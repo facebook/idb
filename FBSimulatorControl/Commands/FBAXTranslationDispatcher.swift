@@ -45,7 +45,7 @@ public final class FBAXTranslationDispatcher: NSObject, AXPTranslationTokenDeleg
 
   // MARK: - Public
 
-  public func platformElement(withRequest request: FBAXTranslationRequest, simulator: FBSimulator) async throws -> AXPMacPlatformElement {
+  func platformElement(withRequest request: FBAXTranslationRequest, simulator: FBSimulator) async throws -> FBAXPlatformElement {
     // The synchronous XPC round-trips driven below (via the delegate callback)
     // must never run on the main queue. This `nonisolated` async method runs on
     // the cooperative executor, off the main actor.
@@ -66,10 +66,10 @@ public final class FBAXTranslationDispatcher: NSObject, AXPTranslationTokenDeleg
     let rawElement = translator.macPlatformElement(fromTranslation: translation)
     collector?.elementConversionDuration = CFAbsoluteTimeGetCurrent() - conversionStart
 
-    // Mirrors the ObjC unchecked typed assignment; test doubles respond to the
-    // selectors without being AXPMacPlatformElement subclasses.
-    let element = unsafeBitCast(rawElement as AnyObject, to: AXPMacPlatformElement.self)
-    element.translation?.bridgeDelegateToken = request.token
+    guard let element = rawElement as? FBAXPlatformElement else {
+      throw FBAccessibilityError.noTranslationObject
+    }
+    element.axSetBridgeDelegateToken(request.token)
     return element
   }
 

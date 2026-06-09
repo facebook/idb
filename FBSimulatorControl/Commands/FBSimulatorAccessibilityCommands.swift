@@ -148,15 +148,15 @@ public class FBSimulatorAccessibilityCommands: NSObject, AsyncAccessibilityOpera
     return try await accessibilityElement(request: nextRequest, remediationPermitted: false)
   }
 
-  private static func remediationRequired(forSimulator simulator: FBSimulator, element: AXPMacPlatformElement) async throws -> Bool {
+  private static func remediationRequired(forSimulator simulator: FBSimulator, element: FBAXPlatformElement) async throws -> Bool {
     // A quick check: a non-zero accessibility frame indicates a healthy element.
-    if !element.accessibilityFrame().equalTo(.zero) {
+    if !element.axFrame().equalTo(.zero) {
       return false
     }
     // Otherwise confirm whether the translation object's pid represents a real process.
     // If it does not, we likely got the pid of a crashed SpringBoard; restarting
     // CoreSimulatorBridge lets launchd bring a fresh SpringBoard (and bridge) back up.
-    let pid = element.translation?.pid ?? 0
+    let pid = element.axTranslationPid
     do {
       _ = try await bridgeFBFuture(simulator.serviceName(forProcessIdentifier: pid))
       return false

@@ -73,7 +73,7 @@ public final class FBAXTranslationRequest {
   /// Serializes the resolved element into a response. The frontmost-application
   /// path additionally computes frame coverage and merges remote (separate-process)
   /// content; the point path is a single-element description.
-  public func run(_ element: AXPMacPlatformElement, options: FBAccessibilityRequestOptions) throws -> FBAccessibilityElementsResponse {
+  func run(_ element: FBAXPlatformElement, options: FBAccessibilityRequestOptions) throws -> FBAccessibilityElementsResponse {
     switch kind {
     case .point:
       return runPoint(element, options: options)
@@ -84,7 +84,7 @@ public final class FBAXTranslationRequest {
 
   // MARK: - Point
 
-  private func runPoint(_ element: AXPMacPlatformElement, options: FBAccessibilityRequestOptions) -> FBAccessibilityElementsResponse {
+  private func runPoint(_ element: FBAXPlatformElement, options: FBAccessibilityRequestOptions) -> FBAccessibilityElementsResponse {
     let serializationStart = CFAbsoluteTimeGetCurrent()
     let elements = FBSimulatorAccessibilitySerializer.formattedDescription(
       ofElement: element,
@@ -99,9 +99,9 @@ public final class FBAXTranslationRequest {
 
   // MARK: - Frontmost Application
 
-  private func runFrontmostApplication(_ element: AXPMacPlatformElement, options: FBAccessibilityRequestOptions) -> FBAccessibilityElementsResponse {
+  private func runFrontmostApplication(_ element: FBAXPlatformElement, options: FBAccessibilityRequestOptions) -> FBAccessibilityElementsResponse {
     // Screen bounds for coverage calculation and remote content fetching.
-    let screenBounds = element.accessibilityFrame()
+    let screenBounds = element.axFrame()
 
     // Coverage grid (populated during traversal) when requested.
     let grid: FBAccessibilityCoverageGrid? = options.collectFrameCoverage ? FBAccessibilityCoverageGrid(screenBounds: screenBounds) : nil
@@ -137,7 +137,7 @@ public final class FBAXTranslationRequest {
       return buildResponse(elements: mainAppElements, serializationStart: serializationStart, frameCoverage: frameCoverage, additionalFrameCoverage: nil)
     }
 
-    let frontmostPid = element.translation?.pid ?? 0
+    let frontmostPid = element.axTranslationPid
     return processRemoteContent(
       mainAppElements: mainAppElements,
       nestedFormat: options.nestedFormat,
@@ -209,16 +209,12 @@ public final class FBAXTranslationRequest {
           continue
         }
 
-        guard let rawHit = translator.macPlatformElement(fromTranslation: hitTranslation) else {
+        guard let hitElement = translator.macPlatformElement(fromTranslation: hitTranslation) as? FBAXPlatformElement else {
           x += stepSize
           continue
         }
-        // Mirrors the unchecked typed cast used by the serializer and dispatcher so
-        // message-responding test doubles (non-AXPMacPlatformElement subclasses) flow
-        // through; identical to `as!` for the real elements returned in production.
-        let hitElement = unsafeBitCast(rawHit as AnyObject, to: AXPMacPlatformElement.self)
 
-        let hitFrame = hitElement.accessibilityFrame()
+        let hitFrame = hitElement.axFrame()
         let hitFrameKey = "\(hitFrame.origin.x),\(hitFrame.origin.y),\(hitFrame.size.width),\(hitFrame.size.height)"
         if discoveredFrames.contains(hitFrameKey) {
           x += stepSize

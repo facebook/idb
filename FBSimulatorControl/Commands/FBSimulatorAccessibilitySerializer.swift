@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import AccessibilityPlatformTranslation
 import AppKit
 import FBControlCore
 import Foundation
@@ -43,40 +42,10 @@ enum FBSimulatorAccessibilitySerializer {
     return String(describing: object)
   }
 
-  private static func customActions(from element: AXPMacPlatformElement) -> [Any] {
-    let actions = element.accessibilityCustomActions() ?? []
-    return actions.map { ensureJSONSerializable($0.name) }
-  }
-
-  // AXTraits is an iOS-specific bitmask that was available in the old
-  // SimulatorBridge implementation. Returns nil if the element does not support
-  // it (callers convert nil to NSNull). Read via `perform` because the
-  // underlying `accessibilityAttributeValue:` is a deprecated NSAccessibility API
-  // that is not exposed to Swift.
-  private static func traits(from element: AXPMacPlatformElement) -> [String]? {
-    let selector = NSSelectorFromString("accessibilityAttributeValue:")
-    guard element.responds(to: selector) else {
-      return nil
-    }
-    guard let result = element.perform(selector, with: "AXTraits")?.takeUnretainedValue() as? NSNumber else {
-      return nil
-    }
-    return Array(AXExtractTraits(result.uint64Value))
-  }
-
-  // Mirrors ObjC's unchecked typed iteration (`for (AXPMacPlatformElement * in ...)`):
-  // children are message-dispatched, so test doubles that respond to the selectors
-  // (but are not `AXPMacPlatformElement` subclasses) flow through unchanged. Uses
-  // `unsafeBitCast` rather than `unsafeDowncast` because the latter asserts the
-  // dynamic type in debug builds, which the doubles would fail.
-  private static func children(of element: AXPMacPlatformElement) -> [AXPMacPlatformElement] {
-    (element.accessibilityChildren() ?? []).map { unsafeBitCast($0 as AnyObject, to: AXPMacPlatformElement.self) }
-  }
-
   // MARK: - Entry points
 
   static func recursiveDescription(
-    fromElement element: AXPMacPlatformElement,
+    fromElement element: FBAXPlatformElement,
     token: String,
     nestedFormat: Bool,
     keys: Set<FBAXKeys>,
@@ -84,7 +53,7 @@ enum FBSimulatorAccessibilitySerializer {
     coverageGrid: FBAccessibilityCoverageGrid?,
     seenPids: SeenPIDs?
   ) -> [[String: Any]] {
-    element.translation?.bridgeDelegateToken = token
+    element.axSetBridgeDelegateToken(token)
     if nestedFormat {
       return [nestedRecursiveDescription(fromElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids)]
     }
@@ -92,14 +61,14 @@ enum FBSimulatorAccessibilitySerializer {
   }
 
   static func formattedDescription(
-    ofElement element: AXPMacPlatformElement,
+    ofElement element: FBAXPlatformElement,
     token: String,
     nestedFormat: Bool,
     keys: Set<FBAXKeys>,
     collector: FBAccessibilityProfilingCollector?,
     coverageGrid: FBAccessibilityCoverageGrid?
   ) -> [String: Any] {
-    element.translation?.bridgeDelegateToken = token
+    element.axSetBridgeDelegateToken(token)
     if nestedFormat {
       return nestedRecursiveDescription(fromElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: nil)
     }
@@ -109,7 +78,7 @@ enum FBSimulatorAccessibilitySerializer {
   // The values here mirror the old SimulatorBridge implementation for downstream
   // compatibility.
   static func accessibilityDictionary(
-    forElement element: AXPMacPlatformElement,
+    forElement element: FBAXPlatformElement,
     token: String,
     keys: Set<FBAXKeys>,
     collector: FBAccessibilityProfilingCollector?,
@@ -118,9 +87,9 @@ enum FBSimulatorAccessibilitySerializer {
     discoveryMethod: String
   ) -> [String: Any] {
     // The token must always be set so that the right callback is called.
-    element.translation?.bridgeDelegateToken = token
+    element.axSetBridgeDelegateToken(token)
 
-    let elementPid = element.translation?.pid ?? 0
+    let elementPid = element.axTranslationPid
     seenPids?.insert(elementPid)
 
     collector?.incrementElementCount()
@@ -140,7 +109,7 @@ enum FBSimulatorAccessibilitySerializer {
 
     // Frame is always computed since it is used by multiple keys and the coverage grid.
     collector?.incrementAttributeFetchCount(forKey: FBAXKeys.frame.rawValue)
-    let frame = element.accessibilityFrame()
+    let frame = element.axFrame()
 
     // Role is used by multiple keys and needs processing. Check Role first to
     // assign rawRole, then Type can derive from it.
@@ -148,13 +117,13 @@ enum FBSimulatorAccessibilitySerializer {
     var rawRole: String?
     if keys.contains(.role) {
       collector?.incrementAttributeFetchCount(forKey: FBAXKeys.role.rawValue)
-      rawRole = element.accessibilityRole()?.rawValue
+      rawRole = element.axRole()
       values[FBAXKeys.role.rawValue] = ensureJSONSerializable(rawRole)
     }
     if keys.contains(.type) {
       if rawRole == nil {
         collector?.incrementAttributeFetchCount(forKey: FBAXKeys.type.rawValue)
-        rawRole = element.accessibilityRole()?.rawValue
+        rawRole = element.axRole()
       }
       // accessibilityRole may be prefixed with "AX"; strip it to match the
       // SimulatorBridge implementation.
@@ -169,7 +138,7 @@ enum FBSimulatorAccessibilitySerializer {
     if let coverageGrid {
       if rawRole == nil {
         collector?.incrementAttributeFetchCount(forKey: nil)
-        rawRole = element.accessibilityRole()?.rawValue
+        rawRole = element.axRole()
       }
       let isApplication = rawRole == "AXApplication" || rawRole == "Application"
       if !isApplication {
@@ -178,12 +147,12 @@ enum FBSimulatorAccessibilitySerializer {
     }
 
     // Legacy values that mirror SimulatorBridge.
-    include(.label, element.accessibilityLabel())
+    include(.label, element.axLabel())
     if keys.contains(.frame) {
       values[FBAXKeys.frame.rawValue] = NSStringFromRect(frame)
     }
-    include(.value, element.accessibilityValue())
-    include(.uniqueID, element.accessibilityIdentifier())
+    include(.value, element.axValue())
+    include(.uniqueID, element.axIdentifier())
 
     // Synthetic values.
     if keys.contains(.type) {
@@ -191,7 +160,7 @@ enum FBSimulatorAccessibilitySerializer {
     }
 
     // New values.
-    include(.title, element.accessibilityTitle())
+    include(.title, element.axTitle())
     if keys.contains(.frameDict) {
       collector?.incrementAttributeFetchCount(forKey: FBAXKeys.frameDict.rawValue)
       values[FBAXKeys.frameDict.rawValue] = [
@@ -201,27 +170,21 @@ enum FBSimulatorAccessibilitySerializer {
         "height": frame.size.height,
       ]
     }
-    include(.help, element.accessibilityHelp())
-    // The boolean NSAccessibility attributes are read through `as AnyObject` to
-    // force dynamic `objc_msgSend` dispatch: AppKit's NSAccessibility Swift overlay
-    // otherwise devirtualizes these property gets, which would bypass an element
-    // (e.g. a test double) that implements the selector but is not an
-    // NSAccessibilityElement subclass. It is also nil-safe for elements that do
-    // not respond to the selector.
-    include(.enabled, (element as AnyObject).isAccessibilityEnabled())
-    include(.customActions, customActions(from: element))
-    include(.roleDescription, element.accessibilityRoleDescription())
-    include(.subrole, element.accessibilitySubrole()?.rawValue)
-    include(.contentRequired, (element as AnyObject).isAccessibilityRequired())
-    include(.pid, element.translation?.pid ?? 0)
+    include(.help, element.axHelp())
+    include(.enabled, element.axIsEnabled())
+    include(.customActions, element.axCustomActionNames())
+    include(.roleDescription, element.axRoleDescription())
+    include(.subrole, element.axSubrole())
+    include(.contentRequired, element.axIsRequired())
+    include(.pid, element.axTranslationPid)
     if keys.contains(.traits) {
       collector?.incrementAttributeFetchCount(forKey: FBAXKeys.traits.rawValue)
-      values[FBAXKeys.traits.rawValue] = traits(from: element) ?? NSNull()
+      values[FBAXKeys.traits.rawValue] = element.axTraits() ?? NSNull()
     }
-    include(.expanded, (element as AnyObject).isAccessibilityExpanded())
-    include(.placeholder, element.accessibilityPlaceholderValue())
-    include(.hidden, (element as AnyObject).isAccessibilityHidden())
-    include(.focused, (element as AnyObject).isAccessibilityFocused())
+    include(.expanded, element.axIsExpanded())
+    include(.placeholder, element.axPlaceholderValue())
+    include(.hidden, element.axIsHidden())
+    include(.focused, element.axIsFocused())
     include(.isRemote, discoveryMethod)
 
     return values
@@ -231,7 +194,7 @@ enum FBSimulatorAccessibilitySerializer {
 
   // Non-hierarchical (flat) output: frames are relative to the root, as in SimulatorBridge.
   private static func flatRecursiveDescription(
-    fromElement element: AXPMacPlatformElement,
+    fromElement element: FBAXPlatformElement,
     token: String,
     keys: Set<FBAXKeys>,
     collector: FBAccessibilityProfilingCollector?,
@@ -240,15 +203,15 @@ enum FBSimulatorAccessibilitySerializer {
   ) -> [[String: Any]] {
     var values: [[String: Any]] = []
     values.append(accessibilityDictionary(forElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids, discoveryMethod: discoveryMethodRecursive))
-    for child in children(of: element) {
-      child.translation?.bridgeDelegateToken = token
+    for child in element.axChildren() {
+      child.axSetBridgeDelegateToken(token)
       values.append(contentsOf: flatRecursiveDescription(fromElement: child, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids))
     }
     return values
   }
 
   private static func nestedRecursiveDescription(
-    fromElement element: AXPMacPlatformElement,
+    fromElement element: FBAXPlatformElement,
     token: String,
     keys: Set<FBAXKeys>,
     collector: FBAccessibilityProfilingCollector?,
@@ -257,8 +220,8 @@ enum FBSimulatorAccessibilitySerializer {
   ) -> [String: Any] {
     var values = accessibilityDictionary(forElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids, discoveryMethod: discoveryMethodRecursive)
     var childrenValues: [[String: Any]] = []
-    for child in children(of: element) {
-      child.translation?.bridgeDelegateToken = token
+    for child in element.axChildren() {
+      child.axSetBridgeDelegateToken(token)
       childrenValues.append(nestedRecursiveDescription(fromElement: child, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids))
     }
     values["children"] = childrenValues

@@ -5,8 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@preconcurrency import AccessibilityPlatformTranslation
-import AppKit
 import FBControlCore
 import Foundation
 
@@ -22,13 +20,13 @@ import Foundation
 /// only the simulator-side facade does, which is now Swift too).
 public final class FBAccessibilityElement {
 
-  private let element: AXPMacPlatformElement
+  private let element: FBAXPlatformElement
   private let request: FBAXTranslationRequest
   private let dispatcher: FBAXTranslationDispatcher
   private weak var simulator: FBSimulator?
   private var closed: Bool = false
 
-  public init(element: AXPMacPlatformElement, request: FBAXTranslationRequest, dispatcher: FBAXTranslationDispatcher, simulator: FBSimulator) {
+  init(element: FBAXPlatformElement, request: FBAXTranslationRequest, dispatcher: FBAXTranslationDispatcher, simulator: FBSimulator) {
     self.element = element
     self.request = request
     self.dispatcher = dispatcher
@@ -85,11 +83,11 @@ public final class FBAccessibilityElement {
     if closed {
       throw FBAccessibilityError.closedElement(operation: "tap")
     }
-    let actionNames = element.accessibilityActionNames() ?? []
+    let actionNames = element.axActionNames()
     guard actionNames.contains("AXPress") else {
       throw FBAccessibilityError.pressUnsupported(supportedActions: FBCollectionInformation.oneLineDescription(from: actionNames))
     }
-    guard element.accessibilityPerformPress() else {
+    guard element.axPerformPress() else {
       throw FBAccessibilityError.pressFailed
     }
   }
@@ -99,18 +97,7 @@ public final class FBAccessibilityElement {
     if closed {
       throw FBAccessibilityError.closedElement(operation: "scroll")
     }
-    switch direction {
-    case .down:
-      element.performScrollDownByPageAction()
-    case .up:
-      element.performScrollUpByPageAction()
-    case .left:
-      element.performScrollLeftByPageAction()
-    case .right:
-      element.performScrollRightByPageAction()
-    case .visible:
-      element.performScrollToVisible()
-    }
+    element.axScroll(direction)
   }
 
   /// Set the accessibility value of the element (e.g., text field content, slider position).
@@ -118,7 +105,7 @@ public final class FBAccessibilityElement {
     if closed {
       throw FBAccessibilityError.closedElement(operation: "set value on")
     }
-    element.setAccessibilityValue(value)
+    element.axSetValue(value)
   }
 
   // MARK: - Descendant search (ownership-transferring)
@@ -144,43 +131,39 @@ public final class FBAccessibilityElement {
 
   // MARK: - Private helpers
 
-  private static func stringValue(forKey key: FBAXSearchableKey, from element: AXPMacPlatformElement) -> String? {
+  private static func stringValue(forKey key: FBAXSearchableKey, from element: FBAXPlatformElement) -> String? {
     switch key {
     case .label:
-      return element.accessibilityLabel()
+      return element.axLabel()
     case .uniqueID:
-      return element.accessibilityIdentifier()
+      return element.axIdentifier()
     case .value:
-      return element.accessibilityValue() as? String
+      return element.axValue() as? String
     case .title:
-      return element.accessibilityTitle()
+      return element.axTitle()
     case .role:
-      return element.accessibilityRole()?.rawValue
+      return element.axRole()
     case .roleDescription:
-      return element.accessibilityRoleDescription()
+      return element.axRoleDescription()
     case .subrole:
-      return element.accessibilitySubrole()?.rawValue
+      return element.axSubrole()
     case .help:
-      return element.accessibilityHelp()
+      return element.axHelp()
     case .placeholder:
-      return element.accessibilityPlaceholderValue()
+      return element.axPlaceholderValue()
     }
   }
 
-  private static func children(of element: AXPMacPlatformElement) -> [AXPMacPlatformElement] {
-    (element.accessibilityChildren() ?? []).map { unsafeBitCast($0 as AnyObject, to: AXPMacPlatformElement.self) }
-  }
-
-  private static func findElement(withValue value: String, forKey key: FBAXSearchableKey, in element: AXPMacPlatformElement, token: String, remainingDepth: UInt) -> AXPMacPlatformElement? {
-    element.translation?.bridgeDelegateToken = token
+  private static func findElement(withValue value: String, forKey key: FBAXSearchableKey, in element: FBAXPlatformElement, token: String, remainingDepth: UInt) -> FBAXPlatformElement? {
+    element.axSetBridgeDelegateToken(token)
     if let propertyValue = stringValue(forKey: key, from: element), propertyValue.contains(value) {
       return element
     }
     if remainingDepth == 0 {
       return nil
     }
-    for child in children(of: element) {
-      child.translation?.bridgeDelegateToken = token
+    for child in element.axChildren() {
+      child.axSetBridgeDelegateToken(token)
       if let found = findElement(withValue: value, forKey: key, in: child, token: token, remainingDepth: remainingDepth - 1) {
         return found
       }

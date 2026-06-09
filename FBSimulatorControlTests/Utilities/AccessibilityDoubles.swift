@@ -144,6 +144,42 @@ class FBSimulatorControlTests_AXPMacPlatformElement_Double: NSObject {
   }
 }
 
+// Conforms the element double to the production seam. Each accessor routes through
+// the existing tracked properties so `accessedProperties` behavior is unchanged.
+// Attributes the double does not model (placeholder/expanded/hidden/focused) and
+// actions it does not perform (scroll/setValue) are inert — none are in the default
+// key set, so the unit suites never exercise them.
+extension FBSimulatorControlTests_AXPMacPlatformElement_Double: FBAXPlatformElement {
+  func axFrame() -> NSRect { accessibilityFrame }
+  func axRole() -> String? { accessibilityRole?.rawValue }
+  func axLabel() -> String? { accessibilityLabel }
+  func axValue() -> Any? { accessibilityValue }
+  func axIdentifier() -> String? { accessibilityIdentifier }
+  func axTitle() -> String? { accessibilityTitle }
+  func axHelp() -> String? { accessibilityHelp }
+  func axRoleDescription() -> String? { accessibilityRoleDescription }
+  func axSubrole() -> String? { accessibilitySubrole?.rawValue }
+  func axPlaceholderValue() -> String? { nil }
+  func axIsEnabled() -> Bool { isAccessibilityEnabled }
+  func axIsRequired() -> Bool { isAccessibilityRequired }
+  func axIsExpanded() -> Bool { false }
+  func axIsHidden() -> Bool { false }
+  func axIsFocused() -> Bool { false }
+  func axCustomActionNames() -> [String] {
+    (accessibilityCustomActions ?? []).compactMap { ($0 as? NSAccessibilityCustomAction)?.name }
+  }
+  func axActionNames() -> [String] { accessibilityActionNames().map { $0.rawValue } }
+  func axTraits() -> [String]? { nil }
+  func axChildren() -> [FBAXPlatformElement] {
+    (accessibilityChildren ?? []).compactMap { $0 as? FBAXPlatformElement }
+  }
+  func axPerformPress() -> Bool { accessibilityPerformPress() }
+  func axScroll(_ direction: FBAccessibilityScrollDirection) {}
+  func axSetValue(_ value: Any?) {}
+  var axTranslationPid: pid_t { translation.pid }
+  func axSetBridgeDelegateToken(_ token: String?) { translation.bridgeDelegateToken = token }
+}
+
 // MARK: - AXPTranslator Double
 
 @objcMembers
