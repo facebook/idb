@@ -7,6 +7,12 @@
 
 #import <SimulatorKit/FoundationXPCProtocolProxyable-Protocol.h>
 
+/**
+ As of Xcode 27 (CoreSimulator 1155.4) this protocol is vended by CoreSimDeviceIO
+ (re-exported by CoreSimulator), not SimulatorKit. Declaration retained here; not
+ referenced by idb/FBSimulatorControl (it was a delegate of the now-removed
+ framebuffer / video-writer classes).
+ */
 @protocol SimDisplayIOSurfaceRenderableDelegate <FoundationXPCProtocolProxyable>
 - (void)didChangeIOSurface:(id)arg1;
 @end

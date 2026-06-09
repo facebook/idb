@@ -21,6 +21,13 @@ NS_ASSUME_NONNULL_BEGIN
  To be 100% sure we calling both methods (with plural underlying implementation and not) and one of the implementation
  will succeed.
  */
+/**
+ As of Xcode 27 (CoreSimulator 1155.4) this protocol is vended by CoreSimDeviceIO
+ (re-exported by CoreSimulator), not SimulatorKit, which is now almost entirely
+ Swift. Declaration retained here; the IO-port descriptor still conforms to it at
+ runtime and FBFramebuffer resolves it via -conformsToProtocol: / -respondsToSelector:,
+ so the move is transparent. Eventual home: a CoreSimDeviceIO header group.
+ */
 @protocol SimDisplayIOSurfaceRenderable <FoundationXPCProtocolProxyable>
 
 /**

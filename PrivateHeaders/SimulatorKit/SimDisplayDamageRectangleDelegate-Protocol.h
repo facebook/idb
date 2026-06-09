@@ -9,6 +9,12 @@
 
 #import <SimulatorKit/FoundationXPCProtocolProxyable-Protocol.h>
 
+/**
+ As of Xcode 27 (CoreSimulator 1155.4) this protocol is vended by CoreSimDeviceIO
+ (re-exported by CoreSimulator), not SimulatorKit, which is now almost entirely
+ Swift. Declaration retained here; resolved at runtime via the re-export. Eventual
+ home: a CoreSimDeviceIO header group.
+ */
 @protocol SimDisplayDamageRectangleDelegate <FoundationXPCProtocolProxyable>
 - (void)didReceiveDamageRect:(struct CGRect)arg1;
 @end
