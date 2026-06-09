@@ -17,6 +17,14 @@ struct __IOSurface;
 @class NSMapTable, NSString, NSUUID, SimDevice;
 @protocol OS_dispatch_queue;
 
+/**
+ Removed from SimulatorKit as of Xcode 27 (CoreSimulator 1155.4). This is the
+ legacy framebuffer-service API (superseded long ago by the
+ SimDisplayIOSurfaceRenderable / SimDisplayRenderable IO-port path that
+ FBFramebuffer uses). The class no longer exists in any Xcode 27 framework and
+ is not referenced by idb/FBSimulatorControl. Header retained for reference and
+ for building against <= Xcode 26.x; scheduled for removal.
+ */
 @interface SimDeviceFramebufferService : NSObject <SimDeviceIOPortConsumer, SimDisplayDamageRectangleDelegate, SimDisplayIOSurfaceRenderableDelegate, SimDisplayRotationAngleDelegate>
 {
   BOOL _consumerAttached;

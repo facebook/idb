@@ -9,6 +9,12 @@
 
 @class NSArray, NSDate;
 
+/**
+ Removed from SimulatorKit as of Xcode 27 (CoreSimulator 1155.4): a legacy video-format helper backing SimDisplayVideoWriter. No longer
+ present in any Xcode 27 framework and not referenced by idb/FBSimulatorControl.
+ Header retained for reference and for building against <= Xcode 26.x; scheduled
+ for removal.
+ */
 @interface SimVideoQuicktimeFormat : NSObject
 {
   unsigned char _qtFormatType;

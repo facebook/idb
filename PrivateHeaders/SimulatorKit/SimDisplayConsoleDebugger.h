@@ -17,6 +17,12 @@ typedef void (^CDUnknownBlockType)(void);
 @class NSString, NSUUID;
 @protocol OS_dispatch_queue;
 
+/**
+ Removed from SimulatorKit as of Xcode 27 (CoreSimulator 1155.4): the display console debugger. No longer
+ present in any Xcode 27 framework and not referenced by idb/FBSimulatorControl.
+ Header retained for reference and for building against <= Xcode 26.x; scheduled
+ for removal.
+ */
 @interface SimDisplayConsoleDebugger : NSObject <SimDeviceIOPortConsumer, SimDisplayDamageRectangleDelegate, SimDisplayIOSurfaceRenderableDelegate, SimDisplayRotationAngleDelegate>
 {
   CDUnknownBlockType _debugLoggingBlock;

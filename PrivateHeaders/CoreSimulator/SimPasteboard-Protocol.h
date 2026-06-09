@@ -10,6 +10,12 @@
 @class NSArray, NSObject;
 @protocol OS_dispatch_queue;
 
+/**
+ Removed from CoreSimulator as of Xcode 27 (CoreSimulator 1155.4): part of the simulator pasteboard / clipboard sync subsystem. No longer
+ present in any Xcode 27 framework and not referenced by idb/FBSimulatorControl.
+ Header retained for reference and for building against <= Xcode 26.x; scheduled
+ for removal.
+ */
 @protocol SimPasteboard <SimDeviceNotifier>
 @property (atomic, readonly, copy) NSArray *items;
 @property (atomic, readonly) unsigned long long changeCount;

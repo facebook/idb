@@ -10,6 +10,12 @@
 /**
  For methods that have been removed from the video writer.
  */
+/**
+ Removed from SimulatorKit as of Xcode 27 (CoreSimulator 1155.4): the (Removed) category on the now-removed SimDisplayVideoWriter class. No longer
+ present in any Xcode 27 framework and not referenced by idb/FBSimulatorControl.
+ Header retained for reference and for building against <= Xcode 26.x; scheduled
+ for removal.
+ */
 @interface SimDisplayVideoWriter (Removed)
 
 /**
