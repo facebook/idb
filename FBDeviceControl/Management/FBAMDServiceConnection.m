@@ -242,7 +242,7 @@ static size_t SendBufferSize = 1024 * 4;
   // Start a loop that ends when there's no more bytes to send
   while (bytesRemaining > 0) {
     // Send the bytes now
-    NSRange sendRange = NSMakeRange(data.length - data.length, MIN(SendBufferSize, bytesRemaining));
+    NSRange sendRange = NSMakeRange(data.length - bytesRemaining, MIN(SendBufferSize, bytesRemaining));
     NSData *chunkData = [data subdataWithRange:sendRange];
     ssize_t result = [self send:chunkData.bytes size:chunkData.length];
     // A negative return indicates error.
