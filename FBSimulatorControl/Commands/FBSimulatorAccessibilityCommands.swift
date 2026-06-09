@@ -48,16 +48,19 @@ extension FBSimulator {
 /// frontmost / at-point / matching accessibility element via the translation
 /// dispatcher, applying SpringBoard-crash remediation for frontmost lookups.
 ///
-/// Not `final` and `translationDispatcher()` is overridable so unit tests can
-/// inject a mock dispatcher (via `@testable`).
-public class FBSimulatorAccessibilityCommands: NSObject, AsyncAccessibilityOperations {
+/// `final`; unit tests inject a mock dispatcher via `injectedDispatcher` (`@testable`).
+/// Stays `NSObject` because it is stored in the simulator's Objective-C command cache.
+public final class FBSimulatorAccessibilityCommands: NSObject, AsyncAccessibilityOperations {
 
   private static let coreSimulatorBridgeServiceName = "com.apple.CoreSimulator.bridge"
 
   private weak var simulator: FBSimulator?
 
+  /// Test injection seam: when set, overrides the simulator's shared dispatcher.
+  var injectedDispatcher: FBAXTranslationDispatcher?
+
   @objc(initWithSimulator:)
-  public required init(simulator: FBSimulator) {
+  public init(simulator: FBSimulator) {
     self.simulator = simulator
     super.init()
   }
@@ -67,16 +70,12 @@ public class FBSimulatorAccessibilityCommands: NSObject, AsyncAccessibilityOpera
     self.init(simulator: target)
   }
 
-  // MARK: Translation Dispatcher Hook
+  // MARK: Translation Dispatcher
 
-  /// The translation dispatcher used for accessibility requests. Defaults to
-  /// `simulator.accessibilityTranslationDispatcher`; tests override this to
-  /// inject a mock. Returns `Any` to mirror the original `- (id)` seam.
-  @objc public func translationDispatcher() -> Any {
-    guard let simulator else {
-      fatalError("FBSimulatorAccessibilityCommands.translationDispatcher accessed after the simulator was deallocated")
-    }
-    return simulator.accessibilityTranslationDispatcher
+  /// The translation dispatcher for accessibility requests: the test-injected one
+  /// when present, otherwise the simulator's process-wide shared dispatcher.
+  private var resolvedDispatcher: FBAXTranslationDispatcher? {
+    injectedDispatcher ?? simulator?.accessibilityTranslationDispatcher
   }
 
   // MARK: AsyncAccessibilityOperations
@@ -130,7 +129,7 @@ public class FBSimulatorAccessibilityCommands: NSObject, AsyncAccessibilityOpera
     guard let simulator else {
       throw FBAccessibilityError.simulatorDeallocated
     }
-    guard let dispatcher = translationDispatcher() as? FBAXTranslationDispatcher else {
+    guard let dispatcher = resolvedDispatcher else {
       throw FBAccessibilityError.dispatcherUnavailable
     }
     let element = try await dispatcher.platformElement(withRequest: request, simulator: simulator)

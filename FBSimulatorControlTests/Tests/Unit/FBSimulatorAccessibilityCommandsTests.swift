@@ -8,22 +8,6 @@
 @testable import FBSimulatorControl
 import XCTest
 
-// MARK: - Mock Dispatcher Wrapper
-
-/// Subclass of the real `FBSimulatorAccessibilityCommands` that overrides only
-/// `translationDispatcher` to return a mock dispatcher built against the test
-/// fixture's mock `AXPTranslator`. All other behavior is inherited unchanged.
-private final class MockDispatcherAccessibilityCommands: FBSimulatorAccessibilityCommands {
-  var mockDispatcher: Any?
-
-  override func translationDispatcher() -> Any {
-    guard let mockDispatcher else {
-      fatalError("MockDispatcherAccessibilityCommands.mockDispatcher must be set before use")
-    }
-    return mockDispatcher
-  }
-}
-
 final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
 
   // MARK: - Properties
@@ -512,10 +496,10 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
   }
 
   /// Creates and activates the fixture with the given root element tree, then
-  /// builds a real `FBSimulator`, a mock translation dispatcher, and registers
-  /// a `MockDispatcherAccessibilityCommands` wrapper into the simulator's
-  /// command cache. Production paths that resolve `accessibilityCommands()` on
-  /// the simulator will return the wrapper.
+  /// builds a real `FBSimulator`, a mock translation dispatcher, and registers an
+  /// `FBSimulatorAccessibilityCommands` with that dispatcher injected into the
+  /// simulator's command cache. Production paths that resolve `accessibilityCommands()`
+  /// on the simulator will return it.
   private func setUp(withRootElement rootElement: FBSimulatorControlTests_AXPMacPlatformElement_Double) {
     fixture = FBAccessibilityTestFixture.bootedSimulator()
     fixture!.rootElement = rootElement
@@ -523,9 +507,9 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
 
     let sim = FBSimulatorTestSupport.testableSimulator(withDevice: fixture!.device)
     let dispatcher = FBSimulator.createAccessibilityTranslationDispatcher(withTranslator: fixture!.translator)
-    let wrapper = MockDispatcherAccessibilityCommands.commands(with: sim)
-    wrapper.mockDispatcher = dispatcher
-    sim.commandCache.register(wrapper, as: FBSimulatorAccessibilityCommands.self)
+    let commands = FBSimulatorAccessibilityCommands.commands(with: sim)
+    commands.injectedDispatcher = dispatcher
+    sim.commandCache.register(commands, as: FBSimulatorAccessibilityCommands.self)
 
     simulator = sim
   }
