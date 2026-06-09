@@ -45,7 +45,7 @@ public enum FBAccessibilityError: LocalizedError, Sendable {
   /// CoreSimulator returned no translation object for the request.
   case noTranslationObject
 
-  /// Restarting CoreSimulatorBridge during SpringBoard remediation failed.
+  /// SpringBoard crashed and the CoreSimulatorBridge restart that would recover it failed.
   case springBoardRemediationFailed(serviceName: String)
 
   public var errorDescription: String? {
@@ -71,7 +71,7 @@ public enum FBAccessibilityError: LocalizedError, Sendable {
     case .noTranslationObject:
       return "No translation object returned for simulator. This means you have likely specified a point onscreen that is invalid or invisible due to a fullscreen dialog"
     case .springBoardRemediationFailed(let serviceName):
-      return "Could not restart \(serviceName) bridge when attempting to remediate SpringBoard Crash"
+      return "SpringBoard has crashed; could not restart \(serviceName) to recover the frontmost application's accessibility hierarchy."
     }
   }
 }

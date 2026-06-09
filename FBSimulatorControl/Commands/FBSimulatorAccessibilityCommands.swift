@@ -160,7 +160,7 @@ public final class FBSimulatorAccessibilityCommands: NSObject, AsyncAccessibilit
       _ = try await bridgeFBFuture(simulator.serviceName(forProcessIdentifier: pid))
       return false
     } catch {
-      simulator.logger?.log("pid \(pid) does not exist, this likely means that SpringBoard has restarted, \(coreSimulatorBridgeServiceName) should be restarted")
+      simulator.logger?.log("Frontmost accessibility hierarchy is stale: the root element has a zero frame and its owning pid \(pid) is no longer a registered launchd service. SpringBoard has crashed and CoreSimulator's \(coreSimulatorBridgeServiceName) is still bound to the dead pid; restarting \(coreSimulatorBridgeServiceName) to recover.")
       return true
     }
   }
