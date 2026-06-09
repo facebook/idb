@@ -203,22 +203,22 @@ public final class FBSimulatorLifecycleCommands: NSObject, FBiOSTargetCommand {
     guard let simulator = self.simulator else {
       throw FBSimulatorError.describe("Simulator deallocated").build()
     }
-    // We cannot 'focus' a SimulatorApp for the non-default device set.
+    // The Simulator host app (Simulator.app, or DeviceHub.app on Xcode 27+) only displays
+    // simulators in the default device set, so 'focus' is unsupported for a custom device set.
+    // This is also why Xcode parallel testing — which clones into a non-default device set — is
+    // not visible in DeviceHub (Apple known issue 176809181).
     if let deviceSetPath = simulator.customDeviceSetPath {
       throw FBSimulatorError.describe("Focusing on the Simulator App for a simulator in a custom device set (\(deviceSetPath)) is not supported").build()
     }
 
-    // Xcode 27 replaced Simulator.app with the CoreDevice-based DeviceHub.app, which only
-    // displays simulators it started itself. It will not attach to a simulator booted out of
-    // band by CoreSimulator/FBSimulatorControl (Apple known issue 176809181), so launching it
-    // here would only open an empty window. Fail with guidance instead.
-    if FBXcodeConfiguration.simulatorApp.identifier == "com.apple.dt.Devices" {
-      throw FBSimulatorError.describe("Focus is unsupported on Xcode 27 and later: DeviceHub.app does not attach to externally-booted simulators (Apple known issue 176809181). Use video streaming to view the simulator instead.").build()
-    }
-
-    // Find the running instances of SimulatorApp.
+    // Find the running instances of the Simulator host app. Xcode 27 renamed Simulator.app
+    // (com.apple.iphonesimulator) to DeviceHub.app (com.apple.dt.Devices); match either.
     let apps = NSWorkspace.shared.runningApplications
-    let simulatorApps = apps.filter { $0.bundleIdentifier == "com.apple.iphonesimulator" }
+    let simulatorAppBundleIDs: Set<String> = ["com.apple.iphonesimulator", "com.apple.dt.Devices"]
+    let simulatorApps = apps.filter { app in
+      guard let bundleIdentifier = app.bundleIdentifier else { return false }
+      return simulatorAppBundleIDs.contains(bundleIdentifier)
+    }
 
     // If we have no SimulatorApp running then we can instead launch one in a focused state
     if simulatorApps.isEmpty {
