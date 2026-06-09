@@ -63,7 +63,5 @@
 @property (nonatomic, readonly, copy) NSString *productFamily;
 @property (nonatomic, readonly) int productFamilyID;
 - (id)description;
-- (id)initWithBundle:(id)arg1;
-- (id)initWithPath:(id)arg1;
 
 @end

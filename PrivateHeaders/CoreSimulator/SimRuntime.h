@@ -67,18 +67,8 @@
 @property (nonatomic, copy) NSString *identifier;
 @property (nonatomic, copy) NSString *name;
 
-- (id)platformRuntimeOverlay;
-- (CDUnknownFunctionPointerType)launch_sim_set_death_handler;
-- (CDUnknownFunctionPointerType)launch_sim_waitpid;
-- (CDUnknownFunctionPointerType)launch_sim_spawn;
-- (CDUnknownFunctionPointerType)launch_sim_getenv;
-- (CDUnknownFunctionPointerType)launch_sim_bind_session_to_port;
-- (CDUnknownFunctionPointerType)launch_sim_find_endpoint;
-- (CDUnknownFunctionPointerType)launch_sim_unregister_endpoint;
-- (CDUnknownFunctionPointerType)launch_sim_register_endpoint;
 - (BOOL)isAvailableWithError:(id *)arg1;
 @property (nonatomic, readonly) BOOL available;
-- (id)dyld_simPath;
 - (BOOL)createInitialContentPath:(id)arg1 error:(id *)arg2;
 - (id)sampleContentPath;
 - (long long)compare:(id)arg1;
@@ -87,7 +77,5 @@
 - (BOOL)supportsDeviceType:(id)arg1;
 - (id)environment;
 - (id)description;
-- (id)initWithBundle:(id)arg1;
-- (id)initWithPath:(id)arg1;
 
 @end

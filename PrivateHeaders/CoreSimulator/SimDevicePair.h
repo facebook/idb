@@ -58,9 +58,6 @@
 - (void)handleXPCNotification:(NSDictionary *)arg1;
 - (void)handleXPCRequestPairSetActive:(NSDictionary *)arg1;
 - (void)handleXPCRequest:(NSDictionary *)arg1;
-- (struct NSMutableDictionary *)newDevicePairNotification;
-- (struct NSMutableDictionary *)createXPCNotification:(id)arg1;
-- (struct NSMutableDictionary *)createXPCRequest:(id)arg1;
 - (long long)compare:(id)arg1;
 - (id)description;
 - (BOOL)unregisterNotificationHandler:(unsigned long long)arg1 error:(id *)arg2;

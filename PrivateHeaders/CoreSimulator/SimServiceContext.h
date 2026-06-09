@@ -31,7 +31,6 @@
   NSObject<OS_dispatch_queue> *_allDeviceSetsQueue;
 }
 
-+ (void)setSharedContextConnectionType:(long long)arg1;
 + (id)serviceContextForDeveloperDir:(id)arg1 connectionType:(long long)arg2 error:(id *)arg3;
 + (id)sharedServiceContextForDeveloperDir:(id)arg1 error:(id *)arg2;
 @property (nonatomic, retain) NSObject<OS_dispatch_queue> *allDeviceSetsQueue;
@@ -48,8 +47,6 @@
 - (void)handleXPCEvent:(id)arg1;
 - (void)handleReconnectionBookkeeping;
 - (void)addProfilesForDeveloperDir:(id)arg1;
-- (void)supportedRuntimesAddProfilesAtPath:(id)arg1;
-- (void)supportedDeviceTypesAddProfilesAtPath:(id)arg1;
 - (void)serviceAddProfilesAtPath:(id)arg1;
 - (void)addProfilesAtPath:(id)arg1;
 @property (nonatomic, readonly, copy) NSDictionary *supportedRuntimesByAlias;
@@ -64,7 +61,5 @@
 - (id)deviceSetWithPath:(id)arg1 error:(id *)arg2;
 - (id)defaultDeviceSetWithError:(id *)arg1;
 - (void)dealloc;
-- (void)connect;
-- (id)initWithDeveloperDir:(id)arg1 connectionType:(long long)arg2;
 
 @end

@@ -33,10 +33,8 @@ typedef NS_ENUM(NSUInteger, SimDeviceBootInfoStatus) {
 @property (nonatomic, assign) SimDeviceBootInfoStatus status;
 @property (nonatomic, readonly) double migrationElapsedTime;
 @property (nonatomic, readonly, copy) NSString *migrationPhaseDescription;
-- (void)encodeWithCoder:(id)arg1;
 - (unsigned long long)hash;
 - (BOOL)isEqual:(id)arg1;
-- (id)initWithCoder:(id)arg1;
 - (id)initWithElapsedTime:(double)arg1 status:(unsigned int)arg2 info:(id)arg3;
 
 @end

@@ -45,4 +45,23 @@
  */
 - (BOOL)createLaunchdJobWithError:(NSError **)arg1 extraEnvironment:(NSDictionary *)arg2 disabledJobs:(NSDictionary *)arg3;
 
+/**
+ Removed in Xcode 27 (CoreSimulator 1155.4). These are internal XPC request
+ plumbing, bridge/launchd lifecycle, and lookup helpers that are no longer
+ present on SimDevice. None are called by idb/FBSimulatorControl; kept here as
+ a record of the Xcode 26.x -> 27 delta.
+ */
+- (NSMutableDictionary *)createXPCNotification:(NSDictionary *)arg1;
+- (NSMutableDictionary *)createXPCRequest:(NSDictionary *)arg1;
+- (void)handleXPCRequestDeviceIOPortDetachConsumer:(NSDictionary *)arg1;
+- (void)handleXPCRequestDeviceIOPortAttachConsumer:(NSDictionary *)arg1;
+- (void)handleXPCRequestSpawn:(NSDictionary *)arg1;
+- (unsigned int)_lookup:(NSString *)arg1 error:(NSError **)arg2;
+- (BOOL)_sendBridgeRequest:(CDUnknownBlockType)arg1 error:(NSError **)arg2;
+- (BOOL)_onBootstrapQueue_bootWithOptions:(NSDictionary *)arg1 deathMonitorPort:(NSMachPort *)arg2 deathTriggerPort:(NSMachPort *)arg3 error:(NSError **)arg4;
+- (void)launchdDeathHandlerWithDeathPort:(NSMachPort *)arg1;
+- (BOOL)startLaunchdWithDeathPort:(NSMachPort *)arg1 deathHandler:(CDUnknownBlockType)arg2 error:(NSError **)arg3;
+- (void)registerPortsWithLaunchd;
+- (BOOL)ensureLogPathsWithError:(NSError **)arg1;
+
 @end
