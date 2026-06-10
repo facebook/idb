@@ -7,7 +7,7 @@
 
 #import "FBSimulatorControlFrameworkLoader.h"
 
-#import <CoreSimulator/NSUserDefaults-SimDefaults.h>
+#import <CoreSimulatorUtilities/NSUserDefaults-SimDefaults.h>
 #import <FBControlCore/FBControlCore.h>
 
 static void FBSimulatorControl_SimLogHandler(int level, const char *function, int lineNumber, NSString *format, ...)
