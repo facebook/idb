@@ -107,7 +107,7 @@ static FBSimulator *_createSimulatorWithDevice(_FBTestSimDevice *device)
   id<FBControlCoreLogger> logger = [FBControlCoreLoggerFactory loggerToConsumer:[FBNullDataConsumer new]];
   id reporter = [_FBTestEventReporter new];
   return [[FBSimulator alloc] initWithDevice:(id)device
-                               configuration:FBSimulatorConfiguration.defaultConfiguration
+                               configuration:[FBSimulatorConfiguration defaultConfigurationAndReturnError:nil]
                                          set:nil
                           auxillaryDirectory:@"/tmp/test-aux"
                                       logger:logger
