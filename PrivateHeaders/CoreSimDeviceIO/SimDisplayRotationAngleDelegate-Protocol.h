@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import <SimulatorKit/FoundationXPCProtocolProxyable-Protocol.h>
+#import <CoreSimulator/FoundationXPCProtocolProxyable-Protocol.h>
 
 /**
  As of Xcode 27 (CoreSimulator 1155.4) this protocol is vended by CoreSimDeviceIO
@@ -13,6 +13,6 @@
  referenced by idb/FBSimulatorControl (it was a delegate of the now-removed
  framebuffer / video-writer classes).
  */
-@protocol SimDisplayIOSurfaceRenderableDelegate <FoundationXPCProtocolProxyable>
-- (void)didChangeIOSurface:(id)arg1;
+@protocol SimDisplayRotationAngleDelegate <FoundationXPCProtocolProxyable>
+- (void)didChangeDisplayAngle:(double)arg1;
 @end

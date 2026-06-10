@@ -7,7 +7,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import <SimulatorKit/FoundationXPCProtocolProxyable-Protocol.h>
+#import <CoreSimulator/FoundationXPCProtocolProxyable-Protocol.h>
 
 /**
  As of Xcode 27 (CoreSimulator 1155.4) this protocol is vended by
@@ -15,7 +15,7 @@
  almost entirely Swift. The declaration is retained here unchanged: the IO-port
  descriptor still conforms to it at runtime and FBFramebuffer resolves it via
  -conformsToProtocol: / -respondsToSelector:, so the framework move is
- transparent. Eventual home: a CoreSimDeviceIO header group.
+ transparent. This header now lives in the CoreSimDeviceIO module.
  */
 @protocol SimDisplayRenderable <FoundationXPCProtocolProxyable, NSObject>
 @property (nonatomic, readonly) long long displaySizeInBytes;

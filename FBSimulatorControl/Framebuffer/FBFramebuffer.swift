@@ -5,11 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+@_implementationOnly @preconcurrency import CoreSimDeviceIO
 @preconcurrency import CoreSimulator
 @preconcurrency import FBControlCore
 import Foundation
 import IOSurface
-@_implementationOnly @preconcurrency import SimulatorKit
 
 @objc public protocol FBSimulatorVideoStreamFramePusher: NSObjectProtocol {
   @objc(setupWithPixelBuffer:edgeInsets:error:)

@@ -7,7 +7,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import <SimulatorKit/FoundationXPCProtocolProxyable-Protocol.h>
+#import <CoreSimulator/FoundationXPCProtocolProxyable-Protocol.h>
 
 @class NSUUID;
 
@@ -16,7 +16,7 @@
  (re-exported by CoreSimulator), not SimulatorKit, which is now almost entirely
  Swift. Declaration retained here; -[SimDeviceIOClient ioPorts] returns objects
  conforming to it at runtime (see FBFramebuffer), so the move is transparent.
- Eventual home: a CoreSimDeviceIO header group.
+ This header now lives in the CoreSimDeviceIO module.
  */
 @protocol SimDeviceIOPortInterface <FoundationXPCProtocolProxyable, NSObject>
 @property (nonatomic, readonly) id descriptor;

@@ -7,7 +7,7 @@
 
 #import <CoreGraphics/CoreGraphics.h>
 
-#import <SimulatorKit/FoundationXPCProtocolProxyable-Protocol.h>
+#import <CoreSimulator/FoundationXPCProtocolProxyable-Protocol.h>
 
 /**
  As of Xcode 27 (CoreSimulator 1155.4) this protocol is vended by CoreSimDeviceIO
