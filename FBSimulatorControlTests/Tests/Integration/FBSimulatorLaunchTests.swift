@@ -23,27 +23,27 @@ final class FBSimulatorLaunchTests: FBSimulatorControlTestCase {
     await assertShutdownSimulatorAndTerminateSession(simulator)
   }
 
-  func testLaunchesiPhone() async {
+  func testLaunchesiPhone() async throws {
     await testLaunchesSingleSimulator(
-      FBSimulatorConfiguration.default.withDeviceModel(FBDeviceModel(rawValue: "iPhone 8"))
+      try FBSimulatorConfiguration.defaultConfiguration().withDeviceModel(FBDeviceModel(rawValue: "iPhone 8"))
     )
   }
 
-  func testLaunchesiPad() async {
+  func testLaunchesiPad() async throws {
     await testLaunchesSingleSimulator(
-      FBSimulatorConfiguration.default.withDeviceModel(FBDeviceModel(rawValue: "iPad Air 2"))
+      try FBSimulatorConfiguration.defaultConfiguration().withDeviceModel(FBDeviceModel(rawValue: "iPad Air 2"))
     )
   }
 
-  func testLaunchesWatch() async {
+  func testLaunchesWatch() async throws {
     await testLaunchesSingleSimulator(
-      FBSimulatorConfiguration.default.withDeviceModel(FBDeviceModel(rawValue: "Apple Watch - 42mm"))
+      try FBSimulatorConfiguration.defaultConfiguration().withDeviceModel(FBDeviceModel(rawValue: "Apple Watch - 42mm"))
     )
   }
 
-  func testLaunchesTV() async {
+  func testLaunchesTV() async throws {
     await testLaunchesSingleSimulator(
-      FBSimulatorConfiguration.default.withDeviceModel(FBDeviceModel(rawValue: "Apple TV"))
+      try FBSimulatorConfiguration.defaultConfiguration().withDeviceModel(FBDeviceModel(rawValue: "Apple TV"))
     )
   }
 

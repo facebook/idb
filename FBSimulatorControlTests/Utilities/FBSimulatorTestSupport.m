@@ -52,10 +52,13 @@
 {
   id<FBControlCoreLogger> logger = [FBControlCoreLoggerFactory loggerToConsumer:[FBNullDataConsumer new]];
   id stubReporter = [FBStubEventReporter new];
+  NSError *configurationError = nil;
+  FBSimulatorConfiguration *configuration = [FBSimulatorConfiguration defaultConfigurationAndReturnError:&configurationError];
+  NSAssert(configuration, @"Could not build the default simulator configuration: %@", configurationError);
   // Cast through `id` so the type checker accepts the substitution as
   // `SimDevice *`. The init only stores fields and reads `device.UDID.UUIDString`.
   return [[FBSimulator alloc] initWithDevice:device
-                               configuration:FBSimulatorConfiguration.defaultConfiguration
+                               configuration:configuration
                                          set:nil
                           auxillaryDirectory:NSTemporaryDirectory()
                                       logger:logger

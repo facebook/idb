@@ -13,25 +13,27 @@ extension FBSimulatorConfiguration {
 
   // MARK: - Matching Configuration against Available Versions
 
-  @objc(newestAvailableOSForDevice:)
-  public class func newestAvailableOS(forDevice device: FBDeviceType) -> FBOSVersion? {
-    (try? FBSimulatorConfiguration.supportedOSVersions(forDevice: device))?.last
+  public class func newestAvailableOS(forDevice device: FBDeviceType) throws -> FBOSVersion? {
+    try FBSimulatorConfiguration.supportedOSVersions(forDevice: device).last
   }
 
   @objc
-  public func newestAvailableOS() -> FBSimulatorConfiguration {
-    let os = FBSimulatorConfiguration.newestAvailableOS(forDevice: device)!
+  public func newestAvailableOS() throws -> FBSimulatorConfiguration {
+    guard let os = try FBSimulatorConfiguration.newestAvailableOS(forDevice: device) else {
+      throw FBSimulatorError.describe("No newest available OS for device \(device.model.rawValue)").build()
+    }
     return withOSNamed(os.name)
   }
 
-  @objc(oldestAvailableOSForDevice:)
-  public class func oldestAvailableOS(forDevice device: FBDeviceType) -> FBOSVersion? {
-    (try? FBSimulatorConfiguration.supportedOSVersions(forDevice: device))?.first
+  public class func oldestAvailableOS(forDevice device: FBDeviceType) throws -> FBOSVersion? {
+    try FBSimulatorConfiguration.supportedOSVersions(forDevice: device).first
   }
 
   @objc
-  public func oldestAvailableOS() -> FBSimulatorConfiguration {
-    let os = FBSimulatorConfiguration.oldestAvailableOS(forDevice: device)!
+  public func oldestAvailableOS() throws -> FBSimulatorConfiguration {
+    guard let os = try FBSimulatorConfiguration.oldestAvailableOS(forDevice: device) else {
+      throw FBSimulatorError.describe("No oldest available OS for device \(device.model.rawValue)").build()
+    }
     return withOSNamed(os.name)
   }
 
@@ -45,7 +47,7 @@ extension FBSimulatorConfiguration {
     guard FBiOSTargetConfiguration.nameToDevice[model] != nil else {
       throw FBSimulatorError.describe("Could not obtain Device for \(model.rawValue), perhaps it is unsupported by FBSimulatorControl").build()
     }
-    return FBSimulatorConfiguration.defaultConfiguration.withOSNamed(osName).withDeviceModel(model)
+    return try FBSimulatorConfiguration.defaultConfiguration().withOSNamed(osName).withDeviceModel(model)
   }
 
   @objc(inferSimulatorConfigurationFromDeviceSynthesizingMissing:)
@@ -53,9 +55,14 @@ extension FBSimulatorConfiguration {
     if let configuration = try? inferSimulatorConfiguration(fromDevice: simDevice) {
       return configuration
     }
+    // Synthesize directly rather than via the throwing `defaultConfiguration()`: this path must not
+    // fail (it has ObjC callers in non-throwing FBSimulator init) and it overrides both OS and device
+    // anyway, so the default's own values are irrelevant.
     let osName = FBOSVersionName(rawValue: simDevice.runtime.name!)
     let model = FBDeviceModel(rawValue: simDevice.deviceType.name!)
-    return FBSimulatorConfiguration.defaultConfiguration.withOSNamed(osName).withDeviceModel(model)
+    let os = FBiOSTargetConfiguration.nameToOSVersion[osName] ?? FBOSVersion.generic(withName: osName.rawValue)
+    let device = FBiOSTargetConfiguration.nameToDevice[model] ?? FBDeviceType.generic(withName: model.rawValue)
+    return FBSimulatorConfiguration(device: device, os: os).withDeviceModel(model)
   }
 
   @objc(checkRuntimeRequirementsReturningError:)
@@ -137,7 +144,7 @@ extension FBSimulatorConfiguration {
           continue
         }
 
-        let configuration = FBSimulatorConfiguration.defaultConfiguration.withDeviceModel(model).withOSNamed(osName)
+        let configuration = try FBSimulatorConfiguration.defaultConfiguration().withDeviceModel(model).withOSNamed(osName)
         configurations.append(configuration)
       }
     }

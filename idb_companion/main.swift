@@ -357,7 +357,12 @@ private func createFuture(_ create: String, userDefaults: UserDefaults, logger: 
       fmap: { (setObj: AnyObject) -> FBFuture<AnyObject> in
         let set = setObj as! FBSimulatorSet
         let parameters = create.components(separatedBy: ",")
-        var config = FBSimulatorConfiguration.default
+        var config: FBSimulatorConfiguration
+        do {
+          config = try FBSimulatorConfiguration.defaultConfiguration()
+        } catch {
+          return FBFuture(error: error as NSError)
+        }
         if parameters.count > 0 {
           config = config.withDeviceModel(FBDeviceModel(rawValue: parameters[0]))
         }

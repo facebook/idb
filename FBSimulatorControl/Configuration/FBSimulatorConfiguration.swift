@@ -18,23 +18,36 @@ public final class FBSimulatorConfiguration: NSObject, NSCopying {
 
   // MARK: - Initializers
 
-  private init(device: FBDeviceType, os: FBOSVersion) {
+  // Module-internal so same-module extensions (e.g. FBSimulatorConfiguration+CoreSimulator) can build a
+  // configuration directly without going through the throwing `defaultConfiguration()`. External callers
+  // still construct via `defaultConfiguration()` + the `with*` methods.
+  init(device: FBDeviceType, os: FBOSVersion) {
     self.device = device
     self.os = os
     super.init()
   }
 
-  // Swift compatibility alias: ObjC importer mapped `defaultConfiguration` to `default`
-  public static var `default`: FBSimulatorConfiguration {
-    defaultConfiguration
+  @objc
+  public static func defaultConfiguration() throws -> FBSimulatorConfiguration {
+    try _defaultConfiguration.get()
   }
 
-  @objc public nonisolated(unsafe) static let defaultConfiguration: FBSimulatorConfiguration = {
+  // Memoized so the default is computed (and the developer directory resolved) at most once,
+  // matching the previous `static let` semantics while letting the resolution error surface.
+  private nonisolated(unsafe) static let _defaultConfiguration: Result<FBSimulatorConfiguration, Error> = {
     FBSimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworksOrAbort()
     let model = FBDeviceModel(rawValue: "iPhone 6")
-    let device = FBiOSTargetConfiguration.nameToDevice[model]!
-    let os = FBSimulatorConfiguration.newestAvailableOS(forDevice: device)!
-    return FBSimulatorConfiguration(device: device, os: os)
+    guard let device = FBiOSTargetConfiguration.nameToDevice[model] else {
+      return .failure(FBSimulatorError.describe("No device type is registered for 'iPhone 6'").build())
+    }
+    do {
+      guard let os = try FBSimulatorConfiguration.newestAvailableOS(forDevice: device) else {
+        return .failure(FBSimulatorError.describe("No available OS versions for the default simulator configuration").build())
+      }
+      return .success(FBSimulatorConfiguration(device: device, os: os))
+    } catch {
+      return .failure(error)
+    }
   }()
 
   // MARK: - NSCopying
@@ -85,7 +98,7 @@ public final class FBSimulatorConfiguration: NSObject, NSCopying {
     if os.families.isEmpty || os.families.contains(NSNumber(value: device.family.rawValue)) {
       return FBSimulatorConfiguration(device: device, os: os)
     }
-    let newOS = FBSimulatorConfiguration.newestAvailableOS(forDevice: device) ?? os
+    let newOS = (try? FBSimulatorConfiguration.newestAvailableOS(forDevice: device)) ?? os
     return FBSimulatorConfiguration(device: device, os: newOS)
   }
 }

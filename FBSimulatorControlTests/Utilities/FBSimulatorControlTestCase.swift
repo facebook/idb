@@ -89,9 +89,9 @@ class FBSimulatorControlTestCase: XCTestCase {
     return FBSimulatorBootConfiguration(options: bootOptions, environment: [:])
   }
 
-  override func setUp() {
+  override func setUpWithError() throws {
     continueAfterFailure = false
-    simulatorConfiguration = FBSimulatorConfiguration.default.withDeviceModel(.modeliPhone16)
+    simulatorConfiguration = try FBSimulatorConfiguration.defaultConfiguration().withDeviceModel(.modeliPhone16)
     bootConfiguration = FBSimulatorBootConfiguration(options: FBSimulatorControlTestCase.bootOptions, environment: [:])
     deviceSetPath = FBSimulatorControlTestCase.defaultDeviceSetPath
   }
