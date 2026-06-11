@@ -13,39 +13,39 @@ final class FBSimulatorHIDEventOrientationTests: XCTestCase {
   // MARK: - Orientation
 
   func testOrientationEventEquality() {
-    XCTAssertEqual(FBSimulatorHIDEvent.setOrientation(.landscapeLeft), .setOrientation(.landscapeLeft))
+    XCTAssertEqual(FBSimulatorHIDEvent.deviceOrientation(.landscapeLeft), .deviceOrientation(.landscapeLeft))
   }
 
   func testOrientationEventInequality() {
-    XCTAssertNotEqual(FBSimulatorHIDEvent.setOrientation(.portrait), .setOrientation(.landscapeLeft))
+    XCTAssertNotEqual(FBSimulatorHIDEvent.deviceOrientation(.portrait), .deviceOrientation(.landscapeLeft))
   }
 
   func testOrientationEventHash() {
     XCTAssertNotEqual(
-      FBSimulatorHIDEvent.setOrientation(.portrait).hashValue,
-      FBSimulatorHIDEvent.setOrientation(.landscapeLeft).hashValue)
+      FBSimulatorHIDEvent.deviceOrientation(.portrait).hashValue,
+      FBSimulatorHIDEvent.deviceOrientation(.landscapeLeft).hashValue)
     XCTAssertEqual(
-      FBSimulatorHIDEvent.setOrientation(.portrait).hashValue,
-      FBSimulatorHIDEvent.setOrientation(.portrait).hashValue)
+      FBSimulatorHIDEvent.deviceOrientation(.portrait).hashValue,
+      FBSimulatorHIDEvent.deviceOrientation(.portrait).hashValue)
   }
 
   func testOrientationEventDescription() {
-    let description = FBSimulatorHIDEvent.setOrientation(.landscapeLeft).description
+    let description = FBSimulatorHIDEvent.deviceOrientation(.landscapeLeft).description
     XCTAssertTrue(description.contains("landscape_left"), "Description should contain orientation name, got: \(description)")
   }
 
   func testSetOrientationFactory() {
-    guard case .deviceOrientation(.portraitUpsideDown) = FBSimulatorHIDEvent.setOrientation(.portraitUpsideDown) else {
+    guard case .deviceOrientation(.portraitUpsideDown) = FBSimulatorHIDEvent.deviceOrientation(.portraitUpsideDown) else {
       return XCTFail("setOrientation should produce a .deviceOrientation event")
     }
   }
 
   func testAllOrientationsCreateDistinctEvents() {
     let events: Set<FBSimulatorHIDEvent> = [
-      .setOrientation(.portrait),
-      .setOrientation(.portraitUpsideDown),
-      .setOrientation(.landscapeRight),
-      .setOrientation(.landscapeLeft),
+      .deviceOrientation(.portrait),
+      .deviceOrientation(.portraitUpsideDown),
+      .deviceOrientation(.landscapeRight),
+      .deviceOrientation(.landscapeLeft),
     ]
     XCTAssertEqual(events.count, 4, "All four orientations should be distinct")
   }
@@ -53,28 +53,28 @@ final class FBSimulatorHIDEventOrientationTests: XCTestCase {
   // MARK: - Shake
 
   func testShakeFactory() {
-    XCTAssertEqual(FBSimulatorHIDEvent.shake(), .shake)
+    XCTAssertEqual(FBSimulatorHIDEvent.shake, .shake)
   }
 
   func testShakeEquality() {
-    XCTAssertEqual(FBSimulatorHIDEvent.shake(), FBSimulatorHIDEvent.shake())
+    XCTAssertEqual(FBSimulatorHIDEvent.shake, FBSimulatorHIDEvent.shake)
   }
 
   func testShakeDescription() {
-    XCTAssertTrue(FBSimulatorHIDEvent.shake().description.contains("Shake"))
+    XCTAssertTrue(FBSimulatorHIDEvent.shake.description.contains("Shake"))
   }
 
   // MARK: - Lock Device
 
   func testLockDeviceFactory() {
-    XCTAssertEqual(FBSimulatorHIDEvent.lockDevice(), .lockDevice)
+    XCTAssertEqual(FBSimulatorHIDEvent.lockDevice, .lockDevice)
   }
 
   func testLockDeviceDescription() {
-    XCTAssertTrue(FBSimulatorHIDEvent.lockDevice().description.contains("Lock"))
+    XCTAssertTrue(FBSimulatorHIDEvent.lockDevice.description.contains("Lock"))
   }
 
   func testLockDeviceEquality() {
-    XCTAssertEqual(FBSimulatorHIDEvent.lockDevice(), FBSimulatorHIDEvent.lockDevice())
+    XCTAssertEqual(FBSimulatorHIDEvent.lockDevice, FBSimulatorHIDEvent.lockDevice)
   }
 }

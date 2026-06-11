@@ -118,93 +118,45 @@ public extension FBSimulatorHIDEvent {
 
 public extension FBSimulatorHIDEvent {
 
-  // MARK: Single Payload Events
-
-  // All of the single-payload static constructors here are superfluous now that the enum carries
-  // the cases. Follow-up commits use the enum cases directly and remove these wrappers.
-
-  static func touchDownAt(x: Double, y: Double) -> FBSimulatorHIDEvent {
-    .touch(direction: .down, x: x, y: y)
-  }
-
-  static func touchUpAt(x: Double, y: Double) -> FBSimulatorHIDEvent {
-    .touch(direction: .up, x: x, y: y)
-  }
-
-  static func buttonDown(_ button: FBSimulatorHIDButton) -> FBSimulatorHIDEvent {
-    .button(direction: .down, button: button)
-  }
-
-  static func buttonUp(_ button: FBSimulatorHIDButton) -> FBSimulatorHIDEvent {
-    .button(direction: .up, button: button)
-  }
-
-  static func keyDown(_ keyCode: UInt32) -> FBSimulatorHIDEvent {
-    .keyboard(direction: .down, keyCode: keyCode)
-  }
-
-  static func keyUp(_ keyCode: UInt32) -> FBSimulatorHIDEvent {
-    .keyboard(direction: .up, keyCode: keyCode)
-  }
-
-  static func setOrientation(_ orientation: FBSimulatorHIDDeviceOrientation) -> FBSimulatorHIDEvent {
-    .deviceOrientation(orientation)
-  }
-
-  static func shake() -> FBSimulatorHIDEvent {
-    .shake
-  }
-
-  static func lockDevice() -> FBSimulatorHIDEvent {
-    .lockDevice
-  }
-
-  static func toggleInCallStatusBar() -> FBSimulatorHIDEvent {
-    .toggleInCallStatusBar
-  }
-
-  // Note: `delay(_:)` is provided directly by the `case delay(TimeInterval)` enum case.
-
-  // MARK: Multiple Payload Events
-
-  static func with(events: [FBSimulatorHIDEvent]) -> FBSimulatorHIDEvent {
-    .composite(events)
-  }
+  // Single-payload events use the enum cases directly (`.touch(direction:x:y:)`,
+  // `.button(direction:button:)`, `.keyboard(direction:keyCode:)`, `.delay(_:)`,
+  // `.deviceOrientation(_:)`, `.shake`, `.lockDevice`, `.toggleInCallStatusBar`, `.composite(_:)`).
+  // Only composites with real construction logic are wrapped here.
 
   static func tapAt(x: Double, y: Double) -> FBSimulatorHIDEvent {
     .composite([
-      touchDownAt(x: x, y: y),
-      touchUpAt(x: x, y: y),
+      .touch(direction: .down, x: x, y: y),
+      .touch(direction: .up, x: x, y: y),
     ])
   }
 
   static func tapAt(x: Double, y: Double, duration: Double) -> FBSimulatorHIDEvent {
     .composite([
-      touchDownAt(x: x, y: y),
-      delay(duration),
-      touchUpAt(x: x, y: y),
+      .touch(direction: .down, x: x, y: y),
+      .delay(duration),
+      .touch(direction: .up, x: x, y: y),
     ])
   }
 
   static func shortButtonPress(_ button: FBSimulatorHIDButton) -> FBSimulatorHIDEvent {
     .composite([
-      buttonDown(button),
-      buttonUp(button),
+      .button(direction: .down, button: button),
+      .button(direction: .up, button: button),
     ])
   }
 
   static func shortKeyPress(_ keyCode: UInt32) -> FBSimulatorHIDEvent {
     .composite([
-      keyDown(keyCode),
-      keyUp(keyCode),
+      .keyboard(direction: .down, keyCode: keyCode),
+      .keyboard(direction: .up, keyCode: keyCode),
     ])
   }
 
   static func shortKeyPressSequence(_ sequence: [NSNumber]) -> FBSimulatorHIDEvent {
     var events: [FBSimulatorHIDEvent] = []
     for keyCode in sequence {
-      events.append(keyDown(keyCode.uint32Value))
-      events.append(keyUp(keyCode.uint32Value))
+      events.append(.keyboard(direction: .down, keyCode: keyCode.uint32Value))
+      events.append(.keyboard(direction: .up, keyCode: keyCode.uint32Value))
     }
     return .composite(events)
   }
@@ -226,14 +178,14 @@ public extension FBSimulatorHIDEvent {
     let stepDelay = duration / Double(steps + 2)
 
     for i in 0...steps {
-      events.append(touchDownAt(x: xStart + dx * Double(i), y: yStart + dy * Double(i)))
-      events.append(delay(stepDelay))
+      events.append(.touch(direction: .down, x: xStart + dx * Double(i), y: yStart + dy * Double(i)))
+      events.append(.delay(stepDelay))
     }
     // Add an additional touch down event at the end of the swipe to avoid inertial scroll on arm simulators.
-    events.append(touchDownAt(x: xStart + dx * Double(steps), y: yStart + dy * Double(steps)))
-    events.append(delay(stepDelay))
+    events.append(.touch(direction: .down, x: xStart + dx * Double(steps), y: yStart + dy * Double(steps)))
+    events.append(.delay(stepDelay))
 
-    events.append(touchUpAt(x: xEnd, y: yEnd))
+    events.append(.touch(direction: .up, x: xEnd, y: yEnd))
 
     return .composite(events)
   }
@@ -256,7 +208,7 @@ public extension FBSimulatorHIDEvent {
     let f1Start = CGPoint(x: centerX - startRadius, y: centerY)
     let f2Start = CGPoint(x: centerX + startRadius, y: centerY)
     events.append(.twoFingerTouch(direction: .down, finger1: f1Start, finger2: f2Start))
-    events.append(delay(stepDelay))
+    events.append(.delay(stepDelay))
 
     // Interpolated moves — same pattern as swipe
     let dr = (endRadius - startRadius) / Double(steps)
@@ -265,14 +217,14 @@ public extension FBSimulatorHIDEvent {
       let f1 = CGPoint(x: centerX - r, y: centerY)
       let f2 = CGPoint(x: centerX + r, y: centerY)
       events.append(.twoFingerTouch(direction: .down, finger1: f1, finger2: f2))
-      events.append(delay(stepDelay))
+      events.append(.delay(stepDelay))
     }
 
     // Duplicate final touch-down to avoid inertial scroll on arm simulators
     let f1End = CGPoint(x: centerX - endRadius, y: centerY)
     let f2End = CGPoint(x: centerX + endRadius, y: centerY)
     events.append(.twoFingerTouch(direction: .down, finger1: f1End, finger2: f2End))
-    events.append(delay(stepDelay))
+    events.append(.delay(stepDelay))
 
     // Touch up at end positions
     events.append(.twoFingerTouch(direction: .up, finger1: f1End, finger2: f2End))

@@ -30,9 +30,9 @@ struct HidMethodHandler {
       case let .key(key):
         switch press.direction {
         case .up:
-          return FBSimulatorHIDEvent.keyUp(UInt32(key.keycode))
+          return .keyboard(direction: .up, keyCode: UInt32(key.keycode))
         case .down:
-          return FBSimulatorHIDEvent.keyDown(UInt32(key.keycode))
+          return .keyboard(direction: .down, keyCode: UInt32(key.keycode))
         case .UNRECOGNIZED:
           throw GRPCStatus(code: .invalidArgument, message: "Unrecognized press.direction")
         }
@@ -43,9 +43,9 @@ struct HidMethodHandler {
         }
         switch press.direction {
         case .up:
-          return FBSimulatorHIDEvent.buttonUp(hidButton)
+          return .button(direction: .up, button: hidButton)
         case .down:
-          return FBSimulatorHIDEvent.buttonDown(hidButton)
+          return .button(direction: .down, button: hidButton)
         case .UNRECOGNIZED:
           throw GRPCStatus(code: .invalidArgument, message: "Unrecognized press.direction")
         }
@@ -53,9 +53,9 @@ struct HidMethodHandler {
       case let .touch(touch):
         switch press.direction {
         case .up:
-          return FBSimulatorHIDEvent.touchUpAt(x: touch.point.x, y: touch.point.y)
+          return .touch(direction: .up, x: touch.point.x, y: touch.point.y)
         case .down:
-          return FBSimulatorHIDEvent.touchDownAt(x: touch.point.x, y: touch.point.y)
+          return .touch(direction: .down, x: touch.point.x, y: touch.point.y)
         case .UNRECOGNIZED:
           throw GRPCStatus(code: .invalidArgument, message: "Unrecognized press.direction")
         }

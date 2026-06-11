@@ -167,10 +167,10 @@ final class FBSimulatorControlTransientTests: XCTestCase {
   // MARK: FBSimulatorHIDEvent - Composite
 
   func testEventWithEventsWrapsCorrectly() {
-    let composite = FBSimulatorHIDEvent.with(events: [
-      .touchDownAt(x: 10, y: 20),
+    let composite = FBSimulatorHIDEvent.composite([
+      .touch(direction: .down, x: 10, y: 20),
       .delay(0.1),
-      .touchUpAt(x: 10, y: 20),
+      .touch(direction: .up, x: 10, y: 20),
     ])
     XCTAssertEqual(composite.subEvents?.count, 3)
   }
@@ -189,49 +189,49 @@ final class FBSimulatorControlTransientTests: XCTestCase {
   // MARK: FBSimulatorHIDEvent - Touch Events
 
   func testTouchDownEquality() {
-    XCTAssertEqual(FBSimulatorHIDEvent.touchDownAt(x: 10, y: 20), .touchDownAt(x: 10, y: 20))
+    XCTAssertEqual(FBSimulatorHIDEvent.touch(direction: .down, x: 10, y: 20), .touch(direction: .down, x: 10, y: 20))
   }
 
   func testTouchDownInequalityByCoordinates() {
-    XCTAssertNotEqual(FBSimulatorHIDEvent.touchDownAt(x: 10, y: 20), .touchDownAt(x: 30, y: 40))
+    XCTAssertNotEqual(FBSimulatorHIDEvent.touch(direction: .down, x: 10, y: 20), .touch(direction: .down, x: 30, y: 40))
   }
 
   func testTouchUpNotEqualToTouchDown() {
-    XCTAssertNotEqual(FBSimulatorHIDEvent.touchDownAt(x: 10, y: 20), .touchUpAt(x: 10, y: 20))
+    XCTAssertNotEqual(FBSimulatorHIDEvent.touch(direction: .down, x: 10, y: 20), .touch(direction: .up, x: 10, y: 20))
   }
 
   // MARK: FBSimulatorHIDEvent - Button Events
 
   func testButtonDownEquality() {
-    XCTAssertEqual(FBSimulatorHIDEvent.buttonDown(.homeButton), .buttonDown(.homeButton))
+    XCTAssertEqual(FBSimulatorHIDEvent.button(direction: .down, button: .homeButton), .button(direction: .down, button: .homeButton))
   }
 
   func testButtonDownInequalityByButton() {
-    XCTAssertNotEqual(FBSimulatorHIDEvent.buttonDown(.homeButton), .buttonDown(.lock))
+    XCTAssertNotEqual(FBSimulatorHIDEvent.button(direction: .down, button: .homeButton), .button(direction: .down, button: .lock))
   }
 
   func testButtonUpNotEqualToButtonDown() {
-    XCTAssertNotEqual(FBSimulatorHIDEvent.buttonDown(.siri), .buttonUp(.siri))
+    XCTAssertNotEqual(FBSimulatorHIDEvent.button(direction: .down, button: .siri), .button(direction: .up, button: .siri))
   }
 
   func testAllButtonTypesCreateDistinctEvents() {
     let buttons: [FBSimulatorHIDButton] = [.applePay, .homeButton, .lock, .sideButton, .siri]
-    let events = Set(buttons.map { FBSimulatorHIDEvent.buttonDown($0) })
+    let events = Set(buttons.map { FBSimulatorHIDEvent.button(direction: .down, button: $0) })
     XCTAssertEqual(events.count, buttons.count, "Each button type should produce a distinct event")
   }
 
   // MARK: FBSimulatorHIDEvent - Keyboard Events
 
   func testKeyDownEquality() {
-    XCTAssertEqual(FBSimulatorHIDEvent.keyDown(0x0D), .keyDown(0x0D)) // W
+    XCTAssertEqual(FBSimulatorHIDEvent.keyboard(direction: .down, keyCode: 0x0D), .keyboard(direction: .down, keyCode: 0x0D)) // W
   }
 
   func testKeyDownInequalityByKeyCode() {
-    XCTAssertNotEqual(FBSimulatorHIDEvent.keyDown(0x0D), .keyDown(0x00)) // W vs A
+    XCTAssertNotEqual(FBSimulatorHIDEvent.keyboard(direction: .down, keyCode: 0x0D), .keyboard(direction: .down, keyCode: 0x00)) // W vs A
   }
 
   func testKeyUpNotEqualToKeyDown() {
-    XCTAssertNotEqual(FBSimulatorHIDEvent.keyDown(0x0D), .keyUp(0x0D))
+    XCTAssertNotEqual(FBSimulatorHIDEvent.keyboard(direction: .down, keyCode: 0x0D), .keyboard(direction: .up, keyCode: 0x0D))
   }
 
   // MARK: FBSimulatorHIDEvent - Swipe
@@ -301,15 +301,15 @@ final class FBSimulatorControlTransientTests: XCTestCase {
   // MARK: FBSimulatorHIDEvent - Cross-type inequality
 
   func testTouchNotEqualToButton() {
-    XCTAssertNotEqual(FBSimulatorHIDEvent.touchDownAt(x: 0, y: 0), .buttonDown(.homeButton))
+    XCTAssertNotEqual(FBSimulatorHIDEvent.touch(direction: .down, x: 0, y: 0), .button(direction: .down, button: .homeButton))
   }
 
   func testButtonNotEqualToKeyboard() {
-    XCTAssertNotEqual(FBSimulatorHIDEvent.buttonDown(.homeButton), .keyDown(0x00))
+    XCTAssertNotEqual(FBSimulatorHIDEvent.button(direction: .down, button: .homeButton), .keyboard(direction: .down, keyCode: 0x00))
   }
 
   func testDelayNotEqualToTouch() {
-    XCTAssertNotEqual(FBSimulatorHIDEvent.delay(1.0), .touchDownAt(x: 0, y: 0))
+    XCTAssertNotEqual(FBSimulatorHIDEvent.delay(1.0), .touch(direction: .down, x: 0, y: 0))
   }
 
   // MARK: DEFAULT_SWIPE_DELTA constant
