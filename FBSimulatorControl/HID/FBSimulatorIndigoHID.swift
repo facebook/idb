@@ -56,7 +56,7 @@ import Foundation
   public static func simulatorKitHID() throws -> FBSimulatorIndigoHID {
     try FBSimulatorControlFrameworkLoader.xcodeFrameworks.loadPrivateFrameworks(nil)
     guard let handle = Bundle(identifier: "com.apple.SimulatorKit")?.dlopenExecutablePath() else {
-      throw FBSimulatorError.describe("Could not open the SimulatorKit framework executable").build()
+      throw FBSimulatorHIDError.simulatorKitUnavailable
     }
     return FBSimulatorIndigoHID(
       messageForButton: unsafeBitCast(FBGetSymbolFromHandle(handle, "IndigoHIDMessageForButton"), to: MessageForButtonFn.self),

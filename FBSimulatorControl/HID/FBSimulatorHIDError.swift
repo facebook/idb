@@ -1,0 +1,60 @@
+/*
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+import Darwin
+import Foundation
+
+/// The failure cases of the HID layer.
+///
+/// Previously these were stringly-typed `FBSimulatorError` `NSError`s. No consumer inspects their
+/// domain or code — they are surfaced only as messages — so they are modelled here as a typed enum
+/// that enumerates the failure modes. `errorDescription` reproduces the original message strings
+/// verbatim, so the text surfaced to callers is unchanged.
+public enum FBSimulatorHIDError: Error, LocalizedError {
+  /// The runtime-only `SimDeviceLegacyHIDClient` class could not be looked up by name.
+  case clientClassUnavailable(className: String)
+  /// The HID client class was found but `initWithDevice:error:` returned nil.
+  case clientCreationFailed(clientClass: String, underlying: Error?)
+  /// A HID operation was attempted after the client had been disposed of.
+  case clientDisposed
+  /// The owning simulator was deallocated before a Purple event could be sent.
+  case simulatorDeallocatedForPurpleEvent
+  /// The owning simulator was deallocated before a Darwin notification could be posted.
+  case simulatorDeallocatedForDarwinNotification
+  /// The `PurpleWorkspacePort` could not be found in the simulator's bootstrap namespace.
+  case purpleWorkspacePortUnavailable(underlying: Error?)
+  /// The `mach_msg` to `PurpleWorkspacePort` timed out (receive queue full).
+  case machSendTimedOut(port: mach_port_t, timeoutMs: mach_msg_timeout_t, detail: String)
+  /// The `mach_msg` to `PurpleWorkspacePort` failed for a reason other than timeout.
+  case machSendFailed(port: mach_port_t, detail: String, code: kern_return_t)
+  /// The SimulatorKit framework executable could not be opened.
+  case simulatorKitUnavailable
+
+  public var errorDescription: String? {
+    switch self {
+    case let .clientClassUnavailable(className):
+      return "Could not look up class \(className)"
+    case let .clientCreationFailed(clientClass, _):
+      return "Could not create instance of \(clientClass)"
+    case .clientDisposed:
+      return "Cannot Connect, HID client has already been disposed of"
+    case .simulatorDeallocatedForPurpleEvent:
+      return "Cannot send PurpleEvent, simulator reference is nil"
+    case .simulatorDeallocatedForDarwinNotification:
+      return "Cannot post Darwin notification, simulator reference is nil"
+    case .purpleWorkspacePortUnavailable:
+      return "Could not find PurpleWorkspacePort in simulator bootstrap namespace"
+    case let .machSendTimedOut(port, timeoutMs, detail):
+      return
+        "mach_msg to PurpleWorkspacePort \(port) timed out after \(timeoutMs) ms — receive queue full, SpringBoard is likely not draining HID events: \(detail)"
+    case let .machSendFailed(port, detail, code):
+      return "mach_msg to PurpleWorkspacePort \(port) failed: \(detail) (kr=0x\(String(code, radix: 16)))"
+    case .simulatorKitUnavailable:
+      return "Could not open the SimulatorKit framework executable"
+    }
+  }
+}

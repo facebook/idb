@@ -85,7 +85,7 @@ import ObjectiveC
   @objc(hidForSimulator:)
   public class func hid(for simulator: FBSimulator) -> FBFuture<FBSimulatorHID> {
     guard let clientClass = objc_lookUpClass(simulatorHIDClientClassName) else {
-      return FBFuture(error: FBSimulatorError.describe("Could not look up class \(simulatorHIDClientClassName)").build())
+      return FBFuture(error: FBSimulatorHIDError.clientClassUnavailable(className: simulatorHIDClientClassName) as NSError)
     }
     // Allocate + initialize the runtime-only client without a link-time class reference.
     let allocated = class_createInstance(clientClass, 0) as AnyObject
@@ -95,11 +95,7 @@ import ObjectiveC
         .initWithDevice(simulator.device, error: &clientError)
     else {
       return FBFuture(
-        error:
-          FBSimulatorError
-          .describe("Could not create instance of \(clientClass)")
-          .caused(by: clientError as? Error)
-          .build())
+        error: FBSimulatorHIDError.clientCreationFailed(clientClass: "\(clientClass)", underlying: clientError as? Error) as NSError)
     }
     let indigo: FBSimulatorIndigoHID
     do {
@@ -147,7 +143,7 @@ import ObjectiveC
    */
   @objc public func connect() -> FBFuture<NSNull> {
     guard client != nil else {
-      return FBFuture(error: FBSimulatorError.describe("Cannot Connect, HID client has already been disposed of").build())
+      return FBFuture(error: FBSimulatorHIDError.clientDisposed as NSError)
     }
     return FBFuture<NSNull>.empty()
   }
@@ -221,17 +217,13 @@ import ObjectiveC
   @objc(sendPurpleEvent:timeoutMs:error:)
   public func sendPurpleEvent(_ data: Data, timeoutMs: mach_msg_timeout_t) throws {
     guard let simulator else {
-      throw FBSimulatorError.describe("Cannot send PurpleEvent, simulator reference is nil").build()
+      throw FBSimulatorHIDError.simulatorDeallocatedForPurpleEvent
     }
 
     var lookupError: NSError?
     let purplePort = simulator.device.lookup("PurpleWorkspacePort", error: &lookupError)
     if purplePort == 0 {
-      throw
-        FBSimulatorError
-        .describe("Could not find PurpleWorkspacePort in simulator bootstrap namespace")
-        .caused(by: lookupError)
-        .build()
+      throw FBSimulatorHIDError.purpleWorkspacePortUnavailable(underlying: lookupError)
     }
 
     // Copy the payload and patch msgh_remote_port with the looked-up port.
@@ -254,15 +246,11 @@ import ObjectiveC
       return
     }
     if kr == MACH_SEND_TIMED_OUT {
-      throw
-        FBSimulatorError
-        .describe("mach_msg to PurpleWorkspacePort \(purplePort) timed out after \(timeoutMs) ms — receive queue full, SpringBoard is likely not draining HID events: \(String(cString: mach_error_string(kr)))")
-        .build()
+      throw FBSimulatorHIDError.machSendTimedOut(
+        port: purplePort, timeoutMs: timeoutMs, detail: String(cString: mach_error_string(kr)))
     }
-    throw
-      FBSimulatorError
-      .describe("mach_msg to PurpleWorkspacePort \(purplePort) failed: \(String(cString: mach_error_string(kr))) (kr=0x\(String(kr, radix: 16)))")
-      .build()
+    throw FBSimulatorHIDError.machSendFailed(
+      port: purplePort, detail: String(cString: mach_error_string(kr)), code: kr)
   }
 
   /**
@@ -271,7 +259,7 @@ import ObjectiveC
   @objc(postDarwinNotification:error:)
   public func postDarwinNotification(_ notificationName: String) throws {
     guard let simulator else {
-      throw FBSimulatorError.describe("Cannot post Darwin notification, simulator reference is nil").build()
+      throw FBSimulatorHIDError.simulatorDeallocatedForDarwinNotification
     }
     try simulator.device.postDarwinNotification(notificationName)
   }
