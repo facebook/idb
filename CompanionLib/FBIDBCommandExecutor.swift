@@ -7,7 +7,7 @@
 
 import FBControlCore
 @_implementationOnly import FBDeviceControl
-@_implementationOnly import FBSimulatorControl
+import FBSimulatorControl
 import Foundation
 import XCTestBootstrap
 
@@ -326,12 +326,9 @@ import XCTestBootstrap
     return try await device.fetchDiagnosticInformation() as NSDictionary
   }
 
-  public func hid(_ event: NSObject) async throws {
+  public func hid(_ event: FBSimulatorHIDEvent) async throws {
     let hid = try await connectToHID()
-    guard let hidEvent = event as? FBSimulatorHIDEventProtocol else {
-      throw FBIDBError.describe("Event \(event) does not conform to FBSimulatorHIDEventProtocol").build()
-    }
-    try await hidEvent.sendAsync(on: hid)
+    try await event.sendAsync(on: hid)
   }
 
   public func set_hardware_keyboard_enabled(_ enabled: Bool) async throws {

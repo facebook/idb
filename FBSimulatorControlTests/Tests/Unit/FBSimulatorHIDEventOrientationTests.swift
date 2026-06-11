@@ -10,99 +10,71 @@ import XCTest
 
 final class FBSimulatorHIDEventOrientationTests: XCTestCase {
 
-  private func makeEvent(_ orientation: FBSimulatorHIDDeviceOrientation) -> NSObject {
-    return FBSimulatorHIDEvent.setOrientation(orientation) as! NSObject
-  }
+  // MARK: - Orientation
 
   func testOrientationEventEquality() {
-    XCTAssertEqual(makeEvent(.landscapeLeft), makeEvent(.landscapeLeft))
+    XCTAssertEqual(FBSimulatorHIDEvent.setOrientation(.landscapeLeft), .setOrientation(.landscapeLeft))
   }
 
   func testOrientationEventInequality() {
-    XCTAssertNotEqual(makeEvent(.portrait), makeEvent(.landscapeLeft))
-  }
-
-  func testOrientationEventCopying() {
-    let event = makeEvent(.portrait)
-    let copy = event.copy() as AnyObject
-    XCTAssertTrue(event === copy, "Immutable event should return self from copy")
+    XCTAssertNotEqual(FBSimulatorHIDEvent.setOrientation(.portrait), .setOrientation(.landscapeLeft))
   }
 
   func testOrientationEventHash() {
-    XCTAssertNotEqual(makeEvent(.portrait).hash, makeEvent(.landscapeLeft).hash)
-    XCTAssertEqual(makeEvent(.portrait).hash, makeEvent(.portrait).hash)
+    XCTAssertNotEqual(
+      FBSimulatorHIDEvent.setOrientation(.portrait).hashValue,
+      FBSimulatorHIDEvent.setOrientation(.landscapeLeft).hashValue)
+    XCTAssertEqual(
+      FBSimulatorHIDEvent.setOrientation(.portrait).hashValue,
+      FBSimulatorHIDEvent.setOrientation(.portrait).hashValue)
   }
 
   func testOrientationEventDescription() {
-    let description = makeEvent(.landscapeLeft).description
+    let description = FBSimulatorHIDEvent.setOrientation(.landscapeLeft).description
     XCTAssertTrue(description.contains("landscape_left"), "Description should contain orientation name, got: \(description)")
   }
 
   func testSetOrientationFactory() {
-    let event: any FBSimulatorHIDEventPayload = FBSimulatorHIDEvent.setOrientation(.portraitUpsideDown)
-    XCTAssertNotNil(event)
-    XCTAssertTrue((event as AnyObject).conforms(to: FBSimulatorHIDEventProtocol.self))
-    XCTAssertTrue((event as AnyObject).conforms(to: FBSimulatorHIDEventPayload.self))
+    guard case .deviceOrientation(.portraitUpsideDown) = FBSimulatorHIDEvent.setOrientation(.portraitUpsideDown) else {
+      return XCTFail("setOrientation should produce a .deviceOrientation event")
+    }
   }
 
   func testAllOrientationsCreateDistinctEvents() {
-    let events: [NSObject] = [
-      makeEvent(.portrait),
-      makeEvent(.portraitUpsideDown),
-      makeEvent(.landscapeRight),
-      makeEvent(.landscapeLeft),
+    let events: Set<FBSimulatorHIDEvent> = [
+      .setOrientation(.portrait),
+      .setOrientation(.portraitUpsideDown),
+      .setOrientation(.landscapeRight),
+      .setOrientation(.landscapeLeft),
     ]
-    let unique = Set(events)
-    XCTAssertEqual(unique.count, 4, "All four orientations should be distinct")
+    XCTAssertEqual(events.count, 4, "All four orientations should be distinct")
   }
 
   // MARK: - Shake
 
   func testShakeFactory() {
-    let event: any FBSimulatorHIDEventPayload = FBSimulatorHIDEvent.shake()
-    XCTAssertNotNil(event)
-    XCTAssertTrue((event as AnyObject).conforms(to: FBSimulatorHIDEventProtocol.self))
-    XCTAssertTrue((event as AnyObject).conforms(to: FBSimulatorHIDEventPayload.self))
+    XCTAssertEqual(FBSimulatorHIDEvent.shake(), .shake)
   }
 
   func testShakeEquality() {
-    let event1 = FBSimulatorHIDEvent.shake() as! NSObject
-    let event2 = FBSimulatorHIDEvent.shake() as! NSObject
-    XCTAssertEqual(event1, event2)
-  }
-
-  func testShakeCopying() {
-    let event = FBSimulatorHIDEvent.shake() as AnyObject
-    let copy = (event as! NSObject).copy() as AnyObject
-    XCTAssertTrue(event === copy, "Immutable event should return self from copy")
+    XCTAssertEqual(FBSimulatorHIDEvent.shake(), FBSimulatorHIDEvent.shake())
   }
 
   func testShakeDescription() {
-    let event = FBSimulatorHIDEvent.shake() as! NSObject
-    XCTAssertTrue(event.description.contains("Shake"))
+    XCTAssertTrue(FBSimulatorHIDEvent.shake().description.contains("Shake"))
   }
 
   // MARK: - Lock Device
 
   func testLockDeviceFactory() {
-    let event = FBSimulatorHIDEvent.lockDevice()
-    XCTAssertNotNil(event)
+    XCTAssertEqual(FBSimulatorHIDEvent.lockDevice(), .lockDevice)
   }
 
   func testLockDeviceDescription() {
-    let event = FBSimulatorHIDEvent.lockDevice() as! NSObject
-    XCTAssertTrue(event.description.contains("Lock"))
+    XCTAssertTrue(FBSimulatorHIDEvent.lockDevice().description.contains("Lock"))
   }
 
   func testLockDeviceEquality() {
-    let event1 = FBSimulatorHIDEvent.lockDevice() as! NSObject
-    let event2 = FBSimulatorHIDEvent.lockDevice() as! NSObject
-    XCTAssertEqual(event1, event2)
-  }
-
-  func testLockDeviceCopying() {
-    let event = FBSimulatorHIDEvent.lockDevice() as! NSObject
-    let copied = event.copy() as! NSObject
-    XCTAssertEqual(event, copied)
+    XCTAssertEqual(FBSimulatorHIDEvent.lockDevice(), FBSimulatorHIDEvent.lockDevice())
   }
 }

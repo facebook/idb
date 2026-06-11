@@ -18,12 +18,12 @@ struct HidMethodHandler {
   func handle(requestStream: GRPCAsyncRequestStream<Idb_HIDEvent>, context: GRPCAsyncServerCallContext) async throws -> Idb_HIDResponse {
     for try await request in requestStream {
       let event = try fbSimulatorHIDEvent(from: request)
-      try await commandExecutor.hid(event as! NSObject)
+      try await commandExecutor.hid(event)
     }
     return .init()
   }
 
-  private func fbSimulatorHIDEvent(from request: Idb_HIDEvent) throws -> FBSimulatorHIDEventProtocol {
+  private func fbSimulatorHIDEvent(from request: Idb_HIDEvent) throws -> FBSimulatorHIDEvent {
     switch request.event {
     case let .press(press):
       switch press.action.action {

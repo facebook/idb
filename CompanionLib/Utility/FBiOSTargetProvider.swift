@@ -7,7 +7,7 @@
 
 import FBControlCore
 @_implementationOnly import FBDeviceControl
-@_implementationOnly import FBSimulatorControl
+import FBSimulatorControl
 import Foundation
 import XCTestBootstrap
 
