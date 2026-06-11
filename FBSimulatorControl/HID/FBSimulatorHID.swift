@@ -82,10 +82,9 @@ import ObjectiveC
    Will fail if a HID Port could not be registered for the provided Simulator.
    Registration may need to occur prior to booting.
    */
-  @objc(hidForSimulator:)
-  public class func hid(for simulator: FBSimulator) -> FBFuture<FBSimulatorHID> {
+  public static func hid(for simulator: FBSimulator) throws -> FBSimulatorHID {
     guard let clientClass = objc_lookUpClass(simulatorHIDClientClassName) else {
-      return FBFuture(error: FBSimulatorHIDError.clientClassUnavailable(className: simulatorHIDClientClassName) as NSError)
+      throw FBSimulatorHIDError.clientClassUnavailable(className: simulatorHIDClientClassName)
     }
     // Allocate + initialize the runtime-only client without a link-time class reference.
     let allocated = class_createInstance(clientClass, 0) as AnyObject
@@ -94,19 +93,13 @@ import ObjectiveC
       let client = unsafeBitCast(allocated, to: SimDeviceLegacyHIDClientMessaging.self)
         .initWithDevice(simulator.device, error: &clientError)
     else {
-      return FBFuture(
-        error: FBSimulatorHIDError.clientCreationFailed(clientClass: "\(clientClass)", underlying: clientError as? Error) as NSError)
+      throw FBSimulatorHIDError.clientCreationFailed(clientClass: "\(clientClass)", underlying: clientError as? Error)
     }
-    let indigo: FBSimulatorIndigoHID
-    do {
-      indigo = try FBSimulatorIndigoHID.simulatorKitHID()
-    } catch {
-      return FBFuture(error: error as NSError)
-    }
+    let indigo = try FBSimulatorIndigoHID.simulatorKitHID()
     let mainScreenSize = simulator.device.deviceType.mainScreenSize
     let scale = simulator.device.deviceType.mainScreenScale
     let purple = FBSimulatorPurpleHID.purple()
-    let hid = FBSimulatorHID(
+    return FBSimulatorHID(
       indigo: indigo,
       purple: purple,
       client: client,
@@ -114,7 +107,6 @@ import ObjectiveC
       mainScreenSize: mainScreenSize,
       mainScreenScale: scale,
       queue: workQueue)
-    return FBFuture(result: hid)
   }
 
   private init(
@@ -139,21 +131,10 @@ import ObjectiveC
   // MARK: Lifecycle
 
   /**
-   Obtains the Reply Port for the Simulator. Must be obtained after the Simulator is booted.
-   */
-  @objc public func connect() -> FBFuture<NSNull> {
-    guard client != nil else {
-      return FBFuture(error: FBSimulatorHIDError.clientDisposed as NSError)
-    }
-    return FBFuture<NSNull>.empty()
-  }
-
-  /**
    Disconnects from the remote HID.
    */
-  @objc public func disconnect() -> FBFuture<NSNull> {
+  public func disconnect() {
     client = nil
-    return FBFuture<NSNull>.empty()
   }
 
   // MARK: HID Manipulation

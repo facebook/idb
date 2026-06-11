@@ -270,9 +270,7 @@ public final class FBSimulatorLifecycleCommands: NSObject, FBiOSTargetCommand {
   }
 
   private func terminateConnectionsAsync() async throws {
-    if let hid {
-      try await bridgeFBFutureVoid(hid.disconnect())
-    }
+    hid?.disconnect()
     self.hid = nil
   }
 
@@ -290,7 +288,7 @@ public final class FBSimulatorLifecycleCommands: NSObject, FBiOSTargetCommand {
     guard let simulator = self.simulator else {
       throw FBSimulatorError.describe("Simulator deallocated").build()
     }
-    let hid = try await bridgeFBFuture(FBSimulatorHID.hid(for: simulator) as FBFuture)
+    let hid = try FBSimulatorHID.hid(for: simulator)
     self.hid = hid
     return hid
   }
