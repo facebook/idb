@@ -44,73 +44,36 @@ public indirect enum FBSimulatorHIDEvent: Equatable, Hashable {
 
 public extension FBSimulatorHIDEvent {
 
-  /// Sends the event on the provided HID, returning a future that resolves when complete.
-  func sendOn(hid: FBSimulatorHID) -> FBFuture<NSNull> {
+  /// Sends the event on the provided HID, completing when delivery is acknowledged.
+  /// A `.composite` sends its sub-events in order; `.delay` suspends the task.
+  func sendAsync(on hid: FBSimulatorHID) async throws {
     switch self {
     case let .touch(direction, x, y):
-      return hid.sendEvent(
+      try await hid.sendEvent(
         hid.indigo.touchScreenSize(hid.mainScreenSize, screenScale: hid.mainScreenScale, direction: direction, x: x, y: y))
     case let .button(direction, button):
-      return hid.sendEvent(hid.indigo.button(with: direction, button: button))
+      try await hid.sendEvent(hid.indigo.button(with: direction, button: button))
     case let .keyboard(direction, keyCode):
-      return hid.sendEvent(hid.indigo.keyboard(with: direction, keyCode: keyCode))
+      try await hid.sendEvent(hid.indigo.keyboard(with: direction, keyCode: keyCode))
     case let .twoFingerTouch(direction, finger1, finger2):
-      return hid.sendEvent(
+      try await hid.sendEvent(
         hid.indigo.twoFingerTouchScreenSize(
           hid.mainScreenSize, screenScale: hid.mainScreenScale, direction: direction, finger1: finger1, finger2: finger2))
     case let .delay(duration):
-      return FBFuture(delay: duration, future: FBFuture<NSNull>.empty())
+      try await Task.sleep(nanoseconds: UInt64(max(0, duration) * 1_000_000_000))
     case let .deviceOrientation(orientation):
-      return FBSimulatorHIDEvent.sendPurpleEvent(hid.purple.orientationEvent(orientation), on: hid)
+      try hid.sendPurpleEvent(hid.purple.orientationEvent(orientation))
     case .shake:
-      return FBSimulatorHIDEvent.postDarwinNotification(shakeDarwinNotification, on: hid)
+      try hid.postDarwinNotification(shakeDarwinNotification)
     case .toggleInCallStatusBar:
-      return FBSimulatorHIDEvent.postDarwinNotification(inCallStatusBarNotification, on: hid)
+      try hid.postDarwinNotification(inCallStatusBarNotification)
     case .lockDevice:
-      return FBSimulatorHIDEvent.sendPurpleEvent(hid.purple.lockDeviceEvent(), on: hid)
+      try hid.sendPurpleEvent(hid.purple.lockDeviceEvent())
     case let .composite(events):
-      return FBSimulatorHIDEvent.performEvents(events, on: hid)
+      for event in events {
+        try await event.sendAsync(on: hid)
+      }
     }
-  }
-
-  /// Async wrapper for `sendOn(hid:)`.
-  func sendAsync(on hid: FBSimulatorHID) async throws {
-    try await bridgeFBFutureVoid(sendOn(hid: hid))
-  }
-
-  private static func sendPurpleEvent(_ data: Data, on hid: FBSimulatorHID) -> FBFuture<NSNull> {
-    do {
-      try hid.sendPurpleEvent(data)
-      return FBFuture<NSNull>.empty()
-    } catch {
-      return FBFuture<NSNull>(error: error as NSError)
-    }
-  }
-
-  private static func postDarwinNotification(_ name: String, on hid: FBSimulatorHID) -> FBFuture<NSNull> {
-    do {
-      try hid.postDarwinNotification(name)
-      return FBFuture<NSNull>.empty()
-    } catch {
-      return FBFuture<NSNull>(error: error as NSError)
-    }
-  }
-
-  private static func performEvents(_ events: [FBSimulatorHIDEvent], on hid: FBSimulatorHID) -> FBFuture<NSNull> {
-    guard let first = events.first else {
-      return FBFuture<NSNull>.empty()
-    }
-    let next = Array(events.dropFirst())
-    // FBFuture's ObjC lightweight generics are erased at runtime; reinterpret the chained
-    // FBFuture<AnyObject> as FBFuture<NSNull> (same representation), as the fmap block requires
-    // an FBFuture<AnyObject> return.
-    let chained = first.sendOn(hid: hid)
-      .onQueue(
-        DispatchQueue.main,
-        fmap: { (_: Any) -> FBFuture<AnyObject> in
-          unsafeBitCast(FBSimulatorHIDEvent.performEvents(next, on: hid), to: FBFuture<AnyObject>.self)
-        })
-    return unsafeBitCast(chained, to: FBFuture<NSNull>.self)
   }
 }
 

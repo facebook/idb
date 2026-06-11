@@ -43,8 +43,10 @@ import ObjectiveC
     Guest-side: `GraphicsServices._PurpleEventCallback` → backboardd.
 
  See `Indigo.h` and `GSEvent.h` for wire format documentation.
+
+ Message sends are serialized onto the private `queue`, so the type is `@unchecked Sendable`.
  */
-@objc public final class FBSimulatorHID: NSObject {
+@objc public final class FBSimulatorHID: NSObject, @unchecked Sendable {
 
   private static let simulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHIDClient"
 
@@ -140,23 +142,20 @@ import ObjectiveC
   // MARK: HID Manipulation
 
   /**
-   Sends the event payload.
+   Sends the event payload, completing when the client acknowledges delivery.
    */
-  @objc public func sendEvent(_ data: Data) -> FBFuture<NSNull> {
-    let result = FBFuture<NSNull>.onQueue(
-      queue,
-      resolve: { [self] () -> FBFuture<AnyObject> in
-        let future = FBMutableFuture<AnyObject>()
+  public func sendEvent(_ data: Data) async throws {
+    try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+      queue.async { [self] in
         sendIndigoMessageData(data, completionQueue: queue) { error in
           if let error {
-            _ = future.resolveWithError(error as NSError)
+            continuation.resume(throwing: error)
           } else {
-            _ = future.resolve(withResult: NSNull())
+            continuation.resume()
           }
         }
-        return future
-      })
-    return result
+      }
+    }
   }
 
   /**
