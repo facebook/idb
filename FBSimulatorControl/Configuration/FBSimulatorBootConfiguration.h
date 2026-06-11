@@ -15,7 +15,4 @@ typedef NS_OPTIONS(NSUInteger, FBSimulatorBootOptions) {
   FBSimulatorBootOptionsVerifyUsable = 1 << 3, /** A Simulator can be report that it is 'Booted' very quickly but is not in Usable. Setting this option requires that the Simulator is 'Usable' before the boot API completes */
 };
 
-// C type definitions required by the generated Swift header.
-#import <FBSimulatorControl/FBSimulatorIndigoHID.h>
-
 // after all protocol headers, to avoid include ordering issues.
