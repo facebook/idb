@@ -14,7 +14,6 @@
 #import <FBSimulatorControl/FBSimulator.h>
 #import <FBSimulatorControl/FBSimulatorBootConfiguration.h>
 #import <FBSimulatorControl/FBSimulatorControlFrameworkLoader.h>
-#import <FBSimulatorControl/FBSimulatorHID.h>
 #import <FBSimulatorControl/FBSimulatorIndigoHID.h>
 #import <FBSimulatorControl/FBSimulatorVideoStream.h>
 
