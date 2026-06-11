@@ -11,9 +11,11 @@
 
 #import <FBControlCore/FBControlCore.h>
 #import <FBSimulatorControl/FBSimulatorIndigoHID.h>
-#import <FBSimulatorControl/FBSimulatorPurpleHID.h>
 
 @class FBSimulator;
+// FBSimulatorPurpleHID is now a Swift type (see FBSimulatorPurpleHID.swift); forward-declare
+// it for the `purple` property below. Implementation files use FBSimulatorControl-Swift.h.
+@class FBSimulatorPurpleHID;
 
 /**
  The HID abstraction layer for a Simulator, providing two transport paths:
