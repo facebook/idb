@@ -173,7 +173,7 @@
 - (void)renameAsync:(NSString *)arg1 completionHandler:(CDUnknownBlockType)arg2;
 - (void)shutdownAsyncWithCompletionHandler:(CDUnknownBlockType)arg1;
 - (void)bootAsyncWithOptions:(NSDictionary *)arg1 completionHandler:(CDUnknownBlockType)arg2;
-- (id)setHardwareKeyboardEnabled:(_Bool)arg1 keyboardType:(unsigned char)arg2 error:(NSError **)arg3;
+- (BOOL)setHardwareKeyboardEnabled:(BOOL)enabled keyboardType:(unsigned char)keyboardType error:(NSError **)error;
 
 // In Xcode 12, this replaces SimulatorBridge related accessibility requests.
 
