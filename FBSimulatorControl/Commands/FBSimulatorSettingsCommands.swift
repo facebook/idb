@@ -926,12 +926,19 @@ public final class FBSimulatorSettingsCommands: NSObject, FBiOSTargetCommand {
     guard let simulator = self.simulator else {
       throw FBSimulatorError.describe("Simulator deallocated").build()
     }
-    guard let helperPath = Bundle(for: FBSimulatorSettingsCommands.self).path(forResource: "SimulatorFrameworkBridge", ofType: nil) else {
-      throw FBSimulatorError.describe("SimulatorFrameworkBridge binary not found in bundle resources. Ensure FBSimulatorControl was built correctly.").build()
+    let helperPath: String?
+    if Bundle.main.bundleURL.pathExtension == "app" {
+      helperPath = Bundle.main.path(forResource: "SimulatorFrameworkBridge", ofType: nil)
+    } else {
+      helperPath = ((Bundle.main.executablePath as? NSString)?.deletingLastPathComponent as? NSString)?.appendingPathComponent("Resources/SimulatorFrameworkBridge")
+    }
+    guard let helperPath else {
+      throw FBSimulatorError.describe("SimulatorFrameworkBridge path not found.").build()
     }
     if !FileManager.default.fileExists(atPath: helperPath) {
-      throw FBSimulatorError.describe("SimulatorFrameworkBridge binary found in bundle but does not exist at path: \(helperPath)").build()
+      throw FBSimulatorError.describe("SimulatorFrameworkBridge binary not found at path: \(helperPath)").build()
     }
+
     let spawnArguments = [helperPath, service, action] + arguments
     let runFuture =
       simulator.simctlExecutor.taskBuilder(withCommand: "spawn", arguments: spawnArguments)

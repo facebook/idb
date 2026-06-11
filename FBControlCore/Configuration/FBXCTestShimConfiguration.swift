@@ -12,8 +12,8 @@ public let FBXCTestShimDirectoryEnvironmentOverride = "TEST_SHIMS_DIRECTORY"
 private let keySimulatorTestShim = "ios_simulator_test_shim"
 private let keyMacTestShim = "mac_test_shim"
 
-private let shimulatorFileName = "libShimulator.dylib"
-private let maculatorShimFileName = "libMaculator.dylib"
+private let shimulatorFileName = "libShimulator-iOS.dylib"
+private let maculatorShimFileName = "libShimulator-macOS.dylib"
 
 @objc(FBXCTestShimConfiguration)
 public class FBXCTestShimConfiguration: NSObject, NSCopying {
@@ -72,41 +72,22 @@ public class FBXCTestShimConfiguration: NSObject, NSCopying {
     let future: FBFuture<AnyObject> = FBFuture.onQueue(
       queue,
       resolve: { () -> FBFuture<AnyObject> in
-        var searchPaths: [String] = []
+        var searchPath: String
         let environmentDefinedDirectory = ProcessInfo.processInfo.environment[FBXCTestShimDirectoryEnvironmentOverride]
         if let envDir = environmentDefinedDirectory {
-          searchPaths.append(envDir)
+          searchPath = envDir
+        } else if let executablePath = Bundle.main.executablePath, (executablePath as NSString).pathExtension != "app" {
+          let resourcesDirectory = ((executablePath as NSString).deletingLastPathComponent as NSString).appendingPathComponent("Resources")
+          searchPath = resourcesDirectory
+        } else if let resourcePath = Bundle(for: self).resourcePath {
+          searchPath = resourcePath
         } else {
-          if let root = fbxctestInstallationRoot {
-            searchPaths.append((root as NSString).appendingPathComponent("lib"))
-            searchPaths.append((root as NSString).appendingPathComponent("bin"))
-            searchPaths.append((root as NSString).appendingPathComponent("idb"))
-            searchPaths.append((root as NSString).appendingPathComponent("idb/bin"))
-          }
-          if let resourcePath = Bundle(for: self).resourcePath {
-            searchPaths.append(resourcePath)
-          }
+          return FBControlCoreError.describe("Unable to create the shim search path.").failFuture()
         }
 
-        var futures: [FBFuture<AnyObject>] = []
-        for path in searchPaths {
-          let f: FBFuture<AnyObject> = confirmExistenceOfRequiredShims(inDirectory: path, logger: logger)
-          futures.append(f.fallback("" as AnyObject))
-        }
-        let combined = FBFuture<AnyObject>.combine(futures)
-        return combined.onQueue(
-          queue,
-          fmap: { result -> FBFuture<AnyObject> in
-            let paths = result as! [String]
-            for path in paths {
-              if path.isEmpty {
-                continue
-              }
-              return FBFuture(result: path as AnyObject)
-            }
-            let shimNames = Array(self.canonicalShimNameToShimFilenames.values)
-            return FBControlCoreError.describe("Could not find all shims \(FBCollectionInformation.oneLineDescription(from: shimNames)) in any of the expected directories \(FBCollectionInformation.oneLineDescription(from: searchPaths))").failFuture()
-          })
+        let searchFuture: FBFuture<AnyObject> = confirmExistenceOfRequiredShims(inDirectory: searchPath, logger: logger)
+        let shimNames = Array(self.canonicalShimNameToShimFilenames.values)
+        return searchFuture.rephraseFailure("Could not find all shims \(FBCollectionInformation.oneLineDescription(from: shimNames)) in the expected directory \(searchPath)")
       })
     return unsafeBitCast(future, to: FBFuture<NSString>.self)
   }
@@ -173,16 +154,6 @@ public class FBXCTestShimConfiguration: NSObject, NSCopying {
           return FBXCTestShimConfiguration(iOSSimulatorTestShimPath: shims[0], macOSTestShimPath: shims[1])
         })
     return unsafeBitCast(future, to: FBFuture<FBXCTestShimConfiguration>.self)
-  }
-
-  private class var fbxctestInstallationRoot: String? {
-    var executablePath = ProcessInfo.processInfo.arguments[0]
-    if !(executablePath as NSString).isAbsolutePath {
-      executablePath = (FileManager.default.currentDirectoryPath as NSString).appending(executablePath)
-    }
-    executablePath = (executablePath as NSString).standardizingPath
-    let path = ((executablePath as NSString).deletingLastPathComponent as NSString).deletingLastPathComponent
-    return FileManager.default.fileExists(atPath: path) ? path : nil
   }
 
   // MARK: NSCopying
