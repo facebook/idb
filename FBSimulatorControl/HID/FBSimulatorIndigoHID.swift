@@ -87,8 +87,7 @@ import Foundation
 
   /// A button event.
   @objc public func button(with direction: FBSimulatorHIDDirection, button: FBSimulatorHIDButton) -> Data {
-    let message = messageForButton(
-      FBSimulatorIndigoHID.eventSource(for: button), direction.rawValue, Int32(ButtonEventTargetHardware))
+    let message = messageForButton(button.indigoEventSource, direction.rawValue, Int32(ButtonEventTargetHardware))
     return FBSimulatorIndigoHID.data(fromMallocedMessage: message)
   }
 
@@ -110,7 +109,7 @@ import Foundation
 
     // Passing a non-NULL point1 makes IndigoHIDMessageForMouseNSEvent produce a 3-payload message
     // with eventType=0x03 (multi-touch) instead of 0x02 (single-touch).
-    let message = messageForMouseNSEvent(&ratio1, &ratio2, 0x32, FBSimulatorIndigoHID.eventType(for: direction), ObjCBool(false))
+    let message = messageForMouseNSEvent(&ratio1, &ratio2, 0x32, direction.indigoEventType, ObjCBool(false))
     let messageSize = malloc_size(message)
     let bytes = UnsafeMutableRawPointer(message)
 
@@ -133,7 +132,7 @@ import Foundation
 
   private func touchMessage(point: CGPoint, direction: FBSimulatorHIDDirection) -> Data {
     var point = point
-    let source = messageForMouseNSEvent(&point, nil, 0x32, FBSimulatorIndigoHID.eventType(for: direction), ObjCBool(false))
+    let source = messageForMouseNSEvent(&point, nil, 0x32, direction.indigoEventType, ObjCBool(false))
     let sourceBytes = UnsafeMutableRawPointer(source)
     // Patch xRatio (0x3C) / yRatio (0x44) into the source IndigoTouch.
     FBSimulatorIndigoHID.write(point.x, at: 0x3C, into: sourceBytes)
@@ -172,30 +171,6 @@ import Foundation
     return Data(bytesNoCopy: raw, count: malloc_size(raw), deallocator: .free)
   }
 
-  private static func eventSource(for button: FBSimulatorHIDButton) -> Int32 {
-    switch button {
-    case .applePay:
-      return Int32(ButtonEventSourceApplePay)
-    case .homeButton:
-      return Int32(ButtonEventSourceHomeButton)
-    case .lock:
-      return Int32(ButtonEventSourceLock)
-    case .sideButton:
-      return Int32(ButtonEventSourceSideButton)
-    case .siri:
-      return Int32(ButtonEventSourceSiri)
-    }
-  }
-
-  private static func eventType(for direction: FBSimulatorHIDDirection) -> Int32 {
-    switch direction {
-    case .down:
-      return Int32(ButtonEventTypeDown)
-    case .up:
-      return Int32(ButtonEventTypeUp)
-    }
-  }
-
   private static func screenRatio(from point: CGPoint, screenSize: CGSize, screenScale: Float) -> CGPoint {
     CGPoint(
       x: (point.x * CGFloat(screenScale)) / screenSize.width,
@@ -210,5 +185,37 @@ import Foundation
   private static func write(_ value: UInt32, at offset: Int, into base: UnsafeMutableRawPointer) {
     var value = value
     memcpy(base.advanced(by: offset), &value, MemoryLayout<UInt32>.size)
+  }
+}
+
+// MARK: - Indigo wire-format mappings
+
+private extension FBSimulatorHIDButton {
+  /// The Indigo `eventSource` value for this button.
+  var indigoEventSource: Int32 {
+    switch self {
+    case .applePay:
+      return Int32(ButtonEventSourceApplePay)
+    case .homeButton:
+      return Int32(ButtonEventSourceHomeButton)
+    case .lock:
+      return Int32(ButtonEventSourceLock)
+    case .sideButton:
+      return Int32(ButtonEventSourceSideButton)
+    case .siri:
+      return Int32(ButtonEventSourceSiri)
+    }
+  }
+}
+
+private extension FBSimulatorHIDDirection {
+  /// The Indigo `eventType` value for this direction.
+  var indigoEventType: Int32 {
+    switch self {
+    case .down:
+      return Int32(ButtonEventTypeDown)
+    case .up:
+      return Int32(ButtonEventTypeUp)
+    }
   }
 }
