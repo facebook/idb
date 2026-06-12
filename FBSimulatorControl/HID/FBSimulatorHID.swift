@@ -73,6 +73,10 @@ import ObjectiveC
   private var client: AnyObject?
   private weak var simulator: FBSimulator?
 
+  // Cached legacy-keyboard-suppression check (see `legacyKeyboardSuppressed()`).
+  private let keyboardSuppressionLock = NSLock()
+  private var cachedKeyboardSuppressed: Bool?
+
   // MARK: Initializers
 
   private static var workQueue: DispatchQueue {
@@ -137,6 +141,38 @@ import ObjectiveC
    */
   public func disconnect() {
     client = nil
+  }
+
+  /// Whether the legacy keyboard HID service is suppressed for this HID's simulator.
+  ///
+  /// On Xcode 27 (CoreSimulator-1155.4) and later, the host-injected SimulatorHID disconnects the
+  /// legacy `ExternalKeyboardService` while `dtuhidd` is active, so legacy keyboard events are
+  /// delivered byte-correctly but produce no text (touch and the other services are unaffected).
+  /// Cached for this HID's lifetime — the dominant case is a simulator already poisoned at connect
+  /// time, and re-reading per key would re-walk the host process tree on every keystroke.
+  func legacyKeyboardSuppressed() -> Bool {
+    keyboardSuppressionLock.lock()
+    defer { keyboardSuppressionLock.unlock() }
+    if let cachedKeyboardSuppressed {
+      return cachedKeyboardSuppressed
+    }
+    let suppressed = computeLegacyKeyboardSuppressed()
+    cachedKeyboardSuppressed = suppressed
+    return suppressed
+  }
+
+  private func computeLegacyKeyboardSuppressed() -> Bool {
+    // Only CoreSimulator-1155.4+ (Xcode 27) ships the dtuhidd suppression machinery; older
+    // toolchains have no `dtuhidd`, so skip the process-tree walk entirely.
+    guard let version = FBSimulatorControlFrameworkLoader.loadedCoreSimulatorVersion,
+      version.compare("1155.4", options: .numeric) != .orderedAscending
+    else {
+      return false
+    }
+    // `dtuhidd` runs as a child of the simulator's `launchd_sim`; its presence in the simulator's
+    // process subtree is the per-simulator signal. Read host-side (the authoritative guest notify
+    // state `com.apple.coredevice.dtuhidd.active` is not host-bridged).
+    return simulator?.launchdSimSubprocessIdentifier(named: "dtuhidd") != nil
   }
 
   // MARK: HID Manipulation
@@ -248,5 +284,48 @@ import ObjectiveC
 
   public override var description: String {
     "SimulatorKit HID \(String(describing: client))"
+  }
+}
+
+// MARK: - Simulator process tree
+
+/// Host-side `launchd_sim` process-tree queries. Kept private to the HID layer (its only consumer),
+/// so it stays off the public `FBSimulator` API and can be inlined further if needed.
+private extension FBSimulator {
+
+  /// The host `launchd_sim` process backing this simulator, matched by the simulator's UDID in its
+  /// arguments, or `nil` if it cannot be found (e.g. the simulator is not booted).
+  func launchdSimProcess(using fetcher: FBProcessFetcher = FBProcessFetcher()) -> FBProcessInfo? {
+    fetcher.processes(withProcessName: "launchd_sim").first { process in
+      process.arguments.contains { $0.contains(udid) }
+    }
+  }
+
+  /// The process identifier of a subprocess of this simulator's `launchd_sim` whose name contains
+  /// `name`, or `nil` if there is none. A purely host-side query of the simulator's process subtree.
+  func launchdSimSubprocessIdentifier(named name: String, using fetcher: FBProcessFetcher = FBProcessFetcher()) -> pid_t? {
+    guard let launchdSim = launchdSimProcess(using: fetcher) else {
+      return nil
+    }
+    let identifier = fetcher.subprocess(of: launchdSim.processIdentifier, withName: name)
+    return identifier > 0 ? identifier : nil
+  }
+}
+
+// MARK: - Loaded CoreSimulator version
+
+/// Kept private to the HID layer (its only consumer): the loaded framework version, read here rather
+/// than swiftifying the Objective-C framework loader (a separate concern).
+private extension FBSimulatorControlFrameworkLoader {
+
+  /// The version of the CoreSimulator framework actually loaded in-process (e.g. `"1155.4"`), read
+  /// from the bundle that vends `SimDevice`, or `nil` if it is not loaded. CoreSimulator is a system
+  /// framework that the Xcode installer overwrites, so the loaded framework can differ from the
+  /// selected Xcode; behaviour gated on a CoreSimulator version must consult this, not the Xcode one.
+  static var loadedCoreSimulatorVersion: String? {
+    guard let simDeviceClass = NSClassFromString("SimDevice") else {
+      return nil
+    }
+    return Bundle(for: simDeviceClass).infoDictionary?["CFBundleVersion"] as? String
   }
 }
