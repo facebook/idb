@@ -281,7 +281,7 @@ final class FBSimulatorControlTransientTests: XCTestCase {
     guard let last = swipe.subEvents?.last else {
       return XCTFail("Swipe should have sub-events")
     }
-    if case .delay(_) = last {
+    if case .delay = last {
       XCTFail("Last event should not be a delay")
     }
   }
