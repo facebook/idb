@@ -25,8 +25,6 @@ private let openURLRetries = 2
 
   func connectToFramebuffer() -> FBFuture<FBFramebuffer>
 
-  func connectToHID() -> FBFuture<FBSimulatorHID>
-
   @objc(openURL:)
   func open(_ url: URL) -> FBFuture<NSNull>
 }
@@ -66,14 +64,6 @@ extension FBSimulator: FBSimulatorLifecycleCommandsProtocol {
   @objc public func connectToFramebuffer() -> FBFuture<FBFramebuffer> {
     do {
       return try lifecycleCommands().connectToFramebuffer()
-    } catch {
-      return FBFuture(error: error)
-    }
-  }
-
-  @objc public func connectToHID() -> FBFuture<FBSimulatorHID> {
-    do {
-      return try lifecycleCommands().connectToHID()
     } catch {
       return FBFuture(error: error)
     }
@@ -139,13 +129,6 @@ public final class FBSimulatorLifecycleCommands: NSObject, FBiOSTargetCommand {
   public func connectToFramebuffer() -> FBFuture<FBFramebuffer> {
     fbFutureFromAsync { [self] in
       try await connectToFramebufferAsync()
-    }
-  }
-
-  @objc
-  public func connectToHID() -> FBFuture<FBSimulatorHID> {
-    fbFutureFromAsync { [self] in
-      try await connectToHIDAsync()
     }
   }
 

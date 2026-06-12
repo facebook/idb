@@ -46,7 +46,7 @@ import ObjectiveC
 
  Message sends are serialized onto the private `queue`, so the type is `@unchecked Sendable`.
  */
-@objc public final class FBSimulatorHID: NSObject, @unchecked Sendable {
+public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable {
 
   private static let simulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHIDClient"
 
@@ -58,15 +58,15 @@ import ObjectiveC
   // MARK: Properties
 
   /// The Queue on which messages are sent to the HID Server.
-  @objc public let queue: DispatchQueue
+  public let queue: DispatchQueue
   /// The Indigo payload builder (touch, button, keyboard).
-  @objc public let indigo: FBSimulatorIndigoHID
+  public let indigo: FBSimulatorIndigoHID
   /// The Purple/GSEvent payload builder (orientation, shake).
-  @objc public let purple: FBSimulatorPurpleHID
+  public let purple: FBSimulatorPurpleHID
   /// The dimensions of the main screen.
-  @objc public let mainScreenSize: CGSize
+  public let mainScreenSize: CGSize
   /// The scale of the main screen.
-  @objc public let mainScreenScale: Float
+  public let mainScreenScale: Float
 
   // Untyped on purpose: the concrete `SimDeviceLegacyHIDClient` is a runtime-only class (see
   // SimDeviceLegacyHIDClientMessaging). Messaged via unsafeBitCast to that protocol.
@@ -131,7 +131,6 @@ import ObjectiveC
     self.mainScreenSize = mainScreenSize
     self.mainScreenScale = mainScreenScale
     self.queue = queue
-    super.init()
   }
 
   // MARK: Lifecycle
@@ -197,7 +196,7 @@ import ObjectiveC
   /**
    Sends the event payload, synchronously. Callers must guarantee all calls are from the same queue.
    */
-  @objc public func sendIndigoMessageData(_ data: Data, completionQueue: DispatchQueue, completion: @escaping @Sendable (Error?) -> Void) {
+  public func sendIndigoMessageData(_ data: Data, completionQueue: DispatchQueue, completion: @escaping @Sendable (Error?) -> Void) {
     // The event is delivered asynchronously. Copy the message and let the client manage its lifecycle:
     // the free of the buffer is performed by the client (freeWhenDone) and the Data frees when out of scope.
     let size = data.count
@@ -219,7 +218,6 @@ import ObjectiveC
   /**
    Sends a raw mach message to the simulator's PurpleWorkspacePort using a default 2000ms send timeout.
    */
-  @objc(sendPurpleEvent:error:)
   public func sendPurpleEvent(_ data: Data) throws {
     try sendPurpleEvent(data, timeoutMs: FBSimulatorHID.defaultPurpleSendTimeoutMs)
   }
@@ -230,7 +228,6 @@ import ObjectiveC
    bootstrap namespace. The send always uses `mach_msg(MACH_SEND_TIMEOUT)`; on `MACH_SEND_TIMED_OUT` the
    kernel guarantees the message is not enqueued.
    */
-  @objc(sendPurpleEvent:timeoutMs:error:)
   public func sendPurpleEvent(_ data: Data, timeoutMs: mach_msg_timeout_t) throws {
     guard let simulator else {
       throw FBSimulatorHIDError.simulatorDeallocatedForPurpleEvent
@@ -272,7 +269,6 @@ import ObjectiveC
   /**
    Posts a Darwin notification to the simulator (e.g. shake, in-call status bar). Synchronous.
    */
-  @objc(postDarwinNotification:error:)
   public func postDarwinNotification(_ notificationName: String) throws {
     guard let simulator else {
       throw FBSimulatorHIDError.simulatorDeallocatedForDarwinNotification
@@ -280,9 +276,9 @@ import ObjectiveC
     try simulator.device.postDarwinNotification(notificationName)
   }
 
-  // MARK: NSObject
+  // MARK: CustomStringConvertible
 
-  public override var description: String {
+  public var description: String {
     "SimulatorKit HID \(String(describing: client))"
   }
 }
