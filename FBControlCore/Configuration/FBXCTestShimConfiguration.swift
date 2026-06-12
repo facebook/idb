@@ -7,8 +7,6 @@
 
 import Foundation
 
-public let FBXCTestShimDirectoryEnvironmentOverride = "TEST_SHIMS_DIRECTORY"
-
 private let keySimulatorTestShim = "ios_simulator_test_shim"
 private let keyMacTestShim = "mac_test_shim"
 
@@ -72,17 +70,15 @@ public class FBXCTestShimConfiguration: NSObject, NSCopying {
     let future: FBFuture<AnyObject> = FBFuture.onQueue(
       queue,
       resolve: { () -> FBFuture<AnyObject> in
-        var searchPath: String
-        let environmentDefinedDirectory = ProcessInfo.processInfo.environment[FBXCTestShimDirectoryEnvironmentOverride]
-        if let envDir = environmentDefinedDirectory {
-          searchPath = envDir
-        } else if let executablePath = Bundle.main.executablePath, (executablePath as NSString).pathExtension != "app" {
-          let resourcesDirectory = ((executablePath as NSString).deletingLastPathComponent as NSString).appendingPathComponent("Resources")
-          searchPath = resourcesDirectory
-        } else if let resourcePath = Bundle(for: self).resourcePath {
+        let bundleURL = Bundle.main.bundleURL.standardizedFileURL
+        let searchPath: String
+        if bundleURL.pathExtension == "app", let resourcePath = Bundle(for: self).resourcePath {
           searchPath = resourcePath
+        } else if let executablePath = Bundle.main.executablePath {
+          let resolvedExecutablePath = (executablePath as NSString).resolvingSymlinksInPath
+          searchPath = ((resolvedExecutablePath as NSString).deletingLastPathComponent as NSString).appendingPathComponent("Resources")
         } else {
-          return FBControlCoreError.describe("Unable to create the shim search path.").failFuture()
+          return FBControlCoreError.describe("Unable to determine the shim search path.").failFuture()
         }
 
         let searchFuture: FBFuture<AnyObject> = confirmExistenceOfRequiredShims(inDirectory: searchPath, logger: logger)

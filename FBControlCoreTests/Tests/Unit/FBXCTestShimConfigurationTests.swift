@@ -11,7 +11,7 @@ import XCTest
 
 /// Tests for the runtime shim lookup in `FBXCTestShimConfiguration`. These cover the renamed
 /// shim dylibs (`libShimulator-iOS.dylib` / `libShimulator-macOS.dylib`) being resolved from a
-/// shim directory, and the `TEST_SHIMS_DIRECTORY` override that selects that directory.
+/// shim directory.
 final class FBXCTestShimConfigurationTests: XCTestCase {
   private static let iOSShimName = "libShimulator-iOS.dylib"
   private static let macOSShimName = "libShimulator-macOS.dylib"
@@ -40,20 +40,5 @@ final class FBXCTestShimConfigurationTests: XCTestCase {
 
     XCTAssertEqual(config.iOSSimulatorTestShimPath, (dir as NSString).appendingPathComponent(Self.iOSShimName))
     XCTAssertEqual(config.macOSTestShimPath, (dir as NSString).appendingPathComponent(Self.macOSShimName))
-  }
-
-  func testFindShimDirectoryUsesEnvironmentOverride() throws {
-    let dir = try makeShimDirectory()
-    defer { try? FileManager.default.removeItem(atPath: dir) }
-
-    setenv(FBXCTestShimDirectoryEnvironmentOverride, dir, 1)
-    defer { unsetenv(FBXCTestShimDirectoryEnvironmentOverride) }
-
-    let found = try FBXCTestShimConfiguration.findShimDirectory(
-      onQueue: DispatchQueue(label: "FBXCTestShimConfigurationTests"),
-      logger: nil
-    ).await()
-
-    XCTAssertEqual(found, dir as NSString)
   }
 }

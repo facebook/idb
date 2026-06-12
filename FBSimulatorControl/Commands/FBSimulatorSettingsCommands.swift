@@ -926,11 +926,17 @@ public final class FBSimulatorSettingsCommands: NSObject, FBiOSTargetCommand {
     guard let simulator = self.simulator else {
       throw FBSimulatorError.describe("Simulator deallocated").build()
     }
+    let bundle = Bundle.main
+    let bundleURL = bundle.bundleURL.standardizedFileURL
     let helperPath: String?
-    if Bundle.main.bundleURL.pathExtension == "app" {
-      helperPath = Bundle.main.path(forResource: "SimulatorFrameworkBridge", ofType: nil)
+    if bundleURL.pathExtension == "app", let resourceURL = bundle.resourceURL {
+      helperPath = resourceURL.appendingPathComponent("SimulatorFrameworkBridge").path
+    } else if let executablePath = bundle.executablePath {
+      let resolvedExecutablePath = (executablePath as NSString).resolvingSymlinksInPath
+      let parentDirectory = (resolvedExecutablePath as NSString).deletingLastPathComponent
+      helperPath = (parentDirectory as NSString).appendingPathComponent("Resources/SimulatorFrameworkBridge")
     } else {
-      helperPath = ((Bundle.main.executablePath as? NSString)?.deletingLastPathComponent as? NSString)?.appendingPathComponent("Resources/SimulatorFrameworkBridge")
+      helperPath = nil
     }
     guard let helperPath else {
       throw FBSimulatorError.describe("SimulatorFrameworkBridge path not found.").build()
