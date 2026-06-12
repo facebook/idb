@@ -133,7 +133,7 @@ const int OPEN_URL_RETRIES = 2;
   
   // Otherwise we have a single Simulator App to activate.
   NSRunningApplication *simulatorApp = simulatorApps.firstObject;
-  if (![simulatorApp activateWithOptions:NSApplicationActivateIgnoringOtherApps]) {
+  if (![simulatorApp activateWithOptions:NSApplicationActivateAllWindows]) {
     return [[FBSimulatorError
       describeFormat:@"Failed to focus %@", simulatorApp]
       failFuture];
@@ -149,12 +149,21 @@ const int OPEN_URL_RETRIES = 2;
   NSURL *applicationURL = [NSURL fileURLWithPath:applicationBundle.path];
 
   // We only want to ever connect to the default SimulatorApp, including re-activating it rather than creating a new instance.
-  NSError *innerError = nil;
-  NSRunningApplication *application = [NSWorkspace.sharedWorkspace
-    launchApplicationAtURL:applicationURL
-    options:NSWorkspaceLaunchDefault
-    configuration:@{}
-    error:&innerError];
+  // -openApplicationAtURL:configuration:completionHandler: is asynchronous (its completion handler runs on a background
+  // queue), so bridge it back to this synchronous API with a bounded semaphore wait.
+  NSWorkspaceOpenConfiguration *configuration = [NSWorkspaceOpenConfiguration configuration];
+  dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
+  __block NSRunningApplication *application = nil;
+  __block NSError *innerError = nil;
+  [NSWorkspace.sharedWorkspace
+    openApplicationAtURL:applicationURL
+    configuration:configuration
+    completionHandler:^(NSRunningApplication *openedApplication, NSError *openError) {
+      application = openedApplication;
+      innerError = openError;
+      dispatch_semaphore_signal(semaphore);
+    }];
+  dispatch_semaphore_wait(semaphore, dispatch_time(DISPATCH_TIME_NOW, (int64_t)(30 * NSEC_PER_SEC)));
 
   if (!application) {
     return [[[FBSimulatorError

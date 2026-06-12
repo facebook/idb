@@ -24,6 +24,7 @@ typedef NS_ENUM(NSInteger, FBWeakFrameworkType) {
 @property (nonatomic, copy, readonly) NSString *name;
 @property (nonatomic, copy, readonly) NSString *basePath;
 @property (nonatomic, copy, readonly) NSString *relativePath;
+@property (nonatomic, copy, readonly) NSArray<NSString *> *relativePathCandidates;
 @property (nonatomic, copy, readonly) NSArray<NSString *> *requiredClassNames;
 @property (nonatomic, assign, readonly) BOOL rootPermitted;
 
@@ -38,7 +39,16 @@ typedef NS_ENUM(NSInteger, FBWeakFrameworkType) {
 {
   return [[FBWeakFramework alloc]
     initWithBasePath:FBXcodeConfiguration.developerDirectory
-    relativePath:relativePath
+    relativePathCandidates:@[relativePath]
+    requiredClassNames:requiredClassNames
+    rootPermitted:NO];
+}
+
++ (instancetype)xcodeFrameworkWithRelativePathCandidates:(NSArray<NSString *> *)relativePathCandidates requiredClassNames:(NSArray<NSString *> *)requiredClassNames
+{
+  return [[FBWeakFramework alloc]
+    initWithBasePath:FBXcodeConfiguration.developerDirectory
+    relativePathCandidates:relativePathCandidates
     requiredClassNames:requiredClassNames
     rootPermitted:NO];
 }
@@ -47,22 +57,24 @@ typedef NS_ENUM(NSInteger, FBWeakFrameworkType) {
 {
   return [[FBWeakFramework alloc]
     initWithBasePath:absolutePath
-    relativePath:@""
+    relativePathCandidates:@[@""]
     requiredClassNames:requiredClassNames
     rootPermitted:rootPermitted];
 }
 
-- (instancetype)initWithBasePath:(NSString *)basePath relativePath:(NSString *)relativePath requiredClassNames:(NSArray<NSString *> *)requiredClassNames rootPermitted:(BOOL)rootPermitted
+- (instancetype)initWithBasePath:(NSString *)basePath relativePathCandidates:(NSArray<NSString *> *)relativePathCandidates requiredClassNames:(NSArray<NSString *> *)requiredClassNames rootPermitted:(BOOL)rootPermitted
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
+  NSString *relativePath = relativePathCandidates.firstObject ?: @"";
   NSString *filename = [basePath stringByAppendingPathComponent:relativePath].lastPathComponent;
 
   _basePath = basePath;
   _relativePath = relativePath;
+  _relativePathCandidates = [relativePathCandidates copy];
   _requiredClassNames = requiredClassNames;
   _name = filename.stringByDeletingPathExtension;
   _rootPermitted = rootPermitted;
@@ -78,6 +90,20 @@ typedef NS_ENUM(NSInteger, FBWeakFrameworkType) {
 }
 
 #pragma mark Private
+
+- (NSString *)resolveExistingPathFromRelativeDirectory:(NSString *)relativeDirectory logger:(id<FBControlCoreLogger>)logger
+{
+  for (NSString *candidate in self.relativePathCandidates) {
+    NSString *path = [[relativeDirectory stringByAppendingPathComponent:candidate] stringByStandardizingPath];
+    if ([NSFileManager.defaultManager fileExistsAtPath:path isDirectory:nil]) {
+      if (self.relativePathCandidates.count > 1) {
+        [logger.debug logFormat:@"%@: Resolved framework path to %@", self.name, path];
+      }
+      return path;
+    }
+  }
+  return nil;
+}
 
 - (BOOL)allRequiredClassesExistsWithError:(NSError **)error
 {
@@ -111,11 +137,18 @@ typedef NS_ENUM(NSInteger, FBWeakFrameworkType) {
       failBool:error];
   }
 
-  // Load frameworks
-  NSString *path = [[relativeDirectory stringByAppendingPathComponent:self.relativePath] stringByStandardizingPath];
-  if (![NSFileManager.defaultManager fileExistsAtPath:path isDirectory:nil]) {
+  // Load frameworks, resolving the first relative-path candidate that exists.
+  // Apple relocates some private frameworks between Xcode versions (e.g.
+  // SimulatorKit moved to Contents/SharedFrameworks in Xcode 27), so we probe
+  // each candidate in priority order rather than assuming a single path.
+  NSString *path = [self resolveExistingPathFromRelativeDirectory:relativeDirectory logger:logger];
+  if (!path) {
+    NSMutableArray<NSString *> *attemptedPaths = [NSMutableArray array];
+    for (NSString *candidate in self.relativePathCandidates) {
+      [attemptedPaths addObject:[[relativeDirectory stringByAppendingPathComponent:candidate] stringByStandardizingPath]];
+    }
     return [[FBControlCoreError
-      describeFormat:@"Attempting to load a file at path '%@', but it does not exist", path]
+      describeFormat:@"Attempting to load a file at path(s) '%@', but none exist", [attemptedPaths componentsJoinedByString:@"', '"]]
       failBool:error];
   }
 

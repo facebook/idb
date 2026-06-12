@@ -1,0 +1,493 @@
+{
+  "ABIRoot": {
+    "kind": "Root",
+    "name": "FBDeviceControl",
+    "printedName": "FBDeviceControl",
+    "children": [
+      {
+        "kind": "Import",
+        "name": "Foundation",
+        "printedName": "Foundation",
+        "declKind": "Import",
+        "moduleName": "FBDeviceControl",
+        "declAttributes": [
+          "RawDocComment"
+        ]
+      },
+      {
+        "kind": "TypeDecl",
+        "name": "FBAppleDevicectlCommandExecutor",
+        "printedName": "FBAppleDevicectlCommandExecutor",
+        "children": [
+          {
+            "kind": "Var",
+            "name": "logger",
+            "printedName": "logger",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Optional",
+                "printedName": "(any FBControlCore.FBControlCoreLogger)?",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "FBControlCoreLogger",
+                    "printedName": "any FBControlCore.FBControlCoreLogger",
+                    "usr": "c:objc(pl)FBControlCoreLogger"
+                  }
+                ],
+                "usr": "s:Sq"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:15FBDeviceControl31FBAppleDevicectlCommandExecutorC6loggerSo19FBControlCoreLogger_pSgvp",
+            "mangledName": "$s15FBDeviceControl31FBAppleDevicectlCommandExecutorC6loggerSo19FBControlCoreLogger_pSgvp",
+            "moduleName": "FBDeviceControl",
+            "declAttributes": [
+              "Final",
+              "HasStorage"
+            ],
+            "isLet": true,
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Optional",
+                    "printedName": "(any FBControlCore.FBControlCoreLogger)?",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "FBControlCoreLogger",
+                        "printedName": "any FBControlCore.FBControlCoreLogger",
+                        "usr": "c:objc(pl)FBControlCoreLogger"
+                      }
+                    ],
+                    "usr": "s:Sq"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:15FBDeviceControl31FBAppleDevicectlCommandExecutorC6loggerSo19FBControlCoreLogger_pSgvg",
+                "mangledName": "$s15FBDeviceControl31FBAppleDevicectlCommandExecutorC6loggerSo19FBControlCoreLogger_pSgvg",
+                "moduleName": "FBDeviceControl",
+                "implicit": true,
+                "declAttributes": [
+                  "Final"
+                ],
+                "accessorKind": "get"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
+            "name": "device",
+            "printedName": "device",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "FBDevice",
+                "printedName": "FBDeviceControl.FBDevice",
+                "usr": "c:objc(cs)FBDevice"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:15FBDeviceControl31FBAppleDevicectlCommandExecutorC6deviceSo0A0Cvp",
+            "mangledName": "$s15FBDeviceControl31FBAppleDevicectlCommandExecutorC6deviceSo0A0Cvp",
+            "moduleName": "FBDeviceControl",
+            "declAttributes": [
+              "Final",
+              "HasStorage"
+            ],
+            "isLet": true,
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "FBDevice",
+                    "printedName": "FBDeviceControl.FBDevice",
+                    "usr": "c:objc(cs)FBDevice"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:15FBDeviceControl31FBAppleDevicectlCommandExecutorC6deviceSo0A0Cvg",
+                "mangledName": "$s15FBDeviceControl31FBAppleDevicectlCommandExecutorC6deviceSo0A0Cvg",
+                "moduleName": "FBDeviceControl",
+                "implicit": true,
+                "declAttributes": [
+                  "Final"
+                ],
+                "accessorKind": "get"
+              }
+            ]
+          },
+          {
+            "kind": "Constructor",
+            "name": "init",
+            "printedName": "init(device:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "FBAppleDevicectlCommandExecutor",
+                "printedName": "FBDeviceControl.FBAppleDevicectlCommandExecutor",
+                "usr": "c:@M@FBDeviceControl@objc(cs)FBAppleDevicectlCommandExecutor"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "FBDevice",
+                "printedName": "FBDeviceControl.FBDevice",
+                "usr": "c:objc(cs)FBDevice"
+              }
+            ],
+            "declKind": "Constructor",
+            "usr": "c:@M@FBDeviceControl@objc(cs)FBAppleDevicectlCommandExecutor(im)initWithDevice:",
+            "mangledName": "$s15FBDeviceControl31FBAppleDevicectlCommandExecutorC6deviceACSo0A0C_tcfc",
+            "moduleName": "FBDeviceControl",
+            "objc_name": "initWithDevice:",
+            "declAttributes": [
+              "AccessControl",
+              "ObjC"
+            ],
+            "init_kind": "Designated"
+          },
+          {
+            "kind": "Function",
+            "name": "taskBuilder",
+            "printedName": "taskBuilder(arguments:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "FBProcessBuilder",
+                "printedName": "FBControlCore.FBProcessBuilder<Foundation.NSNull, Foundation.NSString, Foundation.NSString>",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "NSNull",
+                    "printedName": "Foundation.NSNull",
+                    "usr": "c:objc(cs)NSNull"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "NSString",
+                    "printedName": "Foundation.NSString",
+                    "usr": "c:objc(cs)NSString"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "NSString",
+                    "printedName": "Foundation.NSString",
+                    "usr": "c:objc(cs)NSString"
+                  }
+                ],
+                "usr": "c:objc(cs)FBProcessBuilder"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Array",
+                "printedName": "[Swift.String]",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ],
+                "usr": "s:Sa"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "c:@M@FBDeviceControl@objc(cs)FBAppleDevicectlCommandExecutor(im)taskBuilderWithArguments:",
+            "mangledName": "$s15FBDeviceControl31FBAppleDevicectlCommandExecutorC11taskBuilder9argumentsSo09FBProcessH0CySo6NSNullCSo8NSStringCAKGSaySSG_tF",
+            "moduleName": "FBDeviceControl",
+            "isOpen": true,
+            "objc_name": "taskBuilderWithArguments:",
+            "declAttributes": [
+              "AccessControl",
+              "ObjC"
+            ],
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Constructor",
+            "name": "init",
+            "printedName": "init()",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "FBAppleDevicectlCommandExecutor",
+                "printedName": "FBDeviceControl.FBAppleDevicectlCommandExecutor",
+                "usr": "c:@M@FBDeviceControl@objc(cs)FBAppleDevicectlCommandExecutor"
+              }
+            ],
+            "declKind": "Constructor",
+            "usr": "c:@M@FBDeviceControl@objc(cs)FBAppleDevicectlCommandExecutor(im)init",
+            "mangledName": "$s15FBDeviceControl31FBAppleDevicectlCommandExecutorCACycfc",
+            "moduleName": "FBDeviceControl",
+            "overriding": true,
+            "implicit": true,
+            "objc_name": "init",
+            "declAttributes": [
+              "Dynamic",
+              "ObjC",
+              "Override"
+            ],
+            "init_kind": "Designated"
+          },
+          {
+            "kind": "Function",
+            "name": "launchApplication",
+            "printedName": "launchApplication(configuration:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "FBFuture",
+                "printedName": "FBControlCore.FBFuture<Foundation.NSNumber>",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "NSNumber",
+                    "printedName": "Foundation.NSNumber",
+                    "usr": "c:objc(cs)NSNumber"
+                  }
+                ],
+                "usr": "c:objc(cs)FBFuture"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "FBApplicationLaunchConfiguration",
+                "printedName": "FBControlCore.FBApplicationLaunchConfiguration",
+                "usr": "c:objc(cs)FBApplicationLaunchConfiguration"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "c:@CM@FBDeviceControl@objc(cs)FBAppleDevicectlCommandExecutor(im)launchApplicationWithConfiguration:",
+            "mangledName": "$s15FBDeviceControl31FBAppleDevicectlCommandExecutorC17launchApplication13configurationSo8FBFutureCySo8NSNumberCGSo32FBApplicationLaunchConfigurationC_tF",
+            "moduleName": "FBDeviceControl",
+            "isOpen": true,
+            "objc_name": "launchApplicationWithConfiguration:",
+            "declAttributes": [
+              "Dynamic",
+              "ObjC"
+            ],
+            "isFromExtension": true,
+            "funcSelfKind": "NonMutating"
+          }
+        ],
+        "declKind": "Class",
+        "usr": "c:@M@FBDeviceControl@objc(cs)FBAppleDevicectlCommandExecutor",
+        "mangledName": "$s15FBDeviceControl31FBAppleDevicectlCommandExecutorC",
+        "moduleName": "FBDeviceControl",
+        "isOpen": true,
+        "declAttributes": [
+          "AccessControl",
+          "ObjC"
+        ],
+        "superclassUsr": "c:objc(cs)NSObject",
+        "superclassNames": [
+          "ObjectiveC.NSObject"
+        ],
+        "conformances": [
+          {
+            "kind": "Conformance",
+            "name": "_KeyValueCodingAndObserving",
+            "printedName": "_KeyValueCodingAndObserving",
+            "usr": "s:10Foundation27_KeyValueCodingAndObservingP",
+            "mangledName": "$s10Foundation27_KeyValueCodingAndObservingP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "_KeyValueCodingAndObservingPublishing",
+            "printedName": "_KeyValueCodingAndObservingPublishing",
+            "usr": "s:10Foundation37_KeyValueCodingAndObservingPublishingP",
+            "mangledName": "$s10Foundation37_KeyValueCodingAndObservingPublishingP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "CVarArg",
+            "printedName": "CVarArg",
+            "usr": "s:s7CVarArgP",
+            "mangledName": "$ss7CVarArgP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Copyable",
+            "printedName": "Copyable",
+            "usr": "s:s8CopyableP",
+            "mangledName": "$ss8CopyableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "CustomDebugStringConvertible",
+            "printedName": "CustomDebugStringConvertible",
+            "usr": "s:s28CustomDebugStringConvertibleP",
+            "mangledName": "$ss28CustomDebugStringConvertibleP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "CustomStringConvertible",
+            "printedName": "CustomStringConvertible",
+            "usr": "s:s23CustomStringConvertibleP",
+            "mangledName": "$ss23CustomStringConvertibleP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Equatable",
+            "printedName": "Equatable",
+            "usr": "s:SQ",
+            "mangledName": "$sSQ"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Escapable",
+            "printedName": "Escapable",
+            "usr": "s:s9EscapableP",
+            "mangledName": "$ss9EscapableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Hashable",
+            "printedName": "Hashable",
+            "usr": "s:SH",
+            "mangledName": "$sSH"
+          }
+        ]
+      },
+      {
+        "kind": "Import",
+        "name": "Foundation",
+        "printedName": "Foundation",
+        "declKind": "Import",
+        "moduleName": "FBDeviceControl",
+        "declAttributes": [
+          "RawDocComment"
+        ]
+      },
+      {
+        "kind": "TypeDecl",
+        "name": "FileManager",
+        "printedName": "FileManager",
+        "children": [
+          {
+            "kind": "Function",
+            "name": "temporaryFile",
+            "printedName": "temporaryFile(extension:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "URL",
+                "printedName": "Foundation.URL",
+                "usr": "s:10Foundation3URLV"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:So13NSFileManagerC15FBDeviceControlE13temporaryFile9extension10Foundation3URLVSS_tKF",
+            "mangledName": "$sSo13NSFileManagerC15FBDeviceControlE13temporaryFile9extension10Foundation3URLVSS_tKF",
+            "moduleName": "FBDeviceControl",
+            "isOpen": true,
+            "isFromExtension": true,
+            "throwing": true,
+            "funcSelfKind": "NonMutating"
+          }
+        ],
+        "declKind": "Class",
+        "usr": "c:objc(cs)NSFileManager",
+        "moduleName": "Foundation",
+        "isOpen": true,
+        "objc_name": "NSFileManager",
+        "declAttributes": [
+          "ObjC",
+          "NonSendable",
+          "Dynamic"
+        ],
+        "superclassUsr": "c:objc(cs)NSObject",
+        "isExternal": true,
+        "inheritsConvenienceInitializers": true,
+        "superclassNames": [
+          "ObjectiveC.NSObject"
+        ],
+        "conformances": [
+          {
+            "kind": "Conformance",
+            "name": "_KeyValueCodingAndObserving",
+            "printedName": "_KeyValueCodingAndObserving",
+            "usr": "s:10Foundation27_KeyValueCodingAndObservingP",
+            "mangledName": "$s10Foundation27_KeyValueCodingAndObservingP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "_KeyValueCodingAndObservingPublishing",
+            "printedName": "_KeyValueCodingAndObservingPublishing",
+            "usr": "s:10Foundation37_KeyValueCodingAndObservingPublishingP",
+            "mangledName": "$s10Foundation37_KeyValueCodingAndObservingPublishingP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "CVarArg",
+            "printedName": "CVarArg",
+            "usr": "s:s7CVarArgP",
+            "mangledName": "$ss7CVarArgP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Copyable",
+            "printedName": "Copyable",
+            "usr": "s:s8CopyableP",
+            "mangledName": "$ss8CopyableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "CustomDebugStringConvertible",
+            "printedName": "CustomDebugStringConvertible",
+            "usr": "s:s28CustomDebugStringConvertibleP",
+            "mangledName": "$ss28CustomDebugStringConvertibleP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "CustomStringConvertible",
+            "printedName": "CustomStringConvertible",
+            "usr": "s:s23CustomStringConvertibleP",
+            "mangledName": "$ss23CustomStringConvertibleP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Equatable",
+            "printedName": "Equatable",
+            "usr": "s:SQ",
+            "mangledName": "$sSQ"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Escapable",
+            "printedName": "Escapable",
+            "usr": "s:s9EscapableP",
+            "mangledName": "$ss9EscapableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Hashable",
+            "printedName": "Hashable",
+            "usr": "s:SH",
+            "mangledName": "$sSH"
+          }
+        ]
+      }
+    ],
+    "json_format_version": 8
+  },
+  "ConstValues": []
+}

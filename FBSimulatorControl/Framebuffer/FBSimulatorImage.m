@@ -8,6 +8,7 @@
 #import "FBSimulatorImage.h"
 
 #import <CoreImage/CoreImage.h>
+#import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 
 #import <FBControlCore/FBControlCore.h>
 
@@ -93,12 +94,12 @@
 
 + (nullable NSData *)jpegImageDataFromImage:(nullable CGImageRef)image error:(NSError **)error
 {
-  return [self imageDataFromImage:image type:kUTTypeJPEG error:error];
+  return [self imageDataFromImage:image type:(__bridge CFStringRef)UTTypeJPEG.identifier error:error];
 }
 
 + (nullable NSData *)pngImageDataFromImage:(nullable CGImageRef)image error:(NSError **)error
 {
-  return [self imageDataFromImage:image type:kUTTypePNG error:error];
+  return [self imageDataFromImage:image type:(__bridge CFStringRef)UTTypePNG.identifier error:error];
 }
 
 + (nullable NSData *)imageDataFromImage:(nullable CGImageRef)image type:(CFStringRef)type error:(NSError **)error

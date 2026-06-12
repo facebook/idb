@@ -19,7 +19,14 @@
 
 + (instancetype)SimulatorKit
 {
-  return [FBWeakFramework xcodeFrameworkWithRelativePath:@"Library/PrivateFrameworks/SimulatorKit.framework" requiredClassNames:@[]];
+  // Xcode 27 relocated SimulatorKit out of Contents/Developer/Library/PrivateFrameworks
+  // and into Contents/SharedFrameworks. Probe the new location first, then fall
+  // back to the legacy path for Xcode <= 26. Both are resolved relative to the
+  // developer directory (Contents/Developer).
+  return [FBWeakFramework xcodeFrameworkWithRelativePathCandidates:@[
+    @"../SharedFrameworks/SimulatorKit.framework",
+    @"Library/PrivateFrameworks/SimulatorKit.framework",
+  ] requiredClassNames:@[]];
 }
 
 + (instancetype)DTXConnectionServices

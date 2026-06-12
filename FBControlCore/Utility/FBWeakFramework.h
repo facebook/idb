@@ -26,6 +26,17 @@ NS_ASSUME_NONNULL_BEGIN
 + (instancetype)xcodeFrameworkWithRelativePath:(NSString *)relativePath requiredClassNames:(NSArray<NSString *> *)requiredClassNames;
 
 /**
+ Creates and returns FBWeakFramework relative to Xcode, trying each of the given relative paths in order and loading the first one that exists on disk.
+
+ This is used for frameworks that Apple relocates between Xcode versions (for example SimulatorKit, which moved from `Contents/Developer/Library/PrivateFrameworks` to `Contents/SharedFrameworks` in Xcode 27). The first candidate that exists relative to the developer directory wins; the remaining candidates act as backward-compatible fallbacks.
+
+ @param relativePathCandidates Developer Directory relative paths to the framework, in priority order.
+ @param requiredClassNames list of class names used to determine if framework load was successful
+ @return a Weak Framework that resolves the first existing candidate path at load time.
+ */
++ (instancetype)xcodeFrameworkWithRelativePathCandidates:(NSArray<NSString *> *)relativePathCandidates requiredClassNames:(NSArray<NSString *> *)requiredClassNames;
+
+/**
   Creates and returns FBWeakFramework with the provided absolute path
 
   @param absolutePath The Absolute Path of the Framework.

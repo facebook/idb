@@ -86,6 +86,13 @@ static inline uint32_t GetMagic(FILE *file)
   return magic;
 }
 
+// The mach-o byte-swapping helpers (swap_mach_header / swap_fat_header / swap_fat_arch)
+// were deprecated with "no longer supported" and have no modern replacement. They are only
+// exercised for big-endian fat slices, which no current Apple platform produces, but we keep
+// the calls for completeness and suppress the deprecation warning locally.
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+
 static inline struct mach_header ReadHeader32(FILE *file, uint32_t magic)
 {
   // Read the header from the current location.
@@ -133,6 +140,7 @@ static inline id EnumerateFat(FILE *file, uint32_t fatMagic, id(^block)(struct f
     if (IsSwap(fatMagic)) {
       swap_fat_arch(&fatArch, 1, 0);
     }
+#pragma clang diagnostic pop
 
     // Seek to the start position of the arch
     fseek(file, fatArch.offset, SEEK_SET);

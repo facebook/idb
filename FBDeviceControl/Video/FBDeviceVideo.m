@@ -50,7 +50,7 @@
   CMIOObjectPropertyAddress properties = {
     kCMIOHardwarePropertyAllowScreenCaptureDevices,
     kCMIOObjectPropertyScopeGlobal,
-    kCMIOObjectPropertyElementMaster,
+    kCMIOObjectPropertyElementMain,
   };
   UInt32 allow = 1;
   OSStatus status = CMIOObjectSetPropertyData(

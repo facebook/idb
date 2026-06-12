@@ -2,7 +2,7 @@ name: FBSimulatorControl
 
 options:
   deploymentTarget:
-    macOS: "10.14"
+    macOS: "15.0"
   createIntermediateGroups: true
   groupSortPosition: top
   bundleIdPrefix: com.facebook
@@ -226,12 +226,12 @@ targets:
   IDBCompanionUtilities:
     type: framework
     platform: macOS
-    deploymentTarget: "10.15"
+    deploymentTarget: "15.0"
     sources:
       - path: IDBCompanionUtilities
     settings:
       base:
-        MACOSX_DEPLOYMENT_TARGET: "10.15"
+        MACOSX_DEPLOYMENT_TARGET: "15.0"
         PRODUCT_BUNDLE_IDENTIFIER: com.facebook.IDBCompanionUtilities
         PRODUCT_NAME: IDBCompanionUtilities
         DEFINES_MODULE: YES
@@ -243,12 +243,12 @@ targets:
   IDBCompanionUtilitiesTests:
     type: bundle.unit-test
     platform: macOS
-    deploymentTarget: "10.15"
+    deploymentTarget: "15.0"
     sources:
       - path: IDBCompanionUtilitiesTests
     settings:
       base:
-        MACOSX_DEPLOYMENT_TARGET: "10.15"
+        MACOSX_DEPLOYMENT_TARGET: "15.0"
         PRODUCT_BUNDLE_IDENTIFIER: com.facebook.IDBCompanionUtilitiesTests
         PRODUCT_NAME: IDBCompanionUtilitiesTests
         SWIFT_VERSION: "5.9"
@@ -260,14 +260,14 @@ targets:
   CompanionLib:
     type: framework
     platform: macOS
-    deploymentTarget: "10.15"
+    deploymentTarget: "15.0"
     sources:
       - path: CompanionLib
         excludes:
           - "**/*-Info.plist"
     settings:
       base:
-        MACOSX_DEPLOYMENT_TARGET: "10.15"
+        MACOSX_DEPLOYMENT_TARGET: "15.0"
         PRODUCT_BUNDLE_IDENTIFIER: com.facebook.CompanionLib
         PRODUCT_NAME: CompanionLib
         DEFINES_MODULE: YES

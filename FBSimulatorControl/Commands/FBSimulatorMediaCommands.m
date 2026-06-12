@@ -11,6 +11,7 @@
 
 #import <CoreSimulator/SimDevice.h>
 #import <AppKit/AppKit.h>
+#import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 
 @interface FBSimulatorMediaCommands ()
 
@@ -55,17 +56,19 @@
 
 + (NSPredicate *)predicateForVideoPaths
 {
-  return [self predicateForPathsMatchingUTIs:@[(NSString *)kUTTypeMovie, (NSString *)kUTTypeMPEG4, (NSString *)kUTTypeQuickTimeMovie]];
+  return [self predicateForPathsMatchingTypes:@[UTTypeMovie, UTTypeMPEG4Movie, UTTypeQuickTimeMovie]];
 }
 
 + (NSPredicate *)predicateForPhotoPaths
 {
-  return [self predicateForPathsMatchingUTIs:@[(NSString *)kUTTypeImage, (NSString *)kUTTypePNG, (NSString *)kUTTypeJPEG, (NSString *)kUTTypeJPEG2000]];
+  // UTTypeImage already covers PNG/JPEG/JPEG2000 (they conform to public.image),
+  // which is the behaviour we want when filtering media paths.
+  return [self predicateForPathsMatchingTypes:@[UTTypeImage]];
 }
 
 + (NSPredicate *)predicateForContactPaths
 {
-  return [self predicateForPathsMatchingUTIs:@[(NSString *)kUTTypeVCard]];
+  return [self predicateForPathsMatchingTypes:@[UTTypeVCard]];
 }
 
 + (NSPredicate *)predicateForMediaPaths
@@ -134,13 +137,19 @@
   return YES;
 }
 
-+ (NSPredicate *)predicateForPathsMatchingUTIs:(NSArray<NSString *> *)utis
++ (NSPredicate *)predicateForPathsMatchingTypes:(NSArray<UTType *> *)types
 {
-  NSSet<NSString *> *utiSet = [NSSet setWithArray:utis];
-  NSWorkspace *workspace = NSWorkspace.sharedWorkspace;
   return [NSPredicate predicateWithBlock:^ BOOL (NSURL *url, NSDictionary *_) {
-    NSString *uti = [workspace typeOfFile:url.path error:nil];
-    return [utiSet containsObject:uti];
+    UTType *type = nil;
+    if (![url getResourceValue:&type forKey:NSURLContentTypeKey error:nil] || !type) {
+      return NO;
+    }
+    for (UTType *candidate in types) {
+      if ([type conformsToType:candidate]) {
+        return YES;
+      }
+    }
+    return NO;
   }];
 }
 

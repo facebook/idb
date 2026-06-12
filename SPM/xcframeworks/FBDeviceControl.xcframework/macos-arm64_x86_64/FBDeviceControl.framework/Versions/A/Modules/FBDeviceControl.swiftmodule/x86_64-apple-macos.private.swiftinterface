@@ -1,0 +1,18 @@
+// swift-interface-format-version: 1.0
+// swift-compiler-version: Apple Swift version 6.4 effective-5.10 (swiftlang-6.4.0.20.104 clang-2100.3.20.102)
+// swift-module-flags: -target x86_64-apple-macos15.0 -enable-objc-interop -enable-library-evolution -language-mode 5 -O -enable-experimental-feature DebugDescriptionMacro -enable-bare-slash-regex -module-name FBDeviceControl
+// swift-module-flags-ignorable: -no-verify-emitted-module-interface -formal-cxx-interoperability-mode=off -interface-compiler-version 6.4
+@_exported import FBDeviceControl
+import Foundation
+import Swift
+import _Concurrency
+import _StringProcessing
+import _SwiftConcurrencyShims
+@objc public class FBAppleDevicectlCommandExecutor : ObjectiveC::NSObject {
+  @objc public init(device: FBDeviceControl::FBDevice)
+  @objc public func taskBuilder(arguments: [Swift::String]) -> FBControlCore::FBProcessBuilder<Foundation::NSNull, Foundation::NSString, Foundation::NSString>
+  @objc deinit
+}
+extension FBDeviceControl::FBAppleDevicectlCommandExecutor {
+  @objc dynamic public func launchApplication(configuration: FBControlCore::FBApplicationLaunchConfiguration) -> FBControlCore::FBFuture<Foundation::NSNumber>
+}

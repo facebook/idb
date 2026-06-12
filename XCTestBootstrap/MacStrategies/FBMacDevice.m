@@ -161,7 +161,7 @@
 
 + (NSString *)resolveDeviceUDID
 {
-  io_service_t platformExpert = IOServiceGetMatchingService(kIOMasterPortDefault, IOServiceMatching("IOPlatformExpertDevice"));
+  io_service_t platformExpert = IOServiceGetMatchingService(kIOMainPortDefault, IOServiceMatching("IOPlatformExpertDevice"));
   if (!platformExpert) {
     return nil;
   }

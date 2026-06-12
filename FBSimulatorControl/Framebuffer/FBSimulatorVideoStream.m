@@ -88,6 +88,19 @@ static CVPixelBufferPoolRef createScaledPixelBufferPool(CVPixelBufferRef sourceB
   return scaledPixelBufferPool;
 }
 
+/// Converts a FourCC `OSType` (e.g. 'BGRA') into its 4-character string.
+/// Replaces the obsolete `UTCreateStringForOSType` (HFS type codes are no longer supported).
+static NSString *FBStringFromOSType(OSType type)
+{
+  unichar characters[4] = {
+    (unichar)((type >> 24) & 0xFF),
+    (unichar)((type >> 16) & 0xFF),
+    (unichar)((type >> 8) & 0xFF),
+    (unichar)(type & 0xFF),
+  };
+  return [NSString stringWithCharacters:characters length:4];
+}
+
 static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixelBuffer(CVPixelBufferRef pixelBuffer)
 {
   size_t width = CVPixelBufferGetWidth(pixelBuffer);
@@ -95,7 +108,7 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
   size_t frameSize = CVPixelBufferGetDataSize(pixelBuffer);
   size_t rowSize = CVPixelBufferGetBytesPerRow(pixelBuffer);
   OSType pixelFormat = CVPixelBufferGetPixelFormatType(pixelBuffer);
-  NSString *pixelFormatString = (__bridge_transfer NSString *) UTCreateStringForOSType(pixelFormat);
+  NSString *pixelFormatString = FBStringFromOSType(pixelFormat);
   
   size_t columnLeft;
   size_t columnRight;

@@ -3840,7 +3840,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.IDBCompanionUtilities;
 				PRODUCT_NAME = IDBCompanionUtilities;
 				SWIFT_VERSION = 5.9;
@@ -3940,7 +3940,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.IDBCompanionUtilities;
 				PRODUCT_NAME = IDBCompanionUtilities;
 				SWIFT_VERSION = 5.9;
@@ -3995,7 +3995,7 @@
 					"@executable_path/../Frameworks",
 					"@loader_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.IDBCompanionUtilitiesTests;
 				PRODUCT_NAME = IDBCompanionUtilitiesTests;
 				SWIFT_VERSION = 5.9;
@@ -4029,7 +4029,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.CompanionLib;
 				PRODUCT_NAME = CompanionLib;
 				SWIFT_VERSION = 5.0;
@@ -4090,7 +4090,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.CompanionLib;
 				PRODUCT_NAME = CompanionLib;
 				SWIFT_VERSION = 5.0;
@@ -4148,7 +4148,7 @@
 					"@executable_path/../Frameworks",
 					"@loader_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.IDBCompanionUtilitiesTests;
 				PRODUCT_NAME = IDBCompanionUtilitiesTests;
 				SWIFT_VERSION = 5.9;
