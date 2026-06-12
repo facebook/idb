@@ -24,6 +24,95 @@
 #import <FBControlCore/FBAccessibilityTraits.h>
 
 #import <stdatomic.h>
+#import <unistd.h>
+
+static NSString *FBAXErrorDescription(AXError err)
+{
+  switch (err) {
+    case kAXErrorSuccess:
+      return @"kAXErrorSuccess";
+    case kAXErrorFailure:
+      return @"kAXErrorFailure";
+    case kAXErrorIllegalArgument:
+      return @"kAXErrorIllegalArgument";
+    case kAXErrorInvalidUIElement:
+      return @"kAXErrorInvalidUIElement";
+    case kAXErrorInvalidUIElementObserver:
+      return @"kAXErrorInvalidUIElementObserver";
+    case kAXErrorCannotComplete:
+      return @"kAXErrorCannotComplete";
+    case kAXErrorAttributeUnsupported:
+      return @"kAXErrorAttributeUnsupported";
+    case kAXErrorActionUnsupported:
+      return @"kAXErrorActionUnsupported";
+    case kAXErrorNotificationUnsupported:
+      return @"kAXErrorNotificationUnsupported";
+    case kAXErrorNotImplemented:
+      return @"kAXErrorNotImplemented";
+    case kAXErrorNotificationAlreadyRegistered:
+      return @"kAXErrorNotificationAlreadyRegistered";
+    case kAXErrorNotificationNotRegistered:
+      return @"kAXErrorNotificationNotRegistered";
+    case kAXErrorAPIDisabled:
+      return @"kAXErrorAPIDisabled";
+    case kAXErrorNoValue:
+      return @"kAXErrorNoValue";
+    case kAXErrorParameterizedAttributeUnsupported:
+      return @"kAXErrorParameterizedAttributeUnsupported";
+    case kAXErrorNotEnoughPrecision:
+      return @"kAXErrorNotEnoughPrecision";
+    default:
+      return [NSString stringWithFormat:@"AXError(%d)", err];
+  }
+}
+
+static NSString *FBAXStringAttributeValue(AXUIElementRef element, CFStringRef attribute)
+{
+  CFTypeRef ref = NULL;
+  AXError err = AXUIElementCopyAttributeValue(element, attribute, &ref);
+  if (err != kAXErrorSuccess || ref == NULL) {
+    return nil;
+  }
+  if (CFGetTypeID(ref) != CFStringGetTypeID()) {
+    CFRelease(ref);
+    return nil;
+  }
+  return (__bridge_transfer NSString *)ref;
+}
+
+static BOOL FBAXTitleMatchesDeviceName(AXUIElementRef element, NSString *deviceName)
+{
+  if (deviceName.length == 0) {
+    return YES;
+  }
+  NSString *title = FBAXStringAttributeValue(element, kAXTitleAttribute);
+  if (title.length > 0 && [title containsString:deviceName]) {
+    return YES;
+  }
+  NSString *label = FBAXStringAttributeValue(element, kAXDescriptionAttribute);
+  return label.length > 0 && [label containsString:deviceName];
+}
+
+static NSArray<NSString *> *FBCGWindowTitlesForPID(pid_t pid)
+{
+  CFArrayRef windows = CGWindowListCopyWindowInfo(kCGWindowListOptionOnScreenOnly | kCGWindowListExcludeDesktopElements, kCGNullWindowID);
+  if (windows == NULL) {
+    return @[];
+  }
+  NSMutableArray<NSString *> *titles = [NSMutableArray array];
+  for (NSDictionary *info in (__bridge NSArray *)windows) {
+    NSNumber *ownerPID = info[(id)kCGWindowOwnerPID];
+    if (ownerPID.intValue != pid) {
+      continue;
+    }
+    NSString *name = info[(id)kCGWindowName];
+    if (name.length > 0) {
+      [titles addObject:name];
+    }
+  }
+  CFRelease(windows);
+  return [titles copy];
+}
 
 /**
  Mutable collector for profiling data during an accessibility request.
@@ -195,22 +284,22 @@ static NSString *const AXPrefix = @"AX";
   return AXExtractTraits(bitmask).allObjects;
 }
 
-+ (NSArray<NSDictionary<NSString *, id> *> *)recursiveDescriptionFromElement:(AXPMacPlatformElement *)element token:(NSString *)token nestedFormat:(BOOL)nestedFormat keys:(NSSet<NSString *> *)keys collector:(nullable FBAccessibilityProfilingCollector *)collector
++ (NSArray<NSDictionary<NSString *, id> *> *)recursiveDescriptionFromElement:(AXPMacPlatformElement *)element token:(NSString *)token nestedFormat:(BOOL)nestedFormat keys:(NSSet<NSString *> *)keys collector:(nullable FBAccessibilityProfilingCollector *)collector maxDepth:(NSUInteger)maxDepth
 {
   element.translation.bridgeDelegateToken = token;
   pid_t frontmostPid = element.translation.pid;
   if (nestedFormat) {
-    return @[[self.class nestedRecursiveDescriptionFromElement:element token:token keys:keys collector:collector frontmostPid:frontmostPid]];
+    return @[[self.class nestedRecursiveDescriptionFromElement:element token:token keys:keys collector:collector frontmostPid:frontmostPid remainingDepth:maxDepth]];
   }
-  return [self.class flatRecursiveDescriptionFromElement:element token:token keys:keys collector:collector frontmostPid:frontmostPid];
+  return [self.class flatRecursiveDescriptionFromElement:element token:token keys:keys collector:collector frontmostPid:frontmostPid remainingDepth:maxDepth];
 }
 
-+ (NSDictionary<NSString *, id> *)formattedDescriptionOfElement:(AXPMacPlatformElement *)element token:(NSString *)token nestedFormat:(BOOL)nestedFormat keys:(NSSet<NSString *> *)keys collector:(nullable FBAccessibilityProfilingCollector *)collector
++ (NSDictionary<NSString *, id> *)formattedDescriptionOfElement:(AXPMacPlatformElement *)element token:(NSString *)token nestedFormat:(BOOL)nestedFormat keys:(NSSet<NSString *> *)keys collector:(nullable FBAccessibilityProfilingCollector *)collector maxDepth:(NSUInteger)maxDepth
 {
   element.translation.bridgeDelegateToken = token;
   pid_t frontmostPid = element.translation.pid;
   if (nestedFormat) {
-    return [self.class nestedRecursiveDescriptionFromElement:element token:token keys:keys collector:collector frontmostPid:frontmostPid];
+    return [self.class nestedRecursiveDescriptionFromElement:element token:token keys:keys collector:collector frontmostPid:frontmostPid remainingDepth:maxDepth];
   }
   return [self.class accessibilityDictionaryForElement:element token:token keys:keys collector:collector frontmostPid:frontmostPid];
 }
@@ -312,29 +401,95 @@ static NSString *const AXPrefix = @"AX";
   return [values copy];
 }
 
+// Some bridged iOS containers (notably the iOS 26 floating tab bar) return an empty
+// `accessibilityChildren` even though their tab elements are reachable via alternate
+// AX attributes such as `AXChildrenInNavigationOrder`, `AXTabs`, `AXVisibleChildren`,
+// `AXSelectedChildren`, or `AXContents`. Mirror Accessibility Inspector's behaviour by
+// merging from all of them and deduplicating by element identity (NSObject -isEqual:),
+// preserving first-seen order so `accessibilityChildren` stays canonical when populated.
++ (NSArray<AXPMacPlatformElement *> *)mergedAccessibilityChildrenForElement:(AXPMacPlatformElement *)element token:(NSString *)token
+{
+  static NSArray<NSString *> *altAttributeNames;
+  static dispatch_once_t once;
+  dispatch_once(&once, ^{
+    altAttributeNames = @[
+      @"AXChildrenInNavigationOrder",
+      @"AXTabs",
+      @"AXVisibleChildren",
+      @"AXSelectedChildren",
+      @"AXContents",
+    ];
+  });
+
+  NSMutableArray<AXPMacPlatformElement *> *merged = [NSMutableArray array];
+  NSMutableArray *seen = [NSMutableArray array];
+
+  Class macPlatformElementClass = objc_getClass("AXPMacPlatformElement");
+  void (^addAll)(NSArray *) = ^(NSArray *candidates) {
+    for (id candidate in candidates) {
+      if (macPlatformElementClass && ![candidate isKindOfClass:macPlatformElementClass]) {
+        continue;
+      }
+      AXPMacPlatformElement *child = (AXPMacPlatformElement *)candidate;
+      if ([seen indexOfObjectPassingTest:^BOOL(id existing, NSUInteger _, BOOL *stop) {
+        return existing == child || [existing isEqual:child];
+      }] != NSNotFound) {
+        continue;
+      }
+      [seen addObject:child];
+      child.translation.bridgeDelegateToken = token;
+      [merged addObject:child];
+    }
+  };
+
+  addAll(element.accessibilityChildren);
+  if (![element respondsToSelector:@selector(accessibilityAttributeValue:)]) {
+    return merged;
+  }
+  for (NSString *name in altAttributeNames) {
+    id value = [element accessibilityAttributeValue:name];
+    if ([value isKindOfClass:NSArray.class]) {
+      addAll((NSArray *)value);
+    }
+  }
+  return merged;
+}
+
 // This replicates the non-hierarchical system that was previously present in SimulatorBridge.
 // In this case the values of frames must be relative to the root, rather than the parent frame.
-+ (NSArray<NSDictionary<NSString *, id> *> *)flatRecursiveDescriptionFromElement:(AXPMacPlatformElement *)element token:(NSString *)token keys:(NSSet<NSString *> *)keys collector:(nullable FBAccessibilityProfilingCollector *)collector frontmostPid:(pid_t)frontmostPid
+//
+// `remainingDepth` semantics:
+//  - 0 means unlimited recursion (the original behaviour).
+//  - 1 means we're at the deepest allowed level: the merged-children fan-out is skipped,
+//    so this element is serialized as a leaf with no AXChildren / AXTabs / etc. round-trips.
+//  - N >= 2 means recurse into children with `remainingDepth - 1`.
++ (NSArray<NSDictionary<NSString *, id> *> *)flatRecursiveDescriptionFromElement:(AXPMacPlatformElement *)element token:(NSString *)token keys:(NSSet<NSString *> *)keys collector:(nullable FBAccessibilityProfilingCollector *)collector frontmostPid:(pid_t)frontmostPid remainingDepth:(NSUInteger)remainingDepth
 {
   NSMutableArray<NSDictionary<NSString *, id> *> *values = NSMutableArray.array;
   [values addObject:[self accessibilityDictionaryForElement:element token:token keys:keys collector:collector frontmostPid:frontmostPid]];
-  for (AXPMacPlatformElement *childElement in element.accessibilityChildren) {
-    childElement.translation.bridgeDelegateToken = token;
-    NSArray<NSDictionary<NSString *, id> *> *childValues = [self flatRecursiveDescriptionFromElement:childElement token:token keys:keys collector:collector frontmostPid:frontmostPid];
+  if (remainingDepth == 1) {
+    return values;
+  }
+  NSUInteger childRemainingDepth = (remainingDepth == 0) ? 0 : remainingDepth - 1;
+  for (AXPMacPlatformElement *childElement in [self mergedAccessibilityChildrenForElement:element token:token]) {
+    NSArray<NSDictionary<NSString *, id> *> *childValues = [self flatRecursiveDescriptionFromElement:childElement token:token keys:keys collector:collector frontmostPid:frontmostPid remainingDepth:childRemainingDepth];
     [values addObjectsFromArray:childValues];
   }
   return values;
 }
 
-+ (NSDictionary<NSString *, id> *)nestedRecursiveDescriptionFromElement:(AXPMacPlatformElement *)element token:(NSString *)token keys:(NSSet<NSString *> *)keys collector:(nullable FBAccessibilityProfilingCollector *)collector frontmostPid:(pid_t)frontmostPid
++ (NSDictionary<NSString *, id> *)nestedRecursiveDescriptionFromElement:(AXPMacPlatformElement *)element token:(NSString *)token keys:(NSSet<NSString *> *)keys collector:(nullable FBAccessibilityProfilingCollector *)collector frontmostPid:(pid_t)frontmostPid remainingDepth:(NSUInteger)remainingDepth
 {
   NSMutableDictionary<NSString *, id> *values = [[self accessibilityDictionaryForElement:element token:token keys:keys collector:collector frontmostPid:frontmostPid] mutableCopy];
   NSMutableArray<NSDictionary<NSString *, id> *> *childrenValues = NSMutableArray.array;
-  for (AXPMacPlatformElement *childElement in element.accessibilityChildren) {
-    childElement.translation.bridgeDelegateToken = token;
-    NSDictionary<NSString *, id> *childValues = [self nestedRecursiveDescriptionFromElement:childElement token:token keys:keys collector:collector frontmostPid:frontmostPid];
-    [childrenValues addObject:childValues];
+  if (remainingDepth != 1) {
+    NSUInteger childRemainingDepth = (remainingDepth == 0) ? 0 : remainingDepth - 1;
+    for (AXPMacPlatformElement *childElement in [self mergedAccessibilityChildrenForElement:element token:token]) {
+      NSDictionary<NSString *, id> *childValues = [self nestedRecursiveDescriptionFromElement:childElement token:token keys:keys collector:collector frontmostPid:frontmostPid remainingDepth:childRemainingDepth];
+      [childrenValues addObject:childValues];
+    }
   }
+  // Always emit the `children` key so consumers see a stable JSON shape even when depth is exhausted.
   values[@"children"] = childrenValues;
   return values;
 }
@@ -346,6 +501,7 @@ static NSString *const AXPrefix = @"AX";
 @property (nonatomic, assign, readonly) BOOL nestedFormat;
 @property (nonatomic, copy, readonly) NSString *token;
 @property (nonatomic, copy, readonly) NSSet<NSString *> *keys;
+@property (nonatomic, assign, readonly) NSUInteger maxDepth;
 @property (nonatomic, strong, nullable) SimDevice *device;
 @property (nonatomic, strong, nullable) FBAccessibilityProfilingCollector *collector;
 @property (nonatomic, strong, nullable) id<FBControlCoreLogger> logger;
@@ -354,7 +510,7 @@ static NSString *const AXPrefix = @"AX";
 
 @implementation FBAXTranslationRequest
 
-- (instancetype)initWithNestedFormat:(BOOL)nestedFormat keys:(NSSet<NSString *> *)keys
+- (instancetype)initWithNestedFormat:(BOOL)nestedFormat keys:(NSSet<NSString *> *)keys maxDepth:(NSUInteger)maxDepth
 {
   self = [super init];
   if (!self) {
@@ -364,6 +520,7 @@ static NSString *const AXPrefix = @"AX";
   _token = NSUUID.UUID.UUIDString;
   _nestedFormat = nestedFormat;
   _keys = [keys copy];
+  _maxDepth = maxDepth;
 
   return self;
 }
@@ -401,12 +558,12 @@ static NSString *const AXPrefix = @"AX";
 
 - (nullable id)serialize:(AXPMacPlatformElement *)element error:(NSError **)error
 {
-  return [FBSimulatorAccessibilitySerializer recursiveDescriptionFromElement:element token:self.token nestedFormat:self.nestedFormat keys:self.keys collector:self.collector];
+  return [FBSimulatorAccessibilitySerializer recursiveDescriptionFromElement:element token:self.token nestedFormat:self.nestedFormat keys:self.keys collector:self.collector maxDepth:self.maxDepth];
 }
 
 - (instancetype)cloneWithNewToken
 {
-  return [[FBAXTranslationRequest_FrontmostApplication alloc] initWithNestedFormat:self.nestedFormat keys:self.keys];
+  return [[FBAXTranslationRequest_FrontmostApplication alloc] initWithNestedFormat:self.nestedFormat keys:self.keys maxDepth:self.maxDepth];
 }
 
 @end
@@ -473,9 +630,9 @@ static NSString *const AXPrefix = @"AX";
 
 @implementation FBAXTranslationRequest_Point
 
-- (instancetype)initWithNestedFormat:(BOOL)nestedFormat point:(CGPoint)point action:(FBAXTranslationAction *)action keys:(NSSet<NSString *> *)keys
+- (instancetype)initWithNestedFormat:(BOOL)nestedFormat point:(CGPoint)point action:(FBAXTranslationAction *)action keys:(NSSet<NSString *> *)keys maxDepth:(NSUInteger)maxDepth
 {
-  self = [super initWithNestedFormat:nestedFormat keys:keys];
+  self = [super initWithNestedFormat:nestedFormat keys:keys maxDepth:maxDepth];
   if (!self) {
     return nil;
   }
@@ -493,7 +650,7 @@ static NSString *const AXPrefix = @"AX";
 
 - (NSDictionary<NSString *, id> *)serialize:(AXPMacPlatformElement *)element error:(NSError **)error
 {
-  NSDictionary<NSString *, id> *result = [FBSimulatorAccessibilitySerializer formattedDescriptionOfElement:element token:self.token nestedFormat:self.nestedFormat keys:self.keys collector:self.collector];
+  NSDictionary<NSString *, id> *result = [FBSimulatorAccessibilitySerializer formattedDescriptionOfElement:element token:self.token nestedFormat:self.nestedFormat keys:self.keys collector:self.collector maxDepth:self.maxDepth];
   FBAXTranslationAction *action = self.action;
   if (action && [action performActionOnElement:element error:error] == NO) {
     return nil;
@@ -503,7 +660,7 @@ static NSString *const AXPrefix = @"AX";
 
 - (instancetype)cloneWithNewToken
 {
-  return [[FBAXTranslationRequest_Point alloc] initWithNestedFormat:self.nestedFormat point:self.point action:self.action keys:self.keys];
+  return [[FBAXTranslationRequest_Point alloc] initWithNestedFormat:self.nestedFormat point:self.point action:self.action keys:self.keys maxDepth:self.maxDepth];
 }
 
 @end
@@ -699,6 +856,9 @@ static void *FBAXTranslationDispatcherWorkQueueKey = &FBAXTranslationDispatcherW
 
 @property (nonatomic, weak, readonly) FBSimulator *simulator;
 
++ (nullable AXUIElementRef)copyFirstDescendantMatchingDeviceWindowFromElement:(AXUIElementRef)element deviceName:(nullable NSString *)deviceName depthRemaining:(NSUInteger)depthRemaining;
++ (nullable AXUIElementRef)copySimDisplayRenderableViewFromSystemWideForDeviceName:(nullable NSString *)deviceName simulatorPID:(pid_t)simulatorPID windowTitles:(NSArray<NSString *> **)windowTitles;
+
 @end
 
 static NSString *const CoreSimulatorBridgeServiceName = @"com.apple.CoreSimulator.bridge";
@@ -734,7 +894,7 @@ static NSString *const CoreSimulatorBridgeServiceName = @"com.apple.CoreSimulato
     return [FBFuture futureWithError:error];
   }
 
-  FBAXTranslationRequest *translationRequest = [[FBAXTranslationRequest_FrontmostApplication alloc] initWithNestedFormat:options.nestedFormat keys:options.keys];
+  FBAXTranslationRequest *translationRequest = [[FBAXTranslationRequest_FrontmostApplication alloc] initWithNestedFormat:options.nestedFormat keys:options.keys maxDepth:options.maxDepth];
   if (options.enableProfiling) {
     translationRequest.collector = [[FBAccessibilityProfilingCollector alloc] init];
   }
@@ -752,7 +912,7 @@ static NSString *const CoreSimulatorBridgeServiceName = @"com.apple.CoreSimulato
     return [FBFuture futureWithError:error];
   }
 
-  FBAXTranslationRequest *translationRequest = [[FBAXTranslationRequest_Point alloc] initWithNestedFormat:options.nestedFormat point:point action:nil keys:options.keys];
+  FBAXTranslationRequest *translationRequest = [[FBAXTranslationRequest_Point alloc] initWithNestedFormat:options.nestedFormat point:point action:nil keys:options.keys maxDepth:options.maxDepth];
   if (options.enableProfiling) {
     translationRequest.collector = [[FBAccessibilityProfilingCollector alloc] init];
   }
@@ -771,7 +931,7 @@ static NSString *const CoreSimulatorBridgeServiceName = @"com.apple.CoreSimulato
   }
 
   FBAXTranslationAction *action = [[FBAXTranslationAction alloc] initWithPerformTap:YES expectedLabel:expectedLabel point:point];
-  FBAXTranslationRequest *translationRequest = [[FBAXTranslationRequest_Point alloc] initWithNestedFormat:YES point:point action:action keys:FBAXKeysDefaultSet()];
+  FBAXTranslationRequest *translationRequest = [[FBAXTranslationRequest_Point alloc] initWithNestedFormat:YES point:point action:action keys:FBAXKeysDefaultSet() maxDepth:0];
   // Extract .elements from the response since this method returns raw dictionary
   return [[FBSimulatorAccessibilityCommands accessibilityElementWithTranslationRequest:translationRequest simulator:simulator remediationPermitted:NO]
     onQueue:simulator.workQueue map:^NSDictionary *(FBAccessibilityElementsResponse *response) {
@@ -906,86 +1066,257 @@ static NSString *const CoreSimulatorBridgeServiceName = @"com.apple.CoreSimulato
 - (FBFuture<NSArray<NSDictionary<NSString *, id> *> *> *)accessibilityElementsViaAXUIElementForSimulatorPID:(pid_t)simulatorPID deviceName:(nullable NSString *)deviceName nestedFormat:(BOOL)nestedFormat
 {
   return [FBFuture onQueue:dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0) resolveValue:^NSArray<NSDictionary<NSString *, id> *> *(NSError **error) {
-    AXUIElementRef appRef = AXUIElementCreateApplication(simulatorPID);
-    if (!appRef) {
-      [[FBSimulatorError describeFormat:@"Failed to create AXUIElement for Simulator PID %d", simulatorPID] fail:error];
+    if (!AXIsProcessTrusted()) {
+      [[FBSimulatorError
+        describeFormat:@"AXUIElement accessibility query requires Accessibility permission for bundle %@ (AXIsProcessTrusted() returned NO)",
+        NSBundle.mainBundle.bundlePath]
+        fail:error];
       return nil;
     }
 
-    AXUIElementRef renderableView = [FBSimulatorAccessibilityCommands copySimDisplayRenderableViewFromApp:appRef deviceName:deviceName];
-    CFRelease(appRef);
-    if (!renderableView) {
-      [[FBSimulatorError describeFormat:@"Could not find SimDisplayRenderableView in Simulator.app (PID %d, device: %@)", simulatorPID, deviceName ?: @"any"] fail:error];
+    __block NSArray<NSDictionary<NSString *, id> *> *result = nil;
+    __block NSError *innerError = nil;
+
+    dispatch_sync(dispatch_get_main_queue(), ^{
+      NSRunningApplication *simulatorApp = [NSRunningApplication runningApplicationWithProcessIdentifier:simulatorPID];
+      [simulatorApp activateWithOptions:NSApplicationActivateAllWindows];
+      [NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.2]];
+
+      AXUIElementRef appRef = AXUIElementCreateApplication(simulatorPID);
+      if (!appRef) {
+        [[FBSimulatorError describeFormat:@"Failed to create AXUIElement for Simulator PID %d", simulatorPID] fail:&innerError];
+        return;
+      }
+
+      AXError windowsError = kAXErrorSuccess;
+      NSArray<NSString *> *windowTitles = nil;
+      AXUIElementRef renderableView = [FBSimulatorAccessibilityCommands copySimDisplayRenderableViewFromSystemWideForDeviceName:deviceName simulatorPID:simulatorPID windowTitles:&windowTitles];
+      if (!renderableView) {
+        renderableView = [FBSimulatorAccessibilityCommands copySimDisplayRenderableViewFromApp:appRef deviceName:deviceName windowsError:&windowsError windowTitles:&windowTitles];
+      }
+      CFRelease(appRef);
+      if (!renderableView) {
+        [[FBSimulatorError
+          describeFormat:@"Could not find SimDisplayRenderableView in Simulator.app (PID %d, device: %@, AX windows error: %@, AX window titles: %@, CG window titles: %@, bundle: %@)",
+          simulatorPID,
+          deviceName ?: @"any",
+          FBAXErrorDescription(windowsError),
+          windowTitles ?: @[],
+          FBCGWindowTitlesForPID(simulatorPID),
+          NSBundle.mainBundle.bundlePath]
+          fail:&innerError];
+        return;
+      }
+
+      CGPoint renderableOrigin = [FBSimulatorAccessibilityCommands originOfElement:renderableView];
+      if (nestedFormat) {
+        NSDictionary *tree = [FBSimulatorAccessibilityCommands nestedDictionaryFromAXElement:renderableView origin:renderableOrigin];
+        result = tree ? @[tree] : @[];
+      } else {
+        result = [FBSimulatorAccessibilityCommands flatArrayFromAXElement:renderableView origin:renderableOrigin];
+      }
+      CFRelease(renderableView);
+    });
+
+    if (!result) {
+      if (innerError) {
+        if (error) {
+          *error = innerError;
+        }
+        return nil;
+      }
+      [[FBSimulatorError describe:@"AXUIElement accessibility query returned no result"] fail:error];
       return nil;
     }
-
-    CGPoint renderableOrigin = [FBSimulatorAccessibilityCommands originOfElement:renderableView];
-
-    NSArray<NSDictionary<NSString *, id> *> *result;
-    if (nestedFormat) {
-      NSDictionary *tree = [FBSimulatorAccessibilityCommands nestedDictionaryFromAXElement:renderableView origin:renderableOrigin];
-      result = tree ? @[tree] : @[];
-    } else {
-      result = [FBSimulatorAccessibilityCommands flatArrayFromAXElement:renderableView origin:renderableOrigin];
-    }
-
-    CFRelease(renderableView);
     return result;
   }];
 }
 
-+ (nullable AXUIElementRef)copySimDisplayRenderableViewFromApp:(AXUIElementRef)appRef deviceName:(nullable NSString *)deviceName
++ (nullable AXUIElementRef)copySimDisplayRenderableViewFromApp:(AXUIElementRef)appRef deviceName:(nullable NSString *)deviceName windowsError:(AXError *)windowsError windowTitles:(NSArray<NSString *> **)windowTitles
 {
-  CFArrayRef windowsRef = NULL;
-  AXError err = AXUIElementCopyAttributeValue(appRef, kAXWindowsAttribute, (CFTypeRef *)&windowsRef);
-  if (err != kAXErrorSuccess || !windowsRef) {
-    return NULL;
-  }
+  NSMutableArray<NSString *> *titles = [NSMutableArray array];
 
-  CFIndex windowCount = CFArrayGetCount(windowsRef);
-  AXUIElementRef targetWindow = NULL;
-
-  for (CFIndex i = 0; i < windowCount; i++) {
-    AXUIElementRef window = (AXUIElementRef)CFArrayGetValueAtIndex(windowsRef, i);
-    if (deviceName) {
-      CFTypeRef titleRef = NULL;
-      AXUIElementCopyAttributeValue(window, kAXTitleAttribute, &titleRef);
-      if (titleRef) {
-        NSString *title = (__bridge NSString *)titleRef;
-        BOOL matches = [title containsString:deviceName];
-        CFRelease(titleRef);
-        if (!matches) continue;
+  // First try the focused/main window paths. These often work even when kAXWindowsAttribute
+  // intermittently returns kAXErrorCannotComplete for Simulator.app.
+  for (NSString *attributeName in @[(__bridge NSString *)kAXFocusedWindowAttribute, (__bridge NSString *)kAXMainWindowAttribute]) {
+    CFTypeRef windowRef = NULL;
+    AXError err = AXUIElementCopyAttributeValue(appRef, (__bridge CFStringRef)attributeName, &windowRef);
+    if (err == kAXErrorSuccess && windowRef && CFGetTypeID(windowRef) == AXUIElementGetTypeID()) {
+      AXUIElementRef window = (AXUIElementRef)windowRef;
+      NSString *title = FBAXStringAttributeValue(window, kAXTitleAttribute);
+      if (title.length > 0) {
+        [titles addObject:title];
+      }
+      if (FBAXTitleMatchesDeviceName(window, deviceName)) {
+        AXUIElementRef renderableView = [self copyRenderableViewFromElement:window];
+        CFRelease(windowRef);
+        if (renderableView) {
+          if (windowsError) {
+            *windowsError = kAXErrorSuccess;
+          }
+          if (windowTitles) {
+            *windowTitles = [titles copy];
+          }
+          return renderableView;
+        }
       } else {
-        continue;
+        CFRelease(windowRef);
       }
     }
-    targetWindow = window;
-    break;
   }
 
-  if (!targetWindow) {
-    CFRelease(windowsRef);
+  // Retry kAXWindowsAttribute a few times. Simulator.app sometimes reports kAXErrorCannotComplete
+  // briefly even though the window tree becomes queryable moments later.
+  AXError lastWindowsError = kAXErrorSuccess;
+  for (NSUInteger attempt = 0; attempt < 5; attempt++) {
+    CFArrayRef windowsRef = NULL;
+    AXError err = AXUIElementCopyAttributeValue(appRef, kAXWindowsAttribute, (CFTypeRef *)&windowsRef);
+    lastWindowsError = err;
+    if (err == kAXErrorSuccess && windowsRef) {
+      CFIndex windowCount = CFArrayGetCount(windowsRef);
+      for (CFIndex i = 0; i < windowCount; i++) {
+        AXUIElementRef window = (AXUIElementRef)CFArrayGetValueAtIndex(windowsRef, i);
+        NSString *title = FBAXStringAttributeValue(window, kAXTitleAttribute);
+        if (title.length > 0) {
+          [titles addObject:title];
+        }
+        if (!FBAXTitleMatchesDeviceName(window, deviceName)) {
+          continue;
+        }
+        AXUIElementRef renderableView = [self copyRenderableViewFromElement:window];
+        if (renderableView) {
+          CFRelease(windowsRef);
+          if (windowsError) {
+            *windowsError = kAXErrorSuccess;
+          }
+          if (windowTitles) {
+            *windowTitles = [titles copy];
+          }
+          return renderableView;
+        }
+      }
+      CFRelease(windowsRef);
+      break;
+    }
+    usleep((useconds_t)(100000 * (attempt + 1)));
+  }
+
+  // Final fallback: walk the app's direct AX descendants and look for a descendant whose
+  // title/description matches the device window. This avoids relying on kAXWindowsAttribute.
+  AXUIElementRef renderableView = [self copyFirstDescendantMatchingDeviceWindowFromElement:appRef deviceName:deviceName depthRemaining:4];
+  if (renderableView) {
+    if (windowsError) {
+      *windowsError = kAXErrorSuccess;
+    }
+    if (windowTitles) {
+      *windowTitles = [titles copy];
+    }
+    return renderableView;
+  }
+
+  if (windowsError) {
+    *windowsError = lastWindowsError;
+  }
+  if (windowTitles) {
+    *windowTitles = [titles copy];
+  }
+  return NULL;
+}
+
++ (nullable AXUIElementRef)copySimDisplayRenderableViewFromSystemWideForDeviceName:(nullable NSString *)deviceName simulatorPID:(pid_t)simulatorPID windowTitles:(NSArray<NSString *> **)windowTitles
+{
+  AXUIElementRef systemWide = AXUIElementCreateSystemWide();
+  if (!systemWide) {
+    if (windowTitles) {
+      *windowTitles = @[];
+    }
     return NULL;
   }
 
-  AXUIElementRef renderableView = [self copyRenderableViewFromElement:targetWindow];
-  CFRelease(windowsRef);
+  NSMutableArray<NSString *> *titles = [NSMutableArray array];
+  AXUIElementRef focusedApp = NULL;
+  AXError focusedAppError = AXUIElementCopyAttributeValue(systemWide, kAXFocusedApplicationAttribute, (CFTypeRef *)&focusedApp);
+  CFRelease(systemWide);
+  if (focusedAppError != kAXErrorSuccess || focusedApp == NULL) {
+    if (windowTitles) {
+      *windowTitles = [titles copy];
+    }
+    return NULL;
+  }
+
+  pid_t focusedPID = 0;
+  AXUIElementGetPid(focusedApp, &focusedPID);
+  if (focusedPID != simulatorPID) {
+    CFRelease(focusedApp);
+    if (windowTitles) {
+      *windowTitles = [titles copy];
+    }
+    return NULL;
+  }
+
+  for (NSString *attributeName in @[(__bridge NSString *)kAXFocusedWindowAttribute, (__bridge NSString *)kAXMainWindowAttribute]) {
+    CFTypeRef windowRef = NULL;
+    AXError err = AXUIElementCopyAttributeValue(focusedApp, (__bridge CFStringRef)attributeName, &windowRef);
+    if (err != kAXErrorSuccess || windowRef == NULL || CFGetTypeID(windowRef) != AXUIElementGetTypeID()) {
+      continue;
+    }
+    AXUIElementRef window = (AXUIElementRef)windowRef;
+    NSString *title = FBAXStringAttributeValue(window, kAXTitleAttribute);
+    if (title.length > 0) {
+      [titles addObject:title];
+    }
+    if (FBAXTitleMatchesDeviceName(window, deviceName)) {
+      AXUIElementRef renderableView = [self copyRenderableViewFromElement:window];
+      CFRelease(windowRef);
+      CFRelease(focusedApp);
+      if (windowTitles) {
+        *windowTitles = [titles copy];
+      }
+      return renderableView;
+    }
+    CFRelease(windowRef);
+  }
+
+  AXUIElementRef renderableView = [self copyFirstDescendantMatchingDeviceWindowFromElement:focusedApp deviceName:deviceName depthRemaining:4];
+  CFRelease(focusedApp);
+  if (windowTitles) {
+    *windowTitles = [titles copy];
+  }
   return renderableView;
+}
+
++ (nullable AXUIElementRef)copyFirstDescendantMatchingDeviceWindowFromElement:(AXUIElementRef)element deviceName:(nullable NSString *)deviceName depthRemaining:(NSUInteger)depthRemaining
+{
+  if (FBAXTitleMatchesDeviceName(element, deviceName)) {
+    AXUIElementRef renderableView = [self copyRenderableViewFromElement:element];
+    if (renderableView) {
+      return renderableView;
+    }
+  }
+  if (depthRemaining == 0) {
+    return NULL;
+  }
+  for (id childObj in [self mergedChildrenOfAXElement:element]) {
+    AXUIElementRef child = (__bridge AXUIElementRef)childObj;
+    AXUIElementRef renderableView = [self copyFirstDescendantMatchingDeviceWindowFromElement:child deviceName:deviceName depthRemaining:depthRemaining - 1];
+    if (renderableView) {
+      return renderableView;
+    }
+  }
+  return NULL;
 }
 
 + (nullable AXUIElementRef)copyRenderableViewFromElement:(AXUIElementRef)element
 {
-  CFArrayRef childrenRef = NULL;
-  AXError err = AXUIElementCopyAttributeValue(element, kAXChildrenAttribute, (CFTypeRef *)&childrenRef);
-  if (err != kAXErrorSuccess || !childrenRef) {
-    return NULL;
-  }
-
-  CFIndex count = CFArrayGetCount(childrenRef);
+  // Use the merged child enumeration here too: in iOS 26 the SimDisplayRenderableView
+  // itself may surface its iOS subtree via AXChildrenInNavigationOrder rather than
+  // kAXChildrenAttribute, which would otherwise cause us to skip the renderable view
+  // entirely and fall back to the lossy XPC path.
+  NSArray *children = [self mergedChildrenOfAXElement:element];
   AXUIElementRef result = NULL;
 
-  for (CFIndex i = 0; i < count; i++) {
-    AXUIElementRef child = (AXUIElementRef)CFArrayGetValueAtIndex(childrenRef, i);
+  for (id childObj in children) {
+    AXUIElementRef child = (__bridge AXUIElementRef)childObj;
 
     CFTypeRef roleRef = NULL;
     AXUIElementCopyAttributeValue(child, kAXRoleAttribute, &roleRef);
@@ -1002,23 +1333,16 @@ static NSString *const CoreSimulatorBridgeServiceName = @"com.apple.CoreSimulato
 
       // SimDisplayRenderableView typically has no description or a specific one.
       // It's the first group directly under the window that contains the iOS content.
-      // We verify by checking it has children (the iOS accessibility tree).
-      CFArrayRef grandchildren = NULL;
-      AXUIElementCopyAttributeValue(child, kAXChildrenAttribute, (CFTypeRef *)&grandchildren);
-      if (grandchildren) {
-        CFIndex grandchildCount = CFArrayGetCount(grandchildren);
-        CFRelease(grandchildren);
-        if (grandchildCount > 0) {
-          result = child;
-          CFRetain(result);
-          break;
-        }
+      // We verify by checking it exposes children via any standard child attribute.
+      if ([self mergedChildrenOfAXElement:child].count > 0) {
+        result = child;
+        CFRetain(result);
+        break;
       }
       (void)desc;
     }
   }
 
-  CFRelease(childrenRef);
   return result;
 }
 
@@ -1161,6 +1485,54 @@ static NSNumber *FBBoolAttributeFromAXElement(AXUIElementRef element, CFStringRe
   return [dict copy];
 }
 
+// Some bridged iOS containers (notably the iOS 26 floating tab bar) return an empty
+// kAXChildrenAttribute even though their children show up under attributes like
+// AXChildrenInNavigationOrder, AXTabs, AXVisibleChildren, etc. Accessibility Inspector
+// surfaces those tabs because it falls back across these alternate attributes.
+// We mirror that behaviour by collecting children from every standard child-providing
+// attribute and deduplicating by AXUIElementRef value (CFEqual-based) while preserving
+// first-seen order, so kAXChildrenAttribute remains canonical when populated.
++ (NSArray *)mergedChildrenOfAXElement:(AXUIElementRef)element
+{
+  static CFStringRef const attrs[] = {
+    kAXChildrenAttribute,
+    CFSTR("AXChildrenInNavigationOrder"),
+    kAXTabsAttribute,
+    kAXVisibleChildrenAttribute,
+    kAXSelectedChildrenAttribute,
+    kAXContentsAttribute,
+  };
+  NSMutableArray *merged = [NSMutableArray array];
+  CFMutableSetRef seen = CFSetCreateMutable(NULL, 0, &kCFTypeSetCallBacks);
+  for (size_t i = 0; i < sizeof(attrs) / sizeof(attrs[0]); i++) {
+    CFTypeRef value = NULL;
+    AXError err = AXUIElementCopyAttributeValue(element, attrs[i], &value);
+    if (err != kAXErrorSuccess || value == NULL) {
+      continue;
+    }
+    if (CFGetTypeID(value) != CFArrayGetTypeID()) {
+      CFRelease(value);
+      continue;
+    }
+    CFArrayRef arr = (CFArrayRef)value;
+    CFIndex count = CFArrayGetCount(arr);
+    for (CFIndex j = 0; j < count; j++) {
+      const void *item = CFArrayGetValueAtIndex(arr, j);
+      if (item == NULL || CFGetTypeID(item) != AXUIElementGetTypeID()) {
+        continue;
+      }
+      if (CFSetContainsValue(seen, item)) {
+        continue;
+      }
+      CFSetAddValue(seen, item);
+      [merged addObject:(__bridge id)item];
+    }
+    CFRelease(arr);
+  }
+  CFRelease(seen);
+  return merged;
+}
+
 + (NSArray<NSDictionary<NSString *, id> *> *)flatArrayFromAXElement:(AXUIElementRef)element origin:(CGPoint)containerOrigin
 {
   NSMutableArray<NSDictionary<NSString *, id> *> *results = [NSMutableArray array];
@@ -1172,16 +1544,9 @@ static NSNumber *FBBoolAttributeFromAXElement(AXUIElementRef element, CFStringRe
 {
   [results addObject:[self dictionaryFromAXElement:element origin:containerOrigin]];
 
-  CFArrayRef childrenRef = NULL;
-  AXError err = AXUIElementCopyAttributeValue(element, kAXChildrenAttribute, (CFTypeRef *)&childrenRef);
-  if (err != kAXErrorSuccess || !childrenRef) return;
-
-  CFIndex count = CFArrayGetCount(childrenRef);
-  for (CFIndex i = 0; i < count; i++) {
-    AXUIElementRef child = (AXUIElementRef)CFArrayGetValueAtIndex(childrenRef, i);
-    [self flatRecurseAXElement:child origin:containerOrigin into:results];
+  for (id child in [self mergedChildrenOfAXElement:element]) {
+    [self flatRecurseAXElement:(__bridge AXUIElementRef)child origin:containerOrigin into:results];
   }
-  CFRelease(childrenRef);
 }
 
 + (NSDictionary<NSString *, id> *)nestedDictionaryFromAXElement:(AXUIElementRef)element origin:(CGPoint)containerOrigin
@@ -1189,18 +1554,11 @@ static NSNumber *FBBoolAttributeFromAXElement(AXUIElementRef element, CFStringRe
   NSMutableDictionary<NSString *, id> *dict = [[self dictionaryFromAXElement:element origin:containerOrigin] mutableCopy];
 
   NSMutableArray<NSDictionary<NSString *, id> *> *childDicts = [NSMutableArray array];
-  CFArrayRef childrenRef = NULL;
-  AXError err = AXUIElementCopyAttributeValue(element, kAXChildrenAttribute, (CFTypeRef *)&childrenRef);
-  if (err == kAXErrorSuccess && childrenRef) {
-    CFIndex count = CFArrayGetCount(childrenRef);
-    for (CFIndex i = 0; i < count; i++) {
-      AXUIElementRef child = (AXUIElementRef)CFArrayGetValueAtIndex(childrenRef, i);
-      NSDictionary *childDict = [self nestedDictionaryFromAXElement:child origin:containerOrigin];
-      if (childDict) {
-        [childDicts addObject:childDict];
-      }
+  for (id child in [self mergedChildrenOfAXElement:element]) {
+    NSDictionary *childDict = [self nestedDictionaryFromAXElement:(__bridge AXUIElementRef)child origin:containerOrigin];
+    if (childDict) {
+      [childDicts addObject:childDict];
     }
-    CFRelease(childrenRef);
   }
   dict[@"children"] = childDicts;
 

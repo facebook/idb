@@ -15,19 +15,19 @@
 		<dict>
 			<key>cdhash</key>
 			<data>
-			4PxhXxx7iquAvlFYzqN1kz0/YKw=
+			0ATSocdpVAh1qlU4WQ4nTq6ZLfg=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"e0fc615f1c7b8aab80be5158cea375933d3f60ac" or cdhash H"7e61364ba5cc98d4127f0536c57a11fde43e56e4"</string>
+			<string>cdhash H"d004d2a1c769540875aa5538590e274eae992df8" or cdhash H"303f9b73cefa68c22971b4abfe362cb46f2641fb"</string>
 		</dict>
 		<key>Frameworks/XCTestBootstrap.framework</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			oI7Y/5CCMB4qa/cWqdcAsq1wKKo=
+			MsZxJgUXvVM/qSCDuE31HobSwUA=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"a08ed8ff9082301e2a6bf716a9d700b2ad7028aa" or cdhash H"e84739add7a39e20f17abd9788d2c1cd8527b00e"</string>
+			<string>cdhash H"32c671260517bd533fa92083b84df51e86d2c140" or cdhash H"2cbd2b47738f2c343d6526905d09dd184d654196"</string>
 		</dict>
 		<key>Headers/FBAFCConnection.h</key>
 		<dict>

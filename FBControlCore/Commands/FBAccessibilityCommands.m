@@ -63,6 +63,7 @@ NSSet<FBAXKeys> *FBAXKeysDefaultSet(void) {
   _keys = FBAXKeysDefaultSet();
   _enableLogging = NO;
   _enableProfiling = NO;
+  _maxDepth = 0;
 
   return self;
 }
@@ -74,17 +75,19 @@ NSSet<FBAXKeys> *FBAXKeysDefaultSet(void) {
   copy.keys = [self.keys copy];
   copy.enableLogging = self.enableLogging;
   copy.enableProfiling = self.enableProfiling;
+  copy.maxDepth = self.maxDepth;
   return copy;
 }
 
 - (NSString *)description
 {
-  return [NSString stringWithFormat:@"<%@: nested=%@, keys=%@, logging=%@, profiling=%@>",
+  return [NSString stringWithFormat:@"<%@: nested=%@, keys=%@, logging=%@, profiling=%@, maxDepth=%lu>",
           NSStringFromClass(self.class),
           self.nestedFormat ? @"YES" : @"NO",
           self.keys,
           self.enableLogging ? @"YES" : @"NO",
-          self.enableProfiling ? @"YES" : @"NO"];
+          self.enableProfiling ? @"YES" : @"NO",
+          (unsigned long)self.maxDepth];
 }
 
 @end

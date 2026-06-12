@@ -75,6 +75,20 @@ extern NSSet<FBAXKeys> *FBAXKeysDefaultSet(void);
 @property (nonatomic, assign) BOOL enableProfiling;
 
 /**
+ Maximum recursion depth when walking element children.
+ - 0 means unlimited (the original, backward-compatible behaviour).
+ - 1 means leaf-only: only the matched element is serialized; no children are fetched.
+ - N >= 2 means the matched element plus N-1 levels of descendants.
+
+ The merged-children fan-out (AXChildren / AXChildrenInNavigationOrder / AXTabs /
+ AXVisibleChildren / AXSelectedChildren / AXContents) is also skipped when the depth
+ is exhausted, so this is a meaningful per-AXP-roundtrip saving for shallow callers.
+
+ Default: 0 (unlimited).
+ */
+@property (nonatomic, assign) NSUInteger maxDepth;
+
+/**
  Creates options with default values.
  */
 + (instancetype)defaultOptions;

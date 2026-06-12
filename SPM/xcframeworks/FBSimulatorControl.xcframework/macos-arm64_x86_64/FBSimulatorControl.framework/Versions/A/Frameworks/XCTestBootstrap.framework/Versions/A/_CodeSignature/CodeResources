@@ -15,10 +15,10 @@
 		<dict>
 			<key>cdhash</key>
 			<data>
-			Qjqk3ZiGo8gZOceP3/YAgfOrR9s=
+			5yklfQHwDdSNBXUB//HgmlAqL+I=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"423aa4dd9886a3c81939c78fdff60081f3ab47db" or cdhash H"0821307b7da6ec9613cef8c759e9d5e737faf367"</string>
+			<string>cdhash H"e729257d01f00dd48d057501fff1e09a502a2fe2" or cdhash H"17a5334510a1a82e16a7d480d517a56cd6403a8d"</string>
 		</dict>
 		<key>Resources/Info.plist</key>
 		<dict>

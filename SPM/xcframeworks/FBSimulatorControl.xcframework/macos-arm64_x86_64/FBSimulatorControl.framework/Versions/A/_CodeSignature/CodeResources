@@ -31,19 +31,19 @@
 		<dict>
 			<key>cdhash</key>
 			<data>
-			Qjqk3ZiGo8gZOceP3/YAgfOrR9s=
+			5yklfQHwDdSNBXUB//HgmlAqL+I=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"423aa4dd9886a3c81939c78fdff60081f3ab47db" or cdhash H"0821307b7da6ec9613cef8c759e9d5e737faf367"</string>
+			<string>cdhash H"e729257d01f00dd48d057501fff1e09a502a2fe2" or cdhash H"17a5334510a1a82e16a7d480d517a56cd6403a8d"</string>
 		</dict>
 		<key>Frameworks/XCTestBootstrap.framework</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			9k/ltVnAEZhOLV7IBy9EAkiK8pY=
+			EbnQWL9oyou7hb7uezZEY48FGdM=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"f64fe5b559c011984e2d5ec8072f4402488af296" or cdhash H"7e34d35c74e95c3709b2da11cd67e969daadf21c"</string>
+			<string>cdhash H"11b9d058bf68ca8bbb85beee7b3644638f0519d3" or cdhash H"7cabe9f34f7c96d8f349f6376c34040d3182e025"</string>
 		</dict>
 		<key>Headers/FBAppleSimctlCommandExecutor.h</key>
 		<dict>
