@@ -53,11 +53,6 @@ public extension FBSimulatorHIDEvent {
     case let .button(direction, button):
       try await hid.sendButton(direction: direction, button: button)
     case let .keyboard(direction, keyCode):
-      // Under Xcode 27 `dtuhidd` suppresses the legacy keyboard service: the event would be sent
-      // byte-correctly but produce no text. Fail loudly instead of typing into the void.
-      if hid.legacyKeyboardSuppressed() {
-        throw FBSimulatorHIDError.keyboardSuppressedByActiveDTUHIDD
-      }
       try await hid.sendKeyboard(direction: direction, keyCode: keyCode)
     case let .twoFingerTouch(direction, finger1, finger2):
       try await hid.sendTwoFingerTouch(direction: direction, finger1: finger1, finger2: finger2)

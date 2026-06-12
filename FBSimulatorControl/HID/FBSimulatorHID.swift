@@ -11,20 +11,21 @@ import Darwin
 import Foundation
 
 /**
- The HID abstraction layer for a Simulator, providing two transport paths:
+ The HID abstraction layer for a Simulator.
 
- 1. Indigo (IndigoHIDRegistrationPort) — for touch, button, and keyboard events.
-    Payloads are constructed by `FBSimulatorIndigoHID` and delivered by `FBSimulatorIndigoHIDClient`
-    (which owns the runtime-only `SimDeviceLegacyHIDClient`).
-    Guest-side: `SimHIDVirtualServiceManager` dispatches on eventKind + target.
+ Touch, button, and keyboard events are delivered through a pluggable `FBSimulatorHIDTransport`
+ (the legacy Indigo `SimDeviceLegacyHIDClient` path by default). The remaining event families are
+ not transport-switchable and are sent directly from here:
 
- 2. PurpleWorkspacePort — for GSEvent-based events (e.g., device orientation changes).
+ 1. PurpleWorkspacePort — for GSEvent-based events (e.g., device orientation changes).
     Payloads are constructed by `FBSimulatorPurpleHID` and sent via raw `mach_msg`.
     Guest-side: `GraphicsServices._PurpleEventCallback` → backboardd.
 
+ 2. Darwin notifications — e.g. shake, in-call status bar — posted via the SimDevice.
+
  See `Indigo.h` and `GSEvent.h` for wire format documentation.
 
- Indigo message sends are serialized by `FBSimulatorIndigoHIDClient`, so the type is `@unchecked Sendable`.
+ Indigo-family sends are serialized by the transport, so the type is `@unchecked Sendable`.
  */
 public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable {
 
@@ -35,56 +36,43 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
 
   // MARK: Properties
 
-  /// The Indigo payload builder (touch, button, keyboard).
-  public let indigo: FBSimulatorIndigoHID
-  /// The Purple/GSEvent payload builder (orientation, shake).
+  /// The transport for the touch / button / keyboard primitives.
+  private let transport: FBSimulatorHIDTransport
+  /// The Purple/GSEvent payload builder (orientation, lock).
   public let purple: FBSimulatorPurpleHID
-  /// The dimensions of the main screen.
-  public let mainScreenSize: CGSize
-  /// The scale of the main screen.
-  public let mainScreenScale: Float
 
-  /// The client that delivers Indigo message bytes to the simulator.
-  private let indigoClient: FBSimulatorIndigoHIDClient
   private weak var simulator: FBSimulator?
-
-  // Cached legacy-keyboard-suppression check (see `legacyKeyboardSuppressed()`).
-  private let keyboardSuppressionLock = NSLock()
-  private var cachedKeyboardSuppressed: Bool?
 
   // MARK: Initializers
 
   /**
-   Creates and returns a `FBSimulatorHID` instance for the provided Simulator.
+   Creates and returns a `FBSimulatorHID` instance for the provided Simulator using the default
+   (legacy Indigo) transport.
    Will fail if a HID Port could not be registered for the provided Simulator.
    Registration may need to occur prior to booting.
    */
   public static func hid(for simulator: FBSimulator) throws -> FBSimulatorHID {
-    let indigoClient = try FBSimulatorIndigoHIDClient.client(for: simulator.device)
-    let indigo = try FBSimulatorIndigoHID.simulatorKitHID()
-    return FBSimulatorHID(
-      indigo: indigo,
-      purple: FBSimulatorPurpleHID.purple(),
-      indigoClient: indigoClient,
-      simulator: simulator,
-      mainScreenSize: simulator.device.deviceType.mainScreenSize,
-      mainScreenScale: simulator.device.deviceType.mainScreenScale)
+    try hid(for: simulator, transport: .indigo)
   }
 
-  private init(
-    indigo: FBSimulatorIndigoHID,
-    purple: FBSimulatorPurpleHID,
-    indigoClient: FBSimulatorIndigoHIDClient,
-    simulator: FBSimulator,
-    mainScreenSize: CGSize,
-    mainScreenScale: Float
-  ) {
-    self.indigo = indigo
+  /**
+   Creates and returns a `FBSimulatorHID` instance for the provided Simulator using the given transport.
+   */
+  public static func hid(
+    for simulator: FBSimulator, transport transportType: FBSimulatorHIDTransportType
+  ) throws -> FBSimulatorHID {
+    let transport: FBSimulatorHIDTransport
+    switch transportType {
+    case .indigo:
+      transport = try FBSimulatorIndigoHIDTransport.indigo(for: simulator)
+    }
+    return FBSimulatorHID(transport: transport, purple: FBSimulatorPurpleHID.purple(), simulator: simulator)
+  }
+
+  private init(transport: FBSimulatorHIDTransport, purple: FBSimulatorPurpleHID, simulator: FBSimulator) {
+    self.transport = transport
     self.purple = purple
-    self.indigoClient = indigoClient
     self.simulator = simulator
-    self.mainScreenSize = mainScreenSize
-    self.mainScreenScale = mainScreenScale
   }
 
   // MARK: Lifecycle
@@ -93,73 +81,32 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
    Disconnects from the remote HID.
    */
   public func disconnect() {
-    indigoClient.disconnect()
-  }
-
-  /// Whether the legacy keyboard HID service is suppressed for this HID's simulator.
-  ///
-  /// On Xcode 27 (CoreSimulator-1155.4) and later, the host-injected SimulatorHID disconnects the
-  /// legacy `ExternalKeyboardService` while `dtuhidd` is active, so legacy keyboard events are
-  /// delivered byte-correctly but produce no text (touch and the other services are unaffected).
-  /// Cached for this HID's lifetime — the dominant case is a simulator already poisoned at connect
-  /// time, and re-reading per key would re-walk the host process tree on every keystroke.
-  func legacyKeyboardSuppressed() -> Bool {
-    keyboardSuppressionLock.lock()
-    defer { keyboardSuppressionLock.unlock() }
-    if let cachedKeyboardSuppressed {
-      return cachedKeyboardSuppressed
-    }
-    let suppressed = computeLegacyKeyboardSuppressed()
-    cachedKeyboardSuppressed = suppressed
-    return suppressed
-  }
-
-  private func computeLegacyKeyboardSuppressed() -> Bool {
-    // Only CoreSimulator-1155.4+ (Xcode 27) ships the dtuhidd suppression machinery; older
-    // toolchains have no `dtuhidd`, so skip the process-tree walk entirely.
-    guard let version = FBSimulatorControlFrameworkLoader.loadedCoreSimulatorVersion,
-      version.compare("1155.4", options: .numeric) != .orderedAscending
-    else {
-      return false
-    }
-    // `dtuhidd` runs as a child of the simulator's `launchd_sim`; its presence in the simulator's
-    // process subtree is the per-simulator signal. Read host-side (the authoritative guest notify
-    // state `com.apple.coredevice.dtuhidd.active` is not host-bridged).
-    return simulator?.launchdSimSubprocessIdentifier(named: "dtuhidd") != nil
-  }
-
-  // MARK: HID Manipulation
-
-  /**
-   Sends the Indigo event payload, completing when the client acknowledges delivery.
-   */
-  public func sendEvent(_ data: Data) async throws {
-    try await indigoClient.send(data)
+    transport.disconnect()
   }
 
   // MARK: Indigo Event Send Primitives
 
   /// Sends a single-finger touch at the given point (in points).
   func sendTouch(direction: FBSimulatorHIDDirection, x: Double, y: Double) async throws {
-    try await sendEvent(indigo.touchScreenSize(mainScreenSize, screenScale: mainScreenScale, direction: direction, x: x, y: y))
+    try await transport.sendTouch(direction: direction, x: x, y: y)
   }
 
   /// Sends a two-finger touch (for multi-touch gestures) at the given points (in points).
   func sendTwoFingerTouch(direction: FBSimulatorHIDDirection, finger1: CGPoint, finger2: CGPoint) async throws {
-    try await sendEvent(
-      indigo.twoFingerTouchScreenSize(
-        mainScreenSize, screenScale: mainScreenScale, direction: direction, finger1: finger1, finger2: finger2))
+    try await transport.sendTwoFingerTouch(direction: direction, finger1: finger1, finger2: finger2)
   }
 
   /// Sends a hardware button event.
   func sendButton(direction: FBSimulatorHIDDirection, button: FBSimulatorHIDButton) async throws {
-    try await sendEvent(indigo.button(with: direction, button: button))
+    try await transport.sendButton(direction: direction, button: button)
   }
 
   /// Sends a keyboard key event.
   func sendKeyboard(direction: FBSimulatorHIDDirection, keyCode: UInt32) async throws {
-    try await sendEvent(indigo.keyboard(with: direction, keyCode: keyCode))
+    try await transport.sendKeyboard(direction: direction, keyCode: keyCode)
   }
+
+  // MARK: Purple / GSEvents
 
   /**
    Sends a raw mach message to the simulator's PurpleWorkspacePort using a default 2000ms send timeout.
@@ -212,6 +159,8 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
       port: purplePort, detail: String(cString: mach_error_string(kr)), code: kr)
   }
 
+  // MARK: Darwin Notifications
+
   /**
    Posts a Darwin notification to the simulator (e.g. shake, in-call status bar). Synchronous.
    */
@@ -226,48 +175,5 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
 
   public var description: String {
     "SimulatorKit HID"
-  }
-}
-
-// MARK: - Simulator process tree
-
-/// Host-side `launchd_sim` process-tree queries. Kept private to the HID layer (its only consumer),
-/// so it stays off the public `FBSimulator` API and can be inlined further if needed.
-private extension FBSimulator {
-
-  /// The host `launchd_sim` process backing this simulator, matched by the simulator's UDID in its
-  /// arguments, or `nil` if it cannot be found (e.g. the simulator is not booted).
-  func launchdSimProcess(using fetcher: FBProcessFetcher = FBProcessFetcher()) -> FBProcessInfo? {
-    fetcher.processes(withProcessName: "launchd_sim").first { process in
-      process.arguments.contains { $0.contains(udid) }
-    }
-  }
-
-  /// The process identifier of a subprocess of this simulator's `launchd_sim` whose name contains
-  /// `name`, or `nil` if there is none. A purely host-side query of the simulator's process subtree.
-  func launchdSimSubprocessIdentifier(named name: String, using fetcher: FBProcessFetcher = FBProcessFetcher()) -> pid_t? {
-    guard let launchdSim = launchdSimProcess(using: fetcher) else {
-      return nil
-    }
-    let identifier = fetcher.subprocess(of: launchdSim.processIdentifier, withName: name)
-    return identifier > 0 ? identifier : nil
-  }
-}
-
-// MARK: - Loaded CoreSimulator version
-
-/// Kept private to the HID layer (its only consumer): the loaded framework version, read here rather
-/// than swiftifying the Objective-C framework loader (a separate concern).
-private extension FBSimulatorControlFrameworkLoader {
-
-  /// The version of the CoreSimulator framework actually loaded in-process (e.g. `"1155.4"`), read
-  /// from the bundle that vends `SimDevice`, or `nil` if it is not loaded. CoreSimulator is a system
-  /// framework that the Xcode installer overwrites, so the loaded framework can differ from the
-  /// selected Xcode; behaviour gated on a CoreSimulator version must consult this, not the Xcode one.
-  static var loadedCoreSimulatorVersion: String? {
-    guard let simDeviceClass = NSClassFromString("SimDevice") else {
-      return nil
-    }
-    return Bundle(for: simDeviceClass).infoDictionary?["CFBundleVersion"] as? String
   }
 }
