@@ -43,12 +43,24 @@
 
 + (instancetype)sharedServiceContextWithLogger:(id<FBControlCoreLogger>)logger
 {
+  // CoreSimulator's `sharedServiceContextForDeveloperDir:` vends one context
+  // per developer directory. Cache per directory (instead of a single
+  // process-lifetime instance) so hosts that switch Xcode at runtime get a
+  // context for the newly selected developer directory without a restart.
   static dispatch_once_t onceToken;
-  static FBSimulatorServiceContext *serviceContext = nil;
+  static NSMutableDictionary<NSString *, FBSimulatorServiceContext *> *serviceContexts = nil;
   dispatch_once(&onceToken, ^{
-    serviceContext = [self createServiceContextWithLogger:logger];
+    serviceContexts = [NSMutableDictionary dictionary];
   });
-  return serviceContext;
+  NSString *developerDirectory = [FBXcodeConfiguration getDeveloperDirectoryIfExists] ?: @"";
+  @synchronized (serviceContexts) {
+    FBSimulatorServiceContext *serviceContext = serviceContexts[developerDirectory];
+    if (!serviceContext) {
+      serviceContext = [self createServiceContextWithLogger:logger];
+      serviceContexts[developerDirectory] = serviceContext;
+    }
+    return serviceContext;
+  }
 }
 
 #pragma mark Initialization Private

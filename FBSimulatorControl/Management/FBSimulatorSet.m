@@ -218,9 +218,50 @@
 - (NSArray<FBSimulator *> *)allSimulators
 {
   _allSimulators = [[self.inflationStrategy
-    inflateFromDevices:self.deviceSet.availableDevices exitingSimulators:_allSimulators]
+    inflateFromDevices:self.devicesForInflation exitingSimulators:_allSimulators]
     sortedArrayUsingSelector:@selector(compare:)];
   return _allSimulators;
+}
+
+/**
+ The devices to inflate into FBSimulators: CoreSimulator's `availableDevices`,
+ plus any *booted* device that is missing from it.
+
+ Xcode 27 delivers simulator runtimes as cryptex disk images mounted under
+ /private/var/run/com.apple.security.cryptexd/mnt. Sandboxed host apps are
+ denied file-read access to that mount, so the in-process CoreSimulator cannot
+ register the runtime bundle ("Malformed bundle does not contain an identifier")
+ and classifies the device as unavailable -- even though the device is booted
+ and fully operable over XPC (framebuffer, HID, accessibility all work on the
+ raw SimDevice handle). Including booted devices restores those devices without
+ changing behavior elsewhere: on Xcode <= 26, booted devices are always part of
+ `availableDevices`, so the union is a no-op there. Unavailable *shutdown*
+ devices stay hidden as before.
+ */
+- (NSArray<SimDevice *> *)devicesForInflation
+{
+  NSArray<SimDevice *> *availableDevices = self.deviceSet.availableDevices;
+  NSArray<SimDevice *> *allDevices = self.deviceSet.devices;
+  if (availableDevices.count == allDevices.count) {
+    return availableDevices;
+  }
+  NSMutableSet<NSUUID *> *availableUDIDs = [NSMutableSet setWithCapacity:availableDevices.count];
+  for (SimDevice *device in availableDevices) {
+    if (device.UDID) {
+      [availableUDIDs addObject:device.UDID];
+    }
+  }
+  NSMutableArray<SimDevice *> *devices = [availableDevices mutableCopy];
+  for (SimDevice *device in allDevices) {
+    if (device.state != FBiOSTargetStateBooted) {
+      continue;
+    }
+    if (device.UDID && [availableUDIDs containsObject:device.UDID]) {
+      continue;
+    }
+    [devices addObject:device];
+  }
+  return [devices copy];
 }
 
 #pragma mark FBiOSTargetSet Implementation
