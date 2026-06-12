@@ -9,33 +9,13 @@
 import Darwin
 @preconcurrency import FBControlCore
 import Foundation
-import ObjectiveC
-
-/// Informal protocol for messaging the runtime-only `SimDeviceLegacyHIDClient` class.
-/// That class historically lived in SimulatorKit and has since relocated (e.g. to CoreDeviceIO
-/// in newer Xcodes), and is loaded on demand via dlopen by `FBSimulatorControlFrameworkLoader`.
-/// We therefore never reference it as a Swift type — doing so would emit a link-time
-/// `_OBJC_CLASS_$_SimDeviceLegacyClient` symbol pinned to a single framework, which breaks when
-/// the class moves. Instead we look the class up by name, allocate it with `class_createInstance`,
-/// and message it via `unsafeBitCast` to this protocol — mirroring exactly why the original
-/// Objective-C used `objc_lookUpClass` + `id`.
-@objc private protocol SimDeviceLegacyHIDClientMessaging {
-  @objc(initWithDevice:error:)
-  func initWithDevice(_ device: Any, error: AutoreleasingUnsafeMutablePointer<AnyObject?>?) -> AnyObject?
-
-  @objc(sendWithMessage:freeWhenDone:completionQueue:completion:)
-  func send(
-    withMessage message: UnsafeMutableRawPointer,
-    freeWhenDone: Bool,
-    completionQueue: DispatchQueue,
-    completion: @escaping @Sendable (Error?) -> Void)
-}
 
 /**
  The HID abstraction layer for a Simulator, providing two transport paths:
 
  1. Indigo (IndigoHIDRegistrationPort) — for touch, button, and keyboard events.
-    Payloads are constructed by `FBSimulatorIndigoHID` and sent via `SimDeviceLegacyHIDClient`.
+    Payloads are constructed by `FBSimulatorIndigoHID` and delivered by `FBSimulatorIndigoHIDClient`
+    (which owns the runtime-only `SimDeviceLegacyHIDClient`).
     Guest-side: `SimHIDVirtualServiceManager` dispatches on eventKind + target.
 
  2. PurpleWorkspacePort — for GSEvent-based events (e.g., device orientation changes).
@@ -44,11 +24,9 @@ import ObjectiveC
 
  See `Indigo.h` and `GSEvent.h` for wire format documentation.
 
- Message sends are serialized onto the private `queue`, so the type is `@unchecked Sendable`.
+ Indigo message sends are serialized by `FBSimulatorIndigoHIDClient`, so the type is `@unchecked Sendable`.
  */
 public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable {
-
-  private static let simulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHIDClient"
 
   /// Default Mach send timeout (in milliseconds) for the `sendPurpleEvent:` convenience wrapper.
   /// Healthy round-trips return in low single-digit milliseconds; 2000ms absorbs scheduler jitter
@@ -57,8 +35,6 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
 
   // MARK: Properties
 
-  /// The Queue on which messages are sent to the HID Server.
-  public let queue: DispatchQueue
   /// The Indigo payload builder (touch, button, keyboard).
   public let indigo: FBSimulatorIndigoHID
   /// The Purple/GSEvent payload builder (orientation, shake).
@@ -68,9 +44,8 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
   /// The scale of the main screen.
   public let mainScreenScale: Float
 
-  // Untyped on purpose: the concrete `SimDeviceLegacyHIDClient` is a runtime-only class (see
-  // SimDeviceLegacyHIDClientMessaging). Messaged via unsafeBitCast to that protocol.
-  private var client: AnyObject?
+  /// The client that delivers Indigo message bytes to the simulator.
+  private let indigoClient: FBSimulatorIndigoHIDClient
   private weak var simulator: FBSimulator?
 
   // Cached legacy-keyboard-suppression check (see `legacyKeyboardSuppressed()`).
@@ -79,58 +54,37 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
 
   // MARK: Initializers
 
-  private static var workQueue: DispatchQueue {
-    DispatchQueue(label: "com.facebook.fbsimulatorcontrol.hid")
-  }
-
   /**
    Creates and returns a `FBSimulatorHID` instance for the provided Simulator.
    Will fail if a HID Port could not be registered for the provided Simulator.
    Registration may need to occur prior to booting.
    */
   public static func hid(for simulator: FBSimulator) throws -> FBSimulatorHID {
-    guard let clientClass = objc_lookUpClass(simulatorHIDClientClassName) else {
-      throw FBSimulatorHIDError.clientClassUnavailable(className: simulatorHIDClientClassName)
-    }
-    // Allocate + initialize the runtime-only client without a link-time class reference.
-    let allocated = class_createInstance(clientClass, 0) as AnyObject
-    var clientError: AnyObject?
-    guard
-      let client = unsafeBitCast(allocated, to: SimDeviceLegacyHIDClientMessaging.self)
-        .initWithDevice(simulator.device, error: &clientError)
-    else {
-      throw FBSimulatorHIDError.clientCreationFailed(clientClass: "\(clientClass)", underlying: clientError as? Error)
-    }
+    let indigoClient = try FBSimulatorIndigoHIDClient.client(for: simulator.device)
     let indigo = try FBSimulatorIndigoHID.simulatorKitHID()
-    let mainScreenSize = simulator.device.deviceType.mainScreenSize
-    let scale = simulator.device.deviceType.mainScreenScale
-    let purple = FBSimulatorPurpleHID.purple()
     return FBSimulatorHID(
       indigo: indigo,
-      purple: purple,
-      client: client,
+      purple: FBSimulatorPurpleHID.purple(),
+      indigoClient: indigoClient,
       simulator: simulator,
-      mainScreenSize: mainScreenSize,
-      mainScreenScale: scale,
-      queue: workQueue)
+      mainScreenSize: simulator.device.deviceType.mainScreenSize,
+      mainScreenScale: simulator.device.deviceType.mainScreenScale)
   }
 
   private init(
     indigo: FBSimulatorIndigoHID,
     purple: FBSimulatorPurpleHID,
-    client: AnyObject,
+    indigoClient: FBSimulatorIndigoHIDClient,
     simulator: FBSimulator,
     mainScreenSize: CGSize,
-    mainScreenScale: Float,
-    queue: DispatchQueue
+    mainScreenScale: Float
   ) {
     self.indigo = indigo
     self.purple = purple
-    self.client = client
+    self.indigoClient = indigoClient
     self.simulator = simulator
     self.mainScreenSize = mainScreenSize
     self.mainScreenScale = mainScreenScale
-    self.queue = queue
   }
 
   // MARK: Lifecycle
@@ -139,7 +93,7 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
    Disconnects from the remote HID.
    */
   public func disconnect() {
-    client = nil
+    indigoClient.disconnect()
   }
 
   /// Whether the legacy keyboard HID service is suppressed for this HID's simulator.
@@ -177,42 +131,10 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
   // MARK: HID Manipulation
 
   /**
-   Sends the event payload, completing when the client acknowledges delivery.
+   Sends the Indigo event payload, completing when the client acknowledges delivery.
    */
   public func sendEvent(_ data: Data) async throws {
-    try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-      queue.async { [self] in
-        sendIndigoMessageData(data, completionQueue: queue) { error in
-          if let error {
-            continuation.resume(throwing: error)
-          } else {
-            continuation.resume()
-          }
-        }
-      }
-    }
-  }
-
-  /**
-   Sends the event payload, synchronously. Callers must guarantee all calls are from the same queue.
-   */
-  public func sendIndigoMessageData(_ data: Data, completionQueue: DispatchQueue, completion: @escaping @Sendable (Error?) -> Void) {
-    // The event is delivered asynchronously. Copy the message and let the client manage its lifecycle:
-    // the free of the buffer is performed by the client (freeWhenDone) and the Data frees when out of scope.
-    let size = data.count
-    guard let raw = malloc(size) else {
-      fatalError("Failed to allocate \(size) bytes for an Indigo message")
-    }
-    data.withUnsafeBytes { (buffer: UnsafeRawBufferPointer) in
-      guard let base = buffer.baseAddress else { return }
-      raw.copyMemory(from: base, byteCount: size)
-    }
-    guard let client else {
-      free(raw)
-      return
-    }
-    unsafeBitCast(client, to: SimDeviceLegacyHIDClientMessaging.self)
-      .send(withMessage: raw, freeWhenDone: true, completionQueue: completionQueue, completion: completion)
+    try await indigoClient.send(data)
   }
 
   /**
@@ -279,7 +201,7 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
   // MARK: CustomStringConvertible
 
   public var description: String {
-    "SimulatorKit HID \(String(describing: client))"
+    "SimulatorKit HID"
   }
 }
 
