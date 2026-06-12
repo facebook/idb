@@ -33,6 +33,8 @@ public enum FBSimulatorHIDError: Error, LocalizedError {
   case machSendFailed(port: mach_port_t, detail: String, code: kern_return_t)
   /// The SimulatorKit framework executable could not be opened.
   case simulatorKitUnavailable
+  /// The legacy keyboard HID service is suppressed because `dtuhidd` is active (Xcode 27+).
+  case keyboardSuppressedByActiveDTUHIDD
 
   public var errorDescription: String? {
     switch self {
@@ -55,6 +57,9 @@ public enum FBSimulatorHIDError: Error, LocalizedError {
       return "mach_msg to PurpleWorkspacePort \(port) failed: \(detail) (kr=0x\(String(code, radix: 16)))"
     case .simulatorKitUnavailable:
       return "Could not open the SimulatorKit framework executable"
+    case .keyboardSuppressedByActiveDTUHIDD:
+      return
+        "Keyboard HID is suppressed because dtuhidd is active (Device Hub is open, or a CoreDevice HID client attached). Boot a fresh simulator with Device Hub closed, or use the CoreDevice HID transport. (Xcode 27 / CoreSimulator-1155.4)"
     }
   }
 }
