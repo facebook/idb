@@ -71,32 +71,15 @@ public final class FBCoreSimulatorNotifier: NSObject {
 
   private init(notifier: AnyObject?, queue: DispatchQueue, block: @escaping @Sendable ([String: Any]) -> Void) {
     self.notifierObj = notifier
-    guard let notifierObj = notifier else {
-      // nil notifier (test doubles) — mimic ObjC nil messaging returning 0
+    // nil for test doubles; mirror ObjC nil-messaging with a 0 handle.
+    guard let notifier = notifier as? SimDeviceNotifier else {
       self.handle = 0
       super.init()
       return
     }
-    let handler: @Sendable ([AnyHashable: Any]?) -> Void = { info in
+    self.handle = notifier.registerNotificationHandler(on: queue) { info in
       block((info as? [String: Any]) ?? [:])
     }
-    // Register via registerNotificationHandlerOnQueue:handler:. It is present on every
-    // supported Xcode; the older no-queue registerNotificationHandler: was removed by
-    // Apple in Xcode 11.0, so there is no fallback left to maintain. The selector has
-    // OS_dispatch_queue type ambiguity in Swift, so we invoke it via method(for:); the
-    // closure is bridged to @convention(block) for proper ObjC block semantics.
-    let onQueueSelector = NSSelectorFromString("registerNotificationHandlerOnQueue:handler:")
-    guard notifierObj.responds(to: onQueueSelector) else {
-      // No registration API available (not expected on supported Xcodes) — degrade to a no-op.
-      self.handle = 0
-      super.init()
-      return
-    }
-    let handlerBlock: @convention(block) ([AnyHashable: Any]?) -> Void = handler
-    let handlerObj = unsafeBitCast(handlerBlock, to: AnyObject.self)
-    typealias RegisterOnQueueFn = @convention(c) (AnyObject, Selector, DispatchQueue, AnyObject) -> UInt64
-    let imp = unsafeBitCast(notifierObj.method(for: onQueueSelector), to: RegisterOnQueueFn.self)
-    self.handle = imp(notifierObj, onQueueSelector, queue, handlerObj)
     super.init()
   }
 }
