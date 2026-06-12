@@ -49,21 +49,18 @@ public extension FBSimulatorHIDEvent {
   func sendAsync(on hid: FBSimulatorHID) async throws {
     switch self {
     case let .touch(direction, x, y):
-      try await hid.sendEvent(
-        hid.indigo.touchScreenSize(hid.mainScreenSize, screenScale: hid.mainScreenScale, direction: direction, x: x, y: y))
+      try await hid.sendTouch(direction: direction, x: x, y: y)
     case let .button(direction, button):
-      try await hid.sendEvent(hid.indigo.button(with: direction, button: button))
+      try await hid.sendButton(direction: direction, button: button)
     case let .keyboard(direction, keyCode):
       // Under Xcode 27 `dtuhidd` suppresses the legacy keyboard service: the event would be sent
       // byte-correctly but produce no text. Fail loudly instead of typing into the void.
       if hid.legacyKeyboardSuppressed() {
         throw FBSimulatorHIDError.keyboardSuppressedByActiveDTUHIDD
       }
-      try await hid.sendEvent(hid.indigo.keyboard(with: direction, keyCode: keyCode))
+      try await hid.sendKeyboard(direction: direction, keyCode: keyCode)
     case let .twoFingerTouch(direction, finger1, finger2):
-      try await hid.sendEvent(
-        hid.indigo.twoFingerTouchScreenSize(
-          hid.mainScreenSize, screenScale: hid.mainScreenScale, direction: direction, finger1: finger1, finger2: finger2))
+      try await hid.sendTwoFingerTouch(direction: direction, finger1: finger1, finger2: finger2)
     case let .delay(duration):
       try await Task.sleep(nanoseconds: UInt64(max(0, duration) * 1_000_000_000))
     case let .deviceOrientation(orientation):

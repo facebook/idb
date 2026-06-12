@@ -137,6 +137,30 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
     try await indigoClient.send(data)
   }
 
+  // MARK: Indigo Event Send Primitives
+
+  /// Sends a single-finger touch at the given point (in points).
+  func sendTouch(direction: FBSimulatorHIDDirection, x: Double, y: Double) async throws {
+    try await sendEvent(indigo.touchScreenSize(mainScreenSize, screenScale: mainScreenScale, direction: direction, x: x, y: y))
+  }
+
+  /// Sends a two-finger touch (for multi-touch gestures) at the given points (in points).
+  func sendTwoFingerTouch(direction: FBSimulatorHIDDirection, finger1: CGPoint, finger2: CGPoint) async throws {
+    try await sendEvent(
+      indigo.twoFingerTouchScreenSize(
+        mainScreenSize, screenScale: mainScreenScale, direction: direction, finger1: finger1, finger2: finger2))
+  }
+
+  /// Sends a hardware button event.
+  func sendButton(direction: FBSimulatorHIDDirection, button: FBSimulatorHIDButton) async throws {
+    try await sendEvent(indigo.button(with: direction, button: button))
+  }
+
+  /// Sends a keyboard key event.
+  func sendKeyboard(direction: FBSimulatorHIDDirection, keyCode: UInt32) async throws {
+    try await sendEvent(indigo.keyboard(with: direction, keyCode: keyCode))
+  }
+
   /**
    Sends a raw mach message to the simulator's PurpleWorkspacePort using a default 2000ms send timeout.
    */

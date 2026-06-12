@@ -171,7 +171,7 @@ import Foundation
     return Data(bytesNoCopy: raw, count: malloc_size(raw), deallocator: .free)
   }
 
-  private static func screenRatio(from point: CGPoint, screenSize: CGSize, screenScale: Float) -> CGPoint {
+  static func screenRatio(from point: CGPoint, screenSize: CGSize, screenScale: Float) -> CGPoint {
     CGPoint(
       x: (point.x * CGFloat(screenScale)) / screenSize.width,
       y: (point.y * CGFloat(screenScale)) / screenSize.height)
