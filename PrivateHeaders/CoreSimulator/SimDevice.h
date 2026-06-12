@@ -277,7 +277,7 @@
  Equivalent to `simctl push <device> <bundleID> <payload.json>`.
  */
 @interface SimDevice (SimPushNotification)
-- (void)sendPushNotificationForBundleID:(NSString *)bundleID jsonPayload:(NSDictionary *)jsonPayload error:(NSError **)error;
+- (BOOL)sendPushNotificationForBundleID:(NSString *)bundleID jsonPayload:(NSDictionary *)jsonPayload error:(NSError **)error;
 @end
 
 /**
