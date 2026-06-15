@@ -271,7 +271,7 @@ public final class FBSimulatorLifecycleCommands: NSObject, FBiOSTargetCommand {
     guard let simulator = self.simulator else {
       throw FBSimulatorError.describe("Simulator deallocated").build()
     }
-    let hid = try FBSimulatorHID.hid(for: simulator)
+    let hid = try FBSimulatorHID(for: simulator)
     self.hid = hid
     return hid
   }

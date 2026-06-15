@@ -51,16 +51,16 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
    Will fail if a HID Port could not be registered for the provided Simulator.
    Registration may need to occur prior to booting.
    */
-  public static func hid(for simulator: FBSimulator) throws -> FBSimulatorHID {
-    try hid(for: simulator, transport: .indigo)
+  public convenience init(for simulator: FBSimulator) throws {
+    try self.init(for: simulator, transport: .indigo)
   }
 
   /**
    Creates and returns a `FBSimulatorHID` instance for the provided Simulator using the given transport.
    */
-  public static func hid(
+  public convenience init(
     for simulator: FBSimulator, transport transportType: FBSimulatorHIDTransportType
-  ) throws -> FBSimulatorHID {
+  ) throws {
     let transport: FBSimulatorHIDTransport
     switch transportType {
     case .indigo:
@@ -68,7 +68,7 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
     case .dtuhid:
       transport = try FBSimulatorDTUHIDTransport.dtuhid(for: simulator)
     }
-    return FBSimulatorHID(transport: transport, purple: FBSimulatorPurpleHID(), simulator: simulator)
+    self.init(transport: transport, purple: FBSimulatorPurpleHID(), simulator: simulator)
   }
 
   private init(transport: FBSimulatorHIDTransport, purple: FBSimulatorPurpleHID, simulator: FBSimulator) {
