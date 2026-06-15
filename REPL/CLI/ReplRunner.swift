@@ -9,6 +9,7 @@
 // patternlint-disable avoid-print-to-prevent-production-overhead
 
 import ArgumentParser
+import CompanionDiscovery
 import Foundation
 import GRPC
 import IDBGRPCSwift
@@ -33,14 +34,21 @@ enum Context {
 /// Shared REPL implementation backing both the `test` and `simulator`
 /// subcommands. Its options are flattened into each subcommand via `@OptionGroup`.
 struct ReplRunner: ParsableArguments {
-  @Option(name: .long, help: "Path to the idb_companion gRPC Unix domain socket.")
-  var companionSocket: String
+  @Option(name: .long, help: "UDID of the simulator to use for execution.")
+  var udid: String
 
   @Option(name: .long, help: "Path to the Swift toolchain used to compile code. Defaults to the selected Xcode toolchain (xcode-select -p).")
   var toolchainPath: String?
 
   @Option(name: .long, help: "Target platform (ios, macos).")
   var platform: Platform
+
+  @Option(
+    name: .long,
+    help: ArgumentHelp(
+      "Path to the idb_companion binary, overriding the default system installed binary.",
+      visibility: .hidden))
+  var idbCompanionBinary: String?
 
   func run(context: Context) async throws {
     let toolchain = try resolveToolchainPath(explicit: toolchainPath)
@@ -59,10 +67,13 @@ struct ReplRunner: ParsableArguments {
       moduleMapPath = nil
     }
 
-    // Connect to idb_companion over its gRPC Unix domain socket.
+    // Discover an already-running idb_companion for this target, or start one,
+    // then connect to it.
+    let companion = try companionManager().companionInfo(forUDID: udid)
+
     let group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
     let channel = try GRPCChannelPool.with(
-      target: .unixDomainSocket(companionSocket),
+      target: connectionTarget(for: companion.address),
       transportSecurity: .plaintext,
       eventLoopGroup: group
     )
@@ -154,6 +165,23 @@ struct ReplRunner: ParsableArguments {
     try? await channel.close().get()
     try? await group.shutdownGracefully()
     sessionDirectory.cleanup()
+  }
+
+  private func companionManager() -> CompanionManager {
+    if let idbCompanionBinary {
+      return CompanionManager(companionPath: idbCompanionBinary)
+    }
+    return CompanionManager()
+  }
+
+  /// Maps a discovered companion's address to a connection target.
+  private func connectionTarget(for address: CompanionAddress) -> ConnectionTarget {
+    switch address {
+    case let .domainSocket(path):
+      return .unixDomainSocket(path)
+    case let .tcp(host, port):
+      return .hostAndPort(host, port)
+    }
   }
 
   private func prepareModuleMap(bundle: TestBundleOptions) throws -> (moduleMap: SwiftModuleMap, path: String) {
