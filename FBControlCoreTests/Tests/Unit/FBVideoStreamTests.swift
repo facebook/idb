@@ -203,6 +203,148 @@ private func CreateNotReadySampleBuffer() -> CMSampleBuffer {
   return sampleBuf!
 }
 
+// Realistic HEVC (Main profile) VPS/SPS/PPS parameter sets, accepted by
+// CMVideoFormatDescriptionCreateFromHEVCParameterSets. Used to build a genuine HEVC
+// format description without pulling VideoToolbox into the FBControlCore test target.
+private let hevcVPS: [UInt8] = [
+  0x40, 0x01, 0x0c, 0x01, 0xff, 0xff, 0x01, 0x60, 0x00, 0x00, 0x03, 0x00,
+  0x90, 0x00, 0x00, 0x03, 0x00, 0x00, 0x03, 0x00, 0x78, 0x99, 0x98, 0x09,
+]
+private let hevcSPS: [UInt8] = [
+  0x42, 0x01, 0x01, 0x01, 0x60, 0x00, 0x00, 0x03, 0x00, 0x90, 0x00, 0x00,
+  0x03, 0x00, 0x00, 0x03, 0x00, 0x78, 0xa0, 0x03, 0xc0, 0x80, 0x10, 0xe5,
+  0x96, 0x56, 0x69, 0x24, 0xca, 0xe0, 0x10, 0x00, 0x00, 0x03, 0x00, 0x10,
+  0x00, 0x00, 0x03, 0x01, 0xe0, 0x80,
+]
+private let hevcPPS: [UInt8] = [
+  0x44, 0x01, 0xc1, 0x72, 0xb4, 0x62, 0x40,
+]
+
+/// Creates a genuine HEVC CMSampleBuffer from synthetic parameter sets + a fake IDR slice.
+/// Returns nil if CoreMedia rejects the parameter sets, so callers can fail in isolation
+/// rather than crashing the whole test bundle.
+private func CreateHEVCSampleBuffer(isKeyFrame: Bool) -> CMSampleBuffer? {
+  var formatDesc: CMFormatDescription?
+  let formatStatus = hevcVPS.withUnsafeBufferPointer { vpsPtr in
+    hevcSPS.withUnsafeBufferPointer { spsPtr in
+      hevcPPS.withUnsafeBufferPointer { ppsPtr in
+        // Order per spec convention: VPS, SPS, PPS.
+        var paramSets: [UnsafePointer<UInt8>] = [vpsPtr.baseAddress!, spsPtr.baseAddress!, ppsPtr.baseAddress!]
+        var paramSizes = [vpsPtr.count, spsPtr.count, ppsPtr.count]
+        return CMVideoFormatDescriptionCreateFromHEVCParameterSets(
+          allocator: nil,
+          parameterSetCount: 3,
+          parameterSetPointers: &paramSets,
+          parameterSetSizes: &paramSizes,
+          nalUnitHeaderLength: 4,
+          extensions: nil,
+          formatDescriptionOut: &formatDesc
+        )
+      }
+    }
+  }
+  guard formatStatus == noErr, let format = formatDesc else {
+    return nil
+  }
+
+  // AVCC NAL data: [4-byte big-endian length][HEVC IDR_W_RADL NAL]. NAL type 19 → header 0x26 0x01.
+  let avccBytes: [UInt8] = [
+    0x00, 0x00, 0x00, 0x06, // NAL length = 6
+    0x26, 0x01, 0xaf, 0x08, 0x40, 0x00, // fake IDR slice
+  ]
+  let avccDataCount = avccBytes.count
+  let avccPtr = UnsafeMutablePointer<UInt8>.allocate(capacity: avccDataCount)
+  avccBytes.withUnsafeBufferPointer { avccPtr.initialize(from: $0.baseAddress!, count: avccDataCount) }
+
+  var blockBuf: CMBlockBuffer?
+  let blockStatus = CMBlockBufferCreateWithMemoryBlock(
+    allocator: nil,
+    memoryBlock: avccPtr,
+    blockLength: avccDataCount,
+    blockAllocator: kCFAllocatorNull,
+    customBlockSource: nil,
+    offsetToData: 0,
+    dataLength: avccDataCount,
+    flags: 0,
+    blockBufferOut: &blockBuf
+  )
+  guard blockStatus == noErr else {
+    return nil
+  }
+
+  var sampleBuf: CMSampleBuffer?
+  var sampleSize = avccDataCount
+  var timing = CMSampleTimingInfo(
+    duration: CMTimeMake(value: 1, timescale: 30),
+    presentationTimeStamp: CMTimeMake(value: 0, timescale: 90000),
+    decodeTimeStamp: .invalid
+  )
+  let sampleStatus = CMSampleBufferCreate(
+    allocator: nil,
+    dataBuffer: blockBuf,
+    dataReady: true,
+    makeDataReadyCallback: nil,
+    refcon: nil,
+    formatDescription: format,
+    sampleCount: 1,
+    sampleTimingEntryCount: 1,
+    sampleTimingArray: &timing,
+    sampleSizeEntryCount: 1,
+    sampleSizeArray: &sampleSize,
+    sampleBufferOut: &sampleBuf
+  )
+  guard sampleStatus == noErr, let sampleBuffer = sampleBuf else {
+    return nil
+  }
+
+  // Non-keyframes carry the NotSync attachment; keyframes omit it (modern VideoToolbox pattern).
+  let attachmentsArray = CMSampleBufferGetSampleAttachmentsArray(sampleBuffer, createIfNecessary: true)!
+  let attachments = unsafeBitCast(CFArrayGetValueAtIndex(attachmentsArray, 0), to: CFMutableDictionary.self)
+  if !isKeyFrame {
+    CFDictionarySetValue(
+      attachments,
+      Unmanaged.passUnretained(kCMSampleAttachmentKey_NotSync).toOpaque(),
+      Unmanaged.passUnretained(kCFBooleanTrue).toOpaque()
+    )
+  }
+
+  return sampleBuffer
+}
+
+/// Wraps the given bytes in a CMBlockBuffer for the JPEG-based frame writers.
+private func CreateBlockBuffer(_ bytes: [UInt8]) -> CMBlockBuffer {
+  let count = bytes.count
+  let ptr = UnsafeMutablePointer<UInt8>.allocate(capacity: count)
+  bytes.withUnsafeBufferPointer { ptr.initialize(from: $0.baseAddress!, count: count) }
+
+  var blockBuf: CMBlockBuffer?
+  let status = CMBlockBufferCreateWithMemoryBlock(
+    allocator: nil,
+    memoryBlock: ptr,
+    blockLength: count,
+    blockAllocator: kCFAllocatorNull,
+    customBlockSource: nil,
+    offsetToData: 0,
+    dataLength: count,
+    flags: 0,
+    blockBufferOut: &blockBuf
+  )
+  precondition(status == noErr, "Failed to create block buffer: \(status)")
+  return blockBuf!
+}
+
+/// Returns the PID of every 188-byte TS packet in the data, in order.
+private func TSPacketPIDs(_ data: Data) -> [UInt16] {
+  let bytes = [UInt8](data)
+  var pids: [UInt16] = []
+  var i = 0
+  while i + 188 <= bytes.count {
+    pids.append((UInt16(bytes[i + 1] & 0x1F) << 8) | UInt16(bytes[i + 2]))
+    i += 188
+  }
+  return pids
+}
+
 // MARK: - Tests
 
 final class FBVideoStreamTests: XCTestCase {
@@ -862,5 +1004,193 @@ final class FBVideoStreamTests: XCTestCase {
     let result = WriteH264FrameToFMP4Stream(sampleBuffer, nil, consumer, logger, &error)
     XCTAssertFalse(result)
     XCTAssertNotNil(error)
+  }
+
+  // MARK: MJPEG / Minicap Frame Writers
+
+  func testWriteJPEGDataToMJPEGStreamWritesRawBytes() {
+    let jpeg: [UInt8] = [0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46, 0x49, 0x46, 0xFF, 0xD9]
+    let blockBuffer = CreateBlockBuffer(jpeg)
+    let consumer = FBDataBuffer.accumulatingBuffer()
+    let logger = FBControlCoreLoggerDouble()
+    var error: NSError?
+
+    let result = WriteJPEGDataToMJPEGStream(blockBuffer, consumer, logger, &error)
+    XCTAssertTrue(result)
+    XCTAssertNil(error)
+
+    // MJPEG output is the raw JPEG bytes, unframed.
+    XCTAssertEqual(consumer.data(), Data(jpeg))
+  }
+
+  func testWriteJPEGDataToMinicapStreamPrependsLittleEndianLength() {
+    let jpeg: [UInt8] = [0xFF, 0xD8, 0xFF, 0xD9]
+    let blockBuffer = CreateBlockBuffer(jpeg)
+    let consumer = FBDataBuffer.accumulatingBuffer()
+    let logger = FBControlCoreLoggerDouble()
+    var error: NSError?
+
+    let result = WriteJPEGDataToMinicapStream(blockBuffer, consumer, logger, &error)
+    XCTAssertTrue(result)
+    XCTAssertNil(error)
+
+    let output = consumer.data()
+    XCTAssertEqual(output.count, 4 + jpeg.count)
+
+    // 4-byte little-endian length prefix, then the JPEG payload.
+    var length: UInt32 = 0
+    withUnsafeMutableBytes(of: &length) { $0.copyBytes(from: output.subdata(in: 0..<4)) }
+    XCTAssertEqual(UInt32(littleEndian: length), UInt32(jpeg.count))
+    XCTAssertEqual(output.subdata(in: 4..<output.count), Data(jpeg))
+  }
+
+  // MARK: MPEG-TS Frame Writer (full pipeline)
+
+  func testWriteH264FrameToMPEGTSStreamKeyframeIsWellFormed() {
+    let sampleBuffer = CreateH264SampleBuffer(isKeyFrame: true)
+    let consumer = FBDataBuffer.accumulatingBuffer()
+    let logger = FBControlCoreLoggerDouble()
+    var error: NSError?
+
+    let result = WriteH264FrameToMPEGTSStream(sampleBuffer, nil, consumer, logger, &error)
+    XCTAssertTrue(result)
+    XCTAssertNil(error)
+
+    let output = consumer.data()
+    XCTAssertGreaterThan(output.count, 0)
+    XCTAssertEqual(output.count % 188, 0, "Output must be whole 188-byte TS packets")
+
+    // Every packet starts with the sync byte.
+    let bytes = [UInt8](output)
+    var i = 0
+    while i + 188 <= bytes.count {
+      XCTAssertEqual(bytes[i], 0x47, "Packet at offset \(i) missing sync byte")
+      i += 188
+    }
+
+    // A keyframe emits PAT (0x0000) + PMT (0x0100) for mid-stream join, plus video (0x0101).
+    let pids = Set(TSPacketPIDs(output))
+    XCTAssertTrue(pids.contains(0x0000), "Keyframe should emit a PAT")
+    XCTAssertTrue(pids.contains(0x0100), "Keyframe should emit a PMT")
+    XCTAssertTrue(pids.contains(0x0101), "Should emit video packets")
+  }
+
+  func testWriteH264FrameToMPEGTSStreamNotReadyReturnsError() throws {
+    let sampleBuffer = CreateNotReadySampleBuffer()
+    let consumer = FBDataBuffer.accumulatingBuffer()
+    let logger = FBControlCoreLoggerDouble()
+    var error: NSError?
+
+    let result = WriteH264FrameToMPEGTSStream(sampleBuffer, nil, consumer, logger, &error)
+    XCTAssertFalse(result)
+    XCTAssertTrue(try XCTUnwrap(error).localizedDescription.contains("Sample Buffer is not ready"))
+    XCTAssertEqual(consumer.data().count, 0, "No data should be written for not-ready buffer")
+  }
+
+  // MARK: HEVC Writers
+
+  func testHEVCAnnexBKeyframeEmitsParameterSets() throws {
+    let sampleBuffer = try XCTUnwrap(CreateHEVCSampleBuffer(isKeyFrame: true))
+    let consumer = FBDataBuffer.accumulatingBuffer()
+    let logger = FBControlCoreLoggerDouble()
+    var error: NSError?
+
+    let result = WriteHEVCFrameToAnnexBStream(sampleBuffer, nil, consumer, logger, &error)
+    XCTAssertTrue(result)
+    XCTAssertNil(error)
+
+    let output = consumer.data()
+
+    // Keyframe: VPS, SPS, PPS are each emitted before the NAL data.
+    for (name, set) in [("VPS", hevcVPS), ("SPS", hevcSPS), ("PPS", hevcPPS)] {
+      let range = (output as NSData).range(of: Data(set), options: [], in: NSRange(location: 0, length: output.count))
+      XCTAssertNotEqual(range.location, NSNotFound, "\(name) should be present for an HEVC keyframe")
+    }
+
+    // Output begins with an Annex-B start code.
+    XCTAssertEqual(output.subdata(in: 0..<4), Data([0x00, 0x00, 0x00, 0x01]))
+  }
+
+  func testHEVCMPEGTSStreamKeyframeUsesHEVCStreamType() throws {
+    let sampleBuffer = try XCTUnwrap(CreateHEVCSampleBuffer(isKeyFrame: true))
+    let consumer = FBDataBuffer.accumulatingBuffer()
+    let logger = FBControlCoreLoggerDouble()
+    var error: NSError?
+
+    let result = WriteHEVCFrameToMPEGTSStream(sampleBuffer, nil, consumer, logger, &error)
+    XCTAssertTrue(result)
+    XCTAssertNil(error)
+
+    let output = consumer.data()
+    XCTAssertEqual(output.count % 188, 0)
+
+    // Locate the PMT packet (PID 0x0100) and assert the video stream_type is HEVC (0x24).
+    // PMT packets have no adaptation field, so the section begins at the 5th byte
+    // (4-byte TS header + 1-byte pointer field) and section[12] is the stream_type.
+    let bytes = [UInt8](output)
+    var foundPMT = false
+    var i = 0
+    while i + 188 <= bytes.count {
+      let pid = (UInt16(bytes[i + 1] & 0x1F) << 8) | UInt16(bytes[i + 2])
+      if pid == 0x0100 {
+        XCTAssertEqual(bytes[i + 5 + 12], 0x24, "HEVC PMT video stream_type should be 0x24")
+        foundPMT = true
+      }
+      i += 188
+    }
+    XCTAssertTrue(foundPMT, "Keyframe should emit a PMT")
+  }
+
+  func testHEVCFMP4InitSegmentUsesHVC1AndHVCC() throws {
+    let sampleBuffer = try XCTUnwrap(CreateHEVCSampleBuffer(isKeyFrame: true))
+    let ctx = FBFMP4MuxerContext(hevc: true)
+    let consumer = FBDataBuffer.accumulatingBuffer()
+    let logger = FBControlCoreLoggerDouble()
+    var error: NSError?
+
+    let result = WriteHEVCFrameToFMP4Stream(sampleBuffer, ctx, consumer, logger, &error)
+    XCTAssertTrue(result)
+    XCTAssertNil(error)
+    XCTAssertTrue(ctx.initWritten)
+
+    let output = consumer.data()
+    // First box is ftyp.
+    XCTAssertEqual(output.subdata(in: 4..<8), Data("ftyp".utf8))
+    // ftyp declares the hvc1 brand, and the moov carries an hvcC config box.
+    let hvc1 = (output as NSData).range(of: Data("hvc1".utf8), options: [], in: NSRange(location: 0, length: output.count))
+    XCTAssertNotEqual(hvc1.location, NSNotFound, "fMP4 should declare the hvc1 brand for HEVC")
+    let hvcC = (output as NSData).range(of: Data("hvcC".utf8), options: [], in: NSRange(location: 0, length: output.count))
+    XCTAssertNotEqual(hvcC.location, NSNotFound, "moov should contain an hvcC config box for HEVC")
+  }
+
+  // MARK: MPEG-TS Timed Metadata Stream
+
+  func testEnableMetadataStreamThenWriteTimedMetadataEmitsOnMetadataPID() {
+    // NOTE: FBMPEGTSEnableMetadataStream flips irreversible process-global state; it is
+    // idempotent and existing keyframe TS tests assert packet counts/PIDs that are
+    // unaffected by the metadata-variant PMT, so enabling it here does not perturb them.
+    FBMPEGTSEnableMetadataStream()
+
+    let consumer = FBDataBuffer.accumulatingBuffer()
+    FBMPEGTSWriteTimedMetadata("Chapter Zulu", consumer)
+
+    let output = consumer.data()
+    XCTAssertGreaterThan(output.count, 0, "Enabled metadata stream should emit packets")
+    XCTAssertEqual(output.count % 188, 0)
+
+    // Every emitted packet is on the metadata PID.
+    let bytes = [UInt8](output)
+    var i = 0
+    while i + 188 <= bytes.count {
+      XCTAssertEqual(bytes[i], 0x47)
+      let pid = (UInt16(bytes[i + 1] & 0x1F) << 8) | UInt16(bytes[i + 2])
+      XCTAssertEqual(pid, FBMPEGTSMetadataPID, "Timed metadata must be on the metadata PID")
+      i += 188
+    }
+
+    let id3 = (output as NSData).range(of: Data([UInt8(ascii: "I"), UInt8(ascii: "D"), UInt8(ascii: "3")]), options: [], in: NSRange(location: 0, length: output.count))
+    XCTAssertNotEqual(id3.location, NSNotFound, "ID3 header should be present")
+    let text = (output as NSData).range(of: "Chapter Zulu".data(using: .utf8)!, options: [], in: NSRange(location: 0, length: output.count))
+    XCTAssertNotEqual(text.location, NSNotFound, "Chapter text should be present")
   }
 }
