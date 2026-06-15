@@ -102,7 +102,6 @@ final class FBSimulatorDTUHIDTransportTests: XCTestCase {
       connection: connection, mainScreenSize: CGSize(width: 100, height: 200), mainScreenScale: 2.0)
     defer { transport.disconnect() }
 
-    await assertThrowsNotImplemented { try await transport.sendKeyboard(direction: .down, keyCode: 4) }
     await assertThrowsNotImplemented { try await transport.sendButton(direction: .down, button: .homeButton) }
     await assertThrowsNotImplemented {
       try await transport.sendTwoFingerTouch(direction: .down, finger1: .zero, finger2: .zero)
@@ -137,12 +136,45 @@ final class FBSimulatorDTUHIDTransportTests: XCTestCase {
     XCTAssertEqual(xpc_dictionary_get_uint64(payload!, "value"), 7)
   }
 
+  // MARK: Keyboard encoding
+
+  func testKeyboardButtonEventEnvelope() throws {
+    let down = try encodeKeyboard(IndigoKeyboardButtonEvent(usageCode: 4, state: .down)) // 'a'
+    XCTAssertEqual(xpc_get_type(down), XPC_TYPE_DICTIONARY)
+    XCTAssertEqual(messageString(down, "messageType"), "IndigoKeyboardButtonEvent")
+    XCTAssertEqual(messageString(down, "featureIdentifier"), FBSimulatorDTUHIDTransport.digitizerServiceName)
+
+    let payload = xpc_dictionary_get_dictionary(down, "payload")!
+    XCTAssertEqual(xpc_get_type(xpc_dictionary_get_value(payload, "usageCode")!), XPC_TYPE_UINT64)
+    XCTAssertEqual(xpc_dictionary_get_uint64(payload, "usageCode"), 4)
+    XCTAssertEqual(xpc_get_type(xpc_dictionary_get_value(payload, "state")!), XPC_TYPE_UINT64)
+    XCTAssertEqual(xpc_dictionary_get_uint64(payload, "state"), 1) // down
+
+    let up = try encodeKeyboard(IndigoKeyboardButtonEvent(usageCode: 0xE1, state: .up)) // left-shift up
+    let upPayload = xpc_dictionary_get_dictionary(up, "payload")!
+    XCTAssertEqual(xpc_dictionary_get_uint64(upPayload, "usageCode"), 0xE1)
+    XCTAssertEqual(xpc_dictionary_get_uint64(upPayload, "state"), 2) // up
+  }
+
+  func testHIDButtonStateRawValues() {
+    XCTAssertEqual(HIDButtonState.down.rawValue, 1)
+    XCTAssertEqual(HIDButtonState.up.rawValue, 2)
+  }
+
   // MARK: Helpers
 
   private func encodeDigitizer(_ event: IndigoDigitizerEvent) throws -> xpc_object_t {
     try XPCEncoder().encode(
       DTUHIDMessage(
         messageType: "IndigoDigitizerEvent",
+        featureIdentifier: FBSimulatorDTUHIDTransport.digitizerServiceName,
+        payload: event))
+  }
+
+  private func encodeKeyboard(_ event: IndigoKeyboardButtonEvent) throws -> xpc_object_t {
+    try XPCEncoder().encode(
+      DTUHIDMessage(
+        messageType: "IndigoKeyboardButtonEvent",
         featureIdentifier: FBSimulatorDTUHIDTransport.digitizerServiceName,
         payload: event))
   }

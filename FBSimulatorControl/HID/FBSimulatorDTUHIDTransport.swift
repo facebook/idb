@@ -153,7 +153,10 @@ actor FBSimulatorDTUHIDTransport: FBSimulatorHIDTransport {
   }
 
   func sendKeyboard(direction: FBSimulatorHIDDirection, keyCode: UInt32) async throws {
-    throw FBSimulatorHIDError.notImplementedOnDTUHIDTransport(operation: "sendKeyboard")
+    let state: HIDButtonState = direction == .down ? .down : .up
+    try await send(
+      messageType: "IndigoKeyboardButtonEvent",
+      payload: IndigoKeyboardButtonEvent(usageCode: UInt64(keyCode), state: state))
   }
 
   // MARK: Sending

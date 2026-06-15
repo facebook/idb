@@ -72,3 +72,20 @@ struct IndigoDigitizerEvent: Encodable {
     self.target = target
   }
 }
+
+/// The `dtuhidd` `HIDButtonState`, shared by keyboard and hardware-button events. It is 1-based:
+/// value `0` is rejected at decode (confirmed live — "Cannot initialize HIDButtonState from invalid
+/// UInt8 value 0"), so these are `down = 1`, `up = 2`. Encodes as a `uint64`.
+enum HIDButtonState: UInt64, Encodable {
+  case down = 1
+  case up = 2
+}
+
+/**
+ The `dtuhidd` `IndigoKeyboardButtonEvent` payload: a USB HID keyboard `usageCode` (the same value
+ the legacy path forwards) and its `state`. Both ride as `uint64`.
+ */
+struct IndigoKeyboardButtonEvent: Encodable {
+  let usageCode: UInt64
+  let state: HIDButtonState
+}
