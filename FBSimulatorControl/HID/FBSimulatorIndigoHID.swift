@@ -30,12 +30,12 @@ public final class FBSimulatorIndigoHID {
 
   /// The SimulatorKit implementation. Loads the xcode private frameworks and resolves the
   /// `IndigoHIDMessageFor*` symbols from the SimulatorKit dylib.
-  public static func simulatorKitHID() throws -> FBSimulatorIndigoHID {
+  public convenience init() throws {
     try FBSimulatorControlFrameworkLoader.xcodeFrameworks.loadPrivateFrameworks(nil)
     guard let handle = Bundle(identifier: "com.apple.SimulatorKit")?.dlopenExecutablePath() else {
       throw FBSimulatorHIDError.simulatorKitUnavailable
     }
-    return FBSimulatorIndigoHID(
+    self.init(
       messageForButton: unsafeBitCast(FBGetSymbolFromHandle(handle, "IndigoHIDMessageForButton"), to: MessageForButtonFn.self),
       messageForKeyboardArbitrary: unsafeBitCast(
         FBGetSymbolFromHandle(handle, "IndigoHIDMessageForKeyboardArbitrary"), to: MessageForKeyboardArbitraryFn.self),

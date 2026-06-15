@@ -44,7 +44,7 @@ actor FBSimulatorIndigoHIDTransport: FBSimulatorHIDTransport {
   static func indigo(for simulator: FBSimulator) throws -> FBSimulatorIndigoHIDTransport {
     FBSimulatorIndigoHIDTransport(
       indigoClient: try FBSimulatorIndigoHIDClient.client(for: simulator.device),
-      indigo: try FBSimulatorIndigoHID.simulatorKitHID(),
+      indigo: try FBSimulatorIndigoHID(),
       mainScreenSize: simulator.device.deviceType.mainScreenSize,
       mainScreenScale: simulator.device.deviceType.mainScreenScale,
       simulatorUDID: simulator.udid)

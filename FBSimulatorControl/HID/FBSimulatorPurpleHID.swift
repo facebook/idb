@@ -29,13 +29,6 @@ public final class FBSimulatorPurpleHID {
   private static let gsEventMachMessageID: UInt32 = 0x7B
 
   /**
-   Creates a new `FBSimulatorPurpleHID` instance.
-   */
-  public class func purple() -> FBSimulatorPurpleHID {
-    FBSimulatorPurpleHID()
-  }
-
-  /**
    Constructs a GSEvent orientation change mach message.
    The message uses GSEvent type 50 (kGSEventDeviceOrientationChanged) with the host flag.
 

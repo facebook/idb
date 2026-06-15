@@ -17,7 +17,7 @@ final class FBSimulatorIndigoHIDTests: XCTestCase {
 
   override class func setUp() {
     super.setUp()
-    // FBSimulatorIndigoHID.simulatorKitHID() dlopens SimulatorKit. Pre-load the private
+    // FBSimulatorIndigoHID() dlopens SimulatorKit. Pre-load the private
     // frameworks with the default logger (CoreSimulator, then SimulatorKit) so that the
     // builder's internal load is a no-op — its nil-logger load path would otherwise crash
     // when it is the first loader call in a bare unit-test process.
@@ -28,7 +28,7 @@ final class FBSimulatorIndigoHIDTests: XCTestCase {
   // MARK: - Helpers
 
   private func makeIndigo() throws -> FBSimulatorIndigoHID {
-    try FBSimulatorIndigoHID.simulatorKitHID()
+    try FBSimulatorIndigoHID()
   }
 
   private func uint8(at offset: Int, in data: Data) -> UInt8 {
