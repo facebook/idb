@@ -264,7 +264,8 @@ function invoke_xcodebuild() {
   # Add -skipMacroValidation to work around sandbox restrictions on Swift macro plugins
   # Add ENABLE_USER_SCRIPT_SANDBOXING=NO to disable sandbox for macros
   # Add CLANG_ENABLE_EXPLICIT_MODULES=NO to mirror Configuration/Shared.xcconfig
-  local common_settings="-skipMacroValidation ENABLE_USER_SCRIPT_SANDBOXING=NO CLANG_ENABLE_EXPLICIT_MODULES=NO"
+  # Add ARCHS=arm64 to build arm64 only (no Intel/x86_64 slices).
+  local common_settings="-skipMacroValidation ENABLE_USER_SCRIPT_SANDBOXING=NO CLANG_ENABLE_EXPLICIT_MODULES=NO ARCHS=arm64"
   if [[ -n $HAS_XCPRETTY ]]; then
     NSUnbufferedIO=YES xcodebuild $common_settings SYMROOT="$symroot" OBJROOT="$objroot" $arguments | xcpretty -c
   else
