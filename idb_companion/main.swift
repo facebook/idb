@@ -350,35 +350,18 @@ private func listFuture(_ userDefaults: UserDefaults, xcodeAvailable: Bool, logg
       }) as! FBFuture<NSNull>
 }
 
-private func createFuture(_ create: String, userDefaults: UserDefaults, logger: FBControlCoreLogger, reporter: FBEventReporter) -> FBFuture<NSNull> {
-  return (simulatorSet(userDefaults, logger: logger, reporter: reporter) as FBFuture)
-    .onQueue(
-      DispatchQueue.main,
-      fmap: { (setObj: AnyObject) -> FBFuture<AnyObject> in
-        let set = setObj as! FBSimulatorSet
-        let parameters = create.components(separatedBy: ",")
-        var config: FBSimulatorConfiguration
-        do {
-          config = try FBSimulatorConfiguration.defaultConfiguration()
-        } catch {
-          return FBFuture(error: error as NSError)
-        }
-        if parameters.count > 0 {
-          config = config.withDeviceModel(FBDeviceModel(rawValue: parameters[0]))
-        }
-        if parameters.count > 1 {
-          config = config.withOSNamed(FBOSVersionName(rawValue: parameters[1]))
-        }
-        return set.createSimulator(with: config) as! FBFuture<AnyObject>
-      }
-    )
-    .onQueue(
-      DispatchQueue.main,
-      map: { (simObj: AnyObject) -> AnyObject in
-        let simulator = simObj as! FBSimulator
-        writeTargetToStdOut(simulator)
-        return NSNull()
-      }) as! FBFuture<NSNull>
+private func createFuture(_ create: String, userDefaults: UserDefaults, logger: FBControlCoreLogger, reporter: FBEventReporter) async throws {
+  let parameters = create.components(separatedBy: ",")
+  var config = try FBSimulatorConfiguration.defaultConfiguration()
+  if parameters.count > 0 {
+    config = config.withDeviceModel(FBDeviceModel(rawValue: parameters[0]))
+  }
+  if parameters.count > 1 {
+    config = config.withOSNamed(FBOSVersionName(rawValue: parameters[1]))
+  }
+  let set = try await bridgeFBFuture(simulatorSet(userDefaults, logger: logger, reporter: reporter))
+  let simulator = try await bridgeFBFuture(set.createSimulator(with: config))
+  writeTargetToStdOut(simulator)
 }
 
 private func cloneFuture(_ udid: String, userDefaults: UserDefaults, logger: FBControlCoreLogger, reporter: FBEventReporter) -> FBFuture<NSNull> {
@@ -632,7 +615,11 @@ private func getCompanionCompletedFuture(_ userDefaults: UserDefaults, xcodeAvai
     return FBFuture(result: deleteFuture(deleteArg, userDefaults: userDefaults, logger: logger, reporter: reporter))
   } else if let create {
     logger.info().log("Creating \(create)")
-    return FBFuture(result: createFuture(create, userDefaults: userDefaults, logger: logger, reporter: reporter))
+    return FBFuture(
+      result: fbFutureFromAsync {
+        try await createFuture(create, userDefaults: userDefaults, logger: logger, reporter: reporter)
+        return NSNull()
+      })
   } else if let clone {
     logger.info().log("Cloning \(clone)")
     return FBFuture(result: cloneFuture(clone, userDefaults: userDefaults, logger: logger, reporter: reporter))
