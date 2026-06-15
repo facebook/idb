@@ -390,9 +390,7 @@ function build_idb_companion() {
 #
 #   <dist>/
 #     idb_companion              the executable
-#     *.framework               linked/loaded via @executable_path
 #     *.bundle                  SwiftPM resource bundles (Bundle.module -> Bundle.main)
-#     PackageFrameworks/        dynamic SwiftPM frameworks, when the build produces any
 #     Resources/
 #       libShimulator-iOS.dylib
 #       libShimulator-macOS.dylib
@@ -430,18 +428,6 @@ function build_distribution() {
 
   # Companion executable.
   cp "$release/idb_companion" "$dist/"
-
-  # Frameworks idb_companion links/loads via @executable_path.
-  local framework
-  for framework in "$release"/*.framework; do
-    [ -d "$framework" ] || continue
-    ditto "$framework" "$dist/$(basename "$framework")"
-  done
-
-  # Dynamic SwiftPM frameworks, if the build produced any.
-  if [ -d "$release/PackageFrameworks" ] && [ -n "$(ls -A "$release/PackageFrameworks" 2>/dev/null)" ]; then
-    ditto "$release/PackageFrameworks" "$dist/PackageFrameworks"
-  fi
 
   # SwiftPM resource bundles (Bundle.module resolves relative to Bundle.main).
   local bundle

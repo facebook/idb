@@ -33,6 +33,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.facebook.FBControlCore
         PRODUCT_NAME: FBControlCore
         DEFINES_MODULE: YES
+        MACH_O_TYPE: staticlib
         # Mixed-language workaround: Xcode 26 omits the Swift module's emit
         # directory from HEADER_SEARCH_PATHS, so `#import "FBControlCore-Swift.h"`
         # in .m files fails to find the Swift-generated header. Add the per-arch
@@ -87,11 +88,12 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.facebook.XCTestBootstrap
         PRODUCT_NAME: XCTestBootstrap
         DEFINES_MODULE: YES
+        MACH_O_TYPE: staticlib
         MODULEMAP_FILE: $(SRCROOT)/XCTestBootstrap/module.modulemap
         HEADER_SEARCH_PATHS: $(inherited) $(SRCROOT)/Shims/Shimulator/Tools
     dependencies:
       - target: FBControlCore
-        embed: true
+        embed: false
       - sdk: Cocoa.framework
       - sdk: Foundation.framework
       - sdk: IOKit.framework
@@ -133,6 +135,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.facebook.FBSimulatorControl
         PRODUCT_NAME: FBSimulatorControl
         DEFINES_MODULE: YES
+        MACH_O_TYPE: staticlib
         # Mixed-language workaround: see FBControlCore for rationale.
         HEADER_SEARCH_PATHS: $(inherited) $(SRCROOT)/PrivateHeaders $(OBJECT_FILE_DIR_normal)/$(CURRENT_ARCH)
         # CoreSimulator and SimulatorKit are private Apple frameworks living in
@@ -149,9 +152,9 @@ targets:
         OTHER_LDFLAGS: $(inherited) -weak_library $(SRCROOT)/PrivateHeaders/CoreSimulator/CoreSimulator.tbd -weak_library $(SRCROOT)/PrivateHeaders/AccessibilityPlatformTranslation/AccessibilityPlatformTranslation.tbd
     dependencies:
       - target: FBControlCore
-        embed: true
+        embed: false
       - target: XCTestBootstrap
-        embed: true
+        embed: false
       - sdk: AVFoundation.framework
       - sdk: Accelerate.framework
       - sdk: Cocoa.framework
@@ -207,12 +210,13 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.facebook.FBDeviceControl
         PRODUCT_NAME: FBDeviceControl
         DEFINES_MODULE: YES
+        MACH_O_TYPE: staticlib
         SWIFT_VERSION: "5.0"
     dependencies:
       - target: FBControlCore
-        embed: true
+        embed: false
       - target: XCTestBootstrap
-        embed: true
+        embed: false
       - sdk: AVFoundation.framework
       - sdk: Cocoa.framework
       - sdk: CoreGraphics.framework
@@ -255,6 +259,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.facebook.IDBCompanionUtilities
         PRODUCT_NAME: IDBCompanionUtilities
         DEFINES_MODULE: YES
+        MACH_O_TYPE: staticlib
         SWIFT_VERSION: "5.9"
         GENERATE_INFOPLIST_FILE: YES
         # The @TaskLocal macro lives in SwiftMacros plugin and sometimes can't
@@ -295,17 +300,18 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.facebook.CompanionLib
         PRODUCT_NAME: CompanionLib
         DEFINES_MODULE: YES
+        MACH_O_TYPE: staticlib
         SWIFT_VERSION: "5.0"
         GENERATE_INFOPLIST_FILE: YES
     dependencies:
       - target: FBControlCore
-        embed: true
+        embed: false
       - target: XCTestBootstrap
-        embed: true
+        embed: false
       - target: FBSimulatorControl
-        embed: true
+        embed: false
       - target: FBDeviceControl
-        embed: true
+        embed: false
       - target: IDBCompanionUtilities
-        embed: true
+        embed: false
       - sdk: Foundation.framework

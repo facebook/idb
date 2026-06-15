@@ -70,6 +70,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.facebook.IDBGRPCSwift
         PRODUCT_NAME: IDBGRPCSwift
         DEFINES_MODULE: YES
+        MACH_O_TYPE: staticlib
         SWIFT_VERSION: "5.0"
         GENERATE_INFOPLIST_FILE: YES
     dependencies:
@@ -133,6 +134,16 @@ targets:
         FRAMEWORK_SEARCH_PATHS: $(inherited) $(SRCROOT)/../Build/Products/Release
         # Suppress warnings for existing code patterns that trigger errors with strict settings
         OTHER_CFLAGS: $(inherited) -Wno-implicit-int-conversion -Wno-missing-field-initializers
+        # The frameworks are linked as static archives (MACH_O_TYPE=staticlib), so
+        # pass -ObjC to load every Objective-C class and category from them.
+        # Without it the linker drops category-only object files and their
+        # selectors are missing at runtime.
+        #
+        # CoreSimulator and AccessibilityPlatformTranslation are runtime-loaded
+        # private frameworks. FBSimulatorControl used to weak-link their TBD stubs
+        # at its own link step, but a static archive has no link step, so the final
+        # executable must carry the weak links instead.
+        OTHER_LDFLAGS: $(inherited) -ObjC -weak_library $(SRCROOT)/../PrivateHeaders/CoreSimulator/CoreSimulator.tbd -weak_library $(SRCROOT)/../PrivateHeaders/AccessibilityPlatformTranslation/AccessibilityPlatformTranslation.tbd
         # Use ad-hoc code signing for local development
         CODE_SIGN_IDENTITY: "-"
         CODE_SIGNING_REQUIRED: NO
@@ -141,17 +152,17 @@ targets:
         LD_RUNPATH_SEARCH_PATHS: $(inherited) @executable_path @executable_path/../Frameworks @executable_path/PackageFrameworks
     dependencies:
       - framework: ../Build/Products/Release/FBControlCore.framework
-        embed: true
+        embed: false
       - framework: ../Build/Products/Release/XCTestBootstrap.framework
-        embed: true
+        embed: false
       - framework: ../Build/Products/Release/FBSimulatorControl.framework
-        embed: true
+        embed: false
       - framework: ../Build/Products/Release/FBDeviceControl.framework
-        embed: true
+        embed: false
       - framework: ../Build/Products/Release/CompanionLib.framework
-        embed: true
+        embed: false
       - framework: ../Build/Products/Release/IDBCompanionUtilities.framework
-        embed: true
+        embed: false
       - target: IDBGRPCSwift
         embed: false
       - sdk: Foundation.framework
