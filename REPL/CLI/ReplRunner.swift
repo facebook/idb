@@ -47,6 +47,9 @@ struct ReplRunner: ParsableArguments {
       visibility: .hidden))
   var idbCompanionBinary: String?
 
+  @Argument(help: "An optional line of Swift to compile and run once, printing the result to stdout. If omitted, the interactive REPL starts.")
+  var code: String?
+
   func run(context: Context) async throws {
     let toolchain = try resolveToolchainPath(explicit: toolchainPath)
 
@@ -100,6 +103,44 @@ struct ReplRunner: ParsableArguments {
     let platform = try Platform(deviceType: ready.deviceType)
     let sdkPath = try resolveSDKPath(platform: platform)
     let targetTriple = try resolveTargetTriple(platform: platform)
+
+    // One-shot mode: when a line of code is supplied on the command line, compile
+    // and run just that, print the result to stdout, and exit instead of starting
+    // the interactive REPL.
+    if let code {
+      do {
+        if let dylib = compileRun(swiftCode: code, index: 0, moduleMap: moduleMap, moduleMapPath: moduleMapPath, targetTriple: targetTriple, sdkPath: sdkPath, toolchain: toolchain) {
+          try await call.requestStream.send(
+            .with {
+              $0.control = .execute(
+                .with {
+                  $0.dylib = dylib
+                  $0.symbol = "idb_repl_0"
+                })
+            })
+          switch try await responses.next()?.event {
+          case let .result(result):
+            print(result.output)
+          case let .stopped(stopped):
+            print(stopped.desc.isEmpty ? "idb_companion ended the REPL session" : stopped.desc)
+          case .ready:
+            print("Error: idb_companion sent an unexpected 'ready' event instead of a result")
+          case .none:
+            print("Error: idb_companion closed the REPL stream without returning a result")
+          }
+        }
+      } catch let status as GRPCStatus {
+        print("Error: \(status.message ?? "idb_companion failed with gRPC status \(status.code)")")
+      } catch {
+        print("Error: \(error)")
+      }
+
+      try? await call.requestStream.finish()
+      try? await channel.close().get()
+      try? await group.shutdownGracefully()
+      sessionDirectory.cleanup()
+      return
+    }
 
     printStatus("Connected to \(ready.deviceType) process.", "Type '/help' for available commands.")
 
