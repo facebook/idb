@@ -31,13 +31,30 @@ public final class CompanionManager {
   }
 
   /// Returns the companion to use for `udid`: the one already recorded in the
-  /// registry if present, otherwise a freshly discovered or spawned one.
+  /// registry if it is still reachable, otherwise a freshly discovered or
+  /// spawned one. A recorded companion that has gone away (e.g. it exited but
+  /// left its socket and registry entry behind) is pruned and replaced.
   public func companionInfo(forUDID udid: String) throws -> CompanionInfo {
     let companions = try registry.companions()
     if let existing = companions.first(where: { $0.udid == udid }) {
-      return existing
+      if isAlive(existing) {
+        return existing
+      }
+      try registry.remove(udid: udid)
     }
     return try spawnCompanionServer(udid: udid)
+  }
+
+  /// Whether a recorded companion is still reachable. Domain-socket companions
+  /// are probed by connecting; TCP/remote companions can't be probed cheaply, so
+  /// they are trusted.
+  private func isAlive(_ companion: CompanionInfo) -> Bool {
+    switch companion.address {
+    case let .domainSocket(path):
+      return CompanionConnectivity.isDomainSocketBound(path: path)
+    case .tcp:
+      return true
+    }
   }
 
   /// Ensures a companion exists for `udid` and records it.

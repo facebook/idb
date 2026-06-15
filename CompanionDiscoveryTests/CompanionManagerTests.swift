@@ -95,6 +95,52 @@ struct CompanionManagerTests {
     }
   }
 
+  @Test
+  func prunesStaleDomainSocketEntryAndSpawns() throws {
+    let fakePath = try TestSupport.makeExecutableScript(TestSupport.echoSocketScript)
+    defer { try? FileManager.default.removeItem(atPath: (fakePath as NSString).deletingLastPathComponent) }
+
+    try withTemporaryRegistry { registry in
+      let manager = CompanionManager(companionPath: fakePath, registry: registry)
+      let udid = TestSupport.uniqueUDID()
+      let socketPath = CompanionPaths.companionSocketPath(forUDID: udid)
+      defer {
+        unlink(socketPath)
+        try? FileManager.default.removeItem(atPath: CompanionPaths.logFilePath(forUDID: udid))
+      }
+
+      // A stale entry: a domain socket path that nothing is listening on.
+      try registry.add(CompanionInfo(udid: udid, isLocal: true, pid: nil, address: .domainSocket(path: socketPath)))
+
+      let info = try manager.companionInfo(forUDID: udid)
+      // The dead entry was pruned and a fresh companion spawned (so it has a pid).
+      #expect(info.udid == udid)
+      #expect(info.address == .domainSocket(path: socketPath))
+      #expect(info.pid != nil)
+      let recorded = try registry.companions().count
+      #expect(recorded == 1)
+    }
+  }
+
+  @Test
+  func returnsLiveDomainSocketEntryWithoutSpawning() throws {
+    try withTemporaryRegistry { registry in
+      let udid = TestSupport.uniqueUDID()
+      let socketPath = CompanionPaths.companionSocketPath(forUDID: udid)
+      let fd = TestSupport.makeListeningSocket(at: socketPath)
+      defer {
+        close(fd)
+        unlink(socketPath)
+      }
+      let existing = CompanionInfo(udid: udid, isLocal: true, pid: nil, address: .domainSocket(path: socketPath))
+      try registry.add(existing)
+      // Non-existent companion path: if it tried to spawn, it would throw.
+      let manager = CompanionManager(companionPath: nonexistentCompanionPath(), registry: registry)
+      let info = try manager.companionInfo(forUDID: udid)
+      #expect(info == existing)
+    }
+  }
+
   // MARK: - Helpers
 
   private func nonexistentCompanionPath() -> String {
