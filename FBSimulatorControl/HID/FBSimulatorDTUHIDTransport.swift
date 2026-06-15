@@ -149,7 +149,14 @@ actor FBSimulatorDTUHIDTransport: FBSimulatorHIDTransport {
   }
 
   func sendButton(direction: FBSimulatorHIDDirection, button: FBSimulatorHIDButton) async throws {
-    throw FBSimulatorHIDError.notImplementedOnDTUHIDTransport(operation: "sendButton")
+    guard let usage = button.dtuhidUsage else {
+      throw FBSimulatorHIDError.notImplementedOnDTUHIDTransport(
+        operation: "sendButton(.applePay) — Apple Pay is a double side-button press, not a single HID usage; send two .sideButton presses instead")
+    }
+    let state: HIDButtonState = direction == .down ? .down : .up
+    try await send(
+      messageType: "IndigoButtonEvent",
+      payload: IndigoButtonEvent(usagePage: UInt64(usage.page), usageCode: UInt64(usage.code), state: state))
   }
 
   func sendKeyboard(direction: FBSimulatorHIDDirection, keyCode: UInt32) async throws {
@@ -181,5 +188,29 @@ actor FBSimulatorDTUHIDTransport: FBSimulatorHIDTransport {
     }
     // Keep the connection alive long enough for dtuhidd to consume the event (see settleNanos).
     try? await Task.sleep(nanoseconds: Self.settleNanos)
+  }
+
+}
+
+// MARK: - Button usage mapping
+
+extension FBSimulatorHIDButton {
+
+  /// The HID usage (page, code) that drives this hardware button via `dtuhidd`'s `mainScreenButtons`
+  /// service. All live-confirmed against a booted Xcode 27 / iOS 26 simulator (Consumer page 0x0C).
+  /// Apple Pay has no single usage — it is a double-press of the side button — so it is nil.
+  var dtuhidUsage: (page: UInt16, code: UInt16)? {
+    switch self {
+    case .homeButton:
+      return (0x0C, 0x40) // Consumer: Menu
+    case .lock:
+      return (0x0C, 0x30) // Consumer: Power
+    case .sideButton:
+      return (0x0C, 0x30) // the side button is the power/lock button
+    case .siri:
+      return (0x0C, 0xCF) // Consumer: Voice Command
+    case .applePay:
+      return nil // double-press of the side button; not a single HID usage
+    }
   }
 }

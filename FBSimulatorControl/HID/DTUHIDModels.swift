@@ -89,3 +89,14 @@ struct IndigoKeyboardButtonEvent: Encodable {
   let usageCode: UInt64
   let state: HIDButtonState
 }
+
+/**
+ The `dtuhidd` `IndigoButtonEvent` payload for a hardware button: the HID `usagePage` / `usageCode`
+ identifying the button (see `FBSimulatorDTUHIDTransport.buttonUsage(for:)`) and its `state`. All
+ ride as `uint64`.
+ */
+struct IndigoButtonEvent: Encodable {
+  let usagePage: UInt64
+  let usageCode: UInt64
+  let state: HIDButtonState
+}

@@ -102,10 +102,37 @@ final class FBSimulatorDTUHIDTransportTests: XCTestCase {
       connection: connection, mainScreenSize: CGSize(width: 100, height: 200), mainScreenScale: 2.0)
     defer { transport.disconnect() }
 
-    await assertThrowsNotImplemented { try await transport.sendButton(direction: .down, button: .homeButton) }
     await assertThrowsNotImplemented {
       try await transport.sendTwoFingerTouch(direction: .down, finger1: .zero, finger2: .zero)
     }
+    // Apple Pay has no single HID usage (it is a double side-button press), so it stays unimplemented.
+    await assertThrowsNotImplemented { try await transport.sendButton(direction: .down, button: .applePay) }
+  }
+
+  // MARK: Button encoding
+
+  func testButtonUsageMapping() {
+    XCTAssertEqual(FBSimulatorHIDButton.homeButton.dtuhidUsage?.page, 0x0C)
+    XCTAssertEqual(FBSimulatorHIDButton.homeButton.dtuhidUsage?.code, 0x40)
+    XCTAssertEqual(FBSimulatorHIDButton.lock.dtuhidUsage?.code, 0x30)
+    XCTAssertEqual(FBSimulatorHIDButton.sideButton.dtuhidUsage?.code, 0x30)
+    XCTAssertEqual(FBSimulatorHIDButton.siri.dtuhidUsage?.code, 0xCF)
+    XCTAssertNil(FBSimulatorHIDButton.applePay.dtuhidUsage)
+  }
+
+  func testButtonEventEnvelope() throws {
+    let down = try encodeButton(IndigoButtonEvent(usagePage: 0x0C, usageCode: 0x40, state: .down))
+    XCTAssertEqual(xpc_get_type(down), XPC_TYPE_DICTIONARY)
+    XCTAssertEqual(messageString(down, "messageType"), "IndigoButtonEvent")
+    XCTAssertEqual(messageString(down, "featureIdentifier"), FBSimulatorDTUHIDTransport.digitizerServiceName)
+
+    let payload = xpc_dictionary_get_dictionary(down, "payload")!
+    for key in ["usagePage", "usageCode", "state"] {
+      XCTAssertEqual(xpc_get_type(xpc_dictionary_get_value(payload, key)!), XPC_TYPE_UINT64, "\(key) must be uint64")
+    }
+    XCTAssertEqual(xpc_dictionary_get_uint64(payload, "usagePage"), 0x0C)
+    XCTAssertEqual(xpc_dictionary_get_uint64(payload, "usageCode"), 0x40)
+    XCTAssertEqual(xpc_dictionary_get_uint64(payload, "state"), 1) // down
   }
 
   // MARK: Send pipeline (envelope shape, no connection needed)
@@ -175,6 +202,14 @@ final class FBSimulatorDTUHIDTransportTests: XCTestCase {
     try XPCEncoder().encode(
       DTUHIDMessage(
         messageType: "IndigoKeyboardButtonEvent",
+        featureIdentifier: FBSimulatorDTUHIDTransport.digitizerServiceName,
+        payload: event))
+  }
+
+  private func encodeButton(_ event: IndigoButtonEvent) throws -> xpc_object_t {
+    try XPCEncoder().encode(
+      DTUHIDMessage(
+        messageType: "IndigoButtonEvent",
         featureIdentifier: FBSimulatorDTUHIDTransport.digitizerServiceName,
         payload: event))
   }
