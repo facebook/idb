@@ -49,9 +49,9 @@ final class FBSimulatorIndigoHIDClient: @unchecked Sendable {
   private var client: AnyObject?
 
   /// Looks up, allocates and initializes the runtime-only HID client for the provided device.
-  static func client(for device: SimDevice) throws -> FBSimulatorIndigoHIDClient {
-    guard let clientClass = objc_lookUpClass(clientClassName) else {
-      throw FBSimulatorHIDError.clientClassUnavailable(className: clientClassName)
+  convenience init(for device: SimDevice) throws {
+    guard let clientClass = objc_lookUpClass(Self.clientClassName) else {
+      throw FBSimulatorHIDError.clientClassUnavailable(className: Self.clientClassName)
     }
     // Allocate + initialize the runtime-only client without a link-time class reference.
     let allocated = class_createInstance(clientClass, 0) as AnyObject
@@ -62,7 +62,7 @@ final class FBSimulatorIndigoHIDClient: @unchecked Sendable {
     else {
       throw FBSimulatorHIDError.clientCreationFailed(clientClass: "\(clientClass)", underlying: clientError as? Error)
     }
-    return FBSimulatorIndigoHIDClient(
+    self.init(
       client: client, queue: DispatchQueue(label: "com.facebook.fbsimulatorcontrol.hid"))
   }
 

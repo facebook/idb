@@ -43,7 +43,7 @@ actor FBSimulatorIndigoHIDTransport: FBSimulatorHIDTransport {
   /// Registration may need to occur prior to booting.
   static func indigo(for simulator: FBSimulator) throws -> FBSimulatorIndigoHIDTransport {
     FBSimulatorIndigoHIDTransport(
-      indigoClient: try FBSimulatorIndigoHIDClient.client(for: simulator.device),
+      indigoClient: try FBSimulatorIndigoHIDClient(for: simulator.device),
       indigo: try FBSimulatorIndigoHID(),
       mainScreenSize: simulator.device.deviceType.mainScreenSize,
       mainScreenScale: simulator.device.deviceType.mainScreenScale,
