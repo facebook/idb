@@ -65,6 +65,8 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
     switch transportType {
     case .indigo:
       transport = try FBSimulatorIndigoHIDTransport.indigo(for: simulator)
+    case .dtuhid:
+      transport = try FBSimulatorDTUHIDTransport.dtuhid(for: simulator)
     }
     return FBSimulatorHID(transport: transport, purple: FBSimulatorPurpleHID.purple(), simulator: simulator)
   }

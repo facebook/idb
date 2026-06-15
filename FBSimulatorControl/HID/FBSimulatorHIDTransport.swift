@@ -9,9 +9,11 @@ import CoreGraphics
 import Foundation
 
 /// Selects which transport an `FBSimulatorHID` uses for the touch / button / keyboard primitives.
-public enum FBSimulatorHIDTransportType {
+public enum FBSimulatorHIDTransportType: Equatable, Sendable {
   /// The legacy Indigo path via SimulatorKit's runtime-only `SimDeviceLegacyHIDClient`.
   case indigo
+  /// The modern DTUHID path via the `dtuhidd` daemon (Xcode 27 / iOS 26+).
+  case dtuhid
 }
 
 /// A transport for the Indigo-family HID primitives (touch, two-finger touch, button, keyboard).

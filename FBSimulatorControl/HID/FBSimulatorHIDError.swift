@@ -35,6 +35,14 @@ public enum FBSimulatorHIDError: Error, LocalizedError {
   case simulatorKitUnavailable
   /// The legacy keyboard HID service is suppressed because `dtuhidd` is active (Xcode 27+).
   case keyboardSuppressedByActiveDTUHIDD
+  /// A primitive is not (yet) implemented on the DTUHID transport.
+  case notImplementedOnDTUHIDTransport(operation: String)
+  /// The `dtuhidd` digitizer service could not be looked up in the simulator's bootstrap namespace.
+  case dtuhidDigitizerServiceUnavailable(underlying: Error?)
+  /// The private `_4sim` XPC endpoint symbols could not be resolved (older toolchain).
+  case dtuhidXPCSymbolsUnavailable
+  /// The `dtuhidd` host XPC connection could not be created.
+  case dtuhidConnectionFailed
 
   public var errorDescription: String? {
     switch self {
@@ -60,6 +68,14 @@ public enum FBSimulatorHIDError: Error, LocalizedError {
     case .keyboardSuppressedByActiveDTUHIDD:
       return
         "Keyboard HID is suppressed because dtuhidd is active (Device Hub is open, or a CoreDevice HID client attached). Boot a fresh simulator with Device Hub closed, or use the CoreDevice HID transport. (Xcode 27 / CoreSimulator-1155.4)"
+    case let .notImplementedOnDTUHIDTransport(operation):
+      return "\(operation) is not implemented on the DTUHID transport"
+    case .dtuhidDigitizerServiceUnavailable:
+      return "Could not look up the dtuhidd digitizer service (com.apple.coredevice.feature.remote.hid.digitizer)"
+    case .dtuhidXPCSymbolsUnavailable:
+      return "Could not resolve the private _4sim XPC endpoint symbols required for the DTUHID transport"
+    case .dtuhidConnectionFailed:
+      return "Could not create the dtuhidd host XPC connection"
     }
   }
 }
