@@ -224,20 +224,20 @@ extension FBSimulatorHIDEvent: CustomStringConvertible {
     switch self {
     case let .touch(direction, x, y):
       guard shouldLogHIDEventDetails() else { return "Touch <hidden>" }
-      return "Touch \(directionString(direction)) at (\(UInt(x)),\(UInt(y)))"
+      return "Touch \(direction.name) at (\(UInt(x)),\(UInt(y)))"
     case let .button(direction, button):
       guard shouldLogHIDEventDetails() else { return "Button <hidden>" }
-      return "Button \(buttonString(button)) \(directionString(direction))"
+      return "Button \(button.name) \(direction.name)"
     case let .keyboard(direction, keyCode):
       guard shouldLogHIDEventDetails() else { return "Key <hidden>" }
-      return "Keyboard Code=\(keyCode) \(directionString(direction))"
+      return "Keyboard Code=\(keyCode) \(direction.name)"
     case let .twoFingerTouch(direction, finger1, finger2):
       guard shouldLogHIDEventDetails() else { return "TwoFingerTouch <hidden>" }
-      return "TwoFingerTouch \(directionString(direction)) at (\(finger1.x),\(finger1.y)) (\(finger2.x),\(finger2.y))"
+      return "TwoFingerTouch \(direction.name) at (\(finger1.x),\(finger1.y)) (\(finger2.x),\(finger2.y))"
     case let .delay(duration):
       return "Delay for \(duration)"
     case let .deviceOrientation(orientation):
-      return "Set Orientation \(orientationString(orientation))"
+      return "Set Orientation \(orientation.name)"
     case .shake:
       return "Shake"
     case .toggleInCallStatusBar:
@@ -259,42 +259,5 @@ private func shouldLogHIDEventDetails() -> Bool {
 private extension String {
   var boolValue: Bool {
     (self as NSString).boolValue
-  }
-}
-
-private func directionString(_ direction: FBSimulatorHIDDirection) -> String {
-  switch direction {
-  case .down:
-    return "down"
-  case .up:
-    return "up"
-  }
-}
-
-private func buttonString(_ button: FBSimulatorHIDButton) -> String {
-  switch button {
-  case .applePay:
-    return "apple_pay"
-  case .homeButton:
-    return "home"
-  case .lock:
-    return "lock"
-  case .sideButton:
-    return "side"
-  case .siri:
-    return "siri"
-  }
-}
-
-private func orientationString(_ orientation: FBSimulatorHIDDeviceOrientation) -> String {
-  switch orientation {
-  case .portrait:
-    return "portrait"
-  case .portraitUpsideDown:
-    return "portrait_upside_down"
-  case .landscapeRight:
-    return "landscape_right"
-  case .landscapeLeft:
-    return "landscape_left"
   }
 }
