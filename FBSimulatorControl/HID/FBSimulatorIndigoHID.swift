@@ -11,29 +11,6 @@ import Darwin
 import Foundation
 @_implementationOnly import SimulatorApp
 
-/// The direction of a HID event.
-@objc public enum FBSimulatorHIDDirection: Int32, Sendable {
-  case down = 1
-  case up = 2
-}
-
-/// A hardware button press.
-@objc public enum FBSimulatorHIDButton: Int32, Sendable {
-  case applePay = 1
-  case homeButton = 2
-  case lock = 3
-  case sideButton = 4
-  case siri = 5
-}
-
-/// Device orientation. Values match UIDeviceOrientation (1-4, excluding faceUp/faceDown).
-@objc public enum FBSimulatorHIDDeviceOrientation: Int32, Sendable {
-  case portrait = 1
-  case portraitUpsideDown = 2
-  case landscapeRight = 3
-  case landscapeLeft = 4
-}
-
 /// Translates FBSimulatorHID events into Indigo structs.
 @objc public final class FBSimulatorIndigoHID: NSObject {
 
