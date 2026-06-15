@@ -49,21 +49,16 @@ public final class FBSimulatorServiceContext: NSObject {
     // crash with an opaque NSException; throw a clear error instead.
     let developerDirectory = FBXcodeConfiguration.developerDirectory
     guard !developerDirectory.isEmpty else {
-      throw
-        FBSimulatorError
-        .describe("No full Xcode developer directory is selected. Select one with `xcode-select -s` or set DEVELOPER_DIR.")
-        .build()
+      throw FBSimulatorServiceContextError.noFullXcodeSelected
     }
 
     var innerError: AnyObject?
     let serviceContext = (serviceContextClass as! SimServiceContext.Type)
       .sharedServiceContext(forDeveloperDir: developerDirectory, error: &innerError)
     guard let serviceContext = serviceContext as? SimServiceContext else {
-      throw
-        FBSimulatorError
-        .describe("Could not create a SimServiceContext for developer directory '\(developerDirectory)'")
-        .caused(by: innerError as? NSError)
-        .build()
+      throw FBSimulatorServiceContextError.serviceContextUnavailable(
+        developerDirectory: developerDirectory,
+        reason: (innerError as? NSError)?.localizedDescription)
     }
     return FBSimulatorServiceContext(serviceContext: serviceContext)
   }
@@ -102,18 +97,16 @@ public final class FBSimulatorServiceContext: NSObject {
       // defaultDeviceSetWithError: takes (id *) not (NSError **), so use the raw API
       var error: AnyObject?
       guard let deviceSet = serviceContext.defaultDeviceSetWithError(&error) as? SimDeviceSet else {
-        throw (error as? NSError) ?? FBSimulatorError.describe("Failed to get default device set").build()
+        throw FBSimulatorServiceContextError.defaultDeviceSetUnavailable(reason: (error as? NSError)?.localizedDescription)
       }
       return deviceSet
     }
     let resolvedPath = try FBSimulatorServiceContext.fullyQualifiedDeviceSetPath(deviceSetPath)
     var innerError: AnyObject?
     guard let deviceSet = serviceContext.deviceSet(withPath: resolvedPath, error: &innerError) as? SimDeviceSet else {
-      throw
-        FBSimulatorError
-        .describe("Could not create underlying device set for configuration \(configuration)")
-        .caused(by: innerError as? NSError)
-        .build()
+      throw FBSimulatorServiceContextError.deviceSetUnavailable(
+        configuration: "\(configuration)",
+        reason: (innerError as? NSError)?.localizedDescription)
     }
     return deviceSet
   }
@@ -124,21 +117,18 @@ public final class FBSimulatorServiceContext: NSObject {
     do {
       try FileManager.default.createDirectory(atPath: deviceSetPath, withIntermediateDirectories: true, attributes: nil)
     } catch {
-      throw
-        FBSimulatorError
-        .describe("Failed to create custom SimDeviceSet directory at \(deviceSetPath)")
-        .caused(by: error as NSError)
-        .build()
+      throw FBSimulatorServiceContextError.deviceSetDirectoryCreationFailed(
+        path: deviceSetPath,
+        reason: error.localizedDescription)
     }
 
     // -[NSString stringByResolvingSymlinksInPath] doesn't resolve /var to /private/var.
     // This is important for -[SimServiceContext deviceSetWithPath:error:], which internally caches based on a fully resolved path.
     var pathBuffer = [CChar](repeating: 0, count: Int(PATH_MAX) + 1)
     guard let result = realpath(deviceSetPath, &pathBuffer) else {
-      throw
-        FBSimulatorError
-        .describe("Failed to get realpath for \(deviceSetPath) '\(String(cString: strerror(errno)))'")
-        .build()
+      throw FBSimulatorServiceContextError.deviceSetPathResolutionFailed(
+        path: deviceSetPath,
+        reason: String(cString: strerror(errno)))
     }
     return String(cString: result)
   }
