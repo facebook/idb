@@ -29,3 +29,46 @@ struct DTUHIDMessage<Payload: Encodable>: Encodable {
     self.payload = payload
   }
 }
+
+/// A single digitizer contact, as normalized top-left coordinates in `0...1`.
+struct DigitizerPoint: Encodable {
+  let x: Double
+  let y: Double
+}
+
+/// The `IndigoDigitizerEvent` per-contact phase. Encoded as a `uint64` (its type drives the wire
+/// type via `XPCEncoder`) — `dtuhidd`'s `Codable` decode rejects these as strings.
+enum DigitizerEventType: UInt64, Encodable {
+  case start = 0
+  case position = 1
+  case end = 2
+}
+
+/**
+ The `dtuhidd` `IndigoDigitizerEvent` payload: one contact (`pointOne`) for single-finger touch, or
+ two (`pointOne` + `pointTwo`) for pinch/two-finger gestures, plus the per-contact `eventType`.
+
+ `pointTwo` is `nil` for single-finger touch — `XPCEncoder` omits the key entirely, matching the
+ single-contact wire shape. `eventType` / `edge` / `target` ride as `uint64`.
+ */
+struct IndigoDigitizerEvent: Encodable {
+  let pointOne: DigitizerPoint
+  let pointTwo: DigitizerPoint?
+  let eventType: DigitizerEventType
+  let edge: UInt64
+  let target: UInt64
+
+  init(
+    pointOne: DigitizerPoint,
+    pointTwo: DigitizerPoint? = nil,
+    eventType: DigitizerEventType,
+    edge: UInt64 = 0,
+    target: UInt64 = 0
+  ) {
+    self.pointOne = pointOne
+    self.pointTwo = pointTwo
+    self.eventType = eventType
+    self.edge = edge
+    self.target = target
+  }
+}

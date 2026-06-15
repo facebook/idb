@@ -12,19 +12,96 @@ import XPC
 
 final class FBSimulatorDTUHIDTransportTests: XCTestCase {
 
-  // MARK: Every primitive throws until its capability lands (no silent Indigo fallback)
+  // MARK: Wire encoding (model + XPCEncoder, no connection needed)
 
-  /// At the wiring commit the transport is selectable but implements nothing — every primitive must
-  /// throw `notImplementedOnDTUHIDTransport`. Following commits flip these to real sends one family
-  /// at a time.
-  func testAllPrimitivesThrowNotImplemented() async {
+  func testDigitizerEventEnvelopeShape() throws {
+    let event = try encodeDigitizer(
+      IndigoDigitizerEvent(pointOne: DigitizerPoint(x: 0.25, y: 0.75), eventType: .start))
+
+    XCTAssertEqual(xpc_get_type(event), XPC_TYPE_DICTIONARY)
+    XCTAssertEqual(messageString(event, "messageType"), "IndigoDigitizerEvent")
+    XCTAssertEqual(messageString(event, "featureIdentifier"), FBSimulatorDTUHIDTransport.digitizerServiceName)
+
+    // isBarrier must be an XPC bool, false.
+    XCTAssertEqual(xpc_get_type(xpc_dictionary_get_value(event, "isBarrier")!), XPC_TYPE_BOOL)
+    XCTAssertFalse(xpc_dictionary_get_bool(event, "isBarrier"))
+
+    let payload = xpc_dictionary_get_dictionary(event, "payload")
+    XCTAssertNotNil(payload)
+    let pointOne = xpc_dictionary_get_dictionary(payload!, "pointOne")
+    XCTAssertNotNil(pointOne)
+
+    // Coordinates are XPC doubles.
+    XCTAssertEqual(xpc_get_type(xpc_dictionary_get_value(pointOne!, "x")!), XPC_TYPE_DOUBLE)
+    XCTAssertEqual(xpc_dictionary_get_double(pointOne!, "x"), 0.25, accuracy: 1e-9)
+    XCTAssertEqual(xpc_dictionary_get_double(pointOne!, "y"), 0.75, accuracy: 1e-9)
+
+    // Single-finger touch: the nil pointTwo writes no key.
+    XCTAssertNil(xpc_dictionary_get_dictionary(payload!, "pointTwo"))
+  }
+
+  func testDigitizerEventIntegersAreUInt64() throws {
+    // Decode-critical: dtuhidd's Swift Codable rejects these fields if sent as strings.
+    let event = try encodeDigitizer(
+      IndigoDigitizerEvent(pointOne: DigitizerPoint(x: 0.1, y: 0.2), eventType: .end))
+    let payload = xpc_dictionary_get_dictionary(event, "payload")!
+    for key in ["eventType", "edge", "target"] {
+      XCTAssertEqual(xpc_get_type(xpc_dictionary_get_value(payload, key)!), XPC_TYPE_UINT64, "\(key) must be uint64")
+    }
+    XCTAssertEqual(xpc_dictionary_get_uint64(payload, "eventType"), 2) // .end
+    XCTAssertEqual(xpc_dictionary_get_uint64(payload, "edge"), 0)
+    XCTAssertEqual(xpc_dictionary_get_uint64(payload, "target"), 0)
+  }
+
+  // MARK: Contact-state machine
+
+  func testContactTrackerMapsDownUpToStartPositionEnd() {
+    var tracker = DigitizerContactTracker()
+    XCTAssertEqual(tracker.eventType(for: .down), .start)
+    XCTAssertEqual(tracker.eventType(for: .down), .position)
+    XCTAssertEqual(tracker.eventType(for: .down), .position)
+    XCTAssertEqual(tracker.eventType(for: .up), .end)
+    // A subsequent gesture starts fresh.
+    XCTAssertEqual(tracker.eventType(for: .down), .start)
+    XCTAssertEqual(tracker.eventType(for: .up), .end)
+  }
+
+  func testDigitizerEventTypeRawValues() {
+    XCTAssertEqual(DigitizerEventType.start.rawValue, 0)
+    XCTAssertEqual(DigitizerEventType.position.rawValue, 1)
+    XCTAssertEqual(DigitizerEventType.end.rawValue, 2)
+  }
+
+  // MARK: Normalization parity with the Indigo transport
+
+  func testNormalizationParityWithIndigoRatio() throws {
+    let screenSize = CGSize(width: 1170, height: 2532) // pixels
+    let scale: Float = 3.0
+    let point = CGPoint(x: 201, y: 482) // points
+
+    let ratio = FBSimulatorIndigoHID.screenRatio(from: point, screenSize: screenSize, screenScale: scale)
+    // The DTUHID transport feeds exactly this ratio into pointOne.
+    let event = try encodeDigitizer(
+      IndigoDigitizerEvent(pointOne: DigitizerPoint(x: Double(ratio.x), y: Double(ratio.y)), eventType: .start))
+    let pointOne = xpc_dictionary_get_dictionary(xpc_dictionary_get_dictionary(event, "payload")!, "pointOne")!
+
+    XCTAssertEqual(xpc_dictionary_get_double(pointOne, "x"), Double(ratio.x), accuracy: 1e-9)
+    XCTAssertEqual(xpc_dictionary_get_double(pointOne, "y"), Double(ratio.y), accuracy: 1e-9)
+    // Sanity: point * scale / pixels == point / points, in 0...1.
+    XCTAssertEqual(Double(ratio.x), 201.0 * 3.0 / 1170.0, accuracy: 1e-9)
+    XCTAssertEqual(Double(ratio.y), 482.0 * 3.0 / 2532.0, accuracy: 1e-9)
+  }
+
+  // MARK: Not-yet-implemented families still throw (touch works; the rest land later)
+
+  func testUnimplementedPrimitivesThrow() async {
     let connection = xpc_connection_create("com.facebook.fbsimulatorcontrol.test.dtuhid", nil)
     xpc_connection_set_event_handler(connection) { _ in }
     xpc_connection_resume(connection)
-    let transport = FBSimulatorDTUHIDTransport(connection: connection)
+    let transport = FBSimulatorDTUHIDTransport(
+      connection: connection, mainScreenSize: CGSize(width: 100, height: 200), mainScreenScale: 2.0)
     defer { transport.disconnect() }
 
-    await assertThrowsNotImplemented { try await transport.sendTouch(direction: .down, x: 1, y: 2) }
     await assertThrowsNotImplemented { try await transport.sendKeyboard(direction: .down, keyCode: 4) }
     await assertThrowsNotImplemented { try await transport.sendButton(direction: .down, button: .homeButton) }
     await assertThrowsNotImplemented {
@@ -44,7 +121,8 @@ final class FBSimulatorDTUHIDTransportTests: XCTestCase {
     let connection = xpc_connection_create("com.facebook.fbsimulatorcontrol.test.dtuhid", nil)
     xpc_connection_set_event_handler(connection) { _ in }
     xpc_connection_resume(connection)
-    let transport = FBSimulatorDTUHIDTransport(connection: connection)
+    let transport = FBSimulatorDTUHIDTransport(
+      connection: connection, mainScreenSize: CGSize(width: 100, height: 200), mainScreenScale: 2.0)
     defer { transport.disconnect() }
 
     let message = try transport.encode(messageType: "Probe", payload: Probe(value: 7))
@@ -60,6 +138,14 @@ final class FBSimulatorDTUHIDTransportTests: XCTestCase {
   }
 
   // MARK: Helpers
+
+  private func encodeDigitizer(_ event: IndigoDigitizerEvent) throws -> xpc_object_t {
+    try XPCEncoder().encode(
+      DTUHIDMessage(
+        messageType: "IndigoDigitizerEvent",
+        featureIdentifier: FBSimulatorDTUHIDTransport.digitizerServiceName,
+        payload: event))
+  }
 
   private func messageString(_ dictionary: xpc_object_t, _ key: String) -> String? {
     guard let cString = xpc_dictionary_get_string(dictionary, key) else {

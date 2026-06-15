@@ -12,24 +12,43 @@ import Darwin
 import Foundation
 import XPC
 
+/// Tracks the per-contact phase so that a stream of Indigo `.down`/`.up` events maps onto the
+/// `dtuhidd` `start` / `position` / `end` model: the first `.down` is a `start`, subsequent `.down`s
+/// (a drag/swipe) are `position`s, and `.up` is the `end`.
+struct DigitizerContactTracker {
+  private var active = false
+
+  mutating func eventType(for direction: FBSimulatorHIDDirection) -> DigitizerEventType {
+    switch direction {
+    case .down:
+      if active {
+        return .position
+      }
+      active = true
+      return .start
+    case .up:
+      active = false
+      return .end
+    }
+  }
+}
+
 /**
  The DTUHID transport (Xcode 27 / macOS 26 / iOS 26+).
 
  Drives the modern `dtuhidd` daemon: events cross the host→guest boundary as plain-XPC dictionaries
  delivered to the `com.apple.coredevice.feature.remote.hid.digitizer` service. Each message is built
- as an `Encodable` model wrapped in a `DTUHIDMessage` envelope and serialized with `XPCEncoder`,
- rather than hand-rolled `xpc_dictionary_set_*` calls. The host XPC connection is built from the
- simulator's Mach port via the private `_4sim` endpoint symbols (resolved with `dlsym`) and must be
- marked simulator-to-host with `xpc_connection_enable_sim2host_4sim` before messages reach the
- service handler.
+ as an `Encodable` model (e.g. `IndigoDigitizerEvent`) wrapped in a `DTUHIDMessage` envelope and
+ serialized with `XPCEncoder`, rather than hand-rolled `xpc_dictionary_set_*` calls. The host XPC
+ connection is built from the simulator's Mach port via the private `_4sim` endpoint symbols
+ (resolved with `dlsym`) and must be marked simulator-to-host with `xpc_connection_enable_sim2host_4sim`
+ before messages reach the service handler.
 
- The send pipeline (`encode` + `send`) is complete; the per-capability primitives (`sendTouch` /
- `sendKeyboard` / `sendButton` / `sendTwoFingerTouch`) throw `notImplementedOnDTUHIDTransport` until
- their capability is implemented, rather than silently falling back to Indigo.
+ Capabilities are added one per commit; not-yet-implemented primitives throw
+ `notImplementedOnDTUHIDTransport` rather than silently falling back to Indigo.
 
- An `actor`: mutable per-gesture state added with the capabilities is actor-isolated, so the type
- needs no `@unchecked Sendable`. The XPC connection handle is thread-safe, so `disconnect()` cancels
- it from a `nonisolated` context.
+ An `actor`: the mutable contact state is actor-isolated, so the type needs no `@unchecked Sendable`.
+ The XPC connection handle is thread-safe, so `disconnect()` cancels it from a `nonisolated` context.
  */
 actor FBSimulatorDTUHIDTransport: FBSimulatorHIDTransport {
 
@@ -53,6 +72,9 @@ actor FBSimulatorDTUHIDTransport: FBSimulatorHIDTransport {
   /// `nonisolated(unsafe)` to be read from the `nonisolated` `disconnect()` as well as the
   /// actor-isolated send path.
   nonisolated(unsafe) private let connection: xpc_connection_t
+  private let mainScreenSize: CGSize
+  private let mainScreenScale: Float
+  private var contact = DigitizerContactTracker()
 
   // MARK: Initializers
 
@@ -88,11 +110,16 @@ actor FBSimulatorDTUHIDTransport: FBSimulatorHIDTransport {
     xpc_connection_set_event_handler(connection) { _ in }
     xpc_connection_resume(connection)
 
-    return FBSimulatorDTUHIDTransport(connection: connection)
+    return FBSimulatorDTUHIDTransport(
+      connection: connection,
+      mainScreenSize: simulator.device.deviceType.mainScreenSize,
+      mainScreenScale: simulator.device.deviceType.mainScreenScale)
   }
 
-  init(connection: xpc_connection_t) {
+  init(connection: xpc_connection_t, mainScreenSize: CGSize, mainScreenScale: Float) {
     self.connection = connection
+    self.mainScreenSize = mainScreenSize
+    self.mainScreenScale = mainScreenScale
   }
 
   private static func symbol<T>(_ handle: UnsafeMutableRawPointer, _ name: String, as type: T.Type) -> T? {
@@ -109,7 +136,12 @@ actor FBSimulatorDTUHIDTransport: FBSimulatorHIDTransport {
   }
 
   func sendTouch(direction: FBSimulatorHIDDirection, x: Double, y: Double) async throws {
-    throw FBSimulatorHIDError.notImplementedOnDTUHIDTransport(operation: "sendTouch")
+    let ratio = FBSimulatorIndigoHID.screenRatio(
+      from: CGPoint(x: x, y: y), screenSize: mainScreenSize, screenScale: mainScreenScale)
+    let event = IndigoDigitizerEvent(
+      pointOne: DigitizerPoint(x: Double(ratio.x), y: Double(ratio.y)),
+      eventType: contact.eventType(for: direction))
+    try await send(messageType: "IndigoDigitizerEvent", payload: event)
   }
 
   func sendTwoFingerTouch(direction: FBSimulatorHIDDirection, finger1: CGPoint, finger2: CGPoint) async throws {
