@@ -2,7 +2,7 @@ name: FBSimulatorControl
 
 options:
   deploymentTarget:
-    macOS: "11.0"
+    macOS: "12.0"
   createIntermediateGroups: true
   groupSortPosition: top
   bundleIdPrefix: com.facebook
@@ -141,12 +141,12 @@ targets:
         # Wrap the reverse-engineered headers under PrivateHeaders/<Name>/ as Clang
         # modules so Swift can `import CoreSimulator`, `import SimulatorKit`, etc.
         # Mirrors `make_private_header_frameworks()` in fbobjc/Tools/idb/defs.bzl.
-        OTHER_SWIFT_FLAGS: $(inherited) -Xcc -fmodule-map-file=$(SRCROOT)/PrivateHeaders/CoreSimulator/module.modulemap -Xcc -fmodule-map-file=$(SRCROOT)/PrivateHeaders/SimulatorApp/module.modulemap -Xcc -fmodule-map-file=$(SRCROOT)/PrivateHeaders/SimulatorKit/module.modulemap -Xcc -fmodule-map-file=$(SRCROOT)/PrivateHeaders/AXRuntime/module.modulemap
-        # CoreSimulator is loaded at runtime by FBSimulatorControlFrameworkLoader.
-        # Swift generates direct class references that must be satisfied at link
-        # time, so weak-link against the TBD stub. SimulatorKit is header-only —
-        # no symbols are referenced from compiled code (mirrors the Buck setup).
-        OTHER_LDFLAGS: $(inherited) -weak_library $(SRCROOT)/PrivateHeaders/CoreSimulator/CoreSimulator.tbd
+        OTHER_SWIFT_FLAGS: $(inherited) -Xcc -fmodule-map-file=$(SRCROOT)/PrivateHeaders/CoreSimulator/module.modulemap -Xcc -fmodule-map-file=$(SRCROOT)/PrivateHeaders/SimulatorApp/module.modulemap -Xcc -fmodule-map-file=$(SRCROOT)/PrivateHeaders/SimulatorKit/module.modulemap -Xcc -fmodule-map-file=$(SRCROOT)/PrivateHeaders/AXRuntime/module.modulemap -Xcc -fmodule-map-file=$(SRCROOT)/PrivateHeaders/AccessibilityPlatformTranslation/module.modulemap
+        # CoreSimulator and AccessibilityPlatformTranslation are loaded at
+        # runtime. Swift generates direct class references that must be satisfied
+        # at link time, so weak-link against the TBD stub. SimulatorKit is
+        # header-only — no symbols are referenced from compiled code.
+        OTHER_LDFLAGS: $(inherited) -weak_library $(SRCROOT)/PrivateHeaders/CoreSimulator/CoreSimulator.tbd -weak_library $(SRCROOT)/PrivateHeaders/AccessibilityPlatformTranslation/AccessibilityPlatformTranslation.tbd
     dependencies:
       - target: FBControlCore
         embed: true
@@ -162,6 +162,7 @@ targets:
       - sdk: Foundation.framework
       - sdk: IOSurface.framework
       - sdk: Metal.framework
+      - sdk: UniformTypeIdentifiers.framework
       - sdk: VideoToolbox.framework
 
   FBSimulatorControlTests:
@@ -245,12 +246,12 @@ targets:
   IDBCompanionUtilities:
     type: framework
     platform: macOS
-    deploymentTarget: "11.0"
+    deploymentTarget: "12.0"
     sources:
       - path: IDBCompanionUtilities
     settings:
       base:
-        MACOSX_DEPLOYMENT_TARGET: "11.0"
+        MACOSX_DEPLOYMENT_TARGET: "12.0"
         PRODUCT_BUNDLE_IDENTIFIER: com.facebook.IDBCompanionUtilities
         PRODUCT_NAME: IDBCompanionUtilities
         DEFINES_MODULE: YES
@@ -266,12 +267,12 @@ targets:
   IDBCompanionUtilitiesTests:
     type: bundle.unit-test
     platform: macOS
-    deploymentTarget: "11.0"
+    deploymentTarget: "12.0"
     sources:
       - path: IDBCompanionUtilitiesTests
     settings:
       base:
-        MACOSX_DEPLOYMENT_TARGET: "11.0"
+        MACOSX_DEPLOYMENT_TARGET: "12.0"
         PRODUCT_BUNDLE_IDENTIFIER: com.facebook.IDBCompanionUtilitiesTests
         PRODUCT_NAME: IDBCompanionUtilitiesTests
         SWIFT_VERSION: "5.9"
@@ -283,14 +284,14 @@ targets:
   CompanionLib:
     type: framework
     platform: macOS
-    deploymentTarget: "11.0"
+    deploymentTarget: "12.0"
     sources:
       - path: CompanionLib
         excludes:
           - "**/*-Info.plist"
     settings:
       base:
-        MACOSX_DEPLOYMENT_TARGET: "11.0"
+        MACOSX_DEPLOYMENT_TARGET: "12.0"
         PRODUCT_BUNDLE_IDENTIFIER: com.facebook.CompanionLib
         PRODUCT_NAME: CompanionLib
         DEFINES_MODULE: YES

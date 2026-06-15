@@ -2,7 +2,7 @@ name: idb_companion
 
 options:
   deploymentTarget:
-    macOS: "11.0"
+    macOS: "12.0"
   createIntermediateGroups: true
   groupSortPosition: top
   bundleIdPrefix: com.facebook
@@ -42,7 +42,7 @@ targets:
   IDBGRPCSwift:
     type: framework
     platform: macOS
-    deploymentTarget: "11.0"
+    deploymentTarget: "12.0"
     preBuildScripts:
       - name: Check gRPC Swift files exist
         script: |
@@ -66,7 +66,7 @@ targets:
         optional: true
     settings:
       base:
-        MACOSX_DEPLOYMENT_TARGET: "11.0"
+        MACOSX_DEPLOYMENT_TARGET: "12.0"
         PRODUCT_BUNDLE_IDENTIFIER: com.facebook.IDBGRPCSwift
         PRODUCT_NAME: IDBGRPCSwift
         DEFINES_MODULE: YES
@@ -92,7 +92,7 @@ targets:
   idb_companion:
     type: tool
     platform: macOS
-    deploymentTarget: "11.0"
+    deploymentTarget: "12.0"
     sources:
       - path: .
         excludes:
@@ -124,7 +124,7 @@ targets:
           - $(DERIVED_FILE_DIR)/BuildInfo.swift
     settings:
       base:
-        MACOSX_DEPLOYMENT_TARGET: "11.0"
+        MACOSX_DEPLOYMENT_TARGET: "12.0"
         PRODUCT_NAME: idb_companion
         SWIFT_VERSION: "5.0"
         SWIFT_OBJC_INTERFACE_HEADER_NAME: idb-Swift.h
@@ -153,19 +153,5 @@ targets:
       - framework: ../Build/Products/Release/IDBCompanionUtilities.framework
         embed: true
       - target: IDBGRPCSwift
-        embed: true
-      - package: grpc-swift
-        product: GRPC
-      - package: swift-protobuf
-        product: SwiftProtobuf
-      - package: swift-log
-        product: Logging
-      - package: swift-nio
-        product: NIOCore
-      - package: swift-nio-http2
-        product: NIOHTTP2
-      - package: swift-nio-ssl
-        product: NIOSSL
-      - package: swift-collections
-        product: DequeModule
+        embed: false
       - sdk: Foundation.framework

@@ -26,7 +26,7 @@ function supports_xattrs() {
 
 # Use build directory outside of repo if xattrs not supported (for Xcode compatibility)
 if supports_xattrs; then
-  BUILD_DIRECTORY=Build
+  BUILD_DIRECTORY="$(pwd)/Build"
 else
   BUILD_DIRECTORY="/tmp/idb-build-$(basename "$(pwd)")"
   echo "Note: Using external build directory at $BUILD_DIRECTORY (xattrs not supported)"
@@ -242,6 +242,11 @@ function regenerate_projects() {
   generate_xcodeproj "Shims/Shimulator" "Shimulator"
   echo "Generating idb_companion project..."
   generate_xcodeproj "idb_companion" "idb_companion"
+
+  # xcodegen ignores `embed: false` for a tool target dependency, so strip the
+  # leftover entry here.
+  sed -i '' '/IDBGRPCSwift.framework in Embed Frameworks/d' \
+    idb_companion/idb_companion.xcodeproj/project.pbxproj
 }
 
 # =============================================================================
@@ -254,10 +259,12 @@ function invoke_xcodebuild() {
   local objroot="$BUILD_DIRECTORY/Intermediates"
   # Add -skipMacroValidation to work around sandbox restrictions on Swift macro plugins
   # Add ENABLE_USER_SCRIPT_SANDBOXING=NO to disable sandbox for macros
+  # Add CLANG_ENABLE_EXPLICIT_MODULES=NO to mirror Configuration/Shared.xcconfig
+  local common_settings="-skipMacroValidation ENABLE_USER_SCRIPT_SANDBOXING=NO CLANG_ENABLE_EXPLICIT_MODULES=NO"
   if [[ -n $HAS_XCPRETTY ]]; then
-    NSUnbufferedIO=YES xcodebuild -skipMacroValidation ENABLE_USER_SCRIPT_SANDBOXING=NO SYMROOT="$symroot" OBJROOT="$objroot" $arguments | xcpretty -c
+    NSUnbufferedIO=YES xcodebuild $common_settings SYMROOT="$symroot" OBJROOT="$objroot" $arguments | xcpretty -c
   else
-    xcodebuild -skipMacroValidation ENABLE_USER_SCRIPT_SANDBOXING=NO SYMROOT="$symroot" OBJROOT="$objroot" $arguments
+    xcodebuild $common_settings SYMROOT="$symroot" OBJROOT="$objroot" $arguments
   fi
 }
 
@@ -345,6 +352,7 @@ function build_idb_companion() {
   # Build idb_companion from its own project
   invoke_xcodebuild \
     ONLY_ACTIVE_ARCH=NO \
+    SWIFT_ENABLE_EXPLICIT_MODULES=NO \
     -project idb_companion/idb_companion.xcodeproj \
     -scheme idb_companion \
     -sdk macosx \

@@ -1,0 +1,5 @@
+module AccessibilityPlatformTranslation {
+    umbrella "."
+    export *
+    module * { export * }
+}

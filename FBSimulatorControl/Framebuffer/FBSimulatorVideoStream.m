@@ -14,6 +14,7 @@
 #import <CoreVideo/CoreVideo.h>
 #import <IOSurface/IOSurface.h>
 #import <Metal/Metal.h>
+#import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 #import <VideoToolbox/VideoToolbox.h>
 
 #import <FBControlCore/FBControlCore.h>
@@ -135,7 +136,7 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
   size_t frameSize = CVPixelBufferGetDataSize(pixelBuffer);
   size_t rowSize = CVPixelBufferGetBytesPerRow(pixelBuffer);
   OSType pixelFormat = CVPixelBufferGetPixelFormatType(pixelBuffer);
-  NSString *pixelFormatString = (__bridge_transfer NSString *) UTCreateStringForOSType(pixelFormat);
+  NSString *pixelFormatString = FBStringFromFourCharCode(pixelFormat);
 
   size_t columnLeft;
   size_t columnRight;
@@ -1260,7 +1261,7 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
   }
 
   NSMutableData *pngData = [NSMutableData data];
-  CGImageDestinationRef dest = CGImageDestinationCreateWithData((CFMutableDataRef)pngData, kUTTypePNG, 1, NULL);
+  CGImageDestinationRef dest = CGImageDestinationCreateWithData((CFMutableDataRef)pngData, (__bridge CFStringRef)UTTypePNG.identifier, 1, NULL);
   CGImageDestinationAddImage(dest, cgImage, NULL);
   BOOL finalized = CGImageDestinationFinalize(dest);
   CFRelease(dest);

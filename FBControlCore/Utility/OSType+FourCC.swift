@@ -13,7 +13,11 @@ extension OSType {
   /// characters when every byte is printable ASCII (0x20–0x7e, i.e. excludes
   /// NUL, control bytes, DEL, and any high-bit byte); otherwise falls back to
   /// an `0x`-prefixed 8-digit hex string so the result is always safe to log.
-  var fourCharCodeString: String {
+  ///
+  /// - Note: Objective-C callers cannot see this Swift-only property; they should
+  ///   use the equivalent `FBStringFromFourCharCode` C function (in
+  ///   `FBFourCharCode.h`) instead, which shares this exact logic.
+  public var fourCharCodeString: String {
     let bytes: [UInt8] = [
       UInt8((self >> 24) & 0xff),
       UInt8((self >> 16) & 0xff),

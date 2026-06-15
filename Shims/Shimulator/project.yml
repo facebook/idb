@@ -7,7 +7,7 @@ targets:
   Shimulator:
     type: library.dynamic
     platform: iOS
-    deploymentTarget: "13.0"
+    deploymentTarget: "15.0"
     configFiles:
       Debug: Configs/Shimulator.xcconfig
       Release: Configs/Shimulator.xcconfig
@@ -32,7 +32,7 @@ targets:
   Maculator:
     type: library.dynamic
     platform: macOS
-    deploymentTarget: "11.0"
+    deploymentTarget: "12.0"
     configFiles:
       Debug: Configs/Maculator.xcconfig
       Release: Configs/Maculator.xcconfig
