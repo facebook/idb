@@ -78,7 +78,7 @@ public final class FBSimulatorSet: NSObject, FBiOSTargetSet {
 
   // MARK: - Async
 
-  func createSimulatorAsync(with configuration: FBSimulatorConfiguration) async throws -> FBSimulator {
+  public func createSimulatorAsync(with configuration: FBSimulatorConfiguration) async throws -> FBSimulator {
     let model: String = configuration.device.model.rawValue
 
     // See if we meet the runtime requirements to create a Simulator with the given configuration.

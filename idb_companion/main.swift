@@ -370,7 +370,7 @@ private func createFuture(_ create: String, userDefaults: UserDefaults, logger: 
     config = config.withOSNamed(FBOSVersionName(rawValue: parameters[1]))
   }
   let set = try simulatorSet(userDefaults, logger: logger, reporter: reporter)
-  let simulator = try await bridgeFBFuture(set.createSimulator(with: config))
+  let simulator = try await set.createSimulatorAsync(with: config)
   writeTargetToStdOut(simulator)
 }
 
