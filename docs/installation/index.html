@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="generator" content="Docusaurus v3.7.0">
 <title data-rh="true">Installation | idb</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="https://fbidb.io/docs/installation"><meta data-rh="true" property="og:locale" content="en"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="Installation | idb"><meta data-rh="true" name="description" content="idb is made up of 2 parts, each of which needs to be installed separately."><meta data-rh="true" property="og:description" content="idb is made up of 2 parts, each of which needs to be installed separately."><link data-rh="true" rel="icon" href="/img/favicon.png"><link data-rh="true" rel="canonical" href="https://fbidb.io/docs/installation"><link data-rh="true" rel="alternate" href="https://fbidb.io/docs/installation" hreflang="en"><link data-rh="true" rel="alternate" href="https://fbidb.io/docs/installation" hreflang="x-default"><script src="https://buttons.github.io/buttons.js"></script><link rel="stylesheet" href="/assets/css/styles.6e8e002f.css">
-<script src="/assets/js/runtime~main.ad50fec2.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.128e6809.js" defer="defer"></script>
 <script src="/assets/js/main.b34177bd.js" defer="defer"></script>
 </head>
 <body class="navigation-with-keyboard">
@@ -13,7 +13,17 @@
 <p>Each target (simulator/device) will have a companion process attached allowing idb to communicate remotely.</p>
 <p>The idb companion can be installed via brew or built from <a href="https://github.com/facebook/idb" target="_blank" rel="noopener noreferrer">source</a></p>
 <div class="codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#bfc7d5;--prism-background-color:#292d3e"><div class="codeBlockContent_biex"><pre tabindex="0" class="prism-code language-text codeBlock_bY9V thin-scrollbar" style="color:#bfc7d5;background-color:#292d3e"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#bfc7d5"><span class="token plain">brew tap facebook/fb</span><br></span><span class="token-line" style="color:#bfc7d5"><span class="token plain">brew install idb-companion</span><br></span></code></pre><div class="buttonGroup__atx"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_eSgA" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_y97N"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_LjdS"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
-<p>Note: Instructions on how to install brew can be found <a href="https://brew.sh" target="_blank" rel="noopener noreferrer">here</a></p>
+<p>Notes:</p>
+<ol>
+<li>
+<p>Instructions on how to install brew can be found <a href="https://brew.sh" target="_blank" rel="noopener noreferrer">here</a></p>
+</li>
+<li>
+<p>A full installation of Xcode is required to compile and use idb-companion.
+Installing just the Command Line Tools is not sufficient.
+Xcode can be installed from the App Store.</p>
+</li>
+</ol>
 <h3 class="anchor anchorWithStickyNavbar_LWe7" id="idb-client">idb client<a href="#idb-client" class="hash-link" aria-label="Direct link to idb client" title="Direct link to idb client">​</a></h3>
 <p>A cli tool and python client is provided to interact with idb.</p>
 <p>It can be installed via pip:</p>
