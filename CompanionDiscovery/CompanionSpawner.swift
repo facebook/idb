@@ -31,7 +31,7 @@ public struct CompanionSpawner {
   ///   It survives a normal exit of this process, but would receive terminal
   ///   signals (e.g. Ctrl-C) delivered to this process's group. Proper
   ///   detachment is left for the lifecycle/hookup work.
-  public func spawnDomainSocketServer(udid: String, only: String? = nil, path: String) throws -> CompanionInfo {
+  public func spawnDomainSocketServer(udid: String, only: String? = nil, path: String) async throws -> CompanionInfo {
     try CompanionPaths.ensureLogsDirectory()
     let logPath = CompanionPaths.logFilePath(forUDID: udid)
     let logHandle = try appendHandle(forPath: logPath)
@@ -58,7 +58,7 @@ public struct CompanionSpawner {
 
     let line: String
     do {
-      line = try readFirstLine(from: stdoutPipe.fileHandleForReading, timeout: readinessTimeout)
+      line = try await readFirstLine(from: stdoutPipe.fileHandleForReading, timeout: readinessTimeout)
     } catch {
       process.terminate()
       throw CompanionDiscoveryError.companionNotReady(reason: "couldn't read startup report. \(logTail(logPath))")
@@ -100,33 +100,106 @@ public struct CompanionSpawner {
 /// Reads a single newline-terminated line from `handle`, returning its content
 /// without the trailing newline. Throws if no line arrives within `timeout`, or
 /// if EOF is reached before any bytes are read.
-private func readFirstLine(from handle: FileHandle, timeout: TimeInterval) throws -> String {
-  let semaphore = DispatchSemaphore(value: 0)
-  var outcome: Result<String, Error> = .failure(CompanionDiscoveryError.companionNotReady(reason: "timed out"))
-  DispatchQueue.global().async {
-    var bytes = [UInt8]()
-    while true {
-      let chunk = handle.readData(ofLength: 1)
-      guard let byte = chunk.first else {
-        // EOF: the process closed stdout (likely exited) before a full line.
-        outcome =
-          bytes.isEmpty
+///
+/// The read is event-driven (`FileHandle.readabilityHandler`) and bridged to
+/// `async`, so it never parks a thread while waiting, and it is torn down on
+/// completion, timeout, or cancellation rather than left running in the
+/// background.
+private func readFirstLine(from handle: FileHandle, timeout: TimeInterval) async throws -> String {
+  let state = LineReadState()
+  return try await withTaskCancellationHandler {
+    try await withCheckedThrowingContinuation { continuation in
+      state.begin(handle: handle, timeout: timeout, continuation: continuation)
+    }
+  } onCancel: {
+    state.cancel()
+  }
+}
+
+/// Drives reading a single line from a `FileHandle` and bridges it to a
+/// continuation. Bytes are delivered by the handle's readability handler (so no
+/// thread is parked on the read) and a timer enforces the timeout. A lock
+/// serialises the handler, the timer, and cancellation so the continuation is
+/// resumed exactly once and the read is always torn down afterwards.
+private final class LineReadState: @unchecked Sendable {
+  private let lock = NSLock()
+  private var bytes = [UInt8]()
+  private var continuation: CheckedContinuation<String, Error>?
+  private var handle: FileHandle?
+  private var timer: DispatchSourceTimer?
+  private var cancelled = false
+
+  /// Starts the read and the timeout timer. If cancellation already happened,
+  /// resumes immediately instead.
+  func begin(handle: FileHandle, timeout: TimeInterval, continuation: CheckedContinuation<String, Error>) {
+    lock.lock()
+    defer { lock.unlock() }
+    if cancelled {
+      continuation.resume(throwing: CancellationError())
+      return
+    }
+    self.handle = handle
+    self.continuation = continuation
+
+    let timer = DispatchSource.makeTimerSource()
+    timer.schedule(deadline: .now() + timeout)
+    timer.setEventHandler { [weak self] in
+      self?.finish(.failure(CompanionDiscoveryError.companionNotReady(reason: "timed out after \(Int(timeout))s")))
+    }
+    self.timer = timer
+
+    handle.readabilityHandler = { [weak self] fileHandle in
+      self?.consume(fileHandle.availableData)
+    }
+    timer.resume()
+  }
+
+  /// Stops the read and resumes with a cancellation error if still pending.
+  func cancel() {
+    finish(.failure(CancellationError()))
+  }
+
+  private func consume(_ chunk: Data) {
+    lock.lock()
+    defer { lock.unlock() }
+    guard continuation != nil else { return }
+    if chunk.isEmpty {
+      // EOF: the process closed stdout before a full line.
+      finishLocked(
+        bytes.isEmpty
           ? .failure(CompanionDiscoveryError.companionNotReady(reason: "no output"))
-          : .success(String(decoding: bytes, as: UTF8.self))
-        break
-      }
+          : .success(String(decoding: bytes, as: UTF8.self)))
+      return
+    }
+    for byte in chunk {
       if byte == UInt8(ascii: "\n") {
-        outcome = .success(String(decoding: bytes, as: UTF8.self))
-        break
+        finishLocked(.success(String(decoding: bytes, as: UTF8.self)))
+        return
       }
       bytes.append(byte)
     }
-    semaphore.signal()
   }
-  if semaphore.wait(timeout: .now() + timeout) == .timedOut {
-    throw CompanionDiscoveryError.companionNotReady(reason: "timed out after \(Int(timeout))s")
+
+  /// Finishes the read (also closing the cancel-before-`begin` race) and resumes
+  /// with `result` if still pending.
+  private func finish(_ result: Result<String, Error>) {
+    lock.lock()
+    defer { lock.unlock() }
+    cancelled = true
+    finishLocked(result)
   }
-  return try outcome.get()
+
+  /// Resumes the continuation at most once and tears down the timer and reader so
+  /// nothing is left running. The caller must hold `lock`.
+  private func finishLocked(_ result: Result<String, Error>) {
+    timer?.cancel()
+    timer = nil
+    handle?.readabilityHandler = nil
+    handle = nil
+    guard let continuation else { return }
+    self.continuation = nil
+    continuation.resume(with: result)
+  }
 }
 
 /// Parses a single JSON object line into a dictionary, or nil if it isn't valid

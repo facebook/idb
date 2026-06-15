@@ -16,13 +16,13 @@ import Testing
 @Suite
 struct CompanionSpawnerTests {
   @Test
-  func returnsCompanionInfoFromHandshake() throws {
-    try withFakeCompanion(TestSupport.echoSocketScript) { spawner in
+  func returnsCompanionInfoFromHandshake() async throws {
+    try await withFakeCompanion(TestSupport.echoSocketScript) { spawner in
       let udid = TestSupport.uniqueUDID()
       let socketPath = TestSupport.shortSocketPath()
       defer { cleanUp(udid: udid, socketPath: socketPath) }
 
-      let info = try spawner.spawnDomainSocketServer(udid: udid, path: socketPath)
+      let info = try await spawner.spawnDomainSocketServer(udid: udid, path: socketPath)
       #expect(info.udid == udid)
       #expect(info.isLocal == true)
       #expect(info.address == .domainSocket(path: socketPath))
@@ -31,7 +31,7 @@ struct CompanionSpawnerTests {
   }
 
   @Test
-  func passesUDIDAndOnlyFilterToCompanion() throws {
+  func passesUDIDAndOnlyFilterToCompanion() async throws {
     // Records the launched argv next to the socket so we can assert on it.
     let script = """
       #!/bin/bash
@@ -44,7 +44,7 @@ struct CompanionSpawnerTests {
       echo "$*" > "$path.args"
       printf '{"grpc_path": "%s"}\\n' "$path"
       """
-    try withFakeCompanion(script) { spawner in
+    try await withFakeCompanion(script) { spawner in
       let udid = TestSupport.uniqueUDID()
       let socketPath = TestSupport.shortSocketPath()
       let argsPath = socketPath + ".args"
@@ -53,7 +53,7 @@ struct CompanionSpawnerTests {
         unlink(argsPath)
       }
 
-      _ = try spawner.spawnDomainSocketServer(udid: udid, only: "simulator", path: socketPath)
+      _ = try await spawner.spawnDomainSocketServer(udid: udid, only: "simulator", path: socketPath)
       let argv = try String(contentsOfFile: argsPath, encoding: .utf8)
       #expect(argv.contains("--udid \(udid)"))
       #expect(argv.contains("--grpc-domain-sock \(socketPath)"))
@@ -62,7 +62,7 @@ struct CompanionSpawnerTests {
   }
 
   @Test
-  func omitsOnlyFilterWhenNil() throws {
+  func omitsOnlyFilterWhenNil() async throws {
     let script = """
       #!/bin/bash
       path=""
@@ -74,7 +74,7 @@ struct CompanionSpawnerTests {
       echo "$*" > "$path.args"
       printf '{"grpc_path": "%s"}\\n' "$path"
       """
-    try withFakeCompanion(script) { spawner in
+    try await withFakeCompanion(script) { spawner in
       let udid = TestSupport.uniqueUDID()
       let socketPath = TestSupport.shortSocketPath()
       let argsPath = socketPath + ".args"
@@ -83,25 +83,25 @@ struct CompanionSpawnerTests {
         unlink(argsPath)
       }
 
-      _ = try spawner.spawnDomainSocketServer(udid: udid, path: socketPath)
+      _ = try await spawner.spawnDomainSocketServer(udid: udid, path: socketPath)
       let argv = try String(contentsOfFile: argsPath, encoding: .utf8)
       #expect(!argv.contains("--only"))
     }
   }
 
   @Test
-  func throwsOnSocketPathMismatch() throws {
+  func throwsOnSocketPathMismatch() async throws {
     let script = """
       #!/bin/bash
       printf '{"grpc_path": "/wrong/path.sock"}\\n'
       """
-    try withFakeCompanion(script) { spawner in
+    try await withFakeCompanion(script) { spawner in
       let udid = TestSupport.uniqueUDID()
       let socketPath = TestSupport.shortSocketPath()
       defer { cleanUp(udid: udid, socketPath: socketPath) }
 
       do {
-        _ = try spawner.spawnDomainSocketServer(udid: udid, path: socketPath)
+        _ = try await spawner.spawnDomainSocketServer(udid: udid, path: socketPath)
         Issue.record("expected spawnDomainSocketServer to throw")
       } catch let error as CompanionDiscoveryError {
         guard case .socketPathMismatch = error else {
@@ -113,34 +113,34 @@ struct CompanionSpawnerTests {
   }
 
   @Test
-  func throwsWhenCompanionPrintsNoHandshake() throws {
-    try withFakeCompanion("#!/bin/bash\nexit 0\n") { spawner in
+  func throwsWhenCompanionPrintsNoHandshake() async throws {
+    try await withFakeCompanion("#!/bin/bash\nexit 0\n") { spawner in
       let udid = TestSupport.uniqueUDID()
       let socketPath = TestSupport.shortSocketPath()
       defer { cleanUp(udid: udid, socketPath: socketPath) }
-      #expect(throws: CompanionDiscoveryError.self) {
-        try spawner.spawnDomainSocketServer(udid: udid, path: socketPath)
+      await #expect(throws: CompanionDiscoveryError.self) {
+        try await spawner.spawnDomainSocketServer(udid: udid, path: socketPath)
       }
     }
   }
 
   @Test
-  func throwsWhenBinaryMissing() throws {
+  func throwsWhenBinaryMissing() async throws {
     let spawner = CompanionSpawner(companionPath: "/nonexistent/idb_companion_\(UUID().uuidString)")
     let udid = TestSupport.uniqueUDID()
     let socketPath = TestSupport.shortSocketPath()
     defer { cleanUp(udid: udid, socketPath: socketPath) }
-    #expect(throws: CompanionDiscoveryError.self) {
-      try spawner.spawnDomainSocketServer(udid: udid, path: socketPath)
+    await #expect(throws: CompanionDiscoveryError.self) {
+      try await spawner.spawnDomainSocketServer(udid: udid, path: socketPath)
     }
   }
 
   // MARK: - Helpers
 
-  private func withFakeCompanion(_ script: String, _ body: (CompanionSpawner) throws -> Void) throws {
+  private func withFakeCompanion(_ script: String, _ body: (CompanionSpawner) async throws -> Void) async throws {
     let fakePath = try TestSupport.makeExecutableScript(script)
     defer { try? FileManager.default.removeItem(atPath: (fakePath as NSString).deletingLastPathComponent) }
-    try body(CompanionSpawner(companionPath: fakePath))
+    try await body(CompanionSpawner(companionPath: fakePath))
   }
 
   private func cleanUp(udid: String, socketPath: String) {

@@ -67,7 +67,7 @@ struct ReplRunner: ParsableArguments {
 
     // Discover an already-running idb_companion for this target, or start one,
     // then connect to it.
-    let companion = try companionManager().companionInfo(forUDID: udid)
+    let companion = try await companionManager().companionInfo(forUDID: udid)
 
     let group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
     let channel = try GRPCChannelPool.with(
