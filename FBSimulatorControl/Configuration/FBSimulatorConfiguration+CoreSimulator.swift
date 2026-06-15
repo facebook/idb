@@ -20,7 +20,7 @@ extension FBSimulatorConfiguration {
   @objc
   public func newestAvailableOS() throws -> FBSimulatorConfiguration {
     guard let os = try FBSimulatorConfiguration.newestAvailableOS(forDevice: device) else {
-      throw FBSimulatorError.describe("No newest available OS for device \(device.model.rawValue)").build()
+      throw FBSimulatorConfigurationError.noNewestAvailableOS(device: device.model.rawValue)
     }
     return withOSNamed(os.name)
   }
@@ -32,7 +32,7 @@ extension FBSimulatorConfiguration {
   @objc
   public func oldestAvailableOS() throws -> FBSimulatorConfiguration {
     guard let os = try FBSimulatorConfiguration.oldestAvailableOS(forDevice: device) else {
-      throw FBSimulatorError.describe("No oldest available OS for device \(device.model.rawValue)").build()
+      throw FBSimulatorConfigurationError.noOldestAvailableOS(device: device.model.rawValue)
     }
     return withOSNamed(os.name)
   }
@@ -41,11 +41,11 @@ extension FBSimulatorConfiguration {
   public class func inferSimulatorConfiguration(fromDevice simDevice: SimDevice) throws -> FBSimulatorConfiguration {
     let osName = FBOSVersionName(rawValue: simDevice.runtime.name!)
     guard FBiOSTargetConfiguration.nameToOSVersion[osName] != nil else {
-      throw FBSimulatorError.describe("Could not obtain OS Version for \(osName.rawValue), perhaps it is unsupported by FBSimulatorControl").build()
+      throw FBSimulatorConfigurationError.unsupportedOSVersion(name: osName.rawValue)
     }
     let model = FBDeviceModel(rawValue: simDevice.deviceType.name!)
     guard FBiOSTargetConfiguration.nameToDevice[model] != nil else {
-      throw FBSimulatorError.describe("Could not obtain Device for \(model.rawValue), perhaps it is unsupported by FBSimulatorControl").build()
+      throw FBSimulatorConfigurationError.unsupportedDevice(name: model.rawValue)
     }
     return try FBSimulatorConfiguration.defaultConfiguration().withOSNamed(osName).withDeviceModel(model)
   }
@@ -71,16 +71,18 @@ extension FBSimulatorConfiguration {
     do {
       runtime = try obtainRuntime()
     } catch {
-      throw FBSimulatorError.describe("Could not obtain available SimRuntime for configuration \(self)").caused(by: error).build()
+      throw FBSimulatorConfigurationError.runtimeUnavailable(configuration: "\(self)", reason: error.localizedDescription)
     }
     let deviceType: SimDeviceType
     do {
       deviceType = try obtainDeviceType()
     } catch {
-      throw FBSimulatorError.describe("Could not obtain available SimDeviceType for configuration \(self)").caused(by: error).build()
+      throw FBSimulatorConfigurationError.deviceTypeUnavailable(configuration: "\(self)", reason: error.localizedDescription)
     }
     if !runtime.supportsDeviceType(deviceType) {
-      throw FBSimulatorError.describe("Device Type \(deviceType.name ?? "unknown") does not support Runtime \(runtime.name ?? "unknown")").build()
+      throw FBSimulatorConfigurationError.runtimeDeviceTypeMismatch(
+        deviceType: deviceType.name ?? "unknown",
+        runtime: runtime.name ?? "unknown")
     }
   }
 
@@ -161,10 +163,10 @@ extension FBSimulatorConfiguration {
     let runtimes = try FBSimulatorConfiguration.supportedRuntimes()
     let matchingRuntimes = (runtimes as NSArray).filtered(using: runtimePredicate) as! [SimRuntime]
     if matchingRuntimes.isEmpty {
-      throw FBSimulatorError.describe("Could not obtain matching SimRuntime, no matches. Available Runtimes \(runtimes)").build()
+      throw FBSimulatorConfigurationError.noMatchingRuntime(available: "\(runtimes)")
     }
     if matchingRuntimes.count > 1 {
-      throw FBSimulatorError.describe("Matching Runtimes is ambiguous: \(matchingRuntimes)").build()
+      throw FBSimulatorConfigurationError.ambiguousRuntime(matches: "\(matchingRuntimes)")
     }
     return matchingRuntimes[0]
   }
@@ -174,10 +176,10 @@ extension FBSimulatorConfiguration {
     let deviceTypes = try FBSimulatorConfiguration.supportedDeviceTypes()
     let matchingDeviceTypes = (deviceTypes as NSArray).filtered(using: FBSimulatorConfiguration.deviceTypePredicate(device)) as! [SimDeviceType]
     if matchingDeviceTypes.isEmpty {
-      throw FBSimulatorError.describe("Could not obtain matching DeviceTypes, no matches. Available Device Types \(matchingDeviceTypes)").build()
+      throw FBSimulatorConfigurationError.noMatchingDeviceType(available: "\(matchingDeviceTypes)")
     }
     if matchingDeviceTypes.count > 1 {
-      throw FBSimulatorError.describe("Matching Device Types is ambiguous: \(matchingDeviceTypes)").build()
+      throw FBSimulatorConfigurationError.ambiguousDeviceType(matches: "\(matchingDeviceTypes)")
     }
     return matchingDeviceTypes[0]
   }

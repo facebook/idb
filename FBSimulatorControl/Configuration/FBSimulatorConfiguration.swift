@@ -38,11 +38,11 @@ public final class FBSimulatorConfiguration: NSObject, NSCopying {
     FBSimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworksOrAbort()
     let model = FBDeviceModel(rawValue: "iPhone 6")
     guard let device = FBiOSTargetConfiguration.nameToDevice[model] else {
-      return .failure(FBSimulatorError.describe("No device type is registered for 'iPhone 6'").build())
+      return .failure(FBSimulatorConfigurationError.noDefaultDeviceTypeRegistered(model: model.rawValue))
     }
     do {
       guard let os = try FBSimulatorConfiguration.newestAvailableOS(forDevice: device) else {
-        return .failure(FBSimulatorError.describe("No available OS versions for the default simulator configuration").build())
+        return .failure(FBSimulatorConfigurationError.noAvailableOSVersionsForDefault)
       }
       return .success(FBSimulatorConfiguration(device: device, os: os))
     } catch {
