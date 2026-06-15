@@ -5,20 +5,18 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import Foundation
-
 /// The core, transport-agnostic HID value types. Every transport (Indigo, DTUHID) and the
 /// `FBSimulatorHIDEvent` dispatch share these; they are intentionally independent of any one
 /// transport's wire format.
 
 /// The direction of a HID event.
-@objc public enum FBSimulatorHIDDirection: Int32, Sendable {
+public enum FBSimulatorHIDDirection: Int32, Sendable {
   case down = 1
   case up = 2
 }
 
 /// A hardware button press.
-@objc public enum FBSimulatorHIDButton: Int32, Sendable {
+public enum FBSimulatorHIDButton: Int32, Sendable {
   case applePay = 1
   case homeButton = 2
   case lock = 3
@@ -27,7 +25,7 @@ import Foundation
 }
 
 /// Device orientation. Values match UIDeviceOrientation (1-4, excluding faceUp/faceDown).
-@objc public enum FBSimulatorHIDDeviceOrientation: Int32, Sendable {
+public enum FBSimulatorHIDDeviceOrientation: Int32, Sendable {
   case portrait = 1
   case portraitUpsideDown = 2
   case landscapeRight = 3

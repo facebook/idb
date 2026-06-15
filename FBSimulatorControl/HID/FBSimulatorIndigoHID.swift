@@ -12,7 +12,7 @@ import Foundation
 @_implementationOnly import SimulatorApp
 
 /// Translates FBSimulatorHID events into Indigo structs.
-@objc public final class FBSimulatorIndigoHID: NSObject {
+public final class FBSimulatorIndigoHID {
 
   // The SimulatorKit `IndigoHIDMessageFor*` functions, resolved at runtime via dlsym.
   private typealias MessageForButtonFn = @convention(c) (Int32, Int32, Int32) -> UnsafeMutablePointer<IndigoMessage>
@@ -51,25 +51,24 @@ import Foundation
     self.messageForButton = messageForButton
     self.messageForKeyboardArbitrary = messageForKeyboardArbitrary
     self.messageForMouseNSEvent = messageForMouseNSEvent
-    super.init()
   }
 
   // MARK: Public
 
   /// A keyboard event. The keycodes are 'Hardware Independent' as described in `<HIToolbox/Events.h>`.
-  @objc public func keyboard(with direction: FBSimulatorHIDDirection, keyCode: UInt32) -> Data {
+  public func keyboard(with direction: FBSimulatorHIDDirection, keyCode: UInt32) -> Data {
     let message = messageForKeyboardArbitrary(Int32(bitPattern: keyCode), direction.rawValue)
     return FBSimulatorIndigoHID.data(fromMallocedMessage: message)
   }
 
   /// A button event.
-  @objc public func button(with direction: FBSimulatorHIDDirection, button: FBSimulatorHIDButton) -> Data {
+  public func button(with direction: FBSimulatorHIDDirection, button: FBSimulatorHIDButton) -> Data {
     let message = messageForButton(button.indigoEventSource, direction.rawValue, Int32(ButtonEventTargetHardware))
     return FBSimulatorIndigoHID.data(fromMallocedMessage: message)
   }
 
   /// A single-finger touch event. `x`/`y` are in points; `screenSize` is in pixels.
-  @objc public func touchScreenSize(
+  public func touchScreenSize(
     _ screenSize: CGSize, screenScale: Float, direction: FBSimulatorHIDDirection, x: Double, y: Double
   ) -> Data {
     // Convert Screen Offset to Ratio for Indigo.
@@ -78,7 +77,7 @@ import Foundation
   }
 
   /// A two-finger touch event for multi-touch gestures (pinch, rotate, etc.).
-  @objc public func twoFingerTouchScreenSize(
+  public func twoFingerTouchScreenSize(
     _ screenSize: CGSize, screenScale: Float, direction: FBSimulatorHIDDirection, finger1: CGPoint, finger2: CGPoint
   ) -> Data {
     var ratio1 = FBSimulatorIndigoHID.screenRatio(from: finger1, screenSize: screenSize, screenScale: screenScale)

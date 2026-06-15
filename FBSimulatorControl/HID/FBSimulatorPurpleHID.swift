@@ -20,7 +20,7 @@ import Foundation
  Unlike `FBSimulatorIndigoHID`, this class has no dlsym dependencies — payloads are
  constructed from documented constants.
  */
-@objc public final class FBSimulatorPurpleHID: NSObject {
+public final class FBSimulatorPurpleHID {
 
   // GSEvent constants. Values mirror SimulatorApp/GSEvent.h.
   private static let gsEventTypeDeviceOrientationChanged: UInt32 = 50
@@ -31,7 +31,7 @@ import Foundation
   /**
    Creates a new `FBSimulatorPurpleHID` instance.
    */
-  @objc public class func purple() -> FBSimulatorPurpleHID {
+  public class func purple() -> FBSimulatorPurpleHID {
     FBSimulatorPurpleHID()
   }
 
@@ -42,7 +42,7 @@ import Foundation
    - Parameter orientation: the desired device orientation.
    - Returns: a `Data` containing the complete mach message (112 bytes, msgh_size=108).
    */
-  @objc public func orientationEvent(_ orientation: FBSimulatorHIDDeviceOrientation) -> Data {
+  public func orientationEvent(_ orientation: FBSimulatorHIDDeviceOrientation) -> Data {
     // Construct a 112-byte buffer (aligned to 8 bytes, >= 108 = 0x6C mach message size).
     // See GSEvent.h for the complete wire format documentation.
     var buf = [UInt8](repeating: 0, count: 112)
@@ -68,7 +68,7 @@ import Foundation
 
    - Returns: a `Data` containing the complete mach message (112 bytes).
    */
-  @objc public func lockDeviceEvent() -> Data {
+  public func lockDeviceEvent() -> Data {
     // Same 112-byte buffer as orientation, but with GSEventTypeLockDevice and no payload.
     var buf = [UInt8](repeating: 0, count: 112)
     FBSimulatorPurpleHID.writeMachHeader(into: &buf)
