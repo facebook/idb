@@ -86,25 +86,35 @@ private func writeTargetToStdOut(_ target: FBiOSTargetInfo) {
   }
 }
 
-private func simulatorSetWithPath(_ deviceSetPath: String?, logger: FBControlCoreLogger, reporter: FBEventReporter) -> FBFuture<FBSimulatorSet> {
+private func simulatorSetWithPath(_ deviceSetPath: String?, logger: FBControlCoreLogger, reporter: FBEventReporter) throws -> FBSimulatorSet {
   // Give a more meaningful message if we can't load the frameworks.
-  do {
-    try FBSimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworks(logger)
-  } catch {
-    return FBFuture(error: error)
-  }
+  try FBSimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworks(logger)
   let configuration = FBSimulatorControlConfiguration(deviceSetPath: deviceSetPath, logger: logger, reporter: reporter)
+  return try FBSimulatorControl.withConfiguration(configuration).set
+}
+
+private func simulatorSet(_ userDefaults: UserDefaults, logger: FBControlCoreLogger, reporter: FBEventReporter) throws -> FBSimulatorSet {
+  let deviceSetPath = userDefaults.string(forKey: "-device-set-path")
+  return try simulatorSetWithPath(deviceSetPath, logger: logger, reporter: reporter)
+}
+
+// FBFuture adapters over the throwing functions above, for the command paths that are still
+// FBFuture-based (boot/clone/delete/list/notify). These disappear as those paths migrate to
+// async/await; the create path calls the throwing functions directly.
+private func simulatorSetFuture(_ userDefaults: UserDefaults, logger: FBControlCoreLogger, reporter: FBEventReporter) -> FBFuture<FBSimulatorSet> {
   do {
-    let control = try FBSimulatorControl.withConfiguration(configuration)
-    return FBFuture(result: control.set)
+    return FBFuture(result: try simulatorSet(userDefaults, logger: logger, reporter: reporter))
   } catch {
     return FBFuture(error: error)
   }
 }
 
-private func simulatorSet(_ userDefaults: UserDefaults, logger: FBControlCoreLogger, reporter: FBEventReporter) -> FBFuture<FBSimulatorSet> {
-  let deviceSetPath = userDefaults.string(forKey: "-device-set-path")
-  return simulatorSetWithPath(deviceSetPath, logger: logger, reporter: reporter)
+private func simulatorSetWithPathFuture(_ deviceSetPath: String?, logger: FBControlCoreLogger, reporter: FBEventReporter) -> FBFuture<FBSimulatorSet> {
+  do {
+    return FBFuture(result: try simulatorSetWithPath(deviceSetPath, logger: logger, reporter: reporter))
+  } catch {
+    return FBFuture(error: error)
+  }
 }
 
 private func deviceSet(_ logger: FBControlCoreLogger, ecidFilter: String?) -> FBFuture<FBDeviceSet> {
@@ -128,7 +138,7 @@ private func defaultTargetSets(_ userDefaults: UserDefaults, xcodeAvailable: Boo
   if let only {
     if only.lowercased().contains("simulator") {
       logger.log("'--only' set for Simulators")
-      return FBFuture<AnyObject>.combine([simulatorSet(userDefaults, logger: logger, reporter: reporter) as! FBFuture<AnyObject>])
+      return FBFuture<AnyObject>.combine([simulatorSetFuture(userDefaults, logger: logger, reporter: reporter) as! FBFuture<AnyObject>])
     }
     if only.lowercased().contains("device") {
       logger.log("'--only' set for Devices")
@@ -147,7 +157,7 @@ private func defaultTargetSets(_ userDefaults: UserDefaults, xcodeAvailable: Boo
   }
   logger.log("Providing targets across Simulator and Device sets.")
   return FBFuture<AnyObject>.combine([
-    simulatorSet(userDefaults, logger: logger, reporter: reporter) as! FBFuture<AnyObject>,
+    simulatorSetFuture(userDefaults, logger: logger, reporter: reporter) as! FBFuture<AnyObject>,
     deviceSet(logger, ecidFilter: nil) as! FBFuture<AnyObject>,
   ])
 }
@@ -177,7 +187,7 @@ private func deviceForECID(_ ecid: String, logger: FBControlCoreLogger) -> FBFut
 }
 
 private func simulatorFuture(_ udid: String, userDefaults: UserDefaults, logger: FBControlCoreLogger, reporter: FBEventReporter) -> FBFuture<FBSimulator> {
-  return (simulatorSet(userDefaults, logger: logger, reporter: reporter) as FBFuture)
+  return (simulatorSetFuture(userDefaults, logger: logger, reporter: reporter) as FBFuture)
     .onQueue(
       DispatchQueue.main,
       fmap: { (setObj: AnyObject) -> FBFuture<AnyObject> in
@@ -315,7 +325,7 @@ private func eraseFuture(_ udid: String, userDefaults: UserDefaults, xcodeAvaila
 }
 
 private func deleteFuture(_ udidOrAll: String, userDefaults: UserDefaults, logger: FBControlCoreLogger, reporter: FBEventReporter) -> FBFuture<NSNull> {
-  return (simulatorSet(userDefaults, logger: logger, reporter: reporter) as FBFuture)
+  return (simulatorSetFuture(userDefaults, logger: logger, reporter: reporter) as FBFuture)
     .onQueue(
       DispatchQueue.main,
       fmap: { (setObj: AnyObject) -> FBFuture<AnyObject> in
@@ -359,7 +369,7 @@ private func createFuture(_ create: String, userDefaults: UserDefaults, logger: 
   if parameters.count > 1 {
     config = config.withOSNamed(FBOSVersionName(rawValue: parameters[1]))
   }
-  let set = try await bridgeFBFuture(simulatorSet(userDefaults, logger: logger, reporter: reporter))
+  let set = try simulatorSet(userDefaults, logger: logger, reporter: reporter)
   let simulator = try await bridgeFBFuture(set.createSimulator(with: config))
   writeTargetToStdOut(simulator)
 }
@@ -368,7 +378,7 @@ private func cloneFuture(_ udid: String, userDefaults: UserDefaults, logger: FBC
   let destinationSet = userDefaults.string(forKey: "-clone-destination-set")
   return FBFuture<AnyObject>.combine([
     simulatorFuture(udid, userDefaults: userDefaults, logger: logger, reporter: reporter) as! FBFuture<AnyObject>,
-    simulatorSetWithPath(destinationSet, logger: logger, reporter: reporter) as! FBFuture<AnyObject>,
+    simulatorSetWithPathFuture(destinationSet, logger: logger, reporter: reporter) as! FBFuture<AnyObject>,
   ])
   .onQueue(
     DispatchQueue.main,
