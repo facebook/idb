@@ -9,6 +9,9 @@ import ArgumentParser
 
 @main
 struct TestRepl: AsyncParsableCommand {
+  @Option(help: "The reason the tool is being used.")
+  var reason: String?
+
   static var configuration = CommandConfiguration(
     commandName: "idb-repl",
     abstract: "Launch a test bundle in REPL mode",
