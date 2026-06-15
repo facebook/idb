@@ -102,11 +102,30 @@ final class FBSimulatorDTUHIDTransportTests: XCTestCase {
       connection: connection, mainScreenSize: CGSize(width: 100, height: 200), mainScreenScale: 2.0)
     defer { transport.disconnect() }
 
-    await assertThrowsNotImplemented {
-      try await transport.sendTwoFingerTouch(direction: .down, finger1: .zero, finger2: .zero)
-    }
     // Apple Pay has no single HID usage (it is a double side-button press), so it stays unimplemented.
     await assertThrowsNotImplemented { try await transport.sendButton(direction: .down, button: .applePay) }
+  }
+
+  // MARK: Two-finger encoding
+
+  func testDigitizerEventWithTwoFingers() throws {
+    let event = try encodeDigitizer(
+      IndigoDigitizerEvent(
+        pointOne: DigitizerPoint(x: 0.25, y: 0.5),
+        pointTwo: DigitizerPoint(x: 0.75, y: 0.5),
+        eventType: .start))
+    let payload = xpc_dictionary_get_dictionary(event, "payload")!
+    let pointOne = xpc_dictionary_get_dictionary(payload, "pointOne")!
+    let pointTwo = xpc_dictionary_get_dictionary(payload, "pointTwo")
+    XCTAssertNotNil(pointTwo, "a two-finger event must carry pointTwo")
+    XCTAssertEqual(xpc_dictionary_get_double(pointOne, "x"), 0.25, accuracy: 1e-9)
+    XCTAssertEqual(xpc_dictionary_get_double(pointTwo!, "x"), 0.75, accuracy: 1e-9)
+    XCTAssertEqual(xpc_dictionary_get_double(pointTwo!, "y"), 0.5, accuracy: 1e-9)
+
+    // A single-finger event still omits pointTwo.
+    let single = try encodeDigitizer(
+      IndigoDigitizerEvent(pointOne: DigitizerPoint(x: 0.1, y: 0.2), eventType: .start))
+    XCTAssertNil(xpc_dictionary_get_dictionary(xpc_dictionary_get_dictionary(single, "payload")!, "pointTwo"))
   }
 
   // MARK: Button encoding

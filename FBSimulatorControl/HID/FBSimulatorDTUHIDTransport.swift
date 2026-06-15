@@ -75,6 +75,7 @@ actor FBSimulatorDTUHIDTransport: FBSimulatorHIDTransport {
   private let mainScreenSize: CGSize
   private let mainScreenScale: Float
   private var contact = DigitizerContactTracker()
+  private var twoFingerContact = DigitizerContactTracker()
 
   // MARK: Initializers
 
@@ -145,7 +146,13 @@ actor FBSimulatorDTUHIDTransport: FBSimulatorHIDTransport {
   }
 
   func sendTwoFingerTouch(direction: FBSimulatorHIDDirection, finger1: CGPoint, finger2: CGPoint) async throws {
-    throw FBSimulatorHIDError.notImplementedOnDTUHIDTransport(operation: "sendTwoFingerTouch")
+    let r1 = FBSimulatorIndigoHID.screenRatio(from: finger1, screenSize: mainScreenSize, screenScale: mainScreenScale)
+    let r2 = FBSimulatorIndigoHID.screenRatio(from: finger2, screenSize: mainScreenSize, screenScale: mainScreenScale)
+    let event = IndigoDigitizerEvent(
+      pointOne: DigitizerPoint(x: Double(r1.x), y: Double(r1.y)),
+      pointTwo: DigitizerPoint(x: Double(r2.x), y: Double(r2.y)),
+      eventType: twoFingerContact.eventType(for: direction))
+    try await send(messageType: "IndigoDigitizerEvent", payload: event)
   }
 
   func sendButton(direction: FBSimulatorHIDDirection, button: FBSimulatorHIDButton) async throws {
