@@ -284,6 +284,13 @@ import XCTestBootstrap
     return try await replTarget.startReplTest(bundlePath: bundlePath)
   }
 
+  /// The product family ("iphone", "ipad", "watch", "tv", "mac", "unknown") of
+  /// the target this companion is connected to. Reported to the client as part
+  /// of the REPL handshake.
+  public var replDeviceType: String {
+    FBControlCoreProductFamilyString(target.deviceType.family)
+  }
+
   /// Launches `SimulatorFrameworkBridge` on the simulator for the "simulator"
   /// REPL context. The returned `ReplSession.run` completes when the bridge
   /// process exits.

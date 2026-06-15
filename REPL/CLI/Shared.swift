@@ -60,21 +60,45 @@ class SessionDirectory {
 
 let sessionDirectory = SessionDirectory()
 
-enum Platform: String, ExpressibleByArgument, CaseIterable {
-  case ios
-  case macos
+/// The Apple platform to compile injected code for, derived from the device
+/// type the companion reports for its connected target.
+enum Platform {
+  case iOSSimulator
+  case macOS
+  case watchOSSimulator
+  case tvOSSimulator
+
+  /// Maps a companion-reported device type to the platform to compile for.
+  init(deviceType: String) throws {
+    switch deviceType {
+    case "iphone", "ipad":
+      self = .iOSSimulator
+    case "mac":
+      self = .macOS
+    case "watch":
+      self = .watchOSSimulator
+    case "tv":
+      self = .tvOSSimulator
+    default:
+      throw ValidationError("Unsupported device type reported by idb_companion: '\(deviceType)'")
+    }
+  }
 
   var sdkName: String {
     switch self {
-    case .ios: return "iphonesimulator"
-    case .macos: return "macosx"
+    case .iOSSimulator: return "iphonesimulator"
+    case .macOS: return "macosx"
+    case .watchOSSimulator: return "watchsimulator"
+    case .tvOSSimulator: return "appletvsimulator"
     }
   }
 
   func targetTriple(version: String) -> String {
     switch self {
-    case .ios: return "arm64-apple-ios\(version)-simulator"
-    case .macos: return "arm64-apple-macosx\(version)"
+    case .iOSSimulator: return "arm64-apple-ios\(version)-simulator"
+    case .macOS: return "arm64-apple-macosx\(version)"
+    case .watchOSSimulator: return "arm64-apple-watchos\(version)-simulator"
+    case .tvOSSimulator: return "arm64-apple-tvos\(version)-simulator"
     }
   }
 }

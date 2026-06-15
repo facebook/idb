@@ -40,9 +40,6 @@ struct ReplRunner: ParsableArguments {
   @Option(name: .long, help: "Path to the Swift toolchain used to compile code. Defaults to the selected Xcode toolchain (xcode-select -p).")
   var toolchainPath: String?
 
-  @Option(name: .long, help: "Target platform (ios, macos).")
-  var platform: Platform
-
   @Option(
     name: .long,
     help: ArgumentHelp(
@@ -52,8 +49,6 @@ struct ReplRunner: ParsableArguments {
 
   func run(context: Context) async throws {
     let toolchain = try resolveToolchainPath(explicit: toolchainPath)
-    let sdkPath = try resolveSDKPath(platform: platform)
-    let targetTriple = try resolveTargetTriple(platform: platform)
 
     // The module map only applies to the test context; the simulator context
     // runs without a bundle or module map.
@@ -96,11 +91,17 @@ struct ReplRunner: ParsableArguments {
 
     // The companion launches the test and connects to the shim before it is ready.
     let first = try await responses.next()
-    guard let firstEvent = first?.event, case .ready = firstEvent else {
+    guard let firstEvent = first?.event, case let .ready(ready) = firstEvent else {
       throw ValidationError("idb_companion did not report the REPL as ready")
     }
 
-    printStatus("Connected to test process.", "Type '/help' for available commands.")
+    // The companion reports the connected target's device type; compile injected
+    // code for the matching platform.
+    let platform = try Platform(deviceType: ready.deviceType)
+    let sdkPath = try resolveSDKPath(platform: platform)
+    let targetTriple = try resolveTargetTriple(platform: platform)
+
+    printStatus("Connected to \(ready.deviceType) process.", "Type '/help' for available commands.")
 
     var lines: [String] = []
     let editor = LineEditor()

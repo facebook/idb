@@ -50,7 +50,10 @@ struct ReplMethodHandler {
     defer { client.close() }
 
     targetLogger.debug().log("REPL session ready on socket \(session.socketPath)")
-    try await responseStream.send(.with { $0.event = .ready(.init()) })
+    try await responseStream.send(
+      .with {
+        $0.event = .ready(.with { $0.deviceType = commandExecutor.replDeviceType })
+      })
 
     var runIndex = 0
     bridge: for try await request in requestStream {

@@ -817,7 +817,11 @@ message ReplRequest {
 
 message ReplResponse {
   // The test is running and the REPL is ready to accept Execute messages.
-  message Ready {}
+  message Ready {
+    // The product family of the connected target: "iphone", "ipad", "watch",
+    // "tv", "mac", or "unknown".
+    string device_type = 1;
+  }
   // The result of executing one Execute message.
   message Result {
     bool success = 1;

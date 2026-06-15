@@ -179,6 +179,28 @@ func FBiOSTargetTypeStringFromTargetType(_ targetType: FBiOSTargetType) -> NSStr
   return "Unknown"
 }
 
+/// The canonical string representation of a product family (the device "type":
+/// iphone, ipad, watch, tv, mac), distinct from the simulator/device/mac
+/// distinction carried by FBiOSTargetType.
+public func FBControlCoreProductFamilyString(_ family: FBControlCoreProductFamily) -> String {
+  switch family {
+  case .familyiPhone:
+    return "iphone"
+  case .familyiPad:
+    return "ipad"
+  case .familyAppleWatch:
+    return "watch"
+  case .familyAppleTV:
+    return "tv"
+  case .familyMac:
+    return "mac"
+  case .familyUnknown:
+    return "unknown"
+  @unknown default:
+    return "unknown"
+  }
+}
+
 /// A Default Comparison Function that can be called for different implementations of FBiOSTarget.
 @_cdecl("FBiOSTargetComparison")
 func FBiOSTargetComparison(_ left: FBiOSTarget, _ right: FBiOSTarget) -> ComparisonResult {
