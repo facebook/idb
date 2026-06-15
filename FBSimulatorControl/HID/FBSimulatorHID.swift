@@ -46,23 +46,20 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
   // MARK: Initializers
 
   /**
-   Creates and returns a `FBSimulatorHID` instance for the provided Simulator using the default
-   (legacy Indigo) transport.
-   Will fail if a HID Port could not be registered for the provided Simulator.
-   Registration may need to occur prior to booting.
-   */
-  public convenience init(for simulator: FBSimulator) throws {
-    try self.init(for: simulator, transport: .indigo)
-  }
+   Creates a `FBSimulatorHID` for the provided Simulator.
 
-  /**
-   Creates and returns a `FBSimulatorHID` instance for the provided Simulator using the given transport.
+   `transport` selects the HID path. When `nil` (the default) it is resolved with
+   `FBSimulator.defaultHIDTransport` — the DTUHID transport when an active `dtuhidd` has suppressed
+   the legacy HID, and the legacy Indigo path otherwise — so a caller that does not care gets a
+   working transport without choosing one. Pass an explicit value to force a specific transport. Will
+   fail if the chosen transport cannot be established for the provided Simulator (registration may
+   need to occur prior to booting).
    */
   public convenience init(
-    for simulator: FBSimulator, transport transportType: FBSimulatorHIDTransportType
+    for simulator: FBSimulator, transport transportType: FBSimulatorHIDTransportType? = nil
   ) throws {
     let transport: FBSimulatorHIDTransport
-    switch transportType {
+    switch transportType ?? simulator.defaultHIDTransport {
     case .indigo:
       transport = try FBSimulatorIndigoHIDTransport.indigo(for: simulator)
     case .dtuhid:

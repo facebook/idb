@@ -33,6 +33,14 @@ extension FBSimulator {
     // is the per-simulator signal.
     return FBProcessFetcher().simulatorSubprocess(named: "dtuhidd", forSimulatorUDID: udid) != nil
   }
+
+  /// The HID transport to use when a caller does not request one: the DTUHID transport when an active
+  /// `dtuhidd` has suppressed the legacy HID, and the legacy Indigo path otherwise. The selection
+  /// criteria are deliberately the same as the suppression detection (`isLegacyHIDSuppressed`); this
+  /// can be refined independently later if the two ever need to diverge.
+  var defaultHIDTransport: FBSimulatorHIDTransportType {
+    isLegacyHIDSuppressed ? .dtuhid : .indigo
+  }
 }
 
 // MARK: - Simulator process tree
