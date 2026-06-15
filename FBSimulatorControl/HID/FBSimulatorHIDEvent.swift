@@ -74,6 +74,30 @@ public extension FBSimulatorHIDEvent {
   }
 }
 
+public extension FBSimulatorHID {
+
+  /// Sends a (possibly composite) HID event, then drains the transport exactly once.
+  ///
+  /// A `.composite` is flattened to its ordered sub-events so each is logged individually, and a
+  /// `.delay` suspends the task; the single drain (`flush()`) then runs after the whole event. So a
+  /// tap (down + up) or a typed string settles once, not after every primitive — which keeps the
+  /// gesture intact before the connection is torn down while avoiding a per-primitive stall (e.g.
+  /// slow typing on the DTUHID transport).
+  func send(event: FBSimulatorHIDEvent, logger: FBControlCoreLogger) async throws {
+    for subEvent in event.subEvents ?? [event] {
+      switch subEvent {
+      case let .delay(duration):
+        logger.log("Delay \(duration)s")
+        try await Task.sleep(nanoseconds: UInt64(max(0, duration) * 1_000_000_000))
+      default:
+        logger.log("Sending \(subEvent)")
+        try await subEvent.sendAsync(on: self)
+      }
+    }
+    try await flush()
+  }
+}
+
 // MARK: - Factories
 
 public extension FBSimulatorHIDEvent {

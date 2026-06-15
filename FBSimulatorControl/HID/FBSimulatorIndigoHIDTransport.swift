@@ -95,6 +95,9 @@ actor FBSimulatorIndigoHIDTransport: FBSimulatorHIDTransport {
     try await indigoClient.send(indigo.keyboard(with: direction, keyCode: keyCode))
   }
 
+  /// No-op: the legacy client awaits delivery on every `send`, so there is nothing left to drain.
+  func flush() async throws {}
+
   // MARK: Legacy keyboard suppression
 
   /// Whether the legacy keyboard HID service is suppressed for this transport's simulator.

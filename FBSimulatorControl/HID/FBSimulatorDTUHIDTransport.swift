@@ -59,14 +59,14 @@ actor FBSimulatorDTUHIDTransport: FBSimulatorHIDTransport {
   private typealias ConnectionFromEndpointFn = @convention(c) (xpc_object_t) -> xpc_connection_t?
   private typealias EnableSim2HostFn = @convention(c) (xpc_connection_t) -> Void
 
-  /// Time to keep the connection alive after a send so `dtuhidd` consumes the event before the
-  /// connection can be torn down. `dtuhidd` resets its virtual services (dropping any in-flight
-  /// gesture) the instant the host peer disconnects — which, for a one-shot gesture from a
-  /// short-lived host process, is the moment that process exits right after the send. The XPC send
-  /// barrier only confirms the message was flushed to the connection, not that the daemon consumed
-  /// it, so we settle here. It also spaces a gesture's down/up so the guest registers a real
-  /// gesture rather than a zero-duration blip.
-  private static let settleNanos: UInt64 = 80_000_000 // 80ms
+  /// Time `flush()` keeps the connection alive after a gesture's events are sent, so `dtuhidd`
+  /// consumes them before the connection is torn down. `dtuhidd` resets its virtual services
+  /// (dropping any in-flight gesture) the instant the host peer disconnects — which, for a one-shot
+  /// gesture from a short-lived host process, is the moment that process exits right after the send.
+  /// The XPC send barrier only confirms the bytes reached the connection, not that the daemon
+  /// consumed them, and `dtuhidd` does not reply to events or barriers — so a bounded wait is the
+  /// only signal available. It runs once per gesture (in `flush()`), not after every primitive.
+  private static let drainNanos: UInt64 = 80_000_000 // 80ms
 
   /// The host→guest XPC connection to `dtuhidd`. XPC connections are thread-safe, so it is marked
   /// `nonisolated(unsafe)` to be read from the `nonisolated` `disconnect()` as well as the
@@ -184,7 +184,8 @@ actor FBSimulatorDTUHIDTransport: FBSimulatorHIDTransport {
   }
 
   /// Encodes `payload`, sends it over the connection, and resolves when the XPC send barrier fires.
-  /// The actor serializes calls, so per-gesture state stays consistent.
+  /// The actor serializes calls, so per-gesture state stays consistent. Does not wait for the daemon
+  /// to consume the event — that is `flush()`'s job, run once per gesture rather than per primitive.
   func send(messageType: String, payload: some Encodable) async throws {
     let object = try encode(messageType: messageType, payload: payload)
     try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
@@ -193,8 +194,13 @@ actor FBSimulatorDTUHIDTransport: FBSimulatorHIDTransport {
         continuation.resume()
       }
     }
-    // Keep the connection alive long enough for dtuhidd to consume the event (see settleNanos).
-    try? await Task.sleep(nanoseconds: Self.settleNanos)
+  }
+
+  /// Drains the connection once a gesture's events have all been sent: waits `drainNanos` so
+  /// `dtuhidd` consumes them before the connection is torn down. Run once per gesture (see
+  /// `drainNanos`), not after every primitive.
+  func flush() async throws {
+    try? await Task.sleep(nanoseconds: Self.drainNanos)
   }
 
 }

@@ -34,4 +34,8 @@ protocol FBSimulatorHIDTransport: Sendable {
   func sendButton(direction: FBSimulatorHIDDirection, button: FBSimulatorHIDButton) async throws
   /// Sends a keyboard key event.
   func sendKeyboard(direction: FBSimulatorHIDDirection, keyCode: UInt32) async throws
+  /// Drains the transport after a gesture's events have all been sent, so the daemon consumes them
+  /// before the connection is torn down. Called once per dispatched `FBSimulatorHIDEvent` (i.e. once
+  /// per gesture), not once per primitive.
+  func flush() async throws
 }

@@ -108,6 +108,13 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
     try await transport.sendKeyboard(direction: direction, keyCode: keyCode)
   }
 
+  /// Drains the transport once a gesture's primitives have all been sent (see
+  /// `FBSimulatorHIDTransport.flush`). `FBSimulatorHIDEvent.send(on:logger:)` calls this once per
+  /// dispatched event; the individual `send*` primitives do not.
+  func flush() async throws {
+    try await transport.flush()
+  }
+
   // MARK: Purple / GSEvents
 
   /**
