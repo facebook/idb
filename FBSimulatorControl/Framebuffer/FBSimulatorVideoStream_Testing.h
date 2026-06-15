@@ -4,9 +4,11 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
+
 // Test-only header exposing internal classes for unit testing.
 
 #import <CoreMedia/CoreMedia.h>
+#import <CoreVideo/CoreVideo.h>
 #import <Foundation/Foundation.h>
 #import <VideoToolbox/VideoToolbox.h>
 
@@ -17,6 +19,26 @@
 @class FBVideoStreamConfiguration;
 
 typedef BOOL (*FBCompressedFrameWriter)(CMSampleBufferRef _Nonnull sampleBuffer, id _Nullable context, id<FBDataConsumer> _Nonnull consumer, id<FBControlCoreLogger> _Nonnull logger, NSError * _Nullable * _Nullable error);
+
+/// Test-only exposure of the bitmap (BGRA) frame pusher so its raw byte contract can be unit tested.
+@interface FBSimulatorVideoStreamFramePusher_Bitmap : NSObject
+
+- (nonnull instancetype)initWithConsumer:(nonnull id<FBDataConsumer>)consumer scaleFactor:(nullable NSNumber *)scaleFactor;
+
+- (BOOL)setupWithPixelBuffer:(CVPixelBufferRef _Nonnull)pixelBuffer
+                  edgeInsets:(FBVideoStreamEdgeInsets)edgeInsets
+                       error:(NSError * _Nullable * _Nullable)error;
+
+- (BOOL)writeEncodedFrame:(CVPixelBufferRef _Nonnull)pixelBuffer
+              frameNumber:(NSUInteger)frameNumber
+         timeAtFirstFrame:(CFTimeInterval)timeAtFirstFrame
+            frameDuration:(CFTimeInterval)frameDuration
+            forceKeyFrame:(BOOL)forceKeyFrame
+                    error:(NSError * _Nullable * _Nullable)error;
+
+- (BOOL)tearDown:(NSError * _Nullable * _Nullable)error;
+
+@end
 
 @interface FBSimulatorVideoStreamFramePusher_VideoToolbox : NSObject
 

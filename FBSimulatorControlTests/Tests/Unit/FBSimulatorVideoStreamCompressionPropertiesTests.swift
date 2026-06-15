@@ -109,4 +109,42 @@ final class FBSimulatorVideoStreamCompressionPropertiesTests: XCTestCase {
     let props = FBSimulatorVideoStream.compressionSessionProperties(for: config, callerProperties: [:])
     XCTAssertEqual(props[kVTCompressionPropertyKey_AverageBitRate as String] as? NSNumber, 500000)
   }
+
+  // MARK: - HEVC Encoding-Specific Properties
+
+  func testHEVCProfileAndClosedGOP() {
+    let config = FBVideoStreamConfiguration(
+      format: FBVideoStreamFormat.compressedVideo(withCodec: .hevc, transport: .annexB),
+      framesPerSecond: nil,
+      rateControl: nil,
+      scaleFactor: nil,
+      keyFrameRate: nil
+    )
+    let props = FBSimulatorVideoStream.compressionSessionProperties(for: config, callerProperties: [:])
+    // HEVC uses a closed GOP and an HEVC Main/Main10 profile.
+    XCTAssertEqual(props[kVTCompressionPropertyKey_AllowOpenGOP as String] as? NSNumber, false)
+    let profile = props[kVTCompressionPropertyKey_ProfileLevel as String] as? String
+    XCTAssertNotNil(profile)
+    XCTAssertTrue(
+      profile == (kVTProfileLevel_HEVC_Main_AutoLevel as String) || profile == (kVTProfileLevel_HEVC_Main10_AutoLevel as String),
+      "HEVC profile should be Main or Main10, got \(String(describing: profile))"
+    )
+    // HEVC must not set the H264-specific entropy mode.
+    XCTAssertNil(props[kVTCompressionPropertyKey_H264EntropyMode as String])
+  }
+
+  // MARK: - Low-Latency Base Properties
+
+  func testBasePropertiesUseZeroMaxFrameDelay() {
+    let config = FBVideoStreamConfiguration(
+      format: FBVideoStreamFormat.compressedVideo(withCodec: .h264, transport: .annexB),
+      framesPerSecond: nil,
+      rateControl: nil,
+      scaleFactor: nil,
+      keyFrameRate: nil
+    )
+    let props = FBSimulatorVideoStream.compressionSessionProperties(for: config, callerProperties: [:])
+    // Zero frame delay keeps the live stream low-latency.
+    XCTAssertEqual(props[kVTCompressionPropertyKey_MaxFrameDelayCount as String] as? NSNumber, 0)
+  }
 }

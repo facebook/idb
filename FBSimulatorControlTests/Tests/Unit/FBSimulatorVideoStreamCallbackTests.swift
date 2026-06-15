@@ -6,6 +6,7 @@
  */
 
 import CoreMedia
+import CoreVideo
 import FBControlCore
 @testable import FBSimulatorControl
 import VideoToolbox
@@ -279,5 +280,75 @@ final class FBSimulatorVideoStreamCallbackTests: XCTestCase {
       }
     }
     XCTAssertTrue(foundStats, "Stats during warmup should show 0 written and write failures")
+  }
+}
+
+/// Tests for the bitmap (BGRA) frame pusher's raw byte contract.
+final class FBSimulatorVideoStreamBitmapPusherTests: XCTestCase {
+
+  // MARK: - Helpers
+
+  /// Creates an IOSurface-backed BGRA pixel buffer filled with a constant byte.
+  private func makeBGRAPixelBuffer(width: Int, height: Int, fill: UInt8) -> CVPixelBuffer {
+    let attrs: [String: Any] = [kCVPixelBufferIOSurfacePropertiesKey as String: [:]]
+    var pixelBuffer: CVPixelBuffer?
+    let status = CVPixelBufferCreate(nil, width, height, kCVPixelFormatType_32BGRA, attrs as CFDictionary, &pixelBuffer)
+    precondition(status == kCVReturnSuccess, "CVPixelBufferCreate failed: \(status)")
+    let buffer = pixelBuffer!
+
+    CVPixelBufferLockBaseAddress(buffer, [])
+    if let base = CVPixelBufferGetBaseAddress(buffer) {
+      memset(base, Int32(fill), CVPixelBufferGetDataSize(buffer))
+    }
+    CVPixelBufferUnlockBaseAddress(buffer, [])
+    return buffer
+  }
+
+  // MARK: - Tests
+
+  func testBitmapPusherWritesRawPixelBytes() throws {
+    let buffer = makeBGRAPixelBuffer(width: 16, height: 8, fill: 0xAB)
+    let consumer = FBDataBuffer.accumulatingBuffer()
+    let pusher = FBSimulatorVideoStreamFramePusher_Bitmap(consumer: consumer, scaleFactor: nil)
+
+    let zeroInsets = FBVideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0)
+    try pusher.setup(with: buffer, edgeInsets: zeroInsets)
+    try pusher.writeEncodedFrame(
+      buffer,
+      frameNumber: 0,
+      timeAtFirstFrame: 0,
+      frameDuration: 0,
+      forceKeyFrame: false
+    )
+
+    // The bitmap pusher writes the raw pixel buffer bytes through to the consumer, unframed.
+    let output = consumer.data()
+    XCTAssertEqual(output.count, CVPixelBufferGetDataSize(buffer))
+    XCTAssertFalse(output.isEmpty)
+    XCTAssertTrue(output.allSatisfy { $0 == 0xAB }, "Raw BGRA bytes should pass through unchanged")
+
+    try pusher.tearDown()
+  }
+
+  func testBitmapPusherWithoutScaleDoesNotResize() throws {
+    let buffer = makeBGRAPixelBuffer(width: 16, height: 8, fill: 0x10)
+    let consumer = FBDataBuffer.accumulatingBuffer()
+    // nil scaleFactor → no pixel transfer session, raw passthrough at source dimensions.
+    let pusher = FBSimulatorVideoStreamFramePusher_Bitmap(consumer: consumer, scaleFactor: nil)
+
+    let zeroInsets = FBVideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0)
+    try pusher.setup(with: buffer, edgeInsets: zeroInsets)
+    try pusher.writeEncodedFrame(
+      buffer,
+      frameNumber: 0,
+      timeAtFirstFrame: 0,
+      frameDuration: 0,
+      forceKeyFrame: false
+    )
+
+    // Output is exactly one source-sized frame.
+    XCTAssertEqual(consumer.data().count, CVPixelBufferGetDataSize(buffer))
+
+    try pusher.tearDown()
   }
 }
