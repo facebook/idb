@@ -4,13 +4,13 @@ options:
   createIntermediateGroups: true
 
 targets:
-  Shimulator:
+  Shimulator-iOS:
     type: library.dynamic
     platform: iOS
     deploymentTarget: "15.0"
     configFiles:
-      Debug: Configs/Shimulator.xcconfig
-      Release: Configs/Shimulator.xcconfig
+      Debug: Configs/Shimulator-iOS.xcconfig
+      Release: Configs/Shimulator-iOS.xcconfig
     sources:
       - path: Tools
       - path: TestReporterShim
@@ -19,7 +19,7 @@ targets:
     settings:
       base:
         SDKROOT: iphonesimulator
-        PRODUCT_NAME: Shimulator
+        PRODUCT_NAME: Shimulator-iOS
         EXECUTABLE_PREFIX: lib
         CODE_SIGN_IDENTITY: "-"
         CLANG_ENABLE_OBJC_ARC: NO
@@ -29,13 +29,13 @@ targets:
       - sdk: Foundation.framework
       - sdk: UIKit.framework
 
-  Maculator:
+  Shimulator-macOS:
     type: library.dynamic
     platform: macOS
     deploymentTarget: "12.0"
     configFiles:
-      Debug: Configs/Maculator.xcconfig
-      Release: Configs/Maculator.xcconfig
+      Debug: Configs/Shimulator-macOS.xcconfig
+      Release: Configs/Shimulator-macOS.xcconfig
     sources:
       - path: Tools
       - path: TestReporterShim
@@ -44,7 +44,7 @@ targets:
     settings:
       base:
         SDKROOT: macosx
-        PRODUCT_NAME: Maculator
+        PRODUCT_NAME: Shimulator-macOS
         EXECUTABLE_PREFIX: lib
         CODE_SIGN_IDENTITY: "-"
         CLANG_ENABLE_OBJC_ARC: NO

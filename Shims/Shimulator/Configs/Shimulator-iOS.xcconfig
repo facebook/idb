@@ -1,9 +1,9 @@
-// The config for the Shimulator Dylib
+// The config for the Shimulator-iOS Dylib
 
 CURRENT_PROJECT_VERSION = 1
 DYLIB_CURRENT_VERSION = 1
 DYLIB_COMPATIBILITY_VERSION = 1
-PRODUCT_NAME = Shimulator
+PRODUCT_NAME = Shimulator-iOS
 EXECUTABLE_PREFIX = lib
 SDKROOT = iphonesimulator
 IPHONEOS_DEPLOYMENT_TARGET = 15.0

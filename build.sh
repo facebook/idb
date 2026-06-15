@@ -240,6 +240,10 @@ function regenerate_projects() {
   generate_xcodeproj "." "FBSimulatorControl"
   echo "Generating Shimulator project..."
   generate_xcodeproj "Shims/Shimulator" "Shimulator"
+  echo "Generating Repl shim project..."
+  generate_xcodeproj "Shims/Repl" "Repl"
+  echo "Generating SimulatorFrameworkBridge project..."
+  generate_xcodeproj "SimulatorFrameworkBridge" "SimulatorFrameworkBridge"
   echo "Generating idb_companion project..."
   generate_xcodeproj "idb_companion" "idb_companion"
 
@@ -318,10 +322,14 @@ function build_all_frameworks() {
 function build_shim() {
   local name=$1
   local sdk=$2
+  # The Repl shims live in their own project (Shims/Repl) to avoid an
+  # XCTestPrivate.h header collision with the Shimulator shims; default to the
+  # Shimulator project otherwise.
+  local project=${3:-Shims/Shimulator/Shimulator.xcodeproj}
 
   invoke_xcodebuild \
     ONLY_ACTIVE_ARCH=NO \
-    -project Shims/Shimulator/Shimulator.xcodeproj \
+    -project $project \
     -scheme $name \
     -sdk $sdk \
     -derivedDataPath $BUILD_DIRECTORY \
@@ -330,8 +338,23 @@ function build_shim() {
 }
 
 function build_shims() {
-  build_shim Shimulator iphonesimulator
-  build_shim Maculator macosx
+  build_shim Shimulator-iOS iphonesimulator
+  build_shim Shimulator-macOS macosx
+  build_shim Repl-iOS iphonesimulator Shims/Repl/Repl.xcodeproj
+  build_shim Repl-macOS macosx Shims/Repl/Repl.xcodeproj
+}
+
+function build_simulator_framework_bridge() {
+  # An iOS-simulator command-line executable, spawned by idb_companion inside the
+  # simulator to drive privacy/services state and the REPL socket.
+  invoke_xcodebuild \
+    ONLY_ACTIVE_ARCH=NO \
+    -project SimulatorFrameworkBridge/SimulatorFrameworkBridge.xcodeproj \
+    -scheme SimulatorFrameworkBridge \
+    -sdk iphonesimulator \
+    -derivedDataPath $BUILD_DIRECTORY \
+    -configuration Release \
+    build
 }
 
 function build_idb_companion() {
@@ -362,10 +385,86 @@ function build_idb_companion() {
   strip_embedded_frameworks
 }
 
+# Assemble the runtime layout idb_companion expects:
+#
+#   <dist>/
+#     idb_companion              the executable
+#     *.framework               linked/loaded via @executable_path
+#     *.bundle                  SwiftPM resource bundles (Bundle.module -> Bundle.main)
+#     PackageFrameworks/        dynamic SwiftPM frameworks, when the build produces any
+#     Resources/
+#       libShimulator-iOS.dylib
+#       libShimulator-macOS.dylib
+#       libRepl-iOS.dylib
+#       libRepl-macOS.dylib
+#       SimulatorFrameworkBridge
+#
+function build_distribution() {
+  local release="$BUILD_DIRECTORY/Products/Release"
+  local sim="$BUILD_DIRECTORY/Products/Release-iphonesimulator"
+  local dist="$BUILD_DIRECTORY/Distribution"
+
+  echo "Assembling distribution into $dist"
+
+  # Fail early with a clear message if a prerequisite product is missing.
+  local required=(
+    "$release/idb_companion"
+    "$sim/libShimulator-iOS.dylib"
+    "$release/libShimulator-macOS.dylib"
+    "$sim/libRepl-iOS.dylib"
+    "$release/libRepl-macOS.dylib"
+    "$sim/SimulatorFrameworkBridge"
+  )
+  local path
+  for path in "${required[@]}"; do
+    if [ ! -e "$path" ]; then
+      echo "error: expected build product not found: $path"
+      echo "Run './build.sh build' first."
+      exit 1
+    fi
+  done
+
+  rm -rf "$dist"
+  mkdir -p "$dist/Resources"
+
+  # Companion executable.
+  cp "$release/idb_companion" "$dist/"
+
+  # Frameworks idb_companion links/loads via @executable_path.
+  local framework
+  for framework in "$release"/*.framework; do
+    [ -d "$framework" ] || continue
+    ditto "$framework" "$dist/$(basename "$framework")"
+  done
+
+  # Dynamic SwiftPM frameworks, if the build produced any.
+  if [ -d "$release/PackageFrameworks" ] && [ -n "$(ls -A "$release/PackageFrameworks" 2>/dev/null)" ]; then
+    ditto "$release/PackageFrameworks" "$dist/PackageFrameworks"
+  fi
+
+  # SwiftPM resource bundles (Bundle.module resolves relative to Bundle.main).
+  local bundle
+  for bundle in "$release"/*.bundle; do
+    [ -e "$bundle" ] || continue
+    ditto "$bundle" "$dist/$(basename "$bundle")"
+  done
+
+  # Shims + SimulatorFrameworkBridge live under Resources/ next to idb_companion.
+  cp "$sim/libShimulator-iOS.dylib" "$dist/Resources/"
+  cp "$release/libShimulator-macOS.dylib" "$dist/Resources/"
+  cp "$sim/libRepl-iOS.dylib" "$dist/Resources/"
+  cp "$release/libRepl-macOS.dylib" "$dist/Resources/"
+  cp "$sim/SimulatorFrameworkBridge" "$dist/Resources/"
+
+  echo "Distribution ready at $dist"
+}
+
 function build_all() {
   # build_idb_companion already builds frameworks first
   build_shims
+  build_simulator_framework_bridge
   build_idb_companion
+  build_distribution
 }
 
 function build() {
@@ -382,17 +481,25 @@ function build() {
         build_all_frameworks;;
       shims)
         build_shims;;
-      Shimulator)
-        build_shim Shimulator iphonesimulator;;
-      Maculator)
-        build_shim Maculator macosx;;
+      Shimulator-iOS)
+        build_shim Shimulator-iOS iphonesimulator;;
+      Shimulator-macOS)
+        build_shim Shimulator-macOS macosx;;
+      Repl-iOS)
+        build_shim Repl-iOS iphonesimulator Shims/Repl/Repl.xcodeproj;;
+      Repl-macOS)
+        build_shim Repl-macOS macosx Shims/Repl/Repl.xcodeproj;;
+      SimulatorFrameworkBridge)
+        build_simulator_framework_bridge;;
       idb_companion)
         build_idb_companion;;
+      distribution)
+        build_distribution;;
       FBControlCore|XCTestBootstrap|FBSimulatorControl|FBDeviceControl)
         build_target $target;;
       *)
         echo "Unknown target: $target"
-        echo "Valid targets: all, frameworks, shims, idb_companion, FBControlCore, XCTestBootstrap, FBSimulatorControl, FBDeviceControl, Shimulator, Maculator"
+        echo "Valid targets: all, frameworks, shims, idb_companion, FBControlCore, XCTestBootstrap, FBSimulatorControl, FBDeviceControl, Shimulator-iOS, Shimulator-macOS, Repl-iOS, Repl-macOS, SimulatorFrameworkBridge, distribution"
         exit 1;;
     esac
   fi
@@ -466,15 +573,19 @@ Commands:
     Targets:
       (none)          Build all targets
       all             Build all targets
+      distribution    Assemble the distribution
       frameworks      Build all frameworks only
-      shims           Build Shimulator and Maculator dylibs
       idb_companion   Build idb_companion only
+      shims           Build all shim dylibs (Shimulator + Repl, iOS + macOS)
       FBControlCore   Build FBControlCore framework
-      XCTestBootstrap Build XCTestBootstrap framework
-      FBSimulatorControl Build FBSimulatorControl framework
       FBDeviceControl Build FBDeviceControl framework
-      Shimulator      Build Shimulator dylib (iOS simulator)
-      Maculator       Build Maculator dylib (macOS)
+      FBSimulatorControl Build FBSimulatorControl framework
+      Repl-iOS        Build Repl-iOS dylib (iOS simulator)
+      Repl-macOS      Build Repl-macOS dylib (macOS)
+      Shimulator-iOS  Build Shimulator-iOS dylib (iOS simulator)
+      Shimulator-macOS Build Shimulator-macOS dylib (macOS)
+      SimulatorFrameworkBridge Build SimulatorFrameworkBridge executable (iOS simulator)
+      XCTestBootstrap Build XCTestBootstrap framework
 
   test [<target>]
     Run tests. If no target specified, runs all tests.
@@ -491,7 +602,7 @@ Examples:
   ./build.sh generate-proto           # Regenerate gRPC Swift from proto
   ./build.sh build                    # Build everything
   ./build.sh build frameworks         # Build all frameworks
-  ./build.sh build shims              # Build Shimulator and Maculator
+  ./build.sh build shims              # Build Shimulator-iOS and Shimulator-macOS
   ./build.sh build idb_companion      # Build idb_companion
   ./build.sh build FBControlCore      # Build specific framework
   ./build.sh test                     # Run all tests
