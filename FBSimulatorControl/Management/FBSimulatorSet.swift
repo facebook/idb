@@ -88,7 +88,7 @@ public final class FBSimulatorSet: NSObject, FBiOSTargetSet {
       deviceType = try configuration.obtainDeviceType()
       runtime = try configuration.obtainRuntime()
     } catch {
-      throw FBSimulatorError.describe("Could not obtain DeviceType or SimRuntime for Configuration \(configuration)").caused(by: error as NSError).build()
+      throw FBSimulatorSetError.deviceTypeOrRuntimeUnavailable(configuration: "\(configuration)", reason: error.localizedDescription)
     }
 
     // First, create the device.
@@ -100,7 +100,7 @@ public final class FBSimulatorSet: NSObject, FBiOSTargetSet {
     do {
       try await FBSimulatorShutdownStrategy.shutdownAsync(simulator)
     } catch {
-      throw FBSimulatorError.describe("Could not get newly-created simulator into a shutdown state").caused(by: error as NSError).build()
+      throw FBSimulatorSetError.shutdownAfterCreateFailed(reason: error.localizedDescription)
     }
     return simulator
   }
@@ -187,7 +187,7 @@ public final class FBSimulatorSet: NSObject, FBiOSTargetSet {
 
   private func fetchNewlyMadeSimulatorOrThrow(_ device: SimDevice) throws -> FBSimulator {
     guard let simulator = FBSimulatorSet.keySimulatorsByUDID(allSimulators)[device.udid.uuidString] else {
-      throw FBSimulatorError.describe("Expected simulator with UDID \(device.udid.uuidString) to be inflated").build()
+      throw FBSimulatorSetError.simulatorNotInflated(udid: device.udid.uuidString)
     }
     return simulator
   }
@@ -198,7 +198,7 @@ public final class FBSimulatorSet: NSObject, FBiOSTargetSet {
         if let device {
           continuation.resume(returning: device)
         } else {
-          continuation.resume(throwing: error ?? FBSimulatorError.describe("Failed to create device with no error").build())
+          continuation.resume(throwing: error ?? FBSimulatorSetError.deviceCreationFailed)
         }
       }
     }
@@ -210,7 +210,7 @@ public final class FBSimulatorSet: NSObject, FBiOSTargetSet {
         if let created {
           continuation.resume(returning: created)
         } else {
-          continuation.resume(throwing: error ?? FBSimulatorError.describe("Failed to clone device with no error").build())
+          continuation.resume(throwing: error ?? FBSimulatorSetError.deviceCloneFailed)
         }
       }
     }
