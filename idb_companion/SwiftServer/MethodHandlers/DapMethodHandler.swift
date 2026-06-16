@@ -41,7 +41,8 @@ struct DapMethodHandler {
 
     let lldbVSCode = "dap/\(startRequest.debuggerPkgID)/usr/bin/lldb-vscode"
 
-    let stdOutConsumer = createDataConsumer(to: responseStream)
+    // FBDataConsumer is a thread-safe ObjC protocol that isn't marked Sendable.
+    nonisolated(unsafe) let stdOutConsumer = createDataConsumer(to: responseStream)
     targetLogger.debug().log("Starting dap server with path \(lldbVSCode)")
 
     let tenMinutes: UInt64 = 600 * 1000000000

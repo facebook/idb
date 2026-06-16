@@ -35,12 +35,14 @@ private class FBDeviceDebugServer_TwistedPairFiles: NSObject {
       return nil
     }
 
-    let logger = self.logger
+    // FBControlCoreLogger and FBMutableFuture are thread-safe ObjC
+    // types that aren't Sendable.
+    nonisolated(unsafe) let logger = self.logger
     let socket = self.socket
     let socketReadHandle = FileHandle(fileDescriptor: socket)
     nonisolated(unsafe) let connection = self.connection
-    let socketReadCompleted = FBMutableFuture<NSNull>()
-    let connectionReadCompleted = FBMutableFuture<NSNull>()
+    nonisolated(unsafe) let socketReadCompleted = FBMutableFuture<NSNull>()
+    nonisolated(unsafe) let connectionReadCompleted = FBMutableFuture<NSNull>()
 
     socketToConnectionQueue.async {
       while socketReadCompleted.state == .running && connectionReadCompleted.state == .running {

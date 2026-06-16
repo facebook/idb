@@ -85,6 +85,7 @@ struct ReplMethodHandler {
     // wait for it (bounded), then report the session stopped.
     client.close()
     let thirtySeconds: UInt64 = 30 * 1_000_000_000
+    nonisolated(unsafe) let session = session
     try? await Task.timeout(nanoseconds: thirtySeconds) {
       try await bridgeFBFutureVoid(session.run)
     }

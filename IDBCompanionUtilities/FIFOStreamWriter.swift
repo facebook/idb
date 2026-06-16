@@ -15,7 +15,7 @@ public protocol AsyncStreamWriter {
 
 /// Wraps any async stream writer and bridges it to synchronous world
 /// preserving FIFO order of elements.
-public final class FIFOStreamWriter<StreamWriter: AsyncStreamWriter>: @unchecked Sendable {
+public final class FIFOStreamWriter<StreamWriter: AsyncStreamWriter & Sendable>: @unchecked Sendable {
 
   private let stream: StreamWriter
 

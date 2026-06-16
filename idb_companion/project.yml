@@ -74,7 +74,7 @@ targets:
         PRODUCT_NAME: IDBGRPCSwift
         DEFINES_MODULE: YES
         MACH_O_TYPE: staticlib
-        SWIFT_VERSION: "5.0"
+        SWIFT_VERSION: "6.0"
         GENERATE_INFOPLIST_FILE: YES
     dependencies:
       - package: grpc-swift

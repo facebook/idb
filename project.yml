@@ -34,6 +34,7 @@ targets:
         PRODUCT_NAME: FBControlCore
         DEFINES_MODULE: YES
         MACH_O_TYPE: staticlib
+        SWIFT_VERSION: "6.0"
         # Mixed-language workaround: Xcode 26 omits the Swift module's emit
         # directory from HEADER_SEARCH_PATHS, so `#import "FBControlCore-Swift.h"`
         # in .m files fails to find the Swift-generated header. Add the per-arch
@@ -89,6 +90,7 @@ targets:
         PRODUCT_NAME: XCTestBootstrap
         DEFINES_MODULE: YES
         MACH_O_TYPE: staticlib
+        SWIFT_VERSION: "6.0"
         MODULEMAP_FILE: $(SRCROOT)/XCTestBootstrap/module.modulemap
         HEADER_SEARCH_PATHS: $(inherited) $(SRCROOT)/Shims/Shimulator/Tools
     dependencies:
@@ -136,6 +138,7 @@ targets:
         PRODUCT_NAME: FBSimulatorControl
         DEFINES_MODULE: YES
         MACH_O_TYPE: staticlib
+        SWIFT_VERSION: "6.0"
         # Mixed-language workaround: see FBControlCore for rationale.
         HEADER_SEARCH_PATHS: $(inherited) $(SRCROOT)/PrivateHeaders $(OBJECT_FILE_DIR_normal)/$(CURRENT_ARCH)
         # CoreSimulator and SimulatorKit are private Apple frameworks living in
@@ -211,7 +214,7 @@ targets:
         PRODUCT_NAME: FBDeviceControl
         DEFINES_MODULE: YES
         MACH_O_TYPE: staticlib
-        SWIFT_VERSION: "5.0"
+        SWIFT_VERSION: "6.0"
     dependencies:
       - target: FBControlCore
         embed: false
@@ -260,7 +263,7 @@ targets:
         PRODUCT_NAME: IDBCompanionUtilities
         DEFINES_MODULE: YES
         MACH_O_TYPE: staticlib
-        SWIFT_VERSION: "5.9"
+        SWIFT_VERSION: "6.0"
         GENERATE_INFOPLIST_FILE: YES
         # The @TaskLocal macro lives in SwiftMacros plugin and sometimes can't
         # be loaded under Xcode 26's plugin sandbox; disable the frontend
@@ -301,7 +304,7 @@ targets:
         PRODUCT_NAME: CompanionLib
         DEFINES_MODULE: YES
         MACH_O_TYPE: staticlib
-        SWIFT_VERSION: "5.0"
+        SWIFT_VERSION: "6.0"
         GENERATE_INFOPLIST_FILE: YES
     dependencies:
       - target: FBControlCore

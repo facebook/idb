@@ -279,16 +279,18 @@ public class FBSimulatorApplicationCommands: NSObject, FBiOSTargetCommand {
       stdOutPath: translateAbsolutePath(stdOutPath, toPathRelativeTo: simulator.dataDirectory!),
       stdErrPath: translateAbsolutePath(stdErrPath, toPathRelativeTo: simulator.dataDirectory!))
 
-    let logger = simulator.logger
-    logger?.log("Launching Application \(configuration.bundleID) with \(FBCollectionInformation.oneLineDescription(from: configuration.arguments)) \(FBCollectionInformation.oneLineDescription(from: configuration.environment))")
+    // FBControlCoreLogger is a thread-safe ObjC protocol that is not Sendable.
+    nonisolated(unsafe) let logger = simulator.logger
+    let bundleID = configuration.bundleID
+    logger?.log("Launching Application \(bundleID) with \(FBCollectionInformation.oneLineDescription(from: configuration.arguments)) \(FBCollectionInformation.oneLineDescription(from: configuration.environment))")
 
     let pid = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<pid_t, Error>) in
-      simulator.device.launchApplicationAsync(withID: configuration.bundleID, options: options, completionQueue: simulator.workQueue) { error, pid in
+      simulator.device.launchApplicationAsync(withID: bundleID, options: options, completionQueue: simulator.workQueue) { error, pid in
         if let error {
-          logger?.log("Failed to launch Application \(configuration.bundleID) \(error)")
+          logger?.log("Failed to launch Application \(bundleID) \(error)")
           continuation.resume(throwing: error)
         } else {
-          logger?.log("Launched Application \(configuration.bundleID) with pid \(pid)")
+          logger?.log("Launched Application \(bundleID) with pid \(pid)")
           continuation.resume(returning: pid)
         }
       }
