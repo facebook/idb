@@ -89,7 +89,7 @@ extension FBSimulatorControlTestCase {
   func assertObtainsBootedSimulator(with configuration: FBSimulatorConfiguration, bootConfiguration: FBSimulatorBootConfiguration) -> FBSimulator? {
     guard let simulator = try? assertObtainsSimulatorWithConfiguration(configuration).await() else { return nil }
     do {
-      try simulator.boot(bootConfiguration).await()
+      try fbFutureFromAsync { try await simulator.boot(bootConfiguration) }.await()
     } catch {
       XCTFail("Failed to boot simulator: \(error)")
       return nil

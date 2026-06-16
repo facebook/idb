@@ -62,7 +62,7 @@ public final class FBSimulatorVideoRecordingCommands: NSObject, FBiOSTargetComma
       throw FBSimulatorError.describe("Simulator deallocated").build()
     }
     let logger = simulator.logger
-    let framebuffer = try await bridgeFBFuture(simulator.connectToFramebuffer())
+    let framebuffer = try await simulator.connectToFramebuffer()
     return FBSimulatorVideoStream.make(framebuffer: framebuffer, configuration: configuration, logger: logger!)
   }
 }

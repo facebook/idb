@@ -8,11 +8,15 @@
 import FBControlCore
 import Foundation
 
-/// Swift-native async/await counterpart of the simulator-specific members of
-/// `FBSimulatorLifecycleCommandsProtocol`.
 public protocol AsyncSimulatorLifecycleCommands: AnyObject {
 
+  func boot(_ configuration: FBSimulatorBootConfiguration) async throws
+
   func focus() async throws
+
+  func disconnect(withTimeout timeout: TimeInterval, logger: (any FBControlCoreLogger)?) async throws
+
+  func connectToFramebuffer() async throws -> FBFramebuffer
 
   func open(_ url: URL) async throws
 

@@ -25,8 +25,8 @@
  An implementation of FBiOSTarget for iOS Simulators.
  */
 // Protocol conformances declared in Swift via extensions:
-// FBSimulatorLifecycleCommandsProtocol, FBSimulatorLaunchCtlCommandsProtocol,
-// FBSimulatorApplicationCommandsProtocol, FBSimulatorFileCommandsProtocol
+// FBSimulatorLaunchCtlCommandsProtocol, FBSimulatorApplicationCommandsProtocol,
+// FBSimulatorFileCommandsProtocol
 @interface FBSimulator : NSObject <FBiOSTarget>
 
 #pragma mark FBiOSTargetInfo / FBiOSTarget Protocol Members

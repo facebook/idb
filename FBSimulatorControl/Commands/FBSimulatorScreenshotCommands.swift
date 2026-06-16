@@ -47,7 +47,7 @@ public final class FBSimulatorScreenshotCommands: NSObject, FBiOSTargetCommand {
     if let image = self.image {
       return image
     }
-    let framebuffer = try await bridgeFBFuture(simulator.connectToFramebuffer())
+    let framebuffer = try await simulator.connectToFramebuffer()
     let image = FBSimulatorImage(framebuffer: framebuffer, logger: simulator.logger)
     self.image = image
     return image

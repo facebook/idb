@@ -76,6 +76,7 @@ private func writeJSONToStdOut(_ json: Any) {
     readyOutput.append(newline)
   }
   readyOutput.withUnsafeBytes { bytes in
+    // swiftlint:disable:next force_unwrapping
     _ = Darwin.write(STDOUT_FILENO, bytes.baseAddress!, bytes.count)
   }
   fflush(stdout)
@@ -199,7 +200,7 @@ private func simulatorFuture(_ udid: String, userDefaults: UserDefaults, logger:
     .onQueue(
       DispatchQueue.main,
       fmap: { (targetObj: AnyObject) -> FBFuture<AnyObject> in
-        guard let commands = targetObj as? FBSimulatorLifecycleCommandsProtocol else {
+        guard let commands = targetObj as? AsyncSimulatorLifecycleCommands else {
           return FBIDBError.describe("\(targetObj) does not support Simulator Lifecycle commands").failFuture()
         }
         return FBFuture(result: commands as AnyObject)
@@ -248,7 +249,10 @@ private func bootFuture(_ udid: String, userDefaults: UserDefaults, logger: FBCo
           options.remove(.verifyUsable)
         }
         let config = FBSimulatorBootConfiguration(options: options, environment: [:])
-        return simulator.boot(config).mapReplace(simulator)
+        return fbFutureFromAsync {
+          try await simulator.boot(config)
+          return simulator as AnyObject
+        }
       }
     )
     .onQueue(

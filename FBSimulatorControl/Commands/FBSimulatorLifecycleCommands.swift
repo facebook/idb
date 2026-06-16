@@ -14,71 +14,6 @@ import AppKit
 
 private let openURLRetries = 2
 
-@objc public protocol FBSimulatorLifecycleCommandsProtocol: NSObjectProtocol, FBiOSTargetCommand {
-  @objc(boot:)
-  func boot(_ configuration: FBSimulatorBootConfiguration) -> FBFuture<NSNull>
-
-  func focus() -> FBFuture<NSNull>
-
-  @objc(disconnectWithTimeout:logger:)
-  func disconnect(withTimeout timeout: TimeInterval, logger: (any FBControlCoreLogger)?) -> FBFuture<NSNull>
-
-  func connectToFramebuffer() -> FBFuture<FBFramebuffer>
-
-  @objc(openURL:)
-  func open(_ url: URL) -> FBFuture<NSNull>
-}
-
-// MARK: - FBSimulator+FBSimulatorLifecycleCommandsProtocol
-
-extension FBSimulator: FBSimulatorLifecycleCommandsProtocol {
-
-  // MARK: FBSimulatorLifecycleCommandsProtocol
-
-  @objc(boot:)
-  public func boot(_ configuration: FBSimulatorBootConfiguration) -> FBFuture<NSNull> {
-    do {
-      return try lifecycleCommands().boot(configuration)
-    } catch {
-      return FBFuture(error: error)
-    }
-  }
-
-  @objc public func focus() -> FBFuture<NSNull> {
-    do {
-      return try lifecycleCommands().focus()
-    } catch {
-      return FBFuture(error: error)
-    }
-  }
-
-  @objc(disconnectWithTimeout:logger:)
-  public func disconnect(withTimeout timeout: TimeInterval, logger: (any FBControlCoreLogger)?) -> FBFuture<NSNull> {
-    do {
-      return try lifecycleCommands().disconnect(withTimeout: timeout, logger: logger)
-    } catch {
-      return FBFuture(error: error)
-    }
-  }
-
-  @objc public func connectToFramebuffer() -> FBFuture<FBFramebuffer> {
-    do {
-      return try lifecycleCommands().connectToFramebuffer()
-    } catch {
-      return FBFuture(error: error)
-    }
-  }
-
-  @objc(openURL:)
-  public func open(_ url: URL) -> FBFuture<NSNull> {
-    do {
-      return try lifecycleCommands().open(url)
-    } catch {
-      return FBFuture(error: error)
-    }
-  }
-}
-
 @objc(FBSimulatorLifecycleCommands)
 public final class FBSimulatorLifecycleCommands: NSObject, FBiOSTargetCommand {
 
@@ -97,47 +32,6 @@ public final class FBSimulatorLifecycleCommands: NSObject, FBiOSTargetCommand {
   private init(simulator: FBSimulator) {
     self.simulator = simulator
     super.init()
-  }
-
-  // MARK: - Boot/Shutdown (legacy FBFuture entry points)
-
-  @objc
-  public func boot(_ configuration: FBSimulatorBootConfiguration) -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      try await bootAsync(configuration)
-      return NSNull()
-    }
-  }
-
-  @objc
-  public func focus() -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      try await focusAsync()
-      return NSNull()
-    }
-  }
-
-  @objc
-  public func disconnect(withTimeout timeout: TimeInterval, logger: (any FBControlCoreLogger)?) -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      try await disconnectAsync(withTimeout: timeout, logger: logger)
-      return NSNull()
-    }
-  }
-
-  @objc
-  public func connectToFramebuffer() -> FBFuture<FBFramebuffer> {
-    fbFutureFromAsync { [self] in
-      try await connectToFramebufferAsync()
-    }
-  }
-
-  @objc
-  public func open(_ url: URL) -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      try await openAsync(url)
-      return NSNull()
-    }
   }
 
   // MARK: - Async
@@ -334,8 +228,20 @@ extension FBSimulator: AsyncEraseCommands {
 
 extension FBSimulator: AsyncSimulatorLifecycleCommands {
 
+  public func boot(_ configuration: FBSimulatorBootConfiguration) async throws {
+    try await lifecycleCommands().bootAsync(configuration)
+  }
+
   public func focus() async throws {
     try await lifecycleCommands().focusAsync()
+  }
+
+  public func disconnect(withTimeout timeout: TimeInterval, logger: (any FBControlCoreLogger)?) async throws {
+    try await lifecycleCommands().disconnectAsync(withTimeout: timeout, logger: logger)
+  }
+
+  public func connectToFramebuffer() async throws -> FBFramebuffer {
+    try await lifecycleCommands().connectToFramebufferAsync()
   }
 
   public func open(_ url: URL) async throws {
