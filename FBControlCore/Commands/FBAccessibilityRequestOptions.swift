@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import CoreGraphics
 import Foundation
 
 /// Options for fetching remote process elements (e.g., WebView content).

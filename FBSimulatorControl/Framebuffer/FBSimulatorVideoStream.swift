@@ -30,13 +30,15 @@ import VideoToolbox
 
 // MARK: - Frame Writer
 
-/// A C frame-writer function from `FBVideoStream.h` (typedef `FBCompressedFrameWriter` in ObjC).
-/// Signature: `BOOL (CMSampleBufferRef, id context, id<FBDataConsumer>, id<FBControlCoreLogger>, NSError**)`.
-/// References e.g. `WriteFrameToAnnexBStream` directly. MJPEG/Minicap pushers pass `nil` and rely on
-/// their compressor callback instead.
+/// A Swift frame-writer function (the former `FBVideoStreamWriters` global writers, e.g.
+/// `WriteFrameToAnnexBStream`). Signature mirrors the ObjC
+/// `BOOL (CMSampleBufferRef, id context, id<FBDataConsumer>, id<FBControlCoreLogger>, NSError**)`.
+/// Now that the writers are plain Swift functions taking an `Any?` context, this is a normal Swift
+/// closure type (not `@convention(c)`). MJPEG/Minicap pushers pass `nil` and rely on their compressor
+/// callback instead.
 typealias FBCompressedFrameWriter =
-  @convention(c) (
-    CMSampleBuffer, AnyObject?, any FBDataConsumer, any FBControlCoreLogger, NSErrorPointer
+  (
+    CMSampleBuffer, Any?, any FBDataConsumer, any FBControlCoreLogger, NSErrorPointer
   ) -> Bool
 
 // MARK: - Frame Pusher Protocol
