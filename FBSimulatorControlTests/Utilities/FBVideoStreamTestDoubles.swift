@@ -152,8 +152,56 @@ func createNotReadySampleBuffer() -> CMSampleBuffer {
   return sampleBuf!
 }
 
+/// A test double logger that captures all logged messages for assertion.
+/// Re-expressed in Swift now that the pushers are Swift (the ObjC bridge double is gone).
+final class FBCapturingLogger: NSObject, FBControlCoreLogger {
+  let messages = NSMutableArray()
+
+  @discardableResult
+  func log(_ message: String) -> FBControlCoreLogger {
+    messages.add(message)
+    return self
+  }
+
+  func info() -> FBControlCoreLogger { self }
+  func debug() -> FBControlCoreLogger { self }
+  func error() -> FBControlCoreLogger { self }
+  func withName(_ prefix: String) -> FBControlCoreLogger { self }
+  func withDateFormatEnabled(_ enabled: Bool) -> FBControlCoreLogger { self }
+  var name: String? { nil }
+  var level: FBControlCoreLogLevel { .multiple }
+}
+
+/// Test compressor callback mirroring the production `CompressedFrameCallback` retain/release
+/// contract: the source frame (passed retained at encode) is consumed via `takeRetainedValue`,
+/// and the pusher (passed unretained) is recovered via `takeUnretainedValue`.
+private let TestCompressorCallback: VTCompressionOutputCallback = { outputCallbackRefCon, sourceFrameRefCon, encodeStatus, infoFlags, sampleBuffer in
+  if let sourceFrameRefCon {
+    _ = Unmanaged<AnyObject>.fromOpaque(sourceFrameRefCon).takeRetainedValue()
+  }
+  guard let outputCallbackRefCon, let sampleBuffer else { return }
+  let pusher = Unmanaged<FBSimulatorVideoStreamFramePusher_VideoToolbox>.fromOpaque(outputCallbackRefCon).takeUnretainedValue()
+  pusher.handleCompressedSampleBuffer(sampleBuffer, encodeStatus: encodeStatus, infoFlags: infoFlags)
+}
+
 /// Creates a FBSimulatorVideoStreamFramePusher_VideoToolbox configured for H264/AnnexB testing.
-/// Delegates to ObjC bridge because compressorCallback and frameWriter are C function pointers.
+/// Constructed directly in Swift now that the pusher is a Swift class.
 func createTestVideoStreamPusher(_ logger: FBControlCoreLogger) -> FBSimulatorVideoStreamFramePusher_VideoToolbox {
-  return CreateTestVideoStreamPusher(logger)
+  let format = FBVideoStreamFormat.compressedVideo(withCodec: .h264, transport: .annexB)
+  let config = FBVideoStreamConfiguration(
+    format: format,
+    framesPerSecond: 30,
+    rateControl: nil,
+    scaleFactor: nil,
+    keyFrameRate: 10.0)
+  let consumer = FBDataBuffer.accumulatingBuffer()
+  return FBSimulatorVideoStreamFramePusher_VideoToolbox(
+    configuration: config,
+    compressionSessionProperties: [:],
+    videoCodec: kCMVideoCodecType_H264,
+    consumer: consumer,
+    compressorCallback: TestCompressorCallback,
+    frameWriter: WriteFrameToAnnexBStream,
+    frameWriterContext: nil,
+    logger: logger)
 }

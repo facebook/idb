@@ -11,17 +11,8 @@
 import Foundation
 import IOSurface
 
-@objc public protocol FBSimulatorVideoStreamFramePusher: NSObjectProtocol {
-  @objc(setupWithPixelBuffer:edgeInsets:error:)
-  func setup(withPixelBuffer pixelBuffer: CVPixelBuffer, edgeInsets: FBVideoStreamEdgeInsets, error: NSErrorPointer) -> Bool
-
-  func tearDown(_ error: NSErrorPointer) -> Bool
-
-  @objc(writeEncodedFrame:frameNumber:timeAtFirstFrame:frameDuration:forceKeyFrame:error:)
-  func writeEncodedFrame(_ pixelBuffer: CVPixelBuffer, frameNumber: UInt, timeAtFirstFrame: CFTimeInterval, frameDuration: CFTimeInterval, forceKeyFrame: Bool, error: NSErrorPointer) -> Bool
-
-  @objc optional func currentStats() -> FBVideoEncoderStats
-}
+// The FBSimulatorVideoStreamFramePusher protocol lives in FBSimulatorVideoStream.swift as a plain
+// (non-@objc) Swift protocol; the pushers are only constructed and used from Swift.
 
 @objc public protocol FBFramebufferConsumer: NSObjectProtocol {
   @objc(didChangeIOSurface:)

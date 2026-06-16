@@ -105,7 +105,7 @@ final class FBSimulatorVideoStreamCallbackTests: XCTestCase {
     let logger = FBCapturingLogger()
     let pusher = createTestVideoStreamPusher(logger)
 
-    HandleCompressedSampleBufferNullable(pusher, nil, -12345, VTEncodeInfoFlags())
+    pusher.handleCompressedSampleBuffer(nil, encodeStatus: -12345, infoFlags: VTEncodeInfoFlags())
 
     var foundError = false
     for msg in logger.messages {
@@ -121,7 +121,7 @@ final class FBSimulatorVideoStreamCallbackTests: XCTestCase {
     let logger = FBCapturingLogger()
     let pusher = createTestVideoStreamPusher(logger)
 
-    HandleCompressedSampleBufferNullable(pusher, nil, noErr, .frameDropped)
+    pusher.handleCompressedSampleBuffer(nil, encodeStatus: noErr, infoFlags: .frameDropped)
 
     // Dropped frame should increment failure counter, not produce a per-frame log
     XCTAssertEqual(pusher.consecutiveNotReadyFrameCount, 1)
@@ -135,7 +135,7 @@ final class FBSimulatorVideoStreamCallbackTests: XCTestCase {
 
     // Send 20 dropped frames — should trigger starvation warning
     for _ in 0..<20 {
-      HandleCompressedSampleBufferNullable(pusher, nil, noErr, .frameDropped)
+      pusher.handleCompressedSampleBuffer(nil, encodeStatus: noErr, infoFlags: .frameDropped)
     }
 
     var foundStarvationWarning = false
@@ -216,11 +216,11 @@ final class FBSimulatorVideoStreamCallbackTests: XCTestCase {
 
     // 2 dropped frames
     for _ in 0..<2 {
-      HandleCompressedSampleBufferNullable(pusher, nil, noErr, .frameDropped)
+      pusher.handleCompressedSampleBuffer(nil, encodeStatus: noErr, infoFlags: .frameDropped)
     }
 
     // 1 encode error
-    HandleCompressedSampleBufferNullable(pusher, nil, -12345, VTEncodeInfoFlags())
+    pusher.handleCompressedSampleBuffer(nil, encodeStatus: -12345, infoFlags: VTEncodeInfoFlags())
 
     // Verify counters
     XCTAssertEqual(pusher.stats.writeCount, 3)

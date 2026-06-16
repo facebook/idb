@@ -5,9 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import <CoreMedia/CoreMedia.h>
 #import <Foundation/Foundation.h>
-#import <VideoToolbox/VideoToolbox.h>
 
 #import <FBControlCore/FBControlCore.h>
 #import <FBSimulatorControl/FBSimulatorControl.h>
@@ -15,33 +13,8 @@
 @class FBSimulatorConfiguration;
 @class FBSimulatorControlConfiguration;
 @class FBSimulatorSet;
-@class FBSimulatorVideoStreamFramePusher_VideoToolbox;
 
 NS_ASSUME_NONNULL_BEGIN
-
-/**
- A test double logger that captures all logged messages for assertion.
- */
-@interface FBCapturingLogger : NSObject <FBControlCoreLogger>
-@property (nonatomic, readonly, strong) NSMutableArray<NSString *> *messages;
-@end
-
-/**
- Wraps handleCompressedSampleBuffer:encodeStatus:infoFlags: to accept nullable CMSampleBufferRef.
- Swift cannot pass nil for CMSampleBuffer parameters, so this ObjC wrapper is needed.
- */
-void HandleCompressedSampleBufferNullable(
-  FBSimulatorVideoStreamFramePusher_VideoToolbox *pusher,
-  CMSampleBufferRef _Nullable sampleBuffer,
-  OSStatus encodeStatus,
-  VTEncodeInfoFlags infoFlags);
-
-/**
- Creates a FBSimulatorVideoStreamFramePusher_VideoToolbox configured for H264/AnnexB testing.
- This must be in ObjC because the compressorCallback (VTCompressionOutputCallback) and
- frameWriter (FBCompressedFrameWriter) are C function pointers that cannot be easily bridged to Swift.
- */
-FBSimulatorVideoStreamFramePusher_VideoToolbox *CreateTestVideoStreamPusher(id<FBControlCoreLogger> logger);
 
 /**
  Creates an FBSimulatorSet using a fake SimDeviceSet (NSObject double).

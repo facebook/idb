@@ -63,7 +63,7 @@ public final class FBSimulatorVideoRecordingCommands: NSObject, FBiOSTargetComma
     }
     let logger = simulator.logger
     let framebuffer = try await bridgeFBFuture(simulator.connectToFramebuffer())
-    return FBSimulatorVideoStream(framebuffer: framebuffer, configuration: configuration, logger: logger!) as! any FBVideoStream
+    return FBSimulatorVideoStream.make(framebuffer: framebuffer, configuration: configuration, logger: logger!)
   }
 }
 
