@@ -8,8 +8,6 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-// swiftlint:disable force_cast
-
 public struct FBWallpaperName: RawRepresentable, Equatable, Hashable, Sendable {
   public let rawValue: String
   public init(rawValue: String) { self.rawValue = rawValue }
@@ -25,6 +23,26 @@ public let FBSpringboardServiceName: String = "com.apple.springboardservices"
 private let IconPlistFile = "icons.plist"
 private let IconJSONFile = "icons.json"
 private let IconLayoutSize: UInt = 4
+
+public enum FBSpringboardServicesError: Error, LocalizedError {
+  case unexpectedResponse(command: String, expected: String, actual: String)
+  case invalidIconLayoutJSON(path: String)
+  case invalidIconLayoutPlist(path: String)
+  case invalidIconLayoutFile(filename: String, validFilenames: [String])
+
+  public var errorDescription: String? {
+    switch self {
+    case .unexpectedResponse(let command, let expected, let actual):
+      return "SpringBoardServices command '\(command)' returned \(actual), expected \(expected)"
+    case .invalidIconLayoutJSON(let path):
+      return "Icon layout JSON at '\(path)' is not in the expected format"
+    case .invalidIconLayoutPlist(let path):
+      return "Icon layout plist at '\(path)' is not in the expected format"
+    case .invalidIconLayoutFile(let filename, let validFilenames):
+      return "\(filename) is not one of \(FBCollectionInformation.oneLineDescription(from: validFilenames))"
+    }
+  }
+}
 
 /// Wraps the non-`Sendable` `FBAMDServiceConnection` so it can be captured by
 /// the `@Sendable` closures dispatched on the serial connection queue. Serial
@@ -121,7 +139,10 @@ public class FBSpringboardServicesClient: NSObject {
   public func getIconLayoutAsync() async throws -> [Any] {
     let raw = try await getRawIconStateAsync(formatVersion: 2)
     guard let array = raw as? [Any] else {
-      throw FBControlCoreError.describe("Icon state response \(raw) is not an array").build()
+      throw FBSpringboardServicesError.unexpectedResponse(
+        command: "getIconState",
+        expected: "an array",
+        actual: String(describing: raw))
     }
     return array
   }
@@ -148,7 +169,15 @@ public class FBSpringboardServicesClient: NSObject {
       queue.async {
         do {
           try connectionBox.connection.sendMessage(["command": "setIconState", "iconState": layoutBox.value])
-          _ = try connectionBox.connection.receive(Int(IconLayoutSize))
+          let response = try connectionBox.connection.receive(Int(IconLayoutSize))
+          if response.count != Int(IconLayoutSize) {
+            continuation.resume(
+              throwing: FBSpringboardServicesError.unexpectedResponse(
+                command: "setIconState",
+                expected: "\(IconLayoutSize) response bytes",
+                actual: "\(response.count) response bytes"))
+            return
+          }
           continuation.resume(returning: ())
         } catch {
           continuation.resume(throwing: error)
@@ -163,7 +192,15 @@ public class FBSpringboardServicesClient: NSObject {
       queue.async {
         do {
           let result = try connectionBox.connection.sendAndReceiveMessage(["command": "getHomeScreenIconMetrics"])
-          continuation.resume(returning: (result as? [String: Any]) ?? [:])
+          guard let metrics = result as? [String: Any] else {
+            continuation.resume(
+              throwing: FBSpringboardServicesError.unexpectedResponse(
+                command: "getHomeScreenIconMetrics",
+                expected: "a dictionary",
+                actual: String(describing: result)))
+            return
+          }
+          continuation.resume(returning: metrics)
         } catch {
           continuation.resume(throwing: error)
         }
@@ -245,7 +282,8 @@ class FBSpringboardServicesIconContainer: NSObject, AsyncFileContainer {
     }
     let layout = try await client.getIconLayoutAsync()
     if filename == IconJSONFile {
-      let jsonLayout = FBSpringboardServicesIconContainer.flattenBaseFormat(layout as! [[Any]])
+      let iconPages = try FBSpringboardServicesIconContainer.iconPages(from: layout, command: "getIconState")
+      let jsonLayout = FBSpringboardServicesIconContainer.flattenBaseFormat(iconPages)
       let data = try JSONSerialization.data(withJSONObject: jsonLayout, options: .prettyPrinted)
       try data.write(to: URL(fileURLWithPath: destinationPath), options: .atomic)
     } else {
@@ -267,7 +305,7 @@ class FBSpringboardServicesIconContainer: NSObject, AsyncFileContainer {
       let data = try Data(contentsOf: URL(fileURLWithPath: sourcePath))
       let jsonObject = try JSONSerialization.jsonObject(with: data, options: [])
       guard let layout = jsonObject as? IconLayoutJSONType else {
-        throw FBControlCoreError.describe("JSON is not in the expected format").build()
+        throw FBSpringboardServicesError.invalidIconLayoutJSON(path: sourcePath)
       }
       return try await convertJSONFormatToWireFormatAsync(layout)
     }
@@ -275,16 +313,16 @@ class FBSpringboardServicesIconContainer: NSObject, AsyncFileContainer {
       let data = try Data(contentsOf: URL(fileURLWithPath: sourcePath))
       let layout = try PropertyListSerialization.propertyList(from: data, options: [], format: nil)
       guard let array = layout as? NSArray else {
-        throw FBControlCoreError.describe("Plist is not an array").build()
+        throw FBSpringboardServicesError.invalidIconLayoutPlist(path: sourcePath)
       }
       return array
     }
-    throw FBControlCoreError.describe("\(filename) is not one of \(FBCollectionInformation.oneLineDescription(from: validFilenames))").build()
+    throw FBSpringboardServicesError.invalidIconLayoutFile(filename: filename, validFilenames: validFilenames)
   }
 
   private func convertJSONFormatToWireFormatAsync(_ jsonFormat: IconLayoutJSONType) async throws -> NSArray {
     let currentApps = try await client.getIconLayoutAsync()
-    let currentAppsArray = currentApps as! [[Any]]
+    let currentAppsArray = try FBSpringboardServicesIconContainer.iconPages(from: currentApps, command: "getIconState")
     let iconsByBundleID = FBSpringboardServicesIconContainer.keyIconsByBundleID(currentAppsArray)
     var format: [[Any]] = []
     for jsonPage in jsonFormat {
@@ -297,6 +335,16 @@ class FBSpringboardServicesIconContainer: NSObject, AsyncFileContainer {
       format.append(fullPage)
     }
     return format as NSArray
+  }
+
+  static func iconPages(from layout: [Any], command: String) throws -> [[Any]] {
+    guard let pages = layout as? [[Any]] else {
+      throw FBSpringboardServicesError.unexpectedResponse(
+        command: command,
+        expected: "an array of icon pages",
+        actual: String(describing: layout))
+    }
+    return pages
   }
 
   static func flattenBaseFormat(_ baseFormat: [[Any]]) -> [[String]] {
