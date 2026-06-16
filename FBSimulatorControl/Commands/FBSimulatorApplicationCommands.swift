@@ -9,7 +9,7 @@
 @preconcurrency import FBControlCore
 @preconcurrency import Foundation
 
-// swiftlint:disable force_cast force_unwrapping
+// swiftlint:disable force_cast force_try force_unwrapping
 
 @objc public protocol FBSimulatorApplicationCommandsProtocol: NSObjectProtocol {
   @objc(installedApplicationWithBundleID:error:)
@@ -195,7 +195,7 @@ public class FBSimulatorApplicationCommands: NSObject, FBiOSTargetCommand {
     guard let simulator = self.simulator else {
       throw FBSimulatorError.describe("Simulator deallocated").build()
     }
-    let serviceNameToProcessIdentifier = try await bridgeFBFuture(simulator.serviceNamesAndProcessIdentifiers(matching: FBSimulatorApplicationCommands.uiKitApplicationRegex)) as! [String: NSNumber]
+    let serviceNameToProcessIdentifier = try await simulator.serviceNamesAndProcessIdentifiers(matching: FBSimulatorApplicationCommands.uiKitApplicationRegex)
     var mapping: [String: NSNumber] = [:]
     for serviceName in serviceNameToProcessIdentifier.keys {
       if let bundleName = FBSimulatorLaunchCtlCommands.extractApplicationBundleIdentifier(fromServiceName: serviceName) {
@@ -213,8 +213,8 @@ public class FBSimulatorApplicationCommands: NSObject, FBiOSTargetCommand {
     guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else {
       throw FBSimulatorError.describe("Couldn't build search pattern for '\(bundleID)'").build()
     }
-    let result = try await bridgeFBFuture(simulator.firstServiceNameAndProcessIdentifier(matching: regex)) as! [Any]
-    return (result[1] as! NSNumber).int32Value
+    let (_, processIdentifier) = try await simulator.firstServiceNameAndProcessIdentifier(matching: regex)
+    return processIdentifier
   }
 
   // MARK: - Private

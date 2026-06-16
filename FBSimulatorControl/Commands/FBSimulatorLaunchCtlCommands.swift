@@ -9,108 +9,7 @@
 @preconcurrency import FBControlCore
 @preconcurrency import Foundation
 
-// swiftlint:disable force_unwrapping
-
-@objc public protocol FBSimulatorLaunchCtlCommandsProtocol: NSObjectProtocol, FBiOSTargetCommand {
-  @objc(serviceNameForProcessIdentifier:)
-  func serviceName(forProcessIdentifier pid: pid_t) -> FBFuture<NSString>
-
-  @objc(serviceNameForProcess:)
-  func serviceName(forProcess process: FBProcessInfo) -> FBFuture<NSString>
-
-  @objc(serviceNamesAndProcessIdentifiersMatching:)
-  func serviceNamesAndProcessIdentifiers(matching regex: NSRegularExpression) -> FBFuture<NSDictionary>
-
-  @objc(firstServiceNameAndProcessIdentifierMatching:)
-  func firstServiceNameAndProcessIdentifier(matching regex: NSRegularExpression) -> FBFuture<NSArray>
-
-  @objc(processIsRunningOnSimulator:)
-  func processIsRunning(onSimulator process: FBProcessInfo) -> FBFuture<NSNumber>
-
-  func listServices() -> FBFuture<NSDictionary>
-
-  @objc(stopServiceWithName:)
-  func stopService(withName serviceName: String) -> FBFuture<NSString>
-
-  @objc(startServiceWithName:)
-  func startService(withName serviceName: String) -> FBFuture<NSString>
-}
-
-// MARK: - FBSimulator+FBSimulatorLaunchCtlCommandsProtocol
-
-extension FBSimulator: FBSimulatorLaunchCtlCommandsProtocol {
-
-  @objc(serviceNameForProcessIdentifier:)
-  public func serviceName(forProcessIdentifier pid: pid_t) -> FBFuture<NSString> {
-    do {
-      return try launchCtlCommands().serviceName(forProcessIdentifier: pid)
-    } catch {
-      return FBFuture(error: error)
-    }
-  }
-
-  @objc(serviceNameForProcess:)
-  public func serviceName(forProcess process: FBProcessInfo) -> FBFuture<NSString> {
-    do {
-      return try launchCtlCommands().serviceName(forProcess: process)
-    } catch {
-      return FBFuture(error: error)
-    }
-  }
-
-  @objc(serviceNamesAndProcessIdentifiersMatching:)
-  public func serviceNamesAndProcessIdentifiers(matching regex: NSRegularExpression) -> FBFuture<NSDictionary> {
-    do {
-      return try launchCtlCommands().serviceNamesAndProcessIdentifiers(matching: regex)
-    } catch {
-      return FBFuture(error: error)
-    }
-  }
-
-  @objc(firstServiceNameAndProcessIdentifierMatching:)
-  public func firstServiceNameAndProcessIdentifier(matching regex: NSRegularExpression) -> FBFuture<NSArray> {
-    do {
-      return try launchCtlCommands().firstServiceNameAndProcessIdentifier(matching: regex)
-    } catch {
-      return FBFuture(error: error)
-    }
-  }
-
-  @objc(processIsRunningOnSimulator:)
-  public func processIsRunning(onSimulator process: FBProcessInfo) -> FBFuture<NSNumber> {
-    do {
-      return try launchCtlCommands().processIsRunning(onSimulator: process)
-    } catch {
-      return FBFuture(error: error)
-    }
-  }
-
-  @objc public func listServices() -> FBFuture<NSDictionary> {
-    do {
-      return try launchCtlCommands().listServices()
-    } catch {
-      return FBFuture(error: error)
-    }
-  }
-
-  @objc(stopServiceWithName:)
-  public func stopService(withName serviceName: String) -> FBFuture<NSString> {
-    do {
-      return try launchCtlCommands().stopService(withName: serviceName)
-    } catch {
-      return FBFuture(error: error)
-    }
-  }
-
-  @objc(startServiceWithName:)
-  public func startService(withName serviceName: String) -> FBFuture<NSString> {
-    do {
-      return try launchCtlCommands().startService(withName: serviceName)
-    } catch {
-      return FBFuture(error: error)
-    }
-  }
-}
+// swiftlint:disable force_cast force_try force_unwrapping
 
 @objc(FBSimulatorLaunchCtlCommands)
 public final class FBSimulatorLaunchCtlCommands: NSObject, FBiOSTargetCommand {
@@ -143,81 +42,19 @@ public final class FBSimulatorLaunchCtlCommands: NSObject, FBiOSTargetCommand {
     super.init()
   }
 
-  // MARK: - Querying Services (legacy FBFuture entry points)
+  // MARK: - Services
 
-  @objc
-  public func serviceName(forProcessIdentifier pid: pid_t) -> FBFuture<NSString> {
-    fbFutureFromAsync { [self] in
-      try await serviceNameAsync(forProcessIdentifier: pid) as NSString
-    }
-  }
-
-  @objc
-  public func serviceName(forProcess process: FBProcessInfo) -> FBFuture<NSString> {
-    fbFutureFromAsync { [self] in
-      try await serviceNameAsync(forProcessIdentifier: process.processIdentifier) as NSString
-    }
-  }
-
-  @objc
-  public func serviceNamesAndProcessIdentifiers(matching regex: NSRegularExpression) -> FBFuture<NSDictionary> {
-    fbFutureFromAsync { [self] in
-      try await serviceNamesAndProcessIdentifiersAsync(matching: regex) as NSDictionary
-    }
-  }
-
-  @objc
-  public func firstServiceNameAndProcessIdentifier(matching regex: NSRegularExpression) -> FBFuture<NSArray> {
-    fbFutureFromAsync { [self] in
-      let (serviceName, processIdentifier) = try await firstServiceNameAndProcessIdentifierAsync(matching: regex)
-      return [serviceName, NSNumber(value: processIdentifier)] as NSArray
-    }
-  }
-
-  @objc
-  public func processIsRunning(onSimulator process: FBProcessInfo) -> FBFuture<NSNumber> {
-    fbFutureFromAsync { [self] in
-      _ = try await serviceNameAsync(forProcessIdentifier: process.processIdentifier)
-      return NSNumber(value: true)
-    }
-  }
-
-  @objc
-  public func listServices() -> FBFuture<NSDictionary> {
-    fbFutureFromAsync { [self] in
-      try await listServicesAsync() as NSDictionary
-    }
-  }
-
-  // MARK: - Manipulating Services (legacy FBFuture entry points)
-
-  @objc
-  public func stopService(withName serviceName: String) -> FBFuture<NSString> {
-    fbFutureFromAsync { [self] in
-      try await stopServiceAsync(withName: serviceName) as NSString
-    }
-  }
-
-  @objc
-  public func startService(withName serviceName: String) -> FBFuture<NSString> {
-    fbFutureFromAsync { [self] in
-      try await startServiceAsync(withName: serviceName) as NSString
-    }
-  }
-
-  // MARK: - Async
-
-  fileprivate func serviceNameAsync(forProcessIdentifier pid: pid_t) async throws -> String {
+  fileprivate func serviceName(forProcessIdentifier pid: pid_t) async throws -> String {
     let pattern = "^\(NSRegularExpression.escapedPattern(for: "\(pid)"))\t"
     guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else {
       throw FBSimulatorError.describe("Couldn't build search pattern for '\(pid)'").build()
     }
-    let (serviceName, _) = try await firstServiceNameAndProcessIdentifierAsync(matching: regex)
+    let (serviceName, _) = try await firstServiceNameAndProcessIdentifier(matching: regex)
     return serviceName
   }
 
-  fileprivate func serviceNamesAndProcessIdentifiersAsync(matching regex: NSRegularExpression) async throws -> [String: NSNumber] {
-    let text = try await runWithArgumentsAsync(["list"])
+  fileprivate func serviceNamesAndProcessIdentifiers(matching regex: NSRegularExpression) async throws -> [String: NSNumber] {
+    let text = try await runWithArguments(["list"])
     let lines = text.components(separatedBy: .newlines)
     var mapping: [String: NSNumber] = [:]
     for line in lines {
@@ -234,8 +71,8 @@ public final class FBSimulatorLaunchCtlCommands: NSObject, FBiOSTargetCommand {
     return mapping
   }
 
-  fileprivate func firstServiceNameAndProcessIdentifierAsync(matching regex: NSRegularExpression) async throws -> (String, pid_t) {
-    let serviceNameToProcessIdentifier = try await serviceNamesAndProcessIdentifiersAsync(matching: regex)
+  fileprivate func firstServiceNameAndProcessIdentifier(matching regex: NSRegularExpression) async throws -> (String, pid_t) {
+    let serviceNameToProcessIdentifier = try await serviceNamesAndProcessIdentifiers(matching: regex)
     if serviceNameToProcessIdentifier.isEmpty {
       throw FBSimulatorError.describe("No Matching processes for '\(regex.pattern)'").build()
     }
@@ -247,8 +84,8 @@ public final class FBSimulatorLaunchCtlCommands: NSObject, FBiOSTargetCommand {
     return (serviceName, processIdentifier)
   }
 
-  fileprivate func listServicesAsync() async throws -> [String: Any] {
-    let text = try await runWithArgumentsAsync(["list"])
+  fileprivate func listServices() async throws -> [String: Any] {
+    let text = try await runWithArguments(["list"])
     let lines = text.components(separatedBy: .newlines)
     if lines.count < 2 {
       throw FBSimulatorError.describe("Insufficient number of lines from output '\(text)'").build()
@@ -269,9 +106,9 @@ public final class FBSimulatorLaunchCtlCommands: NSObject, FBiOSTargetCommand {
     return services
   }
 
-  fileprivate func stopServiceAsync(withName serviceName: String) async throws -> String {
+  fileprivate func stopService(withName serviceName: String) async throws -> String {
     do {
-      return try await runWithArgumentsAsync(["stop", serviceName])
+      return try await runWithArguments(["stop", serviceName])
     } catch {
       throw FBSimulatorError.describe("Failed to stop service '\(serviceName)'")
         .caused(by: error as NSError)
@@ -279,9 +116,9 @@ public final class FBSimulatorLaunchCtlCommands: NSObject, FBiOSTargetCommand {
     }
   }
 
-  fileprivate func startServiceAsync(withName serviceName: String) async throws -> String {
+  fileprivate func startService(withName serviceName: String) async throws -> String {
     do {
-      return try await runWithArgumentsAsync(["start", serviceName])
+      return try await runWithArguments(["start", serviceName])
     } catch {
       throw FBSimulatorError.describe("Failed to start service '\(serviceName)'")
         .caused(by: error as NSError)
@@ -327,7 +164,7 @@ public final class FBSimulatorLaunchCtlCommands: NSObject, FBiOSTargetCommand {
     return serviceName
   }
 
-  private func runWithArgumentsAsync(_ arguments: [String]) async throws -> String {
+  private func runWithArguments(_ arguments: [String]) async throws -> String {
     let launchConfiguration = FBProcessSpawnConfiguration(
       launchPath: launchctlLaunchPath,
       arguments: arguments,
@@ -337,5 +174,43 @@ public final class FBSimulatorLaunchCtlCommands: NSObject, FBiOSTargetCommand {
     )
     let result = try await FBProcessSpawnCommandHelpers.launchConsumingStdout(launchConfiguration, withCommands: simulator)
     return result
+  }
+}
+
+// MARK: - FBSimulator+AsyncLaunchCtlCommands
+
+extension FBSimulator: AsyncLaunchCtlCommands {
+
+  public func serviceName(forProcessIdentifier pid: pid_t) async throws -> String {
+    try await launchCtlCommands().serviceName(forProcessIdentifier: pid)
+  }
+
+  public func serviceName(forProcess process: FBProcessInfo) async throws -> String {
+    try await launchCtlCommands().serviceName(forProcessIdentifier: process.processIdentifier)
+  }
+
+  public func serviceNamesAndProcessIdentifiers(matching regex: NSRegularExpression) async throws -> [String: NSNumber] {
+    try await launchCtlCommands().serviceNamesAndProcessIdentifiers(matching: regex)
+  }
+
+  public func firstServiceNameAndProcessIdentifier(matching regex: NSRegularExpression) async throws -> (serviceName: String, processIdentifier: pid_t) {
+    try await launchCtlCommands().firstServiceNameAndProcessIdentifier(matching: regex)
+  }
+
+  public func processIsRunning(onSimulator process: FBProcessInfo) async throws -> Bool {
+    _ = try await launchCtlCommands().serviceName(forProcessIdentifier: process.processIdentifier)
+    return true
+  }
+
+  public func listServices() async throws -> [String: Any] {
+    try await launchCtlCommands().listServices()
+  }
+
+  public func stopService(withName serviceName: String) async throws -> String {
+    try await launchCtlCommands().stopService(withName: serviceName)
+  }
+
+  public func startService(withName serviceName: String) async throws -> String {
+    try await launchCtlCommands().startService(withName: serviceName)
   }
 }

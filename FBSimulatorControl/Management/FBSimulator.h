@@ -25,8 +25,7 @@
  An implementation of FBiOSTarget for iOS Simulators.
  */
 // Protocol conformances declared in Swift via extensions:
-// FBSimulatorLaunchCtlCommandsProtocol, FBSimulatorApplicationCommandsProtocol,
-// FBSimulatorFileCommandsProtocol
+// FBSimulatorApplicationCommandsProtocol, FBSimulatorFileCommandsProtocol
 @interface FBSimulator : NSObject <FBiOSTarget>
 
 #pragma mark FBiOSTargetInfo / FBiOSTarget Protocol Members
@@ -65,12 +64,6 @@
 // FBSimulatorLifecycleCommandsProtocol- (nonnull FBFuture<NSNull *> *)disconnectWithTimeout:(NSTimeInterval)timeout logger:(nullable id<FBControlCoreLogger>)logger;
 - (nonnull FBFuture *)connectToBridge;
 - (nonnull FBFuture *)connectToFramebuffer;
-
-// FBSimulatorLaunchCtlCommandsProtocol- (nonnull FBFuture<NSDictionary *> *)serviceNamesAndProcessIdentifiersMatching:(nonnull NSRegularExpression *)regex;
-- (nonnull FBFuture<NSArray *> *)firstServiceNameAndProcessIdentifierMatching:(nonnull NSRegularExpression *)regex;
-- (nonnull FBFuture<NSString *> *)stopServiceWithName:(nonnull NSString *)serviceName;
-- (nonnull FBFuture<NSString *> *)serviceNameForProcessIdentifier:(pid_t)processIdentifier;
-- (nonnull FBFuture<NSString *> *)startServiceWithName:(nonnull NSString *)serviceName;
 
 // Lifecycle (legacy FBFuture entry points, ObjC-visible)
 - (nonnull FBFuture<NSNull *> *)shutdown;

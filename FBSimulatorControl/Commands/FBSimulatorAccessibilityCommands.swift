@@ -157,7 +157,7 @@ public final class FBSimulatorAccessibilityCommands: NSObject, AsyncAccessibilit
     // CoreSimulatorBridge lets launchd bring a fresh SpringBoard (and bridge) back up.
     let pid = element.axTranslationPid
     do {
-      _ = try await bridgeFBFuture(simulator.serviceName(forProcessIdentifier: pid))
+      _ = try await simulator.serviceName(forProcessIdentifier: pid)
       return false
     } catch {
       simulator.logger?.log("Frontmost accessibility hierarchy is stale: the root element has a zero frame and its owning pid \(pid) is no longer a registered launchd service. SpringBoard has crashed and CoreSimulator's \(coreSimulatorBridgeServiceName) is still bound to the dead pid; restarting \(coreSimulatorBridgeServiceName) to recover.")
@@ -167,7 +167,7 @@ public final class FBSimulatorAccessibilityCommands: NSObject, AsyncAccessibilit
 
   private static func remediateSpringBoard(forSimulator simulator: FBSimulator) async throws {
     do {
-      _ = try await bridgeFBFuture(simulator.stopService(withName: coreSimulatorBridgeServiceName))
+      _ = try await simulator.stopService(withName: coreSimulatorBridgeServiceName)
     } catch {
       throw FBAccessibilityError.springBoardRemediationFailed(serviceName: coreSimulatorBridgeServiceName)
     }

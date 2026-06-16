@@ -9,6 +9,8 @@
 @preconcurrency import FBControlCore
 import Foundation
 
+// swiftlint:disable force_cast force_unwrapping
+
 @objc(FBDefaultsModificationStrategy)
 public class FBDefaultsModificationStrategy: NSObject {
 
@@ -112,7 +114,10 @@ public class FBDefaultsModificationStrategy: NSObject {
     // Stop the service, if booted.
     let stopFuture: FBFuture<NSNull> =
       state == .booted
-      ? simulator.stopService(withName: serviceName).mapReplace(NSNull()) as! FBFuture<NSNull>
+      ? fbFutureFromAsync {
+        _ = try await self.simulator.stopService(withName: serviceName)
+        return NSNull()
+      }
       : FBFuture<NSNull>.empty()
 
     // The path to amend.
@@ -134,7 +139,10 @@ public class FBDefaultsModificationStrategy: NSObject {
         fmap: { (_: Any) -> FBFuture<AnyObject> in
           // Re-start the Service if booted.
           if state == .booted {
-            return simulator.startService(withName: serviceName).mapReplace(NSNull())
+            return fbFutureFromAsync {
+              _ = try await self.simulator.startService(withName: serviceName)
+              return NSNull()
+            }
           }
           return FBFuture(result: NSNull())
         })) as! FBFuture<NSNull>
@@ -220,7 +228,10 @@ public class FBLocationServicesModificationStrategy: FBDefaultsModificationStrat
     // Stop the service, if booted.
     let stopFuture: FBFuture<NSNull> =
       state == .booted
-      ? simulator.stopService(withName: serviceName).mapReplace(NSNull()) as! FBFuture<NSNull>
+      ? fbFutureFromAsync {
+        _ = try await self.simulator.stopService(withName: serviceName)
+        return NSNull()
+      }
       : FBFuture<NSNull>.empty()
 
     let path = (simulator.dataDirectory! as NSString)
@@ -247,7 +258,10 @@ public class FBLocationServicesModificationStrategy: FBDefaultsModificationStrat
           }
           // Re-start the Service if booted.
           if state == .booted {
-            return self.simulator.startService(withName: serviceName).mapReplace(NSNull())
+            return fbFutureFromAsync {
+              _ = try await self.simulator.startService(withName: serviceName)
+              return NSNull()
+            }
           }
           return FBFuture(result: NSNull())
         })) as! FBFuture<NSNull>
