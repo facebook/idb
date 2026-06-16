@@ -23,10 +23,65 @@ import VideoToolbox
 
 // MARK: - Value Types
 
-// `FBVideoStreamEdgeInsets` and `FBVideoEncoderStats` are C structs declared in
-// `FBSimulatorVideoStream.h` (imported via the `FBSimulatorControl` module). Swift constructs them
-// via the C memberwise init `FBVideoStreamEdgeInsets(top:bottom:left:right:)` and the default
-// `FBVideoEncoderStats()`. Keeping them as C structs lets them appear in the `@objc` surface.
+/// Edge insets that extend the output frame dimensions beyond the source framebuffer.
+/// Each edge adds opaque pixels for overlay content (label bars, diagnostic stats, etc.).
+public struct FBVideoStreamEdgeInsets {
+  public var top: UInt
+  public var bottom: UInt
+  public var left: UInt
+  public var right: UInt
+
+  public init(top: UInt, bottom: UInt, left: UInt, right: UInt) {
+    self.top = top
+    self.bottom = bottom
+    self.left = left
+    self.right = right
+  }
+}
+
+/// Stats tracked by the video encoder (VideoToolbox).
+/// Zeroed if the stream uses a non-encoded format (e.g. bitmap/BGRA).
+public struct FBVideoEncoderStats {
+  public var callbackCount: UInt
+  public var writeCount: UInt
+  public var dropCount: UInt
+  public var writeFailureCount: UInt
+  public var encodeErrorCount: UInt
+  public var tornFrameCount: UInt
+  public var totalEncodedBytes: UInt
+  public var totalEncodeSubmitSeconds: CFTimeInterval
+
+  public init() {
+    self.callbackCount = 0
+    self.writeCount = 0
+    self.dropCount = 0
+    self.writeFailureCount = 0
+    self.encodeErrorCount = 0
+    self.tornFrameCount = 0
+    self.totalEncodedBytes = 0
+    self.totalEncodeSubmitSeconds = 0
+  }
+
+  public init(
+    callbackCount: UInt,
+    writeCount: UInt,
+    dropCount: UInt,
+    writeFailureCount: UInt,
+    encodeErrorCount: UInt,
+    tornFrameCount: UInt,
+    totalEncodedBytes: UInt,
+    totalEncodeSubmitSeconds: CFTimeInterval
+  ) {
+    self.callbackCount = callbackCount
+    self.writeCount = writeCount
+    self.dropCount = dropCount
+    self.writeFailureCount = writeFailureCount
+    self.encodeErrorCount = encodeErrorCount
+    self.tornFrameCount = tornFrameCount
+    self.totalEncodedBytes = totalEncodedBytes
+    self.totalEncodeSubmitSeconds = totalEncodeSubmitSeconds
+  }
+}
 
 // MARK: - Frame Writer
 
@@ -696,7 +751,6 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
 
   /// Constructs a Bitmap Stream with edge insets for overlay content.
   /// Insets extend the output frame dimensions, pushing video content inward.
-  @objc(streamWithFramebuffer:configuration:edgeInsets:logger:)
   public class func make(framebuffer: FBFramebuffer, configuration: FBVideoStreamConfiguration, edgeInsets: FBVideoStreamEdgeInsets, logger: any FBControlCoreLogger) -> FBSimulatorVideoStream {
     let framesPerSecondNumber = configuration.framesPerSecond
     let framesPerSecond = framesPerSecondNumber?.uintValue ?? 0
@@ -1188,7 +1242,6 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
 
   /// Returns a snapshot of the current video encoder stats.
   /// Returns a zeroed struct if the stream uses a non-encoded format (e.g. bitmap/BGRA).
-  @objc
   public func currentEncoderStats() -> FBVideoEncoderStats {
     if let pusher = framePusher, let stats = pusher.currentStats() {
       return stats
