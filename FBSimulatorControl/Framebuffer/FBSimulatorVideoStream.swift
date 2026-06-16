@@ -696,12 +696,12 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: NSObject, FBSimulato
 /// This component can be used to provide a real-time stream of a Simulator's Framebuffer.
 /// This can be connected to additional software via a stream to a File Handle or Fifo.
 ///
-/// Concurrency model (matching the ObjC original): the `writeQueue` serializes start/stop and the
-/// framebuffer consumer callbacks (`didChange`/`didReceiveDamageRect`). The Lazy subclass pushes
-/// frames from those callbacks; the Eager subclass instead runs a dedicated cadence `Thread` that
-/// calls `pushFrame` inline at a fixed frame rate.
+/// Concurrency model: the `writeQueue` serializes start/stop, the framebuffer consumer callbacks
+/// (`didChange`/`didReceiveDamageRect`), and every frame push. The Lazy subclass pushes frames from
+/// those callbacks; the Eager subclass runs a cadence `Task` that, at a fixed frame rate, dispatches
+/// `pushFrame` back onto `writeQueue` and awaits it before sleeping until the next deadline.
 // @unchecked Sendable: the ObjC original was a plain NSObject relied upon across the writeQueue and
-// (for Eager) the cadence thread without formal Sendable guarantees; the sibling FBFramebuffer is
+// (for Eager) the cadence task without formal Sendable guarantees; the sibling FBFramebuffer is
 // likewise @unchecked Sendable.
 @objc(FBSimulatorVideoStream)
 public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStream, @unchecked Sendable {
@@ -840,16 +840,23 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
         }
         self.frameWriterContext = nil
         // Clean up overlay compositing resources (ARC-managed; dropping references releases them).
-        // Resolving `stoppedFuture` below also ends the Eager cadence thread's run loop, which
-        // polls `stoppedFuture.state`.
         self.overlayBuffer = nil
         self.compositedBufferPool = nil
+        // Tear down any subclass cadence machinery (the Eager subclass cancels its cadence task).
+        // Resolving `stoppedFuture` below also ends the Eager cadence loop, which polls
+        // `stoppedFuture.state`; cancelling additionally wakes it if it is suspended in a sleep.
+        self.cadenceTeardown()
         self.stoppedFuture.resolve(withResult: NSNull())
         return self.stoppedFuture
       }) as! FBFuture<NSNull>
   }
 
   // MARK: - Private
+
+  /// Tear down any subclass-specific cadence machinery. Called on the `writeQueue` from
+  /// `stopStreaming` before `stoppedFuture` is resolved. No-op in the base/Lazy stream; the Eager
+  /// subclass overrides this to cancel its cadence task.
+  func cadenceTeardown() {}
 
   private func attachConsumerIfNeeded() -> FBFuture<NSNull> {
     FBFuture<AnyObject>.onQueue(
@@ -1297,20 +1304,39 @@ final class FBSimulatorVideoStream_Lazy: FBSimulatorVideoStream, @unchecked Send
 
 // MARK: - FBSimulatorVideoStream_Eager
 
-/// Constant-frame-rate stream: pushes frames at a fixed cadence on a dedicated `Thread`.
+/// Constant-frame-rate stream: pushes frames at a fixed cadence driven by a Swift `Task`.
 ///
-/// Concurrency model: a high-priority `Thread` runs `runFramePushLoop`, a drift-corrected
-/// `mach_wait_until` cadence loop (a faithful translation of the ObjC `NSThread` loop). Each tick
-/// calls `pushFrame` inline on that thread — matching the ObjC code, which mutated stream state on
-/// the push thread rather than on the `writeQueue`. The loop runs while `stoppedFuture` is running.
+/// Concurrency model: `mountSurface` starts a detached cadence `Task` (`framePusherTask`) running
+/// `runFramePushLoop`, a drift-corrected loop that suspends between ticks with
+/// `Task.sleep(nanoseconds:)` instead of blocking a dedicated `Thread` with `mach_wait_until`.
+/// Timing is still measured in Mach ticks (`mach_absolute_time()`) to preserve the original
+/// drift-correction exactly — only the wait mechanism changes from a blocking thread to a
+/// suspending task. The loop runs while `stoppedFuture` is running and the task is not cancelled.
+///
+/// Serialization: the actual frame push (`pushFrame`) — and all the stream-state mutation it does
+/// (`frameNumber`, `timeAtLastPush`, the frame pusher's encoder state) — must stay serialized on
+/// the existing serial `writeQueue`, which also runs the framebuffer consumer callbacks. The async
+/// loop therefore dispatches each `pushFrame(forceKeyFrame: false)` onto `writeQueue` and awaits
+/// its completion (via a checked continuation) before measuring push duration and sleeping. This
+/// keeps the cadence single-in-flight (no overlapping pushes) and confines all mutable state to
+/// `writeQueue`, consistent with the class's `@unchecked Sendable` conformance.
+///
+/// The task is cancelled from the `stopStreaming` teardown path (which resolves `stoppedFuture`,
+/// ending the loop condition) and on `deinit` as a backstop.
 final class FBSimulatorVideoStream_Eager: FBSimulatorVideoStream, @unchecked Sendable {
 
   let framesPerSecond: UInt
-  private var framePusherThread: Thread?
+  private var framePusherTask: Task<Void, Never>?
 
   init(framebuffer: FBFramebuffer, configuration: FBVideoStreamConfiguration, framesPerSecond: UInt, edgeInsets: FBVideoStreamEdgeInsets, writeQueue: DispatchQueue, logger: any FBControlCoreLogger) {
     self.framesPerSecond = framesPerSecond
     super.init(framebuffer: framebuffer, configuration: configuration, edgeInsets: edgeInsets, writeQueue: writeQueue, logger: logger)
+  }
+
+  deinit {
+    // Backstop: ensure the cadence task is cancelled if the stream is torn down without a
+    // clean stopStreaming (which already ends the loop by resolving stoppedFuture).
+    framePusherTask?.cancel()
   }
 
   override var compressionSessionProperties: [String: Any] {
@@ -1323,16 +1349,23 @@ final class FBSimulatorVideoStream_Eager: FBSimulatorVideoStream, @unchecked Sen
   override func mountSurface(_ surface: IOSurface) throws {
     try super.mountSurface(surface)
 
-    let thread = Thread { [weak self] in
-      self?.runFramePushLoop()
+    // Start the cadence task in place of the former dedicated Thread. `self` is captured: the
+    // class confines its mutable state to `writeQueue` (where the push actually runs) and is
+    // `@unchecked Sendable`, consistent with capturing it here.
+    framePusherTask = Task { [self] in
+      await runFramePushLoop()
     }
-    thread.qualityOfService = .userInteractive
-    self.framePusherThread = thread
-    thread.start()
   }
 
-  private func runFramePushLoop() {
-    Thread.current.threadPriority = 1.0
+  /// Cancel the cadence task when streaming stops. Runs on the `writeQueue` (called from
+  /// `stopStreaming`). Cancellation wakes the loop if it is suspended in `Task.sleep`; the loop
+  /// also exits on the next iteration once `stoppedFuture` is resolved.
+  override func cadenceTeardown() {
+    framePusherTask?.cancel()
+    framePusherTask = nil
+  }
+
+  private func runFramePushLoop() async {
     let fps = framesPerSecond
     let frameIntervalNanos = NSEC_PER_SEC / UInt64(fps)
 
@@ -1351,9 +1384,16 @@ final class FBSimulatorVideoStream_Eager: FBSimulatorVideoStream, @unchecked Sen
     var pushM2 = 0.0 // Welford M2 (sum of squared deviations)
 
     var nextTargetTime = mach_absolute_time() + frameIntervalMach
-    while stoppedFuture.state == .running {
+    while stoppedFuture.state == .running && !Task.isCancelled {
       let beforePush = mach_absolute_time()
-      pushFrame(forceKeyFrame: false)
+      // Serialize the push (and the stream-state mutation it performs) onto the writeQueue,
+      // matching the framebuffer consumer callbacks, and await its completion before sleeping.
+      await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+        writeQueue.async { [self] in
+          pushFrame(forceKeyFrame: false)
+          continuation.resume()
+        }
+      }
       let afterPush = mach_absolute_time()
 
       // Track push duration stats.
@@ -1366,9 +1406,18 @@ final class FBSimulatorVideoStream_Eager: FBSimulatorVideoStream, @unchecked Sen
       pushMean += delta / Double(pushCount)
       pushM2 += delta * (Double(pushDuration) - pushMean)
 
-      // Sleep or log overrun.
+      // Sleep until the next drift-corrected deadline, or log an overrun if we are already past it.
+      // Timing stays in Mach ticks for drift-correction; only the remaining gap is converted to
+      // nanoseconds for Task.sleep (the macOS 12 deployment target rules out ContinuousClock).
       if afterPush < nextTargetTime {
-        mach_wait_until(nextTargetTime)
+        let remainingMach = nextTargetTime - afterPush
+        let remainingNanos = remainingMach * UInt64(timebase.numer) / UInt64(timebase.denom)
+        do {
+          try await Task.sleep(nanoseconds: remainingNanos)
+        } catch {
+          // Cancelled while sleeping — exit the loop.
+          break
+        }
       } else {
         overrunCount += 1
         let overrunNanos = (afterPush - nextTargetTime) * UInt64(timebase.numer) / UInt64(timebase.denom)
