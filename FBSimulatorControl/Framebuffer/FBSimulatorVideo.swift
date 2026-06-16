@@ -96,10 +96,7 @@ private class FBSimulatorVideoSimCtl: FBSimulatorVideo {
             return FBFuture(error: FBSimulatorError.describe("Deallocated").build())
           }
           let version = simctlVersion as! NSDecimalNumber
-          var recordVideoParameters: [String] = ["--type=mp4"]
-          if version.compare(NSDecimalNumber(string: "681.14")) != .orderedAscending {
-            recordVideoParameters = ["--codec=h264", "--force"]
-          }
+          let recordVideoParameters = FBSimulatorVideoSimCtlSupport.recordVideoArguments(forSimctlVersion: version)
 
           let ioCommandArguments = [["recordVideo"], recordVideoParameters, [self.filePath]].flatMap { $0 }
 
@@ -195,19 +192,11 @@ private class FBSimulatorVideoSimCtl: FBSimulatorVideo {
         fmap: { [weak self] (task: Any) -> FBFuture<AnyObject> in
           let subprocess = task as! FBSubprocess<NSNull, NSString, NSNull>
           let output = subprocess.stdOut! as String
-          let pattern = "CoreSimulator-([0-9\\.]+)"
-          guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else {
-            return FBFuture(result: NSDecimalNumber.zero)
-          }
-          let matches = regex.matches(in: output, options: [], range: NSRange(location: 0, length: output.count))
-          if matches.isEmpty {
+          guard let version = FBSimulatorVideoSimCtlSupport.parseSimctlVersion(fromWhatOutput: output) else {
             self?.logger.log("Couldn't find simctl version from: \(output), return 0.0")
             return FBFuture(result: NSDecimalNumber.zero)
           }
-          let match = matches[0]
-          let range = match.range(at: 1)
-          let result = (output as NSString).substring(with: range)
-          return FBFuture(result: NSDecimalNumber(string: result))
+          return FBFuture(result: version)
         }
       )
       .onQueue(
@@ -216,5 +205,38 @@ private class FBSimulatorVideoSimCtl: FBSimulatorVideo {
           self?.logger.log("Abnormal exit of 'what' process \(error), assuming version 0.0")
           return FBFuture(result: NSDecimalNumber.zero)
         }))
+  }
+}
+
+// MARK: - FBSimulatorVideoSimCtlSupport
+
+/// Pure helpers for the `simctl`-backed recorder, factored out of `FBSimulatorVideoSimCtl` so the
+/// version gating and version parsing can be exercised by unit tests without a running simulator.
+enum FBSimulatorVideoSimCtlSupport {
+
+  /// CoreSimulator 681.14 is the first version whose `simctl io recordVideo` accepts `--codec`/`--force`.
+  /// Earlier versions take `--type` instead.
+  static let codecArgumentsMinimumVersion = NSDecimalNumber(string: "681.14")
+
+  /// The `simctl io recordVideo` codec arguments appropriate for the given CoreSimulator version.
+  static func recordVideoArguments(forSimctlVersion version: NSDecimalNumber) -> [String] {
+    if version.compare(codecArgumentsMinimumVersion) != .orderedAscending {
+      return ["--codec=h264", "--force"]
+    }
+    return ["--type=mp4"]
+  }
+
+  /// Parses the CoreSimulator version out of `/usr/bin/what` output (e.g. a line containing
+  /// `CoreSimulator-681.14`). Returns `nil` when no version can be found.
+  static func parseSimctlVersion(fromWhatOutput output: String) -> NSDecimalNumber? {
+    let pattern = "CoreSimulator-([0-9\\.]+)"
+    guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else {
+      return nil
+    }
+    let matches = regex.matches(in: output, options: [], range: NSRange(location: 0, length: output.count))
+    guard let match = matches.first else {
+      return nil
+    }
+    return NSDecimalNumber(string: (output as NSString).substring(with: match.range(at: 1)))
   }
 }
