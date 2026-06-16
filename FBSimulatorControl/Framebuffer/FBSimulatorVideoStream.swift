@@ -1151,39 +1151,41 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
     let format = configuration.format
     switch format.type {
     case .compressedVideo:
+      // Map (codec, transport) to the VideoToolbox codec, frame writer, and muxer context,
+      // then construct the pusher once. AnnexB is the default transport for each codec.
+      let videoCodec: CMVideoCodecType
+      let frameWriter: FBCompressedFrameWriter
+      let frameWriterContext: AnyObject?
       if format.codec == .h264 {
+        videoCodec = kCMVideoCodecType_H264
         if format.transport == .fmp4 {
-          let ctx = FBFMP4MuxerContext(hevc: false)
-          return FBSimulatorVideoStreamFramePusher_VideoToolbox(
-            configuration: configuration, compressionSessionProperties: derived, videoCodec: kCMVideoCodecType_H264,
-            consumer: consumer, outputMode: .compressed, frameWriter: WriteH264FrameToFMP4Stream, frameWriterContext: ctx, logger: logger)
+          frameWriter = WriteH264FrameToFMP4Stream
+          frameWriterContext = FBFMP4MuxerContext(hevc: false)
+        } else if format.transport == .mpegts {
+          frameWriter = WriteH264FrameToMPEGTSStream
+          frameWriterContext = nil
+        } else {
+          frameWriter = WriteFrameToAnnexBStream
+          frameWriterContext = nil
         }
-        if format.transport == .mpegts {
-          return FBSimulatorVideoStreamFramePusher_VideoToolbox(
-            configuration: configuration, compressionSessionProperties: derived, videoCodec: kCMVideoCodecType_H264,
-            consumer: consumer, outputMode: .compressed, frameWriter: WriteH264FrameToMPEGTSStream, frameWriterContext: nil, logger: logger)
-        }
-        return FBSimulatorVideoStreamFramePusher_VideoToolbox(
-          configuration: configuration, compressionSessionProperties: derived, videoCodec: kCMVideoCodecType_H264,
-          consumer: consumer, outputMode: .compressed, frameWriter: WriteFrameToAnnexBStream, frameWriterContext: nil, logger: logger)
-      }
-      if format.codec == .hevc {
+      } else if format.codec == .hevc {
+        videoCodec = kCMVideoCodecType_HEVC
         if format.transport == .fmp4 {
-          let ctx = FBFMP4MuxerContext(hevc: true)
-          return FBSimulatorVideoStreamFramePusher_VideoToolbox(
-            configuration: configuration, compressionSessionProperties: derived, videoCodec: kCMVideoCodecType_HEVC,
-            consumer: consumer, outputMode: .compressed, frameWriter: WriteHEVCFrameToFMP4Stream, frameWriterContext: ctx, logger: logger)
+          frameWriter = WriteHEVCFrameToFMP4Stream
+          frameWriterContext = FBFMP4MuxerContext(hevc: true)
+        } else if format.transport == .mpegts {
+          frameWriter = WriteHEVCFrameToMPEGTSStream
+          frameWriterContext = nil
+        } else {
+          frameWriter = WriteHEVCFrameToAnnexBStream
+          frameWriterContext = nil
         }
-        if format.transport == .mpegts {
-          return FBSimulatorVideoStreamFramePusher_VideoToolbox(
-            configuration: configuration, compressionSessionProperties: derived, videoCodec: kCMVideoCodecType_HEVC,
-            consumer: consumer, outputMode: .compressed, frameWriter: WriteHEVCFrameToMPEGTSStream, frameWriterContext: nil, logger: logger)
-        }
-        return FBSimulatorVideoStreamFramePusher_VideoToolbox(
-          configuration: configuration, compressionSessionProperties: derived, videoCodec: kCMVideoCodecType_HEVC,
-          consumer: consumer, outputMode: .compressed, frameWriter: WriteHEVCFrameToAnnexBStream, frameWriterContext: nil, logger: logger)
+      } else {
+        throw FBControlCoreError.describe("Unsupported codec '\(String(describing: format.codec))'").build()
       }
-      throw FBControlCoreError.describe("Unsupported codec '\(String(describing: format.codec))'").build()
+      return FBSimulatorVideoStreamFramePusher_VideoToolbox(
+        configuration: configuration, compressionSessionProperties: derived, videoCodec: videoCodec,
+        consumer: consumer, outputMode: .compressed, frameWriter: frameWriter, frameWriterContext: frameWriterContext, logger: logger)
     case .mjpeg:
       return FBSimulatorVideoStreamFramePusher_VideoToolbox(
         configuration: configuration, compressionSessionProperties: derived, videoCodec: kCMVideoCodecType_JPEG,
