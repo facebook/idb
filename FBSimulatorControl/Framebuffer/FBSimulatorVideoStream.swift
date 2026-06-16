@@ -743,8 +743,6 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
   /// Bitmaps will only be written when there is a new bitmap available.
   ///
   /// Static factories (rather than initializers) since they must pick the Eager/Lazy subclass.
-  /// Exposed to ObjC under the original `+streamWithFramebuffer:…` selectors.
-  @objc(streamWithFramebuffer:configuration:logger:)
   public class func make(framebuffer: FBFramebuffer, configuration: FBVideoStreamConfiguration, logger: any FBControlCoreLogger) -> FBSimulatorVideoStream {
     make(framebuffer: framebuffer, configuration: configuration, edgeInsets: FBVideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0), logger: logger)
   }
@@ -1055,7 +1053,6 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
 
   /// Builds the compression session properties dictionary for a given configuration and caller-provided properties.
   /// This is extracted for testability — the dictionary is passed to VTSessionSetProperties at stream start.
-  @objc(compressionSessionPropertiesForConfiguration:callerProperties:)
   public class func compressionSessionProperties(for configuration: FBVideoStreamConfiguration, callerProperties: [String: Any]) -> [String: Any] {
     var derived: [String: Any] = [
       kVTCompressionPropertyKey_RealTime as String: true,
@@ -1160,7 +1157,6 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
   /// Write a timed metadata marker (chapter) to the stream.
   /// Dispatches to the appropriate transport mechanism (MPEG-TS ID3, fMP4 emsg).
   /// Logs and drops if the transport does not support timed metadata.
-  @objc
   public func writeTimedMetadata(_ text: String) {
     let format = configuration.format
     if format.type != .compressedVideo {
@@ -1187,7 +1183,6 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
   ///
   /// In lazy/VFR mode: dispatches pushFrame on the write queue so overlay changes are encoded immediately.
   /// In eager/CFR mode: no extra push — the next cadence tick picks up the change without disrupting frame timing.
-  @objc
   public func updateOverlayBuffer(_ overlayBuffer: CVPixelBuffer?) {
     let sameReference = (overlayBuffer === self.overlayBuffer)
 
@@ -1213,8 +1208,6 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
   // MARK: - Screenshot
 
   /// Capture a PNG screenshot of the current frame with overlay composited.
-  /// Exposed to ObjC as `captureCompositedScreenshotWithError:`; Swift callers use `try`.
-  @objc(captureCompositedScreenshotWithError:)
   public func captureCompositedScreenshot() throws -> Data {
     guard let sourceBuffer = pixelBuffer else {
       throw FBSimulatorError.describe("No pixel buffer available for screenshot").build()
@@ -1257,21 +1250,17 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
   }
 
   /// Returns a snapshot of the current framebuffer stats (from the underlying FBFramebuffer).
-  @objc
   public func currentFramebufferStats() -> FBFramebufferStats {
     framebuffer.currentStats()
   }
 
   /// Total number of frames pushed to the encoder since streaming started.
-  @objc
   public var currentFrameNumber: UInt { frameNumber }
 
   /// Wall-clock time when the first frame was pushed, or 0 if not yet started.
-  @objc
   public var currentTimeAtFirstFrame: CFTimeInterval { timeAtFirstFrame }
 
   /// Wall-clock time when the first framebuffer callback was received, or 0 if not yet started.
-  @objc
   public var framebufferStatsStartTime: CFTimeInterval { framebuffer.statsStartTime }
 
   // MARK: - FBiOSTargetOperation
