@@ -52,6 +52,7 @@ private let kUsageHelpMessage = """
       --headless VALUE           If VALUE is a true value, the Simulator boot's lifecycle will be tied to the lifecycle of this invocation.
       --verify-booted VALUE      If VALUE is a true value, will verify that the Simulator is in a known-booted state before --boot completes. Default is true.
       --terminate-offline VALUE  Terminate if the target goes offline, otherwise the companion will stay alive.
+      --idle-shutdown-time SECS  Exit after SECS seconds with no active or newly received gRPC requests (default: stays alive).
 
    Filter Options:
       simulator                  Limit interactions to Simulators only.
@@ -455,6 +456,7 @@ private func cleanFuture(_ udid: String, userDefaults: UserDefaults, xcodeAvaila
 
 private func companionServerFuture(_ udid: String, userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBControlCoreLogger, reporter: FBEventReporter) -> FBFuture<FBFuture<NSNull>> {
   let terminateOffline = userDefaults.bool(forKey: "-terminate-offline")
+  let idleShutdownTime = userDefaults.string(forKey: "-idle-shutdown-time").flatMap(Double.init).flatMap { $0 > 0 ? $0 : nil }
 
   return targetForUDID(udid, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, warmUp: true, logger: logger, reporter: reporter)
     .onQueue(
@@ -481,6 +483,21 @@ private func companionServerFuture(_ udid: String, userDefaults: UserDefaults, x
           // Start up the companion
           let ports = IDBPortsConfiguration(arguments: userDefaults)
 
+          // The gRPC domain socket this companion serves on, if any. Removing it
+          // the instant shutdown begins stops clients from discovering a
+          // companion that is already shutting down.
+          let registeredSocketPath: String?
+          if case let .unixDomainSocket(path) = ports.swiftServerTarget {
+            registeredSocketPath = path
+          } else {
+            registeredSocketPath = nil
+          }
+          let removeRegisteredSocket: @Sendable () -> Void = {
+            if let registeredSocketPath {
+              Darwin.unlink(registeredSocketPath)
+            }
+          }
+
           // Command Executor
           let commandExecutor = FBIDBCommandExecutor.commandExecutor(
             forTarget: target,
@@ -490,12 +507,19 @@ private func companionServerFuture(_ udid: String, userDefaults: UserDefaults, x
             logger: idbLogger
           )
 
+          // Give the monitor the socket cleanup so an idle shutdown unlinks the
+          // socket synchronously the instant it begins, ahead of the async teardown.
+          let idleShutdownMonitor = idleShutdownTime.map {
+            IdleShutdownMonitor(idleTime: $0, logger: idbLogger, onShutdownStarted: removeRegisteredSocket)
+          }
+
           let swiftServer = try GRPCSwiftServer(
             target: target,
             commandExecutor: commandExecutor,
             reporter: IDBConfiguration.eventReporter,
             logger: logger as! FBIDBLogger,
-            ports: ports
+            ports: ports,
+            idleShutdownMonitor: idleShutdownMonitor
           )
 
           return (swiftServer.start() as FBFuture)
@@ -504,6 +528,12 @@ private func companionServerFuture(_ udid: String, userDefaults: UserDefaults, x
               map: { (serverDescription: AnyObject) -> AnyObject in
                 writeJSONToStdOut(serverDescription)
                 var futures: [FBFuture<NSNull>] = [unsafeBitCast(swiftServer.completed, to: FBFuture<NSNull>.self)]
+
+                if let idleShutdownMonitor, let idleShutdownTime {
+                  logger.info().log("Companion will shut down after \(Int(idleShutdownTime))s of inactivity")
+                  idleShutdownMonitor.start()
+                  futures.append(unsafeBitCast(idleShutdownMonitor.expired, to: FBFuture<NSNull>.self))
+                }
 
                 if terminateOffline {
                   logger.info().log("Companion will terminate when target goes offline")
@@ -519,6 +549,9 @@ private func companionServerFuture(_ udid: String, userDefaults: UserDefaults, x
                     target.workQueue,
                     chain: { (future: FBFuture<AnyObject>) -> FBFuture<AnyObject> in
                       temporaryDirectory.cleanOnExit()
+                      // Catch-all for shutdown paths that don't remove the socket
+                      // synchronously themselves (target-offline, server close).
+                      removeRegisteredSocket()
                       return future
                     }) as AnyObject
               })
