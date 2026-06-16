@@ -348,10 +348,10 @@ private class FBDeviceFileCommands_DiskImages: NSObject, AsyncFileContainer {
 // MARK: - FBDeviceFileCommands_Symbols
 
 private class FBDeviceFileCommands_Symbols: NSObject, AsyncFileContainer {
-  let commands: any FBDeviceDebugSymbolsCommandsProtocol
+  let commands: any AsyncDebugSymbolsCommands
   let queue: DispatchQueue
 
-  init(commands: any FBDeviceDebugSymbolsCommandsProtocol, queue: DispatchQueue) {
+  init(commands: any AsyncDebugSymbolsCommands, queue: DispatchQueue) {
     self.commands = commands
     self.queue = queue
     super.init()
@@ -363,9 +363,9 @@ private class FBDeviceFileCommands_Symbols: NSObject, AsyncFileContainer {
 
   func copy(fromContainer sourcePath: String, toHost destinationPath: String) async throws -> String {
     if sourcePath == ExtractedSymbolsDirectory {
-      return try await bridgeFBFuture(commands.pullAndExtractSymbols(toDestinationDirectory: destinationPath)) as String
+      return try await commands.pullAndExtractSymbols(toDestinationDirectory: destinationPath)
     }
-    return try await bridgeFBFuture(commands.pullSymbolFile(sourcePath, toDestinationPath: destinationPath)) as String
+    return try await commands.pullSymbolFile(sourcePath, toDestinationPath: destinationPath)
   }
 
   func tail(_ path: String, to consumer: any FBDataConsumer) async throws -> any FBiOSTargetOperation {
@@ -385,7 +385,7 @@ private class FBDeviceFileCommands_Symbols: NSObject, AsyncFileContainer {
   }
 
   func contents(ofDirectory path: String) async throws -> [String] {
-    let listedSymbols = try await bridgeFBFutureArray(commands.listSymbols()) as [String]
+    let listedSymbols = try await commands.listSymbols()
     return listedSymbols + [ExtractedSymbolsDirectory]
   }
 }
@@ -492,8 +492,8 @@ public class FBDeviceFileCommands: NSObject, FBiOSTargetCommand {
   }
 
   fileprivate func fileCommandsForSymbols() -> FBFutureContext<FBDeviceFileCommands_Symbols> {
-    let symbolCommands: any FBDeviceDebugSymbolsCommandsProtocol = device!
-    return FBFutureContext(result: FBDeviceFileCommands_Symbols(commands: symbolCommands, queue: device!.asyncQueue))
+    // swiftlint:disable:next force_unwrapping
+    FBFutureContext(result: FBDeviceFileCommands_Symbols(commands: device! as any AsyncDebugSymbolsCommands, queue: device!.asyncQueue))
   }
 }
 
