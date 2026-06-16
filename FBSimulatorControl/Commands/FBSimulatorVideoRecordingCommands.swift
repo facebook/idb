@@ -40,7 +40,7 @@ public final class FBSimulatorVideoRecordingCommands: NSObject, FBiOSTargetComma
       throw FBSimulatorError.describe("Cannot create a new video recording session, one is already active").build()
     }
     let video = FBSimulatorVideo.video(withSimctlExecutor: simulator.simctlExecutor, filePath: filePath, logger: simulator.logger!)
-    try await bridgeFBFutureVoid(video.startRecording())
+    try await video.startRecording()
     self.video = video
     return video
   }
@@ -54,7 +54,7 @@ public final class FBSimulatorVideoRecordingCommands: NSObject, FBiOSTargetComma
         .describe("There was no existing video instance for \(self.simulator?.description ?? "unknown")")
         .build()
     }
-    try await bridgeFBFutureVoid(video.stopRecording())
+    try await video.stopRecording()
   }
 
   fileprivate func createStreamAsync(configuration: FBVideoStreamConfiguration) async throws -> any FBVideoStream {

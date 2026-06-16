@@ -8,6 +8,40 @@
 import FBControlCore
 import Foundation
 
+// The simctl process APIs vend Objective-C lightweight generics that erase to `id` at the Swift
+// boundary, so the calls into them require force casts; the in-memory stdout is likewise force
+// unwrapped. These are unavoidable at the FBControlCore process boundary.
+// swiftlint:disable force_cast force_unwrapping
+
+// MARK: - FBSimulatorVideoError
+
+/// Errors raised by the `simctl`-backed video recorder.
+///
+/// Previously these were stringly-typed `FBSimulatorError` `NSError`s. No consumer inspects their
+/// domain or code — they are surfaced only as messages — so they are modelled here as a typed enum.
+/// `errorDescription` reproduces the original message strings verbatim, so the message is unchanged
+/// when the error is bridged back to `NSError` and surfaced through `FBFuture`/`localizedDescription`.
+public enum FBSimulatorVideoError: Error, LocalizedError {
+  case alreadyRecording
+  case noRecordingTask
+  case fileNotWritten(filePath: String, timeout: TimeInterval)
+
+  public var errorDescription: String? {
+    switch self {
+    case .alreadyRecording:
+      return "Cannot Start Recording, there is already an recording task running"
+    case .noRecordingTask:
+      return "Cannot Stop Recording, there is no recording task started"
+    case let .fileNotWritten(filePath, timeout):
+      return "Timed out after \(timeout)s waiting for simctl to write file to \(filePath)"
+    }
+  }
+}
+
+extension FBSimulatorVideoError: CustomStringConvertible {
+  public var description: String { errorDescription ?? "Unknown FBSimulatorVideo error" }
+}
+
 // MARK: - FBSimulatorVideo
 
 @objc(FBSimulatorVideo)
@@ -22,7 +56,6 @@ public class FBSimulatorVideo: NSObject, FBiOSTargetOperation {
 
   // MARK: - Initializers
 
-  @objc(videoWithSimctlExecutor:filePath:logger:)
   public class func video(withSimctlExecutor simctlExecutor: FBAppleSimctlCommandExecutor, filePath: String, logger: any FBControlCoreLogger) -> FBSimulatorVideo {
     FBSimulatorVideoSimCtl(simctlExecutor: simctlExecutor, filePath: filePath, logger: logger)
   }
@@ -35,176 +68,131 @@ public class FBSimulatorVideo: NSObject, FBiOSTargetOperation {
     super.init()
   }
 
-  // MARK: - Public Methods
+  // MARK: - Recording
 
-  @objc
-  public func startRecording() -> FBFuture<NSNull> {
+  public func startRecording() async throws {
     fatalError("-[\(type(of: self)) startRecording] is abstract and should be overridden")
   }
 
-  @objc
-  public func stopRecording() -> FBFuture<NSNull> {
+  public func stopRecording() async throws {
     fatalError("-[\(type(of: self)) stopRecording] is abstract and should be overridden")
   }
 
   // MARK: - FBiOSTargetOperation
 
-  @objc
-  public var completed: FBFuture<NSNull> {
-    unsafeBitCast(
-      completedFuture.onQueue(
-        queue,
-        respondToCancellation: { [weak self] in
-          guard let self else {
-            return FBFuture<NSNull>.empty()
-          }
-          return self.stopRecording()
-        }),
-      to: FBFuture<NSNull>.self
-    )
+  @objc public var completed: FBFuture<NSNull> {
+    convertFBMutableFuture(completedFuture).onQueue(
+      queue,
+      respondToCancellation: { [weak self] in
+        guard let self else {
+          return FBFuture<NSNull>.empty()
+        }
+        return fbFutureFromAsync {
+          try await self.stopRecording()
+          return NSNull()
+        }
+      })
   }
 }
 
 // MARK: - FBSimulatorVideoSimCtl
 
-private class FBSimulatorVideoSimCtl: FBSimulatorVideo {
+private final class FBSimulatorVideoSimCtl: FBSimulatorVideo {
+
+  private static let recordingTaskWaitTimeout: TimeInterval = 10.0
+  private static let simctlResolveFileTimeout: TimeInterval = 10.0
 
   private let simctlExecutor: FBAppleSimctlCommandExecutor
-  private var recordingStarted: FBFuture<FBSubprocess<NSNull, AnyObject, AnyObject>>?
+  private var recordingTask: FBSubprocess<NSNull, AnyObject, AnyObject>?
 
   init(simctlExecutor: FBAppleSimctlCommandExecutor, filePath: String, logger: any FBControlCoreLogger) {
     self.simctlExecutor = simctlExecutor
     super.init(filePath: filePath, logger: logger)
   }
 
-  // MARK: - Public
+  // MARK: - Recording
 
-  override func startRecording() -> FBFuture<NSNull> {
-    if recordingStarted != nil {
-      return
-        FBSimulatorError
-        .describe("Cannot Start Recording, there is already an recording task running")
-        .failFuture() as! FBFuture<NSNull>
+  override func startRecording() async throws {
+    if recordingTask != nil {
+      throw FBSimulatorVideoError.alreadyRecording
     }
 
-    let started: FBFuture<FBSubprocess<NSNull, AnyObject, AnyObject>> =
-      (simctlVersionNumber()
-      .onQueue(
-        queue,
-        fmap: { [weak self] (simctlVersion: Any) -> FBFuture<AnyObject> in
-          guard let self else {
-            return FBFuture(error: FBSimulatorError.describe("Deallocated").build())
-          }
-          let version = simctlVersion as! NSDecimalNumber
-          let recordVideoParameters = FBSimulatorVideoSimCtlSupport.recordVideoArguments(forSimctlVersion: version)
+    let version = await simctlVersion()
+    let recordVideoParameters = FBSimulatorVideoSimCtlSupport.recordVideoArguments(forSimctlVersion: version)
+    let ioCommandArguments = [["recordVideo"], recordVideoParameters, [filePath]].flatMap { $0 }
 
-          let ioCommandArguments = [["recordVideo"], recordVideoParameters, [self.filePath]].flatMap { $0 }
-
-          return
-            ((self.simctlExecutor
-            .taskBuilder(withCommand: "io", arguments: ioCommandArguments) as! FBProcessBuilder<NSNull, AnyObject, AnyObject>)
-            .withStdOut(to: self.logger)
-            .withStdErr(to: self.logger)
-            .withTaskLifecycleLogging(to: self.logger)
-            .start()) as! FBFuture<AnyObject>
-        })) as! FBFuture<FBSubprocess<NSNull, AnyObject, AnyObject>>
-
-    recordingStarted = started
-    return started.mapReplace(NSNull()) as! FBFuture<NSNull>
+    let startFuture =
+      (simctlExecutor.taskBuilder(withCommand: "io", arguments: ioCommandArguments) as! FBProcessBuilder<NSNull, AnyObject, AnyObject>)
+      .withStdOut(to: logger)
+      .withStdErr(to: logger)
+      .withTaskLifecycleLogging(to: logger)
+      .start() as! FBFuture<FBSubprocess<NSNull, AnyObject, AnyObject>>
+    recordingTask = try await bridgeFBFuture(startFuture)
   }
 
-  private static let recordingTaskWaitTimeout: TimeInterval = 10.0
-
-  override func stopRecording() -> FBFuture<NSNull> {
-    guard let recordingStarted = self.recordingStarted else {
-      return
-        FBSimulatorError
-        .describe("Cannot Stop Recording, there is no recording task started")
-        .failFuture() as! FBFuture<NSNull>
-    }
-    guard let recordingTask = recordingStarted.result else {
-      return
-        FBSimulatorError
-        .describe("Cannot Stop Recording, the recording task hasn't started")
-        .failFuture() as! FBFuture<NSNull>
+  override func stopRecording() async throws {
+    guard let recordingTask = self.recordingTask else {
+      throw FBSimulatorVideoError.noRecordingTask
     }
 
     if recordingTask.statLoc.hasCompleted {
       logger.log("Stop Recording requested, but it's completed with output '\(recordingTask.stdOut!)' '\(recordingTask.stdErr!)', perhaps the video is damaged")
-      return FBFuture<NSNull>.empty()
+      return
     }
 
-    let completed: FBFuture<NSNull> =
-      (((recordingTask
-      .sendSignal(SIGINT, backingOffToKillWithTimeout: FBSimulatorVideoSimCtl.recordingTaskWaitTimeout, logger: logger) as! FBFuture<AnyObject>)
-      .logCompletion(logger, withPurpose: "The video recording task terminated"))
-      .onQueue(
-        queue,
-        fmap: { [weak self] (_: Any) -> FBFuture<AnyObject> in
-          guard let self else {
-            return FBFuture(result: NSNull())
-          }
-          self.recordingStarted = nil
-          return FBSimulatorVideoSimCtl.confirmFileHasBeenWritten(self.filePath, queue: self.queue, logger: self.logger) as! FBFuture<AnyObject>
-        }
-      )
-      .onQueue(
-        queue,
-        handleError: { [weak self] (error: any Error) -> FBFuture<AnyObject> in
-          self?.logger.log("Failed confirm video file been written \(error)")
-          return FBFuture(result: NSNull())
-        })) as! FBFuture<NSNull>
+    // Mirror the previous FBFuture chain's error handling: any failure terminating the task or
+    // confirming the file is logged and swallowed, and the operation still completes.
+    do {
+      let signalFuture =
+        recordingTask
+        .sendSignal(SIGINT, backingOffToKillWithTimeout: Self.recordingTaskWaitTimeout, logger: logger) as! FBFuture<AnyObject>
+      try await bridgeFBFutureVoid(signalFuture.logCompletion(logger, withPurpose: "The video recording task terminated"))
+      self.recordingTask = nil
+      try await confirmFileHasBeenWritten()
+    } catch {
+      logger.log("Failed confirm video file been written \(error)")
+    }
 
-    _ = completedFuture.resolve(from: unsafeBitCast(completed, to: FBFuture<AnyObject>.self))
-
-    return completed
+    completedFuture.resolve(withResult: NSNull())
   }
 
   // MARK: - Private
 
-  private static let simctlResolveFileTimeout: TimeInterval = 10
-
-  private class func confirmFileHasBeenWritten(_ filePath: String, queue: DispatchQueue, logger: any FBControlCoreLogger) -> FBFuture<NSNull> {
-    (FBFuture<AnyObject>
-      .onQueue(
-        queue,
-        resolveWhen: {
-          let fileAttributes = try? FileManager.default.attributesOfItem(atPath: filePath)
-          let fileSize = (fileAttributes?[.size] as? UInt) ?? 0
-          if fileSize > 0 {
-            logger.log("simctl has written out the video to \(filePath) with file size \(fileSize)")
-            return true
-          }
-          return false
-        }
-      )
-      .timeout(simctlResolveFileTimeout, waitingFor: "simctl to write file to \(filePath)")) as! FBFuture<NSNull>
+  private func confirmFileHasBeenWritten() async throws {
+    let deadline = Date().addingTimeInterval(Self.simctlResolveFileTimeout)
+    while true {
+      let fileAttributes = try? FileManager.default.attributesOfItem(atPath: filePath)
+      let fileSize = (fileAttributes?[.size] as? UInt) ?? 0
+      if fileSize > 0 {
+        logger.log("simctl has written out the video to \(filePath) with file size \(fileSize)")
+        return
+      }
+      if Date() >= deadline {
+        throw FBSimulatorVideoError.fileNotWritten(filePath: filePath, timeout: Self.simctlResolveFileTimeout)
+      }
+      try await Task.sleep(nanoseconds: 100_000_000)
+    }
   }
 
-  private func simctlVersionNumber() -> FBFuture<AnyObject> {
-    ((((FBProcessBuilder<NSNull, AnyObject, AnyObject>
-      .withLaunchPath("/usr/bin/what", arguments: ["/Library/Developer/PrivateFrameworks/CoreSimulator.framework/Versions/A/Resources/bin/simctl"]) as! FBProcessBuilder<NSNull, AnyObject, AnyObject>)
-      .withStdOutInMemoryAsString() as! FBProcessBuilder<NSNull, AnyObject, AnyObject>)
-      .withStdErrToDevNull() as! FBProcessBuilder<NSNull, AnyObject, AnyObject>)
-      .runUntilCompletion(withAcceptableExitCodes: nil)
-      .onQueue(
-        queue,
-        fmap: { [weak self] (task: Any) -> FBFuture<AnyObject> in
-          let subprocess = task as! FBSubprocess<NSNull, NSString, NSNull>
-          let output = subprocess.stdOut! as String
-          guard let version = FBSimulatorVideoSimCtlSupport.parseSimctlVersion(fromWhatOutput: output) else {
-            self?.logger.log("Couldn't find simctl version from: \(output), return 0.0")
-            return FBFuture(result: NSDecimalNumber.zero)
-          }
-          return FBFuture(result: version)
-        }
-      )
-      .onQueue(
-        queue,
-        handleError: { [weak self] (error: any Error) -> FBFuture<AnyObject> in
-          self?.logger.log("Abnormal exit of 'what' process \(error), assuming version 0.0")
-          return FBFuture(result: NSDecimalNumber.zero)
-        }))
+  private func simctlVersion() async -> NSDecimalNumber {
+    do {
+      let builder =
+        (((FBProcessBuilder<NSNull, AnyObject, AnyObject>
+          .withLaunchPath("/usr/bin/what", arguments: ["/Library/Developer/PrivateFrameworks/CoreSimulator.framework/Versions/A/Resources/bin/simctl"]) as! FBProcessBuilder<NSNull, AnyObject, AnyObject>)
+          .withStdOutInMemoryAsString() as! FBProcessBuilder<NSNull, AnyObject, AnyObject>)
+          .withStdErrToDevNull() as! FBProcessBuilder<NSNull, AnyObject, AnyObject>)
+      let task = try await bridgeFBFuture(builder.runUntilCompletion(withAcceptableExitCodes: nil))
+      let subprocess = task as! FBSubprocess<NSNull, NSString, NSNull>
+      let output = subprocess.stdOut! as String
+      guard let version = FBSimulatorVideoSimCtlSupport.parseSimctlVersion(fromWhatOutput: output) else {
+        logger.log("Couldn't find simctl version from: \(output), return 0.0")
+        return .zero
+      }
+      return version
+    } catch {
+      logger.log("Abnormal exit of 'what' process \(error), assuming version 0.0")
+      return .zero
+    }
   }
 }
 
