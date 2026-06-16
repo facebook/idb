@@ -8,7 +8,6 @@
 import FBControlCore
 import Foundation
 
-/// Swift-native async/await counterpart of `FBSimulatorKeychainCommandsProtocol`.
 public protocol AsyncKeychainCommands: AnyObject {
 
   func clearKeychain() async throws

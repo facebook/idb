@@ -10,23 +10,6 @@ import Foundation
 
 // swiftlint:disable force_cast
 
-@objc public protocol FBSimulatorKeychainCommandsProtocol: NSObjectProtocol {
-  func clearKeychain() -> FBFuture<NSNull>
-}
-
-// MARK: - FBSimulator+FBSimulatorKeychainCommandsProtocol
-
-extension FBSimulator: FBSimulatorKeychainCommandsProtocol {
-
-  @objc public func clearKeychain() -> FBFuture<NSNull> {
-    do {
-      return try keychainCommands().clearKeychain()
-    } catch {
-      return FBFuture(error: error)
-    }
-  }
-}
-
 @objc(FBSimulatorKeychainCommands)
 public final class FBSimulatorKeychainCommands: NSObject, FBiOSTargetCommand {
 
@@ -46,22 +29,9 @@ public final class FBSimulatorKeychainCommands: NSObject, FBiOSTargetCommand {
     super.init()
   }
 
-  // MARK: - FBSimulatorKeychainCommandsProtocol (legacy FBFuture entry point)
-
-  @objc
-  public func clearKeychain() -> FBFuture<NSNull> {
-    fbFutureFromAsync { [weak self] in
-      guard let self else {
-        throw FBSimulatorError.describe("Simulator deallocated").build()
-      }
-      try await self.clearKeychainImpl()
-      return NSNull()
-    }
-  }
-
   // MARK: - Private
 
-  fileprivate func clearKeychainImpl() async throws {
+  fileprivate func clearKeychain() async throws {
     guard let simulator = self.simulator else {
       throw FBSimulatorError.describe("Simulator deallocated").build()
     }
@@ -74,6 +44,6 @@ public final class FBSimulatorKeychainCommands: NSObject, FBiOSTargetCommand {
 extension FBSimulator: AsyncKeychainCommands {
 
   public func clearKeychain() async throws {
-    try await keychainCommands().clearKeychainImpl()
+    try await keychainCommands().clearKeychain()
   }
 }

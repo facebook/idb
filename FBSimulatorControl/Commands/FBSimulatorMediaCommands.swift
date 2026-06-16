@@ -10,24 +10,7 @@ import FBControlCore
 import Foundation
 import UniformTypeIdentifiers
 
-@objc public protocol FBSimulatorMediaCommandsProtocol: NSObjectProtocol, FBiOSTargetCommand {
-  @objc(addMedia:)
-  func addMedia(_ mediaFileURLs: [URL]) -> FBFuture<NSNull>
-}
-
-// MARK: - FBSimulator+FBSimulatorMediaCommandsProtocol
-
-extension FBSimulator: FBSimulatorMediaCommandsProtocol {
-
-  @objc(addMedia:)
-  public func addMedia(_ mediaFileURLs: [URL]) -> FBFuture<NSNull> {
-    do {
-      return try mediaCommands().addMedia(mediaFileURLs)
-    } catch {
-      return FBFuture(error: error)
-    }
-  }
-}
+// swiftlint:disable force_cast
 
 @objc(FBSimulatorMediaCommands)
 public final class FBSimulatorMediaCommands: NSObject, FBiOSTargetCommand {
@@ -46,16 +29,6 @@ public final class FBSimulatorMediaCommands: NSObject, FBiOSTargetCommand {
   private init(simulator: FBSimulator) {
     self.simulator = simulator
     super.init()
-  }
-
-  // MARK: - FBSimulatorMediaCommands Protocol (legacy FBFuture entry point)
-
-  @objc
-  public func addMedia(_ mediaFileURLs: [URL]) -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      try uploadMedia(mediaFileURLs)
-      return NSNull()
-    }
   }
 
   // MARK: - Private
@@ -109,7 +82,6 @@ public final class FBSimulatorMediaCommands: NSObject, FBiOSTargetCommand {
           FBSimulatorMediaCommands.predicateForPhotoPaths,
           FBSimulatorMediaCommands.predicateForVideoPaths,
         ])
-        // swiftlint:disable:next force_cast
       ) as! [URL]
     if !photosAndVideos.isEmpty {
       do {

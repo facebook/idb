@@ -8,7 +8,6 @@
 import FBControlCore
 import Foundation
 
-/// Swift-native async/await counterpart of `FBSimulatorMediaCommandsProtocol`.
 public protocol AsyncMediaCommands: AnyObject {
 
   func addMedia(_ mediaFileURLs: [URL]) async throws
