@@ -34,7 +34,10 @@ public final class CompanionManager {
   /// registry if it is still reachable, otherwise a freshly discovered or
   /// spawned one. A recorded companion that has gone away (e.g. it exited but
   /// left its socket and registry entry behind) is pruned and replaced.
-  public func companionInfo(forUDID udid: String) async throws -> CompanionInfo {
+  ///
+  /// When a companion is spawned, `idleShutdownTime` (if set) is forwarded as
+  /// `--idle-shutdown-time`; it has no effect when an existing companion is reused.
+  public func companionInfo(forUDID udid: String, idleShutdownTime: TimeInterval? = nil) async throws -> CompanionInfo {
     let companions = try registry.companions()
     if let existing = companions.first(where: { $0.udid == udid }) {
       if isAlive(existing) {
@@ -42,7 +45,7 @@ public final class CompanionManager {
       }
       try registry.remove(udid: udid)
     }
-    return try await spawnCompanionServer(udid: udid)
+    return try await spawnCompanionServer(udid: udid, idleShutdownTime: idleShutdownTime)
   }
 
   /// Whether a recorded companion is still reachable. Domain-socket companions
@@ -57,16 +60,17 @@ public final class CompanionManager {
     }
   }
 
-  /// Ensures a companion exists for `udid` and records it.
+  /// Ensures a companion exists for `udid` and records it. `idleShutdownTime`, if
+  /// set, is forwarded to a newly spawned companion as `--idle-shutdown-time`.
   @discardableResult
-  public func spawnCompanionServer(udid: String, only: String? = nil) async throws -> CompanionInfo {
+  public func spawnCompanionServer(udid: String, only: String? = nil, idleShutdownTime: TimeInterval? = nil) async throws -> CompanionInfo {
     let path = CompanionPaths.companionSocketPath(forUDID: udid)
     let info: CompanionInfo
     if CompanionConnectivity.isDomainSocketBound(path: path) {
       // A companion is already serving this path, so reuse it.
       info = CompanionInfo(udid: udid, isLocal: true, pid: nil, address: .domainSocket(path: path))
     } else {
-      info = try await spawner.spawnDomainSocketServer(udid: udid, only: only, path: path)
+      info = try await spawner.spawnDomainSocketServer(udid: udid, only: only, path: path, idleShutdownTime: idleShutdownTime)
     }
     try registry.add(info)
     return info

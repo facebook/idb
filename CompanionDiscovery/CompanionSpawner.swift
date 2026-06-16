@@ -25,13 +25,15 @@ public struct CompanionSpawner {
   }
 
   /// Spawns a companion for `udid` bound to `path`, returning a record for it.
+  /// When `idleShutdownTime` is set, the companion is launched with
+  /// `--idle-shutdown-time` so it exits after that many seconds of gRPC inactivity.
   ///
   /// - Note: Unlike the Python client, the spawned process is not yet detached
   ///   into its own process group (`reparent=True` / `preexec_fn=os.setpgrp`).
   ///   It survives a normal exit of this process, but would receive terminal
   ///   signals (e.g. Ctrl-C) delivered to this process's group. Proper
   ///   detachment is left for the lifecycle/hookup work.
-  public func spawnDomainSocketServer(udid: String, only: String? = nil, path: String) async throws -> CompanionInfo {
+  public func spawnDomainSocketServer(udid: String, only: String? = nil, path: String, idleShutdownTime: TimeInterval? = nil) async throws -> CompanionInfo {
     try CompanionPaths.ensureLogsDirectory()
     let logPath = CompanionPaths.logFilePath(forUDID: udid)
     let logHandle = try appendHandle(forPath: logPath)
@@ -41,6 +43,9 @@ public struct CompanionSpawner {
     arguments += onlyArguments(only)
     if let deviceSetPath {
       arguments += ["--device-set-path", deviceSetPath]
+    }
+    if let idleShutdownTime {
+      arguments += ["--idle-shutdown-time", "\(Int(idleShutdownTime))"]
     }
 
     let process = Process()

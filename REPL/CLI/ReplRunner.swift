@@ -66,8 +66,10 @@ struct ReplRunner: ParsableArguments {
     }
 
     // Discover an already-running idb_companion for this target, or start one,
-    // then connect to it.
-    let companion = try await companionManager().companionInfo(forUDID: udid)
+    // then connect to it. A companion we start should not outlive its use, so it
+    // exits after 5 minutes without gRPC activity.
+    let idleShutdownTime: TimeInterval = 5 * 60
+    let companion = try await companionManager().companionInfo(forUDID: udid, idleShutdownTime: idleShutdownTime)
 
     let group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
     let channel = try GRPCChannelPool.with(
