@@ -72,7 +72,8 @@ public class FBDeviceVideoStream: NSObject, FBVideoStream {
     return streamType.init(session: session, output: output, writeQueue: writeQueue, logger: logger)
   }
 
-  private class func classForConfiguration(_ configuration: FBVideoStreamConfiguration) -> FBDeviceVideoStream.Type? {
+  // Internal (not private) so @testable tests can assert format → subclass dispatch.
+  class func classForConfiguration(_ configuration: FBVideoStreamConfiguration) -> FBDeviceVideoStream.Type? {
     let format = configuration.format
     switch format.type {
     case .compressedVideo:
