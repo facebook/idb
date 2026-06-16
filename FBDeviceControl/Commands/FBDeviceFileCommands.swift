@@ -471,16 +471,6 @@ public class FBDeviceFileCommands: NSObject, FBiOSTargetCommand {
         }) as! FBFutureContext<FBDeviceFileContainer_MDMProfiles>
   }
 
-  fileprivate func fileCommandsForSpringboardIconLayout() -> FBFutureContext<FBSpringboardServicesIconContainer> {
-    device!.startService(FBSpringboardServicesClient.serviceName)
-      .onQueue(
-        device!.asyncQueue,
-        pend: { (connection: AnyObject) -> FBFuture<AnyObject> in
-          let conn = connection as! FBAMDServiceConnection
-          return FBFuture(result: FBSpringboardServicesClient.springboardServicesClient(connection: conn, logger: self.device!.logger!).iconContainer() as AnyObject)
-        }) as! FBFutureContext<FBSpringboardServicesIconContainer>
-  }
-
   fileprivate func fileCommandsForWallpaper() -> FBFutureContext<FBDeviceFileContainer_Wallpaper> {
     FBFutureContext(futureContexts: [
       unsafeBitCast(device!.startService(FBSpringboardServicesClient.serviceName), to: FBFutureContext<AnyObject>.self),
@@ -563,7 +553,13 @@ extension FBDevice: AsyncFileCommands {
   public func withFileCommandsForSpringboardIconLayout<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await withAsyncFileContainer(fileCommands().fileCommandsForSpringboardIconLayout(), body: body)
+    guard let logger else {
+      throw FBDeviceControlError().describe("Device logger is nil").build()
+    }
+    return try await withFBFutureContext(startService(FBSpringboardServicesClient.serviceName)) { connection in
+      let client = FBSpringboardServicesClient.springboardServicesClient(connection: connection, logger: logger)
+      return try await body(client.iconContainer())
+    }
   }
 
   public func withFileCommandsForWallpaper<R>(
