@@ -8,7 +8,6 @@
 import FBControlCore
 import Foundation
 
-/// Swift-native async/await counterpart of `FBSimulatorSettingsCommandsProtocol`.
 public protocol AsyncSettingsCommands: AnyObject {
 
   func setSetting(_ setting: FBSimulatorSetting, enabled: Bool) async throws

@@ -9,6 +9,8 @@
 @preconcurrency import FBControlCore
 @preconcurrency import Foundation
 
+// swiftlint:disable force_cast force_unwrapping
+
 /// An enumeration of simulator settings that can be toggled on/off.
 /// Each value maps to a different underlying transport (SimDevice API, Darwin notification, etc.)
 /// but the public API is uniform: setSetting:enabled:.
@@ -44,295 +46,6 @@
 
 private let slowAnimationsNotification = "com.apple.UIKit.SimulatorSlowMotionAnimationState"
 
-@objc public protocol FBSimulatorSettingsCommandsProtocol: NSObjectProtocol, FBiOSTargetCommand {
-  @objc(setSetting:enabled:)
-  func setSetting(_ setting: FBSimulatorSetting, enabled: Bool) -> FBFuture<NSNull>
-
-  func currentAppearance() -> FBFuture<NSNumber>
-
-  @objc(setAppearance:)
-  func setAppearance(_ appearance: FBSimulatorAppearance) -> FBFuture<NSNull>
-
-  func currentContentSizeCategory() -> FBFuture<NSNumber>
-
-  @objc(setContentSizeCategory:)
-  func setContentSizeCategory(_ category: FBSimulatorContentSizeCategory) -> FBFuture<NSNull>
-
-  func currentStatusBarOverrides() -> FBFuture<FBStatusBarOverride>
-
-  @objc(overrideStatusBar:)
-  func overrideStatusBar(_ override: FBStatusBarOverride?) -> FBFuture<NSNull>
-
-  @objc(setPreference:value:type:domain:)
-  func setPreference(_ name: String, value: String, type: String?, domain: String?) -> FBFuture<NSNull>
-
-  @objc(getCurrentPreference:domain:)
-  func getCurrentPreference(_ name: String, domain: String?) -> FBFuture<NSString>
-
-  @objc(grantAccess:toServices:)
-  func grantAccess(_ bundleIDs: Set<String>, toServices services: Set<FBTargetSettingsService>) -> FBFuture<NSNull>
-
-  @objc(revokeAccess:toServices:)
-  func revokeAccess(_ bundleIDs: Set<String>, toServices services: Set<FBTargetSettingsService>) -> FBFuture<NSNull>
-
-  @objc(grantAccess:toDeeplink:)
-  func grantAccess(_ bundleIDs: Set<String>, toDeeplink scheme: String) -> FBFuture<NSNull>
-
-  @objc(revokeAccess:toDeeplink:)
-  func revokeAccess(_ bundleIDs: Set<String>, toDeeplink scheme: String) -> FBFuture<NSNull>
-
-  @objc(updateContacts:)
-  func updateContacts(_ databaseDirectory: String) -> FBFuture<NSNull>
-
-  func clearContacts() -> FBFuture<NSNull>
-
-  func clearPhotos() -> FBFuture<NSNull>
-
-  @objc(setProxyWithHost:port:type:)
-  func setProxy(host: String, port: UInt, type: String) -> FBFuture<NSNull>
-
-  func clearProxy() -> FBFuture<NSNull>
-
-  func listProxy() -> FBFuture<NSString>
-
-  @objc(setDnsServers:)
-  func setDnsServers(_ servers: [String]) -> FBFuture<NSNull>
-
-  func clearDns() -> FBFuture<NSNull>
-
-  func listDns() -> FBFuture<NSString>
-
-  @objc(setHealthAuthorization:forBundleID:typeIdentifiers:)
-  func setHealthAuthorization(_ approved: Bool, forBundleID bundleID: String, typeIdentifiers: [String]) -> FBFuture<NSNull>
-
-  @objc(clearHealthAuthorizationForBundleID:)
-  func clearHealthAuthorization(forBundleID bundleID: String) -> FBFuture<NSNull>
-
-  @objc(listHealthAuthorizationForBundleID:)
-  func listHealthAuthorization(forBundleID bundleID: String) -> FBFuture<NSString>
-}
-
-// MARK: - FBSimulator+FBSimulatorSettingsCommandsProtocol
-
-extension FBSimulator: FBSimulatorSettingsCommandsProtocol {
-
-  @objc(setSetting:enabled:)
-  public func setSetting(_ setting: FBSimulatorSetting, enabled: Bool) -> FBFuture<NSNull> {
-    do {
-      return try settingsCommands().setSetting(setting, enabled: enabled)
-    } catch {
-      return FBFuture(error: error)
-    }
-  }
-
-  @objc public func currentAppearance() -> FBFuture<NSNumber> {
-    do {
-      return try settingsCommands().currentAppearance()
-    } catch {
-      return FBFuture(error: error)
-    }
-  }
-
-  @objc(setAppearance:)
-  public func setAppearance(_ appearance: FBSimulatorAppearance) -> FBFuture<NSNull> {
-    do {
-      return try settingsCommands().setAppearance(appearance)
-    } catch {
-      return FBFuture(error: error)
-    }
-  }
-
-  @objc public func currentContentSizeCategory() -> FBFuture<NSNumber> {
-    do {
-      return try settingsCommands().currentContentSizeCategory()
-    } catch {
-      return FBFuture(error: error)
-    }
-  }
-
-  @objc(setContentSizeCategory:)
-  public func setContentSizeCategory(_ category: FBSimulatorContentSizeCategory) -> FBFuture<NSNull> {
-    do {
-      return try settingsCommands().setContentSizeCategory(category)
-    } catch {
-      return FBFuture(error: error)
-    }
-  }
-
-  @objc public func currentStatusBarOverrides() -> FBFuture<FBStatusBarOverride> {
-    do {
-      return try settingsCommands().currentStatusBarOverrides()
-    } catch {
-      return FBFuture(error: error)
-    }
-  }
-
-  @objc(overrideStatusBar:)
-  public func overrideStatusBar(_ override: FBStatusBarOverride?) -> FBFuture<NSNull> {
-    do {
-      return try settingsCommands().overrideStatusBar(override)
-    } catch {
-      return FBFuture(error: error)
-    }
-  }
-
-  @objc(setPreference:value:type:domain:)
-  public func setPreference(_ name: String, value: String, type: String?, domain: String?) -> FBFuture<NSNull> {
-    do {
-      return try settingsCommands().setPreference(name, value: value, type: type, domain: domain)
-    } catch {
-      return FBFuture(error: error)
-    }
-  }
-
-  @objc(getCurrentPreference:domain:)
-  public func getCurrentPreference(_ name: String, domain: String?) -> FBFuture<NSString> {
-    do {
-      return try settingsCommands().getCurrentPreference(name, domain: domain)
-    } catch {
-      return FBFuture(error: error)
-    }
-  }
-
-  @objc(grantAccess:toServices:)
-  public func grantAccess(_ bundleIDs: Set<String>, toServices services: Set<FBTargetSettingsService>) -> FBFuture<NSNull> {
-    do {
-      return try settingsCommands().grantAccess(bundleIDs, toServices: services)
-    } catch {
-      return FBFuture(error: error)
-    }
-  }
-
-  @objc(revokeAccess:toServices:)
-  public func revokeAccess(_ bundleIDs: Set<String>, toServices services: Set<FBTargetSettingsService>) -> FBFuture<NSNull> {
-    do {
-      return try settingsCommands().revokeAccess(bundleIDs, toServices: services)
-    } catch {
-      return FBFuture(error: error)
-    }
-  }
-
-  @objc(grantAccess:toDeeplink:)
-  public func grantAccess(_ bundleIDs: Set<String>, toDeeplink scheme: String) -> FBFuture<NSNull> {
-    do {
-      return try settingsCommands().grantAccess(bundleIDs, toDeeplink: scheme)
-    } catch {
-      return FBFuture(error: error)
-    }
-  }
-
-  @objc(revokeAccess:toDeeplink:)
-  public func revokeAccess(_ bundleIDs: Set<String>, toDeeplink scheme: String) -> FBFuture<NSNull> {
-    do {
-      return try settingsCommands().revokeAccess(bundleIDs, toDeeplink: scheme)
-    } catch {
-      return FBFuture(error: error)
-    }
-  }
-
-  @objc(updateContacts:)
-  public func updateContacts(_ databaseDirectory: String) -> FBFuture<NSNull> {
-    do {
-      return try settingsCommands().updateContacts(databaseDirectory)
-    } catch {
-      return FBFuture(error: error)
-    }
-  }
-
-  @objc public func clearContacts() -> FBFuture<NSNull> {
-    do {
-      return try settingsCommands().clearContacts()
-    } catch {
-      return FBFuture(error: error)
-    }
-  }
-
-  @objc public func clearPhotos() -> FBFuture<NSNull> {
-    do {
-      return try settingsCommands().clearPhotos()
-    } catch {
-      return FBFuture(error: error)
-    }
-  }
-
-  @objc(setProxyWithHost:port:type:)
-  public func setProxy(host: String, port: UInt, type: String) -> FBFuture<NSNull> {
-    do {
-      return try settingsCommands().setProxy(host: host, port: port, type: type)
-    } catch {
-      return FBFuture(error: error)
-    }
-  }
-
-  @objc public func clearProxy() -> FBFuture<NSNull> {
-    do {
-      return try settingsCommands().clearProxy()
-    } catch {
-      return FBFuture(error: error)
-    }
-  }
-
-  @objc public func listProxy() -> FBFuture<NSString> {
-    do {
-      return try settingsCommands().listProxy()
-    } catch {
-      return FBFuture(error: error)
-    }
-  }
-
-  @objc(setDnsServers:)
-  public func setDnsServers(_ servers: [String]) -> FBFuture<NSNull> {
-    do {
-      return try settingsCommands().setDnsServers(servers)
-    } catch {
-      return FBFuture(error: error)
-    }
-  }
-
-  @objc public func clearDns() -> FBFuture<NSNull> {
-    do {
-      return try settingsCommands().clearDns()
-    } catch {
-      return FBFuture(error: error)
-    }
-  }
-
-  @objc public func listDns() -> FBFuture<NSString> {
-    do {
-      return try settingsCommands().listDns()
-    } catch {
-      return FBFuture(error: error)
-    }
-  }
-
-  @objc(setHealthAuthorization:forBundleID:typeIdentifiers:)
-  public func setHealthAuthorization(_ approved: Bool, forBundleID bundleID: String, typeIdentifiers: [String]) -> FBFuture<NSNull> {
-    do {
-      return try settingsCommands().setHealthAuthorization(approved, forBundleID: bundleID, typeIdentifiers: typeIdentifiers)
-    } catch {
-      return FBFuture(error: error)
-    }
-  }
-
-  @objc(clearHealthAuthorizationForBundleID:)
-  public func clearHealthAuthorization(forBundleID bundleID: String) -> FBFuture<NSNull> {
-    do {
-      return try settingsCommands().clearHealthAuthorization(forBundleID: bundleID)
-    } catch {
-      return FBFuture(error: error)
-    }
-  }
-
-  @objc(listHealthAuthorizationForBundleID:)
-  public func listHealthAuthorization(forBundleID bundleID: String) -> FBFuture<NSString> {
-    do {
-      return try settingsCommands().listHealthAuthorization(forBundleID: bundleID)
-    } catch {
-      return FBFuture(error: error)
-    }
-  }
-}
-
 @objc(FBSimulatorSettingsCommands)
 public final class FBSimulatorSettingsCommands: NSObject, FBiOSTargetCommand {
 
@@ -352,18 +65,7 @@ public final class FBSimulatorSettingsCommands: NSObject, FBiOSTargetCommand {
     super.init()
   }
 
-  // MARK: - Public (legacy FBFuture entry points)
-
-  @objc(setSetting:enabled:)
-  public func setSetting(_ setting: FBSimulatorSetting, enabled: Bool) -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      try await setSettingAsync(setting, enabled: enabled)
-      return NSNull()
-    }
-  }
-
-  // Single source of truth for setSetting dispatch. Both the FBFuture entry point
-  // and the AsyncSettingsCommands async entry point call into this.
+  // Single source of truth for setSetting dispatch, called by the AsyncSettingsCommands entry point.
   fileprivate func setSettingAsync(_ setting: FBSimulatorSetting, enabled: Bool) async throws {
     switch setting {
     case .hardwareKeyboard:
@@ -375,13 +77,6 @@ public final class FBSimulatorSettingsCommands: NSObject, FBiOSTargetCommand {
     }
   }
 
-  @objc
-  public func currentAppearance() -> FBFuture<NSNumber> {
-    fbFutureFromAsync { [self] in
-      try await currentAppearanceAsync().rawValue as NSNumber
-    }
-  }
-
   fileprivate func currentAppearanceAsync() async throws -> FBSimulatorAppearance {
     guard let simulator = self.simulator else {
       throw FBSimulatorError.describe("Simulator deallocated").build()
@@ -390,26 +85,11 @@ public final class FBSimulatorSettingsCommands: NSObject, FBiOSTargetCommand {
     return FBSimulatorAppearance(rawValue: raw) ?? .light
   }
 
-  @objc(setAppearance:)
-  public func setAppearance(_ appearance: FBSimulatorAppearance) -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      try await setAppearanceAsync(appearance)
-      return NSNull()
-    }
-  }
-
   fileprivate func setAppearanceAsync(_ appearance: FBSimulatorAppearance) async throws {
     guard let simulator = self.simulator else {
       throw FBSimulatorError.describe("Simulator deallocated").build()
     }
     try simulator.device.setUIInterfaceStyle(appearance.rawValue)
-  }
-
-  @objc
-  public func currentContentSizeCategory() -> FBFuture<NSNumber> {
-    fbFutureFromAsync { [self] in
-      try await currentContentSizeCategoryAsync().rawValue as NSNumber
-    }
   }
 
   fileprivate func currentContentSizeCategoryAsync() async throws -> FBSimulatorContentSizeCategory {
@@ -420,26 +100,11 @@ public final class FBSimulatorSettingsCommands: NSObject, FBiOSTargetCommand {
     return FBSimulatorContentSizeCategory(rawValue: raw) ?? .large
   }
 
-  @objc(setContentSizeCategory:)
-  public func setContentSizeCategory(_ category: FBSimulatorContentSizeCategory) -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      try await setContentSizeCategoryAsync(category)
-      return NSNull()
-    }
-  }
-
   fileprivate func setContentSizeCategoryAsync(_ category: FBSimulatorContentSizeCategory) async throws {
     guard let simulator = self.simulator else {
       throw FBSimulatorError.describe("Simulator deallocated").build()
     }
     try simulator.device.setContentSizeCategory(category.rawValue)
-  }
-
-  @objc
-  public func currentStatusBarOverrides() -> FBFuture<FBStatusBarOverride> {
-    fbFutureFromAsync { [self] in
-      try await currentStatusBarOverridesAsync()
-    }
   }
 
   fileprivate func currentStatusBarOverridesAsync() async throws -> FBStatusBarOverride {
@@ -481,14 +146,6 @@ public final class FBSimulatorSettingsCommands: NSObject, FBiOSTargetCommand {
     return override
   }
 
-  @objc(overrideStatusBar:)
-  public func overrideStatusBar(_ override: FBStatusBarOverride?) -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      try await overrideStatusBarAsync(override)
-      return NSNull()
-    }
-  }
-
   fileprivate func overrideStatusBarAsync(_ override: FBStatusBarOverride?) async throws {
     guard let simulator = self.simulator else {
       throw FBSimulatorError.describe("Simulator deallocated").build()
@@ -521,154 +178,6 @@ public final class FBSimulatorSettingsCommands: NSObject, FBiOSTargetCommand {
       let level = override.batteryLevel?.intValue ?? 100
       let notCharging = override.showNotCharging?.boolValue ?? false
       try simulator.device.overrideStatusBarBatteryState(state, batteryLevel: level, showNotCharging: notCharging)
-    }
-  }
-
-  @objc
-  public func setPreference(_ name: String, value: String, type: String?, domain: String?) -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      try await setPreferenceAsync(name, value: value, type: type, domain: domain)
-      return NSNull()
-    }
-  }
-
-  @objc
-  public func getCurrentPreference(_ name: String, domain: String?) -> FBFuture<NSString> {
-    fbFutureFromAsync { [self] in
-      try await getCurrentPreferenceAsync(name, domain: domain) as NSString
-    }
-  }
-
-  @objc
-  public func grantAccess(_ bundleIDs: Set<String>, toServices services: Set<FBTargetSettingsService>) -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      try await grantAccessAsync(bundleIDs, toServices: services)
-      return NSNull()
-    }
-  }
-
-  @objc
-  public func revokeAccess(_ bundleIDs: Set<String>, toServices services: Set<FBTargetSettingsService>) -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      try await revokeAccessAsync(bundleIDs, toServices: services)
-      return NSNull()
-    }
-  }
-
-  @objc
-  public func grantAccess(_ bundleIDs: Set<String>, toDeeplink scheme: String) -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      try await grantAccessAsync(bundleIDs, toDeeplink: scheme)
-      return NSNull()
-    }
-  }
-
-  @objc
-  public func revokeAccess(_ bundleIDs: Set<String>, toDeeplink scheme: String) -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      try await revokeAccessAsync(bundleIDs, toDeeplink: scheme)
-      return NSNull()
-    }
-  }
-
-  @objc
-  public func updateContacts(_ databaseDirectory: String) -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      try await updateContactsAsync(databaseDirectory)
-      return NSNull()
-    }
-  }
-
-  @objc
-  public func clearContacts() -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      try await runSimulatorFrameworkBridgeAsync(withService: "contacts", action: "clear")
-      return NSNull()
-    }
-  }
-
-  @objc
-  public func clearPhotos() -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      try await runSimulatorFrameworkBridgeAsync(withService: "photos", action: "clear")
-      return NSNull()
-    }
-  }
-
-  @objc(setProxyWithHost:port:type:)
-  public func setProxy(host: String, port: UInt, type: String) -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      try await runSimulatorFrameworkBridgeAsync(
-        withService: "proxy",
-        action: "set",
-        arguments: [host, "\(port)", type.isEmpty ? "http" : type])
-      return NSNull()
-    }
-  }
-
-  @objc
-  public func clearProxy() -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      try await runSimulatorFrameworkBridgeAsync(withService: "proxy", action: "clear")
-      return NSNull()
-    }
-  }
-
-  @objc
-  public func listProxy() -> FBFuture<NSString> {
-    fbFutureFromAsync { [self] in
-      try await runSimulatorFrameworkBridgeAsync(withService: "proxy", action: "list") as NSString
-    }
-  }
-
-  @objc(setDnsServers:)
-  public func setDnsServers(_ servers: [String]) -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      if servers.isEmpty {
-        throw FBSimulatorError.describe("At least one DNS server address is required").build()
-      }
-      try await runSimulatorFrameworkBridgeAsync(withService: "dns", action: "set", arguments: servers)
-      return NSNull()
-    }
-  }
-
-  @objc
-  public func clearDns() -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      try await runSimulatorFrameworkBridgeAsync(withService: "dns", action: "clear")
-      return NSNull()
-    }
-  }
-
-  @objc
-  public func listDns() -> FBFuture<NSString> {
-    fbFutureFromAsync { [self] in
-      try await runSimulatorFrameworkBridgeAsync(withService: "dns", action: "list") as NSString
-    }
-  }
-
-  @objc(setHealthAuthorization:forBundleID:typeIdentifiers:)
-  public func setHealthAuthorization(_ approved: Bool, forBundleID bundleID: String, typeIdentifiers: [String]) -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      let action = approved ? "approve" : "revoke"
-      let args = [bundleID] + typeIdentifiers
-      try await runSimulatorFrameworkBridgeAsync(withService: "health", action: action, arguments: args)
-      return NSNull()
-    }
-  }
-
-  @objc(clearHealthAuthorizationForBundleID:)
-  public func clearHealthAuthorization(forBundleID bundleID: String) -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      try await runSimulatorFrameworkBridgeAsync(withService: "health", action: "clear", arguments: [bundleID])
-      return NSNull()
-    }
-  }
-
-  @objc(listHealthAuthorizationForBundleID:)
-  public func listHealthAuthorization(forBundleID bundleID: String) -> FBFuture<NSString> {
-    fbFutureFromAsync { [self] in
-      try await runSimulatorFrameworkBridgeAsync(withService: "health", action: "list", arguments: [bundleID]) as NSString
     }
   }
 
@@ -917,6 +426,50 @@ public final class FBSimulatorSettingsCommands: NSObject, FBiOSTargetCommand {
       }
       try FileManager.default.copyItem(atPath: sourceFilePath, toPath: destinationFilePath)
     }
+  }
+
+  fileprivate func setProxyAsync(host: String, port: UInt, type: String) async throws {
+    try await runSimulatorFrameworkBridgeAsync(
+      withService: "proxy",
+      action: "set",
+      arguments: [host, "\(port)", type.isEmpty ? "http" : type])
+  }
+
+  fileprivate func clearProxyAsync() async throws {
+    try await runSimulatorFrameworkBridgeAsync(withService: "proxy", action: "clear")
+  }
+
+  fileprivate func listProxyAsync() async throws -> String {
+    try await runSimulatorFrameworkBridgeAsync(withService: "proxy", action: "list")
+  }
+
+  fileprivate func setDnsServersAsync(_ servers: [String]) async throws {
+    if servers.isEmpty {
+      throw FBSimulatorError.describe("At least one DNS server address is required").build()
+    }
+    try await runSimulatorFrameworkBridgeAsync(withService: "dns", action: "set", arguments: servers)
+  }
+
+  fileprivate func clearDnsAsync() async throws {
+    try await runSimulatorFrameworkBridgeAsync(withService: "dns", action: "clear")
+  }
+
+  fileprivate func listDnsAsync() async throws -> String {
+    try await runSimulatorFrameworkBridgeAsync(withService: "dns", action: "list")
+  }
+
+  fileprivate func setHealthAuthorizationAsync(_ approved: Bool, forBundleID bundleID: String, typeIdentifiers: [String]) async throws {
+    let action = approved ? "approve" : "revoke"
+    let args = [bundleID] + typeIdentifiers
+    try await runSimulatorFrameworkBridgeAsync(withService: "health", action: action, arguments: args)
+  }
+
+  fileprivate func clearHealthAuthorizationAsync(forBundleID bundleID: String) async throws {
+    try await runSimulatorFrameworkBridgeAsync(withService: "health", action: "clear", arguments: [bundleID])
+  }
+
+  fileprivate func listHealthAuthorizationAsync(forBundleID bundleID: String) async throws -> String {
+    try await runSimulatorFrameworkBridgeAsync(withService: "health", action: "list", arguments: [bundleID])
   }
 
   // MARK: - Private
@@ -1273,38 +826,38 @@ extension FBSimulator: AsyncSettingsCommands {
   }
 
   public func setProxy(host: String, port: UInt, type: String) async throws {
-    try await bridgeFBFutureVoid(settingsCommands().setProxy(host: host, port: port, type: type))
+    try await settingsCommands().setProxyAsync(host: host, port: port, type: type)
   }
 
   public func clearProxy() async throws {
-    try await bridgeFBFutureVoid(settingsCommands().clearProxy())
+    try await settingsCommands().clearProxyAsync()
   }
 
   public func listProxy() async throws -> String {
-    try await bridgeFBFuture(settingsCommands().listProxy()) as String
+    try await settingsCommands().listProxyAsync()
   }
 
   public func setDnsServers(_ servers: [String]) async throws {
-    try await bridgeFBFutureVoid(settingsCommands().setDnsServers(servers))
+    try await settingsCommands().setDnsServersAsync(servers)
   }
 
   public func clearDns() async throws {
-    try await bridgeFBFutureVoid(settingsCommands().clearDns())
+    try await settingsCommands().clearDnsAsync()
   }
 
   public func listDns() async throws -> String {
-    try await bridgeFBFuture(settingsCommands().listDns()) as String
+    try await settingsCommands().listDnsAsync()
   }
 
   public func setHealthAuthorization(_ approved: Bool, forBundleID bundleID: String, typeIdentifiers: [String]) async throws {
-    try await bridgeFBFutureVoid(settingsCommands().setHealthAuthorization(approved, forBundleID: bundleID, typeIdentifiers: typeIdentifiers))
+    try await settingsCommands().setHealthAuthorizationAsync(approved, forBundleID: bundleID, typeIdentifiers: typeIdentifiers)
   }
 
   public func clearHealthAuthorization(forBundleID bundleID: String) async throws {
-    try await bridgeFBFutureVoid(settingsCommands().clearHealthAuthorization(forBundleID: bundleID))
+    try await settingsCommands().clearHealthAuthorizationAsync(forBundleID: bundleID)
   }
 
   public func listHealthAuthorization(forBundleID bundleID: String) async throws -> String {
-    try await bridgeFBFuture(settingsCommands().listHealthAuthorization(forBundleID: bundleID)) as String
+    try await settingsCommands().listHealthAuthorizationAsync(forBundleID: bundleID)
   }
 }

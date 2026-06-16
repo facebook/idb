@@ -21,8 +21,13 @@ final class FBSimulatorSettingsCommandsTests: XCTestCase {
     return simulator
   }
 
-  private func assertFuture(_ future: FBFuture<NSNull>, failsWithTimeout timeout: TimeInterval, message: String) {
-    XCTAssertThrowsError(try future.`await`(withTimeout: timeout), message)
+  private func assertThrowsAsync(_ message: String, _ expression: () async throws -> Void) async {
+    do {
+      try await expression()
+      XCTFail(message)
+    } catch {
+      // Expected to throw.
+    }
   }
 
   // MARK: - Filtered TCC Approvals
@@ -139,79 +144,70 @@ final class FBSimulatorSettingsCommandsTests: XCTestCase {
 
   // MARK: - Grant/Revoke Access Input Validation
 
-  func testGrantAccessRejectsEmptyServices() {
+  func testGrantAccessRejectsEmptyServices() async {
     let simulator = makeSimulator()
-    assertFuture(
-      simulator.grantAccess(["com.test"], toServices: []),
-      failsWithTimeout: 1.0,
-      message: "grantAccess should reject empty services set")
+    await assertThrowsAsync("grantAccess should reject empty services set") {
+      try await simulator.grantAccess(["com.test"], toServices: [])
+    }
   }
 
-  func testGrantAccessRejectsEmptyBundleIDs() {
+  func testGrantAccessRejectsEmptyBundleIDs() async {
     let simulator = makeSimulator()
-    assertFuture(
-      simulator.grantAccess([], toServices: [.contacts]),
-      failsWithTimeout: 1.0,
-      message: "grantAccess should reject empty bundle IDs set")
+    await assertThrowsAsync("grantAccess should reject empty bundle IDs set") {
+      try await simulator.grantAccess([], toServices: [.contacts])
+    }
   }
 
-  func testRevokeAccessRejectsEmptyServices() {
+  func testRevokeAccessRejectsEmptyServices() async {
     let simulator = makeSimulator()
-    assertFuture(
-      simulator.revokeAccess(["com.test"], toServices: []),
-      failsWithTimeout: 1.0,
-      message: "revokeAccess should reject empty services set")
+    await assertThrowsAsync("revokeAccess should reject empty services set") {
+      try await simulator.revokeAccess(["com.test"], toServices: [])
+    }
   }
 
-  func testRevokeAccessRejectsEmptyBundleIDs() {
+  func testRevokeAccessRejectsEmptyBundleIDs() async {
     let simulator = makeSimulator()
-    assertFuture(
-      simulator.revokeAccess([], toServices: [.contacts]),
-      failsWithTimeout: 1.0,
-      message: "revokeAccess should reject empty bundle IDs set")
+    await assertThrowsAsync("revokeAccess should reject empty bundle IDs set") {
+      try await simulator.revokeAccess([], toServices: [.contacts])
+    }
   }
 
   // MARK: - Deeplink Access Validation
 
-  func testGrantDeeplinkRejectsEmptyScheme() {
+  func testGrantDeeplinkRejectsEmptyScheme() async {
     let simulator = makeSimulator()
-    assertFuture(
-      simulator.grantAccess(["com.test"], toDeeplink: ""),
-      failsWithTimeout: 1.0,
-      message: "grantAccess(toDeeplink:) should reject empty scheme")
+    await assertThrowsAsync("grantAccess(toDeeplink:) should reject empty scheme") {
+      try await simulator.grantAccess(["com.test"], toDeeplink: "")
+    }
   }
 
-  func testGrantDeeplinkRejectsEmptyBundleIDs() {
+  func testGrantDeeplinkRejectsEmptyBundleIDs() async {
     let simulator = makeSimulator()
-    assertFuture(
-      simulator.grantAccess([], toDeeplink: "myapp"),
-      failsWithTimeout: 1.0,
-      message: "grantAccess(toDeeplink:) should reject empty bundle IDs")
+    await assertThrowsAsync("grantAccess(toDeeplink:) should reject empty bundle IDs") {
+      try await simulator.grantAccess([], toDeeplink: "myapp")
+    }
   }
 
-  func testRevokeDeeplinkRejectsEmptyScheme() {
+  func testRevokeDeeplinkRejectsEmptyScheme() async {
     let simulator = makeSimulator()
-    assertFuture(
-      simulator.revokeAccess(["com.test"], toDeeplink: ""),
-      failsWithTimeout: 1.0,
-      message: "revokeAccess(toDeeplink:) should reject empty scheme")
+    await assertThrowsAsync("revokeAccess(toDeeplink:) should reject empty scheme") {
+      try await simulator.revokeAccess(["com.test"], toDeeplink: "")
+    }
   }
 
-  func testRevokeDeeplinkRejectsEmptyBundleIDs() {
+  func testRevokeDeeplinkRejectsEmptyBundleIDs() async {
     let simulator = makeSimulator()
-    assertFuture(
-      simulator.revokeAccess([], toDeeplink: "myapp"),
-      failsWithTimeout: 1.0,
-      message: "revokeAccess(toDeeplink:) should reject empty bundle IDs")
+    await assertThrowsAsync("revokeAccess(toDeeplink:) should reject empty bundle IDs") {
+      try await simulator.revokeAccess([], toDeeplink: "myapp")
+    }
   }
 
   // MARK: - DNS Validation
 
-  func testSetDnsServersRejectsEmptyArray() {
+  func testSetDnsServersRejectsEmptyArray() async {
     let simulator = makeSimulator()
-    assertFuture(
-      simulator.setDnsServers([]),
-      failsWithTimeout: 1.0,
-      message: "setDnsServers should reject empty array")
+    await assertThrowsAsync("setDnsServers should reject empty array") {
+      try await simulator.setDnsServers([])
+    }
   }
 }
