@@ -39,6 +39,17 @@ public struct FBVideoStreamEdgeInsets {
   }
 }
 
+/// Frame cadence strategy for the video stream.
+///
+/// - `.lazy`: variable-frame-rate — a frame is pushed only when the framebuffer signals a damage
+///   rect (`didReceiveDamageRect`).
+/// - `.eager(framesPerSecond:)`: constant-frame-rate — a cadence `Task` pushes frames at the fixed
+///   rate, and damage events are ignored (the cadence task drives pushes).
+enum FBVideoStreamCadence {
+  case lazy
+  case eager(framesPerSecond: UInt)
+}
+
 /// Stats tracked by the video encoder (VideoToolbox).
 /// Zeroed if the stream uses a non-encoded format (e.g. bitmap/BGRA).
 public struct FBVideoEncoderStats {
@@ -703,12 +714,13 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: NSObject, FBSimulato
 /// This can be connected to additional software via a stream to a File Handle or Fifo.
 ///
 /// Concurrency model: the `writeQueue` serializes start/stop, the framebuffer consumer callbacks
-/// (`didChange`/`didReceiveDamageRect`), and every frame push. The Lazy subclass pushes frames from
-/// those callbacks; the Eager subclass runs a cadence `Task` that, at a fixed frame rate, dispatches
-/// `pushFrame` back onto `writeQueue` and awaits it before sleeping until the next deadline.
+/// (`didChange`/`didReceiveDamageRect`), and every frame push. The cadence is selected by the
+/// `cadence` strategy: `.lazy` pushes frames from the damage callback (variable frame rate), while
+/// `.eager` runs a cadence `Task` that, at a fixed frame rate, dispatches `pushFrame` back onto
+/// `writeQueue` and awaits it before sleeping until the next deadline.
 // @unchecked Sendable: the ObjC original was a plain NSObject relied upon across the writeQueue and
-// (for Eager) the cadence task without formal Sendable guarantees; the sibling FBFramebuffer is
-// likewise @unchecked Sendable.
+// (in the eager cadence) the cadence task without formal Sendable guarantees; the sibling
+// FBFramebuffer is likewise @unchecked Sendable.
 @objc(FBSimulatorVideoStream)
 public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStream, @unchecked Sendable {
 
@@ -717,10 +729,15 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
   let framebuffer: FBFramebuffer
   let configuration: FBVideoStreamConfiguration
   let edgeInsets: FBVideoStreamEdgeInsets
+  let cadence: FBVideoStreamCadence
   let writeQueue: DispatchQueue
   let logger: any FBControlCoreLogger
   let startedFuture: FBMutableFuture<NSNull>
   let stoppedFuture: FBMutableFuture<NSNull>
+
+  /// The cadence task that drives fixed-FPS pushes in `.eager` mode (nil in `.lazy` mode and before
+  /// `mountSurface` starts it). Started in `mountSurface`, cancelled in `cadenceTeardown`/`deinit`.
+  private var framePusherTask: Task<Void, Never>?
 
   /// CVPixelBuffer is ARC-managed; held strong and released automatically.
   var pixelBuffer: CVPixelBuffer?
@@ -748,7 +765,7 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
   /// Constructs a Bitmap Stream.
   /// Bitmaps will only be written when there is a new bitmap available.
   ///
-  /// Static factories (rather than initializers) since they must pick the Eager/Lazy subclass.
+  /// Static factories (rather than initializers) since they must derive the cadence strategy.
   public class func make(framebuffer: FBFramebuffer, configuration: FBVideoStreamConfiguration, logger: any FBControlCoreLogger) -> FBSimulatorVideoStream {
     make(framebuffer: framebuffer, configuration: configuration, edgeInsets: FBVideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0), logger: logger)
   }
@@ -758,32 +775,36 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
   public class func make(framebuffer: FBFramebuffer, configuration: FBVideoStreamConfiguration, edgeInsets: FBVideoStreamEdgeInsets, logger: any FBControlCoreLogger) -> FBSimulatorVideoStream {
     let framesPerSecondNumber = configuration.framesPerSecond
     let framesPerSecond = framesPerSecondNumber?.uintValue ?? 0
-    if framesPerSecondNumber != nil, framesPerSecond > 0 {
-      return FBSimulatorVideoStream_Eager(
-        framebuffer: framebuffer,
-        configuration: configuration,
-        framesPerSecond: framesPerSecond,
-        edgeInsets: edgeInsets,
-        writeQueue: makeWriteQueue(),
-        logger: logger)
-    }
-    return FBSimulatorVideoStream_Lazy(
+    let cadence: FBVideoStreamCadence =
+      (framesPerSecondNumber != nil && framesPerSecond > 0)
+      ? .eager(framesPerSecond: framesPerSecond)
+      : .lazy
+    return FBSimulatorVideoStream(
       framebuffer: framebuffer,
       configuration: configuration,
       edgeInsets: edgeInsets,
+      cadence: cadence,
       writeQueue: makeWriteQueue(),
       logger: logger)
   }
 
-  init(framebuffer: FBFramebuffer, configuration: FBVideoStreamConfiguration, edgeInsets: FBVideoStreamEdgeInsets, writeQueue: DispatchQueue, logger: any FBControlCoreLogger) {
+  init(framebuffer: FBFramebuffer, configuration: FBVideoStreamConfiguration, edgeInsets: FBVideoStreamEdgeInsets, cadence: FBVideoStreamCadence, writeQueue: DispatchQueue, logger: any FBControlCoreLogger) {
     self.framebuffer = framebuffer
     self.configuration = configuration
     self.edgeInsets = edgeInsets
+    self.cadence = cadence
     self.writeQueue = writeQueue
     self.logger = logger
     self.startedFuture = FBMutableFuture<NSNull>()
     self.stoppedFuture = FBMutableFuture<NSNull>()
     super.init()
+  }
+
+  deinit {
+    // Backstop: ensure the cadence task is cancelled if the stream is torn down without a clean
+    // stopStreaming (which already ends the loop by resolving stoppedFuture). No-op in `.lazy` mode,
+    // where the task is never started.
+    framePusherTask?.cancel()
   }
 
   // MARK: - Public
@@ -846,8 +867,8 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
         // Clean up overlay compositing resources (ARC-managed; dropping references releases them).
         self.overlayBuffer = nil
         self.compositedBufferPool = nil
-        // Tear down any subclass cadence machinery (the Eager subclass cancels its cadence task).
-        // Resolving `stoppedFuture` below also ends the Eager cadence loop, which polls
+        // Tear down the cadence machinery (in `.eager` mode this cancels the cadence task).
+        // Resolving `stoppedFuture` below also ends the eager cadence loop, which polls
         // `stoppedFuture.state`; cancelling additionally wakes it if it is suspended in a sleep.
         self.cadenceTeardown()
         self.stoppedFuture.resolve(withResult: NSNull())
@@ -857,10 +878,14 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
 
   // MARK: - Private
 
-  /// Tear down any subclass-specific cadence machinery. Called on the `writeQueue` from
-  /// `stopStreaming` before `stoppedFuture` is resolved. No-op in the base/Lazy stream; the Eager
-  /// subclass overrides this to cancel its cadence task.
-  func cadenceTeardown() {}
+  /// Tear down the cadence machinery. Called on the `writeQueue` from `stopStreaming` before
+  /// `stoppedFuture` is resolved. In `.eager` mode this cancels the cadence task (which also wakes it
+  /// if it is suspended in `Task.sleep`; the loop also exits on the next iteration once
+  /// `stoppedFuture` is resolved). No-op in `.lazy` mode, where the task is never started.
+  func cadenceTeardown() {
+    framePusherTask?.cancel()
+    framePusherTask = nil
+  }
 
   private func attachConsumerIfNeeded() -> FBFuture<NSNull> {
     FBFuture<AnyObject>.onQueue(
@@ -890,7 +915,16 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
   }
 
   @objc
-  public func didReceiveDamageRect() {}
+  public func didReceiveDamageRect() {
+    // In `.lazy` (variable-frame-rate) mode, push a frame on each damage event. In `.eager`
+    // (constant-frame-rate) mode, the cadence task drives pushes, so damage events are ignored.
+    switch cadence {
+    case .lazy:
+      pushFrame(forceKeyFrame: false)
+    case .eager:
+      break
+    }
+  }
 
   // MARK: - Private (Surface)
 
@@ -974,6 +1008,16 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
 
     // Signal that we've started
     startedFuture.resolve(withResult: NSNull())
+
+    // In `.eager` mode, start the cadence task that drives fixed-FPS pushes (in place of the former
+    // dedicated Thread). `self` is captured: the class confines its mutable state to `writeQueue`
+    // (where the push actually runs) and is `@unchecked Sendable`, consistent with capturing it here.
+    // In `.lazy` mode there is no cadence task — pushes are driven by `didReceiveDamageRect`.
+    if case let .eager(framesPerSecond) = cadence {
+      framePusherTask = Task { [self] in
+        await runFramePushLoop(framesPerSecond: framesPerSecond)
+      }
+    }
   }
 
   /// Build a composited CIImage from the source pixel buffer, applying edge insets
@@ -1155,8 +1199,20 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
     }
   }
 
-  /// Caller-provided compression session properties. Overridden by the Eager subclass.
-  var compressionSessionProperties: [String: Any] { [:] }
+  /// Caller-provided compression session properties. In `.eager` mode these add the fixed frame rate
+  /// (`ExpectedFrameRate`) and a long keyframe interval (`MaxKeyFrameInterval`) suited to a constant
+  /// cadence; in `.lazy` mode there are none (the base, variable-frame-rate value).
+  var compressionSessionProperties: [String: Any] {
+    switch cadence {
+    case .lazy:
+      return [:]
+    case let .eager(framesPerSecond):
+      return [
+        kVTCompressionPropertyKey_ExpectedFrameRate as String: framesPerSecond,
+        kVTCompressionPropertyKey_MaxKeyFrameInterval as String: 360,
+      ]
+    }
+  }
 
   // MARK: - Timed Metadata
 
@@ -1204,10 +1260,13 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
     // decodable by consumers (e.g. ffplay) that need a keyframe to start rendering.
     // In eager/CFR mode: the push loop runs at fixed cadence and picks up the change
     // on the next tick — an extra push would disrupt frame timing.
-    if self is FBSimulatorVideoStream_Lazy {
+    switch cadence {
+    case .lazy:
       writeQueue.async { [weak self] in
         self?.pushFrame(forceKeyFrame: true)
       }
+    case .eager:
+      break
     }
   }
 
@@ -1284,83 +1343,29 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
         }),
       to: FBFuture<NSNull>.self)
   }
-}
 
-// MARK: - FBSimulatorVideoStream_Lazy
+  // MARK: - Cadence Loop
 
-/// Variable-frame-rate stream: pushes a frame only when the framebuffer signals a damage rect.
-final class FBSimulatorVideoStream_Lazy: FBSimulatorVideoStream, @unchecked Sendable {
-
-  @objc
-  public override func didReceiveDamageRect() {
-    pushFrame(forceKeyFrame: false)
-  }
-}
-
-// MARK: - FBSimulatorVideoStream_Eager
-
-/// Constant-frame-rate stream: pushes frames at a fixed cadence driven by a Swift `Task`.
-///
-/// Concurrency model: `mountSurface` starts a detached cadence `Task` (`framePusherTask`) running
-/// `runFramePushLoop`, a drift-corrected loop that suspends between ticks with
-/// `Task.sleep(nanoseconds:)` instead of blocking a dedicated `Thread` with `mach_wait_until`.
-/// Timing is still measured in Mach ticks (`mach_absolute_time()`) to preserve the original
-/// drift-correction exactly — only the wait mechanism changes from a blocking thread to a
-/// suspending task. The loop runs while `stoppedFuture` is running and the task is not cancelled.
-///
-/// Serialization: the actual frame push (`pushFrame`) — and all the stream-state mutation it does
-/// (`frameNumber`, `timeAtLastPush`, the frame pusher's encoder state) — must stay serialized on
-/// the existing serial `writeQueue`, which also runs the framebuffer consumer callbacks. The async
-/// loop therefore dispatches each `pushFrame(forceKeyFrame: false)` onto `writeQueue` and awaits
-/// its completion (via a checked continuation) before measuring push duration and sleeping. This
-/// keeps the cadence single-in-flight (no overlapping pushes) and confines all mutable state to
-/// `writeQueue`, consistent with the class's `@unchecked Sendable` conformance.
-///
-/// The task is cancelled from the `stopStreaming` teardown path (which resolves `stoppedFuture`,
-/// ending the loop condition) and on `deinit` as a backstop.
-final class FBSimulatorVideoStream_Eager: FBSimulatorVideoStream, @unchecked Sendable {
-
-  let framesPerSecond: UInt
-  private var framePusherTask: Task<Void, Never>?
-
-  init(framebuffer: FBFramebuffer, configuration: FBVideoStreamConfiguration, framesPerSecond: UInt, edgeInsets: FBVideoStreamEdgeInsets, writeQueue: DispatchQueue, logger: any FBControlCoreLogger) {
-    self.framesPerSecond = framesPerSecond
-    super.init(framebuffer: framebuffer, configuration: configuration, edgeInsets: edgeInsets, writeQueue: writeQueue, logger: logger)
-  }
-
-  deinit {
-    // Backstop: ensure the cadence task is cancelled if the stream is torn down without a
-    // clean stopStreaming (which already ends the loop by resolving stoppedFuture).
-    framePusherTask?.cancel()
-  }
-
-  override var compressionSessionProperties: [String: Any] {
-    [
-      kVTCompressionPropertyKey_ExpectedFrameRate as String: framesPerSecond,
-      kVTCompressionPropertyKey_MaxKeyFrameInterval as String: 360,
-    ]
-  }
-
-  override func mountSurface(_ surface: IOSurface) throws {
-    try super.mountSurface(surface)
-
-    // Start the cadence task in place of the former dedicated Thread. `self` is captured: the
-    // class confines its mutable state to `writeQueue` (where the push actually runs) and is
-    // `@unchecked Sendable`, consistent with capturing it here.
-    framePusherTask = Task { [self] in
-      await runFramePushLoop()
-    }
-  }
-
-  /// Cancel the cadence task when streaming stops. Runs on the `writeQueue` (called from
-  /// `stopStreaming`). Cancellation wakes the loop if it is suspended in `Task.sleep`; the loop
-  /// also exits on the next iteration once `stoppedFuture` is resolved.
-  override func cadenceTeardown() {
-    framePusherTask?.cancel()
-    framePusherTask = nil
-  }
-
-  private func runFramePushLoop() async {
+  /// The `.eager` cadence loop: pushes frames at a fixed frame rate driven by a Swift `Task`.
+  ///
+  /// Concurrency model: `mountSurface` starts a detached cadence `Task` (`framePusherTask`) running
+  /// this loop, a drift-corrected loop that suspends between ticks with `Task.sleep(nanoseconds:)`
+  /// instead of blocking a dedicated `Thread` with `mach_wait_until`. Timing is still measured in
+  /// Mach ticks (`mach_absolute_time()`) to preserve the original drift-correction exactly — only
+  /// the wait mechanism changes from a blocking thread to a suspending task. The loop runs while
+  /// `stoppedFuture` is running and the task is not cancelled.
+  ///
+  /// Serialization: the actual frame push (`pushFrame`) — and all the stream-state mutation it does
+  /// (`frameNumber`, `timeAtLastPush`, the frame pusher's encoder state) — must stay serialized on
+  /// the existing serial `writeQueue`, which also runs the framebuffer consumer callbacks. The async
+  /// loop therefore dispatches each `pushFrame(forceKeyFrame: false)` onto `writeQueue` and awaits
+  /// its completion (via a checked continuation) before measuring push duration and sleeping. This
+  /// keeps the cadence single-in-flight (no overlapping pushes) and confines all mutable state to
+  /// `writeQueue`, consistent with the class's `@unchecked Sendable` conformance.
+  ///
+  /// The task is cancelled from the `stopStreaming` teardown path (which resolves `stoppedFuture`,
+  /// ending the loop condition) and on `deinit` as a backstop.
+  private func runFramePushLoop(framesPerSecond: UInt) async {
     let fps = framesPerSecond
     let frameIntervalNanos = NSEC_PER_SEC / UInt64(fps)
 
