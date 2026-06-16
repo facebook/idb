@@ -25,6 +25,10 @@ private let KeyVideoRecordingPath = "video_recording_path"
 private let KeyWaitForDebugger = "wait_for_debugger"
 private let KeyWorkingDirectory = "working_directory"
 
+// MARK: Defaults
+
+private let kDefaultTimeoutValue: TimeInterval = 500
+
 // MARK: - FBXCTestConfiguration
 
 @objc public class FBXCTestConfiguration: NSObject, NSCopying {
@@ -50,13 +54,9 @@ private let KeyWorkingDirectory = "working_directory"
     {
       self.testTimeout = envTimeout
     } else {
-      self.testTimeout = timeout > 0 ? timeout : FBXCTestConfiguration.defaultTimeoutValue()
+      self.testTimeout = timeout > 0 ? timeout : kDefaultTimeoutValue
     }
     super.init()
-  }
-
-  private static func defaultTimeoutValue() -> TimeInterval {
-    500
   }
 
   // MARK: NSObject
