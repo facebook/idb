@@ -119,21 +119,19 @@ extension FBSimulatorVideoStreamFramePusher {
   func currentStats() -> FBVideoEncoderStats? { nil }
 }
 
-// MARK: - Source Frame Holder
+// MARK: - VideoToolbox Output Mode
 
-/// Holds the converted pixel buffer that backs an in-flight encode, kept alive until the
-/// compressor callback fires. Passed through `VTCompressionSessionEncodeFrame`'s
-/// `sourceFrameRefcon` via `Unmanaged.passRetained` and balanced by `takeRetainedValue` in the
-/// callback — matching the ObjC `__bridge_retained` at encode / `__bridge_transfer` in the callback.
-final class FBVideoCompressorCallbackSourceFrame {
-  let frameNumber: UInt
-  /// The CVPixelBuffer is ARC-managed; holding it strong keeps it alive for the encode.
-  var pixelBuffer: CVPixelBuffer?
-
-  init(pixelBuffer: CVPixelBuffer?, frameNumber: UInt) {
-    self.pixelBuffer = pixelBuffer
-    self.frameNumber = frameNumber
-  }
+/// Selects what the VideoToolbox pusher's per-frame encode handler does with each encoded sample.
+/// Replaces the former trio of global `@convention(c)` compressor callbacks — the same mapping the
+/// pusher used to pick a C callback (all H264/HEVC → `.compressed`, MJPEG → `.mjpeg`,
+/// Minicap → `.minicap`) now picks an enum case, dispatched inside the block-based encode handler.
+enum FBVideoToolboxOutputMode {
+  /// H264/HEVC: hand the sample to `handleCompressedSampleBuffer` for framing + stats.
+  case compressed
+  /// MJPEG: write the sample's block buffer straight to the MJPEG stream.
+  case mjpeg
+  /// Minicap: emit the Minicap header on the first frame, then write each JPEG frame.
+  case minicap
 }
 
 // MARK: - Pixel Buffer Pool Helpers
@@ -220,56 +218,6 @@ private func bitmapStreamPixelBufferAttributes(from pixelBuffer: CVPixelBuffer) 
   ]
 }
 
-// MARK: - VideoToolbox Compressor Callbacks
-
-/// `outputCallbackRefcon` is the pusher (passed unretained). `sourceFrameRefcon` is the
-/// `FBVideoCompressorCallbackSourceFrame` (passed retained, consumed here via `takeRetainedValue`).
-private let CompressedFrameCallback: VTCompressionOutputCallback = { outputCallbackRefCon, sourceFrameRefCon, encodeStatus, infoFlags, sampleBuffer in
-  if let sourceFrameRefCon {
-    _ = Unmanaged<FBVideoCompressorCallbackSourceFrame>.fromOpaque(sourceFrameRefCon).takeRetainedValue()
-  }
-  guard let outputCallbackRefCon, let sampleBuffer else { return }
-  let pusher = Unmanaged<FBSimulatorVideoStreamFramePusher_VideoToolbox>.fromOpaque(outputCallbackRefCon).takeUnretainedValue()
-  pusher.handleCompressedSampleBuffer(sampleBuffer, encodeStatus: encodeStatus, infoFlags: infoFlags)
-}
-
-private let MJPEGCompressorCallback: VTCompressionOutputCallback = { outputCallbackRefCon, sourceFrameRefCon, _, _, sampleBuffer in
-  if let sourceFrameRefCon {
-    _ = Unmanaged<FBVideoCompressorCallbackSourceFrame>.fromOpaque(sourceFrameRefCon).takeRetainedValue()
-  }
-  guard let outputCallbackRefCon, let sampleBuffer else { return }
-  let pusher = Unmanaged<FBSimulatorVideoStreamFramePusher_VideoToolbox>.fromOpaque(outputCallbackRefCon).takeUnretainedValue()
-  guard let blockBuffer = CMSampleBufferGetDataBuffer(sampleBuffer) else { return }
-  var error: NSError?
-  if !WriteJPEGDataToMJPEGStream(blockBuffer, pusher.consumer, pusher.logger, &error) {
-    pusher.logger.log("Failed to write MJPEG frame: \(String(describing: error))")
-  }
-}
-
-private let MinicapCompressorCallback: VTCompressionOutputCallback = { outputCallbackRefCon, sourceFrameRefCon, _, _, sampleBuffer in
-  var frameNumber: UInt = 0
-  if let sourceFrameRefCon {
-    let sourceFrame = Unmanaged<FBVideoCompressorCallbackSourceFrame>.fromOpaque(sourceFrameRefCon).takeRetainedValue()
-    frameNumber = sourceFrame.frameNumber
-  }
-  guard let outputCallbackRefCon, let sampleBuffer else { return }
-  let pusher = Unmanaged<FBSimulatorVideoStreamFramePusher_VideoToolbox>.fromOpaque(outputCallbackRefCon).takeUnretainedValue()
-  if frameNumber == 0 {
-    if let formatDescription = CMSampleBufferGetFormatDescription(sampleBuffer) {
-      let dimensions = CMVideoFormatDescriptionGetDimensions(formatDescription)
-      var error: NSError?
-      if !WriteMinicapHeaderToStream(UInt32(dimensions.width), UInt32(dimensions.height), pusher.consumer, pusher.logger, &error) {
-        pusher.logger.log("Failed to write Minicap header: \(String(describing: error))")
-      }
-    }
-  }
-  guard let blockBuffer = CMSampleBufferGetDataBuffer(sampleBuffer) else { return }
-  var error: NSError?
-  if !WriteJPEGDataToMinicapStream(blockBuffer, pusher.consumer, pusher.logger, &error) {
-    pusher.logger.log("Failed to write Minicap frame: \(String(describing: error))")
-  }
-}
-
 // MARK: - Bitmap Frame Pusher
 
 /// Writes raw BGRA pixel bytes (optionally scaled) straight through to the consumer, unframed.
@@ -346,13 +294,21 @@ final class FBSimulatorVideoStreamFramePusher_Bitmap: NSObject, FBSimulatorVideo
 
 /// Encodes BGRA frames via a VTCompressionSession (BGRA→NV12 via VTPixelTransferSession), then
 /// writes the encoded sample to the consumer through the chosen frame writer (or, for MJPEG/Minicap,
-/// directly in the compressor callback). Tracks warmup/starvation counters and periodic stats.
-final class FBSimulatorVideoStreamFramePusher_VideoToolbox: NSObject, FBSimulatorVideoStreamFramePusher {
+/// directly in the encode handler). Tracks warmup/starvation counters and periodic stats.
+///
+/// @unchecked Sendable: `VTCompressionSessionEncodeFrame`'s `@Sendable` output handler can run on a
+/// VideoToolbox thread after the encode call returns, so it captures `self`. All mutable encoder
+/// state (`stats`, warmup/starvation counters, `statsTimer`) is only ever touched from that handler
+/// and from the owning stream's serial `writeQueue`, which submits frames one at a time (the encoder
+/// is configured with `MaxFrameDelayCount: 0` and real-time low-latency rate control, so a frame's
+/// handler completes before the next `writeEncodedFrame` is submitted). This mirrors the owning
+/// `FBSimulatorVideoStream`, which is likewise `@unchecked Sendable`.
+final class FBSimulatorVideoStreamFramePusher_VideoToolbox: NSObject, FBSimulatorVideoStreamFramePusher, @unchecked Sendable {
   let configuration: FBVideoStreamConfiguration
   let compressionSessionProperties: [String: Any]
   let videoCodec: CMVideoCodecType
-  let compressorCallback: VTCompressionOutputCallback
-  /// nil for MJPEG/Minicap, which write directly in their compressor callback.
+  let outputMode: FBVideoToolboxOutputMode
+  /// nil for MJPEG/Minicap, which write directly in the encode handler.
   let frameWriter: FBCompressedFrameWriter?
   let frameWriterContext: AnyObject?
   let consumer: any FBDataConsumer
@@ -377,14 +333,14 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: NSObject, FBSimulato
     compressionSessionProperties: [String: Any],
     videoCodec: CMVideoCodecType,
     consumer: any FBDataConsumer,
-    compressorCallback: @escaping VTCompressionOutputCallback,
+    outputMode: FBVideoToolboxOutputMode,
     frameWriter: FBCompressedFrameWriter?,
     frameWriterContext: AnyObject?,
     logger: any FBControlCoreLogger
   ) {
     self.configuration = configuration
     self.compressionSessionProperties = compressionSessionProperties
-    self.compressorCallback = compressorCallback
+    self.outputMode = outputMode
     self.frameWriter = frameWriter
     self.frameWriterContext = frameWriterContext
     self.consumer = consumer
@@ -505,6 +461,38 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: NSObject, FBSimulato
     }
   }
 
+  /// MJPEG output: write the encoded sample's JPEG block buffer straight to the MJPEG stream.
+  /// Ignores encode status/flags, matching the former `MJPEGCompressorCallback`.
+  private func handleMJPEGSampleBuffer(_ sampleBuffer: CMSampleBuffer?) {
+    guard let sampleBuffer, let blockBuffer = CMSampleBufferGetDataBuffer(sampleBuffer) else { return }
+    var error: NSError?
+    if !WriteJPEGDataToMJPEGStream(blockBuffer, consumer, logger, &error) {
+      logger.log("Failed to write MJPEG frame: \(String(describing: error))")
+    }
+  }
+
+  /// Minicap output: on frame 0 emit the Minicap header (from the sample's format dimensions), then
+  /// write the JPEG block buffer to the Minicap stream. Ignores encode status/flags, matching the
+  /// former `MinicapCompressorCallback` — the frame number is captured from `writeEncodedFrame`
+  /// rather than carried through a source-frame holder.
+  private func handleMinicapSampleBuffer(_ sampleBuffer: CMSampleBuffer?, frameNumber: UInt) {
+    guard let sampleBuffer else { return }
+    if frameNumber == 0 {
+      if let formatDescription = CMSampleBufferGetFormatDescription(sampleBuffer) {
+        let dimensions = CMVideoFormatDescriptionGetDimensions(formatDescription)
+        var error: NSError?
+        if !WriteMinicapHeaderToStream(UInt32(dimensions.width), UInt32(dimensions.height), consumer, logger, &error) {
+          logger.log("Failed to write Minicap header: \(String(describing: error))")
+        }
+      }
+    }
+    guard let blockBuffer = CMSampleBufferGetDataBuffer(sampleBuffer) else { return }
+    var error: NSError?
+    if !WriteJPEGDataToMinicapStream(blockBuffer, consumer, logger, &error) {
+      logger.log("Failed to write Minicap frame: \(String(describing: error))")
+    }
+  }
+
   func setup(with pixelBuffer: CVPixelBuffer, edgeInsets: FBVideoStreamEdgeInsets) throws {
     var encoderSpecification: [String: Any] = [
       kVTVideoEncoderSpecification_EnableHardwareAcceleratedVideoEncoder as String: true
@@ -554,6 +542,9 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: NSObject, FBSimulato
       kCVPixelBufferIOSurfacePropertiesKey as String: [String: Any](),
     ]
 
+    // No create-time output callback: each frame is encoded with the block-based
+    // `VTCompressionSessionEncodeFrame(...outputHandler:)` overload (see `writeEncodedFrame`),
+    // so the session needs neither an `outputCallback` nor a `refcon`.
     var compressionSession: VTCompressionSession?
     let status = VTCompressionSessionCreate(
       allocator: nil,
@@ -563,8 +554,8 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: NSObject, FBSimulato
       encoderSpecification: encoderSpecification as CFDictionary,
       imageBufferAttributes: sourceImageBufferAttributes as CFDictionary,
       compressedDataAllocator: nil,
-      outputCallback: compressorCallback,
-      refcon: Unmanaged.passUnretained(self).toOpaque(),
+      outputCallback: nil,
+      refcon: nil,
       compressionSessionOut: &compressionSession
     )
     if status != noErr {
@@ -612,7 +603,6 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: NSObject, FBSimulato
     }
 
     var bufferToWrite = pixelBuffer
-    let sourceFrameRef = FBVideoCompressorCallbackSourceFrame(pixelBuffer: nil, frameNumber: frameNumber)
 
     let encodeStart = CFAbsoluteTimeGetCurrent()
 
@@ -628,7 +618,6 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: NSObject, FBSimulato
         let transferStatus = VTPixelTransferSessionTransferImage(pixelTransferSession, from: pixelBuffer, to: nv12Buffer)
         if transferStatus == noErr {
           bufferToWrite = nv12Buffer
-          sourceFrameRef.pixelBuffer = nv12Buffer
         } else {
           logger.log("VTPixelTransferSession BGRA→NV12 failed: \(transferStatus) — falling back to BGRA input")
         }
@@ -637,12 +626,31 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: NSObject, FBSimulato
       }
     }
 
-    var flags = VTEncodeInfoFlags()
     let time = CMTimeMakeWithSeconds(CFAbsoluteTimeGetCurrent() - timeAtFirstFrame, preferredTimescale: Int32(NSEC_PER_SEC))
     let duration = frameDuration > 0 ? CMTimeMakeWithSeconds(frameDuration, preferredTimescale: Int32(NSEC_PER_SEC)) : CMTime.invalid
     var frameProperties: [String: Any]?
     if frameNumber == 0 || forceKeyFrame {
       frameProperties = [kVTEncodeFrameOptionKey_ForceKeyFrame as String: true]
+    }
+
+    // The block-based output handler replaces the former create-time C output callback. It captures
+    // the output mode and (for Minicap) this frame's number directly — no `sourceFrameRefcon`
+    // round-trip and no holder object, so the `passRetained`/`takeRetainedValue` pair is gone.
+    // `[weak self]` keeps the handler leak/cycle-free: the session does not retain the pusher, so a
+    // strong capture here would be a retain cycle (pusher → session → handler → pusher). The handler
+    // may run on a VideoToolbox thread after this call returns; `sampleBuffer` is ARC-managed and
+    // mutable encoder state is confined to the handler + the serial writeQueue (see the class doc).
+    let outputMode = self.outputMode
+    let handler: VTCompressionOutputHandler = { [weak self] encodeStatus, infoFlags, sampleBuffer in
+      guard let self else { return }
+      switch outputMode {
+      case .compressed:
+        self.handleCompressedSampleBuffer(sampleBuffer, encodeStatus: encodeStatus, infoFlags: infoFlags)
+      case .mjpeg:
+        self.handleMJPEGSampleBuffer(sampleBuffer)
+      case .minicap:
+        self.handleMinicapSampleBuffer(sampleBuffer, frameNumber: frameNumber)
+      }
     }
 
     // Lock the source buffer for read-only access during the encode call. For
@@ -657,16 +665,14 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: NSObject, FBSimulato
     let surface = CVPixelBufferGetIOSurface(bufferToWrite)?.takeUnretainedValue()
     let seedBefore = surface.map { IOSurfaceGetSeed($0) } ?? 0
     CVPixelBufferLockBaseAddress(bufferToWrite, .readOnly)
-    // The sourceFrameRef is retained here (balanced by takeRetainedValue in the callback),
-    // matching the ObjC __bridge_retained at encode / __bridge_transfer in the callback.
     let status = VTCompressionSessionEncodeFrame(
       compressionSession,
       imageBuffer: bufferToWrite,
       presentationTimeStamp: time,
       duration: duration,
       frameProperties: frameProperties as CFDictionary?,
-      sourceFrameRefcon: Unmanaged.passRetained(sourceFrameRef).toOpaque(),
-      infoFlagsOut: &flags
+      infoFlagsOut: nil,
+      outputHandler: handler
     )
     CVPixelBufferUnlockBaseAddress(bufferToWrite, .readOnly)
 
@@ -1106,42 +1112,42 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
           let ctx = FBFMP4MuxerContext(hevc: false)
           return FBSimulatorVideoStreamFramePusher_VideoToolbox(
             configuration: configuration, compressionSessionProperties: derived, videoCodec: kCMVideoCodecType_H264,
-            consumer: consumer, compressorCallback: CompressedFrameCallback, frameWriter: WriteH264FrameToFMP4Stream, frameWriterContext: ctx, logger: logger)
+            consumer: consumer, outputMode: .compressed, frameWriter: WriteH264FrameToFMP4Stream, frameWriterContext: ctx, logger: logger)
         }
         if format.transport == .mpegts {
           return FBSimulatorVideoStreamFramePusher_VideoToolbox(
             configuration: configuration, compressionSessionProperties: derived, videoCodec: kCMVideoCodecType_H264,
-            consumer: consumer, compressorCallback: CompressedFrameCallback, frameWriter: WriteH264FrameToMPEGTSStream, frameWriterContext: nil, logger: logger)
+            consumer: consumer, outputMode: .compressed, frameWriter: WriteH264FrameToMPEGTSStream, frameWriterContext: nil, logger: logger)
         }
         return FBSimulatorVideoStreamFramePusher_VideoToolbox(
           configuration: configuration, compressionSessionProperties: derived, videoCodec: kCMVideoCodecType_H264,
-          consumer: consumer, compressorCallback: CompressedFrameCallback, frameWriter: WriteFrameToAnnexBStream, frameWriterContext: nil, logger: logger)
+          consumer: consumer, outputMode: .compressed, frameWriter: WriteFrameToAnnexBStream, frameWriterContext: nil, logger: logger)
       }
       if format.codec == .hevc {
         if format.transport == .fmp4 {
           let ctx = FBFMP4MuxerContext(hevc: true)
           return FBSimulatorVideoStreamFramePusher_VideoToolbox(
             configuration: configuration, compressionSessionProperties: derived, videoCodec: kCMVideoCodecType_HEVC,
-            consumer: consumer, compressorCallback: CompressedFrameCallback, frameWriter: WriteHEVCFrameToFMP4Stream, frameWriterContext: ctx, logger: logger)
+            consumer: consumer, outputMode: .compressed, frameWriter: WriteHEVCFrameToFMP4Stream, frameWriterContext: ctx, logger: logger)
         }
         if format.transport == .mpegts {
           return FBSimulatorVideoStreamFramePusher_VideoToolbox(
             configuration: configuration, compressionSessionProperties: derived, videoCodec: kCMVideoCodecType_HEVC,
-            consumer: consumer, compressorCallback: CompressedFrameCallback, frameWriter: WriteHEVCFrameToMPEGTSStream, frameWriterContext: nil, logger: logger)
+            consumer: consumer, outputMode: .compressed, frameWriter: WriteHEVCFrameToMPEGTSStream, frameWriterContext: nil, logger: logger)
         }
         return FBSimulatorVideoStreamFramePusher_VideoToolbox(
           configuration: configuration, compressionSessionProperties: derived, videoCodec: kCMVideoCodecType_HEVC,
-          consumer: consumer, compressorCallback: CompressedFrameCallback, frameWriter: WriteHEVCFrameToAnnexBStream, frameWriterContext: nil, logger: logger)
+          consumer: consumer, outputMode: .compressed, frameWriter: WriteHEVCFrameToAnnexBStream, frameWriterContext: nil, logger: logger)
       }
       throw FBControlCoreError.describe("Unsupported codec '\(String(describing: format.codec))'").build()
     case .mjpeg:
       return FBSimulatorVideoStreamFramePusher_VideoToolbox(
         configuration: configuration, compressionSessionProperties: derived, videoCodec: kCMVideoCodecType_JPEG,
-        consumer: consumer, compressorCallback: MJPEGCompressorCallback, frameWriter: nil, frameWriterContext: nil, logger: logger)
+        consumer: consumer, outputMode: .mjpeg, frameWriter: nil, frameWriterContext: nil, logger: logger)
     case .minicap:
       return FBSimulatorVideoStreamFramePusher_VideoToolbox(
         configuration: configuration, compressionSessionProperties: derived, videoCodec: kCMVideoCodecType_JPEG,
-        consumer: consumer, compressorCallback: MinicapCompressorCallback, frameWriter: nil, frameWriterContext: nil, logger: logger)
+        consumer: consumer, outputMode: .minicap, frameWriter: nil, frameWriterContext: nil, logger: logger)
     case .bgra:
       return FBSimulatorVideoStreamFramePusher_Bitmap(consumer: consumer, scaleFactor: configuration.scaleFactor)
     @unknown default:
