@@ -386,10 +386,30 @@ function build_idb_companion() {
   strip_embedded_frameworks
 }
 
+function build_idb_repl() {
+  check_protobuf
+  # idb-repl links IDBGRPCSwift, which needs the generated gRPC Swift files.
+  if [ ! -f "IDBGRPCSwift/idb.grpc.swift" ] || [ ! -f "IDBGRPCSwift/idb.pb.swift" ]; then
+    echo "Proto files not found, generating..."
+    generate_proto
+  fi
+  # Build the idb-repl CLI from the idb_companion project (shares IDBGRPCSwift).
+  invoke_xcodebuild \
+    ONLY_ACTIVE_ARCH=NO \
+    SWIFT_ENABLE_EXPLICIT_MODULES=NO \
+    -project idb_companion/idb_companion.xcodeproj \
+    -scheme idb-repl \
+    -sdk macosx \
+    -derivedDataPath $BUILD_DIRECTORY \
+    -configuration Release \
+    build
+}
+
 # Assemble the runtime layout idb_companion expects:
 #
 #   <dist>/
-#     idb_companion              the executable
+#     idb_companion             the executable
+#     idb-repl                  the REPL CLI
 #     *.bundle                  SwiftPM resource bundles (Bundle.module -> Bundle.main)
 #     Resources/
 #       libShimulator-iOS.dylib
@@ -408,6 +428,7 @@ function build_distribution() {
   # Fail early with a clear message if a prerequisite product is missing.
   local required=(
     "$release/idb_companion"
+    "$release/idb-repl"
     "$sim/libShimulator-iOS.dylib"
     "$release/libShimulator-macOS.dylib"
     "$sim/libRepl-iOS.dylib"
@@ -426,8 +447,9 @@ function build_distribution() {
   rm -rf "$dist"
   mkdir -p "$dist/Resources"
 
-  # Companion executable.
+  # Companion executable and the REPL CLI.
   cp "$release/idb_companion" "$dist/"
+  cp "$release/idb-repl" "$dist/"
 
   # SwiftPM resource bundles (Bundle.module resolves relative to Bundle.main).
   local bundle
@@ -451,6 +473,7 @@ function build_all() {
   build_shims
   build_simulator_framework_bridge
   build_idb_companion
+  build_idb_repl
   build_distribution
 }
 
@@ -480,13 +503,15 @@ function build() {
         build_simulator_framework_bridge;;
       idb_companion)
         build_idb_companion;;
+      idb-repl)
+        build_idb_repl;;
       distribution)
         build_distribution;;
       FBControlCore|XCTestBootstrap|FBSimulatorControl|FBDeviceControl)
         build_target $target;;
       *)
         echo "Unknown target: $target"
-        echo "Valid targets: all, frameworks, shims, idb_companion, FBControlCore, XCTestBootstrap, FBSimulatorControl, FBDeviceControl, Shimulator-iOS, Shimulator-macOS, Repl-iOS, Repl-macOS, SimulatorFrameworkBridge, distribution"
+        echo "Valid targets: all, frameworks, shims, idb_companion, idb-repl, FBControlCore, XCTestBootstrap, FBSimulatorControl, FBDeviceControl, Shimulator-iOS, Shimulator-macOS, Repl-iOS, Repl-macOS, SimulatorFrameworkBridge, distribution"
         exit 1;;
     esac
   fi
@@ -563,6 +588,7 @@ Commands:
       distribution    Assemble the distribution
       frameworks      Build all frameworks only
       idb_companion   Build idb_companion only
+      idb-repl        Build idb-repl only
       shims           Build all shim dylibs (Shimulator + Repl, iOS + macOS)
       FBControlCore   Build FBControlCore framework
       FBDeviceControl Build FBDeviceControl framework

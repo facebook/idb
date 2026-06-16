@@ -37,6 +37,9 @@ packages:
   swift-collections:
     url: https://github.com/apple/swift-collections.git
     from: 1.0.0
+  swift-argument-parser:
+    url: https://github.com/apple/swift-argument-parser.git
+    from: 1.3.0
 
 targets:
   IDBGRPCSwift:
@@ -165,4 +168,38 @@ targets:
         embed: false
       - target: IDBGRPCSwift
         embed: false
+      - sdk: Foundation.framework
+
+  # The `idb-repl` CLI (Buck: fbsource//fbobjc/Tools/idb:idb-repl). A small gRPC
+  # client that talks to a companion to drive a test/simulator REPL. It links the
+  # IDBGRPCSwift static archive (which bundles the gRPC/NIO/protobuf closure) and
+  # ArgumentParser; like idb_companion it must NOT depend on the gRPC packages
+  # directly (those symbols come from IDBGRPCSwift, and a second copy would be a
+  # duplicate-symbol error). It is placed in the distribution next to idb_companion.
+  idb-repl:
+    type: tool
+    platform: macOS
+    deploymentTarget: "12.0"
+    sources:
+      - path: ../REPL/CLI
+    settings:
+      base:
+        MACOSX_DEPLOYMENT_TARGET: "12.0"
+        PRODUCT_NAME: idb-repl
+        SWIFT_VERSION: "5.0"
+        GENERATE_INFOPLIST_FILE: YES
+        # The entry point is `@main struct TestRepl` in main.swift. Without
+        # -parse-as-library, Swift treats a file named main.swift as top-level
+        # script code, which conflicts with @main ("'main' attribute cannot be
+        # used in a module that contains top-level code").
+        OTHER_SWIFT_FLAGS: $(inherited) -parse-as-library
+        # Use ad-hoc code signing for local development
+        CODE_SIGN_IDENTITY: "-"
+        CODE_SIGNING_REQUIRED: NO
+        CODE_SIGNING_ALLOWED: NO
+    dependencies:
+      - target: IDBGRPCSwift
+        embed: false
+      - package: swift-argument-parser
+        product: ArgumentParser
       - sdk: Foundation.framework
