@@ -1348,105 +1348,181 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
 
   // MARK: - Cadence Loop
 
-  /// The `.eager` cadence loop: pushes frames at a fixed frame rate driven by a Swift `Task`.
+  /// The `.eager` cadence loop: pushes frames at a fixed frame rate.
   ///
-  /// Concurrency model: `mountSurface` starts a detached cadence `Task` (`framePusherTask`) running
-  /// this loop, a drift-corrected loop that suspends between ticks with `Task.sleep(nanoseconds:)`
-  /// instead of blocking a dedicated `Thread` with `mach_wait_until`. Timing is still measured in
-  /// Mach ticks (`mach_absolute_time()`) to preserve the original drift-correction exactly — only
-  /// the wait mechanism changes from a blocking thread to a suspending task. The loop runs while
-  /// `stoppedFuture` is running and the task is not cancelled.
+  /// The loop reads as "for each frame tick, push a frame, record it". The two complicated concerns
+  /// are factored out: `FrameCadence` is the drift-corrected clock that suspends until the next
+  /// deadline (`Task.sleep`, replacing the former dedicated `Thread` blocked on `mach_wait_until`)
+  /// and `CadenceStats` accumulates the per-push duration statistics. Timing is still measured in
+  /// Mach ticks to preserve the original drift correction exactly; only the wait mechanism is a
+  /// suspending task (the macOS 12 deployment target rules out `ContinuousClock`).
   ///
-  /// Serialization: the actual frame push (`pushFrame`) — and all the stream-state mutation it does
-  /// (`frameNumber`, `timeAtLastPush`, the frame pusher's encoder state) — must stay serialized on
-  /// the existing serial `writeQueue`, which also runs the framebuffer consumer callbacks. The async
-  /// loop therefore dispatches each `pushFrame(forceKeyFrame: false)` onto `writeQueue` and awaits
-  /// its completion (via a checked continuation) before measuring push duration and sleeping. This
-  /// keeps the cadence single-in-flight (no overlapping pushes) and confines all mutable state to
-  /// `writeQueue`, consistent with the class's `@unchecked Sendable` conformance.
+  /// Serialization: the actual `pushFrame` — and the stream-state mutation it does (`frameNumber`,
+  /// `timeAtLastPush`, the frame pusher's encoder state) — is dispatched onto the serial `writeQueue`
+  /// (which also runs the framebuffer consumer callbacks) and awaited before the next tick, so pushes
+  /// never overlap and all mutable state stays confined to `writeQueue`, consistent with the class's
+  /// `@unchecked Sendable` conformance.
   ///
-  /// The task is cancelled from the `stopStreaming` teardown path (which resolves `stoppedFuture`,
-  /// ending the loop condition) and on `deinit` as a backstop.
+  /// The loop ends when `stoppedFuture` stops running or the cadence `Task` is cancelled — the
+  /// `stopStreaming` teardown does both, and `deinit` cancels as a backstop.
   private func runFramePushLoop(framesPerSecond: UInt) async {
-    let fps = framesPerSecond
-    let frameIntervalNanos = NSEC_PER_SEC / UInt64(fps)
-
-    var timebase = mach_timebase_info_data_t()
-    mach_timebase_info(&timebase)
-    let frameIntervalMach = frameIntervalNanos * UInt64(timebase.denom) / UInt64(timebase.numer)
-
-    // Cadence stats (Welford's online algorithm for variance).
-    let statsIntervalSeconds = 5.0
-    let statsIntervalMach = UInt64(statsIntervalSeconds * 1e9) * UInt64(timebase.denom) / UInt64(timebase.numer)
-    var statsStartTime = mach_absolute_time()
-    var pushCount: UInt64 = 0
-    var overrunCount: UInt64 = 0
-    var maxPushMach: UInt64 = 0
-    var pushMean = 0.0 // Welford mean (in Mach ticks)
-    var pushM2 = 0.0 // Welford M2 (sum of squared deviations)
-
-    var nextTargetTime = mach_absolute_time() + frameIntervalMach
-    while stoppedFuture.state == .running && !Task.isCancelled {
+    let frameIntervalNanos = NSEC_PER_SEC / UInt64(framesPerSecond)
+    var stats = CadenceStats(frameIntervalNanos: frameIntervalNanos, logger: logger)
+    for await tick in FrameCadence(framesPerSecond: framesPerSecond, logger: logger) {
+      guard stoppedFuture.state == .running else { break }
       let beforePush = mach_absolute_time()
-      // Serialize the push (and the stream-state mutation it performs) onto the writeQueue,
-      // matching the framebuffer consumer callbacks, and await its completion before sleeping.
       await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
         writeQueue.async { [self] in
           pushFrame(forceKeyFrame: false)
           continuation.resume()
         }
       }
-      let afterPush = mach_absolute_time()
+      stats.record(pushDurationMach: mach_absolute_time() - beforePush, overran: tick.overran)
+    }
+  }
+}
 
-      // Track push duration stats.
-      let pushDuration = afterPush - beforePush
-      pushCount += 1
-      if pushDuration > maxPushMach {
-        maxPushMach = pushDuration
+// MARK: - FrameCadence
+
+/// One tick of the eager cadence clock.
+struct FrameTick {
+  /// True when the previous push overshot its deadline, so this tick fired without sleeping.
+  let overran: Bool
+}
+
+/// A drift-corrected frame clock for `.eager` mode. Iterating it (`for await tick in …`) suspends
+/// until the next frame deadline and yields a `FrameTick`, so the push loop can read as just
+/// "push each tick". The iterator owns all the timing — Mach-tick deadlines, the `Task.sleep` wait,
+/// drift correction, and the per-deadline overrun log — and ends (returns `nil`) when the
+/// surrounding `Task` is cancelled.
+///
+/// Note: an overrun (a push that overshoots its deadline) is detected on the *following* `next()`,
+/// when the clock finds it is already past the deadline. The immediate "exceeded budget" log fires
+/// at the same moment and with the same content as before; only the attribution of the overrun
+/// *count* to a 5s stats window can shift by one push at a window boundary, which is immaterial.
+struct FrameCadence: AsyncSequence {
+  typealias Element = FrameTick
+
+  let framesPerSecond: UInt
+  let logger: any FBControlCoreLogger
+
+  func makeAsyncIterator() -> Iterator {
+    Iterator(framesPerSecond: framesPerSecond, logger: logger)
+  }
+
+  struct Iterator: AsyncIteratorProtocol {
+    private let frameIntervalMach: UInt64
+    private let frameIntervalNanos: UInt64
+    private let machNumer: UInt64
+    private let machDenom: UInt64
+    private let logger: any FBControlCoreLogger
+    private var nextTargetTime: UInt64
+    private var firstTickPending = true
+
+    init(framesPerSecond: UInt, logger: any FBControlCoreLogger) {
+      let frameIntervalNanos = NSEC_PER_SEC / UInt64(framesPerSecond)
+      var timebase = mach_timebase_info_data_t()
+      mach_timebase_info(&timebase)
+      self.machNumer = UInt64(timebase.numer)
+      self.machDenom = UInt64(timebase.denom)
+      self.frameIntervalNanos = frameIntervalNanos
+      self.frameIntervalMach = frameIntervalNanos * UInt64(timebase.denom) / UInt64(timebase.numer)
+      self.logger = logger
+      self.nextTargetTime = mach_absolute_time() + self.frameIntervalMach
+    }
+
+    mutating func next() async -> FrameTick? {
+      if Task.isCancelled {
+        return nil
       }
-      let delta = Double(pushDuration) - pushMean
-      pushMean += delta / Double(pushCount)
-      pushM2 += delta * (Double(pushDuration) - pushMean)
+      // The first tick fires immediately: the original loop pushes once before its first sleep.
+      if firstTickPending {
+        firstTickPending = false
+        return FrameTick(overran: false)
+      }
 
-      // Sleep until the next drift-corrected deadline, or log an overrun if we are already past it.
-      // Timing stays in Mach ticks for drift-correction; only the remaining gap is converted to
-      // nanoseconds for Task.sleep (the macOS 12 deployment target rules out ContinuousClock).
-      if afterPush < nextTargetTime {
-        let remainingMach = nextTargetTime - afterPush
-        let remainingNanos = remainingMach * UInt64(timebase.numer) / UInt64(timebase.denom)
+      let now = mach_absolute_time()
+      var overran = false
+      if now < nextTargetTime {
+        // Sleep until the drift-corrected deadline. Only the remaining gap is converted to nanos.
+        let remainingNanos = (nextTargetTime - now) * machNumer / machDenom
         do {
           try await Task.sleep(nanoseconds: remainingNanos)
         } catch {
-          // Cancelled while sleeping — exit the loop.
-          break
+          return nil // cancelled while sleeping
         }
       } else {
-        overrunCount += 1
-        let overrunNanos = (afterPush - nextTargetTime) * UInt64(timebase.numer) / UInt64(timebase.denom)
+        // Already past the deadline — the previous push overshot the frame budget.
+        overran = true
+        let overrunNanos = (now - nextTargetTime) * machNumer / machDenom
         logger.log(String(format: "Frame push exceeded budget by %.1f ms (budget: %.1f ms)", Double(overrunNanos) / 1e6, Double(frameIntervalNanos) / 1e6))
       }
       nextTargetTime += frameIntervalMach
-
-      // Periodic cadence stats.
-      if afterPush - statsStartTime >= statsIntervalMach {
-        let toMs = Double(timebase.numer) / Double(timebase.denom) / 1e6
-        let avgMs = pushMean * toMs
-        let maxMs = Double(maxPushMach) * toMs
-        let stddevMs = pushCount > 1 ? sqrt(pushM2 / Double(pushCount - 1)) * toMs : 0
-        let intervalSeconds = Double(afterPush - statsStartTime) * Double(timebase.numer) / Double(timebase.denom) / 1e9
-        logger.info().log(
-          String(
-            format: "Cadence stats (%.1fs): %llu pushes, %llu overruns, push duration avg %.1f ms / max %.1f ms, jitter stddev %.1f ms (budget: %.1f ms)",
-            intervalSeconds, pushCount, overrunCount, avgMs, maxMs, stddevMs, Double(frameIntervalNanos) / 1e6))
-
-        // Reset for next interval.
-        statsStartTime = afterPush
-        pushCount = 0
-        overrunCount = 0
-        maxPushMach = 0
-        pushMean = 0
-        pushM2 = 0
-      }
+      return FrameTick(overran: overran)
     }
+  }
+}
+
+// MARK: - CadenceStats
+
+/// Accumulates eager-cadence push statistics — Welford online mean/variance of push duration plus an
+/// overrun count — and logs a summary every 5 seconds. Kept out of the push loop so the loop reads
+/// as just "push each tick"; `record` is called once per push.
+struct CadenceStats {
+  private let frameIntervalNanos: UInt64
+  private let machToMs: Double
+  private let statsIntervalMach: UInt64
+  private let logger: any FBControlCoreLogger
+
+  private var statsStartTime: UInt64
+  private var pushCount: UInt64 = 0
+  private var overrunCount: UInt64 = 0
+  private var maxPushMach: UInt64 = 0
+  private var pushMean = 0.0 // Welford mean (in Mach ticks)
+  private var pushM2 = 0.0 // Welford M2 (sum of squared deviations)
+
+  init(frameIntervalNanos: UInt64, logger: any FBControlCoreLogger) {
+    var timebase = mach_timebase_info_data_t()
+    mach_timebase_info(&timebase)
+    self.machToMs = Double(timebase.numer) / Double(timebase.denom) / 1e6
+    let statsIntervalSeconds = 5.0
+    self.statsIntervalMach = UInt64(statsIntervalSeconds * 1e9) * UInt64(timebase.denom) / UInt64(timebase.numer)
+    self.frameIntervalNanos = frameIntervalNanos
+    self.logger = logger
+    self.statsStartTime = mach_absolute_time()
+  }
+
+  mutating func record(pushDurationMach: UInt64, overran: Bool) {
+    pushCount += 1
+    if overran {
+      overrunCount += 1
+    }
+    if pushDurationMach > maxPushMach {
+      maxPushMach = pushDurationMach
+    }
+    let delta = Double(pushDurationMach) - pushMean
+    pushMean += delta / Double(pushCount)
+    pushM2 += delta * (Double(pushDurationMach) - pushMean)
+
+    let now = mach_absolute_time()
+    guard now - statsStartTime >= statsIntervalMach else {
+      return
+    }
+    let avgMs = pushMean * machToMs
+    let maxMs = Double(maxPushMach) * machToMs
+    let stddevMs = pushCount > 1 ? sqrt(pushM2 / Double(pushCount - 1)) * machToMs : 0
+    let intervalSeconds = Double(now - statsStartTime) * machToMs / 1e3
+    logger.info().log(
+      String(
+        format: "Cadence stats (%.1fs): %llu pushes, %llu overruns, push duration avg %.1f ms / max %.1f ms, jitter stddev %.1f ms (budget: %.1f ms)",
+        intervalSeconds, pushCount, overrunCount, avgMs, maxMs, stddevMs, Double(frameIntervalNanos) / 1e6))
+
+    // Reset for next interval.
+    statsStartTime = now
+    pushCount = 0
+    overrunCount = 0
+    maxPushMach = 0
+    pushMean = 0
+    pushM2 = 0
   }
 }
