@@ -14,6 +14,10 @@ public final class CompanionManager {
   public let registry: CompanionRegistry
   private let spawner: CompanionSpawner
 
+  /// Pseudo-udid passed as `--udid booted`, telling a spawned companion to attach
+  /// to the single booted simulator/device.
+  private static let bootedTargetUDID = "booted"
+
   /// - Parameters:
   ///   - companionPath: path to the `idb_companion` binary used to spawn
   ///     companions on demand. Defaults to
@@ -46,6 +50,35 @@ public final class CompanionManager {
       try registry.remove(udid: udid)
     }
     return try await spawnCompanionServer(udid: udid, idleShutdownTime: idleShutdownTime)
+  }
+
+  /// Returns the companion to use when the caller has not named a specific target:
+  /// - exactly one companion is recorded and reachable -> returns it;
+  /// - no companion is reachable -> spawns a local companion with `--udid booted`
+  ///   (the companion attaches to the single booted simulator/device) and returns
+  ///   it; if that spawn fails, discovery fails;
+  /// - more than one companion is reachable -> discovery fails (ambiguous).
+  ///
+  /// Recorded companions that have gone away are pruned. `idleShutdownTime`, if
+  /// set, is forwarded to a spawned companion.
+  public func defaultCompanion(idleShutdownTime: TimeInterval? = nil) async throws -> CompanionInfo {
+    var reachable: [CompanionInfo] = []
+    for companion in try registry.companions() {
+      if isAlive(companion) {
+        reachable.append(companion)
+      } else {
+        // Drop entries whose companion has gone away.
+        try registry.remove(udid: companion.udid)
+      }
+    }
+
+    if reachable.count > 1 {
+      throw CompanionDiscoveryError.multipleCompanions(udids: reachable.map(\.udid))
+    }
+    if let existing = reachable.first {
+      return existing
+    }
+    return try await spawnCompanionServer(udid: Self.bootedTargetUDID, idleShutdownTime: idleShutdownTime)
   }
 
   /// Whether a recorded companion is still reachable. Domain-socket companions

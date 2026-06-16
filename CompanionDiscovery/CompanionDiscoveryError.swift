@@ -19,6 +19,8 @@ public enum CompanionDiscoveryError: Error, CustomStringConvertible {
   case companionNotReady(reason: String)
   /// The companion bound a domain socket path different from the requested one.
   case socketPathMismatch(expected: String, actual: String)
+  /// More than one companion is running, so one could not be chosen without a udid.
+  case multipleCompanions(udids: [String])
 
   public var description: String {
     switch self {
@@ -32,6 +34,8 @@ public enum CompanionDiscoveryError: Error, CustomStringConvertible {
       return "Companion did not become ready: \(reason)"
     case let .socketPathMismatch(expected, actual):
       return "Companion bound an unexpected domain socket (expected \(expected), got \(actual))"
+    case let .multipleCompanions(udids):
+      return "Multiple companions are running (\(udids.joined(separator: ", "))); pass a udid to choose one"
     }
   }
 }

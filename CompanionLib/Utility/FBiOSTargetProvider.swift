@@ -16,9 +16,12 @@ import XCTestBootstrap
   @objc public static func target(withUDID udid: String, targetSets: [FBiOSTargetSet], warmUp: Bool, logger: FBControlCoreLogger) -> FBFuture<AnyObject> {
     let target: FBiOSTarget
     do {
-      if udid.lowercased() == "only" {
+      switch udid.lowercased() {
+      case "only":
         target = try fetchSoleTarget(forTargetSets: targetSets, logger: logger)
-      } else {
+      case "booted":
+        target = try fetchSoleBootedTarget(forTargetSets: targetSets, logger: logger)
+      default:
         target = try fetchTarget(withUDID: udid, targetSets: targetSets, logger: logger)
       }
     } catch {
@@ -60,6 +63,25 @@ import XCTestBootstrap
     }
     guard let target = targets.first else {
       throw FBIDBError.describe("Cannot get a sole target when none were found in target sets \(FBCollectionInformation.oneLineDescription(from: targetSets))").build()
+    }
+    return target
+  }
+
+  private static func fetchSoleBootedTarget(forTargetSets targetSets: [FBiOSTargetSet], logger: FBControlCoreLogger) throws -> FBiOSTarget {
+    var bootedTargets: [FBiOSTarget] = []
+    for targetSet in targetSets {
+      for info in targetSet.allTargetInfos {
+        guard let target = info as? FBiOSTarget, target.state == .booted else {
+          continue
+        }
+        bootedTargets.append(target)
+      }
+    }
+    if bootedTargets.count > 1 {
+      throw FBIDBError.describe("Cannot get a sole booted target when multiple are booted \(FBCollectionInformation.oneLineDescription(from: bootedTargets))").build()
+    }
+    guard let target = bootedTargets.first else {
+      throw FBIDBError.describe("Cannot get a sole booted target when none are booted in target sets \(FBCollectionInformation.oneLineDescription(from: targetSets))").build()
     }
     return target
   }

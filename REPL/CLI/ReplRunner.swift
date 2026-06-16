@@ -34,8 +34,10 @@ enum Context {
 /// Shared REPL implementation backing both the `test` and `simulator`
 /// subcommands. Its options are flattened into each subcommand via `@OptionGroup`.
 struct ReplRunner: ParsableArguments {
-  @Option(name: .long, help: "UDID of the simulator to use for execution.")
-  var udid: String
+  @Option(
+    name: .long,
+    help: "UDID of the simulator to use for execution. If omitted, the single running companion is used, or one is started for the only available simulator.")
+  var udid: String?
 
   @Option(name: .long, help: "Path to the Swift toolchain used to compile code. Defaults to the selected Xcode toolchain (xcode-select -p).")
   var toolchainPath: String?
@@ -65,11 +67,17 @@ struct ReplRunner: ParsableArguments {
       moduleMapPath = nil
     }
 
-    // Discover an already-running idb_companion for this target, or start one,
-    // then connect to it. A companion we start should not outlive its use, so it
-    // exits after 5 minutes without gRPC activity.
+    // Discover the companion to use, starting one if needed. A companion we start
+    // should not outlive its use, so it exits after 5 minutes without gRPC
+    // activity. With no udid, use the single running companion (or start one for
+    // the only available simulator).
     let idleShutdownTime: TimeInterval = 5 * 60
-    let companion = try await companionManager().companionInfo(forUDID: udid, idleShutdownTime: idleShutdownTime)
+    let companion: CompanionInfo
+    if let udid {
+      companion = try await companionManager().companionInfo(forUDID: udid, idleShutdownTime: idleShutdownTime)
+    } else {
+      companion = try await companionManager().defaultCompanion(idleShutdownTime: idleShutdownTime)
+    }
 
     let group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
     let channel = try GRPCChannelPool.with(
