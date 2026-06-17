@@ -434,7 +434,10 @@ private func activateFuture(_ ecid: String, logger: FBControlCoreLogger) -> FBFu
       DispatchQueue.main,
       fmap: { (deviceObj: AnyObject) -> FBFuture<AnyObject> in
         let device = deviceObj as! FBDevice
-        return device.activate() as! FBFuture<AnyObject>
+        return fbFutureFromAsync {
+          try await device.activate()
+          return NSNull()
+        } as! FBFuture<AnyObject>
       }) as! FBFuture<NSNull>
 }
 

@@ -52,7 +52,6 @@
 - (nonnull NSDictionary<NSString *, NSString *> *)environmentAdditions;
 
 // Forwarded command methods declared for ObjC/Swift visibility
-- (nonnull FBFuture<NSNull *> *)activate;
 - (nonnull FBFuture *)ensureDeveloperDiskImageIsMounted;
 - (nonnull FBFuture<FBInstalledApplication *> *)installedApplicationWithBundleID:(nonnull NSString *)bundleID;
 

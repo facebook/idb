@@ -8,6 +8,8 @@
 @preconcurrency import FBControlCore
 import Foundation
 
+// swiftlint:disable force_cast force_unwrapping
+
 private let DefaultDRMHandshakeURL = "https://albert.apple.com/deviceservices/drmHandshake"
 private let DefaultDeviceActivationURL = "https://albert.apple.com/deviceservices/deviceActivation"
 
@@ -26,18 +28,9 @@ public class FBDeviceActivationCommands: NSObject, FBiOSTargetCommand {
     super.init()
   }
 
-  // MARK: - FBDeviceActivationCommands (legacy FBFuture entry point)
+  // MARK: - Activation
 
-  public func activate() -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      try await activateAsync()
-      return NSNull()
-    }
-  }
-
-  // MARK: - Async
-
-  fileprivate func activateAsync() async throws {
+  fileprivate func activate() async throws {
     guard let device else {
       throw FBDeviceControlError().describe("Device is nil").build()
     }
@@ -229,5 +222,14 @@ public class FBDeviceActivationCommands: NSObject, FBiOSTargetCommand {
     data.append(contentsOf: newlineData)
 
     return data
+  }
+}
+
+// MARK: - FBDevice+AsyncActivationCommands
+
+extension FBDevice: AsyncActivationCommands {
+
+  public func activate() async throws {
+    try await activationCommands().activate()
   }
 }
