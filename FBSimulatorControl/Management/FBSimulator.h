@@ -26,6 +26,9 @@
  */
 // Protocol conformances declared in Swift via extensions:
 // FBSimulatorApplicationCommandsProtocol, FBSimulatorFileCommandsProtocol
+// FBSimulator's async commands serialize their work onto FBFuture's internal
+// queues, so instances are safe to pass across Swift concurrency domains.
+NS_SWIFT_SENDABLE
 @interface FBSimulator : NSObject <FBiOSTarget>
 
 #pragma mark FBiOSTargetInfo / FBiOSTarget Protocol Members

@@ -22,14 +22,14 @@
 
 /// Dark/Light mode appearance.
 /// Values match UIUserInterfaceStyle used by SimDevice's setUIInterfaceStyle:error:.
-@objc public enum FBSimulatorAppearance: Int {
+@objc public enum FBSimulatorAppearance: Int, Sendable {
   case light = 1 // UIUserInterfaceStyleLight
   case dark = 2 // UIUserInterfaceStyleDark
 }
 
 /// Dynamic Type content size categories.
 /// Values match the integer indices used by SimDevice's setContentSizeCategory:error:.
-@objc public enum FBSimulatorContentSizeCategory: Int {
+@objc public enum FBSimulatorContentSizeCategory: Int, Sendable {
   case extraSmall = 1
   case small = 2
   case medium = 3
