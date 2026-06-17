@@ -24,4 +24,20 @@ public protocol AsyncFileContainer: AnyObject {
   func remove(_ path: String) async throws
 
   func contents(ofDirectory path: String) async throws -> [String]
+
+  /// The path of the container on the host filesystem, if it is backed by a
+  /// single real directory. `nil` for containers that don't map to one host path.
+  var pathOnHostFileSystem: String? { get }
+
+  /// A mapping of identifiers to host filesystem paths, for containers that
+  /// expose multiple roots (e.g. per-application or per-group containers).
+  /// `nil` for containers that don't expose such a mapping.
+  var pathMapping: [String: String]? { get }
+}
+
+public extension AsyncFileContainer {
+
+  var pathOnHostFileSystem: String? { nil }
+
+  var pathMapping: [String: String]? { nil }
 }

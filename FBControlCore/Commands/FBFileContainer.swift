@@ -83,6 +83,12 @@ public final class FBContainedFile_ContainedRoot: NSObject, AsyncFileContainer {
     super.init()
   }
 
+  // MARK: - Host path access
+
+  public var pathOnHostFileSystem: String? { rootFileBox.file.pathOnHostFileSystem }
+
+  public var pathMapping: [String: String]? { rootFileBox.file.pathMapping }
+
   // MARK: - AsyncFileContainer
 
   public func copy(fromHost sourcePath: String, toContainer destinationPath: String) async throws {

@@ -8,49 +8,7 @@
 import FBControlCore
 import Foundation
 
-@objc public protocol FBSimulatorFileCommandsProtocol: NSObjectProtocol {
-  @objc(containedFileForApplication:error:)
-  func containedFile(forApplication bundleID: String) throws -> any FBContainedFile
-
-  @objc(containedFileForGroupContainersWithError:)
-  func containedFileForGroupContainers() throws -> any FBContainedFile
-
-  @objc(containedFileForApplicationContainersWithError:)
-  func containedFileForApplicationContainers() throws -> any FBContainedFile
-
-  func containedFileForRootFilesystem() -> any FBContainedFile
-}
-
-// MARK: - FBSimulator+FBSimulatorFileCommandsProtocol
-
-extension FBSimulator: FBSimulatorFileCommandsProtocol {
-
-  @objc(containedFileForApplication:error:)
-  public func containedFile(forApplication bundleID: String) throws -> any FBContainedFile {
-    try fileCommands().containedFile(forApplication: bundleID)
-  }
-
-  @objc(containedFileForGroupContainersWithError:)
-  public func containedFileForGroupContainers() throws -> any FBContainedFile {
-    try fileCommands().containedFileForGroupContainers()
-  }
-
-  @objc(containedFileForApplicationContainersWithError:)
-  public func containedFileForApplicationContainers() throws -> any FBContainedFile {
-    try fileCommands().containedFileForApplicationContainers()
-  }
-
-  @objc public func containedFileForRootFilesystem() -> any FBContainedFile {
-    do {
-      return try fileCommands().containedFileForRootFilesystem()
-    } catch {
-      // The accessor only throws if commandCache.resolve fails — extremely
-      // unlikely. Fall back to a stub for the non-throwing protocol method.
-      // swiftlint:disable:next force_cast
-      return FBFileContainer.containedFile(forBasePath: "") as! any FBContainedFile
-    }
-  }
-}
+// swiftlint:disable force_cast force_unwrapping
 
 @objc(FBSimulatorFileCommands)
 public final class FBSimulatorFileCommands: NSObject, FBiOSTargetCommand {
@@ -98,7 +56,6 @@ public final class FBSimulatorFileCommands: NSObject, FBiOSTargetCommand {
   }
 
   public func fileCommandsForAuxillary() -> FBFutureContext<FBContainedFile_ContainedRoot> {
-    // swiftlint:disable:next force_cast
     return FBFutureContext<AnyObject>(result: FBFileContainer.fileContainer(forBasePath: simulator.auxillaryDirectory) as AnyObject) as! FBFutureContext<FBContainedFile_ContainedRoot>
   }
 
@@ -203,10 +160,9 @@ public final class FBSimulatorFileCommands: NSObject, FBiOSTargetCommand {
       .failFutureContext() as! FBFutureContext<FBContainedFile_ContainedRoot>
   }
 
-  // MARK: - FBSimulatorFileCommandsProtocol Implementation
+  // MARK: - Contained file accessors
 
-  @objc
-  public func containedFile(forApplication bundleID: String) throws -> any FBContainedFile {
+  private func containedFile(forApplication bundleID: String) throws -> any FBContainedFile {
     let installedApplication: FBInstalledApplication = try simulator.installedApplication(withBundleID: bundleID).await()
     guard let container = installedApplication.dataContainer else {
       throw FBSimulatorError.describe("No data container present for application \(installedApplication)").build()
@@ -214,8 +170,7 @@ public final class FBSimulatorFileCommands: NSObject, FBiOSTargetCommand {
     return FBFileContainer.containedFile(forBasePath: container) as! any FBContainedFile
   }
 
-  @objc
-  public func containedFileForApplicationContainers() throws -> any FBContainedFile {
+  private func containedFileForApplicationContainers() throws -> any FBContainedFile {
     let installedApps = try FBSimDeviceWrapper.installedApps(onDevice: simulator.device)
     var mapping: [String: String] = [:]
     for (bundleID, appInfo) in installedApps {
@@ -229,8 +184,7 @@ public final class FBSimulatorFileCommands: NSObject, FBiOSTargetCommand {
     return FBFileContainer.containedFile(forPathMapping: mapping) as! any FBContainedFile
   }
 
-  @objc
-  public func containedFileForGroupContainers() throws -> any FBContainedFile {
+  private func containedFileForGroupContainers() throws -> any FBContainedFile {
     let installedApps = try FBSimDeviceWrapper.installedApps(onDevice: simulator.device)
     var bundleIDToURL: [String: URL] = [:]
     for (_, appInfo) in installedApps {
@@ -250,8 +204,7 @@ public final class FBSimulatorFileCommands: NSObject, FBiOSTargetCommand {
     return FBFileContainer.containedFile(forPathMapping: pathMapping) as! any FBContainedFile
   }
 
-  @objc
-  public func containedFileForRootFilesystem() -> any FBContainedFile {
+  private func containedFileForRootFilesystem() -> any FBContainedFile {
     FBFileContainer.containedFile(forBasePath: simulator.dataDirectory!) as! any FBContainedFile
   }
 }
