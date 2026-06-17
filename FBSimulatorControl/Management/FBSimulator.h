@@ -25,7 +25,7 @@
  An implementation of FBiOSTarget for iOS Simulators.
  */
 // Protocol conformances declared in Swift via extensions:
-// FBSimulatorApplicationCommandsProtocol, FBSimulatorFileCommandsProtocol
+// FBSimulatorFileCommandsProtocol
 // FBSimulator's async commands serialize their work onto FBFuture's internal
 // queues, so instances are safe to pass across Swift concurrency domains.
 NS_SWIFT_SENDABLE

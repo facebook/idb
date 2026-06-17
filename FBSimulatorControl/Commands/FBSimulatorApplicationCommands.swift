@@ -11,21 +11,6 @@
 
 // swiftlint:disable force_cast force_try force_unwrapping
 
-@objc public protocol FBSimulatorApplicationCommandsProtocol: NSObjectProtocol {
-  @objc(installedApplicationWithBundleID:error:)
-  func installedApplication(withBundleID bundleID: String) throws -> FBInstalledApplication
-}
-
-// MARK: - FBSimulator+FBSimulatorApplicationCommandsProtocol
-
-extension FBSimulator: FBSimulatorApplicationCommandsProtocol {
-
-  @objc(installedApplicationWithBundleID:error:)
-  public func installedApplication(withBundleID bundleID: String) throws -> FBInstalledApplication {
-    try applicationCommands().installedApplication(withBundleID: bundleID)
-  }
-}
-
 @objc(FBSimulatorApplicationCommands)
 public class FBSimulatorApplicationCommands: NSObject, FBiOSTargetCommand {
 
@@ -51,21 +36,21 @@ public class FBSimulatorApplicationCommands: NSObject, FBiOSTargetCommand {
   @objc
   public func installApplication(withPath path: String) -> FBFuture<FBInstalledApplication> {
     fbFutureFromAsync { [self] in
-      try await installApplicationAsync(withPath: path)
+      try await installApplication(withPath: path)
     }
   }
 
   @objc
   public func launchApplication(_ configuration: FBApplicationLaunchConfiguration) -> FBFuture<FBLaunchedApplication> {
     fbFutureFromAsync { [self] in
-      try await launchApplicationAsync(configuration)
+      try await launchApplication(configuration)
     }
   }
 
   @objc
   public func killApplication(withBundleID bundleID: String) -> FBFuture<NSNull> {
     fbFutureFromAsync { [self] in
-      try await killApplicationAsync(withBundleID: bundleID)
+      try await killApplication(withBundleID: bundleID)
       return NSNull()
     }
   }
@@ -73,14 +58,14 @@ public class FBSimulatorApplicationCommands: NSObject, FBiOSTargetCommand {
   @objc
   public func installedApplications() -> FBFuture<NSArray> {
     fbFutureFromAsync { [self] in
-      try await installedApplicationsAsync() as NSArray
+      try await installedApplications() as NSArray
     }
   }
 
   @objc
   public func uninstallApplication(withBundleID bundleID: String) -> FBFuture<NSNull> {
     fbFutureFromAsync { [self] in
-      try await uninstallApplicationAsync(withBundleID: bundleID)
+      try await uninstallApplication(withBundleID: bundleID)
       return NSNull()
     }
   }
@@ -88,38 +73,31 @@ public class FBSimulatorApplicationCommands: NSObject, FBiOSTargetCommand {
   @objc
   public func installedApplication(withBundleID bundleID: String) -> FBFuture<FBInstalledApplication> {
     fbFutureFromAsync { [self] in
-      try await installedApplicationAsync(withBundleID: bundleID)
+      try await installedApplication(withBundleID: bundleID)
     }
   }
 
   @objc
   public func processID(withBundleID bundleID: String) -> FBFuture<NSNumber> {
     fbFutureFromAsync { [self] in
-      let pid = try await processIDAsync(withBundleID: bundleID)
+      let pid = try await processID(withBundleID: bundleID)
       return NSNumber(value: pid)
     }
   }
 
-  // MARK: - FBSimulatorApplicationCommandsProtocol
-
-  @objc
-  public func installedApplication(withBundleID bundleID: String) throws -> FBInstalledApplication {
-    try fetchInstalledApplication(bundleID: bundleID)
-  }
-
   // MARK: - Async
 
-  fileprivate func installApplicationAsync(withPath path: String) async throws -> FBInstalledApplication {
+  fileprivate func installApplication(withPath path: String) async throws -> FBInstalledApplication {
     guard let simulator = self.simulator else {
       throw FBSimulatorError.describe("Simulator deallocated").build()
     }
-    let appBundle = try await confirmCompatibilityOfApplicationAsync(atPath: path)
+    let appBundle = try await confirmCompatibilityOfApplication(atPath: path)
     let options: [String: Any] = ["CFBundleIdentifier": appBundle.identifier]
     let appURL = URL(fileURLWithPath: appBundle.path)
     var installError: NSError?
     do {
       try simulator.device.installApplication(appURL, withOptions: options as [AnyHashable: Any])
-      return try await installedApplicationAsync(withBundleID: appBundle.identifier)
+      return try await installedApplication(withBundleID: appBundle.identifier)
     } catch {
       installError = error as NSError
     }
@@ -128,32 +106,32 @@ public class FBSimulatorApplicationCommands: NSObject, FBiOSTargetCommand {
     if let err = installError, err.description.contains("Failed to load Info.plist from bundle at path") {
       simulator.logger?.log("Retrying install due to reinstall bug")
       if (try? simulator.device.installApplication(appURL, withOptions: options as [AnyHashable: Any])) != nil {
-        return try await installedApplicationAsync(withBundleID: appBundle.identifier)
+        return try await installedApplication(withBundleID: appBundle.identifier)
       }
     }
 
     throw FBSimulatorError.describe("Failed to install Application \(appBundle) with options \(options)").build()
   }
 
-  internal func launchApplicationAsync(_ configuration: FBApplicationLaunchConfiguration) async throws -> FBLaunchedApplication {
+  internal func launchApplication(_ configuration: FBApplicationLaunchConfiguration) async throws -> FBLaunchedApplication {
     guard let simulator = self.simulator else {
       throw FBSimulatorError.describe("Simulator deallocated").build()
     }
-    try await ensureApplicationIsInstalledAsync(configuration.bundleID)
-    try await confirmApplicationLaunchStateAsync(configuration.bundleID, launchMode: configuration.launchMode, waitForDebugger: configuration.waitForDebugger)
+    try await ensureApplicationIsInstalled(configuration.bundleID)
+    try await confirmApplicationLaunchState(configuration.bundleID, launchMode: configuration.launchMode, waitForDebugger: configuration.waitForDebugger)
     let attachment = try await bridgeFBFuture(configuration.io.attachViaFile())
     let launch = launchApplication(configuration, stdOut: attachment.stdOut!, stdErr: attachment.stdErr!)
     return try await bridgeFBFuture(FBSimulatorLaunchedApplication.application(withSimulator: simulator, configuration: configuration, attachment: attachment, launchFuture: launch))
   }
 
-  fileprivate func killApplicationAsync(withBundleID bundleID: String) async throws {
+  fileprivate func killApplication(withBundleID bundleID: String) async throws {
     guard let simulator = self.simulator else {
       throw FBSimulatorError.describe("Simulator deallocated").build()
     }
     try simulator.device.terminateApplication(withID: bundleID)
   }
 
-  fileprivate func installedApplicationsAsync() async throws -> [FBInstalledApplication] {
+  fileprivate func installedApplications() async throws -> [FBInstalledApplication] {
     guard let simulator = self.simulator else {
       throw FBSimulatorError.describe("Simulator deallocated").build()
     }
@@ -170,16 +148,16 @@ public class FBSimulatorApplicationCommands: NSObject, FBiOSTargetCommand {
     return applications
   }
 
-  fileprivate func uninstallApplicationAsync(withBundleID bundleID: String) async throws {
+  fileprivate func uninstallApplication(withBundleID bundleID: String) async throws {
     guard let simulator = self.simulator else {
       throw FBSimulatorError.describe("Simulator deallocated").build()
     }
-    let installedApplication = try await installedApplicationAsync(withBundleID: bundleID)
+    let installedApplication = try await installedApplication(withBundleID: bundleID)
     if installedApplication.installType == .system {
       throw FBSimulatorError.describe("Can't uninstall '\(installedApplication)' as it is a system Application").build()
     }
     // Best-effort kill before uninstall; ignore errors.
-    _ = try? await killApplicationAsync(withBundleID: bundleID)
+    _ = try? await killApplication(withBundleID: bundleID)
     do {
       try simulator.device.uninstallApplication(bundleID, withOptions: nil)
     } catch {
@@ -187,11 +165,11 @@ public class FBSimulatorApplicationCommands: NSObject, FBiOSTargetCommand {
     }
   }
 
-  fileprivate func installedApplicationAsync(withBundleID bundleID: String) async throws -> FBInstalledApplication {
+  fileprivate func installedApplication(withBundleID bundleID: String) async throws -> FBInstalledApplication {
     try fetchInstalledApplication(bundleID: bundleID)
   }
 
-  fileprivate func runningApplicationsAsync() async throws -> [String: NSNumber] {
+  fileprivate func runningApplications() async throws -> [String: NSNumber] {
     guard let simulator = self.simulator else {
       throw FBSimulatorError.describe("Simulator deallocated").build()
     }
@@ -205,7 +183,7 @@ public class FBSimulatorApplicationCommands: NSObject, FBiOSTargetCommand {
     return mapping
   }
 
-  fileprivate func processIDAsync(withBundleID bundleID: String) async throws -> pid_t {
+  fileprivate func processID(withBundleID bundleID: String) async throws -> pid_t {
     guard let simulator = self.simulator else {
       throw FBSimulatorError.describe("Simulator deallocated").build()
     }
@@ -234,22 +212,22 @@ public class FBSimulatorApplicationCommands: NSObject, FBiOSTargetCommand {
     try! NSRegularExpression(pattern: "UIKitApplication:", options: [])
   }()
 
-  private func ensureApplicationIsInstalledAsync(_ bundleID: String) async throws {
+  private func ensureApplicationIsInstalled(_ bundleID: String) async throws {
     do {
-      _ = try await installedApplicationAsync(withBundleID: bundleID)
+      _ = try await installedApplication(withBundleID: bundleID)
     } catch {
       throw FBSimulatorError.describe("App \(bundleID) can't be launched as it isn't installed: \(error)").build()
     }
   }
 
-  private func confirmApplicationLaunchStateAsync(_ bundleID: String, launchMode: FBApplicationLaunchMode, waitForDebugger: Bool) async throws {
+  private func confirmApplicationLaunchState(_ bundleID: String, launchMode: FBApplicationLaunchMode, waitForDebugger: Bool) async throws {
     if waitForDebugger && launchMode == .foregroundIfRunning {
       throw FBSimulatorError.describe("'Foreground if running' and 'wait for debugger cannot be applied simultaneously").build()
     }
 
     let pid: pid_t
     do {
-      pid = try await processIDAsync(withBundleID: bundleID)
+      pid = try await processID(withBundleID: bundleID)
     } catch {
       // Process not running: treat as launchable.
       return
@@ -258,7 +236,7 @@ public class FBSimulatorApplicationCommands: NSObject, FBiOSTargetCommand {
     if launchMode == .failIfRunning {
       throw FBSimulatorError.describe("App '\(bundleID)' can't be launched as it is already running (PID=\(pid))").build()
     } else if launchMode == .relaunchIfRunning {
-      try await killApplicationAsync(withBundleID: bundleID)
+      try await killApplication(withBundleID: bundleID)
     }
   }
 
@@ -266,11 +244,11 @@ public class FBSimulatorApplicationCommands: NSObject, FBiOSTargetCommand {
     fbFutureFromAsync { [self] in
       try await bridgeFBFutureVoid(stdOut.startReading())
       try await bridgeFBFutureVoid(stdErr.startReading())
-      return try await launchApplicationAsync(configuration, stdOutPath: stdOut.filePath, stdErrPath: stdErr.filePath)
+      return try await launchApplication(configuration, stdOutPath: stdOut.filePath, stdErrPath: stdErr.filePath)
     }
   }
 
-  private func launchApplicationAsync(_ configuration: FBApplicationLaunchConfiguration, stdOutPath: String?, stdErrPath: String?) async throws -> NSNumber {
+  private func launchApplication(_ configuration: FBApplicationLaunchConfiguration, stdOutPath: String?, stdErrPath: String?) async throws -> NSNumber {
     guard let simulator = self.simulator else {
       throw FBSimulatorError.describe("Simulator deallocated").build()
     }
@@ -354,7 +332,7 @@ public class FBSimulatorApplicationCommands: NSObject, FBiOSTargetCommand {
       dataContainer: (dataContainer as? URL)?.path)
   }
 
-  private func confirmCompatibilityOfApplicationAsync(atPath path: String) async throws -> FBBundleDescriptor {
+  private func confirmCompatibilityOfApplication(atPath path: String) async throws -> FBBundleDescriptor {
     guard let application = try? FBBundleDescriptor.bundle(fromPath: path) else {
       throw FBSimulatorError.describe("Could not determine Application information for path \(path)").build()
     }
@@ -364,7 +342,7 @@ public class FBSimulatorApplicationCommands: NSObject, FBiOSTargetCommand {
 
     let installed: FBInstalledApplication?
     do {
-      installed = try await installedApplicationAsync(withBundleID: application.identifier)
+      installed = try await installedApplication(withBundleID: application.identifier)
     } catch {
       installed = nil
     }
@@ -388,36 +366,36 @@ public class FBSimulatorApplicationCommands: NSObject, FBiOSTargetCommand {
 extension FBSimulator: AsyncApplicationCommands {
 
   public func installApplication(atPath path: String) async throws -> FBInstalledApplication {
-    try await applicationCommands().installApplicationAsync(withPath: path)
+    try await applicationCommands().installApplication(withPath: path)
   }
 
   public func uninstallApplication(bundleID: String) async throws {
-    try await applicationCommands().uninstallApplicationAsync(withBundleID: bundleID)
+    try await applicationCommands().uninstallApplication(withBundleID: bundleID)
   }
 
   public func launchApplication(_ configuration: FBApplicationLaunchConfiguration) async throws -> FBLaunchedApplication {
-    try await applicationCommands().launchApplicationAsync(configuration)
+    try await applicationCommands().launchApplication(configuration)
   }
 
   public func killApplication(bundleID: String) async throws {
-    try await applicationCommands().killApplicationAsync(withBundleID: bundleID)
+    try await applicationCommands().killApplication(withBundleID: bundleID)
   }
 
   public func installedApplications() async throws -> [FBInstalledApplication] {
-    try await applicationCommands().installedApplicationsAsync()
+    try await applicationCommands().installedApplications()
   }
 
   public func installedApplication(bundleID: String) async throws -> FBInstalledApplication {
-    try await applicationCommands().installedApplicationAsync(withBundleID: bundleID)
+    try await applicationCommands().installedApplication(withBundleID: bundleID)
   }
 
   public func runningApplications() async throws -> [String: pid_t] {
-    let dict = try await applicationCommands().runningApplicationsAsync()
+    let dict = try await applicationCommands().runningApplications()
     return dict.mapValues { $0.int32Value }
   }
 
   public func processID(forBundleID bundleID: String) async throws -> pid_t {
-    try await applicationCommands().processIDAsync(withBundleID: bundleID)
+    try await applicationCommands().processID(withBundleID: bundleID)
   }
 }
 

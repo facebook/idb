@@ -16,7 +16,7 @@ import XCTest
 private struct LaunchCaptureStop: Error {}
 
 /// Subclass of the real `FBSimulatorApplicationCommands` that overrides only
-/// `launchApplicationAsync` to record the configuration supplied by the
+/// `launchApplication` to record the configuration supplied by the
 /// production code path. All other behavior is inherited unchanged.
 ///
 /// Registered via `simulator.commandCache.register(_:as: FBSimulatorApplicationCommands.self)`
@@ -32,7 +32,7 @@ private final class CapturingApplicationCommands: FBSimulatorApplicationCommands
     return _capturedConfiguration
   }
 
-  override func launchApplicationAsync(_ configuration: FBApplicationLaunchConfiguration) async throws -> FBLaunchedApplication {
+  override func launchApplication(_ configuration: FBApplicationLaunchConfiguration) async throws -> FBLaunchedApplication {
     lock.lock()
     _capturedConfiguration = configuration
     lock.unlock()

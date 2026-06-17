@@ -7,9 +7,6 @@
 
 import Foundation
 
-/// Swift-native async/await counterpart of `FBApplicationCommands`.
-/// Replaces `FBFuture`-returning methods with `async throws` ones and uses
-/// Swift-native types in place of NSArray/NSDictionary/NSNumber/NSNull.
 public protocol AsyncApplicationCommands: AnyObject {
 
   func installApplication(atPath path: String) async throws -> FBInstalledApplication
