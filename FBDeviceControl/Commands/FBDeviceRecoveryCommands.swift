@@ -16,6 +16,7 @@ public class FBDeviceRecoveryCommands: NSObject, FBiOSTargetCommand {
 
   @objc
   public class func commands(with target: any FBiOSTarget) -> Self {
+    // swiftlint:disable:next force_cast
     unsafeDowncast(FBDeviceRecoveryCommands(device: target as! FBDevice), to: self)
   }
 
@@ -24,27 +25,9 @@ public class FBDeviceRecoveryCommands: NSObject, FBiOSTargetCommand {
     super.init()
   }
 
-  // MARK: FBDeviceRecoveryCommands (legacy FBFuture entry points)
+  // MARK: - Recovery
 
-  @objc
-  public func enterRecovery() -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      try await enterRecoveryAsync()
-      return NSNull()
-    }
-  }
-
-  @objc
-  public func exitRecovery() -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      try await exitRecoveryAsync()
-      return NSNull()
-    }
-  }
-
-  // MARK: - Async
-
-  fileprivate func enterRecoveryAsync() async throws {
+  fileprivate func enterRecovery() async throws {
     guard let device else {
       throw FBDeviceControlError().describe("Device is nil").build()
     }
@@ -59,7 +42,7 @@ public class FBDeviceRecoveryCommands: NSObject, FBiOSTargetCommand {
     }
   }
 
-  fileprivate func exitRecoveryAsync() async throws {
+  fileprivate func exitRecovery() async throws {
     guard let device else {
       throw FBDeviceControlError().describe("Device is nil").build()
     }
@@ -89,5 +72,18 @@ public class FBDeviceRecoveryCommands: NSObject, FBiOSTargetCommand {
       return copyErrorTextFunc(status)?.takeRetainedValue() as String? ?? "Unknown error"
     }
     return "Unknown error"
+  }
+}
+
+// MARK: - FBDevice+AsyncRecoveryCommands
+
+extension FBDevice: AsyncRecoveryCommands {
+
+  public func enterRecovery() async throws {
+    try await recoveryCommands().enterRecovery()
+  }
+
+  public func exitRecovery() async throws {
+    try await recoveryCommands().exitRecovery()
   }
 }

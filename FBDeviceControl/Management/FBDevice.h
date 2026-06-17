@@ -53,8 +53,6 @@
 
 // Forwarded command methods declared for ObjC/Swift visibility
 - (nonnull FBFuture<NSNull *> *)activate;
-- (nonnull FBFuture<NSNull *> *)enterRecovery;
-- (nonnull FBFuture<NSNull *> *)exitRecovery;
 - (nonnull FBFuture *)ensureDeveloperDiskImageIsMounted;
 - (nonnull FBFuture<FBInstalledApplication *> *)installedApplicationWithBundleID:(nonnull NSString *)bundleID;
 

@@ -408,7 +408,10 @@ private func enterRecoveryFuture(_ ecid: String, logger: FBControlCoreLogger) ->
       DispatchQueue.main,
       fmap: { (deviceObj: AnyObject) -> FBFuture<AnyObject> in
         let device = deviceObj as! FBDevice
-        return device.enterRecovery() as! FBFuture<AnyObject>
+        return fbFutureFromAsync {
+          try await device.enterRecovery()
+          return NSNull()
+        } as! FBFuture<AnyObject>
       }) as! FBFuture<NSNull>
 }
 
@@ -418,7 +421,10 @@ private func exitRecoveryFuture(_ ecid: String, logger: FBControlCoreLogger) -> 
       DispatchQueue.main,
       fmap: { (deviceObj: AnyObject) -> FBFuture<AnyObject> in
         let device = deviceObj as! FBDevice
-        return device.exitRecovery() as! FBFuture<AnyObject>
+        return fbFutureFromAsync {
+          try await device.exitRecovery()
+          return NSNull()
+        } as! FBFuture<AnyObject>
       }) as! FBFuture<NSNull>
 }
 
