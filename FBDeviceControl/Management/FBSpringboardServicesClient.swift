@@ -332,3 +332,42 @@ class FBSpringboardServicesIconContainer: NSObject, AsyncFileContainer {
     return format as NSArray
   }
 }
+
+extension FBDevice {
+
+  public func getSpringboardIconLayout() async throws -> FBSpringboardIconLayout {
+    try await withSpringboardServicesClient { client in
+      try await client.getIconLayoutAsync()
+    }
+  }
+
+  public func setSpringboardIconLayout(_ layout: FBSpringboardIconLayout) async throws {
+    try await withSpringboardServicesClient { client in
+      try await client.setIconLayoutAsync(layout)
+    }
+  }
+
+  public func getRawSpringboardIconState(formatVersion: UInt) async throws -> AnyObject {
+    try await withSpringboardServicesClient { client in
+      try await client.getRawIconStateAsync(formatVersion: formatVersion)
+    }
+  }
+
+  public func getSpringboardIconMetrics() async throws -> [String: Any] {
+    try await withSpringboardServicesClient { client in
+      try await client.getHomeScreenIconMetricsAsync()
+    }
+  }
+
+  private func withSpringboardServicesClient<R>(
+    body: (FBSpringboardServicesClient) async throws -> R
+  ) async throws -> R {
+    guard let logger else {
+      throw FBDeviceControlError().describe("Device logger is nil").build()
+    }
+    return try await withFBFutureContext(startService(FBSpringboardServicesClient.serviceName)) { connection in
+      let client = FBSpringboardServicesClient(connection: connection, logger: logger)
+      return try await body(client)
+    }
+  }
+}
