@@ -145,8 +145,9 @@ static NSTimeInterval const CrashCheckWaitLimit = 120;  // Time to wait for cras
  */
 - (FBFuture<NSNull *> *)performDiagnosisOnBundleConnectionError:(NSError *)error
 {
-  return [[[self.target
-            processIDWithBundleID:self.context.testHostLaunchConfiguration.bundleID]
+  return [[[FBTestHostProcessQuery
+            processIdentifierForBundleID:self.context.testHostLaunchConfiguration.bundleID
+            target:self.target]
            onQueue:self.requestQueue
            handleError:^FBFuture *(NSError *pidLookupError) {
              NSString *msg = @"Error while establishing connection to test bundle: "
@@ -356,8 +357,9 @@ static NSTimeInterval const CrashCheckWaitLimit = 120;  // Time to wait for cras
 {
   id<FBLaunchedApplication> testHostApplication = self.testHostApplication;
   NSString *testHostBundleID = self.context.testHostLaunchConfiguration.bundleID;
-  return [[[self.target
-            processIDWithBundleID:self.context.testHostLaunchConfiguration.bundleID]
+  return [[[FBTestHostProcessQuery
+            processIdentifierForBundleID:self.context.testHostLaunchConfiguration.bundleID
+            target:self.target]
            onQueue:self.target.workQueue
            chain:^FBFuture<FBCrashLogInfo *> *(FBFuture<NSNumber *> *processIdentifierFuture) {
              if (processIdentifierFuture.result) {
