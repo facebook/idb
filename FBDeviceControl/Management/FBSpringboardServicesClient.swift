@@ -99,31 +99,6 @@ public class FBSpringboardServicesClient: NSObject {
 
   // MARK: Public Methods (legacy FBFuture entry points)
 
-  public func getIconLayout() -> FBFuture<NSArray> {
-    fbFutureFromAsync { [self] in
-      try await getIconLayoutAsync().rawValue
-    }
-  }
-
-  public func getRawIconState(formatVersion: UInt) -> FBFuture<AnyObject> {
-    fbFutureFromAsync { [self] in
-      try await getRawIconStateAsync(formatVersion: formatVersion)
-    }
-  }
-
-  public func setIconLayout(_ iconLayout: NSArray) -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      try await setIconLayoutRawAsync(iconLayout)
-      return NSNull()
-    }
-  }
-
-  public func getHomeScreenIconMetrics() -> FBFuture<NSDictionary> {
-    fbFutureFromAsync { [self] in
-      try await getHomeScreenIconMetricsAsync() as NSDictionary
-    }
-  }
-
   @objc public func wallpaperImageData(forKind name: String) -> FBFuture<NSData> {
     fbFutureFromAsync { [self] in
       try await wallpaperImageDataAsync(forKind: name) as NSData
@@ -157,10 +132,10 @@ public class FBSpringboardServicesClient: NSObject {
   }
 
   public func setIconLayoutAsync(_ iconLayout: FBSpringboardIconLayout) async throws {
-    try await setIconLayoutRawAsync(iconLayout.rawValue)
+    try await sendIconLayout(iconLayout.rawValue)
   }
 
-  public func setIconLayoutRawAsync(_ iconLayout: NSArray) async throws {
+  private func sendIconLayout(_ iconLayout: NSArray) async throws {
     let connectionBox = SpringboardConnectionBox(connection)
     let layoutBox = SpringboardDataBox(iconLayout)
     try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
@@ -291,12 +266,12 @@ class FBSpringboardServicesIconContainer: NSObject, AsyncFileContainer {
 
   fileprivate func copyFromHostAsync(sourcePath: String, toContainer destinationPath: String) async throws {
     let layout = try await iconLayoutFromSourcePathAsync(sourcePath, toDestinationFile: (destinationPath as NSString).lastPathComponent)
-    try await client.setIconLayoutRawAsync(layout)
+    try await client.setIconLayoutAsync(layout)
   }
 
   // MARK: Private
 
-  private func iconLayoutFromSourcePathAsync(_ sourcePath: String, toDestinationFile filename: String) async throws -> NSArray {
+  private func iconLayoutFromSourcePathAsync(_ sourcePath: String, toDestinationFile filename: String) async throws -> FBSpringboardIconLayout {
     if filename == IconJSONFile {
       let data = try Data(contentsOf: URL(fileURLWithPath: sourcePath))
       let jsonObject = try JSONSerialization.jsonObject(with: data, options: [])
@@ -308,20 +283,21 @@ class FBSpringboardServicesIconContainer: NSObject, AsyncFileContainer {
     if filename == IconPlistFile {
       let data = try Data(contentsOf: URL(fileURLWithPath: sourcePath))
       let layout = try PropertyListSerialization.propertyList(from: data, options: [], format: nil)
-      guard let array = layout as? NSArray else {
+      do {
+        return try FBSpringboardIconLayout(rawValue: layout)
+      } catch {
         throw FBSpringboardServicesError.invalidIconLayoutPlist(path: sourcePath)
       }
-      return array
     }
     throw FBSpringboardServicesError.invalidIconLayoutFile(filename: filename, validFilenames: validFilenames)
   }
 
-  private func convertJSONFormatToWireFormatAsync(_ jsonFormat: IconLayoutJSONType) async throws -> NSArray {
+  private func convertJSONFormatToWireFormatAsync(_ jsonFormat: IconLayoutJSONType) async throws -> FBSpringboardIconLayout {
     let currentLayout = try await client.getIconLayoutAsync()
     let iconsByBundleID = currentLayout.iconsByBundleID
-    var format: [[Any]] = []
+    var format: [[[String: Any]]] = []
     for jsonPage in jsonFormat {
-      var fullPage: [Any] = []
+      var fullPage: [[String: Any]] = []
       for bundleID in jsonPage {
         if let icon = iconsByBundleID[bundleID] {
           fullPage.append(icon)
@@ -329,7 +305,7 @@ class FBSpringboardServicesIconContainer: NSObject, AsyncFileContainer {
       }
       format.append(fullPage)
     }
-    return format as NSArray
+    return FBSpringboardIconLayout(pages: format)
   }
 }
 
