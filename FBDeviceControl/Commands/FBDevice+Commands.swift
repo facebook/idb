@@ -93,4 +93,8 @@ extension FBDevice {
   func developerDiskImageCommands() throws -> FBDeviceDeveloperDiskImageCommands {
     commandCache.resolve { FBDeviceDeveloperDiskImageCommands.commands(with: self) }
   }
+
+  func socketForwardingCommands() throws -> FBDeviceSocketForwardingCommands {
+    commandCache.resolve { FBDeviceSocketForwardingCommands.commands(with: self) }
+  }
 }

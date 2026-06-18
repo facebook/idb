@@ -8,7 +8,7 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-// swiftlint:disable force_unwrapping
+// swiftlint:disable force_cast force_unwrapping
 
 @objc(FBDeviceSocketForwardingCommands)
 public class FBDeviceSocketForwardingCommands: NSObject, FBiOSTargetCommand {
@@ -25,25 +25,9 @@ public class FBDeviceSocketForwardingCommands: NSObject, FBiOSTargetCommand {
     super.init()
   }
 
-  // MARK: FBSocketForwardingCommands (legacy FBFuture entry point)
+  // MARK: - Socket forwarding
 
-  public func drainLocalFileInput(
-    _ localFileDescriptorInput: Int32,
-    localFileOutput localFileDescriptorOutput: Int32,
-    remotePort: Int32
-  ) -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      try await drainLocalFileInputAsync(
-        localFileDescriptorInput,
-        localFileOutput: localFileDescriptorOutput,
-        remotePort: remotePort)
-      return NSNull()
-    }
-  }
-
-  // MARK: - Async
-
-  fileprivate func drainLocalFileInputAsync(
+  fileprivate func drainLocalFileInput(
     _ localFileDescriptorInput: Int32,
     localFileOutput localFileDescriptorOutput: Int32,
     remotePort: Int32
@@ -95,5 +79,14 @@ public class FBDeviceSocketForwardingCommands: NSObject, FBiOSTargetCommand {
     }
     logger?.log("Got local socket \(localSocket) for remote port \(remotePort)")
     return localSocket
+  }
+}
+
+// MARK: - FBDevice+AsyncSocketForwardingCommands
+
+extension FBDevice: AsyncSocketForwardingCommands {
+
+  public func drainLocalFileInput(_ localFileDescriptorInput: Int32, localFileOutput localFileDescriptorOutput: Int32, remotePort: Int32) async throws {
+    try await socketForwardingCommands().drainLocalFileInput(localFileDescriptorInput, localFileOutput: localFileDescriptorOutput, remotePort: remotePort)
   }
 }

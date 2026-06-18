@@ -621,10 +621,13 @@ private func forwardFuture(_ forward: String, userDefaults: UserDefaults, xcodeA
     .onQueue(
       DispatchQueue.main,
       fmap: { (targetObj: AnyObject) -> FBFuture<AnyObject> in
-        guard let commands = targetObj as? FBSocketForwardingCommands else {
-          return FBIDBError.describe("\(targetObj) does not conform to FBSocketForwardingCommands").failFuture()
+        guard let commands = targetObj as? AsyncSocketForwardingCommands else {
+          return FBIDBError.describe("\(targetObj) does not conform to AsyncSocketForwardingCommands").failFuture()
         }
-        return commands.drainLocalFileInput(STDIN_FILENO, localFileOutput: STDOUT_FILENO, remotePort: remotePort) as! FBFuture<AnyObject>
+        return fbFutureFromAsync {
+          try await commands.drainLocalFileInput(STDIN_FILENO, localFileOutput: STDOUT_FILENO, remotePort: remotePort)
+          return NSNull()
+        } as! FBFuture<AnyObject>
       }) as! FBFuture<NSNull>
 }
 
