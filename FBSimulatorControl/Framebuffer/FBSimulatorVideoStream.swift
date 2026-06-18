@@ -735,9 +735,16 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
   let startedFuture: FBMutableFuture<NSNull>
   let stoppedFuture: FBMutableFuture<NSNull>
 
-  /// The cadence task that drives fixed-FPS pushes in `.eager` mode (nil in `.lazy` mode and before
-  /// `mountSurface` starts it). Started in `mountSurface`, cancelled in `cadenceTeardown`/`deinit`.
+  /// The push-loop task that drives frame pushes (nil before `mountSurface` starts it). It iterates a
+  /// stimulus `AsyncSequence` of `FrameTrigger`s: `FrameCadence` (the fixed-rate clock) in `.eager`
+  /// mode, or `LazyFrameTriggers` (poked by the framebuffer callbacks) in `.lazy` mode.
+  /// Started in `mountSurface`, cancelled in `cadenceTeardown`/`deinit`.
   private var framePusherTask: Task<Void, Never>?
+
+  /// In `.lazy` (VFR) mode, the trigger source that the framebuffer callbacks (`didReceiveDamageRect`,
+  /// `updateOverlayBuffer`) poke to drive a push through the shared loop. Created in `mountSurface`,
+  /// finished in `cadenceTeardown`. Nil in `.eager` mode (the cadence clock drives pushes there).
+  private var lazyTriggers: LazyFrameTriggers?
 
   /// CVPixelBuffer is ARC-managed; held strong and released automatically.
   var pixelBuffer: CVPixelBuffer?
@@ -878,11 +885,14 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
 
   // MARK: - Private
 
-  /// Tear down the cadence machinery. Called on the `writeQueue` from `stopStreaming` before
-  /// `stoppedFuture` is resolved. In `.eager` mode this cancels the cadence task (which also wakes it
-  /// if it is suspended in `Task.sleep`; the loop also exits on the next iteration once
-  /// `stoppedFuture` is resolved). No-op in `.lazy` mode, where the task is never started.
+  /// Tear down the push-loop machinery. Called on the `writeQueue` from `stopStreaming` before
+  /// `stoppedFuture` is resolved. Finishes the `.lazy` trigger stream (ending its `for await`) and
+  /// cancels the push-loop task — which also wakes the `.eager` loop if it is suspended in
+  /// `Task.sleep`; either way the loop also exits on its next iteration once `stoppedFuture` is
+  /// resolved.
   func cadenceTeardown() {
+    lazyTriggers?.finish()
+    lazyTriggers = nil
     framePusherTask?.cancel()
     framePusherTask = nil
   }
@@ -916,11 +926,11 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
 
   @objc
   public func didReceiveDamageRect() {
-    // In `.lazy` (variable-frame-rate) mode, push a frame on each damage event. In `.eager`
-    // (constant-frame-rate) mode, the cadence task drives pushes, so damage events are ignored.
+    // In `.lazy` (variable-frame-rate) mode, a damage event is a stimulus for the shared push loop.
+    // In `.eager` (constant-frame-rate) mode, the cadence clock drives pushes, so damage is ignored.
     switch cadence {
     case .lazy:
-      pushFrame(forceKeyFrame: false)
+      lazyTriggers?.signalDamage()
     case .eager:
       break
     }
@@ -1009,13 +1019,24 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
     // Signal that we've started
     startedFuture.resolve(withResult: NSNull())
 
-    // In `.eager` mode, start the cadence task that drives fixed-FPS pushes (in place of the former
-    // dedicated Thread). `self` is captured: the class confines its mutable state to `writeQueue`
-    // (where the push actually runs) and is `@unchecked Sendable`, consistent with capturing it here.
-    // In `.lazy` mode there is no cadence task — pushes are driven by `didReceiveDamageRect`.
-    if case let .eager(framesPerSecond) = cadence {
+    // Start the push-loop task that drives frame pushes — once; a surface re-mount just swaps
+    // `pixelBuffer` for the running loop to pick up. The stimulus differs by cadence: `.eager`
+    // iterates the fixed-rate `FrameCadence` clock; `.lazy` iterates `LazyFrameTriggers`, poked by
+    // the framebuffer callbacks (`didReceiveDamageRect`/`updateOverlayBuffer`). Both feed the same
+    // loop. `self` is captured: mutable state is confined to `writeQueue` (where the push runs) and
+    // the class is `@unchecked Sendable`.
+    guard framePusherTask == nil else { return }
+    switch cadence {
+    case let .eager(framesPerSecond):
       framePusherTask = Task { [self] in
-        await runFramePushLoop(framesPerSecond: framesPerSecond)
+        let stats = CadenceStats(frameIntervalNanos: NSEC_PER_SEC / UInt64(framesPerSecond), logger: logger)
+        await runFramePushLoop(stimulus: FrameCadence(framesPerSecond: framesPerSecond, logger: logger), stats: stats)
+      }
+    case .lazy:
+      let triggers = LazyFrameTriggers()
+      lazyTriggers = triggers
+      framePusherTask = Task { [self] in
+        await runFramePushLoop(stimulus: triggers, stats: nil)
       }
     }
   }
@@ -1245,7 +1266,7 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
   /// Update the overlay buffer and push a frame to encode the change.
   /// Pass nil to clear the overlay.
   ///
-  /// In lazy/VFR mode: dispatches pushFrame on the write queue so overlay changes are encoded immediately.
+  /// In lazy/VFR mode: signals the push loop to encode a keyframe so the overlay change is immediately decodable.
   /// In eager/CFR mode: no extra push — the next cadence tick picks up the change without disrupting frame timing.
   public func updateOverlayBuffer(_ overlayBuffer: CVPixelBuffer?) {
     let sameReference = (overlayBuffer === self.overlayBuffer)
@@ -1258,15 +1279,13 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
     let stateDescription = overlayBuffer != nil ? (sameReference ? "contents updated" : "buffer swapped") : "cleared"
     logger.log("Overlay \(stateDescription) (frame=\(frameNumber))")
 
-    // In lazy/VFR mode: force a keyframe push so overlay changes are immediately
-    // decodable by consumers (e.g. ffplay) that need a keyframe to start rendering.
-    // In eager/CFR mode: the push loop runs at fixed cadence and picks up the change
-    // on the next tick — an extra push would disrupt frame timing.
+    // In lazy/VFR mode: trigger a keyframe push (through the shared loop) so overlay changes are
+    // immediately decodable by consumers (e.g. ffplay) that need a keyframe to start rendering.
+    // In eager/CFR mode: the push loop runs at fixed cadence and picks up the change on the next
+    // tick — an extra push would disrupt frame timing.
     switch cadence {
     case .lazy:
-      writeQueue.async { [weak self] in
-        self?.pushFrame(forceKeyFrame: true)
-      }
+      lazyTriggers?.signalKeyFrame()
     case .eager:
       break
     }
@@ -1348,50 +1367,109 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
 
   // MARK: - Cadence Loop
 
-  /// The `.eager` cadence loop: pushes frames at a fixed frame rate.
+  /// The frame push loop, shared by both cadences. It iterates a stimulus `AsyncSequence` of
+  /// `FrameTrigger`s and pushes a frame for each, so the loop reads as "for each trigger, push a
+  /// frame, record it". The stimulus is the only thing that differs between modes: `FrameCadence`
+  /// (the drift-corrected fixed-rate clock) for `.eager`, or `LazyFrameTriggers` (fed by
+  /// the damage/overlay callbacks) for `.lazy`. `stats` is provided for `.eager` (which has a frame
+  /// budget) and `nil` for `.lazy` (VFR has no fixed budget).
   ///
-  /// The loop reads as "for each frame tick, push a frame, record it". The two complicated concerns
-  /// are factored out: `FrameCadence` is the drift-corrected clock that suspends until the next
-  /// deadline (`Task.sleep`, replacing the former dedicated `Thread` blocked on `mach_wait_until`)
-  /// and `CadenceStats` accumulates the per-push duration statistics. Timing is still measured in
-  /// Mach ticks to preserve the original drift correction exactly; only the wait mechanism is a
-  /// suspending task (the macOS 12 deployment target rules out `ContinuousClock`).
+  /// Serialization: each push — and the stream-state mutation it does (`frameNumber`, `timeAtLastPush`,
+  /// the frame pusher's encoder state) — runs on the serial `writeQueue` (matching the framebuffer
+  /// consumer callbacks) and is awaited before the next trigger, so pushes never overlap and mutable
+  /// state stays confined to that queue, consistent with the class's `@unchecked Sendable` conformance.
   ///
-  /// Serialization: the actual `pushFrame` — and the stream-state mutation it does (`frameNumber`,
-  /// `timeAtLastPush`, the frame pusher's encoder state) — is dispatched onto the serial `writeQueue`
-  /// (which also runs the framebuffer consumer callbacks) and awaited before the next tick, so pushes
-  /// never overlap and all mutable state stays confined to `writeQueue`, consistent with the class's
-  /// `@unchecked Sendable` conformance.
-  ///
-  /// The loop ends when `stoppedFuture` stops running or the cadence `Task` is cancelled — the
-  /// `stopStreaming` teardown does both, and `deinit` cancels as a backstop.
-  private func runFramePushLoop(framesPerSecond: UInt) async {
-    let frameIntervalNanos = NSEC_PER_SEC / UInt64(framesPerSecond)
-    var stats = CadenceStats(frameIntervalNanos: frameIntervalNanos, logger: logger)
-    for await tick in FrameCadence(framesPerSecond: framesPerSecond, logger: logger) {
-      guard stoppedFuture.state == .running else { break }
-      let beforePush = mach_absolute_time()
-      await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
-        writeQueue.async { [self] in
-          pushFrame(forceKeyFrame: false)
-          continuation.resume()
-        }
+  /// The loop ends when `stoppedFuture` stops running, the stimulus finishes (the `.lazy` teardown
+  /// finishes the stream), or the task is cancelled — `stopStreaming`/`cadenceTeardown` do all three,
+  /// and `deinit` cancels as a backstop.
+  private func runFramePushLoop<Stimulus: AsyncSequence>(stimulus: Stimulus, stats: CadenceStats?) async
+  where Stimulus.Element == FrameTrigger {
+    var stats = stats
+    do {
+      // A generic `AsyncSequence` has a throwing `next()`; `FrameCadence` and `AsyncStream` are both
+      // non-throwing, so the catch is unreachable in practice and exists only to satisfy `for try await`.
+      for try await trigger in stimulus {
+        guard stoppedFuture.state == .running else { break }
+        let pushDurationMach = await pushOnWriteQueue(forceKeyFrame: trigger.forceKeyFrame)
+        stats?.record(pushDurationMach: pushDurationMach, overran: trigger.overran)
       }
-      stats.record(pushDurationMach: mach_absolute_time() - beforePush, overran: tick.overran)
+    } catch {
+      logger.log("Frame push loop stimulus failed: \(error)")
     }
+  }
+
+  /// Dispatch a single frame push onto the serial `writeQueue` and await its completion, returning the
+  /// push duration in Mach ticks (used for cadence statistics). Keeping the measurement here lets the
+  /// push loop hand the duration straight to `CadenceStats` without timing the push itself.
+  private func pushOnWriteQueue(forceKeyFrame: Bool) async -> UInt64 {
+    let beforePush = mach_absolute_time()
+    await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+      writeQueue.async { [self] in
+        pushFrame(forceKeyFrame: forceKeyFrame)
+        continuation.resume()
+      }
+    }
+    return mach_absolute_time() - beforePush
   }
 }
 
-// MARK: - FrameCadence
+// MARK: - FrameTrigger / FrameCadence / LazyFrameTriggers
 
-/// One tick of the eager cadence clock.
-struct FrameTick {
-  /// True when the previous push overshot its deadline, so this tick fired without sleeping.
+/// A stimulus to push one frame, produced by either cadence: the `FrameCadence` clock (eager) or
+/// `LazyFrameTriggers` (lazy, fed by damage/overlay callbacks). Modelling both as the same element
+/// lets a single push loop serve both modes.
+struct FrameTrigger {
+  /// Whether this push should force a keyframe — e.g. a `.lazy` overlay change, so consumers that
+  /// need a keyframe can decode it immediately. Cadence-clock ticks never force one.
+  let forceKeyFrame: Bool
+  /// True when the previous push overshot its deadline (eager cadence only — always false for VFR).
   let overran: Bool
 }
 
-/// A drift-corrected frame clock for `.eager` mode. Iterating it (`for await tick in …`) suspends
-/// until the next frame deadline and yields a `FrameTick`, so the push loop can read as just
+/// The `.lazy` (VFR) stimulus for the frame push loop: an `AsyncSequence` of `FrameTrigger`s poked by
+/// the framebuffer callbacks rather than a clock. `signalDamage()` (a new framebuffer rect) and
+/// `signalKeyFrame()` (an overlay change, which must be a decodable keyframe) each enqueue a trigger
+/// that the shared loop consumes. Owning the stream and its continuation here keeps that state off
+/// `FBSimulatorVideoStream` and its `writeQueue`, so the callbacks simply call a method.
+final class LazyFrameTriggers: AsyncSequence, Sendable {
+  typealias Element = FrameTrigger
+
+  private let stream: AsyncStream<FrameTrigger>
+  private let continuation: AsyncStream<FrameTrigger>.Continuation
+
+  init() {
+    // The `AsyncStream` builder hands back the continuation synchronously during init, so the IUO is
+    // always assigned before use. This is the pre-`makeStream` idiom (`makeStream` needs a newer
+    // deployment target than our macOS 12 floor).
+    // swiftlint:disable:next implicitly_unwrapped_optional
+    var continuation: AsyncStream<FrameTrigger>.Continuation!
+    self.stream = AsyncStream<FrameTrigger>(bufferingPolicy: .unbounded) { continuation = $0 }
+    self.continuation = continuation
+  }
+
+  /// Signal that the framebuffer changed — enqueue a normal (non-keyframe) push.
+  func signalDamage() {
+    continuation.yield(FrameTrigger(forceKeyFrame: false, overran: false))
+  }
+
+  /// Signal that the overlay changed — enqueue a keyframe push so consumers that need a keyframe can
+  /// decode the change immediately.
+  func signalKeyFrame() {
+    continuation.yield(FrameTrigger(forceKeyFrame: true, overran: false))
+  }
+
+  /// End the stream, completing the push loop's `for await`.
+  func finish() {
+    continuation.finish()
+  }
+
+  func makeAsyncIterator() -> AsyncStream<FrameTrigger>.Iterator {
+    stream.makeAsyncIterator()
+  }
+}
+
+/// A drift-corrected frame clock for `.eager` mode. Iterating it (`for await trigger in …`) suspends
+/// until the next frame deadline and yields a `FrameTrigger`, so the push loop can read as just
 /// "push each tick". The iterator owns all the timing — Mach-tick deadlines, the `Task.sleep` wait,
 /// drift correction, and the per-deadline overrun log — and ends (returns `nil`) when the
 /// surrounding `Task` is cancelled.
@@ -1401,7 +1479,7 @@ struct FrameTick {
 /// at the same moment and with the same content as before; only the attribution of the overrun
 /// *count* to a 5s stats window can shift by one push at a window boundary, which is immaterial.
 struct FrameCadence: AsyncSequence {
-  typealias Element = FrameTick
+  typealias Element = FrameTrigger
 
   let framesPerSecond: UInt
   let logger: any FBControlCoreLogger
@@ -1431,14 +1509,14 @@ struct FrameCadence: AsyncSequence {
       self.nextTargetTime = mach_absolute_time() + self.frameIntervalMach
     }
 
-    mutating func next() async -> FrameTick? {
+    mutating func next() async -> FrameTrigger? {
       if Task.isCancelled {
         return nil
       }
       // The first tick fires immediately: the original loop pushes once before its first sleep.
       if firstTickPending {
         firstTickPending = false
-        return FrameTick(overran: false)
+        return FrameTrigger(forceKeyFrame: false, overran: false)
       }
 
       let now = mach_absolute_time()
@@ -1458,7 +1536,7 @@ struct FrameCadence: AsyncSequence {
         logger.log(String(format: "Frame push exceeded budget by %.1f ms (budget: %.1f ms)", Double(overrunNanos) / 1e6, Double(frameIntervalNanos) / 1e6))
       }
       nextTargetTime += frameIntervalMach
-      return FrameTick(overran: overran)
+      return FrameTrigger(forceKeyFrame: false, overran: overran)
     }
   }
 }
