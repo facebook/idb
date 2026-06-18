@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import "FBTestManagerAPIMediator.h"
+#import "FBTestManagerAPIMediatorIDEInterface.h"
 
 #import <objc/runtime.h>
 
@@ -28,212 +28,45 @@
 #import "FBTestReporterAdapter.h"
 #import "XCTestBootstrapError.h"
 
-@interface FBTestManagerAPIMediator () <XCTestManager_IDEInterface, XCTMessagingChannel_RunnerToIDE>
+@interface FBTestManagerAPIMediatorIDEInterface () <XCTestManager_IDEInterface, XCTMessagingChannel_RunnerToIDE>
 
+@property (nonatomic, readonly, weak) FBTestManagerAPIMediator *mediator;
 @property (nonatomic, readonly, strong) FBTestManagerContext *context;
-@property (nonatomic, readonly, strong) id<FBiOSTarget, FBXCTestExtendedCommands, FBApplicationCommands> target;
-@property (nonatomic, readonly, strong) id<FBXCTestReporter> reporter;
 @property (nullable, nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
-
-@property (nonatomic, readonly, strong) dispatch_queue_t requestQueue;
 @property (nonatomic, readonly, strong) FBTestReporterAdapter *reporterAdapter;
-@property (nonatomic, readonly, strong) NSMutableDictionary<NSString *, id<FBLaunchedApplication>> *tokenToLaunchedAppMap;
 
 @end
 
-@implementation FBTestManagerAPIMediator
+@implementation FBTestManagerAPIMediatorIDEInterface
 
 #pragma mark - Initializers
 
-+ (FBFuture<NSNull *> *)connectAndRunUntilCompletionWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget, FBXCTestExtendedCommands, FBApplicationCommands>)target reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
-{
-  FBTestManagerAPIMediator *mediator = [[self alloc] initWithContext:context target:target reporter:reporter logger:logger];
-  return [mediator connectAndRunUntilCompletion];
-}
-
-- (instancetype)initWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget, FBXCTestExtendedCommands, FBApplicationCommands>)target reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithMediator:(FBTestManagerAPIMediator *)mediator context:(FBTestManagerContext *)context reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
+  _mediator = mediator;
   _context = context;
-  _target = target;
-  _reporter = reporter;
   _logger = logger;
-
-  _tokenToLaunchedAppMap = [NSMutableDictionary new];
-  _requestQueue = dispatch_queue_create("com.facebook.xctestboostrap.mediator", DISPATCH_QUEUE_PRIORITY_DEFAULT);
-
   _reporterAdapter = [FBTestReporterAdapter withReporter:reporter];
 
   return self;
 }
 
-#pragma mark - NSObject
+#pragma mark - Public
 
-- (NSString *)description
+- (FBFuture<NSNull *> *)runBundleToCompletionWithTarget:(id<FBiOSTarget, FBXCTestExtendedCommands, FBApplicationCommands>)target testHostApplication:(id<FBLaunchedApplication>)testHostApplication requestQueue:(dispatch_queue_t)requestQueue
 {
-  return [NSString stringWithFormat:
-          @"TestManager for (%@)",
-          self.context
-  ];
-}
-
-#pragma mark - Private
-
-static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
-
-- (FBFuture<NSNull *> *)terminateSpawnedProcesses
-{
-  NSArray<id<FBLaunchedApplication>> *appsToKill = [self.tokenToLaunchedAppMap allValues];
-  [self.tokenToLaunchedAppMap removeAllObjects];
-
-  if (appsToKill.count > 0) {
-    [self.logger log:[NSString stringWithFormat:@"Terminating processes spawned due to test bundle requests: %@", [FBCollectionInformation oneLineDescriptionFromArray:appsToKill]]];
-
-    NSMutableArray<FBFuture *> *futuresToWait = [NSMutableArray arrayWithCapacity:appsToKill.count];
-    for (id<FBLaunchedApplication> app in appsToKill) {
-      [futuresToWait addObject:[self.target killApplicationWithBundleID:app.bundleID]];
-    }
-    return [FBFuture futureWithFutures:futuresToWait.copy];
-  }
-
-  return FBFuture.empty;
-}
-
-- (FBFuture<NSNull *> *)connectAndRunUntilCompletion
-{
-  id<FBControlCoreLogger> logger = self.logger;
-  id<FBXCTestReporter> reporter = self.reporter;
-  dispatch_queue_t queue = self.requestQueue;
-  NSTimeInterval timeout = self.context.timeout <= 0 ? DefaultTestTimeout : self.context.timeout;
-
-  return [[[self
-            startAndRunApplicationTestHost]
-           onQueue:queue
-           pop:^(id<FBLaunchedApplication> launchedApplication) {
-             bool waitForDebugger = self.context.testHostLaunchConfiguration.waitForDebugger;
-             FBFuture *future = FBFuture.empty;
-             if (waitForDebugger) {
-               [reporter processWaitingForDebuggerWithProcessIdentifier:launchedApplication.processIdentifier];
-               future = [FBProcessFetcher waitForDebuggerToAttachAndContinueFor:launchedApplication.processIdentifier];
-             }
-
-             return [future onQueue:queue
-                               fmap:^(id _) {
-                                 return [self runUntilCompletion:launchedApplication logger:logger queue:queue timeout:timeout];
-                               }];
-           }]
-          onQueue:queue
-          chain:^(FBFuture<NSNull *> *future) {
-            [reporter processUnderTestDidExit];
-
-            NSError *error = future.error;
-            if (error) {
-              [logger log:[NSString stringWithFormat:@"Test Execution finished in error %@", error]];
-              [reporter didCrashDuringTest:error];
-            }
-            return future;
-          }];
-}
-
-- (FBFuture<NSNull *> *)runUntilCompletion:(id<FBLaunchedApplication>)launchedApplication logger:(id<FBControlCoreLogger>)logger queue:(dispatch_queue_t)queue timeout:(NSTimeInterval)timeout
-{
-  return [[[FBTestBundleConnection
-            connectAndRunBundleToCompletionWithContext:self.context
-            target:self.target
-            interface:self
-            testHostApplication:launchedApplication
-            requestQueue:self.requestQueue
-            logger:logger]
-           onQueue:queue
-           fmap:^(NSNull *_) {
-             // The bundle has disconnected at this point, but we also need to terminate any processes
-             // spawned through `_XCT_launchProcessWithPath`and wait for the host application to terminate
-             return [[[self terminateSpawnedProcesses] chainReplace:launchedApplication.applicationTerminated] cancel];
-           }]
-          onQueue:queue
-          timeout:timeout
-          handler:^{
-            // The timeout is applied to the lifecycle of the entire application.
-            [logger log:[NSString stringWithFormat:@"Timed out after %f, attempting stack sample", timeout]];
-            return [[[FBProcessFetcher
-                      performSampleStackshotForProcessIdentifier:launchedApplication.processIdentifier
-                      queue:queue]
-                     onQueue:queue
-                     fmap:^FBFuture<id> *(NSString *stackshot) {
-                       return (FBFuture *)[[FBXCTestError
-                                            describe:[NSString stringWithFormat:@"Waited %f seconds for process %d to terminate, but the host application process stalled: %@", timeout, launchedApplication.processIdentifier, stackshot]]
-                                           failFuture];
-                     }]
-                    onQueue:queue
-                    chain:^FBFuture *(FBFuture *future) {
-                      return [[self terminateSpawnedProcesses] chainReplace:future];
-                    }];
-          }];
-}
-
-- (FBFutureContext<id<FBLaunchedApplication>> *)startAndRunApplicationTestHost
-{
-  return [[self.target
-           launchApplication:self.context.testHostLaunchConfiguration]
-          onQueue:self.target.workQueue
-          contextualTeardown:^(id<FBLaunchedApplication> launchedApplication, FBFutureState _) {
-            return [launchedApplication.applicationTerminated cancel];
-          }];
-}
-
-- (FBFuture<id<FBLaunchedApplication>> *)installAndLaunchApplication:(FBApplicationLaunchConfiguration *)configuration atPath:(NSString *)path
-{
-  if (!path) {
-    return (FBFuture *)[[FBControlCoreError
-                         describe:[NSString stringWithFormat:@"Could not install App-Under-Test %@ as it is not installed and no path was provided", configuration]]
-                        failFuture];
-  }
-  return [[[[self
-             isApplicationInstalledWithBundleID:configuration.bundleID]
-            onQueue:self.target.workQueue
-            fmap:^FBFuture<NSNull *> *(NSNumber *isInstalled) {
-              if (!isInstalled.boolValue) {
-                return FBFuture.empty;
-              }
-              return [self.target uninstallApplicationWithBundleID:configuration.bundleID];
-            }]
-           onQueue:self.target.workQueue
-           fmap:^(NSNull *_) {
-             return [self.target installApplicationWithPath:path];
-           }]
-          onQueue:self.target.workQueue
-          fmap:^(NSNull *_) {
-            return [self.target launchApplication:configuration];
-          }];
-}
-
-- (FBFuture<id<FBLaunchedApplication>> *)launchApplication:(FBApplicationLaunchConfiguration *)configuration atPath:(NSString *)path
-{
-  // Check if path points to installed app
-  return [[self.target
-           installedApplicationWithBundleID:configuration.bundleID]
-          onQueue:self.target.workQueue
-          chain:^(FBFuture<FBInstalledApplication *> *future) {
-            FBInstalledApplication *app = future.result;
-            if (app && [app.bundle.path isEqualToString:path]) {
-              return [self.target launchApplication:configuration];
-            }
-            return [self installAndLaunchApplication:configuration atPath:path];
-          }];
-}
-
-- (FBFuture<NSNumber *> *)isApplicationInstalledWithBundleID:(NSString *)bundleID
-{
-  return [[self.target
-           installedApplicationWithBundleID:bundleID]
-          onQueue:self.target.asyncQueue
-          chain:^(FBFuture<FBInstalledApplication *> *future) {
-            return [FBFuture futureWithResult:(future.state == FBFutureStateDone ? @YES : @NO)];
-          }];
+  return [FBTestBundleConnection
+          connectAndRunBundleToCompletionWithContext:self.context
+          target:target
+          interface:self
+          testHostApplication:testHostApplication
+          requestQueue:requestQueue
+          logger:self.logger];
 }
 
 #pragma mark - XCTestManager_IDEInterface protocol
@@ -245,41 +78,17 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
 /// This `token` will be used later on for further requests ralated to this process
 - (id)_XCT_launchProcessWithPath:(NSString *)path bundleID:(NSString *)bundleID arguments:(NSArray *)arguments environmentVariables:(NSDictionary *)environment
 {
-  [self.logger log:[NSString stringWithFormat:@"Test process requested process launch with bundleID %@", bundleID]];
-  NSMutableDictionary<NSString *, NSString *> *targetEnvironment = @{}.mutableCopy;
-  [targetEnvironment addEntriesFromDictionary:self.context.testedApplicationAdditionalEnvironment];
-  [targetEnvironment addEntriesFromDictionary:environment];
-
-  FBProcessIO *processIO = [[FBProcessIO alloc]
-                            initWithStdIn:nil
-                            stdOut:[FBProcessOutput outputForLogger:self.logger]
-                            stdErr:[FBProcessOutput outputForLogger:self.logger]];
-
   DTXRemoteInvocationReceipt *receipt = [objc_lookUpClass("DTXRemoteInvocationReceipt") new];
-  FBApplicationLaunchConfiguration *launch = [[FBApplicationLaunchConfiguration alloc]
-                                              initWithBundleID:bundleID
-                                              bundleName:bundleID
-                                              arguments:arguments
-                                              environment:targetEnvironment
-                                              waitForDebugger:NO
-                                              io:processIO
-                                              launchMode:FBApplicationLaunchModeFailIfRunning];
   id token = @(receipt.hash);
-
-  [[self
-    launchApplication:launch
-    atPath:path]
-   onQueue:self.target.workQueue
-   notifyOfCompletion:^(FBFuture<id<FBLaunchedApplication>> *future) {
-     NSError *innerError = future.error;
-     if (innerError) {
-       [receipt invokeCompletionWithReturnValue:nil error:innerError];
-     } else {
-       self.tokenToLaunchedAppMap[token] = future.result;
-       [receipt invokeCompletionWithReturnValue:token error:nil];
-     }
+  [self.mediator
+   launchProcessForUITestWithToken:token
+   path:path
+   bundleID:bundleID
+   arguments:arguments
+   environment:environment
+   completion:^(NSError *error) {
+     [receipt invokeCompletionWithReturnValue:(error ? nil : token) error:error];
    }];
-
   return receipt;
 }
 
@@ -308,30 +117,12 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
 /// This method doesn't seem to be called when all the tests finish execution.
 - (id)_XCT_terminateProcess:(id)token
 {
-  [self.logger log:[NSString stringWithFormat:@"Test process requested process termination with token %@", token]];
-  NSError *error;
   DTXRemoteInvocationReceipt *receipt = [objc_lookUpClass("DTXRemoteInvocationReceipt") new];
-  if (!token) {
-    error = [NSError errorWithDomain:@"XCTestIDEInterfaceErrorDomain"
-                                code:0x1
-                            userInfo:@{NSLocalizedDescriptionKey : @"API violation: token was nil."}];
-  } else {
-    NSString *bundleID = self.tokenToLaunchedAppMap[token].bundleID;
-    if (!bundleID) {
-      error = [NSError errorWithDomain:@"XCTestIDEInterfaceErrorDomain"
-                                  code:0x2
-                              userInfo:@{NSLocalizedDescriptionKey : @"Invalid or expired token: no matching operation was found."}];
-    } else {
-      [[self.target killApplicationWithBundleID:bundleID]
-       onQueue:self.target.workQueue
-       notifyOfCompletion:^(FBFuture<NSNull *> *future) {
-         [receipt invokeCompletionWithReturnValue:token error:future.error];
-       }];
-    }
-  }
-  if (error) {
-    [self.logger log:[NSString stringWithFormat:@"Failed to kill process with token %@ dure to %@", token, error]];
-  }
+  [self.mediator
+   terminateProcessForToken:token
+   completion:^(NSError *error) {
+     [receipt invokeCompletionWithReturnValue:(error ? nil : token) error:error];
+   }];
   return receipt;
 }
 

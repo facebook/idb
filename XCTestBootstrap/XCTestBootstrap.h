@@ -10,7 +10,7 @@
 #import <XCTestBootstrap/FBCodeCoverageConfiguration.h>
 #import <XCTestBootstrap/FBTestBundleConnection.h>
 #import <XCTestBootstrap/FBTestConfiguration.h>
-#import <XCTestBootstrap/FBTestManagerAPIMediator.h>
+#import <XCTestBootstrap/FBTestManagerAPIMediatorIDEInterface.h>
 #import <XCTestBootstrap/FBTestManagerResultSummary.h>
 #import <XCTestBootstrap/FBXCTestConfiguration.h>
 #import <XCTestBootstrap/XCTestBootstrapError.h>

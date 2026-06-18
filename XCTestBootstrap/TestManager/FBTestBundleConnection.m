@@ -30,7 +30,6 @@
 #import <XCTestPrivate/XCTMessagingChannel_RunnerToIDE-Protocol.h>
 
 #import "FBTestConfiguration.h"
-#import "FBTestManagerAPIMediator.h"
 #import "XCTestBootstrapError.h"
 
 static const NSInteger FBProtocolVersion = 36;
