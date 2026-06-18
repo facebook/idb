@@ -45,10 +45,10 @@ extension XCTestCase {
     XCTAssertEqual(simulator.state, .shutdown)
   }
 
-  func assertSimulator(_ simulator: FBSimulator, isRunningApplicationFromConfiguration launchConfiguration: FBApplicationLaunchConfiguration) {
+  func assertSimulator(_ simulator: FBSimulator, isRunningApplicationFromConfiguration launchConfiguration: FBApplicationLaunchConfiguration) async {
     do {
-      let processID = try simulator.processID(withBundleID: launchConfiguration.bundleID).await()
-      XCTAssertNotNil(processID)
+      let processID = try await simulator.processID(forBundleID: launchConfiguration.bundleID)
+      XCTAssertGreaterThan(processID, 0)
     } catch {
       XCTFail("Failed to get process ID: \(error)")
     }
@@ -75,10 +75,10 @@ extension FBSimulatorControlTestCase {
     return assertObtainsBootedSimulator(with: simulatorConfiguration, bootConfiguration: bootConfiguration)
   }
 
-  func assertObtainsBootedSimulator(withInstalledApplication application: FBBundleDescriptor) -> FBSimulator? {
+  func assertObtainsBootedSimulator(withInstalledApplication application: FBBundleDescriptor) async -> FBSimulator? {
     guard let simulator = assertObtainsBootedSimulator() else { return nil }
     do {
-      try simulator.installApplication(withPath: application.path).await()
+      _ = try await simulator.installApplication(atPath: application.path)
     } catch {
       XCTFail("Failed to install application: \(error)")
       return nil
@@ -97,28 +97,28 @@ extension FBSimulatorControlTestCase {
     return simulator
   }
 
-  func assertSimulator(_ simulator: FBSimulator, installs application: FBBundleDescriptor) -> FBSimulator {
+  func assertSimulator(_ simulator: FBSimulator, installs application: FBBundleDescriptor) async -> FBSimulator {
     do {
-      try simulator.installApplication(withPath: application.path).await()
+      _ = try await simulator.installApplication(atPath: application.path)
     } catch {
       XCTFail("Failed to install application: \(error)")
     }
     return simulator
   }
 
-  func assertSimulator(_ simulator: FBSimulator, launches configuration: FBApplicationLaunchConfiguration) -> FBSimulator {
+  func assertSimulator(_ simulator: FBSimulator, launches configuration: FBApplicationLaunchConfiguration) async -> FBSimulator {
     do {
-      try simulator.launchApplication(configuration).await()
+      _ = try await simulator.launchApplication(configuration)
     } catch {
       XCTFail("Failed to launch application: \(error)")
     }
 
-    assertSimulator(simulator, isRunningApplicationFromConfiguration: configuration)
+    await assertSimulator(simulator, isRunningApplicationFromConfiguration: configuration)
     assertSimulatorBooted(simulator)
 
     // Second launch should fail
     do {
-      try simulator.launchApplication(configuration).await()
+      _ = try await simulator.launchApplication(configuration)
       XCTFail("Second launch should have failed")
     } catch {
       // Expected
@@ -127,8 +127,8 @@ extension FBSimulatorControlTestCase {
     return simulator
   }
 
-  func assertSimulator(withConfiguration simulatorConfiguration: FBSimulatorConfiguration, boots bootConfiguration: FBSimulatorBootConfiguration, thenLaunchesApplication launchConfiguration: FBApplicationLaunchConfiguration) -> FBSimulator? {
+  func assertSimulator(withConfiguration simulatorConfiguration: FBSimulatorConfiguration, boots bootConfiguration: FBSimulatorBootConfiguration, thenLaunchesApplication launchConfiguration: FBApplicationLaunchConfiguration) async -> FBSimulator? {
     guard let simulator = assertObtainsBootedSimulator(with: simulatorConfiguration, bootConfiguration: bootConfiguration) else { return nil }
-    return assertSimulator(simulator, launches: launchConfiguration)
+    return await assertSimulator(simulator, launches: launchConfiguration)
   }
 }

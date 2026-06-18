@@ -98,52 +98,6 @@ public class FBDeviceApplicationCommands: NSObject, FBiOSTargetCommand {
     super.init()
   }
 
-  // MARK: FBApplicationCommands (legacy FBFuture entry points)
-
-  @objc public func installApplication(withPath path: String) -> FBFuture<FBInstalledApplication> {
-    fbFutureFromAsync { [self] in
-      try await installApplicationAsync(withPath: path)
-    }
-  }
-
-  @objc public func uninstallApplication(withBundleID bundleID: String) -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      try await uninstallApplicationAsync(withBundleID: bundleID)
-      return NSNull()
-    }
-  }
-
-  @objc public func installedApplications() -> FBFuture<NSArray> {
-    fbFutureFromAsync { [self] in
-      try await installedApplicationsAsync() as NSArray
-    }
-  }
-
-  @objc public func installedApplication(withBundleID bundleID: String) -> FBFuture<FBInstalledApplication> {
-    fbFutureFromAsync { [self] in
-      try await installedApplicationAsync(withBundleID: bundleID)
-    }
-  }
-
-  @objc public func processID(withBundleID bundleID: String) -> FBFuture<NSNumber> {
-    fbFutureFromAsync { [self] in
-      try await processIDAsync(withBundleID: bundleID) as NSNumber
-    }
-  }
-
-  @objc public func killApplication(withBundleID bundleID: String) -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      try await killApplicationAsync(withBundleID: bundleID)
-      return NSNull()
-    }
-  }
-
-  @objc public func launchApplication(_ configuration: FBApplicationLaunchConfiguration) -> FBFuture<any FBLaunchedApplication> {
-    fbFutureFromAsync { [self] in
-      try await launchApplicationAsync(configuration)
-    }
-  }
-
   // MARK: - Async
 
   fileprivate func installApplicationAsync(withPath path: String) async throws -> FBInstalledApplication {
@@ -439,72 +393,5 @@ extension FBDevice: AsyncApplicationCommands {
   public func processID(forBundleID bundleID: String) async throws -> pid_t {
     let pid = try await applicationCommands().processIDAsync(withBundleID: bundleID)
     return pid.int32Value
-  }
-}
-
-// MARK: - FBDevice+FBApplicationCommands
-
-extension FBDevice: FBApplicationCommands {
-
-  @objc(installApplicationWithPath:)
-  public func installApplication(withPath path: String) -> FBFuture<FBInstalledApplication> {
-    do {
-      return try applicationCommands().installApplication(withPath: path)
-    } catch {
-      return FBFuture(error: error)
-    }
-  }
-
-  @objc(uninstallApplicationWithBundleID:)
-  public func uninstallApplication(withBundleID bundleID: String) -> FBFuture<NSNull> {
-    do {
-      return try applicationCommands().uninstallApplication(withBundleID: bundleID)
-    } catch {
-      return FBFuture(error: error)
-    }
-  }
-
-  @objc(launchApplication:)
-  public func launchApplication(_ configuration: FBApplicationLaunchConfiguration) -> FBFuture<any FBLaunchedApplication> {
-    do {
-      return try applicationCommands().launchApplication(configuration)
-    } catch {
-      return FBFuture(error: error)
-    }
-  }
-
-  @objc(killApplicationWithBundleID:)
-  public func killApplication(withBundleID bundleID: String) -> FBFuture<NSNull> {
-    do {
-      return try applicationCommands().killApplication(withBundleID: bundleID)
-    } catch {
-      return FBFuture(error: error)
-    }
-  }
-
-  @objc public func installedApplications() -> FBFuture<NSArray> {
-    do {
-      return try applicationCommands().installedApplications()
-    } catch {
-      return FBFuture(error: error)
-    }
-  }
-
-  @objc(installedApplicationWithBundleID:)
-  public func installedApplication(withBundleID bundleID: String) -> FBFuture<FBInstalledApplication> {
-    do {
-      return try applicationCommands().installedApplication(withBundleID: bundleID)
-    } catch {
-      return FBFuture(error: error)
-    }
-  }
-
-  @objc(processIDWithBundleID:)
-  public func processID(withBundleID bundleID: String) -> FBFuture<NSNumber> {
-    do {
-      return try applicationCommands().processID(withBundleID: bundleID)
-    } catch {
-      return FBFuture(error: error)
-    }
   }
 }

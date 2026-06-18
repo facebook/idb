@@ -40,11 +40,9 @@ public final class FBSimulatorFileCommands: NSObject, FBiOSTargetCommand {
           guard let self else {
             return FBFuture(error: FBControlCoreError.describe("FBSimulatorFileCommands deallocated").build())
           }
-          do {
-            let containedFile = try self.containedFile(forApplication: bundleID)
-            return FBFuture(result: FBFileContainer.fileContainer(forContainedFile: containedFile as AnyObject) as AnyObject)
-          } catch {
-            return FBFuture(error: error)
+          return fbFutureFromAsync {
+            let containedFile = try await self.containedFile(forApplication: bundleID)
+            return FBFileContainer.fileContainer(forContainedFile: containedFile as AnyObject) as AnyObject
           }
         }
       )
@@ -162,8 +160,8 @@ public final class FBSimulatorFileCommands: NSObject, FBiOSTargetCommand {
 
   // MARK: - Contained file accessors
 
-  private func containedFile(forApplication bundleID: String) throws -> any FBContainedFile {
-    let installedApplication: FBInstalledApplication = try simulator.installedApplication(withBundleID: bundleID).await()
+  private func containedFile(forApplication bundleID: String) async throws -> any FBContainedFile {
+    let installedApplication = try await simulator.installedApplication(bundleID: bundleID)
     guard let container = installedApplication.dataContainer else {
       throw FBSimulatorError.describe("No data container present for application \(installedApplication)").build()
     }

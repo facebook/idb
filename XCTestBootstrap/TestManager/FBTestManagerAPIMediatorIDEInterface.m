@@ -58,7 +58,7 @@
 
 #pragma mark - Public
 
-- (FBFuture<NSNull *> *)runBundleToCompletionWithTarget:(id<FBiOSTarget, FBXCTestExtendedCommands, FBApplicationCommands>)target testHostApplication:(id<FBLaunchedApplication>)testHostApplication requestQueue:(dispatch_queue_t)requestQueue
+- (FBFuture<NSNull *> *)runBundleToCompletionWithTarget:(id<FBiOSTarget, FBXCTestExtendedCommands>)target testHostApplication:(id<FBLaunchedApplication>)testHostApplication requestQueue:(dispatch_queue_t)requestQueue
 {
   return [FBTestBundleConnection
           connectAndRunBundleToCompletionWithContext:self.context

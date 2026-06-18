@@ -26,7 +26,7 @@ public final class FBTestManagerAPIMediator: NSObject, @unchecked Sendable {
   // MARK: - Properties
 
   private let context: FBTestManagerContext
-  private let target: any FBiOSTarget & FBXCTestExtendedCommands & FBApplicationCommands
+  private let target: any FBiOSTarget & FBXCTestExtendedCommands
   private let asyncTarget: any AsyncApplicationCommands
   private let reporter: FBXCTestReporter
   private let logger: FBControlCoreLogger
@@ -46,7 +46,7 @@ public final class FBTestManagerAPIMediator: NSObject, @unchecked Sendable {
    */
   public static func connectAndRunUntilCompletion(
     with context: FBTestManagerContext,
-    target: any FBiOSTarget & FBXCTestExtendedCommands & FBApplicationCommands,
+    target: any FBiOSTarget & FBXCTestExtendedCommands,
     reporter: FBXCTestReporter,
     logger: FBControlCoreLogger
   ) -> FBFuture<NSNull> {
@@ -59,7 +59,7 @@ public final class FBTestManagerAPIMediator: NSObject, @unchecked Sendable {
 
   private init(
     context: FBTestManagerContext,
-    target: any FBiOSTarget & FBXCTestExtendedCommands & FBApplicationCommands,
+    target: any FBiOSTarget & FBXCTestExtendedCommands,
     reporter: FBXCTestReporter,
     logger: FBControlCoreLogger
   ) {

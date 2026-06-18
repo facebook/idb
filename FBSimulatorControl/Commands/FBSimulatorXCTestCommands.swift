@@ -205,7 +205,7 @@ public final class FBSimulatorXCTestCommands: NSObject, FBiOSTargetCommand {
 
     try await bridgeFBFutureVoid(
       FBManagedTestRunStrategy.runToCompletion(
-        withTarget: simulator as any FBiOSTarget & FBXCTestExtendedCommands & FBApplicationCommands,
+        withTarget: simulator as any FBiOSTarget & FBXCTestExtendedCommands,
         configuration: testLaunchConfiguration,
         codesign: FBControlCoreGlobalConfiguration.confirmCodesignaturesAreValid
           ? FBCodesignProvider.codeSignCommand(withIdentityName: "-", logger: simulator.logger)

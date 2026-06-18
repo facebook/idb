@@ -12,7 +12,6 @@
 @class FBTestManagerAPIMediator;
 @class FBTestManagerContext;
 
-@protocol FBApplicationCommands;
 @protocol FBControlCoreLogger;
 @protocol FBLaunchedApplication;
 @protocol FBXCTestExtendedCommands;
@@ -57,7 +56,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param requestQueue the queue for asynchronous delivery.
  @return a Future that resolves when the test plan has completed.
  */
-- (FBFuture<NSNull *> *)runBundleToCompletionWithTarget:(id<FBiOSTarget, FBXCTestExtendedCommands, FBApplicationCommands>)target testHostApplication:(id<FBLaunchedApplication>)testHostApplication requestQueue:(dispatch_queue_t)requestQueue;
+- (FBFuture<NSNull *> *)runBundleToCompletionWithTarget:(id<FBiOSTarget, FBXCTestExtendedCommands>)target testHostApplication:(id<FBLaunchedApplication>)testHostApplication requestQueue:(dispatch_queue_t)requestQueue;
 
 @end
 
