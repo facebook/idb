@@ -47,7 +47,8 @@ static NSTimeInterval const CrashCheckWaitLimit = 120;  // Time to wait for cras
 @interface FBTestBundleConnection () <XCTestManager_IDEInterface, XCTMessagingChannel_DaemonToIDE, XCTMessagingChannel_RunnerToIDE>
 
 @property (nonatomic, readonly, strong) FBTestManagerContext *context;
-@property (nonatomic, readonly, strong) id<FBiOSTarget, FBXCTestExtendedCommands> target;
+@property (nonatomic, readonly, strong) id<FBiOSTarget> target;
+@property (nonatomic, readonly, assign) int testManagerdSocket;
 @property (nonatomic, readonly, strong) id<XCTestManager_IDEInterface, XCTMessagingChannel_RunnerToIDE, NSObject> interface;
 @property (nonatomic, readonly, strong) id<FBLaunchedApplication> testHostApplication;
 @property (nonatomic, readonly, strong) dispatch_queue_t requestQueue;
@@ -85,7 +86,7 @@ static NSTimeInterval const CrashCheckWaitLimit = 120;  // Time to wait for cras
   return _clientProcessDisplayPath;
 }
 
-- (instancetype)initWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget, FBXCTestExtendedCommands>)target interface:(id<XCTestManager_IDEInterface, XCTMessagingChannel_RunnerToIDE, NSObject>)interface testHostApplication:(id<FBLaunchedApplication>)testHostApplication requestQueue:(dispatch_queue_t)requestQueue logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target socket:(int)socket interface:(id<XCTestManager_IDEInterface, XCTMessagingChannel_RunnerToIDE, NSObject>)interface testHostApplication:(id<FBLaunchedApplication>)testHostApplication requestQueue:(dispatch_queue_t)requestQueue logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -94,6 +95,7 @@ static NSTimeInterval const CrashCheckWaitLimit = 120;  // Time to wait for cras
 
   _context = context;
   _target = target;
+  _testManagerdSocket = socket;
   _interface = interface;
   _testHostApplication = testHostApplication;
   _requestQueue = requestQueue;
@@ -129,9 +131,15 @@ static NSTimeInterval const CrashCheckWaitLimit = 120;  // Time to wait for cras
 
 #pragma mark Public
 
-+ (FBFuture<NSNull *> *)connectAndRunBundleToCompletionWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget, FBXCTestExtendedCommands>)target interface:(id<XCTestManager_IDEInterface, XCTMessagingChannel_RunnerToIDE, NSObject>)interface testHostApplication:(id<FBLaunchedApplication>)testHostApplication requestQueue:(dispatch_queue_t)requestQueue logger:(id<FBControlCoreLogger>)logger
++ (FBFuture<NSNull *> *)connectAndRunBundleToCompletionWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target socket:(int)socket interface:(id<XCTestManager_IDEInterface, XCTMessagingChannel_RunnerToIDE, NSObject>)interface testHostApplication:(id<FBLaunchedApplication>)testHostApplication requestQueue:(dispatch_queue_t)requestQueue logger:(id<FBControlCoreLogger>)logger
 {
-  FBTestBundleConnection *connection = [[self alloc] initWithContext:context target:target interface:interface testHostApplication:testHostApplication requestQueue:requestQueue logger:logger];
+  FBTestBundleConnection *connection = [[self alloc] initWithContext:context
+                                                              target:target
+                                                              socket:socket
+                                                           interface:interface
+                                                 testHostApplication:testHostApplication
+                                                        requestQueue:requestQueue
+                                                              logger:logger];
   return [connection connectAndRunToCompletion];
 }
 
@@ -194,8 +202,10 @@ static NSTimeInterval const CrashCheckWaitLimit = 120;  // Time to wait for cras
   __block id<XCTestDriverInterface> testBundleProxy;
   __block DTXConnection *testBundleConnection;
 
-  return [[[[[self
-              startTestmanagerdConnection]
+  return [[[[[FBTestBundleConnection
+              connectionWithSocket:self.testManagerdSocket
+              queue:self.requestQueue
+              logger:self.logger]
              onQueue:self.requestQueue
              pend:^(DTXConnection *connection) {
                [connection registerDisconnectHandler:^{
@@ -223,19 +233,6 @@ static NSTimeInterval const CrashCheckWaitLimit = 120;  // Time to wait for cras
             [self.logger log:[NSString stringWithFormat:@"Starting Execution of the test plan w/ version %ld", FBProtocolVersion]];
             [testBundleProxy _IDE_startExecutingTestPlanWithProtocolVersion:@(FBProtocolVersion)];
             return self.bundleDisconnectedSuccessfully;
-          }];
-}
-
-- (FBFutureContext<DTXConnection *> *)startTestmanagerdConnection
-{
-  id<FBControlCoreLogger> logger = self.logger;
-  dispatch_queue_t queue = self.requestQueue;
-  [logger log:@"Starting a fresh testmanagerd connection"];
-  return [[self.target
-           transportForTestManagerService]
-          onQueue:queue
-          push:^(NSNumber *socket) {
-            return [FBTestBundleConnection connectionWithSocket:socket.intValue queue:queue logger:logger];
           }];
 }
 

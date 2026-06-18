@@ -32,20 +32,6 @@ public class FBDeviceXCTestCommands: NSObject, FBiOSTargetCommand {
     super.init()
   }
 
-  // MARK: FBXCTestCommands (legacy FBFuture entry point)
-
-  @objc(runTestWithLaunchConfiguration:reporter:logger:)
-  public func runTest(
-    withLaunchConfiguration testLaunchConfiguration: FBTestLaunchConfiguration,
-    reporter: AnyObject,
-    logger: any FBControlCoreLogger
-  ) -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      try await runTestAsync(withLaunchConfiguration: testLaunchConfiguration, reporter: reporter, logger: logger)
-      return NSNull()
-    }
-  }
-
   // MARK: - Async
 
   fileprivate func runTestAsync(

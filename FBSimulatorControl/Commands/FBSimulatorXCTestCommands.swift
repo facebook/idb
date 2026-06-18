@@ -35,15 +35,7 @@ public final class FBSimulatorXCTestCommands: NSObject, FBiOSTargetCommand {
     super.init()
   }
 
-  // MARK: - FBXCTestCommands (legacy FBFuture entry points)
-
-  @objc(runTestWithLaunchConfiguration:reporter:logger:)
-  public func runTest(withLaunchConfiguration testLaunchConfiguration: FBTestLaunchConfiguration, reporter: AnyObject, logger: any FBControlCoreLogger) -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      try await runTestAsync(launchConfiguration: testLaunchConfiguration, reporter: reporter, logger: logger)
-      return NSNull()
-    }
-  }
+  // MARK: - testmanagerd transport (FBFutureContext engine, consumed by the ObjC test bundle connection)
 
   // FBFutureContext APIs cannot be expressed natively in async/await producer
   // form (only the consumer side `withFBFutureContext` exists). Keep the
@@ -106,22 +98,6 @@ public final class FBSimulatorXCTestCommands: NSObject, FBiOSTargetCommand {
           close(Int32((socketNumber as! NSNumber).intValue))
           return FBFuture<NSNull>.empty()
         })) as! FBFutureContext<NSNumber>
-  }
-
-  // MARK: - FBXCTestExtendedCommands (legacy FBFuture entry points)
-
-  @objc(listTestsForBundleAtPath:timeout:withAppAtPath:)
-  public func listTests(forBundleAtPath bundlePath: String, timeout: TimeInterval, withAppAtPath appPath: String?) -> FBFuture<NSArray> {
-    fbFutureFromAsync { [self] in
-      try await listTestsAsync(forBundleAtPath: bundlePath, timeout: timeout, withAppAtPath: appPath) as NSArray
-    }
-  }
-
-  @objc
-  public func extendedTestShim() -> FBFuture<NSString> {
-    fbFutureFromAsync { [self] in
-      try await extendedTestShimAsync() as NSString
-    }
   }
 
   @objc
@@ -205,7 +181,7 @@ public final class FBSimulatorXCTestCommands: NSObject, FBiOSTargetCommand {
 
     try await bridgeFBFutureVoid(
       FBManagedTestRunStrategy.runToCompletion(
-        withTarget: simulator as any FBiOSTarget & FBXCTestExtendedCommands,
+        withTarget: simulator as any FBiOSTarget,
         configuration: testLaunchConfiguration,
         codesign: FBControlCoreGlobalConfiguration.confirmCodesignaturesAreValid
           ? FBCodesignProvider.codeSignCommand(withIdentityName: "-", logger: simulator.logger)
@@ -305,46 +281,6 @@ extension FBSimulator: AsyncXCTestExtendedCommands {
       return try xctestExtendedCommands().xctestPath
     } catch {
       return ""
-    }
-  }
-}
-
-// MARK: - FBSimulator+FBXCTestExtendedCommands
-
-extension FBSimulator: FBXCTestExtendedCommands {
-
-  @objc(runTestWithLaunchConfiguration:reporter:logger:)
-  public func runTest(withLaunchConfiguration testLaunchConfiguration: FBTestLaunchConfiguration, reporter: AnyObject, logger: any FBControlCoreLogger) -> FBFuture<NSNull> {
-    do {
-      return try xctestExtendedCommands().runTest(withLaunchConfiguration: testLaunchConfiguration, reporter: reporter, logger: logger)
-    } catch {
-      return FBFuture(error: error)
-    }
-  }
-
-  @objc(listTestsForBundleAtPath:timeout:withAppAtPath:)
-  public func listTests(forBundleAtPath bundlePath: String, timeout: TimeInterval, withAppAtPath appPath: String?) -> FBFuture<NSArray> {
-    do {
-      return try xctestExtendedCommands().listTests(forBundleAtPath: bundlePath, timeout: timeout, withAppAtPath: appPath)
-    } catch {
-      return FBFuture(error: error)
-    }
-  }
-
-  @objc public func extendedTestShim() -> FBFuture<NSString> {
-    do {
-      return try xctestExtendedCommands().extendedTestShim()
-    } catch {
-      return FBFuture(error: error)
-    }
-  }
-
-  @objc(transportForTestManagerService)
-  public func transportForTestManagerService() -> FBFutureContext<NSNumber> {
-    do {
-      return try xctestExtendedCommands().transportForTestManagerService()
-    } catch {
-      return FBFutureContext(error: error)
     }
   }
 }

@@ -26,8 +26,9 @@ public final class FBTestManagerAPIMediator: NSObject, @unchecked Sendable {
   // MARK: - Properties
 
   private let context: FBTestManagerContext
-  private let target: any FBiOSTarget & FBXCTestExtendedCommands
+  private let target: any FBiOSTarget
   private let asyncTarget: any AsyncApplicationCommands
+  private let asyncXCTestTarget: any AsyncXCTestExtendedCommands
   private let reporter: FBXCTestReporter
   private let logger: FBControlCoreLogger
   private let requestQueue: DispatchQueue
@@ -46,7 +47,7 @@ public final class FBTestManagerAPIMediator: NSObject, @unchecked Sendable {
    */
   public static func connectAndRunUntilCompletion(
     with context: FBTestManagerContext,
-    target: any FBiOSTarget & FBXCTestExtendedCommands,
+    target: any FBiOSTarget,
     reporter: FBXCTestReporter,
     logger: FBControlCoreLogger
   ) -> FBFuture<NSNull> {
@@ -59,7 +60,7 @@ public final class FBTestManagerAPIMediator: NSObject, @unchecked Sendable {
 
   private init(
     context: FBTestManagerContext,
-    target: any FBiOSTarget & FBXCTestExtendedCommands,
+    target: any FBiOSTarget,
     reporter: FBXCTestReporter,
     logger: FBControlCoreLogger
   ) {
@@ -69,6 +70,8 @@ public final class FBTestManagerAPIMediator: NSObject, @unchecked Sendable {
     // the legacy FBApplicationCommands declared in this type's signature.
     // swiftlint:disable:next force_cast
     self.asyncTarget = target as! any AsyncApplicationCommands
+    // swiftlint:disable:next force_cast
+    self.asyncXCTestTarget = target as! any AsyncXCTestExtendedCommands
     self.reporter = reporter
     self.logger = logger
     self.requestQueue = DispatchQueue(label: "com.facebook.xctestboostrap.mediator")
@@ -108,7 +111,12 @@ public final class FBTestManagerAPIMediator: NSObject, @unchecked Sendable {
 
   private func runUntilCompletion(launchedApplication: FBLaunchedApplication, timeout: TimeInterval) async throws {
     let work: FBFuture<AnyObject> = fbFutureFromAsync { () -> AnyObject in
-      try await bridgeFBFutureVoid(self.ideInterface.runBundleToCompletion(withTarget: self.target, testHostApplication: launchedApplication, request: self.requestQueue))
+      // Open the testmanagerd transport over async and hand the socket down to the Objective-C
+      // bundle connection (which no longer acquires the transport itself). The socket stays open
+      // for the duration of the connection and is closed when this scope ends.
+      try await self.asyncXCTestTarget.withTransportForTestManagerService { socket in
+        try await bridgeFBFutureVoid(self.ideInterface.runBundleToCompletion(with: self.target, socket: socket.int32Value, testHostApplication: launchedApplication, request: self.requestQueue))
+      }
       // The bundle has disconnected at this point, but we also need to terminate any processes
       // spawned through `_XCT_launchProcessWithPath` and tear down the host application.
       try await self.terminateSpawnedProcesses()
