@@ -101,7 +101,7 @@ public class FBSpringboardServicesClient: NSObject {
 
   public func getIconLayout() -> FBFuture<NSArray> {
     fbFutureFromAsync { [self] in
-      try await getIconLayoutAsync() as NSArray
+      try await getIconLayoutAsync().rawValue
     }
   }
 
@@ -113,7 +113,7 @@ public class FBSpringboardServicesClient: NSObject {
 
   public func setIconLayout(_ iconLayout: NSArray) -> FBFuture<NSNull> {
     fbFutureFromAsync { [self] in
-      try await setIconLayoutAsync(iconLayout)
+      try await setIconLayoutRawAsync(iconLayout)
       return NSNull()
     }
   }
@@ -136,15 +136,9 @@ public class FBSpringboardServicesClient: NSObject {
 
   // MARK: - Async
 
-  public func getIconLayoutAsync() async throws -> [Any] {
+  public func getIconLayoutAsync() async throws -> FBSpringboardIconLayout {
     let raw = try await getRawIconStateAsync(formatVersion: 2)
-    guard let array = raw as? [Any] else {
-      throw FBSpringboardServicesError.unexpectedResponse(
-        command: "getIconState",
-        expected: "an array",
-        actual: String(describing: raw))
-    }
-    return array
+    return try FBSpringboardIconLayout(rawValue: raw)
   }
 
   public func getRawIconStateAsync(formatVersion: UInt) async throws -> AnyObject {
@@ -162,7 +156,11 @@ public class FBSpringboardServicesClient: NSObject {
     }
   }
 
-  public func setIconLayoutAsync(_ iconLayout: NSArray) async throws {
+  public func setIconLayoutAsync(_ iconLayout: FBSpringboardIconLayout) async throws {
+    try await setIconLayoutRawAsync(iconLayout.rawValue)
+  }
+
+  public func setIconLayoutRawAsync(_ iconLayout: NSArray) async throws {
     let connectionBox = SpringboardConnectionBox(connection)
     let layoutBox = SpringboardDataBox(iconLayout)
     try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
@@ -282,12 +280,10 @@ class FBSpringboardServicesIconContainer: NSObject, AsyncFileContainer {
     }
     let layout = try await client.getIconLayoutAsync()
     if filename == IconJSONFile {
-      let iconPages = try FBSpringboardServicesIconContainer.iconPages(from: layout, command: "getIconState")
-      let jsonLayout = FBSpringboardServicesIconContainer.flattenBaseFormat(iconPages)
-      let data = try JSONSerialization.data(withJSONObject: jsonLayout, options: .prettyPrinted)
+      let data = try JSONSerialization.data(withJSONObject: layout.flattenedBundleIdentifierPages(), options: .prettyPrinted)
       try data.write(to: URL(fileURLWithPath: destinationPath), options: .atomic)
     } else {
-      let data = try PropertyListSerialization.data(fromPropertyList: layout, format: .xml, options: 0)
+      let data = try PropertyListSerialization.data(fromPropertyList: layout.pages, format: .xml, options: 0)
       try data.write(to: URL(fileURLWithPath: destinationPath), options: .atomic)
     }
     return destinationPath
@@ -295,7 +291,7 @@ class FBSpringboardServicesIconContainer: NSObject, AsyncFileContainer {
 
   fileprivate func copyFromHostAsync(sourcePath: String, toContainer destinationPath: String) async throws {
     let layout = try await iconLayoutFromSourcePathAsync(sourcePath, toDestinationFile: (destinationPath as NSString).lastPathComponent)
-    try await client.setIconLayoutAsync(layout)
+    try await client.setIconLayoutRawAsync(layout)
   }
 
   // MARK: Private
@@ -321,9 +317,8 @@ class FBSpringboardServicesIconContainer: NSObject, AsyncFileContainer {
   }
 
   private func convertJSONFormatToWireFormatAsync(_ jsonFormat: IconLayoutJSONType) async throws -> NSArray {
-    let currentApps = try await client.getIconLayoutAsync()
-    let currentAppsArray = try FBSpringboardServicesIconContainer.iconPages(from: currentApps, command: "getIconState")
-    let iconsByBundleID = FBSpringboardServicesIconContainer.keyIconsByBundleID(currentAppsArray)
+    let currentLayout = try await client.getIconLayoutAsync()
+    let iconsByBundleID = currentLayout.iconsByBundleID
     var format: [[Any]] = []
     for jsonPage in jsonFormat {
       var fullPage: [Any] = []
@@ -335,41 +330,5 @@ class FBSpringboardServicesIconContainer: NSObject, AsyncFileContainer {
       format.append(fullPage)
     }
     return format as NSArray
-  }
-
-  static func iconPages(from layout: [Any], command: String) throws -> [[Any]] {
-    guard let pages = layout as? [[Any]] else {
-      throw FBSpringboardServicesError.unexpectedResponse(
-        command: command,
-        expected: "an array of icon pages",
-        actual: String(describing: layout))
-    }
-    return pages
-  }
-
-  static func flattenBaseFormat(_ baseFormat: [[Any]]) -> [[String]] {
-    var flatFormat: IconLayoutJSONType = []
-    for basePage in baseFormat {
-      var flatPage: [String] = []
-      for icon in basePage {
-        if let iconDict = icon as? [String: Any], let bundleIdentifier = iconDict["bundleIdentifier"] as? String {
-          flatPage.append(bundleIdentifier)
-        }
-      }
-      flatFormat.append(flatPage)
-    }
-    return flatFormat
-  }
-
-  static func keyIconsByBundleID(_ layout: [[Any]]) -> [String: [String: Any]] {
-    var iconsByBundleID: [String: [String: Any]] = [:]
-    for page in layout {
-      for icon in page {
-        if let iconDict = icon as? [String: Any], let bundleIdentifier = iconDict["bundleIdentifier"] as? String {
-          iconsByBundleID[bundleIdentifier] = iconDict
-        }
-      }
-    }
-    return iconsByBundleID
   }
 }

@@ -17,7 +17,10 @@ public class FBDeviceDiagnosticInformationCommands: NSObject, FBiOSTargetCommand
   // MARK: - Initializers
 
   public class func commands(with target: any FBiOSTarget) -> Self {
-    self.init(device: target as! FBDevice)
+    guard let device = target as? FBDevice else {
+      preconditionFailure("Expected FBDevice target, got \(target)")
+    }
+    return self.init(device: device)
   }
 
   required init(device: FBDevice) {
@@ -65,7 +68,7 @@ public class FBDeviceDiagnosticInformationCommands: NSObject, FBiOSTargetCommand
     }
     return try await withFBFutureContext(device.startService(FBSpringboardServicesClient.serviceName)) { connection in
       let client = FBSpringboardServicesClient(connection: connection, logger: logger)
-      return try await client.getIconLayoutAsync()
+      return try await client.getIconLayoutAsync().pages
     }
   }
 
