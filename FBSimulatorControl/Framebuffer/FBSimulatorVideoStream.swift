@@ -1291,6 +1291,24 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
     }
   }
 
+  // MARK: - Keyframe Requests
+
+  /// Request that the next encoded frame be a keyframe (IDR).
+  /// Dispatches an extra push on the stream's write queue with the VideoToolbox
+  /// `kVTEncodeFrameOptionKey_ForceKeyFrame` flag set, so a downstream consumer
+  /// that has lost frames (e.g. a WebRTC viewer that has sent a PLI/FIR) can
+  /// resync immediately instead of waiting for the next periodic IDR.
+  ///
+  /// Safe to call from any thread. A burst of calls produces a burst of
+  /// keyframes — callers are expected to throttle if needed.
+  public func requestKeyFrame() {
+    // Dispatch onto writeQueue to match the threading expectations of
+    // pushFrame(forceKeyFrame:) (every other internal caller already does this).
+    writeQueue.async { [weak self] in
+      self?.pushFrame(forceKeyFrame: true)
+    }
+  }
+
   // MARK: - Screenshot
 
   /// Capture a PNG screenshot of the current frame with overlay composited.
