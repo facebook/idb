@@ -295,36 +295,65 @@ extension IDBXCTestReporter {
     }
   }
 
-  // TODO: Parallelism of execution was lost after rewriting this method to swift. Make this work in parallel again
+  /// One of the independent, heavyweight artifacts assembled at the end of a test run.
+  private enum FinalArtifact {
+    case resultBundle(Data)
+    case coverage(Data)
+    case logDirectory(Data)
+  }
+
   private func insertFinalDataThenWriteResponse(response: Idb_XctestRunResponse) async throws {
     var response = response
 
-    if !configuration.resultBundlePath.isEmpty && configuration.reportResultBundle {
-      do {
-        let resultBundle = try await gzipFolder(at: configuration.resultBundlePath)
-        response.resultBundle = .with {
-          $0.data = resultBundle
+    // Run the three independent finalization steps concurrently, restoring the parallelism of the
+    // original ObjC reporter (`+[FBFuture futureWithFutures:]`). A task group keeps this consistent
+    // with the companion's other concurrent work (LaunchMethodHandler, ConcurrentForEach).
+    let artifacts: [FinalArtifact] = try await withThrowingTaskGroup(of: FinalArtifact?.self) { group in
+      if !configuration.resultBundlePath.isEmpty && configuration.reportResultBundle {
+        group.addTask {
+          do {
+            return .resultBundle(try await self.gzipFolder(at: self.configuration.resultBundlePath))
+          } catch {
+            self.logger.info().log("Failed to create result bundle \(error.localizedDescription)")
+            return nil
+          }
         }
-      } catch {
-        logger.info().log("Failed to create result bundle \(error.localizedDescription)")
       }
+
+      if let coverageConfig = configuration.coverageConfiguration, !coverageConfig.coverageDirectory.isEmpty {
+        group.addTask {
+          do {
+            return .coverage(try await self.getCoverageResponseData(config: coverageConfig))
+          } catch {
+            self.logger.info().log("Failed to get coverage data: \(error.localizedDescription)")
+            return nil
+          }
+        }
+      }
+
+      if let logDirectoryPath = configuration.logDirectoryPath {
+        group.addTask {
+          .logDirectory(try await self.gzipFolder(at: logDirectoryPath))
+        }
+      }
+
+      var collected: [FinalArtifact] = []
+      for try await artifact in group {
+        if let artifact {
+          collected.append(artifact)
+        }
+      }
+      return collected
     }
 
-    if let coverageConfig = configuration.coverageConfiguration, !coverageConfig.coverageDirectory.isEmpty {
-      do {
-        let coverageData = try await getCoverageResponseData(config: coverageConfig)
-        response.codeCoverageData = .with {
-          $0.data = coverageData
-        }
-      } catch {
-        logger.info().log("Failed to get coverage data: \(error.localizedDescription)")
-      }
-    }
-
-    if let logDirectoryPath = configuration.logDirectoryPath {
-      let data = try await gzipFolder(at: logDirectoryPath)
-      response.logDirectory = .with {
-        $0.data = data
+    for artifact in artifacts {
+      switch artifact {
+      case let .resultBundle(data):
+        response.resultBundle = .with { $0.data = data }
+      case let .coverage(data):
+        response.codeCoverageData = .with { $0.data = data }
+      case let .logDirectory(data):
+        response.logDirectory = .with { $0.data = data }
       }
     }
 
