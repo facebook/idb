@@ -319,9 +319,9 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: NSObject, FBSimulato
   let compressionSessionProperties: [String: Any]
   let videoCodec: CMVideoCodecType
   let outputMode: FBVideoToolboxOutputMode
-  /// nil for MJPEG/Minicap, which write directly in the encode handler.
-  let frameWriter: FBCompressedFrameWriter?
-  let frameWriterContext: AnyObject?
+  /// The encoded-sample sink for `.compressed` output; nil for MJPEG/Minicap, which write the JPEG
+  /// block buffer directly to `consumer` in the encode handler.
+  let encodedSampleConsumer: FBEncodedSampleConsumer?
   let consumer: any FBDataConsumer
   let logger: any FBControlCoreLogger
 
@@ -345,15 +345,13 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: NSObject, FBSimulato
     videoCodec: CMVideoCodecType,
     consumer: any FBDataConsumer,
     outputMode: FBVideoToolboxOutputMode,
-    frameWriter: FBCompressedFrameWriter?,
-    frameWriterContext: AnyObject?,
+    encodedSampleConsumer: FBEncodedSampleConsumer?,
     logger: any FBControlCoreLogger
   ) {
     self.configuration = configuration
     self.compressionSessionProperties = compressionSessionProperties
     self.outputMode = outputMode
-    self.frameWriter = frameWriter
-    self.frameWriterContext = frameWriterContext
+    self.encodedSampleConsumer = encodedSampleConsumer
     self.consumer = consumer
     self.logger = logger
     self.videoCodec = videoCodec
@@ -422,9 +420,8 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: NSObject, FBSimulato
     let frameDropped = infoFlags.contains(.frameDropped)
     var writeSucceeded = false
     if !frameDropped, let sampleBuffer {
-      var error: NSError?
-      if let frameWriter {
-        writeSucceeded = frameWriter(sampleBuffer, frameWriterContext, consumer, logger, &error)
+      if let encodedSampleConsumer {
+        writeSucceeded = encodedSampleConsumer.consume(sampleBuffer, logger: logger)
       }
       if writeSucceeded {
         if let dataBuffer = CMSampleBufferGetDataBuffer(sampleBuffer) {
@@ -972,7 +969,7 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
     try framePusher.setup(with: buffer, edgeInsets: edgeInsets)
     self.framePusher = framePusher
     if let videoToolboxPusher = framePusher as? FBSimulatorVideoStreamFramePusher_VideoToolbox {
-      self.frameWriterContext = videoToolboxPusher.frameWriterContext
+      self.frameWriterContext = (videoToolboxPusher.encodedSampleConsumer as? FBDataConsumerEncodedSampleConsumer)?.frameWriterContext
     }
 
     // Set up overlay compositing infrastructure.
@@ -1204,17 +1201,19 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
       } else {
         throw FBControlCoreError.describe("Unsupported codec '\(String(describing: format.codec))'").build()
       }
+      let encodedSampleConsumer = FBDataConsumerEncodedSampleConsumer(
+        consumer: consumer, frameWriter: frameWriter, frameWriterContext: frameWriterContext)
       return FBSimulatorVideoStreamFramePusher_VideoToolbox(
         configuration: configuration, compressionSessionProperties: derived, videoCodec: videoCodec,
-        consumer: consumer, outputMode: .compressed, frameWriter: frameWriter, frameWriterContext: frameWriterContext, logger: logger)
+        consumer: consumer, outputMode: .compressed, encodedSampleConsumer: encodedSampleConsumer, logger: logger)
     case .mjpeg:
       return FBSimulatorVideoStreamFramePusher_VideoToolbox(
         configuration: configuration, compressionSessionProperties: derived, videoCodec: kCMVideoCodecType_JPEG,
-        consumer: consumer, outputMode: .mjpeg, frameWriter: nil, frameWriterContext: nil, logger: logger)
+        consumer: consumer, outputMode: .mjpeg, encodedSampleConsumer: nil, logger: logger)
     case .minicap:
       return FBSimulatorVideoStreamFramePusher_VideoToolbox(
         configuration: configuration, compressionSessionProperties: derived, videoCodec: kCMVideoCodecType_JPEG,
-        consumer: consumer, outputMode: .minicap, frameWriter: nil, frameWriterContext: nil, logger: logger)
+        consumer: consumer, outputMode: .minicap, encodedSampleConsumer: nil, logger: logger)
     case .bgra:
       return FBSimulatorVideoStreamFramePusher_Bitmap(consumer: consumer, scaleFactor: configuration.scaleFactor)
     @unknown default:
