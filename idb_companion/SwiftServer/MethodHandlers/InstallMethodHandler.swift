@@ -174,13 +174,17 @@ struct InstallMethodHandler {
       var buffer = [UInt8](initial)
       appStream.write(&buffer, maxLength: buffer.count)
 
-      for try await request in requestStream {
-        guard let data = request.extractDataFrame() else {
-          continue
-        }
+      do {
+        for try await request in requestStream {
+          guard let data = request.extractDataFrame() else {
+            continue
+          }
 
-        var buffer = [UInt8](data)
-        appStream.write(&buffer, maxLength: buffer.count)
+          var buffer = [UInt8](data)
+          appStream.write(&buffer, maxLength: buffer.count)
+        }
+      } catch {
+        targetLogger.error().log("Failed to read install payload from request stream: \(error)")
       }
     }
 
