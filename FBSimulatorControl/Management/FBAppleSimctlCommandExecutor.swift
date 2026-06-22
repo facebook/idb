@@ -26,15 +26,9 @@ public final class FBAppleSimctlCommandExecutor: NSObject {
     FBAppleSimctlCommandExecutor(
       deviceSetPath: simulator.set.deviceSet.setPath,
       deviceUUID: simulator.udid,
+      // A booted/managed simulator always has a logger.
+      // swiftlint:disable:next force_unwrapping
       logger: simulator.logger!.withName("simctl"))
-  }
-
-  @objc(executorForDeviceSet:)
-  public class func executor(for set: FBSimulatorSet) -> FBAppleSimctlCommandExecutor {
-    FBAppleSimctlCommandExecutor(
-      deviceSetPath: set.deviceSet.setPath,
-      deviceUUID: nil,
-      logger: set.logger!)
   }
 
   private init(deviceSetPath: String, deviceUUID: String?, logger: any FBControlCoreLogger) {
