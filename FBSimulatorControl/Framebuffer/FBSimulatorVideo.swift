@@ -60,6 +60,13 @@ public class FBSimulatorVideo: NSObject, FBiOSTargetOperation {
     FBSimulatorVideoSimCtl(simctlExecutor: simctlExecutor, filePath: filePath, logger: logger)
   }
 
+  /// Records simulator video in-process: drives the framebuffer through the shared
+  /// `FBSimulatorVideoStream` encode pipeline and muxes the encoded frames into an `.mp4` at `filePath`
+  /// via `AVAssetWriter`.
+  public class func video(withFramebuffer framebuffer: FBFramebuffer, configuration: FBVideoStreamConfiguration, filePath: String, logger: any FBControlCoreLogger) -> FBSimulatorVideo {
+    FBSimulatorVideoStreamRecorder(framebuffer: framebuffer, configuration: configuration, filePath: filePath, logger: logger)
+  }
+
   init(filePath: String, logger: any FBControlCoreLogger) {
     self.filePath = filePath
     self.logger = logger
@@ -226,5 +233,43 @@ enum FBSimulatorVideoSimCtlSupport {
       return nil
     }
     return NSDecimalNumber(string: (output as NSString).substring(with: match.range(at: 1)))
+  }
+}
+
+// MARK: - FBSimulatorVideoStreamRecorder
+
+/// Records simulator video in-process. Reuses `FBSimulatorVideoStream` to attach to the framebuffer,
+/// drive an eager (constant-frame-rate) cadence, and encode via VideoToolbox — but routes the encoded
+/// frames into an `FBVideoFileWriter` (`AVAssetWriter`) rather than byte-framing them to a data
+/// consumer. The byte-stream consumer is a discard; only the `.mp4` is produced.
+private final class FBSimulatorVideoStreamRecorder: FBSimulatorVideo {
+  private let stream: FBSimulatorVideoStream
+  private let fileWriter: FBVideoFileWriter
+  private var hasStopped = false
+
+  init(framebuffer: FBFramebuffer, configuration: FBVideoStreamConfiguration, filePath: String, logger: any FBControlCoreLogger) {
+    let fileWriter = FBVideoFileWriter(filePath: filePath, logger: logger)
+    self.fileWriter = fileWriter
+    self.stream = FBSimulatorVideoStream.makeRecorder(framebuffer: framebuffer, configuration: configuration, fileWriter: fileWriter, logger: logger)
+    super.init(filePath: filePath, logger: logger)
+  }
+
+  override func startRecording() async throws {
+    // Encoded frames are routed to `fileWriter` (which opens lazily on its first sample, since
+    // passthrough muxing needs that sample's format); the stream's byte consumer is unused, so a
+    // no-op consumer satisfies its streaming bookkeeping (and never reports back-pressure).
+    try await bridgeFBFutureVoid(stream.startStreaming(FBNullDataConsumer()))
+  }
+
+  override func stopRecording() async throws {
+    if hasStopped {
+      return
+    }
+    hasStopped = true
+    // Stop the framebuffer push and flush the encoder (tearDown's VTCompressionSessionCompleteFrames
+    // drains all pending frames into `fileWriter`) before finalizing the file's moov.
+    try await bridgeFBFutureVoid(stream.stopStreaming())
+    try await fileWriter.finish()
+    completedFuture.resolve(withResult: NSNull())
   }
 }

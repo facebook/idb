@@ -727,6 +727,9 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
   let configuration: FBVideoStreamConfiguration
   let edgeInsets: FBVideoStreamEdgeInsets
   let cadence: FBVideoStreamCadence
+  /// When set (recording), encoded `.compressed` frames are routed to this sink — an `FBVideoFileWriter`
+  /// — instead of being byte-framed to `consumer`. nil for streaming.
+  let encodedSampleConsumerOverride: FBEncodedSampleConsumer?
   let writeQueue: DispatchQueue
   let logger: any FBControlCoreLogger
   let startedFuture: FBMutableFuture<NSNull>
@@ -777,26 +780,44 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
   /// Constructs a Bitmap Stream with edge insets for overlay content.
   /// Insets extend the output frame dimensions, pushing video content inward.
   public class func make(framebuffer: FBFramebuffer, configuration: FBVideoStreamConfiguration, edgeInsets: FBVideoStreamEdgeInsets, logger: any FBControlCoreLogger) -> FBSimulatorVideoStream {
-    let framesPerSecondNumber = configuration.framesPerSecond
-    let framesPerSecond = framesPerSecondNumber?.uintValue ?? 0
-    let cadence: FBVideoStreamCadence =
-      (framesPerSecondNumber != nil && framesPerSecond > 0)
-      ? .eager(framesPerSecond: framesPerSecond)
-      : .lazy
-    return FBSimulatorVideoStream(
+    FBSimulatorVideoStream(
       framebuffer: framebuffer,
       configuration: configuration,
       edgeInsets: edgeInsets,
-      cadence: cadence,
+      cadence: cadence(for: configuration),
       writeQueue: makeWriteQueue(),
       logger: logger)
   }
 
-  init(framebuffer: FBFramebuffer, configuration: FBVideoStreamConfiguration, edgeInsets: FBVideoStreamEdgeInsets, cadence: FBVideoStreamCadence, writeQueue: DispatchQueue, logger: any FBControlCoreLogger) {
+  /// Constructs a recording stream: encoded `.compressed` frames are muxed into a file via `fileWriter`
+  /// rather than byte-framed to an `FBDataConsumer`. Records clean frames (no overlay/insets); set
+  /// `configuration.framesPerSecond` so the cadence is eager (a recorded file wants a continuous
+  /// timeline even while the screen is idle).
+  class func makeRecorder(framebuffer: FBFramebuffer, configuration: FBVideoStreamConfiguration, fileWriter: FBVideoFileWriter, logger: any FBControlCoreLogger) -> FBSimulatorVideoStream {
+    FBSimulatorVideoStream(
+      framebuffer: framebuffer,
+      configuration: configuration,
+      edgeInsets: FBVideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0),
+      cadence: cadence(for: configuration),
+      writeQueue: makeWriteQueue(),
+      logger: logger,
+      encodedSampleConsumerOverride: fileWriter)
+  }
+
+  /// Eager (constant-frame-rate) when a positive `framesPerSecond` is set, else lazy (variable-rate,
+  /// driven by damage events).
+  private class func cadence(for configuration: FBVideoStreamConfiguration) -> FBVideoStreamCadence {
+    let framesPerSecondNumber = configuration.framesPerSecond
+    let framesPerSecond = framesPerSecondNumber?.uintValue ?? 0
+    return (framesPerSecondNumber != nil && framesPerSecond > 0) ? .eager(framesPerSecond: framesPerSecond) : .lazy
+  }
+
+  init(framebuffer: FBFramebuffer, configuration: FBVideoStreamConfiguration, edgeInsets: FBVideoStreamEdgeInsets, cadence: FBVideoStreamCadence, writeQueue: DispatchQueue, logger: any FBControlCoreLogger, encodedSampleConsumerOverride: FBEncodedSampleConsumer? = nil) {
     self.framebuffer = framebuffer
     self.configuration = configuration
     self.edgeInsets = edgeInsets
     self.cadence = cadence
+    self.encodedSampleConsumerOverride = encodedSampleConsumerOverride
     self.writeQueue = writeQueue
     self.logger = logger
     self.startedFuture = FBMutableFuture<NSNull>()
@@ -965,6 +986,7 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
       configuration: configuration,
       compressionSessionProperties: compressionSessionProperties,
       consumer: consumer,
+      encodedSampleConsumerOverride: encodedSampleConsumerOverride,
       logger: logger)
     try framePusher.setup(with: buffer, edgeInsets: edgeInsets)
     self.framePusher = framePusher
@@ -1163,6 +1185,7 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
     configuration: FBVideoStreamConfiguration,
     compressionSessionProperties: [String: Any],
     consumer: any FBDataConsumer,
+    encodedSampleConsumerOverride: FBEncodedSampleConsumer?,
     logger: any FBControlCoreLogger
   ) throws -> any FBSimulatorVideoStreamFramePusher {
     let derived = Self.compressionSessionProperties(for: configuration, callerProperties: compressionSessionProperties)
@@ -1201,8 +1224,9 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
       } else {
         throw FBControlCoreError.describe("Unsupported codec '\(String(describing: format.codec))'").build()
       }
-      let encodedSampleConsumer = FBDataConsumerEncodedSampleConsumer(
-        consumer: consumer, frameWriter: frameWriter, frameWriterContext: frameWriterContext)
+      let encodedSampleConsumer: FBEncodedSampleConsumer =
+        encodedSampleConsumerOverride
+        ?? FBDataConsumerEncodedSampleConsumer(consumer: consumer, frameWriter: frameWriter, frameWriterContext: frameWriterContext)
       return FBSimulatorVideoStreamFramePusher_VideoToolbox(
         configuration: configuration, compressionSessionProperties: derived, videoCodec: videoCodec,
         consumer: consumer, outputMode: .compressed, encodedSampleConsumer: encodedSampleConsumer, logger: logger)
