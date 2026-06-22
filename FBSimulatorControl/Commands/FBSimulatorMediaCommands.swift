@@ -6,6 +6,7 @@
  */
 
 import AppKit
+@preconcurrency import CoreSimulator
 import FBControlCore
 import Foundation
 import UniformTypeIdentifiers
@@ -72,7 +73,7 @@ public final class FBSimulatorMediaCommands: NSObject, FBiOSTargetCommand {
     }
 
     if simulator.state != .booted {
-      let stateString = FBSimDeviceWrapper.stateString(forDevice: simulator.device) ?? "unknown"
+      let stateString = (simulator.device.stateString() as String?) ?? "unknown"
       throw FBSimulatorError.describe("Simulator must be booted to upload photos, is \(stateString)").build()
     }
 
@@ -85,7 +86,7 @@ public final class FBSimulatorMediaCommands: NSObject, FBiOSTargetCommand {
       ) as! [URL]
     if !photosAndVideos.isEmpty {
       do {
-        try FBSimDeviceWrapper.addMedia(onDevice: simulator.device, urls: photosAndVideos)
+        try simulator.device.addMedia(photosAndVideos)
       } catch {
         throw FBSimulatorError.describe("Failed to add media \(photosAndVideos)").caused(by: error as NSError).build()
       }
@@ -94,7 +95,7 @@ public final class FBSimulatorMediaCommands: NSObject, FBiOSTargetCommand {
     let contacts = (mediaFileURLs as NSArray).filtered(using: FBSimulatorMediaCommands.predicateForContactPaths) as! [URL]
     if !contacts.isEmpty {
       do {
-        try FBSimDeviceWrapper.addMedia(onDevice: simulator.device, urls: contacts)
+        try simulator.device.addMedia(contacts)
       } catch {
         throw FBSimulatorError.describe("Failed to add contacts \(contacts)").caused(by: error as NSError).build()
       }

@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+@preconcurrency import CoreSimulator
 @preconcurrency import FBControlCore
 import Foundation
 
@@ -75,9 +76,8 @@ public final class FBSimulatorProcessSpawnCommands: NSObject, FBiOSTargetCommand
     // holder once `spawnAsync` returns it. The terminationHandler will only be
     // invoked after the process exits, which strictly follows that return.
     let pidHolder = PIDHolder()
-    let processIdentifier = try await FBSimDeviceWrapper.spawnAsync(
-      onDevice: simulator.device,
-      path: configuration.launchPath,
+    let processIdentifier = try await simulator.device.spawnAsync(
+      withPath: configuration.launchPath,
       options: options,
       terminationQueue: simulator.workQueue,
       terminationHandler: { (statLocValue: Int32) in

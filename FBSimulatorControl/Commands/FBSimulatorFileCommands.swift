@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+@preconcurrency import CoreSimulator
 import FBControlCore
 import Foundation
 
@@ -169,7 +170,7 @@ public final class FBSimulatorFileCommands: NSObject, FBiOSTargetCommand {
   }
 
   private func containedFileForApplicationContainers() throws -> any FBContainedFile {
-    let installedApps = try FBSimDeviceWrapper.installedApps(onDevice: simulator.device)
+    let installedApps = try simulator.device.installedApps() as! [String: Any]
     var mapping: [String: String] = [:]
     for (bundleID, appInfo) in installedApps {
       guard let info = appInfo as? [String: Any],
@@ -183,7 +184,7 @@ public final class FBSimulatorFileCommands: NSObject, FBiOSTargetCommand {
   }
 
   private func containedFileForGroupContainers() throws -> any FBContainedFile {
-    let installedApps = try FBSimDeviceWrapper.installedApps(onDevice: simulator.device)
+    let installedApps = try simulator.device.installedApps() as! [String: Any]
     var bundleIDToURL: [String: URL] = [:]
     for (_, appInfo) in installedApps {
       guard let info = appInfo as? [String: Any],

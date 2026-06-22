@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+@preconcurrency import CoreSimulator
 import FBControlCore
 import Foundation
 
@@ -33,10 +34,10 @@ public final class FBSimulatorMemoryCommands: NSObject, FBiOSTargetCommand {
     guard let simulator = self.simulator else {
       throw FBSimulatorError.describe("Simulator deallocated").build()
     }
-    guard FBSimDeviceWrapper.deviceCanSimulateMemoryWarning(simulator.device) else {
+    guard simulator.device.responds(to: NSSelectorFromString("simulateMemoryWarning")) else {
       throw FBSimulatorError.describe("SimDevice doesn't have simulateMemoryWarning selector").build()
     }
-    FBSimDeviceWrapper.simulateMemoryWarning(onDevice: simulator.device)
+    simulator.device.simulateMemoryWarning()
   }
 }
 

@@ -7,6 +7,7 @@
 
 // swiftlint:disable force_cast
 
+@preconcurrency import CoreSimulator
 import FBControlCore
 import Foundation
 
@@ -35,7 +36,7 @@ public final class FBSimulatorLocationCommands: NSObject, FBiOSTargetCommand {
     guard let simulator = self.simulator else {
       throw FBSimulatorError.describe("Simulator deallocated").build()
     }
-    try FBSimDeviceWrapper.setLocationOnDevice(simulator.device, latitude: latitude, longitude: longitude)
+    try simulator.device.setLocationWithLatitude(latitude, andLongitude: longitude)
   }
 }
 

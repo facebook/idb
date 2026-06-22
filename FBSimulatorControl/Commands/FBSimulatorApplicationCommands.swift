@@ -81,7 +81,7 @@ public class FBSimulatorApplicationCommands: NSObject, FBiOSTargetCommand {
     guard let simulator = self.simulator else {
       throw FBSimulatorError.describe("Simulator deallocated").build()
     }
-    let installedApps = try FBSimDeviceWrapper.installedApps(onDevice: simulator.device)
+    let installedApps = try simulator.device.installedApps()
     var applications: [FBInstalledApplication] = []
     for appInfo in installedApps.values {
       guard let dict = appInfo as? [String: Any],

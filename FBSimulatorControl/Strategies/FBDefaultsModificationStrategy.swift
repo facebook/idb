@@ -152,7 +152,7 @@ public class FBDefaultsModificationStrategy: NSObject {
 
   private var defaultsBinary: String {
     let path =
-      ((FBSimDeviceWrapper.runtimeRoot(forDevice: simulator.device)! as NSString)
+      ((simulator.device.runtime.root! as NSString)
       .appendingPathComponent("usr") as NSString)
       .appendingPathComponent("bin") as NSString
     let fullPath = path.appendingPathComponent("defaults")

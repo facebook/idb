@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+@preconcurrency import CoreSimulator
 import FBControlCore
 import Foundation
 
@@ -41,15 +42,11 @@ public final class FBSimulatorNotificationCommands: NSObject, FBiOSTargetCommand
       throw FBSimulatorError.describe("Failed to deserialize notification json: not a dictionary").build()
     }
 
-    guard FBSimDeviceWrapper.deviceCanSendPushNotification(simulator.device) else {
+    guard simulator.device.responds(to: NSSelectorFromString("sendPushNotificationForBundleID:jsonPayload:error:")) else {
       throw FBSimulatorError.describe("SimDevice doesn't have sendPushNotificationForBundleID selector").build()
     }
 
-    var error: NSError?
-    FBSimDeviceWrapper.sendPushNotification(onDevice: simulator.device, bundleID: bundleID, jsonPayload: jsonObj, error: &error)
-    if let error {
-      throw error
-    }
+    try simulator.device.sendPushNotification(forBundleID: bundleID, jsonPayload: jsonObj)
   }
 }
 

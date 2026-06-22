@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+@preconcurrency import CoreSimulator
 import FBControlCore
 import Foundation
 
@@ -55,7 +56,7 @@ public final class FBSimulatorLogCommands: NSObject, FBiOSTargetCommand {
     guard let simulator = self.simulator else {
       throw FBSimulatorError.describe("Simulator deallocated").build()
     }
-    guard let root = FBSimDeviceWrapper.runtimeRoot(forDevice: simulator.device) else {
+    guard let root = simulator.device.runtime.root else {
       throw FBSimulatorError.describe("Could not obtain runtime root for simulator").build()
     }
     let path =

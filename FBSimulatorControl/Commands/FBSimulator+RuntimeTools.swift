@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+@preconcurrency import CoreSimulator
 @preconcurrency import FBControlCore
 import Foundation
 
@@ -105,7 +106,7 @@ extension FBSimulator {
   /// - Parameter relativePath: Path relative to the RuntimeRoot, e.g.
   ///   `usr/bin/heap`.
   private func runtimeExecutablePath(_ relativePath: String) throws -> String {
-    guard let root = FBSimDeviceWrapper.runtimeRoot(forDevice: device) else {
+    guard let root = device.runtime.root else {
       throw FBSimulatorError.describe("Could not obtain runtime root for simulator").build()
     }
     let path = (root as NSString).appendingPathComponent(relativePath)
