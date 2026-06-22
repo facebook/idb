@@ -254,6 +254,8 @@ class Client(ClientBase):
 
     @property
     def is_local(self) -> bool:
+        if os.environ.get("IDB_FORCE_REMOTE") == "1":
+            return False
         return self.companion.is_local
 
     @classmethod
