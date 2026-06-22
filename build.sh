@@ -258,18 +258,23 @@ function regenerate_projects() {
 # =============================================================================
 
 function invoke_xcodebuild() {
-  local arguments=$@
   local symroot="$BUILD_DIRECTORY/Products"
   local objroot="$BUILD_DIRECTORY/Intermediates"
+  # Use arrays so each setting/argument stays a single word regardless of spaces.
   # Add -skipMacroValidation to work around sandbox restrictions on Swift macro plugins
   # Add ENABLE_USER_SCRIPT_SANDBOXING=NO to disable sandbox for macros
   # Add CLANG_ENABLE_EXPLICIT_MODULES=NO to mirror Configuration/Shared.xcconfig
   # Add ARCHS=arm64 to build arm64 only (no Intel/x86_64 slices).
-  local common_settings="-skipMacroValidation ENABLE_USER_SCRIPT_SANDBOXING=NO CLANG_ENABLE_EXPLICIT_MODULES=NO ARCHS=arm64"
+  local common_settings=(
+    -skipMacroValidation
+    ENABLE_USER_SCRIPT_SANDBOXING=NO
+    CLANG_ENABLE_EXPLICIT_MODULES=NO
+    ARCHS=arm64
+  )
   if [[ -n $HAS_XCPRETTY ]]; then
-    NSUnbufferedIO=YES xcodebuild $common_settings SYMROOT="$symroot" OBJROOT="$objroot" $arguments | xcpretty -c
+    NSUnbufferedIO=YES xcodebuild "${common_settings[@]}" SYMROOT="$symroot" OBJROOT="$objroot" "$@" | xcpretty -c
   else
-    xcodebuild $common_settings SYMROOT="$symroot" OBJROOT="$objroot" $arguments
+    xcodebuild "${common_settings[@]}" SYMROOT="$symroot" OBJROOT="$objroot" "$@"
   fi
 }
 
@@ -306,10 +311,10 @@ function build_target() {
   invoke_xcodebuild \
     ONLY_ACTIVE_ARCH=NO \
     -project FBSimulatorControl.xcodeproj \
-    -scheme $name \
+    -scheme "$name" \
     -sdk macosx \
-    -derivedDataPath $BUILD_DIRECTORY \
-    -configuration $configuration \
+    -derivedDataPath "$BUILD_DIRECTORY" \
+    -configuration "$configuration" \
     build
 }
 
@@ -330,10 +335,10 @@ function build_shim() {
 
   invoke_xcodebuild \
     ONLY_ACTIVE_ARCH=NO \
-    -project $project \
-    -scheme $name \
-    -sdk $sdk \
-    -derivedDataPath $BUILD_DIRECTORY \
+    -project "$project" \
+    -scheme "$name" \
+    -sdk "$sdk" \
+    -derivedDataPath "$BUILD_DIRECTORY" \
     -configuration Release \
     build
 }
@@ -353,7 +358,7 @@ function build_simulator_framework_bridge() {
     -project SimulatorFrameworkBridge/SimulatorFrameworkBridge.xcodeproj \
     -scheme SimulatorFrameworkBridge \
     -sdk iphonesimulator \
-    -derivedDataPath $BUILD_DIRECTORY \
+    -derivedDataPath "$BUILD_DIRECTORY" \
     -configuration Release \
     build
 }
@@ -380,7 +385,7 @@ function build_idb_companion() {
     -project idb_companion/idb_companion.xcodeproj \
     -scheme idb_companion \
     -sdk macosx \
-    -derivedDataPath $BUILD_DIRECTORY \
+    -derivedDataPath "$BUILD_DIRECTORY" \
     -configuration Release \
     build
   strip_embedded_frameworks
@@ -400,7 +405,7 @@ function build_idb_repl() {
     -project idb_companion/idb_companion.xcodeproj \
     -scheme idb-repl \
     -sdk macosx \
-    -derivedDataPath $BUILD_DIRECTORY \
+    -derivedDataPath "$BUILD_DIRECTORY" \
     -configuration Release \
     build
 }
@@ -508,7 +513,7 @@ function build() {
       distribution)
         build_distribution;;
       FBControlCore|XCTestBootstrap|FBSimulatorControl|FBDeviceControl)
-        build_target $target;;
+        build_target "$target";;
       *)
         echo "Unknown target: $target"
         echo "Valid targets: all, frameworks, shims, idb_companion, idb-repl, FBControlCore, XCTestBootstrap, FBSimulatorControl, FBDeviceControl, Shimulator-iOS, Shimulator-macOS, Repl-iOS, Repl-macOS, SimulatorFrameworkBridge, distribution"
@@ -525,9 +530,9 @@ function test_target() {
   local name=$1
   invoke_xcodebuild \
     -project FBSimulatorControl.xcodeproj \
-    -scheme $name \
+    -scheme "$name" \
     -sdk macosx \
-    -derivedDataPath $BUILD_DIRECTORY \
+    -derivedDataPath "$BUILD_DIRECTORY" \
     test
 }
 
@@ -549,7 +554,7 @@ function run_tests() {
       all)
         test_all;;
       FBControlCore|XCTestBootstrap|FBSimulatorControl|FBDeviceControl)
-        test_target $target;;
+        test_target "$target";;
       *)
         echo "Unknown test target: $target"
         echo "Valid targets: all, FBControlCore, XCTestBootstrap, FBSimulatorControl, FBDeviceControl"
@@ -655,10 +660,10 @@ case $COMMAND in
     generate_proto;;
   build)
     regenerate_projects
-    build $TARGET_ARG;;
+    build "$TARGET_ARG";;
   test)
     regenerate_projects
-    run_tests $TARGET_ARG;;
+    run_tests "$TARGET_ARG";;
   *)
     echo "Unknown command: $COMMAND"
     print_usage
