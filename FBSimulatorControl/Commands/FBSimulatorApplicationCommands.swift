@@ -234,7 +234,8 @@ public class FBSimulatorApplicationCommands: NSObject, FBiOSTargetCommand {
     return (translatedPath as NSString).appendingPathComponent(absolutePath)
   }
 
-  private class func simDeviceLaunchOptions(for configuration: FBApplicationLaunchConfiguration, stdOutPath: String?, stdErrPath: String?) -> [String: Any] {
+  // Internal (not private) so the app-launch option dictionary can be characterized by unit tests; see FBSimulatorProcessSpawnCommandsTests.
+  class func simDeviceLaunchOptions(for configuration: FBApplicationLaunchConfiguration, stdOutPath: String?, stdErrPath: String?) -> [String: Any] {
     var options = FBSimulatorProcessSpawnCommands.launchOptions(
       withArguments: configuration.arguments,
       environment: configuration.environment,

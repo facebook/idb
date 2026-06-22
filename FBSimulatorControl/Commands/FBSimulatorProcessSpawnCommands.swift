@@ -115,7 +115,8 @@ public final class FBSimulatorProcessSpawnCommands: NSObject, FBiOSTargetCommand
     var value: Int32 = 0
   }
 
-  private class func simDeviceLaunchOptions(withSimulator simulator: FBSimulator, launchPath: String, arguments: [String], environment: [String: String], waitForDebugger: Bool, stdOut: FBProcessStreamAttachment?, stdErr: FBProcessStreamAttachment?, mode: FBProcessSpawnMode) -> [String: Any] {
+  // Internal (not private) so the option dictionary can be characterized by unit tests; see FBSimulatorProcessSpawnCommandsTests.
+  class func simDeviceLaunchOptions(withSimulator simulator: FBSimulator, launchPath: String, arguments: [String], environment: [String: String], waitForDebugger: Bool, stdOut: FBProcessStreamAttachment?, stdErr: FBProcessStreamAttachment?, mode: FBProcessSpawnMode) -> [String: Any] {
     // argv[0] should be launch path of the process. SimDevice does not do this automatically, so we need to add it.
     let fullArguments = [launchPath] + arguments
     var options = launchOptions(withArguments: fullArguments, environment: environment, waitForDebugger: waitForDebugger)
@@ -129,7 +130,8 @@ public final class FBSimulatorProcessSpawnCommands: NSObject, FBiOSTargetCommand
     return options
   }
 
-  private class func shouldLaunchStandalone(onSimulator simulator: FBSimulator, mode: FBProcessSpawnMode) -> Bool {
+  // Internal (not private) for unit-test characterization of the launchd-vs-standalone decision.
+  class func shouldLaunchStandalone(onSimulator simulator: FBSimulator, mode: FBProcessSpawnMode) -> Bool {
     switch mode {
     case .launchd:
       return false
