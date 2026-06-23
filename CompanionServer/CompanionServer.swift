@@ -30,8 +30,13 @@ func companionServerLog(_ message: String) {
 ///
 /// Only Unix domain sockets are supported today; TCP can be layered on later.
 ///
-/// `@unchecked Sendable`: the only mutable state is `channel`, guarded by
-/// `channelLock`, so instances can be used across concurrency domains (e.g.
+/// When `idleShutdownTime` is set, the server shuts itself down (closes its
+/// listening channel) after that many seconds without a received request, so a
+/// spawned companion does not outlive its use. A bare connection that sends
+/// nothing (e.g. a discovery liveness probe) does not count as activity.
+///
+/// `@unchecked Sendable`: the mutable state (`channel`, `idleMonitor`) is guarded
+/// by `stateLock`, so instances can be used across concurrency domains (e.g.
 /// awaited from a `@MainActor` caller).
 public final class CompanionServer: @unchecked Sendable {
   /// Invoked for every JSON-RPC request received on any connection.
@@ -41,19 +46,33 @@ public final class CompanionServer: @unchecked Sendable {
   private let paths: CompanionPaths
   private let registry: CompanionRegistry
   private let onRequest: RequestHandler
+  private let idleShutdownTime: TimeInterval?
   private let group: MultiThreadedEventLoopGroup
-  private let channelLock = NSLock()
+  private let stateLock = NSLock()
   private var _channel: Channel?
   private var channel: Channel? {
     get {
-      channelLock.lock()
-      defer { channelLock.unlock() }
+      stateLock.lock()
+      defer { stateLock.unlock() }
       return _channel
     }
     set {
-      channelLock.lock()
-      defer { channelLock.unlock() }
+      stateLock.lock()
+      defer { stateLock.unlock() }
       _channel = newValue
+    }
+  }
+  private var _idleMonitor: IdleShutdownMonitor?
+  private var idleMonitor: IdleShutdownMonitor? {
+    get {
+      stateLock.lock()
+      defer { stateLock.unlock() }
+      return _idleMonitor
+    }
+    set {
+      stateLock.lock()
+      defer { stateLock.unlock() }
+      _idleMonitor = newValue
     }
   }
 
@@ -63,6 +82,9 @@ public final class CompanionServer: @unchecked Sendable {
   ///   - version: which companion generation to register under. Determines the
   ///     base directory for the socket and registry (see `CompanionPaths`).
   ///     Defaults to `.v2`.
+  ///   - idleShutdownTime: if set, the server closes itself after this many
+  ///     seconds without a received request. If nil (default), it runs until
+  ///     explicitly closed.
   ///   - registry: the registry to record this server in. Defaults to one rooted
   ///     at `version`'s state file; pass an explicit registry to override it
   ///     (e.g. a test fixture with an isolated state file).
@@ -71,12 +93,14 @@ public final class CompanionServer: @unchecked Sendable {
   public init(
     udid: String,
     version: CompanionVersion = .v2,
+    idleShutdownTime: TimeInterval? = nil,
     registry: CompanionRegistry? = nil,
     onRequest: RequestHandler? = nil
   ) {
     let paths = CompanionPaths(version: version)
     self.udid = udid
     self.paths = paths
+    self.idleShutdownTime = idleShutdownTime
     self.registry = registry ?? CompanionRegistry(stateFilePath: paths.stateFile)
     self.onRequest = onRequest ?? { request in companionServerLog("CompanionServer received \(request)") }
     self.group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
@@ -89,13 +113,30 @@ public final class CompanionServer: @unchecked Sendable {
     let socketPath = paths.companionSocketPath(forUDID: udid)
     try prepareSocketPath(socketPath)
 
+    // When configured, an idle monitor closes the listening channel after a
+    // quiet period; a received request counts as activity.
+    let monitor: IdleShutdownMonitor?
+    if let idleShutdownTime {
+      monitor = IdleShutdownMonitor(timeout: idleShutdownTime) { [weak self] in self?.handleIdleTimeout() }
+    } else {
+      monitor = nil
+    }
+    self.idleMonitor = monitor
+
+    let onActivity: (@Sendable () -> Void)?
+    if let monitor {
+      onActivity = { monitor.recordActivity() }
+    } else {
+      onActivity = nil
+    }
+
     let onRequest = self.onRequest
     let bootstrap = ServerBootstrap(group: group)
       .serverChannelOption(ChannelOptions.backlog, value: 256)
       .childChannelInitializer { channel in
         channel.pipeline.addHandlers([
           ByteToMessageHandler(NewlineFrameDecoder()),
-          JSONRPCConnectionHandler(onRequest: onRequest),
+          JSONRPCConnectionHandler(onRequest: onRequest, onActivity: onActivity),
         ])
       }
 
@@ -109,8 +150,19 @@ public final class CompanionServer: @unchecked Sendable {
       address: .domainSocket(path: socketPath))
     try registry.add(info)
 
+    // Begin the idle countdown now that the server is listening.
+    monitor?.start()
+
     companionServerLog("CompanionServer listening on \(socketPath) for udid \(udid)")
     return info
+  }
+
+  /// Closes the listening channel when the idle monitor fires. `waitUntilClosed()`
+  /// then returns, and the owner is expected to call `close()` to deregister and
+  /// clean up.
+  private func handleIdleTimeout() {
+    companionServerLog("CompanionServer idle for \(Int(idleShutdownTime ?? 0))s; shutting down")
+    channel?.close(promise: nil)
   }
 
   /// Suspends until the server's listening channel is closed.
@@ -124,6 +176,8 @@ public final class CompanionServer: @unchecked Sendable {
   /// Stops accepting connections, deregisters from the registry, removes the
   /// socket file, and shuts down the event loop group.
   public func close() async throws {
+    idleMonitor?.stop()
+    idleMonitor = nil
     if let channel {
       try? await channel.close().get()
       self.channel = nil

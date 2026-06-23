@@ -98,9 +98,14 @@ public struct CompanionSpawner {
       return arguments
     case .v2:
       // idb2 derives its own socket path from the udid and the v2 layout and
-      // prints it back; it takes neither --grpc-domain-sock nor (yet) the
-      // --only / --device-set-path / --idle-shutdown-time options.
-      return ["--udid", udid, "companion"]
+      // prints it back, so it takes no --grpc-domain-sock. --idle-shutdown-time
+      // goes after the `companion` subcommand; --only / --device-set-path are not
+      // supported yet.
+      var arguments = ["--udid", udid, "companion"]
+      if let idleShutdownTime {
+        arguments += ["--idle-shutdown-time", "\(Int(idleShutdownTime))"]
+      }
+      return arguments
     }
   }
 

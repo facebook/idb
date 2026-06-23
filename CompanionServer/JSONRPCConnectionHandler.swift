@@ -16,9 +16,14 @@ final class JSONRPCConnectionHandler: ChannelInboundHandler {
   typealias InboundIn = ByteBuffer
 
   private let onRequest: CompanionServer.RequestHandler
+  /// Called on each received frame, to reset the idle timer. A bare connection
+  /// that sends nothing (e.g. a discovery liveness probe) is not counted as
+  /// activity, so it does not keep an otherwise-idle server alive.
+  private let onActivity: (@Sendable () -> Void)?
 
-  init(onRequest: @escaping CompanionServer.RequestHandler) {
+  init(onRequest: @escaping CompanionServer.RequestHandler, onActivity: (@Sendable () -> Void)?) {
     self.onRequest = onRequest
+    self.onActivity = onActivity
   }
 
   func channelActive(context: ChannelHandlerContext) {
@@ -27,6 +32,7 @@ final class JSONRPCConnectionHandler: ChannelInboundHandler {
   }
 
   func channelRead(context: ChannelHandlerContext, data: NIOAny) {
+    onActivity?()
     var buffer = unwrapInboundIn(data)
     let bytes = buffer.readBytes(length: buffer.readableBytes) ?? []
     let payload = Data(bytes)

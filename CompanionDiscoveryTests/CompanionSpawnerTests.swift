@@ -151,15 +151,17 @@ struct CompanionSpawnerTests {
       try? FileManager.default.removeItem(atPath: logPath)
     }
 
-    let info = try await spawner.spawnDomainSocketServer(udid: udid, path: socketPath)
+    let info = try await spawner.spawnDomainSocketServer(udid: udid, path: socketPath, idleShutdownTime: 300)
     #expect(info.udid == udid)
     #expect(info.address == .domainSocket(path: socketPath))
     #expect((info.pid ?? 0) > 0)
 
-    // It launched the `idb2 companion` subcommand, not an idb_companion gRPC server.
+    // It launched the `idb2 companion` subcommand, not an idb_companion gRPC server,
+    // and forwarded the idle-shutdown time.
     let argv = try String(contentsOfFile: argsPath, encoding: .utf8)
     #expect(argv.contains("--udid \(udid)"))
     #expect(argv.contains("companion"))
+    #expect(argv.contains("--idle-shutdown-time 300"))
     #expect(!argv.contains("--grpc-domain-sock"))
 
     // Logs are written under the version's logs directory.

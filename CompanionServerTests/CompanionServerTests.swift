@@ -69,6 +69,57 @@ struct CompanionServerTests {
     }
   }
 
+  // MARK: - Idle shutdown
+
+  @Test
+  func shutsDownWhenIdle() async throws {
+    try await withTemporaryRegistry { registry in
+      let udid = uniqueUDID()
+      let path = CompanionPaths(version: .v2).companionSocketPath(forUDID: udid)
+      let server = CompanionServer(udid: udid, version: .v2, idleShutdownTime: 0.3, registry: registry)
+      defer { unlink(path) }
+
+      _ = try await server.start()
+      #expect(CompanionConnectivity.isDomainSocketBound(path: path))
+
+      // With no requests, the server closes itself, so the socket stops accepting.
+      // (Probing with isDomainSocketBound connects without sending, which is not
+      // counted as activity, so it does not keep resetting the idle timer.)
+      try await waitUntil { !CompanionConnectivity.isDomainSocketBound(path: path) }
+      #expect(!CompanionConnectivity.isDomainSocketBound(path: path))
+
+      try await server.close()
+    }
+  }
+
+  @Test
+  func activityResetsIdleTimer() async throws {
+    try await withTemporaryRegistry { registry in
+      let udid = uniqueUDID()
+      let path = CompanionPaths(version: .v2).companionSocketPath(forUDID: udid)
+      // Generous window so wall-clock jitter on a loaded machine can't fire it
+      // early: requests arrive every ~0.2s, far inside the 2s window.
+      let server = CompanionServer(udid: udid, version: .v2, idleShutdownTime: 2.0, registry: registry)
+      defer { unlink(path) }
+
+      _ = try await server.start()
+
+      // Send a request every ~0.2s for ~1s; each one resets the timer, so the
+      // server must still be up afterwards.
+      for _ in 0..<5 {
+        sendActivity(toSocketPath: path)
+        try await Task.sleep(nanoseconds: 200_000_000)
+      }
+      #expect(CompanionConnectivity.isDomainSocketBound(path: path))
+
+      // Once it goes quiet, it shuts down.
+      try await waitUntil(timeout: 8) { !CompanionConnectivity.isDomainSocketBound(path: path) }
+      #expect(!CompanionConnectivity.isDomainSocketBound(path: path))
+
+      try await server.close()
+    }
+  }
+
   // MARK: - Helpers
 
   private func uniqueUDID() -> String {
@@ -128,6 +179,31 @@ struct CompanionServerTests {
     bytes.withUnsafeBytes { raw in
       _ = Darwin.write(fd, raw.baseAddress, raw.count)
     }
+  }
+
+  /// Best-effort: sends one JSON-RPC line to the server to count as activity,
+  /// ignoring any failure (so a slow/closed socket can't crash the test).
+  private func sendActivity(toSocketPath path: String) {
+    let fd = socket(AF_UNIX, SOCK_STREAM, 0)
+    guard fd >= 0 else { return }
+    defer { close(fd) }
+    var addr = sockaddr_un()
+    addr.sun_family = sa_family_t(AF_UNIX)
+    let capacity = MemoryLayout.size(ofValue: addr.sun_path)
+    guard path.utf8.count < capacity else { return }
+    withUnsafeMutablePointer(to: &addr.sun_path) { rawPointer in
+      rawPointer.withMemoryRebound(to: CChar.self, capacity: capacity) { destination in
+        _ = strncpy(destination, path, capacity - 1)
+      }
+    }
+    let length = socklen_t(MemoryLayout<sockaddr_un>.size)
+    let connected = withUnsafePointer(to: &addr) { addrPointer in
+      addrPointer.withMemoryRebound(to: sockaddr.self, capacity: 1) { sockaddrPointer in
+        Darwin.connect(fd, sockaddrPointer, length)
+      }
+    }
+    guard connected == 0 else { return }
+    writeLine(#"{"jsonrpc":"2.0","method":"ping"}"#, to: fd)
   }
 }
 
