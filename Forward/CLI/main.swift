@@ -5,8 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// patternlint-disable avoid-print-to-prevent-production-overhead
-
 import CompanionDiscovery
 import Darwin
 import Foundation
@@ -33,7 +31,7 @@ struct IdbForward {
       }
     }
 
-    print("Remaining arguments: \(remainingArguments)")
+    logStderr("Remaining arguments: \(remainingArguments)")
 
     // Discover the companion to use, starting one if needed. A companion we start
     // should not outlive its use, so it exits after 5 minutes without activity.
@@ -49,41 +47,69 @@ struct IdbForward {
         companion = try await manager.defaultCompanion(idleShutdownTime: idleShutdownTime)
       }
     } catch {
-      print("Error: \(error)")
+      logStderr("Error: \(error)")
       exit(1)
     }
 
-    printCompanion(companion)
+    logCompanion(companion)
 
     // Forward the remaining arguments to the companion as a `cli` JSON-RPC
-    // request: the companion runs them through idb2's ArgumentParser.
+    // request: the companion runs them through idb2's ArgumentParser and returns
+    // the command's stdout and exit code, which we relay as our own.
     switch companion.address {
     case let .domainSocket(path):
+      let response: Data
       do {
-        try sendCLICommand(remainingArguments, toSocketPath: path)
-        print("Forwarded cli command to companion: \(remainingArguments)")
+        response = try sendCLICommand(remainingArguments, toSocketPath: path)
       } catch {
-        print("Error: \(error)")
+        logStderr("Error: \(error)")
         exit(1)
       }
+      emit(response)
     case let .tcp(host, port):
-      print("Error: forwarding to TCP companions is not supported yet (\(host):\(port))")
+      logStderr("Error: forwarding to TCP companions is not supported yet (\(host):\(port))")
       exit(1)
     }
   }
 
-  /// Prints the discovered companion's details to stdout.
-  private static func printCompanion(_ companion: CompanionInfo) {
-    print("Companion:")
-    print("  udid: \(companion.udid)")
-    print("  isLocal: \(companion.isLocal)")
-    print("  pid: \(companion.pid.map(String.init) ?? "none")")
-    switch companion.address {
-    case let .tcp(host, port):
-      print("  address: tcp \(host):\(port)")
-    case let .domainSocket(path):
-      print("  address: unix \(path)")
+  /// Parses the companion's JSON-RPC response: writes the command's stdout to our
+  /// stdout and exits with its exit code, or reports an error response.
+  private static func emit(_ data: Data) -> Never {
+    var json = data
+    while json.last == 0x0A || json.last == 0x0D {
+      json.removeLast()
     }
+    guard let object = try? JSONSerialization.jsonObject(with: json) as? [String: Any] else {
+      logStderr("Error: companion returned an invalid response")
+      exit(1)
+    }
+    if let result = object["result"] as? [String: Any] {
+      let output = result["stdout"] as? String ?? ""
+      let exitCode = (result["exitCode"] as? NSNumber)?.int32Value ?? 0
+      FileHandle.standardOutput.write(Data(output.utf8))
+      exit(exitCode)
+    }
+    if let errorObject = object["error"] as? [String: Any] {
+      logStderr("Error: \(errorObject["message"] as? String ?? "\(errorObject)")")
+      exit(1)
+    }
+    logStderr("Error: companion response had neither result nor error")
+    exit(1)
+  }
+
+  /// Writes a diagnostic line to stderr, keeping stdout for the forwarded
+  /// command's own output.
+  private static func logStderr(_ message: String) {
+    FileHandle.standardError.write(Data((message + "\n").utf8))
+  }
+
+  private static func logCompanion(_ companion: CompanionInfo) {
+    let address: String
+    switch companion.address {
+    case let .tcp(host, port): address = "tcp \(host):\(port)"
+    case let .domainSocket(path): address = "unix \(path)"
+    }
+    logStderr("Companion: udid=\(companion.udid) isLocal=\(companion.isLocal) pid=\(companion.pid.map(String.init) ?? "none") address=\(address)")
   }
 
   enum ForwardError: Error, CustomStringConvertible {
@@ -103,9 +129,10 @@ struct IdbForward {
     }
   }
 
-  /// Encodes `arguments` as a `cli` JSON-RPC request and writes it, newline
-  /// terminated, to the companion listening on `path`.
-  private static func sendCLICommand(_ arguments: [String], toSocketPath path: String) throws {
+  /// Encodes `arguments` as a `cli` JSON-RPC request, writes it (newline framed)
+  /// to the companion listening on `path`, then reads the response to EOF and
+  /// returns it.
+  private static func sendCLICommand(_ arguments: [String], toSocketPath path: String) throws -> Data {
     let request: [String: Any] = [
       "jsonrpc": "2.0",
       "method": "cli",
@@ -156,10 +183,17 @@ struct IdbForward {
       }
     }
 
-    // Keep the connection open and read until the companion closes it: that close
-    // is the companion's acknowledgement that it received the request, so the
-    // command is reliably delivered before this process exits.
-    var byte: UInt8 = 0
-    while Darwin.read(fd, &byte, 1) > 0 {}
+    // Read the response to EOF: the companion writes one JSON-RPC response line
+    // and then closes the connection.
+    var response = Data()
+    var chunk = [UInt8](repeating: 0, count: 4096)
+    while true {
+      let n = chunk.withUnsafeMutableBytes { Darwin.read(fd, $0.baseAddress, $0.count) }
+      if n <= 0 {
+        break
+      }
+      response.append(contentsOf: chunk[0..<n])
+    }
+    return response
   }
 }

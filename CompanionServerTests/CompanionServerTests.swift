@@ -48,7 +48,12 @@ struct CompanionServerTests {
       let recorder = RequestRecorder()
       let udid = uniqueUDID()
       let expectedPath = CompanionPaths(version: .v2).companionSocketPath(forUDID: udid)
-      let server = CompanionServer(udid: udid, version: .v2, registry: registry, onRequest: { recorder.record($0) })
+      let server = CompanionServer(
+        udid: udid, version: .v2, registry: registry,
+        onRequest: { request in
+          recorder.record(request)
+          return nil
+        })
       defer { unlink(expectedPath) }
 
       _ = try await server.start()
@@ -64,6 +69,32 @@ struct CompanionServerTests {
       #expect(received?.jsonrpc == "2.0")
       #expect(received?.id == .number(7))
       #expect(received?.params == .object(["x": .number(1)]))
+
+      try await server.close()
+    }
+  }
+
+  @Test
+  func returnsResponseToClient() async throws {
+    try await withTemporaryRegistry { registry in
+      let udid = uniqueUDID()
+      let path = CompanionPaths(version: .v2).companionSocketPath(forUDID: udid)
+      let server = CompanionServer(
+        udid: udid, version: .v2, registry: registry,
+        onRequest: { request in
+          JSONRPCResponse(id: request.id, result: .object(["echo": .string(request.method)]))
+        })
+      defer { unlink(path) }
+
+      _ = try await server.start()
+
+      // Send a request, keep the connection open, and read the response back.
+      let fd = connect(toSocketPath: path)
+      defer { close(fd) }
+      writeLine(#"{"jsonrpc":"2.0","method":"ping","id":7}"#, to: fd)
+      let decoded = try JSONDecoder().decode(JSONRPCResponse.self, from: readResponse(fd))
+      #expect(decoded.id == .number(7))
+      #expect(decoded.result == .object(["echo": .string("ping")]))
 
       try await server.close()
     }
@@ -129,19 +160,23 @@ struct CompanionServerTests {
       // paused for the whole time the request is in flight, then restart after.
       let server = CompanionServer(
         udid: udid, version: .v2, idleShutdownTime: 0.5, registry: registry,
-        onRequest: { _ in try? await Task.sleep(nanoseconds: 2_000_000_000) })
+        onRequest: { _ in
+          try? await Task.sleep(nanoseconds: 2_000_000_000)
+          return nil
+        })
       defer { unlink(path) }
 
       _ = try await server.start()
 
-      // Fire-and-forget a request (connection closed immediately, as idb-forward
-      // does), then confirm the server is still up at 1s — well past the 0.5s
-      // idle timeout — because the in-flight request paused the timer.
-      sendActivity(toSocketPath: path)
+      // Send the request in the background (sendActivity blocks reading the reply
+      // until the 2s handler finishes), then confirm the server is still up at 1s —
+      // well past the 0.5s idle timeout — because the in-flight request paused it.
+      let sender = Task.detached { sendActivity(toSocketPath: path) }
       try await Task.sleep(nanoseconds: 1_000_000_000)
       #expect(CompanionConnectivity.isDomainSocketBound(path: path))
 
       // After the request finishes (~2s) the timer restarts and it shuts down.
+      _ = await sender.value
       try await waitUntil(timeout: 6) { !CompanionConnectivity.isDomainSocketBound(path: path) }
       #expect(!CompanionConnectivity.isDomainSocketBound(path: path))
 
@@ -199,6 +234,24 @@ struct CompanionServerTests {
     }
     precondition(result == 0, "connect() failed (errno \(errno))")
     return fd
+  }
+
+  /// Reads from `fd` to EOF, returning the bytes with any trailing newline
+  /// stripped (the server writes one response line then closes).
+  private func readResponse(_ fd: Int32) -> Data {
+    var data = Data()
+    var chunk = [UInt8](repeating: 0, count: 1024)
+    while true {
+      let n = chunk.withUnsafeMutableBytes { Darwin.read(fd, $0.baseAddress, $0.count) }
+      if n <= 0 {
+        break
+      }
+      data.append(contentsOf: chunk[0..<n])
+    }
+    while data.last == 0x0A {
+      data.removeLast()
+    }
+    return data
   }
 
   /// Writes `line` followed by a newline to `fd`.

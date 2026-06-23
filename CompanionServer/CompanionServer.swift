@@ -40,8 +40,10 @@ func companionServerLog(_ message: String) {
 /// awaited from a `@MainActor` caller).
 public final class CompanionServer: @unchecked Sendable {
   /// Invoked for every JSON-RPC request received on any connection. Awaited to
-  /// completion; the idle countdown is paused for its duration.
-  public typealias RequestHandler = @Sendable (JSONRPCRequest) async -> Void
+  /// completion (the idle countdown is paused for its duration); the returned
+  /// response, if any, is written back to the client before the connection is
+  /// closed. Return nil for a request that warrants no reply.
+  public typealias RequestHandler = @Sendable (JSONRPCRequest) async -> JSONRPCResponse?
 
   private let udid: String
   private let paths: CompanionPaths
@@ -103,7 +105,11 @@ public final class CompanionServer: @unchecked Sendable {
     self.paths = paths
     self.idleShutdownTime = idleShutdownTime
     self.registry = registry ?? CompanionRegistry(stateFilePath: paths.stateFile)
-    self.onRequest = onRequest ?? { request in companionServerLog("CompanionServer received \(request)") }
+    self.onRequest =
+      onRequest ?? { request in
+        companionServerLog("CompanionServer received \(request)")
+        return nil
+      }
     self.group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
   }
 
@@ -128,16 +134,23 @@ public final class CompanionServer: @unchecked Sendable {
     // so the countdown is paused while the request is processed and restarts at
     // the full timeout once it completes.
     let onRequest = self.onRequest
-    let submit: @Sendable (JSONRPCRequest) -> Void = { request in
+    let submit: @Sendable (JSONRPCRequest, Channel) -> Void = { request, channel in
       // Pause the idle countdown synchronously, as the request is read on the
       // event loop, so it cannot fire in the gap before the async task starts.
       monitor?.beginActivity()
       // Detached so the work is not tied to (and cannot be cancelled by) the
-      // connection that delivered the request — idb-forward closes its socket
-      // immediately after sending.
+      // connection — the client keeps it open only to read the reply back.
       Task.detached {
         defer { monitor?.endActivity() }
-        await onRequest(request)
+        let response = await onRequest(request)
+        if let response, let data = try? JSONEncoder().encode(response) {
+          var buffer = ByteBufferAllocator().buffer(capacity: data.count + 1)
+          buffer.writeBytes(data)
+          buffer.writeInteger(UInt8(ascii: "\n"))
+          try? await channel.writeAndFlush(buffer).get()
+        }
+        // One request per connection: close once the reply (if any) is sent.
+        try? await channel.close().get()
       }
     }
 
