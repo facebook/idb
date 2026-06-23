@@ -29,7 +29,11 @@ func companionServerLog(_ message: String) {
 /// `onRequest`, which by default prints it.
 ///
 /// Only Unix domain sockets are supported today; TCP can be layered on later.
-public final class CompanionServer {
+///
+/// `@unchecked Sendable`: the only mutable state is `channel`, guarded by
+/// `channelLock`, so instances can be used across concurrency domains (e.g.
+/// awaited from a `@MainActor` caller).
+public final class CompanionServer: @unchecked Sendable {
   /// Invoked for every JSON-RPC request received on any connection.
   public typealias RequestHandler = @Sendable (JSONRPCRequest) -> Void
 
@@ -38,7 +42,20 @@ public final class CompanionServer {
   private let registry: CompanionRegistry
   private let onRequest: RequestHandler
   private let group: MultiThreadedEventLoopGroup
-  private var channel: Channel?
+  private let channelLock = NSLock()
+  private var _channel: Channel?
+  private var channel: Channel? {
+    get {
+      channelLock.lock()
+      defer { channelLock.unlock() }
+      return _channel
+    }
+    set {
+      channelLock.lock()
+      defer { channelLock.unlock() }
+      _channel = newValue
+    }
+  }
 
   /// - Parameters:
   ///   - udid: the target the server fronts. Determines the conventional socket
