@@ -1470,33 +1470,47 @@ struct FrameTrigger {
 /// The `.lazy` (VFR) stimulus for the frame push loop: an `AsyncSequence` of `FrameTrigger`s poked by
 /// the framebuffer callbacks rather than a clock. `signalDamage()` (a new framebuffer rect) and
 /// `signalKeyFrame()` (an overlay change, which must be a decodable keyframe) each enqueue a trigger
-/// that the shared loop consumes. Owning the stream and its continuation here keeps that state off
+/// that the shared loop consumes. Owning the stream and its keyframe state here keeps it off
 /// `FBSimulatorVideoStream` and its `writeQueue`, so the callbacks simply call a method.
-final class LazyFrameTriggers: AsyncSequence, Sendable {
+///
+/// Triggers coalesce to the newest (`bufferingNewest(1)`): when pushes fall behind, redundant frames
+/// are dropped and only the latest screen state is pushed — the correct semantics for VFR. A keyframe
+/// must survive that coalescing, so it is not carried on a (droppable) trigger but held as a sticky
+/// flag that `signalKeyFrame()` sets and the iterator reads-and-clears as it pulls each trigger.
+// @unchecked Sendable: `pendingKeyFrame` is mutable across threads but guarded by `lock`; the stream
+// and its continuation are Sendable.
+final class LazyFrameTriggers: AsyncSequence, @unchecked Sendable {
   typealias Element = FrameTrigger
 
-  private let stream: AsyncStream<FrameTrigger>
-  private let continuation: AsyncStream<FrameTrigger>.Continuation
+  private let stream: AsyncStream<Void>
+  private let continuation: AsyncStream<Void>.Continuation
+  private let lock = NSLock()
+  /// Whether the next pushed frame must be a keyframe. Guarded by `lock`; set by `signalKeyFrame`,
+  /// read-and-cleared by the iterator, so coalescing never drops a pending keyframe.
+  private var pendingKeyFrame = false
 
   init() {
     // The `AsyncStream` builder hands back the continuation synchronously during init, so the IUO is
     // always assigned before use. This is the pre-`makeStream` idiom (`makeStream` needs a newer
     // deployment target than our macOS 12 floor).
     // swiftlint:disable:next implicitly_unwrapped_optional
-    var continuation: AsyncStream<FrameTrigger>.Continuation!
-    self.stream = AsyncStream<FrameTrigger>(bufferingPolicy: .unbounded) { continuation = $0 }
+    var continuation: AsyncStream<Void>.Continuation!
+    self.stream = AsyncStream<Void>(bufferingPolicy: .bufferingNewest(1)) { continuation = $0 }
     self.continuation = continuation
   }
 
-  /// Signal that the framebuffer changed — enqueue a normal (non-keyframe) push.
+  /// Signal that the framebuffer changed — enqueue a push of the latest state.
   func signalDamage() {
-    continuation.yield(FrameTrigger(forceKeyFrame: false, overran: false))
+    continuation.yield(())
   }
 
-  /// Signal that the overlay changed — enqueue a keyframe push so consumers that need a keyframe can
-  /// decode the change immediately.
+  /// Signal that the overlay changed — mark the next push a keyframe so consumers that need a keyframe
+  /// can decode the change immediately, then enqueue a push.
   func signalKeyFrame() {
-    continuation.yield(FrameTrigger(forceKeyFrame: true, overran: false))
+    lock.lock()
+    pendingKeyFrame = true
+    lock.unlock()
+    continuation.yield(())
   }
 
   /// End the stream, completing the push loop's `for await`.
@@ -1504,8 +1518,27 @@ final class LazyFrameTriggers: AsyncSequence, Sendable {
     continuation.finish()
   }
 
-  func makeAsyncIterator() -> AsyncStream<FrameTrigger>.Iterator {
-    stream.makeAsyncIterator()
+  /// Atomically read and clear the sticky keyframe flag.
+  private func takePendingKeyFrame() -> Bool {
+    lock.lock()
+    defer { lock.unlock() }
+    let pending = pendingKeyFrame
+    pendingKeyFrame = false
+    return pending
+  }
+
+  func makeAsyncIterator() -> AsyncIterator {
+    AsyncIterator(base: stream.makeAsyncIterator(), source: self)
+  }
+
+  struct AsyncIterator: AsyncIteratorProtocol {
+    var base: AsyncStream<Void>.Iterator
+    let source: LazyFrameTriggers
+
+    mutating func next() async -> FrameTrigger? {
+      guard await base.next() != nil else { return nil }
+      return FrameTrigger(forceKeyFrame: source.takePendingKeyFrame(), overran: false)
+    }
   }
 }
 
