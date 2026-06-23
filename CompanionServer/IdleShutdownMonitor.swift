@@ -8,19 +8,21 @@
 import Dispatch
 import Foundation
 
-/// Shuts a server down after a period without activity. Each `recordActivity()`
-/// (a new connection or a received request) resets the countdown; if `timeout`
-/// elapses with no activity, `onTimeout` is invoked exactly once.
+/// Shuts a server down after a period without activity. While a request is being
+/// processed the countdown is paused (`beginActivity()`); it restarts at the full
+/// `timeout` once processing completes (`endActivity()`). If `timeout` elapses
+/// with nothing in flight, `onTimeout` is invoked exactly once.
 ///
-/// `@unchecked Sendable`: the resettable timer is guarded by `lock`, so
-/// `recordActivity()` (called on a NIO event-loop thread) and the timer's own
-/// firing (on `queue`) are serialised.
+/// `@unchecked Sendable`: the timer and in-flight counter are guarded by `lock`,
+/// so the begin/end calls (on cooperative threads) and the timer's own firing (on
+/// `queue`) are serialised.
 final class IdleShutdownMonitor: @unchecked Sendable {
   private let timeout: TimeInterval
   private let onTimeout: @Sendable () -> Void
   private let queue = DispatchQueue(label: "com.facebook.idb.companionserver.idle")
   private let lock = NSLock()
   private var timer: DispatchSourceTimer?
+  private var inFlight = 0
   private var finished = false
 
   init(timeout: TimeInterval, onTimeout: @escaping @Sendable () -> Void) {
@@ -40,12 +42,29 @@ final class IdleShutdownMonitor: @unchecked Sendable {
     timer.resume()
   }
 
-  /// Resets the countdown back to `timeout` from now.
-  func recordActivity() {
+  /// Marks a request as in flight, pausing the countdown until it completes.
+  func beginActivity() {
     lock.lock()
     defer { lock.unlock() }
     guard let timer, !finished else { return }
-    timer.schedule(deadline: .now() + timeout)
+    inFlight += 1
+    if inFlight == 1 {
+      timer.schedule(deadline: .distantFuture) // pause while work is in flight
+    }
+  }
+
+  /// Marks an in-flight request complete; when none remain, restarts the
+  /// countdown at the full `timeout`.
+  func endActivity() {
+    lock.lock()
+    defer { lock.unlock() }
+    guard let timer, !finished else { return }
+    if inFlight > 0 {
+      inFlight -= 1
+    }
+    if inFlight == 0 {
+      timer.schedule(deadline: .now() + timeout)
+    }
   }
 
   /// Cancels the countdown without invoking `onTimeout`.

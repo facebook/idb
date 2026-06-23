@@ -39,8 +39,9 @@ func companionServerLog(_ message: String) {
 /// by `stateLock`, so instances can be used across concurrency domains (e.g.
 /// awaited from a `@MainActor` caller).
 public final class CompanionServer: @unchecked Sendable {
-  /// Invoked for every JSON-RPC request received on any connection.
-  public typealias RequestHandler = @Sendable (JSONRPCRequest) -> Void
+  /// Invoked for every JSON-RPC request received on any connection. Awaited to
+  /// completion; the idle countdown is paused for its duration.
+  public typealias RequestHandler = @Sendable (JSONRPCRequest) async -> Void
 
   private let udid: String
   private let paths: CompanionPaths
@@ -123,20 +124,29 @@ public final class CompanionServer: @unchecked Sendable {
     }
     self.idleMonitor = monitor
 
-    let onActivity: (@Sendable () -> Void)?
-    if let monitor {
-      onActivity = { monitor.recordActivity() }
-    } else {
-      onActivity = nil
+    // Each received request runs in its own Task, bracketed by the idle monitor
+    // so the countdown is paused while the request is processed and restarts at
+    // the full timeout once it completes.
+    let onRequest = self.onRequest
+    let submit: @Sendable (JSONRPCRequest) -> Void = { request in
+      // Pause the idle countdown synchronously, as the request is read on the
+      // event loop, so it cannot fire in the gap before the async task starts.
+      monitor?.beginActivity()
+      // Detached so the work is not tied to (and cannot be cancelled by) the
+      // connection that delivered the request — idb-forward closes its socket
+      // immediately after sending.
+      Task.detached {
+        defer { monitor?.endActivity() }
+        await onRequest(request)
+      }
     }
 
-    let onRequest = self.onRequest
     let bootstrap = ServerBootstrap(group: group)
       .serverChannelOption(ChannelOptions.backlog, value: 256)
       .childChannelInitializer { channel in
         channel.pipeline.addHandlers([
           ByteToMessageHandler(NewlineFrameDecoder()),
-          JSONRPCConnectionHandler(onRequest: onRequest, onActivity: onActivity),
+          JSONRPCConnectionHandler(submit: submit),
         ])
       }
 

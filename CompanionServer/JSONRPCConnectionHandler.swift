@@ -8,22 +8,21 @@
 import Foundation
 @_implementationOnly import NIOCore
 
-/// Per-connection handler sitting after `NewlineFrameDecoder`. Each inbound frame
-/// is one line; it decodes the line as a `JSONRPCRequest` and forwards it to the
-/// server's request handler. Malformed lines are reported but do not close the
-/// connection.
+/// Per-connection handler sitting after `NewlineFrameDecoder`. It decodes the
+/// first line as a `JSONRPCRequest`, hands it to the server's `submit` closure
+/// (which dispatches it asynchronously and brackets it with the idle monitor),
+/// then closes the connection. Closing is the client's "request received" signal:
+/// the client keeps the connection open and reads until EOF, so the request is
+/// reliably delivered before either side goes away. The request itself runs in a
+/// detached task, independent of this connection.
 final class JSONRPCConnectionHandler: ChannelInboundHandler {
   typealias InboundIn = ByteBuffer
 
-  private let onRequest: CompanionServer.RequestHandler
-  /// Called on each received frame, to reset the idle timer. A bare connection
-  /// that sends nothing (e.g. a discovery liveness probe) is not counted as
-  /// activity, so it does not keep an otherwise-idle server alive.
-  private let onActivity: (@Sendable () -> Void)?
+  /// Hands a decoded request to the server for asynchronous processing.
+  private let submit: @Sendable (JSONRPCRequest) -> Void
 
-  init(onRequest: @escaping CompanionServer.RequestHandler, onActivity: (@Sendable () -> Void)?) {
-    self.onRequest = onRequest
-    self.onActivity = onActivity
+  init(submit: @escaping @Sendable (JSONRPCRequest) -> Void) {
+    self.submit = submit
   }
 
   func channelActive(context: ChannelHandlerContext) {
@@ -32,16 +31,17 @@ final class JSONRPCConnectionHandler: ChannelInboundHandler {
   }
 
   func channelRead(context: ChannelHandlerContext, data: NIOAny) {
-    onActivity?()
     var buffer = unwrapInboundIn(data)
     let bytes = buffer.readBytes(length: buffer.readableBytes) ?? []
     let payload = Data(bytes)
     do {
       let request = try JSONDecoder().decode(JSONRPCRequest.self, from: payload)
-      onRequest(request)
+      submit(request)
     } catch {
       companionServerLog("CompanionServer: ignoring non-JSON-RPC line: \(String(decoding: payload, as: UTF8.self))")
     }
+    // One request per connection: close to acknowledge receipt to the client.
+    context.close(promise: nil)
   }
 
   func errorCaught(context: ChannelHandlerContext, error: Error) {

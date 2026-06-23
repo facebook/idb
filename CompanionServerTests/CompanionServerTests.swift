@@ -120,6 +120,35 @@ struct CompanionServerTests {
     }
   }
 
+  @Test
+  func idleTimerPausedWhileProcessing() async throws {
+    try await withTemporaryRegistry { registry in
+      let udid = uniqueUDID()
+      let path = CompanionPaths(version: .v2).companionSocketPath(forUDID: udid)
+      // The handler sleeps far longer than the idle timeout, so the timer must be
+      // paused for the whole time the request is in flight, then restart after.
+      let server = CompanionServer(
+        udid: udid, version: .v2, idleShutdownTime: 0.5, registry: registry,
+        onRequest: { _ in try? await Task.sleep(nanoseconds: 2_000_000_000) })
+      defer { unlink(path) }
+
+      _ = try await server.start()
+
+      // Fire-and-forget a request (connection closed immediately, as idb-forward
+      // does), then confirm the server is still up at 1s — well past the 0.5s
+      // idle timeout — because the in-flight request paused the timer.
+      sendActivity(toSocketPath: path)
+      try await Task.sleep(nanoseconds: 1_000_000_000)
+      #expect(CompanionConnectivity.isDomainSocketBound(path: path))
+
+      // After the request finishes (~2s) the timer restarts and it shuts down.
+      try await waitUntil(timeout: 6) { !CompanionConnectivity.isDomainSocketBound(path: path) }
+      #expect(!CompanionConnectivity.isDomainSocketBound(path: path))
+
+      try await server.close()
+    }
+  }
+
   // MARK: - Helpers
 
   private func uniqueUDID() -> String {
@@ -204,6 +233,10 @@ struct CompanionServerTests {
     }
     guard connected == 0 else { return }
     writeLine(#"{"jsonrpc":"2.0","method":"ping"}"#, to: fd)
+    // Keep the connection open and read until the server closes it (its receipt
+    // ack), so the request is reliably delivered.
+    var byte: UInt8 = 0
+    while Darwin.read(fd, &byte, 1) > 0 {}
   }
 }
 
