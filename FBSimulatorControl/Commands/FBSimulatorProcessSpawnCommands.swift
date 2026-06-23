@@ -9,7 +9,6 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-@objc(FBSimulatorProcessSpawnCommands)
 public final class FBSimulatorProcessSpawnCommands: NSObject, FBiOSTargetCommand {
 
   // MARK: - Properties
@@ -28,10 +27,9 @@ public final class FBSimulatorProcessSpawnCommands: NSObject, FBiOSTargetCommand
     super.init()
   }
 
-  // MARK: - Public
+  // MARK: - Launch Options
 
-  @objc(launchOptionsWithArguments:environment:waitForDebugger:)
-  public class func launchOptions(withArguments arguments: [String], environment: [String: String], waitForDebugger: Bool) -> [String: Any] {
+  class func launchOptions(withArguments arguments: [String], environment: [String: String], waitForDebugger: Bool) -> [String: Any] {
     var options: [String: Any] = [:]
     options["arguments"] = arguments
     options["environment"] = environment
