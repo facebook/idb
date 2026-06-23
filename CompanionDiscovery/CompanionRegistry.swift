@@ -9,13 +9,13 @@ import Darwin
 import Foundation
 
 /// A persistent registry of running companions, keyed by `udid`, stored as JSON
-/// at `CompanionPaths.stateFile`.
+/// at `stateFilePath` (defaulting to the v1 `CompanionPaths().stateFile`).
 public final class CompanionRegistry {
   private let stateFilePath: String
   private let lockTimeout: TimeInterval
   private let lockRetryInterval: useconds_t
 
-  public init(stateFilePath: String = CompanionPaths.stateFile) {
+  public init(stateFilePath: String = CompanionPaths().stateFile) {
     self.stateFilePath = stateFilePath
     self.lockTimeout = 3.0
     self.lockRetryInterval = 50_000 // 50ms, matching `_open_lockfile`.
@@ -77,6 +77,12 @@ public final class CompanionRegistry {
 
   // MARK: - Locked file access
 
+  /// Creates the directory holding the state file (and its lockfile) if needed.
+  private func ensureContainingDirectory() throws {
+    let directory = (stateFilePath as NSString).deletingLastPathComponent
+    try FileManager.default.createDirectory(atPath: directory, withIntermediateDirectories: true)
+  }
+
   private func readLocked() throws -> [CompanionInfo] {
     guard let data = FileManager.default.contents(atPath: stateFilePath), !data.isEmpty else {
       return []
@@ -90,7 +96,7 @@ public final class CompanionRegistry {
   }
 
   private func writeLocked(_ companions: [CompanionInfo]) throws {
-    try CompanionPaths.ensureBaseDirectory()
+    try ensureContainingDirectory()
     let encoder = JSONEncoder()
     encoder.outputFormatting = [.sortedKeys]
     let data = try encoder.encode(companions.sorted { $0.udid < $1.udid })
@@ -101,7 +107,7 @@ public final class CompanionRegistry {
 
   /// Runs `body` while holding an exclusive lock.
   private func withLock<T>(_ body: () throws -> T) throws -> T {
-    try CompanionPaths.ensureBaseDirectory()
+    try ensureContainingDirectory()
     let lockPath = stateFilePath + ".lock"
     let deadline = Date().addingTimeInterval(lockTimeout)
     var fd: Int32 = -1

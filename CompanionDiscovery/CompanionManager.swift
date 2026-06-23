@@ -13,25 +13,38 @@ import Foundation
 public final class CompanionManager {
   public let registry: CompanionRegistry
   private let spawner: CompanionSpawner
+  private let paths: CompanionPaths
 
   /// Pseudo-udid passed as `--udid booted`, telling a spawned companion to attach
   /// to the single booted simulator/device.
   private static let bootedTargetUDID = "booted"
 
   /// - Parameters:
-  ///   - companionPath: path to the `idb_companion` binary used to spawn
-  ///     companions on demand. Defaults to
-  ///     `CompanionPaths.defaultCompanionExecutable`; pass an explicit path to
+  ///   - version: which companion generation to discover. Determines the base
+  ///     directory used for the registry, logs, and socket paths (see
+  ///     `CompanionPaths`), so a v1 manager and a v2 manager never collide.
+  ///     Defaults to `.v1`.
+  ///   - companionPath: path to the binary used to spawn companions on demand.
+  ///     Defaults to `version`'s `CompanionPaths.defaultCompanionExecutable`
+  ///     (`idb_companion` for v1, `idb2` for v2); pass an explicit path to
   ///     override it (e.g. a test fixture).
   ///   - deviceSetPath: optional custom CoreSimulator device set.
-  ///   - registry: the backing companion registry.
+  ///   - registry: the backing companion registry. Defaults to one rooted at
+  ///     `version`'s state file; pass an explicit registry to override it (e.g. a
+  ///     test fixture with an isolated state file).
   public init(
-    companionPath: String = CompanionPaths.defaultCompanionExecutable,
+    version: CompanionVersion = .v1,
+    companionPath: String? = nil,
     deviceSetPath: String? = nil,
-    registry: CompanionRegistry = CompanionRegistry()
+    registry: CompanionRegistry? = nil
   ) {
-    self.registry = registry
-    self.spawner = CompanionSpawner(companionPath: companionPath, deviceSetPath: deviceSetPath)
+    let paths = CompanionPaths(version: version)
+    self.paths = paths
+    self.registry = registry ?? CompanionRegistry(stateFilePath: paths.stateFile)
+    self.spawner = CompanionSpawner(
+      paths: paths,
+      companionPath: companionPath ?? paths.defaultCompanionExecutable,
+      deviceSetPath: deviceSetPath)
   }
 
   /// Returns the companion to use for `udid`: the one already recorded in the
@@ -97,7 +110,7 @@ public final class CompanionManager {
   /// set, is forwarded to a newly spawned companion as `--idle-shutdown-time`.
   @discardableResult
   public func spawnCompanionServer(udid: String, only: String? = nil, idleShutdownTime: TimeInterval? = nil) async throws -> CompanionInfo {
-    let path = CompanionPaths.companionSocketPath(forUDID: udid)
+    let path = paths.companionSocketPath(forUDID: udid)
     let info: CompanionInfo
     if CompanionConnectivity.isDomainSocketBound(path: path) {
       // A companion is already serving this path, so reuse it.

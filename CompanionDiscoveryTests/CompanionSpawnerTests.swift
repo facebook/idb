@@ -135,6 +135,38 @@ struct CompanionSpawnerTests {
     }
   }
 
+  @Test
+  func v2LaunchesIdb2CompanionAndReadsBarePath() async throws {
+    let fakePath = try TestSupport.makeExecutableScript(TestSupport.idb2CompanionScript)
+    defer { try? FileManager.default.removeItem(atPath: (fakePath as NSString).deletingLastPathComponent) }
+
+    let spawner = CompanionSpawner(paths: CompanionPaths(version: .v2), companionPath: fakePath)
+    let udid = TestSupport.uniqueUDID()
+    let socketPath = CompanionPaths(version: .v2).companionSocketPath(forUDID: udid)
+    let argsPath = socketPath + ".args"
+    let logPath = CompanionPaths(version: .v2).logFilePath(forUDID: udid)
+    defer {
+      unlink(socketPath)
+      unlink(argsPath)
+      try? FileManager.default.removeItem(atPath: logPath)
+    }
+
+    let info = try await spawner.spawnDomainSocketServer(udid: udid, path: socketPath)
+    #expect(info.udid == udid)
+    #expect(info.address == .domainSocket(path: socketPath))
+    #expect((info.pid ?? 0) > 0)
+
+    // It launched the `idb2 companion` subcommand, not an idb_companion gRPC server.
+    let argv = try String(contentsOfFile: argsPath, encoding: .utf8)
+    #expect(argv.contains("--udid \(udid)"))
+    #expect(argv.contains("companion"))
+    #expect(!argv.contains("--grpc-domain-sock"))
+
+    // Logs are written under the version's logs directory.
+    #expect(logPath == "/tmp/idb2/logs/\(udid)")
+    #expect(FileManager.default.fileExists(atPath: logPath))
+  }
+
   // MARK: - Helpers
 
   private func withFakeCompanion(_ script: String, _ body: (CompanionSpawner) async throws -> Void) async throws {
@@ -145,6 +177,6 @@ struct CompanionSpawnerTests {
 
   private func cleanUp(udid: String, socketPath: String) {
     unlink(socketPath)
-    try? FileManager.default.removeItem(atPath: CompanionPaths.logFilePath(forUDID: udid))
+    try? FileManager.default.removeItem(atPath: CompanionPaths().logFilePath(forUDID: udid))
   }
 }

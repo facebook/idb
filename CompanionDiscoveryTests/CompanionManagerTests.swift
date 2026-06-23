@@ -37,10 +37,10 @@ struct CompanionManagerTests {
     try await withTemporaryRegistry { registry in
       let manager = CompanionManager(companionPath: fakePath, registry: registry)
       let udid = TestSupport.uniqueUDID()
-      let socketPath = CompanionPaths.companionSocketPath(forUDID: udid)
+      let socketPath = CompanionPaths().companionSocketPath(forUDID: udid)
       defer {
         unlink(socketPath)
-        try? FileManager.default.removeItem(atPath: CompanionPaths.logFilePath(forUDID: udid))
+        try? FileManager.default.removeItem(atPath: CompanionPaths().logFilePath(forUDID: udid))
       }
 
       let info = try await manager.companionInfo(forUDID: udid)
@@ -55,7 +55,7 @@ struct CompanionManagerTests {
   func reusesBoundConventionalSocketWithoutSpawning() async throws {
     try await withTemporaryRegistry { registry in
       let udid = TestSupport.uniqueUDID()
-      let socketPath = CompanionPaths.companionSocketPath(forUDID: udid)
+      let socketPath = CompanionPaths().companionSocketPath(forUDID: udid)
       let fd = TestSupport.makeListeningSocket(at: socketPath)
       defer {
         close(fd)
@@ -105,10 +105,10 @@ struct CompanionManagerTests {
     try await withTemporaryRegistry { registry in
       let manager = CompanionManager(companionPath: fakePath, registry: registry)
       let udid = TestSupport.uniqueUDID()
-      let socketPath = CompanionPaths.companionSocketPath(forUDID: udid)
+      let socketPath = CompanionPaths().companionSocketPath(forUDID: udid)
       defer {
         unlink(socketPath)
-        try? FileManager.default.removeItem(atPath: CompanionPaths.logFilePath(forUDID: udid))
+        try? FileManager.default.removeItem(atPath: CompanionPaths().logFilePath(forUDID: udid))
       }
 
       // A stale entry: a domain socket path that nothing is listening on.
@@ -128,7 +128,7 @@ struct CompanionManagerTests {
   func returnsLiveDomainSocketEntryWithoutSpawning() async throws {
     try await withTemporaryRegistry { registry in
       let udid = TestSupport.uniqueUDID()
-      let socketPath = CompanionPaths.companionSocketPath(forUDID: udid)
+      let socketPath = CompanionPaths().companionSocketPath(forUDID: udid)
       let fd = TestSupport.makeListeningSocket(at: socketPath)
       defer {
         close(fd)
@@ -211,13 +211,13 @@ struct CompanionManagerTests {
 
     try await withTemporaryRegistry { registry in
       // The `--udid booted` companion uses the conventional socket path for "booted".
-      let bootedSocketPath = CompanionPaths.companionSocketPath(forUDID: "booted")
+      let bootedSocketPath = CompanionPaths().companionSocketPath(forUDID: "booted")
       let argsPath = bootedSocketPath + ".args"
       unlink(bootedSocketPath) // clear any leftover from a prior run
       defer {
         unlink(bootedSocketPath)
         unlink(argsPath)
-        try? FileManager.default.removeItem(atPath: CompanionPaths.logFilePath(forUDID: "booted"))
+        try? FileManager.default.removeItem(atPath: CompanionPaths().logFilePath(forUDID: "booted"))
       }
 
       let manager = CompanionManager(companionPath: fakePath, registry: registry)
@@ -258,11 +258,11 @@ struct CompanionManagerTests {
   @Test
   func defaultCompanionFailsWhenSpawnFails() async throws {
     try await withTemporaryRegistry { registry in
-      let bootedSocketPath = CompanionPaths.companionSocketPath(forUDID: "booted")
+      let bootedSocketPath = CompanionPaths().companionSocketPath(forUDID: "booted")
       unlink(bootedSocketPath) // ensure the booted-target spawn path is not already bound
       defer {
         unlink(bootedSocketPath)
-        try? FileManager.default.removeItem(atPath: CompanionPaths.logFilePath(forUDID: "booted"))
+        try? FileManager.default.removeItem(atPath: CompanionPaths().logFilePath(forUDID: "booted"))
       }
       // Empty registry + a companion binary that does not exist: the `--udid booted`
       // spawn fails, so discovery fails.
@@ -270,6 +270,35 @@ struct CompanionManagerTests {
       await #expect(throws: CompanionDiscoveryError.self) {
         try await manager.defaultCompanion()
       }
+    }
+  }
+
+  // MARK: - Versioning
+
+  @Test
+  func versionTwoSpawnsIdb2CompanionAndRecords() async throws {
+    let fakePath = try TestSupport.makeExecutableScript(TestSupport.idb2CompanionScript)
+    defer { try? FileManager.default.removeItem(atPath: (fakePath as NSString).deletingLastPathComponent) }
+
+    try await withTemporaryRegistry { registry in
+      let manager = CompanionManager(version: .v2, companionPath: fakePath, registry: registry)
+      let udid = TestSupport.uniqueUDID()
+      let socketPath = CompanionPaths(version: .v2).companionSocketPath(forUDID: udid)
+      let argsPath = socketPath + ".args"
+      defer {
+        unlink(socketPath)
+        unlink(argsPath)
+        try? FileManager.default.removeItem(atPath: CompanionPaths(version: .v2).logFilePath(forUDID: udid))
+      }
+
+      let info = try await manager.companionInfo(forUDID: udid)
+      #expect(info.address == .domainSocket(path: socketPath))
+      #expect(info.pid != nil) // freshly spawned
+      // Launched idb2's `companion` subcommand and recorded the companion.
+      let argv = try String(contentsOfFile: argsPath, encoding: .utf8)
+      #expect(argv.contains("--udid \(udid)"))
+      #expect(argv.contains("companion"))
+      #expect(try registry.companions().map(\.udid) == [udid])
     }
   }
 

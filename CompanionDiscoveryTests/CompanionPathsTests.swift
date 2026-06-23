@@ -8,23 +8,38 @@
 import CompanionDiscovery
 import Testing
 
-/// Locks in the filesystem conventions shared with the Python `idb` client.
+/// Locks in the filesystem conventions for each companion version: v1 shares the
+/// Python `idb` client's locations, v2 lives under a separate directory.
 @Suite
 struct CompanionPathsTests {
   @Test
-  func usesSharedIdbLocations() {
-    #expect(CompanionPaths.baseDirectory == "/tmp/idb")
-    #expect(CompanionPaths.stateFile == "/tmp/idb/state")
-    #expect(CompanionPaths.logsDirectory == "/tmp/idb/logs")
+  func v1UsesSharedIdbLocations() {
+    let paths = CompanionPaths(version: .v1)
+    #expect(paths.baseDirectory == "/tmp/idb")
+    #expect(paths.stateFile == "/tmp/idb/state")
+    #expect(paths.logsDirectory == "/tmp/idb/logs")
+    #expect(paths.companionSocketPath(forUDID: "ABCD") == "/tmp/idb/ABCD_companion.sock")
+    #expect(paths.logFilePath(forUDID: "ABCD") == "/tmp/idb/logs/ABCD")
   }
 
   @Test
-  func companionSocketPathMatchesConvention() {
-    #expect(CompanionPaths.companionSocketPath(forUDID: "ABCD") == "/tmp/idb/ABCD_companion.sock")
+  func v2UsesSeparateIdb2Locations() {
+    let paths = CompanionPaths(version: .v2)
+    #expect(paths.baseDirectory == "/tmp/idb2")
+    #expect(paths.stateFile == "/tmp/idb2/state")
+    #expect(paths.logsDirectory == "/tmp/idb2/logs")
+    #expect(paths.companionSocketPath(forUDID: "ABCD") == "/tmp/idb2/ABCD_companion.sock")
+    #expect(paths.logFilePath(forUDID: "ABCD") == "/tmp/idb2/logs/ABCD")
   }
 
   @Test
-  func logFilePathMatchesConvention() {
-    #expect(CompanionPaths.logFilePath(forUDID: "ABCD") == "/tmp/idb/logs/ABCD")
+  func defaultsToV1() {
+    #expect(CompanionPaths().baseDirectory == CompanionPaths(version: .v1).baseDirectory)
+  }
+
+  @Test
+  func companionBinaryIsVersionAware() {
+    #expect(CompanionPaths(version: .v1).defaultCompanionExecutable == "/usr/local/bin/idb_companion")
+    #expect(CompanionPaths(version: .v2).defaultCompanionExecutable == "/usr/local/bin/idb2")
   }
 }

@@ -41,7 +41,7 @@ enum TestSupport {
   }
 
   /// A fake companion that echoes the requested `--grpc-domain-sock` value back
-  /// as `grpc_path` (the startup handshake the spawner reads), then exits.
+  /// as `grpc_path` (the v1 startup handshake the spawner reads), then exits.
   static let echoSocketScript = """
     #!/bin/bash
     path=""
@@ -51,6 +51,23 @@ enum TestSupport {
       prev="$arg"
     done
     printf '{"grpc_path": "%s"}\\n' "$path"
+    """
+
+  /// A fake `idb2`: derives the conventional v2 socket path from its `--udid`,
+  /// records its argv at `<socket>.args`, then prints the bare path (the v2
+  /// startup handshake) and exits. The `/tmp/idb2` prefix mirrors
+  /// `CompanionPaths(version: .v2)`.
+  static let idb2CompanionScript = """
+    #!/bin/bash
+    udid=""
+    prev=""
+    for arg in "$@"; do
+      if [ "$prev" = "--udid" ]; then udid="$arg"; fi
+      prev="$arg"
+    done
+    socket=$(printf '/tmp/idb2/%s_companion.sock' "$udid")
+    echo "$*" > "$socket.args"
+    printf '%s\\n' "$socket"
     """
 
   /// Creates and binds a listening AF_UNIX socket at `path`, returning its fd.

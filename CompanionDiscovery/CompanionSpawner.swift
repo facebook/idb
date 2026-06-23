@@ -10,47 +10,44 @@ import Foundation
 
 /// Launches `idb_companion` processes.
 public struct CompanionSpawner {
+  private let paths: CompanionPaths
   private let companionPath: String
   private let deviceSetPath: String?
   /// Seconds to wait for the companion to print its startup line.
   private let readinessTimeout: TimeInterval
 
-  /// - Parameter companionPath: path to the `idb_companion` binary to launch.
-  ///   Defaults to `CompanionPaths.defaultCompanionExecutable`; callers can
-  ///   override it with a specific binary.
-  public init(companionPath: String = CompanionPaths.defaultCompanionExecutable, deviceSetPath: String? = nil, readinessTimeout: TimeInterval = 30) {
+  /// - Parameters:
+  ///   - paths: the versioned filesystem locations a spawned companion logs
+  ///     under, and whose `version` selects how the companion is launched.
+  ///     Defaults to the v1 `CompanionPaths()`.
+  ///   - companionPath: path to the binary to launch (`idb_companion` for v1,
+  ///     `idb2` for v2).
+  public init(paths: CompanionPaths = CompanionPaths(), companionPath: String, deviceSetPath: String? = nil, readinessTimeout: TimeInterval = 30) {
+    self.paths = paths
     self.companionPath = companionPath
     self.deviceSetPath = deviceSetPath
     self.readinessTimeout = readinessTimeout
   }
 
-  /// Spawns a companion for `udid` bound to `path`, returning a record for it.
-  /// When `idleShutdownTime` is set, the companion is launched with
-  /// `--idle-shutdown-time` so it exits after that many seconds of gRPC inactivity.
+  /// Spawns a companion for `udid` bound to `path`, returning a record for it
+  /// only after the companion reports the bound socket path on stdout — so a
+  /// caller can connect without racing the bind. When `idleShutdownTime` is set,
+  /// a v1 companion is launched with `--idle-shutdown-time` so it exits after that
+  /// many seconds of gRPC inactivity (not yet supported for v2).
   ///
-  /// - Note: Unlike the Python client, the spawned process is not yet detached
-  ///   into its own process group (`reparent=True` / `preexec_fn=os.setpgrp`).
-  ///   It survives a normal exit of this process, but would receive terminal
-  ///   signals (e.g. Ctrl-C) delivered to this process's group. Proper
-  ///   detachment is left for the lifecycle/hookup work.
+  /// - Note: For v2, `idb2 companion` detaches itself (it calls `setsid()`), so it
+  ///   outlives this process and is not killed by terminal signals delivered to
+  ///   this process's group. The v1 `idb_companion` is not detached by the spawner;
+  ///   it survives a normal exit of this process but would receive such signals.
   public func spawnDomainSocketServer(udid: String, only: String? = nil, path: String, idleShutdownTime: TimeInterval? = nil) async throws -> CompanionInfo {
-    try CompanionPaths.ensureLogsDirectory()
-    let logPath = CompanionPaths.logFilePath(forUDID: udid)
+    try paths.ensureLogsDirectory()
+    let logPath = paths.logFilePath(forUDID: udid)
     let logHandle = try appendHandle(forPath: logPath)
     defer { try? logHandle.close() }
 
-    var arguments = ["--udid", udid, "--grpc-domain-sock", path]
-    arguments += onlyArguments(only)
-    if let deviceSetPath {
-      arguments += ["--device-set-path", deviceSetPath]
-    }
-    if let idleShutdownTime {
-      arguments += ["--idle-shutdown-time", "\(Int(idleShutdownTime))"]
-    }
-
     let process = Process()
     process.executableURL = URL(fileURLWithPath: companionPath)
-    process.arguments = arguments
+    process.arguments = launchArguments(udid: udid, only: only, path: path, idleShutdownTime: idleShutdownTime)
     let stdoutPipe = Pipe()
     process.standardOutput = stdoutPipe
     process.standardError = logHandle
@@ -61,6 +58,8 @@ public struct CompanionSpawner {
       throw CompanionDiscoveryError.spawnFailed(reason: "\(error). \(logTail(logPath))")
     }
 
+    // Wait for the companion's startup line before returning: the socket is bound
+    // by the time it is emitted, so there is no race between spawning and connecting.
     let line: String
     do {
       line = try await readFirstLine(from: stdoutPipe.fileHandleForReading, timeout: readinessTimeout)
@@ -69,19 +68,57 @@ public struct CompanionSpawner {
       throw CompanionDiscoveryError.companionNotReady(reason: "couldn't read startup report. \(logTail(logPath))")
     }
 
-    guard let report = parseJSONObject(line), let grpcPath = report["grpc_path"] as? String, !grpcPath.isEmpty else {
+    guard let reportedPath = parseReportedSocketPath(from: line) else {
       process.terminate()
-      throw CompanionDiscoveryError.companionNotReady(reason: "no grpc_path in startup report '\(line)'. \(logTail(logPath))")
+      throw CompanionDiscoveryError.companionNotReady(reason: "no socket path in startup report '\(line)'. \(logTail(logPath))")
     }
-    guard grpcPath == path else {
+    guard reportedPath == path else {
       process.terminate()
-      throw CompanionDiscoveryError.socketPathMismatch(expected: path, actual: grpcPath)
+      throw CompanionDiscoveryError.socketPathMismatch(expected: path, actual: reportedPath)
     }
 
     return CompanionInfo(udid: udid, isLocal: true, pid: process.processIdentifier, address: .domainSocket(path: path))
   }
 
   // MARK: - Helpers
+
+  /// Builds the argv to launch the companion for `paths.version`.
+  private func launchArguments(udid: String, only: String?, path: String, idleShutdownTime: TimeInterval?) -> [String] {
+    switch paths.version {
+    case .v1:
+      // idb_companion binds the socket path we hand it and reports it back.
+      var arguments = ["--udid", udid, "--grpc-domain-sock", path]
+      arguments += onlyArguments(only)
+      if let deviceSetPath {
+        arguments += ["--device-set-path", deviceSetPath]
+      }
+      if let idleShutdownTime {
+        arguments += ["--idle-shutdown-time", "\(Int(idleShutdownTime))"]
+      }
+      return arguments
+    case .v2:
+      // idb2 derives its own socket path from the udid and the v2 layout and
+      // prints it back; it takes neither --grpc-domain-sock nor (yet) the
+      // --only / --device-set-path / --idle-shutdown-time options.
+      return ["--udid", udid, "companion"]
+    }
+  }
+
+  /// Extracts the bound socket path from the companion's first stdout line: v1
+  /// emits a JSON `{"grpc_path": "..."}` report; v2 emits the bare path. Returns
+  /// nil if the line carries no usable path.
+  private func parseReportedSocketPath(from line: String) -> String? {
+    switch paths.version {
+    case .v1:
+      guard let report = parseJSONObject(line), let grpcPath = report["grpc_path"] as? String, !grpcPath.isEmpty else {
+        return nil
+      }
+      return grpcPath
+    case .v2:
+      let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
+      return trimmed.isEmpty ? nil : trimmed
+    }
+  }
 
   /// A `mac` target takes no filter; others map to `--only <value>`. nil means
   /// "search all target sets".
