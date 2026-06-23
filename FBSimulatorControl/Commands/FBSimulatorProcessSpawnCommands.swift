@@ -99,9 +99,9 @@ public final class FBSimulatorProcessSpawnCommands: NSObject, FBiOSTargetCommand
 
     return FBSubprocess<AnyObject, AnyObject, AnyObject>(
       processIdentifier: processIdentifier,
-      statLoc: unsafeBitCast(statLoc, to: FBFuture<NSNumber>.self),
-      exitCode: unsafeBitCast(exitCode, to: FBFuture<NSNumber>.self),
-      signal: unsafeBitCast(signal, to: FBFuture<NSNumber>.self),
+      statLoc: convertFBMutableFuture(statLoc),
+      exitCode: convertFBMutableFuture(exitCode),
+      signal: convertFBMutableFuture(signal),
       configuration: configuration,
       queue: simulator.workQueue
     )
