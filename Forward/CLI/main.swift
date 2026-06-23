@@ -15,13 +15,18 @@ struct IdbForward {
   static func main() async {
     let allArguments = Array(CommandLine.arguments.dropFirst())
 
-    // Pull `--udid <value>` out of the argument list.
+    // Pull `--udid <value>` and `--idb-companion-binary <value>` out of the
+    // argument list. The latter overrides the default system-installed companion
+    // binary that CompanionDiscovery launches (mirrors idb-repl's flag).
     var udid: String?
+    var companionBinary: String?
     var remainingArguments: [String] = []
     var iterator = allArguments.makeIterator()
     while let argument = iterator.next() {
       if argument == "--udid" {
         udid = iterator.next()
+      } else if argument == "--idb-companion-binary" {
+        companionBinary = iterator.next()
       } else {
         remainingArguments.append(argument)
       }
@@ -34,7 +39,7 @@ struct IdbForward {
     // With no udid, use the single running companion (or start one for the only
     // available simulator).
     let idleShutdownTime: TimeInterval = 5 * 60
-    let manager = CompanionManager(version: .v2)
+    let manager = CompanionManager(version: .v2, companionPath: companionBinary)
     let companion: CompanionInfo
     do {
       if let udid {
