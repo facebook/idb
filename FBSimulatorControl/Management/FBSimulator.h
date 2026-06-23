@@ -107,7 +107,9 @@ NS_SWIFT_SENDABLE
 @property (nonnull, nonatomic, readwrite, copy) FBSimulatorConfiguration *configuration;
 
 /**
- A command executor for simctl
+ A command executor for simctl.
+ Only used for video recording (`simctl io recordVideo`), which has no CoreSimulator API; all other
+ operations spawn inside the simulator via CoreSimulator (see `-launchProcess:`).
  */
 @property (nonnull, nonatomic, readonly, strong) FBAppleSimctlCommandExecutor *simctlExecutor;
 

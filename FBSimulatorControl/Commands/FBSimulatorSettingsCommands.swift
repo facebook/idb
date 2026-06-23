@@ -498,14 +498,19 @@ public final class FBSimulatorSettingsCommands: NSObject, FBiOSTargetCommand {
       throw FBSimulatorError.describe("SimulatorFrameworkBridge binary not found at path: \(helperPath)").build()
     }
 
-    let spawnArguments = [helperPath, service, action] + arguments
-    let runFuture =
-      simulator.simctlExecutor.taskBuilder(withCommand: "spawn", arguments: spawnArguments)
-      .withStdOutInMemoryAsString()
-      .runUntilCompletion(withAcceptableExitCodes: [0])
-    let task = try await bridgeFBFuture(runFuture)
+    // Spawn the bridge helper inside the simulator via CoreSimulator (the same
+    // path as every other in-simulator spawn) rather than shelling out to
+    // `simctl spawn`. The helper runs in the booted launchd domain, identically
+    // to what `simctl spawn` provided.
+    let output = try await simulator.launchProcessConsumingOutput(
+      launchPath: helperPath,
+      arguments: [service, action] + arguments)
+    guard output.exitCode == 0 else {
+      let stderr = String(data: output.stderr, encoding: .utf8) ?? ""
+      throw FBSimulatorError.describe("SimulatorFrameworkBridge \(service) \(action) failed with exit code \(output.exitCode): \(stderr)").build()
+    }
     simulator.logger?.log("SimulatorFrameworkBridge \(service) \(action) completed successfully")
-    return (task.stdOut as String?) ?? ""
+    return String(data: output.stdout, encoding: .utf8) ?? ""
   }
 
   fileprivate func authorizeLocationSettingsAsync(_ bundleIDs: [String]) async throws {
