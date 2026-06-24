@@ -85,19 +85,11 @@ public class FBDefaultsModificationStrategy: NSObject {
   }
 
   fileprivate func performDefaultsCommand(withArguments arguments: [String]) -> FBFuture<NSString> {
-    // Make the Launch Config
-    let configuration = FBProcessSpawnConfiguration(
-      launchPath: defaultsBinary,
-      arguments: arguments,
-      environment: [:],
-      io: FBProcessIO.outputToDevNull(),
-      mode: .default
-    )
-
-    // Run the defaults command.
+    let launchPath = defaultsBinary
     return fbFutureFromAsync { [simulator] in
-      let output = try await FBProcessSpawnCommandHelpers.launchConsumingStdout(configuration, withCommands: simulator)
-      return output.trimmingCharacters(in: .newlines) as NSString
+      let output = try await simulator.launchProcessConsumingOutput(launchPath: launchPath, arguments: arguments)
+      let stdout = String(data: output.stdout, encoding: .utf8) ?? ""
+      return stdout.trimmingCharacters(in: .newlines) as NSString
     }
   }
 

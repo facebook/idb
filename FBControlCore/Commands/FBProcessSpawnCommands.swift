@@ -10,31 +10,6 @@ import Foundation
 @objc(FBProcessSpawnCommandHelpers)
 public final class FBProcessSpawnCommandHelpers: NSObject {
 
-  // MARK: Short-Running Processes
-
-  /// Launches the process described by `configuration`, waits for it to exit, and returns its accumulated stdout.
-  public class func launchConsumingStdout(
-    _ configuration: FBProcessSpawnConfiguration,
-    withCommands commands: any AsyncProcessSpawnCommands
-  ) async throws -> String {
-    let consumer = FBDataBuffer.accumulatingBuffer()
-    let io = FBProcessIO<AnyObject, AnyObject, AnyObject>(
-      stdIn: configuration.io.stdIn,
-      stdOut: FBProcessOutput<AnyObject>(for: consumer),
-      stdErr: configuration.io.stdOut
-    )
-    let derived = FBProcessSpawnConfiguration(
-      launchPath: configuration.launchPath,
-      arguments: configuration.arguments,
-      environment: configuration.environment,
-      io: io,
-      mode: configuration.mode
-    )
-    let process = try await commands.launchProcess(derived)
-    _ = try await bridgeFBFuture(process.exitCode)
-    return (NSString(data: consumer.data(), encoding: String.Encoding.utf8.rawValue) ?? "") as String
-  }
-
   @objc
   public class func resolveProcessFinished(
     withStatLoc statLoc: Int32,

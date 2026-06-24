@@ -165,15 +165,8 @@ public final class FBSimulatorLaunchCtlCommands: NSObject, FBiOSTargetCommand {
   }
 
   private func runWithArguments(_ arguments: [String]) async throws -> String {
-    let launchConfiguration = FBProcessSpawnConfiguration(
-      launchPath: launchctlLaunchPath,
-      arguments: arguments,
-      environment: [:],
-      io: FBProcessIO.outputToDevNull(),
-      mode: .default
-    )
-    let result = try await FBProcessSpawnCommandHelpers.launchConsumingStdout(launchConfiguration, withCommands: simulator)
-    return result
+    let output = try await simulator.launchProcessConsumingOutput(launchPath: launchctlLaunchPath, arguments: arguments)
+    return String(data: output.stdout, encoding: .utf8) ?? ""
   }
 }
 
