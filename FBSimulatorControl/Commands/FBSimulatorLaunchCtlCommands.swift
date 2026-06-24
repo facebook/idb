@@ -182,10 +182,37 @@ public final class FBSimulatorLaunchCtlCommands: NSObject, FBiOSTargetCommand {
         return ["start", serviceName]
       }
     }
+
+    var exitCodePolicy: ExitCodePolicy {
+      switch self {
+      case .list:
+        return .require([0])
+      case .stop:
+        // launchctl returns ESRCH (3) when the service is not running; for stop that is an idempotent
+        // no-op. Any other non-zero is a genuine failure to stop a running service.
+        return .require([0, 3])
+      case .start:
+        // For start, ESRCH (3) means there is no such service to start — a genuine failure, not a
+        // no-op — so only a 0 exit is success.
+        return .require([0])
+      }
+    }
   }
 
   private func run(_ command: Command) async throws -> String {
     let output = try await simulator.launchProcessConsumingOutput(launchPath: launchctlLaunchPath, arguments: command.arguments)
+    return try FBSimulatorLaunchCtlCommands.stdout(orThrowFrom: output, command: command, logger: simulator.logger)
+  }
+
+  // Internal for unit-test coverage of the exit-code handling; see FBSimulatorLaunchCtlCommandsTests.
+  static func stdout(orThrowFrom output: FBInSimulatorToolOutput, command: Command, logger: (any FBControlCoreLogger)?) throws -> String {
+    if output.exitCode != 0 {
+      let stderr = String(data: output.stderr, encoding: .utf8) ?? ""
+      guard command.exitCodePolicy.accepts(output.exitCode) else {
+        throw FBSimulatorError.describe("launchctl \(command.arguments.joined(separator: " ")) failed with exit code \(output.exitCode): \(stderr)").build()
+      }
+      logger?.log("launchctl \(command.arguments.joined(separator: " ")) exited with code \(output.exitCode): \(stderr)")
+    }
     return String(data: output.stdout, encoding: .utf8) ?? ""
   }
 }
