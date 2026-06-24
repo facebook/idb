@@ -8,6 +8,7 @@
 import CompanionLib
 import FBControlCore
 import Foundation
+import IDBCompanionUtilities
 
 @objc final class FBiOSTargetStateChangeNotifier: NSObject, FBiOSTargetSetDelegate {
 
@@ -15,13 +16,13 @@ import Foundation
   private let targetSets: [FBiOSTargetSet]
   private let logger: FBControlCoreLogger
   private var current: [String: FBiOSTargetDescription]
-  private let finished: FBMutableFuture<NSNull>
+  private let donePromise = AsyncPromise<Void>()
 
   // MARK: Initializers
 
-  @objc static func notifierToFilePath(_ filePath: String, withTargetSets targetSets: [FBiOSTargetSet], logger: FBControlCoreLogger) -> FBFuture<FBiOSTargetStateChangeNotifier> {
+  static func notifierToFilePath(_ filePath: String, withTargetSets targetSets: [FBiOSTargetSet], logger: FBControlCoreLogger) throws -> FBiOSTargetStateChangeNotifier {
     if targetSets.isEmpty {
-      return unsafeBitCast(FBIDBError.describe("Cannot initialize FBiOSTargetStateChangeNotifier without any sets to monitor").failFuture() as FBFuture<AnyObject>, to: FBFuture<FBiOSTargetStateChangeNotifier>.self)
+      throw FBIDBError.describe("Cannot initialize FBiOSTargetStateChangeNotifier without any sets to monitor").build()
     }
 
     let didCreateFile = FileManager.default.createFile(
@@ -31,26 +32,26 @@ import Foundation
     )
 
     if !didCreateFile {
-      return unsafeBitCast(FBIDBError.describe("Failed to create local targets file: \(filePath) \(String(cString: strerror(errno)))").failFuture() as FBFuture<AnyObject>, to: FBFuture<FBiOSTargetStateChangeNotifier>.self)
+      throw FBIDBError.describe("Failed to create local targets file: \(filePath) \(String(cString: strerror(errno)))").build()
     }
 
     let notifier = FBiOSTargetStateChangeNotifier(filePath: filePath, targetSets: targetSets, logger: logger)
     for targetSet in targetSets {
       targetSet.delegate = notifier
     }
-    return FBFuture(result: notifier)
+    return notifier
   }
 
-  @objc static func notifierToStdOut(withTargetSets targetSets: [FBiOSTargetSet], logger: FBControlCoreLogger) -> FBFuture<FBiOSTargetStateChangeNotifier> {
+  static func notifierToStdOut(withTargetSets targetSets: [FBiOSTargetSet], logger: FBControlCoreLogger) throws -> FBiOSTargetStateChangeNotifier {
     if targetSets.isEmpty {
-      return unsafeBitCast(FBIDBError.describe("Cannot initialize FBiOSTargetStateChangeNotifier without any sets to monitor").failFuture() as FBFuture<AnyObject>, to: FBFuture<FBiOSTargetStateChangeNotifier>.self)
+      throw FBIDBError.describe("Cannot initialize FBiOSTargetStateChangeNotifier without any sets to monitor").build()
     }
 
     let notifier = FBiOSTargetStateChangeNotifier(filePath: nil, targetSets: targetSets, logger: logger)
     for targetSet in targetSets {
       targetSet.delegate = notifier
     }
-    return FBFuture(result: notifier)
+    return notifier
   }
 
   private init(filePath: String?, targetSets: [FBiOSTargetSet], logger: FBControlCoreLogger) {
@@ -58,20 +59,19 @@ import Foundation
     self.targetSets = targetSets
     self.logger = logger
     self.current = [:]
-    self.finished = FBMutableFuture<NSNull>()
     super.init()
   }
 
   // MARK: Public
 
-  @objc func startNotifier() -> FBFuture<NSNull> {
+  func startNotifier() throws {
     for targetSet in targetSets {
       for target in targetSet.allTargetInfos {
         current[target.uniqueIdentifier] = FBiOSTargetDescription(target: target)
       }
     }
-    if !writeTargets() {
-      return unsafeBitCast(finished, to: FBFuture<NSNull>.self)
+    guard writeTargets() else {
+      throw FBIDBError.describe("Failed to write the initial target state").build()
     }
     // If we're writing to a file, we also need to signal to stdout on the first update
     if filePath != nil {
@@ -81,17 +81,17 @@ import Foundation
           readyOutput.append(newline)
         }
         readyOutput.withUnsafeBytes { bytes in
+          // swiftlint:disable:next force_unwrapping
           _ = Darwin.write(STDOUT_FILENO, bytes.baseAddress!, bytes.count)
         }
         fflush(stdout)
       }
     }
-
-    return FBFuture<NSNull>.empty()
   }
 
-  @objc var notifierDone: FBFuture<NSNull> {
-    unsafeBitCast(finished, to: FBFuture<NSNull>.self)
+  /// Suspends until the notifier finishes (on a write error) or is cancelled.
+  func waitUntilDone() async throws {
+    try await donePromise.value
   }
 
   // MARK: Private
@@ -103,7 +103,7 @@ import Foundation
       jsonArray.append(target.asJSON)
     }
     guard let data = try? JSONSerialization.data(withJSONObject: jsonArray) else {
-      finished.resolveWithError(FBIDBError.describe("error writing update to consumer").build())
+      donePromise.fail(FBIDBError.describe("error writing update to consumer").build())
       return false
     }
     if let filePath {
@@ -119,17 +119,19 @@ import Foundation
       return true
     } catch {
       logger.log("Failed writing updates \(error)")
-      finished.resolveWithError(FBIDBError.describe("Failed writing updates \(error)").build())
+      donePromise.fail(FBIDBError.describe("Failed writing updates \(error)").build())
       return false
     }
   }
 
   private func writeTargetsDataToStdOut(_ data: Data) -> Bool {
     data.withUnsafeBytes { bytes in
+      // swiftlint:disable:next force_unwrapping
       _ = Darwin.write(STDOUT_FILENO, bytes.baseAddress!, bytes.count)
     }
     let newline = FBDataBuffer.newlineTerminal()
     newline.withUnsafeBytes { bytes in
+      // swiftlint:disable:next force_unwrapping
       _ = Darwin.write(STDOUT_FILENO, bytes.baseAddress!, bytes.count)
     }
     fflush(stdout)

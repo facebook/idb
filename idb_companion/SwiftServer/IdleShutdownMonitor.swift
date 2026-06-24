@@ -9,6 +9,7 @@ import CompanionLib
 import Dispatch
 import FBControlCore
 import Foundation
+import IDBCompanionUtilities
 
 /// Shuts the companion down after a period of gRPC inactivity.
 ///
@@ -20,8 +21,12 @@ import Foundation
 /// `expired` resolves so the server can shut down.
 @objc final class IdleShutdownMonitor: NSObject {
 
-  /// Resolves once `idleTime` seconds pass with no active or newly-received requests.
-  let expired: FBMutableFuture<NSNull>
+  private let expiredPromise = AsyncPromise<Void>()
+
+  /// Suspends until `idleTime` seconds pass with no active or newly-received requests.
+  func waitUntilExpired() async throws {
+    try await expiredPromise.value
+  }
 
   private let idleTime: TimeInterval
   private let logger: FBIDBLogger
@@ -46,7 +51,6 @@ import Foundation
     self.idleTime = idleTime
     self.logger = logger
     self.onShutdownStarted = onShutdownStarted
-    self.expired = FBMutableFuture<NSNull>()
     super.init()
   }
 
@@ -120,6 +124,6 @@ import Foundation
     // Release externally-visible resources (the socket) synchronously, before the
     // async teardown begins, so nothing rediscovers this companion mid-shutdown.
     onShutdownStarted?()
-    expired.resolve(withResult: NSNull())
+    expiredPromise.resolve(())
   }
 }

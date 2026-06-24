@@ -31,10 +31,6 @@ final class GRPCSwiftServer: NSObject {
   private let serverConfig: Server.Configuration
   private let ports: IDBPortsConfiguration
 
-  @objc
-  let completed: FBMutableFuture<NSNull>
-
-  @objc
   init(
     target: FBiOSTarget,
     commandExecutor: FBIDBCommandExecutor,
@@ -72,24 +68,14 @@ final class GRPCSwiftServer: NSObject {
     self.serverConfig = serverConfiguration
     self.ports = ports
 
-    self.completed = FBMutableFuture<NSNull>()
     self.logger = logger
 
     super.init()
   }
 
-  @objc func start() -> FBMutableFuture<NSDictionary> {
-    // Start the server and print its address once it has started.
-    let future = FBMutableFuture<NSDictionary>()
-
+  func start() async throws -> [String: Any] {
     if case .unixDomainSocket(let path) = ports.swiftServerTarget {
-      do {
-        try cleanupUnixDomainSocket(path: path)
-      } catch {
-        self.logger.error().log("\(error)")
-        future.resolveWithError(error)
-        return future
-      }
+      try cleanupUnixDomainSocket(path: path)
     }
 
     let server = Server.start(configuration: serverConfig)
@@ -100,23 +86,17 @@ final class GRPCSwiftServer: NSObject {
       logger.info().log("Starting swift server with TLS path \(tlsPath)")
     }
 
-    server.map(\.channel.localAddress).whenComplete { [weak self, ports] result in
-      do {
-        let address = try result.get()
-        self?.logServerStartup(address: address)
-        try future.resolve(withResult: ports.swiftServerTarget.outputDescription(for: address) as NSDictionary)
-      } catch {
-        self?.logger.error().log("\(error)")
-        future.resolveWithError(error)
-      }
-    }
+    let runningServer = try await server.get()
+    let address = runningServer.channel.localAddress
+    logServerStartup(address: address)
+    return try ports.swiftServerTarget.outputDescription(for: address)
+  }
 
-    server.flatMap(\.onClose).whenCompleteBlocking(onto: .main) { [completed] _ in
-      self.logger.info().log("Server closed")
-      completed.resolve(withResult: NSNull())
-    }
-
-    return future
+  /// Suspends until the server's channel closes.
+  func waitUntilClosed() async throws {
+    guard let server = self.server else { return }
+    try await server.flatMap(\.onClose).get()
+    logger.info().log("Server closed")
   }
 
   private func cleanupUnixDomainSocket(path: String) throws {

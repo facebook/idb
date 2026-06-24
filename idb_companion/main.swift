@@ -10,6 +10,7 @@ import FBControlCore
 import FBDeviceControl
 import FBSimulatorControl
 import Foundation
+import IDBCompanionUtilities
 import XCTestBootstrap
 
 // swiftlint:disable force_cast
@@ -69,6 +70,13 @@ private let kXcodeHelpMessage = """
 
   """
 
+/// The outcome of the companion's main work, used to race the selected command
+/// against the signal handler via `Task.select`.
+private enum CompanionOutcome: Sendable {
+  case finished
+  case signalled(Int32)
+}
+
 private func writeJSONToStdOut(_ json: Any) {
   guard let jsonOutput = try? JSONSerialization.data(withJSONObject: json) else { return }
   var readyOutput = Data(jsonOutput)
@@ -100,272 +108,186 @@ private func simulatorSet(_ userDefaults: UserDefaults, logger: FBControlCoreLog
   return try simulatorSetWithPath(deviceSetPath, logger: logger, reporter: reporter)
 }
 
-// FBFuture adapters over the throwing functions above, for the command paths that are still
-// FBFuture-based (boot/clone/delete/list/notify). These disappear as those paths migrate to
-// async/await; the create path calls the throwing functions directly.
-private func simulatorSetFuture(_ userDefaults: UserDefaults, logger: FBControlCoreLogger, reporter: FBEventReporter) -> FBFuture<FBSimulatorSet> {
-  do {
-    return FBFuture(result: try simulatorSet(userDefaults, logger: logger, reporter: reporter))
-  } catch {
-    return FBFuture(error: error)
-  }
-}
-
-private func simulatorSetWithPathFuture(_ deviceSetPath: String?, logger: FBControlCoreLogger, reporter: FBEventReporter) -> FBFuture<FBSimulatorSet> {
-  do {
-    return FBFuture(result: try simulatorSetWithPath(deviceSetPath, logger: logger, reporter: reporter))
-  } catch {
-    return FBFuture(error: error)
-  }
-}
-
-private func deviceSet(_ logger: FBControlCoreLogger, ecidFilter: String?) -> FBFuture<FBDeviceSet> {
-  return FBFuture<AnyObject>.onQueue(
-    DispatchQueue.main,
-    resolveValue: { errorPtr -> AnyObject? in
+private func deviceSet(_ logger: FBControlCoreLogger, ecidFilter: String?) async throws -> FBDeviceSet {
+  // `FBDeviceSet` hardcodes `DispatchQueue.main` for its device managers and
+  // registers MobileDevice notifications that expect the main run loop, so it
+  // must be created on the main thread.
+  let set: FBDeviceSet = try await withCheckedThrowingContinuation { continuation in
+    DispatchQueue.main.async {
       do {
         // Give a more meaningful message if we can't load the frameworks.
         try FBDeviceControlFrameworkLoader().loadPrivateFrameworks(logger)
-        return try FBDeviceSet(logger: logger, delegate: nil, ecidFilter: ecidFilter)
+        continuation.resume(returning: try FBDeviceSet(logger: logger, delegate: nil, ecidFilter: ecidFilter))
       } catch {
-        errorPtr?.pointee = error as NSError
-        return nil
+        continuation.resume(throwing: error)
       }
     }
-  ).delay(0.2) as! FBFuture<FBDeviceSet> // This is needed to give the Restorable Devices time to populate.
+  }
+  // This is needed to give the Restorable Devices time to populate.
+  try await Task.sleep(nanoseconds: 200_000_000)
+  return set
 }
 
-private func defaultTargetSets(_ userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBControlCoreLogger, reporter: FBEventReporter) -> FBFuture<NSArray> {
+private func defaultTargetSets(_ userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBControlCoreLogger, reporter: FBEventReporter) async throws -> [FBiOSTargetSet] {
   let only = userDefaults.string(forKey: "-only")
   if let only {
     if only.lowercased().contains("simulator") {
       logger.log("'--only' set for Simulators")
-      return FBFuture<AnyObject>.combine([simulatorSetFuture(userDefaults, logger: logger, reporter: reporter) as! FBFuture<AnyObject>])
+      return [try simulatorSet(userDefaults, logger: logger, reporter: reporter)]
     }
     if only.lowercased().contains("device") {
       logger.log("'--only' set for Devices")
-      return FBFuture<AnyObject>.combine([deviceSet(logger, ecidFilter: nil) as! FBFuture<AnyObject>])
+      return [try await deviceSet(logger, ecidFilter: nil)]
     }
     if only.lowercased().hasPrefix("ecid:") {
       let ecid = only.lowercased().replacingOccurrences(of: "ecid:", with: "")
       logger.log("ECID filter of \(ecid)")
-      return FBFuture<AnyObject>.combine([deviceSet(logger, ecidFilter: ecid) as! FBFuture<AnyObject>])
+      return [try await deviceSet(logger, ecidFilter: ecid)]
     }
-    return unsafeBitCast(FBIDBError.describe("\(only) is not a valid argument for '--only'").failFuture() as FBFuture<AnyObject>, to: FBFuture<NSArray>.self)
+    throw FBIDBError.describe("\(only) is not a valid argument for '--only'").build()
   }
   if !xcodeAvailable {
     logger.log("Xcode is not available, only Devices will be provided")
-    return FBFuture<AnyObject>.combine([deviceSet(logger, ecidFilter: nil) as! FBFuture<AnyObject>])
+    return [try await deviceSet(logger, ecidFilter: nil)]
   }
   logger.log("Providing targets across Simulator and Device sets.")
-  return FBFuture<AnyObject>.combine([
-    simulatorSetFuture(userDefaults, logger: logger, reporter: reporter) as! FBFuture<AnyObject>,
-    deviceSet(logger, ecidFilter: nil) as! FBFuture<AnyObject>,
-  ])
+  return [
+    try simulatorSet(userDefaults, logger: logger, reporter: reporter),
+    try await deviceSet(logger, ecidFilter: nil),
+  ]
 }
 
-private func targetForUDID(_ udid: String, userDefaults: UserDefaults, xcodeAvailable: Bool, warmUp: Bool, logger: FBControlCoreLogger, reporter: FBEventReporter) -> FBFuture<AnyObject> {
-  return defaultTargetSets(userDefaults, xcodeAvailable: xcodeAvailable, logger: logger, reporter: reporter)
-    .onQueue(
-      DispatchQueue.main,
-      fmap: { (targetSets: NSArray) -> FBFuture<AnyObject> in
-        let sets = targetSets as! [FBiOSTargetSet]
-        return FBiOSTargetProvider.target(withUDID: udid, targetSets: sets, warmUp: warmUp, logger: logger)
-      })
+private func targetForUDID(_ udid: String, userDefaults: UserDefaults, xcodeAvailable: Bool, warmUp: Bool, logger: FBControlCoreLogger, reporter: FBEventReporter) async throws -> FBiOSTarget {
+  let targetSets = try await defaultTargetSets(userDefaults, xcodeAvailable: xcodeAvailable, logger: logger, reporter: reporter)
+  let target = try await bridgeFBFuture(FBiOSTargetProvider.target(withUDID: udid, targetSets: targetSets, warmUp: warmUp, logger: logger))
+  return target as! FBiOSTarget
 }
 
-private func deviceForECID(_ ecid: String, logger: FBControlCoreLogger) -> FBFuture<FBDevice> {
-  return (deviceSet(logger, ecidFilter: ecid.replacingOccurrences(of: "ecid:", with: "")) as FBFuture)
-    .onQueue(
-      DispatchQueue.main,
-      fmap: { (deviceSetObj: AnyObject) -> FBFuture<AnyObject> in
-        let devSet = deviceSetObj as! FBDeviceSet
-        let devices = devSet.allDevices
-        if devices.isEmpty {
-          return FBIDBError.describe("No devices \(FBCollectionInformation.oneLineDescription(from: devices)) matching \(ecid)").failFuture()
-        }
-        return FBFuture(result: devices[0])
-      }) as! FBFuture<FBDevice>
-}
-
-private func simulatorFuture(_ udid: String, userDefaults: UserDefaults, logger: FBControlCoreLogger, reporter: FBEventReporter) -> FBFuture<FBSimulator> {
-  return (simulatorSetFuture(userDefaults, logger: logger, reporter: reporter) as FBFuture)
-    .onQueue(
-      DispatchQueue.main,
-      fmap: { (setObj: AnyObject) -> FBFuture<AnyObject> in
-        let simSet = setObj as! FBSimulatorSet
-        return FBiOSTargetProvider.target(withUDID: udid, targetSets: [simSet], warmUp: false, logger: logger)
-      }
-    )
-    .onQueue(
-      DispatchQueue.main,
-      fmap: { (targetObj: AnyObject) -> FBFuture<AnyObject> in
-        guard let commands = targetObj as? AsyncSimulatorLifecycleCommands else {
-          return FBIDBError.describe("\(targetObj) does not support Simulator Lifecycle commands").failFuture()
-        }
-        return FBFuture(result: commands as AnyObject)
-      }) as! FBFuture<FBSimulator>
-}
-
-private func targetOfflineFuture(_ target: FBiOSTarget, logger: FBControlCoreLogger) -> FBFuture<NSNull> {
-  let resolveLeavesBooted: FBFuture<NSNull> = fbFutureFromAsync {
-    guard let asyncTarget = target as? any AsyncLifecycleCommands else {
-      throw FBIDBError.describe("\(target) does not support AsyncLifecycleCommands").build()
-    }
-    try await asyncTarget.resolveLeavesState(.booted)
-    return NSNull()
+private func deviceForECID(_ ecid: String, logger: FBControlCoreLogger) async throws -> FBDevice {
+  let set = try await deviceSet(logger, ecidFilter: ecid.replacingOccurrences(of: "ecid:", with: ""))
+  let devices = set.allDevices
+  if devices.isEmpty {
+    throw FBIDBError.describe("No devices \(FBCollectionInformation.oneLineDescription(from: devices)) matching \(ecid)").build()
   }
-  return
-    resolveLeavesBooted
-    .onQueue(
-      target.workQueue,
-      doOnResolved: { (_: AnyObject) in
-        target.logger?.log("Target is no longer booted, companion going offline")
-      })
+  return devices[0]
 }
 
-private func bootFuture(_ udid: String, userDefaults: UserDefaults, logger: FBControlCoreLogger, reporter: FBEventReporter) -> FBFuture<FBFuture<NSNull>> {
+private func resolveSimulator(_ udid: String, userDefaults: UserDefaults, logger: FBControlCoreLogger, reporter: FBEventReporter) async throws -> FBSimulator {
+  let set = try simulatorSet(userDefaults, logger: logger, reporter: reporter)
+  let target = try await bridgeFBFuture(FBiOSTargetProvider.target(withUDID: udid, targetSets: [set], warmUp: false, logger: logger))
+  guard target is AsyncSimulatorLifecycleCommands else {
+    throw FBIDBError.describe("\(target) does not support Simulator Lifecycle commands").build()
+  }
+  return target as! FBSimulator
+}
+
+private func awaitTargetOffline(_ target: FBiOSTarget, logger: FBControlCoreLogger) async throws {
+  guard let asyncTarget = target as? any AsyncLifecycleCommands else {
+    throw FBIDBError.describe("\(target) does not support AsyncLifecycleCommands").build()
+  }
+  try await asyncTarget.resolveLeavesState(.booted)
+  target.logger?.log("Target is no longer booted, companion going offline")
+}
+
+private func runBoot(_ udid: String, userDefaults: UserDefaults, logger: FBControlCoreLogger, reporter: FBEventReporter) async throws {
   let headless = userDefaults.bool(forKey: "-headless")
   let verifyBooted = userDefaults.object(forKey: "-verify-booted") == nil ? true : userDefaults.bool(forKey: "-verify-booted")
-  return (simulatorFuture(udid, userDefaults: userDefaults, logger: logger, reporter: reporter) as FBFuture)
-    .onQueue(
-      DispatchQueue.main,
-      fmap: { (simObj: AnyObject) -> FBFuture<AnyObject> in
-        let simulator = simObj as! FBSimulator
-        // Boot the simulator with the options provided.
-        var options = FBSimulatorBootConfiguration.default.options
-        if headless {
-          logger.log("Booting \(udid) headlessly")
-          options.insert(.tieToProcessLifecycle)
-        } else {
-          logger.log("Booting \(udid) normally")
-          options.remove(.tieToProcessLifecycle)
-        }
-        if verifyBooted {
-          logger.log("Booting \(udid) with verification")
-          options.insert(.verifyUsable)
-        } else {
-          logger.log("Booting \(udid) without verification")
-          options.remove(.verifyUsable)
-        }
-        let config = FBSimulatorBootConfiguration(options: options, environment: [:])
-        return fbFutureFromAsync {
-          try await simulator.boot(config)
-          return simulator as AnyObject
-        }
-      }
-    )
-    .onQueue(
-      DispatchQueue.main,
-      map: { (simObj: AnyObject) -> AnyObject in
-        let simulator = simObj as! FBSimulator
-        // Write the boot success to stdout
-        writeTargetToStdOut(simulator)
-        // In a headless boot:
-        // - We need to keep this process running until it's otherwise shutdown. When the sim is shutdown this process will die.
-        // - If this process is manually killed then the simulator will die
-        // For a regular boot the sim will outlive this process.
-        if !headless {
-          return FBFuture<NSNull>.empty() as AnyObject
-        }
-        // Whilst we can rely on this process being killed shutting the simulator, this is asynchronous.
-        // This means that we should attempt to handle cancellation gracefully.
-        // In this case we should attempt to shutdown in response to cancellation.
-        // This means if this future is cancelled and waited-for before the process exits we will return it in a "Shutdown" state.
-        return targetOfflineFuture(simulator, logger: logger)
-          .onQueue(
-            DispatchQueue.main,
-            respondToCancellation: {
-              return fbFutureFromAsync {
-                try await simulator.shutdown()
-                return NSNull()
-              }
-            }) as AnyObject
-      }) as! FBFuture<FBFuture<NSNull>>
+  let simulator = try await resolveSimulator(udid, userDefaults: userDefaults, logger: logger, reporter: reporter)
+
+  // Boot the simulator with the options provided.
+  var options = FBSimulatorBootConfiguration.default.options
+  if headless {
+    logger.log("Booting \(udid) headlessly")
+    options.insert(.tieToProcessLifecycle)
+  } else {
+    logger.log("Booting \(udid) normally")
+    options.remove(.tieToProcessLifecycle)
+  }
+  if verifyBooted {
+    logger.log("Booting \(udid) with verification")
+    options.insert(.verifyUsable)
+  } else {
+    logger.log("Booting \(udid) without verification")
+    options.remove(.verifyUsable)
+  }
+  let config = FBSimulatorBootConfiguration(options: options, environment: [:])
+  try await simulator.boot(config)
+
+  // Write the boot success to stdout
+  writeTargetToStdOut(simulator)
+
+  // In a headless boot:
+  // - We need to keep this process running until it's otherwise shutdown. When the sim is shutdown this process will die.
+  // - If this process is manually killed then the simulator will die
+  // For a regular boot the sim will outlive this process.
+  if !headless {
+    return
+  }
+
+  // Whilst we can rely on this process being killed shutting the simulator, this is asynchronous.
+  // This means that we should attempt to handle cancellation gracefully.
+  // In this case we should attempt to shutdown in response to cancellation, and wait for it.
+  do {
+    try await awaitTargetOffline(simulator, logger: logger)
+  } catch {
+    // Includes CancellationError on signal. A fresh, unstructured Task does not
+    // inherit the parent's cancelled state, so the shutdown runs to completion;
+    // we await it before rethrowing so the sim is down before we exit.
+    let shutdown = Task { try await simulator.shutdown() }
+    _ = try? await shutdown.value
+    throw error
+  }
 }
 
-private func shutdownFuture(_ udid: String, userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBControlCoreLogger, reporter: FBEventReporter) -> FBFuture<NSNull> {
-  return targetForUDID(udid, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, warmUp: false, logger: logger, reporter: reporter)
-    .onQueue(
-      DispatchQueue.main,
-      fmap: { (targetObj: AnyObject) -> FBFuture<AnyObject> in
-        guard let target = targetObj as? any AsyncPowerCommands else {
-          return FBIDBError.describe("Cannot shutdown \(targetObj), does not support shutting down").failFuture()
-        }
-        return fbFutureFromAsync {
-          try await target.shutdown()
-          return NSNull()
-        } as! FBFuture<AnyObject>
-      }) as! FBFuture<NSNull>
+private func runShutdown(_ udid: String, userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBControlCoreLogger, reporter: FBEventReporter) async throws {
+  let target = try await targetForUDID(udid, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, warmUp: false, logger: logger, reporter: reporter)
+  guard let powerTarget = target as? any AsyncPowerCommands else {
+    throw FBIDBError.describe("Cannot shutdown \(target), does not support shutting down").build()
+  }
+  try await powerTarget.shutdown()
 }
 
-private func rebootFuture(_ udid: String, userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBControlCoreLogger, reporter: FBEventReporter) -> FBFuture<NSNull> {
-  return targetForUDID(udid, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, warmUp: false, logger: logger, reporter: reporter)
-    .onQueue(
-      DispatchQueue.main,
-      fmap: { (targetObj: AnyObject) -> FBFuture<AnyObject> in
-        guard let target = targetObj as? any AsyncPowerCommands else {
-          return FBIDBError.describe("Cannot shutdown \(targetObj), does not support rebooting").failFuture()
-        }
-        return fbFutureFromAsync {
-          try await target.reboot()
-          return NSNull()
-        } as! FBFuture<AnyObject>
-      }) as! FBFuture<NSNull>
+private func runReboot(_ udid: String, userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBControlCoreLogger, reporter: FBEventReporter) async throws {
+  let target = try await targetForUDID(udid, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, warmUp: false, logger: logger, reporter: reporter)
+  guard let powerTarget = target as? any AsyncPowerCommands else {
+    throw FBIDBError.describe("Cannot shutdown \(target), does not support rebooting").build()
+  }
+  try await powerTarget.reboot()
 }
 
-private func eraseFuture(_ udid: String, userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBControlCoreLogger, reporter: FBEventReporter) -> FBFuture<NSNull> {
-  return targetForUDID(udid, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, warmUp: false, logger: logger, reporter: reporter)
-    .onQueue(
-      DispatchQueue.main,
-      fmap: { (targetObj: AnyObject) -> FBFuture<AnyObject> in
-        guard let target = targetObj as? any AsyncEraseCommands else {
-          return FBIDBError.describe("Cannot erase \(targetObj), does not support erasing").failFuture()
-        }
-        return fbFutureFromAsync {
-          try await target.erase()
-          return NSNull()
-        } as! FBFuture<AnyObject>
-      }) as! FBFuture<NSNull>
+private func runErase(_ udid: String, userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBControlCoreLogger, reporter: FBEventReporter) async throws {
+  let target = try await targetForUDID(udid, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, warmUp: false, logger: logger, reporter: reporter)
+  guard let eraseTarget = target as? any AsyncEraseCommands else {
+    throw FBIDBError.describe("Cannot erase \(target), does not support erasing").build()
+  }
+  try await eraseTarget.erase()
 }
 
-private func deleteFuture(_ udidOrAll: String, userDefaults: UserDefaults, logger: FBControlCoreLogger, reporter: FBEventReporter) -> FBFuture<NSNull> {
-  return (simulatorSetFuture(userDefaults, logger: logger, reporter: reporter) as FBFuture)
-    .onQueue(
-      DispatchQueue.main,
-      fmap: { (setObj: AnyObject) -> FBFuture<AnyObject> in
-        let set = setObj as! FBSimulatorSet
-        if udidOrAll.lowercased() == "all" {
-          return set.deleteAll() as! FBFuture<AnyObject>
-        }
-        guard let simulator = set.simulator(withUDID: udidOrAll) else {
-          return FBIDBError.describe("Could not find a simulator with udid \(udidOrAll)").failFuture()
-        }
-        return set.delete(simulator) as! FBFuture<AnyObject>
-      }
-    )
-    .mapReplace(NSNull()) as! FBFuture<NSNull>
+private func runDelete(_ udidOrAll: String, userDefaults: UserDefaults, logger: FBControlCoreLogger, reporter: FBEventReporter) async throws {
+  let set = try simulatorSet(userDefaults, logger: logger, reporter: reporter)
+  if udidOrAll.lowercased() == "all" {
+    try await bridgeFBFutureVoid(set.deleteAll())
+    return
+  }
+  guard let simulator = set.simulator(withUDID: udidOrAll) else {
+    throw FBIDBError.describe("Could not find a simulator with udid \(udidOrAll)").build()
+  }
+  try await bridgeFBFutureVoid(set.delete(simulator))
 }
 
-private func listFuture(_ userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBControlCoreLogger, reporter: FBEventReporter) -> FBFuture<NSNull> {
-  return defaultTargetSets(userDefaults, xcodeAvailable: xcodeAvailable, logger: logger, reporter: reporter)
-    .onQueue(
-      DispatchQueue.main,
-      map: { (targetSetsObj: AnyObject) -> AnyObject in
-        let targetSets = targetSetsObj as! [FBiOSTargetSet]
-        var reportedCount: UInt = 0
-        for targetSet in targetSets {
-          for targetInfo in targetSet.allTargetInfos {
-            writeTargetToStdOut(targetInfo)
-            reportedCount += 1
-          }
-        }
-        logger.log("Reported \(reportedCount) targets to stdout")
-        return NSNull()
-      }) as! FBFuture<NSNull>
+private func runList(_ userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBControlCoreLogger, reporter: FBEventReporter) async throws {
+  let targetSets = try await defaultTargetSets(userDefaults, xcodeAvailable: xcodeAvailable, logger: logger, reporter: reporter)
+  var reportedCount: UInt = 0
+  for targetSet in targetSets {
+    for targetInfo in targetSet.allTargetInfos {
+      writeTargetToStdOut(targetInfo)
+      reportedCount += 1
+    }
+  }
+  logger.log("Reported \(reportedCount) targets to stdout")
 }
 
-private func createFuture(_ create: String, userDefaults: UserDefaults, logger: FBControlCoreLogger, reporter: FBEventReporter) async throws {
+private func runCreate(_ create: String, userDefaults: UserDefaults, logger: FBControlCoreLogger, reporter: FBEventReporter) async throws {
   let parameters = create.components(separatedBy: ",")
   var config = try FBSimulatorConfiguration.defaultConfiguration()
   if parameters.count > 0 {
@@ -379,259 +301,180 @@ private func createFuture(_ create: String, userDefaults: UserDefaults, logger: 
   writeTargetToStdOut(simulator)
 }
 
-private func cloneFuture(_ udid: String, userDefaults: UserDefaults, logger: FBControlCoreLogger, reporter: FBEventReporter) -> FBFuture<NSNull> {
+private func runClone(_ udid: String, userDefaults: UserDefaults, logger: FBControlCoreLogger, reporter: FBEventReporter) async throws {
   let destinationSet = userDefaults.string(forKey: "-clone-destination-set")
-  return FBFuture<AnyObject>.combine([
-    simulatorFuture(udid, userDefaults: userDefaults, logger: logger, reporter: reporter) as! FBFuture<AnyObject>,
-    simulatorSetWithPathFuture(destinationSet, logger: logger, reporter: reporter) as! FBFuture<AnyObject>,
-  ])
-  .onQueue(
-    DispatchQueue.main,
-    fmap: { (tuple: NSArray) -> FBFuture<AnyObject> in
-      let base = tuple[0] as! FBSimulator
-      let destination = tuple[1] as! FBSimulatorSet
-      return base.set.cloneSimulator(base, toDeviceSet: destination) as! FBFuture<AnyObject>
-    }
+  let base = try await resolveSimulator(udid, userDefaults: userDefaults, logger: logger, reporter: reporter)
+  let destination = try simulatorSetWithPath(destinationSet, logger: logger, reporter: reporter)
+  let cloned = try await bridgeFBFuture(base.set.cloneSimulator(base, toDeviceSet: destination))
+  writeTargetToStdOut(cloned)
+}
+
+private func runEnterRecovery(_ ecid: String, logger: FBControlCoreLogger) async throws {
+  let device = try await deviceForECID(ecid, logger: logger)
+  try await device.enterRecovery()
+}
+
+private func runExitRecovery(_ ecid: String, logger: FBControlCoreLogger) async throws {
+  let device = try await deviceForECID(ecid, logger: logger)
+  try await device.exitRecovery()
+}
+
+private func runActivate(_ ecid: String, logger: FBControlCoreLogger) async throws {
+  let device = try await deviceForECID(ecid, logger: logger)
+  try await device.activate()
+}
+
+private func runClean(_ udid: String, userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBControlCoreLogger, reporter: FBEventReporter) async throws {
+  let target = try await targetForUDID(udid, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, warmUp: true, logger: logger, reporter: reporter)
+  let idbLogger = logger as! FBIDBLogger
+  let storageManager = try FBIDBStorageManager.manager(forTarget: target, logger: idbLogger)
+  let commandExecutor = FBIDBCommandExecutor.commandExecutor(
+    forTarget: target,
+    storageManager: storageManager,
+    temporaryDirectory: FBTemporaryDirectory(logger: idbLogger),
+    debugserverPort: in_port_t(IDBPortsConfiguration(arguments: userDefaults).debugserverPort),
+    logger: idbLogger
   )
-  .onQueue(
-    DispatchQueue.main,
-    map: { (clonedObj: AnyObject) -> AnyObject in
-      let cloned = clonedObj as! FBSimulator
-      writeTargetToStdOut(cloned)
-      return NSNull()
-    }) as! FBFuture<NSNull>
+  try await commandExecutor.clean()
 }
 
-private func enterRecoveryFuture(_ ecid: String, logger: FBControlCoreLogger) -> FBFuture<NSNull> {
-  return (deviceForECID(ecid, logger: logger) as FBFuture)
-    .onQueue(
-      DispatchQueue.main,
-      fmap: { (deviceObj: AnyObject) -> FBFuture<AnyObject> in
-        let device = deviceObj as! FBDevice
-        return fbFutureFromAsync {
-          try await device.enterRecovery()
-          return NSNull()
-        } as! FBFuture<AnyObject>
-      }) as! FBFuture<NSNull>
-}
-
-private func exitRecoveryFuture(_ ecid: String, logger: FBControlCoreLogger) -> FBFuture<NSNull> {
-  return (deviceForECID(ecid, logger: logger) as FBFuture)
-    .onQueue(
-      DispatchQueue.main,
-      fmap: { (deviceObj: AnyObject) -> FBFuture<AnyObject> in
-        let device = deviceObj as! FBDevice
-        return fbFutureFromAsync {
-          try await device.exitRecovery()
-          return NSNull()
-        } as! FBFuture<AnyObject>
-      }) as! FBFuture<NSNull>
-}
-
-private func activateFuture(_ ecid: String, logger: FBControlCoreLogger) -> FBFuture<NSNull> {
-  return (deviceForECID(ecid, logger: logger) as FBFuture)
-    .onQueue(
-      DispatchQueue.main,
-      fmap: { (deviceObj: AnyObject) -> FBFuture<AnyObject> in
-        let device = deviceObj as! FBDevice
-        return fbFutureFromAsync {
-          try await device.activate()
-          return NSNull()
-        } as! FBFuture<AnyObject>
-      }) as! FBFuture<NSNull>
-}
-
-private func cleanFuture(_ udid: String, userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBControlCoreLogger, reporter: FBEventReporter) -> FBFuture<NSNull> {
-  return targetForUDID(udid, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, warmUp: true, logger: logger, reporter: reporter)
-    .onQueue(
-      DispatchQueue.main,
-      fmap: { (targetObj: AnyObject) -> FBFuture<AnyObject> in
-        let target = targetObj as! FBiOSTarget
-        do {
-          let idbLogger = logger as! FBIDBLogger
-          let storageManager = try FBIDBStorageManager.manager(forTarget: target, logger: idbLogger)
-          let commandExecutor = FBIDBCommandExecutor.commandExecutor(
-            forTarget: target,
-            storageManager: storageManager,
-            temporaryDirectory: FBTemporaryDirectory(logger: idbLogger),
-            debugserverPort: in_port_t(IDBPortsConfiguration(arguments: userDefaults).debugserverPort),
-            logger: idbLogger
-          )
-          return fbFutureFromAsync {
-            try await commandExecutor.clean()
-            return NSNull()
-          } as! FBFuture<AnyObject>
-        } catch {
-          return FBFuture(error: error)
-        }
-      }) as! FBFuture<NSNull>
-}
-
-private func companionServerFuture(_ udid: String, userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBControlCoreLogger, reporter: FBEventReporter) -> FBFuture<FBFuture<NSNull>> {
+private func runCompanionServer(_ udid: String, userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBControlCoreLogger, reporter: FBEventReporter) async throws {
   let terminateOffline = userDefaults.bool(forKey: "-terminate-offline")
   let idleShutdownTime = userDefaults.string(forKey: "-idle-shutdown-time").flatMap(Double.init).flatMap { $0 > 0 ? $0 : nil }
 
-  return targetForUDID(udid, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, warmUp: true, logger: logger, reporter: reporter)
-    .onQueue(
-      DispatchQueue.main,
-      fmap: { (targetObj: AnyObject) -> FBFuture<AnyObject> in
-        let target = targetObj as! FBiOSTarget
-        let addMetadataSel = NSSelectorFromString("addMetadata:")
-        if (reporter as AnyObject).responds(to: addMetadataSel) {
-          _ = (reporter as AnyObject).perform(
-            addMetadataSel,
-            with: [
-              "udid": udid,
-              "target_type": FBiOSTargetTypeStringFromTargetType(target.targetType).lowercased(),
-            ])
-        }
-        reporter.report(FBEventReporterSubject(forEvent: "launched"))
+  let target = try await targetForUDID(udid, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, warmUp: true, logger: logger, reporter: reporter)
 
-        let idbLogger = logger as! FBIDBLogger
-        let temporaryDirectory = FBTemporaryDirectory(logger: idbLogger)
+  let addMetadataSel = NSSelectorFromString("addMetadata:")
+  if (reporter as AnyObject).responds(to: addMetadataSel) {
+    _ = (reporter as AnyObject).perform(
+      addMetadataSel,
+      with: [
+        "udid": udid,
+        "target_type": FBiOSTargetTypeStringFromTargetType(target.targetType).lowercased(),
+      ])
+  }
+  reporter.report(FBEventReporterSubject(forEvent: "launched"))
 
-        do {
-          let storageManager = try FBIDBStorageManager.manager(forTarget: target, logger: idbLogger)
+  let idbLogger = logger as! FBIDBLogger
+  let temporaryDirectory = FBTemporaryDirectory(logger: idbLogger)
+  let storageManager = try FBIDBStorageManager.manager(forTarget: target, logger: idbLogger)
 
-          // Start up the companion
-          let ports = IDBPortsConfiguration(arguments: userDefaults)
+  // Start up the companion
+  let ports = IDBPortsConfiguration(arguments: userDefaults)
 
-          // The gRPC domain socket this companion serves on, if any. Removing it
-          // the instant shutdown begins stops clients from discovering a
-          // companion that is already shutting down.
-          let registeredSocketPath: String?
-          if case let .unixDomainSocket(path) = ports.swiftServerTarget {
-            registeredSocketPath = path
-          } else {
-            registeredSocketPath = nil
-          }
-          let removeRegisteredSocket: @Sendable () -> Void = {
-            if let registeredSocketPath {
-              Darwin.unlink(registeredSocketPath)
-            }
-          }
+  // The gRPC domain socket this companion serves on, if any. Removing it
+  // the instant shutdown begins stops clients from discovering a
+  // companion that is already shutting down.
+  let registeredSocketPath: String?
+  if case let .unixDomainSocket(path) = ports.swiftServerTarget {
+    registeredSocketPath = path
+  } else {
+    registeredSocketPath = nil
+  }
+  let removeRegisteredSocket: @Sendable () -> Void = {
+    if let registeredSocketPath {
+      Darwin.unlink(registeredSocketPath)
+    }
+  }
 
-          // Command Executor
-          let commandExecutor = FBIDBCommandExecutor.commandExecutor(
-            forTarget: target,
-            storageManager: storageManager,
-            temporaryDirectory: temporaryDirectory,
-            debugserverPort: in_port_t(ports.debugserverPort),
-            logger: idbLogger
-          )
+  // Command Executor
+  let commandExecutor = FBIDBCommandExecutor.commandExecutor(
+    forTarget: target,
+    storageManager: storageManager,
+    temporaryDirectory: temporaryDirectory,
+    debugserverPort: in_port_t(ports.debugserverPort),
+    logger: idbLogger
+  )
 
-          // Give the monitor the socket cleanup so an idle shutdown unlinks the
-          // socket synchronously the instant it begins, ahead of the async teardown.
-          let idleShutdownMonitor = idleShutdownTime.map {
-            IdleShutdownMonitor(idleTime: $0, logger: idbLogger, onShutdownStarted: removeRegisteredSocket)
-          }
+  // Give the monitor the socket cleanup so an idle shutdown unlinks the
+  // socket synchronously the instant it begins, ahead of the async teardown.
+  let idleShutdownMonitor = idleShutdownTime.map {
+    IdleShutdownMonitor(idleTime: $0, logger: idbLogger, onShutdownStarted: removeRegisteredSocket)
+  }
 
-          let swiftServer = try GRPCSwiftServer(
-            target: target,
-            commandExecutor: commandExecutor,
-            reporter: IDBConfiguration.eventReporter,
-            logger: logger as! FBIDBLogger,
-            ports: ports,
-            idleShutdownMonitor: idleShutdownMonitor
-          )
+  let swiftServer = try GRPCSwiftServer(
+    target: target,
+    commandExecutor: commandExecutor,
+    reporter: reporter,
+    logger: idbLogger,
+    ports: ports,
+    idleShutdownMonitor: idleShutdownMonitor
+  )
 
-          return (swiftServer.start() as FBFuture)
-            .onQueue(
-              target.workQueue,
-              map: { (serverDescription: AnyObject) -> AnyObject in
-                writeJSONToStdOut(serverDescription)
-                var futures: [FBFuture<NSNull>] = [unsafeBitCast(swiftServer.completed, to: FBFuture<NSNull>.self)]
+  let serverDescription = try await swiftServer.start()
+  writeJSONToStdOut(serverDescription)
 
-                if let idleShutdownMonitor, let idleShutdownTime {
-                  logger.info().log("Companion will shut down after \(Int(idleShutdownTime))s of inactivity")
-                  idleShutdownMonitor.start()
-                  futures.append(unsafeBitCast(idleShutdownMonitor.expired, to: FBFuture<NSNull>.self))
-                }
+  // Catch-all teardown for every exit path (normal completion, error, or
+  // cancellation): mirrors the old `chain:` handler. An idle shutdown also
+  // removes the socket synchronously the instant it fires.
+  defer {
+    temporaryDirectory.cleanOnExit()
+    removeRegisteredSocket()
+  }
 
-                if terminateOffline {
-                  logger.info().log("Companion will terminate when target goes offline")
-                  futures.append(targetOfflineFuture(target, logger: logger))
-                } else {
-                  logger.info().log("Companion will stay alive if target goes offline")
-                }
+  if let idleShutdownMonitor, let idleShutdownTime {
+    logger.info().log("Companion will shut down after \(Int(idleShutdownTime))s of inactivity")
+    idleShutdownMonitor.start()
+  }
+  if terminateOffline {
+    logger.info().log("Companion will terminate when target goes offline")
+  } else {
+    logger.info().log("Companion will stay alive if target goes offline")
+  }
 
-                let completed = FBFuture(race: futures)
-                return
-                  completed
-                  .onQueue(
-                    target.workQueue,
-                    chain: { (future: FBFuture<AnyObject>) -> FBFuture<AnyObject> in
-                      temporaryDirectory.cleanOnExit()
-                      // Catch-all for shutdown paths that don't remove the socket
-                      // synchronously themselves (target-offline, server close).
-                      removeRegisteredSocket()
-                      return future
-                    }) as AnyObject
-              })
-        } catch {
-          return FBFuture(error: error)
-        }
-      }) as! FBFuture<FBFuture<NSNull>>
+  // Race the completion conditions; whichever resolves first ends the companion.
+  // `Task.select` does not cancel the losers on the win path, so cancel them via
+  // `defer`. If this command is cancelled (signal), `Task.select`'s own
+  // `onCancel` cancels these children for us.
+  var raceTasks: [Task<Void, Error>] = [Task { try await swiftServer.waitUntilClosed() }]
+  if let idleShutdownMonitor {
+    raceTasks.append(Task { try await idleShutdownMonitor.waitUntilExpired() })
+  }
+  if terminateOffline {
+    raceTasks.append(Task { try await awaitTargetOffline(target, logger: logger) })
+  }
+  defer { raceTasks.forEach { $0.cancel() } }
+  _ = try await Task.select(raceTasks).value
 }
 
-private func notiferFuture(_ notify: String, userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBControlCoreLogger, reporter: FBEventReporter) -> FBFuture<FBFuture<NSNull>> {
-  return defaultTargetSets(userDefaults, xcodeAvailable: xcodeAvailable, logger: logger, reporter: reporter)
-    .onQueue(
-      DispatchQueue.main,
-      fmap: { (targetSetsObj: AnyObject) -> FBFuture<AnyObject> in
-        let targetSets = targetSetsObj as! [FBiOSTargetSet]
-        if notify == "stdout" {
-          return FBiOSTargetStateChangeNotifier.notifierToStdOut(withTargetSets: targetSets, logger: logger) as! FBFuture<AnyObject>
-        }
-        return FBiOSTargetStateChangeNotifier.notifierToFilePath(notify, withTargetSets: targetSets, logger: logger) as! FBFuture<AnyObject>
-      }
-    )
-    .onQueue(
-      DispatchQueue.main,
-      fmap: { (notifierObj: AnyObject) -> FBFuture<AnyObject> in
-        let notifier = notifierObj as! FBiOSTargetStateChangeNotifier
-        logger.log("Starting Notifier \(notifier)")
-        return (notifier.startNotifier() as FBFuture).mapReplace(notifier)
-      }
-    )
-    .onQueue(
-      DispatchQueue.main,
-      map: { (notifierObj: AnyObject) -> AnyObject in
-        let notifier = notifierObj as! FBiOSTargetStateChangeNotifier
-        logger.log("Started Notifier \(notifier)")
-        return notifier.notifierDone
-          .onQueue(
-            DispatchQueue.main,
-            respondToCancellation: {
-              logger.log("Stopping Notifier \(notifier)")
-              return FBFuture<NSNull>.empty()
-            }) as AnyObject
-      }) as! FBFuture<FBFuture<NSNull>>
+private func runNotifier(_ notify: String, userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBControlCoreLogger, reporter: FBEventReporter) async throws {
+  let targetSets = try await defaultTargetSets(userDefaults, xcodeAvailable: xcodeAvailable, logger: logger, reporter: reporter)
+  let notifier: FBiOSTargetStateChangeNotifier
+  if notify == "stdout" {
+    notifier = try FBiOSTargetStateChangeNotifier.notifierToStdOut(withTargetSets: targetSets, logger: logger)
+  } else {
+    notifier = try FBiOSTargetStateChangeNotifier.notifierToFilePath(notify, withTargetSets: targetSets, logger: logger)
+  }
+  logger.log("Starting Notifier \(notifier)")
+  try notifier.startNotifier()
+  logger.log("Started Notifier \(notifier)")
+  do {
+    try await notifier.waitUntilDone()
+  } catch is CancellationError {
+    logger.log("Stopping Notifier \(notifier)")
+    throw CancellationError()
+  }
 }
 
-private func forwardFuture(_ forward: String, userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBControlCoreLogger, reporter: FBEventReporter) -> FBFuture<NSNull> {
+private func runForward(_ forward: String, userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBControlCoreLogger, reporter: FBEventReporter) async throws {
   let components = forward.components(separatedBy: ":")
   if components.count != 2 {
-    return unsafeBitCast(FBIDBError.describe("\(forward) should be of the form UDID:PORT").failFuture() as FBFuture<AnyObject>, to: FBFuture<NSNull>.self)
+    throw FBIDBError.describe("\(forward) should be of the form UDID:PORT").build()
   }
   let udid = components[0]
   let remotePort = Int32(components[1]) ?? 0
 
-  return targetForUDID(udid, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, warmUp: false, logger: logger, reporter: reporter)
-    .onQueue(
-      DispatchQueue.main,
-      fmap: { (targetObj: AnyObject) -> FBFuture<AnyObject> in
-        guard let commands = targetObj as? AsyncSocketForwardingCommands else {
-          return FBIDBError.describe("\(targetObj) does not conform to AsyncSocketForwardingCommands").failFuture()
-        }
-        return fbFutureFromAsync {
-          try await commands.drainLocalFileInput(STDIN_FILENO, localFileOutput: STDOUT_FILENO, remotePort: remotePort)
-          return NSNull()
-        } as! FBFuture<AnyObject>
-      }) as! FBFuture<NSNull>
+  let target = try await targetForUDID(udid, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, warmUp: false, logger: logger, reporter: reporter)
+  guard let commands = target as? AsyncSocketForwardingCommands else {
+    throw FBIDBError.describe("\(target) does not conform to AsyncSocketForwardingCommands").build()
+  }
+  try await commands.drainLocalFileInput(STDIN_FILENO, localFileOutput: STDOUT_FILENO, remotePort: remotePort)
 }
 
-private func getCompanionCompletedFuture(_ userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBControlCoreLogger) -> FBFuture<FBFuture<NSNull>> {
+/// Runs the single mode-of-operation selected by the command-line arguments,
+/// returning once it has completed (the companion-server / boot / notify modes
+/// run until they are shut down or cancelled).
+private func runSelectedCommand(_ userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBControlCoreLogger) async throws {
   let boot = userDefaults.string(forKey: "-boot")
   let reboot = userDefaults.string(forKey: "-reboot")
   let clone = userDefaults.string(forKey: "-clone")
@@ -650,76 +493,80 @@ private func getCompanionCompletedFuture(_ userDefaults: UserDefaults, xcodeAvai
 
   let reporter = IDBConfiguration.eventReporter
   if let udid {
-    return companionServerFuture(udid, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, logger: logger, reporter: reporter)
+    try await runCompanionServer(udid, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, logger: logger, reporter: reporter)
   } else if list != nil {
     logger.info().log("Listing")
-    return FBFuture(result: listFuture(userDefaults, xcodeAvailable: xcodeAvailable, logger: logger, reporter: reporter))
+    try await runList(userDefaults, xcodeAvailable: xcodeAvailable, logger: logger, reporter: reporter)
   } else if let notify {
     logger.info().log("Notifying \(notify)")
-    return notiferFuture(notify, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, logger: logger, reporter: reporter)
+    try await runNotifier(notify, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, logger: logger, reporter: reporter)
   } else if let boot {
     logger.log("Booting \(boot)")
-    return bootFuture(boot, userDefaults: userDefaults, logger: logger, reporter: reporter)
+    try await runBoot(boot, userDefaults: userDefaults, logger: logger, reporter: reporter)
   } else if let shutdown {
     logger.info().log("Shutting down \(shutdown)")
-    return FBFuture(result: shutdownFuture(shutdown, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, logger: logger, reporter: reporter))
+    try await runShutdown(shutdown, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, logger: logger, reporter: reporter)
   } else if let reboot {
     logger.info().log("Rebooting \(reboot)")
-    return FBFuture(result: rebootFuture(reboot, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, logger: logger, reporter: reporter))
+    try await runReboot(reboot, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, logger: logger, reporter: reporter)
   } else if let erase {
     logger.info().log("Erasing \(erase)")
-    return FBFuture(result: eraseFuture(erase, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, logger: logger, reporter: reporter))
+    try await runErase(erase, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, logger: logger, reporter: reporter)
   } else if let deleteArg {
     logger.info().log("Deleting \(deleteArg)")
-    return FBFuture(result: deleteFuture(deleteArg, userDefaults: userDefaults, logger: logger, reporter: reporter))
+    try await runDelete(deleteArg, userDefaults: userDefaults, logger: logger, reporter: reporter)
   } else if let create {
     logger.info().log("Creating \(create)")
-    return FBFuture(
-      result: fbFutureFromAsync {
-        try await createFuture(create, userDefaults: userDefaults, logger: logger, reporter: reporter)
-        return NSNull()
-      })
+    try await runCreate(create, userDefaults: userDefaults, logger: logger, reporter: reporter)
   } else if let clone {
     logger.info().log("Cloning \(clone)")
-    return FBFuture(result: cloneFuture(clone, userDefaults: userDefaults, logger: logger, reporter: reporter))
+    try await runClone(clone, userDefaults: userDefaults, logger: logger, reporter: reporter)
   } else if let recover {
     logger.info().log("Putting \(recover) into recovery")
-    return FBFuture(result: enterRecoveryFuture(recover, logger: logger))
+    try await runEnterRecovery(recover, logger: logger)
   } else if let unrecover {
     logger.info().log("Removing \(unrecover) from recovery")
-    return FBFuture(result: exitRecoveryFuture(unrecover, logger: logger))
+    try await runExitRecovery(unrecover, logger: logger)
   } else if let activate {
     logger.info().log("Activating \(activate)")
-    return FBFuture(result: activateFuture(activate, logger: logger))
+    try await runActivate(activate, logger: logger)
   } else if let clean {
     logger.info().log("Cleaning \(clean)")
-    return FBFuture(result: cleanFuture(clean, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, logger: logger, reporter: reporter))
+    try await runClean(clean, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, logger: logger, reporter: reporter)
   } else if let forward {
     logger.info().log("Forwarding \(forward)")
-    return FBFuture(result: forwardFuture(forward, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, logger: logger, reporter: reporter))
+    try await runForward(forward, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, logger: logger, reporter: reporter)
+  } else {
+    throw FBIDBError.describe("You must specify at least one 'Mode of operation'\n\n\(kUsageHelpMessage)").build()
   }
-  return unsafeBitCast(FBIDBError.describe("You must specify at least one 'Mode of operation'\n\n\(kUsageHelpMessage)").failFuture() as FBFuture<AnyObject>, to: FBFuture<FBFuture<NSNull>>.self)
 }
 
-private func signalHandlerFuture(_ signalCode: UInt, exitMessage: String, logger: FBControlCoreLogger) -> FBFuture<NSNumber> {
-  let queue = DispatchQueue.global(qos: .userInitiated)
-  let future: FBMutableFuture<NSNumber> = FBMutableFuture<NSNumber>()
-  let source = DispatchSource.makeSignalSource(signal: Int32(signalCode), queue: DispatchQueue.main)
+/// Suspends until `signalCode` is delivered, returning the signal number. The
+/// default disposition is ignored (replaced by the dispatch source) to match the
+/// legacy behavior; cancelling the awaiting task tears the source down.
+private func waitForSignal(_ signalCode: Int32, exitMessage: String, logger: FBControlCoreLogger) async throws -> Int32 {
+  let promise = AsyncPromise<Int32>()
+  let source = DispatchSource.makeSignalSource(signal: signalCode, queue: DispatchQueue.main)
   source.setEventHandler {
     logger.error().log(exitMessage)
-    future.resolve(withResult: NSNumber(value: signalCode))
+    promise.resolve(signalCode)
   }
   source.resume()
   var action = sigaction()
   action.__sigaction_u.__sa_handler = SIG_IGN
-  sigaction(Int32(signalCode), &action, nil)
-  return unsafeBitCast(
-    future
-      .onQueue(
-        queue,
-        notifyOfCompletion: { (_: FBFuture<AnyObject>) in
-          source.cancel()
-        }), to: FBFuture<NSNumber>.self)
+  sigaction(signalCode, &action, nil)
+  defer { source.cancel() }
+  return try await promise.value
+}
+
+/// Suspends until any of `signals` is delivered, returning the first signal
+/// number seen.
+private func waitForAnySignal(_ signals: [(code: Int32, message: String)], logger: FBControlCoreLogger) async throws -> Int32 {
+  let tasks = signals.map { signal in
+    Task { try await waitForSignal(signal.code, exitMessage: signal.message, logger: logger) }
+  }
+  defer { tasks.forEach { $0.cancel() } }
+  return try await Task.select(tasks).value
 }
 
 private func envDescription() -> String {
@@ -763,47 +610,40 @@ private func idbMain() async -> Int32 {
     return 1
   }
 
-  let signalled = FBFuture(race: [
-    signalHandlerFuture(UInt(SIGINT), exitMessage: "Signalled: SIGINT", logger: logger),
-    signalHandlerFuture(UInt(SIGTERM), exitMessage: "Signalled: SIGTERM", logger: logger),
-  ])
-  let companionCompletedFuture = unsafeBitCast(getCompanionCompletedFuture(userDefaults, xcodeAvailable: true, logger: logger), to: FBFuture<AnyObject>.self)
-  let companionCompleted: FBFuture<NSNull>
-  do {
-    guard let result = try companionCompletedFuture.`await`() as? FBFuture<NSNull> else {
-      logger.error().log("Failed to get companion completed future")
-      return 1
-    }
-    companionCompleted = result
-  } catch {
-    logger.error().log(error.localizedDescription)
-    return 1
+  let command = Task<CompanionOutcome, Error> {
+    try await runSelectedCommand(userDefaults, xcodeAvailable: true, logger: logger)
+    return .finished
+  }
+  let signals = Task<CompanionOutcome, Error> {
+    .signalled(
+      try await waitForAnySignal(
+        [(SIGINT, "Signalled: SIGINT"), (SIGTERM, "Signalled: SIGTERM")],
+        logger: logger))
   }
 
-  let completed = FBFuture(race: [
-    unsafeBitCast(companionCompleted, to: FBFuture<AnyObject>.self),
-    unsafeBitCast(signalled, to: FBFuture<AnyObject>.self),
-  ])
-  if let completedError = completed.error {
-    logger.error().log(completedError.localizedDescription)
-    return 1
-  }
-  let result: AnyObject
+  // Race the command against the signal handler. `Task.select` returns the first
+  // task to finish but does NOT cancel the loser, so cancel it explicitly.
+  let winner = await Task.select(command, signals)
   do {
-    result = try completed.`await`()
+    switch try await winner.value {
+    case .finished:
+      signals.cancel()
+      return 0
+    case let .signalled(signo):
+      // Cancelling the command propagates into its in-flight `Task.select`
+      // (server/notifier race) or graceful-shutdown handler (headless boot), so
+      // its teardown runs; await it before exiting.
+      command.cancel()
+      _ = try? await command.value
+      logger.log("Responding to termination of idb with signo \(signo)")
+      return 0
+    }
   } catch {
+    command.cancel()
+    signals.cancel()
     logger.error().log(error.localizedDescription)
     return 1
   }
-  if companionCompleted.state == FBFutureState.cancelled {
-    logger.log("Responding to termination of idb with signo \(result)")
-    let cancellation = companionCompleted.cancel()
-    guard let _ = try? cancellation.`await`() else {
-      logger.error().log("Cancellation failed")
-      return 1
-    }
-  }
-  return 0
 }
 
 let result = await idbMain()

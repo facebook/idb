@@ -49,12 +49,11 @@ final class IdleShutdownMonitorTests: XCTestCase {
   /// running `onResolve` first.
   private func expirationExpectation(for monitor: IdleShutdownMonitor, onResolve: (() -> Void)? = nil) -> XCTestExpectation {
     let fulfilled = expectation(description: "monitor.expired resolves")
-    _ = monitor.expired.onQueue(
-      DispatchQueue.global(),
-      notifyOfCompletion: { _ in
-        onResolve?()
-        fulfilled.fulfill()
-      })
+    Task {
+      try? await monitor.waitUntilExpired()
+      onResolve?()
+      fulfilled.fulfill()
+    }
     return fulfilled
   }
 
