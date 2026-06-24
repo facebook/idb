@@ -54,7 +54,7 @@ public final class FBSimulatorLaunchCtlCommands: NSObject, FBiOSTargetCommand {
   }
 
   fileprivate func serviceNamesAndProcessIdentifiers(matching regex: NSRegularExpression) async throws -> [String: NSNumber] {
-    let text = try await runWithArguments(["list"])
+    let text = try await run(.list)
     let lines = text.components(separatedBy: .newlines)
     var mapping: [String: NSNumber] = [:]
     for line in lines {
@@ -85,7 +85,7 @@ public final class FBSimulatorLaunchCtlCommands: NSObject, FBiOSTargetCommand {
   }
 
   fileprivate func listServices() async throws -> [String: Any] {
-    let text = try await runWithArguments(["list"])
+    let text = try await run(.list)
     let lines = text.components(separatedBy: .newlines)
     if lines.count < 2 {
       throw FBSimulatorError.describe("Insufficient number of lines from output '\(text)'").build()
@@ -108,7 +108,7 @@ public final class FBSimulatorLaunchCtlCommands: NSObject, FBiOSTargetCommand {
 
   fileprivate func stopService(withName serviceName: String) async throws -> String {
     do {
-      return try await runWithArguments(["stop", serviceName])
+      return try await run(.stop(serviceName: serviceName))
     } catch {
       throw FBSimulatorError.describe("Failed to stop service '\(serviceName)'")
         .caused(by: error as NSError)
@@ -118,7 +118,7 @@ public final class FBSimulatorLaunchCtlCommands: NSObject, FBiOSTargetCommand {
 
   fileprivate func startService(withName serviceName: String) async throws -> String {
     do {
-      return try await runWithArguments(["start", serviceName])
+      return try await run(.start(serviceName: serviceName))
     } catch {
       throw FBSimulatorError.describe("Failed to start service '\(serviceName)'")
         .caused(by: error as NSError)
@@ -164,8 +164,28 @@ public final class FBSimulatorLaunchCtlCommands: NSObject, FBiOSTargetCommand {
     return serviceName
   }
 
-  private func runWithArguments(_ arguments: [String]) async throws -> String {
-    let output = try await simulator.launchProcessConsumingOutput(launchPath: launchctlLaunchPath, arguments: arguments)
+  // The closed set of launchctl operations this command issues. Modelling them as an enum keeps argv
+  // construction in one place and makes the operation set exhaustive, so a new operation cannot be
+  // added without routing through `run`.
+  enum Command {
+    case list
+    case stop(serviceName: String)
+    case start(serviceName: String)
+
+    var arguments: [String] {
+      switch self {
+      case .list:
+        return ["list"]
+      case let .stop(serviceName):
+        return ["stop", serviceName]
+      case let .start(serviceName):
+        return ["start", serviceName]
+      }
+    }
+  }
+
+  private func run(_ command: Command) async throws -> String {
+    let output = try await simulator.launchProcessConsumingOutput(launchPath: launchctlLaunchPath, arguments: command.arguments)
     return String(data: output.stdout, encoding: .utf8) ?? ""
   }
 }
