@@ -25,22 +25,24 @@ module.exports = {
     footer: {
       style: 'dark',
       logo: {
-        alt: 'idb',
-        src: 'img/oss_logo.png',
-        href: 'https://opensource.facebook.com/',
+        alt: 'Meta Open Source',
+        src: 'img/meta_open_source_logo_negative.svg',
+        href: 'https://opensource.fb.com/',
+        width: 300,
+        height: 64,
       },
-      copyright: `Copyright © ${new Date().getFullYear()} Facebook, Inc.`,
+      copyright: `Copyright © ${new Date().getFullYear()} Meta Platforms, Inc.`,
       links: [
         {
           title: 'Social',
           items: [
             {
-              label: 'Twitter',
-              to: 'https://twitter.com/fbOpenSource'
+              label: 'Threads',
+              href: 'https://www.threads.com/@metaopensource'
             },
             {
               label: 'Discord',
-              to: 'https://discord.gg/SF26Yqw'
+              href: 'https://discord.gg/SF26Yqw'
             }
           ]
         },
@@ -49,10 +51,28 @@ module.exports = {
           items: [
             {
               label: 'Github',
-              to: 'https://github.com/facebook/idb'
+              href: 'https://github.com/facebook/idb'
             },
           ]
-        }
+        },
+        {
+          title: 'Legal',
+          // Please do not remove the privacy and terms, it's a legal requirement.
+          items: [
+            {
+              label: 'Privacy',
+              href: 'https://opensource.fb.com/legal/privacy/',
+              target: '_blank',
+              rel: 'noreferrer noopener',
+            },
+            {
+              label: 'Terms',
+              href: 'https://opensource.fb.com/legal/terms/',
+              target: '_blank',
+              rel: 'noreferrer noopener',
+            },
+          ],
+        },
       ],
     },
   },
@@ -67,5 +87,4 @@ module.exports = {
       },
     ],
   ],
-  scripts: ['https://buttons.github.io/buttons.js'],
 };

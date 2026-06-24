@@ -29,7 +29,7 @@ function HomeSplash(props) {
               GETTING STARTED
             </Link>
           </div>
-          <div className="col col--4"><img className={styles.itemImage} src="img/idb_icon.svg" alt="API" /></div>
+          <div className="col col--4"><img className={styles.itemImage} src={useBaseUrl('img/idb_icon.svg')} alt="idb" /></div>
         </div>
       </div>
     </header>
@@ -41,7 +41,7 @@ const DemoVideo = props => (
     <section className={classnames('hero', styles.items)}>
       <div className="container">
         <video playsInline loop muted controls>
-          <source src="idb_demo.mov" type="video/mp4" />
+          <source src={useBaseUrl('idb_demo.mov')} type="video/mp4" />
         </video>
       </div>
     </section>
