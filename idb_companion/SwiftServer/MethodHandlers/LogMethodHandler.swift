@@ -18,11 +18,11 @@ struct LogMethodHandler {
   let commandExecutor: FBIDBCommandExecutor
 
   func handle(request: Idb_LogRequest, responseStream: GRPCAsyncResponseStreamWriter<Idb_LogResponse>, context: GRPCAsyncServerCallContext) async throws {
-    let writingDone = FBMutableFuture<NSNull>(name: nil)
+    let writingDone = AsyncPromise<Void>()
     let streamWriter = FIFOStreamWriter(stream: responseStream)
 
     let consumer = FBBlockDataConsumer.synchronousDataConsumer { data in
-      if writingDone.hasCompleted {
+      if writingDone.isResolved {
         return
       }
       let response = Idb_LogResponse.with {
@@ -31,7 +31,7 @@ struct LogMethodHandler {
       do {
         try streamWriter.send(response)
       } catch {
-        writingDone.resolveWithError(error)
+        writingDone.fail(error)
       }
     }
 
@@ -46,13 +46,13 @@ struct LogMethodHandler {
     }
 
     let observeWritingDone = Task<Void, Error> {
-      try await awaitMutableFutureVoid(writingDone)
+      try await writingDone.value
     }
     let observeOperationCompletion = Task<Void, Error> {
       try await operation.waitUntilCompleted()
     }
     try await Task.select(observeWritingDone, observeOperationCompletion).value
-    writingDone.resolve(withResult: NSNull())
+    writingDone.resolve(())
 
     observeOperationCompletion.cancel()
   }

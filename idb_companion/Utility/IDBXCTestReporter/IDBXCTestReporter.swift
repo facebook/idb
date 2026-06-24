@@ -52,7 +52,7 @@ extension IDBXCTestReporter {
 
 @objc final class IDBXCTestReporter: NSObject, FBXCTestReporter, FBDataConsumer {
 
-  let reportingTerminated = FBMutableFuture<NSNumber>()
+  private let reportingTerminated = AsyncPromise<Int>()
   var configuration: Configuration!
 
   @Atomic private var responseStream: GRPCAsyncResponseStreamWriter<Idb_XctestRunResponse>?
@@ -60,7 +60,7 @@ extension IDBXCTestReporter {
   private let queue: DispatchQueue
   private let logger: FBControlCoreLogger
 
-  private let processUnderTestExitedMutable = FBMutableFuture<NSNull>()
+  private let processUnderTestExited = AsyncPromise<Void>()
 
   @Atomic private var currentInfo = CurrentTestInfo()
 
@@ -73,8 +73,8 @@ extension IDBXCTestReporter {
   // MARK: - Async API
 
   /// Waits until reporting has terminated. Returns the status raw value reported.
-  func awaitReportingTerminated() async throws -> NSNumber {
-    try await awaitMutableFuture(reportingTerminated)
+  func awaitReportingTerminated() async throws -> Int {
+    try await reportingTerminated.value
   }
 
   // MARK: - FBDataConsumer implementation
@@ -115,7 +115,7 @@ extension IDBXCTestReporter {
   }
 
   @objc func processUnderTestDidExit() {
-    processUnderTestExitedMutable.resolve(withResult: NSNull())
+    processUnderTestExited.resolve(())
   }
 
   @objc func testSuite(_ testSuite: String, didStartAt startTime: String) {
@@ -128,7 +128,7 @@ extension IDBXCTestReporter {
       write(testRunInfo: info)
     } catch {
       _responseStream.sync { $0 = nil }
-      reportingTerminated.resolveWithError(error)
+      reportingTerminated.fail(error)
     }
   }
 
@@ -351,7 +351,7 @@ extension IDBXCTestReporter {
 
     if shouldCloseStream {
       logger.log("Test Reporting has finished with status \(response.status)")
-      reportingTerminated.resolve(withResult: .init(value: response.status.rawValue))
+      reportingTerminated.resolve(response.status.rawValue)
     }
   }
 
@@ -367,7 +367,7 @@ extension IDBXCTestReporter {
   }
 
   private func getCoverageResponseData(config: FBCodeCoverageConfiguration) async throws -> Data {
-    try await awaitMutableFutureVoid(processUnderTestExitedMutable)
+    try await processUnderTestExited.value
     switch config.format {
     case .exported:
       let data = try await getCoverageDataExported(config: config)
@@ -423,7 +423,11 @@ extension IDBXCTestReporter {
         .withStdErrInMemoryAsString())
 
     let gzipProcessInput = FBProcessInput<OutputStream>.fromStream()
-    let archiveFuture = FBArchiveOperations.createGzipData(from: gzipProcessInput as! FBProcessInput<AnyObject>, logger: self.logger)
+    // swiftlint:disable:next force_cast
+    let gzipInput = gzipProcessInput as! FBProcessInput<AnyObject>
+    let archiveTask = Task {
+      try await FBArchiveOperations.createGzipDataAsync(from: gzipInput, logger: self.logger)
+    }
 
     let oneMega = 1024 * 1024
     let buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: oneMega)
@@ -450,7 +454,7 @@ extension IDBXCTestReporter {
       throw FBControlCoreError.describe("xcrun failed to export code coverage data \(exitCode) \(exportProcess.stdErr ?? "")")
     }
 
-    let archiveProcess = try await bridgeFBFuture(archiveFuture)
+    let archiveProcess = try await archiveTask.value
     let stdOut = archiveProcess.stdOut ?? NSData()
     return stdOut as Data
   }
