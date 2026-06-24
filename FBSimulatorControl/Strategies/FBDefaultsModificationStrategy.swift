@@ -54,38 +54,50 @@ public class FBDefaultsModificationStrategy: NSObject {
         .failFuture() as! FBFuture<NSNull>
     }
 
-    // Build the arguments
-    var arguments = ["import"]
-    if let domainOrPath {
-      arguments.append(domainOrPath)
-    }
-    arguments.append(file)
-
-    return performDefaultsCommand(withArguments: arguments).mapReplace(NSNull()) as! FBFuture<NSNull>
+    return run(.importPlist(domainOrPath: domainOrPath, file: file)).mapReplace(NSNull()) as! FBFuture<NSNull>
   }
 
   // MARK: - Internal Methods
 
   fileprivate func setDefault(inDomain domain: String, key: String, value: String, type: String?) -> FBFuture<NSNull> {
-    return performDefaultsCommand(withArguments: [
-      "write",
-      domain,
-      key,
-      "-\(type ?? "string")",
-      value,
-    ]).mapReplace(NSNull()) as! FBFuture<NSNull>
+    return run(.write(domain: domain, key: key, type: type ?? "string", value: value)).mapReplace(NSNull()) as! FBFuture<NSNull>
   }
 
   fileprivate func getDefault(inDomain domain: String, key: String) -> FBFuture<NSString> {
-    return performDefaultsCommand(withArguments: [
-      "read",
-      domain,
-      key,
-    ])
+    return run(.read(domain: domain, key: key))
   }
 
-  fileprivate func performDefaultsCommand(withArguments arguments: [String]) -> FBFuture<NSString> {
+  // The closed set of `defaults` operations this strategy issues. Modelling them as an enum keeps argv
+  // construction in one place and makes the operation set exhaustive, so a new operation cannot be
+  // added without routing through `run`.
+  enum Command {
+    case read(domain: String, key: String)
+    case write(domain: String, key: String, type: String, value: String)
+    case importPlist(domainOrPath: String?, file: String)
+    case delete(path: String, key: String)
+
+    var arguments: [String] {
+      switch self {
+      case let .read(domain, key):
+        return ["read", domain, key]
+      case let .write(domain, key, type, value):
+        return ["write", domain, key, "-\(type)", value]
+      case let .importPlist(domainOrPath, file):
+        var args = ["import"]
+        if let domainOrPath {
+          args.append(domainOrPath)
+        }
+        args.append(file)
+        return args
+      case let .delete(path, key):
+        return ["delete", path, key]
+      }
+    }
+  }
+
+  fileprivate func run(_ command: Command) -> FBFuture<NSString> {
     let launchPath = defaultsBinary
+    let arguments = command.arguments
     return fbFutureFromAsync { [simulator] in
       let output = try await simulator.launchProcessConsumingOutput(launchPath: launchPath, arguments: arguments)
       let stdout = String(data: output.stdout, encoding: .utf8) ?? ""
@@ -230,7 +242,7 @@ public class FBLocationServicesModificationStrategy: FBDefaultsModificationStrat
       .appendingPathComponent("Library/Caches/locationd/clients.plist")
     let futures: [FBFuture<AnyObject>] = bundleIDs.map { bundleID in
       unsafeBitCast(
-        self.performDefaultsCommand(withArguments: ["delete", path, bundleID]),
+        self.run(.delete(path: path, key: bundleID)),
         to: FBFuture<AnyObject>.self)
     }
 
