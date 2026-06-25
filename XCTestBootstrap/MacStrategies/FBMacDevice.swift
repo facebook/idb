@@ -13,7 +13,7 @@ import IOKit
   func _XCT_requestConnectedSocketForTransport(_ arg1: @escaping (FileHandle?, Error?) -> Void)
 }
 
-@objc public final class FBMacDevice: NSObject, FBiOSTarget, FBCrashLogCommands {
+@objc public final class FBMacDevice: NSObject, FBiOSTarget {
 
   // MARK: - FBiOSTarget synthesized properties
 

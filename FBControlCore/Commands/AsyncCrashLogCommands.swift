@@ -7,7 +7,6 @@
 
 import Foundation
 
-/// Swift-native async/await counterpart of `FBCrashLogCommands`.
 public protocol AsyncCrashLogCommands: AnyObject {
 
   func crashes(matching predicate: NSPredicate, useCache: Bool) async throws -> [FBCrashLogInfo]

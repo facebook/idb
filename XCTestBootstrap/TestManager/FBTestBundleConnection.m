@@ -365,21 +365,15 @@ static NSTimeInterval const CrashCheckWaitLimit = 120;  // Time to wait for cras
                                    failFuture];
              }
 
-             id<FBCrashLogCommands> crashLog = (id<FBCrashLogCommands>) self.target;
-             if (![crashLog conformsToProtocol:@protocol(FBCrashLogCommands)]) {
-               return (FBFuture *)[[FBControlCoreError
-                                    describe:[NSString stringWithFormat:@"%@ does not conform to %@", self.target, NSStringFromProtocol(@protocol(FBCrashLogCommands))]]
-                                   failFuture];
-             }
-
              NSTimeInterval crashWaitTimeout = CrashCheckWaitLimit;
              NSString *crashWaitTimeoutFromEnv = NSProcessInfo.processInfo.environment[@"FBXCTEST_CRASH_WAIT_TIMEOUT"];
              if (crashWaitTimeoutFromEnv) {
                crashWaitTimeout = crashWaitTimeoutFromEnv.floatValue;
              }
 
-             return [[crashLog
-                      notifyOfCrash:[FBCrashLogInfo predicateForCrashLogsWithProcessID:testHostApplication.processIdentifier]]
+             return [[FBTestHostCrashLogQuery
+                      notifyOfCrashForProcessIdentifier:testHostApplication.processIdentifier
+                      target:self.target]
                      timeout:crashWaitTimeout
                      waitingFor:[NSString stringWithFormat:@"Getting crash log for process with pid %d, bundle ID: %@", testHostApplication.processIdentifier, testHostBundleID]];
            }]
