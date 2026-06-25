@@ -93,16 +93,38 @@ public class FBDefaultsModificationStrategy: NSObject {
         return ["delete", path, key]
       }
     }
+
+    var exitCodePolicy: ExitCodePolicy {
+      switch self {
+      case .read, .delete:
+        // `defaults` returns 1 for a missing key/domain (a benign optional read or idempotent delete)
+        // and for a genuine failure alike, with no distinguishing code, so tolerate any non-zero.
+        return .tolerateAny
+      case .write, .importPlist:
+        return .require([0])
+      }
+    }
   }
 
   fileprivate func run(_ command: Command) -> FBFuture<NSString> {
     let launchPath = defaultsBinary
-    let arguments = command.arguments
     return fbFutureFromAsync { [simulator] in
-      let output = try await simulator.launchProcessConsumingOutput(launchPath: launchPath, arguments: arguments)
-      let stdout = String(data: output.stdout, encoding: .utf8) ?? ""
-      return stdout.trimmingCharacters(in: .newlines) as NSString
+      let output = try await simulator.launchProcessConsumingOutput(launchPath: launchPath, arguments: command.arguments)
+      return try FBDefaultsModificationStrategy.stdout(orThrowFrom: output, command: command, logger: simulator.logger)
     }
+  }
+
+  // Internal for unit-test coverage of the exit-code handling; see FBDefaultsModificationStrategyTests.
+  static func stdout(orThrowFrom output: FBInSimulatorToolOutput, command: Command, logger: (any FBControlCoreLogger)?) throws -> NSString {
+    if output.exitCode != 0 {
+      let stderr = String(data: output.stderr, encoding: .utf8) ?? ""
+      guard command.exitCodePolicy.accepts(output.exitCode) else {
+        throw FBSimulatorError.describe("defaults \(command.arguments.joined(separator: " ")) failed with exit code \(output.exitCode): \(stderr)").build()
+      }
+      logger?.log("defaults \(command.arguments.joined(separator: " ")) exited with code \(output.exitCode): \(stderr)")
+    }
+    let stdout = String(data: output.stdout, encoding: .utf8) ?? ""
+    return stdout.trimmingCharacters(in: .newlines) as NSString
   }
 
   fileprivate func amendRelativeTo(path relativePath: String, defaults: [String: Any], managingService serviceName: String) -> FBFuture<NSNull> {
