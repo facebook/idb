@@ -9,7 +9,6 @@
 import FBControlCore
 import Foundation
 
-@objc(FBSimulatorLogCommands)
 public final class FBSimulatorLogCommands: NSObject, FBiOSTargetCommand {
 
   // MARK: - Properties
@@ -18,7 +17,6 @@ public final class FBSimulatorLogCommands: NSObject, FBiOSTargetCommand {
 
   // MARK: - Initializers
 
-  @objc(commandsWithTarget:)
   public class func commands(with target: any FBiOSTarget) -> FBSimulatorLogCommands {
     FBSimulatorLogCommands(simulator: target as! FBSimulator)
   }

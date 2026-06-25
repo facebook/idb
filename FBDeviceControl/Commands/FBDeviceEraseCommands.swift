@@ -119,12 +119,11 @@ private final class FBDeviceEraseOperation: NSObject, FBiOSTargetSetDelegate, @u
 
 // MARK: - FBDeviceEraseCommands
 
-@objc(FBDeviceEraseCommands)
 public final class FBDeviceEraseCommands: NSObject, FBiOSTargetCommand, EraseCommands {
 
   private weak var device: FBDevice?
 
-  @objc public class func commands(with target: any FBiOSTarget) -> Self {
+  public class func commands(with target: any FBiOSTarget) -> Self {
     // swiftlint:disable:next force_cast
     unsafeDowncast(FBDeviceEraseCommands(device: target as! FBDevice), to: self)
   }

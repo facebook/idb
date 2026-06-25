@@ -11,7 +11,6 @@
 
 // swiftlint:disable force_cast force_try force_unwrapping
 
-@objc(FBSimulatorLaunchCtlCommands)
 public final class FBSimulatorLaunchCtlCommands: NSObject, FBiOSTargetCommand {
 
   // MARK: - Properties
@@ -29,7 +28,6 @@ public final class FBSimulatorLaunchCtlCommands: NSObject, FBiOSTargetCommand {
     return binary.path
   }
 
-  @objc(commandsWithTarget:)
   public class func commands(with target: any FBiOSTarget) -> FBSimulatorLaunchCtlCommands {
     let simulator = target as! FBSimulator
     let launchctlLaunchPath = try! launchCtlLaunchPath(for: simulator)

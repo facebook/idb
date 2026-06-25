@@ -14,7 +14,6 @@ import AppKit
 
 private let openURLRetries = 2
 
-@objc(FBSimulatorLifecycleCommands)
 public final class FBSimulatorLifecycleCommands: NSObject, FBiOSTargetCommand {
 
   // MARK: - Properties
@@ -24,7 +23,6 @@ public final class FBSimulatorLifecycleCommands: NSObject, FBiOSTargetCommand {
 
   // MARK: - Initializers
 
-  @objc(commandsWithTarget:)
   public class func commands(with target: any FBiOSTarget) -> FBSimulatorLifecycleCommands {
     FBSimulatorLifecycleCommands(simulator: target as! FBSimulator)
   }

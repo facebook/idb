@@ -28,13 +28,12 @@ private func mountCallback(_ callbackDictionary: [String: Any]?, _ context: Unsa
   }
 }
 
-@objc(FBDeviceDeveloperDiskImageCommands)
 public class FBDeviceDeveloperDiskImageCommands: NSObject, FBiOSTargetCommand, DeveloperDiskImageCommands {
   private(set) weak var device: FBDevice?
 
   // MARK: Initializers
 
-  @objc public class func commands(with target: any FBiOSTarget) -> Self {
+  public class func commands(with target: any FBiOSTarget) -> Self {
     unsafeDowncast(FBDeviceDeveloperDiskImageCommands(device: target as! FBDevice), to: self)
   }
 

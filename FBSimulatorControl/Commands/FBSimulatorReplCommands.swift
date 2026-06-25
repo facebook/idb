@@ -9,7 +9,6 @@ import FBControlCore
 import Foundation
 @preconcurrency import XCTestBootstrap
 
-@objc(FBSimulatorReplCommands)
 public final class FBSimulatorReplCommands: NSObject, FBiOSTargetCommand {
 
   // MARK: - Properties
@@ -18,7 +17,6 @@ public final class FBSimulatorReplCommands: NSObject, FBiOSTargetCommand {
 
   // MARK: - Initializers
 
-  @objc(commandsWithTarget:)
   public class func commands(with target: any FBiOSTarget) -> FBSimulatorReplCommands {
     // swiftlint:disable:next force_cast
     return FBSimulatorReplCommands(simulator: target as! FBSimulator)

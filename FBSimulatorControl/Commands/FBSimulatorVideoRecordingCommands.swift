@@ -10,7 +10,6 @@ import Foundation
 
 // swiftlint:disable force_cast force_unwrapping
 
-@objc(FBSimulatorVideoRecordingCommands)
 public final class FBSimulatorVideoRecordingCommands: NSObject, FBiOSTargetCommand {
 
   // MARK: - Properties
@@ -20,7 +19,6 @@ public final class FBSimulatorVideoRecordingCommands: NSObject, FBiOSTargetComma
 
   // MARK: - Initializers
 
-  @objc(commandsWithTarget:)
   public class func commands(with target: any FBiOSTarget) -> FBSimulatorVideoRecordingCommands {
     FBSimulatorVideoRecordingCommands(simulator: target as! FBSimulator)
   }

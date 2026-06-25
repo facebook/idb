@@ -10,7 +10,6 @@ import Foundation
 
 private let DiagnosticsRelayService = "com.apple.mobile.diagnostics_relay"
 
-@objc(FBDeviceDiagnosticInformationCommands)
 public class FBDeviceDiagnosticInformationCommands: NSObject, FBiOSTargetCommand {
   private weak var device: FBDevice?
 

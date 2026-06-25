@@ -42,7 +42,6 @@ public class FBDeviceLogOperation: NSObject, LogOperation {
 
 // MARK: - FBDeviceLogCommands
 
-@objc(FBDeviceLogCommands)
 public class FBDeviceLogCommands: NSObject, FBiOSTargetCommand {
   private weak var device: FBDevice?
 

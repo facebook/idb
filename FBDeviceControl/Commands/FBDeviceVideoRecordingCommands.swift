@@ -9,7 +9,6 @@ import AVFoundation
 @preconcurrency import FBControlCore
 import Foundation
 
-@objc(FBDeviceVideoRecordingCommands)
 public class FBDeviceVideoRecordingCommands: NSObject, FBiOSTargetCommand {
   private weak var device: FBDevice?
   private var video: FBDeviceVideo?

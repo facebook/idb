@@ -10,7 +10,6 @@ import Foundation
 
 private let ScreenShotDataKey = "ScreenShotData"
 
-@objc(FBDeviceScreenshotCommands)
 public class FBDeviceScreenshotCommands: NSObject, FBiOSTargetCommand {
   private weak var device: FBDevice?
 

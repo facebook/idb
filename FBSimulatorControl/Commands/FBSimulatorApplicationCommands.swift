@@ -11,7 +11,6 @@
 
 // swiftlint:disable force_cast force_try force_unwrapping
 
-@objc(FBSimulatorApplicationCommands)
 public class FBSimulatorApplicationCommands: NSObject, FBiOSTargetCommand {
 
   // MARK: - Properties
@@ -20,7 +19,6 @@ public class FBSimulatorApplicationCommands: NSObject, FBiOSTargetCommand {
 
   // MARK: - Initializers
 
-  @objc(commandsWithTarget:)
   public class func commands(with target: any FBiOSTarget) -> Self {
     let simulator = target as! FBSimulator
     return Self(simulator: simulator)

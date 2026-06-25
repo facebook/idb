@@ -10,13 +10,12 @@ import Foundation
 
 // swiftlint:disable force_cast force_unwrapping
 
-@objc(FBDeviceSocketForwardingCommands)
 public class FBDeviceSocketForwardingCommands: NSObject, FBiOSTargetCommand {
   private(set) weak var device: FBDevice?
 
   // MARK: Initializers
 
-  @objc public class func commands(with target: any FBiOSTarget) -> Self {
+  public class func commands(with target: any FBiOSTarget) -> Self {
     unsafeDowncast(FBDeviceSocketForwardingCommands(device: target as! FBDevice), to: self)
   }
 

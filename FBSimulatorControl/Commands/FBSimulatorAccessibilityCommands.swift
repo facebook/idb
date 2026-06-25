@@ -65,7 +65,6 @@ public final class FBSimulatorAccessibilityCommands: NSObject, AccessibilityOper
     super.init()
   }
 
-  @objc(commandsWithTarget:)
   public class func commands(with target: FBSimulator) -> Self {
     self.init(simulator: target)
   }

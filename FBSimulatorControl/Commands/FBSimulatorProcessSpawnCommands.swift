@@ -17,7 +17,6 @@ public final class FBSimulatorProcessSpawnCommands: NSObject, FBiOSTargetCommand
 
   // MARK: - Initializers
 
-  @objc(commandsWithTarget:)
   public class func commands(with target: any FBiOSTarget) -> FBSimulatorProcessSpawnCommands {
     return FBSimulatorProcessSpawnCommands(simulator: target as! FBSimulator)
   }

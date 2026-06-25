@@ -57,7 +57,6 @@ private class FBSimulatorDebugServer: NSObject, FBDebugServer {
 
 // MARK: - FBSimulatorDebuggerCommands
 
-@objc(FBSimulatorDebuggerCommands)
 public final class FBSimulatorDebuggerCommands: NSObject, FBiOSTargetCommand {
 
   // MARK: - Properties
@@ -74,7 +73,6 @@ public final class FBSimulatorDebuggerCommands: NSObject, FBiOSTargetCommand {
 
   // MARK: - Initializers
 
-  @objc(commandsWithTarget:)
   public class func commands(with target: any FBiOSTarget) -> FBSimulatorDebuggerCommands {
     FBSimulatorDebuggerCommands(
       // swiftlint:disable:next force_cast

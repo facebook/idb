@@ -8,7 +8,6 @@
 import FBControlCore
 import Foundation
 
-@objc(FBDevicePowerCommands)
 public class FBDevicePowerCommands: NSObject, FBiOSTargetCommand {
   private weak var device: FBDevice?
 

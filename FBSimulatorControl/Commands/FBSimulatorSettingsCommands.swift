@@ -46,7 +46,6 @@
 
 private let slowAnimationsNotification = "com.apple.UIKit.SimulatorSlowMotionAnimationState"
 
-@objc(FBSimulatorSettingsCommands)
 public final class FBSimulatorSettingsCommands: NSObject, FBiOSTargetCommand {
 
   // MARK: - Properties
@@ -55,7 +54,6 @@ public final class FBSimulatorSettingsCommands: NSObject, FBiOSTargetCommand {
 
   // MARK: - Initializers
 
-  @objc(commandsWithTarget:)
   public class func commands(with target: any FBiOSTarget) -> FBSimulatorSettingsCommands {
     FBSimulatorSettingsCommands(simulator: target as! FBSimulator)
   }

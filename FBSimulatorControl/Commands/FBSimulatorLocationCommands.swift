@@ -11,7 +11,6 @@
 import FBControlCore
 import Foundation
 
-@objc(FBSimulatorLocationCommands)
 public final class FBSimulatorLocationCommands: NSObject, FBiOSTargetCommand {
 
   // MARK: - Properties
@@ -20,7 +19,6 @@ public final class FBSimulatorLocationCommands: NSObject, FBiOSTargetCommand {
 
   // MARK: - Initializers
 
-  @objc(commandsWithTarget:)
   public class func commands(with target: any FBiOSTarget) -> FBSimulatorLocationCommands {
     FBSimulatorLocationCommands(simulator: target as! FBSimulator)
   }

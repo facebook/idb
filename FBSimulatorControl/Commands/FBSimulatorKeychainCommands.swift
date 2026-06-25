@@ -10,7 +10,6 @@ import Foundation
 
 // swiftlint:disable force_cast
 
-@objc(FBSimulatorKeychainCommands)
 public final class FBSimulatorKeychainCommands: NSObject, FBiOSTargetCommand {
 
   // MARK: - Properties
@@ -19,7 +18,6 @@ public final class FBSimulatorKeychainCommands: NSObject, FBiOSTargetCommand {
 
   // MARK: - Initializers
 
-  @objc(commandsWithTarget:)
   public class func commands(with target: any FBiOSTarget) -> FBSimulatorKeychainCommands {
     FBSimulatorKeychainCommands(simulator: target as! FBSimulator)
   }

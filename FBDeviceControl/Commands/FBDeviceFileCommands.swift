@@ -392,18 +392,17 @@ private class FBDeviceFileCommands_Symbols: NSObject, AsyncFileContainer {
 
 // MARK: - FBDeviceFileCommands
 
-@objc(FBDeviceFileCommands)
 public class FBDeviceFileCommands: NSObject, FBiOSTargetCommand {
   private weak var device: FBDevice?
   private let afcCalls: AFCCalls
 
   // MARK: Initializers
 
-  @objc public class func commands(with target: any FBiOSTarget) -> Self {
+  public class func commands(with target: any FBiOSTarget) -> Self {
     unsafeDowncast(FBDeviceFileCommands(device: target as! FBDevice, afcCalls: FBAFCConnection.defaultCalls), to: self)
   }
 
-  @objc public class func commands(with target: any FBiOSTarget, afcCalls: AFCCalls) -> Self {
+  public class func commands(with target: any FBiOSTarget, afcCalls: AFCCalls) -> Self {
     unsafeDowncast(FBDeviceFileCommands(device: target as! FBDevice, afcCalls: afcCalls), to: self)
   }
 

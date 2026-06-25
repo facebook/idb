@@ -11,7 +11,6 @@ import Foundation
 
 // swiftlint:disable force_cast force_unwrapping
 
-@objc(FBSimulatorFileCommands)
 public final class FBSimulatorFileCommands: NSObject, FBiOSTargetCommand {
 
   // MARK: - Properties
@@ -20,7 +19,6 @@ public final class FBSimulatorFileCommands: NSObject, FBiOSTargetCommand {
 
   // MARK: - Initializers
 
-  @objc(commandsWithTarget:)
   public class func commands(with target: any FBiOSTarget) -> Self {
     unsafeDowncast(FBSimulatorFileCommands(simulator: target as! FBSimulator), to: self)
   }
