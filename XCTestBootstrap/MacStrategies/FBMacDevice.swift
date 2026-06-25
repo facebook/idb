@@ -344,7 +344,7 @@ import IOKit
     return FBFuture(result: NSNull())
   }
 
-  public func launchApplication(_ configuration: FBApplicationLaunchConfiguration) -> FBFuture<any FBLaunchedApplication> {
+  public func launchApplication(_ configuration: FBApplicationLaunchConfiguration) -> FBFuture<FBMacLaunchedApplication> {
     guard let bundle = bundleIDToProductMap[configuration.bundleID] as? FBBundleDescriptor else {
       return unsafeBitCast(
         FBControlCoreError.describe("Could not find application for \(configuration.bundleID)").failFuture(),

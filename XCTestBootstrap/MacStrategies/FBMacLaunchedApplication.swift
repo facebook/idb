@@ -23,18 +23,12 @@ import Foundation
     super.init()
   }
 
-  @objc public var applicationTerminated: FBFuture<NSNull> {
-    let bundleID = self.bundleID
-    let device = self.device
-    let future = FBMutableFuture<AnyObject>()
-    let result = future.onQueue(
-      queue,
-      respondToCancellation: { () -> FBFuture<NSNull> in
-        guard let device else {
-          return FBFuture(result: NSNull())
-        }
-        return device.killApplication(withBundleID: bundleID)
-      })
-    return unsafeBitCast(result, to: FBFuture<NSNull>.self)
+  public func waitForTermination() async throws {
+    throw FBControlCoreError.describe("Awaiting termination is not supported for macOS applications").build()
+  }
+
+  public func terminate() async throws {
+    guard let device else { return }
+    try await bridgeFBFutureVoid(device.killApplication(withBundleID: bundleID))
   }
 }

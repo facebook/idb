@@ -14,7 +14,7 @@ public class FBSimulatorLaunchedApplication: NSObject, FBLaunchedApplication {
 
   @objc public let configuration: FBApplicationLaunchConfiguration
   @objc public let processIdentifier: pid_t
-  @objc public let applicationTerminated: FBFuture<NSNull>
+  private let applicationTerminated: FBFuture<NSNull>
 
   // MARK: - Private Properties
 
@@ -25,6 +25,14 @@ public class FBSimulatorLaunchedApplication: NSObject, FBLaunchedApplication {
 
   @objc public var bundleID: String {
     configuration.bundleID
+  }
+
+  public func waitForTermination() async throws {
+    try await bridgeFBFutureVoid(applicationTerminated)
+  }
+
+  public func terminate() async throws {
+    try await bridgeFBFutureVoid(applicationTerminated.cancel())
   }
 
   @objc public var stdOut: (any FBProcessFileOutput)? {

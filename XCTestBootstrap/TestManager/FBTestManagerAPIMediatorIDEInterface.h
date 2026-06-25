@@ -13,7 +13,6 @@
 @class FBTestManagerContext;
 
 @protocol FBControlCoreLogger;
-@protocol FBLaunchedApplication;
 @protocol FBXCTestReporter;
 @protocol FBiOSTarget;
 

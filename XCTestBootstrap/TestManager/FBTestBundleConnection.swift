@@ -60,7 +60,6 @@ final class FBTestBundleConnection {
       target: target,
       socket: socket,
       interface: interface,
-      testHostApplication: testHostApplication,
       request: requestQueue,
       logger: logger
     )

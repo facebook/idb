@@ -49,7 +49,6 @@ static NSTimeInterval const DaemonSessionReadyTimeout = 60; // Time for `_IDE_in
 @property (nonatomic, readonly, strong) id<FBiOSTarget> target;
 @property (nonatomic, readonly, assign) int testManagerdSocket;
 @property (nonatomic, readonly, strong) id<XCTestManager_IDEInterface, XCTMessagingChannel_RunnerToIDE, NSObject> interface;
-@property (nonatomic, readonly, strong) id<FBLaunchedApplication> testHostApplication;
 @property (nonatomic, readonly, strong) dispatch_queue_t requestQueue;
 @property (nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
 
@@ -88,7 +87,7 @@ static NSTimeInterval const DaemonSessionReadyTimeout = 60; // Time for `_IDE_in
   return _clientProcessDisplayPath;
 }
 
-- (instancetype)initWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target socket:(int)socket interface:(id)interface testHostApplication:(id<FBLaunchedApplication>)testHostApplication requestQueue:(dispatch_queue_t)requestQueue logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target socket:(int)socket interface:(id)interface requestQueue:(dispatch_queue_t)requestQueue logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -99,7 +98,6 @@ static NSTimeInterval const DaemonSessionReadyTimeout = 60; // Time for `_IDE_in
   _target = target;
   _testManagerdSocket = socket;
   _interface = interface;
-  _testHostApplication = testHostApplication;
   _requestQueue = requestQueue;
   _logger = logger;
 

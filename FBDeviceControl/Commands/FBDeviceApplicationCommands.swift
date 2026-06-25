@@ -58,18 +58,12 @@ private class FBDeviceLaunchedApplication: NSObject, FBLaunchedApplication {
     super.init()
   }
 
-  var applicationTerminated: FBFuture<NSNull> {
-    let commands = self.commands
-    let processIdentifier = self.processIdentifier
-    return unsafeBitCast(
-      FBMutableFuture<NSNull>()
-        .onQueue(
-          queue,
-          respondToCancellation: {
-            commands.killApplication(withProcessIdentifier: processIdentifier)
-          }),
-      to: FBFuture<NSNull>.self
-    )
+  func waitForTermination() async throws {
+    throw FBControlCoreError.describe("Awaiting termination is not supported for device applications").build()
+  }
+
+  func terminate() async throws {
+    try await bridgeFBFutureVoid(commands.killApplication(withProcessIdentifier: processIdentifier))
   }
 
   var bundleID: String {

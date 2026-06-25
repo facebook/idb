@@ -58,7 +58,7 @@ struct LaunchMethodHandler {
       throw GRPCStatus(code: .failedPrecondition, message: "Application has already started")
     }
 
-    try await launchedApp.terminateAsync()
+    try await launchedApp.terminate()
 
     try await withThrowingTaskGroup(of: Void.self) { group in
       for consumer in consumers {

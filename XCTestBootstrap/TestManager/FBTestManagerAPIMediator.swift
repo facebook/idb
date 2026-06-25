@@ -95,8 +95,8 @@ public final class FBTestManagerAPIMediator: NSObject, @unchecked Sendable {
       } catch {
         result = .failure(error)
       }
-      // Mirror the contextual teardown of the test host: cancel its termination future.
-      _ = try? await bridgeFBFutureVoid(launchedApplication.applicationTerminated.cancel())
+      // Mirror the contextual teardown of the test host: terminate it.
+      _ = try? await launchedApplication.terminate()
     } catch {
       result = .failure(error)
     }
@@ -129,7 +129,7 @@ public final class FBTestManagerAPIMediator: NSObject, @unchecked Sendable {
       // The bundle has disconnected at this point, but we also need to terminate any processes
       // spawned through `_XCT_launchProcessWithPath` and tear down the host application.
       try await self.terminateSpawnedProcesses()
-      _ = try? await bridgeFBFutureVoid(launchedApplication.applicationTerminated.cancel())
+      _ = try? await launchedApplication.terminate()
       return NSNull()
     }
     // The timeout is applied to the lifecycle of the entire application.

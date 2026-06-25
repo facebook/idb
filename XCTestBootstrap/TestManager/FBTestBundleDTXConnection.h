@@ -23,7 +23,7 @@
 
  @param interface the IDE-interface delegate (an `XCTestManager_IDEInterface` / `XCTMessagingChannel_RunnerToIDE` implementor) that test bundle and daemon callbacks are forwarded to. Typed as `id` so this header stays free of private XCTest protocols.
  */
-- (nonnull instancetype)initWithContext:(nonnull FBTestManagerContext *)context target:(nonnull id<FBiOSTarget>)target socket:(int)socket interface:(nonnull id)interface testHostApplication:(nonnull id<FBLaunchedApplication>)testHostApplication requestQueue:(nonnull dispatch_queue_t)requestQueue logger:(nonnull id<FBControlCoreLogger>)logger;
+- (nonnull instancetype)initWithContext:(nonnull FBTestManagerContext *)context target:(nonnull id<FBiOSTarget>)target socket:(int)socket interface:(nonnull id)interface requestQueue:(nonnull dispatch_queue_t)requestQueue logger:(nonnull id<FBControlCoreLogger>)logger;
 
 #pragma mark Step-wise connection API
 
