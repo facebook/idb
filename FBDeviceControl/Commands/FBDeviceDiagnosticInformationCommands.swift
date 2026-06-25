@@ -82,9 +82,9 @@ public class FBDeviceDiagnosticInformationCommands: NSObject, FBiOSTargetCommand
   }
 }
 
-// MARK: - FBDevice+AsyncDiagnosticInformationCommands
+// MARK: - FBDevice+DiagnosticInformationCommands
 
-extension FBDevice: AsyncDiagnosticInformationCommands {
+extension FBDevice: DiagnosticInformationCommands {
 
   public func fetchDiagnosticInformation() async throws -> [String: Any] {
     try await diagnosticInformationCommands().fetchDiagnosticInformationAsync()

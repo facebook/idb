@@ -11,7 +11,7 @@ import Foundation
 // MARK: - FBDeviceLogOperation
 
 @objc(FBDeviceLogOperation)
-public class FBDeviceLogOperation: NSObject, AsyncLogOperation {
+public class FBDeviceLogOperation: NSObject, LogOperation {
   public let consumer: any FBDataConsumer
   private let readCompleted: FBFuture<NSNull>
   private let serviceCompleted: FBMutableFuture<NSNull>
@@ -29,7 +29,7 @@ public class FBDeviceLogOperation: NSObject, AsyncLogOperation {
     super.init()
   }
 
-  // MARK: AsyncLogOperation
+  // MARK: LogOperation
 
   public var completed: FBFuture<NSNull> {
     unsafeBitCast(serviceCompleted, to: FBFuture<NSNull>.self)
@@ -90,11 +90,11 @@ public class FBDeviceLogCommands: NSObject, FBiOSTargetCommand {
   }
 }
 
-// MARK: - FBDevice+AsyncLogCommands
+// MARK: - FBDevice+LogCommands
 
-extension FBDevice: AsyncLogCommands {
+extension FBDevice: LogCommands {
 
-  public func tailLog(arguments: [String], consumer: any FBDataConsumer) async throws -> any AsyncLogOperation {
+  public func tailLog(arguments: [String], consumer: any FBDataConsumer) async throws -> any LogOperation {
     return try await bridgeFBFuture(logCommands().tailLog(arguments, consumer: consumer))
   }
 }

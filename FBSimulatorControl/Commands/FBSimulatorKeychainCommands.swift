@@ -39,9 +39,9 @@ public final class FBSimulatorKeychainCommands: NSObject, FBiOSTargetCommand {
   }
 }
 
-// MARK: - FBSimulator+AsyncKeychainCommands
+// MARK: - FBSimulator+KeychainCommands
 
-extension FBSimulator: AsyncKeychainCommands {
+extension FBSimulator: KeychainCommands {
 
   public func clearKeychain() async throws {
     try await keychainCommands().clearKeychain()

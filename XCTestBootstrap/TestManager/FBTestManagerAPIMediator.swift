@@ -14,7 +14,7 @@ import Foundation
  the `testmanagerd` daemon, and the test runner.
 
  The orchestration and application lifecycle operations run on Swift `async`/`await` over
- `AsyncApplicationCommands`. The private XCTest `XCTestManager_IDEInterface` callback surface that the
+ `ApplicationCommands`. The private XCTest `XCTestManager_IDEInterface` callback surface that the
  test runner communicates with stays in Objective-C in `FBTestManagerAPIMediatorIDEInterface`, which
  forwards application launch/termination requests back to this type.
  */
@@ -27,8 +27,8 @@ public final class FBTestManagerAPIMediator: NSObject, @unchecked Sendable {
 
   private let context: FBTestManagerContext
   private let target: any FBiOSTarget
-  private let asyncTarget: any AsyncApplicationCommands
-  private let asyncXCTestTarget: any AsyncXCTestExtendedCommands
+  private let asyncTarget: any ApplicationCommands
+  private let asyncXCTestTarget: any XCTestExtendedCommands
   private let reporter: FBXCTestReporter
   private let logger: FBControlCoreLogger
   private let requestQueue: DispatchQueue
@@ -66,12 +66,12 @@ public final class FBTestManagerAPIMediator: NSObject, @unchecked Sendable {
   ) {
     self.context = context
     self.target = target
-    // FBSimulator, FBDevice and FBMacDevice all conform to AsyncApplicationCommands in addition to
+    // FBSimulator, FBDevice and FBMacDevice all conform to ApplicationCommands in addition to
     // the legacy FBApplicationCommands declared in this type's signature.
     // swiftlint:disable:next force_cast
-    self.asyncTarget = target as! any AsyncApplicationCommands
+    self.asyncTarget = target as! any ApplicationCommands
     // swiftlint:disable:next force_cast
-    self.asyncXCTestTarget = target as! any AsyncXCTestExtendedCommands
+    self.asyncXCTestTarget = target as! any XCTestExtendedCommands
     self.reporter = reporter
     self.logger = logger
     self.requestQueue = DispatchQueue(label: "com.facebook.xctestboostrap.mediator")

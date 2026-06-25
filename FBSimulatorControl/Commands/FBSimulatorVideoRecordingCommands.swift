@@ -80,9 +80,9 @@ public final class FBSimulatorVideoRecordingCommands: NSObject, FBiOSTargetComma
   }
 }
 
-// MARK: - FBSimulator+AsyncVideoRecordingCommands
+// MARK: - FBSimulator+VideoRecordingCommands
 
-extension FBSimulator: AsyncVideoRecordingCommands {
+extension FBSimulator: VideoRecordingCommands {
 
   public func startRecording(toFile filePath: String) async throws -> any FBiOSTargetOperation {
     try await videoRecordingCommands().startRecordingAsync(toFile: filePath)
@@ -93,9 +93,9 @@ extension FBSimulator: AsyncVideoRecordingCommands {
   }
 }
 
-// MARK: - FBSimulator+AsyncVideoStreamCommands
+// MARK: - FBSimulator+VideoStreamCommands
 
-extension FBSimulator: AsyncVideoStreamCommands {
+extension FBSimulator: VideoStreamCommands {
 
   public func createStream(configuration: FBVideoStreamConfiguration) async throws -> any FBVideoStream {
     try await videoRecordingCommands().createStreamAsync(configuration: configuration)

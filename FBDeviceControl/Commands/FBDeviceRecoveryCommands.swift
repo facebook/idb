@@ -75,9 +75,9 @@ public class FBDeviceRecoveryCommands: NSObject, FBiOSTargetCommand {
   }
 }
 
-// MARK: - FBDevice+AsyncRecoveryCommands
+// MARK: - FBDevice+RecoveryCommands
 
-extension FBDevice: AsyncRecoveryCommands {
+extension FBDevice: RecoveryCommands {
 
   public func enterRecovery() async throws {
     try await recoveryCommands().enterRecovery()

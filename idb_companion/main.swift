@@ -175,15 +175,15 @@ private func deviceForECID(_ ecid: String, logger: FBControlCoreLogger) async th
 private func resolveSimulator(_ udid: String, userDefaults: UserDefaults, logger: FBControlCoreLogger, reporter: FBEventReporter) async throws -> FBSimulator {
   let set = try simulatorSet(userDefaults, logger: logger, reporter: reporter)
   let target = try await bridgeFBFuture(FBiOSTargetProvider.target(withUDID: udid, targetSets: [set], warmUp: false, logger: logger))
-  guard target is AsyncSimulatorLifecycleCommands else {
+  guard target is SimulatorLifecycleCommands else {
     throw FBIDBError.describe("\(target) does not support Simulator Lifecycle commands").build()
   }
   return target as! FBSimulator
 }
 
 private func awaitTargetOffline(_ target: FBiOSTarget, logger: FBControlCoreLogger) async throws {
-  guard let asyncTarget = target as? any AsyncLifecycleCommands else {
-    throw FBIDBError.describe("\(target) does not support AsyncLifecycleCommands").build()
+  guard let asyncTarget = target as? any LifecycleCommands else {
+    throw FBIDBError.describe("\(target) does not support LifecycleCommands").build()
   }
   try await asyncTarget.resolveLeavesState(.booted)
   target.logger?.log("Target is no longer booted, companion going offline")
@@ -241,7 +241,7 @@ private func runBoot(_ udid: String, userDefaults: UserDefaults, logger: FBContr
 
 private func runShutdown(_ udid: String, userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBControlCoreLogger, reporter: FBEventReporter) async throws {
   let target = try await targetForUDID(udid, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, warmUp: false, logger: logger, reporter: reporter)
-  guard let powerTarget = target as? any AsyncPowerCommands else {
+  guard let powerTarget = target as? any PowerCommands else {
     throw FBIDBError.describe("Cannot shutdown \(target), does not support shutting down").build()
   }
   try await powerTarget.shutdown()
@@ -249,7 +249,7 @@ private func runShutdown(_ udid: String, userDefaults: UserDefaults, xcodeAvaila
 
 private func runReboot(_ udid: String, userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBControlCoreLogger, reporter: FBEventReporter) async throws {
   let target = try await targetForUDID(udid, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, warmUp: false, logger: logger, reporter: reporter)
-  guard let powerTarget = target as? any AsyncPowerCommands else {
+  guard let powerTarget = target as? any PowerCommands else {
     throw FBIDBError.describe("Cannot shutdown \(target), does not support rebooting").build()
   }
   try await powerTarget.reboot()
@@ -257,7 +257,7 @@ private func runReboot(_ udid: String, userDefaults: UserDefaults, xcodeAvailabl
 
 private func runErase(_ udid: String, userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBControlCoreLogger, reporter: FBEventReporter) async throws {
   let target = try await targetForUDID(udid, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, warmUp: false, logger: logger, reporter: reporter)
-  guard let eraseTarget = target as? any AsyncEraseCommands else {
+  guard let eraseTarget = target as? any EraseCommands else {
     throw FBIDBError.describe("Cannot erase \(target), does not support erasing").build()
   }
   try await eraseTarget.erase()
@@ -465,8 +465,8 @@ private func runForward(_ forward: String, userDefaults: UserDefaults, xcodeAvai
   let remotePort = Int32(components[1]) ?? 0
 
   let target = try await targetForUDID(udid, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, warmUp: false, logger: logger, reporter: reporter)
-  guard let commands = target as? AsyncSocketForwardingCommands else {
-    throw FBIDBError.describe("\(target) does not conform to AsyncSocketForwardingCommands").build()
+  guard let commands = target as? SocketForwardingCommands else {
+    throw FBIDBError.describe("\(target) does not conform to SocketForwardingCommands").build()
   }
   try await commands.drainLocalFileInput(STDIN_FILENO, localFileOutput: STDOUT_FILENO, remotePort: remotePort)
 }

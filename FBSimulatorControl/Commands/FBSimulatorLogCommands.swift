@@ -30,7 +30,7 @@ public final class FBSimulatorLogCommands: NSObject, FBiOSTargetCommand {
 
   // MARK: - Private
 
-  fileprivate func tailLogAsync(arguments: [String], consumer: any FBDataConsumer) async throws -> any AsyncLogOperation {
+  fileprivate func tailLogAsync(arguments: [String], consumer: any FBDataConsumer) async throws -> any LogOperation {
     guard let simulator = self.simulator else {
       throw FBSimulatorError.describe("Simulator deallocated").build()
     }
@@ -69,11 +69,11 @@ public final class FBSimulatorLogCommands: NSObject, FBiOSTargetCommand {
   }
 }
 
-// MARK: - FBSimulator+AsyncLogCommands
+// MARK: - FBSimulator+LogCommands
 
-extension FBSimulator: AsyncLogCommands {
+extension FBSimulator: LogCommands {
 
-  public func tailLog(arguments: [String], consumer: any FBDataConsumer) async throws -> any AsyncLogOperation {
+  public func tailLog(arguments: [String], consumer: any FBDataConsumer) async throws -> any LogOperation {
     return try await logCommands().tailLogAsync(arguments: arguments, consumer: consumer)
   }
 }

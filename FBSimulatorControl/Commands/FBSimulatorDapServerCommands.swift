@@ -69,9 +69,9 @@ public final class FBSimulatorDapServerCommand: NSObject, FBiOSTargetCommand {
   }
 }
 
-// MARK: - FBSimulator+AsyncDapServerCommand
+// MARK: - FBSimulator+DapServerCommand
 
-extension FBSimulator: AsyncDapServerCommand {
+extension FBSimulator: DapServerCommand {
 
   public func launchDapServer(
     _ dapPath: Any,

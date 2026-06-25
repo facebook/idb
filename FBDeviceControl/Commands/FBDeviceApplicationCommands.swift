@@ -351,9 +351,9 @@ public class FBDeviceApplicationCommands: NSObject, FBiOSTargetCommand {
   ]
 }
 
-// MARK: - FBDevice+AsyncApplicationCommands
+// MARK: - FBDevice+ApplicationCommands
 
-extension FBDevice: AsyncApplicationCommands {
+extension FBDevice: ApplicationCommands {
 
   public func installApplication(atPath path: String) async throws -> FBInstalledApplication {
     try await applicationCommands().installApplicationAsync(withPath: path)

@@ -82,9 +82,9 @@ public class FBDeviceSocketForwardingCommands: NSObject, FBiOSTargetCommand {
   }
 }
 
-// MARK: - FBDevice+AsyncSocketForwardingCommands
+// MARK: - FBDevice+SocketForwardingCommands
 
-extension FBDevice: AsyncSocketForwardingCommands {
+extension FBDevice: SocketForwardingCommands {
 
   public func drainLocalFileInput(_ localFileDescriptorInput: Int32, localFileOutput localFileDescriptorOutput: Int32, remotePort: Int32) async throws {
     try await socketForwardingCommands().drainLocalFileInput(localFileDescriptorInput, localFileOutput: localFileDescriptorOutput, remotePort: remotePort)

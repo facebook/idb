@@ -65,7 +65,7 @@ public final class FBSimulatorSettingsCommands: NSObject, FBiOSTargetCommand {
     super.init()
   }
 
-  // Single source of truth for setSetting dispatch, called by the AsyncSettingsCommands entry point.
+  // Single source of truth for setSetting dispatch, called by the SettingsCommands entry point.
   fileprivate func setSettingAsync(_ setting: FBSimulatorSetting, enabled: Bool) async throws {
     switch setting {
     case .hardwareKeyboard:
@@ -762,9 +762,9 @@ public final class FBSimulatorSettingsCommands: NSObject, FBiOSTargetCommand {
   }
 }
 
-// MARK: - FBSimulator+AsyncSettingsCommands
+// MARK: - FBSimulator+SettingsCommands
 
-extension FBSimulator: AsyncSettingsCommands {
+extension FBSimulator: SettingsCommands {
 
   public func setSetting(_ setting: FBSimulatorSetting, enabled: Bool) async throws {
     try await settingsCommands().setSettingAsync(setting, enabled: enabled)

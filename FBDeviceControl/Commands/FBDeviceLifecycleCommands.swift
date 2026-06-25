@@ -40,11 +40,11 @@ public class FBDeviceLifecycleCommands: NSObject, FBiOSTargetCommand {
   }
 }
 
-// MARK: - AsyncLifecycleCommands
+// MARK: - LifecycleCommands
 
-// MARK: - FBDevice+AsyncLifecycleCommands
+// MARK: - FBDevice+LifecycleCommands
 
-extension FBDevice: AsyncLifecycleCommands {
+extension FBDevice: LifecycleCommands {
 
   public func resolveState(_ state: FBiOSTargetState) async throws {
     try await lifecycleCommands().resolveStateAsync(state)

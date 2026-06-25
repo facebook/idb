@@ -50,10 +50,10 @@ private final class ContainedFileBox: @unchecked Sendable {
   }
 }
 
-/// Carries a non-`Sendable` `AsyncProvisioningProfileCommands` across the async boundary.
+/// Carries a non-`Sendable` `ProvisioningProfileCommands` across the async boundary.
 private final class ProvisioningCommandsBox: @unchecked Sendable {
-  let commands: any AsyncProvisioningProfileCommands
-  init(_ commands: any AsyncProvisioningProfileCommands) {
+  let commands: any ProvisioningProfileCommands
+  init(_ commands: any ProvisioningProfileCommands) {
     self.commands = commands
   }
 }
@@ -286,13 +286,13 @@ public final class FBContainedFile_ContainedRoot: NSObject, AsyncFileContainer {
 
 }
 
-/// File container backed by `AsyncProvisioningProfileCommands`.
+/// File container backed by `ProvisioningProfileCommands`.
 @objc(FBFileContainer_ProvisioningProfile)
 public final class FBFileContainer_ProvisioningProfile: NSObject, AsyncFileContainer {
 
   private let commandsBox: ProvisioningCommandsBox
 
-  public init(commands: any AsyncProvisioningProfileCommands) {
+  public init(commands: any ProvisioningProfileCommands) {
     self.commandsBox = ProvisioningCommandsBox(commands)
     super.init()
   }

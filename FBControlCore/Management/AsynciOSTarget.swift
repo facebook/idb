@@ -7,27 +7,25 @@
 
 import Foundation
 
-/// Swift-native async/await counterpart of `FBiOSTarget`.
-///
 /// Composes the new async command protocols (Phase 1.1/1.2) and exposes the same
 /// shared informational properties as `FBiOSTarget`. Conformers can adopt this
 /// protocol incrementally alongside the existing `@objc FBiOSTarget` conformance.
 public protocol AsynciOSTarget: AnyObject,
-  AsyncApplicationCommands,
-  AsyncVideoStreamCommands,
-  AsyncCrashLogCommands,
-  AsyncDebuggerCommands,
-  AsyncEraseCommands,
-  AsyncFileCommands,
-  AsyncLocationCommands,
-  AsyncLogCommands,
-  AsyncScreenshotCommands,
-  AsyncVideoRecordingCommands,
-  AsyncXCTestCommands,
-  AsyncXCTraceRecordCommands,
-  AsyncInstrumentsCommands,
-  AsyncLifecycleCommands,
-  AsyncPowerCommands
+  ApplicationCommands,
+  VideoStreamCommands,
+  CrashLogCommands,
+  DebuggerCommands,
+  EraseCommands,
+  FileCommands,
+  LocationCommands,
+  LogCommands,
+  ScreenshotCommands,
+  VideoRecordingCommands,
+  XCTestCommands,
+  XCTraceRecordCommands,
+  InstrumentsCommands,
+  LifecycleCommands,
+  PowerCommands
 {
 
   // MARK: FBiOSTargetInfo (sync, no FBFuture involved)

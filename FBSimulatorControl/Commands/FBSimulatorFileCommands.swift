@@ -208,86 +208,86 @@ public final class FBSimulatorFileCommands: NSObject, FBiOSTargetCommand {
   }
 }
 
-// MARK: - FBSimulator+AsyncFileCommands
+// MARK: - FBSimulator+FileCommands
 
-extension FBSimulator: AsyncFileCommands {
+extension FBSimulator: FileCommands {
 
   public func withFileCommandsForContainerApplication<R>(
     _ bundleID: String,
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await withAsyncFileContainer(fileCommands().fileCommandsForContainerApplication(bundleID), body: body)
+    try await withFileContainer(fileCommands().fileCommandsForContainerApplication(bundleID), body: body)
   }
 
   public func withFileCommandsForAuxillary<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await withAsyncFileContainer(fileCommands().fileCommandsForAuxillary(), body: body)
+    try await withFileContainer(fileCommands().fileCommandsForAuxillary(), body: body)
   }
 
   public func withFileCommandsForApplicationContainers<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await withAsyncFileContainer(fileCommands().fileCommandsForApplicationContainers(), body: body)
+    try await withFileContainer(fileCommands().fileCommandsForApplicationContainers(), body: body)
   }
 
   public func withFileCommandsForGroupContainers<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await withAsyncFileContainer(fileCommands().fileCommandsForGroupContainers(), body: body)
+    try await withFileContainer(fileCommands().fileCommandsForGroupContainers(), body: body)
   }
 
   public func withFileCommandsForRootFilesystem<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await withAsyncFileContainer(fileCommands().fileCommandsForRootFilesystem(), body: body)
+    try await withFileContainer(fileCommands().fileCommandsForRootFilesystem(), body: body)
   }
 
   public func withFileCommandsForMediaDirectory<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await withAsyncFileContainer(fileCommands().fileCommandsForMediaDirectory(), body: body)
+    try await withFileContainer(fileCommands().fileCommandsForMediaDirectory(), body: body)
   }
 
   public func withFileCommandsForProvisioningProfiles<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await withAsyncFileContainer(fileCommands().fileCommandsForProvisioningProfiles(), body: body)
+    try await withFileContainer(fileCommands().fileCommandsForProvisioningProfiles(), body: body)
   }
 
   public func withFileCommandsForMDMProfiles<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await withAsyncFileContainer(fileCommands().fileCommandsForMDMProfiles(), body: body)
+    try await withFileContainer(fileCommands().fileCommandsForMDMProfiles(), body: body)
   }
 
   public func withFileCommandsForSpringboardIconLayout<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await withAsyncFileContainer(fileCommands().fileCommandsForSpringboardIconLayout(), body: body)
+    try await withFileContainer(fileCommands().fileCommandsForSpringboardIconLayout(), body: body)
   }
 
   public func withFileCommandsForWallpaper<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await withAsyncFileContainer(fileCommands().fileCommandsForWallpaper(), body: body)
+    try await withFileContainer(fileCommands().fileCommandsForWallpaper(), body: body)
   }
 
   public func withFileCommandsForDiskImages<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await withAsyncFileContainer(fileCommands().fileCommandsForDiskImages(), body: body)
+    try await withFileContainer(fileCommands().fileCommandsForDiskImages(), body: body)
   }
 
   public func withFileCommandsForSymbols<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await withAsyncFileContainer(fileCommands().fileCommandsForSymbols(), body: body)
+    try await withFileContainer(fileCommands().fileCommandsForSymbols(), body: body)
   }
 
   /// Scopes the file container to `body`, exposing it through the
   /// `AsyncFileContainer` async API.
-  private func withAsyncFileContainer<C: AsyncFileContainer, R>(
+  private func withFileContainer<C: AsyncFileContainer, R>(
     _ context: FBFutureContext<C>,
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {

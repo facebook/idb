@@ -308,9 +308,9 @@ public class FBSimulatorApplicationCommands: NSObject, FBiOSTargetCommand {
   }
 }
 
-// MARK: - FBSimulator+AsyncApplicationCommands
+// MARK: - FBSimulator+ApplicationCommands
 
-extension FBSimulator: AsyncApplicationCommands {
+extension FBSimulator: ApplicationCommands {
 
   public func installApplication(atPath path: String) async throws -> FBInstalledApplication {
     try await applicationCommands().installApplication(withPath: path)

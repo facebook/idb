@@ -111,9 +111,9 @@ public final class FBSimulatorMediaCommands: NSObject, FBiOSTargetCommand {
   }
 }
 
-// MARK: - FBSimulator+AsyncMediaCommands
+// MARK: - FBSimulator+MediaCommands
 
-extension FBSimulator: AsyncMediaCommands {
+extension FBSimulator: MediaCommands {
 
   public func addMedia(_ mediaFileURLs: [URL]) async throws {
     try mediaCommands().uploadMedia(mediaFileURLs)

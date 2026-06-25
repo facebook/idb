@@ -27,7 +27,7 @@ private func removeGlobalLogger(_ logger: FBControlCoreLogger) {
 // @unchecked Sendable: all stored properties are immutable lets wrapping
 // thread-safe ObjC objects, so instances are safe to hand back through the
 // continuation in tailToConsumerAsync.
-private final class FBIDBLoggerOperation: NSObject, AsyncLogOperation, @unchecked Sendable {
+private final class FBIDBLoggerOperation: NSObject, LogOperation, @unchecked Sendable {
   let consumer: FBDataConsumer
   let logger: FBControlCoreLogger
   let queue: DispatchQueue
@@ -102,11 +102,11 @@ private final class FBIDBLoggerOperation: NSObject, AsyncLogOperation, @unchecke
     return all
   }
 
-  public func tailToConsumerAsync(_ consumer: FBDataConsumer) async throws -> any AsyncLogOperation {
+  public func tailToConsumerAsync(_ consumer: FBDataConsumer) async throws -> any LogOperation {
     let queue = FBIDBLogger.loggerQueue
     // FBDataConsumer is a thread-safe ObjC protocol that isn't Sendable.
     nonisolated(unsafe) let consumer = consumer
-    return await withCheckedContinuation { (continuation: CheckedContinuation<any AsyncLogOperation, Never>) in
+    return await withCheckedContinuation { (continuation: CheckedContinuation<any LogOperation, Never>) in
       queue.async {
         let logger = FBControlCoreLoggerFactory.logger(to: consumer)
         let operation = FBIDBLoggerOperation(consumer: consumer, logger: logger, queue: queue)

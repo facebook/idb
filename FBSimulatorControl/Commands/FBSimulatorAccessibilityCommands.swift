@@ -50,7 +50,7 @@ extension FBSimulator {
 ///
 /// `final`; unit tests inject a mock dispatcher via `injectedDispatcher` (`@testable`).
 /// Stays `NSObject` because it is stored in the simulator's Objective-C command cache.
-public final class FBSimulatorAccessibilityCommands: NSObject, AsyncAccessibilityOperations {
+public final class FBSimulatorAccessibilityCommands: NSObject, AccessibilityOperations {
 
   private static let coreSimulatorBridgeServiceName = "com.apple.CoreSimulator.bridge"
 
@@ -78,7 +78,7 @@ public final class FBSimulatorAccessibilityCommands: NSObject, AsyncAccessibilit
     injectedDispatcher ?? simulator?.accessibilityTranslationDispatcher
   }
 
-  // MARK: AsyncAccessibilityOperations
+  // MARK: AccessibilityOperations
 
   public func accessibilityElement(at point: CGPoint) async throws -> FBAccessibilityElement {
     try validateAccessibility()
@@ -174,9 +174,9 @@ public final class FBSimulatorAccessibilityCommands: NSObject, AsyncAccessibilit
   }
 }
 
-// MARK: - FBSimulator+AsyncAccessibilityCommands
+// MARK: - FBSimulator+AccessibilityCommands
 
-extension FBSimulator: AsyncAccessibilityCommands {
+extension FBSimulator: AccessibilityCommands {
 
   public func accessibilityElement(at point: CGPoint) async throws -> FBAccessibilityElement {
     try await accessibilityCommands().accessibilityElement(at: point)

@@ -50,9 +50,9 @@ public class FBDeviceLocationCommands: NSObject, FBiOSTargetCommand {
   }
 }
 
-// MARK: - FBDevice+AsyncLocationCommands
+// MARK: - FBDevice+LocationCommands
 
-extension FBDevice: AsyncLocationCommands {
+extension FBDevice: LocationCommands {
 
   public func overrideLocation(longitude: Double, latitude: Double) async throws {
     try await locationCommands().overrideLocationAsync(withLongitude: longitude, latitude: latitude)

@@ -61,9 +61,9 @@ public final class FBSimulatorCrashLogCommands: NSObject, FBiOSTargetCommand {
   }
 }
 
-// MARK: - FBSimulator+AsyncCrashLogCommands
+// MARK: - FBSimulator+CrashLogCommands
 
-extension FBSimulator: AsyncCrashLogCommands {
+extension FBSimulator: CrashLogCommands {
 
   public func crashes(matching predicate: NSPredicate, useCache: Bool) async throws -> [FBCrashLogInfo] {
     try await crashLogCommands().crashesAsync(matching: predicate, useCache: useCache)

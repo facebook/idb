@@ -225,9 +225,9 @@ public class FBDeviceActivationCommands: NSObject, FBiOSTargetCommand {
   }
 }
 
-// MARK: - FBDevice+AsyncActivationCommands
+// MARK: - FBDevice+ActivationCommands
 
-extension FBDevice: AsyncActivationCommands {
+extension FBDevice: ActivationCommands {
 
   public func activate() async throws {
     try await activationCommands().activate()

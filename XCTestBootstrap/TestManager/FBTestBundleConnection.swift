@@ -22,8 +22,8 @@ final class FBTestBundleConnection {
 
   private let context: FBTestManagerContext
   private let target: any FBiOSTarget
-  private let asyncApp: any AsyncApplicationCommands
-  private let asyncCrash: any AsyncCrashLogCommands
+  private let asyncApp: any ApplicationCommands
+  private let asyncCrash: any CrashLogCommands
   private let socket: Int32
   private let interface: NSObject
   private let testHostApplication: FBLaunchedApplication
@@ -43,8 +43,8 @@ final class FBTestBundleConnection {
     self.target = target
     // FBSimulator, FBDevice and FBMacDevice all conform to these async protocols.
     // swiftlint:disable force_cast
-    self.asyncApp = target as! any AsyncApplicationCommands
-    self.asyncCrash = target as! any AsyncCrashLogCommands
+    self.asyncApp = target as! any ApplicationCommands
+    self.asyncCrash = target as! any CrashLogCommands
     // swiftlint:enable force_cast
     self.socket = socket
     self.interface = interface
@@ -133,7 +133,7 @@ final class FBTestBundleConnection {
     }
     let pid = testHostApplication.processIdentifier
     let predicate = FBCrashLogInfo.predicateForCrashLogs(withProcessID: pid)
-    // AsyncCrashLogCommands.notifyOfCrash(matching:) has no timeout, so bound it with FBFuture's
+    // CrashLogCommands.notifyOfCrash(matching:) has no timeout, so bound it with FBFuture's
     // timeout the way the old FBTestHostCrashLogQuery caller did.
     let future = fbFutureFromAsync { try await self.asyncCrash.notifyOfCrash(matching: predicate) }
     let timed = future.timeout(crashWaitTimeout, waitingFor: "Getting crash log for process with pid \(pid), bundle ID: \(bundleID)")

@@ -41,9 +41,9 @@ public final class FBSimulatorMemoryCommands: NSObject, FBiOSTargetCommand {
   }
 }
 
-// MARK: - FBSimulator+AsyncMemoryCommands
+// MARK: - FBSimulator+MemoryCommands
 
-extension FBSimulator: AsyncMemoryCommands {
+extension FBSimulator: MemoryCommands {
 
   public func simulateMemoryWarning() async throws {
     try await memoryCommands().simulateMemoryWarningAsync()

@@ -40,9 +40,9 @@ public class FBDevicePowerCommands: NSObject, FBiOSTargetCommand {
   }
 }
 
-// MARK: - FBDevice+AsyncPowerCommands
+// MARK: - FBDevice+PowerCommands
 
-extension FBDevice: AsyncPowerCommands {
+extension FBDevice: PowerCommands {
 
   public func shutdown() async throws {
     try await powerCommands().sendRelayCommand("Shutdown")

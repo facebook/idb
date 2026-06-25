@@ -43,9 +43,9 @@ public class FBDeviceScreenshotCommands: NSObject, FBiOSTargetCommand {
   }
 }
 
-// MARK: - FBDevice+AsyncScreenshotCommands
+// MARK: - FBDevice+ScreenshotCommands
 
-extension FBDevice: AsyncScreenshotCommands {
+extension FBDevice: ScreenshotCommands {
 
   public func takeScreenshot(format: FBScreenshotFormat) async throws -> Data {
     try await screenshotCommands().takeScreenshotAsync(format)

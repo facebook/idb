@@ -278,7 +278,7 @@ import XCTestBootstrap
   /// `IDB_REPL_SOCKET_PATH`. The returned `ReplSession.run` future completes when
   /// the test process exits, i.e. once the control socket is closed.
   public func repl_start_test(bundlePath: String) async throws -> ReplSession {
-    guard let replTarget = target as? AsyncReplCommands else {
+    guard let replTarget = target as? ReplCommands else {
       throw FBIDBError.describe("\(target) does not support running REPL tests").build()
     }
     return try await replTarget.startReplTest(bundlePath: bundlePath)
@@ -295,7 +295,7 @@ import XCTestBootstrap
   /// REPL context. The returned `ReplSession.run` completes when the bridge
   /// process exits.
   public func repl_start_simulator() async throws -> ReplSession {
-    guard let replTarget = target as? AsyncReplCommands else {
+    guard let replTarget = target as? ReplCommands else {
       throw FBIDBError.describe("\(target) does not support running REPL sessions").build()
     }
     return try await replTarget.startReplSimulator()
@@ -322,7 +322,7 @@ import XCTestBootstrap
     return server
   }
 
-  public func tail_companion_logs(_ consumer: FBDataConsumer) async throws -> any AsyncLogOperation {
+  public func tail_companion_logs(_ consumer: FBDataConsumer) async throws -> any LogOperation {
     return try await logger.tailToConsumerAsync(consumer)
   }
 

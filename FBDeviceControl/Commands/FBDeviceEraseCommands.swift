@@ -120,7 +120,7 @@ private final class FBDeviceEraseOperation: NSObject, FBiOSTargetSetDelegate, @u
 // MARK: - FBDeviceEraseCommands
 
 @objc(FBDeviceEraseCommands)
-public final class FBDeviceEraseCommands: NSObject, FBiOSTargetCommand, AsyncEraseCommands {
+public final class FBDeviceEraseCommands: NSObject, FBiOSTargetCommand, EraseCommands {
 
   private weak var device: FBDevice?
 
@@ -134,7 +134,7 @@ public final class FBDeviceEraseCommands: NSObject, FBiOSTargetCommand, AsyncEra
     super.init()
   }
 
-  // MARK: AsyncEraseCommands
+  // MARK: EraseCommands
 
   public func erase() async throws {
     guard let device else {
@@ -148,9 +148,9 @@ public final class FBDeviceEraseCommands: NSObject, FBiOSTargetCommand, AsyncEra
   }
 }
 
-// MARK: - FBDevice+AsyncEraseCommands
+// MARK: - FBDevice+EraseCommands
 
-extension FBDevice: AsyncEraseCommands {
+extension FBDevice: EraseCommands {
 
   public func erase() async throws {
     try await eraseCommands().erase()

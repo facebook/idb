@@ -68,7 +68,7 @@ public final class FBSimulatorReplCommands: NSObject, FBiOSTargetCommand {
     )
 
     let runner = FBLogicTestRunStrategy(
-      target: simulator as any FBiOSTarget & AsyncProcessSpawnCommands & AsyncXCTestExtendedCommands,
+      target: simulator as any FBiOSTarget & ProcessSpawnCommands & XCTestExtendedCommands,
       configuration: configuration,
       reporter: ReplNullReporter(),
       logger: logger)
@@ -107,9 +107,9 @@ public final class FBSimulatorReplCommands: NSObject, FBiOSTargetCommand {
   }
 }
 
-// MARK: - FBSimulator+AsyncReplCommands
+// MARK: - FBSimulator+ReplCommands
 
-extension FBSimulator: AsyncReplCommands {
+extension FBSimulator: ReplCommands {
 
   public func startReplTest(bundlePath: String) async throws -> ReplSession {
     try await replCommands().startReplTestAsync(bundlePath: bundlePath)

@@ -35,12 +35,12 @@ struct LogMethodHandler {
       }
     }
 
-    let operation: any AsyncLogOperation
+    let operation: any LogOperation
     if request.source == .companion {
       operation = try await commandExecutor.tail_companion_logs(consumer)
     } else {
-      guard let asyncTarget = target as? any AsyncLogCommands else {
-        throw GRPCStatus(code: .failedPrecondition, message: "\(target) does not support AsyncLogCommands")
+      guard let asyncTarget = target as? any LogCommands else {
+        throw GRPCStatus(code: .failedPrecondition, message: "\(target) does not support LogCommands")
       }
       operation = try await asyncTarget.tailLog(arguments: request.arguments, consumer: consumer)
     }

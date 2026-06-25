@@ -9,7 +9,7 @@
 import Foundation
 
 @objc(FBDeviceProvisioningProfileCommands)
-public class FBDeviceProvisioningProfileCommands: NSObject, FBiOSTargetCommand, AsyncProvisioningProfileCommands {
+public class FBDeviceProvisioningProfileCommands: NSObject, FBiOSTargetCommand, ProvisioningProfileCommands {
   private(set) weak var device: FBDevice?
 
   // MARK: Public
@@ -23,7 +23,7 @@ public class FBDeviceProvisioningProfileCommands: NSObject, FBiOSTargetCommand, 
     super.init()
   }
 
-  // MARK: AsyncProvisioningProfileCommands
+  // MARK: ProvisioningProfileCommands
 
   public func allProvisioningProfiles() async throws -> [[String: Any]] {
     guard let device else {

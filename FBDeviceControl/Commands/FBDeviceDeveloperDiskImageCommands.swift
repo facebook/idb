@@ -29,7 +29,7 @@ private func mountCallback(_ callbackDictionary: [String: Any]?, _ context: Unsa
 }
 
 @objc(FBDeviceDeveloperDiskImageCommands)
-public class FBDeviceDeveloperDiskImageCommands: NSObject, FBiOSTargetCommand, AsyncDeveloperDiskImageCommands {
+public class FBDeviceDeveloperDiskImageCommands: NSObject, FBiOSTargetCommand, DeveloperDiskImageCommands {
   private(set) weak var device: FBDevice?
 
   // MARK: Initializers
@@ -43,7 +43,7 @@ public class FBDeviceDeveloperDiskImageCommands: NSObject, FBiOSTargetCommand, A
     super.init()
   }
 
-  // MARK: AsyncDeveloperDiskImageCommands
+  // MARK: DeveloperDiskImageCommands
 
   public func mountedDiskImages() async throws -> [FBDeveloperDiskImage] {
     let mountInfo = try await mountInfoToDiskImageAsync()
@@ -182,9 +182,9 @@ public class FBDeviceDeveloperDiskImageCommands: NSObject, FBiOSTargetCommand, A
   }
 }
 
-// MARK: - FBDevice+AsyncDeveloperDiskImageCommands
+// MARK: - FBDevice+DeveloperDiskImageCommands
 
-extension FBDevice: AsyncDeveloperDiskImageCommands {
+extension FBDevice: DeveloperDiskImageCommands {
 
   public func mountedDiskImages() async throws -> [FBDeveloperDiskImage] {
     try await developerDiskImageCommands().mountedDiskImages()

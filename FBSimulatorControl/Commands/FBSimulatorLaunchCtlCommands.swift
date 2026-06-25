@@ -217,9 +217,9 @@ public final class FBSimulatorLaunchCtlCommands: NSObject, FBiOSTargetCommand {
   }
 }
 
-// MARK: - FBSimulator+AsyncLaunchCtlCommands
+// MARK: - FBSimulator+LaunchCtlCommands
 
-extension FBSimulator: AsyncLaunchCtlCommands {
+extension FBSimulator: LaunchCtlCommands {
 
   public func serviceName(forProcessIdentifier pid: pid_t) async throws -> String {
     try await launchCtlCommands().serviceName(forProcessIdentifier: pid)

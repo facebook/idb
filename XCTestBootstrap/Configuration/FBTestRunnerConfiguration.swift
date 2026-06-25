@@ -50,7 +50,7 @@ public class FBTestRunnerConfiguration: NSObject, NSCopying {
 
   // MARK: Public
 
-  public class func prepareConfiguration(withTarget target: FBiOSTarget & AsyncApplicationCommands & AsyncXCTestExtendedCommands, testLaunchConfiguration: FBTestLaunchConfiguration, workingDirectory: String, codesign: FBCodesignProvider?) -> FBFuture<FBTestRunnerConfiguration> {
+  public class func prepareConfiguration(withTarget target: FBiOSTarget & ApplicationCommands & XCTestExtendedCommands, testLaunchConfiguration: FBTestLaunchConfiguration, workingDirectory: String, codesign: FBCodesignProvider?) -> FBFuture<FBTestRunnerConfiguration> {
     if let codesign {
       return unsafeBitCast(
         codesign.cdHashForBundle(atPath: testLaunchConfiguration.testBundle.path)
@@ -96,7 +96,7 @@ public class FBTestRunnerConfiguration: NSObject, NSCopying {
     return envs
   }
 
-  private class func prepareConfigurationAfterCodesignatureCheck(withTarget target: FBiOSTarget & AsyncApplicationCommands & AsyncXCTestExtendedCommands, testLaunchConfiguration: FBTestLaunchConfiguration, workingDirectory: String) -> FBFuture<FBTestRunnerConfiguration> {
+  private class func prepareConfigurationAfterCodesignatureCheck(withTarget target: FBiOSTarget & ApplicationCommands & XCTestExtendedCommands, testLaunchConfiguration: FBTestLaunchConfiguration, workingDirectory: String) -> FBFuture<FBTestRunnerConfiguration> {
     // Common Paths
     let runtimeRoot = target.runtimeRootDirectory
     let platformRoot = target.platformRootDirectory

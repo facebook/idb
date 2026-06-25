@@ -129,9 +129,9 @@ public class FBDeviceDebuggerCommands: NSObject, FBiOSTargetCommand {
   }
 }
 
-// MARK: - FBDevice+AsyncDebuggerCommands
+// MARK: - FBDevice+DebuggerCommands
 
-extension FBDevice: AsyncDebuggerCommands {
+extension FBDevice: DebuggerCommands {
 
   public func launchDebugServer(
     forHostApplication application: FBBundleDescriptor,

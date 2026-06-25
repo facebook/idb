@@ -85,9 +85,9 @@ public class FBDeviceXCTestCommands: NSObject, FBiOSTargetCommand {
   }
 }
 
-// MARK: - FBDevice+AsyncXCTestCommands
+// MARK: - FBDevice+XCTestCommands
 
-extension FBDevice: AsyncXCTestCommands {
+extension FBDevice: XCTestCommands {
 
   public func runTest(
     launchConfiguration: FBTestLaunchConfiguration,

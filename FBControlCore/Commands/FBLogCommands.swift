@@ -8,7 +8,7 @@
 import Foundation
 
 @objc(FBProcessLogOperation)
-public class FBProcessLogOperation: NSObject, AsyncLogOperation {
+public class FBProcessLogOperation: NSObject, LogOperation {
 
   // MARK: Properties
 
@@ -25,7 +25,7 @@ public class FBProcessLogOperation: NSObject, AsyncLogOperation {
     super.init()
   }
 
-  // MARK: AsyncLogOperation
+  // MARK: LogOperation
 
   @objc public var completed: FBFuture<NSNull> {
     let process = self.process

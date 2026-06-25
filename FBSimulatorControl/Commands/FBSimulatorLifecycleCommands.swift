@@ -189,9 +189,9 @@ public final class FBSimulatorLifecycleCommands: NSObject, FBiOSTargetCommand {
   }
 }
 
-// MARK: - FBSimulator+AsyncLifecycleCommands
+// MARK: - FBSimulator+LifecycleCommands
 
-extension FBSimulator: AsyncLifecycleCommands {
+extension FBSimulator: LifecycleCommands {
 
   public func resolveState(_ state: FBiOSTargetState) async throws {
     try await lifecycleCommands().resolveStateAsync(state)
@@ -202,9 +202,9 @@ extension FBSimulator: AsyncLifecycleCommands {
   }
 }
 
-// MARK: - FBSimulator+AsyncPowerCommands
+// MARK: - FBSimulator+PowerCommands
 
-extension FBSimulator: AsyncPowerCommands {
+extension FBSimulator: PowerCommands {
 
   public func shutdown() async throws {
     try await lifecycleCommands().shutdownAsync()
@@ -215,18 +215,18 @@ extension FBSimulator: AsyncPowerCommands {
   }
 }
 
-// MARK: - FBSimulator+AsyncEraseCommands
+// MARK: - FBSimulator+EraseCommands
 
-extension FBSimulator: AsyncEraseCommands {
+extension FBSimulator: EraseCommands {
 
   public func erase() async throws {
     try await lifecycleCommands().erase()
   }
 }
 
-// MARK: - FBSimulator+AsyncSimulatorLifecycleCommands
+// MARK: - FBSimulator+SimulatorLifecycleCommands
 
-extension FBSimulator: AsyncSimulatorLifecycleCommands {
+extension FBSimulator: SimulatorLifecycleCommands {
 
   public func boot(_ configuration: FBSimulatorBootConfiguration) async throws {
     try await lifecycleCommands().bootAsync(configuration)

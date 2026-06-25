@@ -71,8 +71,8 @@ public extension FBXCTestDescriptor {
 
   private static func killAllRunningApplications(_ target: FBiOSTarget) -> FBFuture<NSNull> {
     let future: FBFuture<NSNull> = fbFutureFromAsync {
-      guard let asyncTarget = target as? any AsyncApplicationCommands else {
-        throw FBIDBError.describe("\(target) does not support AsyncApplicationCommands").build()
+      guard let asyncTarget = target as? any ApplicationCommands else {
+        throw FBIDBError.describe("\(target) does not support ApplicationCommands").build()
       }
       let running = try await asyncTarget.runningApplications()
       try await Array(running.keys).concurrentForEachThrowingFirstError { bundleID in
@@ -103,8 +103,8 @@ public extension FBXCTestDescriptor {
       }
       let testHostBundleID = request.testHostAppBundleID ?? "com.apple.Preferences"
       let pairFuture: FBFuture<FBTestApplicationsPair> = fbFutureFromAsync {
-        guard let asyncTarget = target as? any AsyncApplicationCommands else {
-          throw FBIDBError.describe("\(target) does not support AsyncApplicationCommands").build()
+        guard let asyncTarget = target as? any ApplicationCommands else {
+          throw FBIDBError.describe("\(target) does not support ApplicationCommands").build()
         }
         let testTargetApp = try await asyncTarget.installedApplication(bundleID: testTargetAppBundleID)
         let testHostApp = try await asyncTarget.installedApplication(bundleID: testHostBundleID)
@@ -117,8 +117,8 @@ public extension FBXCTestDescriptor {
       return FBIDBError.describe("Request for Application Test, but no app_bundle_id or test_host_app_bundle_id provided").failFuture() as! FBFuture<FBTestApplicationsPair>
     }
     return fbFutureFromAsync {
-      guard let asyncTarget = target as? any AsyncApplicationCommands else {
-        throw FBIDBError.describe("\(target) does not support AsyncApplicationCommands").build()
+      guard let asyncTarget = target as? any ApplicationCommands else {
+        throw FBIDBError.describe("\(target) does not support ApplicationCommands").build()
       }
       let application = try await asyncTarget.installedApplication(bundleID: bundleID)
       return FBTestApplicationsPair(applicationUnderTest: nil, testHostApp: application)

@@ -489,9 +489,9 @@ import IOKit
 
 }
 
-// MARK: - FBMacDevice+AsyncProcessSpawnCommands
+// MARK: - FBMacDevice+ProcessSpawnCommands
 
-extension FBMacDevice: AsyncProcessSpawnCommands {
+extension FBMacDevice: ProcessSpawnCommands {
 
   public func launchProcess(
     _ configuration: FBProcessSpawnConfiguration
@@ -501,9 +501,9 @@ extension FBMacDevice: AsyncProcessSpawnCommands {
   }
 }
 
-// MARK: - FBMacDevice+AsyncXCTestExtendedCommands
+// MARK: - FBMacDevice+XCTestExtendedCommands
 
-extension FBMacDevice: AsyncXCTestExtendedCommands {
+extension FBMacDevice: XCTestExtendedCommands {
 
   public func runTest(
     launchConfiguration: FBTestLaunchConfiguration,
@@ -535,9 +535,9 @@ extension FBMacDevice: AsyncXCTestExtendedCommands {
   }
 }
 
-// MARK: - FBMacDevice+AsyncApplicationCommands
+// MARK: - FBMacDevice+ApplicationCommands
 
-extension FBMacDevice: AsyncApplicationCommands {
+extension FBMacDevice: ApplicationCommands {
 
   public func installApplication(atPath path: String) async throws -> FBInstalledApplication {
     try await bridgeFBFuture(installApplication(withPath: path))
@@ -580,9 +580,9 @@ extension FBMacDevice: AsyncApplicationCommands {
   }
 }
 
-// MARK: - FBMacDevice+AsyncCrashLogCommands
+// MARK: - FBMacDevice+CrashLogCommands
 
-extension FBMacDevice: AsyncCrashLogCommands {
+extension FBMacDevice: CrashLogCommands {
 
   public func crashes(matching predicate: NSPredicate, useCache: Bool) async throws -> [FBCrashLogInfo] {
     throw FBControlCoreError.describe("-[FBMacDevice crashes:useCache:] is not implemented").build()

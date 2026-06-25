@@ -29,12 +29,12 @@ private final class FBLogicTestRunOutputs: NSObject {
 
 @objc public final class FBLogicTestRunStrategy: NSObject, FBXCTestRunner {
 
-  private let target: FBiOSTarget & AsyncProcessSpawnCommands & AsyncXCTestExtendedCommands
+  private let target: FBiOSTarget & ProcessSpawnCommands & XCTestExtendedCommands
   private let configuration: FBLogicTestConfiguration
   private let reporter: FBLogicXCTestReporter
   private let logger: FBControlCoreLogger
 
-  public init(target: FBiOSTarget & AsyncProcessSpawnCommands & AsyncXCTestExtendedCommands, configuration: FBLogicTestConfiguration, reporter: FBLogicXCTestReporter, logger: FBControlCoreLogger) {
+  public init(target: FBiOSTarget & ProcessSpawnCommands & XCTestExtendedCommands, configuration: FBLogicTestConfiguration, reporter: FBLogicXCTestReporter, logger: FBControlCoreLogger) {
     self.target = target
     self.configuration = configuration
     self.reporter = reporter
@@ -377,7 +377,7 @@ private final class FBLogicTestRunOutputs: NSObject {
           .onQueue(
             queue,
             fmap: { _ -> FBFuture<AnyObject> in
-              let crashCommands = self.target as? any AsyncCrashLogCommands
+              let crashCommands = self.target as? any CrashLogCommands
               return unsafeBitCast(
                 FBXCTestProcess.ensureProcess(process, completesWithin: timeout, crashLogCommands: crashCommands, queue: queue, logger: logger),
                 to: FBFuture<AnyObject>.self

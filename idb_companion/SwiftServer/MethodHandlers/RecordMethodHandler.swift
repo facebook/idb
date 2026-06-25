@@ -26,8 +26,8 @@ struct RecordMethodHandler {
       ? URL(fileURLWithPath: target.auxillaryDirectory).appendingPathComponent("idb_encode").appendingPathExtension("mp4").path
       : start.filePath
 
-    guard let asyncTarget = target as? any AsyncVideoRecordingCommands else {
-      throw GRPCStatus(code: .failedPrecondition, message: "\(target) does not support AsyncVideoRecordingCommands")
+    guard let asyncTarget = target as? any VideoRecordingCommands else {
+      throw GRPCStatus(code: .failedPrecondition, message: "\(target) does not support VideoRecordingCommands")
     }
     _ = try await asyncTarget.startRecording(toFile: filePath)
 

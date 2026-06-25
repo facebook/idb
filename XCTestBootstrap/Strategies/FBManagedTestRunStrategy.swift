@@ -24,7 +24,7 @@ import Foundation
     // both conform to these protocols in addition to the legacy ones declared
     // in this function's signature, so the cast is safe at runtime.
     // swiftlint:disable:next force_cast
-    let asyncTarget = target as! any FBiOSTarget & AsyncApplicationCommands & AsyncXCTestExtendedCommands
+    let asyncTarget = target as! any FBiOSTarget & ApplicationCommands & XCTestExtendedCommands
     let prepareFuture: FBFuture<AnyObject> = unsafeBitCast(
       FBTestRunnerConfiguration.prepareConfiguration(
         withTarget: asyncTarget,

@@ -156,7 +156,7 @@ public final class FBSimulatorXCTestCommands: NSObject, FBiOSTargetCommand {
       architectures: architectures)
 
     return try await bridgeFBFutureArray(
-      FBListTestStrategy(target: simulator as any FBiOSTarget & AsyncProcessSpawnCommands & AsyncXCTestExtendedCommands, configuration: configuration, logger: simulator.logger!)
+      FBListTestStrategy(target: simulator as any FBiOSTarget & ProcessSpawnCommands & XCTestExtendedCommands, configuration: configuration, logger: simulator.logger!)
         .listTests())
   }
 
@@ -246,9 +246,9 @@ public final class FBSimulatorXCTestCommands: NSObject, FBiOSTargetCommand {
   }
 }
 
-// MARK: - FBSimulator+AsyncXCTestExtendedCommands
+// MARK: - FBSimulator+XCTestExtendedCommands
 
-extension FBSimulator: AsyncXCTestExtendedCommands {
+extension FBSimulator: XCTestExtendedCommands {
 
   public func runTest(
     launchConfiguration: FBTestLaunchConfiguration,

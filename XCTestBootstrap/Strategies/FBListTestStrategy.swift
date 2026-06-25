@@ -45,11 +45,11 @@ private final class FBListTestStrategy_ReporterWrapped: NSObject, FBXCTestRunner
 
 @objc public final class FBListTestStrategy: NSObject {
 
-  let target: FBiOSTarget & AsyncProcessSpawnCommands & AsyncXCTestExtendedCommands
+  let target: FBiOSTarget & ProcessSpawnCommands & XCTestExtendedCommands
   private let configuration: FBListTestConfiguration
   private let logger: FBControlCoreLogger
 
-  public init(target: FBiOSTarget & AsyncProcessSpawnCommands & AsyncXCTestExtendedCommands, configuration: FBListTestConfiguration, logger: FBControlCoreLogger) {
+  public init(target: FBiOSTarget & ProcessSpawnCommands & XCTestExtendedCommands, configuration: FBListTestConfiguration, logger: FBControlCoreLogger) {
     self.target = target
     self.configuration = configuration
     self.logger = logger
@@ -218,7 +218,7 @@ private final class FBListTestStrategy_ReporterWrapped: NSObject, FBXCTestRunner
     )
   }
 
-  private static func listTestProcess(withTarget target: FBiOSTarget & AsyncProcessSpawnCommands, configuration: FBListTestConfiguration, xctestPath: String, environment: [String: String], stdOutConsumer: FBDataConsumer, stdErrConsumer: FBDataConsumer, logger: FBControlCoreLogger, temporaryDirectory: URL) -> FBFuture<AnyObject> {
+  private static func listTestProcess(withTarget target: FBiOSTarget & ProcessSpawnCommands, configuration: FBListTestConfiguration, xctestPath: String, environment: [String: String], stdOutConsumer: FBDataConsumer, stdErrConsumer: FBDataConsumer, logger: FBControlCoreLogger, temporaryDirectory: URL) -> FBFuture<AnyObject> {
     var launchPath = xctestPath
     var env = environment
 
@@ -261,7 +261,7 @@ private final class FBListTestStrategy_ReporterWrapped: NSObject, FBXCTestRunner
     }
   }
 
-  private static func listTestProcess(withSpawnConfiguration spawnConfiguration: FBProcessSpawnConfiguration, onTarget target: FBiOSTarget & AsyncProcessSpawnCommands, timeout: TimeInterval, logger: FBControlCoreLogger) -> FBFuture<AnyObject> {
+  private static func listTestProcess(withSpawnConfiguration spawnConfiguration: FBProcessSpawnConfiguration, onTarget target: FBiOSTarget & ProcessSpawnCommands, timeout: TimeInterval, logger: FBControlCoreLogger) -> FBFuture<AnyObject> {
     let launchFuture: FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>> = fbFutureFromAsync {
       try await target.launchProcess(spawnConfiguration)
     }

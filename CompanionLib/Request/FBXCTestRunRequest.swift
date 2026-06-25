@@ -203,7 +203,7 @@ private class FBXCTestRunRequest_LogicTest: FBXCTestRunRequest {
   private func startTestExecution(_ configuration: FBLogicTestConfiguration, target: FBiOSTarget, reporter: FBXCTestReporter, logger: FBControlCoreLogger) throws -> FBIDBTestOperation {
     let adapter = FBLogicReporterAdapter(reporter: reporter, logger: logger)
     let runner = FBLogicTestRunStrategy(
-      target: target as! (FBiOSTarget & AsyncProcessSpawnCommands & AsyncXCTestExtendedCommands),
+      target: target as! (FBiOSTarget & ProcessSpawnCommands & XCTestExtendedCommands),
       configuration: configuration,
       reporter: adapter,
       logger: logger
@@ -259,8 +259,8 @@ private class FBXCTestRunRequest_AppTest: FBXCTestRunRequest {
     }
 
     let testCompleted: FBFuture<NSNull> = fbFutureFromAsync {
-      guard let asyncTarget = target as? any AsyncXCTestCommands else {
-        throw FBIDBError.describe("\(target) does not support AsyncXCTestCommands").build()
+      guard let asyncTarget = target as? any XCTestCommands else {
+        throw FBIDBError.describe("\(target) does not support XCTestCommands").build()
       }
       try await asyncTarget.runTest(launchConfiguration: testLaunchConfiguration, reporter: reporter, logger: logger)
       return NSNull()
