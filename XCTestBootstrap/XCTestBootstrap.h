@@ -8,7 +8,7 @@
 #import <XCTestBootstrap/FBActivityRecord.h>
 #import <XCTestBootstrap/FBAttachment.h>
 #import <XCTestBootstrap/FBCodeCoverageConfiguration.h>
-#import <XCTestBootstrap/FBTestBundleConnection.h>
+#import <XCTestBootstrap/FBTestBundleDTXConnection.h>
 #import <XCTestBootstrap/FBTestConfiguration.h>
 #import <XCTestBootstrap/FBTestManagerAPIMediatorIDEInterface.h>
 #import <XCTestBootstrap/FBTestManagerResultSummary.h>

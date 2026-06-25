@@ -115,7 +115,16 @@ public final class FBTestManagerAPIMediator: NSObject, @unchecked Sendable {
       // bundle connection (which no longer acquires the transport itself). The socket stays open
       // for the duration of the connection and is closed when this scope ends.
       try await self.asyncXCTestTarget.withTransportForTestManagerService { socket in
-        try await bridgeFBFutureVoid(self.ideInterface.runBundleToCompletion(with: self.target, socket: socket.int32Value, testHostApplication: launchedApplication, request: self.requestQueue))
+        let connection = FBTestBundleConnection(
+          context: self.context,
+          target: self.target,
+          socket: socket.int32Value,
+          interface: self.ideInterface,
+          testHostApplication: launchedApplication,
+          requestQueue: self.requestQueue,
+          logger: self.logger
+        )
+        try await connection.connectAndRun()
       }
       // The bundle has disconnected at this point, but we also need to terminate any processes
       // spawned through `_XCT_launchProcessWithPath` and tear down the host application.

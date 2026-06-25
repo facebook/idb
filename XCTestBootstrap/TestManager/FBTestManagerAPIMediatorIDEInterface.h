@@ -44,19 +44,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (instancetype)initWithMediator:(FBTestManagerAPIMediator *)mediator context:(FBTestManagerContext *)context reporter:(id<FBXCTestReporter>)reporter logger:(nullable id<FBControlCoreLogger>)logger;
 
-#pragma mark Public
-
-/**
- Connects to the test bundle and runs the test plan to completion, using the receiver as the
- IDE interface that the test bundle and daemon communicate with.
-
- @param target the target.
- @param testHostApplication the launched test host application.
- @param requestQueue the queue for asynchronous delivery.
- @return a Future that resolves when the test plan has completed.
- */
-- (FBFuture<NSNull *> *)runBundleToCompletionWithTarget:(id<FBiOSTarget>)target socket:(int)socket testHostApplication:(id<FBLaunchedApplication>)testHostApplication requestQueue:(dispatch_queue_t)requestQueue;
-
 @end
 
 NS_ASSUME_NONNULL_END

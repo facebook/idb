@@ -23,7 +23,6 @@
 #import <XCTestPrivate/XCTestManager_DaemonConnectionInterface-Protocol.h>
 #import <XCTestPrivate/XCTestManager_IDEInterface-Protocol.h>
 
-#import "FBTestBundleConnection.h"
 #import "FBTestManagerResultSummary.h"
 #import "FBTestReporterAdapter.h"
 #import "XCTestBootstrapError.h"
@@ -54,20 +53,6 @@
   _reporterAdapter = [FBTestReporterAdapter withReporter:reporter];
 
   return self;
-}
-
-#pragma mark - Public
-
-- (FBFuture<NSNull *> *)runBundleToCompletionWithTarget:(id<FBiOSTarget>)target socket:(int)socket testHostApplication:(id<FBLaunchedApplication>)testHostApplication requestQueue:(dispatch_queue_t)requestQueue
-{
-  return [FBTestBundleConnection
-          connectAndRunBundleToCompletionWithContext:self.context
-          target:target
-          socket:socket
-          interface:self
-          testHostApplication:testHostApplication
-          requestQueue:requestQueue
-          logger:self.logger];
 }
 
 #pragma mark - XCTestManager_IDEInterface protocol
