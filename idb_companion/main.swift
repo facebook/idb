@@ -388,8 +388,8 @@ private func runCompanionServer(_ udid: String, userDefaults: UserDefaults, xcod
 
   // Give the monitor the socket cleanup so an idle shutdown unlinks the
   // socket synchronously the instant it begins, ahead of the async teardown.
-  let idleShutdownMonitor = idleShutdownTime.map {
-    IdleShutdownMonitor(idleTime: $0, logger: idbLogger, onShutdownStarted: removeRegisteredSocket)
+  let idleMonitor = idleShutdownTime.map {
+    IdleMonitor(idleTime: $0, logger: idbLogger, onShutdownStarted: removeRegisteredSocket)
   }
 
   let swiftServer = try GRPCSwiftServer(
@@ -398,7 +398,7 @@ private func runCompanionServer(_ udid: String, userDefaults: UserDefaults, xcod
     reporter: reporter,
     logger: idbLogger,
     ports: ports,
-    idleShutdownMonitor: idleShutdownMonitor
+    idleMonitor: idleMonitor
   )
 
   let serverDescription = try await swiftServer.start()
@@ -412,9 +412,9 @@ private func runCompanionServer(_ udid: String, userDefaults: UserDefaults, xcod
     removeRegisteredSocket()
   }
 
-  if let idleShutdownMonitor, let idleShutdownTime {
+  if let idleMonitor, let idleShutdownTime {
     logger.info().log("Companion will shut down after \(Int(idleShutdownTime))s of inactivity")
-    idleShutdownMonitor.start()
+    idleMonitor.start()
   }
   if terminateOffline {
     logger.info().log("Companion will terminate when target goes offline")
@@ -427,8 +427,8 @@ private func runCompanionServer(_ udid: String, userDefaults: UserDefaults, xcod
   // `defer`. If this command is cancelled (signal), `Task.select`'s own
   // `onCancel` cancels these children for us.
   var raceTasks: [Task<Void, Error>] = [Task { try await swiftServer.waitUntilClosed() }]
-  if let idleShutdownMonitor {
-    raceTasks.append(Task { try await idleShutdownMonitor.waitUntilExpired() })
+  if let idleMonitor {
+    raceTasks.append(Task { try await idleMonitor.waitUntilExpired() })
   }
   if terminateOffline {
     raceTasks.append(Task { try await awaitTargetOffline(target, logger: logger) })

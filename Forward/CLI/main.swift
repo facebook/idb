@@ -37,7 +37,7 @@ struct IdbForward {
     // should not outlive its use, so it exits after 5 minutes without activity.
     // With no udid, use the single running companion (or start one for the only
     // available simulator).
-    let idleShutdownTime: TimeInterval = 5 * 60
+    let idleShutdownTime = 5 * 60
     let manager = CompanionManager(version: .v2, companionPath: companionBinary)
     let companion: CompanionInfo
     do {

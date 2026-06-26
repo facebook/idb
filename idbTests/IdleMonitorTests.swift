@@ -32,7 +32,7 @@ private final class EventLog: @unchecked Sendable {
   }
 }
 
-final class IdleShutdownMonitorTests: XCTestCase {
+final class IdleMonitorTests: XCTestCase {
 
   /// A short idle window keeps the timing-based tests fast; waits below use a
   /// generous multiple of it to stay robust under load.
@@ -41,13 +41,13 @@ final class IdleShutdownMonitorTests: XCTestCase {
   private static let logger = FBIDBLogger(
     loggers: [FBControlCoreLoggerFactory.systemLoggerWriting(toStderr: true, withDebugLogging: false)])
 
-  private func makeMonitor(onShutdownStarted: (@Sendable () -> Void)? = nil) -> IdleShutdownMonitor {
-    IdleShutdownMonitor(idleTime: idleTime, logger: Self.logger, onShutdownStarted: onShutdownStarted)
+  private func makeMonitor(onShutdownStarted: (@Sendable () -> Void)? = nil) -> IdleMonitor {
+    IdleMonitor(idleTime: idleTime, logger: Self.logger, onShutdownStarted: onShutdownStarted)
   }
 
   /// Registers an expectation that fulfills when `expired` resolves, optionally
   /// running `onResolve` first.
-  private func expirationExpectation(for monitor: IdleShutdownMonitor, onResolve: (() -> Void)? = nil) -> XCTestExpectation {
+  private func expirationExpectation(for monitor: IdleMonitor, onResolve: (() -> Void)? = nil) -> XCTestExpectation {
     let fulfilled = expectation(description: "monitor.expired resolves")
     Task {
       try? await monitor.waitUntilExpired()

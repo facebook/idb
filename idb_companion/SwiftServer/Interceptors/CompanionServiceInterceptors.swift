@@ -17,24 +17,16 @@ import IDBGRPCSwift
 final class CompanionServiceInterceptors: Idb_CompanionServiceServerInterceptorFactoryProtocol {
 
   private let logger: FBIDBLogger
-  private let reporter: FBEventReporter
-  private let idleShutdownMonitor: IdleShutdownMonitor?
 
-  init(logger: FBIDBLogger, reporter: FBEventReporter, idleShutdownMonitor: IdleShutdownMonitor? = nil) {
+  init(logger: FBIDBLogger) {
     self.logger = logger
-    self.reporter = reporter
-    self.idleShutdownMonitor = idleShutdownMonitor
   }
 
   private func commonInterceptors<Request, Response>() -> [ServerInterceptor<Request, Response>] {
-    var interceptors: [ServerInterceptor<Request, Response>] = [
+    [
       MethodInfoSetterInterceptor(),
-      LoggingInterceptor(logger: logger, reporter: reporter),
+      LoggingInterceptor(logger: logger),
     ]
-    if let idleShutdownMonitor {
-      interceptors.append(IdleShutdownInterceptor<Request, Response>(monitor: idleShutdownMonitor))
-    }
-    return interceptors
   }
 
   func makeconnectInterceptors() -> [ServerInterceptor<Idb_ConnectRequest, Idb_ConnectResponse>] {

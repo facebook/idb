@@ -71,7 +71,7 @@ struct ReplRunner: ParsableArguments {
     // should not outlive its use, so it exits after 5 minutes without gRPC
     // activity. With no udid, use the single running companion (or start one for
     // the only available simulator).
-    let idleShutdownTime: TimeInterval = 5 * 60
+    let idleShutdownTime = 5 * 60
     let companion: CompanionInfo
     if let udid {
       companion = try await companionManager().companionInfo(forUDID: udid, idleShutdownTime: idleShutdownTime)

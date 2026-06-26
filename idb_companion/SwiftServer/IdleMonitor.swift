@@ -11,15 +11,17 @@ import FBControlCore
 import Foundation
 import IDBCompanionUtilities
 
-/// Shuts the companion down after a period of gRPC inactivity.
+/// Tracks in-flight work and signals when none has run for `idleTime`.
 ///
-/// The companion is treated as idle only when no requests are in flight: the
-/// countdown starts when the last in-flight request finishes (or at `start()` if
-/// none are running yet) and is cancelled as soon as a new request arrives, so a
-/// long-running call keeps the companion alive. When the countdown elapses with
-/// nothing in flight, `onShutdownStarted` is invoked synchronously and then
-/// `expired` resolves so the server can shut down.
-@objc final class IdleShutdownMonitor: NSObject {
+/// Work counts as in flight while a `tracking { }` block (or a balanced
+/// `requestStarted()` / `requestEnded()` pair) is open: the countdown starts when
+/// the last in-flight operation finishes (or at `start()` if nothing is running),
+/// and is cancelled as soon as new work arrives, so a long-running operation holds
+/// it off. When the countdown elapses with nothing in flight, `onShutdownStarted`
+/// runs synchronously and then `expired` resolves. Deciding what to do when idle
+/// (e.g. shutting the companion down) is left to whoever observes `expired`; the
+/// monitor itself is not shutdown-specific.
+@objc final class IdleMonitor: NSObject {
 
   private let expiredPromise = AsyncPromise<Void>()
 
@@ -34,7 +36,7 @@ import IDBCompanionUtilities
   /// resolves — used to release externally-visible resources (e.g. unlink the
   /// gRPC socket) without waiting for the async teardown.
   private let onShutdownStarted: (@Sendable () -> Void)?
-  private let queue = DispatchQueue(label: "com.facebook.idb.IdleShutdownMonitor")
+  private let queue = DispatchQueue(label: "com.facebook.idb.IdleMonitor")
   private let lock = NSLock()
 
   /// Number of requests currently in flight.
@@ -86,6 +88,16 @@ import IDBCompanionUtilities
     }
   }
 
+  /// Runs `body` as a single in-flight operation: the idle countdown is held off
+  /// while it runs and re-armed when it finishes. The `defer` guarantees the
+  /// operation is accounted as finished on every path — normal return, thrown
+  /// error, or task cancellation — so a caller can never leave the count stuck.
+  func tracking<R>(_ body: () async throws -> R) async throws -> R {
+    requestStarted()
+    defer { requestEnded() }
+    return try await body()
+  }
+
   // MARK: - Timer (callers must hold `lock`)
 
   private func armLocked() {
@@ -120,7 +132,7 @@ import IDBCompanionUtilities
     timer = nil
     lock.unlock()
 
-    logger.info().log("No gRPC activity for \(Int(idleTime))s, companion will shut down")
+    logger.info().log("No activity for \(Int(idleTime))s; signalling idle")
     // Release externally-visible resources (the socket) synchronously, before the
     // async teardown begins, so nothing rediscovers this companion mid-shutdown.
     onShutdownStarted?()

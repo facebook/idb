@@ -37,20 +37,21 @@ final class GRPCSwiftServer: NSObject {
     reporter: FBEventReporter,
     logger: FBIDBLogger,
     ports: IDBPortsConfiguration,
-    idleShutdownMonitor: IdleShutdownMonitor?
+    idleMonitor: IdleMonitor?
   ) throws {
 
     let group = MultiThreadedEventLoopGroup(numberOfThreads: 4)
     let tlsCerts = Self.loadCertificates(tlsCertPath: ports.tlsCertPath, logger: logger)
 
-    let interceptors = CompanionServiceInterceptors(logger: logger, reporter: reporter, idleShutdownMonitor: idleShutdownMonitor)
+    let interceptors = CompanionServiceInterceptors(logger: logger)
 
     self.provider = CompanionServiceProvider(
       target: target,
       commandExecutor: commandExecutor,
       reporter: reporter,
       logger: logger,
-      interceptors: interceptors)
+      interceptors: interceptors,
+      idleMonitor: idleMonitor)
 
     var serverConfiguration = Server.Configuration.default(
       target: ports.swiftServerTarget.grpcConnection,

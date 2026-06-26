@@ -54,7 +54,7 @@ public final class CompanionManager {
   ///
   /// When a companion is spawned, `idleShutdownTime` (if set) is forwarded as
   /// `--idle-shutdown-time`; it has no effect when an existing companion is reused.
-  public func companionInfo(forUDID udid: String, idleShutdownTime: TimeInterval? = nil) async throws -> CompanionInfo {
+  public func companionInfo(forUDID udid: String, idleShutdownTime: Int? = nil) async throws -> CompanionInfo {
     let companions = try registry.companions()
     if let existing = companions.first(where: { $0.udid == udid }) {
       if isAlive(existing) {
@@ -74,7 +74,7 @@ public final class CompanionManager {
   ///
   /// Recorded companions that have gone away are pruned. `idleShutdownTime`, if
   /// set, is forwarded to a spawned companion.
-  public func defaultCompanion(idleShutdownTime: TimeInterval? = nil) async throws -> CompanionInfo {
+  public func defaultCompanion(idleShutdownTime: Int? = nil) async throws -> CompanionInfo {
     var reachable: [CompanionInfo] = []
     for companion in try registry.companions() {
       if isAlive(companion) {
@@ -109,7 +109,7 @@ public final class CompanionManager {
   /// Ensures a companion exists for `udid` and records it. `idleShutdownTime`, if
   /// set, is forwarded to a newly spawned companion as `--idle-shutdown-time`.
   @discardableResult
-  public func spawnCompanionServer(udid: String, only: String? = nil, idleShutdownTime: TimeInterval? = nil) async throws -> CompanionInfo {
+  public func spawnCompanionServer(udid: String, only: String? = nil, idleShutdownTime: Int? = nil) async throws -> CompanionInfo {
     let path = paths.companionSocketPath(forUDID: udid)
     let info: CompanionInfo
     if CompanionConnectivity.isDomainSocketBound(path: path) {

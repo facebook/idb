@@ -39,7 +39,7 @@ public struct CompanionSpawner {
   ///   outlives this process and is not killed by terminal signals delivered to
   ///   this process's group. The v1 `idb_companion` is not detached by the spawner;
   ///   it survives a normal exit of this process but would receive such signals.
-  public func spawnDomainSocketServer(udid: String, only: String? = nil, path: String, idleShutdownTime: TimeInterval? = nil) async throws -> CompanionInfo {
+  public func spawnDomainSocketServer(udid: String, only: String? = nil, path: String, idleShutdownTime: Int? = nil) async throws -> CompanionInfo {
     try paths.ensureLogsDirectory()
     let logPath = paths.logFilePath(forUDID: udid)
     let logHandle = try appendHandle(forPath: logPath)
@@ -83,7 +83,7 @@ public struct CompanionSpawner {
   // MARK: - Helpers
 
   /// Builds the argv to launch the companion for `paths.version`.
-  private func launchArguments(udid: String, only: String?, path: String, idleShutdownTime: TimeInterval?) -> [String] {
+  private func launchArguments(udid: String, only: String?, path: String, idleShutdownTime: Int?) -> [String] {
     switch paths.version {
     case .v1:
       // idb_companion binds the socket path we hand it and reports it back.
@@ -93,7 +93,7 @@ public struct CompanionSpawner {
         arguments += ["--device-set-path", deviceSetPath]
       }
       if let idleShutdownTime {
-        arguments += ["--idle-shutdown-time", "\(Int(idleShutdownTime))"]
+        arguments += ["--idle-shutdown-time", "\(idleShutdownTime)"]
       }
       return arguments
     case .v2:
@@ -103,7 +103,7 @@ public struct CompanionSpawner {
       // supported yet.
       var arguments = ["--udid", udid, "companion"]
       if let idleShutdownTime {
-        arguments += ["--idle-shutdown-time", "\(Int(idleShutdownTime))"]
+        arguments += ["--idle-shutdown-time", "\(idleShutdownTime)"]
       }
       return arguments
     }

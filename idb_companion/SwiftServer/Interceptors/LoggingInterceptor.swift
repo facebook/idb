@@ -6,26 +6,25 @@
  */
 
 import CompanionLib
-import FBControlCore
-import Foundation
 import GRPC
-import NIO
 
-private enum MethodStartKey: UserInfo.Key {
-  typealias Value = Date
-}
-
+/// Logs gRPC transport-level lifecycle for each call: the request start and, for
+/// streaming calls, each received frame and the client-stream close.
+///
+/// Call *completion* (success/failure) is intentionally not logged or reported
+/// here. A server interceptor's `send(.end)` is not invoked when a client cancels
+/// or drops the connection mid-call, so completion observed at this layer is
+/// unreliable and would silently miss such calls. `CompanionTelemetry` wraps every
+/// handler in a `do`/`catch` and reports completion — and the success/failure
+/// `FBEventReporter` event — reliably on every termination path, so it is the
+/// single source for that.
 final class LoggingInterceptor<Request, Response>: ServerInterceptor<Request, Response> {
 
   private let logger: FBIDBLogger
-  private let reporter: FBEventReporter
 
-  init(logger: FBIDBLogger, reporter: FBEventReporter) {
+  init(logger: FBIDBLogger) {
     self.logger = logger
-    self.reporter = reporter
   }
-
-  // MARK: Request start + incoming frames
 
   override func receive(_ part: GRPCServerRequestPart<Request>, context: ServerInterceptorContext<Request, Response>) {
     guard let methodInfo = context.userInfo[MethodInfoKey.self] else {
@@ -36,8 +35,7 @@ final class LoggingInterceptor<Request, Response>: ServerInterceptor<Request, Re
 
     switch part {
     case .metadata:
-      saveStartDate(in: context)
-      reportMethodStart(methodName: methodInfo.name, in: context)
+      logger.info().log("Start of \(methodInfo.name)")
 
     case .message where methodInfo.callType == .clientStreaming || methodInfo.callType == .bidirectionalStreaming:
       logger.debug().log("Receive frame of \(methodInfo.name)")
@@ -50,56 +48,5 @@ final class LoggingInterceptor<Request, Response>: ServerInterceptor<Request, Re
     }
 
     super.receive(part, context: context)
-  }
-
-  private func saveStartDate(in context: ServerInterceptorContext<Request, Response>) {
-    context.userInfo[MethodStartKey.self] = Date()
-  }
-
-  private func reportMethodStart(methodName: String, in context: ServerInterceptorContext<Request, Response>) {
-    logger.info().log("Start of \(methodName)")
-  }
-
-  // MARK: Request end + outgoing frames
-
-  override func send(_ part: GRPCServerResponsePart<Response>, promise: EventLoopPromise<Void>?, context: ServerInterceptorContext<Request, Response>) {
-    guard let methodInfo = context.userInfo[MethodInfoKey.self] else {
-      assertionFailure("MethodInfoKey is empty, you have incorrect interceptor order")
-      super.send(part, promise: promise, context: context)
-      return
-    }
-
-    switch part {
-    case let .end(status, _):
-      reportMethodEnd(methodName: methodInfo.name, status: status, context: context)
-
-    default:
-      break
-    }
-
-    super.send(part, promise: promise, context: context)
-  }
-
-  private func reportMethodEnd(methodName: String, status: GRPCStatus, context: ServerInterceptorContext<Request, Response>) {
-    let duration = getMethodDuration(context: context)
-
-    let subject: FBEventReporterSubject
-    if status.isOk {
-      logger.debug().log("Success of \(methodName)")
-      subject = FBEventReporterSubject(forSuccessfulCall: methodName, duration: duration, size: nil, arguments: [])
-    } else {
-      logger.info().log("Failure of \(methodName), \(status)")
-      subject = FBEventReporterSubject(forFailingCall: methodName, duration: duration, message: status.message ?? "Unknown error with code \(status.code)", size: nil, arguments: [])
-    }
-
-    reporter.report(subject)
-  }
-
-  private func getMethodDuration(context: ServerInterceptorContext<Request, Response>) -> TimeInterval {
-    guard let methodStartDate = context.userInfo[MethodStartKey.self] else {
-      assertionFailure("\(MethodStartKey.self) is not configured on request start")
-      return 0
-    }
-    return Date().timeIntervalSince(methodStartDate)
   }
 }
