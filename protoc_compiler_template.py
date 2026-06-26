@@ -1,3 +1,8 @@
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
 # EASY-INSTALL-ENTRY-SCRIPT: 'grpclib==0.4.1','console_scripts','protoc-gen-python_grpc'
 __requires__ = "grpclib==0.4.1"
 import re
