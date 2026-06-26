@@ -15,9 +15,11 @@ exports:
       - SimDeviceIOServer
       - SimDeviceNotificationManager
       - SimDevicePair
+      - SimDevicePasteboard
       - SimDeviceSet
       - SimDeviceType
       - SimLocalThrowable
+      - SimPasteboardItem
       - SimProfilesPathMonitor
       - SimRuntime
       - SimServiceContext
