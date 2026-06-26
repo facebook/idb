@@ -11,6 +11,32 @@ import Foundation
 
 // swiftlint:disable force_unwrapping
 
+/// Errors thrown while modifying simulator defaults/preferences. String-representable so the message
+/// reaches the caller and the error log without the NSError wrapper.
+enum DefaultsModificationError: Error, CustomStringConvertible {
+  case couldNotCreateDirectory(plist: String, underlying: Error)
+  case couldNotWritePlist(String)
+  case invalidState(FBiOSTargetState, action: String)
+  case commandFailed(command: String, exitCode: Int32, stderr: String)
+
+  var description: String {
+    switch self {
+    case let .couldNotCreateDirectory(plist, underlying):
+      return "Could not create intermediate directories for temporary plist \(plist): \(underlying)"
+    case let .couldNotWritePlist(plist):
+      return "Failed to write out defaults to temporary file \(plist)"
+    case let .invalidState(state, action):
+      return "Cannot \(action) a plist when the Simulator state is \(FBiOSTargetStateStringFromState(state)), should be \(FBiOSTargetStateString.shutdown) or \(FBiOSTargetStateString.booted)"
+    case let .commandFailed(command, exitCode, stderr):
+      return "defaults \(command) failed with exit code \(exitCode): \(stderr)"
+    }
+  }
+}
+
+extension DefaultsModificationError: LocalizedError {
+  var errorDescription: String? { description }
+}
+
 public class FBDefaultsModificationStrategy: NSObject {
 
   // MARK: - Properties
@@ -33,15 +59,11 @@ public class FBDefaultsModificationStrategy: NSObject {
     do {
       try FileManager.default.createDirectory(atPath: dirPath, withIntermediateDirectories: true, attributes: nil)
     } catch {
-      throw
-        FBSimulatorError
-        .describe("Could not create intermediate directories for temporary plist \(file)")
-        .caused(by: error as NSError)
-        .build()
+      throw DefaultsModificationError.couldNotCreateDirectory(plist: file, underlying: error)
     }
 
     if !(defaults as NSDictionary).write(toFile: file, atomically: true) {
-      throw FBSimulatorError.describe("Failed to write out defaults to temporary file \(file)").build()
+      throw DefaultsModificationError.couldNotWritePlist(file)
     }
 
     _ = try await run(.importPlist(domainOrPath: domainOrPath, file: file))
@@ -107,7 +129,7 @@ public class FBDefaultsModificationStrategy: NSObject {
     if output.exitCode != 0 {
       let stderr = String(data: output.stderr, encoding: .utf8) ?? ""
       guard command.exitCodePolicy.accepts(output.exitCode) else {
-        throw FBSimulatorError.describe("defaults \(command.arguments.joined(separator: " ")) failed with exit code \(output.exitCode): \(stderr)").build()
+        throw DefaultsModificationError.commandFailed(command: command.arguments.joined(separator: " "), exitCode: output.exitCode, stderr: stderr)
       }
       logger?.log("defaults \(command.arguments.joined(separator: " ")) exited with code \(output.exitCode): \(stderr)")
     }
@@ -118,10 +140,7 @@ public class FBDefaultsModificationStrategy: NSObject {
   fileprivate func amendRelativeTo(path relativePath: String, defaults: [String: Any], managingService serviceName: String) async throws {
     let state = simulator.state
     guard state == .booted || state == .shutdown else {
-      throw
-        FBSimulatorError
-        .describe("Cannot amend a plist when the Simulator state is \(FBiOSTargetStateStringFromState(state)), should be \(FBiOSTargetStateString.shutdown) or \(FBiOSTargetStateString.booted)")
-        .build()
+      throw DefaultsModificationError.invalidState(state, action: "amend")
     }
 
     // Stop the service while the plist is rewritten, restarting it afterwards if it was running.
@@ -198,10 +217,7 @@ public class FBLocationServicesModificationStrategy: FBDefaultsModificationStrat
   public func revokeLocationServices(forBundleIDs bundleIDs: [String]) async throws {
     let state = simulator.state
     guard state == .booted || state == .shutdown else {
-      throw
-        FBSimulatorError
-        .describe("Cannot modify a plist when the Simulator state is \(FBiOSTargetStateStringFromState(state)), should be \(FBiOSTargetStateString.shutdown) or \(FBiOSTargetStateString.booted)")
-        .build()
+      throw DefaultsModificationError.invalidState(state, action: "modify")
     }
 
     let serviceName = "locationd"
