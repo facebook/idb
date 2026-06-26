@@ -790,14 +790,14 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
   }
 
   /// Constructs a recording stream: encoded `.compressed` frames are muxed into a file via `fileWriter`
-  /// rather than byte-framed to an `FBDataConsumer`. Records clean frames (no overlay/insets); set
-  /// `configuration.framesPerSecond` so the cadence is eager (a recorded file wants a continuous
-  /// timeline even while the screen is idle).
-  class func makeRecorder(framebuffer: FBFramebuffer, configuration: FBVideoStreamConfiguration, fileWriter: FBVideoFileWriter, logger: any FBControlCoreLogger) -> FBSimulatorVideoStream {
+  /// rather than byte-framed to an `FBDataConsumer`. `edgeInsets` (default zero) reserves overlay bar
+  /// regions exactly as on the streaming path; set `configuration.framesPerSecond` so the cadence is
+  /// eager (a recorded file wants a continuous timeline even while the screen is idle).
+  class func makeRecorder(framebuffer: FBFramebuffer, configuration: FBVideoStreamConfiguration, edgeInsets: FBVideoStreamEdgeInsets = FBVideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0), fileWriter: FBVideoFileWriter, logger: any FBControlCoreLogger) -> FBSimulatorVideoStream {
     FBSimulatorVideoStream(
       framebuffer: framebuffer,
       configuration: configuration,
-      edgeInsets: FBVideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0),
+      edgeInsets: edgeInsets,
       cadence: cadence(for: configuration),
       writeQueue: makeWriteQueue(),
       logger: logger,
