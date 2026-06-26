@@ -211,19 +211,16 @@ public final class FBSimulatorSettingsCommands: NSObject, FBiOSTargetCommand {
     guard let simulator = self.simulator else {
       throw FBSimulatorError.describe("Simulator deallocated").build()
     }
-    try await bridgeFBFutureVoid(
-      FBPreferenceModificationStrategy(simulator: simulator)
-        .setPreference(name, value: value, type: type, domain: domain))
+    try await FBPreferenceModificationStrategy(simulator: simulator)
+      .setPreference(name, value: value, type: type, domain: domain)
   }
 
   fileprivate func getCurrentPreferenceAsync(_ name: String, domain: String?) async throws -> String {
     guard let simulator = self.simulator else {
       throw FBSimulatorError.describe("Simulator deallocated").build()
     }
-    let result = try await bridgeFBFuture(
-      FBPreferenceModificationStrategy(simulator: simulator)
-        .getCurrentPreference(name, domain: domain))
-    return result as String
+    return try await FBPreferenceModificationStrategy(simulator: simulator)
+      .getCurrentPreference(name, domain: domain)
   }
 
   fileprivate func grantAccessAsync(_ bundleIDs: Set<String>, toServices services: Set<FBTargetSettingsService>) async throws {
@@ -515,18 +512,16 @@ public final class FBSimulatorSettingsCommands: NSObject, FBiOSTargetCommand {
     guard let simulator = self.simulator else {
       throw FBSimulatorError.describe("Simulator deallocated").build()
     }
-    try await bridgeFBFutureVoid(
-      FBLocationServicesModificationStrategy(simulator: simulator)
-        .approveLocationServices(forBundleIDs: bundleIDs))
+    try await FBLocationServicesModificationStrategy(simulator: simulator)
+      .approveLocationServices(forBundleIDs: bundleIDs)
   }
 
   fileprivate func revokeLocationSettingsAsync(_ bundleIDs: [String]) async throws {
     guard let simulator = self.simulator else {
       throw FBSimulatorError.describe("Simulator deallocated").build()
     }
-    try await bridgeFBFutureVoid(
-      FBLocationServicesModificationStrategy(simulator: simulator)
-        .revokeLocationServices(forBundleIDs: bundleIDs))
+    try await FBLocationServicesModificationStrategy(simulator: simulator)
+      .revokeLocationServices(forBundleIDs: bundleIDs)
   }
 
   fileprivate func updateHealthServiceAsync(_ bundleIDs: [String], approve approved: Bool) async throws {

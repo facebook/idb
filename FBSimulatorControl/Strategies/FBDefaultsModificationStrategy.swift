@@ -9,7 +9,7 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-// swiftlint:disable force_cast force_unwrapping
+// swiftlint:disable force_unwrapping
 
 public class FBDefaultsModificationStrategy: NSObject {
 
@@ -26,38 +26,35 @@ public class FBDefaultsModificationStrategy: NSObject {
 
   // MARK: - Public Methods
 
-  public func modifyDefaults(inDomainOrPath domainOrPath: String?, defaults: [String: Any]) -> FBFuture<NSNull> {
+  public func modifyDefaults(inDomainOrPath domainOrPath: String?, defaults: [String: Any]) async throws {
     let file = (simulator.auxillaryDirectory as NSString).appendingPathComponent("temporary.plist")
     let dirPath = (file as NSString).deletingLastPathComponent
 
     do {
       try FileManager.default.createDirectory(atPath: dirPath, withIntermediateDirectories: true, attributes: nil)
     } catch {
-      return
+      throw
         FBSimulatorError
         .describe("Could not create intermediate directories for temporary plist \(file)")
         .caused(by: error as NSError)
-        .failFuture() as! FBFuture<NSNull>
+        .build()
     }
 
     if !(defaults as NSDictionary).write(toFile: file, atomically: true) {
-      return
-        FBSimulatorError
-        .describe("Failed to write out defaults to temporary file \(file)")
-        .failFuture() as! FBFuture<NSNull>
+      throw FBSimulatorError.describe("Failed to write out defaults to temporary file \(file)").build()
     }
 
-    return run(.importPlist(domainOrPath: domainOrPath, file: file)).mapReplace(NSNull()) as! FBFuture<NSNull>
+    _ = try await run(.importPlist(domainOrPath: domainOrPath, file: file))
   }
 
   // MARK: - Internal Methods
 
-  fileprivate func setDefault(inDomain domain: String, key: String, value: String, type: String?) -> FBFuture<NSNull> {
-    return run(.write(domain: domain, key: key, type: type ?? "string", value: value)).mapReplace(NSNull()) as! FBFuture<NSNull>
+  fileprivate func setDefault(inDomain domain: String, key: String, value: String, type: String?) async throws {
+    _ = try await run(.write(domain: domain, key: key, type: type ?? "string", value: value))
   }
 
-  fileprivate func getDefault(inDomain domain: String, key: String) -> FBFuture<NSString> {
-    return run(.read(domain: domain, key: key))
+  fileprivate func getDefault(inDomain domain: String, key: String) async throws -> NSString {
+    return try await run(.read(domain: domain, key: key))
   }
 
   // The closed set of `defaults` operations this strategy issues. Modelling them as an enum keeps argv
@@ -99,12 +96,10 @@ public class FBDefaultsModificationStrategy: NSObject {
     }
   }
 
-  fileprivate func run(_ command: Command) -> FBFuture<NSString> {
+  fileprivate func run(_ command: Command) async throws -> NSString {
     let launchPath = defaultsBinary
-    return fbFutureFromAsync { [simulator] in
-      let output = try await simulator.launchProcessConsumingOutput(launchPath: launchPath, arguments: command.arguments)
-      return try FBDefaultsModificationStrategy.stdout(orThrowFrom: output, command: command, logger: simulator.logger)
-    }
+    let output = try await simulator.launchProcessConsumingOutput(launchPath: launchPath, arguments: command.arguments)
+    return try FBDefaultsModificationStrategy.stdout(orThrowFrom: output, command: command, logger: simulator.logger)
   }
 
   // Internal for unit-test coverage of the exit-code handling; see FBDefaultsModificationStrategyTests.
@@ -120,56 +115,29 @@ public class FBDefaultsModificationStrategy: NSObject {
     return stdout.trimmingCharacters(in: .newlines) as NSString
   }
 
-  fileprivate func amendRelativeTo(path relativePath: String, defaults: [String: Any], managingService serviceName: String) -> FBFuture<NSNull> {
-    let simulator = self.simulator
+  fileprivate func amendRelativeTo(path relativePath: String, defaults: [String: Any], managingService serviceName: String) async throws {
     let state = simulator.state
-    if state != .booted && state != .shutdown {
-      return
+    guard state == .booted || state == .shutdown else {
+      throw
         FBSimulatorError
         .describe("Cannot amend a plist when the Simulator state is \(FBiOSTargetStateStringFromState(state)), should be \(FBiOSTargetStateString.shutdown) or \(FBiOSTargetStateString.booted)")
-        .failFuture() as! FBFuture<NSNull>
+        .build()
     }
 
-    // Stop the service, if booted.
-    let stopFuture: FBFuture<NSNull> =
-      state == .booted
-      ? fbFutureFromAsync {
-        _ = try await self.simulator.stopService(withName: serviceName)
-        return NSNull()
-      }
-      : FBFuture<NSNull>.empty()
-
-    // The path to amend.
+    // Stop the service while the plist is rewritten, restarting it afterwards if it was running.
+    if state == .booted {
+      _ = try await simulator.stopService(withName: serviceName)
+    }
     let fullPath = (simulator.dataDirectory! as NSString).appendingPathComponent(relativePath)
-
-    return
-      (unsafeBitCast(stopFuture, to: FBFuture<AnyObject>.self)
-      .onQueue(
-        simulator.workQueue,
-        fmap: { [weak self] (_: Any) -> FBFuture<AnyObject> in
-          guard let self else {
-            return FBFuture(result: NSNull())
-          }
-          return unsafeBitCast(self.modifyDefaults(inDomainOrPath: fullPath, defaults: defaults), to: FBFuture<AnyObject>.self)
-        }
-      )
-      .onQueue(
-        simulator.workQueue,
-        fmap: { (_: Any) -> FBFuture<AnyObject> in
-          // Re-start the Service if booted.
-          if state == .booted {
-            return fbFutureFromAsync {
-              _ = try await self.simulator.startService(withName: serviceName)
-              return NSNull()
-            }
-          }
-          return FBFuture(result: NSNull())
-        })) as! FBFuture<NSNull>
+    try await modifyDefaults(inDomainOrPath: fullPath, defaults: defaults)
+    if state == .booted {
+      _ = try await simulator.startService(withName: serviceName)
+    }
   }
 
   // MARK: - Private
 
-  private var defaultsBinary: String {
+  fileprivate var defaultsBinary: String {
     let path =
       ((simulator.device.runtime.root! as NSString)
       .appendingPathComponent("usr") as NSString)
@@ -190,14 +158,14 @@ public class FBPreferenceModificationStrategy: FBDefaultsModificationStrategy {
 
   private static let appleGlobalDomain = "Apple Global Domain"
 
-  public func setPreference(_ name: String, value: String, type: String?, domain: String?) -> FBFuture<NSNull> {
+  public func setPreference(_ name: String, value: String, type: String?, domain: String?) async throws {
     let effectiveDomain = domain ?? FBPreferenceModificationStrategy.appleGlobalDomain
-    return setDefault(inDomain: effectiveDomain, key: name, value: value, type: type)
+    try await setDefault(inDomain: effectiveDomain, key: name, value: value, type: type)
   }
 
-  public func getCurrentPreference(_ name: String, domain: String?) -> FBFuture<NSString> {
+  public func getCurrentPreference(_ name: String, domain: String?) async throws -> String {
     let effectiveDomain = domain ?? FBPreferenceModificationStrategy.appleGlobalDomain
-    return getDefault(inDomain: effectiveDomain, key: name)
+    return try await getDefault(inDomain: effectiveDomain, key: name) as String
   }
 }
 
@@ -205,7 +173,7 @@ public class FBPreferenceModificationStrategy: FBDefaultsModificationStrategy {
 
 public class FBLocationServicesModificationStrategy: FBDefaultsModificationStrategy {
 
-  public func approveLocationServices(forBundleIDs bundleIDs: [String]) -> FBFuture<NSNull> {
+  public func approveLocationServices(forBundleIDs bundleIDs: [String]) async throws {
     var defaults: [String: Any] = [:]
     for bundleID in bundleIDs {
       defaults[bundleID] =
@@ -220,63 +188,53 @@ public class FBLocationServicesModificationStrategy: FBDefaultsModificationStrat
         ] as [String: Any]
     }
 
-    return amendRelativeTo(
+    try await amendRelativeTo(
       path: "Library/Caches/locationd/clients.plist",
       defaults: defaults,
       managingService: "locationd"
     )
   }
 
-  public func revokeLocationServices(forBundleIDs bundleIDs: [String]) -> FBFuture<NSNull> {
+  public func revokeLocationServices(forBundleIDs bundleIDs: [String]) async throws {
     let state = simulator.state
-    if state != .booted && state != .shutdown {
-      return
+    guard state == .booted || state == .shutdown else {
+      throw
         FBSimulatorError
         .describe("Cannot modify a plist when the Simulator state is \(FBiOSTargetStateStringFromState(state)), should be \(FBiOSTargetStateString.shutdown) or \(FBiOSTargetStateString.booted)")
-        .failFuture() as! FBFuture<NSNull>
+        .build()
     }
 
     let serviceName = "locationd"
-
-    // Stop the service, if booted.
-    let stopFuture: FBFuture<NSNull> =
-      state == .booted
-      ? fbFutureFromAsync {
-        _ = try await self.simulator.stopService(withName: serviceName)
-        return NSNull()
-      }
-      : FBFuture<NSNull>.empty()
+    if state == .booted {
+      _ = try await simulator.stopService(withName: serviceName)
+    }
 
     let path = (simulator.dataDirectory! as NSString)
       .appendingPathComponent("Library/Caches/locationd/clients.plist")
-    let futures: [FBFuture<AnyObject>] = bundleIDs.map { bundleID in
-      unsafeBitCast(
-        self.run(.delete(path: path, key: bundleID)),
-        to: FBFuture<AnyObject>.self)
+    // Run the per-bundle deletes concurrently (matching the prior FBFuture.combine). The outputs are
+    // Sendable, so the exit-code policy and logging are applied after the group rather than inside the
+    // task closures, keeping the non-Sendable logger out of the sending closures.
+    let sim = simulator
+    let launchPath = defaultsBinary
+    let outputs = try await withThrowingTaskGroup(of: (Command, FBInSimulatorToolOutput).self) { group in
+      for bundleID in bundleIDs {
+        let command = Command.delete(path: path, key: bundleID)
+        group.addTask {
+          (command, try await sim.launchProcessConsumingOutput(launchPath: launchPath, arguments: command.arguments))
+        }
+      }
+      var collected: [(Command, FBInSimulatorToolOutput)] = []
+      for try await result in group {
+        collected.append(result)
+      }
+      return collected
+    }
+    for (command, output) in outputs {
+      _ = try FBDefaultsModificationStrategy.stdout(orThrowFrom: output, command: command, logger: simulator.logger)
     }
 
-    return
-      (unsafeBitCast(stopFuture, to: FBFuture<AnyObject>.self)
-      .onQueue(
-        simulator.workQueue,
-        fmap: { (_: Any) -> FBFuture<AnyObject> in
-          FBFuture<AnyObject>.combine(futures).mapReplace(NSNull())
-        }
-      )
-      .onQueue(
-        simulator.workQueue,
-        fmap: { [weak self] (_: Any) -> FBFuture<AnyObject> in
-          guard let self else {
-            return FBFuture(result: NSNull())
-          }
-          // Re-start the Service if booted.
-          if state == .booted {
-            return fbFutureFromAsync {
-              _ = try await self.simulator.startService(withName: serviceName)
-              return NSNull()
-            }
-          }
-          return FBFuture(result: NSNull())
-        })) as! FBFuture<NSNull>
+    if state == .booted {
+      _ = try await simulator.startService(withName: serviceName)
+    }
   }
 }
