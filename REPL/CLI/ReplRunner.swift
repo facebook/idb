@@ -260,8 +260,7 @@ struct ReplRunner: ParsableArguments {
       let swiftPath = try sessionDirectory.filePath(named: "run-\(index).swift")
       let dylibPath = try sessionDirectory.filePath(named: "run-\(index).dylib")
 
-      let (_, strippedCode) = extractImports(from: swiftCode)
-      let code = wrappedCode(swiftCode: strippedCode, index: index, moduleMap: moduleMap)
+      let code = ReplSourceGenerator.generateSource(for: swiftCode, index: index, moduleMap: moduleMap)
       try code.write(toFile: swiftPath, atomically: true, encoding: .utf8)
 
       let (status, compilerOutput) = try compileSwift(sourcePath: swiftPath, outputPath: dylibPath, moduleMapPath: moduleMapPath, targetTriple: targetTriple, sdkPath: sdkPath, toolchain: toolchain)
@@ -277,93 +276,6 @@ struct ReplRunner: ParsableArguments {
       printStatus("Error:", "\(error)")
       return nil
     }
-  }
-
-  private func extractImports(from code: String) -> (imports: [String], strippedCode: String) {
-    let pattern = #"(?:@\w+\s+)?import\s+([a-zA-Z_]\w*(?:\.[a-zA-Z_]\w*)*)\s*;?"#
-    guard let regex = try? NSRegularExpression(pattern: pattern) else {
-      return ([], code)
-    }
-    let nsCode = code as NSString
-    let range = NSRange(location: 0, length: nsCode.length)
-    let imports = regex.matches(in: code, range: range).map { match in
-      nsCode.substring(with: match.range(at: 1))
-    }
-    let stripped = regex.stringByReplacingMatches(in: code, range: range, withTemplate: "")
-    return (imports, stripped)
-  }
-
-  private func wrappedCode(swiftCode: String, index: Int, moduleMap: SwiftModuleMap?) -> String {
-    // TODO: fix importing the modules declared in the module map.
-    // let imports = moduleMap.entries
-    //   .filter { $0.modulePath != nil && !$0.moduleName.hasPrefix("_") }
-    //   .map { module in
-    //     let testable = module.modulePath?.contains("toolchain") == true ? "" : "@testable "
-    //     return "\(testable)import \(module.moduleName) // idb-repl-strip"
-    //   }
-    //   .joined(separator: "\n")
-    let function =
-      containsAsync(swiftCode)
-      ? asyncFunction(swiftCode: swiftCode, index: index)
-      : syncFunction(swiftCode: swiftCode, index: index)
-    return """
-      import Foundation // idb-repl-strip
-      \(function)
-      """
-  }
-
-  private func containsAsync(_ code: String) -> Bool {
-    let pattern = #"\b(?:async|await)\b"#
-    guard let regex = try? NSRegularExpression(pattern: pattern) else {
-      return false
-    }
-    let nsCode = code as NSString
-    return regex.firstMatch(in: code, range: NSRange(location: 0, length: nsCode.length)) != nil
-  }
-
-  private func syncFunction(swiftCode: String, index: Int) -> String {
-    return """
-      private func userCode_\(index)() throws -> Any { // idb-repl-strip
-        \(swiftCode)
-      } // idb-repl-strip
-      @_cdecl("idb_repl_\(index)") public func idb_repl_\(index)() -> UnsafePointer<CChar>? { // idb-repl-strip
-        let output: String // idb-repl-strip
-        do { // idb-repl-strip
-          let result = try userCode_\(index)() // idb-repl-strip
-          output = "Result:\\n\\(String(describing: result))" // idb-repl-strip
-        } catch { // idb-repl-strip
-          output = "Exception:\\n\\(String(describing: error))" // idb-repl-strip
-        } // idb-repl-strip
-        return output.withCString { UnsafePointer(strdup($0)) } // idb-repl-strip
-      } // idb-repl-strip
-      """
-  }
-
-  private func asyncFunction(swiftCode: String, index: Int) -> String {
-    return """
-      private func userCode_\(index)() async throws -> Any { // idb-repl-strip
-        \(swiftCode)
-      } // idb-repl-strip
-      @_cdecl("idb_repl_\(index)") public func idb_repl_\(index)() -> UnsafePointer<CChar>? { // idb-repl-strip
-        final class _Box: @unchecked Sendable { var value: Result<Any, Error> = .success("()") } // idb-repl-strip
-        let box = _Box() // idb-repl-strip
-        let semaphore = DispatchSemaphore(value: 0) // idb-repl-strip
-        Task { // idb-repl-strip
-          do { box.value = .success(try await userCode_\(index)()) } // idb-repl-strip
-          catch { box.value = .failure(error) } // idb-repl-strip
-          semaphore.signal() // idb-repl-strip
-        } // idb-repl-strip
-        semaphore.wait() // idb-repl-strip
-        let output: String // idb-repl-strip
-        do { // idb-repl-strip
-          let result = try box.value.get() // idb-repl-strip
-          output = "Result:\\n\\(String(describing: result))" // idb-repl-strip
-        } catch { // idb-repl-strip
-          output = "Exception:\\n\\(String(describing: error))" // idb-repl-strip
-        } // idb-repl-strip
-        return output.withCString { UnsafePointer(strdup($0)) } // idb-repl-strip
-      } // idb-repl-strip
-      """
   }
 
   private func compileSwift(sourcePath: String, outputPath: String, moduleMapPath: String?, targetTriple: String, sdkPath: String, toolchain: String) throws -> (Int32, String) {
