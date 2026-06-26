@@ -11,7 +11,6 @@ import Foundation
 
 // swiftlint:disable force_cast force_unwrapping
 
-@objc(FBDefaultsModificationStrategy)
 public class FBDefaultsModificationStrategy: NSObject {
 
   // MARK: - Properties
@@ -20,11 +19,6 @@ public class FBDefaultsModificationStrategy: NSObject {
 
   // MARK: - Initializers
 
-  @objc(strategyWithSimulator:)
-  public class func strategy(with simulator: FBSimulator) -> Self {
-    return self.init(simulator: simulator)
-  }
-
   required init(simulator: FBSimulator) {
     self.simulator = simulator
     super.init()
@@ -32,7 +26,6 @@ public class FBDefaultsModificationStrategy: NSObject {
 
   // MARK: - Public Methods
 
-  @objc
   public func modifyDefaults(inDomainOrPath domainOrPath: String?, defaults: [String: Any]) -> FBFuture<NSNull> {
     let file = (simulator.auxillaryDirectory as NSString).appendingPathComponent("temporary.plist")
     let dirPath = (file as NSString).deletingLastPathComponent
@@ -193,18 +186,15 @@ public class FBDefaultsModificationStrategy: NSObject {
 
 // MARK: - FBPreferenceModificationStrategy
 
-@objc(FBPreferenceModificationStrategy)
 public class FBPreferenceModificationStrategy: FBDefaultsModificationStrategy {
 
   private static let appleGlobalDomain = "Apple Global Domain"
 
-  @objc
   public func setPreference(_ name: String, value: String, type: String?, domain: String?) -> FBFuture<NSNull> {
     let effectiveDomain = domain ?? FBPreferenceModificationStrategy.appleGlobalDomain
     return setDefault(inDomain: effectiveDomain, key: name, value: value, type: type)
   }
 
-  @objc
   public func getCurrentPreference(_ name: String, domain: String?) -> FBFuture<NSString> {
     let effectiveDomain = domain ?? FBPreferenceModificationStrategy.appleGlobalDomain
     return getDefault(inDomain: effectiveDomain, key: name)
@@ -213,10 +203,8 @@ public class FBPreferenceModificationStrategy: FBDefaultsModificationStrategy {
 
 // MARK: - FBLocationServicesModificationStrategy
 
-@objc(FBLocationServicesModificationStrategy)
 public class FBLocationServicesModificationStrategy: FBDefaultsModificationStrategy {
 
-  @objc
   public func approveLocationServices(forBundleIDs bundleIDs: [String]) -> FBFuture<NSNull> {
     var defaults: [String: Any] = [:]
     for bundleID in bundleIDs {
@@ -239,7 +227,6 @@ public class FBLocationServicesModificationStrategy: FBDefaultsModificationStrat
     )
   }
 
-  @objc
   public func revokeLocationServices(forBundleIDs bundleIDs: [String]) -> FBFuture<NSNull> {
     let state = simulator.state
     if state != .booted && state != .shutdown {
