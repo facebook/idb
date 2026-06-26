@@ -137,7 +137,7 @@ public class FBDefaultsModificationStrategy: NSObject {
 
   // MARK: - Private
 
-  fileprivate var defaultsBinary: String {
+  private var defaultsBinary: String {
     let path =
       ((simulator.device.runtime.root! as NSString)
       .appendingPathComponent("usr") as NSString)
@@ -211,26 +211,10 @@ public class FBLocationServicesModificationStrategy: FBDefaultsModificationStrat
 
     let path = (simulator.dataDirectory! as NSString)
       .appendingPathComponent("Library/Caches/locationd/clients.plist")
-    // Run the per-bundle deletes concurrently (matching the prior FBFuture.combine). The outputs are
-    // Sendable, so the exit-code policy and logging are applied after the group rather than inside the
-    // task closures, keeping the non-Sendable logger out of the sending closures.
-    let sim = simulator
-    let launchPath = defaultsBinary
-    let outputs = try await withThrowingTaskGroup(of: (Command, FBInSimulatorToolOutput).self) { group in
-      for bundleID in bundleIDs {
-        let command = Command.delete(path: path, key: bundleID)
-        group.addTask {
-          (command, try await sim.launchProcessConsumingOutput(launchPath: launchPath, arguments: command.arguments))
-        }
-      }
-      var collected: [(Command, FBInSimulatorToolOutput)] = []
-      for try await result in group {
-        collected.append(result)
-      }
-      return collected
-    }
-    for (command, output) in outputs {
-      _ = try FBDefaultsModificationStrategy.stdout(orThrowFrom: output, command: command, logger: simulator.logger)
+    // Delete sequentially: every delete is a read-modify-write of the same clients.plist, so running
+    // them concurrently races and can drop entries when revoking several bundle IDs at once.
+    for bundleID in bundleIDs {
+      _ = try await run(.delete(path: path, key: bundleID))
     }
 
     if state == .booted {
