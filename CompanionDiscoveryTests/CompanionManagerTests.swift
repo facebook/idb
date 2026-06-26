@@ -225,6 +225,7 @@ struct CompanionManagerTests {
       #expect(info.address == .domainSocket(path: bootedSocketPath))
       let argv = try String(contentsOfFile: argsPath, encoding: .utf8)
       #expect(argv.contains("--udid booted"))
+      #expect(argv.contains("--only simulator"))
       let recorded = try registry.companions().map(\.udid)
       #expect(recorded == ["booted"])
     }

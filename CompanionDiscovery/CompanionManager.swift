@@ -16,8 +16,12 @@ public final class CompanionManager {
   private let paths: CompanionPaths
 
   /// Pseudo-udid passed as `--udid booted`, telling a spawned companion to attach
-  /// to the single booted simulator/device.
+  /// to the single booted simulator.
   private static let bootedTargetUDID = "booted"
+
+  /// `--only` filter passed alongside `--udid booted` so the booted-target search
+  /// is scoped to simulators.
+  private static let simulatorOnlyFilter = "simulator"
 
   /// - Parameters:
   ///   - version: which companion generation to discover. Determines the base
@@ -68,7 +72,7 @@ public final class CompanionManager {
   /// Returns the companion to use when the caller has not named a specific target:
   /// - exactly one companion is recorded and reachable -> returns it;
   /// - no companion is reachable -> spawns a local companion with `--udid booted`
-  ///   (the companion attaches to the single booted simulator/device) and returns
+  ///   `--only simulator` (it attaches to the single booted simulator) and returns
   ///   it; if that spawn fails, discovery fails;
   /// - more than one companion is reachable -> discovery fails (ambiguous).
   ///
@@ -91,7 +95,10 @@ public final class CompanionManager {
     if let existing = reachable.first {
       return existing
     }
-    return try await spawnCompanionServer(udid: Self.bootedTargetUDID, idleShutdownTime: idleShutdownTime)
+    return try await spawnCompanionServer(
+      udid: Self.bootedTargetUDID,
+      only: Self.simulatorOnlyFilter,
+      idleShutdownTime: idleShutdownTime)
   }
 
   /// Whether a recorded companion is still reachable. Domain-socket companions
