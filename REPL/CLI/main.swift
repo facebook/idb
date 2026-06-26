@@ -12,14 +12,14 @@ struct TestRepl: AsyncParsableCommand {
   @Option(help: "The reason the tool is being used.")
   var reason: String?
 
-  static var configuration = CommandConfiguration(
+  static let configuration = CommandConfiguration(
     commandName: "idb-repl",
     abstract: "Launch a test bundle in REPL mode",
     subcommands: [TestCommand.self, SimulatorCommand.self])
 }
 
 struct TestCommand: AsyncParsableCommand {
-  static var configuration = CommandConfiguration(
+  static let configuration = CommandConfiguration(
     commandName: "test",
     abstract: "Run the REPL in a test context.")
 
@@ -32,7 +32,7 @@ struct TestCommand: AsyncParsableCommand {
 }
 
 struct SimulatorCommand: AsyncParsableCommand {
-  static var configuration = CommandConfiguration(
+  static let configuration = CommandConfiguration(
     commandName: "simulator",
     abstract: "Run the REPL in a simulator context.")
 

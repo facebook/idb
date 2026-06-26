@@ -29,8 +29,11 @@ struct TestBundleOptions: ParsableArguments {
   }
 }
 
-class SessionDirectory {
+/// @unchecked Sendable: the lazy-creation flag is the only mutable state and is
+/// guarded by `lock`; `path` is an immutable `let`.
+final class SessionDirectory: @unchecked Sendable {
   let path: String
+  private let lock = NSLock()
   private var created = false
 
   init() {
@@ -43,6 +46,8 @@ class SessionDirectory {
   }
 
   func filePath(named name: String) throws -> String {
+    lock.lock()
+    defer { lock.unlock() }
     if !created {
       try FileManager.default.createDirectory(atPath: path, withIntermediateDirectories: true)
       created = true
@@ -51,6 +56,8 @@ class SessionDirectory {
   }
 
   func cleanup() {
+    lock.lock()
+    defer { lock.unlock() }
     if created {
       try? FileManager.default.removeItem(atPath: path)
       created = false
