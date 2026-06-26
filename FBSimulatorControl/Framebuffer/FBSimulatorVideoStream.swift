@@ -755,6 +755,9 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
   var consumer: (any FBDataConsumer)?
   var framePusher: (any FBSimulatorVideoStreamFramePusher)?
   var frameWriterContext: AnyObject?
+  /// The timed-metadata (chapter) sink: the streaming transport writer, or (recording) the file
+  /// writer's chapter track. Resolved in `mountSurface`, cleared in `stopStreaming`.
+  var timedMetadataConsumer: (any FBTimedMetadataConsumer)?
 
   // Overlay compositing
   var overlayBuffer: CVPixelBuffer?
@@ -889,6 +892,7 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
           }
         }
         self.frameWriterContext = nil
+        self.timedMetadataConsumer = nil
         // Clean up overlay compositing resources (ARC-managed; dropping references releases them).
         self.overlayBuffer = nil
         self.compositedBufferPool = nil
@@ -992,6 +996,15 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
     self.framePusher = framePusher
     if let videoToolboxPusher = framePusher as? FBSimulatorVideoStreamFramePusher_VideoToolbox {
       self.frameWriterContext = (videoToolboxPusher.encodedSampleConsumer as? FBDataConsumerEncodedSampleConsumer)?.frameWriterContext
+    }
+
+    // Resolve the timed-metadata (chapter) sink. A recording file writer that supports chapters
+    // supplies its own consumer; otherwise the streaming transport writer (fMP4 emsg / MPEG-TS ID3)
+    // handles markers, dropping them on transports with no metadata channel.
+    if configuration.format.type == .compressedVideo {
+      self.timedMetadataConsumer =
+        (encodedSampleConsumerOverride as? FBTimedMetadataConsumer)
+        ?? FBTransportTimedMetadataConsumer(format: configuration.format, consumer: consumer, frameWriterContext: frameWriterContext)
     }
 
     // Set up overlay compositing infrastructure.
@@ -1262,26 +1275,12 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
 
   // MARK: - Timed Metadata
 
-  /// Write a timed metadata marker (chapter) to the stream.
-  /// Dispatches to the appropriate transport mechanism (MPEG-TS ID3, fMP4 emsg).
-  /// Logs and drops if the transport does not support timed metadata.
+  /// Write a timed metadata marker (chapter) at the current stream position. Routed to the
+  /// `FBTimedMetadataConsumer` resolved in `mountSurface` — the streaming transport writer
+  /// (MPEG-TS ID3 / fMP4 emsg) or, when recording, the file writer's chapter track. A no-op before the
+  /// surface is mounted, after the stream stops, or for formats without a metadata channel.
   public func writeTimedMetadata(_ text: String) {
-    let format = configuration.format
-    if format.type != .compressedVideo {
-      return
-    }
-    guard let consumer else { return }
-
-    if format.transport == .mpegts {
-      FBMPEGTSEnableMetadataStream()
-      FBMPEGTSWriteTimedMetadata(text, consumer)
-    } else if format.transport == .fmp4 {
-      if let ctx = frameWriterContext as? FBFMP4MuxerContext {
-        FBFMP4WriteEmsgBox(ctx, text, consumer)
-      }
-    } else {
-      logger.log("writeTimedMetadata: not supported for transport '\(String(describing: format.transport))', dropping")
-    }
+    timedMetadataConsumer?.writeTimedMetadata(text, logger: logger)
   }
 
   // MARK: - Overlay
