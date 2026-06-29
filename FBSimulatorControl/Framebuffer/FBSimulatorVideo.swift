@@ -14,8 +14,12 @@ import Foundation
 /// `FBSimulatorVideoStream` encode pipeline at an eager (constant-frame-rate) cadence and muxes the
 /// encoded frames into an `.mp4` via `FBVideoFileWriter` (`AVAssetWriter`). The byte-stream consumer is
 /// a discard; only the `.mp4` is produced.
+// @unchecked Sendable: an in-process recording operation handle, used across async boundaries by the
+// recording commands and the sime2e record path. All mutable state is confined to its serial `queue`
+// (and `hasStopped` guards the single stop), and its `stream`/`fileWriter` are themselves
+// `@unchecked Sendable`, matching the sibling `FBSimulatorVideoStream`.
 @objc(FBSimulatorVideo)
-public class FBSimulatorVideo: NSObject, FBiOSTargetOperation {
+public class FBSimulatorVideo: NSObject, FBiOSTargetOperation, @unchecked Sendable {
 
   // MARK: - Properties
 
