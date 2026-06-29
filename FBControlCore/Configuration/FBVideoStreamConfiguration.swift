@@ -7,14 +7,32 @@
 
 import Foundation
 
+/// The video codec for compressed video streams.
+public enum FBVideoStreamCodec: String {
+  case h264
+  case hevc
+}
+
+/// The transport/container framing for compressed video streams.
+public enum FBVideoStreamTransport: String {
+  case annexB = "annex-b"
+  case mpegts
+  case fmp4
+}
+
+/// The rate-control mode for VTCompression.
+public enum FBVideoStreamRateControlMode: Int {
+  case constantQuality
+  case averageBitrate
+}
+
 @objc(FBVideoStreamFormat)
 public final class FBVideoStreamFormat: NSObject, NSCopying {
 
   @objc public let type: FBVideoStreamFormatType
-  @objc public let codec: FBVideoStreamCodec?
-  @objc public let transport: FBVideoStreamTransport?
+  public let codec: FBVideoStreamCodec?
+  public let transport: FBVideoStreamTransport?
 
-  @objc(compressedVideoWithCodec:transport:)
   public class func compressedVideo(withCodec codec: FBVideoStreamCodec, transport: FBVideoStreamTransport) -> FBVideoStreamFormat {
     FBVideoStreamFormat(type: .compressedVideo, codec: codec, transport: transport)
   }
@@ -84,7 +102,7 @@ public final class FBVideoStreamFormat: NSObject, NSCopying {
 @objc(FBVideoStreamRateControl)
 public final class FBVideoStreamRateControl: NSObject, NSCopying {
 
-  @objc public let mode: FBVideoStreamRateControlMode
+  public let mode: FBVideoStreamRateControlMode
   @objc public let value: NSNumber
 
   @objc(quality:)
@@ -131,8 +149,6 @@ public final class FBVideoStreamRateControl: NSObject, NSCopying {
       } else {
         return String(format: "Bitrate %.0f kbps", bps / 1000.0)
       }
-    @unknown default:
-      return "RateControl(\(mode.rawValue), \(value))"
     }
   }
 }

@@ -77,8 +77,8 @@ public class FBDeviceVideoStream: NSObject, FBVideoStream {
     let format = configuration.format
     switch format.type {
     case .compressedVideo:
-      if format.codec?.rawValue == "h264" {
-        if format.transport?.rawValue == "mpegts" {
+      if format.codec == .h264 {
+        if format.transport == .mpegts {
           return FBDeviceVideoStream_H264MPEGTS.self
         }
         return FBDeviceVideoStream_H264.self
