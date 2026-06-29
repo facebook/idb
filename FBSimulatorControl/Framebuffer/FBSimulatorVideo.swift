@@ -29,14 +29,14 @@ public class FBSimulatorVideo: NSObject, FBiOSTargetOperation {
 
   // MARK: - Initializers
 
-  public class func video(withFramebuffer framebuffer: FBFramebuffer, configuration: FBVideoStreamConfiguration, filePath: String, edgeInsets: FBVideoStreamEdgeInsets = FBVideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0), logger: any FBControlCoreLogger) -> FBSimulatorVideo {
-    FBSimulatorVideo(framebuffer: framebuffer, configuration: configuration, filePath: filePath, edgeInsets: edgeInsets, logger: logger)
+  public class func video(withFramebuffer framebuffer: FBFramebuffer, configuration: FBVideoStreamConfiguration, filePath: String, edgeInsets: FBVideoStreamEdgeInsets = FBVideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0), chaptersEnabled: Bool = false, logger: any FBControlCoreLogger) -> FBSimulatorVideo {
+    FBSimulatorVideo(framebuffer: framebuffer, configuration: configuration, filePath: filePath, edgeInsets: edgeInsets, chaptersEnabled: chaptersEnabled, logger: logger)
   }
 
-  private init(framebuffer: FBFramebuffer, configuration: FBVideoStreamConfiguration, filePath: String, edgeInsets: FBVideoStreamEdgeInsets, logger: any FBControlCoreLogger) {
+  private init(framebuffer: FBFramebuffer, configuration: FBVideoStreamConfiguration, filePath: String, edgeInsets: FBVideoStreamEdgeInsets, chaptersEnabled: Bool, logger: any FBControlCoreLogger) {
     self.queue = DispatchQueue(label: "com.facebook.simulatorvideo")
     self.completedFuture = FBMutableFuture<NSNull>()
-    let fileWriter = FBVideoFileWriter(filePath: filePath, logger: logger)
+    let fileWriter = FBVideoFileWriter(filePath: filePath, chaptersEnabled: chaptersEnabled, logger: logger)
     self.fileWriter = fileWriter
     self.stream = FBSimulatorVideoStream.makeRecorder(framebuffer: framebuffer, configuration: configuration, edgeInsets: edgeInsets, fileWriter: fileWriter, logger: logger)
     super.init()
