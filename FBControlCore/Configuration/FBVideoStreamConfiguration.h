@@ -16,13 +16,3 @@ extern FBVideoStreamEncoding _Nonnull const FBVideoStreamEncodingHEVC NS_SWIFT_N
 extern FBVideoStreamEncoding _Nonnull const FBVideoStreamEncodingBGRA NS_SWIFT_NAME(bgra);
 extern FBVideoStreamEncoding _Nonnull const FBVideoStreamEncodingMJPEG NS_SWIFT_NAME(mjpeg);
 extern FBVideoStreamEncoding _Nonnull const FBVideoStreamEncodingMinicap;
-
-/**
- The type of video stream format.
- */
-typedef NS_ENUM(NSUInteger, FBVideoStreamFormatType) {
-  FBVideoStreamFormatTypeCompressedVideo,
-  FBVideoStreamFormatTypeMJPEG NS_SWIFT_NAME(mjpeg),
-  FBVideoStreamFormatTypeMinicap,
-  FBVideoStreamFormatTypeBGRA NS_SWIFT_NAME(bgra),
-};

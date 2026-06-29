@@ -1001,7 +1001,7 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
     // Resolve the timed-metadata (chapter) sink. A recording file writer that supports chapters
     // supplies its own consumer; otherwise the streaming transport writer (fMP4 emsg / MPEG-TS ID3)
     // handles markers, dropping them on transports with no metadata channel.
-    if configuration.format.type == .compressedVideo {
+    if case .compressedVideo = configuration.format {
       self.timedMetadataConsumer =
         (encodedSampleConsumerOverride as? FBTimedMetadataConsumer)
         ?? FBTransportTimedMetadataConsumer(format: configuration.format, consumer: consumer, frameWriterContext: frameWriterContext)
@@ -1175,20 +1175,21 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
       derived[key] = value
     }
     derived[kVTCompressionPropertyKey_MaxKeyFrameIntervalDuration as String] = configuration.keyFrameRate
-    let format = configuration.format
-    if format.type == .compressedVideo, format.codec == .h264 {
-      derived[kVTCompressionPropertyKey_ProfileLevel as String] = kVTProfileLevel_H264_Baseline_AutoLevel as String
-      derived[kVTCompressionPropertyKey_H264EntropyMode as String] = kVTH264EntropyMode_CAVLC as String
-      if #available(macOS 12.1, *) {
-        derived[kVTCompressionPropertyKey_ProfileLevel as String] = kVTProfileLevel_H264_High_AutoLevel as String
-        derived[kVTCompressionPropertyKey_H264EntropyMode as String] = kVTH264EntropyMode_CABAC as String
-      }
-    }
-    if format.type == .compressedVideo, format.codec == .hevc {
-      derived[kVTCompressionPropertyKey_AllowOpenGOP as String] = false
-      derived[kVTCompressionPropertyKey_ProfileLevel as String] = kVTProfileLevel_HEVC_Main_AutoLevel as String
-      if #available(macOS 13.0, *) {
-        derived[kVTCompressionPropertyKey_ProfileLevel as String] = kVTProfileLevel_HEVC_Main10_AutoLevel as String
+    if case let .compressedVideo(codec, _) = configuration.format {
+      switch codec {
+      case .h264:
+        derived[kVTCompressionPropertyKey_ProfileLevel as String] = kVTProfileLevel_H264_Baseline_AutoLevel as String
+        derived[kVTCompressionPropertyKey_H264EntropyMode as String] = kVTH264EntropyMode_CAVLC as String
+        if #available(macOS 12.1, *) {
+          derived[kVTCompressionPropertyKey_ProfileLevel as String] = kVTProfileLevel_H264_High_AutoLevel as String
+          derived[kVTCompressionPropertyKey_H264EntropyMode as String] = kVTH264EntropyMode_CABAC as String
+        }
+      case .hevc:
+        derived[kVTCompressionPropertyKey_AllowOpenGOP as String] = false
+        derived[kVTCompressionPropertyKey_ProfileLevel as String] = kVTProfileLevel_HEVC_Main_AutoLevel as String
+        if #available(macOS 13.0, *) {
+          derived[kVTCompressionPropertyKey_ProfileLevel as String] = kVTProfileLevel_HEVC_Main10_AutoLevel as String
+        }
       }
     }
     return derived
@@ -1202,40 +1203,40 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
     logger: any FBControlCoreLogger
   ) throws -> any FBSimulatorVideoStreamFramePusher {
     let derived = Self.compressionSessionProperties(for: configuration, callerProperties: compressionSessionProperties)
-    let format = configuration.format
-    switch format.type {
-    case .compressedVideo:
+    switch configuration.format {
+    case let .compressedVideo(codec, transport):
       // Map (codec, transport) to the VideoToolbox codec, frame writer, and muxer context,
-      // then construct the pusher once. AnnexB is the default transport for each codec.
+      // then construct the pusher once.
       let videoCodec: CMVideoCodecType
       let frameWriter: FBCompressedFrameWriter
       let frameWriterContext: AnyObject?
-      if format.codec == .h264 {
+      switch codec {
+      case .h264:
         videoCodec = kCMVideoCodecType_H264
-        if format.transport == .fmp4 {
+        switch transport {
+        case .fmp4:
           frameWriter = WriteH264FrameToFMP4Stream
           frameWriterContext = FBFMP4MuxerContext(hevc: false)
-        } else if format.transport == .mpegts {
+        case .mpegts:
           frameWriter = WriteH264FrameToMPEGTSStream
           frameWriterContext = nil
-        } else {
+        case .annexB:
           frameWriter = WriteFrameToAnnexBStream
           frameWriterContext = nil
         }
-      } else if format.codec == .hevc {
+      case .hevc:
         videoCodec = kCMVideoCodecType_HEVC
-        if format.transport == .fmp4 {
+        switch transport {
+        case .fmp4:
           frameWriter = WriteHEVCFrameToFMP4Stream
           frameWriterContext = FBFMP4MuxerContext(hevc: true)
-        } else if format.transport == .mpegts {
+        case .mpegts:
           frameWriter = WriteHEVCFrameToMPEGTSStream
           frameWriterContext = nil
-        } else {
+        case .annexB:
           frameWriter = WriteHEVCFrameToAnnexBStream
           frameWriterContext = nil
         }
-      } else {
-        throw FBControlCoreError.describe("Unsupported codec '\(String(describing: format.codec))'").build()
       }
       let encodedSampleConsumer: FBEncodedSampleConsumer =
         encodedSampleConsumerOverride
@@ -1253,8 +1254,6 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
         consumer: consumer, outputMode: .minicap, encodedSampleConsumer: nil, logger: logger)
     case .bgra:
       return FBSimulatorVideoStreamFramePusher_Bitmap(consumer: consumer, scaleFactor: configuration.scaleFactor)
-    @unknown default:
-      throw FBControlCoreError.describe("Unsupported format type \(format.type.rawValue)").build()
     }
   }
 

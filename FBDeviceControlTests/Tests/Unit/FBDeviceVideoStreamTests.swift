@@ -39,9 +39,9 @@ final class FBDeviceVideoStreamTests: XCTestCase {
   // MARK: - Format → subclass dispatch
 
   func testClassForConfigurationResolvesSupportedFormats() {
-    XCTAssertNotNil(FBDeviceVideoStream.classForConfiguration(configuration(.bgra())))
-    XCTAssertNotNil(FBDeviceVideoStream.classForConfiguration(configuration(.mjpeg())))
-    XCTAssertNotNil(FBDeviceVideoStream.classForConfiguration(configuration(.minicap())))
+    XCTAssertNotNil(FBDeviceVideoStream.classForConfiguration(configuration(.bgra)))
+    XCTAssertNotNil(FBDeviceVideoStream.classForConfiguration(configuration(.mjpeg)))
+    XCTAssertNotNil(FBDeviceVideoStream.classForConfiguration(configuration(.minicap)))
     XCTAssertNotNil(FBDeviceVideoStream.classForConfiguration(configuration(.compressedVideo(withCodec: .h264, transport: .annexB))))
     XCTAssertNotNil(FBDeviceVideoStream.classForConfiguration(configuration(.compressedVideo(withCodec: .h264, transport: .mpegts))))
   }
@@ -64,7 +64,7 @@ final class FBDeviceVideoStreamTests: XCTestCase {
 
   func testBGRAWritesRawPixelBytes() throws {
     let consumer = FBDataBuffer.accumulatingBuffer()
-    let stream = try makeStream(for: .bgra(), consumer: consumer)
+    let stream = try makeStream(for: .bgra, consumer: consumer)
     let sampleBuffer = makeBGRASampleBuffer(width: 16, height: 8, fill: 0xAB)
     let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer)!
 
@@ -102,7 +102,7 @@ final class FBDeviceVideoStreamTests: XCTestCase {
 
   func testMJPEGPassesThroughJPEGBytes() throws {
     let consumer = FBDataBuffer.accumulatingBuffer()
-    let stream = try makeStream(for: .mjpeg(), consumer: consumer)
+    let stream = try makeStream(for: .mjpeg, consumer: consumer)
     let jpeg: [UInt8] = [0xFF, 0xD8, 0xFF, 0xE0, 0x01, 0x02, 0x03, 0xFF, 0xD9]
 
     stream.consumeSampleBuffer(makeJPEGSampleBuffer(bytes: jpeg))
@@ -112,7 +112,7 @@ final class FBDeviceVideoStreamTests: XCTestCase {
 
   func testMinicapWritesHeaderThenFrame() throws {
     let consumer = FBDataBuffer.accumulatingBuffer()
-    let stream = try makeStream(for: .minicap(), consumer: consumer)
+    let stream = try makeStream(for: .minicap, consumer: consumer)
     let jpeg: [UInt8] = [0xFF, 0xD8, 0xFF, 0xD9]
 
     // Frame 0 emits the Minicap global header (sized from the sample's video dimensions), then a
@@ -132,7 +132,7 @@ final class FBDeviceVideoStreamTests: XCTestCase {
   }
 
   func testConsumeWithoutConsumerDoesNotCrash() throws {
-    let stream = try makeStream(for: .bgra(), consumer: nil)
+    let stream = try makeStream(for: .bgra, consumer: nil)
     // No consumer attached; consuming a frame should be a no-op rather than a crash.
     stream.consumeSampleBuffer(makeBGRASampleBuffer(width: 4, height: 4, fill: 0x00))
   }

@@ -32,7 +32,7 @@ final class FBSimulatorVideoStreamCompressionPropertiesTests: XCTestCase {
 
   func testCallerPropertiesMerged() {
     let config = FBVideoStreamConfiguration(
-      format: FBVideoStreamFormat.mjpeg(),
+      format: FBVideoStreamFormat.mjpeg,
       framesPerSecond: nil,
       rateControl: nil,
       scaleFactor: nil,
@@ -47,7 +47,7 @@ final class FBSimulatorVideoStreamCompressionPropertiesTests: XCTestCase {
 
   func testMJPEGCompressionPropertiesContainQuality() {
     let config = FBVideoStreamConfiguration(
-      format: FBVideoStreamFormat.mjpeg(),
+      format: FBVideoStreamFormat.mjpeg,
       framesPerSecond: nil,
       rateControl: FBVideoStreamRateControl.quality(0.5),
       scaleFactor: nil,
@@ -59,7 +59,7 @@ final class FBSimulatorVideoStreamCompressionPropertiesTests: XCTestCase {
 
   func testMinicapCompressionPropertiesContainQuality() {
     let config = FBVideoStreamConfiguration(
-      format: FBVideoStreamFormat.minicap(),
+      format: FBVideoStreamFormat.minicap,
       framesPerSecond: nil,
       rateControl: FBVideoStreamRateControl.quality(0.5),
       scaleFactor: nil,
@@ -100,7 +100,7 @@ final class FBSimulatorVideoStreamCompressionPropertiesTests: XCTestCase {
 
   func testExplicitBitrate() {
     let config = FBVideoStreamConfiguration(
-      format: FBVideoStreamFormat.mjpeg(),
+      format: FBVideoStreamFormat.mjpeg,
       framesPerSecond: nil,
       rateControl: FBVideoStreamRateControl.bitrate(500000),
       scaleFactor: nil,

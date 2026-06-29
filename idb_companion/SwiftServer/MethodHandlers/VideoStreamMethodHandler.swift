@@ -111,11 +111,11 @@ struct VideoStreamMethodHandler {
     case .h264:
       return .compressedVideo(withCodec: .h264, transport: .annexB)
     case .rbga:
-      return .bgra()
+      return .bgra
     case .mjpeg:
-      return .mjpeg()
+      return .mjpeg
     case .minicap:
-      return .minicap()
+      return .minicap
     case .i420, .UNRECOGNIZED:
       return .compressedVideo(withCodec: .h264, transport: .annexB)
     }

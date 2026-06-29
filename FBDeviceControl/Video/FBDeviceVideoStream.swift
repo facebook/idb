@@ -74,24 +74,21 @@ public class FBDeviceVideoStream: NSObject, FBVideoStream {
 
   // Internal (not private) so @testable tests can assert format → subclass dispatch.
   class func classForConfiguration(_ configuration: FBVideoStreamConfiguration) -> FBDeviceVideoStream.Type? {
-    let format = configuration.format
-    switch format.type {
-    case .compressedVideo:
-      if format.codec == .h264 {
-        if format.transport == .mpegts {
-          return FBDeviceVideoStream_H264MPEGTS.self
-        }
-        return FBDeviceVideoStream_H264.self
+    switch configuration.format {
+    case let .compressedVideo(codec, transport):
+      switch codec {
+      case .h264:
+        return transport == .mpegts ? FBDeviceVideoStream_H264MPEGTS.self : FBDeviceVideoStream_H264.self
+      case .hevc:
+        // HEVC is not yet supported on the device path.
+        return nil
       }
-      return nil
     case .mjpeg:
       return FBDeviceVideoStream_MJPEG.self
     case .minicap:
       return FBDeviceVideoStream_Minicap.self
     case .bgra:
       return FBDeviceVideoStream_BGRA.self
-    @unknown default:
-      return nil
     }
   }
 

@@ -26,75 +26,27 @@ public enum FBVideoStreamRateControlMode: Int {
   case averageBitrate
 }
 
-@objc(FBVideoStreamFormat)
-public final class FBVideoStreamFormat: NSObject, NSCopying {
+/// The format of a video stream: a compressed codec carried over a transport, or one of the raw/JPEG
+/// formats that have no codec or transport. Modeled as a sum so `transport` exists only where it is
+/// meaningful (the `compressedVideo` case) and every dispatch site matches exhaustively.
+public enum FBVideoStreamFormat: Hashable {
+  case compressedVideo(withCodec: FBVideoStreamCodec, transport: FBVideoStreamTransport)
+  case mjpeg
+  case minicap
+  case bgra
+}
 
-  @objc public let type: FBVideoStreamFormatType
-  public let codec: FBVideoStreamCodec?
-  public let transport: FBVideoStreamTransport?
-
-  public class func compressedVideo(withCodec codec: FBVideoStreamCodec, transport: FBVideoStreamTransport) -> FBVideoStreamFormat {
-    FBVideoStreamFormat(type: .compressedVideo, codec: codec, transport: transport)
-  }
-
-  @objc
-  public class func mjpeg() -> FBVideoStreamFormat {
-    FBVideoStreamFormat(type: .mjpeg, codec: nil, transport: nil)
-  }
-
-  @objc
-  public class func minicap() -> FBVideoStreamFormat {
-    FBVideoStreamFormat(type: .minicap, codec: nil, transport: nil)
-  }
-
-  @objc
-  public class func bgra() -> FBVideoStreamFormat {
-    FBVideoStreamFormat(type: .bgra, codec: nil, transport: nil)
-  }
-
-  private init(type: FBVideoStreamFormatType, codec: FBVideoStreamCodec?, transport: FBVideoStreamTransport?) {
-    self.type = type
-    self.codec = codec
-    self.transport = transport
-    super.init()
-  }
-
-  // MARK: NSCopying
-
-  public func copy(with zone: NSZone? = nil) -> Any {
-    self
-  }
-
-  // MARK: NSObject
-
-  public override func isEqual(_ object: Any?) -> Bool {
-    guard let other = object as? FBVideoStreamFormat else { return false }
-    if type != other.type { return false }
-    if type == .compressedVideo {
-      return codec == other.codec && transport == other.transport
-    }
-    return true
-  }
-
-  public override var hash: Int {
-    var h = Int(type.rawValue)
-    h ^= codec?.hashValue ?? 0
-    h ^= transport?.hashValue ?? 0
-    return h
-  }
-
-  public override var description: String {
-    switch type {
-    case .compressedVideo:
-      return "\(codec?.rawValue ?? "") over \(transport?.rawValue ?? "")"
+extension FBVideoStreamFormat: CustomStringConvertible {
+  public var description: String {
+    switch self {
+    case let .compressedVideo(codec, transport):
+      return "\(codec.rawValue) over \(transport.rawValue)"
     case .mjpeg:
       return "MJPEG"
     case .minicap:
       return "Minicap"
     case .bgra:
       return "BGRA"
-    @unknown default:
-      return "Format(\(type.rawValue))"
     }
   }
 }
@@ -156,15 +108,14 @@ public final class FBVideoStreamRateControl: NSObject, NSCopying {
 @objc(FBVideoStreamConfiguration)
 public final class FBVideoStreamConfiguration: NSObject, NSCopying {
 
-  @objc public let format: FBVideoStreamFormat
+  public let format: FBVideoStreamFormat
   @objc public let framesPerSecond: NSNumber?
   @objc public let rateControl: FBVideoStreamRateControl
   @objc public let scaleFactor: NSNumber?
   @objc public let keyFrameRate: NSNumber
 
-  @objc
   public init(format: FBVideoStreamFormat, framesPerSecond: NSNumber?, rateControl: FBVideoStreamRateControl?, scaleFactor: NSNumber?, keyFrameRate: NSNumber?) {
-    self.format = format.copy() as! FBVideoStreamFormat
+    self.format = format
     self.framesPerSecond = framesPerSecond
     self.rateControl = (rateControl?.copy() as? FBVideoStreamRateControl) ?? FBVideoStreamRateControl.quality(0.75)
     self.scaleFactor = scaleFactor
@@ -182,7 +133,7 @@ public final class FBVideoStreamConfiguration: NSObject, NSCopying {
 
   public override func isEqual(_ object: Any?) -> Bool {
     guard let other = object as? FBVideoStreamConfiguration else { return false }
-    if !format.isEqual(other.format) { return false }
+    if format != other.format { return false }
     let fpsEqual: Bool = framesPerSecond == other.framesPerSecond || (framesPerSecond != nil && other.framesPerSecond != nil && framesPerSecond!.isEqual(to: other.framesPerSecond!))
     if !fpsEqual { return false }
     if !rateControl.isEqual(other.rateControl) { return false }
@@ -192,7 +143,7 @@ public final class FBVideoStreamConfiguration: NSObject, NSCopying {
   }
 
   public override var hash: Int {
-    format.hash ^ (framesPerSecond?.hash ?? 0) ^ rateControl.hash ^ (scaleFactor?.hash ?? 0) ^ keyFrameRate.hash
+    format.hashValue ^ (framesPerSecond?.hash ?? 0) ^ rateControl.hash ^ (scaleFactor?.hash ?? 0) ^ keyFrameRate.hash
   }
 
   public override var description: String {

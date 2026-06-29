@@ -41,15 +41,20 @@ final class FBTransportTimedMetadataConsumer: FBTimedMetadataConsumer {
   }
 
   func writeTimedMetadata(_ text: String, logger: any FBControlCoreLogger) {
-    if format.transport == .mpegts {
+    guard case let .compressedVideo(_, transport) = format else {
+      logger.log("writeTimedMetadata: not supported for format '\(format)', dropping")
+      return
+    }
+    switch transport {
+    case .mpegts:
       FBMPEGTSEnableMetadataStream()
       FBMPEGTSWriteTimedMetadata(text, consumer)
-    } else if format.transport == .fmp4 {
+    case .fmp4:
       if let ctx = frameWriterContext as? FBFMP4MuxerContext {
         FBFMP4WriteEmsgBox(ctx, text, consumer)
       }
-    } else {
-      logger.log("writeTimedMetadata: not supported for transport '\(String(describing: format.transport))', dropping")
+    case .annexB:
+      logger.log("writeTimedMetadata: not supported for transport '\(transport.rawValue)', dropping")
     }
   }
 }
