@@ -11,5 +11,19 @@ public protocol VideoRecordingCommands: AnyObject {
 
   func startRecording(toFile filePath: String) async throws -> any FBiOSTargetOperation
 
+  /// Record using a caller-provided stream configuration (codec, frame rate, scale, rate control,
+  /// key-frame rate). Mirrors `VideoStreamCommands.createStream(configuration:)`.
+  func startRecording(toFile filePath: String, configuration: FBVideoStreamConfiguration) async throws -> any FBiOSTargetOperation
+
   func stopRecording() async throws
+}
+
+public extension VideoRecordingCommands {
+
+  /// Default: ignore the configuration and fall back to the target's fixed recording path. This lets
+  /// conformers that cannot honor a configuration (e.g. `FBDevice`, whose recording is a separate
+  /// `AVCaptureSession` path) inherit it unchanged; `FBSimulator` overrides it to honor the config.
+  func startRecording(toFile filePath: String, configuration: FBVideoStreamConfiguration) async throws -> any FBiOSTargetOperation {
+    try await startRecording(toFile: filePath)
+  }
 }

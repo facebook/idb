@@ -30,9 +30,9 @@ public final class FBSimulatorVideoRecordingCommands: NSObject, FBiOSTargetComma
 
   // MARK: - Private
 
-  /// The configuration for in-process recording: H264 at a constant frame rate (eager cadence), clean
-  /// frames, default quality. The transport is irrelevant — recording muxes encoded samples to a file
-  /// rather than byte-framing them.
+  /// The default configuration for in-process recording when the caller supplies none: H264 at a
+  /// constant frame rate (eager cadence), clean frames, default quality. The transport is irrelevant —
+  /// recording muxes encoded samples to a file rather than byte-framing them.
   private static var recordingConfiguration: FBVideoStreamConfiguration {
     FBVideoStreamConfiguration(
       format: FBVideoStreamFormat.compressedVideo(withCodec: .h264, transport: .annexB),
@@ -43,6 +43,10 @@ public final class FBSimulatorVideoRecordingCommands: NSObject, FBiOSTargetComma
   }
 
   fileprivate func startRecordingAsync(toFile filePath: String) async throws -> any FBiOSTargetOperation {
+    try await startRecordingAsync(toFile: filePath, configuration: Self.recordingConfiguration)
+  }
+
+  fileprivate func startRecordingAsync(toFile filePath: String, configuration: FBVideoStreamConfiguration) async throws -> any FBiOSTargetOperation {
     guard let simulator = self.simulator else {
       throw FBSimulatorError.describe("Simulator deallocated").build()
     }
@@ -50,7 +54,7 @@ public final class FBSimulatorVideoRecordingCommands: NSObject, FBiOSTargetComma
       throw FBSimulatorError.describe("Cannot create a new video recording session, one is already active").build()
     }
     let framebuffer = try await simulator.connectToFramebuffer()
-    let video = FBSimulatorVideo.video(withFramebuffer: framebuffer, configuration: Self.recordingConfiguration, filePath: filePath, logger: simulator.logger!)
+    let video = FBSimulatorVideo.video(withFramebuffer: framebuffer, configuration: configuration, filePath: filePath, logger: simulator.logger!)
     try await video.startRecording()
     self.video = video
     return video
@@ -84,6 +88,10 @@ extension FBSimulator: VideoRecordingCommands {
 
   public func startRecording(toFile filePath: String) async throws -> any FBiOSTargetOperation {
     try await videoRecordingCommands().startRecordingAsync(toFile: filePath)
+  }
+
+  public func startRecording(toFile filePath: String, configuration: FBVideoStreamConfiguration) async throws -> any FBiOSTargetOperation {
+    try await videoRecordingCommands().startRecordingAsync(toFile: filePath, configuration: configuration)
   }
 
   public func stopRecording() async throws {
