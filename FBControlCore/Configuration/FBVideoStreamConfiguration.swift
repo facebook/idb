@@ -105,22 +105,42 @@ public final class FBVideoStreamRateControl: NSObject, NSCopying {
   }
 }
 
-@objc(FBVideoStreamConfiguration)
-public final class FBVideoStreamConfiguration: NSObject, NSCopying {
+/// How frames are encoded, independent of the output format/sink: frame rate, scale, rate control, and
+/// key-frame interval. Composed into `FBVideoStreamConfiguration` so the streaming and recording paths
+/// can build and pass the same encode options, varying only the format (and, for record, the sink).
+public struct FBVideoEncodeOptions {
+  public let framesPerSecond: NSNumber?
+  public let scaleFactor: NSNumber?
+  public let rateControl: FBVideoStreamRateControl
+  public let keyFrameRate: NSNumber
 
-  public let format: FBVideoStreamFormat
-  @objc public let framesPerSecond: NSNumber?
-  @objc public let rateControl: FBVideoStreamRateControl
-  @objc public let scaleFactor: NSNumber?
-  @objc public let keyFrameRate: NSNumber
-
-  public init(format: FBVideoStreamFormat, framesPerSecond: NSNumber?, rateControl: FBVideoStreamRateControl?, scaleFactor: NSNumber?, keyFrameRate: NSNumber?) {
-    self.format = format
+  public init(framesPerSecond: NSNumber?, rateControl: FBVideoStreamRateControl?, scaleFactor: NSNumber?, keyFrameRate: NSNumber?) {
     self.framesPerSecond = framesPerSecond
     self.rateControl = (rateControl?.copy() as? FBVideoStreamRateControl) ?? FBVideoStreamRateControl.quality(0.75)
     self.scaleFactor = scaleFactor
     self.keyFrameRate = keyFrameRate ?? 1.0
+  }
+}
+
+@objc(FBVideoStreamConfiguration)
+public final class FBVideoStreamConfiguration: NSObject, NSCopying {
+
+  public let format: FBVideoStreamFormat
+  public let encodeOptions: FBVideoEncodeOptions
+
+  public var framesPerSecond: NSNumber? { encodeOptions.framesPerSecond }
+  public var rateControl: FBVideoStreamRateControl { encodeOptions.rateControl }
+  public var scaleFactor: NSNumber? { encodeOptions.scaleFactor }
+  public var keyFrameRate: NSNumber { encodeOptions.keyFrameRate }
+
+  public init(format: FBVideoStreamFormat, encodeOptions: FBVideoEncodeOptions) {
+    self.format = format
+    self.encodeOptions = encodeOptions
     super.init()
+  }
+
+  public convenience init(format: FBVideoStreamFormat, framesPerSecond: NSNumber?, rateControl: FBVideoStreamRateControl?, scaleFactor: NSNumber?, keyFrameRate: NSNumber?) {
+    self.init(format: format, encodeOptions: FBVideoEncodeOptions(framesPerSecond: framesPerSecond, rateControl: rateControl, scaleFactor: scaleFactor, keyFrameRate: keyFrameRate))
   }
 
   // MARK: NSCopying
