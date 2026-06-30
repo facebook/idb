@@ -49,8 +49,10 @@ extension FBSimulator {
 /// dispatcher, applying SpringBoard-crash remediation for frontmost lookups.
 ///
 /// `final`; unit tests inject a mock dispatcher via `injectedDispatcher` (`@testable`).
-/// Stays `NSObject` because it is stored in the simulator's Objective-C command cache.
-public final class FBSimulatorAccessibilityCommands: NSObject, AccessibilityOperations {
+///
+/// Plain Swift, no `NSObject`/`@objc`: nothing in Objective-C references this class, and the
+/// command cache (`FBTargetCommandCache`) stores values as `Any`, so it imposes no such requirement.
+public final class FBSimulatorAccessibilityCommands: AccessibilityOperations {
 
   private static let coreSimulatorBridgeServiceName = "com.apple.CoreSimulator.bridge"
 
@@ -59,10 +61,8 @@ public final class FBSimulatorAccessibilityCommands: NSObject, AccessibilityOper
   /// Test injection seam: when set, overrides the simulator's shared dispatcher.
   var injectedDispatcher: FBAXTranslationDispatcher?
 
-  @objc(initWithSimulator:)
-  public init(simulator: FBSimulator) {
+  init(simulator: FBSimulator) {
     self.simulator = simulator
-    super.init()
   }
 
   public class func commands(with target: FBSimulator) -> Self {
