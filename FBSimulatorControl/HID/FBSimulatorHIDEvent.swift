@@ -145,6 +145,13 @@ public extension FBSimulatorHIDEvent {
     return .composite(events)
   }
 
+  /// A Siri Remote focus action for tvOS, delivered as the USB HID keyboard usage the tvOS focus
+  /// engine consumes (arrows move focus, Return selects, Escape acts as Menu/back). The keyboard
+  /// path is the universal baseline that works on the legacy Indigo transport.
+  static func remoteButton(_ button: FBSimulatorHIDRemoteButton) -> FBSimulatorHIDEvent {
+    shortKeyPress(button.keyboardUsage)
+  }
+
   static func swipe(
     _ xStart: Double, yStart: Double, xEnd: Double, yEnd: Double, delta: Double, duration: Double
   ) -> FBSimulatorHIDEvent {
@@ -214,6 +221,23 @@ public extension FBSimulatorHIDEvent {
     events.append(.twoFingerTouch(direction: .up, finger1: f1End, finger2: f2End))
 
     return .composite(events)
+  }
+}
+
+// MARK: - Remote button key mapping
+
+private extension FBSimulatorHIDRemoteButton {
+  /// The USB HID Keyboard/Keypad page (0x07) usage the tvOS focus engine consumes for this action.
+  /// Live-confirmed on a booted Apple TV simulator: arrows move focus, Return selects, Escape backs out.
+  var keyboardUsage: UInt32 {
+    switch self {
+    case .up: return 0x52
+    case .down: return 0x51
+    case .left: return 0x50
+    case .right: return 0x4F
+    case .select: return 0x28 // Return
+    case .menu: return 0x29 // Escape
+    }
   }
 }
 

@@ -44,6 +44,30 @@ public enum FBSimulatorHIDButton: Int32, Sendable, CaseIterable {
   }
 }
 
+/// A Siri Remote action for tvOS focus navigation. The focus-step actions map to USB HID keyboard
+/// usages the tvOS focus engine already consumes; this is the transport-agnostic vocabulary callers
+/// use, independent of how a given transport delivers it.
+public enum FBSimulatorHIDRemoteButton: Int32, Sendable, CaseIterable {
+  case up = 1
+  case down = 2
+  case left = 3
+  case right = 4
+  case select = 5
+  case menu = 6
+
+  /// The canonical lower-snake-case name for this remote action.
+  public var name: String {
+    switch self {
+    case .up: return "up"
+    case .down: return "down"
+    case .left: return "left"
+    case .right: return "right"
+    case .select: return "select"
+    case .menu: return "menu"
+    }
+  }
+}
+
 /// Device orientation. Values match UIDeviceOrientation (1-4, excluding faceUp/faceDown).
 public enum FBSimulatorHIDDeviceOrientation: Int32, Sendable, CaseIterable {
   case portrait = 1
