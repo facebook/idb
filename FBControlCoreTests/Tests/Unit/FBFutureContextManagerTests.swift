@@ -151,6 +151,26 @@ final class FBFutureContextManagerTests: XCTestCase, FBFutureContextManagerDeleg
     let future1 = FBMutableFuture<AnyObject>()
     let future2 = FBMutableFuture<AnyObject>()
 
+    // The three acquisitions must genuinely overlap for the sharable context to be
+    // prepared exactly once. `contextPoolTimeout` is 0, so the instant a consumer
+    // finishes and `using` empties, the context is torn down -- if a later consumer
+    // has not registered yet, that forces a redundant prepare. Rather than rely on
+    // the three dispatched blocks happening to interleave (which is load-sensitive
+    // and flaky), each consumer parks inside its `pop` -- still holding the context
+    // -- until all three have acquired, then they are released together.
+    let inUse0 = FBMutableFuture<AnyObject>()
+    let inUse1 = FBMutableFuture<AnyObject>()
+    let inUse2 = FBMutableFuture<AnyObject>()
+    let allAcquired = DispatchGroup()
+    allAcquired.enter()
+    allAcquired.enter()
+    allAcquired.enter()
+    allAcquired.notify(queue: concurrent) {
+      (inUse0 as! FBMutableFuture).resolve(from: FBFuture<AnyObject>(result: NSNumber(value: 0)))
+      (inUse1 as! FBMutableFuture).resolve(from: FBFuture<AnyObject>(result: NSNumber(value: 1)))
+      (inUse2 as! FBMutableFuture).resolve(from: FBFuture<AnyObject>(result: NSNumber(value: 2)))
+    }
+
     let block0: @convention(block) () -> Void = {
       let inner =
         manager
@@ -159,7 +179,8 @@ final class FBFutureContextManagerTests: XCTestCase, FBFutureContextManagerDeleg
           queue,
           pop: { result in
             logger.log("Test 0 In Use")
-            return FBFuture<AnyObject>(result: NSNumber(value: 0))
+            allAcquired.leave()
+            return inUse0
           })
       (future0 as! FBMutableFuture).resolve(from: inner)
     }
@@ -171,7 +192,8 @@ final class FBFutureContextManagerTests: XCTestCase, FBFutureContextManagerDeleg
           queue,
           pop: { result in
             logger.log("Test 1 In Use")
-            return FBFuture<AnyObject>(result: NSNumber(value: 1))
+            allAcquired.leave()
+            return inUse1
           })
       (future1 as! FBMutableFuture).resolve(from: inner)
     }
@@ -183,7 +205,8 @@ final class FBFutureContextManagerTests: XCTestCase, FBFutureContextManagerDeleg
           queue,
           pop: { result in
             logger.log("Test 2 In Use")
-            return FBFuture<AnyObject>(result: NSNumber(value: 2))
+            allAcquired.leave()
+            return inUse2
           })
       (future2 as! FBMutableFuture).resolve(from: inner)
     }
@@ -192,7 +215,7 @@ final class FBFutureContextManagerTests: XCTestCase, FBFutureContextManagerDeleg
     concurrent.async(execute: block1)
     concurrent.async(execute: block2)
 
-    let value = try? FBFuture<AnyObject>.combine([future0, future1, future2]).await(withTimeout: 1) as NSArray?
+    let value = try? FBFuture<AnyObject>.combine([future0, future1, future2]).await(withTimeout: 10) as NSArray?
     XCTAssertNotNil(value)
     XCTAssertEqual(value as? NSArray, [0, 1, 2] as NSArray)
 
