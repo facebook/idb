@@ -88,17 +88,8 @@ public final class FBSimulatorLaunchCtlCommands: NSObject, FBiOSTargetCommand {
     if lines.count < 2 {
       throw FBSimulatorError.describe("Insufficient number of lines from output '\(text)'").build()
     }
-    let serviceLines = Array(lines.dropFirst())
-
     var services: [String: Any] = [:]
-    for line in serviceLines {
-      if line.isEmpty {
-        continue
-      }
-      var processIdentifier: pid_t = -1
-      guard let serviceName = try? FBSimulatorLaunchCtlCommands.extractServiceName(fromListLine: line, processIdentifierOut: &processIdentifier) else {
-        continue
-      }
+    for (serviceName, processIdentifier) in Self.serviceMap(fromListOutput: text) {
       services[serviceName] = processIdentifier > 0 ? NSNumber(value: processIdentifier) : NSNull()
     }
     return services
@@ -160,6 +151,25 @@ public final class FBSimulatorLaunchCtlCommands: NSObject, FBiOSTargetCommand {
     }
     processIdentifierOut = pid_t(processIdentifierInteger)
     return serviceName
+  }
+
+  // Parses `launchctl list` output into a service-name -> pid map: a pid of -1 marks a
+  // loaded-but-not-running service (the "-" placeholder), >= 1 is a live process. The header
+  // row and any malformed (non-three-column) lines are skipped. Static and internal so the
+  // parsing can be unit-tested without spawning launchctl; see FBSimulatorLaunchCtlCommandsTests.
+  static func serviceMap(fromListOutput text: String) -> [String: pid_t] {
+    var services: [String: pid_t] = [:]
+    for line in text.components(separatedBy: .newlines) {
+      if line.isEmpty {
+        continue
+      }
+      var processIdentifier: pid_t = -1
+      guard let serviceName = try? extractServiceName(fromListLine: line, processIdentifierOut: &processIdentifier) else {
+        continue
+      }
+      services[serviceName] = processIdentifier
+    }
+    return services
   }
 
   // The closed set of launchctl operations this command issues. Modelling them as an enum keeps argv

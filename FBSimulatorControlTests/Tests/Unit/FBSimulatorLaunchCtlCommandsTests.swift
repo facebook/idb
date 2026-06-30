@@ -46,4 +46,38 @@ final class FBSimulatorLaunchCtlCommandsTests: XCTestCase {
       XCTAssertTrue(String(describing: error).contains("exit code 3"), "got: \(String(describing: error))")
     }
   }
+
+  // MARK: - serviceMap parsing
+
+  // Mirrors `launchctl list`: a header row, a stopped service ("-" pid), a live service, and a
+  // malformed line. Tab-separated like the real output (extractServiceName splits on whitespace).
+  private static let listOutput = "PID\tStatus\tLabel\n-\t0\tcom.apple.stopped\n4321\t0\tcom.apple.SpringBoard\nnot a valid line\n"
+
+  func testServiceMapParsesRunningStoppedAndSkipsNoise() {
+    let map = FBSimulatorLaunchCtlCommands.serviceMap(fromListOutput: Self.listOutput)
+    XCTAssertEqual(map["com.apple.SpringBoard"], 4321, "a live service maps to its pid")
+    XCTAssertEqual(map["com.apple.stopped"], -1, "a loaded-but-stopped service maps to -1")
+    XCTAssertNil(map["Label"], "the header row is skipped")
+    XCTAssertNil(map["line"], "malformed (non-three-column) lines are skipped")
+  }
+
+  // MARK: - Liveness queries (default protocol implementations over listServices())
+
+  func testServiceIsRunningReflectsLivePid() async throws {
+    let launchCtl = FBSimulatorControlTests_LaunchCtl_Double.with(running: ["com.apple.SpringBoard": 4321], stopped: ["com.apple.idle"])
+    let running = try await launchCtl.serviceIsRunning(named: "com.apple.SpringBoard")
+    let stopped = try await launchCtl.serviceIsRunning(named: "com.apple.idle")
+    let absent = try await launchCtl.serviceIsRunning(named: "com.apple.absent")
+    XCTAssertTrue(running)
+    XCTAssertFalse(stopped, "a loaded-but-stopped service is not running")
+    XCTAssertFalse(absent, "an absent service is not running")
+  }
+
+  func testProcessIsRunningReflectsLivePid() async throws {
+    let launchCtl = FBSimulatorControlTests_LaunchCtl_Double.with(running: ["com.apple.SpringBoard": 4321])
+    let livePidRunning = try await launchCtl.processIsRunning(withProcessIdentifier: 4321)
+    let absentPidRunning = try await launchCtl.processIsRunning(withProcessIdentifier: 9999)
+    XCTAssertTrue(livePidRunning)
+    XCTAssertFalse(absentPidRunning, "an unregistered pid is not running")
+  }
 }
