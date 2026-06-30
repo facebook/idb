@@ -7,6 +7,7 @@
 # pyre-strict
 
 import json
+import os
 from argparse import ArgumentParser, Namespace, SUPPRESS
 from collections.abc import Mapping
 from typing import Union
@@ -226,7 +227,12 @@ class TargetCreateCommand(CompanionCommand):
 class UDIDTargetedCompanionCommand(CompanionCommand):
     def add_parser_arguments(self, parser: ArgumentParser) -> None:
         super().add_parser_arguments(parser=parser)
-        parser.add_argument("udid", help="The UDID of the target", nargs="?")
+        parser.add_argument(
+            "udid",
+            help="The UDID of the target",
+            nargs="?",
+            default=os.environ.get("IDB_UDID"),
+        )
         parser.add_argument("--udid", help=SUPPRESS, dest="udid_flag")
 
     def get_udid(self, args: Namespace) -> str:
@@ -234,6 +240,9 @@ class UDIDTargetedCompanionCommand(CompanionCommand):
             return args.udid
         elif args.udid_flag:
             return args.udid_flag
+        env_udid = os.environ.get("IDB_UDID")
+        if env_udid:
+            return env_udid
         raise Exception("Need to provide udid as a position argument")
 
 
