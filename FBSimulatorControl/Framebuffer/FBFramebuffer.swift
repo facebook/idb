@@ -43,6 +43,10 @@ public final class FBFramebuffer: NSObject, @unchecked Sendable {
     guard let ports else {
       throw FBSimulatorError.describe("No IO ports available on \(ioClient)").build()
     }
+    // iOS exposes the main display as displayClass 0. tvOS renders only on the TVOut display (a
+    // non-zero class), so prefer class 0 but fall back to the first renderable display rather than
+    // throwing — otherwise screenshots and video are impossible on a target with no class-0 display.
+    var fallbackSurface: AnyObject?
     for port in ports {
       guard let portInterface = port as? SimDeviceIOPortInterface else {
         continue
@@ -59,11 +63,16 @@ public final class FBFramebuffer: NSObject, @unchecked Sendable {
       }
       let descriptorState = descriptor.perform(NSSelectorFromString("state"))?.takeUnretainedValue() as! SimDisplayDescriptorState
       let displayClass = descriptorState.displayClass
-      if displayClass != 0 {
-        logger.log("SimDisplay Class is '\(displayClass)' which is not the main display '0'")
-        continue
+      if displayClass == 0 {
+        return FBFramebuffer(surface: descriptor, logger: logger)
       }
-      return FBFramebuffer(surface: descriptor, logger: logger)
+      if fallbackSurface == nil {
+        logger.log("SimDisplay Class '\(displayClass)' is not the main display '0'; holding as fallback (e.g. tvOS TVOut)")
+        fallbackSurface = descriptor
+      }
+    }
+    if let fallbackSurface {
+      return FBFramebuffer(surface: fallbackSurface, logger: logger)
     }
     throw FBSimulatorError.describe("Could not find the Main Screen Surface for Clients \(FBCollectionInformation.oneLineDescription(from: ports)) in \(ioClient)").build()
   }
