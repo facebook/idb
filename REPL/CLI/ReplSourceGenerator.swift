@@ -22,12 +22,15 @@ enum ReplSourceGenerator {
   /// (plus Foundation, which the generated wrapper needs) at file scope, followed
   /// by their remaining code wrapped in the `idb_repl_<index>` entry point.
   ///
+  /// `autoImportModules` are imported at file scope alongside the user's own
+  /// imports, so injected code can reference the test bundle's modules (one per
+  /// probe-generated `<Module>.swiftinterface`) without an explicit `import`.
+  ///
   /// `moduleMap`, when supplied, describes the modules declared in the test
-  /// bundle's Swift module map. Importing them automatically is not yet wired up
-  /// (see the TODO in `wrappedCode`).
-  static func generateSource(for code: String, index: Int, moduleMap: SwiftModuleMap? = nil) -> String {
+  /// bundle's Swift module map. Importing those automatically is not yet wired up.
+  static func generateSource(for code: String, index: Int, autoImportModules: [String] = [], moduleMap: SwiftModuleMap? = nil) -> String {
     let (imports, body) = extractImports(from: code)
-    return wrappedCode(swiftCode: body, imports: imports, index: index, moduleMap: moduleMap)
+    return wrappedCode(swiftCode: body, imports: autoImportModules + imports, index: index, moduleMap: moduleMap)
   }
 
   /// Splits `code` into the module names it imports and the same code with those

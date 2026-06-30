@@ -109,13 +109,20 @@ struct ReplRunner: ParsableArguments {
     }
 
     // The shim's in-process probe may have generated .swiftinterface files for
-    // the test bundle's modules; report their paths (on stderr, to keep one-shot
-    // stdout clean). These will later feed compilation of injected code.
+    // the test bundle's modules. Report their paths (on stderr, to keep one-shot
+    // stdout clean) and add their directories to the compiler's import search
+    // path so injected code can `import` and call into those modules.
     if !ready.generatedInterfaces.isEmpty {
       FileHandle.standardError.write(Data("idb-repl: received generated interface(s):\n".utf8))
       for path in ready.generatedInterfaces {
         FileHandle.standardError.write(Data("  \(path)\n".utf8))
       }
+    }
+    let interfaceSearchPaths = Set(ready.generatedInterfaces.map { ($0 as NSString).deletingLastPathComponent }).sorted()
+    // Auto-import the generated modules (one per <Module>.swiftinterface) so the
+    // user can reference the bundle's types without an explicit `import`.
+    let autoImportModules = ready.generatedInterfaces.map {
+      (($0 as NSString).lastPathComponent as NSString).deletingPathExtension
     }
 
     // The companion reports the connected target's device type; compile injected
@@ -129,7 +136,7 @@ struct ReplRunner: ParsableArguments {
     // the interactive REPL.
     if let code {
       do {
-        if let dylib = compileRun(swiftCode: code, index: 0, moduleMap: moduleMap, moduleMapPath: moduleMapPath, targetTriple: targetTriple, sdkPath: sdkPath, toolchain: toolchain) {
+        if let dylib = compileRun(swiftCode: code, index: 0, moduleMap: moduleMap, moduleMapPath: moduleMapPath, interfaceSearchPaths: interfaceSearchPaths, autoImportModules: autoImportModules, targetTriple: targetTriple, sdkPath: sdkPath, toolchain: toolchain) {
           try await call.requestStream.send(
             .with {
               $0.control = .execute(
@@ -177,7 +184,7 @@ struct ReplRunner: ParsableArguments {
         switch trimmed {
         case "/run":
           let swiftCode = lines.joined(separator: "\n")
-          if let dylib = compileRun(swiftCode: swiftCode, index: runIndex, moduleMap: moduleMap, moduleMapPath: moduleMapPath, targetTriple: targetTriple, sdkPath: sdkPath, toolchain: toolchain) {
+          if let dylib = compileRun(swiftCode: swiftCode, index: runIndex, moduleMap: moduleMap, moduleMapPath: moduleMapPath, interfaceSearchPaths: interfaceSearchPaths, autoImportModules: autoImportModules, targetTriple: targetTriple, sdkPath: sdkPath, toolchain: toolchain) {
             try await call.requestStream.send(
               .with {
                 $0.control = .execute(
@@ -265,15 +272,15 @@ struct ReplRunner: ParsableArguments {
 
   /// Compiles the entered Swift into a dylib and returns its bytes, or prints a
   /// compile error and returns nil.
-  private func compileRun(swiftCode: String, index: Int, moduleMap: SwiftModuleMap?, moduleMapPath: String?, targetTriple: String, sdkPath: String, toolchain: String) -> Data? {
+  private func compileRun(swiftCode: String, index: Int, moduleMap: SwiftModuleMap?, moduleMapPath: String?, interfaceSearchPaths: [String], autoImportModules: [String], targetTriple: String, sdkPath: String, toolchain: String) -> Data? {
     do {
       let swiftPath = try sessionDirectory.filePath(named: "run-\(index).swift")
       let dylibPath = try sessionDirectory.filePath(named: "run-\(index).dylib")
 
-      let code = ReplSourceGenerator.generateSource(for: swiftCode, index: index, moduleMap: moduleMap)
+      let code = ReplSourceGenerator.generateSource(for: swiftCode, index: index, autoImportModules: autoImportModules, moduleMap: moduleMap)
       try code.write(toFile: swiftPath, atomically: true, encoding: .utf8)
 
-      let (status, compilerOutput) = try compileSwift(sourcePath: swiftPath, outputPath: dylibPath, moduleMapPath: moduleMapPath, targetTriple: targetTriple, sdkPath: sdkPath, toolchain: toolchain)
+      let (status, compilerOutput) = try compileSwift(sourcePath: swiftPath, outputPath: dylibPath, moduleMapPath: moduleMapPath, interfaceSearchPaths: interfaceSearchPaths, targetTriple: targetTriple, sdkPath: sdkPath, toolchain: toolchain)
       try? FileManager.default.removeItem(atPath: swiftPath)
 
       if status == 0 {
@@ -288,22 +295,29 @@ struct ReplRunner: ParsableArguments {
     }
   }
 
-  private func compileSwift(sourcePath: String, outputPath: String, moduleMapPath: String?, targetTriple: String, sdkPath: String, toolchain: String) throws -> (Int32, String) {
+  private func compileSwift(sourcePath: String, outputPath: String, moduleMapPath: String?, interfaceSearchPaths: [String], targetTriple: String, sdkPath: String, toolchain: String) throws -> (Int32, String) {
     let swiftcPath = (toolchain as NSString).appendingPathComponent("usr/bin/swiftc")
     let swiftc = Process()
     swiftc.executableURL = URL(fileURLWithPath: swiftcPath)
     var environment = ProcessInfo.processInfo.environment
     environment["SDKROOT"] = sdkPath
     swiftc.environment = environment
-    swiftc.arguments = [
+    var arguments = [
       sourcePath,
       "-emit-library", "-o", outputPath,
       "-target", targetTriple,
-      // TODO: pass the Swift module map to swiftc.
-      // "-Xfrontend", "-explicit-swift-module-map-file", "-Xfrontend", moduleMapPath,
-      // "-Xfrontend", "-disable-implicit-swift-modules",
-      "-Xlinker", "-undefined", "-Xlinker", "dynamic_lookup",
     ]
+    // Add the probe-generated .swiftinterface directories to the import search
+    // path so injected code can `import` the test bundle's modules. The symbols
+    // themselves are resolved at load time via `-undefined dynamic_lookup`.
+    for searchPath in interfaceSearchPaths {
+      arguments.append(contentsOf: ["-I", searchPath])
+    }
+    // TODO: pass the Swift module map to swiftc.
+    // "-Xfrontend", "-explicit-swift-module-map-file", "-Xfrontend", moduleMapPath,
+    // "-Xfrontend", "-disable-implicit-swift-modules",
+    arguments.append(contentsOf: ["-Xlinker", "-undefined", "-Xlinker", "dynamic_lookup"])
+    swiftc.arguments = arguments
     let outputPipe = Pipe()
     swiftc.standardOutput = outputPipe
     let errorPipe = Pipe()
