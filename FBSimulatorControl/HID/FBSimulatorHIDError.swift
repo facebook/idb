@@ -43,6 +43,8 @@ public enum FBSimulatorHIDError: Error, LocalizedError {
   case dtuhidXPCSymbolsUnavailable
   /// The `dtuhidd` host XPC connection could not be created.
   case dtuhidConnectionFailed
+  /// A touchscreen touch was attempted on a tvOS target, which has no touchscreen.
+  case touchUnsupportedOnAppleTV
 
   public var errorDescription: String? {
     switch self {
@@ -76,6 +78,8 @@ public enum FBSimulatorHIDError: Error, LocalizedError {
       return "Could not resolve the private _4sim XPC endpoint symbols required for the DTUHID transport"
     case .dtuhidConnectionFailed:
       return "Could not create the dtuhidd host XPC connection"
+    case .touchUnsupportedOnAppleTV:
+      return "Touch input is not supported on tvOS targets (no touchscreen)"
     }
   }
 }

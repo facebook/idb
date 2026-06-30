@@ -34,6 +34,9 @@ actor FBSimulatorIndigoHIDTransport: FBSimulatorHIDTransport {
   /// `FBSimulator.isLegacyHIDSuppressed` when the transport is built. `sendKeyboard` fails loudly on
   /// it rather than typing into the void; the DTUHID transport is the workaround.
   private let legacyKeyboardSuppressed: Bool
+  /// The product family of the target, captured at construction. Touchscreen touches are a no-op on
+  /// tvOS (it has no digitizer), so the touch primitives reject `AppleTV` rather than failing silently.
+  private let productFamily: FBControlCoreProductFamily
 
   // MARK: Initializers
 
@@ -46,7 +49,8 @@ actor FBSimulatorIndigoHIDTransport: FBSimulatorHIDTransport {
       indigo: try FBSimulatorIndigoHID(),
       mainScreenSize: simulator.device.deviceType.mainScreenSize,
       mainScreenScale: simulator.device.deviceType.mainScreenScale,
-      legacyKeyboardSuppressed: simulator.isLegacyHIDSuppressed)
+      legacyKeyboardSuppressed: simulator.isLegacyHIDSuppressed,
+      productFamily: simulator.productFamily)
   }
 
   init(
@@ -54,13 +58,15 @@ actor FBSimulatorIndigoHIDTransport: FBSimulatorHIDTransport {
     indigo: FBSimulatorIndigoHID,
     mainScreenSize: CGSize,
     mainScreenScale: Float,
-    legacyKeyboardSuppressed: Bool
+    legacyKeyboardSuppressed: Bool,
+    productFamily: FBControlCoreProductFamily
   ) {
     self.indigoClient = indigoClient
     self.indigo = indigo
     self.mainScreenSize = mainScreenSize
     self.mainScreenScale = mainScreenScale
     self.legacyKeyboardSuppressed = legacyKeyboardSuppressed
+    self.productFamily = productFamily
   }
 
   // MARK: FBSimulatorHIDTransport
@@ -70,11 +76,17 @@ actor FBSimulatorIndigoHIDTransport: FBSimulatorHIDTransport {
   }
 
   func sendTouch(direction: FBSimulatorHIDDirection, x: Double, y: Double) async throws {
+    if productFamily == .familyAppleTV {
+      throw FBSimulatorHIDError.touchUnsupportedOnAppleTV
+    }
     try await indigoClient.send(
       indigo.touchScreenSize(mainScreenSize, screenScale: mainScreenScale, direction: direction, x: x, y: y))
   }
 
   func sendTwoFingerTouch(direction: FBSimulatorHIDDirection, finger1: CGPoint, finger2: CGPoint) async throws {
+    if productFamily == .familyAppleTV {
+      throw FBSimulatorHIDError.touchUnsupportedOnAppleTV
+    }
     try await indigoClient.send(
       indigo.twoFingerTouchScreenSize(
         mainScreenSize, screenScale: mainScreenScale, direction: direction, finger1: finger1, finger2: finger2))
