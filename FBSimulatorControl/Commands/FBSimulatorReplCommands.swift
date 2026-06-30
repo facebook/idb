@@ -51,7 +51,11 @@ public final class FBSimulatorReplCommands: NSObject, FBiOSTargetCommand {
     let architectures = Set((bundle.binary?.architectures ?? []).map(\.rawValue))
 
     let configuration = FBLogicTestConfiguration(
-      environment: ["IDB_REPL_SOCKET_PATH": socketPath],
+      environment: [
+        "IDB_REPL_SOCKET_PATH": socketPath,
+        "IDB_REPL_GEN_INTERFACE_DIR": "/tmp/idb_repl_interfaces",
+        "IDB_REPL_PROBE_IMAGE": "ReplTest",
+      ],
       workingDirectory: simulator.auxillaryDirectory,
       testBundlePath: bundlePath,
       waitForDebugger: false,
