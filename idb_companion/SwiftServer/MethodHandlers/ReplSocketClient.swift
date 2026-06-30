@@ -72,6 +72,39 @@ final class ReplSocketClient {
     return ReplSocketClient(fd: fd)
   }
 
+  /// Reads the shim's one-line greeting, sent once on connect before any
+  /// command, and returns the `.swiftinterface` paths it advertises (possibly
+  /// empty). Must be called exactly once, before the first `execute`.
+  func readGreeting() async throws -> [String] {
+    let fd = self.fd
+    return try await withCheckedThrowingContinuation { continuation in
+      ioQueue.async {
+        do {
+          var greetingData = Data()
+          var byte: UInt8 = 0
+          while true {
+            let bytesRead = Darwin.read(fd, &byte, 1)
+            if bytesRead > 0 {
+              if byte == 0x0A { break }
+              greetingData.append(byte)
+            } else if bytesRead == 0 {
+              throw GRPCStatus(code: .unavailable, message: "repl: control socket closed before the greeting was received (the test process may have crashed)")
+            } else {
+              throw GRPCStatus(code: .internalError, message: "repl: failed to read greeting from control socket: \(String(cString: strerror(errno)))")
+            }
+          }
+          guard let json = try JSONSerialization.jsonObject(with: greetingData) as? [String: Any] else {
+            throw GRPCStatus(code: .internalError, message: "repl: invalid greeting from test process")
+          }
+          let interfaces = json["interfaces"] as? [String] ?? []
+          continuation.resume(returning: interfaces)
+        } catch {
+          continuation.resume(throwing: error)
+        }
+      }
+    }
+  }
+
   /// Sends a `{dylib, symbol}` command to the shim and returns its result.
   func execute(dylibPath: String, symbol: String) async throws -> (success: Bool, output: String) {
     let fd = self.fd

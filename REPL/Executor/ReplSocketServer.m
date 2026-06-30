@@ -105,7 +105,7 @@ static void SendResponse(NSDictionary *response, int fd)
 
 // MARK: - Entry Point
 
-int FBReplServeSocket(NSString *socketPath)
+int FBReplServeSocket(NSString *socketPath, NSArray<NSString *> *generatedInterfaces)
 {
   if (socketPath.length == 0) {
     return 0;
@@ -119,6 +119,9 @@ int FBReplServeSocket(NSString *socketPath)
   // Accept a connection and process commands until the connection closes.
   int clientFd = accept(serverFd, NULL, NULL);
   if (clientFd >= 0) {
+    // Greet the client with the .swiftinterface paths the probe generated (an
+    // empty list when there are none), then handle commands.
+    SendResponse(@{@"interfaces" : generatedInterfaces ?: @[]}, clientFd);
     NSString *line;
     while ((line = ReadLineFromFd(clientFd)) != nil) {
       NSDictionary *response = ProcessCommand(line);

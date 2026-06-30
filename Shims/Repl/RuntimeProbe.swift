@@ -647,16 +647,16 @@ private func renderInterface(module: String, declarations: [String]) -> String {
 final class RuntimeProbe {
   /// Enumerate the Swift types in the image(s) whose path contains
   /// `imageNameFilter`, write one `<Module>.swiftinterface` per module into
-  /// `outputDir`, and return the path of the first file written (nil on failure).
-  func generateInterfaces(outputDir: String, imageNameFilter: String) -> String? {
+  /// `outputDir`, and return the paths of every file written (empty on failure).
+  func generateInterfaces(outputDir: String, imageNameFilter: String) -> [String] {
     guard !imageNameFilter.isEmpty else {
       NSLog("[idb-repl][probe] no image filter provided; refusing to scan all images")
-      return nil
+      return []
     }
     let images = matchingImages(filter: imageNameFilter)
     guard !images.isEmpty else {
       NSLog("[idb-repl][probe] no loaded image matched '%@'", imageNameFilter)
-      return nil
+      return []
     }
 
     var declarationsByModule: [String: [String]] = [:]
@@ -679,30 +679,31 @@ final class RuntimeProbe {
     }
     guard !declarationsByModule.isEmpty else {
       NSLog("[idb-repl][probe] matched image(s) but recovered no top-level Swift types")
-      return nil
+      return []
     }
 
     try? FileManager.default.createDirectory(atPath: outputDir, withIntermediateDirectories: true)
-    var firstPath: String?
+    var writtenPaths: [String] = []
     for (module, declarations) in declarationsByModule {
       let text = renderInterface(module: module, declarations: declarations)
       let path = (outputDir as NSString).appendingPathComponent("\(module).swiftinterface")
       do {
         try text.write(toFile: path, atomically: true, encoding: .utf8)
         NSLog("[idb-repl][probe] wrote %@ (%d decls)", path, declarations.count)
-        if firstPath == nil { firstPath = path }
+        writtenPaths.append(path)
       } catch {
         NSLog("[idb-repl][probe] failed to write %@: %@", path, "\(error)")
       }
     }
-    return firstPath
+    return writtenPaths
   }
 }
 
 // MARK: - C entry point (called from the ObjC shim; see TestRepl.m)
 
-/// Generates `.swiftinterface` file(s) for the matching image(s) and returns a
-/// malloc'd path (the caller must `free` it), or NULL.
+/// Generates `.swiftinterface` file(s) for the matching image(s) and returns the
+/// written paths joined by newlines in a malloc'd string (the caller must
+/// `free` it), or NULL when nothing was generated.
 @_cdecl("FBReplGenerateSwiftInterface")
 public func FBReplGenerateSwiftInterface(
   _ outDirC: UnsafePointer<CChar>?,
@@ -710,10 +711,9 @@ public func FBReplGenerateSwiftInterface(
 ) -> UnsafePointer<CChar>? {
   let outDir = outDirC.map { String(cString: $0) } ?? NSTemporaryDirectory()
   let filter = imageFilterC.map { String(cString: $0) } ?? ""
-  guard let path = RuntimeProbe().generateInterfaces(outputDir: outDir, imageNameFilter: filter) else {
-    return nil
-  }
-  guard let duplicated = strdup(path) else {
+  let paths = RuntimeProbe().generateInterfaces(outputDir: outDir, imageNameFilter: filter)
+  guard !paths.isEmpty else { return nil }
+  guard let duplicated = strdup(paths.joined(separator: "\n")) else {
     return nil
   }
   return UnsafePointer(duplicated)

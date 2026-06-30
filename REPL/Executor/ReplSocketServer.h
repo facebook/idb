@@ -14,4 +14,9 @@
 
 // Serves the REPL on `socketPath`. A no-op (returns 0) if `socketPath` is empty.
 // Returns 0 on normal completion, non-zero if the socket could not be created.
-int FBReplServeSocket(NSString *socketPath);
+//
+// On connect, before handling commands, the server sends a one-line JSON
+// greeting `{"interfaces": [...]}` carrying `generatedInterfaces` (the host paths
+// of any .swiftinterface files generated for the loaded modules; pass an empty
+// array or nil when there are none) so the connecting client can learn them.
+int FBReplServeSocket(NSString *socketPath, NSArray<NSString *> *generatedInterfaces);

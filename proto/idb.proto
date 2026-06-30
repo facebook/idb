@@ -821,6 +821,9 @@ message ReplResponse {
     // The product family of the connected target: "iphone", "ipad", "watch",
     // "tv", "mac", or "unknown".
     string device_type = 1;
+    // Host filesystem paths of the .swiftinterface files generated in-process
+    // for the test bundle's modules, so injected code can compile against them.
+    repeated string generated_interfaces = 2;
   }
   // The result of executing one Execute message.
   message Result {

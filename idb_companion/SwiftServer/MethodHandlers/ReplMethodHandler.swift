@@ -49,10 +49,18 @@ struct ReplMethodHandler {
     let client = try await ReplSocketClient.connect(path: session.socketPath, timeout: 120)
     defer { client.close() }
 
+    // The shim greets us with the .swiftinterface paths it generated in-process
+    // (empty in the simulator context), which we forward to the driver.
+    let generatedInterfaces = try await client.readGreeting()
+
     targetLogger.debug().log("REPL session ready on socket \(session.socketPath)")
     try await responseStream.send(
       .with {
-        $0.event = .ready(.with { $0.deviceType = commandExecutor.replDeviceType })
+        $0.event = .ready(
+          .with {
+            $0.deviceType = commandExecutor.replDeviceType
+            $0.generatedInterfaces = generatedInterfaces
+          })
       })
 
     var runIndex = 0

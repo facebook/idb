@@ -108,6 +108,16 @@ struct ReplRunner: ParsableArguments {
       throw ValidationError("idb_companion did not report the REPL as ready")
     }
 
+    // The shim's in-process probe may have generated .swiftinterface files for
+    // the test bundle's modules; report their paths (on stderr, to keep one-shot
+    // stdout clean). These will later feed compilation of injected code.
+    if !ready.generatedInterfaces.isEmpty {
+      FileHandle.standardError.write(Data("idb-repl: received generated interface(s):\n".utf8))
+      for path in ready.generatedInterfaces {
+        FileHandle.standardError.write(Data("  \(path)\n".utf8))
+      }
+    }
+
     // The companion reports the connected target's device type; compile injected
     // code for the matching platform.
     let platform = try Platform(deviceType: ready.deviceType)
