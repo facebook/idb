@@ -500,15 +500,17 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
   /// `FBSimulatorAccessibilityCommands` with that dispatcher injected into the
   /// simulator's command cache. Production paths that resolve `accessibilityCommands()`
   /// on the simulator will return it.
-  private func setUp(withRootElement rootElement: FBSimulatorControlTests_AXPMacPlatformElement_Double) {
+  private func setUp(
+    withRootElement rootElement: FBSimulatorControlTests_AXPMacPlatformElement_Double,
+    launchCtl: (any LaunchCtlCommands)? = nil
+  ) {
     fixture = FBAccessibilityTestFixture.bootedSimulator()
     fixture!.rootElement = rootElement
     fixture!.setUp()
 
     let sim = FBSimulatorTestSupport.testableSimulator(withDevice: fixture!.device)
     let dispatcher = FBSimulator.createAccessibilityTranslationDispatcher(withTranslator: fixture!.translator)
-    let commands = FBSimulatorAccessibilityCommands.commands(with: sim)
-    commands.injectedDispatcher = dispatcher
+    let commands = FBSimulatorAccessibilityCommands(simulator: sim, translationDispatcher: dispatcher, launchCtl: launchCtl)
     sim.commandCache.register(commands, as: FBSimulatorAccessibilityCommands.self)
 
     simulator = sim
@@ -1129,5 +1131,32 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
 
     let reparsed = try JSONSerialization.jsonObject(with: first) as? [String: Any]
     XCTAssertEqual(reparsed?["elements"] as? [[String: Any]] as NSArray?, envelope["elements"] as? [[String: Any]] as NSArray?)
+  }
+
+  // MARK: - SpringBoard Remediation (zero-frame stale hierarchy)
+
+  func testFrontmostRemediatesWhenZeroFramedRootPidIsDead() async throws {
+    // A zero-framed root whose owning pid (12345) is not a live launchd service is the
+    // stale-SpringBoard signal: remediation must restart CoreSimulatorBridge, then retry.
+    let zeroFrameRoot = FBAccessibilityTestElementBuilder.application(withLabel: "App", frame: .zero, children: [])
+    let launchCtl = FBSimulatorControlTests_LaunchCtl_Double.with(running: [:])
+    setUp(withRootElement: zeroFrameRoot, launchCtl: launchCtl)
+
+    let element = try await simulator.accessibilityElementForFrontmostApplication()
+    element.close()
+
+    XCTAssertEqual(launchCtl.stoppedServices, ["com.apple.CoreSimulator.bridge"], "a stale hierarchy must restart CoreSimulatorBridge")
+  }
+
+  func testFrontmostDoesNotRemediateWhenZeroFramedRootPidIsLive() async throws {
+    // A zero frame alone is not stale: when the owning pid is still a live service, no remediation.
+    let zeroFrameRoot = FBAccessibilityTestElementBuilder.application(withLabel: "App", frame: .zero, children: [])
+    let launchCtl = FBSimulatorControlTests_LaunchCtl_Double.with(running: ["com.apple.SpringBoard": 12345])
+    setUp(withRootElement: zeroFrameRoot, launchCtl: launchCtl)
+
+    let element = try await simulator.accessibilityElementForFrontmostApplication()
+    element.close()
+
+    XCTAssertTrue(launchCtl.stoppedServices.isEmpty, "a live pid means the hierarchy is healthy — no remediation")
   }
 }

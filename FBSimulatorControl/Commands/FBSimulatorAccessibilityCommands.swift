@@ -48,8 +48,6 @@ extension FBSimulator {
 /// frontmost / at-point / matching accessibility element via the translation
 /// dispatcher, applying SpringBoard-crash remediation for frontmost lookups.
 ///
-/// `final`; unit tests inject a mock dispatcher via `injectedDispatcher` (`@testable`).
-///
 /// Plain Swift, no `NSObject`/`@objc`: nothing in Objective-C references this class, and the
 /// command cache (`FBTargetCommandCache`) stores values as `Any`, so it imposes no such requirement.
 public final class FBSimulatorAccessibilityCommands: AccessibilityOperations {
@@ -58,11 +56,17 @@ public final class FBSimulatorAccessibilityCommands: AccessibilityOperations {
 
   private weak var simulator: FBSimulator?
 
-  /// Test injection seam: when set, overrides the simulator's shared dispatcher.
-  var injectedDispatcher: FBAXTranslationDispatcher?
+  private let translationDispatcher: FBAXTranslationDispatcher?
+  private let launchCtl: (any LaunchCtlCommands)?
 
-  init(simulator: FBSimulator) {
+  init(
+    simulator: FBSimulator,
+    translationDispatcher: FBAXTranslationDispatcher? = nil,
+    launchCtl: (any LaunchCtlCommands)? = nil
+  ) {
     self.simulator = simulator
+    self.translationDispatcher = translationDispatcher
+    self.launchCtl = launchCtl
   }
 
   public class func commands(with target: FBSimulator) -> Self {
@@ -71,10 +75,16 @@ public final class FBSimulatorAccessibilityCommands: AccessibilityOperations {
 
   // MARK: Translation Dispatcher
 
-  /// The translation dispatcher for accessibility requests: the test-injected one
-  /// when present, otherwise the simulator's process-wide shared dispatcher.
+  /// The translation dispatcher for accessibility requests: the supplied one when
+  /// present, otherwise the simulator's process-wide shared dispatcher.
   private var resolvedDispatcher: FBAXTranslationDispatcher? {
-    injectedDispatcher ?? simulator?.accessibilityTranslationDispatcher
+    translationDispatcher ?? simulator?.accessibilityTranslationDispatcher
+  }
+
+  /// The launchctl command surface for service-liveness checks: the supplied one when
+  /// present, otherwise the simulator itself.
+  private func resolvedLaunchCtl(_ simulator: FBSimulator) -> any LaunchCtlCommands {
+    launchCtl ?? simulator
   }
 
   // MARK: AccessibilityOperations
@@ -135,40 +145,40 @@ public final class FBSimulatorAccessibilityCommands: AccessibilityOperations {
     if !remediationPermitted {
       return FBAccessibilityElement(element: element, request: request, dispatcher: dispatcher, simulator: simulator)
     }
-    if try await !Self.remediationRequired(forSimulator: simulator, element: element) {
+    if await !remediationRequired(forSimulator: simulator, element: element) {
       return FBAccessibilityElement(element: element, request: request, dispatcher: dispatcher, simulator: simulator)
     }
     // The request's token was pushed by the dispatcher but is not yet wrapped in an
     // FBAccessibilityElement, so pop it manually before discarding the request.
     dispatcher.popRequest(request)
     let nextRequest = request.cloneWithNewToken()
-    try await Self.remediateSpringBoard(forSimulator: simulator)
+    try await remediateSpringBoard(forSimulator: simulator)
     return try await accessibilityElement(request: nextRequest, remediationPermitted: false)
   }
 
-  private static func remediationRequired(forSimulator simulator: FBSimulator, element: FBAXPlatformElement) async throws -> Bool {
+  private func remediationRequired(forSimulator simulator: FBSimulator, element: FBAXPlatformElement) async -> Bool {
     // A quick check: a non-zero accessibility frame indicates a healthy element.
     if !element.axFrame().equalTo(.zero) {
       return false
     }
-    // Otherwise confirm whether the translation object's pid represents a real process.
-    // If it does not, we likely got the pid of a crashed SpringBoard; restarting
-    // CoreSimulatorBridge lets launchd bring a fresh SpringBoard (and bridge) back up.
+    // Otherwise the zero-framed root is stale unless its owning pid is still a live launchd
+    // service. A dead pid means SpringBoard crashed; restarting CoreSimulatorBridge lets
+    // launchd bring a fresh SpringBoard (and bridge) back up. A launchctl failure is treated
+    // as "not live" so recovery is still attempted.
     let pid = element.axTranslationPid
-    do {
-      _ = try await simulator.serviceName(forProcessIdentifier: pid)
+    let pidIsLive = (try? await resolvedLaunchCtl(simulator).processIsRunning(withProcessIdentifier: pid)) ?? false
+    if pidIsLive {
       return false
-    } catch {
-      simulator.logger?.log("Frontmost accessibility hierarchy is stale: the root element has a zero frame and its owning pid \(pid) is no longer a registered launchd service. SpringBoard has crashed and CoreSimulator's \(coreSimulatorBridgeServiceName) is still bound to the dead pid; restarting \(coreSimulatorBridgeServiceName) to recover.")
-      return true
     }
+    simulator.logger?.log("Frontmost accessibility hierarchy is stale: the root element has a zero frame and its owning pid \(pid) is no longer a registered launchd service. SpringBoard has crashed and CoreSimulator's \(Self.coreSimulatorBridgeServiceName) is still bound to the dead pid; restarting \(Self.coreSimulatorBridgeServiceName) to recover.")
+    return true
   }
 
-  private static func remediateSpringBoard(forSimulator simulator: FBSimulator) async throws {
+  private func remediateSpringBoard(forSimulator simulator: FBSimulator) async throws {
     do {
-      _ = try await simulator.stopService(withName: coreSimulatorBridgeServiceName)
+      _ = try await resolvedLaunchCtl(simulator).stopService(withName: Self.coreSimulatorBridgeServiceName)
     } catch {
-      throw FBAccessibilityError.springBoardRemediationFailed(serviceName: coreSimulatorBridgeServiceName)
+      throw FBAccessibilityError.springBoardRemediationFailed(serviceName: Self.coreSimulatorBridgeServiceName)
     }
   }
 }
