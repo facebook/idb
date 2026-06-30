@@ -53,6 +53,7 @@ extension FBSimulator {
 public final class FBSimulatorAccessibilityCommands: AccessibilityOperations {
 
   private static let coreSimulatorBridgeServiceName = "com.apple.CoreSimulator.bridge"
+  private static let springBoardServiceName = "com.apple.SpringBoard"
 
   private weak var simulator: FBSimulator?
 
@@ -141,7 +142,20 @@ public final class FBSimulatorAccessibilityCommands: AccessibilityOperations {
     guard let dispatcher = resolvedDispatcher else {
       throw FBAccessibilityError.dispatcherUnavailable
     }
-    let element = try await dispatcher.platformElement(withRequest: request, simulator: simulator)
+    let element: FBAXPlatformElement
+    do {
+      element = try await dispatcher.platformElement(withRequest: request, simulator: simulator)
+    } catch FBAccessibilityError.noTranslationObject where remediationPermitted {
+      // On the frontmost path a nil translation usually means SpringBoard (the provider of the
+      // frontmost application) is down. Re-label the error when we can confirm that; a probe
+      // failure or a live reading keeps the original .noTranslationObject (e.g. a genuine
+      // invalid point or a transient mid-respawn).
+      let springBoardRunning = (try? await resolvedLaunchCtl(simulator).serviceIsRunning(named: Self.springBoardServiceName)) ?? true
+      if !springBoardRunning {
+        throw FBAccessibilityError.springBoardNotRunning
+      }
+      throw FBAccessibilityError.noTranslationObject
+    }
     if !remediationPermitted {
       return FBAccessibilityElement(element: element, request: request, dispatcher: dispatcher, simulator: simulator)
     }

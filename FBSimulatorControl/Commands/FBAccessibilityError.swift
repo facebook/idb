@@ -48,6 +48,10 @@ public enum FBAccessibilityError: LocalizedError, Sendable {
   /// SpringBoard crashed and the CoreSimulatorBridge restart that would recover it failed.
   case springBoardRemediationFailed(serviceName: String)
 
+  /// A frontmost-application accessibility hierarchy was requested but SpringBoard
+  /// (the provider of the frontmost application) is not running on the simulator.
+  case springBoardNotRunning
+
   public var errorDescription: String? {
     switch self {
     case .closedElement(let operation):
@@ -72,6 +76,8 @@ public enum FBAccessibilityError: LocalizedError, Sendable {
       return "No translation object returned for simulator. This means you have likely specified a point onscreen that is invalid or invisible due to a fullscreen dialog"
     case .springBoardRemediationFailed(let serviceName):
       return "SpringBoard has crashed; could not restart \(serviceName) to recover the frontmost application's accessibility hierarchy."
+    case .springBoardNotRunning:
+      return "SpringBoard is not running on the simulator, so there is no frontmost application to describe. Boot/relaunch the simulator (or restart SpringBoard) and retry."
     }
   }
 }

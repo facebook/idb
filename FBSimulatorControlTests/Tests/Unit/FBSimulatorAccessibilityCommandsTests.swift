@@ -1160,20 +1160,48 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     XCTAssertTrue(launchCtl.stoppedServices.isEmpty, "a live pid means the hierarchy is healthy — no remediation")
   }
 
-  // MARK: - Frontmost nil-translation (describe-all failure)
+  // MARK: - Frontmost nil-translation (describe-all SpringBoard-down classification)
 
-  func testFrontmostDescribeAllThrowsNoTranslationObjectWhenTranslationIsNil() async throws {
-    setUp(withRootElement: defaultElementTree)
+  func testFrontmostDescribeAllReturnsSpringBoardNotRunningWhenSpringBoardDown() async throws {
+    // SpringBoard is confirmed not running.
+    setUp(withRootElement: defaultElementTree, launchCtl: FBSimulatorControlTests_LaunchCtl_Double.with(running: [:]))
     // No frontmost translation -> request.perform(withTranslator:) returns nil.
     fixture!.translator.frontmostApplicationResult = nil
 
     do {
       let element = try await simulator.accessibilityElementForFrontmostApplication()
       element.close()
-      XCTFail("Expected a nil frontmost translation to throw")
+      XCTFail("Expected springBoardNotRunning")
+    } catch FBAccessibilityError.springBoardNotRunning {
+      // Expected: the describe-all failure is re-classified to the precise root cause.
+    }
+  }
+
+  func testFrontmostDescribeAllStaysNoTranslationObjectWhenSpringBoardRunning() async throws {
+    // SpringBoard is up, so a nil translation is some other failure (e.g. a transient) — unchanged.
+    setUp(withRootElement: defaultElementTree, launchCtl: FBSimulatorControlTests_LaunchCtl_Double.with(running: ["com.apple.SpringBoard": 4321]))
+    fixture!.translator.frontmostApplicationResult = nil
+
+    do {
+      let element = try await simulator.accessibilityElementForFrontmostApplication()
+      element.close()
+      XCTFail("Expected noTranslationObject")
     } catch FBAccessibilityError.noTranslationObject {
-      // Expected pre-change behaviour: the describe-all failure is reported as a generic
-      // no-translation error regardless of why the frontmost application is missing.
+      // Expected: re-classification fires only when SpringBoard is confirmed down.
+    }
+  }
+
+  func testAtPointDescribeStaysNoTranslationObjectWhenTranslationIsNil() async throws {
+    setUp(withRootElement: defaultElementTree)
+    // The at-point path can legitimately specify an invalid point, so it is never re-classified.
+    fixture!.translator.objectAtPointResult = nil
+
+    do {
+      let element = try await simulator.accessibilityElement(at: CGPoint(x: 10, y: 10))
+      element.close()
+      XCTFail("Expected noTranslationObject")
+    } catch FBAccessibilityError.noTranslationObject {
+      // Expected: the point path keeps the generic message regardless of SpringBoard state.
     }
   }
 }
