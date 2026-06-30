@@ -1159,4 +1159,21 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
 
     XCTAssertTrue(launchCtl.stoppedServices.isEmpty, "a live pid means the hierarchy is healthy — no remediation")
   }
+
+  // MARK: - Frontmost nil-translation (describe-all failure)
+
+  func testFrontmostDescribeAllThrowsNoTranslationObjectWhenTranslationIsNil() async throws {
+    setUp(withRootElement: defaultElementTree)
+    // No frontmost translation -> request.perform(withTranslator:) returns nil.
+    fixture!.translator.frontmostApplicationResult = nil
+
+    do {
+      let element = try await simulator.accessibilityElementForFrontmostApplication()
+      element.close()
+      XCTFail("Expected a nil frontmost translation to throw")
+    } catch FBAccessibilityError.noTranslationObject {
+      // Expected pre-change behaviour: the describe-all failure is reported as a generic
+      // no-translation error regardless of why the frontmost application is missing.
+    }
+  }
 }
