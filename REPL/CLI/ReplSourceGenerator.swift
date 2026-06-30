@@ -25,12 +25,9 @@ enum ReplSourceGenerator {
   /// `autoImportModules` are imported at file scope alongside the user's own
   /// imports, so injected code can reference the test bundle's modules (one per
   /// probe-generated `<Module>.swiftinterface`) without an explicit `import`.
-  ///
-  /// `moduleMap`, when supplied, describes the modules declared in the test
-  /// bundle's Swift module map. Importing those automatically is not yet wired up.
-  static func generateSource(for code: String, index: Int, autoImportModules: [String] = [], moduleMap: SwiftModuleMap? = nil) -> String {
+  static func generateSource(for code: String, index: Int, autoImportModules: [String] = []) -> String {
     let (imports, body) = extractImports(from: code)
-    return wrappedCode(swiftCode: body, imports: autoImportModules + imports, index: index, moduleMap: moduleMap)
+    return wrappedCode(swiftCode: body, imports: autoImportModules + imports, index: index)
   }
 
   /// Splits `code` into the module names it imports and the same code with those
@@ -62,7 +59,7 @@ enum ReplSourceGenerator {
 
   // MARK: - Private
 
-  private static func wrappedCode(swiftCode: String, imports: [String], index: Int, moduleMap: SwiftModuleMap?) -> String {
+  private static func wrappedCode(swiftCode: String, imports: [String], index: Int) -> String {
     let function =
       containsAsync(swiftCode)
       ? asyncFunction(swiftCode: swiftCode, index: index)
@@ -74,14 +71,6 @@ enum ReplSourceGenerator {
     for module in imports where !modules.contains(module) {
       modules.append(module)
     }
-    // TODO: fix importing the modules declared in the module map.
-    // let imports = moduleMap.entries
-    //   .filter { $0.modulePath != nil && !$0.moduleName.hasPrefix("_") }
-    //   .map { module in
-    //     let testable = module.modulePath?.contains("toolchain") == true ? "" : "@testable "
-    //     return "\(testable)import \(module.moduleName) // idb-repl-strip"
-    //   }
-    //   .joined(separator: "\n")
     let importLines = modules.map { "import \($0) // idb-repl-strip" }.joined(separator: "\n")
     return """
       \(importLines)

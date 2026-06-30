@@ -55,18 +55,6 @@ struct ReplRunner: ParsableArguments {
   func run(context: Context) async throws {
     let toolchain = try resolveToolchainPath(explicit: toolchainPath)
 
-    // The module map only applies to the test context; the simulator context
-    // runs without a bundle or module map.
-    let moduleMap: SwiftModuleMap?
-    let moduleMapPath: String?
-    switch context {
-    case let .test(bundle):
-      (moduleMap, moduleMapPath) = try prepareModuleMap(bundle: bundle)
-    case .simulator:
-      moduleMap = nil
-      moduleMapPath = nil
-    }
-
     // Discover the companion to use, starting one if needed. A companion we start
     // should not outlive its use, so it exits after 5 minutes without gRPC
     // activity. With no udid, use the single running companion (or start one for
@@ -136,7 +124,7 @@ struct ReplRunner: ParsableArguments {
     // the interactive REPL.
     if let code {
       do {
-        if let dylib = compileRun(swiftCode: code, index: 0, moduleMap: moduleMap, moduleMapPath: moduleMapPath, interfaceSearchPaths: interfaceSearchPaths, autoImportModules: autoImportModules, targetTriple: targetTriple, sdkPath: sdkPath, toolchain: toolchain) {
+        if let dylib = compileRun(swiftCode: code, index: 0, interfaceSearchPaths: interfaceSearchPaths, autoImportModules: autoImportModules, targetTriple: targetTriple, sdkPath: sdkPath, toolchain: toolchain) {
           try await call.requestStream.send(
             .with {
               $0.control = .execute(
@@ -184,7 +172,7 @@ struct ReplRunner: ParsableArguments {
         switch trimmed {
         case "/run":
           let swiftCode = lines.joined(separator: "\n")
-          if let dylib = compileRun(swiftCode: swiftCode, index: runIndex, moduleMap: moduleMap, moduleMapPath: moduleMapPath, interfaceSearchPaths: interfaceSearchPaths, autoImportModules: autoImportModules, targetTriple: targetTriple, sdkPath: sdkPath, toolchain: toolchain) {
+          if let dylib = compileRun(swiftCode: swiftCode, index: runIndex, interfaceSearchPaths: interfaceSearchPaths, autoImportModules: autoImportModules, targetTriple: targetTriple, sdkPath: sdkPath, toolchain: toolchain) {
             try await call.requestStream.send(
               .with {
                 $0.control = .execute(
@@ -253,34 +241,17 @@ struct ReplRunner: ParsableArguments {
     }
   }
 
-  private func prepareModuleMap(bundle: TestBundleOptions) throws -> (moduleMap: SwiftModuleMap, path: String) {
-    let original = try SwiftModuleMap(path: bundle.swiftModuleMap)
-    let moduleName = ((bundle.swiftModule as NSString).lastPathComponent as NSString).deletingPathExtension
-    let newModule = SwiftModuleMap.Module(
-      moduleName: moduleName,
-      isFramework: false,
-      modulePath: bundle.swiftModule,
-      clangModulePath: nil,
-      clangModuleMapPath: nil
-    )
-    let updatedMap = SwiftModuleMap(entries: [newModule] + original.entries)
-    let path = try sessionDirectory.filePath(named: "module-map.json")
-    let data = try JSONEncoder().encode(updatedMap.entries)
-    try data.write(to: URL(fileURLWithPath: path))
-    return (updatedMap, path)
-  }
-
   /// Compiles the entered Swift into a dylib and returns its bytes, or prints a
   /// compile error and returns nil.
-  private func compileRun(swiftCode: String, index: Int, moduleMap: SwiftModuleMap?, moduleMapPath: String?, interfaceSearchPaths: [String], autoImportModules: [String], targetTriple: String, sdkPath: String, toolchain: String) -> Data? {
+  private func compileRun(swiftCode: String, index: Int, interfaceSearchPaths: [String], autoImportModules: [String], targetTriple: String, sdkPath: String, toolchain: String) -> Data? {
     do {
       let swiftPath = try sessionDirectory.filePath(named: "run-\(index).swift")
       let dylibPath = try sessionDirectory.filePath(named: "run-\(index).dylib")
 
-      let code = ReplSourceGenerator.generateSource(for: swiftCode, index: index, autoImportModules: autoImportModules, moduleMap: moduleMap)
+      let code = ReplSourceGenerator.generateSource(for: swiftCode, index: index, autoImportModules: autoImportModules)
       try code.write(toFile: swiftPath, atomically: true, encoding: .utf8)
 
-      let (status, compilerOutput) = try compileSwift(sourcePath: swiftPath, outputPath: dylibPath, moduleMapPath: moduleMapPath, interfaceSearchPaths: interfaceSearchPaths, targetTriple: targetTriple, sdkPath: sdkPath, toolchain: toolchain)
+      let (status, compilerOutput) = try compileSwift(sourcePath: swiftPath, outputPath: dylibPath, interfaceSearchPaths: interfaceSearchPaths, targetTriple: targetTriple, sdkPath: sdkPath, toolchain: toolchain)
       try? FileManager.default.removeItem(atPath: swiftPath)
 
       if status == 0 {
@@ -295,7 +266,7 @@ struct ReplRunner: ParsableArguments {
     }
   }
 
-  private func compileSwift(sourcePath: String, outputPath: String, moduleMapPath: String?, interfaceSearchPaths: [String], targetTriple: String, sdkPath: String, toolchain: String) throws -> (Int32, String) {
+  private func compileSwift(sourcePath: String, outputPath: String, interfaceSearchPaths: [String], targetTriple: String, sdkPath: String, toolchain: String) throws -> (Int32, String) {
     let swiftcPath = (toolchain as NSString).appendingPathComponent("usr/bin/swiftc")
     let swiftc = Process()
     swiftc.executableURL = URL(fileURLWithPath: swiftcPath)
@@ -313,9 +284,6 @@ struct ReplRunner: ParsableArguments {
     for searchPath in interfaceSearchPaths {
       arguments.append(contentsOf: ["-I", searchPath])
     }
-    // TODO: pass the Swift module map to swiftc.
-    // "-Xfrontend", "-explicit-swift-module-map-file", "-Xfrontend", moduleMapPath,
-    // "-Xfrontend", "-disable-implicit-swift-modules",
     arguments.append(contentsOf: ["-Xlinker", "-undefined", "-Xlinker", "dynamic_lookup"])
     swiftc.arguments = arguments
     let outputPipe = Pipe()

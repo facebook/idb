@@ -12,21 +12,6 @@ import Foundation
 struct TestBundleOptions: ParsableArguments {
   @Option(name: .long, help: "Path to the test bundle.")
   var testBundlePath: String
-
-  @Option(name: .long, help: "Path to the Swift module for the test target. Must end with a .swiftmodule file.")
-  var swiftModule: String
-
-  @Option(name: .long, help: "Path to the explicit Swift module map for the test target. Must end with a .json file.")
-  var swiftModuleMap: String
-
-  func validate() throws {
-    guard (swiftModule as NSString).pathExtension == "swiftmodule" else {
-      throw ValidationError("--swift-module path must end with a .swiftmodule file, got: \(swiftModule)")
-    }
-    guard (swiftModuleMap as NSString).pathExtension == "json" else {
-      throw ValidationError("--swift-module-map path must end with a .json file, got: \(swiftModuleMap)")
-    }
-  }
 }
 
 /// @unchecked Sendable: the lazy-creation flag is the only mutable state and is
