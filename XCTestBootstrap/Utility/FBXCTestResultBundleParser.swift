@@ -441,7 +441,19 @@ private func dateFromString(_ date: String) -> Date? {
       .onQueue(
         queue,
         doOnResolved: { actionTestSummaryObj in
-          let actionTestSummary = actionTestSummaryObj as! NSDictionary
+          guard let actionTestSummary = actionTestSummaryObj as? NSDictionary else {
+            let errorMessage = "Expected action test summary \(summaryRefId) to be an NSDictionary, got \(String(describing: type(of: actionTestSummaryObj)))"
+            logger.log(errorMessage)
+            reporter.testCaseDidFail(
+              forTestClass: testClassName, method: testMethodIdentifier,
+              exceptions: [
+                FBExceptionInfo(message: errorMessage)
+              ])
+            // No activity summaries: the summary payload failed to parse, so there is nothing to extract.
+            let logs = buildTestLog(nil, testBundleName: testBundleName, testClassName: testClassName, testMethodName: testMethodIdentifier, testPassed: false, duration: duration.doubleValue, logger: logger)
+            reporter.testCaseDidFinish(forTestClass: testClassName, method: testMethodIdentifier, with: .failed, duration: duration.doubleValue, logs: logs)
+            return
+          }
           if status == .failed {
             let failureSummaries = accessAndUnwrapValues(actionTestSummary, "failureSummaries", logger)
             reporter.testCaseDidFail(
