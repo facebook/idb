@@ -43,18 +43,27 @@ typedef struct {
 
  The 9th and 10th Slot Represent a touch-up or touch-down.
  The struct is then partially repeated in the 10th slot.
+
+ The eventMask/range/touch fields carry the digitizer phase. The tvOS Siri Remote trackpad
+ (IndigoHIDMessageForTrackpadMoveEvent(point, target); target 0x16 = the dedicated trackpad service,
+ NOT the screenID|0x40000000 screen target) builds a Position/touch-down "changed" contact, and its
+ phase is expressed by setting these fields (see FBSimulatorIndigoHID.trackpad(point:phase:)). That
+ builder emits a two-IndigoPayload message: this contact plus a repeated one in the IndigoPayload at
+ MemoryLayout<IndigoMessage>.size (0xC0), the same layout the multi-touch builder uses.
+
+ The remaining fieldN slots are not yet reverse-engineered; only the named fields are understood.
  */
 typedef struct {
   unsigned int field1; // 0x20 + 0x10 + 0x0 = 0x30
   unsigned int field2; // 0x20 + 0x10 + 0x4 = 0x34
-  unsigned int field3; // 0x20 + 0x10 + 0x8 = 0x38
+  unsigned int eventMask; // 0x20 + 0x10 + 0x8 = 0x38  IOHIDDigitizerEventMask: Range 0x1 | Touch 0x2 | Position 0x4 | Identity 0x20
   double xRatio; // 0x20 + 0x10 + 0xc = 0x3c
   double yRatio; // 0x20 + 0x10 + 0x14 = 0x44
   double field6; // 0x20 + 0x10 + 0x1c = 0x4c
   double field7; // 0x20 + 0x10 + 0x24 = 0x54
   double field8; // 0x20 + 0x10 + 0x2c = 0x5c
-  unsigned int field9; // 0x20 + 0x10 + 0x34 = 0x64
-  unsigned int field10; // 0x20 + 0x10 + 0x38 = 0x68
+  unsigned int range; // 0x20 + 0x10 + 0x34 = 0x64  in-range / hover
+  unsigned int touch; // 0x20 + 0x10 + 0x38 = 0x68  contact down
   unsigned int field11; // 0x20 + 0x10 + 0x3c = 0x6c
   unsigned int field12; // 0x20 + 0x10 + 0x40 = 0x70
   unsigned int field13; // 0x20 + 0x10 + 0x44 = 0x74
