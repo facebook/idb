@@ -1,0 +1,16 @@
+// swift-interface-format-version: 1.0
+// swift-compiler-version: Apple Swift version 6.3.1 effective-5.10 (swiftlang-6.3.1.1.2 clang-2100.0.123.102)
+// swift-module-flags: -target arm64-apple-ios15.0-simulator -enable-objc-interop -enable-library-evolution -module-name IDB
+// swift-module-flags-ignorable:  -formal-cxx-interoperability-mode=off -interface-compiler-version 6.3.1
+import Foundation
+import Swift
+import _Concurrency
+import _StringProcessing
+import _SwiftConcurrencyShims
+public struct HostCommandError : Swift.Error, Swift.CustomStringConvertible {
+  public let description: Swift.String
+}
+@discardableResult
+public func invoke(_ name: Swift.String, _ args: [Swift.String : Any] = [:]) throws -> Any?
+public func tap(x: Swift.Double, y: Swift.Double) throws
+public func describeAll() throws -> Swift.String

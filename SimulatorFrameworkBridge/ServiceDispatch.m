@@ -7,7 +7,7 @@
 
 #import "ServiceDispatch.h"
 
-#import <ReplExecutor/ReplSocketServer.h>
+#import <dlfcn.h>
 
 #import "ContactsService.h"
 #import "DnsService.h"
@@ -37,11 +37,30 @@ int dispatchService(NSString *service, NSString *action, NSArray<NSString *> *ar
     return handleProxyAction(action, arguments);
   } else if ([service isEqualToString:@"repl"]) {
     if ([action isEqualToString:@"start"]) {
-      // Serve the REPL control socket.
-      // The socket path is passed as the first argument to `repl start`. The
-      // simulator context has no in-process probe, so no generated interfaces.
+      // Serve the REPL control socket via libRepl, which the bridge loads on
+      // demand (only when a repl session starts). libRepl exports the socket
+      // server -- and the IDB API that injected code calls -- so serving through
+      // its copy keeps both on the same control-socket connection, and injected
+      // `import IDB` symbols resolve against it. Arguments: the socket path, then
+      // libRepl's path. The simulator context has no in-process probe, so it
+      // generates no interfaces (the companion reports the pre-built one).
       NSString *socketPath = arguments.count > 0 ? arguments[0] : nil;
-      return FBReplServeSocket(socketPath, @[]);
+      NSString *libReplPath = arguments.count > 1 ? arguments[1] : nil;
+      if (libReplPath.length == 0) {
+        NSLog(@"repl start requires the libRepl path as its second argument");
+        return 1;
+      }
+      void *handle = dlopen(libReplPath.fileSystemRepresentation, RTLD_NOW | RTLD_GLOBAL);
+      if (!handle) {
+        NSLog(@"Failed to load libRepl at %@: %s", libReplPath, dlerror());
+        return 1;
+      }
+      int (*serve)(NSString *, NSArray<NSString *> *) = dlsym(handle, "FBReplServeSocket");
+      if (!serve) {
+        NSLog(@"libRepl is missing FBReplServeSocket: %s", dlerror());
+        return 1;
+      }
+      return serve(socketPath, @[]);
     }
     NSLog(@"Unknown repl action: %@", action);
     return 1;

@@ -14,9 +14,14 @@ import Foundation
 public struct ReplSession {
   public let socketPath: String
   public let run: FBFuture<NSNull>
+  /// Paths to pre-built `.swiftinterface` files (the `IDB` module's) that the
+  /// companion reports to the driver alongside any the host generates, so injected
+  /// code can `import` them. The matching code is loaded into the REPL host.
+  public let extraInterfacePaths: [String]
 
-  public init(socketPath: String, run: FBFuture<NSNull>) {
+  public init(socketPath: String, run: FBFuture<NSNull>, extraInterfacePaths: [String] = []) {
     self.socketPath = socketPath
     self.run = run
+    self.extraInterfacePaths = extraInterfacePaths
   }
 }

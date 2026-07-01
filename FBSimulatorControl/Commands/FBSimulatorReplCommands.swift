@@ -37,12 +37,16 @@ public final class FBSimulatorReplCommands: NSObject, FBiOSTargetCommand {
       throw FBSimulatorError.describe("Simulator has no logger").build()
     }
 
-    // Resolve the REPL shim, which is bundled alongside the other shims.
+    // Resolve the REPL shim, which is bundled alongside the other shims, as is the
+    // IDB module's .swiftinterface (reported to the driver so injected code can
+    // `import IDB`; the IDB code itself is linked into libRepl, which is injected).
     let shimDirectory = try await bridgeFBFuture(FBXCTestShimConfiguration.findShimDirectory(onQueue: simulator.workQueue, logger: logger))
     let replDylibPath = shimDirectory.appendingPathComponent("libRepl-iOS.dylib")
     guard FileManager.default.fileExists(atPath: replDylibPath) else {
       throw FBSimulatorError.describe("REPL shim not found at expected location \(replDylibPath)").build()
     }
+    let idbInterfacePath = shimDirectory.appendingPathComponent("IDB.swiftinterface")
+    let extraInterfacePaths = FileManager.default.fileExists(atPath: idbInterfacePath) ? [idbInterfacePath] : []
 
     // The shim binds this socket; the gRPC handler connects to it.
     let socketPath = "/tmp/idb_repl_\(UUID().uuidString).sock"
@@ -74,7 +78,7 @@ public final class FBSimulatorReplCommands: NSObject, FBiOSTargetCommand {
       configuration: configuration,
       reporter: ReplNullReporter(),
       logger: logger)
-    return ReplSession(socketPath: socketPath, run: runner.execute())
+    return ReplSession(socketPath: socketPath, run: runner.execute(), extraInterfacePaths: extraInterfacePaths)
   }
 
   fileprivate func startReplSimulatorAsync() async throws -> ReplSession {
@@ -82,20 +86,27 @@ public final class FBSimulatorReplCommands: NSObject, FBiOSTargetCommand {
       throw FBSimulatorError.describe("Simulator is deallocated").build()
     }
 
-    // The SimulatorFrameworkBridge binary is bundled alongside the shims.
-    guard let bridgePath = Bundle(for: FBSimulatorReplCommands.self).path(forResource: "SimulatorFrameworkBridge", ofType: nil) else {
+    // The SimulatorFrameworkBridge binary is bundled alongside the shims, as are
+    // libRepl (which the bridge loads to serve the REPL) and the IDB module's
+    // .swiftinterface (reported to the driver so injected code can `import IDB`).
+    let bundle = Bundle(for: FBSimulatorReplCommands.self)
+    guard let bridgePath = bundle.path(forResource: "SimulatorFrameworkBridge", ofType: nil) else {
       throw FBSimulatorError.describe("SimulatorFrameworkBridge binary not found in bundle resources").build()
     }
+    guard let libReplPath = bundle.path(forResource: "libRepl-iOS", ofType: "dylib") else {
+      throw FBSimulatorError.describe("libRepl-iOS.dylib not found in bundle resources").build()
+    }
+    let idbInterfacePath = bundle.path(forResource: "IDB", ofType: "swiftinterface")
 
-    // The bridge's `repl start` action takes the socket path as its argument and
-    // serves the control socket there. Serving blocks until the socket is
+    // The bridge's `repl start` action takes the socket path and libRepl's path
+    // and serves the control socket there. Serving blocks until the socket is
     // closed, which is what keeps the session alive.
     let socketPath = "/tmp/idb_repl_\(UUID().uuidString).sock"
 
     let io: FBProcessIO<AnyObject, AnyObject, AnyObject> = .outputToDevNull()
     let configuration = FBProcessSpawnConfiguration(
       launchPath: bridgePath,
-      arguments: ["repl", "start", socketPath],
+      arguments: ["repl", "start", socketPath, libReplPath],
       environment: [:],
       io: io,
       mode: .posixSpawn
@@ -105,7 +116,7 @@ public final class FBSimulatorReplCommands: NSObject, FBiOSTargetCommand {
     // the socket is closed), matching the `ReplSession.run` contract.
     let process = try await simulator.launchProcess(configuration)
     let run = unsafeBitCast(process.statLoc, to: FBFuture<NSNull>.self)
-    return ReplSession(socketPath: socketPath, run: run)
+    return ReplSession(socketPath: socketPath, run: run, extraInterfacePaths: [idbInterfacePath].compactMap { $0 })
   }
 }
 

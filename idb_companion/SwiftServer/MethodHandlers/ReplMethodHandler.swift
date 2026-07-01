@@ -49,9 +49,11 @@ struct ReplMethodHandler {
     let client = try await ReplSocketClient.connect(path: session.socketPath, timeout: 120)
     defer { client.close() }
 
-    // The shim greets us with the .swiftinterface paths it generated in-process
-    // (empty in the simulator context), which we forward to the driver.
-    let generatedInterfaces = try await client.readGreeting()
+    // The host greets us with the .swiftinterface paths it generated in-process
+    // (empty in the simulator context). Combine them with the session's pre-built
+    // interfaces (the `IDB` module's) and forward all to the driver, so injected
+    // code can `import` them.
+    let generatedInterfaces = try await client.readGreeting() + session.extraInterfacePaths
 
     targetLogger.debug().log("REPL session ready on socket \(session.socketPath)")
     try await responseStream.send(

@@ -74,40 +74,9 @@ enum ReplSourceGenerator {
     let importLines = modules.map { "import \($0) // idb-repl-strip" }.joined(separator: "\n")
     return """
       \(importLines)
-      \(hostCommandPrelude)
       \(function)
       """
   }
-
-  /// Prelude emitted into every submission so injected code can call back into
-  /// idb_companion through the `IDB` namespace (e.g. `try IDB.tap(x: 1, y: 2)`).
-  /// It looks up the host's `FBReplInvokeHostCommand` C entry point at runtime
-  /// (via `dlsym`, since the symbol lives in the injecting bridge/shim) and wraps
-  /// it with typed methods that JSON-encode their arguments and throw on failure.
-  /// Every line is tagged `// idb-repl-strip` so it is elided from user-facing
-  /// compiler errors.
-  private static let hostCommandPrelude: String = """
-    struct IDB { // idb-repl-strip
-      struct HostCommandError: Error, CustomStringConvertible { let description: String } // idb-repl-strip
-      private typealias InvokeFunction = @convention(c) (UnsafePointer<CChar>?, UnsafePointer<CChar>?) -> UnsafeMutablePointer<CChar>? // idb-repl-strip
-      @discardableResult static func invoke(_ name: String, _ args: [String: Any] = [:]) throws -> Any? { // idb-repl-strip
-        guard let symbol = dlsym(dlopen(nil, RTLD_NOW), "FBReplInvokeHostCommand") else { // idb-repl-strip
-          throw HostCommandError(description: "idb: host command channel unavailable") // idb-repl-strip
-        } // idb-repl-strip
-        let invokeHostCommand = unsafeBitCast(symbol, to: InvokeFunction.self) // idb-repl-strip
-        let argsJSON = String(decoding: (try? JSONSerialization.data(withJSONObject: args)) ?? Data("{}".utf8), as: UTF8.self) // idb-repl-strip
-        guard let responsePtr = name.withCString({ namePtr in argsJSON.withCString { argsPtr in invokeHostCommand(namePtr, argsPtr) } }) else { // idb-repl-strip
-          throw HostCommandError(description: "idb: no response for host command '\\(name)' (not running inside an idb REPL execution?)") // idb-repl-strip
-        } // idb-repl-strip
-        defer { free(responsePtr) } // idb-repl-strip
-        let response = ((try? JSONSerialization.jsonObject(with: Data(String(cString: responsePtr).utf8))) as? [String: Any]) ?? [:] // idb-repl-strip
-        if response["success"] as? Bool == true { return response["result"] } // idb-repl-strip
-        throw HostCommandError(description: response["error"] as? String ?? "idb: host command '\\(name)' failed") // idb-repl-strip
-      } // idb-repl-strip
-      static func tap(x: Double, y: Double) throws { try invoke("tap", ["x": x, "y": y]) } // idb-repl-strip
-      static func describeAll() throws -> String { (try invoke("describe_all") as? String) ?? "" } // idb-repl-strip
-    } // idb-repl-strip
-    """
 
   private static func syncFunction(swiftCode: String, index: Int) -> String {
     return """
