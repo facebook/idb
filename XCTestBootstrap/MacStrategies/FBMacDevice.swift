@@ -468,7 +468,7 @@ import IOKit
     )
   }
 
-  public func startRecording(toFile filePath: String) -> FBFuture<any FBiOSTargetOperation> {
+  public func startRecording(toFile filePath: String) -> FBFuture<NSNull> {
     return unsafeBitCast(
       FBControlCoreError.describe("-[FBMacDevice startRecordingToFile:] is not implemented").failFuture(),
       to: FBFuture.self

@@ -42,11 +42,11 @@ public final class FBSimulatorVideoRecordingCommands: NSObject, FBiOSTargetComma
       keyFrameRate: nil)
   }
 
-  fileprivate func startRecordingAsync(toFile filePath: String) async throws -> any FBiOSTargetOperation {
+  fileprivate func startRecordingAsync(toFile filePath: String) async throws {
     try await startRecordingAsync(toFile: filePath, configuration: Self.recordingConfiguration)
   }
 
-  fileprivate func startRecordingAsync(toFile filePath: String, configuration: FBVideoStreamConfiguration) async throws -> any FBiOSTargetOperation {
+  fileprivate func startRecordingAsync(toFile filePath: String, configuration: FBVideoStreamConfiguration) async throws {
     guard let simulator = self.simulator else {
       throw FBSimulatorError.describe("Simulator deallocated").build()
     }
@@ -57,7 +57,6 @@ public final class FBSimulatorVideoRecordingCommands: NSObject, FBiOSTargetComma
     let video = FBSimulatorVideo.video(withFramebuffer: framebuffer, configuration: configuration, filePath: filePath, logger: simulator.logger!)
     try await video.startRecording()
     self.video = video
-    return video
   }
 
   fileprivate func stopRecordingAsync() async throws {
@@ -86,11 +85,11 @@ public final class FBSimulatorVideoRecordingCommands: NSObject, FBiOSTargetComma
 
 extension FBSimulator: VideoRecordingCommands {
 
-  public func startRecording(toFile filePath: String) async throws -> any FBiOSTargetOperation {
+  public func startRecording(toFile filePath: String) async throws {
     try await videoRecordingCommands().startRecordingAsync(toFile: filePath)
   }
 
-  public func startRecording(toFile filePath: String, configuration: FBVideoStreamConfiguration) async throws -> any FBiOSTargetOperation {
+  public func startRecording(toFile filePath: String, configuration: FBVideoStreamConfiguration) async throws {
     try await videoRecordingCommands().startRecordingAsync(toFile: filePath, configuration: configuration)
   }
 

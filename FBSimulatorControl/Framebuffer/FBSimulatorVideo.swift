@@ -19,12 +19,11 @@ import Foundation
 // (and `hasStopped` guards the single stop), and its `stream`/`fileWriter` are themselves
 // `@unchecked Sendable`, matching the sibling `FBSimulatorVideoStream`.
 @objc(FBSimulatorVideo)
-public class FBSimulatorVideo: NSObject, FBiOSTargetOperation, @unchecked Sendable {
+public class FBSimulatorVideo: NSObject, @unchecked Sendable {
 
   // MARK: - Properties
 
   private let queue: DispatchQueue
-  private let completedFuture: FBMutableFuture<NSNull>
   /// The underlying encode pipeline. Exposed so the sime2e record path can drive stdin-controlled
   /// overlay/chapter/screenshot on the live stream, mirroring how `videoStream(...)` returns the stream.
   public let stream: FBSimulatorVideoStream
@@ -39,7 +38,6 @@ public class FBSimulatorVideo: NSObject, FBiOSTargetOperation, @unchecked Sendab
 
   private init(framebuffer: FBFramebuffer, configuration: FBVideoStreamConfiguration, filePath: String, edgeInsets: FBVideoStreamEdgeInsets, chaptersEnabled: Bool, logger: any FBControlCoreLogger) {
     self.queue = DispatchQueue(label: "com.facebook.simulatorvideo")
-    self.completedFuture = FBMutableFuture<NSNull>()
     let fileWriter = FBVideoFileWriter(filePath: filePath, chaptersEnabled: chaptersEnabled, logger: logger)
     self.fileWriter = fileWriter
     self.stream = FBSimulatorVideoStream.makeRecorder(framebuffer: framebuffer, configuration: configuration, edgeInsets: edgeInsets, fileWriter: fileWriter, logger: logger)
@@ -64,22 +62,5 @@ public class FBSimulatorVideo: NSObject, FBiOSTargetOperation, @unchecked Sendab
     // drains all pending frames into `fileWriter`) before finalizing the file's moov.
     try await bridgeFBFutureVoid(stream.stopStreaming())
     try await fileWriter.finish()
-    completedFuture.resolve(withResult: NSNull())
-  }
-
-  // MARK: - FBiOSTargetOperation
-
-  @objc public var completed: FBFuture<NSNull> {
-    convertFBMutableFuture(completedFuture).onQueue(
-      queue,
-      respondToCancellation: { [weak self] in
-        guard let self else {
-          return FBFuture<NSNull>.empty()
-        }
-        return fbFutureFromAsync {
-          try await self.stopRecording()
-          return NSNull()
-        }
-      })
   }
 }

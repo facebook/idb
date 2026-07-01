@@ -11,7 +11,7 @@ import CoreMediaIO
 import Foundation
 
 @objc(FBDeviceVideo)
-public class FBDeviceVideo: NSObject, FBiOSTargetOperation {
+public class FBDeviceVideo: NSObject {
   private let encoder: FBVideoFileWriter
   private let workQueue: DispatchQueue
 
@@ -99,16 +99,5 @@ public class FBDeviceVideo: NSObject, FBiOSTargetOperation {
 
   @objc public func stopRecording() -> FBFuture<NSNull> {
     encoder.stopRecording()
-  }
-
-  // MARK: FBiOSTargetOperation
-
-  @objc public var completed: FBFuture<NSNull> {
-    let encoder = self.encoder
-    return encoder.completed().onQueue(
-      workQueue,
-      respondToCancellation: {
-        encoder.stopRecording()
-      })
   }
 }

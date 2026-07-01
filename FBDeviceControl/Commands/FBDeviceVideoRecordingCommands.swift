@@ -26,7 +26,7 @@ public class FBDeviceVideoRecordingCommands: NSObject, FBiOSTargetCommand {
 
   // MARK: - Async
 
-  fileprivate func startRecordingAsync(toFile filePath: String) async throws -> FBDeviceVideo {
+  fileprivate func startRecordingAsync(toFile filePath: String) async throws {
     guard let device else {
       throw FBDeviceControlError().describe("Device is nil").build()
     }
@@ -36,7 +36,6 @@ public class FBDeviceVideoRecordingCommands: NSObject, FBiOSTargetCommand {
     let video = try await FBDeviceVideo.videoAsync(for: device, filePath: filePath)
     self.video = video
     try await bridgeFBFutureVoid(video.startRecording())
-    return video
   }
 
   fileprivate func stopRecordingAsync() async throws {
@@ -63,7 +62,7 @@ public class FBDeviceVideoRecordingCommands: NSObject, FBiOSTargetCommand {
 
 extension FBDevice: VideoRecordingCommands {
 
-  public func startRecording(toFile filePath: String) async throws -> any FBiOSTargetOperation {
+  public func startRecording(toFile filePath: String) async throws {
     try await videoRecordingCommands().startRecordingAsync(toFile: filePath)
   }
 

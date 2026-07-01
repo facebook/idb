@@ -29,7 +29,7 @@ struct RecordMethodHandler {
     guard let asyncTarget = target as? any VideoRecordingCommands else {
       throw GRPCStatus(code: .failedPrecondition, message: "\(target) does not support VideoRecordingCommands")
     }
-    _ = try await asyncTarget.startRecording(toFile: filePath)
+    try await asyncTarget.startRecording(toFile: filePath)
 
     _ = try await requestStream.requiredNext
     try await asyncTarget.stopRecording()
