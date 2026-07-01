@@ -97,6 +97,41 @@ class ButtonCommand(ClientCommand):
         )
 
 
+# Remote action -> USB HID keyboard usage the tvOS focus engine consumes (keyboard-backed; no proto
+# change). Arrows move focus, Return selects, Escape acts as Menu/back.
+_REMOTE_KEYCODES: dict[str, int] = {
+    "up": 0x52,
+    "down": 0x51,
+    "left": 0x50,
+    "right": 0x4F,
+    "select": 0x28,
+    "menu": 0x29,
+}
+
+
+class RemoteCommand(ClientCommand):
+    @property
+    def description(self) -> str:
+        return "Send a Siri Remote action for tvOS focus navigation"
+
+    @property
+    def name(self) -> str:
+        return "remote"
+
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
+        parser.add_argument(
+            "action",
+            help="The remote action",
+            choices=list(_REMOTE_KEYCODES),
+            type=str,
+        )
+        parser.add_argument("--duration", help="Press duration", type=float)
+        super().add_parser_arguments(parser)
+
+    async def run_with_client(self, args: Namespace, client: Client) -> None:
+        await client.key(keycode=_REMOTE_KEYCODES[args.action], duration=args.duration)
+
+
 class KeyCommand(ClientCommand):
     @property
     def description(self) -> str:

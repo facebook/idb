@@ -909,6 +909,12 @@ class TestParser(TestCase):
         await cli_main(cmd_input=["ui", "key", "12"])
         self.client_mock.key.assert_called_once_with(keycode=12, duration=None)
 
+    async def test_remote(self) -> None:
+        self.client_mock.key = AsyncMock(return_value=[])
+        # SELECT maps to the Return USB HID keyboard usage (0x28) the tvOS focus engine consumes.
+        await cli_main(cmd_input=["ui", "remote", "select"])
+        self.client_mock.key.assert_called_once_with(keycode=0x28, duration=None)
+
     async def test_key_with_shift_modifier(self) -> None:
         self.client_mock.hid = AsyncMock(return_value=[])
 
