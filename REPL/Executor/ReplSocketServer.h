@@ -20,3 +20,13 @@
 // of any .swiftinterface files generated for the loaded modules; pass an empty
 // array or nil when there are none) so the connecting client can learn them.
 int FBReplServeSocket(NSString *socketPath, NSArray<NSString *> *generatedInterfaces);
+
+// Sends a `host_command` on the active control-socket connection and blocks until
+// the matching `host_result`, returning that response as a malloc'd JSON C string
+// (the caller frees it), or NULL on failure / when no connection is active.
+//
+// `name` is the command name; `argsJSON` is a JSON object string of arguments (may
+// be NULL or "{}"). Only valid to call while a command is executing -- i.e. from
+// injected code running inside the served call -- since the protocol is strictly
+// nested and lockstep (no other message may be in flight on the socket).
+const char *FBReplInvokeHostCommand(const char *name, const char *argsJSON);

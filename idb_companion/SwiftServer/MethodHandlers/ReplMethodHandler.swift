@@ -63,6 +63,10 @@ struct ReplMethodHandler {
           })
       })
 
+    // Services nested `host_command`s the served process sends back while an
+    // execute is running (e.g. `IDB.tap`), mapping them to FBIDBCommandExecutor.
+    let dispatcher = HostCommandDispatcher(commandExecutor: commandExecutor)
+
     var runIndex = 0
     bridge: for try await request in requestStream {
       switch request.control {
@@ -74,7 +78,10 @@ struct ReplMethodHandler {
         runIndex += 1
         try execute.dylib.write(to: URL(fileURLWithPath: dylibPath))
 
-        let result = try await client.execute(dylibPath: dylibPath, symbol: execute.symbol)
+        let result = try await client.execute(
+          dylibPath: dylibPath,
+          symbol: execute.symbol,
+          hostCommandHandler: { name, args in await dispatcher.run(name: name, args: args) })
         try await responseStream.send(
           .with {
             $0.event = .result(

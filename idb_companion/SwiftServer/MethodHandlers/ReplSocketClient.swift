@@ -96,6 +96,9 @@ final class ReplSocketClient {
           guard let json = try JSONSerialization.jsonObject(with: greetingData) as? [String: Any] else {
             throw GRPCStatus(code: .internalError, message: "repl: invalid greeting from test process")
           }
+          guard json["type"] as? String == "greeting" else {
+            throw GRPCStatus(code: .internalError, message: "repl: expected a 'greeting' message, got type '\(json["type"] as? String ?? "nil")'")
+          }
           let interfaces = json["interfaces"] as? [String] ?? []
           continuation.resume(returning: interfaces)
         } catch {
@@ -105,60 +108,112 @@ final class ReplSocketClient {
     }
   }
 
-  /// Sends a `{dylib, symbol}` command to the shim and returns its result.
-  func execute(dylibPath: String, symbol: String) async throws -> (success: Bool, output: String) {
+  /// Services a `host_command` the served process sends back *while* an `execute`
+  /// is in flight. Returns whether the command succeeded plus a JSON string: the
+  /// command's result value on success, or an error message on failure.
+  typealias HostCommandHandler = (_ name: String, _ args: [String: Any]) async -> (success: Bool, resultJSON: String)
+
+  /// Sends a `{dylib, symbol}` command to the shim and returns its result. While
+  /// the served process runs the injected code it may send nested `host_command`
+  /// messages back; each is serviced via `hostCommandHandler` and answered with a
+  /// `host_result` before the loop continues. The loop ends when the final
+  /// `result` for this execute arrives. A `read` returning EOF/error before a
+  /// complete message means the shim closed the socket mid-exchange (e.g. the test
+  /// process crashed), surfaced as a disconnect.
+  func execute(dylibPath: String, symbol: String, hostCommandHandler: @escaping HostCommandHandler) async throws -> (success: Bool, output: String) {
     let fd = self.fd
     return try await withCheckedThrowingContinuation { continuation in
       ioQueue.async {
         do {
-          let command = ["dylib": dylibPath, "symbol": symbol]
-          var data = try JSONSerialization.data(withJSONObject: command)
-          data.append(0x0A)
-          try data.withUnsafeBytes { (raw: UnsafeRawBufferPointer) in
-            guard let base = raw.baseAddress else { return }
-            var written = 0
-            while written < raw.count {
-              let n = Darwin.write(fd, base + written, raw.count - written)
-              guard n > 0 else {
-                throw GRPCStatus(code: .internalError, message: "repl: failed to write command to control socket")
-              }
-              written += n
-            }
-          }
+          try Self.writeLine(["type": "execute", "dylib": dylibPath, "symbol": symbol], to: fd)
 
-          // Read the newline-terminated response one byte at a time. A `read` of
-          // 0 (clean EOF) or -1 (error) before the newline means the shim closed
-          // the control socket mid-response (e.g. the test process crashed);
-          // surface that as a disconnect rather than falling through to parse a
-          // partial or empty buffer.
-          var responseData = Data()
-          var byte: UInt8 = 0
           while true {
-            let bytesRead = Darwin.read(fd, &byte, 1)
-            if bytesRead > 0 {
-              if byte == 0x0A { break }
-              responseData.append(byte)
-            } else if bytesRead == 0 {
-              throw GRPCStatus(code: .unavailable, message: "repl: control socket closed by the test process before a complete response was received (the test process may have crashed)")
-            } else {
-              throw GRPCStatus(code: .internalError, message: "repl: failed to read response from control socket: \(String(cString: strerror(errno)))")
+            let responseData = try Self.readLine(fd: fd)
+            guard let json = try JSONSerialization.jsonObject(with: responseData) as? [String: Any] else {
+              throw GRPCStatus(code: .internalError, message: "repl: invalid response from test process")
+            }
+            switch json["type"] as? String {
+            case "host_command":
+              let name = json["name"] as? String ?? ""
+              let args = json["args"] as? [String: Any] ?? [:]
+              let hostResult = Self.runHostCommand(hostCommandHandler, name: name, args: args)
+              try Self.writeLine(Self.hostResultMessage(hostResult), to: fd)
+
+            case "result":
+              let success = json["success"] as? Bool ?? false
+              let output =
+                success
+                ? (json["result"] as? String ?? "")
+                : "Error: \(json["error"] as? String ?? "unknown")"
+              continuation.resume(returning: (success, output))
+              return
+
+            case let other:
+              throw GRPCStatus(code: .internalError, message: "repl: unexpected control-socket message type '\(other ?? "nil")'")
             }
           }
-
-          guard let json = try JSONSerialization.jsonObject(with: responseData) as? [String: Any] else {
-            throw GRPCStatus(code: .internalError, message: "repl: invalid response from test process")
-          }
-          let success = json["success"] as? Bool ?? false
-          let output: String
-          if success {
-            output = json["result"] as? String ?? ""
-          } else {
-            output = "Error: \(json["error"] as? String ?? "unknown")"
-          }
-          continuation.resume(returning: (success, output))
         } catch {
           continuation.resume(throwing: error)
         }
+      }
+    }
+  }
+
+  /// Runs the async `hostCommandHandler` to completion from the synchronous
+  /// `ioQueue`, bridging with a semaphore. The `ioQueue` is dedicated to this
+  /// socket, so blocking it here is fine.
+  private static func runHostCommand(_ handler: @escaping HostCommandHandler, name: String, args: [String: Any]) -> (success: Bool, resultJSON: String) {
+    final class Box: @unchecked Sendable { var value: (success: Bool, resultJSON: String) = (false, "null") }
+    let box = Box()
+    let semaphore = DispatchSemaphore(value: 0)
+    Task {
+      box.value = await handler(name, args)
+      semaphore.signal()
+    }
+    semaphore.wait()
+    return box.value
+  }
+
+  /// Builds a `host_result` message from a handler's `(success, resultJSON)`: the
+  /// JSON string becomes the `result` value on success, or the `error` on failure.
+  private static func hostResultMessage(_ result: (success: Bool, resultJSON: String)) -> [String: Any] {
+    if result.success {
+      let value = (try? JSONSerialization.jsonObject(with: Data(result.resultJSON.utf8), options: [.fragmentsAllowed])) ?? NSNull()
+      return ["type": "host_result", "success": true, "result": value]
+    }
+    return ["type": "host_result", "success": false, "error": result.resultJSON]
+  }
+
+  /// Reads one newline-terminated message from `fd`, throwing on EOF/error.
+  private static func readLine(fd: Int32) throws -> Data {
+    var data = Data()
+    var byte: UInt8 = 0
+    while true {
+      let bytesRead = Darwin.read(fd, &byte, 1)
+      if bytesRead > 0 {
+        if byte == 0x0A { return data }
+        data.append(byte)
+      } else if bytesRead == 0 {
+        throw GRPCStatus(code: .unavailable, message: "repl: control socket closed before a complete message was received (the test process may have crashed)")
+      } else {
+        throw GRPCStatus(code: .internalError, message: "repl: failed to read from control socket: \(String(cString: strerror(errno)))")
+      }
+    }
+  }
+
+  /// Writes `message` as a newline-terminated JSON line to `fd`.
+  private static func writeLine(_ message: [String: Any], to fd: Int32) throws {
+    var data = try JSONSerialization.data(withJSONObject: message)
+    data.append(0x0A)
+    try data.withUnsafeBytes { (raw: UnsafeRawBufferPointer) in
+      guard let base = raw.baseAddress else { return }
+      var written = 0
+      while written < raw.count {
+        let n = Darwin.write(fd, base + written, raw.count - written)
+        guard n > 0 else {
+          throw GRPCStatus(code: .internalError, message: "repl: failed to write to control socket")
+        }
+        written += n
       }
     }
   }
