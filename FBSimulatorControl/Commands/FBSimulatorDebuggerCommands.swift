@@ -21,9 +21,13 @@ private class FBSimulatorDebugServer: NSObject, FBDebugServer {
     super.init()
   }
 
-  // MARK: - FBiOSTargetOperation
+  // MARK: - FBDebugServer
 
-  var completed: FBFuture<NSNull> {
+  func cancel() async throws {
+    try await bridgeFBFutureVoid(self.completed.cancel())
+  }
+
+  private var completed: FBFuture<NSNull> {
     let task = self.task
     let queue = DispatchQueue.global(qos: .userInitiated)
 

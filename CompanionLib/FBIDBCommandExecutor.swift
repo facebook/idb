@@ -20,7 +20,7 @@ import XCTestBootstrap
   private let debugserverPort: in_port_t
 
   @objc public let storageManager: FBIDBStorageManager
-  @objc public var debugServer: FBDebugServer?
+  public var debugServer: FBDebugServer?
   @objc public let temporaryDirectory: FBTemporaryDirectory
 
   // MARK: - Initializers
@@ -317,7 +317,7 @@ import XCTestBootstrap
 
   public func debugserver_stop() async throws -> FBDebugServer {
     let server = try debugserver_status()
-    try await server.cancelAsync()
+    try await server.cancel()
     debugServer = nil
     return server
   }

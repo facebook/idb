@@ -7,7 +7,10 @@
 
 import Foundation
 
-@objc public protocol FBDebugServer: FBiOSTargetOperation {
+public protocol FBDebugServer: AnyObject {
 
-  @objc var lldbBootstrapCommands: [String] { get }
+  var lldbBootstrapCommands: [String] { get }
+
+  /// Cancels the debug server and waits for teardown to complete.
+  func cancel() async throws
 }

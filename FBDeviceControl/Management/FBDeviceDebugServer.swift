@@ -208,9 +208,13 @@ public class FBDeviceDebugServer: NSObject, FBSocketServerDelegate, FBDebugServe
     self.twistedPair = pair
   }
 
-  // MARK: - FBiOSTargetOperation
+  // MARK: - FBDebugServer
 
-  @objc public var completed: FBFuture<NSNull> {
+  public func cancel() async throws {
+    try await bridgeFBFutureVoid(self.completed.cancel())
+  }
+
+  private var completed: FBFuture<NSNull> {
     guard let teardown else {
       fatalError("teardown must be set via debugServer(forServiceConnection:...) before accessing completed")
     }
