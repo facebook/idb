@@ -8,7 +8,7 @@
 import Foundation
 
 @objc(FBXCTraceRecordOperation)
-public final class FBXCTraceRecordOperation: NSObject, FBiOSTargetOperation {
+public final class FBXCTraceRecordOperation: NSObject {
 
   // MARK: Properties
 
@@ -170,18 +170,5 @@ public final class FBXCTraceRecordOperation: NSObject, FBiOSTargetOperation {
       throw FBControlCoreError.describe("xctrace does not exist at expected path \(path)").build()
     }
     return path
-  }
-
-  // MARK: FBiOSTargetOperation
-
-  @objc public var completed: FBFuture<NSNull> {
-    let result = task.exited(withCodes: Set([NSNumber(value: 0)]))
-      .mapReplace(NSNull())
-      .onQueue(
-        queue,
-        respondToCancellation: {
-          self.stop(withTimeout: DefaultXCTraceRecordStopTimeout).mapReplace(NSNull()) as! FBFuture<NSNull>
-        })
-    return unsafeBitCast(result, to: FBFuture<NSNull>.self)
   }
 }
