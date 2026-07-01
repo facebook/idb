@@ -1388,7 +1388,7 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
   /// Wall-clock time when the first framebuffer callback was received, or 0 if not yet started.
   public var framebufferStatsStartTime: CFTimeInterval { framebuffer.statsStartTime }
 
-  // MARK: - FBiOSTargetOperation
+  // MARK: - FBVideoStream
 
   @objc
   public var completed: FBFuture<NSNull> {

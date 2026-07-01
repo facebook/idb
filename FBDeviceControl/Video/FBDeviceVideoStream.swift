@@ -136,7 +136,7 @@ public class FBDeviceVideoStream: NSObject, FBVideoStream {
     fatalError("\(type(of: self)).\(#function) is abstract and should be overridden")
   }
 
-  // MARK: FBiOSTargetOperation
+  // MARK: FBVideoStream
 
   @objc public var completed: FBFuture<NSNull> {
     unsafeBitCast(stopFuture, to: FBFuture<NSNull>.self).onQueue(

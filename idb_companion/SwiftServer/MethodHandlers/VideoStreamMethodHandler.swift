@@ -43,7 +43,7 @@ struct VideoStreamMethodHandler {
     }
 
     let observeVideoStreamStop = Task<Void, Error> {
-      try await videoStream.awaitCompletionAsync()
+      try await videoStream.awaitCompletion()
     }
 
     try await Task.select(observeClientCancelStreaming, observeVideoStreamStop).value

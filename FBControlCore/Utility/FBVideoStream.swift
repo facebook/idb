@@ -8,7 +8,10 @@
 import Foundation
 
 /// Streams Bitmaps to a File Sink.
-@objc public protocol FBVideoStream: FBiOSTargetOperation {
+@objc public protocol FBVideoStream {
+  /// A Future that resolves when the stream has completed.
+  @objc var completed: FBFuture<NSNull> { get }
+
   /// Starts the Streaming, to a Data Consumer.
   func startStreaming(_ consumer: FBDataConsumer) -> FBFuture<NSNull>
 
@@ -17,6 +20,11 @@ import Foundation
 }
 
 extension FBVideoStream {
+  /// Waits for the stream to complete.
+  public func awaitCompletion() async throws {
+    try await bridgeFBFutureVoid(self.completed)
+  }
+
   /// Async wrapper for `startStreaming(_:)`.
   public func startStreamingAsync(_ consumer: any FBDataConsumer) async throws {
     try await bridgeFBFutureVoid(startStreaming(consumer))
