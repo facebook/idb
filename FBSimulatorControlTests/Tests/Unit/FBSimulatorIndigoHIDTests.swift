@@ -119,16 +119,23 @@ final class FBSimulatorIndigoHIDTests: XCTestCase {
       (.siri, 0x400002),
     ]
     for (button, source) in expected {
-      let data = indigo.button(with: .down, button: button)
+      let data = try XCTUnwrap(indigo.button(with: .down, button: button))
       // IndigoButton.eventSource at 0x30.
       XCTAssertEqual(uint32(at: 0x30, in: data), source, "eventSource for button rawValue \(button.rawValue)")
     }
   }
 
+  func testConsumerOnlyButtonHasNoIndigoSource() {
+    // `play_pause` is a Consumer-page button the legacy Indigo path cannot express, so it produces no
+    // button message (the DTUHID transport delivers it instead).
+    let indigo = try? makeIndigo()
+    XCTAssertNil(indigo?.button(with: .down, button: .playPause))
+  }
+
   func testButtonDirectionAndTarget() throws {
     let indigo = try makeIndigo()
-    let down = indigo.button(with: .down, button: .homeButton)
-    let up = indigo.button(with: .up, button: .homeButton)
+    let down = try XCTUnwrap(indigo.button(with: .down, button: .homeButton))
+    let up = try XCTUnwrap(indigo.button(with: .up, button: .homeButton))
     // IndigoButton.eventType at 0x34 == direction (down=1, up=2).
     XCTAssertEqual(uint32(at: 0x34, in: down), 1, "down eventType")
     XCTAssertEqual(uint32(at: 0x34, in: up), 2, "up eventType")

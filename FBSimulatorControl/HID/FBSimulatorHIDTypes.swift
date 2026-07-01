@@ -31,6 +31,7 @@ public enum FBSimulatorHIDButton: Int32, Sendable, CaseIterable {
   case lock = 3
   case sideButton = 4
   case siri = 5
+  case playPause = 6
 
   /// The canonical lower-snake-case name for this button.
   public var name: String {
@@ -40,6 +41,7 @@ public enum FBSimulatorHIDButton: Int32, Sendable, CaseIterable {
     case .lock: return "lock"
     case .sideButton: return "side_button"
     case .siri: return "siri"
+    case .playPause: return "play_pause"
     }
   }
 }

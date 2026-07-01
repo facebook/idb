@@ -61,9 +61,13 @@ public final class FBSimulatorIndigoHID {
     return FBSimulatorIndigoHID.data(fromMallocedMessage: message)
   }
 
-  /// A button event.
-  public func button(with direction: FBSimulatorHIDDirection, button: FBSimulatorHIDButton) -> Data {
-    let message = messageForButton(button.indigoEventSource, direction.rawValue, Int32(ButtonEventTargetHardware))
+  /// A button event, or `nil` when the button has no legacy Indigo source (a Consumer-page button
+  /// such as `play_pause` that only the DTUHID transport can deliver).
+  public func button(with direction: FBSimulatorHIDDirection, button: FBSimulatorHIDButton) -> Data? {
+    guard let source = button.indigoEventSource else {
+      return nil
+    }
+    let message = messageForButton(source, direction.rawValue, Int32(ButtonEventTargetHardware))
     return FBSimulatorIndigoHID.data(fromMallocedMessage: message)
   }
 
@@ -167,8 +171,10 @@ public final class FBSimulatorIndigoHID {
 // MARK: - Indigo wire-format mappings
 
 private extension FBSimulatorHIDButton {
-  /// The Indigo `eventSource` value for this button.
-  var indigoEventSource: Int32 {
+  /// The Indigo `eventSource` value for this button, or `nil` when the legacy Indigo path has no
+  /// source for it — a Consumer-page button such as `play_pause` that only the DTUHID transport
+  /// can deliver (the mirror image of `apple_pay`, which has an Indigo source but no DTUHID usage).
+  var indigoEventSource: Int32? {
     switch self {
     case .applePay:
       return Int32(ButtonEventSourceApplePay)
@@ -180,6 +186,8 @@ private extension FBSimulatorHIDButton {
       return Int32(ButtonEventSourceSideButton)
     case .siri:
       return Int32(ButtonEventSourceSiri)
+    case .playPause:
+      return nil
     }
   }
 }

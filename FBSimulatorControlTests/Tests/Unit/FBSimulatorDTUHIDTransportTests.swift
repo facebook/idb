@@ -136,6 +136,8 @@ final class FBSimulatorDTUHIDTransportTests: XCTestCase {
     XCTAssertEqual(FBSimulatorHIDButton.lock.dtuhidUsage?.code, 0x30)
     XCTAssertEqual(FBSimulatorHIDButton.sideButton.dtuhidUsage?.code, 0x30)
     XCTAssertEqual(FBSimulatorHIDButton.siri.dtuhidUsage?.code, 0xCF)
+    XCTAssertEqual(FBSimulatorHIDButton.playPause.dtuhidUsage?.page, 0x0C)
+    XCTAssertEqual(FBSimulatorHIDButton.playPause.dtuhidUsage?.code, 0xCD)
     XCTAssertNil(FBSimulatorHIDButton.applePay.dtuhidUsage)
   }
 

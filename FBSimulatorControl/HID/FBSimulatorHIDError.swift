@@ -37,6 +37,8 @@ public enum FBSimulatorHIDError: Error, LocalizedError {
   case keyboardSuppressedByActiveDTUHIDD
   /// A primitive is not (yet) implemented on the DTUHID transport.
   case notImplementedOnDTUHIDTransport(operation: String)
+  /// A primitive has no legacy Indigo representation (e.g. a Consumer-page button); use DTUHID.
+  case notImplementedOnIndigoTransport(operation: String)
   /// The `dtuhidd` digitizer service could not be looked up in the simulator's bootstrap namespace.
   case dtuhidDigitizerServiceUnavailable(underlying: Error?)
   /// The private `_4sim` XPC endpoint symbols could not be resolved (older toolchain).
@@ -72,6 +74,8 @@ public enum FBSimulatorHIDError: Error, LocalizedError {
         "Keyboard HID is suppressed because dtuhidd is active (Device Hub is open, or a CoreDevice HID client attached). Boot a fresh simulator with Device Hub closed, or use the CoreDevice HID transport. (Xcode 27 / CoreSimulator-1155.4)"
     case let .notImplementedOnDTUHIDTransport(operation):
       return "\(operation) is not implemented on the DTUHID transport"
+    case let .notImplementedOnIndigoTransport(operation):
+      return "\(operation) is not implemented on the legacy Indigo transport"
     case .dtuhidDigitizerServiceUnavailable:
       return "Could not look up the dtuhidd digitizer service (com.apple.coredevice.feature.remote.hid.digitizer)"
     case .dtuhidXPCSymbolsUnavailable:

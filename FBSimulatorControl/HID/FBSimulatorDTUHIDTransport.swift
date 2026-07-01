@@ -222,6 +222,8 @@ extension FBSimulatorHIDButton {
       return (0x0C, 0x30) // the side button is the power/lock button
     case .siri:
       return (0x0C, 0xCF) // Consumer: Voice Command
+    case .playPause:
+      return (0x0C, 0xCD) // Consumer: Play/Pause
     case .applePay:
       return nil // double-press of the side button; not a single HID usage
     }
