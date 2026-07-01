@@ -51,9 +51,21 @@ struct ReplMethodHandler {
 
     // The host greets us with the .swiftinterface paths it generated in-process
     // (empty in the simulator context). Combine them with the session's pre-built
-    // interfaces (the `IDB` module's) and forward all to the driver, so injected
-    // code can `import` them.
-    let generatedInterfaces = try await client.readGreeting() + session.extraInterfacePaths
+    // interfaces (the `IDB` module's). We read each file's contents here and
+    // forward those (not the paths) to the driver, which may not share a
+    // filesystem with the companion; the driver materializes them locally.
+    let interfacePaths = try await client.readGreeting() + session.extraInterfacePaths
+    let generatedInterfaces: [Idb_ReplResponse.Ready.GeneratedInterface] = interfacePaths.compactMap { path in
+      guard let contents = try? String(contentsOfFile: path, encoding: .utf8) else {
+        targetLogger.error().log("Failed to read generated interface at \(path); skipping")
+        return nil
+      }
+      let moduleName = ((path as NSString).lastPathComponent as NSString).deletingPathExtension
+      return .with {
+        $0.moduleName = moduleName
+        $0.contents = contents
+      }
+    }
 
     targetLogger.debug().log("REPL session ready on socket \(session.socketPath)")
     try await responseStream.send(

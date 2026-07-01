@@ -96,22 +96,25 @@ struct ReplRunner: ParsableArguments {
       throw ValidationError("idb_companion did not report the REPL as ready")
     }
 
-    // The shim's in-process probe may have generated .swiftinterface files for
-    // the test bundle's modules. Report their paths (on stderr, to keep one-shot
-    // stdout clean) and add their directories to the compiler's import search
-    // path so injected code can `import` and call into those modules.
+    // The companion sends the .swiftinterface files available to injected code
+    // (the test bundle's probe-generated modules and the `IDB` module) as
+    // contents, since it may not share a filesystem with us. Materialize each into
+    // the session directory, add that directory to the compiler's import search
+    // path, and auto-import the modules so user code can reference them without an
+    // explicit `import`. Report them on stderr (keeping one-shot stdout clean).
+    var autoImportModules: [String] = []
+    var interfaceDirectory: String?
     if !ready.generatedInterfaces.isEmpty {
       FileHandle.standardError.write(Data("idb-repl: received generated interface(s):\n".utf8))
-      for path in ready.generatedInterfaces {
-        FileHandle.standardError.write(Data("  \(path)\n".utf8))
+      for interface in ready.generatedInterfaces {
+        let path = try sessionDirectory.filePath(named: "\(interface.moduleName).swiftinterface")
+        try interface.contents.write(toFile: path, atomically: true, encoding: .utf8)
+        interfaceDirectory = (path as NSString).deletingLastPathComponent
+        autoImportModules.append(interface.moduleName)
+        FileHandle.standardError.write(Data("  \(interface.moduleName)\n".utf8))
       }
     }
-    let interfaceSearchPaths = Set(ready.generatedInterfaces.map { ($0 as NSString).deletingLastPathComponent }).sorted()
-    // Auto-import the generated modules (one per <Module>.swiftinterface) so the
-    // user can reference the bundle's types without an explicit `import`.
-    let autoImportModules = ready.generatedInterfaces.map {
-      (($0 as NSString).lastPathComponent as NSString).deletingPathExtension
-    }
+    let interfaceSearchPaths = interfaceDirectory.map { [$0] } ?? []
 
     // The companion reports the connected target's device type; compile injected
     // code for the matching platform.

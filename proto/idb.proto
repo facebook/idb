@@ -821,9 +821,15 @@ message ReplResponse {
     // The product family of the connected target: "iphone", "ipad", "watch",
     // "tv", "mac", or "unknown".
     string device_type = 1;
-    // Host filesystem paths of the .swiftinterface files generated in-process
-    // for the test bundle's modules, so injected code can compile against them.
-    repeated string generated_interfaces = 2;
+    // The .swiftinterface files available to injected code (the test bundle's
+    // probe-generated modules and the `IDB` module). Sent as contents rather
+    // than paths so the driver can materialize them locally without sharing a
+    // filesystem with the companion.
+    message GeneratedInterface {
+      string module_name = 1;
+      string contents = 2;
+    }
+    repeated GeneratedInterface generated_interfaces = 2;
   }
   // The result of executing one Execute message.
   message Result {
