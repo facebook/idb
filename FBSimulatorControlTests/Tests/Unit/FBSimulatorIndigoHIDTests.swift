@@ -157,4 +157,33 @@ final class FBSimulatorIndigoHIDTests: XCTestCase {
     // ...and a different keycode changes the payload (the keycode flows through).
     XCTAssertNotEqual(zeroingTimestamp(a1), zeroingTimestamp(b), "Distinct keycodes produce distinct payloads")
   }
+
+  // MARK: - Trackpad (tvOS)
+
+  // Pins the digitizer phase fields the tvOS trackpad sets on the two-IndigoPayload message: the
+  // primary contact's IndigoTouch.eventMask (0x38) / range (0x64) / touch (0x68), and the second
+  // payload's copies at 0xd8 / 0x104 / 0x108. The second payload sits at the wire offset 0xC0 (not
+  // Swift's under-counted MemoryLayout<IndigoMessage>.size), so this also guards that offset.
+  func testTrackpadPhaseFields() throws {
+    let indigo = try makeIndigo()
+    let point = CGPoint(x: 0.5, y: 0.5)
+
+    // began: eventMask = Range|Touch|Identity (0x23); second-payload eventMask = 3.
+    let began = try indigo.trackpad(point: point, phase: .began)
+    XCTAssertEqual(uint32(at: 0x38, in: began), 0x23, "began eventMask")
+    XCTAssertEqual(uint32(at: 0xd8, in: began), 3, "began second-payload eventMask")
+
+    // changed: builder default — Position mask (0x04), no patches.
+    let changed = try indigo.trackpad(point: point, phase: .changed)
+    XCTAssertEqual(uint32(at: 0x38, in: changed), 0x04, "changed EventMask (builder default Position)")
+
+    // ended: eventMask = Range|Identity (0x21), range/touch cleared on both payloads.
+    let ended = try indigo.trackpad(point: point, phase: .ended)
+    XCTAssertEqual(uint32(at: 0x38, in: ended), 0x21, "ended eventMask")
+    XCTAssertEqual(uint32(at: 0x64, in: ended), 0, "ended range up")
+    XCTAssertEqual(uint32(at: 0x68, in: ended), 0, "ended touch up")
+    XCTAssertEqual(uint32(at: 0xd8, in: ended), 1, "ended second-payload eventMask")
+    XCTAssertEqual(uint32(at: 0x104, in: ended), 0, "ended second-payload Range up")
+    XCTAssertEqual(uint32(at: 0x108, in: ended), 0, "ended second-payload Touch up")
+  }
 }

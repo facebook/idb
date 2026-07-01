@@ -24,6 +24,7 @@ public indirect enum FBSimulatorHIDEvent: Equatable, Hashable {
   case button(direction: FBSimulatorHIDDirection, button: FBSimulatorHIDButton)
   case keyboard(direction: FBSimulatorHIDDirection, keyCode: UInt32)
   case twoFingerTouch(direction: FBSimulatorHIDDirection, finger1: CGPoint, finger2: CGPoint)
+  case trackpad(phase: FBSimulatorTrackpadPhase, point: CGPoint)
   case delay(TimeInterval)
   case deviceOrientation(FBSimulatorHIDDeviceOrientation)
   case shake
@@ -56,6 +57,8 @@ public extension FBSimulatorHIDEvent {
       try await hid.sendKeyboard(direction: direction, keyCode: keyCode)
     case let .twoFingerTouch(direction, finger1, finger2):
       try await hid.sendTwoFingerTouch(direction: direction, finger1: finger1, finger2: finger2)
+    case let .trackpad(phase, point):
+      try await hid.sendTrackpad(point: point, phase: phase)
     case let .delay(duration):
       try await Task.sleep(nanoseconds: UInt64(max(0, duration) * 1_000_000_000))
     case let .deviceOrientation(orientation):
@@ -181,6 +184,26 @@ public extension FBSimulatorHIDEvent {
     return .composite(events)
   }
 
+  /// A tvOS Siri Remote trackpad pan from `(fromX,fromY)` to `(toX,toY)` — points absolute-normalized
+  /// (0..1, top-left). Expands to a began → changed×steps → ended gesture; the interpolated changed
+  /// samples with small delays give the focus engine the velocity it needs to move focus. Drained once
+  /// by `send(event:logger:)`. Indigo-only (the DTUHID transport has no trackpad).
+  static func pan(
+    fromX: Double, fromY: Double, toX: Double, toY: Double, steps: Int, duration: Double
+  ) -> FBSimulatorHIDEvent {
+    let n = max(1, steps)
+    let stepDelay = duration / Double(n + 1)
+    var events: [FBSimulatorHIDEvent] = [.trackpad(phase: .began, point: CGPoint(x: fromX, y: fromY))]
+    for i in 1...n {
+      let t = Double(i) / Double(n + 1)
+      events.append(.delay(stepDelay))
+      events.append(.trackpad(phase: .changed, point: CGPoint(x: fromX + (toX - fromX) * t, y: fromY + (toY - fromY) * t)))
+    }
+    events.append(.delay(stepDelay))
+    events.append(.trackpad(phase: .ended, point: CGPoint(x: toX, y: toY)))
+    return .composite(events)
+  }
+
   static func pinchAt(
     x centerX: Double, y centerY: Double, scale: Double, duration: Double, radius: Double
   ) -> FBSimulatorHIDEvent {
@@ -258,6 +281,9 @@ extension FBSimulatorHIDEvent: CustomStringConvertible {
     case let .twoFingerTouch(direction, finger1, finger2):
       guard shouldLogHIDEventDetails() else { return "TwoFingerTouch <hidden>" }
       return "TwoFingerTouch \(direction.name) at (\(finger1.x),\(finger1.y)) (\(finger2.x),\(finger2.y))"
+    case let .trackpad(phase, point):
+      guard shouldLogHIDEventDetails() else { return "Trackpad <hidden>" }
+      return "Trackpad \(phase.name) at (\(point.x),\(point.y))"
     case let .delay(duration):
       return "Delay for \(duration)"
     case let .deviceOrientation(orientation):

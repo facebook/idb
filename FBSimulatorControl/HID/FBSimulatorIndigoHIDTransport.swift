@@ -112,4 +112,9 @@ actor FBSimulatorIndigoHIDTransport: FBSimulatorHIDTransport {
 
   /// No-op: the legacy client awaits delivery on every `send`, so there is nothing left to drain.
   func flush() async throws {}
+
+  // No tvOS guard — the trackpad is exactly what Apple TV targets need (unlike the touchscreen).
+  func sendTrackpad(point: CGPoint, phase: FBSimulatorTrackpadPhase) async throws {
+    try await indigoClient.send(indigo.trackpad(point: point, phase: phase))
+  }
 }

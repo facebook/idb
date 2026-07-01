@@ -34,6 +34,10 @@ protocol FBSimulatorHIDTransport: Sendable {
   func sendButton(direction: FBSimulatorHIDDirection, button: FBSimulatorHIDButton) async throws
   /// Sends a keyboard key event.
   func sendKeyboard(direction: FBSimulatorHIDDirection, keyCode: UInt32) async throws
+  /// Sends one phase of a tvOS Siri Remote trackpad gesture. `point` is absolute-normalized (0..1).
+  /// Indigo-only: the trackpad rides the dedicated Indigo trackpad service, which the `dtuhidd` daemon
+  /// does not expose (the DTUHID impl throws `notImplementedOnDTUHIDTransport`).
+  func sendTrackpad(point: CGPoint, phase: FBSimulatorTrackpadPhase) async throws
   /// Drains the transport after a gesture's events have all been sent, so the daemon consumes them
   /// before the connection is torn down. Called once per dispatched `FBSimulatorHIDEvent` (i.e. once
   /// per gesture), not once per primitive.

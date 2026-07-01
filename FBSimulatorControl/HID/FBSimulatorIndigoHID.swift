@@ -21,6 +21,11 @@ public final class FBSimulatorIndigoHID {
     @convention(c) (
       UnsafeMutablePointer<CGPoint>?, UnsafeMutablePointer<CGPoint>?, Int32, Int32, ObjCBool
     ) -> UnsafeMutablePointer<IndigoMessage>
+  // The SimulatorKit tvOS-trackpad builder: builds a touch-DOWN "changed" digitizer event for the
+  // dedicated trackpad service (target 0x16). Callers set the returned message's digitizer phase
+  // fields (see `trackpad(point:phase:)`) to express a began → changed → ended gesture.
+  private typealias MessageForTrackpadMoveEventFn =
+    @convention(c) (CGPoint, UInt32) -> UnsafeMutablePointer<IndigoMessage>
 
   private let messageForButton: MessageForButtonFn
   private let messageForKeyboardArbitrary: MessageForKeyboardArbitraryFn
@@ -68,6 +73,56 @@ public final class FBSimulatorIndigoHID {
       return nil
     }
     let message = messageForButton(source, direction.rawValue, Int32(ButtonEventTargetHardware))
+    return FBSimulatorIndigoHID.data(fromMallocedMessage: message)
+  }
+
+  /// The dedicated tvOS trackpad HID service target (what Simulator.app's on-screen remote hard-codes;
+  /// NOT the `screenID | 0x40000000` screen target, which binds to the main-screen digitizer and does
+  /// not move tvOS focus).
+  private static let trackpadTarget: UInt32 = 0x16
+
+  /// The wire size of a single-payload `IndigoMessage` (Indigo.h: "Total allocation is 0xC0"), i.e.
+  /// where the trackpad builder appends its second `IndigoPayload` (matching `twoFingerTouchScreenSize`'s
+  /// payload 2 at 0xC0). NB: this is the *wire* offset — Swift's `MemoryLayout<IndigoMessage>.size`
+  /// under-counts it (0xB0) because of the packed union, so it cannot be used to locate payload 2.
+  private static let indigoMessageWireSize = 0xC0
+
+  /// A tvOS Siri Remote trackpad move. Builds `IndigoHIDMessageForTrackpadMoveEvent(point, 0x16)` and
+  /// sets its digitizer phase fields so the focus engine reads a began → changed → ended gesture
+  /// rather than a stream of stationary positions (a bare position stream is accepted but does not
+  /// move focus). `point` is absolute-normalized (0..1, top-left origin).
+  ///
+  /// The builder emits a *two*-`IndigoPayload` message (like the multi-touch builder): the primary
+  /// contact in `message.payload`, a repeated contact in the `IndigoPayload` immediately after the
+  /// message (at `MemoryLayout<IndigoMessage>.size` — see `twoFingerTouchScreenSize`'s payload 2 at
+  /// 0xC0). Both carry the digitizer state in `IndigoTouch.eventMask` (IOHIDDigitizerEventMask: Range
+  /// 0x1 | Touch 0x2 | Position 0x4 | Identity 0x20), `range`, and `touch`; the builder defaults to a
+  /// Position/touch-down "changed" contact.
+  public func trackpad(point: CGPoint, phase: FBSimulatorTrackpadPhase) throws -> Data {
+    guard let handle = Bundle(identifier: "com.apple.SimulatorKit")?.dlopenExecutablePath() else {
+      throw FBSimulatorHIDError.simulatorKitUnavailable
+    }
+    let build = unsafeBitCast(
+      FBGetSymbolFromHandle(handle, "IndigoHIDMessageForTrackpadMoveEvent"),
+      to: MessageForTrackpadMoveEventFn.self)
+    let message = build(point, FBSimulatorIndigoHID.trackpadTarget)
+    let secondary = UnsafeMutableRawPointer(message)
+      .advanced(by: FBSimulatorIndigoHID.indigoMessageWireSize)
+      .assumingMemoryBound(to: IndigoPayload.self)
+    switch phase {
+    case .began:
+      message.pointee.payload.event.touch.eventMask = 0x23 // Range|Touch|Identity
+      secondary.pointee.event.touch.eventMask = 3
+    case .changed:
+      break // builder default: Position mask, touch down
+    case .ended:
+      message.pointee.payload.event.touch.eventMask = 0x21 // Range|Identity, Touch cleared
+      message.pointee.payload.event.touch.range = 0 // out of range
+      message.pointee.payload.event.touch.touch = 0 // contact up
+      secondary.pointee.event.touch.eventMask = 1
+      secondary.pointee.event.touch.range = 0
+      secondary.pointee.event.touch.touch = 0
+    }
     return FBSimulatorIndigoHID.data(fromMallocedMessage: message)
   }
 

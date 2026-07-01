@@ -70,6 +70,24 @@ public enum FBSimulatorHIDRemoteButton: Int32, Sendable, CaseIterable {
   }
 }
 
+/// The phase of a tvOS Siri Remote trackpad gesture. A pan is a began → changed×N → ended sequence;
+/// the phase selects which digitizer fields the Indigo trackpad message carries so the tvOS focus
+/// engine reads a lifting gesture (a bare stream of positions never moves focus).
+public enum FBSimulatorTrackpadPhase: Sendable, Equatable, Hashable, CaseIterable {
+  case began
+  case changed
+  case ended
+
+  /// The canonical lower-snake-case name for this phase.
+  public var name: String {
+    switch self {
+    case .began: return "began"
+    case .changed: return "changed"
+    case .ended: return "ended"
+    }
+  }
+}
+
 /// Device orientation. Values match UIDeviceOrientation (1-4, excluding faceUp/faceDown).
 public enum FBSimulatorHIDDeviceOrientation: Int32, Sendable, CaseIterable {
   case portrait = 1
