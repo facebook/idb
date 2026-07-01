@@ -403,7 +403,7 @@ import XCTestBootstrap
     }
   }
 
-  public func tail(_ path: String, to_consumer consumer: FBDataConsumer, in_container containerType: String?) async throws -> any FBiOSTargetOperation {
+  public func tail(_ path: String, to_consumer consumer: FBDataConsumer, in_container containerType: String?) async throws -> FileContainerTailOperation {
     return try await withFileContainer(for: containerType) { container in
       try await container.tail(path, to: consumer)
     }

@@ -226,7 +226,7 @@ class FBSpringboardServicesIconContainer: NSObject, AsyncFileContainer {
     try await copyFromContainerAsync(sourcePath: sourcePath, toHost: destinationPath)
   }
 
-  func tail(_ path: String, to consumer: any FBDataConsumer) async throws -> any FBiOSTargetOperation {
+  func tail(_ path: String, to consumer: any FBDataConsumer) async throws -> FileContainerTailOperation {
     throw FBControlCoreError.describe("tail is not implemented for FBSpringboardServicesIconContainer").build()
   }
 

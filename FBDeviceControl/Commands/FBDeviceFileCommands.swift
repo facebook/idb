@@ -59,7 +59,7 @@ public class FBDeviceFileContainer: NSObject, AsyncFileContainer {
     return destination
   }
 
-  public func tail(_ path: String, to consumer: any FBDataConsumer) async throws -> any FBiOSTargetOperation {
+  public func tail(_ path: String, to consumer: any FBDataConsumer) async throws -> FileContainerTailOperation {
     throw FBControlCoreError.describe("tail is not implemented for FBDeviceFileContainer").build()
   }
 
@@ -164,7 +164,7 @@ private class FBDeviceFileContainer_Wallpaper: NSObject, AsyncFileContainer {
     return destinationPath
   }
 
-  func tail(_ path: String, to consumer: any FBDataConsumer) async throws -> any FBiOSTargetOperation {
+  func tail(_ path: String, to consumer: any FBDataConsumer) async throws -> FileContainerTailOperation {
     throw FBControlCoreError.describe("tail is not supported for Wallpaper File Containers").build()
   }
 
@@ -206,7 +206,7 @@ private class FBDeviceFileContainer_MDMProfiles: NSObject, AsyncFileContainer {
     throw FBControlCoreError.describe("\(#function) does not make sense for MDM Profile File Containers").build()
   }
 
-  func tail(_ path: String, to consumer: any FBDataConsumer) async throws -> any FBiOSTargetOperation {
+  func tail(_ path: String, to consumer: any FBDataConsumer) async throws -> FileContainerTailOperation {
     throw FBControlCoreError.describe("tail is not supported for MDM Profile File Containers").build()
   }
 
@@ -249,7 +249,7 @@ private class FBDeviceFileCommands_DiskImages: NSObject, AsyncFileContainer {
     throw FBControlCoreError.describe("\(#function) does not make sense for Disk Images").build()
   }
 
-  func tail(_ path: String, to consumer: any FBDataConsumer) async throws -> any FBiOSTargetOperation {
+  func tail(_ path: String, to consumer: any FBDataConsumer) async throws -> FileContainerTailOperation {
     throw FBControlCoreError.describe("tail is not supported for Disk Images").build()
   }
 
@@ -368,7 +368,7 @@ private class FBDeviceFileCommands_Symbols: NSObject, AsyncFileContainer {
     return try await commands.pullSymbolFile(sourcePath, toDestinationPath: destinationPath)
   }
 
-  func tail(_ path: String, to consumer: any FBDataConsumer) async throws -> any FBiOSTargetOperation {
+  func tail(_ path: String, to consumer: any FBDataConsumer) async throws -> FileContainerTailOperation {
     throw FBControlCoreError.describe("tail is not supported for Symbols").build()
   }
 

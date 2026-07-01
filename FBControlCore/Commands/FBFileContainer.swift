@@ -58,13 +58,18 @@ private final class ProvisioningCommandsBox: @unchecked Sendable {
   }
 }
 
-/// Wraps a teardown future in `FBiOSTargetOperation` shape so `tail` has an
-/// operation handle to return.
-private final class FileContainerTailOperation: NSObject, FBiOSTargetOperation {
-  let completed: FBFuture<NSNull>
+/// Handle to a running `tail` started by a file container. Cancelling stops the
+/// underlying `tail` subprocess and waits for it to exit.
+public final class FileContainerTailOperation: NSObject {
+  private let completed: FBFuture<NSNull>
   init(completed: FBFuture<NSNull>) {
     self.completed = completed
     super.init()
+  }
+
+  /// Cancels the tail and waits for the cancellation to complete.
+  public func cancel() async throws {
+    try await bridgeFBFutureVoid(self.completed.cancel())
   }
 }
 
@@ -170,7 +175,7 @@ public final class FBContainedFile_ContainedRoot: NSObject, AsyncFileContainer {
     }
   }
 
-  public func tail(_ path: String, to consumer: any FBDataConsumer) async throws -> any FBiOSTargetOperation {
+  public func tail(_ path: String, to consumer: any FBDataConsumer) async throws -> FileContainerTailOperation {
     let box = rootFileBox
     let serialQueue = queue
     let hostPath: String = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<String, Error>) in
@@ -308,7 +313,7 @@ public final class FBFileContainer_ProvisioningProfile: NSObject, AsyncFileConta
     throw FBControlCoreError.describe("\(#function) is not implemented for provisioning profiles").build()
   }
 
-  public func tail(_ path: String, to consumer: any FBDataConsumer) async throws -> any FBiOSTargetOperation {
+  public func tail(_ path: String, to consumer: any FBDataConsumer) async throws -> FileContainerTailOperation {
     throw FBControlCoreError.describe("\(#function) is not implemented for provisioning profiles").build()
   }
 
