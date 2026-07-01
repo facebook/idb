@@ -8,7 +8,6 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBFuture.h>
-#import <FBControlCore/FBiOSTargetOperation.h>
 
 static const size_t FBProcessOutputErrorMessageLength = 200;
 

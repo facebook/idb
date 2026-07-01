@@ -39,7 +39,6 @@
 #import <FBControlCore/FBiOSTarget.h>
 #import <FBControlCore/FBiOSTargetConfiguration.h>
 #import <FBControlCore/FBiOSTargetConstants.h>
-#import <FBControlCore/FBiOSTargetOperation.h>
 
 #if __has_include(<FBControlCore/FBControlCore-Swift.h>)
  #import <FBControlCore/FBControlCore-Swift.h>

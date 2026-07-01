@@ -8,7 +8,6 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBSubprocess.h>
-#import <FBControlCore/FBiOSTargetOperation.h>
 
 extern const NSTimeInterval DefaultInstrumentsOperationDuration; // Operation duration
 extern const NSTimeInterval DefaultInstrumentsTerminateTimeout; // When stopping instruments with SIGINT, wait this long before SIGKILLing it
