@@ -16,7 +16,7 @@ import XCTestBootstrap
   case running
 }
 
-@objc public final class FBIDBTestOperation: NSObject, FBiOSTargetOperation {
+@objc public final class FBIDBTestOperation: NSObject {
 
   @objc public let completed: FBFuture<NSNull>
   @objc public let logger: FBControlCoreLogger
@@ -40,6 +40,11 @@ import XCTestBootstrap
     self.completed = completed
     self.queue = queue
     super.init()
+  }
+
+  /// Waits for the test run to complete.
+  public func awaitCompletion() async throws {
+    try await bridgeFBFutureVoid(self.completed)
   }
 
   public override var description: String {
