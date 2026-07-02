@@ -27,13 +27,13 @@ public final class FBXCTraceRecordOperation {
     self.logger = logger
   }
 
-  public class func operation(with target: FBiOSTarget, configuration: FBXCTraceRecordConfiguration, logger: FBControlCoreLogger) -> FBFuture<FBXCTraceRecordOperation> {
+  public class func operation(with target: FBiOSTarget, configuration: FBXCTraceRecordConfiguration, logger: FBControlCoreLogger) async throws -> FBXCTraceRecordOperation {
     let queue = DispatchQueue(label: "com.facebook.fbcontrolcore.xctrace")
     let traceDir = (target.auxillaryDirectory as NSString).appendingPathComponent("xctrace-" + UUID().uuidString)
     do {
       try FileManager.default.createDirectory(atPath: traceDir, withIntermediateDirectories: false, attributes: nil)
     } catch {
-      return FBControlCoreError.describe("Failed to create xctrace trace output directory: \(error)").failFuture() as! FBFuture<FBXCTraceRecordOperation>
+      throw FBControlCoreError.describe("Failed to create xctrace trace output directory: \(error)").build()
     }
     let traceFile = (traceDir as NSString).appendingPathComponent("trace.trace")
 
@@ -67,49 +67,40 @@ public final class FBXCTraceRecordOperation {
     logger.log("Starting xctrace with arguments: \(FBCollectionInformation.oneLineDescription(from: arguments))")
 
     // Find the absolute path to xctrace
-    let xctracePath: String
-    do {
-      xctracePath = try Self.xctracePath()
-    } catch {
-      return FBFuture(error: error) as! FBFuture<FBXCTraceRecordOperation>
-    }
+    let xctracePath = try Self.xctracePath()
 
     var environment: [String: String] = [:]
     if let customDeviceSetPath = target.customDeviceSetPath {
       guard let shim = configuration.shim else {
-        return FBControlCoreError.describe("Failed to locate the shim file for xctrace method swizzling").failFuture() as! FBFuture<FBXCTraceRecordOperation>
+        throw FBControlCoreError.describe("Failed to locate the shim file for xctrace method swizzling").build()
       }
       environment["SIM_DEVICE_SET_PATH"] = customDeviceSetPath
       environment["DYLD_INSERT_LIBRARIES"] = shim.macOSTestShimPath
     }
 
-    let result = FBProcessBuilder<AnyObject, AnyObject, AnyObject>
-      .withLaunchPath(xctracePath)
-      .withArguments(arguments)
-      .withEnvironmentAdditions(environment)
-      .withStdOut(to: logger)
-      .withStdErr(to: logger)
-      .withTaskLifecycleLogging(to: logger)
-      .start()
-      .onQueue(
-        target.asyncQueue,
-        map: { task -> AnyObject in
-          logger.log("Started xctrace \(task)")
-          let typedTask = unsafeBitCast(task, to: FBSubprocess<AnyObject, AnyObject, AnyObject>.self)
-          return FBXCTraceRecordOperation(task: typedTask, traceDir: URL(fileURLWithPath: traceFile), configuration: configuration, queue: queue, logger: logger)
-        })
-    return unsafeBitCast(result, to: FBFuture<FBXCTraceRecordOperation>.self)
+    let started = try await bridgeFBFuture(
+      FBProcessBuilder<AnyObject, AnyObject, AnyObject>
+        .withLaunchPath(xctracePath)
+        .withArguments(arguments)
+        .withEnvironmentAdditions(environment)
+        .withStdOut(to: logger)
+        .withStdErr(to: logger)
+        .withTaskLifecycleLogging(to: logger)
+        .start())
+    logger.log("Started xctrace \(started)")
+    let typedTask = unsafeBitCast(started, to: FBSubprocess<AnyObject, AnyObject, AnyObject>.self)
+    return FBXCTraceRecordOperation(task: typedTask, traceDir: URL(fileURLWithPath: traceFile), configuration: configuration, queue: queue, logger: logger)
   }
 
   // MARK: Public Methods
 
-  /// Async wrapper for `stop(withTimeout:)`. Returns the trace directory URL on success.
-  public func stopAsync(withTimeout timeout: TimeInterval) async throws -> URL {
-    let url = try await bridgeFBFuture(self.stop(withTimeout: timeout))
+  /// Stops the xctrace recording and returns the trace directory URL on success.
+  public func stop(withTimeout timeout: TimeInterval) async throws -> URL {
+    let url = try await bridgeFBFuture(self.stopFuture(withTimeout: timeout))
     return url as URL
   }
 
-  public func stop(withTimeout timeout: TimeInterval) -> FBFuture<NSURL> {
+  private func stopFuture(withTimeout timeout: TimeInterval) -> FBFuture<NSURL> {
     let result = FBFuture<AnyObject>.onQueue(
       queue,
       resolve: {
@@ -128,33 +119,6 @@ public final class FBXCTraceRecordOperation {
             }
           })
     )
-    return unsafeBitCast(result, to: FBFuture<NSURL>.self)
-  }
-
-  public class func postProcess(_ arguments: [String]?, traceDir: URL, queue: DispatchQueue, logger: FBControlCoreLogger?) -> FBFuture<NSURL> {
-    guard let arguments, !arguments.isEmpty else {
-      return FBFuture<NSURL>(result: traceDir as NSURL)
-    }
-    let outputTraceFile = traceDir.deletingLastPathComponent().appendingPathComponent(arguments[2])
-    var launchArguments: [String] = [arguments[1], traceDir.path, "-o", outputTraceFile.path]
-    if arguments.count > 3 {
-      launchArguments.append(contentsOf: Array(arguments[3...]))
-    }
-
-    logger?.log("Starting post processing | Launch path: \(arguments[0]) | Arguments: \(FBCollectionInformation.oneLineDescription(from: launchArguments))")
-    let result = FBProcessBuilder<NSNull, NSData, NSData>
-      .withLaunchPath(arguments[0])
-      .withArguments(launchArguments)
-      .withStdInConnected()
-      .withStdOut(to: logger!)
-      .withStdErr(to: logger!)
-      .withTaskLifecycleLogging(to: logger)
-      .runUntilCompletion(withAcceptableExitCodes: Set([NSNumber(value: 0)]))
-      .onQueue(
-        queue,
-        map: { _ -> AnyObject in
-          outputTraceFile as NSURL
-        })
     return unsafeBitCast(result, to: FBFuture<NSURL>.self)
   }
 

@@ -70,7 +70,7 @@ struct XctraceRecordMethodHandler {
 
   private func stopXCTrace(operation: FBXCTraceRecordOperation, request stop: Idb_XctraceRecordRequest.Stop, responseStream: GRPCAsyncResponseStreamWriter<Idb_XctraceRecordResponse>, finishedWriting: Atomic<Bool>) async throws {
     let stopTimeout = stop.timeout != 0 ? stop.timeout : DefaultXCTraceRecordStopTimeout
-    _ = try await operation.stopAsync(withTimeout: stopTimeout)
+    _ = try await operation.stop(withTimeout: stopTimeout)
     let response = Idb_XctraceRecordResponse.with {
       $0.state = .processing
     }

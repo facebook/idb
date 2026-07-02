@@ -30,7 +30,6 @@ public class FBXCTraceRecordCommands: NSObject, FBiOSTargetCommand {
 
   public func startXctraceRecord(_ configuration: FBXCTraceRecordConfiguration, logger: any FBControlCoreLogger) async throws -> FBXCTraceRecordOperation {
     let shim = try await bridgeFBFuture(FBXCTestShimConfiguration.sharedShimConfiguration(with: logger))
-    return try await bridgeFBFuture(
-      FBXCTraceRecordOperation.operation(with: target, configuration: configuration.withShim(shim), logger: logger))
+    return try await FBXCTraceRecordOperation.operation(with: target, configuration: configuration.withShim(shim), logger: logger)
   }
 }
