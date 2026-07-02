@@ -5,9 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import CompanionUtilities
 @preconcurrency import FBControlCore
 import Foundation
-import IDBCompanionUtilities
 
 /// Awaits the value of an `FBFutureContext` and registers its teardown with the
 /// current `FBTeardownContext` so it fires when the surrounding handler scope

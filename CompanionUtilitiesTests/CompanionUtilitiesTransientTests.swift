@@ -5,10 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@testable import IDBCompanionUtilities
+@testable import CompanionUtilities
 import XCTest
 
-final class IDBCompanionUtilitiesTransientTests: XCTestCase {
+final class CompanionUtilitiesTransientTests: XCTestCase {
 
   // MARK: - FBMutex Tests
 

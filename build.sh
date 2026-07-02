@@ -377,7 +377,7 @@ function build_idb_companion() {
   build_target FBSimulatorControl Release
   build_target FBDeviceControl Release
   build_target CompanionLib Release
-  build_target IDBCompanionUtilities Release
+  build_target CompanionUtilities Release
   # Build idb_companion from its own project
   invoke_xcodebuild \
     ONLY_ACTIVE_ARCH=NO \

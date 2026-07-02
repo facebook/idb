@@ -6,9 +6,9 @@
  */
 
 import CompanionLib
+import CompanionUtilities
 import Foundation
 import GRPC
-import IDBCompanionUtilities
 import IDBGRPCSwift
 
 enum MethodInfoKey: UserInfo.Key {

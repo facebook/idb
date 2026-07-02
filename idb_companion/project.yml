@@ -164,7 +164,7 @@ targets:
         embed: false
       - framework: ../Build/Products/Release/CompanionLib.framework
         embed: false
-      - framework: ../Build/Products/Release/IDBCompanionUtilities.framework
+      - framework: ../Build/Products/Release/CompanionUtilities.framework
         embed: false
       - target: IDBGRPCSwift
         embed: false

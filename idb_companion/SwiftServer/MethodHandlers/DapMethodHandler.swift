@@ -6,10 +6,10 @@
  */
 
 import CompanionLib
+import CompanionUtilities
 import FBControlCore
 import FBSimulatorControl
 import GRPC
-import IDBCompanionUtilities
 import IDBGRPCSwift
 
 struct DapMethodHandler {

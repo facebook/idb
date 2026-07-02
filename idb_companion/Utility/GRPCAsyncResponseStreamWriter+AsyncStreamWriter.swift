@@ -5,8 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import CompanionUtilities
 import GRPC
-import IDBCompanionUtilities
 
 extension GRPCAsyncResponseStreamWriter: @retroactive AsyncStreamWriter {
   public typealias Value = Response

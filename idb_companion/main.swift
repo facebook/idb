@@ -6,11 +6,11 @@
  */
 
 import CompanionLib
+import CompanionUtilities
 import FBControlCore
 import FBDeviceControl
 import FBSimulatorControl
 import Foundation
-import IDBCompanionUtilities
 import XCTestBootstrap
 
 // swiftlint:disable force_cast

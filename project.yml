@@ -250,17 +250,17 @@ targets:
       - target: FBDeviceControl
       - sdk: XCTest.framework
 
-  IDBCompanionUtilities:
+  CompanionUtilities:
     type: framework
     platform: macOS
     deploymentTarget: "12.0"
     sources:
-      - path: IDBCompanionUtilities
+      - path: CompanionUtilities
     settings:
       base:
         MACOSX_DEPLOYMENT_TARGET: "12.0"
-        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.IDBCompanionUtilities
-        PRODUCT_NAME: IDBCompanionUtilities
+        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.CompanionUtilities
+        PRODUCT_NAME: CompanionUtilities
         DEFINES_MODULE: YES
         MACH_O_TYPE: staticlib
         SWIFT_VERSION: "6.0"
@@ -272,21 +272,21 @@ targets:
     dependencies:
       - sdk: Foundation.framework
 
-  IDBCompanionUtilitiesTests:
+  CompanionUtilitiesTests:
     type: bundle.unit-test
     platform: macOS
     deploymentTarget: "12.0"
     sources:
-      - path: IDBCompanionUtilitiesTests
+      - path: CompanionUtilitiesTests
     settings:
       base:
         MACOSX_DEPLOYMENT_TARGET: "12.0"
-        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.IDBCompanionUtilitiesTests
-        PRODUCT_NAME: IDBCompanionUtilitiesTests
+        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.CompanionUtilitiesTests
+        PRODUCT_NAME: CompanionUtilitiesTests
         SWIFT_VERSION: "5.9"
         GENERATE_INFOPLIST_FILE: YES
     dependencies:
-      - target: IDBCompanionUtilities
+      - target: CompanionUtilities
       - sdk: XCTest.framework
 
   CompanionLib:
@@ -315,6 +315,6 @@ targets:
         embed: false
       - target: FBDeviceControl
         embed: false
-      - target: IDBCompanionUtilities
+      - target: CompanionUtilities
         embed: false
       - sdk: Foundation.framework

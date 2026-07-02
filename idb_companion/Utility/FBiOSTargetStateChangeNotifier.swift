@@ -6,9 +6,9 @@
  */
 
 import CompanionLib
+import CompanionUtilities
 import FBControlCore
 import Foundation
-import IDBCompanionUtilities
 
 @objc final class FBiOSTargetStateChangeNotifier: NSObject, FBiOSTargetSetDelegate {
 

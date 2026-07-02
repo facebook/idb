@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@testable import IDBCompanionUtilities
+@testable import CompanionUtilities
 import XCTest
 
 final class AsyncPromiseTests: XCTestCase {

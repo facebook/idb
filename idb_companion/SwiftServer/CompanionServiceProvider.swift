@@ -6,10 +6,10 @@
  */
 
 import CompanionLib
+import CompanionUtilities
 @preconcurrency import FBControlCore
 import Foundation
 import GRPC
-import IDBCompanionUtilities
 import IDBGRPCSwift
 import NIOHPACK
 import SwiftProtobuf

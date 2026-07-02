@@ -6,10 +6,10 @@
  */
 
 import CompanionLib
+import CompanionUtilities
 import Dispatch
 import FBControlCore
 import Foundation
-import IDBCompanionUtilities
 
 /// Tracks in-flight work and signals when none has run for `idleTime`.
 ///

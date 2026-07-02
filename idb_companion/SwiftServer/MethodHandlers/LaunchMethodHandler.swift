@@ -6,10 +6,10 @@
  */
 
 import CompanionLib
+import CompanionUtilities
 import FBControlCore
 import Foundation
 import GRPC
-import IDBCompanionUtilities
 import IDBGRPCSwift
 
 struct LaunchMethodHandler {
