@@ -6,11 +6,10 @@
 
 # pyre-strict
 
-import asyncio
 import os
 import sys
 from argparse import Namespace
-from typing import Any, TypeVar
+from typing import TypeVar
 from unittest.mock import ANY, MagicMock, patch
 
 from idb.cli.commands.xctest import NO_SPECIFIED_PATH
@@ -58,9 +57,6 @@ class AsyncGeneratorMock(AsyncMock):
 
 
 class TestParser(TestCase):
-    def __init__(self, *args: Any, **kws: Any) -> None:
-        super().__init__(*args, loop=asyncio.get_event_loop(), **kws)
-
     def setUp(self) -> None:
         self.client_mock = MagicMock(name="client_mock")
         self.client_mock.build.return_value = AsyncContextManagerMock(
