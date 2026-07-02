@@ -69,7 +69,7 @@ struct InstrumentsRunMethodHandler {
   }
 
   private func stopInstruments(operation: FBInstrumentsOperation, request: Idb_InstrumentsRunRequest.Stop, responseStream: GRPCAsyncResponseStreamWriter<Idb_InstrumentsRunResponse>, finishedWriting: Atomic<Bool>) async throws {
-    _ = try await operation.stopAsync()
+    let traceFile = try await operation.stopAsync()
     let response = Idb_InstrumentsRunResponse.with {
       $0.state = .postProcessing
     }
@@ -78,7 +78,7 @@ struct InstrumentsRunMethodHandler {
     let postProcessArguments = commandExecutor.storageManager.interpolateArgumentReplacements(request.postProcessArguments)
     let processed = try await FBInstrumentsOperation.postProcessAsync(
       arguments: postProcessArguments,
-      traceFile: operation.traceFile,
+      traceFile: traceFile,
       queue: BridgeQueues.futureSerialFullfillmentQueue,
       logger: logger)
     let processedPath = processed.path
