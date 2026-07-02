@@ -15,7 +15,7 @@ struct TestRepl: AsyncParsableCommand {
   static let configuration = CommandConfiguration(
     commandName: "idb-repl",
     abstract: "Launch a test bundle in REPL mode",
-    subcommands: [TestCommand.self, SimulatorCommand.self])
+    subcommands: [TestCommand.self, SimulatorCommand.self, AppCommand.self])
 }
 
 struct TestCommand: AsyncParsableCommand {
@@ -40,5 +40,18 @@ struct SimulatorCommand: AsyncParsableCommand {
 
   func run() async throws {
     try await repl.run(context: .simulator)
+  }
+}
+
+struct AppCommand: AsyncParsableCommand {
+  static let configuration = CommandConfiguration(
+    commandName: "app",
+    abstract: "Run the REPL in an app context (launch an installed app with the REPL injected).")
+
+  @OptionGroup var repl: ReplRunner
+  @OptionGroup var app: AppOptions
+
+  func run() async throws {
+    try await repl.run(context: .app(app))
   }
 }

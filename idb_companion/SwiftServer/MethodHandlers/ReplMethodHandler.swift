@@ -25,9 +25,12 @@ struct ReplMethodHandler {
     targetLogger.debug().log("REPL session context: \(start.context)")
 
     let session: ReplSession
-    if case .test = start.context {
+    switch start.context {
+    case .test:
       session = try await commandExecutor.repl_start_test(bundlePath: start.testBundlePath)
-    } else {
+    case .app:
+      session = try await commandExecutor.repl_start_app(bundleID: start.appBundleID)
+    case .simulator, .UNRECOGNIZED:
       session = try await commandExecutor.repl_start_simulator()
     }
 

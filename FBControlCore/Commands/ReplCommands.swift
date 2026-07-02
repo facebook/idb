@@ -12,4 +12,6 @@ public protocol ReplCommands: AnyObject {
   func startReplTest(bundlePath: String) async throws -> ReplSession
 
   func startReplSimulator() async throws -> ReplSession
+
+  func startReplApp(bundleID: String) async throws -> ReplSession
 }

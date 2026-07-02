@@ -797,8 +797,11 @@ message ReplRequest {
     enum Context {
       SIMULATOR = 0;
       TEST = 1;
+      APP = 2;
     }
     Context context = 2;
+    // The bundle id to launch (with the REPL injected) for the APP context.
+    string app_bundle_id = 3;
   }
   // Sent for each piece of code to run: a compiled dylib and the symbol to
   // call.

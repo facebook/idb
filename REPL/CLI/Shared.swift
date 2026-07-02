@@ -14,6 +14,12 @@ struct TestBundleOptions: ParsableArguments {
   var testBundlePath: String
 }
 
+/// Options that only apply to the `app` context.
+struct AppOptions: ParsableArguments {
+  @Option(name: .long, help: "Bundle id of the installed app to launch and inject the REPL into.")
+  var bundleID: String
+}
+
 /// @unchecked Sendable: the lazy-creation flag is the only mutable state and is
 /// guarded by `lock`; `path` is an immutable `let`.
 final class SessionDirectory: @unchecked Sendable {

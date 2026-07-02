@@ -120,6 +120,51 @@ public final class FBSimulatorReplCommands: NSObject, FBiOSTargetCommand {
     let run = unsafeBitCast(process.statLoc, to: FBFuture<NSNull>.self)
     return ReplSession(socketPath: socketPath, run: run, extraInterfacePaths: [idbInterfacePath].compactMap { $0 })
   }
+
+  fileprivate func startReplAppAsync(bundleID: String) async throws -> ReplSession {
+    guard let simulator = self.simulator else {
+      throw FBSimulatorError.describe("Simulator is deallocated").build()
+    }
+    guard let logger = simulator.logger else {
+      throw FBSimulatorError.describe("Simulator has no logger").build()
+    }
+
+    // Inject libRepl into the launched app from the shim install location (the
+    // same dylib the other contexts use). libRepl's constructor -- gated on
+    // IDB_REPL_APP_AUTOSTART -- starts the control socket inside the app on load.
+    let shimDirectory = try await bridgeFBFuture(FBXCTestShimConfiguration.findShimDirectory(onQueue: simulator.workQueue, logger: logger))
+    let replDylibPath = shimDirectory.appendingPathComponent("libRepl-iOS.dylib")
+    guard FileManager.default.fileExists(atPath: replDylibPath) else {
+      throw FBSimulatorError.describe("REPL shim not found at expected location \(replDylibPath)").build()
+    }
+
+    // The app binds this socket (via libRepl's constructor); the gRPC handler connects.
+    let socketPath = "/tmp/idb_repl_\(UUID().uuidString).sock"
+
+    let io: FBProcessIO<AnyObject, AnyObject, AnyObject> = .outputToDevNull()
+    let configuration = FBApplicationLaunchConfiguration(
+      bundleID: bundleID,
+      bundleName: nil,
+      arguments: [],
+      environment: [
+        "DYLD_INSERT_LIBRARIES": replDylibPath,
+        "IDB_REPL_APP_AUTOSTART": "1",
+        "IDB_REPL_SOCKET_PATH": socketPath,
+      ],
+      waitForDebugger: false,
+      io: io,
+      // Relaunch so a fresh process picks up the injected dylib even if the app is
+      // already running.
+      launchMode: .relaunchIfRunning
+    )
+    _ = try await simulator.launchApplication(configuration)
+
+    // The app outlives the REPL session -- it keeps running and resets for the
+    // next client on disconnect -- so `run` is already resolved: teardown must not
+    // wait for the app to exit.
+    let run: FBFuture<NSNull> = FBFuture(result: NSNull())
+    return ReplSession(socketPath: socketPath, run: run, extraInterfacePaths: [])
+  }
 }
 
 // MARK: - FBSimulator+ReplCommands
@@ -132,6 +177,10 @@ extension FBSimulator: ReplCommands {
 
   public func startReplSimulator() async throws -> ReplSession {
     try await replCommands().startReplSimulatorAsync()
+  }
+
+  public func startReplApp(bundleID: String) async throws -> ReplSession {
+    try await replCommands().startReplAppAsync(bundleID: bundleID)
   }
 }
 

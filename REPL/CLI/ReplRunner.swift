@@ -16,17 +16,19 @@ import IDBGRPCSwift
 import NIOCore
 import NIOPosix
 
-/// Selects which context the REPL runs in. The `test` context carries the
-/// bundle/module options it needs; `simulator` has none.
+/// Selects which context the REPL runs in. The `test` and `app` contexts carry
+/// the options they need; `simulator` has none.
 enum Context {
   case simulator
   case test(TestBundleOptions)
+  case app(AppOptions)
 
   /// The corresponding gRPC enum forwarded to the companion in the Start message.
   var proto: Idb_ReplRequest.Start.Context {
     switch self {
     case .simulator: return .simulator
     case .test: return .test
+    case .app: return .app
     }
   }
 }
@@ -83,9 +85,13 @@ struct ReplRunner: ParsableArguments {
         $0.control = .start(
           .with {
             $0.context = context.proto
-            // Only the test context runs against a bundle.
+            // Only the test context runs against a bundle; only the app context
+            // names an app to launch.
             if case let .test(bundle) = context {
               $0.testBundlePath = bundle.testBundlePath
+            }
+            if case let .app(app) = context {
+              $0.appBundleID = app.bundleID
             }
           })
       })
