@@ -7,30 +7,26 @@
 
 import Foundation
 
-@objc(FBXCTraceRecordOperation)
-public final class FBXCTraceRecordOperation: NSObject {
+public final class FBXCTraceRecordOperation {
 
   // MARK: Properties
 
-  @objc public let task: FBSubprocess<AnyObject, AnyObject, AnyObject>
-  @objc public let queue: DispatchQueue
-  @objc public let traceDir: URL
-  @objc public let configuration: FBXCTraceRecordConfiguration
-  @objc public let logger: FBControlCoreLogger
+  public let task: FBSubprocess<AnyObject, AnyObject, AnyObject>
+  public let queue: DispatchQueue
+  public let traceDir: URL
+  public let configuration: FBXCTraceRecordConfiguration
+  public let logger: FBControlCoreLogger
 
   // MARK: Initializers
 
-  @objc
   public init(task: FBSubprocess<AnyObject, AnyObject, AnyObject>, traceDir: URL, configuration: FBXCTraceRecordConfiguration, queue: DispatchQueue, logger: FBControlCoreLogger) {
     self.task = task
     self.traceDir = traceDir
     self.configuration = configuration
     self.queue = queue
     self.logger = logger
-    super.init()
   }
 
-  @objc(operationWithTarget:configuration:logger:)
   public class func operation(with target: FBiOSTarget, configuration: FBXCTraceRecordConfiguration, logger: FBControlCoreLogger) -> FBFuture<FBXCTraceRecordOperation> {
     let queue = DispatchQueue(label: "com.facebook.fbcontrolcore.xctrace")
     let traceDir = (target.auxillaryDirectory as NSString).appendingPathComponent("xctrace-" + UUID().uuidString)
@@ -113,7 +109,6 @@ public final class FBXCTraceRecordOperation: NSObject {
     return url as URL
   }
 
-  @objc
   public func stop(withTimeout timeout: TimeInterval) -> FBFuture<NSURL> {
     let result = FBFuture<AnyObject>.onQueue(
       queue,
@@ -136,7 +131,6 @@ public final class FBXCTraceRecordOperation: NSObject {
     return unsafeBitCast(result, to: FBFuture<NSURL>.self)
   }
 
-  @objc(postProcess:traceDir:queue:logger:)
   public class func postProcess(_ arguments: [String]?, traceDir: URL, queue: DispatchQueue, logger: FBControlCoreLogger?) -> FBFuture<NSURL> {
     guard let arguments, !arguments.isEmpty else {
       return FBFuture<NSURL>(result: traceDir as NSURL)
