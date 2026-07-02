@@ -60,11 +60,10 @@ private final class ProvisioningCommandsBox: @unchecked Sendable {
 
 /// Handle to a running `tail` started by a file container. Cancelling stops the
 /// underlying `tail` subprocess and waits for it to exit.
-public final class FileContainerTailOperation: NSObject {
+public final class FileContainerTailOperation {
   private let completed: FBFuture<NSNull>
   init(completed: FBFuture<NSNull>) {
     self.completed = completed
-    super.init()
   }
 
   /// Cancels the tail and waits for the cancellation to complete.

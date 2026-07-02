@@ -10,7 +10,7 @@ import Foundation
 
 // MARK: - FBSimulatorDebugServer
 
-private class FBSimulatorDebugServer: NSObject, FBDebugServer {
+private final class FBSimulatorDebugServer: FBDebugServer {
 
   let task: FBSubprocess<NSNull, AnyObject, AnyObject>
   let lldbBootstrapCommands: [String]
@@ -18,7 +18,6 @@ private class FBSimulatorDebugServer: NSObject, FBDebugServer {
   init(debugServerTask: FBSubprocess<NSNull, AnyObject, AnyObject>, lldbBootstrapCommands: [String]) {
     self.task = debugServerTask
     self.lldbBootstrapCommands = lldbBootstrapCommands
-    super.init()
   }
 
   // MARK: - FBDebugServer
