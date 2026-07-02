@@ -461,11 +461,8 @@ import IOKit
   // Swift protocol requires exact existential return types matching ObjC `id<Protocol>` generics.
   // Use unsafeBitCast since FBFuture's ObjC generic is type-erased at runtime.
 
-  public func createStream(with configuration: FBVideoStreamConfiguration) -> FBFuture<any FBVideoStream> {
-    return unsafeBitCast(
-      FBControlCoreError.describe("-[FBMacDevice createStreamWithConfiguration:] is not implemented").failFuture(),
-      to: FBFuture.self
-    )
+  public func createStream(with configuration: FBVideoStreamConfiguration) async throws -> any FBVideoStream {
+    throw FBControlCoreError.describe("-[FBMacDevice createStreamWithConfiguration:] is not implemented").build()
   }
 
   public func startRecording(toFile filePath: String) -> FBFuture<NSNull> {

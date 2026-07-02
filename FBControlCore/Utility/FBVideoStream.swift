@@ -7,31 +7,18 @@
 
 import Foundation
 
-/// Streams Bitmaps to a File Sink.
-@objc public protocol FBVideoStream {
+/// A handle to a running video stream. It is returned already streaming; call `stop()` to end it.
+public protocol FBVideoStream: AnyObject {
   /// A Future that resolves when the stream has completed.
-  @objc var completed: FBFuture<NSNull> { get }
+  var completed: FBFuture<NSNull> { get }
 
-  /// Starts the Streaming, to a Data Consumer.
-  func startStreaming(_ consumer: FBDataConsumer) -> FBFuture<NSNull>
-
-  /// Stops the Streaming.
-  func stopStreaming() -> FBFuture<NSNull>
+  /// Stops the stream and waits for it to finish.
+  func stop() async throws
 }
 
 extension FBVideoStream {
   /// Waits for the stream to complete.
   public func awaitCompletion() async throws {
     try await bridgeFBFutureVoid(self.completed)
-  }
-
-  /// Async wrapper for `startStreaming(_:)`.
-  public func startStreamingAsync(_ consumer: any FBDataConsumer) async throws {
-    try await bridgeFBFutureVoid(startStreaming(consumer))
-  }
-
-  /// Async wrapper for `stopStreaming()`.
-  public func stopStreamingAsync() async throws {
-    try await bridgeFBFutureVoid(stopStreaming())
   }
 }

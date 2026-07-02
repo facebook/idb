@@ -807,6 +807,13 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
       encodedSampleConsumerOverride: fileWriter)
   }
 
+  /// Starts a Bitmap Stream to `consumer` and returns the running handle.
+  public class func start(framebuffer: FBFramebuffer, configuration: FBVideoStreamConfiguration, edgeInsets: FBVideoStreamEdgeInsets = FBVideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0), to consumer: any FBDataConsumer, logger: any FBControlCoreLogger) async throws -> FBSimulatorVideoStream {
+    let stream = make(framebuffer: framebuffer, configuration: configuration, edgeInsets: edgeInsets, logger: logger)
+    try await bridgeFBFutureVoid(stream.startStreaming(consumer))
+    return stream
+  }
+
   /// Eager (constant-frame-rate) when a positive `framesPerSecond` is set, else lazy (variable-rate,
   /// driven by damage events).
   private class func cadence(for configuration: FBVideoStreamConfiguration) -> FBVideoStreamCadence {
@@ -1389,6 +1396,10 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
   public var framebufferStatsStartTime: CFTimeInterval { framebuffer.statsStartTime }
 
   // MARK: - FBVideoStream
+
+  public func stop() async throws {
+    try await bridgeFBFutureVoid(stopStreaming())
+  }
 
   @objc
   public var completed: FBFuture<NSNull> {

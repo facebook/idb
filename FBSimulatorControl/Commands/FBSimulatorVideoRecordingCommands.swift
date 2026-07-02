@@ -71,13 +71,13 @@ public final class FBSimulatorVideoRecordingCommands: NSObject, FBiOSTargetComma
     try await video.stopRecording()
   }
 
-  fileprivate func createStreamAsync(configuration: FBVideoStreamConfiguration) async throws -> any FBVideoStream {
+  fileprivate func createStreamAsync(configuration: FBVideoStreamConfiguration, to consumer: any FBDataConsumer) async throws -> any FBVideoStream {
     guard let simulator = self.simulator else {
       throw FBSimulatorError.describe("Simulator deallocated").build()
     }
     let logger = simulator.logger
     let framebuffer = try await simulator.connectToFramebuffer()
-    return FBSimulatorVideoStream.make(framebuffer: framebuffer, configuration: configuration, logger: logger!)
+    return try await FBSimulatorVideoStream.start(framebuffer: framebuffer, configuration: configuration, to: consumer, logger: logger!)
   }
 }
 
@@ -102,7 +102,7 @@ extension FBSimulator: VideoRecordingCommands {
 
 extension FBSimulator: VideoStreamCommands {
 
-  public func createStream(configuration: FBVideoStreamConfiguration) async throws -> any FBVideoStream {
-    try await videoRecordingCommands().createStreamAsync(configuration: configuration)
+  public func createStream(configuration: FBVideoStreamConfiguration, to consumer: any FBDataConsumer) async throws -> any FBVideoStream {
+    try await videoRecordingCommands().createStreamAsync(configuration: configuration, to: consumer)
   }
 }

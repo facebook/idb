@@ -49,12 +49,14 @@ public class FBDeviceVideoRecordingCommands: NSObject, FBiOSTargetCommand {
     try await bridgeFBFutureVoid(video.stopRecording())
   }
 
-  fileprivate func createStreamAsync(with configuration: FBVideoStreamConfiguration) async throws -> any FBVideoStream {
+  fileprivate func createStreamAsync(with configuration: FBVideoStreamConfiguration, to consumer: any FBDataConsumer) async throws -> any FBVideoStream {
     guard let device, let logger = device.logger else {
       throw FBDeviceControlError().describe("Device is nil").build()
     }
     let session = try await FBDeviceVideo.captureSessionAsync(for: device)
-    return try FBDeviceVideoStream.stream(withSession: session, configuration: configuration, logger: logger)
+    let stream = try FBDeviceVideoStream.stream(withSession: session, configuration: configuration, logger: logger)
+    try await bridgeFBFutureVoid(stream.startStreaming(consumer))
+    return stream
   }
 }
 
@@ -75,7 +77,7 @@ extension FBDevice: VideoRecordingCommands {
 
 extension FBDevice: VideoStreamCommands {
 
-  public func createStream(configuration: FBVideoStreamConfiguration) async throws -> any FBVideoStream {
-    try await videoRecordingCommands().createStreamAsync(with: configuration)
+  public func createStream(configuration: FBVideoStreamConfiguration, to consumer: any FBDataConsumer) async throws -> any FBVideoStream {
+    try await videoRecordingCommands().createStreamAsync(with: configuration, to: consumer)
   }
 }

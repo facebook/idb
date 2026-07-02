@@ -138,6 +138,10 @@ public class FBDeviceVideoStream: NSObject, FBVideoStream {
 
   // MARK: FBVideoStream
 
+  public func stop() async throws {
+    try await bridgeFBFutureVoid(stopStreaming())
+  }
+
   @objc public var completed: FBFuture<NSNull> {
     unsafeBitCast(stopFuture, to: FBFuture<NSNull>.self).onQueue(
       writeQueue,
