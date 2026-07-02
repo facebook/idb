@@ -160,7 +160,7 @@ static NSDictionary *ProcessCommand(NSDictionary *command)
 
 // MARK: - Entry Point
 
-int FBReplServeSocket(NSString *socketPath, NSArray<NSString *> *generatedInterfaces)
+int FBReplServeSocket(NSString *socketPath, NSArray<NSString *> *generatedInterfaces, BOOL keepListening)
 {
   if (socketPath.length == 0) {
     return 0;
@@ -171,9 +171,16 @@ int FBReplServeSocket(NSString *socketPath, NSArray<NSString *> *generatedInterf
     return 1;
   }
 
-  // Accept a connection and process commands until the connection closes.
-  int clientFd = accept(serverFd, NULL, NULL);
-  if (clientFd >= 0) {
+  // Accept a connection and process commands until it closes. In keepListening
+  // mode (the app context) loop back to accept the next client so the in-app REPL
+  // resets and stays ready; otherwise serve a single connection and return so the
+  // host process exits (test / simulator contexts).
+  BOOL listening = YES;
+  while (listening) {
+    int clientFd = accept(serverFd, NULL, NULL);
+    if (clientFd < 0) {
+      break;
+    }
     gClientFd = clientFd;
     // Greet the client with the .swiftinterface paths the probe generated (an
     // empty list when there are none), then handle commands.
@@ -194,6 +201,7 @@ int FBReplServeSocket(NSString *socketPath, NSArray<NSString *> *generatedInterf
     }
     gClientFd = -1;
     close(clientFd);
+    listening = keepListening;
   }
 
   close(serverFd);

@@ -22,7 +22,13 @@
 // `generatedInterfaces` (the host paths of any .swiftinterface files generated
 // for the loaded modules; pass an empty array or nil when there are none) so the
 // connecting client can learn them.
-int FBReplServeSocket(NSString *socketPath, NSArray<NSString *> *generatedInterfaces);
+//
+// `keepListening`: when NO, serve a single connection and return (the test and
+// simulator contexts, where the host process exits once the session ends). When
+// YES, keep the listening socket open and accept a new connection after each one
+// closes -- the app context, where the host is a long-lived app that must reset
+// and wait for the next client rather than exit.
+int FBReplServeSocket(NSString *socketPath, NSArray<NSString *> *generatedInterfaces, BOOL keepListening);
 
 // Sends a `host_command` frame carrying `commandBytes` (the encoded command, e.g.
 // a binary property list of a `ReplCommand`) on the active control-socket

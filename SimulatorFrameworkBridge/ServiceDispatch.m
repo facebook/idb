@@ -55,12 +55,13 @@ int dispatchService(NSString *service, NSString *action, NSArray<NSString *> *ar
         NSLog(@"Failed to load libRepl at %@: %s", libReplPath, dlerror());
         return 1;
       }
-      int (*serve)(NSString *, NSArray<NSString *> *) = dlsym(handle, "FBReplServeSocket");
+      int (*serve)(NSString *, NSArray<NSString *> *, BOOL) = dlsym(handle, "FBReplServeSocket");
       if (!serve) {
         NSLog(@"libRepl is missing FBReplServeSocket: %s", dlerror());
         return 1;
       }
-      return serve(socketPath, @[]);
+      // The bridge exits when the session ends, so serve a single connection.
+      return serve(socketPath, @[], NO);
     }
     NSLog(@"Unknown repl action: %@", action);
     return 1;

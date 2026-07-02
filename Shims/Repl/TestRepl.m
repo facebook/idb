@@ -34,9 +34,10 @@ extern const char *FBReplGenerateSwiftInterface(const char *outDir, const char *
     }
   }
 
-  // Start the shared ReplExecutor with the requested socket path.
+  // Start the shared ReplExecutor with the requested socket path. The test host
+  // exits when the session ends, so serve a single connection (keepListening: NO).
   NSString *socketPath = environment[@"IDB_REPL_SOCKET_PATH"];
-  FBReplServeSocket(socketPath, generatedInterfaces);
+  FBReplServeSocket(socketPath, generatedInterfaces, NO);
 }
 
 @end
