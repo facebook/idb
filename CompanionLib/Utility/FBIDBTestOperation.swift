@@ -9,37 +9,36 @@ import FBControlCore
 import Foundation
 import XCTestBootstrap
 
-@objc public enum FBIDBTestOperationState: UInt {
+public enum FBIDBTestOperationState: UInt {
   case notRunning
   case terminatedNormally
   case terminatedAbnormally
   case running
 }
 
-@objc public final class FBIDBTestOperation: NSObject {
+public final class FBIDBTestOperation: CustomStringConvertible {
 
-  @objc public let completed: FBFuture<NSNull>
-  @objc public let logger: FBControlCoreLogger
-  @objc public let queue: DispatchQueue
-  @objc public let reporter: FBXCTestReporter
-  @objc public let reporterConfiguration: FBXCTestReporterConfiguration
+  public let completed: FBFuture<NSNull>
+  public let logger: FBControlCoreLogger
+  public let queue: DispatchQueue
+  public let reporter: FBXCTestReporter
+  public let reporterConfiguration: FBXCTestReporterConfiguration
   private let configuration: AnyObject
 
-  @objc public var state: FBIDBTestOperationState {
+  public var state: FBIDBTestOperationState {
     if completed.error != nil {
       return .terminatedAbnormally
     }
     return completed.hasCompleted ? .terminatedNormally : .running
   }
 
-  @objc public init(configuration: AnyObject, reporterConfiguration: FBXCTestReporterConfiguration, reporter: FBXCTestReporter, logger: FBControlCoreLogger, completed: FBFuture<NSNull>, queue: DispatchQueue) {
+  public init(configuration: AnyObject, reporterConfiguration: FBXCTestReporterConfiguration, reporter: FBXCTestReporter, logger: FBControlCoreLogger, completed: FBFuture<NSNull>, queue: DispatchQueue) {
     self.configuration = configuration
     self.reporterConfiguration = reporterConfiguration
     self.reporter = reporter
     self.logger = logger
     self.completed = completed
     self.queue = queue
-    super.init()
   }
 
   /// Waits for the test run to complete.
@@ -47,7 +46,7 @@ import XCTestBootstrap
     try await bridgeFBFutureVoid(self.completed)
   }
 
-  public override var description: String {
+  public var description: String {
     "Test Run (\(configuration))"
   }
 }

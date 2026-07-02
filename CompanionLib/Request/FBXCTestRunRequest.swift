@@ -101,7 +101,7 @@ private let FBLogicTestTimeout: TimeInterval = 60 * 60 // Approx. an hour.
 
   // MARK: - Public Methods
 
-  @objc public func start(withBundleStorageManager bundleStorage: FBXCTestBundleStorage, target: FBiOSTarget, reporter: FBXCTestReporter, logger: FBControlCoreLogger, temporaryDirectory: FBTemporaryDirectory) -> FBFuture<FBIDBTestOperation> {
+  public func start(withBundleStorageManager bundleStorage: FBXCTestBundleStorage, target: FBiOSTarget, reporter: FBXCTestReporter, logger: FBControlCoreLogger, temporaryDirectory: FBTemporaryDirectory) -> FBFuture<FBIDBTestOperation> {
     fbFutureFromAsync { [self] in
       try await startAsync(withBundleStorageManager: bundleStorage, target: target, reporter: reporter, logger: logger, temporaryDirectory: temporaryDirectory)
     }
