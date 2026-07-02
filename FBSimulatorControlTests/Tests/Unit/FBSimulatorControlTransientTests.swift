@@ -276,6 +276,21 @@ final class FBSimulatorControlTransientTests: XCTestCase {
     XCTAssertEqual(swipe.subEvents?.count, expectedEvents)
   }
 
+  func testSwipeShorterThanDeltaClampsToOneStep() {
+    // distance = 5 < delta 10 gives Int(0.5) = 0 steps, which divides by zero in
+    // dx/dy and yields NaN touch coordinates. Steps must be clamped to at least 1,
+    // mirroring `pinchAt` and `pan`.
+    let swipe = FBSimulatorHIDEvent.swipe(0, yStart: 0, xEnd: 5, yEnd: 0, delta: 10, duration: 1.0)
+    let expectedSteps = 1
+    let expectedEvents = (expectedSteps + 1) * 2 + 2 + 1
+    XCTAssertEqual(swipe.subEvents?.count, expectedEvents)
+    for event in swipe.subEvents ?? [] {
+      if case let .touch(_, x, y) = event {
+        XCTAssertTrue(x.isFinite && y.isFinite, "Swipe produced a non-finite coordinate (\(x), \(y))")
+      }
+    }
+  }
+
   func testSwipeEndsWithTouchUp() {
     let swipe = FBSimulatorHIDEvent.swipe(0, yStart: 0, xEnd: 50, yEnd: 0, delta: 10, duration: 0.5)
     guard let last = swipe.subEvents?.last else {
