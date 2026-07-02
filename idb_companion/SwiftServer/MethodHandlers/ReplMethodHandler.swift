@@ -11,6 +11,7 @@ import Foundation
 import GRPC
 import IDBCompanionUtilities
 import IDBGRPCSwift
+import ReplProtocol
 
 struct ReplMethodHandler {
 
@@ -95,7 +96,15 @@ struct ReplMethodHandler {
         let result = try await client.execute(
           dylibPath: dylibPath,
           symbol: execute.symbol,
-          hostCommandHandler: { name, args in await dispatcher.run(name: name, args: args) })
+          hostCommandHandler: { _, args in
+            guard let payload = args["data"] as? String,
+              let data = Data(base64Encoded: payload),
+              let command = try? PropertyListDecoder().decode(ReplCommand.self, from: data)
+            else {
+              return (false, "repl: could not decode host command")
+            }
+            return await dispatcher.run(command)
+          })
         try await responseStream.send(
           .with {
             $0.event = .result(

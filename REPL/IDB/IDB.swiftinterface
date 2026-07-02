@@ -8,8 +8,6 @@ import Swift
 import _Concurrency
 import _StringProcessing
 import _SwiftConcurrencyShims
-@discardableResult
-public func invoke(_ name: Swift.String, _ args: [Swift.String : Any] = [:]) -> Any?
 public func tap(_ point: CoreFoundation.CGPoint)
 public func tap(marker: Swift.String)
 public func swipe(from: CoreFoundation.CGPoint, to: CoreFoundation.CGPoint, duration: Swift.Double = 0, delta: Swift.Double = 0)
