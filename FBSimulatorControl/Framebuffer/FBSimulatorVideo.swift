@@ -18,8 +18,7 @@ import Foundation
 // recording commands and the sime2e record path. All mutable state is confined to its serial `queue`
 // (and `hasStopped` guards the single stop), and its `stream`/`fileWriter` are themselves
 // `@unchecked Sendable`, matching the sibling `FBSimulatorVideoStream`.
-@objc(FBSimulatorVideo)
-public class FBSimulatorVideo: NSObject, @unchecked Sendable {
+public final class FBSimulatorVideo: @unchecked Sendable {
 
   // MARK: - Properties
 
@@ -41,7 +40,6 @@ public class FBSimulatorVideo: NSObject, @unchecked Sendable {
     let fileWriter = FBVideoFileWriter(filePath: filePath, chaptersEnabled: chaptersEnabled, logger: logger)
     self.fileWriter = fileWriter
     self.stream = FBSimulatorVideoStream.makeRecorder(framebuffer: framebuffer, configuration: configuration, edgeInsets: edgeInsets, fileWriter: fileWriter, logger: logger)
-    super.init()
   }
 
   // MARK: - Recording
