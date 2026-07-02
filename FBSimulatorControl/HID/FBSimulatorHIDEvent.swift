@@ -164,7 +164,7 @@ public extension FBSimulatorHIDEvent {
     if effectiveDelta <= 0.0 {
       effectiveDelta = DEFAULT_SWIPE_DELTA
     }
-    let steps = Int(distance / effectiveDelta)
+    let steps = max(1, Int(distance / effectiveDelta))
 
     let dx = (xEnd - xStart) / Double(steps)
     let dy = (yEnd - yStart) / Double(steps)
