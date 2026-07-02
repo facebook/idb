@@ -30,7 +30,7 @@ if supports_xattrs; then
 else
   BUILD_DIRECTORY="/tmp/idb-build-$(basename "$(pwd)")"
   echo "Note: Using external build directory at $BUILD_DIRECTORY (xattrs not supported)"
-  # idb_companion/project.yml hard-codes framework refs as
+  # Companion/project.yml hard-codes framework refs as
   # `../Build/Products/Release/...`. Symlink the in-tree `Build` dir so
   # those references resolve to the actual external build output.
   rm -rf Build
@@ -245,12 +245,12 @@ function regenerate_projects() {
   echo "Generating SimulatorFrameworkBridge project..."
   generate_xcodeproj "SimulatorFrameworkBridge" "SimulatorFrameworkBridge"
   echo "Generating idb_companion project..."
-  generate_xcodeproj "idb_companion" "idb_companion"
+  generate_xcodeproj "Companion" "idb_companion"
 
   # xcodegen ignores `embed: false` for a tool target dependency, so strip the
   # leftover entry here.
   sed -i '' '/IDBGRPCSwift.framework in Embed Frameworks/d' \
-    idb_companion/idb_companion.xcodeproj/project.pbxproj
+    Companion/idb_companion.xcodeproj/project.pbxproj
 }
 
 # =============================================================================
@@ -382,7 +382,7 @@ function build_idb_companion() {
   invoke_xcodebuild \
     ONLY_ACTIVE_ARCH=NO \
     SWIFT_ENABLE_EXPLICIT_MODULES=NO \
-    -project idb_companion/idb_companion.xcodeproj \
+    -project Companion/idb_companion.xcodeproj \
     -scheme idb_companion \
     -sdk macosx \
     -derivedDataPath "$BUILD_DIRECTORY" \
@@ -402,7 +402,7 @@ function build_idb_repl() {
   invoke_xcodebuild \
     ONLY_ACTIVE_ARCH=NO \
     SWIFT_ENABLE_EXPLICIT_MODULES=NO \
-    -project idb_companion/idb_companion.xcodeproj \
+    -project Companion/idb_companion.xcodeproj \
     -scheme idb-repl \
     -sdk macosx \
     -derivedDataPath "$BUILD_DIRECTORY" \
