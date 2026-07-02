@@ -100,9 +100,8 @@ final class ReplSocketClient {
 
   /// Services a `host_command` the served process sends back *while* an `execute`
   /// is in flight. Receives the raw encoded command bytes (a binary property list
-  /// of a `ReplCommand`) and returns whether it succeeded plus a string: the
-  /// command's result value on success, or an error message on failure.
-  typealias HostCommandHandler = (_ commandData: Data) async -> (success: Bool, resultJSON: String)
+  /// of a `ReplCommand`) and returns the command's outcome.
+  typealias HostCommandHandler = (_ commandData: Data) async -> HostCommandResult
 
   /// Sends a `{dylib, symbol}` command to the shim and returns its result. While
   /// the served process runs the injected code it may send nested `host_command`
@@ -149,8 +148,8 @@ final class ReplSocketClient {
   /// Runs the async `hostCommandHandler` to completion from the synchronous
   /// `ioQueue`, bridging with a semaphore. The `ioQueue` is dedicated to this
   /// socket, so blocking it here is fine.
-  private static func runHostCommand(_ handler: @escaping HostCommandHandler, commandData: Data) -> (success: Bool, resultJSON: String) {
-    final class Box: @unchecked Sendable { var value: (success: Bool, resultJSON: String) = (false, "null") }
+  private static func runHostCommand(_ handler: @escaping HostCommandHandler, commandData: Data) -> HostCommandResult {
+    final class Box: @unchecked Sendable { var value: HostCommandResult = .failure(HostCommandError.message("repl: host command did not complete")) }
     let box = Box()
     let semaphore = DispatchSemaphore(value: 0)
     Task {
@@ -161,13 +160,16 @@ final class ReplSocketClient {
     return box.value
   }
 
-  /// Builds a `host_result` message from a handler's `(success, resultJSON)`: the
-  /// string becomes the `result` value on success, or the `error` on failure.
-  private static func hostResultMessage(_ result: (success: Bool, resultJSON: String)) -> [String: Any] {
-    if result.success {
-      return ["type": "host_result", "success": true, "result": result.resultJSON]
+  /// Builds a `host_result` message from a command's outcome: the payload bytes
+  /// become the `result` value on success, or the error's description becomes the
+  /// `error` message on failure.
+  private static func hostResultMessage(_ result: HostCommandResult) -> [String: Any] {
+    switch result {
+    case .success(let data):
+      return ["type": "host_result", "success": true, "result": data]
+    case .failure(let error):
+      return ["type": "host_result", "success": false, "error": "\(error)"]
     }
-    return ["type": "host_result", "success": false, "error": result.resultJSON]
   }
 
   // MARK: - Framing

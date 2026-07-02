@@ -98,7 +98,7 @@ struct ReplMethodHandler {
           symbol: execute.symbol,
           hostCommandHandler: { commandData in
             guard let command = try? PropertyListDecoder().decode(ReplCommand.self, from: commandData) else {
-              return (false, "repl: could not decode host command")
+              return .failure(HostCommandError.message("repl: could not decode host command"))
             }
             return await dispatcher.run(command)
           })

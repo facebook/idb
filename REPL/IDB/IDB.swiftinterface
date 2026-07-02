@@ -17,4 +17,25 @@ public func text(_ string: Swift.String)
 public func touchDown(_ point: CoreFoundation.CGPoint)
 public func touchMove(_ point: CoreFoundation.CGPoint)
 public func touchUp(_ point: CoreFoundation.CGPoint)
-public func describeAll() -> Swift.String
+public func describeAll() -> IDB.AXElement?
+public struct AXElement : Swift.Decodable, Swift.Sendable {
+  public let label: Swift.String?
+  public let value: Swift.String?
+  public let uniqueID: Swift.String?
+  public let type: Swift.String?
+  public let title: Swift.String?
+  public let help: Swift.String?
+  public let enabled: Swift.Bool?
+  public let customActions: [Swift.String]?
+  public let role: Swift.String?
+  public let roleDescription: Swift.String?
+  public let subrole: Swift.String?
+  public let contentRequired: Swift.Bool?
+  public let pid: Swift.Int?
+  public let traits: [Swift.String]?
+  public let children: [IDB.AXElement]
+  public var frame: CoreFoundation.CGRect? {
+    get
+  }
+  public init(from decoder: any Swift.Decoder) throws
+}

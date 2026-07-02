@@ -127,7 +127,14 @@ public func touchUp(_ point: CGPoint) {
   perform(.touchUp(point))
 }
 
-/// Returns the connected target's full accessibility hierarchy as JSON.
-public func describeAll() -> String {
-  (perform(.describeAll) as? String) ?? ""
+/// Returns the connected target's accessibility hierarchy as a tree of
+/// `AXElement`, or nil if it could not be retrieved.
+public func describeAll() -> AXElement? {
+  guard let data = perform(.describeAll) as? Data else {
+    return nil
+  }
+  if let root = try? PropertyListDecoder().decode(AXElement.self, from: data) {
+    return root
+  }
+  return try? PropertyListDecoder().decode([AXElement].self, from: data).first
 }

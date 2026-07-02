@@ -11,81 +11,164 @@ import FBSimulatorControl
 import Foundation
 import ReplProtocol
 
+/// The outcome of running a host command: on success, the serialized result
+/// payload (empty when the command has no return value); on failure, the error.
+enum HostCommandResult {
+  case success(Data)
+  case failure(Error)
+}
+
+/// An error raised while handling a host command (e.g. an invalid argument). Its
+/// `description` is the message that reaches the REPL client.
+enum HostCommandError: Error, CustomStringConvertible {
+  case message(String)
+
+  var description: String {
+    switch self {
+    case .message(let message):
+      return message
+    }
+  }
+}
+
 /// Maps a decoded `ReplCommand` -- sent by injected REPL code while it runs -- to
 /// an `FBIDBCommandExecutor` call.
 ///
-/// Returns `(success, resultJSON)`: on success, `resultJSON` is the command's
-/// result value encoded as JSON (`"null"` when there is none); on failure, it is
-/// an error message. Sharing `ReplCommand` with the client (via `ReplProtocol`)
-/// makes this switch exhaustive -- adding a command is a compile-time change here
-/// as well as on the client.
+/// Each command's logic (`resultValue(for:)`) produces its result as a value --
+/// nothing, a `Codable` value, or a Foundation property-list object -- or throws.
+/// `run` serializes that to the wire payload and turns a thrown error into a
+/// failure, both in one place, so adding a command repeats none of that. Sharing
+/// `ReplCommand` with the client (via `ReplProtocol`) keeps the switch exhaustive.
 struct HostCommandDispatcher {
 
   let commandExecutor: FBIDBCommandExecutor
 
-  func run(_ command: ReplCommand) async -> (success: Bool, resultJSON: String) {
+  /// The result a command produces, before serialization to the wire.
+  private enum ResultValue {
+    /// A `Codable` value; encoded as a binary property list.
+    case encodable(any Encodable)
+    /// A Foundation property-list object (e.g. the accessibility tree), already in
+    /// a form `PropertyListSerialization` accepts.
+    case propertyList(Any)
+  }
+
+  func run(_ command: ReplCommand) async -> HostCommandResult {
     do {
-      switch command {
-      case .tap(let point):
-        try await commandExecutor.hid(.tapAt(x: point.x, y: point.y))
-        return (true, "null")
-
-      case .tapMarker(let marker):
-        try await commandExecutor.accessibility_tap(label: marker)
-        return (true, "null")
-
-      case .swipe(let from, let to, let duration, let delta):
-        try await commandExecutor.hid(.swipe(from.x, yStart: from.y, xEnd: to.x, yEnd: to.y, delta: delta, duration: duration))
-        return (true, "null")
-
-      case .pinch(let center, let scale, let duration, let radius):
-        try await commandExecutor.hid(.pinchAt(x: center.x, y: center.y, scale: scale, duration: duration, radius: radius))
-        return (true, "null")
-
-      case .button(let name):
-        let normalized = name.replacingOccurrences(of: "-", with: "_").lowercased()
-        guard let button = FBSimulatorHIDButton.allCases.first(where: { $0.name == normalized }) else {
-          let valid = FBSimulatorHIDButton.allCases.map(\.name).joined(separator: ", ")
-          return (false, "button: unknown button '\(name)' (expected one of: \(valid))")
-        }
-        try await commandExecutor.hid(.shortButtonPress(button))
-        return (true, "null")
-
-      case .text(let text):
-        var events: [FBSimulatorHIDEvent] = []
-        for character in text {
-          guard let key = Self.hidKeyCode(for: character) else {
-            return (false, "text: unsupported character '\(character)'")
-          }
-          if key.shift { events.append(.keyboard(direction: .down, keyCode: Self.leftShiftKeyCode)) }
-          events.append(.keyboard(direction: .down, keyCode: key.code))
-          events.append(.keyboard(direction: .up, keyCode: key.code))
-          if key.shift { events.append(.keyboard(direction: .up, keyCode: Self.leftShiftKeyCode)) }
-        }
-        try await commandExecutor.hid(.composite(events))
-        return (true, "null")
-
-      // touch-move uses the same `.down` primitive as touch-down at a new point;
-      // a sequence of down -> move(s) -> up forms a held drag (the HID connection
-      // is cached on the simulator, so it persists across these commands).
-      case .touchDown(let point), .touchMove(let point):
-        try await commandExecutor.hid(.touch(direction: .down, x: point.x, y: point.y))
-        return (true, "null")
-
-      case .touchUp(let point):
-        try await commandExecutor.hid(.touch(direction: .up, x: point.x, y: point.y))
-        return (true, "null")
-
-      case .describeAll:
-        let response = try await commandExecutor.accessibility_info_at_point(nil, nestedFormat: false)
-        let elementsData = try JSONSerialization.data(withJSONObject: response.elements)
-        // The elements JSON is the string `IDB.describeAll()` returns verbatim;
-        // it rides in the host_result's `result` field as-is.
-        return (true, String(decoding: elementsData, as: UTF8.self))
+      switch try await resultValue(for: command) {
+      case nil:
+        return .success(Data())
+      case .encodable(let value):
+        return .success(try Self.propertyListData(encoding: value))
+      case .propertyList(let object):
+        return .success(try PropertyListSerialization.data(fromPropertyList: object, format: .binary, options: 0))
       }
     } catch {
-      return (false, "\(error)")
+      return .failure(error)
     }
+  }
+
+  /// Runs `command`, returning its result value, or nil when it has no return
+  /// value. Throws on failure.
+  private func resultValue(for command: ReplCommand) async throws -> ResultValue? {
+    switch command {
+    case .tap(let point):
+      try await commandExecutor.hid(.tapAt(x: point.x, y: point.y))
+      return nil
+
+    case .tapMarker(let marker):
+      try await commandExecutor.accessibility_tap(label: marker)
+      return nil
+
+    case .swipe(let from, let to, let duration, let delta):
+      try await commandExecutor.hid(.swipe(from.x, yStart: from.y, xEnd: to.x, yEnd: to.y, delta: delta, duration: duration))
+      return nil
+
+    case .pinch(let center, let scale, let duration, let radius):
+      try await commandExecutor.hid(.pinchAt(x: center.x, y: center.y, scale: scale, duration: duration, radius: radius))
+      return nil
+
+    case .button(let name):
+      let normalized = name.replacingOccurrences(of: "-", with: "_").lowercased()
+      guard let button = FBSimulatorHIDButton.allCases.first(where: { $0.name == normalized }) else {
+        let valid = FBSimulatorHIDButton.allCases.map(\.name).joined(separator: ", ")
+        throw HostCommandError.message("button: unknown button '\(name)' (expected one of: \(valid))")
+      }
+      try await commandExecutor.hid(.shortButtonPress(button))
+      return nil
+
+    case .text(let text):
+      var events: [FBSimulatorHIDEvent] = []
+      for character in text {
+        guard let key = Self.hidKeyCode(for: character) else {
+          throw HostCommandError.message("text: unsupported character '\(character)'")
+        }
+        if key.shift { events.append(.keyboard(direction: .down, keyCode: Self.leftShiftKeyCode)) }
+        events.append(.keyboard(direction: .down, keyCode: key.code))
+        events.append(.keyboard(direction: .up, keyCode: key.code))
+        if key.shift { events.append(.keyboard(direction: .up, keyCode: Self.leftShiftKeyCode)) }
+      }
+      try await commandExecutor.hid(.composite(events))
+      return nil
+
+    // touch-move uses the same `.down` primitive as touch-down at a new point;
+    // a sequence of down -> move(s) -> up forms a held drag (the HID connection
+    // is cached on the simulator, so it persists across these commands).
+    case .touchDown(let point), .touchMove(let point):
+      try await commandExecutor.hid(.touch(direction: .down, x: point.x, y: point.y))
+      return nil
+
+    case .touchUp(let point):
+      try await commandExecutor.hid(.touch(direction: .up, x: point.x, y: point.y))
+      return nil
+
+    case .describeAll:
+      let response = try await commandExecutor.accessibility_info_at_point(nil, nestedFormat: true)
+      // Adapt the serializer's tree for the client: drop nulls and render each
+      // node's AXValue as a String (see `replAccessibilityTree`). Only describe_all
+      // needs this.
+      let tree = Self.replAccessibilityTree(from: response.elements) ?? [String: Any]()
+      return .propertyList(tree)
+    }
+  }
+
+  /// Encodes a `Codable` value as a binary property list. Generic so the
+  /// existential from `ResultValue.encodable` is opened to a concrete type, which
+  /// `PropertyListEncoder.encode` requires.
+  private static func propertyListData<Value: Encodable>(encoding value: Value) throws -> Data {
+    let encoder = PropertyListEncoder()
+    encoder.outputFormat = .binary
+    return try encoder.encode(value)
+  }
+
+  /// Adapts the shared serializer's accessibility tree for the REPL client: drops
+  /// the `NSNull`s it emits for absent attributes (a property list has no null type,
+  /// and `AXElement`'s fields are optional so a missing key reads as nil), and
+  /// renders each node's `AXValue` as a String, so the client decodes a plain
+  /// optional String rather than a string/number/bool union.
+  private static func replAccessibilityTree(from value: Any) -> Any? {
+    if value is NSNull {
+      return nil
+    }
+    if var dictionary = value as? [String: Any] {
+      dictionary = dictionary.compactMapValues(replAccessibilityTree(from:))
+      if let axValue = dictionary["AXValue"] {
+        dictionary["AXValue"] = Self.stringForAXValue(axValue)
+      }
+      return dictionary
+    }
+    if let array = value as? [Any] {
+      return array.compactMap(replAccessibilityTree(from:))
+    }
+    return value
+  }
+
+  /// Renders an `AXValue` as a String, preserving boolean semantics
+  /// (`"true"`/`"false"`) rather than letting a property-list Boolean become "1"/"0".
+  private static func stringForAXValue(_ value: Any) -> String {
+    if CFGetTypeID(value as AnyObject) == CFBooleanGetTypeID() {
+      return (value as? Bool ?? false) ? "true" : "false"
+    }
+    return String(describing: value)
   }
 
   /// USB HID left-shift usage code, held to produce shifted characters.
