@@ -10,8 +10,7 @@ import CoreMediaIO
 @preconcurrency import FBControlCore
 import Foundation
 
-@objc(FBDeviceVideo)
-public class FBDeviceVideo: NSObject {
+public final class FBDeviceVideo {
   private let encoder: FBVideoFileWriter
   private let workQueue: DispatchQueue
 
@@ -53,13 +52,6 @@ public class FBDeviceVideo: NSObject {
 
   // MARK: Initializers
 
-  @objc(captureSessionForDevice:)
-  public class func captureSession(for device: FBDevice) -> FBFuture<AVCaptureSession> {
-    fbFutureFromAsync {
-      try await captureSessionAsync(for: device)
-    }
-  }
-
   public class func captureSessionAsync(for device: FBDevice) async throws -> AVCaptureSession {
     try allowAccessToScreenCaptureDevices()
     let captureDevice = try await findCaptureDeviceAsync(for: device)
@@ -72,13 +64,6 @@ public class FBDeviceVideo: NSObject {
     return session
   }
 
-  @objc(videoForDevice:filePath:)
-  public class func video(for device: FBDevice, filePath: String) -> FBFuture<FBDeviceVideo> {
-    fbFutureFromAsync {
-      try await videoAsync(for: device, filePath: filePath)
-    }
-  }
-
   public class func videoAsync(for device: FBDevice, filePath: String) async throws -> FBDeviceVideo {
     let session = try await captureSessionAsync(for: device)
     let encoder = try FBVideoFileWriter.writer(withSession: session, filePath: filePath, logger: device.logger ?? FBControlCoreGlobalConfiguration.defaultLogger)
@@ -88,16 +73,15 @@ public class FBDeviceVideo: NSObject {
   private init(encoder: FBVideoFileWriter, workQueue: DispatchQueue) {
     self.encoder = encoder
     self.workQueue = workQueue
-    super.init()
   }
 
   // MARK: Public
 
-  @objc public func startRecording() -> FBFuture<NSNull> {
+  public func startRecording() -> FBFuture<NSNull> {
     encoder.startRecording()
   }
 
-  @objc public func stopRecording() -> FBFuture<NSNull> {
+  public func stopRecording() -> FBFuture<NSNull> {
     encoder.stopRecording()
   }
 }
