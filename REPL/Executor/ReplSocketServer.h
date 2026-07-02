@@ -42,3 +42,12 @@ int FBReplServeSocket(NSString *socketPath, NSArray<NSString *> *generatedInterf
 // inside the served call -- since the protocol is strictly nested and lockstep
 // (no other message may be in flight on the socket).
 void *FBReplInvokeHostCommand(const void *commandBytes, int commandLength, int *outLength);
+
+// Whether the REPL host process outlives a single session -- i.e. whether
+// FBReplServeSocket was started with keepListening:YES (the app context). Injected
+// code resolves this with dlsym (like FBReplInvokeHostCommand) to decide how to
+// react when the control socket drops mid-command: in the app context it stops the
+// submission quietly and lets the app keep running (the server re-accepts) rather
+// than terminating the process as the disposable test / simulator hosts do. NO
+// until the server starts.
+BOOL FBReplHostOutlivesSession(void);

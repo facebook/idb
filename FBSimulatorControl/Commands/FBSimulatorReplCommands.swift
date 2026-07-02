@@ -138,6 +138,13 @@ public final class FBSimulatorReplCommands: NSObject, FBiOSTargetCommand {
       throw FBSimulatorError.describe("REPL shim not found at expected location \(replDylibPath)").build()
     }
 
+    // Report the IDB API's .swiftinterface (bundled beside libRepl) so the driver
+    // auto-imports it and injected app code can call IDB.*, as the test and
+    // simulator contexts do. The companion reads it host-side, so the app sandbox
+    // need not contain it.
+    let idbInterfacePath = shimDirectory.appendingPathComponent("IDBAPI.swiftinterface")
+    let extraInterfacePaths = FileManager.default.fileExists(atPath: idbInterfacePath) ? [idbInterfacePath] : []
+
     // The app binds this socket (via libRepl's constructor); the gRPC handler connects.
     let socketPath = "/tmp/idb_repl_\(UUID().uuidString).sock"
 
@@ -163,7 +170,7 @@ public final class FBSimulatorReplCommands: NSObject, FBiOSTargetCommand {
     // next client on disconnect -- so `run` is already resolved: teardown must not
     // wait for the app to exit.
     let run: FBFuture<NSNull> = FBFuture(result: NSNull())
-    return ReplSession(socketPath: socketPath, run: run, extraInterfacePaths: [])
+    return ReplSession(socketPath: socketPath, run: run, extraInterfacePaths: extraInterfacePaths)
   }
 }
 

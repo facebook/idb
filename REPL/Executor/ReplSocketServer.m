@@ -18,6 +18,11 @@
 // connection and the protocol is single-threaded and lockstep.
 static int gClientFd = -1;
 
+// Whether the host process outlives a single session (keepListening:YES, the app
+// context). Read via FBReplHostOutlivesSession by injected code deciding whether a
+// lost connection should end the process or just reset. Set when the server starts.
+static BOOL gHostOutlivesSession = NO;
+
 // MARK: - Socket Setup
 
 static int CreateSocketAtPath(NSString *socketPath)
@@ -162,6 +167,10 @@ static NSDictionary *ProcessCommand(NSDictionary *command)
 
 int FBReplServeSocket(NSString *socketPath, NSArray<NSString *> *generatedInterfaces, BOOL keepListening)
 {
+  // Record the host's lifetime mode so injected code (via FBReplHostOutlivesSession)
+  // can tell whether a dropped connection should end the process or just reset.
+  gHostOutlivesSession = keepListening;
+
   if (socketPath.length == 0) {
     return 0;
   }
@@ -252,4 +261,12 @@ void *FBReplInvokeHostCommand(const void *commandBytes, int commandLength, int *
     *outLength = resultLength;
   }
   return result;
+}
+
+// Resolved via dlsym from injected REPL code (like FBReplInvokeHostCommand), so it
+// needs the same used + default-visibility treatment to survive dead-stripping.
+__attribute__((used, visibility("default")))
+BOOL FBReplHostOutlivesSession(void)
+{
+  return gHostOutlivesSession;
 }

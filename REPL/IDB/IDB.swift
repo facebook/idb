@@ -22,9 +22,10 @@ import Foundation
 // driver auto-imports the module by the name the companion reports, so injected
 // code never writes the import itself.
 //
-// This module is linked into `libRepl`, which serves the REPL in both contexts
-// (DYLD-injected into the xctest process for `test`; dlopen'd by
-// SimulatorFrameworkBridge for `simulator`). Injected code compiles against the
+// This module is linked into `libRepl`, which serves the REPL in each context
+// (DYLD-injected into the xctest process for `test`, dlopen'd by
+// SimulatorFrameworkBridge for `simulator`, and DYLD-injected into a launched app
+// for `app`, where libRepl starts itself). Injected code compiles against the
 // matching `IDBAPI.swiftinterface`; at run time its `IDB.*` references resolve to
 // this module's symbols, exported by the loaded `libRepl`. Each call encodes a
 // `ReplCommand` (the shared wire type) and hands it to the host's
@@ -33,20 +34,22 @@ import Foundation
 // link dependency is `ReplProtocol`, the pure wire types shared with the
 // companion -- so the request contract is one type-checked model on both sides.
 //
-// The calls do not throw. Losing the connection to the companion means the REPL
-// session is over, so instead of surfacing a catchable error on every call it
-// stops the submission outright (see `haltReplExecution`). A command that merely
-// did not apply is ignored (best-effort). If a future command's failure is a
-// meaningful result of the call, make that one `throws`.
+// The calls do not throw. Losing the connection to the companion ends the session,
+// so instead of surfacing a catchable error on every call it stops the submission
+// outright (see `haltReplExecution`): the disposable test / simulator host exits,
+// while in the app context the app keeps running and only the submission ends. A
+// command that merely did not apply is ignored (best-effort). If a future command's
+// failure is a meaningful result of the call, make that one `throws`.
 //
 // Injected code must not write to stdout/stderr: in the REPL host those file
 // descriptors can alias the control socket, so a stray write corrupts the
 // protocol. That is why failures are silent rather than logged.
 
 /// Encodes `command`, sends it to the companion, and returns the parsed `result`
-/// value on success, or `nil` if the command reported a failure. Does not return
-/// if the REPL host can no longer reach the companion -- it stops the submission
-/// (see `haltReplExecution`) rather than surfacing a catchable error.
+/// value on success, or `nil` on failure -- a command that did not apply, or a lost
+/// connection. A lost connection also stops the submission via `haltReplExecution`,
+/// which exits the disposable test / simulator host or simply returns in the app
+/// context (leaving the app running) before this returns `nil`.
 ///
 /// Top-level and `private`, so it is neither exported to injected code nor part
 /// of the `IDB` namespace surface; the command methods below call it directly.
@@ -55,6 +58,7 @@ private func perform(_ command: ReplCommand) -> Any? {
   typealias InvokeFunction = @convention(c) (UnsafeRawPointer?, Int32, UnsafeMutablePointer<Int32>?) -> UnsafeMutableRawPointer?
   guard let symbol = dlsym(dlopen(nil, RTLD_NOW), "FBReplInvokeHostCommand") else {
     haltReplExecution() // not running inside an idb REPL host
+    return nil
   }
   let invokeHostCommand = unsafeBitCast(symbol, to: InvokeFunction.self)
   // Encode the command as a binary property list so values (e.g. coordinates)
@@ -71,6 +75,7 @@ private func perform(_ command: ReplCommand) -> Any? {
   }
   guard let responsePtr else {
     haltReplExecution() // the REPL host disconnected mid-command
+    return nil
   }
   defer { free(responsePtr) }
   let responseData = Data(bytes: responsePtr, count: Int(responseLength))
@@ -81,12 +86,30 @@ private func perform(_ command: ReplCommand) -> Any? {
   return nil
 }
 
-/// Stops the current REPL submission because the companion is no longer reachable
-/// (the session is over). Exits the host process outright rather than throwing a
-/// catchable error -- injected code can do nothing useful once the host is gone,
-/// and the driver observes the halt as the session disconnecting.
-private func haltReplExecution() -> Never {
+/// Ends the current REPL submission because the companion is no longer reachable.
+/// The test and simulator hosts are disposable, so this exits the process outright
+/// -- injected code can do nothing useful once the host is gone, and the driver
+/// observes the halt as the session disconnecting. In the app context the host
+/// outlives the session (the server resets and waits for the next client), so this
+/// returns instead; the caller then ends the submission quietly by returning `nil`,
+/// leaving the app running.
+private func haltReplExecution() {
+  if hostOutlivesSession() {
+    return
+  }
   exit(EXIT_FAILURE)
+}
+
+/// Whether the REPL host process outlives a single session -- true in the app
+/// context (`FBReplServeSocket(..., keepListening: YES)`), false for the disposable
+/// test and simulator hosts. Resolved from the loaded `libRepl` with `dlsym`, like
+/// `FBReplInvokeHostCommand`; treated as false if the host predates this entry point.
+private func hostOutlivesSession() -> Bool {
+  typealias QueryFunction = @convention(c) () -> ObjCBool
+  guard let symbol = dlsym(dlopen(nil, RTLD_NOW), "FBReplHostOutlivesSession") else {
+    return false
+  }
+  return unsafeBitCast(symbol, to: QueryFunction.self)().boolValue
 }
 
 /// The idb command namespace. It is a caseless enum used purely to scope the API:
