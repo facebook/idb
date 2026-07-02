@@ -43,16 +43,96 @@ static int CreateSocketAtPath(NSString *socketPath)
   return fd;
 }
 
+// MARK: - Framing
+//
+// Each message is a length-prefixed frame: a 4-byte big-endian byte count
+// followed by that many bytes of a binary property list. Framing by length
+// (rather than a delimiter) lets a payload carry arbitrary binary -- so command
+// and response values travel as raw property-list data and round-trip exactly,
+// with no delimiter byte to collide with or escape.
+
+static BOOL ReadFully(int fd, void *buffer, size_t count)
+{
+  size_t total = 0;
+  while (total < count) {
+    ssize_t n = read(fd, (char *)buffer + total, count - total);
+    if (n <= 0) {
+      return NO;
+    }
+    total += (size_t)n;
+  }
+  return YES;
+}
+
+static BOOL WriteFully(int fd, const void *buffer, size_t count)
+{
+  size_t total = 0;
+  while (total < count) {
+    ssize_t n = write(fd, (const char *)buffer + total, count - total);
+    if (n <= 0) {
+      return NO;
+    }
+    total += (size_t)n;
+  }
+  return YES;
+}
+
+// Reads one frame's payload bytes, or nil on EOF/error (a closed connection).
+static NSData *ReadFrame(int fd)
+{
+  uint8_t header[4];
+  if (!ReadFully(fd, header, sizeof(header))) {
+    return nil;
+  }
+  uint32_t length = ((uint32_t)header[0] << 24) | ((uint32_t)header[1] << 16) | ((uint32_t)header[2] << 8) | (uint32_t)header[3];
+  NSMutableData *payload = [NSMutableData dataWithLength:length];
+  if (length > 0 && !ReadFully(fd, payload.mutableBytes, length)) {
+    return nil;
+  }
+  return payload;
+}
+
+static BOOL WriteFrame(int fd, NSData *payload)
+{
+  uint32_t length = (uint32_t)payload.length;
+  uint8_t header[4] = {
+    (uint8_t)((length >> 24) & 0xFF),
+    (uint8_t)((length >> 16) & 0xFF),
+    (uint8_t)((length >> 8) & 0xFF),
+    (uint8_t)(length & 0xFF),
+  };
+  if (!WriteFully(fd, header, sizeof(header))) {
+    return NO;
+  }
+  return WriteFully(fd, payload.bytes, payload.length);
+}
+
+static NSDictionary *DecodeMessage(NSData *frame)
+{
+  if (!frame) {
+    return nil;
+  }
+  id message = [NSPropertyListSerialization propertyListWithData:frame options:0 format:NULL error:NULL];
+  return [message isKindOfClass:[NSDictionary class]] ? message : nil;
+}
+
+static NSDictionary *ReadMessage(int fd)
+{
+  return DecodeMessage(ReadFrame(fd));
+}
+
+static void WriteMessage(NSDictionary *message, int fd)
+{
+  NSData *payload = [NSPropertyListSerialization dataWithPropertyList:message format:NSPropertyListBinaryFormat_v1_0 options:0 error:NULL];
+  if (payload) {
+    WriteFrame(fd, payload);
+  }
+}
+
 // MARK: - Command Processing
 
-static NSDictionary *ProcessCommand(NSString *line)
+static NSDictionary *ProcessCommand(NSDictionary *command)
 {
-  NSData *data = [line dataUsingEncoding:NSUTF8StringEncoding];
-  NSDictionary *command = [NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
-  if (!command) {
-    return @{@"success" : @NO, @"error" : @"Invalid JSON"};
-  }
-
   NSString *dylibPath = command[@"dylib"];
   NSString *symbol = command[@"symbol"];
   if (!dylibPath || !symbol) {
@@ -78,37 +158,6 @@ static NSDictionary *ProcessCommand(NSString *line)
   return @{@"success" : @YES, @"result" : resultStr};
 }
 
-// MARK: - Socket I/O
-
-static NSString *ReadLineFromFd(int fd)
-{
-  NSMutableData *lineData = [NSMutableData data];
-  char byte;
-  while (YES) {
-    ssize_t n = read(fd, &byte, 1);
-    if (n <= 0) {
-      return lineData.length > 0 ? [[NSString alloc] initWithData:lineData encoding:NSUTF8StringEncoding] : nil;
-    }
-    if (byte == '\n') {
-      return [[NSString alloc] initWithData:lineData encoding:NSUTF8StringEncoding];
-    }
-    [lineData appendBytes:&byte length:1];
-  }
-}
-
-static void SendResponse(NSDictionary *response, int fd)
-{
-  NSData *data = [NSJSONSerialization dataWithJSONObject:response options:0 error:nil];
-  if (!data) {
-    return;
-  }
-  NSMutableData *lineData = [data mutableCopy];
-  const char newline = '\n';
-  [lineData appendBytes:&newline length:1];
-  write(fd, lineData.bytes, lineData.length);
-  [lineData release];
-}
-
 // MARK: - Entry Point
 
 int FBReplServeSocket(NSString *socketPath, NSArray<NSString *> *generatedInterfaces)
@@ -128,14 +177,20 @@ int FBReplServeSocket(NSString *socketPath, NSArray<NSString *> *generatedInterf
     gClientFd = clientFd;
     // Greet the client with the .swiftinterface paths the probe generated (an
     // empty list when there are none), then handle commands.
-    SendResponse(@{@"type" : @"greeting", @"interfaces" : generatedInterfaces ?: @[]}, clientFd);
-    NSString *line;
-    while ((line = ReadLineFromFd(clientFd)) != nil) {
-      NSMutableDictionary *response = [ProcessCommand(line) mutableCopy];
-      response[@"type"] = @"result";
-      SendResponse(response, clientFd);
-      [response release];
-      [line release];
+    WriteMessage(@{@"type" : @"greeting", @"interfaces" : generatedInterfaces ?: @[]}, clientFd);
+    BOOL connected = YES;
+    while (connected) {
+      @autoreleasepool {
+        NSDictionary *command = ReadMessage(clientFd);
+        if (!command) {
+          connected = NO;
+        } else {
+          NSMutableDictionary *response = [ProcessCommand(command) mutableCopy];
+          response[@"type"] = @"result";
+          WriteMessage(response, clientFd);
+          [response release];
+        }
+      }
     }
     gClientFd = -1;
     close(clientFd);
@@ -153,42 +208,40 @@ int FBReplServeSocket(NSString *socketPath, NSArray<NSString *> *generatedInterf
 // without these attributes the linker dead-strips it out of the bridge/shim and
 // the lookup fails.
 __attribute__((used, visibility("default")))
-const char *FBReplInvokeHostCommand(const char *name, const char *argsJSON)
+void *FBReplInvokeHostCommand(const void *commandBytes, int commandLength, int *outLength)
 {
   int fd = gClientFd;
-  if (fd < 0 || name == NULL) {
+  if (fd < 0) {
     return NULL;
   }
 
-  // Parse the args JSON object if provided; default to an empty object.
-  id args = @{};
-  if (argsJSON != NULL) {
-    NSData *argsData = [[NSString stringWithUTF8String:argsJSON] dataUsingEncoding:NSUTF8StringEncoding];
-    id parsed = argsData ? [NSJSONSerialization JSONObjectWithData:argsData options:0 error:nil] : nil;
-    if (parsed != nil) {
-      args = parsed;
-    }
+  @autoreleasepool {
+    NSData *commandData = commandBytes != NULL ? [NSData dataWithBytes:commandBytes length:(NSUInteger)commandLength] : [NSData data];
+    WriteMessage(@{@"type" : @"host_command", @"command" : commandData}, fd);
   }
 
-  SendResponse(
-    @{@"type" : @"host_command",
-      @"name" : [NSString stringWithUTF8String:name],
-      @"args" : args},
-    fd
-  );
-
-  // Read messages until the matching host_result. Because host commands are
+  // Read frames until the matching host_result. Because host commands are
   // strictly nested inside an executing command, nothing else is on the socket.
-  NSString *line;
-  while ((line = ReadLineFromFd(fd)) != nil) {
-    NSData *data = [line dataUsingEncoding:NSUTF8StringEncoding];
-    NSDictionary *response = [NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
-    if ([response[@"type"] isEqualToString:@"host_result"]) {
-      char *result = strdup(line.UTF8String);
-      [line release];
-      return result;
+  // The host_result frame's raw bytes are returned verbatim (malloc'd) for the
+  // caller to decode.
+  void *result = NULL;
+  int resultLength = 0;
+  BOOL connected = YES;
+  while (connected && result == NULL) {
+    @autoreleasepool {
+      NSData *frame = ReadFrame(fd);
+      if (!frame) {
+        connected = NO;
+      } else if ([DecodeMessage(frame)[@"type"] isEqualToString:@"host_result"]) {
+        resultLength = (int)frame.length;
+        result = malloc(frame.length);
+        memcpy(result, frame.bytes, frame.length);
+      }
     }
-    [line release];
   }
-  return NULL;
+
+  if (result != NULL && outLength != NULL) {
+    *outLength = resultLength;
+  }
+  return result;
 }

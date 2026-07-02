@@ -79,11 +79,9 @@ struct HostCommandDispatcher {
       case .describeAll:
         let response = try await commandExecutor.accessibility_info_at_point(nil, nestedFormat: false)
         let elementsData = try JSONSerialization.data(withJSONObject: response.elements)
-        let elementsJSON = String(decoding: elementsData, as: UTF8.self)
-        // Encode the elements JSON as a JSON string value so the host_result
-        // `result` is the String that `IDB.describeAll()` returns verbatim.
-        let resultData = try JSONSerialization.data(withJSONObject: elementsJSON, options: [.fragmentsAllowed])
-        return (true, String(decoding: resultData, as: UTF8.self))
+        // The elements JSON is the string `IDB.describeAll()` returns verbatim;
+        // it rides in the host_result's `result` field as-is.
+        return (true, String(decoding: elementsData, as: UTF8.self))
       }
     } catch {
       return (false, "\(error)")

@@ -96,11 +96,8 @@ struct ReplMethodHandler {
         let result = try await client.execute(
           dylibPath: dylibPath,
           symbol: execute.symbol,
-          hostCommandHandler: { _, args in
-            guard let payload = args["data"] as? String,
-              let data = Data(base64Encoded: payload),
-              let command = try? PropertyListDecoder().decode(ReplCommand.self, from: data)
-            else {
+          hostCommandHandler: { commandData in
+            guard let command = try? PropertyListDecoder().decode(ReplCommand.self, from: commandData) else {
               return (false, "repl: could not decode host command")
             }
             return await dispatcher.run(command)

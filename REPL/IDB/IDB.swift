@@ -43,24 +43,29 @@ import Foundation
 /// (see `haltReplExecution`) rather than surfacing a catchable error.
 @discardableResult
 private func perform(_ command: ReplCommand) -> Any? {
-  typealias InvokeFunction = @convention(c) (UnsafePointer<CChar>?, UnsafePointer<CChar>?) -> UnsafeMutablePointer<CChar>?
+  typealias InvokeFunction = @convention(c) (UnsafeRawPointer?, Int32, UnsafeMutablePointer<Int32>?) -> UnsafeMutableRawPointer?
   guard let symbol = dlsym(dlopen(nil, RTLD_NOW), "FBReplInvokeHostCommand") else {
     haltReplExecution() // not running inside an idb REPL host
   }
   let invokeHostCommand = unsafeBitCast(symbol, to: InvokeFunction.self)
   // Encode the command as a binary property list so values (e.g. coordinates)
-  // round-trip bit-for-bit rather than through a decimal string. The control
-  // transport is newline-delimited text, so the binary is base64'd into a small
-  // JSON envelope for the wire.
+  // round-trip bit-for-bit rather than through a decimal string. It travels as
+  // the raw payload of a length-prefixed frame -- there is no text envelope.
   let encoder = PropertyListEncoder()
   encoder.outputFormat = .binary
-  let payload = (try? encoder.encode(command))?.base64EncodedString() ?? ""
-  let commandJSON = (try? JSONSerialization.data(withJSONObject: ["data": payload])).map { String(decoding: $0, as: UTF8.self) } ?? "{}"
-  guard let responsePtr = "command".withCString({ namePtr in commandJSON.withCString { argsPtr in invokeHostCommand(namePtr, argsPtr) } }) else {
+  guard let commandData = try? encoder.encode(command) else {
+    return nil // a command that cannot be encoded cannot be sent; skip it
+  }
+  var responseLength: Int32 = 0
+  let responsePtr = commandData.withUnsafeBytes { (raw: UnsafeRawBufferPointer) in
+    invokeHostCommand(raw.baseAddress, Int32(raw.count), &responseLength)
+  }
+  guard let responsePtr else {
     haltReplExecution() // the REPL host disconnected mid-command
   }
   defer { free(responsePtr) }
-  let response = ((try? JSONSerialization.jsonObject(with: Data(String(cString: responsePtr).utf8))) as? [String: Any]) ?? [:]
+  let responseData = Data(bytes: responsePtr, count: Int(responseLength))
+  let response = ((try? PropertyListSerialization.propertyList(from: responseData, options: [], format: nil)) as? [String: Any]) ?? [:]
   if response["success"] as? Bool == true {
     return response["result"]
   }

@@ -12,6 +12,11 @@ import GRPC
 /// test process. The shim is the server (it binds the socket); the companion
 /// connects to it and forwards `dlopen`/`dlsym`/call requests.
 ///
+/// Messages are length-prefixed binary property-list frames (a 4-byte big-endian
+/// byte count then that many bytes of a binary plist), matching
+/// `ReplSocketServer`. Length framing lets payloads carry arbitrary binary, so
+/// command values round-trip exactly.
+///
 /// All blocking socket I/O runs on a dedicated dispatch queue so the gRPC
 /// handler's cooperative thread is never blocked (a user's compiled code may run
 /// for an arbitrary amount of time).
@@ -72,34 +77,19 @@ final class ReplSocketClient {
     return ReplSocketClient(fd: fd)
   }
 
-  /// Reads the shim's one-line greeting, sent once on connect before any
-  /// command, and returns the `.swiftinterface` paths it advertises (possibly
-  /// empty). Must be called exactly once, before the first `execute`.
+  /// Reads the shim's greeting frame, sent once on connect before any command,
+  /// and returns the `.swiftinterface` paths it advertises (possibly empty). Must
+  /// be called exactly once, before the first `execute`.
   func readGreeting() async throws -> [String] {
     let fd = self.fd
     return try await withCheckedThrowingContinuation { continuation in
       ioQueue.async {
         do {
-          var greetingData = Data()
-          var byte: UInt8 = 0
-          while true {
-            let bytesRead = Darwin.read(fd, &byte, 1)
-            if bytesRead > 0 {
-              if byte == 0x0A { break }
-              greetingData.append(byte)
-            } else if bytesRead == 0 {
-              throw GRPCStatus(code: .unavailable, message: "repl: control socket closed before the greeting was received (the test process may have crashed)")
-            } else {
-              throw GRPCStatus(code: .internalError, message: "repl: failed to read greeting from control socket: \(String(cString: strerror(errno)))")
-            }
+          let message = try Self.readMessage(fd: fd)
+          guard message["type"] as? String == "greeting" else {
+            throw GRPCStatus(code: .internalError, message: "repl: expected a 'greeting' message, got type '\(message["type"] as? String ?? "nil")'")
           }
-          guard let json = try JSONSerialization.jsonObject(with: greetingData) as? [String: Any] else {
-            throw GRPCStatus(code: .internalError, message: "repl: invalid greeting from test process")
-          }
-          guard json["type"] as? String == "greeting" else {
-            throw GRPCStatus(code: .internalError, message: "repl: expected a 'greeting' message, got type '\(json["type"] as? String ?? "nil")'")
-          }
-          let interfaces = json["interfaces"] as? [String] ?? []
+          let interfaces = message["interfaces"] as? [String] ?? []
           continuation.resume(returning: interfaces)
         } catch {
           continuation.resume(throwing: error)
@@ -109,9 +99,10 @@ final class ReplSocketClient {
   }
 
   /// Services a `host_command` the served process sends back *while* an `execute`
-  /// is in flight. Returns whether the command succeeded plus a JSON string: the
+  /// is in flight. Receives the raw encoded command bytes (a binary property list
+  /// of a `ReplCommand`) and returns whether it succeeded plus a string: the
   /// command's result value on success, or an error message on failure.
-  typealias HostCommandHandler = (_ name: String, _ args: [String: Any]) async -> (success: Bool, resultJSON: String)
+  typealias HostCommandHandler = (_ commandData: Data) async -> (success: Bool, resultJSON: String)
 
   /// Sends a `{dylib, symbol}` command to the shim and returns its result. While
   /// the served process runs the injected code it may send nested `host_command`
@@ -125,26 +116,22 @@ final class ReplSocketClient {
     return try await withCheckedThrowingContinuation { continuation in
       ioQueue.async {
         do {
-          try Self.writeLine(["type": "execute", "dylib": dylibPath, "symbol": symbol], to: fd)
+          try Self.writeMessage(["type": "execute", "dylib": dylibPath, "symbol": symbol], to: fd)
 
           while true {
-            let responseData = try Self.readLine(fd: fd)
-            guard let json = try JSONSerialization.jsonObject(with: responseData) as? [String: Any] else {
-              throw GRPCStatus(code: .internalError, message: "repl: invalid response from test process")
-            }
-            switch json["type"] as? String {
+            let message = try Self.readMessage(fd: fd)
+            switch message["type"] as? String {
             case "host_command":
-              let name = json["name"] as? String ?? ""
-              let args = json["args"] as? [String: Any] ?? [:]
-              let hostResult = Self.runHostCommand(hostCommandHandler, name: name, args: args)
-              try Self.writeLine(Self.hostResultMessage(hostResult), to: fd)
+              let commandData = (message["command"] as? Data) ?? Data()
+              let hostResult = Self.runHostCommand(hostCommandHandler, commandData: commandData)
+              try Self.writeMessage(Self.hostResultMessage(hostResult), to: fd)
 
             case "result":
-              let success = json["success"] as? Bool ?? false
+              let success = message["success"] as? Bool ?? false
               let output =
                 success
-                ? (json["result"] as? String ?? "")
-                : "Error: \(json["error"] as? String ?? "unknown")"
+                ? (message["result"] as? String ?? "")
+                : "Error: \(message["error"] as? String ?? "unknown")"
               continuation.resume(returning: (success, output))
               return
 
@@ -162,12 +149,12 @@ final class ReplSocketClient {
   /// Runs the async `hostCommandHandler` to completion from the synchronous
   /// `ioQueue`, bridging with a semaphore. The `ioQueue` is dedicated to this
   /// socket, so blocking it here is fine.
-  private static func runHostCommand(_ handler: @escaping HostCommandHandler, name: String, args: [String: Any]) -> (success: Bool, resultJSON: String) {
+  private static func runHostCommand(_ handler: @escaping HostCommandHandler, commandData: Data) -> (success: Bool, resultJSON: String) {
     final class Box: @unchecked Sendable { var value: (success: Bool, resultJSON: String) = (false, "null") }
     let box = Box()
     let semaphore = DispatchSemaphore(value: 0)
     Task {
-      box.value = await handler(name, args)
+      box.value = await handler(commandData)
       semaphore.signal()
     }
     semaphore.wait()
@@ -175,37 +162,72 @@ final class ReplSocketClient {
   }
 
   /// Builds a `host_result` message from a handler's `(success, resultJSON)`: the
-  /// JSON string becomes the `result` value on success, or the `error` on failure.
+  /// string becomes the `result` value on success, or the `error` on failure.
   private static func hostResultMessage(_ result: (success: Bool, resultJSON: String)) -> [String: Any] {
     if result.success {
-      let value = (try? JSONSerialization.jsonObject(with: Data(result.resultJSON.utf8), options: [.fragmentsAllowed])) ?? NSNull()
-      return ["type": "host_result", "success": true, "result": value]
+      return ["type": "host_result", "success": true, "result": result.resultJSON]
     }
     return ["type": "host_result", "success": false, "error": result.resultJSON]
   }
 
-  /// Reads one newline-terminated message from `fd`, throwing on EOF/error.
-  private static func readLine(fd: Int32) throws -> Data {
-    var data = Data()
-    var byte: UInt8 = 0
-    while true {
-      let bytesRead = Darwin.read(fd, &byte, 1)
-      if bytesRead > 0 {
-        if byte == 0x0A { return data }
-        data.append(byte)
-      } else if bytesRead == 0 {
+  // MARK: - Framing
+
+  /// Reads one length-prefixed frame from `fd` (a 4-byte big-endian byte count
+  /// then that many payload bytes), throwing on EOF/error.
+  private static func readFrame(fd: Int32) throws -> Data {
+    let header = try readBytes(fd: fd, count: 4)
+    let length = (Int(header[0]) << 24) | (Int(header[1]) << 16) | (Int(header[2]) << 8) | Int(header[3])
+    guard length > 0 else { return Data() }
+    return try readBytes(fd: fd, count: length)
+  }
+
+  /// Reads exactly `count` bytes from `fd`, looping over short reads; throws on
+  /// EOF/error.
+  private static func readBytes(fd: Int32, count: Int) throws -> Data {
+    var data = Data(count: count)
+    var total = 0
+    while total < count {
+      let n = data.withUnsafeMutableBytes { (raw: UnsafeMutableRawBufferPointer) -> Int in
+        guard let base = raw.baseAddress else { return 0 }
+        return Darwin.read(fd, base + total, count - total)
+      }
+      if n > 0 {
+        total += n
+      } else if n == 0 {
         throw GRPCStatus(code: .unavailable, message: "repl: control socket closed before a complete message was received (the test process may have crashed)")
       } else {
         throw GRPCStatus(code: .internalError, message: "repl: failed to read from control socket: \(String(cString: strerror(errno)))")
       }
     }
+    return data
   }
 
-  /// Writes `message` as a newline-terminated JSON line to `fd`.
-  private static func writeLine(_ message: [String: Any], to fd: Int32) throws {
-    var data = try JSONSerialization.data(withJSONObject: message)
-    data.append(0x0A)
-    try data.withUnsafeBytes { (raw: UnsafeRawBufferPointer) in
+  /// Reads one frame and decodes it as a binary property-list message.
+  private static func readMessage(fd: Int32) throws -> [String: Any] {
+    let frame = try readFrame(fd: fd)
+    guard let message = try PropertyListSerialization.propertyList(from: frame, options: [], format: nil) as? [String: Any] else {
+      throw GRPCStatus(code: .internalError, message: "repl: invalid control-socket message")
+    }
+    return message
+  }
+
+  /// Writes `message` as a binary property-list frame to `fd`.
+  private static func writeMessage(_ message: [String: Any], to fd: Int32) throws {
+    let payload = try PropertyListSerialization.data(fromPropertyList: message, format: .binary, options: 0)
+    try writeFrame(payload, to: fd)
+  }
+
+  /// Writes `payload` as a length-prefixed frame to `fd`.
+  private static func writeFrame(_ payload: Data, to fd: Int32) throws {
+    let length = payload.count
+    var framed = Data([
+      UInt8((length >> 24) & 0xFF),
+      UInt8((length >> 16) & 0xFF),
+      UInt8((length >> 8) & 0xFF),
+      UInt8(length & 0xFF),
+    ])
+    framed.append(payload)
+    try framed.withUnsafeBytes { (raw: UnsafeRawBufferPointer) in
       guard let base = raw.baseAddress else { return }
       var written = 0
       while written < raw.count {
