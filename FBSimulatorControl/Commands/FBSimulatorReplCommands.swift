@@ -38,14 +38,15 @@ public final class FBSimulatorReplCommands: NSObject, FBiOSTargetCommand {
     }
 
     // Resolve the REPL shim, which is bundled alongside the other shims, as is the
-    // IDB module's .swiftinterface (reported to the driver so injected code can
-    // `import IDB`; the IDB code itself is linked into libRepl, which is injected).
+    // IDBAPI module's .swiftinterface (reported to the driver, which auto-imports it
+    // so injected code reaches the API through `IDB`; the API code itself is linked
+    // into libRepl, which is injected).
     let shimDirectory = try await bridgeFBFuture(FBXCTestShimConfiguration.findShimDirectory(onQueue: simulator.workQueue, logger: logger))
     let replDylibPath = shimDirectory.appendingPathComponent("libRepl-iOS.dylib")
     guard FileManager.default.fileExists(atPath: replDylibPath) else {
       throw FBSimulatorError.describe("REPL shim not found at expected location \(replDylibPath)").build()
     }
-    let idbInterfacePath = shimDirectory.appendingPathComponent("IDB.swiftinterface")
+    let idbInterfacePath = shimDirectory.appendingPathComponent("IDBAPI.swiftinterface")
     let extraInterfacePaths = FileManager.default.fileExists(atPath: idbInterfacePath) ? [idbInterfacePath] : []
 
     // The shim binds this socket; the gRPC handler connects to it.
@@ -87,8 +88,9 @@ public final class FBSimulatorReplCommands: NSObject, FBiOSTargetCommand {
     }
 
     // The SimulatorFrameworkBridge binary is bundled alongside the shims, as are
-    // libRepl (which the bridge loads to serve the REPL) and the IDB module's
-    // .swiftinterface (reported to the driver so injected code can `import IDB`).
+    // libRepl (which the bridge loads to serve the REPL) and the IDBAPI module's
+    // .swiftinterface (reported to the driver, which auto-imports it so injected
+    // code reaches the API through `IDB`).
     let bundle = Bundle(for: FBSimulatorReplCommands.self)
     guard let bridgePath = bundle.path(forResource: "SimulatorFrameworkBridge", ofType: nil) else {
       throw FBSimulatorError.describe("SimulatorFrameworkBridge binary not found in bundle resources").build()
@@ -96,7 +98,7 @@ public final class FBSimulatorReplCommands: NSObject, FBiOSTargetCommand {
     guard let libReplPath = bundle.path(forResource: "libRepl-iOS", ofType: "dylib") else {
       throw FBSimulatorError.describe("libRepl-iOS.dylib not found in bundle resources").build()
     }
-    let idbInterfacePath = bundle.path(forResource: "IDB", ofType: "swiftinterface")
+    let idbInterfacePath = bundle.path(forResource: "IDBAPI", ofType: "swiftinterface")
 
     // The bridge's `repl start` action takes the socket path and libRepl's path
     // and serves the control socket there. Serving blocks until the socket is
