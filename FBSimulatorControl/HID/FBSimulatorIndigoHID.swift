@@ -165,13 +165,15 @@ public final class FBSimulatorIndigoHID {
 
   private func touchMessage(point: CGPoint, direction: FBSimulatorHIDDirection) -> Data {
     var point = point
+    // SimulatorKit has no single-touch builder: IndigoHIDMessageForMouseNSEvent always emits a
+    // multi-touch (eventType 0x03) message. So source a valid touch-down IndigoTouch from it, then
+    // hand-envelope it as a single-touch (eventType 0x02) two-payload message.
     let source = messageForMouseNSEvent(&point, nil, 0x32, direction.indigoEventType, ObjCBool(false))
+    source.pointee.payload.event.touch.xRatio = point.x
+    source.pointee.payload.event.touch.yRatio = point.y
     let sourceBytes = UnsafeMutableRawPointer(source)
-    // Patch xRatio (0x3C) / yRatio (0x44) into the source IndigoTouch.
-    FBSimulatorIndigoHID.write(point.x, at: 0x3C, into: sourceBytes)
-    FBSimulatorIndigoHID.write(point.y, at: 0x44, into: sourceBytes)
 
-    // Build a fresh touch message (320 / 0x140 bytes) and copy the Digitizer payload in.
+    // Build a fresh single-touch message (320 / 0x140 bytes) and copy the Digitizer payload in.
     let messageSize = MemoryLayout<IndigoMessage>.size + MemoryLayout<IndigoPayload>.size
     let stride = MemoryLayout<IndigoPayload>.size // 0x90
     guard let destination = calloc(1, messageSize) else {
@@ -187,11 +189,14 @@ public final class FBSimulatorIndigoHID {
     memcpy(destination.advanced(by: 0x30), sourceBytes.advanced(by: 0x30), MemoryLayout<IndigoTouch>.size)
     free(source)
 
-    // Duplicate the first IndigoPayload (at 0x20) into the second slot, and mark it
-    // (second touch.field1 = 1, field2 = 2 — the bits at 0x30 + stride).
+    // Duplicate the first IndigoPayload (at 0x20) into the second slot, then mark the copied contact
+    // (touch.field1 = 1, field2 = 2). NB: this self-allocated message uses the Swift `IndigoPayload`
+    // stride (0x90), so the second payload sits at 0xB0 — not the 0xC0 wire offset of the
+    // SimulatorKit-built messages.
     memcpy(destination.advanced(by: 0x20 + stride), destination.advanced(by: 0x20), stride)
-    FBSimulatorIndigoHID.write(UInt32(1), at: 0x30 + stride, into: destination)
-    FBSimulatorIndigoHID.write(UInt32(2), at: 0x34 + stride, into: destination)
+    let secondPayload = FBSimulatorIndigoHID.payload(at: 0x20 + stride, of: message)
+    secondPayload.pointee.event.touch.field1 = 1
+    secondPayload.pointee.event.touch.field2 = 2
 
     return Data(bytesNoCopy: destination, count: messageSize, deallocator: .free)
   }
@@ -217,16 +222,6 @@ public final class FBSimulatorIndigoHID {
     CGPoint(
       x: (point.x * CGFloat(screenScale)) / screenSize.width,
       y: (point.y * CGFloat(screenScale)) / screenSize.height)
-  }
-
-  private static func write(_ value: Double, at offset: Int, into base: UnsafeMutableRawPointer) {
-    var value = value
-    memcpy(base.advanced(by: offset), &value, MemoryLayout<Double>.size)
-  }
-
-  private static func write(_ value: UInt32, at offset: Int, into base: UnsafeMutableRawPointer) {
-    var value = value
-    memcpy(base.advanced(by: offset), &value, MemoryLayout<UInt32>.size)
   }
 }
 
