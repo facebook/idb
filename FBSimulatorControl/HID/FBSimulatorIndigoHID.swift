@@ -86,11 +86,15 @@ public final class FBSimulatorIndigoHID {
   /// not move tvOS focus).
   private static let trackpadTarget: UInt32 = 0x16
 
-  /// The wire size of a single-payload `IndigoMessage` (Indigo.h: "Total allocation is 0xC0"), i.e.
-  /// where the trackpad builder appends its second `IndigoPayload` (matching `twoFingerTouchScreenSize`'s
-  /// payload 2 at 0xC0). NB: this is the *wire* offset — Swift's `MemoryLayout<IndigoMessage>.size`
-  /// under-counts it (0xB0) because of the packed union, so it cannot be used to locate payload 2.
-  private static let indigoMessageWireSize = 0xC0
+  /// Wire offset of the second `IndigoPayload` in a SimulatorKit-built message (Indigo.h: a single-payload
+  /// allocation is 0xC0). NB: this is the *wire* offset — Swift's `MemoryLayout<IndigoMessage>.size`
+  /// under-counts it (0xB0) because of the packed union, so it cannot be used to locate the payload.
+  private static let secondPayloadWireOffset = 0xC0
+  /// Wire stride between consecutive `IndigoPayload`s in a SimulatorKit-built message. The packed union
+  /// makes this larger than `MemoryLayout<IndigoPayload>.size` (which is 0x90).
+  private static let payloadWireStride = 0xA0
+  /// Wire offset of the third `IndigoPayload` — the second finger in a multi-touch message.
+  private static let thirdPayloadWireOffset = secondPayloadWireOffset + payloadWireStride
 
   /// A tvOS Siri Remote trackpad move. Builds `IndigoHIDMessageForTrackpadMoveEvent(point, 0x16)` and
   /// sets its digitizer phase fields so the focus engine reads a began → changed → ended gesture
@@ -105,9 +109,7 @@ public final class FBSimulatorIndigoHID {
   /// Position/touch-down "changed" contact.
   public func trackpad(point: CGPoint, phase: FBSimulatorTrackpadPhase) throws -> Data {
     let message = messageForTrackpadMoveEvent(point, FBSimulatorIndigoHID.trackpadTarget)
-    let secondary = UnsafeMutableRawPointer(message)
-      .advanced(by: FBSimulatorIndigoHID.indigoMessageWireSize)
-      .assumingMemoryBound(to: IndigoPayload.self)
+    let secondary = FBSimulatorIndigoHID.payload(at: FBSimulatorIndigoHID.secondPayloadWireOffset, of: message)
     switch phase {
     case .began:
       message.pointee.payload.event.touch.eventMask = 0x23 // Range|Touch|Identity
@@ -141,25 +143,22 @@ public final class FBSimulatorIndigoHID {
     var ratio1 = FBSimulatorIndigoHID.screenRatio(from: finger1, screenSize: screenSize, screenScale: screenScale)
     var ratio2 = FBSimulatorIndigoHID.screenRatio(from: finger2, screenSize: screenSize, screenScale: screenScale)
 
-    // Passing a non-NULL point1 makes IndigoHIDMessageForMouseNSEvent produce a 3-payload message
+    // Passing a non-NULL second point makes IndigoHIDMessageForMouseNSEvent produce a 3-payload message
     // with eventType=0x03 (multi-touch) instead of 0x02 (single-touch).
     let message = messageForMouseNSEvent(&ratio1, &ratio2, 0x32, direction.indigoEventType, ObjCBool(false))
-    let messageSize = malloc_size(message)
-    let bytes = UnsafeMutableRawPointer(message)
 
-    // The function does not store our coordinates directly — patch them manually.
-    // Byte offsets derived from Indigo.h struct layout (IndigoPayload stride = 0xA0):
-    //   Payload 1 (finger 1) at 0x20:  xRatio at 0x3C, yRatio at 0x44
-    //   Payload 2 (digitizer) at 0xC0: xRatio at 0xDC, yRatio at 0xE4
-    //   Payload 3 (finger 2) at 0x160: xRatio at 0x17C, yRatio at 0x184
-    FBSimulatorIndigoHID.write(ratio1.x, at: 0x3C, into: bytes)
-    FBSimulatorIndigoHID.write(ratio1.y, at: 0x44, into: bytes)
-    FBSimulatorIndigoHID.write(ratio1.x, at: 0xDC, into: bytes)
-    FBSimulatorIndigoHID.write(ratio1.y, at: 0xE4, into: bytes)
-    FBSimulatorIndigoHID.write(ratio2.x, at: 0x17C, into: bytes)
-    FBSimulatorIndigoHID.write(ratio2.y, at: 0x184, into: bytes)
+    // The builder does not store our coordinates directly — patch each contact's xRatio/yRatio. Finger 1
+    // is the primary contact, the digitizer summary (payload 2) mirrors it, and finger 2 is payload 3.
+    message.pointee.payload.event.touch.xRatio = ratio1.x
+    message.pointee.payload.event.touch.yRatio = ratio1.y
+    let digitizer = FBSimulatorIndigoHID.payload(at: FBSimulatorIndigoHID.secondPayloadWireOffset, of: message)
+    digitizer.pointee.event.touch.xRatio = ratio1.x
+    digitizer.pointee.event.touch.yRatio = ratio1.y
+    let finger2Payload = FBSimulatorIndigoHID.payload(at: FBSimulatorIndigoHID.thirdPayloadWireOffset, of: message)
+    finger2Payload.pointee.event.touch.xRatio = ratio2.x
+    finger2Payload.pointee.event.touch.yRatio = ratio2.y
 
-    return Data(bytesNoCopy: bytes, count: messageSize, deallocator: .free)
+    return FBSimulatorIndigoHID.data(fromMallocedMessage: message)
   }
 
   // MARK: Event Generation
@@ -203,6 +202,15 @@ public final class FBSimulatorIndigoHID {
   private static func data(fromMallocedMessage message: UnsafeMutablePointer<IndigoMessage>) -> Data {
     let raw = UnsafeMutableRawPointer(message)
     return Data(bytesNoCopy: raw, count: malloc_size(raw), deallocator: .free)
+  }
+
+  /// A typed view of the `IndigoPayload` at a wire offset the Swift `IndigoMessage.payload` field cannot
+  /// address — SimulatorKit lays the second and third payloads at `payloadWireStride`, which the packed
+  /// union under-counts. Used for the digitizer/second-finger contacts in multi-payload messages.
+  private static func payload(
+    at wireOffset: Int, of message: UnsafeMutablePointer<IndigoMessage>
+  ) -> UnsafeMutablePointer<IndigoPayload> {
+    UnsafeMutableRawPointer(message).advanced(by: wireOffset).assumingMemoryBound(to: IndigoPayload.self)
   }
 
   static func screenRatio(from point: CGPoint, screenSize: CGSize, screenScale: Float) -> CGPoint {
