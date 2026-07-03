@@ -30,6 +30,7 @@ public final class FBSimulatorIndigoHID {
   private let messageForButton: MessageForButtonFn
   private let messageForKeyboardArbitrary: MessageForKeyboardArbitraryFn
   private let messageForMouseNSEvent: MessageForMouseNSEventFn
+  private let messageForTrackpadMoveEvent: MessageForTrackpadMoveEventFn
 
   // MARK: Initializers
 
@@ -45,17 +46,21 @@ public final class FBSimulatorIndigoHID {
       messageForKeyboardArbitrary: unsafeBitCast(
         FBGetSymbolFromHandle(handle, "IndigoHIDMessageForKeyboardArbitrary"), to: MessageForKeyboardArbitraryFn.self),
       messageForMouseNSEvent: unsafeBitCast(
-        FBGetSymbolFromHandle(handle, "IndigoHIDMessageForMouseNSEvent"), to: MessageForMouseNSEventFn.self))
+        FBGetSymbolFromHandle(handle, "IndigoHIDMessageForMouseNSEvent"), to: MessageForMouseNSEventFn.self),
+      messageForTrackpadMoveEvent: unsafeBitCast(
+        FBGetSymbolFromHandle(handle, "IndigoHIDMessageForTrackpadMoveEvent"), to: MessageForTrackpadMoveEventFn.self))
   }
 
   private init(
     messageForButton: @escaping MessageForButtonFn,
     messageForKeyboardArbitrary: @escaping MessageForKeyboardArbitraryFn,
-    messageForMouseNSEvent: @escaping MessageForMouseNSEventFn
+    messageForMouseNSEvent: @escaping MessageForMouseNSEventFn,
+    messageForTrackpadMoveEvent: @escaping MessageForTrackpadMoveEventFn
   ) {
     self.messageForButton = messageForButton
     self.messageForKeyboardArbitrary = messageForKeyboardArbitrary
     self.messageForMouseNSEvent = messageForMouseNSEvent
+    self.messageForTrackpadMoveEvent = messageForTrackpadMoveEvent
   }
 
   // MARK: Public
@@ -99,13 +104,7 @@ public final class FBSimulatorIndigoHID {
   /// 0x1 | Touch 0x2 | Position 0x4 | Identity 0x20), `range`, and `touch`; the builder defaults to a
   /// Position/touch-down "changed" contact.
   public func trackpad(point: CGPoint, phase: FBSimulatorTrackpadPhase) throws -> Data {
-    guard let handle = Bundle(identifier: "com.apple.SimulatorKit")?.dlopenExecutablePath() else {
-      throw FBSimulatorHIDError.simulatorKitUnavailable
-    }
-    let build = unsafeBitCast(
-      FBGetSymbolFromHandle(handle, "IndigoHIDMessageForTrackpadMoveEvent"),
-      to: MessageForTrackpadMoveEventFn.self)
-    let message = build(point, FBSimulatorIndigoHID.trackpadTarget)
+    let message = messageForTrackpadMoveEvent(point, FBSimulatorIndigoHID.trackpadTarget)
     let secondary = UnsafeMutableRawPointer(message)
       .advanced(by: FBSimulatorIndigoHID.indigoMessageWireSize)
       .assumingMemoryBound(to: IndigoPayload.self)
