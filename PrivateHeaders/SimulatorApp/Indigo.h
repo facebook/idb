@@ -49,13 +49,14 @@ typedef struct {
  NOT the screenID|0x40000000 screen target) builds a Position/touch-down "changed" contact, and its
  phase is expressed by setting these fields (see FBSimulatorIndigoHID.trackpad(point:phase:)). That
  builder emits a two-IndigoPayload message: this contact plus a repeated one in the IndigoPayload at
- MemoryLayout<IndigoMessage>.size (0xC0), the same layout the multi-touch builder uses.
+ the 0xC0 wire offset, the same layout the multi-touch builder uses.
 
- The remaining fieldN slots are not yet reverse-engineered; only the named fields are understood.
+ The remaining fieldN slots are not yet reverse-engineered; where a builder writes a constant, the
+ observed value is noted inline.
  */
 typedef struct {
-  unsigned int field1; // 0x20 + 0x10 + 0x0 = 0x30
-  unsigned int field2; // 0x20 + 0x10 + 0x4 = 0x34
+  unsigned int field1; // 0x20 + 0x10 + 0x0 = 0x30  observed 0x400002; FBSimulatorIndigoHID.touchMessage marks the duplicated 2nd contact field1=1
+  unsigned int field2; // 0x20 + 0x10 + 0x4 = 0x34  observed 0x1; touchMessage marks the duplicated 2nd contact field2=2
   unsigned int eventMask; // 0x20 + 0x10 + 0x8 = 0x38  IOHIDDigitizerEventMask: Range 0x1 | Touch 0x2 | Position 0x4 | Identity 0x20
   double xRatio; // 0x20 + 0x10 + 0xc = 0x3c
   double yRatio; // 0x20 + 0x10 + 0x14 = 0x44
@@ -179,11 +180,11 @@ typedef union {
  The Payload embedded inside an IndigoMessage, below the mach_msg headers.
  */
 typedef struct {
-  unsigned int field1; // 0x20 + 0x0 = 0x20: "eventKind" — identifies the event type for guest-side dispatch.
-                       // SimHIDVirtualServiceManager.serviceForIndigoHIDData: dispatches on this
-                       // via bitmask 0x20846 (accepted values: 1, 2, 6, 11, 17; special: 35=gamePad).
-                       // IndigoHIDMessageForButton sets this to 2.
-                       // IndigoHIDMessageForDeviceMotionLiteEvent sets this to the eventType param (typically 1).
+  unsigned int eventKind; // 0x20 + 0x0 = 0x20: identifies the event type for guest-side dispatch.
+                          // SimHIDVirtualServiceManager.serviceForIndigoHIDData: dispatches on this
+                          // via bitmask 0x20846 (accepted values: 1, 2, 6, 11, 17; special: 35=gamePad).
+                          // IndigoHIDMessageForButton sets this to 2; the touch/trackpad builders set it to 0xB.
+                          // IndigoHIDMessageForDeviceMotionLiteEvent sets this to the eventType param (typically 1).
   unsigned long long timestamp; // 0x20 + 0x04 = 0x24: mach_absolute_time(), set by IndigoHID setTimestamp helper.
   unsigned int field3; // 0x20 + 0x0c = 0x2c: Zeroed in all observed messages.
   IndigoEvent event; // 0x20 + 0x10 = 0x30
@@ -191,12 +192,18 @@ typedef struct {
 
 /**
  The Indigo Message sent over the wire via SimDeviceLegacyHIDClient → IndigoHIDRegistrationPort.
- Total allocation is 0xC0 (192) bytes (calloc'd by IndigoHIDMessageFor* functions).
+ A single-payload message is 0xC0 (192) bytes (calloc'd by the IndigoHIDMessageFor* functions).
+
+ Multi-payload messages built by SimulatorKit (multi-touch, trackpad) append further IndigoPayloads
+ at the 0xA0 wire stride — payload 2 at 0xC0, payload 3 at 0x160. That stride is larger than
+ sizeof(IndigoPayload) as Swift computes it (0x90, the packed-union under-count), so the hand-built
+ single-touch message (FBSimulatorIndigoHID.touchMessage) — which uses the Swift stride — instead
+ places its second payload at 0xB0.
  */
 typedef struct {
   MachMessageHeader header; // 0x0
-  unsigned int innerSize; // 0x18: Always 0xa0 (160) for all event types.
-  unsigned char eventType; // 0x1c: 0x01 for button/keyboard/motion, 0x02 for touch.
+  unsigned int innerSize; // 0x18: 0xa0 (160) for SimulatorKit-built messages; the hand-built single-touch message sets Swift's sizeof(IndigoPayload) = 0x90.
+  unsigned char eventType; // 0x1c: 0x01 for button/keyboard/motion, 0x02 for single-touch, 0x03 for multi-touch.
   IndigoPayload payload; // 0x20
 } IndigoMessage;
 

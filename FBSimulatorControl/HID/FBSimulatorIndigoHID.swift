@@ -102,11 +102,10 @@ public final class FBSimulatorIndigoHID {
   /// move focus). `point` is absolute-normalized (0..1, top-left origin).
   ///
   /// The builder emits a *two*-`IndigoPayload` message (like the multi-touch builder): the primary
-  /// contact in `message.payload`, a repeated contact in the `IndigoPayload` immediately after the
-  /// message (at `MemoryLayout<IndigoMessage>.size` — see `twoFingerTouchScreenSize`'s payload 2 at
-  /// 0xC0). Both carry the digitizer state in `IndigoTouch.eventMask` (IOHIDDigitizerEventMask: Range
-  /// 0x1 | Touch 0x2 | Position 0x4 | Identity 0x20), `range`, and `touch`; the builder defaults to a
-  /// Position/touch-down "changed" contact.
+  /// contact in `message.payload` and a repeated contact in the second `IndigoPayload` at
+  /// `secondPayloadWireOffset` (0xC0). Both carry the digitizer state in `IndigoTouch.eventMask`
+  /// (IOHIDDigitizerEventMask: Range 0x1 | Touch 0x2 | Position 0x4 | Identity 0x20), `range`, and
+  /// `touch`; the builder defaults to a Position/touch-down "changed" contact.
   public func trackpad(point: CGPoint, phase: FBSimulatorTrackpadPhase) throws -> Data {
     let message = messageForTrackpadMoveEvent(point, FBSimulatorIndigoHID.trackpadTarget)
     let secondary = FBSimulatorIndigoHID.payload(at: FBSimulatorIndigoHID.secondPayloadWireOffset, of: message)
@@ -182,7 +181,7 @@ public final class FBSimulatorIndigoHID {
     let message = destination.assumingMemoryBound(to: IndigoMessage.self)
     message.pointee.innerSize = UInt32(MemoryLayout<IndigoPayload>.size)
     message.pointee.eventType = UInt8(IndigoEventTypeTouch)
-    message.pointee.payload.field1 = 0x0000_000B
+    message.pointee.payload.eventKind = 0x0000_000B
     message.pointee.payload.timestamp = mach_absolute_time()
 
     // Copy in the Digitizer (IndigoTouch) payload from the source, at event offset 0x30.

@@ -66,8 +66,8 @@ final class FBSimulatorIndigoHIDTests: XCTestCase {
     XCTAssertEqual(uint32(at: 0x18, in: data), 0x90, "innerSize should be sizeof(IndigoPayload)")
     // eventType byte at 0x1c == IndigoEventTypeTouch (2).
     XCTAssertEqual(uint8(at: 0x1c, in: data), 2, "eventType should be touch")
-    // payload.field1 at 0x20 == 0x0b.
-    XCTAssertEqual(uint32(at: 0x20, in: data), 0x0b, "payload.field1 should be 0x0b")
+    // payload.eventKind at 0x20 == 0x0b.
+    XCTAssertEqual(uint32(at: 0x20, in: data), 0x0b, "payload.eventKind should be 0x0b")
     // touch.xRatio at 0x3c, yRatio at 0x44.
     XCTAssertEqual(double(at: 0x3c, in: data), 0.5, accuracy: 1e-9, "xRatio")
     XCTAssertEqual(double(at: 0x44, in: data), 0.5, accuracy: 1e-9, "yRatio")
