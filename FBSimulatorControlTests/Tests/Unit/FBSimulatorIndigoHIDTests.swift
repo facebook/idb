@@ -84,6 +84,27 @@ final class FBSimulatorIndigoHIDTests: XCTestCase {
     XCTAssertEqual(double(at: 0x44, in: data), 0.375, accuracy: 1e-9, "yRatio = y*scale/height")
   }
 
+  // The digitizer contact state encodes direction: `.down` sets range/touch (contact down), `.up`
+  // clears them (contact up). The eventKind (0x20) and touch-down eventMask (0x38) are the same for
+  // both directions.
+  func testTouchContactAndDirection() throws {
+    let indigo = try makeIndigo()
+    let size = CGSize(width: 200, height: 400)
+    let down = indigo.touchScreenSize(size, screenScale: 2, direction: .down, x: 50, y: 100)
+    let up = indigo.touchScreenSize(size, screenScale: 2, direction: .up, x: 50, y: 100)
+
+    XCTAssertEqual(uint32(at: 0x20, in: down), 0x0b, "eventKind")
+    XCTAssertEqual(uint32(at: 0x38, in: down), 0x03, "touch-down eventMask")
+    // down: contact present (range 0x64 = 1, touch 0x68 = 1).
+    XCTAssertEqual(uint32(at: 0x64, in: down), 1, "down range")
+    XCTAssertEqual(uint32(at: 0x68, in: down), 1, "down touch")
+    // up: contact released (range/touch cleared).
+    XCTAssertEqual(uint32(at: 0x64, in: up), 0, "up range")
+    XCTAssertEqual(uint32(at: 0x68, in: up), 0, "up touch")
+    // The second (duplicated) payload begins at the wire offset 0xb0 with its own eventKind.
+    XCTAssertEqual(uint32(at: 0xb0, in: down), 0x0b, "second payload eventKind at 0xb0")
+  }
+
   // MARK: - Two-finger touch
 
   func testTwoFingerPatchedRatios() throws {
@@ -105,6 +126,26 @@ final class FBSimulatorIndigoHIDTests: XCTestCase {
     // Finger 2 ratio at 0x17C/0x184.
     XCTAssertEqual(double(at: 0x17C, in: data), 1.0, accuracy: 1e-9, "finger2 xRatio")
     XCTAssertEqual(double(at: 0x184, in: data), 1.0, accuracy: 1e-9, "finger2 yRatio")
+  }
+
+  // The multi-touch message identity: eventType 0x03 (vs single-touch 0x02), innerSize 0xa0, and the
+  // three-payload size 0x200. Direction flips the primary digitizer contact like single-touch.
+  func testTwoFingerMessageIdentity() throws {
+    let indigo = try makeIndigo()
+    let size = CGSize(width: 200, height: 400)
+    let finger1 = CGPoint(x: 50, y: 100)
+    let finger2 = CGPoint(x: 100, y: 200)
+    let down = indigo.twoFingerTouchScreenSize(size, screenScale: 2, direction: .down, finger1: finger1, finger2: finger2)
+    let up = indigo.twoFingerTouchScreenSize(size, screenScale: 2, direction: .up, finger1: finger1, finger2: finger2)
+
+    XCTAssertEqual(down.count, 0x200, "two-finger message size")
+    XCTAssertEqual(uint32(at: 0x18, in: down), 0xa0, "innerSize")
+    XCTAssertEqual(uint8(at: 0x1c, in: down), 3, "eventType should be multi-touch")
+    XCTAssertEqual(uint32(at: 0x20, in: down), 0x0b, "eventKind")
+    // Direction flips the primary digitizer contact (range 0x64 / touch 0x68).
+    XCTAssertEqual(uint32(at: 0x64, in: down), 1, "down range")
+    XCTAssertEqual(uint32(at: 0x64, in: up), 0, "up range")
+    XCTAssertEqual(uint32(at: 0x68, in: up), 0, "up touch")
   }
 
   // MARK: - Button
@@ -158,6 +199,20 @@ final class FBSimulatorIndigoHIDTests: XCTestCase {
     XCTAssertNotEqual(zeroingTimestamp(a1), zeroingTimestamp(b), "Distinct keycodes produce distinct payloads")
   }
 
+  // The keyboard message routes to the keyboard service: eventSource 0x2710, eventTarget 0x64, the
+  // keyCode flows to 0x3c, and direction sets eventType (down=1, up=2).
+  func testKeyboardDirectionAndFields() throws {
+    let indigo = try makeIndigo()
+    let down = indigo.keyboard(with: .down, keyCode: 0x04)
+    let up = indigo.keyboard(with: .up, keyCode: 0x04)
+
+    XCTAssertEqual(uint32(at: 0x30, in: down), 0x2710, "eventSource should be keyboard")
+    XCTAssertEqual(uint32(at: 0x34, in: down), 1, "down eventType")
+    XCTAssertEqual(uint32(at: 0x34, in: up), 2, "up eventType")
+    XCTAssertEqual(uint32(at: 0x38, in: down), 0x64, "eventTarget should be keyboard")
+    XCTAssertEqual(uint32(at: 0x3c, in: down), 0x04, "keyCode flows to 0x3c")
+  }
+
   // MARK: - Trackpad (tvOS)
 
   // Pins the digitizer phase fields the tvOS trackpad sets on the two-IndigoPayload message: the
@@ -185,5 +240,17 @@ final class FBSimulatorIndigoHIDTests: XCTestCase {
     XCTAssertEqual(uint32(at: 0xd8, in: ended), 1, "ended second-payload eventMask")
     XCTAssertEqual(uint32(at: 0x104, in: ended), 0, "ended second-payload Range up")
     XCTAssertEqual(uint32(at: 0x108, in: ended), 0, "ended second-payload Touch up")
+  }
+
+  // The trackpad message identity (a single-touch 0x02 envelope, innerSize 0xa0, two-payload size
+  // 0x180) and that the input point reaches the primary digitizer coordinates at xRatio/yRatio.
+  func testTrackpadMessageIdentity() throws {
+    let indigo = try makeIndigo()
+    let data = try indigo.trackpad(point: CGPoint(x: 0.5, y: 0.5), phase: .changed)
+    XCTAssertEqual(uint8(at: 0x1c, in: data), 2, "trackpad eventType should be touch")
+    XCTAssertEqual(uint32(at: 0x18, in: data), 0xa0, "trackpad innerSize")
+    XCTAssertEqual(data.count, 0x180, "trackpad message size")
+    XCTAssertEqual(double(at: 0x3c, in: data), 0.5, accuracy: 1e-9, "trackpad xRatio")
+    XCTAssertEqual(double(at: 0x44, in: data), 0.5, accuracy: 1e-9, "trackpad yRatio")
   }
 }
