@@ -184,6 +184,73 @@ struct CompanionServerTests {
     }
   }
 
+  // MARK: - TCP
+
+  @Test
+  func tcpBindsResolvesPortRoundTripsAndIsNotRegistered() async throws {
+    try await withTemporaryRegistry { registry in
+      let udid = uniqueUDID()
+      let server = CompanionServer(
+        udid: udid, version: .v2,
+        listen: .tcp(host: "127.0.0.1", port: 0, tlsCertPath: nil),
+        registry: registry,
+        onRequest: { request in
+          JSONRPCResponse(id: request.id, result: .object(["echo": .string(request.method)]))
+        })
+
+      let info = try await server.start()
+      guard case let .tcp(host, port) = info.address else {
+        Issue.record("expected a .tcp address, got \(info.address)")
+        try await server.close()
+        return
+      }
+      #expect(host == "127.0.0.1")
+      #expect(port > 0) // the ephemeral bind (port 0) resolved to the actual port
+
+      // A TCP companion is reached by explicit address, so it is not registered.
+      #expect(try registry.companions().isEmpty)
+
+      // Round-trip a request over the TCP socket.
+      let fd = connect(toHost: host, port: port)
+      defer { close(fd) }
+      writeLine(#"{"jsonrpc":"2.0","method":"ping","id":7}"#, to: fd)
+      let decoded = try JSONDecoder().decode(JSONRPCResponse.self, from: readResponse(fd))
+      #expect(decoded.id == .number(7))
+      #expect(decoded.result == .object(["echo": .string("ping")]))
+
+      // close() leaves the registry untouched for a TCP server (nothing to remove).
+      try await server.close()
+      #expect(try registry.companions().isEmpty)
+    }
+  }
+
+  @Test
+  func tcpWithUnreadableTLSCertFailsToStart() async throws {
+    try await withTemporaryRegistry { registry in
+      let udid = uniqueUDID()
+      let missingCertPath = (NSTemporaryDirectory() as NSString)
+        .appendingPathComponent("nonexistent_\(UUID().uuidString).pem")
+      let server = CompanionServer(
+        udid: udid, version: .v2,
+        listen: .tcp(host: "127.0.0.1", port: 0, tlsCertPath: missingCertPath),
+        registry: registry)
+
+      do {
+        _ = try await server.start()
+        Issue.record("expected start() to throw for an unreadable TLS certificate")
+      } catch let error as CompanionServerError {
+        guard case .tlsCertificateLoadFailed = error else {
+          Issue.record("expected .tlsCertificateLoadFailed, got \(error)")
+          try await server.close()
+          return
+        }
+      }
+      // A failed start registers nothing; close() shuts down the event loop group.
+      #expect(try registry.companions().isEmpty)
+      try await server.close()
+    }
+  }
+
   // MARK: - Helpers
 
   private func uniqueUDID() -> String {
@@ -227,6 +294,25 @@ struct CompanionServerTests {
       }
     }
     let length = socklen_t(MemoryLayout<sockaddr_un>.size)
+    let result = withUnsafePointer(to: &addr) { addrPointer in
+      addrPointer.withMemoryRebound(to: sockaddr.self, capacity: 1) { sockaddrPointer in
+        Darwin.connect(fd, sockaddrPointer, length)
+      }
+    }
+    precondition(result == 0, "connect() failed (errno \(errno))")
+    return fd
+  }
+
+  /// Connects a client socket to `host:port` over TCP, returning the connected fd.
+  /// Crashes on failure (a test setup error).
+  private func connect(toHost host: String, port: Int) -> Int32 {
+    let fd = socket(AF_INET, SOCK_STREAM, 0)
+    precondition(fd >= 0, "socket() failed (errno \(errno))")
+    var addr = sockaddr_in()
+    addr.sin_family = sa_family_t(AF_INET)
+    addr.sin_port = in_port_t(port).bigEndian
+    precondition(inet_pton(AF_INET, host, &addr.sin_addr) == 1, "inet_pton failed for \(host)")
+    let length = socklen_t(MemoryLayout<sockaddr_in>.size)
     let result = withUnsafePointer(to: &addr) { addrPointer in
       addrPointer.withMemoryRebound(to: sockaddr.self, capacity: 1) { sockaddrPointer in
         Darwin.connect(fd, sockaddrPointer, length)
