@@ -22,13 +22,12 @@ func companionServerLog(_ message: String) {
 /// Where a `CompanionServer` listens.
 ///
 /// `.domainSocket` binds the conventional `<udid>_companion.sock` path and is the
-/// default. `.tcp` binds a TCP socket; when `tlsCertPath` is set, connections are
-/// TLS, the PEM at that path supplying the server's certificate chain and private
-/// key (matching the legacy companion's `-tls-cert-path`). The cert path is a
-/// plain `String` so the public API stays free of NIOSSL types.
+/// default. `.tcp` binds a TCP socket whose TLS is selected by `CompanionServerTLS`
+/// (plaintext, an explicit certificate PEM, or the registered provider's identity).
+/// TLS is expressed as paths/modes so the public API stays free of NIOSSL types.
 public enum CompanionListenTarget: Sendable, Equatable {
   case domainSocket
-  case tcp(host: String, port: Int, tlsCertPath: String?)
+  case tcp(host: String, port: Int, tls: CompanionServerTLS)
 }
 
 /// A companion server that listens on a Unix domain socket or a TCP socket and
@@ -287,23 +286,35 @@ public final class CompanionServer: @unchecked Sendable {
 
   // MARK: - Helpers
 
-  /// Builds the TLS context for a TLS-enabled TCP listen, or nil for a plaintext
-  /// listen (always the case for a Unix domain socket). The PEM at `tlsCertPath`
-  /// must contain both the certificate chain and the private key, matching the
-  /// legacy companion's `-tls-cert-path`. TLS is server-auth only: clients are not
-  /// asked for a certificate.
+  /// Builds the TLS context for a TCP listen, or nil for plaintext (always the case
+  /// for a Unix domain socket, for `.disabled`, or for `.metaIdentity` when no
+  /// provider is registered). The identity's PEM(s) supply the certificate chain
+  /// and private key. TLS is server-auth only: clients are not asked for a cert.
   private func makeServerSSLContext() throws -> NIOSSLContext? {
-    guard case let .tcp(_, _, tlsCertPath) = listen, let tlsCertPath else {
+    guard case let .tcp(_, _, tls) = listen else {
+      return nil // a Unix domain socket is always plaintext
+    }
+    let identity: CompanionTLSIdentity
+    switch tls {
+    case .disabled:
       return nil
+    case let .certificate(path):
+      identity = CompanionTLSIdentity(combinedPEMPath: path)
+    case .metaIdentity:
+      // No registered provider → plaintext.
+      guard let serverIdentity = CompanionTLS.provider?.serverIdentity() else {
+        return nil
+      }
+      identity = serverIdentity
     }
     do {
-      let certificates = try NIOSSLCertificate.fromPEMFile(tlsCertPath).map { NIOSSLCertificateSource.certificate($0) }
+      let certificates = try NIOSSLCertificate.fromPEMFile(identity.certificateChainPath).map { NIOSSLCertificateSource.certificate($0) }
       let configuration = TLSConfiguration.makeServerConfiguration(
         certificateChain: certificates,
-        privateKey: .file(tlsCertPath))
+        privateKey: .file(identity.privateKeyPath))
       return try NIOSSLContext(configuration: configuration)
     } catch {
-      throw CompanionServerError.tlsCertificateLoadFailed(path: tlsCertPath, underlying: error)
+      throw CompanionServerError.tlsCertificateLoadFailed(path: identity.certificateChainPath, underlying: error)
     }
   }
 

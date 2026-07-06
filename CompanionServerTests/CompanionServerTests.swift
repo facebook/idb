@@ -192,7 +192,7 @@ struct CompanionServerTests {
       let udid = uniqueUDID()
       let server = CompanionServer(
         udid: udid, version: .v2,
-        listen: .tcp(host: "127.0.0.1", port: 0, tlsCertPath: nil),
+        listen: .tcp(host: "127.0.0.1", port: 0, tls: .disabled),
         registry: registry,
         onRequest: { request in
           JSONRPCResponse(id: request.id, result: .object(["echo": .string(request.method)]))
@@ -232,7 +232,7 @@ struct CompanionServerTests {
         .appendingPathComponent("nonexistent_\(UUID().uuidString).pem")
       let server = CompanionServer(
         udid: udid, version: .v2,
-        listen: .tcp(host: "127.0.0.1", port: 0, tlsCertPath: missingCertPath),
+        listen: .tcp(host: "127.0.0.1", port: 0, tls: .certificate(path: missingCertPath)),
         registry: registry)
 
       do {
@@ -402,4 +402,79 @@ private final class RequestRecorder: @unchecked Sendable {
     defer { lock.unlock() }
     return storage.count
   }
+}
+
+/// Exercises the `.metaIdentity` server path through the `CompanionTLS.provider`
+/// seam. Serialized because it mutates the process-wide provider; the other suite
+/// never reads it (its tests use `.disabled` / `.certificate`).
+@Suite(.serialized)
+struct CompanionServerMetaTLSTests {
+  @Test
+  func metaIdentityConsultsProviderAndFailsOnBadCert() async throws {
+    // A provider pointing at a bogus PEM proves the `.metaIdentity` path is wired:
+    // start() must consult it and fail loading the certificate.
+    let bogus = (NSTemporaryDirectory() as NSString)
+      .appendingPathComponent("bogus_\(UUID().uuidString).pem")
+    CompanionTLS.provider = FakeCompanionTLSProvider(identity: CompanionTLSIdentity(combinedPEMPath: bogus))
+    defer { CompanionTLS.provider = nil }
+
+    try await withServer(tls: .metaIdentity) { server in
+      do {
+        _ = try await server.start()
+        Issue.record("expected start() to fail loading the provider's certificate")
+      } catch let error as CompanionServerError {
+        guard case .tlsCertificateLoadFailed = error else {
+          Issue.record("expected .tlsCertificateLoadFailed, got \(error)")
+          return
+        }
+      }
+    }
+  }
+
+  @Test
+  func metaIdentityWithoutProviderBindsPlaintext() async throws {
+    // With no provider registered, `.metaIdentity` degrades to a plaintext bind
+    // rather than failing.
+    CompanionTLS.provider = nil
+
+    try await withServer(tls: .metaIdentity) { server in
+      let info = try await server.start()
+      guard case .tcp = info.address else {
+        Issue.record("expected a .tcp address, got \(info.address)")
+        return
+      }
+    }
+  }
+
+  /// Runs `body` with a TCP `CompanionServer` on an isolated registry, closing it
+  /// afterward regardless of outcome.
+  private func withServer(
+    tls: CompanionServerTLS,
+    _ body: (CompanionServer) async throws -> Void
+  ) async throws {
+    let directory = (NSTemporaryDirectory() as NSString)
+      .appendingPathComponent("companion_meta_tls_tests_\(UUID().uuidString)")
+    try FileManager.default.createDirectory(atPath: directory, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(atPath: directory) }
+    let registry = CompanionRegistry(
+      stateFilePath: (directory as NSString).appendingPathComponent("state"))
+    let server = CompanionServer(
+      udid: "TEST-\(UUID().uuidString)", version: .v2,
+      listen: .tcp(host: "127.0.0.1", port: 0, tls: tls),
+      registry: registry)
+    do {
+      try await body(server)
+    } catch {
+      try? await server.close()
+      throw error
+    }
+    try await server.close()
+  }
+}
+
+/// A `CompanionTLSProvider` that returns a fixed identity, for exercising the seam.
+private struct FakeCompanionTLSProvider: CompanionTLSProvider {
+  let identity: CompanionTLSIdentity
+  func clientIdentity() -> CompanionTLSIdentity? { identity }
+  func serverIdentity() -> CompanionTLSIdentity? { identity }
 }
