@@ -18,7 +18,7 @@ _SIGNALS: Sequence[signal.Signals] = [signal.SIGTERM, signal.SIGINT]
 
 
 def signal_handler_event(name: str) -> asyncio.Event:
-    loop = asyncio.get_running_loop()
+    loop = asyncio.get_event_loop()
     stop: asyncio.Event = asyncio.Event()
 
     def signal_handler(sig: signal.Signals) -> None:
@@ -26,7 +26,7 @@ def signal_handler_event(name: str) -> asyncio.Event:
         stop.set()
 
     for sig in _SIGNALS:
-        loop.add_signal_handler(sig, lambda sig=sig: signal_handler(sig))
+        loop.add_signal_handler(sig, lambda: signal_handler(sig))
 
     print(f"Running {name} until ^C", file=stderr)
     return stop
