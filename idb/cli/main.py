@@ -372,16 +372,7 @@ async def drain_coroutines(pending: set[asyncio.Task]) -> None:
 
 
 def main(cmd_input: list[str] | None = None) -> SysExitArg:
-    try:
-        # lint-fixme: NoGetEventLoop
-        loop = asyncio.get_event_loop()
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-    try:
-        return loop.run_until_complete(gen_main(cmd_input))
-    finally:
-        loop.close()
+    return asyncio.run(gen_main(cmd_input))
 
 
 def main_2() -> None:

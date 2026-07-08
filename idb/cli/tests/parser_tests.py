@@ -6,15 +6,13 @@
 
 # pyre-strict
 
-import asyncio
 import os
-import sys
 from argparse import Namespace
 from typing import Any, TypeVar
 from unittest.mock import ANY, MagicMock, patch
 
 from idb.cli.commands.xctest import NO_SPECIFIED_PATH
-from idb.cli.main import gen_main as cli_main
+from idb.cli.main import gen_main as cli_main, get_default_companion_path
 from idb.common.types import (
     Compression,
     CrashLogQuery,
@@ -30,9 +28,7 @@ from idb.utils.testing import AsyncContextManagerMock, AsyncMock, TestCase
 
 
 T = TypeVar("T")
-COMPANION_PATH: str | None = (
-    "/usr/local/bin/idb_companion" if sys.platform == "darwin" else None
-)
+COMPANION_PATH: str | None = get_default_companion_path()
 
 
 class AsyncGeneratorMock(AsyncMock):
@@ -59,7 +55,7 @@ class AsyncGeneratorMock(AsyncMock):
 
 class TestParser(TestCase):
     def __init__(self, *args: Any, **kws: Any) -> None:
-        super().__init__(*args, loop=asyncio.get_event_loop(), **kws)
+        super().__init__(*args, **kws)
 
     def setUp(self) -> None:
         self.client_mock = MagicMock(name="client_mock")
