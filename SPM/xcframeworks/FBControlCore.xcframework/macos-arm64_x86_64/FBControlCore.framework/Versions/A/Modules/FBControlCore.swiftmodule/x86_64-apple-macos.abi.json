@@ -6606,9 +6606,95 @@
             ]
           },
           {
+            "kind": "Var",
+            "name": "maxDepth",
+            "printedName": "maxDepth",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "UInt",
+                "printedName": "Swift.UInt",
+                "usr": "s:Su"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:13FBControlCore29FBAccessibilityRequestOptionsV8maxDepthSuvp",
+            "mangledName": "$s13FBControlCore29FBAccessibilityRequestOptionsV8maxDepthSuvp",
+            "moduleName": "FBControlCore",
+            "declAttributes": [
+              "HasStorage",
+              "AccessControl",
+              "RawDocComment"
+            ],
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "UInt",
+                    "printedName": "Swift.UInt",
+                    "usr": "s:Su"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:13FBControlCore29FBAccessibilityRequestOptionsV8maxDepthSuvg",
+                "mangledName": "$s13FBControlCore29FBAccessibilityRequestOptionsV8maxDepthSuvg",
+                "moduleName": "FBControlCore",
+                "implicit": true,
+                "accessorKind": "get"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Set",
+                "printedName": "Set()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "UInt",
+                    "printedName": "Swift.UInt",
+                    "usr": "s:Su"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:13FBControlCore29FBAccessibilityRequestOptionsV8maxDepthSuvs",
+                "mangledName": "$s13FBControlCore29FBAccessibilityRequestOptionsV8maxDepthSuvs",
+                "moduleName": "FBControlCore",
+                "implicit": true,
+                "accessorKind": "set"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Modify",
+                "printedName": "Modify()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:13FBControlCore29FBAccessibilityRequestOptionsV8maxDepthSuvM",
+                "mangledName": "$s13FBControlCore29FBAccessibilityRequestOptionsV8maxDepthSuvM",
+                "moduleName": "FBControlCore",
+                "implicit": true,
+                "accessorKind": "_modify"
+              }
+            ]
+          },
+          {
             "kind": "Constructor",
             "name": "init",
-            "printedName": "init(nestedFormat:keys:enableLogging:enableProfiling:collectFrameCoverage:remoteContentOptions:)",
+            "printedName": "init(nestedFormat:keys:enableLogging:enableProfiling:collectFrameCoverage:remoteContentOptions:maxDepth:)",
             "children": [
               {
                 "kind": "TypeNominal",
@@ -6681,11 +6767,18 @@
                 ],
                 "hasDefaultArg": true,
                 "usr": "s:Sq"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "UInt",
+                "printedName": "Swift.UInt",
+                "hasDefaultArg": true,
+                "usr": "s:Su"
               }
             ],
             "declKind": "Constructor",
-            "usr": "s:13FBControlCore29FBAccessibilityRequestOptionsV12nestedFormat4keys13enableLogging0I9Profiling20collectFrameCoverage013remoteContentE0ACSb_ShyAA8FBAXKeysOGSgS3bAA0c6RemotepE0VSgtcfc",
-            "mangledName": "$s13FBControlCore29FBAccessibilityRequestOptionsV12nestedFormat4keys13enableLogging0I9Profiling20collectFrameCoverage013remoteContentE0ACSb_ShyAA8FBAXKeysOGSgS3bAA0c6RemotepE0VSgtcfc",
+            "usr": "s:13FBControlCore29FBAccessibilityRequestOptionsV12nestedFormat4keys13enableLogging0I9Profiling20collectFrameCoverage013remoteContentE08maxDepthACSb_ShyAA8FBAXKeysOGSgS3bAA0c6RemotepE0VSgSutcfc",
+            "mangledName": "$s13FBControlCore29FBAccessibilityRequestOptionsV12nestedFormat4keys13enableLogging0I9Profiling20collectFrameCoverage013remoteContentE08maxDepthACSb_ShyAA8FBAXKeysOGSgS3bAA0c6RemotepE0VSgSutcfc",
             "moduleName": "FBControlCore",
             "declAttributes": [
               "AccessControl"
@@ -51188,30 +51281,37 @@
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Commands\/FBAccessibilityRequestOptions.swift",
       "kind": "BooleanLiteral",
-      "offset": 2281,
+      "offset": 2588,
       "length": 5,
       "value": "false"
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Commands\/FBAccessibilityRequestOptions.swift",
       "kind": "BooleanLiteral",
-      "offset": 2362,
+      "offset": 2669,
       "length": 5,
       "value": "false"
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Commands\/FBAccessibilityRequestOptions.swift",
       "kind": "BooleanLiteral",
-      "offset": 2397,
+      "offset": 2704,
       "length": 5,
       "value": "false"
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Commands\/FBAccessibilityRequestOptions.swift",
       "kind": "BooleanLiteral",
-      "offset": 2437,
+      "offset": 2744,
       "length": 5,
       "value": "false"
+    },
+    {
+      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Commands\/FBAccessibilityRequestOptions.swift",
+      "kind": "IntegerLiteral",
+      "offset": 2842,
+      "length": 1,
+      "value": "0"
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBApplicationLaunchConfiguration.swift",

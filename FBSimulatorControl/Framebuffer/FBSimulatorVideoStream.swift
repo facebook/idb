@@ -107,6 +107,15 @@ typealias FBCompressedFrameWriter =
     CMSampleBuffer, Any?, any FBDataConsumer, any FBControlCoreLogger, NSErrorPointer
   ) -> Bool
 
+// MARK: - Pixel Buffer Consumer (RocketSim addition)
+
+/// RocketSim addition: consumers of a BGRA stream that conform to this protocol receive the raw
+/// `CVPixelBuffer` (base address locked for reading) instead of a `Data` copy, avoiding a
+/// per-frame allocation + copy on the 120 FPS recording path.
+public protocol RSPixelBufferConsumer: AnyObject {
+  func writeEncodedFrame(_ pixelBuffer: CVPixelBuffer, frameNumber: UInt, timeAtFirstFrame: CFTimeInterval) throws
+}
+
 // MARK: - Frame Pusher Protocol
 
 /// Frame pusher abstraction. Concrete pushers convert + write frames to the consumer.
@@ -287,6 +296,11 @@ final class FBSimulatorVideoStreamFramePusher_Bitmap: NSObject, FBSimulatorVideo
 
     CVPixelBufferLockBaseAddress(bufferToWrite, .readOnly)
     defer { CVPixelBufferUnlockBaseAddress(bufferToWrite, .readOnly) }
+
+    if let pixelConsumer = consumer as? RSPixelBufferConsumer {
+      try pixelConsumer.writeEncodedFrame(bufferToWrite, frameNumber: frameNumber, timeAtFirstFrame: timeAtFirstFrame)
+      return
+    }
 
     guard let baseAddress = CVPixelBufferGetBaseAddress(bufferToWrite) else { return }
     let size = CVPixelBufferGetDataSize(bufferToWrite)

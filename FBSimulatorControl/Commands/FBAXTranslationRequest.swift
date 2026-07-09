@@ -92,7 +92,8 @@ final class FBAXTranslationRequest {
       nestedFormat: options.nestedFormat,
       keys: Self.serializerKeys(options),
       collector: collector,
-      coverageGrid: nil
+      coverageGrid: nil,
+      maxDepth: options.maxDepth
     )
     return buildResponse(elements: elements, serializationStart: serializationStart, frameCoverage: nil, additionalFrameCoverage: nil)
   }
@@ -120,7 +121,8 @@ final class FBAXTranslationRequest {
       keys: keys,
       collector: collector,
       coverageGrid: grid,
-      seenPids: seenPids
+      seenPids: seenPids,
+      maxDepth: options.maxDepth
     )
 
     // Base coverage after the main traversal.

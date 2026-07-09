@@ -58,13 +58,19 @@ public struct FBAccessibilityRequestOptions: Sendable {
   /// Options for remote content fetching. `nil` (default) means remote content is not fetched.
   public var remoteContentOptions: FBAccessibilityRemoteContentOptions?
 
+  /// RocketSim addition: maximum serialization depth. `0` (default) is unlimited; `1` serializes
+  /// only the resolved element without descending into children. Point queries that only inspect
+  /// the top-level match use this to skip the expensive merged-children fan-out.
+  public var maxDepth: UInt
+
   public init(
     nestedFormat: Bool = false,
     keys: Set<FBAXKeys>? = FBAXKeys.defaultSet,
     enableLogging: Bool = false,
     enableProfiling: Bool = false,
     collectFrameCoverage: Bool = false,
-    remoteContentOptions: FBAccessibilityRemoteContentOptions? = nil
+    remoteContentOptions: FBAccessibilityRemoteContentOptions? = nil,
+    maxDepth: UInt = 0
   ) {
     self.nestedFormat = nestedFormat
     self.keys = keys
@@ -72,6 +78,7 @@ public struct FBAccessibilityRequestOptions: Sendable {
     self.enableProfiling = enableProfiling
     self.collectFrameCoverage = collectFrameCoverage
     self.remoteContentOptions = remoteContentOptions
+    self.maxDepth = maxDepth
   }
 }
 

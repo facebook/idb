@@ -11095,7 +11095,7 @@
           {
             "kind": "Function",
             "name": "recursiveDescription",
-            "printedName": "recursiveDescription(fromElement:token:nestedFormat:keys:collector:coverageGrid:seenPids:)",
+            "printedName": "recursiveDescription(fromElement:token:nestedFormat:keys:collector:coverageGrid:seenPids:maxDepth:)",
             "children": [
               {
                 "kind": "TypeNominal",
@@ -11197,11 +11197,18 @@
                   }
                 ],
                 "usr": "s:Sq"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "UInt",
+                "printedName": "Swift.UInt",
+                "hasDefaultArg": true,
+                "usr": "s:Su"
               }
             ],
             "declKind": "Func",
-            "usr": "s:18FBSimulatorControl0A23AccessibilitySerializerO20recursiveDescription11fromElement5token12nestedFormat4keys9collector12coverageGrid8seenPidsSaySDySSypGGAA012FBAXPlatformH0_p_SSSbShy13FBControlCore8FBAXKeysOGAA33FBAccessibilityProfilingCollectorCSgAA0v8CoverageO0CSgAA8SeenPIDsCSgtFZ",
-            "mangledName": "$s18FBSimulatorControl0A23AccessibilitySerializerO20recursiveDescription11fromElement5token12nestedFormat4keys9collector12coverageGrid8seenPidsSaySDySSypGGAA012FBAXPlatformH0_p_SSSbShy13FBControlCore8FBAXKeysOGAA33FBAccessibilityProfilingCollectorCSgAA0v8CoverageO0CSgAA8SeenPIDsCSgtFZ",
+            "usr": "s:18FBSimulatorControl0A23AccessibilitySerializerO20recursiveDescription11fromElement5token12nestedFormat4keys9collector12coverageGrid8seenPids8maxDepthSaySDySSypGGAA012FBAXPlatformH0_p_SSSbShy13FBControlCore8FBAXKeysOGAA33FBAccessibilityProfilingCollectorCSgAA0x8CoverageO0CSgAA8SeenPIDsCSgSutFZ",
+            "mangledName": "$s18FBSimulatorControl0A23AccessibilitySerializerO20recursiveDescription11fromElement5token12nestedFormat4keys9collector12coverageGrid8seenPids8maxDepthSaySDySSypGGAA012FBAXPlatformH0_p_SSSbShy13FBControlCore8FBAXKeysOGAA33FBAccessibilityProfilingCollectorCSgAA0x8CoverageO0CSgAA8SeenPIDsCSgSutFZ",
             "moduleName": "FBSimulatorControl",
             "static": true,
             "declAttributes": [
@@ -11212,7 +11219,7 @@
           {
             "kind": "Function",
             "name": "formattedDescription",
-            "printedName": "formattedDescription(ofElement:token:nestedFormat:keys:collector:coverageGrid:)",
+            "printedName": "formattedDescription(ofElement:token:nestedFormat:keys:collector:coverageGrid:maxDepth:)",
             "children": [
               {
                 "kind": "TypeNominal",
@@ -11292,11 +11299,18 @@
                   }
                 ],
                 "usr": "s:Sq"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "UInt",
+                "printedName": "Swift.UInt",
+                "hasDefaultArg": true,
+                "usr": "s:Su"
               }
             ],
             "declKind": "Func",
-            "usr": "s:18FBSimulatorControl0A23AccessibilitySerializerO20formattedDescription9ofElement5token12nestedFormat4keys9collector12coverageGridSDySSypGAA012FBAXPlatformH0_p_SSSbShy13FBControlCore8FBAXKeysOGAA33FBAccessibilityProfilingCollectorCSgAA0t8CoverageO0CSgtFZ",
-            "mangledName": "$s18FBSimulatorControl0A23AccessibilitySerializerO20formattedDescription9ofElement5token12nestedFormat4keys9collector12coverageGridSDySSypGAA012FBAXPlatformH0_p_SSSbShy13FBControlCore8FBAXKeysOGAA33FBAccessibilityProfilingCollectorCSgAA0t8CoverageO0CSgtFZ",
+            "usr": "s:18FBSimulatorControl0A23AccessibilitySerializerO20formattedDescription9ofElement5token12nestedFormat4keys9collector12coverageGrid8maxDepthSDySSypGAA012FBAXPlatformH0_p_SSSbShy13FBControlCore8FBAXKeysOGAA33FBAccessibilityProfilingCollectorCSgAA0v8CoverageO0CSgSutFZ",
+            "mangledName": "$s18FBSimulatorControl0A23AccessibilitySerializerO20formattedDescription9ofElement5token12nestedFormat4keys9collector12coverageGrid8maxDepthSDySSypGAA012FBAXPlatformH0_p_SSSbShy13FBControlCore8FBAXKeysOGAA33FBAccessibilityProfilingCollectorCSgAA0v8CoverageO0CSgSutFZ",
             "moduleName": "FBSimulatorControl",
             "static": true,
             "funcSelfKind": "NonMutating"
@@ -36534,6 +36548,79 @@
       },
       {
         "kind": "TypeDecl",
+        "name": "RSPixelBufferConsumer",
+        "printedName": "RSPixelBufferConsumer",
+        "children": [
+          {
+            "kind": "Function",
+            "name": "writeEncodedFrame",
+            "printedName": "writeEncodedFrame(_:frameNumber:timeAtFirstFrame:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "CVBuffer",
+                "printedName": "CoreVideo.CVBuffer",
+                "usr": "c:@T@CVBufferRef"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "UInt",
+                "printedName": "Swift.UInt",
+                "usr": "s:Su"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Double",
+                "printedName": "Swift.Double",
+                "usr": "s:Sd"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:18FBSimulatorControl21RSPixelBufferConsumerP17writeEncodedFrame_11frameNumber011timeAtFirstH0ySo11CVBufferRefa_SuSdtKF",
+            "mangledName": "$s18FBSimulatorControl21RSPixelBufferConsumerP17writeEncodedFrame_11frameNumber011timeAtFirstH0ySo11CVBufferRefa_SuSdtKF",
+            "moduleName": "FBSimulatorControl",
+            "genericSig": "<τ_0_0 where τ_0_0 : FBSimulatorControl.RSPixelBufferConsumer>",
+            "sugared_genericSig": "<Self where Self : FBSimulatorControl.RSPixelBufferConsumer>",
+            "protocolReq": true,
+            "throwing": true,
+            "reqNewWitnessTableEntry": true,
+            "funcSelfKind": "NonMutating"
+          }
+        ],
+        "declKind": "Protocol",
+        "usr": "s:18FBSimulatorControl21RSPixelBufferConsumerP",
+        "mangledName": "$s18FBSimulatorControl21RSPixelBufferConsumerP",
+        "moduleName": "FBSimulatorControl",
+        "genericSig": "<τ_0_0 : AnyObject>",
+        "sugared_genericSig": "<Self : AnyObject>",
+        "declAttributes": [
+          "AccessControl",
+          "RawDocComment"
+        ],
+        "conformances": [
+          {
+            "kind": "Conformance",
+            "name": "Escapable",
+            "printedName": "Escapable",
+            "usr": "s:s9EscapableP",
+            "mangledName": "$ss9EscapableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Copyable",
+            "printedName": "Copyable",
+            "usr": "s:s8CopyableP",
+            "mangledName": "$ss8CopyableP"
+          }
+        ]
+      },
+      {
+        "kind": "TypeDecl",
         "name": "FBSimulatorVideoStreamFramePusher",
         "printedName": "FBSimulatorVideoStreamFramePusher",
         "children": [
@@ -59096,6 +59183,48 @@
       "value": "\"point_grid\""
     },
     {
+      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Commands\/FBSimulatorAccessibilitySerializer.swift",
+      "kind": "IntegerLiteral",
+      "offset": 1803,
+      "length": 1,
+      "value": "0"
+    },
+    {
+      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Commands\/FBSimulatorAccessibilitySerializer.swift",
+      "kind": "IntegerLiteral",
+      "offset": 2549,
+      "length": 1,
+      "value": "0"
+    },
+    {
+      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Commands\/FBSimulatorAccessibilitySerializer.swift",
+      "kind": "IntegerLiteral",
+      "offset": 7858,
+      "length": 1,
+      "value": "0"
+    },
+    {
+      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Commands\/FBSimulatorAccessibilitySerializer.swift",
+      "kind": "IntegerLiteral",
+      "offset": 7882,
+      "length": 1,
+      "value": "0"
+    },
+    {
+      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Commands\/FBSimulatorAccessibilitySerializer.swift",
+      "kind": "IntegerLiteral",
+      "offset": 8843,
+      "length": 1,
+      "value": "0"
+    },
+    {
+      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Commands\/FBSimulatorAccessibilitySerializer.swift",
+      "kind": "IntegerLiteral",
+      "offset": 8867,
+      "length": 1,
+      "value": "0"
+    },
+    {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Commands\/FBSimulatorApplicationCommands.swift",
       "kind": "StringLiteral",
       "offset": 6804,
@@ -59798,168 +59927,168 @@
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Framebuffer\/FBSimulatorVideoStream.swift",
       "kind": "IntegerLiteral",
-      "offset": 13442,
+      "offset": 14120,
       "length": 1,
       "value": "0"
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Framebuffer\/FBSimulatorVideoStream.swift",
       "kind": "BooleanLiteral",
-      "offset": 13467,
+      "offset": 14145,
       "length": 5,
       "value": "false"
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Framebuffer\/FBSimulatorVideoStream.swift",
       "kind": "BooleanLiteral",
-      "offset": 13505,
+      "offset": 14183,
       "length": 5,
       "value": "false"
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Framebuffer\/FBSimulatorVideoStream.swift",
       "kind": "FloatLiteral",
-      "offset": 13639,
+      "offset": 14317,
       "length": 3,
       "value": "5.0"
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Framebuffer\/FBSimulatorVideoStream.swift",
       "kind": "IntegerLiteral",
-      "offset": 33587,
+      "offset": 34265,
       "length": 1,
       "value": "0"
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Framebuffer\/FBSimulatorVideoStream.swift",
       "kind": "IntegerLiteral",
-      "offset": 33628,
+      "offset": 34306,
       "length": 1,
       "value": "0"
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Framebuffer\/FBSimulatorVideoStream.swift",
       "kind": "IntegerLiteral",
-      "offset": 33656,
+      "offset": 34334,
       "length": 1,
       "value": "0"
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Framebuffer\/FBSimulatorVideoStream.swift",
       "kind": "IntegerLiteral",
-      "offset": 34256,
+      "offset": 34934,
       "length": 1,
       "value": "0"
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Framebuffer\/FBSimulatorVideoStream.swift",
       "kind": "IntegerLiteral",
-      "offset": 34288,
+      "offset": 34966,
       "length": 1,
       "value": "0"
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Framebuffer\/FBSimulatorVideoStream.swift",
       "kind": "IntegerLiteral",
-      "offset": 36111,
+      "offset": 36789,
       "length": 1,
       "value": "0"
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Framebuffer\/FBSimulatorVideoStream.swift",
       "kind": "IntegerLiteral",
-      "offset": 36122,
+      "offset": 36800,
       "length": 1,
       "value": "0"
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Framebuffer\/FBSimulatorVideoStream.swift",
       "kind": "IntegerLiteral",
-      "offset": 36131,
+      "offset": 36809,
       "length": 1,
       "value": "0"
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Framebuffer\/FBSimulatorVideoStream.swift",
       "kind": "IntegerLiteral",
-      "offset": 36141,
+      "offset": 36819,
       "length": 1,
       "value": "0"
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Framebuffer\/FBSimulatorVideoStream.swift",
       "kind": "IntegerLiteral",
-      "offset": 36758,
+      "offset": 37436,
       "length": 1,
       "value": "0"
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Framebuffer\/FBSimulatorVideoStream.swift",
       "kind": "IntegerLiteral",
-      "offset": 36769,
+      "offset": 37447,
       "length": 1,
       "value": "0"
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Framebuffer\/FBSimulatorVideoStream.swift",
       "kind": "IntegerLiteral",
-      "offset": 36778,
+      "offset": 37456,
       "length": 1,
       "value": "0"
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Framebuffer\/FBSimulatorVideoStream.swift",
       "kind": "IntegerLiteral",
-      "offset": 36788,
+      "offset": 37466,
       "length": 1,
       "value": "0"
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Framebuffer\/FBSimulatorVideoStream.swift",
       "kind": "BooleanLiteral",
-      "offset": 69426,
+      "offset": 70104,
       "length": 5,
       "value": "false"
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Framebuffer\/FBSimulatorVideoStream.swift",
       "kind": "BooleanLiteral",
-      "offset": 72565,
+      "offset": 73243,
       "length": 4,
       "value": "true"
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Framebuffer\/FBSimulatorVideoStream.swift",
       "kind": "IntegerLiteral",
-      "offset": 74932,
+      "offset": 75610,
       "length": 1,
       "value": "0"
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Framebuffer\/FBSimulatorVideoStream.swift",
       "kind": "IntegerLiteral",
-      "offset": 74971,
+      "offset": 75649,
       "length": 1,
       "value": "0"
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Framebuffer\/FBSimulatorVideoStream.swift",
       "kind": "IntegerLiteral",
-      "offset": 75009,
+      "offset": 75687,
       "length": 1,
       "value": "0"
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Framebuffer\/FBSimulatorVideoStream.swift",
       "kind": "FloatLiteral",
-      "offset": 75036,
+      "offset": 75714,
       "length": 3,
       "value": "0.0"
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Framebuffer\/FBSimulatorVideoStream.swift",
       "kind": "FloatLiteral",
-      "offset": 75095,
+      "offset": 75773,
       "length": 3,
       "value": "0.0"
     },

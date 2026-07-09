@@ -870,6 +870,9 @@ public struct FBVideoEncoderStats {
   public init()
   public init(callbackCount: UInt, writeCount: UInt, dropCount: UInt, writeFailureCount: UInt, encodeErrorCount: UInt, tornFrameCount: UInt, totalEncodedBytes: UInt, totalEncodeSubmitSeconds: CFTimeInterval)
 }
+public protocol RSPixelBufferConsumer : AnyObject {
+  func writeEncodedFrame(_ pixelBuffer: CVPixelBuffer, frameNumber: UInt, timeAtFirstFrame: CFTimeInterval) throws
+}
 @_hasMissingDesignatedInitializers @objc(FBSimulatorVideoStream) public class FBSimulatorVideoStream : NSObject, FBFramebufferConsumer, FBVideoStream, @unchecked Sendable {
   public class func make(framebuffer: FBFramebuffer, configuration: FBVideoStreamConfiguration, logger: any FBControlCoreLogger) -> FBSimulatorVideoStream
   public class func make(framebuffer: FBFramebuffer, configuration: FBVideoStreamConfiguration, edgeInsets: FBVideoStreamEdgeInsets, logger: any FBControlCoreLogger) -> FBSimulatorVideoStream

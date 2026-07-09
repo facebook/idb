@@ -51,13 +51,14 @@ enum FBSimulatorAccessibilitySerializer {
     keys: Set<FBAXKeys>,
     collector: FBAccessibilityProfilingCollector?,
     coverageGrid: FBAccessibilityCoverageGrid?,
-    seenPids: SeenPIDs?
+    seenPids: SeenPIDs?,
+    maxDepth: UInt = 0
   ) -> [[String: Any]] {
     element.axSetBridgeDelegateToken(token)
     if nestedFormat {
-      return [nestedRecursiveDescription(fromElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids)]
+      return [nestedRecursiveDescription(fromElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids, depth: 0, maxDepth: maxDepth)]
     }
-    return flatRecursiveDescription(fromElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids)
+    return flatRecursiveDescription(fromElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids, depth: 0, maxDepth: maxDepth)
   }
 
   static func formattedDescription(
@@ -66,13 +67,20 @@ enum FBSimulatorAccessibilitySerializer {
     nestedFormat: Bool,
     keys: Set<FBAXKeys>,
     collector: FBAccessibilityProfilingCollector?,
-    coverageGrid: FBAccessibilityCoverageGrid?
+    coverageGrid: FBAccessibilityCoverageGrid?,
+    maxDepth: UInt = 0
   ) -> [String: Any] {
     element.axSetBridgeDelegateToken(token)
     if nestedFormat {
-      return nestedRecursiveDescription(fromElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: nil)
+      return nestedRecursiveDescription(fromElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: nil, depth: 0, maxDepth: maxDepth)
     }
     return accessibilityDictionary(forElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: nil, discoveryMethod: discoveryMethodRecursive)
+  }
+
+  /// RocketSim addition: whether recursion may descend past `depth` into child elements.
+  /// A `maxDepth` of 0 is unlimited; 1 serializes only the root element.
+  private static func mayDescend(from depth: UInt, maxDepth: UInt) -> Bool {
+    maxDepth == 0 || depth + 1 < maxDepth
   }
 
   // The values here mirror the old SimulatorBridge implementation for downstream
@@ -199,13 +207,18 @@ enum FBSimulatorAccessibilitySerializer {
     keys: Set<FBAXKeys>,
     collector: FBAccessibilityProfilingCollector?,
     coverageGrid: FBAccessibilityCoverageGrid?,
-    seenPids: SeenPIDs?
+    seenPids: SeenPIDs?,
+    depth: UInt = 0,
+    maxDepth: UInt = 0
   ) -> [[String: Any]] {
     var values: [[String: Any]] = []
     values.append(accessibilityDictionary(forElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids, discoveryMethod: discoveryMethodRecursive))
+    guard mayDescend(from: depth, maxDepth: maxDepth) else {
+      return values
+    }
     for child in element.axChildren() {
       child.axSetBridgeDelegateToken(token)
-      values.append(contentsOf: flatRecursiveDescription(fromElement: child, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids))
+      values.append(contentsOf: flatRecursiveDescription(fromElement: child, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids, depth: depth + 1, maxDepth: maxDepth))
     }
     return values
   }
@@ -216,13 +229,17 @@ enum FBSimulatorAccessibilitySerializer {
     keys: Set<FBAXKeys>,
     collector: FBAccessibilityProfilingCollector?,
     coverageGrid: FBAccessibilityCoverageGrid?,
-    seenPids: SeenPIDs?
+    seenPids: SeenPIDs?,
+    depth: UInt = 0,
+    maxDepth: UInt = 0
   ) -> [String: Any] {
     var values = accessibilityDictionary(forElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids, discoveryMethod: discoveryMethodRecursive)
     var childrenValues: [[String: Any]] = []
-    for child in element.axChildren() {
-      child.axSetBridgeDelegateToken(token)
-      childrenValues.append(nestedRecursiveDescription(fromElement: child, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids))
+    if mayDescend(from: depth, maxDepth: maxDepth) {
+      for child in element.axChildren() {
+        child.axSetBridgeDelegateToken(token)
+        childrenValues.append(nestedRecursiveDescription(fromElement: child, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids, depth: depth + 1, maxDepth: maxDepth))
+      }
     }
     values["children"] = childrenValues
     return values

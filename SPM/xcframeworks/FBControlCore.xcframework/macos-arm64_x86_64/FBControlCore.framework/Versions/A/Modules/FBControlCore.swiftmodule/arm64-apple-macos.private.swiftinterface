@@ -193,7 +193,8 @@ public struct FBAccessibilityRequestOptions : Sendable {
   public var enableProfiling: Bool
   public var collectFrameCoverage: Bool
   public var remoteContentOptions: FBAccessibilityRemoteContentOptions?
-  public init(nestedFormat: Bool = false, keys: Set<FBAXKeys>? = FBAXKeys.defaultSet, enableLogging: Bool = false, enableProfiling: Bool = false, collectFrameCoverage: Bool = false, remoteContentOptions: FBAccessibilityRemoteContentOptions? = nil)
+  public var maxDepth: UInt
+  public init(nestedFormat: Bool = false, keys: Set<FBAXKeys>? = FBAXKeys.defaultSet, enableLogging: Bool = false, enableProfiling: Bool = false, collectFrameCoverage: Bool = false, remoteContentOptions: FBAccessibilityRemoteContentOptions? = nil, maxDepth: UInt = 0)
 }
 extension FBAccessibilityRequestOptions : CustomStringConvertible {
   public var description: String {
