@@ -20,13 +20,13 @@ public final class FBCoreSimulatorNotifier: NSObject {
   // MARK: - Public
 
   @objc(notifierForSimDevice:queue:block:)
-  public class func notifier(for simDevice: SimDevice, queue: DispatchQueue, block: @escaping @Sendable ([String: Any]) -> Void) -> FBCoreSimulatorNotifier {
+  class func notifier(for simDevice: SimDevice, queue: DispatchQueue, block: @escaping @Sendable ([String: Any]) -> Void) -> FBCoreSimulatorNotifier {
     let notifier = simDevice.notificationManager as AnyObject?
     return FBCoreSimulatorNotifier(notifier: notifier, queue: queue, block: block)
   }
 
   @objc(resolveLeavesState:forSimDevice:)
-  public class func resolveLeavesState(_ state: FBiOSTargetState, for device: SimDevice) -> FBFuture<NSNull> {
+  class func resolveLeavesState(_ state: FBiOSTargetState, for device: SimDevice) -> FBFuture<NSNull> {
     let future = FBMutableFuture<NSNull>()
     let queue = DispatchQueue(label: "com.facebook.fbsimulatorcontrol.resolve_state")
     nonisolated(unsafe) let futureRef = future

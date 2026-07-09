@@ -59,7 +59,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			AuBP5dIzOkxMuOftrkamNQWw0e+RxYy+/C2b9l+lYfM=
+			i604Fqdhx2vEVEAgk88UYXcZpkPvVBtsJgoCI+JaTQo=
 			</data>
 		</dict>
 		<key>Headers/FBSimulatorControl.h</key>
@@ -80,14 +80,14 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			/7p3Zd7rMzS6EzU1kZJBwfeKbytc/xiwPcn/vL472gQ=
+			ww/VMGJp24xFjwj+LX2Cv8GLdORiqy35v5olGBuOkKY=
 			</data>
 		</dict>
 		<key>Modules/FBSimulatorControl.swiftmodule/arm64-apple-macos.private.swiftinterface</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			DJBIFUlUDOtcWWlnJgCWj0MK7McljkvU4tzpt5Y87MM=
+			k+jyQ3uDcT2EFsN2Xcgo7T0gnCfLqFf4R6xIG5mCxEE=
 			</data>
 		</dict>
 		<key>Modules/FBSimulatorControl.swiftmodule/arm64-apple-macos.swiftdoc</key>
@@ -101,28 +101,28 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			DJBIFUlUDOtcWWlnJgCWj0MK7McljkvU4tzpt5Y87MM=
+			k+jyQ3uDcT2EFsN2Xcgo7T0gnCfLqFf4R6xIG5mCxEE=
 			</data>
 		</dict>
 		<key>Modules/FBSimulatorControl.swiftmodule/arm64-apple-macos.swiftmodule</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			DE3EfthhSWYxz2bFQfsykPS9Shr9IjGm6zGUGc3lVwA=
+			6sSAXgjJxv1SMDgVd1copsjXP3s5v6Vr2kGh2HXdyb4=
 			</data>
 		</dict>
 		<key>Modules/FBSimulatorControl.swiftmodule/x86_64-apple-macos.abi.json</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			/7p3Zd7rMzS6EzU1kZJBwfeKbytc/xiwPcn/vL472gQ=
+			ww/VMGJp24xFjwj+LX2Cv8GLdORiqy35v5olGBuOkKY=
 			</data>
 		</dict>
 		<key>Modules/FBSimulatorControl.swiftmodule/x86_64-apple-macos.private.swiftinterface</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			mS+AUil+ZjGcygafQk8Yezd6uS7rFags6uxkpt3mTQE=
+			doE8YJvBRpZgWn24M92TIpV/Xrf7Sz1KMkWTkfZNnTI=
 			</data>
 		</dict>
 		<key>Modules/FBSimulatorControl.swiftmodule/x86_64-apple-macos.swiftdoc</key>
@@ -136,14 +136,14 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			mS+AUil+ZjGcygafQk8Yezd6uS7rFags6uxkpt3mTQE=
+			doE8YJvBRpZgWn24M92TIpV/Xrf7Sz1KMkWTkfZNnTI=
 			</data>
 		</dict>
 		<key>Modules/FBSimulatorControl.swiftmodule/x86_64-apple-macos.swiftmodule</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			PZYLLWW2TujD4MaUP7sTRTQ+Ni0Qu9gGy1HKVOlBLis=
+			sULMdnXazGTN9Vagkz35aQ3xfDx6zz0VykOOSG5shyA=
 			</data>
 		</dict>
 		<key>Modules/module.modulemap</key>

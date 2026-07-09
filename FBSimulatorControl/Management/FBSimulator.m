@@ -24,6 +24,13 @@
 
 static NSString *const DefaultDeviceSet = @"~/Library/Developer/CoreSimulator/Devices";
 
+// Implemented in Swift (FBSimulatorConfiguration+CoreSimulator.swift) with internal
+// visibility so SimDevice stays out of the public module interface. The @objc metadata
+// still exists at runtime; redeclare the selector here for this in-module caller.
+@interface FBSimulatorConfiguration (SwiftInternalCoreSimulator)
++ (FBSimulatorConfiguration *)inferSimulatorConfigurationFromDeviceSynthesizingMissing:(SimDevice *)simDevice;
+@end
+
 @implementation FBSimulator
 
 @synthesize auxillaryDirectory = _auxillaryDirectory;

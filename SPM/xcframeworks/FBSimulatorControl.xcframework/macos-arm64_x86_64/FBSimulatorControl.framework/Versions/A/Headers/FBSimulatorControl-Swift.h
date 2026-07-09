@@ -389,11 +389,8 @@ SWIFT_CLASS_NAMED("FBAppleSimctlCommandExecutor")
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
 @end
 
-@class SimDevice;
 SWIFT_CLASS_NAMED("FBCoreSimulatorNotifier")
 @interface FBCoreSimulatorNotifier : NSObject
-+ (FBCoreSimulatorNotifier * _Nonnull)notifierForSimDevice:(SimDevice * _Nonnull)simDevice queue:(dispatch_queue_t _Nonnull)queue block:(void (^ _Nonnull)(NSDictionary<NSString *, id> * _Nonnull))block SWIFT_WARN_UNUSED_RESULT;
-+ (FBFuture<NSNull *> * _Nonnull)resolveLeavesState:(FBiOSTargetState)state forSimDevice:(SimDevice * _Nonnull)device SWIFT_WARN_UNUSED_RESULT;
 - (void)terminate;
 - (nonnull instancetype)init SWIFT_UNAVAILABLE;
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
@@ -502,8 +499,6 @@ SWIFT_CLASS_NAMED("FBSimulatorConfiguration")
 @interface FBSimulatorConfiguration (SWIFT_EXTENSION(FBSimulatorControl))
 - (FBSimulatorConfiguration * _Nullable)newestAvailableOSAndReturnError:(NSError * _Nullable * _Nullable)error SWIFT_WARN_UNUSED_RESULT;
 - (FBSimulatorConfiguration * _Nullable)oldestAvailableOSAndReturnError:(NSError * _Nullable * _Nullable)error SWIFT_WARN_UNUSED_RESULT;
-+ (FBSimulatorConfiguration * _Nullable)inferSimulatorConfigurationFromDevice:(SimDevice * _Nonnull)simDevice error:(NSError * _Nullable * _Nullable)error SWIFT_WARN_UNUSED_RESULT;
-+ (FBSimulatorConfiguration * _Nonnull)inferSimulatorConfigurationFromDeviceSynthesizingMissing:(SimDevice * _Nonnull)simDevice SWIFT_WARN_UNUSED_RESULT;
 - (BOOL)checkRuntimeRequirementsReturningError:(NSError * _Nullable * _Nullable)error;
 + (NSArray<FBOSVersion *> * _Nullable)supportedOSVersionsAndReturnError:(NSError * _Nullable * _Nullable)error SWIFT_WARN_UNUSED_RESULT;
 + (NSArray<FBOSVersion *> * _Nullable)supportedOSVersionsForDevice:(FBDeviceType * _Nonnull)device error:(NSError * _Nullable * _Nullable)error SWIFT_WARN_UNUSED_RESULT;
@@ -1266,11 +1261,8 @@ SWIFT_CLASS_NAMED("FBAppleSimctlCommandExecutor")
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
 @end
 
-@class SimDevice;
 SWIFT_CLASS_NAMED("FBCoreSimulatorNotifier")
 @interface FBCoreSimulatorNotifier : NSObject
-+ (FBCoreSimulatorNotifier * _Nonnull)notifierForSimDevice:(SimDevice * _Nonnull)simDevice queue:(dispatch_queue_t _Nonnull)queue block:(void (^ _Nonnull)(NSDictionary<NSString *, id> * _Nonnull))block SWIFT_WARN_UNUSED_RESULT;
-+ (FBFuture<NSNull *> * _Nonnull)resolveLeavesState:(FBiOSTargetState)state forSimDevice:(SimDevice * _Nonnull)device SWIFT_WARN_UNUSED_RESULT;
 - (void)terminate;
 - (nonnull instancetype)init SWIFT_UNAVAILABLE;
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
@@ -1379,8 +1371,6 @@ SWIFT_CLASS_NAMED("FBSimulatorConfiguration")
 @interface FBSimulatorConfiguration (SWIFT_EXTENSION(FBSimulatorControl))
 - (FBSimulatorConfiguration * _Nullable)newestAvailableOSAndReturnError:(NSError * _Nullable * _Nullable)error SWIFT_WARN_UNUSED_RESULT;
 - (FBSimulatorConfiguration * _Nullable)oldestAvailableOSAndReturnError:(NSError * _Nullable * _Nullable)error SWIFT_WARN_UNUSED_RESULT;
-+ (FBSimulatorConfiguration * _Nullable)inferSimulatorConfigurationFromDevice:(SimDevice * _Nonnull)simDevice error:(NSError * _Nullable * _Nullable)error SWIFT_WARN_UNUSED_RESULT;
-+ (FBSimulatorConfiguration * _Nonnull)inferSimulatorConfigurationFromDeviceSynthesizingMissing:(SimDevice * _Nonnull)simDevice SWIFT_WARN_UNUSED_RESULT;
 - (BOOL)checkRuntimeRequirementsReturningError:(NSError * _Nullable * _Nullable)error;
 + (NSArray<FBOSVersion *> * _Nullable)supportedOSVersionsAndReturnError:(NSError * _Nullable * _Nullable)error SWIFT_WARN_UNUSED_RESULT;
 + (NSArray<FBOSVersion *> * _Nullable)supportedOSVersionsForDevice:(FBDeviceType * _Nonnull)device error:(NSError * _Nullable * _Nullable)error SWIFT_WARN_UNUSED_RESULT;

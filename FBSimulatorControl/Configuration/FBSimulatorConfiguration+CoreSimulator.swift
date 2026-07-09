@@ -38,7 +38,7 @@ extension FBSimulatorConfiguration {
   }
 
   @objc(inferSimulatorConfigurationFromDevice:error:)
-  public class func inferSimulatorConfiguration(fromDevice simDevice: SimDevice) throws -> FBSimulatorConfiguration {
+  class func inferSimulatorConfiguration(fromDevice simDevice: SimDevice) throws -> FBSimulatorConfiguration {
     let osName = FBOSVersionName(rawValue: simDevice.runtime.name!)
     guard FBiOSTargetConfiguration.nameToOSVersion[osName] != nil else {
       throw FBSimulatorConfigurationError.unsupportedOSVersion(name: osName.rawValue)
@@ -51,7 +51,7 @@ extension FBSimulatorConfiguration {
   }
 
   @objc(inferSimulatorConfigurationFromDeviceSynthesizingMissing:)
-  public class func inferSimulatorConfigurationFromDeviceSynthesizingMissing(_ simDevice: SimDevice) -> FBSimulatorConfiguration {
+  class func inferSimulatorConfigurationFromDeviceSynthesizingMissing(_ simDevice: SimDevice) -> FBSimulatorConfiguration {
     if let configuration = try? inferSimulatorConfiguration(fromDevice: simDevice) {
       return configuration
     }

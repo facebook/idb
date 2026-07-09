@@ -33,7 +33,7 @@ public protocol AccessibilityOperations : AnyObject {
   func accessibilityElementForFrontmostApplication() async throws -> FBAccessibilityElement
   func accessibilityElementMatching(value: String, forKey key: FBAXSearchableKey, depth: UInt) async throws -> FBAccessibilityElement
 }
-public protocol AccessibilityCommands : FBSimulatorControl.AccessibilityOperations {
+public protocol AccessibilityCommands : AccessibilityOperations {
 }
 public enum FBAXUIElementAccessibility {
   public enum QueryError : Error, CustomStringConvertible {
@@ -110,8 +110,6 @@ final public class FBAccessibilityProfilingCollector {
   @objc deinit
 }
 @_hasMissingDesignatedInitializers @objc(FBCoreSimulatorNotifier) final public class FBCoreSimulatorNotifier : NSObject {
-  @objc(notifierForSimDevice:queue:block:) final public class func notifier(for simDevice: SimDevice, queue: DispatchQueue, block: @escaping @Sendable ([String : Any]) -> Void) -> FBCoreSimulatorNotifier
-  @objc(resolveLeavesState:forSimDevice:) final public class func resolveLeavesState(_ state: FBiOSTargetState, for device: SimDevice) -> FBFuture<NSNull>
   @objc final public func terminate()
   @objc deinit
 }
@@ -192,7 +190,7 @@ extension FBSimulator : ApplicationCommands {
 @objc(FBSimulatorBootConfiguration) public class FBSimulatorBootConfiguration : NSObject, NSCopying {
   @objc final public let options: FBSimulatorBootOptions
   @objc final public let environment: [String : String]
-  @objc(defaultConfiguration) nonisolated(unsafe) public static let `default`: FBSimulatorControl.FBSimulatorBootConfiguration
+  @objc(defaultConfiguration) nonisolated(unsafe) public static let `default`: FBSimulatorBootConfiguration
   @objc public init(options: FBSimulatorBootOptions, environment: [String : String])
   @objc public func copy(with zone: NSZone? = nil) -> Any
   @objc override dynamic public func isEqual(_ object: Any?) -> Bool
@@ -218,8 +216,6 @@ extension FBSimulatorConfiguration {
   @objc final public func newestAvailableOS() throws -> FBSimulatorConfiguration
   final public class func oldestAvailableOS(forDevice device: FBDeviceType) throws -> FBOSVersion?
   @objc final public func oldestAvailableOS() throws -> FBSimulatorConfiguration
-  @objc(inferSimulatorConfigurationFromDevice:error:) final public class func inferSimulatorConfiguration(fromDevice simDevice: SimDevice) throws -> FBSimulatorConfiguration
-  @objc(inferSimulatorConfigurationFromDeviceSynthesizingMissing:) final public class func inferSimulatorConfigurationFromDeviceSynthesizingMissing(_ simDevice: SimDevice) -> FBSimulatorConfiguration
   @objc(checkRuntimeRequirementsReturningError:) final public func checkRuntimeRequirements() throws
   @objc final public class func supportedOSVersions() throws -> [FBOSVersion]
   @objc(supportedOSVersionsForDevice:error:) final public class func supportedOSVersions(forDevice device: FBDeviceType) throws -> [FBOSVersion]
@@ -412,7 +408,7 @@ indirect public enum FBSimulatorHIDEvent : Equatable, Hashable {
   public var subEvents: [FBSimulatorHIDEvent]? {
     get
   }
-  public static func == (a: FBSimulatorControl.FBSimulatorHIDEvent, b: FBSimulatorControl.FBSimulatorHIDEvent) -> Swift.Bool
+  public static func == (a: FBSimulatorHIDEvent, b: FBSimulatorHIDEvent) -> Swift.Bool
   public func hash(into hasher: inout Swift.Hasher)
   public var hashValue: Swift.Int {
     get
@@ -443,7 +439,7 @@ extension FBSimulatorHIDEvent : CustomStringConvertible {
 public enum FBSimulatorHIDTransportType : Equatable, Sendable {
   case indigo
   case dtuhid
-  public static func == (a: FBSimulatorControl.FBSimulatorHIDTransportType, b: FBSimulatorControl.FBSimulatorHIDTransportType) -> Swift.Bool
+  public static func == (a: FBSimulatorHIDTransportType, b: FBSimulatorHIDTransportType) -> Swift.Bool
   public func hash(into hasher: inout Swift.Hasher)
   public var hashValue: Swift.Int {
     get
@@ -456,9 +452,9 @@ public enum FBSimulatorHIDDirection : Int32, Sendable, CaseIterable {
     get
   }
   public init?(rawValue: Swift.Int32)
-  public typealias AllCases = [FBSimulatorControl.FBSimulatorHIDDirection]
+  public typealias AllCases = [FBSimulatorHIDDirection]
   public typealias RawValue = Swift.Int32
-  nonisolated public static var allCases: [FBSimulatorControl.FBSimulatorHIDDirection] {
+  nonisolated public static var allCases: [FBSimulatorHIDDirection] {
     get
   }
   public var rawValue: Swift.Int32 {
@@ -476,9 +472,9 @@ public enum FBSimulatorHIDButton : Int32, Sendable, CaseIterable {
     get
   }
   public init?(rawValue: Swift.Int32)
-  public typealias AllCases = [FBSimulatorControl.FBSimulatorHIDButton]
+  public typealias AllCases = [FBSimulatorHIDButton]
   public typealias RawValue = Swift.Int32
-  nonisolated public static var allCases: [FBSimulatorControl.FBSimulatorHIDButton] {
+  nonisolated public static var allCases: [FBSimulatorHIDButton] {
     get
   }
   public var rawValue: Swift.Int32 {
@@ -496,9 +492,9 @@ public enum FBSimulatorHIDRemoteButton : Int32, Sendable, CaseIterable {
     get
   }
   public init?(rawValue: Swift.Int32)
-  public typealias AllCases = [FBSimulatorControl.FBSimulatorHIDRemoteButton]
+  public typealias AllCases = [FBSimulatorHIDRemoteButton]
   public typealias RawValue = Swift.Int32
-  nonisolated public static var allCases: [FBSimulatorControl.FBSimulatorHIDRemoteButton] {
+  nonisolated public static var allCases: [FBSimulatorHIDRemoteButton] {
     get
   }
   public var rawValue: Swift.Int32 {
@@ -512,9 +508,9 @@ public enum FBSimulatorTrackpadPhase : Sendable, Equatable, Hashable, CaseIterab
   public var name: String {
     get
   }
-  public static func == (a: FBSimulatorControl.FBSimulatorTrackpadPhase, b: FBSimulatorControl.FBSimulatorTrackpadPhase) -> Swift.Bool
-  public typealias AllCases = [FBSimulatorControl.FBSimulatorTrackpadPhase]
-  nonisolated public static var allCases: [FBSimulatorControl.FBSimulatorTrackpadPhase] {
+  public static func == (a: FBSimulatorTrackpadPhase, b: FBSimulatorTrackpadPhase) -> Swift.Bool
+  public typealias AllCases = [FBSimulatorTrackpadPhase]
+  nonisolated public static var allCases: [FBSimulatorTrackpadPhase] {
     get
   }
   public func hash(into hasher: inout Swift.Hasher)
@@ -531,9 +527,9 @@ public enum FBSimulatorHIDDeviceOrientation : Int32, Sendable, CaseIterable {
     get
   }
   public init?(rawValue: Swift.Int32)
-  public typealias AllCases = [FBSimulatorControl.FBSimulatorHIDDeviceOrientation]
+  public typealias AllCases = [FBSimulatorHIDDeviceOrientation]
   public typealias RawValue = Swift.Int32
-  nonisolated public static var allCases: [FBSimulatorControl.FBSimulatorHIDDeviceOrientation] {
+  nonisolated public static var allCases: [FBSimulatorHIDDeviceOrientation] {
     get
   }
   public var rawValue: Swift.Int32 {
@@ -997,7 +993,7 @@ public enum FBBarContent : Equatable {
   case text(String)
   case stats
   case hidden
-  public static func == (a: FBSimulatorControl.FBBarContent, b: FBSimulatorControl.FBBarContent) -> Swift.Bool
+  public static func == (a: FBBarContent, b: FBBarContent) -> Swift.Bool
 }
 public enum FBBarMode : String {
   case pad
@@ -1123,31 +1119,31 @@ public protocol SimulatorLifecycleCommands : AnyObject {
   func open(_ url: URL) async throws
   func connectToHID() async throws -> FBSimulatorHID
 }
-extension FBSimulatorControl.FBSimulatorHIDButton : Swift.Equatable {}
-extension FBSimulatorControl.FBSimulatorHIDButton : Swift.Hashable {}
-extension FBSimulatorControl.FBSimulatorHIDButton : Swift.RawRepresentable {}
-extension FBSimulatorControl.FBSimulatorHIDRemoteButton : Swift.Equatable {}
-extension FBSimulatorControl.FBSimulatorHIDRemoteButton : Swift.Hashable {}
-extension FBSimulatorControl.FBSimulatorHIDRemoteButton : Swift.RawRepresentable {}
-extension FBSimulatorControl.FBSimulatorHIDTransportType : Swift.Hashable {}
-extension FBSimulatorControl.FBSimulatorHIDDirection : Swift.Equatable {}
-extension FBSimulatorControl.FBSimulatorHIDDirection : Swift.Hashable {}
-extension FBSimulatorControl.FBSimulatorHIDDirection : Swift.RawRepresentable {}
-extension FBSimulatorControl.FBSimulatorHIDDeviceOrientation : Swift.Equatable {}
-extension FBSimulatorControl.FBSimulatorHIDDeviceOrientation : Swift.Hashable {}
-extension FBSimulatorControl.FBSimulatorHIDDeviceOrientation : Swift.RawRepresentable {}
-extension FBSimulatorControl.FBSimulatorSetting : Swift.Equatable {}
-extension FBSimulatorControl.FBSimulatorSetting : Swift.Hashable {}
-extension FBSimulatorControl.FBSimulatorSetting : Swift.RawRepresentable {}
-extension FBSimulatorControl.FBSimulatorAppearance : Swift.Equatable {}
-extension FBSimulatorControl.FBSimulatorAppearance : Swift.Hashable {}
-extension FBSimulatorControl.FBSimulatorAppearance : Swift.RawRepresentable {}
-extension FBSimulatorControl.FBSimulatorContentSizeCategory : Swift.Equatable {}
-extension FBSimulatorControl.FBSimulatorContentSizeCategory : Swift.Hashable {}
-extension FBSimulatorControl.FBSimulatorContentSizeCategory : Swift.RawRepresentable {}
-extension FBSimulatorControl.FBOverlayCoordSpace : Swift.Equatable {}
-extension FBSimulatorControl.FBOverlayCoordSpace : Swift.Hashable {}
-extension FBSimulatorControl.FBOverlayCoordSpace : Swift.RawRepresentable {}
-extension FBSimulatorControl.FBBarMode : Swift.Equatable {}
-extension FBSimulatorControl.FBBarMode : Swift.Hashable {}
-extension FBSimulatorControl.FBBarMode : Swift.RawRepresentable {}
+extension FBSimulatorHIDButton : Swift.Equatable {}
+extension FBSimulatorHIDButton : Swift.Hashable {}
+extension FBSimulatorHIDButton : Swift.RawRepresentable {}
+extension FBSimulatorHIDRemoteButton : Swift.Equatable {}
+extension FBSimulatorHIDRemoteButton : Swift.Hashable {}
+extension FBSimulatorHIDRemoteButton : Swift.RawRepresentable {}
+extension FBSimulatorHIDTransportType : Swift.Hashable {}
+extension FBSimulatorHIDDirection : Swift.Equatable {}
+extension FBSimulatorHIDDirection : Swift.Hashable {}
+extension FBSimulatorHIDDirection : Swift.RawRepresentable {}
+extension FBSimulatorHIDDeviceOrientation : Swift.Equatable {}
+extension FBSimulatorHIDDeviceOrientation : Swift.Hashable {}
+extension FBSimulatorHIDDeviceOrientation : Swift.RawRepresentable {}
+extension FBSimulatorSetting : Swift.Equatable {}
+extension FBSimulatorSetting : Swift.Hashable {}
+extension FBSimulatorSetting : Swift.RawRepresentable {}
+extension FBSimulatorAppearance : Swift.Equatable {}
+extension FBSimulatorAppearance : Swift.Hashable {}
+extension FBSimulatorAppearance : Swift.RawRepresentable {}
+extension FBSimulatorContentSizeCategory : Swift.Equatable {}
+extension FBSimulatorContentSizeCategory : Swift.Hashable {}
+extension FBSimulatorContentSizeCategory : Swift.RawRepresentable {}
+extension FBOverlayCoordSpace : Swift.Equatable {}
+extension FBOverlayCoordSpace : Swift.Hashable {}
+extension FBOverlayCoordSpace : Swift.RawRepresentable {}
+extension FBBarMode : Swift.Equatable {}
+extension FBBarMode : Swift.Hashable {}
+extension FBBarMode : Swift.RawRepresentable {}

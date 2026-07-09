@@ -7555,7 +7555,6 @@
             "objc_name": "notifierForSimDevice:queue:block:",
             "declAttributes": [
               "Final",
-              "AccessControl",
               "ObjC",
               "RawDocComment"
             ],
@@ -7601,7 +7600,6 @@
             "objc_name": "resolveLeavesState:forSimDevice:",
             "declAttributes": [
               "Final",
-              "AccessControl",
               "ObjC"
             ],
             "funcSelfKind": "NonMutating"
@@ -13573,7 +13571,6 @@
             "objc_name": "inferSimulatorConfigurationFromDevice:error:",
             "declAttributes": [
               "Final",
-              "AccessControl",
               "ObjC"
             ],
             "isFromExtension": true,
@@ -13606,7 +13603,6 @@
             "objc_name": "inferSimulatorConfigurationFromDeviceSynthesizingMissing:",
             "declAttributes": [
               "Final",
-              "AccessControl",
               "ObjC"
             ],
             "isFromExtension": true,
