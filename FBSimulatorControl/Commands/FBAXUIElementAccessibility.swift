@@ -239,14 +239,14 @@ public enum FBAXUIElementAccessibility {
   // We mirror that behaviour by collecting children from every standard child-providing
   // attribute and deduplicating by AXUIElement value (CFEqual-based) while preserving
   // first-seen order, so kAXChildrenAttribute remains canonical when populated.
-  private static let childProvidingAttributes: [CFString] = [
+  private static var childProvidingAttributes: [CFString] { [
     kAXChildrenAttribute as CFString,
     "AXChildrenInNavigationOrder" as CFString,
     kAXTabsAttribute as CFString,
     kAXVisibleChildrenAttribute as CFString,
     kAXSelectedChildrenAttribute as CFString,
     kAXContentsAttribute as CFString,
-  ]
+  ] }
 
   private static func mergedChildren(of element: AXUIElement) -> [AXUIElement] {
     var merged: [AXUIElement] = []

@@ -55,14 +55,15 @@ NS_ASSUME_NONNULL_BEGIN
                           callbackQueue:(dispatch_queue_t)queue
                           frameCallback:(void (^)(void))frameCallback
                 surfacesChangedCallback:(void (^)(IOSurface * _Nullable unmaskedSurface, IOSurface * _Nullable maskedSurface))surfacesChangedCallback
-              propertiesChangedCallback:(void (^)(id<SimScreenProperties> properties))propertiesChangedCallback;
+              propertiesChangedCallback:(void (^)(id<SimScreenProperties> properties))propertiesChangedCallback
+  NS_SWIFT_NAME(registerScreenCallbacks(uuid:callbackQueue:frameCallback:surfacesChangedCallback:propertiesChangedCallback:));
 
 /**
  Tears down a previously registered set of callbacks. Guard with
  `respondsToSelector:` before calling — the exact selector is not guaranteed
  across betas.
  */
-- (void)unregisterScreenCallbacksWithUUID:(NSUUID *)uuid;
+- (void)unregisterScreenCallbacksWithUUID:(NSUUID *)uuid NS_SWIFT_NAME(unregisterScreenCallbacks(uuid:));
 
 @end
 

@@ -28,7 +28,8 @@ NS_ASSUME_NONNULL_BEGIN
  Pick the screen whose `-isDefault` is YES (fallback: first).
  */
 - (void)enumerateScreensWithCompletionQueue:(dispatch_queue_t)queue
-                          completionHandler:(void (^)(NSArray<id<SimScreen>> * _Nullable screens, NSError * _Nullable error))completionHandler;
+                          completionHandler:(void (^)(NSArray<id<SimScreen>> * _Nullable screens, NSError * _Nullable error))completionHandler
+  NS_SWIFT_NAME(enumerateScreens(completionQueue:completionHandler:));
 
 /**
  Adapter lifecycle callbacks for hot-plug of displays. Guard with

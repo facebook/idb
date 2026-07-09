@@ -190,9 +190,9 @@ public final class FBSimulatorSet: NSObject, FBiOSTargetSet {
    `availableDevices`, so the union is a no-op there. Unavailable *shutdown*
    devices stay hidden as before.
    */
-  private var devicesForInflation: [SimDevice] {
-    let availableDevices = deviceSet.availableDevices
-    let allDevices = deviceSet.devices
+  private var devicesForInflation: [Any] {
+    let availableDevices = deviceSet.availableDevices.compactMap { $0 as? SimDevice }
+    let allDevices = deviceSet.devices.compactMap { $0 as? SimDevice }
     if availableDevices.count == allDevices.count {
       return availableDevices
     }

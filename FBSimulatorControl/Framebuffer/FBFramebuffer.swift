@@ -109,7 +109,7 @@ public final class FBFramebuffer: NSObject, @unchecked Sendable {
    enumeration API is asynchronous, so we bridge it with a bounded semaphore wait.
    */
   private class func defaultScreen(for adapter: SimScreenAdapter, logger: any FBControlCoreLogger) -> (any SimScreen)? {
-    guard adapter.responds(to: #selector(SimScreenAdapter.enumerateScreens(withCompletionQueue:completionHandler:))) else {
+    guard adapter.responds(to: #selector(SimScreenAdapter.enumerateScreens(completionQueue:completionHandler:))) else {
       logger.log("SimScreenAdapter \(adapter) does not respond to enumerateScreensWithCompletionQueue:completionHandler:")
       return nil
     }
@@ -117,10 +117,11 @@ public final class FBFramebuffer: NSObject, @unchecked Sendable {
     let semaphore = DispatchSemaphore(value: 0)
     let queue = DispatchQueue(label: "com.facebook.fbsimulatorcontrol.framebuffer.screenenumeration")
     nonisolated(unsafe) var resolvedScreen: (any SimScreen)?
+    nonisolated(unsafe) let loggerRef = logger
 
-    adapter.enumerateScreens(withCompletionQueue: queue) { screens, enumerationError in
+    adapter.enumerateScreens(completionQueue: queue) { screens, enumerationError in
       if let enumerationError {
-        logger.log("Failed to enumerate SimScreens: \(enumerationError)")
+        loggerRef.log("Failed to enumerate SimScreens: \(enumerationError)")
       }
       let screens = screens ?? []
       resolvedScreen = screens.first { $0.responds(to: #selector(getter: SimScreen.isDefault)) && $0.isDefault } ?? screens.first
@@ -228,7 +229,7 @@ public final class FBFramebuffer: NSObject, @unchecked Sendable {
 
     _ = try? FBObjCExceptionGuard.guarded {
       screen.registerScreenCallbacks(
-        with: uuid as UUID,
+        uuid: uuid as UUID,
         callbackQueue: queue,
         frameCallback: { [weak self] in
           guard let self else { return }
@@ -238,7 +239,7 @@ public final class FBFramebuffer: NSObject, @unchecked Sendable {
             consumerRef.didReceiveDamageRect()
           }
         },
-        surfacesChangedCallback: { [weak self] unmaskedSurface, maskedSurface in
+        surfacesChangedCallback: { [weak self] (unmaskedSurface: IOSurface?, maskedSurface: IOSurface?) in
           guard let self else { return }
           self.stats.ioSurfaceChangeCount += 1
           // Prefer the raw (unmasked) surface to mirror the legacy framebufferSurface.
@@ -345,11 +346,11 @@ public final class FBFramebuffer: NSObject, @unchecked Sendable {
         displayRenderable.unregisterDamageRectanglesCallback(with: uuid as UUID)
       }
     case .screen(let screen):
-      guard screen.responds(to: #selector(SimScreen.unregisterScreenCallbacks(with:))) else {
+      guard screen.responds(to: #selector(SimScreen.unregisterScreenCallbacks(uuid:))) else {
         return
       }
       _ = try? FBObjCExceptionGuard.guarded {
-        screen.unregisterScreenCallbacks(with: uuid as UUID)
+        screen.unregisterScreenCallbacks(uuid: uuid as UUID)
       }
     }
   }
