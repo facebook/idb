@@ -168,11 +168,46 @@ public final class FBSimulatorSet: NSObject, FBiOSTargetSet {
   @objc
   public var allSimulators: [FBSimulator] {
     _allSimulators = inflationStrategy.inflate(
-      fromDevices: deviceSet.availableDevices,
+      fromDevices: devicesForInflation,
       exitingSimulators: _allSimulators
     )
     .sorted { ($0 as FBSimulator).compare($1 as any FBiOSTarget) == .orderedAscending }
     return _allSimulators
+  }
+
+  /**
+   Fork addition. The devices to inflate into FBSimulators: CoreSimulator's
+   `availableDevices`, plus any *booted* device that is missing from it.
+
+   Xcode 27 delivers simulator runtimes as cryptex disk images mounted under
+   /private/var/run/com.apple.security.cryptexd/mnt. Sandboxed host apps are
+   denied file-read access to that mount, so the in-process CoreSimulator cannot
+   register the runtime bundle ("Malformed bundle does not contain an identifier")
+   and classifies the device as unavailable -- even though the device is booted
+   and fully operable over XPC (framebuffer, HID, accessibility all work on the
+   raw SimDevice handle). Including booted devices restores those devices without
+   changing behavior elsewhere: on Xcode <= 26, booted devices are always part of
+   `availableDevices`, so the union is a no-op there. Unavailable *shutdown*
+   devices stay hidden as before.
+   */
+  private var devicesForInflation: [SimDevice] {
+    let availableDevices = deviceSet.availableDevices
+    let allDevices = deviceSet.devices
+    if availableDevices.count == allDevices.count {
+      return availableDevices
+    }
+    let availableUDIDs = Set(availableDevices.map(\.udid))
+    var devices = availableDevices
+    for device in allDevices {
+      guard device.state == FBiOSTargetState.booted.rawValue else {
+        continue
+      }
+      guard !availableUDIDs.contains(device.udid) else {
+        continue
+      }
+      devices.append(device)
+    }
+    return devices
   }
 
   // MARK: - Private Methods

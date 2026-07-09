@@ -10,28 +10,69 @@ import Foundation
 @objc(FBXcodeConfiguration)
 public class FBXcodeConfiguration: NSObject {
 
+  // MARK: Injected Developer Directory (fork addition)
+
+  // Sandboxed hosts (e.g. Mac App Store apps) cannot invoke `xcode-select` or
+  // read `/var/db/xcode_select_link`, so they inject the developer directory
+  // resolved from a security-scoped bookmark instead. All derived values are
+  // cached and reset on injection so hosts that switch Xcode at runtime pick
+  // up the new directory without a restart. This mirrors the pre-rewrite
+  // Objective-C implementation of this class.
+  //
+  // The lock only guards the cache storage; derived values are computed
+  // outside the lock because their computation reads `developerDirectory`,
+  // which takes the same (non-recursive) lock.
+  private static let cacheLock = NSLock()
+  nonisolated(unsafe) private static var injectedDeveloperDirectory: String?
+  nonisolated(unsafe) private static var cachedDeveloperDirectory: String??
+  nonisolated(unsafe) private static var cachedXcodeVersionNumber: NSDecimalNumber?
+  nonisolated(unsafe) private static var cachedIOSSDKVersion: String?
+
+  /**
+   Injects the Xcode developer directory to use, bypassing `xcode-select` resolution.
+   Overrides the resolved developer directory until cleared with nil.
+   */
+  @objc public static func setInjectedDeveloperDirectory(_ developerDirectory: String?) {
+    cacheLock.withLock {
+      injectedDeveloperDirectory = developerDirectory
+      cachedDeveloperDirectory = nil
+      cachedXcodeVersionNumber = nil
+      cachedIOSSDKVersion = nil
+    }
+  }
+
   // MARK: Public Properties
 
-  @objc public static let developerDirectory: String = {
-    (try? FBXcodeDirectory.resolveDeveloperDirectory()) ?? ""
-  }()
+  @objc public static var developerDirectory: String {
+    resolvedDeveloperDirectory() ?? ""
+  }
 
-  @objc public static let contentsDirectory: String = {
+  /// The developer directory if it can be resolved, nil otherwise.
+  @objc public static func getDeveloperDirectoryIfExists() -> String? {
+    resolvedDeveloperDirectory()
+  }
+
+  @objc public static var contentsDirectory: String {
     (developerDirectory as NSString).deletingLastPathComponent
-  }()
+  }
 
-  @objc public static let xcodeVersionNumber: NSDecimalNumber = {
+  @objc public static var xcodeVersionNumber: NSDecimalNumber {
+    if let cached = cacheLock.withLock({ cachedXcodeVersionNumber }) {
+      return cached
+    }
     let versionString = FBXcodeConfiguration.readValue(forKey: "CFBundleShortVersionString", fromPlistAtPath: FBXcodeConfiguration.xcodeInfoPlistPath)
-    return NSDecimalNumber(string: versionString as? String)
-  }()
+    let versionNumber = NSDecimalNumber(string: versionString as? String)
+    cacheLock.withLock { cachedXcodeVersionNumber = versionNumber }
+    return versionNumber
+  }
 
-  @objc public static let xcodeVersion: OperatingSystemVersion = {
-    return FBOSVersion.operatingSystemVersion(fromName: xcodeVersionNumber.stringValue)
-  }()
+  @objc public static var xcodeVersion: OperatingSystemVersion {
+    FBOSVersion.operatingSystemVersion(fromName: xcodeVersionNumber.stringValue)
+  }
 
-  @objc public static let iosSDKVersionNumber: NSDecimalNumber = {
+  @objc public static var iosSDKVersionNumber: NSDecimalNumber {
     NSDecimalNumber(string: iosSDKVersion)
-  }()
+  }
 
   @objc public static let iosSDKVersionNumberFormatter: NumberFormatter = {
     let formatter = NumberFormatter()
@@ -41,19 +82,24 @@ public class FBXcodeConfiguration: NSObject {
     return formatter
   }()
 
-  @objc public static let iosSDKVersion: String = {
-    return FBXcodeConfiguration.readValue(forKey: "Version", fromPlistAtPath: FBXcodeConfiguration.iPhoneSimulatorPlatformInfoPlistPath) as? String ?? ""
-  }()
+  @objc public static var iosSDKVersion: String {
+    if let cached = cacheLock.withLock({ cachedIOSSDKVersion }) {
+      return cached
+    }
+    let version = FBXcodeConfiguration.readValue(forKey: "Version", fromPlistAtPath: FBXcodeConfiguration.iPhoneSimulatorPlatformInfoPlistPath) as? String ?? ""
+    cacheLock.withLock { cachedIOSSDKVersion = version }
+    return version
+  }
 
-  @objc public static let isXcode12OrGreater: Bool = {
+  @objc public static var isXcode12OrGreater: Bool {
     xcodeVersionNumber.compare(NSDecimalNumber(string: "12.0")) != .orderedAscending
-  }()
+  }
 
-  @objc public static let isXcode12_5OrGreater: Bool = {
+  @objc public static var isXcode12_5OrGreater: Bool {
     xcodeVersionNumber.compare(NSDecimalNumber(string: "12.5")) != .orderedAscending
-  }()
+  }
 
-  @objc public static let simulatorApp: FBBundleDescriptor = {
+  @objc public static var simulatorApp: FBBundleDescriptor {
     let path = simulatorApplicationPath
     guard let bundle = Bundle(path: path) else {
       fatalError("Could not load Simulator.app bundle at '\(path)'")
@@ -65,7 +111,7 @@ public class FBXcodeConfiguration: NSObject {
     let identifier = bundle.bundleIdentifier ?? "com.apple.iphonesimulator"
     // We deliberately don't include the binary because we should never need it.
     return FBBundleDescriptor(name: name, identifier: identifier, path: path, binary: nil)
-  }()
+  }
 
   // MARK: NSObject
 
@@ -78,6 +124,26 @@ public class FBXcodeConfiguration: NSObject {
   }
 
   // MARK: Private
+
+  private static func resolvedDeveloperDirectory() -> String? {
+    let cached: String?? = cacheLock.withLock {
+      if let injected = injectedDeveloperDirectory {
+        return .some(injected)
+      }
+      return cachedDeveloperDirectory
+    }
+    if let cached {
+      return cached
+    }
+    let resolved = try? FBXcodeDirectory.resolveDeveloperDirectory()
+    cacheLock.withLock {
+      // An injection may have raced this resolution; do not clobber it.
+      if injectedDeveloperDirectory == nil, cachedDeveloperDirectory == nil {
+        cachedDeveloperDirectory = .some(resolved)
+      }
+    }
+    return resolved
+  }
 
   fileprivate class var simulatorApplicationPath: String {
     // Xcode 27 renamed Simulator.app to DeviceHub.app and moved it from

@@ -18,7 +18,11 @@ public final class FBSimulatorServiceContext: NSObject {
 
   // MARK: - Initialization
 
-  nonisolated(unsafe) private static var _sharedInstance: FBSimulatorServiceContext?
+  // Fork change: CoreSimulator's `sharedServiceContextForDeveloperDir:` vends one
+  // context per developer directory. Cache per directory (instead of a single
+  // process-lifetime instance) so hosts that switch Xcode at runtime get a
+  // context for the newly selected developer directory without a restart.
+  nonisolated(unsafe) private static var sharedInstances: [String: FBSimulatorServiceContext] = [:]
   private static let sharedLock = NSLock()
 
   @objc
@@ -28,13 +32,14 @@ public final class FBSimulatorServiceContext: NSObject {
 
   @objc(sharedServiceContextWithLogger:error:)
   public class func sharedServiceContext(withLogger logger: (any FBControlCoreLogger)?) throws -> FBSimulatorServiceContext {
+    let developerDirectory = FBXcodeConfiguration.getDeveloperDirectoryIfExists() ?? ""
     sharedLock.lock()
     defer { sharedLock.unlock() }
-    if let instance = _sharedInstance {
+    if let instance = sharedInstances[developerDirectory] {
       return instance
     }
     let instance = try createServiceContext(withLogger: logger)
-    _sharedInstance = instance
+    sharedInstances[developerDirectory] = instance
     return instance
   }
 

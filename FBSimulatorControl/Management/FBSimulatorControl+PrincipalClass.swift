@@ -34,6 +34,19 @@ public final class FBSimulatorControl: NSObject {
     return FBSimulatorControl(configuration: configuration, serviceContext: serviceContext, set: set)
   }
 
+  /**
+   Fork addition: bootstraps with an injected Xcode developer directory.
+
+   Sandboxed hosts cannot resolve the developer directory via `xcode-select`,
+   so they pass the directory obtained from a security-scoped bookmark here
+   before any Xcode-path-dependent code runs.
+   */
+  @objc(withConfiguration:developerDirectory:error:)
+  public class func withConfiguration(_ configuration: FBSimulatorControlConfiguration, developerDirectory: String?) throws -> FBSimulatorControl {
+    FBXcodeConfiguration.setInjectedDeveloperDirectory(developerDirectory)
+    return try withConfiguration(configuration)
+  }
+
   private init(configuration: FBSimulatorControlConfiguration, serviceContext: FBSimulatorServiceContext, set: FBSimulatorSet) {
     self.configuration = configuration
     self.serviceContext = serviceContext
