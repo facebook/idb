@@ -6,7 +6,7 @@
  */
 
 import CoreGraphics
-@preconcurrency import CoreSimulator
+@_implementationOnly import CoreSimulator
 @preconcurrency import FBControlCore
 import Foundation
 

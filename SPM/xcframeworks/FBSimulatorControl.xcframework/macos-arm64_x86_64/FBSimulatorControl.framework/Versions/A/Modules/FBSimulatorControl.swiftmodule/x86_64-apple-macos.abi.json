@@ -2240,6 +2240,7 @@
         "declKind": "Import",
         "moduleName": "FBSimulatorControl",
         "declAttributes": [
+          "ImplementationOnly",
           "RawDocComment"
         ]
       },
@@ -2999,6 +3000,7 @@
         "moduleName": "FBSimulatorControl",
         "declAttributes": [
           "Preconcurrency",
+          "ImplementationOnly",
           "RawDocComment"
         ]
       },
@@ -3007,7 +3009,10 @@
         "name": "CoreSimulator",
         "printedName": "CoreSimulator",
         "declKind": "Import",
-        "moduleName": "FBSimulatorControl"
+        "moduleName": "FBSimulatorControl",
+        "declAttributes": [
+          "ImplementationOnly"
+        ]
       },
       {
         "kind": "Import",
@@ -3028,6 +3033,160 @@
         "name": "FBAXTranslationDispatcher",
         "printedName": "FBAXTranslationDispatcher",
         "children": [
+          {
+            "kind": "Var",
+            "name": "translator",
+            "printedName": "translator",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "WeakStorage",
+                "printedName": "AccessibilityPlatformTranslation.AXPTranslator?"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:18FBSimulatorControl25FBAXTranslationDispatcherC10translator33_84F427741AFFCE32DAB529FD36CC6EECLLSo13AXPTranslatorCSgvp",
+            "mangledName": "$s18FBSimulatorControl25FBAXTranslationDispatcherC10translator33_84F427741AFFCE32DAB529FD36CC6EECLLSo13AXPTranslatorCSgvp",
+            "moduleName": "FBSimulatorControl",
+            "isInternal": true,
+            "declAttributes": [
+              "HasInitialValue",
+              "Final",
+              "HasStorage",
+              "ReferenceOwnership",
+              "AccessControl"
+            ],
+            "fixedbinaryorder": 0,
+            "ownership": 1,
+            "hasStorage": true
+          },
+          {
+            "kind": "Var",
+            "name": "logger",
+            "printedName": "logger",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Optional",
+                "printedName": "(any FBControlCore.FBControlCoreLogger)?",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "FBControlCoreLogger",
+                    "printedName": "any FBControlCore.FBControlCoreLogger",
+                    "usr": "c:@M@FBControlCore@objc(pl)FBControlCoreLogger"
+                  }
+                ],
+                "usr": "s:Sq"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:18FBSimulatorControl25FBAXTranslationDispatcherC6logger33_84F427741AFFCE32DAB529FD36CC6EECLL13FBControlCore0lM6Logger_pSgvp",
+            "mangledName": "$s18FBSimulatorControl25FBAXTranslationDispatcherC6logger33_84F427741AFFCE32DAB529FD36CC6EECLL13FBControlCore0lM6Logger_pSgvp",
+            "moduleName": "FBSimulatorControl",
+            "isInternal": true,
+            "declAttributes": [
+              "Final",
+              "HasStorage",
+              "AccessControl"
+            ],
+            "fixedbinaryorder": 1,
+            "isLet": true,
+            "hasStorage": true
+          },
+          {
+            "kind": "Var",
+            "name": "callbackQueue",
+            "printedName": "callbackQueue",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "DispatchQueue",
+                "printedName": "Dispatch.DispatchQueue",
+                "usr": "c:objc(cs)OS_dispatch_queue"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:18FBSimulatorControl25FBAXTranslationDispatcherC13callbackQueue33_84F427741AFFCE32DAB529FD36CC6EECLLSo17OS_dispatch_queueCvp",
+            "mangledName": "$s18FBSimulatorControl25FBAXTranslationDispatcherC13callbackQueue33_84F427741AFFCE32DAB529FD36CC6EECLLSo17OS_dispatch_queueCvp",
+            "moduleName": "FBSimulatorControl",
+            "isInternal": true,
+            "declAttributes": [
+              "Final",
+              "HasStorage",
+              "AccessControl"
+            ],
+            "fixedbinaryorder": 2,
+            "isLet": true,
+            "hasStorage": true
+          },
+          {
+            "kind": "Var",
+            "name": "lock",
+            "printedName": "lock",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "NSLock",
+                "printedName": "Foundation.NSLock",
+                "usr": "c:objc(cs)NSLock"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:18FBSimulatorControl25FBAXTranslationDispatcherC4lock33_84F427741AFFCE32DAB529FD36CC6EECLLSo6NSLockCvp",
+            "mangledName": "$s18FBSimulatorControl25FBAXTranslationDispatcherC4lock33_84F427741AFFCE32DAB529FD36CC6EECLLSo6NSLockCvp",
+            "moduleName": "FBSimulatorControl",
+            "isInternal": true,
+            "declAttributes": [
+              "HasInitialValue",
+              "Final",
+              "HasStorage",
+              "AccessControl"
+            ],
+            "fixedbinaryorder": 3,
+            "isLet": true,
+            "hasStorage": true
+          },
+          {
+            "kind": "Var",
+            "name": "tokenToRequest",
+            "printedName": "tokenToRequest",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Dictionary",
+                "printedName": "[Swift.String : FBSimulatorControl.FBAXTranslationRequest]",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "FBAXTranslationRequest",
+                    "printedName": "FBSimulatorControl.FBAXTranslationRequest",
+                    "usr": "s:18FBSimulatorControl22FBAXTranslationRequestC"
+                  }
+                ],
+                "usr": "s:SD"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:18FBSimulatorControl25FBAXTranslationDispatcherC14tokenToRequest33_84F427741AFFCE32DAB529FD36CC6EECLLSDySSAA0cG0CGvp",
+            "mangledName": "$s18FBSimulatorControl25FBAXTranslationDispatcherC14tokenToRequest33_84F427741AFFCE32DAB529FD36CC6EECLLSDySSAA0cG0CGvp",
+            "moduleName": "FBSimulatorControl",
+            "isInternal": true,
+            "declAttributes": [
+              "HasInitialValue",
+              "Final",
+              "HasStorage",
+              "AccessControl"
+            ],
+            "fixedbinaryorder": 4,
+            "hasStorage": true
+          },
           {
             "kind": "Constructor",
             "name": "init",
@@ -3064,9 +3223,6 @@
             "usr": "s:18FBSimulatorControl25FBAXTranslationDispatcherC10translator6loggerACSo13AXPTranslatorC_13FBControlCore0hI6Logger_pSgtcfc",
             "mangledName": "$s18FBSimulatorControl25FBAXTranslationDispatcherC10translator6loggerACSo13AXPTranslatorC_13FBControlCore0hI6Logger_pSgtcfc",
             "moduleName": "FBSimulatorControl",
-            "declAttributes": [
-              "AccessControl"
-            ],
             "init_kind": "Designated"
           },
           {
@@ -3126,8 +3282,7 @@
             "mangledName": "$s18FBSimulatorControl25FBAXTranslationDispatcherC10popRequestyyAA0cF0CF",
             "moduleName": "FBSimulatorControl",
             "declAttributes": [
-              "Final",
-              "AccessControl"
+              "Final"
             ],
             "funcSelfKind": "NonMutating"
           },
@@ -3186,7 +3341,6 @@
             "declAttributes": [
               "Final",
               "ObjC",
-              "AccessControl",
               "RawDocComment"
             ],
             "funcSelfKind": "NonMutating"
@@ -3222,8 +3376,7 @@
             "objc_name": "accessibilityTranslationConvertPlatformFrameToSystem:withToken:",
             "declAttributes": [
               "Final",
-              "ObjC",
-              "AccessControl"
+              "ObjC"
             ],
             "funcSelfKind": "NonMutating"
           },
@@ -3259,8 +3412,7 @@
             "objc_name": "accessibilityTranslationRootParentWithToken:",
             "declAttributes": [
               "Final",
-              "ObjC",
-              "AccessControl"
+              "ObjC"
             ],
             "funcSelfKind": "NonMutating"
           },
@@ -3298,7 +3450,6 @@
         "objc_name": "FBAXTranslationDispatcher",
         "declAttributes": [
           "Final",
-          "AccessControl",
           "ObjC",
           "RawDocComment"
         ],
@@ -3379,6 +3530,7 @@
         "declKind": "Import",
         "moduleName": "FBSimulatorControl",
         "declAttributes": [
+          "ImplementationOnly",
           "RawDocComment"
         ]
       },
@@ -3387,7 +3539,10 @@
         "name": "CoreSimulator",
         "printedName": "CoreSimulator",
         "declKind": "Import",
-        "moduleName": "FBSimulatorControl"
+        "moduleName": "FBSimulatorControl",
+        "declAttributes": [
+          "ImplementationOnly"
+        ]
       },
       {
         "kind": "Import",
@@ -3451,7 +3606,8 @@
                 "moduleName": "FBSimulatorControl",
                 "declAttributes": [
                   "RawDocComment"
-                ]
+                ],
+                "fixedbinaryorder": 0
               },
               {
                 "kind": "Var",
@@ -3504,7 +3660,8 @@
                 "moduleName": "FBSimulatorControl",
                 "declAttributes": [
                   "RawDocComment"
-                ]
+                ],
+                "fixedbinaryorder": 1
               }
             ],
             "declKind": "Enum",
@@ -3512,9 +3669,9 @@
             "mangledName": "$s18FBSimulatorControl22FBAXTranslationRequestC4KindO",
             "moduleName": "FBSimulatorControl",
             "declAttributes": [
-              "AccessControl",
               "RawDocComment"
             ],
+            "isEnumExhaustive": true,
             "conformances": [
               {
                 "kind": "Conformance",
@@ -3529,6 +3686,20 @@
                 "printedName": "Escapable",
                 "usr": "s:s9EscapableP",
                 "mangledName": "$ss9EscapableP"
+              },
+              {
+                "kind": "Conformance",
+                "name": "Sendable",
+                "printedName": "Sendable",
+                "usr": "s:s8SendableP",
+                "mangledName": "$ss8SendableP"
+              },
+              {
+                "kind": "Conformance",
+                "name": "BitwiseCopyable",
+                "printedName": "BitwiseCopyable",
+                "usr": "s:s15BitwiseCopyableP",
+                "mangledName": "$ss15BitwiseCopyableP"
               }
             ]
           },
@@ -3550,9 +3721,9 @@
             "moduleName": "FBSimulatorControl",
             "declAttributes": [
               "Final",
-              "HasStorage",
-              "AccessControl"
+              "HasStorage"
             ],
+            "fixedbinaryorder": 0,
             "isLet": true,
             "hasStorage": true,
             "accessors": [
@@ -3574,6 +3745,7 @@
                 "moduleName": "FBSimulatorControl",
                 "implicit": true,
                 "declAttributes": [
+                  "Transparent",
                   "Final"
                 ],
                 "accessorKind": "get"
@@ -3598,9 +3770,9 @@
             "moduleName": "FBSimulatorControl",
             "declAttributes": [
               "Final",
-              "HasStorage",
-              "AccessControl"
+              "HasStorage"
             ],
+            "fixedbinaryorder": 1,
             "isLet": true,
             "hasStorage": true,
             "accessors": [
@@ -3622,6 +3794,7 @@
                 "moduleName": "FBSimulatorControl",
                 "implicit": true,
                 "declAttributes": [
+                  "Transparent",
                   "Final"
                 ],
                 "accessorKind": "get"
@@ -3655,9 +3828,9 @@
             "declAttributes": [
               "HasInitialValue",
               "Final",
-              "HasStorage",
-              "AccessControl"
+              "HasStorage"
             ],
+            "fixedbinaryorder": 2,
             "hasStorage": true,
             "accessors": [
               {
@@ -3686,6 +3859,7 @@
                 "moduleName": "FBSimulatorControl",
                 "implicit": true,
                 "declAttributes": [
+                  "Transparent",
                   "Final"
                 ],
                 "accessorKind": "get"
@@ -3721,6 +3895,7 @@
                 "moduleName": "FBSimulatorControl",
                 "implicit": true,
                 "declAttributes": [
+                  "Transparent",
                   "Final"
                 ],
                 "accessorKind": "set"
@@ -3742,6 +3917,7 @@
                 "moduleName": "FBSimulatorControl",
                 "implicit": true,
                 "declAttributes": [
+                  "Transparent",
                   "Final"
                 ],
                 "accessorKind": "_modify"
@@ -3775,9 +3951,9 @@
             "declAttributes": [
               "HasInitialValue",
               "Final",
-              "HasStorage",
-              "AccessControl"
+              "HasStorage"
             ],
+            "fixedbinaryorder": 3,
             "hasStorage": true,
             "accessors": [
               {
@@ -3806,6 +3982,7 @@
                 "moduleName": "FBSimulatorControl",
                 "implicit": true,
                 "declAttributes": [
+                  "Transparent",
                   "Final"
                 ],
                 "accessorKind": "get"
@@ -3841,6 +4018,7 @@
                 "moduleName": "FBSimulatorControl",
                 "implicit": true,
                 "declAttributes": [
+                  "Transparent",
                   "Final"
                 ],
                 "accessorKind": "set"
@@ -3862,6 +4040,7 @@
                 "moduleName": "FBSimulatorControl",
                 "implicit": true,
                 "declAttributes": [
+                  "Transparent",
                   "Final"
                 ],
                 "accessorKind": "_modify"
@@ -3895,9 +4074,9 @@
             "declAttributes": [
               "HasInitialValue",
               "Final",
-              "HasStorage",
-              "AccessControl"
+              "HasStorage"
             ],
+            "fixedbinaryorder": 4,
             "hasStorage": true,
             "accessors": [
               {
@@ -3926,6 +4105,7 @@
                 "moduleName": "FBSimulatorControl",
                 "implicit": true,
                 "declAttributes": [
+                  "Transparent",
                   "Final"
                 ],
                 "accessorKind": "get"
@@ -3961,6 +4141,7 @@
                 "moduleName": "FBSimulatorControl",
                 "implicit": true,
                 "declAttributes": [
+                  "Transparent",
                   "Final"
                 ],
                 "accessorKind": "set"
@@ -3982,6 +4163,7 @@
                 "moduleName": "FBSimulatorControl",
                 "implicit": true,
                 "declAttributes": [
+                  "Transparent",
                   "Final"
                 ],
                 "accessorKind": "_modify"
@@ -4015,9 +4197,9 @@
             "declAttributes": [
               "HasInitialValue",
               "Final",
-              "HasStorage",
-              "AccessControl"
+              "HasStorage"
             ],
+            "fixedbinaryorder": 5,
             "hasStorage": true,
             "accessors": [
               {
@@ -4046,6 +4228,7 @@
                 "moduleName": "FBSimulatorControl",
                 "implicit": true,
                 "declAttributes": [
+                  "Transparent",
                   "Final"
                 ],
                 "accessorKind": "get"
@@ -4081,6 +4264,7 @@
                 "moduleName": "FBSimulatorControl",
                 "implicit": true,
                 "declAttributes": [
+                  "Transparent",
                   "Final"
                 ],
                 "accessorKind": "set"
@@ -4102,6 +4286,7 @@
                 "moduleName": "FBSimulatorControl",
                 "implicit": true,
                 "declAttributes": [
+                  "Transparent",
                   "Final"
                 ],
                 "accessorKind": "_modify"
@@ -4127,9 +4312,9 @@
             "declAttributes": [
               "Final",
               "HasStorage",
-              "AccessControl",
               "RawDocComment"
             ],
+            "fixedbinaryorder": 6,
             "hasStorage": true,
             "accessors": [
               {
@@ -4150,6 +4335,7 @@
                 "moduleName": "FBSimulatorControl",
                 "implicit": true,
                 "declAttributes": [
+                  "Transparent",
                   "Final"
                 ],
                 "accessorKind": "get"
@@ -4177,6 +4363,7 @@
                 "moduleName": "FBSimulatorControl",
                 "implicit": true,
                 "declAttributes": [
+                  "Transparent",
                   "Final"
                 ],
                 "accessorKind": "set"
@@ -4198,6 +4385,7 @@
                 "moduleName": "FBSimulatorControl",
                 "implicit": true,
                 "declAttributes": [
+                  "Transparent",
                   "Final"
                 ],
                 "accessorKind": "_modify"
@@ -4226,9 +4414,6 @@
             "usr": "s:18FBSimulatorControl22FBAXTranslationRequestC4kindA2C4KindO_tcfc",
             "mangledName": "$s18FBSimulatorControl22FBAXTranslationRequestC4kindA2C4KindO_tcfc",
             "moduleName": "FBSimulatorControl",
-            "declAttributes": [
-              "AccessControl"
-            ],
             "init_kind": "Designated"
           },
           {
@@ -4249,7 +4434,6 @@
             "moduleName": "FBSimulatorControl",
             "declAttributes": [
               "Final",
-              "AccessControl",
               "RawDocComment"
             ],
             "funcSelfKind": "NonMutating"
@@ -4286,7 +4470,6 @@
             "moduleName": "FBSimulatorControl",
             "declAttributes": [
               "Final",
-              "AccessControl",
               "RawDocComment"
             ],
             "funcSelfKind": "NonMutating"
@@ -4333,7 +4516,6 @@
         "moduleName": "FBSimulatorControl",
         "declAttributes": [
           "Final",
-          "AccessControl",
           "RawDocComment"
         ],
         "conformances": [
@@ -7046,7 +7228,7 @@
         "declKind": "Import",
         "moduleName": "FBSimulatorControl",
         "declAttributes": [
-          "Preconcurrency",
+          "ImplementationOnly",
           "RawDocComment"
         ]
       },
@@ -7284,7 +7466,7 @@
         "declKind": "Import",
         "moduleName": "FBSimulatorControl",
         "declAttributes": [
-          "Preconcurrency",
+          "ImplementationOnly",
           "RawDocComment"
         ]
       },
@@ -7629,7 +7811,7 @@
         "declKind": "Import",
         "moduleName": "FBSimulatorControl",
         "declAttributes": [
-          "Preconcurrency",
+          "ImplementationOnly",
           "RawDocComment"
         ]
       },
@@ -9733,7 +9915,7 @@
         "declKind": "Import",
         "moduleName": "FBSimulatorControl",
         "declAttributes": [
-          "Preconcurrency"
+          "ImplementationOnly"
         ]
       },
       {
@@ -10250,7 +10432,7 @@
         "declKind": "Import",
         "moduleName": "FBSimulatorControl",
         "declAttributes": [
-          "Preconcurrency",
+          "ImplementationOnly",
           "RawDocComment"
         ]
       },
@@ -10495,6 +10677,7 @@
         "moduleName": "FBSimulatorControl",
         "declAttributes": [
           "Preconcurrency",
+          "ImplementationOnly",
           "RawDocComment"
         ]
       },
@@ -10510,7 +10693,10 @@
         "name": "CoreSimulator",
         "printedName": "CoreSimulator",
         "declKind": "Import",
-        "moduleName": "FBSimulatorControl"
+        "moduleName": "FBSimulatorControl",
+        "declAttributes": [
+          "ImplementationOnly"
+        ]
       },
       {
         "kind": "Import",
@@ -11273,7 +11459,7 @@
         "declKind": "Import",
         "moduleName": "FBSimulatorControl",
         "declAttributes": [
-          "Preconcurrency",
+          "ImplementationOnly",
           "RawDocComment"
         ]
       },
@@ -12233,7 +12419,7 @@
         "declKind": "Import",
         "moduleName": "FBSimulatorControl",
         "declAttributes": [
-          "Preconcurrency",
+          "ImplementationOnly",
           "RawDocComment"
         ]
       },
@@ -12455,7 +12641,7 @@
         "declKind": "Import",
         "moduleName": "FBSimulatorControl",
         "declAttributes": [
-          "Preconcurrency",
+          "ImplementationOnly",
           "RawDocComment"
         ]
       },
@@ -12664,7 +12850,7 @@
         "declKind": "Import",
         "moduleName": "FBSimulatorControl",
         "declAttributes": [
-          "Preconcurrency",
+          "ImplementationOnly",
           "RawDocComment"
         ]
       },
@@ -13690,7 +13876,6 @@
             "objc_name": "obtainRuntimeWithError:",
             "declAttributes": [
               "Final",
-              "AccessControl",
               "ObjC",
               "RawDocComment"
             ],
@@ -13717,7 +13902,6 @@
             "objc_name": "obtainDeviceTypeWithError:",
             "declAttributes": [
               "Final",
-              "AccessControl",
               "ObjC"
             ],
             "isFromExtension": true,
@@ -14782,7 +14966,7 @@
         "declKind": "Import",
         "moduleName": "FBSimulatorControl",
         "declAttributes": [
-          "Preconcurrency",
+          "ImplementationOnly",
           "RawDocComment"
         ]
       },
@@ -16062,7 +16246,7 @@
         "declKind": "Import",
         "moduleName": "FBSimulatorControl",
         "declAttributes": [
-          "Preconcurrency"
+          "ImplementationOnly"
         ]
       },
       {
@@ -17444,7 +17628,7 @@
         "declKind": "Import",
         "moduleName": "FBSimulatorControl",
         "declAttributes": [
-          "Preconcurrency",
+          "ImplementationOnly",
           "RawDocComment"
         ]
       },
@@ -17738,7 +17922,7 @@
         "declKind": "Import",
         "moduleName": "FBSimulatorControl",
         "declAttributes": [
-          "Preconcurrency",
+          "ImplementationOnly",
           "RawDocComment"
         ]
       },
@@ -18080,7 +18264,7 @@
         "declKind": "Import",
         "moduleName": "FBSimulatorControl",
         "declAttributes": [
-          "Preconcurrency",
+          "ImplementationOnly",
           "RawDocComment"
         ]
       },
@@ -18623,7 +18807,7 @@
         "declKind": "Import",
         "moduleName": "FBSimulatorControl",
         "declAttributes": [
-          "Preconcurrency",
+          "ImplementationOnly",
           "RawDocComment"
         ]
       },
@@ -21501,7 +21685,7 @@
         "declKind": "Import",
         "moduleName": "FBSimulatorControl",
         "declAttributes": [
-          "Preconcurrency",
+          "ImplementationOnly",
           "RawDocComment"
         ]
       },
@@ -25045,7 +25229,7 @@
         "declKind": "Import",
         "moduleName": "FBSimulatorControl",
         "declAttributes": [
-          "Preconcurrency",
+          "ImplementationOnly",
           "RawDocComment"
         ]
       },
@@ -25281,7 +25465,7 @@
         "declKind": "Import",
         "moduleName": "FBSimulatorControl",
         "declAttributes": [
-          "Preconcurrency"
+          "ImplementationOnly"
         ]
       },
       {
@@ -25874,7 +26058,7 @@
         "declKind": "Import",
         "moduleName": "FBSimulatorControl",
         "declAttributes": [
-          "Preconcurrency",
+          "ImplementationOnly",
           "RawDocComment"
         ]
       },
@@ -26276,7 +26460,7 @@
         "declKind": "Import",
         "moduleName": "FBSimulatorControl",
         "declAttributes": [
-          "Preconcurrency",
+          "ImplementationOnly",
           "RawDocComment"
         ]
       },
@@ -27495,7 +27679,7 @@
         "declKind": "Import",
         "moduleName": "FBSimulatorControl",
         "declAttributes": [
-          "Preconcurrency"
+          "ImplementationOnly"
         ]
       },
       {
@@ -27676,7 +27860,7 @@
         "declKind": "Import",
         "moduleName": "FBSimulatorControl",
         "declAttributes": [
-          "Preconcurrency",
+          "ImplementationOnly",
           "RawDocComment"
         ]
       },
@@ -27852,7 +28036,7 @@
         "declKind": "Import",
         "moduleName": "FBSimulatorControl",
         "declAttributes": [
-          "Preconcurrency",
+          "ImplementationOnly",
           "RawDocComment"
         ]
       },
@@ -28038,7 +28222,7 @@
         "declKind": "Import",
         "moduleName": "FBSimulatorControl",
         "declAttributes": [
-          "Preconcurrency"
+          "ImplementationOnly"
         ]
       },
       {
@@ -28221,7 +28405,7 @@
         "declKind": "Import",
         "moduleName": "FBSimulatorControl",
         "declAttributes": [
-          "Preconcurrency",
+          "ImplementationOnly",
           "RawDocComment"
         ]
       },
@@ -28397,7 +28581,7 @@
         "declKind": "Import",
         "moduleName": "FBSimulatorControl",
         "declAttributes": [
-          "Preconcurrency",
+          "ImplementationOnly",
           "RawDocComment"
         ]
       },
@@ -28573,7 +28757,7 @@
         "declKind": "Import",
         "moduleName": "FBSimulatorControl",
         "declAttributes": [
-          "Preconcurrency",
+          "ImplementationOnly",
           "RawDocComment"
         ]
       },
@@ -28760,7 +28944,7 @@
         "declKind": "Import",
         "moduleName": "FBSimulatorControl",
         "declAttributes": [
-          "Preconcurrency",
+          "ImplementationOnly",
           "RawDocComment"
         ]
       },
@@ -29908,7 +30092,7 @@
         "declKind": "Import",
         "moduleName": "FBSimulatorControl",
         "declAttributes": [
-          "Preconcurrency",
+          "ImplementationOnly",
           "RawDocComment"
         ]
       },
@@ -30058,7 +30242,6 @@
             "moduleName": "FBSimulatorControl",
             "declAttributes": [
               "Final",
-              "AccessControl",
               "ObjC"
             ],
             "funcSelfKind": "NonMutating"
@@ -30089,7 +30272,6 @@
             "moduleName": "FBSimulatorControl",
             "declAttributes": [
               "Final",
-              "AccessControl",
               "ObjC"
             ],
             "funcSelfKind": "NonMutating"
@@ -30119,7 +30301,6 @@
             "objc_name": "createDeviceSetWithConfiguration:error:",
             "declAttributes": [
               "Final",
-              "AccessControl",
               "ObjC"
             ],
             "throwing": true,
@@ -30804,6 +30985,7 @@
         "moduleName": "FBSimulatorControl",
         "declAttributes": [
           "Preconcurrency",
+          "ImplementationOnly",
           "RawDocComment"
         ]
       },
@@ -30899,7 +31081,6 @@
             "declAttributes": [
               "Final",
               "HasStorage",
-              "AccessControl",
               "ObjC"
             ],
             "isLet": true,
@@ -31355,7 +31536,6 @@
             "objc_name": "setWithConfiguration:deviceSet:delegate:logger:reporter:",
             "declAttributes": [
               "Final",
-              "AccessControl",
               "ObjC",
               "RawDocComment"
             ],
@@ -32608,7 +32788,7 @@
         "declKind": "Import",
         "moduleName": "FBSimulatorControl",
         "declAttributes": [
-          "Preconcurrency",
+          "ImplementationOnly",
           "RawDocComment"
         ]
       },
@@ -34244,7 +34424,7 @@
         "declKind": "Import",
         "moduleName": "FBSimulatorControl",
         "declAttributes": [
-          "Preconcurrency",
+          "ImplementationOnly",
           "RawDocComment"
         ]
       },
@@ -44107,7 +44287,7 @@
         "declKind": "Import",
         "moduleName": "FBSimulatorControl",
         "declAttributes": [
-          "Preconcurrency",
+          "ImplementationOnly",
           "RawDocComment"
         ]
       },
@@ -54960,7 +55140,6 @@
             "static": true,
             "declAttributes": [
               "Final",
-              "AccessControl",
               "RawDocComment"
             ],
             "isFromExtension": true,
@@ -54985,7 +55164,6 @@
             "isOpen": true,
             "declAttributes": [
               "Dynamic",
-              "AccessControl",
               "ObjC"
             ],
             "isFromExtension": true,
@@ -58770,14 +58948,14 @@
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Commands\/FBAXTranslationDispatcher.swift",
       "kind": "Dictionary",
-      "offset": 1649,
+      "offset": 1684,
       "length": 3,
       "value": "[]"
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Commands\/FBAXTranslationRequest.swift",
       "kind": "FloatLiteral",
-      "offset": 1591,
+      "offset": 1619,
       "length": 3,
       "value": "5.0"
     },
@@ -58847,49 +59025,49 @@
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Strategies\/FBDefaultsModificationStrategy.swift",
       "kind": "StringLiteral",
-      "offset": 7038,
+      "offset": 7043,
       "length": 21,
       "value": "\"Apple Global Domain\""
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Commands\/FBSimulator+RuntimeTools.swift",
       "kind": "Array",
-      "offset": 1963,
+      "offset": 1968,
       "length": 2,
       "value": "[]"
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Commands\/FBSimulator+RuntimeTools.swift",
       "kind": "Dictionary",
-      "offset": 2003,
+      "offset": 2008,
       "length": 3,
       "value": "[]"
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Commands\/FBSimulator+RuntimeTools.swift",
       "kind": "Array",
-      "offset": 3096,
+      "offset": 3101,
       "length": 2,
       "value": "[]"
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Commands\/FBSimulator+RuntimeTools.swift",
       "kind": "Dictionary",
-      "offset": 3136,
+      "offset": 3141,
       "length": 3,
       "value": "[]"
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Commands\/FBSimulatorAccessibilityCommands.swift",
       "kind": "StringLiteral",
-      "offset": 2658,
+      "offset": 2686,
       "length": 32,
       "value": "\"com.apple.CoreSimulator.bridge\""
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Commands\/FBSimulatorAccessibilityCommands.swift",
       "kind": "StringLiteral",
-      "offset": 2737,
+      "offset": 2765,
       "length": 23,
       "value": "\"com.apple.SpringBoard\""
     },
@@ -58924,21 +59102,21 @@
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Commands\/FBSimulatorApplicationCommands.swift",
       "kind": "StringLiteral",
-      "offset": 6799,
+      "offset": 6804,
       "length": 19,
       "value": "\"UIKitApplication:\""
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Commands\/FBSimulatorApplicationCommands.swift",
       "kind": "Array",
-      "offset": 6829,
+      "offset": 6834,
       "length": 2,
       "value": "[]"
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Commands\/FBSimulatorApplicationCommands.swift",
       "kind": "StringLiteral",
-      "offset": 11108,
+      "offset": 11113,
       "length": 15,
       "value": "\"DataContainer\""
     },
@@ -58966,14 +59144,14 @@
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Strategies\/FBSimulatorBootVerificationStrategy.swift",
       "kind": "FloatLiteral",
-      "offset": 635,
+      "offset": 640,
       "length": 3,
       "value": "0.5"
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Strategies\/FBSimulatorBootVerificationStrategy.swift",
       "kind": "FloatLiteral",
-      "offset": 715,
+      "offset": 720,
       "length": 3,
       "value": "1.5"
     },
@@ -59078,21 +59256,21 @@
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/HID\/FBSimulatorDTUHIDTransport.swift",
       "kind": "BooleanLiteral",
-      "offset": 642,
+      "offset": 647,
       "length": 5,
       "value": "false"
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/HID\/FBSimulatorDTUHIDTransport.swift",
       "kind": "StringLiteral",
-      "offset": 2099,
+      "offset": 2104,
       "length": 51,
       "value": "\"com.apple.coredevice.feature.remote.hid.digitizer\""
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/HID\/FBSimulatorDTUHIDTransport.swift",
       "kind": "IntegerLiteral",
-      "offset": 3259,
+      "offset": 3264,
       "length": 10,
       "value": "80000000"
     },
@@ -59106,7 +59284,7 @@
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/HID\/FBSimulatorHID.swift",
       "kind": "IntegerLiteral",
-      "offset": 1550,
+      "offset": 1555,
       "length": 4,
       "value": "2000"
     },
@@ -59281,14 +59459,14 @@
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/HID\/FBSimulatorIndigoHIDClient.swift",
       "kind": "StringLiteral",
-      "offset": 1973,
+      "offset": 1978,
       "length": 39,
       "value": "\"SimulatorKit.SimDeviceLegacyHIDClient\""
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Commands\/FBSimulatorLaunchCtlCommands.swift",
       "kind": "StringLiteral",
-      "offset": 5222,
+      "offset": 5227,
       "length": 30,
       "value": "\"UIKitApplication:([^\\[]*).*\""
     },
@@ -59323,14 +59501,14 @@
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Commands\/FBSimulatorLifecycleCommands.swift",
       "kind": "IntegerLiteral",
-      "offset": 393,
+      "offset": 398,
       "length": 1,
       "value": "2"
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Commands\/FBSimulatorProcessSpawnCommands.swift",
       "kind": "IntegerLiteral",
-      "offset": 4219,
+      "offset": 4224,
       "length": 1,
       "value": "0"
     },
@@ -59365,217 +59543,217 @@
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Management\/FBSimulatorServiceContext.swift",
       "kind": "Dictionary",
-      "offset": 887,
+      "offset": 892,
       "length": 3,
       "value": "[]"
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Commands\/FBSimulatorSettingsCommands.swift",
       "kind": "IntegerLiteral",
-      "offset": 650,
+      "offset": 655,
       "length": 14,
       "value": "1"
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Commands\/FBSimulatorSettingsCommands.swift",
       "kind": "IntegerLiteral",
-      "offset": 672,
+      "offset": 677,
       "length": 16,
       "value": "2"
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Commands\/FBSimulatorSettingsCommands.swift",
       "kind": "IntegerLiteral",
-      "offset": 882,
+      "offset": 887,
       "length": 1,
       "value": "1"
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Commands\/FBSimulatorSettingsCommands.swift",
       "kind": "IntegerLiteral",
-      "offset": 927,
+      "offset": 932,
       "length": 1,
       "value": "2"
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Commands\/FBSimulatorSettingsCommands.swift",
       "kind": "IntegerLiteral",
-      "offset": 1176,
+      "offset": 1181,
       "length": 1,
       "value": "1"
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Commands\/FBSimulatorSettingsCommands.swift",
       "kind": "IntegerLiteral",
-      "offset": 1193,
+      "offset": 1198,
       "length": 1,
       "value": "2"
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Commands\/FBSimulatorSettingsCommands.swift",
       "kind": "IntegerLiteral",
-      "offset": 1211,
+      "offset": 1216,
       "length": 1,
       "value": "3"
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Commands\/FBSimulatorSettingsCommands.swift",
       "kind": "IntegerLiteral",
-      "offset": 1228,
+      "offset": 1233,
       "length": 1,
       "value": "4"
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Commands\/FBSimulatorSettingsCommands.swift",
       "kind": "IntegerLiteral",
-      "offset": 1250,
+      "offset": 1255,
       "length": 1,
       "value": "5"
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Commands\/FBSimulatorSettingsCommands.swift",
       "kind": "IntegerLiteral",
-      "offset": 1277,
+      "offset": 1282,
       "length": 1,
       "value": "6"
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Commands\/FBSimulatorSettingsCommands.swift",
       "kind": "IntegerLiteral",
-      "offset": 1309,
+      "offset": 1314,
       "length": 1,
       "value": "7"
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Commands\/FBSimulatorSettingsCommands.swift",
       "kind": "IntegerLiteral",
-      "offset": 1340,
+      "offset": 1345,
       "length": 1,
       "value": "8"
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Commands\/FBSimulatorSettingsCommands.swift",
       "kind": "IntegerLiteral",
-      "offset": 1370,
+      "offset": 1375,
       "length": 1,
       "value": "9"
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Commands\/FBSimulatorSettingsCommands.swift",
       "kind": "IntegerLiteral",
-      "offset": 1405,
+      "offset": 1410,
       "length": 2,
       "value": "10"
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Commands\/FBSimulatorSettingsCommands.swift",
       "kind": "IntegerLiteral",
-      "offset": 1446,
+      "offset": 1451,
       "length": 2,
       "value": "11"
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Commands\/FBSimulatorSettingsCommands.swift",
       "kind": "IntegerLiteral",
-      "offset": 1492,
+      "offset": 1497,
       "length": 2,
       "value": "12"
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Commands\/FBSimulatorSettingsCommands.swift",
       "kind": "StringLiteral",
-      "offset": 1539,
+      "offset": 1544,
       "length": 51,
       "value": "\"com.apple.UIKit.SimulatorSlowMotionAnimationState\""
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Commands\/FBSimulatorSettingsCommands.swift",
       "kind": "Array",
-      "offset": 20937,
+      "offset": 20942,
       "length": 2,
       "value": "[]"
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Commands\/FBSimulatorSettingsCommands.swift",
       "kind": "StringLiteral",
-      "offset": 27026,
+      "offset": 27031,
       "length": 24,
       "value": "\"kTCCServiceAddressBook\""
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Commands\/FBSimulatorSettingsCommands.swift",
       "kind": "StringLiteral",
-      "offset": 27088,
+      "offset": 27093,
       "length": 19,
       "value": "\"kTCCServicePhotos\""
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Commands\/FBSimulatorSettingsCommands.swift",
       "kind": "StringLiteral",
-      "offset": 27145,
+      "offset": 27150,
       "length": 19,
       "value": "\"kTCCServiceCamera\""
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Commands\/FBSimulatorSettingsCommands.swift",
       "kind": "StringLiteral",
-      "offset": 27206,
+      "offset": 27211,
       "length": 23,
       "value": "\"kTCCServiceMicrophone\""
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Commands\/FBSimulatorSettingsCommands.swift",
       "kind": "StringLiteral",
-      "offset": 27370,
+      "offset": 27375,
       "length": 25,
       "value": "\"kTCCServiceContactsFull\""
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Commands\/FBSimulatorSettingsCommands.swift",
       "kind": "StringLiteral",
-      "offset": 27433,
+      "offset": 27438,
       "length": 19,
       "value": "\"kTCCServicePhotos\""
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Commands\/FBSimulatorSettingsCommands.swift",
       "kind": "StringLiteral",
-      "offset": 27490,
+      "offset": 27495,
       "length": 8,
       "value": "\"camera\""
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Commands\/FBSimulatorSettingsCommands.swift",
       "kind": "StringLiteral",
-      "offset": 27538,
+      "offset": 27543,
       "length": 22,
       "value": "\"__CoreLocationAlways\""
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Commands\/FBSimulatorSettingsCommands.swift",
       "kind": "StringLiteral",
-      "offset": 27602,
+      "offset": 27607,
       "length": 23,
       "value": "\"kTCCServiceMicrophone\""
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Commands\/FBSimulatorSettingsCommands.swift",
       "kind": "StringLiteral",
-      "offset": 27767,
+      "offset": 27772,
       "length": 22,
       "value": "\"__CoreLocationAlways\""
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Commands\/FBSimulatorSettingsCommands.swift",
       "kind": "Array",
-      "offset": 27865,
+      "offset": 27870,
       "length": 207,
       "value": "[\"AddressBook.sqlitedb\", \"AddressBook.sqlitedb-shm\", \"AddressBook.sqlitedb-wal\", \"AddressBookImages.sqlitedb\", \"AddressBookImages.sqlitedb-shm\", \"AddressBookImages.sqlitedb-wal\"]"
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Strategies\/FBSimulatorShutdownStrategy.swift",
       "kind": "IntegerLiteral",
-      "offset": 1739,
+      "offset": 1744,
       "length": 3,
       "value": "164"
     },
@@ -59792,28 +59970,28 @@
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Commands\/FBSimulatorXCTestCommands.swift",
       "kind": "IntegerLiteral",
-      "offset": 417,
+      "offset": 422,
       "length": 1,
       "value": "5"
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Commands\/FBSimulatorXCTestCommands.swift",
       "kind": "StringLiteral",
-      "offset": 447,
+      "offset": 452,
       "length": 23,
       "value": "\"TESTMANAGERD_SIM_SOCK\""
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Commands\/FBSimulatorXCTestCommands.swift",
       "kind": "BooleanLiteral",
-      "offset": 669,
+      "offset": 674,
       "length": 5,
       "value": "false"
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Commands\/FBSimulatorXCTestCommands.swift",
       "kind": "StringLiteral",
-      "offset": 4226,
+      "offset": 4231,
       "length": 74,
       "value": "\"Platforms\/iPhoneSimulator.platform\/Developer\/Library\/Xcode\/Agents\/xctest\""
     },

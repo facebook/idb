@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@preconcurrency import CoreSimulator
+@_implementationOnly import CoreSimulator
 @preconcurrency import FBControlCore
 import Foundation
 
@@ -87,17 +87,17 @@ public final class FBSimulatorServiceContext: NSObject {
   }
 
   @objc
-  public func supportedRuntimes() -> [SimRuntime] {
+  func supportedRuntimes() -> [SimRuntime] {
     return (serviceContext.supportedRuntimes as? [SimRuntime]) ?? []
   }
 
   @objc
-  public func supportedDeviceTypes() -> [SimDeviceType] {
+  func supportedDeviceTypes() -> [SimDeviceType] {
     return (serviceContext.supportedDeviceTypes as? [SimDeviceType]) ?? []
   }
 
   @objc(createDeviceSetWithConfiguration:error:)
-  public func createDeviceSet(with configuration: FBSimulatorControlConfiguration) throws -> SimDeviceSet {
+  func createDeviceSet(with configuration: FBSimulatorControlConfiguration) throws -> SimDeviceSet {
     guard let deviceSetPath = configuration.deviceSetPath else {
       // defaultDeviceSetWithError: takes (id *) not (NSError **), so use the raw API
       var error: AnyObject?

@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import AccessibilityPlatformTranslation
+@_implementationOnly import AccessibilityPlatformTranslation
 import AppKit
 import FBControlCore
 import Foundation

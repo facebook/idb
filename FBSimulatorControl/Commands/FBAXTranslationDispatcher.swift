@@ -5,8 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@preconcurrency import AccessibilityPlatformTranslation
-import CoreSimulator
+@_implementationOnly @preconcurrency import AccessibilityPlatformTranslation
+@_implementationOnly import CoreSimulator
 import FBControlCore
 import Foundation
 
@@ -28,7 +28,7 @@ private final class AXPResponseBox: @unchecked Sendable {
 /// only because it conforms to the Objective-C `AXPTranslationTokenDelegateHelper`
 /// protocol and is installed as `AXPTranslator`'s bridge-token delegate.
 @objc(FBAXTranslationDispatcher)
-public final class FBAXTranslationDispatcher: NSObject, AXPTranslationTokenDelegateHelper {
+final class FBAXTranslationDispatcher: NSObject, AXPTranslationTokenDelegateHelper {
 
   private weak var translator: AXPTranslator?
   private let logger: FBControlCoreLogger?
@@ -36,7 +36,7 @@ public final class FBAXTranslationDispatcher: NSObject, AXPTranslationTokenDeleg
   private let lock = NSLock()
   private var tokenToRequest: [String: FBAXTranslationRequest] = [:]
 
-  public init(translator: AXPTranslator, logger: FBControlCoreLogger?) {
+  init(translator: AXPTranslator, logger: FBControlCoreLogger?) {
     self.translator = translator
     self.logger = logger
     self.callbackQueue = DispatchQueue(label: "com.facebook.fbsimulatorcontrol.accessibility_translator.callback")
@@ -82,7 +82,7 @@ public final class FBAXTranslationDispatcher: NSObject, AXPTranslationTokenDeleg
     logger?.log("Registered request with token \(request.token)")
   }
 
-  public func popRequest(_ request: FBAXTranslationRequest) {
+  func popRequest(_ request: FBAXTranslationRequest) {
     lock.lock()
     let present = tokenToRequest[request.token] != nil
     if present {
@@ -111,7 +111,7 @@ public final class FBAXTranslationDispatcher: NSObject, AXPTranslationTokenDeleg
   // Since the CoreSimulator accessibility API is asynchronous but AXPTranslator's
   // delegation is synchronous, a DispatchGroup acts as a mutex to wait on the
   // result. The wait must never run on the main queue.
-  public func accessibilityTranslationDelegateBridgeCallback(withToken token: String) -> AXPTranslationCallback {
+  func accessibilityTranslationDelegateBridgeCallback(withToken token: String) -> AXPTranslationCallback {
     guard let request = request(forToken: token) else {
       return { [weak self] _ in
         self?.logger?.log("Request with token \(token) is gone. Returning empty response")
@@ -146,11 +146,11 @@ public final class FBAXTranslationDispatcher: NSObject, AXPTranslationTokenDeleg
     }
   }
 
-  public func accessibilityTranslationConvertPlatformFrame(toSystem rect: CGRect, withToken token: String) -> CGRect {
+  func accessibilityTranslationConvertPlatformFrame(toSystem rect: CGRect, withToken token: String) -> CGRect {
     rect
   }
 
-  public func accessibilityTranslationRootParent(withToken token: String) -> Any? {
+  func accessibilityTranslationRootParent(withToken token: String) -> Any? {
     logger?.log("Delegate method 'accessibilityTranslationRootParentWithToken:', with unknown implementation called with token \(token). Returning nil.")
     return nil
   }

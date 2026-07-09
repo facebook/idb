@@ -6,7 +6,7 @@
  */
 
 import AppKit
-@preconcurrency import CoreSimulator
+@_implementationOnly import CoreSimulator
 import FBControlCore
 import Foundation
 import UniformTypeIdentifiers

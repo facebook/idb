@@ -5,9 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@preconcurrency import AccessibilityPlatformTranslation
+@_implementationOnly @preconcurrency import AccessibilityPlatformTranslation
 import AppKit
-import CoreSimulator
+@_implementationOnly import CoreSimulator
 import FBControlCore
 import Foundation
 
@@ -20,7 +20,7 @@ extension FBSimulator {
   /// fixture's mock `AXPTranslator` (mirrors the original `id` parameter). Swift-only
   /// (not `@objc`): an `@objc` `Any` parameter double-visions as `Any`/`Any!` and
   /// makes the call ambiguous; nothing in Objective-C calls this anymore.
-  public static func createAccessibilityTranslationDispatcher(withTranslator translator: Any) -> FBAXTranslationDispatcher {
+  static func createAccessibilityTranslationDispatcher(withTranslator translator: Any) -> FBAXTranslationDispatcher {
     let axTranslator = unsafeBitCast(translator as AnyObject, to: AXPTranslator.self)
     let dispatcher = FBAXTranslationDispatcher(translator: axTranslator, logger: nil)
     axTranslator.bridgeTokenDelegate = dispatcher
@@ -37,7 +37,7 @@ extension FBSimulator {
     return FBSimulator.createAccessibilityTranslationDispatcher(withTranslator: translator)
   }()
 
-  @objc public var accessibilityTranslationDispatcher: FBAXTranslationDispatcher {
+  @objc var accessibilityTranslationDispatcher: FBAXTranslationDispatcher {
     FBSimulator.sharedAccessibilityTranslationDispatcher
   }
 }

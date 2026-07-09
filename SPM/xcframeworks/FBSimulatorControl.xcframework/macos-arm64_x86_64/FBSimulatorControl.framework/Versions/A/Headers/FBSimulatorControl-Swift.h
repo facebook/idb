@@ -346,7 +346,6 @@ extern "C" {
 #if __has_warning("-Watimport-in-framework-header")
 #pragma clang diagnostic ignored "-Watimport-in-framework-header"
 #endif
-@import AccessibilityPlatformTranslation;
 @import CoreFoundation;
 @import CoreGraphics;
 @import Dispatch;
@@ -378,25 +377,8 @@ extern "C" {
 
 #if defined(__OBJC__)
 
-@class NSString;
-/// Bridges the asynchronous CoreSimulator accessibility API to the synchronous
-/// callback model <code>AXPTranslator</code> expects. Holds the token→request registry and,
-/// per request, performs the translator handshake and converts the lazy AXP
-/// attribute callbacks into synchronous CoreSimulator XPC round-trips.
-/// Created and driven entirely from Swift in this module (see
-/// <code>FBSimulatorAccessibilityCommands</code>). It remains an <code>@objc</code>/<code>NSObject</code> class
-/// only because it conforms to the Objective-C <code>AXPTranslationTokenDelegateHelper</code>
-/// protocol and is installed as <code>AXPTranslator</code>’s bridge-token delegate.
-SWIFT_CLASS_NAMED("FBAXTranslationDispatcher")
-@interface FBAXTranslationDispatcher : NSObject <AXPTranslationTokenDelegateHelper>
-- (AXPTranslationCallback _Nonnull)accessibilityTranslationDelegateBridgeCallbackWithToken:(NSString * _Nonnull)token SWIFT_WARN_UNUSED_RESULT;
-- (CGRect)accessibilityTranslationConvertPlatformFrameToSystem:(CGRect)rect withToken:(NSString * _Nonnull)token SWIFT_WARN_UNUSED_RESULT;
-- (id _Nullable)accessibilityTranslationRootParentWithToken:(NSString * _Nonnull)token SWIFT_WARN_UNUSED_RESULT;
-- (nonnull instancetype)init SWIFT_UNAVAILABLE;
-+ (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
-@end
-
 @class FBSimulator;
+@class NSString;
 @class NSNull;
 @protocol FBControlCoreLogger;
 SWIFT_CLASS_NAMED("FBAppleSimctlCommandExecutor")
@@ -449,10 +431,6 @@ SWIFT_CLASS("_TtC18FBSimulatorControl38FBLocationServicesModificationStrategy")
 
 SWIFT_CLASS("_TtC18FBSimulatorControl32FBPreferenceModificationStrategy")
 @interface FBPreferenceModificationStrategy : FBDefaultsModificationStrategy
-@end
-
-@interface FBSimulator (SWIFT_EXTENSION(FBSimulatorControl))
-@property (nonatomic, readonly, strong) FBAXTranslationDispatcher * _Nonnull accessibilityTranslationDispatcher;
 @end
 
 /// Dark/Light mode appearance.
@@ -521,8 +499,6 @@ SWIFT_CLASS_NAMED("FBSimulatorConfiguration")
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
 @end
 
-@class SimRuntime;
-@class SimDeviceType;
 @interface FBSimulatorConfiguration (SWIFT_EXTENSION(FBSimulatorControl))
 - (FBSimulatorConfiguration * _Nullable)newestAvailableOSAndReturnError:(NSError * _Nullable * _Nullable)error SWIFT_WARN_UNUSED_RESULT;
 - (FBSimulatorConfiguration * _Nullable)oldestAvailableOSAndReturnError:(NSError * _Nullable * _Nullable)error SWIFT_WARN_UNUSED_RESULT;
@@ -533,8 +509,6 @@ SWIFT_CLASS_NAMED("FBSimulatorConfiguration")
 + (NSArray<FBOSVersion *> * _Nullable)supportedOSVersionsForDevice:(FBDeviceType * _Nonnull)device error:(NSError * _Nullable * _Nullable)error SWIFT_WARN_UNUSED_RESULT;
 + (NSArray<FBSimulatorConfiguration *> * _Nullable)allAvailableDefaultConfigurationsWithLogger:(id <FBControlCoreLogger> _Nullable)logger error:(NSError * _Nullable * _Nullable)error SWIFT_WARN_UNUSED_RESULT;
 + (NSArray<FBSimulatorConfiguration *> * _Nullable)allAvailableDefaultConfigurationsWithAbsentOSVersionsOut:(NSArray * _Nullable * _Nullable)absentOSVersionsOut absentDeviceTypesOut:(NSArray * _Nullable * _Nullable)absentDeviceTypesOut error:(NSError * _Nullable * _Nullable)error SWIFT_WARN_UNUSED_RESULT;
-- (SimRuntime * _Nullable)obtainRuntimeWithError:(NSError * _Nullable * _Nullable)error SWIFT_WARN_UNUSED_RESULT;
-- (SimDeviceType * _Nullable)obtainDeviceTypeWithError:(NSError * _Nullable * _Nullable)error SWIFT_WARN_UNUSED_RESULT;
 @end
 
 /// Dynamic Type content size categories.
@@ -757,15 +731,11 @@ SWIFT_CLASS("_TtC18FBSimulatorControl29FBSimulatorScreenshotCommands")
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
 @end
 
-@class SimDeviceSet;
 SWIFT_CLASS_NAMED("FBSimulatorServiceContext")
 @interface FBSimulatorServiceContext : NSObject
 + (FBSimulatorServiceContext * _Nullable)sharedServiceContextAndReturnError:(NSError * _Nullable * _Nullable)error SWIFT_WARN_UNUSED_RESULT;
 + (FBSimulatorServiceContext * _Nullable)sharedServiceContextWithLogger:(id <FBControlCoreLogger> _Nullable)logger error:(NSError * _Nullable * _Nullable)error SWIFT_WARN_UNUSED_RESULT;
 - (NSArray<NSString *> * _Nonnull)pathsOfAllDeviceSets SWIFT_WARN_UNUSED_RESULT;
-- (NSArray<SimRuntime *> * _Nonnull)supportedRuntimes SWIFT_WARN_UNUSED_RESULT;
-- (NSArray<SimDeviceType *> * _Nonnull)supportedDeviceTypes SWIFT_WARN_UNUSED_RESULT;
-- (SimDeviceSet * _Nullable)createDeviceSetWithConfiguration:(FBSimulatorControlConfiguration * _Nonnull)configuration error:(NSError * _Nullable * _Nullable)error SWIFT_WARN_UNUSED_RESULT;
 - (nonnull instancetype)init SWIFT_UNAVAILABLE;
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
 @end
@@ -775,13 +745,11 @@ SWIFT_CLASS_NAMED("FBSimulatorServiceContext")
 SWIFT_CLASS_NAMED("FBSimulatorSet")
 @interface FBSimulatorSet : NSObject <FBiOSTargetSet>
 @property (nonatomic, readonly, strong) FBSimulatorControlConfiguration * _Nonnull configuration;
-@property (nonatomic, readonly, strong) SimDeviceSet * _Nonnull deviceSet;
 @property (nonatomic, weak) id <FBiOSTargetSetDelegate> _Nullable delegate;
 @property (nonatomic, readonly, strong) id <FBControlCoreLogger> _Nullable logger;
 @property (nonatomic, readonly, strong) id <FBEventReporter> _Nullable reporter;
 @property (nonatomic, readonly, strong) dispatch_queue_t _Nonnull workQueue;
 @property (nonatomic, readonly, strong) dispatch_queue_t _Nonnull asyncQueue;
-+ (FBSimulatorSet * _Nonnull)setWithConfiguration:(FBSimulatorControlConfiguration * _Nonnull)configuration deviceSet:(SimDeviceSet * _Nonnull)deviceSet delegate:(id <FBiOSTargetSetDelegate> _Nullable)delegate logger:(id <FBControlCoreLogger> _Nullable)logger reporter:(id <FBEventReporter> _Nullable)reporter SWIFT_WARN_UNUSED_RESULT;
 - (id <FBiOSTargetInfo> _Nullable)targetWithUDID:(NSString * _Nonnull)udid SWIFT_WARN_UNUSED_RESULT;
 - (FBSimulator * _Nullable)simulatorWithUDID:(NSString * _Nonnull)udid SWIFT_WARN_UNUSED_RESULT;
 - (FBFuture<FBSimulator *> * _Nonnull)createSimulatorWithConfiguration:(FBSimulatorConfiguration * _Nonnull)configuration SWIFT_WARN_UNUSED_RESULT;
@@ -1255,7 +1223,6 @@ extern "C" {
 #if __has_warning("-Watimport-in-framework-header")
 #pragma clang diagnostic ignored "-Watimport-in-framework-header"
 #endif
-@import AccessibilityPlatformTranslation;
 @import CoreFoundation;
 @import CoreGraphics;
 @import Dispatch;
@@ -1287,25 +1254,8 @@ extern "C" {
 
 #if defined(__OBJC__)
 
-@class NSString;
-/// Bridges the asynchronous CoreSimulator accessibility API to the synchronous
-/// callback model <code>AXPTranslator</code> expects. Holds the token→request registry and,
-/// per request, performs the translator handshake and converts the lazy AXP
-/// attribute callbacks into synchronous CoreSimulator XPC round-trips.
-/// Created and driven entirely from Swift in this module (see
-/// <code>FBSimulatorAccessibilityCommands</code>). It remains an <code>@objc</code>/<code>NSObject</code> class
-/// only because it conforms to the Objective-C <code>AXPTranslationTokenDelegateHelper</code>
-/// protocol and is installed as <code>AXPTranslator</code>’s bridge-token delegate.
-SWIFT_CLASS_NAMED("FBAXTranslationDispatcher")
-@interface FBAXTranslationDispatcher : NSObject <AXPTranslationTokenDelegateHelper>
-- (AXPTranslationCallback _Nonnull)accessibilityTranslationDelegateBridgeCallbackWithToken:(NSString * _Nonnull)token SWIFT_WARN_UNUSED_RESULT;
-- (CGRect)accessibilityTranslationConvertPlatformFrameToSystem:(CGRect)rect withToken:(NSString * _Nonnull)token SWIFT_WARN_UNUSED_RESULT;
-- (id _Nullable)accessibilityTranslationRootParentWithToken:(NSString * _Nonnull)token SWIFT_WARN_UNUSED_RESULT;
-- (nonnull instancetype)init SWIFT_UNAVAILABLE;
-+ (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
-@end
-
 @class FBSimulator;
+@class NSString;
 @class NSNull;
 @protocol FBControlCoreLogger;
 SWIFT_CLASS_NAMED("FBAppleSimctlCommandExecutor")
@@ -1358,10 +1308,6 @@ SWIFT_CLASS("_TtC18FBSimulatorControl38FBLocationServicesModificationStrategy")
 
 SWIFT_CLASS("_TtC18FBSimulatorControl32FBPreferenceModificationStrategy")
 @interface FBPreferenceModificationStrategy : FBDefaultsModificationStrategy
-@end
-
-@interface FBSimulator (SWIFT_EXTENSION(FBSimulatorControl))
-@property (nonatomic, readonly, strong) FBAXTranslationDispatcher * _Nonnull accessibilityTranslationDispatcher;
 @end
 
 /// Dark/Light mode appearance.
@@ -1430,8 +1376,6 @@ SWIFT_CLASS_NAMED("FBSimulatorConfiguration")
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
 @end
 
-@class SimRuntime;
-@class SimDeviceType;
 @interface FBSimulatorConfiguration (SWIFT_EXTENSION(FBSimulatorControl))
 - (FBSimulatorConfiguration * _Nullable)newestAvailableOSAndReturnError:(NSError * _Nullable * _Nullable)error SWIFT_WARN_UNUSED_RESULT;
 - (FBSimulatorConfiguration * _Nullable)oldestAvailableOSAndReturnError:(NSError * _Nullable * _Nullable)error SWIFT_WARN_UNUSED_RESULT;
@@ -1442,8 +1386,6 @@ SWIFT_CLASS_NAMED("FBSimulatorConfiguration")
 + (NSArray<FBOSVersion *> * _Nullable)supportedOSVersionsForDevice:(FBDeviceType * _Nonnull)device error:(NSError * _Nullable * _Nullable)error SWIFT_WARN_UNUSED_RESULT;
 + (NSArray<FBSimulatorConfiguration *> * _Nullable)allAvailableDefaultConfigurationsWithLogger:(id <FBControlCoreLogger> _Nullable)logger error:(NSError * _Nullable * _Nullable)error SWIFT_WARN_UNUSED_RESULT;
 + (NSArray<FBSimulatorConfiguration *> * _Nullable)allAvailableDefaultConfigurationsWithAbsentOSVersionsOut:(NSArray * _Nullable * _Nullable)absentOSVersionsOut absentDeviceTypesOut:(NSArray * _Nullable * _Nullable)absentDeviceTypesOut error:(NSError * _Nullable * _Nullable)error SWIFT_WARN_UNUSED_RESULT;
-- (SimRuntime * _Nullable)obtainRuntimeWithError:(NSError * _Nullable * _Nullable)error SWIFT_WARN_UNUSED_RESULT;
-- (SimDeviceType * _Nullable)obtainDeviceTypeWithError:(NSError * _Nullable * _Nullable)error SWIFT_WARN_UNUSED_RESULT;
 @end
 
 /// Dynamic Type content size categories.
@@ -1666,15 +1608,11 @@ SWIFT_CLASS("_TtC18FBSimulatorControl29FBSimulatorScreenshotCommands")
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
 @end
 
-@class SimDeviceSet;
 SWIFT_CLASS_NAMED("FBSimulatorServiceContext")
 @interface FBSimulatorServiceContext : NSObject
 + (FBSimulatorServiceContext * _Nullable)sharedServiceContextAndReturnError:(NSError * _Nullable * _Nullable)error SWIFT_WARN_UNUSED_RESULT;
 + (FBSimulatorServiceContext * _Nullable)sharedServiceContextWithLogger:(id <FBControlCoreLogger> _Nullable)logger error:(NSError * _Nullable * _Nullable)error SWIFT_WARN_UNUSED_RESULT;
 - (NSArray<NSString *> * _Nonnull)pathsOfAllDeviceSets SWIFT_WARN_UNUSED_RESULT;
-- (NSArray<SimRuntime *> * _Nonnull)supportedRuntimes SWIFT_WARN_UNUSED_RESULT;
-- (NSArray<SimDeviceType *> * _Nonnull)supportedDeviceTypes SWIFT_WARN_UNUSED_RESULT;
-- (SimDeviceSet * _Nullable)createDeviceSetWithConfiguration:(FBSimulatorControlConfiguration * _Nonnull)configuration error:(NSError * _Nullable * _Nullable)error SWIFT_WARN_UNUSED_RESULT;
 - (nonnull instancetype)init SWIFT_UNAVAILABLE;
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
 @end
@@ -1684,13 +1622,11 @@ SWIFT_CLASS_NAMED("FBSimulatorServiceContext")
 SWIFT_CLASS_NAMED("FBSimulatorSet")
 @interface FBSimulatorSet : NSObject <FBiOSTargetSet>
 @property (nonatomic, readonly, strong) FBSimulatorControlConfiguration * _Nonnull configuration;
-@property (nonatomic, readonly, strong) SimDeviceSet * _Nonnull deviceSet;
 @property (nonatomic, weak) id <FBiOSTargetSetDelegate> _Nullable delegate;
 @property (nonatomic, readonly, strong) id <FBControlCoreLogger> _Nullable logger;
 @property (nonatomic, readonly, strong) id <FBEventReporter> _Nullable reporter;
 @property (nonatomic, readonly, strong) dispatch_queue_t _Nonnull workQueue;
 @property (nonatomic, readonly, strong) dispatch_queue_t _Nonnull asyncQueue;
-+ (FBSimulatorSet * _Nonnull)setWithConfiguration:(FBSimulatorControlConfiguration * _Nonnull)configuration deviceSet:(SimDeviceSet * _Nonnull)deviceSet delegate:(id <FBiOSTargetSetDelegate> _Nullable)delegate logger:(id <FBControlCoreLogger> _Nullable)logger reporter:(id <FBEventReporter> _Nullable)reporter SWIFT_WARN_UNUSED_RESULT;
 - (id <FBiOSTargetInfo> _Nullable)targetWithUDID:(NSString * _Nonnull)udid SWIFT_WARN_UNUSED_RESULT;
 - (FBSimulator * _Nullable)simulatorWithUDID:(NSString * _Nonnull)udid SWIFT_WARN_UNUSED_RESULT;
 - (FBFuture<FBSimulator *> * _Nonnull)createSimulatorWithConfiguration:(FBSimulatorConfiguration * _Nonnull)configuration SWIFT_WARN_UNUSED_RESULT;

@@ -5,8 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import AccessibilityPlatformTranslation
-import CoreSimulator
+@_implementationOnly import AccessibilityPlatformTranslation
+@_implementationOnly import CoreSimulator
 import FBControlCore
 import Foundation
 
@@ -18,10 +18,10 @@ import Foundation
 ///
 /// Created and driven entirely from Swift in this module (the dispatcher, the
 /// element handle, and the facade), so it is a plain Swift class.
-public final class FBAXTranslationRequest {
+final class FBAXTranslationRequest {
 
   /// What the request resolves and how it serializes.
-  public enum Kind {
+  enum Kind {
     /// The frontmost application's element tree, with frame-coverage calculation
     /// and remote (separate-process) content discovery.
     case frontmostApplication
@@ -36,19 +36,19 @@ public final class FBAXTranslationRequest {
   // indefinitely on a `DispatchGroup.wait`.
   private static let defaultRequestTimeoutSeconds: TimeInterval = 5.0
 
-  public let kind: Kind
-  public let token: String
-  public var device: SimDevice?
-  public var collector: FBAccessibilityProfilingCollector?
-  public var logger: FBControlCoreLogger?
-  public var translator: AXPTranslator?
+  let kind: Kind
+  let token: String
+  var device: SimDevice?
+  var collector: FBAccessibilityProfilingCollector?
+  var logger: FBControlCoreLogger?
+  var translator: AXPTranslator?
 
   /// Per-request timeout (seconds) applied to each synchronous CoreSimulator
   /// accessibility XPC round-trip. `0` (or negative) is "wait nothing". There is
   /// no "wait forever" mode — a stalled XPC service never hangs the caller.
-  public var requestTimeoutSeconds: TimeInterval
+  var requestTimeoutSeconds: TimeInterval
 
-  public init(kind: Kind) {
+  init(kind: Kind) {
     self.kind = kind
     self.token = UUID().uuidString
     self.requestTimeoutSeconds = Self.defaultRequestTimeoutSeconds
@@ -56,12 +56,12 @@ public final class FBAXTranslationRequest {
 
   /// A fresh request of the same kind with a new token, used to retry after
   /// SpringBoard remediation.
-  public func cloneWithNewToken() -> FBAXTranslationRequest {
+  func cloneWithNewToken() -> FBAXTranslationRequest {
     FBAXTranslationRequest(kind: kind)
   }
 
   /// Resolves the root translation object for this request's kind.
-  public func perform(withTranslator translator: AXPTranslator) -> AXPTranslationObject? {
+  func perform(withTranslator translator: AXPTranslator) -> AXPTranslationObject? {
     switch kind {
     case .frontmostApplication:
       return translator.frontmostApplication(withDisplayId: 0, bridgeDelegateToken: token)

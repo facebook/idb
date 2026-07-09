@@ -6,7 +6,7 @@
  */
 
 @_implementationOnly @preconcurrency import CoreSimDeviceIO
-@preconcurrency import CoreSimulator
+@_implementationOnly import CoreSimulator
 @preconcurrency import FBControlCore
 import Foundation
 import IOSurface

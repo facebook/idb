@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@preconcurrency import CoreSimulator
+@_implementationOnly import CoreSimulator
 @preconcurrency import FBControlCore
 @preconcurrency import Foundation
 
@@ -159,7 +159,7 @@ extension FBSimulatorConfiguration {
   // MARK: - Obtaining CoreSimulator Classes
 
   @objc(obtainRuntimeWithError:)
-  public func obtainRuntime() throws -> SimRuntime {
+  func obtainRuntime() throws -> SimRuntime {
     let runtimes = try FBSimulatorConfiguration.supportedRuntimes()
     let matchingRuntimes = (runtimes as NSArray).filtered(using: runtimePredicate) as! [SimRuntime]
     if matchingRuntimes.isEmpty {
@@ -172,7 +172,7 @@ extension FBSimulatorConfiguration {
   }
 
   @objc(obtainDeviceTypeWithError:)
-  public func obtainDeviceType() throws -> SimDeviceType {
+  func obtainDeviceType() throws -> SimDeviceType {
     let deviceTypes = try FBSimulatorConfiguration.supportedDeviceTypes()
     let matchingDeviceTypes = (deviceTypes as NSArray).filtered(using: FBSimulatorConfiguration.deviceTypePredicate(device)) as! [SimDeviceType]
     if matchingDeviceTypes.isEmpty {

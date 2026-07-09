@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@preconcurrency import CoreSimulator
+@_implementationOnly @preconcurrency import CoreSimulator
 @preconcurrency import FBControlCore
 import Foundation
 
@@ -15,7 +15,7 @@ public final class FBSimulatorSet: NSObject, FBiOSTargetSet {
   // MARK: - Properties
 
   @objc public let configuration: FBSimulatorControlConfiguration
-  @objc public let deviceSet: SimDeviceSet
+  @objc let deviceSet: SimDeviceSet
   @objc public weak var delegate: (any FBiOSTargetSetDelegate)?
   @objc public let logger: (any FBControlCoreLogger)?
   @objc public let reporter: (any FBEventReporter)?
@@ -29,7 +29,7 @@ public final class FBSimulatorSet: NSObject, FBiOSTargetSet {
   // MARK: - Initializers
 
   @objc(setWithConfiguration:deviceSet:delegate:logger:reporter:)
-  public class func set(withConfiguration configuration: FBSimulatorControlConfiguration, deviceSet: SimDeviceSet, delegate: (any FBiOSTargetSetDelegate)?, logger: (any FBControlCoreLogger)?, reporter: (any FBEventReporter)?) -> FBSimulatorSet {
+  class func set(withConfiguration configuration: FBSimulatorControlConfiguration, deviceSet: SimDeviceSet, delegate: (any FBiOSTargetSetDelegate)?, logger: (any FBControlCoreLogger)?, reporter: (any FBEventReporter)?) -> FBSimulatorSet {
     FBSimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworksOrAbort()
     return FBSimulatorSet(configuration: configuration, deviceSet: deviceSet, delegate: delegate, logger: logger, reporter: reporter)
   }

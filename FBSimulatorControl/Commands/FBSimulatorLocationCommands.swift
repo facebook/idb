@@ -7,7 +7,7 @@
 
 // swiftlint:disable force_cast
 
-@preconcurrency import CoreSimulator
+@_implementationOnly import CoreSimulator
 import FBControlCore
 import Foundation
 
