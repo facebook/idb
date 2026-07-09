@@ -10,7 +10,7 @@
 IDBGRPCSwift/*.swift
 
 ## Build & Test Generated
-build/
+Build/
 fbsimctl/cli-tests/executable-under-test
 DerivedData
 libMaculator.dylib

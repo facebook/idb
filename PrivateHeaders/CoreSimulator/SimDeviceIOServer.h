@@ -6,16 +6,15 @@
  */
 
 #import <CoreSimulator/SimDeviceIO.h>
-
 #import <CoreSimulator/SimDeviceIOInterface-Protocol.h>
 
 @class NSArray, NSDictionary;
 
 @interface SimDeviceIOServer : SimDeviceIO <SimDeviceIOInterface>
 {
-    NSDictionary *_loadedBundles;
-    NSArray *_ioPorts;
-    NSArray *_ioPortProxies;
+  NSDictionary *_loadedBundles;
+  NSArray *_ioPorts;
+  NSArray *_ioPortProxies;
 }
 
 @property (nonatomic, copy) NSArray *ioPortProxies;
@@ -24,10 +23,6 @@
 
 - (BOOL)unregisterService:(id)arg1 error:(id *)arg2;
 - (BOOL)registerPort:(unsigned int)arg1 service:(id)arg2 error:(id *)arg3;
-- (id)tvOutDisplayDescriptorState;
-- (id)mainDisplayDescriptorState;
-- (id)integratedDisplayDescriptorState;
 - (BOOL)unloadAllBundles;
-- (BOOL)loadAllBundles;
 
 @end

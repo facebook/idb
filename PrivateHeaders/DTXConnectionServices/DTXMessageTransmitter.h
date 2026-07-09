@@ -9,7 +9,7 @@
 
 @interface DTXMessageTransmitter : NSObject
 {
-    unsigned int _suggestedFragmentSize;
+  unsigned int _suggestedFragmentSize;
 }
 
 @property unsigned int suggestedFragmentSize; // @synthesize suggestedFragmentSize=_suggestedFragmentSize;
@@ -17,4 +17,3 @@
 - (unsigned int)fragmentsForLength:(unsigned long long)arg1;
 
 @end
-

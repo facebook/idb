@@ -10,8 +10,6 @@
 #import <DTXConnectionServices/DTXMessage.h>
 
 @interface DTXLegacyDictionaryMessage : DTXMessage
-{
-}
+{}
 
 @end
-

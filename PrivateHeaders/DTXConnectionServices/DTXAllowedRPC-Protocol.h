@@ -9,4 +9,3 @@
 
 @protocol DTXAllowedRPC <NSObject>
 @end
-

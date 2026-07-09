@@ -7,39 +7,30 @@
 
 #import <Foundation/Foundation.h>
 
-#import <CoreSimulator/NSPasteboardItemDataProvider-Protocol.h>
+NS_ASSUME_NONNULL_BEGIN
 
-@class NSArray, NSMapTable, NSMutableArray, NSMutableDictionary, NSPasteboardItem, NSString;
+/**
+ A single typed item on a simulator pasteboard.
 
-@interface SimPasteboardItem : NSObject <NSPasteboardItemDataProvider>
-{
-    BOOL _typesAllResolved;
-    NSMutableDictionary *_dataDictionary;
-    NSMutableArray *_preferredOrderedTypes;
-    NSMapTable *_promisedDataTypes;
-    NSPasteboardItem *_nsPasteboardItem;
-}
+ This is the in-process CoreSimulator pasteboard item present up to and including
+ Xcode 26.2. Apple removed it in later CoreSimulator (the pasteboard was reimplemented
+ in the Swift SimPasteboardPlus framework). It is therefore referenced only behind a
+ runtime availability guard, and the declarations below are a subset of the original
+ class limited to the members used for plain-text get/set.
+ */
+@interface SimPasteboardItem : NSObject
 
-+ (id)itemFromNSPasteboardItem:(id)arg1 options:(id)arg2;
-@property (nonatomic, assign) BOOL typesAllResolved;
-@property (retain, nonatomic) NSPasteboardItem *nsPasteboardItem;
-@property (retain, nonatomic) NSMapTable *promisedDataTypes;
-@property (retain, nonatomic) NSMutableArray *preferredOrderedTypes;
-@property (retain, nonatomic) NSMutableDictionary *dataDictionary;
+- (instancetype)init;
 
-- (void)resolveAllTypes;
-- (void)pasteboard:(id)arg1 item:(id)arg2 provideDataForType:(id)arg3;
-@property (atomic, copy, readonly) NSPasteboardItem *nsPasteboardRepresentation;
-@property (atomic, copy, readonly) NSArray *types;
-- (id)valueForType:(id)arg1;
-- (BOOL)setValue:(id)arg1 forType:(id)arg2;
-- (BOOL)setDataProvider:(id)arg1 forTypes:(id)arg2;
-- (id)init;
-@property (readonly, copy, nonatomic) NSArray *internalRepresentation;
+/// The data flavours (UTIs) carried by the item, e.g. @"public.utf8-plain-text".
+@property (atomic, copy, readonly) NSArray<NSString *> *types;
 
-// Remaining properties
-@property (atomic, copy, readonly) NSString *debugDescription;
-@property (atomic, readonly) unsigned long long hash;
-@property (atomic, readonly) Class superclass;
+/// The value stored for a UTI. For text flavours this is an NSString (or NSData of UTF-8 bytes).
+- (nullable id)valueForType:(NSString *)type;
+
+/// Stores a value for a UTI. Returns NO if the value could not be set.
+- (BOOL)setValue:(id)value forType:(NSString *)type;
 
 @end
+
+NS_ASSUME_NONNULL_END

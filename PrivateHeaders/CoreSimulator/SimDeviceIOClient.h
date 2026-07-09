@@ -12,17 +12,16 @@
 
 @interface SimDeviceIOClient : SimDeviceIO
 {
-    NSArray *_deviceIOPorts;
-    struct NSMutableDictionary *_consumerProxies;
-    NSObject<OS_dispatch_queue> *_executionQueue;
+  NSArray *_deviceIOPorts;
+  struct NSMutableDictionary *_consumerProxies;
+  NSObject<OS_dispatch_queue> *_executionQueue;
 }
 
-@property (retain, nonatomic) NSObject<OS_dispatch_queue> *executionQueue;
-@property (retain, nonatomic) NSMutableDictionary *consumerProxies;
+@property (nonatomic, retain) NSObject<OS_dispatch_queue> *executionQueue;
+@property (nonatomic, retain) NSMutableDictionary *consumerProxies;
 @property (nonatomic, copy) NSArray *deviceIOPorts;
 
 - (void)updateIOPorts;
-- (void)detachConsumer:(id)arg1 fromPort:(id)arg2;
 - (id)ioPorts;
 - (void)dealloc;
 - (id)initWithDevice:(id)arg1;

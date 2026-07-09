@@ -11,14 +11,14 @@
 
 @interface DTXRemoteInvocationReceipt : NSObject
 {
-    dispatch_queue_t _guard;
-    CDUnknownBlockType _completionHandler;
-    id _returnValue;
-    unsigned int _returnType;
+  dispatch_queue_t _guard;
+  CDUnknownBlockType _completionHandler;
+  id _returnValue;
+  unsigned int _returnType;
 }
 
 - (void)invokeCompletionWithReturnValue:(id)arg1 error:(id)arg2;
-- (void)handleCompletion:(void(^)(NSNumber *version, NSError *error))arg1;
+- (void)handleCompletion:(void (^)(NSNumber *version, NSError *error))arg1;
 - (void)_checkedAssign:(CDUnknownBlockType)arg1;
 - (void)dealloc;
 - (id)init;

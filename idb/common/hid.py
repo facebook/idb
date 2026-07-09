@@ -6,7 +6,7 @@
 
 # pyre-strict
 
-from collections.abc import AsyncIterator, Iterable
+from collections.abc import AsyncIterator, Iterable, Iterator
 from typing import Dict, List, Optional, Tuple
 
 from idb.common.types import (
@@ -16,6 +16,7 @@ from idb.common.types import (
     HIDDirection,
     HIDEvent,
     HIDKey,
+    HIDPinch,
     HIDPress,
     HIDPressAction,
     HIDSwipe,
@@ -26,6 +27,23 @@ from idb.common.types import (
 
 def tap_to_events(x: float, y: float, duration: float | None = None) -> list[HIDEvent]:
     return _press_with_duration(HIDTouch(point=Point(x=x, y=y)), duration=duration)
+
+
+def multi_tap_to_events(
+    x: float,
+    y: float,
+    count: int = 2,
+    duration: float | None = None,
+    pause: float = 0.1,
+) -> list[HIDEvent]:
+    events = []
+    for i in range(count):
+        if i > 0:
+            events.append(HIDDelay(duration=pause))
+        # pyrefly: ignore [bad-argument-type]
+        events.extend(tap_to_events(x, y, duration))
+    # pyrefly: ignore [bad-return]
+    return events
 
 
 def button_press_to_events(
@@ -44,8 +62,10 @@ def _press_with_duration(
     events = []
     events.append(HIDPress(action=action, direction=HIDDirection.DOWN))
     if duration:
+        # pyrefly: ignore [bad-argument-type]
         events.append(HIDDelay(duration=duration))
     events.append(HIDPress(action=action, direction=HIDDirection.UP))
+    # pyrefly: ignore [bad-return]
     return events
 
 
@@ -66,6 +86,52 @@ def _key_down_event(keycode: int) -> HIDEvent:
 
 def _key_up_event(keycode: int) -> HIDEvent:
     return HIDPress(action=HIDKey(keycode=keycode), direction=HIDDirection.UP)
+
+
+MODIFIER_KEYCODES: dict[str, int] = {
+    "shift": 225,  # Left Shift
+    "control": 224,  # Left Control
+    "option": 226,  # Left Alt/Option
+    "command": 227,  # Left GUI/Command
+    "tab": 43,  # Tab key (used as modifier in iOS Full Keyboard Access)
+}
+
+
+def key_press_with_modifiers_to_events(
+    keycode: int,
+    modifiers: list[str] | None = None,
+    duration: float | None = None,
+) -> list[HIDEvent]:
+    events = []
+    modifier_keycodes = []
+
+    if modifiers:
+        for mod in modifiers:
+            mod_lower = mod.lower()
+            if mod_lower in MODIFIER_KEYCODES:
+                modifier_keycodes.append(MODIFIER_KEYCODES[mod_lower])
+            else:
+                raise ValueError(f"Unknown modifier: {mod}")
+
+    # Press modifiers down
+    for mod_keycode in modifier_keycodes:
+        events.append(_key_down_event(mod_keycode))
+
+    # Press target key
+    events.append(_key_down_event(keycode))
+
+    # Optional delay
+    if duration:
+        events.append(HIDDelay(duration=duration))
+
+    # Release target key
+    events.append(_key_up_event(keycode))
+
+    # Release modifiers in reverse order
+    for mod_keycode in reversed(modifier_keycodes):
+        events.append(_key_up_event(mod_keycode))
+
+    return events
 
 
 def key_press_shifted_to_events(keycode: int) -> list[HIDEvent]:
@@ -192,3 +258,18 @@ async def iterator_to_async_iterator(
 ) -> AsyncIterator[HIDEvent]:
     for event in events:
         yield event
+
+
+def pinch_to_events(
+    center_x: float,
+    center_y: float,
+    scale: float,
+    duration: float = 0.5,
+    radius: float = 100.0,
+) -> Iterator[HIDEvent]:
+    yield HIDPinch(
+        center=Point(x=center_x, y=center_y),
+        scale=scale,
+        duration=duration,
+        radius=radius,
+    )

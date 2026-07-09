@@ -15,7 +15,7 @@ from idb.common.types import ClientManager
 class KillCommand(ManagementCommand):
     @property
     def description(self) -> str:
-        return "Kill the idb daemon"
+        return "Kill all idb companion processes"
 
     @property
     def name(self) -> str:

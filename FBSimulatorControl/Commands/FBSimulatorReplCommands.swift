@@ -1,0 +1,205 @@
+/*
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+import FBControlCore
+import Foundation
+@preconcurrency import XCTestBootstrap
+
+public final class FBSimulatorReplCommands: NSObject, FBiOSTargetCommand {
+
+  // MARK: - Properties
+
+  private weak var simulator: FBSimulator?
+
+  // MARK: - Initializers
+
+  public class func commands(with target: any FBiOSTarget) -> FBSimulatorReplCommands {
+    // swiftlint:disable:next force_cast
+    return FBSimulatorReplCommands(simulator: target as! FBSimulator)
+  }
+
+  private init(simulator: FBSimulator) {
+    self.simulator = simulator
+    super.init()
+  }
+
+  // MARK: - Async
+
+  fileprivate func startReplTestAsync(bundlePath: String) async throws -> ReplSession {
+    guard let simulator = self.simulator else {
+      throw FBSimulatorError.describe("Simulator is deallocated").build()
+    }
+    guard let logger = simulator.logger else {
+      throw FBSimulatorError.describe("Simulator has no logger").build()
+    }
+
+    // Resolve the REPL shim, which is bundled alongside the other shims, as is the
+    // IDBAPI module's .swiftinterface (reported to the driver, which auto-imports it
+    // so injected code reaches the API through `IDB`; the API code itself is linked
+    // into libRepl, which is injected).
+    let shimDirectory = try await bridgeFBFuture(FBXCTestShimConfiguration.findShimDirectory(onQueue: simulator.workQueue, logger: logger))
+    let replDylibPath = shimDirectory.appendingPathComponent("libRepl-iOS.dylib")
+    guard FileManager.default.fileExists(atPath: replDylibPath) else {
+      throw FBSimulatorError.describe("REPL shim not found at expected location \(replDylibPath)").build()
+    }
+    let idbInterfacePath = shimDirectory.appendingPathComponent("IDBAPI.swiftinterface")
+    let extraInterfacePaths = FileManager.default.fileExists(atPath: idbInterfacePath) ? [idbInterfacePath] : []
+
+    // The shim binds this socket; the gRPC handler connects to it.
+    let socketPath = "/tmp/idb_repl_\(UUID().uuidString).sock"
+
+    let bundle = try FBBundleDescriptor.bundle(fromPath: bundlePath)
+    let architectures = Set((bundle.binary?.architectures ?? []).map(\.rawValue))
+
+    let configuration = FBLogicTestConfiguration(
+      environment: [
+        "IDB_REPL_SOCKET_PATH": socketPath,
+        "IDB_REPL_GEN_INTERFACE_DIR": "/tmp/idb_repl_interfaces",
+        "IDB_REPL_PROBE_IMAGE": "ReplTest",
+      ],
+      workingDirectory: simulator.auxillaryDirectory,
+      testBundlePath: bundlePath,
+      waitForDebugger: false,
+      timeout: 3_600, // 1 hour
+      testFilter: "TestRepl/start",
+      mirroring: .fileLogs,
+      coverageConfiguration: nil,
+      binaryPath: bundle.binary?.path,
+      logDirectoryPath: nil,
+      architectures: architectures,
+      injectLibraries: [replDylibPath]
+    )
+
+    let runner = FBLogicTestRunStrategy(
+      target: simulator as any FBiOSTarget & ProcessSpawnCommands & XCTestExtendedCommands,
+      configuration: configuration,
+      reporter: ReplNullReporter(),
+      logger: logger)
+    return ReplSession(socketPath: socketPath, run: runner.execute(), extraInterfacePaths: extraInterfacePaths)
+  }
+
+  fileprivate func startReplSimulatorAsync() async throws -> ReplSession {
+    guard let simulator = self.simulator else {
+      throw FBSimulatorError.describe("Simulator is deallocated").build()
+    }
+
+    // The SimulatorFrameworkBridge binary is bundled alongside the shims, as are
+    // libRepl (which the bridge loads to serve the REPL) and the IDBAPI module's
+    // .swiftinterface (reported to the driver, which auto-imports it so injected
+    // code reaches the API through `IDB`).
+    let bundle = Bundle(for: FBSimulatorReplCommands.self)
+    guard let bridgePath = bundle.path(forResource: "SimulatorFrameworkBridge", ofType: nil) else {
+      throw FBSimulatorError.describe("SimulatorFrameworkBridge binary not found in bundle resources").build()
+    }
+    guard let libReplPath = bundle.path(forResource: "libRepl-iOS", ofType: "dylib") else {
+      throw FBSimulatorError.describe("libRepl-iOS.dylib not found in bundle resources").build()
+    }
+    let idbInterfacePath = bundle.path(forResource: "IDBAPI", ofType: "swiftinterface")
+
+    // The bridge's `repl start` action takes the socket path and libRepl's path
+    // and serves the control socket there. Serving blocks until the socket is
+    // closed, which is what keeps the session alive.
+    let socketPath = "/tmp/idb_repl_\(UUID().uuidString).sock"
+
+    let io: FBProcessIO<AnyObject, AnyObject, AnyObject> = .outputToDevNull()
+    let configuration = FBProcessSpawnConfiguration(
+      launchPath: bridgePath,
+      arguments: ["repl", "start", socketPath, libReplPath],
+      environment: [:],
+      io: io,
+      mode: .posixSpawn
+    )
+
+    // Launch without waiting; `statLoc` completes when the bridge exits (once
+    // the socket is closed), matching the `ReplSession.run` contract.
+    let process = try await simulator.launchProcess(configuration)
+    let run = unsafeBitCast(process.statLoc, to: FBFuture<NSNull>.self)
+    return ReplSession(socketPath: socketPath, run: run, extraInterfacePaths: [idbInterfacePath].compactMap { $0 })
+  }
+
+  fileprivate func startReplAppAsync(bundleID: String) async throws -> ReplSession {
+    guard let simulator = self.simulator else {
+      throw FBSimulatorError.describe("Simulator is deallocated").build()
+    }
+    guard let logger = simulator.logger else {
+      throw FBSimulatorError.describe("Simulator has no logger").build()
+    }
+
+    // Inject libRepl into the launched app from the shim install location (the
+    // same dylib the other contexts use). libRepl's constructor -- gated on
+    // IDB_REPL_APP_AUTOSTART -- starts the control socket inside the app on load.
+    let shimDirectory = try await bridgeFBFuture(FBXCTestShimConfiguration.findShimDirectory(onQueue: simulator.workQueue, logger: logger))
+    let replDylibPath = shimDirectory.appendingPathComponent("libRepl-iOS.dylib")
+    guard FileManager.default.fileExists(atPath: replDylibPath) else {
+      throw FBSimulatorError.describe("REPL shim not found at expected location \(replDylibPath)").build()
+    }
+
+    // Report the IDB API's .swiftinterface (bundled beside libRepl) so the driver
+    // auto-imports it and injected app code can call IDB.*, as the test and
+    // simulator contexts do. The companion reads it host-side, so the app sandbox
+    // need not contain it.
+    let idbInterfacePath = shimDirectory.appendingPathComponent("IDBAPI.swiftinterface")
+    let extraInterfacePaths = FileManager.default.fileExists(atPath: idbInterfacePath) ? [idbInterfacePath] : []
+
+    // The app binds this socket (via libRepl's constructor); the gRPC handler connects.
+    let socketPath = "/tmp/idb_repl_\(UUID().uuidString).sock"
+
+    let io: FBProcessIO<AnyObject, AnyObject, AnyObject> = .outputToDevNull()
+    let configuration = FBApplicationLaunchConfiguration(
+      bundleID: bundleID,
+      bundleName: nil,
+      arguments: [],
+      environment: [
+        "DYLD_INSERT_LIBRARIES": replDylibPath,
+        "IDB_REPL_APP_AUTOSTART": "1",
+        "IDB_REPL_SOCKET_PATH": socketPath,
+      ],
+      waitForDebugger: false,
+      io: io,
+      // Relaunch so a fresh process picks up the injected dylib even if the app is
+      // already running.
+      launchMode: .relaunchIfRunning
+    )
+    _ = try await simulator.launchApplication(configuration)
+
+    // The app outlives the REPL session -- it keeps running and resets for the
+    // next client on disconnect -- so `run` is already resolved: teardown must not
+    // wait for the app to exit.
+    let run: FBFuture<NSNull> = FBFuture(result: NSNull())
+    return ReplSession(socketPath: socketPath, run: run, extraInterfacePaths: extraInterfacePaths)
+  }
+}
+
+// MARK: - FBSimulator+ReplCommands
+
+extension FBSimulator: ReplCommands {
+
+  public func startReplTest(bundlePath: String) async throws -> ReplSession {
+    try await replCommands().startReplTestAsync(bundlePath: bundlePath)
+  }
+
+  public func startReplSimulator() async throws -> ReplSession {
+    try await replCommands().startReplSimulatorAsync()
+  }
+
+  public func startReplApp(bundleID: String) async throws -> ReplSession {
+    try await replCommands().startReplAppAsync(bundleID: bundleID)
+  }
+}
+
+// MARK: - Reporter
+
+/// A no-op logic-test reporter. REPL mode runs the shim's single test purely to
+/// host the control socket, so the normal test-reporting events are discarded.
+final class ReplNullReporter: NSObject, FBLogicXCTestReporter {
+  func processWaitingForDebugger(withProcessIdentifier pid: pid_t) {}
+  func didBeginExecutingTestPlan() {}
+  func didFinishExecutingTestPlan() {}
+  func testHadOutput(_ output: String) {}
+  func handleEventJSONData(_ data: Data) {}
+  func didCrashDuringTest(_ error: Error) {}
+}

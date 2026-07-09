@@ -7,22 +7,22 @@
 
 #import "FBTestConfiguration.h"
 
-#import <FBControlCore/FBControlCore.h>
+#import <objc/runtime.h>
 
+#import <FBControlCore/FBControlCore.h>
+#import <XCTestBootstrap/XCTestBootstrap-Swift.h>
 #import <XCTestPrivate/XCTCapabilitiesBuilder.h>
-#import <XCTestPrivate/XCTestConfiguration.h>
 #import <XCTestPrivate/XCTTestIdentifier.h>
 #import <XCTestPrivate/XCTTestIdentifierSet.h>
 #import <XCTestPrivate/XCTTestIdentifierSetBuilder.h>
-
-#import <objc/runtime.h>
+#import <XCTestPrivate/XCTestConfiguration.h>
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 
 @implementation FBTestConfiguration
 
-+ (nullable instancetype)configurationByWritingToFileWithSessionIdentifier:(NSUUID *)sessionIdentifier moduleName:(NSString *)moduleName testBundlePath:(NSString *)testBundlePath uiTesting:(BOOL)uiTesting testsToRun:(nullable NSSet<NSString *> *)testsToRun testsToSkip:(nullable NSSet<NSString *> *)testsToSkip targetApplicationPath:(nullable NSString *)targetApplicationPath targetApplicationBundleID:(nullable NSString *)targetApplicationBundleID testApplicationDependencies:(nullable NSDictionary<NSString *, NSString*> *)testApplicationDependencies automationFrameworkPath:(nullable NSString *)automationFrameworkPath reportActivities:(BOOL)reportActivities error:(NSError **)error
++ (nullable instancetype)configurationByWritingToFileWithSessionIdentifier:(NSUUID *)sessionIdentifier moduleName:(NSString *)moduleName testBundlePath:(NSString *)testBundlePath uiTesting:(BOOL)uiTesting testsToRun:(nullable NSSet<NSString *> *)testsToRun testsToSkip:(nullable NSSet<NSString *> *)testsToSkip targetApplicationPath:(nullable NSString *)targetApplicationPath targetApplicationBundleID:(nullable NSString *)targetApplicationBundleID testApplicationDependencies:(nullable NSDictionary<NSString *, NSString *> *)testApplicationDependencies automationFrameworkPath:(nullable NSString *)automationFrameworkPath reportActivities:(BOOL)reportActivities error:(NSError * _Nullable * _Nullable)error
 {
   // Construct the XCTestConfiguration class.
   XCTestConfiguration *testConfiguration = [objc_lookUpClass("XCTestConfiguration") new];
@@ -33,7 +33,7 @@
   testConfiguration.reportResultsToIDE = YES;
   testConfiguration.testsMustRunOnMainThread = uiTesting;
   testConfiguration.initializeForUITesting = uiTesting;
-  [self setTestsToRun: testsToRun andTestsToSkip: testsToSkip to: testConfiguration];
+  [self setTestsToRun:testsToRun andTestsToSkip:testsToSkip to:testConfiguration];
   testConfiguration.targetApplicationPath = targetApplicationPath;
   testConfiguration.targetApplicationBundleID = targetApplicationBundleID;
   testConfiguration.automationFrameworkPath = automationFrameworkPath;
@@ -57,7 +57,7 @@
   return [self configurationWithSessionIdentifier:sessionIdentifier moduleName:moduleName testBundlePath:testBundlePath path:testConfigPath uiTesting:uiTesting xcTestConfiguration:testConfiguration];
 }
 
-+ (void) setTestsToRun: (NSSet<NSString *> *) toRun andTestsToSkip: (NSSet<NSString *> *) toSkip to: (XCTestConfiguration *) configuration
++ (void)setTestsToRun:(NSSet<NSString *> *)toRun andTestsToSkip:(NSSet<NSString *> *)toSkip to:(XCTestConfiguration *)configuration
 {
   if (FBXcodeConfiguration.isXcode12_5OrGreater) {
     configuration.testsToSkip = [self xctestIdentifierSetFromSetOfStrings:toSkip];
@@ -68,7 +68,7 @@
   }
 }
 
-+ (nullable XCTTestIdentifierSet *)xctestIdentifierSetFromSetOfStrings:(nullable NSSet<NSString *> *) tests
++ (nullable XCTTestIdentifierSet *)xctestIdentifierSetFromSetOfStrings:(nullable NSSet<NSString *> *)tests
 {
   if (tests == nil) {
     return nil;
@@ -78,8 +78,8 @@
   XCTTestIdentifierSetBuilder *b = [[XCTTestIdentifierSetBuilder_class alloc] init];
   Class XCTTestIdentifier_class = objc_lookUpClass("XCTTestIdentifier");;
   for (NSString *test in tests) {
-    XCTTestIdentifier *identifier = [[XCTTestIdentifier_class alloc] initWithStringRepresentation: test preserveModulePrefix:YES];
-    [b addTestIdentifier: identifier];
+    XCTTestIdentifier *identifier = [[XCTTestIdentifier_class alloc] initWithStringRepresentation:test preserveModulePrefix:YES];
+    [b addTestIdentifier:identifier];
   }
 
   return b.testIdentifierSet;
@@ -88,12 +88,12 @@
 + (instancetype)configurationWithSessionIdentifier:(NSUUID *)sessionIdentifier moduleName:(NSString *)moduleName testBundlePath:(NSString *)testBundlePath path:(NSString *)path uiTesting:(BOOL)uiTesting xcTestConfiguration:(XCTestConfiguration *)xcTestConfiguration
 {
   return [[self alloc]
-    initWithSessionIdentifier:sessionIdentifier
-    moduleName:moduleName
-    testBundlePath:testBundlePath
-    path:path
-    uiTesting:uiTesting
-    xcTestConfiguration:xcTestConfiguration];
+          initWithSessionIdentifier:sessionIdentifier
+          moduleName:moduleName
+          testBundlePath:testBundlePath
+          path:path
+          uiTesting:uiTesting
+          xcTestConfiguration:xcTestConfiguration];
 }
 
 - (instancetype)initWithSessionIdentifier:(NSUUID *)sessionIdentifier moduleName:(NSString *)moduleName testBundlePath:(NSString *)testBundlePath path:(NSString *)path uiTesting:(BOOL)uiTesting xcTestConfiguration:(XCTestConfiguration *)xcTestConfiguration
@@ -108,7 +108,7 @@
   _testBundlePath = testBundlePath;
   _path = path;
   _shouldInitializeForUITesting = uiTesting;
-  _xcTestConfiguration=xcTestConfiguration;
+  _xcTestConfiguration = xcTestConfiguration;
 
   return self;
 }

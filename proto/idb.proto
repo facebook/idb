@@ -67,6 +67,7 @@ service CompanionService {
   rpc xctest_list_tests(XctestListTestsRequest)
       returns (XctestListTestsResponse) {}
   rpc xctest_run(XctestRunRequest) returns (stream XctestRunResponse) {}
+  rpc repl(stream ReplRequest) returns (stream ReplResponse) {}
   // File Operations
   rpc ls(LsRequest) returns (LsResponse) {}
   rpc mkdir(MkdirRequest) returns (MkdirResponse) {}
@@ -389,10 +390,18 @@ message HIDEvent {
     double duration = 1;
   }
 
+  message HIDPinch {
+    Point center = 1;
+    double scale = 2;
+    double duration = 3;
+    double radius = 4;
+  }
+
   oneof event {
     HIDPress press = 1;
     HIDSwipe swipe = 2;
     HIDDelay delay = 3;
+    HIDPinch pinch = 4;
   }
 }
 
@@ -775,6 +784,70 @@ message XctestRunResponse {
   Payload log_directory = 6;
   DebuggerInfo debugger = 7;
   Payload code_coverage_data = 8;
+}
+
+// repl runs a test bundle in REPL mode and bridges compiled dylibs to the
+// in-process shim for execution. The client (idb-repl) compiles user code into
+// a dylib and streams it via Execute; the companion runs it in the test process
+// and streams the result back.
+message ReplRequest {
+  // Sent once, first, to start the session.
+  message Start {
+    string test_bundle_path = 1;
+    enum Context {
+      SIMULATOR = 0;
+      TEST = 1;
+      APP = 2;
+    }
+    Context context = 2;
+    // The bundle id to launch (with the REPL injected) for the APP context.
+    string app_bundle_id = 3;
+  }
+  // Sent for each piece of code to run: a compiled dylib and the symbol to
+  // call.
+  message Execute {
+    bytes dylib = 1;
+    string symbol = 2;
+  }
+  // Sent to end the session (also implied by closing the stream).
+  message Stop {}
+  oneof control {
+    Start start = 1;
+    Execute execute = 2;
+    Stop stop = 3;
+  }
+}
+
+message ReplResponse {
+  // The test is running and the REPL is ready to accept Execute messages.
+  message Ready {
+    // The product family of the connected target: "iphone", "ipad", "watch",
+    // "tv", "mac", or "unknown".
+    string device_type = 1;
+    // The .swiftinterface files available to injected code (the test bundle's
+    // probe-generated modules and the `IDB` module). Sent as contents rather
+    // than paths so the driver can materialize them locally without sharing a
+    // filesystem with the companion.
+    message GeneratedInterface {
+      string module_name = 1;
+      string contents = 2;
+    }
+    repeated GeneratedInterface generated_interfaces = 2;
+  }
+  // The result of executing one Execute message.
+  message Result {
+    bool success = 1;
+    string output = 2;
+  }
+  // The session has ended.
+  message Stopped {
+    string desc = 1;
+  }
+  oneof event {
+    Ready ready = 1;
+    Result result = 2;
+    Stopped stopped = 3;
+  }
 }
 
 // File

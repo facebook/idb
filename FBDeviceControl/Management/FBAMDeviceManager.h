@@ -7,17 +7,15 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBDeviceControl/FBDeviceManager.h>
 #import <FBDeviceControl/FBAMDefines.h>
-
-NS_ASSUME_NONNULL_BEGIN
+#import <FBDeviceControl/FBDeviceManager.h>
 
 @class FBAMDevice;
 
 /**
  Class for obtaining FBAMDevice instances.
  */
-@interface FBAMDeviceManager : FBDeviceManager<FBAMDevice *>
+@interface FBAMDeviceManager : FBDeviceManager <FBAMDevice *>
 
 /**
  The Designated Initializer
@@ -25,11 +23,11 @@ NS_ASSUME_NONNULL_BEGIN
  @param calls the AMDCalls to use.
  @param workQueue the queue on which work should be serialized.
  @param asyncQueue the queue on which asynchronous work can be performed sequentially.
- @param ecidFilter an ECID filter to apply.
+ @param ecidFilter an ECID filter to apply, or `nil` to accept all devices.
  @param logger the logger to use.
  @return a new FBAMDeviceManager instance
  */
-- (instancetype)initWithCalls:(AMDCalls)calls workQueue:(dispatch_queue_t)workQueue asyncQueue:(dispatch_queue_t)asyncQueue ecidFilter:(NSString *)ecidFilter logger:(id<FBControlCoreLogger>)logger;
+- (nonnull instancetype)initWithCalls:(AMDCalls)calls workQueue:(nonnull dispatch_queue_t)workQueue asyncQueue:(nonnull dispatch_queue_t)asyncQueue ecidFilter:(nullable NSString *)ecidFilter logger:(nonnull id<FBControlCoreLogger>)logger;
 
 /**
  Starts using the AMDeviceRef by doing the following:
@@ -43,7 +41,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  @return YES if successful, NO otherwise.
  */
-+ (BOOL)startUsing:(AMDeviceRef)device calls:(AMDCalls)calls logger:(id<FBControlCoreLogger>)logger error:(NSError **)error;
++ (BOOL)startUsing:(AMDeviceRef _Nonnull)device calls:(AMDCalls)calls logger:(nonnull id<FBControlCoreLogger>)logger error:(NSError * _Nullable * _Nullable)error;
 
 /**
  Stops using the AMDeviceRef connections.
@@ -56,8 +54,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  @return YES if successful, NO otherwise.
  */
-+ (BOOL)stopUsing:(AMDeviceRef)device calls:(AMDCalls)calls logger:(id<FBControlCoreLogger>)logger error:(NSError **)error;
++ (BOOL)stopUsing:(AMDeviceRef _Nonnull)device calls:(AMDCalls)calls logger:(nonnull id<FBControlCoreLogger>)logger error:(NSError * _Nullable * _Nullable)error;
 
 @end
-
-NS_ASSUME_NONNULL_END

@@ -1,0 +1,51 @@
+/*
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+#import <XCTest/XCTest.h>
+
+#import <SimulatorFrameworkBridgeLib/HealthSettingsService.h>
+
+@interface HealthSettingsServiceTests : XCTestCase
+@end
+
+@implementation HealthSettingsServiceTests
+
+// HealthKit.framework is not available on macOS, so loadAuthStore()
+// returns nil and every action returns 1. These tests verify the
+// error path when HealthKit is unavailable.
+
+- (void)testListReturnsFailureWhenFrameworkUnavailable
+{
+  XCTAssertEqual(handleHealthSettingsAction(@"list", @"com.example.test", @[]), 1);
+}
+
+- (void)testClearReturnsFailureWhenFrameworkUnavailable
+{
+  XCTAssertEqual(handleHealthSettingsAction(@"clear", @"com.example.test", @[]), 1);
+}
+
+- (void)testApproveReturnsFailureWhenFrameworkUnavailable
+{
+  XCTAssertEqual(handleHealthSettingsAction(@"approve", @"com.example.test", @[@"HKQuantityTypeIdentifierStepCount"]), 1);
+}
+
+- (void)testApproveWithDefaultTypesReturnsFailureWhenFrameworkUnavailable
+{
+  XCTAssertEqual(handleHealthSettingsAction(@"approve", @"com.example.test", @[]), 1);
+}
+
+- (void)testRevokeReturnsFailureWhenFrameworkUnavailable
+{
+  XCTAssertEqual(handleHealthSettingsAction(@"revoke", @"com.example.test", @[@"HKQuantityTypeIdentifierStepCount"]), 1);
+}
+
+- (void)testUnknownActionReturnsFailure
+{
+  XCTAssertEqual(handleHealthSettingsAction(@"frobnicate", @"com.example.test", @[]), 1);
+}
+
+@end

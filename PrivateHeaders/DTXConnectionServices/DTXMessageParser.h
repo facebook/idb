@@ -9,16 +9,16 @@
 
 @interface DTXMessageParser : NSObject
 {
-    const char *_parsingBuffer;
-    unsigned long long _parsingBufferUsed;
-    unsigned long long _parsingBufferSize;
-    dispatch_queue_t _parsingQueue;
-    NSMutableDictionary *_fragmentedBuffersByIdentifier;
-    dispatch_semaphore_t _hasMoreDataSem;
-    dispatch_semaphore_t _wantsMoreDataSem;
-    unsigned long long _desiredSize;
-    BOOL _eof;
-    id <DTXBlockCompressor> _compressor;
+  const char *_parsingBuffer;
+  unsigned long long _parsingBufferUsed;
+  unsigned long long _parsingBufferSize;
+  dispatch_queue_t _parsingQueue;
+  NSMutableDictionary *_fragmentedBuffersByIdentifier;
+  dispatch_semaphore_t _hasMoreDataSem;
+  dispatch_semaphore_t _wantsMoreDataSem;
+  unsigned long long _desiredSize;
+  BOOL _eof;
+  id<DTXBlockCompressor> _compressor;
 }
 
 - (void)replaceCompressor:(id)arg1;
@@ -30,4 +30,3 @@
 - (id)initWithMessageHandler:(CDUnknownBlockType)arg1 andParseExceptionHandler:(CDUnknownBlockType)arg2;
 
 @end
-

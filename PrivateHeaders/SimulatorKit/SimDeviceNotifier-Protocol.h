@@ -5,9 +5,4 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@class OS_dispatch_queue;
-
-@protocol SimDeviceNotifier
-- (unsigned long long)registerNotificationHandlerOnQueue:(OS_dispatch_queue *)arg1 handler:(void (^)(NSDictionary *))arg2;
-- (BOOL)unregisterNotificationHandler:(unsigned long long)arg1 error:(id *)arg2;
-@end
+#import <CoreSimulator/SimDeviceNotifier-Protocol.h>

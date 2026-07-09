@@ -1,0 +1,13 @@
+--- !tapi-tbd
+tbd-version: 4
+targets: [ arm64-macos, x86_64-macos ]
+install-name: '/System/Library/PrivateFrameworks/AccessibilityPlatformTranslation.framework/Versions/A/AccessibilityPlatformTranslation'
+current-version: 0
+compatibility-version: 0
+exports:
+  - targets: [ arm64-macos, x86_64-macos ]
+    objc-classes:
+      - AXPMacPlatformElement
+      - AXPTranslator
+      - AXPTranslatorResponse
+...

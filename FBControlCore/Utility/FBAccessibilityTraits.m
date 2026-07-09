@@ -53,7 +53,7 @@ NSString *AXExtractTypeFromTraits(uint64_t traits)
   return @"Unknown";
 }
 
-#define FBTraitMapEntry(T) @(T): [@#T substringFromIndex:@"AXTrait".length]
+#define FBTraitMapEntry(T) @(T) : [@#T substringFromIndex: @"AXTrait".length]
 NSDictionary<NSNumber *, NSString *> *AXTraitToNameMap(void)
 {
   static NSDictionary<NSNumber *, NSString *> *_mapping;

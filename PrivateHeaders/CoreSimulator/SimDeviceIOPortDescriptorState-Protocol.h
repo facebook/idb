@@ -8,5 +8,5 @@
 #import <CoreSimulator/FoundationXPCProtocolProxyable-Protocol.h>
 
 @protocol SimDeviceIOPortDescriptorState <FoundationXPCProtocolProxyable>
-@property (readonly, nonatomic) int powerState;
+@property (nonatomic, readonly) int powerState;
 @end

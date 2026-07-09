@@ -10,4 +10,3 @@
 @protocol XCTMessagingRole_DebugLogging
 - (id)_XCT_logDebugMessage:(NSString *)arg1;
 @end
-

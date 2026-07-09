@@ -14,4 +14,12 @@
  */
 + (NSArray<SimDeviceType *> *)supportedDeviceTypes;
 
+/**
+ Removed in Xcode 27 (CoreSimulator 1155.4). The bundle/path initializers are no
+ longer exposed; SimDeviceType instances are vended via SimServiceContext. Not
+ called by idb/FBSimulatorControl.
+ */
+- (id)initWithBundle:(id)arg1;
+- (id)initWithPath:(id)arg1;
+
 @end

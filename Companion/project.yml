@@ -1,0 +1,205 @@
+name: idb_companion
+
+options:
+  deploymentTarget:
+    macOS: "12.0"
+  createIntermediateGroups: true
+  groupSortPosition: top
+  bundleIdPrefix: com.facebook
+
+configFiles:
+  Debug: ../Configuration/Shared.xcconfig
+  Release: ../Configuration/Shared.xcconfig
+
+settings:
+  base:
+    HEADER_SEARCH_PATHS: $(inherited) $(SRCROOT)/../PrivateHeaders
+
+packages:
+  grpc-swift:
+    url: https://github.com/grpc/grpc-swift.git
+    from: 1.19.1
+  swift-protobuf:
+    url: https://github.com/apple/swift-protobuf.git
+    from: 1.28.0
+  swift-log:
+    url: https://github.com/apple/swift-log.git
+    from: 1.5.0
+  swift-nio:
+    url: https://github.com/apple/swift-nio.git
+    from: 2.50.0
+  swift-nio-http2:
+    url: https://github.com/apple/swift-nio-http2.git
+    from: 1.28.0
+  swift-nio-ssl:
+    url: https://github.com/apple/swift-nio-ssl.git
+    from: 2.25.0
+  swift-collections:
+    url: https://github.com/apple/swift-collections.git
+    from: 1.0.0
+  swift-argument-parser:
+    url: https://github.com/apple/swift-argument-parser.git
+    from: 1.3.0
+
+targets:
+  IDBGRPCSwift:
+    type: framework
+    platform: macOS
+    deploymentTarget: "12.0"
+    preBuildScripts:
+      - name: Check gRPC Swift files exist
+        script: |
+          set -e
+          OUTPUT_DIR="${SRCROOT}/../IDBGRPCSwift"
+
+          if [ -f "$OUTPUT_DIR/idb.pb.swift" ] && [ -f "$OUTPUT_DIR/idb.grpc.swift" ]; then
+            echo "gRPC Swift files exist"
+            exit 0
+          fi
+
+          echo "error: gRPC Swift files not found. Run: ./build.sh generate-proto"
+          exit 1
+        inputFiles:
+          - $(SRCROOT)/../proto/idb.proto
+        outputFiles:
+          - $(SRCROOT)/../IDBGRPCSwift/idb.pb.swift
+          - $(SRCROOT)/../IDBGRPCSwift/idb.grpc.swift
+    sources:
+      - path: ../IDBGRPCSwift
+        optional: true
+    settings:
+      base:
+        MACOSX_DEPLOYMENT_TARGET: "12.0"
+        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.IDBGRPCSwift
+        PRODUCT_NAME: IDBGRPCSwift
+        DEFINES_MODULE: YES
+        MACH_O_TYPE: staticlib
+        SWIFT_VERSION: "6.0"
+        GENERATE_INFOPLIST_FILE: YES
+    dependencies:
+      - package: grpc-swift
+        product: GRPC
+      - package: swift-protobuf
+        product: SwiftProtobuf
+      - package: swift-log
+        product: Logging
+      - package: swift-nio
+        product: NIOCore
+      - package: swift-nio-http2
+        product: NIOHTTP2
+      - package: swift-nio-ssl
+        product: NIOSSL
+      - package: swift-collections
+        product: DequeModule
+      - sdk: Foundation.framework
+
+  idb_companion:
+    type: tool
+    platform: macOS
+    deploymentTarget: "12.0"
+    sources:
+      - path: .
+        excludes:
+          - "**/*-Info.plist"
+          - "**/*.xcconfig"
+          - "project.yml"
+      # BuildInfo.swift is generated into DERIVED_FILE_DIR by the preBuildScript
+      # below. xcodegen needs a concrete pbxproj reference so the swiftc invocation
+      # picks it up. Using `optional: true` allows xcodegen to add the reference
+      # even though the file doesn't exist at project-generation time.
+      - path: $(DERIVED_FILE_DIR)/BuildInfo.swift
+        optional: true
+        type: file
+    preBuildScripts:
+      - name: Generate BuildInfo.swift
+        # Stamp build date/time into a Swift file inside DERIVED_FILE_DIR so that
+        # main.swift can reference `kBuildDate` / `kBuildTime`. Mirrors the
+        # `:BuildInfo` genrule in fbobjc/Tools/idb/defs.bzl.
+        script: |
+          set -e
+          mkdir -p "$DERIVED_FILE_DIR"
+          {
+            date +'let kBuildDate = "%b %-d %Y"'
+            date +'let kBuildTime = "%H:%M:%S"'
+          } > "$DERIVED_FILE_DIR/BuildInfo.swift"
+        # No inputFiles means Xcode runs this every build (the timestamp must
+        # always be fresh).
+        outputFiles:
+          - $(DERIVED_FILE_DIR)/BuildInfo.swift
+    settings:
+      base:
+        MACOSX_DEPLOYMENT_TARGET: "12.0"
+        PRODUCT_NAME: idb_companion
+        SWIFT_VERSION: "5.0"
+        SWIFT_OBJC_INTERFACE_HEADER_NAME: idb-Swift.h
+        INFOPLIST_FILE: $(SRCROOT)/Info.plist
+        HEADER_SEARCH_PATHS: $(inherited) $(SRCROOT)/../PrivateHeaders
+        FRAMEWORK_SEARCH_PATHS: $(inherited) $(SRCROOT)/../Build/Products/Release
+        # Suppress warnings for existing code patterns that trigger errors with strict settings
+        OTHER_CFLAGS: $(inherited) -Wno-implicit-int-conversion -Wno-missing-field-initializers
+        # The frameworks are linked as static archives (MACH_O_TYPE=staticlib), so
+        # pass -ObjC to load every Objective-C class and category from them.
+        # Without it the linker drops category-only object files and their
+        # selectors are missing at runtime.
+        #
+        # CoreSimulator and AccessibilityPlatformTranslation are runtime-loaded
+        # private frameworks. FBSimulatorControl used to weak-link their TBD stubs
+        # at its own link step, but a static archive has no link step, so the final
+        # executable must carry the weak links instead.
+        OTHER_LDFLAGS: $(inherited) -ObjC -weak_library $(SRCROOT)/../PrivateHeaders/CoreSimulator/CoreSimulator.tbd -weak_library $(SRCROOT)/../PrivateHeaders/AccessibilityPlatformTranslation/AccessibilityPlatformTranslation.tbd
+        # Use ad-hoc code signing for local development
+        CODE_SIGN_IDENTITY: "-"
+        CODE_SIGNING_REQUIRED: NO
+        CODE_SIGNING_ALLOWED: NO
+        # Add rpath to find frameworks in same directory and PackageFrameworks
+        LD_RUNPATH_SEARCH_PATHS: $(inherited) @executable_path @executable_path/../Frameworks @executable_path/PackageFrameworks
+    dependencies:
+      - framework: ../Build/Products/Release/FBControlCore.framework
+        embed: false
+      - framework: ../Build/Products/Release/XCTestBootstrap.framework
+        embed: false
+      - framework: ../Build/Products/Release/FBSimulatorControl.framework
+        embed: false
+      - framework: ../Build/Products/Release/FBDeviceControl.framework
+        embed: false
+      - framework: ../Build/Products/Release/CompanionLib.framework
+        embed: false
+      - framework: ../Build/Products/Release/CompanionUtilities.framework
+        embed: false
+      - target: IDBGRPCSwift
+        embed: false
+      - sdk: Foundation.framework
+
+  # The `idb-repl` CLI (Buck: fbsource//fbobjc/Tools/idb:idb-repl). A small gRPC
+  # client that talks to a companion to drive a test/simulator REPL. It links the
+  # IDBGRPCSwift static archive (which bundles the gRPC/NIO/protobuf closure) and
+  # ArgumentParser; like idb_companion it must NOT depend on the gRPC packages
+  # directly (those symbols come from IDBGRPCSwift, and a second copy would be a
+  # duplicate-symbol error). It is placed in the distribution next to idb_companion.
+  idb-repl:
+    type: tool
+    platform: macOS
+    deploymentTarget: "12.0"
+    sources:
+      - path: ../REPL/CLI
+    settings:
+      base:
+        MACOSX_DEPLOYMENT_TARGET: "12.0"
+        PRODUCT_NAME: idb-repl
+        SWIFT_VERSION: "5.0"
+        GENERATE_INFOPLIST_FILE: YES
+        # The entry point is `@main struct TestRepl` in main.swift. Without
+        # -parse-as-library, Swift treats a file named main.swift as top-level
+        # script code, which conflicts with @main ("'main' attribute cannot be
+        # used in a module that contains top-level code").
+        OTHER_SWIFT_FLAGS: $(inherited) -parse-as-library
+        # Use ad-hoc code signing for local development
+        CODE_SIGN_IDENTITY: "-"
+        CODE_SIGNING_REQUIRED: NO
+        CODE_SIGNING_ALLOWED: NO
+    dependencies:
+      - target: IDBGRPCSwift
+        embed: false
+      - package: swift-argument-parser
+        product: ArgumentParser
+      - sdk: Foundation.framework

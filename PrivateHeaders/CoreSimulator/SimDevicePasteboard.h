@@ -7,58 +7,35 @@
 
 #import <Foundation/Foundation.h>
 
-#import <CoreSimulator/SimPasteboard-Protocol.h>
+NS_ASSUME_NONNULL_BEGIN
 
-@class NSArray, NSDate, SimDevice, SimDeviceNotificationManager, SimDevicePasteboardConnection, SimMachPortServer;
-@protocol OS_dispatch_queue, OS_dispatch_source;
+@class SimPasteboardItem;
 
-@interface SimDevicePasteboard : NSObject <SimPasteboard>
-{
-    NSObject<OS_dispatch_queue> *_itemsQueue;
-    unsigned long long _changeCount;
-    NSArray *_items;
-    SimDevice *_device;
-    SimDevicePasteboardConnection *_pasteboardConnection;
-    SimMachPortServer *_notificationServer;
-    SimDeviceNotificationManager *_notificationManager;
-    unsigned long long _bootMonitorRegistrationID;
-    SimMachPortServer *_promisedDataServer;
-    NSObject<OS_dispatch_queue> *_subscriptionStateQueue;
-    NSDate *_lastConnectionTime;
-    NSObject<OS_dispatch_source> *_lifecycleSource;
-    NSArray *_stagedItems;
-}
+/**
+ The simulator's device pasteboard, vended by -[SimDevice pasteboard].
 
-@property (atomic, copy) NSArray *stagedItems;
-@property (retain, nonatomic) NSObject<OS_dispatch_source> *lifecycleSource;
-@property (retain, nonatomic) NSDate *lastConnectionTime;
-@property (retain, nonatomic) NSObject<OS_dispatch_queue> *subscriptionStateQueue;
-@property (retain, nonatomic) SimMachPortServer *promisedDataServer;
-@property (nonatomic, assign) unsigned long long bootMonitorRegistrationID;
-@property (retain, nonatomic) SimDeviceNotificationManager *notificationManager;
-@property (retain, nonatomic) SimMachPortServer *notificationServer;
-@property (retain, nonatomic) SimDevicePasteboardConnection *pasteboardConnection;
-@property (nonatomic, weak) SimDevice *device;
-@property (atomic, copy) NSArray *items;
-@property (atomic, assign) unsigned long long changeCount; // @synthesize changeCount=_changeCount;
-@property (retain, nonatomic) NSObject<OS_dispatch_queue> *itemsQueue;
+ Present in CoreSimulator up to Xcode 26.2, this provides one-shot get/set against the
+ device pasteboard with no host syncing. Apple removed it in later CoreSimulator (the
+ pasteboard moved to the Swift SimPasteboardPlus framework, whose only surface is
+ snapshot/autosync based). Both this class and -[SimDevice pasteboard] are therefore
+ referenced only behind a runtime availability guard (-[SimDevice respondsToSelector:@selector(pasteboard)]);
+ the class symbols are weak-linked, so they resolve at link time and are absent (nil) at runtime
+ on newer CoreSimulator.
 
-- (BOOL)unregisterNotificationHandler:(unsigned long long)arg1 error:(id *)arg2;
-- (unsigned long long)registerNotificationHandlerOnQueue:(id)arg1 handler:(CDUnknownBlockType)arg2;
-- (void)syncBarrier;
-- (unsigned long long)setPasteboardWithItems:(id)arg1 error:(id *)arg2;
-- (void)setPasteboardAsyncWithItems:(id)arg1 completionQueue:(id)arg2 completionHandler:(CDUnknownBlockType)arg3;
-- (id)itemsFromPasteboardWithTypes:(id)arg1 error:(id *)arg2;
-- (void)itemsFromPasteboardAsyncWithTypes:(id)arg1 completionQueue:(id)arg2 completionHandler:(CDUnknownBlockType)arg3;
-- (id)generateSimPasteboardItemsWithTypes:(id)arg1 changeCount:(unsigned long long)arg2;
-- (void)setItems:(id)arg1 changeCount:(unsigned long long)arg2;
-- (void)pasteboardHasChanged:(unsigned long long)arg1 itemsTypes:(id)arg2;
-- (void)_onSubscriptionStateQueue_unsubscribe;
-- (void)addDisconnectMonitorPort:(unsigned int)arg1;
-- (void)startMonitorLifecyclePort;
-- (void)_onSubscriptionStateQueue_subscribe;
-- (id)description;
-- (void)dealloc;
-- (id)initWithDevice:(id)arg1;
+ Only the subset of methods used for plain-text get/set is declared. Both methods import into Swift
+ as `throws` via the standard NSError convention (the change-count return is preserved alongside).
+ */
+@interface SimDevicePasteboard : NSObject
+
+/// Replaces the pasteboard contents with the given items. Returns the new change count; throws on failure.
+- (unsigned long long)setPasteboardWithItems:(NSArray<SimPasteboardItem *> *)items error:(NSError **)error
+    NS_SWIFT_NAME(setItems(_:)) __attribute__((swift_error(nonnull_error)));
+
+/// Returns the items currently on the pasteboard that carry one of the requested UTIs.
+/// `nullable` (rather than relying on the audit) so the trailing `error:` keeps the Swift
+/// throwing-bridge: a nil return signals the thrown error.
+- (nullable NSArray<SimPasteboardItem *> *)itemsFromPasteboardWithTypes:(NSArray<NSString *> *)types error:(NSError **)error NS_SWIFT_NAME(items(forTypes:));
 
 @end
+
+NS_ASSUME_NONNULL_END

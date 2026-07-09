@@ -59,7 +59,7 @@ async def get_std_as_streams() -> StdStreams:
     Makes stdin available for reading and stdout and stderr for writing.
     """
 
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     stdin = asyncio.StreamReader()
     protocol = asyncio.StreamReaderProtocol(stdin)
     await loop.connect_read_pipe(lambda: protocol, sys.stdin)

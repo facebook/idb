@@ -8,12 +8,10 @@
 #import <Foundation/Foundation.h>
 
 @interface DTXBlockCompressorFactory : NSObject
-{
-}
+{}
 
 + (id)createLibCompressionBlockCompressor;
 + (id)createLibFastCompressionBlockCompressor;
 + (id)createBlockCompressor;
 
 @end
-

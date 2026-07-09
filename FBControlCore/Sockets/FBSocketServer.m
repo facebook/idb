@@ -7,14 +7,14 @@
 
 #import "FBSocketServer.h"
 
-#import "FBControlCoreError.h"
+#import "FBControlCore-SwiftImport.h"
 
 @interface FBSocketServer ()
 
-@property (nonatomic, strong, readonly) id<FBSocketServerDelegate> delegate;
+@property (nonatomic, readonly, strong) id<FBSocketServerDelegate> delegate;
 
-@property (nonatomic, assign, readwrite) int socketDescriptor;
-@property (nonatomic, strong, readwrite) dispatch_source_t acceptSource;
+@property (nonatomic, readwrite, assign) int socketDescriptor;
+@property (nonatomic, readwrite, strong) dispatch_source_t acceptSource;
 
 @end
 
@@ -46,9 +46,9 @@
 - (FBFuture<NSNull *> *)startListening
 {
   if (self.acceptSource) {
-    return [[FBControlCoreError
-      describe:@"Cannot start listening, socket is already listening"]
-      failFuture];
+    return (FBFuture *)[[FBControlCoreError
+                         describe:@"Cannot start listening, socket is already listening"]
+                        failFuture];
   }
   return [self createSocketWithPort:self.port];
 }
@@ -56,26 +56,24 @@
 - (FBFuture<NSNull *> *)stopListening
 {
   if (!self.acceptSource) {
-    return [[FBControlCoreError
-      describe:@"Cannot stop listening, there is no active socket"]
-      failFuture];
+    return (FBFuture *)[[FBControlCoreError
+                         describe:@"Cannot stop listening, there is no active socket"]
+                        failFuture];
   }
   dispatch_source_cancel(self.acceptSource);
   self.acceptSource = nil;
-  if (self.socketDescriptor) {
-    close(self.socketDescriptor);
-    self.socketDescriptor = 0;
-  }
+  self.socketDescriptor = 0;
   return FBFuture.empty;
 }
 
 - (FBFutureContext<NSNull *> *)startListeningContext
 {
   return [[self
-    startListening]
-    onQueue:self.delegate.queue contextualTeardown:^(NSNull *_, FBFutureState __) {
-      return [self stopListening];
-    }];
+           startListening]
+          onQueue:self.delegate.queue
+          contextualTeardown:^(NSNull *_, FBFutureState __) {
+            return [self stopListening];
+          }];
 }
 
 #pragma mark Private
@@ -84,10 +82,10 @@
 {
   // Get the Socket, set some options
   int socketDescriptor = socket(PF_INET6, SOCK_STREAM, IPPROTO_TCP);
-  if (socket <= 0) {
-    return [[FBControlCoreError
-      describeFormat:@"Failed to create a socket with error '%s'", strerror(errno)]
-      failFuture];
+  if (socketDescriptor <= 0) {
+    return (FBFuture *)[[FBControlCoreError
+                         describe:[NSString stringWithFormat:@"Failed to create a socket with error '%s'", strerror(errno)]]
+                        failFuture];
   }
   int flagTrue = 1;
   setsockopt(socketDescriptor, SOL_SOCKET, SO_REUSEADDR, &flagTrue, sizeof(flagTrue));
@@ -101,17 +99,17 @@
   address.sin6_addr = in6addr_any;
   int result = bind(socketDescriptor, (struct sockaddr *)&address, sizeof(address));
   if (result != 0) {
-    return [[FBControlCoreError
-      describeFormat:@"Failed to bind the socket on port %d with error '%s'", self.port, strerror(errno)]
-      failFuture];
+    return (FBFuture *)[[FBControlCoreError
+                         describe:[NSString stringWithFormat:@"Failed to bind the socket on port %d with error '%s'", self.port, strerror(errno)]]
+                        failFuture];
   }
 
   // Start Listening
   result = listen(socketDescriptor, 10);
   if (result != 0) {
-    return [[FBControlCoreError
-      describeFormat:@"Failed to listen on the socket on port %d error '%s'", self.port, strerror(errno)]
-      failFuture];
+    return (FBFuture *)[[FBControlCoreError
+                         describe:[NSString stringWithFormat:@"Failed to listen on the socket on port %d error '%s'", self.port, strerror(errno)]]
+                        failFuture];
   }
 
   // Prepare the Accept Source.
@@ -123,21 +121,21 @@
   self.acceptSource = dispatch_source_create(DISPATCH_SOURCE_TYPE_READ, (uintptr_t) socketDescriptor, 0, acceptQueue);
   __weak typeof(self) weakSelf = self;
 
-  // Dispatch read events from the accept source.
+  // Handle incoming connection events from the accept source.
   dispatch_source_set_event_handler(self.acceptSource, ^{
     [weakSelf accept:socketDescriptor clientQueue:clientQueue error:nil];
   });
   dispatch_source_set_cancel_handler(self.acceptSource, ^{
     close(socketDescriptor);
   });
-  // Start reading socket.
+  // Start accepting connections.
   self.socketDescriptor = socketDescriptor;
   dispatch_resume(self.acceptSource);
 
   // Update port
   memset(&address, 0, sizeof(address));
   socklen_t addresslen = sizeof(address);
-  getsockname(socketDescriptor, (struct sockaddr*)(&address), &addresslen);
+  getsockname(socketDescriptor, (struct sockaddr *)(&address), &addresslen);
   _port = ntohs(address.sin6_port);
 
   return FBFuture.empty;
@@ -151,11 +149,11 @@
   int acceptDescriptor = accept(socketDescriptor, (struct sockaddr *) &address, &addressLength);
   if (!acceptDescriptor) {
     return [[FBControlCoreError
-      describeFormat:@"accept() failed with error '%s'", strerror(errno)]
-      failBool:error];
+             describe:[NSString stringWithFormat:@"accept() failed with error '%s'", strerror(errno)]]
+            failBool:error];
   }
 
-  // Notify the Delegate the queue it wished to be notified on.
+  // Notify the delegate on its preferred queue.
   dispatch_async(clientQueue, ^{
     [self.delegate socketServer:self clientConnected:address.sin6_addr fileDescriptor:acceptDescriptor];
   });

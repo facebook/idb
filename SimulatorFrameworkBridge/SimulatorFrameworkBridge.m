@@ -6,30 +6,28 @@
  */
 
 #import <Foundation/Foundation.h>
-#import "ContactsService.h"
-#import "PhotoLibraryService.h"
 
-int main(int argc, const char * argv[]) {
+#import "ServiceDispatch.h"
+
+int main(int argc, const char *argv[])
+{
   @autoreleasepool {
     if (argc < 3) {
-      NSLog(@"Usage: %s <service> <action>", argv[0]);
-      NSLog(@"Services: contacts, photos");
-      NSLog(@"Actions: clear");
+      NSLog(@"Usage: %s <service> <action> [args...]", argv[0]);
+      NSLog(@"Services: contacts, photos, notifications, health, proxy");
+      NSLog(@"Actions: clear, approve, revoke, check, set, list");
       return 1;
     }
 
     NSString *service = [NSString stringWithUTF8String:argv[1]];
     NSString *action = [NSString stringWithUTF8String:argv[2]];
 
-    if ([service isEqualToString:@"contacts"]) {
-      return handleContactsAction(action);
-    } else if ([service isEqualToString:@"photos"]) {
-      return handlePhotoLibraryAction(action);
-    } else {
-      NSLog(@"Unknown service: %@", service);
-      NSLog(@"Available services: contacts, photos");
-      return 1;
+    // Collect remaining args (argv[3..]) into an array for services that need them
+    NSMutableArray<NSString *> *remainingArgs = [NSMutableArray array];
+    for (int i = 3; i < argc; i++) {
+      [remainingArgs addObject:[NSString stringWithUTF8String:argv[i]]];
     }
-    return 0;
+
+    return dispatchService(service, action, remainingArgs);
   }
 }

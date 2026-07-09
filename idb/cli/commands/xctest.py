@@ -229,6 +229,7 @@ class CommonRunXcTestCommand(ClientCommand):
         super().add_parser_arguments(parser)
 
     async def run_with_client(self, args: Namespace, client: Client) -> None:
+        # pyrefly: ignore [missing-attribute]
         await super().run_with_client(args, client)
 
         is_ui = args.run == "ui"
@@ -268,6 +269,7 @@ class CommonRunXcTestCommand(ClientCommand):
 
         async for test_result in client.run_xctest(
             test_bundle_id=args.test_bundle_id,
+            # pyrefly: ignore [bad-argument-type]
             app_bundle_id=app_bundle_id,
             test_host_app_bundle_id=test_host_app_bundle_id,
             is_ui_test=is_ui,

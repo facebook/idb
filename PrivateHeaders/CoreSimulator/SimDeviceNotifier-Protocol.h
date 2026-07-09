@@ -9,11 +9,5 @@
 
 @protocol SimDeviceNotifier
 - (BOOL)unregisterNotificationHandler:(unsigned long long)arg1 error:(id *)arg2;
-- (unsigned long long)registerNotificationHandlerOnQueue:(NSObject<OS_dispatch_queue> *)arg1 handler:(void (^)(NSDictionary *))arg2;
-
-// Removed in Xcode 11.0
-@optional;
-- (unsigned long long)registerNotificationHandler:(void (^)(NSDictionary *))arg1;
-
+- (unsigned long long)registerNotificationHandlerOnQueue:(dispatch_queue_t)arg1 handler:(void (^)(NSDictionary *))arg2;
 @end
-

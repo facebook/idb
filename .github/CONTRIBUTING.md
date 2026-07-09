@@ -2,7 +2,7 @@
 We want to make contributing to this project as easy and transparent as possible.
 
 ## Our Development Process
-`idb` is formed of an Objective-C++ server (the "companion") and a python client. 
+`idb` is formed of an Objective-C++ server (the "companion") and a python client.
 
 There's a number of goals that we had in mind when building this out:
 - The companion is not optimized for APIs that are convenient for users to use, we're optimizing for making it as easy as possible to use with an RPC framework.
@@ -39,10 +39,9 @@ We use GitHub issues to track public bugs. Please ensure your description is cle
 
 All issues will default to being created with the issue template. Please fill in as much as makes sense.
 
-## Coding Style  
+## Coding Style
 * 2 spaces for indentation in the Objective-C++ companion and the python client.
 * 80 character line length for python. Please run [`black` against python code](https://github.com/ambv/black).
 
 ## License
 By contributing to `idb`, you agree that your contributions will be licensed under the LICENSE file in the root directory of this source tree.
-

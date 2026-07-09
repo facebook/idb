@@ -10,7 +10,9 @@
 #pragma pack(push, 4)
 
 /**
- Annotation of the mach_msg_header_t with offsets
+ Annotation of the mach_msg_header_t with offsets.
+ This mirrors the system mach_msg_header_t but uses explicit types
+ for compatibility with #pragma pack(push, 4) in the Indigo wire format.
  */
 typedef struct {
   unsigned int msgh_bits; // 0x0

@@ -1,0 +1,49 @@
+/*
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+@preconcurrency import CoreSimulator
+import FBControlCore
+import Foundation
+
+public final class FBSimulatorMemoryCommands: NSObject, FBiOSTargetCommand {
+
+  // MARK: - Properties
+
+  private weak var simulator: FBSimulator?
+
+  // MARK: - Initializers
+
+  public class func commands(with target: any FBiOSTarget) -> FBSimulatorMemoryCommands {
+    FBSimulatorMemoryCommands(simulator: target as! FBSimulator)
+  }
+
+  private init(simulator: FBSimulator) {
+    self.simulator = simulator
+    super.init()
+  }
+
+  // MARK: - Private
+
+  fileprivate func simulateMemoryWarningAsync() async throws {
+    guard let simulator = self.simulator else {
+      throw FBSimulatorError.describe("Simulator deallocated").build()
+    }
+    guard simulator.device.responds(to: NSSelectorFromString("simulateMemoryWarning")) else {
+      throw FBSimulatorError.describe("SimDevice doesn't have simulateMemoryWarning selector").build()
+    }
+    simulator.device.simulateMemoryWarning()
+  }
+}
+
+// MARK: - FBSimulator+MemoryCommands
+
+extension FBSimulator: MemoryCommands {
+
+  public func simulateMemoryWarning() async throws {
+    try await memoryCommands().simulateMemoryWarningAsync()
+  }
+}

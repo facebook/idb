@@ -16,4 +16,3 @@
 - (void)handleNotification:(unsigned long long)arg1 data:(id<NSObject, NSCopying, NSSecureCoding>)arg2 associatedObject:(AXPTranslationObject *)arg3;
 
 @end
-

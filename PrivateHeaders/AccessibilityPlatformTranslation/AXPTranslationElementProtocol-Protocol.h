@@ -11,6 +11,5 @@
 
 @protocol AXPTranslationElementProtocol <NSObject>
 + (id)platformElementWithTranslationObject:(AXPTranslationObject *)arg1;
-@property(readonly, nonatomic) AXPTranslationObject *translation;
+@property (nonatomic, readonly) AXPTranslationObject *translation;
 @end
-

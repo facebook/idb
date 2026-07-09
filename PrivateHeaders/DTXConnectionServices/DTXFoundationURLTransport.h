@@ -11,8 +11,8 @@
 
 @interface DTXFoundationURLTransport : DTXTransport <NSURLSessionDelegate>
 {
-    NSURLSession *_session;
-    NSURLSessionDataTask *_dataTask;
+  NSURLSession *_session;
+  NSURLSessionDataTask *_dataTask;
 }
 
 + (id)schemes;
@@ -26,10 +26,6 @@
 - (id)initWithLocalAddress:(id)arg1;
 
 // Remaining properties
-@property(readonly, copy) NSString *debugDescription;
-
-
-
+@property (readonly, copy) NSString *debugDescription;
 
 @end
-

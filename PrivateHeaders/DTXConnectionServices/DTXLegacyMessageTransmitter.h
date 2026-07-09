@@ -10,11 +10,9 @@
 #import <DTXConnectionServices/DTXMessageTransmitter.h>
 
 @interface DTXLegacyMessageTransmitter : DTXMessageTransmitter
-{
-}
+{}
 
 - (void)transmitMessage:(id)arg1 routingInfo:(void *)arg2 fragment:(unsigned int)arg3 transmitter:(CDUnknownBlockType)arg4;
 - (unsigned int)fragmentsForLength:(unsigned long long)arg1;
 
 @end
-

@@ -46,4 +46,3 @@ void XTSwizzleSelectorForFunction(Class cls, SEL sel, IMP newImp)
     method_exchangeImplementations(originalMethod, newMethod);
   }
 }
-

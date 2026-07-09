@@ -7,14 +7,12 @@
 
 #import <Foundation/Foundation.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 typedef NSString *FBBinaryArchitecture NS_STRING_ENUM;
 
-extern FBBinaryArchitecture const FBBinaryArchitecturei386;
-extern FBBinaryArchitecture const FBBinaryArchitecturex86_64;
-extern FBBinaryArchitecture const FBBinaryArchitectureArm;
-extern FBBinaryArchitecture const FBBinaryArchitectureArm64;
+extern FBBinaryArchitecture _Nonnull const FBBinaryArchitecturei386;
+extern FBBinaryArchitecture _Nonnull const FBBinaryArchitecturex86_64;
+extern FBBinaryArchitecture _Nonnull const FBBinaryArchitectureArm;
+extern FBBinaryArchitecture _Nonnull const FBBinaryArchitectureArm64;
 
 /**
  Concrete value wrapper around a binary artifact.
@@ -32,7 +30,7 @@ extern FBBinaryArchitecture const FBBinaryArchitectureArm64;
  @param path The path to the executable. Must not be nil.
  @return a new FBBinaryDescriptor instance.
  */
-- (instancetype)initWithName:(NSString *)name architectures:(NSSet<FBBinaryArchitecture> *)architectures uuid:(nullable NSUUID *)uuid path:(NSString *)path;
+- (nonnull instancetype)initWithName:(nonnull NSString *)name architectures:(nonnull NSSet<FBBinaryArchitecture> *)architectures uuid:(nullable NSUUID *)uuid path:(nonnull NSString *)path;
 
 /**
  Returns the FBBinaryDescriptor for the given binary path, by parsing the binary.
@@ -41,37 +39,35 @@ extern FBBinaryArchitecture const FBBinaryArchitectureArm64;
  @param error an error out for any error that occurs.
  @return a Binary Descriptor, if one could be parsed.
  */
-+ (nullable instancetype)binaryWithPath:(NSString *)path error:(NSError **)error;
++ (nullable instancetype)binaryWithPath:(nonnull NSString *)path error:(NSError * _Nullable * _Nullable)error;
 
 #pragma mark Properties
 
 /**
  The name of the executable.
  */
-@property (nonatomic, copy, readonly) NSString *name;
+@property (nonnull, nonatomic, readonly, copy) NSString *name;
 
 /**
  The Supported Architectures of the Executable.
  */
-@property (nonatomic, copy, readonly) NSSet<FBBinaryArchitecture> *architectures;
+@property (nonnull, nonatomic, readonly, copy) NSSet<FBBinaryArchitecture> *architectures;
 
 /**
  The LC_UUID of the binary (if present)
  */
-@property (nonatomic, copy, nullable, readonly) NSUUID *uuid;
+@property (nullable, nonatomic, readonly, copy) NSUUID *uuid;
 
 /**
  The file path to the executable.
  */
-@property (nonatomic, copy, readonly) NSString *path;
+@property (nonnull, nonatomic, readonly, copy) NSString *path;
 
 #pragma mark Public Methods
 
 /**
  Obtain the rpaths in the binary.
  */
-- (nullable NSArray<NSString *> *)rpathsWithError:(NSError **)error;
+- (nullable NSArray<NSString *> *)rpathsWithError:(NSError * _Nullable * _Nullable)error;
 
 @end
-
-NS_ASSUME_NONNULL_END

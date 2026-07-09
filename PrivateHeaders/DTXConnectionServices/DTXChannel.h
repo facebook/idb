@@ -12,20 +12,20 @@
 
 @interface DTXChannel : NSObject// <DTXMessenger>
 {
-    DTXConnection *_connection;
-    dispatch_queue_t _serialQueue;
-    dispatch_queue_t _atomicHandlers;
-    id <DTXAllowedRPC> _dispatchTarget;
-    CDUnknownBlockType _messageHandler;
-    CDUnknownBlockType _dispatchValidator;
-    BOOL _canceled;
-    unsigned int _channelCode;
-    int _compressionTypeHint;
+  DTXConnection *_connection;
+  dispatch_queue_t _serialQueue;
+  dispatch_queue_t _atomicHandlers;
+  id<DTXAllowedRPC> _dispatchTarget;
+  CDUnknownBlockType _messageHandler;
+  CDUnknownBlockType _dispatchValidator;
+  BOOL _canceled;
+  unsigned int _channelCode;
+  int _compressionTypeHint;
 }
 
-@property(nonatomic) int compressionTypeHint; // @synthesize compressionTypeHint=_compressionTypeHint;
-@property(readonly, retain, nonatomic) DTXConnection *connection; // @synthesize connection=_connection;
-@property(readonly, nonatomic) unsigned int channelCode; // @synthesize channelCode=_channelCode;
+@property (nonatomic) int compressionTypeHint; // @synthesize compressionTypeHint=_compressionTypeHint;
+@property (nonatomic, readonly, retain) DTXConnection *connection; // @synthesize connection=_connection;
+@property (nonatomic, readonly) unsigned int channelCode; // @synthesize channelCode=_channelCode;
 @property BOOL isCanceled; // @synthesize isCanceled=_canceled;
 - (void)sendMessageSync:(DTXMessage *)message replyHandler:(void (^)(DTXMessage *responseMessage))replyHandler;
 - (void)sendMessage:(DTXMessage *)message replyHandler:(void (^)(DTXMessage *responseMessage))replyHandler;
@@ -38,18 +38,14 @@
 - (void)cancel;
 - (void)registerDisconnectHandler:(CDUnknownBlockType)arg1;
 - (void)_setDispatchValidator:(CDUnknownBlockType)arg1;
-@property(retain) id <DTXAllowedRPC> dispatchTarget;
-@property(copy) CDUnknownBlockType messageHandler;
+@property (retain) id<DTXAllowedRPC> dispatchTarget;
+@property (copy) CDUnknownBlockType messageHandler;
 - (void)_scheduleMessage:(id)arg1 tracker:(id)arg2 withHandler:(CDUnknownBlockType)arg3;
 - (void)_scheduleBlock:(CDUnknownBlockType)arg1;
 - (void)dealloc;
 - (id)initWithConnection:(id)arg1 channelIdentifier:(unsigned int)arg2;
 
 // Remaining properties
-@property(readonly, copy) NSString *debugDescription;
-
-
-
+@property (readonly, copy) NSString *debugDescription;
 
 @end
-

@@ -1,0 +1,11 @@
+// The config for the Shimulator-macOS Dylib
+
+CURRENT_PROJECT_VERSION = 1
+DYLIB_CURRENT_VERSION = 1
+DYLIB_COMPATIBILITY_VERSION = 1
+PRODUCT_NAME = Shimulator-macOS
+EXECUTABLE_PREFIX = lib
+SDKROOT = macosx
+MACOSX_DEPLOYMENT_TARGET = 12.0
+COPY_PHASE_STRIP = NO
+CODE_SIGN_IDENTITY = - // Shimulator-macOS Shims must be CodeSigned, to work for injection.

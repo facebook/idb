@@ -10,4 +10,3 @@
 @protocol XCTMessagingRole_ProtectedResourceAuthorization
 - (void)_XCT_resetAuthorizationStatusForBundleIdentifier:(NSString *)arg1 resourceIdentifier:(NSString *)arg2 reply:(void (^)(_Bool, NSError *))arg3;
 @end
-
