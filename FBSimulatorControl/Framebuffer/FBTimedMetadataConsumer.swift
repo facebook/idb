@@ -55,6 +55,8 @@ final class FBTransportTimedMetadataConsumer: FBTimedMetadataConsumer {
       }
     case .annexB:
       logger.log("writeTimedMetadata: not supported for transport '\(transport.rawValue)', dropping")
+    @unknown default:
+      logger.log("writeTimedMetadata: not supported for transport '\(transport.rawValue)', dropping")
     }
   }
 }

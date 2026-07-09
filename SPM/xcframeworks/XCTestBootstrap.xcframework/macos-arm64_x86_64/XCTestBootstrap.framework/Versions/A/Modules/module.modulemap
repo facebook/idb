@@ -7,3 +7,7 @@ framework module XCTestBootstrap {
     // Explicitly exclude headers that import private frameworks
     exclude header "FBTestReporterAdapter.h"
 }
+
+module XCTestBootstrap.Swift {
+  header "XCTestBootstrap-Swift.h"
+}

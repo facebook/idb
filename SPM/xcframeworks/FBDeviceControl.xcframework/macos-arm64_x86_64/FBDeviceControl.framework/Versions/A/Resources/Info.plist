@@ -29,19 +29,19 @@
 	<key>DTCompiler</key>
 	<string>com.apple.compilers.llvm.clang.1_0</string>
 	<key>DTPlatformBuild</key>
-	<string>26A5353p</string>
+	<string>25E236</string>
 	<key>DTPlatformName</key>
 	<string>macosx</string>
 	<key>DTPlatformVersion</key>
-	<string>27.0</string>
+	<string>26.4</string>
 	<key>DTSDKBuild</key>
-	<string>26A5353p</string>
+	<string>25E236</string>
 	<key>DTSDKName</key>
-	<string>macosx27.0</string>
+	<string>macosx26.4</string>
 	<key>DTXcode</key>
-	<string>2700</string>
+	<string>2640</string>
 	<key>DTXcodeBuild</key>
-	<string>27A5194q</string>
+	<string>17E192</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>15.0</string>
 	<key>NSHumanReadableCopyright</key>

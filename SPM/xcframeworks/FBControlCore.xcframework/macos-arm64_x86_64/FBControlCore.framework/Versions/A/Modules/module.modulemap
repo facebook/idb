@@ -4,3 +4,7 @@ framework module FBControlCore {
 
   module * { export * }
 }
+
+module FBControlCore.Swift {
+  header "FBControlCore-Swift.h"
+}

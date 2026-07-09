@@ -1197,6 +1197,8 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
         if #available(macOS 13.0, *) {
           derived[kVTCompressionPropertyKey_ProfileLevel as String] = kVTProfileLevel_HEVC_Main10_AutoLevel as String
         }
+      @unknown default:
+        break
       }
     }
     return derived
@@ -1230,6 +1232,8 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
         case .annexB:
           frameWriter = WriteFrameToAnnexBStream
           frameWriterContext = nil
+        @unknown default:
+          throw FBSimulatorError.describe("Unsupported video stream transport '\(transport.rawValue)'").build()
         }
       case .hevc:
         videoCodec = kCMVideoCodecType_HEVC
@@ -1243,7 +1247,11 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
         case .annexB:
           frameWriter = WriteHEVCFrameToAnnexBStream
           frameWriterContext = nil
+        @unknown default:
+          throw FBSimulatorError.describe("Unsupported video stream transport '\(transport.rawValue)'").build()
         }
+      @unknown default:
+        throw FBSimulatorError.describe("Unsupported video stream codec '\(codec.rawValue)'").build()
       }
       let encodedSampleConsumer: FBEncodedSampleConsumer =
         encodedSampleConsumerOverride
@@ -1261,6 +1269,8 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
         consumer: consumer, outputMode: .minicap, encodedSampleConsumer: nil, logger: logger)
     case .bgra:
       return FBSimulatorVideoStreamFramePusher_Bitmap(consumer: consumer, scaleFactor: configuration.scaleFactor)
+    @unknown default:
+      throw FBSimulatorError.describe("Unsupported video stream format '\(configuration.format)'").build()
     }
   }
 

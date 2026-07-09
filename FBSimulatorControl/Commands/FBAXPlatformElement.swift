@@ -113,6 +113,8 @@ extension AXPMacPlatformElement: FBAXPlatformElement {
       performScrollRightByPageAction()
     case .visible:
       performScrollToVisible()
+    @unknown default:
+      break
     }
   }
 

@@ -82,6 +82,8 @@ public class FBDeviceVideoStream: NSObject, FBVideoStream {
       case .hevc:
         // HEVC is not yet supported on the device path.
         return nil
+      @unknown default:
+        return nil
       }
     case .mjpeg:
       return FBDeviceVideoStream_MJPEG.self
@@ -89,6 +91,8 @@ public class FBDeviceVideoStream: NSObject, FBVideoStream {
       return FBDeviceVideoStream_Minicap.self
     case .bgra:
       return FBDeviceVideoStream_BGRA.self
+    @unknown default:
+      return nil
     }
   }
 

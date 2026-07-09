@@ -9,16 +9,19 @@
 
 #import <FBControlCore/FBControlCore.h>
 #import <FBDeviceControl/FBAMDefines.h>
-#import <FBDeviceControl/FBDeviceStorage.h>
 
-NS_ASSUME_NONNULL_BEGIN
+@class FBDeviceStorage;
 
 typedef CFTypeRef PrivateDevice;
 
 /**
  Abstract class for device-based discovery.
  */
-@interface FBDeviceManager<PublicDevice : id> : NSObject <FBiOSTargetSet>
+@interface FBDeviceManager <PublicDevice : id> : NSObject <FBiOSTargetSet>
+
+#pragma mark - FBiOSTargetSet Protocol Members
+// Declared explicitly for Swift visibility since FBiOSTargetSet is Swift-defined.
+@property (nullable, nonatomic, readwrite, weak) id<FBiOSTargetSetDelegate> delegate;
 
 #pragma mark Initializers
 
@@ -28,14 +31,14 @@ typedef CFTypeRef PrivateDevice;
  @param logger the logger to use.
  @return a new FBDeviceManager instance.
  */
-- (instancetype)initWithLogger:(id<FBControlCoreLogger>)logger;
+- (nonnull instancetype)initWithLogger:(nonnull id<FBControlCoreLogger>)logger;
 
 #pragma mark Public
 
 /**
  The current set of devices
  */
-@property (nonatomic, copy, readonly)  NSArray<PublicDevice> *currentDeviceList;
+@property (nonnull, nonatomic, readonly, copy) NSArray<PublicDevice> *currentDeviceList;
 
 #pragma mark Implemented in Subclasses
 
@@ -45,7 +48,7 @@ typedef CFTypeRef PrivateDevice;
  @param error an error out for any error that occurs.
  @return YES if successful, NO otherwise
  */
-- (BOOL)startListeningWithError:(NSError **)error;
+- (BOOL)startListeningWithError:(NSError * _Nullable * _Nullable)error;
 
 /**
  Stops listening for device notifications.
@@ -53,7 +56,7 @@ typedef CFTypeRef PrivateDevice;
  @param error an error out for any error that occurs.
  @return YES if successful, NO otherwise
  */
-- (BOOL)stopListeningWithError:(NSError **)error;
+- (BOOL)stopListeningWithError:(NSError * _Nullable * _Nullable)error;
 
 /**
  Construct the public type from the private type
@@ -63,17 +66,17 @@ typedef CFTypeRef PrivateDevice;
  @param info optional information about the device.
  @return the public device.
  */
-- (PublicDevice)constructPublic:(PrivateDevice)privateDevice identifier:(NSString *)identifier info:(nullable NSDictionary<NSString *, id> *)info;
+- (nonnull PublicDevice)constructPublic:(PrivateDevice _Nonnull)privateDevice identifier:(nonnull NSString *)identifier info:(nullable NSDictionary<NSString *, id> *)info;
 
 /**
- Construct the public type from the private type
+ Update the public type with data from the private type
 
  @param publicDevice the public device
  @param privateDevice the private device
  @param identifier the device identifier.
  @param info optional information about the device.
  */
-+ (void)updatePublicReference:(PublicDevice)publicDevice privateDevice:(PrivateDevice)privateDevice identifier:(NSString *)identifier info:(nullable NSDictionary<NSString *, id> *)info;
++ (void)updatePublicReference:(nonnull PublicDevice)publicDevice privateDevice:(PrivateDevice _Nonnull)privateDevice identifier:(nonnull NSString *)identifier info:(nullable NSDictionary<NSString *, id> *)info;
 
 /**
  Extract the private type from the public type
@@ -81,7 +84,7 @@ typedef CFTypeRef PrivateDevice;
  @param publicDevice the public device
  @return the private device.
  */
-+ (PrivateDevice)extractPrivateReference:(PublicDevice)publicDevice;
++ (PrivateDevice _Nullable)extractPrivateReference:(nonnull PublicDevice)publicDevice;
 
 #pragma mark Called in Subclasses
 
@@ -92,7 +95,7 @@ typedef CFTypeRef PrivateDevice;
  @param identifier the device identifier
  @param info optional information about the device.
  */
-- (void)deviceConnected:(PrivateDevice)privateDevice identifier:(NSString *)identifier info:(nullable NSDictionary<NSString *, id> *)info;
+- (void)deviceConnected:(PrivateDevice _Nonnull)privateDevice identifier:(nonnull NSString *)identifier info:(nullable NSDictionary<NSString *, id> *)info;
 
 /**
  Call when the device is disconnected.
@@ -100,18 +103,16 @@ typedef CFTypeRef PrivateDevice;
  @param privateDevice the device reference.
  @param identifier the device identifier
  */
-- (void)deviceDisconnected:(PrivateDevice)privateDevice identifier:(NSString *)identifier;
+- (void)deviceDisconnected:(PrivateDevice _Nonnull)privateDevice identifier:(nonnull NSString *)identifier;
 
 /**
  The logger to use.
  */
-@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
+@property (nonnull, nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
 
 /**
  The Storage of Device instances.
  */
-@property (nonatomic, strong, readonly) FBDeviceStorage<PublicDevice> *storage;
+@property (nonnull, nonatomic, readonly, strong) FBDeviceStorage *storage;
 
 @end
-
-NS_ASSUME_NONNULL_END

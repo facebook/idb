@@ -151,6 +151,8 @@ public final class FBAccessibilityElement {
       return element.axHelp()
     case .placeholder:
       return element.axPlaceholderValue()
+    @unknown default:
+      return nil
     }
   }
 

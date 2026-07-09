@@ -1,0 +1,1443 @@
+// swift-interface-format-version: 1.0
+// swift-compiler-version: Apple Swift version 6.3 (swiftlang-6.3.0.123.5 clang-2100.0.123.102)
+// swift-module-flags: -target x86_64-apple-macos15.0 -enable-objc-interop -enable-library-evolution -swift-version 6 -O -enable-experimental-feature DebugDescriptionMacro -module-name FBControlCore
+// swift-module-flags-ignorable: -no-verify-emitted-module-interface -formal-cxx-interoperability-mode=off -interface-compiler-version 6.3
+import AVFoundation
+import CoreGraphics
+import CoreMedia
+import CoreVideo
+@_exported import FBControlCore
+@preconcurrency import Foundation
+import Swift
+import _Concurrency
+import _StringProcessing
+import _SwiftConcurrencyShims
+public protocol ApplicationCommands : AnyObject {
+  func installApplication(atPath path: Swift.String) async throws -> FBControlCore.FBInstalledApplication
+  func uninstallApplication(bundleID: Swift.String) async throws
+  func launchApplication(_ configuration: FBControlCore.FBApplicationLaunchConfiguration) async throws -> any FBControlCore.FBLaunchedApplication
+  func killApplication(bundleID: Swift.String) async throws
+  func installedApplications() async throws -> [FBControlCore.FBInstalledApplication]
+  func installedApplication(bundleID: Swift.String) async throws -> FBControlCore.FBInstalledApplication
+  func runningApplications() async throws -> [Swift.String : _DarwinFoundation2.pid_t]
+  func processID(forBundleID bundleID: Swift.String) async throws -> _DarwinFoundation2.pid_t
+}
+public enum AsyncFBFutureBridgeError : Swift.Error {
+  case continuationFulfilledWithoutValues
+  case contextTeardownNotCaptured
+  public static func == (a: FBControlCore.AsyncFBFutureBridgeError, b: FBControlCore.AsyncFBFutureBridgeError) -> Swift.Bool
+  public func hash(into hasher: inout Swift.Hasher)
+  public var hashValue: Swift.Int {
+    get
+  }
+}
+public func bridgeFBFuture<T>(_ future: FBControlCore.FBFuture<T>) async throws -> T where T : AnyObject
+public func bridgeFBFutureArray<T>(_ future: FBControlCore.FBFuture<Foundation.NSArray>) async throws -> [T]
+public func bridgeFBFutureDictionary<K, V>(_ future: FBControlCore.FBFuture<Foundation.NSDictionary>) async throws -> [K : V] where K : Swift.Hashable
+public func bridgeFBFutureVoid(_ future: FBControlCore.FBFuture<Foundation.NSNull>) async throws
+public func bridgeFBFutureVoid(_ future: FBControlCore.FBFuture<Swift.AnyObject>) async throws
+public func bridgeFBFutures<T>(_ futures: [FBControlCore.FBFuture<T>]) async throws -> [T] where T : AnyObject
+public func convertFBMutableFuture<T>(_ mutableFuture: FBControlCore.FBMutableFuture<T>) -> FBControlCore.FBFuture<T> where T : AnyObject
+public func awaitMutableFuture<T>(_ mutableFuture: FBControlCore.FBMutableFuture<T>) async throws -> T where T : AnyObject
+public func awaitMutableFutureVoid(_ mutableFuture: FBControlCore.FBMutableFuture<Foundation.NSNull>) async throws
+public func withFBFutureContext<T, R>(_ context: FBControlCore.FBFutureContext<T>, body: (T) async throws -> R) async throws -> R where T : AnyObject
+public func fbFutureFromAsync<Success>(job: @escaping () async throws -> Success) -> FBControlCore.FBFuture<Success> where Success : AnyObject
+public protocol AsyncFileContainer : AnyObject {
+  func copy(fromHost sourcePath: Swift.String, toContainer destinationPath: Swift.String) async throws
+  func copy(fromContainer sourcePath: Swift.String, toHost destinationPath: Swift.String) async throws -> Swift.String
+  func tail(_ path: Swift.String, to consumer: any FBControlCore.FBDataConsumer) async throws -> FBControlCore.FileContainerTailOperation
+  func createDirectory(_ directoryPath: Swift.String) async throws
+  func move(from sourcePath: Swift.String, to destinationPath: Swift.String) async throws
+  func remove(_ path: Swift.String) async throws
+  func contents(ofDirectory path: Swift.String) async throws -> [Swift.String]
+  var pathOnHostFileSystem: Swift.String? { get }
+  var pathMapping: [Swift.String : Swift.String]? { get }
+}
+extension FBControlCore.AsyncFileContainer {
+  public var pathOnHostFileSystem: Swift.String? {
+    get
+  }
+  public var pathMapping: [Swift.String : Swift.String]? {
+    get
+  }
+}
+public func pollUntilTrue(on queue: Dispatch.DispatchQueue, interval: Foundation.TimeInterval = 0.1, condition: @escaping @Sendable () -> Swift.Bool) async throws
+public func retryUntilSuccess<T>(interval: Foundation.TimeInterval = 0.1, operation: @escaping @Sendable () async throws -> T) async throws -> T
+public func withAsyncResource<T, R>(acquire: () async throws -> T, cleanup: (T) async throws -> Swift.Void, body: (T) async throws -> R) async throws -> R
+public protocol AsynciOSTarget : FBControlCore.ApplicationCommands, FBControlCore.CrashLogCommands, FBControlCore.DebuggerCommands, FBControlCore.EraseCommands, FBControlCore.FileCommands, FBControlCore.InstrumentsCommands, FBControlCore.LifecycleCommands, FBControlCore.LocationCommands, FBControlCore.LogCommands, FBControlCore.PowerCommands, FBControlCore.ScreenshotCommands, FBControlCore.VideoRecordingCommands, FBControlCore.VideoStreamCommands, FBControlCore.XCTestCommands, FBControlCore.XCTraceRecordCommands {
+  var uniqueIdentifier: Swift.String { get }
+  var udid: Swift.String { get }
+  var name: Swift.String { get }
+  var deviceType: FBControlCore.FBDeviceType { get }
+  var architectures: [FBControlCore.FBArchitecture] { get }
+  var osVersion: FBControlCore.FBOSVersion { get }
+  var extendedInformation: [Swift.String : Any] { get }
+  var targetType: FBControlCore.FBiOSTargetType { get }
+  var state: FBControlCore.FBiOSTargetState { get }
+  var logger: (any FBControlCore.FBControlCoreLogger)? { get }
+  var customDeviceSetPath: Swift.String? { get }
+  var temporaryDirectory: FBControlCore.FBTemporaryDirectory { get }
+  var auxillaryDirectory: Swift.String { get }
+  var runtimeRootDirectory: Swift.String { get }
+  var platformRootDirectory: Swift.String { get }
+  var screenInfo: FBControlCore.FBiOSTargetScreenInfo? { get }
+  var workQueue: Dispatch.DispatchQueue { get }
+  var asyncQueue: Dispatch.DispatchQueue { get }
+  func compare(_ target: any FBControlCore.AsynciOSTarget) -> Foundation.ComparisonResult
+  func requiresBundlesToBeSigned() -> Swift.Bool
+  func replacementMapping() -> [Swift.String : Swift.String]
+  func environmentAdditions() -> [Swift.String : Swift.String]
+}
+public enum CodingAgentEnvironment {
+  public static var isRunningInsideAgent: Swift.Bool {
+    get
+  }
+}
+public protocol CrashLogCommands : AnyObject {
+  func crashes(matching predicate: Foundation.NSPredicate, useCache: Swift.Bool) async throws -> [FBControlCore.FBCrashLogInfo]
+  func notifyOfCrash(matching predicate: Foundation.NSPredicate) async throws -> FBControlCore.FBCrashLogInfo
+  func pruneCrashes(matching predicate: Foundation.NSPredicate) async throws -> [FBControlCore.FBCrashLogInfo]
+  func withCrashLogFiles<R>(body: (any FBControlCore.AsyncFileContainer) async throws -> R) async throws -> R
+}
+public protocol DapServerCommand : AnyObject {
+  func launchDapServer(_ dapPath: Any, stdIn: FBControlCore.FBProcessInput<Swift.AnyObject>, stdOut: any FBControlCore.FBDataConsumer) async throws -> FBControlCore.FBSubprocess<Swift.AnyObject, any FBControlCore.FBDataConsumer, Foundation.NSString>
+}
+public protocol DebuggerCommands : AnyObject {
+  func launchDebugServer(forHostApplication application: FBControlCore.FBBundleDescriptor, port: _DarwinFoundation2.in_port_t) async throws -> any FBControlCore.FBDebugServer
+}
+public protocol DeveloperDiskImageCommands : AnyObject {
+  func mountedDiskImages() async throws -> [FBControlCore.FBDeveloperDiskImage]
+  func mountDiskImage(_ diskImage: FBControlCore.FBDeveloperDiskImage) async throws -> FBControlCore.FBDeveloperDiskImage
+  func unmountDiskImage(_ diskImage: FBControlCore.FBDeveloperDiskImage) async throws
+  func mountableDiskImages() -> [FBControlCore.FBDeveloperDiskImage]
+  func ensureDeveloperDiskImageIsMounted() async throws -> FBControlCore.FBDeveloperDiskImage
+}
+public protocol DiagnosticInformationCommands : AnyObject {
+  func fetchDiagnosticInformation() async throws -> [Swift.String : Any]
+}
+public protocol EraseCommands : AnyObject {
+  func erase() async throws
+}
+public enum FBAXKeys : Swift.String, Swift.Sendable {
+  case label
+  case frame
+  case value
+  case uniqueID
+  case type
+  case title
+  case frameDict
+  case help
+  case enabled
+  case customActions
+  case role
+  case roleDescription
+  case subrole
+  case contentRequired
+  case pid
+  case traits
+  case expanded
+  case placeholder
+  case hidden
+  case focused
+  case isRemote
+  public static let defaultSet: Swift.Set<FBControlCore.FBAXKeys>
+  public init?(rawValue: Swift.String)
+  public typealias RawValue = Swift.String
+  public var rawValue: Swift.String {
+    get
+  }
+}
+public enum FBAXSearchableKey : Swift.String, Swift.Sendable {
+  case label
+  case uniqueID
+  case value
+  case title
+  case role
+  case roleDescription
+  case subrole
+  case help
+  case placeholder
+  public init?(rawValue: Swift.String)
+  public typealias RawValue = Swift.String
+  public var rawValue: Swift.String {
+    get
+  }
+}
+public enum FBAccessibilityScrollDirection : Swift.Sendable {
+  case up
+  case down
+  case left
+  case right
+  case visible
+  public static func == (a: FBControlCore.FBAccessibilityScrollDirection, b: FBControlCore.FBAccessibilityScrollDirection) -> Swift.Bool
+  public func hash(into hasher: inout Swift.Hasher)
+  public var hashValue: Swift.Int {
+    get
+  }
+}
+public struct FBAccessibilityRemoteContentOptions : Swift.Sendable {
+  public var gridStepSize: CoreFoundation.CGFloat
+  public var region: CoreFoundation.CGRect
+  public var maxPoints: Swift.UInt
+  public init(gridStepSize: CoreFoundation.CGFloat = 50.0, region: CoreFoundation.CGRect = .null, maxPoints: Swift.UInt = 0)
+}
+extension FBControlCore.FBAccessibilityRemoteContentOptions : Swift.CustomStringConvertible {
+  public var description: Swift.String {
+    get
+  }
+}
+public struct FBAccessibilityRequestOptions : Swift.Sendable {
+  public var nestedFormat: Swift.Bool
+  public var keys: Swift.Set<FBControlCore.FBAXKeys>?
+  public var enableLogging: Swift.Bool
+  public var enableProfiling: Swift.Bool
+  public var collectFrameCoverage: Swift.Bool
+  public var remoteContentOptions: FBControlCore.FBAccessibilityRemoteContentOptions?
+  public init(nestedFormat: Swift.Bool = false, keys: Swift.Set<FBControlCore.FBAXKeys>? = FBAXKeys.defaultSet, enableLogging: Swift.Bool = false, enableProfiling: Swift.Bool = false, collectFrameCoverage: Swift.Bool = false, remoteContentOptions: FBControlCore.FBAccessibilityRemoteContentOptions? = nil)
+}
+extension FBControlCore.FBAccessibilityRequestOptions : Swift.CustomStringConvertible {
+  public var description: Swift.String {
+    get
+  }
+}
+public struct FBAccessibilityProfilingData : Swift.Sendable {
+  public let elementCount: Swift.Int64
+  public let attributeFetchCount: Swift.Int64
+  public let xpcCallCount: Swift.Int64
+  public let translationDuration: CoreFoundation.CFAbsoluteTime
+  public let elementConversionDuration: CoreFoundation.CFAbsoluteTime
+  public let serializationDuration: CoreFoundation.CFAbsoluteTime
+  public let totalXPCDuration: CoreFoundation.CFAbsoluteTime
+  public let fetchedKeys: Swift.Set<Swift.String>
+  public init(elementCount: Swift.Int64, attributeFetchCount: Swift.Int64, xpcCallCount: Swift.Int64, translationDuration: CoreFoundation.CFAbsoluteTime, elementConversionDuration: CoreFoundation.CFAbsoluteTime, serializationDuration: CoreFoundation.CFAbsoluteTime, totalXPCDuration: CoreFoundation.CFAbsoluteTime, fetchedKeys: Swift.Set<Swift.String>)
+  public func asDictionary() -> [Swift.String : Foundation.NSNumber]
+}
+extension FBControlCore.FBAccessibilityProfilingData : Swift.CustomStringConvertible {
+  public var description: Swift.String {
+    get
+  }
+}
+public struct FBAccessibilityElementsResponse {
+  public let elements: Any
+  public let profilingData: FBControlCore.FBAccessibilityProfilingData?
+  public let frameCoverage: Swift.Double?
+  public let additionalFrameCoverage: Swift.Double?
+  public init(elements: Any, profilingData: FBControlCore.FBAccessibilityProfilingData?, frameCoverage: Swift.Double?, additionalFrameCoverage: Swift.Double?)
+  public func asDictionary() -> [Swift.String : Any]
+}
+extension FBControlCore.FBAccessibilityElementsResponse : Swift.CustomStringConvertible {
+  public var description: Swift.String {
+    get
+  }
+}
+@objc(FBApplicationLaunchMode) public enum FBApplicationLaunchMode : Swift.UInt {
+  case failIfRunning = 0
+  case foregroundIfRunning = 1
+  case relaunchIfRunning = 2
+  public init?(rawValue: Swift.UInt)
+  public typealias RawValue = Swift.UInt
+  public var rawValue: Swift.UInt {
+    get
+  }
+}
+@objc(FBApplicationLaunchConfiguration) public class FBApplicationLaunchConfiguration : FBControlCore.FBProcessLaunchConfiguration {
+  @objc final public let bundleID: Swift.String
+  @objc final public let bundleName: Swift.String?
+  @objc final public let waitForDebugger: Swift.Bool
+  @objc final public let launchMode: FBControlCore.FBApplicationLaunchMode
+  @objc public init(bundleID: Swift.String, bundleName: Swift.String?, arguments: [Swift.String], environment: [Swift.String : Swift.String], waitForDebugger: Swift.Bool, io: FBControlCore.FBProcessIO<Swift.AnyObject, Swift.AnyObject, Swift.AnyObject>, launchMode: FBControlCore.FBApplicationLaunchMode)
+  @objc override dynamic public var hash: Swift.Int {
+    @objc get
+  }
+  @objc override dynamic public func isEqual(_ object: Any?) -> Swift.Bool
+  @objc override dynamic public var description: Swift.String {
+    @objc get
+  }
+  @objc deinit
+}
+@_inheritsConvenienceInitializers @objc(FBArchitectureProcessAdapter) public class FBArchitectureProcessAdapter : ObjectiveC.NSObject {
+  @objc public func adaptProcessConfiguration(_ processConfiguration: FBControlCore.FBProcessSpawnConfiguration, toAnyArchitectureIn requestedArchitectures: Swift.Set<FBControlCore.FBArchitecture>, queue: Dispatch.DispatchQueue, temporaryDirectory: Foundation.URL) -> FBControlCore.FBFuture<FBControlCore.FBProcessSpawnConfiguration>
+  @objc public func adaptProcessConfiguration(_ processConfiguration: FBControlCore.FBProcessSpawnConfiguration, toAnyArchitectureIn requestedArchitectures: Swift.Set<FBControlCore.FBArchitecture>, hostArchitectures: Swift.Set<FBControlCore.FBArchitecture>, queue: Dispatch.DispatchQueue, temporaryDirectory: Foundation.URL) -> FBControlCore.FBFuture<FBControlCore.FBProcessSpawnConfiguration>
+  @objc public class func hostMachineSupportedArchitectures() -> Swift.Set<FBControlCore.FBArchitecture>
+  @objc override dynamic public init()
+  @objc deinit
+}
+extension FBControlCore.FBArchiveOperations {
+  public class func extractArchiveAsync(atPath path: Swift.String, toPath extractPath: Swift.String, overrideModificationTime overrideMTime: Swift.Bool, logger: any FBControlCore.FBControlCoreLogger) async throws -> Swift.String
+  public class func extractArchiveAsync(fromStream stream: FBControlCore.FBProcessInput<Swift.AnyObject>, toPath extractPath: Swift.String, overrideModificationTime overrideMTime: Swift.Bool, logger: any FBControlCore.FBControlCoreLogger, compression: FBControlCore.FBCompressionFormat) async throws -> Swift.String
+  public class func extractGzipAsync(fromStream stream: FBControlCore.FBProcessInput<Swift.AnyObject>, toPath extractPath: Swift.String, logger: any FBControlCore.FBControlCoreLogger) async throws -> Swift.String
+  public class func createGzipDataAsync(from input: FBControlCore.FBProcessInput<Swift.AnyObject>, logger: any FBControlCore.FBControlCoreLogger) async throws -> FBControlCore.FBSubprocess<Swift.AnyObject, Foundation.NSData, Swift.AnyObject>
+  public class func createGzipAsync(forPath path: Swift.String, logger: any FBControlCore.FBControlCoreLogger) async throws -> FBControlCore.FBSubprocess<Foundation.NSNull, Foundation.InputStream, Swift.AnyObject>
+  public class func createGzippedTarAsync(forPath path: Swift.String, logger: any FBControlCore.FBControlCoreLogger) async throws -> FBControlCore.FBSubprocess<Foundation.NSNull, Foundation.InputStream, Swift.AnyObject>
+  public class func createGzippedTarDataAsync(forPath path: Swift.String, queue: Dispatch.DispatchQueue, logger: any FBControlCore.FBControlCoreLogger) async throws -> Foundation.Data
+}
+extension FBControlCore.FBBinaryDescriptor : @unchecked Swift.Sendable {
+}
+extension FBControlCore.FBBundleDescriptor {
+  @objc(findAppPathFromDirectory:logger:error:) final public class func findAppPath(fromDirectory directory: Foundation.URL, logger: (any FBControlCore.FBControlCoreLogger)?) throws -> FBControlCore.FBBundleDescriptor
+  @objc(isApplicationAtPath:) final public class func isApplication(atPath path: Swift.String) -> Swift.Bool
+}
+@objc(FBBundleDescriptor) final public class FBBundleDescriptor : ObjectiveC.NSObject, Foundation.NSCopying, Swift.Sendable {
+  @objc final public let name: Swift.String
+  @objc final public let identifier: Swift.String
+  @objc final public let path: Swift.String
+  @objc final public let binary: FBControlCore.FBBinaryDescriptor?
+  @objc public init(name: Swift.String, identifier: Swift.String, path: Swift.String, binary: FBControlCore.FBBinaryDescriptor?)
+  @objc(bundleFromPath:error:) final public class func bundle(fromPath path: Swift.String) throws -> FBControlCore.FBBundleDescriptor
+  @objc(bundleWithFallbackIdentifierFromPath:error:) final public class func bundleWithFallbackIdentifier(fromPath path: Swift.String) throws -> FBControlCore.FBBundleDescriptor
+  @objc final public func copy(with zone: ObjectiveC.NSZone? = nil) -> Any
+  @objc override final public func isEqual(_ object: Any?) -> Swift.Bool
+  @objc override final public var hash: Swift.Int {
+    @objc get
+  }
+  @objc override final public var description: Swift.String {
+    @objc get
+  }
+  final public func updatePathsForRelocationAsync(withCodesign codesign: FBControlCore.FBCodesignProvider, logger: any FBControlCore.FBControlCoreLogger, queue: Dispatch.DispatchQueue) async throws
+  @objc(updatePathsForRelocationWithCodesign:logger:queue:) final public func updatePathsForRelocation(withCodesign codesign: FBControlCore.FBCodesignProvider, logger: any FBControlCore.FBControlCoreLogger, queue: Dispatch.DispatchQueue) -> FBControlCore.FBFuture<Swift.AnyObject>
+  @objc deinit
+}
+@_hasMissingDesignatedInitializers @objc(FBCodesignProvider) public class FBCodesignProvider : ObjectiveC.NSObject {
+  @objc final public let identityName: Swift.String
+  @objc(codeSignCommandWithIdentityName:logger:) public class func codeSignCommand(withIdentityName identityName: Swift.String, logger: (any FBControlCore.FBControlCoreLogger)?) -> Self
+  @objc(codeSignCommandWithAdHocIdentityWithLogger:) public class func codeSignCommandWithAdHocIdentity(logger: (any FBControlCore.FBControlCoreLogger)?) -> Self
+  @objc(signBundleAtPath:) public func signBundle(atPath bundlePath: Swift.String) -> FBControlCore.FBFuture<Foundation.NSNull>
+  @objc(recursivelySignBundleAtPath:) public func recursivelySignBundle(atPath bundlePath: Swift.String) -> FBControlCore.FBFuture<Foundation.NSNull>
+  @objc(cdHashForBundleAtPath:) public func cdHashForBundle(atPath bundlePath: Swift.String) -> FBControlCore.FBFuture<Foundation.NSString>
+  @objc deinit
+}
+@_inheritsConvenienceInitializers @objc(FBCollectionInformation) final public class FBCollectionInformation : ObjectiveC.NSObject {
+  @objc(oneLineDescriptionFromArray:) final public class func oneLineDescription(from array: [Any]) -> Swift.String
+  @objc(oneLineDescriptionFromArray:atKeyPath:) final public class func oneLineDescription(from array: [Any], atKeyPath keyPath: Swift.String) -> Swift.String
+  @objc(oneLineDescriptionFromDictionary:) final public class func oneLineDescription(from dictionary: [Swift.String : Any]) -> Swift.String
+  @objc(isArrayHeterogeneous:withClass:) final public class func isArrayHeterogeneous(_ array: [Any], with cls: Swift.AnyClass) -> Swift.Bool
+  @objc(isDictionaryHeterogeneous:keyClass:valueClass:) final public class func isDictionaryHeterogeneous(_ dictionary: [Swift.AnyHashable : Any], keyClass keyCls: Swift.AnyClass, valueClass valueCls: Swift.AnyClass) -> Swift.Bool
+  @objc override dynamic public init()
+  @objc deinit
+}
+@_inheritsConvenienceInitializers @objc(FBCollectionOperations) final public class FBCollectionOperations : ObjectiveC.NSObject {
+  @objc(arrayFromIndices:) final public class func array(from indices: Foundation.IndexSet) -> [Foundation.NSNumber]
+  @objc(recursiveFilteredJSONSerializableRepresentationOfDictionary:) final public class func recursiveFilteredJSONSerializableRepresentation(of input: [Swift.String : Any]) -> [Swift.String : Any]
+  @objc(recursiveFilteredJSONSerializableRepresentationOfArray:) final public class func recursiveFilteredJSONSerializableRepresentation(of input: [Any]) -> [Any]
+  @objc(indicesFromArray:) final public class func indices(from array: [Foundation.NSNumber]) -> Foundation.IndexSet
+  @objc(nullableValueForDictionary:key:) final public class func nullableValue(for dictionary: [Swift.AnyHashable : Any], key: any Foundation.NSCopying) -> Any?
+  @objc(arrayWithObject:count:) final public class func array(with object: Any, count: Swift.UInt) -> [Any]
+  @objc override dynamic public init()
+  @objc deinit
+}
+@_inheritsConvenienceInitializers @objc(FBConcatedJsonParser) final public class FBConcatedJsonParser : ObjectiveC.NSObject {
+  @objc(parseConcatenatedJSONFromString:error:) final public class func parseConcatenatedJSON(from str: Swift.String) throws -> [Swift.String : Any]
+  @objc override dynamic public init()
+  @objc deinit
+}
+@_inheritsConvenienceInitializers @objc(FBConcurrentCollectionOperations) final public class FBConcurrentCollectionOperations : ObjectiveC.NSObject {
+  @objc(generate:withBlock:) final public class func generate(_ count: Swift.UInt, withBlock block: @escaping @Sendable (Swift.UInt) -> Any) -> [Any]
+  @objc(map:withBlock:) final public class func map(_ array: [Any], withBlock block: @escaping @Sendable (Any) -> Any) -> [Any]
+  @objc(filter:predicate:) final public class func filter(_ array: [Any], predicate: Foundation.NSPredicate) -> [Any]
+  @objc(mapFilter:map:predicate:) final public class func mapFilter(_ array: [Any], map block: @escaping @Sendable (Any) -> Any, predicate: Foundation.NSPredicate) -> [Any]
+  @objc(filterMap:predicate:map:) final public class func filterMap(_ array: [Any], predicate: Foundation.NSPredicate, map block: @escaping @Sendable (Any) -> Any) -> [Any]
+  @objc override dynamic public init()
+  @objc deinit
+}
+public let FBControlCoreErrorDomain: Swift.String
+@_inheritsConvenienceInitializers @objc open class FBControlCoreError : ObjectiveC.NSObject {
+  @objc required override dynamic public init()
+  @objc open class func describe(_ description: Swift.String) -> Self
+  @discardableResult
+  @objc open func describe(_ description: Swift.String) -> Self
+  @objc open class func caused(by cause: (any Swift.Error)?) -> Self
+  @discardableResult
+  @objc open func caused(by cause: (any Swift.Error)?) -> Self
+  @discardableResult
+  @objc open func failBool(_ error: Foundation.NSErrorPointer) -> Swift.Bool
+  @discardableResult
+  @objc open func failInt(_ error: Foundation.NSErrorPointer) -> Swift.Int32
+  @discardableResult
+  @objc open func failUInt(_ error: Foundation.NSErrorPointer) -> Swift.UInt32
+  @discardableResult
+  @objc open func failRect(_ error: Foundation.NSErrorPointer) -> CoreFoundation.CGRect
+  @discardableResult
+  @objc open func fail(_ error: Foundation.NSErrorPointer) -> Any?
+  @objc open func failFuture() -> FBControlCore.FBFuture<Swift.AnyObject>
+  @objc open func failFutureContext() -> FBControlCore.FBFutureContext<Swift.AnyObject>
+  @discardableResult
+  @objc open func failPointer(_ error: Foundation.NSErrorPointer) -> Swift.UnsafeMutableRawPointer?
+  @discardableResult
+  @objc open func extraInfo(_ key: Swift.String, value: Any) -> Self
+  @discardableResult
+  @objc open func recursiveDescription() -> Self
+  @discardableResult
+  @objc open func noRecursiveDescription() -> Self
+  @discardableResult
+  @objc open func inDomain(_ domain: Swift.String) -> Self
+  @discardableResult
+  @objc open func code(_ code: Swift.Int) -> Self
+  @objc open func build() -> Foundation.NSError
+  @objc override dynamic open var description: Swift.String {
+    @objc get
+  }
+  @objc deinit
+}
+extension FBControlCore.FBControlCoreError {
+  @objc dynamic public class func error(forDescription description: Swift.String) -> Foundation.NSError
+  @objc dynamic public class func fail(withErrorMessage errorMessage: Swift.String, errorOut: Foundation.NSErrorPointer) -> Any?
+  @objc(failWithError:errorOut:) dynamic public class func fail(with failureCause: Foundation.NSError, errorOut: Foundation.NSErrorPointer) -> Any?
+  @objc(failWithError:description:errorOut:) dynamic public class func fail(with failureCause: Foundation.NSError, description: Swift.String, errorOut: Foundation.NSErrorPointer) -> Any?
+  @objc dynamic public class func failBool(withErrorMessage errorMessage: Swift.String, errorOut: Foundation.NSErrorPointer) -> Swift.Bool
+  @discardableResult
+  @objc(failBoolWithError:errorOut:) dynamic public class func failBool(with failureCause: Foundation.NSError, errorOut: Foundation.NSErrorPointer) -> Swift.Bool
+  @discardableResult
+  @objc(failBoolWithError:description:errorOut:) dynamic public class func failBool(with failureCause: Foundation.NSError, description: Swift.String, errorOut: Foundation.NSErrorPointer) -> Swift.Bool
+  @objc(failFutureWithError:) dynamic public class func failFuture(with error: Foundation.NSError) -> FBControlCore.FBFuture<Swift.AnyObject>
+}
+public let FBControlCoreStderrLogging: Swift.String
+public let FBControlCoreDebugLogging: Swift.String
+@_inheritsConvenienceInitializers @objc(FBControlCoreGlobalConfiguration) public class FBControlCoreGlobalConfiguration : ObjectiveC.NSObject {
+  @objc public class var fastTimeout: Foundation.TimeInterval {
+    @objc get
+  }
+  @objc public class var regularTimeout: Foundation.TimeInterval {
+    @objc get
+  }
+  @objc public class var slowTimeout: Foundation.TimeInterval {
+    @objc get
+  }
+  @objc public class var defaultLogger: any FBControlCore.FBControlCoreLogger {
+    @objc get
+    @objc set
+  }
+  @objc public class var confirmCodesignaturesAreValid: Swift.Bool {
+    @objc get
+  }
+  @objc public class var safeSubprocessEnvironment: [Swift.String : Swift.String] {
+    @objc get
+  }
+  @objc override dynamic public class func description() -> Swift.String
+  @objc override dynamic public var description: Swift.String {
+    @objc get
+  }
+  @objc override dynamic public init()
+  @objc deinit
+}
+@objc public protocol FBControlCoreLogger : ObjectiveC.NSObjectProtocol {
+  @objc @discardableResult
+  func log(_ message: Swift.String) -> any FBControlCore.FBControlCoreLogger
+  @objc func info() -> any FBControlCore.FBControlCoreLogger
+  @objc func debug() -> any FBControlCore.FBControlCoreLogger
+  @objc func error() -> any FBControlCore.FBControlCoreLogger
+  @objc func withName(_ name: Swift.String) -> any FBControlCore.FBControlCoreLogger
+  @objc func withDateFormatEnabled(_ enabled: Swift.Bool) -> any FBControlCore.FBControlCoreLogger
+  @objc var name: Swift.String? { get }
+  @objc var level: FBControlCore.FBControlCoreLogLevel { get }
+}
+extension FBControlCore.FBCompositeLogger : FBControlCore.FBControlCoreLogger {
+}
+@objc(FBCrashLog) public class FBCrashLog : ObjectiveC.NSObject, Foundation.NSCopying {
+  @objc final public let info: FBControlCore.FBCrashLogInfo
+  @objc final public let contents: Swift.String
+  @objc public init(info: FBControlCore.FBCrashLogInfo, contents: Swift.String)
+  @objc override dynamic public var description: Swift.String {
+    @objc get
+  }
+  @objc public func copy(with zone: ObjectiveC.NSZone? = nil) -> Any
+  @objc public class func dateFormatter() -> Foundation.DateFormatter
+  @objc deinit
+}
+@objc(FBCrashLogInfo) public class FBCrashLogInfo : ObjectiveC.NSObject, Foundation.NSCopying {
+  @objc final public let crashPath: Swift.String
+  @objc final public let executablePath: Swift.String
+  @objc final public let identifier: Swift.String
+  @objc final public let processName: Swift.String
+  @objc final public let processIdentifier: _DarwinFoundation2.pid_t
+  @objc final public let parentProcessName: Swift.String
+  @objc final public let parentProcessIdentifier: _DarwinFoundation2.pid_t
+  @objc final public let date: Foundation.Date
+  @objc final public let processType: FBControlCore.FBCrashLogInfoProcessType
+  @objc final public let exceptionDescription: Swift.String?
+  @objc final public let crashedThreadDescription: Swift.String?
+  @objc public var name: Swift.String {
+    @objc get
+  }
+  @objc public init(crashPath: Swift.String, executablePath: Swift.String, identifier: Swift.String, processName: Swift.String, processIdentifier: _DarwinFoundation2.pid_t, parentProcessName: Swift.String, parentProcessIdentifier: _DarwinFoundation2.pid_t, date: Foundation.Date, processType: FBControlCore.FBCrashLogInfoProcessType, exceptionDescription: Swift.String?, crashedThreadDescription: Swift.String?)
+  @objc(fromCrashLogAtPath:error:) public class func fromCrashLog(atPath crashPath: Swift.String) throws -> FBControlCore.FBCrashLogInfo
+  @objc(isParsableCrashLog:) public class func isParsableCrashLog(_ data: Foundation.Data) -> Swift.Bool
+  @objc override dynamic public var description: Swift.String {
+    @objc get
+  }
+  @objc public func copy(with zone: ObjectiveC.NSZone? = nil) -> Any
+  @objc(loadRawCrashLogStringWithError:) public func loadRawCrashLogString() throws -> Swift.String
+  @objc(crashInfoAfterDate:logger:) public class func crashInfo(afterDate date: Foundation.Date, logger: (any FBControlCore.FBControlCoreLogger)?) -> [FBControlCore.FBCrashLogInfo]
+  @objc(obtainCrashLogWithError:) public func obtainCrashLog() throws -> FBControlCore.FBCrashLog
+  @objc(predicateForCrashLogsWithProcessID:) public class func predicateForCrashLogs(withProcessID processID: _DarwinFoundation2.pid_t) -> Foundation.NSPredicate
+  @objc(predicateNewerThanDate:) public class func predicateNewer(thanDate date: Foundation.Date) -> Foundation.NSPredicate
+  @objc(predicateOlderThanDate:) public class func predicateOlder(thanDate date: Foundation.Date) -> Foundation.NSPredicate
+  @objc(predicateForIdentifier:) public class func predicate(forIdentifier identifier: Swift.String) -> Foundation.NSPredicate
+  @objc(predicateForName:) public class func predicate(forName name: Swift.String) -> Foundation.NSPredicate
+  @objc(predicateForExecutablePathContains:) public class func predicate(forExecutablePathContains contains: Swift.String) -> Foundation.NSPredicate
+  @objc public class var diagnosticReportsPaths: [Swift.String] {
+    @objc get
+  }
+  @objc deinit
+}
+@_hasMissingDesignatedInitializers @objc(FBCrashLogNotifier) public class FBCrashLogNotifier : ObjectiveC.NSObject {
+  @objc final public let store: FBControlCore.FBCrashLogStore
+  @objc public class var sharedInstance: FBControlCore.FBCrashLogNotifier {
+    @objc get
+  }
+  @objc public func startListening(_ onlyNew: Swift.Bool) -> Swift.Bool
+  @objc(nextCrashLogForPredicate:) public func nextCrashLog(forPredicate predicate: Foundation.NSPredicate) -> FBControlCore.FBFuture<FBControlCore.FBCrashLogInfo>
+  @objc deinit
+}
+@objc(FBCrashLogParser) public protocol FBCrashLogParser : ObjectiveC.NSObjectProtocol {
+  @objc(parseCrashLogFromString:executablePathOut:identifierOut:processNameOut:parentProcessNameOut:processIdentifierOut:parentProcessIdentifierOut:dateOut:exceptionDescription:crashedThreadDescription:error:) func parseCrashLog(from str: Swift.String, executablePathOut: Swift.AutoreleasingUnsafeMutablePointer<Foundation.NSString>, identifierOut: Swift.AutoreleasingUnsafeMutablePointer<Foundation.NSString>, processNameOut: Swift.AutoreleasingUnsafeMutablePointer<Foundation.NSString>, parentProcessNameOut: Swift.AutoreleasingUnsafeMutablePointer<Foundation.NSString>, processIdentifierOut: Swift.UnsafeMutablePointer<_DarwinFoundation2.pid_t>, parentProcessIdentifierOut: Swift.UnsafeMutablePointer<_DarwinFoundation2.pid_t>, dateOut: Swift.AutoreleasingUnsafeMutablePointer<Foundation.NSDate>, exceptionDescription: Swift.AutoreleasingUnsafeMutablePointer<Foundation.NSString>, crashedThreadDescription: Swift.AutoreleasingUnsafeMutablePointer<Foundation.NSString>, error: Foundation.NSErrorPointer)
+}
+@_inheritsConvenienceInitializers @objc(FBConcatedJSONCrashLogParser) public class FBConcatedJSONCrashLogParser : ObjectiveC.NSObject, FBControlCore.FBCrashLogParser {
+  @objc public func parseCrashLog(from str: Swift.String, executablePathOut: Swift.AutoreleasingUnsafeMutablePointer<Foundation.NSString>, identifierOut: Swift.AutoreleasingUnsafeMutablePointer<Foundation.NSString>, processNameOut: Swift.AutoreleasingUnsafeMutablePointer<Foundation.NSString>, parentProcessNameOut: Swift.AutoreleasingUnsafeMutablePointer<Foundation.NSString>, processIdentifierOut: Swift.UnsafeMutablePointer<_DarwinFoundation2.pid_t>, parentProcessIdentifierOut: Swift.UnsafeMutablePointer<_DarwinFoundation2.pid_t>, dateOut: Swift.AutoreleasingUnsafeMutablePointer<Foundation.NSDate>, exceptionDescription: Swift.AutoreleasingUnsafeMutablePointer<Foundation.NSString>, crashedThreadDescription: Swift.AutoreleasingUnsafeMutablePointer<Foundation.NSString>, error: Foundation.NSErrorPointer)
+  @objc override dynamic public init()
+  @objc deinit
+}
+@_inheritsConvenienceInitializers @objc(FBPlainTextCrashLogParser) public class FBPlainTextCrashLogParser : ObjectiveC.NSObject, FBControlCore.FBCrashLogParser {
+  @objc public func parseCrashLog(from str: Swift.String, executablePathOut: Swift.AutoreleasingUnsafeMutablePointer<Foundation.NSString>, identifierOut: Swift.AutoreleasingUnsafeMutablePointer<Foundation.NSString>, processNameOut: Swift.AutoreleasingUnsafeMutablePointer<Foundation.NSString>, parentProcessNameOut: Swift.AutoreleasingUnsafeMutablePointer<Foundation.NSString>, processIdentifierOut: Swift.UnsafeMutablePointer<_DarwinFoundation2.pid_t>, parentProcessIdentifierOut: Swift.UnsafeMutablePointer<_DarwinFoundation2.pid_t>, dateOut: Swift.AutoreleasingUnsafeMutablePointer<Foundation.NSDate>, exceptionDescription: Swift.AutoreleasingUnsafeMutablePointer<Foundation.NSString>, crashedThreadDescription: Swift.AutoreleasingUnsafeMutablePointer<Foundation.NSString>, error: Foundation.NSErrorPointer)
+  @objc override dynamic public init()
+  @objc deinit
+}
+@_hasMissingDesignatedInitializers @objc(FBCrashLogStore) public class FBCrashLogStore : ObjectiveC.NSObject {
+  @objc(storeForDirectories:logger:) public class func store(forDirectories directories: [Swift.String], logger: any FBControlCore.FBControlCoreLogger) -> Self
+  @discardableResult
+  @objc public func ingestAllExistingInDirectory() -> [FBControlCore.FBCrashLogInfo]
+  @objc(ingestCrashLogAtPath:) public func ingestCrashLog(atPath path: Swift.String) -> FBControlCore.FBCrashLogInfo?
+  @objc(ingestCrashLogData:name:) public func ingestCrashLogData(_ data: Foundation.Data, name: Swift.String) -> FBControlCore.FBCrashLogInfo?
+  @objc(removeCrashLogAtPath:) public func removeCrashLog(atPath path: Swift.String) -> FBControlCore.FBCrashLogInfo?
+  @objc(ingestedCrashLogWithName:) public func ingestedCrashLog(withName name: Swift.String) -> FBControlCore.FBCrashLogInfo?
+  @objc public func allIngestedCrashLogs() -> [FBControlCore.FBCrashLogInfo]
+  @objc(nextCrashLogForMatchingPredicate:) public func nextCrashLog(forMatchingPredicate predicate: Foundation.NSPredicate) -> FBControlCore.FBFuture<FBControlCore.FBCrashLogInfo>
+  @objc(ingestedCrashLogsMatchingPredicate:) public func ingestedCrashLogs(matchingPredicate predicate: Foundation.NSPredicate) -> [FBControlCore.FBCrashLogInfo]
+  @objc(pruneCrashLogsMatchingPredicate:) public func pruneCrashLogs(matchingPredicate predicate: Foundation.NSPredicate) -> [FBControlCore.FBCrashLogInfo]
+  @objc deinit
+}
+@objc public protocol FBAccumulatingBuffer : FBControlCore.FBDataConsumer, FBControlCore.FBDataConsumerLifecycle {
+  @objc func data() -> Foundation.Data
+  @objc func lines() -> [Swift.String]
+}
+@objc public protocol FBConsumableBuffer : FBControlCore.FBAccumulatingBuffer {
+  @objc func consumeCurrentData() -> Foundation.Data
+  @objc func consumeCurrentString() -> Swift.String?
+  @objc func consumeLength(_ length: Swift.UInt) -> Foundation.Data?
+  @objc(consumeUntil:) func consume(until terminal: Foundation.Data) -> Foundation.Data?
+  @objc func consumeLineData() -> Foundation.Data?
+  @objc func consumeLineString() -> Swift.String?
+}
+@objc public protocol FBNotifyingBuffer : FBControlCore.FBConsumableBuffer {
+  @objc func consume(_ consumer: any FBControlCore.FBDataConsumer, onQueue queue: Dispatch.DispatchQueue?, untilTerminal terminal: Foundation.Data, error: Foundation.NSErrorPointer) -> Swift.Bool
+  @objc(consumeAndNotifyWhen:) func consumeAndNotify(when terminal: Foundation.Data) -> FBControlCore.FBFuture<Foundation.NSData>
+  @objc func consumeHeaderLength(_ headerLength: Swift.UInt, derivedLength: @escaping (Foundation.Data) -> Swift.UInt) -> FBControlCore.FBFuture<Foundation.NSData>
+}
+@objc public protocol FBDataBuffer_Forwarder : ObjectiveC.NSObjectProtocol {
+  @objc func run(_ buffer: any FBControlCore.FBConsumableBuffer)
+  @objc var consumer: any FBControlCore.FBDataConsumer { get }
+}
+@objc public protocol FBDataConsumer : ObjectiveC.NSObjectProtocol {
+  @objc func consumeData(_ data: Foundation.Data)
+  @objc func consumeEndOfFile()
+}
+@objc public protocol FBDispatchDataConsumer : ObjectiveC.NSObjectProtocol {
+  @objc func consumeData(_ data: Dispatch.__DispatchData)
+  @objc func consumeEndOfFile()
+}
+@objc public protocol FBDataConsumerSync : ObjectiveC.NSObjectProtocol {
+}
+@objc public protocol FBDataConsumerAsync : ObjectiveC.NSObjectProtocol {
+  @objc func unprocessedDataCount() -> Swift.Int
+}
+@objc public protocol FBDataConsumerLifecycle : ObjectiveC.NSObjectProtocol {
+  @objc var finishedConsuming: FBControlCore.FBFuture<Foundation.NSNull> { get }
+}
+extension FBControlCore.FBDataConsumerLifecycle {
+  public func awaitFinishedConsumingAsync() async throws
+}
+extension FBControlCore.FBLoggingDataConsumer : FBControlCore.FBDataConsumer {
+}
+extension FBControlCore.FBCompositeDataConsumer : FBControlCore.FBDataConsumer, FBControlCore.FBDataConsumerLifecycle {
+}
+extension FBControlCore.FBNullDataConsumer : FBControlCore.FBDataConsumer {
+}
+public protocol FBDebugServer : AnyObject {
+  var lldbBootstrapCommands: [Swift.String] { get }
+  func cancel() async throws
+}
+@_hasMissingDesignatedInitializers @objc(FBDeveloperDiskImage) public class FBDeveloperDiskImage : ObjectiveC.NSObject {
+  @objc final public let diskImagePath: Swift.String
+  @objc final public let signature: Foundation.Data
+  @objc final public let version: Foundation.OperatingSystemVersion
+  @objc final public let xcodeVersion: Foundation.OperatingSystemVersion
+  @objc(unknownDiskImageWithSignature:) public class func unknownDiskImage(withSignature signature: Foundation.Data) -> FBControlCore.FBDeveloperDiskImage
+  @objc(developerDiskImage:logger:error:) public class func developerDiskImage(_ targetVersion: Foundation.OperatingSystemVersion, logger: (any FBControlCore.FBControlCoreLogger)?) throws -> FBControlCore.FBDeveloperDiskImage
+  @objc public class var allDiskImages: [FBControlCore.FBDeveloperDiskImage] {
+    @objc get
+  }
+  @objc(pathForDeveloperSymbols:logger:error:) public class func pathForDeveloperSymbols(_ buildVersion: Swift.String, logger: any FBControlCore.FBControlCoreLogger) throws -> Swift.String
+  @objc(bestImageForImages:targetVersion:logger:error:) public class func bestImage(forImages images: [FBControlCore.FBDeveloperDiskImage], targetVersion: Foundation.OperatingSystemVersion, logger: (any FBControlCore.FBControlCoreLogger)?) throws -> FBControlCore.FBDeveloperDiskImage
+  @objc override dynamic public var description: Swift.String {
+    @objc get
+  }
+  @objc public func compare(_ other: FBControlCore.FBDeveloperDiskImage) -> Foundation.ComparisonResult
+  @objc deinit
+}
+@objc(FBEventReporter) public protocol FBEventReporter : ObjectiveC.NSObjectProtocol {
+  @objc func report(_ subject: FBControlCore.FBEventReporterSubject)
+  @objc func addMetadata(_ metadata: [Swift.String : Swift.String])
+  @objc var metadata: [Swift.String : Swift.String] { get }
+}
+public struct FBEventType : Swift.RawRepresentable, Swift.Equatable, Swift.Hashable, Swift.Sendable {
+  public let rawValue: Swift.String
+  public init(rawValue: Swift.String)
+  public static let started: FBControlCore.FBEventType
+  public static let ended: FBControlCore.FBEventType
+  public static let discrete: FBControlCore.FBEventType
+  public static let success: FBControlCore.FBEventType
+  public static let failure: FBControlCore.FBEventType
+  public typealias RawValue = Swift.String
+}
+@_hasMissingDesignatedInitializers @objc(FBEventReporterSubject) final public class FBEventReporterSubject : ObjectiveC.NSObject {
+  @objc final public let eventName: Swift.String
+  final public let eventType: FBControlCore.FBEventType
+  @objc final public let arguments: [Swift.String]?
+  @objc final public let duration: Foundation.NSNumber?
+  @objc final public let size: Foundation.NSNumber?
+  @objc final public let message: Swift.String?
+  @objc convenience public init(forEvent eventName: Swift.String)
+  @objc convenience public init(forStartedCall call: Swift.String, arguments: [Swift.String])
+  @objc convenience public init(forSuccessfulCall call: Swift.String, duration: Foundation.TimeInterval, size: Foundation.NSNumber?, arguments: [Swift.String])
+  @objc convenience public init(forFailingCall call: Swift.String, duration: Foundation.TimeInterval, message: Swift.String, size: Foundation.NSNumber?, arguments: [Swift.String])
+  @objc(subjectForEvent:) final public class func subject(forEvent eventName: Swift.String) -> FBControlCore.FBEventReporterSubject
+  @objc(subjectForStartedCall:arguments:) final public class func subject(forStartedCall call: Swift.String, arguments: [Swift.String]) -> FBControlCore.FBEventReporterSubject
+  @objc(subjectForSuccessfulCall:duration:size:arguments:) final public class func subject(forSuccessfulCall call: Swift.String, duration: Foundation.TimeInterval, size: Foundation.NSNumber?, arguments: [Swift.String]) -> FBControlCore.FBEventReporterSubject
+  @objc(subjectForFailingCall:duration:message:size:arguments:) final public class func subject(forFailingCall call: Swift.String, duration: Foundation.TimeInterval, message: Swift.String, size: Foundation.NSNumber?, arguments: [Swift.String]) -> FBControlCore.FBEventReporterSubject
+  @objc deinit
+}
+@objc public protocol FBContainedFile : ObjectiveC.NSObjectProtocol {
+  @objc(removeItemWithError:) func removeItem() throws
+  @objc(contentsOfDirectoryWithError:) func contentsOfDirectory() throws -> [Swift.String]
+  @objc(contentsOfFileWithError:) func contentsOfFile() throws -> Foundation.Data
+  @objc(createDirectoryWithError:) func createDirectory() throws
+  @objc(fileExistsIsDirectory:) func fileExists(isDirectory isDirectoryOut: Swift.UnsafeMutablePointer<ObjectiveC.ObjCBool>?) -> Swift.Bool
+  @objc(moveTo:error:) func move(to destination: any FBControlCore.FBContainedFile) throws
+  @objc(populateWithContentsOfHostPath:error:) func populate(withContentsOfHostPath path: Swift.String) throws
+  @objc(populateHostPathWithContents:error:) func populateHostPath(withContents path: Swift.String) throws
+  @objc(fileByAppendingPathComponent:error:) func file(byAppendingPathComponent component: Swift.String) throws -> any FBControlCore.FBContainedFile
+  @objc var pathOnHostFileSystem: Swift.String? { get }
+  @objc var pathMapping: [Swift.String : Swift.String]? { get }
+}
+@_hasMissingDesignatedInitializers final public class FileContainerTailOperation {
+  final public func cancel() async throws
+  @objc deinit
+}
+@objc(FBContainedFile_ContainedRoot) final public class FBContainedFile_ContainedRoot : ObjectiveC.NSObject, FBControlCore.AsyncFileContainer {
+  @objc public init(rootFile: any FBControlCore.FBContainedFile, queue: Dispatch.DispatchQueue)
+  final public var pathOnHostFileSystem: Swift.String? {
+    get
+  }
+  final public var pathMapping: [Swift.String : Swift.String]? {
+    get
+  }
+  final public func copy(fromHost sourcePath: Swift.String, toContainer destinationPath: Swift.String) async throws
+  final public func copy(fromContainer sourcePath: Swift.String, toHost destinationPath: Swift.String) async throws -> Swift.String
+  final public func tail(_ path: Swift.String, to consumer: any FBControlCore.FBDataConsumer) async throws -> FBControlCore.FileContainerTailOperation
+  final public func createDirectory(_ directoryPath: Swift.String) async throws
+  final public func move(from sourcePath: Swift.String, to destinationPath: Swift.String) async throws
+  final public func remove(_ path: Swift.String) async throws
+  final public func contents(ofDirectory path: Swift.String) async throws -> [Swift.String]
+  @objc deinit
+}
+@objc(FBFileContainer_ProvisioningProfile) final public class FBFileContainer_ProvisioningProfile : ObjectiveC.NSObject, FBControlCore.AsyncFileContainer {
+  public init(commands: any FBControlCore.ProvisioningProfileCommands)
+  final public func copy(fromHost sourcePath: Swift.String, toContainer destinationPath: Swift.String) async throws
+  final public func copy(fromContainer sourcePath: Swift.String, toHost destinationPath: Swift.String) async throws -> Swift.String
+  final public func tail(_ path: Swift.String, to consumer: any FBControlCore.FBDataConsumer) async throws -> FBControlCore.FileContainerTailOperation
+  final public func createDirectory(_ directoryPath: Swift.String) async throws
+  final public func move(from sourcePath: Swift.String, to destinationPath: Swift.String) async throws
+  final public func remove(_ path: Swift.String) async throws
+  final public func contents(ofDirectory path: Swift.String) async throws -> [Swift.String]
+  @objc deinit
+}
+@_hasMissingDesignatedInitializers @objc(FBFileReader) public class FBFileReader : ObjectiveC.NSObject, FBControlCore.FBFileReaderProtocol {
+  @objc public var state: FBControlCore.FBFileReaderState {
+    get
+  }
+  @objc public static func reader(withFileDescriptor fileDescriptor: Swift.Int32, closeOnEndOfFile: Swift.Bool, consumer: any FBControlCore.FBDataConsumer, logger: (any FBControlCore.FBControlCoreLogger)?) -> Self
+  @objc public static func dispatchDataReader(withFileDescriptor fileDescriptor: Swift.Int32, closeOnEndOfFile: Swift.Bool, consumer: any FBControlCore.FBDispatchDataConsumer, logger: (any FBControlCore.FBControlCoreLogger)?) -> Self
+  @objc public static func reader(withFilePath filePath: Swift.String, consumer: any FBControlCore.FBDataConsumer, logger: (any FBControlCore.FBControlCoreLogger)?) -> FBControlCore.FBFuture<FBControlCore.FBFileReader>
+  @objc override dynamic public var description: Swift.String {
+    @objc get
+  }
+  @objc public func startReading() -> FBControlCore.FBFuture<Foundation.NSNull>
+  @objc public func stopReading() -> FBControlCore.FBFuture<Foundation.NSNumber>
+  @objc public func finishedReading(withTimeout timeout: Foundation.TimeInterval) -> FBControlCore.FBFuture<Foundation.NSNumber>
+  @objc public var finishedReading: FBControlCore.FBFuture<Foundation.NSNumber> {
+    @objc get
+  }
+  @objc deinit
+}
+@objc public protocol FBFileReaderProtocol {
+  @objc @discardableResult
+  func startReading() -> FBControlCore.FBFuture<Foundation.NSNull>
+  @objc @discardableResult
+  func stopReading() -> FBControlCore.FBFuture<Foundation.NSNumber>
+  @objc @discardableResult
+  func finishedReading(withTimeout timeout: Foundation.TimeInterval) -> FBControlCore.FBFuture<Foundation.NSNumber>
+  @objc var state: FBControlCore.FBFileReaderState { get }
+  @objc var finishedReading: FBControlCore.FBFuture<Foundation.NSNumber> { get }
+}
+@_inheritsConvenienceInitializers @_hasMissingDesignatedInitializers @objc(FBFileWriter) public class FBFileWriter : ObjectiveC.NSObject {
+  @objc public static var nullWriter: any FBControlCore.FBDataConsumer {
+    @objc get
+  }
+  @objc public static func asyncDispatchDataWriter(withFileDescriptor fileDescriptor: Swift.Int32, closeOnEndOfFile: Swift.Bool) -> FBControlCore.FBFuture<Swift.AnyObject>
+  @objc public static func syncWriter(withFileDescriptor fileDescriptor: Swift.Int32, closeOnEndOfFile: Swift.Bool) -> any FBControlCore.FBDataConsumer & FBControlCore.FBDataConsumerLifecycle
+  @objc public static func asyncWriter(withFileDescriptor fileDescriptor: Swift.Int32, closeOnEndOfFile: Swift.Bool, queue: Dispatch.DispatchQueue, error: Foundation.NSErrorPointer) -> (any FBControlCore.FBDataConsumer & FBControlCore.FBDataConsumerLifecycle)?
+  @objc public static func asyncWriter(withFileDescriptor fileDescriptor: Swift.Int32, closeOnEndOfFile: Swift.Bool, error: Foundation.NSErrorPointer) -> (any FBControlCore.FBDataConsumer & FBControlCore.FBDataConsumerLifecycle)?
+  @objc public static func syncWriter(forFilePath filePath: Swift.String, error: Foundation.NSErrorPointer) -> (any FBControlCore.FBDataConsumer & FBControlCore.FBDataConsumerLifecycle)?
+  @objc public static func asyncWriter(forFilePath filePath: Swift.String) -> FBControlCore.FBFuture<Swift.AnyObject>
+  @objc deinit
+}
+@objc public protocol FBFutureContextManagerDelegate : ObjectiveC.NSObjectProtocol {
+  @objc(prepare:) func prepare(_ logger: any FBControlCore.FBControlCoreLogger) -> FBControlCore.FBFuture<Swift.AnyObject>
+  @discardableResult
+  @objc(teardown:logger:) func teardown(_ context: Any, logger: any FBControlCore.FBControlCoreLogger) -> FBControlCore.FBFuture<Foundation.NSNull>
+  @objc var contextName: Swift.String { get }
+  @objc var contextPoolTimeout: Foundation.NSNumber? { get }
+  @objc var isContextSharable: Swift.Bool { get }
+}
+@objc(FBInstalledApplication) final public class FBInstalledApplication : ObjectiveC.NSObject, Foundation.NSCopying {
+  @objc final public let bundle: FBControlCore.FBBundleDescriptor
+  @objc final public let installType: FBControlCore.FBApplicationInstallType
+  @objc final public let dataContainer: Swift.String?
+  @objc final public var installTypeString: Swift.String {
+    @objc get
+  }
+  @objc(installedApplicationWithBundle:installType:dataContainer:) final public class func installedApplication(withBundle bundle: FBControlCore.FBBundleDescriptor, installType: FBControlCore.FBApplicationInstallType, dataContainer: Swift.String?) -> FBControlCore.FBInstalledApplication
+  @objc(installedApplicationWithBundle:installTypeString:signerIdentity:dataContainer:) final public class func installedApplication(withBundle bundle: FBControlCore.FBBundleDescriptor, installTypeString: Swift.String?, signerIdentity: Swift.String?, dataContainer: Swift.String?) -> FBControlCore.FBInstalledApplication
+  @objc public init(bundle: FBControlCore.FBBundleDescriptor, installType: FBControlCore.FBApplicationInstallType, dataContainer: Swift.String?)
+  @objc convenience public init(bundle: FBControlCore.FBBundleDescriptor, installTypeString: Swift.String?, signerIdentity: Swift.String?, dataContainer: Swift.String?)
+  @objc override final public var hash: Swift.Int {
+    @objc get
+  }
+  @objc override final public func isEqual(_ object: Any?) -> Swift.Bool
+  @objc override final public var description: Swift.String {
+    @objc get
+  }
+  @objc final public func copy(with zone: ObjectiveC.NSZone? = nil) -> Any
+  @objc(stringFromApplicationInstallType:) final public class func string(from installType: FBControlCore.FBApplicationInstallType) -> Swift.String
+  @objc(installTypeFromString:signerIdentity:) final public class func installType(from installTypeString: Swift.String?, signerIdentity: Swift.String?) -> FBControlCore.FBApplicationInstallType
+  @objc deinit
+}
+@objc(FBInstrumentsTimings) final public class FBInstrumentsTimings : ObjectiveC.NSObject {
+  @objc final public let terminateTimeout: Foundation.TimeInterval
+  @objc final public let launchRetryTimeout: Foundation.TimeInterval
+  @objc final public let launchErrorTimeout: Foundation.TimeInterval
+  @objc final public let operationDuration: Foundation.TimeInterval
+  @objc(timingsWithTerminateTimeout:launchRetryTimeout:launchErrorTimeout:operationDuration:) final public class func timings(withTerminateTimeout terminateTimeout: Foundation.TimeInterval, launchRetryTimeout: Foundation.TimeInterval, launchErrorTimeout: Foundation.TimeInterval, operationDuration: Foundation.TimeInterval) -> FBControlCore.FBInstrumentsTimings
+  @objc public init(terminateTimeout: Foundation.TimeInterval, launchRetryTimeout: Foundation.TimeInterval, launchErrorTimeout: Foundation.TimeInterval, operationDuration: Foundation.TimeInterval)
+  @objc deinit
+}
+@objc(FBInstrumentsConfiguration) final public class FBInstrumentsConfiguration : ObjectiveC.NSObject, Foundation.NSCopying {
+  @objc final public let templateName: Swift.String
+  @objc final public let targetApplication: Swift.String
+  @objc final public let appEnvironment: [Swift.String : Swift.String]
+  @objc final public let appArguments: [Swift.String]
+  @objc final public let toolArguments: [Swift.String]
+  @objc final public let timings: FBControlCore.FBInstrumentsTimings
+  @objc(configurationWithTemplateName:targetApplication:appEnvironment:appArguments:toolArguments:timings:) final public class func configuration(withTemplateName templateName: Swift.String, targetApplication: Swift.String, appEnvironment: [Swift.String : Swift.String], appArguments: [Swift.String], toolArguments: [Swift.String], timings: FBControlCore.FBInstrumentsTimings) -> FBControlCore.FBInstrumentsConfiguration
+  @objc public init(templateName: Swift.String, targetApplication: Swift.String, appEnvironment: [Swift.String : Swift.String], appArguments: [Swift.String], toolArguments: [Swift.String], timings: FBControlCore.FBInstrumentsTimings)
+  @objc override final public var description: Swift.String {
+    @objc get
+  }
+  @objc final public func copy(with zone: ObjectiveC.NSZone? = nil) -> Any
+  @objc deinit
+}
+extension FBControlCore.FBInstrumentsOperation {
+  public class func operationAsync(target: any FBControlCore.FBiOSTarget, configuration: FBControlCore.FBInstrumentsConfiguration, logger: any FBControlCore.FBControlCoreLogger) async throws -> FBControlCore.FBInstrumentsOperation
+  public func stopAsync() async throws -> Foundation.URL
+  public class func postProcessAsync(arguments: [Swift.String]?, traceFile: Foundation.URL, queue: Dispatch.DispatchQueue, logger: (any FBControlCore.FBControlCoreLogger)?) async throws -> Foundation.URL
+}
+public protocol FBLaunchedApplication : AnyObject {
+  var bundleID: Swift.String { get }
+  var processIdentifier: _DarwinFoundation2.pid_t { get }
+  func waitForTermination() async throws
+  func terminate() async throws
+}
+@objc(FBProcessLogOperation) public class FBProcessLogOperation : ObjectiveC.NSObject, FBControlCore.LogOperation {
+  @objc final public let process: FBControlCore.FBSubprocess<Swift.AnyObject, Swift.AnyObject, Swift.AnyObject>
+  @objc final public let consumer: any FBControlCore.FBDataConsumer
+  @objc public init(process: FBControlCore.FBSubprocess<Swift.AnyObject, Swift.AnyObject, Swift.AnyObject>, consumer: any FBControlCore.FBDataConsumer, queue: Dispatch.DispatchQueue)
+  @objc public var completed: FBControlCore.FBFuture<Foundation.NSNull> {
+    @objc get
+  }
+  public func waitUntilCompleted() async throws
+  @objc(osLogArgumentsInsertStreamIfNeeded:) public class func osLogArgumentsInsertStreamIfNeeded(_ arguments: [Swift.String]) -> [Swift.String]
+  @objc deinit
+}
+extension FBControlCore.FBObjCExceptionGuard {
+  public static func guarded<T>(_ closure: () throws -> T) throws -> T
+}
+@objc(FBProcessInfo) final public class FBProcessInfo : ObjectiveC.NSObject, Foundation.NSCopying {
+  @objc final public let processIdentifier: _DarwinFoundation2.pid_t
+  @objc final public let launchPath: Swift.String
+  @objc final public let arguments: [Swift.String]
+  @objc final public let environment: [Swift.String : Swift.String]
+  @objc final public var processName: Swift.String {
+    @objc get
+  }
+  @objc public init(processIdentifier: _DarwinFoundation2.pid_t, launchPath: Swift.String, arguments: [Swift.String], environment: [Swift.String : Swift.String])
+  @objc override final public var hash: Swift.Int {
+    @objc get
+  }
+  @objc override final public func isEqual(_ object: Any?) -> Swift.Bool
+  @objc override final public var description: Swift.String {
+    @objc get
+  }
+  @objc final public func copy(with zone: ObjectiveC.NSZone? = nil) -> Any
+  @objc deinit
+}
+@objc(FBProcessLaunchConfiguration) public class FBProcessLaunchConfiguration : ObjectiveC.NSObject {
+  @objc final public let arguments: [Swift.String]
+  @objc final public let environment: [Swift.String : Swift.String]
+  @objc final public let io: FBControlCore.FBProcessIO<Swift.AnyObject, Swift.AnyObject, Swift.AnyObject>
+  @objc public init(arguments: [Swift.String], environment: [Swift.String : Swift.String], io: FBControlCore.FBProcessIO<Swift.AnyObject, Swift.AnyObject, Swift.AnyObject>)
+  @objc override dynamic public var hash: Swift.Int {
+    @objc get
+  }
+  @objc override dynamic public func isEqual(_ object: Any?) -> Swift.Bool
+  @objc deinit
+}
+@_inheritsConvenienceInitializers @objc(FBProcessSpawnCommandHelpers) final public class FBProcessSpawnCommandHelpers : ObjectiveC.NSObject {
+  @objc final public class func resolveProcessFinished(withStatLoc statLoc: Swift.Int32, inTeardownOfIOAttachment attachment: FBControlCore.FBProcessIOAttachment, statLocFuture: FBControlCore.FBMutableFuture<Foundation.NSNumber>, exitCodeFuture: FBControlCore.FBMutableFuture<Foundation.NSNumber>, signalFuture: FBControlCore.FBMutableFuture<Foundation.NSNumber>, processIdentifier: _DarwinFoundation2.pid_t, configuration: FBControlCore.FBProcessSpawnConfiguration, queue: Dispatch.DispatchQueue, logger: (any FBControlCore.FBControlCoreLogger)?)
+  @objc override dynamic public init()
+  @objc deinit
+}
+@objc(FBProcessSpawnMode) public enum FBProcessSpawnMode : Swift.UInt {
+  case `default` = 0
+  case posixSpawn = 1
+  case launchd = 2
+  public init?(rawValue: Swift.UInt)
+  public typealias RawValue = Swift.UInt
+  public var rawValue: Swift.UInt {
+    get
+  }
+}
+@objc(FBProcessSpawnConfiguration) public class FBProcessSpawnConfiguration : FBControlCore.FBProcessLaunchConfiguration {
+  @objc final public let launchPath: Swift.String
+  @objc final public let mode: FBControlCore.FBProcessSpawnMode
+  @objc public var processName: Swift.String {
+    @objc get
+  }
+  @objc public init(launchPath: Swift.String, arguments: [Swift.String], environment: [Swift.String : Swift.String], io: FBControlCore.FBProcessIO<Swift.AnyObject, Swift.AnyObject, Swift.AnyObject>, mode: FBControlCore.FBProcessSpawnMode)
+  @objc override dynamic public var hash: Swift.Int {
+    @objc get
+  }
+  @objc override dynamic public func isEqual(_ object: Any?) -> Swift.Bool
+  @objc override dynamic public var description: Swift.String {
+    @objc get
+  }
+  @objc deinit
+}
+@objc public protocol FBStandardStream : ObjectiveC.NSObjectProtocol {
+  @objc func attach() -> FBControlCore.FBFuture<FBControlCore.FBProcessStreamAttachment>
+  @objc func detach() -> FBControlCore.FBFuture<Foundation.NSNull>
+}
+@objc public protocol FBStandardStreamTransfer : ObjectiveC.NSObjectProtocol {
+  @objc var bytesTransferred: Swift.Int { get }
+  @objc var streamError: (any Swift.Error)? { get }
+}
+@objc public protocol FBProcessFileOutput : ObjectiveC.NSObjectProtocol {
+  @objc var filePath: Swift.String { get }
+  @objc func startReading() -> FBControlCore.FBFuture<Foundation.NSNull>
+  @objc func stopReading() -> FBControlCore.FBFuture<Foundation.NSNull>
+}
+@objc(FBProcessOutput) public protocol FBProcessOutputProtocol : ObjectiveC.NSObjectProtocol {
+  @objc func providedThroughFile() -> FBControlCore.FBFuture<any FBControlCore.FBProcessFileOutput>
+  @objc func providedThroughConsumer() -> FBControlCore.FBFuture<any FBControlCore.FBDataConsumer>
+}
+extension FBControlCore.FBProcessOutput : FBControlCore.FBStandardStream, FBControlCore.FBProcessOutputProtocol {
+}
+extension FBControlCore.FBProcessInput : FBControlCore.FBStandardStream {
+}
+@_hasMissingDesignatedInitializers @objc(FBProcessTerminationStrategy) public class FBProcessTerminationStrategy : ObjectiveC.NSObject {
+  @objc public class func strategy(withConfiguration configuration: FBControlCore.FBProcessTerminationStrategyConfiguration, processFetcher: FBControlCore.FBProcessFetcher, workQueue: Dispatch.DispatchQueue, logger: any FBControlCore.FBControlCoreLogger) -> Self
+  @objc public class func strategy(withProcessFetcher processFetcher: FBControlCore.FBProcessFetcher, workQueue: Dispatch.DispatchQueue, logger: any FBControlCore.FBControlCoreLogger) -> Self
+  @discardableResult
+  @objc public func killProcessIdentifier(_ processIdentifier: _DarwinFoundation2.pid_t) -> FBControlCore.FBFuture<Foundation.NSNull>
+  @objc deinit
+}
+@objc public protocol FBSocketServerDelegate : ObjectiveC.NSObjectProtocol {
+  @objc(socketServer:clientConnected:fileDescriptor:) func socketServer(_ server: FBControlCore.FBSocketServer, clientConnected address: Darwin.in6_addr, fileDescriptor: Swift.Int32)
+  @objc var queue: Dispatch.DispatchQueue { get }
+}
+@_inheritsConvenienceInitializers @objc(FBStorageUtils) public class FBStorageUtils : ObjectiveC.NSObject {
+  @objc(bucketFilesWithExtensions:inDirectory:error:) public class func bucketFiles(withExtensions extensions: Swift.Set<Swift.String>, inDirectory directory: Foundation.URL) throws -> [Swift.String : Swift.Set<Foundation.URL>]
+  @objc(findFileWithExtension:atURL:error:) public class func findFile(withExtension ext: Swift.String, at url: Foundation.URL) throws -> Foundation.URL
+  @objc(findFilesWithExtension:atURL:error:) public class func findFiles(withExtension ext: Swift.String, at url: Foundation.URL) throws -> Swift.Set<Foundation.URL>
+  @objc(findUniqueFileInDirectory:error:) public class func findUniqueFile(inDirectory directory: Foundation.URL) throws -> Foundation.URL
+  @objc(filesInDirectory:error:) public class func files(inDirectory directory: Foundation.URL) throws -> [Foundation.URL]
+  @objc(bundleInDirectory:error:) public class func bundle(inDirectory directory: Foundation.URL) throws -> FBControlCore.FBBundleDescriptor
+  @objc override dynamic public init()
+  @objc deinit
+}
+public func awaitExitCode<StdIn, StdOut, StdErr>(of subprocess: FBControlCore.FBSubprocess<StdIn, StdOut, StdErr>) async throws -> Swift.Int32 where StdIn : AnyObject, StdOut : AnyObject, StdErr : AnyObject
+public func awaitExit<StdIn, StdOut, StdErr>(of subprocess: FBControlCore.FBSubprocess<StdIn, StdOut, StdErr>, withCodes codes: Swift.Set<Swift.Int32>) async throws where StdIn : AnyObject, StdOut : AnyObject, StdErr : AnyObject
+public func awaitStart<StdIn, StdOut, StdErr>(of builder: FBControlCore.FBProcessBuilder<StdIn, StdOut, StdErr>) async throws -> FBControlCore.FBSubprocess<StdIn, StdOut, StdErr> where StdIn : AnyObject, StdOut : AnyObject, StdErr : AnyObject
+public func awaitRunUntilCompletion<StdIn, StdOut, StdErr>(of builder: FBControlCore.FBProcessBuilder<StdIn, StdOut, StdErr>, withAcceptableExitCodes acceptableExitCodes: Swift.Set<Swift.Int32>?) async throws -> FBControlCore.FBSubprocess<StdIn, StdOut, StdErr> where StdIn : AnyObject, StdOut : AnyObject, StdErr : AnyObject
+@_inheritsConvenienceInitializers @objc final public class FBTargetCommandCache : ObjectiveC.NSObject {
+  final public func resolve<T>(_ type: T.Type = T.self, build: () throws -> T) rethrows -> T
+  final public func register<T>(_ value: T, as type: T.Type = T.self)
+  @objc override dynamic public init()
+  @objc deinit
+}
+@_hasMissingDesignatedInitializers @objc(FBTemporaryDirectory) public class FBTemporaryDirectory : ObjectiveC.NSObject {
+  @objc final public let logger: any FBControlCore.FBControlCoreLogger
+  @objc final public let queue: Dispatch.DispatchQueue
+  @objc(temporaryDirectoryWithLogger:) public class func temporaryDirectory(logger: any FBControlCore.FBControlCoreLogger) -> Self
+  @objc(initWithLogger:) convenience public init(logger: any FBControlCore.FBControlCoreLogger)
+  @objc public func cleanOnExit()
+  @objc public func ephemeralTemporaryDirectory() -> Foundation.URL
+  @objc(withGzipExtractedFromStream:name:) public func withGzipExtracted(fromStream input: FBControlCore.FBProcessInput<Swift.AnyObject>, name: Swift.String) -> FBControlCore.FBFutureContext<Foundation.NSURL>
+  @objc(withArchiveExtracted:) public func withArchiveExtracted(_ tarData: Foundation.Data) -> FBControlCore.FBFutureContext<Foundation.NSURL>
+  @objc(withArchiveExtractedFromStream:compression:) public func withArchiveExtracted(fromStream input: FBControlCore.FBProcessInput<Swift.AnyObject>, compression: FBControlCore.FBCompressionFormat) -> FBControlCore.FBFutureContext<Foundation.NSURL>
+  @objc(withArchiveExtractedFromStream:compression:overrideModificationTime:) public func withArchiveExtracted(fromStream input: FBControlCore.FBProcessInput<Swift.AnyObject>, compression: FBControlCore.FBCompressionFormat, overrideModificationTime overrideMTime: Swift.Bool) -> FBControlCore.FBFutureContext<Foundation.NSURL>
+  @objc(withArchiveExtractedFromFile:) public func withArchiveExtracted(fromFile filePath: Swift.String) -> FBControlCore.FBFutureContext<Foundation.NSURL>
+  @objc(withArchiveExtractedFromFile:overrideModificationTime:) public func withArchiveExtracted(fromFile filePath: Swift.String, overrideModificationTime overrideMTime: Swift.Bool) -> FBControlCore.FBFutureContext<Foundation.NSURL>
+  @objc(filesFromSubdirs:) public func files(fromSubdirs extractionDirContext: FBControlCore.FBFutureContext<Foundation.NSURL>) -> FBControlCore.FBFutureContext<Foundation.NSArray>
+  @objc public func temporaryDirectory() -> Foundation.URL
+  @objc public func withTemporaryDirectory() -> FBControlCore.FBFutureContext<Foundation.NSURL>
+  @objc deinit
+}
+@objc(FBTestLaunchConfiguration) final public class FBTestLaunchConfiguration : ObjectiveC.NSObject, Foundation.NSCopying {
+  @objc final public let testBundle: FBControlCore.FBBundleDescriptor
+  @objc final public let applicationLaunchConfiguration: FBControlCore.FBApplicationLaunchConfiguration
+  @objc final public let testHostBundle: FBControlCore.FBBundleDescriptor?
+  @objc final public let timeout: Foundation.TimeInterval
+  @objc final public let shouldInitializeUITesting: Swift.Bool
+  @objc final public let shouldUseXcodebuild: Swift.Bool
+  @objc final public let testsToRun: Swift.Set<Swift.String>?
+  @objc final public let testsToSkip: Swift.Set<Swift.String>?
+  @objc final public let targetApplicationBundle: FBControlCore.FBBundleDescriptor?
+  @objc final public let xcTestRunProperties: [Swift.String : Any]?
+  @objc final public let resultBundlePath: Swift.String?
+  @objc final public let reportActivities: Swift.Bool
+  @objc final public let coverageDirectoryPath: Swift.String?
+  @objc final public let shouldEnableContinuousCoverageCollection: Swift.Bool
+  @objc final public let logDirectoryPath: Swift.String?
+  @objc final public let reportResultBundle: Swift.Bool
+  @objc public init(testBundle: FBControlCore.FBBundleDescriptor, applicationLaunchConfiguration: FBControlCore.FBApplicationLaunchConfiguration, testHostBundle: FBControlCore.FBBundleDescriptor?, timeout: Foundation.TimeInterval, initializeUITesting: Swift.Bool, useXcodebuild: Swift.Bool, testsToRun: Swift.Set<Swift.String>?, testsToSkip: Swift.Set<Swift.String>?, targetApplicationBundle: FBControlCore.FBBundleDescriptor?, xcTestRunProperties: [Swift.String : Any]?, resultBundlePath: Swift.String?, reportActivities: Swift.Bool, coverageDirectoryPath: Swift.String?, enableContinuousCoverageCollection: Swift.Bool, logDirectoryPath: Swift.String?, reportResultBundle: Swift.Bool)
+  @objc final public func copy(with zone: ObjectiveC.NSZone? = nil) -> Any
+  @objc override final public func isEqual(_ object: Any?) -> Swift.Bool
+  @objc override final public var hash: Swift.Int {
+    @objc get
+  }
+  @objc override final public var description: Swift.String {
+    @objc get
+  }
+  @objc deinit
+}
+@_hasMissingDesignatedInitializers @objc(FBVideoFileWriter) public class FBVideoFileWriter : ObjectiveC.NSObject, AVFoundation.AVCaptureFileOutputRecordingDelegate {
+  @objc(writerWithSession:filePath:logger:error:) public class func writer(withSession session: AVFoundation.AVCaptureSession, filePath: Swift.String, logger: any FBControlCore.FBControlCoreLogger) throws -> Self
+  @objc public func startRecording() -> FBControlCore.FBFuture<Foundation.NSNull>
+  @objc public func stopRecording() -> FBControlCore.FBFuture<Foundation.NSNull>
+  @objc public func completed() -> FBControlCore.FBFuture<Foundation.NSNull>
+  @objc public func fileOutput(_ output: AVFoundation.AVCaptureFileOutput, didStartRecordingTo fileURL: Foundation.URL, from connections: [AVFoundation.AVCaptureConnection])
+  @objc public func fileOutput(_ output: AVFoundation.AVCaptureFileOutput, didPauseRecordingTo fileURL: Foundation.URL, from connections: [AVFoundation.AVCaptureConnection])
+  @objc public func fileOutput(_ output: AVFoundation.AVCaptureFileOutput, willFinishRecordingTo outputFileURL: Foundation.URL, from connections: [AVFoundation.AVCaptureConnection], error: (any Swift.Error)?)
+  @objc public func fileOutput(_ output: AVFoundation.AVCaptureFileOutput, didFinishRecordingTo outputFileURL: Foundation.URL, from connections: [AVFoundation.AVCaptureConnection], error: (any Swift.Error)?)
+  @objc public func fileOutput(_ output: AVFoundation.AVCaptureFileOutput, didResumeRecordingTo fileURL: Foundation.URL, from connections: [AVFoundation.AVCaptureConnection])
+  @objc deinit
+}
+public protocol FBVideoStream : AnyObject {
+  var completed: FBControlCore.FBFuture<Foundation.NSNull> { get }
+  func stop() async throws
+}
+extension FBControlCore.FBVideoStream {
+  public func awaitCompletion() async throws
+}
+public enum FBVideoStreamCodec : Swift.String {
+  case h264
+  case hevc
+  public init?(rawValue: Swift.String)
+  public typealias RawValue = Swift.String
+  public var rawValue: Swift.String {
+    get
+  }
+}
+public enum FBVideoStreamTransport : Swift.String {
+  case annexB
+  case mpegts
+  case fmp4
+  public init?(rawValue: Swift.String)
+  public typealias RawValue = Swift.String
+  public var rawValue: Swift.String {
+    get
+  }
+}
+public enum FBVideoStreamRateControlMode : Swift.Int {
+  case constantQuality
+  case averageBitrate
+  public init?(rawValue: Swift.Int)
+  public typealias RawValue = Swift.Int
+  public var rawValue: Swift.Int {
+    get
+  }
+}
+public enum FBVideoStreamFormat : Swift.Hashable {
+  case compressedVideo(withCodec: FBControlCore.FBVideoStreamCodec, transport: FBControlCore.FBVideoStreamTransport)
+  case mjpeg
+  case minicap
+  case bgra
+  public static func == (a: FBControlCore.FBVideoStreamFormat, b: FBControlCore.FBVideoStreamFormat) -> Swift.Bool
+  public func hash(into hasher: inout Swift.Hasher)
+  public var hashValue: Swift.Int {
+    get
+  }
+}
+extension FBControlCore.FBVideoStreamFormat : Swift.CustomStringConvertible {
+  public var description: Swift.String {
+    get
+  }
+}
+@_hasMissingDesignatedInitializers @objc(FBVideoStreamRateControl) final public class FBVideoStreamRateControl : ObjectiveC.NSObject, Foundation.NSCopying {
+  final public let mode: FBControlCore.FBVideoStreamRateControlMode
+  @objc final public let value: Foundation.NSNumber
+  @objc(quality:) final public class func quality(_ quality: Foundation.NSNumber) -> FBControlCore.FBVideoStreamRateControl
+  @objc(bitrate:) final public class func bitrate(_ bitrate: Foundation.NSNumber) -> FBControlCore.FBVideoStreamRateControl
+  @objc final public func copy(with zone: ObjectiveC.NSZone? = nil) -> Any
+  @objc override final public func isEqual(_ object: Any?) -> Swift.Bool
+  @objc override final public var hash: Swift.Int {
+    @objc get
+  }
+  @objc override final public var description: Swift.String {
+    @objc get
+  }
+  @objc deinit
+}
+public struct FBVideoEncodeOptions {
+  public let framesPerSecond: Foundation.NSNumber?
+  public let scaleFactor: Foundation.NSNumber?
+  public let rateControl: FBControlCore.FBVideoStreamRateControl
+  public let keyFrameRate: Foundation.NSNumber
+  public init(framesPerSecond: Foundation.NSNumber?, rateControl: FBControlCore.FBVideoStreamRateControl?, scaleFactor: Foundation.NSNumber?, keyFrameRate: Foundation.NSNumber?)
+}
+@objc(FBVideoStreamConfiguration) final public class FBVideoStreamConfiguration : ObjectiveC.NSObject, Foundation.NSCopying {
+  final public let format: FBControlCore.FBVideoStreamFormat
+  final public let encodeOptions: FBControlCore.FBVideoEncodeOptions
+  final public var framesPerSecond: Foundation.NSNumber? {
+    get
+  }
+  final public var rateControl: FBControlCore.FBVideoStreamRateControl {
+    get
+  }
+  final public var scaleFactor: Foundation.NSNumber? {
+    get
+  }
+  final public var keyFrameRate: Foundation.NSNumber {
+    get
+  }
+  public init(format: FBControlCore.FBVideoStreamFormat, encodeOptions: FBControlCore.FBVideoEncodeOptions)
+  convenience public init(format: FBControlCore.FBVideoStreamFormat, framesPerSecond: Foundation.NSNumber?, rateControl: FBControlCore.FBVideoStreamRateControl?, scaleFactor: Foundation.NSNumber?, keyFrameRate: Foundation.NSNumber?)
+  @objc final public func copy(with zone: ObjectiveC.NSZone? = nil) -> Any
+  @objc override final public func isEqual(_ object: Any?) -> Swift.Bool
+  @objc override final public var hash: Swift.Int {
+    @objc get
+  }
+  @objc override final public var description: Swift.String {
+    @objc get
+  }
+  @objc deinit
+}
+public func checkConsumerBufferLimit(_ consumer: any FBControlCore.FBDataConsumer, _ logger: any FBControlCore.FBControlCoreLogger) -> Swift.Bool
+@discardableResult
+public func WriteFrameToAnnexBStream(_ sampleBuffer: CoreMedia.CMSampleBuffer, _ context: Any?, _ consumer: any FBControlCore.FBDataConsumer, _ logger: any FBControlCore.FBControlCoreLogger, _ error: Foundation.NSErrorPointer) -> Swift.Bool
+@discardableResult
+public func WriteHEVCFrameToAnnexBStream(_ sampleBuffer: CoreMedia.CMSampleBuffer, _ context: Any?, _ consumer: any FBControlCore.FBDataConsumer, _ logger: any FBControlCore.FBControlCoreLogger, _ error: Foundation.NSErrorPointer) -> Swift.Bool
+public let FBMPEGTSMetadataPID: Swift.UInt16
+public func FBMPEGTS_CRC32(_ data: Swift.UnsafePointer<Swift.UInt8>, _ length: Swift.Int) -> Swift.UInt32
+public func FBMPEGTSCreatePATPacket(_ continuityCounter: inout Swift.UInt8) -> Foundation.Data
+public func FBMPEGTSCreatePMTPacket(_ continuityCounter: inout Swift.UInt8, _ streamType: Swift.UInt8) -> Foundation.Data
+public func FBMPEGTSPacketizePES(_ pesData: Foundation.Data, _ isKeyFrame: Swift.Bool, _ streamType: Swift.UInt8, _ pts90k: Swift.UInt64, _ videoContinuityCounter: inout Swift.UInt8, _ patContinuityCounter: inout Swift.UInt8, _ pmtContinuityCounter: inout Swift.UInt8) -> Foundation.Data
+public func FBMPEGTSCreatePMTPacketWithMetadata(_ continuityCounter: inout Swift.UInt8, _ streamType: Swift.UInt8, _ includeMetadataStream: Swift.Bool) -> Foundation.Data
+public func FBMPEGTSCreateTimedMetadataPackets(_ text: Swift.String, _ pts90k: Swift.UInt64, _ metadataContinuityCounter: inout Swift.UInt8) -> Foundation.Data
+public func FBMPEGTSEnableMetadataStream()
+public func FBMPEGTSWriteTimedMetadata(_ text: Swift.String, _ consumer: any FBControlCore.FBDataConsumer)
+@discardableResult
+public func WriteHEVCFrameToMPEGTSStream(_ sampleBuffer: CoreMedia.CMSampleBuffer, _ context: Any?, _ consumer: any FBControlCore.FBDataConsumer, _ logger: any FBControlCore.FBControlCoreLogger, _ error: Foundation.NSErrorPointer) -> Swift.Bool
+@discardableResult
+public func WriteH264FrameToMPEGTSStream(_ sampleBuffer: CoreMedia.CMSampleBuffer, _ context: Any?, _ consumer: any FBControlCore.FBDataConsumer, _ logger: any FBControlCore.FBControlCoreLogger, _ error: Foundation.NSErrorPointer) -> Swift.Bool
+@discardableResult
+public func WriteJPEGDataToMJPEGStream(_ jpegDataBuffer: CoreMedia.CMBlockBuffer, _ consumer: any FBControlCore.FBDataConsumer, _ logger: any FBControlCore.FBControlCoreLogger, _ error: Foundation.NSErrorPointer) -> Swift.Bool
+@discardableResult
+public func WriteJPEGDataToMinicapStream(_ jpegDataBuffer: CoreMedia.CMBlockBuffer, _ consumer: any FBControlCore.FBDataConsumer, _ logger: any FBControlCore.FBControlCoreLogger, _ error: Foundation.NSErrorPointer) -> Swift.Bool
+@discardableResult
+public func WriteMinicapHeaderToStream(_ width: Swift.UInt32, _ height: Swift.UInt32, _ consumer: any FBControlCore.FBDataConsumer, _ logger: any FBControlCore.FBControlCoreLogger, _ error: Foundation.NSErrorPointer) -> Swift.Bool
+final public class FBFMP4MuxerContext {
+  final public let isHEVC: Swift.Bool
+  final public var initWritten: Swift.Bool
+  final public var sequenceNumber: Swift.UInt32
+  final public var baseDecodeTime: Swift.UInt64
+  final public var lastPts90k: Swift.UInt64
+  public init(hevc isHEVC: Swift.Bool)
+  @objc deinit
+}
+@discardableResult
+public func WriteH264FrameToFMP4Stream(_ sampleBuffer: CoreMedia.CMSampleBuffer, _ context: Any?, _ consumer: any FBControlCore.FBDataConsumer, _ logger: any FBControlCore.FBControlCoreLogger, _ error: Foundation.NSErrorPointer) -> Swift.Bool
+@discardableResult
+public func WriteHEVCFrameToFMP4Stream(_ sampleBuffer: CoreMedia.CMSampleBuffer, _ context: Any?, _ consumer: any FBControlCore.FBDataConsumer, _ logger: any FBControlCore.FBControlCoreLogger, _ error: Foundation.NSErrorPointer) -> Swift.Bool
+public func FBFMP4WriteEmsgBox(_ context: FBControlCore.FBFMP4MuxerContext, _ text: Swift.String, _ consumer: any FBControlCore.FBDataConsumer)
+extension FBControlCore.FBWeakFramework {
+  @objc(CoreSimulator) dynamic public class var coreSimulator: FBControlCore.FBWeakFramework {
+    @objc get
+  }
+  @objc(SimulatorKit) dynamic public class var simulatorKit: FBControlCore.FBWeakFramework {
+    @objc get
+  }
+  @objc(DTXConnectionServices) dynamic public class var dtxConnectionServices: FBControlCore.FBWeakFramework {
+    @objc get
+  }
+  @objc(XCTest) dynamic public class var xcTest: FBControlCore.FBWeakFramework {
+    @objc get
+  }
+  @objc(MobileDevice) dynamic public class var mobileDevice: FBControlCore.FBWeakFramework {
+    @objc get
+  }
+  @objc(AccessibilityPlatformTranslation) dynamic public class var accessibilityPlatformTranslation: FBControlCore.FBWeakFramework {
+    @objc get
+  }
+}
+@_hasMissingDesignatedInitializers @objc(FBWeakFramework) public class FBWeakFramework : ObjectiveC.NSObject {
+  @objc final public let name: Swift.String
+  @objc(xcodeFrameworkWithRelativePath:requiredClassNames:) public class func xcodeFramework(withRelativePath relativePath: Swift.String, requiredClassNames: [Swift.String]) -> FBControlCore.FBWeakFramework
+  @objc(frameworkWithPath:requiredClassNames:rootPermitted:) public class func framework(withPath absolutePath: Swift.String, requiredClassNames: [Swift.String], rootPermitted: Swift.Bool) -> FBControlCore.FBWeakFramework
+  @objc(loadWithLogger:error:) public func load(with logger: any FBControlCore.FBControlCoreLogger) throws
+  @objc deinit
+}
+@objc(FBXCTestShimConfiguration) public class FBXCTestShimConfiguration : ObjectiveC.NSObject, Foundation.NSCopying {
+  @objc final public let iOSSimulatorTestShimPath: Swift.String
+  @objc final public let macOSTestShimPath: Swift.String
+  @objc public init(iOSSimulatorTestShimPath: Swift.String, macOSTestShimPath: Swift.String)
+  @objc public class func findShimDirectory(onQueue queue: Dispatch.DispatchQueue, logger: (any FBControlCore.FBControlCoreLogger)?) -> FBControlCore.FBFuture<Foundation.NSString>
+  @objc(sharedShimConfigurationWithLogger:) public class func sharedShimConfiguration(with logger: (any FBControlCore.FBControlCoreLogger)?) -> FBControlCore.FBFuture<FBControlCore.FBXCTestShimConfiguration>
+  @objc public class func defaultShimConfiguration(with logger: (any FBControlCore.FBControlCoreLogger)?) -> FBControlCore.FBFuture<FBControlCore.FBXCTestShimConfiguration>
+  @objc public class func shimConfiguration(withDirectory directory: Swift.String, logger: (any FBControlCore.FBControlCoreLogger)?) -> FBControlCore.FBFuture<FBControlCore.FBXCTestShimConfiguration>
+  @objc public func copy(with zone: ObjectiveC.NSZone? = nil) -> Any
+  @objc override dynamic public func isEqual(_ object: Any?) -> Swift.Bool
+  @objc override dynamic public var hash: Swift.Int {
+    @objc get
+  }
+  @objc deinit
+}
+@objc(FBXCTraceRecordConfiguration) final public class FBXCTraceRecordConfiguration : ObjectiveC.NSObject, Foundation.NSCopying {
+  @objc final public let templateName: Swift.String
+  @objc final public let timeLimit: Foundation.TimeInterval
+  @objc final public let package: Swift.String?
+  @objc final public let allProcesses: Swift.Bool
+  @objc final public let processToAttach: Swift.String?
+  @objc final public let processToLaunch: Swift.String?
+  @objc final public let launchArgs: [Swift.String]?
+  @objc final public let targetStdin: Swift.String?
+  @objc final public let targetStdout: Swift.String?
+  @objc final public let processEnv: [Swift.String : Swift.String]?
+  @objc final public let shim: FBControlCore.FBXCTestShimConfiguration?
+  @objc(RecordWithTemplateName:timeLimit:package:allProcesses:processToAttach:processToLaunch:launchArgs:targetStdin:targetStdout:processEnv:shim:) final public class func record(withTemplateName templateName: Swift.String, timeLimit: Foundation.TimeInterval, package: Swift.String?, allProcesses: Swift.Bool, processToAttach: Swift.String?, processToLaunch: Swift.String?, launchArgs: [Swift.String]?, targetStdin: Swift.String?, targetStdout: Swift.String?, processEnv: [Swift.String : Swift.String]?, shim: FBControlCore.FBXCTestShimConfiguration?) -> FBControlCore.FBXCTraceRecordConfiguration
+  @objc public init(templateName: Swift.String, timeLimit: Foundation.TimeInterval, package: Swift.String?, allProcesses: Swift.Bool, processToAttach: Swift.String?, processToLaunch: Swift.String?, launchArgs: [Swift.String]?, targetStdin: Swift.String?, targetStdout: Swift.String?, processEnv: [Swift.String : Swift.String]?, shim: FBControlCore.FBXCTestShimConfiguration?)
+  @objc final public func withShim(_ shim: FBControlCore.FBXCTestShimConfiguration) -> FBControlCore.FBXCTraceRecordConfiguration
+  @objc override final public var description: Swift.String {
+    @objc get
+  }
+  @objc final public func copy(with zone: ObjectiveC.NSZone? = nil) -> Any
+  @objc deinit
+}
+final public class FBXCTraceRecordOperation {
+  final public let task: FBControlCore.FBSubprocess<Swift.AnyObject, Swift.AnyObject, Swift.AnyObject>
+  final public let queue: Dispatch.DispatchQueue
+  final public let traceDir: Foundation.URL
+  final public let configuration: FBControlCore.FBXCTraceRecordConfiguration
+  final public let logger: any FBControlCore.FBControlCoreLogger
+  public init(task: FBControlCore.FBSubprocess<Swift.AnyObject, Swift.AnyObject, Swift.AnyObject>, traceDir: Foundation.URL, configuration: FBControlCore.FBXCTraceRecordConfiguration, queue: Dispatch.DispatchQueue, logger: any FBControlCore.FBControlCoreLogger)
+  final public class func operation(with target: any FBControlCore.FBiOSTarget, configuration: FBControlCore.FBXCTraceRecordConfiguration, logger: any FBControlCore.FBControlCoreLogger) async throws -> FBControlCore.FBXCTraceRecordOperation
+  final public func stop(withTimeout timeout: Foundation.TimeInterval) async throws -> Foundation.URL
+  final public class func xctracePath() throws -> Swift.String
+  @objc deinit
+}
+@_hasMissingDesignatedInitializers @objc(FBXCTraceRecordCommands) public class FBXCTraceRecordCommands : ObjectiveC.NSObject, FBControlCore.FBiOSTargetCommand {
+  @objc final public let target: any FBControlCore.FBiOSTarget
+  @objc(commandsWithTarget:) public class func commands(with target: any FBControlCore.FBiOSTarget) -> Self
+  public func startXctraceRecord(_ configuration: FBControlCore.FBXCTraceRecordConfiguration, logger: any FBControlCore.FBControlCoreLogger) async throws -> FBControlCore.FBXCTraceRecordOperation
+  @objc deinit
+}
+@_inheritsConvenienceInitializers @objc(FBXcodeConfiguration) public class FBXcodeConfiguration : ObjectiveC.NSObject {
+  @objc public static func setInjectedDeveloperDirectory(_ developerDirectory: Swift.String?)
+  @objc public static var developerDirectory: Swift.String {
+    @objc get
+  }
+  @objc public static func getDeveloperDirectoryIfExists() -> Swift.String?
+  @objc public static var contentsDirectory: Swift.String {
+    @objc get
+  }
+  @objc public static var xcodeVersionNumber: Foundation.NSDecimalNumber {
+    @objc get
+  }
+  @objc public static var xcodeVersion: Foundation.OperatingSystemVersion {
+    @objc get
+  }
+  @objc public static var iosSDKVersionNumber: Foundation.NSDecimalNumber {
+    @objc get
+  }
+  @objc public static let iosSDKVersionNumberFormatter: Foundation.NumberFormatter
+  @objc public static var iosSDKVersion: Swift.String {
+    @objc get
+  }
+  @objc public static var isXcode12OrGreater: Swift.Bool {
+    @objc get
+  }
+  @objc public static var isXcode12_5OrGreater: Swift.Bool {
+    @objc get
+  }
+  @objc public static var simulatorApp: FBControlCore.FBBundleDescriptor {
+    @objc get
+  }
+  @objc override dynamic public class func description() -> Swift.String
+  @objc override dynamic public var description: Swift.String {
+    @objc get
+  }
+  @objc override dynamic public init()
+  @objc deinit
+}
+public struct FBXcodeDirectory {
+  public static func resolveDeveloperDirectory() throws -> Swift.String
+  public static func xcodeSelectDeveloperDirectory() throws -> Swift.String
+  public static func symlinkedDeveloperDirectory() throws -> Swift.String
+}
+@objc public protocol FBiOSTargetCommand : ObjectiveC.NSObjectProtocol {
+  @objc(commandsWithTarget:) static func commands(with target: any FBControlCore.FBiOSTarget) -> Self
+}
+@objc public protocol FBiOSTargetInfo : ObjectiveC.NSObjectProtocol {
+  @objc var uniqueIdentifier: Swift.String { get }
+  @objc var udid: Swift.String { get }
+  @objc var name: Swift.String { get }
+  @objc var deviceType: FBControlCore.FBDeviceType { get }
+  @objc var architectures: [FBControlCore.FBArchitecture] { get }
+  @objc var osVersion: FBControlCore.FBOSVersion { get }
+  @objc var extendedInformation: [Swift.String : Any] { get }
+  @objc var targetType: FBControlCore.FBiOSTargetType { get }
+  @objc var state: FBControlCore.FBiOSTargetState { get }
+}
+@objc public protocol FBiOSTarget : FBControlCore.FBiOSTargetCommand, FBControlCore.FBiOSTargetInfo {
+  @objc var logger: (any FBControlCore.FBControlCoreLogger)? { get }
+  @objc var customDeviceSetPath: Swift.String? { get }
+  @objc var temporaryDirectory: FBControlCore.FBTemporaryDirectory { get }
+  @objc var auxillaryDirectory: Swift.String { get }
+  @objc var runtimeRootDirectory: Swift.String { get }
+  @objc var platformRootDirectory: Swift.String { get }
+  @objc var screenInfo: FBControlCore.FBiOSTargetScreenInfo? { get }
+  @objc var workQueue: Dispatch.DispatchQueue { get }
+  @objc var asyncQueue: Dispatch.DispatchQueue { get }
+  @objc(compare:) func compare(_ target: any FBControlCore.FBiOSTarget) -> Foundation.ComparisonResult
+  @objc func requiresBundlesToBeSigned() -> Swift.Bool
+  @objc func replacementMapping() -> [Swift.String : Swift.String]
+  @objc func environmentAdditions() -> [Swift.String : Swift.String]
+}
+public func FBControlCoreProductFamilyString(_ family: FBControlCore.FBControlCoreProductFamily) -> Swift.String
+@objc(FBiOSTargetScreenInfo) final public class FBiOSTargetScreenInfo : ObjectiveC.NSObject, Foundation.NSCopying {
+  @objc final public let widthPixels: Swift.UInt
+  @objc final public let heightPixels: Swift.UInt
+  @objc final public let scale: Swift.Float
+  @objc public init(widthPixels: Swift.UInt, heightPixels: Swift.UInt, scale: Swift.Float)
+  @objc override final public func isEqual(_ object: Any?) -> Swift.Bool
+  @objc override final public var hash: Swift.Int {
+    @objc get
+  }
+  @objc override final public var description: Swift.String {
+    @objc get
+  }
+  @objc final public func copy(with zone: ObjectiveC.NSZone? = nil) -> Any
+  @objc deinit
+}
+@_hasMissingDesignatedInitializers @objc(FBDeviceType) final public class FBDeviceType : ObjectiveC.NSObject, Foundation.NSCopying {
+  @objc final public let model: FBControlCore.FBDeviceModel
+  @objc final public let productTypes: Swift.Set<Swift.String>
+  @objc final public let deviceArchitecture: FBControlCore.FBArchitecture
+  @objc final public let family: FBControlCore.FBControlCoreProductFamily
+  @objc(genericWithName:) final public class func generic(withName name: Swift.String) -> FBControlCore.FBDeviceType
+  @objc override final public func isEqual(_ object: Any?) -> Swift.Bool
+  @objc override final public var hash: Swift.Int {
+    @objc get
+  }
+  @objc override final public var description: Swift.String {
+    @objc get
+  }
+  @objc final public func copy(with zone: ObjectiveC.NSZone? = nil) -> Any
+  @objc deinit
+}
+@_hasMissingDesignatedInitializers @objc(FBOSVersion) final public class FBOSVersion : ObjectiveC.NSObject, Foundation.NSCopying {
+  @objc final public let name: FBControlCore.FBOSVersionName
+  @objc final public let families: Swift.Set<Foundation.NSNumber>
+  @objc(genericWithName:) final public class func generic(withName name: Swift.String) -> FBControlCore.FBOSVersion
+  @objc(operatingSystemVersionFromName:) final public class func operatingSystemVersion(fromName name: Swift.String) -> Foundation.OperatingSystemVersion
+  @objc final public var versionString: Swift.String {
+    @objc get
+  }
+  @objc final public var number: Foundation.NSDecimalNumber {
+    @objc get
+  }
+  @objc final public var version: Foundation.OperatingSystemVersion {
+    @objc get
+  }
+  @objc override final public func isEqual(_ object: Any?) -> Swift.Bool
+  @objc override final public var hash: Swift.Int {
+    @objc get
+  }
+  @objc override final public var description: Swift.String {
+    @objc get
+  }
+  @objc final public func copy(with zone: ObjectiveC.NSZone? = nil) -> Any
+  @objc deinit
+}
+@_inheritsConvenienceInitializers @objc(FBiOSTargetConfiguration) final public class FBiOSTargetConfiguration : ObjectiveC.NSObject {
+  @objc final public class var nameToDevice: [FBControlCore.FBDeviceModel : FBControlCore.FBDeviceType] {
+    @objc get
+  }
+  @objc final public class var productTypeToDevice: [Swift.String : FBControlCore.FBDeviceType] {
+    @objc get
+  }
+  @objc final public class var nameToOSVersion: [FBControlCore.FBOSVersionName : FBControlCore.FBOSVersion] {
+    @objc get
+  }
+  @objc(baseArchsToCompatibleArch:) final public class func baseArchsToCompatibleArch(_ architectures: [FBControlCore.FBArchitecture]) -> Swift.Set<FBControlCore.FBArchitecture>
+  @objc override dynamic public init()
+  @objc deinit
+}
+@objc public protocol FBiOSTargetSetDelegate {
+  @objc(targetAdded:inTargetSet:) func targetAdded(_ targetInfo: any FBControlCore.FBiOSTargetInfo, in targetSet: any FBControlCore.FBiOSTargetSet)
+  @objc(targetRemoved:inTargetSet:) func targetRemoved(_ targetInfo: any FBControlCore.FBiOSTargetInfo, in targetSet: any FBControlCore.FBiOSTargetSet)
+  @objc(targetUpdated:inTargetSet:) func targetUpdated(_ targetInfo: any FBControlCore.FBiOSTargetInfo, in targetSet: any FBControlCore.FBiOSTargetSet)
+}
+@objc public protocol FBiOSTargetSet : ObjectiveC.NSObjectProtocol {
+  @objc weak var delegate: (any FBControlCore.FBiOSTargetSetDelegate)? { get set }
+  @objc var allTargetInfos: [any FBControlCore.FBiOSTargetInfo] { get }
+  @objc(targetWithUDID:) func target(withUDID udid: Swift.String) -> (any FBControlCore.FBiOSTargetInfo)?
+}
+public protocol FileCommands : AnyObject {
+  func withFileCommandsForContainerApplication<R>(_ bundleID: Swift.String, body: (any FBControlCore.AsyncFileContainer) async throws -> R) async throws -> R
+  func withFileCommandsForAuxillary<R>(body: (any FBControlCore.AsyncFileContainer) async throws -> R) async throws -> R
+  func withFileCommandsForApplicationContainers<R>(body: (any FBControlCore.AsyncFileContainer) async throws -> R) async throws -> R
+  func withFileCommandsForGroupContainers<R>(body: (any FBControlCore.AsyncFileContainer) async throws -> R) async throws -> R
+  func withFileCommandsForRootFilesystem<R>(body: (any FBControlCore.AsyncFileContainer) async throws -> R) async throws -> R
+  func withFileCommandsForMediaDirectory<R>(body: (any FBControlCore.AsyncFileContainer) async throws -> R) async throws -> R
+  func withFileCommandsForProvisioningProfiles<R>(body: (any FBControlCore.AsyncFileContainer) async throws -> R) async throws -> R
+  func withFileCommandsForMDMProfiles<R>(body: (any FBControlCore.AsyncFileContainer) async throws -> R) async throws -> R
+  func withFileCommandsForSpringboardIconLayout<R>(body: (any FBControlCore.AsyncFileContainer) async throws -> R) async throws -> R
+  func withFileCommandsForWallpaper<R>(body: (any FBControlCore.AsyncFileContainer) async throws -> R) async throws -> R
+  func withFileCommandsForDiskImages<R>(body: (any FBControlCore.AsyncFileContainer) async throws -> R) async throws -> R
+  func withFileCommandsForSymbols<R>(body: (any FBControlCore.AsyncFileContainer) async throws -> R) async throws -> R
+}
+public protocol InstrumentsCommands : AnyObject {
+  func startInstruments(configuration: FBControlCore.FBInstrumentsConfiguration, logger: any FBControlCore.FBControlCoreLogger) async throws -> FBControlCore.FBInstrumentsOperation
+}
+public protocol LifecycleCommands : AnyObject {
+  func resolveState(_ state: FBControlCore.FBiOSTargetState) async throws
+  func resolveLeavesState(_ state: FBControlCore.FBiOSTargetState) async throws
+}
+public protocol LocationCommands : AnyObject {
+  func overrideLocation(longitude: Swift.Double, latitude: Swift.Double) async throws
+}
+public protocol LogOperation : AnyObject {
+  var consumer: any FBControlCore.FBDataConsumer { get }
+  func waitUntilCompleted() async throws
+}
+public protocol LogCommands : AnyObject {
+  func tailLog(arguments: [Swift.String], consumer: any FBControlCore.FBDataConsumer) async throws -> any FBControlCore.LogOperation
+}
+public protocol MemoryCommands : AnyObject {
+  func simulateMemoryWarning() async throws
+}
+extension Foundation.NSPredicate {
+  @objc dynamic public class func notNullPredicate() -> Foundation.NSPredicate
+}
+public protocol NotificationCommands : AnyObject {
+  func sendPushNotification(forBundleID bundleID: Swift.String, jsonPayload: Swift.String) async throws
+}
+extension Swift.UInt32 {
+  public var fourCharCodeString: Swift.String {
+    get
+  }
+}
+public protocol PowerCommands : AnyObject {
+  func shutdown() async throws
+  func reboot() async throws
+}
+public protocol ProcessSpawnCommands : AnyObject {
+  func launchProcess(_ configuration: FBControlCore.FBProcessSpawnConfiguration) async throws -> FBControlCore.FBSubprocess<Swift.AnyObject, Swift.AnyObject, Swift.AnyObject>
+}
+public protocol ProvisioningProfileCommands : AnyObject {
+  func allProvisioningProfiles() async throws -> [[Swift.String : Any]]
+  func removeProvisioningProfile(uuid: Swift.String) async throws -> [Swift.String : Any]
+  func installProvisioningProfile(_ profileData: Foundation.Data) async throws -> [Swift.String : Any]
+}
+public protocol ReplCommands : AnyObject {
+  func startReplTest(bundlePath: Swift.String) async throws -> FBControlCore.ReplSession
+  func startReplSimulator() async throws -> FBControlCore.ReplSession
+  func startReplApp(bundleID: Swift.String) async throws -> FBControlCore.ReplSession
+}
+public struct ReplSession {
+  public let socketPath: Swift.String
+  public let run: FBControlCore.FBFuture<Foundation.NSNull>
+  public let extraInterfacePaths: [Swift.String]
+  public init(socketPath: Swift.String, run: FBControlCore.FBFuture<Foundation.NSNull>, extraInterfacePaths: [Swift.String] = [])
+}
+public protocol ScreenshotCommands : AnyObject {
+  func takeScreenshot(format: FBControlCore.FBScreenshotFormat) async throws -> Foundation.Data
+}
+public protocol VideoRecordingCommands : AnyObject {
+  func startRecording(toFile filePath: Swift.String) async throws
+  func startRecording(toFile filePath: Swift.String, configuration: FBControlCore.FBVideoStreamConfiguration) async throws
+  func stopRecording() async throws
+}
+extension FBControlCore.VideoRecordingCommands {
+  public func startRecording(toFile filePath: Swift.String, configuration: FBControlCore.FBVideoStreamConfiguration) async throws
+}
+public protocol VideoStreamCommands : AnyObject {
+  func createStream(configuration: FBControlCore.FBVideoStreamConfiguration, to consumer: any FBControlCore.FBDataConsumer) async throws -> any FBControlCore.FBVideoStream
+}
+public protocol XCTestCommands : AnyObject {
+  func runTest(launchConfiguration: FBControlCore.FBTestLaunchConfiguration, reporter: Swift.AnyObject, logger: any FBControlCore.FBControlCoreLogger) async throws
+}
+public protocol XCTestExtendedCommands : FBControlCore.XCTestCommands {
+  func listTests(forBundleAtPath bundlePath: Swift.String, timeout: Foundation.TimeInterval, withAppAtPath appPath: Swift.String?) async throws -> [Swift.String]
+  func extendedTestShim() async throws -> Swift.String
+  func withTransportForTestManagerService<R>(body: (Foundation.NSNumber) async throws -> R) async throws -> R
+  var xctestPath: Swift.String { get }
+}
+public protocol XCTraceRecordCommands : AnyObject {
+  func startXctraceRecord(configuration: FBControlCore.FBXCTraceRecordConfiguration, logger: any FBControlCore.FBControlCoreLogger) async throws -> FBControlCore.FBXCTraceRecordOperation
+}
+extension FBControlCore.AsyncFBFutureBridgeError : Swift.Equatable {}
+extension FBControlCore.AsyncFBFutureBridgeError : Swift.Hashable {}
+extension FBControlCore.FBAXKeys : Swift.Equatable {}
+extension FBControlCore.FBAXKeys : Swift.Hashable {}
+extension FBControlCore.FBAXKeys : Swift.RawRepresentable {}
+extension FBControlCore.FBAXSearchableKey : Swift.Equatable {}
+extension FBControlCore.FBAXSearchableKey : Swift.Hashable {}
+extension FBControlCore.FBAXSearchableKey : Swift.RawRepresentable {}
+extension FBControlCore.FBAccessibilityScrollDirection : Swift.Equatable {}
+extension FBControlCore.FBAccessibilityScrollDirection : Swift.Hashable {}
+extension FBControlCore.FBApplicationLaunchMode : Swift.Equatable {}
+extension FBControlCore.FBApplicationLaunchMode : Swift.Hashable {}
+extension FBControlCore.FBApplicationLaunchMode : Swift.RawRepresentable {}
+extension FBControlCore.FBProcessSpawnMode : Swift.Equatable {}
+extension FBControlCore.FBProcessSpawnMode : Swift.Hashable {}
+extension FBControlCore.FBProcessSpawnMode : Swift.RawRepresentable {}
+extension FBControlCore.FBVideoStreamCodec : Swift.Equatable {}
+extension FBControlCore.FBVideoStreamCodec : Swift.Hashable {}
+extension FBControlCore.FBVideoStreamCodec : Swift.RawRepresentable {}
+extension FBControlCore.FBVideoStreamTransport : Swift.Equatable {}
+extension FBControlCore.FBVideoStreamTransport : Swift.Hashable {}
+extension FBControlCore.FBVideoStreamTransport : Swift.RawRepresentable {}
+extension FBControlCore.FBVideoStreamRateControlMode : Swift.Equatable {}
+extension FBControlCore.FBVideoStreamRateControlMode : Swift.Hashable {}
+extension FBControlCore.FBVideoStreamRateControlMode : Swift.RawRepresentable {}

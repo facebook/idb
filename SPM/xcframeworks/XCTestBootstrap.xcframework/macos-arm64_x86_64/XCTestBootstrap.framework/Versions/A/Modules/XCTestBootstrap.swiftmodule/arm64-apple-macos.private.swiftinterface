@@ -1,0 +1,402 @@
+// swift-interface-format-version: 1.0
+// swift-compiler-version: Apple Swift version 6.3 (swiftlang-6.3.0.123.5 clang-2100.0.123.102)
+// swift-module-flags: -target arm64-apple-macos15.0 -enable-objc-interop -enable-library-evolution -swift-version 6 -O -enable-experimental-feature DebugDescriptionMacro -module-name XCTestBootstrap
+// swift-module-flags-ignorable: -no-verify-emitted-module-interface -formal-cxx-interoperability-mode=off -interface-compiler-version 6.3
+@preconcurrency import FBControlCore
+import Foundation
+import IOKit
+import Swift
+@_exported import XCTestBootstrap
+import _Concurrency
+import _StringProcessing
+import _SwiftConcurrencyShims
+@objc final public class FBCodeCoverageConfiguration : ObjectiveC.NSObject {
+  @objc final public let coverageDirectory: Swift.String
+  @objc final public let format: XCTestBootstrap.FBCodeCoverageFormat
+  @objc final public let shouldEnableContinuousCoverageCollection: Swift.Bool
+  @objc public init(directory coverageDirectory: Swift.String, format: XCTestBootstrap.FBCodeCoverageFormat, enableContinuousCoverageCollection: Swift.Bool)
+  @objc override final public var description: Swift.String {
+    @objc get
+  }
+  @objc deinit
+}
+@objc final public class FBExceptionInfo : ObjectiveC.NSObject {
+  @objc final public let message: Swift.String
+  @objc final public let file: Swift.String?
+  @objc final public let line: Swift.UInt
+  @objc public init(message: Swift.String, file: Swift.String?, line: Swift.UInt)
+  @objc convenience public init(message: Swift.String)
+  @objc override final public var description: Swift.String {
+    @objc get
+  }
+  @objc deinit
+}
+@objc final public class FBJSONTestReporter : ObjectiveC.NSObject, XCTestBootstrap.FBXCTestReporter {
+  @objc public init(testBundlePath: Swift.String, testType: Swift.String, logger: (any FBControlCore.FBControlCoreLogger)?, dataConsumer: any FBControlCore.FBDataConsumer)
+  @objc final public func printReport() throws
+  @objc final public func processWaitingForDebugger(withProcessIdentifier pid: _DarwinFoundation2.pid_t)
+  @objc final public func didBeginExecutingTestPlan()
+  @objc final public func didFinishExecutingTestPlan()
+  @objc final public func testSuite(_ testSuite: Swift.String, didStartAt startTime: Swift.String)
+  @objc final public func testCaseDidStart(forTestClass testClass: Swift.String, method: Swift.String)
+  @objc final public func testCaseDidFail(forTestClass testClass: Swift.String, method: Swift.String, exceptions: [XCTestBootstrap.FBExceptionInfo])
+  @objc final public func testCaseDidFinish(forTestClass testClass: Swift.String, method: Swift.String, with status: XCTestBootstrap.FBTestReportStatus, duration: Foundation.TimeInterval, logs: [Swift.String]?)
+  @objc final public func finished(with summary: XCTestBootstrap.FBTestManagerResultSummary)
+  @objc final public func didRecordVideo(atPath videoRecordingPath: Swift.String)
+  @objc final public func didSaveOSLog(atPath osLogPath: Swift.String)
+  @objc final public func didCopiedTestArtifact(_ testArtifactFilename: Swift.String, toPath path: Swift.String)
+  @objc final public func testHadOutput(_ output: Swift.String)
+  @objc final public func handleExternalEvent(_ line: Swift.String)
+  @objc final public func processUnderTestDidExit()
+  @objc final public func didCrashDuringTest(_ error: any Swift.Error)
+  @objc deinit
+}
+@objc final public class FBListTestStrategy : ObjectiveC.NSObject {
+  public init(target: any FBControlCore.FBiOSTarget & FBControlCore.ProcessSpawnCommands & FBControlCore.XCTestExtendedCommands, configuration: XCTestBootstrap.FBListTestConfiguration, logger: any FBControlCore.FBControlCoreLogger)
+  @objc final public func listTests() -> FBControlCore.FBFuture<Foundation.NSArray>
+  @objc final public func wrapInReporter(_ reporter: any XCTestBootstrap.FBXCTestReporter) -> any XCTestBootstrap.FBXCTestRunner
+  @objc deinit
+}
+@objc final public class FBLogicReporterAdapter : ObjectiveC.NSObject, XCTestBootstrap.FBLogicXCTestReporter {
+  @objc public init(reporter: any XCTestBootstrap.FBXCTestReporter, logger: (any FBControlCore.FBControlCoreLogger)?)
+  @objc final public func didBeginExecutingTestPlan()
+  @objc final public func didFinishExecutingTestPlan()
+  @objc final public func processWaitingForDebugger(withProcessIdentifier pid: _DarwinFoundation2.pid_t)
+  @objc final public func testHadOutput(_ output: Swift.String)
+  @objc final public func handleEventJSONData(_ data: Foundation.Data)
+  @objc final public func didCrashDuringTest(_ error: any Swift.Error)
+  @objc deinit
+}
+@objc final public class FBLogicTestRunStrategy : ObjectiveC.NSObject, XCTestBootstrap.FBXCTestRunner {
+  public init(target: any FBControlCore.FBiOSTarget & FBControlCore.ProcessSpawnCommands & FBControlCore.XCTestExtendedCommands, configuration: XCTestBootstrap.FBLogicTestConfiguration, reporter: any XCTestBootstrap.FBLogicXCTestReporter, logger: any FBControlCore.FBControlCoreLogger)
+  @objc final public func execute() -> FBControlCore.FBFuture<Foundation.NSNull>
+  @objc deinit
+}
+@objc public protocol FBLogicXCTestReporter : ObjectiveC.NSObjectProtocol {
+  @objc(processWaitingForDebuggerWithProcessIdentifier:) func processWaitingForDebugger(withProcessIdentifier pid: _DarwinFoundation2.pid_t)
+  @objc func didBeginExecutingTestPlan()
+  @objc func didFinishExecutingTestPlan()
+  @objc(testHadOutput:) func testHadOutput(_ output: Swift.String)
+  @objc(handleEventJSONData:) func handleEventJSONData(_ data: Foundation.Data)
+  @objc(didCrashDuringTest:) func didCrashDuringTest(_ error: any Swift.Error)
+}
+@_inheritsConvenienceInitializers @objc final public class FBMacDevice : ObjectiveC.NSObject, FBControlCore.FBiOSTarget {
+  @objc final public let architectures: [FBControlCore.FBArchitecture]
+  @objc final public let asyncQueue: Dispatch.DispatchQueue
+  @objc final public let auxillaryDirectory: Swift.String
+  @objc final public var name: Swift.String
+  @objc final public var logger: (any FBControlCore.FBControlCoreLogger)?
+  @objc final public let osVersion: FBControlCore.FBOSVersion
+  @objc final public var state: FBControlCore.FBiOSTargetState
+  @objc final public let targetType: FBControlCore.FBiOSTargetType
+  @objc final public let workQueue: Dispatch.DispatchQueue
+  @objc final public let screenInfo: FBControlCore.FBiOSTargetScreenInfo?
+  @objc final public var deviceType: FBControlCore.FBDeviceType
+  @objc final public let udid: Swift.String
+  @objc final public let temporaryDirectory: FBControlCore.FBTemporaryDirectory
+  @objc public static var applicationInstallDirectory: Swift.String {
+    @objc get
+  }
+  @objc public static func fetchInstalledApplications() -> Foundation.NSMutableDictionary
+  @objc override dynamic public init()
+  @objc convenience public init(logger: any FBControlCore.FBControlCoreLogger)
+  @objc public init(logger: any FBControlCore.FBControlCoreLogger, catalyst: Swift.Bool)
+  @objc final public func restorePrimaryDeviceState() -> FBControlCore.FBFuture<Foundation.NSNull>
+  @objc final public var runtimeRootDirectory: Swift.String {
+    @objc get
+  }
+  @objc final public var platformRootDirectory: Swift.String {
+    @objc get
+  }
+  @objc final public var xctestPath: Swift.String {
+    @objc get
+  }
+  @objc final public func transportForTestManagerService() -> FBControlCore.FBFutureContext<Foundation.NSNumber>
+  @objc final public func processID(withBundleID bundleID: Swift.String) -> FBControlCore.FBFuture<Foundation.NSNumber>
+  @objc final public var consoleString: Swift.String {
+    @objc get
+  }
+  @objc final public func requiresBundlesToBeSigned() -> Swift.Bool
+  @objc public static func commands(with target: any FBControlCore.FBiOSTarget) -> Self
+  @objc final public func installApplication(withPath path: Swift.String) -> FBControlCore.FBFuture<FBControlCore.FBInstalledApplication>
+  @objc final public func uninstallApplication(withBundleID bundleID: Swift.String) -> FBControlCore.FBFuture<Foundation.NSNull>
+  @objc final public func installedApplications() -> FBControlCore.FBFuture<Foundation.NSArray>
+  @objc final public func installedApplication(withBundleID bundleID: Swift.String) -> FBControlCore.FBFuture<FBControlCore.FBInstalledApplication>
+  @objc final public func killApplication(withBundleID bundleID: Swift.String) -> FBControlCore.FBFuture<Foundation.NSNull>
+  final public func launchApplication(_ configuration: FBControlCore.FBApplicationLaunchConfiguration) -> FBControlCore.FBFuture<XCTestBootstrap.FBMacLaunchedApplication>
+  @objc(runTestWithLaunchConfiguration:reporter:logger:) final public func runTest(withLaunchConfiguration testLaunchConfiguration: FBControlCore.FBTestLaunchConfiguration, reporter: Swift.AnyObject, logger: any FBControlCore.FBControlCoreLogger) -> FBControlCore.FBFuture<Foundation.NSNull>
+  @objc final public var uniqueIdentifier: Swift.String {
+    @objc get
+  }
+  @objc final public var extendedInformation: [Swift.String : Any] {
+    @objc get
+  }
+  @objc final public func compare(_ target: any FBControlCore.FBiOSTarget) -> Foundation.ComparisonResult
+  @objc final public var customDeviceSetPath: Swift.String? {
+    @objc get
+  }
+  @objc final public func replacementMapping() -> [Swift.String : Swift.String]
+  @objc final public func environmentAdditions() -> [Swift.String : Swift.String]
+  @objc final public func extendedTestShim() -> FBControlCore.FBFuture<Foundation.NSString>
+  @objc(listTestsForBundleAtPath:timeout:withAppAtPath:) final public func listTests(forBundleAtPath bundlePath: Swift.String, timeout: Foundation.TimeInterval, withAppAtPath appPath: Swift.String?) -> FBControlCore.FBFuture<Foundation.NSArray>
+  final public func createStream(with configuration: FBControlCore.FBVideoStreamConfiguration) async throws -> any FBControlCore.FBVideoStream
+  final public func startRecording(toFile filePath: Swift.String) -> FBControlCore.FBFuture<Foundation.NSNull>
+  @objc final public func stopRecording() -> FBControlCore.FBFuture<Foundation.NSNull>
+  @objc(notifyOfCrash:) final public func notifyOfCrash(_ predicate: Foundation.NSPredicate) -> FBControlCore.FBFuture<FBControlCore.FBCrashLogInfo>
+  @objc deinit
+}
+extension XCTestBootstrap.FBMacDevice : FBControlCore.ProcessSpawnCommands {
+  final public func launchProcess(_ configuration: FBControlCore.FBProcessSpawnConfiguration) async throws -> FBControlCore.FBSubprocess<Swift.AnyObject, Swift.AnyObject, Swift.AnyObject>
+}
+extension XCTestBootstrap.FBMacDevice : FBControlCore.XCTestExtendedCommands {
+  final public func runTest(launchConfiguration: FBControlCore.FBTestLaunchConfiguration, reporter: Swift.AnyObject, logger: any FBControlCore.FBControlCoreLogger) async throws
+  final public func listTests(forBundleAtPath bundlePath: Swift.String, timeout: Foundation.TimeInterval, withAppAtPath appPath: Swift.String?) async throws -> [Swift.String]
+  final public func extendedTestShim() async throws -> Swift.String
+  final public func withTransportForTestManagerService<R>(body: (Foundation.NSNumber) async throws -> R) async throws -> R
+}
+extension XCTestBootstrap.FBMacDevice : FBControlCore.ApplicationCommands {
+  final public func installApplication(atPath path: Swift.String) async throws -> FBControlCore.FBInstalledApplication
+  final public func uninstallApplication(bundleID: Swift.String) async throws
+  final public func launchApplication(_ configuration: FBControlCore.FBApplicationLaunchConfiguration) async throws -> any FBControlCore.FBLaunchedApplication
+  final public func killApplication(bundleID: Swift.String) async throws
+  final public func installedApplications() async throws -> [FBControlCore.FBInstalledApplication]
+  final public func installedApplication(bundleID: Swift.String) async throws -> FBControlCore.FBInstalledApplication
+  final public func runningApplications() async throws -> [Swift.String : _DarwinFoundation2.pid_t]
+  final public func processID(forBundleID bundleID: Swift.String) async throws -> _DarwinFoundation2.pid_t
+}
+extension XCTestBootstrap.FBMacDevice : FBControlCore.CrashLogCommands {
+  final public func crashes(matching predicate: Foundation.NSPredicate, useCache: Swift.Bool) async throws -> [FBControlCore.FBCrashLogInfo]
+  final public func notifyOfCrash(matching predicate: Foundation.NSPredicate) async throws -> FBControlCore.FBCrashLogInfo
+  final public func pruneCrashes(matching predicate: Foundation.NSPredicate) async throws -> [FBControlCore.FBCrashLogInfo]
+  final public func withCrashLogFiles<R>(body: (any FBControlCore.AsyncFileContainer) async throws -> R) async throws -> R
+}
+@objc final public class FBMacLaunchedApplication : ObjectiveC.NSObject, FBControlCore.FBLaunchedApplication {
+  @objc final public let bundleID: Swift.String
+  @objc final public let processIdentifier: _DarwinFoundation2.pid_t
+  @objc public init(bundleID: Swift.String, processIdentifier: _DarwinFoundation2.pid_t, device: XCTestBootstrap.FBMacDevice, queue: Dispatch.DispatchQueue)
+  final public func waitForTermination() async throws
+  final public func terminate() async throws
+  @objc deinit
+}
+@_inheritsConvenienceInitializers @objc final public class FBManagedTestRunStrategy : ObjectiveC.NSObject {
+  @objc public static func runToCompletion(withTarget target: any FBControlCore.FBiOSTarget, configuration: FBControlCore.FBTestLaunchConfiguration, codesign: FBControlCore.FBCodesignProvider?, workingDirectory: Swift.String, reporter: any XCTestBootstrap.FBXCTestReporter, logger: any FBControlCore.FBControlCoreLogger) -> FBControlCore.FBFuture<Foundation.NSNull>
+  @objc override dynamic public init()
+  @objc deinit
+}
+@_inheritsConvenienceInitializers @objc final public class FBOToolDynamicLibs : ObjectiveC.NSObject {
+  @objc public static func findFullPath(forSanitiserDyldInBundle bundlePath: Swift.String, onQueue queue: Dispatch.DispatchQueue) -> FBControlCore.FBFuture<Foundation.NSArray>
+  @objc override dynamic public init()
+  @objc deinit
+}
+@_inheritsConvenienceInitializers @objc final public class FBOToolOperation : ObjectiveC.NSObject {
+  @objc public static func listSanitiserDylibsRequired(byBundle testBundlePath: Swift.String, onQueue queue: Dispatch.DispatchQueue) -> FBControlCore.FBFuture<Foundation.NSArray>
+  @objc override dynamic public init()
+  @objc deinit
+}
+@_hasMissingDesignatedInitializers @objc(FBTestManagerAPIMediator) final public class FBTestManagerAPIMediator : ObjectiveC.NSObject, @unchecked Swift.Sendable {
+  public static func connectAndRunUntilCompletion(with context: XCTestBootstrap.FBTestManagerContext, target: any FBControlCore.FBiOSTarget, reporter: any XCTestBootstrap.FBXCTestReporter, logger: any FBControlCore.FBControlCoreLogger) -> FBControlCore.FBFuture<Foundation.NSNull>
+  @objc(launchProcessForUITestWithToken:path:bundleID:arguments:environment:completion:) final public func launchProcessForUITest(withToken token: Foundation.NSNumber, path: Swift.String?, bundleID: Swift.String, arguments: [Swift.String], environment: [Swift.String : Swift.String], completion: @escaping @Sendable ((any Swift.Error)?) -> Swift.Void)
+  @objc(terminateProcessForToken:completion:) final public func terminateProcess(forToken token: Foundation.NSNumber?, completion: @escaping @Sendable ((any Swift.Error)?) -> Swift.Void)
+  @objc deinit
+}
+@objc final public class FBTestManagerContext : ObjectiveC.NSObject, Foundation.NSCopying {
+  @objc final public let sessionIdentifier: Foundation.UUID
+  @objc final public let timeout: Foundation.TimeInterval
+  @objc final public let testHostLaunchConfiguration: FBControlCore.FBApplicationLaunchConfiguration
+  @objc final public let testedApplicationAdditionalEnvironment: [Swift.String : Swift.String]
+  @objc final public let testConfiguration: XCTestBootstrap.FBTestConfiguration
+  @objc public init(sessionIdentifier: Foundation.UUID, timeout: Foundation.TimeInterval, testHostLaunchConfiguration: FBControlCore.FBApplicationLaunchConfiguration, testedApplicationAdditionalEnvironment: [Swift.String : Swift.String], testConfiguration: XCTestBootstrap.FBTestConfiguration)
+  @objc override final public var description: Swift.String {
+    @objc get
+  }
+  @objc final public func copy(with zone: ObjectiveC.NSZone? = nil) -> Any
+  @objc deinit
+}
+@objc final public class FBTestManagerResultSummary : ObjectiveC.NSObject {
+  @objc final public let testSuite: Swift.String
+  @objc final public let finishTime: Foundation.Date
+  @objc final public let runCount: Swift.Int
+  @objc final public let failureCount: Swift.Int
+  @objc final public let unexpected: Swift.Int
+  @objc final public let testDuration: Foundation.TimeInterval
+  @objc final public let totalDuration: Foundation.TimeInterval
+  @objc final public class func from(testSuite: Swift.String, finishingAt finishTime: Swift.String, runCount: Foundation.NSNumber, failures failuresCount: Foundation.NSNumber, unexpected unexpectedFailureCount: Foundation.NSNumber, testDuration: Foundation.NSNumber, totalDuration: Foundation.NSNumber) -> XCTestBootstrap.FBTestManagerResultSummary
+  @objc public init(testSuite: Swift.String, finishTime: Foundation.Date, runCount: Swift.Int, failureCount: Swift.Int, unexpected: Swift.Int, testDuration: Foundation.TimeInterval, totalDuration: Foundation.TimeInterval)
+  @objc override final public var description: Swift.String {
+    @objc get
+  }
+  @objc override final public func isEqual(_ object: Any?) -> Swift.Bool
+  @objc final public class func status(forStatusString statusString: Swift.String) -> XCTestBootstrap.FBTestReportStatus
+  @objc final public class func statusString(for status: XCTestBootstrap.FBTestReportStatus) -> Swift.String
+  @objc deinit
+}
+@objc(FBTestRunnerConfiguration) public class FBTestRunnerConfiguration : ObjectiveC.NSObject, Foundation.NSCopying {
+  @objc final public let sessionIdentifier: Foundation.UUID
+  @objc final public let testRunner: FBControlCore.FBBundleDescriptor
+  @objc final public let launchEnvironment: [Swift.String : Swift.String]
+  @objc final public let testedApplicationAdditionalEnvironment: [Swift.String : Swift.String]
+  @objc final public let testConfiguration: XCTestBootstrap.FBTestConfiguration
+  @objc public var launchArguments: [Swift.String] {
+    @objc get
+  }
+  @objc public init(sessionIdentifier: Foundation.UUID, testRunner: FBControlCore.FBBundleDescriptor, launchEnvironment: [Swift.String : Swift.String], testedApplicationAdditionalEnvironment: [Swift.String : Swift.String], testConfiguration: XCTestBootstrap.FBTestConfiguration)
+  @objc public func copy(with zone: ObjectiveC.NSZone? = nil) -> Any
+  public class func prepareConfiguration(withTarget target: any FBControlCore.ApplicationCommands & FBControlCore.FBiOSTarget & FBControlCore.XCTestExtendedCommands, testLaunchConfiguration: FBControlCore.FBTestLaunchConfiguration, workingDirectory: Swift.String, codesign: FBControlCore.FBCodesignProvider?) -> FBControlCore.FBFuture<XCTestBootstrap.FBTestRunnerConfiguration>
+  @objc(launchEnvironmentWithHostApplication:hostApplicationAdditionalEnvironment:testBundle:testConfigurationPath:frameworkSearchPaths:) public class func launchEnvironment(withHostApplication hostApplication: FBControlCore.FBBundleDescriptor, hostApplicationAdditionalEnvironment: [Swift.String : Swift.String], testBundle: FBControlCore.FBBundleDescriptor, testConfigurationPath: Swift.String, frameworkSearchPaths: [Swift.String]) -> [Swift.String : Swift.String]
+  @objc deinit
+}
+@objc public class FBXCTestConfiguration : ObjectiveC.NSObject, Foundation.NSCopying {
+  @objc final public let processUnderTestEnvironment: [Swift.String : Swift.String]
+  @objc final public let workingDirectory: Swift.String
+  @objc final public let testBundlePath: Swift.String
+  @objc final public let waitForDebugger: Swift.Bool
+  @objc final public let testTimeout: Foundation.TimeInterval
+  @objc public var testType: XCTestBootstrap.FBXCTestType {
+    @objc get
+  }
+  @objc public init(environment: [Swift.String : Swift.String], workingDirectory: Swift.String, testBundlePath: Swift.String, waitForDebugger: Swift.Bool, timeout: Foundation.TimeInterval)
+  @objc override dynamic public var description: Swift.String {
+    @objc get
+  }
+  @objc override dynamic public func isEqual(_ object: Any?) -> Swift.Bool
+  @objc override dynamic public var hash: Swift.Int {
+    @objc get
+  }
+  @objc public func buildEnvironment(withEntries entries: [Swift.String : Swift.String]) -> [Swift.String : Swift.String]
+  @objc public func jsonSerializableRepresentation() -> [Swift.String : Any]
+  @objc public func copy(with zone: ObjectiveC.NSZone? = nil) -> Any
+  @objc deinit
+}
+@objc final public class FBListTestConfiguration : XCTestBootstrap.FBXCTestConfiguration {
+  @objc final public let architectures: Swift.Set<Swift.String>
+  @objc final public let runnerAppPath: Swift.String?
+  @objc public static func configuration(withEnvironment environment: [Swift.String : Swift.String], workingDirectory: Swift.String, testBundlePath: Swift.String, runnerAppPath: Swift.String?, waitForDebugger: Swift.Bool, timeout: Foundation.TimeInterval, architectures: Swift.Set<Swift.String>) -> XCTestBootstrap.FBListTestConfiguration
+  @objc public init(environment: [Swift.String : Swift.String], workingDirectory: Swift.String, testBundlePath: Swift.String, runnerAppPath: Swift.String?, waitForDebugger: Swift.Bool, timeout: Foundation.TimeInterval, architectures: Swift.Set<Swift.String>)
+  @objc override final public var testType: XCTestBootstrap.FBXCTestType {
+    @objc get
+  }
+  @objc override final public func jsonSerializableRepresentation() -> [Swift.String : Any]
+  @objc deinit
+}
+@objc final public class FBTestManagerTestConfiguration : XCTestBootstrap.FBXCTestConfiguration {
+  @objc final public let runnerAppPath: Swift.String
+  @objc final public let testTargetAppPath: Swift.String?
+  @objc final public let testFilter: Swift.String?
+  @objc final public let osLogPath: Swift.String?
+  @objc final public let videoRecordingPath: Swift.String?
+  @objc final public let testArtifactsFilenameGlobs: [Swift.String]?
+  @objc public static func configuration(withEnvironment environment: [Swift.String : Swift.String], workingDirectory: Swift.String, testBundlePath: Swift.String, waitForDebugger: Swift.Bool, timeout: Foundation.TimeInterval, runnerAppPath: Swift.String, testTargetAppPath: Swift.String?, testFilter: Swift.String?, videoRecordingPath: Swift.String?, testArtifactsFilenameGlobs: [Swift.String]?, osLogPath: Swift.String?) -> XCTestBootstrap.FBTestManagerTestConfiguration
+  @objc public init(environment: [Swift.String : Swift.String], workingDirectory: Swift.String, testBundlePath: Swift.String, waitForDebugger: Swift.Bool, timeout: Foundation.TimeInterval, runnerAppPath: Swift.String, testTargetAppPath: Swift.String?, testFilter: Swift.String?, videoRecordingPath: Swift.String?, testArtifactsFilenameGlobs: [Swift.String]?, osLogPath: Swift.String?)
+  @objc override final public var testType: XCTestBootstrap.FBXCTestType {
+    @objc get
+  }
+  @objc override final public func jsonSerializableRepresentation() -> [Swift.String : Any]
+  @objc deinit
+}
+@objc final public class FBLogicTestConfiguration : XCTestBootstrap.FBXCTestConfiguration {
+  @objc final public let testFilter: Swift.String?
+  @objc final public let mirroring: XCTestBootstrap.FBLogicTestMirrorLogs
+  @objc final public let coverageConfiguration: XCTestBootstrap.FBCodeCoverageConfiguration?
+  @objc final public let binaryPath: Swift.String?
+  @objc final public let logDirectoryPath: Swift.String?
+  @objc final public let architectures: Swift.Set<Swift.String>
+  @objc final public let injectLibraries: [Swift.String]
+  @objc public static func configuration(withEnvironment environment: [Swift.String : Swift.String], workingDirectory: Swift.String, testBundlePath: Swift.String, waitForDebugger: Swift.Bool, timeout: Foundation.TimeInterval, testFilter: Swift.String?, mirroring: XCTestBootstrap.FBLogicTestMirrorLogs, coverageConfiguration: XCTestBootstrap.FBCodeCoverageConfiguration?, binaryPath: Swift.String?, logDirectoryPath: Swift.String?, architectures: Swift.Set<Swift.String>) -> XCTestBootstrap.FBLogicTestConfiguration
+  @objc public init(environment: [Swift.String : Swift.String], workingDirectory: Swift.String, testBundlePath: Swift.String, waitForDebugger: Swift.Bool, timeout: Foundation.TimeInterval, testFilter: Swift.String?, mirroring: XCTestBootstrap.FBLogicTestMirrorLogs, coverageConfiguration: XCTestBootstrap.FBCodeCoverageConfiguration?, binaryPath: Swift.String?, logDirectoryPath: Swift.String?, architectures: Swift.Set<Swift.String>, injectLibraries: [Swift.String] = [])
+  @objc override final public var testType: XCTestBootstrap.FBXCTestType {
+    @objc get
+  }
+  @objc override final public func jsonSerializableRepresentation() -> [Swift.String : Any]
+  @objc deinit
+}
+@_hasMissingDesignatedInitializers @objc final public class FBXCTestLogger : ObjectiveC.NSObject, FBControlCore.FBControlCoreLogger {
+  @objc final public let logDirectory: Swift.String
+  @objc public static func defaultLoggerInDefaultDirectory() -> XCTestBootstrap.FBXCTestLogger
+  @objc public static func loggerInDefaultDirectory(_ name: Swift.String) -> XCTestBootstrap.FBXCTestLogger
+  @objc public static func defaultLogger(inDirectory directory: Swift.String) -> XCTestBootstrap.FBXCTestLogger
+  @objc public static func logger(inDirectory directory: Swift.String, name: Swift.String) -> XCTestBootstrap.FBXCTestLogger
+  @discardableResult
+  @objc final public func log(_ string: Swift.String) -> any FBControlCore.FBControlCoreLogger
+  @objc final public func info() -> any FBControlCore.FBControlCoreLogger
+  @objc final public func debug() -> any FBControlCore.FBControlCoreLogger
+  @objc final public func error() -> any FBControlCore.FBControlCoreLogger
+  @objc final public func withName(_ prefix: Swift.String) -> any FBControlCore.FBControlCoreLogger
+  @objc final public func withDateFormatEnabled(_ enabled: Swift.Bool) -> any FBControlCore.FBControlCoreLogger
+  @objc final public var name: Swift.String? {
+    @objc get
+  }
+  @objc final public var level: FBControlCore.FBControlCoreLogLevel {
+    @objc get
+  }
+  @objc final public func logConsumption(of consumer: any FBControlCore.FBDataConsumer, toFileNamed fileName: Swift.String, logger: any FBControlCore.FBControlCoreLogger) -> FBControlCore.FBFuture<Swift.AnyObject>
+  @objc deinit
+}
+@_inheritsConvenienceInitializers @objc final public class FBXCTestProcess : ObjectiveC.NSObject {
+  public static func ensureProcess(_ process: FBControlCore.FBSubprocess<Swift.AnyObject, Swift.AnyObject, Swift.AnyObject>, completesWithin timeout: Foundation.TimeInterval, crashLogCommands: (any FBControlCore.CrashLogCommands)?, queue: Dispatch.DispatchQueue, logger: any FBControlCore.FBControlCoreLogger) -> FBControlCore.FBFuture<Foundation.NSNumber>
+  @objc public static func describeFailingExitCode(_ exitCode: Swift.Int32) -> Swift.String?
+  @objc override dynamic public init()
+  @objc deinit
+}
+@objc public protocol FBXCTestReporter : ObjectiveC.NSObjectProtocol {
+  @objc(processWaitingForDebuggerWithProcessIdentifier:) func processWaitingForDebugger(withProcessIdentifier pid: _DarwinFoundation2.pid_t)
+  @objc func didBeginExecutingTestPlan()
+  @objc func didFinishExecutingTestPlan()
+  @objc func processUnderTestDidExit()
+  @objc(testSuite:didStartAt:) func testSuite(_ testSuite: Swift.String, didStartAt startTime: Swift.String)
+  @objc(testCaseDidFinishForTestClass:method:withStatus:duration:logs:) func testCaseDidFinish(forTestClass testClass: Swift.String, method: Swift.String, with status: XCTestBootstrap.FBTestReportStatus, duration: Foundation.TimeInterval, logs: [Swift.String]?)
+  @objc(testCaseDidFailForTestClass:method:exceptions:) func testCaseDidFail(forTestClass testClass: Swift.String, method: Swift.String, exceptions: [XCTestBootstrap.FBExceptionInfo])
+  @objc(testCaseDidStartForTestClass:method:) func testCaseDidStart(forTestClass testClass: Swift.String, method: Swift.String)
+  @objc(finishedWithSummary:) func finished(with summary: XCTestBootstrap.FBTestManagerResultSummary)
+  @objc(testHadOutput:) func testHadOutput(_ output: Swift.String)
+  @objc(handleExternalEvent:) func handleExternalEvent(_ event: Swift.String)
+  @objc(printReportWithError:) func printReport() throws
+  @objc(didCrashDuringTest:) func didCrashDuringTest(_ error: any Swift.Error)
+  @objc(testCase:method:willStartActivity:) optional func testCase(_ testClass: Swift.String, method: Swift.String, willStartActivity activity: XCTestBootstrap.FBActivityRecord)
+  @objc(testCase:method:didFinishActivity:) optional func testCase(_ testClass: Swift.String, method: Swift.String, didFinishActivity activity: XCTestBootstrap.FBActivityRecord)
+  @objc(testPlanDidFailWithMessage:) optional func testPlanDidFail(withMessage message: Swift.String)
+  @objc(didRecordVideoAtPath:) optional func didRecordVideo(atPath videoRecordingPath: Swift.String)
+  @objc(didSaveOSLogAtPath:) optional func didSaveOSLog(atPath osLogPath: Swift.String)
+  @objc(didCopiedTestArtifact:toPath:) optional func didCopiedTestArtifact(_ testArtifactFilename: Swift.String, toPath path: Swift.String)
+}
+@_inheritsConvenienceInitializers @objc final public class FBXCTestResultBundleParser : ObjectiveC.NSObject {
+  @objc public static func parse(_ resultBundlePath: Swift.String, target: any FBControlCore.FBiOSTarget, reporter: any XCTestBootstrap.FBXCTestReporter, logger: any FBControlCore.FBControlCoreLogger, extractScreenshots: Swift.Bool) -> FBControlCore.FBFuture<Foundation.NSNull>
+  @objc override dynamic public init()
+  @objc deinit
+}
+@_inheritsConvenienceInitializers @objc final public class FBXCTestResultToolOperation : ObjectiveC.NSObject {
+  @objc public static func getJSON(from path: Swift.String, forId bundleObjectId: Swift.String?, queue: Dispatch.DispatchQueue, logger: (any FBControlCore.FBControlCoreLogger)?) -> FBControlCore.FBFuture<Foundation.NSDictionary>
+  @objc public static func exportFile(from path: Swift.String, to destination: Swift.String, forId bundleObjectId: Swift.String, queue: Dispatch.DispatchQueue, logger: (any FBControlCore.FBControlCoreLogger)?) -> FBControlCore.FBFuture<FBControlCore.FBSubprocess<Swift.AnyObject, Swift.AnyObject, Swift.AnyObject>>
+  @objc public static func exportJPEG(from path: Swift.String, to destination: Swift.String, forId bundleObjectId: Swift.String, type encodeType: Swift.String, queue: Dispatch.DispatchQueue, logger: (any FBControlCore.FBControlCoreLogger)?) -> FBControlCore.FBFuture<FBControlCore.FBSubprocess<Swift.AnyObject, Swift.AnyObject, Swift.AnyObject>>
+  @objc public static func exportDirectory(from path: Swift.String, to destination: Swift.String, forId bundleObjectId: Swift.String, queue: Dispatch.DispatchQueue, logger: (any FBControlCore.FBControlCoreLogger)?) -> FBControlCore.FBFuture<FBControlCore.FBSubprocess<Swift.AnyObject, Swift.AnyObject, Swift.AnyObject>>
+  @objc public static func describeFormat(_ queue: Dispatch.DispatchQueue, logger: (any FBControlCore.FBControlCoreLogger)?) -> FBControlCore.FBFuture<Foundation.NSDictionary>
+  @objc override dynamic public init()
+  @objc deinit
+}
+@objc public protocol FBXCTestRunner : ObjectiveC.NSObjectProtocol {
+  @objc func execute() -> FBControlCore.FBFuture<Foundation.NSNull>
+}
+@_inheritsConvenienceInitializers @objc final public class FBXcodeBuildOperation : ObjectiveC.NSObject {
+  @objc public static func operation(withUDID udid: Swift.String, configuration: FBControlCore.FBTestLaunchConfiguration, xcodeBuildPath: Swift.String, testRunFilePath: Swift.String, simDeviceSet simDeviceSetPath: Swift.String?, macOSTestShimPath: Swift.String?, queue: Dispatch.DispatchQueue, logger: (any FBControlCore.FBControlCoreLogger)?) -> FBControlCore.FBFuture<FBControlCore.FBSubprocess<Swift.AnyObject, Swift.AnyObject, Swift.AnyObject>>
+  @objc public static func xctestRunProperties(_ testLaunch: FBControlCore.FBTestLaunchConfiguration) -> [Swift.String : Any]
+  @objc public static func createXCTestRunFile(at directory: Swift.String, fromConfiguration configuration: FBControlCore.FBTestLaunchConfiguration) throws -> Swift.String
+  @objc public static func terminateAbandonedXcodebuildProcesses(forUDID udid: Swift.String, processFetcher: FBControlCore.FBProcessFetcher, queue: Dispatch.DispatchQueue, logger: any FBControlCore.FBControlCoreLogger) -> FBControlCore.FBFuture<Foundation.NSArray>
+  @objc(xcodeBuildPathWithError:) public static func xcodeBuildPath() throws -> Swift.String
+  @objc public static func overwriteXCTestRunProperties(withBaseProperties baseProperties: [Swift.String : Any], newProperties: [Swift.String : Any]) -> Foundation.NSDictionary
+  @objc public static func confirmExit(ofXcodebuildOperation task: FBControlCore.FBSubprocess<Swift.AnyObject, Swift.AnyObject, Swift.AnyObject>, configuration: FBControlCore.FBTestLaunchConfiguration, reporter: any XCTestBootstrap.FBXCTestReporter, target: any FBControlCore.FBiOSTarget, logger: any FBControlCore.FBControlCoreLogger) -> FBControlCore.FBFuture<Foundation.NSNull>
+  @objc override dynamic public init()
+  @objc deinit
+}
+@_inheritsConvenienceInitializers @objc final public class XCTestBootstrapError : FBControlCore.FBControlCoreError {
+  @objc required dynamic public init()
+  @objc deinit
+}
+@_inheritsConvenienceInitializers @objc final public class FBXCTestError : FBControlCore.FBControlCoreError {
+  @objc required dynamic public init()
+  @objc deinit
+}
+@_inheritsConvenienceInitializers @objc final public class XCTestBootstrapFrameworkLoader : FBControlCore.FBControlCoreFrameworkLoader {
+  @objc nonisolated(unsafe) public static let allDependentFrameworks: XCTestBootstrap.XCTestBootstrapFrameworkLoader
+  @objc override dynamic public init(name frameworkName: Swift.String, frameworks: [FBControlCore.FBWeakFramework])
+  @objc override dynamic public init()
+  @objc deinit
+}

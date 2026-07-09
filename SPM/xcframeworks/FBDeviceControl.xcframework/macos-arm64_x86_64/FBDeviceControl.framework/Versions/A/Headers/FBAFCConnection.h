@@ -10,13 +10,11 @@
 #import <FBControlCore/FBFuture.h>
 #import <FBDeviceControl/FBAMDefines.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBAMDServiceConnection;
 @protocol FBControlCoreLogger;
 
 /**
- An Object wrapper for an Apple File Conduit handle/
+ An Object wrapper for an Apple File Conduit handle.
  */
 @interface FBAFCConnection : NSObject
 
@@ -30,7 +28,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to use.
  @return a new FBAFConnection Instance.
  */
-- (instancetype)initWithConnection:(AFCConnectionRef)connection calls:(AFCCalls)calls logger:(nullable id<FBControlCoreLogger>)logger;
+- (nonnull instancetype)initWithConnection:(AFCConnectionRef _Nonnull)connection calls:(AFCCalls)calls logger:(nullable id<FBControlCoreLogger>)logger;
 
 /**
  Constructs an FBAFCConnection from a Service Connection and tears it down after.
@@ -38,10 +36,10 @@ NS_ASSUME_NONNULL_BEGIN
  @param serviceConnection the connection to use.
  @param calls the calls to use.
  @param logger the logger to use.
- @param queue the logger to use.
+ @param queue the queue to use.
  @return an FBAFCConnection instance.
  */
-+ (FBFutureContext<FBAFCConnection *> *)afcFromServiceConnection:(FBAMDServiceConnection *)serviceConnection calls:(AFCCalls)calls logger:(id<FBControlCoreLogger>)logger queue:(dispatch_queue_t)queue;
++ (nonnull FBFutureContext<FBAFCConnection *> *)afcFromServiceConnection:(nonnull FBAMDServiceConnection *)serviceConnection calls:(AFCCalls)calls logger:(nonnull id<FBControlCoreLogger>)logger queue:(nonnull dispatch_queue_t)queue;
 
 #pragma mark Public Methods
 
@@ -54,7 +52,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  @return YES if successful, NO otherwise.
  */
-- (BOOL)copyFromHost:(NSString *)hostPath toContainerPath:(NSString *)containerPath error:(NSError **)error;
+- (BOOL)copyFromHost:(nonnull NSString *)hostPath toContainerPath:(nonnull NSString *)containerPath error:(NSError * _Nullable * _Nullable)error;
 
 /**
  Creates a Directory.
@@ -63,77 +61,75 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  @return YES if successful, NO otherwise.
  */
-- (BOOL)createDirectory:(NSString *)path error:(NSError **)error;
+- (BOOL)createDirectory:(nonnull NSString *)path error:(NSError * _Nullable * _Nullable)error;
 
 /**
  Get the contents of a directory.
 
  @param path the path to locate.
- @param error an error out for any occurs
+ @param error an error out for any error that occurs.
  @return the contents of the directory.
  */
-- (nullable NSArray<NSString *> *)contentsOfDirectory:(NSString *)path error:(NSError **)error;
+- (nullable NSArray<NSString *> *)contentsOfDirectory:(nonnull NSString *)path error:(NSError * _Nullable * _Nullable)error;
 
 /**
  Get the contents of a file.
 
  @param path the path to read.
- @param error an error out for any occurs.
+ @param error an error out for any error that occurs.
  @return the data for the file.
  */
-- (nullable NSData *)contentsOfPath:(NSString *)path error:(NSError **)error;
+- (nullable NSData *)contentsOfPath:(nonnull NSString *)path error:(NSError * _Nullable * _Nullable)error;
 
 /**
  Removes a path.
 
  @param path the path to remove.
  @param recursively YES to recurse, NO otherwise.
- @param error an error out for any occurs.
+ @param error an error out for any error that occurs.
  @return YES if successful, NO otherwise.
  */
-- (BOOL)removePath:(NSString *)path recursively:(BOOL)recursively error:(NSError **)error;
+- (BOOL)removePath:(nonnull NSString *)path recursively:(BOOL)recursively error:(NSError * _Nullable * _Nullable)error;
 
 /**
  Renames a path.
 
  @param path the path to rename
  @param destination the destination path.
- @param error an error out for any occurs.
+ @param error an error out for any error that occurs.
  @return YES if successful, NO otherwise.
  */
-- (BOOL)renamePath:(NSString *)path destination:(NSString *)destination error:(NSError **)error;
+- (BOOL)renamePath:(nonnull NSString *)path destination:(nonnull NSString *)destination error:(NSError * _Nullable * _Nullable)error;
 
 /**
  Close the connection.
  The connection should not be used after this.
 
  @param error an error out for any error that occurs.
- @return YES if succesful, NO otherwise.
+ @return YES if successful, NO otherwise.
  */
-- (BOOL)closeWithError:(NSError **)error;
+- (BOOL)closeWithError:(NSError * _Nullable * _Nullable)error;
 
 #pragma mark Properties
 
 /**
  The wrapped 'Apple File Conduit'.
  */
-@property (nonatomic, assign, readonly, nullable) AFCConnectionRef connection;
+@property (nullable, nonatomic, readonly, assign) AFCConnectionRef connection;
 
 /**
  The Calls to use.
  */
-@property (nonatomic, assign, readonly) AFCCalls calls;
+@property (nonatomic, readonly, assign) AFCCalls calls;
 
 /**
  The logger to use
  */
-@property (nonatomic, strong, nullable, readonly) id<FBControlCoreLogger> logger;
+@property (nullable, nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
 
 /**
  The Default Calls.
  */
-@property (nonatomic, assign, readonly, class) AFCCalls defaultCalls;
+@property (class, nonatomic, readonly, assign) AFCCalls defaultCalls;
 
 @end
-
-NS_ASSUME_NONNULL_END
