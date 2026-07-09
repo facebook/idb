@@ -50,6 +50,10 @@ final class FBSimulatorIndigoHIDClient: @unchecked Sendable {
 
   /// Looks up, allocates and initializes the runtime-only HID client for the provided device.
   convenience init(for device: SimDevice) throws {
+    // The HID client class lives in SimulatorKit (or CoreDeviceIO on newer Xcodes), which is
+    // loaded on demand. Host applications that haven't preloaded it (unlike the companion,
+    // which loads all frameworks at startup) would otherwise fail the class lookup below.
+    try FBSimulatorControlFrameworkLoader.xcodeFrameworks.loadPrivateFrameworks(nil)
     guard let clientClass = objc_lookUpClass(Self.clientClassName) else {
       throw FBSimulatorHIDError.clientClassUnavailable(className: Self.clientClassName)
     }
