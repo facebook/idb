@@ -22,8 +22,12 @@ build_xcframework() {
         echo "Existing xcframework deleted."
     fi
     
-    # Archive the project
-    xcodebuild archive -project "$project_name" -archivePath "$archive_path" SKIP_INSTALL=NO BUILD_LIBRARY_FOR_DISTRIBUTION=YES -scheme "$framework_name" -destination generic/platform=macOS
+    # Archive the project.
+    # -module-interface-preserve-types-as-written: the FBSimulatorControl module contains a
+    # class also named FBSimulatorControl, so the default module-qualified names in the emitted
+    # swiftinterface ("FBSimulatorControl.FBSimulatorVideo") resolve to the class instead of the
+    # module and the interface fails to compile in consumers.
+    xcodebuild archive -project "$project_name" -archivePath "$archive_path" SKIP_INSTALL=NO BUILD_LIBRARY_FOR_DISTRIBUTION=YES OTHER_SWIFT_FLAGS='$(inherited) -Xfrontend -module-interface-preserve-types-as-written' -scheme "$framework_name" -destination generic/platform=macOS
     
     # Create xcframework
     xcodebuild -create-xcframework -framework "$framework_path" -output "$xcframework_path"
