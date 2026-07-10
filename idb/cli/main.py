@@ -13,7 +13,21 @@ import logging
 import os
 import shutil
 import sys
+import warnings
 from typing import List, Optional, Set, Union
+
+# Suppress thrift-py-deprecated migration warnings from internal Meta libraries.
+# These are emitted by libfb.py.asyncio.scribe (used for scuba logging) and are
+# not actionable by idb users. The migration is tracked in the owning library.
+warnings.filterwarnings(
+    "ignore",
+    message="Uses thrift-py-deprecated",
+    module=r"libfb\.py\..*",
+)
+
+# Mute infrastructure loggers that would otherwise leak to stderr on every
+# idb invocation. Users only care about idb output, not scuba teardown noise.
+logging.getLogger("scuba_logger").setLevel(logging.CRITICAL)
 
 import idb.common.plugin as plugin
 from idb.cli.commands.accessibility import (
