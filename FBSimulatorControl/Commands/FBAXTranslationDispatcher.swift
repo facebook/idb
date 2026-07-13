@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@_implementationOnly @preconcurrency import AccessibilityPlatformTranslation
 @_implementationOnly import CoreSimulator
 import FBControlCore
 import Foundation
@@ -14,29 +13,28 @@ import Foundation
 /// `@Sendable` CoreSimulator completion handler. The `DispatchGroup` wait below
 /// establishes the happens-before needed before the value is read, so unchecked
 /// Sendable is safe here.
-private final class AXPResponseBox: @unchecked Sendable {
-  var response: AXPTranslatorResponse?
+private final class FBAXResponseBox: @unchecked Sendable {
+  var response: NSObject?
 }
 
 /// Bridges the asynchronous CoreSimulator accessibility API to the synchronous
-/// callback model `AXPTranslator` expects. Holds the token→request registry and,
-/// per request, performs the translator handshake and converts the lazy AXP
+/// callback model the runtime translator expects. Holds the token→request registry
+/// and, per request, performs the translator handshake and converts lazy
 /// attribute callbacks into synchronous CoreSimulator XPC round-trips.
 ///
 /// Created and driven entirely from Swift in this module (see
 /// `FBSimulatorAccessibilityCommands`). It remains an `@objc`/`NSObject` class
-/// only because it conforms to the Objective-C `AXPTranslationTokenDelegateHelper`
-/// protocol and is installed as `AXPTranslator`'s bridge-token delegate.
+/// only because it conforms to the Objective-C runtime delegate protocol.
 @objc(FBAXTranslationDispatcher)
-final class FBAXTranslationDispatcher: NSObject, AXPTranslationTokenDelegateHelper {
+final class FBAXTranslationDispatcher: NSObject, FBAXRuntimeTranslationDelegate {
 
-  private weak var translator: AXPTranslator?
+  private weak var translator: NSObject?
   private let logger: FBControlCoreLogger?
   private let callbackQueue: DispatchQueue
   private let lock = NSLock()
   private var tokenToRequest: [String: FBAXTranslationRequest] = [:]
 
-  init(translator: AXPTranslator, logger: FBControlCoreLogger?) {
+  init(translator: NSObject, logger: FBControlCoreLogger?) {
     self.translator = translator
     self.logger = logger
     self.callbackQueue = DispatchQueue(label: "com.facebook.fbsimulatorcontrol.accessibility_translator.callback")
@@ -60,13 +58,13 @@ final class FBAXTranslationDispatcher: NSObject, AXPTranslationTokenDelegateHelp
       throw FBAccessibilityError.noTranslationObject
     }
     collector?.translationDuration = CFAbsoluteTimeGetCurrent() - translationStart
-    translation.bridgeDelegateToken = request.token
+    FBAXRuntimeBridge.setBridgeDelegateToken(request.token, onTranslation: translation)
 
     let conversionStart = CFAbsoluteTimeGetCurrent()
-    let rawElement = translator.macPlatformElement(fromTranslation: translation)
+    let element = FBAXRuntimeBridge.platformElement(fromTranslation: translation, usingTranslator: translator)
     collector?.elementConversionDuration = CFAbsoluteTimeGetCurrent() - conversionStart
 
-    guard let element = rawElement as? FBAXPlatformElement else {
+    guard let element else {
       throw FBAccessibilityError.noTranslationObject
     }
     element.axSetBridgeDelegateToken(request.token)
@@ -102,16 +100,16 @@ final class FBAXTranslationDispatcher: NSObject, AXPTranslationTokenDelegateHelp
     return tokenToRequest[token]
   }
 
-  private static func emptyResponse() -> AXPTranslatorResponse? {
-    AXPTranslatorResponse.empty() as? AXPTranslatorResponse
+  private static func emptyResponse() -> NSObject? {
+    FBAXRuntimeBridge.emptyResponse()
   }
 
-  // MARK: - AXPTranslationTokenDelegateHelper
+  // MARK: - Runtime translation delegate
 
-  // Since the CoreSimulator accessibility API is asynchronous but AXPTranslator's
+  // Since the CoreSimulator accessibility API is asynchronous but the runtime translator's
   // delegation is synchronous, a DispatchGroup acts as a mutex to wait on the
   // result. The wait must never run on the main queue.
-  func accessibilityTranslationDelegateBridgeCallback(withToken token: String) -> AXPTranslationCallback {
+  func accessibilityTranslationDelegateBridgeCallback(withToken token: String) -> FBAXRuntimeTranslationCallback {
     guard let request = request(forToken: token) else {
       return { [weak self] _ in
         self?.logger?.log("Request with token \(token) is gone. Returning empty response")
@@ -127,11 +125,19 @@ final class FBAXTranslationDispatcher: NSObject, AXPTranslationTokenDelegateHelp
       logger?.log("Sending Accessibility Request \(String(describing: axRequest))")
       let group = DispatchGroup()
       group.enter()
-      let box = AXPResponseBox()
+      let box = FBAXResponseBox()
 
       let xpcStart = CFAbsoluteTimeGetCurrent()
-      device?.sendAccessibilityRequestAsync(axRequest, completionQueue: callbackQueue) { innerResponse in
-        box.response = innerResponse
+      if let device {
+        FBAXRuntimeBridge.sendAccessibilityRequest(
+          axRequest,
+          toDevice: device,
+          completionQueue: callbackQueue
+        ) { innerResponse in
+          box.response = innerResponse
+          group.leave()
+        }
+      } else {
         group.leave()
       }
       let waitResult = group.wait(timeout: .now() + timeoutSeconds)

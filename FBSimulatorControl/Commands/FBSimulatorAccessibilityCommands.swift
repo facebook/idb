@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@_implementationOnly @preconcurrency import AccessibilityPlatformTranslation
 import AppKit
 @_implementationOnly import CoreSimulator
 import FBControlCore
@@ -17,23 +16,27 @@ extension FBSimulator {
 
   /// Builds a dispatcher for the given translator and wires it up as the
   /// translator's token delegate. `translator` is typed `Any` to accept the test
-  /// fixture's mock `AXPTranslator` (mirrors the original `id` parameter). Swift-only
+  /// fixture's mock translator (mirrors the original `id` parameter). Swift-only
   /// (not `@objc`): an `@objc` `Any` parameter double-visions as `Any`/`Any!` and
   /// makes the call ambiguous; nothing in Objective-C calls this anymore.
   static func createAccessibilityTranslationDispatcher(withTranslator translator: Any) -> FBAXTranslationDispatcher {
-    let axTranslator = unsafeBitCast(translator as AnyObject, to: AXPTranslator.self)
-    let dispatcher = FBAXTranslationDispatcher(translator: axTranslator, logger: nil)
-    axTranslator.bridgeTokenDelegate = dispatcher
+    guard let runtimeTranslator = translator as? NSObject else {
+      preconditionFailure("The accessibility translator must be an Objective-C object")
+    }
+    let dispatcher = FBAXTranslationDispatcher(translator: runtimeTranslator, logger: nil)
+    FBAXRuntimeBridge.setBridgeDelegate(dispatcher, onTranslator: runtimeTranslator)
     return dispatcher
   }
 
-  // Process-wide singleton: AXPTranslator is itself a singleton with a single
-  // bridgeTokenDelegate slot, so exactly one dispatcher backs every simulator (it
+  // The runtime translator is a process-wide singleton with a single delegate
+  // slot, so exactly one dispatcher backs every simulator (it
   // disambiguates concurrent requests by token, guarded internally by a lock).
   // The lazy `static let` initialiser is thread-safe; `nonisolated(unsafe)` opts
   // this shared instance out of Swift 6 Sendable checking accordingly.
   private nonisolated(unsafe) static let sharedAccessibilityTranslationDispatcher: FBAXTranslationDispatcher = {
-    let translator = unsafeBitCast(AXPTranslator.sharedInstance() as AnyObject, to: AXPTranslator.self)
+    guard let translator = FBAXRuntimeBridge.sharedTranslator() else {
+      preconditionFailure("The accessibility translation runtime is unavailable")
+    }
     return FBSimulator.createAccessibilityTranslationDispatcher(withTranslator: translator)
   }()
 

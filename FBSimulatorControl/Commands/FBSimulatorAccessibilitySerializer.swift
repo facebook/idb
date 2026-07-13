@@ -18,7 +18,7 @@ final class SeenPIDs {
   func contains(_ pid: pid_t) -> Bool { pids.contains(pid) }
 }
 
-/// Serializes an `AXPMacPlatformElement` tree into the JSON-ready dictionaries
+/// Serializes a runtime platform-element tree into the JSON-ready dictionaries
 /// emitted by the accessibility commands. The values mirror the old
 /// SimulatorBridge implementation for downstream compatibility.
 ///

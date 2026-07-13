@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@_implementationOnly import AccessibilityPlatformTranslation
 @_implementationOnly import CoreSimulator
 import FBControlCore
 import Foundation
@@ -41,7 +40,7 @@ final class FBAXTranslationRequest {
   var device: SimDevice?
   var collector: FBAccessibilityProfilingCollector?
   var logger: FBControlCoreLogger?
-  var translator: AXPTranslator?
+  var translator: NSObject?
 
   /// Per-request timeout (seconds) applied to each synchronous CoreSimulator
   /// accessibility XPC round-trip. `0` (or negative) is "wait nothing". There is
@@ -61,12 +60,12 @@ final class FBAXTranslationRequest {
   }
 
   /// Resolves the root translation object for this request's kind.
-  func perform(withTranslator translator: AXPTranslator) -> AXPTranslationObject? {
+  func perform(withTranslator translator: NSObject) -> NSObject? {
     switch kind {
     case .frontmostApplication:
-      return translator.frontmostApplication(withDisplayId: 0, bridgeDelegateToken: token)
+      return FBAXRuntimeBridge.frontmostApplication(usingTranslator: translator, displayID: 0, token: token)
     case .point(let point):
-      return translator.object(at: point, displayId: 0, bridgeDelegateToken: token)
+      return FBAXRuntimeBridge.object(at: point, usingTranslator: translator, displayID: 0, token: token)
     }
   }
 
@@ -166,7 +165,7 @@ final class FBAXTranslationRequest {
     coverageGrid: FBAccessibilityCoverageGrid?,
     keys: Set<FBAXKeys>,
     remoteOptions: FBAccessibilityRemoteContentOptions,
-    translator: AXPTranslator
+    translator: NSObject
   ) -> [[String: Any]] {
     var discoveredElements: [[String: Any]] = []
     var discoveredFrames = Set<String>()
@@ -198,12 +197,12 @@ final class FBAXTranslationRequest {
 
         pointCount += 1
 
-        guard let hitTranslation = translator.object(at: point, displayId: 0, bridgeDelegateToken: token) else {
+        guard let hitTranslation = FBAXRuntimeBridge.object(at: point, usingTranslator: translator, displayID: 0, token: token) else {
           x += stepSize
           continue
         }
-        hitTranslation.bridgeDelegateToken = token
-        let hitPid = hitTranslation.pid
+        FBAXRuntimeBridge.setBridgeDelegateToken(token, onTranslation: hitTranslation)
+        let hitPid = FBAXRuntimeBridge.processIdentifier(forTranslation: hitTranslation)
 
         // Skip PIDs already seen in the main traversal, and the frontmost app itself.
         if seenPids.contains(hitPid) || hitPid <= 0 || hitPid == frontmostPid {
@@ -211,7 +210,7 @@ final class FBAXTranslationRequest {
           continue
         }
 
-        guard let hitElement = translator.macPlatformElement(fromTranslation: hitTranslation) as? FBAXPlatformElement else {
+        guard let hitElement = FBAXRuntimeBridge.platformElement(fromTranslation: hitTranslation, usingTranslator: translator) else {
           x += stepSize
           continue
         }
@@ -260,7 +259,7 @@ final class FBAXTranslationRequest {
     serializationStart: CFAbsoluteTime,
     keys: Set<FBAXKeys>,
     remoteOptions: FBAccessibilityRemoteContentOptions,
-    translator: AXPTranslator
+    translator: NSObject
   ) -> FBAccessibilityElementsResponse {
     let coverageBefore = coverageGrid?.coverageRatio() ?? 0
 

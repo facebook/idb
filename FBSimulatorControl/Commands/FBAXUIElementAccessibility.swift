@@ -337,7 +337,7 @@ public enum FBAXUIElementAccessibility {
     }
     dict[FBAXKeys.customActions.rawValue] = customActionNames
 
-    // Simulator.app bridges iOS elements via AXPTranslator, so AXTraits may be
+    // Simulator.app bridges iOS elements through its translation runtime, so AXTraits may be
     // readable even through the C API. Fall back to NSNull when unavailable.
     var traitsRef: CFTypeRef?
     let traitsError = AXUIElementCopyAttributeValue(element, "AXTraits" as CFString, &traitsRef)

@@ -357,6 +357,7 @@
 		94B811039FA2AE0F8C001234 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = ACDF3CEFBE766F0CDD0B99DC /* Foundation.framework */; };
 		9551F9B0A42F73B4BFD8C9DD /* FBXCTestResultToolOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = C080B517CDBC2A19E3E04235 /* FBXCTestResultToolOperation.swift */; };
 		962FC65364194DFE86274E8B /* XCTestBootstrap.h in Headers */ = {isa = PBXBuildFile; fileRef = 037A4DD9C52AA1AD61E57DED /* XCTestBootstrap.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		96FB0ED41CEF1568A608B795 /* FBAXRuntimeBridge.m in Sources */ = {isa = PBXBuildFile; fileRef = E7B4B93794A502CA1AE9DC35 /* FBAXRuntimeBridge.m */; };
 		974BCDFFDBB66E5D27238EEE /* FBXCTestReporterDouble.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B37527CE82F7D8ABFA599FD /* FBXCTestReporterDouble.swift */; };
 		9785CEF5FD72A0078D18D4E7 /* IOSurface.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2D51447D26036D37031EF7E1 /* IOSurface.framework */; };
 		98779F1B5744D59D104D21D0 /* FBInstrumentsOperation.h in Headers */ = {isa = PBXBuildFile; fileRef = 4017EF69908DF197ED5F5E03 /* FBInstrumentsOperation.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -503,6 +504,7 @@
 		D7C7FBEF86C527AF69E213FD /* FBDeviceDebuggerCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A4BA88DFB53FB6677B80A8E /* FBDeviceDebuggerCommands.swift */; };
 		D7E57043A59E27ABACC33028 /* FBDeviceSet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EB42F1BB09FB6515A084C8E /* FBDeviceSet.swift */; };
 		D83D0FC3AEE055EE6A739D1D /* OverlayRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04AAA518FAF0989901C266A0 /* OverlayRenderer.swift */; };
+		D903875A0346D99BD564F126 /* FBAXRuntimeBridge.h in Headers */ = {isa = PBXBuildFile; fileRef = A6593C3159AEA04863E4D1D4 /* FBAXRuntimeBridge.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		D915D7E604EB1AD93C483196 /* FBSettingsCommands.m in Sources */ = {isa = PBXBuildFile; fileRef = 3DCA54116D0ADA74E9CB984E /* FBSettingsCommands.m */; };
 		D99EC18C5C0A133DDC606846 /* FBDeviceControlFrameworkLoader.h in Headers */ = {isa = PBXBuildFile; fileRef = 381C8E620AA5D610129E61AF /* FBDeviceControlFrameworkLoader.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		D9AF7E72B2BE793BE92C6D30 /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 97EC23979E6AAC616B634992 /* CoreVideo.framework */; };
@@ -565,7 +567,6 @@
 		FDFF483A61A28076F96B9FFD /* AtomicTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FB63BF7C6402C5A3D833CD5 /* AtomicTests.swift */; };
 		FE0CBAE3DB38836B3A351555 /* FBFileReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53758504FBE59EE7CBA00B9B /* FBFileReaderTests.swift */; };
 		FE255681E144631FCA06DB9A /* FBTestManagerResultSummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6C0CC7AF656CC2BCFFC43AB /* FBTestManagerResultSummary.swift */; };
-		FEDE8EF0B82B6D4CE44F519E /* xcschememanagement.plist in Resources */ = {isa = PBXBuildFile; fileRef = 2ECAF05A4C2CD05D4AE13003 /* xcschememanagement.plist */; };
 		FF0A18AFCE45C8696DAD39B8 /* FBDeviceCommands.h in Headers */ = {isa = PBXBuildFile; fileRef = DEBDB5BCD9358E966AAB535D /* FBDeviceCommands.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		FF1B289E2172CADB4E4EE61E /* AccessibilityCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B67419934F1C4F694D19E62 /* AccessibilityCommands.swift */; };
 		FF2B5A1D3FEF1427441D150A /* FBDeviceDebugSymbolsCommands.h in Headers */ = {isa = PBXBuildFile; fileRef = CEE85E4B48426FDD56A5E5EF /* FBDeviceDebugSymbolsCommands.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -806,7 +807,6 @@
 		2D51447D26036D37031EF7E1 /* IOSurface.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOSurface.framework; path = System/Library/Frameworks/IOSurface.framework; sourceTree = SDKROOT; };
 		2E4D76463F7B4CEBDACE0409 /* ApplicationCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationCommands.swift; sourceTree = "<group>"; };
 		2E5012740658DD0426D01D2C /* FBBinaryDescriptorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FBBinaryDescriptorTests.swift; sourceTree = "<group>"; };
-		2ECAF05A4C2CD05D4AE13003 /* xcschememanagement.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = xcschememanagement.plist; sourceTree = "<group>"; };
 		2F0B02A37E270DE24F327FE2 /* FBTestApplicationsPair.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FBTestApplicationsPair.swift; sourceTree = "<group>"; };
 		2F6871C332ABC0872A84C40D /* FBDeviceVideo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FBDeviceVideo.swift; sourceTree = "<group>"; };
 		30A6E66E71A372EAFEE114CD /* XCTestBootstrap.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = XCTestBootstrap.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -1088,6 +1088,7 @@
 		A4E5B7A559E6E7D244B766A4 /* LifecycleCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifecycleCommands.swift; sourceTree = "<group>"; };
 		A553D6849098397EE0D2A7A2 /* FBDataBuffer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FBDataBuffer.m; sourceTree = "<group>"; };
 		A5BE801CE4DD2F85B0A7C61B /* FileManager+TemporaryFile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FileManager+TemporaryFile.swift"; sourceTree = "<group>"; };
+		A6593C3159AEA04863E4D1D4 /* FBAXRuntimeBridge.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FBAXRuntimeBridge.h; sourceTree = "<group>"; };
 		A6AF886395765358F778A67B /* FBVideoStreamConfiguration.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FBVideoStreamConfiguration.h; sourceTree = "<group>"; };
 		A6DAB183382021FACA1CCDCE /* AsyncPromiseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsyncPromiseTests.swift; sourceTree = "<group>"; };
 		A7CE27D9E388953F29449C15 /* EraseCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EraseCommands.swift; sourceTree = "<group>"; };
@@ -1219,6 +1220,7 @@
 		E48ECD08587A8B4B012478D4 /* TestFixtures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestFixtures.swift; sourceTree = "<group>"; };
 		E570A2A7A3A5423F61D18D4B /* FBInstrumentsOperation+Async.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FBInstrumentsOperation+Async.swift"; sourceTree = "<group>"; };
 		E598E20F388F80CFEC758F02 /* XCTestBootstrapTests.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = XCTestBootstrapTests.xcconfig; sourceTree = "<group>"; };
+		E7B4B93794A502CA1AE9DC35 /* FBAXRuntimeBridge.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FBAXRuntimeBridge.m; sourceTree = "<group>"; };
 		E82565D15918AD4F9D866869 /* FBSimulatorReplCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FBSimulatorReplCommands.swift; sourceTree = "<group>"; };
 		E8814FEB182C66537D256D8E /* FBProcessStream.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FBProcessStream.m; sourceTree = "<group>"; };
 		E8C19ED4A8AFF4317EC91676 /* FBXCTestResultBundleParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FBXCTestResultBundleParser.swift; sourceTree = "<group>"; };
@@ -1460,6 +1462,8 @@
 				8D160CB43B862DE6CDE0E811 /* FBAccessibilityError.swift */,
 				BCADC9EBF1E2D17FD009B927 /* FBAccessibilityProfilingCollector.swift */,
 				C543AD95060EAD7F9E29AE22 /* FBAXPlatformElement.swift */,
+				A6593C3159AEA04863E4D1D4 /* FBAXRuntimeBridge.h */,
+				E7B4B93794A502CA1AE9DC35 /* FBAXRuntimeBridge.m */,
 				6A4561290BD41D7BB1A08FBF /* FBAXTranslationDispatcher.swift */,
 				92C4A02A7025B1DFD1F49751 /* FBAXTranslationRequest.swift */,
 				22F4CBFC5CA8946BC7B91A1D /* FBAXUIElementAccessibility.swift */,
@@ -1654,14 +1658,6 @@
 				1E813C9D718B30D80CBA4B69 /* OSType+FourCC.swift */,
 			);
 			path = Utility;
-			sourceTree = "<group>";
-		};
-		1FD3DF7B71A2E4F1CD05E285 /* xcschemes */ = {
-			isa = PBXGroup;
-			children = (
-				2ECAF05A4C2CD05D4AE13003 /* xcschememanagement.plist */,
-			);
-			path = xcschemes;
 			sourceTree = "<group>";
 		};
 		26C66D639B2459218FDB80F0 /* FBDeviceControl */ = {
@@ -1906,7 +1902,6 @@
 		588124666F8D5BBB7B5253AE /* xcode */ = {
 			isa = PBXGroup;
 			children = (
-				79CAC631027E169EFE6E90F6 /* xcuserdata */,
 				BAB36FE12F01519FD33B0D46 /* package.xcworkspace */,
 			);
 			path = xcode;
@@ -2063,14 +2058,6 @@
 			path = Commands;
 			sourceTree = "<group>";
 		};
-		79CAC631027E169EFE6E90F6 /* xcuserdata */ = {
-			isa = PBXGroup;
-			children = (
-				85E7018993EF46B7C9207451 /* avanderlee.xcuserdatad */,
-			);
-			path = xcuserdata;
-			sourceTree = "<group>";
-		};
 		7B0390B186D986DC69B2C8B1 /* Shimulator */ = {
 			isa = PBXGroup;
 			children = (
@@ -2145,14 +2132,6 @@
 				13619E3455E4C2D4A81B65EA /* FBSimulatorSetError.swift */,
 			);
 			path = Management;
-			sourceTree = "<group>";
-		};
-		85E7018993EF46B7C9207451 /* avanderlee.xcuserdatad */ = {
-			isa = PBXGroup;
-			children = (
-				1FD3DF7B71A2E4F1CD05E285 /* xcschemes */,
-			);
-			path = avanderlee.xcuserdatad;
 			sourceTree = "<group>";
 		};
 		89D2A7C26A856699911E5DE1 /* Configuration */ = {
@@ -2675,6 +2654,7 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D903875A0346D99BD564F126 /* FBAXRuntimeBridge.h in Headers */,
 				A0BC103EAB83D6DB479AAB89 /* FBFramebuffer.h in Headers */,
 				1F21AD848BEF2F736BB032FD /* FBPeriodicStatsTimer.h in Headers */,
 				277BC0D52413E0EC0C62F3A8 /* FBSimulator.h in Headers */,
@@ -2971,7 +2951,6 @@
 			files = (
 				40BC04632454EF42202171D6 /* README.md in Resources */,
 				6B93EF7309F17BC249802641 /* package.xcworkspace in Resources */,
-				FEDE8EF0B82B6D4CE44F519E /* xcschememanagement.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3104,6 +3083,7 @@
 				5DA9D5210AC8E6B05F772B84 /* DTUHIDModels.swift in Sources */,
 				4475CFC21A38FDA0CA910821 /* ExitCodePolicy.swift in Sources */,
 				46272D2CEB3218AAB248D6FE /* FBAXPlatformElement.swift in Sources */,
+				96FB0ED41CEF1568A608B795 /* FBAXRuntimeBridge.m in Sources */,
 				06AC049A2F164D848D2ED61C /* FBAXTranslationDispatcher.swift in Sources */,
 				30A8D6CF6C8F5028A43740CA /* FBAXTranslationRequest.swift in Sources */,
 				5E1371FE1AC520B210CFFD74 /* FBAXUIElementAccessibility.swift in Sources */,
@@ -3629,8 +3609,10 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				COMBINE_HIDPI_IMAGES = YES;
 				INFOPLIST_FILE = "$(SRCROOT)/FBSimulatorControlTests/FBSimulatorControlTests-Info.plist";
+				OTHER_LDFLAGS = "$(inherited) -ObjC -weak_library $(SRCROOT)/PrivateHeaders/CoreSimulator/CoreSimulator.tbd";
 				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.FBSimulatorControlTests;
 				PRODUCT_NAME = FBSimulatorControlTests;
+				SWIFT_OBJC_BRIDGING_HEADER = "$(SRCROOT)/FBSimulatorControlTests/FBSimulatorControlTests-Bridging-Header.h";
 			};
 			name = Debug;
 		};
@@ -3872,8 +3854,8 @@
 				INFOPLIST_FILE = "$(SRCROOT)/FBSimulatorControl/FBSimulatorControl-Info.plist";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				MACH_O_TYPE = staticlib;
-				OTHER_LDFLAGS = "$(inherited) -weak_library $(SRCROOT)/PrivateHeaders/CoreSimulator/CoreSimulator.tbd -weak_library $(SRCROOT)/PrivateHeaders/AccessibilityPlatformTranslation/AccessibilityPlatformTranslation.tbd";
-				OTHER_SWIFT_FLAGS = "$(inherited) -Xcc -fmodule-map-file=$(SRCROOT)/PrivateHeaders/CoreSimulator/module.modulemap -Xcc -fmodule-map-file=$(SRCROOT)/PrivateHeaders/SimulatorApp/module.modulemap -Xcc -fmodule-map-file=$(SRCROOT)/PrivateHeaders/SimulatorKit/module.modulemap -Xcc -fmodule-map-file=$(SRCROOT)/PrivateHeaders/AXRuntime/module.modulemap -Xcc -fmodule-map-file=$(SRCROOT)/PrivateHeaders/AccessibilityPlatformTranslation/module.modulemap";
+				OTHER_LDFLAGS = "$(inherited) -weak_library $(SRCROOT)/PrivateHeaders/CoreSimulator/CoreSimulator.tbd";
+				OTHER_SWIFT_FLAGS = "$(inherited) -Xcc -fmodule-map-file=$(SRCROOT)/PrivateHeaders/CoreSimulator/module.modulemap -Xcc -fmodule-map-file=$(SRCROOT)/PrivateHeaders/SimulatorApp/module.modulemap -Xcc -fmodule-map-file=$(SRCROOT)/PrivateHeaders/SimulatorKit/module.modulemap -Xcc -fmodule-map-file=$(SRCROOT)/PrivateHeaders/AXRuntime/module.modulemap";
 				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.FBSimulatorControl;
 				PRODUCT_NAME = FBSimulatorControl;
 				SWIFT_VERSION = 6.0;
@@ -3887,8 +3869,10 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				COMBINE_HIDPI_IMAGES = YES;
 				INFOPLIST_FILE = "$(SRCROOT)/FBSimulatorControlTests/FBSimulatorControlTests-Info.plist";
+				OTHER_LDFLAGS = "$(inherited) -ObjC -weak_library $(SRCROOT)/PrivateHeaders/CoreSimulator/CoreSimulator.tbd";
 				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.FBSimulatorControlTests;
 				PRODUCT_NAME = FBSimulatorControlTests;
+				SWIFT_OBJC_BRIDGING_HEADER = "$(SRCROOT)/FBSimulatorControlTests/FBSimulatorControlTests-Bridging-Header.h";
 			};
 			name = Release;
 		};
@@ -3943,8 +3927,8 @@
 				INFOPLIST_FILE = "$(SRCROOT)/FBSimulatorControl/FBSimulatorControl-Info.plist";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				MACH_O_TYPE = staticlib;
-				OTHER_LDFLAGS = "$(inherited) -weak_library $(SRCROOT)/PrivateHeaders/CoreSimulator/CoreSimulator.tbd -weak_library $(SRCROOT)/PrivateHeaders/AccessibilityPlatformTranslation/AccessibilityPlatformTranslation.tbd";
-				OTHER_SWIFT_FLAGS = "$(inherited) -Xcc -fmodule-map-file=$(SRCROOT)/PrivateHeaders/CoreSimulator/module.modulemap -Xcc -fmodule-map-file=$(SRCROOT)/PrivateHeaders/SimulatorApp/module.modulemap -Xcc -fmodule-map-file=$(SRCROOT)/PrivateHeaders/SimulatorKit/module.modulemap -Xcc -fmodule-map-file=$(SRCROOT)/PrivateHeaders/AXRuntime/module.modulemap -Xcc -fmodule-map-file=$(SRCROOT)/PrivateHeaders/AccessibilityPlatformTranslation/module.modulemap";
+				OTHER_LDFLAGS = "$(inherited) -weak_library $(SRCROOT)/PrivateHeaders/CoreSimulator/CoreSimulator.tbd";
+				OTHER_SWIFT_FLAGS = "$(inherited) -Xcc -fmodule-map-file=$(SRCROOT)/PrivateHeaders/CoreSimulator/module.modulemap -Xcc -fmodule-map-file=$(SRCROOT)/PrivateHeaders/SimulatorApp/module.modulemap -Xcc -fmodule-map-file=$(SRCROOT)/PrivateHeaders/SimulatorKit/module.modulemap -Xcc -fmodule-map-file=$(SRCROOT)/PrivateHeaders/AXRuntime/module.modulemap";
 				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.FBSimulatorControl;
 				PRODUCT_NAME = FBSimulatorControl;
 				SWIFT_VERSION = 6.0;

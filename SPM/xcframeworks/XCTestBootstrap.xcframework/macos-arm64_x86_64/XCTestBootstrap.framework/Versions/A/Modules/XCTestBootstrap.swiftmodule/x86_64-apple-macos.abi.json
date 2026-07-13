@@ -15992,693 +15992,693 @@
   },
   "ConstValues": [
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/Configuration\/FBCodeCoverageConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/Configuration\/FBCodeCoverageConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 796,
       "length": 153,
       "value": "\"Coverage Directory \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/Configuration\/FBCodeCoverageConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/Configuration\/FBCodeCoverageConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 836,
       "length": 1,
       "value": "\" | Format \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/Configuration\/FBCodeCoverageConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/Configuration\/FBCodeCoverageConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 864,
       "length": 1,
       "value": "\" | Enable Continuous Coverage Collection \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/Configuration\/FBCodeCoverageConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/Configuration\/FBCodeCoverageConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 948,
       "length": 1,
       "value": "\"\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/Reporters\/FBExceptionInfo.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/Reporters\/FBExceptionInfo.swift",
       "kind": "StringLiteral",
       "offset": 676,
       "length": 62,
       "value": "\"Message \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/Reporters\/FBExceptionInfo.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/Reporters\/FBExceptionInfo.swift",
       "kind": "StringLiteral",
       "offset": 695,
       "length": 1,
       "value": "\" | File \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/Reporters\/FBExceptionInfo.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/Reporters\/FBExceptionInfo.swift",
       "kind": "StringLiteral",
       "offset": 713,
       "length": 8,
       "value": "\"(null)\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/Reporters\/FBExceptionInfo.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/Reporters\/FBExceptionInfo.swift",
       "kind": "StringLiteral",
       "offset": 722,
       "length": 1,
       "value": "\" | Line \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/Reporters\/FBExceptionInfo.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/Reporters\/FBExceptionInfo.swift",
       "kind": "StringLiteral",
       "offset": 737,
       "length": 1,
       "value": "\"\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/Reporters\/FBJSONTestReporter.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/Reporters\/FBJSONTestReporter.swift",
       "kind": "Array",
       "offset": 630,
       "length": 2,
       "value": "[]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/Reporters\/FBJSONTestReporter.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/Reporters\/FBJSONTestReporter.swift",
       "kind": "Dictionary",
       "offset": 704,
       "length": 3,
       "value": "[]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/Reporters\/FBJSONTestReporter.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/Reporters\/FBJSONTestReporter.swift",
       "kind": "Array",
       "offset": 752,
       "length": 2,
       "value": "[]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/Reporters\/FBJSONTestReporter.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/Reporters\/FBJSONTestReporter.swift",
       "kind": "BooleanLiteral",
       "offset": 858,
       "length": 5,
       "value": "false"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/Reporters\/FBJSONTestReporter.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/Reporters\/FBJSONTestReporter.swift",
       "kind": "BooleanLiteral",
       "offset": 895,
       "length": 5,
       "value": "false"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/Strategies\/FBLogicTestRunStrategy.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/Strategies\/FBLogicTestRunStrategy.swift",
       "kind": "IntegerLiteral",
       "offset": 291,
       "length": 1,
       "value": "5"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/MacStrategies\/FBMacDevice.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/MacStrategies\/FBMacDevice.swift",
       "kind": "StringLiteral",
       "offset": 1040,
       "length": 5,
       "value": "\"Mac\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/MacStrategies\/FBMacDevice.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/MacStrategies\/FBMacDevice.swift",
       "kind": "BooleanLiteral",
       "offset": 1610,
       "length": 4,
       "value": "true"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/MacStrategies\/FBMacDevice.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/MacStrategies\/FBMacDevice.swift",
       "kind": "StringLiteral",
       "offset": 6494,
       "length": 27,
       "value": "\"Platforms\/MacOSX.platform\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/MacStrategies\/FBMacDevice.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/MacStrategies\/FBMacDevice.swift",
       "kind": "StringLiteral",
       "offset": 6649,
       "length": 16,
       "value": "\"usr\/bin\/xctest\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/MacStrategies\/FBMacDevice.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/MacStrategies\/FBMacDevice.swift",
       "kind": "StringLiteral",
       "offset": 7556,
       "length": 32,
       "value": "\"com.apple.testmanagerd.control\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/MacStrategies\/FBMacDevice.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/MacStrategies\/FBMacDevice.swift",
       "kind": "Array",
       "offset": 7599,
       "length": 2,
       "value": "[]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/MacStrategies\/FBMacDevice.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/MacStrategies\/FBMacDevice.swift",
       "kind": "StringLiteral",
       "offset": 7825,
       "length": 53,
       "value": "\"Connection with test manager daemon was interrupted\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/MacStrategies\/FBMacDevice.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/MacStrategies\/FBMacDevice.swift",
       "kind": "StringLiteral",
       "offset": 7987,
       "length": 49,
       "value": "\"Invalidated connection with test manager daemon\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/MacStrategies\/FBMacDevice.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/MacStrategies\/FBMacDevice.swift",
       "kind": "StringLiteral",
       "offset": 8216,
       "length": 104,
       "value": "\"Error occurred during synchronousRemoteObjectProxyWithErrorHandler call: \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/MacStrategies\/FBMacDevice.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/MacStrategies\/FBMacDevice.swift",
       "kind": "StringLiteral",
       "offset": 8319,
       "length": 2,
       "value": "\"\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/MacStrategies\/FBMacDevice.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/MacStrategies\/FBMacDevice.swift",
       "kind": "StringLiteral",
       "offset": 8617,
       "length": 95,
       "value": "\"Error requesting connection with test manager daemon: \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/MacStrategies\/FBMacDevice.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/MacStrategies\/FBMacDevice.swift",
       "kind": "StringLiteral",
       "offset": 8708,
       "length": 2,
       "value": "\"\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/MacStrategies\/FBMacDevice.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/MacStrategies\/FBMacDevice.swift",
       "kind": "StringLiteral",
       "offset": 8711,
       "length": 2,
       "value": "\"\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/MacStrategies\/FBMacDevice.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/MacStrategies\/FBMacDevice.swift",
       "kind": "StringLiteral",
       "offset": 8882,
       "length": 13,
       "value": "\"FBMacDevice\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/MacStrategies\/FBMacDevice.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/MacStrategies\/FBMacDevice.swift",
       "kind": "IntegerLiteral",
       "offset": 8903,
       "length": 1,
       "value": "0"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/MacStrategies\/FBMacDevice.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/MacStrategies\/FBMacDevice.swift",
       "kind": "StringLiteral",
       "offset": 8944,
       "length": 33,
       "value": "\"Unknown error getting transport\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/MacStrategies\/FBMacDevice.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/MacStrategies\/FBMacDevice.swift",
       "kind": "StringLiteral",
       "offset": 9117,
       "length": 25,
       "value": "\"futureContextWithError:\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/MacStrategies\/FBMacDevice.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/MacStrategies\/FBMacDevice.swift",
       "kind": "StringLiteral",
       "offset": 10502,
       "length": 36,
       "value": "\"consoleString is not yet supported\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/MacStrategies\/FBMacDevice.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/MacStrategies\/FBMacDevice.swift",
       "kind": "StringLiteral",
       "offset": 10551,
       "length": 2,
       "value": "\"\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/MacStrategies\/FBMacDevice.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/MacStrategies\/FBMacDevice.swift",
       "kind": "Dictionary",
       "offset": 15669,
       "length": 3,
       "value": "[]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/TestManager\/FBTestBundleConnection.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/TestManager\/FBTestBundleConnection.swift",
       "kind": "IntegerLiteral",
       "offset": 294,
       "length": 2,
       "value": "60"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/TestManager\/FBTestBundleConnection.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/TestManager\/FBTestBundleConnection.swift",
       "kind": "IntegerLiteral",
       "offset": 345,
       "length": 3,
       "value": "120"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/TestManager\/FBTestManagerAPIMediator.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/TestManager\/FBTestManagerAPIMediator.swift",
       "kind": "IntegerLiteral",
       "offset": 1006,
       "length": 2,
       "value": "60"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/TestManager\/FBTestManagerAPIMediator.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/TestManager\/FBTestManagerAPIMediator.swift",
       "kind": "IntegerLiteral",
       "offset": 1011,
       "length": 2,
       "value": "60"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/TestManager\/FBTestManagerAPIMediator.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/TestManager\/FBTestManagerAPIMediator.swift",
       "kind": "Dictionary",
       "offset": 1475,
       "length": 3,
       "value": "[]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/TestManager\/FBTestManagerContext.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/TestManager\/FBTestManagerContext.swift",
       "kind": "StringLiteral",
       "offset": 1203,
       "length": 108,
       "value": "\"Test Host \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/TestManager\/FBTestManagerContext.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/TestManager\/FBTestManagerContext.swift",
       "kind": "StringLiteral",
       "offset": 1244,
       "length": 1,
       "value": "\" | Session ID \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/TestManager\/FBTestManagerContext.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/TestManager\/FBTestManagerContext.swift",
       "kind": "StringLiteral",
       "offset": 1289,
       "length": 1,
       "value": "\" | Timeout \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/TestManager\/FBTestManagerContext.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/TestManager\/FBTestManagerContext.swift",
       "kind": "StringLiteral",
       "offset": 1310,
       "length": 1,
       "value": "\"\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/TestManager\/FBTestManagerResultSummary.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/TestManager\/FBTestManagerResultSummary.swift",
       "kind": "StringLiteral",
       "offset": 1760,
       "length": 192,
       "value": "\"Suite \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/TestManager\/FBTestManagerResultSummary.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/TestManager\/FBTestManagerResultSummary.swift",
       "kind": "StringLiteral",
       "offset": 1779,
       "length": 1,
       "value": "\" | Finish Time \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/TestManager\/FBTestManagerResultSummary.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/TestManager\/FBTestManagerResultSummary.swift",
       "kind": "StringLiteral",
       "offset": 1807,
       "length": 1,
       "value": "\" | Run Count \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/TestManager\/FBTestManagerResultSummary.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/TestManager\/FBTestManagerResultSummary.swift",
       "kind": "StringLiteral",
       "offset": 1831,
       "length": 1,
       "value": "\" | Failures \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/TestManager\/FBTestManagerResultSummary.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/TestManager\/FBTestManagerResultSummary.swift",
       "kind": "StringLiteral",
       "offset": 1858,
       "length": 1,
       "value": "\" | Unexpected \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/TestManager\/FBTestManagerResultSummary.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/TestManager\/FBTestManagerResultSummary.swift",
       "kind": "StringLiteral",
       "offset": 1885,
       "length": 1,
       "value": "\" | Test Duration \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/TestManager\/FBTestManagerResultSummary.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/TestManager\/FBTestManagerResultSummary.swift",
       "kind": "StringLiteral",
       "offset": 1917,
       "length": 1,
       "value": "\" | Total Duration \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/TestManager\/FBTestManagerResultSummary.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/TestManager\/FBTestManagerResultSummary.swift",
       "kind": "StringLiteral",
       "offset": 1951,
       "length": 1,
       "value": "\"\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/TestManager\/FBTestManagerResultSummary.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/TestManager\/FBTestManagerResultSummary.swift",
       "kind": "StringLiteral",
       "offset": 3071,
       "length": 23,
       "value": "\"yyyy-MM-dd HH:mm:ss Z\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/TestManager\/FBTestManagerResultSummary.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/TestManager\/FBTestManagerResultSummary.swift",
       "kind": "BooleanLiteral",
       "offset": 3121,
       "length": 4,
       "value": "true"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/TestManager\/FBTestManagerResultSummary.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/TestManager\/FBTestManagerResultSummary.swift",
       "kind": "StringLiteral",
       "offset": 3168,
       "length": 7,
       "value": "\"en_US\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/Configuration\/FBTestRunnerConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/Configuration\/FBTestRunnerConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 244,
       "length": 25,
       "value": "\"SHIMULATOR_START_XCTEST\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/Configuration\/FBTestRunnerConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/Configuration\/FBTestRunnerConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 304,
       "length": 26,
       "value": "\"XCTOOL_WAIT_FOR_DEBUGGER\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/Configuration\/FBTestRunnerConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/Configuration\/FBTestRunnerConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 365,
       "length": 19,
       "value": "\"LLVM_PROFILE_FILE\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/Configuration\/FBTestRunnerConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/Configuration\/FBTestRunnerConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 420,
       "length": 20,
       "value": "\"LOG_DIRECTORY_PATH\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/Configuration\/FBTestRunnerConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/Configuration\/FBTestRunnerConfiguration.swift",
       "kind": "Array",
       "offset": 895,
       "length": 98,
       "value": "[\"-NSTreatUnknownArgumentsAsOpen\", \"NO\", \"-ApplePersistenceIgnoreState\", \"YES\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/Configuration\/FBXCTestConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/Configuration\/FBXCTestConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 280,
       "length": 13,
       "value": "\"environment\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/Configuration\/FBXCTestConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/Configuration\/FBXCTestConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 325,
       "length": 11,
       "value": "\"list_only\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/Configuration\/FBXCTestConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/Configuration\/FBXCTestConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 364,
       "length": 13,
       "value": "\"os_log_path\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/Configuration\/FBXCTestConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/Configuration\/FBXCTestConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 409,
       "length": 16,
       "value": "\"test_host_path\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/Configuration\/FBXCTestConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/Configuration\/FBXCTestConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 460,
       "length": 18,
       "value": "\"test_target_path\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/Configuration\/FBXCTestConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/Configuration\/FBXCTestConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 523,
       "length": 31,
       "value": "\"test_artifacts_filename_globs\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/Configuration\/FBXCTestConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/Configuration\/FBXCTestConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 587,
       "length": 18,
       "value": "\"test_bundle_path\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/Configuration\/FBXCTestConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/Configuration\/FBXCTestConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 634,
       "length": 13,
       "value": "\"test_filter\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/Configuration\/FBXCTestConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/Configuration\/FBXCTestConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 676,
       "length": 13,
       "value": "\"test_mirror\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/Configuration\/FBXCTestConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/Configuration\/FBXCTestConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 719,
       "length": 14,
       "value": "\"test_timeout\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/Configuration\/FBXCTestConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/Configuration\/FBXCTestConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 760,
       "length": 11,
       "value": "\"test_type\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/Configuration\/FBXCTestConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/Configuration\/FBXCTestConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 808,
       "length": 22,
       "value": "\"video_recording_path\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/Configuration\/FBXCTestConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/Configuration\/FBXCTestConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 864,
       "length": 19,
       "value": "\"wait_for_debugger\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/Configuration\/FBXCTestConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/Configuration\/FBXCTestConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 918,
       "length": 19,
       "value": "\"working_directory\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/Configuration\/FBXCTestConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/Configuration\/FBXCTestConfiguration.swift",
       "kind": "IntegerLiteral",
       "offset": 1007,
       "length": 3,
       "value": "500"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/Configuration\/FBXCTestConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/Configuration\/FBXCTestConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 1408,
       "length": 68,
       "value": "\"-[\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/Configuration\/FBXCTestConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/Configuration\/FBXCTestConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 1428,
       "length": 8,
       "value": "\" testType] is abstract and should be overridden\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/Configuration\/FBXCTestConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/Configuration\/FBXCTestConfiguration.swift",
       "kind": "Array",
       "offset": 2275,
       "length": 2,
       "value": "[]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/Configuration\/FBXCTestConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/Configuration\/FBXCTestConfiguration.swift",
       "kind": "IntegerLiteral",
       "offset": 3146,
       "length": 1,
       "value": "1"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/Configuration\/FBXCTestConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/Configuration\/FBXCTestConfiguration.swift",
       "kind": "IntegerLiteral",
       "offset": 3150,
       "length": 1,
       "value": "0"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/Configuration\/FBXCTestConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/Configuration\/FBXCTestConfiguration.swift",
       "kind": "Array",
       "offset": 10161,
       "length": 2,
       "value": "[]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/Utility\/FBXCTestLogger.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/Utility\/FBXCTestLogger.swift",
       "kind": "StringLiteral",
       "offset": 275,
       "length": 24,
       "value": "\"FBXCTEST_LOG_DIRECTORY\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/Utility\/FBXCTestLogger.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/Utility\/FBXCTestLogger.swift",
       "kind": "StringLiteral",
       "offset": 342,
       "length": 34,
       "value": "\"XCTOOL_TEST_ENV_FB_LOG_DIRECTORY\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/Strategies\/FBXCTestProcess.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/Strategies\/FBXCTestProcess.swift",
       "kind": "IntegerLiteral",
       "offset": 281,
       "length": 3,
       "value": "-20"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/Strategies\/FBXCTestProcess.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/Strategies\/FBXCTestProcess.swift",
       "kind": "IntegerLiteral",
       "offset": 330,
       "length": 3,
       "value": "180"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/Strategies\/FBXCTestProcess.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/Strategies\/FBXCTestProcess.swift",
       "kind": "IntegerLiteral",
       "offset": 381,
       "length": 1,
       "value": "1"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/Utility\/FBXCTestResultBundleParser.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/Utility\/FBXCTestResultBundleParser.swift",
       "kind": "IntegerLiteral",
       "offset": 286,
       "length": 3,
       "value": "120"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/Utility\/FBXCTestResultBundleParser.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/Utility\/FBXCTestResultBundleParser.swift",
       "kind": "StringLiteral",
       "offset": 2625,
       "length": 28,
       "value": "\"yyyy-MM-dd'T'HH:mm:ss.SSSZ\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/Utility\/FBXCTestResultBundleParser.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/Utility\/FBXCTestResultBundleParser.swift",
       "kind": "StringLiteral",
       "offset": 29383,
       "length": 16,
       "value": "\"^Screenshot_.*\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/Utility\/FBXCTestResultBundleParser.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/Utility\/FBXCTestResultBundleParser.swift",
       "kind": "Array",
       "offset": 29410,
       "length": 2,
       "value": "[]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/Utility\/FBXCTestResultToolOperation.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/Utility\/FBXCTestResultToolOperation.swift",
       "kind": "StringLiteral",
       "offset": 255,
       "length": 16,
       "value": "\"\/usr\/bin\/xcrun\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/Utility\/FBXCTestResultToolOperation.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/Utility\/FBXCTestResultToolOperation.swift",
       "kind": "StringLiteral",
       "offset": 295,
       "length": 15,
       "value": "\"\/usr\/bin\/sips\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/Utility\/FBXCTestResultToolOperation.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/Utility\/FBXCTestResultToolOperation.swift",
       "kind": "StringLiteral",
       "offset": 330,
       "length": 13,
       "value": "\"public.heic\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/Utility\/FBXCTestResultToolOperation.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/Utility\/FBXCTestResultToolOperation.swift",
       "kind": "StringLiteral",
       "offset": 363,
       "length": 13,
       "value": "\"public.jpeg\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/Utility\/FBXcodeBuildOperation.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/Utility\/FBXcodeBuildOperation.swift",
       "kind": "StringLiteral",
       "offset": 277,
       "length": 29,
       "value": "\"XCTESTBOOTSTRAP_TARGET_UDID\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/Utility\/FBXcodeBuildOperation.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/Utility\/FBXcodeBuildOperation.swift",
       "kind": "StringLiteral",
       "offset": 356,
       "length": 21,
       "value": "\"SIM_DEVICE_SET_PATH\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/Utility\/FBXcodeBuildOperation.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/Utility\/FBXcodeBuildOperation.swift",
       "kind": "StringLiteral",
       "offset": 425,
       "length": 23,
       "value": "\"DYLD_INSERT_LIBRARIES\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/Utility\/FBXcodeBuildOperation.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/Utility\/FBXcodeBuildOperation.swift",
       "kind": "StringLiteral",
       "offset": 496,
       "length": 5,
       "value": "\"180\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/XCTestBootstrap\/Utility\/XCTestBootstrapFrameworkLoader.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/XCTestBootstrap\/Utility\/XCTestBootstrapFrameworkLoader.swift",
       "kind": "StringLiteral",
       "offset": 480,
       "length": 17,

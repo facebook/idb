@@ -8,7 +8,6 @@
 import FBControlCore
 @testable import FBSimulatorControl
 import Foundation
-import ObjectiveC
 
 // MARK: - AXPTranslationObject Double
 
@@ -259,53 +258,6 @@ class FBSimulatorControlTests_SimDevice_Accessibility_Double: NSObject {
   }
 }
 
-// MARK: - AXPTranslator Swizzling
-
-class FBAccessibilityTranslatorSwizzler: NSObject {
-  private static var installedMockTranslator: FBSimulatorControlTests_AXPTranslator_Double?
-  private static var originalSharedInstanceIMP: IMP?
-  private static var swizzleInstalled = false
-
-  class func installMockTranslator(_ mockTranslator: FBSimulatorControlTests_AXPTranslator_Double) {
-    precondition(!swizzleInstalled, "Mock translator already installed. Call uninstall first.")
-
-    installedMockTranslator = mockTranslator
-
-    guard let axpTranslatorClass: AnyClass = objc_getClass("AXPTranslator") as? AnyClass else {
-      fatalError("AXPTranslator class not found. Ensure AccessibilityPlatformTranslation framework is loaded.")
-    }
-
-    guard let originalMethod = class_getClassMethod(axpTranslatorClass, NSSelectorFromString("sharedInstance")) else {
-      fatalError("+[AXPTranslator sharedInstance] method not found")
-    }
-
-    originalSharedInstanceIMP = method_getImplementation(originalMethod)
-
-    let mockBlock: @convention(block) (AnyObject) -> AnyObject? = { _ in
-      return FBAccessibilityTranslatorSwizzler.installedMockTranslator
-    }
-    let mockIMP = imp_implementationWithBlock(mockBlock)
-    method_setImplementation(originalMethod, mockIMP)
-
-    swizzleInstalled = true
-  }
-
-  class func uninstallMockTranslator() {
-    guard swizzleInstalled else { return }
-
-    guard let axpTranslatorClass: AnyClass = objc_getClass("AXPTranslator") as? AnyClass else { return }
-    guard let originalMethod = class_getClassMethod(axpTranslatorClass, NSSelectorFromString("sharedInstance")) else { return }
-
-    if let originalIMP = originalSharedInstanceIMP {
-      method_setImplementation(originalMethod, originalIMP)
-    }
-
-    installedMockTranslator = nil
-    originalSharedInstanceIMP = nil
-    swizzleInstalled = false
-  }
-}
-
 // MARK: - Element Builder
 
 class FBAccessibilityTestElementBuilder: NSObject {
@@ -388,13 +340,9 @@ class FBAccessibilityTestFixture: NSObject {
     return bootedSimulatorFixture()
   }
 
-  /// Installs the AXPTranslator swizzle and wires the translator's results.
-  /// Tests build the dispatcher separately via
-  /// `FBSimulator.createAccessibilityTranslationDispatcher(withTranslator:translator)`
-  /// once setUp returns.
+  /// Wires the opaque translator double's results. Tests inject it directly into
+  /// a dispatcher, so no private framework load or singleton swizzle is needed.
   func setUp() {
-    FBSimulatorControlFrameworkLoader.accessibilityFrameworks.loadPrivateFrameworksOrAbort()
-
     let translation = FBSimulatorControlTests_AXPTranslationObject_Double()
     translation.pid = 12345
 
@@ -407,10 +355,7 @@ class FBAccessibilityTestFixture: NSObject {
       translator.macPlatformElementResult = FBAccessibilityTestElementBuilder.rootElement(withChildren: [])
     }
 
-    FBAccessibilityTranslatorSwizzler.installMockTranslator(translator)
   }
 
-  func tearDown() {
-    FBAccessibilityTranslatorSwizzler.uninstallMockTranslator()
-  }
+  func tearDown() {}
 }

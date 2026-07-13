@@ -51027,2947 +51027,2947 @@
   },
   "ConstValues": [
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Async\/AsyncFBFutureBridge.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Async\/AsyncFBFutureBridge.swift",
       "kind": "StringLiteral",
       "offset": 12212,
       "length": 41,
       "value": "\"com.facebook.fbcontrolcore.async_bridge\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Async\/AsyncPolling.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Async\/AsyncPolling.swift",
       "kind": "FloatLiteral",
       "offset": 1046,
       "length": 3,
       "value": "0.1"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Async\/AsyncPolling.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Async\/AsyncPolling.swift",
       "kind": "FloatLiteral",
       "offset": 2103,
       "length": 3,
       "value": "0.1"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/CodingAgentEnvironment.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/CodingAgentEnvironment.swift",
       "kind": "Array",
       "offset": 589,
       "length": 142,
       "value": "[\"CLAUDE_CODE\", \"CLAUDECODE\", \"CODEX_SANDBOX\", \"CURSOR_AGENT\", \"GEMINI_CLI\", \"REPLIT_AGENT\", \"AIDER_SESSION\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Commands\/FBAccessibilityKeys.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Commands\/FBAccessibilityKeys.swift",
       "kind": "StringLiteral",
       "offset": 454,
       "length": 9,
       "value": "\"AXLabel\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Commands\/FBAccessibilityKeys.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Commands\/FBAccessibilityKeys.swift",
       "kind": "StringLiteral",
       "offset": 479,
       "length": 9,
       "value": "\"AXFrame\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Commands\/FBAccessibilityKeys.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Commands\/FBAccessibilityKeys.swift",
       "kind": "StringLiteral",
       "offset": 504,
       "length": 9,
       "value": "\"AXValue\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Commands\/FBAccessibilityKeys.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Commands\/FBAccessibilityKeys.swift",
       "kind": "StringLiteral",
       "offset": 532,
       "length": 12,
       "value": "\"AXUniqueId\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Commands\/FBAccessibilityKeys.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Commands\/FBAccessibilityKeys.swift",
       "kind": "StringLiteral",
       "offset": 559,
       "length": 6,
       "value": "\"type\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Commands\/FBAccessibilityKeys.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Commands\/FBAccessibilityKeys.swift",
       "kind": "StringLiteral",
       "offset": 581,
       "length": 7,
       "value": "\"title\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Commands\/FBAccessibilityKeys.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Commands\/FBAccessibilityKeys.swift",
       "kind": "StringLiteral",
       "offset": 608,
       "length": 7,
       "value": "\"frame\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Commands\/FBAccessibilityKeys.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Commands\/FBAccessibilityKeys.swift",
       "kind": "StringLiteral",
       "offset": 630,
       "length": 6,
       "value": "\"help\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Commands\/FBAccessibilityKeys.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Commands\/FBAccessibilityKeys.swift",
       "kind": "StringLiteral",
       "offset": 654,
       "length": 9,
       "value": "\"enabled\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Commands\/FBAccessibilityKeys.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Commands\/FBAccessibilityKeys.swift",
       "kind": "StringLiteral",
       "offset": 687,
       "length": 16,
       "value": "\"custom_actions\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Commands\/FBAccessibilityKeys.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Commands\/FBAccessibilityKeys.swift",
       "kind": "StringLiteral",
       "offset": 718,
       "length": 6,
       "value": "\"role\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Commands\/FBAccessibilityKeys.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Commands\/FBAccessibilityKeys.swift",
       "kind": "StringLiteral",
       "offset": 750,
       "length": 18,
       "value": "\"role_description\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Commands\/FBAccessibilityKeys.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Commands\/FBAccessibilityKeys.swift",
       "kind": "StringLiteral",
       "offset": 786,
       "length": 9,
       "value": "\"subrole\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Commands\/FBAccessibilityKeys.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Commands\/FBAccessibilityKeys.swift",
       "kind": "StringLiteral",
       "offset": 821,
       "length": 18,
       "value": "\"content_required\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Commands\/FBAccessibilityKeys.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Commands\/FBAccessibilityKeys.swift",
       "kind": "StringLiteral",
       "offset": 853,
       "length": 5,
       "value": "\"pid\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Commands\/FBAccessibilityKeys.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Commands\/FBAccessibilityKeys.swift",
       "kind": "StringLiteral",
       "offset": 875,
       "length": 8,
       "value": "\"traits\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Commands\/FBAccessibilityKeys.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Commands\/FBAccessibilityKeys.swift",
       "kind": "StringLiteral",
       "offset": 902,
       "length": 10,
       "value": "\"expanded\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Commands\/FBAccessibilityKeys.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Commands\/FBAccessibilityKeys.swift",
       "kind": "StringLiteral",
       "offset": 934,
       "length": 13,
       "value": "\"placeholder\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Commands\/FBAccessibilityKeys.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Commands\/FBAccessibilityKeys.swift",
       "kind": "StringLiteral",
       "offset": 964,
       "length": 8,
       "value": "\"hidden\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Commands\/FBAccessibilityKeys.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Commands\/FBAccessibilityKeys.swift",
       "kind": "StringLiteral",
       "offset": 990,
       "length": 9,
       "value": "\"focused\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Commands\/FBAccessibilityKeys.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Commands\/FBAccessibilityKeys.swift",
       "kind": "StringLiteral",
       "offset": 1018,
       "length": 11,
       "value": "\"is_remote\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Commands\/FBAccessibilityKeys.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Commands\/FBAccessibilityKeys.swift",
       "kind": "StringLiteral",
       "offset": 1489,
       "length": 9,
       "value": "\"AXLabel\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Commands\/FBAccessibilityKeys.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Commands\/FBAccessibilityKeys.swift",
       "kind": "StringLiteral",
       "offset": 1517,
       "length": 12,
       "value": "\"AXUniqueId\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Commands\/FBAccessibilityKeys.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Commands\/FBAccessibilityKeys.swift",
       "kind": "StringLiteral",
       "offset": 1545,
       "length": 9,
       "value": "\"AXValue\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Commands\/FBAccessibilityKeys.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Commands\/FBAccessibilityKeys.swift",
       "kind": "StringLiteral",
       "offset": 1570,
       "length": 7,
       "value": "\"title\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Commands\/FBAccessibilityKeys.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Commands\/FBAccessibilityKeys.swift",
       "kind": "StringLiteral",
       "offset": 1592,
       "length": 6,
       "value": "\"role\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Commands\/FBAccessibilityKeys.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Commands\/FBAccessibilityKeys.swift",
       "kind": "StringLiteral",
       "offset": 1624,
       "length": 18,
       "value": "\"role_description\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Commands\/FBAccessibilityKeys.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Commands\/FBAccessibilityKeys.swift",
       "kind": "StringLiteral",
       "offset": 1660,
       "length": 9,
       "value": "\"subrole\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Commands\/FBAccessibilityKeys.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Commands\/FBAccessibilityKeys.swift",
       "kind": "StringLiteral",
       "offset": 1684,
       "length": 6,
       "value": "\"help\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Commands\/FBAccessibilityKeys.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Commands\/FBAccessibilityKeys.swift",
       "kind": "StringLiteral",
       "offset": 1712,
       "length": 13,
       "value": "\"placeholder\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Commands\/FBAccessibilityRequestOptions.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Commands\/FBAccessibilityRequestOptions.swift",
       "kind": "FloatLiteral",
       "offset": 791,
       "length": 4,
       "value": "50.0"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Commands\/FBAccessibilityRequestOptions.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Commands\/FBAccessibilityRequestOptions.swift",
       "kind": "IntegerLiteral",
       "offset": 839,
       "length": 1,
       "value": "0"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Commands\/FBAccessibilityRequestOptions.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Commands\/FBAccessibilityRequestOptions.swift",
       "kind": "BooleanLiteral",
       "offset": 2588,
       "length": 5,
       "value": "false"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Commands\/FBAccessibilityRequestOptions.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Commands\/FBAccessibilityRequestOptions.swift",
       "kind": "BooleanLiteral",
       "offset": 2669,
       "length": 5,
       "value": "false"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Commands\/FBAccessibilityRequestOptions.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Commands\/FBAccessibilityRequestOptions.swift",
       "kind": "BooleanLiteral",
       "offset": 2704,
       "length": 5,
       "value": "false"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Commands\/FBAccessibilityRequestOptions.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Commands\/FBAccessibilityRequestOptions.swift",
       "kind": "BooleanLiteral",
       "offset": 2744,
       "length": 5,
       "value": "false"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Commands\/FBAccessibilityRequestOptions.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Commands\/FBAccessibilityRequestOptions.swift",
       "kind": "IntegerLiteral",
       "offset": 2842,
       "length": 1,
       "value": "0"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBApplicationLaunchConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBApplicationLaunchConfiguration.swift",
       "kind": "IntegerLiteral",
       "offset": 308,
       "length": 1,
       "value": "0"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBApplicationLaunchConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBApplicationLaunchConfiguration.swift",
       "kind": "IntegerLiteral",
       "offset": 339,
       "length": 1,
       "value": "1"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBApplicationLaunchConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBApplicationLaunchConfiguration.swift",
       "kind": "IntegerLiteral",
       "offset": 368,
       "length": 1,
       "value": "2"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBApplicationLaunchConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBApplicationLaunchConfiguration.swift",
       "kind": "IntegerLiteral",
       "offset": 1241,
       "length": 1,
       "value": "0"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBApplicationLaunchConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBApplicationLaunchConfiguration.swift",
       "kind": "IntegerLiteral",
       "offset": 1266,
       "length": 4,
       "value": "1231"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBApplicationLaunchConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBApplicationLaunchConfiguration.swift",
       "kind": "IntegerLiteral",
       "offset": 1273,
       "length": 4,
       "value": "1237"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBApplicationLaunchConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBApplicationLaunchConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 1693,
       "length": 52,
       "value": "\"App Launch \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBApplicationLaunchConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBApplicationLaunchConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 1716,
       "length": 1,
       "value": "\" (\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBApplicationLaunchConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBApplicationLaunchConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 1734,
       "length": 8,
       "value": "\"(null)\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBApplicationLaunchConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBApplicationLaunchConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 1743,
       "length": 1,
       "value": "\")\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Applications\/FBBundleDescriptor.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Applications\/FBBundleDescriptor.swift",
       "kind": "IntegerLiteral",
       "offset": 1664,
       "length": 1,
       "value": "0"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Applications\/FBBundleDescriptor.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Applications\/FBBundleDescriptor.swift",
       "kind": "StringLiteral",
       "offset": 1720,
       "length": 35,
       "value": "\"Name: \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Applications\/FBBundleDescriptor.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Applications\/FBBundleDescriptor.swift",
       "kind": "StringLiteral",
       "offset": 1734,
       "length": 1,
       "value": "\" | ID: \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Applications\/FBBundleDescriptor.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Applications\/FBBundleDescriptor.swift",
       "kind": "StringLiteral",
       "offset": 1754,
       "length": 1,
       "value": "\"\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Codesigning\/FBCodesignProvider.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Codesigning\/FBCodesignProvider.swift",
       "kind": "StringLiteral",
       "offset": 1287,
       "length": 13,
       "value": "\"CDHash=(.+)\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Codesigning\/FBCodesignProvider.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Codesigning\/FBCodesignProvider.swift",
       "kind": "Array",
       "offset": 1311,
       "length": 2,
       "value": "[]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBControlCoreError.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBControlCoreError.swift",
       "kind": "StringLiteral",
       "offset": 248,
       "length": 28,
       "value": "\"com.facebook.FBControlCore\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBControlCoreGlobalConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBControlCoreGlobalConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 250,
       "length": 23,
       "value": "\"FBCONTROLCORE_LOGGING\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBControlCoreGlobalConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBControlCoreGlobalConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 313,
       "length": 29,
       "value": "\"FBCONTROLCORE_DEBUG_LOGGING\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBControlCoreGlobalConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBControlCoreGlobalConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 383,
       "length": 36,
       "value": "\"FBCONTROLCORE_CONFIRM_SIGNED_SHIMS\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBControlCoreGlobalConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBControlCoreGlobalConfiguration.swift",
       "kind": "IntegerLiteral",
       "offset": 672,
       "length": 2,
       "value": "10"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBControlCoreGlobalConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBControlCoreGlobalConfiguration.swift",
       "kind": "IntegerLiteral",
       "offset": 733,
       "length": 2,
       "value": "30"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBControlCoreGlobalConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBControlCoreGlobalConfiguration.swift",
       "kind": "IntegerLiteral",
       "offset": 791,
       "length": 3,
       "value": "120"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBControlCoreGlobalConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBControlCoreGlobalConfiguration.swift",
       "kind": "BooleanLiteral",
       "offset": 1384,
       "length": 5,
       "value": "false"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBControlCoreGlobalConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBControlCoreGlobalConfiguration.swift",
       "kind": "Dictionary",
       "offset": 1546,
       "length": 3,
       "value": "[]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBControlCoreGlobalConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBControlCoreGlobalConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 1634,
       "length": 9,
       "value": "\"TERMCAP\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Crashes\/FBCrashLog.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Crashes\/FBCrashLog.swift",
       "kind": "StringLiteral",
       "offset": 558,
       "length": 52,
       "value": "\"Crash Info: \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Crashes\/FBCrashLog.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Crashes\/FBCrashLog.swift",
       "kind": "StringLiteral",
       "offset": 578,
       "length": 1,
       "value": "\" \n Crash Report: \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Crashes\/FBCrashLog.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Crashes\/FBCrashLog.swift",
       "kind": "StringLiteral",
       "offset": 607,
       "length": 1,
       "value": "\"\n\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Crashes\/FBCrashLog.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Crashes\/FBCrashLog.swift",
       "kind": "StringLiteral",
       "offset": 959,
       "length": 27,
       "value": "\"yyyy-MM-dd HH:mm:ss.SSS Z\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Crashes\/FBCrashLog.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Crashes\/FBCrashLog.swift",
       "kind": "BooleanLiteral",
       "offset": 1011,
       "length": 4,
       "value": "true"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Crashes\/FBCrashLog.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Crashes\/FBCrashLog.swift",
       "kind": "StringLiteral",
       "offset": 1056,
       "length": 7,
       "value": "\"en_US\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Crashes\/FBCrashLog.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Crashes\/FBCrashLog.swift",
       "kind": "StringLiteral",
       "offset": 4398,
       "length": 305,
       "value": "\"Identifier \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Crashes\/FBCrashLog.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Crashes\/FBCrashLog.swift",
       "kind": "StringLiteral",
       "offset": 4423,
       "length": 1,
       "value": "\" | Executable Path \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Crashes\/FBCrashLog.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Crashes\/FBCrashLog.swift",
       "kind": "StringLiteral",
       "offset": 4459,
       "length": 1,
       "value": "\" | Process \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Crashes\/FBCrashLog.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Crashes\/FBCrashLog.swift",
       "kind": "StringLiteral",
       "offset": 4484,
       "length": 1,
       "value": "\" | pid \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Crashes\/FBCrashLog.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Crashes\/FBCrashLog.swift",
       "kind": "StringLiteral",
       "offset": 4511,
       "length": 1,
       "value": "\" | Parent \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Crashes\/FBCrashLog.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Crashes\/FBCrashLog.swift",
       "kind": "StringLiteral",
       "offset": 4541,
       "length": 1,
       "value": "\" | ppid \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Crashes\/FBCrashLog.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Crashes\/FBCrashLog.swift",
       "kind": "StringLiteral",
       "offset": 4575,
       "length": 1,
       "value": "\" | Date \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Crashes\/FBCrashLog.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Crashes\/FBCrashLog.swift",
       "kind": "StringLiteral",
       "offset": 4590,
       "length": 1,
       "value": "\" | Path \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Crashes\/FBCrashLog.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Crashes\/FBCrashLog.swift",
       "kind": "StringLiteral",
       "offset": 4610,
       "length": 1,
       "value": "\" | Exception: \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Crashes\/FBCrashLog.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Crashes\/FBCrashLog.swift",
       "kind": "StringLiteral",
       "offset": 4650,
       "length": 5,
       "value": "\"nil\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Crashes\/FBCrashLog.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Crashes\/FBCrashLog.swift",
       "kind": "StringLiteral",
       "offset": 4656,
       "length": 1,
       "value": "\" | Trace: \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Crashes\/FBCrashLog.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Crashes\/FBCrashLog.swift",
       "kind": "StringLiteral",
       "offset": 4696,
       "length": 5,
       "value": "\"nil\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Crashes\/FBCrashLog.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Crashes\/FBCrashLog.swift",
       "kind": "StringLiteral",
       "offset": 4702,
       "length": 1,
       "value": "\"\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Crashes\/FBCrashLog.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Crashes\/FBCrashLog.swift",
       "kind": "StringLiteral",
       "offset": 8488,
       "length": 32,
       "value": "\"Library\/Logs\/DiagnosticReports\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Crashes\/FBCrashLog.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Crashes\/FBCrashLog.swift",
       "kind": "StringLiteral",
       "offset": 8529,
       "length": 33,
       "value": "\"\/Library\/Logs\/DiagnosticReports\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Crashes\/FBCrashLogParser.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Crashes\/FBCrashLogParser.swift",
       "kind": "IntegerLiteral",
       "offset": 5772,
       "length": 2,
       "value": "20"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBCrashLogStore.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBCrashLogStore.swift",
       "kind": "StringLiteral",
       "offset": 263,
       "length": 20,
       "value": "\"FBCrashLogAppeared\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBDeveloperDiskImage.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBDeveloperDiskImage.swift",
       "kind": "StringLiteral",
       "offset": 249,
       "length": 30,
       "value": "\"IDB_EXTRA_DEVICE_SUPPORT_DIR\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBDeveloperDiskImage.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBDeveloperDiskImage.swift",
       "kind": "StringLiteral",
       "offset": 2136,
       "length": 43,
       "value": "\"Platforms\/iPhoneOS.platform\/DeviceSupport\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBDeveloperDiskImage.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBDeveloperDiskImage.swift",
       "kind": "StringLiteral",
       "offset": 5668,
       "length": 67,
       "value": "\"\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBDeveloperDiskImage.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBDeveloperDiskImage.swift",
       "kind": "StringLiteral",
       "offset": 5685,
       "length": 1,
       "value": "\": \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBDeveloperDiskImage.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBDeveloperDiskImage.swift",
       "kind": "StringLiteral",
       "offset": 5710,
       "length": 1,
       "value": "\".\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBDeveloperDiskImage.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBDeveloperDiskImage.swift",
       "kind": "StringLiteral",
       "offset": 5734,
       "length": 1,
       "value": "\"\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Reporting\/FBEventReporterSubject.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Reporting\/FBEventReporterSubject.swift",
       "kind": "StringLiteral",
       "offset": 431,
       "length": 9,
       "value": "\"started\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Reporting\/FBEventReporterSubject.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Reporting\/FBEventReporterSubject.swift",
       "kind": "StringLiteral",
       "offset": 492,
       "length": 7,
       "value": "\"ended\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Reporting\/FBEventReporterSubject.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Reporting\/FBEventReporterSubject.swift",
       "kind": "StringLiteral",
       "offset": 554,
       "length": 10,
       "value": "\"discrete\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Reporting\/FBEventReporterSubject.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Reporting\/FBEventReporterSubject.swift",
       "kind": "StringLiteral",
       "offset": 618,
       "length": 9,
       "value": "\"success\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Reporting\/FBEventReporterSubject.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Reporting\/FBEventReporterSubject.swift",
       "kind": "StringLiteral",
       "offset": 681,
       "length": 9,
       "value": "\"failure\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBFileReader.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBFileReader.swift",
       "kind": "StringLiteral",
       "offset": 3592,
       "length": 64,
       "value": "\"Reader for \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBFileReader.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBFileReader.swift",
       "kind": "StringLiteral",
       "offset": 3616,
       "length": 4,
       "value": "\" with state \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBFileReader.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBFileReader.swift",
       "kind": "StringLiteral",
       "offset": 3655,
       "length": 1,
       "value": "\"\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBFileReader.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBFileReader.swift",
       "kind": "StringLiteral",
       "offset": 4736,
       "length": 34,
       "value": "\"Finished reading of \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBFileReader.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBFileReader.swift",
       "kind": "StringLiteral",
       "offset": 4769,
       "length": 2,
       "value": "\"\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Applications\/FBInstalledApplication.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Applications\/FBInstalledApplication.swift",
       "kind": "StringLiteral",
       "offset": 249,
       "length": 9,
       "value": "\"unknown\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Applications\/FBInstalledApplication.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Applications\/FBInstalledApplication.swift",
       "kind": "StringLiteral",
       "offset": 297,
       "length": 8,
       "value": "\"system\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Applications\/FBInstalledApplication.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Applications\/FBInstalledApplication.swift",
       "kind": "StringLiteral",
       "offset": 341,
       "length": 5,
       "value": "\"mac\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Applications\/FBInstalledApplication.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Applications\/FBInstalledApplication.swift",
       "kind": "StringLiteral",
       "offset": 383,
       "length": 6,
       "value": "\"user\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Applications\/FBInstalledApplication.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Applications\/FBInstalledApplication.swift",
       "kind": "StringLiteral",
       "offset": 436,
       "length": 17,
       "value": "\"user_enterprise\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Applications\/FBInstalledApplication.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Applications\/FBInstalledApplication.swift",
       "kind": "StringLiteral",
       "offset": 501,
       "length": 18,
       "value": "\"user_development\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Applications\/FBInstalledApplication.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Applications\/FBInstalledApplication.swift",
       "kind": "StringLiteral",
       "offset": 2710,
       "length": 104,
       "value": "\"Bundle \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Applications\/FBInstalledApplication.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Applications\/FBInstalledApplication.swift",
       "kind": "StringLiteral",
       "offset": 2739,
       "length": 1,
       "value": "\" | Install Type \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Applications\/FBInstalledApplication.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Applications\/FBInstalledApplication.swift",
       "kind": "StringLiteral",
       "offset": 2775,
       "length": 1,
       "value": "\" | Container \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Applications\/FBInstalledApplication.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Applications\/FBInstalledApplication.swift",
       "kind": "StringLiteral",
       "offset": 2807,
       "length": 5,
       "value": "\"nil\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Applications\/FBInstalledApplication.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Applications\/FBInstalledApplication.swift",
       "kind": "StringLiteral",
       "offset": 2813,
       "length": 1,
       "value": "\"\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBInstrumentsConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBInstrumentsConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 2779,
       "length": 453,
       "value": "\"Instruments \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBInstrumentsConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBInstrumentsConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 2807,
       "length": 1,
       "value": "\" | \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBInstrumentsConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBInstrumentsConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 2830,
       "length": 1,
       "value": "\" | \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBInstrumentsConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBInstrumentsConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 2900,
       "length": 1,
       "value": "\" | \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBInstrumentsConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBInstrumentsConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 2968,
       "length": 1,
       "value": "\" | \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBInstrumentsConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBInstrumentsConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 3037,
       "length": 1,
       "value": "\" | duration \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBInstrumentsConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBInstrumentsConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 3077,
       "length": 1,
       "value": "\" | terminate timeout \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBInstrumentsConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBInstrumentsConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 3125,
       "length": 1,
       "value": "\" | launch retry timeout \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBInstrumentsConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBInstrumentsConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 3178,
       "length": 1,
       "value": "\" | launch error timeout \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBInstrumentsConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBInstrumentsConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 3231,
       "length": 1,
       "value": "\"\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Commands\/FBLogCommands.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Commands\/FBLogCommands.swift",
       "kind": "IntegerLiteral",
       "offset": 907,
       "length": 1,
       "value": "0"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Commands\/FBLogCommands.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Commands\/FBLogCommands.swift",
       "kind": "IntegerLiteral",
       "offset": 1086,
       "length": 1,
       "value": "5"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Commands\/FBLogCommands.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Commands\/FBLogCommands.swift",
       "kind": "Array",
       "offset": 1774,
       "length": 57,
       "value": "[\"collect\", \"config\", \"erase\", \"show\", \"stream\", \"stats\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Processes\/FBProcessInfo.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Processes\/FBProcessInfo.swift",
       "kind": "StringLiteral",
       "offset": 1304,
       "length": 51,
       "value": "\"Process \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Processes\/FBProcessInfo.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Processes\/FBProcessInfo.swift",
       "kind": "StringLiteral",
       "offset": 1327,
       "length": 1,
       "value": "\" | PID \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Processes\/FBProcessInfo.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Processes\/FBProcessInfo.swift",
       "kind": "StringLiteral",
       "offset": 1354,
       "length": 1,
       "value": "\"\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBProcessSpawnConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBProcessSpawnConfiguration.swift",
       "kind": "IntegerLiteral",
       "offset": 294,
       "length": 1,
       "value": "0"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBProcessSpawnConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBProcessSpawnConfiguration.swift",
       "kind": "IntegerLiteral",
       "offset": 316,
       "length": 1,
       "value": "1"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBProcessSpawnConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBProcessSpawnConfiguration.swift",
       "kind": "IntegerLiteral",
       "offset": 335,
       "length": 1,
       "value": "2"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBProcessSpawnConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBProcessSpawnConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 1519,
       "length": 199,
       "value": "\"Process Launch \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBProcessSpawnConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBProcessSpawnConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 1548,
       "length": 1,
       "value": "\" | Arguments \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBProcessSpawnConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBProcessSpawnConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 1623,
       "length": 1,
       "value": "\" | Environment \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBProcessSpawnConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBProcessSpawnConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 1702,
       "length": 1,
       "value": "\" | Output \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBProcessSpawnConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBProcessSpawnConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 1717,
       "length": 1,
       "value": "\"\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Processes\/FBProcessTerminationStrategy.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Processes\/FBProcessTerminationStrategy.swift",
       "kind": "FloatLiteral",
       "offset": 265,
       "length": 4,
       "value": "20.0"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Commands\/FBTargetCommandCache.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Commands\/FBTargetCommandCache.swift",
       "kind": "Dictionary",
       "offset": 860,
       "length": 3,
       "value": "[]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
       "kind": "IntegerLiteral",
       "offset": 3777,
       "length": 1,
       "value": "0"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
       "kind": "IntegerLiteral",
       "offset": 3838,
       "length": 1,
       "value": "1"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
       "kind": "IntegerLiteral",
       "offset": 3842,
       "length": 1,
       "value": "0"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
       "kind": "IntegerLiteral",
       "offset": 3875,
       "length": 1,
       "value": "1"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
       "kind": "IntegerLiteral",
       "offset": 3879,
       "length": 1,
       "value": "0"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
       "kind": "IntegerLiteral",
       "offset": 3922,
       "length": 1,
       "value": "0"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
       "kind": "IntegerLiteral",
       "offset": 3966,
       "length": 1,
       "value": "0"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
       "kind": "IntegerLiteral",
       "offset": 4010,
       "length": 1,
       "value": "0"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
       "kind": "IntegerLiteral",
       "offset": 4069,
       "length": 1,
       "value": "0"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
       "kind": "IntegerLiteral",
       "offset": 4106,
       "length": 1,
       "value": "0"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
       "kind": "IntegerLiteral",
       "offset": 4148,
       "length": 1,
       "value": "0"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
       "kind": "IntegerLiteral",
       "offset": 4202,
       "length": 1,
       "value": "1"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
       "kind": "IntegerLiteral",
       "offset": 4206,
       "length": 1,
       "value": "0"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
       "kind": "IntegerLiteral",
       "offset": 4243,
       "length": 1,
       "value": "0"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 4311,
       "length": 878,
       "value": "\"FBTestLaunchConfiguration TestBundle \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 4362,
       "length": 1,
       "value": "\" | AppConfig \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 4408,
       "length": 1,
       "value": "\" | HostBundle \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 4472,
       "length": 7,
       "value": "\"(nil)\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 4480,
       "length": 1,
       "value": "\" | UITesting \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
       "kind": "IntegerLiteral",
       "offset": 4523,
       "length": 1,
       "value": "1"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
       "kind": "IntegerLiteral",
       "offset": 4527,
       "length": 1,
       "value": "0"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 4529,
       "length": 1,
       "value": "\" | UseXcodebuild \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
       "kind": "IntegerLiteral",
       "offset": 4570,
       "length": 1,
       "value": "1"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
       "kind": "IntegerLiteral",
       "offset": 4574,
       "length": 1,
       "value": "0"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 4576,
       "length": 1,
       "value": "\" | TestsToRun \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 4636,
       "length": 7,
       "value": "\"(nil)\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 4644,
       "length": 1,
       "value": "\" | TestsToSkip \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 4706,
       "length": 7,
       "value": "\"(nil)\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 4714,
       "length": 1,
       "value": "\" | Target application bundle \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 4802,
       "length": 7,
       "value": "\"(nil)\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 4810,
       "length": 19,
       "value": "\" xcTestRunProperties \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 4886,
       "length": 7,
       "value": "\"(nil)\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 4894,
       "length": 1,
       "value": "\" | ResultBundlePath \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 4936,
       "length": 7,
       "value": "\"(nil)\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 4944,
       "length": 1,
       "value": "\" | CoverageDirPath \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 4990,
       "length": 7,
       "value": "\"(nil)\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 4998,
       "length": 1,
       "value": "\" | EnableContinuousCoverageCollection \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
       "kind": "IntegerLiteral",
       "offset": 5081,
       "length": 1,
       "value": "1"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
       "kind": "IntegerLiteral",
       "offset": 5085,
       "length": 1,
       "value": "0"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 5087,
       "length": 1,
       "value": "\" | LogDirectoryPath \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 5129,
       "length": 7,
       "value": "\"(nil)\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 5137,
       "length": 1,
       "value": "\" | ReportResultBundle \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
       "kind": "IntegerLiteral",
       "offset": 5182,
       "length": 1,
       "value": "1"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
       "kind": "IntegerLiteral",
       "offset": 5186,
       "length": 1,
       "value": "0"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBTestLaunchConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 5188,
       "length": 1,
       "value": "\"\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBVideoStreamConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBVideoStreamConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 455,
       "length": 9,
       "value": "\"annex-b\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBVideoStreamConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBVideoStreamConfiguration.swift",
       "kind": "IntegerLiteral",
       "offset": 617,
       "length": 14,
       "value": "1"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBVideoStreamConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBVideoStreamConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 2607,
       "length": 18,
       "value": "\"Quality \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBVideoStreamConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBVideoStreamConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 2624,
       "length": 1,
       "value": "\"\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBVideoStreamConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBVideoStreamConfiguration.swift",
       "kind": "FloatLiteral",
       "offset": 2702,
       "length": 9,
       "value": "1000000.0"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBVideoStreamConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBVideoStreamConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 2744,
       "length": 19,
       "value": "\"Bitrate %.1f Mbps\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBVideoStreamConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBVideoStreamConfiguration.swift",
       "kind": "FloatLiteral",
       "offset": 2771,
       "length": 9,
       "value": "1000000.0"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBVideoStreamConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBVideoStreamConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 2827,
       "length": 19,
       "value": "\"Bitrate %.0f kbps\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBVideoStreamConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBVideoStreamConfiguration.swift",
       "kind": "FloatLiteral",
       "offset": 2854,
       "length": 6,
       "value": "1000.0"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBVideoStreamConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBVideoStreamConfiguration.swift",
       "kind": "IntegerLiteral",
       "offset": 5700,
       "length": 1,
       "value": "0"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBVideoStreamConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBVideoStreamConfiguration.swift",
       "kind": "IntegerLiteral",
       "offset": 5746,
       "length": 1,
       "value": "0"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBVideoStreamConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBVideoStreamConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 5822,
       "length": 173,
       "value": "\"Format \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBVideoStreamConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBVideoStreamConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 5839,
       "length": 1,
       "value": "\" | FPS \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBVideoStreamConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBVideoStreamConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 5880,
       "length": 5,
       "value": "\"nil\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBVideoStreamConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBVideoStreamConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 5886,
       "length": 1,
       "value": "\" | Rate Control \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBVideoStreamConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBVideoStreamConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 5916,
       "length": 1,
       "value": "\" | Scale \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBVideoStreamConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBVideoStreamConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 5955,
       "length": 5,
       "value": "\"nil\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBVideoStreamConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBVideoStreamConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 5961,
       "length": 1,
       "value": "\" | Key frame rate \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBVideoStreamConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBVideoStreamConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 5994,
       "length": 1,
       "value": "\"\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBVideoStreamWriters.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBVideoStreamWriters.swift",
       "kind": "IntegerLiteral",
       "offset": 595,
       "length": 1,
       "value": "2"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBVideoStreamWriters.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBVideoStreamWriters.swift",
       "kind": "IntegerLiteral",
       "offset": 1351,
       "length": 1,
       "value": "4"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBVideoStreamWriters.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBVideoStreamWriters.swift",
       "kind": "Array",
       "offset": 1392,
       "length": 24,
       "value": "[0x00, 0x00, 0x00, 0x01]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBVideoStreamWriters.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBVideoStreamWriters.swift",
       "kind": "IntegerLiteral",
       "offset": 8384,
       "length": 3,
       "value": "188"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBVideoStreamWriters.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBVideoStreamWriters.swift",
       "kind": "IntegerLiteral",
       "offset": 8420,
       "length": 4,
       "value": "0x47"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBVideoStreamWriters.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBVideoStreamWriters.swift",
       "kind": "IntegerLiteral",
       "offset": 8454,
       "length": 6,
       "value": "0x0000"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBVideoStreamWriters.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBVideoStreamWriters.swift",
       "kind": "IntegerLiteral",
       "offset": 8490,
       "length": 6,
       "value": "0x0100"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBVideoStreamWriters.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBVideoStreamWriters.swift",
       "kind": "IntegerLiteral",
       "offset": 8528,
       "length": 6,
       "value": "0x0101"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBVideoStreamWriters.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBVideoStreamWriters.swift",
       "kind": "IntegerLiteral",
       "offset": 8576,
       "length": 6,
       "value": "0x0102"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBVideoStreamWriters.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBVideoStreamWriters.swift",
       "kind": "IntegerLiteral",
       "offset": 8619,
       "length": 4,
       "value": "0x24"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBVideoStreamWriters.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBVideoStreamWriters.swift",
       "kind": "IntegerLiteral",
       "offset": 8660,
       "length": 4,
       "value": "0x1B"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBVideoStreamWriters.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBVideoStreamWriters.swift",
       "kind": "IntegerLiteral",
       "offset": 8710,
       "length": 4,
       "value": "0x15"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBVideoStreamWriters.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBVideoStreamWriters.swift",
       "kind": "IntegerLiteral",
       "offset": 8821,
       "length": 1,
       "value": "0"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBVideoStreamWriters.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBVideoStreamWriters.swift",
       "kind": "IntegerLiteral",
       "offset": 8831,
       "length": 3,
       "value": "256"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBVideoStreamWriters.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBVideoStreamWriters.swift",
       "kind": "IntegerLiteral",
       "offset": 8847,
       "length": 1,
       "value": "0"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBVideoStreamWriters.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBVideoStreamWriters.swift",
       "kind": "IntegerLiteral",
       "offset": 8851,
       "length": 3,
       "value": "256"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBVideoStreamWriters.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBVideoStreamWriters.swift",
       "kind": "IntegerLiteral",
       "offset": 8884,
       "length": 2,
       "value": "24"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBVideoStreamWriters.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBVideoStreamWriters.swift",
       "kind": "IntegerLiteral",
       "offset": 8900,
       "length": 1,
       "value": "0"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBVideoStreamWriters.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBVideoStreamWriters.swift",
       "kind": "IntegerLiteral",
       "offset": 8904,
       "length": 1,
       "value": "8"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBVideoStreamWriters.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBVideoStreamWriters.swift",
       "kind": "IntegerLiteral",
       "offset": 8923,
       "length": 10,
       "value": "0x80000000"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBVideoStreamWriters.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBVideoStreamWriters.swift",
       "kind": "IntegerLiteral",
       "offset": 8937,
       "length": 1,
       "value": "0"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBVideoStreamWriters.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBVideoStreamWriters.swift",
       "kind": "IntegerLiteral",
       "offset": 8963,
       "length": 1,
       "value": "1"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBVideoStreamWriters.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBVideoStreamWriters.swift",
       "kind": "IntegerLiteral",
       "offset": 8968,
       "length": 10,
       "value": "0x04C11DB7"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBVideoStreamWriters.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBVideoStreamWriters.swift",
       "kind": "IntegerLiteral",
       "offset": 9010,
       "length": 1,
       "value": "1"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBVideoStreamWriters.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBVideoStreamWriters.swift",
       "kind": "BooleanLiteral",
       "offset": 13343,
       "length": 5,
       "value": "false"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBVideoStreamWriters.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBVideoStreamWriters.swift",
       "kind": "IntegerLiteral",
       "offset": 24296,
       "length": 1,
       "value": "0"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBVideoStreamWriters.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBVideoStreamWriters.swift",
       "kind": "IntegerLiteral",
       "offset": 24351,
       "length": 1,
       "value": "0"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBVideoStreamWriters.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBVideoStreamWriters.swift",
       "kind": "IntegerLiteral",
       "offset": 25010,
       "length": 1,
       "value": "0"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBVideoStreamWriters.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBVideoStreamWriters.swift",
       "kind": "IntegerLiteral",
       "offset": 25080,
       "length": 1,
       "value": "0"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBVideoStreamWriters.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBVideoStreamWriters.swift",
       "kind": "IntegerLiteral",
       "offset": 25150,
       "length": 1,
       "value": "0"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBWeakFramework+ApplePrivateFrameworks.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBWeakFramework+ApplePrivateFrameworks.swift",
       "kind": "StringLiteral",
       "offset": 352,
       "length": 62,
       "value": "\"\/Library\/Developer\/PrivateFrameworks\/CoreSimulator.framework\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBWeakFramework+ApplePrivateFrameworks.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBWeakFramework+ApplePrivateFrameworks.swift",
       "kind": "Array",
       "offset": 436,
       "length": 13,
       "value": "[\"SimDevice\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBWeakFramework+ApplePrivateFrameworks.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBWeakFramework+ApplePrivateFrameworks.swift",
       "kind": "BooleanLiteral",
       "offset": 466,
       "length": 5,
       "value": "false"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBWeakFramework+ApplePrivateFrameworks.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBWeakFramework+ApplePrivateFrameworks.swift",
       "kind": "StringLiteral",
       "offset": 870,
       "length": 44,
       "value": "\"..\/SharedFrameworks\/SimulatorKit.framework\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBWeakFramework+ApplePrivateFrameworks.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBWeakFramework+ApplePrivateFrameworks.swift",
       "kind": "StringLiteral",
       "offset": 1178,
       "length": 50,
       "value": "\"Library\/PrivateFrameworks\/SimulatorKit.framework\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBWeakFramework+ApplePrivateFrameworks.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBWeakFramework+ApplePrivateFrameworks.swift",
       "kind": "Array",
       "offset": 1323,
       "length": 2,
       "value": "[]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBWeakFramework+ApplePrivateFrameworks.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBWeakFramework+ApplePrivateFrameworks.swift",
       "kind": "StringLiteral",
       "offset": 1474,
       "length": 53,
       "value": "\"..\/SharedFrameworks\/DTXConnectionServices.framework\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBWeakFramework+ApplePrivateFrameworks.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBWeakFramework+ApplePrivateFrameworks.swift",
       "kind": "Array",
       "offset": 1549,
       "length": 47,
       "value": "[\"DTXConnection\", \"DTXRemoteInvocationReceipt\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBWeakFramework+ApplePrivateFrameworks.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBWeakFramework+ApplePrivateFrameworks.swift",
       "kind": "StringLiteral",
       "offset": 1715,
       "length": 73,
       "value": "\"Platforms\/MacOSX.platform\/Developer\/Library\/Frameworks\/XCTest.framework\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBWeakFramework+ApplePrivateFrameworks.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBWeakFramework+ApplePrivateFrameworks.swift",
       "kind": "Array",
       "offset": 1810,
       "length": 23,
       "value": "[\"XCTestConfiguration\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBWeakFramework+ApplePrivateFrameworks.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBWeakFramework+ApplePrivateFrameworks.swift",
       "kind": "StringLiteral",
       "offset": 1951,
       "length": 58,
       "value": "\"\/System\/Library\/PrivateFrameworks\/MobileDevice.framework\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBWeakFramework+ApplePrivateFrameworks.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBWeakFramework+ApplePrivateFrameworks.swift",
       "kind": "Array",
       "offset": 2031,
       "length": 2,
       "value": "[]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBWeakFramework+ApplePrivateFrameworks.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBWeakFramework+ApplePrivateFrameworks.swift",
       "kind": "BooleanLiteral",
       "offset": 2050,
       "length": 4,
       "value": "true"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBWeakFramework+ApplePrivateFrameworks.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBWeakFramework+ApplePrivateFrameworks.swift",
       "kind": "StringLiteral",
       "offset": 2212,
       "length": 78,
       "value": "\"\/System\/Library\/PrivateFrameworks\/AccessibilityPlatformTranslation.framework\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBWeakFramework+ApplePrivateFrameworks.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBWeakFramework+ApplePrivateFrameworks.swift",
       "kind": "Array",
       "offset": 2312,
       "length": 24,
       "value": "[\"AXPTranslationObject\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBWeakFramework+ApplePrivateFrameworks.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBWeakFramework+ApplePrivateFrameworks.swift",
       "kind": "BooleanLiteral",
       "offset": 2353,
       "length": 5,
       "value": "false"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBXCTestShimConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBXCTestShimConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 245,
       "length": 25,
       "value": "\"ios_simulator_test_shim\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBXCTestShimConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBXCTestShimConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 300,
       "length": 15,
       "value": "\"mac_test_shim\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBXCTestShimConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBXCTestShimConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 350,
       "length": 25,
       "value": "\"libShimulator-iOS.dylib\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBXCTestShimConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBXCTestShimConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 412,
       "length": 27,
       "value": "\"libShimulator-macOS.dylib\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBXCTraceConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBXCTraceConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 2852,
       "length": 5,
       "value": "\"nil\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBXCTraceConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBXCTraceConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 2958,
       "length": 5,
       "value": "\"nil\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBXCTraceConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBXCTraceConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 2975,
       "length": 402,
       "value": "\"xctrace record: template \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBXCTraceConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBXCTraceConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 3016,
       "length": 1,
       "value": "\" | duration \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBXCTraceConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBXCTraceConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 3040,
       "length": 1,
       "value": "\" | process to launch \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBXCTraceConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBXCTraceConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 3082,
       "length": 5,
       "value": "\"nil\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBXCTraceConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBXCTraceConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 3088,
       "length": 1,
       "value": "\" | process to attach \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBXCTraceConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBXCTraceConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 3130,
       "length": 5,
       "value": "\"nil\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBXCTraceConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBXCTraceConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 3136,
       "length": 1,
       "value": "\" | package \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBXCTraceConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBXCTraceConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 3160,
       "length": 5,
       "value": "\"nil\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBXCTraceConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBXCTraceConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 3166,
       "length": 1,
       "value": "\" | target stdin \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBXCTraceConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBXCTraceConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 3199,
       "length": 5,
       "value": "\"nil\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBXCTraceConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBXCTraceConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 3205,
       "length": 1,
       "value": "\" | target stdout \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBXCTraceConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBXCTraceConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 3240,
       "length": 5,
       "value": "\"nil\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBXCTraceConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBXCTraceConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 3246,
       "length": 1,
       "value": "\" | target arguments \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBXCTraceConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBXCTraceConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 3283,
       "length": 1,
       "value": "\" | target environment \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBXCTraceConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBXCTraceConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 3322,
       "length": 1,
       "value": "\" | record all processes \""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBXCTraceConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBXCTraceConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 3363,
       "length": 5,
       "value": "\"Yes\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBXCTraceConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBXCTraceConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 3371,
       "length": 4,
       "value": "\"No\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBXCTraceConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBXCTraceConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 3376,
       "length": 1,
       "value": "\"\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBXcodeConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBXcodeConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 1903,
       "length": 2,
       "value": "\"\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBXcodeConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBXcodeConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 2435,
       "length": 28,
       "value": "\"CFBundleShortVersionString\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBXcodeConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBXcodeConfiguration.swift",
       "kind": "IntegerLiteral",
       "offset": 3148,
       "length": 1,
       "value": "1"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBXcodeConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBXcodeConfiguration.swift",
       "kind": "IntegerLiteral",
       "offset": 3188,
       "length": 1,
       "value": "3"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBXcodeConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBXcodeConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 3417,
       "length": 9,
       "value": "\"Version\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBXcodeConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBXcodeConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 3518,
       "length": 2,
       "value": "\"\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBXcodeConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBXcodeConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 3710,
       "length": 6,
       "value": "\"12.0\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBXcodeConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBXcodeConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 3855,
       "length": 6,
       "value": "\"12.5\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBXcodeConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBXcodeConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 4057,
       "length": 50,
       "value": "\"Could not load Simulator.app bundle at '\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBXcodeConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBXcodeConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 4105,
       "length": 3,
       "value": "\"'\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBXcodeConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBXcodeConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 4160,
       "length": 14,
       "value": "\"CFBundleName\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBXcodeConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBXcodeConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 4221,
       "length": 20,
       "value": "\"CFBundleExecutable\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBXcodeConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Utility\/FBXcodeConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 4385,
       "length": 27,
       "value": "\"com.apple.iphonesimulator\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 1074,
       "length": 35,
       "value": "\"Screen Pixels %lu,%lu | Scale %fX\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 2346,
       "length": 27,
       "value": "\"Model '\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 2371,
       "length": 2,
       "value": "\"'\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "IntegerLiteral",
       "offset": 5345,
       "length": 1,
       "value": "1"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 5854,
       "length": 23,
       "value": "\"OS '\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 5875,
       "length": 2,
       "value": "\"'\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 7225,
       "length": 11,
       "value": "\"iPhone4,1\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 7333,
       "length": 26,
       "value": "[\"iPhone5,1\", \"iPhone5,2\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 7458,
       "length": 13,
       "value": "[\"iPhone5,3\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 7570,
       "length": 26,
       "value": "[\"iPhone6,1\", \"iPhone6,2\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 7692,
       "length": 11,
       "value": "\"iPhone7,2\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 7803,
       "length": 11,
       "value": "\"iPhone7,1\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 7911,
       "length": 11,
       "value": "\"iPhone8,1\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 8023,
       "length": 11,
       "value": "\"iPhone8,2\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 8145,
       "length": 11,
       "value": "\"iPhone8,4\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 8267,
       "length": 12,
       "value": "\"iPhone12,8\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 8376,
       "length": 39,
       "value": "[\"iPhone9,1\", \"iPhone9,2\", \"iPhone9,3\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 8516,
       "length": 26,
       "value": "[\"iPhone9,2\", \"iPhone9,4\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 8639,
       "length": 28,
       "value": "[\"iPhone10,1\", \"iPhone10,4\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 8768,
       "length": 28,
       "value": "[\"iPhone10,2\", \"iPhone10,5\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 8893,
       "length": 28,
       "value": "[\"iPhone10,3\", \"iPhone10,6\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 9019,
       "length": 14,
       "value": "[\"iPhone11,2\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 9134,
       "length": 14,
       "value": "[\"iPhone11,6\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 9246,
       "length": 14,
       "value": "[\"iPhone11,8\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 9358,
       "length": 14,
       "value": "[\"iPhone12,1\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 9473,
       "length": 14,
       "value": "[\"iPhone12,3\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 9591,
       "length": 14,
       "value": "[\"iPhone12,5\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 9707,
       "length": 14,
       "value": "[\"iPhone13,1\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 9819,
       "length": 14,
       "value": "[\"iPhone13,2\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 9934,
       "length": 14,
       "value": "[\"iPhone13,3\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 10052,
       "length": 14,
       "value": "[\"iPhone13,4\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 10168,
       "length": 14,
       "value": "[\"iPhone14,4\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 10280,
       "length": 14,
       "value": "[\"iPhone14,5\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 10395,
       "length": 14,
       "value": "[\"iPhone14,2\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 10513,
       "length": 14,
       "value": "[\"iPhone14,3\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 10625,
       "length": 14,
       "value": "[\"iPhone14,7\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 10741,
       "length": 14,
       "value": "[\"iPhone14,8\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 10856,
       "length": 14,
       "value": "[\"iPhone15,2\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 10974,
       "length": 14,
       "value": "[\"iPhone15,3\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 11086,
       "length": 14,
       "value": "[\"iPhone15,4\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 11202,
       "length": 14,
       "value": "[\"iPhone15,5\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 11317,
       "length": 14,
       "value": "[\"iPhone16,1\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 11435,
       "length": 14,
       "value": "[\"iPhone16,2\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 11547,
       "length": 14,
       "value": "[\"iPhone17,3\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 11663,
       "length": 14,
       "value": "[\"iPhone17,4\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 11778,
       "length": 14,
       "value": "[\"iPhone17,1\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 11896,
       "length": 14,
       "value": "[\"iPhone17,2\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 12009,
       "length": 14,
       "value": "[\"iPhone17,5\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 12121,
       "length": 14,
       "value": "[\"iPhone18,3\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 12236,
       "length": 14,
       "value": "[\"iPhone18,1\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 12354,
       "length": 14,
       "value": "[\"iPhone18,2\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 12481,
       "length": 11,
       "value": "[\"iPod9,1\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 12585,
       "length": 44,
       "value": "[\"iPad2,1\", \"iPad2,2\", \"iPad2,3\", \"iPad2,4\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 12727,
       "length": 66,
       "value": "[\"iPad3,1\", \"iPad3,2\", \"iPad3,3\", \"iPad3,4\", \"iPad3,5\", \"iPad3,6\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 12888,
       "length": 33,
       "value": "[\"iPad4,1\", \"iPad4,2\", \"iPad4,3\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 13017,
       "length": 22,
       "value": "[\"iPad5,3\", \"iPad5,4\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 13148,
       "length": 24,
       "value": "[\"iPad11,3\", \"iPad11,4\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 13281,
       "length": 24,
       "value": "[\"iPad13,1\", \"iPad13,2\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 13400,
       "length": 44,
       "value": "[\"iPad6,7\", \"iPad6,8\", \"iPad6,3\", \"iPad6,4\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 13548,
       "length": 22,
       "value": "[\"iPad6,3\", \"iPad6,4\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 13675,
       "length": 22,
       "value": "[\"iPad6,7\", \"iPad6,8\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 13787,
       "length": 23,
       "value": "\"iPad (5th generation)\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 13827,
       "length": 24,
       "value": "[\"iPad6,11\", \"iPad6,12\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 13957,
       "length": 22,
       "value": "[\"iPad7,5\", \"iPad7,6\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 14098,
       "length": 22,
       "value": "[\"iPad7,1\", \"iPad7,2\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 14225,
       "length": 22,
       "value": "[\"iPad7,3\", \"iPad7,4\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 14353,
       "length": 24,
       "value": "[\"iPad7,11\", \"iPad7,12\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 14483,
       "length": 24,
       "value": "[\"iPad11,6\", \"iPad11,7\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 14613,
       "length": 24,
       "value": "[\"iPad12,1\", \"iPad12,2\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 14744,
       "length": 26,
       "value": "[\"iPad13,18\", \"iPad13,19\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 14865,
       "length": 24,
       "value": "[\"iPad16,3\", \"iPad16,4\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 15008,
       "length": 44,
       "value": "[\"iPad8,5\", \"iPad8,6\", \"iPad8,7\", \"iPad8,8\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 15171,
       "length": 24,
       "value": "[\"iPad8,11\", \"iPad8,12\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 15312,
       "length": 44,
       "value": "[\"iPad8,1\", \"iPad8,2\", \"iPad8,3\", \"iPad8,4\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 15473,
       "length": 24,
       "value": "[\"iPad8,11\", \"iPad8,12\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 15587,
       "length": 39,
       "value": "\"iPad Pro (12.9-inch) (5th generation)\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 15643,
       "length": 50,
       "value": "[\"iPad13,8\", \"iPad13,9\", \"iPad13,10\", \"iPad13,11\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 15810,
       "length": 23,
       "value": "[\"iPad8,9\", \"iPad8,10\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 15923,
       "length": 37,
       "value": "\"iPad Pro (11-inch) (3rd generation)\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 15977,
       "length": 48,
       "value": "[\"iPad13,4\", \"iPad13,5\", \"iPad13,6\", \"iPad13,7\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 16123,
       "length": 33,
       "value": "[\"iPad4,4\", \"iPad4,5\", \"iPad4,6\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 16254,
       "length": 33,
       "value": "[\"iPad4,7\", \"iPad4,8\", \"iPad4,9\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 16385,
       "length": 22,
       "value": "[\"iPad5,1\", \"iPad5,2\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 16505,
       "length": 24,
       "value": "[\"iPad11,1\", \"iPad11,2\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 16617,
       "length": 10,
       "value": "\"Apple TV\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 16644,
       "length": 14,
       "value": "[\"AppleTV5,3\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 16746,
       "length": 13,
       "value": "\"Apple TV 4K\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 16776,
       "length": 14,
       "value": "[\"AppleTV6,2\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 16878,
       "length": 24,
       "value": "\"Apple TV 4K (at 1080p)\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 16919,
       "length": 14,
       "value": "[\"AppleTV6,2\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 17021,
       "length": 30,
       "value": "\"Apple TV 4K (2nd generation)\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 17068,
       "length": 15,
       "value": "[\"AppleTV11,1\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 17171,
       "length": 41,
       "value": "\"Apple TV 4K (at 1080p) (2nd generation)\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 17229,
       "length": 15,
       "value": "[\"AppleTV11,1\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 17335,
       "length": 20,
       "value": "\"Apple Watch - 38mm\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 17372,
       "length": 12,
       "value": "[\"Watch1,1\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 17475,
       "length": 20,
       "value": "\"Apple Watch - 42mm\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 17512,
       "length": 12,
       "value": "[\"Watch1,2\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 17615,
       "length": 23,
       "value": "\"Apple Watch SE - 40mm\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 17655,
       "length": 12,
       "value": "[\"Watch1,1\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 17758,
       "length": 23,
       "value": "\"Apple Watch SE - 44mm\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 17798,
       "length": 12,
       "value": "[\"Watch1,2\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 17901,
       "length": 29,
       "value": "\"Apple Watch Series 2 - 38mm\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 17947,
       "length": 12,
       "value": "[\"Watch2,1\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 18050,
       "length": 29,
       "value": "\"Apple Watch Series 2 - 42mm\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 18096,
       "length": 12,
       "value": "[\"Watch2,2\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 18199,
       "length": 29,
       "value": "\"Apple Watch Series 3 - 38mm\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 18245,
       "length": 12,
       "value": "[\"Watch3,1\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 18348,
       "length": 29,
       "value": "\"Apple Watch Series 3 - 42mm\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 18394,
       "length": 12,
       "value": "[\"Watch3,2\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 18497,
       "length": 29,
       "value": "\"Apple Watch Series 4 - 40mm\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 18543,
       "length": 24,
       "value": "[\"Watch4,1\", \"Watch4,3\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 18658,
       "length": 29,
       "value": "\"Apple Watch Series 4 - 44mm\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 18704,
       "length": 24,
       "value": "[\"Watch4,2\", \"Watch4,4\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 18819,
       "length": 29,
       "value": "\"Apple Watch Series 5 - 40mm\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 18865,
       "length": 24,
       "value": "[\"Watch5,1\", \"Watch5,3\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 18980,
       "length": 29,
       "value": "\"Apple Watch Series 5 - 44mm\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 19026,
       "length": 24,
       "value": "[\"Watch5,2\", \"Watch5,4\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 19141,
       "length": 29,
       "value": "\"Apple Watch Series 6 - 40mm\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 19187,
       "length": 24,
       "value": "[\"Watch6,1\", \"Watch6,3\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 19302,
       "length": 29,
       "value": "\"Apple Watch Series 6 - 44mm\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "Array",
       "offset": 19348,
       "length": 24,
       "value": "[\"Watch6,2\", \"Watch6,4\"]"
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 20300,
       "length": 12,
       "value": "\"iOS 10.2.1\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 20422,
       "length": 12,
       "value": "\"iOS 10.3.1\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 21264,
       "length": 10,
       "value": "\"iOS 13.6\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 21336,
       "length": 10,
       "value": "\"iOS 13.7\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 21552,
       "length": 10,
       "value": "\"iOS 14.3\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 21624,
       "length": 10,
       "value": "\"iOS 14.4\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 21696,
       "length": 10,
       "value": "\"iOS 14.5\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Configuration\/FBiOSTargetConfiguration.swift",
       "kind": "StringLiteral",
       "offset": 22916,
       "length": 11,
       "value": "\"tvOS 14.5\""
     },
     {
-      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Commands\/ReplSession.swift",
+      "filePath": "\/Users\/avanderlee\/.cursor\/worktrees\/idb\/axp-runtime-bridge\/FBControlCore\/Commands\/ReplSession.swift",
       "kind": "Array",
       "offset": 967,
       "length": 2,
