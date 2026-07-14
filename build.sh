@@ -309,6 +309,7 @@ function verify_companion_camera_usage_description() {
   local arch
   local info
   local description
+  local continuity_camera_device_type
 
   if [ ! -f "$binary" ]; then
     echo "error: idb_companion binary not found at $binary"
@@ -316,6 +317,14 @@ function verify_companion_camera_usage_description() {
   fi
   if ! expected=$(plutil -extract NSCameraUsageDescription raw -o - Companion/Info.plist); then
     echo "error: Companion/Info.plist has no readable NSCameraUsageDescription"
+    return 1
+  fi
+  if ! continuity_camera_device_type=$(plutil -extract NSCameraUseContinuityCameraDeviceType raw -o - Companion/Info.plist); then
+    echo "error: Companion/Info.plist has no readable NSCameraUseContinuityCameraDeviceType"
+    return 1
+  fi
+  if [[ "$continuity_camera_device_type" != "true" ]]; then
+    echo "error: Companion/Info.plist must set NSCameraUseContinuityCameraDeviceType to true"
     return 1
   fi
   if ! archs=$(lipo -archs "$binary") || [ -z "$archs" ]; then
@@ -337,7 +346,15 @@ function verify_companion_camera_usage_description() {
       echo "error: $binary ($arch) has unexpected NSCameraUsageDescription: $description"
       return 1
     fi
-    echo "Verified camera usage description in $binary ($arch)"
+    if ! continuity_camera_device_type=$(printf '%s\n' "$info" | sed -n '/^<?xml /,$p' | plutil -extract NSCameraUseContinuityCameraDeviceType raw -o - -); then
+      echo "error: $binary ($arch) has no readable NSCameraUseContinuityCameraDeviceType"
+      return 1
+    fi
+    if [[ "$continuity_camera_device_type" != "true" ]]; then
+      echo "error: $binary ($arch) must set NSCameraUseContinuityCameraDeviceType to true"
+      return 1
+    fi
+    echo "Verified camera privacy keys in $binary ($arch)"
   done
 }
 

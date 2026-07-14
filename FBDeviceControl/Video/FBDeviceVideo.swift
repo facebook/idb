@@ -10,9 +10,21 @@ import CoreMediaIO
 @preconcurrency import FBControlCore
 import Foundation
 
+protocol FBDeviceVideoCaptureDeviceCandidate {
+  var uniqueID: String { get }
+  var localizedName: String { get }
+  var modelID: String { get }
+
+  func hasMediaType(_ mediaType: AVMediaType) -> Bool
+}
+
+extension AVCaptureDevice: FBDeviceVideoCaptureDeviceCandidate {}
+
 public final class FBDeviceVideo {
   private let encoder: FBVideoFileWriter
   private let workQueue: DispatchQueue
+
+  private static let captureDeviceDiscoveryPollNanoseconds: UInt64 = 250_000_000
 
   // MARK: Initialization Helpers
 
@@ -92,17 +104,125 @@ public final class FBDeviceVideo {
     }
   }
 
+  private class func normalizedIdentifier(_ identifier: String) -> String {
+    identifier
+      .components(separatedBy: CharacterSet.alphanumerics.inverted)
+      .joined()
+      .lowercased()
+  }
+
+  static func captureDevice<Candidate: FBDeviceVideoCaptureDeviceCandidate>(
+    forUDID targetUDID: String,
+    named targetName: String,
+    connectedDeviceUDIDs: [String],
+    from candidates: [Candidate]
+  ) -> Candidate? {
+    let normalizedUDID = normalizedIdentifier(targetUDID)
+    var screenCandidates: [Candidate] = []
+    var identifierMatches: [Candidate] = []
+    var nameMatches: [Candidate] = []
+
+    for candidate in candidates {
+      guard candidate.modelID == "iOS Device", candidate.hasMediaType(.muxed) else {
+        continue
+      }
+      screenCandidates.append(candidate)
+
+      let normalizedCandidateID = normalizedIdentifier(candidate.uniqueID)
+      if !normalizedUDID.isEmpty, normalizedCandidateID.contains(normalizedUDID) {
+        identifierMatches.append(candidate)
+      }
+      if candidate.localizedName == targetName {
+        nameMatches.append(candidate)
+      }
+    }
+
+    if !identifierMatches.isEmpty {
+      return identifierMatches.count == 1 ? identifierMatches[0] : nil
+    }
+    if !nameMatches.isEmpty {
+      return nameMatches.count == 1 ? nameMatches[0] : nil
+    }
+    if screenCandidates.count == 1,
+       connectedDeviceUDIDs.count == 1,
+       connectedDeviceUDIDs[0] == targetUDID
+    {
+      return screenCandidates[0]
+    }
+    return nil
+  }
+
+  private class func captureDeviceInventory(_ candidates: [AVCaptureDevice]) -> String {
+    let descriptions = candidates.map { candidate in
+      var mediaTypes: [String] = []
+      if candidate.hasMediaType(.video) {
+        mediaTypes.append("video")
+      }
+      if candidate.hasMediaType(.audio) {
+        mediaTypes.append("audio")
+      }
+      if candidate.hasMediaType(.muxed) {
+        mediaTypes.append("muxed")
+      }
+      return "{name=\(candidate.localizedName), uniqueID=\(candidate.uniqueID), modelID=\(candidate.modelID), deviceType=\(candidate.deviceType.rawValue), mediaTypes=\(mediaTypes.joined(separator: ","))}"
+    }.sorted()
+    return descriptions.isEmpty ? "<none>" : descriptions.joined(separator: "; ")
+  }
+
+  private class func captureDeviceDiscoverySession() -> AVCaptureDevice.DiscoverySession {
+    if #available(macOS 14.0, *) {
+      return AVCaptureDevice.DiscoverySession(
+        deviceTypes: [.external, .continuityCamera],
+        mediaType: nil,
+        position: .unspecified
+      )
+    }
+    return AVCaptureDevice.DiscoverySession(
+      deviceTypes: [.externalUnknown],
+      mediaType: nil,
+      position: .unspecified
+    )
+  }
+
   private class func findCaptureDeviceAsync(for device: FBDevice) async throws -> AVCaptureDevice {
     let timeout = FBControlCoreGlobalConfiguration.fastTimeout
     let deadline = Date().addingTimeInterval(timeout)
+    let logger = device.logger ?? FBControlCoreGlobalConfiguration.defaultLogger
+    var discoverySession: AVCaptureDevice.DiscoverySession?
+    var lastInventory: String?
+
     while true {
       if let captureDevice = AVCaptureDevice(uniqueID: device.udid) {
         return captureDevice
       }
+
+      if discoverySession == nil {
+        discoverySession = captureDeviceDiscoverySession()
+      }
+      let candidates = discoverySession?.devices ?? []
+      let inventory = captureDeviceInventory(candidates)
+      if inventory != lastInventory {
+        logger.log("[FBDeviceVideo] Capture device candidates: \(inventory)")
+        lastInventory = inventory
+      }
+
+      let connectedDeviceUDIDs = device.set?.allDevices.map(\.udid) ?? []
+      if let captureDevice = captureDevice(
+        forUDID: device.udid,
+        named: device.name,
+        connectedDeviceUDIDs: connectedDeviceUDIDs,
+        from: candidates
+      ) {
+        logger.log(
+          "[FBDeviceVideo] Matched screen capture device name=\(captureDevice.localizedName) uniqueID=\(captureDevice.uniqueID) modelID=\(captureDevice.modelID)"
+        )
+        return captureDevice
+      }
+
       if Date() >= deadline {
         throw FBDeviceControlError.describe("Timed out waiting \(timeout)s for device \(device) to have an associated capture device appear").build()
       }
-      try await Task.sleep(nanoseconds: 100_000_000)
+      try await Task.sleep(nanoseconds: captureDeviceDiscoveryPollNanoseconds)
     }
   }
 
