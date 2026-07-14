@@ -10,7 +10,7 @@ import CoreMedia
 import FBControlCore
 import Foundation
 
-// MARK: - FBVideoFileWriter
+// MARK: - FBSimulatorVideoFileWriter
 
 /// Muxes already-encoded H264/HEVC `CMSampleBuffer`s into an `.mp4` using `AVAssetWriter` in
 /// passthrough mode (no re-encode). The in-process simulator recorder uses this as the file sink for
@@ -35,7 +35,7 @@ import Foundation
 /// called after the encoder has completed every frame, so `consume` and `finish` never overlap. The
 /// timed-metadata path (`writeTimedMetadata`) runs off that queue (the stdin handler), so the chapter
 /// state it shares with `consume`/`finish` is guarded by `chapterLock`.
-final class FBVideoFileWriter: NSObject, FBEncodedSampleConsumer, FBTimedMetadataConsumer, @unchecked Sendable {
+final class FBSimulatorVideoFileWriter: NSObject, FBEncodedSampleConsumer, FBTimedMetadataConsumer, @unchecked Sendable {
   private let outputURL: URL
   private let fileType: AVFileType
   private let chaptersEnabled: Bool
@@ -115,7 +115,7 @@ final class FBVideoFileWriter: NSObject, FBEncodedSampleConsumer, FBTimedMetadat
   /// encoder has flushed all pending frames. A no-op if no frame was ever written.
   func finish() async throws {
     guard let assetWriter, let input else {
-      logger.log("FBVideoFileWriter.finish called with no frames written; nothing to finalize")
+      logger.log("FBSimulatorVideoFileWriter.finish called with no frames written; nothing to finalize")
       return
     }
     if let chapterInput {

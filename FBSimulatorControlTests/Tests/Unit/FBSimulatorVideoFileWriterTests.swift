@@ -10,16 +10,16 @@ import CoreMedia
 @testable import FBSimulatorControl
 import XCTest
 
-final class FBVideoFileWriterTests: XCTestCase {
+final class FBSimulatorVideoFileWriterTests: XCTestCase {
 
   /// Feeds encoded H264 samples through the writer, finalizes, then reopens the file to confirm it is
   /// a valid mp4 with one video track, a non-zero duration, and every appended frame readable back.
   func testWritesReadablePassthroughVideoTrack() async throws {
-    let path = (NSTemporaryDirectory() as NSString).appendingPathComponent("FBVideoFileWriterTests-\(UUID().uuidString).mp4")
+    let path = (NSTemporaryDirectory() as NSString).appendingPathComponent("FBSimulatorVideoFileWriterTests-\(UUID().uuidString).mp4")
     defer { try? FileManager.default.removeItem(atPath: path) }
 
     let logger = FBCapturingLogger()
-    let writer = FBVideoFileWriter(filePath: path, logger: logger)
+    let writer = FBSimulatorVideoFileWriter(filePath: path, logger: logger)
 
     let frameCount = 10
     for index in 0..<frameCount {
@@ -52,11 +52,11 @@ final class FBVideoFileWriterTests: XCTestCase {
   /// With chapters enabled, markers fed mid-recording become a player-visible QuickTime chapter track
   /// whose titles and order survive a finalize + reopen.
   func testWritesReadableChapterTrack() async throws {
-    let path = (NSTemporaryDirectory() as NSString).appendingPathComponent("FBVideoFileWriterTests-chapters-\(UUID().uuidString).mp4")
+    let path = (NSTemporaryDirectory() as NSString).appendingPathComponent("FBSimulatorVideoFileWriterTests-chapters-\(UUID().uuidString).mp4")
     defer { try? FileManager.default.removeItem(atPath: path) }
 
     let logger = FBCapturingLogger()
-    let writer = FBVideoFileWriter(filePath: path, chaptersEnabled: true, logger: logger)
+    let writer = FBSimulatorVideoFileWriter(filePath: path, chaptersEnabled: true, logger: logger)
 
     let chaptersByFrame = [0: "Intro", 10: "Middle", 20: "End"]
     for index in 0..<30 {
@@ -115,11 +115,11 @@ final class FBVideoFileWriterTests: XCTestCase {
   /// Without chapters enabled, markers are dropped and no chapter track is added — the default
   /// recording output is unchanged.
   func testNoChapterTrackWhenDisabled() async throws {
-    let path = (NSTemporaryDirectory() as NSString).appendingPathComponent("FBVideoFileWriterTests-nochapters-\(UUID().uuidString).mp4")
+    let path = (NSTemporaryDirectory() as NSString).appendingPathComponent("FBSimulatorVideoFileWriterTests-nochapters-\(UUID().uuidString).mp4")
     defer { try? FileManager.default.removeItem(atPath: path) }
 
     let logger = FBCapturingLogger()
-    let writer = FBVideoFileWriter(filePath: path, logger: logger)
+    let writer = FBSimulatorVideoFileWriter(filePath: path, logger: logger)
     for index in 0..<10 {
       XCTAssertTrue(writer.consume(sampleBuffer(frameIndex: index), logger: logger))
       writer.writeTimedMetadata("ignored \(index)", logger: logger)
@@ -135,9 +135,9 @@ final class FBVideoFileWriterTests: XCTestCase {
 
   /// Finalizing a writer that never received a frame is a no-op rather than an error.
   func testFinishWithoutFramesDoesNotThrow() async throws {
-    let path = (NSTemporaryDirectory() as NSString).appendingPathComponent("FBVideoFileWriterTests-empty-\(UUID().uuidString).mp4")
+    let path = (NSTemporaryDirectory() as NSString).appendingPathComponent("FBSimulatorVideoFileWriterTests-empty-\(UUID().uuidString).mp4")
     defer { try? FileManager.default.removeItem(atPath: path) }
-    let writer = FBVideoFileWriter(filePath: path, logger: FBCapturingLogger())
+    let writer = FBSimulatorVideoFileWriter(filePath: path, logger: FBCapturingLogger())
     try await writer.finish()
   }
 

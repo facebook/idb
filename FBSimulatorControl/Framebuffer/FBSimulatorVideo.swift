@@ -12,7 +12,7 @@ import Foundation
 
 /// Records simulator video in-process. Drives the framebuffer through the shared
 /// `FBSimulatorVideoStream` encode pipeline at an eager (constant-frame-rate) cadence and muxes the
-/// encoded frames into an `.mp4` via `FBVideoFileWriter` (`AVAssetWriter`). The byte-stream consumer is
+/// encoded frames into an `.mp4` via `FBSimulatorVideoFileWriter` (`AVAssetWriter`). The byte-stream consumer is
 /// a discard; only the `.mp4` is produced.
 // @unchecked Sendable: an in-process recording operation handle, used across async boundaries by the
 // recording commands and the sime2e record path. All mutable state is confined to its serial `queue`
@@ -26,7 +26,7 @@ public final class FBSimulatorVideo: @unchecked Sendable {
   /// The underlying encode pipeline. Exposed so the sime2e record path can drive stdin-controlled
   /// overlay/chapter/screenshot on the live stream, mirroring how `videoStream(...)` returns the stream.
   public let stream: FBSimulatorVideoStream
-  private let fileWriter: FBVideoFileWriter
+  private let fileWriter: FBSimulatorVideoFileWriter
   private var hasStopped = false
 
   // MARK: - Initializers
@@ -37,7 +37,7 @@ public final class FBSimulatorVideo: @unchecked Sendable {
 
   private init(framebuffer: FBFramebuffer, configuration: FBVideoStreamConfiguration, filePath: String, edgeInsets: FBVideoStreamEdgeInsets, chaptersEnabled: Bool, logger: any FBControlCoreLogger) {
     self.queue = DispatchQueue(label: "com.facebook.simulatorvideo")
-    let fileWriter = FBVideoFileWriter(filePath: filePath, chaptersEnabled: chaptersEnabled, logger: logger)
+    let fileWriter = FBSimulatorVideoFileWriter(filePath: filePath, chaptersEnabled: chaptersEnabled, logger: logger)
     self.fileWriter = fileWriter
     self.stream = FBSimulatorVideoStream.makeRecorder(framebuffer: framebuffer, configuration: configuration, edgeInsets: edgeInsets, fileWriter: fileWriter, logger: logger)
   }
