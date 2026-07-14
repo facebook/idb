@@ -133,6 +133,7 @@ targets:
         SWIFT_VERSION: "5.0"
         SWIFT_OBJC_INTERFACE_HEADER_NAME: idb-Swift.h
         INFOPLIST_FILE: $(SRCROOT)/Info.plist
+        CREATE_INFOPLIST_SECTION_IN_BINARY: YES
         HEADER_SEARCH_PATHS: $(inherited) $(SRCROOT)/../PrivateHeaders
         FRAMEWORK_SEARCH_PATHS: $(inherited) $(SRCROOT)/../Build/Products/Release
         # Suppress warnings for existing code patterns that trigger errors with strict settings

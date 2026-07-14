@@ -16,6 +16,62 @@ public final class FBDeviceVideo {
 
   // MARK: Initialization Helpers
 
+  private class func videoCaptureAuthorizationStatusString(_ status: AVAuthorizationStatus) -> String {
+    switch status {
+    case .notDetermined:
+      return "notDetermined"
+    case .restricted:
+      return "restricted"
+    case .denied:
+      return "denied"
+    case .authorized:
+      return "authorized"
+    @unknown default:
+      return "unknown(\(status.rawValue))"
+    }
+  }
+
+  private class func videoCaptureAuthorizationError(_ status: AVAuthorizationStatus) -> Error {
+    if status == .denied {
+      return FBDeviceControlError.describe(
+        "Camera authorization is denied. Grant camera access to the application responsible for idb_companion in System Settings > Privacy & Security > Camera"
+      ).build()
+    }
+    if status == .restricted {
+      return FBDeviceControlError.describe("Camera authorization is restricted by system policy").build()
+    }
+    return FBDeviceControlError.describe(
+      "Camera authorization request did not grant access (status: \(videoCaptureAuthorizationStatusString(status)))"
+    ).build()
+  }
+
+  static func ensureVideoCaptureAuthorization(
+    logger: any FBControlCoreLogger,
+    authorizationStatus: () -> AVAuthorizationStatus,
+    requestAccess: () async -> Bool
+  ) async throws {
+    let status = authorizationStatus()
+    logger.log("[FBDeviceVideo] Camera authorization status: \(videoCaptureAuthorizationStatusString(status))")
+
+    switch status {
+    case .authorized:
+      return
+    case .denied, .restricted:
+      throw videoCaptureAuthorizationError(status)
+    case .notDetermined:
+      let granted = await requestAccess()
+      let finalStatus = authorizationStatus()
+      logger.log(
+        "[FBDeviceVideo] Camera authorization status after request: \(videoCaptureAuthorizationStatusString(finalStatus)) (granted=\(granted ? "YES" : "NO"))"
+      )
+      guard granted, finalStatus == .authorized else {
+        throw videoCaptureAuthorizationError(finalStatus)
+      }
+    @unknown default:
+      throw videoCaptureAuthorizationError(status)
+    }
+  }
+
   private class func allowAccessToScreenCaptureDevices() throws {
     var properties = CMIOObjectPropertyAddress(
       mSelector: CMIOObjectPropertySelector(kCMIOHardwarePropertyAllowScreenCaptureDevices),
@@ -53,8 +109,37 @@ public final class FBDeviceVideo {
   // MARK: Initializers
 
   public class func captureSessionAsync(for device: FBDevice) async throws -> AVCaptureSession {
+    try await captureSessionAsync(
+      logger: device.logger ?? FBControlCoreGlobalConfiguration.defaultLogger,
+      authorizationStatus: {
+        AVCaptureDevice.authorizationStatus(for: .video)
+      },
+      requestAccess: {
+        await AVCaptureDevice.requestAccess(for: .video)
+      },
+      allowAccessToScreenCaptureDevices: {
+        try allowAccessToScreenCaptureDevices()
+      },
+      findCaptureDevice: {
+        try await findCaptureDeviceAsync(for: device)
+      }
+    )
+  }
+
+  static func captureSessionAsync(
+    logger: any FBControlCoreLogger,
+    authorizationStatus: () -> AVAuthorizationStatus,
+    requestAccess: () async -> Bool,
+    allowAccessToScreenCaptureDevices: () throws -> Void,
+    findCaptureDevice: () async throws -> AVCaptureDevice
+  ) async throws -> AVCaptureSession {
+    try await ensureVideoCaptureAuthorization(
+      logger: logger,
+      authorizationStatus: authorizationStatus,
+      requestAccess: requestAccess
+    )
     try allowAccessToScreenCaptureDevices()
-    let captureDevice = try await findCaptureDeviceAsync(for: device)
+    let captureDevice = try await findCaptureDevice()
     let deviceInput = try AVCaptureDeviceInput(device: captureDevice)
     let session = AVCaptureSession()
     if !session.canAddInput(deviceInput) {
