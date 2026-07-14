@@ -55,6 +55,8 @@ struct ReplRunner: ParsableArguments {
   var code: String?
 
   func run(context: Context) async throws {
+    // @oss-disable
+
     let toolchain = try resolveToolchainPath(explicit: toolchainPath)
 
     // Discover the companion to use, starting one if needed. A companion we start
@@ -72,7 +74,7 @@ struct ReplRunner: ParsableArguments {
     let group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
     let channel = try GRPCChannelPool.with(
       target: connectionTarget(for: companion.address),
-      transportSecurity: .plaintext,
+      transportSecurity: try channelTransportSecurity(for: companion.address),
       eventLoopGroup: group
     )
     let client = Idb_CompanionServiceAsyncClient(channel: channel)
