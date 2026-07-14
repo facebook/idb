@@ -28,14 +28,24 @@ private func pixelBufferAttributes(from pixelBuffer: CVPixelBuffer) -> [String: 
   ]
 }
 
+// @unchecked Sendable: like FBSimulatorVideoStream, this is a plain NSObject whose frame state is
+// confined to `writeQueue` (the AVCapture delegate queue), and whose lifecycle state below is guarded
+// by `lifecycleLock`. The conformance lets the async completion await use a cancellation handler.
 @objc(FBDeviceVideoStream)
-public class FBDeviceVideoStream: NSObject, FBVideoStream {
+public class FBDeviceVideoStream: NSObject, FBVideoStream, @unchecked Sendable {
   let logger: any FBControlCoreLogger
   private let session: AVCaptureSession
   private let output: AVCaptureVideoDataOutput
   let writeQueue: DispatchQueue
-  let startFuture: FBMutableFuture<NSNull>
-  let stopFuture: FBMutableFuture<NSNull>
+
+  // Lifecycle state guarded by `lifecycleLock`: start/stop run on the caller's thread while the
+  // started signal fires on `writeQueue`. `hasStarted` latches on the first delivered frame,
+  // `isStopped` on stop; the awaiter lists hold continuations resumed on those transitions.
+  private let lifecycleLock = NSLock()
+  private var hasStarted = false
+  private var isStopped = false
+  private var startAwaiters: [CheckedContinuation<Void, Never>] = []
+  private var stopAwaiters: [CheckedContinuation<Void, Never>] = []
 
   var consumer: (any FBDataConsumer)?
   var pixelBufferAttributes_: [String: Any]?
@@ -104,30 +114,102 @@ public class FBDeviceVideoStream: NSObject, FBVideoStream {
     self.output = output
     self.writeQueue = writeQueue
     self.logger = logger
-    self.startFuture = FBMutableFuture<NSNull>()
-    self.stopFuture = FBMutableFuture<NSNull>()
     super.init()
   }
 
   // MARK: Public Methods
 
   @objc public func startStreaming(_ consumer: any FBDataConsumer) -> FBFuture<NSNull> {
+    fbFutureFromAsync { [self] in
+      try await startStreamingImpl(consumer)
+      return NSNull()
+    }
+  }
+
+  private func startStreamingImpl(_ consumer: any FBDataConsumer) async throws {
     if self.consumer != nil {
-      return FBDeviceControlError.describe("Cannot start streaming, a consumer is already attached").failFuture() as! FBFuture<NSNull>
+      throw FBDeviceControlError.describe("Cannot start streaming, a consumer is already attached").build()
     }
     self.consumer = consumer
     output.setSampleBufferDelegate(self, queue: writeQueue)
     session.startRunning()
-    return unsafeBitCast(startFuture, to: FBFuture<NSNull>.self)
+    // Resolve once the first frame is delivered (see captureOutput), matching the old startFuture.
+    await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+      registerStartAwaiter(continuation)
+    }
   }
 
   @objc public func stopStreaming() -> FBFuture<NSNull> {
+    fbFutureFromAsync { [self] in
+      try await stopStreamingImpl()
+      return NSNull()
+    }
+  }
+
+  private func stopStreamingImpl() async throws {
     if consumer == nil {
-      return FBDeviceControlError.describe("Cannot stop streaming, no consumer attached").failFuture() as! FBFuture<NSNull>
+      throw FBDeviceControlError.describe("Cannot stop streaming, no consumer attached").build()
     }
     session.stopRunning()
-    stopFuture.resolve(withResult: NSNull())
-    return unsafeBitCast(stopFuture, to: FBFuture<NSNull>.self)
+    if let awaiters = markStopped() {
+      for awaiter in awaiters {
+        awaiter.resume()
+      }
+    }
+  }
+
+  // The lifecycle state is guarded by `lifecycleLock`, whose `lock()`/`unlock()` are unavailable from
+  // async contexts, so the critical sections live in these synchronous helpers.
+
+  private func registerStartAwaiter(_ continuation: CheckedContinuation<Void, Never>) {
+    lifecycleLock.lock()
+    if hasStarted {
+      lifecycleLock.unlock()
+      continuation.resume()
+    } else {
+      startAwaiters.append(continuation)
+      lifecycleLock.unlock()
+    }
+  }
+
+  private func registerStopAwaiter(_ continuation: CheckedContinuation<Void, Never>) {
+    lifecycleLock.lock()
+    if isStopped {
+      lifecycleLock.unlock()
+      continuation.resume()
+    } else {
+      stopAwaiters.append(continuation)
+      lifecycleLock.unlock()
+    }
+  }
+
+  /// Latch stopped and return the awaiters to resume, or nil if already stopped.
+  private func markStopped() -> [CheckedContinuation<Void, Never>]? {
+    lifecycleLock.lock()
+    defer { lifecycleLock.unlock() }
+    if isStopped {
+      return nil
+    }
+    isStopped = true
+    let awaiters = stopAwaiters
+    stopAwaiters = []
+    return awaiters
+  }
+
+  /// Latch the started state and resume start awaiters, on the first delivered frame.
+  private func signalStarted() {
+    lifecycleLock.lock()
+    if hasStarted {
+      lifecycleLock.unlock()
+      return
+    }
+    hasStarted = true
+    let awaiters = startAwaiters
+    startAwaiters = []
+    lifecycleLock.unlock()
+    for awaiter in awaiters {
+      awaiter.resume()
+    }
   }
 
   // MARK: Data consumption
@@ -143,11 +225,21 @@ public class FBDeviceVideoStream: NSObject, FBVideoStream {
   }
 
   @objc public var completed: FBFuture<NSNull> {
-    unsafeBitCast(stopFuture, to: FBFuture<NSNull>.self).onQueue(
-      writeQueue,
-      respondToCancellation: {
-        self.stopStreaming()
-      })
+    fbFutureFromAsync { [self] in
+      await awaitCompletionImpl()
+      return NSNull()
+    }
+  }
+
+  private func awaitCompletionImpl() async {
+    await withTaskCancellationHandler {
+      await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+        registerStopAwaiter(continuation)
+      }
+    } onCancel: {
+      // Mirror the previous FBFuture cancellation handler: cancelling a completion await stops the stream.
+      Task { [weak self] in try? await self?.stopStreamingImpl() }
+    }
   }
 }
 
@@ -157,7 +249,7 @@ extension FBDeviceVideoStream: AVCaptureVideoDataOutputSampleBufferDelegate {
   public func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
     guard let consumer = self.consumer else { return }
     if !checkConsumerBufferLimit(consumer, logger) { return }
-    startFuture.resolve(withResult: NSNull())
+    signalStarted()
     consumeSampleBuffer(sampleBuffer)
   }
 
@@ -168,7 +260,7 @@ extension FBDeviceVideoStream: AVCaptureVideoDataOutputSampleBufferDelegate {
 
 // MARK: - BGRA Subclass
 
-private class FBDeviceVideoStream_BGRA: FBDeviceVideoStream {
+private class FBDeviceVideoStream_BGRA: FBDeviceVideoStream, @unchecked Sendable {
   override func consumeSampleBuffer(_ sampleBuffer: CMSampleBuffer) {
     guard let consumer = self.consumer else { return }
     guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
@@ -209,7 +301,7 @@ private class FBDeviceVideoStream_BGRA: FBDeviceVideoStream {
 
 // MARK: - H264 Subclass
 
-private class FBDeviceVideoStream_H264: FBDeviceVideoStream {
+private class FBDeviceVideoStream_H264: FBDeviceVideoStream, @unchecked Sendable {
   override func consumeSampleBuffer(_ sampleBuffer: CMSampleBuffer) {
     guard let consumer = self.consumer else { return }
     WriteFrameToAnnexBStream(sampleBuffer, nil, consumer, logger, nil)
@@ -218,7 +310,7 @@ private class FBDeviceVideoStream_H264: FBDeviceVideoStream {
 
 // MARK: - H264 MPEGTS Subclass
 
-private class FBDeviceVideoStream_H264MPEGTS: FBDeviceVideoStream {
+private class FBDeviceVideoStream_H264MPEGTS: FBDeviceVideoStream, @unchecked Sendable {
   override func consumeSampleBuffer(_ sampleBuffer: CMSampleBuffer) {
     guard let consumer = self.consumer else { return }
     WriteH264FrameToMPEGTSStream(sampleBuffer, nil, consumer, logger, nil)
@@ -227,7 +319,7 @@ private class FBDeviceVideoStream_H264MPEGTS: FBDeviceVideoStream {
 
 // MARK: - MJPEG Subclass
 
-private class FBDeviceVideoStream_MJPEG: FBDeviceVideoStream {
+private class FBDeviceVideoStream_MJPEG: FBDeviceVideoStream, @unchecked Sendable {
   override func consumeSampleBuffer(_ sampleBuffer: CMSampleBuffer) {
     guard let consumer = self.consumer, let jpegDataBuffer = CMSampleBufferGetDataBuffer(sampleBuffer) else { return }
     WriteJPEGDataToMJPEGStream(jpegDataBuffer, consumer, logger, nil)
@@ -250,7 +342,7 @@ private class FBDeviceVideoStream_MJPEG: FBDeviceVideoStream {
 
 // MARK: - Minicap Subclass
 
-private class FBDeviceVideoStream_Minicap: FBDeviceVideoStream_MJPEG {
+private class FBDeviceVideoStream_Minicap: FBDeviceVideoStream_MJPEG, @unchecked Sendable {
   private var hasSentHeader = false
 
   override func consumeSampleBuffer(_ sampleBuffer: CMSampleBuffer) {
