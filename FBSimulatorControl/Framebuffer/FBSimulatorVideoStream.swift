@@ -732,8 +732,15 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
   let encodedSampleConsumerOverride: FBEncodedSampleConsumer?
   let writeQueue: DispatchQueue
   let logger: any FBControlCoreLogger
-  let startedFuture: FBMutableFuture<NSNull>
-  let stoppedFuture: FBMutableFuture<NSNull>
+
+  // Lifecycle state, confined to `writeQueue`. `hasStarted` latches once the first surface mounts (a
+  // stream cannot be restarted); `isStopped` latches on teardown and is the sole stop-idempotency
+  // guard. `startAwaiters`/`stopAwaiters` hold continuations resumed on those transitions, so
+  // `startStreaming`/`completed` can await them natively without an intervening `FBFuture`.
+  private var hasStarted = false
+  private var isStopped = false
+  private var startAwaiters: [CheckedContinuation<Void, Error>] = []
+  private var stopAwaiters: [CheckedContinuation<Void, Never>] = []
 
   /// The push-loop task that drives frame pushes (nil before `mountSurface` starts it). It iterates a
   /// stimulus `AsyncSequence` of `FrameTrigger`s: `FrameCadence` (the fixed-rate clock) in `.eager`
@@ -830,14 +837,12 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
     self.encodedSampleConsumerOverride = encodedSampleConsumerOverride
     self.writeQueue = writeQueue
     self.logger = logger
-    self.startedFuture = FBMutableFuture<NSNull>()
-    self.stoppedFuture = FBMutableFuture<NSNull>()
     super.init()
   }
 
   deinit {
     // Backstop: ensure the cadence task is cancelled if the stream is torn down without a clean
-    // stopStreaming (which already ends the loop by resolving stoppedFuture). No-op in `.lazy` mode,
+    // stopStreaming (which already ends the loop by cancelling the task). No-op in `.lazy` mode,
     // where the task is never started.
     framePusherTask?.cancel()
   }
@@ -846,70 +851,95 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
 
   @objc
   public func startStreaming(_ consumer: any FBDataConsumer) -> FBFuture<NSNull> {
-    let resolved: FBFuture<AnyObject> = FBFuture<AnyObject>.onQueue(
-      writeQueue,
-      resolve: { [weak self] () -> FBFuture<AnyObject> in
-        guard let self else {
-          return FBFuture(error: FBSimulatorError.describe("Stream deallocated").build())
-        }
-        if self.startedFuture.hasCompleted {
-          return FBSimulatorError.describe("Cannot start streaming, since streaming is stopped").failFuture()
+    fbFutureFromAsync { [self] in
+      try await startStreamingImpl(consumer)
+      return NSNull()
+    }
+  }
+
+  private func startStreamingImpl(_ consumer: any FBDataConsumer) async throws {
+    try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+      writeQueue.async { [self] in
+        if hasStarted {
+          continuation.resume(throwing: FBSimulatorError.describe("Cannot start streaming, since streaming is stopped").build())
+          return
         }
         if self.consumer != nil {
-          return FBSimulatorError.describe("Cannot start streaming, since streaming has already has started").failFuture()
+          continuation.resume(throwing: FBSimulatorError.describe("Cannot start streaming, since streaming has already has started").build())
+          return
         }
         self.consumer = consumer
-        return self.attachConsumerIfNeeded() as! FBFuture<AnyObject>
-      })
-    return resolved.onQueue(
-      writeQueue,
-      fmap: { [weak self] _ -> FBFuture<AnyObject> in
-        guard let self else {
-          return FBFuture(error: FBSimulatorError.describe("Stream deallocated").build())
+        // Attach to the framebuffer; when a surface is already available this mounts it synchronously
+        // (latching `hasStarted`), otherwise the first surface callback does.
+        if !framebuffer.isConsumerAttached(self) {
+          let surface = framebuffer.attach(self, on: writeQueue)
+          didChange(surface)
         }
-        return self.startedFuture
-      }) as! FBFuture<NSNull>
+        if hasStarted {
+          continuation.resume()
+        } else {
+          startAwaiters.append(continuation)
+        }
+      }
+    }
   }
 
   @objc
   public func stopStreaming() -> FBFuture<NSNull> {
-    FBFuture<AnyObject>.onQueue(
-      writeQueue,
-      resolve: { [weak self] () -> FBFuture<AnyObject> in
-        guard let self else {
-          return FBFuture(error: FBSimulatorError.describe("Stream deallocated").build())
-        }
-        if self.stoppedFuture.hasCompleted {
-          return self.stoppedFuture
+    fbFutureFromAsync { [self] in
+      try await stopStreamingImpl()
+      return NSNull()
+    }
+  }
+
+  private func stopStreamingImpl() async throws {
+    try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+      writeQueue.async { [self] in
+        if isStopped {
+          continuation.resume()
+          return
         }
         guard let consumer = self.consumer else {
-          return FBSimulatorError.describe("Cannot stop streaming, no consumer attached").failFuture()
+          continuation.resume(throwing: FBSimulatorError.describe("Cannot stop streaming, no consumer attached").build())
+          return
         }
-        if !self.framebuffer.isConsumerAttached(self) {
-          return FBSimulatorError.describe("Cannot stop streaming, is not attached to a surface").failFuture()
+        if !framebuffer.isConsumerAttached(self) {
+          continuation.resume(throwing: FBSimulatorError.describe("Cannot stop streaming, is not attached to a surface").build())
+          return
         }
         self.consumer = nil
-        self.framebuffer.detach(self)
+        framebuffer.detach(self)
         consumer.consumeEndOfFile()
-        if let framePusher = self.framePusher {
+        if let framePusher {
           do {
             try framePusher.tearDown()
           } catch {
-            return FBSimulatorError.describe("Failed to tear down frame pusher: \(error)").failFuture()
+            continuation.resume(throwing: FBSimulatorError.describe("Failed to tear down frame pusher: \(error)").build())
+            return
           }
         }
-        self.frameWriterContext = nil
-        self.timedMetadataConsumer = nil
+        frameWriterContext = nil
+        timedMetadataConsumer = nil
         // Clean up overlay compositing resources (ARC-managed; dropping references releases them).
-        self.overlayBuffer = nil
-        self.compositedBufferPool = nil
-        // Tear down the cadence machinery (in `.eager` mode this cancels the cadence task).
-        // Resolving `stoppedFuture` below also ends the eager cadence loop, which polls
-        // `stoppedFuture.state`; cancelling additionally wakes it if it is suspended in a sleep.
-        self.cadenceTeardown()
-        self.stoppedFuture.resolve(withResult: NSNull())
-        return self.stoppedFuture
-      }) as! FBFuture<NSNull>
+        overlayBuffer = nil
+        compositedBufferPool = nil
+        // Tear down the cadence machinery: cancels the push-loop task (the loop exits on
+        // `Task.isCancelled`) and, in `.lazy` mode, finishes the trigger stream.
+        cadenceTeardown()
+        isStopped = true
+        resumeStopAwaiters()
+        continuation.resume()
+      }
+    }
+  }
+
+  /// Resume everyone awaiting completion. Must be called on `writeQueue`.
+  private func resumeStopAwaiters() {
+    let awaiters = stopAwaiters
+    stopAwaiters = []
+    for awaiter in awaiters {
+      awaiter.resume()
+    }
   }
 
   // MARK: - Private
@@ -924,24 +954,6 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
     lazyTriggers = nil
     framePusherTask?.cancel()
     framePusherTask = nil
-  }
-
-  private func attachConsumerIfNeeded() -> FBFuture<NSNull> {
-    FBFuture<AnyObject>.onQueue(
-      writeQueue,
-      resolve: { [weak self] () -> FBFuture<AnyObject> in
-        guard let self else {
-          return FBFuture(result: NSNull())
-        }
-        if self.framebuffer.isConsumerAttached(self) {
-          self.logger.log("Already attached \(self) as a consumer")
-          return FBFuture(result: NSNull())
-        }
-        // If we have a surface now, we can start rendering, so mount the surface.
-        let surface = self.framebuffer.attach(self, on: self.writeQueue)
-        self.didChange(surface)
-        return FBFuture(result: NSNull())
-      }) as! FBFuture<NSNull>
   }
 
   // MARK: - FBFramebufferConsumer
@@ -1055,8 +1067,15 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
       logger.info().log("Composited pool includes edge insets (t=\(insets.top) b=\(insets.bottom) l=\(insets.left) r=\(insets.right)): w=\(compositedWidth)/h=\(compositedHeight)")
     }
 
-    // Signal that we've started
-    startedFuture.resolve(withResult: NSNull())
+    // Signal that we've started, resuming anyone awaiting the initial surface mount.
+    if !hasStarted {
+      hasStarted = true
+      let awaiters = startAwaiters
+      startAwaiters = []
+      for awaiter in awaiters {
+        awaiter.resume()
+      }
+    }
 
     // Start the push-loop task that drives frame pushes — once; a surface re-mount just swaps
     // `pixelBuffer` for the running loop to pick up. The stimulus differs by cadence: `.eager`
@@ -1403,16 +1422,27 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
 
   @objc
   public var completed: FBFuture<NSNull> {
-    let mutable = FBMutableFuture<NSNull>()
-    _ = mutable.resolve(from: stoppedFuture)
-    return unsafeBitCast(
-      mutable.onQueue(
-        writeQueue,
-        respondToCancellation: { [weak self] in
-          guard let self else { return FBFuture<NSNull>.empty() }
-          return self.stopStreaming()
-        }),
-      to: FBFuture<NSNull>.self)
+    fbFutureFromAsync { [self] in
+      await awaitCompletionImpl()
+      return NSNull()
+    }
+  }
+
+  private func awaitCompletionImpl() async {
+    await withTaskCancellationHandler {
+      await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+        writeQueue.async { [self] in
+          if isStopped {
+            continuation.resume()
+          } else {
+            stopAwaiters.append(continuation)
+          }
+        }
+      }
+    } onCancel: {
+      // Mirror the previous FBFuture cancellation handler: cancelling a completion await stops the stream.
+      Task { [weak self] in try? await self?.stopStreamingImpl() }
+    }
   }
 
   // MARK: - Cadence Loop
@@ -1429,9 +1459,9 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
   /// consumer callbacks) and is awaited before the next trigger, so pushes never overlap and mutable
   /// state stays confined to that queue, consistent with the class's `@unchecked Sendable` conformance.
   ///
-  /// The loop ends when `stoppedFuture` stops running, the stimulus finishes (the `.lazy` teardown
-  /// finishes the stream), or the task is cancelled — `stopStreaming`/`cadenceTeardown` do all three,
-  /// and `deinit` cancels as a backstop.
+  /// The loop ends when the task is cancelled (`stopStreaming`/`cadenceTeardown` cancel it, and
+  /// `deinit` cancels as a backstop) or the stimulus finishes (the `.lazy` teardown finishes the
+  /// stream).
   private func runFramePushLoop<Stimulus: AsyncSequence>(stimulus: Stimulus, stats: CadenceStats?) async
   where Stimulus.Element == FrameTrigger {
     var stats = stats
@@ -1439,7 +1469,7 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
       // A generic `AsyncSequence` has a throwing `next()`; `FrameCadence` and `AsyncStream` are both
       // non-throwing, so the catch is unreachable in practice and exists only to satisfy `for try await`.
       for try await trigger in stimulus {
-        guard stoppedFuture.state == .running else { break }
+        guard !Task.isCancelled else { break }
         let pushDurationMach = await pushOnWriteQueue(forceKeyFrame: trigger.forceKeyFrame)
         stats?.record(pushDurationMach: pushDurationMach, overran: trigger.overran)
       }
