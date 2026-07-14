@@ -34,7 +34,6 @@
 #import <FBControlCore/FBSettingsCommands.h>
 #import <FBControlCore/FBSocketServer.h>
 #import <FBControlCore/FBSubprocess.h>
-#import <FBControlCore/FBVideoStreamConfiguration.h>
 #import <FBControlCore/FBXCTraceOperation.h>
 #import <FBControlCore/FBiOSTarget.h>
 #import <FBControlCore/FBiOSTargetConfiguration.h>
