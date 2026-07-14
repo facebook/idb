@@ -30,6 +30,10 @@ public final class FBFramebuffer: NSObject, @unchecked Sendable {
   private let logger: any FBControlCoreLogger
   private let surface: AnyObject // SimDisplayIOSurfaceRenderable & SimDisplayRenderable
 
+  // `statsLock` guards `stats`, `lastLoggedStats`, and `statsTimer`: the IOSurface and damage
+  // callbacks below fire on arbitrary private-framework threads, while `currentStats()` and
+  // `statsStartTime` are read from a consumer's queue.
+  private let statsLock = NSLock()
   private var stats: FBFramebufferStats
   private var lastLoggedStats: FBFramebufferStats
   private var statsTimer: FBPeriodicStatsTimer
@@ -129,11 +133,15 @@ public final class FBFramebuffer: NSObject, @unchecked Sendable {
 
   @objc
   public func currentStats() -> FBFramebufferStats {
-    stats
+    statsLock.lock()
+    defer { statsLock.unlock() }
+    return stats
   }
 
   @objc public var statsStartTime: CFTimeInterval {
-    statsTimer.startTime
+    statsLock.lock()
+    defer { statsLock.unlock() }
+    return statsTimer.startTime
   }
 
   // MARK: - Private
@@ -154,8 +162,11 @@ public final class FBFramebuffer: NSObject, @unchecked Sendable {
 
     let ioSurfaceChanged: (Any?) -> Void = { [weak self] surfaceArg in
       guard let self else { return }
+      self.statsLock.lock()
       self.stats.ioSurfaceChangeCount += 1
-      if self.stats.ioSurfaceChangeCount == 1 {
+      let isFirstChange = self.stats.ioSurfaceChangeCount == 1
+      self.statsLock.unlock()
+      if isFirstChange {
         self.logger.info().log("First IOSurface change callback, surface=\(String(describing: surfaceArg))")
       }
       nonisolated(unsafe) let surfaceRef = surfaceArg
@@ -175,11 +186,13 @@ public final class FBFramebuffer: NSObject, @unchecked Sendable {
     let damageCallback: ([Any]?) -> Void = { [weak self] frames in
       guard let self else { return }
       let frameArray = frames ?? []
+      self.statsLock.lock()
       self.stats.damageCallbackCount += 1
       self.stats.damageRectCount += UInt(frameArray.count)
       if frameArray.isEmpty {
         self.stats.emptyDamageCallbackCount += 1
       }
+      self.statsLock.unlock()
       self.logStatsIfNeeded()
       queue.async {
         consumerRef.didReceiveDamageRect()
@@ -191,12 +204,16 @@ public final class FBFramebuffer: NSObject, @unchecked Sendable {
   }
 
   private func logStatsIfNeeded() {
+    statsLock.lock()
+
     var timer = statsTimer
     var intervalDuration: CFTimeInterval = 0
     var totalElapsed: CFTimeInterval = 0
     if !FBPeriodicStatsTimerTick(&timer, &intervalDuration, &totalElapsed) {
-      if timer.startTime != statsTimer.startTime {
-        statsTimer = timer
+      let isFirstTick = timer.startTime != statsTimer.startTime
+      statsTimer = timer
+      statsLock.unlock()
+      if isFirstTick {
         logger.info().log("First damage callback received")
       }
       return
@@ -205,11 +222,13 @@ public final class FBFramebuffer: NSObject, @unchecked Sendable {
 
     let current = stats
     let last = lastLoggedStats
+    lastLoggedStats = current
+    statsLock.unlock()
+
     let intervalCallbacks = current.damageCallbackCount - last.damageCallbackCount
     let intervalRects = current.damageRectCount - last.damageRectCount
     let intervalEmpty = current.emptyDamageCallbackCount - last.emptyDamageCallbackCount
     let intervalIOSurface = current.ioSurfaceChangeCount - last.ioSurfaceChangeCount
-    lastLoggedStats = current
 
     let intervalRate = intervalDuration > 0 ? Double(intervalCallbacks) / intervalDuration : 0
     let totalRate = totalElapsed > 0 ? Double(current.damageCallbackCount) / totalElapsed : 0
