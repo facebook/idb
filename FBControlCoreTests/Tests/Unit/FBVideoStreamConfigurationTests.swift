@@ -17,8 +17,7 @@ final class FBVideoStreamConfigurationTests: XCTestCase {
       scaleFactor: nil,
       keyFrameRate: nil
     )
-    XCTAssertEqual(config.rateControl.mode, .constantQuality)
-    XCTAssertEqual(config.rateControl.value, NSNumber(value: 0.75))
+    XCTAssertEqual(config.rateControl, .quality(0.75))
   }
 
   func testDefaultKeyFrameRate() {
@@ -29,25 +28,24 @@ final class FBVideoStreamConfigurationTests: XCTestCase {
       scaleFactor: nil,
       keyFrameRate: nil
     )
-    XCTAssertEqual(config.keyFrameRate, NSNumber(value: 1.0))
+    XCTAssertEqual(config.keyFrameRate, 1.0)
   }
 
   func testExplicitQualityPreserved() {
-    let rc = FBVideoStreamRateControl.quality(NSNumber(value: 0.7))
+    let rc = FBVideoStreamRateControl.quality(0.7)
     let config = FBVideoStreamConfiguration(
       format: FBVideoStreamFormat.compressedVideo(withCodec: FBVideoStreamCodec.h264, transport: FBVideoStreamTransport.annexB),
       framesPerSecond: nil,
       rateControl: rc,
       scaleFactor: nil,
-      keyFrameRate: NSNumber(value: 5.0)
+      keyFrameRate: 5.0
     )
-    XCTAssertEqual(config.rateControl.mode, .constantQuality)
-    XCTAssertEqual(config.rateControl.value, NSNumber(value: 0.7))
-    XCTAssertEqual(config.keyFrameRate, NSNumber(value: 5.0))
+    XCTAssertEqual(config.rateControl, .quality(0.7))
+    XCTAssertEqual(config.keyFrameRate, 5.0)
   }
 
   func testExplicitBitratePreserved() {
-    let rc = FBVideoStreamRateControl.bitrate(NSNumber(value: 500000))
+    let rc = FBVideoStreamRateControl.bitrate(500000)
     let config = FBVideoStreamConfiguration(
       format: FBVideoStreamFormat.compressedVideo(withCodec: FBVideoStreamCodec.h264, transport: FBVideoStreamTransport.annexB),
       framesPerSecond: nil,
@@ -55,25 +53,24 @@ final class FBVideoStreamConfigurationTests: XCTestCase {
       scaleFactor: nil,
       keyFrameRate: nil
     )
-    XCTAssertEqual(config.rateControl.mode, .averageBitrate)
-    XCTAssertEqual(config.rateControl.value, NSNumber(value: 500000))
+    XCTAssertEqual(config.rateControl, .bitrate(500000))
   }
 
   func testConfigurationEquality() {
-    let rc = FBVideoStreamRateControl.quality(NSNumber(value: 0.5))
+    let rc = FBVideoStreamRateControl.quality(0.5)
     let a = FBVideoStreamConfiguration(
       format: FBVideoStreamFormat.compressedVideo(withCodec: FBVideoStreamCodec.h264, transport: FBVideoStreamTransport.annexB),
-      framesPerSecond: NSNumber(value: 30),
+      framesPerSecond: 30,
       rateControl: rc,
       scaleFactor: nil,
-      keyFrameRate: NSNumber(value: 5.0)
+      keyFrameRate: 5.0
     )
     let b = FBVideoStreamConfiguration(
       format: FBVideoStreamFormat.compressedVideo(withCodec: FBVideoStreamCodec.h264, transport: FBVideoStreamTransport.annexB),
-      framesPerSecond: NSNumber(value: 30),
-      rateControl: FBVideoStreamRateControl.quality(NSNumber(value: 0.5)),
+      framesPerSecond: 30,
+      rateControl: FBVideoStreamRateControl.quality(0.5),
       scaleFactor: nil,
-      keyFrameRate: NSNumber(value: 5.0)
+      keyFrameRate: 5.0
     )
     XCTAssertEqual(a, b)
   }
@@ -91,9 +88,9 @@ final class FBVideoStreamConfigurationTests: XCTestCase {
   }
 
   func testRateControlEquality() {
-    let a = FBVideoStreamRateControl.quality(NSNumber(value: 0.5))
-    let b = FBVideoStreamRateControl.quality(NSNumber(value: 0.5))
-    let c = FBVideoStreamRateControl.bitrate(NSNumber(value: 500000))
+    let a = FBVideoStreamRateControl.quality(0.5)
+    let b = FBVideoStreamRateControl.quality(0.5)
+    let c = FBVideoStreamRateControl.bitrate(500000)
     XCTAssertEqual(a, b)
     XCTAssertNotEqual(a, c)
   }

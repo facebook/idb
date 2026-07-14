@@ -77,14 +77,14 @@ struct VideoStreamMethodHandler {
       consumer = writer
     }
 
-    let framesPerSecond = start.fps > 0 ? NSNumber(value: start.fps) : nil
+    let framesPerSecond = start.fps > 0 ? Int(start.fps) : nil
     let format = streamFormat(from: start.format)
 
     let rateControl: FBVideoStreamRateControl?
     if start.avgBitrate > 0 {
-      rateControl = .bitrate(NSNumber(value: start.avgBitrate))
+      rateControl = .bitrate(Int(start.avgBitrate))
     } else if start.compressionQuality > 0 {
-      rateControl = .quality(NSNumber(value: start.compressionQuality))
+      rateControl = .quality(Double(start.compressionQuality))
     } else {
       rateControl = nil
     }
@@ -93,8 +93,8 @@ struct VideoStreamMethodHandler {
       format: format,
       framesPerSecond: framesPerSecond,
       rateControl: rateControl,
-      scaleFactor: .init(value: start.scaleFactor),
-      keyFrameRate: .init(value: start.keyFrameRate))
+      scaleFactor: Double(start.scaleFactor),
+      keyFrameRate: Double(start.keyFrameRate))
 
     guard let asyncTarget = target as? any VideoStreamCommands else {
       throw GRPCStatus(code: .failedPrecondition, message: "\(target) does not support VideoStreamCommands")

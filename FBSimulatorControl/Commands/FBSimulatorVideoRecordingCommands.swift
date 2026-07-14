@@ -36,7 +36,7 @@ public final class FBSimulatorVideoRecordingCommands: NSObject, FBiOSTargetComma
   private static var recordingConfiguration: FBVideoStreamConfiguration {
     FBVideoStreamConfiguration(
       format: FBVideoStreamFormat.compressedVideo(withCodec: .h264, transport: .annexB),
-      framesPerSecond: NSNumber(value: 30),
+      framesPerSecond: 30,
       rateControl: nil,
       scaleFactor: nil,
       keyFrameRate: nil)

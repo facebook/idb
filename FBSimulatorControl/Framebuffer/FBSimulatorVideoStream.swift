@@ -147,12 +147,12 @@ enum FBVideoToolboxOutputMode {
 
 // MARK: - Pixel Buffer Pool Helpers
 
-private func createScaledPixelBufferPool(sourceBuffer: CVPixelBuffer, scaleFactor: NSNumber) -> CVPixelBufferPool? {
+private func createScaledPixelBufferPool(sourceBuffer: CVPixelBuffer, scaleFactor: Double) -> CVPixelBufferPool? {
   let sourceWidth = CVPixelBufferGetWidth(sourceBuffer)
   let sourceHeight = CVPixelBufferGetHeight(sourceBuffer)
 
-  let destinationWidth = Int(floor(scaleFactor.doubleValue * Double(sourceWidth)))
-  let destinationHeight = Int(floor(scaleFactor.doubleValue * Double(sourceHeight)))
+  let destinationWidth = Int(floor(scaleFactor * Double(sourceWidth)))
+  let destinationHeight = Int(floor(scaleFactor * Double(sourceHeight)))
 
   let pixelBufferAttributes: [String: Any] = [
     kCVPixelBufferWidthKey as String: destinationWidth,
@@ -235,19 +235,19 @@ private func bitmapStreamPixelBufferAttributes(from pixelBuffer: CVPixelBuffer) 
 final class FBSimulatorVideoStreamFramePusher_Bitmap: NSObject, FBSimulatorVideoStreamFramePusher {
   let consumer: any FBDataConsumer
   /// The scale factor between 0-1. nil for no scaling.
-  let scaleFactor: NSNumber?
+  let scaleFactor: Double?
   /// CV/VT types are ARC-managed in Swift; held strong, released automatically.
   var scaledPixelBufferPool: CVPixelBufferPool?
   var pixelTransferSession: VTPixelTransferSession?
 
-  init(consumer: any FBDataConsumer, scaleFactor: NSNumber?) {
+  init(consumer: any FBDataConsumer, scaleFactor: Double?) {
     self.consumer = consumer
     self.scaleFactor = scaleFactor
     super.init()
   }
 
   func setup(with pixelBuffer: CVPixelBuffer, edgeInsets: FBVideoStreamEdgeInsets) throws {
-    if let scaleFactor, scaleFactor.compare(0) == .orderedDescending, scaleFactor.compare(1) == .orderedAscending {
+    if let scaleFactor, scaleFactor > 0, scaleFactor < 1 {
       self.scaledPixelBufferPool = createScaledPixelBufferPool(sourceBuffer: pixelBuffer, scaleFactor: scaleFactor)
       var transferSession: VTPixelTransferSession?
       let status = VTPixelTransferSessionCreate(allocator: kCFAllocatorDefault, pixelTransferSessionOut: &transferSession)
@@ -512,9 +512,9 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: NSObject, FBSimulato
     let sourceHeight = CVPixelBufferGetHeight(pixelBuffer)
     var destinationWidth = sourceWidth
     var destinationHeight = sourceHeight
-    if let scaleFactor = configuration.scaleFactor, scaleFactor.compare(0) == .orderedDescending, scaleFactor.compare(1) == .orderedAscending {
-      destinationWidth = Int(floor(scaleFactor.doubleValue * Double(sourceWidth)))
-      destinationHeight = Int(floor(scaleFactor.doubleValue * Double(sourceHeight)))
+    if let scaleFactor = configuration.scaleFactor, scaleFactor > 0, scaleFactor < 1 {
+      destinationWidth = Int(floor(scaleFactor * Double(sourceWidth)))
+      destinationHeight = Int(floor(scaleFactor * Double(sourceHeight)))
       logger.info().log("Applying \(scaleFactor) scale from w=\(sourceWidth)/h=\(sourceHeight) to w=\(destinationWidth)/h=\(destinationHeight)")
     }
     // Add edge insets to output dimensions. The composited frame includes the insets,
@@ -820,9 +820,10 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
   /// Eager (constant-frame-rate) when a positive `framesPerSecond` is set, else lazy (variable-rate,
   /// driven by damage events).
   private class func cadence(for configuration: FBVideoStreamConfiguration) -> FBVideoStreamCadence {
-    let framesPerSecondNumber = configuration.framesPerSecond
-    let framesPerSecond = framesPerSecondNumber?.uintValue ?? 0
-    return (framesPerSecondNumber != nil && framesPerSecond > 0) ? .eager(framesPerSecond: framesPerSecond) : .lazy
+    guard let framesPerSecond = configuration.framesPerSecond, framesPerSecond > 0 else {
+      return .lazy
+    }
+    return .eager(framesPerSecond: UInt(framesPerSecond))
   }
 
   init(framebuffer: FBFramebuffer, configuration: FBVideoStreamConfiguration, edgeInsets: FBVideoStreamEdgeInsets, cadence: FBVideoStreamCadence, writeQueue: DispatchQueue, logger: any FBControlCoreLogger, encodedSampleConsumerOverride: FBEncodedSampleConsumer? = nil) {
@@ -1022,9 +1023,9 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
     let height = CVPixelBufferGetHeight(buffer)
     var compositedWidth = width
     var compositedHeight = height
-    if let scaleFactor = configuration.scaleFactor, scaleFactor.compare(0) == .orderedDescending, scaleFactor.compare(1) == .orderedAscending {
-      compositedWidth = Int(floor(scaleFactor.doubleValue * Double(width)))
-      compositedHeight = Int(floor(scaleFactor.doubleValue * Double(height)))
+    if let scaleFactor = configuration.scaleFactor, scaleFactor > 0, scaleFactor < 1 {
+      compositedWidth = Int(floor(scaleFactor * Double(width)))
+      compositedHeight = Int(floor(scaleFactor * Double(height)))
     }
     let insets = edgeInsets
     compositedWidth += Int(insets.left + insets.right)
@@ -1169,12 +1170,13 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
       kVTCompressionPropertyKey_MaxFrameDelayCount as String: 0,
     ]
 
-    if configuration.rateControl.mode == .averageBitrate {
+    switch configuration.rateControl {
+    case let .bitrate(bitrate):
       // Explicit bitrate: AverageBitRate is in bits/sec
-      derived[kVTCompressionPropertyKey_AverageBitRate as String] = configuration.rateControl.value
-    } else {
+      derived[kVTCompressionPropertyKey_AverageBitRate as String] = bitrate
+    case let .quality(quality):
       // Constant-quality mode
-      derived[kVTCompressionPropertyKey_Quality as String] = configuration.rateControl.value
+      derived[kVTCompressionPropertyKey_Quality as String] = quality
     }
 
     for (key, value) in callerProperties {

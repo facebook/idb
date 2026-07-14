@@ -71,7 +71,7 @@ public class FBDeviceVideoStream: NSObject, FBVideoStream, @unchecked Sendable {
         guard let connection = session.connections.first else {
           throw FBDeviceControlError.describe("No capture connection available!").build()
         }
-        let frameTime: Float64 = 1.0 / Float64(fps.uintValue)
+        let frameTime: Float64 = 1.0 / Float64(fps)
         connection.videoMinFrameDuration = CMTimeMakeWithSeconds(frameTime, preferredTimescale: Int32(NSEC_PER_SEC))
       } else {
         throw FBDeviceControlError.describe("Cannot set FPS on an OS prior to 10.15").build()
