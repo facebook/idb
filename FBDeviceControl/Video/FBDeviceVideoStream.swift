@@ -119,14 +119,7 @@ public class FBDeviceVideoStream: NSObject, FBVideoStream, @unchecked Sendable {
 
   // MARK: Public Methods
 
-  @objc public func startStreaming(_ consumer: any FBDataConsumer) -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      try await startStreamingImpl(consumer)
-      return NSNull()
-    }
-  }
-
-  private func startStreamingImpl(_ consumer: any FBDataConsumer) async throws {
+  public func startStreaming(_ consumer: any FBDataConsumer) async throws {
     if self.consumer != nil {
       throw FBDeviceControlError.describe("Cannot start streaming, a consumer is already attached").build()
     }
@@ -139,14 +132,7 @@ public class FBDeviceVideoStream: NSObject, FBVideoStream, @unchecked Sendable {
     }
   }
 
-  @objc public func stopStreaming() -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      try await stopStreamingImpl()
-      return NSNull()
-    }
-  }
-
-  private func stopStreamingImpl() async throws {
+  public func stopStreaming() async throws {
     if consumer == nil {
       throw FBDeviceControlError.describe("Cannot stop streaming, no consumer attached").build()
     }
@@ -220,25 +206,14 @@ public class FBDeviceVideoStream: NSObject, FBVideoStream, @unchecked Sendable {
 
   // MARK: FBVideoStream
 
-  public func stop() async throws {
-    try await bridgeFBFutureVoid(stopStreaming())
-  }
-
-  @objc public var completed: FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      await awaitCompletionImpl()
-      return NSNull()
-    }
-  }
-
-  private func awaitCompletionImpl() async {
+  public func awaitCompletion() async {
     await withTaskCancellationHandler {
       await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
         registerStopAwaiter(continuation)
       }
     } onCancel: {
-      // Mirror the previous FBFuture cancellation handler: cancelling a completion await stops the stream.
-      Task { [weak self] in try? await self?.stopStreamingImpl() }
+      // Cancelling a completion await stops the stream (mirrors a cancellable completion signal).
+      Task { [weak self] in try? await self?.stopStreaming() }
     }
   }
 }

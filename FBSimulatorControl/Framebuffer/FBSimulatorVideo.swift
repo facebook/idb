@@ -48,7 +48,7 @@ public final class FBSimulatorVideo: @unchecked Sendable {
     // Encoded frames are routed to `fileWriter` (which opens lazily on its first sample, since
     // passthrough muxing needs that sample's format); the stream's byte consumer is unused, so a
     // no-op consumer satisfies its streaming bookkeeping (and never reports back-pressure).
-    try await bridgeFBFutureVoid(stream.startStreaming(FBNullDataConsumer()))
+    try await stream.startStreaming(FBNullDataConsumer())
   }
 
   public func stopRecording() async throws {
@@ -58,7 +58,7 @@ public final class FBSimulatorVideo: @unchecked Sendable {
     hasStopped = true
     // Stop the framebuffer push and flush the encoder (tearDown's VTCompressionSessionCompleteFrames
     // drains all pending frames into `fileWriter`) before finalizing the file's moov.
-    try await bridgeFBFutureVoid(stream.stopStreaming())
+    try await stream.stopStreaming()
     try await fileWriter.finish()
   }
 }

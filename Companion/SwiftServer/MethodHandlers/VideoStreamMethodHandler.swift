@@ -48,7 +48,7 @@ struct VideoStreamMethodHandler {
 
     try await Task.select(observeClientCancelStreaming, observeVideoStreamStop).value
 
-    try await videoStream.stop()
+    try await videoStream.stopStreaming()
     targetLogger.log("The video stream is terminated")
   }
 
@@ -99,9 +99,7 @@ struct VideoStreamMethodHandler {
     guard let asyncTarget = target as? any VideoStreamCommands else {
       throw GRPCStatus(code: .failedPrecondition, message: "\(target) does not support VideoStreamCommands")
     }
-    let videoStream = try await asyncTarget.createStream(configuration: config, to: consumer)
-
-    return videoStream
+    return try await asyncTarget.createStream(configuration: config, to: consumer)
   }
 
   private func streamFormat(from requestFormat: Idb_VideoStreamRequest.Format) -> FBVideoStreamFormat {

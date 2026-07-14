@@ -817,7 +817,7 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
   /// Starts a Bitmap Stream to `consumer` and returns the running handle.
   public class func start(framebuffer: FBFramebuffer, configuration: FBVideoStreamConfiguration, edgeInsets: FBVideoStreamEdgeInsets = FBVideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0), to consumer: any FBDataConsumer, logger: any FBControlCoreLogger) async throws -> FBSimulatorVideoStream {
     let stream = make(framebuffer: framebuffer, configuration: configuration, edgeInsets: edgeInsets, logger: logger)
-    try await bridgeFBFutureVoid(stream.startStreaming(consumer))
+    try await stream.startStreaming(consumer)
     return stream
   }
 
@@ -849,15 +849,7 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
 
   // MARK: - Public
 
-  @objc
-  public func startStreaming(_ consumer: any FBDataConsumer) -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      try await startStreamingImpl(consumer)
-      return NSNull()
-    }
-  }
-
-  private func startStreamingImpl(_ consumer: any FBDataConsumer) async throws {
+  public func startStreaming(_ consumer: any FBDataConsumer) async throws {
     try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
       writeQueue.async { [self] in
         if hasStarted {
@@ -884,15 +876,7 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
     }
   }
 
-  @objc
-  public func stopStreaming() -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      try await stopStreamingImpl()
-      return NSNull()
-    }
-  }
-
-  private func stopStreamingImpl() async throws {
+  public func stopStreaming() async throws {
     try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
       writeQueue.async { [self] in
         if isStopped {
@@ -1416,19 +1400,7 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
 
   // MARK: - FBVideoStream
 
-  public func stop() async throws {
-    try await bridgeFBFutureVoid(stopStreaming())
-  }
-
-  @objc
-  public var completed: FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      await awaitCompletionImpl()
-      return NSNull()
-    }
-  }
-
-  private func awaitCompletionImpl() async {
+  public func awaitCompletion() async {
     await withTaskCancellationHandler {
       await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
         writeQueue.async { [self] in
@@ -1440,8 +1412,8 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
         }
       }
     } onCancel: {
-      // Mirror the previous FBFuture cancellation handler: cancelling a completion await stops the stream.
-      Task { [weak self] in try? await self?.stopStreamingImpl() }
+      // Cancelling a completion await stops the stream (mirrors a cancellable completion signal).
+      Task { [weak self] in try? await self?.stopStreaming() }
     }
   }
 

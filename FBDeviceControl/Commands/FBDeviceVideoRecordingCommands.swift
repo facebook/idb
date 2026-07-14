@@ -55,7 +55,7 @@ public class FBDeviceVideoRecordingCommands: NSObject, FBiOSTargetCommand {
     }
     let session = try await FBDeviceVideo.captureSessionAsync(for: device)
     let stream = try FBDeviceVideoStream.stream(withSession: session, configuration: configuration, logger: logger)
-    try await bridgeFBFutureVoid(stream.startStreaming(consumer))
+    try await stream.startStreaming(consumer)
     return stream
   }
 }

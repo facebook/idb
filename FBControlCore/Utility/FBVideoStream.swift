@@ -7,18 +7,17 @@
 
 import Foundation
 
-/// A handle to a running video stream. It is returned already streaming; call `stop()` to end it.
-public protocol FBVideoStream: AnyObject {
-  /// A Future that resolves when the stream has completed.
-  var completed: FBFuture<NSNull> { get }
+/// Streams Bitmaps to a File Sink.
+///
+/// `Sendable` because the async lifecycle methods are awaited across concurrency domains (the gRPC
+/// companion, the sime2e command handlers); the conforming stream classes are `@unchecked Sendable`.
+public protocol FBVideoStream: AnyObject, Sendable {
+  /// Starts the Streaming, to a Data Consumer.
+  func startStreaming(_ consumer: FBDataConsumer) async throws
 
-  /// Stops the stream and waits for it to finish.
-  func stop() async throws
-}
+  /// Stops the Streaming.
+  func stopStreaming() async throws
 
-extension FBVideoStream {
-  /// Waits for the stream to complete.
-  public func awaitCompletion() async throws {
-    try await bridgeFBFutureVoid(self.completed)
-  }
+  /// Waits for the stream to complete (returns once it has stopped).
+  func awaitCompletion() async throws
 }
