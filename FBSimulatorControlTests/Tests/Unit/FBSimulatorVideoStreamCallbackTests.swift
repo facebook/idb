@@ -189,7 +189,7 @@ final class FBSimulatorVideoStreamCallbackTests: XCTestCase {
 
     // Backdate statsTimer by 6 seconds to trigger stats on next frame
     var timer = pusher.statsTimer
-    timer.lastLogTime = CFAbsoluteTimeGetCurrent() - 6.0
+    timer.backdateForTesting(by: 6.0)
     pusher.statsTimer = timer
 
     ready = makeReadySampleBuffer()
@@ -230,7 +230,7 @@ final class FBSimulatorVideoStreamCallbackTests: XCTestCase {
 
     // Backdate to trigger stats log
     var timer = pusher.statsTimer
-    timer.lastLogTime = CFAbsoluteTimeGetCurrent() - 6.0
+    timer.backdateForTesting(by: 6.0)
     pusher.statsTimer = timer
 
     let ready = makeReadySampleBuffer()
@@ -262,7 +262,7 @@ final class FBSimulatorVideoStreamCallbackTests: XCTestCase {
 
     // Backdate to trigger stats log
     var timer = pusher.statsTimer
-    timer.lastLogTime = CFAbsoluteTimeGetCurrent() - 6.0
+    timer.backdateForTesting(by: 6.0)
     pusher.statsTimer = timer
 
     // Send one more not-ready buffer to trigger the stats log

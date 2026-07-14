@@ -337,7 +337,7 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: NSObject, FBSimulato
   var starvationWarningLogged = false
   var stats = FBVideoEncoderStats()
   var lastLoggedStats = FBVideoEncoderStats()
-  var statsTimer = FBPeriodicStatsTimerCreate(5.0)
+  var statsTimer = FBPeriodicStatsTimer(interval: 5.0)
 
   init(
     configuration: FBVideoStreamConfiguration,
@@ -359,19 +359,15 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: NSObject, FBSimulato
   }
 
   func handleCompressedSampleBuffer(_ sampleBuffer: CMSampleBuffer?, encodeStatus: OSStatus, infoFlags: VTEncodeInfoFlags) {
-    if statsTimer.startTime == 0 {
-      // First call — initialize the timer.
-      var unused1: CFTimeInterval = 0
-      var unused2: CFTimeInterval = 0
-      FBPeriodicStatsTimerTick(&statsTimer, &unused1, &unused2)
+    if !statsTimer.hasStarted {
+      // First call — start the timer.
+      _ = statsTimer.tick()
       logger.info().log("First encode callback received")
     }
 
     processCompressedSampleBuffer(sampleBuffer, encodeStatus: encodeStatus, infoFlags: infoFlags)
 
-    var intervalDuration: CFTimeInterval = 0
-    var totalElapsed: CFTimeInterval = 0
-    if !FBPeriodicStatsTimerTick(&statsTimer, &intervalDuration, &totalElapsed) {
+    guard case let .elapsed(intervalDuration, totalElapsed) = statsTimer.tick() else {
       return
     }
 
