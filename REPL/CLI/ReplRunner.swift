@@ -51,6 +51,14 @@ struct ReplRunner: ParsableArguments {
       visibility: .hidden))
   var idbCompanionBinary: String?
 
+  @Option(
+    name: .long,
+    help: "Connect directly to a companion at host:port (e.g. 127.0.0.1:10882), bypassing discovery. Use to reach an already-running, typically remote, companion.")
+  var companion: String?
+
+  @Flag(name: .long, help: "Use an unencrypted TCP connection to the companion instead of TLS.")
+  var plaintext = false
+
   @Argument(help: "An optional line of Swift to compile and run once, printing the result to stdout. If omitted, the interactive REPL starts.")
   var code: String?
 
@@ -59,22 +67,15 @@ struct ReplRunner: ParsableArguments {
 
     let toolchain = try resolveToolchainPath(explicit: toolchainPath)
 
-    // Discover the companion to use, starting one if needed. A companion we start
-    // should not outlive its use, so it exits after 5 minutes without gRPC
-    // activity. With no udid, use the single running companion (or start one for
-    // the only available simulator).
-    let idleShutdownTime = 5 * 60
-    let companion: CompanionInfo
-    if let udid {
-      companion = try await companionManager().companionInfo(forUDID: udid, idleShutdownTime: idleShutdownTime)
-    } else {
-      companion = try await companionManager().defaultCompanion(idleShutdownTime: idleShutdownTime)
-    }
+    // Resolve the companion to connect to (see `resolveCompanionAddress`): an
+    // explicit `--companion host:port`, otherwise a discovered companion.
+    let address = try await resolveCompanionAddress()
 
     let group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
     let channel = try GRPCChannelPool.with(
-      target: connectionTarget(for: companion.address),
-      transportSecurity: try channelTransportSecurity(for: companion.address),
+      target: connectionTarget(for: address),
+      transportSecurity: try channelTransportSecurity(
+        for: address, tls: plaintext ? .disabled : .metaIdentity),
       eventLoopGroup: group
     )
     let client = Idb_CompanionServiceAsyncClient(channel: channel)
@@ -233,6 +234,29 @@ struct ReplRunner: ParsableArguments {
     try? await channel.close().get()
     try? await group.shutdownGracefully()
     sessionDirectory.cleanup()
+  }
+
+  /// Resolves the companion address to connect to. `--companion host:port`
+  /// connects directly to an explicit (typically remote) TCP companion, bypassing
+  /// discovery, matching idb-forward. Otherwise a companion is discovered — by
+  /// `--udid`, or the single running / only-available-simulator default — and
+  /// started if needed, exiting after 5 minutes without gRPC activity so it does
+  /// not outlive its use.
+  private func resolveCompanionAddress() async throws -> CompanionAddress {
+    if let companion {
+      guard let address = CompanionAddress.parse(tcp: companion) else {
+        throw ValidationError(
+          "--companion expects host:port, e.g. 127.0.0.1:10882 (got '\(companion)')")
+      }
+      return address
+    }
+    let idleShutdownTime = 5 * 60
+    if let udid {
+      return try await companionManager()
+        .companionInfo(forUDID: udid, idleShutdownTime: idleShutdownTime).address
+    }
+    return try await companionManager()
+      .defaultCompanion(idleShutdownTime: idleShutdownTime).address
   }
 
   private func companionManager() -> CompanionManager {

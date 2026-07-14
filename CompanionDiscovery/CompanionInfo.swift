@@ -13,6 +13,24 @@ public enum CompanionAddress: Equatable {
   case domainSocket(path: String)
 }
 
+// MARK: - Parsing
+
+extension CompanionAddress {
+  /// Parses a `host:port` (or `[ipv6]:port`) string into a `.tcp` address, or nil
+  /// if malformed. Splits on the last colon so a bracketed IPv6 literal works.
+  public static func parse(tcp value: String) -> CompanionAddress? {
+    guard let colon = value.lastIndex(of: ":") else { return nil }
+    var host = String(value[value.startIndex..<colon])
+    let portString = String(value[value.index(after: colon)...])
+    guard let port = Int(portString), (1...65535).contains(port) else { return nil }
+    if host.hasPrefix("[") && host.hasSuffix("]") {
+      host = String(host.dropFirst().dropLast())
+    }
+    guard !host.isEmpty else { return nil }
+    return .tcp(host: host, port: port)
+  }
+}
+
 /// A record of a single running companion, keyed by the simulator/device `udid`.
 public struct CompanionInfo: Codable, Equatable {
   public let udid: String

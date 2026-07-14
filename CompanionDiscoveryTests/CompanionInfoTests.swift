@@ -94,3 +94,44 @@ struct CompanionInfoTests {
     return try #require(parsed)
   }
 }
+
+/// Verifies `CompanionAddress.parse(tcp:)` host:port parsing.
+@Suite
+struct CompanionAddressParseTests {
+  @Test
+  func parsesIPv4AndPort() {
+    #expect(CompanionAddress.parse(tcp: "127.0.0.1:10882") == .tcp(host: "127.0.0.1", port: 10882))
+  }
+
+  @Test
+  func parsesHostnameAndPort() {
+    #expect(CompanionAddress.parse(tcp: "companion.example:443") == .tcp(host: "companion.example", port: 443))
+  }
+
+  @Test
+  func parsesBracketedIPv6() {
+    // The last colon separates the port, so a bracketed IPv6 literal is preserved.
+    #expect(CompanionAddress.parse(tcp: "[::1]:10882") == .tcp(host: "::1", port: 10882))
+  }
+
+  @Test
+  func rejectsMissingPort() {
+    #expect(CompanionAddress.parse(tcp: "127.0.0.1") == nil)
+  }
+
+  @Test
+  func rejectsNonNumericPort() {
+    #expect(CompanionAddress.parse(tcp: "host:abc") == nil)
+  }
+
+  @Test
+  func rejectsOutOfRangePort() {
+    #expect(CompanionAddress.parse(tcp: "host:0") == nil)
+    #expect(CompanionAddress.parse(tcp: "host:70000") == nil)
+  }
+
+  @Test
+  func rejectsEmptyHost() {
+    #expect(CompanionAddress.parse(tcp: ":10882") == nil)
+  }
+}

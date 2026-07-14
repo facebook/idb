@@ -49,7 +49,7 @@ struct IdbForward {
     // start one for the only available simulator.
     let address: CompanionAddress
     if let explicitCompanion {
-      guard let parsed = parseTCPAddress(explicitCompanion) else {
+      guard let parsed = CompanionAddress.parse(tcp: explicitCompanion) else {
         logStderr("Error: --companion expects host:port, e.g. 127.0.0.1:10882 (got '\(explicitCompanion)')")
         exit(1)
       }
@@ -128,19 +128,5 @@ struct IdbForward {
 
   private static func logCompanion(_ companion: CompanionInfo) {
     logStderr("Companion: udid=\(companion.udid) isLocal=\(companion.isLocal) pid=\(companion.pid.map(String.init) ?? "none") address=\(addressDescription(companion.address))")
-  }
-
-  /// Parses a `host:port` (or `[ipv6]:port`) string into a `.tcp` address, or nil
-  /// if malformed. Splits on the last colon so a bracketed IPv6 literal works.
-  private static func parseTCPAddress(_ value: String) -> CompanionAddress? {
-    guard let colon = value.lastIndex(of: ":") else { return nil }
-    var host = String(value[value.startIndex..<colon])
-    let portString = String(value[value.index(after: colon)...])
-    guard let port = Int(portString), (1...65535).contains(port) else { return nil }
-    if host.hasPrefix("[") && host.hasSuffix("]") {
-      host = String(host.dropFirst().dropLast())
-    }
-    guard !host.isEmpty else { return nil }
-    return .tcp(host: host, port: port)
   }
 }
