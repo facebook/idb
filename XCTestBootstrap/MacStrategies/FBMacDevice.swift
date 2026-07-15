@@ -9,6 +9,8 @@ import FBControlCore
 import Foundation
 import IOKit
 
+// swiftlint:disable force_cast force_unwrapping
+
 @objc private protocol XCTestManager_XPCControl {
   func _XCT_requestConnectedSocketForTransport(_ arg1: @escaping (FileHandle?, Error?) -> Void)
 }
@@ -427,6 +429,7 @@ import IOKit
       .onQueue(
         asyncQueue,
         map: { shimConfigObj -> AnyObject in
+          // swiftlint:disable:next force_cast
           let shims = shimConfigObj as! FBXCTestShimConfiguration
           return shims.macOSTestShimPath as NSString
         }),
@@ -454,24 +457,6 @@ import IOKit
     )
 
     return FBListTestStrategy(target: self, configuration: configuration, logger: self.logger!).listTests()
-  }
-
-  // MARK: - Not implemented stubs
-
-  // unsafeBitCast is used because FBFuture's ObjC generic is type-erased at runtime.
-
-  public func startRecording(toFile filePath: String) -> FBFuture<NSNull> {
-    return unsafeBitCast(
-      FBControlCoreError.describe("-[FBMacDevice startRecordingToFile:] is not implemented").failFuture(),
-      to: FBFuture.self
-    )
-  }
-
-  @objc public func stopRecording() -> FBFuture<NSNull> {
-    return unsafeBitCast(
-      FBControlCoreError.describe("-[FBMacDevice stopRecording] is not implemented").failFuture(),
-      to: FBFuture<NSNull>.self
-    )
   }
 
   @objc(notifyOfCrash:)
