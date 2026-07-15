@@ -50,8 +50,7 @@ public class FBDeviceVideoRecordingCommands: NSObject, FBiOSTargetCommand {
       throw FBDeviceControlError().describe("There was no existing video instance for \(device)").build()
     }
     self.video = nil
-    try await bridgeFBFutureVoid(video.stopRecording())
-    return video.outputURL
+    return try await video.stop()
   }
 
   fileprivate func createStreamAsync(with configuration: FBVideoStreamConfiguration, to consumer: any FBDataConsumer) async throws -> any FBVideoStream {

@@ -84,8 +84,9 @@ public final class FBDeviceVideo {
     encoder.startRecording()
   }
 
-  public func stopRecording() -> FBFuture<NSNull> {
-    encoder.stopRecording()
+  public func stop() async throws -> URL {
+    try await bridgeFBFutureVoid(encoder.stopRecording())
+    return outputURL
   }
 
 }
