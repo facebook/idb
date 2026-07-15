@@ -300,6 +300,64 @@ function strip_embedded_frameworks() {
   strip_framework "XCTestBootstrap.framework/Versions/Current/Frameworks/FBControlCore.framework"
 }
 
+# Verify that the command-line companion carries the privacy usage description
+# in every Mach-O slice. INFOPLIST_FILE alone does not embed a plist in a tool.
+function verify_companion_camera_usage_description() {
+  local binary="$1"
+  local expected
+  local archs
+  local arch
+  local info
+  local description
+  local continuity_camera_device_type
+
+  if [ ! -f "$binary" ]; then
+    echo "error: idb_companion binary not found at $binary"
+    return 1
+  fi
+  if ! expected=$(plutil -extract NSCameraUsageDescription raw -o - Companion/Info.plist); then
+    echo "error: Companion/Info.plist has no readable NSCameraUsageDescription"
+    return 1
+  fi
+  if ! continuity_camera_device_type=$(plutil -extract NSCameraUseContinuityCameraDeviceType raw -o - Companion/Info.plist); then
+    echo "error: Companion/Info.plist has no readable NSCameraUseContinuityCameraDeviceType"
+    return 1
+  fi
+  if [[ "$continuity_camera_device_type" != "true" ]]; then
+    echo "error: Companion/Info.plist must set NSCameraUseContinuityCameraDeviceType to true"
+    return 1
+  fi
+  if ! archs=$(lipo -archs "$binary") || [ -z "$archs" ]; then
+    echo "error: Could not determine architectures for $binary"
+    return 1
+  fi
+
+  for arch in $archs; do
+    info=$(otool -arch "$arch" -P "$binary")
+    if [[ "$info" != *"(__TEXT,__info_plist) section"* ]]; then
+      echo "error: $binary ($arch) is missing __TEXT,__info_plist"
+      return 1
+    fi
+    if ! description=$(printf '%s\n' "$info" | sed -n '/^<?xml /,$p' | plutil -extract NSCameraUsageDescription raw -o - -); then
+      echo "error: $binary ($arch) has no readable NSCameraUsageDescription"
+      return 1
+    fi
+    if [[ "$description" != "$expected" ]]; then
+      echo "error: $binary ($arch) has unexpected NSCameraUsageDescription: $description"
+      return 1
+    fi
+    if ! continuity_camera_device_type=$(printf '%s\n' "$info" | sed -n '/^<?xml /,$p' | plutil -extract NSCameraUseContinuityCameraDeviceType raw -o - -); then
+      echo "error: $binary ($arch) has no readable NSCameraUseContinuityCameraDeviceType"
+      return 1
+    fi
+    if [[ "$continuity_camera_device_type" != "true" ]]; then
+      echo "error: $binary ($arch) must set NSCameraUseContinuityCameraDeviceType to true"
+      return 1
+    fi
+    echo "Verified camera privacy keys in $binary ($arch)"
+  done
+}
+
 # =============================================================================
 # Build Functions
 # =============================================================================
@@ -388,6 +446,7 @@ function build_idb_companion() {
     -derivedDataPath "$BUILD_DIRECTORY" \
     -configuration Release \
     build
+  verify_companion_camera_usage_description "$BUILD_DIRECTORY/Products/Release/idb_companion"
   strip_embedded_frameworks
 }
 
@@ -455,6 +514,7 @@ function build_distribution() {
   # Companion executable and the REPL CLI.
   cp "$release/idb_companion" "$dist/"
   cp "$release/idb-repl" "$dist/"
+  verify_companion_camera_usage_description "$dist/idb_companion"
 
   # SwiftPM resource bundles (Bundle.module resolves relative to Bundle.main).
   local bundle
