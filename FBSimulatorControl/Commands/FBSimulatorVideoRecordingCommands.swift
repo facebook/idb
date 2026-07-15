@@ -57,7 +57,7 @@ public final class FBSimulatorVideoRecordingCommands: NSObject, FBiOSTargetComma
     let video = FBSimulatorVideo.video(withFramebuffer: framebuffer, configuration: configuration, filePath: filePath, logger: simulator.logger!)
     try await video.startRecording()
     self.video = video
-    return CommandVideoRecording {
+    return FBVideoRecordingHandle {
       return try await self.stopAsync()
     }
   }
@@ -94,18 +94,6 @@ extension FBSimulator: VideoRecordingCommands {
 
   public func startRecording(toFile filePath: String, configuration: FBVideoStreamConfiguration) async throws -> any FBVideoRecording {
     try await videoRecordingCommands().startRecordingAsync(toFile: filePath, configuration: configuration)
-  }
-}
-
-private final class CommandVideoRecording: FBVideoRecording {
-  private let stopAction: () async throws -> URL
-
-  init(stop: @escaping () async throws -> URL) {
-    self.stopAction = stop
-  }
-
-  func stop() async throws -> URL {
-    try await stopAction()
   }
 }
 

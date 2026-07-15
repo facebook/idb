@@ -37,7 +37,7 @@ public class FBDeviceVideoRecordingCommands: NSObject, FBiOSTargetCommand {
     let video = try await FBDeviceVideo.videoAsync(for: device, filePath: filePath)
     self.video = video
     try await bridgeFBFutureVoid(video.startRecording())
-    return CommandVideoRecording {
+    return FBVideoRecordingHandle {
       return try await self.stopAsync()
     }
   }
@@ -70,18 +70,6 @@ extension FBDevice: VideoRecordingCommands {
 
   public func startRecording(toFile filePath: String) async throws -> any FBVideoRecording {
     try await videoRecordingCommands().startRecordingAsync(toFile: filePath)
-  }
-}
-
-private final class CommandVideoRecording: FBVideoRecording {
-  private let stopAction: () async throws -> URL
-
-  init(stop: @escaping () async throws -> URL) {
-    self.stopAction = stop
-  }
-
-  func stop() async throws -> URL {
-    try await stopAction()
   }
 }
 

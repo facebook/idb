@@ -15,6 +15,20 @@ public protocol FBVideoRecording {
   func stop() async throws -> URL
 }
 
+/// A closure-backed recording handle for command implementations that keep ownership of the
+/// underlying recording operation.
+public final class FBVideoRecordingHandle: FBVideoRecording {
+  private let stopAction: () async throws -> URL
+
+  public init(stop: @escaping () async throws -> URL) {
+    self.stopAction = stop
+  }
+
+  public func stop() async throws -> URL {
+    try await stopAction()
+  }
+}
+
 public protocol VideoRecordingCommands: AnyObject {
 
   func startRecording(toFile filePath: String) async throws -> any FBVideoRecording
