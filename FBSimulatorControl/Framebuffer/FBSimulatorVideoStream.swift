@@ -17,9 +17,69 @@ import Metal
 import UniformTypeIdentifiers
 import VideoToolbox
 
-// FBFuture's generic surface forces `as!` / `unsafeBitCast` bridging in Swift (matching the rest of
-// FBSimulatorControl, e.g. FBSimulatorVideo / FBSimulator*Commands).
-// swiftlint:disable force_cast
+private enum FBSimulatorVideoStreamError: Error {
+  case failedToCreatePixelTransferSession(status: OSStatus)
+  case failedToStartCompressionSession(status: OSStatus)
+  case compressionSessionNil
+  case failedToSetCompressionSessionProperties(status: OSStatus)
+  case failedToPrepareCompressionSession(status: OSStatus)
+  case missingCompressionSession
+  case failedToCompress(status: OSStatus)
+  case startWhenStopped
+  case startAlreadyStarted
+  case stopWithoutConsumer
+  case stopNotAttachedToSurface
+  case failedToTearDownFramePusher(errorDescription: String)
+  case failedToCreatePixelBufferFromSurface(status: CVReturn)
+  case failedToCreatePixelBufferFromSurfaceNil
+  case mountSurfaceWithoutConsumer
+  case noPixelBufferForScreenshot
+  case failedToCreateCGImage
+  case failedToEncodePNG
+}
+
+extension FBSimulatorVideoStreamError: LocalizedError {
+  var errorDescription: String? {
+    switch self {
+    case .failedToCreatePixelTransferSession(let status):
+      return "Failed to create VTPixelTransferSession: \(status)"
+    case .failedToStartCompressionSession(let status):
+      return "Failed to start Compression Session \(status)"
+    case .compressionSessionNil:
+      return "Failed to start Compression Session (nil)"
+    case .failedToSetCompressionSessionProperties(let status):
+      return "Failed to set compression session properties \(status)"
+    case .failedToPrepareCompressionSession(let status):
+      return "Failed to prepare compression session \(status)"
+    case .missingCompressionSession:
+      return "No compression session"
+    case .failedToCompress(let status):
+      return "Failed to compress \(status)"
+    case .startWhenStopped:
+      return "Cannot start streaming, since streaming is stopped"
+    case .startAlreadyStarted:
+      return "Cannot start streaming, since streaming has already has started"
+    case .stopWithoutConsumer:
+      return "Cannot stop streaming, no consumer attached"
+    case .stopNotAttachedToSurface:
+      return "Cannot stop streaming, is not attached to a surface"
+    case .failedToTearDownFramePusher(let errorDescription):
+      return "Failed to tear down frame pusher: \(errorDescription)"
+    case .failedToCreatePixelBufferFromSurface(let status):
+      return "Failed to create Pixel Buffer from Surface with errorCode \(status)"
+    case .failedToCreatePixelBufferFromSurfaceNil:
+      return "Failed to create Pixel Buffer from Surface (nil)"
+    case .mountSurfaceWithoutConsumer:
+      return "Cannot mount surface when there is no consumer"
+    case .noPixelBufferForScreenshot:
+      return "No pixel buffer available for screenshot"
+    case .failedToCreateCGImage:
+      return "Failed to create CGImage from pixel buffer"
+    case .failedToEncodePNG:
+      return "Failed to encode PNG"
+    }
+  }
+}
 
 // MARK: - Value Types
 
@@ -252,7 +312,7 @@ final class FBSimulatorVideoStreamFramePusher_Bitmap: NSObject, FBSimulatorVideo
       var transferSession: VTPixelTransferSession?
       let status = VTPixelTransferSessionCreate(allocator: kCFAllocatorDefault, pixelTransferSessionOut: &transferSession)
       if status != noErr {
-        throw FBControlCoreError.describe("Failed to create VTPixelTransferSession: \(status)").build()
+        throw FBSimulatorVideoStreamError.failedToCreatePixelTransferSession(status: status)
       }
       self.pixelTransferSession = transferSession
     }
@@ -532,7 +592,7 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: NSObject, FBSimulato
     var transferSession: VTPixelTransferSession?
     let transferStatus = VTPixelTransferSessionCreate(allocator: kCFAllocatorDefault, pixelTransferSessionOut: &transferSession)
     if transferStatus != noErr {
-      throw FBSimulatorError.describe("Failed to create VTPixelTransferSession: \(transferStatus)").build()
+      throw FBSimulatorVideoStreamError.failedToCreatePixelTransferSession(status: transferStatus)
     }
     self.pixelTransferSession = transferSession
     self.nv12PixelBufferPool = createNV12PixelBufferPool(width: destinationWidth, height: destinationHeight)
@@ -563,19 +623,19 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: NSObject, FBSimulato
       compressionSessionOut: &compressionSession
     )
     if status != noErr {
-      throw FBSimulatorError.describe("Failed to start Compression Session \(status)").build()
+      throw FBSimulatorVideoStreamError.failedToStartCompressionSession(status: status)
     }
     guard let compressionSession else {
-      throw FBSimulatorError.describe("Failed to start Compression Session (nil)").build()
+      throw FBSimulatorVideoStreamError.compressionSessionNil
     }
 
     let propertiesStatus = VTSessionSetProperties(compressionSession, propertyDictionary: compressionSessionProperties as CFDictionary)
     if propertiesStatus != noErr {
-      throw FBSimulatorError.describe("Failed to set compression session properties \(propertiesStatus)").build()
+      throw FBSimulatorVideoStreamError.failedToSetCompressionSessionProperties(status: propertiesStatus)
     }
     let prepareStatus = VTCompressionSessionPrepareToEncodeFrames(compressionSession)
     if prepareStatus != noErr {
-      throw FBSimulatorError.describe("Failed to prepare compression session \(prepareStatus)").build()
+      throw FBSimulatorVideoStreamError.failedToPrepareCompressionSession(status: prepareStatus)
     }
     self.compressionSession = compressionSession
   }
@@ -603,7 +663,7 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: NSObject, FBSimulato
     forceKeyFrame: Bool
   ) throws {
     guard let compressionSession else {
-      throw FBControlCoreError.describe("No compression session").build()
+      throw FBSimulatorVideoStreamError.missingCompressionSession
     }
 
     var bufferToWrite = pixelBuffer
@@ -691,7 +751,7 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: NSObject, FBSimulato
       }
     }
     if status != 0 {
-      throw FBControlCoreError.describe("Failed to compress \(status)").build()
+      throw FBSimulatorVideoStreamError.failedToCompress(status: status)
     }
   }
 
@@ -732,7 +792,7 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
   // Lifecycle state, confined to `writeQueue`. `hasStarted` latches once the first surface mounts (a
   // stream cannot be restarted); `isStopped` latches on teardown and is the sole stop-idempotency
   // guard. `startAwaiters`/`stopAwaiters` hold continuations resumed on those transitions, so
-  // `startStreaming`/`completed` can await them natively without an intervening `FBFuture`.
+  // `startStreaming`/`completed` can await them natively.
   private var hasStarted = false
   private var isStopped = false
   private var startAwaiters: [CheckedContinuation<Void, Error>] = []
@@ -850,11 +910,11 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
     try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
       writeQueue.async { [self] in
         if hasStarted {
-          continuation.resume(throwing: FBSimulatorError.describe("Cannot start streaming, since streaming is stopped").build())
+          continuation.resume(throwing: FBSimulatorVideoStreamError.startWhenStopped)
           return
         }
         if self.consumer != nil {
-          continuation.resume(throwing: FBSimulatorError.describe("Cannot start streaming, since streaming has already has started").build())
+          continuation.resume(throwing: FBSimulatorVideoStreamError.startAlreadyStarted)
           return
         }
         self.consumer = consumer
@@ -881,11 +941,11 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
           return
         }
         guard let consumer = self.consumer else {
-          continuation.resume(throwing: FBSimulatorError.describe("Cannot stop streaming, no consumer attached").build())
+          continuation.resume(throwing: FBSimulatorVideoStreamError.stopWithoutConsumer)
           return
         }
         if !framebuffer.isConsumerAttached(self) {
-          continuation.resume(throwing: FBSimulatorError.describe("Cannot stop streaming, is not attached to a surface").build())
+          continuation.resume(throwing: FBSimulatorVideoStreamError.stopNotAttachedToSurface)
           return
         }
         self.consumer = nil
@@ -895,7 +955,7 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
           do {
             try framePusher.tearDown()
           } catch {
-            continuation.resume(throwing: FBSimulatorError.describe("Failed to tear down frame pusher: \(error)").build())
+            continuation.resume(throwing: FBSimulatorVideoStreamError.failedToTearDownFramePusher(errorDescription: "\(error)"))
             return
           }
         }
@@ -968,14 +1028,14 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
     var unmanagedBuffer: Unmanaged<CVPixelBuffer>?
     let status = CVPixelBufferCreateWithIOSurface(nil, surface, nil, &unmanagedBuffer)
     if status != kCVReturnSuccess {
-      throw FBSimulatorError.describe("Failed to create Pixel Buffer from Surface with errorCode \(status)").build()
+      throw FBSimulatorVideoStreamError.failedToCreatePixelBufferFromSurface(status: status)
     }
     guard let buffer = unmanagedBuffer?.takeRetainedValue() else {
-      throw FBSimulatorError.describe("Failed to create Pixel Buffer from Surface (nil)").build()
+      throw FBSimulatorVideoStreamError.failedToCreatePixelBufferFromSurfaceNil
     }
 
     guard let consumer else {
-      throw FBSimulatorError.describe("Cannot mount surface when there is no consumer").build()
+      throw FBSimulatorVideoStreamError.mountSurfaceWithoutConsumer
     }
 
     // Get the Attributes
@@ -1343,7 +1403,7 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
   /// Capture a PNG screenshot of the current frame with overlay composited.
   public func captureCompositedScreenshot() throws -> Data {
     guard let sourceBuffer = pixelBuffer else {
-      throw FBSimulatorError.describe("No pixel buffer available for screenshot").build()
+      throw FBSimulatorVideoStreamError.noPixelBufferForScreenshot
     }
 
     // Build a CIImage, compositing the overlay if present, or applying edge inset padding.
@@ -1354,18 +1414,18 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
 
     let ctx = compositorCIContext ?? CIContext()
     guard let cgImage = ctx.createCGImage(ciImage, from: ciImage.extent) else {
-      throw FBSimulatorError.describe("Failed to create CGImage from pixel buffer").build()
+      throw FBSimulatorVideoStreamError.failedToCreateCGImage
     }
 
     let pngData = NSMutableData()
     guard let dest = CGImageDestinationCreateWithData(pngData as CFMutableData, UTType.png.identifier as CFString, 1, nil) else {
-      throw FBSimulatorError.describe("Failed to encode PNG").build()
+      throw FBSimulatorVideoStreamError.failedToEncodePNG
     }
     CGImageDestinationAddImage(dest, cgImage, nil)
     let finalized = CGImageDestinationFinalize(dest)
 
     if !finalized {
-      throw FBSimulatorError.describe("Failed to encode PNG").build()
+      throw FBSimulatorVideoStreamError.failedToEncodePNG
     }
 
     return pngData as Data
