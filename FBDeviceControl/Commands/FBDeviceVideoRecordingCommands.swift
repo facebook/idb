@@ -36,7 +36,7 @@ public class FBDeviceVideoRecordingCommands: NSObject, FBiOSTargetCommand {
     }
     let video = try await FBDeviceVideo.videoAsync(for: device, filePath: filePath)
     self.video = video
-    try await bridgeFBFutureVoid(video.startRecording())
+    try await video.startRecording()
     return FBVideoRecordingHandle {
       return try await self.stopAsync()
     }

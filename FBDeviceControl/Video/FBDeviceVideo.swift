@@ -80,8 +80,8 @@ public final class FBDeviceVideo {
 
   // MARK: Public
 
-  public func startRecording() -> FBFuture<NSNull> {
-    encoder.startRecording()
+  public func startRecording() async throws {
+    try await bridgeFBFutureVoid(encoder.startRecording())
   }
 
   public func stop() async throws -> URL {
