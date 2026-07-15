@@ -12,6 +12,28 @@ import Foundation
 
 // MARK: - FBSimulatorVideoFileWriter
 
+private enum FBSimulatorVideoFileWriterError: Error {
+  case assetWriterFailedToFinish(errorDescription: String)
+  case firstSampleBufferMissingFormatDescription
+  case cannotAddVideoInput
+  case assetWriterFailedToStart(errorDescription: String)
+}
+
+extension FBSimulatorVideoFileWriterError: LocalizedError {
+  var errorDescription: String? {
+    switch self {
+    case .assetWriterFailedToFinish(let errorDescription):
+      return "AVAssetWriter failed to finish writing: \(errorDescription)"
+    case .firstSampleBufferMissingFormatDescription:
+      return "First sample buffer has no format description"
+    case .cannotAddVideoInput:
+      return "AVAssetWriter cannot add the video input"
+    case .assetWriterFailedToStart(let errorDescription):
+      return "AVAssetWriter failed to start writing: \(errorDescription)"
+    }
+  }
+}
+
 /// Muxes already-encoded H264/HEVC `CMSampleBuffer`s into an `.mp4` using `AVAssetWriter` in
 /// passthrough mode (no re-encode). The in-process simulator recorder uses this as the file sink for
 /// the framebuffer→VideoToolbox encode pipeline.
@@ -125,7 +147,7 @@ final class FBSimulatorVideoFileWriter: NSObject, FBEncodedSampleConsumer, FBTim
     input.markAsFinished()
     await assetWriter.finishWriting()
     if assetWriter.status == .failed {
-      throw FBControlCoreError.describe("AVAssetWriter failed to finish writing: \(assetWriter.error.map { String(describing: $0) } ?? "unknown error")").build()
+      throw FBSimulatorVideoFileWriterError.assetWriterFailedToFinish(errorDescription: assetWriter.error.map { String(describing: $0) } ?? "unknown error")
     }
   }
 
@@ -145,7 +167,7 @@ final class FBSimulatorVideoFileWriter: NSObject, FBEncodedSampleConsumer, FBTim
       return input
     }
     guard let formatDescription = CMSampleBufferGetFormatDescription(sampleBuffer) else {
-      throw FBControlCoreError.describe("First sample buffer has no format description").build()
+      throw FBSimulatorVideoFileWriterError.firstSampleBufferMissingFormatDescription
     }
     // AVAssetWriter refuses to overwrite an existing file.
     try? FileManager.default.removeItem(at: outputURL)
@@ -154,7 +176,7 @@ final class FBSimulatorVideoFileWriter: NSObject, FBEncodedSampleConsumer, FBTim
     let input = AVAssetWriterInput(mediaType: .video, outputSettings: nil, sourceFormatHint: formatDescription)
     input.expectsMediaDataInRealTime = true
     guard assetWriter.canAdd(input) else {
-      throw FBControlCoreError.describe("AVAssetWriter cannot add the video input").build()
+      throw FBSimulatorVideoFileWriterError.cannotAddVideoInput
     }
     assetWriter.add(input)
 
@@ -165,7 +187,7 @@ final class FBSimulatorVideoFileWriter: NSObject, FBEncodedSampleConsumer, FBTim
     }
 
     guard assetWriter.startWriting() else {
-      throw FBControlCoreError.describe("AVAssetWriter failed to start writing: \(assetWriter.error.map { String(describing: $0) } ?? "unknown error")").build()
+      throw FBSimulatorVideoFileWriterError.assetWriterFailedToStart(errorDescription: assetWriter.error.map { String(describing: $0) } ?? "unknown error")
     }
     assetWriter.startSession(atSourceTime: CMSampleBufferGetPresentationTimeStamp(sampleBuffer))
     self.assetWriter = assetWriter
