@@ -38,11 +38,11 @@ public class FBDeviceVideoRecordingCommands: NSObject, FBiOSTargetCommand {
     self.video = video
     try await bridgeFBFutureVoid(video.startRecording())
     return CommandVideoRecording {
-      return try await self.stopRecordingAsync()
+      return try await self.stopAsync()
     }
   }
 
-  fileprivate func stopRecordingAsync() async throws -> URL {
+  fileprivate func stopAsync() async throws -> URL {
     guard let device else {
       throw FBDeviceControlError().describe("Device is nil").build()
     }
@@ -74,14 +74,14 @@ extension FBDevice: VideoRecordingCommands {
 }
 
 private final class CommandVideoRecording: FBVideoRecording {
-  private let stopRecording: () async throws -> URL
+  private let stopAction: () async throws -> URL
 
-  init(stopRecording: @escaping () async throws -> URL) {
-    self.stopRecording = stopRecording
+  init(stop: @escaping () async throws -> URL) {
+    self.stopAction = stop
   }
 
   func stop() async throws -> URL {
-    try await stopRecording()
+    try await stopAction()
   }
 }
 
