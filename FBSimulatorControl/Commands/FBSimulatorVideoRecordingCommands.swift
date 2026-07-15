@@ -10,6 +10,25 @@ import Foundation
 
 // swiftlint:disable force_cast force_unwrapping
 
+private enum FBSimulatorVideoRecordingCommandError: Error {
+  case simulatorDeallocated
+  case recordingAlreadyActive
+  case missingVideo(simulatorDescription: String)
+}
+
+extension FBSimulatorVideoRecordingCommandError: LocalizedError {
+  var errorDescription: String? {
+    switch self {
+    case .simulatorDeallocated:
+      return "Simulator deallocated"
+    case .recordingAlreadyActive:
+      return "Cannot create a new video recording session, one is already active"
+    case .missingVideo(let simulatorDescription):
+      return "There was no existing video instance for \(simulatorDescription)"
+    }
+  }
+}
+
 public final class FBSimulatorVideoRecordingCommands: NSObject, FBiOSTargetCommand {
 
   // MARK: - Properties
@@ -48,10 +67,10 @@ public final class FBSimulatorVideoRecordingCommands: NSObject, FBiOSTargetComma
 
   fileprivate func startRecordingAsync(toFile filePath: String, configuration: FBVideoStreamConfiguration) async throws -> any FBVideoRecording {
     guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator deallocated").build()
+      throw FBSimulatorVideoRecordingCommandError.simulatorDeallocated
     }
     if video != nil {
-      throw FBSimulatorError.describe("Cannot create a new video recording session, one is already active").build()
+      throw FBSimulatorVideoRecordingCommandError.recordingAlreadyActive
     }
     let framebuffer = try await simulator.connectToFramebuffer()
     let video = FBSimulatorVideo.video(withFramebuffer: framebuffer, configuration: configuration, filePath: filePath, logger: simulator.logger!)
@@ -66,17 +85,14 @@ public final class FBSimulatorVideoRecordingCommands: NSObject, FBiOSTargetComma
     let video = self.video
     self.video = nil
     guard let video else {
-      throw
-        FBSimulatorError
-        .describe("There was no existing video instance for \(self.simulator?.description ?? "unknown")")
-        .build()
+      throw FBSimulatorVideoRecordingCommandError.missingVideo(simulatorDescription: self.simulator?.description ?? "unknown")
     }
     return try await video.stop()
   }
 
   fileprivate func createStreamAsync(configuration: FBVideoStreamConfiguration, to consumer: any FBDataConsumer) async throws -> any FBVideoStream {
     guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator deallocated").build()
+      throw FBSimulatorVideoRecordingCommandError.simulatorDeallocated
     }
     let logger = simulator.logger
     let framebuffer = try await simulator.connectToFramebuffer()
