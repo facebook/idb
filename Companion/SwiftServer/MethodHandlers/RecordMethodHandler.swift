@@ -29,14 +29,14 @@ struct RecordMethodHandler {
     guard let asyncTarget = target as? any VideoRecordingCommands else {
       throw GRPCStatus(code: .failedPrecondition, message: "\(target) does not support VideoRecordingCommands")
     }
-    try await asyncTarget.startRecording(toFile: filePath)
+    let recording = try await asyncTarget.startRecording(toFile: filePath)
 
     _ = try await requestStream.requiredNext
-    try await asyncTarget.stopRecording()
+    let outputURL = try await recording.stop()
 
     if start.filePath.isEmpty {
       let gzipTask = try await FBArchiveOperations.createGzipAsync(
-        forPath: filePath,
+        forPath: outputURL.path,
         logger: targetLogger)
 
       try await FileDrainWriter.performDrain(task: gzipTask) { data in

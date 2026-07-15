@@ -23,6 +23,8 @@ public final class FBSimulatorVideo: @unchecked Sendable {
   // MARK: - Properties
 
   private let queue: DispatchQueue
+  /// The URL of the `.mp4` this recording writes.
+  let outputURL: URL
   /// The underlying encode pipeline. Exposed so the sime2e record path can drive stdin-controlled
   /// overlay/chapter/screenshot on the live stream, mirroring how `videoStream(...)` returns the stream.
   public let stream: FBSimulatorVideoStream
@@ -37,6 +39,7 @@ public final class FBSimulatorVideo: @unchecked Sendable {
 
   private init(framebuffer: FBFramebuffer, configuration: FBVideoStreamConfiguration, filePath: String, edgeInsets: FBVideoStreamEdgeInsets, chaptersEnabled: Bool, logger: any FBControlCoreLogger) {
     self.queue = DispatchQueue(label: "com.facebook.simulatorvideo")
+    self.outputURL = URL(fileURLWithPath: filePath)
     let fileWriter = FBSimulatorVideoFileWriter(filePath: filePath, chaptersEnabled: chaptersEnabled, logger: logger)
     self.fileWriter = fileWriter
     self.stream = FBSimulatorVideoStream.makeRecorder(framebuffer: framebuffer, configuration: configuration, edgeInsets: edgeInsets, fileWriter: fileWriter, logger: logger)
@@ -61,4 +64,5 @@ public final class FBSimulatorVideo: @unchecked Sendable {
     try await stream.stopStreaming()
     try await fileWriter.finish()
   }
+
 }

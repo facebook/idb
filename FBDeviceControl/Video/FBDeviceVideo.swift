@@ -13,6 +13,8 @@ import Foundation
 public final class FBDeviceVideo {
   private let encoder: FBVideoFileWriter
   private let workQueue: DispatchQueue
+  /// The URL of the video file this recording writes.
+  let outputURL: URL
 
   // MARK: Initialization Helpers
 
@@ -67,12 +69,13 @@ public final class FBDeviceVideo {
   public class func videoAsync(for device: FBDevice, filePath: String) async throws -> FBDeviceVideo {
     let session = try await captureSessionAsync(for: device)
     let encoder = try FBVideoFileWriter.writer(withSession: session, filePath: filePath, logger: device.logger ?? FBControlCoreGlobalConfiguration.defaultLogger)
-    return FBDeviceVideo(encoder: encoder, workQueue: device.workQueue)
+    return FBDeviceVideo(encoder: encoder, workQueue: device.workQueue, outputURL: URL(fileURLWithPath: filePath))
   }
 
-  private init(encoder: FBVideoFileWriter, workQueue: DispatchQueue) {
+  private init(encoder: FBVideoFileWriter, workQueue: DispatchQueue, outputURL: URL) {
     self.encoder = encoder
     self.workQueue = workQueue
+    self.outputURL = outputURL
   }
 
   // MARK: Public
@@ -84,4 +87,5 @@ public final class FBDeviceVideo {
   public func stopRecording() -> FBFuture<NSNull> {
     encoder.stopRecording()
   }
+
 }

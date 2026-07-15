@@ -42,11 +42,11 @@ public final class FBSimulatorVideoRecordingCommands: NSObject, FBiOSTargetComma
       keyFrameRate: nil)
   }
 
-  fileprivate func startRecordingAsync(toFile filePath: String) async throws {
+  fileprivate func startRecordingAsync(toFile filePath: String) async throws -> any FBVideoRecording {
     try await startRecordingAsync(toFile: filePath, configuration: Self.recordingConfiguration)
   }
 
-  fileprivate func startRecordingAsync(toFile filePath: String, configuration: FBVideoStreamConfiguration) async throws {
+  fileprivate func startRecordingAsync(toFile filePath: String, configuration: FBVideoStreamConfiguration) async throws -> any FBVideoRecording {
     guard let simulator = self.simulator else {
       throw FBSimulatorError.describe("Simulator deallocated").build()
     }
@@ -57,9 +57,12 @@ public final class FBSimulatorVideoRecordingCommands: NSObject, FBiOSTargetComma
     let video = FBSimulatorVideo.video(withFramebuffer: framebuffer, configuration: configuration, filePath: filePath, logger: simulator.logger!)
     try await video.startRecording()
     self.video = video
+    return CommandVideoRecording {
+      return try await self.stopRecordingAsync()
+    }
   }
 
-  fileprivate func stopRecordingAsync() async throws {
+  fileprivate func stopRecordingAsync() async throws -> URL {
     let video = self.video
     self.video = nil
     guard let video else {
@@ -69,6 +72,7 @@ public final class FBSimulatorVideoRecordingCommands: NSObject, FBiOSTargetComma
         .build()
     }
     try await video.stopRecording()
+    return video.outputURL
   }
 
   fileprivate func createStreamAsync(configuration: FBVideoStreamConfiguration, to consumer: any FBDataConsumer) async throws -> any FBVideoStream {
@@ -85,16 +89,24 @@ public final class FBSimulatorVideoRecordingCommands: NSObject, FBiOSTargetComma
 
 extension FBSimulator: VideoRecordingCommands {
 
-  public func startRecording(toFile filePath: String) async throws {
+  public func startRecording(toFile filePath: String) async throws -> any FBVideoRecording {
     try await videoRecordingCommands().startRecordingAsync(toFile: filePath)
   }
 
-  public func startRecording(toFile filePath: String, configuration: FBVideoStreamConfiguration) async throws {
+  public func startRecording(toFile filePath: String, configuration: FBVideoStreamConfiguration) async throws -> any FBVideoRecording {
     try await videoRecordingCommands().startRecordingAsync(toFile: filePath, configuration: configuration)
   }
+}
 
-  public func stopRecording() async throws {
-    try await videoRecordingCommands().stopRecordingAsync()
+private final class CommandVideoRecording: FBVideoRecording {
+  private let stopRecording: () async throws -> URL
+
+  init(stopRecording: @escaping () async throws -> URL) {
+    self.stopRecording = stopRecording
+  }
+
+  func stop() async throws -> URL {
+    try await stopRecording()
   }
 }
 

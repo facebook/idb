@@ -16,6 +16,7 @@ public class FBDeviceVideoRecordingCommands: NSObject, FBiOSTargetCommand {
   // MARK: - Initializers
 
   public class func commands(with target: any FBiOSTarget) -> Self {
+    // swiftlint:disable:next force_cast
     self.init(device: target as! FBDevice)
   }
 
@@ -26,7 +27,7 @@ public class FBDeviceVideoRecordingCommands: NSObject, FBiOSTargetCommand {
 
   // MARK: - Async
 
-  fileprivate func startRecordingAsync(toFile filePath: String) async throws {
+  fileprivate func startRecordingAsync(toFile filePath: String) async throws -> any FBVideoRecording {
     guard let device else {
       throw FBDeviceControlError().describe("Device is nil").build()
     }
@@ -36,9 +37,12 @@ public class FBDeviceVideoRecordingCommands: NSObject, FBiOSTargetCommand {
     let video = try await FBDeviceVideo.videoAsync(for: device, filePath: filePath)
     self.video = video
     try await bridgeFBFutureVoid(video.startRecording())
+    return CommandVideoRecording {
+      return try await self.stopRecordingAsync()
+    }
   }
 
-  fileprivate func stopRecordingAsync() async throws {
+  fileprivate func stopRecordingAsync() async throws -> URL {
     guard let device else {
       throw FBDeviceControlError().describe("Device is nil").build()
     }
@@ -47,6 +51,7 @@ public class FBDeviceVideoRecordingCommands: NSObject, FBiOSTargetCommand {
     }
     self.video = nil
     try await bridgeFBFutureVoid(video.stopRecording())
+    return video.outputURL
   }
 
   fileprivate func createStreamAsync(with configuration: FBVideoStreamConfiguration, to consumer: any FBDataConsumer) async throws -> any FBVideoStream {
@@ -64,12 +69,20 @@ public class FBDeviceVideoRecordingCommands: NSObject, FBiOSTargetCommand {
 
 extension FBDevice: VideoRecordingCommands {
 
-  public func startRecording(toFile filePath: String) async throws {
+  public func startRecording(toFile filePath: String) async throws -> any FBVideoRecording {
     try await videoRecordingCommands().startRecordingAsync(toFile: filePath)
   }
+}
 
-  public func stopRecording() async throws {
-    try await videoRecordingCommands().stopRecordingAsync()
+private final class CommandVideoRecording: FBVideoRecording {
+  private let stopRecording: () async throws -> URL
+
+  init(stopRecording: @escaping () async throws -> URL) {
+    self.stopRecording = stopRecording
+  }
+
+  func stop() async throws -> URL {
+    try await stopRecording()
   }
 }
 
