@@ -10,6 +10,25 @@ import CoreMediaIO
 @preconcurrency import FBControlCore
 import Foundation
 
+private enum FBDeviceVideoError: Error {
+  case failedToEnableScreenCaptureDevices(status: OSStatus)
+  case timedOutWaitingForCaptureDevice(timeout: TimeInterval, deviceDescription: String)
+  case cannotAddDeviceInput(captureDeviceDescription: String)
+}
+
+extension FBDeviceVideoError: LocalizedError {
+  var errorDescription: String? {
+    switch self {
+    case .failedToEnableScreenCaptureDevices(let status):
+      return "Failed to enable Screen Capture devices with status \(status)"
+    case let .timedOutWaitingForCaptureDevice(timeout, deviceDescription):
+      return "Timed out waiting \(timeout)s for device \(deviceDescription) to have an associated capture device appear"
+    case .cannotAddDeviceInput(let captureDeviceDescription):
+      return "Cannot add Device Input to session for \(captureDeviceDescription)"
+    }
+  }
+}
+
 public final class FBDeviceVideo {
   private let encoder: FBVideoFileWriter
 
@@ -31,7 +50,7 @@ public final class FBDeviceVideo {
       &allow
     )
     if status != 0 {
-      throw FBDeviceControlError.describe("Failed to enable Screen Capture devices with status \(status)").build()
+      throw FBDeviceVideoError.failedToEnableScreenCaptureDevices(status: status)
     }
   }
 
@@ -43,7 +62,7 @@ public final class FBDeviceVideo {
         return captureDevice
       }
       if Date() >= deadline {
-        throw FBDeviceControlError.describe("Timed out waiting \(timeout)s for device \(device) to have an associated capture device appear").build()
+        throw FBDeviceVideoError.timedOutWaitingForCaptureDevice(timeout: timeout, deviceDescription: "\(device)")
       }
       try await Task.sleep(nanoseconds: 100_000_000)
     }
@@ -57,7 +76,7 @@ public final class FBDeviceVideo {
     let deviceInput = try AVCaptureDeviceInput(device: captureDevice)
     let session = AVCaptureSession()
     if !session.canAddInput(deviceInput) {
-      throw FBDeviceControlError.describe("Cannot add Device Input to session for \(captureDevice)").build()
+      throw FBDeviceVideoError.cannotAddDeviceInput(captureDeviceDescription: "\(captureDevice)")
     }
     session.addInput(deviceInput)
     return session

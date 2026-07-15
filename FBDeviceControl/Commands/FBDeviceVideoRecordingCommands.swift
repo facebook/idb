@@ -9,6 +9,25 @@ import AVFoundation
 @preconcurrency import FBControlCore
 import Foundation
 
+private enum FBDeviceVideoRecordingCommandError: Error {
+  case missingDevice
+  case recordingAlreadyActive
+  case missingVideo(deviceDescription: String)
+}
+
+extension FBDeviceVideoRecordingCommandError: LocalizedError {
+  var errorDescription: String? {
+    switch self {
+    case .missingDevice:
+      return "Device is nil"
+    case .recordingAlreadyActive:
+      return "Cannot create a new video recording session, one is already active"
+    case .missingVideo(let deviceDescription):
+      return "There was no existing video instance for \(deviceDescription)"
+    }
+  }
+}
+
 public class FBDeviceVideoRecordingCommands: NSObject, FBiOSTargetCommand {
   private weak var device: FBDevice?
   private var video: FBDeviceVideo?
@@ -29,10 +48,10 @@ public class FBDeviceVideoRecordingCommands: NSObject, FBiOSTargetCommand {
 
   fileprivate func startRecordingAsync(toFile filePath: String) async throws -> any FBVideoRecording {
     guard let device else {
-      throw FBDeviceControlError().describe("Device is nil").build()
+      throw FBDeviceVideoRecordingCommandError.missingDevice
     }
     if video != nil {
-      throw FBDeviceControlError().describe("Cannot create a new video recording session, one is already active").build()
+      throw FBDeviceVideoRecordingCommandError.recordingAlreadyActive
     }
     let video = try await FBDeviceVideo.videoAsync(for: device, filePath: filePath)
     self.video = video
@@ -44,10 +63,10 @@ public class FBDeviceVideoRecordingCommands: NSObject, FBiOSTargetCommand {
 
   fileprivate func stopAsync() async throws -> URL {
     guard let device else {
-      throw FBDeviceControlError().describe("Device is nil").build()
+      throw FBDeviceVideoRecordingCommandError.missingDevice
     }
     guard let video else {
-      throw FBDeviceControlError().describe("There was no existing video instance for \(device)").build()
+      throw FBDeviceVideoRecordingCommandError.missingVideo(deviceDescription: "\(device)")
     }
     self.video = nil
     return try await video.stop()
@@ -55,7 +74,7 @@ public class FBDeviceVideoRecordingCommands: NSObject, FBiOSTargetCommand {
 
   fileprivate func createStreamAsync(with configuration: FBVideoStreamConfiguration, to consumer: any FBDataConsumer) async throws -> any FBVideoStream {
     guard let device, let logger = device.logger else {
-      throw FBDeviceControlError().describe("Device is nil").build()
+      throw FBDeviceVideoRecordingCommandError.missingDevice
     }
     let session = try await FBDeviceVideo.captureSessionAsync(for: device)
     let stream = try FBDeviceVideoStream.stream(withSession: session, configuration: configuration, logger: logger)
