@@ -18,7 +18,7 @@ public class FBVideoFileWriter: NSObject, AVCaptureFileOutputRecordingDelegate {
   private let logger: any FBControlCoreLogger
   private let startFuture: FBMutableFuture<NSNull>
   private let finishFuture: FBMutableFuture<NSNull>
-  private let filePath: String
+  private let outputURL: URL
 
   // MARK: Initializers
 
@@ -35,7 +35,7 @@ public class FBVideoFileWriter: NSObject, AVCaptureFileOutputRecordingDelegate {
   required init(session: AVCaptureSession, output: AVCaptureMovieFileOutput, filePath: String, logger: any FBControlCoreLogger) {
     self.session = session
     self.output = output
-    self.filePath = filePath
+    self.outputURL = URL(fileURLWithPath: filePath)
     self.logger = logger
     self.startFuture = FBMutableFuture()
     self.finishFuture = FBMutableFuture()
@@ -44,36 +44,52 @@ public class FBVideoFileWriter: NSObject, AVCaptureFileOutputRecordingDelegate {
 
   // MARK: Public Methods
 
-  @objc public func startRecording() -> FBFuture<NSNull> {
+  public func start() async throws {
+    try await bridgeFBFutureVoid(startWriting())
+  }
+
+  public func stop() async throws -> URL {
+    try await bridgeFBFutureVoid(stopWriting())
+    return outputURL
+  }
+
+  // MARK: Private Methods
+
+  private var filePath: String {
+    outputURL.path
+  }
+
+  private func startWriting() -> FBFuture<NSNull> {
     if FileManager.default.fileExists(atPath: filePath) {
       logger.log("File already exists at \(filePath), deleting")
       do {
         try FileManager.default.removeItem(atPath: filePath)
       } catch {
-        return FBControlCoreError.describe("Failed to remove existing device video at \(filePath)").caused(by: error).failFuture() as! FBFuture<NSNull>
+        return unsafeBitCast(
+          FBControlCoreError.describe("Failed to remove existing device video at \(filePath)").caused(by: error).failFuture(),
+          to: FBFuture<NSNull>.self
+        )
       }
       logger.log("Removed video file at \(filePath)")
     }
     do {
       try FileManager.default.createDirectory(atPath: (filePath as NSString).deletingLastPathComponent, withIntermediateDirectories: true, attributes: nil)
     } catch {
-      return FBControlCoreError.describe("Failed to remove create auxillary directory for device at \(filePath)").caused(by: error).failFuture() as! FBFuture<NSNull>
+      return unsafeBitCast(
+        FBControlCoreError.describe("Failed to remove create auxillary directory for device at \(filePath)").caused(by: error).failFuture(),
+        to: FBFuture<NSNull>.self
+      )
     }
-    let file = URL(fileURLWithPath: filePath)
     session.startRunning()
-    output.startRecording(to: file, recordingDelegate: self)
+    output.startRecording(to: outputURL, recordingDelegate: self)
     logger.log("Started Video Session for Device Video at file \(filePath)")
     return unsafeBitCast(startFuture, to: FBFuture<NSNull>.self)
   }
 
-  @objc public func stopRecording() -> FBFuture<NSNull> {
+  private func stopWriting() -> FBFuture<NSNull> {
     output.stopRecording()
     session.stopRunning()
     return unsafeBitCast(finishFuture, to: FBFuture<NSNull>.self)
-  }
-
-  @objc public func completed() -> FBFuture<NSNull> {
-    unsafeBitCast(finishFuture, to: FBFuture<NSNull>.self)
   }
 
   // MARK: AVCaptureFileOutputRecordingDelegate
