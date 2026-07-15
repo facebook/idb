@@ -71,8 +71,7 @@ public final class FBSimulatorVideoRecordingCommands: NSObject, FBiOSTargetComma
         .describe("There was no existing video instance for \(self.simulator?.description ?? "unknown")")
         .build()
     }
-    try await video.stopRecording()
-    return video.outputURL
+    return try await video.stop()
   }
 
   fileprivate func createStreamAsync(configuration: FBVideoStreamConfiguration, to consumer: any FBDataConsumer) async throws -> any FBVideoStream {

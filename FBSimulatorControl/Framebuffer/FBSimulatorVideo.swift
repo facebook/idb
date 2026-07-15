@@ -54,15 +54,16 @@ public final class FBSimulatorVideo: @unchecked Sendable {
     try await stream.startStreaming(FBNullDataConsumer())
   }
 
-  public func stopRecording() async throws {
+  public func stop() async throws -> URL {
     if hasStopped {
-      return
+      return outputURL
     }
     hasStopped = true
     // Stop the framebuffer push and flush the encoder (tearDown's VTCompressionSessionCompleteFrames
     // drains all pending frames into `fileWriter`) before finalizing the file's moov.
     try await stream.stopStreaming()
     try await fileWriter.finish()
+    return outputURL
   }
 
 }
