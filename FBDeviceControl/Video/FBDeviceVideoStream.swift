@@ -28,6 +28,40 @@ private func pixelBufferAttributes(from pixelBuffer: CVPixelBuffer) -> [String: 
   ]
 }
 
+private enum FBDeviceVideoStreamError: Error {
+  case invalidStreamFormat(String)
+  case cannotAddDataOutput
+  case noCaptureConnection
+  case cannotSetFPSBeforeMacOS1015
+  case consumerAlreadyAttached
+  case noConsumerAttached
+  case unsupportedBGRAOutput
+  case unsupportedJPEGCodec
+}
+
+extension FBDeviceVideoStreamError: LocalizedError {
+  var errorDescription: String? {
+    switch self {
+    case .invalidStreamFormat(let formatDescription):
+      return "\(formatDescription) is not a valid stream format"
+    case .cannotAddDataOutput:
+      return "Cannot add Data Output to session"
+    case .noCaptureConnection:
+      return "No capture connection available!"
+    case .cannotSetFPSBeforeMacOS1015:
+      return "Cannot set FPS on an OS prior to 10.15"
+    case .consumerAlreadyAttached:
+      return "Cannot start streaming, a consumer is already attached"
+    case .noConsumerAttached:
+      return "Cannot stop streaming, no consumer attached"
+    case .unsupportedBGRAOutput:
+      return "kCVPixelFormatType_32BGRA is not a supported output type"
+    case .unsupportedJPEGCodec:
+      return "AVVideoCodecTypeJPEG is not a supported codec type"
+    }
+  }
+}
+
 // @unchecked Sendable: like FBSimulatorVideoStream, this is a plain NSObject whose frame state is
 // confined to `writeQueue` (the AVCapture delegate queue), and whose lifecycle state below is guarded
 // by `lifecycleLock`. The conformance lets the async completion await use a cancellation handler.
@@ -56,25 +90,25 @@ public class FBDeviceVideoStream: NSObject, FBVideoStream, @unchecked Sendable {
   public class func stream(withSession session: AVCaptureSession, configuration: FBVideoStreamConfiguration, logger: any FBControlCoreLogger) throws -> FBDeviceVideoStream {
     let format = configuration.format
     guard let streamType = classForConfiguration(configuration) else {
-      throw FBDeviceControlError.describe("\(format) is not a valid stream format").build()
+      throw FBDeviceVideoStreamError.invalidStreamFormat("\(format)")
     }
 
     let output = AVCaptureVideoDataOutput()
     try streamType.configureVideoOutput(output, configuration: configuration)
     if !session.canAddOutput(output) {
-      throw FBDeviceControlError.describe("Cannot add Data Output to session").build()
+      throw FBDeviceVideoStreamError.cannotAddDataOutput
     }
     session.addOutput(output)
 
     if let fps = configuration.framesPerSecond {
       if #available(macOS 10.15, *) {
         guard let connection = session.connections.first else {
-          throw FBDeviceControlError.describe("No capture connection available!").build()
+          throw FBDeviceVideoStreamError.noCaptureConnection
         }
         let frameTime: Float64 = 1.0 / Float64(fps)
         connection.videoMinFrameDuration = CMTimeMakeWithSeconds(frameTime, preferredTimescale: Int32(NSEC_PER_SEC))
       } else {
-        throw FBDeviceControlError.describe("Cannot set FPS on an OS prior to 10.15").build()
+        throw FBDeviceVideoStreamError.cannotSetFPSBeforeMacOS1015
       }
     }
 
@@ -121,7 +155,7 @@ public class FBDeviceVideoStream: NSObject, FBVideoStream, @unchecked Sendable {
 
   public func startStreaming(_ consumer: any FBDataConsumer) async throws {
     if self.consumer != nil {
-      throw FBDeviceControlError.describe("Cannot start streaming, a consumer is already attached").build()
+      throw FBDeviceVideoStreamError.consumerAlreadyAttached
     }
     self.consumer = consumer
     output.setSampleBufferDelegate(self, queue: writeQueue)
@@ -134,7 +168,7 @@ public class FBDeviceVideoStream: NSObject, FBVideoStream, @unchecked Sendable {
 
   public func stopStreaming() async throws {
     if consumer == nil {
-      throw FBDeviceControlError.describe("Cannot stop streaming, no consumer attached").build()
+      throw FBDeviceVideoStreamError.noConsumerAttached
     }
     session.stopRunning()
     if let awaiters = markStopped() {
@@ -266,7 +300,7 @@ private class FBDeviceVideoStream_BGRA: FBDeviceVideoStream, @unchecked Sendable
   override class func configureVideoOutput(_ output: AVCaptureVideoDataOutput, configuration: FBVideoStreamConfiguration) throws {
     try super.configureVideoOutput(output, configuration: configuration)
     if !output.availableVideoPixelFormatTypes.contains(kCVPixelFormatType_32BGRA) {
-      throw FBDeviceControlError().describe("kCVPixelFormatType_32BGRA is not a supported output type").build()
+      throw FBDeviceVideoStreamError.unsupportedBGRAOutput
     }
     output.videoSettings = [
       kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA
@@ -304,7 +338,7 @@ private class FBDeviceVideoStream_MJPEG: FBDeviceVideoStream, @unchecked Sendabl
     try super.configureVideoOutput(output, configuration: configuration)
     output.alwaysDiscardsLateVideoFrames = true
     if !output.availableVideoCodecTypes.contains(.jpeg) {
-      throw FBDeviceControlError.describe("AVVideoCodecTypeJPEG is not a supported codec type").build()
+      throw FBDeviceVideoStreamError.unsupportedJPEGCodec
     }
     output.videoSettings = [
       AVVideoCodecKey: AVVideoCodecType.jpeg.rawValue,
