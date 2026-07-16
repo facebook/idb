@@ -110,6 +110,17 @@ enum FBVideoStreamCadence {
   case eager(framesPerSecond: UInt)
 }
 
+private extension FBVideoStreamCodec {
+  var videoToolboxCodec: CMVideoCodecType {
+    switch self {
+    case .h264:
+      return kCMVideoCodecType_H264
+    case .hevc:
+      return kCMVideoCodecType_HEVC
+    }
+  }
+}
+
 /// Stats tracked by the video encoder (VideoToolbox).
 /// Zeroed if the stream uses a non-encoded format (e.g. bitmap/BGRA).
 public struct FBVideoEncoderStats {
@@ -1257,37 +1268,11 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
     let derived = Self.compressionSessionProperties(for: configuration, callerProperties: compressionSessionProperties)
     switch configuration.format {
     case let .compressedVideo(codec, transport):
-      // Map (codec, transport) to the VideoToolbox codec, frame writer, and muxer context,
-      // then construct the pusher once.
-      let videoCodec: CMVideoCodecType
-      let frameWriter: any FBEncodedFrameWriter
-      switch codec {
-      case .h264:
-        videoCodec = kCMVideoCodecType_H264
-        switch transport {
-        case .fmp4:
-          frameWriter = FBFMP4FrameWriter(hevc: false)
-        case .mpegts:
-          frameWriter = FBMPEGTSFrameWriter(hevc: false)
-        case .annexB:
-          frameWriter = FBAnnexBFrameWriter(hevc: false)
-        }
-      case .hevc:
-        videoCodec = kCMVideoCodecType_HEVC
-        switch transport {
-        case .fmp4:
-          frameWriter = FBFMP4FrameWriter(hevc: true)
-        case .mpegts:
-          frameWriter = FBMPEGTSFrameWriter(hevc: true)
-        case .annexB:
-          frameWriter = FBAnnexBFrameWriter(hevc: true)
-        }
-      }
       let encodedSampleConsumer: FBEncodedSampleConsumer =
         encodedSampleConsumerOverride
-        ?? FBDataConsumerEncodedSampleConsumer(consumer: consumer, frameWriter: frameWriter)
+        ?? FBDataConsumerEncodedSampleConsumer(consumer: consumer, frameWriter: transport.frameWriter(for: codec))
       return FBSimulatorVideoStreamFramePusher_VideoToolbox(
-        configuration: configuration, compressionSessionProperties: derived, videoCodec: videoCodec,
+        configuration: configuration, compressionSessionProperties: derived, videoCodec: codec.videoToolboxCodec,
         consumer: consumer, outputMode: .compressed, encodedSampleConsumer: encodedSampleConsumer, logger: logger)
     case .mjpeg:
       return FBSimulatorVideoStreamFramePusher_VideoToolbox(

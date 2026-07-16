@@ -42,6 +42,20 @@ public protocol FBVideoStreamTimedMetadataWriter {
   func writeTimedMetadata(_ text: String, to consumer: any FBDataConsumer)
 }
 
+public extension FBVideoStreamTransport {
+  func frameWriter(for codec: FBVideoStreamCodec) -> any FBEncodedFrameWriter {
+    let isHEVC = codec == .hevc
+    switch self {
+    case .fmp4:
+      return FBFMP4FrameWriter(hevc: isHEVC)
+    case .mpegts:
+      return FBMPEGTSFrameWriter(hevc: isHEVC)
+    case .annexB:
+      return FBAnnexBFrameWriter(hevc: isHEVC)
+    }
+  }
+}
+
 private enum FBVideoStreamWriterError: Error {
   case failedToGetDataPointer(offset: Int, status: OSStatus)
   case failedToGetDataBuffer
