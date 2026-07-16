@@ -1021,8 +1021,9 @@ final class FBVideoStreamTests: XCTestCase {
     let sampleBuffer = CreateH264SampleBuffer(isKeyFrame: true)
     let consumer = FBDataBuffer.accumulatingBuffer()
     let logger = FBControlCoreLoggerDouble()
+    let ctx = FBMPEGTSMuxerContext()
 
-    XCTAssertNoThrow(try WriteH264FrameToMPEGTSStream(sampleBuffer, nil, consumer, logger))
+    XCTAssertNoThrow(try WriteH264FrameToMPEGTSStream(sampleBuffer, ctx, consumer, logger))
 
     let output = consumer.data()
     XCTAssertGreaterThan(output.count, 0)
@@ -1047,8 +1048,9 @@ final class FBVideoStreamTests: XCTestCase {
     let sampleBuffer = CreateNotReadySampleBuffer()
     let consumer = FBDataBuffer.accumulatingBuffer()
     let logger = FBControlCoreLoggerDouble()
+    let ctx = FBMPEGTSMuxerContext()
 
-    XCTAssertThrowsError(try WriteH264FrameToMPEGTSStream(sampleBuffer, nil, consumer, logger)) { error in
+    XCTAssertThrowsError(try WriteH264FrameToMPEGTSStream(sampleBuffer, ctx, consumer, logger)) { error in
       XCTAssertTrue(error.localizedDescription.contains("Sample Buffer is not ready"))
     }
     XCTAssertEqual(consumer.data().count, 0, "No data should be written for not-ready buffer")
@@ -1079,8 +1081,9 @@ final class FBVideoStreamTests: XCTestCase {
     let sampleBuffer = try XCTUnwrap(CreateHEVCSampleBuffer(isKeyFrame: true))
     let consumer = FBDataBuffer.accumulatingBuffer()
     let logger = FBControlCoreLoggerDouble()
+    let ctx = FBMPEGTSMuxerContext()
 
-    XCTAssertNoThrow(try WriteHEVCFrameToMPEGTSStream(sampleBuffer, nil, consumer, logger))
+    XCTAssertNoThrow(try WriteHEVCFrameToMPEGTSStream(sampleBuffer, ctx, consumer, logger))
 
     let output = consumer.data()
     XCTAssertEqual(output.count % 188, 0)
@@ -1124,13 +1127,10 @@ final class FBVideoStreamTests: XCTestCase {
   // MARK: MPEG-TS Timed Metadata Stream
 
   func testEnableMetadataStreamThenWriteTimedMetadataEmitsOnMetadataPID() {
-    // NOTE: FBMPEGTSEnableMetadataStream flips irreversible process-global state; it is
-    // idempotent and existing keyframe TS tests assert packet counts/PIDs that are
-    // unaffected by the metadata-variant PMT, so enabling it here does not perturb them.
-    FBMPEGTSEnableMetadataStream()
-
+    let ctx = FBMPEGTSMuxerContext()
     let consumer = FBDataBuffer.accumulatingBuffer()
-    FBMPEGTSWriteTimedMetadata("Chapter Zulu", consumer)
+    FBMPEGTSEnableMetadataStream(ctx)
+    FBMPEGTSWriteTimedMetadata("Chapter Zulu", ctx, consumer)
 
     let output = consumer.data()
     XCTAssertGreaterThan(output.count, 0, "Enabled metadata stream should emit packets")

@@ -324,10 +324,12 @@ private class FBDeviceVideoStream_H264: FBDeviceVideoStream, @unchecked Sendable
 // MARK: - H264 MPEGTS Subclass
 
 private class FBDeviceVideoStream_H264MPEGTS: FBDeviceVideoStream, @unchecked Sendable {
+  private let mpegtsContext = FBMPEGTSMuxerContext()
+
   override func consumeSampleBuffer(_ sampleBuffer: CMSampleBuffer) {
     guard let consumer = self.consumer else { return }
     do {
-      try WriteH264FrameToMPEGTSStream(sampleBuffer, nil, consumer, logger)
+      try WriteH264FrameToMPEGTSStream(sampleBuffer, mpegtsContext, consumer, logger)
     } catch {
       logger.log("Failed to write H264 MPEG-TS frame: \(error)")
     }

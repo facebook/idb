@@ -1283,7 +1283,7 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
           frameWriterContext = FBFMP4MuxerContext(hevc: false)
         case .mpegts:
           frameWriter = WriteH264FrameToMPEGTSStream
-          frameWriterContext = nil
+          frameWriterContext = FBMPEGTSMuxerContext()
         case .annexB:
           frameWriter = WriteFrameToAnnexBStream
           frameWriterContext = nil
@@ -1296,7 +1296,7 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
           frameWriterContext = FBFMP4MuxerContext(hevc: true)
         case .mpegts:
           frameWriter = WriteHEVCFrameToMPEGTSStream
-          frameWriterContext = nil
+          frameWriterContext = FBMPEGTSMuxerContext()
         case .annexB:
           frameWriter = WriteHEVCFrameToAnnexBStream
           frameWriterContext = nil

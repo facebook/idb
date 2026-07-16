@@ -44,6 +44,7 @@ private enum FBVideoStreamWriterError: Error {
   case failedToGetParameterSetCount(codecName: String, status: OSStatus)
   case failedToGetParameterSet(codecName: String, index: Int, status: OSStatus)
   case failedToCopyBlockBufferData(status: OSStatus)
+  case mpegtsWriterCalledWithoutContext
   case fmp4WriterCalledWithoutContext
 }
 
@@ -68,6 +69,8 @@ extension FBVideoStreamWriterError: LocalizedError {
       return "Failed to get \(codecName) parameter set at index \(index): \(status)"
     case let .failedToCopyBlockBufferData(status):
       return "Failed to copy block buffer data: \(status)"
+    case .mpegtsWriterCalledWithoutContext:
+      return "MPEG-TS writer called without context"
     case .fmp4WriterCalledWithoutContext:
       return "fMP4 writer called without context"
     }
@@ -339,11 +342,6 @@ public func FBMPEGTSCreatePMTPacket(_ continuityCounter: inout UInt8, _ streamTy
   return Data(packet)
 }
 
-// Metadata state used by FBMPEGTSPacketizePES. Mutated under `metadataLock` from the
-// metadata APIs; read here without locking, matching the original's single-threaded-write
-// assumption (`FBMPEGTSEnableMetadataStream` flips it once at stream start).
-private nonisolated(unsafe) var metadataStreamEnabled = false
-
 public func FBMPEGTSPacketizePES(
   _ pesData: Data,
   _ isKeyFrame: Bool,
@@ -351,7 +349,8 @@ public func FBMPEGTSPacketizePES(
   _ pts90k: UInt64,
   _ videoContinuityCounter: inout UInt8,
   _ patContinuityCounter: inout UInt8,
-  _ pmtContinuityCounter: inout UInt8
+  _ pmtContinuityCounter: inout UInt8,
+  _ includeMetadataStream: Bool = false
 ) -> Data {
   // First packet carries at most 176 bytes (PCR adaptation field uses 8 bytes),
   // remaining packets carry 184 bytes each.
@@ -364,7 +363,7 @@ public func FBMPEGTSPacketizePES(
   // Emit PAT + PMT on keyframes for mid-stream join support
   if isKeyFrame {
     output.append(FBMPEGTSCreatePATPacket(&patContinuityCounter))
-    output.append(FBMPEGTSCreatePMTPacketWithMetadata(&pmtContinuityCounter, streamType, metadataStreamEnabled))
+    output.append(FBMPEGTSCreatePMTPacketWithMetadata(&pmtContinuityCounter, streamType, includeMetadataStream))
   }
 
   let pesBytes = [UInt8](pesData)
@@ -636,38 +635,44 @@ public func FBMPEGTSCreateTimedMetadataPackets(_ text: String, _ pts90k: UInt64,
 
 // MARK: - MPEG-TS Metadata State
 
-// Guards the process-global metadata state, matching the original's `os_unfair_lock metadataLock`.
-// `NSLock` preserves the same lock/unlock discipline; the lock is only ever held briefly to read or
-// flip a few scalars, so the choice of primitive does not affect byte output.
-private let metadataLock = NSLock()
-private nonisolated(unsafe) var metadataContinuityCounter: UInt8 = 0
-private nonisolated(unsafe) var lastPts90k: UInt64 = 0
+/// Per-stream MPEG-TS muxer state. Frame packets and timed metadata share this so continuity
+/// counters and metadata PTS stay scoped to the stream rather than the process.
+public final class FBMPEGTSMuxerContext {
+  fileprivate let metadataLock = NSLock()
+  fileprivate var metadataStreamEnabled = false
+  fileprivate var metadataContinuityCounter: UInt8 = 0
+  fileprivate var lastPts90k: UInt64 = 0
+  fileprivate var videoContinuityCounter: UInt8 = 0
+  fileprivate var patContinuityCounter: UInt8 = 0
+  fileprivate var pmtContinuityCounter: UInt8 = 0
 
-public func FBMPEGTSEnableMetadataStream() {
-  metadataLock.lock()
-  metadataStreamEnabled = true
-  metadataLock.unlock()
+  public init() {}
 }
 
-public func FBMPEGTSWriteTimedMetadata(_ text: String, _ consumer: any FBDataConsumer) {
-  metadataLock.lock()
-  if !metadataStreamEnabled {
-    metadataLock.unlock()
+public func FBMPEGTSEnableMetadataStream(_ context: FBMPEGTSMuxerContext) {
+  context.metadataLock.lock()
+  context.metadataStreamEnabled = true
+  context.metadataLock.unlock()
+}
+
+public func FBMPEGTSWriteTimedMetadata(_ text: String, _ context: FBMPEGTSMuxerContext, _ consumer: any FBDataConsumer) {
+  context.metadataLock.lock()
+  if !context.metadataStreamEnabled {
+    context.metadataLock.unlock()
     return
   }
-  let pts = lastPts90k
-  let packets = FBMPEGTSCreateTimedMetadataPackets(text, pts, &metadataContinuityCounter)
-  metadataLock.unlock()
+  let pts = context.lastPts90k
+  let packets = FBMPEGTSCreateTimedMetadataPackets(text, pts, &context.metadataContinuityCounter)
+  context.metadataLock.unlock()
 
   consumer.consumeData(packets)
 }
 
-// Continuity counters persist across calls via file-private globals (function-`static` in the original).
-private nonisolated(unsafe) var mpegtsVideoContinuityCounter: UInt8 = 0
-private nonisolated(unsafe) var mpegtsPATContinuityCounter: UInt8 = 0
-private nonisolated(unsafe) var mpegtsPMTContinuityCounter: UInt8 = 0
+private func WriteCodecFrameToMPEGTSStream(_ sampleBuffer: CMSampleBuffer, _ context: Any?, _ paramSetGetter: FBVideoParameterSetGetter, _ codecName: String, _ mpegtsStreamType: UInt8, _ consumer: any FBDataConsumer, _ logger: any FBControlCoreLogger) throws {
+  guard let ctx = context as? FBMPEGTSMuxerContext else {
+    throw FBVideoStreamWriterError.mpegtsWriterCalledWithoutContext
+  }
 
-private func WriteCodecFrameToMPEGTSStream(_ sampleBuffer: CMSampleBuffer, _ paramSetGetter: FBVideoParameterSetGetter, _ codecName: String, _ mpegtsStreamType: UInt8, _ consumer: any FBDataConsumer, _ logger: any FBControlCoreLogger) throws {
   if !CMSampleBufferDataIsReady(sampleBuffer) {
     throw FBVideoStreamWriterError.sampleBufferNotReady
   }
@@ -726,9 +731,10 @@ private func WriteCodecFrameToMPEGTSStream(_ sampleBuffer: CMSampleBuffer, _ par
   let pts90k = UInt64(CMTimeGetSeconds(pts) * 90000.0)
 
   // Update the shared last PTS for timed metadata injection
-  metadataLock.lock()
-  lastPts90k = pts90k
-  metadataLock.unlock()
+  ctx.metadataLock.lock()
+  ctx.lastPts90k = pts90k
+  let includeMetadataStream = ctx.metadataStreamEnabled
+  ctx.metadataLock.unlock()
 
   var pesPacket = [UInt8]()
   pesPacket.reserveCapacity(pesTotalLength)
@@ -792,19 +798,20 @@ private func WriteCodecFrameToMPEGTSStream(_ sampleBuffer: CMSampleBuffer, _ par
     isKeyFrame,
     mpegtsStreamType,
     pts90k,
-    &mpegtsVideoContinuityCounter,
-    &mpegtsPATContinuityCounter,
-    &mpegtsPMTContinuityCounter
+    &ctx.videoContinuityCounter,
+    &ctx.patContinuityCounter,
+    &ctx.pmtContinuityCounter,
+    includeMetadataStream
   )
   consumer.consumeData(tsData)
 }
 
 public func WriteHEVCFrameToMPEGTSStream(_ sampleBuffer: CMSampleBuffer, _ context: Any?, _ consumer: any FBDataConsumer, _ logger: any FBControlCoreLogger) throws {
-  try WriteCodecFrameToMPEGTSStream(sampleBuffer, CMVideoFormatDescriptionGetHEVCParameterSetAtIndex, "HEVC", HEVCStreamType, consumer, logger)
+  try WriteCodecFrameToMPEGTSStream(sampleBuffer, context, CMVideoFormatDescriptionGetHEVCParameterSetAtIndex, "HEVC", HEVCStreamType, consumer, logger)
 }
 
 public func WriteH264FrameToMPEGTSStream(_ sampleBuffer: CMSampleBuffer, _ context: Any?, _ consumer: any FBDataConsumer, _ logger: any FBControlCoreLogger) throws {
-  try WriteCodecFrameToMPEGTSStream(sampleBuffer, CMVideoFormatDescriptionGetH264ParameterSetAtIndex, "H264", H264StreamType, consumer, logger)
+  try WriteCodecFrameToMPEGTSStream(sampleBuffer, context, CMVideoFormatDescriptionGetH264ParameterSetAtIndex, "H264", H264StreamType, consumer, logger)
 }
 
 public func WriteJPEGDataToMJPEGStream(_ jpegDataBuffer: CMBlockBuffer, _ consumer: any FBDataConsumer, _ logger: any FBControlCoreLogger) throws {

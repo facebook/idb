@@ -30,8 +30,8 @@ protocol FBTimedMetadataConsumer: AnyObject {
 final class FBTransportTimedMetadataConsumer: FBTimedMetadataConsumer {
   private let format: FBVideoStreamFormat
   private let consumer: any FBDataConsumer
-  /// The fMP4 muxer context (`FBFMP4MuxerContext`), shared with the owning stream so the `emsg` boxes
-  /// mux into the same fragmented stream. `nil` for stateless transports (MPEG-TS, Annex-B).
+  /// The muxer context (`FBFMP4MuxerContext` / `FBMPEGTSMuxerContext`), shared with the owning stream
+  /// so timed metadata muxes into the same byte stream. `nil` for stateless transports (Annex-B).
   private let frameWriterContext: AnyObject?
 
   init(format: FBVideoStreamFormat, consumer: any FBDataConsumer, frameWriterContext: AnyObject?) {
@@ -47,8 +47,12 @@ final class FBTransportTimedMetadataConsumer: FBTimedMetadataConsumer {
     }
     switch transport {
     case .mpegts:
-      FBMPEGTSEnableMetadataStream()
-      FBMPEGTSWriteTimedMetadata(text, consumer)
+      if let ctx = frameWriterContext as? FBMPEGTSMuxerContext {
+        FBMPEGTSEnableMetadataStream(ctx)
+        FBMPEGTSWriteTimedMetadata(text, ctx, consumer)
+      } else {
+        logger.log("writeTimedMetadata: MPEG-TS context missing, dropping")
+      }
     case .fmp4:
       if let ctx = frameWriterContext as? FBFMP4MuxerContext {
         FBFMP4WriteEmsgBox(ctx, text, consumer)
