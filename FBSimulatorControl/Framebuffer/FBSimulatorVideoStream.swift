@@ -154,18 +154,6 @@ public struct FBVideoEncoderStats {
   }
 }
 
-// MARK: - Frame Writer
-
-/// A Swift frame-writer function (the former `FBVideoStreamWriters` global writers, e.g.
-/// `WriteFrameToAnnexBStream`).
-/// Now that the writers are plain Swift functions taking an `Any?` context, this is a normal Swift
-/// closure type (not `@convention(c)`). MJPEG/Minicap pushers pass `nil` and rely on their compressor
-/// callback instead.
-typealias FBCompressedFrameWriter =
-  (
-    CMSampleBuffer, Any?, any FBDataConsumer, any FBControlCoreLogger
-  ) throws -> Void
-
 // MARK: - Frame Pusher Protocol
 
 /// Frame pusher abstraction. Concrete pushers convert + write frames to the consumer.
@@ -527,7 +515,7 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: FBSimulatorVideoStre
   private func handleMJPEGSampleBuffer(_ sampleBuffer: CMSampleBuffer?) {
     guard let sampleBuffer, let blockBuffer = CMSampleBufferGetDataBuffer(sampleBuffer) else { return }
     do {
-      try WriteJPEGDataToMJPEGStream(blockBuffer, consumer, logger)
+      try FBMJPEGFrameWriter().write(blockBuffer, to: consumer, logger: logger)
     } catch {
       logger.log("Failed to write MJPEG frame: \(error)")
     }
@@ -542,12 +530,12 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: FBSimulatorVideoStre
     if frameNumber == 0 {
       if let formatDescription = CMSampleBufferGetFormatDescription(sampleBuffer) {
         let dimensions = CMVideoFormatDescriptionGetDimensions(formatDescription)
-        WriteMinicapHeaderToStream(UInt32(dimensions.width), UInt32(dimensions.height), consumer, logger)
+        FBMinicapFrameWriter().writeHeader(width: UInt32(dimensions.width), height: UInt32(dimensions.height), to: consumer, logger: logger)
       }
     }
     guard let blockBuffer = CMSampleBufferGetDataBuffer(sampleBuffer) else { return }
     do {
-      try WriteJPEGDataToMinicapStream(blockBuffer, consumer, logger)
+      try FBMinicapFrameWriter().write(blockBuffer, to: consumer, logger: logger)
     } catch {
       logger.log("Failed to write Minicap frame: \(error)")
     }
@@ -813,7 +801,7 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
   var pixelBufferAttributes: [String: Any]?
   var consumer: (any FBDataConsumer)?
   var framePusher: (any FBSimulatorVideoStreamFramePusher)?
-  var frameWriterContext: AnyObject?
+  var transportTimedMetadataWriter: (any FBVideoStreamTimedMetadataWriter)?
   /// The timed-metadata (chapter) sink: the streaming transport writer, or (recording) the file
   /// writer's chapter track. Resolved in `mountSurface`, cleared in `stopStreaming`.
   var timedMetadataConsumer: (any FBTimedMetadataConsumer)?
@@ -955,7 +943,7 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
             return
           }
         }
-        frameWriterContext = nil
+        transportTimedMetadataWriter = nil
         timedMetadataConsumer = nil
         // Clean up overlay compositing resources (ARC-managed; dropping references releases them).
         overlayBuffer = nil
@@ -1051,7 +1039,7 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
     try framePusher.setup(with: buffer, edgeInsets: edgeInsets)
     self.framePusher = framePusher
     if let videoToolboxPusher = framePusher as? FBSimulatorVideoStreamFramePusher_VideoToolbox {
-      self.frameWriterContext = (videoToolboxPusher.encodedSampleConsumer as? FBDataConsumerEncodedSampleConsumer)?.frameWriterContext
+      self.transportTimedMetadataWriter = (videoToolboxPusher.encodedSampleConsumer as? FBDataConsumerEncodedSampleConsumer)?.timedMetadataWriter
     }
 
     // Resolve the timed-metadata (chapter) sink. A recording file writer that supports chapters
@@ -1060,7 +1048,7 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
     if case .compressedVideo = configuration.format {
       self.timedMetadataConsumer =
         (encodedSampleConsumerOverride as? FBTimedMetadataConsumer)
-        ?? FBTransportTimedMetadataConsumer(format: configuration.format, consumer: consumer, frameWriterContext: frameWriterContext)
+        ?? FBTransportTimedMetadataConsumer(format: configuration.format, consumer: consumer, timedMetadataWriter: transportTimedMetadataWriter)
     }
 
     // Set up overlay compositing infrastructure.
@@ -1272,39 +1260,32 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
       // Map (codec, transport) to the VideoToolbox codec, frame writer, and muxer context,
       // then construct the pusher once.
       let videoCodec: CMVideoCodecType
-      let frameWriter: FBCompressedFrameWriter
-      let frameWriterContext: AnyObject?
+      let frameWriter: any FBEncodedFrameWriter
       switch codec {
       case .h264:
         videoCodec = kCMVideoCodecType_H264
         switch transport {
         case .fmp4:
-          frameWriter = WriteH264FrameToFMP4Stream
-          frameWriterContext = FBFMP4MuxerContext(hevc: false)
+          frameWriter = FBFMP4FrameWriter(hevc: false)
         case .mpegts:
-          frameWriter = WriteH264FrameToMPEGTSStream
-          frameWriterContext = FBMPEGTSMuxerContext()
+          frameWriter = FBMPEGTSFrameWriter(hevc: false)
         case .annexB:
-          frameWriter = WriteFrameToAnnexBStream
-          frameWriterContext = nil
+          frameWriter = FBAnnexBFrameWriter(hevc: false)
         }
       case .hevc:
         videoCodec = kCMVideoCodecType_HEVC
         switch transport {
         case .fmp4:
-          frameWriter = WriteHEVCFrameToFMP4Stream
-          frameWriterContext = FBFMP4MuxerContext(hevc: true)
+          frameWriter = FBFMP4FrameWriter(hevc: true)
         case .mpegts:
-          frameWriter = WriteHEVCFrameToMPEGTSStream
-          frameWriterContext = FBMPEGTSMuxerContext()
+          frameWriter = FBMPEGTSFrameWriter(hevc: true)
         case .annexB:
-          frameWriter = WriteHEVCFrameToAnnexBStream
-          frameWriterContext = nil
+          frameWriter = FBAnnexBFrameWriter(hevc: true)
         }
       }
       let encodedSampleConsumer: FBEncodedSampleConsumer =
         encodedSampleConsumerOverride
-        ?? FBDataConsumerEncodedSampleConsumer(consumer: consumer, frameWriter: frameWriter, frameWriterContext: frameWriterContext)
+        ?? FBDataConsumerEncodedSampleConsumer(consumer: consumer, frameWriter: frameWriter)
       return FBSimulatorVideoStreamFramePusher_VideoToolbox(
         configuration: configuration, compressionSessionProperties: derived, videoCodec: videoCodec,
         consumer: consumer, outputMode: .compressed, encodedSampleConsumer: encodedSampleConsumer, logger: logger)

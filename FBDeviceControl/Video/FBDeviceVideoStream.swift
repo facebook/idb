@@ -311,10 +311,12 @@ private class FBDeviceVideoStream_BGRA: FBDeviceVideoStream, @unchecked Sendable
 // MARK: - H264 Subclass
 
 private class FBDeviceVideoStream_H264: FBDeviceVideoStream, @unchecked Sendable {
+  private let frameWriter = FBAnnexBFrameWriter(hevc: false)
+
   override func consumeSampleBuffer(_ sampleBuffer: CMSampleBuffer) {
     guard let consumer = self.consumer else { return }
     do {
-      try WriteFrameToAnnexBStream(sampleBuffer, nil, consumer, logger)
+      try frameWriter.write(sampleBuffer, to: consumer, logger: logger)
     } catch {
       logger.log("Failed to write H264 frame: \(error)")
     }
@@ -324,12 +326,12 @@ private class FBDeviceVideoStream_H264: FBDeviceVideoStream, @unchecked Sendable
 // MARK: - H264 MPEGTS Subclass
 
 private class FBDeviceVideoStream_H264MPEGTS: FBDeviceVideoStream, @unchecked Sendable {
-  private let mpegtsContext = FBMPEGTSMuxerContext()
+  private let frameWriter = FBMPEGTSFrameWriter(hevc: false)
 
   override func consumeSampleBuffer(_ sampleBuffer: CMSampleBuffer) {
     guard let consumer = self.consumer else { return }
     do {
-      try WriteH264FrameToMPEGTSStream(sampleBuffer, mpegtsContext, consumer, logger)
+      try frameWriter.write(sampleBuffer, to: consumer, logger: logger)
     } catch {
       logger.log("Failed to write H264 MPEG-TS frame: \(error)")
     }
@@ -339,10 +341,12 @@ private class FBDeviceVideoStream_H264MPEGTS: FBDeviceVideoStream, @unchecked Se
 // MARK: - MJPEG Subclass
 
 private class FBDeviceVideoStream_MJPEG: FBDeviceVideoStream, @unchecked Sendable {
+  private let mjpegFrameWriter = FBMJPEGFrameWriter()
+
   override func consumeSampleBuffer(_ sampleBuffer: CMSampleBuffer) {
     guard let consumer = self.consumer, let jpegDataBuffer = CMSampleBufferGetDataBuffer(sampleBuffer) else { return }
     do {
-      try WriteJPEGDataToMJPEGStream(jpegDataBuffer, consumer, logger)
+      try mjpegFrameWriter.write(jpegDataBuffer, to: consumer, logger: logger)
     } catch {
       logger.log("Failed to write MJPEG frame: \(error)")
     }
@@ -367,18 +371,19 @@ private class FBDeviceVideoStream_MJPEG: FBDeviceVideoStream, @unchecked Sendabl
 
 private class FBDeviceVideoStream_Minicap: FBDeviceVideoStream_MJPEG, @unchecked Sendable {
   private var hasSentHeader = false
+  private let minicapFrameWriter = FBMinicapFrameWriter()
 
   override func consumeSampleBuffer(_ sampleBuffer: CMSampleBuffer) {
     guard let consumer = self.consumer else { return }
     if !hasSentHeader {
       guard let format = CMSampleBufferGetFormatDescription(sampleBuffer) else { return }
       let dimensions = CMVideoFormatDescriptionGetDimensions(format)
-      WriteMinicapHeaderToStream(UInt32(dimensions.width), UInt32(dimensions.height), consumer, logger)
+      minicapFrameWriter.writeHeader(width: UInt32(dimensions.width), height: UInt32(dimensions.height), to: consumer, logger: logger)
       hasSentHeader = true
     }
     guard let jpegDataBuffer = CMSampleBufferGetDataBuffer(sampleBuffer) else { return }
     do {
-      try WriteJPEGDataToMinicapStream(jpegDataBuffer, consumer, logger)
+      try minicapFrameWriter.write(jpegDataBuffer, to: consumer, logger: logger)
     } catch {
       logger.log("Failed to write Minicap frame: \(error)")
     }

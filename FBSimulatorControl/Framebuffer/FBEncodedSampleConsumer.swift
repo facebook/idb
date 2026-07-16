@@ -26,24 +26,23 @@ protocol FBEncodedSampleConsumer: AnyObject {
 // MARK: - FBDataConsumerEncodedSampleConsumer
 
 /// The streaming `FBEncodedSampleConsumer`: byte-frames each encoded sample to an `FBDataConsumer`
-/// through an `FBCompressedFrameWriter` (Annex-B / MPEG-TS / fMP4). This reproduces the pre-refactor
+/// through an `FBEncodedFrameWriter` (Annex-B / MPEG-TS / fMP4). This reproduces the pre-refactor
 /// inline frame writer call exactly.
 final class FBDataConsumerEncodedSampleConsumer: FBEncodedSampleConsumer {
   let consumer: any FBDataConsumer
-  let frameWriter: FBCompressedFrameWriter
-  /// The muxer context (e.g. `FBFMP4MuxerContext` for fMP4), shared with the owning stream so its
-  /// `writeTimedMetadata` emsg/ID3 path muxes into the same stream. `nil` for stateless transports.
-  let frameWriterContext: AnyObject?
+  let frameWriter: any FBEncodedFrameWriter
+  /// The timed-metadata writer for transports that can carry markers (`fMP4` / `MPEG-TS`).
+  let timedMetadataWriter: (any FBVideoStreamTimedMetadataWriter)?
 
-  init(consumer: any FBDataConsumer, frameWriter: @escaping FBCompressedFrameWriter, frameWriterContext: AnyObject?) {
+  init(consumer: any FBDataConsumer, frameWriter: any FBEncodedFrameWriter) {
     self.consumer = consumer
     self.frameWriter = frameWriter
-    self.frameWriterContext = frameWriterContext
+    self.timedMetadataWriter = frameWriter as? any FBVideoStreamTimedMetadataWriter
   }
 
   func consume(_ sampleBuffer: CMSampleBuffer, logger: any FBControlCoreLogger) -> Bool {
     do {
-      try frameWriter(sampleBuffer, frameWriterContext, consumer, logger)
+      try frameWriter.write(sampleBuffer, to: consumer, logger: logger)
       return true
     } catch {
       logger.log("Failed to write encoded sample: \(error)")

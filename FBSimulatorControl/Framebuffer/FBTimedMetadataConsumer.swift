@@ -30,14 +30,14 @@ protocol FBTimedMetadataConsumer: AnyObject {
 final class FBTransportTimedMetadataConsumer: FBTimedMetadataConsumer {
   private let format: FBVideoStreamFormat
   private let consumer: any FBDataConsumer
-  /// The muxer context (`FBFMP4MuxerContext` / `FBMPEGTSMuxerContext`), shared with the owning stream
-  /// so timed metadata muxes into the same byte stream. `nil` for stateless transports (Annex-B).
-  private let frameWriterContext: AnyObject?
+  /// Transport writer that can mux timed metadata into the same byte stream. `nil` for stateless
+  /// transports (Annex-B).
+  private let timedMetadataWriter: (any FBVideoStreamTimedMetadataWriter)?
 
-  init(format: FBVideoStreamFormat, consumer: any FBDataConsumer, frameWriterContext: AnyObject?) {
+  init(format: FBVideoStreamFormat, consumer: any FBDataConsumer, timedMetadataWriter: (any FBVideoStreamTimedMetadataWriter)?) {
     self.format = format
     self.consumer = consumer
-    self.frameWriterContext = frameWriterContext
+    self.timedMetadataWriter = timedMetadataWriter
   }
 
   func writeTimedMetadata(_ text: String, logger: any FBControlCoreLogger) {
@@ -46,16 +46,11 @@ final class FBTransportTimedMetadataConsumer: FBTimedMetadataConsumer {
       return
     }
     switch transport {
-    case .mpegts:
-      if let ctx = frameWriterContext as? FBMPEGTSMuxerContext {
-        FBMPEGTSEnableMetadataStream(ctx)
-        FBMPEGTSWriteTimedMetadata(text, ctx, consumer)
+    case .mpegts, .fmp4:
+      if let timedMetadataWriter {
+        timedMetadataWriter.writeTimedMetadata(text, to: consumer)
       } else {
-        logger.log("writeTimedMetadata: MPEG-TS context missing, dropping")
-      }
-    case .fmp4:
-      if let ctx = frameWriterContext as? FBFMP4MuxerContext {
-        FBFMP4WriteEmsgBox(ctx, text, consumer)
+        logger.log("writeTimedMetadata: timed-metadata writer missing for transport '\(transport.rawValue)', dropping")
       }
     case .annexB:
       logger.log("writeTimedMetadata: not supported for transport '\(transport.rawValue)', dropping")
