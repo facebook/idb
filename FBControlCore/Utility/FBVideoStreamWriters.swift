@@ -34,9 +34,49 @@ public func checkConsumerBufferLimit(_ consumer: any FBDataConsumer, _ logger: a
 private let AVCCHeaderLength: Int = 4
 private let AnnexBStartCode: [UInt8] = [0x00, 0x00, 0x00, 0x01]
 
+private enum FBVideoStreamWriterError: Error {
+  case failedToGetDataPointer(offset: Int, status: OSStatus)
+  case failedToGetDataBuffer
+  case failedToAccessBlockBufferData(offset: Int, status: OSStatus)
+  case failedToReplaceBlockBufferData(offset: Int, status: OSStatus)
+  case sampleBufferNotReady
+  case failedToGetFormatDescription
+  case failedToGetParameterSetCount(codecName: String, status: OSStatus)
+  case failedToGetParameterSet(codecName: String, index: Int, status: OSStatus)
+  case failedToCopyBlockBufferData(status: OSStatus)
+  case fmp4WriterCalledWithoutContext
+}
+
+extension FBVideoStreamWriterError: LocalizedError {
+  var errorDescription: String? {
+    switch self {
+    case let .failedToGetDataPointer(offset, status):
+      return "Failed to get Data Pointer at offset \(offset): \(status)"
+    case .failedToGetDataBuffer:
+      return "Failed to get data buffer"
+    case let .failedToAccessBlockBufferData(offset, status):
+      return "Failed to access block buffer data at offset \(offset): \(status)"
+    case let .failedToReplaceBlockBufferData(offset, status):
+      return "Failed to replace block buffer data at offset \(offset): \(status)"
+    case .sampleBufferNotReady:
+      return "Sample Buffer is not ready"
+    case .failedToGetFormatDescription:
+      return "Failed to get format description"
+    case let .failedToGetParameterSetCount(codecName, status):
+      return "Failed to get \(codecName) parameter set count \(status)"
+    case let .failedToGetParameterSet(codecName, index, status):
+      return "Failed to get \(codecName) parameter set at index \(index): \(status)"
+    case let .failedToCopyBlockBufferData(status):
+      return "Failed to copy block buffer data: \(status)"
+    case .fmp4WriterCalledWithoutContext:
+      return "fMP4 writer called without context"
+    }
+  }
+}
+
 /// Write the contents of a CMBlockBuffer to a data consumer, iterating contiguous segments.
 /// Sync consumers receive zero-copy NSData backed by the buffer's memory; async consumers receive a copy.
-private func WriteBlockBufferToConsumer(_ blockBuffer: CMBlockBuffer, _ consumer: any FBDataConsumer, _ error: NSErrorPointer) -> Bool {
+private func WriteBlockBufferToConsumer(_ blockBuffer: CMBlockBuffer, _ consumer: any FBDataConsumer) throws {
   let dataLength = CMBlockBufferGetDataLength(blockBuffer)
   let isSyncConsumer = consumer is FBDataConsumerSync
   var offset = 0
@@ -45,10 +85,10 @@ private func WriteBlockBufferToConsumer(_ blockBuffer: CMBlockBuffer, _ consumer
     var lengthAtOffset = 0
     let status = CMBlockBufferGetDataPointer(blockBuffer, atOffset: offset, lengthAtOffsetOut: &lengthAtOffset, totalLengthOut: nil, dataPointerOut: &dataPointer)
     if status != noErr {
-      return FBControlCoreError.describe("Failed to get Data Pointer at offset \(offset): \(status)").failBool(error)
+      throw FBVideoStreamWriterError.failedToGetDataPointer(offset: offset, status: status)
     }
     guard let dataPointer else {
-      return FBControlCoreError.describe("Failed to get Data Pointer at offset \(offset): \(status)").failBool(error)
+      throw FBVideoStreamWriterError.failedToGetDataPointer(offset: offset, status: status)
     }
     if isSyncConsumer {
       consumer.consumeData(Data(bytesNoCopy: dataPointer, count: lengthAtOffset, deallocator: .none))
@@ -57,12 +97,11 @@ private func WriteBlockBufferToConsumer(_ blockBuffer: CMBlockBuffer, _ consumer
     }
     offset += lengthAtOffset
   }
-  return true
 }
 
-private func ConvertAVCCToAnnexBInPlace(_ sampleBuffer: CMSampleBuffer, _ error: NSErrorPointer) -> Bool {
+private func ConvertAVCCToAnnexBInPlace(_ sampleBuffer: CMSampleBuffer) throws {
   guard let dataBuffer = CMSampleBufferGetDataBuffer(sampleBuffer) else {
-    return FBControlCoreError.describe("Failed to get data buffer").failBool(error)
+    throw FBVideoStreamWriterError.failedToGetDataBuffer
   }
   let dataLength = CMBlockBufferGetDataLength(dataBuffer)
 
@@ -75,7 +114,7 @@ private func ConvertAVCCToAnnexBInPlace(_ sampleBuffer: CMSampleBuffer, _ error:
       return CMBlockBufferAccessDataBytes(dataBuffer, atOffset: offset, length: AVCCHeaderLength, temporaryBlock: tempBase, returnedPointerOut: &nalLengthPtr)
     }
     if status != noErr {
-      return FBControlCoreError.describe("Failed to access block buffer data at offset \(offset): \(status)").failBool(error)
+      throw FBVideoStreamWriterError.failedToAccessBlockBufferData(offset: offset, status: status)
     }
     // memcpy(&nalLength, nalLengthPtr, 4) + CFSwapInt32BigToHost: assemble the 4 big-endian bytes.
     var nalLength: UInt32 = 0
@@ -89,11 +128,10 @@ private func ConvertAVCCToAnnexBInPlace(_ sampleBuffer: CMSampleBuffer, _ error:
       return CMBlockBufferReplaceDataBytes(with: startBase, blockBuffer: dataBuffer, offsetIntoDestination: offset, dataLength: AVCCHeaderLength)
     }
     if status != noErr {
-      return FBControlCoreError.describe("Failed to replace block buffer data at offset \(offset): \(status)").failBool(error)
+      throw FBVideoStreamWriterError.failedToReplaceBlockBufferData(offset: offset, status: status)
     }
     offset += AVCCHeaderLength + Int(nalLength)
   }
-  return true
 }
 
 // H264 and HEVC parameter set getters have identical signatures.
@@ -106,9 +144,9 @@ private typealias FBVideoParameterSetGetter = (
   _ nalUnitHeaderLengthOut: UnsafeMutablePointer<Int32>?
 ) -> OSStatus
 
-private func WriteCodecFrameToAnnexBStream(_ sampleBuffer: CMSampleBuffer, _ paramSetGetter: FBVideoParameterSetGetter, _ codecName: String, _ consumer: any FBDataConsumer, _ logger: any FBControlCoreLogger, _ error: NSErrorPointer) -> Bool {
+private func WriteCodecFrameToAnnexBStream(_ sampleBuffer: CMSampleBuffer, _ paramSetGetter: FBVideoParameterSetGetter, _ codecName: String, _ consumer: any FBDataConsumer, _ logger: any FBControlCoreLogger) throws {
   if !CMSampleBufferDataIsReady(sampleBuffer) {
-    return FBControlCoreError.describe("Sample Buffer is not ready").failBool(error)
+    throw FBVideoStreamWriterError.sampleBufferNotReady
   }
 
   var isKeyFrame = false
@@ -118,31 +156,29 @@ private func WriteCodecFrameToAnnexBStream(_ sampleBuffer: CMSampleBuffer, _ par
   }
 
   // Convert AVCC length-prefixed NAL units to Annex-B start-code format in place.
-  if !ConvertAVCCToAnnexBInPlace(sampleBuffer, error) {
-    return false
-  }
+  try ConvertAVCCToAnnexBInPlace(sampleBuffer)
 
   // Get the block buffer for parameter sets and consumer write.
   guard let dataBuffer = CMSampleBufferGetDataBuffer(sampleBuffer) else {
-    return FBControlCoreError.describe("Failed to get data buffer").failBool(error)
+    throw FBVideoStreamWriterError.failedToGetDataBuffer
   }
 
   if isKeyFrame {
     // Keyframes: send parameter sets (SPS, PPS / VPS, SPS, PPS) first, then the converted block buffer.
     guard let format = CMSampleBufferGetFormatDescription(sampleBuffer) else {
-      return FBControlCoreError.describe("Failed to get format description").failBool(error)
+      throw FBVideoStreamWriterError.failedToGetFormatDescription
     }
     var parameterSetCount = 0
     var status = paramSetGetter(format, 0, nil, nil, &parameterSetCount, nil)
     if status != noErr {
-      return FBControlCoreError.describe("Failed to get \(codecName) parameter set count \(status)").failBool(error)
+      throw FBVideoStreamWriterError.failedToGetParameterSetCount(codecName: codecName, status: status)
     }
     for i in 0..<parameterSetCount {
       var paramSize = 0
       var parameterSet: UnsafePointer<UInt8>?
       status = paramSetGetter(format, i, &parameterSet, &paramSize, nil, nil)
       if status != noErr {
-        return FBControlCoreError.describe("Failed to get \(codecName) parameter set at index \(i): \(status)").failBool(error)
+        throw FBVideoStreamWriterError.failedToGetParameterSet(codecName: codecName, index: i, status: status)
       }
       var paramHeader = [UInt8]()
       paramHeader.reserveCapacity(AVCCHeaderLength + paramSize)
@@ -155,17 +191,15 @@ private func WriteCodecFrameToAnnexBStream(_ sampleBuffer: CMSampleBuffer, _ par
   }
 
   // Send the converted block buffer data.
-  return WriteBlockBufferToConsumer(dataBuffer, consumer, error)
+  try WriteBlockBufferToConsumer(dataBuffer, consumer)
 }
 
-@discardableResult
-public func WriteFrameToAnnexBStream(_ sampleBuffer: CMSampleBuffer, _ context: Any?, _ consumer: any FBDataConsumer, _ logger: any FBControlCoreLogger, _ error: NSErrorPointer) -> Bool {
-  return WriteCodecFrameToAnnexBStream(sampleBuffer, CMVideoFormatDescriptionGetH264ParameterSetAtIndex, "H264", consumer, logger, error)
+public func WriteFrameToAnnexBStream(_ sampleBuffer: CMSampleBuffer, _ context: Any?, _ consumer: any FBDataConsumer, _ logger: any FBControlCoreLogger) throws {
+  try WriteCodecFrameToAnnexBStream(sampleBuffer, CMVideoFormatDescriptionGetH264ParameterSetAtIndex, "H264", consumer, logger)
 }
 
-@discardableResult
-public func WriteHEVCFrameToAnnexBStream(_ sampleBuffer: CMSampleBuffer, _ context: Any?, _ consumer: any FBDataConsumer, _ logger: any FBControlCoreLogger, _ error: NSErrorPointer) -> Bool {
-  return WriteCodecFrameToAnnexBStream(sampleBuffer, CMVideoFormatDescriptionGetHEVCParameterSetAtIndex, "HEVC", consumer, logger, error)
+public func WriteHEVCFrameToAnnexBStream(_ sampleBuffer: CMSampleBuffer, _ context: Any?, _ consumer: any FBDataConsumer, _ logger: any FBControlCoreLogger) throws {
+  try WriteCodecFrameToAnnexBStream(sampleBuffer, CMVideoFormatDescriptionGetHEVCParameterSetAtIndex, "HEVC", consumer, logger)
 }
 
 // MARK: - MPEG-TS Writer
@@ -633,9 +667,9 @@ private nonisolated(unsafe) var mpegtsVideoContinuityCounter: UInt8 = 0
 private nonisolated(unsafe) var mpegtsPATContinuityCounter: UInt8 = 0
 private nonisolated(unsafe) var mpegtsPMTContinuityCounter: UInt8 = 0
 
-private func WriteCodecFrameToMPEGTSStream(_ sampleBuffer: CMSampleBuffer, _ paramSetGetter: FBVideoParameterSetGetter, _ codecName: String, _ mpegtsStreamType: UInt8, _ consumer: any FBDataConsumer, _ logger: any FBControlCoreLogger, _ error: NSErrorPointer) -> Bool {
+private func WriteCodecFrameToMPEGTSStream(_ sampleBuffer: CMSampleBuffer, _ paramSetGetter: FBVideoParameterSetGetter, _ codecName: String, _ mpegtsStreamType: UInt8, _ consumer: any FBDataConsumer, _ logger: any FBControlCoreLogger) throws {
   if !CMSampleBufferDataIsReady(sampleBuffer) {
-    return FBControlCoreError.describe("Sample Buffer is not ready").failBool(error)
+    throw FBVideoStreamWriterError.sampleBufferNotReady
   }
 
   var isKeyFrame = false
@@ -646,12 +680,10 @@ private func WriteCodecFrameToMPEGTSStream(_ sampleBuffer: CMSampleBuffer, _ par
 
   // Convert AVCC to Annex-B in place before computing sizes.
   // AVCC headers and Annex-B start codes are both 4 bytes so sizes are unchanged.
-  if !ConvertAVCCToAnnexBInPlace(sampleBuffer, error) {
-    return false
-  }
+  try ConvertAVCCToAnnexBInPlace(sampleBuffer)
 
   guard let dataBuffer = CMSampleBufferGetDataBuffer(sampleBuffer) else {
-    return FBControlCoreError.describe("Failed to get data buffer").failBool(error)
+    throw FBVideoStreamWriterError.failedToGetDataBuffer
   }
   let dataLength = CMBlockBufferGetDataLength(dataBuffer)
 
@@ -662,17 +694,17 @@ private func WriteCodecFrameToMPEGTSStream(_ sampleBuffer: CMSampleBuffer, _ par
   if isKeyFrame {
     format = CMSampleBufferGetFormatDescription(sampleBuffer)
     guard let format else {
-      return FBControlCoreError.describe("Failed to get format description").failBool(error)
+      throw FBVideoStreamWriterError.failedToGetFormatDescription
     }
     var status = paramSetGetter(format, 0, nil, nil, &parameterSetCount, nil)
     if status != noErr {
-      return FBControlCoreError.describe("Failed to get \(codecName) parameter set count \(status)").failBool(error)
+      throw FBVideoStreamWriterError.failedToGetParameterSetCount(codecName: codecName, status: status)
     }
     for i in 0..<parameterSetCount {
       var paramSize = 0
       status = paramSetGetter(format, i, nil, &paramSize, nil, nil)
       if status != noErr {
-        return FBControlCoreError.describe("Failed to get \(codecName) parameter set at index \(i): \(status)").failBool(error)
+        throw FBVideoStreamWriterError.failedToGetParameterSet(codecName: codecName, index: i, status: status)
       }
       parameterSetSize += AVCCHeaderLength + paramSize
     }
@@ -751,7 +783,7 @@ private func WriteCodecFrameToMPEGTSStream(_ sampleBuffer: CMSampleBuffer, _ par
     return CMBlockBufferCopyDataBytes(dataBuffer, atOffset: 0, dataLength: dataLength, destination: nalDest + nalDestOffset)
   }
   if copyStatus != noErr {
-    return FBControlCoreError.describe("Failed to copy block buffer data: \(copyStatus)").failBool(error)
+    throw FBVideoStreamWriterError.failedToCopyBlockBufferData(status: copyStatus)
   }
 
   // Packetize into MPEG-TS and write to consumer
@@ -765,41 +797,34 @@ private func WriteCodecFrameToMPEGTSStream(_ sampleBuffer: CMSampleBuffer, _ par
     &mpegtsPMTContinuityCounter
   )
   consumer.consumeData(tsData)
-
-  return true
 }
 
-@discardableResult
-public func WriteHEVCFrameToMPEGTSStream(_ sampleBuffer: CMSampleBuffer, _ context: Any?, _ consumer: any FBDataConsumer, _ logger: any FBControlCoreLogger, _ error: NSErrorPointer) -> Bool {
-  return WriteCodecFrameToMPEGTSStream(sampleBuffer, CMVideoFormatDescriptionGetHEVCParameterSetAtIndex, "HEVC", HEVCStreamType, consumer, logger, error)
+public func WriteHEVCFrameToMPEGTSStream(_ sampleBuffer: CMSampleBuffer, _ context: Any?, _ consumer: any FBDataConsumer, _ logger: any FBControlCoreLogger) throws {
+  try WriteCodecFrameToMPEGTSStream(sampleBuffer, CMVideoFormatDescriptionGetHEVCParameterSetAtIndex, "HEVC", HEVCStreamType, consumer, logger)
 }
 
-@discardableResult
-public func WriteH264FrameToMPEGTSStream(_ sampleBuffer: CMSampleBuffer, _ context: Any?, _ consumer: any FBDataConsumer, _ logger: any FBControlCoreLogger, _ error: NSErrorPointer) -> Bool {
-  return WriteCodecFrameToMPEGTSStream(sampleBuffer, CMVideoFormatDescriptionGetH264ParameterSetAtIndex, "H264", H264StreamType, consumer, logger, error)
+public func WriteH264FrameToMPEGTSStream(_ sampleBuffer: CMSampleBuffer, _ context: Any?, _ consumer: any FBDataConsumer, _ logger: any FBControlCoreLogger) throws {
+  try WriteCodecFrameToMPEGTSStream(sampleBuffer, CMVideoFormatDescriptionGetH264ParameterSetAtIndex, "H264", H264StreamType, consumer, logger)
 }
 
-@discardableResult
-public func WriteJPEGDataToMJPEGStream(_ jpegDataBuffer: CMBlockBuffer, _ consumer: any FBDataConsumer, _ logger: any FBControlCoreLogger, _ error: NSErrorPointer) -> Bool {
-  return WriteBlockBufferToConsumer(jpegDataBuffer, consumer, error)
+public func WriteJPEGDataToMJPEGStream(_ jpegDataBuffer: CMBlockBuffer, _ consumer: any FBDataConsumer, _ logger: any FBControlCoreLogger) throws {
+  try WriteBlockBufferToConsumer(jpegDataBuffer, consumer)
 }
 
-@discardableResult
-public func WriteJPEGDataToMinicapStream(_ jpegDataBuffer: CMBlockBuffer, _ consumer: any FBDataConsumer, _ logger: any FBControlCoreLogger, _ error: NSErrorPointer) -> Bool {
+public func WriteJPEGDataToMinicapStream(_ jpegDataBuffer: CMBlockBuffer, _ consumer: any FBDataConsumer, _ logger: any FBControlCoreLogger) throws {
   // Write the header length first
   let dataLength = CMBlockBufferGetDataLength(jpegDataBuffer)
   var imageLength = UInt32(dataLength).littleEndian
   let lengthData = Data(bytes: &imageLength, count: MemoryLayout<UInt32>.size)
   consumer.consumeData(lengthData)
 
-  return WriteJPEGDataToMJPEGStream(jpegDataBuffer, consumer, logger, error)
+  try WriteJPEGDataToMJPEGStream(jpegDataBuffer, consumer, logger)
 }
 
 // MinicapHeader is built byte-by-byte (24 bytes, all little-endian) rather than relying
 // on Swift struct layout, matching the `#pragma pack(push, 1)` C struct.
 // https://github.com/openstf/minicap#usage
-@discardableResult
-public func WriteMinicapHeaderToStream(_ width: UInt32, _ height: UInt32, _ consumer: any FBDataConsumer, _ logger: any FBControlCoreLogger, _ error: NSErrorPointer) -> Bool {
+public func WriteMinicapHeaderToStream(_ width: UInt32, _ height: UInt32, _ consumer: any FBDataConsumer, _ logger: any FBControlCoreLogger) {
   let headerSize: UInt8 = 24
   let pid = UInt32(bitPattern: ProcessInfo.processInfo.processIdentifier).littleEndian
   let displayWidth = width.littleEndian
@@ -820,7 +845,6 @@ public func WriteMinicapHeaderToStream(_ width: UInt32, _ height: UInt32, _ cons
   header.append(0) // quirks
 
   consumer.consumeData(Data(header))
-  return true
 }
 
 // MARK: - Fragmented MP4 (fMP4) Writer
@@ -1300,13 +1324,13 @@ public final class FBFMP4MuxerContext {
 }
 
 // Per-frame fMP4 writer: each frame is immediately emitted as a single-sample moof+mdat fragment.
-private func WriteCodecFrameToFMP4Stream(_ sampleBuffer: CMSampleBuffer, _ context: Any?, _ consumer: any FBDataConsumer, _ logger: any FBControlCoreLogger, _ error: NSErrorPointer) -> Bool {
+private func WriteCodecFrameToFMP4Stream(_ sampleBuffer: CMSampleBuffer, _ context: Any?, _ consumer: any FBDataConsumer, _ logger: any FBControlCoreLogger) throws {
   guard let ctx = context as? FBFMP4MuxerContext else {
-    return FBControlCoreError.describe("fMP4 writer called without context").failBool(error)
+    throw FBVideoStreamWriterError.fmp4WriterCalledWithoutContext
   }
 
   if !CMSampleBufferDataIsReady(sampleBuffer) {
-    return FBControlCoreError.describe("Sample Buffer is not ready").failBool(error)
+    throw FBVideoStreamWriterError.sampleBufferNotReady
   }
 
   // Detect keyframe.
@@ -1325,11 +1349,11 @@ private func WriteCodecFrameToFMP4Stream(_ sampleBuffer: CMSampleBuffer, _ conte
   // On first keyframe: emit init segment (ftyp + moov).
   if !ctx.initWritten {
     if !isKeyFrame {
-      return true // Drop frames before first keyframe.
+      return // Drop frames before first keyframe.
     }
 
     guard let formatDesc = CMSampleBufferGetFormatDescription(sampleBuffer) else {
-      return FBControlCoreError.describe("Failed to get format description").failBool(error)
+      throw FBVideoStreamWriterError.failedToGetFormatDescription
     }
     let dims = CMVideoFormatDescriptionGetDimensions(formatDesc)
 
@@ -1357,7 +1381,7 @@ private func WriteCodecFrameToFMP4Stream(_ sampleBuffer: CMSampleBuffer, _ conte
 
   // Get AVCC NAL data (do NOT convert to Annex-B).
   guard let dataBuffer = CMSampleBufferGetDataBuffer(sampleBuffer) else {
-    return FBControlCoreError.describe("Failed to get data buffer").failBool(error)
+    throw FBVideoStreamWriterError.failedToGetDataBuffer
   }
   let dataLength = CMBlockBufferGetDataLength(dataBuffer)
 
@@ -1380,24 +1404,20 @@ private func WriteCodecFrameToFMP4Stream(_ sampleBuffer: CMSampleBuffer, _ conte
       return CMBlockBufferCopyDataBytes(dataBuffer, atOffset: 0, dataLength: dataLength, destination: dest)
     }
     if copyStatus != noErr {
-      return FBControlCoreError.describe("Failed to copy block buffer data: \(copyStatus)").failBool(error)
+      throw FBVideoStreamWriterError.failedToCopyBlockBufferData(status: copyStatus)
     }
     consumer.consumeData(sampleData)
   }
 
   ctx.baseDecodeTime += UInt64(duration90k)
-
-  return true
 }
 
-@discardableResult
-public func WriteH264FrameToFMP4Stream(_ sampleBuffer: CMSampleBuffer, _ context: Any?, _ consumer: any FBDataConsumer, _ logger: any FBControlCoreLogger, _ error: NSErrorPointer) -> Bool {
-  return WriteCodecFrameToFMP4Stream(sampleBuffer, context, consumer, logger, error)
+public func WriteH264FrameToFMP4Stream(_ sampleBuffer: CMSampleBuffer, _ context: Any?, _ consumer: any FBDataConsumer, _ logger: any FBControlCoreLogger) throws {
+  try WriteCodecFrameToFMP4Stream(sampleBuffer, context, consumer, logger)
 }
 
-@discardableResult
-public func WriteHEVCFrameToFMP4Stream(_ sampleBuffer: CMSampleBuffer, _ context: Any?, _ consumer: any FBDataConsumer, _ logger: any FBControlCoreLogger, _ error: NSErrorPointer) -> Bool {
-  return WriteCodecFrameToFMP4Stream(sampleBuffer, context, consumer, logger, error)
+public func WriteHEVCFrameToFMP4Stream(_ sampleBuffer: CMSampleBuffer, _ context: Any?, _ consumer: any FBDataConsumer, _ logger: any FBControlCoreLogger) throws {
+  try WriteCodecFrameToFMP4Stream(sampleBuffer, context, consumer, logger)
 }
 
 public func FBFMP4WriteEmsgBox(_ context: FBFMP4MuxerContext, _ text: String, _ consumer: any FBDataConsumer) {

@@ -313,7 +313,11 @@ private class FBDeviceVideoStream_BGRA: FBDeviceVideoStream, @unchecked Sendable
 private class FBDeviceVideoStream_H264: FBDeviceVideoStream, @unchecked Sendable {
   override func consumeSampleBuffer(_ sampleBuffer: CMSampleBuffer) {
     guard let consumer = self.consumer else { return }
-    WriteFrameToAnnexBStream(sampleBuffer, nil, consumer, logger, nil)
+    do {
+      try WriteFrameToAnnexBStream(sampleBuffer, nil, consumer, logger)
+    } catch {
+      logger.log("Failed to write H264 frame: \(error)")
+    }
   }
 }
 
@@ -322,7 +326,11 @@ private class FBDeviceVideoStream_H264: FBDeviceVideoStream, @unchecked Sendable
 private class FBDeviceVideoStream_H264MPEGTS: FBDeviceVideoStream, @unchecked Sendable {
   override func consumeSampleBuffer(_ sampleBuffer: CMSampleBuffer) {
     guard let consumer = self.consumer else { return }
-    WriteH264FrameToMPEGTSStream(sampleBuffer, nil, consumer, logger, nil)
+    do {
+      try WriteH264FrameToMPEGTSStream(sampleBuffer, nil, consumer, logger)
+    } catch {
+      logger.log("Failed to write H264 MPEG-TS frame: \(error)")
+    }
   }
 }
 
@@ -331,7 +339,11 @@ private class FBDeviceVideoStream_H264MPEGTS: FBDeviceVideoStream, @unchecked Se
 private class FBDeviceVideoStream_MJPEG: FBDeviceVideoStream, @unchecked Sendable {
   override func consumeSampleBuffer(_ sampleBuffer: CMSampleBuffer) {
     guard let consumer = self.consumer, let jpegDataBuffer = CMSampleBufferGetDataBuffer(sampleBuffer) else { return }
-    WriteJPEGDataToMJPEGStream(jpegDataBuffer, consumer, logger, nil)
+    do {
+      try WriteJPEGDataToMJPEGStream(jpegDataBuffer, consumer, logger)
+    } catch {
+      logger.log("Failed to write MJPEG frame: \(error)")
+    }
   }
 
   override class func configureVideoOutput(_ output: AVCaptureVideoDataOutput, configuration: FBVideoStreamConfiguration) throws {
@@ -359,10 +371,14 @@ private class FBDeviceVideoStream_Minicap: FBDeviceVideoStream_MJPEG, @unchecked
     if !hasSentHeader {
       guard let format = CMSampleBufferGetFormatDescription(sampleBuffer) else { return }
       let dimensions = CMVideoFormatDescriptionGetDimensions(format)
-      WriteMinicapHeaderToStream(UInt32(dimensions.width), UInt32(dimensions.height), consumer, logger, nil)
+      WriteMinicapHeaderToStream(UInt32(dimensions.width), UInt32(dimensions.height), consumer, logger)
       hasSentHeader = true
     }
     guard let jpegDataBuffer = CMSampleBufferGetDataBuffer(sampleBuffer) else { return }
-    WriteJPEGDataToMinicapStream(jpegDataBuffer, consumer, logger, nil)
+    do {
+      try WriteJPEGDataToMinicapStream(jpegDataBuffer, consumer, logger)
+    } catch {
+      logger.log("Failed to write Minicap frame: \(error)")
+    }
   }
 }

@@ -157,15 +157,14 @@ public struct FBVideoEncoderStats {
 // MARK: - Frame Writer
 
 /// A Swift frame-writer function (the former `FBVideoStreamWriters` global writers, e.g.
-/// `WriteFrameToAnnexBStream`). Signature mirrors the ObjC
-/// `BOOL (CMSampleBufferRef, id context, id<FBDataConsumer>, id<FBControlCoreLogger>, NSError**)`.
+/// `WriteFrameToAnnexBStream`).
 /// Now that the writers are plain Swift functions taking an `Any?` context, this is a normal Swift
 /// closure type (not `@convention(c)`). MJPEG/Minicap pushers pass `nil` and rely on their compressor
 /// callback instead.
 typealias FBCompressedFrameWriter =
   (
-    CMSampleBuffer, Any?, any FBDataConsumer, any FBControlCoreLogger, NSErrorPointer
-  ) -> Bool
+    CMSampleBuffer, Any?, any FBDataConsumer, any FBControlCoreLogger
+  ) throws -> Void
 
 // MARK: - Frame Pusher Protocol
 
@@ -529,9 +528,10 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: NSObject, FBSimulato
   /// Ignores encode status/flags, matching the former `MJPEGCompressorCallback`.
   private func handleMJPEGSampleBuffer(_ sampleBuffer: CMSampleBuffer?) {
     guard let sampleBuffer, let blockBuffer = CMSampleBufferGetDataBuffer(sampleBuffer) else { return }
-    var error: NSError?
-    if !WriteJPEGDataToMJPEGStream(blockBuffer, consumer, logger, &error) {
-      logger.log("Failed to write MJPEG frame: \(String(describing: error))")
+    do {
+      try WriteJPEGDataToMJPEGStream(blockBuffer, consumer, logger)
+    } catch {
+      logger.log("Failed to write MJPEG frame: \(error)")
     }
   }
 
@@ -544,16 +544,14 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: NSObject, FBSimulato
     if frameNumber == 0 {
       if let formatDescription = CMSampleBufferGetFormatDescription(sampleBuffer) {
         let dimensions = CMVideoFormatDescriptionGetDimensions(formatDescription)
-        var error: NSError?
-        if !WriteMinicapHeaderToStream(UInt32(dimensions.width), UInt32(dimensions.height), consumer, logger, &error) {
-          logger.log("Failed to write Minicap header: \(String(describing: error))")
-        }
+        WriteMinicapHeaderToStream(UInt32(dimensions.width), UInt32(dimensions.height), consumer, logger)
       }
     }
     guard let blockBuffer = CMSampleBufferGetDataBuffer(sampleBuffer) else { return }
-    var error: NSError?
-    if !WriteJPEGDataToMinicapStream(blockBuffer, consumer, logger, &error) {
-      logger.log("Failed to write Minicap frame: \(String(describing: error))")
+    do {
+      try WriteJPEGDataToMinicapStream(blockBuffer, consumer, logger)
+    } catch {
+      logger.log("Failed to write Minicap frame: \(error)")
     }
   }
 

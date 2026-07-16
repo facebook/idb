@@ -355,11 +355,8 @@ final class FBVideoStreamTests: XCTestCase {
     let sampleBuffer = CreateH264SampleBuffer(isKeyFrame: true)
     let consumer = FBDataBuffer.accumulatingBuffer()
     let logger = FBControlCoreLoggerDouble()
-    var error: NSError?
 
-    let result = WriteFrameToAnnexBStream(sampleBuffer, nil, consumer, logger, &error)
-    XCTAssertTrue(result)
-    XCTAssertNil(error)
+    XCTAssertNoThrow(try WriteFrameToAnnexBStream(sampleBuffer, nil, consumer, logger))
 
     let output = consumer.data()
 
@@ -389,11 +386,8 @@ final class FBVideoStreamTests: XCTestCase {
     let sampleBuffer = CreateH264SampleBuffer(isKeyFrame: false)
     let consumer = FBDataBuffer.accumulatingBuffer()
     let logger = FBControlCoreLoggerDouble()
-    var error: NSError?
 
-    let result = WriteFrameToAnnexBStream(sampleBuffer, nil, consumer, logger, &error)
-    XCTAssertTrue(result)
-    XCTAssertNil(error)
+    XCTAssertNoThrow(try WriteFrameToAnnexBStream(sampleBuffer, nil, consumer, logger))
 
     let output = consumer.data()
 
@@ -417,11 +411,8 @@ final class FBVideoStreamTests: XCTestCase {
     let sampleBuffer = CreateH264SampleBuffer(isKeyFrame: false)
     let consumer = FBDataBuffer.accumulatingBuffer()
     let logger = FBControlCoreLoggerDouble()
-    var error: NSError?
 
-    let result = WriteFrameToAnnexBStream(sampleBuffer, nil, consumer, logger, &error)
-    XCTAssertTrue(result)
-    XCTAssertNil(error)
+    XCTAssertNoThrow(try WriteFrameToAnnexBStream(sampleBuffer, nil, consumer, logger))
 
     let output = consumer.data()
 
@@ -438,11 +429,10 @@ final class FBVideoStreamTests: XCTestCase {
     let sampleBuffer = CreateNotReadySampleBuffer()
     let consumer = FBDataBuffer.accumulatingBuffer()
     let logger = FBControlCoreLoggerDouble()
-    var error: NSError?
 
-    let result = WriteFrameToAnnexBStream(sampleBuffer, nil, consumer, logger, &error)
-    XCTAssertFalse(result)
-    XCTAssertTrue(try XCTUnwrap(error).localizedDescription.contains("Sample Buffer is not ready"))
+    XCTAssertThrowsError(try WriteFrameToAnnexBStream(sampleBuffer, nil, consumer, logger)) { error in
+      XCTAssertTrue(error.localizedDescription.contains("Sample Buffer is not ready"))
+    }
     XCTAssertEqual(consumer.data().count, 0, "No data should be written for not-ready buffer")
   }
 
@@ -451,11 +441,8 @@ final class FBVideoStreamTests: XCTestCase {
   func testWriteMinicapHeader() {
     let consumer = FBDataBuffer.accumulatingBuffer()
     let logger = FBControlCoreLoggerDouble()
-    var error: NSError?
 
-    let result = WriteMinicapHeaderToStream(1920, 1080, consumer, logger, &error)
-    XCTAssertTrue(result)
-    XCTAssertNil(error)
+    WriteMinicapHeaderToStream(1920, 1080, consumer, logger)
 
     let output = consumer.data()
     XCTAssertEqual(output.count, 24)
@@ -885,11 +872,8 @@ final class FBVideoStreamTests: XCTestCase {
     let ctx = FBFMP4MuxerContext(hevc: false)
     let consumer = FBDataBuffer.accumulatingBuffer()
     let logger = FBControlCoreLoggerDouble()
-    var error: NSError?
 
-    let result = WriteH264FrameToFMP4Stream(sampleBuffer, ctx, consumer, logger, &error)
-    XCTAssertTrue(result)
-    XCTAssertNil(error)
+    XCTAssertNoThrow(try WriteH264FrameToFMP4Stream(sampleBuffer, ctx, consumer, logger))
     XCTAssertTrue(ctx.initWritten)
 
     let output = consumer.data()
@@ -921,11 +905,8 @@ final class FBVideoStreamTests: XCTestCase {
     let ctx = FBFMP4MuxerContext(hevc: false)
     let consumer = FBDataBuffer.accumulatingBuffer()
     let logger = FBControlCoreLoggerDouble()
-    var error: NSError?
 
-    let result = WriteH264FrameToFMP4Stream(nonKeyframe, ctx, consumer, logger, &error)
-    XCTAssertTrue(result)
-    XCTAssertNil(error)
+    XCTAssertNoThrow(try WriteH264FrameToFMP4Stream(nonKeyframe, ctx, consumer, logger))
     XCTAssertFalse(ctx.initWritten)
     XCTAssertEqual(consumer.data().count, 0, "No data should be written before first keyframe")
   }
@@ -936,7 +917,7 @@ final class FBVideoStreamTests: XCTestCase {
     let logger = FBControlCoreLoggerDouble()
 
     let keyframe = CreateH264SampleBuffer(isKeyFrame: true)
-    _ = WriteH264FrameToFMP4Stream(keyframe, ctx, consumer, logger, nil)
+    XCTAssertNoThrow(try WriteH264FrameToFMP4Stream(keyframe, ctx, consumer, logger))
 
     let output = consumer.data()
     let moofType = Data("moof".utf8)
@@ -987,11 +968,10 @@ final class FBVideoStreamTests: XCTestCase {
     let ctx = FBFMP4MuxerContext(hevc: false)
     let consumer = FBDataBuffer.accumulatingBuffer()
     let logger = FBControlCoreLoggerDouble()
-    var error: NSError?
 
-    let result = WriteH264FrameToFMP4Stream(sampleBuffer, ctx, consumer, logger, &error)
-    XCTAssertFalse(result)
-    XCTAssertTrue(try XCTUnwrap(error).localizedDescription.contains("Sample Buffer is not ready"))
+    XCTAssertThrowsError(try WriteH264FrameToFMP4Stream(sampleBuffer, ctx, consumer, logger)) { error in
+      XCTAssertTrue(error.localizedDescription.contains("Sample Buffer is not ready"))
+    }
     XCTAssertEqual(consumer.data().count, 0)
   }
 
@@ -999,11 +979,8 @@ final class FBVideoStreamTests: XCTestCase {
     let sampleBuffer = CreateH264SampleBuffer(isKeyFrame: true)
     let consumer = FBDataBuffer.accumulatingBuffer()
     let logger = FBControlCoreLoggerDouble()
-    var error: NSError?
 
-    let result = WriteH264FrameToFMP4Stream(sampleBuffer, nil, consumer, logger, &error)
-    XCTAssertFalse(result)
-    XCTAssertNotNil(error)
+    XCTAssertThrowsError(try WriteH264FrameToFMP4Stream(sampleBuffer, nil, consumer, logger))
   }
 
   // MARK: MJPEG / Minicap Frame Writers
@@ -1013,11 +990,8 @@ final class FBVideoStreamTests: XCTestCase {
     let blockBuffer = CreateBlockBuffer(jpeg)
     let consumer = FBDataBuffer.accumulatingBuffer()
     let logger = FBControlCoreLoggerDouble()
-    var error: NSError?
 
-    let result = WriteJPEGDataToMJPEGStream(blockBuffer, consumer, logger, &error)
-    XCTAssertTrue(result)
-    XCTAssertNil(error)
+    XCTAssertNoThrow(try WriteJPEGDataToMJPEGStream(blockBuffer, consumer, logger))
 
     // MJPEG output is the raw JPEG bytes, unframed.
     XCTAssertEqual(consumer.data(), Data(jpeg))
@@ -1028,11 +1002,8 @@ final class FBVideoStreamTests: XCTestCase {
     let blockBuffer = CreateBlockBuffer(jpeg)
     let consumer = FBDataBuffer.accumulatingBuffer()
     let logger = FBControlCoreLoggerDouble()
-    var error: NSError?
 
-    let result = WriteJPEGDataToMinicapStream(blockBuffer, consumer, logger, &error)
-    XCTAssertTrue(result)
-    XCTAssertNil(error)
+    XCTAssertNoThrow(try WriteJPEGDataToMinicapStream(blockBuffer, consumer, logger))
 
     let output = consumer.data()
     XCTAssertEqual(output.count, 4 + jpeg.count)
@@ -1050,11 +1021,8 @@ final class FBVideoStreamTests: XCTestCase {
     let sampleBuffer = CreateH264SampleBuffer(isKeyFrame: true)
     let consumer = FBDataBuffer.accumulatingBuffer()
     let logger = FBControlCoreLoggerDouble()
-    var error: NSError?
 
-    let result = WriteH264FrameToMPEGTSStream(sampleBuffer, nil, consumer, logger, &error)
-    XCTAssertTrue(result)
-    XCTAssertNil(error)
+    XCTAssertNoThrow(try WriteH264FrameToMPEGTSStream(sampleBuffer, nil, consumer, logger))
 
     let output = consumer.data()
     XCTAssertGreaterThan(output.count, 0)
@@ -1079,11 +1047,10 @@ final class FBVideoStreamTests: XCTestCase {
     let sampleBuffer = CreateNotReadySampleBuffer()
     let consumer = FBDataBuffer.accumulatingBuffer()
     let logger = FBControlCoreLoggerDouble()
-    var error: NSError?
 
-    let result = WriteH264FrameToMPEGTSStream(sampleBuffer, nil, consumer, logger, &error)
-    XCTAssertFalse(result)
-    XCTAssertTrue(try XCTUnwrap(error).localizedDescription.contains("Sample Buffer is not ready"))
+    XCTAssertThrowsError(try WriteH264FrameToMPEGTSStream(sampleBuffer, nil, consumer, logger)) { error in
+      XCTAssertTrue(error.localizedDescription.contains("Sample Buffer is not ready"))
+    }
     XCTAssertEqual(consumer.data().count, 0, "No data should be written for not-ready buffer")
   }
 
@@ -1093,11 +1060,8 @@ final class FBVideoStreamTests: XCTestCase {
     let sampleBuffer = try XCTUnwrap(CreateHEVCSampleBuffer(isKeyFrame: true))
     let consumer = FBDataBuffer.accumulatingBuffer()
     let logger = FBControlCoreLoggerDouble()
-    var error: NSError?
 
-    let result = WriteHEVCFrameToAnnexBStream(sampleBuffer, nil, consumer, logger, &error)
-    XCTAssertTrue(result)
-    XCTAssertNil(error)
+    XCTAssertNoThrow(try WriteHEVCFrameToAnnexBStream(sampleBuffer, nil, consumer, logger))
 
     let output = consumer.data()
 
@@ -1115,11 +1079,8 @@ final class FBVideoStreamTests: XCTestCase {
     let sampleBuffer = try XCTUnwrap(CreateHEVCSampleBuffer(isKeyFrame: true))
     let consumer = FBDataBuffer.accumulatingBuffer()
     let logger = FBControlCoreLoggerDouble()
-    var error: NSError?
 
-    let result = WriteHEVCFrameToMPEGTSStream(sampleBuffer, nil, consumer, logger, &error)
-    XCTAssertTrue(result)
-    XCTAssertNil(error)
+    XCTAssertNoThrow(try WriteHEVCFrameToMPEGTSStream(sampleBuffer, nil, consumer, logger))
 
     let output = consumer.data()
     XCTAssertEqual(output.count % 188, 0)
@@ -1146,11 +1107,8 @@ final class FBVideoStreamTests: XCTestCase {
     let ctx = FBFMP4MuxerContext(hevc: true)
     let consumer = FBDataBuffer.accumulatingBuffer()
     let logger = FBControlCoreLoggerDouble()
-    var error: NSError?
 
-    let result = WriteHEVCFrameToFMP4Stream(sampleBuffer, ctx, consumer, logger, &error)
-    XCTAssertTrue(result)
-    XCTAssertNil(error)
+    XCTAssertNoThrow(try WriteHEVCFrameToFMP4Stream(sampleBuffer, ctx, consumer, logger))
     XCTAssertTrue(ctx.initWritten)
 
     let output = consumer.data()

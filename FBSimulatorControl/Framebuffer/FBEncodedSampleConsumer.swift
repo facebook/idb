@@ -27,7 +27,7 @@ protocol FBEncodedSampleConsumer: AnyObject {
 
 /// The streaming `FBEncodedSampleConsumer`: byte-frames each encoded sample to an `FBDataConsumer`
 /// through an `FBCompressedFrameWriter` (Annex-B / MPEG-TS / fMP4). This reproduces the pre-refactor
-/// inline `frameWriter(sampleBuffer, frameWriterContext, consumer, logger, &error)` call exactly.
+/// inline frame writer call exactly.
 final class FBDataConsumerEncodedSampleConsumer: FBEncodedSampleConsumer {
   let consumer: any FBDataConsumer
   let frameWriter: FBCompressedFrameWriter
@@ -42,7 +42,12 @@ final class FBDataConsumerEncodedSampleConsumer: FBEncodedSampleConsumer {
   }
 
   func consume(_ sampleBuffer: CMSampleBuffer, logger: any FBControlCoreLogger) -> Bool {
-    var error: NSError?
-    return frameWriter(sampleBuffer, frameWriterContext, consumer, logger, &error)
+    do {
+      try frameWriter(sampleBuffer, frameWriterContext, consumer, logger)
+      return true
+    } catch {
+      logger.log("Failed to write encoded sample: \(error)")
+      return false
+    }
   }
 }
