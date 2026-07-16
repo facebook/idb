@@ -355,7 +355,7 @@ final class FBVideoStreamTests: XCTestCase {
     let sampleBuffer = CreateH264SampleBuffer(isKeyFrame: true)
     let consumer = FBDataBuffer.accumulatingBuffer()
     let logger = FBControlCoreLoggerDouble()
-    let writer = FBAnnexBFrameWriter(hevc: false)
+    let writer = FBAnnexBFrameWriter(codec: .h264)
 
     XCTAssertNoThrow(try writer.write(sampleBuffer, to: consumer, logger: logger))
 
@@ -387,7 +387,7 @@ final class FBVideoStreamTests: XCTestCase {
     let sampleBuffer = CreateH264SampleBuffer(isKeyFrame: false)
     let consumer = FBDataBuffer.accumulatingBuffer()
     let logger = FBControlCoreLoggerDouble()
-    let writer = FBAnnexBFrameWriter(hevc: false)
+    let writer = FBAnnexBFrameWriter(codec: .h264)
 
     XCTAssertNoThrow(try writer.write(sampleBuffer, to: consumer, logger: logger))
 
@@ -413,7 +413,7 @@ final class FBVideoStreamTests: XCTestCase {
     let sampleBuffer = CreateH264SampleBuffer(isKeyFrame: false)
     let consumer = FBDataBuffer.accumulatingBuffer()
     let logger = FBControlCoreLoggerDouble()
-    let writer = FBAnnexBFrameWriter(hevc: false)
+    let writer = FBAnnexBFrameWriter(codec: .h264)
 
     XCTAssertNoThrow(try writer.write(sampleBuffer, to: consumer, logger: logger))
 
@@ -432,7 +432,7 @@ final class FBVideoStreamTests: XCTestCase {
     let sampleBuffer = CreateNotReadySampleBuffer()
     let consumer = FBDataBuffer.accumulatingBuffer()
     let logger = FBControlCoreLoggerDouble()
-    let writer = FBAnnexBFrameWriter(hevc: false)
+    let writer = FBAnnexBFrameWriter(codec: .h264)
 
     XCTAssertThrowsError(try writer.write(sampleBuffer, to: consumer, logger: logger)) { error in
       XCTAssertTrue(error.localizedDescription.contains("Sample Buffer is not ready"))
@@ -874,7 +874,7 @@ final class FBVideoStreamTests: XCTestCase {
 
   func testFMP4InitSegmentEmittedOnFirstKeyframe() {
     let sampleBuffer = CreateH264SampleBuffer(isKeyFrame: true)
-    let writer = FBFMP4FrameWriter(hevc: false)
+    let writer = FBFMP4FrameWriter(codec: .h264)
     let consumer = FBDataBuffer.accumulatingBuffer()
     let logger = FBControlCoreLoggerDouble()
 
@@ -907,7 +907,7 @@ final class FBVideoStreamTests: XCTestCase {
 
   func testFMP4NonKeyframeBeforeFirstKeyframeDropped() {
     let nonKeyframe = CreateH264SampleBuffer(isKeyFrame: false)
-    let writer = FBFMP4FrameWriter(hevc: false)
+    let writer = FBFMP4FrameWriter(codec: .h264)
     let consumer = FBDataBuffer.accumulatingBuffer()
     let logger = FBControlCoreLoggerDouble()
 
@@ -917,7 +917,7 @@ final class FBVideoStreamTests: XCTestCase {
   }
 
   func testFMP4FragmentContainsMoofAndMdat() {
-    let writer = FBFMP4FrameWriter(hevc: false)
+    let writer = FBFMP4FrameWriter(codec: .h264)
     let consumer = FBDataBuffer.accumulatingBuffer()
     let logger = FBControlCoreLoggerDouble()
 
@@ -939,7 +939,7 @@ final class FBVideoStreamTests: XCTestCase {
   }
 
   func testFMP4EmsgBoxStructure() {
-    let writer = FBFMP4FrameWriter(hevc: false)
+    let writer = FBFMP4FrameWriter(codec: .h264)
     writer.lastPts90k = 90000
     let consumer = FBDataBuffer.accumulatingBuffer()
 
@@ -970,7 +970,7 @@ final class FBVideoStreamTests: XCTestCase {
 
   func testFMP4NotReadyBufferReturnsError() throws {
     let sampleBuffer = CreateNotReadySampleBuffer()
-    let writer = FBFMP4FrameWriter(hevc: false)
+    let writer = FBFMP4FrameWriter(codec: .h264)
     let consumer = FBDataBuffer.accumulatingBuffer()
     let logger = FBControlCoreLoggerDouble()
 
@@ -1020,7 +1020,7 @@ final class FBVideoStreamTests: XCTestCase {
     let sampleBuffer = CreateH264SampleBuffer(isKeyFrame: true)
     let consumer = FBDataBuffer.accumulatingBuffer()
     let logger = FBControlCoreLoggerDouble()
-    let writer = FBMPEGTSFrameWriter(hevc: false)
+    let writer = FBMPEGTSFrameWriter(codec: .h264)
 
     XCTAssertNoThrow(try writer.write(sampleBuffer, to: consumer, logger: logger))
 
@@ -1047,7 +1047,7 @@ final class FBVideoStreamTests: XCTestCase {
     let sampleBuffer = CreateNotReadySampleBuffer()
     let consumer = FBDataBuffer.accumulatingBuffer()
     let logger = FBControlCoreLoggerDouble()
-    let writer = FBMPEGTSFrameWriter(hevc: false)
+    let writer = FBMPEGTSFrameWriter(codec: .h264)
 
     XCTAssertThrowsError(try writer.write(sampleBuffer, to: consumer, logger: logger)) { error in
       XCTAssertTrue(error.localizedDescription.contains("Sample Buffer is not ready"))
@@ -1061,7 +1061,7 @@ final class FBVideoStreamTests: XCTestCase {
     let sampleBuffer = try XCTUnwrap(CreateHEVCSampleBuffer(isKeyFrame: true))
     let consumer = FBDataBuffer.accumulatingBuffer()
     let logger = FBControlCoreLoggerDouble()
-    let writer = FBAnnexBFrameWriter(hevc: true)
+    let writer = FBAnnexBFrameWriter(codec: .hevc)
 
     XCTAssertNoThrow(try writer.write(sampleBuffer, to: consumer, logger: logger))
 
@@ -1081,7 +1081,7 @@ final class FBVideoStreamTests: XCTestCase {
     let sampleBuffer = try XCTUnwrap(CreateHEVCSampleBuffer(isKeyFrame: true))
     let consumer = FBDataBuffer.accumulatingBuffer()
     let logger = FBControlCoreLoggerDouble()
-    let writer = FBMPEGTSFrameWriter(hevc: true)
+    let writer = FBMPEGTSFrameWriter(codec: .hevc)
 
     XCTAssertNoThrow(try writer.write(sampleBuffer, to: consumer, logger: logger))
 
@@ -1107,7 +1107,7 @@ final class FBVideoStreamTests: XCTestCase {
 
   func testHEVCFMP4InitSegmentUsesHVC1AndHVCC() throws {
     let sampleBuffer = try XCTUnwrap(CreateHEVCSampleBuffer(isKeyFrame: true))
-    let writer = FBFMP4FrameWriter(hevc: true)
+    let writer = FBFMP4FrameWriter(codec: .hevc)
     let consumer = FBDataBuffer.accumulatingBuffer()
     let logger = FBControlCoreLoggerDouble()
 
@@ -1127,7 +1127,7 @@ final class FBVideoStreamTests: XCTestCase {
   // MARK: MPEG-TS Timed Metadata Stream
 
   func testEnableMetadataStreamThenWriteTimedMetadataEmitsOnMetadataPID() {
-    let writer = FBMPEGTSFrameWriter(hevc: false)
+    let writer = FBMPEGTSFrameWriter(codec: .h264)
     let consumer = FBDataBuffer.accumulatingBuffer()
     writer.writeTimedMetadata("Chapter Zulu", to: consumer)
 

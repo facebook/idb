@@ -311,7 +311,7 @@ private class FBDeviceVideoStream_BGRA: FBDeviceVideoStream, @unchecked Sendable
 // MARK: - H264 Subclass
 
 private class FBDeviceVideoStream_H264: FBDeviceVideoStream, @unchecked Sendable {
-  private let frameWriter = FBAnnexBFrameWriter(hevc: false)
+  private let frameWriter = FBAnnexBFrameWriter(codec: .h264)
 
   override func consumeSampleBuffer(_ sampleBuffer: CMSampleBuffer) {
     guard let consumer = self.consumer else { return }
@@ -326,7 +326,7 @@ private class FBDeviceVideoStream_H264: FBDeviceVideoStream, @unchecked Sendable
 // MARK: - H264 MPEGTS Subclass
 
 private class FBDeviceVideoStream_H264MPEGTS: FBDeviceVideoStream, @unchecked Sendable {
-  private let frameWriter = FBMPEGTSFrameWriter(hevc: false)
+  private let frameWriter = FBMPEGTSFrameWriter(codec: .h264)
 
   override func consumeSampleBuffer(_ sampleBuffer: CMSampleBuffer) {
     guard let consumer = self.consumer else { return }

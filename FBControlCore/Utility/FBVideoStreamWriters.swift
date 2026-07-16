@@ -44,14 +44,13 @@ public protocol FBVideoStreamTimedMetadataWriter {
 
 public extension FBVideoStreamTransport {
   func frameWriter(for codec: FBVideoStreamCodec) -> any FBEncodedFrameWriter {
-    let isHEVC = codec == .hevc
     switch self {
     case .fmp4:
-      return FBFMP4FrameWriter(hevc: isHEVC)
+      return FBFMP4FrameWriter(codec: codec)
     case .mpegts:
-      return FBMPEGTSFrameWriter(hevc: isHEVC)
+      return FBMPEGTSFrameWriter(codec: codec)
     case .annexB:
-      return FBAnnexBFrameWriter(hevc: isHEVC)
+      return FBAnnexBFrameWriter(codec: codec)
     }
   }
 }
@@ -164,19 +163,20 @@ private typealias FBVideoParameterSetGetter = (
 ) -> OSStatus
 
 public struct FBAnnexBFrameWriter: FBEncodedFrameWriter {
-  private let isHEVC: Bool
+  private let codec: FBVideoStreamCodec
 
-  public init(hevc isHEVC: Bool) {
-    self.isHEVC = isHEVC
+  public init(codec: FBVideoStreamCodec) {
+    self.codec = codec
   }
 
   public func write(_ sampleBuffer: CMSampleBuffer, to consumer: any FBDataConsumer, logger: any FBControlCoreLogger) throws {
     let paramSetGetter: FBVideoParameterSetGetter
     let codecName: String
-    if isHEVC {
+    switch codec {
+    case .hevc:
       paramSetGetter = CMVideoFormatDescriptionGetHEVCParameterSetAtIndex
       codecName = "HEVC"
-    } else {
+    case .h264:
       paramSetGetter = CMVideoFormatDescriptionGetH264ParameterSetAtIndex
       codecName = "H264"
     }
@@ -660,7 +660,7 @@ public func FBMPEGTSCreateTimedMetadataPackets(_ text: String, _ pts90k: UInt64,
 }
 
 public final class FBMPEGTSFrameWriter: FBEncodedFrameWriter, FBVideoStreamTimedMetadataWriter {
-  private let isHEVC: Bool
+  private let codec: FBVideoStreamCodec
   private let metadataLock = NSLock()
   private var metadataStreamEnabled = false
   private var metadataContinuityCounter: UInt8 = 0
@@ -669,8 +669,8 @@ public final class FBMPEGTSFrameWriter: FBEncodedFrameWriter, FBVideoStreamTimed
   private var patContinuityCounter: UInt8 = 0
   private var pmtContinuityCounter: UInt8 = 0
 
-  public init(hevc isHEVC: Bool) {
-    self.isHEVC = isHEVC
+  public init(codec: FBVideoStreamCodec) {
+    self.codec = codec
   }
 
   private func enableMetadataStream() {
@@ -699,11 +699,12 @@ public final class FBMPEGTSFrameWriter: FBEncodedFrameWriter, FBVideoStreamTimed
     let paramSetGetter: FBVideoParameterSetGetter
     let codecName: String
     let mpegtsStreamType: UInt8
-    if isHEVC {
+    switch codec {
+    case .hevc:
       paramSetGetter = CMVideoFormatDescriptionGetHEVCParameterSetAtIndex
       codecName = "HEVC"
       mpegtsStreamType = HEVCStreamType
-    } else {
+    case .h264:
       paramSetGetter = CMVideoFormatDescriptionGetH264ParameterSetAtIndex
       codecName = "H264"
       mpegtsStreamType = H264StreamType
@@ -1352,14 +1353,14 @@ private func FBFMP4CreateFragmentHeader(_ sequenceNumber: UInt32, _ baseDecodeTi
 }
 
 public final class FBFMP4FrameWriter: FBEncodedFrameWriter, FBVideoStreamTimedMetadataWriter {
-  private let isHEVC: Bool
+  private let codec: FBVideoStreamCodec
   private(set) var initWritten: Bool
   private(set) var sequenceNumber: UInt32
   private var baseDecodeTime: UInt64
   var lastPts90k: UInt64
 
-  public init(hevc isHEVC: Bool) {
-    self.isHEVC = isHEVC
+  public init(codec: FBVideoStreamCodec) {
+    self.codec = codec
     self.initWritten = false
     self.sequenceNumber = 0
     self.baseDecodeTime = 0
@@ -1394,6 +1395,7 @@ public final class FBFMP4FrameWriter: FBEncodedFrameWriter, FBVideoStreamTimedMe
         throw FBVideoStreamWriterError.failedToGetFormatDescription
       }
       let dims = CMVideoFormatDescriptionGetDimensions(formatDesc)
+      let isHEVC = codec == .hevc
 
       let ftyp = FBFMP4CreateFtypBox(isHEVC)
       let moov = FBFMP4CreateMoovBox(formatDesc, isHEVC, UInt32(dims.width), UInt32(dims.height), 90000)
