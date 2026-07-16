@@ -659,28 +659,27 @@ public func FBMPEGTSCreateTimedMetadataPackets(_ text: String, _ pts90k: UInt64,
   return output
 }
 
-// MARK: - MPEG-TS Metadata State
-
-/// Per-stream MPEG-TS muxer state. Frame packets and timed metadata share this so continuity
-/// counters and metadata PTS stay scoped to the stream rather than the process.
-private final class FBMPEGTSMuxerContext {
+public final class FBMPEGTSFrameWriter: FBEncodedFrameWriter, FBVideoStreamTimedMetadataWriter {
+  private let isHEVC: Bool
   private let metadataLock = NSLock()
   private var metadataStreamEnabled = false
   private var metadataContinuityCounter: UInt8 = 0
   private var lastPts90k: UInt64 = 0
-  fileprivate var videoContinuityCounter: UInt8 = 0
-  fileprivate var patContinuityCounter: UInt8 = 0
-  fileprivate var pmtContinuityCounter: UInt8 = 0
+  private var videoContinuityCounter: UInt8 = 0
+  private var patContinuityCounter: UInt8 = 0
+  private var pmtContinuityCounter: UInt8 = 0
 
-  public init() {}
+  public init(hevc isHEVC: Bool) {
+    self.isHEVC = isHEVC
+  }
 
-  fileprivate func enableMetadataStream() {
+  private func enableMetadataStream() {
     metadataLock.lock()
     defer { metadataLock.unlock() }
     metadataStreamEnabled = true
   }
 
-  fileprivate func timedMetadataPackets(for text: String) -> Data? {
+  private func timedMetadataPackets(for text: String) -> Data? {
     metadataLock.lock()
     defer { metadataLock.unlock() }
     guard metadataStreamEnabled else {
@@ -689,20 +688,11 @@ private final class FBMPEGTSMuxerContext {
     return FBMPEGTSCreateTimedMetadataPackets(text, lastPts90k, &metadataContinuityCounter)
   }
 
-  fileprivate func recordVideoPTSAndMetadataStreamState(_ pts90k: UInt64) -> Bool {
+  private func recordVideoPTSAndMetadataStreamState(_ pts90k: UInt64) -> Bool {
     metadataLock.lock()
     defer { metadataLock.unlock() }
     lastPts90k = pts90k
     return metadataStreamEnabled
-  }
-}
-
-public final class FBMPEGTSFrameWriter: FBEncodedFrameWriter, FBVideoStreamTimedMetadataWriter {
-  private let isHEVC: Bool
-  private let context = FBMPEGTSMuxerContext()
-
-  public init(hevc isHEVC: Bool) {
-    self.isHEVC = isHEVC
   }
 
   public func write(_ sampleBuffer: CMSampleBuffer, to consumer: any FBDataConsumer, logger: any FBControlCoreLogger) throws {
@@ -776,7 +766,7 @@ public final class FBMPEGTSFrameWriter: FBEncodedFrameWriter, FBVideoStreamTimed
     let pts = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
     let pts90k = UInt64(CMTimeGetSeconds(pts) * 90000.0)
 
-    let includeMetadataStream = context.recordVideoPTSAndMetadataStreamState(pts90k)
+    let includeMetadataStream = recordVideoPTSAndMetadataStreamState(pts90k)
 
     var pesPacket = [UInt8]()
     pesPacket.reserveCapacity(pesTotalLength)
@@ -840,17 +830,17 @@ public final class FBMPEGTSFrameWriter: FBEncodedFrameWriter, FBVideoStreamTimed
       isKeyFrame,
       mpegtsStreamType,
       pts90k,
-      &context.videoContinuityCounter,
-      &context.patContinuityCounter,
-      &context.pmtContinuityCounter,
+      &videoContinuityCounter,
+      &patContinuityCounter,
+      &pmtContinuityCounter,
       includeMetadataStream
     )
     consumer.consumeData(tsData)
   }
 
   public func writeTimedMetadata(_ text: String, to consumer: any FBDataConsumer) {
-    context.enableMetadataStream()
-    guard let packets = context.timedMetadataPackets(for: text) else {
+    enableMetadataStream()
+    guard let packets = timedMetadataPackets(for: text) else {
       return
     }
     consumer.consumeData(packets)
