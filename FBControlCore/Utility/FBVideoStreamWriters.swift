@@ -10,8 +10,8 @@ import Foundation
 
 // Faithful Swift translation of the former `FBVideoStream.m` pure-C byte writers:
 // H264/HEVC Annex-B, the MPEG-TS muxer (PAT/PMT/PES packetizer, CRC32, ID3 timed
-// metadata), the fragmented-MP4 box writer + `FBFMP4MuxerContext`, and the
-// MJPEG/Minicap writers. Behaviour and byte output are preserved exactly.
+// metadata), the fragmented-MP4 box writer, and the MJPEG/Minicap writers. Behaviour and byte output
+// are preserved exactly.
 
 private let MaxAllowedUnprocessedDataCounts: Int = 2
 
@@ -1351,30 +1351,19 @@ private func FBFMP4CreateFragmentHeader(_ sequenceNumber: UInt32, _ baseDecodeTi
   return data
 }
 
-/// Muxer context for fragmented MP4 (fMP4) output.
-/// Minimal state holder — all frame writing logic lives in the writer type.
-/// Created per video stream — no static/global state.
-private final class FBFMP4MuxerContext {
-  let isHEVC: Bool
-  var initWritten: Bool
-  var sequenceNumber: UInt32
-  var baseDecodeTime: UInt64
+public final class FBFMP4FrameWriter: FBEncodedFrameWriter, FBVideoStreamTimedMetadataWriter {
+  private let isHEVC: Bool
+  private(set) var initWritten: Bool
+  private(set) var sequenceNumber: UInt32
+  private var baseDecodeTime: UInt64
   var lastPts90k: UInt64
 
-  init(hevc isHEVC: Bool) {
+  public init(hevc isHEVC: Bool) {
     self.isHEVC = isHEVC
     self.initWritten = false
     self.sequenceNumber = 0
     self.baseDecodeTime = 0
     self.lastPts90k = 0
-  }
-}
-
-public final class FBFMP4FrameWriter: FBEncodedFrameWriter, FBVideoStreamTimedMetadataWriter {
-  private let context: FBFMP4MuxerContext
-
-  public init(hevc isHEVC: Bool) {
-    self.context = FBFMP4MuxerContext(hevc: isHEVC)
   }
 
   public func write(_ sampleBuffer: CMSampleBuffer, to consumer: any FBDataConsumer, logger: any FBControlCoreLogger) throws {
@@ -1392,11 +1381,11 @@ public final class FBFMP4FrameWriter: FBEncodedFrameWriter, FBVideoStreamTimedMe
     // Extract PTS.
     let pts = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
     let pts90k = UInt64(CMTimeGetSeconds(pts) * 90000.0)
-    let prevPts90k = context.lastPts90k
-    context.lastPts90k = pts90k
+    let prevPts90k = lastPts90k
+    lastPts90k = pts90k
 
     // On first keyframe: emit init segment (ftyp + moov).
-    if !context.initWritten {
+    if !initWritten {
       if !isKeyFrame {
         return // Drop frames before first keyframe.
       }
@@ -1406,15 +1395,15 @@ public final class FBFMP4FrameWriter: FBEncodedFrameWriter, FBVideoStreamTimedMe
       }
       let dims = CMVideoFormatDescriptionGetDimensions(formatDesc)
 
-      let ftyp = FBFMP4CreateFtypBox(context.isHEVC)
-      let moov = FBFMP4CreateMoovBox(formatDesc, context.isHEVC, UInt32(dims.width), UInt32(dims.height), 90000)
+      let ftyp = FBFMP4CreateFtypBox(isHEVC)
+      let moov = FBFMP4CreateMoovBox(formatDesc, isHEVC, UInt32(dims.width), UInt32(dims.height), 90000)
 
       consumer.consumeData(Data(ftyp))
       consumer.consumeData(Data(moov))
 
-      context.initWritten = true
-      context.baseDecodeTime = pts90k
-      logger.log("fMP4 init segment written (\(dims.width)x\(dims.height), \(context.isHEVC ? "HEVC" : "H264"))")
+      initWritten = true
+      baseDecodeTime = pts90k
+      logger.log("fMP4 init segment written (\(dims.width)x\(dims.height), \(isHEVC ? "HEVC" : "H264"))")
     }
 
     // Compute duration.
@@ -1435,8 +1424,8 @@ public final class FBFMP4FrameWriter: FBEncodedFrameWriter, FBVideoStreamTimedMe
     let dataLength = CMBlockBufferGetDataLength(dataBuffer)
 
     // Emit moof + mdat header, then sample data — single copy only.
-    context.sequenceNumber += 1
-    let header = FBFMP4CreateFragmentHeader(context.sequenceNumber, context.baseDecodeTime, duration90k, UInt32(dataLength), isKeyFrame)
+    sequenceNumber += 1
+    let header = FBFMP4CreateFragmentHeader(sequenceNumber, baseDecodeTime, duration90k, UInt32(dataLength), isKeyFrame)
     consumer.consumeData(Data(header))
 
     // Try zero-copy via CMBlockBufferGetDataPointer (works when buffer is contiguous).
@@ -1458,22 +1447,15 @@ public final class FBFMP4FrameWriter: FBEncodedFrameWriter, FBVideoStreamTimedMe
       consumer.consumeData(sampleData)
     }
 
-    context.baseDecodeTime += UInt64(duration90k)
+    baseDecodeTime += UInt64(duration90k)
   }
 
   public func writeTimedMetadata(_ text: String, to consumer: any FBDataConsumer) {
-    consumer.consumeData(FBFMP4CreateEmsgBox(context, text))
-  }
-
-  var initWritten: Bool { context.initWritten }
-  var sequenceNumber: UInt32 { context.sequenceNumber }
-  var lastPts90k: UInt64 {
-    get { context.lastPts90k }
-    set { context.lastPts90k = newValue }
+    consumer.consumeData(FBFMP4CreateEmsgBox(lastPts90k, text))
   }
 }
 
-private func FBFMP4CreateEmsgBox(_ context: FBFMP4MuxerContext, _ text: String) -> Data {
+private func FBFMP4CreateEmsgBox(_ presentationTime90k: UInt64, _ text: String) -> Data {
   let textData = [UInt8](text.utf8)
 
   var data = [UInt8]()
@@ -1482,7 +1464,7 @@ private func FBFMP4CreateEmsgBox(_ context: FBFMP4MuxerContext, _ text: String) 
   let off = FBFMP4BeginBox(&data, "emsg")
   FBFMP4WriteFullBoxHeader(&data, 1, 0)
   FBFMP4Write32(&data, 90000)
-  FBFMP4Write64(&data, context.lastPts90k)
+  FBFMP4Write64(&data, presentationTime90k)
   FBFMP4Write32(&data, 0)
   FBFMP4Write32(&data, 0)
 
