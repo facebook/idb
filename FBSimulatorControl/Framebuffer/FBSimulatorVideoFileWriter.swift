@@ -57,7 +57,7 @@ extension FBSimulatorVideoFileWriterError: LocalizedError {
 /// called after the encoder has completed every frame, so `consume` and `finish` never overlap. The
 /// timed-metadata path (`writeTimedMetadata`) runs off that queue (the stdin handler), so the chapter
 /// state it shares with `consume`/`finish` is guarded by `chapterLock`.
-final class FBSimulatorVideoFileWriter: NSObject, FBEncodedSampleConsumer, FBTimedMetadataConsumer, @unchecked Sendable {
+final class FBSimulatorVideoFileWriter: FBEncodedSampleConsumer, FBTimedMetadataConsumer, @unchecked Sendable {
   private let outputURL: URL
   private let fileType: AVFileType
   private let chaptersEnabled: Bool
@@ -81,7 +81,6 @@ final class FBSimulatorVideoFileWriter: NSObject, FBEncodedSampleConsumer, FBTim
     self.fileType = fileType
     self.chaptersEnabled = chaptersEnabled
     self.logger = logger
-    super.init()
   }
 
   // MARK: - FBEncodedSampleConsumer

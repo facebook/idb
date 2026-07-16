@@ -291,7 +291,7 @@ private func bitmapStreamPixelBufferAttributes(from pixelBuffer: CVPixelBuffer) 
 // MARK: - Bitmap Frame Pusher
 
 /// Writes raw BGRA pixel bytes (optionally scaled) straight through to the consumer, unframed.
-final class FBSimulatorVideoStreamFramePusher_Bitmap: NSObject, FBSimulatorVideoStreamFramePusher {
+final class FBSimulatorVideoStreamFramePusher_Bitmap: FBSimulatorVideoStreamFramePusher {
   let consumer: any FBDataConsumer
   /// The scale factor between 0-1. nil for no scaling.
   let scaleFactor: Double?
@@ -302,7 +302,6 @@ final class FBSimulatorVideoStreamFramePusher_Bitmap: NSObject, FBSimulatorVideo
   init(consumer: any FBDataConsumer, scaleFactor: Double?) {
     self.consumer = consumer
     self.scaleFactor = scaleFactor
-    super.init()
   }
 
   func setup(with pixelBuffer: CVPixelBuffer, edgeInsets: FBVideoStreamEdgeInsets) throws {
@@ -373,7 +372,7 @@ final class FBSimulatorVideoStreamFramePusher_Bitmap: NSObject, FBSimulatorVideo
 /// is configured with `MaxFrameDelayCount: 0` and real-time low-latency rate control, so a frame's
 /// handler completes before the next `writeEncodedFrame` is submitted). This mirrors the owning
 /// `FBSimulatorVideoStream`, which is likewise `@unchecked Sendable`.
-final class FBSimulatorVideoStreamFramePusher_VideoToolbox: NSObject, FBSimulatorVideoStreamFramePusher, @unchecked Sendable {
+final class FBSimulatorVideoStreamFramePusher_VideoToolbox: FBSimulatorVideoStreamFramePusher, @unchecked Sendable {
   let configuration: FBVideoStreamConfiguration
   let compressionSessionProperties: [String: Any]
   let videoCodec: CMVideoCodecType
@@ -414,7 +413,6 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: NSObject, FBSimulato
     self.consumer = consumer
     self.logger = logger
     self.videoCodec = videoCodec
-    super.init()
   }
 
   func handleCompressedSampleBuffer(_ sampleBuffer: CMSampleBuffer?, encodeStatus: OSStatus, infoFlags: VTEncodeInfoFlags) {
