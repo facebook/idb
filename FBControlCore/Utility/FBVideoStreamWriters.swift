@@ -638,33 +638,47 @@ public func FBMPEGTSCreateTimedMetadataPackets(_ text: String, _ pts90k: UInt64,
 /// Per-stream MPEG-TS muxer state. Frame packets and timed metadata share this so continuity
 /// counters and metadata PTS stay scoped to the stream rather than the process.
 public final class FBMPEGTSMuxerContext {
-  fileprivate let metadataLock = NSLock()
-  fileprivate var metadataStreamEnabled = false
-  fileprivate var metadataContinuityCounter: UInt8 = 0
-  fileprivate var lastPts90k: UInt64 = 0
+  private let metadataLock = NSLock()
+  private var metadataStreamEnabled = false
+  private var metadataContinuityCounter: UInt8 = 0
+  private var lastPts90k: UInt64 = 0
   fileprivate var videoContinuityCounter: UInt8 = 0
   fileprivate var patContinuityCounter: UInt8 = 0
   fileprivate var pmtContinuityCounter: UInt8 = 0
 
   public init() {}
+
+  fileprivate func enableMetadataStream() {
+    metadataLock.lock()
+    defer { metadataLock.unlock() }
+    metadataStreamEnabled = true
+  }
+
+  fileprivate func timedMetadataPackets(for text: String) -> Data? {
+    metadataLock.lock()
+    defer { metadataLock.unlock() }
+    guard metadataStreamEnabled else {
+      return nil
+    }
+    return FBMPEGTSCreateTimedMetadataPackets(text, lastPts90k, &metadataContinuityCounter)
+  }
+
+  fileprivate func recordVideoPTSAndMetadataStreamState(_ pts90k: UInt64) -> Bool {
+    metadataLock.lock()
+    defer { metadataLock.unlock() }
+    lastPts90k = pts90k
+    return metadataStreamEnabled
+  }
 }
 
 public func FBMPEGTSEnableMetadataStream(_ context: FBMPEGTSMuxerContext) {
-  context.metadataLock.lock()
-  context.metadataStreamEnabled = true
-  context.metadataLock.unlock()
+  context.enableMetadataStream()
 }
 
 public func FBMPEGTSWriteTimedMetadata(_ text: String, _ context: FBMPEGTSMuxerContext, _ consumer: any FBDataConsumer) {
-  context.metadataLock.lock()
-  if !context.metadataStreamEnabled {
-    context.metadataLock.unlock()
+  guard let packets = context.timedMetadataPackets(for: text) else {
     return
   }
-  let pts = context.lastPts90k
-  let packets = FBMPEGTSCreateTimedMetadataPackets(text, pts, &context.metadataContinuityCounter)
-  context.metadataLock.unlock()
-
   consumer.consumeData(packets)
 }
 
@@ -730,11 +744,7 @@ private func WriteCodecFrameToMPEGTSStream(_ sampleBuffer: CMSampleBuffer, _ con
   let pts = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
   let pts90k = UInt64(CMTimeGetSeconds(pts) * 90000.0)
 
-  // Update the shared last PTS for timed metadata injection
-  ctx.metadataLock.lock()
-  ctx.lastPts90k = pts90k
-  let includeMetadataStream = ctx.metadataStreamEnabled
-  ctx.metadataLock.unlock()
+  let includeMetadataStream = ctx.recordVideoPTSAndMetadataStreamState(pts90k)
 
   var pesPacket = [UInt8]()
   pesPacket.reserveCapacity(pesTotalLength)
