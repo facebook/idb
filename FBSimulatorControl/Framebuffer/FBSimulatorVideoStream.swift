@@ -812,7 +812,6 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
   var pixelBufferAttributes: [String: Any]?
   var consumer: (any FBDataConsumer)?
   var framePusher: (any FBSimulatorVideoStreamFramePusher)?
-  var transportTimedMetadataWriter: (any FBVideoStreamTimedMetadataWriter)?
   /// The timed-metadata (chapter) sink: the streaming transport writer, or (recording) the file
   /// writer's chapter track. Resolved in `mountSurface`, cleared in `stopStreaming`.
   var timedMetadataConsumer: (any FBTimedMetadataConsumer)?
@@ -954,7 +953,6 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
             return
           }
         }
-        transportTimedMetadataWriter = nil
         timedMetadataConsumer = nil
         // Clean up overlay compositing resources (ARC-managed; dropping references releases them).
         overlayBuffer = nil
@@ -1049,9 +1047,9 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
       logger: logger)
     try framePusher.setup(with: buffer, edgeInsets: edgeInsets)
     self.framePusher = framePusher
-    if let videoToolboxPusher = framePusher as? FBSimulatorVideoStreamFramePusher_VideoToolbox {
-      self.transportTimedMetadataWriter = (videoToolboxPusher.encodedSampleConsumer as? FBDataConsumerEncodedSampleConsumer)?.timedMetadataWriter
-    }
+    let transportTimedMetadataWriter =
+      ((framePusher as? FBSimulatorVideoStreamFramePusher_VideoToolbox)?.encodedSampleConsumer as? FBDataConsumerEncodedSampleConsumer)?
+      .timedMetadataWriter
 
     // Resolve the timed-metadata (chapter) sink. A recording file writer that supports chapters
     // supplies its own consumer; otherwise the streaming transport writer (fMP4 emsg / MPEG-TS ID3)
