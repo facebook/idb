@@ -398,7 +398,8 @@ private func runCompanionServer(_ udid: String, userDefaults: UserDefaults, xcod
     reporter: reporter,
     logger: idbLogger,
     ports: ports,
-    idleMonitor: idleMonitor
+    idleMonitor: idleMonitor,
+    onShutdownStarted: removeRegisteredSocket
   )
 
   let serverDescription = try await swiftServer.start()

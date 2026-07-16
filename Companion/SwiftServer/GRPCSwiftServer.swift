@@ -31,13 +31,27 @@ final class GRPCSwiftServer: NSObject {
   private let serverConfig: Server.Configuration
   private let ports: IDBPortsConfiguration
 
+  /// How long graceful shutdown is given to drain in-flight RPCs before the server is
+  /// closed forcefully. Bounds shutdown so a stuck long-lived RPC (e.g. a log or video
+  /// stream) cannot keep the companion alive after a termination signal.
+  private static let gracefulShutdownTimeout: TimeAmount = .seconds(5)
+
+  private let shutdownLock = NSLock()
+  private var didInitiateShutdown = false
+
+  /// Invoked synchronously the instant shutdown begins, before the async drain — used to
+  /// release externally-visible registration (e.g. unlink the gRPC socket) so no client
+  /// can discover this companion during the graceful-shutdown window that follows.
+  private let onShutdownStarted: (@Sendable () -> Void)?
+
   init(
     target: FBiOSTarget,
     commandExecutor: FBIDBCommandExecutor,
     reporter: FBEventReporter,
     logger: FBIDBLogger,
     ports: IDBPortsConfiguration,
-    idleMonitor: IdleMonitor?
+    idleMonitor: IdleMonitor?,
+    onShutdownStarted: (@Sendable () -> Void)? = nil
   ) throws {
 
     let group = MultiThreadedEventLoopGroup(numberOfThreads: 4)
@@ -70,6 +84,7 @@ final class GRPCSwiftServer: NSObject {
     self.ports = ports
 
     self.logger = logger
+    self.onShutdownStarted = onShutdownStarted
 
     super.init()
   }
@@ -93,11 +108,45 @@ final class GRPCSwiftServer: NSObject {
     return try ports.swiftServerTarget.outputDescription(for: address)
   }
 
-  /// Suspends until the server's channel closes.
+  /// Suspends until the server's channel closes. If the awaiting task is cancelled
+  /// (e.g. on SIGTERM), a graceful shutdown is initiated so the channel closes and this
+  /// returns: NIO's `EventLoopFuture.get()` does not observe task cancellation and
+  /// nothing else closes the server, so without this a cancelled wait would hang forever.
   func waitUntilClosed() async throws {
     guard let server = self.server else { return }
-    try await server.flatMap(\.onClose).get()
-    logger.info().log("Server closed")
+    try await withTaskCancellationHandler {
+      try await server.flatMap(\.onClose).get()
+      logger.info().log("Server closed")
+    } onCancel: {
+      initiateShutdown()
+    }
+  }
+
+  /// Begins shutting the server down so a pending ``waitUntilClosed()`` returns.
+  /// In-flight RPCs are given ``gracefulShutdownTimeout`` to complete while new RPCs and
+  /// connections are rejected; if they do not finish in time the server is closed
+  /// forcefully. Non-blocking and idempotent.
+  func initiateShutdown() {
+    shutdownLock.lock()
+    let alreadyInitiated = didInitiateShutdown
+    didInitiateShutdown = true
+    shutdownLock.unlock()
+    guard !alreadyInitiated else { return }
+
+    // Release externally-visible registration the instant shutdown begins, so no client can
+    // discover this companion during the graceful-shutdown drain that follows.
+    onShutdownStarted?()
+
+    guard let server = self.server else { return }
+    logger.info().log("Shutting down swift server")
+    server.whenSuccess { [logger] server in
+      let forceClose = server.channel.eventLoop.scheduleTask(in: Self.gracefulShutdownTimeout) {
+        logger.info().log("Graceful shutdown timed out; closing swift server forcefully")
+        server.close(promise: nil)
+      }
+      server.onClose.whenComplete { _ in forceClose.cancel() }
+      server.initiateGracefulShutdown(promise: nil)
+    }
   }
 
   private func cleanupUnixDomainSocket(path: String) throws {
