@@ -62,4 +62,60 @@ final class FBSimulatorConfigurationTests: XCTestCase {
     XCTAssertEqual(configuration.device.model, .modeliPhone7)
     XCTAssertEqual(configuration.os.name, FBOSVersionName(rawValue: "FooOS"))
   }
+
+  func testMetadataResolutionPrefersDirectName() {
+    let resolvedName = FBSimulatorConfiguration.resolvedMetadataName(
+      directName: "iOS 27.0",
+      identifier: "com.apple.CoreSimulator.SimRuntime.iOS-27-0"
+    ) {
+      XCTFail("Candidates should not be loaded when direct metadata is available")
+      return []
+    }
+
+    XCTAssertEqual(resolvedName, "iOS 27.0")
+  }
+
+  func testMetadataResolutionRecoversNameFromIdentifier() {
+    let resolvedName = FBSimulatorConfiguration.resolvedMetadataName(
+      directName: nil,
+      identifier: "com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro"
+    ) {
+      [
+        (identifier: "com.apple.CoreSimulator.SimDeviceType.iPhone-16", name: "iPhone 16"),
+        (identifier: "com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro", name: "iPhone 17 Pro"),
+      ]
+    }
+
+    XCTAssertEqual(resolvedName, "iPhone 17 Pro")
+  }
+
+  func testSynthesizedConfigurationPreservesKnownMetadata() {
+    let fallback = FBSimulatorConfiguration(
+      device: FBDeviceType.generic(withName: "Fallback Device"),
+      os: FBOSVersion.generic(withName: "Fallback OS"))
+
+    let missingRuntime = FBSimulatorConfiguration.synthesizedConfiguration(
+      runtimeName: nil,
+      deviceModelName: "Known Device",
+      fallback: fallback)
+    XCTAssertEqual(missingRuntime.os.name.rawValue, "Fallback OS")
+    XCTAssertEqual(missingRuntime.device.model.rawValue, "Known Device")
+
+    let missingDevice = FBSimulatorConfiguration.synthesizedConfiguration(
+      runtimeName: "Known OS",
+      deviceModelName: nil,
+      fallback: fallback)
+    XCTAssertEqual(missingDevice.os.name.rawValue, "Known OS")
+    XCTAssertEqual(missingDevice.device.model.rawValue, "Fallback Device")
+  }
+
+  func testSynthesizedConfigurationAlwaysReturnsWithoutFallback() {
+    let configuration = FBSimulatorConfiguration.synthesizedConfiguration(
+      runtimeName: nil,
+      deviceModelName: nil,
+      fallback: nil)
+
+    XCTAssertEqual(configuration.os.name.rawValue, "Unknown Runtime")
+    XCTAssertEqual(configuration.device.model.rawValue, "Unknown Device")
+  }
 }
