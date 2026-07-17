@@ -43,7 +43,7 @@ extension FBSimulator {
   ///
   /// - Parameters:
   ///   - relativePath: Executable path relative to the RuntimeRoot, e.g.
-  ///     `usr/bin/heap` or `bin/sh`.
+  ///     `usr/bin/heap` or `bin/launchctl`.
   ///   - arguments: Arguments passed to the tool.
   ///   - environment: Environment for the spawned tool.
   /// - Returns: The captured stdout, stderr and exit code.
