@@ -23,6 +23,11 @@ static int gClientFd = -1;
 // lost connection should end the process or just reset. Set when the server starts.
 static BOOL gHostOutlivesSession = NO;
 
+// The next run index for compiled dylibs, bumped once per executed command.
+// Persists for the process lifetime -- including across client reconnects for the
+// `app` context.
+static int gRunIndex = 0;
+
 // MARK: - Socket Setup
 
 static int CreateSocketAtPath(NSString *socketPath)
@@ -193,7 +198,7 @@ int FBReplServeSocket(NSString *socketPath, NSArray<NSString *> *generatedInterf
     gClientFd = clientFd;
     // Greet the client with the .swiftinterface paths the probe generated (an
     // empty list when there are none), then handle commands.
-    WriteMessage(@{@"type" : @"greeting", @"interfaces" : generatedInterfaces ?: @[]}, clientFd);
+    WriteMessage(@{@"type" : @"greeting", @"interfaces" : generatedInterfaces ?: @[], @"nextRunIndex" : @(gRunIndex)}, clientFd);
     BOOL connected = YES;
     while (connected) {
       @autoreleasepool {
@@ -203,6 +208,8 @@ int FBReplServeSocket(NSString *socketPath, NSArray<NSString *> *generatedInterf
         } else {
           NSMutableDictionary *response = [ProcessCommand(command) mutableCopy];
           response[@"type"] = @"result";
+          gRunIndex++;
+          response[@"nextRunIndex"] = @(gRunIndex);
           WriteMessage(response, clientFd);
           [response release];
         }

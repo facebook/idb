@@ -135,6 +135,7 @@ struct ReplRunner: ParsableArguments {
     var responses: GRPCAsyncResponseStream<Idb_ReplResponse>.Iterator
     let deviceType: String
     let osVersion: String
+    let nextRunIndex: UInt32
     let autoImportModules: [String]
     let interfaceSearchPaths: [String]
     let sdkPath: String
@@ -170,6 +171,7 @@ struct ReplRunner: ParsableArguments {
               }
               if case let .app(app) = context {
                 $0.appBundleID = app.bundleID
+                $0.reuseSession = app.reuseSession
               }
             })
         })
@@ -181,6 +183,7 @@ struct ReplRunner: ParsableArguments {
       }
       deviceType = ready.deviceType
       osVersion = ready.osVersion
+      nextRunIndex = ready.nextRunIndex
       reporter.addMetadata(["device_type": deviceType])
 
       // The companion sends the .swiftinterface files available to injected code
@@ -224,13 +227,14 @@ struct ReplRunner: ParsableArguments {
     if let code {
       let start = Date()
       do {
-        let dylib = try compileRun(swiftCode: code, index: 0, interfaceSearchPaths: interfaceSearchPaths, autoImportModules: autoImportModules, targetTriple: targetTriple, sdkPath: sdkPath, toolchain: toolchain)
+        let index = Int(nextRunIndex)
+        let dylib = try compileRun(swiftCode: code, index: index, interfaceSearchPaths: interfaceSearchPaths, autoImportModules: autoImportModules, targetTriple: targetTriple, sdkPath: sdkPath, toolchain: toolchain)
         try await call.requestStream.send(
           .with {
             $0.control = .execute(
               .with {
                 $0.dylib = dylib
-                $0.symbol = "idb_repl_0"
+                $0.symbol = "idb_repl_\(index)"
               })
           })
         switch try await responses.next()?.event {
@@ -260,7 +264,7 @@ struct ReplRunner: ParsableArguments {
 
     var lines: [String] = []
     let editor = LineEditor()
-    var runIndex = 0
+    var runIndex = Int(nextRunIndex)
 
     inputLoop: while let input = editor.readLine() {
       let trimmed = input.trimmingCharacters(in: .whitespaces)
@@ -286,6 +290,7 @@ struct ReplRunner: ParsableArguments {
             switch try await responses.next()?.event {
             case let .result(result):
               printStatus(result.output)
+              runIndex = result.nextRunIndex >= 0 ? Int(result.nextRunIndex) : 0
             case let .stopped(stopped):
               throw ReplExecutionError.sessionStopped(stopped.desc)
             case .ready:
@@ -299,7 +304,6 @@ struct ReplRunner: ParsableArguments {
             reportCall(reporter, "run", start: start, arguments: ["size=\(codeSize(swiftCode))"], failure: "\(error)")
             stopSession = (error as? ReplExecutionError)?.terminatesSession ?? true
           }
-          runIndex += 1
           lines = []
           if stopSession {
             break inputLoop
@@ -372,7 +376,7 @@ struct ReplRunner: ParsableArguments {
     let code = ReplSourceGenerator.generateSource(for: swiftCode, index: index, autoImportModules: autoImportModules)
     try code.write(toFile: swiftPath, atomically: true, encoding: .utf8)
 
-    let (status, compilerOutput) = try compileSwift(sourcePath: swiftPath, outputPath: dylibPath, interfaceSearchPaths: interfaceSearchPaths, targetTriple: targetTriple, sdkPath: sdkPath, toolchain: toolchain)
+    let (status, compilerOutput) = try compileSwift(sourcePath: swiftPath, outputPath: dylibPath, index: index, interfaceSearchPaths: interfaceSearchPaths, targetTriple: targetTriple, sdkPath: sdkPath, toolchain: toolchain)
     try? FileManager.default.removeItem(atPath: swiftPath)
 
     guard status == 0 else {
@@ -381,7 +385,7 @@ struct ReplRunner: ParsableArguments {
     return try Data(contentsOf: URL(fileURLWithPath: dylibPath))
   }
 
-  private func compileSwift(sourcePath: String, outputPath: String, interfaceSearchPaths: [String], targetTriple: String, sdkPath: String, toolchain: String) throws -> (Int32, String) {
+  private func compileSwift(sourcePath: String, outputPath: String, index: Int, interfaceSearchPaths: [String], targetTriple: String, sdkPath: String, toolchain: String) throws -> (Int32, String) {
     let swiftcPath = (toolchain as NSString).appendingPathComponent("usr/bin/swiftc")
     let swiftc = Process()
     swiftc.executableURL = URL(fileURLWithPath: swiftcPath)
@@ -392,6 +396,9 @@ struct ReplRunner: ParsableArguments {
       sourcePath,
       "-emit-library", "-o", outputPath,
       "-target", targetTriple,
+      // Give each submission a unique, predictable module name matching its
+      // entry-point symbol.
+      "-module-name", "idb_repl_\(index)",
     ]
     // Add the probe-generated .swiftinterface directories to the import search
     // path so injected code can `import` the test bundle's modules. The symbols

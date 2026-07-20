@@ -317,14 +317,15 @@ import XCTestBootstrap
     return try await replTarget.startReplSimulator()
   }
 
-  /// Launches an installed app with the REPL injected, for the "app" REPL context.
-  /// The returned `ReplSession.run` is already resolved: the app outlives the
-  /// session (it resets and waits for the next client on disconnect).
-  public func repl_start_app(bundleID: String) async throws -> ReplSession {
+  /// Launches an installed app with the REPL injected, for the `app` REPL
+  /// context -- or, when `reuseSession` is true, reattaches to an already-running
+  /// REPL for the app. The returned `ReplSession.run` is already resolved: the app
+  /// outlives the session (it resets and waits for the next client on disconnect).
+  public func repl_start_app(bundleID: String, reuseSession: Bool) async throws -> ReplSession {
     guard let replTarget = target as? ReplCommands else {
       throw FBIDBError.describe("\(target) does not support running REPL sessions").build()
     }
-    return try await replTarget.startReplApp(bundleID: bundleID)
+    return try await replTarget.startReplApp(bundleID: bundleID, reuseSession: reuseSession)
   }
 
   public func debugserver_start(_ bundleID: String) async throws -> FBDebugServer {

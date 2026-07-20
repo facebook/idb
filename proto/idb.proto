@@ -802,6 +802,12 @@ message ReplRequest {
     Context context = 2;
     // The bundle id to launch (with the REPL injected) for the APP context.
     string app_bundle_id = 3;
+    // APP context only: whether to reuse an already-running REPL for this app
+    // (reattach) instead of forcing a new session (a clean relaunch). idb-repl
+    // sends true by default and false when `--new-session` is passed. Unset --
+    // an older client that predates reattach -- is false, so the companion
+    // relaunches.
+    bool reuse_session = 4;
   }
   // Sent for each piece of code to run: a compiled dylib and the symbol to
   // call.
@@ -835,11 +841,16 @@ message ReplResponse {
     repeated GeneratedInterface generated_interfaces = 2;
     // The OS version of the connected target, e.g. "26.2".
     string os_version = 4;
+    // The next index the driver should use for numbering a compiled module.
+    uint32 next_run_index = 5;
   }
   // The result of executing one Execute message.
   message Result {
     bool success = 1;
     string output = 2;
+    // The next index the driver should use for numbering a compiled module.
+    // A negative value signals the session has ended.
+    int32 next_run_index = 3;
   }
   // The session has ended.
   message Stopped {

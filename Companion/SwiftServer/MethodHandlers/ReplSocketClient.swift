@@ -77,10 +77,17 @@ final class ReplSocketClient {
     return ReplSocketClient(fd: fd)
   }
 
-  /// Reads the shim's greeting frame, sent once on connect before any command,
-  /// and returns the `.swiftinterface` paths it advertises (possibly empty). Must
-  /// be called exactly once, before the first `execute`.
-  func readGreeting() async throws -> [String] {
+  /// The shim's greeting: the `.swiftinterface` paths it advertises (possibly
+  /// empty), plus the next run index to number compiled dylibs from (nonzero
+  /// only when the app persisted a higher value across reconnects).
+  struct Greeting {
+    let interfaces: [String]
+    let nextRunIndex: UInt32
+  }
+
+  /// Reads the shim's greeting frame, sent once on connect before any command.
+  /// Must be called exactly once, before the first `execute`.
+  func readGreeting() async throws -> Greeting {
     let fd = self.fd
     return try await withCheckedThrowingContinuation { continuation in
       ioQueue.async {
@@ -90,7 +97,8 @@ final class ReplSocketClient {
             throw GRPCStatus(code: .internalError, message: "repl: expected a 'greeting' message, got type '\(message["type"] as? String ?? "nil")'")
           }
           let interfaces = message["interfaces"] as? [String] ?? []
-          continuation.resume(returning: interfaces)
+          let nextRunIndex = (message["nextRunIndex"] as? NSNumber)?.uint32Value ?? 0
+          continuation.resume(returning: Greeting(interfaces: interfaces, nextRunIndex: nextRunIndex))
         } catch {
           continuation.resume(throwing: error)
         }
@@ -110,7 +118,7 @@ final class ReplSocketClient {
   /// `result` for this execute arrives. A `read` returning EOF/error before a
   /// complete message means the shim closed the socket mid-exchange (e.g. the test
   /// process crashed), surfaced as a disconnect.
-  func execute(dylibPath: String, symbol: String, hostCommandHandler: @escaping HostCommandHandler) async throws -> (success: Bool, output: String) {
+  func execute(dylibPath: String, symbol: String, hostCommandHandler: @escaping HostCommandHandler) async throws -> (success: Bool, output: String, nextRunIndex: Int32) {
     let fd = self.fd
     return try await withCheckedThrowingContinuation { continuation in
       ioQueue.async {
@@ -131,7 +139,8 @@ final class ReplSocketClient {
                 success
                 ? (message["result"] as? String ?? "")
                 : "Error: \(message["error"] as? String ?? "unknown")"
-              continuation.resume(returning: (success, output))
+              let nextRunIndex = (message["nextRunIndex"] as? NSNumber)?.int32Value ?? 0
+              continuation.resume(returning: (success, output, nextRunIndex))
               return
 
             case let other:

@@ -29,7 +29,7 @@ struct ReplMethodHandler {
     case .test:
       session = try await commandExecutor.repl_start_test(bundlePath: start.testBundlePath)
     case .app:
-      session = try await commandExecutor.repl_start_app(bundleID: start.appBundleID)
+      session = try await commandExecutor.repl_start_app(bundleID: start.appBundleID, reuseSession: start.reuseSession)
     case .simulator, .UNRECOGNIZED:
       session = try await commandExecutor.repl_start_simulator()
     }
@@ -58,7 +58,8 @@ struct ReplMethodHandler {
     // interfaces (the `IDB` module's). We read each file's contents here and
     // forward those (not the paths) to the driver, which may not share a
     // filesystem with the companion; the driver materializes them locally.
-    let interfacePaths = try await client.readGreeting() + session.extraInterfacePaths
+    let greeting = try await client.readGreeting()
+    let interfacePaths = greeting.interfaces + session.extraInterfacePaths
     let generatedInterfaces: [Idb_ReplResponse.Ready.GeneratedInterface] = interfacePaths.compactMap { path in
       guard let contents = try? String(contentsOfFile: path, encoding: .utf8) else {
         targetLogger.error().log("Failed to read generated interface at \(path); skipping")
@@ -79,6 +80,7 @@ struct ReplMethodHandler {
             $0.deviceType = commandExecutor.replDeviceType
             $0.osVersion = commandExecutor.replOSVersion
             $0.generatedInterfaces = generatedInterfaces
+            $0.nextRunIndex = greeting.nextRunIndex
           })
       })
 
@@ -112,6 +114,7 @@ struct ReplMethodHandler {
               .with {
                 $0.success = result.success
                 $0.output = result.output
+                $0.nextRunIndex = result.nextRunIndex
               })
           })
 
