@@ -10,6 +10,7 @@
 
 import ArgumentParser
 import CompanionDiscovery
+import CompanionUtilities
 import Foundation
 import GRPC
 import IDBGRPCSwift
@@ -29,6 +30,50 @@ enum Context {
     case .simulator: return .simulator
     case .test: return .test
     case .app: return .app
+    }
+  }
+
+  /// Short name for the context, recorded as a telemetry normal.
+  var telemetryName: String {
+    switch self {
+    case .simulator: return "simulator"
+    case .test: return "test"
+    case .app: return "app"
+    }
+  }
+}
+
+/// A failure while compiling or executing REPL code. Its description is shown to
+/// the user and recorded as the telemetry failure message.
+enum ReplExecutionError: Error, CustomStringConvertible {
+  case compileFailed(String)
+  case sessionStopped(String)
+  case unexpectedReady
+  case streamClosed
+  case notReady
+
+  var description: String {
+    switch self {
+    case let .compileFailed(output):
+      return output
+    case let .sessionStopped(detail):
+      return detail.isEmpty ? "idb_companion ended the REPL session" : detail
+    case .unexpectedReady:
+      return "idb_companion sent an unexpected 'ready' event instead of a result"
+    case .streamClosed:
+      return "idb_companion closed the REPL stream without returning a result"
+    case .notReady:
+      return "idb_companion did not report the REPL as ready"
+    }
+  }
+
+  /// Whether the REPL session can no longer continue after this error.
+  var terminatesSession: Bool {
+    switch self {
+    case .compileFailed, .unexpectedReady:
+      return false
+    case .sessionStopped, .streamClosed, .notReady:
+      return true
     }
   }
 }
@@ -65,104 +110,143 @@ struct ReplRunner: ParsableArguments {
   func run(context: Context) async throws {
     // @oss-disable
 
-    let toolchain = try resolveToolchainPath(explicit: toolchainPath)
-
-    // Resolve the companion to connect to (see `resolveCompanionAddress`): an
-    // explicit `--companion host:port`, otherwise a discovered companion.
-    let address = try await resolveCompanionAddress()
-
-    let group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
-    let channel = try GRPCChannelPool.with(
-      target: connectionTarget(for: address),
-      transportSecurity: try channelTransportSecurity(
-        for: address, tls: plaintext ? .disabled : .metaIdentity),
-      eventLoopGroup: group
-    )
-    let client = Idb_CompanionServiceAsyncClient(channel: channel)
-
-    // Open the bidirectional repl stream and start a session.
-    let call = client.makeReplCall()
-    var responses = call.responseStream.makeAsyncIterator()
-    try await call.requestStream.send(
-      .with {
-        $0.control = .start(
-          .with {
-            $0.context = context.proto
-            // Only the test context runs against a bundle; only the app context
-            // names an app to launch.
-            if case let .test(bundle) = context {
-              $0.testBundlePath = bundle.testBundlePath
-            }
-            if case let .app(app) = context {
-              $0.appBundleID = app.bundleID
-            }
-          })
-      })
-
-    // The companion launches the test and connects to the shim before it is ready.
-    let first = try await responses.next()
-    guard let firstEvent = first?.event, case let .ready(ready) = firstEvent else {
-      throw ValidationError("idb_companion did not report the REPL as ready")
+    let reporter = ReplTelemetry.makeReporter()
+    var sessionMetadata = [
+      "context": context.telemetryName
+    ]
+    if let udid {
+      sessionMetadata["udid"] = udid
     }
+    if companion != nil {
+      sessionMetadata["connection"] = "remote"
+    }
+    if let reason = GlobalOptions.shared.reason {
+      sessionMetadata["reason"] = reason
+    }
+    reporter.addMetadata(sessionMetadata)
 
-    // The companion sends the .swiftinterface files available to injected code
-    // (the test bundle's probe-generated modules and the `IDB` module) as
-    // contents, since it may not share a filesystem with us. Materialize each into
-    // the session directory, add that directory to the compiler's import search
-    // path, and auto-import the modules so user code can reference them without an
-    // explicit `import`. Report them on stderr (keeping one-shot stdout clean).
-    var autoImportModules: [String] = []
-    var interfaceDirectory: String?
-    if !ready.generatedInterfaces.isEmpty {
-      FileHandle.standardError.write(Data("idb-repl: received generated interface(s):\n".utf8))
-      for interface in ready.generatedInterfaces {
-        let path = try sessionDirectory.filePath(named: "\(interface.moduleName).swiftinterface")
-        try interface.contents.write(toFile: path, atomically: true, encoding: .utf8)
-        interfaceDirectory = (path as NSString).deletingLastPathComponent
-        autoImportModules.append(interface.moduleName)
-        FileHandle.standardError.write(Data("  \(interface.moduleName)\n".utf8))
+    // Start a REPL session: connect to the companion and wait for it to report
+    // the REPL ready.
+    let sessionStart = Date()
+    let toolchain: String
+    let group: MultiThreadedEventLoopGroup
+    let channel: GRPCChannel
+    let call: GRPCAsyncBidirectionalStreamingCall<Idb_ReplRequest, Idb_ReplResponse>
+    var responses: GRPCAsyncResponseStream<Idb_ReplResponse>.Iterator
+    let deviceType: String
+    let osVersion: String
+    let autoImportModules: [String]
+    let interfaceSearchPaths: [String]
+    let sdkPath: String
+    let targetTriple: String
+    do {
+      toolchain = try resolveToolchainPath(explicit: toolchainPath)
+
+      // Resolve the companion to connect to (see `resolveCompanionAddress`): an
+      // explicit `--companion host:port`, otherwise a discovered companion.
+      let address = try await resolveCompanionAddress()
+
+      group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
+      channel = try GRPCChannelPool.with(
+        target: connectionTarget(for: address),
+        transportSecurity: try channelTransportSecurity(
+          for: address, tls: plaintext ? .disabled : .metaIdentity),
+        eventLoopGroup: group
+      )
+      let client = Idb_CompanionServiceAsyncClient(channel: channel)
+
+      // Open the bidirectional repl stream and start a session.
+      call = client.makeReplCall()
+      responses = call.responseStream.makeAsyncIterator()
+      try await call.requestStream.send(
+        .with {
+          $0.control = .start(
+            .with {
+              $0.context = context.proto
+              // Only the test context runs against a bundle; only the app context
+              // names an app to launch.
+              if case let .test(bundle) = context {
+                $0.testBundlePath = bundle.testBundlePath
+              }
+              if case let .app(app) = context {
+                $0.appBundleID = app.bundleID
+              }
+            })
+        })
+
+      // The companion launches the test and connects to the shim before it is ready.
+      let first = try await responses.next()
+      guard let firstEvent = first?.event, case let .ready(ready) = firstEvent else {
+        throw ReplExecutionError.notReady
       }
-    }
-    let interfaceSearchPaths = interfaceDirectory.map { [$0] } ?? []
+      deviceType = ready.deviceType
+      osVersion = ready.osVersion
+      reporter.addMetadata(["device_type": deviceType])
 
-    // The companion reports the connected target's device type and OS version;
-    // compile injected code for the matching platform, flooring the deployment
-    // target at the runtime OS version so it never links against symbols newer
-    // than the runtime provides.
-    let platform = try Platform(deviceType: ready.deviceType)
-    let sdkPath = try resolveSDKPath(platform: platform)
-    let targetTriple = try resolveTargetTriple(platform: platform, runtimeOSVersion: ready.osVersion)
-    FileHandle.standardError.write(Data("idb-repl: compiling injected code for \(targetTriple)\n".utf8))
+      // The companion sends the .swiftinterface files available to injected code
+      // (the test bundle's probe-generated modules and the `IDB` module) as
+      // contents, since it may not share a filesystem with us. Materialize each into
+      // the session directory, add that directory to the compiler's import search
+      // path, and auto-import the modules so user code can reference them without an
+      // explicit `import`. Report them on stderr (keeping one-shot stdout clean).
+      var modules: [String] = []
+      var interfaceDirectory: String?
+      if !ready.generatedInterfaces.isEmpty {
+        FileHandle.standardError.write(Data("idb-repl: received generated interface(s):\n".utf8))
+        for interface in ready.generatedInterfaces {
+          let path = try sessionDirectory.filePath(named: "\(interface.moduleName).swiftinterface")
+          try interface.contents.write(toFile: path, atomically: true, encoding: .utf8)
+          interfaceDirectory = (path as NSString).deletingLastPathComponent
+          modules.append(interface.moduleName)
+          FileHandle.standardError.write(Data("  \(interface.moduleName)\n".utf8))
+        }
+      }
+      autoImportModules = modules
+      interfaceSearchPaths = interfaceDirectory.map { [$0] } ?? []
+
+      // The companion reports the connected target's device type and OS version;
+      // compile injected code for the matching platform, flooring the deployment
+      // target at the runtime OS version so it never links against symbols newer
+      // than the runtime provides.
+      let platform = try Platform(deviceType: deviceType)
+      sdkPath = try resolveSDKPath(platform: platform)
+      targetTriple = try resolveTargetTriple(platform: platform, runtimeOSVersion: osVersion)
+      FileHandle.standardError.write(Data("idb-repl: compiling injected code for \(targetTriple)\n".utf8))
+    } catch {
+      reportCall(reporter, "start_session", start: sessionStart, arguments: [], failure: "\(error)")
+      throw error
+    }
+    reportCall(reporter, "start_session", start: sessionStart, arguments: [], failure: nil)
 
     // One-shot mode: when a line of code is supplied on the command line, compile
     // and run just that, print the result to stdout, and exit instead of starting
     // the interactive REPL.
     if let code {
+      let start = Date()
       do {
-        if let dylib = compileRun(swiftCode: code, index: 0, interfaceSearchPaths: interfaceSearchPaths, autoImportModules: autoImportModules, targetTriple: targetTriple, sdkPath: sdkPath, toolchain: toolchain) {
-          try await call.requestStream.send(
-            .with {
-              $0.control = .execute(
-                .with {
-                  $0.dylib = dylib
-                  $0.symbol = "idb_repl_0"
-                })
-            })
-          switch try await responses.next()?.event {
-          case let .result(result):
-            print(result.output)
-          case let .stopped(stopped):
-            print(stopped.desc.isEmpty ? "idb_companion ended the REPL session" : stopped.desc)
-          case .ready:
-            print("Error: idb_companion sent an unexpected 'ready' event instead of a result")
-          case .none:
-            print("Error: idb_companion closed the REPL stream without returning a result")
-          }
+        let dylib = try compileRun(swiftCode: code, index: 0, interfaceSearchPaths: interfaceSearchPaths, autoImportModules: autoImportModules, targetTriple: targetTriple, sdkPath: sdkPath, toolchain: toolchain)
+        try await call.requestStream.send(
+          .with {
+            $0.control = .execute(
+              .with {
+                $0.dylib = dylib
+                $0.symbol = "idb_repl_0"
+              })
+          })
+        switch try await responses.next()?.event {
+        case let .result(result):
+          print(result.output)
+        case let .stopped(stopped):
+          throw ReplExecutionError.sessionStopped(stopped.desc)
+        case .ready:
+          throw ReplExecutionError.unexpectedReady
+        case .none:
+          throw ReplExecutionError.streamClosed
         }
-      } catch let status as GRPCStatus {
-        print("Error: \(status.message ?? "idb_companion failed with gRPC status \(status.code)")")
+        reportCall(reporter, "run", start: start, arguments: ["size=\(codeSize(code))"], failure: nil)
       } catch {
         print("Error: \(error)")
+        reportCall(reporter, "run", start: start, arguments: ["size=\(codeSize(code))"], failure: "\(error)")
       }
 
       try? await call.requestStream.finish()
@@ -172,7 +256,7 @@ struct ReplRunner: ParsableArguments {
       return
     }
 
-    printStatus("Connected to \(ready.deviceType) \(ready.osVersion) process.", "Type '/help' for available commands.")
+    printStatus("Connected to \(deviceType) \(osVersion) process.", "Type '/help' for available commands.")
 
     var lines: [String] = []
     let editor = LineEditor()
@@ -186,8 +270,11 @@ struct ReplRunner: ParsableArguments {
         print("")
         switch trimmed {
         case "/run":
+          let start = Date()
           let swiftCode = lines.joined(separator: "\n")
-          if let dylib = compileRun(swiftCode: swiftCode, index: runIndex, interfaceSearchPaths: interfaceSearchPaths, autoImportModules: autoImportModules, targetTriple: targetTriple, sdkPath: sdkPath, toolchain: toolchain) {
+          var stopSession = false
+          do {
+            let dylib = try compileRun(swiftCode: swiftCode, index: runIndex, interfaceSearchPaths: interfaceSearchPaths, autoImportModules: autoImportModules, targetTriple: targetTriple, sdkPath: sdkPath, toolchain: toolchain)
             try await call.requestStream.send(
               .with {
                 $0.control = .execute(
@@ -196,31 +283,27 @@ struct ReplRunner: ParsableArguments {
                     $0.symbol = "idb_repl_\(runIndex)"
                   })
               })
-            do {
-              let event = try await responses.next()?.event
-              switch event {
-              case let .result(result):
-                printStatus(result.output)
-              case let .stopped(stopped):
-                let detail = stopped.desc.isEmpty ? "idb_companion ended the REPL session" : stopped.desc
-                printStatus("Session ended:", detail)
-                break inputLoop
-              case .ready:
-                printStatus("Error:", "idb_companion sent an unexpected 'ready' event instead of a result")
-              case .none:
-                printStatus("Error:", "idb_companion closed the REPL stream without returning a result")
-                break inputLoop
-              }
-            } catch let status as GRPCStatus {
-              printStatus("Error:", status.message ?? "idb_companion failed with gRPC status \(status.code)")
-              break inputLoop
-            } catch {
-              printStatus("Error:", "\(error)")
-              break inputLoop
+            switch try await responses.next()?.event {
+            case let .result(result):
+              printStatus(result.output)
+            case let .stopped(stopped):
+              throw ReplExecutionError.sessionStopped(stopped.desc)
+            case .ready:
+              throw ReplExecutionError.unexpectedReady
+            case .none:
+              throw ReplExecutionError.streamClosed
             }
+            reportCall(reporter, "run", start: start, arguments: ["size=\(codeSize(swiftCode))"], failure: nil)
+          } catch {
+            printStatus("Error:", "\(error)")
+            reportCall(reporter, "run", start: start, arguments: ["size=\(codeSize(swiftCode))"], failure: "\(error)")
+            stopSession = (error as? ReplExecutionError)?.terminatesSession ?? true
           }
           runIndex += 1
           lines = []
+          if stopSession {
+            break inputLoop
+          }
         case "/help":
           printHelp()
         case "/exit":
@@ -279,29 +362,23 @@ struct ReplRunner: ParsableArguments {
     }
   }
 
-  /// Compiles the entered Swift into a dylib and returns its bytes, or prints a
-  /// compile error and returns nil.
-  private func compileRun(swiftCode: String, index: Int, interfaceSearchPaths: [String], autoImportModules: [String], targetTriple: String, sdkPath: String, toolchain: String) -> Data? {
-    do {
-      let swiftPath = try sessionDirectory.filePath(named: "run-\(index).swift")
-      let dylibPath = try sessionDirectory.filePath(named: "run-\(index).dylib")
+  /// Compiles the entered Swift into a dylib and returns its bytes, throwing
+  /// `ReplExecutionError.compileFailed` (carrying the compiler output) when the
+  /// compile fails.
+  private func compileRun(swiftCode: String, index: Int, interfaceSearchPaths: [String], autoImportModules: [String], targetTriple: String, sdkPath: String, toolchain: String) throws -> Data {
+    let swiftPath = try sessionDirectory.filePath(named: "run-\(index).swift")
+    let dylibPath = try sessionDirectory.filePath(named: "run-\(index).dylib")
 
-      let code = ReplSourceGenerator.generateSource(for: swiftCode, index: index, autoImportModules: autoImportModules)
-      try code.write(toFile: swiftPath, atomically: true, encoding: .utf8)
+    let code = ReplSourceGenerator.generateSource(for: swiftCode, index: index, autoImportModules: autoImportModules)
+    try code.write(toFile: swiftPath, atomically: true, encoding: .utf8)
 
-      let (status, compilerOutput) = try compileSwift(sourcePath: swiftPath, outputPath: dylibPath, interfaceSearchPaths: interfaceSearchPaths, targetTriple: targetTriple, sdkPath: sdkPath, toolchain: toolchain)
-      try? FileManager.default.removeItem(atPath: swiftPath)
+    let (status, compilerOutput) = try compileSwift(sourcePath: swiftPath, outputPath: dylibPath, interfaceSearchPaths: interfaceSearchPaths, targetTriple: targetTriple, sdkPath: sdkPath, toolchain: toolchain)
+    try? FileManager.default.removeItem(atPath: swiftPath)
 
-      if status == 0 {
-        return try Data(contentsOf: URL(fileURLWithPath: dylibPath))
-      } else {
-        printStatus("Error:", compilerOutput)
-        return nil
-      }
-    } catch {
-      printStatus("Error:", "\(error)")
-      return nil
+    guard status == 0 else {
+      throw ReplExecutionError.compileFailed(compilerOutput)
     }
+    return try Data(contentsOf: URL(fileURLWithPath: dylibPath))
   }
 
   private func compileSwift(sourcePath: String, outputPath: String, interfaceSearchPaths: [String], targetTriple: String, sdkPath: String, toolchain: String) throws -> (Int32, String) {
@@ -381,6 +458,21 @@ struct ReplRunner: ParsableArguments {
       "",
       "Enter Swift code line by line, then type /run to execute."
     )
+  }
+
+  /// The size of a block of code, used as coarse telemetry metadata.
+  private func codeSize(_ code: String) -> Int {
+    code.count
+  }
+
+  /// Reports the outcome of a timed call (`nil` failure means success).
+  private func reportCall(_ reporter: FBEventReporter, _ name: String, start: Date, arguments: [String], failure: String?) {
+    let duration = Date().timeIntervalSince(start)
+    if let failure {
+      reporter.report(FBEventReporterSubject(forFailingCall: name, duration: duration, message: failure, size: nil, arguments: arguments))
+    } else {
+      reporter.report(FBEventReporterSubject(forSuccessfulCall: name, duration: duration, size: nil, arguments: arguments))
+    }
   }
 
   private func printStatus(_ lines: String...) {

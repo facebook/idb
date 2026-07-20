@@ -6,6 +6,32 @@
  */
 
 import ArgumentParser
+import Foundation
+
+/// Carries the root command's global options to `ReplRunner.run`, which executes
+/// on a subcommand. swift-argument-parser does not expose a parent command's
+/// options to its subcommands; `TestRepl.validate()` runs on the root as the
+/// parser descends into the subcommand, and is where the parsed global options
+/// are stashed for the run.
+final class GlobalOptions: @unchecked Sendable {
+  static let shared = GlobalOptions()
+
+  private let lock = NSLock()
+  private var storedReason: String?
+
+  var reason: String? {
+    get {
+      lock.lock()
+      defer { lock.unlock() }
+      return storedReason
+    }
+    set {
+      lock.lock()
+      defer { lock.unlock() }
+      storedReason = newValue
+    }
+  }
+}
 
 @main
 struct TestRepl: AsyncParsableCommand {
@@ -16,6 +42,10 @@ struct TestRepl: AsyncParsableCommand {
     commandName: "idb-repl",
     abstract: "Launch a test bundle in REPL mode",
     subcommands: [TestCommand.self, SimulatorCommand.self, AppCommand.self])
+
+  mutating func validate() throws {
+    GlobalOptions.shared.reason = reason
+  }
 }
 
 struct TestCommand: AsyncParsableCommand {
