@@ -228,14 +228,16 @@ extension FBSimulatorConfiguration {
   }
 
   private class func resolvedMetadata(from simDevice: SimDevice) -> ResolvedMetadata {
-    let runtimeName = resolvedMetadataName(
-      directName: simDevice.runtime.name,
-      identifier: simDevice.runtimeIdentifier
-    ) {
-      try supportedRuntimes().map { (identifier: $0.identifier, name: $0.name) }
-    }
+    let runtimeIdentifier = nonEmpty(simDevice.runtimeIdentifier)
+    let runtimeName = runtimeName(fromIdentifier: runtimeIdentifier)
+      ?? resolvedMetadataName(
+        directName: (simDevice.value(forKey: "runtime") as? SimRuntime)?.name,
+        identifier: runtimeIdentifier
+      ) {
+        try supportedRuntimes().map { (identifier: $0.identifier, name: $0.name) }
+      }
     let deviceModelName = resolvedMetadataName(
-      directName: simDevice.deviceType.name,
+      directName: (simDevice.value(forKey: "deviceType") as? SimDeviceType)?.name,
       identifier: simDevice.deviceTypeIdentifier
     ) {
       try supportedDeviceTypes().map { (identifier: $0.identifier, name: $0.name) }
@@ -258,6 +260,23 @@ extension FBSimulatorConfiguration {
     }
     return candidates.first { nonEmpty($0.identifier) == identifier }
       .flatMap { nonEmpty($0.name) }
+  }
+
+  static func runtimeName(fromIdentifier identifier: String?) -> String? {
+    let prefix = "com.apple.CoreSimulator.SimRuntime."
+    guard let identifier = nonEmpty(identifier), identifier.hasPrefix(prefix) else {
+      return nil
+    }
+    let components = identifier.dropFirst(prefix.count).split(separator: "-")
+    guard components.count >= 2 else {
+      return nil
+    }
+    let platform = components[0]
+    let versionComponents = components.dropFirst()
+    guard versionComponents.allSatisfy({ Int($0) != nil }) else {
+      return nil
+    }
+    return "\(platform) \(versionComponents.joined(separator: "."))"
   }
 
   private static func nonEmpty(_ value: String?) -> String? {

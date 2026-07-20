@@ -23,6 +23,8 @@ class FBSimulatorControlTests_SimDeviceRuntime_Double: NSObject {
 class FBSimulatorControlTests_SimDevice_Double: NSObject {
   var name: String = ""
   var UDID: NSUUID = NSUUID()
+  var runtimeIdentifier: String?
+  var deviceTypeIdentifier: String?
   private var _dataPath: String?
   var dataPath: String {
     get {
@@ -57,5 +59,6 @@ class FBSimulatorControlTests_SimDevice_Double: NSObject {
 @objcMembers
 class FBSimulatorControlTests_SimDeviceSet_Double: NSObject {
   var availableDevices: [Any] = []
+  var devices: [Any] = []
   var notificationManager: AnyObject?
 }
