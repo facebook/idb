@@ -231,13 +231,13 @@ extension FBSimulatorConfiguration {
     let runtimeIdentifier = nonEmpty(simDevice.runtimeIdentifier)
     let runtimeName = runtimeName(fromIdentifier: runtimeIdentifier)
       ?? resolvedMetadataName(
-        directName: (simDevice.value(forKey: "runtime") as? SimRuntime)?.name,
+        directName: metadataName(forKey: "runtime", from: simDevice),
         identifier: runtimeIdentifier
       ) {
         try supportedRuntimes().map { (identifier: $0.identifier, name: $0.name) }
       }
     let deviceModelName = resolvedMetadataName(
-      directName: (simDevice.value(forKey: "deviceType") as? SimDeviceType)?.name,
+      directName: metadataName(forKey: "deviceType", from: simDevice),
       identifier: simDevice.deviceTypeIdentifier
     ) {
       try supportedDeviceTypes().map { (identifier: $0.identifier, name: $0.name) }
@@ -277,6 +277,13 @@ extension FBSimulatorConfiguration {
       return nil
     }
     return "\(platform) \(versionComponents.joined(separator: "."))"
+  }
+
+  private static func metadataName(forKey key: String, from simDevice: SimDevice) -> String? {
+    guard let metadata = simDevice.value(forKey: key) as? NSObject else {
+      return nil
+    }
+    return nonEmpty(metadata.value(forKey: "name") as? String)
   }
 
   private static func nonEmpty(_ value: String?) -> String? {
