@@ -833,6 +833,8 @@ message ReplResponse {
       string contents = 2;
     }
     repeated GeneratedInterface generated_interfaces = 2;
+    // The OS version of the connected target, e.g. "26.2".
+    string os_version = 4;
   }
   // The result of executing one Execute message.
   message Result {

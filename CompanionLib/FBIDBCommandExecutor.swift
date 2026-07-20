@@ -300,6 +300,13 @@ import XCTestBootstrap
     FBControlCoreProductFamilyString(target.deviceType.family)
   }
 
+  /// The OS version ("26.2") of the target this companion is connected to.
+  /// Reported to the client in the REPL handshake so it can compile injected
+  /// code for the runtime's deployment target.
+  public var replOSVersion: String {
+    target.osVersion.versionString
+  }
+
   /// Launches `SimulatorFrameworkBridge` on the simulator for the "simulator"
   /// REPL context. The returned `ReplSession.run` completes when the bridge
   /// process exits.

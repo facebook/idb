@@ -77,6 +77,7 @@ struct ReplMethodHandler {
         $0.event = .ready(
           .with {
             $0.deviceType = commandExecutor.replDeviceType
+            $0.osVersion = commandExecutor.replOSVersion
             $0.generatedInterfaces = generatedInterfaces
           })
       })

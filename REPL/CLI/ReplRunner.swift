@@ -125,11 +125,14 @@ struct ReplRunner: ParsableArguments {
     }
     let interfaceSearchPaths = interfaceDirectory.map { [$0] } ?? []
 
-    // The companion reports the connected target's device type; compile injected
-    // code for the matching platform.
+    // The companion reports the connected target's device type and OS version;
+    // compile injected code for the matching platform, flooring the deployment
+    // target at the runtime OS version so it never links against symbols newer
+    // than the runtime provides.
     let platform = try Platform(deviceType: ready.deviceType)
     let sdkPath = try resolveSDKPath(platform: platform)
-    let targetTriple = try resolveTargetTriple(platform: platform)
+    let targetTriple = try resolveTargetTriple(platform: platform, runtimeOSVersion: ready.osVersion)
+    FileHandle.standardError.write(Data("idb-repl: compiling injected code for \(targetTriple)\n".utf8))
 
     // One-shot mode: when a line of code is supplied on the command line, compile
     // and run just that, print the result to stdout, and exit instead of starting
@@ -169,7 +172,7 @@ struct ReplRunner: ParsableArguments {
       return
     }
 
-    printStatus("Connected to \(ready.deviceType) process.", "Type '/help' for available commands.")
+    printStatus("Connected to \(ready.deviceType) \(ready.osVersion) process.", "Type '/help' for available commands.")
 
     var lines: [String] = []
     let editor = LineEditor()
