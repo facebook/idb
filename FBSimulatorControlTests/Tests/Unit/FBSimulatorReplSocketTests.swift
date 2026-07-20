@@ -48,8 +48,12 @@ final class FBSimulatorReplSocketTests: XCTestCase {
     let path = replSocketPath(udid: "SOME-UDID", bundleID: "com.example.app")
     XCTAssertTrue(path.hasPrefix("/tmp/idb_repl_"), path)
     XCTAssertTrue(path.hasSuffix(".sock"), path)
-    // "/tmp/idb_repl_" (14) + 16 hex digits + ".sock" (5).
-    XCTAssertEqual(path.utf8.count, 35, path)
+    // The leading "/tmp/idb_repl_<uid>" directory is variable-length (the uid
+    // differs by user), so pin the basename shape instead: 16 hex digits + ".sock".
+    let base = (path as NSString).lastPathComponent
+    let hash = String(base.dropLast(".sock".count))
+    XCTAssertEqual(hash.count, 16, path)
+    XCTAssertTrue(hash.allSatisfy { $0.isHexDigit }, path)
   }
 
   func testSocketPathIsDeterministic() {

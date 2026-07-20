@@ -78,7 +78,11 @@ static BOOL WriteFully(int fd, const void *buffer, size_t count)
 {
   size_t total = 0;
   while (total < count) {
-    ssize_t n = write(fd, (const char *)buffer + total, count - total);
+    // Use send() with MSG_NOSIGNAL rather than write() so a write to a client
+    // that has hung up without completing the protocol (e.g. the reattach
+    // liveness probe connects then closes without reading) fails with EPIPE
+    // instead of raising SIGPIPE and terminating the host app.
+    ssize_t n = send(fd, (const char *)buffer + total, count - total, MSG_NOSIGNAL);
     if (n <= 0) {
       return NO;
     }

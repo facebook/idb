@@ -147,7 +147,11 @@ public final class FBSimulatorReplCommands: NSObject, FBiOSTargetCommand {
 
     // Derive the control socket path deterministically from the simulator + app
     // so a later `idb-repl app` can find and reattach to a still-running REPL
-    // instead of relaunching. Hashed to a fixed length that fits sockaddr_un.
+    // instead of relaunching. Hashed to a fixed length that fits sockaddr_un, and
+    // placed in a per-user 0700 directory so only the owning user can reach it.
+    guard ensureReplSocketDirectory(replSocketDirectory()) else {
+      throw FBSimulatorError.describe("Could not create a private REPL socket directory at \(replSocketDirectory())").build()
+    }
     let socketPath = replSocketPath(udid: simulator.udid, bundleID: bundleID)
 
     // Reattach: if a REPL is already listening at this path, reuse the live app
@@ -220,13 +224,37 @@ final class ReplNullReporter: NSObject, FBLogicXCTestReporter {
 
 // MARK: - App-context REPL socket helpers
 
+/// The per-user directory that holds app-context REPL control sockets. Placed
+/// under /tmp -- a namespace shared between the host companion and the simulator
+/// app (which runs as the same user) -- but scoped to the owning user by a 0700
+/// directory.
+func replSocketDirectory() -> String {
+  return "/tmp/idb_repl_\(getuid())"
+}
+
+/// Ensures `dir` exists as a private (0700) directory we own, safely: it creates
+/// it 0700 if missing, then verifies via lstat that it is a real directory,
+/// owned by the current user, with exactly 0700 permissions.
+@discardableResult
+func ensureReplSocketDirectory(_ dir: String) -> Bool {
+  let fm = FileManager.default
+  if !fm.fileExists(atPath: dir) {
+    try? fm.createDirectory(atPath: dir, withIntermediateDirectories: false, attributes: [.posixPermissions: 0o700])
+  }
+  var st = stat()
+  guard lstat(dir, &st) == 0 else { return false }
+  return (st.st_mode & UInt16(S_IFMT)) == UInt16(S_IFDIR)
+    && st.st_uid == getuid()
+    && (st.st_mode & 0o777) == 0o700
+}
+
 /// The deterministic control socket path for an app-context REPL, derived from
-/// the simulator udid and app bundle id. Reattach relies on this being stable
-/// across `idb-repl` invocations and companion restarts. Hashed to a fixed
-/// length: `sockaddr_un.sun_path` is only 104 bytes, so the raw udid + bundle
-/// id would not reliably fit.
+/// the simulator udid and app bundle id, inside the per-user socket directory.
+/// Reattach relies on this being stable across `idb-repl` invocations and
+/// companion restarts. Hashed to a fixed length: `sockaddr_un.sun_path` is only
+/// 104 bytes, so the raw udid + bundle id would not reliably fit.
 func replSocketPath(udid: String, bundleID: String) -> String {
-  return "/tmp/idb_repl_\(stableHashHex("\(udid)\u{0}\(bundleID)")).sock"
+  return "\(replSocketDirectory())/\(stableHashHex("\(udid)\u{0}\(bundleID)")).sock"
 }
 
 /// A stable, process-independent 64-bit FNV-1a hash of `string` as 16 hex
