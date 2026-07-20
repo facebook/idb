@@ -225,14 +225,14 @@ final class ReplNullReporter: NSObject, FBLogicXCTestReporter {
 /// across `idb-repl` invocations and companion restarts. Hashed to a fixed
 /// length: `sockaddr_un.sun_path` is only 104 bytes, so the raw udid + bundle
 /// id would not reliably fit.
-private func replSocketPath(udid: String, bundleID: String) -> String {
+func replSocketPath(udid: String, bundleID: String) -> String {
   return "/tmp/idb_repl_\(stableHashHex("\(udid)\u{0}\(bundleID)")).sock"
 }
 
 /// A stable, process-independent 64-bit FNV-1a hash of `string` as 16 hex
 /// digits. Swift's `Hasher` is seeded per process, so it cannot back a path
 /// that must match across processes.
-private func stableHashHex(_ string: String) -> String {
+func stableHashHex(_ string: String) -> String {
   var hash: UInt64 = 0xcbf2_9ce4_8422_2325
   for byte in string.utf8 {
     hash ^= UInt64(byte)
@@ -245,7 +245,7 @@ private func stableHashHex(_ string: String) -> String {
 /// Whether a REPL control socket is already listening at `path`. A single, fast
 /// connect attempt: connect() to an absent or dead socket fails at once
 /// (ENOENT/ECONNREFUSED), so a closed app is detected without waiting.
-private func replListenerIsAlive(at path: String) async -> Bool {
+func replListenerIsAlive(at path: String) async -> Bool {
   let queue = DispatchQueue(label: "com.facebook.idb.repl.probe")
   return await withCheckedContinuation { continuation in
     queue.async {
