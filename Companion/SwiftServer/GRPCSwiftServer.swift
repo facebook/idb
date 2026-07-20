@@ -6,6 +6,7 @@
  */
 
 import CompanionLib
+import CompanionUtilities
 import FBControlCore
 import Foundation
 import GRPC

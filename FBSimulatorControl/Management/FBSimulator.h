@@ -7,6 +7,7 @@
 
 #import <Foundation/Foundation.h>
 
+#import <CompanionUtilities/CompanionUtilities-Swift.h>
 #import <FBControlCore/FBControlCore.h>
 
 @protocol FBControlCoreLogger;

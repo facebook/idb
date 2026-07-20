@@ -6,6 +6,7 @@
  */
 
 import CompanionLib
+import CompanionUtilities
 import GRPC
 
 /// Logs gRPC transport-level lifecycle for each call: the request start and, for

@@ -468,57 +468,6 @@ final class FBControlCoreTransientTests: XCTestCase {
     XCTAssertEqual(result.count, 0)
   }
 
-  // MARK: FBEventReporterSubject
-
-  func testSubjectForEvent() {
-    let subject = FBEventReporterSubject(forEvent: "my_event")
-
-    XCTAssertEqual(subject.eventName, "my_event")
-    XCTAssertEqual(subject.eventType, FBEventType.discrete)
-    XCTAssertNil(subject.arguments)
-    XCTAssertNil(subject.duration)
-    XCTAssertNil(subject.size)
-    XCTAssertNil(subject.message)
-  }
-
-  func testSubjectForStartedCall() {
-    let subject = FBEventReporterSubject(forStartedCall: "install", arguments: ["com.app"])
-
-    XCTAssertEqual(subject.eventName, "install")
-    XCTAssertEqual(subject.eventType, FBEventType.started)
-    XCTAssertEqual(subject.arguments, ["com.app"])
-    XCTAssertNil(subject.duration)
-  }
-
-  func testSubjectForSuccessfulCall() {
-    let subject = FBEventReporterSubject(forSuccessfulCall: "install", duration: 1.5, size: 1024, arguments: ["arg1"])
-
-    XCTAssertEqual(subject.eventName, "install")
-    XCTAssertEqual(subject.eventType, FBEventType.success)
-    XCTAssertEqual(subject.arguments, ["arg1"])
-    XCTAssertEqual(subject.duration, 1500)
-    XCTAssertEqual(subject.size, 1024)
-    XCTAssertNil(subject.message)
-  }
-
-  func testSubjectForFailingCall() {
-    let subject = FBEventReporterSubject(forFailingCall: "install", duration: 0.25, message: "timeout", size: nil as NSNumber?, arguments: [])
-
-    XCTAssertEqual(subject.eventName, "install")
-    XCTAssertEqual(subject.eventType, FBEventType.failure)
-    XCTAssertEqual(subject.message, "timeout")
-    XCTAssertEqual(subject.duration, 250)
-    XCTAssertNil(subject.size)
-  }
-
-  func testEventTypeConstants() {
-    XCTAssertEqual(FBEventType.started.rawValue, "started")
-    XCTAssertEqual(FBEventType.ended.rawValue, "ended")
-    XCTAssertEqual(FBEventType.discrete.rawValue, "discrete")
-    XCTAssertEqual(FBEventType.success.rawValue, "success")
-    XCTAssertEqual(FBEventType.failure.rawValue, "failure")
-  }
-
   // MARK: FBTestLaunchConfiguration
 
   func testTestLaunchConfigurationInit() {

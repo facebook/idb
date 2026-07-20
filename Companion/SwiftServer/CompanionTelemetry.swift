@@ -6,6 +6,7 @@
  */
 
 import CompanionLib
+import CompanionUtilities
 @preconcurrency import FBControlCore
 import Foundation
 
