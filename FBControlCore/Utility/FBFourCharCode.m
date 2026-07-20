@@ -23,7 +23,10 @@ NSString *FBStringFromFourCharCode(OSType code)
     }
   }
   if (allPrintableASCII) {
-    return [[NSString alloc] initWithBytes:bytes length:sizeof(bytes) encoding:NSASCIIStringEncoding];
+    NSString *string = [[NSString alloc] initWithBytes:bytes length:sizeof(bytes) encoding:NSASCIIStringEncoding];
+    if (string) {
+      return string;
+    }
   }
   return [NSString stringWithFormat:@"0x%08x", code];
 }

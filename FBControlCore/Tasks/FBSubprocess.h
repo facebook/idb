@@ -94,7 +94,7 @@ static const size_t FBProcessOutputErrorMessageLength = 200;
  @param logger an optional logger to log process lifecycle events to.
  @return a future that resolves with the launched process once it has been started.
  */
-+ (nonnull FBFuture<FBSubprocess *> *)launchProcessWithConfiguration:(nonnull FBProcessSpawnConfiguration *)configuration logger:(nonnull id<FBControlCoreLogger>)logger;
++ (nonnull FBFuture<FBSubprocess *> *)launchProcessWithConfiguration:(nonnull FBProcessSpawnConfiguration *)configuration logger:(nullable id<FBControlCoreLogger>)logger;
 
 #pragma mark Methods
 

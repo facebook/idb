@@ -92,10 +92,13 @@ void *FBGetSymbolFromHandleOptional(void *handle, const char *name)
   }
 
   // We're done with loading Frameworks.
-  [logger.debug log:
-   [NSString stringWithFormat:@"Loaded All Private Frameworks %@",
-    [FBCollectionInformation oneLineDescriptionFromArray:[weakFrameworks valueForKeyPath:@"@unionOfObjects.name"] atKeyPath:@"lastPathComponent"]]
-  ];
+  NSArray<NSString *> *frameworkNames = [weakFrameworks valueForKeyPath:@"@unionOfObjects.name"];
+  if (frameworkNames) {
+    [logger.debug log:
+     [NSString stringWithFormat:@"Loaded All Private Frameworks %@",
+      [FBCollectionInformation oneLineDescriptionFromArray:frameworkNames atKeyPath:@"lastPathComponent"]]
+    ];
+  }
 
   return YES;
 }

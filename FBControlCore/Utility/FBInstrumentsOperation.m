@@ -114,7 +114,10 @@ const NSTimeInterval DefaultInstrumentsLaunchRetryTimeout = 360.0;
   if (configuration.targetApplication && [configuration.targetApplication length] > 0) {
     [arguments addObject:configuration.targetApplication];
     for (NSString *key in configuration.appEnvironment) {
-      [arguments addObjectsFromArray:@[@"-e", key, configuration.appEnvironment[key]]];
+      NSString *value = configuration.appEnvironment[key];
+      if (value) {
+        [arguments addObjectsFromArray:@[@"-e", key, value]];
+      }
     }
     [arguments addObjectsFromArray:configuration.appArguments];
   }
@@ -201,7 +204,14 @@ const NSTimeInterval DefaultInstrumentsLaunchRetryTimeout = 360.0;
     return [FBFuture futureWithResult:traceFile];
   }
   NSURL *outputTraceFile = [[traceFile URLByDeletingLastPathComponent] URLByAppendingPathComponent:arguments[2]];
-  NSMutableArray<NSString *> *launchArguments = [@[arguments[1], traceFile.path, @"-o", outputTraceFile.path] mutableCopy];
+  NSString *traceFilePath = traceFile.path;
+  NSString *outputTraceFilePath = outputTraceFile.path;
+  if (!traceFilePath || !outputTraceFilePath) {
+    return (FBFuture<NSURL *> *)[[FBControlCoreError
+                                  describe:[NSString stringWithFormat:@"Cannot post process, trace file %@ or output %@ has no path", traceFile, outputTraceFile]]
+                                 failFuture];
+  }
+  NSMutableArray<NSString *> *launchArguments = [@[arguments[1], traceFilePath, @"-o", outputTraceFilePath] mutableCopy];
   if (arguments.count > 3) {
     [launchArguments addObjectsFromArray:[arguments subarrayWithRange:(NSRange) {3, [arguments count] - 3}]];
   }

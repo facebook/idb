@@ -75,7 +75,7 @@
   if (_temporaryDirectory) {
     return _temporaryDirectory;
   }
-  _temporaryDirectory = [FBTemporaryDirectory temporaryDirectoryWithLogger:self.logger];
+  _temporaryDirectory = [FBTemporaryDirectory temporaryDirectoryWithLogger:self.logger ?: [FBControlCoreLoggerFactory systemLoggerWritingToStderr:NO withDebugLogging:NO]];
   return _temporaryDirectory;
 }
 

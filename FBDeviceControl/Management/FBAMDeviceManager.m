@@ -50,9 +50,10 @@ static BOOL FB_AMDeviceConnected(AMDeviceRef device, FBAMDeviceManager *manager)
     [logger.error log:@"Ignoring device as cannot obtain ECID for it"];
     return NO;
   }
-  if (manager.ecidFilter && ![uniqueChipID isEqualToString:manager.ecidFilter]) {
+  NSString *ecidFilter = manager.ecidFilter;
+  if (ecidFilter && ![uniqueChipID isEqualToString:ecidFilter]) {
     [FBAMDeviceManager stopConnectionToDevice:device calls:calls logger:logger error:nil];
-    [logger.error log:[NSString stringWithFormat:@"Ignoring device as ECID %@ does not match filter %@", uniqueChipID, manager.ecidFilter]];
+    [logger.error log:[NSString stringWithFormat:@"Ignoring device as ECID %@ does not match filter %@", uniqueChipID, ecidFilter]];
     return NO;
   }
 

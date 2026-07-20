@@ -62,7 +62,10 @@ static NSString *const DefaultDeviceSet = @"~/Library/Developer/CoreSimulator/De
 
   _device = device;
   _configuration = configuration;
-  _set = set;
+  FBSimulatorSet *simulatorSet = set;
+  if (simulatorSet) {
+    _set = simulatorSet;
+  }
   _auxillaryDirectory = auxillaryDirectory;
   _logger = [logger withName:device.UDID.UUIDString];
   _commandCache = [FBTargetCommandCache new];
@@ -133,7 +136,7 @@ static NSString *const DefaultDeviceSet = @"~/Library/Developer/CoreSimulator/De
   if (_temporaryDirectory) {
     return _temporaryDirectory;
   }
-  _temporaryDirectory = [FBTemporaryDirectory temporaryDirectoryWithLogger:self.logger];
+  _temporaryDirectory = [FBTemporaryDirectory temporaryDirectoryWithLogger:self.logger ?: [FBControlCoreLoggerFactory systemLoggerWritingToStderr:NO withDebugLogging:NO]];
   return _temporaryDirectory;
 }
 
@@ -160,7 +163,7 @@ static NSString *const DefaultDeviceSet = @"~/Library/Developer/CoreSimulator/De
 - (NSDictionary<NSString *, NSString *> *)replacementMapping
 {
   return @{
-    @"%%SIM_ROOT%%" : self.dataDirectory,
+    @"%%SIM_ROOT%%" : self.dataDirectory ?: @"",
   };
 }
 

@@ -588,7 +588,7 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
     FBFutureState state = future.state;
     switch (state) {
       case FBFutureStateDone:
-        results[index] = future.result;
+        results[index] = future.result ?: NSNull.null;
         remaining--;
         if (remaining == 0) {
           [compositeFuture resolveWithResult:[results copy]];
@@ -727,8 +727,9 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
 - (FBFuture<NSNull *> *)cancel
 {
   @synchronized(self) {
-    if (self.resolvedCancellation) {
-      return self.resolvedCancellation;
+    FBFuture<NSNull *> *resolvedCancellation = self.resolvedCancellation;
+    if (resolvedCancellation) {
+      return resolvedCancellation;
     }
     if (self.state != FBFutureStateRunning) {
       return FBFuture.empty;
@@ -736,8 +737,9 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
   }
   NSArray<FBFuture_Cancellation *> *cancelResponders = [self resolveAsCancelled];
   @synchronized(self) {
-    self.resolvedCancellation = [FBFuture resolveCancellationResponders:cancelResponders forOriginalName:self.name];
-    return self.resolvedCancellation;
+    FBFuture<NSNull *> *resolvedCancellation = [FBFuture resolveCancellationResponders:cancelResponders forOriginalName:self.name];
+    self.resolvedCancellation = resolvedCancellation;
+    return resolvedCancellation;
   }
 }
 

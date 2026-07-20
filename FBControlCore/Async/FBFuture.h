@@ -45,7 +45,7 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
  @param result the result.
  @return a new Future.
  */
-+ (nonnull FBFuture<T> *)futureWithResult:(nonnull T)result;
++ (nonnull FBFuture<T> *)futureWithResult:(nullable T)result;
 
 /**
  Constructs a Future that wraps an error.
@@ -53,7 +53,7 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
  @param error the error to wrap.
  @return a new Future.
  */
-+ (nonnull FBFuture<T> *)futureWithError:(nonnull NSError *)error;
++ (nonnull FBFuture<T> *)futureWithError:(nullable NSError *)error;
 
 /**
  Construct a Future that resolves with a delay.
@@ -417,7 +417,7 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
  @param result The result.
  @return the receiver, for chaining.
  */
-- (nonnull instancetype)resolveWithResult:(nonnull T)result;
+- (nonnull instancetype)resolveWithResult:(nullable T)result;
 
 /**
  Make the wrapped future fail with an error.
@@ -425,7 +425,7 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
  @param error The error.
  @return the receiver, for chaining.
  */
-- (nonnull instancetype)resolveWithError:(nonnull NSError *)error;
+- (nonnull instancetype)resolveWithError:(nullable NSError *)error;
 
 /**
  Resolve the receiver upon the completion of another future.

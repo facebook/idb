@@ -133,8 +133,14 @@
              describe:[NSString stringWithFormat:@"Could not return context for '%@' as none exists", purpose]]
             failBool:error];
   }
+  id contextResult = context.result;
+  if (!contextResult) {
+    return [[FBControlCoreError
+             describe:[NSString stringWithFormat:@"Could not return context for '%@' as it has not resolved", purpose]]
+            failBool:error];
+  }
   id<FBControlCoreLogger> logger = [self loggerWithPurpose:purpose];
-  FBFuture<NSNull *> *teardown = [self.delegate teardown:context.result logger:logger];
+  FBFuture<NSNull *> *teardown = [self.delegate teardown:contextResult logger:logger];
   if (!teardown.result) {
     return [[FBControlCoreError
              describe:[NSString stringWithFormat:@"Could not return context synchronously in %@", teardown]]

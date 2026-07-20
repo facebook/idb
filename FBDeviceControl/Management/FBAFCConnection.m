@@ -122,7 +122,10 @@ const char *DoubleDot = "..";
       continue;
     }
 
-    [dirs addObject:[NSString stringWithUTF8String:listing]];
+    NSString *entry = [NSString stringWithUTF8String:listing];
+    if (entry) {
+      [dirs addObject:entry];
+    }
   }
 
   self.calls.DirectoryClose(self.connection, directory);
@@ -133,8 +136,14 @@ const char *DoubleDot = "..";
 - (NSData *)contentsOfPath:(NSString *)path error:(NSError **)error
 {
   [self.logger log:[NSString stringWithFormat:@"Contents of path %@", path]];
+  const char *filePath = path.UTF8String;
+  if (!filePath) {
+    return [[FBDeviceControlError
+             describe:[NSString stringWithFormat:@"Could not encode path %@ as UTF-8", path]]
+            fail:error];
+  }
   CFTypeRef file;
-  mach_error_t result = self.calls.FileRefOpen(self.connection, path.UTF8String, FBAFCReadOnlyMode, &file);
+  mach_error_t result = self.calls.FileRefOpen(self.connection, filePath, FBAFCReadOnlyMode, &file);
   if (result != 0) {
     return [[FBDeviceControlError
              describe:[NSString stringWithFormat:@"Error when opening file %@: %@", path, [self errorMessageWithCode:result]]]
@@ -169,7 +178,13 @@ const char *DoubleDot = "..";
     return [self removePathAndContents:path error:error];
   } else {
     [self.logger log:[NSString stringWithFormat:@"Removing file path %@", path]];
-    mach_error_t result = self.calls.RemovePath(self.connection, [path UTF8String]);
+    const char *filePath = path.UTF8String;
+    if (!filePath) {
+      return [[FBDeviceControlError
+               describe:[NSString stringWithFormat:@"Could not encode path %@ as UTF-8", path]]
+              failBool:error];
+    }
+    mach_error_t result = self.calls.RemovePath(self.connection, filePath);
     if (result != 0) {
       return [[FBDeviceControlError
                describe:[NSString stringWithFormat:@"Error when removing path %@: %@", path, [self errorMessageWithCode:result]]]
@@ -182,7 +197,14 @@ const char *DoubleDot = "..";
 
 - (BOOL)renamePath:(NSString *)path destination:(NSString *)destination error:(NSError **)error
 {
-  mach_error_t result = self.calls.RenamePath(self.connection, path.UTF8String, destination.UTF8String);
+  const char *sourcePath = path.UTF8String;
+  const char *destinationPath = destination.UTF8String;
+  if (!sourcePath || !destinationPath) {
+    return [[FBDeviceControlError
+             describe:[NSString stringWithFormat:@"Could not encode path %@ or destination %@ as UTF-8", path, destination]]
+            failBool:error];
+  }
+  mach_error_t result = self.calls.RenamePath(self.connection, sourcePath, destinationPath);
   if (result != 0) {
     return [[FBDeviceControlError
              describe:[NSString stringWithFormat:@"Error when renaming from %@ to %@: %@", path, destination, [self errorMessageWithCode:result]]]
@@ -224,8 +246,14 @@ const char *DoubleDot = "..";
             failBool:error];
   }
 
+  const char *filePath = containerPath.UTF8String;
+  if (!filePath) {
+    return [[FBDeviceControlError
+             describe:[NSString stringWithFormat:@"Could not encode container path %@ as UTF-8", containerPath]]
+            failBool:error];
+  }
   CFTypeRef fileReference;
-  mach_error_t result = self.calls.FileRefOpen(self.connection, containerPath.UTF8String, FBAFCreateReadAndWrite, &fileReference);
+  mach_error_t result = self.calls.FileRefOpen(self.connection, filePath, FBAFCreateReadAndWrite, &fileReference);
   if (result != 0) {
     return [[FBDeviceControlError
              describe:[NSString stringWithFormat:@"Error when opening file %@: %@", containerPath, [self errorMessageWithCode:result]]]
@@ -263,7 +291,11 @@ const char *DoubleDot = "..";
                                           errorHandler:NULL];
 
   for (NSURL *url in urls) {
-    BOOL success = [self copyFromHost:url.path toContainerPath:containerPath error:error];
+    NSString *hostPath = url.path;
+    if (!hostPath) {
+      continue;
+    }
+    BOOL success = [self copyFromHost:hostPath toContainerPath:containerPath error:error];
     if (!success) {
       [self.logger log:[NSString stringWithFormat:@"Failed to copy %@ to %@ with error %@", url, containerPath, *error]];
       return NO;

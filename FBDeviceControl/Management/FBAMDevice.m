@@ -18,6 +18,8 @@
 #import "FBAMRestorableDevice.h"
 #import "FBDeviceControlFrameworkLoader.h"
 
+static NSString *const UnknownValue = @"unknown";
+
 #pragma mark - FBAMDevice Implementation
 
 @implementation FBAMDevice
@@ -78,17 +80,18 @@
 
 - (NSString *)uniqueIdentifier
 {
-  return [self.allValues[FBDeviceKeyUniqueChipID] stringValue];
+  return [self.allValues[FBDeviceKeyUniqueChipID] stringValue] ?: UnknownValue;
 }
 
 - (NSString *)udid
 {
-  return self.allValues[FBDeviceKeyUniqueDeviceID];
+  return self.allValues[FBDeviceKeyUniqueDeviceID] ?: UnknownValue;
 }
 
 - (NSArray<FBArchitecture> *)architectures
 {
-  return @[self.allValues[FBDeviceKeyCPUArchitecture]];
+  FBArchitecture architecture = self.allValues[FBDeviceKeyCPUArchitecture];
+  return architecture ? @[architecture] : @[];
 }
 
 - (NSString *)buildVersion
@@ -103,12 +106,13 @@
 
 - (NSString *)name
 {
-  return self.allValues[FBDeviceKeyDeviceName];
+  return self.allValues[FBDeviceKeyDeviceName] ?: UnknownValue;
 }
 
 - (FBDeviceType *)deviceType
 {
-  return FBiOSTargetConfiguration.productTypeToDevice[self.allValues[FBDeviceKeyProductType]];
+  NSString *productType = self.allValues[FBDeviceKeyProductType] ?: UnknownValue;
+  return FBiOSTargetConfiguration.productTypeToDevice[productType] ?: [FBDeviceType genericWithName:productType];
 }
 
 - (FBOSVersion *)osVersion
@@ -136,7 +140,11 @@
 
 - (FBDeviceActivationState)activationState
 {
-  return FBDeviceActivationStateCoerceFromString(self.allValues[FBDeviceKeyActivationState]);
+  NSString *activationState = self.allValues[FBDeviceKeyActivationState];
+  if (!activationState) {
+    return FBDeviceActivationStateUnknown;
+  }
+  return FBDeviceActivationStateCoerceFromString(activationState);
 }
 
 #pragma mark FBDeviceCommands Protocol Implementation
@@ -172,7 +180,13 @@
                                     describe:[NSString stringWithFormat:@"SecureStartService of %@ Failed with 0x%x %@", service, status, errorDescription]]
                                    failFuture];
              }
-             FBAMDServiceConnection *connection = [FBAMDServiceConnection connectionWithName:service connection:serviceConnection device:device.amDeviceRef calls:self.calls logger:self.logger];
+             AMDeviceRef amDeviceRef = device.amDeviceRef;
+             if (!amDeviceRef) {
+               return (FBFuture *)[[FBDeviceControlError
+                                    describe:[NSString stringWithFormat:@"Cannot start service %@: device is not connected", service]]
+                                   failFuture];
+             }
+             FBAMDServiceConnection *connection = [FBAMDServiceConnection connectionWithName:service connection:serviceConnection device:amDeviceRef calls:self.calls logger:self.logger];
              [self.logger log:[NSString stringWithFormat:@"Service %@ started", service]];
              return [FBFuture futureWithResult:connection];
            }]

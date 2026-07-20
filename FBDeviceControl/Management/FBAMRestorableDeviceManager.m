@@ -44,8 +44,9 @@ static void FB_AMRestorableDeviceListenerCallback(AMRestorableDeviceRef device, 
   FBiOSTargetState targetState = [FBAMRestorableDevice targetStateForDeviceState:deviceState];
   NSString *identifier = [@(manager.calls.RestorableDeviceGetECID(device)) stringValue];
   [logger log:[NSString stringWithFormat:@"%@ %@ in state %@", device, NotificationTypeToString(status), FBiOSTargetStateStringFromState(targetState)]];
-  if (manager.ecidFilter && ![identifier isEqualToString:manager.ecidFilter]) {
-    [logger log:[NSString stringWithFormat:@"Ignoring %@ as it does not match filter of %@", device, manager.ecidFilter]];
+  NSString *ecidFilter = manager.ecidFilter;
+  if (ecidFilter && ![identifier isEqualToString:ecidFilter]) {
+    [logger log:[NSString stringWithFormat:@"Ignoring %@ as it does not match filter of %@", device, ecidFilter]];
     return;
   }
   switch (status) {
