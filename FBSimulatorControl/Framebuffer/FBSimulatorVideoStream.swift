@@ -381,6 +381,8 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: FBSimulatorVideoStre
   let encodedSampleConsumer: FBEncodedSampleConsumer?
   let consumer: any FBDataConsumer
   let logger: any FBControlCoreLogger
+  private let mjpegFrameWriter = FBMJPEGFrameWriter()
+  private let minicapFrameWriter = FBMinicapFrameWriter()
 
   /// CV/VT types are ARC-managed in Swift; held strong, released automatically.
   var compressionSession: VTCompressionSession?
@@ -526,7 +528,7 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: FBSimulatorVideoStre
   private func handleMJPEGSampleBuffer(_ sampleBuffer: CMSampleBuffer?) {
     guard let sampleBuffer, let blockBuffer = CMSampleBufferGetDataBuffer(sampleBuffer) else { return }
     do {
-      try FBMJPEGFrameWriter().write(blockBuffer, to: consumer, logger: logger)
+      try mjpegFrameWriter.write(blockBuffer, to: consumer, logger: logger)
     } catch {
       logger.log("Failed to write MJPEG frame: \(error)")
     }
@@ -541,12 +543,12 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: FBSimulatorVideoStre
     if frameNumber == 0 {
       if let formatDescription = CMSampleBufferGetFormatDescription(sampleBuffer) {
         let dimensions = CMVideoFormatDescriptionGetDimensions(formatDescription)
-        FBMinicapFrameWriter().writeHeader(width: UInt32(dimensions.width), height: UInt32(dimensions.height), to: consumer, logger: logger)
+        minicapFrameWriter.writeHeader(width: UInt32(dimensions.width), height: UInt32(dimensions.height), to: consumer, logger: logger)
       }
     }
     guard let blockBuffer = CMSampleBufferGetDataBuffer(sampleBuffer) else { return }
     do {
-      try FBMinicapFrameWriter().write(blockBuffer, to: consumer, logger: logger)
+      try minicapFrameWriter.write(blockBuffer, to: consumer, logger: logger)
     } catch {
       logger.log("Failed to write Minicap frame: \(error)")
     }
