@@ -247,10 +247,10 @@ struct ReplRunner: ParsableArguments {
         case .none:
           throw ReplExecutionError.streamClosed
         }
-        reportCall(reporter, "run", start: start, arguments: ["size=\(codeSize(code))"], failure: nil)
+        reportCall(reporter, "run", start: start, arguments: codeMetadata(code), failure: nil)
       } catch {
         print("Error: \(error)")
-        reportCall(reporter, "run", start: start, arguments: ["size=\(codeSize(code))"], failure: "\(error)")
+        reportCall(reporter, "run", start: start, arguments: codeMetadata(code), failure: "\(error)")
       }
 
       try? await call.requestStream.finish()
@@ -298,10 +298,10 @@ struct ReplRunner: ParsableArguments {
             case .none:
               throw ReplExecutionError.streamClosed
             }
-            reportCall(reporter, "run", start: start, arguments: ["size=\(codeSize(swiftCode))"], failure: nil)
+            reportCall(reporter, "run", start: start, arguments: codeMetadata(swiftCode), failure: nil)
           } catch {
             printStatus("Error:", "\(error)")
-            reportCall(reporter, "run", start: start, arguments: ["size=\(codeSize(swiftCode))"], failure: "\(error)")
+            reportCall(reporter, "run", start: start, arguments: codeMetadata(swiftCode), failure: "\(error)")
             stopSession = (error as? ReplExecutionError)?.terminatesSession ?? true
           }
           lines = []
@@ -467,9 +467,14 @@ struct ReplRunner: ParsableArguments {
     )
   }
 
-  /// The size of a block of code, used as coarse telemetry metadata.
-  private func codeSize(_ code: String) -> Int {
-    code.count
+  /// Coarse telemetry metadata describing a block of code — its character count
+  /// and its significant line count — as `key=value` elements for a call's
+  /// `arguments`.
+  private func codeMetadata(_ code: String) -> [String] {
+    [
+      "size=\(code.count)",
+      "lines=\(ReplSourceMetadata.countSignificantLinesOfCode(in: code))",
+    ]
   }
 
   /// Reports the outcome of a timed call (`nil` failure means success).
