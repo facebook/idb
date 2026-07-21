@@ -162,6 +162,47 @@ private typealias FBVideoParameterSetGetter = (
   _ nalUnitHeaderLengthOut: UnsafeMutablePointer<Int32>?
 ) -> OSStatus
 
+private extension FBVideoStreamCodec {
+  var parameterSetGetter: FBVideoParameterSetGetter {
+    switch self {
+    case .h264:
+      return CMVideoFormatDescriptionGetH264ParameterSetAtIndex
+    case .hevc:
+      return CMVideoFormatDescriptionGetHEVCParameterSetAtIndex
+    }
+  }
+
+  var displayName: String {
+    switch self {
+    case .h264:
+      return "H264"
+    case .hevc:
+      return "HEVC"
+    }
+  }
+
+  var mpegtsStreamType: UInt8 {
+    switch self {
+    case .h264:
+      return H264StreamType
+    case .hevc:
+      return HEVCStreamType
+    }
+  }
+
+  var isHEVC: Bool {
+    self == .hevc
+  }
+}
+
+private func FBVideoSampleBufferIsKeyFrame(_ sampleBuffer: CMSampleBuffer) -> Bool {
+  guard let attachments = CMSampleBufferGetSampleAttachmentsArray(sampleBuffer, createIfNecessary: true), CFArrayGetCount(attachments) != 0 else {
+    return false
+  }
+  let attachment = unsafeBitCast(CFArrayGetValueAtIndex(attachments, 0), to: CFDictionary.self)
+  return !CFDictionaryContainsKey(attachment, Unmanaged.passUnretained(kCMSampleAttachmentKey_NotSync).toOpaque())
+}
+
 public struct FBAnnexBFrameWriter: FBEncodedFrameWriter {
   private let codec: FBVideoStreamCodec
 
@@ -170,26 +211,11 @@ public struct FBAnnexBFrameWriter: FBEncodedFrameWriter {
   }
 
   public func write(_ sampleBuffer: CMSampleBuffer, to consumer: any FBDataConsumer, logger: any FBControlCoreLogger) throws {
-    let paramSetGetter: FBVideoParameterSetGetter
-    let codecName: String
-    switch codec {
-    case .hevc:
-      paramSetGetter = CMVideoFormatDescriptionGetHEVCParameterSetAtIndex
-      codecName = "HEVC"
-    case .h264:
-      paramSetGetter = CMVideoFormatDescriptionGetH264ParameterSetAtIndex
-      codecName = "H264"
-    }
-
     if !CMSampleBufferDataIsReady(sampleBuffer) {
       throw FBVideoStreamWriterError.sampleBufferNotReady
     }
 
-    var isKeyFrame = false
-    if let attachments = CMSampleBufferGetSampleAttachmentsArray(sampleBuffer, createIfNecessary: true), CFArrayGetCount(attachments) != 0 {
-      let attachment = unsafeBitCast(CFArrayGetValueAtIndex(attachments, 0), to: CFDictionary.self)
-      isKeyFrame = !CFDictionaryContainsKey(attachment, Unmanaged.passUnretained(kCMSampleAttachmentKey_NotSync).toOpaque())
-    }
+    let isKeyFrame = FBVideoSampleBufferIsKeyFrame(sampleBuffer)
 
     // Convert AVCC length-prefixed NAL units to Annex-B start-code format in place.
     try ConvertAVCCToAnnexBInPlace(sampleBuffer)
@@ -205,16 +231,16 @@ public struct FBAnnexBFrameWriter: FBEncodedFrameWriter {
         throw FBVideoStreamWriterError.failedToGetFormatDescription
       }
       var parameterSetCount = 0
-      var status = paramSetGetter(format, 0, nil, nil, &parameterSetCount, nil)
+      var status = codec.parameterSetGetter(format, 0, nil, nil, &parameterSetCount, nil)
       if status != noErr {
-        throw FBVideoStreamWriterError.failedToGetParameterSetCount(codecName: codecName, status: status)
+        throw FBVideoStreamWriterError.failedToGetParameterSetCount(codecName: codec.displayName, status: status)
       }
       for i in 0..<parameterSetCount {
         var paramSize = 0
         var parameterSet: UnsafePointer<UInt8>?
-        status = paramSetGetter(format, i, &parameterSet, &paramSize, nil, nil)
+        status = codec.parameterSetGetter(format, i, &parameterSet, &paramSize, nil, nil)
         if status != noErr {
-          throw FBVideoStreamWriterError.failedToGetParameterSet(codecName: codecName, index: i, status: status)
+          throw FBVideoStreamWriterError.failedToGetParameterSet(codecName: codec.displayName, index: i, status: status)
         }
         var paramHeader = [UInt8]()
         paramHeader.reserveCapacity(AVCCHeaderLength + paramSize)
@@ -696,29 +722,11 @@ public final class FBMPEGTSFrameWriter: FBEncodedFrameWriter, FBVideoStreamTimed
   }
 
   public func write(_ sampleBuffer: CMSampleBuffer, to consumer: any FBDataConsumer, logger: any FBControlCoreLogger) throws {
-    let paramSetGetter: FBVideoParameterSetGetter
-    let codecName: String
-    let mpegtsStreamType: UInt8
-    switch codec {
-    case .hevc:
-      paramSetGetter = CMVideoFormatDescriptionGetHEVCParameterSetAtIndex
-      codecName = "HEVC"
-      mpegtsStreamType = HEVCStreamType
-    case .h264:
-      paramSetGetter = CMVideoFormatDescriptionGetH264ParameterSetAtIndex
-      codecName = "H264"
-      mpegtsStreamType = H264StreamType
-    }
-
     if !CMSampleBufferDataIsReady(sampleBuffer) {
       throw FBVideoStreamWriterError.sampleBufferNotReady
     }
 
-    var isKeyFrame = false
-    if let attachments = CMSampleBufferGetSampleAttachmentsArray(sampleBuffer, createIfNecessary: true), CFArrayGetCount(attachments) != 0 {
-      let attachment = unsafeBitCast(CFArrayGetValueAtIndex(attachments, 0), to: CFDictionary.self)
-      isKeyFrame = !CFDictionaryContainsKey(attachment, Unmanaged.passUnretained(kCMSampleAttachmentKey_NotSync).toOpaque())
-    }
+    let isKeyFrame = FBVideoSampleBufferIsKeyFrame(sampleBuffer)
 
     // Convert AVCC to Annex-B in place before computing sizes.
     // AVCC headers and Annex-B start codes are both 4 bytes so sizes are unchanged.
@@ -738,15 +746,15 @@ public final class FBMPEGTSFrameWriter: FBEncodedFrameWriter, FBVideoStreamTimed
       guard let format else {
         throw FBVideoStreamWriterError.failedToGetFormatDescription
       }
-      var status = paramSetGetter(format, 0, nil, nil, &parameterSetCount, nil)
+      var status = codec.parameterSetGetter(format, 0, nil, nil, &parameterSetCount, nil)
       if status != noErr {
-        throw FBVideoStreamWriterError.failedToGetParameterSetCount(codecName: codecName, status: status)
+        throw FBVideoStreamWriterError.failedToGetParameterSetCount(codecName: codec.displayName, status: status)
       }
       for i in 0..<parameterSetCount {
         var paramSize = 0
-        status = paramSetGetter(format, i, nil, &paramSize, nil, nil)
+        status = codec.parameterSetGetter(format, i, nil, &paramSize, nil, nil)
         if status != noErr {
-          throw FBVideoStreamWriterError.failedToGetParameterSet(codecName: codecName, index: i, status: status)
+          throw FBVideoStreamWriterError.failedToGetParameterSet(codecName: codec.displayName, index: i, status: status)
         }
         parameterSetSize += AVCCHeaderLength + paramSize
       }
@@ -806,7 +814,7 @@ public final class FBMPEGTSFrameWriter: FBEncodedFrameWriter, FBVideoStreamTimed
       for i in 0..<parameterSetCount {
         var paramSize = 0
         var parameterSet: UnsafePointer<UInt8>?
-        _ = paramSetGetter(format, i, &parameterSet, &paramSize, nil, nil)
+        _ = codec.parameterSetGetter(format, i, &parameterSet, &paramSize, nil, nil)
         pesPacket.append(contentsOf: AnnexBStartCode)
         if let parameterSet {
           pesPacket.append(contentsOf: UnsafeBufferPointer(start: parameterSet, count: paramSize))
@@ -829,7 +837,7 @@ public final class FBMPEGTSFrameWriter: FBEncodedFrameWriter, FBVideoStreamTimed
     let tsData = FBMPEGTSPacketizePES(
       Data(pesPacket),
       isKeyFrame,
-      mpegtsStreamType,
+      codec.mpegtsStreamType,
       pts90k,
       &videoContinuityCounter,
       &patContinuityCounter,
@@ -1372,12 +1380,7 @@ public final class FBFMP4FrameWriter: FBEncodedFrameWriter, FBVideoStreamTimedMe
       throw FBVideoStreamWriterError.sampleBufferNotReady
     }
 
-    // Detect keyframe.
-    var isKeyFrame = false
-    if let attachments = CMSampleBufferGetSampleAttachmentsArray(sampleBuffer, createIfNecessary: true), CFArrayGetCount(attachments) != 0 {
-      let attachment = unsafeBitCast(CFArrayGetValueAtIndex(attachments, 0), to: CFDictionary.self)
-      isKeyFrame = !CFDictionaryContainsKey(attachment, Unmanaged.passUnretained(kCMSampleAttachmentKey_NotSync).toOpaque())
-    }
+    let isKeyFrame = FBVideoSampleBufferIsKeyFrame(sampleBuffer)
 
     // Extract PTS.
     let pts = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
@@ -1395,17 +1398,16 @@ public final class FBFMP4FrameWriter: FBEncodedFrameWriter, FBVideoStreamTimedMe
         throw FBVideoStreamWriterError.failedToGetFormatDescription
       }
       let dims = CMVideoFormatDescriptionGetDimensions(formatDesc)
-      let isHEVC = codec == .hevc
 
-      let ftyp = FBFMP4CreateFtypBox(isHEVC)
-      let moov = FBFMP4CreateMoovBox(formatDesc, isHEVC, UInt32(dims.width), UInt32(dims.height), 90000)
+      let ftyp = FBFMP4CreateFtypBox(codec.isHEVC)
+      let moov = FBFMP4CreateMoovBox(formatDesc, codec.isHEVC, UInt32(dims.width), UInt32(dims.height), 90000)
 
       consumer.consumeData(Data(ftyp))
       consumer.consumeData(Data(moov))
 
       initWritten = true
       baseDecodeTime = pts90k
-      logger.log("fMP4 init segment written (\(dims.width)x\(dims.height), \(isHEVC ? "HEVC" : "H264"))")
+      logger.log("fMP4 init segment written (\(dims.width)x\(dims.height), \(codec.displayName))")
     }
 
     // Compute duration.
