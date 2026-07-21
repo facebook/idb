@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+// patternlint-disable avoid-print-to-prevent-production-overhead
+
 import ArgumentParser
 import Foundation
 
@@ -35,23 +37,35 @@ final class GlobalOptions: @unchecked Sendable {
 
 @main
 struct TestRepl: AsyncParsableCommand {
-  @Option(help: "The reason the tool is being used.")
+  @Option(help: "The reason the tool is being used. (Required for use by AI agents.)")
   var reason: String?
+
+  @Flag(name: [.customShort("v"), .long], help: "Print the build date and time, then exit.")
+  var version = false
 
   static let configuration = CommandConfiguration(
     commandName: "idb-repl",
-    abstract: "Launch a test bundle in REPL mode",
+    abstract: "Compile and run Swift code inside a live process on an iOS simulator.",
     subcommands: [TestCommand.self, SimulatorCommand.self, AppCommand.self])
 
   mutating func validate() throws {
     GlobalOptions.shared.reason = reason
+  }
+
+  func run() async throws {
+    if version {
+      print("idb-repl built at \(kBuildDate) \(kBuildTime)")
+      return
+    }
+    // No subcommand and no --version: show help, matching the default behavior.
+    throw CleanExit.helpRequest(self)
   }
 }
 
 struct TestCommand: AsyncParsableCommand {
   static let configuration = CommandConfiguration(
     commandName: "test",
-    abstract: "Run the REPL in a test context.")
+    abstract: "Run code in a live test process.")
 
   @OptionGroup var repl: ReplRunner
   @OptionGroup var bundle: TestBundleOptions
@@ -64,7 +78,7 @@ struct TestCommand: AsyncParsableCommand {
 struct SimulatorCommand: AsyncParsableCommand {
   static let configuration = CommandConfiguration(
     commandName: "simulator",
-    abstract: "Run the REPL in a simulator context.")
+    abstract: "Run code in a live simulator process.")
 
   @OptionGroup var repl: ReplRunner
 
@@ -76,7 +90,7 @@ struct SimulatorCommand: AsyncParsableCommand {
 struct AppCommand: AsyncParsableCommand {
   static let configuration = CommandConfiguration(
     commandName: "app",
-    abstract: "Run the REPL in an app context (launch an installed app with the REPL injected).")
+    abstract: "Run code in a live app process.")
 
   @OptionGroup var repl: ReplRunner
   @OptionGroup var app: AppOptions

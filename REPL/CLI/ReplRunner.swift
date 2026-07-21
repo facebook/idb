@@ -101,7 +101,11 @@ struct ReplRunner: ParsableArguments {
     help: "Connect directly to a companion at host:port (e.g. 127.0.0.1:10882), bypassing discovery. Use to reach an already-running, typically remote, companion.")
   var companion: String?
 
-  @Flag(name: .long, help: "Use an unencrypted TCP connection to the companion instead of TLS.")
+  @Flag(
+    name: .long,
+    help: ArgumentHelp(
+      "Use an unencrypted TCP connection to the companion instead of TLS.",
+      visibility: .hidden))
   var plaintext = false
 
   @Argument(help: "An optional line of Swift to compile and run once, printing the result to stdout. If omitted, the interactive REPL starts.")
