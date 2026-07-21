@@ -82,7 +82,7 @@ public final class FBTeardownContext: Sendable {
   /// Creates `FBContext` and executes operation with it
   /// - Parameter operation: Inside the operation you have `FBTeardownContext.current` available that will be cleaned up on scoping out
   /// - Returns: Operation result
-  public static func withAutocleanup<T>(function: String = #function, file: String = #file, line: Int = #line, column: Int = #column, operation: @Sendable () async throws -> T) async throws -> T {
+  public static func withAutocleanup<T>(function: String = #function, file: String = #file, line: Int = #line, column: Int = #column, operation: nonisolated(nonsending) () async throws -> T) async throws -> T {
     let context = FBTeardownContext(isAutocleanup: true, function: function, file: file, line: line, column: column)
     let result = try await FBTeardownContext.$current.withValue(context, operation: operation)
     try await context.performCleanup()
