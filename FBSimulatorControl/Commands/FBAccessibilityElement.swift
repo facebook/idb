@@ -108,6 +108,17 @@ public final class FBAccessibilityElement {
     element.axSetValue(value)
   }
 
+  // MARK: - Geometry
+
+  /// The element's frame in screen points. The element must be open.
+  public func frame() throws -> CGRect {
+    if closed {
+      throw FBAccessibilityError.closedElement(operation: "read the frame of")
+    }
+    element.axSetBridgeDelegateToken(request.token)
+    return element.axFrame()
+  }
+
   // MARK: - Descendant search (ownership-transferring)
 
   /// Searches the accessibility tree rooted at this element for a descendant

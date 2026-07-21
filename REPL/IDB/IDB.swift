@@ -7,6 +7,7 @@
 
 import CoreGraphics
 import Foundation
+import ImageIO
 @_implementationOnly import ReplProtocol
 
 // The API that injected REPL code calls to drive the connected target while its
@@ -112,6 +113,15 @@ private func hostOutlivesSession() -> Bool {
   return unsafeBitCast(symbol, to: QueryFunction.self)().boolValue
 }
 
+/// Interprets a host command's raw result as a UTF-8 string, or nil when the
+/// result is absent or empty -- a command that did not apply or failed.
+private func stringResult(_ value: Any?) -> String? {
+  guard let data = value as? Data, !data.isEmpty else {
+    return nil
+  }
+  return String(data: data, encoding: .utf8)
+}
+
 /// The idb command namespace. It is a caseless enum used purely to scope the API:
 /// injected code reaches everything through `IDB.` (e.g. `IDB.ui`), and nothing
 /// leaks into the importer's unqualified namespace.
@@ -190,4 +200,88 @@ public enum IDB {
   /// exported function, resolved like the command methods. `UI` is stateless, so
   /// a fresh value per access costs nothing.
   public static var ui: UI { UI() }
+
+  /// Screenshot commands for the connected target, reached through `IDB.screenshot`.
+  public struct Screenshot {
+
+    /// The area of the screen to capture.
+    public enum Area {
+      /// The whole screen.
+      case full
+      /// A rectangle in screen points (the same coordinate space as `IDB.ui.tap`).
+      case rect(CGRect)
+      /// The frontmost-app accessibility element whose label contains `label`
+      /// (the same lookup as `IDB.ui.tap(marker:)`); its frame is captured.
+      case element(label: String)
+    }
+
+    /// Captures `area` and returns it as a `CGImage`, or nil on failure. The image
+    /// is transferred from the companion as uncompressed TIFF -- preserving the
+    /// screen's color space -- and decoded here; nothing is written to disk. In an
+    /// app-context REPL, wrap the result with `UIImage(cgImage:)` for a `UIImage`.
+    public func image(_ area: Area = .full) -> CGImage? {
+      guard let data = perform(.screenshot(area: area.wire, output: .data)) as? Data,
+        !data.isEmpty,
+        let source = CGImageSourceCreateWithData(data as CFData, nil),
+        let image = CGImageSourceCreateImageAtIndex(source, 0, nil)
+      else {
+        return nil
+      }
+      return image
+    }
+
+    /// Captures `area` to a PNG file on the companion and returns its path, or nil
+    /// on failure. The path is on the companion's filesystem, which is the correct
+    /// path for other `IDB` commands (they run there too).
+    @discardableResult
+    public func save(_ area: Area = .full) -> String? {
+      stringResult(perform(.screenshot(area: area.wire, output: .file)))
+    }
+  }
+
+  /// The screenshot command namespace, reached as `IDB.screenshot`. Computed for
+  /// the same library-evolution reason as `ui`.
+  public static var screenshot: Screenshot { Screenshot() }
+
+  /// Video-recording commands for the connected target, reached through `IDB.video`.
+  public struct Video {
+
+    /// Starts recording the connected target's screen into an auto-named file in
+    /// the session's temporary directory. Only one recording runs at a time;
+    /// returns false if one is already in progress or recording could not start.
+    @discardableResult
+    public func startRecording() -> Bool {
+      guard let data = perform(.startRecording) as? Data else {
+        return false
+      }
+      return !data.isEmpty
+    }
+
+    /// Stops the in-progress recording and returns the companion-side path to the
+    /// recorded file, or nil if no recording was in progress. The path is on the
+    /// companion's filesystem, which is the correct path for other `IDB` commands.
+    @discardableResult
+    public func stopRecording() -> String? {
+      stringResult(perform(.stopRecording))
+    }
+  }
+
+  /// The video command namespace, reached as `IDB.video`. Computed for the same
+  /// library-evolution reason as `ui`.
+  public static var video: Video { Video() }
+}
+
+extension IDB.Screenshot.Area {
+  /// The wire form sent to the companion. Not public: `ScreenshotArea` is an
+  /// implementation-only import so it must not appear in the public API surface.
+  fileprivate var wire: ScreenshotArea {
+    switch self {
+    case .full:
+      return .full
+    case .rect(let rect):
+      return .rect(rect)
+    case .element(let label):
+      return .element(label: label)
+    }
+  }
 }

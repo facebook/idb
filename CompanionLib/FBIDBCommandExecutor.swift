@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import CoreGraphics
 import FBControlCore
 @_implementationOnly import FBDeviceControl
 import FBSimulatorControl
@@ -152,6 +153,40 @@ import XCTestBootstrap
     }
     defer { element.close() }
     return try element.serialize(with: options)
+  }
+
+  // MARK: - REPL screenshot & recording
+
+  /// The companion-host directory the target uses for per-target files. REPL
+  /// screenshot/video artifacts are staged under a session subdirectory here.
+  public var auxillaryDirectory: String {
+    target.auxillaryDirectory
+  }
+
+  /// The frame (in screen points) of the frontmost-app accessibility element whose
+  /// label contains `label` -- the same lookup as `accessibility_tap`.
+  public func repl_accessibility_frame(label: String) async throws -> CGRect {
+    guard let simulator = target as? FBSimulator else {
+      throw FBIDBError.describe("Target is not a simulator, cannot look up an accessibility frame: \(target)").build()
+    }
+    let element = try await simulator.accessibilityElementMatching(value: label, forKey: .label, depth: .max)
+    defer { element.close() }
+    return try element.frame()
+  }
+
+  /// Captures a screenshot, optionally cropped to `cropRect` (in screen points),
+  /// encoded as uncompressed TIFF (`asPNG == false`) or PNG.
+  public func repl_screenshot(cropRect: CGRect?, asPNG: Bool) async throws -> Data {
+    guard let simulator = target as? FBSimulator else {
+      throw FBIDBError.describe("Target is not a simulator, cannot take a screenshot: \(target)").build()
+    }
+    return try await simulator.replScreenshot(cropRect: cropRect, asPNG: asPNG)
+  }
+
+  /// Starts recording the target's screen to `filePath`. The returned handle's
+  /// `stop()` finalizes the file. Only one recording runs at a time.
+  public func repl_start_recording(toFile filePath: String) async throws -> any FBVideoRecording {
+    try await target.startRecording(toFile: filePath)
   }
 
   public func add_media(_ filePaths: [URL]) async throws {

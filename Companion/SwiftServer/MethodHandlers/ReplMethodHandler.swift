@@ -48,6 +48,17 @@ struct ReplMethodHandler {
     try FileManager.default.createDirectory(atPath: scratchDirectory, withIntermediateDirectories: true)
     defer { try? FileManager.default.removeItem(atPath: scratchDirectory) }
 
+    // Per-session directory for captured artifacts (screenshots, recordings). It
+    // lives under the target's auxillary directory -- a real companion-host path
+    // that is also the pull-able AUXILLARY container -- and is removed at the end
+    // of the session.
+    let artifactsDirectory = URL(fileURLWithPath: commandExecutor.auxillaryDirectory)
+      .appendingPathComponent("idb-repl-artifacts")
+      .appendingPathComponent(UUID().uuidString)
+    try FileManager.default.createDirectory(at: artifactsDirectory, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: artifactsDirectory) }
+    let hostState = ReplHostCommandState(stagingDirectory: artifactsDirectory)
+
     // Connect to the control socket. It appears once the launched process binds
     // it, so retry for a while.
     let client = try await ReplSocketClient.connect(path: session.socketPath, timeout: 120)
@@ -86,7 +97,7 @@ struct ReplMethodHandler {
 
     // Services nested `host_command`s the served process sends back while an
     // execute is running (e.g. `IDB.tap`), mapping them to FBIDBCommandExecutor.
-    let dispatcher = HostCommandDispatcher(commandExecutor: commandExecutor)
+    let dispatcher = HostCommandDispatcher(commandExecutor: commandExecutor, state: hostState)
 
     var runIndex = 0
     bridge: for try await request in requestStream {
@@ -98,6 +109,10 @@ struct ReplMethodHandler {
         let dylibPath = (scratchDirectory as NSString).appendingPathComponent("run-\(runIndex).dylib")
         runIndex += 1
         try execute.dylib.write(to: URL(fileURLWithPath: dylibPath))
+
+        // Artifacts captured during this execute are named with the REPL run index
+        // the driver assigned (the `idb_repl_<n>` entry-point symbol).
+        hostState.beginRun(index: Self.replRunIndex(fromSymbol: execute.symbol) ?? runIndex)
 
         let result = try await client.execute(
           dylibPath: dylibPath,
@@ -132,5 +147,14 @@ struct ReplMethodHandler {
       try await bridgeFBFutureVoid(session.run)
     }
     try await responseStream.send(.with { $0.event = .stopped(.with { $0.desc = "REPL session ended" }) })
+  }
+
+  /// Extracts the REPL run index the driver encoded in an execute's entry-point
+  /// symbol (`idb_repl_<index>`), or nil if it is not in that form.
+  private static func replRunIndex(fromSymbol symbol: String) -> Int? {
+    guard let suffix = symbol.split(separator: "_").last else {
+      return nil
+    }
+    return Int(suffix)
   }
 }

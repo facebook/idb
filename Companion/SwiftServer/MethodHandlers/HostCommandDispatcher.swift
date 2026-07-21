@@ -6,6 +6,7 @@
  */
 
 import CompanionLib
+import CoreGraphics
 import FBControlCore
 import FBSimulatorControl
 import Foundation
@@ -31,6 +32,60 @@ enum HostCommandError: Error, CustomStringConvertible {
   }
 }
 
+/// Per-REPL-session state shared across host commands within one `repl` stream:
+/// where captured artifacts are staged, the in-progress recording, and the
+/// per-run artifact filename counters.
+///
+/// `@unchecked Sendable`: host commands are serviced one at a time within a
+/// session (each execute is awaited before the next), so these mutable fields are
+/// never accessed concurrently.
+final class ReplHostCommandState: @unchecked Sendable {
+
+  /// The artifact kind, which selects the auto-generated filename prefix/extension.
+  enum ArtifactKind {
+    case screenshot
+    case video
+  }
+
+  /// The directory captured files are written to (a per-session subdirectory of
+  /// the target's auxillary directory).
+  let stagingDirectory: URL
+
+  /// The recording started by `startRecording`, awaiting `stopRecording`.
+  var activeRecording: (any FBVideoRecording)?
+
+  private var runIndex = 0
+  private var screenshotIndex = 0
+  private var videoIndex = 0
+
+  init(stagingDirectory: URL) {
+    self.stagingDirectory = stagingDirectory
+  }
+
+  /// Called at the start of each execute so artifact filenames carry the REPL run
+  /// index and the per-kind counters restart at 1 for the run.
+  func beginRun(index: Int) {
+    runIndex = index
+    screenshotIndex = 0
+    videoIndex = 0
+  }
+
+  /// The next auto-generated artifact path for `kind`, e.g.
+  /// `<staging>/screenshot_<run>_<n>.png` (n starts at 1 within each run).
+  func nextArtifactPath(for kind: ArtifactKind) -> String {
+    let name: String
+    switch kind {
+    case .screenshot:
+      screenshotIndex += 1
+      name = "screenshot_\(runIndex)_\(screenshotIndex).png"
+    case .video:
+      videoIndex += 1
+      name = "video_\(runIndex)_\(videoIndex).mp4"
+    }
+    return stagingDirectory.appendingPathComponent(name).path
+  }
+}
+
 /// Maps a decoded `ReplCommand` -- sent by injected REPL code while it runs -- to
 /// an `FBIDBCommandExecutor` call.
 ///
@@ -42,9 +97,13 @@ enum HostCommandError: Error, CustomStringConvertible {
 struct HostCommandDispatcher {
 
   let commandExecutor: FBIDBCommandExecutor
+  let state: ReplHostCommandState
 
   /// The result a command produces, before serialization to the wire.
   private enum ResultValue {
+    /// Already-serialized bytes, returned to injected code verbatim (e.g. an
+    /// encoded image). Avoids re-wrapping the payload in a property list.
+    case raw(Data)
     /// A `Codable` value; encoded as a binary property list.
     case encodable(any Encodable)
     /// A Foundation property-list object (e.g. the accessibility tree), already in
@@ -57,6 +116,8 @@ struct HostCommandDispatcher {
       switch try await resultValue(for: command) {
       case nil:
         return .success(Data())
+      case .raw(let data):
+        return .success(data)
       case .encodable(let value):
         return .success(try Self.propertyListData(encoding: value))
       case .propertyList(let object):
@@ -128,6 +189,49 @@ struct HostCommandDispatcher {
       // needs this.
       let tree = Self.replAccessibilityTree(from: response.elements) ?? [String: Any]()
       return .propertyList(tree)
+
+    case .screenshot(let area, let output):
+      let rect = try await cropRect(for: area)
+      switch output {
+      case .data:
+        let data = try await commandExecutor.repl_screenshot(cropRect: rect, asPNG: false)
+        return .raw(data)
+      case .file:
+        let data = try await commandExecutor.repl_screenshot(cropRect: rect, asPNG: true)
+        let path = state.nextArtifactPath(for: .screenshot)
+        try data.write(to: URL(fileURLWithPath: path))
+        return .raw(Data(path.utf8))
+      }
+
+    case .startRecording:
+      // One recording at a time: an empty result signals "already recording" (false).
+      if state.activeRecording != nil {
+        return .raw(Data())
+      }
+      let path = state.nextArtifactPath(for: .video)
+      state.activeRecording = try await commandExecutor.repl_start_recording(toFile: path)
+      return .raw(Data(path.utf8))
+
+    case .stopRecording:
+      guard let recording = state.activeRecording else {
+        throw HostCommandError.message("stopRecording: no recording is in progress")
+      }
+      state.activeRecording = nil
+      let url = try await recording.stop()
+      return .raw(Data(url.path.utf8))
+    }
+  }
+
+  /// Resolves a screenshot `area` to a crop rectangle in screen points, or nil for
+  /// the whole screen.
+  private func cropRect(for area: ScreenshotArea) async throws -> CGRect? {
+    switch area {
+    case .full:
+      return nil
+    case .rect(let rect):
+      return rect
+    case .element(let label):
+      return try await commandExecutor.repl_accessibility_frame(label: label)
     }
   }
 
