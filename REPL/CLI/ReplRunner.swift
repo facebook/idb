@@ -41,6 +41,16 @@ enum Context {
     case .app: return "app"
     }
   }
+
+  /// A human-readable label for the report header, naming the bundle or bundle
+  /// path the context targets.
+  var reportLabel: String {
+    switch self {
+    case .simulator: return "simulator"
+    case let .test(bundle): return "test (`\(bundle.testBundlePath)`)"
+    case let .app(app): return "app (`\(app.bundleID)`)"
+    }
+  }
 }
 
 /// A failure while compiling or executing REPL code. Its description is shown to
@@ -107,6 +117,16 @@ struct ReplRunner: ParsableArguments {
       "Use an unencrypted TCP connection to the companion instead of TLS.",
       visibility: .hidden))
   var plaintext = false
+
+  @Option(
+    name: .long,
+    help: "Write a Markdown report of this session (the code run and its results) to this path. If omitted, no report is written.")
+  var reportPath: String?
+
+  @Flag(
+    name: .long,
+    help: "Also record runs whose code fails to compile in the report. Off by default; successful runs and runtime exceptions are always recorded.")
+  var reportFailures = false
 
   @Argument(help: "An optional line of Swift to compile and run once, printing the result to stdout. If omitted, the interactive REPL starts.")
   var code: String?
@@ -225,6 +245,22 @@ struct ReplRunner: ParsableArguments {
     }
     reportCall(reporter, "start_session", start: sessionStart, arguments: [], failure: nil)
 
+    // Set up the session report if a path was given. Best-effort: failing to open
+    // it disables reporting but never stops the REPL.
+    var reportWriter: ReplReportWriter?
+    if let reportPath {
+      let writer = ReplReportWriter(path: reportPath)
+      if let resolvedPath = writer.open(
+        context: context.reportLabel,
+        target: "\(deviceType) \(osVersion)",
+        reason: GlobalOptions.shared.reason,
+        startedAt: Date())
+      {
+        FileHandle.standardError.write(Data("idb-repl: writing session report to \(resolvedPath)\n".utf8))
+        reportWriter = writer
+      }
+    }
+
     // One-shot mode: when a line of code is supplied on the command line, compile
     // and run just that, print the result to stdout, and exit instead of starting
     // the interactive REPL.
@@ -244,6 +280,7 @@ struct ReplRunner: ParsableArguments {
         switch try await responses.next()?.event {
         case let .result(result):
           print(result.output)
+          reportWriter?.recordRun(index: index, code: code, output: result.output, at: Date())
         case let .stopped(stopped):
           throw ReplExecutionError.sessionStopped(stopped.desc)
         case .ready:
@@ -254,9 +291,13 @@ struct ReplRunner: ParsableArguments {
         reportCall(reporter, "run", start: start, arguments: codeMetadata(code), failure: nil)
       } catch {
         print("Error: \(error)")
+        if reportFailures, case let ReplExecutionError.compileFailed(compilerOutput) = error {
+          reportWriter?.recordCompileFailure(index: Int(nextRunIndex), code: code, compilerOutput: compilerOutput, at: Date())
+        }
         reportCall(reporter, "run", start: start, arguments: codeMetadata(code), failure: "\(error)")
       }
 
+      reportWriter?.close()
       try? await call.requestStream.finish()
       try? await channel.close().get()
       try? await group.shutdownGracefully()
@@ -294,6 +335,7 @@ struct ReplRunner: ParsableArguments {
             switch try await responses.next()?.event {
             case let .result(result):
               printStatus(result.output)
+              reportWriter?.recordRun(index: runIndex, code: swiftCode, output: result.output, at: Date())
               runIndex = result.nextRunIndex >= 0 ? Int(result.nextRunIndex) : 0
             case let .stopped(stopped):
               throw ReplExecutionError.sessionStopped(stopped.desc)
@@ -305,6 +347,9 @@ struct ReplRunner: ParsableArguments {
             reportCall(reporter, "run", start: start, arguments: codeMetadata(swiftCode), failure: nil)
           } catch {
             printStatus("Error:", "\(error)")
+            if reportFailures, case let ReplExecutionError.compileFailed(compilerOutput) = error {
+              reportWriter?.recordCompileFailure(index: runIndex, code: swiftCode, compilerOutput: compilerOutput, at: Date())
+            }
             reportCall(reporter, "run", start: start, arguments: codeMetadata(swiftCode), failure: "\(error)")
             stopSession = (error as? ReplExecutionError)?.terminatesSession ?? true
           }
@@ -324,6 +369,7 @@ struct ReplRunner: ParsableArguments {
       }
     }
 
+    reportWriter?.close()
     try? await call.requestStream.finish()
     try? await channel.close().get()
     try? await group.shutdownGracefully()
