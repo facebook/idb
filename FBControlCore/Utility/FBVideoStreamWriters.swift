@@ -42,15 +42,27 @@ public protocol FBVideoStreamTimedMetadataWriter {
   func writeTimedMetadata(_ text: String, to consumer: any FBDataConsumer)
 }
 
+public struct FBVideoStreamFrameWriters {
+  public let frameWriter: any FBEncodedFrameWriter
+  public let timedMetadataWriter: (any FBVideoStreamTimedMetadataWriter)?
+
+  public init(frameWriter: any FBEncodedFrameWriter, timedMetadataWriter: (any FBVideoStreamTimedMetadataWriter)?) {
+    self.frameWriter = frameWriter
+    self.timedMetadataWriter = timedMetadataWriter
+  }
+}
+
 public extension FBVideoStreamTransport {
-  func frameWriter(for codec: FBVideoStreamCodec) -> any FBEncodedFrameWriter {
+  func frameWriters(for codec: FBVideoStreamCodec) -> FBVideoStreamFrameWriters {
     switch self {
     case .fmp4:
-      return FBFMP4FrameWriter(codec: codec)
+      let writer = FBFMP4FrameWriter(codec: codec)
+      return FBVideoStreamFrameWriters(frameWriter: writer, timedMetadataWriter: writer)
     case .mpegts:
-      return FBMPEGTSFrameWriter(codec: codec)
+      let writer = FBMPEGTSFrameWriter(codec: codec)
+      return FBVideoStreamFrameWriters(frameWriter: writer, timedMetadataWriter: writer)
     case .annexB:
-      return FBAnnexBFrameWriter(codec: codec)
+      return FBVideoStreamFrameWriters(frameWriter: FBAnnexBFrameWriter(codec: codec), timedMetadataWriter: nil)
     }
   }
 }

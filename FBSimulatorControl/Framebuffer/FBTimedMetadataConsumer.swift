@@ -24,36 +24,24 @@ protocol FBTimedMetadataConsumer: AnyObject {
 // MARK: - FBTransportTimedMetadataConsumer
 
 /// The streaming `FBTimedMetadataConsumer`: muxes each marker into the encoded byte stream via the
-/// transport writer (MPEG-TS ID3 or fMP4 `emsg`). This reproduces the pre-refactor inline transport
-/// dispatch in `FBSimulatorVideoStream.writeTimedMetadata` exactly, including dropping (with a log) on
-/// transports that carry no timed-metadata channel (e.g. Annex-B).
+/// transport writer (MPEG-TS ID3 or fMP4 `emsg`). Transports that carry no timed-metadata channel
+/// (e.g. Annex-B) pass `nil` and drop markers with a log.
 final class FBTransportTimedMetadataConsumer: FBTimedMetadataConsumer {
-  private let format: FBVideoStreamFormat
   private let consumer: any FBDataConsumer
   /// Transport writer that can mux timed metadata into the same byte stream. `nil` for stateless
   /// transports (Annex-B).
   private let timedMetadataWriter: (any FBVideoStreamTimedMetadataWriter)?
 
-  init(format: FBVideoStreamFormat, consumer: any FBDataConsumer, timedMetadataWriter: (any FBVideoStreamTimedMetadataWriter)?) {
-    self.format = format
+  init(consumer: any FBDataConsumer, timedMetadataWriter: (any FBVideoStreamTimedMetadataWriter)?) {
     self.consumer = consumer
     self.timedMetadataWriter = timedMetadataWriter
   }
 
   func writeTimedMetadata(_ text: String, logger: any FBControlCoreLogger) {
-    guard case let .compressedVideo(_, transport) = format else {
-      logger.log("writeTimedMetadata: not supported for format '\(format)', dropping")
+    guard let timedMetadataWriter else {
+      logger.log("writeTimedMetadata: not supported for this transport, dropping")
       return
     }
-    switch transport {
-    case .mpegts, .fmp4:
-      if let timedMetadataWriter {
-        timedMetadataWriter.writeTimedMetadata(text, to: consumer)
-      } else {
-        logger.log("writeTimedMetadata: timed-metadata writer missing for transport '\(transport.rawValue)', dropping")
-      }
-    case .annexB:
-      logger.log("writeTimedMetadata: not supported for transport '\(transport.rawValue)', dropping")
-    }
+    timedMetadataWriter.writeTimedMetadata(text, to: consumer)
   }
 }

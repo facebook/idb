@@ -34,10 +34,10 @@ final class FBDataConsumerEncodedSampleConsumer: FBEncodedSampleConsumer {
   /// The timed-metadata writer for transports that can carry markers (`fMP4` / `MPEG-TS`).
   let timedMetadataWriter: (any FBVideoStreamTimedMetadataWriter)?
 
-  init(consumer: any FBDataConsumer, frameWriter: any FBEncodedFrameWriter) {
+  init(consumer: any FBDataConsumer, frameWriter: any FBEncodedFrameWriter, timedMetadataWriter: (any FBVideoStreamTimedMetadataWriter)?) {
     self.consumer = consumer
     self.frameWriter = frameWriter
-    self.timedMetadataWriter = frameWriter as? any FBVideoStreamTimedMetadataWriter
+    self.timedMetadataWriter = timedMetadataWriter
   }
 
   func consume(_ sampleBuffer: CMSampleBuffer, logger: any FBControlCoreLogger) -> Bool {

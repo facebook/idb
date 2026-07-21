@@ -379,6 +379,7 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: FBSimulatorVideoStre
   /// The encoded-sample sink for `.compressed` output; nil for MJPEG/Minicap, which write the JPEG
   /// block buffer directly to `consumer` in the encode handler.
   let encodedSampleConsumer: FBEncodedSampleConsumer?
+  let timedMetadataWriter: (any FBVideoStreamTimedMetadataWriter)?
   let consumer: any FBDataConsumer
   let logger: any FBControlCoreLogger
   private let mjpegFrameWriter = FBMJPEGFrameWriter()
@@ -405,12 +406,14 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: FBSimulatorVideoStre
     consumer: any FBDataConsumer,
     outputMode: FBVideoToolboxOutputMode,
     encodedSampleConsumer: FBEncodedSampleConsumer?,
+    timedMetadataWriter: (any FBVideoStreamTimedMetadataWriter)?,
     logger: any FBControlCoreLogger
   ) {
     self.configuration = configuration
     self.compressionSessionProperties = compressionSessionProperties
     self.outputMode = outputMode
     self.encodedSampleConsumer = encodedSampleConsumer
+    self.timedMetadataWriter = timedMetadataWriter
     self.consumer = consumer
     self.logger = logger
     self.videoCodec = videoCodec
@@ -1050,8 +1053,7 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
     try framePusher.setup(with: buffer, edgeInsets: edgeInsets)
     self.framePusher = framePusher
     let transportTimedMetadataWriter =
-      ((framePusher as? FBSimulatorVideoStreamFramePusher_VideoToolbox)?.encodedSampleConsumer as? FBDataConsumerEncodedSampleConsumer)?
-      .timedMetadataWriter
+      (framePusher as? FBSimulatorVideoStreamFramePusher_VideoToolbox)?.timedMetadataWriter
 
     // Resolve the timed-metadata (chapter) sink. A recording file writer that supports chapters
     // supplies its own consumer; otherwise the streaming transport writer (fMP4 emsg / MPEG-TS ID3)
@@ -1059,7 +1061,7 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
     if case .compressedVideo = configuration.format {
       self.timedMetadataConsumer =
         (encodedSampleConsumerOverride as? FBTimedMetadataConsumer)
-        ?? FBTransportTimedMetadataConsumer(format: configuration.format, consumer: consumer, timedMetadataWriter: transportTimedMetadataWriter)
+        ?? FBTransportTimedMetadataConsumer(consumer: consumer, timedMetadataWriter: transportTimedMetadataWriter)
     }
 
     // Set up overlay compositing infrastructure.
@@ -1268,20 +1270,21 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
     let derived = Self.compressionSessionProperties(for: configuration, callerProperties: compressionSessionProperties)
     switch configuration.format {
     case let .compressedVideo(codec, transport):
+      let frameWriters = transport.frameWriters(for: codec)
       let encodedSampleConsumer: FBEncodedSampleConsumer =
         encodedSampleConsumerOverride
-        ?? FBDataConsumerEncodedSampleConsumer(consumer: consumer, frameWriter: transport.frameWriter(for: codec))
+        ?? FBDataConsumerEncodedSampleConsumer(consumer: consumer, frameWriter: frameWriters.frameWriter, timedMetadataWriter: frameWriters.timedMetadataWriter)
       return FBSimulatorVideoStreamFramePusher_VideoToolbox(
         configuration: configuration, compressionSessionProperties: derived, videoCodec: codec.videoToolboxCodec,
-        consumer: consumer, outputMode: .compressed, encodedSampleConsumer: encodedSampleConsumer, logger: logger)
+        consumer: consumer, outputMode: .compressed, encodedSampleConsumer: encodedSampleConsumer, timedMetadataWriter: frameWriters.timedMetadataWriter, logger: logger)
     case .mjpeg:
       return FBSimulatorVideoStreamFramePusher_VideoToolbox(
         configuration: configuration, compressionSessionProperties: derived, videoCodec: kCMVideoCodecType_JPEG,
-        consumer: consumer, outputMode: .mjpeg, encodedSampleConsumer: nil, logger: logger)
+        consumer: consumer, outputMode: .mjpeg, encodedSampleConsumer: nil, timedMetadataWriter: nil, logger: logger)
     case .minicap:
       return FBSimulatorVideoStreamFramePusher_VideoToolbox(
         configuration: configuration, compressionSessionProperties: derived, videoCodec: kCMVideoCodecType_JPEG,
-        consumer: consumer, outputMode: .minicap, encodedSampleConsumer: nil, logger: logger)
+        consumer: consumer, outputMode: .minicap, encodedSampleConsumer: nil, timedMetadataWriter: nil, logger: logger)
     case .bgra:
       return FBSimulatorVideoStreamFramePusher_Bitmap(consumer: consumer, scaleFactor: configuration.scaleFactor)
     }

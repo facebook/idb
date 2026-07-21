@@ -192,6 +192,7 @@ func createTestVideoStreamPusher(_ logger: FBControlCoreLogger) -> FBSimulatorVi
     consumer: consumer,
     outputMode: .compressed,
     encodedSampleConsumer: FBDataConsumerEncodedSampleConsumer(
-      consumer: consumer, frameWriter: FBAnnexBFrameWriter(codec: .h264)),
+      consumer: consumer, frameWriter: FBAnnexBFrameWriter(codec: .h264), timedMetadataWriter: nil),
+    timedMetadataWriter: nil,
     logger: logger)
 }
