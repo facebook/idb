@@ -865,7 +865,7 @@ public struct FBMinicapFrameWriter {
     let lengthData = Data(bytes: &imageLength, count: MemoryLayout<UInt32>.size)
     consumer.consumeData(lengthData)
 
-    try FBMJPEGFrameWriter().write(jpegDataBuffer, to: consumer, logger: logger)
+    try WriteBlockBufferToConsumer(jpegDataBuffer, consumer)
   }
 
   // MinicapHeader is built byte-by-byte (24 bytes, all little-endian) rather than relying
