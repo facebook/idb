@@ -328,6 +328,17 @@ import XCTestBootstrap
     return try await replTarget.startReplApp(bundleID: bundleID, reuseSession: reuseSession)
   }
 
+  /// The environment that arms an app launch for the REPL (DYLD-inject libRepl +
+  /// the IDB_REPL_* vars), used by `idb launch --enable-repl`. The control-socket
+  /// path is deterministic, so a later `idb-repl app` reattaches. Simulator
+  /// targets only.
+  public func replAppLaunchEnvironment(bundleID: String) async throws -> [String: String] {
+    guard let replTarget = target as? ReplCommands else {
+      throw FBIDBError.describe("\(target) does not support REPL app launches").build()
+    }
+    return try await replTarget.replAppLaunchEnvironment(bundleID: bundleID)
+  }
+
   public func debugserver_start(_ bundleID: String) async throws -> FBDebugServer {
     let bundle = try debugserver_prepare(bundleID)
     let server = try await target.launchDebugServer(forHostApplication: bundle, port: debugserverPort)

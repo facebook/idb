@@ -452,6 +452,7 @@ class Client(ABC):
         wait_for_debugger: bool = False,
         stop: asyncio.Event | None = None,
         pid_file: str | None = None,
+        enable_repl: bool = False,
     ) -> None:
         pass
 

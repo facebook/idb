@@ -14,4 +14,7 @@ public protocol ReplCommands: AnyObject {
   func startReplSimulator() async throws -> ReplSession
 
   func startReplApp(bundleID: String, reuseSession: Bool) async throws -> ReplSession
+
+  /// The environment that enables REPL during app launch.
+  func replAppLaunchEnvironment(bundleID: String) async throws -> [String: String]
 }

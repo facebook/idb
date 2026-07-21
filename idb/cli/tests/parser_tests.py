@@ -94,6 +94,7 @@ class TestParser(TestCase):
             wait_for_debugger=False,
             stop=None,
             pid_file=None,
+            enable_repl=False,
         )
 
     async def test_launch_with_pid_file(self) -> None:
@@ -112,6 +113,23 @@ class TestParser(TestCase):
             wait_for_debugger=False,
             stop=None,
             pid_file=pid_file,
+            enable_repl=False,
+        )
+
+    async def test_launch_with_enable_repl(self) -> None:
+        bundle_id = "com.foo.app"
+        udid = "my udid"
+        self.client_mock.launch = AsyncMock(return_value=bundle_id)
+        await cli_main(cmd_input=["launch", "--enable-repl", "--udid", udid, bundle_id])
+        self.client_mock.launch.assert_called_once_with(
+            bundle_id=bundle_id,
+            env={},
+            args=[],
+            foreground_if_running=False,
+            wait_for_debugger=False,
+            stop=None,
+            pid_file=None,
+            enable_repl=True,
         )
 
     async def test_create(self) -> None:

@@ -506,6 +506,7 @@ message LaunchRequest {
     bool foreground_if_running = 4;
     bool wait_for = 5;
     bool wait_for_debugger = 6;
+    bool enable_repl = 7;
   }
   message Stop {}
   oneof control {

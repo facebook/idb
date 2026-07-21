@@ -1086,6 +1086,7 @@ class Client(ClientBase):
         wait_for_debugger: bool = False,
         stop: asyncio.Event | None = None,
         pid_file: str | None = None,
+        enable_repl: bool = False,
     ) -> None:
         async with self.stub.launch.open() as stream:
             request = LaunchRequest(
@@ -1096,6 +1097,7 @@ class Client(ClientBase):
                     foreground_if_running=foreground_if_running,
                     wait_for_debugger=wait_for_debugger,
                     wait_for=True if stop else False,
+                    enable_repl=enable_repl,
                 )
             )
             await stream.send_message(request)

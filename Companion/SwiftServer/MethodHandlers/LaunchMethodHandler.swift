@@ -37,14 +37,31 @@ struct LaunchMethodHandler {
       stdErr = FBProcessOutput<AnyObject>(for: stdErrConsumer)
     }
     let io = FBProcessIO<AnyObject, AnyObject, AnyObject>(stdIn: nil, stdOut: stdOut, stdErr: stdErr)
+
+    var environment = start.env
+    var launchMode: FBApplicationLaunchMode = start.foregroundIfRunning ? .foregroundIfRunning : .failIfRunning
+    if start.enableRepl {
+      // Setup the launch for the REPL (inject libRepl + the IDB_REPL_* vars) and
+      // force a relaunch so an already-running, un-injected app picks up the dylib.
+      let replEnvironment = try await commandExecutor.replAppLaunchEnvironment(bundleID: start.bundleID)
+      for (key, value) in replEnvironment {
+        if key == "DYLD_INSERT_LIBRARIES", let existing = environment[key], !existing.isEmpty {
+          environment[key] = "\(existing):\(value)"
+        } else {
+          environment[key] = value
+        }
+      }
+      launchMode = .relaunchIfRunning
+    }
+
     let config = FBApplicationLaunchConfiguration(
       bundleID: start.bundleID,
       bundleName: nil,
       arguments: start.appArgs,
-      environment: start.env,
+      environment: environment,
       waitForDebugger: start.waitForDebugger,
       io: io,
-      launchMode: start.foregroundIfRunning ? .foregroundIfRunning : .failIfRunning)
+      launchMode: launchMode)
     let launchedApp = try await commandExecutor.launch_app(config)
     let response = Idb_LaunchResponse.with {
       $0.debugger.pid = UInt64(launchedApp.processIdentifier)
