@@ -51,6 +51,14 @@ final class SessionDirectory: @unchecked Sendable {
     return (path as NSString).appendingPathComponent(name)
   }
 
+  /// A path for a retrieved artifact under an `artifacts/` subdirectory of the
+  /// session directory, creating that subdirectory if needed.
+  func artifactPath(named name: String) throws -> String {
+    let directory = try filePath(named: "artifacts")
+    try FileManager.default.createDirectory(atPath: directory, withIntermediateDirectories: true)
+    return (directory as NSString).appendingPathComponent(name)
+  }
+
   func cleanup() {
     lock.lock()
     defer { lock.unlock() }
@@ -62,3 +70,30 @@ final class SessionDirectory: @unchecked Sendable {
 }
 
 let sessionDirectory = SessionDirectory()
+
+/// Session-wide facts learned from the REPL handshake.
+///
+/// @unchecked Sendable: `sharedFilesystem` is guarded by `lock`.
+final class ReplSessionInfo: @unchecked Sendable {
+  private let lock = NSLock()
+  private var sharedFilesystemValue = false
+
+  /// Whether the connected companion shares this driver's filesystem, set once
+  /// from the ready handshake. When true, captured artifacts are moved into the
+  /// session's artifacts directory directly; otherwise they are pulled back over
+  /// gRPC and removed from the companion.
+  var sharedFilesystem: Bool {
+    get {
+      lock.lock()
+      defer { lock.unlock() }
+      return sharedFilesystemValue
+    }
+    set {
+      lock.lock()
+      defer { lock.unlock() }
+      sharedFilesystemValue = newValue
+    }
+  }
+}
+
+let replSessionInfo = ReplSessionInfo()

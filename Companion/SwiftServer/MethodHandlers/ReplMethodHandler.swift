@@ -34,14 +34,19 @@ struct ReplMethodHandler {
       session = try await commandExecutor.repl_start_simulator()
     }
 
-    try await serve(session: session, requestStream: requestStream, responseStream: responseStream)
+    // Detect whether we share the driver's filesystem: the driver sends a path it
+    // created locally; if we can see it, captured artifacts can be moved rather
+    // than pulled back over gRPC.
+    let sharedFilesystem = !start.probeFilePath.isEmpty && FileManager.default.fileExists(atPath: start.probeFilePath)
+
+    try await serve(session: session, sharedFilesystem: sharedFilesystem, requestStream: requestStream, responseStream: responseStream)
   }
 
   /// Bridges the gRPC repl stream to a launched session's control socket:
   /// connects to the socket, reports `ready`, forwards each `Execute` (a dylib
   /// plus a symbol) to the socket and streams back the result, and on stop/EOF
   /// closes the socket (which ends the served process) and reports `stopped`.
-  private func serve(session: ReplSession, requestStream: GRPCAsyncRequestStream<Idb_ReplRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_ReplResponse>) async throws {
+  private func serve(session: ReplSession, sharedFilesystem: Bool, requestStream: GRPCAsyncRequestStream<Idb_ReplRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_ReplResponse>) async throws {
     // Per-session scratch directory for the dylibs received over the wire. It
     // lives on the host filesystem, which the simulator process can read.
     let scratchDirectory = (NSTemporaryDirectory() as NSString).appendingPathComponent("idb_repl_\(UUID().uuidString)")
@@ -52,12 +57,14 @@ struct ReplMethodHandler {
     // lives under the target's auxillary directory -- a real companion-host path
     // that is also the pull-able AUXILLARY container -- and is removed at the end
     // of the session.
+    let artifactsSessionID = UUID().uuidString
+    let artifactsContainerBase = "idb-repl-artifacts/" + artifactsSessionID
     let artifactsDirectory = URL(fileURLWithPath: commandExecutor.auxillaryDirectory)
       .appendingPathComponent("idb-repl-artifacts")
-      .appendingPathComponent(UUID().uuidString)
+      .appendingPathComponent(artifactsSessionID)
     try FileManager.default.createDirectory(at: artifactsDirectory, withIntermediateDirectories: true)
     defer { try? FileManager.default.removeItem(at: artifactsDirectory) }
-    let hostState = ReplHostCommandState(stagingDirectory: artifactsDirectory)
+    let hostState = ReplHostCommandState(stagingDirectory: artifactsDirectory, containerRelativeBase: artifactsContainerBase)
 
     // Connect to the control socket. It appears once the launched process binds
     // it, so retry for a while.
@@ -92,6 +99,7 @@ struct ReplMethodHandler {
             $0.osVersion = commandExecutor.replOSVersion
             $0.generatedInterfaces = generatedInterfaces
             $0.nextRunIndex = greeting.nextRunIndex
+            $0.sharedFilesystem = sharedFilesystem
           })
       })
 
@@ -123,6 +131,12 @@ struct ReplMethodHandler {
             }
             return await dispatcher.run(command)
           })
+        let artifacts = hostState.runArtifacts.map { artifact in
+          Idb_ReplResponse.Result.Artifact.with {
+            $0.hostPath = artifact.hostPath
+            $0.containerPath = artifact.containerPath
+          }
+        }
         try await responseStream.send(
           .with {
             $0.event = .result(
@@ -130,6 +144,7 @@ struct ReplMethodHandler {
                 $0.success = result.success
                 $0.output = result.output
                 $0.nextRunIndex = result.nextRunIndex
+                $0.artifacts = artifacts
               })
           })
 

@@ -809,6 +809,12 @@ message ReplRequest {
     // an older client that predates reattach -- is false, so the companion
     // relaunches.
     bool reuse_session = 4;
+    // A path the driver created locally, used to detect whether the companion
+    // shares the driver's filesystem: the companion checks whether this path
+    // exists and reports the result in Ready.shared_filesystem. When they share
+    // a filesystem the driver moves captured artifacts directly; otherwise it
+    // pulls them back over gRPC.
+    string probe_file_path = 5;
   }
   // Sent for each piece of code to run: a compiled dylib and the symbol to
   // call.
@@ -844,6 +850,10 @@ message ReplResponse {
     string os_version = 4;
     // The next index the driver should use for numbering a compiled module.
     uint32 next_run_index = 5;
+    // Whether the companion shares the driver's filesystem, determined from
+    // Start.probe_file_path. When true the driver reads companion-written
+    // artifact paths directly.
+    bool shared_filesystem = 6;
   }
   // The result of executing one Execute message.
   message Result {
@@ -852,6 +862,20 @@ message ReplResponse {
     // The next index the driver should use for numbering a compiled module.
     // A negative value signals the session has ended.
     int32 next_run_index = 3;
+    // Files captured on the companion during this execute (screenshots saved to
+    // a file, recordings). The driver retrieves each into its session's
+    // artifacts directory -- moving it when the filesystem is shared, otherwise
+    // pulling it over gRPC (the AUXILLARY container) and removing the companion
+    // copy.
+    message Artifact {
+      // The absolute path on the companion host (used for a same-filesystem
+      // move).
+      string host_path = 1;
+      // The path relative to the AUXILLARY file container root (used to pull
+      // the file when the filesystem is not shared).
+      string container_path = 2;
+    }
+    repeated Artifact artifacts = 4;
   }
   // The session has ended.
   message Stopped {

@@ -88,6 +88,18 @@ enum ReplExecutionError: Error, CustomStringConvertible {
   }
 }
 
+/// A failure while retrieving a captured artifact from the companion.
+enum ArtifactTransferError: Error, CustomStringConvertible {
+  case extractionFailed(String)
+
+  var description: String {
+    switch self {
+    case let .extractionFailed(path):
+      return "Failed to extract the artifact archive at \(path)"
+    }
+  }
+}
+
 /// Shared REPL implementation backing both the `test` and `simulator`
 /// subcommands. Its options are flattened into each subcommand via `@OptionGroup`.
 struct ReplRunner: ParsableArguments {
@@ -156,6 +168,7 @@ struct ReplRunner: ParsableArguments {
     let group: MultiThreadedEventLoopGroup
     let channel: GRPCChannel
     let call: GRPCAsyncBidirectionalStreamingCall<Idb_ReplRequest, Idb_ReplResponse>
+    let client: Idb_CompanionServiceAsyncClient
     var responses: GRPCAsyncResponseStream<Idb_ReplResponse>.Iterator
     let deviceType: String
     let osVersion: String
@@ -178,7 +191,12 @@ struct ReplRunner: ParsableArguments {
           for: address, tls: plaintext ? .disabled : .metaIdentity),
         eventLoopGroup: group
       )
-      let client = Idb_CompanionServiceAsyncClient(channel: channel)
+      client = Idb_CompanionServiceAsyncClient(channel: channel)
+
+      // Create a marker file so the companion can detect whether it shares our
+      // filesystem (it checks this path's existence; see Start.probe_file_path).
+      let probeFilePath = try sessionDirectory.filePath(named: "shared-fs-probe")
+      FileManager.default.createFile(atPath: probeFilePath, contents: Data())
 
       // Open the bidirectional repl stream and start a session.
       call = client.makeReplCall()
@@ -188,6 +206,7 @@ struct ReplRunner: ParsableArguments {
           $0.control = .start(
             .with {
               $0.context = context.proto
+              $0.probeFilePath = probeFilePath
               // Only the test context runs against a bundle; only the app context
               // names an app to launch.
               if case let .test(bundle) = context {
@@ -208,6 +227,7 @@ struct ReplRunner: ParsableArguments {
       deviceType = ready.deviceType
       osVersion = ready.osVersion
       nextRunIndex = ready.nextRunIndex
+      replSessionInfo.sharedFilesystem = ready.sharedFilesystem
       reporter.addMetadata(["device_type": deviceType])
 
       // The companion sends the .swiftinterface files available to injected code
@@ -280,6 +300,7 @@ struct ReplRunner: ParsableArguments {
         switch try await responses.next()?.event {
         case let .result(result):
           print(result.output)
+          await transferArtifacts(result.artifacts, client: client)
           reportWriter?.recordRun(index: index, code: code, output: result.output, at: Date())
         case let .stopped(stopped):
           throw ReplExecutionError.sessionStopped(stopped.desc)
@@ -335,6 +356,7 @@ struct ReplRunner: ParsableArguments {
             switch try await responses.next()?.event {
             case let .result(result):
               printStatus(result.output)
+              await transferArtifacts(result.artifacts, client: client)
               reportWriter?.recordRun(index: runIndex, code: swiftCode, output: result.output, at: Date())
               runIndex = result.nextRunIndex >= 0 ? Int(result.nextRunIndex) : 0
             case let .stopped(stopped):
@@ -542,5 +564,76 @@ struct ReplRunner: ParsableArguments {
       print(line)
     }
     print("")
+  }
+
+  /// Retrieves each artifact captured during a run into the session's artifacts
+  /// directory and reports its local path. When the companion shares our
+  /// filesystem the file is moved directly; otherwise it is pulled over gRPC (the
+  /// AUXILLARY container) and removed from the companion. Best-effort: failing to
+  /// retrieve one artifact is logged and does not stop the session.
+  private func transferArtifacts(_ artifacts: [Idb_ReplResponse.Result.Artifact], client: Idb_CompanionServiceAsyncClient) async {
+    for artifact in artifacts {
+      do {
+        let localPath: String
+        if replSessionInfo.sharedFilesystem {
+          localPath = try moveArtifact(hostPath: artifact.hostPath)
+        } else {
+          localPath = try await pullArtifact(containerPath: artifact.containerPath, client: client)
+        }
+        FileHandle.standardError.write(Data("idb-repl: saved artifact to \(localPath)\n".utf8))
+      } catch {
+        FileHandle.standardError.write(Data("idb-repl: could not retrieve artifact \(artifact.hostPath): \(error)\n".utf8))
+      }
+    }
+  }
+
+  /// Moves a companion-written artifact (visible because we share the filesystem)
+  /// into the session's artifacts directory.
+  private func moveArtifact(hostPath: String) throws -> String {
+    let destination = try sessionDirectory.artifactPath(named: (hostPath as NSString).lastPathComponent)
+    try? FileManager.default.removeItem(atPath: destination)
+    try FileManager.default.moveItem(atPath: hostPath, toPath: destination)
+    return destination
+  }
+
+  /// Pulls an artifact from the companion's AUXILLARY container (streamed back as a
+  /// gzipped tar), extracts it into the session's artifacts directory, and removes
+  /// the companion copy.
+  private func pullArtifact(containerPath: String, client: Idb_CompanionServiceAsyncClient) async throws -> String {
+    let request = Idb_PullRequest.with {
+      $0.srcPath = containerPath
+      $0.dstPath = "" // empty: stream the bytes back rather than copy them host-side
+      $0.container = .with { $0.kind = .auxillary }
+    }
+    var archive = Data()
+    for try await response in client.pull(request) {
+      archive.append(response.payload.data)
+    }
+
+    let name = (containerPath as NSString).lastPathComponent
+    let destination = try sessionDirectory.artifactPath(named: name)
+    let directory = (destination as NSString).deletingLastPathComponent
+    let archivePath = (directory as NSString).appendingPathComponent(name + ".tar.gz")
+    try archive.write(to: URL(fileURLWithPath: archivePath))
+    defer { try? FileManager.default.removeItem(atPath: archivePath) }
+    try Self.extractArchive(at: archivePath, into: directory)
+
+    _ = try? await client.rm(
+      Idb_RmRequest.with {
+        $0.paths = [containerPath]
+        $0.container = .with { $0.kind = .auxillary }
+      })
+    return destination
+  }
+
+  private static func extractArchive(at archivePath: String, into directory: String) throws {
+    let process = Process()
+    process.executableURL = URL(fileURLWithPath: "/usr/bin/tar")
+    process.arguments = ["-xzf", archivePath, "-C", directory]
+    try process.run()
+    process.waitUntilExit()
+    guard process.terminationStatus == 0 else {
+      throw ArtifactTransferError.extractionFailed(archivePath)
+    }
   }
 }

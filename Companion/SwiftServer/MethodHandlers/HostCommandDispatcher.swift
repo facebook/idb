@@ -51,23 +51,34 @@ final class ReplHostCommandState: @unchecked Sendable {
   /// the target's auxillary directory).
   let stagingDirectory: URL
 
+  /// The path of `stagingDirectory` relative to the AUXILLARY file-container root
+  /// (the target's auxillary directory), used to pull artifacts back over gRPC.
+  let containerRelativeBase: String
+
   /// The recording started by `startRecording`, awaiting `stopRecording`.
   var activeRecording: (any FBVideoRecording)?
+
+  /// Files captured during the current execute, reported to the driver so it can
+  /// retrieve them.
+  private(set) var runArtifacts: [ReplArtifact] = []
 
   private var runIndex = 0
   private var screenshotIndex = 0
   private var videoIndex = 0
 
-  init(stagingDirectory: URL) {
+  init(stagingDirectory: URL, containerRelativeBase: String) {
     self.stagingDirectory = stagingDirectory
+    self.containerRelativeBase = containerRelativeBase
   }
 
   /// Called at the start of each execute so artifact filenames carry the REPL run
-  /// index and the per-kind counters restart at 1 for the run.
+  /// index, the per-kind counters restart at 1 for the run, and the run's artifact
+  /// list starts empty.
   func beginRun(index: Int) {
     runIndex = index
     screenshotIndex = 0
     videoIndex = 0
+    runArtifacts = []
   }
 
   /// The next auto-generated artifact path for `kind`, e.g.
@@ -84,6 +95,21 @@ final class ReplHostCommandState: @unchecked Sendable {
     }
     return stagingDirectory.appendingPathComponent(name).path
   }
+
+  /// Records a captured file so it is reported in the run's result. The container
+  /// path is relative to the AUXILLARY container root, for pulling it back.
+  func recordArtifact(hostPath: String) {
+    let filename = (hostPath as NSString).lastPathComponent
+    runArtifacts.append(ReplArtifact(hostPath: hostPath, containerPath: containerRelativeBase + "/" + filename))
+  }
+}
+
+/// A file captured on the companion during an execute, to be retrieved by the
+/// driver. `hostPath` is absolute (for a same-filesystem move); `containerPath` is
+/// relative to the AUXILLARY container root (for a gRPC pull).
+struct ReplArtifact {
+  let hostPath: String
+  let containerPath: String
 }
 
 /// Maps a decoded `ReplCommand` -- sent by injected REPL code while it runs -- to
@@ -200,6 +226,7 @@ struct HostCommandDispatcher {
         let data = try await commandExecutor.repl_screenshot(cropRect: rect, asPNG: true)
         let path = state.nextArtifactPath(for: .screenshot)
         try data.write(to: URL(fileURLWithPath: path))
+        state.recordArtifact(hostPath: path)
         return .raw(Data(path.utf8))
       }
 
@@ -218,6 +245,7 @@ struct HostCommandDispatcher {
       }
       state.activeRecording = nil
       let url = try await recording.stop()
+      state.recordArtifact(hostPath: url.path)
       return .raw(Data(url.path.utf8))
     }
   }
