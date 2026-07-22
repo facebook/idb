@@ -1100,6 +1100,12 @@ extension FBWeakFramework {
   @objc(DTXConnectionServices) dynamic public class var dtxConnectionServices: FBWeakFramework {
     @objc get
   }
+  @objc(XCTDaemonControl) dynamic public class var xctDaemonControl: FBWeakFramework {
+    @objc get
+  }
+  @objc(XCUIAutomation) dynamic public class var xcuiAutomation: FBWeakFramework {
+    @objc get
+  }
   @objc(XCTest) dynamic public class var xcTest: FBWeakFramework {
     @objc get
   }

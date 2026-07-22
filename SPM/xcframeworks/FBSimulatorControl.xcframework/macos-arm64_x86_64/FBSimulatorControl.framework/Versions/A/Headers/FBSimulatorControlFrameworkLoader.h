@@ -25,6 +25,20 @@
 @property (class, nonnull, nonatomic, readonly, strong) FBSimulatorControlFrameworkLoader *accessibilityFrameworks;
 
 /**
+ The Xcode frameworks used to establish accessibility automation for Device Hub runtimes.
+ */
+@property (class, nonnull, nonatomic, readonly, strong) FBSimulatorControlFrameworkLoader *accessibilityAutomationFrameworks;
+
+/**
+ Establishes a bounded, short-lived remote automation session and asks it to
+ load simulator accessibility support.
+ */
++ (BOOL)bootstrapAccessibilityForSimulatorDevice:(nonnull id)simulatorDevice
+                                         timeout:(NSTimeInterval)timeout
+                                          logger:(nullable id<FBControlCoreLogger>)logger
+                                           error:(NSError * _Nullable * _Nullable)error;
+
+/**
  All of the Frameworks for operations involving the HID and Framebuffer.
  */
 @property (class, nonnull, nonatomic, readonly, strong) FBSimulatorControlFrameworkLoader *xcodeFrameworks;

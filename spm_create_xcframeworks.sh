@@ -3,6 +3,11 @@
 set -e
 set -o pipefail
 
+source_revision="$(git rev-parse HEAD)"
+developer_directory="${DEVELOPER_DIR:-$(xcode-select -p)}"
+xcode_version="$(DEVELOPER_DIR="$developer_directory" xcodebuild -version | awk 'NR == 1 { print $2 }')"
+xcode_build="$(DEVELOPER_DIR="$developer_directory" xcodebuild -version | awk '/Build version/ { print $3 }')"
+
 # Ensure Xcode projects are generated (xcodegen).
 ./build.sh generate
 
@@ -55,3 +60,17 @@ build_xcframework "FBSimulatorControl"
 build_xcframework "FBDeviceControl"
 
 ./verify_fbsimulatorcontrol_runtime_linkage.sh
+
+jq -n \
+  --arg source_revision "$source_revision" \
+  --arg developer_directory "$developer_directory" \
+  --arg xcode_version "$xcode_version" \
+  --arg xcode_build "$xcode_build" \
+  '{
+    source_revision: $source_revision,
+    toolchain: {
+      developer_directory: $developer_directory,
+      xcode_version: $xcode_version,
+      xcode_build: $xcode_build
+    }
+  }' > SPM/ARTIFACT_PROVENANCE.json

@@ -38549,6 +38549,112 @@
           },
           {
             "kind": "Var",
+            "name": "xctDaemonControl",
+            "printedName": "xctDaemonControl",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "FBWeakFramework",
+                "printedName": "FBControlCore.FBWeakFramework",
+                "usr": "c:@M@FBControlCore@objc(cs)FBWeakFramework"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "c:@CM@FBControlCore@objc(cs)FBWeakFramework(cpy)XCTDaemonControl",
+            "mangledName": "$s13FBControlCore15FBWeakFrameworkC16xctDaemonControlACvpZ",
+            "moduleName": "FBControlCore",
+            "static": true,
+            "isOpen": true,
+            "objc_name": "XCTDaemonControl",
+            "declAttributes": [
+              "Dynamic",
+              "AccessControl",
+              "ObjC"
+            ],
+            "isFromExtension": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "FBWeakFramework",
+                    "printedName": "FBControlCore.FBWeakFramework",
+                    "usr": "c:@M@FBControlCore@objc(cs)FBWeakFramework"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "c:@CM@FBControlCore@objc(cs)FBWeakFramework(cm)XCTDaemonControl",
+                "mangledName": "$s13FBControlCore15FBWeakFrameworkC16xctDaemonControlACvgZ",
+                "moduleName": "FBControlCore",
+                "static": true,
+                "isOpen": true,
+                "declAttributes": [
+                  "Dynamic",
+                  "ObjC"
+                ],
+                "isFromExtension": true,
+                "accessorKind": "get"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
+            "name": "xcuiAutomation",
+            "printedName": "xcuiAutomation",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "FBWeakFramework",
+                "printedName": "FBControlCore.FBWeakFramework",
+                "usr": "c:@M@FBControlCore@objc(cs)FBWeakFramework"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "c:@CM@FBControlCore@objc(cs)FBWeakFramework(cpy)XCUIAutomation",
+            "mangledName": "$s13FBControlCore15FBWeakFrameworkC14xcuiAutomationACvpZ",
+            "moduleName": "FBControlCore",
+            "static": true,
+            "isOpen": true,
+            "objc_name": "XCUIAutomation",
+            "declAttributes": [
+              "Dynamic",
+              "AccessControl",
+              "ObjC"
+            ],
+            "isFromExtension": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "FBWeakFramework",
+                    "printedName": "FBControlCore.FBWeakFramework",
+                    "usr": "c:@M@FBControlCore@objc(cs)FBWeakFramework"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "c:@CM@FBControlCore@objc(cs)FBWeakFramework(cm)XCUIAutomation",
+                "mangledName": "$s13FBControlCore15FBWeakFrameworkC14xcuiAutomationACvgZ",
+                "moduleName": "FBControlCore",
+                "static": true,
+                "isOpen": true,
+                "declAttributes": [
+                  "Dynamic",
+                  "ObjC"
+                ],
+                "isFromExtension": true,
+                "accessorKind": "get"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
             "name": "xcTest",
             "printedName": "xcTest",
             "children": [
@@ -52744,56 +52850,84 @@
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBWeakFramework+ApplePrivateFrameworks.swift",
       "kind": "StringLiteral",
-      "offset": 1715,
+      "offset": 1742,
+      "length": 48,
+      "value": "\"..\/SharedFrameworks\/XCTDaemonControl.framework\""
+    },
+    {
+      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBWeakFramework+ApplePrivateFrameworks.swift",
+      "kind": "Array",
+      "offset": 1818,
+      "length": 36,
+      "value": "[\"XCTDaemonConnectionConfiguration\"]"
+    },
+    {
+      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBWeakFramework+ApplePrivateFrameworks.swift",
+      "kind": "StringLiteral",
+      "offset": 1996,
+      "length": 46,
+      "value": "\"..\/SharedFrameworks\/XCUIAutomation.framework\""
+    },
+    {
+      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBWeakFramework+ApplePrivateFrameworks.swift",
+      "kind": "Array",
+      "offset": 2070,
+      "length": 106,
+      "value": "[\"XCUIDeviceRemoteDaemonConnectionProvider\", \"XCUIDeviceRemoteAutomationSession\"]"
+    },
+    {
+      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBWeakFramework+ApplePrivateFrameworks.swift",
+      "kind": "StringLiteral",
+      "offset": 2295,
       "length": 73,
       "value": "\"Platforms\/MacOSX.platform\/Developer\/Library\/Frameworks\/XCTest.framework\""
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBWeakFramework+ApplePrivateFrameworks.swift",
       "kind": "Array",
-      "offset": 1810,
+      "offset": 2390,
       "length": 23,
       "value": "[\"XCTestConfiguration\"]"
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBWeakFramework+ApplePrivateFrameworks.swift",
       "kind": "StringLiteral",
-      "offset": 1951,
+      "offset": 2531,
       "length": 58,
       "value": "\"\/System\/Library\/PrivateFrameworks\/MobileDevice.framework\""
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBWeakFramework+ApplePrivateFrameworks.swift",
       "kind": "Array",
-      "offset": 2031,
+      "offset": 2611,
       "length": 2,
       "value": "[]"
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBWeakFramework+ApplePrivateFrameworks.swift",
       "kind": "BooleanLiteral",
-      "offset": 2050,
+      "offset": 2630,
       "length": 4,
       "value": "true"
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBWeakFramework+ApplePrivateFrameworks.swift",
       "kind": "StringLiteral",
-      "offset": 2212,
+      "offset": 2792,
       "length": 78,
       "value": "\"\/System\/Library\/PrivateFrameworks\/AccessibilityPlatformTranslation.framework\""
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBWeakFramework+ApplePrivateFrameworks.swift",
       "kind": "Array",
-      "offset": 2312,
+      "offset": 2892,
       "length": 24,
       "value": "[\"AXPTranslationObject\"]"
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBControlCore\/Utility\/FBWeakFramework+ApplePrivateFrameworks.swift",
       "kind": "BooleanLiteral",
-      "offset": 2353,
+      "offset": 2933,
       "length": 5,
       "value": "false"
     },

@@ -21,6 +21,7 @@ import Metal
 import ObjectiveC
 import QuartzCore
 import Swift
+import Synchronization
 import UniformTypeIdentifiers
 import VideoToolbox
 @preconcurrency import XCTestBootstrap

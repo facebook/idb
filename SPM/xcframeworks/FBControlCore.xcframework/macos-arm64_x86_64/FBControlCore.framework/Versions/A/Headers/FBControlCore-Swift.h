@@ -1274,6 +1274,10 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) FBWeakFramew
 + (FBWeakFramework * _Nonnull)SimulatorKit SWIFT_WARN_UNUSED_RESULT;
 SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) FBWeakFramework * _Nonnull DTXConnectionServices;)
 + (FBWeakFramework * _Nonnull)DTXConnectionServices SWIFT_WARN_UNUSED_RESULT;
+SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) FBWeakFramework * _Nonnull XCTDaemonControl;)
++ (FBWeakFramework * _Nonnull)XCTDaemonControl SWIFT_WARN_UNUSED_RESULT;
+SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) FBWeakFramework * _Nonnull XCUIAutomation;)
++ (FBWeakFramework * _Nonnull)XCUIAutomation SWIFT_WARN_UNUSED_RESULT;
 SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) FBWeakFramework * _Nonnull XCTest;)
 + (FBWeakFramework * _Nonnull)XCTest SWIFT_WARN_UNUSED_RESULT;
 SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) FBWeakFramework * _Nonnull MobileDevice;)
@@ -2771,6 +2775,10 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) FBWeakFramew
 + (FBWeakFramework * _Nonnull)SimulatorKit SWIFT_WARN_UNUSED_RESULT;
 SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) FBWeakFramework * _Nonnull DTXConnectionServices;)
 + (FBWeakFramework * _Nonnull)DTXConnectionServices SWIFT_WARN_UNUSED_RESULT;
+SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) FBWeakFramework * _Nonnull XCTDaemonControl;)
++ (FBWeakFramework * _Nonnull)XCTDaemonControl SWIFT_WARN_UNUSED_RESULT;
+SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) FBWeakFramework * _Nonnull XCUIAutomation;)
++ (FBWeakFramework * _Nonnull)XCUIAutomation SWIFT_WARN_UNUSED_RESULT;
 SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) FBWeakFramework * _Nonnull XCTest;)
 + (FBWeakFramework * _Nonnull)XCTest SWIFT_WARN_UNUSED_RESULT;
 SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) FBWeakFramework * _Nonnull MobileDevice;)
