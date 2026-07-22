@@ -51,12 +51,13 @@ final class SessionDirectory: @unchecked Sendable {
     return (path as NSString).appendingPathComponent(name)
   }
 
-  /// A path for a retrieved artifact under an `artifacts/` subdirectory of the
-  /// session directory, creating that subdirectory if needed.
-  func artifactPath(named name: String) throws -> String {
+  /// The `artifacts/` subdirectory of the session directory, created if needed. Used
+  /// to stage retrieved artifacts when no session report is being written (a report
+  /// stores them next to itself instead).
+  func artifactsDirectory() throws -> String {
     let directory = try filePath(named: "artifacts")
     try FileManager.default.createDirectory(atPath: directory, withIntermediateDirectories: true)
-    return (directory as NSString).appendingPathComponent(name)
+    return directory
   }
 
   func cleanup() {

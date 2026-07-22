@@ -88,7 +88,7 @@ struct ReplReportFormatterTests {
 
   @Test
   func runEntryContainsNumberedHeadingCodeAndOutput() {
-    let entry = ReplReportFormatter.runEntry(index: 5, code: "return 1 + 1", output: "Result:\n2", at: epoch)
+    let entry = ReplReportFormatter.runEntry(index: 5, code: "return 1 + 1", output: "Result:\n2", artifacts: [], at: epoch)
     #expect(entry.contains("## Run 5"))
     #expect(entry.contains("```swift\nreturn 1 + 1\n```"))
     #expect(entry.contains("**Output**"))
@@ -98,10 +98,37 @@ struct ReplReportFormatterTests {
   @Test
   func runEntryRecordsRuntimeException() {
     // A runtime exception is a completed run and is recorded like any other output.
-    let entry = ReplReportFormatter.runEntry(index: 1, code: "return try boom()", output: "Exception:\nBoom", at: epoch)
+    let entry = ReplReportFormatter.runEntry(index: 1, code: "return try boom()", output: "Exception:\nBoom", artifacts: [], at: epoch)
     #expect(entry.contains("## Run 1"))
     #expect(entry.contains("Exception:\nBoom"))
     #expect(!entry.contains("compile failed"))
+  }
+
+  @Test
+  func runEntryWithoutArtifactsHasNoArtifactsBlock() {
+    let entry = ReplReportFormatter.runEntry(index: 0, code: "return 1", output: "Result:\n1", artifacts: [], at: epoch)
+    #expect(!entry.contains("**Artifacts**"))
+  }
+
+  // MARK: - runEntry artifacts
+
+  @Test
+  func runEntryEmbedsImageArtifacts() {
+    let entry = ReplReportFormatter.runEntry(
+      index: 5, code: "IDB.screenshot.save()", output: "Result:\nok",
+      artifacts: ["session/screenshot_5_1.png"], at: epoch)
+    #expect(entry.contains("**Artifacts**"))
+    #expect(entry.contains("![screenshot_5_1.png](session/screenshot_5_1.png)"))
+  }
+
+  @Test
+  func runEntryLinksNonImageArtifacts() {
+    let entry = ReplReportFormatter.runEntry(
+      index: 5, code: "IDB.video.stopRecording()", output: "Result:\nok",
+      artifacts: ["session/video_5_1.mp4"], at: epoch)
+    // Video is linked, not embedded as an image.
+    #expect(entry.contains("[video_5_1.mp4](session/video_5_1.mp4)"))
+    #expect(!entry.contains("![video_5_1.mp4]"))
   }
 
   // MARK: - compileFailureEntry
@@ -122,7 +149,7 @@ struct ReplReportFormatterTests {
   func codeContainingAFenceGetsALongerFence() {
     // Code that itself contains a ``` fence must not break out of its block: the
     // wrapping fence grows to four backticks.
-    let entry = ReplReportFormatter.runEntry(index: 0, code: "let s = \"```\"", output: "Result:\nok", at: epoch)
+    let entry = ReplReportFormatter.runEntry(index: 0, code: "let s = \"```\"", output: "Result:\nok", artifacts: [], at: epoch)
     #expect(entry.contains("````swift"))
   }
 }

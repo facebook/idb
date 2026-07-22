@@ -59,15 +59,20 @@ enum ReplReportFormatter {
     "\n_Reconnected \(timestamp(date))_\n"
   }
 
-  /// A single completed run: its number and time, the user's code, and the output
-  /// the target returned (already prefixed `Result:` or `Exception:`). A runtime
-  /// exception is still a completed run — the code compiled and executed.
-  static func runEntry(index: Int, code: String, output: String, at date: Date) -> String {
-    section(
+  /// A single completed run: its number and time, the user's code, the output the
+  /// target returned (already prefixed `Result:` or `Exception:`), and links to any
+  /// artifacts captured during the run. A runtime exception is still a completed run
+  /// — the code compiled and executed.
+  static func runEntry(index: Int, code: String, output: String, artifacts: [String], at date: Date) -> String {
+    var entry = section(
       heading: "Run \(index) — \(timestamp(date))",
       code: code,
       bodyLabel: "Output",
       body: output)
+    if !artifacts.isEmpty {
+      entry += artifactsBlock(artifacts)
+    }
+    return entry
   }
 
   /// A run whose code failed to compile, recorded only under `--report-failures`:
@@ -96,6 +101,29 @@ enum ReplReportFormatter {
       codeBlock(body),
       "",
     ].joined(separator: "\n")
+  }
+
+  /// The trailing "Artifacts" block for a run: each captured artifact as a
+  /// report-relative Markdown reference. Images are embedded so they render inline;
+  /// other files (e.g. video) are linked.
+  private static func artifactsBlock(_ artifacts: [String]) -> String {
+    var lines = ["", "**Artifacts**", ""]
+    lines.append(contentsOf: artifacts.map(artifactReference))
+    lines.append("")
+    return lines.joined(separator: "\n")
+  }
+
+  /// A Markdown reference for a report-relative artifact path: `![name](path)` for
+  /// images so they render inline, `[name](path)` for everything else.
+  private static func artifactReference(_ path: String) -> String {
+    let name = (path as NSString).lastPathComponent
+    return isImagePath(path) ? "![\(name)](\(path))" : "[\(name)](\(path))"
+  }
+
+  /// Whether `path` names an image, by file extension.
+  private static func isImagePath(_ path: String) -> Bool {
+    let imageExtensions: Set<String> = ["png", "jpg", "jpeg", "gif", "bmp", "tiff", "heic", "webp"]
+    return imageExtensions.contains((path as NSString).pathExtension.lowercased())
   }
 
   /// Wraps `content` in a fenced code block whose fence is always longer than the

@@ -307,8 +307,8 @@ struct ReplRunner: ParsableArguments {
         switch try await responses.next()?.event {
         case let .result(result):
           print(result.output)
-          await transferArtifacts(result.artifacts, client: client)
-          reportWriter?.recordRun(index: index, code: code, output: result.output, at: Date())
+          let artifactFilenames = await transferArtifacts(result.artifacts, client: client, into: reportWriter)
+          reportWriter?.recordRun(index: index, code: code, output: result.output, artifactFilenames: artifactFilenames, at: Date())
         case let .stopped(stopped):
           throw ReplExecutionError.sessionStopped(stopped.desc)
         case .ready:
@@ -363,8 +363,8 @@ struct ReplRunner: ParsableArguments {
             switch try await responses.next()?.event {
             case let .result(result):
               printStatus(result.output)
-              await transferArtifacts(result.artifacts, client: client)
-              reportWriter?.recordRun(index: runIndex, code: swiftCode, output: result.output, at: Date())
+              let artifactFilenames = await transferArtifacts(result.artifacts, client: client, into: reportWriter)
+              reportWriter?.recordRun(index: runIndex, code: swiftCode, output: result.output, artifactFilenames: artifactFilenames, at: Date())
               runIndex = result.nextRunIndex >= 0 ? Int(result.nextRunIndex) : 0
             case let .stopped(stopped):
               throw ReplExecutionError.sessionStopped(stopped.desc)
@@ -573,40 +573,66 @@ struct ReplRunner: ParsableArguments {
     print("")
   }
 
-  /// Retrieves each artifact captured during a run into the session's artifacts
-  /// directory and reports its local path. When the companion shares our
-  /// filesystem the file is moved directly; otherwise it is pulled over gRPC (the
-  /// AUXILLARY container) and removed from the companion. Best-effort: failing to
-  /// retrieve one artifact is logged and does not stop the session.
-  private func transferArtifacts(_ artifacts: [Idb_ReplResponse.Result.Artifact], client: Idb_CompanionServiceAsyncClient) async {
+  /// Retrieves each artifact captured during a run and returns the filenames stored
+  /// beside the session report (empty when no report is being written). Artifacts are
+  /// stored next to the report — in its `artifactsDirectory()` — so the report can
+  /// link them and they persist; without a report they land in the ephemeral session
+  /// directory instead. When the companion shares our filesystem the file is moved
+  /// directly; otherwise it is pulled over gRPC (the AUXILLARY container) and removed
+  /// from the companion. Best-effort: failing to retrieve one artifact is logged and
+  /// does not stop the session.
+  private func transferArtifacts(_ artifacts: [Idb_ReplResponse.Result.Artifact], client: Idb_CompanionServiceAsyncClient, into reportWriter: ReplReportWriter?) async -> [String] {
+    guard !artifacts.isEmpty else {
+      return []
+    }
+
+    // Prefer the report's artifacts directory (persistent and linkable); fall back to
+    // the ephemeral session directory when there is no report.
+    let reportArtifactsDirectory = reportWriter?.artifactsDirectory()
+    let directory: String
+    if let reportArtifactsDirectory {
+      directory = reportArtifactsDirectory
+    } else if let sessionArtifacts = try? sessionDirectory.artifactsDirectory() {
+      directory = sessionArtifacts
+    } else {
+      FileHandle.standardError.write(Data("idb-repl: could not prepare an artifacts directory\n".utf8))
+      return []
+    }
+    // Only files stored beside the report can be linked from it.
+    let linkable = reportArtifactsDirectory != nil
+
+    var filenames: [String] = []
     for artifact in artifacts {
       do {
         let localPath: String
         if replSessionInfo.sharedFilesystem {
-          localPath = try moveArtifact(hostPath: artifact.hostPath)
+          localPath = try moveArtifact(hostPath: artifact.hostPath, into: directory)
         } else {
-          localPath = try await pullArtifact(containerPath: artifact.containerPath, client: client)
+          localPath = try await pullArtifact(containerPath: artifact.containerPath, client: client, into: directory)
         }
         FileHandle.standardError.write(Data("idb-repl: saved artifact to \(localPath)\n".utf8))
+        if linkable {
+          filenames.append((localPath as NSString).lastPathComponent)
+        }
       } catch {
         FileHandle.standardError.write(Data("idb-repl: could not retrieve artifact \(artifact.hostPath): \(error)\n".utf8))
       }
     }
+    return filenames
   }
 
   /// Moves a companion-written artifact (visible because we share the filesystem)
-  /// into the session's artifacts directory.
-  private func moveArtifact(hostPath: String) throws -> String {
-    let destination = try sessionDirectory.artifactPath(named: (hostPath as NSString).lastPathComponent)
+  /// into `directory`.
+  private func moveArtifact(hostPath: String, into directory: String) throws -> String {
+    let destination = (directory as NSString).appendingPathComponent((hostPath as NSString).lastPathComponent)
     try? FileManager.default.removeItem(atPath: destination)
     try FileManager.default.moveItem(atPath: hostPath, toPath: destination)
     return destination
   }
 
   /// Pulls an artifact from the companion's AUXILLARY container (streamed back as a
-  /// gzipped tar), extracts it into the session's artifacts directory, and removes
-  /// the companion copy.
-  private func pullArtifact(containerPath: String, client: Idb_CompanionServiceAsyncClient) async throws -> String {
+  /// gzipped tar), extracts it into `directory`, and removes the companion copy.
+  private func pullArtifact(containerPath: String, client: Idb_CompanionServiceAsyncClient, into directory: String) async throws -> String {
     let request = Idb_PullRequest.with {
       $0.srcPath = containerPath
       $0.dstPath = "" // empty: stream the bytes back rather than copy them host-side
@@ -618,8 +644,7 @@ struct ReplRunner: ParsableArguments {
     }
 
     let name = (containerPath as NSString).lastPathComponent
-    let destination = try sessionDirectory.artifactPath(named: name)
-    let directory = (destination as NSString).deletingLastPathComponent
+    let destination = (directory as NSString).appendingPathComponent(name)
     let archivePath = (directory as NSString).appendingPathComponent(name + ".tar.gz")
     try archive.write(to: URL(fileURLWithPath: archivePath))
     defer { try? FileManager.default.removeItem(atPath: archivePath) }

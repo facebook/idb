@@ -18,12 +18,28 @@ import Foundation
 final class ReplReportWriter {
 
   private let path: String
+  /// The directory sibling to the report where captured artifacts are stored: the
+  /// report path with its extension removed (`report-123.md` -> `report-123/`), so
+  /// report-relative links read as `report-123/<file>`.
+  private let artifactsDirectoryPath: String
+  /// The last path component of `artifactsDirectoryPath`, the report-relative link
+  /// prefix for an artifact.
+  private let artifactsDirectoryName: String
   private var handle: FileHandle?
   private var disabled = false
 
   /// `path` may start with `~`; it is expanded here.
   init(path: String) {
-    self.path = (path as NSString).expandingTildeInPath
+    let expandedPath = (path as NSString).expandingTildeInPath
+    self.path = expandedPath
+    var directory = (expandedPath as NSString).deletingPathExtension
+    if directory == expandedPath {
+      // The report path has no extension to strip; avoid colliding the artifacts
+      // directory with the report file itself.
+      directory += "-artifacts"
+    }
+    self.artifactsDirectoryPath = directory
+    self.artifactsDirectoryName = (directory as NSString).lastPathComponent
   }
 
   /// Opens the report and returns its resolved path, or nil if it could not be
@@ -65,6 +81,11 @@ final class ReplReportWriter {
       return path
     }
 
+    // A fresh report supersedes any previous one at this path, so drop stale
+    // artifacts from an earlier session; the directory is recreated lazily when the
+    // first artifact of this session is stored.
+    try? FileManager.default.removeItem(atPath: artifactsDirectoryPath)
+
     guard FileManager.default.createFile(atPath: path, contents: nil),
       let handle = FileHandle(forWritingAtPath: path)
     else {
@@ -76,9 +97,24 @@ final class ReplReportWriter {
     return path
   }
 
-  /// Records a completed run — a value or a runtime exception.
-  func recordRun(index: Int, code: String, output: String, at date: Date) {
-    write(ReplReportFormatter.runEntry(index: index, code: code, output: output, at: date))
+  /// Ensures the artifacts directory exists and returns its path, or nil if it could
+  /// not be created. Callers store transferred artifacts here and pass their
+  /// filenames to `recordRun` to link them from the run.
+  func artifactsDirectory() -> String? {
+    do {
+      try FileManager.default.createDirectory(atPath: artifactsDirectoryPath, withIntermediateDirectories: true)
+      return artifactsDirectoryPath
+    } catch {
+      FileHandle.standardError.write(Data("idb-repl: could not create artifacts directory at \(artifactsDirectoryPath): \(error)\n".utf8))
+      return nil
+    }
+  }
+
+  /// Records a completed run — a value or a runtime exception — with report-relative
+  /// links to any artifacts (`artifactFilenames`) captured during it.
+  func recordRun(index: Int, code: String, output: String, artifactFilenames: [String], at date: Date) {
+    let artifacts = artifactFilenames.map { "\(artifactsDirectoryName)/\($0)" }
+    write(ReplReportFormatter.runEntry(index: index, code: code, output: output, artifacts: artifacts, at: date))
   }
 
   /// Records a run whose code failed to compile (only reached under `--report-failures`).
