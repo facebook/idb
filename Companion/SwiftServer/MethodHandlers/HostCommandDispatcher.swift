@@ -33,19 +33,14 @@ enum HostCommandError: Error, CustomStringConvertible {
 }
 
 /// Per-REPL-session state shared across host commands within one `repl` stream:
-/// where captured artifacts are staged, the in-progress recording, and the
-/// per-run artifact filename counters.
+/// where captured screenshots are staged, and the per-run screenshot filename
+/// counter. Screen recordings are *not* held here -- they can outlive the stream,
+/// so `ReplRecordingCoordinator` owns them.
 ///
 /// `@unchecked Sendable`: host commands are serviced one at a time within a
 /// session (each execute is awaited before the next), so these mutable fields are
 /// never accessed concurrently.
 final class ReplHostCommandState: @unchecked Sendable {
-
-  /// The artifact kind, which selects the auto-generated filename prefix/extension.
-  enum ArtifactKind {
-    case screenshot
-    case video
-  }
 
   /// The directory captured files are written to (a per-session subdirectory of
   /// the target's auxillary directory).
@@ -55,52 +50,46 @@ final class ReplHostCommandState: @unchecked Sendable {
   /// (the target's auxillary directory), used to pull artifacts back over gRPC.
   let containerRelativeBase: String
 
-  /// The recording started by `startRecording`, awaiting `stopRecording`.
-  var activeRecording: (any FBVideoRecording)?
-
   /// Files captured during the current execute, reported to the driver so it can
   /// retrieve them.
   private(set) var runArtifacts: [ReplArtifact] = []
 
   private var runIndex = 0
   private var screenshotIndex = 0
-  private var videoIndex = 0
 
   init(stagingDirectory: URL, containerRelativeBase: String) {
     self.stagingDirectory = stagingDirectory
     self.containerRelativeBase = containerRelativeBase
   }
 
-  /// Called at the start of each execute so artifact filenames carry the REPL run
-  /// index, the per-kind counters restart at 1 for the run, and the run's artifact
-  /// list starts empty.
+  /// Called at the start of each execute so screenshot filenames carry the REPL run
+  /// index, the counter restarts at 1 for the run, and the run's artifact list
+  /// starts empty.
   func beginRun(index: Int) {
     runIndex = index
     screenshotIndex = 0
-    videoIndex = 0
     runArtifacts = []
   }
 
-  /// The next auto-generated artifact path for `kind`, e.g.
+  /// The next auto-generated screenshot path, e.g.
   /// `<staging>/screenshot_<run>_<n>.png` (n starts at 1 within each run).
-  func nextArtifactPath(for kind: ArtifactKind) -> String {
-    let name: String
-    switch kind {
-    case .screenshot:
-      screenshotIndex += 1
-      name = "screenshot_\(runIndex)_\(screenshotIndex).png"
-    case .video:
-      videoIndex += 1
-      name = "video_\(runIndex)_\(videoIndex).mp4"
-    }
+  func nextScreenshotPath() -> String {
+    screenshotIndex += 1
+    let name = "screenshot_\(runIndex)_\(screenshotIndex).png"
     return stagingDirectory.appendingPathComponent(name).path
   }
 
-  /// Records a captured file so it is reported in the run's result. The container
-  /// path is relative to the AUXILLARY container root, for pulling it back.
-  func recordArtifact(hostPath: String) {
+  /// Records a captured screenshot so it is reported in the run's result. The
+  /// container path is relative to the AUXILLARY container root, for pulling it back.
+  func recordScreenshot(hostPath: String) {
     let filename = (hostPath as NSString).lastPathComponent
     runArtifacts.append(ReplArtifact(hostPath: hostPath, containerPath: containerRelativeBase + "/" + filename))
+  }
+
+  /// Records an already-formed artifact (e.g. a recording retrieved from the
+  /// `ReplRecordingCoordinator`, whose container path is not under `stagingDirectory`).
+  func recordArtifact(_ artifact: ReplArtifact) {
+    runArtifacts.append(artifact)
   }
 }
 
@@ -124,6 +113,12 @@ struct HostCommandDispatcher {
 
   let commandExecutor: FBIDBCommandExecutor
   let state: ReplHostCommandState
+  /// Owns the in-progress screen recording, which can outlive this stream.
+  let recordingCoordinator: ReplRecordingCoordinator
+  /// The bundle id of the app hosting this REPL (app context only), used to drop a
+  /// recording if the app exits before it is stopped. Nil for the test/simulator
+  /// contexts, where the disposable host is dropped at stream teardown instead.
+  let appBundleID: String?
 
   /// The result a command produces, before serialization to the wire.
   private enum ResultValue {
@@ -224,29 +219,46 @@ struct HostCommandDispatcher {
         return .raw(data)
       case .file:
         let data = try await commandExecutor.repl_screenshot(cropRect: rect, asPNG: true)
-        let path = state.nextArtifactPath(for: .screenshot)
+        let path = state.nextScreenshotPath()
         try data.write(to: URL(fileURLWithPath: path))
-        state.recordArtifact(hostPath: path)
+        state.recordScreenshot(hostPath: path)
         return .raw(Data(path.utf8))
       }
 
     case .startRecording:
       // One recording at a time: an empty result signals "already recording" (false).
-      if state.activeRecording != nil {
+      guard let path = recordingCoordinator.reserveRecordingPath() else {
         return .raw(Data())
       }
-      let path = state.nextArtifactPath(for: .video)
-      state.activeRecording = try await commandExecutor.repl_start_recording(toFile: path)
+      let recording: any FBVideoRecording
+      do {
+        recording = try await commandExecutor.repl_start_recording(toFile: path)
+      } catch {
+        recordingCoordinator.cancelReservation()
+        throw error
+      }
+      let id = recordingCoordinator.activate(recording: recording, hostPath: path)
+      // In the app context the recording outlives this stream, so watch the app and
+      // drop the recording if it exits before being stopped. The watcher is left to
+      // run rather than cancelled on stop (its id check makes a late fire a no-op),
+      // which also avoids the process-killing cancellation of the alternative
+      // termination future.
+      if let appBundleID {
+        let coordinator = recordingCoordinator
+        let executor = commandExecutor
+        Task {
+          try? await executor.repl_wait_for_app_termination(bundleID: appBundleID)
+          await coordinator.dropRecording(id: id)
+        }
+      }
       return .raw(Data(path.utf8))
 
     case .stopRecording:
-      guard let recording = state.activeRecording else {
+      guard let stopped = try await recordingCoordinator.stopRecording() else {
         throw HostCommandError.message("stopRecording: no recording is in progress")
       }
-      state.activeRecording = nil
-      let url = try await recording.stop()
-      state.recordArtifact(hostPath: url.path)
-      return .raw(Data(url.path.utf8))
+      state.recordArtifact(ReplArtifact(hostPath: stopped.hostPath, containerPath: stopped.containerPath))
+      return .raw(Data(stopped.hostPath.utf8))
     }
   }
 

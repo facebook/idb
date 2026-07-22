@@ -27,6 +27,10 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   /// here (a peer of `telemetry`) rather than inside it, since idle tracking and
   /// telemetry are unrelated concerns.
   private let idleMonitor: IdleMonitor?
+  /// Owns the single in-progress REPL screen recording. Held here, at target scope,
+  /// because a recording can outlive the `repl` stream that started it (the app
+  /// context keeps the app -- and the recording -- alive across reconnects).
+  private let replRecordingCoordinator: ReplRecordingCoordinator
 
   init(
     target: FBiOSTarget,
@@ -43,6 +47,8 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
     self.interceptorFactory = interceptors
     self.telemetry = CompanionTelemetry(logger: logger, reporter: reporter)
     self.idleMonitor = idleMonitor
+    self.replRecordingCoordinator = ReplRecordingCoordinator(
+      auxillaryDirectory: commandExecutor.auxillaryDirectory, logger: target.logger)
   }
 
   /// Wraps a telemetry-reported call so it is also tracked as in-flight by
@@ -427,7 +433,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   func repl(requestStream: GRPCAsyncRequestStream<Idb_ReplRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_ReplResponse>, context: GRPCAsyncServerCallContext) async throws {
     try await trackedBidiStreaming("repl") {
       try await FBTeardownContext.withAutocleanup {
-        try await ReplMethodHandler(commandExecutor: commandExecutor, targetLogger: targetLogger)
+        try await ReplMethodHandler(commandExecutor: commandExecutor, targetLogger: targetLogger, recordingCoordinator: replRecordingCoordinator)
           .handle(requestStream: requestStream, responseStream: responseStream, context: context)
       }
     }

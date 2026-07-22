@@ -189,6 +189,27 @@ import XCTestBootstrap
     try await target.startRecording(toFile: filePath)
   }
 
+  /// Resolves when the app with `bundleID` terminates on the target. Used to drop a
+  /// REPL recording that outlived the app that started it. Throws if the app's
+  /// process cannot be resolved (e.g. it is not running).
+  ///
+  /// Backed by a `DispatchSource` exit watch rather than
+  /// `FBSimulatorLaunchedApplication.terminationFuture`, whose cancellation *kills*
+  /// the process -- the caller must be able to stop watching (e.g. the recording was
+  /// stopped explicitly) without terminating the app.
+  public func repl_wait_for_app_termination(bundleID: String) async throws {
+    let pid = try await target.processID(forBundleID: bundleID)
+    let queue = DispatchQueue(label: "com.facebook.idb.repl.app-termination")
+    await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+      let source = DispatchSource.makeProcessSource(identifier: pid, eventMask: .exit, queue: queue)
+      source.setEventHandler {
+        source.cancel()
+        continuation.resume()
+      }
+      source.resume()
+    }
+  }
+
   public func add_media(_ filePaths: [URL]) async throws {
     try await simulatorTarget().addMedia(filePaths)
   }

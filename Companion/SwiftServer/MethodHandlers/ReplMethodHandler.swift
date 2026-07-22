@@ -17,6 +17,9 @@ struct ReplMethodHandler {
 
   let commandExecutor: FBIDBCommandExecutor
   let targetLogger: FBControlCoreLogger
+  /// Owns the in-progress screen recording, which can outlive a single `repl`
+  /// stream (in the app context). Shared across streams for one target.
+  let recordingCoordinator: ReplRecordingCoordinator
 
   func handle(requestStream: GRPCAsyncRequestStream<Idb_ReplRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_ReplResponse>, context: GRPCAsyncServerCallContext) async throws {
     guard case let .start(start) = try await requestStream.requiredNext.control
@@ -39,14 +42,18 @@ struct ReplMethodHandler {
     // than pulled back over gRPC.
     let sharedFilesystem = !start.probeFilePath.isEmpty && FileManager.default.fileExists(atPath: start.probeFilePath)
 
-    try await serve(session: session, sharedFilesystem: sharedFilesystem, requestStream: requestStream, responseStream: responseStream)
+    // Only the app context has an app whose exit should end a recording; the
+    // test/simulator hosts are disposable and drop any recording at teardown.
+    let appBundleID = start.context == .app ? start.appBundleID : nil
+
+    try await serve(session: session, sharedFilesystem: sharedFilesystem, context: start.context, appBundleID: appBundleID, requestStream: requestStream, responseStream: responseStream)
   }
 
   /// Bridges the gRPC repl stream to a launched session's control socket:
   /// connects to the socket, reports `ready`, forwards each `Execute` (a dylib
   /// plus a symbol) to the socket and streams back the result, and on stop/EOF
   /// closes the socket (which ends the served process) and reports `stopped`.
-  private func serve(session: ReplSession, sharedFilesystem: Bool, requestStream: GRPCAsyncRequestStream<Idb_ReplRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_ReplResponse>) async throws {
+  private func serve(session: ReplSession, sharedFilesystem: Bool, context: Idb_ReplRequest.Start.Context, appBundleID: String?, requestStream: GRPCAsyncRequestStream<Idb_ReplRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_ReplResponse>) async throws {
     // Per-session scratch directory for the dylibs received over the wire. It
     // lives on the host filesystem, which the simulator process can read.
     let scratchDirectory = (NSTemporaryDirectory() as NSString).appendingPathComponent("idb_repl_\(UUID().uuidString)")
@@ -106,7 +113,7 @@ struct ReplMethodHandler {
 
     // Services nested `host_command`s the served process sends back while an
     // execute is running (e.g. `IDB.tap`), mapping them to FBIDBCommandExecutor.
-    let dispatcher = HostCommandDispatcher(commandExecutor: commandExecutor, state: hostState)
+    let dispatcher = HostCommandDispatcher(commandExecutor: commandExecutor, state: hostState, recordingCoordinator: recordingCoordinator, appBundleID: appBundleID)
 
     var runIndex = 0
     bridge: for try await request in requestStream {
@@ -152,6 +159,17 @@ struct ReplMethodHandler {
       case .stop, .none:
         break bridge
       }
+    }
+
+    // The app context's app (and any recording it started) outlives this stream, so
+    // leave the recording running -- a reconnect can still stop it, and the app-exit
+    // watcher drops it otherwise. The test/simulator hosts are disposable, so a
+    // still-running recording is dropped now.
+    switch context {
+    case .app:
+      break
+    case .test, .simulator, .UNRECOGNIZED:
+      await recordingCoordinator.dropActiveRecording()
     }
 
     // Closing the socket ends the served process's accept loop, so it exits;
