@@ -58,6 +58,10 @@ public final class FBSimulatorAccessibilityCommands: AccessibilityOperations {
   private static let coreSimulatorBridgeServiceName = "com.apple.CoreSimulator.bridge"
   private static let springBoardServiceName = "com.apple.SpringBoard"
 
+  static func requiresAccessibilityBootstrap(for runtimeVersion: OperatingSystemVersion) -> Bool {
+    runtimeVersion.majorVersion >= 27
+  }
+
   private weak var simulator: FBSimulator?
 
   private let translationDispatcher: FBAXTranslationDispatcher?
@@ -129,6 +133,13 @@ public final class FBSimulatorAccessibilityCommands: AccessibilityOperations {
       throw FBAccessibilityError.accessibilityUnavailable
     }
     try FBSimulatorControlFrameworkLoader.accessibilityFrameworks.loadPrivateFrameworks(simulator.logger)
+    if Self.requiresAccessibilityBootstrap(for: simulator.osVersion.version) {
+      try FBSimulatorControlFrameworkLoader.bootstrapAccessibility(
+        forSimulatorDevice: simulator.device,
+        timeout: 5,
+        logger: simulator.logger
+      )
+    }
   }
 
   // Returns an FBAccessibilityElement wrapping the platform element for the given request.
