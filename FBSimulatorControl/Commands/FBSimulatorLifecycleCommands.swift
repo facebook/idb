@@ -19,7 +19,9 @@ public final class FBSimulatorLifecycleCommands: NSObject, FBiOSTargetCommand {
   // MARK: - Properties
 
   private weak var simulator: FBSimulator?
-  private var hid: FBSimulatorHID?
+  private let hidCache = FBSimulatorHIDSessionCache<FBSimulatorHID> { hid in
+    hid.disconnect()
+  }
 
   // MARK: - Initializers
 
@@ -38,6 +40,7 @@ public final class FBSimulatorLifecycleCommands: NSObject, FBiOSTargetCommand {
     guard let simulator = self.simulator else {
       throw FBSimulatorError.describe("Simulator deallocated").build()
     }
+    hidCache.invalidate()
     try await FBSimulatorBootStrategy.bootAsync(simulator, with: configuration)
   }
 
@@ -45,6 +48,7 @@ public final class FBSimulatorLifecycleCommands: NSObject, FBiOSTargetCommand {
     guard let simulator = self.simulator else {
       throw FBSimulatorError.describe("Simulator deallocated").build()
     }
+    hidCache.invalidate()
     try await FBSimulatorShutdownStrategy.shutdownAsync(simulator)
   }
 
@@ -57,6 +61,7 @@ public final class FBSimulatorLifecycleCommands: NSObject, FBiOSTargetCommand {
     guard let simulator = self.simulator else {
       throw FBSimulatorError.describe("Simulator deallocated").build()
     }
+    hidCache.invalidate()
     try await FBSimulatorEraseStrategy.erase(simulator)
   }
 
@@ -145,8 +150,15 @@ public final class FBSimulatorLifecycleCommands: NSObject, FBiOSTargetCommand {
   }
 
   private func terminateConnectionsAsync() async throws {
-    hid?.disconnect()
-    self.hid = nil
+    hidCache.invalidate()
+  }
+
+  func cachedHIDBootIdentity() -> FBSimulatorHIDBootIdentity? {
+    hidCache.cachedIdentity
+  }
+
+  func invalidateHID(ifMatching identity: FBSimulatorHIDBootIdentity) {
+    hidCache.invalidate(ifMatching: identity)
   }
 
   fileprivate func connectToFramebufferAsync() async throws -> FBFramebuffer {
@@ -157,15 +169,25 @@ public final class FBSimulatorLifecycleCommands: NSObject, FBiOSTargetCommand {
   }
 
   fileprivate func connectToHIDAsync() async throws -> FBSimulatorHID {
-    if let hid = self.hid {
-      return hid
-    }
     guard let simulator = self.simulator else {
       throw FBSimulatorError.describe("Simulator deallocated").build()
     }
-    let hid = try FBSimulatorHID(for: simulator)
-    self.hid = hid
-    return hid
+    let identity = try FBSimulatorHIDBootIdentityResolver.identity(for: simulator)
+    do {
+      return try hidCache.session(
+        for: identity,
+        create: {
+          try FBSimulatorHID(for: simulator)
+        },
+        currentIdentity: {
+          try FBSimulatorHIDBootIdentityResolver.identity(for: simulator)
+        }
+      )
+    } catch FBSimulatorHIDSessionCacheError.bootChangedDuringConnection {
+      throw FBSimulatorError
+        .describe("Simulator \(simulator.udid) rebooted while establishing the HID connection")
+        .build()
+    }
   }
 
   fileprivate func openAsync(_ url: URL) async throws {

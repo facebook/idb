@@ -47,6 +47,8 @@ final class FBSimulatorIndigoHIDClient: @unchecked Sendable {
   // Untyped on purpose: the concrete `SimDeviceLegacyHIDClient` is a runtime-only class (see
   // SimDeviceLegacyHIDClientMessaging). Messaged via unsafeBitCast to that protocol.
   private var client: AnyObject?
+  private var pendingSendCount = 0
+  private var disconnectRequested = false
 
   /// Looks up, allocates and initializes the runtime-only HID client for the provided device.
   convenience init(for device: SimDevice) throws {
@@ -77,7 +79,10 @@ final class FBSimulatorIndigoHIDClient: @unchecked Sendable {
 
   /// Disconnects from the remote HID by releasing the client.
   func disconnect() {
-    client = nil
+    queue.async { [self] in
+      disconnectRequested = true
+      disposeClientIfPossible()
+    }
   }
 
   /// Sends the message bytes, completing when the client acknowledges delivery.
@@ -107,11 +112,23 @@ final class FBSimulatorIndigoHIDClient: @unchecked Sendable {
       guard let base = buffer.baseAddress else { return }
       raw.copyMemory(from: base, byteCount: size)
     }
-    guard let client else {
+    guard !disconnectRequested, let client else {
       free(raw)
+      completion(FBSimulatorHIDError.clientDisposed)
       return
     }
+    pendingSendCount += 1
     unsafeBitCast(client, to: SimDeviceLegacyHIDClientMessaging.self)
-      .send(withMessage: raw, freeWhenDone: true, completionQueue: completionQueue, completion: completion)
+      .send(withMessage: raw, freeWhenDone: true, completionQueue: completionQueue) { [self] error in
+        pendingSendCount -= 1
+        disposeClientIfPossible()
+        completion(error)
+      }
+  }
+
+  private func disposeClientIfPossible() {
+    if disconnectRequested && pendingSendCount == 0 {
+      client = nil
+    }
   }
 }

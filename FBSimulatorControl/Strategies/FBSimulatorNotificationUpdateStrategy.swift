@@ -56,9 +56,10 @@ public final class FBSimulatorNotificationUpdateStrategy: NSObject, @unchecked S
     guard let simulator = set.simulator(withUDID: device.udid.uuidString) else {
       return
     }
-    _ = fbFutureFromAsync {
-      try await simulator.disconnect(withTimeout: FBControlCoreGlobalConfiguration.regularTimeout, logger: simulator.logger)
-      return NSNull()
+    if let lifecycleCommands = try? simulator.lifecycleCommands(),
+      let identity = lifecycleCommands.cachedHIDBootIdentity()
+    {
+      lifecycleCommands.invalidateHID(ifMatching: identity)
     }
     set.delegate?.targetUpdated(simulator, in: simulator.set)
   }
