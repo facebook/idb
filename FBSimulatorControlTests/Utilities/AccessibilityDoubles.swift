@@ -31,6 +31,7 @@ class FBSimulatorControlTests_AXPMacPlatformElement_Double: NSObject {
   private let _children: [FBSimulatorControlTests_AXPMacPlatformElement_Double]
   private var _translation: FBSimulatorControlTests_AXPTranslationObject_Double
   @objc private(set) var accessedProperties = NSMutableSet()
+  var stubTraits: [String]?
 
   init(
     label: String?,
@@ -168,7 +169,10 @@ extension FBSimulatorControlTests_AXPMacPlatformElement_Double: FBAXPlatformElem
     (accessibilityCustomActions ?? []).compactMap { ($0 as? NSAccessibilityCustomAction)?.name }
   }
   func axActionNames() -> [String] { accessibilityActionNames().map { $0.rawValue } }
-  func axTraits() -> [String]? { nil }
+  func axTraits() -> [String]? {
+    accessedProperties.add("accessibilityTraits")
+    return stubTraits
+  }
   func axChildren() -> [FBAXPlatformElement] {
     (accessibilityChildren ?? []).compactMap { $0 as? FBAXPlatformElement }
   }
