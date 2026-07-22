@@ -25,14 +25,15 @@ public enum IDB {
     get
   }
   public struct Screenshot {
-    public enum Area {
-      case full
-      case rect(CoreFoundation.CGRect)
-      case element(label: Swift.String)
-    }
-    public func image(_ area: IDBAPI.IDB.Screenshot.Area = .full) -> CoreGraphics.CGImage?
     @discardableResult
-    public func save(_ area: IDBAPI.IDB.Screenshot.Area = .full) -> Swift.String?
+    public func capture() -> Swift.String?
+    @discardableResult
+    public func capture(rect: CoreFoundation.CGRect) -> Swift.String?
+    @discardableResult
+    public func capture(label: Swift.String) -> Swift.String?
+    public func captureImage() -> CoreGraphics.CGImage?
+    public func captureImage(rect: CoreFoundation.CGRect) -> CoreGraphics.CGImage?
+    public func captureImage(label: Swift.String) -> CoreGraphics.CGImage?
   }
   public static var screenshot: IDBAPI.IDB.Screenshot {
     get

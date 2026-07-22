@@ -204,23 +204,56 @@ public enum IDB {
   /// Screenshot commands for the connected target, reached through `IDB.screenshot`.
   public struct Screenshot {
 
-    /// The area of the screen to capture.
-    public enum Area {
-      /// The whole screen.
-      case full
-      /// A rectangle in screen points (the same coordinate space as `IDB.ui.tap`).
-      case rect(CGRect)
-      /// The frontmost-app accessibility element whose label contains `label`
-      /// (the same lookup as `IDB.ui.tap(marker:)`); its frame is captured.
-      case element(label: String)
+    /// Captures the full screen to a PNG artifact on the companion and returns its
+    /// path, or nil on failure. The path is on the companion's filesystem, which is
+    /// where other `IDB` commands operate.
+    @discardableResult
+    public func capture() -> String? {
+      fileResult(.full)
     }
 
-    /// Captures `area` and returns it as a `CGImage`, or nil on failure. The image
-    /// is transferred from the companion as uncompressed TIFF -- preserving the
-    /// screen's color space -- and decoded here; nothing is written to disk. In an
-    /// app-context REPL, wrap the result with `UIImage(cgImage:)` for a `UIImage`.
-    public func image(_ area: Area = .full) -> CGImage? {
-      guard let data = perform(.screenshot(area: area.wire, output: .data)) as? Data,
+    /// Captures `rect` (in screen points, the same coordinate space as
+    /// `IDB.ui.tap`) to a PNG artifact and returns its path, or nil on failure.
+    @discardableResult
+    public func capture(rect: CGRect) -> String? {
+      fileResult(.rect(rect))
+    }
+
+    /// Captures the frontmost-app accessibility element whose label contains
+    /// `label` (the same lookup as `IDB.ui.tap(marker:)`) to a PNG artifact and
+    /// returns its path, or nil on failure.
+    @discardableResult
+    public func capture(label: String) -> String? {
+      fileResult(.element(label: label))
+    }
+
+    /// Captures the full screen and returns it as a `CGImage` (nothing is written
+    /// to disk), or nil on failure.
+    public func captureImage() -> CGImage? {
+      imageResult(.full)
+    }
+
+    /// Captures `rect` (in screen points) and returns it as a `CGImage`, or nil on
+    /// failure.
+    public func captureImage(rect: CGRect) -> CGImage? {
+      imageResult(.rect(rect))
+    }
+
+    /// Captures the frontmost-app accessibility element whose label contains
+    /// `label` and returns it as a `CGImage`, or nil on failure.
+    public func captureImage(label: String) -> CGImage? {
+      imageResult(.element(label: label))
+    }
+
+    /// Saves the capture as a PNG artifact and returns its companion-side path.
+    private func fileResult(_ area: ScreenshotArea) -> String? {
+      stringResult(perform(.screenshot(area: area, output: .file)))
+    }
+
+    /// Returns the capture as a `CGImage`, decoded from the uncompressed TIFF the
+    /// companion sends back (preserving the screen's color space).
+    private func imageResult(_ area: ScreenshotArea) -> CGImage? {
+      guard let data = perform(.screenshot(area: area, output: .data)) as? Data,
         !data.isEmpty,
         let source = CGImageSourceCreateWithData(data as CFData, nil),
         let image = CGImageSourceCreateImageAtIndex(source, 0, nil)
@@ -228,14 +261,6 @@ public enum IDB {
         return nil
       }
       return image
-    }
-
-    /// Captures `area` to a PNG file on the companion and returns its path, or nil
-    /// on failure. The path is on the companion's filesystem, which is the correct
-    /// path for other `IDB` commands (they run there too).
-    @discardableResult
-    public func save(_ area: Area = .full) -> String? {
-      stringResult(perform(.screenshot(area: area.wire, output: .file)))
     }
   }
 
@@ -269,19 +294,4 @@ public enum IDB {
   /// The video command namespace, reached as `IDB.video`. Computed for the same
   /// library-evolution reason as `ui`.
   public static var video: Video { Video() }
-}
-
-extension IDB.Screenshot.Area {
-  /// The wire form sent to the companion. Not public: `ScreenshotArea` is an
-  /// implementation-only import so it must not appear in the public API surface.
-  fileprivate var wire: ScreenshotArea {
-    switch self {
-    case .full:
-      return .full
-    case .rect(let rect):
-      return .rect(rect)
-    case .element(let label):
-      return .element(label: label)
-    }
-  }
 }
