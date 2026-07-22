@@ -37,6 +37,48 @@ private final class FakeRecording: FBVideoRecording, @unchecked Sendable {
   }
 }
 
+/// A recording double whose `stop()` blocks until `release()` is called, so a test
+/// can observe the coordinator while a recording is mid-finalize.
+private final class BlockingRecording: FBVideoRecording, @unchecked Sendable {
+  let url: URL
+  private let lock = NSLock()
+  private var onStopEnteredCallback: (() -> Void)?
+  private let releaseSemaphore = DispatchSemaphore(value: 0)
+
+  init(url: URL) {
+    self.url = url
+  }
+
+  /// Registers a callback invoked when `stop()` begins.
+  func onStopEntered(_ callback: @escaping () -> Void) {
+    lock.lock()
+    onStopEnteredCallback = callback
+    lock.unlock()
+  }
+
+  /// Unblocks an in-flight `stop()`.
+  func release() {
+    releaseSemaphore.signal()
+  }
+
+  func stop() async throws -> URL {
+    lock.lock()
+    let callback = onStopEnteredCallback
+    onStopEnteredCallback = nil
+    lock.unlock()
+    callback?()
+    // Wait for the test to release, off the cooperative pool so a single-threaded
+    // executor is not blocked.
+    await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+      DispatchQueue.global().async {
+        self.releaseSemaphore.wait()
+        continuation.resume()
+      }
+    }
+    return url
+  }
+}
+
 final class ReplRecordingCoordinatorTests: XCTestCase {
 
   private var auxillaryDirectory: String = ""
@@ -137,5 +179,35 @@ final class ReplRecordingCoordinatorTests: XCTestCase {
     await coordinator.dropRecording(id: started.id)
     XCTAssertEqual(started.recording.stopCount, 1)
     XCTAssertFalse(FileManager.default.fileExists(atPath: started.path))
+  }
+
+  func testReservationIsRejectedWhileFinalizing() async throws {
+    let coordinator = makeCoordinator()
+    let path = try XCTUnwrap(coordinator.reserveRecordingPath())
+    FileManager.default.createFile(atPath: path, contents: Data([0x00]))
+    let recording = BlockingRecording(url: URL(fileURLWithPath: path))
+    coordinator.activate(recording: recording, hostPath: path)
+
+    // Begin stopping and wait until `stop()` is in flight -- the slot is now
+    // `stopping`, not yet freed.
+    await withCheckedContinuation { (entered: CheckedContinuation<Void, Never>) in
+      recording.onStopEntered { entered.resume() }
+      Task { _ = try? await coordinator.stopRecording() }
+    }
+    XCTAssertNil(
+      coordinator.reserveRecordingPath(),
+      "a reservation must be rejected while the previous recording is still finalizing")
+
+    // Let finalizing complete; the slot frees.
+    recording.release()
+    var reservedAfter: String?
+    for _ in 0..<200 {
+      reservedAfter = coordinator.reserveRecordingPath()
+      if reservedAfter != nil {
+        break
+      }
+      try await Task.sleep(nanoseconds: 5_000_000)
+    }
+    XCTAssertNotNil(reservedAfter, "the slot must free once finalizing completes")
   }
 }

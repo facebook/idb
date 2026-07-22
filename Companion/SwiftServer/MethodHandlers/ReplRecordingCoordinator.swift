@@ -47,13 +47,16 @@ final class ReplRecordingCoordinator: @unchecked Sendable {
     }
   }
 
-  /// The recording lifecycle. `pending` reserves the single slot between the caller
-  /// deciding to start and the underlying capture actually starting, so a concurrent
-  /// start (e.g. a second connection) is rejected without racing the framebuffer.
+  /// The recording lifecycle. The single slot stays occupied through both start and
+  /// stop so a concurrent start (e.g. a reconnect) is rejected rather than racing the
+  /// framebuffer, which supports only one recording at a time: `pending` covers the
+  /// gap between reserving and the capture starting, and `stopping` the gap between
+  /// taking the recording and its `stop()` finishing finalizing.
   private enum State {
     case idle
     case pending
     case active(ActiveRecording)
+    case stopping
   }
 
   /// The subdirectory of the target's auxillary directory recordings are written to.
@@ -73,9 +76,9 @@ final class ReplRecordingCoordinator: @unchecked Sendable {
   }
 
   /// Reserves the single recording slot and returns the file path to record to, or
-  /// nil if a recording is already in progress. On success the caller must follow up
-  /// with `activate` (once the capture has started) or `cancelReservation` (if it
-  /// failed to start).
+  /// nil if a recording is already in progress (including one still finalizing). On
+  /// success the caller must follow up with `activate` (once the capture has started)
+  /// or `cancelReservation` (if it failed to start).
   func reserveRecordingPath() -> String? {
     let filename: String
     lock.lock()
@@ -117,11 +120,13 @@ final class ReplRecordingCoordinator: @unchecked Sendable {
   }
 
   /// Stops the active recording, finalizes its file, and returns it for delivery, or
-  /// nil if no recording is in progress.
+  /// nil if no recording is in progress. The slot stays occupied until finalizing
+  /// completes, so a concurrent start cannot begin a new recording mid-teardown.
   func stopRecording() async throws -> StoppedRecording? {
-    guard let active = take(matching: nil) else {
+    guard let active = beginStopping(matching: nil) else {
       return nil
     }
+    defer { finishStopping() }
     let url = try await active.recording.stop()
     return StoppedRecording(hostPath: url.path, containerPath: active.containerPath)
   }
@@ -130,21 +135,24 @@ final class ReplRecordingCoordinator: @unchecked Sendable {
   /// discards its file. Used when a disposable session tears down with a recording
   /// still running.
   func dropActiveRecording() async {
-    await drop(take(matching: nil))
+    await drop(beginStopping(matching: nil))
   }
 
   /// Drops the recording identified by `id` if it is still the active one. Used by
   /// the app-exit watcher; a no-op if the recording was already stopped or replaced.
   func dropRecording(id: UUID) async {
-    await drop(take(matching: id))
+    await drop(beginStopping(matching: id))
   }
 
   // MARK: - Private
 
-  /// Atomically clears and returns the active recording, when there is one and it
-  /// matches `id` (any recording when `id` is nil). Leaves the slot idle so a new
-  /// recording can start.
-  private func take(matching id: UUID?) -> ActiveRecording? {
+  /// Atomically moves the active recording into the `stopping` state and returns it,
+  /// when there is one and it matches `id` (any recording when `id` is nil). The slot
+  /// stays occupied -- rejecting new reservations -- until `finishStopping()`, so the
+  /// underlying capture is never torn down while a new one is starting. Returns nil
+  /// (leaving the state untouched) when there is nothing to stop, so the caller must
+  /// pair a non-nil result with exactly one `finishStopping()`.
+  private func beginStopping(matching id: UUID?) -> ActiveRecording? {
     lock.lock()
     defer { lock.unlock() }
     guard case let .active(active) = state else {
@@ -153,14 +161,22 @@ final class ReplRecordingCoordinator: @unchecked Sendable {
     if let id, active.id != id {
       return nil
     }
-    state = .idle
+    state = .stopping
     return active
+  }
+
+  /// Frees the slot once a `beginStopping` recording has finished finalizing.
+  private func finishStopping() {
+    lock.lock()
+    defer { lock.unlock() }
+    state = .idle
   }
 
   private func drop(_ active: ActiveRecording?) async {
     guard let active else {
       return
     }
+    defer { finishStopping() }
     _ = try? await active.recording.stop()
     try? FileManager.default.removeItem(atPath: active.hostPath)
     logger?.info().log("Dropped in-progress REPL recording at \(active.hostPath)")
