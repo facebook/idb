@@ -173,6 +173,7 @@ struct ReplRunner: ParsableArguments {
     let deviceType: String
     let osVersion: String
     let nextRunIndex: UInt32
+    let sessionID: String
     let autoImportModules: [String]
     let interfaceSearchPaths: [String]
     let sdkPath: String
@@ -227,8 +228,13 @@ struct ReplRunner: ParsableArguments {
       deviceType = ready.deviceType
       osVersion = ready.osVersion
       nextRunIndex = ready.nextRunIndex
+      sessionID = ready.sessionID
       replSessionInfo.sharedFilesystem = ready.sharedFilesystem
-      reporter.addMetadata(["device_type": deviceType])
+      var readyMetadata = ["device_type": deviceType]
+      if !sessionID.isEmpty {
+        readyMetadata["session_id"] = sessionID
+      }
+      reporter.addMetadata(readyMetadata)
 
       // The companion sends the .swiftinterface files available to injected code
       // (the test bundle's probe-generated modules and the `IDB` module) as
@@ -274,6 +280,7 @@ struct ReplRunner: ParsableArguments {
         context: context.reportLabel,
         target: "\(deviceType) \(osVersion)",
         reason: GlobalOptions.shared.reason,
+        sessionID: sessionID,
         startedAt: Date())
       {
         FileHandle.standardError.write(Data("idb-repl: writing session report to \(resolvedPath)\n".utf8))
@@ -313,7 +320,7 @@ struct ReplRunner: ParsableArguments {
       } catch {
         print("Error: \(error)")
         if reportFailures, case let ReplExecutionError.compileFailed(compilerOutput) = error {
-          reportWriter?.recordCompileFailure(index: Int(nextRunIndex), code: code, compilerOutput: compilerOutput, at: Date())
+          reportWriter?.recordCompileFailure(code: code, compilerOutput: compilerOutput, at: Date())
         }
         reportCall(reporter, "run", start: start, arguments: codeMetadata(code), failure: "\(error)")
       }
@@ -370,7 +377,7 @@ struct ReplRunner: ParsableArguments {
           } catch {
             printStatus("Error:", "\(error)")
             if reportFailures, case let ReplExecutionError.compileFailed(compilerOutput) = error {
-              reportWriter?.recordCompileFailure(index: runIndex, code: swiftCode, compilerOutput: compilerOutput, at: Date())
+              reportWriter?.recordCompileFailure(code: swiftCode, compilerOutput: compilerOutput, at: Date())
             }
             reportCall(reporter, "run", start: start, arguments: codeMetadata(swiftCode), failure: "\(error)")
             stopSession = (error as? ReplExecutionError)?.terminatesSession ?? true

@@ -854,6 +854,11 @@ message ReplResponse {
     // Start.probe_file_path. When true the driver reads companion-written
     // artifact paths directly.
     bool shared_filesystem = 6;
+    // A stable identifier for the REPL host process, sent in every Ready. It
+    // persists across reconnects to a still-running `app` REPL and is
+    // regenerated on relaunch, so the driver can append to the same session
+    // report while a reset (a new session) starts a fresh one.
+    string session_id = 7;
   }
   // The result of executing one Execute message.
   message Result {

@@ -28,6 +28,13 @@ static BOOL gHostOutlivesSession = NO;
 // `app` context.
 static int gRunIndex = 0;
 
+// A stable identifier for this REPL host process, generated once and persisted for
+// the process lifetime -- including across client reconnects for the `app` context
+// (like gRunIndex). The driver keys its session report on this: reconnecting to a
+// still-running app sees the same id and appends to the report, while a relaunch is
+// a new process with a new id that starts the report fresh.
+static NSString *gSessionID = nil;
+
 // MARK: - Socket Setup
 
 static int CreateSocketAtPath(NSString *socketPath)
@@ -180,6 +187,12 @@ int FBReplServeSocket(NSString *socketPath, NSArray<NSString *> *generatedInterf
   // can tell whether a dropped connection should end the process or just reset.
   gHostOutlivesSession = keepListening;
 
+  // Generate the session id once per process; it outlives individual client
+  // connections, so reconnects (in the app context) are greeted with the same id.
+  if (gSessionID == nil) {
+    gSessionID = [[[NSUUID UUID] UUIDString] copy];
+  }
+
   if (socketPath.length == 0) {
     return 0;
   }
@@ -202,7 +215,7 @@ int FBReplServeSocket(NSString *socketPath, NSArray<NSString *> *generatedInterf
     gClientFd = clientFd;
     // Greet the client with the .swiftinterface paths the probe generated (an
     // empty list when there are none), then handle commands.
-    WriteMessage(@{@"type" : @"greeting", @"interfaces" : generatedInterfaces ?: @[], @"nextRunIndex" : @(gRunIndex)}, clientFd);
+    WriteMessage(@{@"type" : @"greeting", @"interfaces" : generatedInterfaces ?: @[], @"nextRunIndex" : @(gRunIndex), @"sessionID" : gSessionID ?: @""}, clientFd);
     BOOL connected = YES;
     while (connected) {
       @autoreleasepool {

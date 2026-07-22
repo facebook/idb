@@ -17,9 +17,10 @@ struct ReplReportFormatterTests {
   // MARK: - header
 
   @Test
-  func headerIncludesTitleContextAndTarget() {
+  func headerIncludesMarkerTitleContextAndTarget() {
     let header = ReplReportFormatter.header(
-      context: "app (`com.example.App`)", target: "iPhone15,3 17.5", reason: "why", startedAt: epoch)
+      context: "app (`com.example.App`)", target: "iPhone15,3 17.5", reason: "why", sessionID: "sess-1", startedAt: epoch)
+    #expect(header.contains("<!-- idb-repl-session: sess-1 -->"))
     #expect(header.contains("# idb-repl session report"))
     #expect(header.contains("- **Context:** app (`com.example.App`)"))
     #expect(header.contains("- **Target:** iPhone15,3 17.5"))
@@ -28,15 +29,59 @@ struct ReplReportFormatterTests {
   }
 
   @Test
+  func headerMarkerIsTheFirstLine() {
+    let header = ReplReportFormatter.header(
+      context: "simulator", target: "sim", reason: nil, sessionID: "abc", startedAt: epoch)
+    #expect(header.hasPrefix("<!-- idb-repl-session: abc -->\n"))
+  }
+
+  @Test
   func headerOmitsReasonWhenAbsent() {
-    let header = ReplReportFormatter.header(context: "simulator", target: "sim", reason: nil, startedAt: epoch)
+    let header = ReplReportFormatter.header(context: "simulator", target: "sim", reason: nil, sessionID: "s", startedAt: epoch)
     #expect(!header.contains("**Reason:**"))
   }
 
   @Test
   func headerOmitsReasonWhenEmpty() {
-    let header = ReplReportFormatter.header(context: "simulator", target: "sim", reason: "", startedAt: epoch)
+    let header = ReplReportFormatter.header(context: "simulator", target: "sim", reason: "", sessionID: "s", startedAt: epoch)
     #expect(!header.contains("**Reason:**"))
+  }
+
+  @Test
+  func timestampsIncludeATimeZoneOffset() {
+    let header = ReplReportFormatter.header(context: "simulator", target: "t", reason: nil, sessionID: "s", startedAt: epoch)
+    let startedLine = header.split(separator: "\n").first { $0.contains("**Started:**") }.map(String.init) ?? ""
+    #expect(startedLine.range(of: #"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [+-]\d{4}$"#, options: .regularExpression) != nil)
+  }
+
+  // MARK: - session marker round-trip
+
+  @Test
+  func sessionMarkerRoundTrips() {
+    let id = "6F1C-abcd"
+    let marker = ReplReportFormatter.sessionMarker(id)
+    #expect(ReplReportFormatter.sessionID(fromHeaderLine: marker) == id)
+  }
+
+  @Test
+  func sessionIDParsesFromHeaderFirstLine() {
+    let header = ReplReportFormatter.header(context: "simulator", target: "t", reason: nil, sessionID: "xyz", startedAt: epoch)
+    let firstLine = header.split(separator: "\n", omittingEmptySubsequences: false).first.map(String.init) ?? ""
+    #expect(ReplReportFormatter.sessionID(fromHeaderLine: firstLine) == "xyz")
+  }
+
+  @Test
+  func nonMarkerLinesParseToNil() {
+    #expect(ReplReportFormatter.sessionID(fromHeaderLine: "# idb-repl session report") == nil)
+    #expect(ReplReportFormatter.sessionID(fromHeaderLine: "") == nil)
+    #expect(ReplReportFormatter.sessionID(fromHeaderLine: "<!-- something else -->") == nil)
+  }
+
+  // MARK: - reconnectMarker
+
+  @Test
+  func reconnectMarkerIsLabeled() {
+    #expect(ReplReportFormatter.reconnectMarker(at: epoch).contains("Reconnected"))
   }
 
   // MARK: - runEntry
@@ -62,11 +107,11 @@ struct ReplReportFormatterTests {
   // MARK: - compileFailureEntry
 
   @Test
-  func compileFailureEntryIsLabeled() {
+  func compileFailureEntryIsLabeledFailedRunWithoutAnIndex() {
     let entry = ReplReportFormatter.compileFailureEntry(
-      index: 2, code: "let x =", compilerOutput: "error: expected expression", at: epoch)
-    #expect(entry.contains("## Run 2"))
-    #expect(entry.contains("(compile failed)"))
+      code: "let x =", compilerOutput: "error: expected expression", at: epoch)
+    #expect(entry.contains("## Failed Run"))
+    #expect(!entry.contains("## Run"))
     #expect(entry.contains("**Compile error**"))
     #expect(entry.contains("error: expected expression"))
   }

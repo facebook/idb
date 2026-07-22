@@ -78,11 +78,14 @@ final class ReplSocketClient {
   }
 
   /// The shim's greeting: the `.swiftinterface` paths it advertises (possibly
-  /// empty), plus the next run index to number compiled dylibs from (nonzero
-  /// only when the app persisted a higher value across reconnects).
+  /// empty), the next run index to number compiled dylibs from (nonzero only when
+  /// the app persisted a higher value across reconnects), and the host's stable
+  /// session id (the same across reconnects to a still-running app, regenerated on
+  /// relaunch).
   struct Greeting {
     let interfaces: [String]
     let nextRunIndex: UInt32
+    let sessionID: String
   }
 
   /// Reads the shim's greeting frame, sent once on connect before any command.
@@ -98,7 +101,8 @@ final class ReplSocketClient {
           }
           let interfaces = message["interfaces"] as? [String] ?? []
           let nextRunIndex = (message["nextRunIndex"] as? NSNumber)?.uint32Value ?? 0
-          continuation.resume(returning: Greeting(interfaces: interfaces, nextRunIndex: nextRunIndex))
+          let sessionID = message["sessionID"] as? String ?? ""
+          continuation.resume(returning: Greeting(interfaces: interfaces, nextRunIndex: nextRunIndex, sessionID: sessionID))
         } catch {
           continuation.resume(throwing: error)
         }

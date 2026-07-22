@@ -100,6 +100,7 @@ struct ReplMethodHandler {
             $0.generatedInterfaces = generatedInterfaces
             $0.nextRunIndex = greeting.nextRunIndex
             $0.sharedFilesystem = sharedFilesystem
+            $0.sessionID = greeting.sessionID
           })
       })
 

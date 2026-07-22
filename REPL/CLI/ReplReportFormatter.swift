@@ -12,11 +12,12 @@ import Foundation
 /// the file handling lives in `ReplReportWriter`.
 enum ReplReportFormatter {
 
-  /// The report's leading header: a title and a metadata list, written once when
-  /// the report file is opened. Ends with a horizontal rule so the first run reads
-  /// as a new section.
-  static func header(context: String, target: String, reason: String?, startedAt: Date) -> String {
+  /// The report's leading header: a machine-readable session marker, then a title
+  /// and a metadata list, written when a report is first created. Ends with a
+  /// horizontal rule so the first run reads as a new section.
+  static func header(context: String, target: String, reason: String?, sessionID: String, startedAt: Date) -> String {
     var lines = [
+      sessionMarker(sessionID),
       "# idb-repl session report",
       "",
       "- **Context:** \(context)",
@@ -28,6 +29,34 @@ enum ReplReportFormatter {
     }
     lines.append(contentsOf: ["", "---", ""])
     return lines.joined(separator: "\n")
+  }
+
+  /// The report's first line: a machine-readable marker recording the REPL session
+  /// the report belongs to. It is an HTML comment, so it is invisible in rendered
+  /// Markdown; `ReplReportWriter` reads it back to decide whether a reconnect should
+  /// append to an existing report or start a fresh one.
+  static func sessionMarker(_ id: String) -> String {
+    "\(sessionMarkerPrefix)\(id)\(sessionMarkerSuffix)"
+  }
+
+  /// Parses the session id from a report's first line, or nil when `line` is not a
+  /// session marker.
+  static func sessionID(fromHeaderLine line: String) -> String? {
+    let trimmed = line.trimmingCharacters(in: .whitespaces)
+    guard trimmed.hasPrefix(sessionMarkerPrefix), trimmed.hasSuffix(sessionMarkerSuffix),
+      trimmed.count >= sessionMarkerPrefix.count + sessionMarkerSuffix.count
+    else {
+      return nil
+    }
+    let start = trimmed.index(trimmed.startIndex, offsetBy: sessionMarkerPrefix.count)
+    let end = trimmed.index(trimmed.endIndex, offsetBy: -sessionMarkerSuffix.count)
+    return String(trimmed[start..<end])
+  }
+
+  /// A marker appended when a run resumes an existing report — a reconnect to a
+  /// still-running app session.
+  static func reconnectMarker(at date: Date) -> String {
+    "\n_Reconnected \(timestamp(date))_\n"
   }
 
   /// A single completed run: its number and time, the user's code, and the output
@@ -43,9 +72,9 @@ enum ReplReportFormatter {
 
   /// A run whose code failed to compile, recorded only under `--report-failures`:
   /// the user's code and the compiler diagnostics.
-  static func compileFailureEntry(index: Int, code: String, compilerOutput: String, at date: Date) -> String {
+  static func compileFailureEntry(code: String, compilerOutput: String, at date: Date) -> String {
     section(
-      heading: "Run \(index) — \(timestamp(date)) (compile failed)",
+      heading: "Failed Run — \(timestamp(date))",
       code: code,
       bodyLabel: "Compile error",
       body: compilerOutput)
@@ -92,10 +121,13 @@ enum ReplReportFormatter {
     return longest
   }
 
+  private static let sessionMarkerPrefix = "<!-- idb-repl-session: "
+  private static let sessionMarkerSuffix = " -->"
+
   private static let timestampFormatter: DateFormatter = {
     let formatter = DateFormatter()
     formatter.locale = Locale(identifier: "en_US_POSIX")
-    formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+    formatter.dateFormat = "yyyy-MM-dd HH:mm:ss Z"
     return formatter
   }()
 
