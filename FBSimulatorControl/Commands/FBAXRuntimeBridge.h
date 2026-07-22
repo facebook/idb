@@ -91,6 +91,7 @@ typedef void (^FBAXRuntimeResponseHandler)(NSObject * _Nullable response);
 + (void)setBridgeDelegateToken:(nullable NSString *)token onTranslation:(NSObject *)translation;
 + (pid_t)processIdentifierForTranslation:(NSObject *)translation;
 + (nullable NSObject *)emptyResponse;
++ (BOOL)setClientType:(NSInteger)clientType onRequest:(NSObject *)request;
 + (void)sendAccessibilityRequest:(NSObject *)request
                         toDevice:(NSObject *)device
                  completionQueue:(dispatch_queue_t)completionQueue

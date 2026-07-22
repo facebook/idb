@@ -317,6 +317,16 @@
   return ((id (*)(id, SEL))objc_msgSend)(responseClass, selector);
 }
 
++ (BOOL)setClientType:(NSInteger)clientType onRequest:(NSObject *)request
+{
+  SEL selector = NSSelectorFromString(@"setClientType:");
+  if (![request respondsToSelector:selector]) {
+    return NO;
+  }
+  ((void (*)(id, SEL, NSInteger))objc_msgSend)(request, selector, clientType);
+  return YES;
+}
+
 + (void)sendAccessibilityRequest:(NSObject *)request
                         toDevice:(NSObject *)device
                  completionQueue:(dispatch_queue_t)completionQueue
