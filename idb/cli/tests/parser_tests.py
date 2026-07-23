@@ -7,12 +7,13 @@
 # pyre-strict
 
 import os
-from argparse import Namespace
+from argparse import ArgumentParser, Namespace
 from typing import Any, TypeVar
 from unittest.mock import ANY, MagicMock, patch
 
 from idb.cli.commands.xctest import NO_SPECIFIED_PATH
 from idb.cli.main import gen_main as cli_main, get_default_companion_path
+from idb.common.command import Command, CommandGroup
 from idb.common.types import (
     Compression,
     CrashLogQuery,
@@ -1744,3 +1745,78 @@ class TestParser(TestCase):
             ),
             2,  # error code when mutually exclusive arguments are provided
         )
+
+    async def test_subcommands_logged_for_top_level_command(self) -> None:
+        self.client_mock.list_apps = AsyncMock(return_value=[])
+        on_launch_mock = MagicMock()
+        with patch("idb.cli.main.plugin.on_launch", on_launch_mock):
+            await cli_main(cmd_input=["list-apps"])
+        on_launch_mock.assert_called_once_with(ANY, subcommands=["list-apps"])
+
+    async def test_subcommands_logged_for_nested_command(self) -> None:
+        self.client_mock.tap = AsyncMock(return_value=[])
+        on_launch_mock = MagicMock()
+        with patch("idb.cli.main.plugin.on_launch", on_launch_mock):
+            await cli_main(cmd_input=["ui", "tap", "10", "20"])
+        on_launch_mock.assert_called_once_with(ANY, subcommands=["ui", "tap"])
+
+
+class _StubCommand(Command):
+    def __init__(self, name: str, aliases: list[str] | None = None) -> None:
+        self._name = name
+        self._aliases = aliases or []
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    @property
+    def description(self) -> str:
+        return ""
+
+    @property
+    def aliases(self) -> list[str]:
+        return self._aliases
+
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
+        pass
+
+    async def run(self, args: Namespace) -> None:
+        pass
+
+
+class TestResolveSubcommandPath(TestCase):
+    def _root(self) -> CommandGroup:
+        return CommandGroup(
+            name="root_command",
+            description="",
+            commands=[
+                _StubCommand(name="list-apps"),
+                _StubCommand(name="list", aliases=["ls"]),
+                CommandGroup(
+                    name="ui",
+                    description="",
+                    commands=[_StubCommand(name="tap")],
+                ),
+            ],
+        )
+
+    def test_top_level_command(self) -> None:
+        args = Namespace(root_command="list-apps")
+        self.assertEqual(self._root().resolve_subcommand_path(args), ["list-apps"])
+
+    def test_nested_command(self) -> None:
+        args = Namespace(root_command="ui", ui="tap")
+        self.assertEqual(self._root().resolve_subcommand_path(args), ["ui", "tap"])
+
+    def test_alias_normalised_to_canonical_name(self) -> None:
+        args = Namespace(root_command="ls")
+        self.assertEqual(self._root().resolve_subcommand_path(args), ["list"])
+
+    def test_no_subcommand_selected(self) -> None:
+        args = Namespace(root_command=None)
+        self.assertEqual(self._root().resolve_subcommand_path(args), [])
+
+    def test_unknown_subcommand(self) -> None:
+        args = Namespace(root_command="does-not-exist")
+        self.assertEqual(self._root().resolve_subcommand_path(args), [])

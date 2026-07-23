@@ -92,12 +92,12 @@ def swallow_exceptions(
 
 
 @swallow_exceptions
-def on_launch(logger: Logger) -> None:
+def on_launch(logger: Logger, subcommands: list[str]) -> None:
     for plugin in PLUGINS:
         on_launch = getattr(plugin, "on_launch", None)
         if on_launch is None:
             continue
-        on_launch(logger)
+        on_launch(logger, subcommands=subcommands)
 
 
 @swallow_exceptions

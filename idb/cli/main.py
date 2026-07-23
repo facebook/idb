@@ -351,7 +351,7 @@ async def gen_main(cmd_input: list[str] | None = None) -> SysExitArg:
 
     try:
         args = parser.parse_args(cmd_input)
-        plugin.on_launch(logger)
+        plugin.on_launch(logger, subcommands=root_command.resolve_subcommand_path(args))
         await root_command.run(args)
         return 0
     except ConnectCommandException as e:
