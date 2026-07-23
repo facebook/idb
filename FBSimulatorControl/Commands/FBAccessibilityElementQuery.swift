@@ -53,4 +53,38 @@ extension AccessibilityOperations {
       withJSONObject: response.asDictionary(), options: .sortedKeys
     )
   }
+
+  /// Resolves a query and performs an accessibility tap (AXPress). When
+  /// `expectedValue` is given, the element's value for `expectedKey` must equal
+  /// it first, otherwise `FBAccessibilityExpectedValueMismatch` is thrown.
+  /// Always closes the element.
+  public func accessibilityTap(
+    for query: FBAccessibilityElementQuery,
+    expectedValue: String? = nil,
+    expectedKey: FBAXSearchableKey = .label
+  ) async throws {
+    let element = try await accessibilityElement(for: query)
+    defer { element.close() }
+    if let expectedValue {
+      let actual = try element.stringValue(forSearchableKey: expectedKey)
+      guard actual == expectedValue else {
+        throw FBAccessibilityExpectedValueMismatch(
+          key: expectedKey, expected: expectedValue, actual: actual
+        )
+      }
+    }
+    try element.tap()
+  }
+}
+
+/// Thrown by `accessibilityTap` when an element's value for the checked key does
+/// not equal the caller's expected value.
+public struct FBAccessibilityExpectedValueMismatch: Error, CustomStringConvertible {
+  public let key: FBAXSearchableKey
+  public let expected: String
+  public let actual: String
+
+  public var description: String {
+    "Element \(key.rawValue) does not match expected value \"\(expected)\". Actual: \"\(actual)\""
+  }
 }
