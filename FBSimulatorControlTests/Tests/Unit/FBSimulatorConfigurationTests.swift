@@ -89,6 +89,19 @@ final class FBSimulatorConfigurationTests: XCTestCase {
     XCTAssertEqual(resolvedName, "iPhone 17 Pro")
   }
 
+  func testRuntimeNameResolutionRecoversCryptexRuntimeIdentifier() {
+    XCTAssertEqual(
+      FBSimulatorConfiguration.runtimeName(
+        fromIdentifier: "com.apple.CoreSimulator.SimRuntime.iOS-27-0"),
+      "iOS 27.0")
+  }
+
+  func testRuntimeNameResolutionRejectsMalformedIdentifier() {
+    XCTAssertNil(
+      FBSimulatorConfiguration.runtimeName(
+        fromIdentifier: "com.apple.CoreSimulator.SimRuntime.iOS-Beta"))
+  }
+
   func testSynthesizedConfigurationPreservesKnownMetadata() {
     let fallback = FBSimulatorConfiguration(
       device: FBDeviceType.generic(withName: "Fallback Device"),
