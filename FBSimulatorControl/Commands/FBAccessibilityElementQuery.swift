@@ -38,4 +38,19 @@ extension AccessibilityOperations {
       return try await accessibilityElementForFrontmostApplication()
     }
   }
+
+  /// Resolves a query and serializes the element to canonical sorted-keys JSON,
+  /// always closing the element. Shared by the describe / describe-find /
+  /// describe-point paths so every front-end emits an identical serialization.
+  public func accessibilityDescribe(
+    for query: FBAccessibilityElementQuery,
+    options: FBAccessibilityRequestOptions
+  ) async throws -> Data {
+    let element = try await accessibilityElement(for: query)
+    defer { element.close() }
+    let response = try element.serialize(with: options)
+    return try JSONSerialization.data(
+      withJSONObject: response.asDictionary(), options: .sortedKeys
+    )
+  }
 }
