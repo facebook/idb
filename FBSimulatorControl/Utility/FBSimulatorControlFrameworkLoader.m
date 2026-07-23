@@ -27,6 +27,38 @@ static NSError *FBSimulatorAccessibilityBootstrapError(NSInteger code, NSString 
                          userInfo:userInfo];
 }
 
+// Shared coalescing/caching state for accessibility bootstraps. Both tables are
+// weakly keyed on the simulator device object so entries evaporate with the device.
+static dispatch_queue_t FBSimulatorAccessibilityBootstrapStateQueue(void)
+{
+  static dispatch_once_t onceToken;
+  static dispatch_queue_t stateQueue;
+  dispatch_once(&onceToken, ^{
+    stateQueue = dispatch_queue_create("com.facebook.FBSimulatorControl.AccessibilityBootstrap", DISPATCH_QUEUE_SERIAL);
+  });
+  return stateQueue;
+}
+
+static NSMapTable *FBSimulatorAccessibilityBootstrapAttempts(void)
+{
+  static dispatch_once_t onceToken;
+  static NSMapTable *attempts;
+  dispatch_once(&onceToken, ^{
+    attempts = [NSMapTable weakToStrongObjectsMapTable];
+  });
+  return attempts;
+}
+
+static NSHashTable *FBSimulatorAccessibilityBootstrapSuccesses(void)
+{
+  static dispatch_once_t onceToken;
+  static NSHashTable *successes;
+  dispatch_once(&onceToken, ^{
+    successes = [NSHashTable weakObjectsHashTable];
+  });
+  return successes;
+}
+
 static void FBSimulatorInvalidateAccessibilitySession(id session)
 {
   SEL selector = NSSelectorFromString(@"invalidate");
@@ -236,17 +268,18 @@ static void FBSimulatorControl_SimLogHandler(int level, const char *function, in
     }
     return NO;
   }
-  static dispatch_once_t onceToken;
-  static dispatch_queue_t stateQueue;
-  static NSMapTable *attempts;
-  dispatch_once(&onceToken, ^{
-    stateQueue = dispatch_queue_create("com.facebook.FBSimulatorControl.AccessibilityBootstrap", DISPATCH_QUEUE_SERIAL);
-    attempts = [NSMapTable weakToStrongObjectsMapTable];
-  });
+  dispatch_queue_t stateQueue = FBSimulatorAccessibilityBootstrapStateQueue();
+  NSMapTable *attempts = FBSimulatorAccessibilityBootstrapAttempts();
+  NSHashTable *successes = FBSimulatorAccessibilityBootstrapSuccesses();
 
   __block FBSimulatorAccessibilityBootstrapAttempt *attempt;
   __block BOOL ownsAttempt = NO;
+  __block BOOL alreadyBootstrapped = NO;
   dispatch_sync(stateQueue, ^{
+    if ([successes containsObject:simulatorDevice]) {
+      alreadyBootstrapped = YES;
+      return;
+    }
     attempt = [attempts objectForKey:simulatorDevice];
     if (!attempt) {
       attempt = [FBSimulatorAccessibilityBootstrapAttempt new];
@@ -254,6 +287,9 @@ static void FBSimulatorControl_SimLogHandler(int level, const char *function, in
       ownsAttempt = YES;
     }
   });
+  if (alreadyBootstrapped) {
+    return YES;
+  }
   if (attemptObserver) {
     attemptObserver(ownsAttempt);
   }
@@ -273,20 +309,47 @@ static void FBSimulatorControl_SimLogHandler(int level, const char *function, in
   }
 
   NSError *bootstrapError = nil;
-  BOOL succeeded = performer(simulatorDevice, timeout, logger, &bootstrapError);
-  attempt.succeeded = succeeded;
-  attempt.error = bootstrapError;
-  dispatch_group_leave(attempt.group);
-  dispatch_sync(stateQueue, ^{
-    if ([attempts objectForKey:simulatorDevice] == attempt) {
-      [attempts removeObjectForKey:simulatorDevice];
-    }
-  });
+  BOOL succeeded = NO;
+  // The performer calls into private XCUIAutomation/XCTestDaemon API that can raise
+  // Objective-C exceptions. Without the @finally the group would never be left,
+  // permanently wedging every follower for this device and crashing in libdispatch
+  // when the still-entered group deallocates.
+  @try {
+    succeeded = performer(simulatorDevice, timeout, logger, &bootstrapError);
+  } @catch (NSException *exception) {
+    succeeded = NO;
+    bootstrapError = FBSimulatorAccessibilityBootstrapError(
+      14,
+      [NSString stringWithFormat:@"The Accessibility bootstrap raised an exception: %@", exception.reason ?: exception.name],
+      nil);
+  } @finally {
+    attempt.succeeded = succeeded;
+    attempt.error = bootstrapError;
+    dispatch_group_leave(attempt.group);
+    dispatch_sync(stateQueue, ^{
+      if (succeeded) {
+        [successes addObject:simulatorDevice];
+      }
+      if ([attempts objectForKey:simulatorDevice] == attempt) {
+        [attempts removeObjectForKey:simulatorDevice];
+      }
+    });
+  }
 
   if (!succeeded && error) {
     *error = bootstrapError;
   }
   return succeeded;
+}
+
++ (void)invalidateAccessibilityBootstrapCacheForSimulatorDevice:(id)simulatorDevice
+{
+  if (!simulatorDevice) {
+    return;
+  }
+  dispatch_sync(FBSimulatorAccessibilityBootstrapStateQueue(), ^{
+    [FBSimulatorAccessibilityBootstrapSuccesses() removeObject:simulatorDevice];
+  });
 }
 
 + (BOOL)performAccessibilityBootstrapForSimulatorDevice:(id)simulatorDevice

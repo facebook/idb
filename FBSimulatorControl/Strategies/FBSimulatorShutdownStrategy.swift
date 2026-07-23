@@ -45,6 +45,10 @@ public final class FBSimulatorShutdownStrategy: NSObject {
       logger?.debug().log("Shutdown of \(simulator.udid) succeeded as it is already shutdown")
       return
     }
+    // A fresh boot needs a fresh accessibility bootstrap.
+    defer {
+      FBSimulatorControlFrameworkLoader.invalidateAccessibilityBootstrapCache(forSimulatorDevice: simulator.device)
+    }
     if simulator.state == .creating {
       try await transitionCreatingToShutdownAsync(simulator)
       return

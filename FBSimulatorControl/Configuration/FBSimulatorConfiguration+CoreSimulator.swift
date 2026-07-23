@@ -197,7 +197,7 @@ extension FBSimulatorConfiguration {
     let predicate = FBSimulatorConfiguration.deviceTypePredicate(device)
     let matchingDeviceTypes = deviceTypes.filter { predicate.evaluate(with: $0) }
     if matchingDeviceTypes.isEmpty {
-      throw FBSimulatorConfigurationError.noMatchingDeviceType(available: "\(matchingDeviceTypes)")
+      throw FBSimulatorConfigurationError.noMatchingDeviceType(available: "\(deviceTypes)")
     }
     if matchingDeviceTypes.count > 1 {
       throw FBSimulatorConfigurationError.ambiguousDeviceType(matches: "\(matchingDeviceTypes)")
@@ -229,13 +229,19 @@ extension FBSimulatorConfiguration {
 
   private class func resolvedMetadata(from simDevice: SimDevice) -> ResolvedMetadata {
     let runtimeIdentifier = nonEmpty(simDevice.runtimeIdentifier)
-    let runtimeName = runtimeName(fromIdentifier: runtimeIdentifier)
-      ?? resolvedMetadataName(
-        directName: metadataName(forKey: "runtime", from: simDevice),
-        identifier: runtimeIdentifier
-      ) {
-        try supportedRuntimes().map { (identifier: $0.identifier, name: $0.name) }
-      }
+    // Prefer the real CoreSimulator runtime name (safe KVC lookup that tolerates
+    // cryptex runtimes with missing metadata), then a supportedRuntimes() identifier
+    // lookup. Synthesizing a name from the identifier is a last resort only: it can
+    // diverge from the installed runtime's actual name (e.g. "iOS 10.3" vs
+    // "iOS 10.3.1", or the "xrOS" identifier prefix vs the "visionOS" display name),
+    // which would break exact-name runtime matching.
+    let runtimeName = resolvedMetadataName(
+      directName: metadataName(forKey: "runtime", from: simDevice),
+      identifier: runtimeIdentifier
+    ) {
+      try supportedRuntimes().map { (identifier: $0.identifier, name: $0.name) }
+    }
+      ?? runtimeName(fromIdentifier: runtimeIdentifier)
     let deviceModelName = resolvedMetadataName(
       directName: metadataName(forKey: "deviceType", from: simDevice),
       identifier: simDevice.deviceTypeIdentifier
