@@ -6,6 +6,8 @@
  */
 
 #import <Foundation/Foundation.h>
+
+#import <AccessibilityPlatformTranslation/CDStructures.h>
 #import <AppKit/AppKit.h>
 
 @class AXPTranslationObject, NSArray, NSMutableDictionary, NSString;
@@ -13,22 +15,22 @@
 
 @interface AXPMacPlatformElement : NSAccessibilityElement
 {
-    NSMutableDictionary *_selectiveCache;
-    AXPTranslationObject *translation;
-    CDUnknownBlockType _nsPostEventTestingCallback;
-    NSArray *_cachedCustomActions;
-    NSArray *_cachedCustomRotors;
+  NSMutableDictionary *_selectiveCache;
+  AXPTranslationObject *translation;
+  CDUnknownBlockType _nsPostEventTestingCallback;
+  NSArray *_cachedCustomActions;
+  NSArray *_cachedCustomRotors;
 }
 
 + (id)elementWithAccessibilityCustomElementData:(id)arg1;
 + (id)applicationElement;
 + (void)initialize;
 + (id)platformElementWithTranslationObject:(id)arg1;
-@property(retain, nonatomic) NSArray *cachedCustomRotors; // @synthesize cachedCustomRotors=_cachedCustomRotors;
-@property(retain, nonatomic) NSArray *cachedCustomActions; // @synthesize cachedCustomActions=_cachedCustomActions;
-@property(copy, nonatomic) CDUnknownBlockType nsPostEventTestingCallback; // @synthesize nsPostEventTestingCallback=_nsPostEventTestingCallback;
-@property(retain, nonatomic) AXPTranslationObject *translation; // @synthesize translation;
-@property(readonly, copy) NSString *description;
+@property (nonatomic, retain) NSArray *cachedCustomRotors; // @synthesize cachedCustomRotors=_cachedCustomRotors;
+@property (nonatomic, retain) NSArray *cachedCustomActions; // @synthesize cachedCustomActions=_cachedCustomActions;
+@property (nonatomic, copy) CDUnknownBlockType nsPostEventTestingCallback; // @synthesize nsPostEventTestingCallback=_nsPostEventTestingCallback;
+@property (nonatomic, retain) AXPTranslationObject *translation; // @synthesize translation;
+@property (readonly, copy) NSString *description;
 - (void)dealloc;
 - (BOOL)accessibilityShouldUseUniqueId;
 - (void)accessibilityPerformAction:(id)arg1;
@@ -63,11 +65,19 @@
 - (id)accessibilityAttributeValue:(NSAccessibilityAttributeName)arg1;
 - (void)setAccessibilityValue:(id)arg1;
 - (int)accessibilityPresenterProcessIdentifier;
+// These accessibility attributes are declared with their proper NSAccessibility
+// object types (rather than the class-dump `- (id)...` form) so they import into
+// Swift as clean typed values instead of `() -> Any`. Selectors and runtime types
+// are unchanged, so the ObjC implementation is unaffected. (Nullability keywords
+// are intentionally omitted to avoid triggering -Wnullability-completeness across
+// this class-dump header; Swift imports these as implicitly-unwrapped optionals.)
 - (id)accessibilityValue;
-- (id)accessibilityLabel;
-- (id)accessibilityTitle;
+- (NSString *)accessibilityLabel;
+- (NSString *)accessibilityTitle;
 - (id)accessibilityParent;
-- (struct CGRect)accessibilityFrame;
+// accessibilityFrame intentionally NOT redeclared here: NSAccessibilityElement
+// already declares it as a property; a method shadow here makes the member
+// ambiguous when imported into Swift.
 - (struct CGPoint)accessibilityActivationPoint;
 - (NSDictionary<NSString *, id> *)accessibilityMultipleAttributes:(NSArray<NSAccessibilityAttributeName> *)arg1; // Takes a NSAccessibilityAttributeName and returns a dictionary mapping it to values
 - (id)accessibilityAttributeValue:(id)arg1 forParameter:(id)arg2;
@@ -81,7 +91,7 @@
 - (id)accessibilityHitTest:(struct CGPoint)arg1;
 - (int)pid;
 - (NSArray<NSString *> *)accessibilityActionNames;
-- (id)accessibilityCustomActions;
+- (NSArray<NSAccessibilityCustomAction *> *)accessibilityCustomActions;
 - (id)accessibilityCustomRotors;
 - (id)_customRotorData:(id)arg1;
 - (id)rotor:(id)arg1 resultForSearchParameters:(id)arg2;
@@ -89,13 +99,12 @@
 - (id)accessibilityAttributeNames;
 - (BOOL)accessibilityPerformPress;
 - (BOOL)accessibilityPerformShowMenu;
-- (id)accessibilityRole;
+- (NSAccessibilityRole)accessibilityRole;
 - (id)role;
 - (id)_cachedRole;
 
 // Remaining properties
-@property(readonly, copy) NSString *debugDescription;
-@property(readonly) Class superclass;
+@property (readonly, copy) NSString *debugDescription;
+@property (readonly) Class superclass;
 
 @end
-

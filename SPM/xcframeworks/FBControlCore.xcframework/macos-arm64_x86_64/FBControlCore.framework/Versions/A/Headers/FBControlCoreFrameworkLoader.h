@@ -7,8 +7,6 @@
 
 #import <Foundation/Foundation.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBWeakFramework;
 @protocol FBControlCoreLogger;
 
@@ -20,7 +18,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param name the name of the symbol.
  @return the Symbol if successful.
  */
-void *FBGetSymbolFromHandle(void *handle, const char *name);
+void *_Nonnull FBGetSymbolFromHandle(void * _Nonnull handle, const char * _Nonnull name);
 
 /**
  Loads a Symbol from a Handle, using dlsym.
@@ -30,7 +28,7 @@ void *FBGetSymbolFromHandle(void *handle, const char *name);
  @param name the name of the symbol.
  @return the Symbol if successful.
  */
-void *FBGetSymbolFromHandleOptional(void *handle, const char *name);
+void *_Nullable FBGetSymbolFromHandleOptional(void * _Nonnull handle, const char * _Nonnull name);
 
 /**
  A Base Framework loader, that will ensure that the current user can load Frameworks.
@@ -46,7 +44,7 @@ void *FBGetSymbolFromHandleOptional(void *handle, const char *name);
  @param frameworks the framework dependencies
  @return a new Framework Loader
  */
-+ (instancetype)loaderWithName:(NSString *)frameworkName frameworks:(NSArray<FBWeakFramework *> *)frameworks;
++ (nonnull instancetype)loaderWithName:(nonnull NSString *)frameworkName frameworks:(nonnull NSArray<FBWeakFramework *> *)frameworks;
 
 /**
  The Designated Initializer
@@ -55,24 +53,24 @@ void *FBGetSymbolFromHandleOptional(void *handle, const char *name);
  @param frameworks the framework dependencies
  @return a new Framework Loader
  */
-- (instancetype)initWithName:(NSString *)frameworkName frameworks:(NSArray<FBWeakFramework *> *)frameworks;
+- (nonnull instancetype)initWithName:(nonnull NSString *)frameworkName frameworks:(nonnull NSArray<FBWeakFramework *> *)frameworks;
 
 #pragma mark Properties
 
 /**
  The Named set of Frameworks.
  */
-@property (nonatomic, copy, readonly) NSString *frameworkName;
+@property (nonnull, nonatomic, readonly, copy) NSString *frameworkName;
 
 /**
  The Frameworks to load.
  */
-@property (nonatomic, copy, readonly) NSArray<FBWeakFramework *> *frameworks;
+@property (nonnull, nonatomic, readonly, copy) NSArray<FBWeakFramework *> *frameworks;
 
 /**
  YES if the Frameworks are loaded, NO otherwise.
  */
-@property (nonatomic, assign, readonly) BOOL hasLoadedFrameworks;
+@property (nonatomic, readonly, assign) BOOL hasLoadedFrameworks;
 
 #pragma mark Public Methods
 
@@ -84,7 +82,7 @@ void *FBGetSymbolFromHandleOptional(void *handle, const char *name);
  @param error any error that occurred during performing the preconditions.
  @return YES if FBSimulatorControl is usable, NO otherwise.
  */
-- (BOOL)loadPrivateFrameworks:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error;
+- (BOOL)loadPrivateFrameworks:(nullable id<FBControlCoreLogger>)logger error:(NSError * _Nullable * _Nullable)error;
 
 /**
  Calls +[FBControlCore loadPrivateFrameworks:error], aborting in the event the Frameworks could not be loaded
@@ -101,8 +99,6 @@ void *FBGetSymbolFromHandleOptional(void *handle, const char *name);
 /**
  Performs a dlopen on the executable path and returns the handle, or else aborts.
  */
-- (void *)dlopenExecutablePath;
+- (void * _Nonnull)dlopenExecutablePath;
 
 @end
-
-NS_ASSUME_NONNULL_END

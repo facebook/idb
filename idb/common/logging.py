@@ -78,7 +78,7 @@ class log_call(AsyncContextManager[None]):
         _name = self.name or function.__name__
 
         @functools.wraps(function)
-        async def _async_wrapper(*args: Any, **kwargs: Any) -> Any:  # pyre-ignore
+        async def _async_wrapper(*args: Any, **kwargs: Any) -> Any:
             logger.debug(f"{_name} called")
             (_metadata, start) = _initial_info(args, self.metadata)
             await plugin.before_invocation(name=_name, metadata=_metadata)

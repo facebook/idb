@@ -1,0 +1,5 @@
+module CoreSimDeviceIO {
+    umbrella "."
+    export *
+    module * { export * }
+}

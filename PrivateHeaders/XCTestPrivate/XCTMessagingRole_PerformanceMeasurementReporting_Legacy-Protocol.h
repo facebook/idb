@@ -10,4 +10,3 @@
 @protocol XCTMessagingRole_PerformanceMeasurementReporting_Legacy
 - (id)_XCT_testMethod:(NSString *)arg1 ofClass:(NSString *)arg2 didMeasureMetric:(NSDictionary *)arg3 file:(NSString *)arg4 line:(NSNumber *)arg5;
 @end
-

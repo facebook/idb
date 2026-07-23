@@ -26,10 +26,15 @@ function supports_xattrs() {
 
 # Use build directory outside of repo if xattrs not supported (for Xcode compatibility)
 if supports_xattrs; then
-  BUILD_DIRECTORY=build
+  BUILD_DIRECTORY="$(pwd)/Build"
 else
   BUILD_DIRECTORY="/tmp/idb-build-$(basename "$(pwd)")"
   echo "Note: Using external build directory at $BUILD_DIRECTORY (xattrs not supported)"
+  # Companion/project.yml hard-codes framework refs as
+  # `../Build/Products/Release/...`. Symlink the in-tree `Build` dir so
+  # those references resolve to the actual external build output.
+  rm -rf Build
+  ln -s "$BUILD_DIRECTORY" Build
 fi
 
 # =============================================================================
@@ -107,11 +112,26 @@ function generate_xcodeproj() {
     local pbxproj="${temp_dir}/${xcodeproj_name}/project.pbxproj"
     if [ -f "$pbxproj" ]; then
       # Calculate the wrong relative prefix that XcodeGen created
-      # and replace it with correct relative path (empty for same dir)
+      # and replace it with correct relative path
       local escaped_path
       escaped_path=$(echo "$abs_project_dir/" | sed 's/[\/&]/\\&/g')
-      # Replace absolute path references that were made relative from /tmp
+      local abs_parent_dir
+      abs_parent_dir=$(dirname "$abs_project_dir")
+      local escaped_parent
+      escaped_parent=$(echo "$abs_parent_dir/" | sed 's/[\/&]/\\&/g')
+      local escaped_parent_no_slash
+      escaped_parent_no_slash=$(echo "$abs_parent_dir" | sed 's/[\/&]/\\&/g')
+      # Order matters: handle the longer (project-dir) prefix first so it
+      # doesn't get partially eaten by the parent-dir pattern, then handle
+      # references that point into the project's parent directory.
+      # Files inside project_dir become bare paths.
       sed -i '' "s|[.][.]/[^;\"]*${escaped_path}||g" "$pbxproj"
+      # Files in project_dir's parent become "../" relative to project_dir.
+      sed -i '' "s|[.][.]/[^;\"]*${escaped_parent}|../|g" "$pbxproj"
+      # The parent dir itself (no trailing path component) becomes "..".
+      # Match the terminator (`;` or `"`) and preserve it.
+      sed -i '' "s|[.][.]/[^;\"]*${escaped_parent_no_slash};|..;|g" "$pbxproj"
+      sed -i '' "s|[.][.]/[^;\"]*${escaped_parent_no_slash}\"|..\"|g" "$pbxproj"
       echo "  [xattr workaround] Fixed relative paths in project.pbxproj"
     fi
 
@@ -220,8 +240,17 @@ function regenerate_projects() {
   generate_xcodeproj "." "FBSimulatorControl"
   echo "Generating Shimulator project..."
   generate_xcodeproj "Shims/Shimulator" "Shimulator"
+  echo "Generating Repl shim project..."
+  generate_xcodeproj "Shims/Repl" "Repl"
+  echo "Generating SimulatorFrameworkBridge project..."
+  generate_xcodeproj "SimulatorFrameworkBridge" "SimulatorFrameworkBridge"
   echo "Generating idb_companion project..."
-  generate_xcodeproj "idb_companion" "idb_companion"
+  generate_xcodeproj "Companion" "idb_companion"
+
+  # xcodegen ignores `embed: false` for a tool target dependency, so strip the
+  # leftover entry here.
+  sed -i '' '/IDBGRPCSwift.framework in Embed Frameworks/d' \
+    Companion/idb_companion.xcodeproj/project.pbxproj
 }
 
 # =============================================================================
@@ -229,13 +258,23 @@ function regenerate_projects() {
 # =============================================================================
 
 function invoke_xcodebuild() {
-  local arguments=$@
+  local symroot="$BUILD_DIRECTORY/Products"
+  local objroot="$BUILD_DIRECTORY/Intermediates"
+  # Use arrays so each setting/argument stays a single word regardless of spaces.
   # Add -skipMacroValidation to work around sandbox restrictions on Swift macro plugins
   # Add ENABLE_USER_SCRIPT_SANDBOXING=NO to disable sandbox for macros
+  # Add CLANG_ENABLE_EXPLICIT_MODULES=NO to mirror Configuration/Shared.xcconfig
+  # Add ARCHS=arm64 to build arm64 only (no Intel/x86_64 slices).
+  local common_settings=(
+    -skipMacroValidation
+    ENABLE_USER_SCRIPT_SANDBOXING=NO
+    CLANG_ENABLE_EXPLICIT_MODULES=NO
+    ARCHS=arm64
+  )
   if [[ -n $HAS_XCPRETTY ]]; then
-    NSUnbufferedIO=YES xcodebuild -skipMacroValidation ENABLE_USER_SCRIPT_SANDBOXING=NO $arguments | xcpretty -c
+    NSUnbufferedIO=YES xcodebuild "${common_settings[@]}" SYMROOT="$symroot" OBJROOT="$objroot" "$@" | xcpretty -c
   else
-    xcodebuild -skipMacroValidation ENABLE_USER_SCRIPT_SANDBOXING=NO $arguments
+    xcodebuild "${common_settings[@]}" SYMROOT="$symroot" OBJROOT="$objroot" "$@"
   fi
 }
 
@@ -246,7 +285,7 @@ function build_idb_deps() {
 }
 
 function strip_framework() {
-  local FRAMEWORK_PATH="$BUILD_DIRECTORY/Build/Products/Release/$1"
+  local FRAMEWORK_PATH="$BUILD_DIRECTORY/Products/Release/$1"
   if [ -d "$FRAMEWORK_PATH" ]; then
     echo "Stripping Framework $FRAMEWORK_PATH"
     rm -r "$FRAMEWORK_PATH"
@@ -272,10 +311,10 @@ function build_target() {
   invoke_xcodebuild \
     ONLY_ACTIVE_ARCH=NO \
     -project FBSimulatorControl.xcodeproj \
-    -scheme $name \
+    -scheme "$name" \
     -sdk macosx \
-    -derivedDataPath $BUILD_DIRECTORY \
-    -configuration $configuration \
+    -derivedDataPath "$BUILD_DIRECTORY" \
+    -configuration "$configuration" \
     build
 }
 
@@ -289,20 +328,39 @@ function build_all_frameworks() {
 function build_shim() {
   local name=$1
   local sdk=$2
+  # The Repl shims live in their own project (Shims/Repl) to avoid an
+  # XCTestPrivate.h header collision with the Shimulator shims; default to the
+  # Shimulator project otherwise.
+  local project=${3:-Shims/Shimulator/Shimulator.xcodeproj}
 
   invoke_xcodebuild \
     ONLY_ACTIVE_ARCH=NO \
-    -project Shims/Shimulator/Shimulator.xcodeproj \
-    -scheme $name \
-    -sdk $sdk \
-    -derivedDataPath $BUILD_DIRECTORY \
+    -project "$project" \
+    -scheme "$name" \
+    -sdk "$sdk" \
+    -derivedDataPath "$BUILD_DIRECTORY" \
     -configuration Release \
     build
 }
 
 function build_shims() {
-  build_shim Shimulator iphonesimulator
-  build_shim Maculator macosx
+  build_shim Shimulator-iOS iphonesimulator
+  build_shim Shimulator-macOS macosx
+  build_shim Repl-iOS iphonesimulator Shims/Repl/Repl.xcodeproj
+  build_shim Repl-macOS macosx Shims/Repl/Repl.xcodeproj
+}
+
+function build_simulator_framework_bridge() {
+  # An iOS-simulator command-line executable, spawned by idb_companion inside the
+  # simulator to drive privacy/services state and the REPL socket.
+  invoke_xcodebuild \
+    ONLY_ACTIVE_ARCH=NO \
+    -project SimulatorFrameworkBridge/SimulatorFrameworkBridge.xcodeproj \
+    -scheme SimulatorFrameworkBridge \
+    -sdk iphonesimulator \
+    -derivedDataPath "$BUILD_DIRECTORY" \
+    -configuration Release \
+    build
 }
 
 function build_idb_companion() {
@@ -319,23 +377,109 @@ function build_idb_companion() {
   build_target FBSimulatorControl Release
   build_target FBDeviceControl Release
   build_target CompanionLib Release
-  build_target IDBCompanionUtilities Release
+  build_target CompanionUtilities Release
   # Build idb_companion from its own project
   invoke_xcodebuild \
     ONLY_ACTIVE_ARCH=NO \
-    -project idb_companion/idb_companion.xcodeproj \
+    SWIFT_ENABLE_EXPLICIT_MODULES=NO \
+    -project Companion/idb_companion.xcodeproj \
     -scheme idb_companion \
     -sdk macosx \
-    -derivedDataPath $BUILD_DIRECTORY \
+    -derivedDataPath "$BUILD_DIRECTORY" \
     -configuration Release \
     build
   strip_embedded_frameworks
 }
 
+function build_idb_repl() {
+  check_protobuf
+  # idb-repl links IDBGRPCSwift, which needs the generated gRPC Swift files.
+  if [ ! -f "IDBGRPCSwift/idb.grpc.swift" ] || [ ! -f "IDBGRPCSwift/idb.pb.swift" ]; then
+    echo "Proto files not found, generating..."
+    generate_proto
+  fi
+  # Build the idb-repl CLI from the idb_companion project (shares IDBGRPCSwift).
+  invoke_xcodebuild \
+    ONLY_ACTIVE_ARCH=NO \
+    SWIFT_ENABLE_EXPLICIT_MODULES=NO \
+    -project Companion/idb_companion.xcodeproj \
+    -scheme idb-repl \
+    -sdk macosx \
+    -derivedDataPath "$BUILD_DIRECTORY" \
+    -configuration Release \
+    build
+}
+
+# Assemble the runtime layout idb_companion expects:
+#
+#   <dist>/
+#     idb_companion             the executable
+#     idb-repl                  the REPL CLI
+#     *.bundle                  SwiftPM resource bundles (Bundle.module -> Bundle.main)
+#     Resources/
+#       libShimulator-iOS.dylib
+#       libShimulator-macOS.dylib
+#       libRepl-iOS.dylib
+#       libRepl-macOS.dylib
+#       SimulatorFrameworkBridge
+#
+function build_distribution() {
+  local release="$BUILD_DIRECTORY/Products/Release"
+  local sim="$BUILD_DIRECTORY/Products/Release-iphonesimulator"
+  local dist="$BUILD_DIRECTORY/Distribution"
+
+  echo "Assembling distribution into $dist"
+
+  # Fail early with a clear message if a prerequisite product is missing.
+  local required=(
+    "$release/idb_companion"
+    "$release/idb-repl"
+    "$sim/libShimulator-iOS.dylib"
+    "$release/libShimulator-macOS.dylib"
+    "$sim/libRepl-iOS.dylib"
+    "$release/libRepl-macOS.dylib"
+    "$sim/SimulatorFrameworkBridge"
+  )
+  local path
+  for path in "${required[@]}"; do
+    if [ ! -e "$path" ]; then
+      echo "error: expected build product not found: $path"
+      echo "Run './build.sh build' first."
+      exit 1
+    fi
+  done
+
+  rm -rf "$dist"
+  mkdir -p "$dist/Resources"
+
+  # Companion executable and the REPL CLI.
+  cp "$release/idb_companion" "$dist/"
+  cp "$release/idb-repl" "$dist/"
+
+  # SwiftPM resource bundles (Bundle.module resolves relative to Bundle.main).
+  local bundle
+  for bundle in "$release"/*.bundle; do
+    [ -e "$bundle" ] || continue
+    ditto "$bundle" "$dist/$(basename "$bundle")"
+  done
+
+  # Shims + SimulatorFrameworkBridge live under Resources/ next to idb_companion.
+  cp "$sim/libShimulator-iOS.dylib" "$dist/Resources/"
+  cp "$release/libShimulator-macOS.dylib" "$dist/Resources/"
+  cp "$sim/libRepl-iOS.dylib" "$dist/Resources/"
+  cp "$release/libRepl-macOS.dylib" "$dist/Resources/"
+  cp "$sim/SimulatorFrameworkBridge" "$dist/Resources/"
+
+  echo "Distribution ready at $dist"
+}
+
 function build_all() {
   # build_idb_companion already builds frameworks first
   build_shims
+  build_simulator_framework_bridge
   build_idb_companion
+  build_idb_repl
+  build_distribution
 }
 
 function build() {
@@ -352,17 +496,27 @@ function build() {
         build_all_frameworks;;
       shims)
         build_shims;;
-      Shimulator)
-        build_shim Shimulator iphonesimulator;;
-      Maculator)
-        build_shim Maculator macosx;;
+      Shimulator-iOS)
+        build_shim Shimulator-iOS iphonesimulator;;
+      Shimulator-macOS)
+        build_shim Shimulator-macOS macosx;;
+      Repl-iOS)
+        build_shim Repl-iOS iphonesimulator Shims/Repl/Repl.xcodeproj;;
+      Repl-macOS)
+        build_shim Repl-macOS macosx Shims/Repl/Repl.xcodeproj;;
+      SimulatorFrameworkBridge)
+        build_simulator_framework_bridge;;
       idb_companion)
         build_idb_companion;;
+      idb-repl)
+        build_idb_repl;;
+      distribution)
+        build_distribution;;
       FBControlCore|XCTestBootstrap|FBSimulatorControl|FBDeviceControl)
-        build_target $target;;
+        build_target "$target";;
       *)
         echo "Unknown target: $target"
-        echo "Valid targets: all, frameworks, shims, idb_companion, FBControlCore, XCTestBootstrap, FBSimulatorControl, FBDeviceControl, Shimulator, Maculator"
+        echo "Valid targets: all, frameworks, shims, idb_companion, idb-repl, FBControlCore, XCTestBootstrap, FBSimulatorControl, FBDeviceControl, Shimulator-iOS, Shimulator-macOS, Repl-iOS, Repl-macOS, SimulatorFrameworkBridge, distribution"
         exit 1;;
     esac
   fi
@@ -376,9 +530,9 @@ function test_target() {
   local name=$1
   invoke_xcodebuild \
     -project FBSimulatorControl.xcodeproj \
-    -scheme $name \
+    -scheme "$name" \
     -sdk macosx \
-    -derivedDataPath $BUILD_DIRECTORY \
+    -derivedDataPath "$BUILD_DIRECTORY" \
     test
 }
 
@@ -400,7 +554,7 @@ function run_tests() {
       all)
         test_all;;
       FBControlCore|XCTestBootstrap|FBSimulatorControl|FBDeviceControl)
-        test_target $target;;
+        test_target "$target";;
       *)
         echo "Unknown test target: $target"
         echo "Valid targets: all, FBControlCore, XCTestBootstrap, FBSimulatorControl, FBDeviceControl"
@@ -436,15 +590,20 @@ Commands:
     Targets:
       (none)          Build all targets
       all             Build all targets
+      distribution    Assemble the distribution
       frameworks      Build all frameworks only
-      shims           Build Shimulator and Maculator dylibs
       idb_companion   Build idb_companion only
+      idb-repl        Build idb-repl only
+      shims           Build all shim dylibs (Shimulator + Repl, iOS + macOS)
       FBControlCore   Build FBControlCore framework
-      XCTestBootstrap Build XCTestBootstrap framework
-      FBSimulatorControl Build FBSimulatorControl framework
       FBDeviceControl Build FBDeviceControl framework
-      Shimulator      Build Shimulator dylib (iOS simulator)
-      Maculator       Build Maculator dylib (macOS)
+      FBSimulatorControl Build FBSimulatorControl framework
+      Repl-iOS        Build Repl-iOS dylib (iOS simulator)
+      Repl-macOS      Build Repl-macOS dylib (macOS)
+      Shimulator-iOS  Build Shimulator-iOS dylib (iOS simulator)
+      Shimulator-macOS Build Shimulator-macOS dylib (macOS)
+      SimulatorFrameworkBridge Build SimulatorFrameworkBridge executable (iOS simulator)
+      XCTestBootstrap Build XCTestBootstrap framework
 
   test [<target>]
     Run tests. If no target specified, runs all tests.
@@ -461,7 +620,7 @@ Examples:
   ./build.sh generate-proto           # Regenerate gRPC Swift from proto
   ./build.sh build                    # Build everything
   ./build.sh build frameworks         # Build all frameworks
-  ./build.sh build shims              # Build Shimulator and Maculator
+  ./build.sh build shims              # Build Shimulator-iOS and Shimulator-macOS
   ./build.sh build idb_companion      # Build idb_companion
   ./build.sh build FBControlCore      # Build specific framework
   ./build.sh test                     # Run all tests
@@ -501,10 +660,10 @@ case $COMMAND in
     generate_proto;;
   build)
     regenerate_projects
-    build $TARGET_ARG;;
+    build "$TARGET_ARG";;
   test)
     regenerate_projects
-    run_tests $TARGET_ARG;;
+    run_tests "$TARGET_ARG";;
   *)
     echo "Unknown command: $COMMAND"
     print_usage

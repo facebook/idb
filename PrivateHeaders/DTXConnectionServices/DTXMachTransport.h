@@ -11,14 +11,14 @@
 
 @interface DTXMachTransport : DTXTransport
 {
-    unsigned int _receivePort;
-    unsigned int _sendPort;
-    NSURL *_connectableAddress;
-    dispatch_queue_t _listenSource;
-    dispatch_queue_t _deadPortSource;
-    dispatch_queue_t _inputQueue;
-    struct DTXMachMessage *_sendBuffer;
-    unsigned int _bufferedLength;
+  unsigned int _receivePort;
+  unsigned int _sendPort;
+  NSURL *_connectableAddress;
+  dispatch_queue_t _listenSource;
+  dispatch_queue_t _deadPortSource;
+  dispatch_queue_t _inputQueue;
+  struct DTXMachMessage *_sendBuffer;
+  unsigned int _bufferedLength;
 }
 
 + (id)fileDescriptorHandshakeWithSendPort:(unsigned int)arg1;
@@ -37,4 +37,3 @@
 - (BOOL)_setupWithSendPort:(unsigned int)arg1 receivePort:(unsigned int)arg2 publishedAddress:(id)arg3;
 
 @end
-

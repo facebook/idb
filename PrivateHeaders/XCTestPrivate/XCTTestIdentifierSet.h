@@ -10,8 +10,7 @@
 @class XCTTestIdentifier;
 
 @interface XCTTestIdentifierSet : NSObject <NSCopying, NSFastEnumeration, NSSecureCoding>
-{
-}
+{}
 
 + (_Bool)supportsSecureCoding;
 + (id)allocWithZone:(struct _NSZone *)arg1;
@@ -23,17 +22,16 @@
 - (_Bool)isEqual:(id)arg1;
 - (id)description;
 - (_Bool)containsTestIdentifier:(id)arg1;
-@property(readonly) unsigned long long count;
+@property (readonly) unsigned long long count;
 - (id)init;
 - (id)initWithTestIdentifiers:(const id *)arg1 count:(unsigned long long)arg2;
 - (id)initWithSet:(id)arg1;
 - (id)initWithArray:(id)arg1;
 - (id)initWithTestIdentifier:(id)arg1;
 - (id)copyWithZone:(struct _NSZone *)arg1;
-@property(readonly) NSDictionary *testIdentifiersGroupedByFirstComponentIdentifier;
+@property (readonly) NSDictionary *testIdentifiersGroupedByFirstComponentIdentifier;
 - (id)builder;
 - (id)setByAddingTestIdentifiersFromSet:(id)arg1;
-@property(readonly) XCTTestIdentifier *anyTestIdentifier;
+@property (readonly) XCTTestIdentifier *anyTestIdentifier;
 
 @end
-

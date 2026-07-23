@@ -11,4 +11,3 @@
 - (id)_IDE_executeTestIdentifiers:(NSSet *)arg1 skippingTestIdentifiers:(NSSet *)arg2;
 - (id)_IDE_fetchDiscoveredTestClasses;
 @end
-

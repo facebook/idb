@@ -18,4 +18,3 @@
 - (void)exchangeCapabilities:(XCTCapabilities *)arg1 reply:(void (^)(XCTCapabilities *))arg2;
 - (void)requestHostAppExecutableNameWithReply:(void (^)(NSString *))arg1;
 @end
-

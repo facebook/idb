@@ -4,3 +4,7 @@ framework module FBSimulatorControl {
 
   module * { export * }
 }
+
+module FBSimulatorControl.Swift {
+  header "FBSimulatorControl-Swift.h"
+}

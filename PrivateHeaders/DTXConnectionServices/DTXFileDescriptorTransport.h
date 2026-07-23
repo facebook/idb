@@ -11,13 +11,13 @@
 
 @interface DTXFileDescriptorTransport : DTXTransport
 {
-    int _inFD;
-    int _outFD;
-    dispatch_queue_t _inputQueue;
-    dispatch_queue_t _outputQueue;
-    int _outputWaitKQ;
-    dispatch_queue_t _inputSource;
-    CDUnknownBlockType _disconnectBlock;
+  int _inFD;
+  int _outFD;
+  dispatch_queue_t _inputQueue;
+  dispatch_queue_t _outputQueue;
+  int _outputWaitKQ;
+  dispatch_queue_t _inputSource;
+  CDUnknownBlockType _disconnectBlock;
 }
 
 - (int)supportedDirections;

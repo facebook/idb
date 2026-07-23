@@ -8,9 +8,6 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBFuture.h>
-#import <FBControlCore/FBiOSTargetOperation.h>
-
-NS_ASSUME_NONNULL_BEGIN
 
 static const size_t FBProcessOutputErrorMessageLength = 200;
 
@@ -26,55 +23,54 @@ static const size_t FBProcessOutputErrorMessageLength = 200;
 /**
  The Process Idenfifer of the Launched Process.
  */
-@property (nonatomic, assign, readonly) pid_t processIdentifier;
+@property (nonatomic, readonly, assign) pid_t processIdentifier;
 
 /**
  A future that resolves with the the value from waitpid(2) on termination.
  This will always resolve on completion, regardless of whether the process was signalled or exited normally.
  Cancelling this Future will have no effect. To terminate the process use the `sendSignal:` APIs.
  */
-@property (nonatomic, strong, readonly) FBFuture<NSNumber *> *statLoc;
+@property (nonnull, nonatomic, readonly, strong) FBFuture<NSNumber *> *statLoc;
 
 /**
  A future that resolves with the exit code upon termination.
  If the process exited abnormally then this future will error.
  Cancelling this Future will have no effect. To terminate the process use the `sendSignal:` APIs.
  */
-@property (nonatomic, strong, readonly) FBFuture<NSNumber *> *exitCode;
+@property (nonnull, nonatomic, readonly, strong) FBFuture<NSNumber *> *exitCode;
 
 /**
  A future that resolves when the process terminates with a signal.
  If the process exited normally then this future will error.
  Cancelling this Future will have no effect. To terminate the process use the `sendSignal:` APIs.
  */
-@property (nonatomic, strong, readonly) FBFuture<NSNumber *> *signal;
+@property (nonnull, nonatomic, readonly, strong) FBFuture<NSNumber *> *signal;
 
 /**
  The IO Object attached to the process.
  */
-@property (nonatomic, strong, readonly) FBProcessSpawnConfiguration *configuration;
+@property (nonnull, nonatomic, readonly, strong) FBProcessSpawnConfiguration *configuration;
 
 /**
  Returns the stdin of the task.
  May be called from any thread.
  The valid types for these values are the wrapped types in FBProcessInput.
  */
-@property (nonatomic, strong, nullable, readonly) StdInType stdIn;
+@property (nullable, nonatomic, readonly, strong) StdInType stdIn;
 
 /**
  Returns the stdout of the task.
  May be called from any thread.
  The valid types for these values are the wrapped types in FBProcessOutput.
  */
-@property (nonatomic, strong, nullable, readonly) StdOutType stdOut;
+@property (nullable, nonatomic, readonly, strong) StdOutType stdOut;
 
 /**
- Returns the stdout of the task.
+ Returns the stderr of the task.
  May be called from any thread.
  The valid types for these values are the wrapped types in FBProcessOutput.
  */
-@property (nonatomic, strong, nullable, readonly) StdErrType stdErr;
-
+@property (nullable, nonatomic, readonly, strong) StdErrType stdErr;
 
 #pragma mark Initializers
 
@@ -89,7 +85,7 @@ static const size_t FBProcessOutputErrorMessageLength = 200;
  @param queue the queue to perform actions on.
  @return an implementation of FBSubprocess.
  */
-- (instancetype)initWithProcessIdentifier:(pid_t)processIdentifier statLoc:(FBFuture<NSNumber *> *)statLoc exitCode:(FBFuture<NSNumber *> *)exitCode signal:(FBFuture<NSNumber *> *)signal configuration:(FBProcessSpawnConfiguration *)configuration queue:(dispatch_queue_t)queue;
+- (nonnull instancetype)initWithProcessIdentifier:(pid_t)processIdentifier statLoc:(nonnull FBFuture<NSNumber *> *)statLoc exitCode:(nonnull FBFuture<NSNumber *> *)exitCode signal:(nonnull FBFuture<NSNumber *> *)signal configuration:(nonnull FBProcessSpawnConfiguration *)configuration queue:(nonnull dispatch_queue_t)queue;
 
 /**
  Launches a process with the provided configuration.
@@ -98,18 +94,18 @@ static const size_t FBProcessOutputErrorMessageLength = 200;
  @param logger an optional logger to log process lifecycle events to.
  @return a future that resolves with the launched process once it has been started.
  */
-+ (FBFuture<FBSubprocess *> *)launchProcessWithConfiguration:(FBProcessSpawnConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger;
++ (nonnull FBFuture<FBSubprocess *> *)launchProcessWithConfiguration:(nonnull FBProcessSpawnConfiguration *)configuration logger:(nonnull id<FBControlCoreLogger>)logger;
 
 #pragma mark Methods
 
 /**
  Confirms that the process exited with a defined set of status codes.
  Cancelling this future will have no effect.
- 
+
  @param acceptableExitCodes the exit codes to check for, must not be nil.
  @return a Future with the same base behaviour as -[FBSubprocess exitCode] with additional checking of codes.
  */
-- (FBFuture<NSNumber *> *)exitedWithCodes:(NSSet<NSNumber *> *)acceptableExitCodes;
+- (nonnull FBFuture<NSNumber *> *)exitedWithCodes:(nonnull NSSet<NSNumber *> *)acceptableExitCodes;
 
 /**
  Signal the process.
@@ -118,7 +114,7 @@ static const size_t FBProcessOutputErrorMessageLength = 200;
  @param signo the signal number to send.
  @return a successful Future that resolves to the signal number when the process has terminated.
  */
-- (FBFuture<NSNumber *> *)sendSignal:(int)signo;
+- (nonnull FBFuture<NSNumber *> *)sendSignal:(int)signo;
 
 /**
  A mechanism for sending an signal to a task, backing off to a kill.
@@ -129,8 +125,6 @@ static const size_t FBProcessOutputErrorMessageLength = 200;
  @param logger used for log information when timeout happened, may be nil.
  @return a future that resolves to the signal sent when the process has been terminated.
  */
-- (FBFuture<NSNumber *> *)sendSignal:(int)signo backingOffToKillWithTimeout:(NSTimeInterval)timeout logger:(nullable id<FBControlCoreLogger>)logger;
+- (nonnull FBFuture<NSNumber *> *)sendSignal:(int)signo backingOffToKillWithTimeout:(NSTimeInterval)timeout logger:(nullable id<FBControlCoreLogger>)logger;
 
 @end
-
-NS_ASSUME_NONNULL_END

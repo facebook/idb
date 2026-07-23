@@ -1,0 +1,5 @@
+module SimPasteboardPlus {
+    umbrella "."
+    export *
+    module * { export * }
+}

@@ -7,37 +7,23 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBiOSTargetCommandForwarder.h>
 #import <FBControlCore/FBFuture.h>
 
-NS_ASSUME_NONNULL_BEGIN
+@protocol FBiOSTarget;
+@protocol FBControlCoreLogger;
 
 @class FBInstrumentsConfiguration;
 @class FBInstrumentsOperation;
 
 /**
- Defines an interface for interacting with Instruments.
+ Concrete instruments command implementation, target-bound.
  */
-@protocol FBInstrumentsCommands <NSObject, FBiOSTargetCommand>
+// @lint-ignore FBOBJCDEPRECATEDCHECK
+@interface FBInstrumentsCommands : NSObject
 
-/**
- Runs instruments with the given configuration
+@property (nonnull, nonatomic, readonly, strong) id<FBiOSTarget> target;
 
- @param configuration the configuration to use.
- @param logger the logger to use.
- @return A future that resolves with the instruments operation.
- */
-- (FBFuture<FBInstrumentsOperation *> *)startInstruments:(FBInstrumentsConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger;
++ (nonnull instancetype)commandsWithTarget:(nonnull id<FBiOSTarget>)target;
+- (nonnull FBFuture<FBInstrumentsOperation *> *)startInstruments:(nonnull FBInstrumentsConfiguration *)configuration logger:(nonnull id<FBControlCoreLogger>)logger;
 
 @end
-
-/**
- A concrete implementation of FBInstrumentsCommands.
- */
-@interface FBInstrumentsCommands : NSObject <FBInstrumentsCommands>
-
-@property (nonatomic, weak, readonly) id<FBiOSTarget> target;
-
-@end
-
-NS_ASSUME_NONNULL_END

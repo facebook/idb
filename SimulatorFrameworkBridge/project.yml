@@ -1,0 +1,57 @@
+name: SimulatorFrameworkBridge
+
+options:
+  createIntermediateGroups: true
+
+targets:
+  # A command-line executable that runs inside the iOS simulator runtime to drive
+  # privacy/services state (contacts, photos, notifications, health, dns, proxy)
+  # and to serve the REPL socket. idb_companion spawns it from the bundled
+  # `Resources/SimulatorFrameworkBridge` binary (see FBSimulatorSettingsCommands /
+  # FBSimulatorReplCommands). Mirrors the Buck `SimulatorFrameworkBridge` target.
+  SimulatorFrameworkBridge:
+    type: tool
+    platform: iOS
+    deploymentTarget: "15.0"
+    sources:
+      - path: .
+        excludes:
+          - "**/*.entitlements"
+          - "**/*.xcodeproj"
+          - "project.yml"
+          - "Build"
+      # ServiceDispatch.m imports <ReplExecutor/ReplSocketServer.h> and calls
+      # FBReplServeSocket; compile the shared executor in so the binary is
+      # self-contained. ReplSocketServer.m is MRC while the bridge sources are
+      # ARC, so disable ARC for just that file.
+      - path: ../REPL/Executor/ReplSocketServer.h
+      - path: ../REPL/Executor/ReplSocketServer.m
+        compilerFlags: -fno-objc-arc
+    preBuildScripts:
+      - name: Stage ReplExecutor headers
+        # The headers live in REPL/Executor; stage them under a `ReplExecutor`
+        # directory on HEADER_SEARCH_PATHS so <ReplExecutor/ReplSocketServer.h>
+        # resolves without renaming the (Buck-synced) source tree.
+        script: |
+          set -e
+          DEST="$TARGET_TEMP_DIR/ReplExecutorHeaders/ReplExecutor"
+          mkdir -p "$DEST"
+          cp "$SRCROOT/../REPL/Executor/"*.h "$DEST/"
+    settings:
+      base:
+        SDKROOT: iphonesimulator
+        IPHONEOS_DEPLOYMENT_TARGET: "15.0"
+        PRODUCT_NAME: SimulatorFrameworkBridge
+        HEADER_SEARCH_PATHS: $(inherited) $(TARGET_TEMP_DIR)/ReplExecutorHeaders
+        # Ad-hoc sign with the bridge's private entitlements (TCC/HealthKit) so the
+        # services it drives are permitted inside the simulator.
+        CODE_SIGN_IDENTITY: "-"
+        CODE_SIGN_ENTITLEMENTS: SimulatorFrameworkBridge.entitlements
+        OTHER_CFLAGS: $(inherited) -Wno-deprecated-declarations
+    dependencies:
+      # HealthKit, BulletinBoard and SystemConfiguration are dlopen-ed at runtime
+      # (private API), so they are intentionally not linked here.
+      - sdk: Foundation.framework
+      - sdk: Contacts.framework
+      - sdk: Photos.framework
+      - sdk: CoreData.framework

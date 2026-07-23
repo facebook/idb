@@ -15,4 +15,3 @@
 - (id)_IDE_fetchParallelizableTestIdentifiers;
 - (id)_IDE_startExecutingTestPlanWithProtocolVersion:(NSNumber *)arg1;
 @end
-

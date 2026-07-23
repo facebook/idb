@@ -11,7 +11,7 @@
 
 @interface DTXLegacyMessageParser : DTXMessageParser
 {
-    NSMutableArray *_savedKeyArrays;
+  NSMutableArray *_savedKeyArrays;
 }
 
 + (void)initialize;
@@ -20,4 +20,3 @@
 - (id)initWithMessageHandler:(CDUnknownBlockType)arg1 andParseExceptionHandler:(CDUnknownBlockType)arg2;
 
 @end
-

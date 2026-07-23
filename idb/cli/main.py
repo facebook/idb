@@ -33,7 +33,6 @@ from idb.cli.commands.crash import (
     CrashListCommand,
     CrashShowCommand,
 )
-from idb.cli.commands.daemon import DaemonCommand
 from idb.cli.commands.dap import DapCommand
 from idb.cli.commands.debugserver import (
     DebugServerStartCommand,
@@ -59,6 +58,9 @@ from idb.cli.commands.hid import (
     ButtonCommand,
     KeyCommand,
     KeySequenceCommand,
+    MultiTapCommand,
+    PinchCommand,
+    RemoteCommand,
     SwipeCommand,
     TapCommand,
     TextCommand,
@@ -121,6 +123,12 @@ logger: logging.Logger = logging.getLogger()
 def get_default_companion_path() -> str | None:
     if sys.platform != "darwin":
         return None
+    # Prefer the direct binary over the wrapper script at /usr/local/bin/idb_companion,
+    # which invokes a DotSlash stub that can fail due to environment differences
+    # (e.g., XAR/PAR modifying PATH to include an incompatible dotslash binary).
+    direct_path = "/opt/facebook/idb/bin/idb_companion"
+    if os.path.isfile(direct_path):
+        return direct_path
     return shutil.which("idb_companion") or "/usr/local/bin/idb_companion"
 
 
@@ -248,7 +256,6 @@ async def gen_main(cmd_input: list[str] | None = None) -> SysExitArg:
         TargetCloneCommand(),
         TargetDeleteCommand(),
         TargetDeleteAllCommand(),
-        DaemonCommand(),
         ScreenshotCommand(),
         CommandGroup(
             name="ui",
@@ -257,7 +264,10 @@ async def gen_main(cmd_input: list[str] | None = None) -> SysExitArg:
                 AccessibilityInfoAllCommand(),
                 AccessibilityInfoAtPointCommand(),
                 TapCommand(),
+                MultiTapCommand(),
+                PinchCommand(),
                 ButtonCommand(),
+                RemoteCommand(),
                 TextCommand(),
                 KeyCommand(),
                 KeySequenceCommand(),
@@ -362,11 +372,7 @@ async def drain_coroutines(pending: set[asyncio.Task]) -> None:
 
 
 def main(cmd_input: list[str] | None = None) -> SysExitArg:
-    loop = asyncio.get_event_loop()
-    try:
-        return loop.run_until_complete(gen_main(cmd_input))
-    finally:
-        loop.close()
+    return asyncio.run(gen_main(cmd_input))
 
 
 def main_2() -> None:

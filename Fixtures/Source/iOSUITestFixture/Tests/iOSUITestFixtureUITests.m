@@ -25,7 +25,7 @@
   XCUIElement *button = app.buttons[@"Welcome"];
   [self expectationForPredicate:[NSPredicate predicateWithFormat:@"exists = 1 && hittable = 1"]
             evaluatedWithObject:button
-                        handler:^BOOL{
+                        handler:^BOOL {
                           [button tap];
                           return YES;
                         }];

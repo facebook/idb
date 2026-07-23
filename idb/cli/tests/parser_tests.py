@@ -6,20 +6,20 @@
 
 # pyre-strict
 
-import asyncio
 import os
-import sys
 from argparse import Namespace
-from typing import Any, Optional, Tuple, TypeVar
+from typing import Any, TypeVar
 from unittest.mock import ANY, MagicMock, patch
 
 from idb.cli.commands.xctest import NO_SPECIFIED_PATH
-from idb.cli.main import gen_main as cli_main
+from idb.cli.main import gen_main as cli_main, get_default_companion_path
 from idb.common.types import (
     Compression,
     CrashLogQuery,
     DomainSocketAddress,
     HIDButtonType,
+    HIDDelay,
+    HIDDirection,
     InstrumentsTimings,
     Permission,
     TCPAddress,
@@ -28,9 +28,7 @@ from idb.utils.testing import AsyncContextManagerMock, AsyncMock, TestCase
 
 
 T = TypeVar("T")
-COMPANION_PATH: str | None = (
-    "/usr/local/bin/idb_companion" if sys.platform == "darwin" else None
-)
+COMPANION_PATH: str | None = get_default_companion_path()
 
 
 class AsyncGeneratorMock(AsyncMock):
@@ -39,6 +37,7 @@ class AsyncGeneratorMock(AsyncMock):
 
     def __init__(self, iter_list: tuple[T, ...] = ()) -> None:
         super().__init__()
+        # pyrefly: ignore [invalid-type-var]
         self.iter_list = iter_list
         self.iter_pos: int = -1
 
@@ -56,7 +55,7 @@ class AsyncGeneratorMock(AsyncMock):
 
 class TestParser(TestCase):
     def __init__(self, *args: Any, **kws: Any) -> None:
-        super().__init__(*args, loop=asyncio.get_event_loop(), **kws)
+        super().__init__(*args, **kws)
 
     def setUp(self) -> None:
         self.client_mock = MagicMock(name="client_mock")
@@ -250,7 +249,7 @@ class TestParser(TestCase):
         port = 1234
         await cli_main(cmd_input=["connect", host, str(port)])
         self.client_manager_mock().connect.assert_called_once_with(
-            destination=TCPAddress(host=host, port=port), metadata=ANY
+            destination=TCPAddress(host=host, port=port),
         )
 
     async def test_connect_with_udid(self) -> None:
@@ -258,7 +257,7 @@ class TestParser(TestCase):
         udid = "0B3311FA-234C-4665-950F-37544F690B61"
         await cli_main(cmd_input=["connect", udid])
         self.client_manager_mock().connect.assert_called_once_with(
-            destination=udid, metadata=ANY
+            destination=udid,
         )
 
     async def test_disconnect_with_host_and_port(self) -> None:
@@ -477,6 +476,7 @@ class TestParser(TestCase):
         namespace.xctest = "run"
         namespace.udid = None
         namespace.json = False
+        namespace.reason = None
         if command in ["app", "ui"]:
             namespace.tests_to_run = None
             namespace.tests_to_skip = None
@@ -630,31 +630,6 @@ class TestParser(TestCase):
             namespace.timeout = None
             mock.assert_called_once_with(namespace)
 
-    async def test_daemon(self) -> None:
-        mock = AsyncMock()
-        with patch(
-            "idb.cli.commands.daemon.DaemonCommand._run_impl", new=mock, create=True
-        ):
-            port = 9888
-            grpc_port = 1235
-            await cli_main(cmd_input=["daemon", "--daemon-grpc-port", str(grpc_port)])
-            namespace = Namespace()
-            namespace.companion_path = COMPANION_PATH
-            namespace.companion = None
-            namespace.compression = None
-            namespace.prune_dead_companion = True
-            namespace.daemon_port = port
-            namespace.daemon_grpc_port = grpc_port
-            namespace.log_level = "WARNING"
-            namespace.log_level_deprecated = None
-            namespace.root_command = "daemon"
-            namespace.json = False
-            namespace.reply_fd = None
-            namespace.prefer_ipv6 = False
-            namespace.notifier_path = None
-            namespace.companion_tls = False
-            mock.assert_called_once_with(namespace)
-
     async def test_terminate(self) -> None:
         self.client_mock.terminate = AsyncMock(return_value=[])
         bundle_id = "com.foo.app"
@@ -676,6 +651,7 @@ class TestParser(TestCase):
             namespace.root_command = "log"
             namespace.udid = "1234"
             namespace.json = False
+            namespace.reason = None
             namespace.log_arguments = []
             namespace.companion_tls = False
             mock.assert_called_once_with(namespace)
@@ -694,9 +670,64 @@ class TestParser(TestCase):
             namespace.root_command = "log"
             namespace.udid = None
             namespace.json = False
+            namespace.reason = None
             namespace.log_arguments = ["--", "--style", "json"]
             namespace.companion_tls = False
             mock.assert_called_once_with(namespace)
+
+    async def test_reason(self) -> None:
+        mock = AsyncMock()
+        with patch("idb.cli.commands.log.LogCommand._run_impl", new=mock, create=True):
+            await cli_main(cmd_input=["log", "--reason", "investigating a test flake"])
+            mock.assert_called_once()
+            namespace = mock.call_args.args[0]
+            self.assertEqual(namespace.reason, "investigating a test flake")
+
+    async def test_reason_added_to_telemetry_metadata(self) -> None:
+        reason = "investigating a test flake"
+        self.client_mock.list_apps = AsyncMock(return_value=[])
+        log_call_mock = MagicMock(
+            return_value=AsyncContextManagerMock(return_value=None)
+        )
+        with patch("idb.cli.log_call", log_call_mock):
+            await cli_main(cmd_input=["list-apps", "--reason", reason])
+        log_call_mock.assert_called_once()
+        metadata = log_call_mock.call_args.kwargs["metadata"]
+        self.assertEqual(metadata["reason"], reason)
+
+    async def test_reason_omitted_from_telemetry_metadata_when_absent(self) -> None:
+        self.client_mock.list_apps = AsyncMock(return_value=[])
+        log_call_mock = MagicMock(
+            return_value=AsyncContextManagerMock(return_value=None)
+        )
+        with patch("idb.cli.log_call", log_call_mock):
+            await cli_main(cmd_input=["list-apps"])
+        log_call_mock.assert_called_once()
+        metadata = log_call_mock.call_args.kwargs["metadata"]
+        self.assertNotIn("reason", metadata)
+
+    async def test_reason_logged_to_stderr(self) -> None:
+        reason = "investigating a test flake"
+        self.client_mock.list_apps = AsyncMock(return_value=[])
+        with self.assertLogs(level="INFO") as log_context:
+            await cli_main(cmd_input=["--log", "INFO", "list-apps", "--reason", reason])
+        self.assertTrue(
+            any(reason in message for message in log_context.output),
+            f"Expected invocation reason in logs, got: {log_context.output}",
+        )
+
+    async def test_reason_truncated_to_200(self) -> None:
+        reason = "x" * 250
+        self.client_mock.list_apps = AsyncMock(return_value=[])
+        log_call_mock = MagicMock(
+            return_value=AsyncContextManagerMock(return_value=None)
+        )
+        with patch("idb.cli.log_call", log_call_mock):
+            await cli_main(cmd_input=["list-apps", "--reason", reason])
+        log_call_mock.assert_called_once()
+        metadata = log_call_mock.call_args.kwargs["metadata"]
+        self.assertEqual(metadata["reason"], "x" * 200)
+        self.assertEqual(len(metadata["reason"]), 200)
 
     async def test_clear_keychain(self) -> None:
         self.client_mock.clear_keychain = AsyncMock(return_value=[])
@@ -765,6 +796,7 @@ class TestParser(TestCase):
             namespace.root_command = "record-video"
             namespace.udid = None
             namespace.json = False
+            namespace.reason = None
             namespace.output_file = output_file
             namespace.companion_tls = False
             mock.assert_called_once_with(namespace)
@@ -791,6 +823,7 @@ class TestParser(TestCase):
                     root_command="video-stream",
                     udid=None,
                     json=False,
+                    reason=None,
                     output_file=output_file,
                     companion_tls=False,
                 )
@@ -806,6 +839,60 @@ class TestParser(TestCase):
         await cli_main(cmd_input=["ui", "tap", "10", "20"])
         self.client_mock.tap.assert_called_once_with(x=10, y=20, duration=None)
 
+    async def test_multi_tap_default(self) -> None:
+        self.client_mock.multi_tap = AsyncMock(return_value=[])
+        await cli_main(cmd_input=["ui", "multi-tap", "10", "20"])
+        self.client_mock.multi_tap.assert_called_once_with(
+            x=10, y=20, count=2, duration=None, pause=0.1
+        )
+
+    async def test_multi_tap_triple(self) -> None:
+        self.client_mock.multi_tap = AsyncMock(return_value=[])
+        await cli_main(cmd_input=["ui", "multi-tap", "10", "20", "--count", "3"])
+        self.client_mock.multi_tap.assert_called_once_with(
+            x=10, y=20, count=3, duration=None, pause=0.1
+        )
+
+    async def test_multi_tap_with_pause(self) -> None:
+        self.client_mock.multi_tap = AsyncMock(return_value=[])
+        await cli_main(cmd_input=["ui", "multi-tap", "10", "20", "--pause", "0.2"])
+        self.client_mock.multi_tap.assert_called_once_with(
+            x=10, y=20, count=2, duration=None, pause=0.2
+        )
+
+    async def test_pinch_default(self) -> None:
+        self.client_mock.pinch = AsyncMock(return_value=[])
+        await cli_main(cmd_input=["ui", "pinch", "200", "400", "2.0"])
+        self.client_mock.pinch.assert_called_once_with(
+            center_x=200.0, center_y=400.0, scale=2.0, duration=0.5, radius=100.0
+        )
+
+    async def test_pinch_zoom_out(self) -> None:
+        self.client_mock.pinch = AsyncMock(return_value=[])
+        await cli_main(cmd_input=["ui", "pinch", "200", "400", "0.5"])
+        self.client_mock.pinch.assert_called_once_with(
+            center_x=200.0, center_y=400.0, scale=0.5, duration=0.5, radius=100.0
+        )
+
+    async def test_pinch_with_options(self) -> None:
+        self.client_mock.pinch = AsyncMock(return_value=[])
+        await cli_main(
+            cmd_input=[
+                "ui",
+                "pinch",
+                "100",
+                "300",
+                "3.0",
+                "--duration",
+                "1.0",
+                "--radius",
+                "50",
+            ]
+        )
+        self.client_mock.pinch.assert_called_once_with(
+            center_x=100.0, center_y=300.0, scale=3.0, duration=1.0, radius=50.0
+        )
+
     async def test_button(self) -> None:
         self.client_mock.button = AsyncMock(return_value=[])
         await cli_main(cmd_input=["ui", "button", "SIRI"])
@@ -817,6 +904,120 @@ class TestParser(TestCase):
         self.client_mock.key = AsyncMock(return_value=[])
         await cli_main(cmd_input=["ui", "key", "12"])
         self.client_mock.key.assert_called_once_with(keycode=12, duration=None)
+
+    async def test_remote(self) -> None:
+        self.client_mock.key = AsyncMock(return_value=[])
+        # SELECT maps to the Return USB HID keyboard usage (0x28) the tvOS focus engine consumes.
+        await cli_main(cmd_input=["ui", "remote", "select"])
+        self.client_mock.key.assert_called_once_with(keycode=0x28, duration=None)
+
+    async def test_key_with_shift_modifier(self) -> None:
+        self.client_mock.hid = AsyncMock(return_value=[])
+
+        # Shift+P
+        await cli_main(cmd_input=["ui", "key", "19", "--shift"])
+        self.client_mock.hid.assert_called_once()
+
+        async_iter = self.client_mock.hid.call_args.args[0]
+        events = [event async for event in async_iter]
+        self.assertEqual(len(events), 4)
+        self.assertEqual(events[0].action.keycode, 225)  # Shift down
+        self.assertEqual(events[0].direction, HIDDirection.DOWN)
+        self.assertEqual(events[1].action.keycode, 19)  # P down
+        self.assertEqual(events[1].direction, HIDDirection.DOWN)
+        self.assertEqual(events[2].action.keycode, 19)  # P up
+        self.assertEqual(events[2].direction, HIDDirection.UP)
+        self.assertEqual(events[3].action.keycode, 225)  # Shift up
+        self.assertEqual(events[3].direction, HIDDirection.UP)
+
+    async def test_key_with_multiple_modifiers(self) -> None:
+        self.client_mock.hid = AsyncMock(return_value=[])
+
+        # Control+Option+Shift+Command+R
+        await cli_main(
+            cmd_input=[
+                "ui",
+                "key",
+                "19",
+                "--control",
+                "--option",
+                "--shift",
+                "--command",
+            ]
+        )
+        self.client_mock.hid.assert_called_once()
+
+        async_iter = self.client_mock.hid.call_args.args[0]
+        events = [event async for event in async_iter]
+
+        self.assertEqual(len(events), 10)
+        # Modifiers down (in order: control, option, shift, command)
+        self.assertEqual(events[0].action.keycode, 224)  # Control down
+        self.assertEqual(events[0].direction, HIDDirection.DOWN)
+        self.assertEqual(events[1].action.keycode, 226)  # Option down
+        self.assertEqual(events[1].direction, HIDDirection.DOWN)
+        self.assertEqual(events[2].action.keycode, 225)  # Shift down
+        self.assertEqual(events[2].direction, HIDDirection.DOWN)
+        self.assertEqual(events[3].action.keycode, 227)  # Command down
+        self.assertEqual(events[3].direction, HIDDirection.DOWN)
+        # Key press
+        self.assertEqual(events[4].action.keycode, 19)  # P down
+        self.assertEqual(events[4].direction, HIDDirection.DOWN)
+        self.assertEqual(events[5].action.keycode, 19)  # P up
+        self.assertEqual(events[5].direction, HIDDirection.UP)
+        # Modifiers up (reversed: command, shift, option, control)
+        self.assertEqual(events[6].action.keycode, 227)  # Command up
+        self.assertEqual(events[6].direction, HIDDirection.UP)
+        self.assertEqual(events[7].action.keycode, 225)  # Shift up
+        self.assertEqual(events[7].direction, HIDDirection.UP)
+        self.assertEqual(events[8].action.keycode, 226)  # Option up
+        self.assertEqual(events[8].direction, HIDDirection.UP)
+        self.assertEqual(events[9].action.keycode, 224)  # Control up
+        self.assertEqual(events[9].direction, HIDDirection.UP)
+
+    async def test_key_with_tab_modifier(self) -> None:
+        self.client_mock.hid = AsyncMock(return_value=[])
+
+        # Tab+H
+        await cli_main(cmd_input=["ui", "key", "11", "--tab"])
+        self.client_mock.hid.assert_called_once()
+
+        async_iter = self.client_mock.hid.call_args.args[0]
+        events = [event async for event in async_iter]
+
+        self.assertEqual(len(events), 4)
+        self.assertEqual(events[0].action.keycode, 43)  # Tab down
+        self.assertEqual(events[0].direction, HIDDirection.DOWN)
+        self.assertEqual(events[1].action.keycode, 11)  # H down
+        self.assertEqual(events[1].direction, HIDDirection.DOWN)
+        self.assertEqual(events[2].action.keycode, 11)  # H up
+        self.assertEqual(events[2].direction, HIDDirection.UP)
+        self.assertEqual(events[3].action.keycode, 43)  # Tab up
+        self.assertEqual(events[3].direction, HIDDirection.UP)
+
+    async def test_key_with_duration_and_modifiers(self) -> None:
+        self.client_mock.hid = AsyncMock(return_value=[])
+
+        # Shift+P with duration=0.5
+        await cli_main(cmd_input=["ui", "key", "19", "--shift", "--duration", "0.5"])
+        self.client_mock.hid.assert_called_once()
+
+        async_iter = self.client_mock.hid.call_args.args[0]
+        events = [event async for event in async_iter]
+
+        # Expected: Shift down, P down, HIDDelay(0.5), P up, Shift up
+        self.assertEqual(len(events), 5)
+        self.assertEqual(events[0].action.keycode, 225)  # Shift down
+        self.assertEqual(events[0].direction, HIDDirection.DOWN)
+        self.assertEqual(events[1].action.keycode, 19)  # P down
+        self.assertEqual(events[1].direction, HIDDirection.DOWN)
+        # Verify HIDDelay is inserted between key press and release
+        self.assertIsInstance(events[2], HIDDelay)
+        self.assertEqual(events[2].duration, 0.5)
+        self.assertEqual(events[3].action.keycode, 19)  # P up
+        self.assertEqual(events[3].direction, HIDDirection.UP)
+        self.assertEqual(events[4].action.keycode, 225)  # Shift up
+        self.assertEqual(events[4].direction, HIDDirection.UP)
 
     async def test_text_input(self) -> None:
         self.client_mock.text = AsyncMock(return_value=[])

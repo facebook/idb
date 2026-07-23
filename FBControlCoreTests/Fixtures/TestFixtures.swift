@@ -5,14 +5,13 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+@testable import FBControlCore
 import Foundation
+import XCTest
 
 private class BundleFinder {}
 
 enum TestFixtures {
-
-  static let xctestBinary = Bundle(for: BundleFinder.self)
-    .path(forResource: "xctest", ofType: nil)!
 
   static let assetsdCrashPathWithCustomDeviceSet = Bundle(for: BundleFinder.self)
     .path(forResource: "assetsd_custom_set", ofType: "crash")!
@@ -28,4 +27,23 @@ enum TestFixtures {
 
   static let appCrashWithJSONFormat = Bundle(for: BundleFinder.self)
     .path(forResource: "xctest-concated-json-crash", ofType: "ips")!
+
+  static let photo0Path = Bundle(for: BundleFinder.self)
+    .path(forResource: "photo0", ofType: "png")!
+
+  static let simulatorSystemLogPath = Bundle(for: BundleFinder.self)
+    .path(forResource: "simulator_system", ofType: "log")!
+
+  static let treeJSONPath = Bundle(for: BundleFinder.self)
+    .path(forResource: "tree", ofType: "json")!
+
+  static let bundleResource = Bundle(for: BundleFinder.self).resourcePath!
+}
+
+extension XCTestCase {
+
+  /// Returns the process info for the current process (equivalent to launchctl).
+  func launchCtlProcess() -> FBProcessInfo? {
+    return FBProcessFetcher().processInfo(for: ProcessInfo.processInfo.processIdentifier)
+  }
 }

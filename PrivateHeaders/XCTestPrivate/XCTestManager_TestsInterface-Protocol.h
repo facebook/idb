@@ -12,4 +12,3 @@
 // iOS 10.x specific
 - (void)_XCT_receivedAccessibilityNotification:(int)arg1 withPayload:(NSData *)arg2;
 @end
-

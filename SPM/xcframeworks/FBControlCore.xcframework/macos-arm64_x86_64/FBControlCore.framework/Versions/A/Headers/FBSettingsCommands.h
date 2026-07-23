@@ -7,19 +7,16 @@
 
 #import <Foundation/Foundation.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  An Enumeration Representing Services.
  */
 typedef NSString *FBTargetSettingsService NS_STRING_ENUM;
 
-extern FBTargetSettingsService const FBTargetSettingsServiceContacts;
-extern FBTargetSettingsService const FBTargetSettingsServicePhotos;
-extern FBTargetSettingsService const FBTargetSettingsServiceCamera;
-extern FBTargetSettingsService const FBTargetSettingsServiceLocation;
-extern FBTargetSettingsService const FBTargetSettingsServiceMicrophone;
-extern FBTargetSettingsService const FBTargetSettingsServiceUrl;
-extern FBTargetSettingsService const FBTargetSettingsServiceNotification;
-
-NS_ASSUME_NONNULL_END
+extern FBTargetSettingsService _Nonnull const FBTargetSettingsServiceContacts;
+extern FBTargetSettingsService _Nonnull const FBTargetSettingsServicePhotos;
+extern FBTargetSettingsService _Nonnull const FBTargetSettingsServiceCamera;
+extern FBTargetSettingsService _Nonnull const FBTargetSettingsServiceLocation;
+extern FBTargetSettingsService _Nonnull const FBTargetSettingsServiceMicrophone;
+extern FBTargetSettingsService _Nonnull const FBTargetSettingsServiceUrl;
+extern FBTargetSettingsService _Nonnull const FBTargetSettingsServiceNotification;
+extern FBTargetSettingsService _Nonnull const FBTargetSettingsServiceHealth;

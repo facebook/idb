@@ -14,4 +14,3 @@
 - (id)_XCT_initializationForUITestingDidFailWithError:(NSError *)arg1;
 - (id)_XCT_didBeginInitializingForUITesting;
 @end
-

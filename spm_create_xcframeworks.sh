@@ -22,9 +22,29 @@ build_xcframework() {
         echo "Existing xcframework deleted."
     fi
     
-    # Archive the project
-    xcodebuild archive -project "$project_name" -archivePath "$archive_path" SKIP_INSTALL=NO BUILD_LIBRARY_FOR_DISTRIBUTION=YES -scheme "$framework_name" -destination generic/platform=macOS
+    # Archive the project.
+    # -module-interface-preserve-types-as-written: the FBSimulatorControl module contains a
+    # class also named FBSimulatorControl, so the default module-qualified names in the emitted
+    # swiftinterface ("FBSimulatorControl.FBSimulatorVideo") resolve to the class instead of the
+    # module and the interface fails to compile in consumers.
+    # MACH_O_TYPE=mh_dylib: the project builds static frameworks for the companion/OSS build,
+    # but the distributed xcframeworks must be dynamic so the weak links against the private
+    # CoreSimulator/AccessibilityPlatformTranslation tbd stubs are bound inside the dylib.
+    # A static archive would push those undefined symbols onto consumers, which cannot
+    # resolve them.
+    xcodebuild archive -project "$project_name" -archivePath "$archive_path" SKIP_INSTALL=NO BUILD_LIBRARY_FOR_DISTRIBUTION=YES MACH_O_TYPE=mh_dylib OTHER_SWIFT_FLAGS='$(inherited) -Xfrontend -module-interface-preserve-types-as-written' -scheme "$framework_name" -destination generic/platform=macOS
     
+    # The FBSimulatorControl module contains a class also named FBSimulatorControl, so
+    # module-qualified names in the emitted swiftinterface ("FBSimulatorControl.FBSimulatorVideo")
+    # resolve to the class instead of the module and fail to compile in consumers.
+    # -module-interface-preserve-types-as-written (above) fixes hand-written declarations;
+    # compiler-synthesized ones (CaseIterable/Equatable conformances etc.) are still qualified,
+    # so strip the module qualifier from the interfaces before packaging.
+    if [ "$framework_name" = "FBSimulatorControl" ]; then
+        find "${framework_path}/Modules/${framework_name}.swiftmodule" -name '*.swiftinterface' \
+            -exec sed -i '' -e 's/\([^A-Za-z0-9_.]\)FBSimulatorControl\./\1/g' -e 's/^FBSimulatorControl\.//' {} +
+    fi
+
     # Create xcframework
     xcodebuild -create-xcframework -framework "$framework_path" -output "$xcframework_path"
 }
@@ -33,3 +53,4 @@ build_xcframework() {
 build_xcframework "XCTestBootstrap"
 build_xcframework "FBControlCore"
 build_xcframework "FBSimulatorControl"
+build_xcframework "FBDeviceControl"

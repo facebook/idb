@@ -8,8 +8,7 @@
 #import <Foundation/Foundation.h>
 
 @interface XCTTestIdentifier : NSObject <NSCopying, NSSecureCoding>
-{
-}
+{}
 
 + (_Bool)supportsSecureCoding;
 + (id)allocWithZone:(struct _NSZone *)arg1;
@@ -21,10 +20,10 @@
 - (Class)classForCoder;
 - (void)encodeWithCoder:(id)arg1;
 - (id)initWithCoder:(id)arg1;
-@property(readonly) unsigned long long options;
+@property (readonly) unsigned long long options;
 - (id)componentAtIndex:(unsigned long long)arg1;
-@property(readonly) unsigned long long componentCount;
-@property(readonly) NSArray *components;
+@property (readonly) unsigned long long componentCount;
+@property (readonly) NSArray *components;
 - (id)initWithComponents:(id)arg1 options:(unsigned long long)arg2;
 - (id)initWithStringRepresentation:(id)arg1 preserveModulePrefix:(_Bool)arg2;
 - (id)initWithStringRepresentation:(id)arg1;
@@ -33,24 +32,23 @@
 - (id)initWithClassAndMethodComponents:(id)arg1;
 - (id)initWithComponents:(id)arg1 isContainer:(_Bool)arg2;
 - (id)copyWithZone:(struct _NSZone *)arg1;
-@property(readonly) XCTTestIdentifier *swiftMethodCounterpart;
-@property(readonly) XCTTestIdentifier *firstComponentIdentifier;
-@property(readonly) XCTTestIdentifier *parentIdentifier;
+@property (readonly) XCTTestIdentifier *swiftMethodCounterpart;
+@property (readonly) XCTTestIdentifier *firstComponentIdentifier;
+@property (readonly) XCTTestIdentifier *parentIdentifier;
 - (id)_identifierString;
-@property(readonly) NSString *identifierString;
-@property(readonly) NSString *displayName;
-@property(readonly) NSString *lastComponentDisplayName;
-@property(readonly) NSString *lastComponent;
-@property(readonly) NSString *firstComponent;
-@property(readonly) _Bool representsBundle;
-@property(readonly) _Bool isLeaf;
-@property(readonly) _Bool isContainer;
+@property (readonly) NSString *identifierString;
+@property (readonly) NSString *displayName;
+@property (readonly) NSString *lastComponentDisplayName;
+@property (readonly) NSString *lastComponent;
+@property (readonly) NSString *firstComponent;
+@property (readonly) _Bool representsBundle;
+@property (readonly) _Bool isLeaf;
+@property (readonly) _Bool isContainer;
 - (unsigned long long)hash;
 - (_Bool)isEqual:(id)arg1;
 - (id)debugDescription;
 - (id)description;
-@property(readonly) _Bool isSwiftMethod;
-@property(readonly) _Bool usesClassAndMethodSemantics;
+@property (readonly) _Bool isSwiftMethod;
+@property (readonly) _Bool usesClassAndMethodSemantics;
 
 @end
-

@@ -10,4 +10,3 @@
 @protocol XCTMessagingRole_CrashReporting
 - (id)_XCT_handleCrashReportData:(NSData *)arg1 fromFileWithName:(NSString *)arg2;
 @end
-

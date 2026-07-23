@@ -11,15 +11,15 @@
 
 @interface DTXSocketTransport : DTXFileDescriptorTransport
 {
-    dispatch_semaphore_t _socketAcceptedSem;
-    dispatch_source_t _acceptSource;
-    NSArray *_addresses;
-    int _port;
+  dispatch_semaphore_t _socketAcceptedSem;
+  dispatch_source_t _acceptSource;
+  NSArray *_addresses;
+  int _port;
 }
 
 + (id)addressForHost:(const char *)arg1 port:(int)arg2;
 + (id)schemes;
-@property(readonly) int port; // @synthesize port=_port;
+@property (readonly) int port; // @synthesize port=_port;
 - (int)supportedDirections;
 - (id)localAddresses;
 - (void)disconnect;
@@ -34,4 +34,3 @@
 - (void)_setupWithLocalPort:(int)arg1;
 
 @end
-

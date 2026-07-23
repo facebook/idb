@@ -6,10 +6,11 @@
  */
 
 #import "FBControlCoreLogger.h"
+#import "FBControlCoreLogger+OSLog.h"
+
+#import <FBControlCore/FBControlCore-Swift.h>
 
 #import "FBDataConsumer.h"
-#import "FBFileWriter.h"
-#import "FBControlCoreLogger+OSLog.h"
 
 @interface FBControlCoreLogger_NSLog : NSObject <FBControlCoreLogger>
 
@@ -38,16 +39,6 @@
   NSString *string = self.name ? [NSString stringWithFormat:@"[%@] %@", self.name, message] : message;
   NSLog(@"%@", string);
   return self;
-}
-
-- (id<FBControlCoreLogger>)logFormat:(NSString *)format, ...
-{
-  va_list args;
-  va_start(args, format);
-  NSString *string = [[NSString alloc] initWithFormat:format arguments:args];
-  va_end(args);
-
-  return [self log:string];
 }
 
 - (id<FBControlCoreLogger>)info
@@ -101,16 +92,6 @@
     [logger log:message];
   }
   return self;
-}
-
-- (id<FBControlCoreLogger>)logFormat:(NSString *)format, ...
-{
-  va_list args;
-  va_start(args, format);
-  NSString *string = [[NSString alloc] initWithFormat:format arguments:args];
-  va_end(args);
-
-  return [self log:string];
 }
 
 - (id<FBControlCoreLogger>)info
@@ -175,8 +156,8 @@
 
 @interface FBControlCoreLogger_Consumer : NSObject <FBControlCoreLogger>
 
-@property (nonatomic, strong, readonly) id<FBDataConsumer> consumer;
-@property (nonatomic, strong, readonly, nullable) NSDateFormatter *dateFormatter;
+@property (nonatomic, readonly, strong) id<FBDataConsumer> consumer;
+@property (nullable, nonatomic, readonly, strong) NSDateFormatter *dateFormatter;
 
 @end
 
@@ -222,16 +203,6 @@
     [self.consumer consumeData:data];
   }
   return self;
-}
-
-- (id<FBControlCoreLogger>)logFormat:(NSString *)format, ... NS_FORMAT_FUNCTION(1,2)
-{
-  va_list args;
-  va_start(args, format);
-  NSString *string = [[NSString alloc] initWithFormat:format arguments:args];
-  va_end(args);
-
-  return [self log:string];
 }
 
 - (id<FBControlCoreLogger>)info
@@ -294,7 +265,7 @@
   return [self compositeLoggerWithLoggers:@[
     systemLogger,
     [self loggerToFileDescriptor:STDERR_FILENO closeOnEndOfFile:NO],
-  ]];
+          ]];
 }
 
 #pragma clang diagnostic pop

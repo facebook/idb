@@ -1,0 +1,5 @@
+module SimulatorApp {
+    umbrella "."
+    export *
+    module * { export * }
+}

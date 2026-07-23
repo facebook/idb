@@ -1,0 +1,62 @@
+/*
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+import FBControlCore
+import Foundation
+
+// swiftlint:disable force_cast
+
+public final class FBSimulatorScreenshotCommands: NSObject, FBiOSTargetCommand {
+
+  // MARK: - Properties
+
+  private let simulator: FBSimulator
+  private var image: FBSimulatorImage?
+
+  // MARK: - Initializers
+
+  public class func commands(with target: any FBiOSTarget) -> FBSimulatorScreenshotCommands {
+    FBSimulatorScreenshotCommands(simulator: target as! FBSimulator)
+  }
+
+  private init(simulator: FBSimulator) {
+    self.simulator = simulator
+    super.init()
+  }
+
+  // MARK: - Private
+
+  fileprivate func takeScreenshotAsync(format: FBScreenshotFormat) async throws -> Data {
+    let image = try await connectToImage()
+    if format == .jpeg {
+      return try image.jpegImageData()
+    } else if format == .png {
+      return try image.pngImageData()
+    } else {
+      throw FBSimulatorError.describe("\(format) is not a recognized screenshot format").build()
+    }
+  }
+
+  private func connectToImage() async throws -> FBSimulatorImage {
+    if let image = self.image {
+      return image
+    }
+    let framebuffer = try await simulator.connectToFramebuffer()
+    let image = FBSimulatorImage(framebuffer: framebuffer, logger: simulator.logger)
+    self.image = image
+    return image
+  }
+}
+
+// MARK: - FBSimulator+ScreenshotCommands
+
+extension FBSimulator: ScreenshotCommands {
+
+  public func takeScreenshot(format: FBScreenshotFormat) async throws -> Data {
+    try await screenshotCommands().takeScreenshotAsync(format: format)
+  }
+}

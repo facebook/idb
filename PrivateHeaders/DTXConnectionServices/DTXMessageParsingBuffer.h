@@ -9,9 +9,9 @@
 
 @interface DTXMessageParsingBuffer : NSObject
 {
-    void *_buffer;
-    unsigned long long _filled;
-    unsigned long long _size;
+  void *_buffer;
+  unsigned long long _filled;
+  unsigned long long _size;
 }
 
 - (unsigned long long)length;
@@ -22,4 +22,3 @@
 - (id)initWithSize:(unsigned long long)arg1;
 
 @end
-

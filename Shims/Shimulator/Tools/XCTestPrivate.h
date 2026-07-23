@@ -15,8 +15,7 @@ struct __va_list_tag {
 };
 
 @interface XCTestObserver : NSObject
-{
-}
+{}
 
 + (void)initialize;
 + (void)suspendObservation;
@@ -43,8 +42,7 @@ struct __va_list_tag {
 @class XCTestRun;
 
 @interface XCTest : NSObject
-{
-}
+{}
 
 - (id)run;
 - (void)tearDown;
@@ -135,7 +133,7 @@ struct __va_list_tag {
 
 @interface XCTestCaseSuite : XCTestSuite
 {
-    Class testCaseClass;
+  Class testCaseClass;
 }
 
 + (id)emptyTestSuiteForTestCaseClass:(Class)arg1;
@@ -147,9 +145,9 @@ struct __va_list_tag {
 
 @interface XCTestCase : XCTest
 {
-    NSInvocation *_invocation;
-    XCTestCaseRun *_testCaseRun;
-    BOOL _continueAfterFailure;
+  NSInvocation *_invocation;
+  XCTestCaseRun *_testCaseRun;
+  BOOL _continueAfterFailure;
 }
 
 + (id)testInvocations;
@@ -190,8 +188,7 @@ struct __va_list_tag {
 @end
 
 @interface XCTTestIdentifier : NSObject <NSCopying, NSSecureCoding>
-{
-}
+{}
 
 + (_Bool)supportsSecureCoding;
 + (id)allocWithZone:(struct _NSZone *)arg1;
@@ -203,10 +200,10 @@ struct __va_list_tag {
 - (Class)classForCoder;
 - (void)encodeWithCoder:(id)arg1;
 - (id)initWithCoder:(id)arg1;
-@property(readonly) unsigned long long options;
+@property (readonly) unsigned long long options;
 - (id)componentAtIndex:(unsigned long long)arg1;
-@property(readonly) unsigned long long componentCount;
-@property(readonly) NSArray *components;
+@property (readonly) unsigned long long componentCount;
+@property (readonly) NSArray *components;
 - (id)initWithComponents:(id)arg1 options:(unsigned long long)arg2;
 - (id)initWithStringRepresentation:(id)arg1 preserveModulePrefix:(_Bool)arg2;
 - (id)initWithStringRepresentation:(id)arg1;
@@ -215,30 +212,29 @@ struct __va_list_tag {
 - (id)initWithClassAndMethodComponents:(id)arg1;
 - (id)initWithComponents:(id)arg1 isContainer:(_Bool)arg2;
 - (id)copyWithZone:(struct _NSZone *)arg1;
-@property(readonly) XCTTestIdentifier *swiftMethodCounterpart;
-@property(readonly) XCTTestIdentifier *firstComponentIdentifier;
-@property(readonly) XCTTestIdentifier *parentIdentifier;
+@property (readonly) XCTTestIdentifier *swiftMethodCounterpart;
+@property (readonly) XCTTestIdentifier *firstComponentIdentifier;
+@property (readonly) XCTTestIdentifier *parentIdentifier;
 - (id)_identifierString;
-@property(readonly) NSString *identifierString;
-@property(readonly) NSString *displayName;
-@property(readonly) NSString *lastComponentDisplayName;
-@property(readonly) NSString *lastComponent;
-@property(readonly) NSString *firstComponent;
-@property(readonly) _Bool representsBundle;
-@property(readonly) _Bool isLeaf;
-@property(readonly) _Bool isContainer;
+@property (readonly) NSString *identifierString;
+@property (readonly) NSString *displayName;
+@property (readonly) NSString *lastComponentDisplayName;
+@property (readonly) NSString *lastComponent;
+@property (readonly) NSString *firstComponent;
+@property (readonly) _Bool representsBundle;
+@property (readonly) _Bool isLeaf;
+@property (readonly) _Bool isContainer;
 - (unsigned long long)hash;
 - (_Bool)isEqual:(id)arg1;
 - (id)debugDescription;
 - (id)description;
-@property(readonly) _Bool isSwiftMethod;
-@property(readonly) _Bool usesClassAndMethodSemantics;
+@property (readonly) _Bool isSwiftMethod;
+@property (readonly) _Bool usesClassAndMethodSemantics;
 
 @end
 
 @interface XCTestLog : XCTestObserver
-{
-}
+{}
 
 - (void)testCaseDidFail:(id)arg1 withDescription:(id)arg2 inFile:(id)arg3 atLine:(NSUInteger)arg4;
 - (void)testSuiteDidStop:(id)arg1;
@@ -253,7 +249,7 @@ struct __va_list_tag {
 
 @interface XCTestSuiteRun : XCTestRun
 {
-    NSMutableArray *runs;
+  NSMutableArray *runs;
 }
 
 - (double)testDuration;
@@ -269,8 +265,7 @@ struct __va_list_tag {
 @end
 
 @interface XCTestProbe : NSObject
-{
-}
+{}
 
 + (void)load;
 + (void)initialize;
@@ -326,27 +321,27 @@ struct __va_list_tag {
   BOOL _emitOSLogs;
 }
 @property BOOL emitOSLogs; // @synthesize emitOSLogs=_emitOSLogs;
-@property(copy) NSString *automationFrameworkPath; // @synthesize automationFrameworkPath=_automationFrameworkPath;
-@property(copy) NSDictionary *aggregateStatisticsBeforeCrash; // @synthesize aggregateStatisticsBeforeCrash=_aggregateStatisticsBeforeCrash;
-@property(copy) NSArray *targetApplicationArguments; // @synthesize targetApplicationArguments=_targetApplicationArguments;
-@property(copy) NSDictionary *targetApplicationEnvironment; // @synthesize targetApplicationEnvironment=_targetApplicationEnvironment;
+@property (copy) NSString *automationFrameworkPath; // @synthesize automationFrameworkPath=_automationFrameworkPath;
+@property (copy) NSDictionary *aggregateStatisticsBeforeCrash; // @synthesize aggregateStatisticsBeforeCrash=_aggregateStatisticsBeforeCrash;
+@property (copy) NSArray *targetApplicationArguments; // @synthesize targetApplicationArguments=_targetApplicationArguments;
+@property (copy) NSDictionary *targetApplicationEnvironment; // @synthesize targetApplicationEnvironment=_targetApplicationEnvironment;
 @property BOOL initializeForUITesting; // @synthesize initializeForUITesting=_initializeForUITesting;
 @property BOOL testsMustRunOnMainThread; // @synthesize testsMustRunOnMainThread=_testsMustRunOnMainThread;
 @property BOOL reportActivities; // @synthesize reportActivities=_reportActivities;
-@property(copy) NSString *productModuleName; // @synthesize productModuleName=_productModuleName;
-@property(copy) NSString *targetApplicationBundleID; // @synthesize targetApplicationBundleID=_targetApplicationBundleID;
-@property(copy) NSString *targetApplicationPath; // @synthesize targetApplicationPath=_targetApplicationPath;
+@property (copy) NSString *productModuleName; // @synthesize productModuleName=_productModuleName;
+@property (copy) NSString *targetApplicationBundleID; // @synthesize targetApplicationBundleID=_targetApplicationBundleID;
+@property (copy) NSString *targetApplicationPath; // @synthesize targetApplicationPath=_targetApplicationPath;
 @property BOOL treatMissingBaselinesAsFailures; // @synthesize treatMissingBaselinesAsFailures=_treatMissingBaselinesAsFailures;
 @property BOOL disablePerformanceMetrics; // @synthesize disablePerformanceMetrics=_disablePerformanceMetrics;
 @property BOOL reportResultsToIDE; // @synthesize reportResultsToIDE=_reportResultsToIDE;
-@property(copy, nonatomic) NSURL *baselineFileURL; // @synthesize baselineFileURL=_baselineFileURL;
-@property(copy) NSString *baselineFileRelativePath; // @synthesize baselineFileRelativePath=_baselineFileRelativePath;
-@property(copy) NSString *pathToXcodeReportingSocket; // @synthesize pathToXcodeReportingSocket=_pathToXcodeReportingSocket;
-@property(copy) NSUUID *sessionIdentifier; // @synthesize sessionIdentifier=_sessionIdentifier;
-@property(copy) id testsToSkip; // @synthesize testsToSkip=_testsToSkip;
-@property(copy) id testsToRun; // @synthesize testsToRun=_testsToRun;
-@property(copy, nonatomic) NSURL *testBundleURL; // @synthesize testBundleURL=_testBundleURL;
-@property(copy) NSString *testBundleRelativePath; // @synthesize testBundleRelativePath=_testBundleRelativePath;
+@property (nonatomic, copy) NSURL *baselineFileURL; // @synthesize baselineFileURL=_baselineFileURL;
+@property (copy) NSString *baselineFileRelativePath; // @synthesize baselineFileRelativePath=_baselineFileRelativePath;
+@property (copy) NSString *pathToXcodeReportingSocket; // @synthesize pathToXcodeReportingSocket=_pathToXcodeReportingSocket;
+@property (copy) NSUUID *sessionIdentifier; // @synthesize sessionIdentifier=_sessionIdentifier;
+@property (copy) id testsToSkip; // @synthesize testsToSkip=_testsToSkip;
+@property (copy) id testsToRun; // @synthesize testsToRun=_testsToRun;
+@property (nonatomic, copy) NSURL *testBundleURL; // @synthesize testBundleURL=_testBundleURL;
+@property (copy) NSString *testBundleRelativePath; // @synthesize testBundleRelativePath=_testBundleRelativePath;
 
 // `absolutePath` has been replaced by `basePathForTestBundleResolution` on XCode 13.0. We don't use either.
 // @property(copy) NSString *absolutePath; // @synthesize absolutePath=_absolutePath;

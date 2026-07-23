@@ -7,9 +7,8 @@
 
 #import "FBSimulatorControlFrameworkLoader.h"
 
+#import <CoreSimulatorUtilities/NSUserDefaults-SimDefaults.h>
 #import <FBControlCore/FBControlCore.h>
-
-#import <CoreSimulator/NSUserDefaults-SimDefaults.h>
 
 static void FBSimulatorControl_SimLogHandler(int level, const char *function, int lineNumber, NSString *format, ...)
 {
@@ -34,9 +33,10 @@ static void FBSimulatorControl_SimLogHandler(int level, const char *function, in
   static dispatch_once_t onceToken;
   static FBSimulatorControlFrameworkLoader *loader;
   dispatch_once(&onceToken, ^{
-    loader = [FBSimulatorControlFrameworkLoader_Essential loaderWithName:@"FBSimulatorControl" frameworks:@[
-      FBWeakFramework.CoreSimulator,
-    ]];
+    loader = [FBSimulatorControlFrameworkLoader_Essential loaderWithName:@"FBSimulatorControl"
+                                                              frameworks:@[
+                FBWeakFramework.CoreSimulator,
+              ]];
   });
   return loader;
 }
@@ -46,10 +46,10 @@ static void FBSimulatorControl_SimLogHandler(int level, const char *function, in
   static dispatch_once_t onceToken;
   static FBSimulatorControlFrameworkLoader *loader;
   dispatch_once(&onceToken, ^{
-    loader = [FBSimulatorControlFrameworkLoader loaderWithName:@"FBSimulatorControl" frameworks:@[
-      FBWeakFramework.AccessibilityPlatformTranslation,
-      FBWeakFramework.SimulatorKit
-    ]];
+    loader = [FBSimulatorControlFrameworkLoader loaderWithName:@"FBSimulatorControl"
+                                                    frameworks:@[
+                FBWeakFramework.AccessibilityPlatformTranslation,
+              ]];
   });
   return loader;
 }
@@ -59,9 +59,10 @@ static void FBSimulatorControl_SimLogHandler(int level, const char *function, in
   static dispatch_once_t onceToken;
   static FBSimulatorControlFrameworkLoader *loader;
   dispatch_once(&onceToken, ^{
-    loader = [FBSimulatorControlFrameworkLoader loaderWithName:@"FBSimulatorControl" frameworks:@[
-      FBWeakFramework.SimulatorKit,
-    ]];
+    loader = [FBSimulatorControlFrameworkLoader loaderWithName:@"FBSimulatorControl"
+                                                    frameworks:@[
+                FBWeakFramework.SimulatorKit,
+              ]];
   });
   return loader;
 }
@@ -134,4 +135,3 @@ static void FBSimulatorControl_SimLogHandler(int level, const char *function, in
 }
 
 @end
-

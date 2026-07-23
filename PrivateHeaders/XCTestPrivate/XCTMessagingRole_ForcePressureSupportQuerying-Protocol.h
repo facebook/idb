@@ -14,4 +14,3 @@
 - (void)_XCT_postTelemetryData:(NSData *)arg1 reply:(void (^)(NSError *))arg2;
 - (void)_XCT_requestPressureEventsSupported:(void (^)(_Bool, NSError *))arg1;
 @end
-

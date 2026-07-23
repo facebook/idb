@@ -13,4 +13,3 @@
 - (void)_XCT_receivedAccessibilityNotification:(int)arg1 fromElement:(XCAccessibilityElement *)arg2 payload:(NSData *)arg3;
 - (void)_XCT_receivedAccessibilityNotification:(int)arg1 withPayload:(NSData *)arg2;
 @end
-

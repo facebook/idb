@@ -21,7 +21,9 @@ from idb.grpc.idb_pb2 import InstallRequest, Payload
 from idb.grpc.xctest import xctest_paths_to_tar
 
 
-CHUNK_SIZE = 16384
+CHUNK_SIZE = (
+    1024 * 1024 * 4
+)  # 4Mb, matching tar.py/gzip.py and well under the companion's 16Mb max receive size
 Destination = InstallRequest.Destination
 Bundle = Union[str, IO[bytes]]
 

@@ -5,21 +5,30 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import <Foundation/NSObject.h>
+#import <Foundation/Foundation.h>
 
 #import <SimulatorApp/Indigo.h>
 
+/**
+ The ObjC class named `SimDeviceLegacyClient` no longer exists in Xcode 27
+ (CoreSimulator 1155.4), but this header is KEPT and in use: it is the
+ compile-time interface for the Swift class `SimulatorKit.SimDeviceLegacyHIDClient`,
+ which is present in Xcode 27. FBSimulatorHID looks that class up by name via
+ objc_lookUpClass("SimulatorKit.SimDeviceLegacyHIDClient") and drives it through
+ -initWithDevice:error: and -sendWithMessage:freeWhenDone:completionQueue:completion:
+ (both still @objc-exposed in Xcode 27). Do not delete.
+ */
 @interface SimDeviceLegacyClient : NSObject
 {
-    // Error parsing type: , name: _io
-    // Error parsing type: , name: _performTargetRemapping
-    // Error parsing type: , name: _ioPort
-    // Error parsing type: , name: _descriptor
-    // Error parsing type: , name: _hidCallbackUUID
-    // Error parsing type: , name: _rwLock
-    // Error parsing type: , name: _isWatch
-    // Error parsing type: , name: _isTV
-    // Error parsing type: , name: _isHIDArbitraryMessageAvailable
+  // Error parsing type: , name: _io
+  // Error parsing type: , name: _performTargetRemapping
+  // Error parsing type: , name: _ioPort
+  // Error parsing type: , name: _descriptor
+  // Error parsing type: , name: _hidCallbackUUID
+  // Error parsing type: , name: _rwLock
+  // Error parsing type: , name: _isWatch
+  // Error parsing type: , name: _isTV
+  // Error parsing type: , name: _isHIDArbitraryMessageAvailable
 }
 
 - (id)init;
@@ -30,4 +39,3 @@
 - (id)initWithDevice:(id)arg1 error:(id *)arg2;
 
 @end
-

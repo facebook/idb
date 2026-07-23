@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBFuture.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  Conveniences to aid synchronous waiting on events, whilst not blocking other event sources.
  */
@@ -23,7 +21,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param untilTrue the condition to meet.
  @return YES if the condition was met, NO if the timeout was reached first.
  */
-- (BOOL)spinRunLoopWithTimeout:(NSTimeInterval)timeout untilTrue:( BOOL (^)(void) )untilTrue;
+- (BOOL)spinRunLoopWithTimeout:(NSTimeInterval)timeout untilTrue:(nonnull BOOL (^)(void))untilTrue;
 
 /**
  Spins the Run Loop until `untilTrue` returns a value, or a timeout is reached.
@@ -32,7 +30,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param untilExists the mapping to a value.
  @return the return value of untilTrue, or nil if a timeout was reached.
  */
-- (nullable id)spinRunLoopWithTimeout:(NSTimeInterval)timeout untilExists:( id (^)(void) )untilExists;
+- (nullable id)spinRunLoopWithTimeout:(NSTimeInterval)timeout untilExists:(nonnull id _Nullable (^)(void))untilExists;
 
 @end
 
@@ -40,7 +38,7 @@ NS_ASSUME_NONNULL_BEGIN
  Helpers for extracting the value from an FBFuture.
  Since FBFuture only exposes callback mounting in it's main interface, this allows callers to wait for a value to appear asynchronously.
  */
-@interface FBFuture<T> (Sync)
+@interface FBFuture <T>(Sync)
 
 /**
  Await the Future, with no Timeout.
@@ -50,7 +48,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error outparam if the Future resolves with an error.
  @return the the Future's result if successful, nil otherwise.
  */
-- (nullable T)await:(NSError **)error;
+- (nullable T)await:(NSError * _Nullable * _Nullable)error;
 
 /**
  Await the Future with the provided timeout.
@@ -61,7 +59,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error outparam if the Future resolves with an error, or the Future is not resolved within the timeout.
  @return the the Future's result if successful, nil otherwise.
  */
-- (nullable T)awaitWithTimeout:(NSTimeInterval)timeout error:(NSError **)error;
+- (nullable T)awaitWithTimeout:(NSTimeInterval)timeout error:(NSError * _Nullable * _Nullable)error;
 
 /**
  Block until the Future is completed and return whether is succeeded.
@@ -71,7 +69,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error outparam if the Future resolves with an error.
  @return YES if the future completes successfully, NO otherwise.
  */
-- (BOOL)succeeds:(NSError **)error;
+- (BOOL)succeeds:(NSError * _Nullable * _Nullable)error;
 
 /**
  Block until the Future is completed and return whether is succeeded.
@@ -81,7 +79,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error outparam if the Future resolves with an error or times out.
  @return YES if the future completes successfully, NO otherwise.
  */
-- (BOOL)onQueue:(dispatch_queue_t)queue timeout:(dispatch_time_t)timeout succeeds:(NSError **)error;
+- (BOOL)onQueue:(nonnull dispatch_queue_t)queue timeout:(dispatch_time_t)timeout succeeds:(NSError * _Nullable * _Nullable)error;
 
 /**
  Block until the Future is completed and return the result.
@@ -90,7 +88,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error outparam if the Future resolves with an error.
  @return the the Future's result if successful, nil otherwise.
  */
-- (nullable T)block:(NSError **)error;
+- (nullable T)block:(NSError * _Nullable * _Nullable)error;
 
 /**
  Block until the Future is completed and return the result.
@@ -101,8 +99,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error outparam if the Future resolves with an error or times out.
  @return the the Future's result if successful, nil otherwise.
  */
-- (nullable T)onQueue:(dispatch_queue_t)queue timeout:(dispatch_time_t)timeout block:(NSError **)error;
+- (nullable T)onQueue:(nonnull dispatch_queue_t)queue timeout:(dispatch_time_t)timeout block:(NSError * _Nullable * _Nullable)error;
 
 @end
-
-NS_ASSUME_NONNULL_END

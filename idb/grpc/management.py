@@ -11,7 +11,6 @@ import logging
 import os
 import signal
 from collections.abc import AsyncGenerator
-from typing import Dict, List, Optional
 
 from idb.common.companion import Companion, CompanionServerConfig
 from idb.common.companion_set import CompanionSet
@@ -31,6 +30,8 @@ from idb.common.types import (
 from idb.grpc.client import Client
 from idb.grpc.target import merge_connected_targets
 from idb.utils.contextlib import asynccontextmanager
+
+COMPANION_CONNECT_TIMEOUT: int = 5  # seconds
 
 
 async def _local_target_type(companion: Companion, udid: str) -> TargetType:
@@ -52,14 +53,19 @@ async def _realize_companions(
     prune_dead_companion: bool,
     logger: logging.Logger,
 ) -> list[TargetDescription]:
-    to_prune: list[Companion]
+    async def _describe_companion(
+        companion: CompanionInfo,
+    ) -> TargetDescription:
+        async with Client.build(address=companion.address, logger=logger) as client:
+            return await client.describe()
 
     async def _companion_to_target(
         companion: CompanionInfo,
     ) -> TargetDescription | None:
         try:
-            async with Client.build(address=companion.address, logger=logger) as client:
-                return await client.describe()
+            return await asyncio.wait_for(
+                _describe_companion(companion), timeout=COMPANION_CONNECT_TIMEOUT
+            )
         except Exception:
             if not prune_dead_companion:
                 logger.warning(f"Failed to describe {companion}, but not removing it")
@@ -213,9 +219,8 @@ class ClientManager(ClientManagerBase):
     async def connect(
         self,
         destination: ConnectionDestination,
-        metadata: dict[str, str] | None = None,
     ) -> CompanionInfo:
-        self._logger.debug(f"Connecting directly to {destination} with meta {metadata}")
+        self._logger.debug(f"Connecting directly to {destination}")
         if isinstance(destination, TCPAddress) or isinstance(
             destination, DomainSocketAddress
         ):

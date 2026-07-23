@@ -5,9 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import XCTest
-
 @testable import FBControlCore
+import XCTest
 
 final class FBCrashLogInfoTests: XCTestCase {
 

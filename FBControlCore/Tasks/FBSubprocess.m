@@ -9,16 +9,12 @@
 
 #include <spawn.h>
 
-#import "FBCollectionInformation.h"
-#import "FBControlCoreError.h"
+#import "FBControlCore-Swift.h"
+#import "FBControlCore-SwiftImport.h"
 #import "FBControlCoreLogger.h"
 #import "FBDataBuffer.h"
 #import "FBDataConsumer.h"
-#import "FBFileWriter.h"
-#import "FBSubprocess.h"
 #import "FBProcessIO.h"
-#import "FBProcessSpawnCommands.h"
-#import "FBProcessSpawnConfiguration.h"
 #import "FBProcessStream.h"
 
 static BOOL AddOutputFileActions(posix_spawn_file_actions_t *fileActions, FBProcessStreamAttachment *attachment, int targetFileDescriptor, NSError **error)
@@ -33,8 +29,8 @@ static BOOL AddOutputFileActions(posix_spawn_file_actions_t *fileActions, FBProc
   int status = posix_spawn_file_actions_adddup2(fileActions, sourceFileDescriptor, targetFileDescriptor);
   if (status != 0) {
     return [[FBControlCoreError
-      describeFormat:@"Failed to dup input %d, to %d: %s", sourceFileDescriptor, targetFileDescriptor, strerror(status)]
-      failBool:error];
+             describe:[NSString stringWithFormat:@"Failed to dup input %d, to %d: %s", sourceFileDescriptor, targetFileDescriptor, strerror(status)]]
+            failBool:error];
   }
   return YES;
 }
@@ -51,15 +47,15 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
   int status = posix_spawn_file_actions_adddup2(fileActions, sourceFileDescriptor, targetFileDescriptor);
   if (status != 0) {
     return [[FBControlCoreError
-      describeFormat:@"Failed to dup input %d, to %d: %s", sourceFileDescriptor, targetFileDescriptor, strerror(status)]
-      failBool:error];
+             describe:[NSString stringWithFormat:@"Failed to dup input %d, to %d: %s", sourceFileDescriptor, targetFileDescriptor, strerror(status)]]
+            failBool:error];
   }
   return YES;
 }
 
 @interface FBSubprocess ()
 
-@property (nonatomic, strong, readonly) dispatch_queue_t queue;
+@property (nonatomic, readonly, strong) dispatch_queue_t queue;
 
 @end
 
@@ -94,16 +90,17 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
 {
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbcontrolcore.task", DISPATCH_QUEUE_SERIAL);
   return [[configuration.io
-    attach]
-    onQueue:queue fmap:^(FBProcessIOAttachment *attachment) {
-      // Everything is setup, launch the process now.
-      NSError *error = nil;
-      FBSubprocess *process = [FBSubprocess processWithConfiguration:configuration attachment:attachment queue:queue logger:logger error:&error];
-      if (!process) {
-        return [FBFuture futureWithError:error];
-      }
-      return [FBFuture futureWithResult:process];
-    }];
+           attach]
+          onQueue:queue
+          fmap:^(FBProcessIOAttachment *attachment) {
+            // Everything is setup, launch the process now.
+            NSError *error = nil;
+            FBSubprocess *process = [FBSubprocess processWithConfiguration:configuration attachment:attachment queue:queue logger:logger error:&error];
+            if (!process) {
+              return [FBFuture futureWithError:error];
+            }
+            return [FBFuture futureWithResult:process];
+          }];
 }
 
 #pragma mark Public Methods
@@ -111,35 +108,39 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
 - (FBFuture<NSNumber *> *)exitedWithCodes:(NSSet<NSNumber *> *)acceptableExitCodes
 {
   return [[FBMutableFuture.future
-    resolveFromFuture:self.exitCode]
-    onQueue:self.queue fmap:^(NSNumber *exitCode) {
-      return [[FBSubprocess confirmExitCode:exitCode.intValue isAcceptable:acceptableExitCodes] mapReplace:exitCode];
-    }];
+           resolveFromFuture:self.exitCode]
+          onQueue:self.queue
+          fmap:^(NSNumber *exitCode) {
+            return [[FBSubprocess confirmExitCode:exitCode.intValue isAcceptable:acceptableExitCodes] mapReplace:exitCode];
+          }];
 }
 
 - (FBFuture<NSNumber *> *)sendSignal:(int)signo
 {
   return [[FBFuture
-    onQueue:self.queue resolve:^{
-      // Do not kill if the process is already dead.
-      if (self.statLoc.hasCompleted) {
-        return self.statLoc;
-      }
-      kill(self.processIdentifier, signo);
-      return self.statLoc;
-    }]
-    mapReplace:@(signo)];
+           onQueue:self.queue
+           resolve:^{
+             // Do not kill if the process is already dead.
+             if (self.statLoc.hasCompleted) {
+               return self.statLoc;
+             }
+             kill(self.processIdentifier, signo);
+             return self.statLoc;
+           }]
+          mapReplace:@(signo)];
 }
 
 - (FBFuture<NSNumber *> *)sendSignal:(int)signo backingOffToKillWithTimeout:(NSTimeInterval)timeout logger:(id<FBControlCoreLogger>)logger
 {
   return [[[self
-    sendSignal:signo]
-    onQueue:self.queue timeout:timeout handler:^{
-      [logger logFormat:@"Process %d didn't exit after wait for %f seconds for sending signal %d, sending SIGKILL now.", self.processIdentifier, timeout, signo];
-      return [self sendSignal:SIGKILL];
-    }]
-    mapReplace:@(signo)];
+            sendSignal:signo]
+           onQueue:self.queue
+           timeout:timeout
+           handler:^{
+             [logger log:[NSString stringWithFormat:@"Process %d didn't exit after wait for %f seconds for sending signal %d, sending SIGKILL now.", self.processIdentifier, timeout, signo]];
+             return [self sendSignal:SIGKILL];
+           }]
+          mapReplace:@(signo)];
 }
 
 #pragma mark Properties
@@ -170,9 +171,9 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
   if ([acceptableExitCodes containsObject:@(exitCode)]) {
     return FBFuture.empty;
   }
-  return [[FBControlCoreError
-    describeFormat:@"Exit Code %d is not acceptable %@", exitCode, [FBCollectionInformation oneLineDescriptionFromArray:acceptableExitCodes.allObjects]]
-    failFuture];
+  return (FBFuture *)[[FBControlCoreError
+                       describe:[NSString stringWithFormat:@"Exit Code %d is not acceptable %@", exitCode, [FBCollectionInformation oneLineDescriptionFromArray:acceptableExitCodes.allObjects]]]
+                      failFuture];
 }
 
 + (FBSubprocess *)processWithConfiguration:(FBProcessSpawnConfiguration *)configuration attachment:(FBProcessIOAttachment *)attachment queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
@@ -233,10 +234,10 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
   posix_spawnattr_destroy(&spawnAttributes);
   if (status != 0) {
     return [[FBControlCoreError
-      describeFormat:@"Failed to launch %@ with error %s", configuration, strerror(status)]
-      fail:error];
+             describe:[NSString stringWithFormat:@"Failed to launch %@ with error %s", configuration, strerror(status)]]
+            fail:error];
   }
-  [logger logFormat:@"%@ Launched with pid %d", configuration.processName, processIdentifier];
+  [logger log:[NSString stringWithFormat:@"%@ Launched with pid %d", configuration.processName, processIdentifier]];
 
   FBMutableFuture<NSNumber *> *statLoc = FBMutableFuture.future;
   FBMutableFuture<NSNumber *> *exitCode = FBMutableFuture.future;
@@ -257,20 +258,20 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
   dispatch_source_set_event_handler(source, ^{
     int status = 0;
     if (waitpid(processIdentifier, &status, WNOHANG) == -1) {
-      [logger logFormat:@"Failed to get the exit status with waitpid: %s", strerror(errno)];
+      [logger log:[NSString stringWithFormat:@"Failed to get the exit status with waitpid: %s", strerror(errno)]];
     }
 
     // Resolve all of the related process finshed futures now, so that they do not need asynchronous resolution.
     [FBProcessSpawnCommandHelpers
-      resolveProcessFinishedWithStatLoc:status
-      inTeardownOfIOAttachment:attachment
-      statLocFuture:statLoc
-      exitCodeFuture:exitCode
-      signalFuture:signal
-      processIdentifier:processIdentifier
-      configuration:configuration
-      queue:queue
-      logger:logger];
+     resolveProcessFinishedWithStatLoc:status
+     inTeardownOfIOAttachment:attachment
+     statLocFuture:statLoc
+     exitCodeFuture:exitCode
+     signalFuture:signal
+     processIdentifier:processIdentifier
+     configuration:configuration
+     queue:queue
+     logger:logger];
 
     // We only need a single notification and the dispatch_source must be retained until we resolve the future.
     // Cancelling the source at the end will release the source as the event handler will no longer be referenced.

@@ -13,13 +13,13 @@
 
 @interface DTXSendAndWaitRateLimiter : NSObject <DTXRateLimiter>
 {
-    dispatch_queue_t _actionQueue;
-    double _microsecondsPerUnit;
-    struct mach_timebase_info _timeBaseInfo;
-    _Bool _logSends;
-    dispatch_queue_t statsQueue;
-    dispatch_source_t _timer;
-    DTXSendAndWaitStats *_stats;
+  dispatch_queue_t _actionQueue;
+  double _microsecondsPerUnit;
+  struct mach_timebase_info _timeBaseInfo;
+  _Bool _logSends;
+  dispatch_queue_t statsQueue;
+  dispatch_source_t _timer;
+  DTXSendAndWaitStats *_stats;
 }
 
 - (void)notifyCompressedData:(unsigned long long)arg1 withUncompressedSize:(unsigned long long)arg2 nanosToCompress:(unsigned long long)arg3 usingCompressionType:(int)arg4;
@@ -28,10 +28,6 @@
 - (id)initWithUnitsPerSecond:(unsigned long long)arg1;
 
 // Remaining properties
-@property(readonly, copy) NSString *debugDescription;
-
-
-
+@property (readonly, copy) NSString *debugDescription;
 
 @end
-

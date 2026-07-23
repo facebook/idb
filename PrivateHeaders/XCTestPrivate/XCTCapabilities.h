@@ -9,13 +9,13 @@
 
 @interface XCTCapabilities : NSObject <NSSecureCoding>
 {
-    NSDictionary *_capabilitiesDictionary;
+  NSDictionary *_capabilitiesDictionary;
 }
 
 + (id)emptyCapabilities;
 + (_Bool)supportsSecureCoding;
 
-@property(readonly, copy) NSDictionary *capabilitiesDictionary; // @synthesize capabilitiesDictionary=_capabilitiesDictionary;
+@property (readonly, copy) NSDictionary *capabilitiesDictionary; // @synthesize capabilitiesDictionary=_capabilitiesDictionary;
 - (_Bool)hasCapability:(id)arg1;
 - (unsigned long long)versionForCapability:(id)arg1;
 - (unsigned long long)hash;
@@ -23,7 +23,7 @@
 - (id)description;
 - (void)encodeWithCoder:(id)arg1;
 - (id)initWithCoder:(id)arg1;
-@property(readonly, copy) NSDictionary *dictionaryRepresentation;
+@property (readonly, copy) NSDictionary *dictionaryRepresentation;
 - (id)initWithDictionary:(id)arg1;
 
 @end

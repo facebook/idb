@@ -11,7 +11,7 @@
 
 @interface DTXBlockCompressorLibFastCompression : NSObject <DTXBlockCompressor>
 {
-    void *_lzfseScratchBuffer;
+  void *_lzfseScratchBuffer;
 }
 
 - (_Bool)uncompressBuffer:(const char *)arg1 ofLength:(unsigned long long)arg2 toBuffer:(char *)arg3 withKnownUncompressedLength:(unsigned long long)arg4 usingCompressionType:(int)arg5;
@@ -19,10 +19,6 @@
 - (void)dealloc;
 
 // Remaining properties
-@property(readonly, copy) NSString *debugDescription;
-
-
-
+@property (readonly, copy) NSString *debugDescription;
 
 @end
-
