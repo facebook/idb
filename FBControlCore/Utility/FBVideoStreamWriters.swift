@@ -339,94 +339,165 @@ private func FBMPEGTSCRC32(_ data: [UInt8], offset: Int, length: Int) -> UInt32 
   return crc
 }
 
-public func FBMPEGTSCreatePATPacket(_ continuityCounter: inout UInt8) -> Data {
+private struct FBMPEGTSSection {
+  let startOffset: Int
+  let lengthOffset: Int
+}
+
+private struct FBMPEGTSPacketWriter {
+  private var packet = [UInt8](repeating: 0xFF, count: TSPacketSize)
+  private var cursor = 0
+
+  init(pid: UInt16, payloadUnitStart: Bool, continuityCounter: inout UInt8) {
+    packet[0] = TSSyncByte
+    packet[1] = (payloadUnitStart ? 0x40 : 0x00) | UInt8((pid >> 8) & 0x1F)
+    packet[2] = UInt8(pid & 0xFF)
+    packet[3] = 0x10 | (continuityCounter & 0x0F)
+    continuityCounter &+= 1
+    cursor = 4
+  }
+
+  mutating func writePointerField(_ value: UInt8 = 0) {
+    write8(value)
+  }
+
+  mutating func beginSection(tableID: UInt8) -> FBMPEGTSSection {
+    let startOffset = cursor
+    write8(tableID)
+    let lengthOffset = cursor
+    write16(0)
+    return FBMPEGTSSection(startOffset: startOffset, lengthOffset: lengthOffset)
+  }
+
+  mutating func finishSection(_ section: FBMPEGTSSection) {
+    let sectionLength = UInt16(cursor - (section.lengthOffset + 2) + 4)
+    packet[section.lengthOffset] = 0xB0 | UInt8((sectionLength >> 8) & 0x0F)
+    packet[section.lengthOffset + 1] = UInt8(sectionLength & 0xFF)
+    write32(FBMPEGTSCRC32(packet, offset: section.startOffset, length: cursor - section.startOffset))
+  }
+
+  mutating func write8(_ value: UInt8) {
+    packet[cursor] = value
+    cursor += 1
+  }
+
+  mutating func write16(_ value: UInt16) {
+    write8(UInt8((value >> 8) & 0xFF))
+    write8(UInt8(value & 0xFF))
+  }
+
+  mutating func write32(_ value: UInt32) {
+    write8(UInt8((value >> 24) & 0xFF))
+    write8(UInt8((value >> 16) & 0xFF))
+    write8(UInt8((value >> 8) & 0xFF))
+    write8(UInt8(value & 0xFF))
+  }
+
+  mutating func writePID(_ pid: UInt16) {
+    write8(0xE0 | UInt8((pid >> 8) & 0x1F))
+    write8(UInt8(pid & 0xFF))
+  }
+
+  mutating func writeLength12(_ length: UInt16) {
+    write8(0xF0 | UInt8((length >> 8) & 0x0F))
+    write8(UInt8(length & 0xFF))
+  }
+
+  func data() -> Data {
+    Data(packet)
+  }
+}
+
+private func FBMPEGTSCreatePESPayloadPacket(
+  pid: UInt16,
+  payloadUnitStart: Bool,
+  continuityCounter: inout UInt8,
+  payload: [UInt8],
+  payloadOffset: inout Int,
+  pcrPTS90k: UInt64?
+) -> [UInt8] {
   var packet = [UInt8](repeating: 0xFF, count: TSPacketSize)
-
-  // TS header
   packet[0] = TSSyncByte
-  packet[1] = 0x40 | UInt8((PATPID >> 8) & 0x1F) // payload_unit_start=1
-  packet[2] = UInt8(PATPID & 0xFF)
-  packet[3] = 0x10 | (continuityCounter & 0x0F) // no adaptation, payload only
+  packet[1] = (payloadUnitStart ? 0x40 : 0x00) | UInt8((pid >> 8) & 0x1F)
+  packet[2] = UInt8(pid & 0xFF)
+
+  var headerSize = 4
+  let remaining = payload.count - payloadOffset
+
+  if let pcrPTS90k {
+    packet[3] = 0x30 | (continuityCounter & 0x0F)
+    packet[4] = 0x07
+    packet[5] = 0x10
+    packet[6] = UInt8(truncatingIfNeeded: pcrPTS90k >> 25)
+    packet[7] = UInt8(truncatingIfNeeded: pcrPTS90k >> 17)
+    packet[8] = UInt8(truncatingIfNeeded: pcrPTS90k >> 9)
+    packet[9] = UInt8(truncatingIfNeeded: pcrPTS90k >> 1)
+    packet[10] = UInt8(truncatingIfNeeded: ((pcrPTS90k & 1) << 7) | 0x7E)
+    packet[11] = 0x00
+    headerSize = 12
+
+    let payloadCapacity = TSPacketSize - headerSize
+    if remaining < payloadCapacity {
+      let stuffingNeeded = payloadCapacity - remaining
+      packet[4] = UInt8(0x07 + stuffingNeeded)
+      headerSize += stuffingNeeded
+    }
+  } else {
+    let payloadCapacity = TSPacketSize - headerSize
+    if remaining < payloadCapacity {
+      let stuffingBytes = payloadCapacity - remaining
+      packet[3] = 0x30 | (continuityCounter & 0x0F)
+      if stuffingBytes == 1 {
+        packet[4] = 0x00
+        headerSize = 5
+      } else {
+        packet[4] = UInt8(stuffingBytes - 1)
+        packet[5] = 0x00
+        headerSize += stuffingBytes
+      }
+    } else {
+      packet[3] = 0x10 | (continuityCounter & 0x0F)
+    }
+  }
+
   continuityCounter &+= 1
+  let payloadSize = min(TSPacketSize - headerSize, remaining)
+  for k in 0..<payloadSize {
+    packet[headerSize + k] = payload[payloadOffset + k]
+  }
+  payloadOffset += payloadSize
+  return packet
+}
 
-  // Pointer field
-  packet[4] = 0x00
-
-  // PAT section — section is &packet[5], indices below are relative to that.
-  let base = 5
-  packet[base + 0] = 0x00 // table_id = PAT
-  // section_length will be filled after
-  packet[base + 3] = 0x00
-  packet[base + 4] = 0x01 // transport_stream_id = 1
-  packet[base + 5] = 0xC1 // version=0, current_next=1
-  packet[base + 6] = 0x00 // section_number
-  packet[base + 7] = 0x00 // last_section_number
-  // Program 1 -> PMT PID
-  packet[base + 8] = 0x00
-  packet[base + 9] = 0x01 // program_number = 1
-  packet[base + 10] = 0xE0 | UInt8((PMTPID >> 8) & 0x1F)
-  packet[base + 11] = UInt8(PMTPID & 0xFF)
-  // section_length = 13 (5 bytes after length field + 4 program + 4 CRC)
-  let sectionLength: UInt16 = 9 + 4 // 9 bytes data + 4 CRC
-  packet[base + 1] = 0xB0 | UInt8((sectionLength >> 8) & 0x0F)
-  packet[base + 2] = UInt8(sectionLength & 0xFF)
-
-  let crc = FBMPEGTSCRC32(packet, offset: base, length: 12)
-  packet[base + 12] = UInt8((crc >> 24) & 0xFF)
-  packet[base + 13] = UInt8((crc >> 16) & 0xFF)
-  packet[base + 14] = UInt8((crc >> 8) & 0xFF)
-  packet[base + 15] = UInt8(crc & 0xFF)
-
-  return Data(packet)
+public func FBMPEGTSCreatePATPacket(_ continuityCounter: inout UInt8) -> Data {
+  var writer = FBMPEGTSPacketWriter(pid: PATPID, payloadUnitStart: true, continuityCounter: &continuityCounter)
+  writer.writePointerField()
+  let section = writer.beginSection(tableID: 0x00)
+  writer.write16(0x0001)
+  writer.write8(0xC1)
+  writer.write8(0x00)
+  writer.write8(0x00)
+  writer.write16(0x0001)
+  writer.writePID(PMTPID)
+  writer.finishSection(section)
+  return writer.data()
 }
 
 public func FBMPEGTSCreatePMTPacket(_ continuityCounter: inout UInt8, _ streamType: UInt8) -> Data {
-  var packet = [UInt8](repeating: 0xFF, count: TSPacketSize)
-
-  // TS header
-  packet[0] = TSSyncByte
-  packet[1] = 0x40 | UInt8((PMTPID >> 8) & 0x1F) // payload_unit_start=1
-  packet[2] = UInt8(PMTPID & 0xFF)
-  packet[3] = 0x10 | (continuityCounter & 0x0F)
-  continuityCounter &+= 1
-
-  // Pointer field
-  packet[4] = 0x00
-
-  // PMT section — section is &packet[5].
-  let base = 5
-  packet[base + 0] = 0x02 // table_id = PMT
-  // section_length filled after
-  packet[base + 3] = 0x00
-  packet[base + 4] = 0x01 // program_number = 1
-  packet[base + 5] = 0xC1 // version=0, current_next=1
-  packet[base + 6] = 0x00 // section_number
-  packet[base + 7] = 0x00 // last_section_number
-  // PCR PID = VideoPID
-  packet[base + 8] = 0xE0 | UInt8((VideoPID >> 8) & 0x1F)
-  packet[base + 9] = UInt8(VideoPID & 0xFF)
-  // program_info_length = 0
-  packet[base + 10] = 0xF0
-  packet[base + 11] = 0x00
-  // Stream entry
-  packet[base + 12] = streamType
-  packet[base + 13] = 0xE0 | UInt8((VideoPID >> 8) & 0x1F)
-  packet[base + 14] = UInt8(VideoPID & 0xFF)
-  // ES_info_length = 0
-  packet[base + 15] = 0xF0
-  packet[base + 16] = 0x00
-
-  let sectionLength: UInt16 = 14 + 4 // 14 bytes data (section[3..16]) + 4 CRC
-  packet[base + 1] = 0xB0 | UInt8((sectionLength >> 8) & 0x0F)
-  packet[base + 2] = UInt8(sectionLength & 0xFF)
-
-  let crc = FBMPEGTSCRC32(packet, offset: base, length: 17)
-  packet[base + 17] = UInt8((crc >> 24) & 0xFF)
-  packet[base + 18] = UInt8((crc >> 16) & 0xFF)
-  packet[base + 19] = UInt8((crc >> 8) & 0xFF)
-  packet[base + 20] = UInt8(crc & 0xFF)
-
-  return Data(packet)
+  var writer = FBMPEGTSPacketWriter(pid: PMTPID, payloadUnitStart: true, continuityCounter: &continuityCounter)
+  writer.writePointerField()
+  let section = writer.beginSection(tableID: 0x02)
+  writer.write16(0x0001)
+  writer.write8(0xC1)
+  writer.write8(0x00)
+  writer.write8(0x00)
+  writer.writePID(VideoPID)
+  writer.writeLength12(0)
+  writer.write8(streamType)
+  writer.writePID(VideoPID)
+  writer.writeLength12(0)
+  writer.finishSection(section)
+  return writer.data()
 }
 
 public func FBMPEGTSPacketizePES(
@@ -454,81 +525,18 @@ public func FBMPEGTSPacketizePES(
   }
 
   let pesBytes = [UInt8](pesData)
-  let pesLength = pesBytes.count
   var pesOffset = 0
   var first = true
 
-  while pesOffset < pesLength {
-    var packet = [UInt8](repeating: 0xFF, count: TSPacketSize)
-
-    // TS header (4 bytes)
-    packet[0] = TSSyncByte
-    packet[1] = (first ? 0x40 : 0x00) | UInt8((VideoPID >> 8) & 0x1F)
-    packet[2] = UInt8(VideoPID & 0xFF)
-
-    var headerSize = 4
-    let remaining = pesLength - pesOffset
-
-    if first {
-      // First packet of each access unit: include adaptation field with PCR
-      packet[3] = 0x30 | (videoContinuityCounter & 0x0F) // adaptation + payload
-      packet[4] = 0x07 // adaptation_field_length = 7
-      packet[5] = 0x10 // flags: PCR present
-      // PCR encoding: 33-bit base (90kHz) + 6 reserved bits (all 1) + 9-bit extension (0)
-      let pcrBase = pts90k
-      packet[6] = UInt8(truncatingIfNeeded: pcrBase >> 25)
-      packet[7] = UInt8(truncatingIfNeeded: pcrBase >> 17)
-      packet[8] = UInt8(truncatingIfNeeded: pcrBase >> 9)
-      packet[9] = UInt8(truncatingIfNeeded: pcrBase >> 1)
-      packet[10] = UInt8(truncatingIfNeeded: ((pcrBase & 1) << 7) | 0x7E) // base LSB + 6 reserved bits
-      packet[11] = 0x00 // extension = 0
-      headerSize = 12
-
-      let payloadCapacity = TSPacketSize - headerSize // 176
-      if remaining < payloadCapacity {
-        // Extend adaptation field with stuffing bytes
-        let stuffingNeeded = payloadCapacity - remaining
-        packet[4] = UInt8(0x07 + stuffingNeeded) // extend adaptation_field_length
-        for k in 0..<stuffingNeeded {
-          packet[12 + k] = 0xFF
-        }
-        headerSize = 12 + stuffingNeeded
-      }
-    } else {
-      let payloadCapacity = TSPacketSize - headerSize // 184
-      if remaining < payloadCapacity {
-        // Need adaptation field for stuffing
-        let stuffingBytes = payloadCapacity - remaining
-        if stuffingBytes == 1 {
-          // adaptation_field_length = 0, just the length byte
-          packet[3] = 0x30 | (videoContinuityCounter & 0x0F)
-          packet[4] = 0x00 // adaptation_field_length = 0
-          headerSize = 5
-        } else {
-          packet[3] = 0x30 | (videoContinuityCounter & 0x0F)
-          packet[4] = UInt8(stuffingBytes - 1) // adaptation_field_length
-          if stuffingBytes > 1 {
-            packet[5] = 0x00 // flags
-            for k in 0..<(stuffingBytes - 2) {
-              packet[6 + k] = 0xFF
-            }
-          }
-          headerSize = 4 + stuffingBytes
-        }
-      } else {
-        packet[3] = 0x10 | (videoContinuityCounter & 0x0F)
-      }
-    }
-
-    videoContinuityCounter &+= 1
-    var payloadSize = TSPacketSize - headerSize
-    if payloadSize > remaining {
-      payloadSize = remaining
-    }
-    for k in 0..<payloadSize {
-      packet[headerSize + k] = pesBytes[pesOffset + k]
-    }
-    pesOffset += payloadSize
+  while pesOffset < pesBytes.count {
+    let packet = FBMPEGTSCreatePESPayloadPacket(
+      pid: VideoPID,
+      payloadUnitStart: first,
+      continuityCounter: &videoContinuityCounter,
+      payload: pesBytes,
+      payloadOffset: &pesOffset,
+      pcrPTS90k: first ? pts90k : nil
+    )
     first = false
 
     output.append(contentsOf: packet)
@@ -542,59 +550,23 @@ public func FBMPEGTSCreatePMTPacketWithMetadata(_ continuityCounter: inout UInt8
     return FBMPEGTSCreatePMTPacket(&continuityCounter, streamType)
   }
 
-  var packet = [UInt8](repeating: 0xFF, count: TSPacketSize)
-
-  // TS header
-  packet[0] = TSSyncByte
-  packet[1] = 0x40 | UInt8((PMTPID >> 8) & 0x1F)
-  packet[2] = UInt8(PMTPID & 0xFF)
-  packet[3] = 0x10 | (continuityCounter & 0x0F)
-  continuityCounter &+= 1
-
-  // Pointer field
-  packet[4] = 0x00
-
-  // PMT section — section is &packet[5].
-  let base = 5
-  packet[base + 0] = 0x02 // table_id = PMT
-  packet[base + 3] = 0x00
-  packet[base + 4] = 0x01 // program_number = 1
-  packet[base + 5] = 0xC1 // version=0, current_next=1
-  packet[base + 6] = 0x00 // section_number
-  packet[base + 7] = 0x00 // last_section_number
-  // PCR PID = VideoPID
-  packet[base + 8] = 0xE0 | UInt8((VideoPID >> 8) & 0x1F)
-  packet[base + 9] = UInt8(VideoPID & 0xFF)
-  // program_info_length = 0
-  packet[base + 10] = 0xF0
-  packet[base + 11] = 0x00
-  // Video stream entry
-  packet[base + 12] = streamType
-  packet[base + 13] = 0xE0 | UInt8((VideoPID >> 8) & 0x1F)
-  packet[base + 14] = UInt8(VideoPID & 0xFF)
-  packet[base + 15] = 0xF0
-  packet[base + 16] = 0x00 // ES_info_length = 0
-  // Metadata stream entry
-  packet[base + 17] = TimedMetadataStreamType
-  packet[base + 18] = 0xE0 | UInt8((FBMPEGTSMetadataPID >> 8) & 0x1F)
-  packet[base + 19] = UInt8(FBMPEGTSMetadataPID & 0xFF)
-  packet[base + 20] = 0xF0
-  packet[base + 21] = 0x00 // ES_info_length = 0
-
-  // section_length = 9 (header after length) + 5 (video entry) + 5 (metadata entry) + 4 (CRC) = 23
-  // But PMT section data before CRC is: bytes [3..21] = 19 bytes. section_length covers from byte [3] to end including CRC.
-  // section_length = (21 - 3 + 1) + 4 = 23
-  let sectionLength: UInt16 = 18 + 4 // 18 bytes data after section_length field + 4 CRC
-  packet[base + 1] = 0xB0 | UInt8((sectionLength >> 8) & 0x0F)
-  packet[base + 2] = UInt8(sectionLength & 0xFF)
-
-  let crc = FBMPEGTSCRC32(packet, offset: base, length: 22)
-  packet[base + 22] = UInt8((crc >> 24) & 0xFF)
-  packet[base + 23] = UInt8((crc >> 16) & 0xFF)
-  packet[base + 24] = UInt8((crc >> 8) & 0xFF)
-  packet[base + 25] = UInt8(crc & 0xFF)
-
-  return Data(packet)
+  var writer = FBMPEGTSPacketWriter(pid: PMTPID, payloadUnitStart: true, continuityCounter: &continuityCounter)
+  writer.writePointerField()
+  let section = writer.beginSection(tableID: 0x02)
+  writer.write16(0x0001)
+  writer.write8(0xC1)
+  writer.write8(0x00)
+  writer.write8(0x00)
+  writer.writePID(VideoPID)
+  writer.writeLength12(0)
+  writer.write8(streamType)
+  writer.writePID(VideoPID)
+  writer.writeLength12(0)
+  writer.write8(TimedMetadataStreamType)
+  writer.writePID(FBMPEGTSMetadataPID)
+  writer.writeLength12(0)
+  writer.finishSection(section)
+  return writer.data()
 }
 
 public func FBMPEGTSCreateTimedMetadataPackets(_ text: String, _ pts90k: UInt64, _ metadataContinuityCounter: inout UInt8) -> Data {
@@ -663,55 +635,21 @@ public func FBMPEGTSCreateTimedMetadataPackets(_ text: String, _ pts90k: UInt64,
 
   // Packetize into TS packets on MetadataPID
   let pesBytes = pesPacket
-  let pesLength = pesBytes.count
-  let numPackets = (pesLength + 183) / 184
+  let numPackets = (pesBytes.count + 183) / 184
   var output = Data(capacity: numPackets * TSPacketSize)
 
   var pesOffset = 0
   var first = true
 
-  while pesOffset < pesLength {
-    var packet = [UInt8](repeating: 0xFF, count: TSPacketSize)
-    packet[0] = TSSyncByte
-    packet[1] = (first ? 0x40 : 0x00) | UInt8((FBMPEGTSMetadataPID >> 8) & 0x1F)
-    packet[2] = UInt8(FBMPEGTSMetadataPID & 0xFF)
-
-    var headerSize = 4
-    let remaining = pesLength - pesOffset
-    let payloadCapacity = TSPacketSize - headerSize // 184
-
-    if remaining < payloadCapacity {
-      let stuffingBytes = payloadCapacity - remaining
-      if stuffingBytes == 1 {
-        packet[3] = 0x30 | (metadataContinuityCounter & 0x0F)
-        packet[4] = 0x00
-        headerSize = 5
-      } else {
-        packet[3] = 0x30 | (metadataContinuityCounter & 0x0F)
-        packet[4] = UInt8(stuffingBytes - 1)
-        if stuffingBytes > 1 {
-          packet[5] = 0x00
-          if stuffingBytes > 2 {
-            for k in 0..<(stuffingBytes - 2) {
-              packet[6 + k] = 0xFF
-            }
-          }
-        }
-        headerSize = 4 + stuffingBytes
-      }
-    } else {
-      packet[3] = 0x10 | (metadataContinuityCounter & 0x0F)
-    }
-
-    metadataContinuityCounter &+= 1
-    var payloadSize = TSPacketSize - headerSize
-    if payloadSize > remaining {
-      payloadSize = remaining
-    }
-    for k in 0..<payloadSize {
-      packet[headerSize + k] = pesBytes[pesOffset + k]
-    }
-    pesOffset += payloadSize
+  while pesOffset < pesBytes.count {
+    let packet = FBMPEGTSCreatePESPayloadPacket(
+      pid: FBMPEGTSMetadataPID,
+      payloadUnitStart: first,
+      continuityCounter: &metadataContinuityCounter,
+      payload: pesBytes,
+      payloadOffset: &pesOffset,
+      pcrPTS90k: nil
+    )
     first = false
 
     output.append(contentsOf: packet)
