@@ -25,6 +25,67 @@ struct AppOptions: ParsableArguments {
   var reuseSession: Bool { !newSession }
 }
 
+/// Connection and toolchain options shared by every subcommand: which target or
+/// companion to reach and how to compile injected code. Flattened into each subcommand
+/// via `@OptionGroup`.
+struct ConnectionOptions: ParsableArguments {
+  @Option(
+    name: .long,
+    help: "UDID of the simulator to use for execution. If omitted, the single running companion is used, or one is started for the only available simulator.")
+  var udid: String?
+
+  @Option(name: .long, help: "Path to the Swift toolchain used to compile code. Defaults to the selected Xcode toolchain (xcode-select -p).")
+  var toolchainPath: String?
+
+  @Option(
+    name: .long,
+    help: ArgumentHelp(
+      "Path to the idb_companion binary, overriding the default system installed binary.",
+      visibility: .hidden))
+  var idbCompanionBinary: String?
+
+  @Option(
+    name: .long,
+    help: "Connect directly to a companion at host:port (e.g. 127.0.0.1:10882), bypassing discovery. Use to reach an already-running, typically remote, companion.")
+  var companion: String?
+
+  @Flag(
+    name: .long,
+    help: ArgumentHelp(
+      "Use an unencrypted TCP connection to the companion instead of TLS.",
+      visibility: .hidden))
+  var plaintext = false
+
+  /// Assembles the session config from these connection options, the report options,
+  /// and the global `--reason`.
+  func sessionConfig(report: ReportOptions) -> ReplSessionConfig {
+    ReplSessionConfig(
+      udid: udid,
+      toolchainPath: toolchainPath,
+      idbCompanionBinary: idbCompanionBinary,
+      companion: companion,
+      plaintext: plaintext,
+      reportPath: report.reportPath,
+      reportFailures: report.reportFailures,
+      reason: GlobalOptions.shared.reason)
+  }
+}
+
+/// Report options shared by every subcommand: where to write the session report and
+/// whether to also record runs that fail to compile. Flattened into each subcommand via
+/// `@OptionGroup`.
+struct ReportOptions: ParsableArguments {
+  @Option(
+    name: .long,
+    help: "Write a Markdown report of this session (the code run and its results) to this path. If omitted, no report is written.")
+  var reportPath: String?
+
+  @Flag(
+    name: .long,
+    help: "Also record runs whose code fails to compile in the report. Off by default; successful runs and runtime exceptions are always recorded.")
+  var reportFailures = false
+}
+
 /// @unchecked Sendable: the lazy-creation flag is the only mutable state and is
 /// guarded by `lock`; `path` is an immutable `let`.
 final class SessionDirectory: @unchecked Sendable {

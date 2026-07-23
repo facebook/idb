@@ -46,7 +46,7 @@ struct TestRepl: AsyncParsableCommand {
   static let configuration = CommandConfiguration(
     commandName: "idb-repl",
     abstract: "Compile and run Swift code inside a live process on an iOS simulator.",
-    subcommands: [TestCommand.self, SimulatorCommand.self, AppCommand.self])
+    subcommands: [TestCommand.self, SimulatorCommand.self, AppCommand.self, ReplayCommand.self])
 
   mutating func validate() throws {
     GlobalOptions.shared.reason = reason
@@ -71,7 +71,7 @@ struct TestCommand: AsyncParsableCommand {
   @OptionGroup var bundle: TestBundleOptions
 
   func run() async throws {
-    try await repl.run(context: .test(bundle))
+    try await repl.run(context: .test(bundlePath: bundle.testBundlePath))
   }
 }
 
@@ -96,6 +96,6 @@ struct AppCommand: AsyncParsableCommand {
   @OptionGroup var app: AppOptions
 
   func run() async throws {
-    try await repl.run(context: .app(app))
+    try await repl.run(context: .app(bundleID: app.bundleID, reuseSession: app.reuseSession))
   }
 }

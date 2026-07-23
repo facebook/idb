@@ -53,7 +53,7 @@ final class ReplReportWriter {
   /// created fresh (truncating any unrelated existing file), starting with the
   /// session marker and header.
   @discardableResult
-  func open(context: String, target: String, reason: String?, sessionID: String, startedAt: Date) -> String? {
+  func open(meta: SessionMeta, target: String, reason: String?, sessionID: String, startedAt: Date) -> String? {
     let directory = (path as NSString).deletingLastPathComponent
     if !directory.isEmpty {
       try? FileManager.default.createDirectory(atPath: directory, withIntermediateDirectories: true)
@@ -93,7 +93,7 @@ final class ReplReportWriter {
       return nil
     }
     self.handle = handle
-    write(ReplReportFormatter.header(context: context, target: target, reason: reason, sessionID: sessionID, startedAt: startedAt))
+    write(ReplReportFormatter.header(meta: meta, target: target, reason: reason, sessionID: sessionID, startedAt: startedAt))
     return path
   }
 
@@ -118,8 +118,8 @@ final class ReplReportWriter {
   }
 
   /// Records a run whose code failed to compile (only reached under `--report-failures`).
-  func recordCompileFailure(code: String, compilerOutput: String, at date: Date) {
-    write(ReplReportFormatter.compileFailureEntry(code: code, compilerOutput: compilerOutput, at: date))
+  func recordCompileFailure(index: Int, code: String, compilerOutput: String, at date: Date) {
+    write(ReplReportFormatter.compileFailureEntry(index: index, code: code, compilerOutput: compilerOutput, at: date))
   }
 
   /// Closes the report file. Further writes are no-ops.

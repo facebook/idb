@@ -16,13 +16,16 @@ struct ReplReportWriterTests {
 
   private let epoch = Date(timeIntervalSince1970: 0)
 
+  private static let simulatorMeta = SessionMeta(v: 1, context: "simulator", bundleID: nil, testBundlePath: nil, freshLaunch: nil)
+  private static let appMeta = SessionMeta(v: 1, context: "app", bundleID: "x", testBundlePath: nil, freshLaunch: true)
+
   @Test
   func writesHeaderAndRunToFile() throws {
     let path = Self.tempReportPath()
     defer { try? FileManager.default.removeItem(atPath: path) }
 
     let writer = ReplReportWriter(path: path)
-    let resolved = writer.open(context: "simulator", target: "sim 17.5", reason: "why", sessionID: "s1", startedAt: epoch)
+    let resolved = writer.open(meta: Self.simulatorMeta, target: "sim 17.5", reason: "why", sessionID: "s1", startedAt: epoch)
     #expect(resolved == path)
     writer.recordRun(index: 0, code: "return 1", output: "Result:\n1", artifactFilenames: [], at: epoch)
     writer.close()
@@ -41,13 +44,13 @@ struct ReplReportWriterTests {
     defer { try? FileManager.default.removeItem(atPath: path) }
 
     let first = ReplReportWriter(path: path)
-    first.open(context: "app (`x`)", target: "t", reason: nil, sessionID: "old", startedAt: epoch)
+    first.open(meta: Self.appMeta, target: "t", reason: nil, sessionID: "old", startedAt: epoch)
     first.recordRun(index: 0, code: "return \"first\"", output: "Result:\nfirst", artifactFilenames: [], at: epoch)
     first.close()
 
     // A new session id at the same path means a reset: the report is recreated.
     let second = ReplReportWriter(path: path)
-    second.open(context: "app (`x`)", target: "t", reason: nil, sessionID: "new", startedAt: epoch)
+    second.open(meta: Self.appMeta, target: "t", reason: nil, sessionID: "new", startedAt: epoch)
     second.recordRun(index: 0, code: "return \"second\"", output: "Result:\nsecond", artifactFilenames: [], at: epoch)
     second.close()
 
@@ -63,13 +66,13 @@ struct ReplReportWriterTests {
     defer { try? FileManager.default.removeItem(atPath: path) }
 
     let first = ReplReportWriter(path: path)
-    first.open(context: "app (`x`)", target: "t", reason: nil, sessionID: "same", startedAt: epoch)
+    first.open(meta: Self.appMeta, target: "t", reason: nil, sessionID: "same", startedAt: epoch)
     first.recordRun(index: 0, code: "return \"first\"", output: "Result:\nfirst", artifactFilenames: [], at: epoch)
     first.close()
 
     // Reconnecting with the same session id appends rather than overwriting.
     let second = ReplReportWriter(path: path)
-    second.open(context: "app (`x`)", target: "t", reason: nil, sessionID: "same", startedAt: epoch)
+    second.open(meta: Self.appMeta, target: "t", reason: nil, sessionID: "same", startedAt: epoch)
     second.recordRun(index: 1, code: "return \"second\"", output: "Result:\nsecond", artifactFilenames: [], at: epoch)
     second.close()
 
@@ -91,7 +94,7 @@ struct ReplReportWriterTests {
     defer { try? FileManager.default.removeItem(atPath: base) }
 
     let writer = ReplReportWriter(path: path)
-    let resolved = writer.open(context: "simulator", target: "t", reason: nil, sessionID: "s", startedAt: epoch)
+    let resolved = writer.open(meta: Self.simulatorMeta, target: "t", reason: nil, sessionID: "s", startedAt: epoch)
     writer.close()
     #expect(resolved == path)
     #expect(FileManager.default.fileExists(atPath: path))
@@ -118,7 +121,7 @@ struct ReplReportWriterTests {
     let path = (base as NSString).appendingPathComponent("session.md")
 
     let writer = ReplReportWriter(path: path)
-    writer.open(context: "app (`x`)", target: "t", reason: nil, sessionID: "s", startedAt: epoch)
+    writer.open(meta: Self.appMeta, target: "t", reason: nil, sessionID: "s", startedAt: epoch)
     // Simulate an artifact transferred into the report's artifacts directory.
     let directory = try #require(writer.artifactsDirectory())
     let artifact = (directory as NSString).appendingPathComponent("screenshot_0_1.png")
@@ -139,7 +142,7 @@ struct ReplReportWriterTests {
     let path = (base as NSString).appendingPathComponent("session.md")
 
     let first = ReplReportWriter(path: path)
-    first.open(context: "app (`x`)", target: "t", reason: nil, sessionID: "old", startedAt: epoch)
+    first.open(meta: Self.appMeta, target: "t", reason: nil, sessionID: "old", startedAt: epoch)
     let directory = try #require(first.artifactsDirectory())
     let staleArtifact = (directory as NSString).appendingPathComponent("screenshot_0_1.png")
     FileManager.default.createFile(atPath: staleArtifact, contents: Data([0x89]))
@@ -147,7 +150,7 @@ struct ReplReportWriterTests {
 
     // A fresh session at the same path drops the previous session's artifacts.
     let second = ReplReportWriter(path: path)
-    second.open(context: "app (`x`)", target: "t", reason: nil, sessionID: "new", startedAt: epoch)
+    second.open(meta: Self.appMeta, target: "t", reason: nil, sessionID: "new", startedAt: epoch)
     second.close()
     #expect(!FileManager.default.fileExists(atPath: staleArtifact))
   }

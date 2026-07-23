@@ -7,20 +7,61 @@
 
 import Foundation
 
+/// Structured, machine-readable session metadata embedded in a report's header as a
+/// hidden marker. Records what `replay` needs to reconstruct the session: the context
+/// kind and, per kind, the bundle/path it targeted and (for `app`) whether the app was
+/// freshly launched. `v` is a schema version for forward-compatibility.
+struct SessionMeta: Codable, Equatable {
+  var v: Int
+  var context: String
+  var bundleID: String?
+  var testBundlePath: String?
+  var freshLaunch: Bool?
+
+  /// The human-readable label shown in the report's `- **Context:**` line, derived from
+  /// the structured fields so the visible label and the marker cannot drift.
+  var reportLabel: String {
+    switch context {
+    case "app": return "app (`\(bundleID ?? "")`)"
+    case "test": return "test (`\(testBundlePath ?? "")`)"
+    default: return context
+    }
+  }
+}
+
+/// Structured, machine-readable metadata for a single run, embedded as a hidden marker
+/// immediately before the run's section. `at` is the run's epoch time with sub-second
+/// precision (the canonical timestamp for `--realtime`, finer than the 1-second visible
+/// heading); `status` is `ok` for a completed run (including a runtime exception) or
+/// `compile-failed` for a run whose code did not compile.
+struct RunMeta: Codable, Equatable {
+  var index: Int
+  var at: Double
+  var status: String
+
+  static let statusOK = "ok"
+  static let statusCompileFailed = "compile-failed"
+}
+
 /// Pure Markdown formatting for `idb-repl` session reports. Every function returns
 /// a string and performs no I/O, so the report's shape can be unit-tested directly;
 /// the file handling lives in `ReplReportWriter`.
+///
+/// Each report also carries hidden, machine-readable markers (HTML comments, invisible
+/// in rendered Markdown) that `ReplReportParser` reads back to replay the session: an
+/// `idb-repl-meta` marker in the header and an `idb-repl-run` marker before each run.
 enum ReplReportFormatter {
 
-  /// The report's leading header: a machine-readable session marker, then a title
-  /// and a metadata list, written when a report is first created. Ends with a
-  /// horizontal rule so the first run reads as a new section.
-  static func header(context: String, target: String, reason: String?, sessionID: String, startedAt: Date) -> String {
+  /// The report's leading header: the machine-readable session and metadata markers,
+  /// then a title and a metadata list, written when a report is first created. Ends with
+  /// a horizontal rule so the first run reads as a new section.
+  static func header(meta: SessionMeta, target: String, reason: String?, sessionID: String, startedAt: Date) -> String {
     var lines = [
       sessionMarker(sessionID),
+      sessionMetaMarker(meta),
       "# idb-repl session report",
       "",
-      "- **Context:** \(context)",
+      "- **Context:** \(meta.reportLabel)",
       "- **Target:** \(target)",
       "- **Started:** \(timestamp(startedAt))",
     ]
@@ -53,18 +94,41 @@ enum ReplReportFormatter {
     return String(trimmed[start..<end])
   }
 
+  /// The hidden session-metadata marker line, `<!-- idb-repl-meta: {json} -->`.
+  static func sessionMetaMarker(_ meta: SessionMeta) -> String {
+    marker(prefix: sessionMetaMarkerPrefix, value: meta)
+  }
+
+  /// The session metadata parsed from a report line, or nil when `line` is not a
+  /// session-metadata marker or its JSON does not decode.
+  static func sessionMeta(fromLine line: String) -> SessionMeta? {
+    decodeMarker(line, prefix: sessionMetaMarkerPrefix)
+  }
+
+  /// The hidden per-run marker line, `<!-- idb-repl-run: {json} -->`.
+  static func runMarker(_ meta: RunMeta) -> String {
+    marker(prefix: runMarkerPrefix, value: meta)
+  }
+
+  /// The run metadata parsed from a report line, or nil when `line` is not a run marker
+  /// or its JSON does not decode.
+  static func runMeta(fromLine line: String) -> RunMeta? {
+    decodeMarker(line, prefix: runMarkerPrefix)
+  }
+
   /// A marker appended when a run resumes an existing report — a reconnect to a
   /// still-running app session.
   static func reconnectMarker(at date: Date) -> String {
     "\n_Reconnected \(timestamp(date))_\n"
   }
 
-  /// A single completed run: its number and time, the user's code, the output the
-  /// target returned (already prefixed `Result:` or `Exception:`), and links to any
-  /// artifacts captured during the run. A runtime exception is still a completed run
-  /// — the code compiled and executed.
+  /// A single completed run: a hidden run marker, then its number and time, the user's
+  /// code, the output the target returned (already prefixed `Result:` or `Exception:`),
+  /// and links to any artifacts captured during the run. A runtime exception is still a
+  /// completed run — the code compiled and executed.
   static func runEntry(index: Int, code: String, output: String, artifacts: [String], at date: Date) -> String {
-    var entry = section(
+    var entry = "\n" + runMarker(RunMeta(index: index, at: date.timeIntervalSince1970, status: RunMeta.statusOK))
+    entry += section(
       heading: "Run \(index) — \(timestamp(date))",
       code: code,
       bodyLabel: "Output",
@@ -75,14 +139,17 @@ enum ReplReportFormatter {
     return entry
   }
 
-  /// A run whose code failed to compile, recorded only under `--report-failures`:
-  /// the user's code and the compiler diagnostics.
-  static func compileFailureEntry(code: String, compilerOutput: String, at date: Date) -> String {
-    section(
+  /// A run whose code failed to compile, recorded only under `--report-failures`: a
+  /// hidden run marker flagged `compile-failed`, then the user's code and the compiler
+  /// diagnostics.
+  static func compileFailureEntry(index: Int, code: String, compilerOutput: String, at date: Date) -> String {
+    var entry = "\n" + runMarker(RunMeta(index: index, at: date.timeIntervalSince1970, status: RunMeta.statusCompileFailed))
+    entry += section(
       heading: "Failed Run — \(timestamp(date))",
       code: code,
       bodyLabel: "Compile error",
       body: compilerOutput)
+    return entry
   }
 
   // MARK: - Private
@@ -149,8 +216,39 @@ enum ReplReportFormatter {
     return longest
   }
 
+  /// Builds a hidden HTML-comment marker line carrying `value` as JSON.
+  private static func marker<T: Encodable>(prefix: String, value: T) -> String {
+    let json = (try? jsonEncoder.encode(value)).flatMap { String(data: $0, encoding: .utf8) } ?? "{}"
+    return "\(prefix)\(json)\(markerSuffix)"
+  }
+
+  /// Decodes a `T` from a marker line beginning with `prefix`, or nil when the line is
+  /// not that marker or its JSON does not decode.
+  private static func decodeMarker<T: Decodable>(_ line: String, prefix: String) -> T? {
+    let trimmed = line.trimmingCharacters(in: .whitespaces)
+    guard trimmed.hasPrefix(prefix), trimmed.hasSuffix(markerSuffix),
+      trimmed.count >= prefix.count + markerSuffix.count
+    else {
+      return nil
+    }
+    let start = trimmed.index(trimmed.startIndex, offsetBy: prefix.count)
+    let end = trimmed.index(trimmed.endIndex, offsetBy: -markerSuffix.count)
+    let json = String(trimmed[start..<end])
+    return json.data(using: .utf8).flatMap { try? JSONDecoder().decode(T.self, from: $0) }
+  }
+
   private static let sessionMarkerPrefix = "<!-- idb-repl-session: "
   private static let sessionMarkerSuffix = " -->"
+  private static let sessionMetaMarkerPrefix = "<!-- idb-repl-meta: "
+  private static let runMarkerPrefix = "<!-- idb-repl-run: "
+  private static let markerSuffix = " -->"
+
+  private static let jsonEncoder: JSONEncoder = {
+    let encoder = JSONEncoder()
+    // Sorted keys make the marker deterministic (stable across runs and testable).
+    encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
+    return encoder
+  }()
 
   private static let timestampFormatter: DateFormatter = {
     let formatter = DateFormatter()
