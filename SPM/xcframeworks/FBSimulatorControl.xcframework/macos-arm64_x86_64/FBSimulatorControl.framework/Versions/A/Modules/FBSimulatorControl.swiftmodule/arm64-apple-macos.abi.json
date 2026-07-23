@@ -19345,6 +19345,66 @@
             "init_kind": "Convenience"
           },
           {
+            "kind": "Constructor",
+            "name": "init",
+            "printedName": "init(for:transport:onTransportInvalidated:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "FBSimulatorHID",
+                "printedName": "FBSimulatorControl.FBSimulatorHID",
+                "usr": "s:18FBSimulatorControl0A3HIDC"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "FBSimulator",
+                "printedName": "FBSimulatorControl.FBSimulator",
+                "usr": "c:objc(cs)FBSimulator"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Optional",
+                "printedName": "FBSimulatorControl.FBSimulatorHIDTransportType?",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "FBSimulatorHIDTransportType",
+                    "printedName": "FBSimulatorControl.FBSimulatorHIDTransportType",
+                    "usr": "s:18FBSimulatorControl0A16HIDTransportTypeO"
+                  }
+                ],
+                "hasDefaultArg": true,
+                "usr": "s:Sq"
+              },
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "() -> ()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  }
+                ]
+              }
+            ],
+            "declKind": "Constructor",
+            "usr": "s:18FBSimulatorControl0A3HIDC3for9transport22onTransportInvalidatedACSo0A0C_AA0A16HIDTransportTypeOSgyyYbctKcfc",
+            "mangledName": "$s18FBSimulatorControl0A3HIDC3for9transport22onTransportInvalidatedACSo0A0C_AA0A16HIDTransportTypeOSgyyYbctKcfc",
+            "moduleName": "FBSimulatorControl",
+            "declAttributes": [
+              "Convenience"
+            ],
+            "throwing": true,
+            "init_kind": "Convenience"
+          },
+          {
             "kind": "Function",
             "name": "disconnect",
             "printedName": "disconnect()",
@@ -22690,35 +22750,27 @@
         "children": [
           {
             "kind": "Var",
-            "name": "record",
-            "printedName": "record",
+            "name": "state",
+            "printedName": "state",
             "children": [
               {
                 "kind": "TypeNominal",
                 "name": "Mutex",
-                "printedName": "Synchronization.Mutex<FBSimulatorControl.FBSimulatorHIDSessionCache<τ_0_0>.Record?>",
+                "printedName": "Synchronization.Mutex<FBSimulatorControl.FBSimulatorHIDSessionCache<τ_0_0>.State>",
                 "children": [
                   {
                     "kind": "TypeNominal",
-                    "name": "Optional",
-                    "printedName": "FBSimulatorControl.FBSimulatorHIDSessionCache<τ_0_0>.Record?",
-                    "children": [
-                      {
-                        "kind": "TypeNominal",
-                        "name": "Record",
-                        "printedName": "FBSimulatorControl.FBSimulatorHIDSessionCache<τ_0_0>.Record",
-                        "usr": "s:18FBSimulatorControl0A15HIDSessionCacheC6Record33_01B13F29D626325536FCC6219001FCD5LLV"
-                      }
-                    ],
-                    "usr": "s:Sq"
+                    "name": "State",
+                    "printedName": "FBSimulatorControl.FBSimulatorHIDSessionCache<τ_0_0>.State",
+                    "usr": "s:18FBSimulatorControl0A15HIDSessionCacheC5State33_01B13F29D626325536FCC6219001FCD5LLV"
                   }
                 ],
                 "usr": "s:15Synchronization5MutexV"
               }
             ],
             "declKind": "Var",
-            "usr": "s:18FBSimulatorControl0A15HIDSessionCacheC6record33_01B13F29D626325536FCC6219001FCD5LL15Synchronization5MutexVyAC6RecordAELLVyx_GSgGvp",
-            "mangledName": "$s18FBSimulatorControl0A15HIDSessionCacheC6record33_01B13F29D626325536FCC6219001FCD5LL15Synchronization5MutexVyAC6RecordAELLVyx_GSgGvp",
+            "usr": "s:18FBSimulatorControl0A15HIDSessionCacheC5state33_01B13F29D626325536FCC6219001FCD5LL15Synchronization5MutexVyAC5StateAELLVyx_GGvp",
+            "mangledName": "$s18FBSimulatorControl0A15HIDSessionCacheC5state33_01B13F29D626325536FCC6219001FCD5LL15Synchronization5MutexVyAC5StateAELLVyx_GGvp",
             "moduleName": "FBSimulatorControl",
             "isInternal": true,
             "declAttributes": [
@@ -22831,7 +22883,7 @@
               {
                 "kind": "TypeFunc",
                 "name": "Function",
-                "printedName": "() throws -> τ_0_0",
+                "printedName": "(@escaping () -> ()) throws -> τ_0_0",
                 "children": [
                   {
                     "kind": "TypeNominal",
@@ -22839,9 +22891,21 @@
                     "printedName": "τ_0_0"
                   },
                   {
-                    "kind": "TypeNominal",
-                    "name": "Void",
-                    "printedName": "()"
+                    "kind": "TypeFunc",
+                    "name": "Function",
+                    "printedName": "() -> ()",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Void",
+                        "printedName": "()"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Void",
+                        "printedName": "()"
+                      }
+                    ]
                   }
                 ],
                 "typeAttributes": [
@@ -22871,8 +22935,8 @@
               }
             ],
             "declKind": "Func",
-            "usr": "s:18FBSimulatorControl0A15HIDSessionCacheC7session3for6create15currentIdentityxAA0a7HIDBootI0V_xyKXEAIyKXEtKF",
-            "mangledName": "$s18FBSimulatorControl0A15HIDSessionCacheC7session3for6create15currentIdentityxAA0a7HIDBootI0V_xyKXEAIyKXEtKF",
+            "usr": "s:18FBSimulatorControl0A15HIDSessionCacheC7session3for6create15currentIdentityxAA0a7HIDBootI0V_xyyYbcKXEAIyKXEtKF",
+            "mangledName": "$s18FBSimulatorControl0A15HIDSessionCacheC7session3for6create15currentIdentityxAA0a7HIDBootI0V_xyyYbcKXEAIyKXEtKF",
             "moduleName": "FBSimulatorControl",
             "genericSig": "<τ_0_0 where τ_0_0 : Swift.Sendable>",
             "sugared_genericSig": "<Session where Session : Swift.Sendable>",
@@ -26908,9 +26972,195 @@
             "hasStorage": true
           },
           {
+            "kind": "Var",
+            "name": "invalidationReported",
+            "printedName": "invalidationReported",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Bool",
+                "printedName": "Swift.Bool",
+                "usr": "s:Sb"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:18FBSimulatorControl0A15IndigoHIDClientC20invalidationReported33_92D09126633746640C89C5C4A043FD2FLLSbvp",
+            "mangledName": "$s18FBSimulatorControl0A15IndigoHIDClientC20invalidationReported33_92D09126633746640C89C5C4A043FD2FLLSbvp",
+            "moduleName": "FBSimulatorControl",
+            "isInternal": true,
+            "declAttributes": [
+              "HasInitialValue",
+              "Final",
+              "HasStorage",
+              "AccessControl"
+            ],
+            "fixedbinaryorder": 4,
+            "hasStorage": true
+          },
+          {
+            "kind": "Var",
+            "name": "onInvalidated",
+            "printedName": "onInvalidated",
+            "children": [
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "() -> ()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  }
+                ]
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:18FBSimulatorControl0A15IndigoHIDClientC13onInvalidated33_92D09126633746640C89C5C4A043FD2FLLyyYbcvp",
+            "mangledName": "$s18FBSimulatorControl0A15IndigoHIDClientC13onInvalidated33_92D09126633746640C89C5C4A043FD2FLLyyYbcvp",
+            "moduleName": "FBSimulatorControl",
+            "isInternal": true,
+            "declAttributes": [
+              "Final",
+              "HasStorage",
+              "AccessControl"
+            ],
+            "fixedbinaryorder": 5,
+            "isLet": true,
+            "hasStorage": true
+          },
+          {
+            "kind": "Var",
+            "name": "onDisposed",
+            "printedName": "onDisposed",
+            "children": [
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "() -> ()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  }
+                ]
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:18FBSimulatorControl0A15IndigoHIDClientC10onDisposed33_92D09126633746640C89C5C4A043FD2FLLyyYbcvp",
+            "mangledName": "$s18FBSimulatorControl0A15IndigoHIDClientC10onDisposed33_92D09126633746640C89C5C4A043FD2FLLyyYbcvp",
+            "moduleName": "FBSimulatorControl",
+            "isInternal": true,
+            "declAttributes": [
+              "Final",
+              "HasStorage",
+              "AccessControl",
+              "RawDocComment"
+            ],
+            "fixedbinaryorder": 6,
+            "isLet": true,
+            "hasStorage": true
+          },
+          {
+            "kind": "Var",
+            "name": "sendImplementation",
+            "printedName": "sendImplementation",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Optional",
+                "printedName": "((Foundation.Data, Dispatch.DispatchQueue, @escaping ((any Swift.Error)?) -> ()) -> ())?",
+                "children": [
+                  {
+                    "kind": "TypeFunc",
+                    "name": "Function",
+                    "printedName": "(Foundation.Data, Dispatch.DispatchQueue, @escaping ((any Swift.Error)?) -> ()) -> ()",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Void",
+                        "printedName": "()"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Tuple",
+                        "printedName": "(Foundation.Data, Dispatch.DispatchQueue, ((any Swift.Error)?) -> ())",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "Data",
+                            "printedName": "Foundation.Data",
+                            "usr": "s:10Foundation4DataV"
+                          },
+                          {
+                            "kind": "TypeNominal",
+                            "name": "DispatchQueue",
+                            "printedName": "Dispatch.DispatchQueue",
+                            "usr": "c:objc(cs)OS_dispatch_queue"
+                          },
+                          {
+                            "kind": "TypeFunc",
+                            "name": "Function",
+                            "printedName": "((any Swift.Error)?) -> ()",
+                            "children": [
+                              {
+                                "kind": "TypeNominal",
+                                "name": "Void",
+                                "printedName": "()"
+                              },
+                              {
+                                "kind": "TypeNominal",
+                                "name": "Optional",
+                                "printedName": "(any Swift.Error)?",
+                                "children": [
+                                  {
+                                    "kind": "TypeNominal",
+                                    "name": "Error",
+                                    "printedName": "any Swift.Error",
+                                    "usr": "s:s5ErrorP"
+                                  }
+                                ],
+                                "usr": "s:Sq"
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ],
+                "usr": "s:Sq"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:18FBSimulatorControl0A15IndigoHIDClientC18sendImplementation33_92D09126633746640C89C5C4A043FD2FLLy10Foundation4DataV_So17OS_dispatch_queueCys5Error_pSgYbctYbcSgvp",
+            "mangledName": "$s18FBSimulatorControl0A15IndigoHIDClientC18sendImplementation33_92D09126633746640C89C5C4A043FD2FLLy10Foundation4DataV_So17OS_dispatch_queueCys5Error_pSgYbctYbcSgvp",
+            "moduleName": "FBSimulatorControl",
+            "isInternal": true,
+            "declAttributes": [
+              "Final",
+              "HasStorage",
+              "AccessControl"
+            ],
+            "fixedbinaryorder": 7,
+            "isLet": true,
+            "hasStorage": true
+          },
+          {
             "kind": "Constructor",
             "name": "init",
-            "printedName": "init(for:)",
+            "printedName": "init(for:onInvalidated:)",
             "children": [
               {
                 "kind": "TypeNominal",
@@ -26923,11 +27173,29 @@
                 "name": "SimDevice",
                 "printedName": "CoreSimulator.SimDevice",
                 "usr": "c:objc(cs)SimDevice"
+              },
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "() -> ()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  }
+                ],
+                "hasDefaultArg": true
               }
             ],
             "declKind": "Constructor",
-            "usr": "s:18FBSimulatorControl0A15IndigoHIDClientC3forACSo9SimDeviceC_tKcfc",
-            "mangledName": "$s18FBSimulatorControl0A15IndigoHIDClientC3forACSo9SimDeviceC_tKcfc",
+            "usr": "s:18FBSimulatorControl0A15IndigoHIDClientC3for13onInvalidatedACSo9SimDeviceC_yyYbctKcfc",
+            "mangledName": "$s18FBSimulatorControl0A15IndigoHIDClientC3for13onInvalidatedACSo9SimDeviceC_yyYbctKcfc",
             "moduleName": "FBSimulatorControl",
             "declAttributes": [
               "Convenience",
@@ -26935,6 +27203,136 @@
             ],
             "throwing": true,
             "init_kind": "Convenience"
+          },
+          {
+            "kind": "Constructor",
+            "name": "init",
+            "printedName": "init(client:queue:onInvalidated:onDisposed:sendImplementation:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "FBSimulatorIndigoHIDClient",
+                "printedName": "FBSimulatorControl.FBSimulatorIndigoHIDClient",
+                "usr": "s:18FBSimulatorControl0A15IndigoHIDClientC"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "ProtocolComposition",
+                "printedName": "AnyObject"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "DispatchQueue",
+                "printedName": "Dispatch.DispatchQueue",
+                "usr": "c:objc(cs)OS_dispatch_queue"
+              },
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "() -> ()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  }
+                ]
+              },
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "() -> ()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  }
+                ],
+                "hasDefaultArg": true
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Optional",
+                "printedName": "((Foundation.Data, Dispatch.DispatchQueue, @escaping ((any Swift.Error)?) -> ()) -> ())?",
+                "children": [
+                  {
+                    "kind": "TypeFunc",
+                    "name": "Function",
+                    "printedName": "(Foundation.Data, Dispatch.DispatchQueue, @escaping ((any Swift.Error)?) -> ()) -> ()",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Void",
+                        "printedName": "()"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Tuple",
+                        "printedName": "(Foundation.Data, Dispatch.DispatchQueue, ((any Swift.Error)?) -> ())",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "Data",
+                            "printedName": "Foundation.Data",
+                            "usr": "s:10Foundation4DataV"
+                          },
+                          {
+                            "kind": "TypeNominal",
+                            "name": "DispatchQueue",
+                            "printedName": "Dispatch.DispatchQueue",
+                            "usr": "c:objc(cs)OS_dispatch_queue"
+                          },
+                          {
+                            "kind": "TypeFunc",
+                            "name": "Function",
+                            "printedName": "((any Swift.Error)?) -> ()",
+                            "children": [
+                              {
+                                "kind": "TypeNominal",
+                                "name": "Void",
+                                "printedName": "()"
+                              },
+                              {
+                                "kind": "TypeNominal",
+                                "name": "Optional",
+                                "printedName": "(any Swift.Error)?",
+                                "children": [
+                                  {
+                                    "kind": "TypeNominal",
+                                    "name": "Error",
+                                    "printedName": "any Swift.Error",
+                                    "usr": "s:s5ErrorP"
+                                  }
+                                ],
+                                "usr": "s:Sq"
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ],
+                "hasDefaultArg": true,
+                "usr": "s:Sq"
+              }
+            ],
+            "declKind": "Constructor",
+            "usr": "s:18FBSimulatorControl0A15IndigoHIDClientC6client5queue13onInvalidated0G8Disposed18sendImplementationACyXl_So012OS_dispatch_F0CyyYbcyyYbcy10Foundation4DataV_AJys5Error_pSgYbctYbcSgtcfc",
+            "mangledName": "$s18FBSimulatorControl0A15IndigoHIDClientC6client5queue13onInvalidated0G8Disposed18sendImplementationACyXl_So012OS_dispatch_F0CyyYbcyyYbcy10Foundation4DataV_AJys5Error_pSgYbctYbcSgtcfc",
+            "moduleName": "FBSimulatorControl",
+            "init_kind": "Designated"
           },
           {
             "kind": "Function",
@@ -27232,7 +27630,7 @@
           {
             "kind": "Function",
             "name": "indigo",
-            "printedName": "indigo(for:)",
+            "printedName": "indigo(for:onInvalidated:)",
             "children": [
               {
                 "kind": "TypeNominal",
@@ -27245,11 +27643,29 @@
                 "name": "FBSimulator",
                 "printedName": "FBSimulatorControl.FBSimulator",
                 "usr": "c:objc(cs)FBSimulator"
+              },
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "() -> ()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  }
+                ],
+                "hasDefaultArg": true
               }
             ],
             "declKind": "Func",
-            "usr": "s:18FBSimulatorControl0A18IndigoHIDTransportC6indigo3forACSo0A0C_tKFZ",
-            "mangledName": "$s18FBSimulatorControl0A18IndigoHIDTransportC6indigo3forACSo0A0C_tKFZ",
+            "usr": "s:18FBSimulatorControl0A18IndigoHIDTransportC6indigo3for13onInvalidatedACSo0A0C_yyYbctKFZ",
+            "mangledName": "$s18FBSimulatorControl0A18IndigoHIDTransportC6indigo3for13onInvalidatedACSo0A0C_yyYbctKFZ",
             "moduleName": "FBSimulatorControl",
             "static": true,
             "declAttributes": [
@@ -61056,6 +61472,13 @@
       "value": "\"com.apple.iphonesimulator.toggleincallstatusbar\""
     },
     {
+      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/HID\/FBSimulatorHIDSessionCache.swift",
+      "kind": "IntegerLiteral",
+      "offset": 351,
+      "length": 1,
+      "value": "0"
+    },
+    {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/HID\/FBSimulatorHIDTypes.swift",
       "kind": "IntegerLiteral",
       "offset": 674,
@@ -61205,21 +61628,28 @@
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/HID\/FBSimulatorIndigoHIDClient.swift",
       "kind": "StringLiteral",
-      "offset": 1978,
+      "offset": 2097,
       "length": 39,
       "value": "\"SimulatorKit.SimDeviceLegacyHIDClient\""
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/HID\/FBSimulatorIndigoHIDClient.swift",
       "kind": "IntegerLiteral",
-      "offset": 2362,
+      "offset": 2481,
       "length": 1,
       "value": "0"
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/HID\/FBSimulatorIndigoHIDClient.swift",
       "kind": "BooleanLiteral",
-      "offset": 2400,
+      "offset": 2519,
+      "length": 5,
+      "value": "false"
+    },
+    {
+      "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/HID\/FBSimulatorIndigoHIDClient.swift",
+      "kind": "BooleanLiteral",
+      "offset": 2562,
       "length": 5,
       "value": "false"
     },
