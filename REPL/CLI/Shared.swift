@@ -16,8 +16,8 @@ struct TestBundleOptions: ParsableArguments {
 
 /// Options that only apply to the `app` context.
 struct AppOptions: ParsableArguments {
-  @Option(name: .long, help: "Bundle id of the installed app to launch and inject the REPL into.")
-  var bundleID: String
+  @Option(name: .long, help: "Bundle id of the installed app to launch and inject the REPL into. If omitted, the companion launches its bundled ReplHost app.")
+  var bundleID: String?
 
   @Flag(name: .long, help: "Start a new REPL session (a clean relaunch) instead of reattaching to an already-running REPL for this app.")
   var newSession = false

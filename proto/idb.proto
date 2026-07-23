@@ -856,7 +856,9 @@ message ReplRequest {
       APP = 2;
     }
     Context context = 2;
-    // The bundle id to launch (with the REPL injected) for the APP context.
+    // The bundle id to launch (with the REPL injected) for the APP context. If
+    // empty, the companion launches its bundled ReplHost app instead
+    // (installing it first if it is not already installed).
     string app_bundle_id = 3;
     // APP context only: whether to reuse an already-running REPL for this app
     // (reattach) instead of forcing a new session (a clean relaunch). idb-repl

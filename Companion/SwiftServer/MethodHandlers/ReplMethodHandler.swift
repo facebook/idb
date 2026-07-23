@@ -28,23 +28,33 @@ struct ReplMethodHandler {
     targetLogger.debug().log("REPL session context: \(start.context)")
 
     let session: ReplSession
+    // Only the app context has an app whose exit should end a recording; the
+    // test/simulator hosts are disposable and drop any recording at teardown. For
+    // the app context an empty bundle id means "use the companion's bundled
+    // ReplHost app": resolve (and install) it once here, then thread the resolved
+    // id onward so the socket path and the app-exit/recording watcher key off a
+    // real id rather than "".
+    let appBundleID: String?
     switch start.context {
     case .test:
       session = try await commandExecutor.repl_start_test(bundlePath: start.testBundlePath)
+      appBundleID = nil
     case .app:
-      session = try await commandExecutor.repl_start_app(bundleID: start.appBundleID, reuseSession: start.reuseSession)
+      let bundleID =
+        start.appBundleID.isEmpty
+        ? try await commandExecutor.ensureReplHostAppInstalled()
+        : start.appBundleID
+      session = try await commandExecutor.repl_start_app(bundleID: bundleID, reuseSession: start.reuseSession)
+      appBundleID = bundleID
     case .simulator, .UNRECOGNIZED:
       session = try await commandExecutor.repl_start_simulator()
+      appBundleID = nil
     }
 
     // Detect whether we share the driver's filesystem: the driver sends a path it
     // created locally; if we can see it, captured artifacts can be moved rather
     // than pulled back over gRPC.
     let sharedFilesystem = !start.probeFilePath.isEmpty && FileManager.default.fileExists(atPath: start.probeFilePath)
-
-    // Only the app context has an app whose exit should end a recording; the
-    // test/simulator hosts are disposable and drop any recording at teardown.
-    let appBundleID = start.context == .app ? start.appBundleID : nil
 
     try await serve(session: session, sharedFilesystem: sharedFilesystem, context: start.context, appBundleID: appBundleID, requestStream: requestStream, responseStream: responseStream)
   }

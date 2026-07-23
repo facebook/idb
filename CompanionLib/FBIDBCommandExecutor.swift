@@ -384,6 +384,31 @@ import XCTestBootstrap
     return try await replTarget.startReplApp(bundleID: bundleID, reuseSession: reuseSession)
   }
 
+  // Keep in sync with defs.bzl `make_repl_host_app` PRODUCT_BUNDLE_IDENTIFIER.
+  static let replHostBundleID = "com.facebook.idb.replhost"
+
+  /// Ensures the bundled ReplHost app is installed on the target and returns its
+  /// bundle id. Installs it from the companion's Resources/ only if it is not
+  /// already installed, so the common (already-installed) case does no filesystem
+  /// work. Used by the `app` REPL context when no bundle id is given.
+  public func ensureReplHostAppInstalled() async throws -> String {
+    let bundleID = Self.replHostBundleID
+    // Fast path: already installed -- nothing to do.
+    if (try? await target.installedApplication(bundleID: bundleID)) != nil {
+      return bundleID
+    }
+    // Not installed: locate ReplHost.app in the Resources/ directory next to the
+    // companion binary (the same directory the shim dylibs load from) and install it.
+    let resourcesDirectory = try await bridgeFBFuture(
+      FBXCTestShimConfiguration.findShimDirectory(onQueue: target.workQueue, logger: logger))
+    let appPath = resourcesDirectory.appendingPathComponent("ReplHost.app")
+    guard FileManager.default.fileExists(atPath: appPath) else {
+      throw FBIDBError.describe("ReplHost.app not found at \(appPath)").build()
+    }
+    _ = try await install_app_file_path(appPath, make_debuggable: false, override_modification_time: false)
+    return bundleID
+  }
+
   /// The environment that arms an app launch for the REPL (DYLD-inject libRepl +
   /// the IDB_REPL_* vars), used by `idb launch --enable-repl`. The control-socket
   /// path is deterministic, so a later `idb-repl app` reattaches. Simulator

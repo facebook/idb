@@ -96,6 +96,6 @@ struct AppCommand: AsyncParsableCommand {
   @OptionGroup var app: AppOptions
 
   func run() async throws {
-    try await repl.run(context: .app(bundleID: app.bundleID, reuseSession: app.reuseSession))
+    try await repl.run(context: .app(bundleID: app.bundleID ?? "", reuseSession: app.reuseSession))
   }
 }
