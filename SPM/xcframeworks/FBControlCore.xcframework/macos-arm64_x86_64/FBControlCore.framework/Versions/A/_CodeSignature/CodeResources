@@ -6,7 +6,7 @@
 	<dict>
 		<key>Resources/Info.plist</key>
 		<data>
-		+7o8NmplenGejmDUu3OURhEVKdI=
+		NBT1yKLFn5d7ZljYaqFp4MrVHGs=
 		</data>
 	</dict>
 	<key>files2</key>
@@ -43,7 +43,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			KwnzOgjl/Nj6YAx/p9K7lIj3fejk0ObZLJpSHzCp9d4=
+			KO1SeQdbdEKYGHS5MmGQhMpoM7Qx8/OKOHzqR69YFBM=
 			</data>
 		</dict>
 		<key>Headers/FBControlCore-SwiftImport.h</key>
@@ -274,70 +274,70 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			B/ccBeabZljWBGMRKtqUyvZruQ4yDJP5Yd3y4OtSOPU=
+			06X5eluzcWLNmFn/SxHSBRJcAIpUKxvQxm+rAIfOPb8=
 			</data>
 		</dict>
 		<key>Modules/FBControlCore.swiftmodule/arm64-apple-macos.private.swiftinterface</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			gC+knjEoOL13HgQp//ZG0E5ibv7AJ8aO6YNqiI+1BpQ=
+			2XdznVVckYjlMTJOCM6ZhkA2PU5E4tGdLCFtOcv8omU=
 			</data>
 		</dict>
 		<key>Modules/FBControlCore.swiftmodule/arm64-apple-macos.swiftdoc</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			VOcIeesOghjKs+dDAB+Xclv0IiIW3N/iZmfphws2H1o=
+			vYl6GSbNd0dRDVO8G+FLvtCofKv1EYcImt/4bdbaq9g=
 			</data>
 		</dict>
 		<key>Modules/FBControlCore.swiftmodule/arm64-apple-macos.swiftinterface</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			gC+knjEoOL13HgQp//ZG0E5ibv7AJ8aO6YNqiI+1BpQ=
+			2XdznVVckYjlMTJOCM6ZhkA2PU5E4tGdLCFtOcv8omU=
 			</data>
 		</dict>
 		<key>Modules/FBControlCore.swiftmodule/arm64-apple-macos.swiftmodule</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			0ZlYqlWygKLmnr7vxfZAf4LLHUkOVHjQtZwNuEJADoI=
+			TICuAGciGtLzxxTOGDOhL/TrKbNeaa9UVnXIChAhak0=
 			</data>
 		</dict>
 		<key>Modules/FBControlCore.swiftmodule/x86_64-apple-macos.abi.json</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			B/ccBeabZljWBGMRKtqUyvZruQ4yDJP5Yd3y4OtSOPU=
+			06X5eluzcWLNmFn/SxHSBRJcAIpUKxvQxm+rAIfOPb8=
 			</data>
 		</dict>
 		<key>Modules/FBControlCore.swiftmodule/x86_64-apple-macos.private.swiftinterface</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			AFU1XiDeF20bumPkgFtf0ccy8oFLjMHGSwjxa0uNWpM=
+			T0mxxADilnYSRntTeN2bFAl1AOEVfGhPHCEwU+4WsLg=
 			</data>
 		</dict>
 		<key>Modules/FBControlCore.swiftmodule/x86_64-apple-macos.swiftdoc</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			b97O9TCmrxgq6taoRmC4PVXEdEzV1kDev2x3Uh4JZcE=
+			uSzOvnRyVLFNv7+6O2h+jwxjDiKcM2TZNCrdSlRdRGg=
 			</data>
 		</dict>
 		<key>Modules/FBControlCore.swiftmodule/x86_64-apple-macos.swiftinterface</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			AFU1XiDeF20bumPkgFtf0ccy8oFLjMHGSwjxa0uNWpM=
+			T0mxxADilnYSRntTeN2bFAl1AOEVfGhPHCEwU+4WsLg=
 			</data>
 		</dict>
 		<key>Modules/FBControlCore.swiftmodule/x86_64-apple-macos.swiftmodule</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			Zel4EuvqUC03SA+ZJeI/hfl4uJ+Xy2E6Kg1mwPQi8k4=
+			+hg4VAX3LULrUpveGZ2imBeFty3XV3GgkXvEHX/jMuw=
 			</data>
 		</dict>
 		<key>Modules/module.modulemap</key>
@@ -351,7 +351,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			4JuOW9RhQgebfZFItdL7zOfDGv4J6LKFpVJkJo1/iKI=
+			8stWJ0vEQSHoz6nFsXBV8OY74eEQjtJsduPk4ppzIEM=
 			</data>
 		</dict>
 	</dict>

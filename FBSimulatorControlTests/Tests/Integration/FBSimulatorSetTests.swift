@@ -65,6 +65,60 @@ final class FBSimulatorSetTests: FBSimulatorSetTestCase {
     XCTAssert(simulator.set === self.set)
   }
 
+  func testInflatesBootedSimulatorWithUnavailableCryptexRuntimeMetadata() {
+    let simulators = createSet(withExistingSimDeviceSpecs: [
+      [
+        "name": "iPhone 17 Pro",
+        "state": FBiOSTargetState.booted.rawValue,
+        "os": "iOS 27.0",
+        "runtimeIdentifier": "com.apple.CoreSimulator.SimRuntime.iOS-27-0",
+        "deviceTypeIdentifier": "com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro",
+        "hasRuntimeMetadata": false,
+        "available": false,
+      ],
+    ])
+
+    XCTAssertEqual(simulators.count, 1)
+    XCTAssertEqual(simulators[0].state, .booted)
+    XCTAssertEqual(simulators[0].osVersion.name.rawValue, "iOS 27.0")
+    XCTAssertEqual(simulators[0].deviceType.model.rawValue, "iPhone 17 Pro")
+  }
+
+  func testInflationPrefersRealRuntimeNameOverSynthesizedIdentifierName() {
+    // The real CoreSimulator runtime name ("iOS 10.3.1") must win over the name
+    // synthesized from the runtime identifier ("iOS 10.3"), otherwise exact-name
+    // runtime matching fails against the installed runtime.
+    let simulators = createSet(withExistingSimDeviceSpecs: [
+      [
+        "name": "iPhone 7",
+        "state": FBiOSTargetState.booted.rawValue,
+        "os": "iOS 10.3.1",
+        "runtimeIdentifier": "com.apple.CoreSimulator.SimRuntime.iOS-10-3",
+        "deviceTypeIdentifier": "com.apple.CoreSimulator.SimDeviceType.iPhone-7",
+      ],
+    ])
+
+    XCTAssertEqual(simulators.count, 1)
+    XCTAssertEqual(simulators[0].osVersion.name.rawValue, "iOS 10.3.1")
+  }
+
+  func testInflationPrefersRealRuntimeNameForVisionOSIdentifierPrefix() {
+    // visionOS runtime identifiers use the legacy "xrOS" prefix; the device's real
+    // runtime name must win so we report "visionOS 2.0" instead of "xrOS 2.0".
+    let simulators = createSet(withExistingSimDeviceSpecs: [
+      [
+        "name": "Apple Vision Pro",
+        "state": FBiOSTargetState.booted.rawValue,
+        "os": "visionOS 2.0",
+        "runtimeIdentifier": "com.apple.CoreSimulator.SimRuntime.xrOS-2-0",
+        "deviceTypeIdentifier": "com.apple.CoreSimulator.SimDeviceType.Apple-Vision-Pro",
+      ],
+    ])
+
+    XCTAssertEqual(simulators.count, 1)
+    XCTAssertEqual(simulators[0].osVersion.name.rawValue, "visionOS 2.0")
+  }
+
   func testReferencesForSimulatorsAreTheSame() {
     createSet(withExistingSimDeviceSpecs: [
       ["name": "iPhone 5", "state": FBiOSTargetState.creating.rawValue],

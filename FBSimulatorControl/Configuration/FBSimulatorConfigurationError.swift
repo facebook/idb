@@ -28,6 +28,12 @@ public enum FBSimulatorConfigurationError: LocalizedError, Sendable {
   /// The device model is not registered with FBSimulatorControl.
   case unsupportedDevice(name: String)
 
+  /// CoreSimulator did not attach runtime metadata to a device.
+  case missingRuntimeMetadata(identifier: String?)
+
+  /// CoreSimulator did not attach device-type metadata to a device.
+  case missingDeviceTypeMetadata(identifier: String?)
+
   /// A matching `SimRuntime` could not be obtained for the configuration.
   case runtimeUnavailable(configuration: String, reason: String?)
 
@@ -65,6 +71,10 @@ public enum FBSimulatorConfigurationError: LocalizedError, Sendable {
       return "Could not obtain OS Version for \(name), perhaps it is unsupported by FBSimulatorControl"
     case .unsupportedDevice(let name):
       return "Could not obtain Device for \(name), perhaps it is unsupported by FBSimulatorControl"
+    case .missingRuntimeMetadata(let identifier):
+      return Self.missingMetadataDescription(kind: "runtime", identifier: identifier)
+    case .missingDeviceTypeMetadata(let identifier):
+      return Self.missingMetadataDescription(kind: "device type", identifier: identifier)
     case .runtimeUnavailable(let configuration, let reason):
       return Self.describe("Could not obtain available SimRuntime for configuration \(configuration)", reason)
     case .deviceTypeUnavailable(let configuration, let reason):
@@ -89,6 +99,13 @@ public enum FBSimulatorConfigurationError: LocalizedError, Sendable {
   private static func describe(_ base: String, _ reason: String?) -> String {
     guard let reason else { return base }
     return "\(base): \(reason)"
+  }
+
+  private static func missingMetadataDescription(kind: String, identifier: String?) -> String {
+    guard let identifier, !identifier.isEmpty else {
+      return "CoreSimulator did not provide \(kind) metadata"
+    }
+    return "CoreSimulator did not provide \(kind) metadata for '\(identifier)'"
   }
 }
 

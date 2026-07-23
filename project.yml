@@ -319,3 +319,12 @@ targets:
       - target: CompanionUtilities
         embed: false
       - sdk: Foundation.framework
+
+schemes:
+  FBSimulatorControl:
+    build:
+      targets:
+        FBSimulatorControl: all
+    test:
+      targets:
+        - FBSimulatorControlTests

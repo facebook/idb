@@ -508,7 +508,15 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     fixture!.rootElement = rootElement
     fixture!.setUp()
 
-    let sim = FBSimulatorTestSupport.testableSimulator(withDevice: fixture!.device)
+    let defaultConfiguration = try! FBSimulatorConfiguration.defaultConfiguration()
+    let legacyRuntimeConfiguration = FBSimulatorConfiguration(
+      device: defaultConfiguration.device,
+      os: FBOSVersion.generic(withName: "iOS 26.0")
+    )
+    let sim = FBSimulatorTestSupport.testableSimulator(
+      withDevice: fixture!.device,
+      configuration: legacyRuntimeConfiguration
+    )
     let dispatcher = FBSimulator.createAccessibilityTranslationDispatcher(withTranslator: fixture!.translator)
     let commands = FBSimulatorAccessibilityCommands(simulator: sim, translationDispatcher: dispatcher, launchCtl: launchCtl)
     sim.commandCache.register(commands, as: FBSimulatorAccessibilityCommands.self)

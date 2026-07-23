@@ -58,6 +58,22 @@ public final class FBSimulatorAccessibilityCommands: AccessibilityOperations {
   private static let coreSimulatorBridgeServiceName = "com.apple.CoreSimulator.bridge"
   private static let springBoardServiceName = "com.apple.SpringBoard"
 
+  static func requiresAccessibilityBootstrap(
+    for runtimeVersion: OperatingSystemVersion,
+    hostXcodeVersion: OperatingSystemVersion = FBXcodeConfiguration.xcodeVersion
+  ) -> Bool {
+    // Version parsing fails open to 0.0.0 on unparseable runtime metadata. On
+    // Xcode 27+ hosts an unknown runtime version is most likely a cryptex runtime
+    // with degraded metadata, so fail closed and require the bootstrap: a redundant
+    // bootstrap costs a bounded wait, while a skipped one breaks accessibility
+    // entirely. Hosts before Xcode 27 keep the previous behavior (no bootstrap),
+    // since their runtimes never need it.
+    if runtimeVersion.majorVersion == 0 {
+      return hostXcodeVersion.majorVersion >= 27
+    }
+    return runtimeVersion.majorVersion >= 27
+  }
+
   private weak var simulator: FBSimulator?
 
   private let translationDispatcher: FBAXTranslationDispatcher?
@@ -129,6 +145,13 @@ public final class FBSimulatorAccessibilityCommands: AccessibilityOperations {
       throw FBAccessibilityError.accessibilityUnavailable
     }
     try FBSimulatorControlFrameworkLoader.accessibilityFrameworks.loadPrivateFrameworks(simulator.logger)
+    if Self.requiresAccessibilityBootstrap(for: simulator.osVersion.version) {
+      try FBSimulatorControlFrameworkLoader.bootstrapAccessibility(
+        forSimulatorDevice: simulator.device,
+        timeout: 5,
+        logger: simulator.logger
+      )
+    }
   }
 
   // Returns an FBAccessibilityElement wrapping the platform element for the given request.

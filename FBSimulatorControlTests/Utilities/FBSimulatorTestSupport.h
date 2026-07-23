@@ -8,6 +8,7 @@
 #import <Foundation/Foundation.h>
 
 @class FBSimulator;
+@class FBSimulatorConfiguration;
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -37,6 +38,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// must respond to `-UDID` (returning `NSUUID *`) and any other selectors the
 /// code path exercises.
 + (FBSimulator *)testableSimulatorWithDevice:(id)device;
+
+/// Variant that also supplies the runtime configuration exposed by the simulator.
++ (FBSimulator *)testableSimulatorWithDevice:(id)device configuration:(FBSimulatorConfiguration *)configuration;
 
 @end
 

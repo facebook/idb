@@ -27,6 +27,21 @@ extension FBWeakFramework {
     FBWeakFramework.xcodeFramework(withRelativePath: "../SharedFrameworks/DTXConnectionServices.framework", requiredClassNames: ["DTXConnection", "DTXRemoteInvocationReceipt"])
   }
 
+  @objc(XCTDaemonControl) public class var xctDaemonControl: FBWeakFramework {
+    FBWeakFramework.xcodeFramework(
+      withRelativePath: "../SharedFrameworks/XCTDaemonControl.framework",
+      requiredClassNames: ["XCTDaemonConnectionConfiguration"])
+  }
+
+  @objc(XCUIAutomation) public class var xcuiAutomation: FBWeakFramework {
+    FBWeakFramework.xcodeFramework(
+      withRelativePath: "../SharedFrameworks/XCUIAutomation.framework",
+      requiredClassNames: [
+        "XCUIDeviceRemoteDaemonConnectionProvider",
+        "XCUIDeviceRemoteAutomationSession",
+      ])
+  }
+
   @objc(XCTest) public class var xcTest: FBWeakFramework {
     FBWeakFramework.xcodeFramework(withRelativePath: "Platforms/MacOSX.platform/Developer/Library/Frameworks/XCTest.framework", requiredClassNames: ["XCTestConfiguration"])
   }
