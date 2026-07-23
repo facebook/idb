@@ -10672,7 +10672,7 @@
           {
             "kind": "Function",
             "name": "requiresAccessibilityBootstrap",
-            "printedName": "requiresAccessibilityBootstrap(for:)",
+            "printedName": "requiresAccessibilityBootstrap(for:hostXcodeVersion:)",
             "children": [
               {
                 "kind": "TypeNominal",
@@ -10685,11 +10685,18 @@
                 "name": "OperatingSystemVersion",
                 "printedName": "Foundation.OperatingSystemVersion",
                 "usr": "c:@SA@NSOperatingSystemVersion"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "OperatingSystemVersion",
+                "printedName": "Foundation.OperatingSystemVersion",
+                "hasDefaultArg": true,
+                "usr": "c:@SA@NSOperatingSystemVersion"
               }
             ],
             "declKind": "Func",
-            "usr": "s:18FBSimulatorControl0A21AccessibilityCommandsC08requiresC9Bootstrap3forSbSo24NSOperatingSystemVersiona_tFZ",
-            "mangledName": "$s18FBSimulatorControl0A21AccessibilityCommandsC08requiresC9Bootstrap3forSbSo24NSOperatingSystemVersiona_tFZ",
+            "usr": "s:18FBSimulatorControl0A21AccessibilityCommandsC08requiresC9Bootstrap3for16hostXcodeVersionSbSo017NSOperatingSystemJ0a_AHtFZ",
+            "mangledName": "$s18FBSimulatorControl0A21AccessibilityCommandsC08requiresC9Bootstrap3for16hostXcodeVersionSbSo017NSOperatingSystemJ0a_AHtFZ",
             "moduleName": "FBSimulatorControl",
             "static": true,
             "declAttributes": [
@@ -16685,6 +16692,13 @@
       },
       {
         "kind": "Import",
+        "name": "Synchronization",
+        "printedName": "Synchronization",
+        "declKind": "Import",
+        "moduleName": "FBSimulatorControl"
+      },
+      {
+        "kind": "Import",
         "name": "XPC",
         "printedName": "XPC",
         "declKind": "Import",
@@ -16994,7 +17008,7 @@
           {
             "kind": "Function",
             "name": "dtuhid",
-            "printedName": "dtuhid(for:)",
+            "printedName": "dtuhid(for:onInvalidated:)",
             "children": [
               {
                 "kind": "TypeNominal",
@@ -17007,11 +17021,29 @@
                 "name": "FBSimulator",
                 "printedName": "FBSimulatorControl.FBSimulator",
                 "usr": "c:objc(cs)FBSimulator"
+              },
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "() -> ()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  }
+                ],
+                "hasDefaultArg": true
               }
             ],
             "declKind": "Func",
-            "usr": "s:18FBSimulatorControl0A15DTUHIDTransportC6dtuhid3forACSo0A0C_tKFZ",
-            "mangledName": "$s18FBSimulatorControl0A15DTUHIDTransportC6dtuhid3forACSo0A0C_tKFZ",
+            "usr": "s:18FBSimulatorControl0A15DTUHIDTransportC6dtuhid3for13onInvalidatedACSo0A0C_yyYbctKFZ",
+            "mangledName": "$s18FBSimulatorControl0A15DTUHIDTransportC6dtuhid3for13onInvalidatedACSo0A0C_yyYbctKFZ",
             "moduleName": "FBSimulatorControl",
             "static": true,
             "declAttributes": [
@@ -17056,6 +17088,59 @@
             "mangledName": "$s18FBSimulatorControl0A15DTUHIDTransportC10connection14mainScreenSize0eF5ScaleACSo13OS_xpc_object_p_So6CGSizeVSftcfc",
             "moduleName": "FBSimulatorControl",
             "init_kind": "Designated"
+          },
+          {
+            "kind": "Function",
+            "name": "makeInvalidationEventHandler",
+            "printedName": "makeInvalidationEventHandler(onInvalidated:)",
+            "children": [
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(any XPC.OS_xpc_object) -> ()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "OS_xpc_object",
+                    "printedName": "any XPC.OS_xpc_object",
+                    "usr": "c:objc(pl)OS_xpc_object"
+                  }
+                ]
+              },
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "() -> ()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  }
+                ]
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:18FBSimulatorControl0A15DTUHIDTransportC28makeInvalidationEventHandler13onInvalidatedySo13OS_xpc_object_pYbcyyYbc_tFZ",
+            "mangledName": "$s18FBSimulatorControl0A15DTUHIDTransportC28makeInvalidationEventHandler13onInvalidatedySo13OS_xpc_object_pYbcyyYbc_tFZ",
+            "moduleName": "FBSimulatorControl",
+            "static": true,
+            "declAttributes": [
+              "Final",
+              "Nonisolated",
+              "RawDocComment"
+            ],
+            "funcSelfKind": "NonMutating"
           },
           {
             "kind": "Function",
@@ -19854,13 +19939,21 @@
       },
       {
         "kind": "Import",
-        "name": "Darwin",
-        "printedName": "Darwin",
+        "name": "CoreSimulator",
+        "printedName": "CoreSimulator",
         "declKind": "Import",
         "moduleName": "FBSimulatorControl",
         "declAttributes": [
+          "ImplementationOnly",
           "RawDocComment"
         ]
+      },
+      {
+        "kind": "Import",
+        "name": "Darwin",
+        "printedName": "Darwin",
+        "declKind": "Import",
+        "moduleName": "FBSimulatorControl"
       },
       {
         "kind": "Import",
@@ -20256,6 +20349,42 @@
             "moduleName": "FBSimulatorControl",
             "static": true,
             "throwing": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "lastBootedAt",
+            "printedName": "lastBootedAt(of:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Optional",
+                "printedName": "Foundation.Date?",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Date",
+                    "printedName": "Foundation.Date",
+                    "usr": "s:10Foundation4DateV"
+                  }
+                ],
+                "usr": "s:Sq"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "NSObject",
+                "printedName": "ObjectiveC.NSObject",
+                "usr": "c:objc(cs)NSObject"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:18FBSimulatorControl0A23HIDBootIdentityResolverO12lastBootedAt2of10Foundation4DateVSgSo8NSObjectC_tFZ",
+            "mangledName": "$s18FBSimulatorControl0A23HIDBootIdentityResolverO12lastBootedAt2of10Foundation4DateVSgSo8NSObjectC_tFZ",
+            "moduleName": "FBSimulatorControl",
+            "static": true,
+            "declAttributes": [
+              "RawDocComment"
+            ],
             "funcSelfKind": "NonMutating"
           },
           {
@@ -61418,21 +61547,21 @@
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/HID\/FBSimulatorDTUHIDTransport.swift",
       "kind": "BooleanLiteral",
-      "offset": 647,
+      "offset": 670,
       "length": 5,
       "value": "false"
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/HID\/FBSimulatorDTUHIDTransport.swift",
       "kind": "StringLiteral",
-      "offset": 2104,
+      "offset": 2127,
       "length": 51,
       "value": "\"com.apple.coredevice.feature.remote.hid.digitizer\""
     },
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/HID\/FBSimulatorDTUHIDTransport.swift",
       "kind": "IntegerLiteral",
-      "offset": 3264,
+      "offset": 3287,
       "length": 10,
       "value": "80000000"
     },
@@ -61943,7 +62072,7 @@
     {
       "filePath": "\/Users\/avanderlee\/Developer\/GIT-Projects\/Forks\/idb\/FBSimulatorControl\/Strategies\/FBSimulatorShutdownStrategy.swift",
       "kind": "IntegerLiteral",
-      "offset": 1744,
+      "offset": 1937,
       "length": 3,
       "value": "164"
     },
