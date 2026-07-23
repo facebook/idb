@@ -28,10 +28,9 @@ build_xcframework() {
     # swiftinterface ("FBSimulatorControl.FBSimulatorVideo") resolve to the class instead of the
     # module and the interface fails to compile in consumers.
     # MACH_O_TYPE=mh_dylib: the project builds static frameworks for the companion/OSS build,
-    # but the distributed xcframeworks must be dynamic so the weak links against the private
-    # CoreSimulator/AccessibilityPlatformTranslation tbd stubs are bound inside the dylib.
-    # A static archive would push those undefined symbols onto consumers, which cannot
-    # resolve them.
+    # but the distributed xcframeworks must be dynamic so the weak link against the private
+    # CoreSimulator tbd stub is bound inside the dylib. A static archive would push those
+    # undefined symbols onto consumers, which cannot resolve them.
     xcodebuild archive -project "$project_name" -archivePath "$archive_path" SKIP_INSTALL=NO BUILD_LIBRARY_FOR_DISTRIBUTION=YES MACH_O_TYPE=mh_dylib OTHER_SWIFT_FLAGS='$(inherited) -Xfrontend -module-interface-preserve-types-as-written' -scheme "$framework_name" -destination generic/platform=macOS
     
     # The FBSimulatorControl module contains a class also named FBSimulatorControl, so
@@ -54,3 +53,5 @@ build_xcframework "XCTestBootstrap"
 build_xcframework "FBControlCore"
 build_xcframework "FBSimulatorControl"
 build_xcframework "FBDeviceControl"
+
+./verify_fbsimulatorcontrol_runtime_linkage.sh

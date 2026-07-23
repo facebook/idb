@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@_implementationOnly import AccessibilityPlatformTranslation
 import AppKit
 import FBControlCore
 import Foundation
@@ -14,15 +13,9 @@ import Foundation
 /// request, dispatcher, element handle, and facade depend on, expressed in plain
 /// value types.
 ///
-/// `AXPMacPlatformElement` is a private-framework class the unit tests cannot
-/// subclass, so they previously flowed message-responding doubles through the code
-/// via `unsafeBitCast(... to: AXPMacPlatformElement.self)`. Routing the production
-/// code through this protocol instead lets both the real element (which conforms via
-/// the adapter extension below) and the test doubles participate with no unsafe
-/// casts. Expressing it as an adapter — rather than mirroring the overlay's own
-/// signatures — also keeps the `NSAccessibility.Role`/`.Action` overlay types out of
-/// callers, and folds in the `objc_msgSend`-forcing `as AnyObject` reads, the
-/// `accessibilityAttributeValue:` traits reflection, and the children casting.
+/// Production instances are Objective-C runtime adapters around an opaque private
+/// framework object. Test doubles can conform directly without loading that
+/// framework.
 protocol FBAXPlatformElement: AnyObject {
   func axFrame() -> NSRect
   func axRole() -> String?
@@ -53,73 +46,47 @@ protocol FBAXPlatformElement: AnyObject {
   func axSetBridgeDelegateToken(_ token: String?)
 }
 
-extension AXPMacPlatformElement: FBAXPlatformElement {
-  func axFrame() -> NSRect { accessibilityFrame() }
-  func axRole() -> String? { accessibilityRole()?.rawValue }
-  func axLabel() -> String? { accessibilityLabel() }
-  func axValue() -> Any? { accessibilityValue() }
-  func axIdentifier() -> String? { accessibilityIdentifier() }
-  func axTitle() -> String? { accessibilityTitle() }
-  func axHelp() -> String? { accessibilityHelp() }
-  func axRoleDescription() -> String? { accessibilityRoleDescription() }
-  func axSubrole() -> String? { accessibilitySubrole()?.rawValue }
-  func axPlaceholderValue() -> String? { accessibilityPlaceholderValue() }
-  func axIsEnabled() -> Bool { isAccessibilityEnabled() }
-  func axIsRequired() -> Bool { isAccessibilityRequired() }
-  func axIsExpanded() -> Bool { isAccessibilityExpanded() }
-  func axIsHidden() -> Bool { isAccessibilityHidden() }
-  func axIsFocused() -> Bool { isAccessibilityFocused() }
-  func axCustomActionNames() -> [String] { (accessibilityCustomActions() ?? []).map { $0.name } }
-  func axActionNames() -> [String] {
-    // Read by message: the instance `accessibilityActionNames` is shadowed by a
-    // class member of the same name on `AXPMacPlatformElement` in this context.
-    let selector = NSSelectorFromString("accessibilityActionNames")
-    guard responds(to: selector),
-      let raw = perform(selector)?.takeUnretainedValue() as? NSArray
-    else {
-      return []
-    }
-    return raw.compactMap { $0 as? String }
-  }
-
-  func axTraits() -> [String]? {
-    // `accessibilityAttributeValue:` is a Swift-unavailable deprecated NSAccessibility
-    // API, so read AXTraits by message.
-    let selector = NSSelectorFromString("accessibilityAttributeValue:")
-    guard responds(to: selector) else {
-      return nil
-    }
-    guard let result = perform(selector, with: "AXTraits")?.takeUnretainedValue() as? NSNumber else {
-      return nil
-    }
-    return Array(AXExtractTraits(result.uint64Value))
-  }
-
-  func axChildren() -> [FBAXPlatformElement] {
-    (accessibilityChildren() ?? []).compactMap { $0 as? FBAXPlatformElement }
-  }
-
-  func axPerformPress() -> Bool { accessibilityPerformPress() }
+extension FBAXRuntimePlatformElement: FBAXPlatformElement {
+  func axFrame() -> NSRect { frame() }
+  func axRole() -> String? { role() }
+  func axLabel() -> String? { label() }
+  func axValue() -> Any? { value() }
+  func axIdentifier() -> String? { identifier() }
+  func axTitle() -> String? { title() }
+  func axHelp() -> String? { help() }
+  func axRoleDescription() -> String? { roleDescription() }
+  func axSubrole() -> String? { subrole() }
+  func axPlaceholderValue() -> String? { placeholderValue() }
+  func axIsEnabled() -> Bool { isEnabled() }
+  func axIsRequired() -> Bool { isRequired() }
+  func axIsExpanded() -> Bool { isExpanded() }
+  func axIsHidden() -> Bool { isHidden() }
+  func axIsFocused() -> Bool { isFocused() }
+  func axCustomActionNames() -> [String] { customActionNames() }
+  func axActionNames() -> [String] { actionNames() }
+  func axTraits() -> [String]? { traits() }
+  func axChildren() -> [FBAXPlatformElement] { children() }
+  func axPerformPress() -> Bool { performPress() }
 
   func axScroll(_ direction: FBAccessibilityScrollDirection) {
     switch direction {
     case .down:
-      performScrollDownByPageAction()
+      scrollDown()
     case .up:
-      performScrollUpByPageAction()
+      scrollUp()
     case .left:
-      performScrollLeftByPageAction()
+      scrollLeft()
     case .right:
-      performScrollRightByPageAction()
+      scrollRight()
     case .visible:
-      performScrollToVisible()
+      scrollToVisible()
     @unknown default:
       break
     }
   }
 
-  func axSetValue(_ value: Any?) { setAccessibilityValue(value) }
+  func axSetValue(_ value: Any?) { setValue(value) }
 
-  var axTranslationPid: pid_t { translation?.pid ?? 0 }
-  func axSetBridgeDelegateToken(_ token: String?) { translation?.bridgeDelegateToken = token }
+  var axTranslationPid: pid_t { translationPID() }
+  func axSetBridgeDelegateToken(_ token: String?) { setBridgeDelegateToken(token) }
 }

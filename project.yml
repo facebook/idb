@@ -147,12 +147,11 @@ targets:
         # Wrap the reverse-engineered headers under PrivateHeaders/<Name>/ as Clang
         # modules so Swift can `import CoreSimulator`, `import SimulatorKit`, etc.
         # Mirrors `make_private_header_frameworks()` in fbobjc/Tools/idb/defs.bzl.
-        OTHER_SWIFT_FLAGS: $(inherited) -Xcc -fmodule-map-file=$(SRCROOT)/PrivateHeaders/CoreSimulator/module.modulemap -Xcc -fmodule-map-file=$(SRCROOT)/PrivateHeaders/SimulatorApp/module.modulemap -Xcc -fmodule-map-file=$(SRCROOT)/PrivateHeaders/SimulatorKit/module.modulemap -Xcc -fmodule-map-file=$(SRCROOT)/PrivateHeaders/AXRuntime/module.modulemap -Xcc -fmodule-map-file=$(SRCROOT)/PrivateHeaders/AccessibilityPlatformTranslation/module.modulemap
-        # CoreSimulator and AccessibilityPlatformTranslation are loaded at
-        # runtime. Swift generates direct class references that must be satisfied
-        # at link time, so weak-link against the TBD stub. SimulatorKit is
-        # header-only — no symbols are referenced from compiled code.
-        OTHER_LDFLAGS: $(inherited) -weak_library $(SRCROOT)/PrivateHeaders/CoreSimulator/CoreSimulator.tbd -weak_library $(SRCROOT)/PrivateHeaders/AccessibilityPlatformTranslation/AccessibilityPlatformTranslation.tbd
+        OTHER_SWIFT_FLAGS: $(inherited) -Xcc -fmodule-map-file=$(SRCROOT)/PrivateHeaders/CoreSimulator/module.modulemap -Xcc -fmodule-map-file=$(SRCROOT)/PrivateHeaders/SimulatorApp/module.modulemap -Xcc -fmodule-map-file=$(SRCROOT)/PrivateHeaders/SimulatorKit/module.modulemap -Xcc -fmodule-map-file=$(SRCROOT)/PrivateHeaders/AXRuntime/module.modulemap
+        # CoreSimulator is loaded at runtime, while Swift's direct references
+        # require its TBD stub at link time. The accessibility translation
+        # framework is accessed exclusively through the Objective-C runtime.
+        OTHER_LDFLAGS: $(inherited) -weak_library $(SRCROOT)/PrivateHeaders/CoreSimulator/CoreSimulator.tbd
     dependencies:
       - target: FBControlCore
         embed: false
@@ -188,6 +187,8 @@ targets:
         INFOPLIST_FILE: $(SRCROOT)/FBSimulatorControlTests/FBSimulatorControlTests-Info.plist
         PRODUCT_BUNDLE_IDENTIFIER: com.facebook.FBSimulatorControlTests
         PRODUCT_NAME: FBSimulatorControlTests
+        SWIFT_OBJC_BRIDGING_HEADER: $(SRCROOT)/FBSimulatorControlTests/FBSimulatorControlTests-Bridging-Header.h
+        OTHER_LDFLAGS: $(inherited) -ObjC -weak_library $(SRCROOT)/PrivateHeaders/CoreSimulator/CoreSimulator.tbd
     dependencies:
       - target: FBControlCore
       - target: XCTestBootstrap

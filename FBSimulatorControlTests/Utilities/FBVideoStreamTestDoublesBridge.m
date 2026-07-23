@@ -9,17 +9,23 @@
 
 #import <FBControlCore/FBControlCore.h>
 #import <FBSimulatorControl/FBSimulatorControl.h>
+#import <objc/message.h>
 
 #pragma mark - CreateSimulatorSetWithFakeDeviceSet
 
 FBSimulatorSet *CreateSimulatorSetWithFakeDeviceSet(FBSimulatorControlConfiguration *configuration,
                                                     NSObject *fakeDeviceSet)
 {
-  return [FBSimulatorSet setWithConfiguration:configuration
-                                    deviceSet:(SimDeviceSet *)fakeDeviceSet
-                                     delegate:nil
-                                       logger:nil
-                                     reporter:nil];
+  SEL selector = NSSelectorFromString(@"setWithConfiguration:deviceSet:delegate:logger:reporter:");
+  return ((id (*)(id, SEL, id, id, id, id, id))objc_msgSend)(
+    FBSimulatorSet.class,
+    selector,
+    configuration,
+    fakeDeviceSet,
+    nil,
+    nil,
+    nil
+  );
 }
 
 #pragma mark - CheckRuntimeRequirements

@@ -120,7 +120,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			kBBeXt9hOwJ+AnljknveffJeclJDeM8LgTe3vNQ5ExU=
+			x75LPYU/XcJ1dD34yDB7ddccMFl1NV8H4ai+l9AfmfM=
 			</data>
 		</dict>
 		<key>Modules/FBDeviceControl.swiftmodule/arm64-apple-macos.private.swiftinterface</key>
@@ -148,14 +148,14 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			mkTLRPkAvL0EoQP1uLAQ5HhgUiIGEEIiz2ZCjxXIMNM=
+			I80eEHzh9lPCiqOST+yE5gz8G03F1brITmAGYidvOkk=
 			</data>
 		</dict>
 		<key>Modules/FBDeviceControl.swiftmodule/x86_64-apple-macos.abi.json</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			kBBeXt9hOwJ+AnljknveffJeclJDeM8LgTe3vNQ5ExU=
+			x75LPYU/XcJ1dD34yDB7ddccMFl1NV8H4ai+l9AfmfM=
 			</data>
 		</dict>
 		<key>Modules/FBDeviceControl.swiftmodule/x86_64-apple-macos.private.swiftinterface</key>
@@ -183,7 +183,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			XbXNr4ZODVHuUIHyXv4UTiJgtp0lZDVZcuGuCmRBixU=
+			dYaisTGebE4v9/lElIldZKQD957/RedIg4ADZI3hlrY=
 			</data>
 		</dict>
 		<key>Modules/module.modulemap</key>
