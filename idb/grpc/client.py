@@ -46,6 +46,8 @@ from idb.common.stream import stream_map
 from idb.common.tar import create_tar, drain_untar, generate_tar
 from idb.common.types import (
     AccessibilityInfo,
+    AccessibilityPoint,
+    AccessibilityTarget,
     Address,
     AppProcessState,
     Client as ClientBase,
@@ -494,9 +496,13 @@ class Client(ClientBase):
 
     @log_and_handle_exceptions("accessibility_info")
     async def accessibility_info(
-        self, point: tuple[int, int] | None, nested: bool
+        self, target: AccessibilityTarget | None, nested: bool
     ) -> AccessibilityInfo:
-        grpc_point = Point(x=point[0], y=point[1]) if point is not None else None
+        grpc_point = (
+            Point(x=target.x, y=target.y)
+            if isinstance(target, AccessibilityPoint)
+            else None
+        )
         response = await self.stub.accessibility_info(
             AccessibilityInfoRequest(
                 point=grpc_point,

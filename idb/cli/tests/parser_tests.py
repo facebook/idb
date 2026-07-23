@@ -15,6 +15,7 @@ from idb.cli.commands.xctest import NO_SPECIFIED_PATH
 from idb.cli.main import gen_main as cli_main, get_default_companion_path
 from idb.common.command import Command, CommandGroup
 from idb.common.types import (
+    AccessibilityPoint,
     Compression,
     CrashLogQuery,
     DomainSocketAddress,
@@ -1130,28 +1131,28 @@ class TestParser(TestCase):
         self.client_mock.accessibility_info = AsyncMock()
         await cli_main(cmd_input=["ui", "describe-all"])
         self.client_mock.accessibility_info.assert_called_once_with(
-            point=None, nested=False
+            target=None, nested=False
         )
 
     async def test_accessibility_info_all_nested(self) -> None:
         self.client_mock.accessibility_info = AsyncMock()
         await cli_main(cmd_input=["ui", "describe-all", "--nested"])
         self.client_mock.accessibility_info.assert_called_once_with(
-            point=None, nested=True
+            target=None, nested=True
         )
 
     async def test_accessibility_info_at_point(self) -> None:
         self.client_mock.accessibility_info = AsyncMock()
         await cli_main(cmd_input=["ui", "describe-point", "10", "20"])
         self.client_mock.accessibility_info.assert_called_once_with(
-            point=(10, 20), nested=False
+            target=AccessibilityPoint(x=10, y=20), nested=False
         )
 
     async def test_accessibility_info_at_point_nested(self) -> None:
         self.client_mock.accessibility_info = AsyncMock()
         await cli_main(cmd_input=["ui", "describe-point", "--nested", "10", "20"])
         self.client_mock.accessibility_info.assert_called_once_with(
-            point=(10, 20), nested=True
+            target=AccessibilityPoint(x=10, y=20), nested=True
         )
 
     async def test_crash_list_all(self) -> None:

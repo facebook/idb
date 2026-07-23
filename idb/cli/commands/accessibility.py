@@ -9,7 +9,7 @@
 from argparse import ArgumentParser, Namespace
 
 from idb.cli import ClientCommand
-from idb.common.types import Client
+from idb.common.types import AccessibilityPoint, Client
 
 
 class AccessibilityInfoAllCommand(ClientCommand):
@@ -31,7 +31,7 @@ class AccessibilityInfoAllCommand(ClientCommand):
         )
 
     async def run_with_client(self, args: Namespace, client: Client) -> None:
-        info = await client.accessibility_info(point=None, nested=args.nested)
+        info = await client.accessibility_info(target=None, nested=args.nested)
         print(info.json)
 
 
@@ -57,6 +57,6 @@ class AccessibilityInfoAtPointCommand(ClientCommand):
 
     async def run_with_client(self, args: Namespace, client: Client) -> None:
         info = await client.accessibility_info(
-            point=(args.x, args.y), nested=args.nested
+            target=AccessibilityPoint(x=args.x, y=args.y), nested=args.nested
         )
         print(info.json)

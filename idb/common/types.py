@@ -178,6 +178,18 @@ class AccessibilityInfo:
 
 
 @dataclass(frozen=True)
+class AccessibilityPoint:
+    x: int
+    y: int
+
+
+# Selects an accessibility element to act on: currently a point (or None = the
+# whole screen / frontmost app). Marker-based targets are added to this union as
+# the accessibility commands land.
+AccessibilityTarget = AccessibilityPoint
+
+
+@dataclass(frozen=True)
 class CrashLogInfo:
     name: str | None
     bundle_id: str | None
@@ -719,7 +731,7 @@ class Client(ABC):
 
     @abstractmethod
     async def accessibility_info(
-        self, point: tuple[int, int] | None, nested: bool
+        self, target: AccessibilityTarget | None, nested: bool
     ) -> AccessibilityInfo:
         pass
 
