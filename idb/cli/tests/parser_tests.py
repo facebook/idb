@@ -767,6 +767,29 @@ class TestParser(TestCase):
         await cli_main(cmd_input=["set-location", str(latitude), str(longitude)])
         self.client_mock.set_location.assert_called_once_with(latitude, longitude)
 
+    async def test_set_preference_forwards_name(self) -> None:
+        self.client_mock.set_preference = AsyncMock(return_value=[])
+        await cli_main(cmd_input=["set", "appearance", "dark"])
+        self.client_mock.set_preference.assert_called_once_with(
+            name="appearance", value="dark", value_type="string", domain=None
+        )
+
+    async def test_set_preference_with_domain(self) -> None:
+        self.client_mock.set_preference = AsyncMock(return_value=[])
+        await cli_main(
+            cmd_input=["set", "MyKey", "1", "--type", "int", "--domain", "com.example"]
+        )
+        self.client_mock.set_preference.assert_called_once_with(
+            name="MyKey", value="1", value_type="int", domain="com.example"
+        )
+
+    async def test_set_autofill_passwords(self) -> None:
+        self.client_mock.set_preference = AsyncMock(return_value=[])
+        await cli_main(cmd_input=["set", "autofill-passwords", "disable"])
+        self.client_mock.set_preference.assert_called_once_with(
+            name="autofill-passwords", value="disable", value_type="string", domain=None
+        )
+
     async def test_approve(self) -> None:
         self.client_mock.approve = AsyncMock(return_value=[])
         bundle_id = "com.fb.myApp"
