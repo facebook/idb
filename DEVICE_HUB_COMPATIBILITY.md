@@ -26,6 +26,11 @@ Save the JSON output with the test result. It identifies the exact Xcode and
 runtime builds and prevents a host-toolchain result from being attributed to a
 different target runtime.
 
+The script uses the host `xcrun` and `xcodebuild` executables from `PATH` while
+setting `DEVELOPER_DIR` to select the requested Xcode. It also requires `jq`,
+`awk`, and `pgrep`; a missing dependency is reported before simulator
+inspection begins.
+
 ## Behavior checks
 
 For every matrix cell, exercise the release-shaped FBSimulatorControl

@@ -65,6 +65,25 @@ final class FBSimulatorSetTests: FBSimulatorSetTestCase {
     XCTAssert(simulator.set === self.set)
   }
 
+  func testInflatesBootedSimulatorWithUnavailableCryptexRuntimeMetadata() {
+    let simulators = createSet(withExistingSimDeviceSpecs: [
+      [
+        "name": "iPhone 17 Pro",
+        "state": FBiOSTargetState.booted.rawValue,
+        "os": "iOS 27.0",
+        "runtimeIdentifier": "com.apple.CoreSimulator.SimRuntime.iOS-27-0",
+        "deviceTypeIdentifier": "com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro",
+        "hasRuntimeMetadata": false,
+        "available": false,
+      ],
+    ])
+
+    XCTAssertEqual(simulators.count, 1)
+    XCTAssertEqual(simulators[0].state, .booted)
+    XCTAssertEqual(simulators[0].osVersion.name.rawValue, "iOS 27.0")
+    XCTAssertEqual(simulators[0].deviceType.model.rawValue, "iPhone 17 Pro")
+  }
+
   func testReferencesForSimulatorsAreTheSame() {
     createSet(withExistingSimDeviceSpecs: [
       ["name": "iPhone 5", "state": FBiOSTargetState.creating.rawValue],

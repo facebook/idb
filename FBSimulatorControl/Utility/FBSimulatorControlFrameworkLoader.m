@@ -13,11 +13,18 @@
 
 static NSString *const FBSimulatorAccessibilityBootstrapErrorDomain = @"com.facebook.FBSimulatorControl.AccessibilityBootstrap";
 
-static NSError *FBSimulatorAccessibilityBootstrapError(NSInteger code, NSString *description)
+typedef BOOL (^FBSimulatorAccessibilityBootstrapPerformer)(id simulatorDevice, NSTimeInterval timeout, id<FBControlCoreLogger> _Nullable logger, NSError **error);
+typedef void (^FBSimulatorAccessibilityBootstrapAttemptObserver)(BOOL ownsAttempt);
+
+static NSError *FBSimulatorAccessibilityBootstrapError(NSInteger code, NSString *description, NSError *underlyingError)
 {
+  NSMutableDictionary *userInfo = [@{NSLocalizedDescriptionKey: description} mutableCopy];
+  if (underlyingError) {
+    userInfo[NSUnderlyingErrorKey] = underlyingError;
+  }
   return [NSError errorWithDomain:FBSimulatorAccessibilityBootstrapErrorDomain
                              code:code
-                         userInfo:@{NSLocalizedDescriptionKey: description}];
+                         userInfo:userInfo];
 }
 
 static void FBSimulatorInvalidateAccessibilitySession(id session)
@@ -124,6 +131,19 @@ static void FBSimulatorInvalidateAccessibilitySession(id session)
                                                  timeout:(NSTimeInterval)timeout
                                                   logger:(nullable id<FBControlCoreLogger>)logger
                                                    error:(NSError **)error;
++ (BOOL)performAccessibilityBootstrapForSimulatorDevice:(id)simulatorDevice
+                                                 timeout:(NSTimeInterval)timeout
+                                                  logger:(nullable id<FBControlCoreLogger>)logger
+                                           providerClass:(nullable Class)providerClass
+                                            sessionClass:(Class)sessionClass
+                                          loadFrameworks:(BOOL)loadFrameworks
+                                                   error:(NSError **)error;
++ (BOOL)bootstrapAccessibilityForSimulatorDevice:(id)simulatorDevice
+                                         timeout:(NSTimeInterval)timeout
+                                          logger:(nullable id<FBControlCoreLogger>)logger
+                                       performer:(FBSimulatorAccessibilityBootstrapPerformer)performer
+                                 attemptObserver:(nullable FBSimulatorAccessibilityBootstrapAttemptObserver)attemptObserver
+                                           error:(NSError **)error;
 
 @end
 
@@ -190,6 +210,32 @@ static void FBSimulatorControl_SimLogHandler(int level, const char *function, in
                                           logger:(id<FBControlCoreLogger>)logger
                                            error:(NSError **)error
 {
+  return [self bootstrapAccessibilityForSimulatorDevice:simulatorDevice
+                                                timeout:timeout
+                                                 logger:logger
+                                              performer:^BOOL(id device, NSTimeInterval performerTimeout, id<FBControlCoreLogger> performerLogger, NSError **performerError) {
+    return [self performAccessibilityBootstrapForSimulatorDevice:device
+                                                         timeout:performerTimeout
+                                                          logger:performerLogger
+                                                           error:performerError];
+  }
+                                        attemptObserver:nil
+                                                  error:error];
+}
+
++ (BOOL)bootstrapAccessibilityForSimulatorDevice:(id)simulatorDevice
+                                         timeout:(NSTimeInterval)timeout
+                                          logger:(id<FBControlCoreLogger>)logger
+                                       performer:(FBSimulatorAccessibilityBootstrapPerformer)performer
+                                 attemptObserver:(FBSimulatorAccessibilityBootstrapAttemptObserver)attemptObserver
+                                           error:(NSError **)error
+{
+  if (timeout <= 0) {
+    if (error) {
+      *error = FBSimulatorAccessibilityBootstrapError(1, @"Accessibility bootstrap timeout must be greater than zero", nil);
+    }
+    return NO;
+  }
   static dispatch_once_t onceToken;
   static dispatch_queue_t stateQueue;
   static NSMapTable *attempts;
@@ -208,9 +254,18 @@ static void FBSimulatorControl_SimLogHandler(int level, const char *function, in
       ownsAttempt = YES;
     }
   });
+  if (attemptObserver) {
+    attemptObserver(ownsAttempt);
+  }
 
   if (!ownsAttempt) {
-    dispatch_group_wait(attempt.group, DISPATCH_TIME_FOREVER);
+    dispatch_time_t deadline = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(timeout * NSEC_PER_SEC));
+    if (dispatch_group_wait(attempt.group, deadline) != 0) {
+      if (error) {
+        *error = FBSimulatorAccessibilityBootstrapError(2, @"Timed out waiting for an in-progress Accessibility bootstrap", nil);
+      }
+      return NO;
+    }
     if (!attempt.succeeded && error) {
       *error = attempt.error;
     }
@@ -218,10 +273,7 @@ static void FBSimulatorControl_SimLogHandler(int level, const char *function, in
   }
 
   NSError *bootstrapError = nil;
-  BOOL succeeded = [self performAccessibilityBootstrapForSimulatorDevice:simulatorDevice
-                                                                 timeout:timeout
-                                                                  logger:logger
-                                                                   error:&bootstrapError];
+  BOOL succeeded = performer(simulatorDevice, timeout, logger, &bootstrapError);
   attempt.succeeded = succeeded;
   attempt.error = bootstrapError;
   dispatch_group_leave(attempt.group);
@@ -242,37 +294,52 @@ static void FBSimulatorControl_SimLogHandler(int level, const char *function, in
                                                   logger:(id<FBControlCoreLogger>)logger
                                                    error:(NSError **)error
 {
+  return [self performAccessibilityBootstrapForSimulatorDevice:simulatorDevice
+                                                       timeout:timeout
+                                                        logger:logger
+                                                 providerClass:NSClassFromString(@"XCUIDeviceRemoteDaemonConnectionProvider")
+                                                  sessionClass:NSClassFromString(@"XCUIDeviceRemoteAutomationSession")
+                                                loadFrameworks:YES
+                                                         error:error];
+}
+
++ (BOOL)performAccessibilityBootstrapForSimulatorDevice:(id)simulatorDevice
+                                                 timeout:(NSTimeInterval)timeout
+                                                  logger:(id<FBControlCoreLogger>)logger
+                                           providerClass:(Class)providerClass
+                                            sessionClass:(Class)sessionClass
+                                          loadFrameworks:(BOOL)loadFrameworks
+                                                   error:(NSError **)error
+{
   if (timeout <= 0) {
     if (error) {
-      *error = FBSimulatorAccessibilityBootstrapError(1, @"Accessibility bootstrap timeout must be greater than zero");
+      *error = FBSimulatorAccessibilityBootstrapError(1, @"Accessibility bootstrap timeout must be greater than zero", nil);
     }
     return NO;
   }
-  if (![self.accessibilityAutomationFrameworks loadPrivateFrameworks:logger error:error]) {
+  if (loadFrameworks && ![self.accessibilityAutomationFrameworks loadPrivateFrameworks:logger error:error]) {
     return NO;
   }
 
-  Class providerClass = NSClassFromString(@"XCUIDeviceRemoteDaemonConnectionProvider");
   SEL providerSelector = NSSelectorFromString(@"connectionProviderForSimDevice:");
   if (![providerClass respondsToSelector:providerSelector]) {
     if (error) {
-      *error = FBSimulatorAccessibilityBootstrapError(2, @"The simulator remote daemon connection provider is unavailable");
+      *error = FBSimulatorAccessibilityBootstrapError(3, @"The simulator remote daemon connection provider is unavailable", nil);
     }
     return NO;
   }
   id provider = ((id (*)(id, SEL, id))objc_msgSend)(providerClass, providerSelector, simulatorDevice);
   if (!provider) {
     if (error) {
-      *error = FBSimulatorAccessibilityBootstrapError(3, @"Could not create a simulator remote daemon connection provider");
+      *error = FBSimulatorAccessibilityBootstrapError(4, @"Could not create a simulator remote daemon connection provider", nil);
     }
     return NO;
   }
 
-  Class sessionClass = NSClassFromString(@"XCUIDeviceRemoteAutomationSession");
   SEL requestSelector = NSSelectorFromString(@"requestSessionWithDaemonConnectionProvider:completion:");
   if (![sessionClass respondsToSelector:requestSelector]) {
     if (error) {
-      *error = FBSimulatorAccessibilityBootstrapError(4, @"The simulator remote automation session API is unavailable");
+      *error = FBSimulatorAccessibilityBootstrapError(7, @"The simulator remote automation session API is unavailable", nil);
     }
     return NO;
   }
@@ -292,7 +359,7 @@ static void FBSimulatorControl_SimLogHandler(int level, const char *function, in
       FBSimulatorInvalidateAccessibilitySession(session);
     }
     if (error) {
-      *error = FBSimulatorAccessibilityBootstrapError(5, @"Timed out creating the simulator remote automation session");
+      *error = FBSimulatorAccessibilityBootstrapError(8, @"Timed out creating the simulator remote automation session", nil);
     }
     return NO;
   }
@@ -300,7 +367,7 @@ static void FBSimulatorControl_SimLogHandler(int level, const char *function, in
   id session = result.session;
   if (!session) {
     if (error) {
-      *error = result.error ?: FBSimulatorAccessibilityBootstrapError(6, @"Could not create the simulator remote automation session");
+      *error = result.error ?: FBSimulatorAccessibilityBootstrapError(9, @"Could not create the simulator remote automation session", nil);
     }
     return NO;
   }
@@ -312,7 +379,7 @@ static void FBSimulatorControl_SimLogHandler(int level, const char *function, in
       BOOL enabled = ((BOOL (*)(id, SEL, NSError **))objc_msgSend)(session, enableSelector, &enableError);
       if (!enabled) {
         if (error) {
-          *error = enableError ?: FBSimulatorAccessibilityBootstrapError(7, @"Could not enable simulator automation mode");
+          *error = enableError ?: FBSimulatorAccessibilityBootstrapError(10, @"Could not enable simulator automation mode", nil);
         }
         return NO;
       }
@@ -321,7 +388,7 @@ static void FBSimulatorControl_SimLogHandler(int level, const char *function, in
     SEL loadSelector = NSSelectorFromString(@"loadAccessibilityWithTimeout:reply:");
     if (![session respondsToSelector:loadSelector]) {
       if (error) {
-        *error = FBSimulatorAccessibilityBootstrapError(8, @"The simulator automation session cannot load Accessibility");
+        *error = FBSimulatorAccessibilityBootstrapError(11, @"The simulator automation session cannot load Accessibility", nil);
       }
       return NO;
     }
@@ -338,13 +405,13 @@ static void FBSimulatorControl_SimLogHandler(int level, const char *function, in
     dispatch_time_t loadDeadline = dispatch_time(DISPATCH_TIME_NOW, (int64_t)((timeout + 1) * NSEC_PER_SEC));
     if (dispatch_semaphore_wait(loadSemaphore, loadDeadline) != 0) {
       if (error) {
-        *error = FBSimulatorAccessibilityBootstrapError(9, @"Timed out loading simulator Accessibility");
+        *error = FBSimulatorAccessibilityBootstrapError(12, @"Timed out loading simulator Accessibility", nil);
       }
       return NO;
     }
     if (!loaded) {
       if (error) {
-        *error = loadError ?: FBSimulatorAccessibilityBootstrapError(10, @"The simulator rejected the Accessibility load request");
+        *error = loadError ?: FBSimulatorAccessibilityBootstrapError(13, @"The simulator rejected the Accessibility load request", nil);
       }
       return NO;
     }
