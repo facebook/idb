@@ -64,6 +64,8 @@ public final class FBSimulatorSettingsCommands: NSObject, FBiOSTargetCommand {
       try await setSlowAnimationsEnabledAsync(enabled)
     case let .increaseContrast(enabled):
       try await setIncreaseContrastEnabledAsync(enabled)
+    case let .autoFillPasswords(enabled):
+      try await setAutoFillPasswordsEnabledAsync(enabled)
     case let .appearance(appearance):
       try await setAppearanceAsync(appearance)
     case let .contentSize(category):
@@ -197,6 +199,13 @@ public final class FBSimulatorSettingsCommands: NSObject, FBiOSTargetCommand {
       throw FBSimulatorError.describe("Simulator deallocated").build()
     }
     try simulator.device.setIncreaseContrastEnabled(enabled)
+  }
+
+  fileprivate func setAutoFillPasswordsEnabledAsync(_ enabled: Bool) async throws {
+    // Disabling iOS AutoFill Passwords (com.apple.WebUI / AutoFillPasswords) suppresses the native
+    // "Automatic Strong Password" cover shown over UITextContentTypeNewPassword fields. It takes
+    // effect for apps launched afterwards and needs no reboot.
+    try await setPreferenceAsync("AutoFillPasswords", value: enabled ? "true" : "false", type: "bool", domain: "com.apple.WebUI")
   }
 
   fileprivate func setDarwinNotificationStateAsync(_ enabled: Bool, name: String) async throws {

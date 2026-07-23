@@ -251,6 +251,12 @@ final class FBSimulatorSettingsCommandsTests: XCTestCase {
     XCTAssertEqual(try FBSimulatorSetting(name: "locale", value: "en_US", type: nil, domain: nil), .locale(localeIdentifier: "en_US"))
   }
 
+  func testParseAutofillPasswords() throws {
+    XCTAssertEqual(try FBSimulatorSetting(name: "autofill-passwords", value: "disable", type: nil, domain: nil), .autoFillPasswords(false))
+    XCTAssertEqual(try FBSimulatorSetting(name: "autofill-passwords", value: "enable", type: nil, domain: nil), .autoFillPasswords(true))
+    XCTAssertThrowsError(try FBSimulatorSetting(name: "autofill-passwords", value: "off", type: nil, domain: nil))
+  }
+
   func testParseUnknownNameFallsBackToPreference() throws {
     XCTAssertEqual(
       try FBSimulatorSetting(name: "com.example.Key", value: "1", type: "int", domain: "com.example"),

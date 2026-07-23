@@ -17,6 +17,7 @@ public enum FBSimulatorSetting: Equatable {
   case hardwareKeyboard(Bool)
   case slowAnimations(Bool)
   case increaseContrast(Bool)
+  case autoFillPasswords(Bool)
   case appearance(FBSimulatorAppearance)
   case contentSize(FBSimulatorContentSizeCategory)
   case locale(localeIdentifier: String)
@@ -50,6 +51,8 @@ extension FBSimulatorSetting {
       self = .slowAnimations(try FBSimulatorSetting.parseEnabled(name: name, value: value))
     case "increase-contrast":
       self = .increaseContrast(try FBSimulatorSetting.parseEnabled(name: name, value: value))
+    case "autofill-passwords":
+      self = .autoFillPasswords(try FBSimulatorSetting.parseEnabled(name: name, value: value))
     case "appearance":
       guard let appearance = FBSimulatorAppearance(argumentName: value) else {
         throw FBSimulatorSettingError.invalidValue(

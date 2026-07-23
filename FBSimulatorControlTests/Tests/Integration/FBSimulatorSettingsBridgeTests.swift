@@ -32,4 +32,25 @@ final class FBSimulatorSettingsBridgeTests: FBSimulatorControlTestCase {
     }
     await assertShutdownSimulatorAndTerminateSession(simulator)
   }
+
+  func testAutoFillPasswordsRoundTripsThroughApply() async throws {
+    guard
+      let simulator = assertObtainsBootedSimulator(
+        with: try FBSimulatorConfiguration.defaultConfiguration().withDeviceModel(FBDeviceModel(rawValue: "iPhone 8")),
+        bootConfiguration: bootConfiguration
+      )
+    else {
+      return
+    }
+    do {
+      try await simulator.apply(.autoFillPasswords(false))
+      let disabled = try await simulator.getCurrentPreference("AutoFillPasswords", domain: "com.apple.WebUI")
+      try await simulator.apply(.autoFillPasswords(true))
+      let enabled = try await simulator.getCurrentPreference("AutoFillPasswords", domain: "com.apple.WebUI")
+      XCTAssertNotEqual(disabled, enabled, "AutoFillPasswords should read back differently after disable vs enable")
+    } catch {
+      XCTFail("apply(.autoFillPasswords) round-trip failed: \(error)")
+    }
+    await assertShutdownSimulatorAndTerminateSession(simulator)
+  }
 }
