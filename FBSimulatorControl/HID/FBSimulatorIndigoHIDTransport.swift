@@ -43,9 +43,13 @@ actor FBSimulatorIndigoHIDTransport: FBSimulatorHIDTransport {
   /// Creates a transport for the provided Simulator, registering a HID client.
   /// Will fail if a HID Port could not be registered for the provided Simulator.
   /// Registration may need to occur prior to booting.
-  static func indigo(for simulator: FBSimulator) throws -> FBSimulatorIndigoHIDTransport {
+  static func indigo(
+    for simulator: FBSimulator,
+    onInvalidated: @escaping @Sendable () -> Void = {}
+  ) throws -> FBSimulatorIndigoHIDTransport {
     FBSimulatorIndigoHIDTransport(
-      indigoClient: try FBSimulatorIndigoHIDClient(for: simulator.device),
+      indigoClient: try FBSimulatorIndigoHIDClient(
+        for: simulator.device, onInvalidated: onInvalidated),
       indigo: try FBSimulatorIndigoHID(),
       mainScreenSize: simulator.device.deviceType.mainScreenSize,
       mainScreenScale: simulator.device.deviceType.mainScreenScale,

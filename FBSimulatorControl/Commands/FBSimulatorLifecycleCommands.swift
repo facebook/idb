@@ -176,8 +176,8 @@ public final class FBSimulatorLifecycleCommands: NSObject, FBiOSTargetCommand {
     do {
       return try hidCache.session(
         for: identity,
-        create: {
-          try FBSimulatorHID(for: simulator)
+        create: { invalidate in
+          try FBSimulatorHID(for: simulator, onTransportInvalidated: invalidate)
         },
         currentIdentity: {
           try FBSimulatorHIDBootIdentityResolver.identity(for: simulator)
