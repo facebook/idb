@@ -39,6 +39,9 @@ import ObjectiveC
  Message sends are serialized onto the private `queue`, so the type is `@unchecked Sendable`.
  */
 final class FBSimulatorIndigoHIDClient: @unchecked Sendable {
+  typealias SendImplementation = @Sendable (
+    Data, DispatchQueue, @escaping @Sendable (Error?) -> Void
+  ) -> Void
 
   private static let clientClassName = "SimulatorKit.SimDeviceLegacyHIDClient"
 
@@ -47,9 +50,19 @@ final class FBSimulatorIndigoHIDClient: @unchecked Sendable {
   // Untyped on purpose: the concrete `SimDeviceLegacyHIDClient` is a runtime-only class (see
   // SimDeviceLegacyHIDClientMessaging). Messaged via unsafeBitCast to that protocol.
   private var client: AnyObject?
+  private var pendingSendCount = 0
+  private var disconnectRequested = false
+  private var invalidationReported = false
+  private let onInvalidated: @Sendable () -> Void
+  /// Test observation seam. Production construction uses the no-op default.
+  private let onDisposed: @Sendable () -> Void
+  private let sendImplementation: SendImplementation?
 
   /// Looks up, allocates and initializes the runtime-only HID client for the provided device.
-  convenience init(for device: SimDevice) throws {
+  convenience init(
+    for device: SimDevice,
+    onInvalidated: @escaping @Sendable () -> Void = {}
+  ) throws {
     // The HID client class lives in SimulatorKit (or CoreDeviceIO on newer Xcodes), which is
     // loaded on demand. Host applications that haven't preloaded it (unlike the companion,
     // which loads all frameworks at startup) would otherwise fail the class lookup below.
@@ -67,17 +80,31 @@ final class FBSimulatorIndigoHIDClient: @unchecked Sendable {
       throw FBSimulatorHIDError.clientCreationFailed(clientClass: "\(clientClass)", underlying: clientError as? Error)
     }
     self.init(
-      client: client, queue: DispatchQueue(label: "com.facebook.fbsimulatorcontrol.hid"))
+      client: client,
+      queue: DispatchQueue(label: "com.facebook.fbsimulatorcontrol.hid"),
+      onInvalidated: onInvalidated)
   }
 
-  private init(client: AnyObject, queue: DispatchQueue) {
+  init(
+    client: AnyObject,
+    queue: DispatchQueue,
+    onInvalidated: @escaping @Sendable () -> Void,
+    onDisposed: @escaping @Sendable () -> Void = {},
+    sendImplementation: SendImplementation? = nil
+  ) {
     self.client = client
     self.queue = queue
+    self.onInvalidated = onInvalidated
+    self.onDisposed = onDisposed
+    self.sendImplementation = sendImplementation
   }
 
   /// Disconnects from the remote HID by releasing the client.
   func disconnect() {
-    client = nil
+    queue.async { [self] in
+      disconnectRequested = true
+      disposeClientIfPossible()
+    }
   }
 
   /// Sends the message bytes, completing when the client acknowledges delivery.
@@ -97,6 +124,34 @@ final class FBSimulatorIndigoHIDClient: @unchecked Sendable {
 
   /// Sends the message bytes synchronously. Callers must guarantee all calls are from `queue`.
   private func sendData(_ data: Data, completionQueue: DispatchQueue, completion: @escaping @Sendable (Error?) -> Void) {
+    guard !disconnectRequested, let client else {
+      completion(FBSimulatorHIDError.clientDisposed)
+      return
+    }
+    pendingSendCount += 1
+    let sendCompletion: @Sendable (Error?) -> Void = { [self] error in
+      pendingSendCount -= 1
+      let shouldReportInvalidation: Bool
+      if error != nil {
+        // A completion error means this transport can no longer be trusted, but does not prove the
+        // event was never delivered. Evict it for the next command instead of retrying here.
+        disconnectRequested = true
+        shouldReportInvalidation = !invalidationReported
+        invalidationReported = true
+      } else {
+        shouldReportInvalidation = false
+      }
+      disposeClientIfPossible()
+      if shouldReportInvalidation {
+        onInvalidated()
+      }
+      completion(error)
+    }
+    if let sendImplementation {
+      sendImplementation(data, completionQueue, sendCompletion)
+      return
+    }
+
     // The event is delivered asynchronously. Copy the message and let the client manage its lifecycle:
     // the free of the buffer is performed by the client (freeWhenDone) and the Data frees when out of scope.
     let size = data.count
@@ -107,11 +162,19 @@ final class FBSimulatorIndigoHIDClient: @unchecked Sendable {
       guard let base = buffer.baseAddress else { return }
       raw.copyMemory(from: base, byteCount: size)
     }
-    guard let client else {
-      free(raw)
+    unsafeBitCast(client, to: SimDeviceLegacyHIDClientMessaging.self)
+      .send(
+        withMessage: raw,
+        freeWhenDone: true,
+        completionQueue: completionQueue,
+        completion: sendCompletion)
+  }
+
+  private func disposeClientIfPossible() {
+    guard disconnectRequested, pendingSendCount == 0, client != nil else {
       return
     }
-    unsafeBitCast(client, to: SimDeviceLegacyHIDClientMessaging.self)
-      .send(withMessage: raw, freeWhenDone: true, completionQueue: completionQueue, completion: completion)
+    client = nil
+    onDisposed()
   }
 }
