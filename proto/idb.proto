@@ -397,11 +397,23 @@ message HIDEvent {
     double radius = 4;
   }
 
+  enum HIDOrientationType {
+    PORTRAIT = 0;
+    PORTRAIT_UPSIDE_DOWN = 1;
+    LANDSCAPE_LEFT = 2;
+    LANDSCAPE_RIGHT = 3;
+  }
+
+  message HIDOrientation {
+    HIDOrientationType orientation = 1;
+  }
+
   oneof event {
     HIDPress press = 1;
     HIDSwipe swipe = 2;
     HIDDelay delay = 3;
     HIDPinch pinch = 4;
+    HIDOrientation orientation = 5;
   }
 }
 

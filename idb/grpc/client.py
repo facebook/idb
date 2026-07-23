@@ -35,6 +35,7 @@ from idb.common.hid import (
     key_press_to_events,
     multi_tap_to_events,
     pinch_to_events,
+    rotate_to_events,
     swipe_to_events,
     tap_to_events,
     text_to_events,
@@ -61,6 +62,7 @@ from idb.common.types import (
     FileListing,
     HIDButtonType,
     HIDEvent,
+    HIDOrientationType,
     IdbConnectionException,
     IdbException,
     InstalledAppInfo,
@@ -907,6 +909,10 @@ class Client(ClientBase):
         self, button_type: HIDButtonType, duration: float | None = None
     ) -> None:
         await self.send_events(button_press_to_events(button_type, duration))
+
+    @log_and_handle_exceptions("hid")
+    async def rotate(self, orientation: HIDOrientationType) -> None:
+        await self.send_events(rotate_to_events(orientation))
 
     @log_and_handle_exceptions("hid")
     async def key(self, keycode: int, duration: float | None = None) -> None:

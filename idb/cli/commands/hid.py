@@ -13,7 +13,7 @@ from idb.common.hid import (
     iterator_to_async_iterator,
     key_press_with_modifiers_to_events,
 )
-from idb.common.types import Client, HIDButtonType
+from idb.common.types import Client, HIDButtonType, HIDOrientationType
 
 
 class TapCommand(ClientCommand):
@@ -95,6 +95,28 @@ class ButtonCommand(ClientCommand):
         await client.button(
             button_type=HIDButtonType[args.button], duration=args.duration
         )
+
+
+class RotateCommand(ClientCommand):
+    @property
+    def description(self) -> str:
+        return "Rotate the device to an orientation"
+
+    @property
+    def name(self) -> str:
+        return "rotate"
+
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
+        parser.add_argument(
+            "orientation",
+            help="The device orientation",
+            choices=[orientation.name for orientation in HIDOrientationType],
+            type=str,
+        )
+        super().add_parser_arguments(parser)
+
+    async def run_with_client(self, args: Namespace, client: Client) -> None:
+        await client.rotate(orientation=HIDOrientationType[args.orientation])
 
 
 # Remote action -> USB HID keyboard usage the tvOS focus engine consumes (keyboard-backed; no proto

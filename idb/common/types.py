@@ -316,7 +316,19 @@ class HIDPinch:
     radius: float
 
 
-HIDEvent = Union[HIDPress, HIDSwipe, HIDDelay, HIDPinch]
+class HIDOrientationType(Enum):
+    PORTRAIT = 0
+    PORTRAIT_UPSIDE_DOWN = 1
+    LANDSCAPE_LEFT = 2
+    LANDSCAPE_RIGHT = 3
+
+
+@dataclass(frozen=True)
+class HIDOrientation:
+    orientation: HIDOrientationType
+
+
+HIDEvent = Union[HIDPress, HIDSwipe, HIDDelay, HIDPinch, HIDOrientation]
 
 
 @dataclass(frozen=True)
@@ -652,6 +664,10 @@ class Client(ABC):
     async def button(
         self, button_type: HIDButtonType, duration: float | None = None
     ) -> None:
+        pass
+
+    @abstractmethod
+    async def rotate(self, orientation: HIDOrientationType) -> None:
         pass
 
     @abstractmethod

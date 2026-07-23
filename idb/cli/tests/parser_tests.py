@@ -20,6 +20,7 @@ from idb.common.types import (
     HIDButtonType,
     HIDDelay,
     HIDDirection,
+    HIDOrientationType,
     InstrumentsTimings,
     Permission,
     TCPAddress,
@@ -916,6 +917,13 @@ class TestParser(TestCase):
         await cli_main(cmd_input=["ui", "button", "SIRI"])
         self.client_mock.button.assert_called_once_with(
             button_type=HIDButtonType.SIRI, duration=None
+        )
+
+    async def test_rotate(self) -> None:
+        self.client_mock.rotate = AsyncMock(return_value=[])
+        await cli_main(cmd_input=["ui", "rotate", "LANDSCAPE_LEFT"])
+        self.client_mock.rotate.assert_called_once_with(
+            orientation=HIDOrientationType.LANDSCAPE_LEFT
         )
 
     async def test_key(self) -> None:
