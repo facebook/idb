@@ -11,6 +11,15 @@ private enum HIDClientTestError: Error, Equatable {
   case sendFailed
 }
 
+/// A device double that, like `SimDevice`, exposes an Objective-C visible `lastBootedAt` getter.
+private final class HIDBootMetadataDeviceDouble: NSObject {
+  @objc let lastBootedAt: Date
+
+  init(lastBootedAt: Date) {
+    self.lastBootedAt = lastBootedAt
+  }
+}
+
 private final class HIDSessionDouble: @unchecked Sendable {
   let id: Int
   let invalidate: @Sendable () -> Void
@@ -145,6 +154,35 @@ struct FBSimulatorHIDSessionCacheTests {
         generation: .coreSimulatorLastBootedAt(lastBootedAt)
       )
     )
+  }
+
+  @Test
+  func deviceImplementingLastBootedAtProvidesBootDate() {
+    let lastBootedAt = Date(timeIntervalSinceReferenceDate: 1_000)
+    let device = HIDBootMetadataDeviceDouble(lastBootedAt: lastBootedAt)
+
+    #expect(FBSimulatorHIDBootIdentityResolver.lastBootedAt(of: device) == lastBootedAt)
+  }
+
+  @Test
+  func deviceMissingLastBootedAtSelectorRoutesToProcessFallback() {
+    let fallback = FBSimulatorHIDBootIdentity(
+      generation: .launchdProcess(
+        processIdentifier: 100,
+        startTimeMicroseconds: 1_000
+      )
+    )
+
+    // NSObject has no `lastBootedAt` getter — the shape of a future CoreSimulator that removed the
+    // private property. The guarded read must return nil instead of crashing, routing identity
+    // resolution to the launchd_sim process fallback.
+    let identity = FBSimulatorHIDBootIdentityResolver.identity(
+      lastBootedAt: FBSimulatorHIDBootIdentityResolver.lastBootedAt(of: NSObject())
+    ) {
+      fallback
+    }
+
+    #expect(identity == fallback)
   }
 
   @Test
@@ -654,6 +692,45 @@ struct FBSimulatorIndigoHIDClientTests {
 
     #expect(recorder.invalidations == 1)
     #expect(recorder.sends == 1)
+  }
+
+  @Test
+  func sendOnAlreadyFailedClientReturnsClientDisposed() async {
+    let recorder = HIDClientTestRecorder()
+    let queue = DispatchQueue(label: "FBSimulatorIndigoHIDClientTests.alreadyFailed")
+    let client = FBSimulatorIndigoHIDClient(
+      client: NSObject(),
+      queue: queue,
+      onInvalidated: { recorder.recordInvalidation() },
+      onDisposed: recorder.recordDisposal
+    ) { _, completionQueue, completion in
+      recorder.recordSend()
+      completionQueue.async {
+        completion(HIDClientTestError.sendFailed)
+      }
+    }
+
+    do {
+      try await client.send(Data([1]))
+      Issue.record("Expected the send completion error")
+    } catch let error as HIDClientTestError {
+      #expect(error == .sendFailed)
+    } catch {
+      Issue.record("Unexpected error: \(error)")
+    }
+    #expect(recorder.disposals == 1)
+
+    do {
+      try await client.send(Data([2]))
+      Issue.record("Expected a send on the failed client to be rejected")
+    } catch FBSimulatorHIDError.clientDisposed {
+    } catch {
+      Issue.record("Unexpected error: \(error)")
+    }
+
+    #expect(recorder.sends == 1)
+    #expect(recorder.invalidations == 1)
+    #expect(recorder.disposals == 1)
   }
 
   @Test
