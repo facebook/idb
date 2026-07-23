@@ -7,6 +7,7 @@
 
 import CoreGraphics
 @testable import FBSimulatorControl
+import Synchronization
 import XCTest
 import XPC
 
@@ -104,6 +105,29 @@ final class FBSimulatorDTUHIDTransportTests: XCTestCase {
 
     // Apple Pay has no single HID usage (it is a double side-button press), so it stays unimplemented.
     await assertThrowsNotImplemented { try await transport.sendButton(direction: .down, button: .applePay) }
+  }
+
+  // MARK: Connection invalidation
+
+  /// The event handler drives session-cache eviction (mirroring the Indigo client): the first
+  /// connection-level XPC error must invalidate, later errors and ordinary messages must not.
+  func testEventHandlerInvalidatesExactlyOnceOnConnectionErrors() {
+    let invalidations = Mutex(0)
+    let handler = FBSimulatorDTUHIDTransport.makeInvalidationEventHandler {
+      invalidations.withLock { $0 += 1 }
+    }
+
+    // A non-error event (a regular message) must not invalidate.
+    handler(xpc_dictionary_create(nil, nil, 0))
+    XCTAssertEqual(invalidations.withLock { $0 }, 0)
+
+    handler(XPC_ERROR_CONNECTION_INTERRUPTED)
+    XCTAssertEqual(invalidations.withLock { $0 }, 1)
+
+    // Subsequent errors — including the cancellation that follows an interruption — stay silent.
+    handler(XPC_ERROR_CONNECTION_INVALID)
+    handler(XPC_ERROR_CONNECTION_INTERRUPTED)
+    XCTAssertEqual(invalidations.withLock { $0 }, 1)
   }
 
   // MARK: Two-finger encoding

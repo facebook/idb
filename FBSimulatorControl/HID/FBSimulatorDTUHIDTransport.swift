@@ -10,6 +10,7 @@ import CoreGraphics
 import Darwin
 @preconcurrency import FBControlCore
 import Foundation
+import Synchronization
 import XPC
 
 /// Tracks the per-contact phase so that a stream of Indigo `.down`/`.up` events maps onto the
@@ -81,7 +82,14 @@ actor FBSimulatorDTUHIDTransport: FBSimulatorHIDTransport {
 
   /// Builds a DTUHID transport for the provided Simulator, establishing the host XPC connection to
   /// `dtuhidd`. All setup is synchronous, so the returned transport is ready to send.
-  static func dtuhid(for simulator: FBSimulator) throws -> FBSimulatorDTUHIDTransport {
+  ///
+  /// `onInvalidated` is invoked (exactly once) when the XPC connection reports a connection-level
+  /// error, so a cached session backed by this transport is evicted as soon as the connection dies
+  /// rather than lingering until the next boot/shutdown notification.
+  static func dtuhid(
+    for simulator: FBSimulator,
+    onInvalidated: @escaping @Sendable () -> Void = {}
+  ) throws -> FBSimulatorDTUHIDTransport {
     guard let handle = dlopen(nil, RTLD_NOW) else {
       throw FBSimulatorHIDError.dtuhidXPCSymbolsUnavailable
     }
@@ -108,7 +116,8 @@ actor FBSimulatorDTUHIDTransport: FBSimulatorHIDTransport {
 
     // The load-bearing step: without this the daemon observes the peer but never the payload.
     enableSim2Host(connection)
-    xpc_connection_set_event_handler(connection) { _ in }
+    xpc_connection_set_event_handler(
+      connection, makeInvalidationEventHandler(onInvalidated: onInvalidated))
     xpc_connection_resume(connection)
 
     return FBSimulatorDTUHIDTransport(
@@ -121,6 +130,31 @@ actor FBSimulatorDTUHIDTransport: FBSimulatorHIDTransport {
     self.connection = connection
     self.mainScreenSize = mainScreenSize
     self.mainScreenScale = mainScreenScale
+  }
+
+  /// Builds the connection's XPC event handler: invokes `onInvalidated` exactly once on the first
+  /// connection-level error. Both XPC errors are terminal for this connection — the endpoint is
+  /// created from a Mach port looked up on one specific boot, so neither an interruption (the
+  /// daemon or the boot died) nor an invalidation (cancellation) is recoverable on the same
+  /// connection. This mirrors the Indigo client's send-failure invalidation: without it a failed
+  /// DTUHID transport would stay cached, and every subsequent command would hit the dead
+  /// connection until a boot/shutdown notification finally evicted it.
+  nonisolated static func makeInvalidationEventHandler(
+    onInvalidated: @escaping @Sendable () -> Void
+  ) -> @Sendable (xpc_object_t) -> Void {
+    let invalidationReported = Mutex(false)
+    return { event in
+      guard xpc_get_type(event) == XPC_TYPE_ERROR else {
+        return
+      }
+      let shouldReport = invalidationReported.withLock { reported in
+        defer { reported = true }
+        return !reported
+      }
+      if shouldReport {
+        onInvalidated()
+      }
+    }
   }
 
   private static func symbol<T>(_ handle: UnsafeMutableRawPointer, _ name: String, as type: T.Type) -> T? {

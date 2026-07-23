@@ -72,7 +72,8 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
       transport = try FBSimulatorIndigoHIDTransport.indigo(
         for: simulator, onInvalidated: onTransportInvalidated)
     case .dtuhid:
-      transport = try FBSimulatorDTUHIDTransport.dtuhid(for: simulator)
+      transport = try FBSimulatorDTUHIDTransport.dtuhid(
+        for: simulator, onInvalidated: onTransportInvalidated)
     }
     self.init(transport: transport, purple: FBSimulatorPurpleHID(), simulator: simulator)
   }

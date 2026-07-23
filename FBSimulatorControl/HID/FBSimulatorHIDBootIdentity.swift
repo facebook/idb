@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+@_implementationOnly import CoreSimulator
 import Darwin
 @preconcurrency import FBControlCore
 import Foundation
@@ -20,7 +21,7 @@ struct FBSimulatorHIDBootIdentity: Equatable, Sendable {
 
 enum FBSimulatorHIDBootIdentityResolver {
   static func identity(for simulator: FBSimulator) throws -> FBSimulatorHIDBootIdentity {
-    let identity = identity(lastBootedAt: simulator.device.lastBootedAt) {
+    let identity = identity(lastBootedAt: lastBootedAt(of: simulator.device)) {
       let matchingProcesses = FBProcessFetcher()
         .processes(withProcessName: "launchd_sim")
         .filter { process in
@@ -47,6 +48,20 @@ enum FBSimulatorHIDBootIdentityResolver {
         .build()
     }
     return identity
+  }
+
+  /// Reads the private `SimDevice.lastBootedAt` only after confirming the runtime object still
+  /// implements the getter. The property comes from a reverse-engineered header
+  /// (`PrivateHeaders/CoreSimulator/SimDevice.h`), so a future CoreSimulator could remove or rename
+  /// it; an unguarded read would then be an unrecognized-selector crash — one that would also stop
+  /// the launchd_sim/proc_pidinfo fallback from ever engaging. Returning nil routes to that fallback.
+  /// Takes `NSObject` (not `SimDevice`) so the guard is exercisable in unit tests with plain doubles.
+  static func lastBootedAt(of device: NSObject) -> Date? {
+    let selector = #selector(getter: SimDevice.lastBootedAt)
+    guard device.responds(to: selector) else {
+      return nil
+    }
+    return device.perform(selector)?.takeUnretainedValue() as? Date
   }
 
   static func identity(
