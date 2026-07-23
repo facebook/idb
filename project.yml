@@ -158,6 +158,8 @@ targets:
         embed: false
       - target: XCTestBootstrap
         embed: false
+      - target: CompanionUtilities
+        embed: false
       - sdk: AVFoundation.framework
       - sdk: Accelerate.framework
       - sdk: Cocoa.framework

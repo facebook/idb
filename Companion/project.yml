@@ -93,6 +93,25 @@ targets:
         product: DequeModule
       - sdk: Foundation.framework
 
+  ReplProtocol:
+    type: framework
+    platform: macOS
+    deploymentTarget: "12.0"
+    sources:
+      - path: ../REPL/ReplProtocol
+    settings:
+      base:
+        MACOSX_DEPLOYMENT_TARGET: "12.0"
+        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.ReplProtocol
+        PRODUCT_NAME: ReplProtocol
+        DEFINES_MODULE: YES
+        MACH_O_TYPE: staticlib
+        SWIFT_VERSION: "6.0"
+        GENERATE_INFOPLIST_FILE: YES
+    dependencies:
+      - sdk: CoreGraphics.framework
+      - sdk: Foundation.framework
+
   idb_companion:
     type: tool
     platform: macOS
@@ -168,6 +187,26 @@ targets:
         embed: false
       - target: IDBGRPCSwift
         embed: false
+      - target: ReplProtocol
+        embed: false
+      - sdk: Foundation.framework
+
+  CompanionDiscovery:
+    type: framework
+    platform: macOS
+    deploymentTarget: "12.0"
+    sources:
+      - path: ../CompanionDiscovery
+    settings:
+      base:
+        MACOSX_DEPLOYMENT_TARGET: "12.0"
+        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.CompanionDiscovery
+        PRODUCT_NAME: CompanionDiscovery
+        DEFINES_MODULE: YES
+        MACH_O_TYPE: staticlib
+        SWIFT_VERSION: "6.0"
+        GENERATE_INFOPLIST_FILE: YES
+    dependencies:
       - sdk: Foundation.framework
 
   # The `idb-repl` CLI (Buck: fbsource//fbobjc/Tools/idb:idb-repl). A small gRPC
@@ -182,11 +221,31 @@ targets:
     deploymentTarget: "12.0"
     sources:
       - path: ../REPL/CLI
+      # BuildInfo.swift is generated into DERIVED_FILE_DIR by the preBuildScript
+      # below; main.swift references `kBuildDate` / `kBuildTime`. `optional: true`
+      # lets xcodegen add the reference before the file exists at generation time.
+      - path: $(DERIVED_FILE_DIR)/BuildInfo.swift
+        optional: true
+        type: file
+    preBuildScripts:
+      - name: Generate BuildInfo.swift
+        # Stamp build date/time into a Swift file inside DERIVED_FILE_DIR.
+        script: |
+          set -e
+          mkdir -p "$DERIVED_FILE_DIR"
+          {
+            date +'let kBuildDate = "%b %-d %Y"'
+            date +'let kBuildTime = "%H:%M:%S"'
+          } > "$DERIVED_FILE_DIR/BuildInfo.swift"
+        # No inputFiles means Xcode runs this every build (the timestamp must
+        # always be fresh).
+        outputFiles:
+          - $(DERIVED_FILE_DIR)/BuildInfo.swift
     settings:
       base:
         MACOSX_DEPLOYMENT_TARGET: "12.0"
         PRODUCT_NAME: idb-repl
-        SWIFT_VERSION: "5.0"
+        SWIFT_VERSION: "6.0"
         GENERATE_INFOPLIST_FILE: YES
         # The entry point is `@main struct TestRepl` in main.swift. Without
         # -parse-as-library, Swift treats a file named main.swift as top-level
@@ -199,6 +258,10 @@ targets:
         CODE_SIGNING_ALLOWED: NO
     dependencies:
       - target: IDBGRPCSwift
+        embed: false
+      - target: CompanionDiscovery
+        embed: false
+      - framework: ../Build/Products/Release/CompanionUtilities.framework
         embed: false
       - package: swift-argument-parser
         product: ArgumentParser
