@@ -1,6 +1,11 @@
 @testable import FBSimulatorControl
+import Foundation
 import Synchronization
 import Testing
+
+private enum HIDBootIdentityTestError: Error {
+  case processInspectionDenied
+}
 
 private final class HIDSessionDouble: @unchecked Sendable {
   let id: Int
@@ -37,22 +42,83 @@ private final class HIDSessionTestRecorder: Sendable {
 @Suite
 struct FBSimulatorHIDSessionCacheTests {
   private let firstBoot = FBSimulatorHIDBootIdentity(
-    processIdentifier: 100,
-    startTimeMicroseconds: 1_000
+    generation: .coreSimulatorLastBootedAt(
+      Date(timeIntervalSinceReferenceDate: 1_000)
+    )
   )
   private let secondBoot = FBSimulatorHIDBootIdentity(
-    processIdentifier: 101,
-    startTimeMicroseconds: 2_000
+    generation: .coreSimulatorLastBootedAt(
+      Date(timeIntervalSinceReferenceDate: 2_000)
+    )
   )
 
   @Test
   func reusedProcessIdentifierWithNewStartTimeIsANewBoot() {
+    let first = FBSimulatorHIDBootIdentity(
+      generation: .launchdProcess(
+        processIdentifier: 100,
+        startTimeMicroseconds: 1_000
+      )
+    )
     let reusedPID = FBSimulatorHIDBootIdentity(
-      processIdentifier: firstBoot.processIdentifier,
-      startTimeMicroseconds: secondBoot.startTimeMicroseconds
+      generation: .launchdProcess(
+        processIdentifier: 100,
+        startTimeMicroseconds: 2_000
+      )
     )
 
-    #expect(reusedPID != firstBoot)
+    #expect(reusedPID != first)
+  }
+
+  @Test
+  func coreSimulatorMetadataSucceedsWhenProcessInspectionIsDenied() throws {
+    let lastBootedAt = Date(timeIntervalSinceReferenceDate: 1_000)
+
+    let identity = try FBSimulatorHIDBootIdentityResolver.identity(
+      lastBootedAt: lastBootedAt
+    ) {
+      throw HIDBootIdentityTestError.processInspectionDenied
+    }
+
+    #expect(
+      identity == FBSimulatorHIDBootIdentity(
+        generation: .coreSimulatorLastBootedAt(lastBootedAt)
+      )
+    )
+  }
+
+  @Test
+  func missingCoreSimulatorMetadataUsesExplicitProcessFallback() {
+    let fallback = FBSimulatorHIDBootIdentity(
+      generation: .launchdProcess(
+        processIdentifier: 100,
+        startTimeMicroseconds: 1_000
+      )
+    )
+
+    let identity = FBSimulatorHIDBootIdentityResolver.identity(
+      lastBootedAt: nil
+    ) {
+      fallback
+    }
+
+    #expect(identity == fallback)
+  }
+
+  @Test
+  func changedCoreSimulatorBootDateIsANewBootWithSameProcess() {
+    let first = FBSimulatorHIDBootIdentity(
+      generation: .coreSimulatorLastBootedAt(
+        Date(timeIntervalSinceReferenceDate: 1_000)
+      )
+    )
+    let second = FBSimulatorHIDBootIdentity(
+      generation: .coreSimulatorLastBootedAt(
+        Date(timeIntervalSinceReferenceDate: 2_000)
+      )
+    )
+
+    #expect(first != second)
   }
 
   @Test
@@ -121,14 +187,16 @@ struct FBSimulatorHIDSessionCacheTests {
   func bootChangeDuringConstructionRejectsSession() {
     let recorder = HIDSessionTestRecorder()
     let cache = makeCache(recorder: recorder)
+    var identities = [firstBoot, secondBoot]
 
     #expect(throws: FBSimulatorHIDSessionCacheError.bootChangedDuringConnection) {
       try cache.session(
         for: firstBoot,
         create: { HIDSessionDouble(id: recorder.recordCreation()) },
-        currentIdentity: { secondBoot }
+        currentIdentity: { identities.removeFirst() }
       )
     }
+    #expect(recorder.creations == 1)
     #expect(recorder.disconnections == [1])
   }
 

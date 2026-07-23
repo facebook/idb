@@ -10,30 +10,55 @@ import Darwin
 import Foundation
 
 struct FBSimulatorHIDBootIdentity: Equatable, Sendable {
-  let processIdentifier: pid_t
-  let startTimeMicroseconds: UInt64
+  enum Generation: Equatable, Sendable {
+    case coreSimulatorLastBootedAt(Date)
+    case launchdProcess(processIdentifier: pid_t, startTimeMicroseconds: UInt64)
+  }
+
+  let generation: Generation
 }
 
 enum FBSimulatorHIDBootIdentityResolver {
   static func identity(for simulator: FBSimulator) throws -> FBSimulatorHIDBootIdentity {
-    let matchingProcesses = FBProcessFetcher()
-      .processes(withProcessName: "launchd_sim")
-      .filter { process in
-        process.arguments.contains { $0.contains(simulator.udid) }
-      }
-      .compactMap(identity(for:))
+    let identity = identity(lastBootedAt: simulator.device.lastBootedAt) {
+      let matchingProcesses = FBProcessFetcher()
+        .processes(withProcessName: "launchd_sim")
+        .filter { process in
+          process.arguments.contains { $0.contains(simulator.udid) }
+        }
+        .compactMap(identity(for:))
 
-    guard let identity = matchingProcesses.max(by: {
-      if $0.startTimeMicroseconds == $1.startTimeMicroseconds {
-        return $0.processIdentifier < $1.processIdentifier
-      }
-      return $0.startTimeMicroseconds < $1.startTimeMicroseconds
-    }) else {
+      return matchingProcesses.max(by: {
+        guard
+          case let .launchdProcess(lhsPID, lhsStartTime) = $0.generation,
+          case let .launchdProcess(rhsPID, rhsStartTime) = $1.generation
+        else {
+          return false
+        }
+        if lhsStartTime == rhsStartTime {
+          return lhsPID < rhsPID
+        }
+        return lhsStartTime < rhsStartTime
+      })
+    }
+    guard let identity else {
       throw FBSimulatorError
         .describe("Could not resolve the launchd_sim boot identity for simulator \(simulator.udid)")
         .build()
     }
     return identity
+  }
+
+  static func identity(
+    lastBootedAt: Date?,
+    fallback: () throws -> FBSimulatorHIDBootIdentity?
+  ) rethrows -> FBSimulatorHIDBootIdentity? {
+    if let lastBootedAt {
+      return FBSimulatorHIDBootIdentity(
+        generation: .coreSimulatorLastBootedAt(lastBootedAt)
+      )
+    }
+    return try fallback()
   }
 
   static func identity(for process: FBProcessInfo) -> FBSimulatorHIDBootIdentity? {
@@ -52,8 +77,10 @@ enum FBSimulatorHIDBootIdentityResolver {
     let microseconds = UInt64(processInfo.pbi_start_tvsec) * 1_000_000
       + UInt64(processInfo.pbi_start_tvusec)
     return FBSimulatorHIDBootIdentity(
-      processIdentifier: process.processIdentifier,
-      startTimeMicroseconds: microseconds
+      generation: .launchdProcess(
+        processIdentifier: process.processIdentifier,
+        startTimeMicroseconds: microseconds
+      )
     )
   }
 }
