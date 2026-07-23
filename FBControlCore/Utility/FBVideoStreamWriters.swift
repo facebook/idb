@@ -202,8 +202,31 @@ private extension FBVideoStreamCodec {
     }
   }
 
-  var isHEVC: Bool {
-    self == .hevc
+  var fmp4CompatibleBrand: String {
+    switch self {
+    case .h264:
+      return "mp41"
+    case .hevc:
+      return "hvc1"
+    }
+  }
+
+  var fmp4SampleEntryType: String {
+    switch self {
+    case .h264:
+      return "avc1"
+    case .hevc:
+      return "hvc1"
+    }
+  }
+
+  var fmp4CodecConfigType: String {
+    switch self {
+    case .h264:
+      return "avcC"
+    case .hevc:
+      return "hvcC"
+    }
   }
 }
 
@@ -969,17 +992,16 @@ private func FBFMP4WriteBytes(_ data: inout [UInt8], _ string: String) {
   data.append(contentsOf: Array(string.utf8))
 }
 
-// Extract codec configuration atom (avcC or hvcC) from CMFormatDescription.
-private func FBFMP4GetCodecConfigAtom(_ formatDescription: CMFormatDescription, _ isHEVC: Bool) -> [UInt8]? {
+private func FBFMP4GetCodecConfigAtom(_ formatDescription: CMFormatDescription, _ codec: FBVideoStreamCodec) -> [UInt8]? {
   if let atoms = CMFormatDescriptionGetExtension(formatDescription, extensionKey: kCMFormatDescriptionExtension_SampleDescriptionExtensionAtoms) as? [String: Any] {
-    let key = isHEVC ? "hvcC" : "avcC"
-    if let configData = atoms[key] as? Data {
+    if let configData = atoms[codec.fmp4CodecConfigType] as? Data {
       return [UInt8](configData)
     }
   }
   // Fallback: build avcC/hvcC manually from parameter sets.
   var config = [UInt8]()
-  if !isHEVC {
+  switch codec {
+  case .h264:
     var sps: UnsafePointer<UInt8>?
     var spsSize = 0
     var paramCount = 0
@@ -1007,7 +1029,7 @@ private func FBFMP4GetCodecConfigAtom(_ formatDescription: CMFormatDescription, 
       FBFMP4Write16(&config, UInt16(ppsSize))
       config.append(contentsOf: UnsafeBufferPointer(start: pps, count: ppsSize))
     }
-  } else {
+  case .hevc:
     var paramCount = 0
     let status = CMVideoFormatDescriptionGetHEVCParameterSetAtIndex(formatDescription, parameterSetIndex: 0, parameterSetPointerOut: nil, parameterSetSizeOut: nil, parameterSetCountOut: &paramCount, nalUnitHeaderLengthOut: nil)
     if status != noErr {
@@ -1070,7 +1092,7 @@ private func FBFMP4GetCodecConfigAtom(_ formatDescription: CMFormatDescription, 
   return config
 }
 
-private func FBFMP4CreateFtypBox(_ isHEVC: Bool) -> [UInt8] {
+private func FBFMP4CreateFtypBox(_ codec: FBVideoStreamCodec) -> [UInt8] {
   var data = [UInt8]()
   data.reserveCapacity(24)
   let off = FBFMP4BeginBox(&data, "ftyp")
@@ -1078,22 +1100,16 @@ private func FBFMP4CreateFtypBox(_ isHEVC: Bool) -> [UInt8] {
   FBFMP4Write32(&data, 0x200)
   FBFMP4WriteBytes(&data, "isom")
   FBFMP4WriteBytes(&data, "iso6")
-  if isHEVC {
-    FBFMP4WriteBytes(&data, "hvc1")
-  } else {
-    FBFMP4WriteBytes(&data, "mp41")
-  }
+  FBFMP4WriteBytes(&data, codec.fmp4CompatibleBrand)
   FBFMP4EndBox(&data, off)
   return data
 }
 
-private func FBFMP4CreateMoovBox(_ formatDescription: CMFormatDescription, _ isHEVC: Bool, _ width: UInt32, _ height: UInt32, _ timescale: UInt32) -> [UInt8] {
+private func FBFMP4CreateMoovBox(_ formatDescription: CMFormatDescription, _ codec: FBVideoStreamCodec, _ width: UInt32, _ height: UInt32, _ timescale: UInt32) -> [UInt8] {
   var data = [UInt8]()
   data.reserveCapacity(512)
 
-  let codecConfig = FBFMP4GetCodecConfigAtom(formatDescription, isHEVC)
-  let sampleEntryType = isHEVC ? "hvc1" : "avc1"
-  let codecConfigType = isHEVC ? "hvcC" : "avcC"
+  let codecConfig = FBFMP4GetCodecConfigAtom(formatDescription, codec)
 
   let moovOff = FBFMP4BeginBox(&data, "moov")
 
@@ -1212,7 +1228,7 @@ private func FBFMP4CreateMoovBox(_ formatDescription: CMFormatDescription, _ isH
 
             // Visual sample entry (avc1 or hvc1)
             do {
-              let entryOff = FBFMP4BeginBox(&data, sampleEntryType)
+              let entryOff = FBFMP4BeginBox(&data, codec.fmp4SampleEntryType)
               FBFMP4WriteZeros(&data, 6)
               FBFMP4Write16(&data, 1)
               FBFMP4WriteZeros(&data, 16)
@@ -1227,7 +1243,7 @@ private func FBFMP4CreateMoovBox(_ formatDescription: CMFormatDescription, _ isH
               FBFMP4Write16(&data, 0xFFFF)
 
               if let codecConfig {
-                let ccOff = FBFMP4BeginBox(&data, codecConfigType)
+                let ccOff = FBFMP4BeginBox(&data, codec.fmp4CodecConfigType)
                 data.append(contentsOf: codecConfig)
                 FBFMP4EndBox(&data, ccOff)
               }
@@ -1411,8 +1427,8 @@ public final class FBFMP4FrameWriter: FBEncodedFrameWriter, FBVideoStreamTimedMe
       }
       let dims = CMVideoFormatDescriptionGetDimensions(formatDesc)
 
-      let ftyp = FBFMP4CreateFtypBox(codec.isHEVC)
-      let moov = FBFMP4CreateMoovBox(formatDesc, codec.isHEVC, UInt32(dims.width), UInt32(dims.height), 90000)
+      let ftyp = FBFMP4CreateFtypBox(codec)
+      let moov = FBFMP4CreateMoovBox(formatDesc, codec, UInt32(dims.width), UInt32(dims.height), 90000)
 
       consumer.consumeData(Data(ftyp))
       consumer.consumeData(Data(moov))
