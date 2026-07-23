@@ -103,6 +103,7 @@
 - (void)handleXPCNotification:(NSDictionary *)arg1;
 @property (nonatomic, readonly, copy) NSString *runtimeIdentifier;
 @property (nonatomic, readonly, copy) NSString *name;
+@property (nonatomic, readonly, copy) NSDate *lastBootedAt;
 - (SimDeviceBootInfo *)bootStatus;
 @property (nonatomic, readonly) unsigned long long state;
 - (NSString *)stateString;

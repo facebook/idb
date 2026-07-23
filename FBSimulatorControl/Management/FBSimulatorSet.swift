@@ -191,23 +191,33 @@ public final class FBSimulatorSet: NSObject, FBiOSTargetSet {
    devices stay hidden as before.
    */
   private var devicesForInflation: [Any] {
-    let availableDevices = deviceSet.availableDevices.compactMap { $0 as? SimDevice }
-    let allDevices = deviceSet.devices.compactMap { $0 as? SimDevice }
+    let availableDevices: [Any] = deviceSet.availableDevices ?? []
+    let allDevices: [Any] = deviceSet.devices ?? []
     if availableDevices.count == allDevices.count {
       return availableDevices
     }
-    let availableUDIDs = Set(availableDevices.map(\.udid))
+    let availableUDIDs = Set(availableDevices.compactMap(Self.deviceUDID))
     var devices = availableDevices
     for device in allDevices {
-      guard device.state == FBiOSTargetState.booted.rawValue else {
+      guard let state = Self.deviceState(device),
+        state == FBiOSTargetState.booted.rawValue
+      else {
         continue
       }
-      guard !availableUDIDs.contains(device.udid) else {
+      guard let udid = Self.deviceUDID(device), !availableUDIDs.contains(udid) else {
         continue
       }
       devices.append(device)
     }
     return devices
+  }
+
+  private static func deviceUDID(_ device: Any) -> NSUUID? {
+    (device as? NSObject)?.value(forKey: "UDID") as? NSUUID
+  }
+
+  private static func deviceState(_ device: Any) -> UInt64? {
+    ((device as? NSObject)?.value(forKey: "state") as? NSNumber)?.uint64Value
   }
 
   // MARK: - Private Methods
