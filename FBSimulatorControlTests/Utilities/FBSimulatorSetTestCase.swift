@@ -17,11 +17,14 @@ class FBSimulatorSetTestCase: XCTestCase {
   @discardableResult
   func createSet(withExistingSimDeviceSpecs simulatorSpecs: [[String: Any]]) -> [FBSimulator] {
     var simDevices: [AnyObject] = []
+    var availableSimDevices: [AnyObject] = []
     for simulatorSpec in simulatorSpecs {
       let name = simulatorSpec["name"] as! String
       let uuid = simulatorSpec["uuid"] as? NSUUID ?? NSUUID()
       let os = simulatorSpec["os"] as? String ?? "iOS 9.0"
       let version = os.components(separatedBy: CharacterSet.whitespaces).last ?? os
+      let hasRuntimeMetadata = simulatorSpec["hasRuntimeMetadata"] as? Bool ?? true
+      let isAvailable = simulatorSpec["available"] as? Bool ?? true
       let state: FBiOSTargetState
       if let stateRaw = simulatorSpec["state"] as? UInt {
         state = FBiOSTargetState(rawValue: stateRaw)!
@@ -41,13 +44,21 @@ class FBSimulatorSetTestCase: XCTestCase {
       device.UDID = uuid
       device.state = UInt64(state.rawValue)
       device.deviceType = deviceType
-      device.runtime = runtime
+      device.deviceTypeIdentifier = simulatorSpec["deviceTypeIdentifier"] as? String
+        ?? "com.apple.CoreSimulator.SimDeviceType.\(name.replacingOccurrences(of: " ", with: "-"))"
+      device.runtimeIdentifier = simulatorSpec["runtimeIdentifier"] as? String
+        ?? "com.apple.CoreSimulator.SimRuntime.\(os.replacingOccurrences(of: " ", with: "-").replacingOccurrences(of: ".", with: "-"))"
+      device.runtime = hasRuntimeMetadata ? runtime : nil
 
       simDevices.append(device)
+      if isAvailable {
+        availableSimDevices.append(device)
+      }
     }
 
     let deviceSet = FBSimulatorControlTests_SimDeviceSet_Double()
-    deviceSet.availableDevices = simDevices
+    deviceSet.availableDevices = availableSimDevices
+    deviceSet.devices = simDevices
 
     let noLogger: (any FBControlCoreLogger)? = nil
     let noReporter: (any FBEventReporter)? = nil

@@ -1,9 +1,18 @@
 #!/bin/bash
 
 set -euo pipefail
+export LC_ALL=C
 
 usage() {
   echo "usage: $0 --developer-dir <path> --udid <simulator-udid>" >&2
+}
+
+require_dependency() {
+  local dependency="$1"
+  if ! command -v "$dependency" >/dev/null 2>&1; then
+    echo "error: required host executable not found on PATH: $dependency" >&2
+    exit 2
+  fi
 }
 
 developer_dir=""
@@ -12,11 +21,19 @@ udid=""
 while [[ "$#" -gt 0 ]]; do
   case "$1" in
     --developer-dir)
-      developer_dir="${2:-}"
+      if [[ "$#" -lt 2 || -z "$2" ]]; then
+        usage
+        exit 2
+      fi
+      developer_dir="$2"
       shift 2
       ;;
     --udid)
-      udid="${2:-}"
+      if [[ "$#" -lt 2 || -z "$2" ]]; then
+        usage
+        exit 2
+      fi
+      udid="$2"
       shift 2
       ;;
     *)
@@ -36,9 +53,15 @@ if [[ ! -d "$developer_dir" ]]; then
   exit 2
 fi
 
-xcrun_path="$developer_dir/usr/bin/xcrun"
-if [[ ! -x "$xcrun_path" ]]; then
-  echo "error: xcrun not found under developer directory: $developer_dir" >&2
+for dependency in xcrun jq xcodebuild awk pgrep; do
+  require_dependency "$dependency"
+done
+
+xcrun_path="$(command -v xcrun)"
+xcodebuild_path="$(command -v xcodebuild)"
+
+if ! DEVELOPER_DIR="$developer_dir" "$xcrun_path" --find simctl >/dev/null 2>&1; then
+  echo "error: simctl is not available for developer directory: $developer_dir" >&2
   exit 2
 fi
 
@@ -62,8 +85,9 @@ runtime_json="$(jq -c --arg identifier "$runtime_identifier" '
   [.runtimes[] | select(.identifier == $identifier)] | first // {}
 ' <<<"$runtimes_json")"
 
-xcode_version="$(DEVELOPER_DIR="$developer_dir" xcodebuild -version | awk 'NR == 1 { print $2 }')"
-xcode_build="$(DEVELOPER_DIR="$developer_dir" xcodebuild -version | awk '/Build version/ { print $3 }')"
+xcode_version_output="$(DEVELOPER_DIR="$developer_dir" "$xcodebuild_path" -version)"
+xcode_version="$(awk 'NR == 1 { print $2 }' <<<"$xcode_version_output")"
+xcode_build="$(awk '/Build version/ { print $3 }' <<<"$xcode_version_output")"
 runtime_version="$(jq -r '.version // "unknown"' <<<"$runtime_json")"
 runtime_build="$(jq -r '.buildversion // "unknown"' <<<"$runtime_json")"
 device_name="$(jq -r '.name' <<<"$device_json")"
