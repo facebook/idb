@@ -137,6 +137,13 @@ import XCTestBootstrap
     try await simulator.accessibilityTap(for: .marker(value: label, key: .label, depth: .max))
   }
 
+  public func accessibility_tap(query: FBAccessibilityElementQuery, expectedValue: String?, expectedKey: FBAXSearchableKey) async throws {
+    guard let simulator = target as? FBSimulator else {
+      throw FBIDBError.describe("Target is not a simulator, cannot tap by accessibility: \(target)").build()
+    }
+    try await simulator.accessibilityTap(for: query, expectedValue: expectedValue, expectedKey: expectedKey)
+  }
+
   public func accessibility_info_at_point(_ value: NSValue?, nestedFormat: Bool) async throws -> FBAccessibilityElementsResponse {
     guard let simulator = target as? FBSimulator else {
       throw FBIDBError.describe("Target is not a simulator, cannot provide accessibility commands: \(target)").build()

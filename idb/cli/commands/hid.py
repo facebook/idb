@@ -13,26 +13,122 @@ from idb.common.hid import (
     iterator_to_async_iterator,
     key_press_with_modifiers_to_events,
 )
-from idb.common.types import Client, HIDButtonType, HIDOrientationType
+from idb.common.types import (
+    AccessibilityMarker,
+    AccessibilityPoint,
+    AccessibilitySearchableKey,
+    AccessibilityTarget,
+    Client,
+    HIDButtonType,
+    HIDOrientationType,
+    IdbException,
+)
+
+
+# CLI names for accessibility searchable keys, matching the sime2e vocabulary so
+# the same marker/expected-value flags work across both CLIs.
+_SEARCHABLE_KEY_NAMES: dict[str, AccessibilitySearchableKey] = {
+    "AXLabel": AccessibilitySearchableKey.LABEL,
+    "AXUniqueId": AccessibilitySearchableKey.UNIQUE_ID,
+    "AXValue": AccessibilitySearchableKey.VALUE,
+    "title": AccessibilitySearchableKey.TITLE,
+    "role": AccessibilitySearchableKey.ROLE,
+    "role_description": AccessibilitySearchableKey.ROLE_DESCRIPTION,
+    "subrole": AccessibilitySearchableKey.SUBROLE,
+    "help": AccessibilitySearchableKey.HELP,
+    "placeholder": AccessibilitySearchableKey.PLACEHOLDER,
+}
+
+
+def _is_int(value: str) -> bool:
+    try:
+        int(value)
+        return True
+    except ValueError:
+        return False
 
 
 class TapCommand(ClientCommand):
     @property
     def description(self) -> str:
-        return "Tap On the Screen"
+        return "Tap On the Screen by coordinates or accessibility marker"
 
     @property
     def name(self) -> str:
         return "tap"
 
     def add_parser_arguments(self, parser: ArgumentParser) -> None:
-        parser.add_argument("x", help="The x-coordinate", type=int)
-        parser.add_argument("y", help="The y-coordinate", type=int)
+        parser.add_argument(
+            "target",
+            nargs="+",
+            help="Either 'x y' coordinates, or a single accessibility marker "
+            "string (implies --api ax)",
+        )
         parser.add_argument("--duration", help="Press duration", type=float)
+        parser.add_argument(
+            "--api",
+            choices=["hid", "ax"],
+            default="hid",
+            help="Interaction API for a point: hid (coordinate touch) or ax "
+            "(accessibility press). A marker always uses ax.",
+        )
+        parser.add_argument(
+            "--match-key",
+            choices=list(_SEARCHABLE_KEY_NAMES),
+            default="AXLabel",
+            help="Accessibility key to match the marker against",
+        )
+        parser.add_argument(
+            "--depth",
+            type=int,
+            default=10,
+            help="Maximum tree depth to search for a marker",
+        )
+        parser.add_argument(
+            "--expected-value",
+            help="Value the element must have (for --expected-key) before tapping",
+        )
+        parser.add_argument(
+            "--expected-key",
+            choices=list(_SEARCHABLE_KEY_NAMES),
+            default="AXLabel",
+            help="Accessibility key to check --expected-value against",
+        )
         super().add_parser_arguments(parser)
 
     async def run_with_client(self, args: Namespace, client: Client) -> None:
-        await client.tap(x=args.x, y=args.y, duration=args.duration)
+        target = args.target
+        is_point = len(target) == 2 and _is_int(target[0]) and _is_int(target[1])
+
+        # Preserve the coordinate HID tap path exactly for `ui tap x y`.
+        if is_point and args.api == "hid" and args.expected_value is None:
+            await client.tap(x=int(target[0]), y=int(target[1]), duration=args.duration)
+            return
+
+        if args.duration is not None:
+            raise IdbException(
+                "--duration is only valid for coordinate HID taps (not --api ax "
+                "or marker taps)"
+            )
+        if is_point:
+            ax_target: AccessibilityTarget = AccessibilityPoint(
+                x=int(target[0]), y=int(target[1])
+            )
+        elif len(target) == 1:
+            ax_target = AccessibilityMarker(
+                value=target[0],
+                match_key=_SEARCHABLE_KEY_NAMES[args.match_key],
+                depth=args.depth,
+            )
+        else:
+            raise IdbException(
+                "ui tap expects 'x y' coordinates or a single marker string"
+            )
+        await client.accessibility_tap(
+            target=ax_target,
+            expected_value=args.expected_value,
+            expected_key=_SEARCHABLE_KEY_NAMES[args.expected_key],
+        )
 
 
 class MultiTapCommand(ClientCommand):

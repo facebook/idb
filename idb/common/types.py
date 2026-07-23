@@ -177,16 +177,34 @@ class AccessibilityInfo:
     json: str
 
 
+class AccessibilitySearchableKey(Enum):
+    LABEL = 0
+    UNIQUE_ID = 1
+    VALUE = 2
+    TITLE = 3
+    ROLE = 4
+    ROLE_DESCRIPTION = 5
+    SUBROLE = 6
+    HELP = 7
+    PLACEHOLDER = 8
+
+
 @dataclass(frozen=True)
 class AccessibilityPoint:
     x: int
     y: int
 
 
-# Selects an accessibility element to act on: currently a point (or None = the
-# whole screen / frontmost app). Marker-based targets are added to this union as
-# the accessibility commands land.
-AccessibilityTarget = AccessibilityPoint
+@dataclass(frozen=True)
+class AccessibilityMarker:
+    value: str
+    match_key: AccessibilitySearchableKey = AccessibilitySearchableKey.LABEL
+    depth: int = 10
+
+
+# Selects an accessibility element to act on: a point or a marker (or None = the
+# whole screen / frontmost app). This union grows as accessibility commands land.
+AccessibilityTarget = Union[AccessibilityPoint, AccessibilityMarker]
 
 
 @dataclass(frozen=True)
@@ -733,6 +751,15 @@ class Client(ABC):
     async def accessibility_info(
         self, target: AccessibilityTarget | None, nested: bool
     ) -> AccessibilityInfo:
+        pass
+
+    @abstractmethod
+    async def accessibility_tap(
+        self,
+        target: AccessibilityTarget,
+        expected_value: str | None = None,
+        expected_key: AccessibilitySearchableKey = AccessibilitySearchableKey.LABEL,
+    ) -> None:
         pass
 
     @abstractmethod

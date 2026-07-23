@@ -169,6 +169,15 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider, @unchec
     }
   }
 
+  func accessibility_action(request: Idb_AccessibilityActionRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_AccessibilityActionResponse {
+    return try await trackedUnaryCall("accessibility_action", request: request) {
+      try await FBTeardownContext.withAutocleanup {
+        try await AccessibilityActionMethodHandler(commandExecutor: commandExecutor)
+          .handle(request: request, context: context)
+      }
+    }
+  }
+
   func focus(request: Idb_FocusRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_FocusResponse {
     return try await trackedUnaryCall("focus", request: request) {
       try await FBTeardownContext.withAutocleanup {

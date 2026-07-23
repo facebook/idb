@@ -15,7 +15,9 @@ from idb.cli.commands.xctest import NO_SPECIFIED_PATH
 from idb.cli.main import gen_main as cli_main, get_default_companion_path
 from idb.common.command import Command, CommandGroup
 from idb.common.types import (
+    AccessibilityMarker,
     AccessibilityPoint,
+    AccessibilitySearchableKey,
     Compression,
     CrashLogQuery,
     DomainSocketAddress,
@@ -882,6 +884,28 @@ class TestParser(TestCase):
         self.client_mock.tap = AsyncMock(return_value=[])
         await cli_main(cmd_input=["ui", "tap", "10", "20"])
         self.client_mock.tap.assert_called_once_with(x=10, y=20, duration=None)
+
+    async def test_tap_ax_point(self) -> None:
+        self.client_mock.accessibility_tap = AsyncMock(return_value=[])
+        await cli_main(cmd_input=["ui", "tap", "10", "20", "--api", "ax"])
+        self.client_mock.accessibility_tap.assert_called_once_with(
+            target=AccessibilityPoint(x=10, y=20),
+            expected_value=None,
+            expected_key=AccessibilitySearchableKey.LABEL,
+        )
+
+    async def test_tap_marker(self) -> None:
+        self.client_mock.accessibility_tap = AsyncMock(return_value=[])
+        await cli_main(cmd_input=["ui", "tap", "Login", "--match-key", "AXUniqueId"])
+        self.client_mock.accessibility_tap.assert_called_once_with(
+            target=AccessibilityMarker(
+                value="Login",
+                match_key=AccessibilitySearchableKey.UNIQUE_ID,
+                depth=10,
+            ),
+            expected_value=None,
+            expected_key=AccessibilitySearchableKey.LABEL,
+        )
 
     async def test_multi_tap_default(self) -> None:
         self.client_mock.multi_tap = AsyncMock(return_value=[])

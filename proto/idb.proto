@@ -26,6 +26,8 @@ service CompanionService {
   // Interaction
   rpc accessibility_info(AccessibilityInfoRequest)
       returns (AccessibilityInfoResponse) {}
+  rpc accessibility_action(AccessibilityActionRequest)
+      returns (AccessibilityActionResponse) {}
   rpc focus(FocusRequest) returns (FocusResponse) {}
   rpc hid(stream HIDEvent) returns (HIDResponse) {}
   rpc open_url(OpenUrlRequest) returns (OpenUrlRequest) {}
@@ -249,6 +251,39 @@ message AccessibilityInfoRequest {
 message AccessibilityInfoResponse {
   string json = 1;
 }
+
+message AccessibilityActionRequest {
+  enum SearchableKey {
+    LABEL = 0;
+    UNIQUE_ID = 1;
+    VALUE = 2;
+    TITLE = 3;
+    ROLE = 4;
+    ROLE_DESCRIPTION = 5;
+    SUBROLE = 6;
+    HELP = 7;
+    PLACEHOLDER = 8;
+  }
+  // No target means the frontmost application element.
+  oneof target {
+    string marker = 1;
+    Point point = 2;
+  }
+  SearchableKey match_key = 3;
+  uint32 depth = 4;
+
+  message Tap {
+    bool check_expected_value = 1;
+    string expected_value = 2;
+    SearchableKey expected_key = 3;
+  }
+
+  oneof action {
+    Tap tap = 5;
+  }
+}
+
+message AccessibilityActionResponse {}
 
 message ApproveRequest {
   enum Permission {

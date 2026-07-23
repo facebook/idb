@@ -65,6 +65,10 @@ final class CompanionServiceInterceptors: Idb_CompanionServiceServerInterceptorF
     commonInterceptors()
   }
 
+  func makeaccessibility_actionInterceptors() -> [ServerInterceptor<Idb_AccessibilityActionRequest, Idb_AccessibilityActionResponse>] {
+    commonInterceptors()
+  }
+
   func makefocusInterceptors() -> [ServerInterceptor<Idb_FocusRequest, Idb_FocusResponse>] {
     commonInterceptors()
   }

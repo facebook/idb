@@ -46,7 +46,9 @@ from idb.common.stream import stream_map
 from idb.common.tar import create_tar, drain_untar, generate_tar
 from idb.common.types import (
     AccessibilityInfo,
+    AccessibilityMarker,
     AccessibilityPoint,
+    AccessibilitySearchableKey,
     AccessibilityTarget,
     Address,
     AppProcessState,
@@ -90,6 +92,7 @@ from idb.grpc.file import container_to_grpc as file_container_to_grpc
 from idb.grpc.hid import event_to_grpc
 from idb.grpc.idb_grpc import CompanionServiceStub
 from idb.grpc.idb_pb2 import (
+    AccessibilityActionRequest,
     AccessibilityInfoRequest,
     AddMediaRequest,
     ANY as AnySetting,
@@ -514,6 +517,29 @@ class Client(ClientBase):
             )
         )
         return AccessibilityInfo(json=response.json)
+
+    @log_and_handle_exceptions("accessibility_tap")
+    async def accessibility_tap(
+        self,
+        target: AccessibilityTarget,
+        expected_value: str | None = None,
+        expected_key: AccessibilitySearchableKey = AccessibilitySearchableKey.LABEL,
+    ) -> None:
+        request = AccessibilityActionRequest(
+            tap=AccessibilityActionRequest.Tap(
+                check_expected_value=expected_value is not None,
+                expected_value=expected_value or "",
+                expected_key=expected_key.value,
+            ),
+        )
+        if isinstance(target, AccessibilityMarker):
+            request.marker = target.value
+            request.match_key = target.match_key.value
+            request.depth = target.depth
+        elif isinstance(target, AccessibilityPoint):
+            request.point.x = target.x
+            request.point.y = target.y
+        await self.stub.accessibility_action(request)
 
     @log_and_handle_exceptions("add_media")
     async def add_media(self, file_paths: list[str]) -> None:
