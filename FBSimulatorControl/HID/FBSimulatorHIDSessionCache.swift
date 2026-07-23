@@ -8,12 +8,18 @@
 import Synchronization
 
 final class FBSimulatorHIDSessionCache<Session: Sendable>: Sendable {
+  private struct State: Sendable {
+    var nextGeneration: UInt = 0
+    var record: Record?
+  }
+
   private struct Record: Sendable {
+    let generation: UInt
     let identity: FBSimulatorHIDBootIdentity
     let session: Session
   }
 
-  private let record = Mutex<Record?>(nil)
+  private let state = Mutex(State())
   private let disconnect: @Sendable (Session) -> Void
 
   init(disconnect: @escaping @Sendable (Session) -> Void) {
@@ -22,27 +28,31 @@ final class FBSimulatorHIDSessionCache<Session: Sendable>: Sendable {
 
   func session(
     for identity: FBSimulatorHIDBootIdentity,
-    create: () throws -> Session,
+    create: (_ invalidate: @escaping @Sendable () -> Void) throws -> Session,
     currentIdentity: () throws -> FBSimulatorHIDBootIdentity
   ) throws -> Session {
-    try record.withLock { record in
+    try state.withLock { state in
       let validatedIdentity = try currentIdentity()
       guard validatedIdentity == identity else {
-        if let record {
+        if let record = state.record {
           disconnect(record.session)
         }
-        record = nil
+        state.record = nil
         throw FBSimulatorHIDSessionCacheError.bootChangedDuringConnection
       }
-      if let record, record.identity == identity {
+      if let record = state.record, record.identity == identity {
         return record.session
       }
-      if let record {
+      if let record = state.record {
         disconnect(record.session)
       }
-      record = nil
+      state.record = nil
 
-      let session = try create()
+      state.nextGeneration &+= 1
+      let generation = state.nextGeneration
+      let session = try create { [weak self] in
+        self?.invalidate(generation: generation)
+      }
       let resolvedIdentity: FBSimulatorHIDBootIdentity
       do {
         resolvedIdentity = try currentIdentity()
@@ -54,33 +64,45 @@ final class FBSimulatorHIDSessionCache<Session: Sendable>: Sendable {
         disconnect(session)
         throw FBSimulatorHIDSessionCacheError.bootChangedDuringConnection
       }
-      record = Record(identity: identity, session: session)
+      state.record = Record(generation: generation, identity: identity, session: session)
       return session
     }
   }
 
   func invalidate() {
-    record.withLock { record in
-      if let record {
+    state.withLock { state in
+      if let record = state.record {
         disconnect(record.session)
       }
-      record = nil
+      state.record = nil
     }
   }
 
   var cachedIdentity: FBSimulatorHIDBootIdentity? {
-    record.withLock { $0?.identity }
+    state.withLock { $0.record?.identity }
   }
 
   func invalidate(ifMatching identity: FBSimulatorHIDBootIdentity) {
-    record.withLock { record in
-      guard record?.identity == identity else {
+    state.withLock { state in
+      guard state.record?.identity == identity else {
         return
       }
-      if let record {
+      if let record = state.record {
         disconnect(record.session)
       }
-      record = nil
+      state.record = nil
+    }
+  }
+
+  private func invalidate(generation: UInt) {
+    state.withLock { state in
+      guard state.record?.generation == generation else {
+        return
+      }
+      if let record = state.record {
+        disconnect(record.session)
+      }
+      state.record = nil
     }
   }
 }
