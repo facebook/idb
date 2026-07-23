@@ -15,6 +15,7 @@ from idb.cli.commands.xctest import NO_SPECIFIED_PATH
 from idb.cli.main import gen_main as cli_main, get_default_companion_path
 from idb.common.command import Command, CommandGroup
 from idb.common.types import (
+    AccessibilityInfo,
     AccessibilityMarker,
     AccessibilityPoint,
     AccessibilitySearchableKey,
@@ -905,6 +906,22 @@ class TestParser(TestCase):
             ),
             expected_value=None,
             expected_key=AccessibilitySearchableKey.LABEL,
+        )
+
+    async def test_describe_marker(self) -> None:
+        self.client_mock.accessibility_info = AsyncMock(
+            return_value=AccessibilityInfo(json="[]")
+        )
+        await cli_main(
+            cmd_input=["ui", "describe", "Login", "--match-key", "AXUniqueId"]
+        )
+        self.client_mock.accessibility_info.assert_called_once_with(
+            target=AccessibilityMarker(
+                value="Login",
+                match_key=AccessibilitySearchableKey.UNIQUE_ID,
+                depth=10,
+            ),
+            nested=False,
         )
 
     async def test_multi_tap_default(self) -> None:

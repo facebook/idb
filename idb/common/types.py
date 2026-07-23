@@ -207,6 +207,21 @@ class AccessibilityMarker:
 AccessibilityTarget = Union[AccessibilityPoint, AccessibilityMarker]
 
 
+# CLI names (matching the sime2e vocabulary) for the accessibility searchable
+# keys, so the same marker/expected-value flags work across both CLIs.
+ACCESSIBILITY_KEY_BY_NAME: dict[str, AccessibilitySearchableKey] = {
+    "AXLabel": AccessibilitySearchableKey.LABEL,
+    "AXUniqueId": AccessibilitySearchableKey.UNIQUE_ID,
+    "AXValue": AccessibilitySearchableKey.VALUE,
+    "title": AccessibilitySearchableKey.TITLE,
+    "role": AccessibilitySearchableKey.ROLE,
+    "role_description": AccessibilitySearchableKey.ROLE_DESCRIPTION,
+    "subrole": AccessibilitySearchableKey.SUBROLE,
+    "help": AccessibilitySearchableKey.HELP,
+    "placeholder": AccessibilitySearchableKey.PLACEHOLDER,
+}
+
+
 @dataclass(frozen=True)
 class CrashLogInfo:
     name: str | None

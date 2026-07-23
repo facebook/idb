@@ -144,6 +144,14 @@ import XCTestBootstrap
     try await simulator.accessibilityTap(for: query, expectedValue: expectedValue, expectedKey: expectedKey)
   }
 
+  public func accessibility_describe(query: FBAccessibilityElementQuery, nested: Bool) async throws -> Data {
+    guard let simulator = target as? FBSimulator else {
+      throw FBIDBError.describe("Target is not a simulator, cannot describe accessibility: \(target)").build()
+    }
+    let options = FBAccessibilityRequestOptions(nestedFormat: nested, enableLogging: true)
+    return try await simulator.accessibilityDescribe(for: query, options: options)
+  }
+
   public func accessibility_info_at_point(_ value: NSValue?, nestedFormat: Bool) async throws -> FBAccessibilityElementsResponse {
     guard let simulator = target as? FBSimulator else {
       throw FBIDBError.describe("Target is not a simulator, cannot provide accessibility commands: \(target)").build()

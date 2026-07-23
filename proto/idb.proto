@@ -246,6 +246,11 @@ message AccessibilityInfoRequest {
   }
   Point point = 2;
   Format format = 3;
+  // Optional: describe a single element by marker (substring match against
+  // match_key, within depth) instead of by point / the whole screen.
+  string marker = 4;
+  AccessibilityActionRequest.SearchableKey match_key = 5;
+  uint32 depth = 6;
 }
 
 message AccessibilityInfoResponse {

@@ -14,30 +14,15 @@ from idb.common.hid import (
     key_press_with_modifiers_to_events,
 )
 from idb.common.types import (
+    ACCESSIBILITY_KEY_BY_NAME as _SEARCHABLE_KEY_NAMES,
     AccessibilityMarker,
     AccessibilityPoint,
-    AccessibilitySearchableKey,
     AccessibilityTarget,
     Client,
     HIDButtonType,
     HIDOrientationType,
     IdbException,
 )
-
-
-# CLI names for accessibility searchable keys, matching the sime2e vocabulary so
-# the same marker/expected-value flags work across both CLIs.
-_SEARCHABLE_KEY_NAMES: dict[str, AccessibilitySearchableKey] = {
-    "AXLabel": AccessibilitySearchableKey.LABEL,
-    "AXUniqueId": AccessibilitySearchableKey.UNIQUE_ID,
-    "AXValue": AccessibilitySearchableKey.VALUE,
-    "title": AccessibilitySearchableKey.TITLE,
-    "role": AccessibilitySearchableKey.ROLE,
-    "role_description": AccessibilitySearchableKey.ROLE_DESCRIPTION,
-    "subrole": AccessibilitySearchableKey.SUBROLE,
-    "help": AccessibilitySearchableKey.HELP,
-    "placeholder": AccessibilitySearchableKey.PLACEHOLDER,
-}
 
 
 def _is_int(value: str) -> bool:

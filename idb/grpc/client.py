@@ -120,7 +120,6 @@ from idb.grpc.idb_pb2 import (
     OpenUrlRequest,
     Payload,
     PhotosClearRequest,
-    Point,
     PullRequest,
     PushRequest,
     RecordRequest,
@@ -501,21 +500,21 @@ class Client(ClientBase):
     async def accessibility_info(
         self, target: AccessibilityTarget | None, nested: bool
     ) -> AccessibilityInfo:
-        grpc_point = (
-            Point(x=target.x, y=target.y)
-            if isinstance(target, AccessibilityPoint)
-            else None
+        request = AccessibilityInfoRequest(
+            format=(
+                AccessibilityInfoRequest.NESTED
+                if nested
+                else AccessibilityInfoRequest.LEGACY
+            ),
         )
-        response = await self.stub.accessibility_info(
-            AccessibilityInfoRequest(
-                point=grpc_point,
-                format=(
-                    AccessibilityInfoRequest.NESTED
-                    if nested
-                    else AccessibilityInfoRequest.LEGACY
-                ),
-            )
-        )
+        if isinstance(target, AccessibilityMarker):
+            request.marker = target.value
+            request.match_key = target.match_key.value
+            request.depth = target.depth
+        elif isinstance(target, AccessibilityPoint):
+            request.point.x = target.x
+            request.point.y = target.y
+        response = await self.stub.accessibility_info(request)
         return AccessibilityInfo(json=response.json)
 
     @log_and_handle_exceptions("accessibility_tap")
