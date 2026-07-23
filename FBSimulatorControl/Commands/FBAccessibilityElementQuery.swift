@@ -86,6 +86,17 @@ extension AccessibilityOperations {
     defer { element.close() }
     try element.scroll(with: direction)
   }
+
+  /// Resolves a query and sets the element's accessibility value. Always closes
+  /// the element.
+  public func accessibilitySetValue(
+    for query: FBAccessibilityElementQuery,
+    value: String
+  ) async throws {
+    let element = try await accessibilityElement(for: query)
+    defer { element.close() }
+    try element.setValue(value)
+  }
 }
 
 /// Thrown by `accessibilityTap` when an element's value for the checked key does
