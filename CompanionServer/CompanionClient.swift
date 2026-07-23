@@ -93,6 +93,9 @@ public enum CompanionClient {
     }
     do {
       var configuration = TLSConfiguration.makeClientConfiguration()
+      // NIOSSL defaults the floor to TLS 1.0; pin it to 1.2 so the deprecated
+      // TLS 1.0/1.1 protocols and their legacy cipher suites are never negotiated.
+      configuration.minimumTLSVersion = .tlsv12
       configuration.certificateVerification = .none
       configuration.certificateChain = try NIOSSLCertificate.fromPEMFile(identity.certificateChainPath).map { .certificate($0) }
       configuration.privateKey = .file(identity.privateKeyPath)
