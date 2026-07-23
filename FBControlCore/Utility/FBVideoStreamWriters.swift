@@ -940,56 +940,81 @@ public struct FBMinicapFrameWriter {
 
 // MARK: - Fragmented MP4 (fMP4) Writer
 
-// ISO BMFF box helpers — all values are big-endian per spec.
+private struct FBFMP4BoxWriter {
+  private(set) var data: [UInt8]
 
-private func FBFMP4Write8(_ data: inout [UInt8], _ value: UInt8) {
-  data.append(value)
-}
+  init(capacity: Int = 0) {
+    data = []
+    data.reserveCapacity(capacity)
+  }
 
-private func FBFMP4Write16(_ data: inout [UInt8], _ value: UInt16) {
-  let be = value.bigEndian
-  withUnsafeBytes(of: be) { data.append(contentsOf: $0) }
-}
+  var count: Int {
+    data.count
+  }
 
-private func FBFMP4Write32(_ data: inout [UInt8], _ value: UInt32) {
-  let be = value.bigEndian
-  withUnsafeBytes(of: be) { data.append(contentsOf: $0) }
-}
+  mutating func write8(_ value: UInt8) {
+    data.append(value)
+  }
 
-private func FBFMP4Write64(_ data: inout [UInt8], _ value: UInt64) {
-  let be = value.bigEndian
-  withUnsafeBytes(of: be) { data.append(contentsOf: $0) }
-}
+  mutating func write16(_ value: UInt16) {
+    let be = value.bigEndian
+    withUnsafeBytes(of: be) { data.append(contentsOf: $0) }
+  }
 
-private func FBFMP4BeginBox(_ data: inout [UInt8], _ type: String) -> Int {
-  let offset = data.count
-  FBFMP4Write32(&data, 0)
-  data.append(contentsOf: Array(type.utf8))
-  return offset
-}
+  mutating func write32(_ value: UInt32) {
+    let be = value.bigEndian
+    withUnsafeBytes(of: be) { data.append(contentsOf: $0) }
+  }
 
-private func FBFMP4EndBox(_ data: inout [UInt8], _ sizeOffset: Int) {
-  let size = UInt32(data.count - sizeOffset)
-  let be = size.bigEndian
-  withUnsafeBytes(of: be) { bytes in
-    for k in 0..<4 {
-      data[sizeOffset + k] = bytes[k]
+  mutating func write64(_ value: UInt64) {
+    let be = value.bigEndian
+    withUnsafeBytes(of: be) { data.append(contentsOf: $0) }
+  }
+
+  mutating func beginBox(_ type: String) -> Int {
+    let offset = data.count
+    write32(0)
+    writeBytes(type)
+    return offset
+  }
+
+  mutating func endBox(_ sizeOffset: Int) {
+    write32(UInt32(data.count - sizeOffset), at: sizeOffset)
+  }
+
+  mutating func writeFullBoxHeader(version: UInt8, flags: UInt32) {
+    write32((UInt32(version) << 24) | (flags & 0x00FFFFFF))
+  }
+
+  mutating func writeZeros(_ count: Int) {
+    assert(count <= 64, "Zero count greater than 64")
+    data.append(contentsOf: [UInt8](repeating: 0, count: count))
+  }
+
+  mutating func writeBytes(_ string: String) {
+    data.append(contentsOf: string.utf8)
+  }
+
+  mutating func append(_ bytes: [UInt8]) {
+    data.append(contentsOf: bytes)
+  }
+
+  mutating func append(_ data: Data) {
+    self.data.append(contentsOf: data)
+  }
+
+  mutating func append(_ bytes: UnsafeBufferPointer<UInt8>) {
+    data.append(contentsOf: bytes)
+  }
+
+  mutating func write32(_ value: UInt32, at offset: Int) {
+    let be = value.bigEndian
+    withUnsafeBytes(of: be) { bytes in
+      for k in 0..<4 {
+        data[offset + k] = bytes[k]
+      }
     }
   }
-}
-
-private func FBFMP4WriteFullBoxHeader(_ data: inout [UInt8], _ version: UInt8, _ flags: UInt32) {
-  let vf = (UInt32(version) << 24) | (flags & 0x00FFFFFF)
-  FBFMP4Write32(&data, vf)
-}
-
-private func FBFMP4WriteZeros(_ data: inout [UInt8], _ count: Int) {
-  assert(count <= 64, "Zero count greater than 64")
-  data.append(contentsOf: [UInt8](repeating: 0, count: count))
-}
-
-private func FBFMP4WriteBytes(_ data: inout [UInt8], _ string: String) {
-  data.append(contentsOf: Array(string.utf8))
 }
 
 private func FBFMP4GetCodecConfigAtom(_ formatDescription: CMFormatDescription, _ codec: FBVideoStreamCodec) -> [UInt8]? {
@@ -999,7 +1024,7 @@ private func FBFMP4GetCodecConfigAtom(_ formatDescription: CMFormatDescription, 
     }
   }
   // Fallback: build avcC/hvcC manually from parameter sets.
-  var config = [UInt8]()
+  var writer = FBFMP4BoxWriter()
   switch codec {
   case .h264:
     var sps: UnsafePointer<UInt8>?
@@ -1016,18 +1041,18 @@ private func FBFMP4GetCodecConfigAtom(_ formatDescription: CMFormatDescription, 
       CMVideoFormatDescriptionGetH264ParameterSetAtIndex(formatDescription, parameterSetIndex: 1, parameterSetPointerOut: &pps, parameterSetSizeOut: &ppsSize, parameterSetCountOut: nil, nalUnitHeaderLengthOut: nil)
     }
 
-    FBFMP4Write8(&config, 1)
-    FBFMP4Write8(&config, sps[1])
-    FBFMP4Write8(&config, sps[2])
-    FBFMP4Write8(&config, sps[3])
-    FBFMP4Write8(&config, 0xFF)
-    FBFMP4Write8(&config, 0xE1)
-    FBFMP4Write16(&config, UInt16(spsSize))
-    config.append(contentsOf: UnsafeBufferPointer(start: sps, count: spsSize))
-    FBFMP4Write8(&config, pps != nil ? 1 : 0)
+    writer.write8(1)
+    writer.write8(sps[1])
+    writer.write8(sps[2])
+    writer.write8(sps[3])
+    writer.write8(0xFF)
+    writer.write8(0xE1)
+    writer.write16(UInt16(spsSize))
+    writer.append(UnsafeBufferPointer(start: sps, count: spsSize))
+    writer.write8(pps != nil ? 1 : 0)
     if let pps {
-      FBFMP4Write16(&config, UInt16(ppsSize))
-      config.append(contentsOf: UnsafeBufferPointer(start: pps, count: ppsSize))
+      writer.write16(UInt16(ppsSize))
+      writer.append(UnsafeBufferPointer(start: pps, count: ppsSize))
     }
   case .hevc:
     var paramCount = 0
@@ -1049,19 +1074,19 @@ private func FBFMP4GetCodecConfigAtom(_ formatDescription: CMFormatDescription, 
       }
     }
 
-    FBFMP4Write8(&config, 1)
-    FBFMP4Write8(&config, 0)
-    FBFMP4Write32(&config, 0)
-    FBFMP4Write16(&config, 0)
-    FBFMP4Write32(&config, 0)
-    FBFMP4Write8(&config, 0)
-    FBFMP4Write16(&config, 0xF000)
-    FBFMP4Write8(&config, 0xFC)
-    FBFMP4Write8(&config, 0xFC)
-    FBFMP4Write8(&config, 0xF8)
-    FBFMP4Write8(&config, 0xF8)
-    FBFMP4Write16(&config, 0)
-    FBFMP4Write8(&config, 0x0F)
+    writer.write8(1)
+    writer.write8(0)
+    writer.write32(0)
+    writer.write16(0)
+    writer.write32(0)
+    writer.write8(0)
+    writer.write16(0xF000)
+    writer.write8(0xFC)
+    writer.write8(0xFC)
+    writer.write8(0xF8)
+    writer.write8(0xF8)
+    writer.write16(0)
+    writer.write8(0x0F)
 
     // Group parameter sets by NAL type, preserving first-seen type order
     // (NSMutableDictionary enumeration order is unspecified in ObjC, but the keys
@@ -1078,234 +1103,232 @@ private func FBFMP4GetCodecConfigAtom(_ formatDescription: CMFormatDescription, 
       grouped[type]?.append(paramSets[i])
     }
 
-    FBFMP4Write8(&config, UInt8(groupedOrder.count))
+    writer.write8(UInt8(groupedOrder.count))
     for nalType in groupedOrder {
       let sets = grouped[nalType] ?? []
-      FBFMP4Write8(&config, nalType & 0x3F)
-      FBFMP4Write16(&config, UInt16(sets.count))
+      writer.write8(nalType & 0x3F)
+      writer.write16(UInt16(sets.count))
       for set in sets {
-        FBFMP4Write16(&config, UInt16(set.count))
-        config.append(contentsOf: set)
+        writer.write16(UInt16(set.count))
+        writer.append(set)
       }
     }
   }
-  return config
+  return writer.data
 }
 
 private func FBFMP4CreateFtypBox(_ codec: FBVideoStreamCodec) -> [UInt8] {
-  var data = [UInt8]()
-  data.reserveCapacity(24)
-  let off = FBFMP4BeginBox(&data, "ftyp")
-  FBFMP4WriteBytes(&data, "isom")
-  FBFMP4Write32(&data, 0x200)
-  FBFMP4WriteBytes(&data, "isom")
-  FBFMP4WriteBytes(&data, "iso6")
-  FBFMP4WriteBytes(&data, codec.fmp4CompatibleBrand)
-  FBFMP4EndBox(&data, off)
-  return data
+  var writer = FBFMP4BoxWriter(capacity: 24)
+  let off = writer.beginBox("ftyp")
+  writer.writeBytes("isom")
+  writer.write32(0x200)
+  writer.writeBytes("isom")
+  writer.writeBytes("iso6")
+  writer.writeBytes(codec.fmp4CompatibleBrand)
+  writer.endBox(off)
+  return writer.data
 }
 
 private func FBFMP4CreateMoovBox(_ formatDescription: CMFormatDescription, _ codec: FBVideoStreamCodec, _ width: UInt32, _ height: UInt32, _ timescale: UInt32) -> [UInt8] {
-  var data = [UInt8]()
-  data.reserveCapacity(512)
+  var writer = FBFMP4BoxWriter(capacity: 512)
 
   let codecConfig = FBFMP4GetCodecConfigAtom(formatDescription, codec)
 
-  let moovOff = FBFMP4BeginBox(&data, "moov")
+  let moovOff = writer.beginBox("moov")
 
   // mvhd
   do {
-    let off = FBFMP4BeginBox(&data, "mvhd")
-    FBFMP4WriteFullBoxHeader(&data, 0, 0)
-    FBFMP4Write32(&data, 0)
-    FBFMP4Write32(&data, 0)
-    FBFMP4Write32(&data, timescale)
-    FBFMP4Write32(&data, 0)
-    FBFMP4Write32(&data, 0x00010000)
-    FBFMP4Write16(&data, 0x0100)
-    FBFMP4WriteZeros(&data, 10)
+    let off = writer.beginBox("mvhd")
+    writer.writeFullBoxHeader(version: 0, flags: 0)
+    writer.write32(0)
+    writer.write32(0)
+    writer.write32(timescale)
+    writer.write32(0)
+    writer.write32(0x00010000)
+    writer.write16(0x0100)
+    writer.writeZeros(10)
     let matrix: [UInt32] = [0x00010000, 0, 0, 0, 0x00010000, 0, 0, 0, 0x40000000]
     for i in 0..<9 {
-      FBFMP4Write32(&data, matrix[i])
+      writer.write32(matrix[i])
     }
-    FBFMP4WriteZeros(&data, 24)
-    FBFMP4Write32(&data, 2)
-    FBFMP4EndBox(&data, off)
+    writer.writeZeros(24)
+    writer.write32(2)
+    writer.endBox(off)
   }
 
   // trak
   do {
-    let trakOff = FBFMP4BeginBox(&data, "trak")
+    let trakOff = writer.beginBox("trak")
 
     // tkhd
     do {
-      let off = FBFMP4BeginBox(&data, "tkhd")
-      FBFMP4WriteFullBoxHeader(&data, 0, 0x03)
-      FBFMP4Write32(&data, 0)
-      FBFMP4Write32(&data, 0)
-      FBFMP4Write32(&data, 1)
-      FBFMP4Write32(&data, 0)
-      FBFMP4Write32(&data, 0)
-      FBFMP4WriteZeros(&data, 8)
-      FBFMP4Write16(&data, 0)
-      FBFMP4Write16(&data, 0)
-      FBFMP4Write16(&data, 0)
-      FBFMP4Write16(&data, 0)
+      let off = writer.beginBox("tkhd")
+      writer.writeFullBoxHeader(version: 0, flags: 0x03)
+      writer.write32(0)
+      writer.write32(0)
+      writer.write32(1)
+      writer.write32(0)
+      writer.write32(0)
+      writer.writeZeros(8)
+      writer.write16(0)
+      writer.write16(0)
+      writer.write16(0)
+      writer.write16(0)
       let matrix: [UInt32] = [0x00010000, 0, 0, 0, 0x00010000, 0, 0, 0, 0x40000000]
       for i in 0..<9 {
-        FBFMP4Write32(&data, matrix[i])
+        writer.write32(matrix[i])
       }
-      FBFMP4Write32(&data, width << 16)
-      FBFMP4Write32(&data, height << 16)
-      FBFMP4EndBox(&data, off)
+      writer.write32(width << 16)
+      writer.write32(height << 16)
+      writer.endBox(off)
     }
 
     // mdia
     do {
-      let mdiaOff = FBFMP4BeginBox(&data, "mdia")
+      let mdiaOff = writer.beginBox("mdia")
 
       // mdhd
       do {
-        let off = FBFMP4BeginBox(&data, "mdhd")
-        FBFMP4WriteFullBoxHeader(&data, 0, 0)
-        FBFMP4Write32(&data, 0)
-        FBFMP4Write32(&data, 0)
-        FBFMP4Write32(&data, timescale)
-        FBFMP4Write32(&data, 0)
-        FBFMP4Write16(&data, 0x55C4)
-        FBFMP4Write16(&data, 0)
-        FBFMP4EndBox(&data, off)
+        let off = writer.beginBox("mdhd")
+        writer.writeFullBoxHeader(version: 0, flags: 0)
+        writer.write32(0)
+        writer.write32(0)
+        writer.write32(timescale)
+        writer.write32(0)
+        writer.write16(0x55C4)
+        writer.write16(0)
+        writer.endBox(off)
       }
 
       // hdlr
       do {
-        let off = FBFMP4BeginBox(&data, "hdlr")
-        FBFMP4WriteFullBoxHeader(&data, 0, 0)
-        FBFMP4Write32(&data, 0)
-        FBFMP4WriteBytes(&data, "vide")
-        FBFMP4WriteZeros(&data, 12)
+        let off = writer.beginBox("hdlr")
+        writer.writeFullBoxHeader(version: 0, flags: 0)
+        writer.write32(0)
+        writer.writeBytes("vide")
+        writer.writeZeros(12)
         let name = "VideoHandler"
-        FBFMP4WriteBytes(&data, name)
-        FBFMP4Write8(&data, 0) // null terminator (strlen(name) + 1)
-        FBFMP4EndBox(&data, off)
+        writer.writeBytes(name)
+        writer.write8(0) // null terminator (strlen(name) + 1)
+        writer.endBox(off)
       }
 
       // minf
       do {
-        let minfOff = FBFMP4BeginBox(&data, "minf")
+        let minfOff = writer.beginBox("minf")
 
         // vmhd
         do {
-          let off = FBFMP4BeginBox(&data, "vmhd")
-          FBFMP4WriteFullBoxHeader(&data, 0, 1)
-          FBFMP4Write16(&data, 0)
-          FBFMP4WriteZeros(&data, 6)
-          FBFMP4EndBox(&data, off)
+          let off = writer.beginBox("vmhd")
+          writer.writeFullBoxHeader(version: 0, flags: 1)
+          writer.write16(0)
+          writer.writeZeros(6)
+          writer.endBox(off)
         }
 
         // dinf → dref → url
         do {
-          let dinfOff = FBFMP4BeginBox(&data, "dinf")
-          let drefOff = FBFMP4BeginBox(&data, "dref")
-          FBFMP4WriteFullBoxHeader(&data, 0, 0)
-          FBFMP4Write32(&data, 1)
-          let urlOff = FBFMP4BeginBox(&data, "url ")
-          FBFMP4WriteFullBoxHeader(&data, 0, 1)
-          FBFMP4EndBox(&data, urlOff)
-          FBFMP4EndBox(&data, drefOff)
-          FBFMP4EndBox(&data, dinfOff)
+          let dinfOff = writer.beginBox("dinf")
+          let drefOff = writer.beginBox("dref")
+          writer.writeFullBoxHeader(version: 0, flags: 0)
+          writer.write32(1)
+          let urlOff = writer.beginBox("url ")
+          writer.writeFullBoxHeader(version: 0, flags: 1)
+          writer.endBox(urlOff)
+          writer.endBox(drefOff)
+          writer.endBox(dinfOff)
         }
 
         // stbl
         do {
-          let stblOff = FBFMP4BeginBox(&data, "stbl")
+          let stblOff = writer.beginBox("stbl")
 
           // stsd
           do {
-            let stsdOff = FBFMP4BeginBox(&data, "stsd")
-            FBFMP4WriteFullBoxHeader(&data, 0, 0)
-            FBFMP4Write32(&data, 1)
+            let stsdOff = writer.beginBox("stsd")
+            writer.writeFullBoxHeader(version: 0, flags: 0)
+            writer.write32(1)
 
             // Visual sample entry (avc1 or hvc1)
             do {
-              let entryOff = FBFMP4BeginBox(&data, codec.fmp4SampleEntryType)
-              FBFMP4WriteZeros(&data, 6)
-              FBFMP4Write16(&data, 1)
-              FBFMP4WriteZeros(&data, 16)
-              FBFMP4Write16(&data, UInt16(width))
-              FBFMP4Write16(&data, UInt16(height))
-              FBFMP4Write32(&data, 0x00480000)
-              FBFMP4Write32(&data, 0x00480000)
-              FBFMP4Write32(&data, 0)
-              FBFMP4Write16(&data, 1)
-              FBFMP4WriteZeros(&data, 32)
-              FBFMP4Write16(&data, 0x0018)
-              FBFMP4Write16(&data, 0xFFFF)
+              let entryOff = writer.beginBox(codec.fmp4SampleEntryType)
+              writer.writeZeros(6)
+              writer.write16(1)
+              writer.writeZeros(16)
+              writer.write16(UInt16(width))
+              writer.write16(UInt16(height))
+              writer.write32(0x00480000)
+              writer.write32(0x00480000)
+              writer.write32(0)
+              writer.write16(1)
+              writer.writeZeros(32)
+              writer.write16(0x0018)
+              writer.write16(0xFFFF)
 
               if let codecConfig {
-                let ccOff = FBFMP4BeginBox(&data, codec.fmp4CodecConfigType)
-                data.append(contentsOf: codecConfig)
-                FBFMP4EndBox(&data, ccOff)
+                let ccOff = writer.beginBox(codec.fmp4CodecConfigType)
+                writer.append(codecConfig)
+                writer.endBox(ccOff)
               }
 
-              FBFMP4EndBox(&data, entryOff)
+              writer.endBox(entryOff)
             }
 
-            FBFMP4EndBox(&data, stsdOff)
+            writer.endBox(stsdOff)
           }
 
           // Empty required boxes
           do {
-            var off = FBFMP4BeginBox(&data, "stts")
-            FBFMP4WriteFullBoxHeader(&data, 0, 0)
-            FBFMP4Write32(&data, 0)
-            FBFMP4EndBox(&data, off)
+            var off = writer.beginBox("stts")
+            writer.writeFullBoxHeader(version: 0, flags: 0)
+            writer.write32(0)
+            writer.endBox(off)
 
-            off = FBFMP4BeginBox(&data, "stsc")
-            FBFMP4WriteFullBoxHeader(&data, 0, 0)
-            FBFMP4Write32(&data, 0)
-            FBFMP4EndBox(&data, off)
+            off = writer.beginBox("stsc")
+            writer.writeFullBoxHeader(version: 0, flags: 0)
+            writer.write32(0)
+            writer.endBox(off)
 
-            off = FBFMP4BeginBox(&data, "stsz")
-            FBFMP4WriteFullBoxHeader(&data, 0, 0)
-            FBFMP4Write32(&data, 0)
-            FBFMP4Write32(&data, 0)
-            FBFMP4EndBox(&data, off)
+            off = writer.beginBox("stsz")
+            writer.writeFullBoxHeader(version: 0, flags: 0)
+            writer.write32(0)
+            writer.write32(0)
+            writer.endBox(off)
 
-            off = FBFMP4BeginBox(&data, "stco")
-            FBFMP4WriteFullBoxHeader(&data, 0, 0)
-            FBFMP4Write32(&data, 0)
-            FBFMP4EndBox(&data, off)
+            off = writer.beginBox("stco")
+            writer.writeFullBoxHeader(version: 0, flags: 0)
+            writer.write32(0)
+            writer.endBox(off)
           }
 
-          FBFMP4EndBox(&data, stblOff)
+          writer.endBox(stblOff)
         }
 
-        FBFMP4EndBox(&data, minfOff)
+        writer.endBox(minfOff)
       }
 
-      FBFMP4EndBox(&data, mdiaOff)
+      writer.endBox(mdiaOff)
     }
 
-    FBFMP4EndBox(&data, trakOff)
+    writer.endBox(trakOff)
   }
 
   // mvex
   do {
-    let mvexOff = FBFMP4BeginBox(&data, "mvex")
-    let trexOff = FBFMP4BeginBox(&data, "trex")
-    FBFMP4WriteFullBoxHeader(&data, 0, 0)
-    FBFMP4Write32(&data, 1)
-    FBFMP4Write32(&data, 1)
-    FBFMP4Write32(&data, 0)
-    FBFMP4Write32(&data, 0)
-    FBFMP4Write32(&data, 0)
-    FBFMP4EndBox(&data, trexOff)
-    FBFMP4EndBox(&data, mvexOff)
+    let mvexOff = writer.beginBox("mvex")
+    let trexOff = writer.beginBox("trex")
+    writer.writeFullBoxHeader(version: 0, flags: 0)
+    writer.write32(1)
+    writer.write32(1)
+    writer.write32(0)
+    writer.write32(0)
+    writer.write32(0)
+    writer.endBox(trexOff)
+    writer.endBox(mvexOff)
   }
 
-  FBFMP4EndBox(&data, moovOff)
-  return data
+  writer.endBox(moovOff)
+  return writer.data
 }
 
 // Build the moof + mdat header for a single-sample fragment.
@@ -1320,72 +1343,66 @@ private func FBFMP4CreateFragmentHeader(_ sequenceNumber: UInt32, _ baseDecodeTi
   let moofSize = 8 + 16 + 8 + 16 + 20 + trunSize
   let mdatHeaderSize = 8
 
-  var data = [UInt8]()
-  data.reserveCapacity(moofSize + mdatHeaderSize)
+  var writer = FBFMP4BoxWriter(capacity: moofSize + mdatHeaderSize)
 
-  let moofOff = FBFMP4BeginBox(&data, "moof")
+  let moofOff = writer.beginBox("moof")
 
   // mfhd
   do {
-    let off = FBFMP4BeginBox(&data, "mfhd")
-    FBFMP4WriteFullBoxHeader(&data, 0, 0)
-    FBFMP4Write32(&data, sequenceNumber)
-    FBFMP4EndBox(&data, off)
+    let off = writer.beginBox("mfhd")
+    writer.writeFullBoxHeader(version: 0, flags: 0)
+    writer.write32(sequenceNumber)
+    writer.endBox(off)
   }
 
   // traf
   do {
-    let trafOff = FBFMP4BeginBox(&data, "traf")
+    let trafOff = writer.beginBox("traf")
 
     // tfhd
     do {
-      let off = FBFMP4BeginBox(&data, "tfhd")
-      FBFMP4WriteFullBoxHeader(&data, 0, 0x020000)
-      FBFMP4Write32(&data, 1)
-      FBFMP4EndBox(&data, off)
+      let off = writer.beginBox("tfhd")
+      writer.writeFullBoxHeader(version: 0, flags: 0x020000)
+      writer.write32(1)
+      writer.endBox(off)
     }
 
     // tfdt
     do {
-      let off = FBFMP4BeginBox(&data, "tfdt")
-      FBFMP4WriteFullBoxHeader(&data, 1, 0)
-      FBFMP4Write64(&data, baseDecodeTime)
-      FBFMP4EndBox(&data, off)
+      let off = writer.beginBox("tfdt")
+      writer.writeFullBoxHeader(version: 1, flags: 0)
+      writer.write64(baseDecodeTime)
+      writer.endBox(off)
     }
 
     // trun — single sample
     do {
-      _ = FBFMP4BeginBox(&data, "trun")
-      FBFMP4WriteFullBoxHeader(&data, 0, trunFlags)
-      FBFMP4Write32(&data, 1) // sample_count = 1
-      FBFMP4Write32(&data, 0) // placeholder for data_offset (patched below)
-      FBFMP4Write32(&data, duration)
-      FBFMP4Write32(&data, sampleSize)
-      FBFMP4Write32(&data, isKeyFrame ? 0x02000000 : 0x01010000)
+      _ = writer.beginBox("trun")
+      writer.writeFullBoxHeader(version: 0, flags: trunFlags)
+      writer.write32(1) // sample_count = 1
+      writer.write32(0) // placeholder for data_offset (patched below)
+      writer.write32(duration)
+      writer.write32(sampleSize)
+      writer.write32(isKeyFrame ? 0x02000000 : 0x01010000)
     }
 
-    FBFMP4EndBox(&data, trafOff)
+    writer.endBox(trafOff)
   }
 
-  FBFMP4EndBox(&data, moofOff)
+  writer.endBox(moofOff)
 
   // Patch data_offset: distance from moof start to first sample byte in mdat.
-  let actualMoofSize = UInt32(data.count - moofOff)
+  let actualMoofSize = UInt32(writer.count - moofOff)
   let dataOffset = actualMoofSize + UInt32(mdatHeaderSize)
   // dataOffsetPos = moofOff + moof_header(8) + mfhd(16) + traf_header(8) + tfhd(16) + tfdt(20) + trun_header(12) + sample_count(4)
   let patchPos = moofOff + 8 + 16 + 8 + 16 + 20 + 12 + 4
-  let dataOffsetBE = dataOffset.bigEndian
-  withUnsafeBytes(of: dataOffsetBE) { bytes in
-    for k in 0..<4 {
-      data[patchPos + k] = bytes[k]
-    }
-  }
+  writer.write32(dataOffset, at: patchPos)
 
   // mdat header only — caller appends sample data.
-  FBFMP4Write32(&data, UInt32(mdatHeaderSize) + sampleSize)
-  FBFMP4WriteBytes(&data, "mdat")
+  writer.write32(UInt32(mdatHeaderSize) + sampleSize)
+  writer.writeBytes("mdat")
 
-  return data
+  return writer.data
 }
 
 public final class FBFMP4FrameWriter: FBEncodedFrameWriter, FBVideoStreamTimedMetadataWriter {
@@ -1490,23 +1507,22 @@ public final class FBFMP4FrameWriter: FBEncodedFrameWriter, FBVideoStreamTimedMe
 private func FBFMP4CreateEmsgBox(_ presentationTime90k: UInt64, _ text: String) -> Data {
   let textData = [UInt8](text.utf8)
 
-  var data = [UInt8]()
-  data.reserveCapacity(64 + textData.count)
+  var writer = FBFMP4BoxWriter(capacity: 64 + textData.count)
 
-  let off = FBFMP4BeginBox(&data, "emsg")
-  FBFMP4WriteFullBoxHeader(&data, 1, 0)
-  FBFMP4Write32(&data, 90000)
-  FBFMP4Write64(&data, presentationTime90k)
-  FBFMP4Write32(&data, 0)
-  FBFMP4Write32(&data, 0)
+  let off = writer.beginBox("emsg")
+  writer.writeFullBoxHeader(version: 1, flags: 0)
+  writer.write32(90000)
+  writer.write64(presentationTime90k)
+  writer.write32(0)
+  writer.write32(0)
 
   let scheme = "urn:sime2e:chapter"
-  FBFMP4WriteBytes(&data, scheme)
-  FBFMP4Write8(&data, 0) // null terminator (strlen(scheme) + 1)
-  FBFMP4Write8(&data, 0) // empty value string
-  data.append(contentsOf: textData)
+  writer.writeBytes(scheme)
+  writer.write8(0) // null terminator (strlen(scheme) + 1)
+  writer.write8(0) // empty value string
+  writer.append(textData)
 
-  FBFMP4EndBox(&data, off)
+  writer.endBox(off)
 
-  return Data(data)
+  return Data(writer.data)
 }
