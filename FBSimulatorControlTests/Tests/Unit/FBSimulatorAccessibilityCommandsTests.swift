@@ -113,6 +113,14 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     XCTAssertGreaterThanOrEqual(profilingData.serializationDuration, 0, "Serialization duration should be non-negative")
   }
 
+  private func stableSerializationProperties(
+    of element: FBSimulatorControlTests_AXPMacPlatformElement_Double
+  ) -> Set<String> {
+    var properties = element.accessedProperties as! Set<String>
+    properties.remove("accessibilityTraits")
+    return properties
+  }
+
   // MARK: - Core Test Helpers
 
   /// Core test for flat output - returns response for optional profiling assertions
@@ -215,13 +223,13 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
 
     // Verify property access tracking - all serialization properties should be accessed
     XCTAssertEqual(
-      fixture!.rootElement!.accessedProperties as! Set<String>,
+      stableSerializationProperties(of: fixture!.rootElement!),
       allSerializationProperties,
       "All serialization properties should be accessed for root element"
     )
     for child in childElements {
       XCTAssertEqual(
-        child.accessedProperties as! Set<String>,
+        stableSerializationProperties(of: child),
         allSerializationProperties,
         "All serialization properties should be accessed for child element"
       )
@@ -256,7 +264,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
 
     // Verify property access tracking - single element doesn't recurse children
     XCTAssertEqual(
-      elementDouble.accessedProperties as! Set<String>,
+      stableSerializationProperties(of: elementDouble),
       singleElementSerializationProperties,
       "Single element at point should access all properties except children"
     )
@@ -369,13 +377,13 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
 
     // Verify property access tracking - all serialization properties should be accessed
     XCTAssertEqual(
-      fixture!.rootElement!.accessedProperties as! Set<String>,
+      stableSerializationProperties(of: fixture!.rootElement!),
       allSerializationProperties,
       "All serialization properties should be accessed for root element"
     )
     for child in childElements {
       XCTAssertEqual(
-        child.accessedProperties as! Set<String>,
+        stableSerializationProperties(of: child),
         allSerializationProperties,
         "All serialization properties should be accessed for child element"
       )

@@ -30,6 +30,20 @@ enum FBSimulatorAccessibilitySerializer {
   private static let discoveryMethodRecursive = "recursive"
   private static let discoveryMethodPointGrid = "point_grid"
 
+  static func supportsTraitFetching(xcodeVersion: OperatingSystemVersion) -> Bool {
+    xcodeVersion.majorVersion < 27
+  }
+
+  static func serializedTraits(
+    for element: FBAXPlatformElement,
+    xcodeVersion: OperatingSystemVersion
+  ) -> Any {
+    guard supportsTraitFetching(xcodeVersion: xcodeVersion) else {
+      return NSNull()
+    }
+    return element.axTraits() ?? NSNull()
+  }
+
   // MARK: - Helpers
 
   private static func ensureJSONSerializable(_ object: Any?) -> Any {
@@ -187,7 +201,10 @@ enum FBSimulatorAccessibilitySerializer {
     include(.pid, element.axTranslationPid)
     if keys.contains(.traits) {
       collector?.incrementAttributeFetchCount(forKey: FBAXKeys.traits.rawValue)
-      values[FBAXKeys.traits.rawValue] = element.axTraits() ?? NSNull()
+      values[FBAXKeys.traits.rawValue] = serializedTraits(
+        for: element,
+        xcodeVersion: FBXcodeConfiguration.xcodeVersion
+      )
     }
     include(.expanded, element.axIsExpanded())
     include(.placeholder, element.axPlaceholderValue())
