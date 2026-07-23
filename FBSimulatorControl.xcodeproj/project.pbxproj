@@ -565,7 +565,6 @@
 		FDFF483A61A28076F96B9FFD /* AtomicTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FB63BF7C6402C5A3D833CD5 /* AtomicTests.swift */; };
 		FE0CBAE3DB38836B3A351555 /* FBFileReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53758504FBE59EE7CBA00B9B /* FBFileReaderTests.swift */; };
 		FE255681E144631FCA06DB9A /* FBTestManagerResultSummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6C0CC7AF656CC2BCFFC43AB /* FBTestManagerResultSummary.swift */; };
-		FEDE8EF0B82B6D4CE44F519E /* xcschememanagement.plist in Resources */ = {isa = PBXBuildFile; fileRef = 2ECAF05A4C2CD05D4AE13003 /* xcschememanagement.plist */; };
 		FF0A18AFCE45C8696DAD39B8 /* FBDeviceCommands.h in Headers */ = {isa = PBXBuildFile; fileRef = DEBDB5BCD9358E966AAB535D /* FBDeviceCommands.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		FF1B289E2172CADB4E4EE61E /* AccessibilityCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B67419934F1C4F694D19E62 /* AccessibilityCommands.swift */; };
 		FF2B5A1D3FEF1427441D150A /* FBDeviceDebugSymbolsCommands.h in Headers */ = {isa = PBXBuildFile; fileRef = CEE85E4B48426FDD56A5E5EF /* FBDeviceDebugSymbolsCommands.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -806,7 +805,6 @@
 		2D51447D26036D37031EF7E1 /* IOSurface.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOSurface.framework; path = System/Library/Frameworks/IOSurface.framework; sourceTree = SDKROOT; };
 		2E4D76463F7B4CEBDACE0409 /* ApplicationCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationCommands.swift; sourceTree = "<group>"; };
 		2E5012740658DD0426D01D2C /* FBBinaryDescriptorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FBBinaryDescriptorTests.swift; sourceTree = "<group>"; };
-		2ECAF05A4C2CD05D4AE13003 /* xcschememanagement.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = xcschememanagement.plist; sourceTree = "<group>"; };
 		2F0B02A37E270DE24F327FE2 /* FBTestApplicationsPair.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FBTestApplicationsPair.swift; sourceTree = "<group>"; };
 		2F6871C332ABC0872A84C40D /* FBDeviceVideo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FBDeviceVideo.swift; sourceTree = "<group>"; };
 		30A6E66E71A372EAFEE114CD /* XCTestBootstrap.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = XCTestBootstrap.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -1656,14 +1654,6 @@
 			path = Utility;
 			sourceTree = "<group>";
 		};
-		1FD3DF7B71A2E4F1CD05E285 /* xcschemes */ = {
-			isa = PBXGroup;
-			children = (
-				2ECAF05A4C2CD05D4AE13003 /* xcschememanagement.plist */,
-			);
-			path = xcschemes;
-			sourceTree = "<group>";
-		};
 		26C66D639B2459218FDB80F0 /* FBDeviceControl */ = {
 			isa = PBXGroup;
 			children = (
@@ -1906,7 +1896,6 @@
 		588124666F8D5BBB7B5253AE /* xcode */ = {
 			isa = PBXGroup;
 			children = (
-				79CAC631027E169EFE6E90F6 /* xcuserdata */,
 				BAB36FE12F01519FD33B0D46 /* package.xcworkspace */,
 			);
 			path = xcode;
@@ -2063,14 +2052,6 @@
 			path = Commands;
 			sourceTree = "<group>";
 		};
-		79CAC631027E169EFE6E90F6 /* xcuserdata */ = {
-			isa = PBXGroup;
-			children = (
-				85E7018993EF46B7C9207451 /* avanderlee.xcuserdatad */,
-			);
-			path = xcuserdata;
-			sourceTree = "<group>";
-		};
 		7B0390B186D986DC69B2C8B1 /* Shimulator */ = {
 			isa = PBXGroup;
 			children = (
@@ -2145,14 +2126,6 @@
 				13619E3455E4C2D4A81B65EA /* FBSimulatorSetError.swift */,
 			);
 			path = Management;
-			sourceTree = "<group>";
-		};
-		85E7018993EF46B7C9207451 /* avanderlee.xcuserdatad */ = {
-			isa = PBXGroup;
-			children = (
-				1FD3DF7B71A2E4F1CD05E285 /* xcschemes */,
-			);
-			path = avanderlee.xcuserdatad;
 			sourceTree = "<group>";
 		};
 		89D2A7C26A856699911E5DE1 /* Configuration */ = {
@@ -2971,7 +2944,6 @@
 			files = (
 				40BC04632454EF42202171D6 /* README.md in Resources */,
 				6B93EF7309F17BC249802641 /* package.xcworkspace in Resources */,
-				FEDE8EF0B82B6D4CE44F519E /* xcschememanagement.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
