@@ -257,6 +257,116 @@ static void (^FBSimulatorAccessibilityBootstrapPendingSessionCompletion)(id, NSE
   XCTAssertTrue(followerSucceeded);
 }
 
+- (void)testExceptionDuringBootstrapReleasesWaitersWithErrorAndAllowsRetry
+{
+  FBSimulatorAccessibilityBootstrapTestDevice *device = [FBSimulatorAccessibilityBootstrapTestDevice new];
+  dispatch_semaphore_t releasePerformer = dispatch_semaphore_create(0);
+  XCTestExpectation *ownerJoined = [self expectationWithDescription:@"Owner joined"];
+  XCTestExpectation *followerJoined = [self expectationWithDescription:@"Follower joined"];
+  XCTestExpectation *completed = [self expectationWithDescription:@"Both calls completed"];
+  completed.expectedFulfillmentCount = 2;
+  __block BOOL ownerSucceeded = YES;
+  __block BOOL followerSucceeded = YES;
+  __block NSError *ownerError = nil;
+  __block NSError *followerError = nil;
+  FBSimulatorAccessibilityBootstrapPerformer throwingPerformer = ^BOOL(id simulatorDevice, NSTimeInterval timeout, id<FBControlCoreLogger> logger, NSError **error) {
+    dispatch_semaphore_wait(releasePerformer, dispatch_time(DISPATCH_TIME_NOW, NSEC_PER_SEC));
+    [NSException raise:@"FBSimulatorAccessibilityBootstrapTestException" format:@"Private automation API misbehaved"];
+    return YES;
+  };
+
+  dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
+    NSError *error = nil;
+    ownerSucceeded = [FBSimulatorControlFrameworkLoader bootstrapAccessibilityForSimulatorDevice:device
+                                                                                         timeout:1
+                                                                                          logger:nil
+                                                                                       performer:throwingPerformer
+                                                                                 attemptObserver:^(BOOL ownsAttempt) {
+      XCTAssertTrue(ownsAttempt);
+      [ownerJoined fulfill];
+    }
+                                                                                           error:&error];
+    ownerError = error;
+    [completed fulfill];
+  });
+  [self waitForExpectations:@[ownerJoined] timeout:1];
+
+  dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
+    NSError *error = nil;
+    followerSucceeded = [FBSimulatorControlFrameworkLoader bootstrapAccessibilityForSimulatorDevice:device
+                                                                                            timeout:1
+                                                                                             logger:nil
+                                                                                          performer:throwingPerformer
+                                                                                    attemptObserver:^(BOOL ownsAttempt) {
+      XCTAssertFalse(ownsAttempt);
+      [followerJoined fulfill];
+    }
+                                                                                              error:&error];
+    followerError = error;
+    [completed fulfill];
+  });
+  [self waitForExpectations:@[followerJoined] timeout:1];
+  dispatch_semaphore_signal(releasePerformer);
+  [self waitForExpectations:@[completed] timeout:1];
+
+  XCTAssertFalse(ownerSucceeded);
+  XCTAssertFalse(followerSucceeded);
+  XCTAssertEqualObjects(ownerError.domain, @"com.facebook.FBSimulatorControl.AccessibilityBootstrap");
+  XCTAssertTrue([ownerError.localizedDescription containsString:@"Private automation API misbehaved"]);
+  XCTAssertEqualObjects(followerError.domain, @"com.facebook.FBSimulatorControl.AccessibilityBootstrap");
+  XCTAssertTrue([followerError.localizedDescription containsString:@"Private automation API misbehaved"]);
+
+  // The attempt must not be wedged: a retry owns a new attempt and can succeed.
+  __block NSUInteger retryPerformerCount = 0;
+  NSError *retryError = nil;
+  BOOL retrySucceeded = [FBSimulatorControlFrameworkLoader bootstrapAccessibilityForSimulatorDevice:device
+                                                                                            timeout:1
+                                                                                             logger:nil
+                                                                                          performer:^BOOL(id simulatorDevice, NSTimeInterval timeout, id<FBControlCoreLogger> logger, NSError **error) {
+    retryPerformerCount += 1;
+    return YES;
+  }
+                                                                                    attemptObserver:nil
+                                                                                              error:&retryError];
+
+  XCTAssertTrue(retrySucceeded);
+  XCTAssertNil(retryError);
+  XCTAssertEqual(retryPerformerCount, 1u);
+}
+
+- (void)testSuccessfulBootstrapIsCachedUntilInvalidated
+{
+  FBSimulatorAccessibilityBootstrapTestDevice *device = [FBSimulatorAccessibilityBootstrapTestDevice new];
+  __block NSUInteger performerCount = 0;
+  FBSimulatorAccessibilityBootstrapPerformer performer = ^BOOL(id simulatorDevice, NSTimeInterval timeout, id<FBControlCoreLogger> logger, NSError **error) {
+    performerCount += 1;
+    return YES;
+  };
+
+  XCTAssertTrue([FBSimulatorControlFrameworkLoader bootstrapAccessibilityForSimulatorDevice:device timeout:1 logger:nil performer:performer attemptObserver:nil error:nil]);
+  XCTAssertTrue([FBSimulatorControlFrameworkLoader bootstrapAccessibilityForSimulatorDevice:device timeout:1 logger:nil performer:performer attemptObserver:nil error:nil]);
+  XCTAssertEqual(performerCount, 1u);
+
+  [FBSimulatorControlFrameworkLoader invalidateAccessibilityBootstrapCacheForSimulatorDevice:device];
+
+  XCTAssertTrue([FBSimulatorControlFrameworkLoader bootstrapAccessibilityForSimulatorDevice:device timeout:1 logger:nil performer:performer attemptObserver:nil error:nil]);
+  XCTAssertEqual(performerCount, 2u);
+}
+
+- (void)testFailedBootstrapIsNotCached
+{
+  FBSimulatorAccessibilityBootstrapTestDevice *device = [FBSimulatorAccessibilityBootstrapTestDevice new];
+  __block NSUInteger performerCount = 0;
+  FBSimulatorAccessibilityBootstrapPerformer performer = ^BOOL(id simulatorDevice, NSTimeInterval timeout, id<FBControlCoreLogger> logger, NSError **error) {
+    performerCount += 1;
+    return performerCount > 1;
+  };
+
+  XCTAssertFalse([FBSimulatorControlFrameworkLoader bootstrapAccessibilityForSimulatorDevice:device timeout:1 logger:nil performer:performer attemptObserver:nil error:nil]);
+  XCTAssertTrue([FBSimulatorControlFrameworkLoader bootstrapAccessibilityForSimulatorDevice:device timeout:1 logger:nil performer:performer attemptObserver:nil error:nil]);
+  XCTAssertEqual(performerCount, 2u);
+}
+
 - (void)testBoundsWaitForCoalescedAttempt
 {
   FBSimulatorAccessibilityBootstrapTestDevice *device = [FBSimulatorAccessibilityBootstrapTestDevice new];
