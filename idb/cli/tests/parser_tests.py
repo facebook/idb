@@ -926,6 +926,11 @@ class TestParser(TestCase):
             orientation=HIDOrientationType.LANDSCAPE_LEFT
         )
 
+    async def test_shake(self) -> None:
+        self.client_mock.shake = AsyncMock(return_value=[])
+        await cli_main(cmd_input=["ui", "shake"])
+        self.client_mock.shake.assert_called_once_with()
+
     async def test_key(self) -> None:
         self.client_mock.key = AsyncMock(return_value=[])
         await cli_main(cmd_input=["ui", "key", "12"])

@@ -408,12 +408,15 @@ message HIDEvent {
     HIDOrientationType orientation = 1;
   }
 
+  message HIDShake {}
+
   oneof event {
     HIDPress press = 1;
     HIDSwipe swipe = 2;
     HIDDelay delay = 3;
     HIDPinch pinch = 4;
     HIDOrientation orientation = 5;
+    HIDShake shake = 6;
   }
 }
 

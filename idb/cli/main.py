@@ -76,6 +76,7 @@ from idb.cli.commands.hid import (
     PinchCommand,
     RemoteCommand,
     RotateCommand,
+    ShakeCommand,
     SwipeCommand,
     TapCommand,
     TextCommand,
@@ -288,6 +289,7 @@ async def gen_main(cmd_input: list[str] | None = None) -> SysExitArg:
                 KeySequenceCommand(),
                 SwipeCommand(),
                 RotateCommand(),
+                ShakeCommand(),
             ],
         ),
         CommandGroup(

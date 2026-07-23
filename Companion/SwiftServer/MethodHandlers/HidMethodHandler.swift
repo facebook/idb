@@ -90,6 +90,9 @@ struct HidMethodHandler {
       }
       return .deviceOrientation(deviceOrientation)
 
+    case .shake:
+      return .shake
+
     case .none:
       throw GRPCStatus(code: .invalidArgument, message: "Unrecognized request.event")
     }

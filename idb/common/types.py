@@ -328,7 +328,12 @@ class HIDOrientation:
     orientation: HIDOrientationType
 
 
-HIDEvent = Union[HIDPress, HIDSwipe, HIDDelay, HIDPinch, HIDOrientation]
+@dataclass(frozen=True)
+class HIDShake:
+    pass
+
+
+HIDEvent = Union[HIDPress, HIDSwipe, HIDDelay, HIDPinch, HIDOrientation, HIDShake]
 
 
 @dataclass(frozen=True)
@@ -668,6 +673,10 @@ class Client(ABC):
 
     @abstractmethod
     async def rotate(self, orientation: HIDOrientationType) -> None:
+        pass
+
+    @abstractmethod
+    async def shake(self) -> None:
         pass
 
     @abstractmethod

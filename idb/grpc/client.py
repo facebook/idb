@@ -36,6 +36,7 @@ from idb.common.hid import (
     multi_tap_to_events,
     pinch_to_events,
     rotate_to_events,
+    shake_to_events,
     swipe_to_events,
     tap_to_events,
     text_to_events,
@@ -913,6 +914,10 @@ class Client(ClientBase):
     @log_and_handle_exceptions("hid")
     async def rotate(self, orientation: HIDOrientationType) -> None:
         await self.send_events(rotate_to_events(orientation))
+
+    @log_and_handle_exceptions("hid")
+    async def shake(self) -> None:
+        await self.send_events(shake_to_events())
 
     @log_and_handle_exceptions("hid")
     async def key(self, keycode: int, duration: float | None = None) -> None:

@@ -20,6 +20,7 @@ from idb.common.types import (
     HIDPinch,
     HIDPress,
     HIDPressAction,
+    HIDShake,
     HIDSwipe,
     HIDTouch,
     Point,
@@ -38,6 +39,7 @@ GrpcHIDTouch = GrpcHIDEvent.HIDTouch
 GrpcHIDButtonType = GrpcHIDEvent.HIDButtonType
 GrpcHIDDirection = GrpcHIDEvent.HIDDirection
 GrpcHIDOrientation = GrpcHIDEvent.HIDOrientation
+GrpcHIDShake = GrpcHIDEvent.HIDShake
 GrpcHIDOrientationType = GrpcHIDEvent.HIDOrientationType
 _A = TypeVar("_A")
 _B = TypeVar("_B")
@@ -147,6 +149,10 @@ def orientation_to_grpc(orientation: HIDOrientation) -> GrpcHIDOrientation:
     )
 
 
+def shake_to_grpc(shake: HIDShake) -> GrpcHIDShake:
+    return GrpcHIDShake()
+
+
 def event_to_grpc(event: HIDEvent) -> GrpcHIDEvent:
     if isinstance(event, HIDPress):
         return GrpcHIDEvent(press=press_to_grpc(event))
@@ -158,5 +164,7 @@ def event_to_grpc(event: HIDEvent) -> GrpcHIDEvent:
         return GrpcHIDEvent(pinch=pinch_to_grpc(event))
     elif isinstance(event, HIDOrientation):
         return GrpcHIDEvent(orientation=orientation_to_grpc(event))
+    elif isinstance(event, HIDShake):
+        return GrpcHIDEvent(shake=shake_to_grpc(event))
     else:
         raise Exception(f"Invalid event {event}")

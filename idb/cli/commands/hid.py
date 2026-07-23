@@ -119,6 +119,19 @@ class RotateCommand(ClientCommand):
         await client.rotate(orientation=HIDOrientationType[args.orientation])
 
 
+class ShakeCommand(ClientCommand):
+    @property
+    def description(self) -> str:
+        return "Shake the device"
+
+    @property
+    def name(self) -> str:
+        return "shake"
+
+    async def run_with_client(self, args: Namespace, client: Client) -> None:
+        await client.shake()
+
+
 # Remote action -> USB HID keyboard usage the tvOS focus engine consumes (keyboard-backed; no proto
 # change). Arrows move focus, Return selects, Escape acts as Menu/back.
 _REMOTE_KEYCODES: dict[str, int] = {

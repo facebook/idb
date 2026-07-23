@@ -21,6 +21,7 @@ from idb.common.types import (
     HIDPinch,
     HIDPress,
     HIDPressAction,
+    HIDShake,
     HIDSwipe,
     HIDTouch,
     Point,
@@ -29,6 +30,10 @@ from idb.common.types import (
 
 def rotate_to_events(orientation: HIDOrientationType) -> list[HIDEvent]:
     return [HIDOrientation(orientation=orientation)]
+
+
+def shake_to_events() -> list[HIDEvent]:
+    return [HIDShake()]
 
 
 def tap_to_events(x: float, y: float, duration: float | None = None) -> list[HIDEvent]:
