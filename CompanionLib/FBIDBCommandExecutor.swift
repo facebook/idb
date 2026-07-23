@@ -418,11 +418,11 @@ import XCTestBootstrap
   }
 
   public func set_hardware_keyboard_enabled(_ enabled: Bool) async throws {
-    try await simulatorTarget().setSetting(.hardwareKeyboard, enabled: enabled)
+    try await simulatorTarget().apply(.hardwareKeyboard(enabled))
   }
 
   public func set_preference(_ name: String, value: String, type: String?, domain: String?) async throws {
-    try await simulatorTarget().setPreference(name, value: value, type: type, domain: domain)
+    try await simulatorTarget().apply(.preference(name: name, value: value, type: type, domain: domain))
   }
 
   public func get_preference(_ name: String, domain: String?) async throws -> String {
@@ -430,7 +430,7 @@ import XCTestBootstrap
   }
 
   public func set_locale_with_identifier(_ identifier: String) async throws {
-    try await simulatorTarget().setPreference("AppleLocale", value: identifier, type: nil, domain: nil)
+    try await simulatorTarget().apply(.locale(localeIdentifier: identifier))
   }
 
   public func get_current_locale_identifier() async throws -> String {

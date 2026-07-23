@@ -10,21 +10,15 @@ import Foundation
 
 public protocol SettingsCommands: AnyObject {
 
-  func setSetting(_ setting: FBSimulatorSetting, enabled: Bool) async throws
+  func apply(_ setting: FBSimulatorSetting) async throws
 
   func currentAppearance() async throws -> FBSimulatorAppearance
 
-  func setAppearance(_ appearance: FBSimulatorAppearance) async throws
-
   func currentContentSizeCategory() async throws -> FBSimulatorContentSizeCategory
-
-  func setContentSizeCategory(_ category: FBSimulatorContentSizeCategory) async throws
 
   func currentStatusBarOverrides() async throws -> FBStatusBarOverride
 
   func overrideStatusBar(_ override: FBStatusBarOverride?) async throws
-
-  func setPreference(_ name: String, value: String, type: String?, domain: String?) async throws
 
   func getCurrentPreference(_ name: String, domain: String?) async throws -> String
 

@@ -11,25 +11,16 @@
 
 // swiftlint:disable force_cast force_unwrapping
 
-/// An enumeration of simulator settings that can be toggled on/off.
-/// Each value maps to a different underlying transport (SimDevice API, Darwin notification, etc.)
-/// but the public API is uniform: setSetting:enabled:.
-@objc public enum FBSimulatorSetting: UInt {
-  case hardwareKeyboard
-  case slowAnimations
-  case increaseContrast
-}
-
 /// Dark/Light mode appearance.
 /// Values match UIUserInterfaceStyle used by SimDevice's setUIInterfaceStyle:error:.
-@objc public enum FBSimulatorAppearance: Int, Sendable {
+public enum FBSimulatorAppearance: Int, Sendable {
   case light = 1 // UIUserInterfaceStyleLight
   case dark = 2 // UIUserInterfaceStyleDark
 }
 
 /// Dynamic Type content size categories.
 /// Values match the integer indices used by SimDevice's setContentSizeCategory:error:.
-@objc public enum FBSimulatorContentSizeCategory: Int, Sendable {
+public enum FBSimulatorContentSizeCategory: Int, Sendable {
   case extraSmall = 1
   case small = 2
   case medium = 3
@@ -63,15 +54,24 @@ public final class FBSimulatorSettingsCommands: NSObject, FBiOSTargetCommand {
     super.init()
   }
 
-  // Single source of truth for setSetting dispatch, called by the SettingsCommands entry point.
-  fileprivate func setSettingAsync(_ setting: FBSimulatorSetting, enabled: Bool) async throws {
+  // Single source of truth for the SettingsCommands.apply entry point: switch over the setting and
+  // dispatch to the transport-specific implementation.
+  fileprivate func applyAsync(_ setting: FBSimulatorSetting) async throws {
     switch setting {
-    case .hardwareKeyboard:
+    case let .hardwareKeyboard(enabled):
       try await setHardwareKeyboardEnabledAsync(enabled)
-    case .slowAnimations:
+    case let .slowAnimations(enabled):
       try await setSlowAnimationsEnabledAsync(enabled)
-    case .increaseContrast:
+    case let .increaseContrast(enabled):
       try await setIncreaseContrastEnabledAsync(enabled)
+    case let .appearance(appearance):
+      try await setAppearanceAsync(appearance)
+    case let .contentSize(category):
+      try await setContentSizeCategoryAsync(category)
+    case let .locale(localeIdentifier):
+      try await setPreferenceAsync("AppleLocale", value: localeIdentifier, type: nil, domain: nil)
+    case let .preference(name, value, type, domain):
+      try await setPreferenceAsync(name, value: value, type: type, domain: domain)
     }
   }
 
@@ -759,12 +759,23 @@ public final class FBSimulatorSettingsCommands: NSObject, FBiOSTargetCommand {
 
 extension FBSimulator: SettingsCommands {
 
-  public func setSetting(_ setting: FBSimulatorSetting, enabled: Bool) async throws {
-    try await settingsCommands().setSettingAsync(setting, enabled: enabled)
+  public func apply(_ setting: FBSimulatorSetting) async throws {
+    try await settingsCommands().applyAsync(setting)
   }
 
-  public func setPreference(_ name: String, value: String, type: String?, domain: String?) async throws {
-    try await settingsCommands().setPreferenceAsync(name, value: value, type: type, domain: domain)
+  /// Read the current value of a curated setting by name, mirroring `apply`'s name space and
+  /// falling back to a raw preference read for any other name. Shared by idb and sime2e `get`.
+  public func currentSettingValue(name: String, domain: String?) async throws -> String {
+    switch name {
+    case "locale":
+      return try await getCurrentPreference("AppleLocale", domain: nil)
+    case "appearance":
+      return try await currentAppearance() == .dark ? "dark" : "light"
+    case "content-size":
+      return (try await currentContentSizeCategory()).argumentName ?? "large"
+    default:
+      return try await getCurrentPreference(name, domain: domain)
+    }
   }
 
   public func getCurrentPreference(_ name: String, domain: String?) async throws -> String {
@@ -803,16 +814,8 @@ extension FBSimulator: SettingsCommands {
     try await settingsCommands().currentAppearanceAsync()
   }
 
-  public func setAppearance(_ appearance: FBSimulatorAppearance) async throws {
-    try await settingsCommands().setAppearanceAsync(appearance)
-  }
-
   public func currentContentSizeCategory() async throws -> FBSimulatorContentSizeCategory {
     try await settingsCommands().currentContentSizeCategoryAsync()
-  }
-
-  public func setContentSizeCategory(_ category: FBSimulatorContentSizeCategory) async throws {
-    try await settingsCommands().setContentSizeCategoryAsync(category)
   }
 
   public func currentStatusBarOverrides() async throws -> FBStatusBarOverride {
