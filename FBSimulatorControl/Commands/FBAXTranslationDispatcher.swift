@@ -28,6 +28,8 @@ private final class FBAXResponseBox: @unchecked Sendable {
 @objc(FBAXTranslationDispatcher)
 final class FBAXTranslationDispatcher: NSObject, FBAXRuntimeTranslationDelegate {
 
+  private static let xctestAccessibilityClientType = 2
+
   private weak var translator: NSObject?
   private let logger: FBControlCoreLogger?
   private let callbackQueue: DispatchQueue
@@ -129,6 +131,10 @@ final class FBAXTranslationDispatcher: NSObject, FBAXRuntimeTranslationDelegate 
 
       let xpcStart = CFAbsoluteTimeGetCurrent()
       if let device {
+        _ = FBAXRuntimeBridge.setClientType(
+          Self.xctestAccessibilityClientType,
+          onRequest: axRequest
+        )
         FBAXRuntimeBridge.sendAccessibilityRequest(
           axRequest,
           toDevice: device,
