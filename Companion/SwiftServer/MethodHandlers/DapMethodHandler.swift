@@ -12,7 +12,7 @@ import FBSimulatorControl
 import GRPC
 import IDBGRPCSwift
 
-struct DapMethodHandler {
+struct DapMethodHandler: @unchecked Sendable {
 
   let commandExecutor: FBIDBCommandExecutor
   let targetLogger: FBControlCoreLogger

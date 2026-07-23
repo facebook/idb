@@ -12,7 +12,7 @@ import Foundation
 import GRPC
 import IDBGRPCSwift
 
-struct LaunchMethodHandler {
+struct LaunchMethodHandler: @unchecked Sendable {
 
   let commandExecutor: FBIDBCommandExecutor
 
@@ -79,6 +79,7 @@ struct LaunchMethodHandler {
 
     try await withThrowingTaskGroup(of: Void.self) { group in
       for consumer in consumers {
+        nonisolated(unsafe) let consumer = consumer
         group.addTask {
           try await consumer.awaitFinishedConsumingAsync()
         }

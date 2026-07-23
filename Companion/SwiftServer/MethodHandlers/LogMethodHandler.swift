@@ -12,7 +12,7 @@ import FBSimulatorControl
 import GRPC
 import IDBGRPCSwift
 
-struct LogMethodHandler {
+struct LogMethodHandler: @unchecked Sendable {
 
   let target: FBiOSTarget
   let commandExecutor: FBIDBCommandExecutor
@@ -48,8 +48,11 @@ struct LogMethodHandler {
     let observeWritingDone = Task<Void, Error> {
       try await writingDone.value
     }
+    // `operation` is a thread-safe handle but not Sendable; rebind as
+    // nonisolated(unsafe) so the observer Task can capture it.
+    nonisolated(unsafe) let operationToObserve = operation
     let observeOperationCompletion = Task<Void, Error> {
-      try await operation.waitUntilCompleted()
+      try await operationToObserve.waitUntilCompleted()
     }
     try await Task.select(observeWritingDone, observeOperationCompletion).value
     writingDone.resolve(())

@@ -74,7 +74,7 @@ targets:
         PRODUCT_NAME: IDBGRPCSwift
         DEFINES_MODULE: YES
         MACH_O_TYPE: staticlib
-        SWIFT_VERSION: "6.0"
+        SWIFT_VERSION: "5.0"
         GENERATE_INFOPLIST_FILE: YES
     dependencies:
       - package: grpc-swift
@@ -149,7 +149,7 @@ targets:
       base:
         MACOSX_DEPLOYMENT_TARGET: "12.0"
         PRODUCT_NAME: idb_companion
-        SWIFT_VERSION: "5.0"
+        SWIFT_VERSION: "6.0"
         SWIFT_OBJC_INTERFACE_HEADER_NAME: idb-Swift.h
         INFOPLIST_FILE: $(SRCROOT)/Info.plist
         HEADER_SEARCH_PATHS: $(inherited) $(SRCROOT)/../PrivateHeaders

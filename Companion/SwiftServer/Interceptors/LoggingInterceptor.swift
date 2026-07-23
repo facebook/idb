@@ -19,7 +19,7 @@ import GRPC
 /// handler in a `do`/`catch` and reports completion — and the success/failure
 /// `FBEventReporter` event — reliably on every termination path, so it is the
 /// single source for that.
-final class LoggingInterceptor<Request, Response>: ServerInterceptor<Request, Response> {
+final class LoggingInterceptor<Request, Response>: ServerInterceptor<Request, Response>, @unchecked Sendable {
 
   private let logger: FBIDBLogger
 

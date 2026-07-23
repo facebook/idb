@@ -9,7 +9,7 @@ import CompanionLib
 import CompanionUtilities
 import FBControlCore
 import Foundation
-import GRPC
+@preconcurrency import GRPC
 import IDBGRPCSwift
 import NIOCore
 import NIOPosix
@@ -18,7 +18,7 @@ import NIOSSL
 struct IDBUnixDomainSocketPathWrongType: Error {}
 
 @objc
-final class GRPCSwiftServer: NSObject {
+final class GRPCSwiftServer: NSObject, @unchecked Sendable {
 
   private struct TLSCertificates {
     let certificates: [NIOSSLCertificateSource]

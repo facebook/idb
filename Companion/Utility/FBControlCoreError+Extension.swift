@@ -9,3 +9,6 @@ import FBSimulatorControl
 
 extension FBControlCoreError: @retroactive Error {
 }
+
+extension FBControlCoreError: @retroactive @unchecked Sendable {
+}

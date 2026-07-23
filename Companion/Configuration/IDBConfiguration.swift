@@ -11,7 +11,9 @@ import Foundation
 
 class IDBConfiguration: NSObject {
 
-  @objc static var eventReporter: FBEventReporter = EmptyEventReporter.shared
+  // Set once at process startup before any request handling, so unsynchronized
+  // access is safe.
+  @objc nonisolated(unsafe) static var eventReporter: FBEventReporter = EmptyEventReporter.shared
 
-  static var idbKillswitch: IDBKillswitch = EmptyIDBKillswitch()
+  nonisolated(unsafe) static var idbKillswitch: IDBKillswitch = EmptyIDBKillswitch()
 }

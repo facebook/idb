@@ -11,7 +11,7 @@ import Foundation
 import GRPC
 import IDBGRPCSwift
 
-struct InstallMethodHandler {
+struct InstallMethodHandler: @unchecked Sendable {
 
   let commandExecutor: FBIDBCommandExecutor
   let targetLogger: FBControlCoreLogger

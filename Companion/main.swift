@@ -113,6 +113,7 @@ private func deviceSet(_ logger: FBControlCoreLogger, ecidFilter: String?) async
   // registers MobileDevice notifications that expect the main run loop, so it
   // must be created on the main thread.
   let set: FBDeviceSet = try await withCheckedThrowingContinuation { continuation in
+    nonisolated(unsafe) let logger = logger
     DispatchQueue.main.async {
       do {
         // Give a more meaningful message if we can't load the frameworks.
@@ -432,6 +433,8 @@ private func runCompanionServer(_ udid: String, userDefaults: UserDefaults, xcod
     raceTasks.append(Task { try await idleMonitor.waitUntilExpired() })
   }
   if terminateOffline {
+    nonisolated(unsafe) let target = target
+    nonisolated(unsafe) let logger = logger
     raceTasks.append(Task { try await awaitTargetOffline(target, logger: logger) })
   }
   defer { raceTasks.forEach { $0.cancel() } }
@@ -564,7 +567,8 @@ private func waitForSignal(_ signalCode: Int32, exitMessage: String, logger: FBC
 /// number seen.
 private func waitForAnySignal(_ signals: [(code: Int32, message: String)], logger: FBControlCoreLogger) async throws -> Int32 {
   let tasks = signals.map { signal in
-    Task { try await waitForSignal(signal.code, exitMessage: signal.message, logger: logger) }
+    nonisolated(unsafe) let logger = logger
+    return Task { try await waitForSignal(signal.code, exitMessage: signal.message, logger: logger) }
   }
   defer { tasks.forEach { $0.cancel() } }
   return try await Task.select(tasks).value

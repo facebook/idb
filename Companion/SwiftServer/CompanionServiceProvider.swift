@@ -15,7 +15,7 @@ import NIOHPACK
 import SwiftProtobuf
 import XCTestBootstrap
 
-final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
+final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider, @unchecked Sendable {
 
   private let target: FBiOSTarget
   private let commandExecutor: FBIDBCommandExecutor

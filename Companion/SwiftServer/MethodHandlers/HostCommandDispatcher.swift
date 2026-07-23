@@ -109,7 +109,7 @@ struct ReplArtifact {
 /// `run` serializes that to the wire payload and turns a thrown error into a
 /// failure, both in one place, so adding a command repeats none of that. Sharing
 /// `ReplCommand` with the client (via `ReplProtocol`) keeps the switch exhaustive.
-struct HostCommandDispatcher {
+struct HostCommandDispatcher: @unchecked Sendable {
 
   let commandExecutor: FBIDBCommandExecutor
   let state: ReplHostCommandState

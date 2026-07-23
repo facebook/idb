@@ -21,7 +21,7 @@ import Foundation
 /// runs synchronously and then `expired` resolves. Deciding what to do when idle
 /// (e.g. shutting the companion down) is left to whoever observes `expired`; the
 /// monitor itself is not shutdown-specific.
-@objc final class IdleMonitor: NSObject {
+@objc final class IdleMonitor: NSObject, @unchecked Sendable {
 
   private let expiredPromise = AsyncPromise<Void>()
 

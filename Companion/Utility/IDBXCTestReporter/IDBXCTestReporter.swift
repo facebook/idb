@@ -50,7 +50,7 @@ extension IDBXCTestReporter {
   }
 }
 
-@objc final class IDBXCTestReporter: NSObject, FBXCTestReporter, FBDataConsumer {
+@objc final class IDBXCTestReporter: NSObject, FBXCTestReporter, FBDataConsumer, @unchecked Sendable {
 
   private let reportingTerminated = AsyncPromise<Int>()
   var configuration: Configuration!

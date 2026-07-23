@@ -20,7 +20,7 @@ import GRPC
 /// All blocking socket I/O runs on a dedicated dispatch queue so the gRPC
 /// handler's cooperative thread is never blocked (a user's compiled code may run
 /// for an arbitrary amount of time).
-final class ReplSocketClient {
+final class ReplSocketClient: @unchecked Sendable {
 
   private let fd: Int32
   private let ioQueue = DispatchQueue(label: "com.facebook.idb.repl.socket")
@@ -125,6 +125,9 @@ final class ReplSocketClient {
   func execute(dylibPath: String, symbol: String, hostCommandHandler: @escaping HostCommandHandler) async throws -> (success: Bool, output: String, nextRunIndex: Int32) {
     let fd = self.fd
     return try await withCheckedThrowingContinuation { continuation in
+      // Thread-safe async closure that isn't Sendable; rebind as nonisolated(unsafe)
+      // so the ioQueue closure can capture it.
+      nonisolated(unsafe) let hostCommandHandler = hostCommandHandler
       ioQueue.async {
         do {
           try Self.writeMessage(["type": "execute", "dylib": dylibPath, "symbol": symbol], to: fd)
@@ -165,8 +168,9 @@ final class ReplSocketClient {
     final class Box: @unchecked Sendable { var value: HostCommandResult = .failure(HostCommandError.message("repl: host command did not complete")) }
     let box = Box()
     let semaphore = DispatchSemaphore(value: 0)
+    nonisolated(unsafe) let commandHandler = handler
     Task {
-      box.value = await handler(commandData)
+      box.value = await commandHandler(commandData)
       semaphore.signal()
     }
     semaphore.wait()

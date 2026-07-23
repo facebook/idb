@@ -41,11 +41,12 @@ actor InternGraphCachableReader<Requestor: InternGraphRequestor> {
 
   // swiftlint:disable force_cast
   private func fetchConfig<FetchResult: Decodable & Sendable>(request: Requestor.Request, decoder: JSONDecoder, defaultValue: FetchResult) async throws -> FetchResult {
+    nonisolated(unsafe) let requestor = internGraphRequestor
     let getInterngraphValueTask = Task<any Sendable, Error> {
       defer { ongoingTasks.removeValue(forKey: request) }
 
       do {
-        let fetchResult: FetchResult = try await internGraphRequestor.read(request: request, decoder: decoder)
+        let fetchResult: FetchResult = try await requestor.read(request: request, decoder: decoder)
         cachedValues[request] = (lastSyncDate: Date(), value: fetchResult)
 
         return fetchResult
