@@ -6,7 +6,7 @@
 	<dict>
 		<key>Resources/Info.plist</key>
 		<data>
-		4r5+BfQGEJWPcslD2FxGFgYUvNw=
+		LTyiGLDJvr8m2r9JnQ3xpx0rKkM=
 		</data>
 		<key>Resources/README.md</key>
 		<data>
@@ -16,6 +16,10 @@
 		<data>
 		hCQ4SPVLDFmD4e0m3vtB0mLOE1Q=
 		</data>
+		<key>Resources/package.xcworkspace/xcuserdata/avanderlee.xcuserdatad/UserInterfaceState.xcuserstate</key>
+		<data>
+		WTPULR/tYqI0lffVJW5e1yMDC3c=
+		</data>
 	</dict>
 	<key>files2</key>
 	<dict>
@@ -23,7 +27,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			8pJ4FSvcjMQB9L3wpxo7Qxqu8V7fuCz6INFapDwyHvU=
+			clc63ajMGtGzQ8P52TvWrmO89jpNf2HuzQDsqjr4MpQ=
 			</data>
 		</dict>
 		<key>Headers/FBFramebuffer.h</key>
@@ -58,7 +62,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			O9PyafjFMso1jst2NmyztT+y6NzYRrXrMGODFsY41N8=
+			pew9Yan64EZB/18uN86OBb3J2UQePhwGB25Wrkei1bg=
 			</data>
 		</dict>
 		<key>Headers/FBSimulatorControl.h</key>
@@ -72,77 +76,77 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			DVl6b2UUnEDO6dazL3gL+JNEfRgh1hvdGg5INBXzjyE=
+			mGU57Ujh2FMnGPI2MA9Vd79Evxo4MLtTIIrrD/XVEuU=
 			</data>
 		</dict>
 		<key>Modules/FBSimulatorControl.swiftmodule/arm64-apple-macos.abi.json</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			hMLJIxwFWUklx1AaTleUBBeGWJRCBTFqniTRiJsNqs8=
+			QGvSCHyKgYs+xjvFoO5ceoAqe6NjhQnjqEJomkpLd1I=
 			</data>
 		</dict>
 		<key>Modules/FBSimulatorControl.swiftmodule/arm64-apple-macos.private.swiftinterface</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			ws2Pd6F8l561b2ctURIAl+3JeF3QLz6xVhqzmOZWkCA=
+			yzH2GXgH3Zq3gSmgPTuZbiKPBnUr4DfeQdZiMQMzoIs=
 			</data>
 		</dict>
 		<key>Modules/FBSimulatorControl.swiftmodule/arm64-apple-macos.swiftdoc</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			Xi9IxJWD8NzNHVETAPADa151e5/Mhg+AeusIxR5ok/M=
+			+7VcfARyxrc1oze8/0T8XIoOEaQrlQTgxr+1YhdMpWc=
 			</data>
 		</dict>
 		<key>Modules/FBSimulatorControl.swiftmodule/arm64-apple-macos.swiftinterface</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			ws2Pd6F8l561b2ctURIAl+3JeF3QLz6xVhqzmOZWkCA=
+			yzH2GXgH3Zq3gSmgPTuZbiKPBnUr4DfeQdZiMQMzoIs=
 			</data>
 		</dict>
 		<key>Modules/FBSimulatorControl.swiftmodule/arm64-apple-macos.swiftmodule</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			+Jo430LB3nmiktxlSgAB7jLYVQMrmaeEXR3b+gfeaXA=
+			2f6gxgQzcKPOjZg3DC+Uk9yh/c1P4kToVt/LP0SeE5c=
 			</data>
 		</dict>
 		<key>Modules/FBSimulatorControl.swiftmodule/x86_64-apple-macos.abi.json</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			hMLJIxwFWUklx1AaTleUBBeGWJRCBTFqniTRiJsNqs8=
+			QGvSCHyKgYs+xjvFoO5ceoAqe6NjhQnjqEJomkpLd1I=
 			</data>
 		</dict>
 		<key>Modules/FBSimulatorControl.swiftmodule/x86_64-apple-macos.private.swiftinterface</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			7R96CwpGeMf0Ijq5VOhN3yR0uOqkA5fEIstwoSLyt8Q=
+			7vC1aqCWLqVlGXJ38VX+RoheiMxasy85s5WZqfYVaaU=
 			</data>
 		</dict>
 		<key>Modules/FBSimulatorControl.swiftmodule/x86_64-apple-macos.swiftdoc</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			t4TH7Yi0ma5h+IOv18aPyKJVa9mek7frHZjjO75reYc=
+			rnrCVdZDbhYulQZ1NjTntHm8v9CtFikDUt56vGtra/M=
 			</data>
 		</dict>
 		<key>Modules/FBSimulatorControl.swiftmodule/x86_64-apple-macos.swiftinterface</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			7R96CwpGeMf0Ijq5VOhN3yR0uOqkA5fEIstwoSLyt8Q=
+			7vC1aqCWLqVlGXJ38VX+RoheiMxasy85s5WZqfYVaaU=
 			</data>
 		</dict>
 		<key>Modules/FBSimulatorControl.swiftmodule/x86_64-apple-macos.swiftmodule</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			UKK3TRM16md6J8Hrzd5bXyTW6Tq7MSmvnMzejv/knn8=
+			54NiBcli+CbF8RPgLCmr14CDGJrkzxhjyFwukdzhZ+0=
 			</data>
 		</dict>
 		<key>Modules/module.modulemap</key>
@@ -156,7 +160,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			W2dRHTnjoPg3xtA4leCqURYgzyZN3uWdEJ0YONGTEhQ=
+			H/ZdzUpiCBgw3jcsJxbDHt2YHK2leqSz+9K5q/VxcdQ=
 			</data>
 		</dict>
 		<key>Resources/README.md</key>
@@ -171,6 +175,13 @@
 			<key>hash2</key>
 			<data>
 			fzsAtcP9tFJC17h+HlxOJdH6gSmhbJQpXsxOjqIjXF8=
+			</data>
+		</dict>
+		<key>Resources/package.xcworkspace/xcuserdata/avanderlee.xcuserdatad/UserInterfaceState.xcuserstate</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			zQ3xFhtX9g3Rsm0SoiJ5o6Qll4kAfrMD21JMPVuNxlU=
 			</data>
 		</dict>
 	</dict>
