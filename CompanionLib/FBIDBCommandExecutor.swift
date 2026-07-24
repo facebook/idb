@@ -416,11 +416,8 @@ import XCTestBootstrap
     }
     // Not installed: locate ReplHost.app in the Resources/ directory next to the
     // companion binary (the same directory the shim dylibs load from) and install it.
-    let resourcesDirectory = try await bridgeFBFuture(
-      FBXCTestShimConfiguration.findShimDirectory(onQueue: target.workQueue, logger: logger))
-    let appPath = resourcesDirectory.appendingPathComponent("ReplHost.app")
-    guard FileManager.default.fileExists(atPath: appPath) else {
-      throw FBIDBError.describe("ReplHost.app not found at \(appPath)").build()
+    guard let appPath = BundledResources.path(forItem: "ReplHost.app") else {
+      throw FBIDBError.describe("ReplHost.app not found in the companion Resources directory").build()
     }
     _ = try await install_app_file_path(appPath, make_debuggable: false, override_modification_time: false)
     return bundleID

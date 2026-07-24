@@ -70,14 +70,7 @@ public class FBXCTestShimConfiguration: NSObject, NSCopying {
     let future: FBFuture<AnyObject> = FBFuture.onQueue(
       queue,
       resolve: { () -> FBFuture<AnyObject> in
-        let bundleURL = Bundle.main.bundleURL.standardizedFileURL
-        let searchPath: String
-        if bundleURL.pathExtension == "app", let resourcePath = Bundle(for: self).resourcePath {
-          searchPath = resourcePath
-        } else if let executablePath = Bundle.main.executablePath {
-          let resolvedExecutablePath = (executablePath as NSString).resolvingSymlinksInPath
-          searchPath = ((resolvedExecutablePath as NSString).deletingLastPathComponent as NSString).appendingPathComponent("Resources")
-        } else {
+        guard let searchPath = BundledResources.directoryPath() else {
           return FBControlCoreError.describe("Unable to determine the shim search path.").failFuture()
         }
 

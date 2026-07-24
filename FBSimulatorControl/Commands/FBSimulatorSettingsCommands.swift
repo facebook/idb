@@ -464,23 +464,8 @@ public final class FBSimulatorSettingsCommands: NSObject, FBiOSTargetCommand {
   @discardableResult
   fileprivate func runSimulatorFrameworkBridgeAsync(withService service: String, action: String, arguments: [String] = []) async throws -> String {
     let simulator = try requireSimulator()
-    let bundle = Bundle.main
-    let bundleURL = bundle.bundleURL.standardizedFileURL
-    let helperPath: String?
-    if bundleURL.pathExtension == "app", let resourceURL = bundle.resourceURL {
-      helperPath = resourceURL.appendingPathComponent("SimulatorFrameworkBridge").path
-    } else if let executablePath = bundle.executablePath {
-      let resolvedExecutablePath = (executablePath as NSString).resolvingSymlinksInPath
-      let parentDirectory = (resolvedExecutablePath as NSString).deletingLastPathComponent
-      helperPath = (parentDirectory as NSString).appendingPathComponent("Resources/SimulatorFrameworkBridge")
-    } else {
-      helperPath = nil
-    }
-    guard let helperPath else {
-      throw FBSimulatorError.describe("SimulatorFrameworkBridge path not found.").build()
-    }
-    if !FileManager.default.fileExists(atPath: helperPath) {
-      throw FBSimulatorError.describe("SimulatorFrameworkBridge binary not found at path: \(helperPath)").build()
+    guard let helperPath = BundledResources.path(forItem: "SimulatorFrameworkBridge") else {
+      throw FBSimulatorError.describe("SimulatorFrameworkBridge binary not found in the companion Resources directory").build()
     }
 
     // Spawn the bridge helper inside the simulator via CoreSimulator (the same
