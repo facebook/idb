@@ -349,21 +349,31 @@ final class ReplSession {
   /// `--udid`, or the single running / only-available-simulator default — and
   /// started if needed, exiting after 5 minutes without gRPC activity so it does
   /// not outlive its use.
+  ///
+  /// Whether local discovery is available is decided by `CompanionDiscovery`
+  /// (`planCompanionRoute`): it spawns and talks to a local `idb_companion`, which
+  /// exists only on macOS, so on other platforms an explicit `--companion` is
+  /// required.
   private static func resolveCompanionAddress(config: ReplSessionConfig) async throws -> CompanionAddress {
-    if let companion = config.companion {
+    switch planCompanionRoute(companion: config.companion) {
+    case let .tcp(companion):
       guard let address = CompanionAddress.parse(tcp: companion) else {
         throw ValidationError(
           "--companion expects host:port, e.g. 127.0.0.1:10882 (got '\(companion)')")
       }
       return address
-    }
-    let idleShutdownTime = 5 * 60
-    if let udid = config.udid {
+    case .discoverLocal:
+      let idleShutdownTime = 5 * 60
+      if let udid = config.udid {
+        return try await companionManager(config: config)
+          .companionInfo(forUDID: udid, idleShutdownTime: idleShutdownTime).address
+      }
       return try await companionManager(config: config)
-        .companionInfo(forUDID: udid, idleShutdownTime: idleShutdownTime).address
+        .defaultCompanion(idleShutdownTime: idleShutdownTime).address
+    case .localUnavailable:
+      throw ValidationError(
+        "idb-repl can only connect to a companion over TCP on this platform; please pass --companion <host:port>")
     }
-    return try await companionManager(config: config)
-      .defaultCompanion(idleShutdownTime: idleShutdownTime).address
   }
 
   private static func companionManager(config: ReplSessionConfig) -> CompanionManager {
