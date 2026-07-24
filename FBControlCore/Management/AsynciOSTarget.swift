@@ -52,7 +52,6 @@ public protocol AsynciOSTarget: AnyObject,
   var workQueue: DispatchQueue { get }
   var asyncQueue: DispatchQueue { get }
 
-  func compare(_ target: any AsynciOSTarget) -> ComparisonResult
   func requiresBundlesToBeSigned() -> Bool
   func replacementMapping() -> [String: String]
   func environmentAdditions() -> [String: String]

@@ -34,12 +34,4 @@ extension FBDevice: InstrumentsCommands {
 
 // MARK: - FBDevice+AsynciOSTarget
 
-extension FBDevice: AsynciOSTarget {
-
-  public func compare(_ target: any AsynciOSTarget) -> ComparisonResult {
-    guard let other = target as? any FBiOSTarget else {
-      return .orderedSame
-    }
-    return FBiOSTargetComparison(self, other)
-  }
-}
+extension FBDevice: AsynciOSTarget {}

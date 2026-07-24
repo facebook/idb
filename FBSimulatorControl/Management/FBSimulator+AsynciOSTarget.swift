@@ -34,12 +34,4 @@ extension FBSimulator: InstrumentsCommands {
 
 // MARK: - FBSimulator+AsynciOSTarget
 
-extension FBSimulator: AsynciOSTarget {
-
-  public func compare(_ target: any AsynciOSTarget) -> ComparisonResult {
-    guard let other = target as? any FBiOSTarget else {
-      return .orderedSame
-    }
-    return FBiOSTargetComparison(self, other)
-  }
-}
+extension FBSimulator: AsynciOSTarget {}
