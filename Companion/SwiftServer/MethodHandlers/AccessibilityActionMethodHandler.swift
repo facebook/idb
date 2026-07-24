@@ -32,7 +32,7 @@ struct AccessibilityActionMethodHandler {
     switch request.target {
     case let .marker(marker):
       query = .marker(
-        value: marker, key: searchableKey(from: request.matchKey), depth: UInt(request.depth))
+        value: marker, key: try searchableKey(from: request.matchKey), depth: UInt(request.depth))
     case let .point(point):
       query = .point(CGPoint(x: point.x, y: point.y))
     case .none:
@@ -42,10 +42,10 @@ struct AccessibilityActionMethodHandler {
     try await commandExecutor.accessibility_tap(
       query: query,
       expectedValue: expectedValue,
-      expectedKey: searchableKey(from: tap.expectedKey))
+      expectedKey: try searchableKey(from: tap.expectedKey))
   }
 
-  private func searchableKey(from key: Idb_AccessibilityActionRequest.SearchableKey) -> FBAXSearchableKey {
+  private func searchableKey(from key: Idb_AccessibilityActionRequest.SearchableKey) throws -> FBAXSearchableKey {
     switch key {
     case .label:
       return .label
@@ -66,7 +66,7 @@ struct AccessibilityActionMethodHandler {
     case .placeholder:
       return .placeholder
     case .UNRECOGNIZED:
-      return .label
+      throw GRPCStatus(code: .invalidArgument, message: "unrecognized accessibility key")
     }
   }
 }
