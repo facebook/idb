@@ -9,6 +9,10 @@
 ## Generated gRPC Swift code (generated from proto/idb.proto)
 IDBGRPCSwift/*.swift
 
+## SwiftPM (Package.swift build)
+.build/
+Package.resolved
+
 ## Build & Test Generated
 Build/
 fbsimctl/cli-tests/executable-under-test

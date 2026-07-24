@@ -5,8 +5,17 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import Darwin
 import Foundation
+
+#if os(macOS)
+import Darwin
+#elseif canImport(Glibc)
+import Glibc
+#elseif canImport(Musl)
+import Musl
+#else
+#error("Unknown platform")
+#endif
 
 /// Liveness checks for companions.
 public enum CompanionConnectivity {
@@ -36,7 +45,7 @@ public enum CompanionConnectivity {
     let length = socklen_t(MemoryLayout<sockaddr_un>.size)
     let result = withUnsafePointer(to: &addr) { addrPointer in
       addrPointer.withMemoryRebound(to: sockaddr.self, capacity: 1) { sockaddrPointer in
-        Darwin.connect(fd, sockaddrPointer, length)
+        Platform.connect(fd, sockaddrPointer, length)
       }
     }
     return result == 0

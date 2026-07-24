@@ -18,19 +18,17 @@ public struct FBEventType: RawRepresentable, Equatable, Hashable, Sendable {
   public static let failure = FBEventType(rawValue: "failure")
 }
 
-@objc(FBEventReporterSubject)
 public final class FBEventReporterSubject: NSObject {
 
-  @objc public let eventName: String
+  public let eventName: String
   public let eventType: FBEventType
-  @objc public let arguments: [String]?
-  @objc public let duration: NSNumber?
-  @objc public let size: NSNumber?
-  @objc public let message: String?
+  public let arguments: [String]?
+  public let duration: NSNumber?
+  public let size: NSNumber?
+  public let message: String?
 
   // MARK: Convenience Initializers
 
-  @objc
   public convenience init(forEvent eventName: String) {
     self.init(
       eventName: eventName,
@@ -42,7 +40,6 @@ public final class FBEventReporterSubject: NSObject {
     )
   }
 
-  @objc
   public convenience init(forStartedCall call: String, arguments: [String]) {
     self.init(
       eventName: call,
@@ -54,7 +51,6 @@ public final class FBEventReporterSubject: NSObject {
     )
   }
 
-  @objc
   public convenience init(forSuccessfulCall call: String, duration: TimeInterval, size: NSNumber?, arguments: [String]) {
     self.init(
       eventName: call,
@@ -66,7 +62,6 @@ public final class FBEventReporterSubject: NSObject {
     )
   }
 
-  @objc
   public convenience init(forFailingCall call: String, duration: TimeInterval, message: String, size: NSNumber?, arguments: [String]) {
     self.init(
       eventName: call,
@@ -79,7 +74,11 @@ public final class FBEventReporterSubject: NSObject {
   }
 
   // MARK: Factory Methods (ObjC compatibility)
-
+  //
+  // Swift callers use the convenience initializers above; these selector-named
+  // factories exist only for Objective-C, so they compile only where ObjC interop
+  // is available.
+  #if canImport(ObjectiveC)
   @objc(subjectForEvent:)
   public class func subject(forEvent eventName: String) -> FBEventReporterSubject {
     return FBEventReporterSubject(forEvent: eventName)
@@ -99,6 +98,7 @@ public final class FBEventReporterSubject: NSObject {
   public class func subject(forFailingCall call: String, duration: TimeInterval, message: String, size: NSNumber?, arguments: [String]) -> FBEventReporterSubject {
     return FBEventReporterSubject(forFailingCall: call, duration: duration, message: message, size: size, arguments: arguments)
   }
+  #endif
 
   // MARK: Private
 

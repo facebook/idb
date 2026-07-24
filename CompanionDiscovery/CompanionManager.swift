@@ -5,8 +5,17 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import Darwin
 import Foundation
+
+#if os(macOS)
+import Darwin
+#elseif canImport(Glibc)
+import Glibc
+#elseif canImport(Musl)
+import Musl
+#else
+#error("Unknown platform")
+#endif
 
 /// Discovers running companions and starts them on demand, keyed by simulator /
 /// device udid.
@@ -141,7 +150,7 @@ public final class CompanionManager {
       guard let pid = companion.pid else {
         continue
       }
-      Darwin.kill(pid, SIGKILL)
+      Platform.kill(pid, SIGKILL)
     }
   }
 }

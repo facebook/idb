@@ -7,6 +7,16 @@
 
 import Foundation
 
+#if os(macOS)
+import Darwin
+#elseif canImport(Glibc)
+import Glibc
+#elseif canImport(Musl)
+import Musl
+#else
+#error("Unknown platform")
+#endif
+
 final class LineEditor {
   private var originalTermios = termios()
   private var isRawMode = false
@@ -15,9 +25,17 @@ final class LineEditor {
   func enableRawMode() {
     tcgetattr(STDIN_FILENO, &originalTermios)
     var raw = originalTermios
-    raw.c_lflag &= ~UInt(ICANON | ECHO)
+    // `tcflag_t` is UInt on Darwin but UInt32 on Linux, so cast through it rather
+    // than a hardcoded width.
+    raw.c_lflag &= ~tcflag_t(ICANON | ECHO)
+    // VMIN / VTIME live at different c_cc indices on Darwin vs Linux.
+    #if os(macOS)
     raw.c_cc.16 = 1 // VMIN
     raw.c_cc.17 = 0 // VTIME
+    #else
+    raw.c_cc.6 = 1 // VMIN
+    raw.c_cc.5 = 0 // VTIME
+    #endif
     tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw)
     isRawMode = true
   }

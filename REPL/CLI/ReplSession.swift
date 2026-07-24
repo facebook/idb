@@ -434,8 +434,10 @@ final class ReplSession {
     try swiftc.run()
 
     // Read both pipes concurrently to avoid deadlock when the OS pipe buffer fills.
-    var outputData = Data()
-    var errorData = Data()
+    // Each var is written by exactly one closure below and read only after
+    // `group.wait()`, so the concurrent capture is safe.
+    nonisolated(unsafe) var outputData = Data()
+    nonisolated(unsafe) var errorData = Data()
     let group = DispatchGroup()
 
     group.enter()

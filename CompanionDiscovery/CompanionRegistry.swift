@@ -5,8 +5,19 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import Darwin
 import Foundation
+
+#if os(macOS) || os(iOS)
+import Darwin
+#elseif canImport(Glibc)
+import Glibc
+#elseif canImport(Musl)
+import Musl
+#elseif os(Windows)
+import ucrt
+#else
+#error("Unknown platform")
+#endif
 
 /// A persistent registry of running companions, keyed by `udid`, stored as JSON
 /// at `stateFilePath` (defaulting to the v1 `CompanionPaths().stateFile`).

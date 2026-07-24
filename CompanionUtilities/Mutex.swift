@@ -5,8 +5,17 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import Darwin
 import Foundation
+
+#if os(macOS)
+import Darwin
+#elseif canImport(Glibc)
+import Glibc
+#elseif canImport(Musl)
+import Musl
+#else
+#error("Unknown platform")
+#endif
 
 /// Helper wrapper around `pthread_mutex`
 final class FBMutex: @unchecked Sendable {

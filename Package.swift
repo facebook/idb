@@ -51,7 +51,8 @@ let package = Package(
         .product(name: "NIO", package: "swift-nio"),
         .product(name: "NIOConcurrencyHelpers", package: "swift-nio"),
       ],
-      path: "IDBGRPCSwift"
+      path: "IDBGRPCSwift",
+      swiftSettings: [.swiftLanguageMode(.v5)]
     ),
     .executableTarget(
       name: "idb-repl",
