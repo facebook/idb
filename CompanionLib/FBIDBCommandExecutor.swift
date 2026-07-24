@@ -462,7 +462,7 @@ import XCTestBootstrap
   }
 
   public func set_preference(_ name: String, value: String, type: String?, domain: String?) async throws {
-    try await simulatorTarget().apply(FBSimulatorSetting(name: name, value: value, type: type, domain: domain))
+    try await simulatorTarget().apply(FBSimulatorSettingResolution(name: name, value: value, type: type, domain: domain))
   }
 
   public func get_preference(_ name: String, domain: String?) async throws -> String {

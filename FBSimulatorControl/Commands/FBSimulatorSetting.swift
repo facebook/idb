@@ -7,12 +7,12 @@
 
 import Foundation
 
-/// A device-wide simulator setting that can be applied via `SettingsCommands.apply(_:)`.
+/// A curated, device-wide simulator setting applied via `SettingsCommands.apply(_:)`.
 ///
-/// Each case maps to a different underlying transport (a SimDevice API, a Darwin notification,
-/// or a preference write), but callers build a value and hand it to a single `apply` entry point
-/// rather than reaching for a method per setting. `init(name:value:type:domain:)` is the single
-/// source of truth for the `set` command surface shared by idb and sime2e.
+/// Each case maps to a different underlying transport (a SimDevice API, a Darwin notification, or a
+/// preference write), but callers build a value and hand it to a single `apply` entry point rather
+/// than reaching for a method per setting. Parsing a CLI `name`/`value` — including the raw-preference
+/// fallback for uncurated names — is `FBSimulatorSettingResolution`'s job.
 public enum FBSimulatorSetting: Equatable {
   case hardwareKeyboard(Bool)
   case slowAnimations(Bool)
@@ -21,6 +21,13 @@ public enum FBSimulatorSetting: Equatable {
   case appearance(FBSimulatorAppearance)
   case contentSize(FBSimulatorContentSizeCategory)
   case locale(localeIdentifier: String)
+}
+
+/// The result of resolving a CLI `set` `name`/`value`: either a curated `FBSimulatorSetting` or a raw
+/// preference write for any name that is not curated. Callers hand this to `apply(_:)`; keeping the
+/// raw case out of `FBSimulatorSetting` lets that enum stay purely the curated settings.
+public enum FBSimulatorSettingResolution: Equatable {
+  case setting(FBSimulatorSetting)
   case preference(name: String, value: String, type: String?, domain: String?)
 }
 
@@ -51,11 +58,11 @@ public enum FBSimulatorSettingError: Error, CustomStringConvertible, LocalizedEr
   public var errorDescription: String? { description }
 }
 
-extension FBSimulatorSetting {
+extension FBSimulatorSettingResolution {
 
-  /// Parse a CLI-style `name`/`value` into a setting. `type`/`domain` are consulted only for the
-  /// raw-preference fallback (any name that is not a curated setting), so the curated names and
-  /// their value grammar live in exactly one place for both idb and sime2e.
+  /// Parse a CLI-style `name`/`value` into a resolution. A curated name yields `.setting`; any other
+  /// name yields `.preference` (a raw defaults write), the only case that consults `type`/`domain`.
+  /// This is the single source of truth for the `set` surface shared by idb and sime2e.
   public init(name: String, value: String, type: String?, domain: String?) throws {
     guard let key = FBSimulatorSettingKey(rawValue: name) else {
       self = .preference(name: name, value: value, type: type, domain: domain)
@@ -63,27 +70,27 @@ extension FBSimulatorSetting {
     }
     switch key {
     case .hardwareKeyboard:
-      self = .hardwareKeyboard(try FBSimulatorSetting.parseEnabled(name: name, value: value))
+      self = .setting(.hardwareKeyboard(try FBSimulatorSettingResolution.parseEnabled(name: name, value: value)))
     case .slowAnimations:
-      self = .slowAnimations(try FBSimulatorSetting.parseEnabled(name: name, value: value))
+      self = .setting(.slowAnimations(try FBSimulatorSettingResolution.parseEnabled(name: name, value: value)))
     case .increaseContrast:
-      self = .increaseContrast(try FBSimulatorSetting.parseEnabled(name: name, value: value))
+      self = .setting(.increaseContrast(try FBSimulatorSettingResolution.parseEnabled(name: name, value: value)))
     case .autoFillPasswords:
-      self = .autoFillPasswords(try FBSimulatorSetting.parseEnabled(name: name, value: value))
+      self = .setting(.autoFillPasswords(try FBSimulatorSettingResolution.parseEnabled(name: name, value: value)))
     case .appearance:
       guard let appearance = FBSimulatorAppearance(argumentName: value) else {
         throw FBSimulatorSettingError.invalidValue(
           name: name, value: value, expected: FBSimulatorAppearance.allArgumentNames.joined(separator: ", "))
       }
-      self = .appearance(appearance)
+      self = .setting(.appearance(appearance))
     case .contentSize:
       guard let category = FBSimulatorContentSizeCategory(argumentName: value) else {
         throw FBSimulatorSettingError.invalidValue(
           name: name, value: value, expected: FBSimulatorContentSizeCategory.allArgumentNames.joined(separator: ", "))
       }
-      self = .contentSize(category)
+      self = .setting(.contentSize(category))
     case .locale:
-      self = .locale(localeIdentifier: value)
+      self = .setting(.locale(localeIdentifier: value))
     }
   }
 

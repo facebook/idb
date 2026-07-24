@@ -72,6 +72,13 @@ public final class FBSimulatorSettingsCommands: NSObject, FBiOSTargetCommand {
       try await setContentSizeCategoryAsync(category)
     case let .locale(localeIdentifier):
       try await setPreferenceAsync("AppleLocale", value: localeIdentifier, type: nil, domain: nil)
+    }
+  }
+
+  fileprivate func applyResolutionAsync(_ resolution: FBSimulatorSettingResolution) async throws {
+    switch resolution {
+    case let .setting(setting):
+      try await applyAsync(setting)
     case let .preference(name, value, type, domain):
       try await setPreferenceAsync(name, value: value, type: type, domain: domain)
     }
@@ -770,6 +777,10 @@ extension FBSimulator: SettingsCommands {
 
   public func apply(_ setting: FBSimulatorSetting) async throws {
     try await settingsCommands().applyAsync(setting)
+  }
+
+  public func apply(_ resolution: FBSimulatorSettingResolution) async throws {
+    try await settingsCommands().applyResolutionAsync(resolution)
   }
 
   /// Read the current value of a curated setting by name, mirroring `apply`'s name space and

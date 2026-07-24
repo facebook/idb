@@ -211,55 +211,55 @@ final class FBSimulatorSettingsCommandsTests: XCTestCase {
     }
   }
 
-  // MARK: - FBSimulatorSetting Parsing
+  // MARK: - FBSimulatorSettingResolution Parsing
 
   func testParseHardwareKeyboardEnableDisable() throws {
-    XCTAssertEqual(try FBSimulatorSetting(name: "hardware-keyboard", value: "enable", type: nil, domain: nil), .hardwareKeyboard(true))
-    XCTAssertEqual(try FBSimulatorSetting(name: "hardware-keyboard", value: "disable", type: nil, domain: nil), .hardwareKeyboard(false))
+    XCTAssertEqual(try FBSimulatorSettingResolution(name: "hardware-keyboard", value: "enable", type: nil, domain: nil), .setting(.hardwareKeyboard(true)))
+    XCTAssertEqual(try FBSimulatorSettingResolution(name: "hardware-keyboard", value: "disable", type: nil, domain: nil), .setting(.hardwareKeyboard(false)))
   }
 
   func testParseSlowAnimationsAndIncreaseContrast() throws {
-    XCTAssertEqual(try FBSimulatorSetting(name: "slow-animations", value: "enable", type: nil, domain: nil), .slowAnimations(true))
-    XCTAssertEqual(try FBSimulatorSetting(name: "increase-contrast", value: "disable", type: nil, domain: nil), .increaseContrast(false))
+    XCTAssertEqual(try FBSimulatorSettingResolution(name: "slow-animations", value: "enable", type: nil, domain: nil), .setting(.slowAnimations(true)))
+    XCTAssertEqual(try FBSimulatorSettingResolution(name: "increase-contrast", value: "disable", type: nil, domain: nil), .setting(.increaseContrast(false)))
   }
 
   func testParseInvalidEnableDisableThrows() {
-    XCTAssertThrowsError(try FBSimulatorSetting(name: "hardware-keyboard", value: "on", type: nil, domain: nil))
+    XCTAssertThrowsError(try FBSimulatorSettingResolution(name: "hardware-keyboard", value: "on", type: nil, domain: nil))
   }
 
   func testParseAppearance() throws {
-    XCTAssertEqual(try FBSimulatorSetting(name: "appearance", value: "dark", type: nil, domain: nil), .appearance(.dark))
-    XCTAssertEqual(try FBSimulatorSetting(name: "appearance", value: "light", type: nil, domain: nil), .appearance(.light))
+    XCTAssertEqual(try FBSimulatorSettingResolution(name: "appearance", value: "dark", type: nil, domain: nil), .setting(.appearance(.dark)))
+    XCTAssertEqual(try FBSimulatorSettingResolution(name: "appearance", value: "light", type: nil, domain: nil), .setting(.appearance(.light)))
   }
 
   func testParseInvalidAppearanceThrows() {
-    XCTAssertThrowsError(try FBSimulatorSetting(name: "appearance", value: "purple", type: nil, domain: nil))
+    XCTAssertThrowsError(try FBSimulatorSettingResolution(name: "appearance", value: "purple", type: nil, domain: nil))
   }
 
   func testParseContentSize() throws {
-    XCTAssertEqual(try FBSimulatorSetting(name: "content-size", value: "large", type: nil, domain: nil), .contentSize(.large))
+    XCTAssertEqual(try FBSimulatorSettingResolution(name: "content-size", value: "large", type: nil, domain: nil), .setting(.contentSize(.large)))
     XCTAssertEqual(
-      try FBSimulatorSetting(name: "content-size", value: "accessibility-medium", type: nil, domain: nil),
-      .contentSize(.accessibilityMedium))
+      try FBSimulatorSettingResolution(name: "content-size", value: "accessibility-medium", type: nil, domain: nil),
+      .setting(.contentSize(.accessibilityMedium)))
   }
 
   func testParseInvalidContentSizeThrows() {
-    XCTAssertThrowsError(try FBSimulatorSetting(name: "content-size", value: "gigantic", type: nil, domain: nil))
+    XCTAssertThrowsError(try FBSimulatorSettingResolution(name: "content-size", value: "gigantic", type: nil, domain: nil))
   }
 
   func testParseLocale() throws {
-    XCTAssertEqual(try FBSimulatorSetting(name: "locale", value: "en_US", type: nil, domain: nil), .locale(localeIdentifier: "en_US"))
+    XCTAssertEqual(try FBSimulatorSettingResolution(name: "locale", value: "en_US", type: nil, domain: nil), .setting(.locale(localeIdentifier: "en_US")))
   }
 
   func testParseAutofillPasswords() throws {
-    XCTAssertEqual(try FBSimulatorSetting(name: "autofill-passwords", value: "disable", type: nil, domain: nil), .autoFillPasswords(false))
-    XCTAssertEqual(try FBSimulatorSetting(name: "autofill-passwords", value: "enable", type: nil, domain: nil), .autoFillPasswords(true))
-    XCTAssertThrowsError(try FBSimulatorSetting(name: "autofill-passwords", value: "off", type: nil, domain: nil))
+    XCTAssertEqual(try FBSimulatorSettingResolution(name: "autofill-passwords", value: "disable", type: nil, domain: nil), .setting(.autoFillPasswords(false)))
+    XCTAssertEqual(try FBSimulatorSettingResolution(name: "autofill-passwords", value: "enable", type: nil, domain: nil), .setting(.autoFillPasswords(true)))
+    XCTAssertThrowsError(try FBSimulatorSettingResolution(name: "autofill-passwords", value: "off", type: nil, domain: nil))
   }
 
   func testParseUnknownNameFallsBackToPreference() throws {
     XCTAssertEqual(
-      try FBSimulatorSetting(name: "com.example.Key", value: "1", type: "int", domain: "com.example"),
+      try FBSimulatorSettingResolution(name: "com.example.Key", value: "1", type: "int", domain: "com.example"),
       .preference(name: "com.example.Key", value: "1", type: "int", domain: "com.example"))
   }
 
