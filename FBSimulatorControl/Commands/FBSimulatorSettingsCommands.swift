@@ -799,11 +799,11 @@ extension FBSimulator: SettingsCommands {
     try await settingsCommands().runSimulatorFrameworkBridgeAsync(withService: "photos", action: "clear")
   }
 
-  public func currentAppearance() async throws -> FBSimulatorAppearance {
+  private func currentAppearance() async throws -> FBSimulatorAppearance {
     try await settingsCommands().currentAppearanceAsync()
   }
 
-  public func currentContentSizeCategory() async throws -> FBSimulatorContentSizeCategory {
+  private func currentContentSizeCategory() async throws -> FBSimulatorContentSizeCategory {
     try await settingsCommands().currentContentSizeCategoryAsync()
   }
 

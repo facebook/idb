@@ -12,10 +12,6 @@ public protocol SettingsCommands: AnyObject {
 
   func apply(_ setting: FBSimulatorSetting) async throws
 
-  func currentAppearance() async throws -> FBSimulatorAppearance
-
-  func currentContentSizeCategory() async throws -> FBSimulatorContentSizeCategory
-
   func currentStatusBarOverrides() async throws -> FBStatusBarOverride
 
   func overrideStatusBar(_ override: FBStatusBarOverride?) async throws
