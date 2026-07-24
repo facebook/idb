@@ -251,6 +251,9 @@ message AccessibilityInfoRequest {
   string marker = 4;
   AccessibilityActionRequest.SearchableKey match_key = 5;
   uint32 depth = 6;
+  // Restricts the described accessibility keys to this set; an empty list
+  // returns the default key set.
+  repeated string keys = 7;
 }
 
 message AccessibilityInfoResponse {

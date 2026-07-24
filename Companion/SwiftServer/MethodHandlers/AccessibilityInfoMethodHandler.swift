@@ -32,7 +32,22 @@ struct AccessibilityInfoMethodHandler {
     if request.hasPoint {
       point = NSValue(point: .init(x: request.point.x, y: request.point.y))
     }
-    let response = try await commandExecutor.accessibility_info_at_point(point, nestedFormat: nested)
+    // Reject an all-invalid --key list rather than silently falling back to the
+    // default set and masking the caller's typo; an empty list means "defaults".
+    let mappedKeys = Set(request.keys.compactMap { FBAXKeys(rawValue: $0) })
+    if !request.keys.isEmpty && mappedKeys.isEmpty {
+      throw GRPCStatus(
+        code: .invalidArgument,
+        message: "no recognized accessibility keys in \(request.keys)")
+    }
+    let keys = mappedKeys.isEmpty ? FBAXKeys.defaultSet : mappedKeys
+    let options = FBAccessibilityRequestOptions(
+      nestedFormat: nested,
+      keys: keys,
+      enableLogging: true,
+      enableProfiling: false,
+      collectFrameCoverage: false)
+    let response = try await commandExecutor.accessibility_info_at_point(point, options: options)
     let jsonData = try JSONSerialization.data(withJSONObject: response.elements)
     return .with {
       $0.json = String(data: jsonData, encoding: .utf8) ?? ""

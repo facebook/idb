@@ -1252,28 +1252,55 @@ class TestParser(TestCase):
         self.client_mock.accessibility_info = AsyncMock()
         await cli_main(cmd_input=["ui", "describe-all"])
         self.client_mock.accessibility_info.assert_called_once_with(
-            target=None, nested=False
+            target=None,
+            nested=False,
+            keys=None,
         )
 
     async def test_accessibility_info_all_nested(self) -> None:
         self.client_mock.accessibility_info = AsyncMock()
         await cli_main(cmd_input=["ui", "describe-all", "--nested"])
         self.client_mock.accessibility_info.assert_called_once_with(
-            target=None, nested=True
+            target=None,
+            nested=True,
+            keys=None,
         )
 
     async def test_accessibility_info_at_point(self) -> None:
         self.client_mock.accessibility_info = AsyncMock()
         await cli_main(cmd_input=["ui", "describe-point", "10", "20"])
         self.client_mock.accessibility_info.assert_called_once_with(
-            target=AccessibilityPoint(x=10, y=20), nested=False
+            target=AccessibilityPoint(x=10, y=20),
+            nested=False,
+            keys=None,
         )
 
     async def test_accessibility_info_at_point_nested(self) -> None:
         self.client_mock.accessibility_info = AsyncMock()
         await cli_main(cmd_input=["ui", "describe-point", "--nested", "10", "20"])
         self.client_mock.accessibility_info.assert_called_once_with(
-            target=AccessibilityPoint(x=10, y=20), nested=True
+            target=AccessibilityPoint(x=10, y=20),
+            nested=True,
+            keys=None,
+        )
+
+    async def test_accessibility_info_all_keys(self) -> None:
+        self.client_mock.accessibility_info = AsyncMock()
+        await cli_main(
+            cmd_input=[
+                "ui",
+                "describe-all",
+                "--nested",
+                "--key",
+                "AXLabel",
+                "--key",
+                "type",
+            ]
+        )
+        self.client_mock.accessibility_info.assert_called_once_with(
+            target=None,
+            nested=True,
+            keys=["AXLabel", "type"],
         )
 
     async def test_crash_list_all(self) -> None:

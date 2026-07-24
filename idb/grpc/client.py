@@ -499,7 +499,10 @@ class Client(ClientBase):
 
     @log_and_handle_exceptions("accessibility_info")
     async def accessibility_info(
-        self, target: AccessibilityTarget | None, nested: bool
+        self,
+        target: AccessibilityTarget | None,
+        nested: bool,
+        keys: list[str] | None = None,
     ) -> AccessibilityInfo:
         request = AccessibilityInfoRequest(
             format=(
@@ -507,6 +510,7 @@ class Client(ClientBase):
                 if nested
                 else AccessibilityInfoRequest.LEGACY
             ),
+            keys=keys or [],
         )
         if isinstance(target, AccessibilityMarker):
             request.marker = target.value

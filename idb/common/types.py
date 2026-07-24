@@ -772,7 +772,10 @@ class Client(ABC):
 
     @abstractmethod
     async def accessibility_info(
-        self, target: AccessibilityTarget | None, nested: bool
+        self,
+        target: AccessibilityTarget | None,
+        nested: bool,
+        keys: list[str] | None = None,
     ) -> AccessibilityInfo:
         pass
 

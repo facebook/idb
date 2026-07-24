@@ -167,11 +167,14 @@ import XCTestBootstrap
   }
 
   public func accessibility_info_at_point(_ value: NSValue?, nestedFormat: Bool) async throws -> FBAccessibilityElementsResponse {
+    return try await accessibility_info_at_point(
+      value, options: FBAccessibilityRequestOptions(nestedFormat: nestedFormat, enableLogging: true))
+  }
+
+  public func accessibility_info_at_point(_ value: NSValue?, options: FBAccessibilityRequestOptions) async throws -> FBAccessibilityElementsResponse {
     guard let simulator = target as? FBSimulator else {
       throw FBIDBError.describe("Target is not a simulator, cannot provide accessibility commands: \(target)").build()
     }
-    let options = FBAccessibilityRequestOptions(nestedFormat: nestedFormat, enableLogging: true)
-
     let element: FBAccessibilityElement
     if let value {
       element = try await simulator.accessibilityElement(at: value.pointValue)

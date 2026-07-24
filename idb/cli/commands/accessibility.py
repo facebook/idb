@@ -48,6 +48,16 @@ def _parse_target(
     )
 
 
+def _add_enricher_args(parser: ArgumentParser) -> None:
+    parser.add_argument(
+        "--key",
+        action="append",
+        dest="keys",
+        default=None,
+        help="Accessibility key to include (repeatable); all keys if omitted",
+    )
+
+
 class AccessibilityInfoAllCommand(ClientCommand):
     @property
     def description(self) -> str:
@@ -65,9 +75,14 @@ class AccessibilityInfoAllCommand(ClientCommand):
             action="store_true",
             default=False,
         )
+        _add_enricher_args(parser)
 
     async def run_with_client(self, args: Namespace, client: Client) -> None:
-        info = await client.accessibility_info(target=None, nested=args.nested)
+        info = await client.accessibility_info(
+            target=None,
+            nested=args.nested,
+            keys=args.keys,
+        )
         print(info.json)
 
 
@@ -90,10 +105,13 @@ class AccessibilityInfoAtPointCommand(ClientCommand):
         )
         parser.add_argument("x", help="The x-coordinate", type=int)
         parser.add_argument("y", help="The y-coordinate", type=int)
+        _add_enricher_args(parser)
 
     async def run_with_client(self, args: Namespace, client: Client) -> None:
         info = await client.accessibility_info(
-            target=AccessibilityPoint(x=args.x, y=args.y), nested=args.nested
+            target=AccessibilityPoint(x=args.x, y=args.y),
+            nested=args.nested,
+            keys=args.keys,
         )
         print(info.json)
 
