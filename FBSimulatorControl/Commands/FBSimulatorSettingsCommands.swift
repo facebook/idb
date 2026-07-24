@@ -57,7 +57,7 @@ public final class FBSimulatorSettingsCommands: NSObject, FBiOSTargetCommand {
   // The command's simulator reference is weak; resolve it or fail uniformly across the settings ops.
   private func requireSimulator() throws -> FBSimulator {
     guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator deallocated").build()
+      throw FBWeakTargetError.simulator
     }
     return simulator
   }

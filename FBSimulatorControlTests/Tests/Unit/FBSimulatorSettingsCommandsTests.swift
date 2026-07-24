@@ -280,6 +280,11 @@ final class FBSimulatorSettingsCommandsTests: XCTestCase {
     XCTAssertNil(FBSimulatorSettingKey.appearance.preferenceBacking)
   }
 
+  func testWeakTargetErrorMessage() {
+    XCTAssertEqual(FBWeakTargetError.deallocated("Simulator").errorDescription, "Simulator deallocated")
+    XCTAssertEqual(FBWeakTargetError.simulator.errorDescription, "Simulator deallocated")
+  }
+
   func testCuratedNames() {
     XCTAssertEqual(FBSimulatorSetting.curatedNames, FBSimulatorSettingKey.allCases.map(\.rawValue))
     XCTAssertTrue(FBSimulatorSetting.curatedNames.contains("autofill-passwords"))
