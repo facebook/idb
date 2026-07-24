@@ -16,7 +16,7 @@ import Foundation
 ///
 /// Every step is a pure function free of I/O or `ReplRunner` state, so the parsing
 /// and generation can be unit-tested directly.
-enum ReplSourceGenerator {
+public enum ReplSourceGenerator {
 
   /// The full compilable source for the submission at `index`: the user's imports
   /// (plus Foundation, which the generated wrapper needs) at file scope, followed
@@ -25,14 +25,14 @@ enum ReplSourceGenerator {
   /// `autoImportModules` are imported at file scope alongside the user's own
   /// imports, so injected code can reference the test bundle's modules (one per
   /// probe-generated `<Module>.swiftinterface`) without an explicit `import`.
-  static func generateSource(for code: String, index: Int, autoImportModules: [String] = []) -> String {
+  public static func generateSource(for code: String, index: Int, autoImportModules: [String] = []) -> String {
     let (imports, body) = extractImports(from: code)
     return wrappedCode(swiftCode: body, imports: autoImportModules + imports, index: index)
   }
 
   /// Splits `code` into the module names it imports and the same code with those
   /// import statements removed.
-  static func extractImports(from code: String) -> (imports: [String], strippedCode: String) {
+  public static func extractImports(from code: String) -> (imports: [String], strippedCode: String) {
     let pattern = #"(?:@\w+\s+)?import\s+([a-zA-Z_]\w*(?:\.[a-zA-Z_]\w*)*)\s*;?"#
     guard let regex = try? NSRegularExpression(pattern: pattern) else {
       return ([], code)
@@ -48,7 +48,7 @@ enum ReplSourceGenerator {
 
   /// Whether `code` uses `async`/`await`, so the wrapper must bridge it to a
   /// synchronous entry point.
-  static func containsAsync(_ code: String) -> Bool {
+  public static func containsAsync(_ code: String) -> Bool {
     let pattern = #"\b(?:async|await)\b"#
     guard let regex = try? NSRegularExpression(pattern: pattern) else {
       return false

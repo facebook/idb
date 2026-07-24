@@ -5,8 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// patternlint-disable cdecl-unsupported
-
 import ArgumentParser
 import CompanionDiscovery
 import CompanionUtilities
@@ -15,6 +13,7 @@ import GRPC
 import IDBGRPCSwift
 import NIOCore
 import NIOPosix
+import ReplCompiler
 
 /// The options needed to establish a REPL session, gathered from the CLI so both
 /// `ReplRunner` (the interactive/one-shot subcommands) and `ReplayCommand` can drive a
@@ -298,13 +297,27 @@ final class ReplSession {
     let index = nextRunIndex
     let start = Date()
     do {
-      let dylib = try Self.compileRun(swiftCode: code, index: index, interfaceSearchPaths: interfaceSearchPaths, autoImportModules: autoImportModules, targetTriple: targetTriple, sdkPath: sdkPath, toolchain: toolchain)
+      let parameters = ReplCompileParameters(
+        targetTriple: targetTriple,
+        sdkPath: sdkPath,
+        toolchainPath: toolchain,
+        interfaceSearchPaths: interfaceSearchPaths,
+        autoImportModules: autoImportModules)
+      let dylib: Data
+      let symbol: String
+      switch try ReplCompiler.compile(userCode: code, index: index, parameters: parameters, workingDirectory: sessionDirectory.path) {
+      case let .success(dylibPath, compiledSymbol):
+        dylib = try Data(contentsOf: URL(fileURLWithPath: dylibPath))
+        symbol = compiledSymbol
+      case let .failure(compilerOutput):
+        throw ReplExecutionError.compileFailed(compilerOutput)
+      }
       try await call.requestStream.send(
         .with {
           $0.control = .execute(
             .with {
               $0.dylib = dylib
-              $0.symbol = "idb_repl_\(index)"
+              $0.symbol = symbol
             })
         })
       switch try await responses.next()?.event {
@@ -391,100 +404,6 @@ final class ReplSession {
     case let .tcp(host, port):
       return .hostAndPort(host, port)
     }
-  }
-
-  // MARK: - Compilation
-
-  /// Compiles the entered Swift into a dylib and returns its bytes, throwing
-  /// `ReplExecutionError.compileFailed` (carrying the compiler output) when the
-  /// compile fails.
-  private static func compileRun(swiftCode: String, index: Int, interfaceSearchPaths: [String], autoImportModules: [String], targetTriple: String, sdkPath: String, toolchain: String) throws -> Data {
-    let swiftPath = try sessionDirectory.filePath(named: "run-\(index).swift")
-    let dylibPath = try sessionDirectory.filePath(named: "run-\(index).dylib")
-
-    let code = ReplSourceGenerator.generateSource(for: swiftCode, index: index, autoImportModules: autoImportModules)
-    try code.write(toFile: swiftPath, atomically: true, encoding: .utf8)
-
-    let (status, compilerOutput) = try compileSwift(sourcePath: swiftPath, outputPath: dylibPath, index: index, interfaceSearchPaths: interfaceSearchPaths, targetTriple: targetTriple, sdkPath: sdkPath, toolchain: toolchain)
-    try? FileManager.default.removeItem(atPath: swiftPath)
-
-    guard status == 0 else {
-      throw ReplExecutionError.compileFailed(compilerOutput)
-    }
-    return try Data(contentsOf: URL(fileURLWithPath: dylibPath))
-  }
-
-  private static func compileSwift(sourcePath: String, outputPath: String, index: Int, interfaceSearchPaths: [String], targetTriple: String, sdkPath: String, toolchain: String) throws -> (Int32, String) {
-    let swiftcPath = (toolchain as NSString).appendingPathComponent("usr/bin/swiftc")
-    let swiftc = Process()
-    swiftc.executableURL = URL(fileURLWithPath: swiftcPath)
-    var environment = ProcessInfo.processInfo.environment
-    environment["SDKROOT"] = sdkPath
-    swiftc.environment = environment
-    var arguments = [
-      sourcePath,
-      "-emit-library", "-o", outputPath,
-      "-target", targetTriple,
-      // Give each submission a unique, predictable module name matching its
-      // entry-point symbol.
-      "-module-name", "idb_repl_\(index)",
-    ]
-    // Add the probe-generated .swiftinterface directories to the import search
-    // path so injected code can `import` the test bundle's modules. The symbols
-    // themselves are resolved at load time via `-undefined dynamic_lookup`.
-    for searchPath in interfaceSearchPaths {
-      arguments.append(contentsOf: ["-I", searchPath])
-    }
-    arguments.append(contentsOf: ["-Xlinker", "-undefined", "-Xlinker", "dynamic_lookup"])
-    swiftc.arguments = arguments
-    let outputPipe = Pipe()
-    swiftc.standardOutput = outputPipe
-    let errorPipe = Pipe()
-    swiftc.standardError = errorPipe
-    try swiftc.run()
-
-    // Read both pipes concurrently to avoid deadlock when the OS pipe buffer fills.
-    // Each var is written by exactly one closure below and read only after
-    // `group.wait()`, so the concurrent capture is safe.
-    nonisolated(unsafe) var outputData = Data()
-    nonisolated(unsafe) var errorData = Data()
-    let group = DispatchGroup()
-
-    group.enter()
-    DispatchQueue.global().async {
-      outputData = outputPipe.fileHandleForReading.readDataToEndOfFile()
-      group.leave()
-    }
-
-    group.enter()
-    DispatchQueue.global().async {
-      errorData = errorPipe.fileHandleForReading.readDataToEndOfFile()
-      group.leave()
-    }
-
-    group.wait()
-    swiftc.waitUntilExit()
-
-    let filters: [NSRegularExpression] = [
-      try NSRegularExpression(pattern: #"ld: warning: -undefined dynamic_lookup is deprecated.*"#)
-    ]
-
-    let sessionPath = sessionDirectory.path
-    var filteredLines: [String] = []
-
-    for data in [outputData, errorData] {
-      if let output = String(data: data, encoding: .utf8) {
-        for line in output.components(separatedBy: "\n") {
-          let range = NSRange(line.startIndex..., in: line)
-          let filtered = filters.contains { $0.firstMatch(in: line, range: range) != nil }
-          if !filtered && !line.isEmpty && !line.contains("// idb-repl-strip") {
-            filteredLines.append(line.replacingOccurrences(of: sessionPath, with: ""))
-          }
-        }
-      }
-    }
-
-    return (swiftc.terminationStatus, filteredLines.joined(separator: "\n"))
   }
 
   // MARK: - Telemetry

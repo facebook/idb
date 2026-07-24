@@ -54,12 +54,19 @@ let package = Package(
       path: "IDBGRPCSwift",
       swiftSettings: [.swiftLanguageMode(.v5)]
     ),
+    // The shared REPL Swift compiler (source generation + swiftc), linked by
+    // idb-repl to compile injected code client-side. Pure Swift + Foundation.
+    .target(
+      name: "ReplCompiler",
+      path: "REPL/Compiler"
+    ),
     .executableTarget(
       name: "idb-repl",
       dependencies: [
         "CompanionUtilities",
         "CompanionDiscovery",
         "IDBGRPCSwift",
+        "ReplCompiler",
         .product(name: "GRPC", package: "grpc-swift"),
         .product(name: "NIOCore", package: "swift-nio"),
         .product(name: "NIOPosix", package: "swift-nio"),

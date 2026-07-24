@@ -21,14 +21,14 @@ struct CompilerEnvironmentError: Error, CustomStringConvertible {
 
 /// The Apple platform to compile injected code for, derived from the device
 /// type the companion reports for its connected target.
-enum Platform {
+public enum Platform {
   case iOSSimulator
   case macOS
   case watchOSSimulator
   case tvOSSimulator
 
   /// Maps a companion-reported device type to the platform to compile for.
-  init(deviceType: String) throws {
+  public init(deviceType: String) throws {
     switch deviceType {
     case "iphone", "ipad":
       self = .iOSSimulator
@@ -62,7 +62,7 @@ enum Platform {
   }
 }
 
-func resolveSDKPath(platform: Platform) throws -> String {
+public func resolveSDKPath(platform: Platform) throws -> String {
   let process = Process()
   process.executableURL = URL(fileURLWithPath: "/usr/bin/xcrun")
   process.arguments = ["--sdk", platform.sdkName, "--show-sdk-path"]
@@ -90,7 +90,7 @@ func resolveSDKPath(platform: Platform) throws -> String {
 /// `runtimeOSVersion` may be greater than the local SDK version (an older Xcode
 /// against a newer runtime); the deployment target is the lower of the two,
 /// since the compiler rejects a deployment target above the SDK version.
-func resolveTargetTriple(platform: Platform, runtimeOSVersion: String) throws -> String {
+public func resolveTargetTriple(platform: Platform, runtimeOSVersion: String) throws -> String {
   let sdkVersion = try resolveSDKPlatformVersion(platform: platform)
   return platform.targetTriple(
     version: DeploymentTargetVersion.floored(runtimeOSVersion: runtimeOSVersion, sdkVersion: sdkVersion))
@@ -120,19 +120,19 @@ private func resolveSDKPlatformVersion(platform: Platform) throws -> String {
 /// Chooses the OS version to compile injected code against (the deployment
 /// target in the LLVM triple). Pure and free of I/O, so it can be unit-tested
 /// directly (see `CompilerEnvironmentTests`).
-enum DeploymentTargetVersion {
+public enum DeploymentTargetVersion {
 
   /// The connected target's runtime OS version, floored at the local SDK
   /// version, since the compiler rejects a deployment target above the SDK
   /// version.
-  static func floored(runtimeOSVersion: String, sdkVersion: String) -> String {
+  public static func floored(runtimeOSVersion: String, sdkVersion: String) -> String {
     isAtMost(runtimeOSVersion, sdkVersion) ? runtimeOSVersion : sdkVersion
   }
 
   /// Whether dotted version `lhs` is less than or equal to `rhs`, compared
   /// component-wise numerically (so "26.2" <= "27.0" and "9.0" <= "10.0").
   /// Missing or non-numeric components count as 0.
-  static func isAtMost(_ lhs: String, _ rhs: String) -> Bool {
+  public static func isAtMost(_ lhs: String, _ rhs: String) -> Bool {
     let lhsComponents = lhs.split(separator: ".").map { Int($0) ?? 0 }
     let rhsComponents = rhs.split(separator: ".").map { Int($0) ?? 0 }
     for index in 0..<max(lhsComponents.count, rhsComponents.count) {
@@ -148,7 +148,7 @@ enum DeploymentTargetVersion {
 /// `test` context derives one from the test target's `[xctoolchain]` sub-target);
 /// otherwise falls back to the locally selected Xcode toolchain via
 /// `xcode-select -p`, matching idb-repl-simulator.sh.
-func resolveToolchainPath(explicit: String?) throws -> String {
+public func resolveToolchainPath(explicit: String?) throws -> String {
   if let explicit {
     return explicit
   }

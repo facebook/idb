@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import ReplCompiler
 import Testing
 
 /// Tests the pure version-flooring logic that picks the deployment target for

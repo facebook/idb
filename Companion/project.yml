@@ -209,6 +209,27 @@ targets:
     dependencies:
       - sdk: Foundation.framework
 
+  # The shared REPL Swift compiler (Buck: fbsource//fbobjc/Tools/idb:ReplCompiler).
+  # Generates the wrapped source and drives swiftc; linked by idb-repl to compile
+  # injected code client-side. Foundation-only.
+  ReplCompiler:
+    type: framework
+    platform: macOS
+    deploymentTarget: "12.0"
+    sources:
+      - path: ../REPL/Compiler
+    settings:
+      base:
+        MACOSX_DEPLOYMENT_TARGET: "12.0"
+        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.ReplCompiler
+        PRODUCT_NAME: ReplCompiler
+        DEFINES_MODULE: YES
+        MACH_O_TYPE: staticlib
+        SWIFT_VERSION: "6.0"
+        GENERATE_INFOPLIST_FILE: YES
+    dependencies:
+      - sdk: Foundation.framework
+
   # The `idb-repl` CLI (Buck: fbsource//fbobjc/Tools/idb:idb-repl). A small gRPC
   # client that talks to a companion to drive a test/simulator REPL. It links the
   # IDBGRPCSwift static archive (which bundles the gRPC/NIO/protobuf closure) and
@@ -260,6 +281,8 @@ targets:
       - target: IDBGRPCSwift
         embed: false
       - target: CompanionDiscovery
+        embed: false
+      - target: ReplCompiler
         embed: false
       - framework: ../Build/Products/Release/CompanionUtilities.framework
         embed: false
