@@ -294,9 +294,14 @@ message AccessibilityActionRequest {
     Direction direction = 1;
   }
 
+  message SetValue {
+    string value = 1;
+  }
+
   oneof action {
     Tap tap = 5;
     Scroll scroll = 6;
+    SetValue set_value = 7;
   }
 }
 

@@ -992,6 +992,18 @@ class TestParser(TestCase):
         self.assertEqual(exit_code, 1)
         self.client_mock.accessibility_scroll.assert_not_called()
 
+    async def test_set_value_marker(self) -> None:
+        self.client_mock.accessibility_set_value = AsyncMock(return_value=[])
+        await cli_main(cmd_input=["ui", "set-value", "Field", "--value", "hello"])
+        self.client_mock.accessibility_set_value.assert_called_once_with(
+            target=AccessibilityMarker(
+                value="Field",
+                match_key=AccessibilitySearchableKey.LABEL,
+                depth=10,
+            ),
+            value="hello",
+        )
+
     async def test_multi_tap_default(self) -> None:
         self.client_mock.multi_tap = AsyncMock(return_value=[])
         await cli_main(cmd_input=["ui", "multi-tap", "10", "20"])

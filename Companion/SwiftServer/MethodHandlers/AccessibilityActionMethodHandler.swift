@@ -23,6 +23,8 @@ struct AccessibilityActionMethodHandler {
       try await performTap(request: request, tap: tap)
     case let .scroll(scroll):
       try await performScroll(request: request, scroll: scroll)
+    case let .setValue(setValue):
+      try await performSetValue(request: request, setValue: setValue)
     case .none:
       throw GRPCStatus(code: .invalidArgument, message: "accessibility_action requires an action")
     }
@@ -44,6 +46,13 @@ struct AccessibilityActionMethodHandler {
     let query = try targetedQuery(from: request) ?? .frontmost
     let direction = try scrollDirection(from: scroll.direction)
     try await commandExecutor.accessibility_scroll(query: query, direction: direction)
+  }
+
+  private func performSetValue(request: Idb_AccessibilityActionRequest, setValue: Idb_AccessibilityActionRequest.SetValue) async throws {
+    guard let query = try targetedQuery(from: request) else {
+      throw GRPCStatus(code: .invalidArgument, message: "accessibility_action set_value requires a marker or point target")
+    }
+    try await commandExecutor.accessibility_set_value(query: query, value: setValue.value)
   }
 
   // Returns nil when no target is set, which callers map to the frontmost app

@@ -794,6 +794,14 @@ class Client(ABC):
         pass
 
     @abstractmethod
+    async def accessibility_set_value(
+        self,
+        target: AccessibilityTarget,
+        value: str,
+    ) -> None:
+        pass
+
+    @abstractmethod
     async def run_instruments(
         self,
         stop: asyncio.Event,

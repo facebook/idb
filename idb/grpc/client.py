@@ -559,6 +559,24 @@ class Client(ClientBase):
             request.point.y = target.y
         await self.stub.accessibility_action(request)
 
+    @log_and_handle_exceptions("accessibility_set_value")
+    async def accessibility_set_value(
+        self,
+        target: AccessibilityTarget,
+        value: str,
+    ) -> None:
+        request = AccessibilityActionRequest(
+            set_value=AccessibilityActionRequest.SetValue(value=value),
+        )
+        if isinstance(target, AccessibilityMarker):
+            request.marker = target.value
+            request.match_key = target.match_key.value
+            request.depth = target.depth
+        elif isinstance(target, AccessibilityPoint):
+            request.point.x = target.x
+            request.point.y = target.y
+        await self.stub.accessibility_action(request)
+
     @log_and_handle_exceptions("add_media")
     async def add_media(self, file_paths: list[str]) -> None:
         async with self.stub.add_media.open() as stream:

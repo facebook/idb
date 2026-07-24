@@ -184,3 +184,41 @@ class AccessibilityScrollCommand(ClientCommand):
             target=target,
             direction=AccessibilityScrollDirection[args.direction.upper()],
         )
+
+
+class AccessibilitySetValueCommand(ClientCommand):
+    @property
+    def description(self) -> str:
+        return "Set the accessibility value of an element"
+
+    @property
+    def name(self) -> str:
+        return "set-value"
+
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
+        super().add_parser_arguments(parser)
+        parser.add_argument(
+            "target",
+            nargs="+",
+            help="'x y' coordinates or a single marker string",
+        )
+        parser.add_argument("--value", required=True, help="The value to set")
+        parser.add_argument(
+            "--match-key",
+            choices=list(ACCESSIBILITY_KEY_BY_NAME),
+            default="AXLabel",
+            help="Accessibility key to match a marker against",
+        )
+        parser.add_argument(
+            "--depth", type=int, default=10, help="Maximum tree depth to search"
+        )
+
+    async def run_with_client(self, args: Namespace, client: Client) -> None:
+        target = _parse_target(
+            args.target,
+            match_key=ACCESSIBILITY_KEY_BY_NAME[args.match_key],
+            depth=args.depth,
+        )
+        if target is None:
+            raise IdbException("set-value requires 'x y' coordinates or a marker")
+        await client.accessibility_set_value(target=target, value=args.value)
