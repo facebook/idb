@@ -53,7 +53,7 @@ class TapCommand(ClientCommand):
         parser.add_argument(
             "--api",
             choices=["hid", "ax"],
-            default="hid",
+            default=None,
             help="Interaction API for a point: hid (coordinate touch) or ax "
             "(accessibility press). A marker always uses ax.",
         )
@@ -84,9 +84,18 @@ class TapCommand(ClientCommand):
     async def run_with_client(self, args: Namespace, client: Client) -> None:
         target = args.target
         is_point = len(target) == 2 and _is_int(target[0]) and _is_int(target[1])
+        is_marker = not is_point and len(target) == 1
+
+        # A marker is always resolved via the accessibility API; `--api hid` only
+        # applies to a coordinate, so reject the contradiction outright.
+        if is_marker and args.api == "hid":
+            raise IdbException(
+                "a marker tap always uses --api ax; drop --api hid or pass "
+                "'x y' coordinates"
+            )
 
         # Preserve the coordinate HID tap path exactly for `ui tap x y`.
-        if is_point and args.api == "hid" and args.expected_value is None:
+        if is_point and args.api != "ax" and args.expected_value is None:
             await client.tap(x=int(target[0]), y=int(target[1]), duration=args.duration)
             return
 
@@ -99,7 +108,7 @@ class TapCommand(ClientCommand):
             ax_target: AccessibilityTarget = AccessibilityPoint(
                 x=int(target[0]), y=int(target[1])
             )
-        elif len(target) == 1:
+        elif is_marker:
             ax_target = AccessibilityMarker(
                 value=target[0],
                 match_key=_SEARCHABLE_KEY_NAMES[args.match_key],

@@ -931,6 +931,14 @@ class TestParser(TestCase):
             expected_key=AccessibilitySearchableKey.VALUE,
         )
 
+    async def test_tap_marker_rejects_api_hid(self) -> None:
+        self.client_mock.tap = AsyncMock(return_value=[])
+        self.client_mock.accessibility_tap = AsyncMock(return_value=[])
+        exit_code = await cli_main(cmd_input=["ui", "tap", "Login", "--api", "hid"])
+        self.assertEqual(exit_code, 1)
+        self.client_mock.tap.assert_not_called()
+        self.client_mock.accessibility_tap.assert_not_called()
+
     async def test_describe_marker(self) -> None:
         self.client_mock.accessibility_info = AsyncMock(
             return_value=AccessibilityInfo(json="[]")
