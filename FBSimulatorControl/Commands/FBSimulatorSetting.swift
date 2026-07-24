@@ -32,7 +32,7 @@ public enum FBSimulatorSettingResolution: Equatable {
 }
 
 /// The curated setting names. Raw values are the CLI names and the single source of truth shared by
-/// the set parser (`FBSimulatorSetting.init(name:...)`) and the get renderer (`currentSettingValue`),
+/// the parser (`FBSimulatorSettingResolution.init(name:...)`) and the getter (`currentSettingValue`),
 /// so each setting's name is declared once and both switches stay exhaustive over it.
 enum FBSimulatorSettingKey: String, CaseIterable {
   case hardwareKeyboard = "hardware-keyboard"
@@ -42,6 +42,25 @@ enum FBSimulatorSettingKey: String, CaseIterable {
   case appearance
   case contentSize = "content-size"
   case locale
+}
+
+extension FBSimulatorSettingKey {
+  /// For a setting whose transport is a preference write, the `(domain, key)` that both `apply` and
+  /// the getter use — declared once so set and get never duplicate it. `nil` for settings backed by a
+  /// SimDevice API or a Darwin notification, which have no readable preference.
+  ///
+  /// `autofill-passwords` maps to `com.apple.WebUI` / `AutoFillPasswords`: disabling it suppresses the
+  /// native "Automatic Strong Password" cover shown over `UITextContentTypeNewPassword` fields.
+  var preferenceBacking: (domain: String?, key: String)? {
+    switch self {
+    case .autoFillPasswords:
+      return (domain: "com.apple.WebUI", key: "AutoFillPasswords")
+    case .locale:
+      return (domain: nil, key: "AppleLocale")
+    case .hardwareKeyboard, .slowAnimations, .increaseContrast, .appearance, .contentSize:
+      return nil
+    }
+  }
 }
 
 /// Raised when a `name`/`value` pair cannot be parsed into an `FBSimulatorSetting`.

@@ -48,6 +48,8 @@ final class FBSimulatorSettingsBridgeTests: FBSimulatorControlTestCase {
       try await simulator.apply(.autoFillPasswords(true))
       let enabled = try await simulator.getCurrentPreference("AutoFillPasswords", domain: "com.apple.WebUI")
       XCTAssertNotEqual(disabled, enabled, "AutoFillPasswords should read back differently after disable vs enable")
+      let viaSettingValue = try await simulator.currentSettingValue(name: "autofill-passwords", domain: nil)
+      XCTAssertEqual(viaSettingValue, enabled, "currentSettingValue should read autofill-passwords from its real backing")
     } catch {
       XCTFail("apply(.autoFillPasswords) round-trip failed: \(error)")
     }

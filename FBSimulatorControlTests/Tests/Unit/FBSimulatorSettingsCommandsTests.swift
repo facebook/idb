@@ -270,4 +270,13 @@ final class FBSimulatorSettingsCommandsTests: XCTestCase {
     XCTAssertEqual(FBSimulatorContentSizeCategory.large.argumentName, "large")
     XCTAssertNil(FBSimulatorAppearance(argumentName: "purple"))
   }
+
+  func testPreferenceBacking() {
+    XCTAssertEqual(FBSimulatorSettingKey.autoFillPasswords.preferenceBacking?.domain, "com.apple.WebUI")
+    XCTAssertEqual(FBSimulatorSettingKey.autoFillPasswords.preferenceBacking?.key, "AutoFillPasswords")
+    XCTAssertNil(FBSimulatorSettingKey.locale.preferenceBacking?.domain)
+    XCTAssertEqual(FBSimulatorSettingKey.locale.preferenceBacking?.key, "AppleLocale")
+    XCTAssertNil(FBSimulatorSettingKey.hardwareKeyboard.preferenceBacking)
+    XCTAssertNil(FBSimulatorSettingKey.appearance.preferenceBacking)
+  }
 }

@@ -65,13 +65,13 @@ public final class FBSimulatorSettingsCommands: NSObject, FBiOSTargetCommand {
     case let .increaseContrast(enabled):
       try await setIncreaseContrastEnabledAsync(enabled)
     case let .autoFillPasswords(enabled):
-      try await setAutoFillPasswordsEnabledAsync(enabled)
+      try await setPreferenceBackedAsync(.autoFillPasswords, value: enabled ? "true" : "false", type: "bool")
     case let .appearance(appearance):
       try await setAppearanceAsync(appearance)
     case let .contentSize(category):
       try await setContentSizeCategoryAsync(category)
     case let .locale(localeIdentifier):
-      try await setPreferenceAsync("AppleLocale", value: localeIdentifier, type: nil, domain: nil)
+      try await setPreferenceBackedAsync(.locale, value: localeIdentifier, type: nil)
     }
   }
 
@@ -208,11 +208,11 @@ public final class FBSimulatorSettingsCommands: NSObject, FBiOSTargetCommand {
     try simulator.device.setIncreaseContrastEnabled(enabled)
   }
 
-  fileprivate func setAutoFillPasswordsEnabledAsync(_ enabled: Bool) async throws {
-    // Disabling iOS AutoFill Passwords (com.apple.WebUI / AutoFillPasswords) suppresses the native
-    // "Automatic Strong Password" cover shown over UITextContentTypeNewPassword fields. It takes
-    // effect for apps launched afterwards and needs no reboot.
-    try await setPreferenceAsync("AutoFillPasswords", value: enabled ? "true" : "false", type: "bool", domain: "com.apple.WebUI")
+  // Write a preference-backed setting through its centralized (domain, key). The ASP-cover rationale
+  // for autofill-passwords lives on FBSimulatorSettingKey.preferenceBacking.
+  fileprivate func setPreferenceBackedAsync(_ key: FBSimulatorSettingKey, value: String, type: String?) async throws {
+    let backing = key.preferenceBacking!
+    try await setPreferenceAsync(backing.key, value: value, type: type, domain: backing.domain)
   }
 
   fileprivate func setDarwinNotificationStateAsync(_ enabled: Bool, name: String) async throws {
@@ -790,13 +790,15 @@ extension FBSimulator: SettingsCommands {
       return try await getCurrentPreference(name, domain: domain)
     }
     switch key {
-    case .locale:
-      return try await getCurrentPreference("AppleLocale", domain: nil)
+    case .autoFillPasswords, .locale:
+      let backing = key.preferenceBacking!
+      return try await getCurrentPreference(backing.key, domain: backing.domain)
     case .appearance:
       return try await currentAppearance() == .dark ? "dark" : "light"
     case .contentSize:
       return (try await currentContentSizeCategory()).argumentName ?? "large"
-    case .hardwareKeyboard, .slowAnimations, .increaseContrast, .autoFillPasswords:
+    case .hardwareKeyboard, .slowAnimations, .increaseContrast:
+      // Set-only (SimDevice API / Darwin notification with no getter); no readable current value.
       return try await getCurrentPreference(name, domain: domain)
     }
   }
