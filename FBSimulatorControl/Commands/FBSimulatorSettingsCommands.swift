@@ -54,6 +54,14 @@ public final class FBSimulatorSettingsCommands: NSObject, FBiOSTargetCommand {
     super.init()
   }
 
+  // The command's simulator reference is weak; resolve it or fail uniformly across the settings ops.
+  private func requireSimulator() throws -> FBSimulator {
+    guard let simulator = self.simulator else {
+      throw FBSimulatorError.describe("Simulator deallocated").build()
+    }
+    return simulator
+  }
+
   // Single source of truth for the SettingsCommands.apply entry point: switch over the setting and
   // dispatch to the transport-specific implementation.
   fileprivate func applyAsync(_ setting: FBSimulatorSetting) async throws {
@@ -85,39 +93,29 @@ public final class FBSimulatorSettingsCommands: NSObject, FBiOSTargetCommand {
   }
 
   fileprivate func currentAppearanceAsync() async throws -> FBSimulatorAppearance {
-    guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator deallocated").build()
-    }
+    let simulator = try requireSimulator()
     let raw = simulator.device.currentUIInterfaceStyle()
     return FBSimulatorAppearance(rawValue: raw) ?? .light
   }
 
   fileprivate func setAppearanceAsync(_ appearance: FBSimulatorAppearance) async throws {
-    guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator deallocated").build()
-    }
+    let simulator = try requireSimulator()
     try simulator.device.setUIInterfaceStyle(appearance.rawValue)
   }
 
   fileprivate func currentContentSizeCategoryAsync() async throws -> FBSimulatorContentSizeCategory {
-    guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator deallocated").build()
-    }
+    let simulator = try requireSimulator()
     let raw = simulator.device.currentContentSizeCategory()
     return FBSimulatorContentSizeCategory(rawValue: raw) ?? .large
   }
 
   fileprivate func setContentSizeCategoryAsync(_ category: FBSimulatorContentSizeCategory) async throws {
-    guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator deallocated").build()
-    }
+    let simulator = try requireSimulator()
     try simulator.device.setContentSizeCategory(category.rawValue)
   }
 
   fileprivate func currentStatusBarOverridesAsync() async throws -> FBStatusBarOverride {
-    guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator deallocated").build()
-    }
+    let simulator = try requireSimulator()
     var timeString: NSString?
     var dataNetworkType: NSNumber?
     var wiFiMode: NSNumber?
@@ -154,9 +152,7 @@ public final class FBSimulatorSettingsCommands: NSObject, FBiOSTargetCommand {
   }
 
   fileprivate func overrideStatusBarAsync(_ override: FBStatusBarOverride?) async throws {
-    guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator deallocated").build()
-    }
+    let simulator = try requireSimulator()
     guard let override else {
       // clearStatusBarOverrides:(NSUInteger)flags sends @{@"OverridesToClear": @(flags)} via MIG.
       // Bit 31 (0x80000000) = clear all. Pass NSUIntegerMax to clear everything.
@@ -191,9 +187,7 @@ public final class FBSimulatorSettingsCommands: NSObject, FBiOSTargetCommand {
   // MARK: - Async
 
   fileprivate func setHardwareKeyboardEnabledAsync(_ enabled: Bool) async throws {
-    guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator deallocated").build()
-    }
+    let simulator = try requireSimulator()
     try simulator.device.setHardwareKeyboardEnabled(enabled, keyboardType: 0)
   }
 
@@ -202,9 +196,7 @@ public final class FBSimulatorSettingsCommands: NSObject, FBiOSTargetCommand {
   }
 
   fileprivate func setIncreaseContrastEnabledAsync(_ enabled: Bool) async throws {
-    guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator deallocated").build()
-    }
+    let simulator = try requireSimulator()
     try simulator.device.setIncreaseContrastEnabled(enabled)
   }
 
@@ -216,33 +208,25 @@ public final class FBSimulatorSettingsCommands: NSObject, FBiOSTargetCommand {
   }
 
   fileprivate func setDarwinNotificationStateAsync(_ enabled: Bool, name: String) async throws {
-    guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator deallocated").build()
-    }
+    let simulator = try requireSimulator()
     try simulator.device.darwinNotificationSetState(enabled ? 1 : 0, name: name)
     try simulator.device.postDarwinNotification(name)
   }
 
   fileprivate func setPreferenceAsync(_ name: String, value: String, type: String?, domain: String?) async throws {
-    guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator deallocated").build()
-    }
+    let simulator = try requireSimulator()
     try await FBPreferenceModificationStrategy(simulator: simulator)
       .setPreference(name, value: value, type: type, domain: domain)
   }
 
   fileprivate func getCurrentPreferenceAsync(_ name: String, domain: String?) async throws -> String {
-    guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator deallocated").build()
-    }
+    let simulator = try requireSimulator()
     return try await FBPreferenceModificationStrategy(simulator: simulator)
       .getCurrentPreference(name, domain: domain)
   }
 
   fileprivate func grantAccessAsync(_ bundleIDs: Set<String>, toServices services: Set<FBTargetSettingsService>) async throws {
-    guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator deallocated").build()
-    }
+    let simulator = try requireSimulator()
     if services.isEmpty {
       throw FBSimulatorError.describe("Cannot approve any services for \(bundleIDs) since no services were provided").build()
     }
@@ -297,9 +281,7 @@ public final class FBSimulatorSettingsCommands: NSObject, FBiOSTargetCommand {
   }
 
   fileprivate func revokeAccessAsync(_ bundleIDs: Set<String>, toServices services: Set<FBTargetSettingsService>) async throws {
-    guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator deallocated").build()
-    }
+    let simulator = try requireSimulator()
     if services.isEmpty {
       throw FBSimulatorError.describe("Cannot revoke any services for \(bundleIDs) since no services were provided").build()
     }
@@ -354,9 +336,7 @@ public final class FBSimulatorSettingsCommands: NSObject, FBiOSTargetCommand {
   }
 
   fileprivate func grantAccessAsync(_ bundleIDs: Set<String>, toDeeplink scheme: String) async throws {
-    guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator deallocated").build()
-    }
+    let simulator = try requireSimulator()
     if scheme.isEmpty {
       throw FBSimulatorError.describe("Empty scheme provided to url approve").build()
     }
@@ -391,9 +371,7 @@ public final class FBSimulatorSettingsCommands: NSObject, FBiOSTargetCommand {
   }
 
   fileprivate func revokeAccessAsync(_ bundleIDs: Set<String>, toDeeplink scheme: String) async throws {
-    guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator deallocated").build()
-    }
+    let simulator = try requireSimulator()
     if scheme.isEmpty {
       throw FBSimulatorError.describe("Empty scheme provided to url revoke").build()
     }
@@ -420,9 +398,7 @@ public final class FBSimulatorSettingsCommands: NSObject, FBiOSTargetCommand {
   }
 
   fileprivate func updateContactsAsync(_ databaseDirectory: String) async throws {
-    guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator deallocated").build()
-    }
+    let simulator = try requireSimulator()
     let destinationDirectory = (simulator.dataDirectory! as NSString).appendingPathComponent("Library/AddressBook")
     if !FileManager.default.fileExists(atPath: destinationDirectory) {
       throw FBSimulatorError.describe("Expected Address Book path to exist at \(destinationDirectory) but it was not there").build()
@@ -487,9 +463,7 @@ public final class FBSimulatorSettingsCommands: NSObject, FBiOSTargetCommand {
 
   @discardableResult
   fileprivate func runSimulatorFrameworkBridgeAsync(withService service: String, action: String, arguments: [String] = []) async throws -> String {
-    guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator deallocated").build()
-    }
+    let simulator = try requireSimulator()
     let bundle = Bundle.main
     let bundleURL = bundle.bundleURL.standardizedFileURL
     let helperPath: String?
@@ -525,17 +499,13 @@ public final class FBSimulatorSettingsCommands: NSObject, FBiOSTargetCommand {
   }
 
   fileprivate func authorizeLocationSettingsAsync(_ bundleIDs: [String]) async throws {
-    guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator deallocated").build()
-    }
+    let simulator = try requireSimulator()
     try await FBLocationServicesModificationStrategy(simulator: simulator)
       .approveLocationServices(forBundleIDs: bundleIDs)
   }
 
   fileprivate func revokeLocationSettingsAsync(_ bundleIDs: [String]) async throws {
-    guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator deallocated").build()
-    }
+    let simulator = try requireSimulator()
     try await FBLocationServicesModificationStrategy(simulator: simulator)
       .revokeLocationServices(forBundleIDs: bundleIDs)
   }
@@ -562,9 +532,7 @@ public final class FBSimulatorSettingsCommands: NSObject, FBiOSTargetCommand {
   }
 
   fileprivate func modifyTCCDatabaseAsync(withBundleIDs bundleIDs: Set<String>, toServices services: Set<FBTargetSettingsService>, grantAccess: Bool) async throws {
-    guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator deallocated").build()
-    }
+    let simulator = try requireSimulator()
     guard let dataDirectory = simulator.dataDirectory else {
       throw FBSimulatorError.describe("Simulator has no data directory").build()
     }
@@ -591,9 +559,7 @@ public final class FBSimulatorSettingsCommands: NSObject, FBiOSTargetCommand {
   }
 
   fileprivate func coreSimulatorApprove(withBundleIDs bundleIDs: Set<String>, toServices services: Set<String>) throws {
-    guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator deallocated").build()
-    }
+    let simulator = try requireSimulator()
     for bundleID in bundleIDs {
       for internalService in services {
         try simulator.device.setPrivacyAccessForService(internalService, bundleID: bundleID, granted: true)
@@ -602,9 +568,7 @@ public final class FBSimulatorSettingsCommands: NSObject, FBiOSTargetCommand {
   }
 
   fileprivate func coreSimulatorRevoke(withBundleIDs bundleIDs: Set<String>, toServices services: Set<String>) throws {
-    guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator deallocated").build()
-    }
+    let simulator = try requireSimulator()
     for bundleID in bundleIDs {
       for internalService in services {
         try simulator.device.resetPrivacyAccess(forService: internalService, bundleID: bundleID)
@@ -794,7 +758,7 @@ extension FBSimulator: SettingsCommands {
       let backing = key.preferenceBacking!
       return try await getCurrentPreference(backing.key, domain: backing.domain)
     case .appearance:
-      return try await currentAppearance() == .dark ? "dark" : "light"
+      return (try await currentAppearance()).argumentName ?? "light"
     case .contentSize:
       return (try await currentContentSizeCategory()).argumentName ?? "large"
     case .hardwareKeyboard, .slowAnimations, .increaseContrast:
