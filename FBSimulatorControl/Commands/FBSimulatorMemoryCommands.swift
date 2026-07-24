@@ -30,7 +30,7 @@ public final class FBSimulatorMemoryCommands: NSObject, FBiOSTargetCommand {
 
   fileprivate func simulateMemoryWarningAsync() async throws {
     guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator deallocated").build()
+      throw FBWeakTargetError.simulator
     }
     guard simulator.device.responds(to: NSSelectorFromString("simulateMemoryWarning")) else {
       throw FBSimulatorError.describe("SimDevice doesn't have simulateMemoryWarning selector").build()

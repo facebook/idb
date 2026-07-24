@@ -108,7 +108,7 @@ public final class FBSimulatorXCTestCommands: NSObject, FBiOSTargetCommand {
 
   fileprivate func runTestAsync(launchConfiguration: FBTestLaunchConfiguration, reporter: AnyObject, logger: any FBControlCoreLogger) async throws {
     guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator is deallocated").build()
+      throw FBWeakTargetError.simulator
     }
     // swiftlint:disable:next force_cast
     let typedReporter = reporter as! any FBXCTestReporter
@@ -139,7 +139,7 @@ public final class FBSimulatorXCTestCommands: NSObject, FBiOSTargetCommand {
 
   fileprivate func listTestsAsync(forBundleAtPath bundlePath: String, timeout: TimeInterval, withAppAtPath appPath: String?) async throws -> [String] {
     guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator is deallocated").build()
+      throw FBWeakTargetError.simulator
     }
 
     let bundleDescriptor = try FBBundleDescriptor.bundleWithFallbackIdentifier(fromPath: bundlePath)
@@ -160,7 +160,7 @@ public final class FBSimulatorXCTestCommands: NSObject, FBiOSTargetCommand {
 
   fileprivate func extendedTestShimAsync() async throws -> String {
     guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator is deallocated").build()
+      throw FBWeakTargetError.simulator
     }
     let shimConfig = try await bridgeFBFuture(FBXCTestShimConfiguration.sharedShimConfiguration(with: simulator.logger))
     return shimConfig.iOSSimulatorTestShimPath
@@ -170,7 +170,7 @@ public final class FBSimulatorXCTestCommands: NSObject, FBiOSTargetCommand {
 
   private func runTestAsync(with testLaunchConfiguration: FBTestLaunchConfiguration, reporter: any FBXCTestReporter, logger: any FBControlCoreLogger, workingDirectory: String?) async throws {
     guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator is deallocated").build()
+      throw FBWeakTargetError.simulator
     }
 
     if simulator.state != .booted {
@@ -224,7 +224,7 @@ public final class FBSimulatorXCTestCommands: NSObject, FBiOSTargetCommand {
 
   private func startTestAsync(with configuration: FBTestLaunchConfiguration, logger: any FBControlCoreLogger) async throws -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
     guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator is deallocated").build()
+      throw FBWeakTargetError.simulator
     }
 
     let filePath = try FBXcodeBuildOperation.createXCTestRunFile(at: simulator.auxillaryDirectory, fromConfiguration: configuration)

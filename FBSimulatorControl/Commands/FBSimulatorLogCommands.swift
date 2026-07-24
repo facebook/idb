@@ -30,7 +30,7 @@ public final class FBSimulatorLogCommands: NSObject, FBiOSTargetCommand {
 
   fileprivate func tailLogAsync(arguments: [String], consumer: any FBDataConsumer) async throws -> any LogOperation {
     guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator deallocated").build()
+      throw FBWeakTargetError.simulator
     }
     let launchPath = try logExecutablePath()
     let streamArguments = FBProcessLogOperation.osLogArgumentsInsertStreamIfNeeded(arguments)
@@ -52,7 +52,7 @@ public final class FBSimulatorLogCommands: NSObject, FBiOSTargetCommand {
 
   private func logExecutablePath() throws -> String {
     guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator deallocated").build()
+      throw FBWeakTargetError.simulator
     }
     guard let root = simulator.device.runtime.root else {
       throw FBSimulatorError.describe("Could not obtain runtime root for simulator").build()

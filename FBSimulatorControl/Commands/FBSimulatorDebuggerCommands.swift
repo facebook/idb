@@ -94,7 +94,7 @@ public final class FBSimulatorDebuggerCommands: NSObject, FBiOSTargetCommand {
 
   func launchDebugServer(forHostApplication application: FBBundleDescriptor, port: in_port_t) async throws -> any FBDebugServer {
     guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator deallocated").build()
+      throw FBWeakTargetError.simulator
     }
     let configuration = FBApplicationLaunchConfiguration(
       bundleID: application.identifier,

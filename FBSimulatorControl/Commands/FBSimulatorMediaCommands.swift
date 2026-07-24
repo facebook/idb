@@ -58,7 +58,7 @@ public final class FBSimulatorMediaCommands: NSObject, FBiOSTargetCommand {
 
   fileprivate func uploadMedia(_ mediaFileURLs: [URL]) throws {
     guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator deallocated").build()
+      throw FBWeakTargetError.simulator
     }
 
     if mediaFileURLs.isEmpty {

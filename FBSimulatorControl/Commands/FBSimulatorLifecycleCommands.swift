@@ -36,14 +36,14 @@ public final class FBSimulatorLifecycleCommands: NSObject, FBiOSTargetCommand {
 
   fileprivate func bootAsync(_ configuration: FBSimulatorBootConfiguration) async throws {
     guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator deallocated").build()
+      throw FBWeakTargetError.simulator
     }
     try await FBSimulatorBootStrategy.bootAsync(simulator, with: configuration)
   }
 
   fileprivate func shutdownAsync() async throws {
     guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator deallocated").build()
+      throw FBWeakTargetError.simulator
     }
     try await FBSimulatorShutdownStrategy.shutdownAsync(simulator)
   }
@@ -55,28 +55,28 @@ public final class FBSimulatorLifecycleCommands: NSObject, FBiOSTargetCommand {
 
   fileprivate func erase() async throws {
     guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator deallocated").build()
+      throw FBWeakTargetError.simulator
     }
     try await FBSimulatorEraseStrategy.erase(simulator)
   }
 
   fileprivate func resolveStateAsync(_ state: FBiOSTargetState) async throws {
     guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator deallocated").build()
+      throw FBWeakTargetError.simulator
     }
     try await bridgeFBFutureVoid(FBiOSTargetResolveState(simulator, state))
   }
 
   fileprivate func resolveLeavesStateAsync(_ state: FBiOSTargetState) async throws {
     guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator deallocated").build()
+      throw FBWeakTargetError.simulator
     }
     try await bridgeFBFutureVoid(FBCoreSimulatorNotifier.resolveLeavesState(state, for: simulator.device))
   }
 
   fileprivate func focusAsync() async throws {
     guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator deallocated").build()
+      throw FBWeakTargetError.simulator
     }
     // The Simulator host app (Simulator.app, or DeviceHub.app on Xcode 27+) only displays
     // simulators in the default device set, so 'focus' is unsupported for a custom device set.
@@ -131,7 +131,7 @@ public final class FBSimulatorLifecycleCommands: NSObject, FBiOSTargetCommand {
 
   fileprivate func disconnectAsync(withTimeout timeout: TimeInterval, logger: (any FBControlCoreLogger)?) async throws {
     guard self.simulator != nil else {
-      throw FBSimulatorError.describe("Simulator deallocated").build()
+      throw FBWeakTargetError.simulator
     }
     let date = Date()
     let teardownFuture =
@@ -151,7 +151,7 @@ public final class FBSimulatorLifecycleCommands: NSObject, FBiOSTargetCommand {
 
   fileprivate func connectToFramebufferAsync() async throws -> FBFramebuffer {
     guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator deallocated").build()
+      throw FBWeakTargetError.simulator
     }
     return try FBFramebuffer.mainScreenSurface(for: simulator, logger: simulator.logger!)
   }
@@ -161,7 +161,7 @@ public final class FBSimulatorLifecycleCommands: NSObject, FBiOSTargetCommand {
       return hid
     }
     guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator deallocated").build()
+      throw FBWeakTargetError.simulator
     }
     let hid = try FBSimulatorHID(for: simulator)
     self.hid = hid
@@ -170,7 +170,7 @@ public final class FBSimulatorLifecycleCommands: NSObject, FBiOSTargetCommand {
 
   fileprivate func openAsync(_ url: URL) async throws {
     guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator deallocated").build()
+      throw FBWeakTargetError.simulator
     }
     var lastError: NSError?
     for _ in 0...openURLRetries {

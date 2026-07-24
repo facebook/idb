@@ -42,7 +42,7 @@ public final class FBSimulatorProcessSpawnCommands: NSObject, FBiOSTargetCommand
 
   fileprivate func launchProcess(_ configuration: FBProcessSpawnConfiguration) async throws -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
     guard let simulator else {
-      throw FBSimulatorError.describe("Simulator deallocated").build()
+      throw FBWeakTargetError.simulator
     }
     let attachment = try await bridgeFBFuture(configuration.io.attach())
     return try await FBSimulatorProcessSpawnCommands.launchProcess(

@@ -30,7 +30,7 @@ public final class FBSimulatorNotificationCommands: NSObject, FBiOSTargetCommand
 
   fileprivate func sendPushNotificationAsync(forBundleID bundleID: String, jsonPayload: String) async throws {
     guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator deallocated").build()
+      throw FBWeakTargetError.simulator
     }
 
     guard let data = jsonPayload.data(using: .utf8) else {

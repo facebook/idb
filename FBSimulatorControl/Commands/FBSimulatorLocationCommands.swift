@@ -32,7 +32,7 @@ public final class FBSimulatorLocationCommands: NSObject, FBiOSTargetCommand {
 
   fileprivate func overrideLocationAsync(longitude: Double, latitude: Double) async throws {
     guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator deallocated").build()
+      throw FBWeakTargetError.simulator
     }
     try simulator.device.setLocationWithLatitude(latitude, andLongitude: longitude)
   }

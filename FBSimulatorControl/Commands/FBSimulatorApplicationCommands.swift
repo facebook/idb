@@ -33,7 +33,7 @@ public class FBSimulatorApplicationCommands: NSObject, FBiOSTargetCommand {
 
   fileprivate func installApplication(withPath path: String) async throws -> FBInstalledApplication {
     guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator deallocated").build()
+      throw FBWeakTargetError.simulator
     }
     let appBundle = try await confirmCompatibilityOfApplication(atPath: path)
     let options: [String: Any] = ["CFBundleIdentifier": appBundle.identifier]
@@ -59,7 +59,7 @@ public class FBSimulatorApplicationCommands: NSObject, FBiOSTargetCommand {
 
   internal func launchApplication(_ configuration: FBApplicationLaunchConfiguration) async throws -> FBLaunchedApplication {
     guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator deallocated").build()
+      throw FBWeakTargetError.simulator
     }
     try await ensureApplicationIsInstalled(configuration.bundleID)
     try await confirmApplicationLaunchState(configuration.bundleID, launchMode: configuration.launchMode, waitForDebugger: configuration.waitForDebugger)
@@ -70,14 +70,14 @@ public class FBSimulatorApplicationCommands: NSObject, FBiOSTargetCommand {
 
   fileprivate func killApplication(withBundleID bundleID: String) async throws {
     guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator deallocated").build()
+      throw FBWeakTargetError.simulator
     }
     try simulator.device.terminateApplication(withID: bundleID)
   }
 
   fileprivate func installedApplications() async throws -> [FBInstalledApplication] {
     guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator deallocated").build()
+      throw FBWeakTargetError.simulator
     }
     let installedApps = try simulator.device.installedApps()
     var applications: [FBInstalledApplication] = []
@@ -94,7 +94,7 @@ public class FBSimulatorApplicationCommands: NSObject, FBiOSTargetCommand {
 
   fileprivate func uninstallApplication(withBundleID bundleID: String) async throws {
     guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator deallocated").build()
+      throw FBWeakTargetError.simulator
     }
     let installedApplication = try await installedApplication(withBundleID: bundleID)
     if installedApplication.installType == .system {
@@ -115,7 +115,7 @@ public class FBSimulatorApplicationCommands: NSObject, FBiOSTargetCommand {
 
   fileprivate func runningApplications() async throws -> [String: NSNumber] {
     guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator deallocated").build()
+      throw FBWeakTargetError.simulator
     }
     let serviceNameToProcessIdentifier = try await simulator.serviceNamesAndProcessIdentifiers(matching: FBSimulatorApplicationCommands.uiKitApplicationRegex)
     var mapping: [String: NSNumber] = [:]
@@ -129,7 +129,7 @@ public class FBSimulatorApplicationCommands: NSObject, FBiOSTargetCommand {
 
   fileprivate func processID(withBundleID bundleID: String) async throws -> pid_t {
     guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator deallocated").build()
+      throw FBWeakTargetError.simulator
     }
     let pattern = "UIKitApplication:\(NSRegularExpression.escapedPattern(for: bundleID))(\\[|$)"
     guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else {
@@ -143,7 +143,7 @@ public class FBSimulatorApplicationCommands: NSObject, FBiOSTargetCommand {
 
   private func fetchInstalledApplication(bundleID: String) throws -> FBInstalledApplication {
     guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator deallocated").build()
+      throw FBWeakTargetError.simulator
     }
     let device = simulator.device
     var applicationType: NSString?
@@ -194,7 +194,7 @@ public class FBSimulatorApplicationCommands: NSObject, FBiOSTargetCommand {
 
   private func launchApplication(_ configuration: FBApplicationLaunchConfiguration, stdOutPath: String?, stdErrPath: String?) async throws -> NSNumber {
     guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator deallocated").build()
+      throw FBWeakTargetError.simulator
     }
     let options = FBSimulatorApplicationCommands.simDeviceLaunchOptions(
       for: configuration,
@@ -282,7 +282,7 @@ public class FBSimulatorApplicationCommands: NSObject, FBiOSTargetCommand {
       throw FBSimulatorError.describe("Could not determine Application information for path \(path)").build()
     }
     guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator deallocated").build()
+      throw FBWeakTargetError.simulator
     }
 
     let installed: FBInstalledApplication?

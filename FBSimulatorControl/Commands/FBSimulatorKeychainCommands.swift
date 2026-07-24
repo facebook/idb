@@ -31,7 +31,7 @@ public final class FBSimulatorKeychainCommands: NSObject, FBiOSTargetCommand {
 
   fileprivate func clearKeychain() async throws {
     guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator deallocated").build()
+      throw FBWeakTargetError.simulator
     }
     try simulator.device.resetKeychain()
   }

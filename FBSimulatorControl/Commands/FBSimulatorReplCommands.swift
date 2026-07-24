@@ -31,7 +31,7 @@ public final class FBSimulatorReplCommands: NSObject, FBiOSTargetCommand {
 
   fileprivate func startReplTest(bundlePath: String) async throws -> ReplSession {
     guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator is deallocated").build()
+      throw FBWeakTargetError.simulator
     }
     guard let logger = simulator.logger else {
       throw FBSimulatorError.describe("Simulator has no logger").build()
@@ -84,7 +84,7 @@ public final class FBSimulatorReplCommands: NSObject, FBiOSTargetCommand {
 
   fileprivate func startReplSimulator() async throws -> ReplSession {
     guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator is deallocated").build()
+      throw FBWeakTargetError.simulator
     }
 
     // The SimulatorFrameworkBridge binary is bundled alongside the shims, as are
@@ -123,7 +123,7 @@ public final class FBSimulatorReplCommands: NSObject, FBiOSTargetCommand {
 
   fileprivate func replAppEnvironment(bundleID: String) async throws -> [String: String] {
     guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator is deallocated").build()
+      throw FBWeakTargetError.simulator
     }
     guard let logger = simulator.logger else {
       throw FBSimulatorError.describe("Simulator has no logger").build()
@@ -142,7 +142,7 @@ public final class FBSimulatorReplCommands: NSObject, FBiOSTargetCommand {
 
   fileprivate func startReplApp(bundleID: String, reuseSession: Bool) async throws -> ReplSession {
     guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator is deallocated").build()
+      throw FBWeakTargetError.simulator
     }
     guard let logger = simulator.logger else {
       throw FBSimulatorError.describe("Simulator has no logger").build()

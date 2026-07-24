@@ -49,7 +49,7 @@ public final class FBSimulatorCrashLogCommands: NSObject, FBiOSTargetCommand {
 
   fileprivate func pruneCrashesAsync(matching predicate: NSPredicate) async throws -> [FBCrashLogInfo] {
     guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator deallocated").build()
+      throw FBWeakTargetError.simulator
     }
     let simulatorPredicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
       FBCrashLogInfo.predicate(forExecutablePathContains: simulator.udid),
