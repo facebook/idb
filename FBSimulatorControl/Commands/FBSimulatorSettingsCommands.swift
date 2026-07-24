@@ -775,14 +775,17 @@ extension FBSimulator: SettingsCommands {
   /// Read the current value of a curated setting by name, mirroring `apply`'s name space and
   /// falling back to a raw preference read for any other name. Shared by idb and sime2e `get`.
   public func currentSettingValue(name: String, domain: String?) async throws -> String {
-    switch name {
-    case "locale":
+    guard let key = FBSimulatorSettingKey(rawValue: name) else {
+      return try await getCurrentPreference(name, domain: domain)
+    }
+    switch key {
+    case .locale:
       return try await getCurrentPreference("AppleLocale", domain: nil)
-    case "appearance":
+    case .appearance:
       return try await currentAppearance() == .dark ? "dark" : "light"
-    case "content-size":
+    case .contentSize:
       return (try await currentContentSizeCategory()).argumentName ?? "large"
-    default:
+    case .hardwareKeyboard, .slowAnimations, .increaseContrast, .autoFillPasswords:
       return try await getCurrentPreference(name, domain: domain)
     }
   }

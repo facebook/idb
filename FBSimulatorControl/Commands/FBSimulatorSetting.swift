@@ -24,6 +24,19 @@ public enum FBSimulatorSetting: Equatable {
   case preference(name: String, value: String, type: String?, domain: String?)
 }
 
+/// The curated setting names. Raw values are the CLI names and the single source of truth shared by
+/// the set parser (`FBSimulatorSetting.init(name:...)`) and the get renderer (`currentSettingValue`),
+/// so each setting's name is declared once and both switches stay exhaustive over it.
+enum FBSimulatorSettingKey: String, CaseIterable {
+  case hardwareKeyboard = "hardware-keyboard"
+  case slowAnimations = "slow-animations"
+  case increaseContrast = "increase-contrast"
+  case autoFillPasswords = "autofill-passwords"
+  case appearance
+  case contentSize = "content-size"
+  case locale
+}
+
 /// Raised when a `name`/`value` pair cannot be parsed into an `FBSimulatorSetting`.
 public enum FBSimulatorSettingError: Error, CustomStringConvertible, LocalizedError {
   case invalidValue(name: String, value: String, expected: String)
@@ -44,31 +57,33 @@ extension FBSimulatorSetting {
   /// raw-preference fallback (any name that is not a curated setting), so the curated names and
   /// their value grammar live in exactly one place for both idb and sime2e.
   public init(name: String, value: String, type: String?, domain: String?) throws {
-    switch name {
-    case "hardware-keyboard":
+    guard let key = FBSimulatorSettingKey(rawValue: name) else {
+      self = .preference(name: name, value: value, type: type, domain: domain)
+      return
+    }
+    switch key {
+    case .hardwareKeyboard:
       self = .hardwareKeyboard(try FBSimulatorSetting.parseEnabled(name: name, value: value))
-    case "slow-animations":
+    case .slowAnimations:
       self = .slowAnimations(try FBSimulatorSetting.parseEnabled(name: name, value: value))
-    case "increase-contrast":
+    case .increaseContrast:
       self = .increaseContrast(try FBSimulatorSetting.parseEnabled(name: name, value: value))
-    case "autofill-passwords":
+    case .autoFillPasswords:
       self = .autoFillPasswords(try FBSimulatorSetting.parseEnabled(name: name, value: value))
-    case "appearance":
+    case .appearance:
       guard let appearance = FBSimulatorAppearance(argumentName: value) else {
         throw FBSimulatorSettingError.invalidValue(
           name: name, value: value, expected: FBSimulatorAppearance.allArgumentNames.joined(separator: ", "))
       }
       self = .appearance(appearance)
-    case "content-size":
+    case .contentSize:
       guard let category = FBSimulatorContentSizeCategory(argumentName: value) else {
         throw FBSimulatorSettingError.invalidValue(
           name: name, value: value, expected: FBSimulatorContentSizeCategory.allArgumentNames.joined(separator: ", "))
       }
       self = .contentSize(category)
-    case "locale":
+    case .locale:
       self = .locale(localeIdentifier: value)
-    default:
-      self = .preference(name: name, value: value, type: type, domain: domain)
     }
   }
 
