@@ -13,8 +13,39 @@ from idb.common.types import (
     ACCESSIBILITY_KEY_BY_NAME,
     AccessibilityMarker,
     AccessibilityPoint,
+    AccessibilityScrollDirection,
+    AccessibilitySearchableKey,
+    AccessibilityTarget,
     Client,
+    IdbException,
 )
+
+
+def _looks_int(value: str) -> bool:
+    try:
+        int(value)
+        return True
+    except ValueError:
+        return False
+
+
+def _parse_target(
+    tokens: list[str], match_key: AccessibilitySearchableKey, depth: int
+) -> AccessibilityTarget | None:
+    """Interpret positional tokens as an accessibility target: 'x y' coordinates
+    (a point), a single marker string, or nothing (the frontmost app). Two integer
+    tokens are always read as coordinates, so quote a marker that would otherwise
+    look like a coordinate pair (e.g. "42 7")."""
+    if len(tokens) == 2 and _looks_int(tokens[0]) and _looks_int(tokens[1]):
+        return AccessibilityPoint(x=int(tokens[0]), y=int(tokens[1]))
+    if len(tokens) == 1:
+        return AccessibilityMarker(value=tokens[0], match_key=match_key, depth=depth)
+    if not tokens:
+        return None
+    raise IdbException(
+        "expected 'x y' coordinates, a single marker string, or no target "
+        "for the frontmost app"
+    )
 
 
 class AccessibilityInfoAllCommand(ClientCommand):
@@ -108,3 +139,48 @@ class AccessibilityDescribeMarkerCommand(ClientCommand):
             nested=args.nested,
         )
         print(info.json)
+
+
+class AccessibilityScrollCommand(ClientCommand):
+    @property
+    def description(self) -> str:
+        return "Scroll an accessibility element (or the frontmost app)"
+
+    @property
+    def name(self) -> str:
+        return "scroll"
+
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
+        super().add_parser_arguments(parser)
+        parser.add_argument(
+            "direction",
+            choices=[d.name.lower() for d in AccessibilityScrollDirection],
+            help="Scroll direction",
+        )
+        parser.add_argument(
+            "target",
+            nargs="*",
+            help="Optional 'x y' coordinates or a single marker; omit to target "
+            "the frontmost app. Two integers are read as coordinates — quote a "
+            "marker that looks like a coordinate pair.",
+        )
+        parser.add_argument(
+            "--match-key",
+            choices=list(ACCESSIBILITY_KEY_BY_NAME),
+            default="AXLabel",
+            help="Accessibility key to match a marker against",
+        )
+        parser.add_argument(
+            "--depth", type=int, default=10, help="Maximum tree depth to search"
+        )
+
+    async def run_with_client(self, args: Namespace, client: Client) -> None:
+        target = _parse_target(
+            args.target,
+            match_key=ACCESSIBILITY_KEY_BY_NAME[args.match_key],
+            depth=args.depth,
+        )
+        await client.accessibility_scroll(
+            target=target,
+            direction=AccessibilityScrollDirection[args.direction.upper()],
+        )

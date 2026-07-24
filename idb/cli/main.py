@@ -34,6 +34,7 @@ from idb.cli.commands.accessibility import (
     AccessibilityDescribeMarkerCommand,
     AccessibilityInfoAllCommand,
     AccessibilityInfoAtPointCommand,
+    AccessibilityScrollCommand,
 )
 from idb.cli.commands.app import (
     AppInstallCommand,
@@ -281,6 +282,7 @@ async def gen_main(cmd_input: list[str] | None = None) -> SysExitArg:
                 AccessibilityInfoAllCommand(),
                 AccessibilityInfoAtPointCommand(),
                 AccessibilityDescribeMarkerCommand(),
+                AccessibilityScrollCommand(),
                 TapCommand(),
                 MultiTapCommand(),
                 PinchCommand(),

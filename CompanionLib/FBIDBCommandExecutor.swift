@@ -152,6 +152,13 @@ import XCTestBootstrap
     return try await simulator.accessibilityDescribe(for: query, options: options)
   }
 
+  public func accessibility_scroll(query: FBAccessibilityElementQuery, direction: FBAccessibilityScrollDirection) async throws {
+    guard let simulator = target as? FBSimulator else {
+      throw FBIDBError.describe("Target is not a simulator, cannot scroll by accessibility: \(target)").build()
+    }
+    try await simulator.accessibilityScroll(for: query, direction: direction)
+  }
+
   public func accessibility_info_at_point(_ value: NSValue?, nestedFormat: Bool) async throws -> FBAccessibilityElementsResponse {
     guard let simulator = target as? FBSimulator else {
       throw FBIDBError.describe("Target is not a simulator, cannot provide accessibility commands: \(target)").build()

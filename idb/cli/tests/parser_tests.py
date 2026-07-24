@@ -18,6 +18,7 @@ from idb.common.types import (
     AccessibilityInfo,
     AccessibilityMarker,
     AccessibilityPoint,
+    AccessibilityScrollDirection,
     AccessibilitySearchableKey,
     Compression,
     CrashLogQuery,
@@ -954,6 +955,42 @@ class TestParser(TestCase):
             ),
             nested=False,
         )
+
+    async def test_scroll_frontmost(self) -> None:
+        self.client_mock.accessibility_scroll = AsyncMock(return_value=[])
+        await cli_main(cmd_input=["ui", "scroll", "down"])
+        self.client_mock.accessibility_scroll.assert_called_once_with(
+            target=None,
+            direction=AccessibilityScrollDirection.DOWN,
+        )
+
+    async def test_scroll_marker(self) -> None:
+        self.client_mock.accessibility_scroll = AsyncMock(return_value=[])
+        await cli_main(cmd_input=["ui", "scroll", "up", "List"])
+        self.client_mock.accessibility_scroll.assert_called_once_with(
+            target=AccessibilityMarker(
+                value="List",
+                match_key=AccessibilitySearchableKey.LABEL,
+                depth=10,
+            ),
+            direction=AccessibilityScrollDirection.UP,
+        )
+
+    async def test_scroll_point(self) -> None:
+        self.client_mock.accessibility_scroll = AsyncMock(return_value=[])
+        await cli_main(cmd_input=["ui", "scroll", "down", "100", "200"])
+        self.client_mock.accessibility_scroll.assert_called_once_with(
+            target=AccessibilityPoint(x=100, y=200),
+            direction=AccessibilityScrollDirection.DOWN,
+        )
+
+    async def test_scroll_too_many_tokens(self) -> None:
+        self.client_mock.accessibility_scroll = AsyncMock(return_value=[])
+        exit_code = await cli_main(
+            cmd_input=["ui", "scroll", "down", "100", "200", "300"]
+        )
+        self.assertEqual(exit_code, 1)
+        self.client_mock.accessibility_scroll.assert_not_called()
 
     async def test_multi_tap_default(self) -> None:
         self.client_mock.multi_tap = AsyncMock(return_value=[])

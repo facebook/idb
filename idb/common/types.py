@@ -222,6 +222,14 @@ ACCESSIBILITY_KEY_BY_NAME: dict[str, AccessibilitySearchableKey] = {
 }
 
 
+class AccessibilityScrollDirection(Enum):
+    UP = 0
+    DOWN = 1
+    LEFT = 2
+    RIGHT = 3
+    VISIBLE = 4
+
+
 @dataclass(frozen=True)
 class CrashLogInfo:
     name: str | None
@@ -774,6 +782,14 @@ class Client(ABC):
         target: AccessibilityTarget,
         expected_value: str | None = None,
         expected_key: AccessibilitySearchableKey = AccessibilitySearchableKey.LABEL,
+    ) -> None:
+        pass
+
+    @abstractmethod
+    async def accessibility_scroll(
+        self,
+        target: AccessibilityTarget | None,
+        direction: AccessibilityScrollDirection,
     ) -> None:
         pass
 

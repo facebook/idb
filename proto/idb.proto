@@ -283,8 +283,20 @@ message AccessibilityActionRequest {
     SearchableKey expected_key = 3;
   }
 
+  message Scroll {
+    enum Direction {
+      UP = 0;
+      DOWN = 1;
+      LEFT = 2;
+      RIGHT = 3;
+      VISIBLE = 4;
+    }
+    Direction direction = 1;
+  }
+
   oneof action {
     Tap tap = 5;
+    Scroll scroll = 6;
   }
 }
 

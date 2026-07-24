@@ -48,6 +48,7 @@ from idb.common.types import (
     AccessibilityInfo,
     AccessibilityMarker,
     AccessibilityPoint,
+    AccessibilityScrollDirection,
     AccessibilitySearchableKey,
     AccessibilityTarget,
     Address,
@@ -530,6 +531,24 @@ class Client(ClientBase):
                 expected_value=expected_value or "",
                 expected_key=expected_key.value,
             ),
+        )
+        if isinstance(target, AccessibilityMarker):
+            request.marker = target.value
+            request.match_key = target.match_key.value
+            request.depth = target.depth
+        elif isinstance(target, AccessibilityPoint):
+            request.point.x = target.x
+            request.point.y = target.y
+        await self.stub.accessibility_action(request)
+
+    @log_and_handle_exceptions("accessibility_scroll")
+    async def accessibility_scroll(
+        self,
+        target: AccessibilityTarget | None,
+        direction: AccessibilityScrollDirection,
+    ) -> None:
+        request = AccessibilityActionRequest(
+            scroll=AccessibilityActionRequest.Scroll(direction=direction.value),
         )
         if isinstance(target, AccessibilityMarker):
             request.marker = target.value
