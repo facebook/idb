@@ -466,7 +466,7 @@ import XCTestBootstrap
   }
 
   public func get_preference(_ name: String, domain: String?) async throws -> String {
-    try await simulatorTarget().getCurrentPreference(name, domain: domain)
+    try await simulatorTarget().currentSettingValue(name: name, domain: domain)
   }
 
   public func set_locale_with_identifier(_ identifier: String) async throws {
