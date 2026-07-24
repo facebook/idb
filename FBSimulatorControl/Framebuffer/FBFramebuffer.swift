@@ -192,7 +192,7 @@ public final class FBFramebuffer: NSObject, @unchecked Sendable {
     }
 
     let displayRenderable = surface as! SimDisplayRenderable
-    let damageCallback: ([Any]?) -> Void = { [weak self] frames in
+    let damageCallback: ([NSValue]?) -> Void = { [weak self] frames in
       guard let self else { return }
       let frameArray = frames ?? []
       self.statsLock.lock()

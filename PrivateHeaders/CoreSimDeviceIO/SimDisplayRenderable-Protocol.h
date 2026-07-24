@@ -25,6 +25,13 @@
 
 // Added in Xcode 9 as -[SimDeviceIOClient attachConsumer:] methods have been removed.
 - (void)unregisterDamageRectanglesCallbackWithUUID:(NSUUID *)arg1;
-- (void)registerCallbackWithUUID:(NSUUID *)arg1 damageRectanglesCallback:(void (^)(NSArray *))arg2;
+/**
+ The callback delivers the display regions that changed since the previous callback. Each element is
+ an NSValue boxing a CGRect. This element type is a reverse-engineered convention: the underlying
+ ROCKRemoteProxy declares only an untyped NSArray and does not enforce it, so consumers must still
+ decode each element defensively. An empty array is a valid "surface changed, no rects reported"
+ signal and is still delivered.
+ */
+- (void)registerCallbackWithUUID:(NSUUID *)arg1 damageRectanglesCallback:(void (^)(NSArray<NSValue *> *))arg2;
 
 @end

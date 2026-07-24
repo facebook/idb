@@ -54,11 +54,17 @@ NS_ASSUME_NONNULL_BEGIN
 
 // Added in Xcode 9 as -[SimDeviceIOClient attachConsumer:] methods have been removed.
 - (void)unregisterIOSurfaceChangeCallbackWithUUID:(NSUUID *)arg1;
-- (void)registerCallbackWithUUID:(NSUUID *)arg1 ioSurfaceChangeCallback:(void (^)(id))arg2;
+/**
+ The callback delivers the new surface: an `IOSurface *` (toll-free bridged from IOSurfaceRef on
+ macOS 10.12+; an xpc_object_t on older hosts — see the `ioSurface` property above). The proxy may
+ vend nil when no surface is available, so the argument is explicitly nullable and consumers cast
+ defensively.
+ */
+- (void)registerCallbackWithUUID:(NSUUID *)arg1 ioSurfaceChangeCallback:(void (^)(id _Nullable))arg2;
 
 // Callbacks was slightly renamed in Xcode 13.2 to address two surfaces instead of one.
 - (void)unregisterIOSurfacesChangeCallbackWithUUID:(NSUUID *)arg1;
-- (void)registerCallbackWithUUID:(NSUUID *)arg1 ioSurfacesChangeCallback:(void (^)(id))arg2;
+- (void)registerCallbackWithUUID:(NSUUID *)arg1 ioSurfacesChangeCallback:(void (^)(id _Nullable))arg2;
 
 @end
 
