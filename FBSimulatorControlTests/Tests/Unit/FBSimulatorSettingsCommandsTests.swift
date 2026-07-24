@@ -279,4 +279,11 @@ final class FBSimulatorSettingsCommandsTests: XCTestCase {
     XCTAssertNil(FBSimulatorSettingKey.hardwareKeyboard.preferenceBacking)
     XCTAssertNil(FBSimulatorSettingKey.appearance.preferenceBacking)
   }
+
+  func testCuratedNames() {
+    XCTAssertEqual(FBSimulatorSetting.curatedNames, FBSimulatorSettingKey.allCases.map(\.rawValue))
+    XCTAssertTrue(FBSimulatorSetting.curatedNames.contains("autofill-passwords"))
+    XCTAssertTrue(FBSimulatorSetting.curatedNames.contains("appearance"))
+    XCTAssertFalse(FBSimulatorSetting.curatedNames.contains("com.example.Key"))
+  }
 }

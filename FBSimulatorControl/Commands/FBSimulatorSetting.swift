@@ -63,6 +63,14 @@ extension FBSimulatorSettingKey {
   }
 }
 
+public extension FBSimulatorSetting {
+  /// The curated setting names accepted by `set`/`get`. A name outside this list is treated as a raw
+  /// preference key. Useful for rendering CLI help and discoverability.
+  static var curatedNames: [String] {
+    FBSimulatorSettingKey.allCases.map(\.rawValue)
+  }
+}
+
 /// Raised when a `name`/`value` pair cannot be parsed into an `FBSimulatorSetting`.
 public enum FBSimulatorSettingError: Error, CustomStringConvertible, LocalizedError {
   case invalidValue(name: String, value: String, expected: String)
