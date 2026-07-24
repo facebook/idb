@@ -908,6 +908,29 @@ class TestParser(TestCase):
             expected_key=AccessibilitySearchableKey.LABEL,
         )
 
+    async def test_tap_marker_expected_value(self) -> None:
+        self.client_mock.accessibility_tap = AsyncMock(return_value=[])
+        await cli_main(
+            cmd_input=[
+                "ui",
+                "tap",
+                "Login",
+                "--expected-value",
+                "Ready",
+                "--expected-key",
+                "AXValue",
+            ]
+        )
+        self.client_mock.accessibility_tap.assert_called_once_with(
+            target=AccessibilityMarker(
+                value="Login",
+                match_key=AccessibilitySearchableKey.LABEL,
+                depth=10,
+            ),
+            expected_value="Ready",
+            expected_key=AccessibilitySearchableKey.VALUE,
+        )
+
     async def test_describe_marker(self) -> None:
         self.client_mock.accessibility_info = AsyncMock(
             return_value=AccessibilityInfo(json="[]")
