@@ -21,10 +21,6 @@ public enum FBSimulatorHIDError: Error, LocalizedError {
   case clientCreationFailed(clientClass: String, underlying: Error?)
   /// A HID operation was attempted after the client had been disposed of.
   case clientDisposed
-  /// The owning simulator was deallocated before a Purple event could be sent.
-  case simulatorDeallocatedForPurpleEvent
-  /// The owning simulator was deallocated before a Darwin notification could be posted.
-  case simulatorDeallocatedForDarwinNotification
   /// The `PurpleWorkspacePort` could not be found in the simulator's bootstrap namespace.
   case purpleWorkspacePortUnavailable(underlying: Error?)
   /// The `mach_msg` to `PurpleWorkspacePort` timed out (receive queue full).
@@ -56,10 +52,6 @@ public enum FBSimulatorHIDError: Error, LocalizedError {
       return "Could not create instance of \(clientClass)"
     case .clientDisposed:
       return "Cannot Connect, HID client has already been disposed of"
-    case .simulatorDeallocatedForPurpleEvent:
-      return "Cannot send PurpleEvent, simulator reference is nil"
-    case .simulatorDeallocatedForDarwinNotification:
-      return "Cannot post Darwin notification, simulator reference is nil"
     case .purpleWorkspacePortUnavailable:
       return "Could not find PurpleWorkspacePort in simulator bootstrap namespace"
     case let .machSendTimedOut(port, timeoutMs, detail):

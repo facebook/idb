@@ -116,7 +116,7 @@ public final class FBSimulatorAccessibilityCommands: AccessibilityOperations {
   // This API requires Xcode 12+ to have been installed on the host at some point.
   private func validateAccessibility() throws {
     guard let simulator else {
-      throw FBAccessibilityError.simulatorDeallocated
+      throw FBWeakTargetError.simulator
     }
     guard simulator.state == .booted else {
       throw FBAccessibilityError.simulatorNotBooted(description: "\(simulator)")
@@ -137,7 +137,7 @@ public final class FBSimulatorAccessibilityCommands: AccessibilityOperations {
   // request. The retry passes remediationPermitted=false, bounding it to a single attempt.
   private func accessibilityElement(request: FBAXTranslationRequest, remediationPermitted: Bool) async throws -> FBAccessibilityElement {
     guard let simulator else {
-      throw FBAccessibilityError.simulatorDeallocated
+      throw FBWeakTargetError.simulator
     }
     guard let dispatcher = resolvedDispatcher else {
       throw FBAccessibilityError.dispatcherUnavailable

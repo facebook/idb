@@ -11,7 +11,6 @@ import Foundation
 // swiftlint:disable force_cast force_unwrapping
 
 private enum FBSimulatorVideoRecordingCommandError: Error {
-  case simulatorDeallocated
   case recordingAlreadyActive
   case missingVideo(simulatorDescription: String)
 }
@@ -19,8 +18,6 @@ private enum FBSimulatorVideoRecordingCommandError: Error {
 extension FBSimulatorVideoRecordingCommandError: LocalizedError {
   var errorDescription: String? {
     switch self {
-    case .simulatorDeallocated:
-      return "Simulator deallocated"
     case .recordingAlreadyActive:
       return "Cannot create a new video recording session, one is already active"
     case .missingVideo(let simulatorDescription):
@@ -67,7 +64,7 @@ public final class FBSimulatorVideoRecordingCommands: NSObject, FBiOSTargetComma
 
   fileprivate func startRecordingAsync(toFile filePath: String, configuration: FBVideoStreamConfiguration) async throws -> any FBVideoRecording {
     guard let simulator = self.simulator else {
-      throw FBSimulatorVideoRecordingCommandError.simulatorDeallocated
+      throw FBWeakTargetError.simulator
     }
     if video != nil {
       throw FBSimulatorVideoRecordingCommandError.recordingAlreadyActive
@@ -92,7 +89,7 @@ public final class FBSimulatorVideoRecordingCommands: NSObject, FBiOSTargetComma
 
   fileprivate func createStreamAsync(configuration: FBVideoStreamConfiguration, to consumer: any FBDataConsumer) async throws -> any FBVideoStream {
     guard let simulator = self.simulator else {
-      throw FBSimulatorVideoRecordingCommandError.simulatorDeallocated
+      throw FBWeakTargetError.simulator
     }
     let logger = simulator.logger
     let framebuffer = try await simulator.connectToFramebuffer()

@@ -30,9 +30,6 @@ public enum FBAccessibilityError: LocalizedError, Sendable {
   /// No descendant matched the search within the depth bound.
   case elementNotFound(key: String, value: String, depth: UInt)
 
-  /// The owning simulator was deallocated before the operation completed.
-  case simulatorDeallocated
-
   /// The simulator is not booted.
   case simulatorNotBooted(description: String)
 
@@ -64,8 +61,6 @@ public enum FBAccessibilityError: LocalizedError, Sendable {
       return "accessibilityPerformPress did not succeed"
     case .elementNotFound(let key, let value, let depth):
       return "Element with \(key) containing '\(value)' not found within depth \(depth)"
-    case .simulatorDeallocated:
-      return "Simulator deallocated"
     case .simulatorNotBooted(let description):
       return "Cannot run accessibility commands against \(description) as it is not booted"
     case .accessibilityUnavailable:

@@ -135,7 +135,7 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
    */
   public func sendPurpleEvent(_ data: Data, timeoutMs: mach_msg_timeout_t) throws {
     guard let simulator else {
-      throw FBSimulatorHIDError.simulatorDeallocatedForPurpleEvent
+      throw FBWeakTargetError.simulator
     }
 
     var lookupError: NSError?
@@ -178,7 +178,7 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
    */
   public func postDarwinNotification(_ notificationName: String) throws {
     guard let simulator else {
-      throw FBSimulatorHIDError.simulatorDeallocatedForDarwinNotification
+      throw FBWeakTargetError.simulator
     }
     try simulator.device.postDarwinNotification(notificationName)
   }

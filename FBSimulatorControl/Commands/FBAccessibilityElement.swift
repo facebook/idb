@@ -133,7 +133,7 @@ public final class FBAccessibilityElement {
     }
     assert(!closed, "Cannot transfer ownership from a closed element")
     guard let simulator else {
-      throw FBAccessibilityError.simulatorDeallocated
+      throw FBWeakTargetError.simulator
     }
     let newHandle = FBAccessibilityElement(element: found, request: request, dispatcher: dispatcher, simulator: simulator)
     closed = true
