@@ -1,0 +1,141 @@
+---
+title: Examples
+---
+
+All examples pass `--reason "<why>"` before the subcommand (not necessary for humans, but required for agents) and use `--udid <udid>`. *(You can omit `--udid` when exactly one simulator is booted.)*
+
+## Two ways to run
+
+### One-shot (a single submission)
+
+Append a single string of Swift to the subcommand. `idb-repl` compiles and runs just that code, prints the result, and exits — no `/run`/`/exit`, no stdin. This is the easiest way to drive a target from a shell or script.
+
+```bash
+idb-repl --reason "quick math" simulator --udid <udid> 'return "answer: \(6 * 7)"'
+```
+
+The code must still end in a `return` of the value to surface. Single-quote it so Swift string interpolation (`\(...)`) passes through untouched.
+
+**One-shot is not limited to one line.** The trailing argument just has to be a single *string* — it can hold as much Swift as you like, including your own `func`, `struct`, and `class` definitions, all compiled together and usable within that submission. A single-quoted shell argument can span multiple lines:
+
+```bash
+idb-repl --reason "multi-line one-shot" simulator --udid <udid> '
+func fib(_ n: Int) -> Int { n < 2 ? n : fib(n - 1) + fib(n - 2) }
+struct Report { let n: Int; var value: Int { fib(n) } }
+let r = Report(n: 10)
+return "fib(\(r.n)) = \(r.value)"
+'
+```
+
+### Interactive
+
+Run a subcommand with **no** trailing code to get an interactive REPL: type Swift line by line, `/run` to execute, `/exit` to quit. See [CLI reference → Interactive commands](cli-reference.mdx#interactive-commands).
+
+Since the Bash tool has no TTY, drive the interactive REPL by piping with `printf` (note the doubled backslash to escape interpolation for `printf`):
+
+```bash
+printf 'let x = 32 * 64\nreturn x\n/run\n/exit\n' \
+  | idb-repl --reason "interactive demo" simulator --udid <udid> 2>&1
+```
+
+Don't pass a trailing `code` argument when piping — that switches to one-shot mode and ignores stdin.
+
+## Reading the output
+
+- On success, **stdout** carries a result block:
+
+  ```text
+  Result:
+  <returned value>
+  ```
+
+- On failure (e.g. a compile error), **stdout** carries `Error: <message>` instead.
+- Either way `idb-repl` **exits 0** — check for the `Result:` / `Error:` prefix, not the exit code.
+- Diagnostics (interfaces received, the target triple) go to **stderr**. Redirect with `2>/dev/null` if you only want the result.
+
+## Simulator context
+
+Evaluate an expression:
+
+```bash
+idb-repl --reason "eval" simulator --udid <udid> 'return "\(Date.now)"'
+```
+
+Tap a labelled element, then report how many top-level accessibility children are on screen:
+
+```bash
+idb-repl --reason "drive UI" simulator --udid <udid> \
+  'IDB.ui.tap(marker: "Settings"); return IDB.ui.describeAll()?.children.count ?? 0'
+```
+
+Take a screenshot (the returned path is on the companion's filesystem):
+
+```bash
+idb-repl --reason "screenshot" simulator --udid <udid> \
+  'return IDB.screenshot.capture() ?? "failed"'
+```
+
+See the [built-in IDB API](built-in-idb-api.mdx) for the full command set.
+
+## App context
+
+Run in the bundled empty host app (nothing to install):
+
+```bash
+idb-repl --reason "get screen size" app --udid <udid> "import UIKit; return UIScreen.main.bounds"
+```
+
+Run inside an installed app's process:
+
+```bash
+idb-repl --reason "read bundle id" app --udid <udid> --bundle-id com.apple.Maps \
+  'return Bundle.main.bundleIdentifier ?? "?"'
+```
+
+### Scripting a live app across many calls
+
+Because the app context attaches to the same running process by default, you can script an app step by step and keep state between calls:
+
+```bash
+UDID=<udid>; APP=com.example.app; WHY="scripting the app"
+# First call launches; later calls attach to the SAME process (same pid).
+idb-repl --reason "$WHY" app --udid $UDID --bundle-id $APP 'return "pid=\(ProcessInfo.processInfo.processIdentifier)"'
+idb-repl --reason "$WHY" app --udid $UDID --bundle-id $APP 'IDB.ui.tap(marker: "Settings"); return "tapped"'
+idb-repl --reason "$WHY" app --udid $UDID --bundle-id $APP 'return "still \(ProcessInfo.processInfo.processIdentifier)"'
+```
+
+Force a fresh process with `--new-session`. For long-running sessions, launch with `idb launch --enable-repl` first — see [Writing REPL code → App context](writing-repl-code.mdx#app-context).
+
+## Test context
+
+Build the `.xctest` bundle, then run code inside the bundle's process:
+
+```bash
+BUNDLE=$(buck build <buck-test-target> --show-output 2>/dev/null | awk '{print $2}')
+idb-repl --reason "run in test bundle" test --udid <udid> --test-bundle-path "$BUNDLE" \
+  'return "loaded \(Bundle.allBundles.count) bundles"'
+```
+
+## Remote companion
+
+Connect directly to an already-running (typically remote) companion, bypassing discovery:
+
+```bash
+idb-repl --reason "remote" app --companion <host:port> 'return "attached to remote"'
+# add --plaintext to force an unencrypted connection
+```
+
+## Recording and replaying
+
+Write a Markdown report of a session, then replay it later:
+
+```bash
+# Record.
+idb-repl --reason "record" app --udid <udid> --bundle-id com.example.app \
+  --report-path /tmp/session.md 'IDB.ui.tap(marker: "Settings"); return "step 1"'
+
+# Replay.
+idb-repl replay --udid <udid> /tmp/session.md
+```
+
+See [Reports and replay](reports-and-replay.mdx) for the details.

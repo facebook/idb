@@ -1,0 +1,34 @@
+---
+title: How it works
+---
+
+This page describes what actually happens when you are running code.
+
+## The pieces
+
+- **`idb-repl` (the driver).** The CLI you run. It takes your Swift code, compiles it, and orchestrates the session. It does **not** talk to the target process directly.
+- **`idb_companion` (the server).** A macOS process that manages simulators and exposes a gRPC API. `idb-repl` builds on top of it — the companion is what actually injects and runs your code inside a process on the simulator. This is the same companion that powers `idb`'s other features.
+- **The target process.** The process your code runs inside: an app, the simulator, or a test bundle (see [Writing REPL code](writing-repl-code.mdx)).
+
+```
+  you ──▶ idb-repl ──(gRPC)──▶ idb companion ──▶ target process on the simulator
+   ▲       (driver)              (server)          (app / simulator / test bundle)
+   └──────────────── result streamed back ──────────────────┘
+```
+
+## What happens when you run a command
+
+1. **Connect to a companion.** `idb-repl` finds or starts an `idb_companion` for your target.
+2. **Prepare the target.** Depending on the [context](writing-repl-code.mdx), the companion attaches to a running app, (re)launches one with the REPL enabled, targets the simulator itself, or loads a test bundle.
+3. **Compile.** The driver compiles the Swift code you entered and sends it to the companion. *(Remote compilation is coming soon.)*
+4. **Inject and execute.** The companion loads the executable code into the target process and triggers execution.
+5. **Return the result.** The value you `return` is streamed back and printed.
+
+Because the code runs *inside* the target process, it sees that process's memory and loaded frameworks directly — which is what makes live app inspection (app context), and running against a test bundle's own modules (test context), possible.
+
+## Sessions and persistence
+
+- In the **app** context, `idb-repl` attaches to an already-running REPL for the same app by default, so successive commands hit the *same* live process and in-memory state persists across calls. `--new-session` forces a clean relaunch. See [Writing REPL code → App context](writing-repl-code.mdx#app-context).
+- The **simulator** and **test** contexts are not reattachable — each run gets a fresh session.
+
+For recording a session and re-running it later, see [Reports and replay](reports-and-replay.mdx).

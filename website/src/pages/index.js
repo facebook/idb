@@ -24,7 +24,7 @@ function HomeSplash(props) {
             <p className="hero__subtitle">{props.tagline}</p>
             <Link
               className="button button--lg button--outline button--primary"
-              to={useBaseUrl('docs/overview')}
+              to={useBaseUrl('docs/idb/overview')}
             >
               GETTING STARTED
             </Link>

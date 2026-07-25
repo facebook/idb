@@ -1,0 +1,110 @@
+---
+title: Writing REPL Code
+---
+
+`idb-repl` runs Swift code you submit in a process on the simulator. You choose which process context with a subcommand — `app`, `simulator`, or `test`. The context determines what your code can see (which modules and symbols) and what it has access to. Whichever you use, the code you write follows the same rules — so this page covers how to write REPL code first, then what each context gives you.
+
+### Structure of REPL code
+
+- A block of REPL code is the code that will be injected and executed. In [one-shot mode](examples.mdx#two-ways-to-run) it's the trailing `code` argument; in interactive mode it's the lines you enter before `/run`. *(Note: The interactive editor is currently considered experimental.)*
+- **A block can be as much code as you like.** Blocks don't have to be a single line or a single expression. A block can define its own `func`s, `struct`s, and `class`es alongside the code that uses them; they're all compiled together and usable within that submission. In one-shot mode the whole block is passed as a single string argument (which can span multiple lines), so the requirement is *one argument*, not *one line*.
+- **Every block must `return` a value.** This value will be converted to a `String` through standard Swift String interpolation. For a void action (such as `IDB.ui.tap`), add a trailing `return "done"`.
+- **Each run starts fresh.** Declarations don't carry over between runs. Even within one live session, a run can't see the `func`s, `let`s, `var`s, or types declared by an earlier run; each submission is compiled on its own, so it must be self-contained. (In the app context, the *process's* own state still persists across runs — objects you stored on the app, navigation, and other side effects — but the REPL code's top-level symbols do not.) *(An option to let each run build directly on top of previous runs is coming soon.)*
+- **Uncaught errors are returned, not fatal.** If your code throws an error you don't catch, the REPL catches it and returns it as the result instead of ending the session — so a thrown error comes back to you just like a returned value.
+- **A crash ends the session.** Returning a value or throwing a Swift error is safe (above), but if your code *crashes* the process — a runtime trap (force-unwrapping `nil`, an out-of-bounds index), a `fatalError`, or anything else that kills the process — the session ends immediately. You'll need to start a new one (in the app context, relaunch or attach again with a fresh command).
+
+### Imports and available modules
+
+- `Foundation` and the built-in [`IDB` API](built-in-idb-api.mdx) are available automatically in every context.
+- Add `import` statements for anything else you need.
+- Modules from the **target** — the installed app or the test bundle — should be importable, so your code can call into the target's own types and functions. **This feature is experimental** so not every symbol is guaranteed to be available.
+
+### Async work
+
+- REPL code can start async work, but mind its lifetime: a **detached `Task`** you spawn keeps running after the submission returns. In a long-running app-context session, detached `Task`s will continue inside the app process even once your REPL code has exited. This is a feature!
+
+## The three contexts
+
+```bash
+idb-repl --reason "<why>" simulator --udid <udid>                                   [swift-code]
+idb-repl --reason "<why>" app       --udid <udid> [--bundle-id <id>] [--new-session] [swift-code]
+idb-repl --reason "<why>" test      --udid <udid> --test-bundle-path <path>         [swift-code]
+```
+
+### App context
+
+```bash
+idb-repl --reason "<why>" app --udid <udid> [--bundle-id <app-bundle-id>] [swift-code]
+```
+
+Runs your code inside an app process.
+
+- **With `--bundle-id`**, it targets an **installed** app (find bundle ids with `idb list-apps --udid <udid>`). Your code runs in the app's process, so it can call into the app and see or modify its live state.
+- **Without `--bundle-id`**, it uses a **default empty host app** — a generic app (`Foundation` + `UIKit` + the `IDB` API) that needs nothing installed, ideal for quick `SwiftUI`/`UIKit` visualization and experiments. The companion installs this host app into the simulator if it isn't already present.
+
+#### Attach vs. relaunch
+
+By default, the app context **attaches to an already-running REPL for the same app**, launching it only if one isn't already live. This means you can fire many one-shot commands at the *same* process and have in-memory state, navigation, and setup persist between them:
+
+```bash
+UDID=<udid>; APP=<app-bundle-id>; WHY="scripting the app"
+idb-repl --reason "$WHY" app --udid $UDID --bundle-id $APP 'return "pid=\(ProcessInfo.processInfo.processIdentifier)"'
+idb-repl --reason "$WHY" app --udid $UDID --bundle-id $APP 'IDB.ui.tap(marker: "Settings"); return "tapped"'
+idb-repl --reason "$WHY" app --udid $UDID --bundle-id $APP 'return IDB.ui.describeAll()?.children.count ?? 0'
+```
+
+Pass `--new-session` to force a clean relaunch (a fresh process) instead of attaching. The app keeps running after the session ends, ready for a later attach.
+
+#### Incorporating `idb-repl` into larger workflows
+
+`idb-repl` is easy to combine with other tools in a single session. The one requirement is that the app must have been **launched with REPL enabled**. Launch an app with `idb launch --enable-repl`, then drive it however you like with `idb` and other tooling — and drop into `idb-repl` to inject Swift **at any point**, as many times as you want.
+
+```bash
+# Launch the app with the REPL enabled.
+idb launch --enable-repl --udid <udid> <app-bundle-id>
+
+# ...drive the app with idb and other tools...
+
+# Inject Swift whenever you need to; this attaches to the running app.
+idb-repl --reason "<why>" app --udid <udid> --bundle-id <app-bundle-id> 'return "attached"'
+```
+
+Any later `idb-repl app` for the same bundle id attaches to that running app instead of launching a new one, so you can interleave code injection with the rest of your workflow freely.
+
+### Simulator context
+
+```bash
+idb-repl --reason "<why>" simulator --udid <udid> [swift-code]
+```
+
+Injects into the simulator as its own **background process** — no app or test bundle required, and **it does not attach to or disturb the foreground app**. It runs as a standalone ("bare metal") process on the simulator, so you can run code without disturbing an app in the foreground. Your code has `Foundation` plus the built-in `IDB` API. Even though code in this context does not run inside an app, you can still **drive whatever is on screen**: tap, type, swipe, screenshot, record, and read the accessibility tree with the [`IDB` commands](built-in-idb-api.mdx).
+
+Each `simulator` run is a fresh session (not currently reattachable).
+
+### Test context
+
+```bash
+idb-repl --reason "<why>" test --udid <udid> --test-bundle-path <path> [swift-code]
+```
+
+Injects into a logic-test (`.xctest`) bundle, running your code inside that bundle's process with the bundle's modules available.
+
+**The bundle's tests are not run automatically.** Loading the bundle for the REPL does not execute any `XCTestCase` — your REPL code decides what runs. It can call into anything the bundle exposes: a specific test method, a helper, or any other code you want to exercise.
+
+Build the `.xctest` bundle with a normal build of the test target and pass its path:
+
+```bash
+BUNDLE=$(buck build <buck-test-target> --show-output 2>/dev/null | awk '{print $2}')
+idb-repl --reason "<why>" test --udid <udid> --test-bundle-path "$BUNDLE" 'return "done"'
+```
+
+Each `test` run is a fresh session (not reattachable).
+
+## Which context imports what
+
+| Context | Auto-imported | Reattachable? |
+|---|---|---|
+| App (installed) | `Foundation` + `IDB` (add others as needed) | Yes (default) |
+| App (default host) | `Foundation` + `UIKit` + `IDB` | Yes (default) |
+| Simulator | `Foundation` + `IDB` | No |
+| Test | `Foundation` + `IDB` + the bundle's modules | No |

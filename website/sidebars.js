@@ -8,18 +8,38 @@
  
 module.exports = {
   "docs": [
-    "overview",
-    "installation",
-    "guided-tour",
-    "architecture",
-    "development",
-    "commands",
-    "fbsimulatorcontrol",
-    "fbdevicecontrol",
-    "video",
-    "test-execution",
-    "file-containers",
-    "accessibility",
-    "faqs"
+    {
+      "type": "category",
+      "label": "idb",
+      "items": [
+        "idb/overview",
+        "idb/installation",
+        "idb/guided-tour",
+        "idb/architecture",
+        "idb/development",
+        "idb/commands",
+        "idb/fbsimulatorcontrol",
+        "idb/fbdevicecontrol",
+        "idb/video",
+        "idb/test-execution",
+        "idb/file-containers",
+        "idb/accessibility"
+      ]
+    },
+    {
+      "type": "category",
+      "label": "idb-repl",
+      "items": [
+        "idb-repl/overview",
+        "idb-repl/requirements",
+        "idb-repl/how-it-works",
+        "idb-repl/writing-repl-code",
+        "idb-repl/examples",
+        "idb-repl/built-in-idb-api",
+        "idb-repl/cli-reference",
+        "idb-repl/reports-and-replay",
+        "idb-repl/troubleshooting"
+      ]
+    }
   ]
 };

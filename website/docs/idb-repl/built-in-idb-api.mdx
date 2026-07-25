@@ -1,0 +1,81 @@
+---
+title: Built-in IDB API
+---
+
+The REPL exposes a built-in command API for driving the connected simulator from your REPL code. It is automatically available in every context. Everything lives under the `IDB` namespace, so it never collides with the target's own symbols: reach commands as `IDB.ui.<command>`, `IDB.screenshot.<command>`, `IDB.video.<command>`, and name types as `IDB.AXElement` (there is no bare `tap` or `AXElement`).
+
+These commands drive the connected simulator directly, so they work in the `app`, `simulator`, and `test` contexts alike.
+
+## Behaviour
+
+- **The calls do not throw.** Instead of surfacing a catchable error on every call, failures are usually silent no-ops or `nil` values.
+- Most `IDB.ui` commands return `Void`; `describeAll`, the `IDB.screenshot` captures, and the `IDB.video` calls return values. Every submission must still end in a `return` — follow a void action with e.g. `return "done"`.
+- `CGPoint` and `CGRect` are available (CoreGraphics).
+- **Paths** returned by the `IDB.screenshot.capture(...)` and `IDB.video` calls point at files on the **simulator host's** filesystem, and are handed back so your REPL code can interact with them directly (read, process, or pass them to another command). If a [session report](reports-and-replay.mdx) is being written, they will be collected for the session report at the end of a run.
+- **Artifacts produced without a path** — such as an in-memory `IDB.screenshot.captureImage()` — are only available in REPL code and will not be saved.
+
+## UI automation — `IDB.ui`
+
+| Command | Description |
+|---|---|
+| `IDB.ui.tap(_ point: CGPoint)` | Tap at a point. |
+| `IDB.ui.tap(marker: String)` | Tap the frontmost app's accessibility element whose label contains `marker`. |
+| `IDB.ui.swipe(from: CGPoint, to: CGPoint, duration: Double = 0, delta: Double = 0)` | Swipe between two points. `duration` in seconds; `delta` is point spacing between intermediate touches (0 = a sensible default). |
+| `IDB.ui.pinch(at center: CGPoint, scale: Double, duration: Double = 0.5, radius: Double = 100)` | Pinch centred at a point. A `scale` below 1 pinches in, above 1 pinches out. |
+| `IDB.ui.button(_ name: String)` | Press a hardware button: `"home"`, `"lock"`, `"side_button"`, `"siri"`, or `"apple_pay"`. |
+| `IDB.ui.text(_ string: String)` | Type `string` on the hardware keyboard. |
+| `IDB.ui.touchDown(_ point:)` / `touchMove(_ point:)` / `touchUp(_ point:)` | Low-level touch primitives. A `touchDown` → `touchMove`(s) → `touchUp` sequence forms a held drag. |
+| `IDB.ui.describeAll() -> IDB.AXElement?` | The frontmost app's full accessibility hierarchy as a tree, or `nil` if it could not be retrieved. |
+
+## Screenshots — `IDB.screenshot`
+
+The `capture(...)` calls write a PNG on the companion and return its path (`String?`, `nil` on failure); the `captureImage(...)` calls return a `CGImage?` in memory instead of a path.
+
+| Command | Description |
+|---|---|
+| `IDB.screenshot.capture() -> String?` | Full screen to a PNG; returns its path. |
+| `IDB.screenshot.capture(rect: CGRect) -> String?` | A rect (screen points, the `IDB.ui.tap` space) to a PNG. |
+| `IDB.screenshot.capture(label: String) -> String?` | The frontmost element whose label contains `label` to a PNG. |
+| `IDB.screenshot.captureImage() -> CGImage?` | Full screen as a `CGImage`. |
+| `IDB.screenshot.captureImage(rect: CGRect) -> CGImage?` | A rect as a `CGImage`. |
+| `IDB.screenshot.captureImage(label: String) -> CGImage?` | A labelled element as a `CGImage`. |
+
+## Video — `IDB.video`
+
+Record the connected target's screen — one recording at a time.
+
+| Command | Description |
+|---|---|
+| `IDB.video.startRecording() -> Bool` | Start recording to an auto-named file; returns `false` if one is already in progress or it could not start. |
+| `IDB.video.stopRecording() -> String?` | Stop the recording and return the file's path, or `nil` if none was in progress. |
+
+## `IDB.AXElement`
+
+The node type returned by `describeAll()`. Attribute fields are optional (an absent attribute is `nil`); `children` is always present (empty for a leaf).
+
+- `label`, `value`, `uniqueID`, `type`, `title`, `help`, `role`, `roleDescription`, `subrole` — `String?`
+- `enabled`, `contentRequired` — `Bool?`
+- `customActions`, `traits` — `[String]?`
+- `pid` — `Int?`
+- `frame` — `CGRect?`
+- `children` — `[IDB.AXElement]`
+
+## Examples
+
+Tap and type, then surface a result:
+
+```swift
+IDB.ui.tap(CGPoint(x: 100, y: 200))
+IDB.ui.text("hello")
+return "done"
+```
+
+Walk the accessibility tree (note the fully-qualified `IDB.AXElement`):
+
+```swift
+guard let root = IDB.ui.describeAll() else { return "no accessibility tree" }
+func labels(_ element: IDB.AXElement) -> [String] {
+  (element.label.map { [$0] } ?? []) + element.children.flatMap(labels)
+}
+return labels(root).joined(separator: ", ")
+```

@@ -1,0 +1,46 @@
+---
+title: Troubleshooting
+---
+
+## An error about which simulator to use
+
+You can omit `--udid` only when **exactly one** simulator is booted. If several are booted (or none), `idb-repl` cannot choose and errors. Fix: boot a single simulator, or pass `--udid <udid>` explicitly. List targets with `idb list-targets`.
+
+## My code failed but the shell exit code is still 0
+
+`idb-repl` **always exits 0**, whether your code succeeded or failed. Do not branch on the exit code. Instead, check the **prefix** of the output:
+
+- `Result:` followed by the value ⇒ success.
+- `Error:` followed by a message ⇒ failure (e.g. a compile error).
+
+## "Expected a return" / no value printed
+
+Every submission must end in a `return` of the value to surface — in one-shot mode, and in interactive mode before each `/run`. For a void action (like `IDB.ui.tap`), add a trailing `return "done"`.
+
+## String interpolation breaks when piping with `printf`
+
+When piping the interactive REPL via `printf`, escape Swift interpolation's backslash: `\\(...)`. In one-shot mode the code is a single-quoted shell argument, so `\(...)` passes through with **no** escaping. See [Examples → Two ways to run](examples.mdx#two-ways-to-run).
+
+## Piped stdin is ignored
+
+If you pass a trailing `code` argument, `idb-repl` runs in one-shot mode and ignores stdin. To drive the interactive REPL via `printf`, omit the trailing code argument.
+
+## A symbol from the app/target isn't visible
+
+- In the **simulator** and **app** contexts only `Foundation` (and, in the default host app, `UIKit`) plus the `IDB` API are imported by default. Add an `import` for other modules from the iOS SDKs. You can also `import` Swift modules from a target app, but this feature is experimental. Objective-C classes and methods can be used dynamically. See [Writing REPL code → Which context imports what](writing-repl-code.mdx#which-context-imports-what).
+
+## An `IDB.*` command did nothing
+
+`IDB.*` calls don't throw. A command that doesn't apply is a silent no-op, and if the connection drops the submission simply stops. Check that the element/marker exists (inspect `IDB.ui.describeAll()`), and that the intended app is frontmost.
+
+## A screenshot/video path doesn't exist locally
+
+Paths returned by `IDB.screenshot` / `IDB.video` are on the same filesystem as the **simulator**, not necessarily your local machine — relevant when using a remote `--companion`. To collect artifacts locally, run with `--report-path`, which gathers captured files along with the report. See [Reports and replay](reports-and-replay.mdx).
+
+## Wrong Swift toolchain
+
+Injected code compiles with the toolchain from the selected Xcode (`xcode-select -p`). If you need a different toolchain, pass `--toolchain-path <path>`.
+
+## Checking your build
+
+`idb-repl --version` prints the build date and time — useful for confirming you're on a recent build.

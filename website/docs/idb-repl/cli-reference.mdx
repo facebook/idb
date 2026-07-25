@@ -1,0 +1,78 @@
+---
+title: CLI reference
+---
+
+## Synopsis
+
+```bash
+idb-repl [--reason "<why>"] <subcommand> [options] [swift-code]
+```
+
+`--reason` and `--version` are **root** flags — they go before the subcommand. Everything else is a subcommand option.
+
+## Subcommands
+
+| Subcommand | Purpose |
+|---|---|
+| `app` | Run code inside an app process (an installed app, or the bundled empty host app). See [Writing REPL code → App](writing-repl-code.mdx#app-context). |
+| `simulator` | Run code inside the running simulator. See [Writing REPL code → Simulator](writing-repl-code.mdx#simulator-context). |
+| `test` | Run code inside a logic-test (`.xctest`) bundle. See [Writing REPL code → Test](writing-repl-code.mdx#test-context). |
+| `replay` | Re-run a recorded session from its report. See [Reports and replay](reports-and-replay.mdx). |
+
+Each of `app` / `simulator` / `test` takes an optional trailing `code` argument — a single string of Swift. Supplied ⇒ one-shot (run it, print, exit); omitted ⇒ interactive REPL (**experimental** — see [Interactive commands](#interactive-commands)).
+
+## Root options
+
+| Option | Description |
+|---|---|
+| `--reason <string>` | Why you're running the tool. Not necessary for humans, but **required for automation**. Goes before the subcommand. |
+| `--version`, `-v` | Print build information, then exit. |
+
+## Common options (`app` / `simulator` / `test`)
+
+| Option | Description |
+|---|---|
+| `--udid <udid>` | The simulator to use. Optional only when **exactly one** simulator is booted. |
+| `--companion <host:port>` | Connect directly to an already-running (typically remote) companion, bypassing discovery. `--udid` is then unused. Connects using TLS when a client identity is available. |
+| `--plaintext` | With `--companion`, force an unencrypted TCP connection. |
+| `--toolchain-path <path>` | Swift toolchain used to compile injected code. Optional when the selected Xcode toolchain is set (`xcode-select -p`); point it at a different toolchain when needed. |
+| `--report-path <path>` | Write a Markdown report of the session. See [Reports and replay](reports-and-replay.mdx). |
+| `--report-failures` | Also record runs whose code fails to compile (only meaningful with `--report-path`). |
+
+## `app`-only options
+
+| Option | Description |
+|---|---|
+| `--bundle-id <id>` | Target this installed app. Omit to use the bundled empty host app. |
+| `--new-session` | Force a clean relaunch instead of attaching to a running REPL for the same app. |
+
+## `test`-only options
+
+| Option | Description |
+|---|---|
+| `--test-bundle-path <path>` | Path to the built `.xctest` bundle to inject code into. |
+
+## `replay` options
+
+| Option | Description |
+|---|---|
+| `--udid <udid>` | The simulator to replay against. |
+| `--new-session` | For `app` reports, force a clean relaunch rather than reproducing the original launch mode. |
+| `--realtime` | Pace runs to match the original inter-run timing. |
+| `--report-path <path>` | Write a fresh (itself replayable) report of the replay. |
+
+See [Reports and replay](reports-and-replay.mdx) for the full replay workflow.
+
+## Interactive commands
+
+**Interactive mode is experimental and incomplete.** Entering and running Swift code line by line works, but it has rough edges and missing features. For reliable, scriptable use, prefer one-shot mode — pass the Swift code as a trailing `code` argument.
+
+In an interactive session (a subcommand with no trailing code), any line **not** starting with `/` is collected as Swift; commands start with `/`:
+
+| Command | Description |
+|---|---|
+| `/run` | Compile and execute the collected code. The collected lines then reset for the next block. |
+| `/help` | Show available commands. |
+| `/exit` | Kill subprocesses and exit. Always send this last when piping input. |
+
+The collected code must end in a `return` of the value to surface. When piping via `printf`, escape Swift interpolation as `\\(...)`; in one-shot mode (a single-quoted argument) no escaping is needed. See [Examples → Two ways to run](examples.mdx#two-ways-to-run).

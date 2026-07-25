@@ -1,0 +1,75 @@
+---
+title: idb-repl
+sidebar_label: Overview
+---
+
+`idb-repl` is an interactive REPL (Read-Eval-Print-Loop) for running Swift code **inside a live process on an iOS Simulator**. You type (or pipe) Swift code, and it is compiled, injected into a running process, executed, and the result is streamed back to your terminal.
+
+**`idb-repl` is designed to be used by coding agents.** Agents are at their best when given generic tools instead of a set of narrowly focused commands. They are also naturally fluent in Swift, Apple's APIs and, when given the source code, the internals of an app. `idb-repl` allows an agent to build whatever it needs to inspect state, call into app internals, chain several steps together with custom logic — and get back a result it can reason over. For an agent this is a faster, more capable way to work.
+
+For developers, it's easier to understand what an agent is doing, because it's working with the same language an app is developed in, with built-in report collection to capture (and replay) what an agent did.
+
+## How does this work?
+
+Want to know the size of the current screen? It can be as simple as:
+
+```
+idb-repl app "import UIKit; return UIScreen.main.bounds.size"
+
+Result:
+(414.0, 896.0)
+```
+
+**Keep in mind:** Although this is a simple example, agents happily work with much greater complexity. For ex. ask an agent to create and present a view controller with mock data in your app, and it will write and execute 200 lines of code to do just that.
+
+## When to use it
+
+- Directly inspect the runtime environment with code. *(For ex. "Does this simulator have access to the internet?")*
+- Explore or drive a running app: read live state, call into its code. *(For ex. present an arbitrary deep view controller with zero navigation.)*
+- Run Swift code inside a test bundle interactively: generate ephemeral test cases reactively to probe new code. *(For ex. "Please find cases for this function not covered by tests and test them against the function.")*
+- Automate a sequence of complex steps against one long-lived app process, and capture a report you can replay later.
+
+## The three contexts
+
+`idb-repl` always runs your code inside *some* process. You pick which with a subcommand:
+
+| Context | Command | Runs your code in… | Good for |
+|---|---|---|---|
+| **App** | `idb-repl app` | An installed app process (or a bundled empty host app) | Driving/inspecting a real app, or quick experiments |
+| **Simulator** | `idb-repl simulator` | A background process on the simulator (not the foreground app) | Automating what's on screen without disturbing the foreground app |
+| **Test** | `idb-repl test` | A logic-test (`.xctest`) bundle | Running Swift code against a test bundle's modules |
+
+The **simulator** context runs as its own background ("bare metal") process on the simulator — it does not attach to or disturb the foreground app.
+
+See [Writing REPL code](writing-repl-code.mdx) for the details of each.
+
+## Quick start
+
+```bash
+# Find a booted simulator.
+idb list-targets
+
+# Run one line of Swift in the bundled empty app (nothing to install).
+idb-repl --reason "trying idb-repl" app --udid <udid> 'return "\(2 * 21)"'
+# -> Result:
+#    42
+
+# Automate the screen: tap a labelled element, then confirm.
+idb-repl --reason "tap settings" simulator --udid <udid> \
+  'IDB.ui.tap(marker: "Settings"); return "tapped"'
+```
+
+## How it works (in brief)
+
+`idb-repl` is a client, so it doesn't talk to the target process directly. Instead it connects to an **`idb` companion** — the server that manages simulators — which injects and runs your Swift code inside a process and streams the result back. `idb-repl` can drive a **local or a remote simulator**: for a local simulator it starts the companion for you; to use a **remote** simulator you must have `idb_companion` already running on the remote host, and point `idb-repl` at it with `--companion <host:port>`. See [How it works](how-it-works.mdx).
+
+## Documentation
+
+- **[Requirements](requirements.mdx)** — what you need before running it.
+- **[How it works](how-it-works.mdx)** — the architecture at a high level.
+- **[Writing REPL code](writing-repl-code.mdx)** — how to write submissions, plus the app / simulator / test contexts, attach vs. relaunch, and the default host app.
+- **[Examples](examples.mdx)** — one-shot and interactive usage, worked examples.
+- **[Built-in IDB API](built-in-idb-api.mdx)** — `IDB.ui`, `IDB.screenshot`, `IDB.video`, accessibility.
+- **[CLI reference](cli-reference.mdx)** — every subcommand and option.
+- **[Reports and replay](reports-and-replay.mdx)** — recording and re-running sessions.
+- **[Troubleshooting](troubleshooting.mdx)** — common errors and how to read the output.

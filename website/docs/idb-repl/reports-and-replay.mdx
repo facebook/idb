@@ -1,0 +1,54 @@
+---
+title: Reports and replay
+---
+
+`idb-repl` can record a session to a Markdown **report** and later **replay** it. Together these let you capture an exploration or automation run, share it as a readable document, and re-run it deterministically.
+
+## Recording a report — `--report-path`
+
+Add `--report-path <path>` to an `app`, `simulator`, or `test` command to write an incremental Markdown report as the session runs. Each entry records the code that was run and its result.
+
+```bash
+idb-repl --reason "record a flow" app --udid <udid> --bundle-id com.example.app \
+  --report-path /tmp/session.md \
+  'IDB.ui.tap(marker: "Settings"); return "opened settings"'
+```
+
+- **Successful runs and runtime exceptions are always recorded.** Add `--report-failures` to also record runs whose code fails to compile.
+- **Reattaching appends.** In the `app` context, reconnecting to a still-running session appends to the same report; a fresh session (a first launch, or `--new-session`) starts the report over.
+
+The report is designed to be re-runnable: it embeds hidden markers recording the context and per-run metadata, which `replay` uses to reconstruct the session.
+
+## Artifacts (screenshots and video)
+
+While a report is being written, several built-in [`IDB` commands](built-in-idb-api.mdx) let you capture **artifacts** into it:
+
+- `IDB.screenshot.capture()` / `IDB.screenshot.captureImage()`
+- `IDB.video.startRecording()` / `IDB.video.stopRecording()`
+
+Captured artifacts are saved into a folder next to the report (a `report.md` uses a `report/` folder) and linked from the run that captured them, so the report reads as a self-contained record of the session.
+
+**Saving artifacts requires the report to be saved.** Capturing an artifact adds it to the *current* report, so you must be running with `--report-path` for it to be kept — without a saved report there is nowhere to collect it. (Calls such as `IDB.screenshot.capture()` that also return a path still write that file on the companion regardless; see [Built-in IDB API → Behaviour](built-in-idb-api.mdx#behaviour).)
+
+## Replaying a report — `replay`
+
+```bash
+idb-repl replay --udid <udid> <report.md>
+```
+
+`replay` reconstructs the recorded context from the report and re-runs each recorded run in order, printing a progress line plus each run's output. Runs that originally failed to compile are skipped.
+
+- For an `app` report, it reproduces the original launch mode by default; pass `--new-session` to force a clean relaunch instead.
+- `--realtime` paces the runs to match the original inter-run timing (otherwise they run back-to-back). This can be extremely slow for an agent-initiated session that had long blocks of inference between runs.
+- `--report-path <path>` writes a fresh report of the replay — which is itself replayable.
+
+```bash
+# Replay against a simulator, preserving the original pacing, and record a new report.
+idb-repl replay --udid <udid> --realtime --report-path /tmp/replay.md /tmp/session.md
+```
+
+## Typical workflow
+
+1. Explore or script (interactive or one-shot) with `--report-path` to capture what you did.
+2. Review or share the Markdown report, with its captured screenshots/video.
+3. Replay it to reproduce the flow — e.g. against a fresh simulator, or to re-capture artifacts.
