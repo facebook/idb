@@ -888,6 +888,31 @@ class TestParser(TestCase):
         await cli_main(cmd_input=["ui", "tap", "10", "20"])
         self.client_mock.tap.assert_called_once_with(x=10, y=20, duration=None)
 
+    async def test_tap_with_duration(self) -> None:
+        self.client_mock.tap = AsyncMock(return_value=[])
+        await cli_main(cmd_input=["ui", "tap", "10", "20", "--duration", "0.5"])
+        self.client_mock.tap.assert_called_once_with(x=10, y=20, duration=0.5)
+
+    async def test_tap_with_expected_value(self) -> None:
+        self.client_mock.accessibility_tap = AsyncMock(return_value=[])
+        await cli_main(
+            cmd_input=[
+                "ui",
+                "tap",
+                "10",
+                "20",
+                "--expected-value",
+                "Ready",
+                "--expected-key",
+                "AXValue",
+            ]
+        )
+        self.client_mock.accessibility_tap.assert_called_once_with(
+            target=AccessibilityPoint(x=10, y=20),
+            expected_value="Ready",
+            expected_key=AccessibilitySearchableKey.VALUE,
+        )
+
     async def test_tap_ax_point(self) -> None:
         self.client_mock.accessibility_tap = AsyncMock(return_value=[])
         await cli_main(cmd_input=["ui", "tap", "10", "20", "--api", "ax"])

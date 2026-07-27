@@ -81,7 +81,6 @@ from idb.cli.commands.hid import (
     RotateCommand,
     ShakeCommand,
     SwipeCommand,
-    TapCommand,
     TextCommand,
 )
 from idb.cli.commands.instruments import InstrumentsCommand
@@ -102,6 +101,7 @@ from idb.cli.commands.settings import (
     SetPreferenceCommand,
 )
 from idb.cli.commands.shell import ShellCommand
+from idb.cli.commands.tap import TapCommand
 from idb.cli.commands.target import (
     ConnectCommandException,
     TargetBootCommand,
