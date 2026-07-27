@@ -5,8 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@_implementationOnly @preconcurrency import CoreSimDeviceIO
-@preconcurrency import CoreSimulator
 @preconcurrency import FBControlCore
 import Foundation
 import IOSurface
@@ -38,7 +36,7 @@ public final class FBFramebuffer: NSObject, @unchecked Sendable {
 
   private let consumers: NSMapTable<AnyObject, NSUUID>
   private let logger: any FBControlCoreLogger
-  private let surface: AnyObject // SimDisplayIOSurfaceRenderable & SimDisplayRenderable
+  private let surface: any FBFramebufferSurface
 
   // `statsLock` guards `stats`, `lastLoggedStats`, and `statsTimer`: the IOSurface and damage
   // callbacks below fire on arbitrary private-framework threads, while `currentStats()` and
@@ -52,46 +50,11 @@ public final class FBFramebuffer: NSObject, @unchecked Sendable {
 
   @objc(mainScreenSurfaceForSimulator:logger:error:)
   public class func mainScreenSurface(for simulator: FBSimulator, logger: any FBControlCoreLogger) throws -> FBFramebuffer {
-    let ioClient = simulator.device.io!
-    let ports: [Any]? = ioClient.ioPorts()
-    guard let ports else {
-      throw FBSimulatorError.describe("No IO ports available on \(ioClient)").build()
-    }
-    // iOS exposes the main display as displayClass 0. tvOS renders only on the TVOut display (a
-    // non-zero class), so prefer class 0 but fall back to the first renderable display rather than
-    // throwing — otherwise screenshots and video are impossible on a target with no class-0 display.
-    var fallbackSurface: AnyObject?
-    for port in ports {
-      guard let portInterface = port as? SimDeviceIOPortInterface else {
-        continue
-      }
-      let descriptor = portInterface.descriptor as AnyObject
-      guard descriptor.conforms(to: SimDisplayRenderable.self),
-        descriptor.conforms(to: SimDisplayIOSurfaceRenderable.self)
-      else {
-        continue
-      }
-      guard descriptor.responds(to: NSSelectorFromString("state")) else {
-        logger.log("SimDisplay \(descriptor) does not have a state, cannot determine if it is the main display")
-        continue
-      }
-      let descriptorState = descriptor.perform(NSSelectorFromString("state"))?.takeUnretainedValue() as! SimDisplayDescriptorState
-      let displayClass = descriptorState.displayClass
-      if displayClass == 0 {
-        return FBFramebuffer(surface: descriptor, logger: logger)
-      }
-      if fallbackSurface == nil {
-        logger.log("SimDisplay Class '\(displayClass)' is not the main display '0'; holding as fallback (e.g. tvOS TVOut)")
-        fallbackSurface = descriptor
-      }
-    }
-    if let fallbackSurface {
-      return FBFramebuffer(surface: fallbackSurface, logger: logger)
-    }
-    throw FBSimulatorError.describe("Could not find the Main Screen Surface for Clients \(FBCollectionInformation.oneLineDescription(from: ports)) in \(ioClient)").build()
+    let surface = try FBFramebufferSurfaceLocator.mainDisplaySurface(for: simulator, logger: logger)
+    return FBFramebuffer(surface: surface, logger: logger)
   }
 
-  private init(surface: AnyObject, logger: any FBControlCoreLogger) {
+  init(surface: any FBFramebufferSurface, logger: any FBControlCoreLogger) {
     self.consumers = NSMapTable(keyOptions: .weakMemory, valueOptions: .copyIn)
     self.logger = logger
     self.surface = surface
@@ -110,7 +73,7 @@ public final class FBFramebuffer: NSObject, @unchecked Sendable {
     let consumerUUID = NSUUID()
 
     // Attempt to return the surface synchronously (if supported).
-    let immediateSurface = extractImmediatelyAvailableSurface()
+    let immediateSurface = surface.immediatelyAvailableSurface()
 
     // Register the consumer.
     consumers.setObject(consumerUUID, forKey: consumer as AnyObject)
@@ -155,21 +118,14 @@ public final class FBFramebuffer: NSObject, @unchecked Sendable {
 
   // MARK: - Private
 
-  private func extractImmediatelyAvailableSurface() -> IOSurface? {
-    guard let renderable = surface as? SimDisplayIOSurfaceRenderable else {
-      return nil
-    }
-    if let surface = try? FBObjCExceptionGuard.guarded({ renderable.framebufferSurface }) as? IOSurface {
-      return surface
-    }
-    return try? FBObjCExceptionGuard.guarded({ renderable.ioSurface }) as? IOSurface
-  }
-
   private func registerConsumer(_ consumer: any FBFramebufferConsumer, uuid: NSUUID, queue: DispatchQueue) {
-    let renderable = surface as! SimDisplayIOSurfaceRenderable
+    // SAFETY: the consumer is only ever messaged inside the `queue.async` blocks below, so every
+    // delivery is serialized onto the consumer's own queue and the capture is never touched
+    // concurrently. `FBFramebufferConsumer` is a reference type and cannot be made `Sendable`.
+    // patternlint-disable-next-line swift-nonisolated-unsafe
     nonisolated(unsafe) let consumerRef = consumer
 
-    let ioSurfaceChanged: (Any?) -> Void = { [weak self] surfaceArg in
+    let ioSurfaceChanged: (IOSurface?) -> Void = { [weak self] surfaceArg in
       guard let self else { return }
       self.statsLock.lock()
       self.stats.ioSurfaceChangeCount += 1
@@ -178,27 +134,17 @@ public final class FBFramebuffer: NSObject, @unchecked Sendable {
       if isFirstChange {
         self.logger.info().log("First IOSurface change callback, surface=\(String(describing: surfaceArg))")
       }
-      nonisolated(unsafe) let surfaceRef = surfaceArg
       queue.async {
-        consumerRef.didChange(surfaceRef as? IOSurface)
+        consumerRef.didChange(surfaceArg)
       }
     }
 
-    _ = try? FBObjCExceptionGuard.guarded {
-      renderable.registerCallback(with: uuid as UUID, ioSurfacesChangeCallback: ioSurfaceChanged)
-    }
-    _ = try? FBObjCExceptionGuard.guarded {
-      renderable.registerCallback(with: uuid as UUID, ioSurfaceChangeCallback: ioSurfaceChanged)
-    }
-
-    let displayRenderable = surface as! SimDisplayRenderable
-    let damageCallback: ([NSValue]?) -> Void = { [weak self] frames in
+    let damageReceived: (FBFramebufferDamage) -> Void = { [weak self] damage in
       guard let self else { return }
-      let frameArray = frames ?? []
       self.statsLock.lock()
       self.stats.damageCallbackCount += 1
-      self.stats.damageRectCount += UInt(frameArray.count)
-      if frameArray.isEmpty {
+      self.stats.damageRectCount += UInt(damage.rects.count)
+      if damage.rects.isEmpty {
         self.stats.emptyDamageCallbackCount += 1
       }
       self.statsLock.unlock()
@@ -207,9 +153,8 @@ public final class FBFramebuffer: NSObject, @unchecked Sendable {
         consumerRef.didReceiveDamageRect()
       }
     }
-    _ = try? FBObjCExceptionGuard.guarded {
-      displayRenderable.registerCallback(with: uuid as UUID, damageRectanglesCallback: damageCallback)
-    }
+
+    _ = try? surface.registerCallbacks(token: uuid as UUID, ioSurfaceChanged: ioSurfaceChanged, damageReceived: damageReceived)
   }
 
   private func logStatsIfNeeded() {
@@ -246,16 +191,6 @@ public final class FBFramebuffer: NSObject, @unchecked Sendable {
   }
 
   private func unregisterConsumer(uuid: NSUUID) {
-    let renderable = surface as! SimDisplayIOSurfaceRenderable
-    _ = try? FBObjCExceptionGuard.guarded {
-      renderable.unregisterIOSurfacesChangeCallback(with: uuid as UUID)
-    }
-    _ = try? FBObjCExceptionGuard.guarded {
-      renderable.unregisterIOSurfaceChangeCallback(with: uuid as UUID)
-    }
-    let displayRenderable = surface as! SimDisplayRenderable
-    _ = try? FBObjCExceptionGuard.guarded {
-      displayRenderable.unregisterDamageRectanglesCallback(with: uuid as UUID)
-    }
+    surface.unregisterCallbacks(token: uuid as UUID)
   }
 }
