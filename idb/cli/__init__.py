@@ -107,7 +107,10 @@ class BaseCommand(Command, metaclass=ABCMeta):
             self.logger.warning(
                 "Setting --log after the command is deprecated, please place it at the start of the invocation"
             )
-        metadata: LoggingMetadata = plugin.resolve_metadata(logger=self.logger)
+        plugin.on_command_parsed(logger=self.logger, command=self, args=args)
+        metadata: LoggingMetadata = plugin.resolve_metadata(
+            logger=self.logger, command=self, args=args
+        )
         metadata["arguments"] = json.dumps(args.__dict__, default=lambda v: str(v))
         if args.reason:
             metadata["reason"] = args.reason[:200]

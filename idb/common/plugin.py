@@ -13,7 +13,7 @@ import importlib
 import logging
 import os
 import ssl
-from argparse import ArgumentParser
+from argparse import ArgumentParser, Namespace
 from collections.abc import Awaitable, Callable
 from functools import wraps
 from logging import Logger
@@ -170,7 +170,20 @@ def on_connecting_parser(parser: ArgumentParser, logger: Logger) -> None:
         plugin_parser(parser=parser, logger=logger)
 
 
-def resolve_metadata(logger: Logger) -> LoggingMetadata:
+@swallow_exceptions
+def on_command_parsed(logger: Logger, command: Command, args: Namespace) -> None:
+    for plugin in PLUGINS:
+        method = getattr(plugin, "on_command_parsed", None)
+        if not method:
+            continue
+        method(logger=logger, command=command, args=args)
+
+
+def resolve_metadata(
+    logger: Logger,
+    command: Command | None = None,
+    args: Namespace | None = None,
+) -> LoggingMetadata:
     metadata: LoggingMetadata = {
         key[len(_META_ENVIRON_PREFIX) :]: value
         for (key, value) in os.environ.items()
@@ -180,7 +193,7 @@ def resolve_metadata(logger: Logger) -> LoggingMetadata:
         plugin_resolver = getattr(plugin, "resolve_metadata", None)
         if not plugin_resolver:
             continue
-        resolved = plugin_resolver(logger=logger)
+        resolved = plugin_resolver(logger=logger, command=command, args=args)
         metadata.update(resolved)
     return metadata
 
