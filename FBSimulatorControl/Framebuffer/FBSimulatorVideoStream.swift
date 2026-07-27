@@ -771,11 +771,10 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: FBSimulatorVideoStre
 /// `cadence` strategy: `.lazy` pushes frames from the damage callback (variable frame rate), while
 /// `.eager` runs a cadence `Task` that, at a fixed frame rate, dispatches `pushFrame` back onto
 /// `writeQueue` and awaits it before sleeping until the next deadline.
-// @unchecked Sendable: the ObjC original was a plain NSObject relied upon across the writeQueue and
-// (in the eager cadence) the cadence task without formal Sendable guarantees; the sibling
+// @unchecked Sendable: mutable stream and frame state is confined to `writeQueue` (and, in the eager
+// cadence, the cadence task) without a compiler-checkable Sendable guarantee; the sibling
 // FBFramebuffer is likewise @unchecked Sendable.
-@objc(FBSimulatorVideoStream)
-public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStream, @unchecked Sendable {
+public final class FBSimulatorVideoStream: FBFramebufferConsumer, FBVideoStream, @unchecked Sendable {
 
   // MARK: - Properties
 
@@ -897,7 +896,6 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
     self.encodedSampleConsumerOverride = encodedSampleConsumerOverride
     self.writeQueue = writeQueue
     self.logger = logger
-    super.init()
   }
 
   deinit {
