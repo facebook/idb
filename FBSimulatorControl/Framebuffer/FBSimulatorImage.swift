@@ -11,12 +11,11 @@ import Foundation
 import ImageIO
 import UniformTypeIdentifiers
 
-@objc(FBSimulatorImage)
-public final class FBSimulatorImage: NSObject {
+public final class FBSimulatorImage {
 
   // MARK: - Properties
 
-  private let logger: FBControlCoreLogger
+  private let logger: (any FBControlCoreLogger)?
   private let writeQueue: DispatchQueue
   private let imageGenerator: FBSurfaceImageGenerator
   private let framebuffer: FBFramebuffer
@@ -30,10 +29,9 @@ public final class FBSimulatorImage: NSObject {
 
   init(framebuffer: FBFramebuffer, logger: (any FBControlCoreLogger)?) {
     self.framebuffer = framebuffer
-    self.logger = logger!
+    self.logger = logger
     self.writeQueue = DispatchQueue(label: "com.facebook.FBSimulatorControl.framebuffer.image")
     self.imageGenerator = FBSurfaceImageGenerator(scale: NSDecimalNumber.one, purpose: "simulator_image", logger: logger)
-    super.init()
   }
 
   // MARK: - Public Methods
@@ -45,14 +43,14 @@ public final class FBSimulatorImage: NSObject {
     // same queue.
     writeQueue.sync {
       guard attachment == nil else { return }
-      logger.log("Image Generator \(imageGenerator) not attached, attaching")
+      logger?.log("Image Generator \(imageGenerator) not attached, attaching")
       let attachment = framebuffer.attach(imageGenerator, on: writeQueue)
       self.attachment = attachment
       if let surface = attachment.initialSurface {
-        logger.log("Surface \(surface) immediately available, adding to Image Generator \(imageGenerator)")
+        logger?.log("Surface \(surface) immediately available, adding to Image Generator \(imageGenerator)")
         imageGenerator.didChange(surface)
       } else {
-        logger.log("Surface for ImageGenerator not immediately available")
+        logger?.log("Surface for ImageGenerator not immediately available")
       }
     }
 
@@ -63,12 +61,10 @@ public final class FBSimulatorImage: NSObject {
     return imageGenerator.image()
   }
 
-  @objc
   public func jpegImageData() throws -> Data {
     try FBSimulatorImage.jpegImageData(from: image())
   }
 
-  @objc
   public func pngImageData() throws -> Data {
     try FBSimulatorImage.pngImageData(from: image())
   }
