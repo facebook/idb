@@ -33,17 +33,33 @@ def package_exists(package_name: str) -> bool:
 
 
 PLUGIN_PACKAGE_NAMES = ["idb.fb.plugin"]
-PLUGINS: list[ModuleType] = [
-    importlib.import_module(package.name)
-    for package in [
-        importlib.util.find_spec(package_name)
-        for package_name in PLUGIN_PACKAGE_NAMES
-        if package_exists(package_name)
+CLI_PLUGIN_PACKAGE_NAMES = ["idb.fb.cli_plugin"]
+
+
+def _load_plugins(package_names: list[str]) -> list[ModuleType]:
+    return [
+        importlib.import_module(package.name)
+        for package in [
+            importlib.util.find_spec(package_name)
+            for package_name in package_names
+            if package_exists(package_name)
+        ]
+        if package is not None
     ]
-    if package is not None
-]
+
+
+PLUGINS: list[ModuleType] = _load_plugins(PLUGIN_PACKAGE_NAMES)
 _META_ENVIRON_PREFIX = "IDB_META_"
 logger: logging.Logger = logging.getLogger(__name__)
+
+
+def load_cli_plugins() -> None:
+    loaded_names = {plugin.__name__ for plugin in PLUGINS}
+    PLUGINS.extend(
+        plugin
+        for plugin in _load_plugins(CLI_PLUGIN_PACKAGE_NAMES)
+        if plugin.__name__ not in loaded_names
+    )
 
 
 P = ParameterSpecification("P")

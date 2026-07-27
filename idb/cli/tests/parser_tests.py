@@ -1932,6 +1932,25 @@ class TestParser(TestCase):
             await cli_main(cmd_input=["ui", "tap", "10", "20"])
         on_launch_mock.assert_called_once_with(ANY, subcommands=["ui", "tap"])
 
+    async def test_cli_plugins_loaded_before_contributed_commands(self) -> None:
+        self.client_mock.list_apps = AsyncMock(return_value=[])
+        events: list[str] = []
+
+        def load_cli_plugins() -> None:
+            events.append("load")
+
+        def get_commands() -> list[Command]:
+            self.assertEqual(events, ["load"])
+            events.append("get_commands")
+            return []
+
+        with (
+            patch("idb.cli.main.plugin.load_cli_plugins", load_cli_plugins),
+            patch("idb.cli.main.plugin.get_commands", get_commands),
+        ):
+            await cli_main(cmd_input=["list-apps"])
+        self.assertEqual(events, ["load", "get_commands"])
+
 
 class _StubCommand(Command):
     def __init__(self, name: str, aliases: list[str] | None = None) -> None:

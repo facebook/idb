@@ -343,6 +343,7 @@ async def gen_main(cmd_input: list[str] | None = None) -> SysExitArg:
         ListCommand,
         shell_command,
     ]
+    plugin.load_cli_plugins()
     commands.extend(plugin.get_commands())
     root_command = CommandGroup(
         name="root_command",
