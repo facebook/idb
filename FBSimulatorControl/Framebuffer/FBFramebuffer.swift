@@ -22,15 +22,13 @@ public struct FBFramebufferStats {
   public init() {}
 }
 
-@objc public protocol FBFramebufferConsumer: NSObjectProtocol {
-  @objc(didChangeIOSurface:)
+public protocol FBFramebufferConsumer: AnyObject {
   func didChange(_ surface: IOSurface?)
 
   func didReceiveDamageRect()
 }
 
-@objc(FBFramebuffer)
-public final class FBFramebuffer: NSObject, @unchecked Sendable {
+public final class FBFramebuffer: @unchecked Sendable {
 
   // MARK: - Properties
 
@@ -39,7 +37,6 @@ public final class FBFramebuffer: NSObject, @unchecked Sendable {
 
   // MARK: - Initializers
 
-  @objc(mainScreenSurfaceForSimulator:logger:error:)
   public class func mainScreenSurface(for simulator: FBSimulator, logger: any FBControlCoreLogger) throws -> FBFramebuffer {
     let surface = try FBFramebufferSurfaceLocator.mainDisplaySurface(for: simulator, logger: logger)
     return FBFramebuffer(surface: surface, logger: logger)
@@ -48,7 +45,6 @@ public final class FBFramebuffer: NSObject, @unchecked Sendable {
   init(surface: any FBFramebufferSurface, logger: any FBControlCoreLogger) {
     self.surface = surface
     self.statsRecorder = FBFramebufferStatsRecorder(logger: logger)
-    super.init()
   }
 
   // MARK: - Public Methods
@@ -72,7 +68,7 @@ public final class FBFramebuffer: NSObject, @unchecked Sendable {
     statsRecorder.snapshot()
   }
 
-  @objc public var statsStartTime: CFTimeInterval {
+  public var statsStartTime: CFTimeInterval {
     statsRecorder.startTime
   }
 

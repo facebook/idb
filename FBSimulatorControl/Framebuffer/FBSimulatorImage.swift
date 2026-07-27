@@ -24,7 +24,6 @@ public final class FBSimulatorImage: NSObject {
 
   // MARK: - Initializers
 
-  @objc(imageWithFramebuffer:logger:)
   public class func image(with framebuffer: FBFramebuffer, logger: (any FBControlCoreLogger)?) -> FBSimulatorImage {
     FBSimulatorImage(framebuffer: framebuffer, logger: logger)
   }

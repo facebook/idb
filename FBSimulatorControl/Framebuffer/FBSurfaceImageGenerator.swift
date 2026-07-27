@@ -78,7 +78,6 @@ public final class FBSurfaceImageGenerator: NSObject, FBFramebufferConsumer {
 
   // MARK: - FBFramebufferConsumer
 
-  @objc
   public func didChange(_ surface: IOSurface?) {
     lastSeedValue = 0
     if let oldSurface = self.surface {
@@ -93,7 +92,6 @@ public final class FBSurfaceImageGenerator: NSObject, FBFramebufferConsumer {
     }
   }
 
-  @objc
   public func didReceiveDamageRect() {
   }
 }

@@ -1003,14 +1003,12 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
 
   // MARK: - FBFramebufferConsumer
 
-  @objc(didChangeIOSurface:)
   public func didChange(_ surface: IOSurface?) {
     guard let surface else { return }
     try? mountSurface(surface)
     pushFrame(forceKeyFrame: false)
   }
 
-  @objc
   public func didReceiveDamageRect() {
     // In `.lazy` (variable-frame-rate) mode, a damage event is a stimulus for the shared push loop.
     // In `.eager` (constant-frame-rate) mode, the cadence clock drives pushes, so damage is ignored.
