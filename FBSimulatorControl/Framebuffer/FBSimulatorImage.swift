@@ -42,7 +42,11 @@ public final class FBSimulatorImage: NSObject {
 
   @objc
   public func image() -> CGImage? {
-    if !framebuffer.isConsumerAttached(imageGenerator) {
+    // Serialize the one-time attach on writeQueue so concurrent image() calls cannot both observe the
+    // generator as unattached and double-attach it; the generator's callbacks are delivered on this
+    // same queue.
+    writeQueue.sync {
+      guard !framebuffer.isConsumerAttached(imageGenerator) else { return }
       logger.log("Image Generator \(imageGenerator) not attached, attaching")
       let surface: IOSurface? = framebuffer.attach(imageGenerator, on: writeQueue)
       if let surface {
