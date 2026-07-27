@@ -46,6 +46,7 @@ from idb.common.stream import stream_map
 from idb.common.tar import create_tar, drain_untar, generate_tar
 from idb.common.types import (
     AccessibilityInfo,
+    AccessibilityInfoOptions,
     AccessibilityMarker,
     AccessibilityPoint,
     AccessibilityScrollDirection,
@@ -501,16 +502,15 @@ class Client(ClientBase):
     async def accessibility_info(
         self,
         target: AccessibilityTarget | None,
-        nested: bool,
-        keys: list[str] | None = None,
+        options: AccessibilityInfoOptions,
     ) -> AccessibilityInfo:
         request = AccessibilityInfoRequest(
             format=(
                 AccessibilityInfoRequest.NESTED
-                if nested
+                if options.nested
                 else AccessibilityInfoRequest.LEGACY
             ),
-            keys=keys or [],
+            keys=options.keys or [],
         )
         if isinstance(target, AccessibilityMarker):
             request.marker = target.value

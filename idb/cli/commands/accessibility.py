@@ -11,6 +11,7 @@ from argparse import ArgumentParser, Namespace
 from idb.cli import ClientCommand
 from idb.common.types import (
     ACCESSIBILITY_KEY_BY_NAME,
+    AccessibilityInfoOptions,
     AccessibilityMarker,
     AccessibilityPoint,
     AccessibilityScrollDirection,
@@ -80,8 +81,7 @@ class AccessibilityInfoAllCommand(ClientCommand):
     async def run_with_client(self, args: Namespace, client: Client) -> None:
         info = await client.accessibility_info(
             target=None,
-            nested=args.nested,
-            keys=args.keys,
+            options=AccessibilityInfoOptions(nested=args.nested, keys=args.keys),
         )
         print(info.json)
 
@@ -110,8 +110,7 @@ class AccessibilityInfoAtPointCommand(ClientCommand):
     async def run_with_client(self, args: Namespace, client: Client) -> None:
         info = await client.accessibility_info(
             target=AccessibilityPoint(x=args.x, y=args.y),
-            nested=args.nested,
-            keys=args.keys,
+            options=AccessibilityInfoOptions(nested=args.nested, keys=args.keys),
         )
         print(info.json)
 
@@ -154,7 +153,7 @@ class AccessibilityDescribeMarkerCommand(ClientCommand):
                 match_key=ACCESSIBILITY_KEY_BY_NAME[args.match_key],
                 depth=args.depth,
             ),
-            nested=args.nested,
+            options=AccessibilityInfoOptions(nested=args.nested),
         )
         print(info.json)
 

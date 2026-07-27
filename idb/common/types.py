@@ -222,6 +222,14 @@ ACCESSIBILITY_KEY_BY_NAME: dict[str, AccessibilitySearchableKey] = {
 }
 
 
+# Shapes the accessibility_info response: the format and which accessibility
+# keys are reported. This grows as describe-all gains enrichers.
+@dataclass(frozen=True)
+class AccessibilityInfoOptions:
+    nested: bool = False
+    keys: list[str] | None = None
+
+
 class AccessibilityScrollDirection(Enum):
     UP = 0
     DOWN = 1
@@ -774,8 +782,7 @@ class Client(ABC):
     async def accessibility_info(
         self,
         target: AccessibilityTarget | None,
-        nested: bool,
-        keys: list[str] | None = None,
+        options: AccessibilityInfoOptions,
     ) -> AccessibilityInfo:
         pass
 

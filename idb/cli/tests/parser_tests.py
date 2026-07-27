@@ -16,6 +16,7 @@ from idb.cli.main import gen_main as cli_main, get_default_companion_path
 from idb.common.command import Command, CommandGroup
 from idb.common.types import (
     AccessibilityInfo,
+    AccessibilityInfoOptions,
     AccessibilityMarker,
     AccessibilityPoint,
     AccessibilityScrollDirection,
@@ -953,7 +954,7 @@ class TestParser(TestCase):
                 match_key=AccessibilitySearchableKey.UNIQUE_ID,
                 depth=10,
             ),
-            nested=False,
+            options=AccessibilityInfoOptions(nested=False),
         )
 
     async def test_scroll_frontmost(self) -> None:
@@ -1253,8 +1254,7 @@ class TestParser(TestCase):
         await cli_main(cmd_input=["ui", "describe-all"])
         self.client_mock.accessibility_info.assert_called_once_with(
             target=None,
-            nested=False,
-            keys=None,
+            options=AccessibilityInfoOptions(nested=False),
         )
 
     async def test_accessibility_info_all_nested(self) -> None:
@@ -1262,8 +1262,7 @@ class TestParser(TestCase):
         await cli_main(cmd_input=["ui", "describe-all", "--nested"])
         self.client_mock.accessibility_info.assert_called_once_with(
             target=None,
-            nested=True,
-            keys=None,
+            options=AccessibilityInfoOptions(nested=True),
         )
 
     async def test_accessibility_info_at_point(self) -> None:
@@ -1271,8 +1270,7 @@ class TestParser(TestCase):
         await cli_main(cmd_input=["ui", "describe-point", "10", "20"])
         self.client_mock.accessibility_info.assert_called_once_with(
             target=AccessibilityPoint(x=10, y=20),
-            nested=False,
-            keys=None,
+            options=AccessibilityInfoOptions(nested=False),
         )
 
     async def test_accessibility_info_at_point_nested(self) -> None:
@@ -1280,8 +1278,7 @@ class TestParser(TestCase):
         await cli_main(cmd_input=["ui", "describe-point", "--nested", "10", "20"])
         self.client_mock.accessibility_info.assert_called_once_with(
             target=AccessibilityPoint(x=10, y=20),
-            nested=True,
-            keys=None,
+            options=AccessibilityInfoOptions(nested=True),
         )
 
     async def test_accessibility_info_all_keys(self) -> None:
@@ -1299,8 +1296,7 @@ class TestParser(TestCase):
         )
         self.client_mock.accessibility_info.assert_called_once_with(
             target=None,
-            nested=True,
-            keys=["AXLabel", "type"],
+            options=AccessibilityInfoOptions(nested=True, keys=["AXLabel", "type"]),
         )
 
     async def test_crash_list_all(self) -> None:
