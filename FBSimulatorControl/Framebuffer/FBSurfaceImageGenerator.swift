@@ -10,8 +10,7 @@ import FBControlCore
 import Foundation
 import IOSurface
 
-@objc(FBSurfaceImageGenerator)
-public final class FBSurfaceImageGenerator: NSObject, FBFramebufferConsumer {
+public final class FBSurfaceImageGenerator: FBFramebufferConsumer {
 
   // MARK: - Properties
 
@@ -23,7 +22,6 @@ public final class FBSurfaceImageGenerator: NSObject, FBFramebufferConsumer {
 
   // MARK: - Initializers
 
-  @objc(imageGeneratorWithScale:purpose:logger:)
   public convenience init(scale: NSDecimalNumber, purpose: String, logger: (any FBControlCoreLogger)?) {
     let namedLogger = logger?.withName("\(logger?.name ?? "")_\(purpose)")
     self.init(scale: scale, logger: namedLogger)
@@ -41,13 +39,10 @@ public final class FBSurfaceImageGenerator: NSObject, FBFramebufferConsumer {
       filter?.setValue(NSDecimalNumber.one, forKey: "inputAspectRatio")
       self.scaleFilter = filter
     }
-
-    super.init()
   }
 
   // MARK: - Public
 
-  @objc
   public func availableImage() -> CGImage? {
     guard let surface = self.surface else {
       return nil
@@ -60,7 +55,6 @@ public final class FBSurfaceImageGenerator: NSObject, FBFramebufferConsumer {
     return image()
   }
 
-  @objc
   public func image() -> CGImage? {
     guard let surface = self.surface else {
       return nil
@@ -69,7 +63,10 @@ public final class FBSurfaceImageGenerator: NSObject, FBFramebufferConsumer {
     var ciImage = CIImage(ioSurface: unsafeBitCast(surface, to: IOSurfaceRef.self))
     if let scaleFilter = self.scaleFilter {
       scaleFilter.setValue(ciImage, forKey: kCIInputImageKey)
-      ciImage = scaleFilter.outputImage!
+      guard let scaled = scaleFilter.outputImage else {
+        return nil
+      }
+      ciImage = scaled
       scaleFilter.setValue(ciImage, forKey: kCIInputImageKey)
     }
 
