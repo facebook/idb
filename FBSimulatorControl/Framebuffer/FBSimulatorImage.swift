@@ -20,7 +20,7 @@ public final class FBSimulatorImage: NSObject {
   private let writeQueue: DispatchQueue
   private let imageGenerator: FBSurfaceImageGenerator
   private let framebuffer: FBFramebuffer
-  private let consumerUUID: UUID
+  private var attachment: FBFramebufferAttachment?
 
   // MARK: - Initializers
 
@@ -32,7 +32,6 @@ public final class FBSimulatorImage: NSObject {
   init(framebuffer: FBFramebuffer, logger: (any FBControlCoreLogger)?) {
     self.framebuffer = framebuffer
     self.logger = logger!
-    self.consumerUUID = UUID()
     self.writeQueue = DispatchQueue(label: "com.facebook.FBSimulatorControl.framebuffer.image")
     self.imageGenerator = FBSurfaceImageGenerator(scale: NSDecimalNumber.one, purpose: "simulator_image", logger: logger)
     super.init()
@@ -46,10 +45,11 @@ public final class FBSimulatorImage: NSObject {
     // generator as unattached and double-attach it; the generator's callbacks are delivered on this
     // same queue.
     writeQueue.sync {
-      guard !framebuffer.isConsumerAttached(imageGenerator) else { return }
+      guard attachment == nil else { return }
       logger.log("Image Generator \(imageGenerator) not attached, attaching")
-      let surface: IOSurface? = framebuffer.attach(imageGenerator, on: writeQueue)
-      if let surface {
+      let attachment = framebuffer.attach(imageGenerator, on: writeQueue)
+      self.attachment = attachment
+      if let surface = attachment.initialSurface {
         logger.log("Surface \(surface) immediately available, adding to Image Generator \(imageGenerator)")
         imageGenerator.didChange(surface)
       } else {

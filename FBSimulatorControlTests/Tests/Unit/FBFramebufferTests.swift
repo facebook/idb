@@ -31,18 +31,18 @@ final class FBFramebufferTests: XCTestCase {
     surface.immediateSurface = ioSurface
     let framebuffer = makeFramebuffer(surface: surface)
 
-    let returned = framebuffer.attach(FakeFramebufferConsumer(), on: makeQueue())
+    let attachment = framebuffer.attach(FakeFramebufferConsumer(), on: makeQueue())
 
-    XCTAssertIdentical(returned, ioSurface)
+    XCTAssertIdentical(attachment.initialSurface, ioSurface)
   }
 
   func testAttachReturnsNilWhenNoSurfaceAvailable() {
     let surface = FakeFramebufferSurface()
     let framebuffer = makeFramebuffer(surface: surface)
 
-    let returned = framebuffer.attach(FakeFramebufferConsumer(), on: makeQueue())
+    let attachment = framebuffer.attach(FakeFramebufferConsumer(), on: makeQueue())
 
-    XCTAssertNil(returned)
+    XCTAssertNil(attachment.initialSurface)
   }
 
   // MARK: - Consumer fan-out
@@ -125,18 +125,37 @@ final class FBFramebufferTests: XCTestCase {
     XCTAssertGreaterThan(framebuffer.statsStartTime, 0)
   }
 
-  // MARK: - Detach
+  // MARK: - Attachment lifecycle
 
-  func testDetachUnregistersCallbacks() {
+  func testAttachmentCancelUnregistersCallbacks() {
     let surface = FakeFramebufferSurface()
     let framebuffer = makeFramebuffer(surface: surface)
-    let consumer = FakeFramebufferConsumer()
-    _ = framebuffer.attach(consumer, on: makeQueue())
-    XCTAssertTrue(framebuffer.isConsumerAttached(consumer))
+    let attachment = framebuffer.attach(FakeFramebufferConsumer(), on: makeQueue())
 
-    framebuffer.detach(consumer)
+    attachment.cancel()
 
-    XCTAssertFalse(framebuffer.isConsumerAttached(consumer))
+    XCTAssertEqual(surface.unregisteredTokens.count, 1)
+  }
+
+  func testAttachmentCancelIsIdempotent() {
+    let surface = FakeFramebufferSurface()
+    let framebuffer = makeFramebuffer(surface: surface)
+    let attachment = framebuffer.attach(FakeFramebufferConsumer(), on: makeQueue())
+
+    attachment.cancel()
+    attachment.cancel()
+
+    XCTAssertEqual(surface.unregisteredTokens.count, 1)
+  }
+
+  func testAttachmentReleaseUnregisters() {
+    let surface = FakeFramebufferSurface()
+    let framebuffer = makeFramebuffer(surface: surface)
+
+    do {
+      _ = framebuffer.attach(FakeFramebufferConsumer(), on: makeQueue())
+    }
+
     XCTAssertEqual(surface.unregisteredTokens.count, 1)
   }
 }

@@ -34,7 +34,6 @@ public final class FBFramebuffer: NSObject, @unchecked Sendable {
 
   // MARK: - Properties
 
-  private let consumers: NSMapTable<AnyObject, NSUUID>
   private let surface: any FBFramebufferSurface
   private let statsRecorder: FBFramebufferStatsRecorder
 
@@ -47,7 +46,6 @@ public final class FBFramebuffer: NSObject, @unchecked Sendable {
   }
 
   init(surface: any FBFramebufferSurface, logger: any FBControlCoreLogger) {
-    self.consumers = NSMapTable(keyOptions: .weakMemory, valueOptions: .copyIn)
     self.surface = surface
     self.statsRecorder = FBFramebufferStatsRecorder(logger: logger)
     super.init()
@@ -55,40 +53,17 @@ public final class FBFramebuffer: NSObject, @unchecked Sendable {
 
   // MARK: - Public Methods
 
-  @objc(attachConsumer:onQueue:)
-  public func attach(_ consumer: any FBFramebufferConsumer, on queue: DispatchQueue) -> IOSurface? {
-    // Don't attach the same consumer twice
-    assert(!isConsumerAttached(consumer), "Cannot re-attach the same consumer \(consumer)")
-    let consumerUUID = NSUUID()
-
-    // Attempt to return the surface synchronously (if supported).
+  /// Attach a consumer, delivering surface-change and damage callbacks on `queue`. The returned
+  /// `FBFramebufferAttachment` owns the registration: call `cancel()`, or release it, to detach.
+  public func attach(_ consumer: any FBFramebufferConsumer, on queue: DispatchQueue) -> FBFramebufferAttachment {
+    let token = UUID()
     let immediateSurface = surface.immediatelyAvailableSurface()
-
-    // Register the consumer.
-    consumers.setObject(consumerUUID, forKey: consumer as AnyObject)
-    registerConsumer(consumer, uuid: consumerUUID, queue: queue)
-
-    return immediateSurface
+    registerConsumer(consumer, token: token, queue: queue)
+    return FBFramebufferAttachment(framebuffer: self, token: token, initialSurface: immediateSurface)
   }
 
-  @objc(detachConsumer:)
-  public func detach(_ consumer: any FBFramebufferConsumer) {
-    guard let uuid = consumers.object(forKey: consumer as AnyObject) else {
-      return
-    }
-    consumers.removeObject(forKey: consumer as AnyObject)
-    unregisterConsumer(uuid: uuid)
-  }
-
-  @objc(isConsumerAttached:)
-  public func isConsumerAttached(_ consumer: any FBFramebufferConsumer) -> Bool {
-    let enumerator = consumers.keyEnumerator()
-    while let existingConsumer = enumerator.nextObject() {
-      if existingConsumer as AnyObject === consumer as AnyObject {
-        return true
-      }
-    }
-    return false
+  fileprivate func detach(token: UUID) {
+    surface.unregisterCallbacks(token: token)
   }
 
   // MARK: - Stats
@@ -103,7 +78,7 @@ public final class FBFramebuffer: NSObject, @unchecked Sendable {
 
   // MARK: - Private
 
-  private func registerConsumer(_ consumer: any FBFramebufferConsumer, uuid: NSUUID, queue: DispatchQueue) {
+  private func registerConsumer(_ consumer: any FBFramebufferConsumer, token: UUID, queue: DispatchQueue) {
     // SAFETY: the consumer is only ever messaged inside the `queue.async` blocks below, so every
     // delivery is serialized onto the consumer's own queue and the capture is never touched
     // concurrently. `FBFramebufferConsumer` is a reference type and cannot be made `Sendable`.
@@ -126,10 +101,41 @@ public final class FBFramebuffer: NSObject, @unchecked Sendable {
       }
     }
 
-    _ = try? surface.registerCallbacks(token: uuid as UUID, ioSurfaceChanged: ioSurfaceChanged, damageReceived: damageReceived)
+    _ = try? surface.registerCallbacks(token: token, ioSurfaceChanged: ioSurfaceChanged, damageReceived: damageReceived)
+  }
+}
+
+/// The handle returned by `FBFramebuffer.attach`. Owns a single consumer registration: the consumer
+/// is detached when `cancel()` is called or when this handle is released.
+public final class FBFramebufferAttachment {
+
+  /// The surface available at attach time, if the framebuffer could vend one synchronously.
+  public let initialSurface: IOSurface?
+
+  private let token: UUID
+  private weak var framebuffer: FBFramebuffer?
+  private let lock = NSLock()
+  private var isCancelled = false
+
+  init(framebuffer: FBFramebuffer, token: UUID, initialSurface: IOSurface?) {
+    self.framebuffer = framebuffer
+    self.token = token
+    self.initialSurface = initialSurface
   }
 
-  private func unregisterConsumer(uuid: NSUUID) {
-    surface.unregisterCallbacks(token: uuid as UUID)
+  /// Detach the consumer. Idempotent.
+  public func cancel() {
+    lock.lock()
+    if isCancelled {
+      lock.unlock()
+      return
+    }
+    isCancelled = true
+    lock.unlock()
+    framebuffer?.detach(token: token)
+  }
+
+  deinit {
+    cancel()
   }
 }

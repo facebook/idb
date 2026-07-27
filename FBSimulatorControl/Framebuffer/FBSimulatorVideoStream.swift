@@ -798,6 +798,10 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
   private var startAwaiters: [CheckedContinuation<Void, Error>] = []
   private var stopAwaiters: [CheckedContinuation<Void, Never>] = []
 
+  /// The framebuffer attachment held while streaming; `cancel()` (or release) detaches this stream
+  /// as a consumer. Nil before start and after stop.
+  private var attachment: FBFramebufferAttachment?
+
   /// The push-loop task that drives frame pushes (nil before `mountSurface` starts it). It iterates a
   /// stimulus `AsyncSequence` of `FrameTrigger`s: `FrameCadence` (the fixed-rate clock) in `.eager`
   /// mode, or `LazyFrameTriggers` (poked by the framebuffer callbacks) in `.lazy` mode.
@@ -919,9 +923,10 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
         self.consumer = consumer
         // Attach to the framebuffer; when a surface is already available this mounts it synchronously
         // (latching `hasStarted`), otherwise the first surface callback does.
-        if !framebuffer.isConsumerAttached(self) {
-          let surface = framebuffer.attach(self, on: writeQueue)
-          didChange(surface)
+        if attachment == nil {
+          let attachment = framebuffer.attach(self, on: writeQueue)
+          self.attachment = attachment
+          didChange(attachment.initialSurface)
         }
         if hasStarted {
           continuation.resume()
@@ -943,12 +948,13 @@ public class FBSimulatorVideoStream: NSObject, FBFramebufferConsumer, FBVideoStr
           continuation.resume(throwing: FBSimulatorVideoStreamError.stopWithoutConsumer)
           return
         }
-        if !framebuffer.isConsumerAttached(self) {
+        guard let attachment = self.attachment else {
           continuation.resume(throwing: FBSimulatorVideoStreamError.stopNotAttachedToSurface)
           return
         }
         self.consumer = nil
-        framebuffer.detach(self)
+        attachment.cancel()
+        self.attachment = nil
         consumer.consumeEndOfFile()
         if let framePusher {
           do {
