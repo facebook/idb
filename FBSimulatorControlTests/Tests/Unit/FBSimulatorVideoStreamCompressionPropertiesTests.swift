@@ -17,9 +17,7 @@ final class FBSimulatorVideoStreamCompressionPropertiesTests: XCTestCase {
     }
     let specification =
       FBSimulatorVideoStreamFramePusher_VideoToolbox.encoderSpecification(
-        for: kCMVideoCodecType_JPEG,
-        format: .mjpeg,
-        allowsSoftwareMJPEGEncoding: false
+        for: .mjpeg(encoder: .requireHardware)
       )
 
     XCTAssertEqual(
@@ -46,9 +44,7 @@ final class FBSimulatorVideoStreamCompressionPropertiesTests: XCTestCase {
   func testMJPEGEncoderAllowsSoftwareEncodingWhenOptedIn() {
     let specification =
       FBSimulatorVideoStreamFramePusher_VideoToolbox.encoderSpecification(
-        for: kCMVideoCodecType_JPEG,
-        format: .mjpeg,
-        allowsSoftwareMJPEGEncoding: true
+        for: .mjpeg(encoder: .allowSoftware)
       )
 
     XCTAssertEqual(
@@ -71,15 +67,13 @@ final class FBSimulatorVideoStreamCompressionPropertiesTests: XCTestCase {
     )
   }
 
-  func testH264EncoderRetainsRequiredHardwareAccelerationWhenMJPEGSoftwareEncodingIsAllowed() throws {
+  func testCompressedVideoRequiresHardwareAcceleration() throws {
     guard #available(macOS 12.1, *) else {
       throw XCTSkip("Required hardware acceleration starts on macOS 12.1")
     }
     let specification =
       FBSimulatorVideoStreamFramePusher_VideoToolbox.encoderSpecification(
-        for: kCMVideoCodecType_H264,
-        format: .compressedVideo(withCodec: .h264, transport: .annexB),
-        allowsSoftwareMJPEGEncoding: true
+        for: .compressedVideo(withCodec: .h264, transport: .annexB)
       )
 
     XCTAssertEqual(
@@ -103,15 +97,13 @@ final class FBSimulatorVideoStreamCompressionPropertiesTests: XCTestCase {
     )
   }
 
-  func testMinicapRetainsRequiredHardwareAccelerationWhenMJPEGSoftwareEncodingIsAllowed() throws {
+  func testMinicapRequiresHardwareAcceleration() throws {
     guard #available(macOS 12.1, *) else {
       throw XCTSkip("Required hardware acceleration starts on macOS 12.1")
     }
     let specification =
       FBSimulatorVideoStreamFramePusher_VideoToolbox.encoderSpecification(
-        for: kCMVideoCodecType_JPEG,
-        format: .minicap,
-        allowsSoftwareMJPEGEncoding: true
+        for: .minicap
       )
 
     XCTAssertEqual(
@@ -135,26 +127,23 @@ final class FBSimulatorVideoStreamCompressionPropertiesTests: XCTestCase {
     )
   }
 
-  func testSoftwareMJPEGEncodingIsOptInAndAffectsConfigurationIdentity() {
-    let defaultConfiguration = FBVideoStreamConfiguration(
-      format: .mjpeg,
+  func testMJPEGEncoderSelectionAffectsConfigurationIdentity() {
+    let hardwareConfiguration = FBVideoStreamConfiguration(
+      format: .mjpeg(encoder: .requireHardware),
       framesPerSecond: nil,
       rateControl: nil,
       scaleFactor: nil,
       keyFrameRate: nil
     )
     let softwareConfiguration = FBVideoStreamConfiguration(
-      format: .mjpeg,
+      format: .mjpeg(encoder: .allowSoftware),
       framesPerSecond: nil,
       rateControl: nil,
       scaleFactor: nil,
-      keyFrameRate: nil,
-      allowsSoftwareMJPEGEncoding: true
+      keyFrameRate: nil
     )
 
-    XCTAssertFalse(defaultConfiguration.allowsSoftwareMJPEGEncoding)
-    XCTAssertTrue(softwareConfiguration.allowsSoftwareMJPEGEncoding)
-    XCTAssertNotEqual(defaultConfiguration, softwareConfiguration)
+    XCTAssertNotEqual(hardwareConfiguration, softwareConfiguration)
   }
 
   // MARK: - Shared Properties
@@ -178,7 +167,7 @@ final class FBSimulatorVideoStreamCompressionPropertiesTests: XCTestCase {
 
   func testCallerPropertiesMerged() {
     let config = FBVideoStreamConfiguration(
-      format: FBVideoStreamFormat.mjpeg,
+      format: FBVideoStreamFormat.mjpeg(encoder: .requireHardware),
       framesPerSecond: nil,
       rateControl: nil,
       scaleFactor: nil,
@@ -193,7 +182,7 @@ final class FBSimulatorVideoStreamCompressionPropertiesTests: XCTestCase {
 
   func testMJPEGCompressionPropertiesContainQuality() {
     let config = FBVideoStreamConfiguration(
-      format: FBVideoStreamFormat.mjpeg,
+      format: FBVideoStreamFormat.mjpeg(encoder: .requireHardware),
       framesPerSecond: nil,
       rateControl: FBVideoStreamRateControl.quality(0.5),
       scaleFactor: nil,
@@ -246,7 +235,7 @@ final class FBSimulatorVideoStreamCompressionPropertiesTests: XCTestCase {
 
   func testExplicitBitrate() {
     let config = FBVideoStreamConfiguration(
-      format: FBVideoStreamFormat.mjpeg,
+      format: FBVideoStreamFormat.mjpeg(encoder: .requireHardware),
       framesPerSecond: nil,
       rateControl: FBVideoStreamRateControl.bitrate(500000),
       scaleFactor: nil,

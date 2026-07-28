@@ -558,11 +558,7 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: FBSimulatorVideoStre
   }
 
   func setup(with pixelBuffer: CVPixelBuffer, edgeInsets: FBVideoStreamEdgeInsets) throws {
-    let encoderSpecification = Self.encoderSpecification(
-      for: videoCodec,
-      format: configuration.format,
-      allowsSoftwareMJPEGEncoding: configuration.allowsSoftwareMJPEGEncoding
-    )
+    let encoderSpecification = Self.encoderSpecification(for: configuration.format)
 
     let sourceWidth = CVPixelBufferGetWidth(pixelBuffer)
     let sourceHeight = CVPixelBufferGetHeight(pixelBuffer)
@@ -636,12 +632,8 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: FBSimulatorVideoStre
     self.compressionSession = compressionSession
   }
 
-  static func encoderSpecification(
-    for codec: CMVideoCodecType,
-    format: FBVideoStreamFormat,
-    allowsSoftwareMJPEGEncoding: Bool
-  ) -> [String: Any] {
-    if codec == kCMVideoCodecType_JPEG && format == .mjpeg && allowsSoftwareMJPEGEncoding {
+  static func encoderSpecification(for format: FBVideoStreamFormat) -> [String: Any] {
+    if case .mjpeg(encoder: .allowSoftware) = format {
       return [
         kVTVideoEncoderSpecification_EnableHardwareAcceleratedVideoEncoder as String: true
       ]

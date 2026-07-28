@@ -40,7 +40,7 @@ final class FBDeviceVideoStreamTests: XCTestCase {
 
   func testClassForConfigurationResolvesSupportedFormats() {
     XCTAssertNotNil(FBDeviceVideoStream.classForConfiguration(configuration(.bgra)))
-    XCTAssertNotNil(FBDeviceVideoStream.classForConfiguration(configuration(.mjpeg)))
+    XCTAssertNotNil(FBDeviceVideoStream.classForConfiguration(configuration(.mjpeg(encoder: .requireHardware))))
     XCTAssertNotNil(FBDeviceVideoStream.classForConfiguration(configuration(.minicap)))
     XCTAssertNotNil(FBDeviceVideoStream.classForConfiguration(configuration(.compressedVideo(withCodec: .h264, transport: .annexB))))
     XCTAssertNotNil(FBDeviceVideoStream.classForConfiguration(configuration(.compressedVideo(withCodec: .h264, transport: .mpegts))))
@@ -102,7 +102,7 @@ final class FBDeviceVideoStreamTests: XCTestCase {
 
   func testMJPEGPassesThroughJPEGBytes() throws {
     let consumer = FBDataBuffer.accumulatingBuffer()
-    let stream = try makeStream(for: .mjpeg, consumer: consumer)
+    let stream = try makeStream(for: .mjpeg(encoder: .requireHardware), consumer: consumer)
     let jpeg: [UInt8] = [0xFF, 0xD8, 0xFF, 0xE0, 0x01, 0x02, 0x03, 0xFF, 0xD9]
 
     stream.consumeSampleBuffer(makeJPEGSampleBuffer(bytes: jpeg))

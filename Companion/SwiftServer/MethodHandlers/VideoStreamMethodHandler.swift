@@ -122,7 +122,7 @@ struct VideoStreamMethodHandler {
     case .rbga:
       return .bgra
     case .mjpeg:
-      return .mjpeg
+      return .mjpeg(encoder: .requireHardware)
     case .minicap:
       return .minicap
     case .i420, .UNRECOGNIZED:

@@ -20,12 +20,21 @@ public enum FBVideoStreamTransport: String {
   case fmp4
 }
 
+/// The encoders an MJPEG stream may use. Hardware encoding is required by default; software
+/// encoding is a deliberate opt-in for hosts without a usable hardware JPEG encoder, trading CPU
+/// for availability.
+public enum FBMJPEGEncoderSelection: Hashable {
+  case requireHardware
+  case allowSoftware
+}
+
 /// The format of a video stream: a compressed codec carried over a transport, or one of the raw/JPEG
 /// formats that have no codec or transport. Modeled as a sum so `transport` exists only where it is
-/// meaningful (the `compressedVideo` case) and every dispatch site matches exhaustively.
+/// meaningful (the `compressedVideo` case), the encoder selection only where it applies (`mjpeg`),
+/// and every dispatch site matches exhaustively.
 public enum FBVideoStreamFormat: Hashable {
   case compressedVideo(withCodec: FBVideoStreamCodec, transport: FBVideoStreamTransport)
-  case mjpeg
+  case mjpeg(encoder: FBMJPEGEncoderSelection)
   case minicap
   case bgra
 }
@@ -35,8 +44,10 @@ extension FBVideoStreamFormat: CustomStringConvertible {
     switch self {
     case let .compressedVideo(codec, transport):
       return "\(codec.rawValue) over \(transport.rawValue)"
-    case .mjpeg:
+    case .mjpeg(encoder: .requireHardware):
       return "MJPEG"
+    case .mjpeg(encoder: .allowSoftware):
+      return "MJPEG (software encoder permitted)"
     case .minicap:
       return "Minicap"
     case .bgra:
@@ -86,31 +97,27 @@ public struct FBVideoEncodeOptions: Hashable {
   }
 }
 
-/// Describes a video stream: the output format, the options controlling how frames are encoded,
-/// and whether software MJPEG encoding is permitted.
+/// Describes a video stream: the output format and the options controlling how frames are encoded.
 public struct FBVideoStreamConfiguration: Hashable, CustomStringConvertible {
 
   public let format: FBVideoStreamFormat
   public let encodeOptions: FBVideoEncodeOptions
-  public let allowsSoftwareMJPEGEncoding: Bool
 
   public var framesPerSecond: Int? { encodeOptions.framesPerSecond }
   public var rateControl: FBVideoStreamRateControl { encodeOptions.rateControl }
   public var scaleFactor: Double? { encodeOptions.scaleFactor }
   public var keyFrameRate: Double { encodeOptions.keyFrameRate }
 
-  public init(format: FBVideoStreamFormat, encodeOptions: FBVideoEncodeOptions, allowsSoftwareMJPEGEncoding: Bool = false) {
+  public init(format: FBVideoStreamFormat, encodeOptions: FBVideoEncodeOptions) {
     self.format = format
     self.encodeOptions = encodeOptions
-    self.allowsSoftwareMJPEGEncoding = allowsSoftwareMJPEGEncoding
   }
 
-  public init(format: FBVideoStreamFormat, framesPerSecond: Int?, rateControl: FBVideoStreamRateControl?, scaleFactor: Double?, keyFrameRate: Double?, allowsSoftwareMJPEGEncoding: Bool = false) {
-    self.init(format: format, encodeOptions: FBVideoEncodeOptions(framesPerSecond: framesPerSecond, rateControl: rateControl, scaleFactor: scaleFactor, keyFrameRate: keyFrameRate), allowsSoftwareMJPEGEncoding: allowsSoftwareMJPEGEncoding)
+  public init(format: FBVideoStreamFormat, framesPerSecond: Int?, rateControl: FBVideoStreamRateControl?, scaleFactor: Double?, keyFrameRate: Double?) {
+    self.init(format: format, encodeOptions: FBVideoEncodeOptions(framesPerSecond: framesPerSecond, rateControl: rateControl, scaleFactor: scaleFactor, keyFrameRate: keyFrameRate))
   }
 
   public var description: String {
-    let softwareMJPEGSuffix = allowsSoftwareMJPEGEncoding ? " | Software MJPEG true" : ""
-    return "Format \(format) | FPS \(framesPerSecond.map { "\($0)" } ?? "nil") | Rate Control \(rateControl) | Scale \(scaleFactor.map { "\($0)" } ?? "nil") | Key frame rate \(keyFrameRate)\(softwareMJPEGSuffix)"
+    "Format \(format) | FPS \(framesPerSecond.map { "\($0)" } ?? "nil") | Rate Control \(rateControl) | Scale \(scaleFactor.map { "\($0)" } ?? "nil") | Key frame rate \(keyFrameRate)"
   }
 }
