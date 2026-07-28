@@ -43,17 +43,24 @@ final class FakeFramebufferSurface: FBFramebufferSurface {
   }
 }
 
-/// A fake `FBFramebufferConsumer` that records what it receives.
+/// A fake `FBFramebufferConsumer` that records what it receives. The `onSurface`/`onDamage` hooks
+/// fire after each recorded delivery (on the delivery queue), so tests can await delivery with an
+/// `XCTestExpectation` without encoding any assumption about when the delivery was enqueued.
 final class FakeFramebufferConsumer: NSObject, FBFramebufferConsumer {
   private(set) var receivedSurfaces: [IOSurface?] = []
   private(set) var damageCallbackCount = 0
 
+  var onSurface: (() -> Void)?
+  var onDamage: (() -> Void)?
+
   func didChange(_ surface: IOSurface?) {
     receivedSurfaces.append(surface)
+    onSurface?()
   }
 
   func didReceiveDamageRect() {
     damageCallbackCount += 1
+    onDamage?()
   }
 }
 

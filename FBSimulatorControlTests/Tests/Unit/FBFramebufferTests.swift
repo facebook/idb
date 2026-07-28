@@ -52,12 +52,15 @@ final class FBFramebufferTests: XCTestCase {
     let framebuffer = makeFramebuffer(surface: surface)
     let consumer = FakeFramebufferConsumer()
     let queue = makeQueue()
-    _ = framebuffer.attach(consumer, on: queue)
+    let attachment = framebuffer.attach(consumer, on: queue)
+    defer { attachment.cancel() }
 
+    let delivered = expectation(description: "surface delivered on the consumer queue")
+    consumer.onSurface = { delivered.fulfill() }
     let ioSurface = makeTestIOSurface()
     surface.ioSurfaceChanged?(ioSurface)
-    queue.sync {}
 
+    wait(for: [delivered], timeout: 5)
     XCTAssertEqual(consumer.receivedSurfaces.count, 1)
     XCTAssertIdentical(consumer.receivedSurfaces.first ?? nil, ioSurface)
   }
@@ -67,11 +70,14 @@ final class FBFramebufferTests: XCTestCase {
     let framebuffer = makeFramebuffer(surface: surface)
     let consumer = FakeFramebufferConsumer()
     let queue = makeQueue()
-    _ = framebuffer.attach(consumer, on: queue)
+    let attachment = framebuffer.attach(consumer, on: queue)
+    defer { attachment.cancel() }
 
+    let delivered = expectation(description: "damage delivered on the consumer queue")
+    consumer.onDamage = { delivered.fulfill() }
     surface.damageReceived?(FBFramebufferDamage(rects: [CGRect(x: 0, y: 0, width: 1, height: 1)]))
-    queue.sync {}
 
+    wait(for: [delivered], timeout: 5)
     XCTAssertEqual(consumer.damageCallbackCount, 1)
   }
 
@@ -82,11 +88,14 @@ final class FBFramebufferTests: XCTestCase {
     let framebuffer = makeFramebuffer(surface: surface)
     let consumer = FakeFramebufferConsumer()
     let queue = makeQueue()
-    _ = framebuffer.attach(consumer, on: queue)
+    let attachment = framebuffer.attach(consumer, on: queue)
+    defer { attachment.cancel() }
 
+    let delivered = expectation(description: "empty damage delivered on the consumer queue")
+    consumer.onDamage = { delivered.fulfill() }
     surface.damageReceived?(FBFramebufferDamage(rects: []))
-    queue.sync {}
 
+    wait(for: [delivered], timeout: 5)
     XCTAssertEqual(consumer.damageCallbackCount, 1)
   }
 
