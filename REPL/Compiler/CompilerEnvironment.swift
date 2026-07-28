@@ -62,22 +62,74 @@ public enum Platform {
   }
 }
 
-public func resolveSDKPath(platform: Platform) throws -> String {
-  let process = Process()
-  process.executableURL = URL(fileURLWithPath: "/usr/bin/xcrun")
-  process.arguments = ["--sdk", platform.sdkName, "--show-sdk-path"]
-  let pipe = Pipe()
-  process.standardOutput = pipe
-  try process.run()
-  process.waitUntilExit()
+/// Locates the Swift toolchain and Apple SDK used to compile injected code.
+/// macOS resolves these through Xcode (`xcode-select` / `xcrun`); other
+/// platforms provide their own implementation.
+protocol CompilerToolchain: Sendable {
+  /// The toolchain directory containing `usr/bin/swiftc`.
+  func toolchainPath() throws -> String
+  /// The Apple SDK path used for `SDKROOT`.
+  func sdkPath(for platform: Platform) throws -> String
+  /// The SDK's platform version (e.g. "27.0") -- the highest deployment target
+  /// the toolchain can build for.
+  func sdkPlatformVersion(for platform: Platform) throws -> String
+}
 
-  guard process.terminationStatus == 0,
-    let output = String(data: pipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8)
-  else {
-    throw CompilerEnvironmentError("Failed to resolve SDK path")
+/// The macOS toolchain: Xcode, located via `xcode-select` and `xcrun`.
+struct XcodeSelectToolchain: CompilerToolchain {
+  /// The selected Xcode toolchain, via `xcode-select -p`.
+  func toolchainPath() throws -> String {
+    let developerDirectory = try run(
+      "/usr/bin/xcode-select", ["-p"],
+      failure: "Failed to resolve the selected Xcode toolchain via xcode-select; pass --toolchain-path explicitly")
+    return (developerDirectory as NSString).appendingPathComponent("Toolchains/XcodeDefault.xctoolchain")
   }
 
-  return output.trimmingCharacters(in: .whitespacesAndNewlines)
+  func sdkPath(for platform: Platform) throws -> String {
+    try run(
+      "/usr/bin/xcrun", ["--sdk", platform.sdkName, "--show-sdk-path"],
+      failure: "Failed to resolve SDK path")
+  }
+
+  func sdkPlatformVersion(for platform: Platform) throws -> String {
+    try run(
+      "/usr/bin/xcrun", ["--sdk", platform.sdkName, "--show-sdk-platform-version"],
+      failure: "Failed to resolve SDK platform version")
+  }
+
+  /// Runs `executable` with `arguments` and returns its trimmed stdout, throwing
+  /// `CompilerEnvironmentError(failure)` on a non-zero exit or unreadable output.
+  private func run(_ executable: String, _ arguments: [String], failure: String) throws -> String {
+    let process = Process()
+    process.executableURL = URL(fileURLWithPath: executable)
+    process.arguments = arguments
+    let pipe = Pipe()
+    process.standardOutput = pipe
+    try process.run()
+    process.waitUntilExit()
+
+    guard process.terminationStatus == 0,
+      let output = String(data: pipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8)
+    else {
+      throw CompilerEnvironmentError(failure)
+    }
+
+    return output.trimmingCharacters(in: .whitespacesAndNewlines)
+  }
+}
+
+/// Selects the toolchain for the current platform. macOS uses Xcode; other
+/// platforms may use a custom provider.
+func makeCompilerToolchain() -> any CompilerToolchain {
+  #if os(macOS)
+  return XcodeSelectToolchain()
+  #else
+  // @oss-disable
+  #endif
+}
+
+public func resolveSDKPath(platform: Platform) throws -> String {
+  try makeCompilerToolchain().sdkPath(for: platform)
 }
 
 /// Resolves the LLVM target triple for compiling injected code. The OS-version
@@ -91,30 +143,9 @@ public func resolveSDKPath(platform: Platform) throws -> String {
 /// against a newer runtime); the deployment target is the lower of the two,
 /// since the compiler rejects a deployment target above the SDK version.
 public func resolveTargetTriple(platform: Platform, runtimeOSVersion: String) throws -> String {
-  let sdkVersion = try resolveSDKPlatformVersion(platform: platform)
+  let sdkVersion = try makeCompilerToolchain().sdkPlatformVersion(for: platform)
   return platform.targetTriple(
     version: DeploymentTargetVersion.floored(runtimeOSVersion: runtimeOSVersion, sdkVersion: sdkVersion))
-}
-
-/// The local SDK's platform version (e.g. "27.0"), from
-/// `xcrun --sdk <name> --show-sdk-platform-version` -- the highest deployment
-/// target the installed toolchain can build for.
-private func resolveSDKPlatformVersion(platform: Platform) throws -> String {
-  let process = Process()
-  process.executableURL = URL(fileURLWithPath: "/usr/bin/xcrun")
-  process.arguments = ["--sdk", platform.sdkName, "--show-sdk-platform-version"]
-  let pipe = Pipe()
-  process.standardOutput = pipe
-  try process.run()
-  process.waitUntilExit()
-
-  guard process.terminationStatus == 0,
-    let output = String(data: pipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8)
-  else {
-    throw CompilerEnvironmentError("Failed to resolve SDK platform version")
-  }
-
-  return output.trimmingCharacters(in: .whitespacesAndNewlines)
 }
 
 /// Chooses the OS version to compile injected code against (the deployment
@@ -144,29 +175,11 @@ public enum DeploymentTargetVersion {
   }
 }
 
-/// Resolves the Swift toolchain path. Returns `explicit` when given (e.g. the
-/// `test` context derives one from the test target's `[xctoolchain]` sub-target);
-/// otherwise falls back to the locally selected Xcode toolchain via
-/// `xcode-select -p`, matching idb-repl-simulator.sh.
+/// Resolves the Swift toolchain path. Returns `explicit` when given;
+/// otherwise uses the current platform's toolchain.
 public func resolveToolchainPath(explicit: String?) throws -> String {
   if let explicit {
     return explicit
   }
-
-  let process = Process()
-  process.executableURL = URL(fileURLWithPath: "/usr/bin/xcode-select")
-  process.arguments = ["-p"]
-  let pipe = Pipe()
-  process.standardOutput = pipe
-  try process.run()
-  process.waitUntilExit()
-
-  guard process.terminationStatus == 0,
-    let output = String(data: pipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8)
-  else {
-    throw CompilerEnvironmentError("Failed to resolve the selected Xcode toolchain via xcode-select; pass --toolchain-path explicitly")
-  }
-
-  let developerDirectory = output.trimmingCharacters(in: .whitespacesAndNewlines)
-  return (developerDirectory as NSString).appendingPathComponent("Toolchains/XcodeDefault.xctoolchain")
+  return try makeCompilerToolchain().toolchainPath()
 }
