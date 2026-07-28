@@ -35,9 +35,8 @@ private class FBDeviceDebugServer_TwistedPairFiles: NSObject {
       return nil
     }
 
-    // FBControlCoreLogger and FBMutableFuture are thread-safe ObjC
-    // types that aren't Sendable.
-    nonisolated(unsafe) let logger = self.logger
+    // FBMutableFuture is a thread-safe ObjC type that isn't Sendable.
+    let logger = self.logger
     let socket = self.socket
     let socketReadHandle = FileHandle(fileDescriptor: socket)
     nonisolated(unsafe) let connection = self.connection

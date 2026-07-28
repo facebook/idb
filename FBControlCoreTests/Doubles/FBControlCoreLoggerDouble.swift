@@ -8,7 +8,8 @@
 import FBControlCore
 
 /// A Double of a Logger that does nothing.
-final class FBControlCoreLoggerDouble: NSObject, FBControlCoreLogger {
+// SAFETY: stateless no-op.
+final class FBControlCoreLoggerDouble: NSObject, FBControlCoreLogger, @unchecked Sendable {
   var name: String? { nil }
   var level: FBControlCoreLogLevel { .multiple }
 

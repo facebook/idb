@@ -8,7 +8,11 @@
 import Foundation
 
 /// A Protocol for Classes that receive Logger Messages.
-@objc public protocol FBControlCoreLogger: NSObjectProtocol {
+///
+/// Conformers must be thread-safe: loggers are shared freely across queues, private-framework
+/// callback threads, and actors throughout the codebase. The `Sendable` refinement encodes that
+/// long-standing contract in the type system.
+@objc public protocol FBControlCoreLogger: NSObjectProtocol, Sendable {
   /// Logs a Message with the provided String.
   @discardableResult
   func log(_ message: String) -> FBControlCoreLogger
@@ -36,5 +40,9 @@ import Foundation
 }
 
 // MARK: - Conformance extensions for ObjC classes
+
+// SAFETY: FBCompositeLogger holds only an immutable array of child loggers, which are themselves
+// required to be thread-safe by the protocol contract above.
+extension FBCompositeLogger: @unchecked Sendable {}
 
 extension FBCompositeLogger: FBControlCoreLogger {}

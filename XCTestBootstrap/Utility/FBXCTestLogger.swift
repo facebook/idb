@@ -11,7 +11,9 @@ import Foundation
 private let fbxctestOutputLogDirectoryEnv = "FBXCTEST_LOG_DIRECTORY"
 private let xctoolOutputLogDirectoryEnv = "XCTOOL_TEST_ENV_FB_LOG_DIRECTORY"
 
-@objc public final class FBXCTestLogger: NSObject, FBControlCoreLogger {
+// SAFETY: all stored state is immutable; thread-safety of logging delegates to the base logger,
+// which the FBControlCoreLogger contract requires to be thread-safe.
+@objc public final class FBXCTestLogger: NSObject, FBControlCoreLogger, @unchecked Sendable {
 
   private let baseLogger: FBControlCoreLogger
   @objc public let logDirectory: String

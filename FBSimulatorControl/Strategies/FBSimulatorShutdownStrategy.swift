@@ -63,8 +63,7 @@ public final class FBSimulatorShutdownStrategy: NSObject {
   private static let shutdownWhenShuttingDownErrorCode: Int = 164
 
   private static func shutdownSimulatorAsync(_ simulator: FBSimulator) async throws {
-    // FBControlCoreLogger is a thread-safe ObjC protocol that is not Sendable.
-    nonisolated(unsafe) let logger = simulator.logger
+    let logger = simulator.logger
     let errorCode = shutdownWhenShuttingDownErrorCode
 
     logger?.debug().log("Shutting down Simulator \(simulator.udid)")

@@ -201,8 +201,7 @@ public class FBSimulatorApplicationCommands: NSObject, FBiOSTargetCommand {
       stdOutPath: translateAbsolutePath(stdOutPath, toPathRelativeTo: simulator.dataDirectory!),
       stdErrPath: translateAbsolutePath(stdErrPath, toPathRelativeTo: simulator.dataDirectory!))
 
-    // FBControlCoreLogger is a thread-safe ObjC protocol that is not Sendable.
-    nonisolated(unsafe) let logger = simulator.logger
+    let logger = simulator.logger
     let bundleID = configuration.bundleID
     logger?.log("Launching Application \(bundleID) with \(FBCollectionInformation.oneLineDescription(from: configuration.arguments)) \(FBCollectionInformation.oneLineDescription(from: configuration.environment))")
 

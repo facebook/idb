@@ -22,8 +22,7 @@ public final class FBSimulatorEraseStrategy: NSObject {
   // MARK: - Private
 
   private static func eraseContentsAndSettings(_ simulator: FBSimulator) async throws {
-    // FBControlCoreLogger is a thread-safe ObjC protocol that is not Sendable.
-    nonisolated(unsafe) let logger = simulator.logger
+    let logger = simulator.logger
     let description = "\(simulator)"
     logger?.log("Erasing \(description)")
     try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in

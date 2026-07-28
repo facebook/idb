@@ -11,11 +11,15 @@ import FBControlCore
 import Foundation
 
 /// A test double logger that captures all logged messages for assertion.
-final class CapturingLogger: NSObject, FBControlCoreLogger {
+// SAFETY: writes are serialized by `lock`; tests read `messages` after the work under test finishes.
+final class CapturingLogger: NSObject, FBControlCoreLogger, @unchecked Sendable {
   let messages = NSMutableArray()
+  private let lock = NSLock()
 
   @discardableResult
   func log(_ message: String) -> any FBControlCoreLogger {
+    lock.lock()
+    defer { lock.unlock() }
     messages.add(message)
     return self
   }

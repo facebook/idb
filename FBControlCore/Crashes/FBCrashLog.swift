@@ -176,7 +176,6 @@ public class FBCrashLogInfo: NSObject, NSCopying {
     for basePath in diagnosticReportsPaths {
       let fileNames = (try? FileManager.default.contentsOfDirectory(atPath: basePath)) ?? []
       let predicate = predicateForFiles(withBasePath: basePath, afterDate: date, withExtensions: ["crash", "ips"])
-      nonisolated(unsafe) let theLogger = logger
       let crashInfos = FBConcurrentCollectionOperations.filterMap(
         fileNames as [Any],
         predicate: predicate,
@@ -186,7 +185,7 @@ public class FBCrashLogInfo: NSObject, NSCopying {
           do {
             return try FBCrashLogInfo.fromCrashLog(atPath: path)
           } catch {
-            theLogger?.log("Error parsing log \(error)")
+            logger?.log("Error parsing log \(error)")
             return NSNull()
           }
         }

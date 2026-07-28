@@ -56,7 +56,9 @@ private final class FBIDBLoggerOperation: NSObject, LogOperation, @unchecked Sen
   }
 }
 
-@objc public final class FBIDBLogger: FBCompositeLogger {
+// Restates the base class's @unchecked Sendable, as required for subclasses; all added state is
+// immutable or confined to `loggerQueue`.
+@objc public final class FBIDBLogger: FBCompositeLogger, @unchecked Sendable {
 
   private static let loggerQueue: DispatchQueue = DispatchQueue(label: "com.facebook.idb.logger")
 
