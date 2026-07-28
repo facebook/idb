@@ -11,6 +11,152 @@ import XCTest
 
 final class FBSimulatorVideoStreamCompressionPropertiesTests: XCTestCase {
 
+  func testMJPEGEncoderRequiresHardwareAccelerationByDefault() throws {
+    guard #available(macOS 12.1, *) else {
+      throw XCTSkip("Required hardware acceleration starts on macOS 12.1")
+    }
+    let specification =
+      FBSimulatorVideoStreamFramePusher_VideoToolbox.encoderSpecification(
+        for: kCMVideoCodecType_JPEG,
+        format: .mjpeg,
+        allowsSoftwareMJPEGEncoding: false
+      )
+
+    XCTAssertEqual(
+      specification[
+        kVTVideoEncoderSpecification_RequireHardwareAcceleratedVideoEncoder
+          as String
+      ] as? Bool,
+      true
+    )
+    XCTAssertEqual(
+      specification[
+        kVTVideoEncoderSpecification_EnableLowLatencyRateControl as String
+      ] as? Bool,
+      true
+    )
+    XCTAssertNil(
+      specification[
+        kVTVideoEncoderSpecification_EnableHardwareAcceleratedVideoEncoder
+          as String
+      ]
+    )
+  }
+
+  func testMJPEGEncoderAllowsSoftwareEncodingWhenOptedIn() {
+    let specification =
+      FBSimulatorVideoStreamFramePusher_VideoToolbox.encoderSpecification(
+        for: kCMVideoCodecType_JPEG,
+        format: .mjpeg,
+        allowsSoftwareMJPEGEncoding: true
+      )
+
+    XCTAssertEqual(
+      specification[
+        kVTVideoEncoderSpecification_EnableHardwareAcceleratedVideoEncoder
+          as String
+      ] as? Bool,
+      true
+    )
+    XCTAssertNil(
+      specification[
+        kVTVideoEncoderSpecification_RequireHardwareAcceleratedVideoEncoder
+          as String
+      ]
+    )
+    XCTAssertNil(
+      specification[
+        kVTVideoEncoderSpecification_EnableLowLatencyRateControl as String
+      ]
+    )
+  }
+
+  func testH264EncoderRetainsRequiredHardwareAccelerationWhenMJPEGSoftwareEncodingIsAllowed() throws {
+    guard #available(macOS 12.1, *) else {
+      throw XCTSkip("Required hardware acceleration starts on macOS 12.1")
+    }
+    let specification =
+      FBSimulatorVideoStreamFramePusher_VideoToolbox.encoderSpecification(
+        for: kCMVideoCodecType_H264,
+        format: .compressedVideo(withCodec: .h264, transport: .annexB),
+        allowsSoftwareMJPEGEncoding: true
+      )
+
+    XCTAssertEqual(
+      specification[
+        kVTVideoEncoderSpecification_RequireHardwareAcceleratedVideoEncoder
+          as String
+      ] as? Bool,
+      true
+    )
+    XCTAssertEqual(
+      specification[
+        kVTVideoEncoderSpecification_EnableLowLatencyRateControl as String
+      ] as? Bool,
+      true
+    )
+    XCTAssertNil(
+      specification[
+        kVTVideoEncoderSpecification_EnableHardwareAcceleratedVideoEncoder
+          as String
+      ]
+    )
+  }
+
+  func testMinicapRetainsRequiredHardwareAccelerationWhenMJPEGSoftwareEncodingIsAllowed() throws {
+    guard #available(macOS 12.1, *) else {
+      throw XCTSkip("Required hardware acceleration starts on macOS 12.1")
+    }
+    let specification =
+      FBSimulatorVideoStreamFramePusher_VideoToolbox.encoderSpecification(
+        for: kCMVideoCodecType_JPEG,
+        format: .minicap,
+        allowsSoftwareMJPEGEncoding: true
+      )
+
+    XCTAssertEqual(
+      specification[
+        kVTVideoEncoderSpecification_RequireHardwareAcceleratedVideoEncoder
+          as String
+      ] as? Bool,
+      true
+    )
+    XCTAssertEqual(
+      specification[
+        kVTVideoEncoderSpecification_EnableLowLatencyRateControl as String
+      ] as? Bool,
+      true
+    )
+    XCTAssertNil(
+      specification[
+        kVTVideoEncoderSpecification_EnableHardwareAcceleratedVideoEncoder
+          as String
+      ]
+    )
+  }
+
+  func testSoftwareMJPEGEncodingIsOptInAndAffectsConfigurationIdentity() {
+    let defaultConfiguration = FBVideoStreamConfiguration(
+      format: .mjpeg,
+      framesPerSecond: nil,
+      rateControl: nil,
+      scaleFactor: nil,
+      keyFrameRate: nil
+    )
+    let softwareConfiguration = FBVideoStreamConfiguration(
+      format: .mjpeg,
+      framesPerSecond: nil,
+      rateControl: nil,
+      scaleFactor: nil,
+      keyFrameRate: nil,
+      allowsSoftwareMJPEGEncoding: true
+    )
+
+    XCTAssertFalse(defaultConfiguration.allowsSoftwareMJPEGEncoding)
+    XCTAssertTrue(softwareConfiguration.allowsSoftwareMJPEGEncoding)
+    XCTAssertNotEqual(defaultConfiguration, softwareConfiguration)
+  }
+
   // MARK: - Shared Properties
 
   func testBasePropertiesAlwaysPresent() {

@@ -90,6 +90,7 @@ public final class FBVideoStreamConfiguration: NSObject, NSCopying {
 
   public let format: FBVideoStreamFormat
   public let encodeOptions: FBVideoEncodeOptions
+  public let allowsSoftwareMJPEGEncoding: Bool
 
   public var framesPerSecond: Int? { encodeOptions.framesPerSecond }
   public var rateControl: FBVideoStreamRateControl { encodeOptions.rateControl }
@@ -99,11 +100,23 @@ public final class FBVideoStreamConfiguration: NSObject, NSCopying {
   public init(format: FBVideoStreamFormat, encodeOptions: FBVideoEncodeOptions) {
     self.format = format
     self.encodeOptions = encodeOptions
+    self.allowsSoftwareMJPEGEncoding = false
+    super.init()
+  }
+
+  public init(format: FBVideoStreamFormat, encodeOptions: FBVideoEncodeOptions, allowsSoftwareMJPEGEncoding: Bool) {
+    self.format = format
+    self.encodeOptions = encodeOptions
+    self.allowsSoftwareMJPEGEncoding = allowsSoftwareMJPEGEncoding
     super.init()
   }
 
   public convenience init(format: FBVideoStreamFormat, framesPerSecond: Int?, rateControl: FBVideoStreamRateControl?, scaleFactor: Double?, keyFrameRate: Double?) {
     self.init(format: format, encodeOptions: FBVideoEncodeOptions(framesPerSecond: framesPerSecond, rateControl: rateControl, scaleFactor: scaleFactor, keyFrameRate: keyFrameRate))
+  }
+
+  public convenience init(format: FBVideoStreamFormat, framesPerSecond: Int?, rateControl: FBVideoStreamRateControl?, scaleFactor: Double?, keyFrameRate: Double?, allowsSoftwareMJPEGEncoding: Bool) {
+    self.init(format: format, encodeOptions: FBVideoEncodeOptions(framesPerSecond: framesPerSecond, rateControl: rateControl, scaleFactor: scaleFactor, keyFrameRate: keyFrameRate), allowsSoftwareMJPEGEncoding: allowsSoftwareMJPEGEncoding)
   }
 
   // MARK: NSCopying
@@ -121,6 +134,7 @@ public final class FBVideoStreamConfiguration: NSObject, NSCopying {
       && rateControl == other.rateControl
       && scaleFactor == other.scaleFactor
       && keyFrameRate == other.keyFrameRate
+      && allowsSoftwareMJPEGEncoding == other.allowsSoftwareMJPEGEncoding
   }
 
   public override var hash: Int {
@@ -130,10 +144,12 @@ public final class FBVideoStreamConfiguration: NSObject, NSCopying {
     hasher.combine(rateControl)
     hasher.combine(scaleFactor)
     hasher.combine(keyFrameRate)
+    hasher.combine(allowsSoftwareMJPEGEncoding)
     return hasher.finalize()
   }
 
   public override var description: String {
-    "Format \(format) | FPS \(framesPerSecond.map { "\($0)" } ?? "nil") | Rate Control \(rateControl) | Scale \(scaleFactor.map { "\($0)" } ?? "nil") | Key frame rate \(keyFrameRate)"
+    let softwareMJPEGSuffix = allowsSoftwareMJPEGEncoding ? " | Software MJPEG true" : ""
+    return "Format \(format) | FPS \(framesPerSecond.map { "\($0)" } ?? "nil") | Rate Control \(rateControl) | Scale \(scaleFactor.map { "\($0)" } ?? "nil") | Key frame rate \(keyFrameRate)\(softwareMJPEGSuffix)"
   }
 }

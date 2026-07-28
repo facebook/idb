@@ -558,15 +558,11 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: FBSimulatorVideoStre
   }
 
   func setup(with pixelBuffer: CVPixelBuffer, edgeInsets: FBVideoStreamEdgeInsets) throws {
-    var encoderSpecification: [String: Any] = [
-      kVTVideoEncoderSpecification_EnableHardwareAcceleratedVideoEncoder as String: true
-    ]
-    if #available(macOS 12.1, *) {
-      encoderSpecification = [
-        kVTVideoEncoderSpecification_RequireHardwareAcceleratedVideoEncoder as String: true,
-        kVTVideoEncoderSpecification_EnableLowLatencyRateControl as String: true,
-      ]
-    }
+    let encoderSpecification = Self.encoderSpecification(
+      for: videoCodec,
+      format: configuration.format,
+      allowsSoftwareMJPEGEncoding: configuration.allowsSoftwareMJPEGEncoding
+    )
 
     let sourceWidth = CVPixelBufferGetWidth(pixelBuffer)
     let sourceHeight = CVPixelBufferGetHeight(pixelBuffer)
@@ -638,6 +634,27 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: FBSimulatorVideoStre
       throw FBSimulatorVideoStreamError.failedToPrepareCompressionSession(status: prepareStatus)
     }
     self.compressionSession = compressionSession
+  }
+
+  static func encoderSpecification(
+    for codec: CMVideoCodecType,
+    format: FBVideoStreamFormat,
+    allowsSoftwareMJPEGEncoding: Bool
+  ) -> [String: Any] {
+    if codec == kCMVideoCodecType_JPEG && format == .mjpeg && allowsSoftwareMJPEGEncoding {
+      return [
+        kVTVideoEncoderSpecification_EnableHardwareAcceleratedVideoEncoder as String: true
+      ]
+    }
+    if #available(macOS 12.1, *) {
+      return [
+        kVTVideoEncoderSpecification_RequireHardwareAcceleratedVideoEncoder as String: true,
+        kVTVideoEncoderSpecification_EnableLowLatencyRateControl as String: true,
+      ]
+    }
+    return [
+      kVTVideoEncoderSpecification_EnableHardwareAcceleratedVideoEncoder as String: true
+    ]
   }
 
   func tearDown() throws {
