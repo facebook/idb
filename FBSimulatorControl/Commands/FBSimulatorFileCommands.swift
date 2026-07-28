@@ -30,78 +30,23 @@ public final class FBSimulatorFileCommands: NSObject, FBiOSTargetCommand {
 
   // MARK: - FBFileCommands Implementation
 
-  public func fileCommandsForContainerApplication(_ bundleID: String) -> FBFutureContext<FBContainedFile_ContainedRoot> {
-    return
-      (FBFuture<AnyObject>
-      .onQueue(
-        simulator.asyncQueue,
-        resolve: { [weak self] in
-          guard let self else {
-            return FBFuture(error: FBControlCoreError.describe("FBSimulatorFileCommands deallocated").build())
-          }
-          return fbFutureFromAsync {
-            let containedFile = try await self.containedFile(forApplication: bundleID)
-            return FBFileContainer.fileContainer(forContainedFile: containedFile as AnyObject) as AnyObject
-          }
-        }
-      )
-      .onQueue(
-        simulator.asyncQueue,
-        contextualTeardown: { (_: Any, _: FBFutureState) -> FBFuture<NSNull> in
-          FBFuture<NSNull>.empty()
-        })) as! FBFutureContext<FBContainedFile_ContainedRoot>
+  public func fileCommandsForContainerApplication(_ bundleID: String) async throws -> FBContainedFile_ContainedRoot {
+    let containedFile = try await containedFile(forApplication: bundleID)
+    return FBFileContainer.fileContainer(forContainedFile: containedFile as AnyObject) as! FBContainedFile_ContainedRoot
   }
 
   public func fileCommandsForAuxillary() -> FBFutureContext<FBContainedFile_ContainedRoot> {
     return FBFutureContext<AnyObject>(result: FBFileContainer.fileContainer(forBasePath: simulator.auxillaryDirectory) as AnyObject) as! FBFutureContext<FBContainedFile_ContainedRoot>
   }
 
-  public func fileCommandsForApplicationContainers() -> FBFutureContext<FBContainedFile_ContainedRoot> {
-    return
-      (FBFuture<AnyObject>
-      .onQueue(
-        simulator.workQueue,
-        resolve: { [weak self] in
-          guard let self else {
-            return FBFuture(error: FBControlCoreError.describe("FBSimulatorFileCommands deallocated").build())
-          }
-          do {
-            let containedFile = try self.containedFileForApplicationContainers()
-            return FBFuture(result: FBFileContainer.fileContainer(forContainedFile: containedFile as AnyObject) as AnyObject)
-          } catch {
-            return FBFuture(error: error)
-          }
-        }
-      )
-      .onQueue(
-        simulator.asyncQueue,
-        contextualTeardown: { (_: Any, _: FBFutureState) -> FBFuture<NSNull> in
-          FBFuture<NSNull>.empty()
-        })) as! FBFutureContext<FBContainedFile_ContainedRoot>
+  public func fileCommandsForApplicationContainers() async throws -> FBContainedFile_ContainedRoot {
+    let containedFile = try containedFileForApplicationContainers()
+    return FBFileContainer.fileContainer(forContainedFile: containedFile as AnyObject) as! FBContainedFile_ContainedRoot
   }
 
-  public func fileCommandsForGroupContainers() -> FBFutureContext<FBContainedFile_ContainedRoot> {
-    return
-      (FBFuture<AnyObject>
-      .onQueue(
-        simulator.workQueue,
-        resolve: { [weak self] in
-          guard let self else {
-            return FBFuture(error: FBControlCoreError.describe("FBSimulatorFileCommands deallocated").build())
-          }
-          do {
-            let containedFile = try self.containedFileForGroupContainers()
-            return FBFuture(result: FBFileContainer.fileContainer(forContainedFile: containedFile as AnyObject) as AnyObject)
-          } catch {
-            return FBFuture(error: error)
-          }
-        }
-      )
-      .onQueue(
-        simulator.asyncQueue,
-        contextualTeardown: { (_: Any, _: FBFutureState) -> FBFuture<NSNull> in
-          FBFuture<NSNull>.empty()
-        })) as! FBFutureContext<FBContainedFile_ContainedRoot>
+  public func fileCommandsForGroupContainers() async throws -> FBContainedFile_ContainedRoot {
+    let containedFile = try containedFileForGroupContainers()
+    return FBFileContainer.fileContainer(forContainedFile: containedFile as AnyObject) as! FBContainedFile_ContainedRoot
   }
 
   public func fileCommandsForRootFilesystem() -> FBFutureContext<FBContainedFile_ContainedRoot> {
@@ -214,7 +159,7 @@ extension FBSimulator: FileCommands {
     _ bundleID: String,
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await withFileContainer(fileCommands().fileCommandsForContainerApplication(bundleID), body: body)
+    try await body(fileCommands().fileCommandsForContainerApplication(bundleID))
   }
 
   public func withFileCommandsForAuxillary<R>(
@@ -226,13 +171,13 @@ extension FBSimulator: FileCommands {
   public func withFileCommandsForApplicationContainers<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await withFileContainer(fileCommands().fileCommandsForApplicationContainers(), body: body)
+    try await body(fileCommands().fileCommandsForApplicationContainers())
   }
 
   public func withFileCommandsForGroupContainers<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await withFileContainer(fileCommands().fileCommandsForGroupContainers(), body: body)
+    try await body(fileCommands().fileCommandsForGroupContainers())
   }
 
   public func withFileCommandsForRootFilesystem<R>(
