@@ -72,7 +72,7 @@ extension FBVideoStreamRateControl: CustomStringConvertible {
 /// How frames are encoded, independent of the output format/sink: frame rate, scale, rate control, and
 /// key-frame interval. Composed into `FBVideoStreamConfiguration` so the streaming and recording paths
 /// can build and pass the same encode options, varying only the format (and, for record, the sink).
-public struct FBVideoEncodeOptions {
+public struct FBVideoEncodeOptions: Hashable {
   public let framesPerSecond: Int?
   public let scaleFactor: Double?
   public let rateControl: FBVideoStreamRateControl
@@ -86,7 +86,9 @@ public struct FBVideoEncodeOptions {
   }
 }
 
-public final class FBVideoStreamConfiguration: NSObject, NSCopying {
+/// Describes a video stream: the output format, the options controlling how frames are encoded,
+/// and whether software MJPEG encoding is permitted.
+public struct FBVideoStreamConfiguration: Hashable, CustomStringConvertible {
 
   public let format: FBVideoStreamFormat
   public let encodeOptions: FBVideoEncodeOptions
@@ -97,58 +99,17 @@ public final class FBVideoStreamConfiguration: NSObject, NSCopying {
   public var scaleFactor: Double? { encodeOptions.scaleFactor }
   public var keyFrameRate: Double { encodeOptions.keyFrameRate }
 
-  public init(format: FBVideoStreamFormat, encodeOptions: FBVideoEncodeOptions) {
-    self.format = format
-    self.encodeOptions = encodeOptions
-    self.allowsSoftwareMJPEGEncoding = false
-    super.init()
-  }
-
-  public init(format: FBVideoStreamFormat, encodeOptions: FBVideoEncodeOptions, allowsSoftwareMJPEGEncoding: Bool) {
+  public init(format: FBVideoStreamFormat, encodeOptions: FBVideoEncodeOptions, allowsSoftwareMJPEGEncoding: Bool = false) {
     self.format = format
     self.encodeOptions = encodeOptions
     self.allowsSoftwareMJPEGEncoding = allowsSoftwareMJPEGEncoding
-    super.init()
   }
 
-  public convenience init(format: FBVideoStreamFormat, framesPerSecond: Int?, rateControl: FBVideoStreamRateControl?, scaleFactor: Double?, keyFrameRate: Double?) {
-    self.init(format: format, encodeOptions: FBVideoEncodeOptions(framesPerSecond: framesPerSecond, rateControl: rateControl, scaleFactor: scaleFactor, keyFrameRate: keyFrameRate))
-  }
-
-  public convenience init(format: FBVideoStreamFormat, framesPerSecond: Int?, rateControl: FBVideoStreamRateControl?, scaleFactor: Double?, keyFrameRate: Double?, allowsSoftwareMJPEGEncoding: Bool) {
+  public init(format: FBVideoStreamFormat, framesPerSecond: Int?, rateControl: FBVideoStreamRateControl?, scaleFactor: Double?, keyFrameRate: Double?, allowsSoftwareMJPEGEncoding: Bool = false) {
     self.init(format: format, encodeOptions: FBVideoEncodeOptions(framesPerSecond: framesPerSecond, rateControl: rateControl, scaleFactor: scaleFactor, keyFrameRate: keyFrameRate), allowsSoftwareMJPEGEncoding: allowsSoftwareMJPEGEncoding)
   }
 
-  // MARK: NSCopying
-
-  public func copy(with zone: NSZone? = nil) -> Any {
-    self
-  }
-
-  // MARK: NSObject
-
-  public override func isEqual(_ object: Any?) -> Bool {
-    guard let other = object as? FBVideoStreamConfiguration else { return false }
-    return format == other.format
-      && framesPerSecond == other.framesPerSecond
-      && rateControl == other.rateControl
-      && scaleFactor == other.scaleFactor
-      && keyFrameRate == other.keyFrameRate
-      && allowsSoftwareMJPEGEncoding == other.allowsSoftwareMJPEGEncoding
-  }
-
-  public override var hash: Int {
-    var hasher = Hasher()
-    hasher.combine(format)
-    hasher.combine(framesPerSecond)
-    hasher.combine(rateControl)
-    hasher.combine(scaleFactor)
-    hasher.combine(keyFrameRate)
-    hasher.combine(allowsSoftwareMJPEGEncoding)
-    return hasher.finalize()
-  }
-
-  public override var description: String {
+  public var description: String {
     let softwareMJPEGSuffix = allowsSoftwareMJPEGEncoding ? " | Software MJPEG true" : ""
     return "Format \(format) | FPS \(framesPerSecond.map { "\($0)" } ?? "nil") | Rate Control \(rateControl) | Scale \(scaleFactor.map { "\($0)" } ?? "nil") | Key frame rate \(keyFrameRate)\(softwareMJPEGSuffix)"
   }

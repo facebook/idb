@@ -86,7 +86,6 @@ public class FBDeviceVideoStream: NSObject, FBVideoStream, @unchecked Sendable {
 
   // MARK: Factory
 
-  @objc(streamWithSession:configuration:logger:error:)
   public class func stream(withSession session: AVCaptureSession, configuration: FBVideoStreamConfiguration, logger: any FBControlCoreLogger) throws -> FBDeviceVideoStream {
     let format = configuration.format
     guard let streamType = classForConfiguration(configuration) else {

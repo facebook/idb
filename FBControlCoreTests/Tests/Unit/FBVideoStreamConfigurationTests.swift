@@ -75,18 +75,6 @@ final class FBVideoStreamConfigurationTests: XCTestCase {
     XCTAssertEqual(a, b)
   }
 
-  func testConfigurationCopy() {
-    let config = FBVideoStreamConfiguration(
-      format: FBVideoStreamFormat.compressedVideo(withCodec: FBVideoStreamCodec.h264, transport: FBVideoStreamTransport.annexB),
-      framesPerSecond: nil,
-      rateControl: nil,
-      scaleFactor: nil,
-      keyFrameRate: nil
-    )
-    let copy = config.copy() as! FBVideoStreamConfiguration
-    XCTAssertEqual(config, copy)
-  }
-
   func testRateControlEquality() {
     let a = FBVideoStreamRateControl.quality(0.5)
     let b = FBVideoStreamRateControl.quality(0.5)
