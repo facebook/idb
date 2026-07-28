@@ -62,12 +62,27 @@ private final class SimDisplayRenderableSurface: FBFramebufferSurface {
     ioSurfaceChanged: @escaping (IOSurface?) -> Void,
     damageReceived: @escaping (FBFramebufferDamage) -> Void
   ) throws {
-    // Register the plural and singular IOSurface entry points and the damage callback independently
-    // and best-effort, mirroring the pre-seam framebuffer: the underlying ROCKRemoteProxy may
-    // implement only some of these, and one failing must not prevent the others.
+    // The underlying ROCKRemoteProxy may implement only the plural or only the singular surface
+    // callback (see SimDisplayIOSurfaceRenderable-Protocol.h). Attempt both and fail only if neither
+    // could be installed.
     let ioSurfaceBlock: (Any?) -> Void = { ioSurfaceChanged($0 as? IOSurface) }
-    _ = try? FBObjCExceptionGuard.guarded { self.surface.registerCallback(with: token, ioSurfacesChangeCallback: ioSurfaceBlock) }
-    _ = try? FBObjCExceptionGuard.guarded { self.surface.registerCallback(with: token, ioSurfaceChangeCallback: ioSurfaceBlock) }
+    var registeredIOSurface = false
+    var ioSurfaceError: Error?
+    do {
+      try FBObjCExceptionGuard.guarded { self.surface.registerCallback(with: token, ioSurfacesChangeCallback: ioSurfaceBlock) }
+      registeredIOSurface = true
+    } catch {
+      ioSurfaceError = error
+    }
+    do {
+      try FBObjCExceptionGuard.guarded { self.surface.registerCallback(with: token, ioSurfaceChangeCallback: ioSurfaceBlock) }
+      registeredIOSurface = true
+    } catch {
+      ioSurfaceError = ioSurfaceError ?? error
+    }
+    if !registeredIOSurface {
+      throw FBFramebufferError.surfaceCallbackRegistrationFailed(underlying: ioSurfaceError)
+    }
 
     let damageBlock: ([NSValue]?) -> Void = { frames in
       // The `[NSValue]` element type is nominal: the proxy vends an untyped NSArray and Swift's block
@@ -76,7 +91,13 @@ private final class SimDisplayRenderableSurface: FBFramebufferSurface {
       let rects = (frames ?? []).compactMap { ($0 as AnyObject) as? NSValue }.map(\.rectValue)
       damageReceived(FBFramebufferDamage(rects: rects))
     }
-    _ = try? FBObjCExceptionGuard.guarded { self.surface.registerCallback(with: token, damageRectanglesCallback: damageBlock) }
+    do {
+      try FBObjCExceptionGuard.guarded { self.surface.registerCallback(with: token, damageRectanglesCallback: damageBlock) }
+    } catch {
+      // Roll back the IOSurface callback so a failed registration leaves nothing behind.
+      unregisterCallbacks(token: token)
+      throw FBFramebufferError.surfaceCallbackRegistrationFailed(underlying: error)
+    }
   }
 
   func unregisterCallbacks(token: UUID) {
@@ -92,10 +113,10 @@ private final class SimDisplayRenderableSurface: FBFramebufferSurface {
 enum FBFramebufferSurfaceLocator {
   static func mainDisplaySurface(for simulator: FBSimulator, logger: any FBControlCoreLogger) throws -> any FBFramebufferSurface {
     guard let ioClient = simulator.device.io else {
-      throw FBSimulatorError.describe("No IO client available on \(simulator.device)").build()
+      throw FBFramebufferError.mainScreenSurfaceNotFound(description: "No IO client available on \(simulator.device)")
     }
     guard let ports = ioClient.ioPorts() else {
-      throw FBSimulatorError.describe("No IO ports available on \(ioClient)").build()
+      throw FBFramebufferError.mainScreenSurfaceNotFound(description: "No IO ports available on \(ioClient)")
     }
 
     // iOS exposes the main display as displayClass 0. tvOS renders only on the TVOut display (a
@@ -127,6 +148,7 @@ enum FBFramebufferSurfaceLocator {
     if let fallback {
       return SimDisplayRenderableSurface(surface: fallback, logger: logger)
     }
-    throw FBSimulatorError.describe("Could not find the Main Screen Surface for Clients \(FBCollectionInformation.oneLineDescription(from: ports)) in \(ioClient)").build()
+    throw FBFramebufferError.mainScreenSurfaceNotFound(
+      description: "Could not find the Main Screen Surface for Clients \(FBCollectionInformation.oneLineDescription(from: ports)) in \(ioClient)")
   }
 }

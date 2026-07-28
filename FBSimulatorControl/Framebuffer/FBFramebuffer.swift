@@ -22,6 +22,26 @@ public struct FBFramebufferStats {
   public init() {}
 }
 
+/// Errors surfaced by `FBFramebuffer`.
+public enum FBFramebufferError: Error, LocalizedError {
+  /// No renderable main-display surface could be located for the simulator.
+  case mainScreenSurfaceNotFound(description: String)
+  /// The surface-change or damage callbacks could not be registered on the display surface.
+  case surfaceCallbackRegistrationFailed(underlying: Error?)
+
+  public var errorDescription: String? {
+    switch self {
+    case let .mainScreenSurfaceNotFound(description):
+      return description
+    case let .surfaceCallbackRegistrationFailed(underlying):
+      if let underlying {
+        return "Failed to register framebuffer surface callbacks: \(underlying)"
+      }
+      return "Failed to register framebuffer surface callbacks"
+    }
+  }
+}
+
 public protocol FBFramebufferConsumer: AnyObject {
   func didChange(_ surface: IOSurface?)
 
@@ -51,10 +71,10 @@ public final class FBFramebuffer: @unchecked Sendable {
 
   /// Attach a consumer, delivering surface-change and damage callbacks on `queue`. The returned
   /// `FBFramebufferAttachment` owns the registration: call `cancel()`, or release it, to detach.
-  public func attach(_ consumer: any FBFramebufferConsumer, on queue: DispatchQueue) -> FBFramebufferAttachment {
+  public func attach(_ consumer: any FBFramebufferConsumer, on queue: DispatchQueue) throws -> FBFramebufferAttachment {
     let token = UUID()
     let immediateSurface = surface.immediatelyAvailableSurface()
-    registerConsumer(consumer, token: token, queue: queue)
+    try registerConsumer(consumer, token: token, queue: queue)
     return FBFramebufferAttachment(framebuffer: self, token: token, initialSurface: immediateSurface)
   }
 
@@ -74,7 +94,7 @@ public final class FBFramebuffer: @unchecked Sendable {
 
   // MARK: - Private
 
-  private func registerConsumer(_ consumer: any FBFramebufferConsumer, token: UUID, queue: DispatchQueue) {
+  private func registerConsumer(_ consumer: any FBFramebufferConsumer, token: UUID, queue: DispatchQueue) throws {
     // SAFETY: the consumer is only ever messaged inside the `queue.async` blocks below, so every
     // delivery is serialized onto the consumer's own queue and the capture is never touched
     // concurrently. `FBFramebufferConsumer` is a reference type and cannot be made `Sendable`.
@@ -97,7 +117,7 @@ public final class FBFramebuffer: @unchecked Sendable {
       }
     }
 
-    _ = try? surface.registerCallbacks(token: token, ioSurfaceChanged: ioSurfaceChanged, damageReceived: damageReceived)
+    try surface.registerCallbacks(token: token, ioSurfaceChanged: ioSurfaceChanged, damageReceived: damageReceived)
   }
 }
 

@@ -25,34 +25,42 @@ final class FBFramebufferTests: XCTestCase {
 
   // MARK: - Attach
 
-  func testAttachReturnsImmediatelyAvailableSurface() {
+  func testAttachReturnsImmediatelyAvailableSurface() throws {
     let surface = FakeFramebufferSurface()
     let ioSurface = makeTestIOSurface()
     surface.immediateSurface = ioSurface
     let framebuffer = makeFramebuffer(surface: surface)
 
-    let attachment = framebuffer.attach(FakeFramebufferConsumer(), on: makeQueue())
+    let attachment = try framebuffer.attach(FakeFramebufferConsumer(), on: makeQueue())
 
     XCTAssertIdentical(attachment.initialSurface, ioSurface)
   }
 
-  func testAttachReturnsNilWhenNoSurfaceAvailable() {
+  func testAttachReturnsNilWhenNoSurfaceAvailable() throws {
     let surface = FakeFramebufferSurface()
     let framebuffer = makeFramebuffer(surface: surface)
 
-    let attachment = framebuffer.attach(FakeFramebufferConsumer(), on: makeQueue())
+    let attachment = try framebuffer.attach(FakeFramebufferConsumer(), on: makeQueue())
 
     XCTAssertNil(attachment.initialSurface)
   }
 
+  func testAttachThrowsWhenRegistrationFails() {
+    let surface = FakeFramebufferSurface()
+    surface.registerError = FBFramebufferError.surfaceCallbackRegistrationFailed(underlying: nil)
+    let framebuffer = makeFramebuffer(surface: surface)
+
+    XCTAssertThrowsError(try framebuffer.attach(FakeFramebufferConsumer(), on: makeQueue()))
+  }
+
   // MARK: - Consumer fan-out
 
-  func testIOSurfaceChangeDeliveredToConsumer() {
+  func testIOSurfaceChangeDeliveredToConsumer() throws {
     let surface = FakeFramebufferSurface()
     let framebuffer = makeFramebuffer(surface: surface)
     let consumer = FakeFramebufferConsumer()
     let queue = makeQueue()
-    let attachment = framebuffer.attach(consumer, on: queue)
+    let attachment = try framebuffer.attach(consumer, on: queue)
     defer { attachment.cancel() }
 
     let delivered = expectation(description: "surface delivered on the consumer queue")
@@ -65,12 +73,12 @@ final class FBFramebufferTests: XCTestCase {
     XCTAssertIdentical(consumer.receivedSurfaces.first ?? nil, ioSurface)
   }
 
-  func testDamageDeliveredToConsumer() {
+  func testDamageDeliveredToConsumer() throws {
     let surface = FakeFramebufferSurface()
     let framebuffer = makeFramebuffer(surface: surface)
     let consumer = FakeFramebufferConsumer()
     let queue = makeQueue()
-    let attachment = framebuffer.attach(consumer, on: queue)
+    let attachment = try framebuffer.attach(consumer, on: queue)
     defer { attachment.cancel() }
 
     let delivered = expectation(description: "damage delivered on the consumer queue")
@@ -81,14 +89,14 @@ final class FBFramebufferTests: XCTestCase {
     XCTAssertEqual(consumer.damageCallbackCount, 1)
   }
 
-  func testEmptyDamageStillPingsConsumer() {
+  func testEmptyDamageStillPingsConsumer() throws {
     // Variable-frame-rate (lazy) streaming relies on the damage ping firing even when no rects are
     // reported, so an empty damage batch must still reach the consumer.
     let surface = FakeFramebufferSurface()
     let framebuffer = makeFramebuffer(surface: surface)
     let consumer = FakeFramebufferConsumer()
     let queue = makeQueue()
-    let attachment = framebuffer.attach(consumer, on: queue)
+    let attachment = try framebuffer.attach(consumer, on: queue)
     defer { attachment.cancel() }
 
     let delivered = expectation(description: "empty damage delivered on the consumer queue")
@@ -101,11 +109,11 @@ final class FBFramebufferTests: XCTestCase {
 
   // MARK: - Stats
 
-  func testStatsCountCallbacks() {
+  func testStatsCountCallbacks() throws {
     let surface = FakeFramebufferSurface()
     let framebuffer = makeFramebuffer(surface: surface)
     let queue = makeQueue()
-    _ = framebuffer.attach(FakeFramebufferConsumer(), on: queue)
+    _ = try framebuffer.attach(FakeFramebufferConsumer(), on: queue)
 
     surface.ioSurfaceChanged?(makeTestIOSurface())
     surface.ioSurfaceChanged?(makeTestIOSurface())
@@ -120,11 +128,11 @@ final class FBFramebufferTests: XCTestCase {
     XCTAssertEqual(stats.emptyDamageCallbackCount, 1)
   }
 
-  func testStatsStartTimeSetAfterFirstDamage() {
+  func testStatsStartTimeSetAfterFirstDamage() throws {
     let surface = FakeFramebufferSurface()
     let framebuffer = makeFramebuffer(surface: surface)
     let queue = makeQueue()
-    _ = framebuffer.attach(FakeFramebufferConsumer(), on: queue)
+    _ = try framebuffer.attach(FakeFramebufferConsumer(), on: queue)
 
     XCTAssertEqual(framebuffer.statsStartTime, 0)
 
@@ -136,20 +144,20 @@ final class FBFramebufferTests: XCTestCase {
 
   // MARK: - Attachment lifecycle
 
-  func testAttachmentCancelUnregistersCallbacks() {
+  func testAttachmentCancelUnregistersCallbacks() throws {
     let surface = FakeFramebufferSurface()
     let framebuffer = makeFramebuffer(surface: surface)
-    let attachment = framebuffer.attach(FakeFramebufferConsumer(), on: makeQueue())
+    let attachment = try framebuffer.attach(FakeFramebufferConsumer(), on: makeQueue())
 
     attachment.cancel()
 
     XCTAssertEqual(surface.unregisteredTokens.count, 1)
   }
 
-  func testAttachmentCancelIsIdempotent() {
+  func testAttachmentCancelIsIdempotent() throws {
     let surface = FakeFramebufferSurface()
     let framebuffer = makeFramebuffer(surface: surface)
-    let attachment = framebuffer.attach(FakeFramebufferConsumer(), on: makeQueue())
+    let attachment = try framebuffer.attach(FakeFramebufferConsumer(), on: makeQueue())
 
     attachment.cancel()
     attachment.cancel()
@@ -157,12 +165,12 @@ final class FBFramebufferTests: XCTestCase {
     XCTAssertEqual(surface.unregisteredTokens.count, 1)
   }
 
-  func testAttachmentReleaseUnregisters() {
+  func testAttachmentReleaseUnregisters() throws {
     let surface = FakeFramebufferSurface()
     let framebuffer = makeFramebuffer(surface: surface)
 
     do {
-      _ = framebuffer.attach(FakeFramebufferConsumer(), on: makeQueue())
+      _ = try framebuffer.attach(FakeFramebufferConsumer(), on: makeQueue())
     }
 
     XCTAssertEqual(surface.unregisteredTokens.count, 1)

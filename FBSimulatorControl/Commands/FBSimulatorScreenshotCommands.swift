@@ -64,7 +64,7 @@ public final class FBSimulatorScreenshotCommands: NSObject, FBiOSTargetCommand {
   /// scaled from points to pixels using the target's screen scale.
   private func replScreenshotImage(cropRect: CGRect?) async throws -> CGImage {
     let image = try await connectToImage()
-    guard let full = image.image() else {
+    guard let full = try image.image() else {
       throw FBSimulatorError.describe("Failed to capture a screenshot").build()
     }
     guard let cropRect else {

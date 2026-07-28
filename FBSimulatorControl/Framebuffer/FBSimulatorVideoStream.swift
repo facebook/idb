@@ -931,9 +931,15 @@ public final class FBSimulatorVideoStream: FBFramebufferConsumer, FBVideoStream,
         // Attach to the framebuffer; when a surface is already available this mounts it synchronously
         // (latching `hasStarted`), otherwise the first surface callback does.
         if attachment == nil {
-          let attachment = framebuffer.attach(self, on: writeQueue)
-          self.attachment = attachment
-          didChange(attachment.initialSurface)
+          do {
+            let attachment = try framebuffer.attach(self, on: writeQueue)
+            self.attachment = attachment
+            didChange(attachment.initialSurface)
+          } catch {
+            self.consumer = nil
+            continuation.resume(throwing: error)
+            return
+          }
         }
         if hasStarted {
           continuation.resume()
