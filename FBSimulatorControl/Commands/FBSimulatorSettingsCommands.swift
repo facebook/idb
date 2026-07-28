@@ -266,13 +266,13 @@ public final class FBSimulatorSettingsCommands: NSObject, FBiOSTargetCommand {
       try await authorizeLocationSettingsAsync(Array(bundleIDs))
       toApprove.remove(FBTargetSettingsService.location)
     }
-    if !toApprove.isEmpty && toApprove.contains(FBTargetSettingsService(rawValue: "notification")) {
+    if !toApprove.isEmpty && toApprove.contains(.notification) {
       try await updateNotificationServiceAsync(Array(bundleIDs), approve: true)
-      toApprove.remove(FBTargetSettingsService(rawValue: "notification"))
+      toApprove.remove(.notification)
     }
-    if !toApprove.isEmpty && toApprove.contains(FBTargetSettingsService(rawValue: "health")) {
+    if !toApprove.isEmpty && toApprove.contains(.health) {
       try await updateHealthServiceAsync(Array(bundleIDs), approve: true)
-      toApprove.remove(FBTargetSettingsService(rawValue: "health"))
+      toApprove.remove(.health)
     }
 
     if !toApprove.isEmpty {
@@ -321,13 +321,13 @@ public final class FBSimulatorSettingsCommands: NSObject, FBiOSTargetCommand {
       try await revokeLocationSettingsAsync(Array(bundleIDs))
       toRevoke.remove(FBTargetSettingsService.location)
     }
-    if !toRevoke.isEmpty && toRevoke.contains(FBTargetSettingsService(rawValue: "notification")) {
+    if !toRevoke.isEmpty && toRevoke.contains(.notification) {
       try await updateNotificationServiceAsync(Array(bundleIDs), approve: false)
-      toRevoke.remove(FBTargetSettingsService(rawValue: "notification"))
+      toRevoke.remove(.notification)
     }
-    if !toRevoke.isEmpty && toRevoke.contains(FBTargetSettingsService(rawValue: "health")) {
+    if !toRevoke.isEmpty && toRevoke.contains(.health) {
       try await updateHealthServiceAsync(Array(bundleIDs), approve: false)
-      toRevoke.remove(FBTargetSettingsService(rawValue: "health"))
+      toRevoke.remove(.health)
     }
 
     if !toRevoke.isEmpty {

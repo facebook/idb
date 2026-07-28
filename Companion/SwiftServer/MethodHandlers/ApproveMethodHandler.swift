@@ -16,10 +16,6 @@ struct ApproveMethodHandler {
 
   func handle(request: Idb_ApproveRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_ApproveResponse {
 
-    // Swift implements custom bridging logic for NSNotificationName and this causes ALL string enums ended with "Notification"
-    // suffix translates in this special way
-    let notificationApprovalService = FBTargetSettingsService.FBTargetSettingsService
-
     let mapping: [Idb_ApproveRequest.Permission: FBTargetSettingsService] = [
       .microphone: .microphone,
       .photos: .photos,
@@ -27,7 +23,7 @@ struct ApproveMethodHandler {
       .contacts: .contacts,
       .url: .url,
       .location: .location,
-      .notification: notificationApprovalService,
+      .notification: .notification,
     ]
 
     var services = try Set(

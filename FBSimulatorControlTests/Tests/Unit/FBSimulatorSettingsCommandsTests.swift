@@ -32,23 +32,20 @@ final class FBSimulatorSettingsCommandsTests: XCTestCase {
 
   // MARK: - Filtered TCC Approvals
 
-  private static let notification = FBTargetSettingsService(rawValue: "notification")
-  private static let health = FBTargetSettingsService(rawValue: "health")
-
   func testFilteredTCCApprovalsKeepsOnlyTCCServices() {
     let input: Set<FBTargetSettingsService> = [
-      .contacts, .photos, .location, Self.notification,
+      .contacts, .photos, .location, .notification,
     ]
     let filtered = FBSimulatorSettingsCommands.filteredTCCApprovals(input)
     XCTAssertTrue(filtered.contains(.contacts), "Contacts is in TCC mapping and should be kept")
     XCTAssertTrue(filtered.contains(.photos), "Photos is in TCC mapping and should be kept")
     XCTAssertFalse(filtered.contains(.location), "Location is NOT in TCC mapping and should be removed")
-    XCTAssertFalse(filtered.contains(Self.notification), "Notification is NOT in TCC mapping and should be removed")
+    XCTAssertFalse(filtered.contains(.notification), "Notification is NOT in TCC mapping and should be removed")
   }
 
   func testFilteredTCCApprovalsReturnsEmptyForNonTCCServices() {
     let input: Set<FBTargetSettingsService> = [
-      .location, Self.notification, Self.health,
+      .location, .notification, .health,
     ]
     let filtered = FBSimulatorSettingsCommands.filteredTCCApprovals(input)
     XCTAssertEqual(

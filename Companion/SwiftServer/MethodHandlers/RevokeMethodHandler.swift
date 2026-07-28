@@ -16,10 +16,6 @@ struct RevokeMethodHandler {
 
   func handle(request: Idb_RevokeRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_RevokeResponse {
 
-    // Swift implements custom bridging logic for NSNotificationName and this causes ALL string enums ended with "Notification"
-    // suffix translates in this special way
-    let notificationApprovalService = FBTargetSettingsService.FBTargetSettingsService
-
     let mapping: [Idb_RevokeRequest.Permission: FBTargetSettingsService] = [
       .microphone: .microphone,
       .photos: .photos,
@@ -27,7 +23,7 @@ struct RevokeMethodHandler {
       .contacts: .contacts,
       .url: .url,
       .location: .location,
-      .notification: notificationApprovalService,
+      .notification: .notification,
     ]
 
     var services = try Set(
