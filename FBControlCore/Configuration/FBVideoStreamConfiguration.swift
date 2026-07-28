@@ -8,13 +8,13 @@
 import Foundation
 
 /// The video codec for compressed video streams.
-public enum FBVideoStreamCodec: String {
+public enum FBVideoStreamCodec: String, Sendable {
   case h264
   case hevc
 }
 
 /// The transport/container framing for compressed video streams.
-public enum FBVideoStreamTransport: String {
+public enum FBVideoStreamTransport: String, Sendable {
   case annexB = "annex-b"
   case mpegts
   case fmp4
@@ -23,7 +23,7 @@ public enum FBVideoStreamTransport: String {
 /// The encoders an MJPEG stream may use. Hardware encoding is required by default; software
 /// encoding is a deliberate opt-in for hosts without a usable hardware JPEG encoder, trading CPU
 /// for availability.
-public enum FBMJPEGEncoderSelection: Hashable {
+public enum FBMJPEGEncoderSelection: Hashable, Sendable {
   case requireHardware
   case allowSoftware
 }
@@ -32,7 +32,7 @@ public enum FBMJPEGEncoderSelection: Hashable {
 /// formats that have no codec or transport. Modeled as a sum so `transport` exists only where it is
 /// meaningful (the `compressedVideo` case), the encoder selection only where it applies (`mjpeg`),
 /// and every dispatch site matches exhaustively.
-public enum FBVideoStreamFormat: Hashable {
+public enum FBVideoStreamFormat: Hashable, Sendable {
   case compressedVideo(withCodec: FBVideoStreamCodec, transport: FBVideoStreamTransport)
   case mjpeg(encoder: FBMJPEGEncoderSelection)
   case minicap
@@ -59,7 +59,7 @@ extension FBVideoStreamFormat: CustomStringConvertible {
 /// The rate-control strategy for VTCompression: a target quality (0–1) or an average bitrate (in bits
 /// per second). Modeled as a sum so quality stays a `Double` and bitrate an `Int` — the encoder wants
 /// each as the corresponding CoreFoundation number type.
-public enum FBVideoStreamRateControl: Hashable {
+public enum FBVideoStreamRateControl: Hashable, Sendable {
   case quality(Double)
   case bitrate(Int)
 }
@@ -83,7 +83,7 @@ extension FBVideoStreamRateControl: CustomStringConvertible {
 /// How frames are encoded, independent of the output format/sink: frame rate, scale, rate control, and
 /// key-frame interval. Composed into `FBVideoStreamConfiguration` so the streaming and recording paths
 /// can build and pass the same encode options, varying only the format (and, for record, the sink).
-public struct FBVideoEncodeOptions: Hashable {
+public struct FBVideoEncodeOptions: Hashable, Sendable {
   public let framesPerSecond: Int?
   public let scaleFactor: Double?
   public let rateControl: FBVideoStreamRateControl
@@ -98,7 +98,7 @@ public struct FBVideoEncodeOptions: Hashable {
 }
 
 /// Describes a video stream: the output format and the options controlling how frames are encoded.
-public struct FBVideoStreamConfiguration: Hashable, CustomStringConvertible {
+public struct FBVideoStreamConfiguration: Hashable, CustomStringConvertible, Sendable {
 
   public let format: FBVideoStreamFormat
   public let encodeOptions: FBVideoEncodeOptions

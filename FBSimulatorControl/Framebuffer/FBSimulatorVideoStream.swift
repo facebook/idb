@@ -85,7 +85,7 @@ extension FBSimulatorVideoStreamError: LocalizedError {
 
 /// Edge insets that extend the output frame dimensions beyond the source framebuffer.
 /// Each edge adds opaque pixels for overlay content (label bars, diagnostic stats, etc.).
-public struct FBVideoStreamEdgeInsets {
+public struct FBVideoStreamEdgeInsets: Sendable {
   public var top: UInt
   public var bottom: UInt
   public var left: UInt
