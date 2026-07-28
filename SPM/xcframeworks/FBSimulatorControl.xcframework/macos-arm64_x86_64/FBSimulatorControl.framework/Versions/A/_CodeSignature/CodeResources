@@ -16,10 +16,6 @@
 		<data>
 		hCQ4SPVLDFmD4e0m3vtB0mLOE1Q=
 		</data>
-		<key>Resources/package.xcworkspace/xcuserdata/avanderlee.xcuserdatad/UserInterfaceState.xcuserstate</key>
-		<data>
-		WTPULR/tYqI0lffVJW5e1yMDC3c=
-		</data>
 	</dict>
 	<key>files2</key>
 	<dict>
@@ -83,7 +79,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			QGvSCHyKgYs+xjvFoO5ceoAqe6NjhQnjqEJomkpLd1I=
+			mDdi1v0y/N/avkq+cmKHMMHdLhbf7p6tzdvAGvtQv0I=
 			</data>
 		</dict>
 		<key>Modules/FBSimulatorControl.swiftmodule/arm64-apple-macos.private.swiftinterface</key>
@@ -97,7 +93,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			+7VcfARyxrc1oze8/0T8XIoOEaQrlQTgxr+1YhdMpWc=
+			rxf14DdBLR4A/EtsYgZlO9q/wZ1tOAUT5GIU9WJDIm0=
 			</data>
 		</dict>
 		<key>Modules/FBSimulatorControl.swiftmodule/arm64-apple-macos.swiftinterface</key>
@@ -111,14 +107,14 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			2f6gxgQzcKPOjZg3DC+Uk9yh/c1P4kToVt/LP0SeE5c=
+			X5ikWFmYf23AIhDmexzBP7ccqe5iKOT49mc6C9J+0Eo=
 			</data>
 		</dict>
 		<key>Modules/FBSimulatorControl.swiftmodule/x86_64-apple-macos.abi.json</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			QGvSCHyKgYs+xjvFoO5ceoAqe6NjhQnjqEJomkpLd1I=
+			mDdi1v0y/N/avkq+cmKHMMHdLhbf7p6tzdvAGvtQv0I=
 			</data>
 		</dict>
 		<key>Modules/FBSimulatorControl.swiftmodule/x86_64-apple-macos.private.swiftinterface</key>
@@ -132,7 +128,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			rnrCVdZDbhYulQZ1NjTntHm8v9CtFikDUt56vGtra/M=
+			YSbMA8lKzB9mYoJled1d+325IUieHZMx7iY//h00hnY=
 			</data>
 		</dict>
 		<key>Modules/FBSimulatorControl.swiftmodule/x86_64-apple-macos.swiftinterface</key>
@@ -146,7 +142,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			54NiBcli+CbF8RPgLCmr14CDGJrkzxhjyFwukdzhZ+0=
+			7gKs0mDf/S5KhZZkQwAkkfurPFRzBsPmdR6zh6HrgNc=
 			</data>
 		</dict>
 		<key>Modules/module.modulemap</key>
@@ -175,13 +171,6 @@
 			<key>hash2</key>
 			<data>
 			fzsAtcP9tFJC17h+HlxOJdH6gSmhbJQpXsxOjqIjXF8=
-			</data>
-		</dict>
-		<key>Resources/package.xcworkspace/xcuserdata/avanderlee.xcuserdatad/UserInterfaceState.xcuserstate</key>
-		<dict>
-			<key>hash2</key>
-			<data>
-			zQ3xFhtX9g3Rsm0SoiJ5o6Qll4kAfrMD21JMPVuNxlU=
 			</data>
 		</dict>
 	</dict>
