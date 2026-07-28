@@ -170,13 +170,19 @@ def on_connecting_parser(parser: ArgumentParser, logger: Logger) -> None:
         plugin_parser(parser=parser, logger=logger)
 
 
-@swallow_exceptions
 def on_command_parsed(logger: Logger, command: Command, args: Namespace) -> None:
+    # Isolate failures per plugin so one failing hook cannot suppress the rest.
     for plugin in PLUGINS:
         method = getattr(plugin, "on_command_parsed", None)
         if not method:
             continue
-        method(logger=logger, command=command, args=args)
+        try:
+            method(logger=logger, command=command, args=args)
+        except Exception:
+            logger.exception(
+                f"on_command_parsed plugin {plugin.__name__} failed, "
+                "swallowing exception"
+            )
 
 
 def resolve_metadata(
