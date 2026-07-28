@@ -6,6 +6,7 @@
  */
 
 import CoreGraphics
+import Darwin
 @testable import FBSimulatorControl
 import Synchronization
 import XCTest
@@ -128,6 +129,53 @@ final class FBSimulatorDTUHIDTransportTests: XCTestCase {
     handler(XPC_ERROR_CONNECTION_INVALID)
     handler(XPC_ERROR_CONNECTION_INTERRUPTED)
     XCTAssertEqual(invalidations.withLock { $0 }, 1)
+  }
+
+  // MARK: Transport selection
+
+  func testTransportSelectionSkipsServiceProbeOnOlderCoreSimulator() {
+    var serviceWasProbed = false
+
+    let isSuppressed = FBSimulatorHIDTransportSelection.isLegacyHIDSuppressed(
+      coreSimulatorVersion: "1155.3",
+      servicePort: {
+        serviceWasProbed = true
+        return 42
+      },
+      deallocate: { _ in
+        XCTFail("Older CoreSimulator versions must not deallocate an unrequested service port")
+      }
+    )
+
+    XCTAssertFalse(isSuppressed)
+    XCTAssertFalse(serviceWasProbed)
+  }
+
+  func testTransportSelectionUsesDTUHIDWhenServiceIsAvailable() {
+    let expectedPort: mach_port_t = 42
+    var deallocatedPort: mach_port_t?
+
+    let isSuppressed = FBSimulatorHIDTransportSelection.isLegacyHIDSuppressed(
+      coreSimulatorVersion: "1155.4",
+      servicePort: { expectedPort },
+      deallocate: { deallocatedPort = $0 }
+    )
+
+    XCTAssertTrue(isSuppressed)
+    XCTAssertEqual(deallocatedPort, expectedPort)
+  }
+
+  func testTransportSelectionUsesIndigoWhenServiceIsUnavailable() {
+    var didDeallocate = false
+
+    let isSuppressed = FBSimulatorHIDTransportSelection.isLegacyHIDSuppressed(
+      coreSimulatorVersion: "1169.1",
+      servicePort: { mach_port_t(MACH_PORT_NULL) },
+      deallocate: { _ in didDeallocate = true }
+    )
+
+    XCTAssertFalse(isSuppressed)
+    XCTAssertFalse(didDeallocate)
   }
 
   // MARK: Two-finger encoding
