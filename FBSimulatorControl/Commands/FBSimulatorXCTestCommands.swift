@@ -174,8 +174,10 @@ public final class FBSimulatorXCTestCommands: NSObject, FBiOSTargetCommand {
         logger: logger))
   }
 
-  // Internal (not private) so the poll can be unit-tested with a getenv device double.
-  func testManagerDaemonSocketPath() async throws -> String {
+  // Internal (not private) so the poll can be unit-tested with a getenv device double. The env key is
+  // parameterized (default `TESTMANAGERD_SIM_SOCK`) so the remote-automation path can resolve its own
+  // socket via `TESTMANAGERD_REMOTE_AUTOMATION_SIM_SOCK` through the same tested poll.
+  func testManagerDaemonSocketPath(envKey: String = simSockEnvKey) async throws -> String {
     guard let simulator = self.simulator else {
       throw FBWeakTargetError.simulator
     }
@@ -183,7 +185,7 @@ public final class FBSimulatorXCTestCommands: NSObject, FBiOSTargetCommand {
     var lastError: NSError?
     while true {
       do {
-        let socketPath = try simulator.device.getenv(simSockEnvKey)
+        let socketPath = try simulator.device.getenv(envKey)
         if !socketPath.isEmpty {
           return socketPath
         }
@@ -193,7 +195,7 @@ public final class FBSimulatorXCTestCommands: NSObject, FBiOSTargetCommand {
       if Date() >= deadline {
         throw
           FBSimulatorError
-          .describe("Failed to get \(simSockEnvKey) from simulator environment")
+          .describe("Failed to get \(envKey) from simulator environment")
           .caused(by: lastError)
           .build()
       }
