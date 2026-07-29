@@ -20,6 +20,7 @@
 @property Protocol *remoteInterface; // @synthesize remoteInterface=_remoteInterface;
 - (void)_sendInvocationMessage:(id)arg1;
 - (void)setExportedObject:(id)arg1 queue:(id)arg2;
+- (void)setAdditionalAllowedClassesForProtocolMethods:(NSSet *)arg1;
 - (void)_validateDispatch:(id)arg1;
 - (void)cancel;
 @property (readonly) id remoteObjectProxy;
