@@ -53,6 +53,20 @@ public actor FBSimulatorRemoteAutomation {
     return try JSONSerialization.data(withJSONObject: response.asDictionary(), options: .sortedKeys)
   }
 
+  /// Reads the whole element tree of the frontmost application over the remote-automation channel and
+  /// serializes it to the accessibility schema as canonical sorted-keys JSON. `(x, y)` is the point
+  /// probed to discover the frontmost app's pid. If the walk hits the depth or node-count bound the
+  /// returned tree is incomplete; that is logged rather than passed off as a full tree.
+  public func describeAll(anchorX x: Double, y: Double, keys: Set<FBAXKeys>, nestedFormat: Bool) async throws -> Data {
+    try await ensureAccessibilityEnabled()
+    let tree = try await readFrontmostTree(anchorX: x, y: y)
+    let elements = Self.describeAllElements(fromTree: tree.root, keys: keys, nestedFormat: nestedFormat, pid: tree.pid)
+    let response = FBAccessibilityElementsResponse(
+      elements: elements, profilingData: nil, frameCoverage: nil, additionalFrameCoverage: nil
+    )
+    return try JSONSerialization.data(withJSONObject: response.asDictionary(), options: .sortedKeys)
+  }
+
   // MARK: - Read preconditions
 
   private var accessibilityPreconditionChecked = false
@@ -79,6 +93,31 @@ public actor FBSimulatorRemoteAutomation {
 
   // MARK: - Reads
 
+  private static let describeMaxDepth = 50
+  private static let describeMaxNodes = 3000
+
+  /// Reads the frontmost application's element tree — probing `(x, y)` to discover its pid — and
+  /// returns the root attribute dictionary with that pid. Shared by the whole-tree operations
+  /// (describe-all, marker tap, wait). Logs a warning when the walk hit the depth or node bound so a
+  /// truncated tree is never passed off as complete.
+  private func readFrontmostTree(anchorX x: Double, y: Double) async throws -> (root: [String: Any], pid: pid_t) {
+    let session = try await self.session()
+    let tree = try await session.applicationElementTree(
+      anchorX: x, y: y,
+      attributes: FBRemoteAutomationAXAttribute.fetchList,
+      childrenAttribute: FBRemoteAutomationAXAttribute.children,
+      maxDepth: Self.describeMaxDepth,
+      maxNodes: Self.describeMaxNodes
+    )
+    guard let root = tree.root as? [String: Any] else {
+      throw FBControlCoreError.describe("Remote automation could not read the frontmost application tree at (\(x), \(y))").build()
+    }
+    if tree.truncated {
+      _ = simulator?.logger?.log("Remote-automation read hit the bound (maxDepth \(Self.describeMaxDepth), maxNodes \(Self.describeMaxNodes)); the returned tree is truncated and incomplete.")
+    }
+    return (root, tree.processIdentifier)
+  }
+
   /// Reads the element at a point and serializes it to the single-element accessibility schema,
   /// feeding a remote-backed `FBAXPlatformElement` through the same serializer as the legacy path.
   /// The element handle stays a disconnected local (received from the session and used once) so it
@@ -98,6 +137,30 @@ public actor FBSimulatorRemoteAutomation {
       collector: nil,
       coverageGrid: nil
     )
+  }
+
+  /// Serializes a remote attribute-dictionary tree (as returned by the session) into the schema,
+  /// building a remote `FBAXPlatformElement` tree and running the shared recursive serializer. Each
+  /// element is tagged with the frontmost app's real pid, discovered during the tree read.
+  static func describeAllElements(fromTree tree: [String: Any], keys: Set<FBAXKeys>, nestedFormat: Bool, pid: pid_t) -> [[String: Any]] {
+    let root = buildPlatformElementTree(from: tree, pid: pid)
+    return FBSimulatorAccessibilitySerializer.recursiveDescription(
+      fromElement: root,
+      token: "",
+      nestedFormat: nestedFormat,
+      keys: keys,
+      collector: nil,
+      coverageGrid: nil,
+      seenPids: nil
+    )
+  }
+
+  /// Recursively builds a remote `FBAXPlatformElement` from a nested attribute-dictionary node,
+  /// tagging every node with the owning application's pid.
+  static func buildPlatformElementTree(from node: [String: Any], pid: pid_t) -> FBRemoteAutomationPlatformElement {
+    let childNodes = (node[FBRemoteAutomationAXAttribute.children] as? [[String: Any]]) ?? []
+    let children = childNodes.map { buildPlatformElementTree(from: $0, pid: pid) }
+    return FBRemoteAutomationPlatformElement(attributes: node, children: children, pid: pid)
   }
 
   // MARK: - Session lifecycle

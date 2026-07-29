@@ -86,4 +86,43 @@ final class FBRemoteAutomationDescribeTests: XCTestCase {
       // expected
     }
   }
+
+  private static func sampleTree() -> [String: Any] {
+    [
+      FBRemoteAutomationAXAttribute.label: "root",
+      FBRemoteAutomationAXAttribute.children: [
+        [
+          FBRemoteAutomationAXAttribute.label: "child",
+          FBRemoteAutomationAXAttribute.children: [[String: Any]](),
+        ] as [String: Any]
+      ],
+    ]
+  }
+
+  func testDescribeAllFlattensTree() {
+    let elements = FBSimulatorRemoteAutomation.describeAllElements(
+      fromTree: Self.sampleTree(), keys: FBAXKeys.defaultSet, nestedFormat: false, pid: 0
+    )
+    XCTAssertEqual(elements.count, 2)
+    let labels = elements.compactMap { $0[FBAXKeys.label.rawValue] as? String }
+    XCTAssertTrue(labels.contains("root"))
+    XCTAssertTrue(labels.contains("child"))
+  }
+
+  func testDescribeAllNestedEmbedsChildren() throws {
+    let elements = FBSimulatorRemoteAutomation.describeAllElements(
+      fromTree: Self.sampleTree(), keys: FBAXKeys.defaultSet, nestedFormat: true, pid: 0
+    )
+    XCTAssertEqual(elements.count, 1)
+    XCTAssertEqual(elements[0][FBAXKeys.label.rawValue] as? String, "root")
+    let children = try XCTUnwrap(elements[0]["children"] as? [[String: Any]])
+    XCTAssertEqual(children.count, 1)
+    XCTAssertEqual(children[0][FBAXKeys.label.rawValue] as? String, "child")
+  }
+
+  func testBuildPlatformElementTreeTagsEveryNodeWithPid() {
+    let root = FBSimulatorRemoteAutomation.buildPlatformElementTree(from: Self.sampleTree(), pid: 99)
+    XCTAssertEqual(root.axTranslationPid, 99)
+    XCTAssertEqual(root.axChildren().first?.axTranslationPid, 99)
+  }
 }
