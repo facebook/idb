@@ -7,6 +7,7 @@
 # pyre-strict
 
 from argparse import ArgumentParser, Namespace
+from enum import Enum, unique
 
 from idb.cli import ClientCommand
 from idb.common.types import (
@@ -25,6 +26,15 @@ def _is_int(value: str) -> bool:
         return True
     except ValueError:
         return False
+
+
+@unique
+class TapDispatch(Enum):
+    COORDINATE_HID = "coordinate_hid"
+    EXPECTED_VALUE = "expected_value"
+    AX_POINT = "ax_point"
+    MARKER = "marker"
+    INVALID = "invalid"
 
 
 class TapCommand(ClientCommand):
@@ -84,6 +94,18 @@ class TapCommand(ClientCommand):
             and args.api != "ax"
             and args.expected_value is None
         )
+
+    def tap_dispatch(self, args: Namespace) -> TapDispatch:
+        target = args.target
+        if self.is_coordinate_hid_tap(args):
+            return TapDispatch.COORDINATE_HID
+        if args.expected_value is not None:
+            return TapDispatch.EXPECTED_VALUE
+        if len(target) == 2 and _is_int(target[0]) and _is_int(target[1]):
+            return TapDispatch.AX_POINT
+        if len(target) == 1:
+            return TapDispatch.MARKER
+        return TapDispatch.INVALID
 
     async def run_with_client(self, args: Namespace, client: Client) -> None:
         target = args.target
