@@ -139,4 +139,26 @@ final class FBRemoteAutomationDescribeTests: XCTestCase {
   func testFrameCenterReturnsNilWhenNoMatch() {
     XCTAssertNil(FBSimulatorRemoteAutomation.frameCenter(inElements: [], markerValue: "General", key: .label))
   }
+
+  func testPollUntilFoundReturnsWhenProbeSucceeds() async throws {
+    final class Counter { var n = 0 }
+    let counter = Counter()
+    let result = try await FBSimulatorRemoteAutomation.pollUntilFound(
+      timeout: 10, pollInterval: 0.01, clock: { 0 }, sleep: { _ in }
+    ) { () -> Int? in
+      counter.n += 1
+      return counter.n >= 2 ? 42 : nil
+    }
+    XCTAssertEqual(result, 42)
+    XCTAssertEqual(counter.n, 2)
+  }
+
+  func testPollUntilFoundTimesOut() async throws {
+    final class Clock { var t = 0.0 }
+    let clock = Clock()
+    let result: Int? = try await FBSimulatorRemoteAutomation.pollUntilFound(
+      timeout: 1, pollInterval: 0.01, clock: { clock.t }, sleep: { _ in clock.t += 0.6 }
+    ) { nil }
+    XCTAssertNil(result)
+  }
 }

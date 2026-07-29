@@ -82,6 +82,36 @@ public actor FBSimulatorRemoteAutomation {
     try await session.synthesizeEvent(record)
   }
 
+  /// Polls the frontmost app tree over the remote-automation channel until an element whose `key`
+  /// value equals `markerValue` appears, or throws when `timeout` elapses. `(x, y)` is the point
+  /// probed to discover the frontmost app's pid.
+  public func wait(markerValue: String, key: FBAXSearchableKey, timeout: TimeInterval, pollInterval: TimeInterval, anchorX x: Double, anchorY y: Double) async throws {
+    try await ensureAccessibilityEnabled()
+    let session = try await self.session()
+    let found = try await Self.pollUntilFound(
+      timeout: timeout,
+      pollInterval: pollInterval,
+      clock: { Date().timeIntervalSinceReferenceDate },
+      sleep: { try await Task.sleep(nanoseconds: UInt64($0 * 1_000_000_000)) }
+    ) { () -> Bool? in
+      // A poll reads the tree directly (rather than via `readFrontmostTree`) so a missing tree retries
+      // instead of throwing, and the truncation warning is not logged on every poll iteration.
+      let tree = try await session.applicationElementTree(
+        anchorX: x, y: y,
+        attributes: FBRemoteAutomationAXAttribute.fetchList,
+        childrenAttribute: FBRemoteAutomationAXAttribute.children,
+        maxDepth: Self.describeMaxDepth,
+        maxNodes: Self.describeMaxNodes
+      )
+      guard let root = tree.root as? [String: Any] else { return nil }
+      let elements = Self.describeAllElements(fromTree: root, keys: FBAXKeys.defaultSet, nestedFormat: false, pid: tree.processIdentifier)
+      return Self.frameCenter(inElements: elements, markerValue: markerValue, key: key) != nil ? true : nil
+    }
+    if found == nil {
+      throw FBControlCoreError.describe("Remote automation timed out after \(timeout)s waiting for \(key.rawValue)=\"\(markerValue)\"").build()
+    }
+  }
+
   // MARK: - Read preconditions
 
   private var accessibilityPreconditionChecked = false
@@ -113,7 +143,7 @@ public actor FBSimulatorRemoteAutomation {
 
   /// Reads the frontmost application's element tree — probing `(x, y)` to discover its pid — and
   /// returns the root attribute dictionary with that pid. Shared by the whole-tree operations
-  /// (describe-all, marker tap, wait). Logs a warning when the walk hit the depth or node bound so a
+  /// (describe-all, marker tap). Logs a warning when the walk hit the depth or node bound so a
   /// truncated tree is never passed off as complete.
   private func readFrontmostTree(anchorX x: Double, y: Double) async throws -> (root: [String: Any], pid: pid_t) {
     let session = try await self.session()
@@ -195,6 +225,27 @@ public actor FBSimulatorRemoteAutomation {
       return (x + width / 2, y + height / 2)
     }
     return nil
+  }
+
+  /// Polls `probe` until it returns a non-nil value or `timeout` elapses (measured by `clock`),
+  /// sleeping `pollInterval` between attempts. `clock`/`sleep` are injected for deterministic tests.
+  static func pollUntilFound<T>(
+    timeout: TimeInterval,
+    pollInterval: TimeInterval,
+    clock: () -> TimeInterval,
+    sleep: (TimeInterval) async throws -> Void,
+    probe: () async throws -> T?
+  ) async throws -> T? {
+    let deadline = clock() + timeout
+    while true {
+      if let value = try await probe() {
+        return value
+      }
+      if clock() >= deadline {
+        return nil
+      }
+      try await sleep(pollInterval)
+    }
   }
 
   // MARK: - Session lifecycle
