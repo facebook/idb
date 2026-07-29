@@ -12,9 +12,6 @@ from idb.cli import ClientCommand
 from idb.common.command import CommandGroup
 from idb.common.types import Client
 
-_ENABLE = "enable"
-_DISABLE = "disable"
-
 
 class SetPreferenceCommand(ClientCommand):
     @property
@@ -52,25 +49,12 @@ class SetPreferenceCommand(ClientCommand):
         super().add_parser_arguments(parser)
 
     async def run_with_client(self, args: Namespace, client: Client) -> None:
-        # special handling for locale and hardware-keyboard preference names
-        # for backwards compatibility
-        if args.name == "locale":
-            await client.set_locale(
-                locale_identifier=args.value,
-            )
-        elif args.name == "hardware-keyboard":
-            if args.value not in [_ENABLE, _DISABLE]:
-                raise Exception(
-                    f"Invalid value for hardware-keyboard. Must be one of {[_ENABLE, _DISABLE]}"
-                )
-            await client.set_hardware_keyboard(args.value == _ENABLE)
-        else:
-            await client.set_preference(
-                name=args.name,
-                value=args.value,
-                value_type=args.type,
-                domain=args.domain,
-            )
+        await client.set_preference(
+            name=args.name,
+            value=args.value,
+            value_type=args.type,
+            domain=args.domain,
+        )
 
 
 class GetPreferenceCommand(ClientCommand):
@@ -97,14 +81,8 @@ class GetPreferenceCommand(ClientCommand):
         super().add_parser_arguments(parser)
 
     async def run_with_client(self, args: Namespace, client: Client) -> None:
-        # special handling for locale reference name
-        # for backwards compatibility
-        if args.name == "locale":
-            locale_identifier = await client.get_locale()
-            print(locale_identifier)
-        else:
-            value = await client.get_preference(name=args.name, domain=args.domain)
-            print(value)
+        value = await client.get_preference(name=args.name, domain=args.domain)
+        print(value)
 
 
 class ListLocaleCommand(ClientCommand):

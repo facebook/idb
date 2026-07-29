@@ -1431,24 +1431,6 @@ class Client(ClientBase):
             yield message
 
     @log_and_handle_exceptions("setting")
-    async def set_hardware_keyboard(self, enabled: bool) -> None:
-        await self.stub.setting(
-            SettingRequest(
-                hardwareKeyboard=SettingRequest.HardwareKeyboard(enabled=enabled)
-            )
-        )
-
-    @log_and_handle_exceptions("setting")
-    async def set_locale(self, locale_identifier: str) -> None:
-        await self.stub.setting(
-            SettingRequest(
-                stringSetting=SettingRequest.StringSetting(
-                    setting=LocaleSetting, value=locale_identifier
-                )
-            )
-        )
-
-    @log_and_handle_exceptions("setting")
     async def set_preference(
         self, name: str, value: str, value_type: str, domain: str | None
     ) -> None:
@@ -1464,11 +1446,6 @@ class Client(ClientBase):
                 )
             )
         )
-
-    @log_and_handle_exceptions("get_setting")
-    async def get_locale(self) -> str:
-        response = await self.stub.get_setting(GetSettingRequest(setting=LocaleSetting))
-        return response.value
 
     @log_and_handle_exceptions("get_setting")
     async def get_preference(self, name: str, domain: str | None) -> str:

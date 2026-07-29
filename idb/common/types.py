@@ -638,21 +638,9 @@ class Client(ABC):
         pass
 
     @abstractmethod
-    async def set_hardware_keyboard(self, enabled: bool) -> None:
-        pass
-
-    @abstractmethod
-    async def set_locale(self, locale_identifier: str) -> None:
-        pass
-
-    @abstractmethod
     async def set_preference(
         self, name: str, value: str, value_type: str, domain: str | None
     ) -> None:
-        pass
-
-    @abstractmethod
-    async def get_locale(self) -> str:
         pass
 
     @abstractmethod

@@ -803,6 +803,29 @@ class TestParser(TestCase):
             name="autofill-passwords", value="disable", value_type="string", domain=None
         )
 
+    async def test_set_hardware_keyboard_routes_through_generic_preference(
+        self,
+    ) -> None:
+        self.client_mock.set_preference = AsyncMock(return_value=[])
+        await cli_main(cmd_input=["set", "hardware-keyboard", "enable"])
+        self.client_mock.set_preference.assert_called_once_with(
+            name="hardware-keyboard", value="enable", value_type="string", domain=None
+        )
+
+    async def test_set_locale_routes_through_generic_preference(self) -> None:
+        self.client_mock.set_preference = AsyncMock(return_value=[])
+        await cli_main(cmd_input=["set", "locale", "en_US"])
+        self.client_mock.set_preference.assert_called_once_with(
+            name="locale", value="en_US", value_type="string", domain=None
+        )
+
+    async def test_get_locale_routes_through_generic_preference(self) -> None:
+        self.client_mock.get_preference = AsyncMock(return_value="en_US")
+        await cli_main(cmd_input=["get", "locale"])
+        self.client_mock.get_preference.assert_called_once_with(
+            name="locale", domain=None
+        )
+
     async def test_approve(self) -> None:
         self.client_mock.approve = AsyncMock(return_value=[])
         bundle_id = "com.fb.myApp"
