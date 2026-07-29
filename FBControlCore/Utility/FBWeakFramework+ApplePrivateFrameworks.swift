@@ -28,7 +28,7 @@ extension FBWeakFramework {
   }
 
   @objc(XCTest) public class var xcTest: FBWeakFramework {
-    FBWeakFramework.xcodeFramework(withRelativePath: "Platforms/MacOSX.platform/Developer/Library/Frameworks/XCTest.framework", requiredClassNames: ["XCTestConfiguration"])
+    FBWeakFramework.xcodeFramework(withRelativePath: "Platforms/MacOSX.platform/Developer/Library/Frameworks/XCTest.framework", requiredClassNames: ["XCTestConfiguration", "XCSynthesizedEventRecord", "XCAccessibilityElement"])
   }
 
   @objc(MobileDevice) public class var mobileDevice: FBWeakFramework {
