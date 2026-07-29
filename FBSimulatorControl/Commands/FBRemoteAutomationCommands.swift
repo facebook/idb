@@ -67,6 +67,21 @@ public actor FBSimulatorRemoteAutomation {
     return try JSONSerialization.data(withJSONObject: response.asDictionary(), options: .sortedKeys)
   }
 
+  /// Finds the element in the frontmost app tree whose `key` value equals `markerValue` and taps its
+  /// frame centre over the remote-automation channel. `(x, y)` is the point probed to discover the
+  /// frontmost app's pid.
+  public func tap(markerValue: String, key: FBAXSearchableKey, anchorX x: Double, anchorY y: Double) async throws {
+    try await ensureAccessibilityEnabled()
+    let tree = try await readFrontmostTree(anchorX: x, y: y)
+    let elements = Self.describeAllElements(fromTree: tree.root, keys: FBAXKeys.defaultSet, nestedFormat: false, pid: tree.pid)
+    guard let center = Self.frameCenter(inElements: elements, markerValue: markerValue, key: key) else {
+      throw FBControlCoreError.describe("Remote automation found no element matching \(key.rawValue)=\"\(markerValue)\"").build()
+    }
+    let session = try await self.session()
+    let record = try Self.eventRecord(for: .tapAt(x: center.x, y: center.y))
+    try await session.synthesizeEvent(record)
+  }
+
   // MARK: - Read preconditions
 
   private var accessibilityPreconditionChecked = false
@@ -161,6 +176,25 @@ public actor FBSimulatorRemoteAutomation {
     let childNodes = (node[FBRemoteAutomationAXAttribute.children] as? [[String: Any]]) ?? []
     let children = childNodes.map { buildPlatformElementTree(from: $0, pid: pid) }
     return FBRemoteAutomationPlatformElement(attributes: node, children: children, pid: pid)
+  }
+
+  /// The centre of the frame of the first serialized element whose `key` value equals `markerValue`.
+  /// Shared by the marker-driven operations (tap, wait, set-value).
+  static func frameCenter(inElements elements: [[String: Any]], markerValue: String, key: FBAXSearchableKey) -> (x: Double, y: Double)? {
+    func number(_ value: Any?) -> Double? {
+      (value as? Double) ?? (value as? NSNumber)?.doubleValue
+    }
+    for element in elements {
+      guard element[key.rawValue] as? String == markerValue,
+        let frame = element[FBAXKeys.frameDict.rawValue] as? [String: Any],
+        let x = number(frame["x"]), let y = number(frame["y"]),
+        let width = number(frame["width"]), let height = number(frame["height"])
+      else {
+        continue
+      }
+      return (x + width / 2, y + height / 2)
+    }
+    return nil
   }
 
   // MARK: - Session lifecycle

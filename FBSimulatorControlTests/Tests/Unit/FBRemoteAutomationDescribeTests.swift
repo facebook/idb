@@ -125,4 +125,18 @@ final class FBRemoteAutomationDescribeTests: XCTestCase {
     XCTAssertEqual(root.axTranslationPid, 99)
     XCTAssertEqual(root.axChildren().first?.axTranslationPid, 99)
   }
+
+  func testFrameCenterFindsMatchingElement() {
+    let elements: [[String: Any]] = [
+      [FBAXKeys.label.rawValue: "Other", FBAXKeys.frameDict.rawValue: ["x": 0.0, "y": 0.0, "width": 10.0, "height": 10.0]],
+      [FBAXKeys.label.rawValue: "General", FBAXKeys.frameDict.rawValue: ["x": 16.0, "y": 380.0, "width": 370.0, "height": 52.0]],
+    ]
+    let center = FBSimulatorRemoteAutomation.frameCenter(inElements: elements, markerValue: "General", key: .label)
+    XCTAssertEqual(center?.x ?? -1, 201, accuracy: 0.001)
+    XCTAssertEqual(center?.y ?? -1, 406, accuracy: 0.001)
+  }
+
+  func testFrameCenterReturnsNilWhenNoMatch() {
+    XCTAssertNil(FBSimulatorRemoteAutomation.frameCenter(inElements: [], markerValue: "General", key: .label))
+  }
 }
