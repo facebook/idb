@@ -269,7 +269,8 @@ final class FBSimulatorSettingsCommandsTests: XCTestCase {
   }
 
   func testPreferenceBacking() {
-    XCTAssertEqual(FBSimulatorSettingKey.autoFillPasswords.preferenceBacking?.domain, "com.apple.WebUI")
+    // nil domain == Apple Global Domain, where the native AutoFill Passwords toggle lives.
+    XCTAssertNil(FBSimulatorSettingKey.autoFillPasswords.preferenceBacking?.domain)
     XCTAssertEqual(FBSimulatorSettingKey.autoFillPasswords.preferenceBacking?.key, "AutoFillPasswords")
     XCTAssertNil(FBSimulatorSettingKey.locale.preferenceBacking?.domain)
     XCTAssertEqual(FBSimulatorSettingKey.locale.preferenceBacking?.key, "AppleLocale")

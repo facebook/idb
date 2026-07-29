@@ -49,12 +49,14 @@ extension FBSimulatorSettingKey {
   /// the getter use — declared once so set and get never duplicate it. `nil` for settings backed by a
   /// SimDevice API or a Darwin notification, which have no readable preference.
   ///
-  /// `autofill-passwords` maps to `com.apple.WebUI` / `AutoFillPasswords`: disabling it suppresses the
-  /// native "Automatic Strong Password" cover shown over `UITextContentTypeNewPassword` fields.
+  /// `autofill-passwords` maps to the Apple Global Domain `AutoFillPasswords` toggle: disabling it
+  /// suppresses the native "Automatic Strong Password" cover shown over `UITextContentTypeNewPassword`
+  /// fields. Writing `com.apple.WebUI` instead only affects WebKit and does not suppress the native
+  /// cover on iOS 26.2+.
   var preferenceBacking: (domain: String?, key: String)? {
     switch self {
     case .autoFillPasswords:
-      return (domain: "com.apple.WebUI", key: "AutoFillPasswords")
+      return (domain: nil, key: "AutoFillPasswords")
     case .locale:
       return (domain: nil, key: "AppleLocale")
     case .hardwareKeyboard, .slowAnimations, .increaseContrast, .appearance, .contentSize:
