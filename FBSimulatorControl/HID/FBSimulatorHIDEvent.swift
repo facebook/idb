@@ -19,7 +19,7 @@ private let inCallStatusBarNotification = "com.apple.iphonesimulator.toggleincal
 /// A HID event that can be sent to a Simulator. A discriminated union of the primitive
 /// payloads (touch, button, keyboard, two-finger touch, orientation, shake, lock, in-call
 /// status bar, delay) plus a `composite` of ordered events.
-public indirect enum FBSimulatorHIDEvent: Equatable, Hashable {
+public indirect enum FBSimulatorHIDEvent: Equatable, Hashable, Sendable {
   case touch(direction: FBSimulatorHIDDirection, x: Double, y: Double)
   case button(direction: FBSimulatorHIDDirection, button: FBSimulatorHIDButton)
   case keyboard(direction: FBSimulatorHIDDirection, keyCode: UInt32)
