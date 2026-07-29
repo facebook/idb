@@ -40,6 +40,19 @@ public actor FBSimulatorRemoteAutomation {
     try await session.synthesizeEvent(record)
   }
 
+  /// Reads the accessibility element at a screen point (in points) over the remote-automation
+  /// channel and serializes it to the accessibility schema as canonical sorted-keys JSON, matching
+  /// the legacy `accessibilityDescribe` point output.
+  public func describe(atX x: Double, y: Double, keys: Set<FBAXKeys>) async throws -> Data {
+    try await ensureAccessibilityEnabled()
+    let session = try await self.session()
+    let element = try await Self.describeElement(atX: x, y: y, using: session, keys: keys)
+    let response = FBAccessibilityElementsResponse(
+      elements: element, profilingData: nil, frameCoverage: nil, additionalFrameCoverage: nil
+    )
+    return try JSONSerialization.data(withJSONObject: response.asDictionary(), options: .sortedKeys)
+  }
+
   // MARK: - Read preconditions
 
   private var accessibilityPreconditionChecked = false
@@ -62,6 +75,29 @@ public actor FBSimulatorRemoteAutomation {
       ).build()
     }
     accessibilityPreconditionChecked = true
+  }
+
+  // MARK: - Reads
+
+  /// Reads the element at a point and serializes it to the single-element accessibility schema,
+  /// feeding a remote-backed `FBAXPlatformElement` through the same serializer as the legacy path.
+  /// The element handle stays a disconnected local (received from the session and used once) so it
+  /// never becomes a shareable value that would risk a data race across the session boundary.
+  static func describeElement(atX x: Double, y: Double, using session: FBRemoteAutomationSession, keys: Set<FBAXKeys>) async throws -> [String: Any] {
+    guard let element = try await session.requestElement(atX: x, y: y) else {
+      throw FBControlCoreError.describe("Remote automation found no element at (\(x), \(y))").build()
+    }
+    let raw = try await session.fetchAttributes(FBRemoteAutomationAXAttribute.fetchList, forElement: element)
+    let attributes = (raw as? [String: Any]) ?? [:]
+    let platformElement = FBRemoteAutomationPlatformElement(attributes: attributes, children: [], pid: 0)
+    return FBSimulatorAccessibilitySerializer.formattedDescription(
+      ofElement: platformElement,
+      token: "",
+      nestedFormat: false,
+      keys: keys,
+      collector: nil,
+      coverageGrid: nil
+    )
   }
 
   // MARK: - Session lifecycle
