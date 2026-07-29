@@ -33,69 +33,54 @@ public final class FBSimulatorXCTestCommands: NSObject, FBiOSTargetCommand {
     super.init()
   }
 
-  // MARK: - testmanagerd transport (FBFutureContext engine, consumed by the ObjC test bundle connection)
+  // MARK: - testmanagerd transport
 
-  // FBFutureContext APIs cannot be expressed natively in async/await producer
-  // form (only the consumer side `withFBFutureContext` exists). Keep the
-  // existing FBFuture/FBFutureContext implementation for now.
-  @objc(transportForTestManagerService)
-  public func transportForTestManagerService() -> FBFutureContext<NSNumber> {
-    guard let simulator = self.simulator else {
-      return
-        FBSimulatorError
-        .describe("Simulator is deallocated")
-        .failFutureContext() as! FBFutureContext<NSNumber>
+  /// Resolves the testmanagerd unix-domain socket, connects to it, and hands the socket fd to
+  /// `body` for the duration of the call, closing it on exit.
+  fileprivate func withTransportForTestManagerService<R>(body: (NSNumber) async throws -> R) async throws -> R {
+    guard self.simulator != nil else {
+      throw FBWeakTargetError.simulator
     }
+    let socketPath = try await testManagerDaemonSocketPath()
+    let socketFD = try Self.connectedTestManagerSocket(atPath: socketPath)
+    defer { close(socketFD) }
+    return try await body(NSNumber(value: socketFD))
+  }
 
-    return
-      (unsafeBitCast(testManagerDaemonSocketPath(), to: FBFuture<AnyObject>.self)
-      .onQueue(
-        simulator.asyncQueue,
-        fmap: { (pathObj: Any) -> FBFuture<AnyObject> in
-          let testManagerSocketString = pathObj as! String
-          let socketFD = socket(AF_UNIX, SOCK_STREAM, 0)
-          if socketFD == -1 {
-            return FBSimulatorError.describe("Unable to create a unix domain socket").failFuture()
-          }
-          if !FileManager.default.fileExists(atPath: testManagerSocketString) {
-            close(socketFD)
-            return FBSimulatorError.describe("Simulator indicated unix domain socket for testmanagerd at path \(testManagerSocketString), but no file was found at that path.").failFuture()
-          }
-
-          let testManagerSocketCStr = testManagerSocketString.utf8CString
-          if testManagerSocketCStr.count - 1 >= 0x68 {
-            close(socketFD)
-            return FBSimulatorError.describe("Unix domain socket path for simulator testmanagerd service '\(testManagerSocketString)' is too big to fit in sockaddr_un.sun_path").failFuture()
-          }
-
-          var remote = sockaddr_un()
-          remote.sun_family = sa_family_t(AF_UNIX)
-          testManagerSocketCStr.withUnsafeBufferPointer { buffer in
-            withUnsafeMutablePointer(to: &remote.sun_path) { sunPathPtr in
-              sunPathPtr.withMemoryRebound(to: CChar.self, capacity: Int(buffer.count)) { dest in
-                _ = memcpy(dest, buffer.baseAddress!, buffer.count)
-              }
-            }
-          }
-          let length = socklen_t(MemoryLayout<sa_family_t>.size + MemoryLayout.size(ofValue: remote.sun_len) + strlen(testManagerSocketString))
-          let connectResult = withUnsafePointer(to: &remote) { remotePtr in
-            remotePtr.withMemoryRebound(to: sockaddr.self, capacity: 1) { sockaddrPtr in
-              connect(socketFD, sockaddrPtr, length)
-            }
-          }
-          if connectResult == -1 {
-            close(socketFD)
-            return FBSimulatorError.describe("Failed to connect to testmangerd socket").failFuture()
-          }
-          return FBFuture(result: NSNumber(value: socketFD))
+  private static func connectedTestManagerSocket(atPath testManagerSocketString: String) throws -> Int32 {
+    let socketFD = socket(AF_UNIX, SOCK_STREAM, 0)
+    if socketFD == -1 {
+      throw FBSimulatorError.describe("Unable to create a unix domain socket").build()
+    }
+    if !FileManager.default.fileExists(atPath: testManagerSocketString) {
+      close(socketFD)
+      throw FBSimulatorError.describe("Simulator indicated unix domain socket for testmanagerd at path \(testManagerSocketString), but no file was found at that path.").build()
+    }
+    let testManagerSocketCStr = testManagerSocketString.utf8CString
+    if testManagerSocketCStr.count - 1 >= 0x68 {
+      close(socketFD)
+      throw FBSimulatorError.describe("Unix domain socket path for simulator testmanagerd service '\(testManagerSocketString)' is too big to fit in sockaddr_un.sun_path").build()
+    }
+    var remote = sockaddr_un()
+    remote.sun_family = sa_family_t(AF_UNIX)
+    testManagerSocketCStr.withUnsafeBufferPointer { buffer in
+      withUnsafeMutablePointer(to: &remote.sun_path) { sunPathPtr in
+        sunPathPtr.withMemoryRebound(to: CChar.self, capacity: Int(buffer.count)) { dest in
+          _ = memcpy(dest, buffer.baseAddress!, buffer.count)
         }
-      )
-      .onQueue(
-        simulator.asyncQueue,
-        contextualTeardown: { (socketNumber: Any, _: FBFutureState) -> FBFuture<NSNull> in
-          close(Int32((socketNumber as! NSNumber).intValue))
-          return FBFuture<NSNull>.empty()
-        })) as! FBFutureContext<NSNumber>
+      }
+    }
+    let length = socklen_t(MemoryLayout<sa_family_t>.size + MemoryLayout.size(ofValue: remote.sun_len) + strlen(testManagerSocketString))
+    let connectResult = withUnsafePointer(to: &remote) { remotePtr in
+      remotePtr.withMemoryRebound(to: sockaddr.self, capacity: 1) { sockaddrPtr in
+        connect(socketFD, sockaddrPtr, length)
+      }
+    }
+    if connectResult == -1 {
+      close(socketFD)
+      throw FBSimulatorError.describe("Failed to connect to testmangerd socket").build()
+    }
+    return socketFD
   }
 
   @objc
@@ -189,37 +174,31 @@ public final class FBSimulatorXCTestCommands: NSObject, FBiOSTargetCommand {
         logger: logger))
   }
 
-  private func testManagerDaemonSocketPath() -> FBFuture<NSString> {
+  // Internal (not private) so the poll can be unit-tested with a getenv device double.
+  func testManagerDaemonSocketPath() async throws -> String {
     guard let simulator = self.simulator else {
-      return FBFuture(error: FBSimulatorError.describe("Simulator is deallocated").build())
+      throw FBWeakTargetError.simulator
     }
-
-    return
-      (FBFuture<AnyObject>.onQueue(
-        simulator.asyncQueue,
-        resolveUntil: { [weak self] () -> FBFuture<AnyObject> in
-          guard let self, let simulator = self.simulator else {
-            return FBSimulatorError.describe("Simulator is deallocated").failFuture()
-          }
-          let socketPath: String?
-          var getenvError: NSError?
-          do {
-            socketPath = try simulator.device.getenv(simSockEnvKey)
-          } catch {
-            socketPath = nil
-            getenvError = error as NSError
-          }
-          guard let socketPath, !socketPath.isEmpty else {
-            return
-              FBSimulatorError
-              .describe("Failed to get \(simSockEnvKey) from simulator environment")
-              .caused(by: getenvError)
-              .failFuture()
-          }
-          return FBFuture(result: socketPath as NSString)
+    let deadline = Date().addingTimeInterval(testmanagerdSimSockTimeout)
+    var lastError: NSError?
+    while true {
+      do {
+        let socketPath = try simulator.device.getenv(simSockEnvKey)
+        if !socketPath.isEmpty {
+          return socketPath
         }
-      )
-      .timeout(testmanagerdSimSockTimeout, waitingFor: "\(simSockEnvKey) to become available in the simulator environment")) as! FBFuture<NSString>
+      } catch {
+        lastError = error as NSError
+      }
+      if Date() >= deadline {
+        throw
+          FBSimulatorError
+          .describe("Failed to get \(simSockEnvKey) from simulator environment")
+          .caused(by: lastError)
+          .build()
+      }
+      try await Task.sleep(nanoseconds: 50_000_000)
+    }
   }
 
   private func startTestAsync(with configuration: FBTestLaunchConfiguration, logger: any FBControlCoreLogger) async throws -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
@@ -271,7 +250,7 @@ extension FBSimulator: XCTestExtendedCommands {
   public func withTransportForTestManagerService<R>(
     body: (NSNumber) async throws -> R
   ) async throws -> R {
-    try await withFBFutureContext(xctestExtendedCommands().transportForTestManagerService(), body: body)
+    try await xctestExtendedCommands().withTransportForTestManagerService(body: body)
   }
 
   public var xctestPath: String {
