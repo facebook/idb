@@ -125,4 +125,84 @@ public actor FBRemoteAutomationSession {
     try await prime()
     return try await invoker.fetchAttributes(attributes as NSArray, forElement: element, deadline: readDeadline)
   }
+
+  /// Reads the whole element tree of the frontmost application as nested attribute dictionaries.
+  ///
+  /// The daemon exposes no whole-tree call and no "frontmost pid" query, so this hit-tests `(x, y)`
+  /// to discover the frontmost app's pid, anchors the application root by that pid, and recurses
+  /// `fetchAttributes` — replacing each node's child element handles with the children's own
+  /// attribute dictionaries. The recursion stays inside the actor because the element handles are not
+  /// Sendable; only the resulting value tree crosses out.
+  ///
+  /// The hit-test-for-pid is an experimental first approach for this experimental API; a future
+  /// refinement should take the pid upfront rather than discovering it by probing a point.
+  public func applicationElementTree(anchorX x: Double, y: Double, attributes: [String], childrenAttribute: String, maxDepth: Int, maxNodes: Int) async throws -> sending FBRemoteAutomationElementTree {
+    try await prime()
+    let point = CGPointCreateDictionaryRepresentation(CGPoint(x: x, y: y)) as NSDictionary
+    guard let anchor = try await invoker.requestElement(atPoint: point, deadline: readDeadline) else {
+      return FBRemoteAutomationElementTree(root: nil, processIdentifier: 0, truncated: false)
+    }
+    let pid = unsafeBitCast(anchor as AnyObject, to: XCAccessibilityElementMessaging.self).processIdentifier
+    guard pid > 0, let root = FBRemoteAutomationPayloads.applicationElement(forProcessIdentifier: pid) else {
+      return FBRemoteAutomationElementTree(root: nil, processIdentifier: 0, truncated: false)
+    }
+    let tree = try await fetchAttributeTree(from: root, attributes: attributes, childrenAttribute: childrenAttribute, depth: 0, maxDepth: maxDepth, budget: maxNodes)
+    return FBRemoteAutomationElementTree(root: tree.node, processIdentifier: pid, truncated: tree.truncated)
+  }
+
+  /// Recursively fetches an element and its descendants into a nested attribute-dictionary tree,
+  /// bounded by `maxDepth` and the `budget` node cap (threaded through the walk and returned so
+  /// siblings share one budget). Each node's child handles are replaced by the children's own
+  /// dictionaries. Internal so the walk can be unit-tested with a fake invoker.
+  func fetchAttributeTree(from element: sending Any, attributes: [String], childrenAttribute: String, depth: Int, maxDepth: Int, budget: Int) async throws -> sending (node: [String: Any], remaining: Int, truncated: Bool) {
+    var remaining = budget - 1
+    let raw = try await invoker.fetchAttributes(attributes as NSArray, forElement: element, deadline: readDeadline)
+    var node = (raw as? [String: Any]) ?? [:]
+    var childNodes: [[String: Any]] = []
+    var truncated = false
+    if var childHandles = node[childrenAttribute] as? [Any] {
+      node[childrenAttribute] = nil
+      if depth < maxDepth {
+        while !childHandles.isEmpty, remaining > 0 {
+          // The walk is sequential within the actor and each handle is consumed exactly once, so
+          // transferring it into the recursive read is race-free; region isolation can't prove that
+          // because the handle shares a region with the array it came from.
+          nonisolated(unsafe) let childHandle = childHandles.removeFirst()
+          let result = try await fetchAttributeTree(from: childHandle, attributes: attributes, childrenAttribute: childrenAttribute, depth: depth + 1, maxDepth: maxDepth, budget: remaining)
+          childNodes.append(result.node)
+          remaining = result.remaining
+          truncated = truncated || result.truncated
+        }
+        // Children left unvisited mean the shared node budget ran out before the walk finished them.
+        if !childHandles.isEmpty { truncated = true }
+      } else if !childHandles.isEmpty {
+        // The depth bound stops the walk from descending into this node's existing children.
+        truncated = true
+      }
+    }
+    node[childrenAttribute] = childNodes
+    return (node, remaining, truncated)
+  }
+}
+
+/// The result of a whole-tree read: the frontmost app's root as nested attribute dictionaries, the
+/// app's process identifier (discovered by hit-test), and whether the walk was cut short by the
+/// depth or node-count bound — so a caller can distinguish a bounded tree from a complete one and
+/// tag its elements with the real owning pid rather than a placeholder.
+public struct FBRemoteAutomationElementTree {
+  public let root: Any?
+  public let processIdentifier: pid_t
+  public let truncated: Bool
+
+  public init(root: Any?, processIdentifier: pid_t, truncated: Bool) {
+    self.root = root
+    self.processIdentifier = processIdentifier
+    self.truncated = truncated
+  }
+}
+
+/// Reads the process identifier off an `XCAccessibilityElement` returned by the daemon. The class is
+/// runtime-loaded (not linked), so it is messaged through this module-local `@objc` protocol.
+@objc private protocol XCAccessibilityElementMessaging {
+  var processIdentifier: CInt { get }
 }
