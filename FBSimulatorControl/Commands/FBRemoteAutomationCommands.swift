@@ -40,6 +40,30 @@ public actor FBSimulatorRemoteAutomation {
     try await session.synthesizeEvent(record)
   }
 
+  // MARK: - Read preconditions
+
+  private var accessibilityPreconditionChecked = false
+
+  /// Remote reads need the target app's in-process accessibility server, which the app starts only
+  /// when `ApplicationAccessibilityEnabled` (`com.apple.Accessibility`) is set *before* it launches.
+  /// The preference cannot take effect for an already-running app, so a read cannot enable it itself;
+  /// this instead checks the preference once per session (caching success) and, when unset, throws a
+  /// precise, tool-agnostic error naming exactly what to set — rather than silently returning an
+  /// empty tree. Any read entry point calls this before touching the accessibility tree.
+  func ensureAccessibilityEnabled() async throws {
+    if accessibilityPreconditionChecked { return }
+    guard let simulator = self.simulator else {
+      throw FBWeakTargetError.simulator
+    }
+    let value = try await simulator.getCurrentPreference("ApplicationAccessibilityEnabled", domain: "com.apple.Accessibility")
+    guard ["1", "true", "yes"].contains(value.lowercased()) else {
+      throw FBControlCoreError.describe(
+        "Remote-automation reads require the accessibility precondition ApplicationAccessibilityEnabled (domain com.apple.Accessibility) to be set before the target app launches; it is currently \(value.isEmpty ? "unset" : "\"\(value)\""). Set it and relaunch the app, e.g. `xcrun simctl spawn <UDID> defaults write com.apple.Accessibility ApplicationAccessibilityEnabled -bool true`. Without it the app does not start its in-process accessibility server and reads return nothing."
+      ).build()
+    }
+    accessibilityPreconditionChecked = true
+  }
+
   // MARK: - Session lifecycle
 
   private func session() async throws -> FBRemoteAutomationSession {
