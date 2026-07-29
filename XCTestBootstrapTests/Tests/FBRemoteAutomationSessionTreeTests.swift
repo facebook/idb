@@ -36,6 +36,8 @@ private actor FakeTreeInvoker: RemoteInvoking {
     dict[childrenAttribute] = node.children as [Any]
     return dict as NSDictionary
   }
+
+  func setAttribute(_ attribute: sending Any, value: sending Any, forElement element: sending Any, deadline: TimeInterval) async throws {}
 }
 
 final class FBRemoteAutomationSessionTreeTests: XCTestCase {

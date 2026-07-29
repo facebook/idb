@@ -42,6 +42,8 @@ private actor FakeReadInvoker: RemoteInvoking {
     }
     return dict as NSDictionary
   }
+
+  func setAttribute(_ attribute: sending Any, value: sending Any, forElement element: sending Any, deadline: TimeInterval) async throws {}
 }
 
 final class FBRemoteAutomationDescribeTests: XCTestCase {

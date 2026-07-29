@@ -21,6 +21,7 @@ private actor FakeRemoteInvoker: RemoteInvoking {
     case synthesizeEvent
     case requestElement
     case fetchAttributes
+    case setAttribute
   }
 
   enum FakeError: Error { case injected }
@@ -30,6 +31,7 @@ private actor FakeRemoteInvoker: RemoteInvoking {
   private(set) var lastPointY: Double?
   private(set) var lastImplicitConfirmationInterval: TimeInterval?
   private(set) var lastAttributes: [String]?
+  private(set) var lastSetValue: String?
 
   private let cannedCapabilities: [String: Int]
   private var beginSessionFailuresRemaining: Int
@@ -77,6 +79,11 @@ private actor FakeRemoteInvoker: RemoteInvoking {
     lastAttributes = attributes as? [String]
     return ["attributes": "value"] as NSDictionary
   }
+
+  func setAttribute(_ attribute: sending Any, value: sending Any, forElement element: sending Any, deadline: TimeInterval) async throws {
+    calls.append(.setAttribute)
+    lastSetValue = value as? String
+  }
 }
 
 final class FBRemoteAutomationSessionTests: XCTestCase {
@@ -91,6 +98,19 @@ final class FBRemoteAutomationSessionTests: XCTestCase {
 
     let calls = await invoker.callLog()
     XCTAssertEqual(calls, [.beginSession, .exchangeCapabilities, .loadAccessibility], "prime() must run the handshake as beginSession -> exchangeCapabilities -> loadAccessibility, in that order.")
+  }
+
+  func testSetValue_RequestsElementThenSetsAttribute() async throws {
+    let invoker = FakeRemoteInvoker()
+    let session = FBRemoteAutomationSession(invoker: invoker, processIdentifier: 1)
+
+    try await session.setValue("hello", atX: 10, y: 20, valueAttribute: "XC_kAXXCAttributeValue")
+
+    let calls = await invoker.callLog()
+    XCTAssertTrue(calls.contains(.requestElement))
+    XCTAssertTrue(calls.contains(.setAttribute))
+    let lastSetValue = await invoker.lastSetValue
+    XCTAssertEqual(lastSetValue, "hello")
   }
 
   func testPrime_IsMemoized_HandshakeRunsOnce() async throws {

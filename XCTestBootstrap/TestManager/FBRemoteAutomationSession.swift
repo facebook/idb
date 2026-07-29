@@ -183,6 +183,17 @@ public actor FBRemoteAutomationSession {
     node[childrenAttribute] = childNodes
     return (node, remaining, truncated)
   }
+
+  /// Sets `value` on the element at a screen point via the remote-automation channel. The element
+  /// handle stays a disconnected local (received from the session and used once).
+  public func setValue(_ value: String, atX x: Double, y: Double, valueAttribute: String) async throws {
+    try await prime()
+    let point = CGPointCreateDictionaryRepresentation(CGPoint(x: x, y: y)) as NSDictionary
+    guard let element = try await invoker.requestElement(atPoint: point, deadline: readDeadline) else {
+      throw FBRemoteAutomationError.payloadUnavailable("element at (\(x), \(y))")
+    }
+    try await invoker.setAttribute(valueAttribute as NSString, value: value as NSString, forElement: element, deadline: writeDeadline)
+  }
 }
 
 /// The result of a whole-tree read: the frontmost app's root as nested attribute dictionaries, the

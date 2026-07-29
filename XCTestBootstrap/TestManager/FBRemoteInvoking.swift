@@ -38,6 +38,7 @@ public protocol RemoteInvoking: Sendable {
   func synthesizeEvent(_ record: sending Any, implicitConfirmationInterval: TimeInterval, deadline: TimeInterval) async throws
   func requestElement(atPoint point: sending Any, deadline: TimeInterval) async throws -> sending Any?
   func fetchAttributes(_ attributes: sending Any, forElement element: sending Any, deadline: TimeInterval) async throws -> sending Any?
+  func setAttribute(_ attribute: sending Any, value: sending Any, forElement element: sending Any, deadline: TimeInterval) async throws
 }
 
 /// Serializes the one-shot completion of a single remote invocation to exactly one
@@ -144,6 +145,11 @@ public final class DTXRemoteInvoker: RemoteInvoking {
   public func fetchAttributes(_ attributes: sending Any, forElement element: sending Any, deadline: TimeInterval) async throws -> sending Any? {
     let receipt = connection.remoteProxy.fetchAttributes(attributes, forElement: element)
     return try await awaitReceipt(receipt, operation: "fetchAttributes", deadline: deadline)
+  }
+
+  public func setAttribute(_ attribute: sending Any, value: sending Any, forElement element: sending Any, deadline: TimeInterval) async throws {
+    let receipt = connection.remoteProxy.setAttribute(attribute, value: value, element: element)
+    _ = try await awaitReceipt(receipt, operation: "setAttribute", deadline: deadline)
   }
 
   private func awaitReceipt(_ receipt: sending (any FBRemoteAutomationReceipt)?, operation: String, deadline: TimeInterval) async throws -> sending Any? {
