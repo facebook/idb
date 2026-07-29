@@ -73,7 +73,7 @@ final class FBFramebufferTests: XCTestCase {
     XCTAssertIdentical(consumer.receivedSurfaces.first ?? nil, ioSurface)
   }
 
-  func testDamageDeliveredToConsumer() throws {
+  func testFrameRenderedDeliveredToConsumer() throws {
     let surface = FakeFramebufferSurface()
     let framebuffer = makeFramebuffer(surface: surface)
     let consumer = FakeFramebufferConsumer()
@@ -81,30 +81,12 @@ final class FBFramebufferTests: XCTestCase {
     let attachment = try framebuffer.attach(consumer, on: queue)
     defer { attachment.cancel() }
 
-    let delivered = expectation(description: "damage delivered on the consumer queue")
-    consumer.onDamage = { delivered.fulfill() }
-    surface.damageReceived?(FBFramebufferDamage(rects: [CGRect(x: 0, y: 0, width: 1, height: 1)]))
+    let delivered = expectation(description: "frame-rendered delivered on the consumer queue")
+    consumer.onFrameRendered = { delivered.fulfill() }
+    surface.frameRendered?()
 
     wait(for: [delivered], timeout: 5)
-    XCTAssertEqual(consumer.damageCallbackCount, 1)
-  }
-
-  func testEmptyDamageStillPingsConsumer() throws {
-    // Variable-frame-rate (lazy) streaming relies on the damage ping firing even when no rects are
-    // reported, so an empty damage batch must still reach the consumer.
-    let surface = FakeFramebufferSurface()
-    let framebuffer = makeFramebuffer(surface: surface)
-    let consumer = FakeFramebufferConsumer()
-    let queue = makeQueue()
-    let attachment = try framebuffer.attach(consumer, on: queue)
-    defer { attachment.cancel() }
-
-    let delivered = expectation(description: "empty damage delivered on the consumer queue")
-    consumer.onDamage = { delivered.fulfill() }
-    surface.damageReceived?(FBFramebufferDamage(rects: []))
-
-    wait(for: [delivered], timeout: 5)
-    XCTAssertEqual(consumer.damageCallbackCount, 1)
+    XCTAssertEqual(consumer.frameRenderedCount, 1)
   }
 
   // MARK: - Stats
@@ -117,18 +99,16 @@ final class FBFramebufferTests: XCTestCase {
 
     surface.ioSurfaceChanged?(makeTestIOSurface())
     surface.ioSurfaceChanged?(makeTestIOSurface())
-    surface.damageReceived?(FBFramebufferDamage(rects: [CGRect(x: 0, y: 0, width: 2, height: 2), CGRect(x: 1, y: 1, width: 3, height: 3)]))
-    surface.damageReceived?(FBFramebufferDamage(rects: []))
+    surface.frameRendered?()
+    surface.frameRendered?()
     queue.sync {}
 
     let stats = framebuffer.currentStats()
     XCTAssertEqual(stats.ioSurfaceChangeCount, 2)
-    XCTAssertEqual(stats.damageCallbackCount, 2)
-    XCTAssertEqual(stats.damageRectCount, 2)
-    XCTAssertEqual(stats.emptyDamageCallbackCount, 1)
+    XCTAssertEqual(stats.frameRenderedCount, 2)
   }
 
-  func testStatsStartTimeSetAfterFirstDamage() throws {
+  func testStatsStartTimeSetAfterFirstFrame() throws {
     let surface = FakeFramebufferSurface()
     let framebuffer = makeFramebuffer(surface: surface)
     let queue = makeQueue()
@@ -136,7 +116,7 @@ final class FBFramebufferTests: XCTestCase {
 
     XCTAssertEqual(framebuffer.statsStartTime, 0)
 
-    surface.damageReceived?(FBFramebufferDamage(rects: []))
+    surface.frameRendered?()
     queue.sync {}
 
     XCTAssertGreaterThan(framebuffer.statsStartTime, 0)

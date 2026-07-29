@@ -89,6 +89,6 @@ public final class FBSurfaceImageGenerator: FBFramebufferConsumer {
     }
   }
 
-  public func didReceiveDamageRect() {
+  public func didRenderFrame() {
   }
 }

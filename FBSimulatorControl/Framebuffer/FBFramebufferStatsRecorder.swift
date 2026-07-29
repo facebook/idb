@@ -9,10 +9,10 @@
 import Foundation
 import IOSurface
 
-/// Accumulates framebuffer surface-change and damage counters and periodically logs interval/total
-/// rates. Owns the single lock guarding the counters and the cadence timer: the callbacks that feed
-/// it fire on arbitrary private-framework threads while `snapshot()` / `startTime` are read from a
-/// consumer's queue.
+/// Accumulates framebuffer surface-change and frame-rendered counters and periodically logs
+/// interval/total rates. Owns the single lock guarding the counters and the cadence timer: the
+/// callbacks that feed it fire on arbitrary private-framework threads while `snapshot()` /
+/// `startTime` are read from a consumer's queue.
 final class FBFramebufferStatsRecorder: @unchecked Sendable {
 
   private let logger: any FBControlCoreLogger
@@ -35,13 +35,9 @@ final class FBFramebufferStatsRecorder: @unchecked Sendable {
     }
   }
 
-  func recordDamage(_ damage: FBFramebufferDamage) {
+  func recordFrameRendered() {
     lock.lock()
-    stats.damageCallbackCount += 1
-    stats.damageRectCount += UInt(damage.rects.count)
-    if damage.rects.isEmpty {
-      stats.emptyDamageCallbackCount += 1
-    }
+    stats.frameRenderedCount += 1
     lock.unlock()
     logStatsIfNeeded()
   }
@@ -63,7 +59,7 @@ final class FBFramebufferStatsRecorder: @unchecked Sendable {
     switch timer.tick() {
     case .started:
       lock.unlock()
-      logger.info().log("First damage callback received")
+      logger.info().log("First frame-rendered callback received")
     case .pending:
       lock.unlock()
     case let .elapsed(intervalDuration, totalElapsed):
@@ -72,22 +68,20 @@ final class FBFramebufferStatsRecorder: @unchecked Sendable {
       lastLoggedStats = current
       lock.unlock()
 
-      let intervalCallbacks = current.damageCallbackCount - last.damageCallbackCount
-      let intervalRects = current.damageRectCount - last.damageRectCount
-      let intervalEmpty = current.emptyDamageCallbackCount - last.emptyDamageCallbackCount
+      let intervalCallbacks = current.frameRenderedCount - last.frameRenderedCount
       let intervalIOSurface = current.ioSurfaceChangeCount - last.ioSurfaceChangeCount
 
       let intervalRate = intervalDuration > 0 ? Double(intervalCallbacks) / intervalDuration : 0
-      let totalRate = totalElapsed > 0 ? Double(current.damageCallbackCount) / totalElapsed : 0
+      let totalRate = totalElapsed > 0 ? Double(current.frameRenderedCount) / totalElapsed : 0
 
       logger.info().log(
         String(
-          format: "Framebuffer stats (interval): %lu damage callbacks in %.1fs (%.1f/s, %lu rects, %lu empty) — %lu IOSurface changes",
-          intervalCallbacks, intervalDuration, intervalRate, intervalRects, intervalEmpty, intervalIOSurface))
+          format: "Framebuffer stats (interval): %lu frames in %.1fs (%.1f/s) — %lu IOSurface changes",
+          intervalCallbacks, intervalDuration, intervalRate, intervalIOSurface))
       logger.info().log(
         String(
-          format: "Framebuffer stats (total): %lu damage callbacks in %.1fs (%.1f/s, %lu rects, %lu empty) — %lu IOSurface changes",
-          current.damageCallbackCount, totalElapsed, totalRate, current.damageRectCount, current.emptyDamageCallbackCount, current.ioSurfaceChangeCount))
+          format: "Framebuffer stats (total): %lu frames in %.1fs (%.1f/s) — %lu IOSurface changes",
+          current.frameRenderedCount, totalElapsed, totalRate, current.ioSurfaceChangeCount))
     }
   }
 }

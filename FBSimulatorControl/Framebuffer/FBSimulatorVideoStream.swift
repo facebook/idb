@@ -101,10 +101,10 @@ public struct FBVideoStreamEdgeInsets: Sendable {
 
 /// Frame cadence strategy for the video stream.
 ///
-/// - `.lazy`: variable-frame-rate — a frame is pushed only when the framebuffer signals a damage
-///   rect (`didReceiveDamageRect`).
+/// - `.lazy`: variable-frame-rate — a frame is pushed only when the framebuffer signals that a new
+///   frame was rendered (`didRenderFrame`).
 /// - `.eager(framesPerSecond:)`: constant-frame-rate — a cadence `Task` pushes frames at the fixed
-///   rate, and damage events are ignored (the cadence task drives pushes).
+///   rate, and frame-rendered events are ignored (the cadence task drives pushes).
 enum FBVideoStreamCadence {
   case lazy
   case eager(framesPerSecond: UInt)
@@ -776,8 +776,8 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: FBSimulatorVideoStre
 /// This can be connected to additional software via a stream to a File Handle or Fifo.
 ///
 /// Concurrency model: the `writeQueue` serializes start/stop, the framebuffer consumer callbacks
-/// (`didChange`/`didReceiveDamageRect`), and every frame push. The cadence is selected by the
-/// `cadence` strategy: `.lazy` pushes frames from the damage callback (variable frame rate), while
+/// (`didChange`/`didRenderFrame`), and every frame push. The cadence is selected by the
+/// `cadence` strategy: `.lazy` pushes frames from the frame-rendered callback (variable frame rate), while
 /// `.eager` runs a cadence `Task` that, at a fixed frame rate, dispatches `pushFrame` back onto
 /// `writeQueue` and awaits it before sleeping until the next deadline.
 // @unchecked Sendable: mutable stream and frame state is confined to `writeQueue` (and, in the eager
@@ -816,7 +816,7 @@ public final class FBSimulatorVideoStream: FBFramebufferConsumer, FBVideoStream,
   /// Started in `mountSurface`, cancelled in `cadenceTeardown`/`deinit`.
   private var framePusherTask: Task<Void, Never>?
 
-  /// In `.lazy` (VFR) mode, the trigger source that the framebuffer callbacks (`didReceiveDamageRect`,
+  /// In `.lazy` (VFR) mode, the trigger source that the framebuffer callbacks (`didRenderFrame`,
   /// `updateOverlayBuffer`) poke to drive a push through the shared loop. Created in `mountSurface`,
   /// finished in `cadenceTeardown`. Nil in `.eager` mode (the cadence clock drives pushes there).
   private var lazyTriggers: LazyFrameTriggers?
@@ -1022,12 +1022,12 @@ public final class FBSimulatorVideoStream: FBFramebufferConsumer, FBVideoStream,
     pushFrame(forceKeyFrame: false)
   }
 
-  public func didReceiveDamageRect() {
-    // In `.lazy` (variable-frame-rate) mode, a damage event is a stimulus for the shared push loop.
-    // In `.eager` (constant-frame-rate) mode, the cadence clock drives pushes, so damage is ignored.
+  public func didRenderFrame() {
+    // In `.lazy` (variable-frame-rate) mode, a rendered frame is the stimulus for the shared push
+    // loop. In `.eager` (constant-frame-rate) mode, the cadence clock drives pushes, so it is ignored.
     switch cadence {
     case .lazy:
-      lazyTriggers?.signalDamage()
+      lazyTriggers?.signalFrameRendered()
     case .eager:
       break
     }
@@ -1135,7 +1135,7 @@ public final class FBSimulatorVideoStream: FBFramebufferConsumer, FBVideoStream,
     // Start the push-loop task that drives frame pushes — once; a surface re-mount just swaps
     // `pixelBuffer` for the running loop to pick up. The stimulus differs by cadence: `.eager`
     // iterates the fixed-rate `FrameCadence` clock; `.lazy` iterates `LazyFrameTriggers`, poked by
-    // the framebuffer callbacks (`didReceiveDamageRect`/`updateOverlayBuffer`). Both feed the same
+    // the framebuffer callbacks (`didRenderFrame`/`updateOverlayBuffer`). Both feed the same
     // loop. `self` is captured: mutable state is confined to `writeQueue` (where the push runs) and
     // the class is `@unchecked Sendable`.
     guard framePusherTask == nil else { return }
@@ -1519,7 +1519,7 @@ struct FrameTrigger {
 }
 
 /// The `.lazy` (VFR) stimulus for the frame push loop: an `AsyncSequence` of `FrameTrigger`s poked by
-/// the framebuffer callbacks rather than a clock. `signalDamage()` (a new framebuffer rect) and
+/// the framebuffer callbacks rather than a clock. `signalFrameRendered()` (a new frame) and
 /// `signalKeyFrame()` (an overlay change, which must be a decodable keyframe) each enqueue a trigger
 /// that the shared loop consumes. Owning the stream and its keyframe state here keeps it off
 /// `FBSimulatorVideoStream` and its `writeQueue`, so the callbacks simply call a method.
@@ -1550,8 +1550,8 @@ final class LazyFrameTriggers: AsyncSequence, @unchecked Sendable {
     self.continuation = continuation
   }
 
-  /// Signal that the framebuffer changed — enqueue a push of the latest state.
-  func signalDamage() {
+  /// Signal that a new frame was rendered — enqueue a push of the latest state.
+  func signalFrameRendered() {
     continuation.yield(())
   }
 

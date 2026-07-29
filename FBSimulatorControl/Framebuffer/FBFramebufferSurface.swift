@@ -11,13 +11,6 @@
 import Foundation
 import IOSurface
 
-/// A batch of display regions reported by a framebuffer damage callback. Each rect is in the
-/// surface's pixel coordinate space. An empty batch is a valid "surface changed, no rects reported"
-/// signal.
-struct FBFramebufferDamage {
-  let rects: [CGRect]
-}
-
 /// The seam between `FBFramebuffer` and the private CoreSimulator display surface. Expressed purely
 /// in public/standard types so the private `@_implementationOnly` renderable protocols never leak
 /// into `FBFramebuffer`'s logic and a fake can be substituted in tests.
@@ -25,12 +18,13 @@ protocol FBFramebufferSurface: AnyObject {
   /// The surface available right now, if the underlying renderable can vend one synchronously.
   func immediatelyAvailableSurface() -> IOSurface?
 
-  /// Register per-consumer callbacks keyed by `token`. Throws if the surface-change callback could
-  /// not be installed on either the plural or singular renderable entry point.
+  /// Register per-consumer callbacks keyed by `token`. `frameRendered` fires once per presented
+  /// frame (a bare change signal — see the registration note below). Throws if the surface-change
+  /// callback could not be installed on either the plural or singular renderable entry point.
   func registerCallbacks(
     token: UUID,
     ioSurfaceChanged: @escaping (IOSurface?) -> Void,
-    damageReceived: @escaping (FBFramebufferDamage) -> Void
+    frameRendered: @escaping () -> Void
   ) throws
 
   /// Best-effort removal of the callbacks registered under `token`.
@@ -38,9 +32,9 @@ protocol FBFramebufferSurface: AnyObject {
 }
 
 /// The production `FBFramebufferSurface`, wrapping the private CoreSimulator renderable. This is the
-/// single place that touches the `@_implementationOnly` renderable protocols, `FBObjCExceptionGuard`,
-/// and the `NSValue`→`CGRect` damage decode; it is `fileprivate` so those private types never appear
-/// in any interface reachable via `@testable import`.
+/// single place that touches the `@_implementationOnly` renderable protocols and `FBObjCExceptionGuard`;
+/// it is `fileprivate` so those private types never appear in any interface reachable via
+/// `@testable import`.
 private final class SimDisplayRenderableSurface: FBFramebufferSurface {
   private let surface: any SimDisplayIOSurfaceRenderable & SimDisplayRenderable
   private let logger: any FBControlCoreLogger
@@ -60,7 +54,7 @@ private final class SimDisplayRenderableSurface: FBFramebufferSurface {
   func registerCallbacks(
     token: UUID,
     ioSurfaceChanged: @escaping (IOSurface?) -> Void,
-    damageReceived: @escaping (FBFramebufferDamage) -> Void
+    frameRendered: @escaping () -> Void
   ) throws {
     // The underlying ROCKRemoteProxy may implement only the plural or only the singular surface
     // callback (see SimDisplayIOSurfaceRenderable-Protocol.h). Attempt both and fail only if neither
@@ -84,15 +78,13 @@ private final class SimDisplayRenderableSurface: FBFramebufferSurface {
       throw FBFramebufferError.surfaceCallbackRegistrationFailed(underlying: ioSurfaceError)
     }
 
-    let damageBlock: ([NSValue]?) -> Void = { frames in
-      // The `[NSValue]` element type is nominal: the proxy vends an untyped NSArray and Swift's block
-      // bridging does not validate elements, so cast each dynamically and drop anything that is not
-      // an NSValue rather than force-messaging `rectValue`.
-      let rects = (frames ?? []).compactMap { ($0 as AnyObject) as? NSValue }.map(\.rectValue)
-      damageReceived(FBFramebufferDamage(rects: rects))
-    }
+    // The `damageRectanglesCallback` is Apple's "old-style" per-frame notification. On modern
+    // CoreSimulator the render server is a whole-frame compositor that computes no changed regions
+    // and always invokes this with an empty array, so the array is ignored: this is purely a
+    // per-frame "a new frame was rendered" signal.
+    let frameRenderedBlock: ([NSValue]?) -> Void = { _ in frameRendered() }
     do {
-      try FBObjCExceptionGuard.guarded { self.surface.registerCallback(with: token, damageRectanglesCallback: damageBlock) }
+      try FBObjCExceptionGuard.guarded { self.surface.registerCallback(with: token, damageRectanglesCallback: frameRenderedBlock) }
     } catch {
       // Roll back the IOSurface callback so a failed registration leaves nothing behind.
       unregisterCallbacks(token: token)

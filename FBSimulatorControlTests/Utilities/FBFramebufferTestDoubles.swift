@@ -11,13 +11,13 @@ import Foundation
 import IOSurface
 
 /// A fake `FBFramebufferSurface` that lets tests drive `FBFramebuffer` without the private
-/// CoreSimulator renderable. Tests call `ioSurfaceChanged` / `damageReceived` to simulate callbacks.
+/// CoreSimulator renderable. Tests call `ioSurfaceChanged` / `frameRendered` to simulate callbacks.
 final class FakeFramebufferSurface: FBFramebufferSurface {
   var immediateSurface: IOSurface?
   var registerError: Error?
 
   private(set) var ioSurfaceChanged: ((IOSurface?) -> Void)?
-  private(set) var damageReceived: ((FBFramebufferDamage) -> Void)?
+  private(set) var frameRendered: (() -> Void)?
   private(set) var registeredTokens: [UUID] = []
   private(set) var unregisteredTokens: [UUID] = []
 
@@ -28,14 +28,14 @@ final class FakeFramebufferSurface: FBFramebufferSurface {
   func registerCallbacks(
     token: UUID,
     ioSurfaceChanged: @escaping (IOSurface?) -> Void,
-    damageReceived: @escaping (FBFramebufferDamage) -> Void
+    frameRendered: @escaping () -> Void
   ) throws {
     if let registerError {
       throw registerError
     }
     registeredTokens.append(token)
     self.ioSurfaceChanged = ioSurfaceChanged
-    self.damageReceived = damageReceived
+    self.frameRendered = frameRendered
   }
 
   func unregisterCallbacks(token: UUID) {
@@ -43,24 +43,24 @@ final class FakeFramebufferSurface: FBFramebufferSurface {
   }
 }
 
-/// A fake `FBFramebufferConsumer` that records what it receives. The `onSurface`/`onDamage` hooks
-/// fire after each recorded delivery (on the delivery queue), so tests can await delivery with an
-/// `XCTestExpectation` without encoding any assumption about when the delivery was enqueued.
+/// A fake `FBFramebufferConsumer` that records what it receives. The `onSurface`/`onFrameRendered`
+/// hooks fire after each recorded delivery (on the delivery queue), so tests can await delivery with
+/// an `XCTestExpectation` without encoding any assumption about when the delivery was enqueued.
 final class FakeFramebufferConsumer: NSObject, FBFramebufferConsumer {
   private(set) var receivedSurfaces: [IOSurface?] = []
-  private(set) var damageCallbackCount = 0
+  private(set) var frameRenderedCount = 0
 
   var onSurface: (() -> Void)?
-  var onDamage: (() -> Void)?
+  var onFrameRendered: (() -> Void)?
 
   func didChange(_ surface: IOSurface?) {
     receivedSurfaces.append(surface)
     onSurface?()
   }
 
-  func didReceiveDamageRect() {
-    damageCallbackCount += 1
-    onDamage?()
+  func didRenderFrame() {
+    frameRenderedCount += 1
+    onFrameRendered?()
   }
 }
 

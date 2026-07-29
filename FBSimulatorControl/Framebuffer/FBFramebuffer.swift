@@ -12,11 +12,11 @@ import IOSurface
 // The FBSimulatorVideoStreamFramePusher protocol lives in FBSimulatorVideoStream.swift as a plain
 // (non-@objc) Swift protocol; the pushers are only constructed and used from Swift.
 
-/// Counters for framebuffer surface-change and damage callbacks, sampled for periodic logging.
+/// Counters for framebuffer surface-change and frame-rendered callbacks, sampled for periodic
+/// logging. There is no rect geometry: the underlying CoreSimulator callback is a per-frame change
+/// signal only (see `FBFramebufferSurface`), so a frame-rendered callback carries no dimensions.
 public struct FBFramebufferStats {
-  public var damageCallbackCount: UInt = 0
-  public var damageRectCount: UInt = 0
-  public var emptyDamageCallbackCount: UInt = 0
+  public var frameRenderedCount: UInt = 0
   public var ioSurfaceChangeCount: UInt = 0
 
   public init() {}
@@ -26,7 +26,7 @@ public struct FBFramebufferStats {
 public enum FBFramebufferError: Error, LocalizedError {
   /// No renderable main-display surface could be located for the simulator.
   case mainScreenSurfaceNotFound(description: String)
-  /// The surface-change or damage callbacks could not be registered on the display surface.
+  /// The surface-change or frame-rendered callbacks could not be registered on the display surface.
   case surfaceCallbackRegistrationFailed(underlying: Error?)
 
   public var errorDescription: String? {
@@ -45,7 +45,10 @@ public enum FBFramebufferError: Error, LocalizedError {
 public protocol FBFramebufferConsumer: AnyObject {
   func didChange(_ surface: IOSurface?)
 
-  func didReceiveDamageRect()
+  /// A new frame was rendered into the current surface. This is a bare per-frame signal — modern
+  /// CoreSimulator reports no changed-region geometry (see `FBFramebufferSurface`) — and is what
+  /// variable-frame-rate consumers use as their push stimulus.
+  func didRenderFrame()
 }
 
 public final class FBFramebuffer: @unchecked Sendable {
@@ -69,8 +72,8 @@ public final class FBFramebuffer: @unchecked Sendable {
 
   // MARK: - Public Methods
 
-  /// Attach a consumer, delivering surface-change and damage callbacks on `queue`. The returned
-  /// `FBFramebufferAttachment` owns the registration: call `cancel()`, or release it, to detach.
+  /// Attach a consumer, delivering surface-change and frame-rendered callbacks on `queue`. The
+  /// returned `FBFramebufferAttachment` owns the registration: call `cancel()`, or release it, to detach.
   public func attach(_ consumer: any FBFramebufferConsumer, on queue: DispatchQueue) throws -> FBFramebufferAttachment {
     let token = UUID()
     let immediateSurface = surface.immediatelyAvailableSurface()
@@ -109,15 +112,15 @@ public final class FBFramebuffer: @unchecked Sendable {
       }
     }
 
-    let damageReceived: (FBFramebufferDamage) -> Void = { [weak self] damage in
+    let frameRendered: () -> Void = { [weak self] in
       guard let self else { return }
-      self.statsRecorder.recordDamage(damage)
+      self.statsRecorder.recordFrameRendered()
       queue.async {
-        consumerRef.didReceiveDamageRect()
+        consumerRef.didRenderFrame()
       }
     }
 
-    try surface.registerCallbacks(token: token, ioSurfaceChanged: ioSurfaceChanged, damageReceived: damageReceived)
+    try surface.registerCallbacks(token: token, ioSurfaceChanged: ioSurfaceChanged, frameRendered: frameRendered)
   }
 }
 
