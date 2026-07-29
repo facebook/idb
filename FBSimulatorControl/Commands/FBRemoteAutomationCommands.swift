@@ -53,6 +53,23 @@ public actor FBSimulatorRemoteAutomation {
     return try JSONSerialization.data(withJSONObject: response.asDictionary(), options: .sortedKeys)
   }
 
+  /// Reads the first element in the frontmost app tree whose `key` value equals `markerValue` and
+  /// serializes it to the single-element accessibility schema, matching `describe(atX:y:keys:)` for a
+  /// point. `(x, y)` is the point probed to discover the frontmost app's pid. `key` must be among the
+  /// requested `keys` for the match to be found.
+  public func describe(markerValue: String, key: FBAXSearchableKey, keys: Set<FBAXKeys>, anchorX x: Double, anchorY y: Double) async throws -> Data {
+    try await ensureAccessibilityEnabled()
+    let tree = try await readFrontmostTree(anchorX: x, y: y)
+    let elements = Self.describeAllElements(fromTree: tree.root, keys: keys, nestedFormat: false, pid: tree.pid)
+    guard let match = Self.matchingElement(inElements: elements, markerValue: markerValue, key: key) else {
+      throw FBControlCoreError.describe("Remote automation found no element matching \(key.rawValue)=\"\(markerValue)\"").build()
+    }
+    let response = FBAccessibilityElementsResponse(
+      elements: match, profilingData: nil, frameCoverage: nil, additionalFrameCoverage: nil
+    )
+    return try JSONSerialization.data(withJSONObject: response.asDictionary(), options: .sortedKeys)
+  }
+
   /// Reads the whole element tree of the frontmost application over the remote-automation channel and
   /// serializes it to the accessibility schema as canonical sorted-keys JSON. `(x, y)` is the point
   /// probed to discover the frontmost app's pid. If the walk hits the depth or node-count bound the
@@ -227,6 +244,11 @@ public actor FBSimulatorRemoteAutomation {
     let childNodes = (node[FBRemoteAutomationAXAttribute.children] as? [[String: Any]]) ?? []
     let children = childNodes.map { buildPlatformElementTree(from: $0, pid: pid) }
     return FBRemoteAutomationPlatformElement(attributes: node, children: children, pid: pid)
+  }
+
+  /// The first serialized element whose `key` value equals `markerValue`, used by describe-by-marker.
+  static func matchingElement(inElements elements: [[String: Any]], markerValue: String, key: FBAXSearchableKey) -> [String: Any]? {
+    elements.first { $0[key.rawValue] as? String == markerValue }
   }
 
   /// The centre of the frame of the first serialized element whose `key` value equals `markerValue`.

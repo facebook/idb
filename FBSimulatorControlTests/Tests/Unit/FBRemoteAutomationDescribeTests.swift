@@ -142,6 +142,16 @@ final class FBRemoteAutomationDescribeTests: XCTestCase {
     XCTAssertNil(FBSimulatorRemoteAutomation.frameCenter(inElements: [], markerValue: "General", key: .label))
   }
 
+  func testMatchingElementFindsByMarker() {
+    let elements: [[String: Any]] = [
+      [FBAXKeys.label.rawValue: "Other"],
+      [FBAXKeys.label.rawValue: "General", FBAXKeys.uniqueID.rawValue: "com.apple.settings.general"],
+    ]
+    let match = FBSimulatorRemoteAutomation.matchingElement(inElements: elements, markerValue: "General", key: .label)
+    XCTAssertEqual(match?[FBAXKeys.uniqueID.rawValue] as? String, "com.apple.settings.general")
+    XCTAssertNil(FBSimulatorRemoteAutomation.matchingElement(inElements: elements, markerValue: "Nope", key: .label))
+  }
+
   func testPollUntilFoundReturnsWhenProbeSucceeds() async throws {
     final class Counter { var n = 0 }
     let counter = Counter()
