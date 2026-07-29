@@ -112,6 +112,27 @@ public actor FBSimulatorRemoteAutomation {
     }
   }
 
+  /// Sets `value` on the element at a screen point (in points) over the remote-automation channel.
+  public func setValue(_ value: String, atX x: Double, y: Double) async throws {
+    try await ensureAccessibilityEnabled()
+    let session = try await self.session()
+    try await session.setValue(value, atX: x, y: y, valueAttribute: FBRemoteAutomationAXAttribute.value)
+  }
+
+  /// Sets `value` on the first element in the frontmost app tree whose `key` value equals
+  /// `markerValue`, over the remote-automation channel. `(x, y)` is the point probed to discover the
+  /// frontmost app's pid.
+  public func setValue(_ value: String, markerValue: String, key: FBAXSearchableKey, anchorX x: Double, anchorY y: Double) async throws {
+    try await ensureAccessibilityEnabled()
+    let tree = try await readFrontmostTree(anchorX: x, y: y)
+    let elements = Self.describeAllElements(fromTree: tree.root, keys: FBAXKeys.defaultSet, nestedFormat: false, pid: tree.pid)
+    guard let center = Self.frameCenter(inElements: elements, markerValue: markerValue, key: key) else {
+      throw FBControlCoreError.describe("Remote automation found no element matching \(key.rawValue)=\"\(markerValue)\"").build()
+    }
+    let session = try await self.session()
+    try await session.setValue(value, atX: center.x, y: center.y, valueAttribute: FBRemoteAutomationAXAttribute.value)
+  }
+
   // MARK: - Read preconditions
 
   private var accessibilityPreconditionChecked = false
@@ -143,8 +164,8 @@ public actor FBSimulatorRemoteAutomation {
 
   /// Reads the frontmost application's element tree — probing `(x, y)` to discover its pid — and
   /// returns the root attribute dictionary with that pid. Shared by the whole-tree operations
-  /// (describe-all, marker tap). Logs a warning when the walk hit the depth or node bound so a
-  /// truncated tree is never passed off as complete.
+  /// (describe-all, marker tap, marker set-value). Logs a warning when the walk hit the depth or node
+  /// bound so a truncated tree is never passed off as complete.
   private func readFrontmostTree(anchorX x: Double, y: Double) async throws -> (root: [String: Any], pid: pid_t) {
     let session = try await self.session()
     let tree = try await session.applicationElementTree(
