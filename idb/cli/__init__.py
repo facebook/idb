@@ -107,7 +107,6 @@ class BaseCommand(Command, metaclass=ABCMeta):
             self.logger.warning(
                 "Setting --log after the command is deprecated, please place it at the start of the invocation"
             )
-        plugin.on_command_parsed(logger=self.logger, command=self, args=args)
         metadata: LoggingMetadata = plugin.resolve_metadata(
             logger=self.logger, command=self, args=args
         )
@@ -118,6 +117,9 @@ class BaseCommand(Command, metaclass=ABCMeta):
             name=name,
             metadata=metadata,
         ):
+            # Runs inside log_call so a plugin rejection is recorded as a
+            # failed invocation rather than escaping before logging starts.
+            plugin.on_command_parsed(logger=self.logger, command=self, args=args)
             await self._run_impl(args)
 
     @abstractmethod

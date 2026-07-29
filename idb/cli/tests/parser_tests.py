@@ -6,13 +6,18 @@
 
 # pyre-strict
 
+import logging
 import os
 from argparse import ArgumentParser, Namespace
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+from types import ModuleType
 from typing import Any, TypeVar
 from unittest.mock import ANY, MagicMock, patch
 
 from idb.cli.commands.xctest import NO_SPECIFIED_PATH
 from idb.cli.main import gen_main as cli_main, get_default_companion_path
+from idb.common import plugin
 from idb.common.command import Command, CommandGroup
 from idb.common.types import (
     AccessibilityInfo,
@@ -28,7 +33,9 @@ from idb.common.types import (
     HIDDelay,
     HIDDirection,
     HIDOrientationType,
+    IdbException,
     InstrumentsTimings,
+    LoggingMetadata,
     Permission,
     TCPAddress,
 )
@@ -2032,3 +2039,32 @@ class TestResolveSubcommandPath(TestCase):
     def test_unknown_subcommand(self) -> None:
         args = Namespace(root_command="does-not-exist")
         self.assertEqual(self._root().resolve_subcommand_path(args), [])
+
+
+class _RejectingPlugin(ModuleType):
+    def on_command_parsed(
+        self, logger: logging.Logger, command: Command, args: Namespace
+    ) -> None:
+        raise IdbException("rejected by policy")
+
+
+class TestPluginRejection(TestCase):
+    async def test_rejected_command_exits_nonzero_and_still_logs(self) -> None:
+        logged: list[tuple[str, LoggingMetadata]] = []
+
+        @asynccontextmanager
+        async def capture_log_call(
+            name: str, metadata: LoggingMetadata
+        ) -> AsyncIterator[None]:
+            logged.append((name, metadata))
+            yield
+
+        rejecting = _RejectingPlugin("rejecting")
+        with (
+            patch.object(plugin, "PLUGINS", [rejecting]),
+            patch("idb.cli.log_call", capture_log_call),
+        ):
+            exit_code = await cli_main(cmd_input=["ui", "tap", "10", "20"])
+        self.assertEqual(exit_code, 1)
+        self.assertEqual(len(logged), 1)
+        self.assertEqual(logged[0][0], "TapCommand")

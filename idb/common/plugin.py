@@ -21,7 +21,7 @@ from types import ModuleType
 from typing import Any, Dict, List, Optional, overload, TypeVar
 
 from idb.common.command import Command
-from idb.common.types import LoggingMetadata
+from idb.common.types import IdbException, LoggingMetadata
 from pyre_extensions import ParameterSpecification
 
 
@@ -171,13 +171,17 @@ def on_connecting_parser(parser: ArgumentParser, logger: Logger) -> None:
 
 
 def on_command_parsed(logger: Logger, command: Command, args: Namespace) -> None:
-    # Isolate failures per plugin so one failing hook cannot suppress the rest.
+    # A plugin rejects the command by raising IdbException; that is policy, not
+    # a bug, and propagates. Any other exception is a plugin failure and stays
+    # isolated per plugin so it cannot suppress later hooks or the command.
     for plugin in PLUGINS:
         method = getattr(plugin, "on_command_parsed", None)
         if not method:
             continue
         try:
             method(logger=logger, command=command, args=args)
+        except IdbException:
+            raise
         except Exception:
             logger.exception(
                 f"on_command_parsed plugin {plugin.__name__} failed, "
