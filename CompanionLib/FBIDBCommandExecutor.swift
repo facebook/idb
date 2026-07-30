@@ -193,9 +193,8 @@ import XCTestBootstrap
     guard let simulator = target as? FBSimulator else {
       throw FBIDBError.describe("Target is not a simulator, cannot look up an accessibility frame: \(target)").build()
     }
-    let element = try await simulator.accessibilityElementMatching(value: label, forKey: .label, depth: .max)
-    defer { element.close() }
-    return try element.frame()
+    return try await simulator.uiAutomation(backend: .accessibility)
+      .frame(.marker(value: label, key: .label, depth: .max))
   }
 
   /// Captures a screenshot, optionally cropped to `cropRect` (in screen points),
