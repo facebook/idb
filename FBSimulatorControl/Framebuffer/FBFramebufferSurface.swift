@@ -45,10 +45,7 @@ private final class SimDisplayRenderableSurface: FBFramebufferSurface {
   }
 
   func immediatelyAvailableSurface() -> IOSurface? {
-    if let surface = try? FBObjCExceptionGuard.guarded({ self.surface.framebufferSurface }) as? IOSurface {
-      return surface
-    }
-    return try? FBObjCExceptionGuard.guarded({ self.surface.ioSurface }) as? IOSurface
+    guardedValue { self.surface.framebufferSurface } ?? guardedValue { self.surface.ioSurface }
   }
 
   func registerCallbacks(
@@ -56,36 +53,29 @@ private final class SimDisplayRenderableSurface: FBFramebufferSurface {
     ioSurfaceChanged: @escaping (IOSurface?) -> Void,
     frameRendered: @escaping () -> Void
   ) throws {
+    try registerLegacyCallbacks(token: token, ioSurfaceChanged: ioSurfaceChanged, frameRendered: frameRendered)
+  }
+
+  /// The legacy registration: the plural/singular IOSurface-change callbacks plus the
+  /// `damageRectanglesCallback` (which on modern CoreSimulator is a bare per-frame signal, not
+  /// geometry — the render server is a whole-frame compositor that invokes it with an empty array).
+  private func registerLegacyCallbacks(
+    token: UUID,
+    ioSurfaceChanged: @escaping (IOSurface?) -> Void,
+    frameRendered: @escaping () -> Void
+  ) throws {
     // The underlying ROCKRemoteProxy may implement only the plural or only the singular surface
-    // callback (see SimDisplayIOSurfaceRenderable-Protocol.h). Attempt both and fail only if neither
-    // could be installed.
+    // callback (see SimDisplayIOSurfaceRenderable-Protocol.h). Attempt both — each is guarded
+    // independently so a raise from one does not skip the other — and require at least one to install.
     let ioSurfaceBlock: (Any?) -> Void = { ioSurfaceChanged($0 as? IOSurface) }
-    var registeredIOSurface = false
-    var ioSurfaceError: Error?
-    do {
-      try FBObjCExceptionGuard.guarded { self.surface.registerCallback(with: token, ioSurfacesChangeCallback: ioSurfaceBlock) }
-      registeredIOSurface = true
-    } catch {
-      ioSurfaceError = error
-    }
-    do {
-      try FBObjCExceptionGuard.guarded { self.surface.registerCallback(with: token, ioSurfaceChangeCallback: ioSurfaceBlock) }
-      registeredIOSurface = true
-    } catch {
-      ioSurfaceError = ioSurfaceError ?? error
-    }
-    if !registeredIOSurface {
-      throw FBFramebufferError.surfaceCallbackRegistrationFailed(underlying: ioSurfaceError)
+    let pluralError = guardedCall { self.surface.registerCallback(with: token, ioSurfacesChangeCallback: ioSurfaceBlock) }
+    let singularError = guardedCall { self.surface.registerCallback(with: token, ioSurfaceChangeCallback: ioSurfaceBlock) }
+    guard pluralError == nil || singularError == nil else {
+      throw FBFramebufferError.surfaceCallbackRegistrationFailed(underlying: pluralError)
     }
 
-    // The `damageRectanglesCallback` is Apple's "old-style" per-frame notification. On modern
-    // CoreSimulator the render server is a whole-frame compositor that computes no changed regions
-    // and always invokes this with an empty array, so the array is ignored: this is purely a
-    // per-frame "a new frame was rendered" signal.
     let frameRenderedBlock: ([NSValue]?) -> Void = { _ in frameRendered() }
-    do {
-      try FBObjCExceptionGuard.guarded { self.surface.registerCallback(with: token, damageRectanglesCallback: frameRenderedBlock) }
-    } catch {
+    if let error = guardedCall({ self.surface.registerCallback(with: token, damageRectanglesCallback: frameRenderedBlock) }) {
       // Roll back the IOSurface callback so a failed registration leaves nothing behind.
       unregisterCallbacks(token: token)
       throw FBFramebufferError.surfaceCallbackRegistrationFailed(underlying: error)
@@ -93,9 +83,32 @@ private final class SimDisplayRenderableSurface: FBFramebufferSurface {
   }
 
   func unregisterCallbacks(token: UUID) {
-    _ = try? FBObjCExceptionGuard.guarded { self.surface.unregisterIOSurfacesChangeCallback(with: token) }
-    _ = try? FBObjCExceptionGuard.guarded { self.surface.unregisterIOSurfaceChangeCallback(with: token) }
-    _ = try? FBObjCExceptionGuard.guarded { self.surface.unregisterDamageRectanglesCallback(with: token) }
+    _ = guardedCall { self.surface.unregisterIOSurfacesChangeCallback(with: token) }
+    _ = guardedCall { self.surface.unregisterIOSurfaceChangeCallback(with: token) }
+    _ = guardedCall { self.surface.unregisterDamageRectanglesCallback(with: token) }
+  }
+
+  // MARK: - Guarded proxy access
+  //
+  // Every call into the private renderable can raise an ObjC exception through the ROCK proxy, so
+  // each is wrapped in `FBObjCExceptionGuard`. These two helpers are the single place that does the
+  // wrapping: `guardedValue` for reads (nil on raise or type mismatch) and `guardedCall` for actions
+  // (the raised error, or nil on success, so a caller can fall back or surface the failure).
+
+  /// Read an untyped (`id`) value from the proxy, cast to the expected type. nil if the proxy raises
+  /// or the value is not a `T` — folding the `as?` in keeps every proxy read a single expression.
+  private func guardedValue<T>(_ body: @escaping () -> Any?) -> T? {
+    guard let value = try? FBObjCExceptionGuard.guarded(body) else { return nil }
+    return value as? T
+  }
+
+  private func guardedCall(_ body: @escaping () -> Void) -> Error? {
+    do {
+      try FBObjCExceptionGuard.guarded(body)
+      return nil
+    } catch {
+      return error
+    }
   }
 }
 
