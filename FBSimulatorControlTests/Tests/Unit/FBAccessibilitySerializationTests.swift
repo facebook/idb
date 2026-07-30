@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import CoreGraphics
 import FBControlCore
 @testable import FBSimulatorControl
 import Foundation
@@ -56,6 +57,28 @@ final class FBAccessibilitySerializationTests: XCTestCase {
     let json = try serializedJSON(nestedFormat: true)
     XCTAssertEqual(json, Self.expectedNestedJSON)
     XCTAssertTrue(json.contains("\"\(FBAXKeys.title.rawValue)\":null"), "nil title must serialize as null, got: \(json)")
+  }
+
+  // An off-screen element (e.g. a SpringBoard icon) can report a non-finite frame coordinate. JSON
+  // has no representation for infinity/NaN, so a non-finite value must serialize as null rather than
+  // let JSONSerialization throw an uncaught NSException ("Invalid number value (infinite) in JSON
+  // write") that terminates the process.
+  func testSerializedJSONSanitizesNonFiniteFrame() throws {
+    let frameDict = CGRectCreateDictionaryRepresentation(CGRect(x: CGFloat.infinity, y: 0, width: 10, height: 20)) as NSDictionary
+    let tree: [String: Any] = [
+      FBRemoteAutomationAXAttribute.label: "icon",
+      FBRemoteAutomationAXAttribute.frame: frameDict,
+    ]
+    let elements = FBSimulatorRemoteAutomation.describeAllElements(
+      fromTree: tree, keys: [.label, .frameDict], nestedFormat: false, pid: 7
+    )
+    let response = FBAccessibilityElementsResponse(
+      elements: elements, profilingData: nil, frameCoverage: nil, additionalFrameCoverage: nil
+    )
+    let data = try JSONSerialization.data(withJSONObject: response.asDictionary(), options: .sortedKeys)
+    let json = String(decoding: data, as: UTF8.self)
+    XCTAssertTrue(json.contains("\"x\":null"), "non-finite frame x must serialize as null, got: \(json)")
+    XCTAssertTrue(json.contains("\"height\":20"), "finite frame values must be preserved, got: \(json)")
   }
 
   private static let expectedFlatJSON =
