@@ -30,10 +30,6 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
     self.simulator = simulator
   }
 
-  public static func commands(with target: FBSimulator) -> FBSimulatorRemoteAutomation {
-    FBSimulatorRemoteAutomation(simulator: target)
-  }
-
   /// Submits a synthesized input event (tap, swipe, …) over the remote-automation channel.
   public func sendHIDEvent(_ event: FBSimulatorHIDEvent) async throws {
     let session = try await self.session()
@@ -80,26 +76,6 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
     }
   }
 
-  // MARK: - Legacy describe entry points (shims onto `describe(_:options:)`)
-  //
-  // Kept only while callers migrate to `uiAutomation(backend:)`; removed once none remain. Each
-  // forwards to the query-shaped `describe`, which owns the read logic and the pid-probe anchor.
-
-  public func describe(atX x: Double, y: Double, keys: Set<FBAXKeys>) async throws -> Data {
-    let response = try await describe(.point(CGPoint(x: x, y: y)), options: FBAccessibilityRequestOptions(keys: keys))
-    return try JSONSerialization.data(withJSONObject: response.asDictionary(), options: .sortedKeys)
-  }
-
-  public func describe(markerValue: String, key: FBAXSearchableKey, keys: Set<FBAXKeys>, anchorX x: Double, anchorY y: Double) async throws -> Data {
-    let response = try await describe(.marker(value: markerValue, key: key, depth: 0), options: FBAccessibilityRequestOptions(keys: keys))
-    return try JSONSerialization.data(withJSONObject: response.asDictionary(), options: .sortedKeys)
-  }
-
-  public func describeAll(anchorX x: Double, y: Double, keys: Set<FBAXKeys>, nestedFormat: Bool) async throws -> Data {
-    let response = try await describe(.frontmost, options: FBAccessibilityRequestOptions(nestedFormat: nestedFormat, keys: keys))
-    return try JSONSerialization.data(withJSONObject: response.asDictionary(), options: .sortedKeys)
-  }
-
   // MARK: - Anchor
 
   /// The screen-centre point used only to probe the frontmost app's pid for whole-tree and marker
@@ -142,12 +118,6 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
     }
   }
 
-  /// Legacy marker-tap entry point; shim onto `tap(_:expectedValue:expectedKey:)`. Removed once
-  /// callers migrate to `uiAutomation(backend:)`.
-  public func tap(markerValue: String, key: FBAXSearchableKey, anchorX x: Double, anchorY y: Double) async throws {
-    try await tap(.marker(value: markerValue, key: key, depth: 0), expectedValue: nil, expectedKey: .label)
-  }
-
   /// Polls the frontmost app tree until the element named by a `.marker` query appears, or throws when
   /// `timeout` elapses. `.point`/`.frontmost` are not waitable. The screen-centre anchor is probed to
   /// discover the frontmost app's pid.
@@ -185,12 +155,6 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
     }
   }
 
-  /// Legacy marker-wait entry point; shim onto `wait(_:timeout:pollInterval:)`. Removed once callers
-  /// migrate to `uiAutomation(backend:)`.
-  public func wait(markerValue: String, key: FBAXSearchableKey, timeout: TimeInterval, pollInterval: TimeInterval, anchorX x: Double, anchorY y: Double) async throws {
-    try await wait(.marker(value: markerValue, key: key, depth: 0), timeout: timeout, pollInterval: pollInterval)
-  }
-
   /// Scrolls the element named by `query`. Not yet supported over remote automation; the accessibility
   /// backend handles scroll.
   public func scroll(_ query: FBAccessibilityElementQuery, direction: FBAccessibilityScrollDirection) async throws {
@@ -222,16 +186,6 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
     case .frontmost:
       throw FBRemoteAutomationError.pointOrMarkerRequired(operation: "Setting a value")
     }
-  }
-
-  /// Legacy point/marker set-value entry points; shims onto `setValue(_:for:)`. Removed once callers
-  /// migrate to `uiAutomation(backend:)`.
-  public func setValue(_ value: String, atX x: Double, y: Double) async throws {
-    try await setValue(value, for: .point(CGPoint(x: x, y: y)))
-  }
-
-  public func setValue(_ value: String, markerValue: String, key: FBAXSearchableKey, anchorX x: Double, anchorY y: Double) async throws {
-    try await setValue(value, for: .marker(value: markerValue, key: key, depth: 0))
   }
 
   // MARK: - Reads
@@ -442,6 +396,6 @@ public extension FBSimulator {
   /// The remote-automation surface, driving UI automation over the guest `testmanagerd`
   /// remote-automation channel without an `.xctest` bundle, runner, or build. Memoized per target.
   func remoteAutomation() throws -> FBSimulatorRemoteAutomation {
-    commandCache.resolve { FBSimulatorRemoteAutomation.commands(with: self) }
+    commandCache.resolve { FBSimulatorRemoteAutomation(simulator: self) }
   }
 }
