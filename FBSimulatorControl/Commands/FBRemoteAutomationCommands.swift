@@ -37,6 +37,19 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
     try await session.synthesizeEvent(record)
   }
 
+  /// Presses a hardware button over the remote-automation channel's device-event selector
+  /// (`_XCTD_performDeviceEvent:`), held for `duration` seconds. This actions a real HID button on
+  /// the guest, unlike the legacy Indigo HOME/LOCK path which no-ops on Xcode 27. Reuses the shared
+  /// `consumerHIDUsage` HID table (the same codes the DTUHID transport uses). Buttons with no single
+  /// HID usage (Apple Pay — a double side-button press) throw `operationUnsupported`.
+  public func pressButton(_ button: FBSimulatorHIDButton, duration: TimeInterval = 0) async throws {
+    guard let usage = button.consumerHIDUsage else {
+      throw FBRemoteAutomationError.operationUnsupported(operation: "Pressing the \(button.name) button")
+    }
+    let session = try await self.session()
+    try await session.performDeviceEvent(page: UInt32(usage.page), usage: UInt32(usage.code), duration: duration)
+  }
+
   // MARK: - FBUIAutomation
 
   /// Reads the element(s) named by `query` over the remote-automation channel and serializes them to
