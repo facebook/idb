@@ -81,6 +81,53 @@ final class FBAccessibilitySerializationTests: XCTestCase {
     XCTAssertTrue(json.contains("\"height\":20"), "finite frame values must be preserved, got: \(json)")
   }
 
+  // A tree: root (labeled) → container (unlabeled, no role) → leaf (labeled); plus sibling (labeled).
+  private static func filterTree() -> [String: Any] {
+    [
+      FBRemoteAutomationAXAttribute.label: "root",
+      FBRemoteAutomationAXAttribute.children: [
+        [
+          FBRemoteAutomationAXAttribute.children: [
+            [FBRemoteAutomationAXAttribute.label: "leaf"] as [String: Any]
+          ]
+        ] as [String: Any],
+        [FBRemoteAutomationAXAttribute.label: "sibling"] as [String: Any],
+      ],
+    ]
+  }
+
+  private static func labels(_ elements: [FBJSONValue]) -> [String] {
+    elements.compactMap { element in
+      guard case let .object(fields) = element, case let .string(label)? = fields[FBAXKeys.label.rawValue] else { return nil }
+      return label
+    }
+  }
+
+  func testInteractableFilterDropsUnlabeledContainersFlat() {
+    let flat = FBSimulatorRemoteAutomation.describeAllElements(
+      fromTree: Self.filterTree(), keys: [.label], nestedFormat: false, pid: 7, filter: .interactable
+    )
+    XCTAssertEqual(Set(Self.labels(flat)), ["root", "leaf", "sibling"], "the unlabeled container is dropped, its leaf kept")
+    XCTAssertEqual(flat.count, 3, "only the three labeled elements remain")
+  }
+
+  func testInteractableFilterHoistsChildrenOfDroppedContainerNested() throws {
+    let nested = FBSimulatorRemoteAutomation.describeAllElements(
+      fromTree: Self.filterTree(), keys: [.label], nestedFormat: true, pid: 7, filter: .interactable
+    )
+    guard case let .object(rootNode)? = nested.first, case let .array(children)? = rootNode["children"] else {
+      return XCTFail("expected a nested root with a children array")
+    }
+    XCTAssertEqual(Set(Self.labels(children)), ["leaf", "sibling"], "the dropped container's leaf is hoisted to root")
+  }
+
+  func testAllFilterKeepsEveryNode() {
+    let flat = FBSimulatorRemoteAutomation.describeAllElements(
+      fromTree: Self.filterTree(), keys: [.label], nestedFormat: false, pid: 7, filter: .all
+    )
+    XCTAssertEqual(flat.count, 4, "the default filter keeps the unlabeled container too")
+  }
+
   private static let expectedFlatJSON =
     #"{"elements":[{"AXLabel":"root","AXUniqueId":"com.example.root","AXValue":"on","title":null},{"AXLabel":"child","AXUniqueId":null,"AXValue":null,"title":null}]}"#
 

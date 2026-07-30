@@ -67,13 +67,13 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
       )
     case .frontmost:
       let tree = try await readFrontmostTree()
-      let elements = Self.describeAllElements(fromTree: tree.root, keys: keys, nestedFormat: options.nestedFormat, pid: tree.pid)
+      let elements = Self.describeAllElements(fromTree: tree.root, keys: keys, nestedFormat: options.nestedFormat, pid: tree.pid, filter: options.filter)
       return FBAccessibilityElementsResponse(
         elements: .array(elements), profilingData: nil, frameCoverage: nil, additionalFrameCoverage: nil
       )
     case let .application(pid):
       let tree = try await readApplicationTree(forPid: pid)
-      let elements = Self.describeAllElements(fromTree: tree.root, keys: keys, nestedFormat: options.nestedFormat, pid: tree.pid)
+      let elements = Self.describeAllElements(fromTree: tree.root, keys: keys, nestedFormat: options.nestedFormat, pid: tree.pid, filter: options.filter)
       return FBAccessibilityElementsResponse(
         elements: .array(elements), profilingData: nil, frameCoverage: nil, additionalFrameCoverage: nil
       )
@@ -322,7 +322,7 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
   /// Serializes a remote attribute-dictionary tree (as returned by the session) into the schema,
   /// building a remote `FBAXPlatformElement` tree and running the shared recursive serializer. Each
   /// element is tagged with the frontmost app's real pid, discovered during the tree read.
-  static func describeAllElements(fromTree tree: [String: Any], keys: Set<FBAXKeys>, nestedFormat: Bool, pid: pid_t) -> [FBJSONValue] {
+  static func describeAllElements(fromTree tree: [String: Any], keys: Set<FBAXKeys>, nestedFormat: Bool, pid: pid_t, filter: FBAccessibilityElementFilter = .all) -> [FBJSONValue] {
     let root = buildPlatformElementTree(from: tree, pid: pid)
     return FBSimulatorAccessibilitySerializer.recursiveDescription(
       fromElement: root,
@@ -331,7 +331,8 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
       keys: keys,
       collector: nil,
       coverageGrid: nil,
-      seenPids: nil
+      seenPids: nil,
+      filter: filter
     )
   }
 

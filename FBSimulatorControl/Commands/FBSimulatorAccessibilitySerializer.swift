@@ -43,14 +43,15 @@ enum FBSimulatorAccessibilitySerializer {
     keys: Set<FBAXKeys>,
     collector: FBAccessibilityProfilingCollector?,
     coverageGrid: FBAccessibilityCoverageGrid?,
-    seenPids: SeenPIDs?
+    seenPids: SeenPIDs?,
+    filter: FBAccessibilityElementFilter = .all
   ) -> [FBJSONValue] {
     element.axSetBridgeDelegateToken(token)
     let dictionaries: [[String: FBJSONValue]]
     if nestedFormat {
-      dictionaries = [nestedRecursiveDescription(fromElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids)]
+      dictionaries = nestedRecursiveDescription(fromElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids, filter: filter)
     } else {
-      dictionaries = flatRecursiveDescription(fromElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids)
+      dictionaries = flatRecursiveDescription(fromElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids, filter: filter)
     }
     return dictionaries.map { .object($0) }
   }
@@ -65,7 +66,8 @@ enum FBSimulatorAccessibilitySerializer {
   ) -> FBJSONValue {
     element.axSetBridgeDelegateToken(token)
     if nestedFormat {
-      return .object(nestedRecursiveDescription(fromElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: nil))
+      // A single element (describe-point) is always the target — never filtered.
+      return .object(nestedRecursiveDescription(fromElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: nil, filter: .all).first ?? [:])
     }
     return .object(accessibilityDictionary(forElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: nil, discoveryMethod: discoveryMethodRecursive))
   }
@@ -198,32 +200,67 @@ enum FBSimulatorAccessibilitySerializer {
     keys: Set<FBAXKeys>,
     collector: FBAccessibilityProfilingCollector?,
     coverageGrid: FBAccessibilityCoverageGrid?,
-    seenPids: SeenPIDs?
+    seenPids: SeenPIDs?,
+    filter: FBAccessibilityElementFilter
   ) -> [[String: FBJSONValue]] {
     var values: [[String: FBJSONValue]] = []
-    values.append(accessibilityDictionary(forElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids, discoveryMethod: discoveryMethodRecursive))
+    if passes(element, filter: filter) {
+      values.append(accessibilityDictionary(forElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids, discoveryMethod: discoveryMethodRecursive))
+    }
     for child in element.axChildren() {
       child.axSetBridgeDelegateToken(token)
-      values.append(contentsOf: flatRecursiveDescription(fromElement: child, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids))
+      values.append(contentsOf: flatRecursiveDescription(fromElement: child, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids, filter: filter))
     }
     return values
   }
 
+  // Returns the element as a single nested node, or — when it is filtered out — its kept descendants
+  // hoisted, for the caller to splice into the nearest kept ancestor.
   private static func nestedRecursiveDescription(
     fromElement element: FBAXPlatformElement,
     token: String,
     keys: Set<FBAXKeys>,
     collector: FBAccessibilityProfilingCollector?,
     coverageGrid: FBAccessibilityCoverageGrid?,
-    seenPids: SeenPIDs?
-  ) -> [String: FBJSONValue] {
-    var values = accessibilityDictionary(forElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids, discoveryMethod: discoveryMethodRecursive)
+    seenPids: SeenPIDs?,
+    filter: FBAccessibilityElementFilter
+  ) -> [[String: FBJSONValue]] {
     var childrenValues: [[String: FBJSONValue]] = []
     for child in element.axChildren() {
       child.axSetBridgeDelegateToken(token)
-      childrenValues.append(nestedRecursiveDescription(fromElement: child, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids))
+      childrenValues.append(contentsOf: nestedRecursiveDescription(fromElement: child, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids, filter: filter))
     }
+    guard passes(element, filter: filter) else {
+      return childrenValues
+    }
+    var values = accessibilityDictionary(forElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids, discoveryMethod: discoveryMethodRecursive)
     values["children"] = .array(childrenValues.map { .object($0) })
-    return values
+    return [values]
+  }
+
+  // MARK: - Filter
+
+  /// Actionable `XCUIElementType`/role names (the "AX" prefix stripped) kept by `.interactable`.
+  private static let interactableRoles: Set<String> = [
+    "Button", "Cell", "TextField", "SecureTextField", "SearchField", "Switch", "Toggle", "Link",
+    "MenuItem", "Slider", "CheckBox", "RadioButton", "SegmentedControl", "Stepper", "PopUpButton",
+    "Picker", "PickerWheel", "Tab", "Key", "DisclosureTriangle",
+  ]
+
+  /// Whether an element is kept under `filter`. `.interactable` keeps elements carrying a label, an
+  /// identifier, or an actionable role — dropping unlabeled structural containers.
+  private static func passes(_ element: FBAXPlatformElement, filter: FBAccessibilityElementFilter) -> Bool {
+    switch filter {
+    case .all:
+      return true
+    case .interactable:
+      if let label = element.axLabel(), !label.isEmpty { return true }
+      if let identifier = element.axIdentifier(), !identifier.isEmpty { return true }
+      if let role = element.axRole() {
+        let normalized = role.hasPrefix(axPrefix) ? String(role.dropFirst(axPrefix.count)) : role
+        if interactableRoles.contains(normalized) { return true }
+      }
+      return false
+    }
   }
 }

@@ -125,7 +125,8 @@ public final class FBAXTranslationRequest {
       keys: keys,
       collector: collector,
       coverageGrid: grid,
-      seenPids: seenPids
+      seenPids: seenPids,
+      filter: options.filter
     )
 
     // Base coverage after the main traversal.

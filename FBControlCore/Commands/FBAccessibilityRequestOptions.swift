@@ -35,6 +35,17 @@ extension FBAccessibilityRemoteContentOptions: CustomStringConvertible {
   }
 }
 
+/// Filters which elements a describe-all read returns, applied in the shared serializer so both the
+/// accessibility and remote-automation backends honor it identically.
+public enum FBAccessibilityElementFilter: Sendable {
+  /// Every element in the tree (default).
+  case all
+  /// Only "interactable" elements — those with a label, an identifier, or an actionable role
+  /// (Button, Cell, TextField, …). Unlabeled structural container nodes are dropped; in nested output
+  /// a dropped container's matching descendants are hoisted to its nearest kept ancestor.
+  case interactable
+}
+
 /// Request options for accessibility operations. Consolidates all parameters
 /// needed for an accessibility query.
 public struct FBAccessibilityRequestOptions: Sendable {
@@ -58,13 +69,17 @@ public struct FBAccessibilityRequestOptions: Sendable {
   /// Options for remote content fetching. `nil` (default) means remote content is not fetched.
   public var remoteContentOptions: FBAccessibilityRemoteContentOptions?
 
+  /// Which elements to include in a describe-all read. Default: `.all`.
+  public var filter: FBAccessibilityElementFilter
+
   public init(
     nestedFormat: Bool = false,
     keys: Set<FBAXKeys>? = FBAXKeys.defaultSet,
     enableLogging: Bool = false,
     enableProfiling: Bool = false,
     collectFrameCoverage: Bool = false,
-    remoteContentOptions: FBAccessibilityRemoteContentOptions? = nil
+    remoteContentOptions: FBAccessibilityRemoteContentOptions? = nil,
+    filter: FBAccessibilityElementFilter = .all
   ) {
     self.nestedFormat = nestedFormat
     self.keys = keys
@@ -72,6 +87,7 @@ public struct FBAccessibilityRequestOptions: Sendable {
     self.enableProfiling = enableProfiling
     self.collectFrameCoverage = collectFrameCoverage
     self.remoteContentOptions = remoteContentOptions
+    self.filter = filter
   }
 }
 
