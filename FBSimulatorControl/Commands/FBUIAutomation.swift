@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import CoreGraphics
 import FBControlCore
 import Foundation
 
@@ -63,6 +64,11 @@ public protocol FBUIAutomation {
     _ query: FBAccessibilityElementQuery,
     direction: FBAccessibilityScrollDirection
   ) async throws
+
+  /// The frame (in screen points) of the element named by `query`. A geometry-only read for callers
+  /// that need an element's position/size — e.g. to draw an overlay or resolve a pid — without a full
+  /// serialize. Accessibility only for now; the remote backend rejects it with a clear error.
+  func frame(_ query: FBAccessibilityElementQuery) async throws -> CGRect
 }
 
 public extension FBUIAutomation {

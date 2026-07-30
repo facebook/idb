@@ -197,6 +197,12 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
     throw FBRemoteAutomationError.operationUnsupported(operation: "Scroll")
   }
 
+  /// The frame of the element named by `query`. Not yet supported over remote automation; the
+  /// accessibility backend serves element geometry.
+  public func frame(_ query: FBAccessibilityElementQuery) async throws -> CGRect {
+    throw FBRemoteAutomationError.operationUnsupported(operation: "Reading an element frame")
+  }
+
   /// Sets `value` on the element named by `query`. `.point` targets the coordinate; `.marker` finds
   /// the element in the frontmost tree and targets its centre. `.frontmost` is not a set-value target.
   public func setValue(_ value: String, for query: FBAccessibilityElementQuery) async throws {

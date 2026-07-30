@@ -89,6 +89,12 @@ final class FBAccessibilityUIAutomation: FBUIAutomation {
     try element.scroll(with: direction)
   }
 
+  func frame(_ query: FBAccessibilityElementQuery) async throws -> CGRect {
+    let element = try await resolveElement(for: query)
+    defer { element.close() }
+    return try element.frame()
+  }
+
   // MARK: - Element resolution
 
   /// Resolves a query to a concrete accessibility element via the point / matching / frontmost
