@@ -32,9 +32,30 @@ public protocol FBUIAutomation {
     _ query: FBAccessibilityElementQuery,
     options: FBAccessibilityRequestOptions
   ) async throws -> FBAccessibilityElementsResponse
+
+  /// Taps the element named by `query`. `.point` taps the coordinate; `.marker` finds the element and
+  /// taps its centre. `expectedValue`, when given, asserts the element's value for `expectedKey`
+  /// before tapping — accessibility only; ignored over remote automation. `.frontmost` taps the
+  /// frontmost element over accessibility but is rejected over remote automation.
+  func tap(
+    _ query: FBAccessibilityElementQuery,
+    expectedValue: String?,
+    expectedKey: FBAXSearchableKey
+  ) async throws
+
+  /// Sets `value` on the element named by `query`. `.point`/`.marker` targets only.
+  func setValue(
+    _ value: String,
+    for query: FBAccessibilityElementQuery
+  ) async throws
 }
 
 public extension FBUIAutomation {
+
+  /// Taps the element named by `query` with no value assertion.
+  func tap(_ query: FBAccessibilityElementQuery) async throws {
+    try await tap(query, expectedValue: nil, expectedKey: .label)
+  }
 
   /// `describe`, serialized to canonical sorted-keys JSON — the form CLI front-ends emit.
   func describeJSON(

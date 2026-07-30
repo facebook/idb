@@ -116,18 +116,36 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
     return (Double(widthPixels) / scale / 2.0, Double(heightPixels) / scale / 2.0)
   }
 
-  /// Finds the element in the frontmost app tree whose `key` value equals `markerValue` and taps its
-  /// frame centre over the remote-automation channel. `(x, y)` is the point probed to discover the
-  /// frontmost app's pid.
-  public func tap(markerValue: String, key: FBAXSearchableKey, anchorX x: Double, anchorY y: Double) async throws {
-    let tree = try await readFrontmostTree(anchorX: x, y: y)
-    let elements = Self.describeAllElements(fromTree: tree.root, keys: FBAXKeys.defaultSet, nestedFormat: false, pid: tree.pid)
-    guard let center = Self.frameCenter(inElements: elements, markerValue: markerValue, key: key) else {
-      throw FBControlCoreError.describe("Remote automation found no element matching \(key.rawValue)=\"\(markerValue)\"").build()
+  /// Taps the element named by `query`. `.point` taps the coordinate directly; `.marker` finds the
+  /// element in the frontmost tree and taps its frame centre. `.frontmost` is not a tappable target
+  /// over remote automation. `expectedValue`/`expectedKey` are accessibility-only and ignored here.
+  public func tap(
+    _ query: FBAccessibilityElementQuery,
+    expectedValue: String?,
+    expectedKey: FBAXSearchableKey
+  ) async throws {
+    switch query {
+    case let .point(point):
+      try await sendHIDEvent(.tapAt(x: Double(point.x), y: Double(point.y)))
+    case let .marker(markerValue, key, _):
+      let anchor = anchorPoint()
+      let tree = try await readFrontmostTree(anchorX: anchor.x, y: anchor.y)
+      let elements = Self.describeAllElements(fromTree: tree.root, keys: FBAXKeys.defaultSet, nestedFormat: false, pid: tree.pid)
+      guard let center = Self.frameCenter(inElements: elements, markerValue: markerValue, key: key) else {
+        throw FBRemoteAutomationError.elementNotFound(key: key.rawValue, value: markerValue)
+      }
+      let session = try await self.session()
+      let record = try Self.eventRecord(for: .tapAt(x: center.x, y: center.y))
+      try await session.synthesizeEvent(record)
+    case .frontmost:
+      throw FBRemoteAutomationError.pointOrMarkerRequired(operation: "A tap")
     }
-    let session = try await self.session()
-    let record = try Self.eventRecord(for: .tapAt(x: center.x, y: center.y))
-    try await session.synthesizeEvent(record)
+  }
+
+  /// Legacy marker-tap entry point; shim onto `tap(_:expectedValue:expectedKey:)`. Removed once
+  /// callers migrate to `uiAutomation(backend:)`.
+  public func tap(markerValue: String, key: FBAXSearchableKey, anchorX x: Double, anchorY y: Double) async throws {
+    try await tap(.marker(value: markerValue, key: key, depth: 0), expectedValue: nil, expectedKey: .label)
   }
 
   /// Polls the frontmost app tree over the remote-automation channel until an element whose `key`
@@ -159,23 +177,35 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
     }
   }
 
-  /// Sets `value` on the element at a screen point (in points) over the remote-automation channel.
-  public func setValue(_ value: String, atX x: Double, y: Double) async throws {
-    let session = try await self.session()
-    try await session.setValue(value, atX: x, y: y, valueAttribute: FBRemoteAutomationAXAttribute.value)
+  /// Sets `value` on the element named by `query`. `.point` targets the coordinate; `.marker` finds
+  /// the element in the frontmost tree and targets its centre. `.frontmost` is not a set-value target.
+  public func setValue(_ value: String, for query: FBAccessibilityElementQuery) async throws {
+    switch query {
+    case let .point(point):
+      let session = try await self.session()
+      try await session.setValue(value, atX: Double(point.x), y: Double(point.y), valueAttribute: FBRemoteAutomationAXAttribute.value)
+    case let .marker(markerValue, key, _):
+      let anchor = anchorPoint()
+      let tree = try await readFrontmostTree(anchorX: anchor.x, y: anchor.y)
+      let elements = Self.describeAllElements(fromTree: tree.root, keys: FBAXKeys.defaultSet, nestedFormat: false, pid: tree.pid)
+      guard let center = Self.frameCenter(inElements: elements, markerValue: markerValue, key: key) else {
+        throw FBRemoteAutomationError.elementNotFound(key: key.rawValue, value: markerValue)
+      }
+      let session = try await self.session()
+      try await session.setValue(value, atX: center.x, y: center.y, valueAttribute: FBRemoteAutomationAXAttribute.value)
+    case .frontmost:
+      throw FBRemoteAutomationError.pointOrMarkerRequired(operation: "Setting a value")
+    }
   }
 
-  /// Sets `value` on the first element in the frontmost app tree whose `key` value equals
-  /// `markerValue`, over the remote-automation channel. `(x, y)` is the point probed to discover the
-  /// frontmost app's pid.
+  /// Legacy point/marker set-value entry points; shims onto `setValue(_:for:)`. Removed once callers
+  /// migrate to `uiAutomation(backend:)`.
+  public func setValue(_ value: String, atX x: Double, y: Double) async throws {
+    try await setValue(value, for: .point(CGPoint(x: x, y: y)))
+  }
+
   public func setValue(_ value: String, markerValue: String, key: FBAXSearchableKey, anchorX x: Double, anchorY y: Double) async throws {
-    let tree = try await readFrontmostTree(anchorX: x, y: y)
-    let elements = Self.describeAllElements(fromTree: tree.root, keys: FBAXKeys.defaultSet, nestedFormat: false, pid: tree.pid)
-    guard let center = Self.frameCenter(inElements: elements, markerValue: markerValue, key: key) else {
-      throw FBControlCoreError.describe("Remote automation found no element matching \(key.rawValue)=\"\(markerValue)\"").build()
-    }
-    let session = try await self.session()
-    try await session.setValue(value, atX: center.x, y: center.y, valueAttribute: FBRemoteAutomationAXAttribute.value)
+    try await setValue(value, for: .marker(value: markerValue, key: key, depth: 0))
   }
 
   // MARK: - Reads

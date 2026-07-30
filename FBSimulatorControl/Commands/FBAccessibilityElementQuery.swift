@@ -49,26 +49,15 @@ extension AccessibilityOperations {
     try await FBAccessibilityUIAutomation(operations: self).describeJSON(query, options: options)
   }
 
-  /// Resolves a query and performs an accessibility tap (AXPress). When
-  /// `expectedValue` is given, the element's value for `expectedKey` must equal
-  /// it first, otherwise `FBAccessibilityExpectedValueMismatch` is thrown.
-  /// Always closes the element.
+  /// Resolves a query and performs an accessibility tap (AXPress), optionally asserting the element's
+  /// value for `expectedKey` first (else `FBAccessibilityExpectedValueMismatch`). Shim onto the
+  /// accessibility `FBUIAutomation` backend; kept only while callers migrate to `uiAutomation(backend:)`.
   public func accessibilityTap(
     for query: FBAccessibilityElementQuery,
     expectedValue: String? = nil,
     expectedKey: FBAXSearchableKey = .label
   ) async throws {
-    let element = try await accessibilityElement(for: query)
-    defer { element.close() }
-    if let expectedValue {
-      let actual = try element.stringValue(forSearchableKey: expectedKey)
-      guard actual == expectedValue else {
-        throw FBAccessibilityExpectedValueMismatch(
-          key: expectedKey, expected: expectedValue, actual: actual
-        )
-      }
-    }
-    try element.tap()
+    try await FBAccessibilityUIAutomation(operations: self).tap(query, expectedValue: expectedValue, expectedKey: expectedKey)
   }
 
   /// Resolves a query and scrolls the element in the given direction. Always
@@ -82,15 +71,13 @@ extension AccessibilityOperations {
     try element.scroll(with: direction)
   }
 
-  /// Resolves a query and sets the element's accessibility value. Always closes
-  /// the element.
+  /// Resolves a query and sets the element's accessibility value. Shim onto the accessibility
+  /// `FBUIAutomation` backend; kept only while callers migrate to `uiAutomation(backend:)`.
   public func accessibilitySetValue(
     for query: FBAccessibilityElementQuery,
     value: String
   ) async throws {
-    let element = try await accessibilityElement(for: query)
-    defer { element.close() }
-    try element.setValue(value)
+    try await FBAccessibilityUIAutomation(operations: self).setValue(value, for: query)
   }
 }
 

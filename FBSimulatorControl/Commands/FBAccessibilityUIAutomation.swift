@@ -29,6 +29,28 @@ final class FBAccessibilityUIAutomation: FBUIAutomation {
     return try element.serialize(with: options)
   }
 
+  func tap(
+    _ query: FBAccessibilityElementQuery,
+    expectedValue: String?,
+    expectedKey: FBAXSearchableKey
+  ) async throws {
+    let element = try await resolveElement(for: query)
+    defer { element.close() }
+    if let expectedValue {
+      let actual = try element.stringValue(forSearchableKey: expectedKey)
+      guard actual == expectedValue else {
+        throw FBAccessibilityExpectedValueMismatch(key: expectedKey, expected: expectedValue, actual: actual)
+      }
+    }
+    try element.tap()
+  }
+
+  func setValue(_ value: String, for query: FBAccessibilityElementQuery) async throws {
+    let element = try await resolveElement(for: query)
+    defer { element.close() }
+    try element.setValue(value)
+  }
+
   // MARK: - Element resolution
 
   /// Resolves a query to a concrete accessibility element via the point / matching / frontmost
