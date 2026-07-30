@@ -60,15 +60,13 @@ extension AccessibilityOperations {
     try await FBAccessibilityUIAutomation(operations: self).tap(query, expectedValue: expectedValue, expectedKey: expectedKey)
   }
 
-  /// Resolves a query and scrolls the element in the given direction. Always
-  /// closes the element.
+  /// Resolves a query and scrolls the element in the given direction. Shim onto the accessibility
+  /// `FBUIAutomation` backend; kept only while callers migrate to `uiAutomation(backend:)`.
   public func accessibilityScroll(
     for query: FBAccessibilityElementQuery,
     direction: FBAccessibilityScrollDirection
   ) async throws {
-    let element = try await accessibilityElement(for: query)
-    defer { element.close() }
-    try element.scroll(with: direction)
+    try await FBAccessibilityUIAutomation(operations: self).scroll(query, direction: direction)
   }
 
   /// Resolves a query and sets the element's accessibility value. Shim onto the accessibility

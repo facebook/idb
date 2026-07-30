@@ -48,6 +48,21 @@ public protocol FBUIAutomation {
     _ value: String,
     for query: FBAccessibilityElementQuery
   ) async throws
+
+  /// Polls until the element named by a `.marker` query appears, or throws when `timeout` elapses.
+  /// `.point`/`.frontmost` are not waitable.
+  func wait(
+    _ query: FBAccessibilityElementQuery,
+    timeout: TimeInterval,
+    pollInterval: TimeInterval
+  ) async throws
+
+  /// Scrolls the element named by `query` in `direction`. Accessibility only for now; the remote
+  /// backend rejects it with a clear error until remote scroll is implemented.
+  func scroll(
+    _ query: FBAccessibilityElementQuery,
+    direction: FBAccessibilityScrollDirection
+  ) async throws
 }
 
 public extension FBUIAutomation {

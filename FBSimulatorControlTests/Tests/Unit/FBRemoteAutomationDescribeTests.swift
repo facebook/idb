@@ -159,7 +159,7 @@ final class FBRemoteAutomationDescribeTests: XCTestCase {
   func testPollUntilFoundReturnsWhenProbeSucceeds() async throws {
     final class Counter { var n = 0 }
     let counter = Counter()
-    let result = try await FBSimulatorRemoteAutomation.pollUntilFound(
+    let result = try await FBUIAutomationPolling.pollUntilFound(
       timeout: 10, pollInterval: 0.01, clock: { 0 }, sleep: { _ in }
     ) { () -> Int? in
       counter.n += 1
@@ -172,7 +172,7 @@ final class FBRemoteAutomationDescribeTests: XCTestCase {
   func testPollUntilFoundTimesOut() async throws {
     final class Clock { var t = 0.0 }
     let clock = Clock()
-    let result: Int? = try await FBSimulatorRemoteAutomation.pollUntilFound(
+    let result: Int? = try await FBUIAutomationPolling.pollUntilFound(
       timeout: 1, pollInterval: 0.01, clock: { clock.t }, sleep: { _ in clock.t += 0.6 }
     ) { nil }
     XCTAssertNil(result)

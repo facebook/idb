@@ -148,12 +148,20 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
     try await tap(.marker(value: markerValue, key: key, depth: 0), expectedValue: nil, expectedKey: .label)
   }
 
-  /// Polls the frontmost app tree over the remote-automation channel until an element whose `key`
-  /// value equals `markerValue` appears, or throws when `timeout` elapses. `(x, y)` is the point
-  /// probed to discover the frontmost app's pid.
-  public func wait(markerValue: String, key: FBAXSearchableKey, timeout: TimeInterval, pollInterval: TimeInterval, anchorX x: Double, anchorY y: Double) async throws {
+  /// Polls the frontmost app tree until the element named by a `.marker` query appears, or throws when
+  /// `timeout` elapses. `.point`/`.frontmost` are not waitable. The screen-centre anchor is probed to
+  /// discover the frontmost app's pid.
+  public func wait(
+    _ query: FBAccessibilityElementQuery,
+    timeout: TimeInterval,
+    pollInterval: TimeInterval
+  ) async throws {
+    guard case let .marker(markerValue, key, _) = query else {
+      throw FBRemoteAutomationError.markerRequired(operation: "Waiting")
+    }
+    let anchor = anchorPoint()
     let session = try await self.session()
-    let found = try await Self.pollUntilFound(
+    let found = try await FBUIAutomationPolling.pollUntilFound(
       timeout: timeout,
       pollInterval: pollInterval,
       clock: { Date().timeIntervalSinceReferenceDate },
@@ -162,7 +170,7 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
       // A poll reads the tree directly (rather than via `readFrontmostTree`) so a missing tree retries
       // instead of throwing, and the truncation warning is not logged on every poll iteration.
       let tree = try await session.applicationElementTree(
-        anchorX: x, y: y,
+        anchorX: anchor.x, y: anchor.y,
         attributes: FBRemoteAutomationAXAttribute.fetchList,
         childrenAttribute: FBRemoteAutomationAXAttribute.children,
         maxDepth: Self.describeMaxDepth,
@@ -173,8 +181,20 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
       return Self.frameCenter(inElements: elements, markerValue: markerValue, key: key) != nil ? true : nil
     }
     if found == nil {
-      throw FBControlCoreError.describe("Remote automation timed out after \(timeout)s waiting for \(key.rawValue)=\"\(markerValue)\". \(Self.accessibilityHint)").build()
+      throw FBRemoteAutomationError.timedOut(key: key.rawValue, value: markerValue, timeout: timeout)
     }
+  }
+
+  /// Legacy marker-wait entry point; shim onto `wait(_:timeout:pollInterval:)`. Removed once callers
+  /// migrate to `uiAutomation(backend:)`.
+  public func wait(markerValue: String, key: FBAXSearchableKey, timeout: TimeInterval, pollInterval: TimeInterval, anchorX x: Double, anchorY y: Double) async throws {
+    try await wait(.marker(value: markerValue, key: key, depth: 0), timeout: timeout, pollInterval: pollInterval)
+  }
+
+  /// Scrolls the element named by `query`. Not yet supported over remote automation; the accessibility
+  /// backend handles scroll.
+  public func scroll(_ query: FBAccessibilityElementQuery, direction: FBAccessibilityScrollDirection) async throws {
+    throw FBRemoteAutomationError.operationUnsupported(operation: "Scroll")
   }
 
   /// Sets `value` on the element named by `query`. `.point` targets the coordinate; `.marker` finds
@@ -319,27 +339,6 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
       return (x + width / 2, y + height / 2)
     }
     return nil
-  }
-
-  /// Polls `probe` until it returns a non-nil value or `timeout` elapses (measured by `clock`),
-  /// sleeping `pollInterval` between attempts. `clock`/`sleep` are injected for deterministic tests.
-  static func pollUntilFound<T>(
-    timeout: TimeInterval,
-    pollInterval: TimeInterval,
-    clock: () -> TimeInterval,
-    sleep: (TimeInterval) async throws -> Void,
-    probe: () async throws -> T?
-  ) async throws -> T? {
-    let deadline = clock() + timeout
-    while true {
-      if let value = try await probe() {
-        return value
-      }
-      if clock() >= deadline {
-        return nil
-      }
-      try await sleep(pollInterval)
-    }
   }
 
   // MARK: - Session lifecycle

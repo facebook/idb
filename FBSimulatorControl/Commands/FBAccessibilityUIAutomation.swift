@@ -51,6 +51,44 @@ final class FBAccessibilityUIAutomation: FBUIAutomation {
     try element.setValue(value)
   }
 
+  func wait(
+    _ query: FBAccessibilityElementQuery,
+    timeout: TimeInterval,
+    pollInterval: TimeInterval
+  ) async throws {
+    guard case let .marker(markerValue, key, depth) = query else {
+      throw FBAccessibilityError.waitRequiresMarker
+    }
+    let found = try await FBUIAutomationPolling.pollUntilFound(
+      timeout: timeout,
+      pollInterval: pollInterval,
+      clock: { Date().timeIntervalSinceReferenceDate },
+      sleep: { try await Task.sleep(nanoseconds: UInt64($0 * 1_000_000_000)) }
+    ) { () -> Bool? in
+      do {
+        let element = try await operations.accessibilityElementMatching(value: markerValue, forKey: key, depth: depth)
+        element.close()
+        return true
+      } catch let error as FBAccessibilityError {
+        // The matcher throws `.elementNotFound` when the element isn't in the tree yet — keep
+        // polling on that alone, and surface every other failure (boot/dispatcher/IPC) at once.
+        if case .elementNotFound = error {
+          return nil
+        }
+        throw error
+      }
+    }
+    if found == nil {
+      throw FBAccessibilityError.waitTimedOut(key: key.rawValue, value: markerValue, timeout: timeout)
+    }
+  }
+
+  func scroll(_ query: FBAccessibilityElementQuery, direction: FBAccessibilityScrollDirection) async throws {
+    let element = try await resolveElement(for: query)
+    defer { element.close() }
+    try element.scroll(with: direction)
+  }
+
   // MARK: - Element resolution
 
   /// Resolves a query to a concrete accessibility element via the point / matching / frontmost
