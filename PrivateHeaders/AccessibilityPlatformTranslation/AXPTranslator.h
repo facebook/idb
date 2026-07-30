@@ -112,7 +112,7 @@ typedef AXPTranslatorResponse *(^AXPTranslationCallback)(AXPTranslatorRequest *r
 - (void)handleNotification:(unsigned long long)arg1 data:(id)arg2 associatedObject:(id)arg3;
 - (AXPTranslationObject *)frontmostApplicationWithDisplayId:(unsigned int)arg1 bridgeDelegateToken:(NSString *)arg2;
 - (id)_translationApplicationObjectForPidNumber:(NSNumber *)arg1;
-- (id)translationApplicationObjectForPid:(int)arg1;
+- (AXPTranslationObject *)translationApplicationObjectForPid:(int)arg1;
 - (id)translationApplicationObject;
 - (id)init;
 

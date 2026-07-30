@@ -216,6 +216,14 @@ class FBSimulatorControlTests_AXPTranslator_Double: NSObject {
     return result
   }
 
+  @objc(translationApplicationObjectForPid:)
+  func translationApplicationObject(forPid pid: pid_t) -> FBSimulatorControlTests_AXPTranslationObject_Double? {
+    methodCalls.add("translationApplicationObjectForPid:\(pid)")
+    let translation = FBSimulatorControlTests_AXPTranslationObject_Double()
+    translation.pid = pid
+    return translation
+  }
+
   func resetTracking() {
     methodCalls.removeAllObjects()
   }

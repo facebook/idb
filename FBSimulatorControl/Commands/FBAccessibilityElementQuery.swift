@@ -10,7 +10,8 @@ import FBControlCore
 import Foundation
 
 /// A resolvable reference to an accessibility element: a screen point, a marker
-/// matched against a searchable key up to a depth, or the frontmost application.
+/// matched against a searchable key up to a depth, the frontmost application, or a
+/// specific application by process identifier.
 ///
 /// This is the framework-level equivalent of the point-or-marker target that
 /// CLIs (sime2e, idb) expose, decoupled from any argument parser so both can
@@ -19,6 +20,10 @@ public enum FBAccessibilityElementQuery: Equatable, Sendable {
   case point(CGPoint)
   case marker(value: String, key: FBAXSearchableKey, depth: UInt)
   case frontmost
+  /// A specific application's whole element tree, anchored by its process identifier — read regardless
+  /// of what is frontmost (e.g. an app behind a system modal), unlike `frontmost`. Callers resolve a
+  /// bundle id to a pid (`FBSimulator.processID(forBundleID:)`) before building this.
+  case application(pid: pid_t)
 }
 
 /// Thrown by the accessibility `tap` when an element's value for the checked key

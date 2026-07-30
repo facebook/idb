@@ -29,6 +29,9 @@ public enum FBRemoteAutomationError: LocalizedError, Sendable {
   case unavailable(underlying: String)
   /// A synthesized input event carried no touch steps.
   case eventMissingTouchSteps
+  /// A by-pid application read returned no tree — the pid is not a live app, or its accessibility
+  /// server has not started.
+  case applicationUnavailable(pid: pid_t)
 
   public var errorDescription: String? {
     switch self {
@@ -50,6 +53,8 @@ public enum FBRemoteAutomationError: LocalizedError, Sendable {
       return "Remote automation is unavailable on this simulator: testmanagerd is not advertising its remote-automation listener (\(remoteAutomationSockEnvKey)). This requires a simulator runtime whose testmanagerd exposes the remote-automation channel (iOS 27+ / Xcode 27). Underlying error: \(underlying)"
     case .eventMissingTouchSteps:
       return "Remote-automation event contained no touch steps"
+    case let .applicationUnavailable(pid):
+      return "Remote automation could not read the application with pid \(pid): it is not a running app, or its accessibility server has not started. \(FBSimulatorRemoteAutomation.accessibilityHint)"
     }
   }
 }

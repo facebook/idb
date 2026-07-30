@@ -1219,4 +1219,15 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
 
     XCTAssertEqual(element.processIdentifier, 12345, "the resolved frontmost element must expose the backing app's pid")
   }
+
+  func testResolveApplicationByPidExposesProcessIdentifier() async throws {
+    // A by-pid target reads that specific app (regardless of what is frontmost), surfacing its pid.
+    let root = FBAccessibilityTestElementBuilder.application(withLabel: "App", frame: CGRect(x: 0, y: 0, width: 100, height: 100), children: [])
+    setUp(withRootElement: root)
+
+    let element = try await simulator.resolveElement(for: .application(pid: 777))
+    defer { element.close() }
+
+    XCTAssertEqual(element.processIdentifier, 777, "a by-pid resolve reads the app with that pid")
+  }
 }

@@ -27,6 +27,9 @@ public final class FBAXTranslationRequest {
     case frontmostApplication
     /// The single element at a screen point.
     case point(CGPoint)
+    /// A specific application's element tree, anchored by process identifier — no hit-test and no
+    /// frontmost resolution. Serialized like `frontmostApplication` (full tree + coverage).
+    case applicationForPid(pid_t)
   }
 
   // Default timeout (in seconds) for synchronous accessibility XPC round-trips.
@@ -67,6 +70,8 @@ public final class FBAXTranslationRequest {
       return translator.frontmostApplication(withDisplayId: 0, bridgeDelegateToken: token)
     case .point(let point):
       return translator.object(at: point, displayId: 0, bridgeDelegateToken: token)
+    case .applicationForPid(let pid):
+      return translator.translationApplicationObject(forPid: pid)
     }
   }
 
@@ -77,7 +82,7 @@ public final class FBAXTranslationRequest {
     switch kind {
     case .point:
       return runPoint(element, options: options)
-    case .frontmostApplication:
+    case .frontmostApplication, .applicationForPid:
       return runFrontmostApplication(element, options: options)
     }
   }

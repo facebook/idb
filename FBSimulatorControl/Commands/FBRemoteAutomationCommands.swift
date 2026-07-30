@@ -71,6 +71,12 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
       return FBAccessibilityElementsResponse(
         elements: .array(elements), profilingData: nil, frameCoverage: nil, additionalFrameCoverage: nil
       )
+    case let .application(pid):
+      let tree = try await readApplicationTree(forPid: pid)
+      let elements = Self.describeAllElements(fromTree: tree.root, keys: keys, nestedFormat: options.nestedFormat, pid: tree.pid)
+      return FBAccessibilityElementsResponse(
+        elements: .array(elements), profilingData: nil, frameCoverage: nil, additionalFrameCoverage: nil
+      )
     }
   }
 
@@ -111,7 +117,7 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
       let session = try await self.session()
       let record = try Self.eventRecord(for: .tapAt(x: center.x, y: center.y))
       try await session.synthesizeEvent(record)
-    case .frontmost:
+    case .frontmost, .application:
       throw FBRemoteAutomationError.pointOrMarkerRequired(operation: "A tap")
     }
   }
@@ -198,7 +204,7 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
       }
       let session = try await self.session()
       try await session.setValue(value, atX: center.x, y: center.y, valueAttribute: FBRemoteAutomationAXAttribute.value)
-    case .frontmost:
+    case .frontmost, .application:
       throw FBRemoteAutomationError.pointOrMarkerRequired(operation: "Setting a value")
     }
   }
@@ -264,6 +270,27 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
     guard let root = tree.root as? [String: Any] else {
       let anchor = anchorPoint()
       throw FBRemoteAutomationError.treeUnavailable(x: anchor.x, y: anchor.y)
+    }
+    if tree.truncated {
+      _ = simulator?.logger?.log("Remote-automation read hit the bound (maxDepth \(Self.describeMaxDepth), maxNodes \(Self.describeMaxNodes)); the returned tree is truncated and incomplete.")
+    }
+    return (root, tree.processIdentifier)
+  }
+
+  /// Reads a specific application's element tree, anchored directly on `pid` — no frontmost resolution
+  /// and no hit-test. Throws `applicationUnavailable` when the pid yields no tree (a dead pid, or the
+  /// app's accessibility server hasn't started).
+  private func readApplicationTree(forPid pid: pid_t) async throws -> (root: [String: Any], pid: pid_t) {
+    let session = try await self.session()
+    let tree = try await session.applicationElementTree(
+      forPid: pid,
+      attributes: FBRemoteAutomationAXAttribute.fetchList,
+      childrenAttribute: FBRemoteAutomationAXAttribute.children,
+      maxDepth: Self.describeMaxDepth,
+      maxNodes: Self.describeMaxNodes
+    )
+    guard let root = tree.root as? [String: Any] else {
+      throw FBRemoteAutomationError.applicationUnavailable(pid: pid)
     }
     if tree.truncated {
       _ = simulator?.logger?.log("Remote-automation read hit the bound (maxDepth \(Self.describeMaxDepth), maxNodes \(Self.describeMaxNodes)); the returned tree is truncated and incomplete.")
