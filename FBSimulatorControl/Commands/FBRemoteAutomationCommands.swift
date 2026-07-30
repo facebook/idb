@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import CoreGraphics
 import FBControlCore
 import Foundation
 import XCTestBootstrap
@@ -20,7 +21,7 @@ let remoteAutomationSockEnvKey = "TESTMANAGERD_REMOTE_AUTOMATION_SIM_SOCK"
 /// and primed once on first use and reused; a failed build clears the memo so a later call retries.
 /// An actor so the memoized session is established exactly once under concurrent callers, without a
 /// lock across suspension points.
-public actor FBSimulatorRemoteAutomation {
+public actor FBSimulatorRemoteAutomation: FBUIAutomation {
 
   private weak var simulator: FBSimulator?
   private var sessionTask: Task<FBRemoteAutomationSession, Error>?
@@ -40,45 +41,79 @@ public actor FBSimulatorRemoteAutomation {
     try await session.synthesizeEvent(record)
   }
 
-  /// Reads the accessibility element at a screen point (in points) over the remote-automation
-  /// channel and serializes it to the accessibility schema as canonical sorted-keys JSON, matching
-  /// the legacy `accessibilityDescribe` point output.
-  public func describe(atX x: Double, y: Double, keys: Set<FBAXKeys>) async throws -> Data {
-    let session = try await self.session()
-    let element = try await Self.describeElement(atX: x, y: y, using: session, keys: keys)
-    let response = FBAccessibilityElementsResponse(
-      elements: element, profilingData: nil, frameCoverage: nil, additionalFrameCoverage: nil
-    )
-    return try JSONSerialization.data(withJSONObject: response.asDictionary(), options: .sortedKeys)
-  }
+  // MARK: - FBUIAutomation
 
-  /// Reads the first element in the frontmost app tree whose `key` value equals `markerValue` and
-  /// serializes it to the single-element accessibility schema, matching `describe(atX:y:keys:)` for a
-  /// point. `(x, y)` is the point probed to discover the frontmost app's pid. `key` must be among the
-  /// requested `keys` for the match to be found.
-  public func describe(markerValue: String, key: FBAXSearchableKey, keys: Set<FBAXKeys>, anchorX x: Double, anchorY y: Double) async throws -> Data {
-    let tree = try await readFrontmostTree(anchorX: x, y: y)
-    let elements = Self.describeAllElements(fromTree: tree.root, keys: keys, nestedFormat: false, pid: tree.pid)
-    guard let match = Self.matchingElement(inElements: elements, markerValue: markerValue, key: key) else {
-      throw FBControlCoreError.describe("Remote automation found no element matching \(key.rawValue)=\"\(markerValue)\"").build()
+  /// Reads the element(s) named by `query` over the remote-automation channel and serializes them to
+  /// the shared accessibility schema. `.point` reads the element at the coordinate; `.marker` finds
+  /// the first frontmost-tree element whose `key` value equals the marker; `.frontmost` reads the
+  /// whole tree. Marker and whole-tree reads probe the screen-centre anchor to discover the frontmost
+  /// app's pid. `key` must be among the requested `keys` for a marker match to be found.
+  public func describe(
+    _ query: FBAccessibilityElementQuery,
+    options: FBAccessibilityRequestOptions
+  ) async throws -> FBAccessibilityElementsResponse {
+    let keys = options.keys ?? FBAXKeys.defaultSet
+    switch query {
+    case let .point(point):
+      let session = try await self.session()
+      let element = try await Self.describeElement(atX: Double(point.x), y: Double(point.y), using: session, keys: keys)
+      return FBAccessibilityElementsResponse(
+        elements: element, profilingData: nil, frameCoverage: nil, additionalFrameCoverage: nil
+      )
+    case let .marker(value, key, _):
+      let anchor = anchorPoint()
+      let tree = try await readFrontmostTree(anchorX: anchor.x, y: anchor.y)
+      let elements = Self.describeAllElements(fromTree: tree.root, keys: keys, nestedFormat: false, pid: tree.pid)
+      guard let match = Self.matchingElement(inElements: elements, markerValue: value, key: key) else {
+        throw FBRemoteAutomationError.elementNotFound(key: key.rawValue, value: value)
+      }
+      return FBAccessibilityElementsResponse(
+        elements: match, profilingData: nil, frameCoverage: nil, additionalFrameCoverage: nil
+      )
+    case .frontmost:
+      let anchor = anchorPoint()
+      let tree = try await readFrontmostTree(anchorX: anchor.x, y: anchor.y)
+      let elements = Self.describeAllElements(fromTree: tree.root, keys: keys, nestedFormat: options.nestedFormat, pid: tree.pid)
+      return FBAccessibilityElementsResponse(
+        elements: .array(elements), profilingData: nil, frameCoverage: nil, additionalFrameCoverage: nil
+      )
     }
-    let response = FBAccessibilityElementsResponse(
-      elements: match, profilingData: nil, frameCoverage: nil, additionalFrameCoverage: nil
-    )
+  }
+
+  // MARK: - Legacy describe entry points (shims onto `describe(_:options:)`)
+  //
+  // Kept only while callers migrate to `uiAutomation(backend:)`; removed once none remain. Each
+  // forwards to the query-shaped `describe`, which owns the read logic and the pid-probe anchor.
+
+  public func describe(atX x: Double, y: Double, keys: Set<FBAXKeys>) async throws -> Data {
+    let response = try await describe(.point(CGPoint(x: x, y: y)), options: FBAccessibilityRequestOptions(keys: keys))
     return try JSONSerialization.data(withJSONObject: response.asDictionary(), options: .sortedKeys)
   }
 
-  /// Reads the whole element tree of the frontmost application over the remote-automation channel and
-  /// serializes it to the accessibility schema as canonical sorted-keys JSON. `(x, y)` is the point
-  /// probed to discover the frontmost app's pid. If the walk hits the depth or node-count bound the
-  /// returned tree is incomplete; that is logged rather than passed off as a full tree.
-  public func describeAll(anchorX x: Double, y: Double, keys: Set<FBAXKeys>, nestedFormat: Bool) async throws -> Data {
-    let tree = try await readFrontmostTree(anchorX: x, y: y)
-    let elements = Self.describeAllElements(fromTree: tree.root, keys: keys, nestedFormat: nestedFormat, pid: tree.pid)
-    let response = FBAccessibilityElementsResponse(
-      elements: .array(elements), profilingData: nil, frameCoverage: nil, additionalFrameCoverage: nil
-    )
+  public func describe(markerValue: String, key: FBAXSearchableKey, keys: Set<FBAXKeys>, anchorX x: Double, anchorY y: Double) async throws -> Data {
+    let response = try await describe(.marker(value: markerValue, key: key, depth: 0), options: FBAccessibilityRequestOptions(keys: keys))
     return try JSONSerialization.data(withJSONObject: response.asDictionary(), options: .sortedKeys)
+  }
+
+  public func describeAll(anchorX x: Double, y: Double, keys: Set<FBAXKeys>, nestedFormat: Bool) async throws -> Data {
+    let response = try await describe(.frontmost, options: FBAccessibilityRequestOptions(nestedFormat: nestedFormat, keys: keys))
+    return try JSONSerialization.data(withJSONObject: response.asDictionary(), options: .sortedKeys)
+  }
+
+  // MARK: - Anchor
+
+  /// The screen-centre point used only to probe the frontmost app's pid for whole-tree and marker
+  /// reads (any on-screen point over the frontmost app works; centre avoids edges/status bar).
+  private func anchorPoint() -> (x: Double, y: Double) {
+    let info = simulator?.screenInfo
+    return Self.anchorPoint(widthPixels: info?.widthPixels ?? 828, heightPixels: info?.heightPixels ?? 1792, scale: info?.scale ?? 2)
+  }
+
+  /// The centre of a screen of the given pixel dimensions, in points. A pure function so the anchor
+  /// arithmetic (and the guard against a zero scale) is unit-testable without a target.
+  static func anchorPoint(widthPixels: UInt, heightPixels: UInt, scale: Float) -> (x: Double, y: Double) {
+    let scale = scale > 0 ? Double(scale) : 1
+    return (Double(widthPixels) / scale / 2.0, Double(heightPixels) / scale / 2.0)
   }
 
   /// Finds the element in the frontmost app tree whose `key` value equals `markerValue` and taps its

@@ -15,7 +15,7 @@ import Foundation
 /// This is the framework-level equivalent of the point-or-marker target that
 /// CLIs (sime2e, idb) expose, decoupled from any argument parser so both can
 /// share a single resolution path.
-public enum FBAccessibilityElementQuery: Equatable {
+public enum FBAccessibilityElementQuery: Equatable, Sendable {
   case point(CGPoint)
   case marker(value: String, key: FBAXSearchableKey, depth: UInt)
   case frontmost
@@ -39,19 +39,14 @@ extension AccessibilityOperations {
     }
   }
 
-  /// Resolves a query and serializes the element to canonical sorted-keys JSON,
-  /// always closing the element. Shared by the describe / describe-find /
-  /// describe-point paths so every front-end emits an identical serialization.
+  /// Resolves a query and serializes the element to canonical sorted-keys JSON.
+  /// Shim onto the accessibility `FBUIAutomation` backend, which owns the read
+  /// logic; kept only while callers migrate to `uiAutomation(backend:)`.
   public func accessibilityDescribe(
     for query: FBAccessibilityElementQuery,
     options: FBAccessibilityRequestOptions
   ) async throws -> Data {
-    let element = try await accessibilityElement(for: query)
-    defer { element.close() }
-    let response = try element.serialize(with: options)
-    return try JSONSerialization.data(
-      withJSONObject: response.asDictionary(), options: .sortedKeys
-    )
+    try await FBAccessibilityUIAutomation(operations: self).describeJSON(query, options: options)
   }
 
   /// Resolves a query and performs an accessibility tap (AXPress). When
