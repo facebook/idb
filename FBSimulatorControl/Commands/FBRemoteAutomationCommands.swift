@@ -169,7 +169,7 @@ public actor FBSimulatorRemoteAutomation {
       maxNodes: Self.describeMaxNodes
     )
     guard let root = tree.root as? [String: Any] else {
-      throw FBControlCoreError.describe("Remote automation could not read the frontmost application tree at (\(x), \(y)). \(Self.accessibilityHint)").build()
+      throw FBRemoteAutomationError.treeUnavailable(x: x, y: y)
     }
     if tree.truncated {
       _ = simulator?.logger?.log("Remote-automation read hit the bound (maxDepth \(Self.describeMaxDepth), maxNodes \(Self.describeMaxNodes)); the returned tree is truncated and incomplete.")
@@ -183,7 +183,7 @@ public actor FBSimulatorRemoteAutomation {
   /// never becomes a shareable value that would risk a data race across the session boundary.
   static func describeElement(atX x: Double, y: Double, using session: FBRemoteAutomationSession, keys: Set<FBAXKeys>) async throws -> FBJSONValue {
     guard let element = try await session.requestElement(atX: x, y: y) else {
-      throw FBControlCoreError.describe("Remote automation found no element at (\(x), \(y)). \(Self.accessibilityHint)").build()
+      throw FBRemoteAutomationError.noElementAtPoint(x: x, y: y)
     }
     let raw = try await session.fetchAttributes(FBRemoteAutomationAXAttribute.fetchList, forElement: element)
     let attributes = (raw as? [String: Any]) ?? [:]
@@ -310,9 +310,7 @@ public actor FBSimulatorRemoteAutomation {
       // listener (iOS 27+), so a resolution failure means the backend is unavailable on this
       // simulator rather than a transient miss — surface that instead of the resolver's opaque
       // env-var timeout.
-      throw FBControlCoreError.describe(
-        "Remote automation is unavailable on this simulator: testmanagerd is not advertising its remote-automation listener (\(remoteAutomationSockEnvKey)). This requires a simulator runtime whose testmanagerd exposes the remote-automation channel (iOS 27+ / Xcode 27)."
-      ).caused(by: error as NSError).build()
+      throw FBRemoteAutomationError.unavailable(underlying: String(describing: error))
     }
     let connection = try FBRemoteAutomationConnection(
       socketPath: socketPath,
@@ -364,7 +362,7 @@ public actor FBSimulatorRemoteAutomation {
       }
     }
     guard let path else {
-      throw FBControlCoreError.describe("Remote-automation event contained no touch steps").build()
+      throw FBRemoteAutomationError.eventMissingTouchSteps
     }
     return try FBRemoteAutomationPayloads.eventRecord(withName: "remote-automation", pointerPaths: [path])
   }
