@@ -126,16 +126,12 @@ public actor FBRemoteAutomationSession {
     return try await invoker.fetchAttributes(attributes as NSArray, forElement: element, deadline: readDeadline)
   }
 
-  /// Reads the whole element tree of the frontmost application as nested attribute dictionaries.
+  /// Reads the whole element tree of the frontmost application as nested attribute dictionaries,
+  /// discovering the app's pid by hit-testing `(x, y)`.
   ///
-  /// The daemon exposes no whole-tree call and no "frontmost pid" query, so this hit-tests `(x, y)`
-  /// to discover the frontmost app's pid, anchors the application root by that pid, and recurses
-  /// `fetchAttributes` — replacing each node's child element handles with the children's own
-  /// attribute dictionaries. The recursion stays inside the actor because the element handles are not
-  /// Sendable; only the resulting value tree crosses out.
-  ///
-  /// The hit-test-for-pid is an experimental first approach for this experimental API; a future
-  /// refinement should take the pid upfront rather than discovering it by probing a point.
+  /// Prefer `applicationElementTree(forPid:…)` when the pid is already known (e.g. from the AX
+  /// frontmost query): a hit-test reads whatever process owns the centre pixel, so a system modal,
+  /// launch-transition chrome, or an empty point is read instead of the target app.
   public func applicationElementTree(anchorX x: Double, y: Double, attributes: [String], childrenAttribute: String, maxDepth: Int, maxNodes: Int) async throws -> sending FBRemoteAutomationElementTree {
     try await prime()
     let point = CGPointCreateDictionaryRepresentation(CGPoint(x: x, y: y)) as NSDictionary
@@ -143,6 +139,16 @@ public actor FBRemoteAutomationSession {
       return FBRemoteAutomationElementTree(root: nil, processIdentifier: 0, truncated: false)
     }
     let pid = unsafeBitCast(anchor as AnyObject, to: XCAccessibilityElementMessaging.self).processIdentifier
+    // The pid overload primes as well; prime() is idempotent (memoized), so the second call is a no-op.
+    return try await applicationElementTree(forPid: pid, attributes: attributes, childrenAttribute: childrenAttribute, maxDepth: maxDepth, maxNodes: maxNodes)
+  }
+
+  /// Reads the whole element tree of the application with the given pid, anchoring the root by pid
+  /// via `elementWithProcessIdentifier:` — no hit-test. Recurses `fetchAttributes`, replacing each
+  /// node's child element handles with the children's own attribute dictionaries. The recursion stays
+  /// inside the actor because the element handles are not Sendable; only the value tree crosses out.
+  public func applicationElementTree(forPid pid: pid_t, attributes: [String], childrenAttribute: String, maxDepth: Int, maxNodes: Int) async throws -> sending FBRemoteAutomationElementTree {
+    try await prime()
     guard pid > 0, let root = FBRemoteAutomationPayloads.applicationElement(forProcessIdentifier: pid) else {
       return FBRemoteAutomationElementTree(root: nil, processIdentifier: 0, truncated: false)
     }

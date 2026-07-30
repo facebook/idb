@@ -40,6 +40,20 @@ private actor FakeTreeInvoker: RemoteInvoking {
   func setAttribute(_ attribute: sending Any, value: sending Any, forElement element: sending Any, deadline: TimeInterval) async throws {}
 }
 
+/// A fake whose hit-test (`requestElement(atPoint:)`) throws, so a pid-anchored read that must never
+/// probe a screen point can be verified: if it hit-tested, the throw would surface.
+private actor NoHitTestInvoker: RemoteInvoking {
+  func beginSession(clientProtocolVersion: Int, deadline: TimeInterval) async throws {}
+  func exchangeCapabilities(deadline: TimeInterval) async throws -> sending Any? { NSDictionary() }
+  func loadAccessibility(timeout: TimeInterval, deadline: TimeInterval) async throws {}
+  func synthesizeEvent(_ record: sending Any, implicitConfirmationInterval: TimeInterval, deadline: TimeInterval) async throws {}
+  func requestElement(atPoint point: sending Any, deadline: TimeInterval) async throws -> sending Any? {
+    throw NSError(domain: "NoHitTestInvoker", code: 1)
+  }
+  func fetchAttributes(_ attributes: sending Any, forElement element: sending Any, deadline: TimeInterval) async throws -> sending Any? { NSDictionary() }
+  func setAttribute(_ attribute: sending Any, value: sending Any, forElement element: sending Any, deadline: TimeInterval) async throws {}
+}
+
 final class FBRemoteAutomationSessionTreeTests: XCTestCase {
 
   private static let label = "label"
@@ -104,5 +118,29 @@ final class FBRemoteAutomationSessionTreeTests: XCTestCase {
     let children = try XCTUnwrap(result.node[Self.children] as? [[String: Any]])
     XCTAssertEqual(children.count, 1)
     XCTAssertTrue(result.truncated, "Exhausting the node budget before the walk finishes signals truncation.")
+  }
+
+  func testApplicationElementTreeForNonPositivePidYieldsEmptyTree() async throws {
+    // A non-positive pid short-circuits to an empty tree before anchoring — no invoker call at all.
+    let session = FBRemoteAutomationSession(invoker: NoHitTestInvoker(), processIdentifier: 0)
+    let tree = try await session.applicationElementTree(
+      forPid: 0, attributes: [Self.label], childrenAttribute: Self.children, maxDepth: 10, maxNodes: 100
+    )
+    XCTAssertNil(tree.root, "A non-positive pid yields an empty tree.")
+    XCTAssertEqual(tree.processIdentifier, 0)
+  }
+
+  func testApplicationElementTreeForPositivePidDoesNotHitTest() async throws {
+    // The pid-anchored read must anchor via `elementWithProcessIdentifier:` and never probe a screen
+    // point. `NoHitTestInvoker` throws from `requestElement(atPoint:)`, so a reintroduced hit-test
+    // would surface as a thrown error here — completing without throwing proves the probe is skipped.
+    // (A non-positive pid, as in the test above, short-circuits before any invoker call, so it cannot
+    // exercise this invariant; a positive pid drives the real anchor-then-walk path.)
+    let session = FBRemoteAutomationSession(invoker: NoHitTestInvoker(), processIdentifier: 0)
+    let tree = try await session.applicationElementTree(
+      forPid: 4321, attributes: [Self.label], childrenAttribute: Self.children, maxDepth: 10, maxNodes: 100
+    )
+    XCTAssertEqual(tree.processIdentifier, 4321, "A positive pid anchors the tree at that pid, not via a hit-test.")
+    XCTAssertNotNil(tree.root, "The root is read via elementWithProcessIdentifier:, not a point probe.")
   }
 }
