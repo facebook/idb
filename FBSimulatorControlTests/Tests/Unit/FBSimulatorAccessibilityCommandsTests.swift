@@ -1204,4 +1204,19 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
       // Expected: the point path keeps the generic message regardless of SpringBoard state.
     }
   }
+
+  // MARK: - Frontmost pid (remote-automation pid anchor)
+
+  func testResolveFrontmostElementExposesProcessIdentifier() async throws {
+    // The remote-automation backend anchors its frontmost read on the app's pid, borrowing it from
+    // the AX handle rather than hit-testing a screen point. The resolved element must surface that pid
+    // (the translation double's pid defaults to 12345).
+    let root = FBAccessibilityTestElementBuilder.application(withLabel: "App", frame: CGRect(x: 0, y: 0, width: 100, height: 100), children: [])
+    setUp(withRootElement: root)
+
+    let element = try await simulator.resolveElement(for: .frontmost)
+    defer { element.close() }
+
+    XCTAssertEqual(element.processIdentifier, 12345, "the resolved frontmost element must expose the backing app's pid")
+  }
 }

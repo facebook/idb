@@ -57,8 +57,7 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
         elements: element, profilingData: nil, frameCoverage: nil, additionalFrameCoverage: nil
       )
     case let .marker(value, key, _):
-      let anchor = anchorPoint()
-      let tree = try await readFrontmostTree(anchorX: anchor.x, y: anchor.y)
+      let tree = try await readFrontmostTree()
       let elements = Self.describeAllElements(fromTree: tree.root, keys: keys, nestedFormat: false, pid: tree.pid)
       guard let match = Self.matchingElement(inElements: elements, markerValue: value, key: key) else {
         throw FBRemoteAutomationError.elementNotFound(key: key.rawValue, value: value)
@@ -67,8 +66,7 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
         elements: match, profilingData: nil, frameCoverage: nil, additionalFrameCoverage: nil
       )
     case .frontmost:
-      let anchor = anchorPoint()
-      let tree = try await readFrontmostTree(anchorX: anchor.x, y: anchor.y)
+      let tree = try await readFrontmostTree()
       let elements = Self.describeAllElements(fromTree: tree.root, keys: keys, nestedFormat: options.nestedFormat, pid: tree.pid)
       return FBAccessibilityElementsResponse(
         elements: .array(elements), profilingData: nil, frameCoverage: nil, additionalFrameCoverage: nil
@@ -78,8 +76,9 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
 
   // MARK: - Anchor
 
-  /// The screen-centre point used only to probe the frontmost app's pid for whole-tree and marker
-  /// reads (any on-screen point over the frontmost app works; centre avoids edges/status bar).
+  /// The screen-centre point used as the *fallback* anchor to probe the frontmost app's pid when the
+  /// AX frontmost query is unavailable (any on-screen point over the frontmost app works; centre
+  /// avoids edges/status bar).
   private func anchorPoint() -> (x: Double, y: Double) {
     let info = simulator?.screenInfo
     return Self.anchorPoint(widthPixels: info?.widthPixels ?? 828, heightPixels: info?.heightPixels ?? 1792, scale: info?.scale ?? 2)
@@ -104,8 +103,7 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
     case let .point(point):
       try await sendHIDEvent(.tapAt(x: Double(point.x), y: Double(point.y)))
     case let .marker(markerValue, key, _):
-      let anchor = anchorPoint()
-      let tree = try await readFrontmostTree(anchorX: anchor.x, y: anchor.y)
+      let tree = try await readFrontmostTree()
       let elements = Self.describeAllElements(fromTree: tree.root, keys: FBAXKeys.defaultSet, nestedFormat: false, pid: tree.pid)
       guard let center = Self.frameCenter(inElements: elements, markerValue: markerValue, key: key) else {
         throw FBRemoteAutomationError.elementNotFound(key: key.rawValue, value: markerValue)
@@ -129,8 +127,13 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
     guard case let .marker(markerValue, key, _) = query else {
       throw FBRemoteAutomationError.markerRequired(operation: "Waiting")
     }
-    let anchor = anchorPoint()
     let session = try await self.session()
+    // Resolve the frontmost app's pid once via the AX window-server query and anchor every poll on
+    // it, so a system modal / launch chrome at the screen centre can't hijack the wait — and the
+    // poll closure captures only Sendable values (pid + session), never the actor. Fall back to the
+    // midpoint hit-test only when the AX pid is unavailable.
+    let pid = await frontmostApplicationPid()
+    let fallbackAnchor = pid > 0 ? nil : anchorPoint()
     let found = try await FBUIAutomationPolling.pollUntilFound(
       timeout: timeout,
       pollInterval: pollInterval,
@@ -139,13 +142,26 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
     ) { () -> Bool? in
       // A poll reads the tree directly (rather than via `readFrontmostTree`) so a missing tree retries
       // instead of throwing, and the truncation warning is not logged on every poll iteration.
-      let tree = try await session.applicationElementTree(
-        anchorX: anchor.x, y: anchor.y,
-        attributes: FBRemoteAutomationAXAttribute.fetchList,
-        childrenAttribute: FBRemoteAutomationAXAttribute.children,
-        maxDepth: Self.describeMaxDepth,
-        maxNodes: Self.describeMaxNodes
-      )
+      let tree: FBRemoteAutomationElementTree
+      if pid > 0 {
+        tree = try await session.applicationElementTree(
+          forPid: pid,
+          attributes: FBRemoteAutomationAXAttribute.fetchList,
+          childrenAttribute: FBRemoteAutomationAXAttribute.children,
+          maxDepth: Self.describeMaxDepth,
+          maxNodes: Self.describeMaxNodes
+        )
+      } else if let fallbackAnchor {
+        tree = try await session.applicationElementTree(
+          anchorX: fallbackAnchor.x, y: fallbackAnchor.y,
+          attributes: FBRemoteAutomationAXAttribute.fetchList,
+          childrenAttribute: FBRemoteAutomationAXAttribute.children,
+          maxDepth: Self.describeMaxDepth,
+          maxNodes: Self.describeMaxNodes
+        )
+      } else {
+        return nil
+      }
       guard let root = tree.root as? [String: Any] else { return nil }
       let elements = Self.describeAllElements(fromTree: root, keys: FBAXKeys.defaultSet, nestedFormat: false, pid: tree.processIdentifier)
       return Self.frameCenter(inElements: elements, markerValue: markerValue, key: key) != nil ? true : nil
@@ -175,8 +191,7 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
       let session = try await self.session()
       try await session.setValue(value, atX: Double(point.x), y: Double(point.y), valueAttribute: FBRemoteAutomationAXAttribute.value)
     case let .marker(markerValue, key, _):
-      let anchor = anchorPoint()
-      let tree = try await readFrontmostTree(anchorX: anchor.x, y: anchor.y)
+      let tree = try await readFrontmostTree()
       let elements = Self.describeAllElements(fromTree: tree.root, keys: FBAXKeys.defaultSet, nestedFormat: false, pid: tree.pid)
       guard let center = Self.frameCenter(inElements: elements, markerValue: markerValue, key: key) else {
         throw FBRemoteAutomationError.elementNotFound(key: key.rawValue, value: markerValue)
@@ -200,21 +215,55 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
   /// surfaced only when a read genuinely comes back empty rather than blocking the read path.
   static let accessibilityHint = "If reads consistently return nothing, the app's accessibility server is likely not running: set ApplicationAccessibilityEnabled (com.apple.Accessibility) before the app launches — e.g. `xcrun simctl spawn <UDID> defaults write com.apple.Accessibility ApplicationAccessibilityEnabled -bool true` — then relaunch the app."
 
-  /// Reads the frontmost application's element tree — probing `(x, y)` to discover its pid — and
-  /// returns the root attribute dictionary with that pid. Shared by the whole-tree operations
-  /// (describe-all, marker tap, marker set-value). Logs a warning when the walk hit the depth or node
-  /// bound so a truncated tree is never passed off as complete.
-  private func readFrontmostTree(anchorX x: Double, y: Double) async throws -> (root: [String: Any], pid: pid_t) {
-    let session = try await self.session()
-    let tree = try await session.applicationElementTree(
-      anchorX: x, y: y,
+  /// Resolves the frontmost application's pid via the CoreSimulator AX path — a window-server
+  /// frontmost query, not a screen hit-test — so the remote read anchors on the real app rather than
+  /// whatever process owns the centre pixel (a system modal, launch-transition chrome, or an empty
+  /// point). Returns 0 when the AX path can't resolve it, so the caller falls back to the midpoint.
+  private func frontmostApplicationPid() async -> pid_t {
+    guard let simulator else { return 0 }
+    do {
+      let element = try await simulator.resolveElement(for: .frontmost)
+      defer { element.close() }
+      return element.processIdentifier
+    } catch {
+      return 0
+    }
+  }
+
+  /// Reads the frontmost app's element tree, anchoring on the AX-resolved pid; falls back to the
+  /// screen-midpoint hit-test only when the AX pid is unavailable. Shared by `readFrontmostTree` and
+  /// the `wait` poll.
+  private func frontmostTree(using session: FBRemoteAutomationSession) async throws -> FBRemoteAutomationElementTree {
+    let pid = await frontmostApplicationPid()
+    if pid > 0 {
+      return try await session.applicationElementTree(
+        forPid: pid,
+        attributes: FBRemoteAutomationAXAttribute.fetchList,
+        childrenAttribute: FBRemoteAutomationAXAttribute.children,
+        maxDepth: Self.describeMaxDepth,
+        maxNodes: Self.describeMaxNodes
+      )
+    }
+    let anchor = anchorPoint()
+    return try await session.applicationElementTree(
+      anchorX: anchor.x, y: anchor.y,
       attributes: FBRemoteAutomationAXAttribute.fetchList,
       childrenAttribute: FBRemoteAutomationAXAttribute.children,
       maxDepth: Self.describeMaxDepth,
       maxNodes: Self.describeMaxNodes
     )
+  }
+
+  /// Reads the frontmost application's element tree (pid-anchored, midpoint fallback) and returns the
+  /// root attribute dictionary with the owning pid. Shared by the whole-tree operations (describe-all,
+  /// marker tap, marker set-value). Logs a warning when the walk hit the depth or node bound so a
+  /// truncated tree is never passed off as complete.
+  private func readFrontmostTree() async throws -> (root: [String: Any], pid: pid_t) {
+    let session = try await self.session()
+    let tree = try await frontmostTree(using: session)
     guard let root = tree.root as? [String: Any] else {
-      throw FBRemoteAutomationError.treeUnavailable(x: x, y: y)
+      let anchor = anchorPoint()
+      throw FBRemoteAutomationError.treeUnavailable(x: anchor.x, y: anchor.y)
     }
     if tree.truncated {
       _ = simulator?.logger?.log("Remote-automation read hit the bound (maxDepth \(Self.describeMaxDepth), maxNodes \(Self.describeMaxNodes)); the returned tree is truncated and incomplete.")

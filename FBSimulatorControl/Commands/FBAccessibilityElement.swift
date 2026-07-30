@@ -119,6 +119,12 @@ final class FBAccessibilityElement {
     return element.axFrame()
   }
 
+  /// The pid of the backing translation object (0 when absent). A zero-serialization identity read —
+  /// used to anchor a remote-automation frontmost read on the app's pid instead of a screen hit-test.
+  var processIdentifier: pid_t {
+    element.axTranslationPid
+  }
+
   // MARK: - Descendant search (ownership-transferring)
 
   /// Searches the accessibility tree rooted at this element for a descendant
