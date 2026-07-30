@@ -62,6 +62,8 @@ NS_ASSUME_NONNULL_BEGIN
   NS_SWIFT_NAME(synthesizeEvent(_:implicitConfirmationInterval:));
 - (nullable id<FBRemoteAutomationReceipt>)_XCTD_setAttribute:(id)attribute value:(id)value element:(id)element
   NS_SWIFT_NAME(setAttribute(_:value:element:));
+- (nullable id<FBRemoteAutomationReceipt>)_XCTD_performDeviceEvent:(id)event
+  NS_SWIFT_NAME(performDeviceEvent(_:));
 
 @end
 

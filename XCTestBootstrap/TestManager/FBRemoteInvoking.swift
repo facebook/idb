@@ -39,6 +39,15 @@ public protocol RemoteInvoking: Sendable {
   func requestElement(atPoint point: sending Any, deadline: TimeInterval) async throws -> sending Any?
   func fetchAttributes(_ attributes: sending Any, forElement element: sending Any, deadline: TimeInterval) async throws -> sending Any?
   func setAttribute(_ attribute: sending Any, value: sending Any, forElement element: sending Any, deadline: TimeInterval) async throws
+  func performDeviceEvent(_ event: sending Any, deadline: TimeInterval) async throws
+}
+
+public extension RemoteInvoking {
+  /// Default: this invoker does not implement the device-event selector (e.g. a test fake). The real
+  /// `DTXRemoteInvoker` overrides this to message the guest daemon.
+  func performDeviceEvent(_ event: sending Any, deadline: TimeInterval) async throws {
+    throw FBRemoteAutomationError.payloadUnavailable("performDeviceEvent")
+  }
 }
 
 /// Serializes the one-shot completion of a single remote invocation to exactly one
@@ -150,6 +159,11 @@ public final class DTXRemoteInvoker: RemoteInvoking {
   public func setAttribute(_ attribute: sending Any, value: sending Any, forElement element: sending Any, deadline: TimeInterval) async throws {
     let receipt = connection.remoteProxy.setAttribute(attribute, value: value, element: element)
     _ = try await awaitReceipt(receipt, operation: "setAttribute", deadline: deadline)
+  }
+
+  public func performDeviceEvent(_ event: sending Any, deadline: TimeInterval) async throws {
+    let receipt = connection.remoteProxy.performDeviceEvent(event)
+    _ = try await awaitReceipt(receipt, operation: "performDeviceEvent", deadline: deadline)
   }
 
   private func awaitReceipt(_ receipt: sending (any FBRemoteAutomationReceipt)?, operation: String, deadline: TimeInterval) async throws -> sending Any? {

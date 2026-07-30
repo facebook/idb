@@ -22,6 +22,14 @@
 
 static NSString *const FBRemoteAutomationRuntimeErrorDomain = @"com.facebook.FBRemoteAutomationRuntime";
 
+// XCDeviceEvent has no header under XCTestPrivate (unlike the other payload classes). This file-local
+// declaration gives the compiler the factory's signature so it can be messaged with normal syntax on
+// the dynamically-looked-up class — the class is never named directly (that would emit an undefined
+// `_OBJC_CLASS_$_XCDeviceEvent` at link, since it is runtime-loaded, not linked).
+@interface XCDeviceEvent : NSObject
++ (instancetype)deviceEventWithPage:(unsigned int)page usage:(unsigned int)usage duration:(double)duration;
+@end
+
 @implementation FBRemoteAutomationRuntime
 
 + (nullable id)failWithError:(NSError **)error format:(NSString *)format, ...
@@ -143,6 +151,15 @@ static NSString *const FBRemoteAutomationRuntimeErrorDomain = @"com.facebook.FBR
     return [self failWithError:error format:@"XCAccessibilityElement is unavailable; is XCTest.framework loaded?"];
   }
   return [elementClass elementWithProcessIdentifier:processIdentifier];
+}
+
++ (nullable id)deviceEventWithPage:(unsigned int)page usage:(unsigned int)usage duration:(double)duration error:(NSError **)error
+{
+  Class eventClass = objc_lookUpClass("XCDeviceEvent");
+  if (!eventClass) {
+    return [self failWithError:error format:@"XCDeviceEvent is unavailable; is XCTest.framework loaded?"];
+  }
+  return [eventClass deviceEventWithPage:page usage:usage duration:duration];
 }
 
 @end

@@ -79,4 +79,12 @@ public enum FBRemoteAutomationPayloads {
   public static func eventRecord(withName name: String, pointerPaths: [FBRemoteAutomationPointerPath]) throws -> Any {
     try FBRemoteAutomationRuntime.synthesizedEventRecord(withName: name, pointerPaths: pointerPaths.map(\.path))
   }
+
+  /// An `XCDeviceEvent` for a hardware-button press: a HID `page`/`usage` held for `duration`
+  /// seconds. Submitted via `_XCTD_performDeviceEvent:`.
+  ///
+  /// - Throws: if `XCDeviceEvent` is unavailable.
+  public static func deviceEvent(page: UInt32, usage: UInt32, duration: TimeInterval) throws -> Any {
+    try FBRemoteAutomationRuntime.deviceEvent(withPage: page, usage: usage, duration: duration)
+  }
 }

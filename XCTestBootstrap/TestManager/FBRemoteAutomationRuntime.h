@@ -82,6 +82,15 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (nullable id)applicationElementForProcessIdentifier:(int)processIdentifier error:(NSError **)error;
 
+/**
+ An `XCDeviceEvent` for a hardware button press: a HID `page`/`usage` held for `duration` seconds, or
+ nil with `error` set if the class is unavailable. Submitted via `_XCTD_performDeviceEvent:`.
+ */
++ (nullable id)deviceEventWithPage:(unsigned int)page
+                             usage:(unsigned int)usage
+                          duration:(double)duration
+                             error:(NSError **)error;
+
 @end
 
 NS_ASSUME_NONNULL_END

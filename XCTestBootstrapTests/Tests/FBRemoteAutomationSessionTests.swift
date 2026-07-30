@@ -22,6 +22,7 @@ private actor FakeRemoteInvoker: RemoteInvoking {
     case requestElement
     case fetchAttributes
     case setAttribute
+    case performDeviceEvent
   }
 
   enum FakeError: Error { case injected }
@@ -83,6 +84,10 @@ private actor FakeRemoteInvoker: RemoteInvoking {
   func setAttribute(_ attribute: sending Any, value: sending Any, forElement element: sending Any, deadline: TimeInterval) async throws {
     calls.append(.setAttribute)
     lastSetValue = value as? String
+  }
+
+  func performDeviceEvent(_ event: sending Any, deadline: TimeInterval) async throws {
+    calls.append(.performDeviceEvent)
   }
 }
 
@@ -179,6 +184,16 @@ final class FBRemoteAutomationSessionTests: XCTestCase {
     let y = await invoker.lastPointY
     XCTAssertEqual(x, 42.5, "The point must be forwarded as a point dictionary carrying the exact x coordinate.")
     XCTAssertEqual(y, 99.0, "The point must be forwarded as a point dictionary carrying the exact y coordinate.")
+  }
+
+  func testPerformDeviceEvent_PrimesThenForwards() async throws {
+    let invoker = FakeRemoteInvoker()
+    let session = FBRemoteAutomationSession(invoker: invoker, processIdentifier: 1)
+
+    try await session.performDeviceEvent(page: 0x0C, usage: 0x40, duration: 0)
+
+    let calls = await invoker.callLog()
+    XCTAssertEqual(calls, [.beginSession, .exchangeCapabilities, .loadAccessibility, .performDeviceEvent], "performDeviceEvent must prime the handshake before issuing the device event.")
   }
 
   func testSynthesizeEvent_PrimesThenForwardsInterval() async throws {

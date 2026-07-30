@@ -103,6 +103,14 @@ public actor FBRemoteAutomationSession {
     )
   }
 
+  /// Presses a hardware button, identified by its HID `page`/`usage` code, held for `duration`
+  /// seconds, via the remote-automation channel's device-event selector.
+  public func performDeviceEvent(page: UInt32, usage: UInt32, duration: TimeInterval) async throws {
+    try await prime()
+    let event = try FBRemoteAutomationPayloads.deviceEvent(page: page, usage: usage, duration: duration)
+    try await invoker.performDeviceEvent(event, deadline: writeDeadline + duration)
+  }
+
   // MARK: - Reads
 
   /// The application's accessibility root, used as the anchor for `fetchAttributes`.
