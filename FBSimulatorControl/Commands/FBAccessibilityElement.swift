@@ -18,7 +18,7 @@ import Foundation
 ///
 /// A pure-Swift class in FBSimulatorControl (FBControlCore never consumed it —
 /// only the simulator-side facade does, which is now Swift too).
-public final class FBAccessibilityElement {
+final class FBAccessibilityElement {
 
   private let element: FBAXPlatformElement
   private let request: FBAXTranslationRequest
@@ -41,7 +41,7 @@ public final class FBAccessibilityElement {
 
   /// Close the element, deregistering the token. Called automatically on dealloc
   /// as a safety net. After close, serialization fails.
-  public func close() {
+  func close() {
     if !closed {
       closed = true
       dispatcher.popRequest(request)
@@ -51,7 +51,7 @@ public final class FBAccessibilityElement {
   // MARK: - Serialization
 
   /// Serialize the element to a full response (preserves profiling/coverage data).
-  public func serialize(with options: FBAccessibilityRequestOptions) throws -> FBAccessibilityElementsResponse {
+  func serialize(with options: FBAccessibilityRequestOptions) throws -> FBAccessibilityElementsResponse {
     if closed {
       throw FBAccessibilityError.closedElement(operation: "serialize")
     }
@@ -66,7 +66,7 @@ public final class FBAccessibilityElement {
   }
 
   /// Read the string value of a searchable accessibility key from this element.
-  public func stringValue(forSearchableKey key: FBAXSearchableKey) throws -> String {
+  func stringValue(forSearchableKey key: FBAXSearchableKey) throws -> String {
     if closed {
       throw FBAccessibilityError.closedElement(operation: "read from")
     }
@@ -79,7 +79,7 @@ public final class FBAccessibilityElement {
   // MARK: - Actions
 
   /// Perform an unconditional accessibility tap (AXPress) without any label verification.
-  public func tap() throws {
+  func tap() throws {
     if closed {
       throw FBAccessibilityError.closedElement(operation: "tap")
     }
@@ -93,7 +93,7 @@ public final class FBAccessibilityElement {
   }
 
   /// Perform an accessibility scroll on the element.
-  public func scroll(with direction: FBAccessibilityScrollDirection) throws {
+  func scroll(with direction: FBAccessibilityScrollDirection) throws {
     if closed {
       throw FBAccessibilityError.closedElement(operation: "scroll")
     }
@@ -101,7 +101,7 @@ public final class FBAccessibilityElement {
   }
 
   /// Set the accessibility value of the element (e.g., text field content, slider position).
-  public func setValue(_ value: Any) throws {
+  func setValue(_ value: String) throws {
     if closed {
       throw FBAccessibilityError.closedElement(operation: "set value on")
     }
@@ -111,7 +111,7 @@ public final class FBAccessibilityElement {
   // MARK: - Geometry
 
   /// The element's frame in screen points. The element must be open.
-  public func frame() throws -> CGRect {
+  func frame() throws -> CGRect {
     if closed {
       throw FBAccessibilityError.closedElement(operation: "read the frame of")
     }
@@ -126,7 +126,7 @@ public final class FBAccessibilityElement {
   /// transferred to a new handle wrapping the found element, and the receiver is
   /// closed without popping. If not found, the receiver is closed and an error
   /// is thrown.
-  public func findElement(withValue value: String, forKey key: FBAXSearchableKey, depth: UInt) throws -> FBAccessibilityElement {
+  func findElement(withValue value: String, forKey key: FBAXSearchableKey, depth: UInt) throws -> FBAccessibilityElement {
     guard let found = Self.findElement(withValue: value, forKey: key, in: element, token: request.token, remainingDepth: depth) else {
       close()
       throw FBAccessibilityError.elementNotFound(key: key.rawValue, value: value, depth: depth)

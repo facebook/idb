@@ -50,7 +50,7 @@ extension FBSimulator {
 ///
 /// Plain Swift, no `NSObject`/`@objc`: nothing in Objective-C references this class, and the
 /// command cache (`FBTargetCommandCache`) stores values as `Any`, so it imposes no such requirement.
-public final class FBSimulatorAccessibilityCommands: AccessibilityOperations {
+final class FBSimulatorAccessibilityCommands: AccessibilityOperations {
 
   private static let coreSimulatorBridgeServiceName = "com.apple.CoreSimulator.bridge"
   private static let springBoardServiceName = "com.apple.SpringBoard"
@@ -70,7 +70,7 @@ public final class FBSimulatorAccessibilityCommands: AccessibilityOperations {
     self.launchCtl = launchCtl
   }
 
-  public class func commands(with target: FBSimulator) -> Self {
+  class func commands(with target: FBSimulator) -> Self {
     self.init(simulator: target)
   }
 
@@ -90,19 +90,19 @@ public final class FBSimulatorAccessibilityCommands: AccessibilityOperations {
 
   // MARK: AccessibilityOperations
 
-  public func accessibilityElement(at point: CGPoint) async throws -> FBAccessibilityElement {
+  func accessibilityElement(at point: CGPoint) async throws -> FBAccessibilityElement {
     try validateAccessibility()
     let request = FBAXTranslationRequest(kind: .point(point))
     return try await accessibilityElement(request: request, remediationPermitted: false)
   }
 
-  public func accessibilityElementForFrontmostApplication() async throws -> FBAccessibilityElement {
+  func accessibilityElementForFrontmostApplication() async throws -> FBAccessibilityElement {
     try validateAccessibility()
     let request = FBAXTranslationRequest(kind: .frontmostApplication)
     return try await accessibilityElement(request: request, remediationPermitted: true)
   }
 
-  public func accessibilityElementMatching(value: String, forKey key: FBAXSearchableKey, depth: UInt) async throws -> FBAccessibilityElement {
+  func accessibilityElementMatching(value: String, forKey key: FBAXSearchableKey, depth: UInt) async throws -> FBAccessibilityElement {
     try validateAccessibility()
     let request = FBAXTranslationRequest(kind: .frontmostApplication)
     let root = try await accessibilityElement(request: request, remediationPermitted: true)
@@ -201,15 +201,15 @@ public final class FBSimulatorAccessibilityCommands: AccessibilityOperations {
 
 extension FBSimulator: AccessibilityCommands {
 
-  public func accessibilityElement(at point: CGPoint) async throws -> FBAccessibilityElement {
+  func accessibilityElement(at point: CGPoint) async throws -> FBAccessibilityElement {
     try await accessibilityCommands().accessibilityElement(at: point)
   }
 
-  public func accessibilityElementForFrontmostApplication() async throws -> FBAccessibilityElement {
+  func accessibilityElementForFrontmostApplication() async throws -> FBAccessibilityElement {
     try await accessibilityCommands().accessibilityElementForFrontmostApplication()
   }
 
-  public func accessibilityElementMatching(
+  func accessibilityElementMatching(
     value: String,
     forKey key: FBAXSearchableKey,
     depth: UInt

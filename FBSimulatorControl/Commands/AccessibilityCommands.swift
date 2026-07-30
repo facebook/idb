@@ -8,7 +8,7 @@
 import FBControlCore
 import Foundation
 
-public protocol AccessibilityOperations: AnyObject {
+protocol AccessibilityOperations: AnyObject {
 
   func accessibilityElement(at point: CGPoint) async throws -> FBAccessibilityElement
 
@@ -21,4 +21,4 @@ public protocol AccessibilityOperations: AnyObject {
   ) async throws -> FBAccessibilityElement
 }
 
-public protocol AccessibilityCommands: AccessibilityOperations {}
+protocol AccessibilityCommands: AccessibilityOperations {}
