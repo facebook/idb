@@ -58,7 +58,7 @@ final class FBRemoteAutomationDescribeTests: XCTestCase {
       ],
       frame: CGRect(x: 16, y: 380, width: 370, height: 52)
     )
-    let session = FBRemoteAutomationSession(invoker: invoker, processIdentifier: 0)
+    let session = try await FBRemoteAutomationSession.connected(invoker: invoker, processIdentifier: 0)
 
     let value = try await FBSimulatorRemoteAutomation.describeElement(
       atX: 200, y: 406, using: session, keys: FBAXKeys.defaultSet
@@ -78,7 +78,7 @@ final class FBRemoteAutomationDescribeTests: XCTestCase {
 
   func testPointDescribeThrowsWhenNoElement() async throws {
     let invoker = FakeReadInvoker(stringAttributes: [:], frame: nil, returnsElement: false)
-    let session = FBRemoteAutomationSession(invoker: invoker, processIdentifier: 0)
+    let session = try await FBRemoteAutomationSession.connected(invoker: invoker, processIdentifier: 0)
 
     do {
       _ = try await FBSimulatorRemoteAutomation.describeElement(

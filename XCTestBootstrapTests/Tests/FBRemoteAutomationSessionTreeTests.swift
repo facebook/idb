@@ -59,7 +59,7 @@ final class FBRemoteAutomationSessionTreeTests: XCTestCase {
   private static let label = "label"
   private static let children = "children"
 
-  private func makeSession() -> FBRemoteAutomationSession {
+  private func makeSession() async throws -> FBRemoteAutomationSession {
     let invoker = FakeTreeInvoker(
       labelAttribute: Self.label,
       childrenAttribute: Self.children,
@@ -70,11 +70,11 @@ final class FBRemoteAutomationSessionTreeTests: XCTestCase {
         "g1": ("g1", []),
       ]
     )
-    return FBRemoteAutomationSession(invoker: invoker, processIdentifier: 0)
+    return try await FBRemoteAutomationSession.connected(invoker: invoker, processIdentifier: 0)
   }
 
   func testFetchAttributeTreeBuildsNestedTree() async throws {
-    let session = makeSession()
+    let session = try await makeSession()
     let result = try await session.fetchAttributeTree(
       from: "root" as NSString, attributes: [Self.label, Self.children], childrenAttribute: Self.children,
       depth: 0, maxDepth: 10, budget: 100
@@ -96,7 +96,7 @@ final class FBRemoteAutomationSessionTreeTests: XCTestCase {
   }
 
   func testFetchAttributeTreeRespectsMaxDepth() async throws {
-    let session = makeSession()
+    let session = try await makeSession()
     let result = try await session.fetchAttributeTree(
       from: "root" as NSString, attributes: [Self.label, Self.children], childrenAttribute: Self.children,
       depth: 0, maxDepth: 1, budget: 100
@@ -109,7 +109,7 @@ final class FBRemoteAutomationSessionTreeTests: XCTestCase {
   }
 
   func testFetchAttributeTreeRespectsNodeBudget() async throws {
-    let session = makeSession()
+    let session = try await makeSession()
     // Budget of 2 admits the root and a single child before the walk stops.
     let result = try await session.fetchAttributeTree(
       from: "root" as NSString, attributes: [Self.label, Self.children], childrenAttribute: Self.children,
@@ -122,7 +122,7 @@ final class FBRemoteAutomationSessionTreeTests: XCTestCase {
 
   func testApplicationElementTreeForNonPositivePidYieldsEmptyTree() async throws {
     // A non-positive pid short-circuits to an empty tree before anchoring — no invoker call at all.
-    let session = FBRemoteAutomationSession(invoker: NoHitTestInvoker(), processIdentifier: 0)
+    let session = try await FBRemoteAutomationSession.connected(invoker: NoHitTestInvoker(), processIdentifier: 0)
     let tree = try await session.applicationElementTree(
       forPid: 0, attributes: [Self.label], childrenAttribute: Self.children, maxDepth: 10, maxNodes: 100
     )
@@ -136,7 +136,7 @@ final class FBRemoteAutomationSessionTreeTests: XCTestCase {
     // would surface as a thrown error here — completing without throwing proves the probe is skipped.
     // (A non-positive pid, as in the test above, short-circuits before any invoker call, so it cannot
     // exercise this invariant; a positive pid drives the real anchor-then-walk path.)
-    let session = FBRemoteAutomationSession(invoker: NoHitTestInvoker(), processIdentifier: 0)
+    let session = try await FBRemoteAutomationSession.connected(invoker: NoHitTestInvoker(), processIdentifier: 0)
     let tree = try await session.applicationElementTree(
       forPid: 4321, attributes: [Self.label], childrenAttribute: Self.children, maxDepth: 10, maxNodes: 100
     )

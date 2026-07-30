@@ -438,9 +438,7 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
     // Let the DTX connection settle after `resume` before the first invocation; sending the
     // handshake immediately races the connection setup and the daemon drops the channel.
     try await Task.sleep(nanoseconds: 300_000_000)
-    let session = FBRemoteAutomationSession(invoker: DTXRemoteInvoker(connection: connection), processIdentifier: 0)
-    try await session.prime()
-    return session
+    return try await FBRemoteAutomationSession.connected(invoker: DTXRemoteInvoker(connection: connection), processIdentifier: 0)
   }
 
   // MARK: - Event translation

@@ -16,11 +16,13 @@ import Foundation
 /// proxy, and tests inject a fake to exercise handshake ordering and payload handling without
 /// a live socket.
 ///
-/// One instance per target, memoized and reused. The handshake
+/// One instance per target, memoized and reused. It is handed out already-connected via
+/// `connected(invoker:…)`, which runs the handshake
 /// (`beginSession@1000` -> `exchangeCapabilities` -> settle -> `loadAccessibilityWithTimeout`)
-/// runs once, eagerly via `prime()`. `enableAutomationMode` is never sent — it wedges
-/// hit-tests. Reads additionally require `ApplicationAccessibilityEnabled=1` set on the
-/// target before it launches, which the caller arranges outside this type.
+/// exactly once, at construction — operations assume it is complete rather than re-checking per
+/// call. `enableAutomationMode` is never sent — it wedges hit-tests. Reads additionally require
+/// `ApplicationAccessibilityEnabled=1` set on the target before it launches, which the caller
+/// arranges outside this type.
 public actor FBRemoteAutomationSession {
 
   private let invoker: RemoteInvoking
@@ -29,7 +31,6 @@ public actor FBRemoteAutomationSession {
   private let readDeadline: TimeInterval
   private let writeDeadline: TimeInterval
 
-  private var primeTask: Task<Void, Error>?
   private var capabilitiesValue = FBRemoteAutomationCapabilities.empty
 
   private static let clientProtocolVersion = 1000
@@ -37,12 +38,12 @@ public actor FBRemoteAutomationSession {
   private static let capabilitiesSettleInterval: TimeInterval = 0.4
   private static let accessibilitySettleInterval: TimeInterval = 0.5
 
-  public init(
+  private init(
     invoker: RemoteInvoking,
     processIdentifier: Int32,
-    handshakeDeadline: TimeInterval = 30,
-    readDeadline: TimeInterval = 20,
-    writeDeadline: TimeInterval = 20
+    handshakeDeadline: TimeInterval,
+    readDeadline: TimeInterval,
+    writeDeadline: TimeInterval
   ) {
     self.invoker = invoker
     self.processIdentifier = processIdentifier
@@ -51,29 +52,34 @@ public actor FBRemoteAutomationSession {
     self.writeDeadline = writeDeadline
   }
 
-  /// The capabilities the daemon advertised during the handshake. Empty until primed.
+  /// Connects a session: constructs it, completes the handshake once, and returns it ready for reads
+  /// and writes. The handshake runs exactly once — here, at construction — so operations never
+  /// re-check it. A failed handshake throws and yields no session; the caller (which memoizes the
+  /// session per target) discards it, and a later attempt reconnects.
+  public static func connected(
+    invoker: RemoteInvoking,
+    processIdentifier: Int32,
+    handshakeDeadline: TimeInterval = 30,
+    readDeadline: TimeInterval = 20,
+    writeDeadline: TimeInterval = 20
+  ) async throws -> FBRemoteAutomationSession {
+    let session = FBRemoteAutomationSession(
+      invoker: invoker,
+      processIdentifier: processIdentifier,
+      handshakeDeadline: handshakeDeadline,
+      readDeadline: readDeadline,
+      writeDeadline: writeDeadline
+    )
+    try await session.performHandshake()
+    return session
+  }
+
+  /// The capabilities the daemon advertised during the handshake (populated by `connected`).
   public var capabilities: FBRemoteAutomationCapabilities {
     capabilitiesValue
   }
 
   // MARK: - Handshake
-
-  /// Eagerly performs the handshake, idempotently. Concurrent callers await one handshake;
-  /// a failed handshake clears the memo so a later call retries.
-  public func prime() async throws {
-    if let task = primeTask {
-      try await task.value
-      return
-    }
-    let task = Task { try await self.performHandshake() }
-    primeTask = task
-    do {
-      try await task.value
-    } catch {
-      primeTask = nil
-      throw error
-    }
-  }
 
   private func performHandshake() async throws {
     try await invoker.beginSession(clientProtocolVersion: Self.clientProtocolVersion, deadline: handshakeDeadline)
@@ -95,7 +101,6 @@ public actor FBRemoteAutomationSession {
   /// Submits a synthesized input event, waiting up to `implicitConfirmationInterval` extra
   /// seconds for the daemon's coarse settle before returning.
   public func synthesizeEvent(_ record: sending Any, implicitConfirmationInterval: TimeInterval = 0) async throws {
-    try await prime()
     try await invoker.synthesizeEvent(
       record,
       implicitConfirmationInterval: implicitConfirmationInterval,
@@ -106,7 +111,6 @@ public actor FBRemoteAutomationSession {
   /// Presses a hardware button, identified by its HID `page`/`usage` code, held for `duration`
   /// seconds, via the remote-automation channel's device-event selector.
   public func performDeviceEvent(page: UInt32, usage: UInt32, duration: TimeInterval) async throws {
-    try await prime()
     let event = try FBRemoteAutomationPayloads.deviceEvent(page: page, usage: usage, duration: duration)
     try await invoker.performDeviceEvent(event, deadline: writeDeadline + duration)
   }
@@ -123,14 +127,12 @@ public actor FBRemoteAutomationSession {
 
   /// The accessibility element at a screen point, expressed in points.
   public func requestElement(atX x: Double, y: Double) async throws -> sending Any? {
-    try await prime()
     let point = CGPointCreateDictionaryRepresentation(CGPoint(x: x, y: y)) as NSDictionary
     return try await invoker.requestElement(atPoint: point, deadline: readDeadline)
   }
 
   /// The requested attributes for an element, as returned by the daemon.
   public func fetchAttributes(_ attributes: [String], forElement element: sending Any) async throws -> sending Any? {
-    try await prime()
     return try await invoker.fetchAttributes(attributes as NSArray, forElement: element, deadline: readDeadline)
   }
 
@@ -141,13 +143,11 @@ public actor FBRemoteAutomationSession {
   /// frontmost query): a hit-test reads whatever process owns the centre pixel, so a system modal,
   /// launch-transition chrome, or an empty point is read instead of the target app.
   public func applicationElementTree(anchorX x: Double, y: Double, attributes: [String], childrenAttribute: String, maxDepth: Int, maxNodes: Int) async throws -> sending FBRemoteAutomationElementTree {
-    try await prime()
     let point = CGPointCreateDictionaryRepresentation(CGPoint(x: x, y: y)) as NSDictionary
     guard let anchor = try await invoker.requestElement(atPoint: point, deadline: readDeadline) else {
       return FBRemoteAutomationElementTree(root: nil, processIdentifier: 0, truncated: false)
     }
     let pid = unsafeBitCast(anchor as AnyObject, to: XCAccessibilityElementMessaging.self).processIdentifier
-    // The pid overload primes as well; prime() is idempotent (memoized), so the second call is a no-op.
     return try await applicationElementTree(forPid: pid, attributes: attributes, childrenAttribute: childrenAttribute, maxDepth: maxDepth, maxNodes: maxNodes)
   }
 
@@ -156,7 +156,6 @@ public actor FBRemoteAutomationSession {
   /// node's child element handles with the children's own attribute dictionaries. The recursion stays
   /// inside the actor because the element handles are not Sendable; only the value tree crosses out.
   public func applicationElementTree(forPid pid: pid_t, attributes: [String], childrenAttribute: String, maxDepth: Int, maxNodes: Int) async throws -> sending FBRemoteAutomationElementTree {
-    try await prime()
     guard pid > 0, let root = FBRemoteAutomationPayloads.applicationElement(forProcessIdentifier: pid) else {
       return FBRemoteAutomationElementTree(root: nil, processIdentifier: 0, truncated: false)
     }
@@ -201,7 +200,6 @@ public actor FBRemoteAutomationSession {
   /// Sets `value` on the element at a screen point via the remote-automation channel. The element
   /// handle stays a disconnected local (received from the session and used once).
   public func setValue(_ value: String, atX x: Double, y: Double, valueAttribute: String) async throws {
-    try await prime()
     let point = CGPointCreateDictionaryRepresentation(CGPoint(x: x, y: y)) as NSDictionary
     guard let element = try await invoker.requestElement(atPoint: point, deadline: readDeadline) else {
       throw FBRemoteAutomationError.payloadUnavailable("element at (\(x), \(y))")
