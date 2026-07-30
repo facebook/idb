@@ -85,7 +85,8 @@ final class FBRemoteAutomationDescribeTests: XCTestCase {
       )
       XCTFail("Expected describeElement to throw when no element is found")
     } catch {
-      // expected
+      // The failure carries the accessibility guidance, so an empty read is actionable rather than silent.
+      XCTAssertTrue("\(error)".contains("ApplicationAccessibilityEnabled"), "The no-element error should surface the accessibility precondition hint; got: \(error)")
     }
   }
 

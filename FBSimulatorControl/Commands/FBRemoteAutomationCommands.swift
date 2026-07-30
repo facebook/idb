@@ -44,7 +44,6 @@ public actor FBSimulatorRemoteAutomation {
   /// channel and serializes it to the accessibility schema as canonical sorted-keys JSON, matching
   /// the legacy `accessibilityDescribe` point output.
   public func describe(atX x: Double, y: Double, keys: Set<FBAXKeys>) async throws -> Data {
-    try await ensureAccessibilityEnabled()
     let session = try await self.session()
     let element = try await Self.describeElement(atX: x, y: y, using: session, keys: keys)
     let response = FBAccessibilityElementsResponse(
@@ -58,7 +57,6 @@ public actor FBSimulatorRemoteAutomation {
   /// point. `(x, y)` is the point probed to discover the frontmost app's pid. `key` must be among the
   /// requested `keys` for the match to be found.
   public func describe(markerValue: String, key: FBAXSearchableKey, keys: Set<FBAXKeys>, anchorX x: Double, anchorY y: Double) async throws -> Data {
-    try await ensureAccessibilityEnabled()
     let tree = try await readFrontmostTree(anchorX: x, y: y)
     let elements = Self.describeAllElements(fromTree: tree.root, keys: keys, nestedFormat: false, pid: tree.pid)
     guard let match = Self.matchingElement(inElements: elements, markerValue: markerValue, key: key) else {
@@ -75,7 +73,6 @@ public actor FBSimulatorRemoteAutomation {
   /// probed to discover the frontmost app's pid. If the walk hits the depth or node-count bound the
   /// returned tree is incomplete; that is logged rather than passed off as a full tree.
   public func describeAll(anchorX x: Double, y: Double, keys: Set<FBAXKeys>, nestedFormat: Bool) async throws -> Data {
-    try await ensureAccessibilityEnabled()
     let tree = try await readFrontmostTree(anchorX: x, y: y)
     let elements = Self.describeAllElements(fromTree: tree.root, keys: keys, nestedFormat: nestedFormat, pid: tree.pid)
     let response = FBAccessibilityElementsResponse(
@@ -88,7 +85,6 @@ public actor FBSimulatorRemoteAutomation {
   /// frame centre over the remote-automation channel. `(x, y)` is the point probed to discover the
   /// frontmost app's pid.
   public func tap(markerValue: String, key: FBAXSearchableKey, anchorX x: Double, anchorY y: Double) async throws {
-    try await ensureAccessibilityEnabled()
     let tree = try await readFrontmostTree(anchorX: x, y: y)
     let elements = Self.describeAllElements(fromTree: tree.root, keys: FBAXKeys.defaultSet, nestedFormat: false, pid: tree.pid)
     guard let center = Self.frameCenter(inElements: elements, markerValue: markerValue, key: key) else {
@@ -103,7 +99,6 @@ public actor FBSimulatorRemoteAutomation {
   /// value equals `markerValue` appears, or throws when `timeout` elapses. `(x, y)` is the point
   /// probed to discover the frontmost app's pid.
   public func wait(markerValue: String, key: FBAXSearchableKey, timeout: TimeInterval, pollInterval: TimeInterval, anchorX x: Double, anchorY y: Double) async throws {
-    try await ensureAccessibilityEnabled()
     let session = try await self.session()
     let found = try await Self.pollUntilFound(
       timeout: timeout,
@@ -125,13 +120,12 @@ public actor FBSimulatorRemoteAutomation {
       return Self.frameCenter(inElements: elements, markerValue: markerValue, key: key) != nil ? true : nil
     }
     if found == nil {
-      throw FBControlCoreError.describe("Remote automation timed out after \(timeout)s waiting for \(key.rawValue)=\"\(markerValue)\"").build()
+      throw FBControlCoreError.describe("Remote automation timed out after \(timeout)s waiting for \(key.rawValue)=\"\(markerValue)\". \(Self.accessibilityHint)").build()
     }
   }
 
   /// Sets `value` on the element at a screen point (in points) over the remote-automation channel.
   public func setValue(_ value: String, atX x: Double, y: Double) async throws {
-    try await ensureAccessibilityEnabled()
     let session = try await self.session()
     try await session.setValue(value, atX: x, y: y, valueAttribute: FBRemoteAutomationAXAttribute.value)
   }
@@ -140,7 +134,6 @@ public actor FBSimulatorRemoteAutomation {
   /// `markerValue`, over the remote-automation channel. `(x, y)` is the point probed to discover the
   /// frontmost app's pid.
   public func setValue(_ value: String, markerValue: String, key: FBAXSearchableKey, anchorX x: Double, anchorY y: Double) async throws {
-    try await ensureAccessibilityEnabled()
     let tree = try await readFrontmostTree(anchorX: x, y: y)
     let elements = Self.describeAllElements(fromTree: tree.root, keys: FBAXKeys.defaultSet, nestedFormat: false, pid: tree.pid)
     guard let center = Self.frameCenter(inElements: elements, markerValue: markerValue, key: key) else {
@@ -150,34 +143,17 @@ public actor FBSimulatorRemoteAutomation {
     try await session.setValue(value, atX: center.x, y: center.y, valueAttribute: FBRemoteAutomationAXAttribute.value)
   }
 
-  // MARK: - Read preconditions
-
-  private var accessibilityPreconditionChecked = false
-
-  /// Remote reads need the target app's in-process accessibility server, which the app starts only
-  /// when `ApplicationAccessibilityEnabled` (`com.apple.Accessibility`) is set *before* it launches.
-  /// The preference cannot take effect for an already-running app, so a read cannot enable it itself;
-  /// this instead checks the preference once per session (caching success) and, when unset, throws a
-  /// precise, tool-agnostic error naming exactly what to set — rather than silently returning an
-  /// empty tree. Any read entry point calls this before touching the accessibility tree.
-  func ensureAccessibilityEnabled() async throws {
-    if accessibilityPreconditionChecked { return }
-    guard let simulator = self.simulator else {
-      throw FBWeakTargetError.simulator
-    }
-    let value = try await simulator.getCurrentPreference("ApplicationAccessibilityEnabled", domain: "com.apple.Accessibility")
-    guard ["1", "true", "yes"].contains(value.lowercased()) else {
-      throw FBControlCoreError.describe(
-        "Remote-automation reads require the accessibility precondition ApplicationAccessibilityEnabled (domain com.apple.Accessibility) to be set before the target app launches; it is currently \(value.isEmpty ? "unset" : "\"\(value)\""). Set it and relaunch the app, e.g. `xcrun simctl spawn <UDID> defaults write com.apple.Accessibility ApplicationAccessibilityEnabled -bool true`. Without it the app does not start its in-process accessibility server and reads return nothing."
-      ).build()
-    }
-    accessibilityPreconditionChecked = true
-  }
-
   // MARK: - Reads
 
   private static let describeMaxDepth = 50
   private static let describeMaxNodes = 3000
+
+  /// Appended to read-failure errors. An empty tree/element almost always means the target app's
+  /// in-process accessibility server never started — that requires `ApplicationAccessibilityEnabled`
+  /// (`com.apple.Accessibility`) to have been set *before* the app launched. The flag is consumed at
+  /// launch (a live read clears it), so it is an unreliable proxy to gate on up front; the guidance is
+  /// surfaced only when a read genuinely comes back empty rather than blocking the read path.
+  static let accessibilityHint = "If reads consistently return nothing, the app's accessibility server is likely not running: set ApplicationAccessibilityEnabled (com.apple.Accessibility) before the app launches — e.g. `xcrun simctl spawn <UDID> defaults write com.apple.Accessibility ApplicationAccessibilityEnabled -bool true` — then relaunch the app."
 
   /// Reads the frontmost application's element tree — probing `(x, y)` to discover its pid — and
   /// returns the root attribute dictionary with that pid. Shared by the whole-tree operations
@@ -193,7 +169,7 @@ public actor FBSimulatorRemoteAutomation {
       maxNodes: Self.describeMaxNodes
     )
     guard let root = tree.root as? [String: Any] else {
-      throw FBControlCoreError.describe("Remote automation could not read the frontmost application tree at (\(x), \(y))").build()
+      throw FBControlCoreError.describe("Remote automation could not read the frontmost application tree at (\(x), \(y)). \(Self.accessibilityHint)").build()
     }
     if tree.truncated {
       _ = simulator?.logger?.log("Remote-automation read hit the bound (maxDepth \(Self.describeMaxDepth), maxNodes \(Self.describeMaxNodes)); the returned tree is truncated and incomplete.")
@@ -207,7 +183,7 @@ public actor FBSimulatorRemoteAutomation {
   /// never becomes a shareable value that would risk a data race across the session boundary.
   static func describeElement(atX x: Double, y: Double, using session: FBRemoteAutomationSession, keys: Set<FBAXKeys>) async throws -> [String: Any] {
     guard let element = try await session.requestElement(atX: x, y: y) else {
-      throw FBControlCoreError.describe("Remote automation found no element at (\(x), \(y))").build()
+      throw FBControlCoreError.describe("Remote automation found no element at (\(x), \(y)). \(Self.accessibilityHint)").build()
     }
     let raw = try await session.fetchAttributes(FBRemoteAutomationAXAttribute.fetchList, forElement: element)
     let attributes = (raw as? [String: Any]) ?? [:]
