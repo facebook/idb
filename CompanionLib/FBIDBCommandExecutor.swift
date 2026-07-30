@@ -134,14 +134,14 @@ import XCTestBootstrap
     guard let simulator = target as? FBSimulator else {
       throw FBIDBError.describe("Target is not a simulator, cannot tap by accessibility label: \(target)").build()
     }
-    try await simulator.accessibilityTap(for: .marker(value: label, key: .label, depth: .max))
+    try await simulator.uiAutomation(backend: .accessibility).tap(.marker(value: label, key: .label, depth: .max))
   }
 
   public func accessibility_tap(query: FBAccessibilityElementQuery, expectedValue: String?, expectedKey: FBAXSearchableKey) async throws {
     guard let simulator = target as? FBSimulator else {
       throw FBIDBError.describe("Target is not a simulator, cannot tap by accessibility: \(target)").build()
     }
-    try await simulator.accessibilityTap(for: query, expectedValue: expectedValue, expectedKey: expectedKey)
+    try await simulator.uiAutomation(backend: .accessibility).tap(query, expectedValue: expectedValue, expectedKey: expectedKey)
   }
 
   public func accessibility_describe(query: FBAccessibilityElementQuery, nested: Bool) async throws -> Data {
@@ -149,21 +149,21 @@ import XCTestBootstrap
       throw FBIDBError.describe("Target is not a simulator, cannot describe accessibility: \(target)").build()
     }
     let options = FBAccessibilityRequestOptions(nestedFormat: nested, enableLogging: true)
-    return try await simulator.accessibilityDescribe(for: query, options: options)
+    return try await simulator.uiAutomation(backend: .accessibility).describeJSON(query, options: options)
   }
 
   public func accessibility_scroll(query: FBAccessibilityElementQuery, direction: FBAccessibilityScrollDirection) async throws {
     guard let simulator = target as? FBSimulator else {
       throw FBIDBError.describe("Target is not a simulator, cannot scroll by accessibility: \(target)").build()
     }
-    try await simulator.accessibilityScroll(for: query, direction: direction)
+    try await simulator.uiAutomation(backend: .accessibility).scroll(query, direction: direction)
   }
 
   public func accessibility_set_value(query: FBAccessibilityElementQuery, value: String) async throws {
     guard let simulator = target as? FBSimulator else {
       throw FBIDBError.describe("Target is not a simulator, cannot set value by accessibility: \(target)").build()
     }
-    try await simulator.accessibilitySetValue(for: query, value: value)
+    try await simulator.uiAutomation(backend: .accessibility).setValue(value, for: query)
   }
 
   public func accessibility_info_at_point(_ value: NSValue?, nestedFormat: Bool) async throws -> FBAccessibilityElementsResponse {
@@ -175,14 +175,8 @@ import XCTestBootstrap
     guard let simulator = target as? FBSimulator else {
       throw FBIDBError.describe("Target is not a simulator, cannot provide accessibility commands: \(target)").build()
     }
-    let element: FBAccessibilityElement
-    if let value {
-      element = try await simulator.accessibilityElement(at: value.pointValue)
-    } else {
-      element = try await simulator.accessibilityElementForFrontmostApplication()
-    }
-    defer { element.close() }
-    return try element.serialize(with: options)
+    let query: FBAccessibilityElementQuery = value.map { .point($0.pointValue) } ?? .frontmost
+    return try await simulator.uiAutomation(backend: .accessibility).describe(query, options: options)
   }
 
   // MARK: - REPL screenshot & recording
