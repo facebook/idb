@@ -18,29 +18,21 @@ final class SeenPIDs {
   func contains(_ pid: pid_t) -> Bool { pids.contains(pid) }
 }
 
-/// Serializes an `AXPMacPlatformElement` tree into the JSON-ready dictionaries
-/// emitted by the accessibility commands. The values mirror the old
-/// SimulatorBridge implementation for downstream compatibility.
+/// Serializes an `AXPMacPlatformElement` tree into the typed JSON emitted by the
+/// accessibility commands. The values mirror the old SimulatorBridge implementation
+/// for downstream compatibility.
 ///
 /// Driven entirely from Swift (`FBAXTranslationRequest` and its remote-content
-/// code), so it is a plain Swift namespace returning Swift collections.
+/// code), so it is a plain Swift namespace returning `FBJSONValue`. Each attribute
+/// is turned into its `FBJSONValue` case at the read site, where its Swift type is
+/// statically known, so no scalar is round-tripped through an untyped `NSNumber`.
+/// `axValue()` is the one exception — it is genuinely `Any` — and is the only value
+/// classified via `FBJSONValue(foundation:)`.
 enum FBSimulatorAccessibilitySerializer {
 
   private static let axPrefix = "AX"
   private static let discoveryMethodRecursive = "recursive"
   private static let discoveryMethodPointGrid = "point_grid"
-
-  // MARK: - Helpers
-
-  private static func ensureJSONSerializable(_ object: Any?) -> Any {
-    guard let object else {
-      return NSNull()
-    }
-    if JSONSerialization.isValidJSONObject([object]) {
-      return object
-    }
-    return String(describing: object)
-  }
 
   // MARK: - Entry points
 
@@ -52,12 +44,15 @@ enum FBSimulatorAccessibilitySerializer {
     collector: FBAccessibilityProfilingCollector?,
     coverageGrid: FBAccessibilityCoverageGrid?,
     seenPids: SeenPIDs?
-  ) -> [[String: Any]] {
+  ) -> [FBJSONValue] {
     element.axSetBridgeDelegateToken(token)
+    let dictionaries: [[String: FBJSONValue]]
     if nestedFormat {
-      return [nestedRecursiveDescription(fromElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids)]
+      dictionaries = [nestedRecursiveDescription(fromElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids)]
+    } else {
+      dictionaries = flatRecursiveDescription(fromElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids)
     }
-    return flatRecursiveDescription(fromElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids)
+    return dictionaries.map { .object($0) }
   }
 
   static func formattedDescription(
@@ -67,12 +62,12 @@ enum FBSimulatorAccessibilitySerializer {
     keys: Set<FBAXKeys>,
     collector: FBAccessibilityProfilingCollector?,
     coverageGrid: FBAccessibilityCoverageGrid?
-  ) -> [String: Any] {
+  ) -> FBJSONValue {
     element.axSetBridgeDelegateToken(token)
     if nestedFormat {
-      return nestedRecursiveDescription(fromElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: nil)
+      return .object(nestedRecursiveDescription(fromElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: nil))
     }
-    return accessibilityDictionary(forElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: nil, discoveryMethod: discoveryMethodRecursive)
+    return .object(accessibilityDictionary(forElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: nil, discoveryMethod: discoveryMethodRecursive))
   }
 
   // The values here mirror the old SimulatorBridge implementation for downstream
@@ -85,7 +80,7 @@ enum FBSimulatorAccessibilitySerializer {
     coverageGrid: FBAccessibilityCoverageGrid?,
     seenPids: SeenPIDs?,
     discoveryMethod: String
-  ) -> [String: Any] {
+  ) -> [String: FBJSONValue] {
     // The token must always be set so that the right callback is called.
     element.axSetBridgeDelegateToken(token)
 
@@ -94,17 +89,21 @@ enum FBSimulatorAccessibilitySerializer {
 
     collector?.incrementElementCount()
 
-    var values: [String: Any] = [:]
+    var values: [String: FBJSONValue] = [:]
 
-    // Includes a key (with JSON serialization) only when requested, incrementing
-    // the profiling counter and reading the value lazily so attribute access is
-    // tracked exactly as the ObjC macro did.
-    func include(_ key: FBAXKeys, _ value: @autoclosure () -> Any?) {
+    func string(_ value: String?) -> FBJSONValue {
+      value.map(FBJSONValue.string) ?? .null
+    }
+
+    // Includes a key only when requested, incrementing the profiling counter and
+    // reading the value lazily so attribute access is tracked exactly as the ObjC
+    // macro did.
+    func include(_ key: FBAXKeys, _ value: @autoclosure () -> FBJSONValue) {
       guard keys.contains(key) else {
         return
       }
       collector?.incrementAttributeFetchCount(forKey: key.rawValue)
-      values[key.rawValue] = ensureJSONSerializable(value())
+      values[key.rawValue] = value()
     }
 
     // Frame is always computed since it is used by multiple keys and the coverage grid.
@@ -118,7 +117,7 @@ enum FBSimulatorAccessibilitySerializer {
     if keys.contains(.role) {
       collector?.incrementAttributeFetchCount(forKey: FBAXKeys.role.rawValue)
       rawRole = element.axRole()
-      values[FBAXKeys.role.rawValue] = ensureJSONSerializable(rawRole)
+      values[FBAXKeys.role.rawValue] = string(rawRole)
     }
     if keys.contains(.type) {
       if rawRole == nil {
@@ -147,45 +146,45 @@ enum FBSimulatorAccessibilitySerializer {
     }
 
     // Legacy values that mirror SimulatorBridge.
-    include(.label, element.axLabel())
+    include(.label, string(element.axLabel()))
     if keys.contains(.frame) {
-      values[FBAXKeys.frame.rawValue] = NSStringFromRect(frame)
+      values[FBAXKeys.frame.rawValue] = .string(NSStringFromRect(frame))
     }
-    include(.value, element.axValue())
-    include(.uniqueID, element.axIdentifier())
+    include(.value, FBJSONValue(foundation: element.axValue()))
+    include(.uniqueID, string(element.axIdentifier()))
 
     // Synthetic values.
     if keys.contains(.type) {
-      values[FBAXKeys.type.rawValue] = ensureJSONSerializable(role)
+      values[FBAXKeys.type.rawValue] = string(role)
     }
 
     // New values.
-    include(.title, element.axTitle())
+    include(.title, string(element.axTitle()))
     if keys.contains(.frameDict) {
       collector?.incrementAttributeFetchCount(forKey: FBAXKeys.frameDict.rawValue)
-      values[FBAXKeys.frameDict.rawValue] = [
-        "x": frame.origin.x,
-        "y": frame.origin.y,
-        "width": frame.size.width,
-        "height": frame.size.height,
-      ]
+      values[FBAXKeys.frameDict.rawValue] = .object([
+        "x": .double(Double(frame.origin.x)),
+        "y": .double(Double(frame.origin.y)),
+        "width": .double(Double(frame.size.width)),
+        "height": .double(Double(frame.size.height)),
+      ])
     }
-    include(.help, element.axHelp())
-    include(.enabled, element.axIsEnabled())
-    include(.customActions, element.axCustomActionNames())
-    include(.roleDescription, element.axRoleDescription())
-    include(.subrole, element.axSubrole())
-    include(.contentRequired, element.axIsRequired())
-    include(.pid, element.axTranslationPid)
+    include(.help, string(element.axHelp()))
+    include(.enabled, .bool(element.axIsEnabled()))
+    include(.customActions, .array(element.axCustomActionNames().map(FBJSONValue.string)))
+    include(.roleDescription, string(element.axRoleDescription()))
+    include(.subrole, string(element.axSubrole()))
+    include(.contentRequired, .bool(element.axIsRequired()))
+    include(.pid, .int(Int64(element.axTranslationPid)))
     if keys.contains(.traits) {
       collector?.incrementAttributeFetchCount(forKey: FBAXKeys.traits.rawValue)
-      values[FBAXKeys.traits.rawValue] = element.axTraits() ?? NSNull()
+      values[FBAXKeys.traits.rawValue] = element.axTraits().map { .array($0.map(FBJSONValue.string)) } ?? .null
     }
-    include(.expanded, element.axIsExpanded())
-    include(.placeholder, element.axPlaceholderValue())
-    include(.hidden, element.axIsHidden())
-    include(.focused, element.axIsFocused())
-    include(.isRemote, discoveryMethod)
+    include(.expanded, .bool(element.axIsExpanded()))
+    include(.placeholder, string(element.axPlaceholderValue()))
+    include(.hidden, .bool(element.axIsHidden()))
+    include(.focused, .bool(element.axIsFocused()))
+    include(.isRemote, .string(discoveryMethod))
 
     return values
   }
@@ -200,8 +199,8 @@ enum FBSimulatorAccessibilitySerializer {
     collector: FBAccessibilityProfilingCollector?,
     coverageGrid: FBAccessibilityCoverageGrid?,
     seenPids: SeenPIDs?
-  ) -> [[String: Any]] {
-    var values: [[String: Any]] = []
+  ) -> [[String: FBJSONValue]] {
+    var values: [[String: FBJSONValue]] = []
     values.append(accessibilityDictionary(forElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids, discoveryMethod: discoveryMethodRecursive))
     for child in element.axChildren() {
       child.axSetBridgeDelegateToken(token)
@@ -217,14 +216,14 @@ enum FBSimulatorAccessibilitySerializer {
     collector: FBAccessibilityProfilingCollector?,
     coverageGrid: FBAccessibilityCoverageGrid?,
     seenPids: SeenPIDs?
-  ) -> [String: Any] {
+  ) -> [String: FBJSONValue] {
     var values = accessibilityDictionary(forElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids, discoveryMethod: discoveryMethodRecursive)
-    var childrenValues: [[String: Any]] = []
+    var childrenValues: [[String: FBJSONValue]] = []
     for child in element.axChildren() {
       child.axSetBridgeDelegateToken(token)
       childrenValues.append(nestedRecursiveDescription(fromElement: child, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids))
     }
-    values["children"] = childrenValues
+    values["children"] = .array(childrenValues.map { .object($0) })
     return values
   }
 }

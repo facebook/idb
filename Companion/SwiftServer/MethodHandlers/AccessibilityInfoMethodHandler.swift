@@ -48,7 +48,7 @@ struct AccessibilityInfoMethodHandler {
       enableProfiling: false,
       collectFrameCoverage: false)
     let response = try await commandExecutor.accessibility_info_at_point(point, options: options)
-    let jsonData = try JSONSerialization.data(withJSONObject: response.elements)
+    let jsonData = try JSONSerialization.data(withJSONObject: response.elements.toFoundationObject())
     return .with {
       $0.json = String(data: jsonData, encoding: .utf8) ?? ""
     }

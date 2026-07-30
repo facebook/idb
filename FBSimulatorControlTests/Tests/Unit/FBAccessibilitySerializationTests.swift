@@ -40,7 +40,7 @@ final class FBAccessibilitySerializationTests: XCTestCase {
       fromTree: Self.sampleTree(), keys: Self.characterizationKeys, nestedFormat: nestedFormat, pid: 7
     )
     let response = FBAccessibilityElementsResponse(
-      elements: elements, profilingData: nil, frameCoverage: nil, additionalFrameCoverage: nil
+      elements: .array(elements), profilingData: nil, frameCoverage: nil, additionalFrameCoverage: nil
     )
     let data = try JSONSerialization.data(withJSONObject: response.asDictionary(), options: .sortedKeys)
     return String(decoding: data, as: UTF8.self)
@@ -73,7 +73,7 @@ final class FBAccessibilitySerializationTests: XCTestCase {
       fromTree: tree, keys: [.label, .frameDict], nestedFormat: false, pid: 7
     )
     let response = FBAccessibilityElementsResponse(
-      elements: elements, profilingData: nil, frameCoverage: nil, additionalFrameCoverage: nil
+      elements: .array(elements), profilingData: nil, frameCoverage: nil, additionalFrameCoverage: nil
     )
     let data = try JSONSerialization.data(withJSONObject: response.asDictionary(), options: .sortedKeys)
     let json = String(decoding: data, as: UTF8.self)

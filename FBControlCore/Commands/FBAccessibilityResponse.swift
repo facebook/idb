@@ -85,12 +85,13 @@ extension FBAccessibilityProfilingData: CustomStringConvertible {
 
 /// Response object containing accessibility elements and optional profiling data.
 ///
-/// `elements` is an `NSArray` (flat/nested) or `NSDictionary` (single element) —
-/// the heterogeneous JSON payload produced by the serializer.
-public struct FBAccessibilityElementsResponse {
+/// `elements` is the serializer's JSON payload as a `Sendable` `FBJSONValue` — an object (single
+/// element) or an array (flat/nested tree) — so a response can cross concurrency domains (e.g. the
+/// remote-automation actor) without an `@unchecked` conformance.
+public struct FBAccessibilityElementsResponse: Sendable {
 
-  /// The accessibility elements. An NSArray (flat/nested) or NSDictionary (single element).
-  public let elements: Any
+  /// The accessibility elements: an object (single element) or an array (flat/nested tree).
+  public let elements: FBJSONValue
 
   /// Profiling data collected during the operation, if profiling was enabled.
   public let profilingData: FBAccessibilityProfilingData?
@@ -104,7 +105,7 @@ public struct FBAccessibilityElementsResponse {
   public let additionalFrameCoverage: Double?
 
   public init(
-    elements: Any,
+    elements: FBJSONValue,
     profilingData: FBAccessibilityProfilingData?,
     frameCoverage: Double?,
     additionalFrameCoverage: Double?
@@ -119,7 +120,7 @@ public struct FBAccessibilityElementsResponse {
   /// Format: `{"elements": <elements>, "profile": <profile>, "coverage": <coverage>}`.
   /// `profile` and `coverage` are included only when the corresponding data is present.
   public func asDictionary() -> [String: Any] {
-    var dict: [String: Any] = ["elements": elements]
+    var dict: [String: Any] = ["elements": elements.toFoundationObject()]
     if let profilingData {
       dict["profile"] = profilingData.asDictionary()
     }

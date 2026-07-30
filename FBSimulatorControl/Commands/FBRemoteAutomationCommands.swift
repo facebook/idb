@@ -76,7 +76,7 @@ public actor FBSimulatorRemoteAutomation {
     let tree = try await readFrontmostTree(anchorX: x, y: y)
     let elements = Self.describeAllElements(fromTree: tree.root, keys: keys, nestedFormat: nestedFormat, pid: tree.pid)
     let response = FBAccessibilityElementsResponse(
-      elements: elements, profilingData: nil, frameCoverage: nil, additionalFrameCoverage: nil
+      elements: .array(elements), profilingData: nil, frameCoverage: nil, additionalFrameCoverage: nil
     )
     return try JSONSerialization.data(withJSONObject: response.asDictionary(), options: .sortedKeys)
   }
@@ -181,7 +181,7 @@ public actor FBSimulatorRemoteAutomation {
   /// feeding a remote-backed `FBAXPlatformElement` through the same serializer as the legacy path.
   /// The element handle stays a disconnected local (received from the session and used once) so it
   /// never becomes a shareable value that would risk a data race across the session boundary.
-  static func describeElement(atX x: Double, y: Double, using session: FBRemoteAutomationSession, keys: Set<FBAXKeys>) async throws -> [String: Any] {
+  static func describeElement(atX x: Double, y: Double, using session: FBRemoteAutomationSession, keys: Set<FBAXKeys>) async throws -> FBJSONValue {
     guard let element = try await session.requestElement(atX: x, y: y) else {
       throw FBControlCoreError.describe("Remote automation found no element at (\(x), \(y)). \(Self.accessibilityHint)").build()
     }
@@ -201,7 +201,7 @@ public actor FBSimulatorRemoteAutomation {
   /// Serializes a remote attribute-dictionary tree (as returned by the session) into the schema,
   /// building a remote `FBAXPlatformElement` tree and running the shared recursive serializer. Each
   /// element is tagged with the frontmost app's real pid, discovered during the tree read.
-  static func describeAllElements(fromTree tree: [String: Any], keys: Set<FBAXKeys>, nestedFormat: Bool, pid: pid_t) -> [[String: Any]] {
+  static func describeAllElements(fromTree tree: [String: Any], keys: Set<FBAXKeys>, nestedFormat: Bool, pid: pid_t) -> [FBJSONValue] {
     let root = buildPlatformElementTree(from: tree, pid: pid)
     return FBSimulatorAccessibilitySerializer.recursiveDescription(
       fromElement: root,
@@ -223,19 +223,29 @@ public actor FBSimulatorRemoteAutomation {
   }
 
   /// The first serialized element whose `key` value equals `markerValue`, used by describe-by-marker.
-  static func matchingElement(inElements elements: [[String: Any]], markerValue: String, key: FBAXSearchableKey) -> [String: Any]? {
-    elements.first { $0[key.rawValue] as? String == markerValue }
+  static func matchingElement(inElements elements: [FBJSONValue], markerValue: String, key: FBAXSearchableKey) -> FBJSONValue? {
+    elements.first { element in
+      guard case let .object(fields) = element, case let .string(value)? = fields[key.rawValue] else {
+        return false
+      }
+      return value == markerValue
+    }
   }
 
   /// The centre of the frame of the first serialized element whose `key` value equals `markerValue`.
   /// Shared by the marker-driven operations (tap, wait, set-value).
-  static func frameCenter(inElements elements: [[String: Any]], markerValue: String, key: FBAXSearchableKey) -> (x: Double, y: Double)? {
-    func number(_ value: Any?) -> Double? {
-      (value as? Double) ?? (value as? NSNumber)?.doubleValue
+  static func frameCenter(inElements elements: [FBJSONValue], markerValue: String, key: FBAXSearchableKey) -> (x: Double, y: Double)? {
+    func number(_ value: FBJSONValue?) -> Double? {
+      switch value {
+      case let .double(number): return number
+      case let .int(number): return Double(number)
+      default: return nil
+      }
     }
     for element in elements {
-      guard element[key.rawValue] as? String == markerValue,
-        let frame = element[FBAXKeys.frameDict.rawValue] as? [String: Any],
+      guard case let .object(fields) = element,
+        case let .string(value)? = fields[key.rawValue], value == markerValue,
+        case let .object(frame)? = fields[FBAXKeys.frameDict.rawValue],
         let x = number(frame["x"]), let y = number(frame["y"]),
         let width = number(frame["width"]), let height = number(frame["height"])
       else {

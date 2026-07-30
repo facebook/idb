@@ -208,7 +208,7 @@ struct HostCommandDispatcher: @unchecked Sendable {
       // Adapt the serializer's tree for the client: drop nulls and render each
       // node's AXValue as a String (see `replAccessibilityTree`). Only describe_all
       // needs this.
-      let tree = Self.replAccessibilityTree(from: response.elements) ?? [String: Any]()
+      let tree = Self.replAccessibilityTree(from: response.elements.toFoundationObject()) ?? [String: Any]()
       return .propertyList(tree)
 
     case .screenshot(let area, let output):

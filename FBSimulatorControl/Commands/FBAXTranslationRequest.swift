@@ -134,7 +134,7 @@ public final class FBAXTranslationRequest {
 
     // Remote content fetching (only when requested and a translator is present).
     guard let remoteOptions = options.remoteContentOptions, let translator else {
-      return buildResponse(elements: mainAppElements, serializationStart: serializationStart, frameCoverage: frameCoverage, additionalFrameCoverage: nil)
+      return buildResponse(elements: .array(mainAppElements), serializationStart: serializationStart, frameCoverage: frameCoverage, additionalFrameCoverage: nil)
     }
 
     let frontmostPid = element.axTranslationPid
@@ -165,8 +165,8 @@ public final class FBAXTranslationRequest {
     keys: Set<FBAXKeys>,
     remoteOptions: FBAccessibilityRemoteContentOptions,
     translator: AXPTranslator
-  ) -> [[String: Any]] {
-    var discoveredElements: [[String: Any]] = []
+  ) -> [FBJSONValue] {
+    var discoveredElements: [FBJSONValue] = []
     var discoveredFrames = Set<String>()
 
     // Always include AXFrame for hit-tested elements (needed for nesting and coverage).
@@ -233,7 +233,7 @@ public final class FBAXTranslationRequest {
           seenPids: nil, // already filtered
           discoveryMethod: "point_grid"
         )
-        discoveredElements.append(elemDict)
+        discoveredElements.append(.object(elemDict))
 
         x += stepSize
       }
@@ -248,7 +248,7 @@ public final class FBAXTranslationRequest {
 
   // Process remote-content discovery and merge with the main elements.
   private func processRemoteContent(
-    mainAppElements: [[String: Any]],
+    mainAppElements: [FBJSONValue],
     nestedFormat: Bool,
     screenBounds: CGRect,
     frontmostPid: pid_t,
@@ -282,19 +282,23 @@ public final class FBAXTranslationRequest {
 
     var elements = mainAppElements
     if !discoveredElements.isEmpty {
-      if nestedFormat, var applicationElement = elements.first {
+      if nestedFormat, let first = elements.first, case let .object(existingFields) = first {
         // Append to the root Application element's children (nested format).
-        var children = applicationElement["children"] as? [[String: Any]] ?? []
+        var applicationElement = existingFields
+        var children: [FBJSONValue] = []
+        if case let .array(existing)? = applicationElement["children"] {
+          children = existing
+        }
         children.append(contentsOf: discoveredElements)
-        applicationElement["children"] = children
-        elements[0] = applicationElement
+        applicationElement["children"] = .array(children)
+        elements[0] = .object(applicationElement)
       } else {
         // Append to the flat array.
         elements.append(contentsOf: discoveredElements)
       }
     }
 
-    return buildResponse(elements: elements, serializationStart: serializationStart, frameCoverage: frameCoverage, additionalFrameCoverage: additionalFrameCoverage)
+    return buildResponse(elements: .array(elements), serializationStart: serializationStart, frameCoverage: frameCoverage, additionalFrameCoverage: additionalFrameCoverage)
   }
 
   // MARK: - Helpers
@@ -302,7 +306,7 @@ public final class FBAXTranslationRequest {
   // Builds the response, finalizing profiling timing — the Swift equivalent of the
   // old `FBAccessibilityElementsResponse (ResponseBuilder)` ObjC category.
   private func buildResponse(
-    elements: Any,
+    elements: FBJSONValue,
     serializationStart: CFAbsoluteTime,
     frameCoverage: Double?,
     additionalFrameCoverage: Double?
