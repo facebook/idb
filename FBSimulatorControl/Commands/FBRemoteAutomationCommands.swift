@@ -380,6 +380,10 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
 
   // MARK: - Session lifecycle
 
+  // The session is expensive to establish (see `makeSession`: framework load + DTX handshake +
+  // settle), so it is built once and memoized on this actor; every operation reuses it. Callers
+  // amortize by holding this actor (via the memoized `simulator.remoteAutomation()`) across
+  // operations rather than re-creating it per call — one session per process, not per command.
   private func session() async throws -> FBRemoteAutomationSession {
     if let sessionTask {
       return try await sessionTask.value
@@ -472,6 +476,13 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
 public extension FBSimulator {
   /// The remote-automation surface, driving UI automation over the guest `testmanagerd`
   /// remote-automation channel without an `.xctest` bundle, runner, or build. Memoized per target.
+  ///
+  /// **Reuse this instance to amortize the session cost.** The first operation establishes the
+  /// underlying `FBRemoteAutomationSession` — socket connect, private-framework load, DTX handshake,
+  /// and settle (~1.8–4.75s) — which is then memoized and reused for every later operation on this
+  /// target. A caller that holds one `FBSimulator` (the idb companion, or a persistent driver) pays
+  /// that cost once; a one-shot CLI invocation that exits after a single command re-establishes the
+  /// whole session every time. Prefer a long-lived process for repeated reads/actions.
   func remoteAutomation() throws -> FBSimulatorRemoteAutomation {
     commandCache.resolve { FBSimulatorRemoteAutomation(simulator: self) }
   }
