@@ -156,7 +156,7 @@ actor FBSimulatorDTUHIDTransport: FBSimulatorHIDTransport {
   }
 
   func sendButton(direction: FBSimulatorHIDDirection, button: FBSimulatorHIDButton) async throws {
-    guard let usage = button.dtuhidUsage else {
+    guard let usage = button.consumerHIDUsage else {
       throw FBSimulatorHIDError.notImplementedOnDTUHIDTransport(
         operation: "sendButton(.applePay) — Apple Pay is a double side-button press, not a single HID usage; send two .sideButton presses instead")
     }
@@ -218,10 +218,12 @@ actor FBSimulatorDTUHIDTransport: FBSimulatorHIDTransport {
 
 extension FBSimulatorHIDButton {
 
-  /// The HID usage (page, code) that drives this hardware button via `dtuhidd`'s `mainScreenButtons`
-  /// service. All live-confirmed against a booted Xcode 27 / iOS 26 simulator (Consumer page 0x0C).
-  /// Apple Pay has no single usage — it is a double-press of the side button — so it is nil.
-  var dtuhidUsage: (page: UInt16, code: UInt16)? {
+  /// The HID Consumer-page usage (page, code) for this hardware button. Transport-agnostic: shared by
+  /// the DTUHID transport (`dtuhidd`'s `mainScreenButtons` service) and the testmanagerd remote
+  /// device-event path (`_XCTD_performDeviceEvent:`). All live-confirmed against a booted Xcode 27 /
+  /// iOS 26 simulator (Consumer page 0x0C). Apple Pay has no single usage — it is a double-press of
+  /// the side button — so it is nil.
+  var consumerHIDUsage: (page: UInt16, code: UInt16)? {
     switch self {
     case .homeButton:
       return (0x0C, 0x40) // Consumer: Menu
