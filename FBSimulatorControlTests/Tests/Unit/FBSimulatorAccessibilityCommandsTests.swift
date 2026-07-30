@@ -121,7 +121,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     withProfiling enableProfiling: Bool,
     childElements: [FBSimulatorControlTests_AXPMacPlatformElement_Double]
   ) async throws -> FBAccessibilityElementsResponse {
-    let element = try await simulator.accessibilityElementForFrontmostApplication()
+    let element = try await simulator.resolveElement(for: .frontmost)
 
     var options = FBAccessibilityRequestOptions()
     options.nestedFormat = false
@@ -240,7 +240,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
   ) async throws -> FBAccessibilityElementsResponse {
     fixture!.translator.macPlatformElementResult = elementDouble
 
-    let element = try await simulator.accessibilityElement(at: point)
+    let element = try await simulator.resolveElement(for: .point(point))
 
     var options = FBAccessibilityRequestOptions()
     options.nestedFormat = false
@@ -270,7 +270,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     withProfiling enableProfiling: Bool,
     childElements: [FBSimulatorControlTests_AXPMacPlatformElement_Double]
   ) async throws -> FBAccessibilityElementsResponse {
-    let element = try await simulator.accessibilityElementForFrontmostApplication()
+    let element = try await simulator.resolveElement(for: .frontmost)
 
     var options = FBAccessibilityRequestOptions()
     options.nestedFormat = true
@@ -390,7 +390,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     withProfiling enableProfiling: Bool,
     childElements: [FBSimulatorControlTests_AXPMacPlatformElement_Double]
   ) async throws -> FBAccessibilityElementsResponse {
-    let element = try await simulator.accessibilityElementForFrontmostApplication()
+    let element = try await simulator.resolveElement(for: .frontmost)
 
     var options = FBAccessibilityRequestOptions()
     options.nestedFormat = false
@@ -454,7 +454,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     )
     fixture!.translator.macPlatformElementResult = titleLabel
 
-    let element = try await simulator.accessibilityElement(at: CGPoint(x: 100, y: 115))
+    let element = try await simulator.resolveElement(for: .point(CGPoint(x: 100, y: 115)))
 
     var options = FBAccessibilityRequestOptions()
     options.nestedFormat = false
@@ -598,7 +598,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     fixture!.translator.macPlatformElementResult = okButton
 
     // Acquire element handle then perform tap
-    let element = try await simulator.accessibilityElement(at: CGPoint(x: 95, y: 772))
+    let element = try await simulator.resolveElement(for: .point(CGPoint(x: 95, y: 772)))
 
     // Read the label using the decomposed API and verify it
     let label = try! element.stringValue(forSearchableKey: .label)
@@ -733,7 +733,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
   func testCoverageCalculationDisabledByDefault() async throws {
     setUp(withRootElement: defaultElementTree)
 
-    let element = try await simulator.accessibilityElementForFrontmostApplication()
+    let element = try await simulator.resolveElement(for: .frontmost)
 
     let options = FBAccessibilityRequestOptions()
     let response = try element.serialize(with: options)
@@ -745,7 +745,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     // Simple test verifying coverage is returned when enabled
     setUp(withRootElement: defaultElementTree)
 
-    let element = try await simulator.accessibilityElementForFrontmostApplication()
+    let element = try await simulator.resolveElement(for: .frontmost)
 
     var options = FBAccessibilityRequestOptions()
     options.collectFrameCoverage = true
@@ -782,7 +782,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
 
     setUp(withRootElement: root)
 
-    let element = try await simulator.accessibilityElementForFrontmostApplication()
+    let element = try await simulator.resolveElement(for: .frontmost)
 
     var options = FBAccessibilityRequestOptions()
     options.collectFrameCoverage = true
@@ -810,7 +810,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
 
     setUp(withRootElement: root)
 
-    let element = try await simulator.accessibilityElementForFrontmostApplication()
+    let element = try await simulator.resolveElement(for: .frontmost)
 
     var options = FBAccessibilityRequestOptions()
     options.collectFrameCoverage = true
@@ -832,7 +832,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
 
     setUp(withRootElement: root)
 
-    let element = try await simulator.accessibilityElementForFrontmostApplication()
+    let element = try await simulator.resolveElement(for: .frontmost)
 
     var options = FBAccessibilityRequestOptions()
     options.collectFrameCoverage = true
@@ -849,7 +849,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     // Test that additionalFrameCoverage is nil when no remote content is discovered
     setUp(withRootElement: defaultElementTree)
 
-    let element = try await simulator.accessibilityElementForFrontmostApplication()
+    let element = try await simulator.resolveElement(for: .frontmost)
 
     var options = FBAccessibilityRequestOptions()
     options.collectFrameCoverage = true
@@ -863,7 +863,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     // Test that additionalFrameCoverage is nil when remote content options are not set
     setUp(withRootElement: defaultElementTree)
 
-    let element = try await simulator.accessibilityElementForFrontmostApplication()
+    let element = try await simulator.resolveElement(for: .frontmost)
 
     var options = FBAccessibilityRequestOptions()
     options.collectFrameCoverage = true
@@ -898,7 +898,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     fixture!.translator.objectAtPointResult = remoteTranslation
     fixture!.translator.macPlatformElementResultsByPid = [99999: remoteElement]
 
-    let element = try await simulator.accessibilityElementForFrontmostApplication()
+    let element = try await simulator.resolveElement(for: .frontmost)
     var options = FBAccessibilityRequestOptions()
     options.collectFrameCoverage = true
     var remoteOptions = FBAccessibilityRemoteContentOptions()
@@ -920,7 +920,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
   func testAccessibilityElementMatchingFindsDescendantByLabel() async throws {
     setUp(withRootElement: defaultElementTree)
 
-    let element = try await simulator.accessibilityElementMatching(value: "OK", forKey: .label, depth: 10)
+    let element = try await simulator.resolveElement(for: .marker(value: "OK", key: .label, depth: 10))
     defer { element.close() }
 
     XCTAssertEqual(try element.stringValue(forSearchableKey: .label), "OK")
@@ -929,7 +929,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
   func testAccessibilityElementMatchingFindsByUniqueID() async throws {
     setUp(withRootElement: defaultElementTree)
 
-    let element = try await simulator.accessibilityElementMatching(value: "cancel_button", forKey: .uniqueID, depth: 10)
+    let element = try await simulator.resolveElement(for: .marker(value: "cancel_button", key: .uniqueID, depth: 10))
     defer { element.close() }
 
     XCTAssertEqual(try element.stringValue(forSearchableKey: .label), "Cancel")
@@ -939,7 +939,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     setUp(withRootElement: defaultElementTree)
 
     // "Conf" is a substring of the "Confirm Action" static text label.
-    let element = try await simulator.accessibilityElementMatching(value: "Conf", forKey: .label, depth: 10)
+    let element = try await simulator.resolveElement(for: .marker(value: "Conf", key: .label, depth: 10))
     defer { element.close() }
 
     XCTAssertEqual(try element.stringValue(forSearchableKey: .label), "Confirm Action")
@@ -949,7 +949,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     setUp(withRootElement: defaultElementTree)
 
     // depth 0 only inspects the root element itself.
-    let element = try await simulator.accessibilityElementMatching(value: "App Window", forKey: .label, depth: 0)
+    let element = try await simulator.resolveElement(for: .marker(value: "App Window", key: .label, depth: 0))
     defer { element.close() }
 
     XCTAssertEqual(try element.stringValue(forSearchableKey: .label), "App Window")
@@ -959,7 +959,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     setUp(withRootElement: defaultElementTree)
 
     // Root is AXApplication, first child is AXStaticText; the first AXButton in DFS order is "OK".
-    let element = try await simulator.accessibilityElementMatching(value: "AXButton", forKey: .role, depth: 10)
+    let element = try await simulator.resolveElement(for: .marker(value: "AXButton", key: .role, depth: 10))
     defer { element.close() }
 
     XCTAssertEqual(try element.stringValue(forSearchableKey: .label), "OK")
@@ -969,7 +969,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     setUp(withRootElement: defaultElementTree)
 
     do {
-      let element = try await simulator.accessibilityElementMatching(value: "DefinitelyMissing", forKey: .label, depth: 10)
+      let element = try await simulator.resolveElement(for: .marker(value: "DefinitelyMissing", key: .label, depth: 10))
       element.close()
       XCTFail("Expected matching to throw for a missing element")
     } catch {
@@ -1002,7 +1002,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
 
     // depth 1 cannot reach a level-2 descendant.
     do {
-      let tooShallow = try await simulator.accessibilityElementMatching(value: "Deep", forKey: .label, depth: 1)
+      let tooShallow = try await simulator.resolveElement(for: .marker(value: "Deep", key: .label, depth: 1))
       tooShallow.close()
       XCTFail("Expected depth-1 search not to reach a level-2 element")
     } catch {
@@ -1010,7 +1010,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     }
 
     // depth 2 reaches it.
-    let found = try await simulator.accessibilityElementMatching(value: "Deep", forKey: .label, depth: 2)
+    let found = try await simulator.resolveElement(for: .marker(value: "Deep", key: .label, depth: 2))
     defer { found.close() }
     XCTAssertEqual(try found.stringValue(forSearchableKey: .label), "Deep")
   }
@@ -1027,7 +1027,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
 
   func testSerializedEnvelopeDefaultContainsOnlyElements() async throws {
     setUp(withRootElement: defaultElementTree)
-    let element = try await simulator.accessibilityElementForFrontmostApplication()
+    let element = try await simulator.resolveElement(for: .frontmost)
     let response = try element.serialize(with: FBAccessibilityRequestOptions())
     element.close()
 
@@ -1037,7 +1037,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
 
   func testSerializedEnvelopeWithProfilingContainsProfile() async throws {
     setUp(withRootElement: defaultElementTree)
-    let element = try await simulator.accessibilityElementForFrontmostApplication()
+    let element = try await simulator.resolveElement(for: .frontmost)
     var options = FBAccessibilityRequestOptions()
     options.enableProfiling = true
     let response = try element.serialize(with: options)
@@ -1063,7 +1063,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
 
   func testSerializedEnvelopeWithCoverageContainsCoverage() async throws {
     setUp(withRootElement: defaultElementTree)
-    let element = try await simulator.accessibilityElementForFrontmostApplication()
+    let element = try await simulator.resolveElement(for: .frontmost)
     var options = FBAccessibilityRequestOptions()
     options.collectFrameCoverage = true
     let response = try element.serialize(with: options)
@@ -1087,7 +1087,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
       frame: NSRect(x: 200, y: 750, width: 150, height: 44)
     )
     fixture!.translator.macPlatformElementResult = cancel
-    let element = try await simulator.accessibilityElement(at: CGPoint(x: 275, y: 772))
+    let element = try await simulator.resolveElement(for: .point(CGPoint(x: 275, y: 772)))
     defer { element.close() }
 
     let response = try element.serialize(with: FBAccessibilityRequestOptions())
@@ -1120,7 +1120,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
 
   func testSerializeToDataIsDeterministicAndRoundTrips() async throws {
     setUp(withRootElement: defaultElementTree)
-    let element = try await simulator.accessibilityElementForFrontmostApplication()
+    let element = try await simulator.resolveElement(for: .frontmost)
     let response = try element.serialize(with: FBAccessibilityRequestOptions())
     element.close()
 
@@ -1142,7 +1142,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     let launchCtl = FBSimulatorControlTests_LaunchCtl_Double.with(running: [:])
     setUp(withRootElement: zeroFrameRoot, launchCtl: launchCtl)
 
-    let element = try await simulator.accessibilityElementForFrontmostApplication()
+    let element = try await simulator.resolveElement(for: .frontmost)
     element.close()
 
     XCTAssertEqual(launchCtl.stoppedServices, ["com.apple.CoreSimulator.bridge"], "a stale hierarchy must restart CoreSimulatorBridge")
@@ -1154,7 +1154,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     let launchCtl = FBSimulatorControlTests_LaunchCtl_Double.with(running: ["com.apple.SpringBoard": 12345])
     setUp(withRootElement: zeroFrameRoot, launchCtl: launchCtl)
 
-    let element = try await simulator.accessibilityElementForFrontmostApplication()
+    let element = try await simulator.resolveElement(for: .frontmost)
     element.close()
 
     XCTAssertTrue(launchCtl.stoppedServices.isEmpty, "a live pid means the hierarchy is healthy — no remediation")
@@ -1169,7 +1169,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     fixture!.translator.frontmostApplicationResult = nil
 
     do {
-      let element = try await simulator.accessibilityElementForFrontmostApplication()
+      let element = try await simulator.resolveElement(for: .frontmost)
       element.close()
       XCTFail("Expected springBoardNotRunning")
     } catch FBAccessibilityError.springBoardNotRunning {
@@ -1183,7 +1183,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     fixture!.translator.frontmostApplicationResult = nil
 
     do {
-      let element = try await simulator.accessibilityElementForFrontmostApplication()
+      let element = try await simulator.resolveElement(for: .frontmost)
       element.close()
       XCTFail("Expected noTranslationObject")
     } catch FBAccessibilityError.noTranslationObject {
@@ -1197,7 +1197,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     fixture!.translator.objectAtPointResult = nil
 
     do {
-      let element = try await simulator.accessibilityElement(at: CGPoint(x: 10, y: 10))
+      let element = try await simulator.resolveElement(for: .point(CGPoint(x: 10, y: 10)))
       element.close()
       XCTFail("Expected noTranslationObject")
     } catch FBAccessibilityError.noTranslationObject {

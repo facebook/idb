@@ -24,7 +24,7 @@ final class FBAccessibilityUIAutomation: FBUIAutomation {
     _ query: FBAccessibilityElementQuery,
     options: FBAccessibilityRequestOptions
   ) async throws -> FBAccessibilityElementsResponse {
-    let element = try await resolveElement(for: query)
+    let element = try await operations.resolveElement(for: query)
     defer { element.close() }
     return try element.serialize(with: options)
   }
@@ -34,7 +34,7 @@ final class FBAccessibilityUIAutomation: FBUIAutomation {
     expectedValue: String?,
     expectedKey: FBAXSearchableKey
   ) async throws {
-    let element = try await resolveElement(for: query)
+    let element = try await operations.resolveElement(for: query)
     defer { element.close() }
     if let expectedValue {
       let actual = try element.stringValue(forSearchableKey: expectedKey)
@@ -46,7 +46,7 @@ final class FBAccessibilityUIAutomation: FBUIAutomation {
   }
 
   func setValue(_ value: String, for query: FBAccessibilityElementQuery) async throws {
-    let element = try await resolveElement(for: query)
+    let element = try await operations.resolveElement(for: query)
     defer { element.close() }
     try element.setValue(value)
   }
@@ -66,7 +66,7 @@ final class FBAccessibilityUIAutomation: FBUIAutomation {
       sleep: { try await Task.sleep(nanoseconds: UInt64($0 * 1_000_000_000)) }
     ) { () -> Bool? in
       do {
-        let element = try await operations.accessibilityElementMatching(value: markerValue, forKey: key, depth: depth)
+        let element = try await operations.resolveElement(for: .marker(value: markerValue, key: key, depth: depth))
         element.close()
         return true
       } catch let error as FBAccessibilityError {
@@ -84,29 +84,14 @@ final class FBAccessibilityUIAutomation: FBUIAutomation {
   }
 
   func scroll(_ query: FBAccessibilityElementQuery, direction: FBAccessibilityScrollDirection) async throws {
-    let element = try await resolveElement(for: query)
+    let element = try await operations.resolveElement(for: query)
     defer { element.close() }
     try element.scroll(with: direction)
   }
 
   func frame(_ query: FBAccessibilityElementQuery) async throws -> CGRect {
-    let element = try await resolveElement(for: query)
+    let element = try await operations.resolveElement(for: query)
     defer { element.close() }
     return try element.frame()
-  }
-
-  // MARK: - Element resolution
-
-  /// Resolves a query to a concrete accessibility element via the point / matching / frontmost
-  /// primitives. Callers own the returned element and must `close()` it.
-  private func resolveElement(for query: FBAccessibilityElementQuery) async throws -> FBAccessibilityElement {
-    switch query {
-    case let .point(point):
-      return try await operations.accessibilityElement(at: point)
-    case let .marker(value, key, depth):
-      return try await operations.accessibilityElementMatching(value: value, forKey: key, depth: depth)
-    case .frontmost:
-      return try await operations.accessibilityElementForFrontmostApplication()
-    }
   }
 }

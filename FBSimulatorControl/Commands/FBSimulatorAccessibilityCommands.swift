@@ -90,23 +90,20 @@ final class FBSimulatorAccessibilityCommands: AccessibilityOperations {
 
   // MARK: AccessibilityOperations
 
-  func accessibilityElement(at point: CGPoint) async throws -> FBAccessibilityElement {
+  func resolveElement(for query: FBAccessibilityElementQuery) async throws -> FBAccessibilityElement {
     try validateAccessibility()
-    let request = FBAXTranslationRequest(kind: .point(point))
-    return try await accessibilityElement(request: request, remediationPermitted: false)
-  }
-
-  func accessibilityElementForFrontmostApplication() async throws -> FBAccessibilityElement {
-    try validateAccessibility()
-    let request = FBAXTranslationRequest(kind: .frontmostApplication)
-    return try await accessibilityElement(request: request, remediationPermitted: true)
-  }
-
-  func accessibilityElementMatching(value: String, forKey key: FBAXSearchableKey, depth: UInt) async throws -> FBAccessibilityElement {
-    try validateAccessibility()
-    let request = FBAXTranslationRequest(kind: .frontmostApplication)
-    let root = try await accessibilityElement(request: request, remediationPermitted: true)
-    return try root.findElement(withValue: value, forKey: key, depth: depth)
+    switch query {
+    case let .point(point):
+      let request = FBAXTranslationRequest(kind: .point(point))
+      return try await accessibilityElement(request: request, remediationPermitted: false)
+    case .frontmost:
+      let request = FBAXTranslationRequest(kind: .frontmostApplication)
+      return try await accessibilityElement(request: request, remediationPermitted: true)
+    case let .marker(value, key, depth):
+      let request = FBAXTranslationRequest(kind: .frontmostApplication)
+      let root = try await accessibilityElement(request: request, remediationPermitted: true)
+      return try root.findElement(withValue: value, forKey: key, depth: depth)
+    }
   }
 
   // MARK: Private
@@ -197,23 +194,11 @@ final class FBSimulatorAccessibilityCommands: AccessibilityOperations {
   }
 }
 
-// MARK: - FBSimulator+AccessibilityCommands
+// MARK: - FBSimulator+AccessibilityOperations
 
-extension FBSimulator: AccessibilityCommands {
+extension FBSimulator: AccessibilityOperations {
 
-  func accessibilityElement(at point: CGPoint) async throws -> FBAccessibilityElement {
-    try await accessibilityCommands().accessibilityElement(at: point)
-  }
-
-  func accessibilityElementForFrontmostApplication() async throws -> FBAccessibilityElement {
-    try await accessibilityCommands().accessibilityElementForFrontmostApplication()
-  }
-
-  func accessibilityElementMatching(
-    value: String,
-    forKey key: FBAXSearchableKey,
-    depth: UInt
-  ) async throws -> FBAccessibilityElement {
-    try await accessibilityCommands().accessibilityElementMatching(value: value, forKey: key, depth: depth)
+  func resolveElement(for query: FBAccessibilityElementQuery) async throws -> FBAccessibilityElement {
+    try await accessibilityCommands().resolveElement(for: query)
   }
 }
