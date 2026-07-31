@@ -43,6 +43,11 @@ static NSString *const kResponseError = @"error";
 // A successful hit-test that found no element at the point: `{ok:true, empty:true}` — distinct from a
 // reader failure (`{ok:false, error:...}`), so the host can tell empty space from a broken reader.
 static NSString *const kResponseEmpty = @"empty";
+// A machine-readable failure kind. The host maps exactly one failure — a pid that names no readable
+// application — to a backend-neutral error; tagging it here lets the host recognize it structurally
+// rather than matching the free-text `error` string. Every other failure carries no kind.
+static NSString *const kResponseErrorKind = @"error_kind";
+static NSString *const kErrorKindApplicationUnavailable = @"application_unavailable";
 
 static NSString *const kVerbDescribe = @"describe";
 static NSString *const kVerbHitTest = @"hittest";
@@ -282,6 +287,11 @@ static NSDictionary *FBAXBridgeErrorResponse(NSString *message)
   return @{kResponseOk : @NO, kResponseError : message};
 }
 
+static NSDictionary *FBAXBridgeApplicationUnavailableResponse(NSString *message)
+{
+  return @{kResponseOk : @NO, kResponseError : message, kResponseErrorKind : kErrorKindApplicationUnavailable};
+}
+
 NSData *FBAXBridgeSerializeResponse(NSDictionary<NSString *, id> *response)
 {
   // Sanitize first (non-finite numbers would otherwise raise), then still guard the call: an
@@ -372,7 +382,7 @@ NSDictionary<NSString *, id> *FBAXBridgeHandleRequest(NSDictionary<NSString *, i
   }
   XCAccessibilityElement *root = [(id)elementClass elementWithProcessIdentifier:pid];
   if (!root) {
-    return FBAXBridgeErrorResponse([NSString stringWithFormat:@"no application element for pid %d", pid]);
+    return FBAXBridgeApplicationUnavailableResponse([NSString stringWithFormat:@"no application element for pid %d", pid]);
   }
 
   if (isHitTest) {

@@ -18,6 +18,11 @@ public enum FBAXBridgeError: LocalizedError, Sendable {
   case frontmostUnavailable
   /// The guest binary exited non-zero, produced unparseable output, or reported a read failure.
   case guestFailure(String)
+  /// The guest reported that `pid` names no readable application — a dead pid, or an app whose
+  /// accessibility server never started. Its own case (rather than a `guestFailure` string) so the
+  /// conformer can re-raise the backend-neutral `FBUIAutomationError.applicationUnavailable` for it,
+  /// matching what the remote backend throws for the same condition.
+  case applicationUnavailable(pid: pid_t)
 
   public var errorDescription: String? {
     switch self {
@@ -27,6 +32,8 @@ public enum FBAXBridgeError: LocalizedError, Sendable {
       return "axbridge could not resolve the frontmost application's pid. \(FBAXTreeSerialization.accessibilityHint)"
     case let .guestFailure(message):
       return "The axbridge guest reader failed: \(message)"
+    case let .applicationUnavailable(pid):
+      return "The axbridge guest found no readable application for pid \(pid)"
     }
   }
 }

@@ -50,6 +50,18 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
 
   nonisolated var backend: FBUIAutomationBackend { .axBridge }
 
+  /// Re-raises the transport-level `FBAXBridgeError.applicationUnavailable` as the backend-neutral
+  /// `FBUIAutomationError.applicationUnavailable`, so a caller holding `any FBUIAutomation` sees the
+  /// same typed error for a dead pid regardless of which backend served the read (the remote backend
+  /// throws the neutral case directly). Other bridge errors pass through untouched.
+  private func translatingSeamErrors<T>(_ body: () async throws -> T) async throws -> T {
+    do {
+      return try await body()
+    } catch let FBAXBridgeError.applicationUnavailable(pid) {
+      throw FBUIAutomationError.applicationUnavailable(backend: backend, pid: pid)
+    }
+  }
+
   /// Reads and flattens the tree a query targets, through the configured transport. Every query but
   /// `.application` anchors on the frontmost app.
   func readElements(
@@ -58,20 +70,24 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
     nestedFormat: Bool,
     filter: FBAccessibilityElementFilter
   ) async throws -> [FBJSONValue] {
-    let pid = try await resolvePid(for: query)
-    let tree = try await readTree(forPid: pid)
-    return FBAXTreeSerialization.describeAllElements(
-      fromTree: tree, keys: keys, nestedFormat: nestedFormat, pid: pid, filter: filter
-    )
+    try await translatingSeamErrors {
+      let pid = try await resolvePid(for: query)
+      let tree = try await readTree(forPid: pid)
+      return FBAXTreeSerialization.describeAllElements(
+        fromTree: tree, keys: keys, nestedFormat: nestedFormat, pid: pid, filter: filter
+      )
+    }
   }
 
   func hitTest(
     at point: CGPoint,
     options: FBAccessibilityRequestOptions
   ) async throws -> FBAccessibilityElementsResponse? {
-    let keys = options.keys
-    let pid = try await resolvePid(for: .frontmost)
-    return try await hitTestElement(pid: pid, point: point, keys: keys)
+    try await translatingSeamErrors {
+      let keys = options.keys
+      let pid = try await resolvePid(for: .frontmost)
+      return try await hitTestElement(pid: pid, point: point, keys: keys)
+    }
   }
 
   func wait(
@@ -91,11 +107,12 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
         )
         return FBAXTreeSerialization.matchingElement(inElements: elements, markerValue: markerValue, key: key) != nil ? true : nil
       } catch let error as FBAXBridgeError {
-        // A frontmost that isn't up yet or a tree that isn't readable yet is "not there yet" — keep
-        // polling. A missing guest binary won't resolve by waiting, so surface it (and any unexpected
-        // non-bridge error) at once rather than burning the whole timeout.
+        // A frontmost that isn't up yet, a tree that isn't readable yet, or a pid that names no
+        // readable app (an app still launching) is "not there yet" — keep polling. A missing guest
+        // binary won't resolve by waiting, so surface it (and any unexpected non-bridge error) at once
+        // rather than burning the whole timeout.
         switch error {
-        case .frontmostUnavailable, .guestFailure:
+        case .frontmostUnavailable, .guestFailure, .applicationUnavailable:
           return nil
         case .bridgeUnavailable:
           throw error

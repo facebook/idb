@@ -38,6 +38,12 @@ enum FBAXBridgeResponse {
       throw FBAXBridgeError.guestFailure("pid \(pid): unparseable guest response")
     }
     guard (response["ok"] as? Bool) == true else {
+      // A tagged dead-pid failure gets its own case so the conformer re-raises the backend-neutral
+      // `FBUIAutomationError.applicationUnavailable`, matching the remote backend. Any other failure
+      // stays an opaque `guestFailure` carrying the guest's own message.
+      if (response["error_kind"] as? String) == "application_unavailable" {
+        throw FBAXBridgeError.applicationUnavailable(pid: pid)
+      }
       let message = (response["error"] as? String) ?? "the guest reported a failure with no message"
       throw FBAXBridgeError.guestFailure("pid \(pid): \(message)")
     }

@@ -33,10 +33,27 @@ final class FBAXBridgeReadsTests: XCTestCase {
   }
 
   func testSurfacesGuestErrorMessage() throws {
-    let data = try envelope(["ok": false, "error": "no application element for pid 7"])
+    // An untagged failure (no `error_kind`) is an opaque `guestFailure` carrying the guest's own
+    // message, so callers see the real cause.
+    let data = try envelope(["ok": false, "error": "the accessibility server is not responding"])
     XCTAssertThrowsError(try FBAXBridgeResponse.tree(fromResponse: data, pid: 7)) { error in
-      // The guest's own error message is carried through so callers see the real cause.
-      XCTAssertTrue("\(error)".contains("no application element for pid 7"), "unexpected error: \(error)")
+      guard case FBAXBridgeError.guestFailure = error else {
+        return XCTFail("an untagged failure should be a guestFailure, got: \(error)")
+      }
+      XCTAssertTrue("\(error)".contains("the accessibility server is not responding"), "unexpected error: \(error)")
+    }
+  }
+
+  func testApplicationUnavailableErrorKindThrowsTypedCase() throws {
+    // A failure tagged `application_unavailable` becomes the typed `FBAXBridgeError.applicationUnavailable`
+    // (carrying the pid), which the conformer re-raises as the backend-neutral
+    // `FBUIAutomationError.applicationUnavailable` — matching what the remote backend throws for a dead pid.
+    let data = try envelope(["ok": false, "error": "no application element for pid 7", "error_kind": "application_unavailable"])
+    XCTAssertThrowsError(try FBAXBridgeResponse.tree(fromResponse: data, pid: 7)) { error in
+      guard case let FBAXBridgeError.applicationUnavailable(pid) = error else {
+        return XCTFail("a tagged failure should be applicationUnavailable, got: \(error)")
+      }
+      XCTAssertEqual(pid, 7)
     }
   }
 
