@@ -73,12 +73,12 @@ final class FBRemoteAutomationReceiptBridgeTests: XCTestCase {
     do {
       _ = try await awaitRemoteReceipt(nil, operation: "op", deadline: 5, queue: bridgeTestQueue)
       XCTFail("A nil receipt must throw payloadUnavailable.")
-    } catch let error as FBRemoteAutomationError {
+    } catch let error as FBRemoteInvocationError {
       guard case .payloadUnavailable = error else {
         return XCTFail("Expected payloadUnavailable, got \(error).")
       }
     } catch {
-      XCTFail("Expected FBRemoteAutomationError, got \(error).")
+      XCTFail("Expected FBRemoteInvocationError, got \(error).")
     }
   }
 
@@ -87,14 +87,14 @@ final class FBRemoteAutomationReceiptBridgeTests: XCTestCase {
     do {
       _ = try await awaitRemoteReceipt(receipt, operation: "loadAccessibility", deadline: 0.1, queue: bridgeTestQueue)
       XCTFail("A receipt that never completes must hit the deadline.")
-    } catch let error as FBRemoteAutomationError {
+    } catch let error as FBRemoteInvocationError {
       guard case let .invocationTimedOut(operation, deadline) = error else {
         return XCTFail("Expected invocationTimedOut, got \(error).")
       }
       XCTAssertEqual(operation, "loadAccessibility")
       XCTAssertEqual(deadline, 0.1)
     } catch {
-      XCTFail("Expected FBRemoteAutomationError, got \(error).")
+      XCTFail("Expected FBRemoteInvocationError, got \(error).")
     }
   }
 

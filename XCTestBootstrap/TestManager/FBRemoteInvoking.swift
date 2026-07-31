@@ -8,8 +8,11 @@
 import Foundation
 @_implementationOnly import SwiftConcurrencyUtils
 
-/// Errors surfaced by the remote-automation session and its invoker.
-public enum FBRemoteAutomationError: Error, CustomStringConvertible {
+/// Failures of the *invocation* layer — a remote call that did not complete, or a runtime-loaded
+/// payload that was unavailable. Distinct from the UI-automation errors the caller-facing backend
+/// raises (missing elements, unsupported operations): those describe the query, these describe the
+/// channel carrying it.
+public enum FBRemoteInvocationError: Error, CustomStringConvertible {
   /// A remote invocation did not complete within its deadline.
   case invocationTimedOut(operation: String, deadline: TimeInterval)
   /// A runtime-loaded payload class or receipt was unavailable (framework not loaded).
@@ -46,7 +49,7 @@ public extension RemoteInvoking {
   /// Default: this invoker does not implement the device-event selector (e.g. a test fake). The real
   /// `DTXRemoteInvoker` overrides this to message the guest daemon.
   func performDeviceEvent(_ event: sending Any, deadline: TimeInterval) async throws {
-    throw FBRemoteAutomationError.payloadUnavailable("performDeviceEvent")
+    throw FBRemoteInvocationError.payloadUnavailable("performDeviceEvent")
   }
 }
 
@@ -186,14 +189,14 @@ func awaitRemoteReceipt(
 ) async throws -> sending Any? {
   try Task.checkCancellation()
   guard let receipt else {
-    throw FBRemoteAutomationError.payloadUnavailable("receipt for \(operation)")
+    throw FBRemoteInvocationError.payloadUnavailable("receipt for \(operation)")
   }
   let bridge = InvocationBridge()
   return try await withTaskCancellationHandler {
     try await withAssertingSafeThrowingContinuation { (continuation: AssertingSafeContinuation<Any?, Error>) in
       bridge.store(continuation)
       let timeout = DispatchWorkItem {
-        bridge.resolve(.failure(FBRemoteAutomationError.invocationTimedOut(operation: operation, deadline: deadline)))
+        bridge.resolve(.failure(FBRemoteInvocationError.invocationTimedOut(operation: operation, deadline: deadline)))
       }
       queue.asyncAfter(deadline: .now() + deadline, execute: timeout)
       receipt.handleCompletion { value, error in

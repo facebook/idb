@@ -120,7 +120,7 @@ public actor FBRemoteAutomationSession {
   /// The application's accessibility root, used as the anchor for `fetchAttributes`.
   public func applicationElement() throws -> sending Any {
     guard let element = FBRemoteAutomationPayloads.applicationElement(forProcessIdentifier: processIdentifier) else {
-      throw FBRemoteAutomationError.payloadUnavailable("XCAccessibilityElement")
+      throw FBRemoteInvocationError.payloadUnavailable("XCAccessibilityElement")
     }
     return element
   }
@@ -202,7 +202,7 @@ public actor FBRemoteAutomationSession {
   public func setValue(_ value: String, atX x: Double, y: Double, valueAttribute: String) async throws {
     let point = CGPointCreateDictionaryRepresentation(CGPoint(x: x, y: y)) as NSDictionary
     guard let element = try await invoker.requestElement(atPoint: point, deadline: readDeadline) else {
-      throw FBRemoteAutomationError.payloadUnavailable("element at (\(x), \(y))")
+      throw FBRemoteInvocationError.payloadUnavailable("element at (\(x), \(y))")
     }
     try await invoker.setAttribute(valueAttribute as NSString, value: value as NSString, forElement: element, deadline: writeDeadline)
   }
