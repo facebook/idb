@@ -67,10 +67,22 @@ enum FBAXTreeSerialization {
     }
   }
 
-  /// The centre of the frame of the first serialized element whose `key` value contains `markerValue`
-  /// (the same substring match as `matchingElement`, so a marker taps the element a read describes).
-  /// Shared by the marker-driven operations (tap, wait, set-value).
-  static func frameCenter(inElements elements: [FBJSONValue], markerValue: String, key: FBAXSearchableKey) -> (x: Double, y: Double)? {
+  /// The outcome of resolving a marker to a point to interact with. Separates a marker that matched an
+  /// element with no usable on-screen frame (off-screen or still settling — nowhere to tap) from one
+  /// that matched nothing: before, both collapsed to a `nil` centre and read as "not found".
+  enum MarkerResolution: Equatable {
+    /// No serialized element's `key` value contains the marker.
+    case notFound
+    /// A matching element exists, but none has a usable frame.
+    case offScreen
+    /// The marker matched an element with a usable frame; its centre point.
+    case resolved(x: Double, y: Double)
+  }
+
+  /// Resolves `markerValue` to the centre of the first matching element that has a usable frame (the
+  /// same substring match as `matchingElement`), reporting whether a match without a usable frame
+  /// existed so a caller can tell an off-screen element apart from an absent one.
+  static func resolveMarker(inElements elements: [FBJSONValue], markerValue: String, key: FBAXSearchableKey) -> MarkerResolution {
     func number(_ value: FBJSONValue?) -> Double? {
       switch value {
       case let .double(number): return number
@@ -78,17 +90,33 @@ enum FBAXTreeSerialization {
       default: return nil
       }
     }
+    var matched = false
     for element in elements {
       guard case let .object(fields) = element,
-        case let .string(value)? = fields[key.rawValue], value.contains(markerValue),
-        case let .object(frame)? = fields[FBAXKeys.frameDict.rawValue],
+        case let .string(value)? = fields[key.rawValue], value.contains(markerValue)
+      else {
+        continue
+      }
+      matched = true
+      guard case let .object(frame)? = fields[FBAXKeys.frameDict.rawValue],
         let x = number(frame["x"]), let y = number(frame["y"]),
         let width = number(frame["width"]), let height = number(frame["height"])
       else {
         continue
       }
-      return (x + width / 2, y + height / 2)
+      return .resolved(x: x + width / 2, y: y + height / 2)
     }
-    return nil
+    return matched ? .offScreen : .notFound
+  }
+
+  /// The centre of the first matching element with a usable frame, or `nil` when the marker matches
+  /// nothing *or* every match is off-screen. A `resolveMarker` wrapper for the `wait` poll, which
+  /// treats both nil cases alike (keep polling); tap/set-value call `resolveMarker` directly to tell an
+  /// off-screen match from a genuine miss.
+  static func frameCenter(inElements elements: [FBJSONValue], markerValue: String, key: FBAXSearchableKey) -> (x: Double, y: Double)? {
+    guard case let .resolved(x, y) = resolveMarker(inElements: elements, markerValue: markerValue, key: key) else {
+      return nil
+    }
+    return (x, y)
   }
 }

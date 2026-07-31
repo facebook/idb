@@ -311,14 +311,19 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
   }
 
   /// The screen-point centre of the frontmost-tree element a `.marker` names — the shared preamble for
-  /// the marker write verbs (tap, set-value). Throws `elementNotFound` when no element matches.
+  /// the marker write verbs (tap, set-value). Throws `elementNotFound` when nothing matches the marker,
+  /// or `elementNotOnScreen` when an element matches but reports no on-screen frame to interact with.
   private func markerCenter(_ markerValue: String, key: FBAXSearchableKey) async throws -> (x: Double, y: Double) {
     let tree = try await readFrontmostTree()
     let elements = FBAXTreeSerialization.describeAllElements(fromTree: tree.root, keys: FBAXKeys.defaultSet.union([key.serializationKey]), nestedFormat: false, pid: tree.pid)
-    guard let center = FBAXTreeSerialization.frameCenter(inElements: elements, markerValue: markerValue, key: key) else {
+    switch FBAXTreeSerialization.resolveMarker(inElements: elements, markerValue: markerValue, key: key) {
+    case let .resolved(x, y):
+      return (x, y)
+    case .offScreen:
+      throw FBUIAutomationError.elementNotOnScreen(backend: .remoteAutomation, key: key.rawValue, value: markerValue)
+    case .notFound:
       throw FBUIAutomationError.elementNotFound(backend: .remoteAutomation, key: key.rawValue, value: markerValue)
     }
-    return center
   }
 
   /// Reads the element at a point and serializes it to the single-element accessibility schema,

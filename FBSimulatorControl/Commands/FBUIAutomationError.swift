@@ -19,6 +19,9 @@ import Foundation
 public enum FBUIAutomationError: LocalizedError, Sendable {
   /// No element matched the marker `value` for `key`.
   case elementNotFound(backend: FBUIAutomationBackend, key: String, value: String)
+  /// A marker matched an element, but it reports no on-screen frame — off-screen or still settling —
+  /// so there is no point to interact with. Distinct from `elementNotFound`: the element exists.
+  case elementNotOnScreen(backend: FBUIAutomationBackend, key: String, value: String)
   /// No element sits at the requested point.
   case noElementAtPoint(backend: FBUIAutomationBackend, x: Double, y: Double)
   /// The wait for a marker element elapsed.
@@ -39,6 +42,8 @@ public enum FBUIAutomationError: LocalizedError, Sendable {
     switch self {
     case let .elementNotFound(backend, key, value):
       return "\(backend.displayName) found no element whose \(key) contains \"\(value)\""
+    case let .elementNotOnScreen(backend, key, value):
+      return "\(backend.displayName) matched an element whose \(key) contains \"\(value)\", but it is off-screen and has no frame to interact with"
     case let .noElementAtPoint(backend, x, y):
       return "\(backend.displayName) found no element at (\(x), \(y)). \(FBAXTreeSerialization.accessibilityHint)"
     case let .timedOut(backend, key, value, timeout):

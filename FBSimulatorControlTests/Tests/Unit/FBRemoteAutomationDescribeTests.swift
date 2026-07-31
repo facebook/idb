@@ -155,6 +155,50 @@ final class FBRemoteAutomationDescribeTests: XCTestCase {
     XCTAssertNil(FBAXTreeSerialization.matchingElement(inElements: elements, markerValue: "Nope", key: .label))
   }
 
+  func testResolveMarkerResolvesAMatchThatHasAFrame() {
+    let elements: [FBJSONValue] = [
+      FBJSONValue(foundation: [FBAXKeys.label.rawValue: "General", FBAXKeys.frameDict.rawValue: ["x": 16.0, "y": 380.0, "width": 370.0, "height": 52.0]])
+    ]
+    XCTAssertEqual(
+      FBAXTreeSerialization.resolveMarker(inElements: elements, markerValue: "General", key: .label),
+      .resolved(x: 201, y: 406)
+    )
+  }
+
+  func testResolveMarkerReportsOffScreenForAFramelessMatch() {
+    // The element matches the marker but carries no frame dictionary (off-screen or still settling),
+    // so there is no point to tap — distinct from the marker matching nothing.
+    let elements: [FBJSONValue] = [
+      FBJSONValue(foundation: [FBAXKeys.label.rawValue: "General"])
+    ]
+    XCTAssertEqual(
+      FBAXTreeSerialization.resolveMarker(inElements: elements, markerValue: "General", key: .label),
+      .offScreen
+    )
+  }
+
+  func testResolveMarkerReportsNotFoundWhenNoMatch() {
+    let elements: [FBJSONValue] = [
+      FBJSONValue(foundation: [FBAXKeys.label.rawValue: "Other", FBAXKeys.frameDict.rawValue: ["x": 0.0, "y": 0.0, "width": 10.0, "height": 10.0]])
+    ]
+    XCTAssertEqual(
+      FBAXTreeSerialization.resolveMarker(inElements: elements, markerValue: "General", key: .label),
+      .notFound
+    )
+  }
+
+  func testResolveMarkerPrefersAMatchWithAFrameOverAFramelessOne() {
+    // A frameless match must not mask a later on-screen match: the resolution is the framed element.
+    let elements: [FBJSONValue] = [
+      FBJSONValue(foundation: [FBAXKeys.label.rawValue: "General"]),
+      FBJSONValue(foundation: [FBAXKeys.label.rawValue: "General", FBAXKeys.frameDict.rawValue: ["x": 16.0, "y": 380.0, "width": 370.0, "height": 52.0]]),
+    ]
+    XCTAssertEqual(
+      FBAXTreeSerialization.resolveMarker(inElements: elements, markerValue: "General", key: .label),
+      .resolved(x: 201, y: 406)
+    )
+  }
+
   func testPollUntilFoundReturnsWhenProbeSucceeds() async throws {
     final class Counter { var n = 0 }
     let counter = Counter()
