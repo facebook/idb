@@ -31,11 +31,14 @@ static NSString *const kAXChildren = @"XC_kAXXCAttributeChildren";
 static NSString *const kRequestVerb = @"verb";
 static NSString *const kRequestPid = @"pid";
 static NSString *const kRequestMaxDepth = @"maxDepth";
+static NSString *const kRequestX = @"x";
+static NSString *const kRequestY = @"y";
 static NSString *const kResponseOk = @"ok";
 static NSString *const kResponseTree = @"tree";
 static NSString *const kResponseError = @"error";
 
 static NSString *const kVerbDescribe = @"describe";
+static NSString *const kVerbHitTest = @"hittest";
 static NSString *const kActionServe = @"serve";
 
 // Frame cap for the persistent `serve` transport: a request larger than this is treated as a
@@ -65,7 +68,17 @@ static const int kNodeBudget = 5000;
 
 @interface XCAccessibilityElement : NSObject
 + (nullable instancetype)elementWithProcessIdentifier:(pid_t)pid;
+// The bridge to/from the raw AXRuntime `AXUIElementRef` (an opaque CFType, held as `void *` here so we
+// avoid linking the AX C types): `AXUIElement` unwraps the application element for a point hit-test,
+// and `elementWithAXUIElement:` re-wraps the hit result so the normal attribute reader can read it.
++ (nullable instancetype)elementWithAXUIElement:(void *)axUIElement;
+- (void *)AXUIElement;
 @end
+
+// `AXUIElementCopyElementAtPosition(app, x, y, &out)` (AXRuntime) — a single-round-trip hit-test that
+// returns just the element at a point, resolved by `dlsym` because AXRuntime is `dlopen`-loaded rather
+// than linked. Returns 0 (kAXErrorSuccess) and a +1-retained element on success; x/y are 32-bit float.
+typedef int32_t (*FBAXCopyElementAtPositionFn)(void *application, float x, float y, void **element);
 
 #pragma mark - AX client setup
 
@@ -211,21 +224,57 @@ static NSDictionary *FBAXBridgeErrorResponse(NSString *message)
   return @{kResponseOk : @NO, kResponseError : message};
 }
 
+// A single-round-trip hit-test: `AXUIElementCopyElementAtPosition` returns just the element at (x, y),
+// which is re-wrapped and read once (no tree walk) — ~1 mach round-trip vs the whole-tree walk's N.
+static NSDictionary *FBAXBridgeHitTest(XCTAccessibilityFramework *framework,
+                                       Class elementClass,
+                                       XCAccessibilityElement *root,
+                                       NSDictionary *request,
+                                       pid_t pid)
+{
+  NSNumber *xNumber = request[kRequestX];
+  NSNumber *yNumber = request[kRequestY];
+  if (![xNumber isKindOfClass:NSNumber.class] || ![yNumber isKindOfClass:NSNumber.class]) {
+    return FBAXBridgeErrorResponse(@"hittest requires numeric x and y");
+  }
+  FBAXCopyElementAtPositionFn copyElementAtPosition = dlsym(RTLD_DEFAULT, "AXUIElementCopyElementAtPosition");
+  if (!copyElementAtPosition) {
+    return FBAXBridgeErrorResponse(@"AXUIElementCopyElementAtPosition unavailable");
+  }
+  void *appElement = [root AXUIElement];
+  if (!appElement) {
+    return FBAXBridgeErrorResponse([NSString stringWithFormat:@"no AXUIElement for pid %d", pid]);
+  }
+  void *hit = NULL;
+  int32_t axError = copyElementAtPosition(appElement, (float)xNumber.doubleValue, (float)yNumber.doubleValue, &hit);
+  if (axError != 0 || !hit) {
+    return FBAXBridgeErrorResponse([NSString stringWithFormat:@"no element at (%@, %@) (AXError %d)", xNumber, yNumber, axError]);
+  }
+  XCAccessibilityElement *hitElement = [(id)elementClass elementWithAXUIElement:hit];
+  int budget = 1;
+  // maxDepth 0 reads just the hit element's own attributes (no child recursion) — the leaf at the point.
+  NSDictionary *node = hitElement ? FBAXBridgeBuildNode(framework, hitElement, 0, 0, &budget) : nil;
+  CFRelease(hit);  // +1-retained by the Copy; the node has already been read from it above.
+  if (!node) {
+    return FBAXBridgeErrorResponse(@"failed to read the hit element");
+  }
+  return @{kResponseOk : @YES, kResponseTree : node};
+}
+
 NSDictionary<NSString *, id> *FBAXBridgeHandleRequest(NSDictionary<NSString *, id> *request)
 {
   NSString *verb = request[kRequestVerb];
-  if (![verb isEqualToString:kVerbDescribe]) {
+  BOOL isDescribe = [verb isEqualToString:kVerbDescribe];
+  BOOL isHitTest = [verb isEqualToString:kVerbHitTest];
+  if (!isDescribe && !isHitTest) {
     return FBAXBridgeErrorResponse([NSString stringWithFormat:@"unsupported verb: %@", verb ?: @"(nil)"]);
   }
 
   NSNumber *pidNumber = request[kRequestPid];
   if (![pidNumber isKindOfClass:NSNumber.class]) {
-    return FBAXBridgeErrorResponse(@"describe requires a numeric pid");
+    return FBAXBridgeErrorResponse(@"request requires a numeric pid");
   }
   pid_t pid = pidNumber.intValue;
-  int maxDepth = [request[kRequestMaxDepth] isKindOfClass:NSNumber.class]
-  ? [(NSNumber *)request[kRequestMaxDepth] intValue]
-  : kDefaultMaxDepth;
 
   NSString *setupError = nil;
   XCTAccessibilityFramework *framework = FBAXBridgeSharedFramework(&setupError);
@@ -237,11 +286,18 @@ NSDictionary<NSString *, id> *FBAXBridgeHandleRequest(NSDictionary<NSString *, i
   if (!elementClass) {
     return FBAXBridgeErrorResponse(@"XCAccessibilityElement unavailable");
   }
-  id root = [(id)elementClass elementWithProcessIdentifier:pid];
+  XCAccessibilityElement *root = [(id)elementClass elementWithProcessIdentifier:pid];
   if (!root) {
     return FBAXBridgeErrorResponse([NSString stringWithFormat:@"no application element for pid %d", pid]);
   }
 
+  if (isHitTest) {
+    return FBAXBridgeHitTest(framework, elementClass, root, request, pid);
+  }
+
+  int maxDepth = [request[kRequestMaxDepth] isKindOfClass:NSNumber.class]
+  ? [(NSNumber *)request[kRequestMaxDepth] intValue]
+  : kDefaultMaxDepth;
   int budget = kNodeBudget;
   NSDictionary *tree = FBAXBridgeBuildNode(framework, root, 0, maxDepth, &budget);
   if (!tree) {
@@ -405,6 +461,10 @@ int handleAccessibilityAction(NSString *action, NSArray<NSString *> *arguments)
       request[kRequestPid] = @(argValue.intValue);
     } else if ([flag isEqualToString:@"--max-depth"]) {
       request[kRequestMaxDepth] = @(argValue.intValue);
+    } else if ([flag isEqualToString:@"--x"]) {
+      request[kRequestX] = @(argValue.doubleValue);
+    } else if ([flag isEqualToString:@"--y"]) {
+      request[kRequestY] = @(argValue.doubleValue);
     }
   }
 

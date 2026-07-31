@@ -27,16 +27,20 @@ NS_ASSUME_NONNULL_BEGIN
  *
  * Reads only (element writes are served by the existing HID / testmanagerd / ax backends).
  *
- * Two front-ends over the same core:
- *   - oneshot:  accessibility describe --pid <pid> [--max-depth <n>]   (reads once, prints JSON, exits)
- *   - persistent: accessibility serve <socketPath>                     (serves many reads over a UDS)
+ * Verbs (over the same core):
+ *   - describe --pid <pid> [--max-depth <n>]   reads the whole element tree.
+ *   - hittest  --pid <pid> --x <x> --y <y>     reads just the element at a point, via a single
+ *                                              AXUIElementCopyElementAtPosition round-trip (no walk).
+ * Front-ends:
+ *   - oneshot:    accessibility <verb> ...       (runs once, prints JSON, exits)
+ *   - persistent: accessibility serve <socket>   (serves many requests over a UDS)
  *
  * The persistent `serve` mode binds a Unix-domain socket and answers length-prefixed JSON request
  * frames (4-byte big-endian length + a request object, same envelope as oneshot) with the framework
  * cached once, so a host client reusing one warm process reads ~30x faster than re-spawning per read.
  *
- * @param action The action to perform ("describe" or "serve").
- * @param arguments Remaining argv beyond service and action (e.g. @[@"--pid", @"1234"] or @[socketPath]).
+ * @param action The verb ("describe" or "hittest") or the "serve" action.
+ * @param arguments Remaining argv (e.g. @[@"--pid", @"1234"], @[@"--pid", @"1234", @"--x", @"20", @"--y", @"40"], or @[socketPath]).
  * @return 0 on success, 1 on failure.
  */
 int handleAccessibilityAction(NSString *action, NSArray<NSString *> *arguments);
