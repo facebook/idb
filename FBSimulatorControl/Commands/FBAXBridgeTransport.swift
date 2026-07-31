@@ -30,26 +30,15 @@ protocol FBAXBridgeTransport {
 
 /// Parses the guest's `{ "ok": Bool, "tree": {...} | "error": String }` response envelope.
 enum FBAXBridgeResponse {
-  static func tree(fromResponse data: Data, pid: pid_t) throws -> [String: Any] {
-    guard let object = try? JSONSerialization.jsonObject(with: data), let response = object as? [String: Any] else {
-      throw FBAXBridgeError.guestFailure("pid \(pid): unparseable guest response")
-    }
-    guard (response["ok"] as? Bool) == true, let tree = response["tree"] as? [String: Any] else {
-      let message = (response["error"] as? String) ?? "no tree in response"
-      throw FBAXBridgeError.guestFailure("pid \(pid): \(message)")
-    }
-    return tree
-  }
-
-  /// Parses a hit-test response: the hit node, or `nil` when the guest reports no element at the point
-  /// (`{ ok: true, empty: true }`) — a valid empty result. A failure (`{ ok: false, error }`) throws,
-  /// so a caller can tell empty space from a broken reader.
-  static func hitTest(fromResponse data: Data, pid: pid_t) throws -> [String: Any]? {
+  /// The node a successful response carries, or `nil` for a successful *empty* result
+  /// (`{ ok: true, empty: true }`) — which only a hit-test produces. A failed response
+  /// (`{ ok: false, error }`) throws, carrying the guest's own message.
+  private static func node(fromResponse data: Data, pid: pid_t) throws -> [String: Any]? {
     guard let object = try? JSONSerialization.jsonObject(with: data), let response = object as? [String: Any] else {
       throw FBAXBridgeError.guestFailure("pid \(pid): unparseable guest response")
     }
     guard (response["ok"] as? Bool) == true else {
-      let message = (response["error"] as? String) ?? "no tree in response"
+      let message = (response["error"] as? String) ?? "the guest reported a failure with no message"
       throw FBAXBridgeError.guestFailure("pid \(pid): \(message)")
     }
     if (response["empty"] as? Bool) == true {
@@ -59,6 +48,21 @@ enum FBAXBridgeResponse {
       throw FBAXBridgeError.guestFailure("pid \(pid): ok response without a tree or empty flag")
     }
     return tree
+  }
+
+  /// Parses a whole-tree read. A tree read has no empty result — an app always has a root element —
+  /// so an empty response is a protocol violation rather than "nothing there".
+  static func tree(fromResponse data: Data, pid: pid_t) throws -> [String: Any] {
+    guard let tree = try node(fromResponse: data, pid: pid) else {
+      throw FBAXBridgeError.guestFailure("pid \(pid): empty response to a whole-tree read")
+    }
+    return tree
+  }
+
+  /// Parses a hit-test response: the hit node, or `nil` when the guest reports no element at the point
+  /// — a valid empty result. A failure throws, so a caller can tell empty space from a broken reader.
+  static func hitTest(fromResponse data: Data, pid: pid_t) throws -> [String: Any]? {
+    try node(fromResponse: data, pid: pid)
   }
 }
 
@@ -191,13 +195,9 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
       let fileDescriptor = try await FBAXBridgeConnection.connect(path: socketPath, timeout: 10)
       return FBAXBridgeConnection(fileDescriptor: fileDescriptor, process: process, socketPath: socketPath)
     } catch {
-      // Connecting failed, so the `FBAXBridgeConnection` that would SIGKILL the serve on deinit was
-      // never created — kill the just-spawned serve here so it does not leak as an orphan, and remove
-      // the socket file it may have bound.
-      if process.processIdentifier > 0 {
-        kill(process.processIdentifier, SIGKILL)
-      }
-      unlink(socketPath)
+      // Connecting failed, so the `FBAXBridgeConnection` that tears the serve down on deinit was never
+      // created — reap the just-spawned serve here so it does not leak as an orphan.
+      FBAXBridgeConnection.teardown(fileDescriptor: nil, process: process, socketPath: socketPath)
       throw error
     }
   }
@@ -231,14 +231,23 @@ final class FBAXBridgeConnection: @unchecked Sendable {
     self.socketPath = socketPath
   }
 
-  deinit {
-    // Best-effort teardown when the reader holding this connection is released (e.g. the host process
-    // exits gracefully): close the socket, kill the long-lived serve process, and remove the socket file.
-    close(fileDescriptor)
+  /// Releases everything a connection attempt can own: the socket, the long-lived serve process, and
+  /// the socket file. Shared by `deinit` and the establish-failure path, which owns everything except
+  /// the descriptor (`nil`) — so both reap a serve the same way and neither can drift from the other.
+  static func teardown(fileDescriptor: Int32?, process: FBSubprocess<AnyObject, AnyObject, AnyObject>, socketPath: String) {
+    if let fileDescriptor {
+      close(fileDescriptor)
+    }
     if process.processIdentifier > 0 {
       kill(process.processIdentifier, SIGKILL)
     }
     unlink(socketPath)
+  }
+
+  deinit {
+    // Best-effort teardown when the reader holding this connection is released (e.g. the host process
+    // exits gracefully).
+    Self.teardown(fileDescriptor: fileDescriptor, process: process, socketPath: socketPath)
   }
 
   func roundTrip(_ requestData: Data) async throws -> Data {

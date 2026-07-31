@@ -54,9 +54,10 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
 
   /// Reads the element(s) named by `query` over the remote-automation channel and serializes them to
   /// the shared accessibility schema. `.point` reads the element at the coordinate; `.marker` finds
-  /// the first frontmost-tree element whose `key` value equals the marker; `.frontmost` reads the
-  /// whole tree. Marker and whole-tree reads probe the screen-centre anchor to discover the frontmost
-  /// app's pid. `key` must be among the requested `keys` for a marker match to be found.
+  /// the first frontmost-tree element whose `key` value contains the marker; `.frontmost` reads the
+  /// whole tree. Marker and whole-tree reads resolve the frontmost app's pid, falling back to a
+  /// screen-centre probe. `key` must be among the requested `keys` for a marker match to be found,
+  /// because the match runs over the serialized element rather than the raw tree.
   public func describe(
     _ query: FBAccessibilityElementQuery,
     options: FBAccessibilityRequestOptions
@@ -75,19 +76,19 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
         throw FBRemoteAutomationError.elementNotFound(key: key.rawValue, value: value)
       }
       return FBAccessibilityElementsResponse(
-        elements: match, profilingData: nil, frameCoverage: nil, additionalFrameCoverage: nil
+        elements: match
       )
     case .frontmost:
       let tree = try await readFrontmostTree()
       let elements = FBAXTreeSerialization.describeAllElements(fromTree: tree.root, keys: keys, nestedFormat: options.nestedFormat, pid: tree.pid, filter: options.filter)
       return FBAccessibilityElementsResponse(
-        elements: .array(elements), profilingData: nil, frameCoverage: nil, additionalFrameCoverage: nil
+        elements: .array(elements)
       )
     case let .application(pid):
       let tree = try await readApplicationTree(forPid: pid)
       let elements = FBAXTreeSerialization.describeAllElements(fromTree: tree.root, keys: keys, nestedFormat: options.nestedFormat, pid: tree.pid, filter: options.filter)
       return FBAccessibilityElementsResponse(
-        elements: .array(elements), profilingData: nil, frameCoverage: nil, additionalFrameCoverage: nil
+        elements: .array(elements)
       )
     }
   }
@@ -103,7 +104,7 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
       return nil
     }
     return FBAccessibilityElementsResponse(
-      elements: element, profilingData: nil, frameCoverage: nil, additionalFrameCoverage: nil
+      elements: element
     )
   }
 

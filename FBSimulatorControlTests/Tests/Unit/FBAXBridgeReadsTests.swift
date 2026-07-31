@@ -151,7 +151,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
     XCTAssertEqual(elements.count, 2, "expected the root plus its one child, flattened")
 
     let response = FBAccessibilityElementsResponse(
-      elements: .array(elements), profilingData: nil, frameCoverage: nil, additionalFrameCoverage: nil
+      elements: .array(elements)
     )
     let json = try JSONSerialization.data(withJSONObject: response.asDictionary(), options: .sortedKeys)
     let serialized = String(data: json, encoding: .utf8) ?? ""

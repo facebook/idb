@@ -34,8 +34,6 @@ final class FBAXBridgeUIAutomation: FBUIAutomation, @unchecked Sendable {
   private let simulator: FBSimulator
   private let transport: any FBAXBridgeTransport
 
-  private static let describeMaxDepth = 50
-
   init(simulator: FBSimulator, transport: any FBAXBridgeTransport) {
     self.simulator = simulator
     self.transport = transport
@@ -57,7 +55,7 @@ final class FBAXBridgeUIAutomation: FBUIAutomation, @unchecked Sendable {
         fromTree: tree, keys: keys, nestedFormat: options.nestedFormat, pid: pid, filter: options.filter
       )
       return FBAccessibilityElementsResponse(
-        elements: .array(elements), profilingData: nil, frameCoverage: nil, additionalFrameCoverage: nil
+        elements: .array(elements)
       )
     case let .marker(value, key, _):
       let tree = try await readTree(forPid: pid)
@@ -68,7 +66,7 @@ final class FBAXBridgeUIAutomation: FBUIAutomation, @unchecked Sendable {
         throw FBAXBridgeError.elementNotFound(key: key.rawValue, value: value)
       }
       return FBAccessibilityElementsResponse(
-        elements: match, profilingData: nil, frameCoverage: nil, additionalFrameCoverage: nil
+        elements: match
       )
     case let .point(point):
       guard let response = try await hitTestElement(pid: pid, point: point, keys: keys) else {
@@ -181,7 +179,7 @@ final class FBAXBridgeUIAutomation: FBUIAutomation, @unchecked Sendable {
       ofElement: hit, token: "", nestedFormat: false, keys: keys, collector: nil, coverageGrid: nil
     )
     return FBAccessibilityElementsResponse(
-      elements: element, profilingData: nil, frameCoverage: nil, additionalFrameCoverage: nil
+      elements: element
     )
   }
 }

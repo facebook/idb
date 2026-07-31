@@ -106,9 +106,9 @@ public struct FBAccessibilityElementsResponse: Sendable {
 
   public init(
     elements: FBJSONValue,
-    profilingData: FBAccessibilityProfilingData?,
-    frameCoverage: Double?,
-    additionalFrameCoverage: Double?
+    profilingData: FBAccessibilityProfilingData? = nil,
+    frameCoverage: Double? = nil,
+    additionalFrameCoverage: Double? = nil
   ) {
     self.elements = elements
     self.profilingData = profilingData
