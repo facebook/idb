@@ -10,7 +10,6 @@ import XCTest
 
 private let DeviceSetEnvKey = "FBSIMULATORCONTROL_DEVICE_SET"
 private let DeviceSetEnvDefault = "default"
-private let DeviceSetEnvCustom = "custom"
 
 private let LaunchTypeEnvKey = "FBSIMULATORCONTROL_LAUNCH_TYPE"
 private let LaunchTypeSimulatorApp = "simulator_app"
@@ -78,11 +77,14 @@ class FBSimulatorControlTestCase: XCTestCase {
   }
 
   class var defaultDeviceSetPath: String? {
+    // Tests use an isolated device set unless explicitly opted into the default
+    // set: the default set holds the developer's own simulators, and suite
+    // tearDown shuts down every booted device in whichever set is used.
     let value = ProcessInfo.processInfo.environment[DeviceSetEnvKey]
-    if value == DeviceSetEnvCustom {
-      return (NSTemporaryDirectory() as NSString).appendingPathComponent("FBSimulatorControlSimulatorLaunchTests_CustomSet")
+    if value == DeviceSetEnvDefault {
+      return nil
     }
-    return nil
+    return (NSTemporaryDirectory() as NSString).appendingPathComponent("FBSimulatorControlSimulatorLaunchTests_CustomSet")
   }
 
   class var defaultBootConfiguration: FBSimulatorBootConfiguration {
