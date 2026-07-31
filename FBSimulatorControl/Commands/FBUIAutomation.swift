@@ -18,6 +18,9 @@ public enum FBUIAutomationBackend: Sendable {
   /// The bundle-free guest AX-C reader: the `SimulatorFrameworkBridge` `accessibility` service spawned
   /// in the simulator. XCUI-grade like `.remoteAutomation`, light like `.accessibility`.
   case axBridge
+  /// As `.axBridge`, but over a persistent (memoized) guest `serve` process reused across reads —
+  /// ~30x faster warm, for long-lived host processes doing repeated reads.
+  case axBridgePersistent
 }
 
 /// The converged UI-automation surface: element reads and element-targeted
@@ -103,7 +106,16 @@ public extension FBSimulator {
     case .remoteAutomation:
       return try remoteAutomation()
     case .axBridge:
-      return FBAXBridgeUIAutomation(simulator: self)
+      return FBAXBridgeUIAutomation(simulator: self, transport: FBAXBridgeOneshotTransport(simulator: self))
+    case .axBridgePersistent:
+      return FBAXBridgeUIAutomation(simulator: self, transport: axBridgePersistentTransport())
     }
+  }
+
+  /// The memoized persistent axbridge transport for this simulator — one warm `serve` process reused
+  /// across every read, so repeated reads amortize the spawn+warmup cost. Mirrors `remoteAutomation()`.
+  /// Internal: an implementation detail of the `.axBridgePersistent` factory arm, not public API.
+  internal func axBridgePersistentTransport() -> FBAXBridgePersistentTransport {
+    commandCache.resolve { FBAXBridgePersistentTransport(simulator: self) }
   }
 }

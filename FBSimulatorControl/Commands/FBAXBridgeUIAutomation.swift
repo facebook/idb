@@ -27,11 +27,13 @@ import Foundation
 final class FBAXBridgeUIAutomation: FBUIAutomation {
 
   private let simulator: FBSimulator
+  private let transport: any FBAXBridgeTransport
 
   private static let describeMaxDepth = 50
 
-  init(simulator: FBSimulator) {
+  init(simulator: FBSimulator, transport: any FBAXBridgeTransport) {
     self.simulator = simulator
+    self.transport = transport
   }
 
   // MARK: - Reads
@@ -147,26 +149,11 @@ final class FBAXBridgeUIAutomation: FBUIAutomation {
     return pid
   }
 
-  /// Spawns the guest `accessibility describe --pid <pid>` one-shot and returns the parsed attribute
-  /// tree. This is the entire transport surface: a persistent-socket transport would replace only this
-  /// method, leaving the verb logic above unchanged.
+  /// Reads the attribute tree for `pid` through the configured transport (one-shot spawn or persistent
+  /// socket). The verb logic above is transport-agnostic; only the injected `transport` differs.
   private func readTree(forPid pid: pid_t) async throws -> [String: Any] {
-    guard let helperPath = BundledResources.path(forItem: "SimulatorFrameworkBridge") else {
-      throw FBAXBridgeError.bridgeUnavailable
-    }
-    let output = try await simulator.launchProcessConsumingOutput(
-      launchPath: helperPath,
-      arguments: ["accessibility", "describe", "--pid", "\(pid)", "--max-depth", "\(Self.describeMaxDepth)"]
-    )
-    guard let object = try? JSONSerialization.jsonObject(with: output.stdout), let response = object as? [String: Any] else {
-      let stderr = String(data: output.stderr, encoding: .utf8) ?? ""
-      throw FBAXBridgeError.guestFailure("exit \(output.exitCode); unparseable output. stderr: \(stderr)")
-    }
-    guard (response["ok"] as? Bool) == true, let tree = response["tree"] as? [String: Any] else {
-      let message = (response["error"] as? String) ?? "no tree in response"
-      throw FBAXBridgeError.guestFailure("pid \(pid): \(message)")
-    }
-    return tree
+    let response = try await transport.read(pid: pid, maxDepth: Self.describeMaxDepth)
+    return try FBAXBridgeResponse.tree(fromResponse: response, pid: pid)
   }
 
   // MARK: - Point hit-testing
