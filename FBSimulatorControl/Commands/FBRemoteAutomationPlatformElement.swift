@@ -47,7 +47,13 @@ final class FBRemoteAutomationPlatformElement: FBAXPlatformElement {
     // The daemon serializes the frame as a CGRect dictionary representation (mirroring the CGPoint
     // dictionary `requestElementAtPoint:` consumes); tolerate an `NSValue` rect as a fallback.
     var rect = CGRect.zero
-    if let dict = raw as? NSDictionary, CGRectMakeWithDictionaryRepresentation(dict as CFDictionary, &rect) {
+    // A frame member can arrive as JSON null: an off-screen or still-settling element reports a
+    // non-finite coordinate, which the guest emits as null (JSON has no infinity or NaN).
+    // `CGRectMakeWithDictionaryRepresentation` sends a number selector to every member, so a null one
+    // crashes it — and a frame with a non-numeric member has no usable geometry regardless.
+    if let dict = raw as? NSDictionary, dict.allValues.allSatisfy({ $0 is NSNumber }),
+      CGRectMakeWithDictionaryRepresentation(dict as CFDictionary, &rect)
+    {
       return rect
     }
     if let value = raw as? NSValue {

@@ -58,6 +58,25 @@ final class FBRemoteAutomationPlatformElementTests: XCTestCase {
     XCTAssertEqual(element.axFrame(), expected)
   }
 
+  func testFrameWithNullMemberDegradesToZeroWithoutCrashing() {
+    // An off-screen or still-settling element reports a non-finite frame coordinate; because JSON has
+    // no infinity/NaN, the guest emits that member as null, which arrives host-side as NSNull.
+    // `CGRectMakeWithDictionaryRepresentation` sends a number selector to every member, so a null one
+    // would raise `-[NSNull _getValue:forType:]` and terminate the read. The frame must degrade to
+    // `.zero` instead of crashing.
+    let frameDict = NSMutableDictionary(
+      dictionary: CGRectCreateDictionaryRepresentation(CGRect(x: 0, y: 0, width: 10, height: 20)) as NSDictionary
+    )
+    frameDict["X"] = NSNull()
+    let element = FBRemoteAutomationPlatformElement(
+      attributes: [FBRemoteAutomationAXAttribute.frame: frameDict],
+      children: [],
+      pid: 0
+    )
+
+    XCTAssertEqual(element.axFrame(), .zero)
+  }
+
   func testRoleMapsElementTypeNumberToReadableName() {
     let element = FBRemoteAutomationPlatformElement(
       attributes: [FBRemoteAutomationAXAttribute.elementType: NSNumber(value: 9)],
