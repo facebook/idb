@@ -63,14 +63,14 @@ final class FBAXBridgeUIAutomation: FBUIAutomation, @unchecked Sendable {
         fromTree: tree, keys: keys, nestedFormat: false, pid: pid
       )
       guard let match = FBAXTreeSerialization.matchingElement(inElements: elements, markerValue: value, key: key) else {
-        throw FBAXBridgeError.elementNotFound(key: key.rawValue, value: value)
+        throw FBUIAutomationError.elementNotFound(backend: .axBridge, key: key.rawValue, value: value)
       }
       return FBAccessibilityElementsResponse(
         elements: match
       )
     case let .point(point):
       guard let response = try await hitTestElement(pid: pid, point: point, keys: keys) else {
-        throw FBAXBridgeError.noElementAtPoint(x: Double(point.x), y: Double(point.y))
+        throw FBUIAutomationError.noElementAtPoint(backend: .axBridge, x: Double(point.x), y: Double(point.y))
       }
       return response
     }
@@ -91,7 +91,7 @@ final class FBAXBridgeUIAutomation: FBUIAutomation, @unchecked Sendable {
     pollInterval: TimeInterval
   ) async throws {
     guard case let .marker(markerValue, key, _) = query else {
-      throw FBAXBridgeError.markerRequired(operation: "Waiting")
+      throw FBUIAutomationError.markerRequired(backend: .axBridge, operation: "Waiting")
     }
     let found = try await FBUIAutomationPolling.pollUntilFound(
       timeout: timeout,
@@ -112,7 +112,7 @@ final class FBAXBridgeUIAutomation: FBUIAutomation, @unchecked Sendable {
       return FBAXTreeSerialization.matchingElement(inElements: elements, markerValue: markerValue, key: key) != nil ? true : nil
     }
     if found == nil {
-      throw FBAXBridgeError.timedOut(key: key.rawValue, value: markerValue, timeout: timeout)
+      throw FBUIAutomationError.timedOut(backend: .axBridge, key: key.rawValue, value: markerValue, timeout: timeout)
     }
   }
 
@@ -123,19 +123,19 @@ final class FBAXBridgeUIAutomation: FBUIAutomation, @unchecked Sendable {
     expectedValue: String?,
     expectedKey: FBAXSearchableKey
   ) async throws {
-    throw FBAXBridgeError.operationUnsupported(operation: "A tap")
+    throw FBUIAutomationError.operationUnsupported(backend: .axBridge, operation: "A tap")
   }
 
   func setValue(_ value: String, for query: FBAccessibilityElementQuery) async throws {
-    throw FBAXBridgeError.operationUnsupported(operation: "Setting a value")
+    throw FBUIAutomationError.operationUnsupported(backend: .axBridge, operation: "Setting a value")
   }
 
   func scroll(_ query: FBAccessibilityElementQuery, direction: FBAccessibilityScrollDirection) async throws {
-    throw FBAXBridgeError.operationUnsupported(operation: "Scroll")
+    throw FBUIAutomationError.operationUnsupported(backend: .axBridge, operation: "Scroll")
   }
 
   func frame(_ query: FBAccessibilityElementQuery) async throws -> CGRect {
-    throw FBAXBridgeError.operationUnsupported(operation: "Reading an element frame")
+    throw FBUIAutomationError.operationUnsupported(backend: .axBridge, operation: "Reading an element frame")
   }
 
   // MARK: - Transport seam (one-shot spawn)

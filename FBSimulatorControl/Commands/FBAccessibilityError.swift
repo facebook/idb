@@ -49,12 +49,6 @@ public enum FBAccessibilityError: LocalizedError, Sendable {
   /// (the provider of the frontmost application) is not running on the simulator.
   case springBoardNotRunning
 
-  /// A wait was requested with a non-marker target; waiting requires a marker.
-  case waitRequiresMarker
-
-  /// A wait for a marker element timed out before it appeared.
-  case waitTimedOut(key: String, value: String, timeout: TimeInterval)
-
   public var errorDescription: String? {
     switch self {
     case .closedElement(let operation):
@@ -79,10 +73,6 @@ public enum FBAccessibilityError: LocalizedError, Sendable {
       return "SpringBoard has crashed; could not restart \(serviceName) to recover the frontmost application's accessibility hierarchy."
     case .springBoardNotRunning:
       return "SpringBoard is not running on the simulator, so there is no frontmost application to describe. Boot/relaunch the simulator (or restart SpringBoard) and retry."
-    case .waitRequiresMarker:
-      return "Waiting requires a marker target, not a point or the frontmost application"
-    case .waitTimedOut(let key, let value, let timeout):
-      return "Timed out after \(timeout)s waiting for \(key)=\"\(value)\""
     }
   }
 }

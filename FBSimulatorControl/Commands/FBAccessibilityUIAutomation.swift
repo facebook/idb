@@ -29,9 +29,29 @@ final class FBAccessibilityUIAutomation: FBUIAutomation, @unchecked Sendable {
     _ query: FBAccessibilityElementQuery,
     options: FBAccessibilityRequestOptions
   ) async throws -> FBAccessibilityElementsResponse {
-    let element = try await operations.resolveElement(for: query)
-    defer { element.close() }
-    return try element.serialize(with: options)
+    try await Self.translatingSeamErrors(query) {
+      let element = try await operations.resolveElement(for: query)
+      defer { element.close() }
+      return try element.serialize(with: options)
+    }
+  }
+
+  /// Runs an accessibility resolution, re-raising the one failure that is a fact about the *query*
+  /// rather than about this transport as the backend-neutral `FBUIAutomationError`. The AX stack
+  /// raises its own rich error deep in the element walk; translating it here is what lets a caller
+  /// holding `any FBUIAutomation` catch "not found" without knowing which backend it holds. Every
+  /// other accessibility failure (dispatcher, SpringBoard, a closed handle) is transport-specific and
+  /// passes through untouched.
+  private static func translatingSeamErrors<T>(
+    _ query: FBAccessibilityElementQuery,
+    _ body: () async throws -> T
+  ) async throws -> T {
+    do {
+      return try await body()
+    } catch let error as FBAccessibilityError {
+      guard case let .elementNotFound(key, value, _) = error else { throw error }
+      throw FBUIAutomationError.elementNotFound(backend: .accessibility, key: key, value: value)
+    }
   }
 
   func hitTest(
@@ -54,21 +74,25 @@ final class FBAccessibilityUIAutomation: FBUIAutomation, @unchecked Sendable {
     expectedValue: String?,
     expectedKey: FBAXSearchableKey
   ) async throws {
-    let element = try await operations.resolveElement(for: query)
-    defer { element.close() }
-    if let expectedValue {
-      let actual = try element.stringValue(forSearchableKey: expectedKey)
-      guard actual == expectedValue else {
-        throw FBAccessibilityExpectedValueMismatch(key: expectedKey, expected: expectedValue, actual: actual)
+    try await Self.translatingSeamErrors(query) {
+      let element = try await operations.resolveElement(for: query)
+      defer { element.close() }
+      if let expectedValue {
+        let actual = try element.stringValue(forSearchableKey: expectedKey)
+        guard actual == expectedValue else {
+          throw FBAccessibilityExpectedValueMismatch(key: expectedKey, expected: expectedValue, actual: actual)
+        }
       }
+      try element.tap()
     }
-    try element.tap()
   }
 
   func setValue(_ value: String, for query: FBAccessibilityElementQuery) async throws {
-    let element = try await operations.resolveElement(for: query)
-    defer { element.close() }
-    try element.setValue(value)
+    try await Self.translatingSeamErrors(query) {
+      let element = try await operations.resolveElement(for: query)
+      defer { element.close() }
+      try element.setValue(value)
+    }
   }
 
   func wait(
@@ -77,7 +101,7 @@ final class FBAccessibilityUIAutomation: FBUIAutomation, @unchecked Sendable {
     pollInterval: TimeInterval
   ) async throws {
     guard case let .marker(markerValue, key, depth) = query else {
-      throw FBAccessibilityError.waitRequiresMarker
+      throw FBUIAutomationError.markerRequired(backend: .accessibility, operation: "Waiting")
     }
     let found = try await FBUIAutomationPolling.pollUntilFound(
       timeout: timeout,
@@ -99,19 +123,23 @@ final class FBAccessibilityUIAutomation: FBUIAutomation, @unchecked Sendable {
       }
     }
     if found == nil {
-      throw FBAccessibilityError.waitTimedOut(key: key.rawValue, value: markerValue, timeout: timeout)
+      throw FBUIAutomationError.timedOut(backend: .accessibility, key: key.rawValue, value: markerValue, timeout: timeout)
     }
   }
 
   func scroll(_ query: FBAccessibilityElementQuery, direction: FBAccessibilityScrollDirection) async throws {
-    let element = try await operations.resolveElement(for: query)
-    defer { element.close() }
-    try element.scroll(with: direction)
+    try await Self.translatingSeamErrors(query) {
+      let element = try await operations.resolveElement(for: query)
+      defer { element.close() }
+      try element.scroll(with: direction)
+    }
   }
 
   func frame(_ query: FBAccessibilityElementQuery) async throws -> CGRect {
-    let element = try await operations.resolveElement(for: query)
-    defer { element.close() }
-    return try element.frame()
+    try await Self.translatingSeamErrors(query) {
+      let element = try await operations.resolveElement(for: query)
+      defer { element.close() }
+      return try element.frame()
+    }
   }
 }

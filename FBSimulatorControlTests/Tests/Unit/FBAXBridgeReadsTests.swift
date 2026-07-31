@@ -56,6 +56,34 @@ final class FBAXBridgeReadsTests: XCTestCase {
     XCTAssertThrowsError(try FBAXBridgeResponse.tree(fromResponse: data, pid: 1))
   }
 
+  // MARK: - One error type across backends
+
+  // The point of the unified error: a caller holding `any FBUIAutomation` does not statically know
+  // its backend, so "not found" has to be catchable without knowing. One catch clause must handle
+  // every backend, and the message must still say which one spoke.
+  func testOneCatchClauseHandlesEveryBackend() {
+    let backends: [FBUIAutomationBackend] = [.accessibility, .remoteAutomation, .axBridge, .axBridgePersistent]
+    for backend in backends {
+      let thrown: Error = FBUIAutomationError.elementNotFound(backend: backend, key: "AXLabel", value: "General")
+      guard case let FBUIAutomationError.elementNotFound(caught, key, value) = thrown else {
+        return XCTFail("\(backend) did not match the shared case")
+      }
+      XCTAssertEqual(caught, backend)
+      XCTAssertEqual(key, "AXLabel")
+      XCTAssertEqual(value, "General")
+      let description = (thrown as? LocalizedError)?.errorDescription ?? ""
+      XCTAssertTrue(description.contains(backend.displayName), "message should name the backend: \(description)")
+      XCTAssertTrue(description.contains("General"), "message should name the marker: \(description)")
+    }
+  }
+
+  func testEmptyPointErrorCarriesTheAccessibilityHint() {
+    // An empty read is most often a missing accessibility server, so the actionable hint rides on the
+    // error rather than being re-stated by each backend.
+    let error = FBUIAutomationError.noElementAtPoint(backend: .axBridge, x: 2000, y: 2000)
+    XCTAssertTrue(error.description.contains("ApplicationAccessibilityEnabled"), "got: \(error.description)")
+  }
+
   // MARK: - Marker matching agrees with the accessibility backend
 
   // The accessibility backend walks the live tree and matches a marker by substring, so the

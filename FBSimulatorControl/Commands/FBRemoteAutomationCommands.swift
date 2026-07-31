@@ -44,7 +44,7 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
   /// HID usage (Apple Pay — a double side-button press) throw `operationUnsupported`.
   public func pressButton(_ button: FBSimulatorHIDButton, duration: TimeInterval = 0) async throws {
     guard let usage = button.consumerHIDUsage else {
-      throw FBRemoteAutomationError.operationUnsupported(operation: "Pressing the \(button.name) button")
+      throw FBUIAutomationError.operationUnsupported(backend: .remoteAutomation, operation: "Pressing the \(button.name) button")
     }
     let session = try await self.session()
     try await session.performDeviceEvent(page: UInt32(usage.page), usage: UInt32(usage.code), duration: duration)
@@ -66,14 +66,14 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
     switch query {
     case let .point(point):
       guard let response = try await hitTest(at: point, options: options) else {
-        throw FBRemoteAutomationError.noElementAtPoint(x: Double(point.x), y: Double(point.y))
+        throw FBUIAutomationError.noElementAtPoint(backend: .remoteAutomation, x: Double(point.x), y: Double(point.y))
       }
       return response
     case let .marker(value, key, _):
       let tree = try await readFrontmostTree()
       let elements = FBAXTreeSerialization.describeAllElements(fromTree: tree.root, keys: keys, nestedFormat: false, pid: tree.pid)
       guard let match = FBAXTreeSerialization.matchingElement(inElements: elements, markerValue: value, key: key) else {
-        throw FBRemoteAutomationError.elementNotFound(key: key.rawValue, value: value)
+        throw FBUIAutomationError.elementNotFound(backend: .remoteAutomation, key: key.rawValue, value: value)
       }
       return FBAccessibilityElementsResponse(
         elements: match
@@ -140,13 +140,13 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
       let tree = try await readFrontmostTree()
       let elements = FBAXTreeSerialization.describeAllElements(fromTree: tree.root, keys: FBAXKeys.defaultSet, nestedFormat: false, pid: tree.pid)
       guard let center = FBAXTreeSerialization.frameCenter(inElements: elements, markerValue: markerValue, key: key) else {
-        throw FBRemoteAutomationError.elementNotFound(key: key.rawValue, value: markerValue)
+        throw FBUIAutomationError.elementNotFound(backend: .remoteAutomation, key: key.rawValue, value: markerValue)
       }
       let session = try await self.session()
       let record = try Self.eventRecord(for: .tapAt(x: center.x, y: center.y))
       try await session.synthesizeEvent(record)
     case .frontmost, .application:
-      throw FBRemoteAutomationError.pointOrMarkerRequired(operation: "A tap")
+      throw FBUIAutomationError.pointOrMarkerRequired(backend: .remoteAutomation, operation: "A tap")
     }
   }
 
@@ -159,7 +159,7 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
     pollInterval: TimeInterval
   ) async throws {
     guard case let .marker(markerValue, key, _) = query else {
-      throw FBRemoteAutomationError.markerRequired(operation: "Waiting")
+      throw FBUIAutomationError.markerRequired(backend: .remoteAutomation, operation: "Waiting")
     }
     let session = try await self.session()
     // Resolve the frontmost app's pid once via the AX window-server query and anchor every poll on
@@ -201,20 +201,20 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
       return FBAXTreeSerialization.frameCenter(inElements: elements, markerValue: markerValue, key: key) != nil ? true : nil
     }
     if found == nil {
-      throw FBRemoteAutomationError.timedOut(key: key.rawValue, value: markerValue, timeout: timeout)
+      throw FBUIAutomationError.timedOut(backend: .remoteAutomation, key: key.rawValue, value: markerValue, timeout: timeout)
     }
   }
 
   /// Scrolls the element named by `query`. Not yet supported over remote automation; the accessibility
   /// backend handles scroll.
   public func scroll(_ query: FBAccessibilityElementQuery, direction: FBAccessibilityScrollDirection) async throws {
-    throw FBRemoteAutomationError.operationUnsupported(operation: "Scroll")
+    throw FBUIAutomationError.operationUnsupported(backend: .remoteAutomation, operation: "Scroll")
   }
 
   /// The frame of the element named by `query`. Not yet supported over remote automation; the
   /// accessibility backend serves element geometry.
   public func frame(_ query: FBAccessibilityElementQuery) async throws -> CGRect {
-    throw FBRemoteAutomationError.operationUnsupported(operation: "Reading an element frame")
+    throw FBUIAutomationError.operationUnsupported(backend: .remoteAutomation, operation: "Reading an element frame")
   }
 
   /// Sets `value` on the element named by `query`. `.point` targets the coordinate; `.marker` finds
@@ -228,12 +228,12 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
       let tree = try await readFrontmostTree()
       let elements = FBAXTreeSerialization.describeAllElements(fromTree: tree.root, keys: FBAXKeys.defaultSet, nestedFormat: false, pid: tree.pid)
       guard let center = FBAXTreeSerialization.frameCenter(inElements: elements, markerValue: markerValue, key: key) else {
-        throw FBRemoteAutomationError.elementNotFound(key: key.rawValue, value: markerValue)
+        throw FBUIAutomationError.elementNotFound(backend: .remoteAutomation, key: key.rawValue, value: markerValue)
       }
       let session = try await self.session()
       try await session.setValue(value, atX: center.x, y: center.y, valueAttribute: FBRemoteAutomationAXAttribute.value)
     case .frontmost, .application:
-      throw FBRemoteAutomationError.pointOrMarkerRequired(operation: "Setting a value")
+      throw FBUIAutomationError.pointOrMarkerRequired(backend: .remoteAutomation, operation: "Setting a value")
     }
   }
 
@@ -308,7 +308,7 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
       maxNodes: FBAXTreeSerialization.maxReadNodes
     )
     guard let root = tree.root as? [String: Any] else {
-      throw FBRemoteAutomationError.applicationUnavailable(pid: pid)
+      throw FBUIAutomationError.applicationUnavailable(backend: .remoteAutomation, pid: pid)
     }
     if tree.truncated {
       _ = simulator?.logger?.log("Remote-automation read hit the bound (maxDepth \(FBAXTreeSerialization.maxReadDepth), maxNodes \(FBAXTreeSerialization.maxReadNodes)); the returned tree is truncated and incomplete.")
