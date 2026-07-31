@@ -32,15 +32,3 @@ public enum FBAccessibilityElementQuery: Equatable, Sendable {
   /// bundle id to a pid (`FBSimulator.processID(forBundleID:)`) before building this.
   case application(pid: pid_t)
 }
-
-/// Thrown by the accessibility `tap` when an element's value for the checked key
-/// does not equal the caller's expected value.
-public struct FBAccessibilityExpectedValueMismatch: Error, CustomStringConvertible {
-  public let key: FBAXSearchableKey
-  public let expected: String
-  public let actual: String
-
-  public var description: String {
-    "Element \(key.rawValue) does not match expected value \"\(expected)\". Actual: \"\(actual)\""
-  }
-}

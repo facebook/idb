@@ -31,6 +31,9 @@ public enum FBUIAutomationError: LocalizedError, Sendable {
   case operationUnsupported(backend: FBUIAutomationBackend, operation: String)
   /// A by-pid read found no tree: the pid is not a live app, or its accessibility server never started.
   case applicationUnavailable(backend: FBUIAutomationBackend, pid: pid_t)
+  /// A `tap` asserted the element's value for `key` (via `expectedValue`) before tapping, but the
+  /// element's actual value did not match.
+  case valueMismatch(backend: FBUIAutomationBackend, key: String, expected: String, actual: String)
 
   public var errorDescription: String? {
     switch self {
@@ -48,6 +51,8 @@ public enum FBUIAutomationError: LocalizedError, Sendable {
       return "\(operation) is not supported over the \(backend.displayName) backend"
     case let .applicationUnavailable(backend, pid):
       return "\(backend.displayName) could not read the application with pid \(pid): it is not a running app, or its accessibility server has not started. \(FBAXTreeSerialization.accessibilityHint)"
+    case let .valueMismatch(backend, key, expected, actual):
+      return "\(backend.displayName) expected \(key) to equal \"\(expected)\" before tapping, but it was \"\(actual)\""
     }
   }
 }

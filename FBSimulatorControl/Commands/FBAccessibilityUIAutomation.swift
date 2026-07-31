@@ -80,7 +80,9 @@ final class FBAccessibilityUIAutomation: FBUIAutomation, @unchecked Sendable {
       if let expectedValue {
         let actual = try element.stringValue(forSearchableKey: expectedKey)
         guard actual == expectedValue else {
-          throw FBAccessibilityExpectedValueMismatch(key: expectedKey, expected: expectedValue, actual: actual)
+          throw FBUIAutomationError.valueMismatch(
+            backend: .accessibility, key: expectedKey.rawValue, expected: expectedValue, actual: actual
+          )
         }
       }
       try element.tap()

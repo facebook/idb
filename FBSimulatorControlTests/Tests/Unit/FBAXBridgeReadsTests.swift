@@ -101,6 +101,26 @@ final class FBAXBridgeReadsTests: XCTestCase {
     XCTAssertTrue(error.description.contains("ApplicationAccessibilityEnabled"), "got: \(error.description)")
   }
 
+  func testValueMismatchIsSeamCatchableAndNamesTheMismatch() {
+    // A `tap` value assertion is a fact about the query, not the transport, so it is the neutral
+    // `FBUIAutomationError` — catchable by a caller holding `any FBUIAutomation` — and its message
+    // names the backend, the key, and both values.
+    let thrown: Error = FBUIAutomationError.valueMismatch(
+      backend: .accessibility, key: FBAXSearchableKey.value.rawValue, expected: "On", actual: "Off"
+    )
+    guard case let FBUIAutomationError.valueMismatch(backend, key, expected, actual) = thrown else {
+      return XCTFail("value mismatch should match the shared case, got: \(thrown)")
+    }
+    XCTAssertEqual(backend, .accessibility)
+    XCTAssertEqual(key, "AXValue")
+    XCTAssertEqual(expected, "On")
+    XCTAssertEqual(actual, "Off")
+    let description = (thrown as? LocalizedError)?.errorDescription ?? ""
+    XCTAssertTrue(description.contains("The accessibility backend"), "message should name the backend: \(description)")
+    XCTAssertTrue(description.contains("AXValue"), "message should name the key: \(description)")
+    XCTAssertTrue(description.contains("On") && description.contains("Off"), "message should name both values: \(description)")
+  }
+
   // MARK: - Marker matching agrees with the accessibility backend
 
   // The accessibility backend walks the live tree and matches a marker by substring, so the
