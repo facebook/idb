@@ -15,6 +15,9 @@ public enum FBUIAutomationBackend: Sendable {
   case accessibility
   /// The bundle-free guest `testmanagerd` remote-automation channel (iOS 27+).
   case remoteAutomation
+  /// The bundle-free guest AX-C reader: the `SimulatorFrameworkBridge` `accessibility` service spawned
+  /// in the simulator. XCUI-grade like `.remoteAutomation`, light like `.accessibility`.
+  case axBridge
 }
 
 /// The converged UI-automation surface: element reads and element-targeted
@@ -99,6 +102,8 @@ public extension FBSimulator {
       return FBAccessibilityUIAutomation(operations: self)
     case .remoteAutomation:
       return try remoteAutomation()
+    case .axBridge:
+      return FBAXBridgeUIAutomation(simulator: self)
     }
   }
 }
