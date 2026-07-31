@@ -71,19 +71,20 @@ final class FBAXBridgeUIAutomation: FBUIAutomation, @unchecked Sendable {
         elements: match, profilingData: nil, frameCoverage: nil, additionalFrameCoverage: nil
       )
     case let .point(point):
-      // A targeted single-round-trip hit-test in the guest (AXUIElementCopyElementAtPosition) resolves
-      // the element at the point directly — ~15x faster warm than reading the whole tree and hit-testing
-      // host-side. The guest returns the single hit node in the same schema, fed through the serializer.
-      let response = try await transport.hitTest(pid: pid, x: Double(point.x), y: Double(point.y))
-      let node = try FBAXBridgeResponse.tree(fromResponse: response, pid: pid)
-      let hit = FBAXTreeSerialization.buildPlatformElementTree(from: node, pid: pid)
-      let element = FBSimulatorAccessibilitySerializer.formattedDescription(
-        ofElement: hit, token: "", nestedFormat: false, keys: keys, collector: nil, coverageGrid: nil
-      )
-      return FBAccessibilityElementsResponse(
-        elements: element, profilingData: nil, frameCoverage: nil, additionalFrameCoverage: nil
-      )
+      guard let response = try await hitTestElement(pid: pid, point: point, keys: keys) else {
+        throw FBAXBridgeError.noElementAtPoint(x: Double(point.x), y: Double(point.y))
+      }
+      return response
     }
+  }
+
+  func hitTest(
+    at point: CGPoint,
+    options: FBAccessibilityRequestOptions
+  ) async throws -> FBAccessibilityElementsResponse? {
+    let keys = options.keys ?? FBAXKeys.defaultSet
+    let pid = try await resolvePid(for: .frontmost)
+    return try await hitTestElement(pid: pid, point: point, keys: keys)
   }
 
   func wait(
@@ -163,5 +164,22 @@ final class FBAXBridgeUIAutomation: FBUIAutomation, @unchecked Sendable {
   private func readTree(forPid pid: pid_t) async throws -> [String: Any] {
     let response = try await transport.read(pid: pid, maxDepth: Self.describeMaxDepth)
     return try FBAXBridgeResponse.tree(fromResponse: response, pid: pid)
+  }
+
+  /// Targeted hit-test for `pid`: the element at the point via the guest's one-round-trip `hittest`
+  /// (AXUIElementCopyElementAtPosition), or `nil` when the point is empty. Shared by `describe(.point)`
+  /// and `hitTest(at:)` — ~15x faster warm than reading the whole tree and hit-testing host-side.
+  private func hitTestElement(pid: pid_t, point: CGPoint, keys: Set<FBAXKeys>) async throws -> FBAccessibilityElementsResponse? {
+    let response = try await transport.hitTest(pid: pid, x: Double(point.x), y: Double(point.y))
+    guard let node = try FBAXBridgeResponse.hitTest(fromResponse: response, pid: pid) else {
+      return nil
+    }
+    let hit = FBAXTreeSerialization.buildPlatformElementTree(from: node, pid: pid)
+    let element = FBSimulatorAccessibilitySerializer.formattedDescription(
+      ofElement: hit, token: "", nestedFormat: false, keys: keys, collector: nil, coverageGrid: nil
+    )
+    return FBAccessibilityElementsResponse(
+      elements: element, profilingData: nil, frameCoverage: nil, additionalFrameCoverage: nil
+    )
   }
 }

@@ -40,6 +40,15 @@ public protocol FBUIAutomation: Sendable {
     options: FBAccessibilityRequestOptions
   ) async throws -> FBAccessibilityElementsResponse
 
+  /// Reads the element at `point` — a targeted hit-test — serialized to the shared schema, or `nil`
+  /// when no element sits at the point. Unlike `describe(.point:)`, which throws for an empty point,
+  /// `hitTest` returns `nil` so a caller (e.g. a streaming hit-test around a tap) can tell empty space
+  /// from a reader failure, which still throws.
+  func hitTest(
+    at point: CGPoint,
+    options: FBAccessibilityRequestOptions
+  ) async throws -> FBAccessibilityElementsResponse?
+
   /// Taps the element named by `query`. `.point` taps the coordinate; `.marker` finds the element and
   /// taps its centre. `expectedValue`, when given, asserts the element's value for `expectedKey`
   /// before tapping — accessibility only; ignored over remote automation. `.frontmost` taps the

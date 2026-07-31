@@ -60,9 +60,10 @@ final class FBRemoteAutomationDescribeTests: XCTestCase {
     )
     let session = try await FBRemoteAutomationSession.connected(invoker: invoker, processIdentifier: 0)
 
-    let value = try await FBSimulatorRemoteAutomation.describeElement(
+    let hit = try await FBSimulatorRemoteAutomation.hitTestElement(
       atX: 200, y: 406, using: session, keys: FBAXKeys.defaultSet
     )
+    let value = try XCTUnwrap(hit)
     let dict = try XCTUnwrap(value.toFoundationObject() as? [String: Any])
 
     XCTAssertEqual(dict[FBAXKeys.label.rawValue] as? String, "General")
@@ -76,19 +77,17 @@ final class FBRemoteAutomationDescribeTests: XCTestCase {
     XCTAssertFalse(frameDict.isEmpty)
   }
 
-  func testPointDescribeThrowsWhenNoElement() async throws {
+  func testPointHitTestReturnsNilWhenNoElement() async throws {
     let invoker = FakeReadInvoker(stringAttributes: [:], frame: nil, returnsElement: false)
     let session = try await FBRemoteAutomationSession.connected(invoker: invoker, processIdentifier: 0)
 
-    do {
-      _ = try await FBSimulatorRemoteAutomation.describeElement(
-        atX: 1, y: 1, using: session, keys: FBAXKeys.defaultSet
-      )
-      XCTFail("Expected describeElement to throw when no element is found")
-    } catch {
-      // The failure carries the accessibility guidance, so an empty read is actionable rather than silent.
-      XCTAssertTrue("\(error)".contains("ApplicationAccessibilityEnabled"), "The no-element error should surface the accessibility precondition hint; got: \(error)")
-    }
+    // No element at the point is a valid empty hit-test result: nil, not a thrown error. The public
+    // describe(.point) turns this nil into a noElementAtPoint error (carrying the accessibility hint),
+    // preserving that contract; the targeted hit-test itself distinguishes empty from failure.
+    let value = try await FBSimulatorRemoteAutomation.hitTestElement(
+      atX: 1, y: 1, using: session, keys: FBAXKeys.defaultSet
+    )
+    XCTAssertNil(value)
   }
 
   private static func sampleTree() -> [String: Any] {

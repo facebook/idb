@@ -34,6 +34,21 @@ final class FBAccessibilityUIAutomation: FBUIAutomation, @unchecked Sendable {
     return try element.serialize(with: options)
   }
 
+  func hitTest(
+    at point: CGPoint,
+    options: FBAccessibilityRequestOptions
+  ) async throws -> FBAccessibilityElementsResponse? {
+    do {
+      let element = try await operations.resolveElement(for: .point(point))
+      defer { element.close() }
+      return try element.serialize(with: options)
+    } catch let error as FBAccessibilityError {
+      // A point that resolves to no element is a valid empty hit-test result, not a failure.
+      if case .elementNotFound = error { return nil }
+      throw error
+    }
+  }
+
   func tap(
     _ query: FBAccessibilityElementQuery,
     expectedValue: String?,

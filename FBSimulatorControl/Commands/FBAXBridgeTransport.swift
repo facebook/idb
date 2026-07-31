@@ -39,6 +39,26 @@ enum FBAXBridgeResponse {
     }
     return tree
   }
+
+  /// Parses a hit-test response: the hit node, or `nil` when the guest reports no element at the point
+  /// (`{ ok: true, empty: true }`) — a valid empty result. A failure (`{ ok: false, error }`) throws,
+  /// so a caller can tell empty space from a broken reader.
+  static func hitTest(fromResponse data: Data, pid: pid_t) throws -> [String: Any]? {
+    guard let object = try? JSONSerialization.jsonObject(with: data), let response = object as? [String: Any] else {
+      throw FBAXBridgeError.guestFailure("pid \(pid): unparseable guest response")
+    }
+    guard (response["ok"] as? Bool) == true else {
+      let message = (response["error"] as? String) ?? "no tree in response"
+      throw FBAXBridgeError.guestFailure("pid \(pid): \(message)")
+    }
+    if (response["empty"] as? Bool) == true {
+      return nil
+    }
+    guard let tree = response["tree"] as? [String: Any] else {
+      throw FBAXBridgeError.guestFailure("pid \(pid): ok response without a tree or empty flag")
+    }
+    return tree
+  }
 }
 
 // MARK: - One-shot transport

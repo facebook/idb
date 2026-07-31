@@ -56,6 +56,35 @@ final class FBAXBridgeReadsTests: XCTestCase {
     XCTAssertThrowsError(try FBAXBridgeResponse.tree(fromResponse: data, pid: 1))
   }
 
+  // MARK: - FBAXBridgeResponse hit-test parsing
+
+  func testHitTestParsesHitNode() throws {
+    let node: [String: Any] = [FBRemoteAutomationAXAttribute.identifier: "com.apple.settings.general"]
+    let data = try envelope(["ok": true, "tree": node])
+    let parsed = try FBAXBridgeResponse.hitTest(fromResponse: data, pid: 42)
+    XCTAssertEqual(parsed?[FBRemoteAutomationAXAttribute.identifier] as? String, "com.apple.settings.general")
+  }
+
+  func testHitTestReturnsNilForEmptyResult() throws {
+    // `{ok:true, empty:true}` is "no element at the point" — a valid empty result, returned as nil,
+    // not conflated with a reader failure.
+    let data = try envelope(["ok": true, "empty": true])
+    XCTAssertNil(try FBAXBridgeResponse.hitTest(fromResponse: data, pid: 42))
+  }
+
+  func testHitTestThrowsOnFailure() throws {
+    // A failure (`ok:false`) is distinct from an empty result and is surfaced with the guest message.
+    let data = try envelope(["ok": false, "error": "AXUIElementCopyElementAtPosition unavailable"])
+    XCTAssertThrowsError(try FBAXBridgeResponse.hitTest(fromResponse: data, pid: 42)) { error in
+      XCTAssertTrue("\(error)".contains("AXUIElementCopyElementAtPosition unavailable"), "unexpected error: \(error)")
+    }
+  }
+
+  func testHitTestThrowsWhenOkButNoTreeOrEmpty() throws {
+    let data = try envelope(["ok": true])
+    XCTAssertThrowsError(try FBAXBridgeResponse.hitTest(fromResponse: data, pid: 1))
+  }
+
   // MARK: - Tree -> shared serializer integration
 
   func testGuestTreeFeedsSharedSerializerSchema() throws {

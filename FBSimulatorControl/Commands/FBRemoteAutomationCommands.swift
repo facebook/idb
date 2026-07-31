@@ -64,11 +64,10 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
     let keys = options.keys ?? FBAXKeys.defaultSet
     switch query {
     case let .point(point):
-      let session = try await self.session()
-      let element = try await Self.describeElement(atX: Double(point.x), y: Double(point.y), using: session, keys: keys)
-      return FBAccessibilityElementsResponse(
-        elements: element, profilingData: nil, frameCoverage: nil, additionalFrameCoverage: nil
-      )
+      guard let response = try await hitTest(at: point, options: options) else {
+        throw FBRemoteAutomationError.noElementAtPoint(x: Double(point.x), y: Double(point.y))
+      }
+      return response
     case let .marker(value, key, _):
       let tree = try await readFrontmostTree()
       let elements = FBAXTreeSerialization.describeAllElements(fromTree: tree.root, keys: keys, nestedFormat: false, pid: tree.pid)
@@ -91,6 +90,21 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
         elements: .array(elements), profilingData: nil, frameCoverage: nil, additionalFrameCoverage: nil
       )
     }
+  }
+
+  /// Reads the element at `point` via a targeted remote hit-test, or `nil` when the point is empty.
+  public func hitTest(
+    at point: CGPoint,
+    options: FBAccessibilityRequestOptions
+  ) async throws -> FBAccessibilityElementsResponse? {
+    let keys = options.keys ?? FBAXKeys.defaultSet
+    let session = try await self.session()
+    guard let element = try await Self.hitTestElement(atX: Double(point.x), y: Double(point.y), using: session, keys: keys) else {
+      return nil
+    }
+    return FBAccessibilityElementsResponse(
+      elements: element, profilingData: nil, frameCoverage: nil, additionalFrameCoverage: nil
+    )
   }
 
   // MARK: - Anchor
@@ -305,12 +319,13 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
   }
 
   /// Reads the element at a point and serializes it to the single-element accessibility schema,
-  /// feeding a remote-backed `FBAXPlatformElement` through the same serializer as the legacy path.
-  /// The element handle stays a disconnected local (received from the session and used once) so it
-  /// never becomes a shareable value that would risk a data race across the session boundary.
-  static func describeElement(atX x: Double, y: Double, using session: FBRemoteAutomationSession, keys: Set<FBAXKeys>) async throws -> FBJSONValue {
+  /// feeding a remote-backed `FBAXPlatformElement` through the same serializer as the legacy path, or
+  /// `nil` when no element sits at the point (a valid empty hit-test result, not a failure). The
+  /// element handle stays a disconnected local (received from the session and used once) so it never
+  /// becomes a shareable value that would risk a data race across the session boundary.
+  static func hitTestElement(atX x: Double, y: Double, using session: FBRemoteAutomationSession, keys: Set<FBAXKeys>) async throws -> FBJSONValue? {
     guard let element = try await session.requestElement(atX: x, y: y) else {
-      throw FBRemoteAutomationError.noElementAtPoint(x: x, y: y)
+      return nil
     }
     let raw = try await session.fetchAttributes(FBRemoteAutomationAXAttribute.fetchList, forElement: element)
     let attributes = (raw as? [String: Any]) ?? [:]
