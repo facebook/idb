@@ -44,17 +44,17 @@ public enum FBRemoteAutomationError: LocalizedError, Sendable {
     case let .operationUnsupported(operation):
       return "\(operation) over the testmanagerd remote-automation backend is not yet supported; use --api ax"
     case let .timedOut(key, value, timeout):
-      return "Remote automation timed out after \(timeout)s waiting for \(key)=\"\(value)\". \(FBSimulatorRemoteAutomation.accessibilityHint)"
+      return "Remote automation timed out after \(timeout)s waiting for \(key)=\"\(value)\". \(FBAXTreeSerialization.accessibilityHint)"
     case let .treeUnavailable(x, y):
-      return "Remote automation could not read the frontmost application tree at (\(x), \(y)). \(FBSimulatorRemoteAutomation.accessibilityHint)"
+      return "Remote automation could not read the frontmost application tree at (\(x), \(y)). \(FBAXTreeSerialization.accessibilityHint)"
     case let .noElementAtPoint(x, y):
-      return "Remote automation found no element at (\(x), \(y)). \(FBSimulatorRemoteAutomation.accessibilityHint)"
+      return "Remote automation found no element at (\(x), \(y)). \(FBAXTreeSerialization.accessibilityHint)"
     case let .unavailable(underlying):
       return "Remote automation is unavailable on this simulator: testmanagerd is not advertising its remote-automation listener (\(remoteAutomationSockEnvKey)). This requires a simulator runtime whose testmanagerd exposes the remote-automation channel (iOS 27+ / Xcode 27). Underlying error: \(underlying)"
     case .eventMissingTouchSteps:
       return "Remote-automation event contained no touch steps"
     case let .applicationUnavailable(pid):
-      return "Remote automation could not read the application with pid \(pid): it is not a running app, or its accessibility server has not started. \(FBSimulatorRemoteAutomation.accessibilityHint)"
+      return "Remote automation could not read the application with pid \(pid): it is not a running app, or its accessibility server has not started. \(FBAXTreeSerialization.accessibilityHint)"
     }
   }
 }

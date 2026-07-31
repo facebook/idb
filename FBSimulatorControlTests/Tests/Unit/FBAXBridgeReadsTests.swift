@@ -77,7 +77,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
     let data = try envelope(["ok": true, "tree": tree])
     let parsed = try FBAXBridgeResponse.tree(fromResponse: data, pid: 99)
 
-    let elements = FBSimulatorRemoteAutomation.describeAllElements(
+    let elements = FBAXTreeSerialization.describeAllElements(
       fromTree: parsed, keys: FBAXKeys.defaultSet, nestedFormat: false, pid: 99
     )
     XCTAssertEqual(elements.count, 2, "expected the root plus its one child, flattened")

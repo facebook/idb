@@ -48,7 +48,7 @@ final class FBAXBridgeUIAutomation: FBUIAutomation {
     switch query {
     case .frontmost, .application:
       let tree = try await readTree(forPid: pid)
-      let elements = FBSimulatorRemoteAutomation.describeAllElements(
+      let elements = FBAXTreeSerialization.describeAllElements(
         fromTree: tree, keys: keys, nestedFormat: options.nestedFormat, pid: pid, filter: options.filter
       )
       return FBAccessibilityElementsResponse(
@@ -56,10 +56,10 @@ final class FBAXBridgeUIAutomation: FBUIAutomation {
       )
     case let .marker(value, key, _):
       let tree = try await readTree(forPid: pid)
-      let elements = FBSimulatorRemoteAutomation.describeAllElements(
+      let elements = FBAXTreeSerialization.describeAllElements(
         fromTree: tree, keys: keys, nestedFormat: false, pid: pid
       )
-      guard let match = FBSimulatorRemoteAutomation.matchingElement(inElements: elements, markerValue: value, key: key) else {
+      guard let match = FBAXTreeSerialization.matchingElement(inElements: elements, markerValue: value, key: key) else {
         throw FBAXBridgeError.elementNotFound(key: key.rawValue, value: value)
       }
       return FBAccessibilityElementsResponse(
@@ -71,7 +71,7 @@ final class FBAXBridgeUIAutomation: FBUIAutomation {
       // host-side. The guest returns the single hit node in the same schema, fed through the serializer.
       let response = try await transport.hitTest(pid: pid, x: Double(point.x), y: Double(point.y))
       let node = try FBAXBridgeResponse.tree(fromResponse: response, pid: pid)
-      let hit = FBSimulatorRemoteAutomation.buildPlatformElementTree(from: node, pid: pid)
+      let hit = FBAXTreeSerialization.buildPlatformElementTree(from: node, pid: pid)
       let element = FBSimulatorAccessibilitySerializer.formattedDescription(
         ofElement: hit, token: "", nestedFormat: false, keys: keys, collector: nil, coverageGrid: nil
       )
@@ -102,10 +102,10 @@ final class FBAXBridgeUIAutomation: FBUIAutomation {
       else {
         return nil
       }
-      let elements = FBSimulatorRemoteAutomation.describeAllElements(
+      let elements = FBAXTreeSerialization.describeAllElements(
         fromTree: tree, keys: FBAXKeys.defaultSet, nestedFormat: false, pid: pid
       )
-      return FBSimulatorRemoteAutomation.matchingElement(inElements: elements, markerValue: markerValue, key: key) != nil ? true : nil
+      return FBAXTreeSerialization.matchingElement(inElements: elements, markerValue: markerValue, key: key) != nil ? true : nil
     }
     if found == nil {
       throw FBAXBridgeError.timedOut(key: key.rawValue, value: markerValue, timeout: timeout)

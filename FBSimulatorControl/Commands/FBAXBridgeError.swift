@@ -38,15 +38,15 @@ public enum FBAXBridgeError: LocalizedError, Sendable {
     case .bridgeUnavailable:
       return "The SimulatorFrameworkBridge guest binary was not found in the companion Resources directory"
     case .frontmostUnavailable:
-      return "axbridge could not resolve the frontmost application's pid. \(FBSimulatorRemoteAutomation.accessibilityHint)"
+      return "axbridge could not resolve the frontmost application's pid. \(FBAXTreeSerialization.accessibilityHint)"
     case let .applicationUnavailable(pid):
-      return "axbridge could not read the application with pid \(pid): it is not a running app, or its accessibility server has not started. \(FBSimulatorRemoteAutomation.accessibilityHint)"
+      return "axbridge could not read the application with pid \(pid): it is not a running app, or its accessibility server has not started. \(FBAXTreeSerialization.accessibilityHint)"
     case let .guestFailure(message):
       return "The axbridge guest reader failed: \(message)"
     case let .elementNotFound(key, value):
       return "axbridge found no element matching \(key)=\"\(value)\""
     case let .noElementAtPoint(x, y):
-      return "axbridge found no element at (\(x), \(y)). \(FBSimulatorRemoteAutomation.accessibilityHint)"
+      return "axbridge found no element at (\(x), \(y)). \(FBAXTreeSerialization.accessibilityHint)"
     case let .markerRequired(operation):
       return "\(operation) requires a marker target, not a point or a whole-tree query"
     case let .pointOrMarkerRequired(operation):
@@ -54,7 +54,7 @@ public enum FBAXBridgeError: LocalizedError, Sendable {
     case let .operationUnsupported(operation):
       return "\(operation) over the axbridge backend is not yet supported"
     case let .timedOut(key, value, timeout):
-      return "axbridge timed out after \(timeout)s waiting for \(key)=\"\(value)\". \(FBSimulatorRemoteAutomation.accessibilityHint)"
+      return "axbridge timed out after \(timeout)s waiting for \(key)=\"\(value)\". \(FBAXTreeSerialization.accessibilityHint)"
     }
   }
 }

@@ -104,7 +104,7 @@ final class FBRemoteAutomationDescribeTests: XCTestCase {
   }
 
   func testDescribeAllFlattensTree() {
-    let elements = FBSimulatorRemoteAutomation.describeAllElements(
+    let elements = FBAXTreeSerialization.describeAllElements(
       fromTree: Self.sampleTree(), keys: FBAXKeys.defaultSet, nestedFormat: false, pid: 0
     )
     XCTAssertEqual(elements.count, 2)
@@ -114,7 +114,7 @@ final class FBRemoteAutomationDescribeTests: XCTestCase {
   }
 
   func testDescribeAllNestedEmbedsChildren() throws {
-    let elements = FBSimulatorRemoteAutomation.describeAllElements(
+    let elements = FBAXTreeSerialization.describeAllElements(
       fromTree: Self.sampleTree(), keys: FBAXKeys.defaultSet, nestedFormat: true, pid: 0
     )
     XCTAssertEqual(elements.count, 1)
@@ -126,7 +126,7 @@ final class FBRemoteAutomationDescribeTests: XCTestCase {
   }
 
   func testBuildPlatformElementTreeTagsEveryNodeWithPid() {
-    let root = FBSimulatorRemoteAutomation.buildPlatformElementTree(from: Self.sampleTree(), pid: 99)
+    let root = FBAXTreeSerialization.buildPlatformElementTree(from: Self.sampleTree(), pid: 99)
     XCTAssertEqual(root.axTranslationPid, 99)
     XCTAssertEqual(root.axChildren().first?.axTranslationPid, 99)
   }
@@ -136,13 +136,13 @@ final class FBRemoteAutomationDescribeTests: XCTestCase {
       FBJSONValue(foundation: [FBAXKeys.label.rawValue: "Other", FBAXKeys.frameDict.rawValue: ["x": 0.0, "y": 0.0, "width": 10.0, "height": 10.0]]),
       FBJSONValue(foundation: [FBAXKeys.label.rawValue: "General", FBAXKeys.frameDict.rawValue: ["x": 16.0, "y": 380.0, "width": 370.0, "height": 52.0]]),
     ]
-    let center = FBSimulatorRemoteAutomation.frameCenter(inElements: elements, markerValue: "General", key: .label)
+    let center = FBAXTreeSerialization.frameCenter(inElements: elements, markerValue: "General", key: .label)
     XCTAssertEqual(center?.x ?? -1, 201, accuracy: 0.001)
     XCTAssertEqual(center?.y ?? -1, 406, accuracy: 0.001)
   }
 
   func testFrameCenterReturnsNilWhenNoMatch() {
-    XCTAssertNil(FBSimulatorRemoteAutomation.frameCenter(inElements: [], markerValue: "General", key: .label))
+    XCTAssertNil(FBAXTreeSerialization.frameCenter(inElements: [], markerValue: "General", key: .label))
   }
 
   func testMatchingElementFindsByMarker() {
@@ -150,10 +150,10 @@ final class FBRemoteAutomationDescribeTests: XCTestCase {
       FBJSONValue(foundation: [FBAXKeys.label.rawValue: "Other"]),
       FBJSONValue(foundation: [FBAXKeys.label.rawValue: "General", FBAXKeys.uniqueID.rawValue: "com.apple.settings.general"]),
     ]
-    let match = FBSimulatorRemoteAutomation.matchingElement(inElements: elements, markerValue: "General", key: .label)
+    let match = FBAXTreeSerialization.matchingElement(inElements: elements, markerValue: "General", key: .label)
     let matchDict = match?.toFoundationObject() as? [String: Any]
     XCTAssertEqual(matchDict?[FBAXKeys.uniqueID.rawValue] as? String, "com.apple.settings.general")
-    XCTAssertNil(FBSimulatorRemoteAutomation.matchingElement(inElements: elements, markerValue: "Nope", key: .label))
+    XCTAssertNil(FBAXTreeSerialization.matchingElement(inElements: elements, markerValue: "Nope", key: .label))
   }
 
   func testPollUntilFoundReturnsWhenProbeSucceeds() async throws {

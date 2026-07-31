@@ -71,8 +71,8 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
       )
     case let .marker(value, key, _):
       let tree = try await readFrontmostTree()
-      let elements = Self.describeAllElements(fromTree: tree.root, keys: keys, nestedFormat: false, pid: tree.pid)
-      guard let match = Self.matchingElement(inElements: elements, markerValue: value, key: key) else {
+      let elements = FBAXTreeSerialization.describeAllElements(fromTree: tree.root, keys: keys, nestedFormat: false, pid: tree.pid)
+      guard let match = FBAXTreeSerialization.matchingElement(inElements: elements, markerValue: value, key: key) else {
         throw FBRemoteAutomationError.elementNotFound(key: key.rawValue, value: value)
       }
       return FBAccessibilityElementsResponse(
@@ -80,13 +80,13 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
       )
     case .frontmost:
       let tree = try await readFrontmostTree()
-      let elements = Self.describeAllElements(fromTree: tree.root, keys: keys, nestedFormat: options.nestedFormat, pid: tree.pid, filter: options.filter)
+      let elements = FBAXTreeSerialization.describeAllElements(fromTree: tree.root, keys: keys, nestedFormat: options.nestedFormat, pid: tree.pid, filter: options.filter)
       return FBAccessibilityElementsResponse(
         elements: .array(elements), profilingData: nil, frameCoverage: nil, additionalFrameCoverage: nil
       )
     case let .application(pid):
       let tree = try await readApplicationTree(forPid: pid)
-      let elements = Self.describeAllElements(fromTree: tree.root, keys: keys, nestedFormat: options.nestedFormat, pid: tree.pid, filter: options.filter)
+      let elements = FBAXTreeSerialization.describeAllElements(fromTree: tree.root, keys: keys, nestedFormat: options.nestedFormat, pid: tree.pid, filter: options.filter)
       return FBAccessibilityElementsResponse(
         elements: .array(elements), profilingData: nil, frameCoverage: nil, additionalFrameCoverage: nil
       )
@@ -123,8 +123,8 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
       try await sendHIDEvent(.tapAt(x: Double(point.x), y: Double(point.y)))
     case let .marker(markerValue, key, _):
       let tree = try await readFrontmostTree()
-      let elements = Self.describeAllElements(fromTree: tree.root, keys: FBAXKeys.defaultSet, nestedFormat: false, pid: tree.pid)
-      guard let center = Self.frameCenter(inElements: elements, markerValue: markerValue, key: key) else {
+      let elements = FBAXTreeSerialization.describeAllElements(fromTree: tree.root, keys: FBAXKeys.defaultSet, nestedFormat: false, pid: tree.pid)
+      guard let center = FBAXTreeSerialization.frameCenter(inElements: elements, markerValue: markerValue, key: key) else {
         throw FBRemoteAutomationError.elementNotFound(key: key.rawValue, value: markerValue)
       }
       let session = try await self.session()
@@ -182,8 +182,8 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
         return nil
       }
       guard let root = tree.root as? [String: Any] else { return nil }
-      let elements = Self.describeAllElements(fromTree: root, keys: FBAXKeys.defaultSet, nestedFormat: false, pid: tree.processIdentifier)
-      return Self.frameCenter(inElements: elements, markerValue: markerValue, key: key) != nil ? true : nil
+      let elements = FBAXTreeSerialization.describeAllElements(fromTree: root, keys: FBAXKeys.defaultSet, nestedFormat: false, pid: tree.processIdentifier)
+      return FBAXTreeSerialization.frameCenter(inElements: elements, markerValue: markerValue, key: key) != nil ? true : nil
     }
     if found == nil {
       throw FBRemoteAutomationError.timedOut(key: key.rawValue, value: markerValue, timeout: timeout)
@@ -211,8 +211,8 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
       try await session.setValue(value, atX: Double(point.x), y: Double(point.y), valueAttribute: FBRemoteAutomationAXAttribute.value)
     case let .marker(markerValue, key, _):
       let tree = try await readFrontmostTree()
-      let elements = Self.describeAllElements(fromTree: tree.root, keys: FBAXKeys.defaultSet, nestedFormat: false, pid: tree.pid)
-      guard let center = Self.frameCenter(inElements: elements, markerValue: markerValue, key: key) else {
+      let elements = FBAXTreeSerialization.describeAllElements(fromTree: tree.root, keys: FBAXKeys.defaultSet, nestedFormat: false, pid: tree.pid)
+      guard let center = FBAXTreeSerialization.frameCenter(inElements: elements, markerValue: markerValue, key: key) else {
         throw FBRemoteAutomationError.elementNotFound(key: key.rawValue, value: markerValue)
       }
       let session = try await self.session()
@@ -226,13 +226,6 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
 
   private static let describeMaxDepth = 50
   private static let describeMaxNodes = 3000
-
-  /// Appended to read-failure errors. An empty tree/element almost always means the target app's
-  /// in-process accessibility server never started — that requires `ApplicationAccessibilityEnabled`
-  /// (`com.apple.Accessibility`) to have been set *before* the app launched. The flag is consumed at
-  /// launch (a live read clears it), so it is an unreliable proxy to gate on up front; the guidance is
-  /// surfaced only when a read genuinely comes back empty rather than blocking the read path.
-  static let accessibilityHint = "If reads consistently return nothing, the app's accessibility server is likely not running: set ApplicationAccessibilityEnabled (com.apple.Accessibility) before the app launches — e.g. `xcrun simctl spawn <UDID> defaults write com.apple.Accessibility ApplicationAccessibilityEnabled -bool true` — then relaunch the app."
 
   /// Resolves the frontmost application's pid via the CoreSimulator AX path — a window-server
   /// frontmost query, not a screen hit-test — so the remote read anchors on the real app rather than
@@ -330,65 +323,6 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
       collector: nil,
       coverageGrid: nil
     )
-  }
-
-  /// Serializes a remote attribute-dictionary tree (as returned by the session) into the schema,
-  /// building a remote `FBAXPlatformElement` tree and running the shared recursive serializer. Each
-  /// element is tagged with the frontmost app's real pid, discovered during the tree read.
-  static func describeAllElements(fromTree tree: [String: Any], keys: Set<FBAXKeys>, nestedFormat: Bool, pid: pid_t, filter: FBAccessibilityElementFilter = .all) -> [FBJSONValue] {
-    let root = buildPlatformElementTree(from: tree, pid: pid)
-    return FBSimulatorAccessibilitySerializer.recursiveDescription(
-      fromElement: root,
-      token: "",
-      nestedFormat: nestedFormat,
-      keys: keys,
-      collector: nil,
-      coverageGrid: nil,
-      seenPids: nil,
-      filter: filter
-    )
-  }
-
-  /// Recursively builds a remote `FBAXPlatformElement` from a nested attribute-dictionary node,
-  /// tagging every node with the owning application's pid.
-  static func buildPlatformElementTree(from node: [String: Any], pid: pid_t) -> FBRemoteAutomationPlatformElement {
-    let childNodes = (node[FBRemoteAutomationAXAttribute.children] as? [[String: Any]]) ?? []
-    let children = childNodes.map { buildPlatformElementTree(from: $0, pid: pid) }
-    return FBRemoteAutomationPlatformElement(attributes: node, children: children, pid: pid)
-  }
-
-  /// The first serialized element whose `key` value equals `markerValue`, used by describe-by-marker.
-  static func matchingElement(inElements elements: [FBJSONValue], markerValue: String, key: FBAXSearchableKey) -> FBJSONValue? {
-    elements.first { element in
-      guard case let .object(fields) = element, case let .string(value)? = fields[key.rawValue] else {
-        return false
-      }
-      return value == markerValue
-    }
-  }
-
-  /// The centre of the frame of the first serialized element whose `key` value equals `markerValue`.
-  /// Shared by the marker-driven operations (tap, wait, set-value).
-  static func frameCenter(inElements elements: [FBJSONValue], markerValue: String, key: FBAXSearchableKey) -> (x: Double, y: Double)? {
-    func number(_ value: FBJSONValue?) -> Double? {
-      switch value {
-      case let .double(number): return number
-      case let .int(number): return Double(number)
-      default: return nil
-      }
-    }
-    for element in elements {
-      guard case let .object(fields) = element,
-        case let .string(value)? = fields[key.rawValue], value == markerValue,
-        case let .object(frame)? = fields[FBAXKeys.frameDict.rawValue],
-        let x = number(frame["x"]), let y = number(frame["y"]),
-        let width = number(frame["width"]), let height = number(frame["height"])
-      else {
-        continue
-      }
-      return (x + width / 2, y + height / 2)
-    }
-    return nil
   }
 
   // MARK: - Session lifecycle
