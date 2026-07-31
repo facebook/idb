@@ -12,6 +12,14 @@ import Foundation
 import XCTest
 import XCTestBootstrap
 
+/// A stand-in for the daemon's `XCAccessibilityElement`. The point-read owning pid is read off the
+/// returned element via an `@objc processIdentifier` message (the session `unsafeBitCast`s the handle
+/// to a module-local protocol), so the fake element must answer that selector.
+private final class FakeAXElement: NSObject {
+  @objc let processIdentifier: CInt
+  init(processIdentifier: CInt) { self.processIdentifier = processIdentifier }
+}
+
 /// A fake `RemoteInvoking` returning a single canned element and its attributes, so the remote
 /// point-describe schema reproduction can be exercised without a live DTX connection.
 private actor FakeReadInvoker: RemoteInvoking {
@@ -19,11 +27,13 @@ private actor FakeReadInvoker: RemoteInvoking {
   private let stringAttributes: [String: String]
   private let frame: CGRect?
   private let returnsElement: Bool
+  private let pid: CInt
 
-  init(stringAttributes: [String: String], frame: CGRect?, returnsElement: Bool = true) {
+  init(stringAttributes: [String: String], frame: CGRect?, returnsElement: Bool = true, pid: CInt = 1320) {
     self.stringAttributes = stringAttributes
     self.frame = frame
     self.returnsElement = returnsElement
+    self.pid = pid
   }
 
   func beginSession(clientProtocolVersion: Int, deadline: TimeInterval) async throws {}
@@ -32,7 +42,7 @@ private actor FakeReadInvoker: RemoteInvoking {
   func synthesizeEvent(_ record: sending Any, implicitConfirmationInterval: TimeInterval, deadline: TimeInterval) async throws {}
 
   func requestElement(atPoint point: sending Any, deadline: TimeInterval) async throws -> sending Any? {
-    returnsElement ? ("element" as NSString) : nil
+    returnsElement ? FakeAXElement(processIdentifier: pid) : nil
   }
 
   func fetchAttributes(_ attributes: sending Any, forElement element: sending Any, deadline: TimeInterval) async throws -> sending Any? {
@@ -88,6 +98,23 @@ final class FBRemoteAutomationDescribeTests: XCTestCase {
       atX: 1, y: 1, using: session, keys: FBAXKeys.defaultSet
     )
     XCTAssertNil(value)
+  }
+
+  func testPointHitTestTagsTheElementWithItsOwningPid() async throws {
+    // The point read must carry the pid of the process that owns the hit element, not a placeholder,
+    // so a serialized point element reports the same owning pid as the whole-tree read does.
+    let invoker = FakeReadInvoker(
+      stringAttributes: [FBRemoteAutomationAXAttribute.label: "General"],
+      frame: CGRect(x: 16, y: 380, width: 370, height: 52),
+      pid: 4321
+    )
+    let session = try await FBRemoteAutomationSession.connected(invoker: invoker, processIdentifier: 0)
+
+    let hit = try await FBSimulatorRemoteAutomation.hitTestElement(
+      atX: 200, y: 406, using: session, keys: FBAXKeys.defaultSet
+    )
+    let dict = try XCTUnwrap(try XCTUnwrap(hit).toFoundationObject() as? [String: Any])
+    XCTAssertEqual((dict[FBAXKeys.pid.rawValue] as? NSNumber)?.intValue, 4321)
   }
 
   private static func sampleTree() -> [String: Any] {

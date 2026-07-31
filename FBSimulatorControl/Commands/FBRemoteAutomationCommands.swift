@@ -343,15 +343,13 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
   /// Reads the element at a point and serializes it to the single-element accessibility schema,
   /// feeding a remote-backed `FBAXPlatformElement` through the same serializer as the legacy path, or
   /// `nil` when no element sits at the point (a valid empty hit-test result, not a failure). The
-  /// element handle stays a disconnected local (received from the session and used once) so it never
-  /// becomes a shareable value that would risk a data race across the session boundary.
+  /// element is tagged with the pid of the process that owns it — resolved inside the session with the
+  /// attributes, so the (non-Sendable) element handle never crosses the actor boundary.
   static func hitTestElement(atX x: Double, y: Double, using session: FBRemoteAutomationSession, keys: Set<FBAXKeys>) async throws -> FBJSONValue? {
-    guard let element = try await session.requestElement(atX: x, y: y) else {
+    guard let hit = try await session.elementAttributes(atX: x, y: y, attributes: FBRemoteAutomationAXAttribute.fetchList) else {
       return nil
     }
-    let raw = try await session.fetchAttributes(FBRemoteAutomationAXAttribute.fetchList, forElement: element)
-    let attributes = (raw as? [String: Any]) ?? [:]
-    let platformElement = FBRemoteAutomationPlatformElement(attributes: attributes, children: [], pid: 0)
+    let platformElement = FBRemoteAutomationPlatformElement(attributes: hit.attributes, children: [], pid: hit.pid)
     return FBSimulatorAccessibilitySerializer.formattedDescription(
       ofElement: platformElement,
       token: "",
