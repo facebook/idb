@@ -133,11 +133,7 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
     case let .point(point):
       try await sendHIDEvent(.tapAt(x: Double(point.x), y: Double(point.y)))
     case let .marker(markerValue, key, _):
-      let tree = try await readFrontmostTree()
-      let elements = FBAXTreeSerialization.describeAllElements(fromTree: tree.root, keys: FBAXKeys.defaultSet, nestedFormat: false, pid: tree.pid)
-      guard let center = FBAXTreeSerialization.frameCenter(inElements: elements, markerValue: markerValue, key: key) else {
-        throw FBUIAutomationError.elementNotFound(backend: .remoteAutomation, key: key.rawValue, value: markerValue)
-      }
+      let center = try await markerCenter(markerValue, key: key)
       try await withSession { session in
         try await session.synthesizeEvent(try Self.eventRecord(for: .tapAt(x: center.x, y: center.y)))
       }
@@ -188,21 +184,9 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
       // instead of throwing, and the truncation warning is not logged on every poll iteration.
       let tree: FBRemoteAutomationElementTree
       if pid > 0 {
-        tree = try await session.applicationElementTree(
-          forPid: pid,
-          attributes: FBRemoteAutomationAXAttribute.fetchList,
-          childrenAttribute: FBRemoteAutomationAXAttribute.children,
-          maxDepth: FBAXTreeSerialization.maxReadDepth,
-          maxNodes: FBAXTreeSerialization.maxReadNodes
-        )
+        tree = try await Self.applicationTree(forPid: pid, using: session)
       } else if let fallbackAnchor {
-        tree = try await session.applicationElementTree(
-          anchorX: fallbackAnchor.x, y: fallbackAnchor.y,
-          attributes: FBRemoteAutomationAXAttribute.fetchList,
-          childrenAttribute: FBRemoteAutomationAXAttribute.children,
-          maxDepth: FBAXTreeSerialization.maxReadDepth,
-          maxNodes: FBAXTreeSerialization.maxReadNodes
-        )
+        tree = try await Self.applicationTree(anchorX: fallbackAnchor.x, y: fallbackAnchor.y, using: session)
       } else {
         return nil
       }
@@ -231,11 +215,7 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
     case let .point(point):
       try await withSession { try await $0.setValue(value, atX: Double(point.x), y: Double(point.y), valueAttribute: FBRemoteAutomationAXAttribute.value) }
     case let .marker(markerValue, key, _):
-      let tree = try await readFrontmostTree()
-      let elements = FBAXTreeSerialization.describeAllElements(fromTree: tree.root, keys: FBAXKeys.defaultSet, nestedFormat: false, pid: tree.pid)
-      guard let center = FBAXTreeSerialization.frameCenter(inElements: elements, markerValue: markerValue, key: key) else {
-        throw FBUIAutomationError.elementNotFound(backend: .remoteAutomation, key: key.rawValue, value: markerValue)
-      }
+      let center = try await markerCenter(markerValue, key: key)
       try await withSession { try await $0.setValue(value, atX: center.x, y: center.y, valueAttribute: FBRemoteAutomationAXAttribute.value) }
     case .frontmost, .application:
       throw FBUIAutomationError.pointOrMarkerRequired(backend: .remoteAutomation, operation: "Setting a value")
@@ -265,22 +245,10 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
   private func frontmostTree(using session: FBRemoteAutomationSession) async throws -> FBRemoteAutomationElementTree {
     let pid = await frontmostApplicationPid()
     if pid > 0 {
-      return try await session.applicationElementTree(
-        forPid: pid,
-        attributes: FBRemoteAutomationAXAttribute.fetchList,
-        childrenAttribute: FBRemoteAutomationAXAttribute.children,
-        maxDepth: FBAXTreeSerialization.maxReadDepth,
-        maxNodes: FBAXTreeSerialization.maxReadNodes
-      )
+      return try await Self.applicationTree(forPid: pid, using: session)
     }
     let anchor = anchorPoint()
-    return try await session.applicationElementTree(
-      anchorX: anchor.x, y: anchor.y,
-      attributes: FBRemoteAutomationAXAttribute.fetchList,
-      childrenAttribute: FBRemoteAutomationAXAttribute.children,
-      maxDepth: FBAXTreeSerialization.maxReadDepth,
-      maxNodes: FBAXTreeSerialization.maxReadNodes
-    )
+    return try await Self.applicationTree(anchorX: anchor.x, y: anchor.y, using: session)
   }
 
   /// Reads the frontmost application's element tree (pid-anchored, midpoint fallback) and returns the
@@ -293,9 +261,7 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
       let anchor = anchorPoint()
       throw FBRemoteAutomationError.treeUnavailable(x: anchor.x, y: anchor.y)
     }
-    if tree.truncated {
-      _ = simulator?.logger?.log("Remote-automation read hit the bound (maxDepth \(FBAXTreeSerialization.maxReadDepth), maxNodes \(FBAXTreeSerialization.maxReadNodes)); the returned tree is truncated and incomplete.")
-    }
+    warnIfTruncated(tree)
     return (root, tree.processIdentifier)
   }
 
@@ -303,22 +269,55 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
   /// and no hit-test. Throws `applicationUnavailable` when the pid yields no tree (a dead pid, or the
   /// app's accessibility server hasn't started).
   private func readApplicationTree(forPid pid: pid_t) async throws -> (root: [String: Any], pid: pid_t) {
-    let tree = try await withSession { session in
-      try await session.applicationElementTree(
-        forPid: pid,
-        attributes: FBRemoteAutomationAXAttribute.fetchList,
-        childrenAttribute: FBRemoteAutomationAXAttribute.children,
-        maxDepth: FBAXTreeSerialization.maxReadDepth,
-        maxNodes: FBAXTreeSerialization.maxReadNodes
-      )
-    }
+    let tree = try await withSession { try await Self.applicationTree(forPid: pid, using: $0) }
     guard let root = tree.root as? [String: Any] else {
       throw FBUIAutomationError.applicationUnavailable(backend: .remoteAutomation, pid: pid)
     }
-    if tree.truncated {
-      _ = simulator?.logger?.log("Remote-automation read hit the bound (maxDepth \(FBAXTreeSerialization.maxReadDepth), maxNodes \(FBAXTreeSerialization.maxReadNodes)); the returned tree is truncated and incomplete.")
-    }
+    warnIfTruncated(tree)
     return (root, tree.processIdentifier)
+  }
+
+  /// Reads an application's element tree with the standard remote read configuration — the full
+  /// attribute fetch-list, the children attribute, and the shared depth/node bounds — anchored on
+  /// `pid`. One definition of that configuration so every read requests the same tree shape.
+  private static func applicationTree(forPid pid: pid_t, using session: FBRemoteAutomationSession) async throws -> FBRemoteAutomationElementTree {
+    try await session.applicationElementTree(
+      forPid: pid,
+      attributes: FBRemoteAutomationAXAttribute.fetchList,
+      childrenAttribute: FBRemoteAutomationAXAttribute.children,
+      maxDepth: FBAXTreeSerialization.maxReadDepth,
+      maxNodes: FBAXTreeSerialization.maxReadNodes
+    )
+  }
+
+  /// As `applicationTree(forPid:using:)`, but anchored on a screen point — the fallback used when the
+  /// frontmost pid can't be resolved via the AX path.
+  private static func applicationTree(anchorX x: Double, y: Double, using session: FBRemoteAutomationSession) async throws -> FBRemoteAutomationElementTree {
+    try await session.applicationElementTree(
+      anchorX: x, y: y,
+      attributes: FBRemoteAutomationAXAttribute.fetchList,
+      childrenAttribute: FBRemoteAutomationAXAttribute.children,
+      maxDepth: FBAXTreeSerialization.maxReadDepth,
+      maxNodes: FBAXTreeSerialization.maxReadNodes
+    )
+  }
+
+  /// Warns when a whole-tree read hit the depth or node bound, so a truncated tree is never passed off
+  /// as complete. The `wait` poll deliberately does not call this — it would log on every iteration.
+  private func warnIfTruncated(_ tree: FBRemoteAutomationElementTree) {
+    guard tree.truncated else { return }
+    _ = simulator?.logger?.log("Remote-automation read hit the bound (maxDepth \(FBAXTreeSerialization.maxReadDepth), maxNodes \(FBAXTreeSerialization.maxReadNodes)); the returned tree is truncated and incomplete.")
+  }
+
+  /// The screen-point centre of the frontmost-tree element a `.marker` names — the shared preamble for
+  /// the marker write verbs (tap, set-value). Throws `elementNotFound` when no element matches.
+  private func markerCenter(_ markerValue: String, key: FBAXSearchableKey) async throws -> (x: Double, y: Double) {
+    let tree = try await readFrontmostTree()
+    let elements = FBAXTreeSerialization.describeAllElements(fromTree: tree.root, keys: FBAXKeys.defaultSet, nestedFormat: false, pid: tree.pid)
+    guard let center = FBAXTreeSerialization.frameCenter(inElements: elements, markerValue: markerValue, key: key) else {
+      throw FBUIAutomationError.elementNotFound(backend: .remoteAutomation, key: key.rawValue, value: markerValue)
+    }
+    return center
   }
 
   /// Reads the element at a point and serializes it to the single-element accessibility schema,
