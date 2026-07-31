@@ -56,4 +56,15 @@ int handleAccessibilityAction(NSString *action, NSArray<NSString *> *arguments);
  */
 NSDictionary<NSString *, id> *FBAXBridgeHandleRequest(NSDictionary<NSString *, id> *request);
 
+/**
+ * Serializes a response dictionary to the JSON bytes both front-ends emit.
+ *
+ * JSON cannot represent infinity or NaN, and `NSJSONSerialization` *raises* on a non-finite number
+ * rather than returning an error — which would abort this process mid-read. An off-screen or
+ * still-laying-out element reports a non-finite frame coordinate, so every number is sanitized to
+ * null first (matching the host serializer) and the serialization is guarded, degrading to an error
+ * frame the client can read rather than terminating the reader.
+ */
+NSData *FBAXBridgeSerializeResponse(NSDictionary<NSString *, id> *response);
+
 NS_ASSUME_NONNULL_END

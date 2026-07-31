@@ -10,6 +10,7 @@
 #import <arpa/inet.h>
 #import <dlfcn.h>
 #import <errno.h>
+#import <math.h>
 #import <objc/runtime.h>
 #import <poll.h>
 #import <sys/socket.h>
@@ -168,6 +169,46 @@ static NSDictionary *FBAXBridgeFrameDictionary(id frameValue)
   return dictionary ?: @{};
 }
 
+// JSON cannot represent infinity or NaN: `NSJSONSerialization` *raises* an `NSInvalidArgumentException`
+// on a non-finite number rather than returning an error, which would abort this process and drop the
+// client's connection mid-read. An element that is off-screen or still being laid out (common on the
+// first read after launch) reports a non-finite frame coordinate, so every number is checked and a
+// non-finite one is emitted as null — matching the host serializer, which sanitizes the same way.
+static id FBAXBridgeJSONSafeNumber(NSNumber *number)
+{
+  if (CFNumberIsFloatType((__bridge CFNumberRef)number) && !isfinite(number.doubleValue)) {
+    return NSNull.null;
+  }
+  return number;
+}
+
+// Recursively replaces every non-finite number in a response with null. Applied once to the whole
+// response before serialization, so a non-finite value anywhere — a frame member, or any future
+// numeric attribute — degrades that one value instead of killing the read.
+static id FBAXBridgeJSONSanitized(id value)
+{
+  if ([value isKindOfClass:NSNumber.class]) {
+    return FBAXBridgeJSONSafeNumber(value);
+  }
+  if ([value isKindOfClass:NSDictionary.class]) {
+    NSDictionary *dictionary = value;
+    NSMutableDictionary *sanitized = [NSMutableDictionary dictionaryWithCapacity:dictionary.count];
+    for (id key in dictionary) {
+      sanitized[key] = FBAXBridgeJSONSanitized(dictionary[key]);
+    }
+    return sanitized;
+  }
+  if ([value isKindOfClass:NSArray.class]) {
+    NSArray *array = value;
+    NSMutableArray *sanitized = [NSMutableArray arrayWithCapacity:array.count];
+    for (id element in array) {
+      [sanitized addObject:FBAXBridgeJSONSanitized(element)];
+    }
+    return sanitized;
+  }
+  return value;
+}
+
 // Coerce an attribute value to a JSON-serializable form. Strings and numbers pass through; the frame
 // becomes a dictionary; anything else is stringified so the payload never fails serialization.
 static id FBAXBridgeJSONSafeValue(id _Nullable value, NSString *key)
@@ -235,6 +276,30 @@ static NSDictionary *_Nullable FBAXBridgeBuildNode(XCTAccessibilityFramework *fr
 static NSDictionary *FBAXBridgeErrorResponse(NSString *message)
 {
   return @{kResponseOk : @NO, kResponseError : message};
+}
+
+NSData *FBAXBridgeSerializeResponse(NSDictionary<NSString *, id> *response)
+{
+  // Sanitize first (non-finite numbers would otherwise raise), then still guard the call: an
+  // unforeseen unserializable value must degrade to an error frame the client can read, never abort
+  // the process and sever the connection.
+  id sanitized = FBAXBridgeJSONSanitized(response);
+  NSData *data = nil;
+  if ([NSJSONSerialization isValidJSONObject:sanitized]) {
+    @try {
+      data = [NSJSONSerialization dataWithJSONObject:sanitized options:0 error:NULL];
+    } @catch (NSException *exception) {
+      NSLog(@"[AccessibilityService] response serialization raised: %@", exception);
+      data = nil;
+    }
+  } else {
+    NSLog(@"[AccessibilityService] response is not a valid JSON object; emitting an error frame");
+  }
+  if (data) {
+    return data;
+  }
+  static const char *const fallback = "{\"ok\":false,\"error\":\"response serialization failed\"}";
+  return [NSData dataWithBytes:fallback length:strlen(fallback)];
 }
 
 // A single-round-trip hit-test: `AXUIElementCopyElementAtPosition` returns just the element at (x, y),
@@ -451,8 +516,7 @@ static int FBAXBridgeServe(NSString *socketPath)
       NSDictionary *response = [parsed isKindOfClass:NSDictionary.class]
       ? FBAXBridgeHandleRequest(parsed)
       : FBAXBridgeErrorResponse(@"malformed request frame");
-      NSData *responseData = [NSJSONSerialization dataWithJSONObject:response options:0 error:NULL]
-      ?: [@"{\"ok\":false,\"error\":\"response serialization failed\"}" dataUsingEncoding:NSUTF8StringEncoding];
+      NSData *responseData = FBAXBridgeSerializeResponse(response);
       uint32_t responseLength = htonl((uint32_t)responseData.length);
       if (!FBAXBridgeWriteFully(connection, &responseLength, sizeof(responseLength))) {
         break;
@@ -501,12 +565,7 @@ int handleAccessibilityAction(NSString *action, NSArray<NSString *> *arguments)
   }
 
   NSDictionary *response = FBAXBridgeHandleRequest(request);
-  NSError *jsonError = nil;
-  NSData *json = [NSJSONSerialization dataWithJSONObject:response options:0 error:&jsonError];
-  if (!json) {
-    NSLog(@"[AccessibilityService] failed to serialize response: %@", jsonError);
-    return 1;
-  }
+  NSData *json = FBAXBridgeSerializeResponse(response);
   fwrite(json.bytes, 1, json.length, stdout);
   fputc('\n', stdout);
   return [response[kResponseOk] boolValue] ? 0 : 1;
