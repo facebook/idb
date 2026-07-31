@@ -69,39 +69,64 @@ struct FBAXBridgeOneshotTransport: FBAXBridgeTransport {
 actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
   private weak var simulator: FBSimulator?
   private var connectionTask: Task<FBAXBridgeConnection, Error>?
+  private var connectionGeneration = 0
 
   init(simulator: FBSimulator) {
     self.simulator = simulator
   }
 
   func read(pid: pid_t, maxDepth: Int) async throws -> Data {
-    let connection = try await self.connection()
     let request: [String: Any] = ["verb": "describe", "pid": Int(pid), "maxDepth": maxDepth]
     let requestData = try JSONSerialization.data(withJSONObject: request)
     do {
-      return try await connection.roundTrip(requestData)
+      let (connection, generation) = try await self.connection()
+      do {
+        return try await connection.roundTrip(requestData)
+      } catch {
+        // Compare-and-clear: drop the memoized connection only if it is still the generation that just
+        // failed. `read` is reentrant on the actor (it suspends at every `await`), so a concurrent read
+        // that shared this now-dead connection may already have dropped it and established a fresh serve
+        // (a newer generation); clearing unconditionally would evict that healthy connection from the
+        // memo and spawn a redundant serve process (the orphan is later SIGKILLed).
+        if connectionGeneration == generation {
+          connectionTask = nil
+        }
+        throw error
+      }
     } catch {
-      // The connection is likely dead — the serve process crashed/exited, or the stream desynced
-      // after a partial frame. Drop the memoized connection so the next read re-establishes a fresh
-      // serve + socket rather than reusing a broken fd forever. The transport is itself memoized
-      // per simulator (`commandCache`), so without this it could never self-heal for the target's
-      // lifetime. Releasing the old connection here triggers its teardown (close fd + kill serve).
-      connectionTask = nil
-      throw error
+      // The connection is likely dead — the serve process terminated (crash, sim teardown, external
+      // kill), or the stream desynced after a partial frame. It has been dropped above; re-establish a
+      // fresh serve + socket and retry the read once. The transport is itself memoized per simulator
+      // (`commandCache`) and never re-created for the target's lifetime, so without this a terminated
+      // SimulatorFrameworkBridge would wedge the client (every future read reusing the dead fd).
+      // Retrying makes recovery transparent; a second failure (e.g. the app's accessibility server is
+      // genuinely down) is surfaced.
+      let (connection, _) = try await self.connection()
+      return try await connection.roundTrip(requestData)
     }
   }
 
-  private func connection() async throws -> FBAXBridgeConnection {
+  /// Returns the memoized connection along with the generation that produced it, so a caller can
+  /// compare-and-clear on the exact generation that failed (`read` is reentrant on the actor — the
+  /// generation is captured before any `await`, so a reentrant caller that re-establishes bumps it and
+  /// the failing caller correctly skips the clear). Establishes once under concurrent callers; each
+  /// fresh serve is a new generation, and an establish failure clears the memo so a later call retries.
+  private func connection() async throws -> (connection: FBAXBridgeConnection, generation: Int) {
     if let connectionTask {
-      return try await connectionTask.value
+      let generation = connectionGeneration
+      return (try await connectionTask.value, generation)
     }
+    connectionGeneration += 1
+    let generation = connectionGeneration
     let simulator = self.simulator
     let task = Task { try await Self.establish(simulator: simulator) }
     connectionTask = task
     do {
-      return try await task.value
+      return (try await task.value, generation)
     } catch {
-      connectionTask = nil
+      if connectionGeneration == generation {
+        connectionTask = nil
+      }
       throw error
     }
   }
