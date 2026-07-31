@@ -186,8 +186,19 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
     // Spawn into the booted launchd domain (`.default`) so the guest joins the simulator's mach
     // namespace and can reach app AX servers — the same domain the one-shot describe uses.
     let process = try await simulator.launchProcess(configuration)
-    let fileDescriptor = try await FBAXBridgeConnection.connect(path: socketPath, timeout: 10)
-    return FBAXBridgeConnection(fileDescriptor: fileDescriptor, process: process, socketPath: socketPath)
+    do {
+      let fileDescriptor = try await FBAXBridgeConnection.connect(path: socketPath, timeout: 10)
+      return FBAXBridgeConnection(fileDescriptor: fileDescriptor, process: process, socketPath: socketPath)
+    } catch {
+      // Connecting failed, so the `FBAXBridgeConnection` that would SIGKILL the serve on deinit was
+      // never created — kill the just-spawned serve here so it does not leak as an orphan, and remove
+      // the socket file it may have bound.
+      if process.processIdentifier > 0 {
+        kill(process.processIdentifier, SIGKILL)
+      }
+      unlink(socketPath)
+      throw error
+    }
   }
 }
 
@@ -208,6 +219,11 @@ final class FBAXBridgeConnection: @unchecked Sendable {
   private let socketPath: String
   private let queue = DispatchQueue(label: "com.facebook.FBSimulatorControl.axbridge.connection")
 
+  /// Per-`recv` deadline (SO_RCVTIMEO) so a hung or dead guest can't wedge a round-trip forever;
+  /// generous relative to a warm read (~20ms), so it only trips on a genuine stall, after which the
+  /// round-trip recovery drops and re-establishes the connection.
+  private static let roundTripTimeoutSeconds = 30
+
   init(fileDescriptor: Int32, process: FBSubprocess<AnyObject, AnyObject, AnyObject>, socketPath: String) {
     self.fileDescriptor = fileDescriptor
     self.process = process
@@ -215,8 +231,8 @@ final class FBAXBridgeConnection: @unchecked Sendable {
   }
 
   deinit {
-    // Best-effort teardown when the memoized transport is released (e.g. the host process exits
-    // gracefully): close the socket, kill the long-lived serve process, and remove the socket file.
+    // Best-effort teardown when the reader holding this connection is released (e.g. the host process
+    // exits gracefully): close the socket, kill the long-lived serve process, and remove the socket file.
     close(fileDescriptor)
     if process.processIdentifier > 0 {
       kill(process.processIdentifier, SIGKILL)
@@ -257,6 +273,10 @@ final class FBAXBridgeConnection: @unchecked Sendable {
             if connectSocket(fileDescriptor, toPath: path) {
               var noSigPipe: Int32 = 1
               setsockopt(fileDescriptor, SOL_SOCKET, SO_NOSIGPIPE, &noSigPipe, socklen_t(MemoryLayout<Int32>.size))
+              // Bound each blocking `recv` so a hung/dead guest can't wedge the caller forever; a read
+              // that stalls past the deadline fails and the round-trip recovery re-establishes.
+              var readTimeout = timeval(tv_sec: roundTripTimeoutSeconds, tv_usec: 0)
+              setsockopt(fileDescriptor, SOL_SOCKET, SO_RCVTIMEO, &readTimeout, socklen_t(MemoryLayout<timeval>.size))
               continuation.resume(returning: fileDescriptor)
               return
             }
@@ -351,6 +371,11 @@ final class FBAXBridgeConnection: @unchecked Sendable {
         let got = recv(fileDescriptor, base + offset, count - offset, 0)
         if got < 0 {
           if errno == EINTR { continue } // interrupted by a signal — retry
+          if errno == EAGAIN || errno == EWOULDBLOCK {
+            // The SO_RCVTIMEO deadline elapsed with no data — the guest is hung or gone. Surface a
+            // timeout so the round-trip recovery drops this connection and re-establishes a fresh serve.
+            throw FBAXBridgeError.guestFailure("serve read timed out after \(roundTripTimeoutSeconds)s")
+          }
           throw FBAXBridgeError.guestFailure("socket read failed: \(String(cString: strerror(errno)))")
         }
         if got == 0 {
