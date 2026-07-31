@@ -9,6 +9,14 @@ import CoreGraphics
 import XCTest
 import XCTestBootstrap
 
+/// A stand-in for the daemon's `XCAccessibilityElement`. The point-read owning pid is read off the
+/// returned element via an `@objc processIdentifier` message (the session `unsafeBitCast`s the handle
+/// to a module-local protocol), so the fake element must answer that selector.
+private final class FakeAXElement: NSObject {
+  @objc let processIdentifier: CInt
+  init(processIdentifier: CInt) { self.processIdentifier = processIdentifier }
+}
+
 /// A fake `RemoteInvoking` that records the order of the typed operations and returns canned
 /// values, so `FBRemoteAutomationSession`'s handshake ordering, capability parsing, and
 /// connect-then-operate behaviour can be tested without a live DTX connection.
@@ -36,10 +44,12 @@ private actor FakeRemoteInvoker: RemoteInvoking {
 
   private let cannedCapabilities: [String: Int]
   private var beginSessionFailuresRemaining: Int
+  private let cannedPid: CInt
 
-  init(capabilities: [String: Int] = [:], beginSessionFailures: Int = 0) {
+  init(capabilities: [String: Int] = [:], beginSessionFailures: Int = 0, pid: CInt = 1320) {
     self.cannedCapabilities = capabilities
     self.beginSessionFailuresRemaining = beginSessionFailures
+    self.cannedPid = pid
   }
 
   func callLog() -> [Call] { calls }
@@ -72,7 +82,7 @@ private actor FakeRemoteInvoker: RemoteInvoking {
       lastPointX = decoded.x
       lastPointY = decoded.y
     }
-    return ["type": "element"] as NSDictionary
+    return FakeAXElement(processIdentifier: cannedPid)
   }
 
   func fetchAttributes(_ attributes: sending Any, forElement element: sending Any, deadline: TimeInterval) async throws -> sending Any? {
@@ -191,5 +201,19 @@ final class FBRemoteAutomationSessionTests: XCTestCase {
     XCTAssertEqual(calls, [.beginSession, .exchangeCapabilities, .loadAccessibility, .fetchAttributes], "A read on a connected session issues only the read.")
     let attributes = await invoker.lastAttributes
     XCTAssertEqual(attributes, ["AXLabel", "AXValue"], "The requested attribute names must be forwarded unchanged and in order.")
+  }
+
+  func testElementAttributes_ReturnsAttributesAndOwningPid() async throws {
+    let invoker = FakeRemoteInvoker(pid: 4321)
+    let session = try await FBRemoteAutomationSession.connected(invoker: invoker, processIdentifier: 1)
+
+    let hit = try await session.elementAttributes(atX: 5, y: 6, attributes: ["AXLabel"])
+
+    let result = try XCTUnwrap(hit, "A point read that resolves an element must return its attributes and owning pid.")
+    XCTAssertEqual(result.pid, 4321, "The owning pid must be read off the hit element and returned alongside its attributes.")
+    XCTAssertEqual(result.attributes["attributes"] as? String, "value", "The element's fetched attribute dictionary must be returned.")
+
+    let calls = await invoker.callLog()
+    XCTAssertEqual(calls, [.beginSession, .exchangeCapabilities, .loadAccessibility, .requestElement, .fetchAttributes], "A point read resolves the element then fetches its attributes.")
   }
 }

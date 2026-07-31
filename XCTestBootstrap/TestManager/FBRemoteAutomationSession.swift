@@ -136,6 +136,25 @@ public actor FBRemoteAutomationSession {
     return try await invoker.fetchAttributes(attributes as NSArray, forElement: element, deadline: readDeadline)
   }
 
+  /// The requested attributes of the accessibility element at a screen point, together with the pid of
+  /// the process that owns it, or `nil` when no element sits there. The element's pid, attributes, and
+  /// the hit-test all happen here so the (non-Sendable) element handle never leaves the actor — the
+  /// caller can then tag the point-read element with the real owning pid rather than a placeholder.
+  public func elementAttributes(atX x: Double, y: Double, attributes: [String]) async throws -> sending (attributes: [String: Any], pid: pid_t)? {
+    let point = CGPointCreateDictionaryRepresentation(CGPoint(x: x, y: y)) as NSDictionary
+    guard let element = try await invoker.requestElement(atPoint: point, deadline: readDeadline) else {
+      return nil
+    }
+    // Reading the pid off the handle taints its region, so the following `sending` transfer into
+    // `fetchAttributes` can't be proven race-free — but the handle is used sequentially within the
+    // actor and consumed exactly once, so the transfer is safe.
+    // @patternlint-disable-next-line swift-nonisolated-unsafe
+    nonisolated(unsafe) let handle = element
+    let pid = unsafeBitCast(handle as AnyObject, to: XCAccessibilityElementMessaging.self).processIdentifier
+    let raw = try await invoker.fetchAttributes(attributes as NSArray, forElement: handle, deadline: readDeadline)
+    return ((raw as? [String: Any]) ?? [:], pid)
+  }
+
   /// Reads the whole element tree of the frontmost application as nested attribute dictionaries,
   /// discovering the app's pid by hit-testing `(x, y)`.
   ///
@@ -180,6 +199,7 @@ public actor FBRemoteAutomationSession {
           // The walk is sequential within the actor and each handle is consumed exactly once, so
           // transferring it into the recursive read is race-free; region isolation can't prove that
           // because the handle shares a region with the array it came from.
+          // @patternlint-disable-next-line swift-nonisolated-unsafe
           nonisolated(unsafe) let childHandle = childHandles.removeFirst()
           let result = try await fetchAttributeTree(from: childHandle, attributes: attributes, childrenAttribute: childrenAttribute, depth: depth + 1, maxDepth: maxDepth, budget: remaining)
           childNodes.append(result.node)
