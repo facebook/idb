@@ -7,8 +7,13 @@
 
 #import "AccessibilityService.h"
 
+#import <arpa/inet.h>
 #import <dlfcn.h>
+#import <errno.h>
 #import <objc/runtime.h>
+#import <sys/socket.h>
+#import <sys/un.h>
+#import <unistd.h>
 
 #import <CoreGraphics/CoreGraphics.h>
 
@@ -31,6 +36,11 @@ static NSString *const kResponseTree = @"tree";
 static NSString *const kResponseError = @"error";
 
 static NSString *const kVerbDescribe = @"describe";
+static NSString *const kActionServe = @"serve";
+
+// Frame cap for the persistent `serve` transport: a request larger than this is treated as a
+// protocol error rather than allocating unbounded memory.
+static const uint32_t kMaxFrameBytes = 16 * 1024 * 1024;
 
 // The private frameworks are loaded from the booted runtime root at these paths (spike-proven via
 // `simctl spawn`); they are driven through the ObjC runtime, never linked.
@@ -79,6 +89,25 @@ static XCTAccessibilityFramework *_Nullable FBAXBridgeMakeFramework(NSString *_N
     return nil;
   }
   return framework;
+}
+
+// The framework is created once and reused across requests: `dlopen` + `initForRemoteAccess` is the
+// dominant setup cost (~260ms), so caching it is what makes the persistent `serve` mode fast (the
+// oneshot path creates it once too). Not thread-safe by design — requests are handled serially.
+static XCTAccessibilityFramework *_Nullable FBAXBridgeSharedFramework(NSString *_Nullable *_Nullable error)
+{
+  static XCTAccessibilityFramework *shared;
+  static NSString *cachedError;
+  static dispatch_once_t onceToken;
+  dispatch_once(&onceToken, ^{
+    NSString *setupError = nil;
+    shared = FBAXBridgeMakeFramework(&setupError);
+    cachedError = setupError;
+  });
+  if (!shared && error) {
+    *error = cachedError ?: @"accessibility setup failed";
+  }
+  return shared;
 }
 
 static NSArray<NSString *> *FBAXBridgeFetchList(void)
@@ -199,7 +228,7 @@ NSDictionary<NSString *, id> *FBAXBridgeHandleRequest(NSDictionary<NSString *, i
   : kDefaultMaxDepth;
 
   NSString *setupError = nil;
-  XCTAccessibilityFramework *framework = FBAXBridgeMakeFramework(&setupError);
+  XCTAccessibilityFramework *framework = FBAXBridgeSharedFramework(&setupError);
   if (!framework) {
     return FBAXBridgeErrorResponse(setupError ?: @"accessibility setup failed");
   }
@@ -221,10 +250,152 @@ NSDictionary<NSString *, id> *FBAXBridgeHandleRequest(NSDictionary<NSString *, i
   return @{kResponseOk : @YES, kResponseTree : tree};
 }
 
-#pragma mark - Oneshot argv front-end
+#pragma mark - Persistent serve transport
+
+static BOOL FBAXBridgeWriteFully(int fd, const void *buffer, size_t length)
+{
+  const char *bytes = buffer;
+  size_t offset = 0;
+  while (offset < length) {
+    ssize_t written = send(fd, bytes + offset, length - offset, MSG_NOSIGNAL);
+    if (written < 0) {
+      if (errno == EINTR) {
+        continue;  // interrupted by a signal, not a real failure — retry
+      }
+      return NO;
+    }
+    if (written == 0) {
+      return NO;
+    }
+    offset += (size_t)written;
+  }
+  return YES;
+}
+
+static BOOL FBAXBridgeReadFully(int fd, void *buffer, size_t length)
+{
+  char *bytes = buffer;
+  size_t offset = 0;
+  while (offset < length) {
+    ssize_t got = recv(fd, bytes + offset, length - offset, 0);
+    if (got < 0) {
+      if (errno == EINTR) {
+        continue;  // interrupted by a signal — retry
+      }
+      return NO;
+    }
+    if (got == 0) {
+      return NO;  // EOF: the client disconnected
+    }
+    offset += (size_t)got;
+  }
+  return YES;
+}
+
+// Serves the transport-agnostic request handler over a Unix-domain socket so a host client can reuse
+// one warm process for many reads (the ~30x amortization). The framing is a 4-byte big-endian length
+// prefix followed by a JSON request/response object — the same envelope the oneshot path emits. The
+// host binds/connects the same `/tmp` path (host and this in-simulator process share the filesystem
+// namespace as the same user, so no data-container translation is needed).
+//
+// This intentionally serves one client at a time, serially: the host holds a single long-lived
+// connection for the session, so requests are processed one-by-one over that connection with a
+// blocking read between them (the read blocks waiting for the next command — the expected interactive
+// idle, not a stall). When the client disconnects, the inner read returns EOF and the outer loop
+// re-`accept`s, allowing a reconnect. The process is torn down by the host at end of session.
+static int FBAXBridgeServe(NSString *socketPath)
+{
+  int listenFd = socket(AF_UNIX, SOCK_STREAM, 0);
+  if (listenFd < 0) {
+    NSLog(@"[AccessibilityService] socket() failed: %s", strerror(errno));
+    return 1;
+  }
+
+  struct sockaddr_un address;
+  memset(&address, 0, sizeof(address));
+  address.sun_family = AF_UNIX;
+  if (strlen(socketPath.fileSystemRepresentation) >= sizeof(address.sun_path)) {
+    NSLog(@"[AccessibilityService] socket path too long: %@", socketPath);
+    close(listenFd);
+    return 1;
+  }
+  strlcpy(address.sun_path, socketPath.fileSystemRepresentation, sizeof(address.sun_path));
+  unlink(address.sun_path);
+
+  if (bind(listenFd, (struct sockaddr *)&address, sizeof(address)) != 0) {
+    NSLog(@"[AccessibilityService] bind(%@) failed: %s", socketPath, strerror(errno));
+    close(listenFd);
+    return 1;
+  }
+  if (listen(listenFd, 1) != 0) {
+    NSLog(@"[AccessibilityService] listen() failed: %s", strerror(errno));
+    close(listenFd);
+    return 1;
+  }
+
+  // Warm the framework up front so the first served request is already fast.
+  NSString *warmupError = nil;
+  FBAXBridgeSharedFramework(&warmupError);
+  NSLog(@"[AccessibilityService] serving accessibility on %@", socketPath);
+
+  while (YES) {
+    int connection = accept(listenFd, NULL, NULL);
+    if (connection < 0) {
+      if (errno == EINTR) {
+        continue;
+      }
+      break;
+    }
+    while (YES) {
+      uint32_t frameLength = 0;
+      if (!FBAXBridgeReadFully(connection, &frameLength, sizeof(frameLength))) {
+        break;
+      }
+      frameLength = ntohl(frameLength);
+      if (frameLength == 0 || frameLength > kMaxFrameBytes) {
+        break;
+      }
+      NSMutableData *requestData = [NSMutableData dataWithLength:frameLength];
+      if (!FBAXBridgeReadFully(connection, requestData.mutableBytes, frameLength)) {
+        break;
+      }
+      id parsed = [NSJSONSerialization JSONObjectWithData:requestData options:0 error:NULL];
+      NSDictionary *response = [parsed isKindOfClass:NSDictionary.class]
+      ? FBAXBridgeHandleRequest(parsed)
+      : FBAXBridgeErrorResponse(@"malformed request frame");
+      NSData *responseData = [NSJSONSerialization dataWithJSONObject:response options:0 error:NULL]
+      ?: [@"{\"ok\":false,\"error\":\"response serialization failed\"}" dataUsingEncoding:NSUTF8StringEncoding];
+      uint32_t responseLength = htonl((uint32_t)responseData.length);
+      if (!FBAXBridgeWriteFully(connection, &responseLength, sizeof(responseLength))) {
+        break;
+      }
+      if (!FBAXBridgeWriteFully(connection, responseData.bytes, responseData.length)) {
+        break;
+      }
+    }
+    close(connection);
+    // Loop back to accept: the host may reconnect within the session. The process is torn down by the
+    // host at end of session.
+  }
+
+  close(listenFd);
+  unlink(address.sun_path);
+  return 0;
+}
+
+#pragma mark - Argv front-end
 
 int handleAccessibilityAction(NSString *action, NSArray<NSString *> *arguments)
 {
+  if ([action isEqualToString:kActionServe]) {
+    NSString *socketPath = arguments.firstObject;
+    if (socketPath.length == 0) {
+      NSLog(@"[AccessibilityService] serve requires a socket path argument");
+      return 1;
+    }
+    return FBAXBridgeServe(socketPath);
+  }
+
   NSMutableDictionary<NSString *, id> *request = [NSMutableDictionary dictionary];
   request[kRequestVerb] = action;
   for (NSUInteger i = 0; i + 1 < arguments.count; i += 2) {

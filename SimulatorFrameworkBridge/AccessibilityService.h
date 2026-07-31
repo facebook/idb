@@ -25,13 +25,18 @@ NS_ASSUME_NONNULL_BEGIN
  * oneshot front-end `handleAccessibilityAction` parses argv, calls the core, and prints the response
  * as JSON on stdout.
  *
- * Reads only for now; writes (tap/scroll/set-value via in-guest HID) are added in a later commit.
+ * Reads only (element writes are served by the existing HID / testmanagerd / ax backends).
  *
- * Usage (oneshot):
- *   accessibility describe --pid <pid> [--max-depth <n>]
+ * Two front-ends over the same core:
+ *   - oneshot:  accessibility describe --pid <pid> [--max-depth <n>]   (reads once, prints JSON, exits)
+ *   - persistent: accessibility serve <socketPath>                     (serves many reads over a UDS)
  *
- * @param action The action to perform ("describe").
- * @param arguments Remaining argv beyond service and action (e.g. @[@"--pid", @"1234"]).
+ * The persistent `serve` mode binds a Unix-domain socket and answers length-prefixed JSON request
+ * frames (4-byte big-endian length + a request object, same envelope as oneshot) with the framework
+ * cached once, so a host client reusing one warm process reads ~30x faster than re-spawning per read.
+ *
+ * @param action The action to perform ("describe" or "serve").
+ * @param arguments Remaining argv beyond service and action (e.g. @[@"--pid", @"1234"] or @[socketPath]).
  * @return 0 on success, 1 on failure.
  */
 int handleAccessibilityAction(NSString *action, NSArray<NSString *> *arguments);
