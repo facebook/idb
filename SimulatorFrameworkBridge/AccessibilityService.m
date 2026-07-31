@@ -11,7 +11,9 @@
 #import <dlfcn.h>
 #import <errno.h>
 #import <objc/runtime.h>
+#import <poll.h>
 #import <sys/socket.h>
+#import <sys/time.h>
 #import <sys/un.h>
 #import <unistd.h>
 
@@ -58,6 +60,14 @@ static NSString *const kXCTAutomationSupportPath =
 // A depth cap and a total-node budget guard against pathological trees.
 static const int kDefaultMaxDepth = 100;
 static const int kNodeBudget = 5000;
+
+// The persistent `serve` exits after sitting idle this long — no client connected, or a connected
+// client sending nothing — so an orphaned serve (the host crashed, or was replaced by the host's
+// recovery path) is reaped rather than lingering. `establish` spawns the serve into the booted
+// launchd domain, so it is parented to launchd_sim, not the host; there is no parent-death signal to
+// watch, hence an idle timeout. A live host that pauses longer is transparently re-spawned on its next
+// read, so this only ever costs a re-spawn, never correctness.
+static const int kIdleTimeoutSeconds = 300;
 
 // File-local declarations of the private classes we drive. The classes are `dlopen`-loaded and
 // resolved via `objc_lookUpClass`, so we never reference the class symbols at link time; these
@@ -400,6 +410,18 @@ static int FBAXBridgeServe(NSString *socketPath)
   NSLog(@"[AccessibilityService] serving accessibility on %@", socketPath);
 
   while (YES) {
+    struct pollfd listenPoll = {.fd = listenFd, .events = POLLIN, .revents = 0};
+    int ready = poll(&listenPoll, 1, kIdleTimeoutSeconds * 1000);
+    if (ready == 0) {
+      NSLog(@"[AccessibilityService] idle %ds with no client; exiting", kIdleTimeoutSeconds);
+      break;  // reap this (likely orphaned) serve
+    }
+    if (ready < 0) {
+      if (errno == EINTR) {
+        continue;
+      }
+      break;
+    }
     int connection = accept(listenFd, NULL, NULL);
     if (connection < 0) {
       if (errno == EINTR) {
@@ -407,6 +429,11 @@ static int FBAXBridgeServe(NSString *socketPath)
       }
       break;
     }
+    // Bound the per-request wait too: a `recv` on a connected-but-idle client (or a dead host still
+    // holding the socket) that blocks past the window fails, the inner loop breaks, and the outer
+    // `poll` then reaps the serve if no new client arrives.
+    struct timeval recvTimeout = {.tv_sec = kIdleTimeoutSeconds, .tv_usec = 0};
+    setsockopt(connection, SOL_SOCKET, SO_RCVTIMEO, &recvTimeout, sizeof(recvTimeout));
     while (YES) {
       uint32_t frameLength = 0;
       if (!FBAXBridgeReadFully(connection, &frameLength, sizeof(frameLength))) {
