@@ -101,6 +101,46 @@ public extension FBUIAutomation {
     let response = try await describe(query, options: options)
     return try JSONSerialization.data(withJSONObject: response.asDictionary(), options: .sortedKeys)
   }
+
+  /// `hitTest`, serialized to canonical sorted-keys JSON, or `nil` when the point is empty — the form
+  /// CLI front-ends emit for a targeted read.
+  func hitTestJSON(
+    at point: CGPoint,
+    options: FBAccessibilityRequestOptions
+  ) async throws -> Data? {
+    guard let response = try await hitTest(at: point, options: options) else { return nil }
+    return try JSONSerialization.data(withJSONObject: response.asDictionary(), options: .sortedKeys)
+  }
+
+  /// Hit-tests `point`, then taps it via `hid`, returning the element that was under the point before
+  /// the tap (or `nil` when the point was empty). The hit-test runs first, so the returned element is
+  /// what the touch lands on; the tap is then sent whether or not an element was found. A reader
+  /// failure throws — and the tap is not sent — so a caller can tell empty space from a broken reader.
+  /// This is the composition primitive behind a streaming "tap and learn what you hit" server: it
+  /// pairs a read backend (`self`) with a HID sender, owning only the ordering and tap-regardless policy.
+  func tapAndHitTest(
+    at point: CGPoint,
+    options: FBAccessibilityRequestOptions,
+    hid: FBSimulatorHID,
+    logger: FBControlCoreLogger
+  ) async throws -> FBAccessibilityElementsResponse? {
+    let element = try await hitTest(at: point, options: options)
+    try await hid.send(event: .tapAt(x: Double(point.x), y: Double(point.y)), logger: logger)
+    return element
+  }
+
+  /// `tapAndHitTest`, serialized to canonical sorted-keys JSON, or `nil` when the point was empty.
+  func tapAndHitTestJSON(
+    at point: CGPoint,
+    options: FBAccessibilityRequestOptions,
+    hid: FBSimulatorHID,
+    logger: FBControlCoreLogger
+  ) async throws -> Data? {
+    guard let response = try await tapAndHitTest(at: point, options: options, hid: hid, logger: logger) else {
+      return nil
+    }
+    return try JSONSerialization.data(withJSONObject: response.asDictionary(), options: .sortedKeys)
+  }
 }
 
 public extension FBSimulator {
