@@ -98,8 +98,7 @@ public extension FBUIAutomation {
     _ query: FBAccessibilityElementQuery,
     options: FBAccessibilityRequestOptions
   ) async throws -> Data {
-    let response = try await describe(query, options: options)
-    return try JSONSerialization.data(withJSONObject: response.asDictionary(), options: .sortedKeys)
+    try await describe(query, options: options).sortedKeysJSON()
   }
 
   /// `hitTest`, serialized to canonical sorted-keys JSON, or `nil` when the point is empty — the form
@@ -108,8 +107,7 @@ public extension FBUIAutomation {
     at point: CGPoint,
     options: FBAccessibilityRequestOptions
   ) async throws -> Data? {
-    guard let response = try await hitTest(at: point, options: options) else { return nil }
-    return try JSONSerialization.data(withJSONObject: response.asDictionary(), options: .sortedKeys)
+    try await hitTest(at: point, options: options)?.sortedKeysJSON()
   }
 
   /// Hit-tests `point`, then taps it via `hid`, returning the element that was under the point before
@@ -136,10 +134,15 @@ public extension FBUIAutomation {
     hid: FBSimulatorHID,
     logger: FBControlCoreLogger
   ) async throws -> Data? {
-    guard let response = try await tapAndHitTest(at: point, options: options, hid: hid, logger: logger) else {
-      return nil
-    }
-    return try JSONSerialization.data(withJSONObject: response.asDictionary(), options: .sortedKeys)
+    try await tapAndHitTest(at: point, options: options, hid: hid, logger: logger)?.sortedKeysJSON()
+  }
+}
+
+private extension FBAccessibilityElementsResponse {
+  /// The canonical sorted-keys JSON encoding every CLI front-end emits — one definition so the byte
+  /// form can't drift between the describe, hit-test, and tap-and-hit-test paths.
+  func sortedKeysJSON() throws -> Data {
+    try JSONSerialization.data(withJSONObject: asDictionary(), options: .sortedKeys)
   }
 }
 
