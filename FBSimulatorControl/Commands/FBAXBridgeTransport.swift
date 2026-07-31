@@ -30,23 +30,28 @@ protocol FBAXBridgeTransport {
 
 /// Parses the guest's `{ "ok": Bool, "tree": {...} | "error": String }` response envelope.
 enum FBAXBridgeResponse {
-  /// The node a successful response carries, or `nil` for a successful *empty* result
-  /// (`{ ok: true, empty: true }`) — which only a hit-test produces. A failed response
-  /// (`{ ok: false, error }`) throws, carrying the guest's own message.
-  private static func node(fromResponse data: Data, pid: pid_t) throws -> [String: Any]? {
+  /// Parses the guest JSON and validates its `ok`/error framing, returning the top-level response
+  /// dictionary of a successful response. A failed response (`{ ok: false, error }`) throws: the typed
+  /// dead-pid case for `application_unavailable` (so the conformer re-raises the backend-neutral
+  /// `FBUIAutomationError.applicationUnavailable`, matching the remote backend), otherwise an opaque
+  /// `guestFailure` carrying the guest's own message.
+  private static func validatedResponse(fromResponse data: Data, pid: pid_t) throws -> [String: Any] {
     guard let object = try? JSONSerialization.jsonObject(with: data), let response = object as? [String: Any] else {
       throw FBAXBridgeError.guestFailure("pid \(pid): unparseable guest response")
     }
     guard (response["ok"] as? Bool) == true else {
-      // A tagged dead-pid failure gets its own case so the conformer re-raises the backend-neutral
-      // `FBUIAutomationError.applicationUnavailable`, matching the remote backend. Any other failure
-      // stays an opaque `guestFailure` carrying the guest's own message.
       if (response["error_kind"] as? String) == "application_unavailable" {
         throw FBAXBridgeError.applicationUnavailable(pid: pid)
       }
       let message = (response["error"] as? String) ?? "the guest reported a failure with no message"
       throw FBAXBridgeError.guestFailure("pid \(pid): \(message)")
     }
+    return response
+  }
+
+  /// The node a successful response carries, or `nil` for a successful *empty* result
+  /// (`{ ok: true, empty: true }`) — which only a hit-test produces.
+  private static func node(fromValidatedResponse response: [String: Any], pid: pid_t) throws -> [String: Any]? {
     if (response["empty"] as? Bool) == true {
       return nil
     }
@@ -56,19 +61,24 @@ enum FBAXBridgeResponse {
     return tree
   }
 
-  /// Parses a whole-tree read. A tree read has no empty result — an app always has a root element —
-  /// so an empty response is a protocol violation rather than "nothing there".
-  static func tree(fromResponse data: Data, pid: pid_t) throws -> [String: Any] {
-    guard let tree = try node(fromResponse: data, pid: pid) else {
+  /// Parses a whole-tree read: the tree, plus whether the guest's walk was cut short by the depth or
+  /// node bound (so the caller can warn the tree is incomplete). A tree read has no empty result — an
+  /// app always has a root element — so an empty response is a protocol violation rather than "nothing
+  /// there". `truncated` defaults to `false` when the guest omits it (an older guest, or a complete walk).
+  static func tree(fromResponse data: Data, pid: pid_t) throws -> (tree: [String: Any], truncated: Bool) {
+    let response = try validatedResponse(fromResponse: data, pid: pid)
+    guard let tree = try node(fromValidatedResponse: response, pid: pid) else {
       throw FBAXBridgeError.guestFailure("pid \(pid): empty response to a whole-tree read")
     }
-    return tree
+    let truncated = (response["truncated"] as? Bool) ?? false
+    return (tree, truncated)
   }
 
   /// Parses a hit-test response: the hit node, or `nil` when the guest reports no element at the point
   /// — a valid empty result. A failure throws, so a caller can tell empty space from a broken reader.
   static func hitTest(fromResponse data: Data, pid: pid_t) throws -> [String: Any]? {
-    try node(fromResponse: data, pid: pid)
+    let response = try validatedResponse(fromResponse: data, pid: pid)
+    return try node(fromValidatedResponse: response, pid: pid)
   }
 }
 

@@ -28,8 +28,18 @@ final class FBAXBridgeReadsTests: XCTestCase {
     ]
     let data = try envelope(["ok": true, "tree": tree])
     let parsed = try FBAXBridgeResponse.tree(fromResponse: data, pid: 42)
-    XCTAssertEqual(parsed[FBRemoteAutomationAXAttribute.label] as? String, "General")
-    XCTAssertEqual(parsed[FBRemoteAutomationAXAttribute.identifier] as? String, "com.apple.settings.general")
+    XCTAssertEqual(parsed.tree[FBRemoteAutomationAXAttribute.label] as? String, "General")
+    XCTAssertEqual(parsed.tree[FBRemoteAutomationAXAttribute.identifier] as? String, "com.apple.settings.general")
+    XCTAssertFalse(parsed.truncated, "a whole-tree read with no truncated flag is a complete tree")
+  }
+
+  func testParsesTruncatedFlagWhenGuestReportsAPartialTree() throws {
+    // A guest walk cut short by the depth or node bound tags its envelope `truncated: true`, so the
+    // conformer can warn the tree is incomplete rather than pass it off as whole.
+    let tree: [String: Any] = [FBRemoteAutomationAXAttribute.label: "root"]
+    let data = try envelope(["ok": true, "tree": tree, "truncated": true])
+    let parsed = try FBAXBridgeResponse.tree(fromResponse: data, pid: 42)
+    XCTAssertTrue(parsed.truncated, "the guest's truncation flag must be surfaced to the caller")
   }
 
   func testSurfacesGuestErrorMessage() throws {
@@ -249,7 +259,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
     let parsed = try FBAXBridgeResponse.tree(fromResponse: data, pid: 99)
 
     let elements = FBAXTreeSerialization.describeAllElements(
-      fromTree: parsed, keys: FBAXKeys.defaultSet, nestedFormat: false, pid: 99
+      fromTree: parsed.tree, keys: FBAXKeys.defaultSet, nestedFormat: false, pid: 99
     )
     XCTAssertEqual(elements.count, 2, "expected the root plus its one child, flattened")
 

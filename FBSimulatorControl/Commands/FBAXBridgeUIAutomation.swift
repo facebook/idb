@@ -72,9 +72,10 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
   ) async throws -> [FBJSONValue] {
     try await translatingSeamErrors {
       let pid = try await resolvePid(for: query)
-      let tree = try await readTree(forPid: pid)
+      let read = try await readTree(forPid: pid)
+      warnIfTruncated(read.truncated)
       return FBAXTreeSerialization.describeAllElements(
-        fromTree: tree, keys: keys, nestedFormat: nestedFormat, pid: pid, filter: filter
+        fromTree: read.tree, keys: keys, nestedFormat: nestedFormat, pid: pid, filter: filter
       )
     }
   }
@@ -101,9 +102,11 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
       // Re-resolve the pid and re-read each poll so an app that launches mid-wait is picked up.
       do {
         let pid = try await self.resolvePid(for: .frontmost)
-        let tree = try await self.readTree(forPid: pid)
+        // A poll reads the tree directly (not through `readElements`), so the truncation warning is
+        // not logged on every poll iteration — matching the describe-path-only warning above.
+        let read = try await self.readTree(forPid: pid)
         let elements = FBAXTreeSerialization.describeAllElements(
-          fromTree: tree, keys: FBAXKeys.defaultSet.union([key.serializationKey]), nestedFormat: false, pid: pid
+          fromTree: read.tree, keys: FBAXKeys.defaultSet.union([key.serializationKey]), nestedFormat: false, pid: pid
         )
         return FBAXTreeSerialization.matchingElement(inElements: elements, markerValue: markerValue, key: key) != nil ? true : nil
       } catch let error as FBAXBridgeError {
@@ -162,13 +165,21 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
   }
 
   /// Reads the full attribute tree for `pid` through the configured transport (one-shot spawn or
-  /// persistent socket). The verb logic above is transport-agnostic; only the injected `transport`
-  /// differs. `.point` does not use this — it uses the targeted `transport.hitTest`.
-  private func readTree(forPid pid: pid_t) async throws -> [String: Any] {
+  /// persistent socket), plus whether the guest's walk was cut short by the depth or node bound. The
+  /// verb logic above is transport-agnostic; only the injected `transport` differs. `.point` does not
+  /// use this — it uses the targeted `transport.hitTest`.
+  private func readTree(forPid pid: pid_t) async throws -> (tree: [String: Any], truncated: Bool) {
     let response = try await transport.read(
       pid: pid, maxDepth: FBAXTreeSerialization.maxReadDepth, maxNodes: FBAXTreeSerialization.maxReadNodes
     )
     return try FBAXBridgeResponse.tree(fromResponse: response, pid: pid)
+  }
+
+  /// Warns when a whole-tree read hit the depth or node bound, so a truncated tree is never passed off
+  /// as complete. The `wait` poll deliberately does not call this — it would log on every iteration.
+  private func warnIfTruncated(_ truncated: Bool) {
+    guard truncated else { return }
+    _ = simulator.logger?.log("axbridge read hit the bound (maxDepth \(FBAXTreeSerialization.maxReadDepth), maxNodes \(FBAXTreeSerialization.maxReadNodes)); the returned tree is truncated and incomplete.")
   }
 
   /// Targeted hit-test for `pid`: the element at the point via the guest's one-round-trip `hittest`
