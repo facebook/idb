@@ -44,10 +44,10 @@ final class FBAXBridgeUIAutomation: FBUIAutomation {
   ) async throws -> FBAccessibilityElementsResponse {
     let keys = options.keys ?? FBAXKeys.defaultSet
     let pid = try await resolvePid(for: query)
-    let tree = try await readTree(forPid: pid)
 
     switch query {
     case .frontmost, .application:
+      let tree = try await readTree(forPid: pid)
       let elements = FBSimulatorRemoteAutomation.describeAllElements(
         fromTree: tree, keys: keys, nestedFormat: options.nestedFormat, pid: pid, filter: options.filter
       )
@@ -55,6 +55,7 @@ final class FBAXBridgeUIAutomation: FBUIAutomation {
         elements: .array(elements), profilingData: nil, frameCoverage: nil, additionalFrameCoverage: nil
       )
     case let .marker(value, key, _):
+      let tree = try await readTree(forPid: pid)
       let elements = FBSimulatorRemoteAutomation.describeAllElements(
         fromTree: tree, keys: keys, nestedFormat: false, pid: pid
       )
@@ -65,10 +66,12 @@ final class FBAXBridgeUIAutomation: FBUIAutomation {
         elements: match, profilingData: nil, frameCoverage: nil, additionalFrameCoverage: nil
       )
     case let .point(point):
-      let root = FBSimulatorRemoteAutomation.buildPlatformElementTree(from: tree, pid: pid)
-      guard let hit = Self.elementAtPoint(point, in: root) else {
-        throw FBAXBridgeError.noElementAtPoint(x: Double(point.x), y: Double(point.y))
-      }
+      // A targeted single-round-trip hit-test in the guest (AXUIElementCopyElementAtPosition) resolves
+      // the element at the point directly — ~15x faster warm than reading the whole tree and hit-testing
+      // host-side. The guest returns the single hit node in the same schema, fed through the serializer.
+      let response = try await transport.hitTest(pid: pid, x: Double(point.x), y: Double(point.y))
+      let node = try FBAXBridgeResponse.tree(fromResponse: response, pid: pid)
+      let hit = FBSimulatorRemoteAutomation.buildPlatformElementTree(from: node, pid: pid)
       let element = FBSimulatorAccessibilitySerializer.formattedDescription(
         ofElement: hit, token: "", nestedFormat: false, keys: keys, collector: nil, coverageGrid: nil
       )
@@ -149,48 +152,11 @@ final class FBAXBridgeUIAutomation: FBUIAutomation {
     return pid
   }
 
-  /// Reads the attribute tree for `pid` through the configured transport (one-shot spawn or persistent
-  /// socket). The verb logic above is transport-agnostic; only the injected `transport` differs.
+  /// Reads the full attribute tree for `pid` through the configured transport (one-shot spawn or
+  /// persistent socket). The verb logic above is transport-agnostic; only the injected `transport`
+  /// differs. `.point` does not use this — it uses the targeted `transport.hitTest`.
   private func readTree(forPid pid: pid_t) async throws -> [String: Any] {
     let response = try await transport.read(pid: pid, maxDepth: Self.describeMaxDepth)
     return try FBAXBridgeResponse.tree(fromResponse: response, pid: pid)
-  }
-
-  // MARK: - Point hit-testing
-
-  /// The element at `point`, preferring meaningful identity over raw geometry. The full tree includes
-  /// unlabeled container nodes, so the geometrically smallest node at a point is often an anonymous
-  /// sub-view; a caller (e.g. a streaming hit-test server) wants the identified element it "hit". So
-  /// this returns the smallest-area element containing the point that has an **identifier**, else the
-  /// smallest with a **label**, else the smallest node of any kind (never nothing when the point is
-  /// covered). Walks the platform-element tree the shared serializer builds, so frames match the output.
-  private static func elementAtPoint(_ point: CGPoint, in root: FBAXPlatformElement) -> FBAXPlatformElement? {
-    var byIdentifier: (element: FBAXPlatformElement, area: Double)?
-    var byLabel: (element: FBAXPlatformElement, area: Double)?
-    var byAny: (element: FBAXPlatformElement, area: Double)?
-    func take(_ element: FBAXPlatformElement, area: Double, into slot: inout (element: FBAXPlatformElement, area: Double)?) {
-      if let current = slot, area > current.area {
-        return
-      }
-      slot = (element, area)
-    }
-    func visit(_ element: FBAXPlatformElement) {
-      let frame = element.axFrame()
-      if frame.contains(point) {
-        let area = Double(frame.width * frame.height)
-        take(element, area: area, into: &byAny)
-        if element.axLabel()?.isEmpty == false {
-          take(element, area: area, into: &byLabel)
-        }
-        if element.axIdentifier()?.isEmpty == false {
-          take(element, area: area, into: &byIdentifier)
-        }
-      }
-      for child in element.axChildren() {
-        visit(child)
-      }
-    }
-    visit(root)
-    return (byIdentifier ?? byLabel ?? byAny)?.element
   }
 }

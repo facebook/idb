@@ -21,7 +21,10 @@ import Foundation
 /// `read` returns the guest's raw JSON response bytes (a `Sendable` `Data`, so it crosses the actor
 /// boundary cleanly); the conformer parses the `{ "ok", "tree" | "error" }` envelope.
 protocol FBAXBridgeTransport {
+  /// Reads the whole element tree for `pid` (the guest `describe` verb).
   func read(pid: pid_t, maxDepth: Int) async throws -> Data
+  /// Reads just the element at a point for `pid` (the guest `hittest` verb) — one round-trip, no walk.
+  func hitTest(pid: pid_t, x: Double, y: Double) async throws -> Data
 }
 
 /// Parses the guest's `{ "ok": Bool, "tree": {...} | "error": String }` response envelope.
@@ -45,13 +48,18 @@ struct FBAXBridgeOneshotTransport: FBAXBridgeTransport {
   let simulator: FBSimulator
 
   func read(pid: pid_t, maxDepth: Int) async throws -> Data {
+    try await spawn(["accessibility", "describe", "--pid", "\(pid)", "--max-depth", "\(maxDepth)"])
+  }
+
+  func hitTest(pid: pid_t, x: Double, y: Double) async throws -> Data {
+    try await spawn(["accessibility", "hittest", "--pid", "\(pid)", "--x", "\(x)", "--y", "\(y)"])
+  }
+
+  private func spawn(_ arguments: [String]) async throws -> Data {
     guard let helperPath = BundledResources.path(forItem: "SimulatorFrameworkBridge") else {
       throw FBAXBridgeError.bridgeUnavailable
     }
-    let output = try await simulator.launchProcessConsumingOutput(
-      launchPath: helperPath,
-      arguments: ["accessibility", "describe", "--pid", "\(pid)", "--max-depth", "\(maxDepth)"]
-    )
+    let output = try await simulator.launchProcessConsumingOutput(launchPath: helperPath, arguments: arguments)
     guard !output.stdout.isEmpty else {
       let stderr = String(data: output.stderr, encoding: .utf8) ?? ""
       throw FBAXBridgeError.guestFailure("exit \(output.exitCode); no output. stderr: \(stderr)")
@@ -76,7 +84,15 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
   }
 
   func read(pid: pid_t, maxDepth: Int) async throws -> Data {
-    let request: [String: Any] = ["verb": "describe", "pid": Int(pid), "maxDepth": maxDepth]
+    try await roundTripWithRecovery(["verb": "describe", "pid": Int(pid), "maxDepth": maxDepth])
+  }
+
+  func hitTest(pid: pid_t, x: Double, y: Double) async throws -> Data {
+    try await roundTripWithRecovery(["verb": "hittest", "pid": Int(pid), "x": x, "y": y])
+  }
+
+  /// Sends one request over the reused connection, recovering from a terminated serve process.
+  private func roundTripWithRecovery(_ request: [String: Any]) async throws -> Data {
     let requestData = try JSONSerialization.data(withJSONObject: request)
     do {
       let (connection, generation) = try await self.connection()
@@ -96,9 +112,9 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
     } catch {
       // The connection is likely dead — the serve process terminated (crash, sim teardown, external
       // kill), or the stream desynced after a partial frame. It has been dropped above; re-establish a
-      // fresh serve + socket and retry the read once. The transport is itself memoized per simulator
+      // fresh serve + socket and retry the request once. The transport is itself memoized per simulator
       // (`commandCache`) and never re-created for the target's lifetime, so without this a terminated
-      // SimulatorFrameworkBridge would wedge the client (every future read reusing the dead fd).
+      // SimulatorFrameworkBridge would wedge the client (every future request reusing the dead fd).
       // Retrying makes recovery transparent; a second failure (e.g. the app's accessibility server is
       // genuinely down) is surfaced.
       let (connection, _) = try await self.connection()
