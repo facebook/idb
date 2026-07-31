@@ -66,7 +66,7 @@ final class FBAXBridgeUIAutomation: FBUIAutomation {
       )
     case let .point(point):
       let root = FBSimulatorRemoteAutomation.buildPlatformElementTree(from: tree, pid: pid)
-      guard let hit = Self.deepestElement(containing: point, in: root) else {
+      guard let hit = Self.elementAtPoint(point, in: root) else {
         throw FBAXBridgeError.noElementAtPoint(x: Double(point.x), y: Double(point.y))
       }
       let element = FBSimulatorAccessibilitySerializer.formattedDescription(
@@ -158,26 +158,39 @@ final class FBAXBridgeUIAutomation: FBUIAutomation {
 
   // MARK: - Point hit-testing
 
-  /// The deepest (smallest-area) element whose frame contains `point`, mirroring hit-test semantics for
-  /// the `.point` describe. Walks the platform-element tree the shared serializer builds, so it uses the
-  /// same frames the serialized output reports.
-  private static func deepestElement(containing point: CGPoint, in element: FBAXPlatformElement) -> FBAXPlatformElement? {
-    var best: FBAXPlatformElement?
-    var bestArea = Double.greatestFiniteMagnitude
+  /// The element at `point`, preferring meaningful identity over raw geometry. The full tree includes
+  /// unlabeled container nodes, so the geometrically smallest node at a point is often an anonymous
+  /// sub-view; a caller (e.g. a streaming hit-test server) wants the identified element it "hit". So
+  /// this returns the smallest-area element containing the point that has an **identifier**, else the
+  /// smallest with a **label**, else the smallest node of any kind (never nothing when the point is
+  /// covered). Walks the platform-element tree the shared serializer builds, so frames match the output.
+  private static func elementAtPoint(_ point: CGPoint, in root: FBAXPlatformElement) -> FBAXPlatformElement? {
+    var byIdentifier: (element: FBAXPlatformElement, area: Double)?
+    var byLabel: (element: FBAXPlatformElement, area: Double)?
+    var byAny: (element: FBAXPlatformElement, area: Double)?
+    func take(_ element: FBAXPlatformElement, area: Double, into slot: inout (element: FBAXPlatformElement, area: Double)?) {
+      if let current = slot, area > current.area {
+        return
+      }
+      slot = (element, area)
+    }
     func visit(_ element: FBAXPlatformElement) {
       let frame = element.axFrame()
       if frame.contains(point) {
         let area = Double(frame.width * frame.height)
-        if area <= bestArea {
-          best = element
-          bestArea = area
+        take(element, area: area, into: &byAny)
+        if element.axLabel()?.isEmpty == false {
+          take(element, area: area, into: &byLabel)
+        }
+        if element.axIdentifier()?.isEmpty == false {
+          take(element, area: area, into: &byIdentifier)
         }
       }
       for child in element.axChildren() {
         visit(child)
       }
     }
-    visit(element)
-    return best
+    visit(root)
+    return (byIdentifier ?? byLabel ?? byAny)?.element
   }
 }
