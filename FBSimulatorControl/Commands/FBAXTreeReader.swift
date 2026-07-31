@@ -50,7 +50,7 @@ extension FBAXTreeReader {
       }
       return response
     case let .marker(value, key, _):
-      let elements = try await readElements(for: query, keys: options.keys, nestedFormat: false, filter: .all)
+      let elements = try await readElements(for: query, keys: options.keys.union([key.serializationKey]), nestedFormat: false, filter: .all)
       guard let match = FBAXTreeSerialization.matchingElement(inElements: elements, markerValue: value, key: key) else {
         throw FBUIAutomationError.elementNotFound(backend: backend, key: key.rawValue, value: value)
       }

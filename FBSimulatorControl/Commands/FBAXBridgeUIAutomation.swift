@@ -103,7 +103,7 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
         let pid = try await self.resolvePid(for: .frontmost)
         let tree = try await self.readTree(forPid: pid)
         let elements = FBAXTreeSerialization.describeAllElements(
-          fromTree: tree, keys: FBAXKeys.defaultSet, nestedFormat: false, pid: pid
+          fromTree: tree, keys: FBAXKeys.defaultSet.union([key.serializationKey]), nestedFormat: false, pid: pid
         )
         return FBAXTreeSerialization.matchingElement(inElements: elements, markerValue: markerValue, key: key) != nil ? true : nil
       } catch let error as FBAXBridgeError {

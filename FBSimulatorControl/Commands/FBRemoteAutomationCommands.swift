@@ -58,8 +58,9 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
   /// the shared accessibility schema. `.point` reads the element at the coordinate; `.marker` finds
   /// the first frontmost-tree element whose `key` value contains the marker; `.frontmost` reads the
   /// whole tree. Marker and whole-tree reads resolve the frontmost app's pid, falling back to a
-  /// screen-centre probe. `key` must be among the requested `keys` for a marker match to be found,
-  /// because the match runs over the serialized element rather than the raw tree.
+  /// screen-centre probe. The match runs over the serialized element rather than the raw tree, so the
+  /// searched `key` is always unioned into the serialized `keys` — a marker resolves regardless of the
+  /// requested key set.
   public func describe(
     _ query: FBAccessibilityElementQuery,
     options: FBAccessibilityRequestOptions
@@ -191,7 +192,7 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
         return nil
       }
       guard let root = tree.root as? [String: Any] else { return nil }
-      let elements = FBAXTreeSerialization.describeAllElements(fromTree: root, keys: FBAXKeys.defaultSet, nestedFormat: false, pid: tree.processIdentifier)
+      let elements = FBAXTreeSerialization.describeAllElements(fromTree: root, keys: FBAXKeys.defaultSet.union([key.serializationKey]), nestedFormat: false, pid: tree.processIdentifier)
       return FBAXTreeSerialization.frameCenter(inElements: elements, markerValue: markerValue, key: key) != nil ? true : nil
     }
   }
@@ -313,7 +314,7 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
   /// the marker write verbs (tap, set-value). Throws `elementNotFound` when no element matches.
   private func markerCenter(_ markerValue: String, key: FBAXSearchableKey) async throws -> (x: Double, y: Double) {
     let tree = try await readFrontmostTree()
-    let elements = FBAXTreeSerialization.describeAllElements(fromTree: tree.root, keys: FBAXKeys.defaultSet, nestedFormat: false, pid: tree.pid)
+    let elements = FBAXTreeSerialization.describeAllElements(fromTree: tree.root, keys: FBAXKeys.defaultSet.union([key.serializationKey]), nestedFormat: false, pid: tree.pid)
     guard let center = FBAXTreeSerialization.frameCenter(inElements: elements, markerValue: markerValue, key: key) else {
       throw FBUIAutomationError.elementNotFound(backend: .remoteAutomation, key: key.rawValue, value: markerValue)
     }

@@ -160,6 +160,44 @@ final class FBAXBridgeReadsTests: XCTestCase {
     XCTAssertEqual(centre?.y, 45)
   }
 
+  // MARK: - A marker matches by its searched key regardless of the requested key set
+
+  // A marker is matched over the *serialized* element, so the searched key's field has to be among the
+  // keys a tree was serialized with. Every marker call site therefore unions the searched key's
+  // serialization key into the read set — a mapping that is only sound because each searchable key
+  // serializes into the field named by its own raw value.
+  func testSearchableKeyMapsToItsOwnSerializedField() {
+    let searchable: [FBAXSearchableKey] = [.label, .uniqueID, .value, .title, .role, .roleDescription, .subrole, .help, .placeholder]
+    for key in searchable {
+      XCTAssertEqual(key.serializationKey.rawValue, key.rawValue, "\(key) must serialize into the field its marker match reads")
+    }
+  }
+
+  func testMarkerMatchesWhenSearchedKeyIsOutsideTheRequestedKeySet() {
+    // describe serialized with the caller's requested keys and the marker verbs with the default set,
+    // so a searched key outside that set — a restricted key request, or `.placeholder`, which the
+    // default set omits — was silently unmatchable even when a matching element was present.
+    let tree: [String: Any] = [
+      FBRemoteAutomationAXAttribute.label: "General Settings",
+      FBRemoteAutomationAXAttribute.children: [[String: Any]](),
+    ]
+    let requested: Set<FBAXKeys> = [.value]
+    let withoutSearchedKey = FBAXTreeSerialization.describeAllElements(fromTree: tree, keys: requested, nestedFormat: false, pid: 1)
+    XCTAssertNil(
+      FBAXTreeSerialization.matchingElement(inElements: withoutSearchedKey, markerValue: "General", key: .label),
+      "a key absent from the serialized set must not resolve a marker"
+    )
+    let withSearchedKey = FBAXTreeSerialization.describeAllElements(
+      fromTree: tree, keys: requested.union([FBAXSearchableKey.label.serializationKey]), nestedFormat: false, pid: 1
+    )
+    guard case let .object(fields)? = FBAXTreeSerialization.matchingElement(inElements: withSearchedKey, markerValue: "General", key: .label),
+      case let .string(label)? = fields[FBAXSearchableKey.label.rawValue]
+    else {
+      return XCTFail("unioning the searched key must make the marker resolve regardless of the requested keys")
+    }
+    XCTAssertEqual(label, "General Settings")
+  }
+
   // MARK: - FBAXBridgeResponse hit-test parsing
 
   func testHitTestParsesHitNode() throws {

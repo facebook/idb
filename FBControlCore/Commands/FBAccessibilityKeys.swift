@@ -53,6 +53,24 @@ public enum FBAXSearchableKey: String, Sendable {
   case subrole = "subrole"
   case help = "help"
   case placeholder = "placeholder"
+
+  /// The `FBAXKeys` whose serialized field a marker match reads. A marker is matched over the
+  /// *serialized* element, so the searched key must be among the keys a tree is serialized with;
+  /// unioning this into the read key set makes a marker resolve the same way regardless of the
+  /// requested key set — notably `.placeholder`, which `FBAXKeys.defaultSet` omits.
+  public var serializationKey: FBAXKeys {
+    switch self {
+    case .label: return .label
+    case .uniqueID: return .uniqueID
+    case .value: return .value
+    case .title: return .title
+    case .role: return .role
+    case .roleDescription: return .roleDescription
+    case .subrole: return .subrole
+    case .help: return .help
+    case .placeholder: return .placeholder
+    }
+  }
 }
 
 /// The direction of an accessibility scroll action.
