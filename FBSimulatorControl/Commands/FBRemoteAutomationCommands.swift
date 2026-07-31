@@ -25,6 +25,7 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
 
   private weak var simulator: FBSimulator?
   private var sessionTask: Task<FBRemoteAutomationSession, Error>?
+  private var sessionGeneration = 0
 
   init(simulator: FBSimulator) {
     self.simulator = simulator
@@ -32,9 +33,11 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
 
   /// Submits a synthesized input event (tap, swipe, …) over the remote-automation channel.
   public func sendHIDEvent(_ event: FBSimulatorHIDEvent) async throws {
-    let session = try await self.session()
-    let record = try Self.eventRecord(for: event)
-    try await session.synthesizeEvent(record)
+    // The record is built inside the session closure: it is not Sendable, so it must be created and
+    // consumed in the same isolation region.
+    try await withSession { session in
+      try await session.synthesizeEvent(try Self.eventRecord(for: event))
+    }
   }
 
   /// Presses a hardware button over the remote-automation channel's device-event selector
@@ -46,8 +49,7 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
     guard let usage = button.consumerHIDUsage else {
       throw FBUIAutomationError.operationUnsupported(backend: .remoteAutomation, operation: "Pressing the \(button.name) button")
     }
-    let session = try await self.session()
-    try await session.performDeviceEvent(page: UInt32(usage.page), usage: UInt32(usage.code), duration: duration)
+    try await withSession { try await $0.performDeviceEvent(page: UInt32(usage.page), usage: UInt32(usage.code), duration: duration) }
   }
 
   // MARK: - FBUIAutomation
@@ -99,8 +101,10 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
     options: FBAccessibilityRequestOptions
   ) async throws -> FBAccessibilityElementsResponse? {
     let keys = options.keys
-    let session = try await self.session()
-    guard let element = try await Self.hitTestElement(atX: Double(point.x), y: Double(point.y), using: session, keys: keys) else {
+    let hit = try await withSession { session in
+      try await Self.hitTestElement(atX: Double(point.x), y: Double(point.y), using: session, keys: keys)
+    }
+    guard let element = hit else {
       return nil
     }
     return FBAccessibilityElementsResponse(
@@ -142,9 +146,9 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
       guard let center = FBAXTreeSerialization.frameCenter(inElements: elements, markerValue: markerValue, key: key) else {
         throw FBUIAutomationError.elementNotFound(backend: .remoteAutomation, key: key.rawValue, value: markerValue)
       }
-      let session = try await self.session()
-      let record = try Self.eventRecord(for: .tapAt(x: center.x, y: center.y))
-      try await session.synthesizeEvent(record)
+      try await withSession { session in
+        try await session.synthesizeEvent(try Self.eventRecord(for: .tapAt(x: center.x, y: center.y)))
+      }
     case .frontmost, .application:
       throw FBUIAutomationError.pointOrMarkerRequired(backend: .remoteAutomation, operation: "A tap")
     }
@@ -158,13 +162,33 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
     timeout: TimeInterval,
     pollInterval: TimeInterval
   ) async throws {
-    let session = try await self.session()
+    let (session, generation) = try await self.session()
     // Resolve the frontmost app's pid once via the AX window-server query and anchor every poll on
     // it, so a system modal / launch chrome at the screen centre can't hijack the wait — and the
     // poll closure captures only Sendable values (pid + session), never the actor. Fall back to the
     // midpoint hit-test only when the AX pid is unavailable.
     let pid = await frontmostApplicationPid()
     let fallbackAnchor = pid > 0 ? nil : anchorPoint()
+    // A wait holds one session for its whole duration, so if that session dies mid-wait the failure
+    // propagates out and the memo must be dropped — otherwise the next operation reuses the corpse.
+    do {
+      try await pollForMarker(query, session: session, pid: pid, fallbackAnchor: fallbackAnchor, timeout: timeout, pollInterval: pollInterval)
+    } catch {
+      if sessionGeneration == generation {
+        sessionTask = nil
+      }
+      throw error
+    }
+  }
+
+  private func pollForMarker(
+    _ query: FBAccessibilityElementQuery,
+    session: FBRemoteAutomationSession,
+    pid: pid_t,
+    fallbackAnchor: (x: Double, y: Double)?,
+    timeout: TimeInterval,
+    pollInterval: TimeInterval
+  ) async throws {
     try await FBUIAutomationPolling.waitForMarker(
       query, backend: .remoteAutomation, timeout: timeout, pollInterval: pollInterval
     ) { markerValue, key, _ in
@@ -213,16 +237,14 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
   public func setValue(_ value: String, for query: FBAccessibilityElementQuery) async throws {
     switch query {
     case let .point(point):
-      let session = try await self.session()
-      try await session.setValue(value, atX: Double(point.x), y: Double(point.y), valueAttribute: FBRemoteAutomationAXAttribute.value)
+      try await withSession { try await $0.setValue(value, atX: Double(point.x), y: Double(point.y), valueAttribute: FBRemoteAutomationAXAttribute.value) }
     case let .marker(markerValue, key, _):
       let tree = try await readFrontmostTree()
       let elements = FBAXTreeSerialization.describeAllElements(fromTree: tree.root, keys: FBAXKeys.defaultSet, nestedFormat: false, pid: tree.pid)
       guard let center = FBAXTreeSerialization.frameCenter(inElements: elements, markerValue: markerValue, key: key) else {
         throw FBUIAutomationError.elementNotFound(backend: .remoteAutomation, key: key.rawValue, value: markerValue)
       }
-      let session = try await self.session()
-      try await session.setValue(value, atX: center.x, y: center.y, valueAttribute: FBRemoteAutomationAXAttribute.value)
+      try await withSession { try await $0.setValue(value, atX: center.x, y: center.y, valueAttribute: FBRemoteAutomationAXAttribute.value) }
     case .frontmost, .application:
       throw FBUIAutomationError.pointOrMarkerRequired(backend: .remoteAutomation, operation: "Setting a value")
     }
@@ -274,8 +296,7 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
   /// marker tap, marker set-value). Logs a warning when the walk hit the depth or node bound so a
   /// truncated tree is never passed off as complete.
   private func readFrontmostTree() async throws -> (root: [String: Any], pid: pid_t) {
-    let session = try await self.session()
-    let tree = try await frontmostTree(using: session)
+    let tree = try await withSession { try await frontmostTree(using: $0) }
     guard let root = tree.root as? [String: Any] else {
       let anchor = anchorPoint()
       throw FBRemoteAutomationError.treeUnavailable(x: anchor.x, y: anchor.y)
@@ -290,14 +311,15 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
   /// and no hit-test. Throws `applicationUnavailable` when the pid yields no tree (a dead pid, or the
   /// app's accessibility server hasn't started).
   private func readApplicationTree(forPid pid: pid_t) async throws -> (root: [String: Any], pid: pid_t) {
-    let session = try await self.session()
-    let tree = try await session.applicationElementTree(
-      forPid: pid,
-      attributes: FBRemoteAutomationAXAttribute.fetchList,
-      childrenAttribute: FBRemoteAutomationAXAttribute.children,
-      maxDepth: FBAXTreeSerialization.maxReadDepth,
-      maxNodes: FBAXTreeSerialization.maxReadNodes
-    )
+    let tree = try await withSession { session in
+      try await session.applicationElementTree(
+        forPid: pid,
+        attributes: FBRemoteAutomationAXAttribute.fetchList,
+        childrenAttribute: FBRemoteAutomationAXAttribute.children,
+        maxDepth: FBAXTreeSerialization.maxReadDepth,
+        maxNodes: FBAXTreeSerialization.maxReadNodes
+      )
+    }
     guard let root = tree.root as? [String: Any] else {
       throw FBUIAutomationError.applicationUnavailable(backend: .remoteAutomation, pid: pid)
     }
@@ -335,17 +357,51 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
   // settle), so it is built once and memoized on this actor; every operation reuses it. Callers
   // amortize by holding this instance across operations rather than re-creating it per call — one
   // session per held instance, torn down when the instance is released.
-  private func session() async throws -> FBRemoteAutomationSession {
-    if let sessionTask {
-      return try await sessionTask.value
+
+  /// Runs `body` against the memoized session, dropping that session if the operation fails.
+  ///
+  /// Without this a session that dies mid-lifetime — the daemon restarted, the simulator shut down,
+  /// the channel dropped — is never replaced, because a memo that resolved successfully was only ever
+  /// cleared on an establish failure. Every later operation then reuses the corpse and the instance is
+  /// wedged for good.
+  ///
+  /// Deliberately no automatic retry: remote operations include writes (tap, set-value, device
+  /// events), and replaying one that may already have been applied could double-apply it. Dropping the
+  /// dead session is enough — the failure is reported, and the *next* operation establishes a fresh
+  /// one. The read transport, whose operations are all idempotent, does retry.
+  private func withSession<T>(_ body: (FBRemoteAutomationSession) async throws -> T) async throws -> T {
+    let (session, generation) = try await self.session()
+    do {
+      return try await body(session)
+    } catch {
+      // Compare-and-clear: only drop the memo if it still holds the session that just failed. This
+      // actor is reentrant, so a concurrent caller may already have replaced it, and clearing
+      // unconditionally would discard a healthy session and re-run the expensive handshake.
+      if sessionGeneration == generation {
+        sessionTask = nil
+      }
+      throw error
     }
+  }
+
+  /// The memoized session and the generation that produced it, establishing one on first use. The
+  /// generation lets a caller drop only the session it actually saw fail.
+  private func session() async throws -> (session: FBRemoteAutomationSession, generation: Int) {
+    if let sessionTask {
+      let generation = sessionGeneration
+      return (try await sessionTask.value, generation)
+    }
+    sessionGeneration += 1
+    let generation = sessionGeneration
     let simulator = self.simulator
     let task = Task { try await Self.makeSession(for: simulator) }
     sessionTask = task
     do {
-      return try await task.value
+      return (try await task.value, generation)
     } catch {
-      sessionTask = nil
+      if sessionGeneration == generation {
+        sessionTask = nil
+      }
       throw error
     }
   }
