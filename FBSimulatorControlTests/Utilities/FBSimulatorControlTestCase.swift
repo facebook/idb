@@ -97,7 +97,12 @@ class FBSimulatorControlTestCase: XCTestCase {
   }
 
   override func tearDown() {
-    _ = try? control.set.shutdownAll().await()
+    // `control` is lazy: referencing it here would bootstrap FBSimulatorControl —
+    // and shut down every booted simulator in the device set — for tests that
+    // never touched a simulator. Only clean up if the test actually used it.
+    if let control = _control {
+      _ = try? control.set.shutdownAll().await()
+    }
     _control = nil
   }
 }
