@@ -28,7 +28,10 @@ NS_ASSUME_NONNULL_BEGIN
  * Reads only (element writes are served by the existing HID / testmanagerd / ax backends).
  *
  * Verbs (over the same core):
- *   - describe --pid <pid> [--max-depth <n>]   reads the whole element tree.
+ *   - describe --pid <pid> [--max-depth <n>] [--max-nodes <n>]
+ *                                              reads the whole element tree. The caller's bounds are
+ *                                              honoured when given, so a host driving several reader
+ *                                              backends gets the same truncation point from each.
  *   - hittest  --pid <pid> --x <x> --y <y>     reads just the element at a point, via a single
  *                                              AXUIElementCopyElementAtPosition round-trip (no walk).
  * Front-ends:
@@ -47,8 +50,8 @@ int handleAccessibilityAction(NSString *action, NSArray<NSString *> *arguments);
 
 /**
  * The transport-agnostic request handler shared by the oneshot argv front-end and any future socket
- * server. Request keys: "verb" (@"describe" or @"hittest"), "pid" (NSNumber), optional "maxDepth"
- * (NSNumber, describe), "x"/"y" (NSNumber, hittest). Response is @{@"ok": @YES, @"tree": <node>} on
+ * server. Request keys: "verb" (@"describe" or @"hittest"), "pid" (NSNumber), optional "maxDepth" and
+ * "maxNodes" (NSNumber, describe — the caller's read bounds), "x"/"y" (NSNumber, hittest). Response is @{@"ok": @YES, @"tree": <node>} on
  * success; @{@"ok": @YES, @"empty": @YES} when a hittest finds no element at the point (a valid empty
  * result, distinct from a failure); or @{@"ok": @NO, @"error": <string>} on failure. Each node is
  * keyed by the `XC_kAXXC*` attributes with a JSON-safe frame (a CGRect dictionary representation) and

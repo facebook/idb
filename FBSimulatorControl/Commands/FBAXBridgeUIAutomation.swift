@@ -162,7 +162,9 @@ final class FBAXBridgeUIAutomation: FBUIAutomation, @unchecked Sendable {
   /// persistent socket). The verb logic above is transport-agnostic; only the injected `transport`
   /// differs. `.point` does not use this — it uses the targeted `transport.hitTest`.
   private func readTree(forPid pid: pid_t) async throws -> [String: Any] {
-    let response = try await transport.read(pid: pid, maxDepth: Self.describeMaxDepth)
+    let response = try await transport.read(
+      pid: pid, maxDepth: FBAXTreeSerialization.maxReadDepth, maxNodes: FBAXTreeSerialization.maxReadNodes
+    )
     return try FBAXBridgeResponse.tree(fromResponse: response, pid: pid)
   }
 

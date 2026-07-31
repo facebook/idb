@@ -21,8 +21,9 @@ import Foundation
 /// `read` returns the guest's raw JSON response bytes (a `Sendable` `Data`, so it crosses the actor
 /// boundary cleanly); the conformer parses the `{ "ok", "tree" | "error" }` envelope.
 protocol FBAXBridgeTransport {
-  /// Reads the whole element tree for `pid` (the guest `describe` verb).
-  func read(pid: pid_t, maxDepth: Int) async throws -> Data
+  /// Reads the whole element tree for `pid` (the guest `describe` verb), bounded by the caller's
+  /// depth and node budget — the host owns those bounds so both XCUI-grade backends truncate alike.
+  func read(pid: pid_t, maxDepth: Int, maxNodes: Int) async throws -> Data
   /// Reads just the element at a point for `pid` (the guest `hittest` verb) — one round-trip, no walk.
   func hitTest(pid: pid_t, x: Double, y: Double) async throws -> Data
 }
@@ -67,8 +68,8 @@ enum FBAXBridgeResponse {
 struct FBAXBridgeOneshotTransport: FBAXBridgeTransport {
   let simulator: FBSimulator
 
-  func read(pid: pid_t, maxDepth: Int) async throws -> Data {
-    try await spawn(["accessibility", "describe", "--pid", "\(pid)", "--max-depth", "\(maxDepth)"])
+  func read(pid: pid_t, maxDepth: Int, maxNodes: Int) async throws -> Data {
+    try await spawn(["accessibility", "describe", "--pid", "\(pid)", "--max-depth", "\(maxDepth)", "--max-nodes", "\(maxNodes)"])
   }
 
   func hitTest(pid: pid_t, x: Double, y: Double) async throws -> Data {
@@ -103,8 +104,8 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
     self.simulator = simulator
   }
 
-  func read(pid: pid_t, maxDepth: Int) async throws -> Data {
-    try await roundTripWithRecovery(["verb": "describe", "pid": Int(pid), "maxDepth": maxDepth])
+  func read(pid: pid_t, maxDepth: Int, maxNodes: Int) async throws -> Data {
+    try await roundTripWithRecovery(["verb": "describe", "pid": Int(pid), "maxDepth": maxDepth, "maxNodes": maxNodes])
   }
 
   func hitTest(pid: pid_t, x: Double, y: Double) async throws -> Data {
@@ -324,7 +325,9 @@ final class FBAXBridgeConnection: @unchecked Sendable {
     let length = decodeLength(header)
     // A zero-length frame is never valid: the guest always sends a non-empty JSON envelope
     // ({"ok":...}), so length 0 (or an absurd length) means a desynced/corrupt stream, not empty data.
-    guard length > 0, length < 64 * 1024 * 1024 else {
+    // Matches the guest's frame cap: a length outside it means a desynced or corrupt stream, not a
+    // huge tree. Keep the two in step — the guest rejects (and never writes) frames above this.
+    guard length > 0, length < 16 * 1024 * 1024 else {
       throw FBAXBridgeError.guestFailure("invalid response frame length \(length)")
     }
     return try readAll(fileDescriptor, count: length)

@@ -15,6 +15,13 @@ import Foundation
 /// on one backend that the other has to reach into.
 enum FBAXTreeSerialization {
 
+  /// The bounds every whole-tree read is taken under, shared by both XCUI-grade backends so their
+  /// output is comparable: a tree read over one backend truncates at the same point as the other.
+  /// The guest reader is *told* these rather than keeping its own copy, so there is one authority for
+  /// how much tree a read returns.
+  static let maxReadDepth = 50
+  static let maxReadNodes = 3000
+
   /// Appended to read-failure errors. An empty tree/element almost always means the target app's
   /// in-process accessibility server never started — that requires `ApplicationAccessibilityEnabled`
   /// (`com.apple.Accessibility`) to have been set *before* the app launched. The flag is consumed at

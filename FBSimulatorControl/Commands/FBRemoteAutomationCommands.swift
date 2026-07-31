@@ -181,16 +181,16 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
           forPid: pid,
           attributes: FBRemoteAutomationAXAttribute.fetchList,
           childrenAttribute: FBRemoteAutomationAXAttribute.children,
-          maxDepth: Self.describeMaxDepth,
-          maxNodes: Self.describeMaxNodes
+          maxDepth: FBAXTreeSerialization.maxReadDepth,
+          maxNodes: FBAXTreeSerialization.maxReadNodes
         )
       } else if let fallbackAnchor {
         tree = try await session.applicationElementTree(
           anchorX: fallbackAnchor.x, y: fallbackAnchor.y,
           attributes: FBRemoteAutomationAXAttribute.fetchList,
           childrenAttribute: FBRemoteAutomationAXAttribute.children,
-          maxDepth: Self.describeMaxDepth,
-          maxNodes: Self.describeMaxNodes
+          maxDepth: FBAXTreeSerialization.maxReadDepth,
+          maxNodes: FBAXTreeSerialization.maxReadNodes
         )
       } else {
         return nil
@@ -238,9 +238,6 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
 
   // MARK: - Reads
 
-  private static let describeMaxDepth = 50
-  private static let describeMaxNodes = 3000
-
   /// Resolves the frontmost application's pid via the CoreSimulator AX path — a window-server
   /// frontmost query, not a screen hit-test — so the remote read anchors on the real app rather than
   /// whatever process owns the centre pixel (a system modal, launch-transition chrome, or an empty
@@ -266,8 +263,8 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
         forPid: pid,
         attributes: FBRemoteAutomationAXAttribute.fetchList,
         childrenAttribute: FBRemoteAutomationAXAttribute.children,
-        maxDepth: Self.describeMaxDepth,
-        maxNodes: Self.describeMaxNodes
+        maxDepth: FBAXTreeSerialization.maxReadDepth,
+        maxNodes: FBAXTreeSerialization.maxReadNodes
       )
     }
     let anchor = anchorPoint()
@@ -275,8 +272,8 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
       anchorX: anchor.x, y: anchor.y,
       attributes: FBRemoteAutomationAXAttribute.fetchList,
       childrenAttribute: FBRemoteAutomationAXAttribute.children,
-      maxDepth: Self.describeMaxDepth,
-      maxNodes: Self.describeMaxNodes
+      maxDepth: FBAXTreeSerialization.maxReadDepth,
+      maxNodes: FBAXTreeSerialization.maxReadNodes
     )
   }
 
@@ -292,7 +289,7 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
       throw FBRemoteAutomationError.treeUnavailable(x: anchor.x, y: anchor.y)
     }
     if tree.truncated {
-      _ = simulator?.logger?.log("Remote-automation read hit the bound (maxDepth \(Self.describeMaxDepth), maxNodes \(Self.describeMaxNodes)); the returned tree is truncated and incomplete.")
+      _ = simulator?.logger?.log("Remote-automation read hit the bound (maxDepth \(FBAXTreeSerialization.maxReadDepth), maxNodes \(FBAXTreeSerialization.maxReadNodes)); the returned tree is truncated and incomplete.")
     }
     return (root, tree.processIdentifier)
   }
@@ -306,14 +303,14 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
       forPid: pid,
       attributes: FBRemoteAutomationAXAttribute.fetchList,
       childrenAttribute: FBRemoteAutomationAXAttribute.children,
-      maxDepth: Self.describeMaxDepth,
-      maxNodes: Self.describeMaxNodes
+      maxDepth: FBAXTreeSerialization.maxReadDepth,
+      maxNodes: FBAXTreeSerialization.maxReadNodes
     )
     guard let root = tree.root as? [String: Any] else {
       throw FBRemoteAutomationError.applicationUnavailable(pid: pid)
     }
     if tree.truncated {
-      _ = simulator?.logger?.log("Remote-automation read hit the bound (maxDepth \(Self.describeMaxDepth), maxNodes \(Self.describeMaxNodes)); the returned tree is truncated and incomplete.")
+      _ = simulator?.logger?.log("Remote-automation read hit the bound (maxDepth \(FBAXTreeSerialization.maxReadDepth), maxNodes \(FBAXTreeSerialization.maxReadNodes)); the returned tree is truncated and incomplete.")
     }
     return (root, tree.processIdentifier)
   }

@@ -34,6 +34,7 @@ static NSString *const kAXChildren = @"XC_kAXXCAttributeChildren";
 static NSString *const kRequestVerb = @"verb";
 static NSString *const kRequestPid = @"pid";
 static NSString *const kRequestMaxDepth = @"maxDepth";
+static NSString *const kRequestMaxNodes = @"maxNodes";
 static NSString *const kRequestX = @"x";
 static NSString *const kRequestY = @"y";
 static NSString *const kResponseOk = @"ok";
@@ -47,8 +48,9 @@ static NSString *const kVerbDescribe = @"describe";
 static NSString *const kVerbHitTest = @"hittest";
 static NSString *const kActionServe = @"serve";
 
-// Frame cap for the persistent `serve` transport: a request larger than this is treated as a
-// protocol error rather than allocating unbounded memory.
+// Frame cap for the persistent `serve` transport: a frame larger than this is treated as a protocol
+// error rather than allocating unbounded memory. This is a property of the wire protocol, so the host
+// client caps reads at the same value — keep the two in step.
 static const uint32_t kMaxFrameBytes = 16 * 1024 * 1024;
 
 // The private frameworks are loaded from the booted runtime root at these paths (spike-proven via
@@ -58,9 +60,11 @@ static NSString *const kAXRuntimePath =
 static NSString *const kXCTAutomationSupportPath =
 @"/Developer/Library/PrivateFrameworks/XCTAutomationSupport.framework/XCTAutomationSupport";
 
-// A depth cap and a total-node budget guard against pathological trees.
+// A depth cap and a total-node budget guard against pathological trees. A request carries the
+// caller's own bounds (the host sets them so every backend truncates alike); these apply only when it
+// does not — e.g. the one-shot front-end invoked by hand.
 static const int kDefaultMaxDepth = 100;
-static const int kNodeBudget = 5000;
+static const int kDefaultNodeBudget = 5000;
 
 // The persistent `serve` exits after sitting idle this long — no client connected, or a connected
 // client sending nothing — so an orphaned serve (the host crashed, or was replaced by the host's
@@ -378,7 +382,9 @@ NSDictionary<NSString *, id> *FBAXBridgeHandleRequest(NSDictionary<NSString *, i
   int maxDepth = [request[kRequestMaxDepth] isKindOfClass:NSNumber.class]
   ? [(NSNumber *)request[kRequestMaxDepth] intValue]
   : kDefaultMaxDepth;
-  int budget = kNodeBudget;
+  int budget = [request[kRequestMaxNodes] isKindOfClass:NSNumber.class]
+  ? [(NSNumber *)request[kRequestMaxNodes] intValue]
+  : kDefaultNodeBudget;
   NSDictionary *tree = FBAXBridgeBuildNode(framework, root, 0, maxDepth, &budget);
   if (!tree) {
     return FBAXBridgeErrorResponse([NSString stringWithFormat:@"failed to read the element tree for pid %d", pid]);
@@ -557,6 +563,8 @@ int handleAccessibilityAction(NSString *action, NSArray<NSString *> *arguments)
       request[kRequestPid] = @(argValue.intValue);
     } else if ([flag isEqualToString:@"--max-depth"]) {
       request[kRequestMaxDepth] = @(argValue.intValue);
+    } else if ([flag isEqualToString:@"--max-nodes"]) {
+      request[kRequestMaxNodes] = @(argValue.intValue);
     } else if ([flag isEqualToString:@"--x"]) {
       request[kRequestX] = @(argValue.doubleValue);
     } else if ([flag isEqualToString:@"--y"]) {
