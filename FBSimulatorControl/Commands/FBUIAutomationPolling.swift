@@ -53,6 +53,11 @@ enum FBUIAutomationPolling {
     guard case let .marker(value, key, depth) = query else {
       throw FBUIAutomationError.markerRequired(backend: backend, operation: "Waiting")
     }
+    // A negative interval would trap `Task.sleep`'s unsigned conversion below; reject it loudly rather
+    // than crash the process on nonsensical input.
+    guard pollInterval >= 0 else {
+      throw FBUIAutomationError.invalidPollInterval(backend: backend, pollInterval: pollInterval)
+    }
     let found = try await pollUntilFound(
       timeout: timeout,
       pollInterval: pollInterval,

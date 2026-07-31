@@ -220,4 +220,32 @@ final class FBRemoteAutomationDescribeTests: XCTestCase {
     ) { nil }
     XCTAssertNil(result)
   }
+
+  func testWaitForMarkerRejectsANegativePollInterval() async {
+    // A negative interval traps the real sleep timer's unsigned conversion; the wait must reject it
+    // before any polling begins rather than crash.
+    final class Probed { var ran = false }
+    let probed = Probed()
+    do {
+      try await FBUIAutomationPolling.waitForMarker(
+        .marker(value: "General", key: .label, depth: 0),
+        backend: .remoteAutomation,
+        timeout: 10,
+        pollInterval: -1
+      ) { _, _, _ in
+        probed.ran = true
+        return true
+      }
+      XCTFail("Expected waitForMarker to reject a negative poll interval")
+    } catch let FBUIAutomationError.invalidPollInterval(backend, pollInterval) {
+      if case .remoteAutomation = backend {
+      } else {
+        XCTFail("Expected the remoteAutomation backend, got \(backend)")
+      }
+      XCTAssertEqual(pollInterval, -1, accuracy: 0.0001)
+    } catch {
+      XCTFail("Expected invalidPollInterval, got \(error)")
+    }
+    XCTAssertFalse(probed.ran, "The probe must not run when the poll interval is rejected")
+  }
 }

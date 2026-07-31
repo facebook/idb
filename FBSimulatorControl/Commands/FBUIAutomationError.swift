@@ -30,6 +30,8 @@ public enum FBUIAutomationError: LocalizedError, Sendable {
   case markerRequired(backend: FBUIAutomationBackend, operation: String)
   /// A verb that requires a point or marker target was given a whole-tree query.
   case pointOrMarkerRequired(backend: FBUIAutomationBackend, operation: String)
+  /// A wait was given a negative poll interval, which has no meaning and would trap the sleep timer.
+  case invalidPollInterval(backend: FBUIAutomationBackend, pollInterval: TimeInterval)
   /// A verb this backend does not implement.
   case operationUnsupported(backend: FBUIAutomationBackend, operation: String)
   /// A by-pid read found no tree: the pid is not a live app, or its accessibility server never started.
@@ -52,6 +54,8 @@ public enum FBUIAutomationError: LocalizedError, Sendable {
       return "\(operation) requires a marker target, not a point or a whole-tree query"
     case let .pointOrMarkerRequired(_, operation):
       return "\(operation) requires a point or marker target, not a whole-tree query"
+    case let .invalidPollInterval(backend, pollInterval):
+      return "\(backend.displayName) was given a negative poll interval (\(pollInterval)s); it must be zero or positive"
     case let .operationUnsupported(backend, operation):
       return "\(operation) is not supported over the \(backend.displayName) backend"
     case let .applicationUnavailable(backend, pid):
