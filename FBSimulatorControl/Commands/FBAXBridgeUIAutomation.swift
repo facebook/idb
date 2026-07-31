@@ -29,7 +29,7 @@ import Foundation
 // actor and the one-shot transport is a stateless value, and the verb logic keeps no mutable state.
 // `Sendable` lets a long-lived caller (e.g. `ui shell`) hold one warm reader across reads.
 // patternlint-disable-next-line unchecked-sendable
-final class FBAXBridgeUIAutomation: FBUIAutomation, @unchecked Sendable {
+final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
 
   private let simulator: FBSimulator
   private let transport: any FBAXBridgeTransport
@@ -45,35 +45,24 @@ final class FBAXBridgeUIAutomation: FBUIAutomation, @unchecked Sendable {
     _ query: FBAccessibilityElementQuery,
     options: FBAccessibilityRequestOptions
   ) async throws -> FBAccessibilityElementsResponse {
-    let keys = options.keys
-    let pid = try await resolvePid(for: query)
+    try await describeTree(query, options: options)
+  }
 
-    switch query {
-    case .frontmost, .application:
-      let tree = try await readTree(forPid: pid)
-      let elements = FBAXTreeSerialization.describeAllElements(
-        fromTree: tree, keys: keys, nestedFormat: options.nestedFormat, pid: pid, filter: options.filter
-      )
-      return FBAccessibilityElementsResponse(
-        elements: .array(elements)
-      )
-    case let .marker(value, key, _):
-      let tree = try await readTree(forPid: pid)
-      let elements = FBAXTreeSerialization.describeAllElements(
-        fromTree: tree, keys: keys, nestedFormat: false, pid: pid
-      )
-      guard let match = FBAXTreeSerialization.matchingElement(inElements: elements, markerValue: value, key: key) else {
-        throw FBUIAutomationError.elementNotFound(backend: .axBridge, key: key.rawValue, value: value)
-      }
-      return FBAccessibilityElementsResponse(
-        elements: match
-      )
-    case let .point(point):
-      guard let response = try await hitTestElement(pid: pid, point: point, keys: keys) else {
-        throw FBUIAutomationError.noElementAtPoint(backend: .axBridge, x: Double(point.x), y: Double(point.y))
-      }
-      return response
-    }
+  nonisolated var backend: FBUIAutomationBackend { .axBridge }
+
+  /// Reads and flattens the tree a query targets, through the configured transport. Every query but
+  /// `.application` anchors on the frontmost app.
+  func readElements(
+    for query: FBAccessibilityElementQuery,
+    keys: Set<FBAXKeys>,
+    nestedFormat: Bool,
+    filter: FBAccessibilityElementFilter
+  ) async throws -> [FBJSONValue] {
+    let pid = try await resolvePid(for: query)
+    let tree = try await readTree(forPid: pid)
+    return FBAXTreeSerialization.describeAllElements(
+      fromTree: tree, keys: keys, nestedFormat: nestedFormat, pid: pid, filter: filter
+    )
   }
 
   func hitTest(

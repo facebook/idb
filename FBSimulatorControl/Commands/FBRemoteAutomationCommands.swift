@@ -21,7 +21,7 @@ let remoteAutomationSockEnvKey = "TESTMANAGERD_REMOTE_AUTOMATION_SIM_SOCK"
 /// handshake — is built and primed once on first use of an instance and reused; a failed build clears
 /// the memo so a later call retries. An actor so the session is established exactly once under
 /// concurrent callers on that instance, without a lock across suspension points.
-public actor FBSimulatorRemoteAutomation: FBUIAutomation {
+public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
 
   private weak var simulator: FBSimulator?
   private var sessionTask: Task<FBRemoteAutomationSession, Error>?
@@ -64,35 +64,27 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
     _ query: FBAccessibilityElementQuery,
     options: FBAccessibilityRequestOptions
   ) async throws -> FBAccessibilityElementsResponse {
-    let keys = options.keys
-    switch query {
-    case let .point(point):
-      guard let response = try await hitTest(at: point, options: options) else {
-        throw FBUIAutomationError.noElementAtPoint(backend: .remoteAutomation, x: Double(point.x), y: Double(point.y))
-      }
-      return response
-    case let .marker(value, key, _):
-      let tree = try await readFrontmostTree()
-      let elements = FBAXTreeSerialization.describeAllElements(fromTree: tree.root, keys: keys, nestedFormat: false, pid: tree.pid)
-      guard let match = FBAXTreeSerialization.matchingElement(inElements: elements, markerValue: value, key: key) else {
-        throw FBUIAutomationError.elementNotFound(backend: .remoteAutomation, key: key.rawValue, value: value)
-      }
-      return FBAccessibilityElementsResponse(
-        elements: match
-      )
-    case .frontmost:
-      let tree = try await readFrontmostTree()
-      let elements = FBAXTreeSerialization.describeAllElements(fromTree: tree.root, keys: keys, nestedFormat: options.nestedFormat, pid: tree.pid, filter: options.filter)
-      return FBAccessibilityElementsResponse(
-        elements: .array(elements)
-      )
-    case let .application(pid):
-      let tree = try await readApplicationTree(forPid: pid)
-      let elements = FBAXTreeSerialization.describeAllElements(fromTree: tree.root, keys: keys, nestedFormat: options.nestedFormat, pid: tree.pid, filter: options.filter)
-      return FBAccessibilityElementsResponse(
-        elements: .array(elements)
-      )
+    try await describeTree(query, options: options)
+  }
+
+  nonisolated var backend: FBUIAutomationBackend { .remoteAutomation }
+
+  /// Reads and flattens the tree a query targets: a named application by pid, or the frontmost app.
+  func readElements(
+    for query: FBAccessibilityElementQuery,
+    keys: Set<FBAXKeys>,
+    nestedFormat: Bool,
+    filter: FBAccessibilityElementFilter
+  ) async throws -> [FBJSONValue] {
+    let tree: (root: [String: Any], pid: pid_t)
+    if case let .application(pid) = query {
+      tree = try await readApplicationTree(forPid: pid)
+    } else {
+      tree = try await readFrontmostTree()
     }
+    return FBAXTreeSerialization.describeAllElements(
+      fromTree: tree.root, keys: keys, nestedFormat: nestedFormat, pid: tree.pid, filter: filter
+    )
   }
 
   /// Reads the element at `point` via a targeted remote hit-test, or `nil` when the point is empty.
