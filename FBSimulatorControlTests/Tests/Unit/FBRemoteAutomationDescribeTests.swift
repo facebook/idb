@@ -221,6 +221,22 @@ final class FBRemoteAutomationDescribeTests: XCTestCase {
     XCTAssertNil(result)
   }
 
+  func testRemoteTapRejectsAValueAssertion() {
+    // The remote backend can't read-and-assert an element's value before tapping, so an expectedValue
+    // must surface as unsupported rather than a silent no-assertion tap.
+    XCTAssertThrowsError(try FBSimulatorRemoteAutomation.rejectValueAssertion("On")) { error in
+      guard case let FBUIAutomationError.operationUnsupported(backend, operation) = error else {
+        return XCTFail("Expected operationUnsupported, got \(error)")
+      }
+      if case .remoteAutomation = backend {
+      } else {
+        XCTFail("Expected the remoteAutomation backend, got \(backend)")
+      }
+      XCTAssertTrue(operation.contains("expected value"), "Operation should name the value assertion, got \"\(operation)\"")
+    }
+    XCTAssertNoThrow(try FBSimulatorRemoteAutomation.rejectValueAssertion(nil))
+  }
+
   func testWaitForMarkerRejectsANegativePollInterval() async {
     // A negative interval traps the real sleep timer's unsigned conversion; the wait must reject it
     // before any polling begins rather than crash.

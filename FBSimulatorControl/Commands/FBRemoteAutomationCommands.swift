@@ -122,14 +122,28 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
     return (Double(widthPixels) / scale / 2.0, Double(heightPixels) / scale / 2.0)
   }
 
+  /// Rejects a value assertion the remote backend cannot honour. The accessibility backend's
+  /// `expectedValue` reads the element's value and asserts it equals the expectation before tapping;
+  /// the remote backend has no atomic read-and-tap, so supplying one asks for an operation it can't
+  /// perform. Rejecting it keeps a value-guarded tap from succeeding with the guard silently dropped. A
+  /// pure static check so the rejection is unit-testable without a live session.
+  static func rejectValueAssertion(_ expectedValue: String?) throws {
+    guard expectedValue == nil else {
+      throw FBUIAutomationError.operationUnsupported(backend: .remoteAutomation, operation: "Asserting an expected value before a tap")
+    }
+  }
+
   /// Taps the element named by `query`. `.point` taps the coordinate directly; `.marker` finds the
   /// element in the frontmost tree and taps its frame centre. `.frontmost` is not a tappable target
-  /// over remote automation. `expectedValue`/`expectedKey` are accessibility-only and ignored here.
+  /// over remote automation. Asserting an `expectedValue` before tapping is accessibility-only; the
+  /// remote backend cannot read-and-assert the element's value atomically, so a non-nil `expectedValue`
+  /// is rejected rather than tapped with the assertion silently dropped.
   public func tap(
     _ query: FBAccessibilityElementQuery,
     expectedValue: String?,
     expectedKey: FBAXSearchableKey
   ) async throws {
+    try Self.rejectValueAssertion(expectedValue)
     switch query {
     case let .point(point):
       try await sendHIDEvent(.tapAt(x: Double(point.x), y: Double(point.y)))
