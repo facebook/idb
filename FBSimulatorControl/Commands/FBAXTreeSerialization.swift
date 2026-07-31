@@ -54,17 +54,21 @@ enum FBAXTreeSerialization {
     return FBRemoteAutomationPlatformElement(attributes: node, children: children, pid: pid)
   }
 
-  /// The first serialized element whose `key` value equals `markerValue`, used by describe-by-marker.
+  /// The first serialized element whose `key` value contains `markerValue`, used by
+  /// describe-by-marker. Substring, matching `FBAccessibilityElementQuery.marker` — the accessibility
+  /// backend walks the live tree and matches the same way, so a marker resolves to the same element
+  /// whichever backend serves the read.
   static func matchingElement(inElements elements: [FBJSONValue], markerValue: String, key: FBAXSearchableKey) -> FBJSONValue? {
     elements.first { element in
       guard case let .object(fields) = element, case let .string(value)? = fields[key.rawValue] else {
         return false
       }
-      return value == markerValue
+      return value.contains(markerValue)
     }
   }
 
-  /// The centre of the frame of the first serialized element whose `key` value equals `markerValue`.
+  /// The centre of the frame of the first serialized element whose `key` value contains `markerValue`
+  /// (the same substring match as `matchingElement`, so a marker taps the element a read describes).
   /// Shared by the marker-driven operations (tap, wait, set-value).
   static func frameCenter(inElements elements: [FBJSONValue], markerValue: String, key: FBAXSearchableKey) -> (x: Double, y: Double)? {
     func number(_ value: FBJSONValue?) -> Double? {
@@ -76,7 +80,7 @@ enum FBAXTreeSerialization {
     }
     for element in elements {
       guard case let .object(fields) = element,
-        case let .string(value)? = fields[key.rawValue], value == markerValue,
+        case let .string(value)? = fields[key.rawValue], value.contains(markerValue),
         case let .object(frame)? = fields[FBAXKeys.frameDict.rawValue],
         let x = number(frame["x"]), let y = number(frame["y"]),
         let width = number(frame["width"]), let height = number(frame["height"])

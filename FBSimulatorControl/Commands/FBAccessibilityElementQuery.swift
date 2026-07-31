@@ -18,6 +18,13 @@ import Foundation
 /// share a single resolution path.
 public enum FBAccessibilityElementQuery: Equatable, Sendable {
   case point(CGPoint)
+  /// An element whose `key` value *contains* `value` — a substring match, not an equality test, so
+  /// `"General"` finds an element labelled `"General Settings"`. Every backend matches the same way;
+  /// the first element found in tree order wins.
+  ///
+  /// `depth` bounds how deep the search descends and is honoured by the accessibility backend, which
+  /// walks the live element tree. The XCUI-grade backends read a whole tree in one round trip (under
+  /// their own read bounds) and match over the result, so they do not apply it.
   case marker(value: String, key: FBAXSearchableKey, depth: UInt)
   case frontmost
   /// A specific application's whole element tree, anchored by its process identifier — read regardless

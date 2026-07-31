@@ -56,6 +56,45 @@ final class FBAXBridgeReadsTests: XCTestCase {
     XCTAssertThrowsError(try FBAXBridgeResponse.tree(fromResponse: data, pid: 1))
   }
 
+  // MARK: - Marker matching agrees with the accessibility backend
+
+  // The accessibility backend walks the live tree and matches a marker by substring, so the
+  // serialized-tree matcher the XCUI-grade backends use must do the same: a marker has to resolve to
+  // the same element whichever backend serves the read, or `--api` silently changes what `tap General`
+  // hits. This pins the substring contract stated on FBAccessibilityElementQuery.marker.
+  func testMarkerMatchesBySubstring() throws {
+    let elements = FBAXTreeSerialization.describeAllElements(
+      fromTree: [
+        FBRemoteAutomationAXAttribute.label: "root",
+        FBRemoteAutomationAXAttribute.children: [
+          [FBRemoteAutomationAXAttribute.label: "General Settings", FBRemoteAutomationAXAttribute.children: [[String: Any]]()] as [String: Any]
+        ],
+      ],
+      keys: FBAXKeys.defaultSet, nestedFormat: false, pid: 1
+    )
+    let match = FBAXTreeSerialization.matchingElement(inElements: elements, markerValue: "General", key: .label)
+    guard case let .object(fields)? = match, case let .string(label)? = fields[FBAXSearchableKey.label.rawValue] else {
+      return XCTFail("a substring marker must match, got: \(String(describing: match))")
+    }
+    XCTAssertEqual(label, "General Settings")
+  }
+
+  func testMarkerFrameCentreMatchesBySubstring() throws {
+    // `tap`/`wait`/`set-value` resolve through frameCenter, so it must use the same predicate as the
+    // describe matcher — otherwise a marker could be describable but not tappable.
+    let elements = FBAXTreeSerialization.describeAllElements(
+      fromTree: [
+        FBRemoteAutomationAXAttribute.label: "General Settings",
+        FBRemoteAutomationAXAttribute.frame: CGRectCreateDictionaryRepresentation(CGRect(x: 10, y: 20, width: 100, height: 50)) as NSDictionary,
+        FBRemoteAutomationAXAttribute.children: [[String: Any]](),
+      ],
+      keys: FBAXKeys.defaultSet, nestedFormat: false, pid: 1
+    )
+    let centre = FBAXTreeSerialization.frameCenter(inElements: elements, markerValue: "General", key: .label)
+    XCTAssertEqual(centre?.x, 60)
+    XCTAssertEqual(centre?.y, 45)
+  }
+
   // MARK: - FBAXBridgeResponse hit-test parsing
 
   func testHitTestParsesHitNode() throws {
