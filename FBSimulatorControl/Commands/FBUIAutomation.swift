@@ -105,9 +105,12 @@ public extension FBUIAutomation {
 
 public extension FBSimulator {
 
-  /// The converged UI-automation surface for `backend` — element reads and element-targeted
-  /// actions over a single query-shaped API. `.remoteAutomation` is the memoized `testmanagerd`
-  /// session; `.accessibility` is the CoreSimulator translation path.
+  /// The converged UI-automation surface for `backend` — element reads and element-targeted actions
+  /// over a single query-shaped API. Each call returns a fresh reader that **owns its own warm
+  /// resource**: `.remoteAutomation` owns a `testmanagerd` DTX session, `.axBridgePersistent` owns a
+  /// guest `serve` process. Hold the returned instance to reuse its warm resource across operations;
+  /// drop it to tear the resource down. `.accessibility` and `.axBridge` are stateless — they hold no
+  /// warm resource, so reconstructing them per call is free.
   func uiAutomation(backend: FBUIAutomationBackend) throws -> any FBUIAutomation {
     switch backend {
     case .accessibility:
@@ -117,14 +120,7 @@ public extension FBSimulator {
     case .axBridge:
       return FBAXBridgeUIAutomation(simulator: self, transport: FBAXBridgeOneshotTransport(simulator: self))
     case .axBridgePersistent:
-      return FBAXBridgeUIAutomation(simulator: self, transport: axBridgePersistentTransport())
+      return FBAXBridgeUIAutomation(simulator: self, transport: FBAXBridgePersistentTransport(simulator: self))
     }
-  }
-
-  /// The memoized persistent axbridge transport for this simulator — one warm `serve` process reused
-  /// across every read, so repeated reads amortize the spawn+warmup cost. Mirrors `remoteAutomation()`.
-  /// Internal: an implementation detail of the `.axBridgePersistent` factory arm, not public API.
-  internal func axBridgePersistentTransport() -> FBAXBridgePersistentTransport {
-    commandCache.resolve { FBAXBridgePersistentTransport(simulator: self) }
   }
 }
