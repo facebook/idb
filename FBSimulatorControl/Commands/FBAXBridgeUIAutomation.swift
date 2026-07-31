@@ -47,7 +47,7 @@ final class FBAXBridgeUIAutomation: FBUIAutomation, @unchecked Sendable {
     _ query: FBAccessibilityElementQuery,
     options: FBAccessibilityRequestOptions
   ) async throws -> FBAccessibilityElementsResponse {
-    let keys = options.keys ?? FBAXKeys.defaultSet
+    let keys = options.keys
     let pid = try await resolvePid(for: query)
 
     switch query {
@@ -82,7 +82,7 @@ final class FBAXBridgeUIAutomation: FBUIAutomation, @unchecked Sendable {
     at point: CGPoint,
     options: FBAccessibilityRequestOptions
   ) async throws -> FBAccessibilityElementsResponse? {
-    let keys = options.keys ?? FBAXKeys.defaultSet
+    let keys = options.keys
     let pid = try await resolvePid(for: .frontmost)
     return try await hitTestElement(pid: pid, point: point, keys: keys)
   }

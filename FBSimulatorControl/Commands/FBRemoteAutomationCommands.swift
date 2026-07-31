@@ -61,7 +61,7 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
     _ query: FBAccessibilityElementQuery,
     options: FBAccessibilityRequestOptions
   ) async throws -> FBAccessibilityElementsResponse {
-    let keys = options.keys ?? FBAXKeys.defaultSet
+    let keys = options.keys
     switch query {
     case let .point(point):
       guard let response = try await hitTest(at: point, options: options) else {
@@ -97,7 +97,7 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
     at point: CGPoint,
     options: FBAccessibilityRequestOptions
   ) async throws -> FBAccessibilityElementsResponse? {
-    let keys = options.keys ?? FBAXKeys.defaultSet
+    let keys = options.keys
     let session = try await self.session()
     guard let element = try await Self.hitTestElement(atX: Double(point.x), y: Double(point.y), using: session, keys: keys) else {
       return nil

@@ -53,9 +53,10 @@ public struct FBAccessibilityRequestOptions: Sendable {
   /// If `true`, data is returned in nested format with children; otherwise flat. Default: `false`.
   public var nestedFormat: Bool
 
-  /// Set of keys to filter which properties are returned.
-  /// Defaults to `FBAXKeys.defaultSet` (the standard keys).
-  public var keys: Set<FBAXKeys>?
+  /// Which properties a read returns. Defaults to `FBAXKeys.defaultSet` (the standard keys); pass an
+  /// explicit set to narrow it. Not optional: "unset" and "the default set" are the same request, and
+  /// making that one value keeps every backend from inventing its own reading of an absent set.
+  public var keys: Set<FBAXKeys>
 
   /// Log accessibility requests and responses to the simulator's logger. Default: `false`.
   public var enableLogging: Bool
@@ -74,7 +75,7 @@ public struct FBAccessibilityRequestOptions: Sendable {
 
   public init(
     nestedFormat: Bool = false,
-    keys: Set<FBAXKeys>? = FBAXKeys.defaultSet,
+    keys: Set<FBAXKeys> = FBAXKeys.defaultSet,
     enableLogging: Bool = false,
     enableProfiling: Bool = false,
     collectFrameCoverage: Bool = false,
@@ -93,6 +94,6 @@ public struct FBAccessibilityRequestOptions: Sendable {
 
 extension FBAccessibilityRequestOptions: CustomStringConvertible {
   public var description: String {
-    "<FBAccessibilityRequestOptions: nested=\(nestedFormat), keys=\(String(describing: keys)), logging=\(enableLogging), profiling=\(enableProfiling), collectFrameCoverage=\(collectFrameCoverage), remote=\(String(describing: remoteContentOptions))>"
+    "<FBAccessibilityRequestOptions: nested=\(nestedFormat), keys=\(keys), logging=\(enableLogging), profiling=\(enableProfiling), collectFrameCoverage=\(collectFrameCoverage), remote=\(String(describing: remoteContentOptions))>"
   }
 }

@@ -327,8 +327,8 @@ public final class FBAXTranslationRequest {
     )
   }
 
-  // The keys to serialize, or an empty set when none were requested.
+  // The keys to serialize.
   private static func serializerKeys(_ options: FBAccessibilityRequestOptions) -> Set<FBAXKeys> {
-    options.keys ?? []
+    options.keys
   }
 }
