@@ -48,6 +48,10 @@ static NSString *const kResponseEmpty = @"empty";
 // rather than matching the free-text `error` string. Every other failure carries no kind.
 static NSString *const kResponseErrorKind = @"error_kind";
 static NSString *const kErrorKindApplicationUnavailable = @"application_unavailable";
+// A whole-tree read whose walk was cut short by the depth cap or the node budget: the returned tree is
+// a partial view, so the host can warn rather than pass it off as complete. Absent or `false` means the
+// walk visited every element within the bounds.
+static NSString *const kResponseTruncated = @"truncated";
 
 static NSString *const kVerbDescribe = @"describe";
 static NSString *const kVerbHitTest = @"hittest";
@@ -242,7 +246,8 @@ static NSDictionary *_Nullable FBAXBridgeBuildNode(XCTAccessibilityFramework *fr
                                                    id element,
                                                    int depth,
                                                    int maxDepth,
-                                                   int *budget)
+                                                   int *budget,
+                                                   BOOL *truncated)
 {
   NSError *error = nil;
   NSDictionary *attributes = [framework attributesForElement:element
@@ -261,20 +266,22 @@ static NSDictionary *_Nullable FBAXBridgeBuildNode(XCTAccessibilityFramework *fr
   }
 
   NSMutableArray<NSDictionary *> *children = [NSMutableArray array];
+  NSArray *childElements =
+  [attributes[kAXChildren] isKindOfClass:NSArray.class] ? attributes[kAXChildren] : nil;
   if (depth < maxDepth) {
-    NSArray *childElements = attributes[kAXChildren];
-    if ([childElements isKindOfClass:NSArray.class]) {
-      for (id child in childElements) {
-        if (*budget <= 0) {
-          break;
-        }
-        (*budget)--;
-        NSDictionary *childNode = FBAXBridgeBuildNode(framework, child, depth + 1, maxDepth, budget);
-        if (childNode) {
-          [children addObject:childNode];
-        }
+    for (id child in childElements) {
+      if (*budget <= 0) {
+        *truncated = YES;  // the shared node budget ran out before every child was visited
+        break;
+      }
+      (*budget)--;
+      NSDictionary *childNode = FBAXBridgeBuildNode(framework, child, depth + 1, maxDepth, budget, truncated);
+      if (childNode) {
+        [children addObject:childNode];
       }
     }
+  } else if (childElements.count > 0) {
+    *truncated = YES;  // the depth cap stopped descent into this node's existing children
   }
   node[kAXChildren] = children;
   return node;
@@ -346,8 +353,9 @@ static NSDictionary *FBAXBridgeHitTest(XCTAccessibilityFramework *framework,
   }
   XCAccessibilityElement *hitElement = [(id)elementClass elementWithAXUIElement:hit];
   int budget = 1;
+  BOOL truncated = NO;  // a hit-test reads only the leaf at the point; truncation is not meaningful here
   // maxDepth 0 reads just the hit element's own attributes (no child recursion) — the leaf at the point.
-  NSDictionary *node = hitElement ? FBAXBridgeBuildNode(framework, hitElement, 0, 0, &budget) : nil;
+  NSDictionary *node = hitElement ? FBAXBridgeBuildNode(framework, hitElement, 0, 0, &budget, &truncated) : nil;
   CFRelease(hit);  // +1-retained by the Copy; the node has already been read from it above.
   if (!node) {
     return FBAXBridgeErrorResponse(@"failed to read the hit element");
@@ -395,11 +403,12 @@ NSDictionary<NSString *, id> *FBAXBridgeHandleRequest(NSDictionary<NSString *, i
   int budget = [request[kRequestMaxNodes] isKindOfClass:NSNumber.class]
   ? [(NSNumber *)request[kRequestMaxNodes] intValue]
   : kDefaultNodeBudget;
-  NSDictionary *tree = FBAXBridgeBuildNode(framework, root, 0, maxDepth, &budget);
+  BOOL truncated = NO;
+  NSDictionary *tree = FBAXBridgeBuildNode(framework, root, 0, maxDepth, &budget, &truncated);
   if (!tree) {
     return FBAXBridgeErrorResponse([NSString stringWithFormat:@"failed to read the element tree for pid %d", pid]);
   }
-  return @{kResponseOk : @YES, kResponseTree : tree};
+  return @{kResponseOk : @YES, kResponseTree : tree, kResponseTruncated : @(truncated)};
 }
 
 #pragma mark - Persistent serve transport

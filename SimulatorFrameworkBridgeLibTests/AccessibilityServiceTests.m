@@ -61,6 +61,16 @@ static NSDictionary *FBAXTestsParse(NSData *data)
   XCTAssertEqualObjects(frame[@"Height"], @52);
 }
 
+// A whole-tree read whose walk was cut short carries a `truncated` flag in its envelope, so the host
+// can warn rather than pass a partial tree off as complete. The flag must survive serialization.
+- (void)testTruncatedFlagIsPreservedInTheEnvelope
+{
+  NSDictionary *response = @{@"ok" : @YES, @"tree" : @{@"XC_kAXXCAttributeLabel" : @"root"}, @"truncated" : @YES};
+  NSDictionary *parsed = FBAXTestsParse(FBAXBridgeSerializeResponse(response));
+  XCTAssertEqualObjects(parsed[@"ok"], @YES);
+  XCTAssertEqualObjects(parsed[@"truncated"], @YES, @"the truncation flag must survive serialization");
+}
+
 // A value that cannot be represented at all must degrade to an error frame the client can read,
 // rather than raising and terminating the reader.
 - (void)testUnserializableValueYieldsAnErrorFrameRatherThanRaising
