@@ -90,29 +90,28 @@ final class FBAXBridgeUIAutomation: FBUIAutomation, @unchecked Sendable {
     timeout: TimeInterval,
     pollInterval: TimeInterval
   ) async throws {
-    guard case let .marker(markerValue, key, _) = query else {
-      throw FBUIAutomationError.markerRequired(backend: .axBridge, operation: "Waiting")
-    }
-    let found = try await FBUIAutomationPolling.pollUntilFound(
-      timeout: timeout,
-      pollInterval: pollInterval,
-      clock: { Date().timeIntervalSinceReferenceDate },
-      sleep: { try await Task.sleep(nanoseconds: UInt64($0 * 1_000_000_000)) }
-    ) { () -> Bool? in
-      // Re-resolve the pid and re-read each poll so an app that launches mid-wait is picked up; any
-      // failure (app not up, empty tree) is treated as "not there yet" and keeps polling.
-      guard let pid = try? await self.resolvePid(for: .frontmost),
-        let tree = try? await self.readTree(forPid: pid)
-      else {
-        return nil
+    try await FBUIAutomationPolling.waitForMarker(
+      query, backend: .axBridge, timeout: timeout, pollInterval: pollInterval
+    ) { markerValue, key, _ in
+      // Re-resolve the pid and re-read each poll so an app that launches mid-wait is picked up.
+      do {
+        let pid = try await self.resolvePid(for: .frontmost)
+        let tree = try await self.readTree(forPid: pid)
+        let elements = FBAXTreeSerialization.describeAllElements(
+          fromTree: tree, keys: FBAXKeys.defaultSet, nestedFormat: false, pid: pid
+        )
+        return FBAXTreeSerialization.matchingElement(inElements: elements, markerValue: markerValue, key: key) != nil ? true : nil
+      } catch let error as FBAXBridgeError {
+        // A frontmost that isn't up yet or a tree that isn't readable yet is "not there yet" — keep
+        // polling. A missing guest binary won't resolve by waiting, so surface it (and any unexpected
+        // non-bridge error) at once rather than burning the whole timeout.
+        switch error {
+        case .frontmostUnavailable, .guestFailure:
+          return nil
+        case .bridgeUnavailable:
+          throw error
+        }
       }
-      let elements = FBAXTreeSerialization.describeAllElements(
-        fromTree: tree, keys: FBAXKeys.defaultSet, nestedFormat: false, pid: pid
-      )
-      return FBAXTreeSerialization.matchingElement(inElements: elements, markerValue: markerValue, key: key) != nil ? true : nil
-    }
-    if found == nil {
-      throw FBUIAutomationError.timedOut(backend: .axBridge, key: key.rawValue, value: markerValue, timeout: timeout)
     }
   }
 

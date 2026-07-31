@@ -158,9 +158,6 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
     timeout: TimeInterval,
     pollInterval: TimeInterval
   ) async throws {
-    guard case let .marker(markerValue, key, _) = query else {
-      throw FBUIAutomationError.markerRequired(backend: .remoteAutomation, operation: "Waiting")
-    }
     let session = try await self.session()
     // Resolve the frontmost app's pid once via the AX window-server query and anchor every poll on
     // it, so a system modal / launch chrome at the screen centre can't hijack the wait — and the
@@ -168,12 +165,9 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
     // midpoint hit-test only when the AX pid is unavailable.
     let pid = await frontmostApplicationPid()
     let fallbackAnchor = pid > 0 ? nil : anchorPoint()
-    let found = try await FBUIAutomationPolling.pollUntilFound(
-      timeout: timeout,
-      pollInterval: pollInterval,
-      clock: { Date().timeIntervalSinceReferenceDate },
-      sleep: { try await Task.sleep(nanoseconds: UInt64($0 * 1_000_000_000)) }
-    ) { () -> Bool? in
+    try await FBUIAutomationPolling.waitForMarker(
+      query, backend: .remoteAutomation, timeout: timeout, pollInterval: pollInterval
+    ) { markerValue, key, _ in
       // A poll reads the tree directly (rather than via `readFrontmostTree`) so a missing tree retries
       // instead of throwing, and the truncation warning is not logged on every poll iteration.
       let tree: FBRemoteAutomationElementTree
@@ -199,9 +193,6 @@ public actor FBSimulatorRemoteAutomation: FBUIAutomation {
       guard let root = tree.root as? [String: Any] else { return nil }
       let elements = FBAXTreeSerialization.describeAllElements(fromTree: root, keys: FBAXKeys.defaultSet, nestedFormat: false, pid: tree.processIdentifier)
       return FBAXTreeSerialization.frameCenter(inElements: elements, markerValue: markerValue, key: key) != nil ? true : nil
-    }
-    if found == nil {
-      throw FBUIAutomationError.timedOut(backend: .remoteAutomation, key: key.rawValue, value: markerValue, timeout: timeout)
     }
   }
 

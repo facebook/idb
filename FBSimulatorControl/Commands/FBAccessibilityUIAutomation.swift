@@ -100,15 +100,9 @@ final class FBAccessibilityUIAutomation: FBUIAutomation, @unchecked Sendable {
     timeout: TimeInterval,
     pollInterval: TimeInterval
   ) async throws {
-    guard case let .marker(markerValue, key, depth) = query else {
-      throw FBUIAutomationError.markerRequired(backend: .accessibility, operation: "Waiting")
-    }
-    let found = try await FBUIAutomationPolling.pollUntilFound(
-      timeout: timeout,
-      pollInterval: pollInterval,
-      clock: { Date().timeIntervalSinceReferenceDate },
-      sleep: { try await Task.sleep(nanoseconds: UInt64($0 * 1_000_000_000)) }
-    ) { () -> Bool? in
+    try await FBUIAutomationPolling.waitForMarker(
+      query, backend: .accessibility, timeout: timeout, pollInterval: pollInterval
+    ) { markerValue, key, depth in
       do {
         let element = try await operations.resolveElement(for: .marker(value: markerValue, key: key, depth: depth))
         element.close()
@@ -121,9 +115,6 @@ final class FBAccessibilityUIAutomation: FBUIAutomation, @unchecked Sendable {
         }
         throw error
       }
-    }
-    if found == nil {
-      throw FBUIAutomationError.timedOut(backend: .accessibility, key: key.rawValue, value: markerValue, timeout: timeout)
     }
   }
 

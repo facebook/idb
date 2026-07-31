@@ -32,4 +32,37 @@ enum FBUIAutomationPolling {
       try await sleep(pollInterval)
     }
   }
+
+  /// The whole `wait` verb, for a backend that can answer "is the marker there yet?".
+  ///
+  /// Every backend's wait is the same three steps around one backend-specific probe: reject a
+  /// non-marker target, poll until found or the deadline passes, then report a timeout. Only the probe
+  /// differs, so only the probe is written per backend. The real clock and sleep are used here; the
+  /// injectable form above stays for tests that need to drive time deterministically.
+  ///
+  /// `probe` returns `true` once the element is present and `nil` while it is not yet — a probe should
+  /// treat "not there" as `nil` rather than throwing, and throw only on a genuine failure, which ends
+  /// the wait immediately instead of burning the timeout.
+  static func waitForMarker(
+    _ query: FBAccessibilityElementQuery,
+    backend: FBUIAutomationBackend,
+    timeout: TimeInterval,
+    pollInterval: TimeInterval,
+    probe: (_ value: String, _ key: FBAXSearchableKey, _ depth: UInt) async throws -> Bool?
+  ) async throws {
+    guard case let .marker(value, key, depth) = query else {
+      throw FBUIAutomationError.markerRequired(backend: backend, operation: "Waiting")
+    }
+    let found = try await pollUntilFound(
+      timeout: timeout,
+      pollInterval: pollInterval,
+      clock: { Date().timeIntervalSinceReferenceDate },
+      sleep: { try await Task.sleep(nanoseconds: UInt64($0 * 1_000_000_000)) }
+    ) {
+      try await probe(value, key, depth)
+    }
+    if found == nil {
+      throw FBUIAutomationError.timedOut(backend: backend, key: key.rawValue, value: value, timeout: timeout)
+    }
+  }
 }
