@@ -47,10 +47,12 @@ int handleAccessibilityAction(NSString *action, NSArray<NSString *> *arguments);
 
 /**
  * The transport-agnostic request handler shared by the oneshot argv front-end and any future socket
- * server. Request keys: "verb" (currently @"describe"), "pid" (NSNumber), optional "maxDepth"
- * (NSNumber). Response is either @{@"ok": @YES, @"tree": <node>} or @{@"ok": @NO, @"error": <string>}.
- * Each node is keyed by the `XC_kAXXC*` attributes with a JSON-safe frame (a CGRect dictionary
- * representation) and its children recursed in place.
+ * server. Request keys: "verb" (@"describe" or @"hittest"), "pid" (NSNumber), optional "maxDepth"
+ * (NSNumber, describe), "x"/"y" (NSNumber, hittest). Response is @{@"ok": @YES, @"tree": <node>} on
+ * success; @{@"ok": @YES, @"empty": @YES} when a hittest finds no element at the point (a valid empty
+ * result, distinct from a failure); or @{@"ok": @NO, @"error": <string>} on failure. Each node is
+ * keyed by the `XC_kAXXC*` attributes with a JSON-safe frame (a CGRect dictionary representation) and
+ * its children recursed in place.
  */
 NSDictionary<NSString *, id> *FBAXBridgeHandleRequest(NSDictionary<NSString *, id> *request);
 

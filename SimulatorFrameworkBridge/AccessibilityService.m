@@ -36,6 +36,9 @@ static NSString *const kRequestY = @"y";
 static NSString *const kResponseOk = @"ok";
 static NSString *const kResponseTree = @"tree";
 static NSString *const kResponseError = @"error";
+// A successful hit-test that found no element at the point: `{ok:true, empty:true}` — distinct from a
+// reader failure (`{ok:false, error:...}`), so the host can tell empty space from a broken reader.
+static NSString *const kResponseEmpty = @"empty";
 
 static NSString *const kVerbDescribe = @"describe";
 static NSString *const kVerbHitTest = @"hittest";
@@ -248,7 +251,9 @@ static NSDictionary *FBAXBridgeHitTest(XCTAccessibilityFramework *framework,
   void *hit = NULL;
   int32_t axError = copyElementAtPosition(appElement, (float)xNumber.doubleValue, (float)yNumber.doubleValue, &hit);
   if (axError != 0 || !hit) {
-    return FBAXBridgeErrorResponse([NSString stringWithFormat:@"no element at (%@, %@) (AXError %d)", xNumber, yNumber, axError]);
+    // No element at the point is a valid empty result, not a failure: a caller doing a streaming
+    // hit-test (e.g. after a tap) must be able to tell "empty space" apart from "the reader broke".
+    return @{kResponseOk : @YES, kResponseEmpty : @YES};
   }
   XCAccessibilityElement *hitElement = [(id)elementClass elementWithAXUIElement:hit];
   int budget = 1;
