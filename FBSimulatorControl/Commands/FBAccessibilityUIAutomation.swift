@@ -12,7 +12,12 @@ import Foundation
 /// query to an `FBAccessibilityElement` via the accessibility primitives and serializes it through
 /// the shared schema — the same handle-based mechanism the accessibility command surface has always
 /// used, expressed as the converged verb set.
-final class FBAccessibilityUIAutomation: FBUIAutomation {
+///
+// SAFETY: holds only an immutable reference to the target; each verb resolves and closes its own
+// element handle, so no mutable state is shared across calls, and the target's accessibility request
+// path is async IPC already safe under concurrent use. `Sendable` lets a caller hold one reader.
+// patternlint-disable-next-line unchecked-sendable
+final class FBAccessibilityUIAutomation: FBUIAutomation, @unchecked Sendable {
 
   private let operations: any AccessibilityOperations
 

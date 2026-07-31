@@ -24,7 +24,12 @@ import Foundation
 /// later change; until then those verbs throw `FBAXBridgeError.operationUnsupported`. The spawn goes
 /// through a small internal seam so a persistent-socket transport can replace it later without
 /// touching this verb logic.
-final class FBAXBridgeUIAutomation: FBUIAutomation {
+///
+// SAFETY: immutable after init — it holds the target and a transport; the persistent transport is an
+// actor and the one-shot transport is a stateless value, and the verb logic keeps no mutable state.
+// `Sendable` lets a long-lived caller (e.g. `ui shell`) hold one warm reader across reads.
+// patternlint-disable-next-line unchecked-sendable
+final class FBAXBridgeUIAutomation: FBUIAutomation, @unchecked Sendable {
 
   private let simulator: FBSimulator
   private let transport: any FBAXBridgeTransport

@@ -31,7 +31,7 @@ public enum FBUIAutomationBackend: Sendable {
 /// an `FBAccessibilityElementQuery`, and call one verb — rather than re-implementing per-backend
 /// dispatch, the pid-probe anchor, or the keys default themselves. Each backend already funnels into
 /// the shared serializer/schema, so the response is identical in shape across backends.
-public protocol FBUIAutomation {
+public protocol FBUIAutomation: Sendable {
 
   /// Reads the element(s) named by `query` and serializes them to the shared accessibility schema.
   /// `.point`/`.marker` yield a single element; `.frontmost` yields the whole tree.
