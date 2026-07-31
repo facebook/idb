@@ -53,5 +53,6 @@ targets:
       # (private API), so they are intentionally not linked here.
       - sdk: Foundation.framework
       - sdk: Contacts.framework
+      - sdk: CoreGraphics.framework
       - sdk: Photos.framework
       - sdk: CoreData.framework

@@ -9,6 +9,7 @@
 
 #import <dlfcn.h>
 
+#import "AccessibilityService.h"
 #import "ContactsService.h"
 #import "DnsService.h"
 #import "HealthSettingsService.h"
@@ -35,6 +36,8 @@ int dispatchService(NSString *service, NSString *action, NSArray<NSString *> *ar
     return handleHealthSettingsAction(action, bundleID, typeIDs);
   } else if ([service isEqualToString:@"proxy"]) {
     return handleProxyAction(action, arguments);
+  } else if ([service isEqualToString:@"accessibility"]) {
+    return handleAccessibilityAction(action, arguments);
   } else if ([service isEqualToString:@"repl"]) {
     if ([action isEqualToString:@"start"]) {
       // Serve the REPL control socket via libRepl, which the bridge loads on
@@ -67,7 +70,7 @@ int dispatchService(NSString *service, NSString *action, NSArray<NSString *> *ar
     return 1;
   } else {
     NSLog(@"Unknown service: %@", service);
-    NSLog(@"Available services: contacts, dns, photos, notifications, health, proxy");
+    NSLog(@"Available services: contacts, dns, photos, notifications, health, proxy, accessibility");
     return 1;
   }
 }
