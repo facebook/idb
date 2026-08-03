@@ -163,7 +163,7 @@ final class ReplSession {
       channel = try GRPCChannelPool.with(
         target: connectionTarget(for: address),
         transportSecurity: try channelTransportSecurity(
-          for: address, tls: config.plaintext ? .disabled : .metaIdentity),
+          for: address, tls: planCompanionClientTLS(plaintext: config.plaintext)),
         eventLoopGroup: group
       )
       client = Idb_CompanionServiceAsyncClient(channel: channel)

@@ -12,8 +12,8 @@ import NIOSSL
 /// The gRPC transport security for a companion connection. When `tls` is
 /// `.metaIdentity`, a TCP companion whose Meta identity is available uses TLS —
 /// presenting the client identity without verifying the peer, matching
-/// `CompanionClient`. A Unix domain socket, a `tls` of `.disabled` (`--plaintext`),
-/// or a missing identity is plaintext.
+/// `CompanionClient`. A Unix domain socket, a `tls` of `.disabled` (see
+/// `planCompanionClientTLS`), or a missing identity is plaintext.
 func channelTransportSecurity(
   for address: CompanionAddress,
   tls: CompanionClientTLS

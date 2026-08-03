@@ -9,6 +9,25 @@ import CompanionDiscovery
 import Testing
 
 @Suite
+struct PlanCompanionClientTLSTests {
+  @Test
+  func metaIdentityIsUsedWhereTLSWorks() {
+    #expect(planCompanionClientTLS(plaintext: false, tlsSupported: true) == .metaIdentity)
+  }
+
+  @Test
+  func plaintextFlagDisablesTLS() {
+    #expect(planCompanionClientTLS(plaintext: true, tlsSupported: true) == .disabled)
+  }
+
+  @Test
+  func tlsIsDisabledWhereItDoesNotWork() {
+    #expect(planCompanionClientTLS(plaintext: false, tlsSupported: false) == .disabled)
+    #expect(planCompanionClientTLS(plaintext: true, tlsSupported: false) == .disabled)
+  }
+}
+
+@Suite
 struct CompanionChannelTLSTests {
   private let identity = CompanionTLSIdentity(combinedPEMPath: "/tmp/idb-repl-test.pem")
 
