@@ -82,6 +82,22 @@ static NSDictionary *FBAXTestsParse(NSData *data)
   XCTAssertEqualObjects(parsed[@"method"], @"system_wide_hit_test");
 }
 
+// A fullscreen-modal descriptor added to a describe response must survive serialization so the host can
+// read it off the wire (host-facing enrichment; the host keeps it out of the serialized CLI output).
+- (void)testModalDescriptorSurvivesSerialization
+{
+  NSDictionary *response = @{
+    @"ok" : @YES,
+    @"tree" : @{@"XC_kAXXCAttributeLabel" : @"root"},
+    @"pid" : @20475,
+    @"modal" : @{@"kind" : @"system", @"elementType" : @"SBAlertItemWindow", @"label" : @"Allow"},
+  };
+  NSDictionary *parsed = FBAXTestsParse(FBAXBridgeSerializeResponse(response));
+  XCTAssertEqualObjects(parsed[@"modal"][@"kind"], @"system");
+  XCTAssertEqualObjects(parsed[@"modal"][@"elementType"], @"SBAlertItemWindow");
+  XCTAssertEqualObjects(parsed[@"modal"][@"label"], @"Allow");
+}
+
 // A value that cannot be represented at all must degrade to an error frame the client can read,
 // rather than raising and terminating the reader.
 - (void)testUnserializableValueYieldsAnErrorFrameRatherThanRaising

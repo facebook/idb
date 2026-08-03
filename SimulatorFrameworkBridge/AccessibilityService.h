@@ -71,12 +71,13 @@ int handleAccessibilityAction(NSString *action, NSArray<NSString *> *arguments);
  * a system-wide hit-test), optional "maxDepth" and "maxNodes" (NSNumber, describe — the caller's read
  * bounds), "x"/"y" (NSNumber — the hittest point, the frontmost anchor, or a fused-describe frontmost
  * anchor). Response is @{@"ok": @YES, @"tree": <node>, @"pid": <NSNumber>} on a describe (with
- * @"method": <string> when the pid was resolved in-guest); @{@"ok": @YES, @"tree": <node>, @"pid":
- * <NSNumber>} on a hittest (the owning pid of the hit element); @{@"ok": @YES, @"empty": @YES} when a
- * hittest finds no element at the point (a valid empty result, distinct from a failure); @{@"ok": @YES,
- * @"pid": <NSNumber>, @"method": <string>} for frontmost; or @{@"ok": @NO, @"error": <string>} on
- * failure. Each node is keyed by the `XC_kAXXC*` attributes with a JSON-safe frame (a CGRect dictionary
- * representation) and its children recursed in place.
+ * @"method": <string> when the pid was resolved in-guest, and @"modal": {@"kind": @"system"|@"app",
+ * @"elementType": <string>, @"label": <string>} when a fullscreen modal/alert is detected in the tree);
+ * @{@"ok": @YES, @"tree": <node>, @"pid": <NSNumber>} on a hittest (the owning pid of the hit element);
+ * @{@"ok": @YES, @"empty": @YES} when a hittest finds no element at the point (a valid empty result,
+ * distinct from a failure); @{@"ok": @YES, @"pid": <NSNumber>, @"method": <string>} for frontmost; or
+ * @{@"ok": @NO, @"error": <string>} on failure. Each node is keyed by the `XC_kAXXC*` attributes with a
+ * JSON-safe frame (a CGRect dictionary representation) and its children recursed in place.
  */
 NSDictionary<NSString *, id> *FBAXBridgeHandleRequest(NSDictionary<NSString *, id> *request);
 

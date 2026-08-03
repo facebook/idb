@@ -59,6 +59,18 @@ static NSString *const kResponseTruncated = @"truncated";
 // (a diagnostic tag, so a future alternate strategy is distinguishable in logs from the current one).
 static NSString *const kResponsePid = @"pid";
 static NSString *const kResponseMethod = @"method";
+// A fullscreen modal/alert descriptor added to a describe response when one is detected in the tree.
+// Host-facing enrichment on the wire; the host does not put it in the serialized CLI output.
+static NSString *const kResponseModal = @"modal";
+static NSString *const kModalKind = @"kind";
+static NSString *const kModalKindSystem = @"system";
+static NSString *const kModalKindApp = @"app";
+static NSString *const kModalElementType = @"elementType";
+static NSString *const kModalLabel = @"label";
+// Concrete accessibility element classes that mark a modal: a SpringBoard system alert window, and the
+// UIKit alert controller view (matched by prefix — the concrete class varies by idiom/OS).
+static NSString *const kSystemAlertWindowClass = @"SBAlertItemWindow";
+static NSString *const kAlertControllerClassPrefix = @"_UIAlertController";
 
 static NSString *const kVerbDescribe = @"describe";
 static NSString *const kVerbHitTest = @"hittest";
@@ -316,6 +328,60 @@ static NSDictionary *_Nullable FBAXBridgeBuildNode(XCTAccessibilityFramework *fr
   }
   node[kAXChildren] = children;
   return node;
+}
+
+#pragma mark - Modal detection
+
+// Recursively scans a built node for the concrete alert classes. `SBAlertItemWindow` (a SpringBoard
+// system alert window) sets `*hasSystemAlertWindow`; the first `_UIAlertController*` view captures the
+// alert's element type and label (its title). Reads the same keys the tree carries on the wire.
+static void FBAXBridgeScanForAlert(NSDictionary *node,
+                                   BOOL *hasSystemAlertWindow,
+                                   NSString *_Nullable *_Nullable alertElementType,
+                                   NSString *_Nullable *_Nullable alertLabel)
+{
+  NSString *elementType = node[kAXElementType];
+  if ([elementType isKindOfClass:NSString.class]) {
+    if ([elementType isEqualToString:kSystemAlertWindowClass]) {
+      *hasSystemAlertWindow = YES;
+    }
+    if (!*alertElementType && [elementType hasPrefix:kAlertControllerClassPrefix]) {
+      *alertElementType = elementType;
+      NSString *label = node[kAXLabel];
+      if ([label isKindOfClass:NSString.class] && label.length > 0) {
+        *alertLabel = label;
+      }
+    }
+  }
+  NSArray *children = node[kAXChildren];
+  if ([children isKindOfClass:NSArray.class]) {
+    for (id child in children) {
+      if ([child isKindOfClass:NSDictionary.class]) {
+        FBAXBridgeScanForAlert(child, hasSystemAlertWindow, alertElementType, alertLabel);
+      }
+    }
+  }
+}
+
+// A fullscreen-modal descriptor for a built tree, or nil when none is present. `kind` is `system` when
+// a SpringBoard alert window is present (a system/permission alert), otherwise `app` (an in-app UIKit
+// alert). Host-facing enrichment: the host reads this to detect a modal without geometry.
+static NSDictionary *_Nullable FBAXBridgeModalDescriptor(NSDictionary *tree)
+{
+  BOOL hasSystemAlertWindow = NO;
+  NSString *alertElementType = nil;
+  NSString *alertLabel = nil;
+  FBAXBridgeScanForAlert(tree, &hasSystemAlertWindow, &alertElementType, &alertLabel);
+  if (!hasSystemAlertWindow && !alertElementType) {
+    return nil;
+  }
+  NSMutableDictionary *modal = [NSMutableDictionary dictionary];
+  modal[kModalKind] = hasSystemAlertWindow ? kModalKindSystem : kModalKindApp;
+  modal[kModalElementType] = alertElementType ?: kSystemAlertWindowClass;
+  if (alertLabel) {
+    modal[kModalLabel] = alertLabel;
+  }
+  return modal;
 }
 
 #pragma mark - Frontmost resolution
@@ -599,6 +665,12 @@ NSDictionary<NSString *, id> *FBAXBridgeHandleRequest(NSDictionary<NSString *, i
   [@{kResponseOk : @YES, kResponseTree : tree, kResponseTruncated : @(truncated), kResponsePid : @(pid)} mutableCopy];
   if (frontmostMethod) {
     response[kResponseMethod] = frontmostMethod;
+  }
+  // Enrich the wire with a fullscreen-modal descriptor when one is present in the tree (host-facing;
+  // not emitted in the serialized CLI output).
+  NSDictionary *modal = FBAXBridgeModalDescriptor(tree);
+  if (modal) {
+    response[kResponseModal] = modal;
   }
   return response;
 }
