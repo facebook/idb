@@ -34,9 +34,14 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
   private let simulator: FBSimulator
   private let transport: any FBAXBridgeTransport
 
-  init(simulator: FBSimulator, transport: any FBAXBridgeTransport) {
+  /// How frontmost reads resolve the foreground app. Defaults to the positional `.centerPoint`; a caller
+  /// (e.g. sime2e) can select `.windowServer` or `.runningBoard`.
+  private let frontmostMethod: FBAXBridgeFrontmostMethod
+
+  init(simulator: FBSimulator, transport: any FBAXBridgeTransport, frontmostMethod: FBAXBridgeFrontmostMethod = .centerPoint) {
     self.simulator = simulator
     self.transport = transport
+    self.frontmostMethod = frontmostMethod
   }
 
   // MARK: - Reads
@@ -48,7 +53,7 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
     try await describeTree(query, options: options)
   }
 
-  nonisolated var backend: FBUIAutomationBackend { .axBridge }
+  nonisolated var backend: FBUIAutomationBackend { .axBridge(frontmostMethod: frontmostMethod) }
 
   /// Re-raises the transport-level `FBAXBridgeError.applicationUnavailable` as the backend-neutral
   /// `FBUIAutomationError.applicationUnavailable`, so a caller holding `any FBUIAutomation` sees the
@@ -113,7 +118,7 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
     pollInterval: TimeInterval
   ) async throws {
     try await FBUIAutomationPolling.waitForMarker(
-      query, backend: .axBridge, timeout: timeout, pollInterval: pollInterval
+      query, backend: backend, timeout: timeout, pollInterval: pollInterval
     ) { markerValue, key, _ in
       // Re-read the frontmost tree each poll (one fused guest query) so an app that launches mid-wait is
       // picked up — no separate pid resolution.
@@ -147,19 +152,19 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
     expectedValue: String?,
     expectedKey: FBAXSearchableKey
   ) async throws {
-    throw FBUIAutomationError.operationUnsupported(backend: .axBridge, operation: "A tap")
+    throw FBUIAutomationError.operationUnsupported(backend: backend, operation: "A tap")
   }
 
   func setValue(_ value: String, for query: FBAccessibilityElementQuery) async throws {
-    throw FBUIAutomationError.operationUnsupported(backend: .axBridge, operation: "Setting a value")
+    throw FBUIAutomationError.operationUnsupported(backend: backend, operation: "Setting a value")
   }
 
   func scroll(_ query: FBAccessibilityElementQuery, direction: FBAccessibilityScrollDirection) async throws {
-    throw FBUIAutomationError.operationUnsupported(backend: .axBridge, operation: "Scroll")
+    throw FBUIAutomationError.operationUnsupported(backend: backend, operation: "Scroll")
   }
 
   func frame(_ query: FBAccessibilityElementQuery) async throws -> CGRect {
-    throw FBUIAutomationError.operationUnsupported(backend: .axBridge, operation: "Reading an element frame")
+    throw FBUIAutomationError.operationUnsupported(backend: backend, operation: "Reading an element frame")
   }
 
   // MARK: - Transport seam (one-shot spawn)
@@ -182,7 +187,7 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
   private func readFrontmostTree() async throws -> (tree: [String: Any], truncated: Bool, pid: pid_t, modal: FBAccessibilityModalInfo?) {
     let anchor = frontmostAnchor()
     let response = try await transport.readFrontmost(
-      x: anchor.x, y: anchor.y, maxDepth: FBAXTreeSerialization.maxReadDepth, maxNodes: FBAXTreeSerialization.maxReadNodes
+      x: anchor.x, y: anchor.y, maxDepth: FBAXTreeSerialization.maxReadDepth, maxNodes: FBAXTreeSerialization.maxReadNodes, method: frontmostMethod
     )
     return try FBAXBridgeResponse.frontmostTree(fromResponse: response)
   }

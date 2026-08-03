@@ -20,23 +20,35 @@ import Foundation
 ///
 /// `read` returns the guest's raw JSON response bytes (a `Sendable` `Data`, so it crosses the actor
 /// boundary cleanly); the conformer parses the `{ "ok", "tree" | "error" }` envelope.
+/// Selects how a frontmost read resolves the foreground app. Raw values are the wire values the guest's
+/// `method` request key accepts.
+public enum FBAXBridgeFrontmostMethod: String, Sendable, CaseIterable {
+  /// Positional: a system-wide accessibility hit-test at the screen-centre anchor (the default).
+  case centerPoint = "center-point"
+  /// The in-guest window-server frontmost (via AXPTranslator) — the authoritative frontmost app.
+  case windowServer = "window-server"
+  /// The in-guest RunningBoard foreground process (the app holding the visibility endowment).
+  case runningBoard = "runningboard"
+}
+
 protocol FBAXBridgeTransport {
   /// Reads the whole element tree for `pid` (the guest `describe` verb), bounded by the caller's
   /// depth and node budget — the host owns those bounds so both XCUI-grade backends truncate alike.
   func read(pid: pid_t, maxDepth: Int, maxNodes: Int) async throws -> Data
   /// Fused frontmost read (the guest `describe` verb with no pid): the guest resolves the frontmost app
-  /// in-guest at the given screen anchor AND reads its tree in this one round-trip — no host-side
-  /// CoreSimulator query and no separate pid call. The response envelope carries the resolved pid
-  /// alongside the tree. This is the whole point of the axbridge frontmost optimization: one IPC hop.
-  func readFrontmost(x: Double, y: Double, maxDepth: Int, maxNodes: Int) async throws -> Data
+  /// in-guest via `method` (anchored at the given screen point for `.centerPoint`) AND reads its tree in
+  /// this one round-trip — no host-side CoreSimulator query and no separate pid call. The response
+  /// envelope carries the resolved pid alongside the tree. This is the axbridge frontmost optimization:
+  /// one IPC hop.
+  func readFrontmost(x: Double, y: Double, maxDepth: Int, maxNodes: Int, method: FBAXBridgeFrontmostMethod) async throws -> Data
   /// Reads just the element at a screen point (the guest `hittest` verb with no pid) — a system-wide
   /// hit-test that resolves the element and its owning app in-guest in one round-trip, with no walk and
   /// no separate frontmost pid query. The response carries the owning pid alongside the hit node.
   func hitTest(x: Double, y: Double) async throws -> Data
-  /// Resolves the frontmost application's pid (the guest `frontmost` verb) via a system-wide hit-test
-  /// at the given screen anchor — the host passes the screen centre. Returns the raw JSON response
-  /// bytes; the conformer parses the `{ "ok", "pid" | "error" }` envelope.
-  func frontmostPid(x: Double, y: Double) async throws -> Data
+  /// Resolves the frontmost application's pid (the guest `frontmost` verb) via `method` (anchored at the
+  /// given screen point for `.centerPoint`). Returns the raw JSON response bytes; the conformer parses
+  /// the `{ "ok", "pid" | "error" }` envelope.
+  func frontmostPid(x: Double, y: Double, method: FBAXBridgeFrontmostMethod) async throws -> Data
 }
 
 /// Parses the guest's `{ "ok": Bool, "tree": {...} | "error": String }` response envelope.
@@ -172,16 +184,16 @@ struct FBAXBridgeOneshotTransport: FBAXBridgeTransport {
     try await spawn(["accessibility", "describe", "--pid", "\(pid)", "--max-depth", "\(maxDepth)", "--max-nodes", "\(maxNodes)"])
   }
 
-  func readFrontmost(x: Double, y: Double, maxDepth: Int, maxNodes: Int) async throws -> Data {
-    try await spawn(["accessibility", "describe", "--x", "\(x)", "--y", "\(y)", "--max-depth", "\(maxDepth)", "--max-nodes", "\(maxNodes)"])
+  func readFrontmost(x: Double, y: Double, maxDepth: Int, maxNodes: Int, method: FBAXBridgeFrontmostMethod) async throws -> Data {
+    try await spawn(["accessibility", "describe", "--x", "\(x)", "--y", "\(y)", "--max-depth", "\(maxDepth)", "--max-nodes", "\(maxNodes)", "--method", method.rawValue])
   }
 
   func hitTest(x: Double, y: Double) async throws -> Data {
     try await spawn(["accessibility", "hittest", "--x", "\(x)", "--y", "\(y)"])
   }
 
-  func frontmostPid(x: Double, y: Double) async throws -> Data {
-    try await spawn(["accessibility", "frontmost", "--x", "\(x)", "--y", "\(y)"])
+  func frontmostPid(x: Double, y: Double, method: FBAXBridgeFrontmostMethod) async throws -> Data {
+    try await spawn(["accessibility", "frontmost", "--x", "\(x)", "--y", "\(y)", "--method", method.rawValue])
   }
 
   private func spawn(_ arguments: [String]) async throws -> Data {
@@ -216,16 +228,16 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
     try await roundTripWithRecovery(["verb": "describe", "pid": Int(pid), "maxDepth": maxDepth, "maxNodes": maxNodes])
   }
 
-  func readFrontmost(x: Double, y: Double, maxDepth: Int, maxNodes: Int) async throws -> Data {
-    try await roundTripWithRecovery(["verb": "describe", "x": x, "y": y, "maxDepth": maxDepth, "maxNodes": maxNodes])
+  func readFrontmost(x: Double, y: Double, maxDepth: Int, maxNodes: Int, method: FBAXBridgeFrontmostMethod) async throws -> Data {
+    try await roundTripWithRecovery(["verb": "describe", "x": x, "y": y, "maxDepth": maxDepth, "maxNodes": maxNodes, "method": method.rawValue])
   }
 
   func hitTest(x: Double, y: Double) async throws -> Data {
     try await roundTripWithRecovery(["verb": "hittest", "x": x, "y": y])
   }
 
-  func frontmostPid(x: Double, y: Double) async throws -> Data {
-    try await roundTripWithRecovery(["verb": "frontmost", "x": x, "y": y])
+  func frontmostPid(x: Double, y: Double, method: FBAXBridgeFrontmostMethod) async throws -> Data {
+    try await roundTripWithRecovery(["verb": "frontmost", "x": x, "y": y, "method": method.rawValue])
   }
 
   /// Sends one request over the reused connection, recovering from a terminated serve process.
