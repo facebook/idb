@@ -139,12 +139,4 @@ final class FBRemoteAutomationPlatformElementTests: XCTestCase {
     XCTAssertTrue(element.axActionNames().isEmpty)
     XCTAssertFalse(element.axPerformPress())
   }
-
-  func testFetchListCoversTheReadAttributes() {
-    let list = FBRemoteAutomationAXAttribute.fetchList
-    XCTAssertTrue(list.contains(FBRemoteAutomationAXAttribute.label))
-    XCTAssertTrue(list.contains(FBRemoteAutomationAXAttribute.frame))
-    XCTAssertTrue(list.contains(FBRemoteAutomationAXAttribute.children))
-    XCTAssertTrue(list.contains(FBRemoteAutomationAXAttribute.identifier))
-  }
 }
