@@ -76,13 +76,26 @@ enum FBAXBridgeResponse {
   /// node bound (so the caller can warn the tree is incomplete). A tree read has no empty result — an
   /// app always has a root element — so an empty response is a protocol violation rather than "nothing
   /// there". `truncated` defaults to `false` when the guest omits it (an older guest, or a complete walk).
-  static func tree(fromResponse data: Data, pid: pid_t) throws -> (tree: [String: Any], truncated: Bool) {
+  static func tree(fromResponse data: Data, pid: pid_t) throws -> (tree: [String: Any], truncated: Bool, modal: FBAccessibilityModalInfo?) {
     let response = try validatedResponse(fromResponse: data, pid: pid)
     guard let tree = try node(fromValidatedResponse: response, pid: pid) else {
       throw FBAXBridgeError.guestFailure("pid \(pid): empty response to a whole-tree read")
     }
     let truncated = (response["truncated"] as? Bool) ?? false
-    return (tree, truncated)
+    return (tree, truncated, modal(fromResponse: response))
+  }
+
+  /// Decodes the optional `modal` descriptor the guest adds to a describe response into a typed value,
+  /// or nil when no modal is present. Host-facing enrichment — never emitted in the serialized output.
+  static func modal(fromResponse response: [String: Any]) -> FBAccessibilityModalInfo? {
+    guard let modal = response["modal"] as? [String: Any],
+      let kindRaw = modal["kind"] as? String,
+      let kind = FBAccessibilityModalInfo.Kind(rawValue: kindRaw),
+      let elementType = modal["elementType"] as? String
+    else {
+      return nil
+    }
+    return FBAccessibilityModalInfo(kind: kind, elementType: elementType, label: modal["label"] as? String)
   }
 
   /// Parses a fused frontmost describe response (the guest resolved the frontmost app and read its tree
@@ -91,7 +104,7 @@ enum FBAXBridgeResponse {
   /// serialized elements. Any `ok:false` (no element at the anchor mid-launch, or the resolved app's
   /// accessibility server not up yet) is `frontmostUnavailable`, which the read poll treats as "not up
   /// yet"; a missing tree or pid on an `ok` response is a protocol violation (`guestFailure`).
-  static func frontmostTree(fromResponse data: Data) throws -> (tree: [String: Any], truncated: Bool, pid: pid_t) {
+  static func frontmostTree(fromResponse data: Data) throws -> (tree: [String: Any], truncated: Bool, pid: pid_t, modal: FBAccessibilityModalInfo?) {
     guard let object = try? JSONSerialization.jsonObject(with: data), let response = object as? [String: Any] else {
       throw FBAXBridgeError.guestFailure("unparseable fused frontmost describe response")
     }
@@ -105,7 +118,7 @@ enum FBAXBridgeResponse {
       throw FBAXBridgeError.guestFailure("fused frontmost describe response without a resolved pid")
     }
     let truncated = (response["truncated"] as? Bool) ?? false
-    return (tree, truncated, pid_t(pid))
+    return (tree, truncated, pid_t(pid), modal(fromResponse: response))
   }
 
   /// Parses a system-wide hit-test response: the hit node and the owning pid of the element there (the

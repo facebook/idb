@@ -25,13 +25,15 @@ protocol FBAXTreeReader: FBUIAutomation {
   /// lets the shared matcher find the element in the result.
   ///
   /// The flattening happens behind this call rather than after it because the raw attribute tree is a
-  /// bag of `Any` and cannot leave a backend's isolation; the serialized elements can.
+  /// bag of `Any` and cannot leave a backend's isolation; the serialized elements can. Also returns any
+  /// fullscreen-modal descriptor the read surfaced (host-facing enrichment, not serialized) — `nil`
+  /// when no modal is present or the backend does not report one.
   func readElements(
     for query: FBAccessibilityElementQuery,
     keys: Set<FBAXKeys>,
     nestedFormat: Bool,
     filter: FBAccessibilityElementFilter
-  ) async throws -> [FBJSONValue]
+  ) async throws -> (elements: [FBJSONValue], modal: FBAccessibilityModalInfo?)
 }
 
 extension FBAXTreeReader {
@@ -50,16 +52,16 @@ extension FBAXTreeReader {
       }
       return response
     case let .marker(value, key, _):
-      let elements = try await readElements(for: query, keys: options.keys.union([key.serializationKey]), nestedFormat: false, filter: .all)
-      guard let match = FBAXTreeSerialization.matchingElement(inElements: elements, markerValue: value, key: key) else {
+      let read = try await readElements(for: query, keys: options.keys.union([key.serializationKey]), nestedFormat: false, filter: .all)
+      guard let match = FBAXTreeSerialization.matchingElement(inElements: read.elements, markerValue: value, key: key) else {
         throw FBUIAutomationError.elementNotFound(backend: backend, key: key.rawValue, value: value)
       }
-      return FBAccessibilityElementsResponse(elements: match)
+      return FBAccessibilityElementsResponse(elements: match, modal: read.modal)
     case .frontmost, .application:
-      let elements = try await readElements(
+      let read = try await readElements(
         for: query, keys: options.keys, nestedFormat: options.nestedFormat, filter: options.filter
       )
-      return FBAccessibilityElementsResponse(elements: .array(elements))
+      return FBAccessibilityElementsResponse(elements: .array(read.elements), modal: read.modal)
     }
   }
 }

@@ -83,6 +83,37 @@ extension FBAccessibilityProfilingData: CustomStringConvertible {
   }
 }
 
+/// Describes a fullscreen modal / alert present over the read target. Carried on the internal
+/// SimulatorFrameworkBridge -> FBSimulatorControl wire to enrich the host's view of what is on screen.
+///
+/// **Not part of the serialized (CLI / gRPC) output** — see `FBAccessibilityElementsResponse.modal`. It
+/// lets a host detect and classify a modal semantically (not by geometry) without changing the emitted
+/// accessibility JSON.
+public struct FBAccessibilityModalInfo: Sendable, Equatable {
+
+  /// Who owns the modal: the system shell (SpringBoard — a system/permission alert) or the app itself
+  /// (an in-app `UIAlertController`).
+  public enum Kind: String, Sendable {
+    case system
+    case app
+  }
+
+  public let kind: Kind
+
+  /// The concrete accessibility element class of the alert, e.g. `SBAlertItemWindow` (system) or
+  /// `_UIAlertControllerPhoneTVMacView` (UIKit alert).
+  public let elementType: String
+
+  /// The alert's title / primary label, when the guest could read one.
+  public let label: String?
+
+  public init(kind: Kind, elementType: String, label: String?) {
+    self.kind = kind
+    self.elementType = elementType
+    self.label = label
+  }
+}
+
 /// Response object containing accessibility elements and optional profiling data.
 ///
 /// `elements` is the serializer's JSON payload as a `Sendable` `FBJSONValue` — an object (single
@@ -104,21 +135,31 @@ public struct FBAccessibilityElementsResponse: Sendable {
   /// Nil if remote content discovery was not performed or found nothing.
   public let additionalFrameCoverage: Double?
 
+  /// A fullscreen modal / alert present over the read target, when one was detected. **Deliberately
+  /// excluded from `asDictionary()`** so the serialized CLI / gRPC output is byte-stable — this is
+  /// host-facing enrichment only, not part of the emitted accessibility payload.
+  public let modal: FBAccessibilityModalInfo?
+
   public init(
     elements: FBJSONValue,
     profilingData: FBAccessibilityProfilingData? = nil,
     frameCoverage: Double? = nil,
-    additionalFrameCoverage: Double? = nil
+    additionalFrameCoverage: Double? = nil,
+    modal: FBAccessibilityModalInfo? = nil
   ) {
     self.elements = elements
     self.profilingData = profilingData
     self.frameCoverage = frameCoverage
     self.additionalFrameCoverage = additionalFrameCoverage
+    self.modal = modal
   }
 
   /// A JSON-serializable dictionary with elements always embedded.
   /// Format: `{"elements": <elements>, "profile": <profile>, "coverage": <coverage>}`.
   /// `profile` and `coverage` are included only when the corresponding data is present.
+  ///
+  /// `modal` is intentionally **not** serialized here: it is host-facing enrichment, and emitting it
+  /// would change the CLI / gRPC accessibility output. Keep it out of this method.
   public func asDictionary() -> [String: Any] {
     var dict: [String: Any] = ["elements": elements.toFoundationObject()]
     if let profilingData {
@@ -137,6 +178,6 @@ public struct FBAccessibilityElementsResponse: Sendable {
 
 extension FBAccessibilityElementsResponse: CustomStringConvertible {
   public var description: String {
-    "<FBAccessibilityElementsResponse: elements=\(Swift.type(of: elements)), profiling=\(String(describing: profilingData)), frameCoverage=\(String(describing: frameCoverage)), additionalFrameCoverage=\(String(describing: additionalFrameCoverage))>"
+    "<FBAccessibilityElementsResponse: elements=\(Swift.type(of: elements)), profiling=\(String(describing: profilingData)), frameCoverage=\(String(describing: frameCoverage)), additionalFrameCoverage=\(String(describing: additionalFrameCoverage)), modal=\(String(describing: modal))>"
   }
 }

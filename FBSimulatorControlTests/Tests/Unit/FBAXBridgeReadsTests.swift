@@ -347,6 +347,50 @@ final class FBAXBridgeReadsTests: XCTestCase {
     }
   }
 
+  // MARK: - Fullscreen-modal descriptor parsing + non-serialization
+
+  func testModalParsesSystemAlert() {
+    let response: [String: Any] = ["ok": true, "modal": ["kind": "system", "elementType": "SBAlertItemWindow", "label": "Allow \u{201c}Maps\u{201d} to use your location?"]]
+    let modal = FBAXBridgeResponse.modal(fromResponse: response)
+    XCTAssertEqual(modal?.kind, .system)
+    XCTAssertEqual(modal?.elementType, "SBAlertItemWindow")
+    XCTAssertEqual(modal?.label, "Allow \u{201c}Maps\u{201d} to use your location?")
+  }
+
+  func testModalParsesAppAlertWithoutLabel() {
+    let response: [String: Any] = ["ok": true, "modal": ["kind": "app", "elementType": "_UIAlertControllerView"]]
+    let modal = FBAXBridgeResponse.modal(fromResponse: response)
+    XCTAssertEqual(modal?.kind, .app)
+    XCTAssertEqual(modal?.elementType, "_UIAlertControllerView")
+    XCTAssertNil(modal?.label)
+  }
+
+  func testModalAbsentOrMalformedIsNil() {
+    XCTAssertNil(FBAXBridgeResponse.modal(fromResponse: ["ok": true]), "no modal key -> nil")
+    XCTAssertNil(FBAXBridgeResponse.modal(fromResponse: ["ok": true, "modal": ["elementType": "X"]]), "missing kind -> nil")
+    XCTAssertNil(FBAXBridgeResponse.modal(fromResponse: ["ok": true, "modal": ["kind": "bogus", "elementType": "X"]]), "unknown kind -> nil")
+  }
+
+  func testFrontmostTreeCarriesModalDescriptor() throws {
+    let tree: [String: Any] = [FBRemoteAutomationAXAttribute.label: "root"]
+    let data = try envelope(["ok": true, "tree": tree, "pid": 20475, "modal": ["kind": "system", "elementType": "SBAlertItemWindow", "label": "Allow"]])
+    let parsed = try FBAXBridgeResponse.frontmostTree(fromResponse: data)
+    XCTAssertEqual(parsed.pid, 20475)
+    XCTAssertEqual(parsed.modal?.kind, .system)
+    XCTAssertEqual(parsed.modal?.elementType, "SBAlertItemWindow")
+  }
+
+  func testModalIsNeverSerializedInTheCLIOutput() throws {
+    // The modal field enriches the host view but MUST NOT change the emitted CLI/gRPC JSON — a response
+    // with a modal must serialize byte-identically to one without.
+    let modal = FBAccessibilityModalInfo(kind: .system, elementType: "SBAlertItemWindow", label: "Allow")
+    let withModal = FBAccessibilityElementsResponse(elements: .array([]), modal: modal)
+    let without = FBAccessibilityElementsResponse(elements: .array([]))
+    let a = try JSONSerialization.data(withJSONObject: withModal.asDictionary(), options: .sortedKeys)
+    let b = try JSONSerialization.data(withJSONObject: without.asDictionary(), options: .sortedKeys)
+    XCTAssertEqual(a, b, "the modal descriptor must not appear in the serialized output")
+  }
+
   // MARK: - Tree -> shared serializer integration
 
   func testGuestTreeFeedsSharedSerializerSchema() throws {

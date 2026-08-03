@@ -76,16 +76,18 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
     keys: Set<FBAXKeys>,
     nestedFormat: Bool,
     filter: FBAccessibilityElementFilter
-  ) async throws -> [FBJSONValue] {
+  ) async throws -> (elements: [FBJSONValue], modal: FBAccessibilityModalInfo?) {
     let tree: (root: [String: Any], pid: pid_t)
     if case let .application(pid) = query {
       tree = try await readApplicationTree(forPid: pid)
     } else {
       tree = try await readFrontmostTree()
     }
-    return FBAXTreeSerialization.describeAllElements(
+    let elements = FBAXTreeSerialization.describeAllElements(
       fromTree: tree.root, keys: keys, nestedFormat: nestedFormat, pid: tree.pid, filter: filter
     )
+    // The remote-automation backend does not surface fullscreen-modal information (yet).
+    return (elements, nil)
   }
 
   /// Reads the element at `point` via a targeted remote hit-test, or `nil` when the point is empty.
