@@ -208,33 +208,46 @@ final class FBAXBridgeReadsTests: XCTestCase {
     XCTAssertEqual(label, "General Settings")
   }
 
-  // MARK: - FBAXBridgeResponse hit-test parsing
+  // MARK: - FBAXBridgeResponse system-wide hit-test parsing
 
-  func testHitTestParsesHitNode() throws {
+  func testHitTestParsesHitNodeAndOwningPid() throws {
+    // A system-wide hit-test resolves which app owns the point, so the response carries the owning pid
+    // the host tags the element with.
     let node: [String: Any] = [FBRemoteAutomationAXAttribute.identifier: "com.apple.settings.general"]
-    let data = try envelope(["ok": true, "tree": node])
-    let parsed = try FBAXBridgeResponse.hitTest(fromResponse: data, pid: 42)
-    XCTAssertEqual(parsed?[FBRemoteAutomationAXAttribute.identifier] as? String, "com.apple.settings.general")
+    let data = try envelope(["ok": true, "tree": node, "pid": 8865])
+    let parsed = try FBAXBridgeResponse.systemWideHitTest(fromResponse: data)
+    XCTAssertEqual(parsed?.node[FBRemoteAutomationAXAttribute.identifier] as? String, "com.apple.settings.general")
+    XCTAssertEqual(parsed?.pid, 8865)
   }
 
   func testHitTestReturnsNilForEmptyResult() throws {
     // `{ok:true, empty:true}` is "no element at the point" — a valid empty result, returned as nil,
     // not conflated with a reader failure.
     let data = try envelope(["ok": true, "empty": true])
-    XCTAssertNil(try FBAXBridgeResponse.hitTest(fromResponse: data, pid: 42))
+    XCTAssertNil(try FBAXBridgeResponse.systemWideHitTest(fromResponse: data))
   }
 
   func testHitTestThrowsOnFailure() throws {
     // A failure (`ok:false`) is distinct from an empty result and is surfaced with the guest message.
     let data = try envelope(["ok": false, "error": "AXUIElementCopyElementAtPosition unavailable"])
-    XCTAssertThrowsError(try FBAXBridgeResponse.hitTest(fromResponse: data, pid: 42)) { error in
+    XCTAssertThrowsError(try FBAXBridgeResponse.systemWideHitTest(fromResponse: data)) { error in
       XCTAssertTrue("\(error)".contains("AXUIElementCopyElementAtPosition unavailable"), "unexpected error: \(error)")
     }
   }
 
   func testHitTestThrowsWhenOkButNoTreeOrEmpty() throws {
     let data = try envelope(["ok": true])
-    XCTAssertThrowsError(try FBAXBridgeResponse.hitTest(fromResponse: data, pid: 1))
+    XCTAssertThrowsError(try FBAXBridgeResponse.systemWideHitTest(fromResponse: data))
+  }
+
+  func testHitTestThrowsWhenOwningPidMissing() throws {
+    // A hit node with no owning pid is a protocol violation — the host cannot tag the element.
+    let data = try envelope(["ok": true, "tree": [FBRemoteAutomationAXAttribute.identifier: "x"]])
+    XCTAssertThrowsError(try FBAXBridgeResponse.systemWideHitTest(fromResponse: data)) { error in
+      guard case FBAXBridgeError.guestFailure = error else {
+        return XCTFail("a hit-test without an owning pid should be guestFailure, got: \(error)")
+      }
+    }
   }
 
   // MARK: - FBAXBridgeResponse frontmost parsing

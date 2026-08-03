@@ -91,9 +91,18 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
     options: FBAccessibilityRequestOptions
   ) async throws -> FBAccessibilityElementsResponse? {
     try await translatingSeamErrors {
-      let keys = options.keys
-      let pid = try await resolvePid(for: .frontmost)
-      return try await hitTestElement(pid: pid, point: point, keys: keys)
+      // A single system-wide guest hit-test resolves the element at the point and its owning app
+      // in-guest — no host-side CoreSimulator frontmost query, one IPC hop. `.point` is positional, so
+      // a system-wide hit-test is exactly its semantics (unlike a whole-tree read of "frontmost").
+      let response = try await transport.hitTest(x: Double(point.x), y: Double(point.y))
+      guard let hit = try FBAXBridgeResponse.systemWideHitTest(fromResponse: response) else {
+        return nil
+      }
+      let element = FBAXTreeSerialization.buildPlatformElementTree(from: hit.node, pid: hit.pid)
+      let formatted = FBSimulatorAccessibilitySerializer.formattedDescription(
+        ofElement: element, token: "", nestedFormat: false, keys: options.keys, collector: nil, coverageGrid: nil
+      )
+      return FBAccessibilityElementsResponse(elements: formatted)
     }
   }
 
@@ -154,22 +163,6 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
 
   // MARK: - Transport seam (one-shot spawn)
 
-  /// Resolves the pid the read targets: `.application` names it directly; every other query anchors on
-  /// the frontmost app, resolved via the CoreSimulator AX window-server query (the same path the remote
-  /// backend uses) rather than a screen hit-test.
-  private func resolvePid(for query: FBAccessibilityElementQuery) async throws -> pid_t {
-    if case let .application(pid) = query {
-      return pid
-    }
-    let element = try await simulator.resolveElement(for: .frontmost)
-    defer { element.close() }
-    let pid = element.processIdentifier
-    guard pid > 0 else {
-      throw FBAXBridgeError.frontmostUnavailable
-    }
-    return pid
-  }
-
   /// Reads the full attribute tree for `pid` through the configured transport (one-shot spawn or
   /// persistent socket), plus whether the guest's walk was cut short by the depth or node bound. The
   /// verb logic above is transport-agnostic; only the injected `transport` differs. `.point` does not
@@ -207,22 +200,5 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
   private func warnIfTruncated(_ truncated: Bool) {
     guard truncated else { return }
     _ = simulator.logger?.log("axbridge read hit the bound (maxDepth \(FBAXTreeSerialization.maxReadDepth), maxNodes \(FBAXTreeSerialization.maxReadNodes)); the returned tree is truncated and incomplete.")
-  }
-
-  /// Targeted hit-test for `pid`: the element at the point via the guest's one-round-trip `hittest`
-  /// (AXUIElementCopyElementAtPosition), or `nil` when the point is empty. Shared by `describe(.point)`
-  /// and `hitTest(at:)` — ~15x faster warm than reading the whole tree and hit-testing host-side.
-  private func hitTestElement(pid: pid_t, point: CGPoint, keys: Set<FBAXKeys>) async throws -> FBAccessibilityElementsResponse? {
-    let response = try await transport.hitTest(pid: pid, x: Double(point.x), y: Double(point.y))
-    guard let node = try FBAXBridgeResponse.hitTest(fromResponse: response, pid: pid) else {
-      return nil
-    }
-    let hit = FBAXTreeSerialization.buildPlatformElementTree(from: node, pid: pid)
-    let element = FBSimulatorAccessibilitySerializer.formattedDescription(
-      ofElement: hit, token: "", nestedFormat: false, keys: keys, collector: nil, coverageGrid: nil
-    )
-    return FBAccessibilityElementsResponse(
-      elements: element
-    )
   }
 }

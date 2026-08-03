@@ -29,8 +29,10 @@ protocol FBAXBridgeTransport {
   /// CoreSimulator query and no separate pid call. The response envelope carries the resolved pid
   /// alongside the tree. This is the whole point of the axbridge frontmost optimization: one IPC hop.
   func readFrontmost(x: Double, y: Double, maxDepth: Int, maxNodes: Int) async throws -> Data
-  /// Reads just the element at a point for `pid` (the guest `hittest` verb) — one round-trip, no walk.
-  func hitTest(pid: pid_t, x: Double, y: Double) async throws -> Data
+  /// Reads just the element at a screen point (the guest `hittest` verb with no pid) — a system-wide
+  /// hit-test that resolves the element and its owning app in-guest in one round-trip, with no walk and
+  /// no separate frontmost pid query. The response carries the owning pid alongside the hit node.
+  func hitTest(x: Double, y: Double) async throws -> Data
   /// Resolves the frontmost application's pid (the guest `frontmost` verb) via a system-wide hit-test
   /// at the given screen anchor — the host passes the screen centre. Returns the raw JSON response
   /// bytes; the conformer parses the `{ "ok", "pid" | "error" }` envelope.
@@ -106,11 +108,28 @@ enum FBAXBridgeResponse {
     return (tree, truncated, pid_t(pid))
   }
 
-  /// Parses a hit-test response: the hit node, or `nil` when the guest reports no element at the point
-  /// — a valid empty result. A failure throws, so a caller can tell empty space from a broken reader.
-  static func hitTest(fromResponse data: Data, pid: pid_t) throws -> [String: Any]? {
-    let response = try validatedResponse(fromResponse: data, pid: pid)
-    return try node(fromValidatedResponse: response, pid: pid)
+  /// Parses a system-wide hit-test response: the hit node and the owning pid of the element there (the
+  /// host does not know it in advance — the guest resolved which app owns the point), or `nil` when the
+  /// guest reports no element at the point (a valid empty result). A failure throws, so a caller can
+  /// tell empty space from a broken reader.
+  static func systemWideHitTest(fromResponse data: Data) throws -> (node: [String: Any], pid: pid_t)? {
+    guard let object = try? JSONSerialization.jsonObject(with: data), let response = object as? [String: Any] else {
+      throw FBAXBridgeError.guestFailure("unparseable hit-test response")
+    }
+    guard (response["ok"] as? Bool) == true else {
+      let message = (response["error"] as? String) ?? "the guest reported a failure with no message"
+      throw FBAXBridgeError.guestFailure(message)
+    }
+    if (response["empty"] as? Bool) == true {
+      return nil
+    }
+    guard let node = response["tree"] as? [String: Any] else {
+      throw FBAXBridgeError.guestFailure("hit-test ok response without a tree or empty flag")
+    }
+    guard let pid = response["pid"] as? Int, pid > 0 else {
+      throw FBAXBridgeError.guestFailure("hit-test response without an owning pid")
+    }
+    return (node, pid_t(pid))
   }
 
   /// Parses a frontmost response (`{ ok: true, pid: <n>, method: <string> }`), returning the resolved
@@ -144,8 +163,8 @@ struct FBAXBridgeOneshotTransport: FBAXBridgeTransport {
     try await spawn(["accessibility", "describe", "--x", "\(x)", "--y", "\(y)", "--max-depth", "\(maxDepth)", "--max-nodes", "\(maxNodes)"])
   }
 
-  func hitTest(pid: pid_t, x: Double, y: Double) async throws -> Data {
-    try await spawn(["accessibility", "hittest", "--pid", "\(pid)", "--x", "\(x)", "--y", "\(y)"])
+  func hitTest(x: Double, y: Double) async throws -> Data {
+    try await spawn(["accessibility", "hittest", "--x", "\(x)", "--y", "\(y)"])
   }
 
   func frontmostPid(x: Double, y: Double) async throws -> Data {
@@ -188,8 +207,8 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
     try await roundTripWithRecovery(["verb": "describe", "x": x, "y": y, "maxDepth": maxDepth, "maxNodes": maxNodes])
   }
 
-  func hitTest(pid: pid_t, x: Double, y: Double) async throws -> Data {
-    try await roundTripWithRecovery(["verb": "hittest", "pid": Int(pid), "x": x, "y": y])
+  func hitTest(x: Double, y: Double) async throws -> Data {
+    try await roundTripWithRecovery(["verb": "hittest", "x": x, "y": y])
   }
 
   func frontmostPid(x: Double, y: Double) async throws -> Data {
