@@ -34,6 +34,11 @@ NS_ASSUME_NONNULL_BEGIN
  *                                              backends gets the same truncation point from each.
  *   - hittest  --pid <pid> --x <x> --y <y>     reads just the element at a point, via a single
  *                                              AXUIElementCopyElementAtPosition round-trip (no walk).
+ *   - frontmost --x <x> --y <y>                resolves the frontmost application's pid via a system-wide
+ *                                              hit-test at the caller's screen anchor (the screen
+ *                                              centre) — no host-side CoreSimulator round-trip. The
+ *                                              simulator's AX server does not report AXFocusedApplication,
+ *                                              so focus is resolved positionally.
  * Front-ends:
  *   - oneshot:    accessibility <verb> ...       (runs once, prints JSON, exits)
  *   - persistent: accessibility serve <socket>   (serves many requests over a UDS)
@@ -42,20 +47,21 @@ NS_ASSUME_NONNULL_BEGIN
  * frames (4-byte big-endian length + a request object, same envelope as oneshot) with the framework
  * cached once, so a host client reusing one warm process reads ~30x faster than re-spawning per read.
  *
- * @param action The verb ("describe" or "hittest") or the "serve" action.
- * @param arguments Remaining argv (e.g. @[@"--pid", @"1234"], @[@"--pid", @"1234", @"--x", @"20", @"--y", @"40"], or @[socketPath]).
+ * @param action The verb ("describe", "hittest", or "frontmost") or the "serve" action.
+ * @param arguments Remaining argv (e.g. @[@"--pid", @"1234"], @[@"--pid", @"1234", @"--x", @"20", @"--y", @"40"], @[@"--x", @"201", @"--y", @"437"] for frontmost, or @[socketPath]).
  * @return 0 on success, 1 on failure.
  */
 int handleAccessibilityAction(NSString *action, NSArray<NSString *> *arguments);
 
 /**
  * The transport-agnostic request handler shared by the oneshot argv front-end and any future socket
- * server. Request keys: "verb" (@"describe" or @"hittest"), "pid" (NSNumber), optional "maxDepth" and
- * "maxNodes" (NSNumber, describe — the caller's read bounds), "x"/"y" (NSNumber, hittest). Response is @{@"ok": @YES, @"tree": <node>} on
- * success; @{@"ok": @YES, @"empty": @YES} when a hittest finds no element at the point (a valid empty
- * result, distinct from a failure); or @{@"ok": @NO, @"error": <string>} on failure. Each node is
- * keyed by the `XC_kAXXC*` attributes with a JSON-safe frame (a CGRect dictionary representation) and
- * its children recursed in place.
+ * server. Request keys: "verb" (@"describe", @"hittest", or @"frontmost"), "pid" (NSNumber, describe /
+ * hittest), optional "maxDepth" and "maxNodes" (NSNumber, describe — the caller's read bounds), "x"/"y"
+ * (NSNumber, hittest and frontmost — the point / screen anchor). Response is @{@"ok": @YES, @"tree": <node>} on success; @{@"ok": @YES, @"empty":
+ * @YES} when a hittest finds no element at the point (a valid empty result, distinct from a failure);
+ * @{@"ok": @YES, @"pid": <NSNumber>, @"method": <string>} for frontmost; or @{@"ok": @NO, @"error":
+ * <string>} on failure. Each node is keyed by the `XC_kAXXC*` attributes with a JSON-safe frame (a
+ * CGRect dictionary representation) and its children recursed in place.
  */
 NSDictionary<NSString *, id> *FBAXBridgeHandleRequest(NSDictionary<NSString *, id> *request);
 

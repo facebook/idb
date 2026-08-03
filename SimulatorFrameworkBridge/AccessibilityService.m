@@ -37,6 +37,9 @@ static NSString *const kRequestMaxDepth = @"maxDepth";
 static NSString *const kRequestMaxNodes = @"maxNodes";
 static NSString *const kRequestX = @"x";
 static NSString *const kRequestY = @"y";
+// Selects how a frontmost read (the `frontmost` verb) resolves the foreground app. Optional; defaults to
+// `center-point` (the positional system-wide hit-test).
+static NSString *const kRequestMethod = @"method";
 static NSString *const kResponseOk = @"ok";
 static NSString *const kResponseTree = @"tree";
 static NSString *const kResponseError = @"error";
@@ -52,10 +55,25 @@ static NSString *const kErrorKindApplicationUnavailable = @"application_unavaila
 // a partial view, so the host can warn rather than pass it off as complete. Absent or `false` means the
 // walk visited every element within the bounds.
 static NSString *const kResponseTruncated = @"truncated";
+// The frontmost-application response: the resolved foreground pid, plus the mechanism that resolved it
+// (a diagnostic tag, so a future alternate strategy is distinguishable in logs from the current one).
+static NSString *const kResponsePid = @"pid";
+static NSString *const kResponseMethod = @"method";
 
 static NSString *const kVerbDescribe = @"describe";
 static NSString *const kVerbHitTest = @"hittest";
+// Resolves the frontmost application's pid entirely in-guest — a system-wide hit-test at the caller's
+// screen-anchor point, with no host-side CoreSimulator AX round-trip.
+static NSString *const kVerbFrontmost = @"frontmost";
 static NSString *const kActionServe = @"serve";
+
+// The `method` a successful `frontmost` response reports (the mechanism that answered).
+static NSString *const kFrontmostMethodSystemWideHitTest = @"system_wide_hit_test";
+
+// Frontmost-resolution methods a request may select (the `method` request key). `center-point` is the
+// positional system-wide hit-test (default); other methods are added in later changes and slot into the
+// resolution dispatcher below.
+static NSString *const kMethodCenterPoint = @"center-point";
 
 // Frame cap for the persistent `serve` transport: a frame larger than this is treated as a protocol
 // error rather than allocating unbounded memory. This is a property of the wire protocol, so the host
@@ -106,6 +124,19 @@ static const int kIdleTimeoutSeconds = 300;
 // returns just the element at a point, resolved by `dlsym` because AXRuntime is `dlopen`-loaded rather
 // than linked. Returns 0 (kAXErrorSuccess) and a +1-retained element on success; x/y are 32-bit float.
 typedef int32_t (*FBAXCopyElementAtPositionFn)(void *application, float x, float y, void **element);
+
+// The AXRuntime C functions used to resolve the frontmost application in-guest, resolved by `dlsym` for
+// the same reason (AXRuntime is `dlopen`-loaded, not linked). AXUIElementRefs are opaque CFTypes held
+// as `void *` here to avoid linking the AX C types.
+//   - `AXUIElementCreateSystemWide()` returns the +1-retained system-wide element — the seed for a
+//     display-wide (rather than pid-scoped) hit-test.
+//   - `AXUIElementGetPid(el, &pid)` reads an element's owning pid (no ownership transfer), which for the
+//     element hit at the screen anchor is the frontmost app's pid.
+//
+// `AXFocusedApplication` on the system-wide element is deliberately *not* used: the simulator's AX
+// server reports it as kAXErrorNoValue (unlike macOS), so focus is resolved positionally instead.
+typedef void *(*FBAXCreateSystemWideFn)(void);
+typedef int32_t (*FBAXGetPidFn)(void *element, pid_t *pid);
 
 #pragma mark - AX client setup
 
@@ -287,6 +318,91 @@ static NSDictionary *_Nullable FBAXBridgeBuildNode(XCTAccessibilityFramework *fr
   return node;
 }
 
+#pragma mark - Frontmost resolution
+
+// Resolves the frontmost application's pid entirely in-guest, with no host-side CoreSimulator AX
+// round-trip: a system-wide hit-test at the caller's screen anchor (the screen centre — the anchor the
+// testmanagerd backend also uses) reads whichever element owns that point, and its owning pid is the
+// frontmost app.
+//
+// This is a *positional* proxy for frontmost, not the window server's notion of frontmost. It agrees
+// with it for a fullscreen app or the home screen, but can differ for a centred element owned by another
+// process (e.g. a system modal). Alternate methods that resolve the authoritative frontmost are added in
+// later changes and dispatched through `FBAXBridgeResolveFrontmostPid`.
+//
+// The AX runtime must already be loaded (the caller warms `FBAXBridgeSharedFramework` first, which
+// `dlopen`s AXRuntime and registers the remote-access client context the AX server answers to). Returns
+// YES with `*pidOut`/`*methodOut` set, or NO with `*errorOut` set to a diagnostic message.
+static BOOL FBAXBridgeCopyForegroundPid(float x, float y, pid_t *pidOut, NSString *_Nullable *_Nullable methodOut, NSString *_Nullable *_Nullable errorOut)
+{
+  FBAXCreateSystemWideFn createSystemWide = dlsym(RTLD_DEFAULT, "AXUIElementCreateSystemWide");
+  FBAXCopyElementAtPositionFn copyElementAtPosition = dlsym(RTLD_DEFAULT, "AXUIElementCopyElementAtPosition");
+  FBAXGetPidFn getPid = dlsym(RTLD_DEFAULT, "AXUIElementGetPid");
+  if (!createSystemWide || !copyElementAtPosition || !getPid) {
+    if (errorOut) {
+      *errorOut = @"AXUIElementCreateSystemWide/CopyElementAtPosition/GetPid unavailable";
+    }
+    return NO;
+  }
+
+  void *systemWide = createSystemWide();
+  if (!systemWide) {
+    if (errorOut) {
+      *errorOut = @"AXUIElementCreateSystemWide returned NULL";
+    }
+    return NO;
+  }
+
+  void *hit = NULL;
+  int32_t axError = copyElementAtPosition(systemWide, x, y, &hit);
+  CFRelease(systemWide);
+  if (axError != 0 || !hit) {
+    // No element at the anchor: an app mid-launch whose AX tree is not up yet, or a genuinely empty
+    // point. The host treats this as "not ready" and retries, so surface it as a resolution failure.
+    if (errorOut) {
+      *errorOut = [NSString stringWithFormat:@"system-wide hit-test at (%.1f, %.1f) found no element (axError %d)", x, y, axError];
+    }
+    return NO;
+  }
+
+  pid_t pid = 0;
+  axError = getPid(hit, &pid);
+  CFRelease(hit);
+  if (axError != 0 || pid <= 0) {
+    if (errorOut) {
+      *errorOut = [NSString stringWithFormat:@"AXUIElementGetPid failed (axError %d, pid %d)", axError, pid];
+    }
+    return NO;
+  }
+
+  if (pidOut) {
+    *pidOut = pid;
+  }
+  if (methodOut) {
+    *methodOut = kFrontmostMethodSystemWideHitTest;
+  }
+  return YES;
+}
+
+// Resolves the frontmost pid by the requested `method`. `center-point` (default) is the positional
+// system-wide hit-test at (x, y); other methods slot in here as they are added. `x`/`y` are the screen
+// anchor for the positional method and ignored by the others.
+static BOOL FBAXBridgeResolveFrontmostPid(NSString *_Nullable method,
+                                          float x,
+                                          float y,
+                                          pid_t *pidOut,
+                                          NSString *_Nullable *_Nullable methodOut,
+                                          NSString *_Nullable *_Nullable errorOut)
+{
+  if (!method || [method isEqualToString:kMethodCenterPoint]) {
+    return FBAXBridgeCopyForegroundPid(x, y, pidOut, methodOut, errorOut);
+  }
+  if (errorOut) {
+    *errorOut = [NSString stringWithFormat:@"unsupported frontmost method: %@", method];
+  }
+  return NO;
+}
+
 #pragma mark - Request handling
 
 static NSDictionary *FBAXBridgeErrorResponse(NSString *message)
@@ -368,8 +484,33 @@ NSDictionary<NSString *, id> *FBAXBridgeHandleRequest(NSDictionary<NSString *, i
   NSString *verb = request[kRequestVerb];
   BOOL isDescribe = [verb isEqualToString:kVerbDescribe];
   BOOL isHitTest = [verb isEqualToString:kVerbHitTest];
-  if (!isDescribe && !isHitTest) {
+  BOOL isFrontmost = [verb isEqualToString:kVerbFrontmost];
+  if (!isDescribe && !isHitTest && !isFrontmost) {
     return FBAXBridgeErrorResponse([NSString stringWithFormat:@"unsupported verb: %@", verb ?: @"(nil)"]);
+  }
+
+  NSString *setupError = nil;
+  XCTAccessibilityFramework *framework = FBAXBridgeSharedFramework(&setupError);
+  if (!framework) {
+    return FBAXBridgeErrorResponse(setupError ?: @"accessibility setup failed");
+  }
+
+  // `frontmost` resolves the foreground pid via the selected method (default: a system-wide hit-test at
+  // the caller's screen anchor) — no input pid — so it is handled before the pid-scoped describe/hittest.
+  if (isFrontmost) {
+    NSNumber *xNumber = request[kRequestX];
+    NSNumber *yNumber = request[kRequestY];
+    if (![xNumber isKindOfClass:NSNumber.class] || ![yNumber isKindOfClass:NSNumber.class]) {
+      return FBAXBridgeErrorResponse(@"frontmost requires numeric x and y (the screen anchor point)");
+    }
+    pid_t frontmostPid = 0;
+    NSString *method = nil;
+    NSString *frontmostError = nil;
+    NSString *requestedMethod = [request[kRequestMethod] isKindOfClass:NSString.class] ? request[kRequestMethod] : nil;
+    if (!FBAXBridgeResolveFrontmostPid(requestedMethod, xNumber.floatValue, yNumber.floatValue, &frontmostPid, &method, &frontmostError)) {
+      return FBAXBridgeErrorResponse(frontmostError ?: @"could not resolve the frontmost application pid");
+    }
+    return @{kResponseOk : @YES, kResponsePid : @(frontmostPid), kResponseMethod : method ?: @""};
   }
 
   NSNumber *pidNumber = request[kRequestPid];
@@ -377,12 +518,6 @@ NSDictionary<NSString *, id> *FBAXBridgeHandleRequest(NSDictionary<NSString *, i
     return FBAXBridgeErrorResponse(@"request requires a numeric pid");
   }
   pid_t pid = pidNumber.intValue;
-
-  NSString *setupError = nil;
-  XCTAccessibilityFramework *framework = FBAXBridgeSharedFramework(&setupError);
-  if (!framework) {
-    return FBAXBridgeErrorResponse(setupError ?: @"accessibility setup failed");
-  }
 
   Class elementClass = objc_lookUpClass("XCAccessibilityElement");
   if (!elementClass) {
@@ -588,6 +723,8 @@ int handleAccessibilityAction(NSString *action, NSArray<NSString *> *arguments)
       request[kRequestX] = @(argValue.doubleValue);
     } else if ([flag isEqualToString:@"--y"]) {
       request[kRequestY] = @(argValue.doubleValue);
+    } else if ([flag isEqualToString:@"--method"]) {
+      request[kRequestMethod] = argValue;
     }
   }
 

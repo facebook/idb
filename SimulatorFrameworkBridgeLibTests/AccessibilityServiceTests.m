@@ -71,6 +71,17 @@ static NSDictionary *FBAXTestsParse(NSData *data)
   XCTAssertEqualObjects(parsed[@"truncated"], @YES, @"the truncation flag must survive serialization");
 }
 
+// A frontmost response carries the resolved foreground pid and the method that resolved it. Both must
+// survive serialization so the host can read the pid and surface which mechanism answered.
+- (void)testFrontmostResponseSerializesPidAndMethod
+{
+  NSDictionary *response = @{@"ok" : @YES, @"pid" : @1234, @"method" : @"system_wide_hit_test"};
+  NSDictionary *parsed = FBAXTestsParse(FBAXBridgeSerializeResponse(response));
+  XCTAssertEqualObjects(parsed[@"ok"], @YES);
+  XCTAssertEqualObjects(parsed[@"pid"], @1234, @"the resolved pid must survive serialization");
+  XCTAssertEqualObjects(parsed[@"method"], @"system_wide_hit_test");
+}
+
 // A value that cannot be represented at all must degrade to an error frame the client can read,
 // rather than raising and terminating the reader.
 - (void)testUnserializableValueYieldsAnErrorFrameRatherThanRaising
