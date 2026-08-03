@@ -8,30 +8,37 @@
 import Foundation
 
 /// The parameters needed to compile a REPL submission into a dylib: the target
-/// triple, the (optional) Apple SDK path, the Swift toolchain, and the search
-/// paths / auto-imported modules for the interfaces injected code may reference.
-/// These are resolved by the caller (see `CompilerEnvironment`), so this type
-/// carries no platform assumptions; `sdkPath` is optional because not every host
-/// compiles against an Apple SDK.
+/// triple, the (optional) Apple SDK path, the Swift toolchain, the search paths /
+/// auto-imported modules for the interfaces injected code may reference, and any
+/// extra compiler or link arguments. These are resolved by the caller (see
+/// `CompilerEnvironment`), so this type carries no assumptions.
 public struct ReplCompileParameters {
   public var targetTriple: String
   public var sdkPath: String?
   public var toolchainPath: String
+  /// Extra arguments added to the `swiftc` invocation for compiling.
+  public var compilerArguments: [String]
   public var interfaceSearchPaths: [String]
   public var autoImportModules: [String]
+  /// Extra arguments added to the `swiftc` invocation for linking.
+  public var linkerArguments: [String]
 
   public init(
     targetTriple: String,
     sdkPath: String?,
     toolchainPath: String,
+    compilerArguments: [String] = [],
     interfaceSearchPaths: [String] = [],
-    autoImportModules: [String] = []
+    autoImportModules: [String] = [],
+    linkerArguments: [String] = []
   ) {
     self.targetTriple = targetTriple
     self.sdkPath = sdkPath
     self.toolchainPath = toolchainPath
+    self.compilerArguments = compilerArguments
     self.interfaceSearchPaths = interfaceSearchPaths
     self.autoImportModules = autoImportModules
+    self.linkerArguments = linkerArguments
   }
 }
 
@@ -110,6 +117,7 @@ public enum ReplCompiler {
       // entry-point symbol.
       "-module-name", "idb_repl_\(index)",
     ]
+    arguments.append(contentsOf: parameters.compilerArguments)
     // Add the probe-generated .swiftinterface directories to the import search
     // path so injected code can `import` the test bundle's modules. The symbols
     // themselves are resolved at load time via `-undefined dynamic_lookup`.
@@ -117,6 +125,7 @@ public enum ReplCompiler {
       arguments.append(contentsOf: ["-I", searchPath])
     }
     arguments.append(contentsOf: ["-Xlinker", "-undefined", "-Xlinker", "dynamic_lookup"])
+    arguments.append(contentsOf: parameters.linkerArguments)
     swiftc.arguments = arguments
     // Redirect stdout/stderr to files rather than pipes: a file sink has no
     // fixed-size kernel buffer to fill, so a large compiler diagnostic can never

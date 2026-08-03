@@ -68,6 +68,8 @@ final class ReplSession {
   private let toolchain: String
   private let targetTriple: String
   private let sdkPath: String
+  private let compilerArguments: [String]
+  private let linkerArguments: [String]
   private let interfaceSearchPaths: [String]
   private let autoImportModules: [String]
   private let reportWriter: ReplReportWriter?
@@ -88,6 +90,8 @@ final class ReplSession {
     toolchain: String,
     targetTriple: String,
     sdkPath: String,
+    compilerArguments: [String],
+    linkerArguments: [String],
     interfaceSearchPaths: [String],
     autoImportModules: [String],
     reportWriter: ReplReportWriter?
@@ -107,6 +111,8 @@ final class ReplSession {
     self.toolchain = toolchain
     self.targetTriple = targetTriple
     self.sdkPath = sdkPath
+    self.compilerArguments = compilerArguments
+    self.linkerArguments = linkerArguments
     self.interfaceSearchPaths = interfaceSearchPaths
     self.autoImportModules = autoImportModules
     self.reportWriter = reportWriter
@@ -152,6 +158,8 @@ final class ReplSession {
     let interfaceSearchPaths: [String]
     let sdkPath: String
     let targetTriple: String
+    let compilerArguments: [String]
+    let linkerArguments: [String]
     do {
       toolchain = try resolveToolchainPath(explicit: config.toolchainPath)
 
@@ -238,6 +246,8 @@ final class ReplSession {
       let platform = try Platform(deviceType: deviceType)
       sdkPath = try resolveSDKPath(platform: platform)
       targetTriple = try resolveTargetTriple(platform: platform, runtimeOSVersion: osVersion)
+      compilerArguments = try resolveCompilerArguments(platform: platform)
+      linkerArguments = try resolveLinkerArguments(platform: platform, runtimeOSVersion: osVersion)
       FileHandle.standardError.write(Data("idb-repl: compiling injected code for \(targetTriple)\n".utf8))
     } catch {
       reportCall(reporter, "start_session", start: sessionStart, arguments: [], failure: "\(error)")
@@ -283,6 +293,8 @@ final class ReplSession {
       toolchain: toolchain,
       targetTriple: targetTriple,
       sdkPath: sdkPath,
+      compilerArguments: compilerArguments,
+      linkerArguments: linkerArguments,
       interfaceSearchPaths: interfaceSearchPaths,
       autoImportModules: autoImportModules,
       reportWriter: reportWriter)
@@ -301,8 +313,10 @@ final class ReplSession {
         targetTriple: targetTriple,
         sdkPath: sdkPath,
         toolchainPath: toolchain,
+        compilerArguments: compilerArguments,
         interfaceSearchPaths: interfaceSearchPaths,
-        autoImportModules: autoImportModules)
+        autoImportModules: autoImportModules,
+        linkerArguments: linkerArguments)
       let dylib: Data
       let symbol: String
       switch try ReplCompiler.compile(userCode: code, index: index, parameters: parameters, workingDirectory: sessionDirectory.path) {

@@ -73,6 +73,22 @@ protocol CompilerToolchain: Sendable {
   /// The SDK's platform version (e.g. "27.0") -- the highest deployment target
   /// the toolchain can build for.
   func sdkPlatformVersion(for platform: Platform) throws -> String
+  /// Extra `swiftc` arguments for compiling.
+  func compilerArguments(for platform: Platform) throws -> [String]
+  /// Extra `swiftc` arguments for linking.
+  func linkerArguments(for platform: Platform, runtimeOSVersion: String) throws -> [String]
+}
+
+extension CompilerToolchain {
+  /// No extra arguments by default.
+  func compilerArguments(for platform: Platform) throws -> [String] {
+    []
+  }
+
+  /// No extra arguments by default.
+  func linkerArguments(for platform: Platform, runtimeOSVersion: String) throws -> [String] {
+    []
+  }
 }
 
 /// The macOS toolchain: Xcode, located via `xcode-select` and `xcrun`.
@@ -146,6 +162,16 @@ public func resolveTargetTriple(platform: Platform, runtimeOSVersion: String) th
   let sdkVersion = try makeCompilerToolchain().sdkPlatformVersion(for: platform)
   return platform.targetTriple(
     version: DeploymentTargetVersion.floored(runtimeOSVersion: runtimeOSVersion, sdkVersion: sdkVersion))
+}
+
+/// Resolves any extra `swiftc` arguments for compiling.
+public func resolveCompilerArguments(platform: Platform) throws -> [String] {
+  try makeCompilerToolchain().compilerArguments(for: platform)
+}
+
+/// Resolves any extra `swiftc` arguments for linking.
+public func resolveLinkerArguments(platform: Platform, runtimeOSVersion: String) throws -> [String] {
+  try makeCompilerToolchain().linkerArguments(for: platform, runtimeOSVersion: runtimeOSVersion)
 }
 
 /// Chooses the OS version to compile injected code against (the deployment

@@ -73,4 +73,18 @@ struct CompilerEnvironmentTests {
     #expect(DeploymentTargetVersion.isAtMost("26.2", "26.2.0")) // trailing zero is equal
     #expect(!DeploymentTargetVersion.isAtMost("26.2.1", "26.2")) // 26.2.1 > 26.2.0
   }
+
+  // MARK: - toolchain-supplied compile arguments
+
+  @Test
+  func noExtraCompilerArgumentsByDefault() throws {
+    #expect(try resolveCompilerArguments(platform: .iOSSimulator).isEmpty)
+    #expect(try resolveCompilerArguments(platform: .macOS).isEmpty)
+  }
+
+  @Test
+  func noExtraLinkerArgumentsByDefault() throws {
+    #expect(try resolveLinkerArguments(platform: .iOSSimulator, runtimeOSVersion: "26.2").isEmpty)
+    #expect(try resolveLinkerArguments(platform: .macOS, runtimeOSVersion: "26.2").isEmpty)
+  }
 }
