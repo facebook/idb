@@ -26,6 +26,10 @@ protocol FBAXBridgeTransport {
   func read(pid: pid_t, maxDepth: Int, maxNodes: Int) async throws -> Data
   /// Reads just the element at a point for `pid` (the guest `hittest` verb) — one round-trip, no walk.
   func hitTest(pid: pid_t, x: Double, y: Double) async throws -> Data
+  /// Resolves the frontmost application's pid (the guest `frontmost` verb) via a system-wide hit-test
+  /// at the given screen anchor — the host passes the screen centre. Returns the raw JSON response
+  /// bytes; the conformer parses the `{ "ok", "pid" | "error" }` envelope.
+  func frontmostPid(x: Double, y: Double) async throws -> Data
 }
 
 /// Parses the guest's `{ "ok": Bool, "tree": {...} | "error": String }` response envelope.
@@ -80,6 +84,22 @@ enum FBAXBridgeResponse {
     let response = try validatedResponse(fromResponse: data, pid: pid)
     return try node(fromValidatedResponse: response, pid: pid)
   }
+
+  /// Parses a frontmost response (`{ ok: true, pid: <n>, method: <string> }`), returning the resolved
+  /// foreground pid. A failed response — or one with a missing or non-positive pid — throws
+  /// `frontmostUnavailable`: the guest could not resolve the frontmost app (most often the anchor point
+  /// had no element because an app is still launching), which the caller's poll path treats as "not up
+  /// yet". A response that cannot be parsed at all is a `guestFailure`, distinguishing a broken reader
+  /// from an unresolved frontmost.
+  static func frontmostPid(fromResponse data: Data) throws -> pid_t {
+    guard let object = try? JSONSerialization.jsonObject(with: data), let response = object as? [String: Any] else {
+      throw FBAXBridgeError.guestFailure("unparseable frontmost response")
+    }
+    guard (response["ok"] as? Bool) == true, let pid = response["pid"] as? Int, pid > 0 else {
+      throw FBAXBridgeError.frontmostUnavailable
+    }
+    return pid_t(pid)
+  }
 }
 
 // MARK: - One-shot transport
@@ -94,6 +114,10 @@ struct FBAXBridgeOneshotTransport: FBAXBridgeTransport {
 
   func hitTest(pid: pid_t, x: Double, y: Double) async throws -> Data {
     try await spawn(["accessibility", "hittest", "--pid", "\(pid)", "--x", "\(x)", "--y", "\(y)"])
+  }
+
+  func frontmostPid(x: Double, y: Double) async throws -> Data {
+    try await spawn(["accessibility", "frontmost", "--x", "\(x)", "--y", "\(y)"])
   }
 
   private func spawn(_ arguments: [String]) async throws -> Data {
@@ -130,6 +154,10 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
 
   func hitTest(pid: pid_t, x: Double, y: Double) async throws -> Data {
     try await roundTripWithRecovery(["verb": "hittest", "pid": Int(pid), "x": x, "y": y])
+  }
+
+  func frontmostPid(x: Double, y: Double) async throws -> Data {
+    try await roundTripWithRecovery(["verb": "frontmost", "x": x, "y": y])
   }
 
   /// Sends one request over the reused connection, recovering from a terminated serve process.
