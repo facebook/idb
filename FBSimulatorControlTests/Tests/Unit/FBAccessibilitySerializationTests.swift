@@ -11,33 +11,43 @@ import FBControlCore
 import Foundation
 import XCTest
 
-/// Golden characterization of the accessibility serializer's JSON output. These pin the exact
-/// serialized bytes — in particular that a nil field is emitted as an explicit `null` and its key is
-/// NOT dropped (a deserializing consumer distinguishes JSON `null` from a missing key, e.g. JS
-/// `null` vs `undefined`). The serializer's internal value representation may change, but this output
-/// must not: the same assertions guard the switch to a Sendable typed-JSON payload.
+/// Golden characterization of the accessibility serializer's JSON output over the full default key set
+/// (`FBAXKeys.defaultSet`). These pin the exact serialized bytes so a change to the serializer's
+/// internal representation cannot silently alter the wire output. In particular they lock:
+/// - the value *types* that must survive representation changes: `enabled`/`content_required` bools
+///   (not `"true"`/`"false"` strings), `custom_actions` an array, `traits` null-or-array, `pid` a bare
+///   int, `AXFrame` a rect string, and `frame` a number dict;
+/// - that an absent field is emitted as an explicit `null` with its key retained, not dropped — a
+///   deserializing consumer distinguishes JSON `null` from a missing key (JS `null` vs `undefined`);
+/// - the `role` (verbatim, e.g. `AXCell`) vs `type` (AX-prefix stripped, e.g. `Cell`) divergence, and
+///   the `XCUIElementType` number → name mapping (`9` -> `Button`).
 final class FBAccessibilitySerializationTests: XCTestCase {
 
-  // A focused key set that keeps the golden small while covering present and absent (null) fields:
-  // `.label` is present on every node, `.value`/`.uniqueID` are present on the root but absent on the
-  // child, and `.title` is never produced by the remote element — so every node has a `null` field.
-  private static let characterizationKeys: Set<FBAXKeys> = [.label, .value, .uniqueID, .title]
-
-  // A two-node tree whose child omits `value`/`identifier`, so the child serializes those as `null`.
+  // A two-node tree exercising both role sources and present-vs-absent fields:
+  // - root carries a numeric `automationType` (9 -> "Button", so role == type), plus a value,
+  //   identifier and frame — every present field;
+  // - child carries a string `automationType` ("AXCell" -> role "AXCell", type "Cell", pinning the
+  //   AX-prefix strip) and omits value/identifier/frame, so those serialize as `null`/zero.
   private static func sampleTree() -> [String: Any] {
     [
       FBRemoteAutomationAXAttribute.label: "root",
       FBRemoteAutomationAXAttribute.value: "on",
       FBRemoteAutomationAXAttribute.identifier: "com.example.root",
+      FBRemoteAutomationAXAttribute.automationType: NSNumber(value: 9),
+      FBRemoteAutomationAXAttribute.frame:
+        CGRectCreateDictionaryRepresentation(CGRect(x: 16, y: 380, width: 370, height: 52)) as NSDictionary,
       FBRemoteAutomationAXAttribute.children: [
-        [FBRemoteAutomationAXAttribute.label: "child"] as [String: Any]
+        [
+          FBRemoteAutomationAXAttribute.label: "child",
+          FBRemoteAutomationAXAttribute.automationType: "AXCell",
+        ] as [String: Any]
       ],
     ]
   }
 
   private func serializedJSON(nestedFormat: Bool) throws -> String {
     let elements = FBAXTreeSerialization.describeAllElements(
-      fromTree: Self.sampleTree(), keys: Self.characterizationKeys, nestedFormat: nestedFormat, pid: 7
+      fromTree: Self.sampleTree(), keys: FBAXKeys.defaultSet, nestedFormat: nestedFormat, pid: 7
     )
     let response = FBAccessibilityElementsResponse(
       elements: .array(elements)
@@ -46,17 +56,34 @@ final class FBAccessibilitySerializationTests: XCTestCase {
     return String(decoding: data, as: UTF8.self)
   }
 
-  func testSerializedFlatJSONPreservesNullFields() throws {
-    let json = try serializedJSON(nestedFormat: false)
-    XCTAssertEqual(json, Self.expectedFlatJSON)
-    // The nil field is an explicit `null`, key present — not dropped.
-    XCTAssertTrue(json.contains("\"\(FBAXKeys.title.rawValue)\":null"), "nil title must serialize as null, got: \(json)")
+  func testSerializedFlatJSONMatchesGolden() throws {
+    XCTAssertEqual(try serializedJSON(nestedFormat: false), Self.expectedFlatJSON)
   }
 
-  func testSerializedNestedJSONPreservesNullFields() throws {
-    let json = try serializedJSON(nestedFormat: true)
-    XCTAssertEqual(json, Self.expectedNestedJSON)
-    XCTAssertTrue(json.contains("\"\(FBAXKeys.title.rawValue)\":null"), "nil title must serialize as null, got: \(json)")
+  func testSerializedNestedJSONMatchesGolden() throws {
+    XCTAssertEqual(try serializedJSON(nestedFormat: true), Self.expectedNestedJSON)
+  }
+
+  // The profiling collector, coverage grid, and seen-pid set are pure side-channels: they accumulate
+  // counts / mark cells / record pids but must not change the serialized node. This invariant is what
+  // lets the serializer later split a pure node core from the legacy decorator without a byte change.
+  func testNodeDictionaryIsCollectorNeutral() throws {
+    let root = FBAXTreeSerialization.buildPlatformElementTree(from: Self.sampleTree(), pid: 7)
+    let grid = try XCTUnwrap(FBAccessibilityCoverageGrid(screenBounds: CGRect(x: 0, y: 0, width: 390, height: 844)))
+    var elements: [FBAXPlatformElement] = [root]
+    elements.append(contentsOf: root.axChildren())
+    for element in elements {
+      let bare = FBSimulatorAccessibilitySerializer.accessibilityDictionary(
+        forElement: element, token: "", keys: FBAXKeys.defaultSet,
+        collector: nil, coverageGrid: nil, seenPids: nil, discoveryMethod: "recursive"
+      )
+      let decorated = FBSimulatorAccessibilitySerializer.accessibilityDictionary(
+        forElement: element, token: "", keys: FBAXKeys.defaultSet,
+        collector: FBAccessibilityProfilingCollector(), coverageGrid: grid, seenPids: SeenPIDs(),
+        discoveryMethod: "recursive"
+      )
+      XCTAssertEqual(bare, decorated, "profiling/coverage/seen-pid side-channels must not change the node output")
+    }
   }
 
   // An off-screen element (e.g. a SpringBoard icon) can report a non-finite frame coordinate. JSON
@@ -129,8 +156,8 @@ final class FBAccessibilitySerializationTests: XCTestCase {
   }
 
   private static let expectedFlatJSON =
-    #"{"elements":[{"AXLabel":"root","AXUniqueId":"com.example.root","AXValue":"on","title":null},{"AXLabel":"child","AXUniqueId":null,"AXValue":null,"title":null}]}"#
+    #"{"elements":[{"AXFrame":"{{16, 380}, {370, 52}}","AXLabel":"root","AXUniqueId":"com.example.root","AXValue":"on","content_required":false,"custom_actions":[],"enabled":true,"frame":{"height":52,"width":370,"x":16,"y":380},"help":null,"pid":7,"role":"Button","role_description":null,"subrole":null,"title":null,"traits":null,"type":"Button"},{"AXFrame":"{{0, 0}, {0, 0}}","AXLabel":"child","AXUniqueId":null,"AXValue":null,"content_required":false,"custom_actions":[],"enabled":true,"frame":{"height":0,"width":0,"x":0,"y":0},"help":null,"pid":7,"role":"AXCell","role_description":null,"subrole":null,"title":null,"traits":null,"type":"Cell"}]}"#
 
   private static let expectedNestedJSON =
-    #"{"elements":[{"AXLabel":"root","AXUniqueId":"com.example.root","AXValue":"on","children":[{"AXLabel":"child","AXUniqueId":null,"AXValue":null,"children":[],"title":null}],"title":null}]}"#
+    #"{"elements":[{"AXFrame":"{{16, 380}, {370, 52}}","AXLabel":"root","AXUniqueId":"com.example.root","AXValue":"on","children":[{"AXFrame":"{{0, 0}, {0, 0}}","AXLabel":"child","AXUniqueId":null,"AXValue":null,"children":[],"content_required":false,"custom_actions":[],"enabled":true,"frame":{"height":0,"width":0,"x":0,"y":0},"help":null,"pid":7,"role":"AXCell","role_description":null,"subrole":null,"title":null,"traits":null,"type":"Cell"}],"content_required":false,"custom_actions":[],"enabled":true,"frame":{"height":52,"width":370,"x":16,"y":380},"help":null,"pid":7,"role":"Button","role_description":null,"subrole":null,"title":null,"traits":null,"type":"Button"}]}"#
 }
