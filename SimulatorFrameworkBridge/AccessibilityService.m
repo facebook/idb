@@ -11,6 +11,7 @@
 #import <dlfcn.h>
 #import <errno.h>
 #import <math.h>
+#import <objc/message.h>
 #import <objc/runtime.h>
 #import <poll.h>
 #import <sys/socket.h>
@@ -81,11 +82,18 @@ static NSString *const kActionServe = @"serve";
 
 // The `method` a successful `frontmost` response reports (the mechanism that answered).
 static NSString *const kFrontmostMethodSystemWideHitTest = @"system_wide_hit_test";
+static NSString *const kFrontmostMethodWindowServer = @"window_server";
+
+// The private AccessibilityPlatformTranslation framework, loaded from the booted runtime root — the same
+// AXPTranslator the host bridges to for a window-server frontmost, driven here entirely in-guest.
+static NSString *const kAXPTranslationPath =
+@"/System/Library/PrivateFrameworks/AccessibilityPlatformTranslation.framework/AccessibilityPlatformTranslation";
 
 // Frontmost-resolution methods a request may select (the `method` request key). `center-point` is the
 // positional system-wide hit-test (default); other methods are added in later changes and slot into the
 // resolution dispatcher below.
 static NSString *const kMethodCenterPoint = @"center-point";
+static NSString *const kMethodWindowServer = @"window-server";
 
 // Frame cap for the persistent `serve` transport: a frame larger than this is treated as a protocol
 // error rather than allocating unbounded memory. This is a property of the wire protocol, so the host
@@ -386,6 +394,142 @@ static NSDictionary *_Nullable FBAXBridgeModalDescriptor(NSDictionary *tree)
 
 #pragma mark - Frontmost resolution
 
+// The bridge/token delegate for the in-guest AXPTranslator window-server frontmost. The host normally
+// provides this delegate and services each per-element request over CoreSimulator; in-guest we close the
+// loop locally: the callback routes every request the translator emits back into the translator's own
+// `processTranslatorRequest:`, which resolves it against the guest AX server. This makes the iOS
+// translator resolve the true window-server frontmost with no host round-trip. Requests are serviced
+// serially by the guest, so the depth guard only bounds re-entrant sub-reads.
+static NSInteger gAXPSelfServiceDepth = 0;
+
+@interface FBAXWindowServerDelegate : NSObject
+@property (nonatomic, weak) id translator;
+@end
+@implementation FBAXWindowServerDelegate
+- (id)selfServiceCallback
+{
+  id translator = self.translator;
+  // Resolved by name (the AXPTranslator selectors are not declared to this translation unit).
+  SEL processSelector = NSSelectorFromString(@"processTranslatorRequest:");
+  return ^id (id request) {
+    if (gAXPSelfServiceDepth > 500) {
+      return nil;
+    }
+    gAXPSelfServiceDepth++;
+    id result = nil;
+    if (translator && [translator respondsToSelector:processSelector]) {
+      @try {
+        result = ((id (*)(id, SEL, id)) objc_msgSend)(translator, processSelector, request);
+      } @catch (NSException *exception) {
+        result = nil;
+      }
+    }
+    gAXPSelfServiceDepth--;
+    return result;
+  };
+}
+
+- (id)accessibilityTranslationDelegateBridgeCallbackWithToken:(NSString *)token { return [self selfServiceCallback]; }
+
+- (id)accessibilityTranslationDelegateBridgeCallback { return [self selfServiceCallback]; }
+
+- (CGRect)accessibilityTranslationConvertPlatformFrameToSystem:(CGRect)rect withToken:(NSString *)token { return rect; }
+
+- (CGRect)accessibilityTranslationConvertPlatformFrameToSystem:(CGRect)rect { return rect; }
+
+- (id)accessibilityTranslationRootParentWithToken:(NSString *)token { return nil; }
+
+- (id)accessibilityTranslationRootParent { return nil; }
+
+@end
+
+// The AXPTranslator (iOS instance) wired for in-guest window-server frontmost, set up once and reused
+// (installing the self-service delegate is the one-time cost). The delegate is retained here so it
+// outlives the translator's weak/assign reference. Returns nil (with `*error` set) if AXPTranslator is
+// unavailable.
+static id _Nullable FBAXBridgeWindowServerTranslator(NSString *_Nullable *_Nullable error)
+{
+  static id translator;
+  static FBAXWindowServerDelegate *delegate;
+  static NSString *cachedError;
+  static dispatch_once_t onceToken;
+  dispatch_once(&onceToken, ^{
+    dlopen(kAXPTranslationPath.fileSystemRepresentation, RTLD_NOW);
+    SEL sharedSelector = NSSelectorFromString(@"sharediOSInstance");
+    Class translatorClass = objc_lookUpClass("AXPTranslator");
+    if (!translatorClass || ![translatorClass respondsToSelector:sharedSelector]) {
+      cachedError = @"AXPTranslator unavailable — is AccessibilityPlatformTranslation loaded?";
+      return;
+    }
+    id instance = ((id (*)(id, SEL)) objc_msgSend)(translatorClass, sharedSelector);
+    if (!instance) {
+      cachedError = @"AXPTranslator sharediOSInstance was nil";
+      return;
+    }
+    FBAXWindowServerDelegate *serviceDelegate = [FBAXWindowServerDelegate new];
+    serviceDelegate.translator = instance;
+    @try {
+      [instance setValue:serviceDelegate forKey:@"bridgeTokenDelegate"];
+      [instance setValue:@YES forKey:@"supportsDelegateTokens"];
+    } @catch (NSException *exception) {
+      cachedError = exception.reason ?: @"failed to wire the AXPTranslator bridge delegate";
+      return;
+    }
+    translator = instance;
+    delegate = serviceDelegate;
+  });
+  (void)delegate;  // retained only to outlive the translator's weak reference to its bridge delegate
+  if (!translator && error) {
+    *error = cachedError ?: @"AXPTranslator setup failed";
+  }
+  return translator;
+}
+
+// Resolves the frontmost application's pid via the in-guest window-server query — the authoritative
+// frontmost the host obtains through AXPTranslator, obtained here with no host round-trip. Asks the
+// wired iOS translator for `frontmostApplicationWithDisplayId:0` and reads the owning pid of the
+// returned application object.
+static BOOL FBAXBridgeCopyWindowServerFrontmostPid(pid_t *pidOut, NSString *_Nullable *_Nullable methodOut, NSString *_Nullable *_Nullable errorOut)
+{
+  NSString *setupError = nil;
+  id translator = FBAXBridgeWindowServerTranslator(&setupError);
+  if (!translator) {
+    if (errorOut) {
+      *errorOut = setupError ?: @"AXPTranslator unavailable";
+    }
+    return NO;
+  }
+  SEL frontmostSelector = NSSelectorFromString(@"frontmostApplicationWithDisplayId:bridgeDelegateToken:");
+  if (![translator respondsToSelector:frontmostSelector]) {
+    if (errorOut) {
+      *errorOut = @"AXPTranslator does not respond to frontmostApplicationWithDisplayId:";
+    }
+    return NO;
+  }
+  SEL pidSelector = NSSelectorFromString(@"pid");
+  id application = ((id (*)(id, SEL, unsigned int, id)) objc_msgSend)(translator, frontmostSelector, 0, @"axbridge");
+  if (!application || ![application respondsToSelector:pidSelector]) {
+    if (errorOut) {
+      *errorOut = @"window-server frontmost returned no application object";
+    }
+    return NO;
+  }
+  pid_t pid = ((int (*)(id, SEL)) objc_msgSend)(application, pidSelector);
+  if (pid <= 0) {
+    if (errorOut) {
+      *errorOut = [NSString stringWithFormat:@"window-server frontmost returned no pid (%d)", pid];
+    }
+    return NO;
+  }
+  if (pidOut) {
+    *pidOut = pid;
+  }
+  if (methodOut) {
+    *methodOut = kFrontmostMethodWindowServer;
+  }
+  return YES;
+}
+
 // Resolves the frontmost application's pid entirely in-guest, with no host-side CoreSimulator AX
 // round-trip: a system-wide hit-test at the caller's screen anchor (the screen centre — the anchor the
 // testmanagerd backend also uses) reads whichever element owns that point, and its owning pid is the
@@ -451,8 +595,8 @@ static BOOL FBAXBridgeCopyForegroundPid(float x, float y, pid_t *pidOut, NSStrin
 }
 
 // Resolves the frontmost pid by the requested `method`. `center-point` (default) is the positional
-// system-wide hit-test at (x, y); other methods slot in here as they are added. `x`/`y` are the screen
-// anchor for the positional method and ignored by the others.
+// system-wide hit-test at (x, y); `window-server` is the in-guest AXPTranslator query. `x`/`y` are the
+// screen anchor for the positional method and ignored by the others.
 static BOOL FBAXBridgeResolveFrontmostPid(NSString *_Nullable method,
                                           float x,
                                           float y,
@@ -462,6 +606,9 @@ static BOOL FBAXBridgeResolveFrontmostPid(NSString *_Nullable method,
 {
   if (!method || [method isEqualToString:kMethodCenterPoint]) {
     return FBAXBridgeCopyForegroundPid(x, y, pidOut, methodOut, errorOut);
+  }
+  if ([method isEqualToString:kMethodWindowServer]) {
+    return FBAXBridgeCopyWindowServerFrontmostPid(pidOut, methodOut, errorOut);
   }
   if (errorOut) {
     *errorOut = [NSString stringWithFormat:@"unsupported frontmost method: %@", method];
