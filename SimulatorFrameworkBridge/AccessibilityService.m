@@ -83,6 +83,7 @@ static NSString *const kActionServe = @"serve";
 // The `method` a successful `frontmost` response reports (the mechanism that answered).
 static NSString *const kFrontmostMethodSystemWideHitTest = @"system_wide_hit_test";
 static NSString *const kFrontmostMethodWindowServer = @"window_server";
+static NSString *const kFrontmostMethodRunningBoard = @"running_board";
 
 // The private AccessibilityPlatformTranslation framework, loaded from the booted runtime root — the same
 // AXPTranslator the host bridges to for a window-server frontmost, driven here entirely in-guest.
@@ -94,6 +95,7 @@ static NSString *const kAXPTranslationPath =
 // resolution dispatcher below.
 static NSString *const kMethodCenterPoint = @"center-point";
 static NSString *const kMethodWindowServer = @"window-server";
+static NSString *const kMethodRunningBoard = @"runningboard";
 
 // Frame cap for the persistent `serve` transport: a frame larger than this is treated as a protocol
 // error rather than allocating unbounded memory. This is a property of the wire protocol, so the host
@@ -530,6 +532,104 @@ static BOOL FBAXBridgeCopyWindowServerFrontmostPid(pid_t *pidOut, NSString *_Nul
   return YES;
 }
 
+// The RunningBoardServices framework, loaded from the booted runtime root — driven through the ObjC
+// runtime, never linked. Enumerating another process's state requires the private
+// `com.apple.runningboard.process-state` entitlement, which the guest binary carries (ad-hoc signed); the
+// simulator's runningboardd honors it.
+static NSString *const kRunningBoardServicesPath =
+@"/System/Library/PrivateFrameworks/RunningBoardServices.framework/RunningBoardServices";
+
+// The endowment namespace RunningBoard grants a process whose scene is on-screen. The foreground app is
+// the launch-services process that holds it.
+static NSString *const kFrontboardVisibilityEndowment = @"com.apple.frontboard.visibility";
+
+// Resolves the frontmost application's pid via RunningBoard: enumerate every launch-services process and
+// return the one endowed with on-screen visibility (`com.apple.frontboard.visibility`). This reads the
+// window server's own notion of foreground — the same pid the window-server method resolves — from the
+// process-lifecycle daemon rather than the accessibility stack, so it needs neither a screen anchor nor
+// the AX server.
+//
+// Enumerating other processes' state requires the `com.apple.runningboard.process-state` entitlement;
+// without it runningboardd rejects the query with "Client not entitled". The RBS classes are resolved by
+// name (they are not declared to this translation unit) and messaged defensively.
+static BOOL FBAXBridgeCopyRunningBoardFrontmostPid(pid_t *pidOut, NSString *_Nullable *_Nullable methodOut, NSString *_Nullable *_Nullable errorOut)
+{
+  dlopen(kRunningBoardServicesPath.fileSystemRepresentation, RTLD_NOW);
+  Class predicateClass = objc_lookUpClass("RBSProcessPredicate");
+  Class stateClass = objc_lookUpClass("RBSProcessState");
+  Class descriptorClass = objc_lookUpClass("RBSProcessStateDescriptor");
+  SEL statesSelector = NSSelectorFromString(@"statesForPredicate:withDescriptor:error:");
+  if (!predicateClass || !stateClass || ![stateClass respondsToSelector:statesSelector]) {
+    if (errorOut) {
+      *errorOut = @"RunningBoardServices unavailable — is RunningBoardServices loaded?";
+    }
+    return NO;
+  }
+
+  id predicate = ((id (*)(id, SEL)) objc_msgSend)(predicateClass, NSSelectorFromString(@"predicateMatchingLaunchServicesProcesses"));
+
+  // The descriptor selects which fields RunningBoard populates. Request the endowment namespaces so each
+  // returned state carries its visibility endowment: the concrete "values" bitmask is not stable across
+  // OS versions, so it is set to all-bits defensively and the specific endowment namespace is named too.
+  id descriptor = nil;
+  if (descriptorClass) {
+    descriptor = ((id (*)(id, SEL)) objc_msgSend)(descriptorClass, NSSelectorFromString(@"descriptor"));
+    @try {
+      SEL setValues = NSSelectorFromString(@"setValues:");
+      if ([descriptor respondsToSelector:setValues]) {
+        ((void (*)(id, SEL, unsigned long long)) objc_msgSend)(descriptor, setValues, ~0ull);
+      }
+      SEL setEndowments = NSSelectorFromString(@"setEndowmentNamespaces:");
+      if ([descriptor respondsToSelector:setEndowments]) {
+        ((void (*)(id, SEL, id)) objc_msgSend)(descriptor, setEndowments, @[kFrontboardVisibilityEndowment]);
+      }
+    } @catch (NSException *exception) {
+      // fall through with the default descriptor
+    }
+  }
+
+  NSError *error = nil;
+  NSArray *states = ((id (*)(id, SEL, id, id, NSError **)) objc_msgSend)(stateClass, statesSelector, predicate, descriptor, &error);
+  if (![states isKindOfClass:NSArray.class]) {
+    if (errorOut) {
+      *errorOut = [NSString stringWithFormat:@"RunningBoard process-state query failed: %@", error ?: @"(no states returned)"];
+    }
+    return NO;
+  }
+
+  SEL endowmentsSelector = NSSelectorFromString(@"endowmentNamespaces");
+  SEL processSelector = NSSelectorFromString(@"process");
+  SEL pidSelector = NSSelectorFromString(@"pid");
+  for (id state in states) {
+    if (![state respondsToSelector:endowmentsSelector]) {
+      continue;
+    }
+    id endowments = ((id (*)(id, SEL)) objc_msgSend)(state, endowmentsSelector);
+    if (![endowments containsObject:kFrontboardVisibilityEndowment]) {
+      continue;
+    }
+    id process = [state respondsToSelector:processSelector] ? ((id (*)(id, SEL)) objc_msgSend)(state, processSelector) : nil;
+    if (!process || ![process respondsToSelector:pidSelector]) {
+      continue;
+    }
+    pid_t pid = ((int (*)(id, SEL)) objc_msgSend)(process, pidSelector);
+    if (pid > 0) {
+      if (pidOut) {
+        *pidOut = pid;
+      }
+      if (methodOut) {
+        *methodOut = kFrontmostMethodRunningBoard;
+      }
+      return YES;
+    }
+  }
+
+  if (errorOut) {
+    *errorOut = @"no launch-services process holds the on-screen visibility endowment";
+  }
+  return NO;
+}
+
 // Resolves the frontmost application's pid entirely in-guest, with no host-side CoreSimulator AX
 // round-trip: a system-wide hit-test at the caller's screen anchor (the screen centre — the anchor the
 // testmanagerd backend also uses) reads whichever element owns that point, and its owning pid is the
@@ -595,8 +695,9 @@ static BOOL FBAXBridgeCopyForegroundPid(float x, float y, pid_t *pidOut, NSStrin
 }
 
 // Resolves the frontmost pid by the requested `method`. `center-point` (default) is the positional
-// system-wide hit-test at (x, y); `window-server` is the in-guest AXPTranslator query. `x`/`y` are the
-// screen anchor for the positional method and ignored by the others.
+// system-wide hit-test at (x, y); `window-server` is the in-guest AXPTranslator query; `runningboard`
+// reads the foreground app from RunningBoard's visibility endowment. `x`/`y` are the screen anchor for
+// the positional method and ignored by the others.
 static BOOL FBAXBridgeResolveFrontmostPid(NSString *_Nullable method,
                                           float x,
                                           float y,
@@ -609,6 +710,9 @@ static BOOL FBAXBridgeResolveFrontmostPid(NSString *_Nullable method,
   }
   if ([method isEqualToString:kMethodWindowServer]) {
     return FBAXBridgeCopyWindowServerFrontmostPid(pidOut, methodOut, errorOut);
+  }
+  if ([method isEqualToString:kMethodRunningBoard]) {
+    return FBAXBridgeCopyRunningBoardFrontmostPid(pidOut, methodOut, errorOut);
   }
   if (errorOut) {
     *errorOut = [NSString stringWithFormat:@"unsupported frontmost method: %@", method];

@@ -7,6 +7,8 @@
         <string>kTCCServiceAddressBook</string>
         <string>kTCCServicePhotos</string>
     </array>
+    <key>com.apple.runningboard.process-state</key>
+    <true/>
     <key>com.apple.bulletinboard.settings</key>
     <true/>
     <key>com.apple.developer.healthkit</key>
