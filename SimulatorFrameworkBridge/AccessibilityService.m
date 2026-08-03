@@ -441,11 +441,15 @@ NSData *FBAXBridgeSerializeResponse(NSDictionary<NSString *, id> *response)
 
 // A single-round-trip hit-test: `AXUIElementCopyElementAtPosition` returns just the element at (x, y),
 // which is re-wrapped and read once (no tree walk) — ~1 mach round-trip vs the whole-tree walk's N.
+//
+// The hit-test seed is the system-wide element when no pid is given — a display-wide hit-test that finds
+// whichever app owns the point, so the host needs no separate frontmost pid query (one IPC hop for
+// `describe(.point)` / `hitTest`) — or a specific app's element when a pid is given. The owning pid of
+// the hit element is always reported, so the host can tag it (for the system-wide case it did not know
+// the pid in advance).
 static NSDictionary *FBAXBridgeHitTest(XCTAccessibilityFramework *framework,
                                        Class elementClass,
-                                       XCAccessibilityElement *root,
-                                       NSDictionary *request,
-                                       pid_t pid)
+                                       NSDictionary *request)
 {
   NSNumber *xNumber = request[kRequestX];
   NSNumber *yNumber = request[kRequestY];
@@ -453,20 +457,48 @@ static NSDictionary *FBAXBridgeHitTest(XCTAccessibilityFramework *framework,
     return FBAXBridgeErrorResponse(@"hittest requires numeric x and y");
   }
   FBAXCopyElementAtPositionFn copyElementAtPosition = dlsym(RTLD_DEFAULT, "AXUIElementCopyElementAtPosition");
-  if (!copyElementAtPosition) {
-    return FBAXBridgeErrorResponse(@"AXUIElementCopyElementAtPosition unavailable");
+  FBAXGetPidFn getPid = dlsym(RTLD_DEFAULT, "AXUIElementGetPid");
+  if (!copyElementAtPosition || !getPid) {
+    return FBAXBridgeErrorResponse(@"AXUIElementCopyElementAtPosition/GetPid unavailable");
   }
-  void *appElement = [root AXUIElement];
-  if (!appElement) {
-    return FBAXBridgeErrorResponse([NSString stringWithFormat:@"no AXUIElement for pid %d", pid]);
+
+  // Resolve the seed: a specific app element for an explicit pid, otherwise the system-wide element.
+  void *seed = NULL;
+  void *systemWide = NULL;  // +1-retained only in the system-wide case; released after the hit-test
+  NSNumber *pidNumber = request[kRequestPid];
+  if ([pidNumber isKindOfClass:NSNumber.class]) {
+    XCAccessibilityElement *root = [(id)elementClass elementWithProcessIdentifier:pidNumber.intValue];
+    if (!root) {
+      return FBAXBridgeApplicationUnavailableResponse([NSString stringWithFormat:@"no application element for pid %d", pidNumber.intValue]);
+    }
+    seed = [root AXUIElement];
+    if (!seed) {
+      return FBAXBridgeErrorResponse([NSString stringWithFormat:@"no AXUIElement for pid %d", pidNumber.intValue]);
+    }
+  } else {
+    FBAXCreateSystemWideFn createSystemWide = dlsym(RTLD_DEFAULT, "AXUIElementCreateSystemWide");
+    if (!createSystemWide) {
+      return FBAXBridgeErrorResponse(@"AXUIElementCreateSystemWide unavailable");
+    }
+    systemWide = createSystemWide();
+    if (!systemWide) {
+      return FBAXBridgeErrorResponse(@"AXUIElementCreateSystemWide returned NULL");
+    }
+    seed = systemWide;
   }
+
   void *hit = NULL;
-  int32_t axError = copyElementAtPosition(appElement, (float)xNumber.doubleValue, (float)yNumber.doubleValue, &hit);
+  int32_t axError = copyElementAtPosition(seed, (float)xNumber.doubleValue, (float)yNumber.doubleValue, &hit);
+  if (systemWide) {
+    CFRelease(systemWide);
+  }
   if (axError != 0 || !hit) {
     // No element at the point is a valid empty result, not a failure: a caller doing a streaming
     // hit-test (e.g. after a tap) must be able to tell "empty space" apart from "the reader broke".
     return @{kResponseOk : @YES, kResponseEmpty : @YES};
   }
+  pid_t owningPid = 0;
+  getPid(hit, &owningPid);
   XCAccessibilityElement *hitElement = [(id)elementClass elementWithAXUIElement:hit];
   int budget = 1;
   BOOL truncated = NO;  // a hit-test reads only the leaf at the point; truncation is not meaningful here
@@ -476,7 +508,7 @@ static NSDictionary *FBAXBridgeHitTest(XCTAccessibilityFramework *framework,
   if (!node) {
     return FBAXBridgeErrorResponse(@"failed to read the hit element");
   }
-  return @{kResponseOk : @YES, kResponseTree : node};
+  return @{kResponseOk : @YES, kResponseTree : node, kResponsePid : @(owningPid)};
 }
 
 NSDictionary<NSString *, id> *FBAXBridgeHandleRequest(NSDictionary<NSString *, id> *request)
@@ -518,18 +550,10 @@ NSDictionary<NSString *, id> *FBAXBridgeHandleRequest(NSDictionary<NSString *, i
     return FBAXBridgeErrorResponse(@"XCAccessibilityElement unavailable");
   }
 
-  // `hittest` is pid-scoped: it hit-tests the named app's element tree at the point.
+  // `hittest` is self-contained: with a pid it hit-tests that app; with no pid it hit-tests the
+  // system-wide element — the app owning the point, resolved in-guest, with no frontmost pid query.
   if (isHitTest) {
-    NSNumber *pidNumber = request[kRequestPid];
-    if (![pidNumber isKindOfClass:NSNumber.class]) {
-      return FBAXBridgeErrorResponse(@"hittest requires a numeric pid");
-    }
-    pid_t pid = pidNumber.intValue;
-    XCAccessibilityElement *root = [(id)elementClass elementWithProcessIdentifier:pid];
-    if (!root) {
-      return FBAXBridgeApplicationUnavailableResponse([NSString stringWithFormat:@"no application element for pid %d", pid]);
-    }
-    return FBAXBridgeHitTest(framework, elementClass, root, request, pid);
+    return FBAXBridgeHitTest(framework, elementClass, request);
   }
 
   // `describe`: an explicit `pid` names the app directly; with no pid it is a fused frontmost read — the

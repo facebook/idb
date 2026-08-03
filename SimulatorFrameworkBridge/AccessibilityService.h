@@ -37,8 +37,12 @@ NS_ASSUME_NONNULL_BEGIN
  *                                              round-trip and no separate pid query. The caller's bounds
  *                                              are honoured when given, so a host driving several reader
  *                                              backends gets the same truncation point from each.
- *   - hittest  --pid <pid> --x <x> --y <y>     reads just the element at a point, via a single
+ *   - hittest (--pid <pid> |) --x <x> --y <y>  reads just the element at a point, via a single
  *                                              AXUIElementCopyElementAtPosition round-trip (no walk).
+ *                                              With `--pid` it hit-tests that app; with no pid it
+ *                                              hit-tests the system-wide element — the app owning the
+ *                                              point, resolved in-guest, with no frontmost pid query.
+ *                                              The owning pid is reported in the response.
  *   - frontmost --x <x> --y <y>                resolves just the frontmost application's pid via a
  *                                              system-wide hit-test at the caller's screen anchor — no
  *                                              host-side CoreSimulator round-trip. Mostly a diagnostic /
@@ -62,15 +66,17 @@ int handleAccessibilityAction(NSString *action, NSArray<NSString *> *arguments);
 
 /**
  * The transport-agnostic request handler shared by the oneshot argv front-end and any future socket
- * server. Request keys: "verb" (@"describe", @"hittest", or @"frontmost"), "pid" (NSNumber, required
- * for hittest; for describe either "pid" or the "x"/"y" frontmost anchor), optional "maxDepth" and
- * "maxNodes" (NSNumber, describe — the caller's read bounds), "x"/"y" (NSNumber — the hittest point,
- * the frontmost anchor, or a fused-describe frontmost anchor). Response is @{@"ok": @YES, @"tree":
- * <node>, @"pid": <NSNumber>} on a describe (with @"method": <string> when the pid was resolved
- * in-guest); @{@"ok": @YES, @"empty": @YES} when a hittest finds no element at the point (a valid empty
- * result, distinct from a failure); @{@"ok": @YES, @"pid": <NSNumber>, @"method": <string>} for
- * frontmost; or @{@"ok": @NO, @"error": <string>} on failure. Each node is keyed by the `XC_kAXXC*`
- * attributes with a JSON-safe frame (a CGRect dictionary representation) and its children recursed in place.
+ * server. Request keys: "verb" (@"describe", @"hittest", or @"frontmost"), "pid" (NSNumber — optional
+ * for both describe and hittest: describe with no pid is a fused frontmost read, hittest with no pid is
+ * a system-wide hit-test), optional "maxDepth" and "maxNodes" (NSNumber, describe — the caller's read
+ * bounds), "x"/"y" (NSNumber — the hittest point, the frontmost anchor, or a fused-describe frontmost
+ * anchor). Response is @{@"ok": @YES, @"tree": <node>, @"pid": <NSNumber>} on a describe (with
+ * @"method": <string> when the pid was resolved in-guest); @{@"ok": @YES, @"tree": <node>, @"pid":
+ * <NSNumber>} on a hittest (the owning pid of the hit element); @{@"ok": @YES, @"empty": @YES} when a
+ * hittest finds no element at the point (a valid empty result, distinct from a failure); @{@"ok": @YES,
+ * @"pid": <NSNumber>, @"method": <string>} for frontmost; or @{@"ok": @NO, @"error": <string>} on
+ * failure. Each node is keyed by the `XC_kAXXC*` attributes with a JSON-safe frame (a CGRect dictionary
+ * representation) and its children recursed in place.
  */
 NSDictionary<NSString *, id> *FBAXBridgeHandleRequest(NSDictionary<NSString *, id> *request);
 
