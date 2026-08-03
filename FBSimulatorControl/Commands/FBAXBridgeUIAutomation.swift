@@ -62,8 +62,9 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
     }
   }
 
-  /// Reads and flattens the tree a query targets, through the configured transport. Every query but
-  /// `.application` anchors on the frontmost app.
+  /// Reads and flattens the tree a query targets, through the configured transport. `.application`
+  /// reads the named pid; every other query is a frontmost read served by a single fused guest query
+  /// (resolve frontmost + read tree in one IPC hop), which reports the pid it resolved.
   func readElements(
     for query: FBAccessibilityElementQuery,
     keys: Set<FBAXKeys>,
@@ -71,11 +72,16 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
     filter: FBAccessibilityElementFilter
   ) async throws -> [FBJSONValue] {
     try await translatingSeamErrors {
-      let pid = try await resolvePid(for: query)
-      let read = try await readTree(forPid: pid)
+      let read: (tree: [String: Any], truncated: Bool, pid: pid_t)
+      if case let .application(pid) = query {
+        let application = try await readTree(forPid: pid)
+        read = (application.tree, application.truncated, pid)
+      } else {
+        read = try await readFrontmostTree()
+      }
       warnIfTruncated(read.truncated)
       return FBAXTreeSerialization.describeAllElements(
-        fromTree: read.tree, keys: keys, nestedFormat: nestedFormat, pid: pid, filter: filter
+        fromTree: read.tree, keys: keys, nestedFormat: nestedFormat, pid: read.pid, filter: filter
       )
     }
   }
@@ -99,14 +105,14 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
     try await FBUIAutomationPolling.waitForMarker(
       query, backend: .axBridge, timeout: timeout, pollInterval: pollInterval
     ) { markerValue, key, _ in
-      // Re-resolve the pid and re-read each poll so an app that launches mid-wait is picked up.
+      // Re-read the frontmost tree each poll (one fused guest query) so an app that launches mid-wait is
+      // picked up — no separate pid resolution.
       do {
-        let pid = try await self.resolvePid(for: .frontmost)
         // A poll reads the tree directly (not through `readElements`), so the truncation warning is
         // not logged on every poll iteration — matching the describe-path-only warning above.
-        let read = try await self.readTree(forPid: pid)
+        let read = try await self.readFrontmostTree()
         let elements = FBAXTreeSerialization.describeAllElements(
-          fromTree: read.tree, keys: FBAXKeys.defaultSet.union([key.serializationKey]), nestedFormat: false, pid: pid
+          fromTree: read.tree, keys: FBAXKeys.defaultSet.union([key.serializationKey]), nestedFormat: false, pid: read.pid
         )
         return FBAXTreeSerialization.matchingElement(inElements: elements, markerValue: markerValue, key: key) != nil ? true : nil
       } catch let error as FBAXBridgeError {
@@ -173,6 +179,27 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
       pid: pid, maxDepth: FBAXTreeSerialization.maxReadDepth, maxNodes: FBAXTreeSerialization.maxReadNodes
     )
     return try FBAXBridgeResponse.tree(fromResponse: response, pid: pid)
+  }
+
+  /// Reads the frontmost app's tree in a **single fused guest query**: the guest resolves the frontmost
+  /// app in-guest (system-wide hit-test at the screen-centre anchor) and reads its tree in one IPC hop,
+  /// returning the tree, the truncation flag, and the pid it resolved. This is the axbridge frontmost
+  /// optimization — no host-side CoreSimulator query and no separate pid round-trip.
+  private func readFrontmostTree() async throws -> (tree: [String: Any], truncated: Bool, pid: pid_t) {
+    let anchor = frontmostAnchor()
+    let response = try await transport.readFrontmost(
+      x: anchor.x, y: anchor.y, maxDepth: FBAXTreeSerialization.maxReadDepth, maxNodes: FBAXTreeSerialization.maxReadNodes
+    )
+    return try FBAXBridgeResponse.frontmostTree(fromResponse: response)
+  }
+
+  /// The screen-centre anchor (in points) for the in-guest frontmost hit-test. The same point the
+  /// remote backend uses (`FBSimulatorRemoteAutomation.anchorPoint`), so the two agree on "frontmost".
+  private func frontmostAnchor() -> (x: Double, y: Double) {
+    let info = simulator.screenInfo
+    return FBSimulatorRemoteAutomation.anchorPoint(
+      widthPixels: info?.widthPixels ?? 828, heightPixels: info?.heightPixels ?? 1792, scale: info?.scale ?? 2
+    )
   }
 
   /// Warns when a whole-tree read hit the depth or node bound, so a truncated tree is never passed off

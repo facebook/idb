@@ -286,6 +286,54 @@ final class FBAXBridgeReadsTests: XCTestCase {
     }
   }
 
+  // MARK: - FBAXBridgeResponse fused frontmost tree parsing
+
+  func testFrontmostTreeParsesTreeAndResolvedPid() throws {
+    // The fused read resolves the frontmost app AND reads its tree in one call, so the response carries
+    // the resolved pid the host tags elements with — it did not know the pid in advance.
+    let tree: [String: Any] = [FBRemoteAutomationAXAttribute.label: "Settings"]
+    let data = try envelope(["ok": true, "tree": tree, "pid": 8865, "method": "system_wide_hit_test", "truncated": false])
+    let parsed = try FBAXBridgeResponse.frontmostTree(fromResponse: data)
+    XCTAssertEqual(parsed.pid, 8865)
+    XCTAssertEqual(parsed.tree[FBRemoteAutomationAXAttribute.label] as? String, "Settings")
+    XCTAssertFalse(parsed.truncated)
+  }
+
+  func testFrontmostTreeSurfacesTruncation() throws {
+    let data = try envelope(["ok": true, "tree": [FBRemoteAutomationAXAttribute.label: "root"], "pid": 1, "truncated": true])
+    XCTAssertTrue(try FBAXBridgeResponse.frontmostTree(fromResponse: data).truncated)
+  }
+
+  func testFrontmostTreeThrowsFrontmostUnavailableOnFailure() throws {
+    // A fused read that couldn't resolve/read the frontmost app maps to frontmostUnavailable, which the
+    // read poll retries.
+    let data = try envelope(["ok": false, "error": "system-wide hit-test at (201.0, 437.0) found no element"])
+    XCTAssertThrowsError(try FBAXBridgeResponse.frontmostTree(fromResponse: data)) { error in
+      guard case FBAXBridgeError.frontmostUnavailable = error else {
+        return XCTFail("a failed fused read should be frontmostUnavailable, got: \(error)")
+      }
+    }
+  }
+
+  func testFrontmostTreeThrowsWhenResolvedPidMissing() throws {
+    // An ok response with a tree but no pid is a protocol violation — the host cannot tag the elements.
+    let data = try envelope(["ok": true, "tree": [FBRemoteAutomationAXAttribute.label: "x"]])
+    XCTAssertThrowsError(try FBAXBridgeResponse.frontmostTree(fromResponse: data)) { error in
+      guard case FBAXBridgeError.guestFailure = error else {
+        return XCTFail("a fused response without a pid should be guestFailure, got: \(error)")
+      }
+    }
+  }
+
+  func testFrontmostTreeThrowsWhenTreeMissing() throws {
+    let data = try envelope(["ok": true, "pid": 8865])
+    XCTAssertThrowsError(try FBAXBridgeResponse.frontmostTree(fromResponse: data)) { error in
+      guard case FBAXBridgeError.guestFailure = error else {
+        return XCTFail("a fused response without a tree should be guestFailure, got: \(error)")
+      }
+    }
+  }
+
   // MARK: - Tree -> shared serializer integration
 
   func testGuestTreeFeedsSharedSerializerSchema() throws {

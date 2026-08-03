@@ -24,6 +24,11 @@ protocol FBAXBridgeTransport {
   /// Reads the whole element tree for `pid` (the guest `describe` verb), bounded by the caller's
   /// depth and node budget — the host owns those bounds so both XCUI-grade backends truncate alike.
   func read(pid: pid_t, maxDepth: Int, maxNodes: Int) async throws -> Data
+  /// Fused frontmost read (the guest `describe` verb with no pid): the guest resolves the frontmost app
+  /// in-guest at the given screen anchor AND reads its tree in this one round-trip — no host-side
+  /// CoreSimulator query and no separate pid call. The response envelope carries the resolved pid
+  /// alongside the tree. This is the whole point of the axbridge frontmost optimization: one IPC hop.
+  func readFrontmost(x: Double, y: Double, maxDepth: Int, maxNodes: Int) async throws -> Data
   /// Reads just the element at a point for `pid` (the guest `hittest` verb) — one round-trip, no walk.
   func hitTest(pid: pid_t, x: Double, y: Double) async throws -> Data
   /// Resolves the frontmost application's pid (the guest `frontmost` verb) via a system-wide hit-test
@@ -78,6 +83,29 @@ enum FBAXBridgeResponse {
     return (tree, truncated)
   }
 
+  /// Parses a fused frontmost describe response (the guest resolved the frontmost app and read its tree
+  /// in one call): the tree, whether the walk was truncated, and the pid the guest resolved and read —
+  /// the host does not know that pid in advance, so it rides back in the envelope and tags the
+  /// serialized elements. Any `ok:false` (no element at the anchor mid-launch, or the resolved app's
+  /// accessibility server not up yet) is `frontmostUnavailable`, which the read poll treats as "not up
+  /// yet"; a missing tree or pid on an `ok` response is a protocol violation (`guestFailure`).
+  static func frontmostTree(fromResponse data: Data) throws -> (tree: [String: Any], truncated: Bool, pid: pid_t) {
+    guard let object = try? JSONSerialization.jsonObject(with: data), let response = object as? [String: Any] else {
+      throw FBAXBridgeError.guestFailure("unparseable fused frontmost describe response")
+    }
+    guard (response["ok"] as? Bool) == true else {
+      throw FBAXBridgeError.frontmostUnavailable
+    }
+    guard let tree = response["tree"] as? [String: Any] else {
+      throw FBAXBridgeError.guestFailure("fused frontmost describe response without a tree")
+    }
+    guard let pid = response["pid"] as? Int, pid > 0 else {
+      throw FBAXBridgeError.guestFailure("fused frontmost describe response without a resolved pid")
+    }
+    let truncated = (response["truncated"] as? Bool) ?? false
+    return (tree, truncated, pid_t(pid))
+  }
+
   /// Parses a hit-test response: the hit node, or `nil` when the guest reports no element at the point
   /// — a valid empty result. A failure throws, so a caller can tell empty space from a broken reader.
   static func hitTest(fromResponse data: Data, pid: pid_t) throws -> [String: Any]? {
@@ -110,6 +138,10 @@ struct FBAXBridgeOneshotTransport: FBAXBridgeTransport {
 
   func read(pid: pid_t, maxDepth: Int, maxNodes: Int) async throws -> Data {
     try await spawn(["accessibility", "describe", "--pid", "\(pid)", "--max-depth", "\(maxDepth)", "--max-nodes", "\(maxNodes)"])
+  }
+
+  func readFrontmost(x: Double, y: Double, maxDepth: Int, maxNodes: Int) async throws -> Data {
+    try await spawn(["accessibility", "describe", "--x", "\(x)", "--y", "\(y)", "--max-depth", "\(maxDepth)", "--max-nodes", "\(maxNodes)"])
   }
 
   func hitTest(pid: pid_t, x: Double, y: Double) async throws -> Data {
@@ -150,6 +182,10 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
 
   func read(pid: pid_t, maxDepth: Int, maxNodes: Int) async throws -> Data {
     try await roundTripWithRecovery(["verb": "describe", "pid": Int(pid), "maxDepth": maxDepth, "maxNodes": maxNodes])
+  }
+
+  func readFrontmost(x: Double, y: Double, maxDepth: Int, maxNodes: Int) async throws -> Data {
+    try await roundTripWithRecovery(["verb": "describe", "x": x, "y": y, "maxDepth": maxDepth, "maxNodes": maxNodes])
   }
 
   func hitTest(pid: pid_t, x: Double, y: Double) async throws -> Data {
