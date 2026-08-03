@@ -513,23 +513,49 @@ NSDictionary<NSString *, id> *FBAXBridgeHandleRequest(NSDictionary<NSString *, i
     return @{kResponseOk : @YES, kResponsePid : @(frontmostPid), kResponseMethod : method ?: @""};
   }
 
-  NSNumber *pidNumber = request[kRequestPid];
-  if (![pidNumber isKindOfClass:NSNumber.class]) {
-    return FBAXBridgeErrorResponse(@"request requires a numeric pid");
-  }
-  pid_t pid = pidNumber.intValue;
-
   Class elementClass = objc_lookUpClass("XCAccessibilityElement");
   if (!elementClass) {
     return FBAXBridgeErrorResponse(@"XCAccessibilityElement unavailable");
   }
+
+  // `hittest` is pid-scoped: it hit-tests the named app's element tree at the point.
+  if (isHitTest) {
+    NSNumber *pidNumber = request[kRequestPid];
+    if (![pidNumber isKindOfClass:NSNumber.class]) {
+      return FBAXBridgeErrorResponse(@"hittest requires a numeric pid");
+    }
+    pid_t pid = pidNumber.intValue;
+    XCAccessibilityElement *root = [(id)elementClass elementWithProcessIdentifier:pid];
+    if (!root) {
+      return FBAXBridgeApplicationUnavailableResponse([NSString stringWithFormat:@"no application element for pid %d", pid]);
+    }
+    return FBAXBridgeHitTest(framework, elementClass, root, request, pid);
+  }
+
+  // `describe`: an explicit `pid` names the app directly; with no pid it is a fused frontmost read — the
+  // guest resolves the frontmost app in-guest (via the selected method, anchored at `x`/`y`) and reads
+  // its tree in this one call, with no separate pid round-trip.
+  pid_t pid = 0;
+  NSString *frontmostMethod = nil;  // non-nil when the pid was resolved in-guest (fused frontmost read)
+  NSNumber *pidNumber = request[kRequestPid];
+  if ([pidNumber isKindOfClass:NSNumber.class]) {
+    pid = pidNumber.intValue;
+  } else {
+    NSNumber *xNumber = request[kRequestX];
+    NSNumber *yNumber = request[kRequestY];
+    if (![xNumber isKindOfClass:NSNumber.class] || ![yNumber isKindOfClass:NSNumber.class]) {
+      return FBAXBridgeErrorResponse(@"describe requires either a numeric pid or the frontmost anchor (x, y)");
+    }
+    NSString *frontmostError = nil;
+    NSString *requestedMethod = [request[kRequestMethod] isKindOfClass:NSString.class] ? request[kRequestMethod] : nil;
+    if (!FBAXBridgeResolveFrontmostPid(requestedMethod, xNumber.floatValue, yNumber.floatValue, &pid, &frontmostMethod, &frontmostError)) {
+      return FBAXBridgeErrorResponse(frontmostError ?: @"could not resolve the frontmost application pid");
+    }
+  }
+
   XCAccessibilityElement *root = [(id)elementClass elementWithProcessIdentifier:pid];
   if (!root) {
     return FBAXBridgeApplicationUnavailableResponse([NSString stringWithFormat:@"no application element for pid %d", pid]);
-  }
-
-  if (isHitTest) {
-    return FBAXBridgeHitTest(framework, elementClass, root, request, pid);
   }
 
   int maxDepth = [request[kRequestMaxDepth] isKindOfClass:NSNumber.class]
@@ -543,7 +569,14 @@ NSDictionary<NSString *, id> *FBAXBridgeHandleRequest(NSDictionary<NSString *, i
   if (!tree) {
     return FBAXBridgeErrorResponse([NSString stringWithFormat:@"failed to read the element tree for pid %d", pid]);
   }
-  return @{kResponseOk : @YES, kResponseTree : tree, kResponseTruncated : @(truncated)};
+  // Always report the pid read, so the host tags elements with it — for a fused frontmost read the host
+  // does not know the pid until now. `method` rides along when the pid was resolved in-guest.
+  NSMutableDictionary *response =
+  [@{kResponseOk : @YES, kResponseTree : tree, kResponseTruncated : @(truncated), kResponsePid : @(pid)} mutableCopy];
+  if (frontmostMethod) {
+    response[kResponseMethod] = frontmostMethod;
+  }
+  return response;
 }
 
 #pragma mark - Persistent serve transport

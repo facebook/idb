@@ -28,17 +28,24 @@ NS_ASSUME_NONNULL_BEGIN
  * Reads only (element writes are served by the existing HID / testmanagerd / ax backends).
  *
  * Verbs (over the same core):
- *   - describe --pid <pid> [--max-depth <n>] [--max-nodes <n>]
- *                                              reads the whole element tree. The caller's bounds are
- *                                              honoured when given, so a host driving several reader
+ *   - describe (--pid <pid> | --x <x> --y <y>) [--max-depth <n>] [--max-nodes <n>]
+ *                                              reads the whole element tree. With `--pid` it reads that
+ *                                              app; with `--x`/`--y` and no pid it is a *fused frontmost
+ *                                              read* — the guest resolves the frontmost app in-guest
+ *                                              (system-wide hit-test at the screen anchor) and reads its
+ *                                              tree in this one call, with no host-side CoreSimulator
+ *                                              round-trip and no separate pid query. The caller's bounds
+ *                                              are honoured when given, so a host driving several reader
  *                                              backends gets the same truncation point from each.
  *   - hittest  --pid <pid> --x <x> --y <y>     reads just the element at a point, via a single
  *                                              AXUIElementCopyElementAtPosition round-trip (no walk).
- *   - frontmost --x <x> --y <y>                resolves the frontmost application's pid via a system-wide
- *                                              hit-test at the caller's screen anchor (the screen
- *                                              centre) — no host-side CoreSimulator round-trip. The
- *                                              simulator's AX server does not report AXFocusedApplication,
- *                                              so focus is resolved positionally.
+ *   - frontmost --x <x> --y <y>                resolves just the frontmost application's pid via a
+ *                                              system-wide hit-test at the caller's screen anchor — no
+ *                                              host-side CoreSimulator round-trip. Mostly a diagnostic /
+ *                                              measurement seam; a frontmost *read* should use the fused
+ *                                              `describe` above to stay one IPC hop. The simulator's AX
+ *                                              server does not report AXFocusedApplication, so focus is
+ *                                              resolved positionally.
  * Front-ends:
  *   - oneshot:    accessibility <verb> ...       (runs once, prints JSON, exits)
  *   - persistent: accessibility serve <socket>   (serves many requests over a UDS)
@@ -55,13 +62,15 @@ int handleAccessibilityAction(NSString *action, NSArray<NSString *> *arguments);
 
 /**
  * The transport-agnostic request handler shared by the oneshot argv front-end and any future socket
- * server. Request keys: "verb" (@"describe", @"hittest", or @"frontmost"), "pid" (NSNumber, describe /
- * hittest), optional "maxDepth" and "maxNodes" (NSNumber, describe — the caller's read bounds), "x"/"y"
- * (NSNumber, hittest and frontmost — the point / screen anchor). Response is @{@"ok": @YES, @"tree": <node>} on success; @{@"ok": @YES, @"empty":
- * @YES} when a hittest finds no element at the point (a valid empty result, distinct from a failure);
- * @{@"ok": @YES, @"pid": <NSNumber>, @"method": <string>} for frontmost; or @{@"ok": @NO, @"error":
- * <string>} on failure. Each node is keyed by the `XC_kAXXC*` attributes with a JSON-safe frame (a
- * CGRect dictionary representation) and its children recursed in place.
+ * server. Request keys: "verb" (@"describe", @"hittest", or @"frontmost"), "pid" (NSNumber, required
+ * for hittest; for describe either "pid" or the "x"/"y" frontmost anchor), optional "maxDepth" and
+ * "maxNodes" (NSNumber, describe — the caller's read bounds), "x"/"y" (NSNumber — the hittest point,
+ * the frontmost anchor, or a fused-describe frontmost anchor). Response is @{@"ok": @YES, @"tree":
+ * <node>, @"pid": <NSNumber>} on a describe (with @"method": <string> when the pid was resolved
+ * in-guest); @{@"ok": @YES, @"empty": @YES} when a hittest finds no element at the point (a valid empty
+ * result, distinct from a failure); @{@"ok": @YES, @"pid": <NSNumber>, @"method": <string>} for
+ * frontmost; or @{@"ok": @NO, @"error": <string>} on failure. Each node is keyed by the `XC_kAXXC*`
+ * attributes with a JSON-safe frame (a CGRect dictionary representation) and its children recursed in place.
  */
 NSDictionary<NSString *, id> *FBAXBridgeHandleRequest(NSDictionary<NSString *, id> *request);
 
