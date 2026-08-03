@@ -189,6 +189,30 @@ def on_command_parsed(logger: Logger, command: Command, args: Namespace) -> None
             )
 
 
+def on_invocation_result(
+    name: str, result: object, metadata: LoggingMetadata
+) -> LoggingMetadata:
+    # Result observation is telemetry-only: it runs after the invocation has
+    # already succeeded, so a plugin failure here must never alter the outcome.
+    # Every exception is swallowed per plugin, and later plugins still run.
+    updates: LoggingMetadata = {}
+    for plugin in PLUGINS:
+        method = getattr(plugin, "on_invocation_result", None)
+        if not method:
+            continue
+        try:
+            resolved = method(name=name, result=result, metadata=metadata)
+        except Exception:
+            logger.exception(
+                f"on_invocation_result plugin {plugin.__name__} failed, "
+                "swallowing exception"
+            )
+            continue
+        if resolved:
+            updates.update(resolved)
+    return updates
+
+
 def resolve_metadata(
     logger: Logger,
     command: Command | None = None,

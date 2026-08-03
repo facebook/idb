@@ -85,6 +85,14 @@ class log_call(AsyncContextManager[None]):
             try:
                 value = await function(*args, **kwargs)
                 logger.debug(f"{_name} succeeded")
+                result_metadata = plugin.on_invocation_result(
+                    name=_name, result=value, metadata=_metadata
+                )
+                if result_metadata:
+                    # Merge into a copy: _metadata may alias the decorator's
+                    # dict, which is shared across invocations of the same
+                    # function, and result tags belong to this one only.
+                    _metadata = {**_metadata, **result_metadata}
                 await plugin.after_invocation(
                     name=_name,
                     duration=int((time.time() - start) * 1000),
