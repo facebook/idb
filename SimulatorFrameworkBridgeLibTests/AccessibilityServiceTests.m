@@ -9,6 +9,7 @@
 #import <XCTest/XCTest.h>
 
 #import <SimulatorFrameworkBridgeLib/AccessibilityService.h>
+#import <SimulatorFrameworkBridgeLib/AccessibilityService+Testing.h>
 
 @interface AccessibilityServiceTests : XCTestCase
 @end
@@ -106,6 +107,134 @@ static NSDictionary *FBAXTestsParse(NSData *data)
   NSDictionary *parsed = FBAXTestsParse(FBAXBridgeSerializeResponse(response));
   XCTAssertEqualObjects(parsed[@"ok"], @NO);
   XCTAssertNotNil(parsed[@"error"]);
+}
+
+#pragma mark - Wire contract
+
+// The guest and host cross the accessibility boundary with no shared header — each holds its own copy of
+// the `XC_kAXXC*` node keys, the request/envelope keys, the modal-descriptor keys, and the
+// frontmost-method selectors. A rename on either side is a silent protocol break, so this pins the
+// guest's constants to the byte-identical literals the host pins in `FBAXWireContractTests` (node keys
+// against `FBRemoteAutomationAXAttribute`, request selectors against `FBAXBridgeFrontmostMethod`); the
+// two files agreeing on these strings is what enforces the contract.
+- (void)testGuestWireConstantsMatchTheHostContract
+{
+  NSDictionary<NSString *, NSString *> *expected = @{
+    @"node.elementType" : @"XC_kAXXCAttributeElementType",
+    @"node.elementBaseType" : @"XC_kAXXCAttributeElementBaseType",
+    @"node.label" : @"XC_kAXXCAttributeLabel",
+    @"node.value" : @"XC_kAXXCAttributeValue",
+    @"node.identifier" : @"XC_kAXXCAttributeIdentifier",
+    @"node.frame" : @"XC_kAXXCAttributeFrame",
+    @"node.automationType" : @"XC_kAXXCAttributeAutomationType",
+    @"node.children" : @"XC_kAXXCAttributeChildren",
+    @"request.verb" : @"verb",
+    @"request.pid" : @"pid",
+    @"request.maxDepth" : @"maxDepth",
+    @"request.maxNodes" : @"maxNodes",
+    @"request.x" : @"x",
+    @"request.y" : @"y",
+    @"request.method" : @"method",
+    @"envelope.ok" : @"ok",
+    @"envelope.tree" : @"tree",
+    @"envelope.error" : @"error",
+    @"envelope.empty" : @"empty",
+    @"envelope.errorKind" : @"error_kind",
+    @"envelope.errorKindApplicationUnavailable" : @"application_unavailable",
+    @"envelope.truncated" : @"truncated",
+    @"envelope.pid" : @"pid",
+    @"envelope.method" : @"method",
+    @"envelope.modal" : @"modal",
+    @"modal.kind" : @"kind",
+    @"modal.kindSystem" : @"system",
+    @"modal.kindApp" : @"app",
+    @"modal.elementType" : @"elementType",
+    @"modal.label" : @"label",
+    @"modal.systemAlertWindowClass" : @"SBAlertItemWindow",
+    @"modal.alertControllerClassPrefix" : @"_UIAlertController",
+    @"verb.describe" : @"describe",
+    @"verb.hittest" : @"hittest",
+    @"verb.frontmost" : @"frontmost",
+    @"method.centerPoint" : @"center-point",
+    @"method.windowServer" : @"window-server",
+    @"method.runningBoard" : @"runningboard",
+    @"methodResponse.systemWideHitTest" : @"system_wide_hit_test",
+    @"methodResponse.windowServer" : @"window_server",
+    @"methodResponse.runningBoard" : @"running_board",
+  };
+  // Whole-dictionary equality also fails on any guest constant this test forgot to pin (or any removed),
+  // not just a changed value.
+  XCTAssertEqualObjects(FBAXBridgeWireConstantsForTesting(), expected);
+}
+
+#pragma mark - Modal detection
+
+// A SpringBoard system alert window anywhere in the tree marks a `system` modal. With no
+// `_UIAlertController` present the descriptor's `elementType` falls back to the alert-window class and
+// carries no label (the label is only captured off an alert-controller node).
+- (void)testModalDescriptorReportsSystemAlertWindowAsSystemKind
+{
+  NSDictionary *tree = @{
+    @"XC_kAXXCAttributeLabel" : @"root",
+    @"XC_kAXXCAttributeChildren" : @[
+      @{@"XC_kAXXCAttributeElementType" : @"SBAlertItemWindow"},
+    ],
+  };
+  NSDictionary *modal = FBAXBridgeModalDescriptor(tree);
+  XCTAssertEqualObjects(modal[@"kind"], @"system");
+  XCTAssertEqualObjects(modal[@"elementType"], @"SBAlertItemWindow");
+  XCTAssertNil(modal[@"label"], @"a system-only alert carries no captured label");
+}
+
+// A `_UIAlertController*` element (matched by prefix — the concrete class varies) with no system alert
+// window marks an `app` modal, capturing the concrete element type and the alert's title label.
+- (void)testModalDescriptorReportsAlertControllerAsAppKindWithElementTypeAndLabel
+{
+  NSDictionary *tree = @{
+    @"XC_kAXXCAttributeLabel" : @"root",
+    @"XC_kAXXCAttributeChildren" : @[
+      @{
+        @"XC_kAXXCAttributeElementType" : @"_UIAlertControllerView",
+        @"XC_kAXXCAttributeLabel" : @"Delete this item?",
+      },
+    ],
+  };
+  NSDictionary *modal = FBAXBridgeModalDescriptor(tree);
+  XCTAssertEqualObjects(modal[@"kind"], @"app");
+  XCTAssertEqualObjects(modal[@"elementType"], @"_UIAlertControllerView");
+  XCTAssertEqualObjects(modal[@"label"], @"Delete this item?");
+}
+
+// When both alert kinds are present the `kind` is `system` (the system alert wins), but the descriptor
+// still reports the captured alert-controller element type and label rather than the window class.
+- (void)testModalDescriptorPrefersSystemKindWhenBothAlertsPresent
+{
+  NSDictionary *tree = @{
+    @"XC_kAXXCAttributeLabel" : @"root",
+    @"XC_kAXXCAttributeChildren" : @[
+      @{@"XC_kAXXCAttributeElementType" : @"SBAlertItemWindow"},
+      @{
+        @"XC_kAXXCAttributeElementType" : @"_UIAlertControllerView",
+        @"XC_kAXXCAttributeLabel" : @"Allow",
+      },
+    ],
+  };
+  NSDictionary *modal = FBAXBridgeModalDescriptor(tree);
+  XCTAssertEqualObjects(modal[@"kind"], @"system", @"a system alert window wins over an app alert");
+  XCTAssertEqualObjects(modal[@"elementType"], @"_UIAlertControllerView", @"the captured alert-controller class is still reported");
+  XCTAssertEqualObjects(modal[@"label"], @"Allow");
+}
+
+// A tree with neither alert class carries no modal descriptor.
+- (void)testModalDescriptorReturnsNilWhenNoAlertPresent
+{
+  NSDictionary *tree = @{
+    @"XC_kAXXCAttributeLabel" : @"root",
+    @"XC_kAXXCAttributeChildren" : @[
+      @{@"XC_kAXXCAttributeElementType" : @"XCUIElementTypeButton", @"XC_kAXXCAttributeLabel" : @"OK"},
+    ],
+  };
+  XCTAssertNil(FBAXBridgeModalDescriptor(tree));
 }
 
 @end

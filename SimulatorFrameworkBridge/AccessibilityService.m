@@ -6,6 +6,7 @@
  */
 
 #import "AccessibilityService.h"
+#import "AccessibilityService+Testing.h"
 
 #import <arpa/inet.h>
 #import <dlfcn.h>
@@ -376,7 +377,7 @@ static void FBAXBridgeScanForAlert(NSDictionary *node,
 // A fullscreen-modal descriptor for a built tree, or nil when none is present. `kind` is `system` when
 // a SpringBoard alert window is present (a system/permission alert), otherwise `app` (an in-app UIKit
 // alert). Host-facing enrichment: the host reads this to detect a modal without geometry.
-static NSDictionary *_Nullable FBAXBridgeModalDescriptor(NSDictionary *tree)
+NSDictionary<NSString *, NSString *> *_Nullable FBAXBridgeModalDescriptor(NSDictionary<NSString *, id> *tree)
 {
   BOOL hasSystemAlertWindow = NO;
   NSString *alertElementType = nil;
@@ -1113,4 +1114,53 @@ int handleAccessibilityAction(NSString *action, NSArray<NSString *> *arguments)
   fwrite(json.bytes, 1, json.length, stdout);
   fputc('\n', stdout);
   return [response[kResponseOk] boolValue] ? 0 : 1;
+}
+
+#pragma mark - Testing
+
+NSDictionary<NSString *, NSString *> *FBAXBridgeWireConstantsForTesting(void)
+{
+  return @{
+    @"node.elementType" : kAXElementType,
+    @"node.elementBaseType" : kAXElementBaseType,
+    @"node.label" : kAXLabel,
+    @"node.value" : kAXValue,
+    @"node.identifier" : kAXIdentifier,
+    @"node.frame" : kAXFrame,
+    @"node.automationType" : kAXAutomationType,
+    @"node.children" : kAXChildren,
+    @"request.verb" : kRequestVerb,
+    @"request.pid" : kRequestPid,
+    @"request.maxDepth" : kRequestMaxDepth,
+    @"request.maxNodes" : kRequestMaxNodes,
+    @"request.x" : kRequestX,
+    @"request.y" : kRequestY,
+    @"request.method" : kRequestMethod,
+    @"envelope.ok" : kResponseOk,
+    @"envelope.tree" : kResponseTree,
+    @"envelope.error" : kResponseError,
+    @"envelope.empty" : kResponseEmpty,
+    @"envelope.errorKind" : kResponseErrorKind,
+    @"envelope.errorKindApplicationUnavailable" : kErrorKindApplicationUnavailable,
+    @"envelope.truncated" : kResponseTruncated,
+    @"envelope.pid" : kResponsePid,
+    @"envelope.method" : kResponseMethod,
+    @"envelope.modal" : kResponseModal,
+    @"modal.kind" : kModalKind,
+    @"modal.kindSystem" : kModalKindSystem,
+    @"modal.kindApp" : kModalKindApp,
+    @"modal.elementType" : kModalElementType,
+    @"modal.label" : kModalLabel,
+    @"modal.systemAlertWindowClass" : kSystemAlertWindowClass,
+    @"modal.alertControllerClassPrefix" : kAlertControllerClassPrefix,
+    @"verb.describe" : kVerbDescribe,
+    @"verb.hittest" : kVerbHitTest,
+    @"verb.frontmost" : kVerbFrontmost,
+    @"method.centerPoint" : kMethodCenterPoint,
+    @"method.windowServer" : kMethodWindowServer,
+    @"method.runningBoard" : kMethodRunningBoard,
+    @"methodResponse.systemWideHitTest" : kFrontmostMethodSystemWideHitTest,
+    @"methodResponse.windowServer" : kFrontmostMethodWindowServer,
+    @"methodResponse.runningBoard" : kFrontmostMethodRunningBoard,
+  };
 }
