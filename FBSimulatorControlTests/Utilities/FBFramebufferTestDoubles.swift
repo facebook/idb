@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import CoreVideo
 import FBControlCore
 @testable import FBSimulatorControl
 import Foundation
@@ -65,11 +66,20 @@ final class FakeFramebufferConsumer: NSObject, FBFramebufferConsumer {
 }
 
 /// Creates a small IOSurface for tests.
+/// Creates a small BGRA IOSurface for tests. The full BGRA property set (format, row alignment,
+/// allocation size) makes the surface consumable by CoreImage and wrappable by
+/// `CVPixelBufferCreateWithIOSurface` (which rejects a surface with no pixel format), not just
+/// passable as a reference.
 func makeTestIOSurface(width: Int = 16, height: Int = 16) -> IOSurface {
+  let bytesPerElement = 4
+  let bytesPerRow = IOSurfaceAlignProperty(kIOSurfaceBytesPerRow, width * bytesPerElement)
   let properties: [IOSurfacePropertyKey: Any] = [
     .width: width,
     .height: height,
-    .bytesPerElement: 4,
+    .bytesPerElement: bytesPerElement,
+    .bytesPerRow: bytesPerRow,
+    .pixelFormat: kCVPixelFormatType_32BGRA,
+    .allocSize: bytesPerRow * height,
   ]
   guard let surface = IOSurface(properties: properties) else {
     fatalError("Failed to create test IOSurface")

@@ -352,3 +352,131 @@ final class FBSimulatorVideoStreamBitmapPusherTests: XCTestCase {
     try pusher.tearDown()
   }
 }
+
+/// End-to-end delivery tests for `FBSimulatorVideoStream` over a fake display surface: a framebuffer
+/// event fired on the fake must come out of the stream as pushed frame data. These pin the
+/// behavioral contract of the delivery chain (surface event → framebuffer → stream cadence →
+/// pusher → consumer) through the public API only, so they must keep passing unchanged as the
+/// internal delivery mechanism evolves.
+final class FBSimulatorVideoStreamDeliveryTests: XCTestCase {
+
+  /// `.bgra` and no `framesPerSecond`: the lazy (variable-frame-rate) cadence with the bitmap
+  /// pusher, so pushes reach the consumer without any encoder in the way.
+  private static let lazyConfiguration = FBVideoStreamConfiguration(
+    format: .bgra, framesPerSecond: nil, rateControl: nil, scaleFactor: nil, keyFrameRate: nil)
+
+  private func makeStream(
+    surface: FakeFramebufferSurface,
+    configuration: FBVideoStreamConfiguration = lazyConfiguration
+  ) -> FBSimulatorVideoStream {
+    let framebuffer = FBFramebuffer(surface: surface, logger: FBCapturingLogger())
+    return FBSimulatorVideoStream.make(
+      framebuffer: framebuffer, configuration: configuration, logger: FBCapturingLogger())
+  }
+
+  /// Poll until `condition` holds, or fail after ~5s. The delivery chain hops queues/tasks, so
+  /// tests await outcomes rather than assuming synchronous effects.
+  private func expectEventually(
+    _ message: String,
+    condition: () -> Bool
+  ) async throws {
+    for _ in 0..<500 {
+      if condition() { return }
+      try await Task.sleep(nanoseconds: 10_000_000)
+    }
+    XCTAssertTrue(condition(), message)
+  }
+
+  /// Wait for the byte count to stop growing (two identical samples 100ms apart) so a test can
+  /// take a baseline that in-flight attach-time pushes cannot disturb.
+  private func settledCount(of consumer: any FBAccumulatingBuffer) async throws -> Int {
+    var previous = -1
+    for _ in 0..<50 {
+      let current = consumer.data().count
+      if current == previous {
+        return current
+      }
+      previous = current
+      try await Task.sleep(nanoseconds: 100_000_000)
+    }
+    return previous
+  }
+
+  func testFrameRenderedSignalPushesFrame() async throws {
+    let surface = FakeFramebufferSurface()
+    surface.immediateSurface = makeTestIOSurface()
+    let consumer = FBDataBuffer.accumulatingBuffer()
+    let stream = makeStream(surface: surface)
+
+    try await stream.startStreaming(consumer)
+    let baseline = try await settledCount(of: consumer)
+
+    surface.frameRendered?()
+
+    try await expectEventually("a rendered-frame signal must produce a pushed frame") {
+      consumer.data().count > baseline
+    }
+    try await stream.stopStreaming()
+  }
+
+  func testPushesTrackFrameSignalsAndQuietFramebufferPushesNothing() async throws {
+    let surface = FakeFramebufferSurface()
+    surface.immediateSurface = makeTestIOSurface()
+    let consumer = FBDataBuffer.accumulatingBuffer()
+    let stream = makeStream(surface: surface)
+
+    try await stream.startStreaming(consumer)
+    let baseline = try await settledCount(of: consumer)
+
+    surface.frameRendered?()
+    try await expectEventually("first signal pushes") { consumer.data().count > baseline }
+    let afterFirst = try await settledCount(of: consumer)
+
+    // Variable-frame-rate contract: no signal, no push.
+    try await Task.sleep(nanoseconds: 300_000_000)
+    XCTAssertEqual(consumer.data().count, afterFirst, "a quiet framebuffer must not push frames in .lazy mode")
+
+    surface.frameRendered?()
+    try await expectEventually("a signal after a quiet period pushes again") {
+      consumer.data().count > afterFirst
+    }
+    try await stream.stopStreaming()
+  }
+
+  func testSurfaceArrivingAfterAttachMountsAndStartsStream() async throws {
+    let surface = FakeFramebufferSurface()
+    let consumer = FBDataBuffer.accumulatingBuffer()
+    let stream = makeStream(surface: surface)
+
+    // With no immediately-available surface, startStreaming suspends until the first
+    // surface-change event mounts. Deliver it once the callbacks are registered.
+    async let started: Void = stream.startStreaming(consumer)
+    try await expectEventually("attach must register the surface callbacks") {
+      surface.ioSurfaceChanged != nil
+    }
+    surface.ioSurfaceChanged?(makeTestIOSurface())
+    try await started
+
+    try await expectEventually("mounting the first surface must push a frame") {
+      !consumer.data().isEmpty
+    }
+    try await stream.stopStreaming()
+  }
+
+  func testSurfaceSwapRemountsAndPushes() async throws {
+    let surface = FakeFramebufferSurface()
+    surface.immediateSurface = makeTestIOSurface()
+    let consumer = FBDataBuffer.accumulatingBuffer()
+    let stream = makeStream(surface: surface)
+
+    try await stream.startStreaming(consumer)
+    let baseline = try await settledCount(of: consumer)
+
+    surface.ioSurfaceChanged?(makeTestIOSurface(width: 32, height: 32))
+
+    try await expectEventually("a surface swap must remount and push a frame") {
+      consumer.data().count > baseline
+    }
+    try await stream.stopStreaming()
+  }
+}
