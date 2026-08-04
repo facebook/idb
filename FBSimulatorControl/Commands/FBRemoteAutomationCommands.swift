@@ -70,24 +70,30 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
 
   nonisolated var backend: FBUIAutomationBackend { .remoteAutomation }
 
-  /// Reads and flattens the tree a query targets: a named application by pid, or the frontmost app.
-  func readElements(
-    for query: FBAccessibilityElementQuery,
-    keys: Set<FBAXKeys>,
-    nestedFormat: Bool,
-    filter: FBAccessibilityElementFilter
-  ) async throws -> (elements: [FBJSONValue], modal: FBAccessibilityModalInfo?) {
-    let tree: (root: [String: Any], pid: pid_t)
+  /// Reads the whole attribute tree a query targets: a named application by pid, or the frontmost app.
+  /// A named pid reads directly and throws `applicationUnavailable` when it yields no tree (a dead pid,
+  /// or the app's accessibility server hasn't started); the frontmost read anchors on the AX-resolved
+  /// pid, falling back to a screen-centre probe. Returns the raw tree with the owning pid and whether
+  /// the walk hit the depth or node bound. The remote backend does not surface fullscreen-modal
+  /// information (yet), so `modal` is always `nil`.
+  func readRawTree(for query: FBAccessibilityElementQuery) async throws -> FBAXTreeRead {
+    let tree: FBRemoteAutomationElementTree
+    let root: [String: Any]
     if case let .application(pid) = query {
-      tree = try await readApplicationTree(forPid: pid)
+      tree = try await withSession { try await Self.applicationTree(forPid: pid, using: $0) }
+      guard let applicationRoot = tree.root as? [String: Any] else {
+        throw FBUIAutomationError.applicationUnavailable(backend: .remoteAutomation, pid: pid)
+      }
+      root = applicationRoot
     } else {
-      tree = try await readFrontmostTree()
+      tree = try await withSession { try await frontmostTree(using: $0) }
+      guard let frontmostRoot = tree.root as? [String: Any] else {
+        let anchor = anchorPoint()
+        throw FBRemoteAutomationError.treeUnavailable(x: anchor.x, y: anchor.y)
+      }
+      root = frontmostRoot
     }
-    let elements = FBAXTreeSerialization.describeAllElements(
-      fromTree: tree.root, keys: keys, nestedFormat: nestedFormat, pid: tree.pid, filter: filter
-    )
-    // The remote-automation backend does not surface fullscreen-modal information (yet).
-    return (elements, nil)
+    return FBAXTreeRead(tree: root, pid: tree.processIdentifier, truncated: tree.truncated, modal: nil)
   }
 
   /// Reads the element at `point` via a targeted remote hit-test, or `nil` when the point is empty.
@@ -197,7 +203,7 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
     try await FBUIAutomationPolling.waitForMarker(
       query, backend: .remoteAutomation, timeout: timeout, pollInterval: pollInterval
     ) { markerValue, key, _ in
-      // A poll reads the tree directly (rather than via `readFrontmostTree`) so a missing tree retries
+      // A poll reads the tree directly (rather than via `readRawTree`) so a missing tree retries
       // instead of throwing, and the truncation warning is not logged on every poll iteration.
       let tree: FBRemoteAutomationElementTree
       if pid > 0 {
@@ -257,8 +263,8 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
   }
 
   /// Reads the frontmost app's element tree, anchoring on the AX-resolved pid; falls back to the
-  /// screen-midpoint hit-test only when the AX pid is unavailable. Shared by `readFrontmostTree` and
-  /// the `wait` poll.
+  /// screen-midpoint hit-test only when the AX pid is unavailable. Used by the frontmost branch of
+  /// `readRawTree`.
   private func frontmostTree(using session: FBRemoteAutomationSession) async throws -> FBRemoteAutomationElementTree {
     let pid = await frontmostApplicationPid()
     if pid > 0 {
@@ -266,32 +272,6 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
     }
     let anchor = anchorPoint()
     return try await Self.applicationTree(anchorX: anchor.x, y: anchor.y, using: session)
-  }
-
-  /// Reads the frontmost application's element tree (pid-anchored, midpoint fallback) and returns the
-  /// root attribute dictionary with the owning pid. Shared by the whole-tree operations (describe-all,
-  /// marker tap, marker set-value). Logs a warning when the walk hit the depth or node bound so a
-  /// truncated tree is never passed off as complete.
-  private func readFrontmostTree() async throws -> (root: [String: Any], pid: pid_t) {
-    let tree = try await withSession { try await frontmostTree(using: $0) }
-    guard let root = tree.root as? [String: Any] else {
-      let anchor = anchorPoint()
-      throw FBRemoteAutomationError.treeUnavailable(x: anchor.x, y: anchor.y)
-    }
-    warnIfTruncated(tree)
-    return (root, tree.processIdentifier)
-  }
-
-  /// Reads a specific application's element tree, anchored directly on `pid` — no frontmost resolution
-  /// and no hit-test. Throws `applicationUnavailable` when the pid yields no tree (a dead pid, or the
-  /// app's accessibility server hasn't started).
-  private func readApplicationTree(forPid pid: pid_t) async throws -> (root: [String: Any], pid: pid_t) {
-    let tree = try await withSession { try await Self.applicationTree(forPid: pid, using: $0) }
-    guard let root = tree.root as? [String: Any] else {
-      throw FBUIAutomationError.applicationUnavailable(backend: .remoteAutomation, pid: pid)
-    }
-    warnIfTruncated(tree)
-    return (root, tree.processIdentifier)
   }
 
   /// Reads an application's element tree with the standard remote read configuration — the full
@@ -320,9 +300,11 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
   }
 
   /// Warns when a whole-tree read hit the depth or node bound, so a truncated tree is never passed off
-  /// as complete. The `wait` poll deliberately does not call this — it would log on every iteration.
-  private func warnIfTruncated(_ tree: FBRemoteAutomationElementTree) {
-    guard tree.truncated else { return }
+  /// as complete. Called once per describe by the shared `describeTree`, and once per marker write by
+  /// `markerCenter`; the `wait` poll reads directly without describing, so it never warns per iteration.
+  /// An actor-isolated witness satisfies the `async` protocol requirement.
+  func warnIfTruncated(_ truncated: Bool) {
+    guard truncated else { return }
     _ = simulator?.logger?.log("Remote-automation read hit the bound (maxDepth \(FBAXTreeSerialization.maxReadDepth), maxNodes \(FBAXTreeSerialization.maxReadNodes)); the returned tree is truncated and incomplete.")
   }
 
@@ -330,8 +312,9 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
   /// the marker write verbs (tap, set-value). Throws `elementNotFound` when nothing matches the marker,
   /// or `elementNotOnScreen` when an element matches but reports no on-screen frame to interact with.
   private func markerCenter(_ markerValue: String, key: FBAXSearchableKey) async throws -> (x: Double, y: Double) {
-    let tree = try await readFrontmostTree()
-    let elements = FBAXTreeSerialization.describeAllElements(fromTree: tree.root, keys: FBAXKeys.defaultSet.union([key.serializationKey]), nestedFormat: false, pid: tree.pid)
+    let read = try await readRawTree(for: .frontmost)
+    warnIfTruncated(read.truncated)
+    let elements = FBAXTreeSerialization.describeAllElements(fromTree: read.tree, keys: FBAXKeys.defaultSet.union([key.serializationKey]), nestedFormat: false, pid: read.pid)
     switch FBAXTreeSerialization.resolveMarker(inElements: elements, markerValue: markerValue, key: key) {
     case let .resolved(x, y):
       return (x, y)

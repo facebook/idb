@@ -38,7 +38,7 @@ enum FBAXWire {
   }
 
   /// Top-level keys of the guest's `{ ok, tree | error, ... }` response envelope, parsed by
-  /// `FBAXBridgeResponse`.
+  /// `FBAXTreeRead`.
   enum Envelope: String {
     case ok
     case error

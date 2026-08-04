@@ -11,7 +11,7 @@ import Foundation
 import XCTest
 
 /// Coverage for the axbridge read path that does not require a live simulator: the guest response
-/// envelope parsing (`FBAXBridgeResponse`) and the tree -> shared-serializer integration that makes
+/// envelope parsing (`FBAXTreeRead`) and the tree -> shared-serializer integration that makes
 /// the axbridge output identical to the testmanagerd backend (both feed `describeAllElements`).
 final class FBAXBridgeReadsTests: XCTestCase {
 
@@ -19,7 +19,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
     try JSONSerialization.data(withJSONObject: object)
   }
 
-  // MARK: - FBAXBridgeResponse envelope parsing
+  // MARK: - FBAXTreeRead envelope parsing
 
   func testParsesTreeFromOkEnvelope() throws {
     let tree: [String: Any] = [
@@ -27,7 +27,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
       FBAXWire.Node.identifier.rawValue: "com.apple.settings.general",
     ]
     let data = try envelope(["ok": true, "tree": tree])
-    let parsed = try FBAXBridgeResponse.tree(fromResponse: data, pid: 42)
+    let parsed = try FBAXTreeRead(wholeTreeResponse: data, pid: 42)
     XCTAssertEqual(parsed.tree[FBAXWire.Node.label.rawValue] as? String, "General")
     XCTAssertEqual(parsed.tree[FBAXWire.Node.identifier.rawValue] as? String, "com.apple.settings.general")
     XCTAssertFalse(parsed.truncated, "a whole-tree read with no truncated flag is a complete tree")
@@ -38,7 +38,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
     // conformer can warn the tree is incomplete rather than pass it off as whole.
     let tree: [String: Any] = [FBAXWire.Node.label.rawValue: "root"]
     let data = try envelope(["ok": true, "tree": tree, "truncated": true])
-    let parsed = try FBAXBridgeResponse.tree(fromResponse: data, pid: 42)
+    let parsed = try FBAXTreeRead(wholeTreeResponse: data, pid: 42)
     XCTAssertTrue(parsed.truncated, "the guest's truncation flag must be surfaced to the caller")
   }
 
@@ -46,7 +46,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
     // An untagged failure (no `error_kind`) is an opaque `guestFailure` carrying the guest's own
     // message, so callers see the real cause.
     let data = try envelope(["ok": false, "error": "the accessibility server is not responding"])
-    XCTAssertThrowsError(try FBAXBridgeResponse.tree(fromResponse: data, pid: 7)) { error in
+    XCTAssertThrowsError(try FBAXTreeRead(wholeTreeResponse: data, pid: 7)) { error in
       guard case FBAXBridgeError.guestFailure = error else {
         return XCTFail("an untagged failure should be a guestFailure, got: \(error)")
       }
@@ -59,7 +59,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
     // (carrying the pid), which the conformer re-raises as the backend-neutral
     // `FBUIAutomationError.applicationUnavailable` — matching what the remote backend throws for a dead pid.
     let data = try envelope(["ok": false, "error": "no application element for pid 7", "error_kind": "application_unavailable"])
-    XCTAssertThrowsError(try FBAXBridgeResponse.tree(fromResponse: data, pid: 7)) { error in
+    XCTAssertThrowsError(try FBAXTreeRead(wholeTreeResponse: data, pid: 7)) { error in
       guard case let FBAXBridgeError.applicationUnavailable(pid) = error else {
         return XCTFail("a tagged failure should be applicationUnavailable, got: \(error)")
       }
@@ -69,18 +69,18 @@ final class FBAXBridgeReadsTests: XCTestCase {
 
   func testThrowsOnMalformedResponse() {
     let data = Data("this is not json".utf8)
-    XCTAssertThrowsError(try FBAXBridgeResponse.tree(fromResponse: data, pid: 1))
+    XCTAssertThrowsError(try FBAXTreeRead(wholeTreeResponse: data, pid: 1))
   }
 
   func testThrowsWhenOkButNoTree() throws {
     let data = try envelope(["ok": true])
-    XCTAssertThrowsError(try FBAXBridgeResponse.tree(fromResponse: data, pid: 1))
+    XCTAssertThrowsError(try FBAXTreeRead(wholeTreeResponse: data, pid: 1))
   }
 
   func testThrowsWhenNotOk() throws {
     // `ok` missing/false with no `error` still fails rather than yielding an empty tree.
     let data = try envelope(["tree": [FBAXWire.Node.label.rawValue: "x"]])
-    XCTAssertThrowsError(try FBAXBridgeResponse.tree(fromResponse: data, pid: 1))
+    XCTAssertThrowsError(try FBAXTreeRead(wholeTreeResponse: data, pid: 1))
   }
 
   // MARK: - One error type across backends
@@ -208,15 +208,15 @@ final class FBAXBridgeReadsTests: XCTestCase {
     XCTAssertEqual(label, "General Settings")
   }
 
-  // MARK: - FBAXBridgeResponse system-wide hit-test parsing
+  // MARK: - FBAXTreeRead system-wide hit-test parsing
 
   func testHitTestParsesHitNodeAndOwningPid() throws {
     // A system-wide hit-test resolves which app owns the point, so the response carries the owning pid
     // the host tags the element with.
     let node: [String: Any] = [FBAXWire.Node.identifier.rawValue: "com.apple.settings.general"]
     let data = try envelope(["ok": true, "tree": node, "pid": 8865])
-    let parsed = try FBAXBridgeResponse.systemWideHitTest(fromResponse: data)
-    XCTAssertEqual(parsed?.node[FBAXWire.Node.identifier.rawValue] as? String, "com.apple.settings.general")
+    let parsed = try FBAXTreeRead(hitTestResponse: data)
+    XCTAssertEqual(parsed?.tree[FBAXWire.Node.identifier.rawValue] as? String, "com.apple.settings.general")
     XCTAssertEqual(parsed?.pid, 8865)
   }
 
@@ -224,40 +224,40 @@ final class FBAXBridgeReadsTests: XCTestCase {
     // `{ok:true, empty:true}` is "no element at the point" — a valid empty result, returned as nil,
     // not conflated with a reader failure.
     let data = try envelope(["ok": true, "empty": true])
-    XCTAssertNil(try FBAXBridgeResponse.systemWideHitTest(fromResponse: data))
+    XCTAssertNil(try FBAXTreeRead(hitTestResponse: data))
   }
 
   func testHitTestThrowsOnFailure() throws {
     // A failure (`ok:false`) is distinct from an empty result and is surfaced with the guest message.
     let data = try envelope(["ok": false, "error": "AXUIElementCopyElementAtPosition unavailable"])
-    XCTAssertThrowsError(try FBAXBridgeResponse.systemWideHitTest(fromResponse: data)) { error in
+    XCTAssertThrowsError(try FBAXTreeRead(hitTestResponse: data)) { error in
       XCTAssertTrue("\(error)".contains("AXUIElementCopyElementAtPosition unavailable"), "unexpected error: \(error)")
     }
   }
 
   func testHitTestThrowsWhenOkButNoTreeOrEmpty() throws {
     let data = try envelope(["ok": true])
-    XCTAssertThrowsError(try FBAXBridgeResponse.systemWideHitTest(fromResponse: data))
+    XCTAssertThrowsError(try FBAXTreeRead(hitTestResponse: data))
   }
 
   func testHitTestThrowsWhenOwningPidMissing() throws {
     // A hit node with no owning pid is a protocol violation — the host cannot tag the element.
     let data = try envelope(["ok": true, "tree": [FBAXWire.Node.identifier.rawValue: "x"]])
-    XCTAssertThrowsError(try FBAXBridgeResponse.systemWideHitTest(fromResponse: data)) { error in
+    XCTAssertThrowsError(try FBAXTreeRead(hitTestResponse: data)) { error in
       guard case FBAXBridgeError.guestFailure = error else {
         return XCTFail("a hit-test without an owning pid should be guestFailure, got: \(error)")
       }
     }
   }
 
-  // MARK: - FBAXBridgeResponse fused frontmost tree parsing
+  // MARK: - FBAXTreeRead fused frontmost tree parsing
 
   func testFrontmostTreeParsesTreeAndResolvedPid() throws {
     // The fused read resolves the frontmost app AND reads its tree in one call, so the response carries
     // the resolved pid the host tags elements with — it did not know the pid in advance.
     let tree: [String: Any] = [FBAXWire.Node.label.rawValue: "Settings"]
     let data = try envelope(["ok": true, "tree": tree, "pid": 8865, "method": "center-point", "truncated": false])
-    let parsed = try FBAXBridgeResponse.frontmostTree(fromResponse: data)
+    let parsed = try FBAXTreeRead(frontmostResponse: data)
     XCTAssertEqual(parsed.pid, 8865)
     XCTAssertEqual(parsed.tree[FBAXWire.Node.label.rawValue] as? String, "Settings")
     XCTAssertFalse(parsed.truncated)
@@ -265,14 +265,14 @@ final class FBAXBridgeReadsTests: XCTestCase {
 
   func testFrontmostTreeSurfacesTruncation() throws {
     let data = try envelope(["ok": true, "tree": [FBAXWire.Node.label.rawValue: "root"], "pid": 1, "truncated": true])
-    XCTAssertTrue(try FBAXBridgeResponse.frontmostTree(fromResponse: data).truncated)
+    XCTAssertTrue(try FBAXTreeRead(frontmostResponse: data).truncated)
   }
 
   func testFrontmostTreeThrowsFrontmostUnavailableOnFailure() throws {
     // A fused read that couldn't resolve/read the frontmost app maps to frontmostUnavailable, which the
     // read poll retries.
     let data = try envelope(["ok": false, "error": "system-wide hit-test at (201.0, 437.0) found no element"])
-    XCTAssertThrowsError(try FBAXBridgeResponse.frontmostTree(fromResponse: data)) { error in
+    XCTAssertThrowsError(try FBAXTreeRead(frontmostResponse: data)) { error in
       guard case FBAXBridgeError.frontmostUnavailable = error else {
         return XCTFail("a failed fused read should be frontmostUnavailable, got: \(error)")
       }
@@ -282,7 +282,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
   func testFrontmostTreeThrowsWhenResolvedPidMissing() throws {
     // An ok response with a tree but no pid is a protocol violation — the host cannot tag the elements.
     let data = try envelope(["ok": true, "tree": [FBAXWire.Node.label.rawValue: "x"]])
-    XCTAssertThrowsError(try FBAXBridgeResponse.frontmostTree(fromResponse: data)) { error in
+    XCTAssertThrowsError(try FBAXTreeRead(frontmostResponse: data)) { error in
       guard case FBAXBridgeError.guestFailure = error else {
         return XCTFail("a fused response without a pid should be guestFailure, got: \(error)")
       }
@@ -291,7 +291,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
 
   func testFrontmostTreeThrowsWhenTreeMissing() throws {
     let data = try envelope(["ok": true, "pid": 8865])
-    XCTAssertThrowsError(try FBAXBridgeResponse.frontmostTree(fromResponse: data)) { error in
+    XCTAssertThrowsError(try FBAXTreeRead(frontmostResponse: data)) { error in
       guard case FBAXBridgeError.guestFailure = error else {
         return XCTFail("a fused response without a tree should be guestFailure, got: \(error)")
       }
@@ -302,7 +302,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
 
   func testModalParsesSystemAlert() {
     let response: [String: Any] = ["ok": true, "modal": ["kind": "system", "elementType": "SBAlertItemWindow", "label": "Allow \u{201c}Maps\u{201d} to use your location?"]]
-    let modal = FBAXBridgeResponse.modal(fromResponse: response)
+    let modal = FBAXTreeRead.modal(fromResponse: response)
     XCTAssertEqual(modal?.kind, .system)
     XCTAssertEqual(modal?.elementType, "SBAlertItemWindow")
     XCTAssertEqual(modal?.label, "Allow \u{201c}Maps\u{201d} to use your location?")
@@ -310,22 +310,22 @@ final class FBAXBridgeReadsTests: XCTestCase {
 
   func testModalParsesAppAlertWithoutLabel() {
     let response: [String: Any] = ["ok": true, "modal": ["kind": "app", "elementType": "_UIAlertControllerView"]]
-    let modal = FBAXBridgeResponse.modal(fromResponse: response)
+    let modal = FBAXTreeRead.modal(fromResponse: response)
     XCTAssertEqual(modal?.kind, .app)
     XCTAssertEqual(modal?.elementType, "_UIAlertControllerView")
     XCTAssertNil(modal?.label)
   }
 
   func testModalAbsentOrMalformedIsNil() {
-    XCTAssertNil(FBAXBridgeResponse.modal(fromResponse: ["ok": true]), "no modal key -> nil")
-    XCTAssertNil(FBAXBridgeResponse.modal(fromResponse: ["ok": true, "modal": ["elementType": "X"]]), "missing kind -> nil")
-    XCTAssertNil(FBAXBridgeResponse.modal(fromResponse: ["ok": true, "modal": ["kind": "bogus", "elementType": "X"]]), "unknown kind -> nil")
+    XCTAssertNil(FBAXTreeRead.modal(fromResponse: ["ok": true]), "no modal key -> nil")
+    XCTAssertNil(FBAXTreeRead.modal(fromResponse: ["ok": true, "modal": ["elementType": "X"]]), "missing kind -> nil")
+    XCTAssertNil(FBAXTreeRead.modal(fromResponse: ["ok": true, "modal": ["kind": "bogus", "elementType": "X"]]), "unknown kind -> nil")
   }
 
   func testFrontmostTreeCarriesModalDescriptor() throws {
     let tree: [String: Any] = [FBAXWire.Node.label.rawValue: "root"]
     let data = try envelope(["ok": true, "tree": tree, "pid": 20475, "modal": ["kind": "system", "elementType": "SBAlertItemWindow", "label": "Allow"]])
-    let parsed = try FBAXBridgeResponse.frontmostTree(fromResponse: data)
+    let parsed = try FBAXTreeRead(frontmostResponse: data)
     XCTAssertEqual(parsed.pid, 20475)
     XCTAssertEqual(parsed.modal?.kind, .system)
     XCTAssertEqual(parsed.modal?.elementType, "SBAlertItemWindow")
@@ -346,7 +346,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
 
   func testGuestTreeFeedsSharedSerializerSchema() throws {
     // A guest envelope carrying a small XC_kAXXC* tree round-trips through the same path the
-    // testmanagerd backend uses (`FBAXBridgeResponse.tree` -> `describeAllElements`), producing the
+    // testmanagerd backend uses (`FBAXTreeRead(wholeTreeResponse:)` -> `describeAllElements`), producing the
     // shared schema: the child is a Button (automationType 9) with its identifier, proving the
     // axbridge output is byte-compatible with the shared serializer rather than a bespoke shape.
     let tree: [String: Any] = [
@@ -361,7 +361,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
       ],
     ]
     let data = try envelope(["ok": true, "tree": tree])
-    let parsed = try FBAXBridgeResponse.tree(fromResponse: data, pid: 99)
+    let parsed = try FBAXTreeRead(wholeTreeResponse: data, pid: 99)
 
     let elements = FBAXTreeSerialization.describeAllElements(
       fromTree: parsed.tree, keys: FBAXKeys.defaultSet, nestedFormat: false, pid: 99

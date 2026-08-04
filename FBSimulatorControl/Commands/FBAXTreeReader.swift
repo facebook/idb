@@ -20,27 +20,31 @@ protocol FBAXTreeReader: FBUIAutomation {
   /// Which backend this is, for the errors the shared verbs raise.
   nonisolated var backend: FBUIAutomationBackend { get }
 
-  /// Reads the tree the query targets and flattens it to the shared schema. `.frontmost` resolves the
-  /// foreground app; `.application` anchors on the given pid; `.marker` reads the frontmost tree and
-  /// lets the shared matcher find the element in the result.
+  /// Reads the whole bounded attribute tree the query targets and returns it parsed. `.frontmost`
+  /// resolves the foreground app; `.application` anchors on the given pid; `.marker` reads the frontmost
+  /// tree so the shared matcher can find the element in the serialized result.
   ///
-  /// The flattening happens behind this call rather than after it because the raw attribute tree is a
-  /// bag of `Any` and cannot leave a backend's isolation; the serialized elements can. Also returns any
-  /// fullscreen-modal descriptor the read surfaced (host-facing enrichment, not serialized) — `nil`
-  /// when no modal is present or the backend does not report one.
-  func readElements(
-    for query: FBAccessibilityElementQuery,
-    keys: Set<FBAXKeys>,
-    nestedFormat: Bool,
-    filter: FBAccessibilityElementFilter
-  ) async throws -> (elements: [FBJSONValue], modal: FBAccessibilityModalInfo?)
+  /// Returns the raw read rather than serialized elements so `describeTree` serializes exactly once,
+  /// with the caller's keys/format/filter — none of which belong on a raw read, since the guest reads
+  /// the whole bounded tree and key selection happens at serialize. `FBAXTreeRead` also carries the
+  /// fullscreen-modal descriptor the read surfaced (host-facing enrichment, not serialized) and whether
+  /// the guest's walk was truncated.
+  func readRawTree(for query: FBAccessibilityElementQuery) async throws -> FBAXTreeRead
+
+  /// Warns that a read's tree was truncated by the depth or node bound, so an incomplete tree is never
+  /// passed off as whole. Per backend because each logs through its own target; `describeTree` calls it
+  /// once per describe, and never on the `.marker` wait poll, which reads without describing.
+  func warnIfTruncated(_ truncated: Bool) async
 }
 
 extension FBAXTreeReader {
 
-  /// `describe` for any tree-reading backend: resolve what the query means, read, serialize, and wrap.
-  /// A point delegates to the backend's targeted `hitTest` and turns an empty result into an error,
-  /// which is what makes `describe(.point:)` throwing while `hitTest` stays optional.
+  /// `describe` for any tree-reading backend: resolve what the query means, read the raw tree, warn if it
+  /// was truncated, serialize it once with the caller's keys/format/filter, and wrap. A point delegates to
+  /// the backend's targeted `hitTest` and turns an empty result into an error, which is what makes
+  /// `describe(.point:)` throwing while `hitTest` stays optional. Serialize and warn live here — not
+  /// behind `readRawTree` — so they run once per describe and not on a `.marker` wait poll that reads
+  /// without describing.
   func describeTree(
     _ query: FBAccessibilityElementQuery,
     options: FBAccessibilityRequestOptions
@@ -52,16 +56,22 @@ extension FBAXTreeReader {
       }
       return response
     case let .marker(value, key, _):
-      let read = try await readElements(for: query, keys: options.keys.union([key.serializationKey]), nestedFormat: false, filter: .all)
-      guard let match = FBAXTreeSerialization.matchingElement(inElements: read.elements, markerValue: value, key: key) else {
+      let read = try await readRawTree(for: query)
+      await warnIfTruncated(read.truncated)
+      let elements = FBAXTreeSerialization.describeAllElements(
+        fromTree: read.tree, keys: options.keys.union([key.serializationKey]), nestedFormat: false, pid: read.pid, filter: .all
+      )
+      guard let match = FBAXTreeSerialization.matchingElement(inElements: elements, markerValue: value, key: key) else {
         throw FBUIAutomationError.elementNotFound(backend: backend, key: key.rawValue, value: value)
       }
       return FBAccessibilityElementsResponse(elements: match, modal: read.modal)
     case .frontmost, .application:
-      let read = try await readElements(
-        for: query, keys: options.keys, nestedFormat: options.nestedFormat, filter: options.filter
+      let read = try await readRawTree(for: query)
+      await warnIfTruncated(read.truncated)
+      let elements = FBAXTreeSerialization.describeAllElements(
+        fromTree: read.tree, keys: options.keys, nestedFormat: options.nestedFormat, pid: read.pid, filter: options.filter
       )
-      return FBAccessibilityElementsResponse(elements: .array(read.elements), modal: read.modal)
+      return FBAccessibilityElementsResponse(elements: .array(elements), modal: read.modal)
     }
   }
 }
