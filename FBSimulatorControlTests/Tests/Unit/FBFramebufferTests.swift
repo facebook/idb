@@ -155,4 +155,93 @@ final class FBFramebufferTests: XCTestCase {
 
     XCTAssertEqual(surface.unregisteredTokens.count, 1)
   }
+
+  // MARK: - Event stream
+
+  func testStreamAttachReturnsInitialSurface() throws {
+    let surface = FakeFramebufferSurface()
+    let ioSurface = makeTestIOSurface()
+    surface.immediateSurface = ioSurface
+    let framebuffer = makeFramebuffer(surface: surface)
+
+    let attachment = try framebuffer.attach()
+
+    XCTAssertIdentical(attachment.initialSurface, ioSurface)
+  }
+
+  func testStreamBuffersAndDeliversEventsInOrder() async throws {
+    let surface = FakeFramebufferSurface()
+    let framebuffer = makeFramebuffer(surface: surface)
+    let attachment = try framebuffer.attach()
+
+    let ioSurface = makeTestIOSurface()
+    // All delivered before iteration begins: the stream must buffer without loss, and must preserve
+    // the exact order across both event kinds (a surface swap can never overtake a frame).
+    surface.ioSurfaceChanged?(ioSurface)
+    surface.frameRendered?()
+    surface.ioSurfaceChanged?(nil)
+    surface.frameRendered?()
+
+    var events: [FBFramebufferEvent] = []
+    for await event in attachment.events {
+      events.append(event)
+      if events.count == 4 {
+        break
+      }
+    }
+
+    guard events.count == 4 else {
+      XCTFail("Expected 4 events, got \(events.count)")
+      return
+    }
+    guard case let .surfaceChanged(first) = events[0] else {
+      XCTFail("Expected .surfaceChanged first, got \(events[0])")
+      return
+    }
+    XCTAssertIdentical(first, ioSurface)
+    guard case .frameRendered = events[1] else {
+      XCTFail("Expected .frameRendered second, got \(events[1])")
+      return
+    }
+    guard case let .surfaceChanged(cleared) = events[2] else {
+      XCTFail("Expected .surfaceChanged third, got \(events[2])")
+      return
+    }
+    XCTAssertNil(cleared)
+    guard case .frameRendered = events[3] else {
+      XCTFail("Expected .frameRendered fourth, got \(events[3])")
+      return
+    }
+  }
+
+  func testStreamCancelFinishesIteration() async throws {
+    let surface = FakeFramebufferSurface()
+    let framebuffer = makeFramebuffer(surface: surface)
+    let attachment = try framebuffer.attach()
+
+    surface.frameRendered?()
+    attachment.cancel()
+
+    // Buffered events are drained, then the finished stream ends the loop.
+    var count = 0
+    for await _ in attachment.events {
+      count += 1
+    }
+    XCTAssertEqual(count, 1)
+    XCTAssertEqual(surface.unregisteredTokens.count, 1)
+  }
+
+  func testStreamAttachRecordsStats() throws {
+    let surface = FakeFramebufferSurface()
+    let framebuffer = makeFramebuffer(surface: surface)
+    let attachment = try framebuffer.attach()
+    defer { attachment.cancel() }
+
+    surface.ioSurfaceChanged?(makeTestIOSurface())
+    surface.frameRendered?()
+
+    let stats = framebuffer.currentStats()
+    XCTAssertEqual(stats.ioSurfaceChangeCount, 1)
+    XCTAssertEqual(stats.frameRenderedCount, 1)
+  }
 }
