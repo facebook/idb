@@ -102,7 +102,7 @@ public struct FBVideoStreamEdgeInsets: Sendable {
 /// Frame cadence strategy for the video stream.
 ///
 /// - `.lazy`: variable-frame-rate — a frame is pushed only when the framebuffer signals that a new
-///   frame was rendered (`didRenderFrame`).
+///   frame was rendered (a `.frameRendered` event).
 /// - `.eager(framesPerSecond:)`: constant-frame-rate — a cadence `Task` pushes frames at the fixed
 ///   rate, and frame-rendered events are ignored (the cadence task drives pushes).
 enum FBVideoStreamCadence {
@@ -123,7 +123,7 @@ private extension FBVideoStreamCodec {
 
 /// Stats tracked by the video encoder (VideoToolbox).
 /// Zeroed if the stream uses a non-encoded format (e.g. bitmap/BGRA).
-public struct FBVideoEncoderStats {
+public struct FBVideoEncoderStats: Sendable {
   public var callbackCount: UInt
   public var writeCount: UInt
   public var dropCount: UInt
@@ -365,12 +365,13 @@ final class FBSimulatorVideoStreamFramePusher_Bitmap: FBSimulatorVideoStreamFram
 /// directly in the encode handler). Tracks warmup/starvation counters and periodic stats.
 ///
 /// @unchecked Sendable: `VTCompressionSessionEncodeFrame`'s `@Sendable` output handler can run on a
-/// VideoToolbox thread after the encode call returns, so it captures `self`. All mutable encoder
-/// state (`stats`, warmup/starvation counters, `statsTimer`) is only ever touched from that handler
-/// and from the owning stream's serial `writeQueue`, which submits frames one at a time (the encoder
-/// is configured with `MaxFrameDelayCount: 0` and real-time low-latency rate control, so a frame's
-/// handler completes before the next `writeEncodedFrame` is submitted). This mirrors the owning
-/// `FBSimulatorVideoStream`, which is likewise `@unchecked Sendable`.
+/// VideoToolbox thread after the encode call returns, so it captures `self`. Encoder state
+/// (warmup/starvation counters, `statsTimer`, `lastLoggedStats`) is only ever touched from that
+/// handler and the owning actor's frame submissions, which alternate one frame at a time (the
+/// encoder is configured with `MaxFrameDelayCount: 0` and real-time low-latency rate control, so a
+/// frame's handler completes before the next `writeEncodedFrame` is submitted). `stats` is
+/// additionally read by `currentStats()` from other isolation domains, so it alone is guarded by
+/// `statsLock`.
 final class FBSimulatorVideoStreamFramePusher_VideoToolbox: FBSimulatorVideoStreamFramePusher, @unchecked Sendable {
   let configuration: FBVideoStreamConfiguration
   let compressionSessionProperties: [String: Any]
@@ -398,6 +399,16 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: FBSimulatorVideoStre
   var stats = FBVideoEncoderStats()
   var lastLoggedStats = FBVideoEncoderStats()
   var statsTimer = FBPeriodicStatsTimer(interval: 5.0)
+
+  // Guards `stats` only: written from the VideoToolbox handler thread and the encode submission,
+  // read by `currentStats()` from arbitrary isolation domains.
+  private let statsLock = NSLock()
+
+  private func withStats<T>(_ body: (inout FBVideoEncoderStats) -> T) -> T {
+    statsLock.lock()
+    defer { statsLock.unlock() }
+    return body(&stats)
+  }
 
   init(
     configuration: FBVideoStreamConfiguration,
@@ -432,7 +443,7 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: FBSimulatorVideoStre
       return
     }
 
-    let current = stats
+    let current = withStats { $0 }
     let last = lastLoggedStats
     let intervalCallbacks = current.callbackCount - last.callbackCount
     let intervalWritten = current.writeCount - last.writeCount
@@ -466,10 +477,10 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: FBSimulatorVideoStre
   }
 
   private func processCompressedSampleBuffer(_ sampleBuffer: CMSampleBuffer?, encodeStatus: OSStatus, infoFlags: VTEncodeInfoFlags) {
-    stats.callbackCount += 1
+    withStats { $0.callbackCount += 1 }
 
     if encodeStatus != noErr {
-      stats.encodeErrorCount += 1
+      withStats { $0.encodeErrorCount += 1 }
       logger.log("VideoToolbox encode error: OSStatus \(encodeStatus)")
       return
     }
@@ -482,16 +493,16 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: FBSimulatorVideoStre
       }
       if writeSucceeded {
         if let dataBuffer = CMSampleBufferGetDataBuffer(sampleBuffer) {
-          stats.totalEncodedBytes += UInt(CMBlockBufferGetDataLength(dataBuffer))
+          withStats { $0.totalEncodedBytes += UInt(CMBlockBufferGetDataLength(dataBuffer)) }
         }
       }
     }
 
     if frameDropped || !writeSucceeded {
       if frameDropped {
-        stats.dropCount += 1
+        withStats { $0.dropCount += 1 }
       } else {
-        stats.writeFailureCount += 1
+        withStats { $0.writeFailureCount += 1 }
       }
       consecutiveNotReadyFrameCount += 1
       let consecutiveFailures = consecutiveNotReadyFrameCount
@@ -513,7 +524,7 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: FBSimulatorVideoStre
     }
 
     // Success
-    stats.writeCount += 1
+    withStats { $0.writeCount += 1 }
     let failuresBefore = consecutiveNotReadyFrameCount
     consecutiveNotReadyFrameCount = 0
     starvationWarningLogged = false
@@ -712,7 +723,7 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: FBSimulatorVideoStre
     // `[weak self]` keeps the handler leak/cycle-free: the session does not retain the pusher, so a
     // strong capture here would be a retain cycle (pusher → session → handler → pusher). The handler
     // may run on a VideoToolbox thread after this call returns; `sampleBuffer` is ARC-managed and
-    // mutable encoder state is confined to the handler + the serial writeQueue (see the class doc).
+    // mutable encoder state is either confined to the handler or guarded by `statsLock` (see the class doc).
     let outputMode = self.outputMode
     let handler: VTCompressionOutputHandler = { [weak self] encodeStatus, infoFlags, sampleBuffer in
       guard let self else { return }
@@ -751,12 +762,12 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: FBSimulatorVideoStre
 
     // Track time spent in NV12 conversion + encode submission.
     let encodeEnd = CFAbsoluteTimeGetCurrent()
-    stats.totalEncodeSubmitSeconds += (encodeEnd - encodeStart)
+    withStats { $0.totalEncodeSubmitSeconds += (encodeEnd - encodeStart) }
 
     if let surface {
       let seedAfter = IOSurfaceGetSeed(surface)
       if seedAfter != seedBefore {
-        stats.tornFrameCount += 1
+        withStats { $0.tornFrameCount += 1 }
       }
     }
     if status != 0 {
@@ -765,7 +776,7 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: FBSimulatorVideoStre
   }
 
   func currentStats() -> FBVideoEncoderStats? {
-    stats
+    withStats { $0 }
   }
 }
 
@@ -775,15 +786,12 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: FBSimulatorVideoStre
 /// This component can be used to provide a real-time stream of a Simulator's Framebuffer.
 /// This can be connected to additional software via a stream to a File Handle or Fifo.
 ///
-/// Concurrency model: the `writeQueue` serializes start/stop, the framebuffer consumer callbacks
-/// (`didChange`/`didRenderFrame`), and every frame push. The cadence is selected by the
-/// `cadence` strategy: `.lazy` pushes frames from the frame-rendered callback (variable frame rate), while
-/// `.eager` runs a cadence `Task` that, at a fixed frame rate, dispatches `pushFrame` back onto
-/// `writeQueue` and awaits it before sleeping until the next deadline.
-// @unchecked Sendable: mutable stream and frame state is confined to `writeQueue` (and, in the eager
-// cadence, the cadence task) without a compiler-checkable Sendable guarantee; the sibling
-// FBFramebuffer is likewise @unchecked Sendable.
-public final class FBSimulatorVideoStream: FBFramebufferConsumer, FBVideoStream, @unchecked Sendable {
+/// Concurrency model: the actor serializes start/stop, framebuffer event handling, and every frame
+/// push. Framebuffer events arrive on the attachment's ordered `AsyncStream`, consumed by an
+/// actor-isolated task, rather than queue-delivered callbacks. The cadence is selected by the
+/// `cadence` strategy: `.lazy` pushes a frame when a frame-rendered event pokes the trigger stream
+/// (variable frame rate), while `.eager` runs a cadence `Task` on the actor that pushes at a fixed frame rate.
+public actor FBSimulatorVideoStream: FBVideoStream {
 
   // MARK: - Properties
 
@@ -794,21 +802,25 @@ public final class FBSimulatorVideoStream: FBFramebufferConsumer, FBVideoStream,
   /// When set (recording), encoded `.compressed` frames are routed to this sink — an `FBSimulatorVideoFileWriter`
   /// — instead of being byte-framed to `consumer`. nil for streaming.
   let encodedSampleConsumerOverride: FBEncodedSampleConsumer?
-  let writeQueue: DispatchQueue
   let logger: any FBControlCoreLogger
 
-  // Lifecycle state, confined to `writeQueue`. `hasStarted` latches once the first surface mounts (a
-  // stream cannot be restarted); `isStopped` latches on teardown and is the sole stop-idempotency
-  // guard. `startAwaiters`/`stopAwaiters` hold continuations resumed on those transitions, so
-  // `startStreaming`/`completed` can await them natively.
+  // Actor-isolated lifecycle state. `hasStarted` latches once the first surface mounts (a stream
+  // cannot be restarted); `isStopped` latches on teardown and is the sole stop-idempotency guard.
+  // `startAwaiters`/`stopAwaiters` hold continuations resumed on those transitions, so
+  // `startStreaming`/`awaitCompletion` can await them natively.
   private var hasStarted = false
   private var isStopped = false
   private var startAwaiters: [CheckedContinuation<Void, Error>] = []
   private var stopAwaiters: [CheckedContinuation<Void, Never>] = []
 
-  /// The framebuffer attachment held while streaming; `cancel()` (or release) detaches this stream
-  /// as a consumer. Nil before start and after stop.
+  /// The framebuffer attachment held while streaming; `cancel()` (or release) detaches this stream.
+  /// Nil before start and after stop.
   private var attachment: FBFramebufferAttachment?
+
+  /// The task consuming the attachment's ordered framebuffer event stream onto the actor: surface
+  /// changes mount, damage pokes the `.lazy` trigger. Ends when the attachment cancels (finishing
+  /// the stream). Started in `startStreaming`, cancelled as a backstop in teardown/`deinit`.
+  private var eventTask: Task<Void, Never>?
 
   /// The push-loop task that drives frame pushes (nil before `mountSurface` starts it). It iterates a
   /// stimulus `AsyncSequence` of `FrameTrigger`s: `FrameCadence` (the fixed-rate clock) in `.eager`
@@ -816,8 +828,8 @@ public final class FBSimulatorVideoStream: FBFramebufferConsumer, FBVideoStream,
   /// Started in `mountSurface`, cancelled in `cadenceTeardown`/`deinit`.
   private var framePusherTask: Task<Void, Never>?
 
-  /// In `.lazy` (VFR) mode, the trigger source that the framebuffer callbacks (`didRenderFrame`,
-  /// `updateOverlayBuffer`) poke to drive a push through the shared loop. Created in `mountSurface`,
+  /// In `.lazy` (VFR) mode, the trigger source that the framebuffer event loop (`.frameRendered`)
+  /// and `updateOverlayBuffer` poke to drive a push through the shared loop. Created in `mountSurface`,
   /// finished in `cadenceTeardown`. Nil in `.eager` mode (the cadence clock drives pushes there).
   private var lazyTriggers: LazyFrameTriggers?
 
@@ -842,27 +854,22 @@ public final class FBSimulatorVideoStream: FBFramebufferConsumer, FBVideoStream,
 
   // MARK: - Initializers
 
-  class func makeWriteQueue() -> DispatchQueue {
-    DispatchQueue(label: "com.facebook.FBSimulatorControl.BitmapStream")
-  }
-
   /// Constructs a Bitmap Stream.
   /// Bitmaps will only be written when there is a new bitmap available.
   ///
   /// Static factories (rather than initializers) since they must derive the cadence strategy.
-  public class func make(framebuffer: FBFramebuffer, configuration: FBVideoStreamConfiguration, logger: any FBControlCoreLogger) -> FBSimulatorVideoStream {
+  public static func make(framebuffer: FBFramebuffer, configuration: FBVideoStreamConfiguration, logger: any FBControlCoreLogger) -> FBSimulatorVideoStream {
     make(framebuffer: framebuffer, configuration: configuration, edgeInsets: FBVideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0), logger: logger)
   }
 
   /// Constructs a Bitmap Stream with edge insets for overlay content.
   /// Insets extend the output frame dimensions, pushing video content inward.
-  public class func make(framebuffer: FBFramebuffer, configuration: FBVideoStreamConfiguration, edgeInsets: FBVideoStreamEdgeInsets, logger: any FBControlCoreLogger) -> FBSimulatorVideoStream {
+  public static func make(framebuffer: FBFramebuffer, configuration: FBVideoStreamConfiguration, edgeInsets: FBVideoStreamEdgeInsets, logger: any FBControlCoreLogger) -> FBSimulatorVideoStream {
     FBSimulatorVideoStream(
       framebuffer: framebuffer,
       configuration: configuration,
       edgeInsets: edgeInsets,
       cadence: cadence(for: configuration),
-      writeQueue: makeWriteQueue(),
       logger: logger)
   }
 
@@ -870,19 +877,18 @@ public final class FBSimulatorVideoStream: FBFramebufferConsumer, FBVideoStream,
   /// rather than byte-framed to an `FBDataConsumer`. `edgeInsets` (default zero) reserves overlay bar
   /// regions exactly as on the streaming path; set `configuration.framesPerSecond` so the cadence is
   /// eager (a recorded file wants a continuous timeline even while the screen is idle).
-  class func makeRecorder(framebuffer: FBFramebuffer, configuration: FBVideoStreamConfiguration, edgeInsets: FBVideoStreamEdgeInsets = FBVideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0), fileWriter: FBSimulatorVideoFileWriter, logger: any FBControlCoreLogger) -> FBSimulatorVideoStream {
-    FBSimulatorVideoStream(
+  static func makeRecorder(framebuffer: FBFramebuffer, configuration: FBVideoStreamConfiguration, edgeInsets: FBVideoStreamEdgeInsets = FBVideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0), fileWriter: FBSimulatorVideoFileWriter, logger: any FBControlCoreLogger) -> FBSimulatorVideoStream {
+    return FBSimulatorVideoStream(
       framebuffer: framebuffer,
       configuration: configuration,
       edgeInsets: edgeInsets,
       cadence: cadence(for: configuration),
-      writeQueue: makeWriteQueue(),
       logger: logger,
       encodedSampleConsumerOverride: fileWriter)
   }
 
   /// Starts a Bitmap Stream to `consumer` and returns the running handle.
-  public class func start(framebuffer: FBFramebuffer, configuration: FBVideoStreamConfiguration, edgeInsets: FBVideoStreamEdgeInsets = FBVideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0), to consumer: any FBDataConsumer, logger: any FBControlCoreLogger) async throws -> FBSimulatorVideoStream {
+  public static func start(framebuffer: FBFramebuffer, configuration: FBVideoStreamConfiguration, edgeInsets: FBVideoStreamEdgeInsets = FBVideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0), to consumer: any FBDataConsumer, logger: any FBControlCoreLogger) async throws -> FBSimulatorVideoStream {
     let stream = make(framebuffer: framebuffer, configuration: configuration, edgeInsets: edgeInsets, logger: logger)
     try await stream.startStreaming(consumer)
     return stream
@@ -890,109 +896,113 @@ public final class FBSimulatorVideoStream: FBFramebufferConsumer, FBVideoStream,
 
   /// Eager (constant-frame-rate) when a positive `framesPerSecond` is set, else lazy (variable-rate,
   /// driven by damage events).
-  private class func cadence(for configuration: FBVideoStreamConfiguration) -> FBVideoStreamCadence {
+  private static func cadence(for configuration: FBVideoStreamConfiguration) -> FBVideoStreamCadence {
     guard let framesPerSecond = configuration.framesPerSecond, framesPerSecond > 0 else {
       return .lazy
     }
     return .eager(framesPerSecond: UInt(framesPerSecond))
   }
 
-  init(framebuffer: FBFramebuffer, configuration: FBVideoStreamConfiguration, edgeInsets: FBVideoStreamEdgeInsets, cadence: FBVideoStreamCadence, writeQueue: DispatchQueue, logger: any FBControlCoreLogger, encodedSampleConsumerOverride: FBEncodedSampleConsumer? = nil) {
+  init(framebuffer: FBFramebuffer, configuration: FBVideoStreamConfiguration, edgeInsets: FBVideoStreamEdgeInsets, cadence: FBVideoStreamCadence, logger: any FBControlCoreLogger, encodedSampleConsumerOverride: FBEncodedSampleConsumer? = nil) {
     self.framebuffer = framebuffer
     self.configuration = configuration
     self.edgeInsets = edgeInsets
     self.cadence = cadence
     self.encodedSampleConsumerOverride = encodedSampleConsumerOverride
-    self.writeQueue = writeQueue
     self.logger = logger
   }
 
   deinit {
-    // Backstop: ensure the push-loop task is cancelled if the stream is torn down without a clean
-    // stopStreaming (which already ends the loop by cancelling the task). Reachable while the loop
-    // runs because the task holds the stream weakly; the loop also exits on its own at the next
-    // trigger once the stream is gone.
+    // Backstop teardown if the stream is dropped without a clean stopStreaming: cancel the
+    // attachment (finishing the event stream, which ends the event task) and both tasks.
+    // Reachable while the push loop runs because it holds the stream weakly; that loop also exits
+    // on its own at the next trigger once the stream is gone.
+    attachment?.cancel()
+    eventTask?.cancel()
     framePusherTask?.cancel()
   }
 
   // MARK: - Public
 
-  public func startStreaming(_ consumer: any FBDataConsumer) async throws {
-    try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-      writeQueue.async { [self] in
-        if hasStarted {
-          continuation.resume(throwing: FBSimulatorVideoStreamError.startWhenStopped)
-          return
-        }
-        if self.consumer != nil {
-          continuation.resume(throwing: FBSimulatorVideoStreamError.startAlreadyStarted)
-          return
-        }
-        self.consumer = consumer
-        // Attach to the framebuffer; when a surface is already available this mounts it synchronously
-        // (latching `hasStarted`), otherwise the first surface callback does.
-        if attachment == nil {
-          do {
-            let attachment = try framebuffer.attach(self, on: writeQueue)
-            self.attachment = attachment
-            didChange(attachment.initialSurface)
-          } catch {
-            self.consumer = nil
-            continuation.resume(throwing: error)
-            return
+  public nonisolated func startStreaming(_ consumer: any FBDataConsumer) async throws {
+    // FBDataConsumer is a thread-safe ObjC protocol that isn't Sendable; this single shim carries it
+    // onto the actor, where it is confined thereafter.
+    // patternlint-disable-next-line swift-nonisolated-unsafe
+    nonisolated(unsafe) let consumer = consumer
+    try await isolatedStartStreaming(consumer)
+  }
+
+  private func isolatedStartStreaming(_ consumer: any FBDataConsumer) async throws {
+    if hasStarted {
+      throw FBSimulatorVideoStreamError.startWhenStopped
+    }
+    if self.consumer != nil {
+      throw FBSimulatorVideoStreamError.startAlreadyStarted
+    }
+    self.consumer = consumer
+    // Attach to the framebuffer; when a surface is already available this mounts it synchronously
+    // (latching `hasStarted`), otherwise the first surface event does.
+    if attachment == nil {
+      do {
+        let attachment = try framebuffer.attach()
+        self.attachment = attachment
+        // Consume the attachment's ordered event stream onto the actor. `[weak self]` so the task
+        // never keeps the stream alive; the strong `attachment` capture ends when the stream
+        // finishes (attachment cancel), completing the loop.
+        eventTask = Task { [weak self] in
+          for await event in attachment.events {
+            await self?.handle(event)
           }
         }
-        if hasStarted {
-          continuation.resume()
-        } else {
-          startAwaiters.append(continuation)
+        if let surface = attachment.initialSurface {
+          handle(.surfaceChanged(surface))
         }
+      } catch {
+        self.consumer = nil
+        throw error
       }
+    }
+    if hasStarted {
+      return
+    }
+    try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+      startAwaiters.append(continuation)
     }
   }
 
   public func stopStreaming() async throws {
-    try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-      writeQueue.async { [self] in
-        if isStopped {
-          continuation.resume()
-          return
-        }
-        guard let consumer = self.consumer else {
-          continuation.resume(throwing: FBSimulatorVideoStreamError.stopWithoutConsumer)
-          return
-        }
-        guard let attachment = self.attachment else {
-          continuation.resume(throwing: FBSimulatorVideoStreamError.stopNotAttachedToSurface)
-          return
-        }
-        self.consumer = nil
-        attachment.cancel()
-        self.attachment = nil
-        consumer.consumeEndOfFile()
-        if let framePusher {
-          do {
-            try framePusher.tearDown()
-          } catch {
-            continuation.resume(throwing: FBSimulatorVideoStreamError.failedToTearDownFramePusher(errorDescription: "\(error)"))
-            return
-          }
-        }
-        timedMetadataConsumer = nil
-        // Clean up overlay compositing resources (ARC-managed; dropping references releases them).
-        overlayBuffer = nil
-        compositedBufferPool = nil
-        // Tear down the cadence machinery: cancels the push-loop task (the loop exits on
-        // `Task.isCancelled`) and, in `.lazy` mode, finishes the trigger stream.
-        cadenceTeardown()
-        isStopped = true
-        resumeStopAwaiters()
-        continuation.resume()
+    if isStopped {
+      return
+    }
+    guard let consumer = self.consumer else {
+      throw FBSimulatorVideoStreamError.stopWithoutConsumer
+    }
+    guard let attachment = self.attachment else {
+      throw FBSimulatorVideoStreamError.stopNotAttachedToSurface
+    }
+    self.consumer = nil
+    attachment.cancel()
+    self.attachment = nil
+    consumer.consumeEndOfFile()
+    if let framePusher {
+      do {
+        try framePusher.tearDown()
+      } catch {
+        throw FBSimulatorVideoStreamError.failedToTearDownFramePusher(errorDescription: "\(error)")
       }
     }
+    timedMetadataConsumer = nil
+    // Clean up overlay compositing resources (ARC-managed; dropping references releases them).
+    overlayBuffer = nil
+    compositedBufferPool = nil
+    // Tear down the cadence machinery: cancels the push-loop task (the loop exits on
+    // `Task.isCancelled`) and, in `.lazy` mode, finishes the trigger stream.
+    cadenceTeardown()
+    isStopped = true
+    resumeStopAwaiters()
   }
 
-  /// Resume everyone awaiting completion. Must be called on `writeQueue`.
+  /// Resume everyone awaiting completion.
   private func resumeStopAwaiters() {
     let awaiters = stopAwaiters
     stopAwaiters = []
@@ -1003,34 +1013,37 @@ public final class FBSimulatorVideoStream: FBFramebufferConsumer, FBVideoStream,
 
   // MARK: - Private
 
-  /// Tear down the push-loop machinery. Called on the `writeQueue` from `stopStreaming` before
-  /// `stoppedFuture` is resolved. Finishes the `.lazy` trigger stream (ending its `for await`) and
-  /// cancels the push-loop task — which also wakes the `.eager` loop if it is suspended in
-  /// `Task.sleep`; either way the loop also exits on its next iteration once `stoppedFuture` is
-  /// resolved.
+  /// Tear down the push-loop machinery, called from `stopStreaming`. Finishes the `.lazy` trigger
+  /// stream (ending its `for await`) and cancels the push-loop and event tasks — cancellation also
+  /// wakes the `.eager` loop if it is suspended in `Task.sleep`.
   func cadenceTeardown() {
     lazyTriggers?.finish()
     lazyTriggers = nil
     framePusherTask?.cancel()
     framePusherTask = nil
+    eventTask?.cancel()
+    eventTask = nil
   }
 
-  // MARK: - FBFramebufferConsumer
+  // MARK: - Framebuffer Events
 
-  public func didChange(_ surface: IOSurface?) {
-    guard let surface else { return }
-    try? mountSurface(surface)
-    pushFrame(forceKeyFrame: false)
-  }
-
-  public func didRenderFrame() {
-    // In `.lazy` (variable-frame-rate) mode, a rendered frame is the stimulus for the shared push
-    // loop. In `.eager` (constant-frame-rate) mode, the cadence clock drives pushes, so it is ignored.
-    switch cadence {
-    case .lazy:
-      lazyTriggers?.signalFrameRendered()
-    case .eager:
-      break
+  /// Apply a single framebuffer event. Per-event work is O(1) and non-suspending, honoring the
+  /// unbounded event stream's drain invariant: a surface change mounts once; a rendered frame pokes
+  /// the `.lazy` trigger, whose `bufferingNewest(1)` coalescing keeps real-time frame dropping where
+  /// it belongs. In `.eager` mode the cadence clock drives pushes, so frame-rendered events are ignored.
+  private func handle(_ event: FBFramebufferEvent) {
+    switch event {
+    case let .surfaceChanged(surface):
+      guard let surface else { return }
+      try? mountSurface(surface)
+      pushFrame(forceKeyFrame: false)
+    case .frameRendered:
+      switch cadence {
+      case .lazy:
+        lazyTriggers?.signalFrameRendered()
+      case .eager:
+        break
+      }
     }
   }
 
@@ -1136,22 +1149,22 @@ public final class FBSimulatorVideoStream: FBFramebufferConsumer, FBVideoStream,
     // Start the push-loop task that drives frame pushes — once; a surface re-mount just swaps
     // `pixelBuffer` for the running loop to pick up. The stimulus differs by cadence: `.eager`
     // iterates the fixed-rate `FrameCadence` clock; `.lazy` iterates `LazyFrameTriggers`, poked by
-    // the framebuffer callbacks (`didRenderFrame`/`updateOverlayBuffer`). Both feed the same
-    // loop. The task holds the stream weakly (upgraded per trigger inside the loop): a strong
-    // capture would make the task and the stream keep each other alive, so a stream released
-    // without `stopStreaming` would push frames forever and the `deinit` backstop could never run.
+    // the framebuffer frame-rendered events and `updateOverlayBuffer`. Both feed the same loop.
+    // The task holds the stream weakly (upgraded per trigger inside the loop): a strong capture
+    // would make the task and the actor keep each other alive, so a stream released without
+    // `stopStreaming` would push frames forever and the `deinit` backstop could never run.
     guard framePusherTask == nil else { return }
     switch cadence {
     case let .eager(framesPerSecond):
       framePusherTask = Task { [weak self, logger] in
         let stats = CadenceStats(frameIntervalNanos: NSEC_PER_SEC / UInt64(framesPerSecond), logger: logger)
-        await Self.runFramePushLoop(stimulus: FrameCadence(framesPerSecond: framesPerSecond, logger: logger), stats: stats, logger: logger) { self }
+        await Self.runFramePushLoop(stimulus: FrameCadence(framesPerSecond: framesPerSecond, logger: logger), stats: stats) { self }
       }
     case .lazy:
       let triggers = LazyFrameTriggers()
       lazyTriggers = triggers
-      framePusherTask = Task { [weak self, logger] in
-        await Self.runFramePushLoop(stimulus: triggers, stats: nil, logger: logger) { self }
+      framePusherTask = Task { [weak self] in
+        await Self.runFramePushLoop(stimulus: triggers, stats: nil) { self }
       }
     }
   }
@@ -1239,7 +1252,7 @@ public final class FBSimulatorVideoStream: FBFramebufferConsumer, FBVideoStream,
 
   /// Builds the compression session properties dictionary for a given configuration and caller-provided properties.
   /// This is extracted for testability — the dictionary is passed to VTSessionSetProperties at stream start.
-  public class func compressionSessionProperties(for configuration: FBVideoStreamConfiguration, callerProperties: [String: Any]) -> [String: Any] {
+  public static func compressionSessionProperties(for configuration: FBVideoStreamConfiguration, callerProperties: [String: Any]) -> [String: Any] {
     var derived: [String: Any] = [
       kVTCompressionPropertyKey_RealTime as String: true,
       kVTCompressionPropertyKey_AllowFrameReordering as String: false,
@@ -1279,7 +1292,7 @@ public final class FBSimulatorVideoStream: FBFramebufferConsumer, FBVideoStream,
     return derived
   }
 
-  class func framePusher(
+  static func framePusher(
     configuration: FBVideoStreamConfiguration,
     compressionSessionProperties: [String: Any],
     consumer: any FBDataConsumer,
@@ -1367,18 +1380,16 @@ public final class FBSimulatorVideoStream: FBFramebufferConsumer, FBVideoStream,
   // MARK: - Keyframe Requests
 
   /// Request that the next encoded frame be a keyframe (IDR).
-  /// Dispatches an extra push on the stream's write queue with the VideoToolbox
+  /// Schedules an extra push on the actor with the VideoToolbox
   /// `kVTEncodeFrameOptionKey_ForceKeyFrame` flag set, so a downstream consumer
   /// that has lost frames (e.g. a WebRTC viewer that has sent a PLI/FIR) can
   /// resync immediately instead of waiting for the next periodic IDR.
   ///
-  /// Safe to call from any thread. A burst of calls produces a burst of
-  /// keyframes — callers are expected to throttle if needed.
-  public func requestKeyFrame() {
-    // Dispatch onto writeQueue to match the threading expectations of
-    // pushFrame(forceKeyFrame:) (every other internal caller already does this).
-    writeQueue.async { [weak self] in
-      self?.pushFrame(forceKeyFrame: true)
+  /// `nonisolated` fire-and-forget: safe to call from any thread. A burst of calls produces a burst
+  /// of keyframes — callers are expected to throttle if needed.
+  public nonisolated func requestKeyFrame() {
+    Task { [weak self] in
+      await self?.pushFrame(forceKeyFrame: true)
     }
   }
 
@@ -1427,7 +1438,8 @@ public final class FBSimulatorVideoStream: FBFramebufferConsumer, FBVideoStream,
   }
 
   /// Returns a snapshot of the current framebuffer stats (from the underlying FBFramebuffer).
-  public func currentFramebufferStats() -> FBFramebufferStats {
+  /// `nonisolated`: reads only the immutable `framebuffer` reference, whose stats are lock-guarded.
+  public nonisolated func currentFramebufferStats() -> FBFramebufferStats {
     framebuffer.currentStats()
   }
 
@@ -1438,20 +1450,18 @@ public final class FBSimulatorVideoStream: FBFramebufferConsumer, FBVideoStream,
   public var currentTimeAtFirstFrame: CFTimeInterval { timeAtFirstFrame }
 
   /// Wall-clock time when the first framebuffer callback was received, or 0 if not yet started.
-  public var framebufferStatsStartTime: CFTimeInterval { framebuffer.statsStartTime }
+  /// `nonisolated`: reads only the immutable `framebuffer` reference.
+  public nonisolated var framebufferStatsStartTime: CFTimeInterval { framebuffer.statsStartTime }
 
   // MARK: - FBVideoStream
 
   public func awaitCompletion() async {
     await withTaskCancellationHandler {
+      if isStopped {
+        return
+      }
       await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
-        writeQueue.async { [self] in
-          if isStopped {
-            continuation.resume()
-          } else {
-            stopAwaiters.append(continuation)
-          }
-        }
+        stopAwaiters.append(continuation)
       }
     } onCancel: {
       // Cancelling a completion await stops the stream (mirrors a cancellable completion signal).
@@ -1468,48 +1478,44 @@ public final class FBSimulatorVideoStream: FBFramebufferConsumer, FBVideoStream,
   /// the damage/overlay callbacks) for `.lazy`. `stats` is provided for `.eager` (which has a frame
   /// budget) and `nil` for `.lazy` (VFR has no fixed budget).
   ///
-  /// Serialization: each push — and the stream-state mutation it does (`frameNumber`, `timeAtLastPush`,
-  /// the frame pusher's encoder state) — runs on the serial `writeQueue` (matching the framebuffer
-  /// consumer callbacks) and is awaited before the next trigger, so pushes never overlap and mutable
-  /// state stays confined to that queue, consistent with the class's `@unchecked Sendable` conformance.
+  /// Serialization: the loop runs on the actor, so each push — and the stream-state mutation it does
+  /// (`frameNumber`, `timeAtLastPush`, the frame pusher's encoder state) — is serialized with every
+  /// other isolated method, and the `for await` suspension between triggers lets other actor work
+  /// (events, accessors, stop) interleave between pushes.
   ///
   /// The loop ends when the task is cancelled (`stopStreaming`/`cadenceTeardown` cancel it, and
   /// `deinit` cancels as a backstop) or the stimulus finishes (the `.lazy` teardown finishes the
   /// stream).
-  private static func runFramePushLoop<Stimulus: AsyncSequence>(
-    stimulus: Stimulus,
-    stats: CadenceStats?,
-    logger: any FBControlCoreLogger,
-    stream: () -> FBSimulatorVideoStream?
-  ) async where Stimulus.Element == FrameTrigger {
+  // Concrete overloads rather than one generic loop: iterating a generic `AsyncSequence` from
+  // actor-isolated code cannot prove the conformance nonisolated (SE-0470); both concrete stimuli
+  // are nonisolated, non-throwing sequences, so each loop is a plain `for await`. The loops are
+  // static and hold the stream weakly, upgrading per trigger — a strong reference held across the
+  // loop would recreate the task↔stream retain cycle that keeps a dropped stream pushing forever.
+  private static func runFramePushLoop(stimulus: LazyFrameTriggers, stats: CadenceStats?, stream: () -> FBSimulatorVideoStream?) async {
     var stats = stats
-    do {
-      // A generic `AsyncSequence` has a throwing `next()`; `FrameCadence` and `AsyncStream` are both
-      // non-throwing, so the catch is unreachable in practice and exists only to satisfy `for try await`.
-      for try await trigger in stimulus {
-        guard !Task.isCancelled else { break }
-        // Upgrade the weak stream per trigger, never across the loop: a strong reference held for
-        // the loop's lifetime would recreate the task↔stream cycle this shape exists to avoid.
-        guard let stream = stream() else { break }
-        let pushDurationMach = await stream.pushOnWriteQueue(forceKeyFrame: trigger.forceKeyFrame)
-        stats?.record(pushDurationMach: pushDurationMach, overran: trigger.overran)
-      }
-    } catch {
-      logger.log("Frame push loop stimulus failed: \(error)")
+    for await trigger in stimulus {
+      guard !Task.isCancelled else { break }
+      guard let stream = stream() else { break }
+      let pushDurationMach = await stream.pushTriggered(forceKeyFrame: trigger.forceKeyFrame)
+      stats?.record(pushDurationMach: pushDurationMach, overran: trigger.overran)
     }
   }
 
-  /// Dispatch a single frame push onto the serial `writeQueue` and await its completion, returning the
-  /// push duration in Mach ticks (used for cadence statistics). Keeping the measurement here lets the
-  /// push loop hand the duration straight to `CadenceStats` without timing the push itself.
-  private func pushOnWriteQueue(forceKeyFrame: Bool) async -> UInt64 {
-    let beforePush = mach_absolute_time()
-    await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
-      writeQueue.async { [self] in
-        pushFrame(forceKeyFrame: forceKeyFrame)
-        continuation.resume()
-      }
+  private static func runFramePushLoop(stimulus: FrameCadence, stats: CadenceStats?, stream: () -> FBSimulatorVideoStream?) async {
+    var stats = stats
+    for await trigger in stimulus {
+      guard !Task.isCancelled else { break }
+      guard let stream = stream() else { break }
+      let pushDurationMach = await stream.pushTriggered(forceKeyFrame: trigger.forceKeyFrame)
+      stats?.record(pushDurationMach: pushDurationMach, overran: trigger.overran)
     }
+  }
+
+  /// One trigger's worth of work, shared by both cadence loops: push a frame, returning the push
+  /// duration in Mach ticks for the caller's cadence statistics.
+  private func pushTriggered(forceKeyFrame: Bool) -> UInt64 {
+    let beforePush = mach_absolute_time()
+    pushFrame(forceKeyFrame: forceKeyFrame)
     return mach_absolute_time() - beforePush
   }
 }
@@ -1531,7 +1537,7 @@ struct FrameTrigger {
 /// the framebuffer callbacks rather than a clock. `signalFrameRendered()` (a new frame) and
 /// `signalKeyFrame()` (an overlay change, which must be a decodable keyframe) each enqueue a trigger
 /// that the shared loop consumes. Owning the stream and its keyframe state here keeps it off
-/// `FBSimulatorVideoStream` and its `writeQueue`, so the callbacks simply call a method.
+/// the `FBSimulatorVideoStream` actor, so event handling simply calls a method.
 ///
 /// Triggers coalesce to the newest (`bufferingNewest(1)`): when pushes fall behind, redundant frames
 /// are dropped and only the latest screen state is pushed — the correct semantics for VFR. A keyframe
@@ -1591,7 +1597,7 @@ final class LazyFrameTriggers: AsyncSequence, @unchecked Sendable {
     AsyncIterator(base: stream.makeAsyncIterator(), source: self)
   }
 
-  struct AsyncIterator: AsyncIteratorProtocol {
+  struct AsyncIterator: nonisolated AsyncIteratorProtocol {
     var base: AsyncStream<Void>.Iterator
     let source: LazyFrameTriggers
 
@@ -1622,7 +1628,7 @@ struct FrameCadence: AsyncSequence {
     Iterator(framesPerSecond: framesPerSecond, logger: logger)
   }
 
-  struct Iterator: AsyncIteratorProtocol {
+  struct Iterator: nonisolated AsyncIteratorProtocol {
     private let frameIntervalMach: UInt64
     private let frameIntervalNanos: UInt64
     private let machNumer: UInt64

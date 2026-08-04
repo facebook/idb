@@ -15,7 +15,7 @@ import Foundation
 /// Counters for framebuffer surface-change and frame-rendered callbacks, sampled for periodic
 /// logging. There is no rect geometry: the underlying CoreSimulator callback is a per-frame change
 /// signal only (see `FBFramebufferSurface`), so a frame-rendered callback carries no dimensions.
-public struct FBFramebufferStats {
+public struct FBFramebufferStats: Sendable {
   public var frameRenderedCount: UInt = 0
   public var ioSurfaceChangeCount: UInt = 0
 
