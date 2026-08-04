@@ -52,27 +52,6 @@ final class FakeFramebufferSurface: FBFramebufferSurface {
   }
 }
 
-/// A fake `FBFramebufferConsumer` that records what it receives. The `onSurface`/`onFrameRendered`
-/// hooks fire after each recorded delivery (on the delivery queue), so tests can await delivery with
-/// an `XCTestExpectation` without encoding any assumption about when the delivery was enqueued.
-final class FakeFramebufferConsumer: NSObject, FBFramebufferConsumer {
-  private(set) var receivedSurfaces: [IOSurface?] = []
-  private(set) var frameRenderedCount = 0
-
-  var onSurface: (() -> Void)?
-  var onFrameRendered: (() -> Void)?
-
-  func didChange(_ surface: IOSurface?) {
-    receivedSurfaces.append(surface)
-    onSurface?()
-  }
-
-  func didRenderFrame() {
-    frameRenderedCount += 1
-    onFrameRendered?()
-  }
-}
-
 /// Creates a small BGRA IOSurface for tests. The full BGRA property set (format, row alignment,
 /// allocation size) makes the surface consumable by CoreImage and wrappable by
 /// `CVPixelBufferCreateWithIOSurface` (which rejects a surface with no pixel format), not just
