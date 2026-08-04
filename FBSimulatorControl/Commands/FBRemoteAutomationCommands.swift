@@ -230,10 +230,10 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
   public func setValue(_ value: String, for query: FBAccessibilityElementQuery) async throws {
     switch query {
     case let .point(point):
-      try await withSession { try await $0.setValue(value, atX: Double(point.x), y: Double(point.y), valueAttribute: FBRemoteAutomationAXAttribute.value) }
+      try await withSession { try await $0.setValue(value, atX: Double(point.x), y: Double(point.y), valueAttribute: FBAXWire.Node.value.rawValue) }
     case let .marker(markerValue, key, _):
       let center = try await markerCenter(markerValue, key: key)
-      try await withSession { try await $0.setValue(value, atX: center.x, y: center.y, valueAttribute: FBRemoteAutomationAXAttribute.value) }
+      try await withSession { try await $0.setValue(value, atX: center.x, y: center.y, valueAttribute: FBAXWire.Node.value.rawValue) }
     case .frontmost, .application:
       throw FBUIAutomationError.pointOrMarkerRequired(backend: .remoteAutomation, operation: "Setting a value")
     }
@@ -300,8 +300,8 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
   private static func applicationTree(forPid pid: pid_t, using session: FBRemoteAutomationSession) async throws -> FBRemoteAutomationElementTree {
     try await session.applicationElementTree(
       forPid: pid,
-      attributes: FBRemoteAutomationAXAttribute.fetchList,
-      childrenAttribute: FBRemoteAutomationAXAttribute.children,
+      attributes: FBAXWire.Node.fetchList,
+      childrenAttribute: FBAXWire.Node.children.rawValue,
       maxDepth: FBAXTreeSerialization.maxReadDepth,
       maxNodes: FBAXTreeSerialization.maxReadNodes
     )
@@ -312,8 +312,8 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
   private static func applicationTree(anchorX x: Double, y: Double, using session: FBRemoteAutomationSession) async throws -> FBRemoteAutomationElementTree {
     try await session.applicationElementTree(
       anchorX: x, y: y,
-      attributes: FBRemoteAutomationAXAttribute.fetchList,
-      childrenAttribute: FBRemoteAutomationAXAttribute.children,
+      attributes: FBAXWire.Node.fetchList,
+      childrenAttribute: FBAXWire.Node.children.rawValue,
       maxDepth: FBAXTreeSerialization.maxReadDepth,
       maxNodes: FBAXTreeSerialization.maxReadNodes
     )
@@ -348,7 +348,7 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
   /// element is tagged with the pid of the process that owns it — resolved inside the session with the
   /// attributes, so the (non-Sendable) element handle never crosses the actor boundary.
   static func hitTestElement(atX x: Double, y: Double, using session: FBRemoteAutomationSession, keys: Set<FBAXKeys>) async throws -> FBJSONValue? {
-    guard let hit = try await session.elementAttributes(atX: x, y: y, attributes: FBRemoteAutomationAXAttribute.fetchList) else {
+    guard let hit = try await session.elementAttributes(atX: x, y: y, attributes: FBAXWire.Node.fetchList) else {
       return nil
     }
     let platformElement = FBRemoteAutomationPlatformElement(attributes: hit.attributes, children: [], pid: hit.pid)

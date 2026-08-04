@@ -48,7 +48,7 @@ private actor FakeReadInvoker: RemoteInvoking {
   func fetchAttributes(_ attributes: sending Any, forElement element: sending Any, deadline: TimeInterval) async throws -> sending Any? {
     var dict: [String: Any] = stringAttributes
     if let frame {
-      dict[FBRemoteAutomationAXAttribute.frame] = CGRectCreateDictionaryRepresentation(frame)
+      dict[FBAXWire.Node.frame.rawValue] = CGRectCreateDictionaryRepresentation(frame)
     }
     return dict as NSDictionary
   }
@@ -61,10 +61,10 @@ final class FBRemoteAutomationDescribeTests: XCTestCase {
   func testPointDescribeReproducesSchema() async throws {
     let invoker = FakeReadInvoker(
       stringAttributes: [
-        FBRemoteAutomationAXAttribute.label: "General",
-        FBRemoteAutomationAXAttribute.value: "On",
-        FBRemoteAutomationAXAttribute.identifier: "com.apple.settings.general",
-        FBRemoteAutomationAXAttribute.automationType: "Button",
+        FBAXWire.Node.label.rawValue: "General",
+        FBAXWire.Node.value.rawValue: "On",
+        FBAXWire.Node.identifier.rawValue: "com.apple.settings.general",
+        FBAXWire.Node.automationType.rawValue: "Button",
       ],
       frame: CGRect(x: 16, y: 380, width: 370, height: 52)
     )
@@ -104,7 +104,7 @@ final class FBRemoteAutomationDescribeTests: XCTestCase {
     // The point read must carry the pid of the process that owns the hit element, not a placeholder,
     // so a serialized point element reports the same owning pid as the whole-tree read does.
     let invoker = FakeReadInvoker(
-      stringAttributes: [FBRemoteAutomationAXAttribute.label: "General"],
+      stringAttributes: [FBAXWire.Node.label.rawValue: "General"],
       frame: CGRect(x: 16, y: 380, width: 370, height: 52),
       pid: 4321
     )
@@ -119,11 +119,11 @@ final class FBRemoteAutomationDescribeTests: XCTestCase {
 
   private static func sampleTree() -> [String: Any] {
     [
-      FBRemoteAutomationAXAttribute.label: "root",
-      FBRemoteAutomationAXAttribute.children: [
+      FBAXWire.Node.label.rawValue: "root",
+      FBAXWire.Node.children.rawValue: [
         [
-          FBRemoteAutomationAXAttribute.label: "child",
-          FBRemoteAutomationAXAttribute.children: [[String: Any]](),
+          FBAXWire.Node.label.rawValue: "child",
+          FBAXWire.Node.children.rawValue: [[String: Any]](),
         ] as [String: Any]
       ],
     ]

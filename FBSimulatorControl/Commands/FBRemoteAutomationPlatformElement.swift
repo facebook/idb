@@ -9,24 +9,6 @@ import CoreGraphics
 import FBControlCore
 import Foundation
 
-/// The accessibility attribute names the remote-automation read path fetches. These are the exact
-/// keys `_XCTD_fetchAttributes:forElement:` accepts and echoes back in its result dictionary.
-enum FBRemoteAutomationAXAttribute {
-  static let elementType = "XC_kAXXCAttributeElementType"
-  static let elementBaseType = "XC_kAXXCAttributeElementBaseType"
-  static let label = "XC_kAXXCAttributeLabel"
-  static let value = "XC_kAXXCAttributeValue"
-  static let identifier = "XC_kAXXCAttributeIdentifier"
-  static let frame = "XC_kAXXCAttributeFrame"
-  static let automationType = "XC_kAXXCAttributeAutomationType"
-  static let children = "XC_kAXXCAttributeChildren"
-
-  /// The attribute list requested for each element during a read.
-  static let fetchList = [
-    elementType, elementBaseType, label, value, identifier, frame, automationType, children,
-  ]
-}
-
 /// An `FBAXPlatformElement` backed by a remote-automation `fetchAttributes` result, so the remote
 /// element tree feeds the same serializer as the legacy AX path. Read-only: the action accessors
 /// (`axPerformPress`/`axScroll`/`axSetValue`) are no-ops here — remote element actions are wired in
@@ -43,7 +25,7 @@ final class FBRemoteAutomationPlatformElement: FBAXPlatformElement {
   }
 
   func axFrame() -> NSRect {
-    guard let raw = attributes[FBRemoteAutomationAXAttribute.frame] else { return .zero }
+    guard let raw = attributes[FBAXWire.Node.frame.rawValue] else { return .zero }
     // The daemon serializes the frame as a CGRect dictionary representation (mirroring the CGPoint
     // dictionary `requestElementAtPoint:` consumes); tolerate an `NSValue` rect as a fallback.
     var rect = CGRect.zero
@@ -66,15 +48,15 @@ final class FBRemoteAutomationPlatformElement: FBAXPlatformElement {
     // The daemon reports the automation/element type as an `XCUIElementType` raw value; map it to a
     // readable name (e.g. 9 -> "Button") so the serialized role is legible rather than a bare number.
     // An already-string value (or an unmapped number) passes through unchanged.
-    elementTypeName(FBRemoteAutomationAXAttribute.automationType)
-      ?? elementTypeName(FBRemoteAutomationAXAttribute.elementType)
-      ?? stringAttribute(FBRemoteAutomationAXAttribute.automationType)
-      ?? stringAttribute(FBRemoteAutomationAXAttribute.elementType)
+    elementTypeName(FBAXWire.Node.automationType.rawValue)
+      ?? elementTypeName(FBAXWire.Node.elementType.rawValue)
+      ?? stringAttribute(FBAXWire.Node.automationType.rawValue)
+      ?? stringAttribute(FBAXWire.Node.elementType.rawValue)
   }
 
-  func axLabel() -> String? { stringAttribute(FBRemoteAutomationAXAttribute.label) }
-  func axValue() -> Any? { attributes[FBRemoteAutomationAXAttribute.value] }
-  func axIdentifier() -> String? { stringAttribute(FBRemoteAutomationAXAttribute.identifier) }
+  func axLabel() -> String? { stringAttribute(FBAXWire.Node.label.rawValue) }
+  func axValue() -> Any? { attributes[FBAXWire.Node.value.rawValue] }
+  func axIdentifier() -> String? { stringAttribute(FBAXWire.Node.identifier.rawValue) }
   func axTitle() -> String? { nil }
   func axHelp() -> String? { nil }
   func axRoleDescription() -> String? { nil }

@@ -30,16 +30,16 @@ final class FBAccessibilitySerializationTests: XCTestCase {
   //   AX-prefix strip) and omits value/identifier/frame, so those serialize as `null`/zero.
   private static func sampleTree() -> [String: Any] {
     [
-      FBRemoteAutomationAXAttribute.label: "root",
-      FBRemoteAutomationAXAttribute.value: "on",
-      FBRemoteAutomationAXAttribute.identifier: "com.example.root",
-      FBRemoteAutomationAXAttribute.automationType: NSNumber(value: 9),
-      FBRemoteAutomationAXAttribute.frame:
+      FBAXWire.Node.label.rawValue: "root",
+      FBAXWire.Node.value.rawValue: "on",
+      FBAXWire.Node.identifier.rawValue: "com.example.root",
+      FBAXWire.Node.automationType.rawValue: NSNumber(value: 9),
+      FBAXWire.Node.frame.rawValue:
         CGRectCreateDictionaryRepresentation(CGRect(x: 16, y: 380, width: 370, height: 52)) as NSDictionary,
-      FBRemoteAutomationAXAttribute.children: [
+      FBAXWire.Node.children.rawValue: [
         [
-          FBRemoteAutomationAXAttribute.label: "child",
-          FBRemoteAutomationAXAttribute.automationType: "AXCell",
+          FBAXWire.Node.label.rawValue: "child",
+          FBAXWire.Node.automationType.rawValue: "AXCell",
         ] as [String: Any]
       ],
     ]
@@ -127,8 +127,8 @@ final class FBAccessibilitySerializationTests: XCTestCase {
   func testSerializedJSONSanitizesNonFiniteFrame() throws {
     let frameDict = CGRectCreateDictionaryRepresentation(CGRect(x: CGFloat.infinity, y: 0, width: 10, height: 20)) as NSDictionary
     let tree: [String: Any] = [
-      FBRemoteAutomationAXAttribute.label: "icon",
-      FBRemoteAutomationAXAttribute.frame: frameDict,
+      FBAXWire.Node.label.rawValue: "icon",
+      FBAXWire.Node.frame.rawValue: frameDict,
     ]
     let elements = FBAXTreeSerialization.describeAllElements(
       fromTree: tree, keys: [.label, .frameDict], nestedFormat: false, pid: 7
@@ -145,14 +145,14 @@ final class FBAccessibilitySerializationTests: XCTestCase {
   // A tree: root (labeled) → container (unlabeled, no role) → leaf (labeled); plus sibling (labeled).
   private static func filterTree() -> [String: Any] {
     [
-      FBRemoteAutomationAXAttribute.label: "root",
-      FBRemoteAutomationAXAttribute.children: [
+      FBAXWire.Node.label.rawValue: "root",
+      FBAXWire.Node.children.rawValue: [
         [
-          FBRemoteAutomationAXAttribute.children: [
-            [FBRemoteAutomationAXAttribute.label: "leaf"] as [String: Any]
+          FBAXWire.Node.children.rawValue: [
+            [FBAXWire.Node.label.rawValue: "leaf"] as [String: Any]
           ]
         ] as [String: Any],
-        [FBRemoteAutomationAXAttribute.label: "sibling"] as [String: Any],
+        [FBAXWire.Node.label.rawValue: "sibling"] as [String: Any],
       ],
     ]
   }

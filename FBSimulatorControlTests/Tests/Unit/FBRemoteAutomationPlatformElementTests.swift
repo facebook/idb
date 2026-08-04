@@ -15,10 +15,10 @@ final class FBRemoteAutomationPlatformElementTests: XCTestCase {
   func testMapsCoreStringAttributes() {
     let element = FBRemoteAutomationPlatformElement(
       attributes: [
-        FBRemoteAutomationAXAttribute.label: "General",
-        FBRemoteAutomationAXAttribute.value: "On",
-        FBRemoteAutomationAXAttribute.identifier: "com.apple.settings.general",
-        FBRemoteAutomationAXAttribute.automationType: "Button",
+        FBAXWire.Node.label.rawValue: "General",
+        FBAXWire.Node.value.rawValue: "On",
+        FBAXWire.Node.identifier.rawValue: "com.apple.settings.general",
+        FBAXWire.Node.automationType.rawValue: "Button",
       ],
       children: [],
       pid: 42
@@ -35,7 +35,7 @@ final class FBRemoteAutomationPlatformElementTests: XCTestCase {
     let expected = CGRect(x: 16, y: 380, width: 370, height: 52)
     let element = FBRemoteAutomationPlatformElement(
       attributes: [
-        FBRemoteAutomationAXAttribute.frame: CGRectCreateDictionaryRepresentation(expected) as NSDictionary
+        FBAXWire.Node.frame.rawValue: CGRectCreateDictionaryRepresentation(expected) as NSDictionary
       ],
       children: [],
       pid: 0
@@ -51,7 +51,7 @@ final class FBRemoteAutomationPlatformElementTests: XCTestCase {
   func testParsesFrameFromNSValueFallback() {
     let expected = NSRect(x: 0, y: 0, width: 402, height: 874)
     let element = FBRemoteAutomationPlatformElement(
-      attributes: [FBRemoteAutomationAXAttribute.frame: NSValue(rect: expected)],
+      attributes: [FBAXWire.Node.frame.rawValue: NSValue(rect: expected)],
       children: [],
       pid: 0
     )
@@ -69,7 +69,7 @@ final class FBRemoteAutomationPlatformElementTests: XCTestCase {
     )
     frameDict["X"] = NSNull()
     let element = FBRemoteAutomationPlatformElement(
-      attributes: [FBRemoteAutomationAXAttribute.frame: frameDict],
+      attributes: [FBAXWire.Node.frame.rawValue: frameDict],
       children: [],
       pid: 0
     )
@@ -79,7 +79,7 @@ final class FBRemoteAutomationPlatformElementTests: XCTestCase {
 
   func testRoleMapsElementTypeNumberToReadableName() {
     let element = FBRemoteAutomationPlatformElement(
-      attributes: [FBRemoteAutomationAXAttribute.elementType: NSNumber(value: 9)],
+      attributes: [FBAXWire.Node.elementType.rawValue: NSNumber(value: 9)],
       children: [],
       pid: 0
     )
@@ -89,8 +89,8 @@ final class FBRemoteAutomationPlatformElementTests: XCTestCase {
   func testRolePrefersAutomationTypeNameOverElementType() {
     let element = FBRemoteAutomationPlatformElement(
       attributes: [
-        FBRemoteAutomationAXAttribute.automationType: NSNumber(value: 48),
-        FBRemoteAutomationAXAttribute.elementType: NSNumber(value: 9),
+        FBAXWire.Node.automationType.rawValue: NSNumber(value: 48),
+        FBAXWire.Node.elementType.rawValue: NSNumber(value: 9),
       ],
       children: [],
       pid: 0
@@ -100,7 +100,7 @@ final class FBRemoteAutomationPlatformElementTests: XCTestCase {
 
   func testRoleFallsBackToRawStringForUnknownElementType() {
     let element = FBRemoteAutomationPlatformElement(
-      attributes: [FBRemoteAutomationAXAttribute.elementType: NSNumber(value: 9999)],
+      attributes: [FBAXWire.Node.elementType.rawValue: NSNumber(value: 9999)],
       children: [],
       pid: 0
     )
@@ -109,12 +109,12 @@ final class FBRemoteAutomationPlatformElementTests: XCTestCase {
 
   func testChildrenAreExposed() {
     let child = FBRemoteAutomationPlatformElement(
-      attributes: [FBRemoteAutomationAXAttribute.label: "About"],
+      attributes: [FBAXWire.Node.label.rawValue: "About"],
       children: [],
       pid: 7
     )
     let root = FBRemoteAutomationPlatformElement(
-      attributes: [FBRemoteAutomationAXAttribute.label: "General"],
+      attributes: [FBAXWire.Node.label.rawValue: "General"],
       children: [child],
       pid: 7
     )

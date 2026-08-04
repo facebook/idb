@@ -23,20 +23,20 @@ final class FBAXBridgeReadsTests: XCTestCase {
 
   func testParsesTreeFromOkEnvelope() throws {
     let tree: [String: Any] = [
-      FBRemoteAutomationAXAttribute.label: "General",
-      FBRemoteAutomationAXAttribute.identifier: "com.apple.settings.general",
+      FBAXWire.Node.label.rawValue: "General",
+      FBAXWire.Node.identifier.rawValue: "com.apple.settings.general",
     ]
     let data = try envelope(["ok": true, "tree": tree])
     let parsed = try FBAXBridgeResponse.tree(fromResponse: data, pid: 42)
-    XCTAssertEqual(parsed.tree[FBRemoteAutomationAXAttribute.label] as? String, "General")
-    XCTAssertEqual(parsed.tree[FBRemoteAutomationAXAttribute.identifier] as? String, "com.apple.settings.general")
+    XCTAssertEqual(parsed.tree[FBAXWire.Node.label.rawValue] as? String, "General")
+    XCTAssertEqual(parsed.tree[FBAXWire.Node.identifier.rawValue] as? String, "com.apple.settings.general")
     XCTAssertFalse(parsed.truncated, "a whole-tree read with no truncated flag is a complete tree")
   }
 
   func testParsesTruncatedFlagWhenGuestReportsAPartialTree() throws {
     // A guest walk cut short by the depth or node bound tags its envelope `truncated: true`, so the
     // conformer can warn the tree is incomplete rather than pass it off as whole.
-    let tree: [String: Any] = [FBRemoteAutomationAXAttribute.label: "root"]
+    let tree: [String: Any] = [FBAXWire.Node.label.rawValue: "root"]
     let data = try envelope(["ok": true, "tree": tree, "truncated": true])
     let parsed = try FBAXBridgeResponse.tree(fromResponse: data, pid: 42)
     XCTAssertTrue(parsed.truncated, "the guest's truncation flag must be surfaced to the caller")
@@ -79,7 +79,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
 
   func testThrowsWhenNotOk() throws {
     // `ok` missing/false with no `error` still fails rather than yielding an empty tree.
-    let data = try envelope(["tree": [FBRemoteAutomationAXAttribute.label: "x"]])
+    let data = try envelope(["tree": [FBAXWire.Node.label.rawValue: "x"]])
     XCTAssertThrowsError(try FBAXBridgeResponse.tree(fromResponse: data, pid: 1))
   }
 
@@ -140,9 +140,9 @@ final class FBAXBridgeReadsTests: XCTestCase {
   func testMarkerMatchesBySubstring() throws {
     let elements = FBAXTreeSerialization.describeAllElements(
       fromTree: [
-        FBRemoteAutomationAXAttribute.label: "root",
-        FBRemoteAutomationAXAttribute.children: [
-          [FBRemoteAutomationAXAttribute.label: "General Settings", FBRemoteAutomationAXAttribute.children: [[String: Any]]()] as [String: Any]
+        FBAXWire.Node.label.rawValue: "root",
+        FBAXWire.Node.children.rawValue: [
+          [FBAXWire.Node.label.rawValue: "General Settings", FBAXWire.Node.children.rawValue: [[String: Any]]()] as [String: Any]
         ],
       ],
       keys: FBAXKeys.defaultSet, nestedFormat: false, pid: 1
@@ -159,9 +159,9 @@ final class FBAXBridgeReadsTests: XCTestCase {
     // describe matcher — otherwise a marker could be describable but not tappable.
     let elements = FBAXTreeSerialization.describeAllElements(
       fromTree: [
-        FBRemoteAutomationAXAttribute.label: "General Settings",
-        FBRemoteAutomationAXAttribute.frame: CGRectCreateDictionaryRepresentation(CGRect(x: 10, y: 20, width: 100, height: 50)) as NSDictionary,
-        FBRemoteAutomationAXAttribute.children: [[String: Any]](),
+        FBAXWire.Node.label.rawValue: "General Settings",
+        FBAXWire.Node.frame.rawValue: CGRectCreateDictionaryRepresentation(CGRect(x: 10, y: 20, width: 100, height: 50)) as NSDictionary,
+        FBAXWire.Node.children.rawValue: [[String: Any]](),
       ],
       keys: FBAXKeys.defaultSet, nestedFormat: false, pid: 1
     )
@@ -188,8 +188,8 @@ final class FBAXBridgeReadsTests: XCTestCase {
     // so a searched key outside that set — a restricted key request, or `.placeholder`, which the
     // default set omits — was silently unmatchable even when a matching element was present.
     let tree: [String: Any] = [
-      FBRemoteAutomationAXAttribute.label: "General Settings",
-      FBRemoteAutomationAXAttribute.children: [[String: Any]](),
+      FBAXWire.Node.label.rawValue: "General Settings",
+      FBAXWire.Node.children.rawValue: [[String: Any]](),
     ]
     let requested: Set<FBAXKeys> = [.value]
     let withoutSearchedKey = FBAXTreeSerialization.describeAllElements(fromTree: tree, keys: requested, nestedFormat: false, pid: 1)
@@ -213,10 +213,10 @@ final class FBAXBridgeReadsTests: XCTestCase {
   func testHitTestParsesHitNodeAndOwningPid() throws {
     // A system-wide hit-test resolves which app owns the point, so the response carries the owning pid
     // the host tags the element with.
-    let node: [String: Any] = [FBRemoteAutomationAXAttribute.identifier: "com.apple.settings.general"]
+    let node: [String: Any] = [FBAXWire.Node.identifier.rawValue: "com.apple.settings.general"]
     let data = try envelope(["ok": true, "tree": node, "pid": 8865])
     let parsed = try FBAXBridgeResponse.systemWideHitTest(fromResponse: data)
-    XCTAssertEqual(parsed?.node[FBRemoteAutomationAXAttribute.identifier] as? String, "com.apple.settings.general")
+    XCTAssertEqual(parsed?.node[FBAXWire.Node.identifier.rawValue] as? String, "com.apple.settings.general")
     XCTAssertEqual(parsed?.pid, 8865)
   }
 
@@ -242,7 +242,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
 
   func testHitTestThrowsWhenOwningPidMissing() throws {
     // A hit node with no owning pid is a protocol violation — the host cannot tag the element.
-    let data = try envelope(["ok": true, "tree": [FBRemoteAutomationAXAttribute.identifier: "x"]])
+    let data = try envelope(["ok": true, "tree": [FBAXWire.Node.identifier.rawValue: "x"]])
     XCTAssertThrowsError(try FBAXBridgeResponse.systemWideHitTest(fromResponse: data)) { error in
       guard case FBAXBridgeError.guestFailure = error else {
         return XCTFail("a hit-test without an owning pid should be guestFailure, got: \(error)")
@@ -255,16 +255,16 @@ final class FBAXBridgeReadsTests: XCTestCase {
   func testFrontmostTreeParsesTreeAndResolvedPid() throws {
     // The fused read resolves the frontmost app AND reads its tree in one call, so the response carries
     // the resolved pid the host tags elements with — it did not know the pid in advance.
-    let tree: [String: Any] = [FBRemoteAutomationAXAttribute.label: "Settings"]
+    let tree: [String: Any] = [FBAXWire.Node.label.rawValue: "Settings"]
     let data = try envelope(["ok": true, "tree": tree, "pid": 8865, "method": "system_wide_hit_test", "truncated": false])
     let parsed = try FBAXBridgeResponse.frontmostTree(fromResponse: data)
     XCTAssertEqual(parsed.pid, 8865)
-    XCTAssertEqual(parsed.tree[FBRemoteAutomationAXAttribute.label] as? String, "Settings")
+    XCTAssertEqual(parsed.tree[FBAXWire.Node.label.rawValue] as? String, "Settings")
     XCTAssertFalse(parsed.truncated)
   }
 
   func testFrontmostTreeSurfacesTruncation() throws {
-    let data = try envelope(["ok": true, "tree": [FBRemoteAutomationAXAttribute.label: "root"], "pid": 1, "truncated": true])
+    let data = try envelope(["ok": true, "tree": [FBAXWire.Node.label.rawValue: "root"], "pid": 1, "truncated": true])
     XCTAssertTrue(try FBAXBridgeResponse.frontmostTree(fromResponse: data).truncated)
   }
 
@@ -281,7 +281,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
 
   func testFrontmostTreeThrowsWhenResolvedPidMissing() throws {
     // An ok response with a tree but no pid is a protocol violation — the host cannot tag the elements.
-    let data = try envelope(["ok": true, "tree": [FBRemoteAutomationAXAttribute.label: "x"]])
+    let data = try envelope(["ok": true, "tree": [FBAXWire.Node.label.rawValue: "x"]])
     XCTAssertThrowsError(try FBAXBridgeResponse.frontmostTree(fromResponse: data)) { error in
       guard case FBAXBridgeError.guestFailure = error else {
         return XCTFail("a fused response without a pid should be guestFailure, got: \(error)")
@@ -323,7 +323,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
   }
 
   func testFrontmostTreeCarriesModalDescriptor() throws {
-    let tree: [String: Any] = [FBRemoteAutomationAXAttribute.label: "root"]
+    let tree: [String: Any] = [FBAXWire.Node.label.rawValue: "root"]
     let data = try envelope(["ok": true, "tree": tree, "pid": 20475, "modal": ["kind": "system", "elementType": "SBAlertItemWindow", "label": "Allow"]])
     let parsed = try FBAXBridgeResponse.frontmostTree(fromResponse: data)
     XCTAssertEqual(parsed.pid, 20475)
@@ -350,13 +350,13 @@ final class FBAXBridgeReadsTests: XCTestCase {
     // shared schema: the child is a Button (automationType 9) with its identifier, proving the
     // axbridge output is byte-compatible with the shared serializer rather than a bespoke shape.
     let tree: [String: Any] = [
-      FBRemoteAutomationAXAttribute.label: "root",
-      FBRemoteAutomationAXAttribute.children: [
+      FBAXWire.Node.label.rawValue: "root",
+      FBAXWire.Node.children.rawValue: [
         [
-          FBRemoteAutomationAXAttribute.label: "General",
-          FBRemoteAutomationAXAttribute.identifier: "com.apple.settings.general",
-          FBRemoteAutomationAXAttribute.automationType: 9,
-          FBRemoteAutomationAXAttribute.children: [[String: Any]](),
+          FBAXWire.Node.label.rawValue: "General",
+          FBAXWire.Node.identifier.rawValue: "com.apple.settings.general",
+          FBAXWire.Node.automationType.rawValue: 9,
+          FBAXWire.Node.children.rawValue: [[String: Any]](),
         ] as [String: Any]
       ],
     ]

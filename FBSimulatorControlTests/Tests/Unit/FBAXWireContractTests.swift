@@ -21,21 +21,21 @@ final class FBAXWireContractTests: XCTestCase {
   // MARK: - Node-attribute keys (the `_XCTD_fetchAttributes:` request/echo keys)
 
   func testNodeAttributeWireKeys() {
-    XCTAssertEqual(FBRemoteAutomationAXAttribute.elementType, "XC_kAXXCAttributeElementType")
-    XCTAssertEqual(FBRemoteAutomationAXAttribute.elementBaseType, "XC_kAXXCAttributeElementBaseType")
-    XCTAssertEqual(FBRemoteAutomationAXAttribute.label, "XC_kAXXCAttributeLabel")
-    XCTAssertEqual(FBRemoteAutomationAXAttribute.value, "XC_kAXXCAttributeValue")
-    XCTAssertEqual(FBRemoteAutomationAXAttribute.identifier, "XC_kAXXCAttributeIdentifier")
-    XCTAssertEqual(FBRemoteAutomationAXAttribute.frame, "XC_kAXXCAttributeFrame")
-    XCTAssertEqual(FBRemoteAutomationAXAttribute.automationType, "XC_kAXXCAttributeAutomationType")
-    XCTAssertEqual(FBRemoteAutomationAXAttribute.children, "XC_kAXXCAttributeChildren")
+    XCTAssertEqual(FBAXWire.Node.elementType.rawValue, "XC_kAXXCAttributeElementType")
+    XCTAssertEqual(FBAXWire.Node.elementBaseType.rawValue, "XC_kAXXCAttributeElementBaseType")
+    XCTAssertEqual(FBAXWire.Node.label.rawValue, "XC_kAXXCAttributeLabel")
+    XCTAssertEqual(FBAXWire.Node.value.rawValue, "XC_kAXXCAttributeValue")
+    XCTAssertEqual(FBAXWire.Node.identifier.rawValue, "XC_kAXXCAttributeIdentifier")
+    XCTAssertEqual(FBAXWire.Node.frame.rawValue, "XC_kAXXCAttributeFrame")
+    XCTAssertEqual(FBAXWire.Node.automationType.rawValue, "XC_kAXXCAttributeAutomationType")
+    XCTAssertEqual(FBAXWire.Node.children.rawValue, "XC_kAXXCAttributeChildren")
   }
 
   // The read requests exactly this ordered set — the guest fetches and echoes back these keys, so both
   // the membership and the order are part of the contract.
   func testFetchListIsTheOrderedReadAttributeSet() {
     XCTAssertEqual(
-      FBRemoteAutomationAXAttribute.fetchList,
+      FBAXWire.Node.fetchList,
       [
         "XC_kAXXCAttributeElementType",
         "XC_kAXXCAttributeElementBaseType",

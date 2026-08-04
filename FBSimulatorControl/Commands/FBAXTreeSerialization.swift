@@ -49,7 +49,7 @@ enum FBAXTreeSerialization {
   /// Recursively builds an `FBRemoteAutomationPlatformElement` from a nested attribute-dictionary
   /// node, tagging every node with the owning application's pid.
   static func buildPlatformElementTree(from node: [String: Any], pid: pid_t) -> FBRemoteAutomationPlatformElement {
-    let childNodes = (node[FBRemoteAutomationAXAttribute.children] as? [[String: Any]]) ?? []
+    let childNodes = (node[FBAXWire.Node.children.rawValue] as? [[String: Any]]) ?? []
     let children = childNodes.map { buildPlatformElementTree(from: $0, pid: pid) }
     return FBRemoteAutomationPlatformElement(attributes: node, children: children, pid: pid)
   }

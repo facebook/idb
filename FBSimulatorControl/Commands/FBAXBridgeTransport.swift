@@ -58,11 +58,11 @@ enum FBAXBridgeResponse {
     guard let object = try? JSONSerialization.jsonObject(with: data), let response = object as? [String: Any] else {
       throw FBAXBridgeError.guestFailure("pid \(pid): unparseable guest response")
     }
-    guard (response["ok"] as? Bool) == true else {
-      if (response["error_kind"] as? String) == "application_unavailable" {
+    guard (response[FBAXWire.Envelope.ok.rawValue] as? Bool) == true else {
+      if (response[FBAXWire.Envelope.errorKind.rawValue] as? String) == "application_unavailable" {
         throw FBAXBridgeError.applicationUnavailable(pid: pid)
       }
-      let message = (response["error"] as? String) ?? "the guest reported a failure with no message"
+      let message = (response[FBAXWire.Envelope.error.rawValue] as? String) ?? "the guest reported a failure with no message"
       throw FBAXBridgeError.guestFailure("pid \(pid): \(message)")
     }
     return response
@@ -71,10 +71,10 @@ enum FBAXBridgeResponse {
   /// The node a successful response carries, or `nil` for a successful *empty* result
   /// (`{ ok: true, empty: true }`) — which only a hit-test produces.
   private static func node(fromValidatedResponse response: [String: Any], pid: pid_t) throws -> [String: Any]? {
-    if (response["empty"] as? Bool) == true {
+    if (response[FBAXWire.Envelope.empty.rawValue] as? Bool) == true {
       return nil
     }
-    guard let tree = response["tree"] as? [String: Any] else {
+    guard let tree = response[FBAXWire.Envelope.tree.rawValue] as? [String: Any] else {
       throw FBAXBridgeError.guestFailure("pid \(pid): ok response without a tree or empty flag")
     }
     return tree
@@ -89,14 +89,14 @@ enum FBAXBridgeResponse {
     guard let tree = try node(fromValidatedResponse: response, pid: pid) else {
       throw FBAXBridgeError.guestFailure("pid \(pid): empty response to a whole-tree read")
     }
-    let truncated = (response["truncated"] as? Bool) ?? false
+    let truncated = (response[FBAXWire.Envelope.truncated.rawValue] as? Bool) ?? false
     return (tree, truncated, modal(fromResponse: response))
   }
 
   /// Decodes the optional `modal` descriptor the guest adds to a describe response into a typed value,
   /// or nil when no modal is present. Host-facing enrichment — never emitted in the serialized output.
   static func modal(fromResponse response: [String: Any]) -> FBAccessibilityModalInfo? {
-    guard let modal = response["modal"] as? [String: Any],
+    guard let modal = response[FBAXWire.Envelope.modal.rawValue] as? [String: Any],
       let kindRaw = modal["kind"] as? String,
       let kind = FBAccessibilityModalInfo.Kind(rawValue: kindRaw),
       let elementType = modal["elementType"] as? String
@@ -116,16 +116,16 @@ enum FBAXBridgeResponse {
     guard let object = try? JSONSerialization.jsonObject(with: data), let response = object as? [String: Any] else {
       throw FBAXBridgeError.guestFailure("unparseable fused frontmost describe response")
     }
-    guard (response["ok"] as? Bool) == true else {
+    guard (response[FBAXWire.Envelope.ok.rawValue] as? Bool) == true else {
       throw FBAXBridgeError.frontmostUnavailable
     }
-    guard let tree = response["tree"] as? [String: Any] else {
+    guard let tree = response[FBAXWire.Envelope.tree.rawValue] as? [String: Any] else {
       throw FBAXBridgeError.guestFailure("fused frontmost describe response without a tree")
     }
-    guard let pid = response["pid"] as? Int, pid > 0 else {
+    guard let pid = response[FBAXWire.Envelope.pid.rawValue] as? Int, pid > 0 else {
       throw FBAXBridgeError.guestFailure("fused frontmost describe response without a resolved pid")
     }
-    let truncated = (response["truncated"] as? Bool) ?? false
+    let truncated = (response[FBAXWire.Envelope.truncated.rawValue] as? Bool) ?? false
     return (tree, truncated, pid_t(pid), modal(fromResponse: response))
   }
 
@@ -137,17 +137,17 @@ enum FBAXBridgeResponse {
     guard let object = try? JSONSerialization.jsonObject(with: data), let response = object as? [String: Any] else {
       throw FBAXBridgeError.guestFailure("unparseable hit-test response")
     }
-    guard (response["ok"] as? Bool) == true else {
-      let message = (response["error"] as? String) ?? "the guest reported a failure with no message"
+    guard (response[FBAXWire.Envelope.ok.rawValue] as? Bool) == true else {
+      let message = (response[FBAXWire.Envelope.error.rawValue] as? String) ?? "the guest reported a failure with no message"
       throw FBAXBridgeError.guestFailure(message)
     }
-    if (response["empty"] as? Bool) == true {
+    if (response[FBAXWire.Envelope.empty.rawValue] as? Bool) == true {
       return nil
     }
-    guard let node = response["tree"] as? [String: Any] else {
+    guard let node = response[FBAXWire.Envelope.tree.rawValue] as? [String: Any] else {
       throw FBAXBridgeError.guestFailure("hit-test ok response without a tree or empty flag")
     }
-    guard let pid = response["pid"] as? Int, pid > 0 else {
+    guard let pid = response[FBAXWire.Envelope.pid.rawValue] as? Int, pid > 0 else {
       throw FBAXBridgeError.guestFailure("hit-test response without an owning pid")
     }
     return (node, pid_t(pid))
@@ -161,15 +161,15 @@ struct FBAXBridgeOneshotTransport: FBAXBridgeTransport {
   let simulator: FBSimulator
 
   func read(pid: pid_t, maxDepth: Int, maxNodes: Int) async throws -> Data {
-    try await spawn(["accessibility", "describe", "--pid", "\(pid)", "--max-depth", "\(maxDepth)", "--max-nodes", "\(maxNodes)"])
+    try await spawn(["accessibility", FBAXWire.Verb.describe.rawValue, "--pid", "\(pid)", "--max-depth", "\(maxDepth)", "--max-nodes", "\(maxNodes)"])
   }
 
   func readFrontmost(x: Double, y: Double, maxDepth: Int, maxNodes: Int, method: FBAXBridgeFrontmostMethod) async throws -> Data {
-    try await spawn(["accessibility", "describe", "--x", "\(x)", "--y", "\(y)", "--max-depth", "\(maxDepth)", "--max-nodes", "\(maxNodes)", "--method", method.rawValue])
+    try await spawn(["accessibility", FBAXWire.Verb.describe.rawValue, "--x", "\(x)", "--y", "\(y)", "--max-depth", "\(maxDepth)", "--max-nodes", "\(maxNodes)", "--method", method.rawValue])
   }
 
   func hitTest(x: Double, y: Double) async throws -> Data {
-    try await spawn(["accessibility", "hittest", "--x", "\(x)", "--y", "\(y)"])
+    try await spawn(["accessibility", FBAXWire.Verb.hitTest.rawValue, "--x", "\(x)", "--y", "\(y)"])
   }
 
   private func spawn(_ arguments: [String]) async throws -> Data {
@@ -201,15 +201,15 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
   }
 
   func read(pid: pid_t, maxDepth: Int, maxNodes: Int) async throws -> Data {
-    try await roundTripWithRecovery(["verb": "describe", "pid": Int(pid), "maxDepth": maxDepth, "maxNodes": maxNodes])
+    try await roundTripWithRecovery(["verb": FBAXWire.Verb.describe.rawValue, "pid": Int(pid), "maxDepth": maxDepth, "maxNodes": maxNodes])
   }
 
   func readFrontmost(x: Double, y: Double, maxDepth: Int, maxNodes: Int, method: FBAXBridgeFrontmostMethod) async throws -> Data {
-    try await roundTripWithRecovery(["verb": "describe", "x": x, "y": y, "maxDepth": maxDepth, "maxNodes": maxNodes, "method": method.rawValue])
+    try await roundTripWithRecovery(["verb": FBAXWire.Verb.describe.rawValue, "x": x, "y": y, "maxDepth": maxDepth, "maxNodes": maxNodes, "method": method.rawValue])
   }
 
   func hitTest(x: Double, y: Double) async throws -> Data {
-    try await roundTripWithRecovery(["verb": "hittest", "x": x, "y": y])
+    try await roundTripWithRecovery(["verb": FBAXWire.Verb.hitTest.rawValue, "x": x, "y": y])
   }
 
   /// Sends one request over the reused connection, recovering from a terminated serve process.
