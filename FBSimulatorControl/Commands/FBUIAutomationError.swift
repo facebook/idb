@@ -78,7 +78,7 @@ public extension FBUIAutomationBackend {
       return "The accessibility backend"
     case .remoteAutomation:
       return "The testmanagerd remote-automation backend"
-    case .axBridge, .axBridgePersistent:
+    case .axBridge:
       return "The axbridge backend"
     }
   }

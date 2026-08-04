@@ -89,7 +89,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
   // its backend, so "not found" has to be catchable without knowing. One catch clause must handle
   // every backend, and the message must still say which one spoke.
   func testOneCatchClauseHandlesEveryBackend() {
-    let backends: [FBUIAutomationBackend] = [.accessibility, .remoteAutomation, .axBridge(frontmostMethod: .centerPoint), .axBridgePersistent(frontmostMethod: .centerPoint)]
+    let backends: [FBUIAutomationBackend] = [.accessibility, .remoteAutomation, .axBridge(persistence: .oneShot, frontmostMethod: .centerPoint), .axBridge(persistence: .persistent, frontmostMethod: .centerPoint)]
     for backend in backends {
       let thrown: Error = FBUIAutomationError.elementNotFound(backend: backend, key: "AXLabel", value: "General")
       guard case let FBUIAutomationError.elementNotFound(caught, key, value) = thrown else {
@@ -107,7 +107,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
   func testEmptyPointErrorCarriesTheAccessibilityHint() {
     // An empty read is most often a missing accessibility server, so the actionable hint rides on the
     // error rather than being re-stated by each backend.
-    let error = FBUIAutomationError.noElementAtPoint(backend: .axBridge(frontmostMethod: .centerPoint), x: 2000, y: 2000)
+    let error = FBUIAutomationError.noElementAtPoint(backend: .axBridge(persistence: .oneShot, frontmostMethod: .centerPoint), x: 2000, y: 2000)
     XCTAssertTrue(error.description.contains("ApplicationAccessibilityEnabled"), "got: \(error.description)")
   }
 

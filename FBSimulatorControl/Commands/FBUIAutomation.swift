@@ -9,6 +9,18 @@ import CoreGraphics
 import FBControlCore
 import Foundation
 
+/// The guest-transport lifecycle for the `.axBridge` backend: a fresh spawn per read, or a memoized
+/// process reused across reads. It applies only to the axbridge backend, so it rides on that case as a
+/// payload rather than existing as a backend of its own.
+public enum FBAXBridgePersistence: Sendable, Equatable {
+  /// A fresh guest spawn per read. Stateless and free to reconstruct per call — for a single one-shot
+  /// read.
+  case oneShot
+  /// A persistent (memoized) guest `serve` process reused across reads — ~30x faster warm, for
+  /// long-lived host processes doing repeated reads.
+  case persistent
+}
+
 /// Selects the backend a UI-automation element operation runs against.
 public enum FBUIAutomationBackend: Sendable, Equatable {
   /// The legacy CoreSimulator accessibility-translation path.
@@ -16,13 +28,11 @@ public enum FBUIAutomationBackend: Sendable, Equatable {
   /// The bundle-free guest `testmanagerd` remote-automation channel (iOS 27+).
   case remoteAutomation
   /// The bundle-free guest AX-C reader: the `SimulatorFrameworkBridge` `accessibility` service spawned
-  /// in the simulator. XCUI-grade like `.remoteAutomation`, light like `.accessibility`. Carries the
-  /// frontmost-resolution method it reads with — the choice only applies to this backend, so it is a
-  /// payload of the case rather than a parameter every backend would have to ignore.
-  case axBridge(frontmostMethod: FBAXBridgeFrontmostMethod)
-  /// As `.axBridge`, but over a persistent (memoized) guest `serve` process reused across reads —
-  /// ~30x faster warm, for long-lived host processes doing repeated reads.
-  case axBridgePersistent(frontmostMethod: FBAXBridgeFrontmostMethod)
+  /// in the simulator. XCUI-grade like `.remoteAutomation`, light like `.accessibility`. `persistence`
+  /// picks a fresh spawn per read or a reused `serve` process; `frontmostMethod` is how it resolves the
+  /// foreground app. Both apply only to this backend, so they are payloads of the case rather than
+  /// parameters every backend would have to ignore.
+  case axBridge(persistence: FBAXBridgePersistence, frontmostMethod: FBAXBridgeFrontmostMethod)
 }
 
 /// The converged UI-automation surface: element reads and element-targeted
@@ -108,23 +118,30 @@ public extension FBSimulator {
 
   /// The converged UI-automation surface for `backend` — element reads and element-targeted actions
   /// over a single query-shaped API. Each call returns a fresh reader that **owns its own warm
-  /// resource**: `.remoteAutomation` owns a `testmanagerd` DTX session, `.axBridgePersistent` owns a
-  /// guest `serve` process. Hold the returned instance to reuse its warm resource across operations;
-  /// drop it to tear the resource down. `.accessibility` and `.axBridge` are stateless — they hold no
-  /// warm resource, so reconstructing them per call is free.
+  /// resource**: `.remoteAutomation` owns a `testmanagerd` DTX session, `.axBridge(persistence:
+  /// .persistent, …)` owns a guest `serve` process. Hold the returned instance to reuse its warm
+  /// resource across operations; drop it to tear the resource down. `.accessibility` and
+  /// `.axBridge(persistence: .oneShot, …)` are stateless — they hold no warm resource, so
+  /// reconstructing them per call is free.
   ///
-  /// The axbridge backend cases carry the frontmost-resolution method they read with, so the choice is
-  /// expressed only where it applies rather than as an argument the other backends would ignore.
+  /// The axbridge backend case carries the transport persistence and frontmost-resolution method it
+  /// reads with, so those choices are expressed only where they apply rather than as arguments the
+  /// other backends would ignore.
   func uiAutomation(backend: FBUIAutomationBackend) throws -> any FBUIAutomation {
     switch backend {
     case .accessibility:
       return FBAccessibilityUIAutomation(operations: self)
     case .remoteAutomation:
       return try remoteAutomation()
-    case let .axBridge(frontmostMethod):
-      return FBAXBridgeUIAutomation(simulator: self, transport: FBAXBridgeOneshotTransport(simulator: self), frontmostMethod: frontmostMethod)
-    case let .axBridgePersistent(frontmostMethod):
-      return FBAXBridgeUIAutomation(simulator: self, transport: FBAXBridgePersistentTransport(simulator: self), frontmostMethod: frontmostMethod)
+    case let .axBridge(persistence, frontmostMethod):
+      let transport: any FBAXBridgeTransport =
+        switch persistence {
+        case .oneShot: FBAXBridgeOneshotTransport(simulator: self)
+        case .persistent: FBAXBridgePersistentTransport(simulator: self)
+        }
+      return FBAXBridgeUIAutomation(
+        simulator: self, transport: transport, persistence: persistence, frontmostMethod: frontmostMethod
+      )
     }
   }
 }

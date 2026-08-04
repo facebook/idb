@@ -34,13 +34,18 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
   private let simulator: FBSimulator
   private let transport: any FBAXBridgeTransport
 
+  /// The transport lifecycle this reader was vended for. Held only so `backend` reports the case the
+  /// caller selected; the injected transport already encodes the behavioural difference.
+  private let persistence: FBAXBridgePersistence
+
   /// How frontmost reads resolve the foreground app. Defaults to the positional `.centerPoint`; a caller
   /// (e.g. sime2e) can select `.windowServer` or `.runningBoard`.
   private let frontmostMethod: FBAXBridgeFrontmostMethod
 
-  init(simulator: FBSimulator, transport: any FBAXBridgeTransport, frontmostMethod: FBAXBridgeFrontmostMethod = .centerPoint) {
+  init(simulator: FBSimulator, transport: any FBAXBridgeTransport, persistence: FBAXBridgePersistence, frontmostMethod: FBAXBridgeFrontmostMethod = .centerPoint) {
     self.simulator = simulator
     self.transport = transport
+    self.persistence = persistence
     self.frontmostMethod = frontmostMethod
   }
 
@@ -53,7 +58,7 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
     try await describeTree(query, options: options)
   }
 
-  nonisolated var backend: FBUIAutomationBackend { .axBridge(frontmostMethod: frontmostMethod) }
+  nonisolated var backend: FBUIAutomationBackend { .axBridge(persistence: persistence, frontmostMethod: frontmostMethod) }
 
   /// Re-raises the transport-level `FBAXBridgeError.applicationUnavailable` as the backend-neutral
   /// `FBUIAutomationError.applicationUnavailable`, so a caller holding `any FBUIAutomation` sees the
