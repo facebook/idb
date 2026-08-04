@@ -10,9 +10,9 @@ import FBControlCore
 import Foundation
 
 /// An `FBAXPlatformElement` backed by a remote-automation `fetchAttributes` result, so the remote
-/// element tree feeds the same serializer as the legacy AX path. Read-only: the action accessors
-/// (`axPerformPress`/`axScroll`/`axSetValue`) are no-ops here — remote element actions are wired in
-/// their own later commits.
+/// element tree feeds the same serializer as the legacy AX path. It conforms to the read-only
+/// `FBAXPlatformElement` and not `FBAXWritableElement`: the remote projection cannot be acted on, so
+/// element actions are kept off it by the type system rather than by silently no-op'd accessors.
 final class FBRemoteAutomationPlatformElement: FBAXPlatformElement {
   private let attributes: [String: Any]
   private let childElements: [FBRemoteAutomationPlatformElement]
@@ -71,9 +71,6 @@ final class FBRemoteAutomationPlatformElement: FBAXPlatformElement {
   func axActionNames() -> [String] { [] }
   func axTraits() -> [String]? { nil }
   func axChildren() -> [FBAXPlatformElement] { childElements }
-  func axPerformPress() -> Bool { false }
-  func axScroll(_ direction: FBAccessibilityScrollDirection) {}
-  func axSetValue(_ value: Any?) {}
 
   var axTranslationPid: pid_t { pid }
   func axSetBridgeDelegateToken(_ token: String?) {}

@@ -10,9 +10,10 @@ import AppKit
 import FBControlCore
 import Foundation
 
-/// The accessibility attribute + action surface the serializer, translation
-/// request, dispatcher, element handle, and facade depend on, expressed in plain
-/// value types.
+/// The read-only accessibility attribute + traversal surface the serializer, translation
+/// request, dispatcher, element handle, and facade depend on, expressed in plain value
+/// types. Element actions live in `FBAXWritableElement`, so a tree that can only be read —
+/// the remote-automation projection — conforms here without pretending it can act.
 ///
 /// `AXPMacPlatformElement` is a private-framework class the unit tests cannot
 /// subclass, so they previously flowed message-responding doubles through the code
@@ -43,14 +44,21 @@ protocol FBAXPlatformElement: AnyObject {
   func axActionNames() -> [String]
   func axTraits() -> [String]?
   func axChildren() -> [FBAXPlatformElement]
-  func axPerformPress() -> Bool
-  func axScroll(_ direction: FBAccessibilityScrollDirection)
-  func axSetValue(_ value: Any?)
 
   /// The pid of the backing translation object (0 when absent).
   var axTranslationPid: pid_t { get }
   /// Sets the backing translation object's bridge-delegate token (no-op when absent).
   func axSetBridgeDelegateToken(_ token: String?)
+}
+
+/// The mutating action surface — press, scroll, set-value — layered on the read surface.
+/// Only the legacy CoreSimulator element (`AXPMacPlatformElement`) and its test double
+/// perform these, so a caller that acts on an element (`FBAccessibilityElement`) demands
+/// this refinement and the type system keeps actions off the read-only remote tree.
+protocol FBAXWritableElement: FBAXPlatformElement {
+  func axPerformPress() -> Bool
+  func axScroll(_ direction: FBAccessibilityScrollDirection)
+  func axSetValue(_ value: Any?)
 }
 
 extension AXPMacPlatformElement: FBAXPlatformElement {
@@ -99,6 +107,11 @@ extension AXPMacPlatformElement: FBAXPlatformElement {
     (accessibilityChildren() ?? []).compactMap { $0 as? FBAXPlatformElement }
   }
 
+  var axTranslationPid: pid_t { translation?.pid ?? 0 }
+  func axSetBridgeDelegateToken(_ token: String?) { translation?.bridgeDelegateToken = token }
+}
+
+extension AXPMacPlatformElement: FBAXWritableElement {
   func axPerformPress() -> Bool { accessibilityPerformPress() }
 
   func axScroll(_ direction: FBAccessibilityScrollDirection) {
@@ -117,7 +130,4 @@ extension AXPMacPlatformElement: FBAXPlatformElement {
   }
 
   func axSetValue(_ value: Any?) { setAccessibilityValue(value) }
-
-  var axTranslationPid: pid_t { translation?.pid ?? 0 }
-  func axSetBridgeDelegateToken(_ token: String?) { translation?.bridgeDelegateToken = token }
 }

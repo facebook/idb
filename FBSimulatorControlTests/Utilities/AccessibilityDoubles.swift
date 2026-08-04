@@ -146,9 +146,8 @@ class FBSimulatorControlTests_AXPMacPlatformElement_Double: NSObject {
 
 // Conforms the element double to the production seam. Each accessor routes through
 // the existing tracked properties so `accessedProperties` behavior is unchanged.
-// Attributes the double does not model (placeholder/expanded/hidden/focused) and
-// actions it does not perform (scroll/setValue) are inert — none are in the default
-// key set, so the unit suites never exercise them.
+// Attributes the double does not model (placeholder/expanded/hidden/focused) are
+// inert — none are in the default key set, so the unit suites never exercise them.
 extension FBSimulatorControlTests_AXPMacPlatformElement_Double: FBAXPlatformElement {
   func axFrame() -> NSRect { accessibilityFrame }
   func axRole() -> String? { accessibilityRole?.rawValue }
@@ -173,11 +172,17 @@ extension FBSimulatorControlTests_AXPMacPlatformElement_Double: FBAXPlatformElem
   func axChildren() -> [FBAXPlatformElement] {
     (accessibilityChildren ?? []).compactMap { $0 as? FBAXPlatformElement }
   }
+  var axTranslationPid: pid_t { translation.pid }
+  func axSetBridgeDelegateToken(_ token: String?) { translation.bridgeDelegateToken = token }
+}
+
+// The double stands in for the writable legacy element, so it conforms to the action
+// surface too. Only press is exercised (via `FBAccessibilityElement.tap()`); scroll and
+// set-value are inert — the unit suites never drive them.
+extension FBSimulatorControlTests_AXPMacPlatformElement_Double: FBAXWritableElement {
   func axPerformPress() -> Bool { accessibilityPerformPress() }
   func axScroll(_ direction: FBAccessibilityScrollDirection) {}
   func axSetValue(_ value: Any?) {}
-  var axTranslationPid: pid_t { translation.pid }
-  func axSetBridgeDelegateToken(_ token: String?) { translation.bridgeDelegateToken = token }
 }
 
 // MARK: - AXPTranslator Double

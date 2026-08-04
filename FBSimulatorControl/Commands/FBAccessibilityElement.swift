@@ -20,13 +20,13 @@ import Foundation
 /// only the simulator-side facade does, which is now Swift too).
 final class FBAccessibilityElement {
 
-  private let element: FBAXPlatformElement
+  private let element: FBAXWritableElement
   private let request: FBAXTranslationRequest
   private let dispatcher: FBAXTranslationDispatcher
   private weak var simulator: FBSimulator?
   private var closed: Bool = false
 
-  init(element: FBAXPlatformElement, request: FBAXTranslationRequest, dispatcher: FBAXTranslationDispatcher, simulator: FBSimulator) {
+  init(element: FBAXWritableElement, request: FBAXTranslationRequest, dispatcher: FBAXTranslationDispatcher, simulator: FBSimulator) {
     self.element = element
     self.request = request
     self.dispatcher = dispatcher
@@ -133,7 +133,10 @@ final class FBAccessibilityElement {
   /// closed without popping. If not found, the receiver is closed and an error
   /// is thrown.
   func findElement(withValue value: String, forKey key: FBAXSearchableKey, depth: UInt) throws -> FBAccessibilityElement {
-    guard let found = Self.findElement(withValue: value, forKey: key, in: element, token: request.token, remainingDepth: depth) else {
+    // The legacy accessibility tree is composed entirely of `AXPMacPlatformElement`, so any matched
+    // descendant is writable; the cast is total in practice. A (structurally impossible) read-only
+    // match is reported as not-found rather than wrapped in a handle whose actions could not dispatch.
+    guard let found = Self.findElement(withValue: value, forKey: key, in: element, token: request.token, remainingDepth: depth) as? FBAXWritableElement else {
       close()
       throw FBAccessibilityError.elementNotFound(key: key.rawValue, value: value, depth: depth)
     }

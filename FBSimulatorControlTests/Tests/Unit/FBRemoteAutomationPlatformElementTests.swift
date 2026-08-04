@@ -137,6 +137,5 @@ final class FBRemoteAutomationPlatformElementTests: XCTestCase {
     XCTAssertFalse(element.axIsHidden())
     XCTAssertTrue(element.axChildren().isEmpty)
     XCTAssertTrue(element.axActionNames().isEmpty)
-    XCTAssertFalse(element.axPerformPress())
   }
 }

@@ -144,7 +144,7 @@ final class FBSimulatorAccessibilityCommands: AccessibilityOperations {
     guard let dispatcher = resolvedDispatcher else {
       throw FBAccessibilityError.dispatcherUnavailable
     }
-    let element: FBAXPlatformElement
+    let element: FBAXWritableElement
     do {
       element = try await dispatcher.platformElement(withRequest: request, simulator: simulator)
     } catch FBAccessibilityError.noTranslationObject where remediationPermitted {
