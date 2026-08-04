@@ -145,11 +145,11 @@ import XCTestBootstrap
     try await simulator.uiAutomation(backend: .accessibility).tap(query, options: FBTapOptions(assertion: assertion))
   }
 
-  public func accessibility_describe(query: FBAccessibilityElementQuery, nested: Bool) async throws -> Data {
+  public func accessibility_describe(query: FBAccessibilityElementQuery, format: FBAccessibilityOutputFormat) async throws -> Data {
     guard let simulator = target as? FBSimulator else {
       throw FBIDBError.describe("Target is not a simulator, cannot describe accessibility: \(target)").build()
     }
-    let options = FBAccessibilityRequestOptions(nestedFormat: nested, enableLogging: true)
+    let options = FBAccessibilityRequestOptions(format: format, enableLogging: true)
     return try await simulator.uiAutomation(backend: .accessibility).describe(query, options: options).sortedKeysJSON()
   }
 
@@ -167,9 +167,9 @@ import XCTestBootstrap
     try await simulator.uiAutomation(backend: .accessibility).setValue(value, for: query)
   }
 
-  public func accessibility_info_at_point(_ value: NSValue?, nestedFormat: Bool) async throws -> FBAccessibilityElementsResponse {
+  public func accessibility_info_at_point(_ value: NSValue?, format: FBAccessibilityOutputFormat) async throws -> FBAccessibilityElementsResponse {
     return try await accessibility_info_at_point(
-      value, options: FBAccessibilityRequestOptions(nestedFormat: nestedFormat, enableLogging: true))
+      value, options: FBAccessibilityRequestOptions(format: format, enableLogging: true))
   }
 
   public func accessibility_info_at_point(_ value: NSValue?, options: FBAccessibilityRequestOptions) async throws -> FBAccessibilityElementsResponse {

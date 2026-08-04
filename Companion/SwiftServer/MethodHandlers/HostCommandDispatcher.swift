@@ -204,7 +204,7 @@ struct HostCommandDispatcher: @unchecked Sendable {
       return nil
 
     case .describeAll:
-      let response = try await commandExecutor.accessibility_info_at_point(nil, nestedFormat: true)
+      let response = try await commandExecutor.accessibility_info_at_point(nil, format: .nested)
       // Adapt the serializer's tree for the client: drop nulls and render each
       // node's AXValue as a String (see `replAccessibilityTree`). Only describe_all
       // needs this.

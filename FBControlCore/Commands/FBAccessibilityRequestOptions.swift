@@ -50,8 +50,12 @@ public enum FBAccessibilityElementFilter: Sendable {
 /// needed for an accessibility query.
 public struct FBAccessibilityRequestOptions: Sendable {
 
-  /// If `true`, data is returned in nested format with children; otherwise flat. Default: `false`.
-  public var nestedFormat: Bool
+  /// How the read is rendered. Default: `.default` (a flat array).
+  public var format: FBAccessibilityOutputFormat
+
+  /// Whether the serializer builds a tree rather than a flat list. Derived from `format` — every format
+  /// but `.default` carries children — so the two can never disagree.
+  public var nestedFormat: Bool { format != .default }
 
   /// Which properties a read returns. Defaults to `FBAXKeys.defaultSet` (the standard keys); pass an
   /// explicit set to narrow it. Not optional: "unset" and "the default set" are the same request, and
@@ -74,7 +78,7 @@ public struct FBAccessibilityRequestOptions: Sendable {
   public var filter: FBAccessibilityElementFilter
 
   public init(
-    nestedFormat: Bool = false,
+    format: FBAccessibilityOutputFormat = .default,
     keys: Set<FBAXKeys> = FBAXKeys.defaultSet,
     enableLogging: Bool = false,
     enableProfiling: Bool = false,
@@ -82,7 +86,7 @@ public struct FBAccessibilityRequestOptions: Sendable {
     remoteContentOptions: FBAccessibilityRemoteContentOptions? = nil,
     filter: FBAccessibilityElementFilter = .all
   ) {
-    self.nestedFormat = nestedFormat
+    self.format = format
     self.keys = keys
     self.enableLogging = enableLogging
     self.enableProfiling = enableProfiling
@@ -94,6 +98,6 @@ public struct FBAccessibilityRequestOptions: Sendable {
 
 extension FBAccessibilityRequestOptions: CustomStringConvertible {
   public var description: String {
-    "<FBAccessibilityRequestOptions: nested=\(nestedFormat), keys=\(keys), logging=\(enableLogging), profiling=\(enableProfiling), collectFrameCoverage=\(collectFrameCoverage), remote=\(String(describing: remoteContentOptions))>"
+    "<FBAccessibilityRequestOptions: format=\(format.rawValue), keys=\(keys), logging=\(enableLogging), profiling=\(enableProfiling), collectFrameCoverage=\(collectFrameCoverage), remote=\(String(describing: remoteContentOptions))>"
   }
 }

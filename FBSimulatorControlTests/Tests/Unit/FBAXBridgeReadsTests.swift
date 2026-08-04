@@ -462,7 +462,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
   // still resolves the element rather than searching only the root.
   func testDescribeTreeMatchesAMarkerFlatEvenWhenNestedIsRequested() async throws {
     let reader = StubTreeReader(read: Self.stubRead())
-    let options = FBAccessibilityRequestOptions(nestedFormat: true)
+    let options = FBAccessibilityRequestOptions(format: .nested)
     let response = try await reader.describeTree(
       .marker(value: "General", key: .label, depth: 10), options: options
     )
@@ -475,7 +475,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
 
   func testDescribeTreeHonoursTheRequestedNestedFormatForWholeTreeQueries() async throws {
     let response = try await StubTreeReader(read: Self.stubRead())
-      .describeTree(.frontmost, options: FBAccessibilityRequestOptions(nestedFormat: true))
+      .describeTree(.frontmost, options: FBAccessibilityRequestOptions(format: .nested))
     guard case let .array(elements) = response.elements, case let .object(root)? = elements.first else {
       return XCTFail("expected a nested root, got \(response.elements)")
     }

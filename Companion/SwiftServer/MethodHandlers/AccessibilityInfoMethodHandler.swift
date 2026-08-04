@@ -17,13 +17,13 @@ struct AccessibilityInfoMethodHandler {
   let commandExecutor: FBIDBCommandExecutor
 
   func handle(request: Idb_AccessibilityInfoRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_AccessibilityInfoResponse {
-    let nested = request.format == .nested
+    let format = outputFormat(from: request.format)
     // A marker selects a single element to describe; without one the request
     // describes the element at a point, or the whole frontmost app.
     if !request.marker.isEmpty {
       let query: FBAccessibilityElementQuery = .marker(
         value: request.marker, key: searchableKey(from: request.matchKey), depth: UInt(request.depth))
-      let data = try await commandExecutor.accessibility_describe(query: query, nested: nested)
+      let data = try await commandExecutor.accessibility_describe(query: query, format: format)
       return .with {
         $0.json = String(data: data, encoding: .utf8) ?? ""
       }
@@ -42,7 +42,7 @@ struct AccessibilityInfoMethodHandler {
     }
     let keys = mappedKeys.isEmpty ? FBAXKeys.defaultSet : mappedKeys
     let options = FBAccessibilityRequestOptions(
-      nestedFormat: nested,
+      format: format,
       keys: keys,
       enableLogging: true,
       enableProfiling: false,
@@ -51,6 +51,20 @@ struct AccessibilityInfoMethodHandler {
     let jsonData = try JSONSerialization.data(withJSONObject: response.elements.toFoundationObject())
     return .with {
       $0.json = String(data: jsonData, encoding: .utf8) ?? ""
+    }
+  }
+
+  /// The wire format the request asked for. `LEGACY` is the flat array the gRPC surface has always
+  /// returned by default; an unrecognized value from a newer client falls back to it rather than
+  /// failing the call.
+  private func outputFormat(from format: Idb_AccessibilityInfoRequest.Format) -> FBAccessibilityOutputFormat {
+    switch format {
+    case .legacy:
+      return .default
+    case .nested:
+      return .nested
+    case .UNRECOGNIZED:
+      return .default
     }
   }
 

@@ -124,7 +124,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     let element = try await simulator.resolveElement(for: .frontmost)
 
     var options = FBAccessibilityRequestOptions()
-    options.nestedFormat = false
+    options.format = .default
     options.enableLogging = true
     options.enableProfiling = enableProfiling
 
@@ -243,7 +243,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     let element = try await simulator.resolveElement(for: .point(point))
 
     var options = FBAccessibilityRequestOptions()
-    options.nestedFormat = false
+    options.format = .default
     options.enableLogging = true
     options.enableProfiling = enableProfiling
 
@@ -273,7 +273,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     let element = try await simulator.resolveElement(for: .frontmost)
 
     var options = FBAccessibilityRequestOptions()
-    options.nestedFormat = true
+    options.format = .nested
     options.enableLogging = true
     options.enableProfiling = enableProfiling
 
@@ -393,7 +393,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     let element = try await simulator.resolveElement(for: .frontmost)
 
     var options = FBAccessibilityRequestOptions()
-    options.nestedFormat = false
+    options.format = .default
     options.keys = Set([FBAXKeys.label, .frameDict])
     options.enableLogging = true
     options.enableProfiling = enableProfiling
@@ -457,7 +457,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     let element = try await simulator.resolveElement(for: .point(CGPoint(x: 100, y: 115)))
 
     var options = FBAccessibilityRequestOptions()
-    options.nestedFormat = false
+    options.format = .default
     options.keys = Set([FBAXKeys.label, .type, .frameDict])
     options.enableLogging = true
     options.enableProfiling = enableProfiling
@@ -609,7 +609,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
 
     // Serialize and verify structure — same expected dict as element-at-point tests
     var options = FBAccessibilityRequestOptions()
-    options.nestedFormat = true
+    options.format = .nested
     let response = try! element.serialize(with: options)
 
     let result = response.elements.toFoundationObject() as! [String: Any]
