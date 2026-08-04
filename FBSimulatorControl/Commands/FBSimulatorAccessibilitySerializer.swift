@@ -21,8 +21,6 @@ import Foundation
 /// classified via `FBJSONValue(foundation:)`.
 enum FBSimulatorAccessibilitySerializer {
 
-  private static let axPrefix = "AX"
-
   // MARK: - Entry points
 
   static func recursiveDescription(
@@ -121,11 +119,7 @@ enum FBSimulatorAccessibilitySerializer {
       }
       // accessibilityRole may be prefixed with "AX"; strip it to match the
       // SimulatorBridge implementation.
-      if let rawRole, rawRole.hasPrefix(axPrefix) {
-        role = String(rawRole.dropFirst(2))
-      } else {
-        role = rawRole
-      }
+      role = rawRole.map(FBAXRoleVocabulary.normalizeRole)
     }
 
     // Mark frame in coverage grid (for non-Application elements).
@@ -255,13 +249,6 @@ enum FBSimulatorAccessibilitySerializer {
 
   // MARK: - Filter
 
-  /// Actionable `XCUIElementType`/role names (the "AX" prefix stripped) kept by `.interactable`.
-  private static let interactableRoles: Set<String> = [
-    "Button", "Cell", "TextField", "SecureTextField", "SearchField", "Switch", "Toggle", "Link",
-    "MenuItem", "Slider", "CheckBox", "RadioButton", "SegmentedControl", "Stepper", "PopUpButton",
-    "Picker", "PickerWheel", "Tab", "Key", "DisclosureTriangle",
-  ]
-
   /// Whether an element is kept under `filter`. `.interactable` keeps elements carrying a label, an
   /// identifier, or an actionable role — dropping unlabeled structural containers.
   private static func passes(_ element: FBAXPlatformElement, filter: FBAccessibilityElementFilter) -> Bool {
@@ -271,10 +258,7 @@ enum FBSimulatorAccessibilitySerializer {
     case .interactable:
       if let label = element.axLabel(), !label.isEmpty { return true }
       if let identifier = element.axIdentifier(), !identifier.isEmpty { return true }
-      if let role = element.axRole() {
-        let normalized = role.hasPrefix(axPrefix) ? String(role.dropFirst(axPrefix.count)) : role
-        if interactableRoles.contains(normalized) { return true }
-      }
+      if let role = element.axRole(), FBAXRoleVocabulary.isInteractable(role: role) { return true }
       return false
     }
   }
