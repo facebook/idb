@@ -12,7 +12,7 @@ import Foundation
 import ImageIO
 import UniformTypeIdentifiers
 
-public final actor FBSimulatorImage {
+public actor FBSimulatorImage {
 
   // MARK: - Properties
 
