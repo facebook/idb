@@ -377,4 +377,217 @@ final class FBAXBridgeReadsTests: XCTestCase {
     // automationType 9 maps to the readable XCUIElementType name via the shared serializer.
     XCTAssertTrue(serialized.contains("\"role\":\"Button\""), "role not mapped in \(serialized)")
   }
+
+  // MARK: - Shared `describeTree` composition
+
+  // `describeTree` is the `FBAXTreeReader` extension both XCUI-grade backends (axbridge and
+  // testmanagerd) inherit as their `describe`, so what it composes — which query shape yields an array
+  // versus a bare object, how the modal rides out, when the truncation warning fires, and which keys a
+  // marker is serialized with — is backend-agnostic behaviour that neither backend's own tests cover.
+  // A stub conformer supplies a canned read so the composition is observable without a simulator.
+
+  private static func twoNodeTree() -> [String: Any] {
+    [
+      FBAXWire.Node.label.rawValue: "root",
+      FBAXWire.Node.children.rawValue: [
+        [
+          FBAXWire.Node.label.rawValue: "General Settings",
+          FBAXWire.Node.children.rawValue: [[String: Any]](),
+        ] as [String: Any]
+      ],
+    ]
+  }
+
+  private static func stubRead(truncated: Bool = false, modal: FBAccessibilityModalInfo? = nil) -> FBAXTreeRead {
+    FBAXTreeRead(tree: twoNodeTree(), pid: 99, truncated: truncated, modal: modal)
+  }
+
+  func testDescribeTreeReturnsAnArrayForWholeTreeQueries() async throws {
+    for query in [FBAccessibilityElementQuery.frontmost, .application(pid: 99)] {
+      let reader = StubTreeReader(read: Self.stubRead())
+      let response = try await reader.describeTree(query, options: FBAccessibilityRequestOptions())
+      guard case let .array(elements) = response.elements else {
+        return XCTFail("\(query) must serialize to an array, got \(response.elements)")
+      }
+      XCTAssertEqual(elements.count, 2, "the whole tree is flattened to root plus child")
+    }
+  }
+
+  // A marker resolves to one element, so the response carries a bare object — the shape divergence a
+  // consumer branches on. (The accessibility backend instead serializes a marker as its whole subtree,
+  // i.e. an array, so the two backends disagree here.)
+  func testDescribeTreeReturnsABareObjectForAMarkerQuery() async throws {
+    let reader = StubTreeReader(read: Self.stubRead())
+    let response = try await reader.describeTree(
+      .marker(value: "General", key: .label, depth: 10), options: FBAccessibilityRequestOptions()
+    )
+    guard case let .object(fields) = response.elements else {
+      return XCTFail("a marker must serialize to a single object, got \(response.elements)")
+    }
+    XCTAssertEqual(fields[FBAXKeys.label.rawValue], .string("General Settings"))
+  }
+
+  func testDescribeTreeCarriesTheModalDescriptorOutOfTheRead() async throws {
+    let modal = FBAccessibilityModalInfo(kind: .system, elementType: "SBAlertItemWindow", label: "Allow")
+    for query in [FBAccessibilityElementQuery.frontmost, .marker(value: "General", key: .label, depth: 10)] {
+      let reader = StubTreeReader(read: Self.stubRead(modal: modal))
+      let response = try await reader.describeTree(query, options: FBAccessibilityRequestOptions())
+      XCTAssertEqual(response.modal, modal, "\(query) must surface the read's modal to the host")
+    }
+  }
+
+  // The truncation warning belongs to a describe, not to a raw read: it fires exactly once per
+  // describe so a `.marker` wait poll (which reads without describing) stays silent.
+  func testDescribeTreeWarnsOnceWithTheReadsTruncationFlag() async throws {
+    let reader = StubTreeReader(read: Self.stubRead(truncated: true))
+    _ = try await reader.describeTree(.frontmost, options: FBAccessibilityRequestOptions())
+    XCTAssertEqual(reader.truncationWarnings, [true], "one warning carrying the read's flag")
+  }
+
+  // A marker is matched over the *serialized* element, so the searched key is unioned into the read key
+  // set — otherwise a marker on a key the caller did not request could never resolve.
+  func testDescribeTreeUnionsTheSearchedKeyForAMarker() async throws {
+    let reader = StubTreeReader(read: Self.stubRead())
+    let options = FBAccessibilityRequestOptions(keys: [.value])
+    let response = try await reader.describeTree(
+      .marker(value: "General", key: .label, depth: 10), options: options
+    )
+    guard case let .object(fields) = response.elements else {
+      return XCTFail("expected a single object, got \(response.elements)")
+    }
+    XCTAssertNotNil(fields[FBAXKeys.label.rawValue], "the searched key must be serialized even when unrequested")
+  }
+
+  // A marker's match runs over a flattened tree regardless of the caller's format, so a nested request
+  // still resolves the element rather than searching only the root.
+  func testDescribeTreeMatchesAMarkerFlatEvenWhenNestedIsRequested() async throws {
+    let reader = StubTreeReader(read: Self.stubRead())
+    let options = FBAccessibilityRequestOptions(nestedFormat: true)
+    let response = try await reader.describeTree(
+      .marker(value: "General", key: .label, depth: 10), options: options
+    )
+    guard case let .object(fields) = response.elements else {
+      return XCTFail("expected a single object, got \(response.elements)")
+    }
+    XCTAssertEqual(fields[FBAXKeys.label.rawValue], .string("General Settings"))
+    XCTAssertNil(fields["children"], "the marker match is serialized flat, so the node carries no children")
+  }
+
+  func testDescribeTreeHonoursTheRequestedNestedFormatForWholeTreeQueries() async throws {
+    let response = try await StubTreeReader(read: Self.stubRead())
+      .describeTree(.frontmost, options: FBAccessibilityRequestOptions(nestedFormat: true))
+    guard case let .array(elements) = response.elements, case let .object(root)? = elements.first else {
+      return XCTFail("expected a nested root, got \(response.elements)")
+    }
+    XCTAssertEqual(elements.count, 1, "nested output carries the child inside the root, not beside it")
+    guard case let .array(children)? = root["children"], case let .object(child)? = children.first else {
+      return XCTFail("expected the child nested under the root, got \(String(describing: root["children"]))")
+    }
+    XCTAssertEqual(child[FBAXKeys.label.rawValue], .string("General Settings"))
+  }
+
+  func testDescribeTreeHonoursTheRequestedFilterForWholeTreeQueries() async throws {
+    // The unlabeled root of this tree is dropped by `.interactable`, leaving only the labeled child.
+    let tree: [String: Any] = [
+      FBAXWire.Node.children.rawValue: [
+        [FBAXWire.Node.label.rawValue: "General Settings", FBAXWire.Node.children.rawValue: [[String: Any]]()] as [String: Any]
+      ]
+    ]
+    let reader = StubTreeReader(read: FBAXTreeRead(tree: tree, pid: 99, truncated: false, modal: nil))
+    let response = try await reader.describeTree(.frontmost, options: FBAccessibilityRequestOptions(filter: .interactable))
+    guard case let .array(elements) = response.elements else {
+      return XCTFail("expected an array, got \(response.elements)")
+    }
+    XCTAssertEqual(elements.count, 1, "the unlabeled container is filtered out, its labeled child kept")
+  }
+
+  func testDescribeTreeThrowsWhenNoElementMatchesTheMarker() async throws {
+    let reader = StubTreeReader(read: Self.stubRead())
+    do {
+      _ = try await reader.describeTree(
+        .marker(value: "Nothing", key: .label, depth: 10), options: FBAccessibilityRequestOptions()
+      )
+      XCTFail("an unmatched marker must throw")
+    } catch let error as FBUIAutomationError {
+      guard case .elementNotFound = error else {
+        return XCTFail("expected elementNotFound, got \(error)")
+      }
+    }
+  }
+
+  // A point never reads a tree: it delegates to the backend's targeted hit-test, and turns that verb's
+  // "no element" (nil) into a throw, which is what makes `describe(.point:)` throwing while `hitTest`
+  // stays optional.
+  func testDescribeTreeDelegatesAPointToHitTestWithoutReadingATree() async throws {
+    let hit = FBAccessibilityElementsResponse(elements: .object([FBAXKeys.label.rawValue: .string("hit")]))
+    let reader = StubTreeReader(read: Self.stubRead(), hitTestResult: hit)
+    let response = try await reader.describeTree(.point(CGPoint(x: 3, y: 4)), options: FBAccessibilityRequestOptions())
+    XCTAssertEqual(reader.hitTestPoints, [CGPoint(x: 3, y: 4)])
+    XCTAssertEqual(reader.readCount, 0, "a point must not read a whole tree")
+    XCTAssertTrue(reader.truncationWarnings.isEmpty, "a point read has no tree to warn about")
+    guard case let .object(fields) = response.elements else {
+      return XCTFail("expected the hit-test's element, got \(response.elements)")
+    }
+    XCTAssertEqual(fields[FBAXKeys.label.rawValue], .string("hit"))
+  }
+
+  func testDescribeTreeThrowsForAnEmptyPoint() async throws {
+    let reader = StubTreeReader(read: Self.stubRead(), hitTestResult: nil)
+    do {
+      _ = try await reader.describeTree(.point(CGPoint(x: 1, y: 2)), options: FBAccessibilityRequestOptions())
+      XCTFail("an empty point must throw from describe")
+    } catch let error as FBUIAutomationError {
+      guard case .noElementAtPoint = error else {
+        return XCTFail("expected noElementAtPoint, got \(error)")
+      }
+    }
+  }
+}
+
+/// A minimal `FBAXTreeReader` serving a canned read, so the shared `describeTree` composition can be
+/// observed without a simulator. `readRawTree`, `warnIfTruncated` and `hitTest` are the three seams
+/// `describeTree` drives; every other `FBUIAutomation` verb is an unused conformance stub.
+private final class StubTreeReader: FBAXTreeReader, @unchecked Sendable {
+
+  let backend: FBUIAutomationBackend = .axBridge(persistence: .oneShot, frontmostMethod: .centerPoint)
+
+  private let read: FBAXTreeRead
+  private let hitTestResult: FBAccessibilityElementsResponse?
+
+  private(set) var readCount = 0
+  private(set) var truncationWarnings: [Bool] = []
+  private(set) var hitTestPoints: [CGPoint] = []
+
+  init(read: FBAXTreeRead, hitTestResult: FBAccessibilityElementsResponse? = nil) {
+    self.read = read
+    self.hitTestResult = hitTestResult
+  }
+
+  func readRawTree(for query: FBAccessibilityElementQuery) async throws -> FBAXTreeRead {
+    readCount += 1
+    return read
+  }
+
+  func warnIfTruncated(_ truncated: Bool) async {
+    truncationWarnings.append(truncated)
+  }
+
+  func hitTest(at point: CGPoint, options: FBAccessibilityRequestOptions) async throws -> FBAccessibilityElementsResponse? {
+    hitTestPoints.append(point)
+    return hitTestResult
+  }
+
+  func describe(_ query: FBAccessibilityElementQuery, options: FBAccessibilityRequestOptions) async throws -> FBAccessibilityElementsResponse {
+    try await describeTree(query, options: options)
+  }
+
+  func tap(_ query: FBAccessibilityElementQuery, options: FBTapOptions) async throws {}
+
+  func setValue(_ value: String, for query: FBAccessibilityElementQuery) async throws {}
+
+  func wait(_ query: FBAccessibilityElementQuery, timeout: TimeInterval, pollInterval: TimeInterval) async throws {}
+
+  func scroll(_ query: FBAccessibilityElementQuery, direction: FBAccessibilityScrollDirection) async throws {}
+
+  func frame(_ query: FBAccessibilityElementQuery) async throws -> CGRect { .zero }
 }

@@ -11,7 +11,7 @@ import Foundation
 ///
 /// The raw values are the on-the-wire JSON keys (and the CLI `--key` names);
 /// they are pinned by golden tests and must not change.
-public enum FBAXKeys: String, Sendable {
+public enum FBAXKeys: String, Sendable, CaseIterable {
   case label = "AXLabel"
   case frame = "AXFrame"
   case value = "AXValue"
