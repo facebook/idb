@@ -38,6 +38,15 @@ protocol FBFramebufferSurface: AnyObject {
 private final class SimDisplayRenderableSurface: FBFramebufferSurface {
   private let surface: any SimDisplayIOSurfaceRenderable & SimDisplayRenderable
   private let logger: any FBControlCoreLogger
+  /// Dedicated serial queue the new-style `SimScreen` callbacks are delivered on, keeping frame and
+  /// surface-changed events ordered. The render server delivers each callback with `clientQueue.sync`
+  /// — it blocks its own notify thread until the callback returns, donating ~`.userInteractive` QoS —
+  /// so this queue is `.userInteractive` (matches the donated QoS, avoiding priority-inversion churn)
+  /// and is used only for these callbacks so the `sync` never waits behind unrelated work. The
+  /// callbacks must stay minimal and non-suspending: anything heavy back-pressures the server's frame
+  /// notifications for this display. Unused by the old-style path (which delivers on the framework's
+  /// own threads).
+  private let callbackQueue = DispatchQueue(label: "com.facebook.FBSimulatorControl.framebuffer-callbacks", qos: .userInteractive)
 
   init(surface: any SimDisplayIOSurfaceRenderable & SimDisplayRenderable, logger: any FBControlCoreLogger) {
     self.surface = surface
@@ -53,7 +62,44 @@ private final class SimDisplayRenderableSurface: FBFramebufferSurface {
     ioSurfaceChanged: @escaping (IOSurface?) -> Void,
     frameRendered: @escaping () -> Void
   ) throws {
+    // Prefer the new-style `SimScreen` grouped callbacks — `frameCallback` is a real per-present
+    // tick and `surfacesChangedCallback` supersedes the two legacy IOSurface variants. Fall back to
+    // the old-style callbacks where the descriptor does not vend `SimScreen` (older CoreSimulator).
+    if registerScreenCallbacks(token: token, ioSurfaceChanged: ioSurfaceChanged, frameRendered: frameRendered) {
+      return
+    }
     try registerLegacyCallbacks(token: token, ioSurfaceChanged: ioSurfaceChanged, frameRendered: frameRendered)
+    logger.info().log("FBFramebuffer: registered old-style framebuffer callbacks")
+  }
+
+  /// New-style path: register the grouped `SimScreen` callbacks. Returns `true` if they were
+  /// installed, `false` if the descriptor does not vend `SimScreen` or the registration raised (in
+  /// which case the caller falls back to the old-style callbacks).
+  private func registerScreenCallbacks(
+    token: UUID,
+    ioSurfaceChanged: @escaping (IOSurface?) -> Void,
+    frameRendered: @escaping () -> Void
+  ) -> Bool {
+    guard let screen = surface as? (any SimScreen) else { return false }
+    let error = guardedCall {
+      screen.registerScreenCallbacks(
+        uuid: token,
+        callbackQueue: self.callbackQueue,
+        frameCallback: { frameRendered() },
+        // Arg 0 is the primary `framebufferSurface` to render; arg 1 is the notch/corner-masked
+        // variant we ignore (see SimScreen-Protocol.h / SimDisplayIOSurfaceRenderable-Protocol.h).
+        surfacesChangedCallback: { framebuffer, _ in ioSurfaceChanged(framebuffer as? IOSurface) },
+        propertiesChangedCallback: { _ in })
+    }
+    if let error {
+      // Roll back in case the raise happened after the remote side installed the callbacks —
+      // otherwise the old-style fallback would double-register under the same token.
+      _ = guardedCall { screen.unregisterScreenCallbacks(uuid: token) }
+      logger.log("FBFramebuffer: new-style SimScreen registration failed (\(error)); using old-style callbacks")
+      return false
+    }
+    logger.info().log("FBFramebuffer: registered new-style SimScreen frame callbacks")
+    return true
   }
 
   /// The legacy registration: the plural/singular IOSurface-change callbacks plus the
@@ -83,6 +129,11 @@ private final class SimDisplayRenderableSurface: FBFramebufferSurface {
   }
 
   func unregisterCallbacks(token: UUID) {
+    // Best-effort across both registration styles; a token registered one way is a no-op for the
+    // other's unregister.
+    if let screen = surface as? (any SimScreen) {
+      _ = guardedCall { screen.unregisterScreenCallbacks(uuid: token) }
+    }
     _ = guardedCall { self.surface.unregisterIOSurfacesChangeCallback(with: token) }
     _ = guardedCall { self.surface.unregisterIOSurfaceChangeCallback(with: token) }
     _ = guardedCall { self.surface.unregisterDamageRectanglesCallback(with: token) }
