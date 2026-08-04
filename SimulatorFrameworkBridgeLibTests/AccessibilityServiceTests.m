@@ -154,7 +154,6 @@ static NSDictionary *FBAXTestsParse(NSData *data)
     @"modal.alertControllerClassPrefix" : @"_UIAlertController",
     @"verb.describe" : @"describe",
     @"verb.hittest" : @"hittest",
-    @"verb.frontmost" : @"frontmost",
     @"method.centerPoint" : @"center-point",
     @"method.windowServer" : @"window-server",
     @"method.runningBoard" : @"runningboard",

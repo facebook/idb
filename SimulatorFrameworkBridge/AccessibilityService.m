@@ -39,8 +39,8 @@ static NSString *const kRequestMaxDepth = @"maxDepth";
 static NSString *const kRequestMaxNodes = @"maxNodes";
 static NSString *const kRequestX = @"x";
 static NSString *const kRequestY = @"y";
-// Selects how a frontmost read (the `frontmost` verb) resolves the foreground app. Optional; defaults to
-// `center-point` (the positional system-wide hit-test).
+// Selects how a fused frontmost read (a `describe` with no pid) resolves the foreground app. Optional;
+// defaults to `center-point` (the positional system-wide hit-test).
 static NSString *const kRequestMethod = @"method";
 static NSString *const kResponseOk = @"ok";
 static NSString *const kResponseTree = @"tree";
@@ -57,8 +57,9 @@ static NSString *const kErrorKindApplicationUnavailable = @"application_unavaila
 // a partial view, so the host can warn rather than pass it off as complete. Absent or `false` means the
 // walk visited every element within the bounds.
 static NSString *const kResponseTruncated = @"truncated";
-// The frontmost-application response: the resolved foreground pid, plus the mechanism that resolved it
-// (a diagnostic tag, so a future alternate strategy is distinguishable in logs from the current one).
+// The resolved foreground pid a fused frontmost read reports, plus the mechanism that resolved it (a
+// diagnostic tag, so a future alternate strategy is distinguishable in logs from the current one). The
+// pid also tags the owning element of a hit-test result.
 static NSString *const kResponsePid = @"pid";
 static NSString *const kResponseMethod = @"method";
 // A fullscreen modal/alert descriptor added to a describe response when one is detected in the tree.
@@ -76,9 +77,6 @@ static NSString *const kAlertControllerClassPrefix = @"_UIAlertController";
 
 static NSString *const kVerbDescribe = @"describe";
 static NSString *const kVerbHitTest = @"hittest";
-// Resolves the frontmost application's pid entirely in-guest — a system-wide hit-test at the caller's
-// screen-anchor point, with no host-side CoreSimulator AX round-trip.
-static NSString *const kVerbFrontmost = @"frontmost";
 static NSString *const kActionServe = @"serve";
 
 // The `method` a successful `frontmost` response reports (the mechanism that answered).
@@ -834,8 +832,7 @@ NSDictionary<NSString *, id> *FBAXBridgeHandleRequest(NSDictionary<NSString *, i
   NSString *verb = request[kRequestVerb];
   BOOL isDescribe = [verb isEqualToString:kVerbDescribe];
   BOOL isHitTest = [verb isEqualToString:kVerbHitTest];
-  BOOL isFrontmost = [verb isEqualToString:kVerbFrontmost];
-  if (!isDescribe && !isHitTest && !isFrontmost) {
+  if (!isDescribe && !isHitTest) {
     return FBAXBridgeErrorResponse([NSString stringWithFormat:@"unsupported verb: %@", verb ?: @"(nil)"]);
   }
 
@@ -843,24 +840,6 @@ NSDictionary<NSString *, id> *FBAXBridgeHandleRequest(NSDictionary<NSString *, i
   XCTAccessibilityFramework *framework = FBAXBridgeSharedFramework(&setupError);
   if (!framework) {
     return FBAXBridgeErrorResponse(setupError ?: @"accessibility setup failed");
-  }
-
-  // `frontmost` resolves the foreground pid via the selected method (default: a system-wide hit-test at
-  // the caller's screen anchor) — no input pid — so it is handled before the pid-scoped describe/hittest.
-  if (isFrontmost) {
-    NSNumber *xNumber = request[kRequestX];
-    NSNumber *yNumber = request[kRequestY];
-    if (![xNumber isKindOfClass:NSNumber.class] || ![yNumber isKindOfClass:NSNumber.class]) {
-      return FBAXBridgeErrorResponse(@"frontmost requires numeric x and y (the screen anchor point)");
-    }
-    pid_t frontmostPid = 0;
-    NSString *method = nil;
-    NSString *frontmostError = nil;
-    NSString *requestedMethod = [request[kRequestMethod] isKindOfClass:NSString.class] ? request[kRequestMethod] : nil;
-    if (!FBAXBridgeResolveFrontmostPid(requestedMethod, xNumber.floatValue, yNumber.floatValue, &frontmostPid, &method, &frontmostError)) {
-      return FBAXBridgeErrorResponse(frontmostError ?: @"could not resolve the frontmost application pid");
-    }
-    return @{kResponseOk : @YES, kResponsePid : @(frontmostPid), kResponseMethod : method ?: @""};
   }
 
   Class elementClass = objc_lookUpClass("XCAccessibilityElement");
@@ -1155,7 +1134,6 @@ NSDictionary<NSString *, NSString *> *FBAXBridgeWireConstantsForTesting(void)
     @"modal.alertControllerClassPrefix" : kAlertControllerClassPrefix,
     @"verb.describe" : kVerbDescribe,
     @"verb.hittest" : kVerbHitTest,
-    @"verb.frontmost" : kVerbFrontmost,
     @"method.centerPoint" : kMethodCenterPoint,
     @"method.windowServer" : kMethodWindowServer,
     @"method.runningBoard" : kMethodRunningBoard,
