@@ -94,55 +94,11 @@ public extension FBUIAutomation {
   func tap(_ query: FBAccessibilityElementQuery) async throws {
     try await tap(query, expectedValue: nil, expectedKey: .label)
   }
-
-  /// `describe`, serialized to canonical sorted-keys JSON — the form CLI front-ends emit.
-  func describeJSON(
-    _ query: FBAccessibilityElementQuery,
-    options: FBAccessibilityRequestOptions
-  ) async throws -> Data {
-    try await describe(query, options: options).sortedKeysJSON()
-  }
-
-  /// `hitTest`, serialized to canonical sorted-keys JSON, or `nil` when the point is empty — the form
-  /// CLI front-ends emit for a targeted read.
-  func hitTestJSON(
-    at point: CGPoint,
-    options: FBAccessibilityRequestOptions
-  ) async throws -> Data? {
-    try await hitTest(at: point, options: options)?.sortedKeysJSON()
-  }
-
-  /// Hit-tests `point`, then taps it via `hid`, returning the element that was under the point before
-  /// the tap (or `nil` when the point was empty). The hit-test runs first, so the returned element is
-  /// what the touch lands on; the tap is then sent whether or not an element was found. A reader
-  /// failure throws — and the tap is not sent — so a caller can tell empty space from a broken reader.
-  /// This is the composition primitive behind a streaming "tap and learn what you hit" server: it
-  /// pairs a read backend (`self`) with a HID sender, owning only the ordering and tap-regardless policy.
-  func tapAndHitTest(
-    at point: CGPoint,
-    options: FBAccessibilityRequestOptions,
-    hid: FBSimulatorHID,
-    logger: FBControlCoreLogger
-  ) async throws -> FBAccessibilityElementsResponse? {
-    let element = try await hitTest(at: point, options: options)
-    try await hid.send(event: .tapAt(x: Double(point.x), y: Double(point.y)), logger: logger)
-    return element
-  }
-
-  /// `tapAndHitTest`, serialized to canonical sorted-keys JSON, or `nil` when the point was empty.
-  func tapAndHitTestJSON(
-    at point: CGPoint,
-    options: FBAccessibilityRequestOptions,
-    hid: FBSimulatorHID,
-    logger: FBControlCoreLogger
-  ) async throws -> Data? {
-    try await tapAndHitTest(at: point, options: options, hid: hid, logger: logger)?.sortedKeysJSON()
-  }
 }
 
-private extension FBAccessibilityElementsResponse {
-  /// The canonical sorted-keys JSON encoding every CLI front-end emits — one definition so the byte
-  /// form can't drift between the describe, hit-test, and tap-and-hit-test paths.
+public extension FBAccessibilityElementsResponse {
+  /// The canonical sorted-keys JSON encoding CLI front-ends emit for an element response — one
+  /// definition, so the byte form can't drift between the describe and hit-test call sites that apply it.
   func sortedKeysJSON() throws -> Data {
     try JSONSerialization.data(withJSONObject: asDictionary(), options: .sortedKeys)
   }
