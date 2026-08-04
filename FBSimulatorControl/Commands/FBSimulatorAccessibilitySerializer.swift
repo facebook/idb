@@ -9,15 +9,6 @@ import AppKit
 import FBControlCore
 import Foundation
 
-/// Reference-typed accumulator for the process ids seen during a serialization
-/// traversal. Shared with the remote-content phase so processes already present
-/// in the main tree are skipped during grid hit-testing.
-final class SeenPIDs {
-  private var pids: Set<pid_t> = []
-  func insert(_ pid: pid_t) { pids.insert(pid) }
-  func contains(_ pid: pid_t) -> Bool { pids.contains(pid) }
-}
-
 /// Serializes an `AXPMacPlatformElement` tree into the typed JSON emitted by the
 /// accessibility commands. The values mirror the old SimulatorBridge implementation
 /// for downstream compatibility.
@@ -31,8 +22,6 @@ final class SeenPIDs {
 enum FBSimulatorAccessibilitySerializer {
 
   private static let axPrefix = "AX"
-  private static let discoveryMethodRecursive = "recursive"
-  private static let discoveryMethodPointGrid = "point_grid"
 
   // MARK: - Entry points
 
@@ -69,25 +58,29 @@ enum FBSimulatorAccessibilitySerializer {
       // A single element (describe-point) is always the target — never filtered.
       return .object(nestedRecursiveDescription(fromElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: nil, filter: .all).first ?? [:])
     }
-    return .object(accessibilityDictionary(forElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: nil, discoveryMethod: discoveryMethodRecursive))
+    return .object(decoratedDictionary(forElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: nil, isRemote: false))
   }
 
-  // The values here mirror the old SimulatorBridge implementation for downstream
-  // compatibility.
-  static func accessibilityDictionary(
+  // MARK: - Node
+
+  /// Builds the `FBJSONValue` node dictionary for a single element over `keys`. The values mirror the old
+  /// SimulatorBridge implementation for downstream compatibility.
+  ///
+  /// `collector` and `coverageGrid` are pure side-channels intrinsic to the attribute-read pass: the
+  /// collector tallies each fetch (and the coverage grid marks the frame it reads) without altering the
+  /// returned dictionary — proven by `testNodeDictionaryIsCollectorNeutral`. They stay in the core
+  /// because the tallies (and the exact `nil`-key coverage read) are a byte-for-byte consequence of the
+  /// read order. The traversal-level concerns the core omits — seen-pid dedup and the `is_remote`
+  /// provenance tag — live in `decoratedDictionary`.
+  static func nodeDictionary(
     forElement element: FBAXPlatformElement,
     token: String,
     keys: Set<FBAXKeys>,
     collector: FBAccessibilityProfilingCollector?,
-    coverageGrid: FBAccessibilityCoverageGrid?,
-    seenPids: SeenPIDs?,
-    discoveryMethod: String
+    coverageGrid: FBAccessibilityCoverageGrid?
   ) -> [String: FBJSONValue] {
     // The token must always be set so that the right callback is called.
     element.axSetBridgeDelegateToken(token)
-
-    let elementPid = element.axTranslationPid
-    seenPids?.insert(elementPid)
 
     collector?.incrementElementCount()
 
@@ -186,8 +179,30 @@ enum FBSimulatorAccessibilitySerializer {
     include(.placeholder, string(element.axPlaceholderValue()))
     include(.hidden, .bool(element.axIsHidden()))
     include(.focused, .bool(element.axIsFocused()))
-    include(.isRemote, .string(discoveryMethod))
 
+    return values
+  }
+
+  /// Wraps `nodeDictionary` with the two traversal-level concerns the pure core omits: recording the
+  /// element's pid in `seenPids` (so remote-content hit-testing can skip processes already present in the
+  /// main tree) and, when `.isRemote` is requested, tagging the node's provenance — `true` for nodes
+  /// discovered by remote grid hit-testing, `false` for the main-tree traversal. `.isRemote` is not in
+  /// `FBAXKeys.defaultSet`, so a default response is byte-identical to the bare core.
+  static func decoratedDictionary(
+    forElement element: FBAXPlatformElement,
+    token: String,
+    keys: Set<FBAXKeys>,
+    collector: FBAccessibilityProfilingCollector?,
+    coverageGrid: FBAccessibilityCoverageGrid?,
+    seenPids: SeenPIDs?,
+    isRemote: Bool
+  ) -> [String: FBJSONValue] {
+    var values = nodeDictionary(forElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid)
+    seenPids?.insert(element.axTranslationPid)
+    if keys.contains(.isRemote) {
+      collector?.incrementAttributeFetchCount(forKey: FBAXKeys.isRemote.rawValue)
+      values[FBAXKeys.isRemote.rawValue] = .bool(isRemote)
+    }
     return values
   }
 
@@ -205,7 +220,7 @@ enum FBSimulatorAccessibilitySerializer {
   ) -> [[String: FBJSONValue]] {
     var values: [[String: FBJSONValue]] = []
     if passes(element, filter: filter) {
-      values.append(accessibilityDictionary(forElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids, discoveryMethod: discoveryMethodRecursive))
+      values.append(decoratedDictionary(forElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids, isRemote: false))
     }
     for child in element.axChildren() {
       child.axSetBridgeDelegateToken(token)
@@ -233,7 +248,7 @@ enum FBSimulatorAccessibilitySerializer {
     guard passes(element, filter: filter) else {
       return childrenValues
     }
-    var values = accessibilityDictionary(forElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids, discoveryMethod: discoveryMethodRecursive)
+    var values = decoratedDictionary(forElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids, isRemote: false)
     values["children"] = .array(childrenValues.map { .object($0) })
     return [values]
   }

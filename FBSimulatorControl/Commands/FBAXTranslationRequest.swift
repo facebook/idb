@@ -10,6 +10,16 @@ import CoreSimulator
 import FBControlCore
 import Foundation
 
+/// Reference-typed accumulator for the process ids seen during a serialization
+/// traversal. Populated as the main tree is serialized and shared with the
+/// remote-content phase so processes already present in the main tree are
+/// skipped during grid hit-testing.
+final class SeenPIDs {
+  private var pids: Set<pid_t> = []
+  func insert(_ pid: pid_t) { pids.insert(pid) }
+  func contains(_ pid: pid_t) -> Bool { pids.contains(pid) }
+}
+
 /// A single accessibility translation request. Carries the per-request token,
 /// the resolved CoreSimulator device + translator, the profiling collector, and
 /// the synchronous XPC timeout. The `kind` selects how the root element is
@@ -230,14 +240,14 @@ public final class FBAXTranslationRequest {
 
         coverageGrid?.markFilled(with: hitFrame)
 
-        let elemDict = FBSimulatorAccessibilitySerializer.accessibilityDictionary(
+        let elemDict = FBSimulatorAccessibilitySerializer.decoratedDictionary(
           forElement: hitElement,
           token: token,
           keys: keysWithFrame,
           collector: collector,
           coverageGrid: nil, // already marked above
           seenPids: nil, // already filtered
-          discoveryMethod: "point_grid"
+          isRemote: true
         )
         discoveredElements.append(.object(elemDict))
 

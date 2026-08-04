@@ -64,26 +64,60 @@ final class FBAccessibilitySerializationTests: XCTestCase {
     XCTAssertEqual(try serializedJSON(nestedFormat: true), Self.expectedNestedJSON)
   }
 
-  // The profiling collector, coverage grid, and seen-pid set are pure side-channels: they accumulate
-  // counts / mark cells / record pids but must not change the serialized node. This invariant is what
-  // lets the serializer later split a pure node core from the legacy decorator without a byte change.
+  // The profiling collector and coverage grid are pure side-channels of the node core, and the decorator's
+  // seen-pid/is_remote layer adds nothing over the default key set: neither may change the serialized node.
+  // This invariant is what lets `nodeDictionary` be the single source of node bytes while
+  // `decoratedDictionary` layers on traversal-level concerns.
   func testNodeDictionaryIsCollectorNeutral() throws {
     let root = FBAXTreeSerialization.buildPlatformElementTree(from: Self.sampleTree(), pid: 7)
     let grid = try XCTUnwrap(FBAccessibilityCoverageGrid(screenBounds: CGRect(x: 0, y: 0, width: 390, height: 844)))
     var elements: [FBAXPlatformElement] = [root]
     elements.append(contentsOf: root.axChildren())
     for element in elements {
-      let bare = FBSimulatorAccessibilitySerializer.accessibilityDictionary(
+      let bare = FBSimulatorAccessibilitySerializer.nodeDictionary(
         forElement: element, token: "", keys: FBAXKeys.defaultSet,
-        collector: nil, coverageGrid: nil, seenPids: nil, discoveryMethod: "recursive"
+        collector: nil, coverageGrid: nil
       )
-      let decorated = FBSimulatorAccessibilitySerializer.accessibilityDictionary(
+      let instrumented = FBSimulatorAccessibilitySerializer.nodeDictionary(
         forElement: element, token: "", keys: FBAXKeys.defaultSet,
-        collector: FBAccessibilityProfilingCollector(), coverageGrid: grid, seenPids: SeenPIDs(),
-        discoveryMethod: "recursive"
+        collector: FBAccessibilityProfilingCollector(), coverageGrid: grid
       )
-      XCTAssertEqual(bare, decorated, "profiling/coverage/seen-pid side-channels must not change the node output")
+      XCTAssertEqual(bare, instrumented, "profiling/coverage side-channels must not change the node output")
+
+      let decorated = FBSimulatorAccessibilitySerializer.decoratedDictionary(
+        forElement: element, token: "", keys: FBAXKeys.defaultSet,
+        collector: FBAccessibilityProfilingCollector(), coverageGrid: grid, seenPids: SeenPIDs(), isRemote: true
+      )
+      XCTAssertEqual(bare, decorated, "the seen-pid/is_remote decorator must not alter default-set node output")
     }
+  }
+
+  // `is_remote` is opt-in (absent from `defaultSet`) and, when requested, is a *bool* recording node
+  // provenance — `false` for the main-tree traversal, `true` for remote grid hit-testing — replacing the
+  // old discovery-method string. The default set never carries the key, so a default response is
+  // byte-identical to the bare node core.
+  func testDecoratorTagsIsRemoteProvenanceAsBool() throws {
+    let root = FBAXTreeSerialization.buildPlatformElementTree(from: Self.sampleTree(), pid: 7)
+    var keysWithRemote = FBAXKeys.defaultSet
+    keysWithRemote.insert(.isRemote)
+
+    let local = FBSimulatorAccessibilitySerializer.decoratedDictionary(
+      forElement: root, token: "", keys: keysWithRemote,
+      collector: nil, coverageGrid: nil, seenPids: nil, isRemote: false
+    )
+    XCTAssertEqual(try XCTUnwrap(local[FBAXKeys.isRemote.rawValue]), .bool(false), "main-tree nodes tag is_remote=false")
+
+    let remote = FBSimulatorAccessibilitySerializer.decoratedDictionary(
+      forElement: root, token: "", keys: keysWithRemote,
+      collector: nil, coverageGrid: nil, seenPids: nil, isRemote: true
+    )
+    XCTAssertEqual(try XCTUnwrap(remote[FBAXKeys.isRemote.rawValue]), .bool(true), "remote-discovered nodes tag is_remote=true")
+
+    let defaultSet = FBSimulatorAccessibilitySerializer.decoratedDictionary(
+      forElement: root, token: "", keys: FBAXKeys.defaultSet,
+      collector: nil, coverageGrid: nil, seenPids: nil, isRemote: true
+    )
+    XCTAssertNil(defaultSet[FBAXKeys.isRemote.rawValue], "is_remote stays absent unless explicitly requested")
   }
 
   // An off-screen element (e.g. a SpringBoard icon) can report a non-finite frame coordinate. JSON
