@@ -73,7 +73,6 @@ final class FakeFramebufferConsumer: NSObject, FBFramebufferConsumer {
   }
 }
 
-/// Creates a small IOSurface for tests.
 /// Creates a small BGRA IOSurface for tests. The full BGRA property set (format, row alignment,
 /// allocation size) makes the surface consumable by CoreImage and wrappable by
 /// `CVPixelBufferCreateWithIOSurface` (which rejects a surface with no pixel format), not just

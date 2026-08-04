@@ -36,9 +36,9 @@ public final class FBSimulatorScreenshotCommands: NSObject, FBiOSTargetCommand {
   fileprivate func takeScreenshotAsync(format: FBScreenshotFormat) async throws -> Data {
     let image = try await connectToImage()
     if format == .jpeg {
-      return try image.jpegImageData()
+      return try await image.jpegImageData()
     } else if format == .png {
-      return try image.pngImageData()
+      return try await image.pngImageData()
     } else {
       throw FBSimulatorError.describe("\(format) is not a recognized screenshot format").build()
     }
@@ -64,7 +64,7 @@ public final class FBSimulatorScreenshotCommands: NSObject, FBiOSTargetCommand {
   /// scaled from points to pixels using the target's screen scale.
   private func replScreenshotImage(cropRect: CGRect?) async throws -> CGImage {
     let image = try await connectToImage()
-    guard let full = try image.image() else {
+    guard let full = try await image.image() else {
       throw FBSimulatorError.describe("Failed to capture a screenshot").build()
     }
     guard let cropRect else {

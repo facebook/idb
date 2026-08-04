@@ -10,7 +10,9 @@ import FBControlCore
 import Foundation
 import IOSurface
 
-public final class FBSurfaceImageGenerator: FBFramebufferConsumer {
+/// Renders the latest simulator IOSurface to a `CGImage`. Not thread-safe by itself: it is owned and
+/// confined by the `FBSimulatorImage` actor, which serializes `updateSurface` and `image()`.
+public final class FBSurfaceImageGenerator {
 
   // MARK: - Properties
 
@@ -73,9 +75,9 @@ public final class FBSurfaceImageGenerator: FBFramebufferConsumer {
     return context.createCGImage(ciImage, from: ciImage.extent)
   }
 
-  // MARK: - FBFramebufferConsumer
+  // MARK: - Surface
 
-  public func didChange(_ surface: IOSurface?) {
+  public func updateSurface(_ surface: IOSurface?) {
     lastSeedValue = 0
     if let oldSurface = self.surface {
       logger?.info().log("Removing old surface \(oldSurface)")
@@ -87,8 +89,5 @@ public final class FBSurfaceImageGenerator: FBFramebufferConsumer {
       logger?.info().log("Received IOSurface from Framebuffer Service \(surface)")
       self.surface = surface
     }
-  }
-
-  public func didRenderFrame() {
   }
 }

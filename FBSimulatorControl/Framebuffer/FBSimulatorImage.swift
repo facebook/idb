@@ -6,53 +6,44 @@
  */
 
 import CoreImage
-import FBControlCore
+@preconcurrency import FBControlCore
 import Foundation
+@preconcurrency import IOSurface
 import ImageIO
 import UniformTypeIdentifiers
 
-public final class FBSimulatorImage {
+public final actor FBSimulatorImage {
 
   // MARK: - Properties
 
   private let logger: (any FBControlCoreLogger)?
-  private let writeQueue: DispatchQueue
   private let imageGenerator: FBSurfaceImageGenerator
   private let framebuffer: FBFramebuffer
   private var attachment: FBFramebufferAttachment?
+  private var eventTask: Task<Void, Never>?
 
   // MARK: - Initializers
 
-  public class func image(with framebuffer: FBFramebuffer, logger: (any FBControlCoreLogger)?) -> FBSimulatorImage {
+  public static func image(with framebuffer: FBFramebuffer, logger: (any FBControlCoreLogger)?) -> FBSimulatorImage {
     FBSimulatorImage(framebuffer: framebuffer, logger: logger)
   }
 
   init(framebuffer: FBFramebuffer, logger: (any FBControlCoreLogger)?) {
     self.framebuffer = framebuffer
     self.logger = logger
-    self.writeQueue = DispatchQueue(label: "com.facebook.FBSimulatorControl.framebuffer.image")
     self.imageGenerator = FBSurfaceImageGenerator(scale: NSDecimalNumber.one, purpose: "simulator_image", logger: logger)
+  }
+
+  deinit {
+    // Finishing the stream ends the event task, which releases the attachment.
+    attachment?.cancel()
+    eventTask?.cancel()
   }
 
   // MARK: - Public Methods
 
   public func image() throws -> CGImage? {
-    // Serialize the one-time attach on writeQueue so concurrent image() calls cannot both observe the
-    // generator as unattached and double-attach it; the generator's callbacks are delivered on this
-    // same queue.
-    try writeQueue.sync {
-      guard attachment == nil else { return }
-      logger?.log("Image Generator \(imageGenerator) not attached, attaching")
-      let attachment = try framebuffer.attach(imageGenerator, on: writeQueue)
-      self.attachment = attachment
-      if let surface = attachment.initialSurface {
-        logger?.log("Surface \(surface) immediately available, adding to Image Generator \(imageGenerator)")
-        imageGenerator.didChange(surface)
-      } else {
-        logger?.log("Surface for ImageGenerator not immediately available")
-      }
-    }
-
+    try attachIfNeeded()
     let img = imageGenerator.image()
     if img != nil {
       return img
@@ -70,15 +61,47 @@ public final class FBSimulatorImage {
 
   // MARK: - Private
 
-  private class func jpegImageData(from image: CGImage?) throws -> Data {
+  /// One-time lazy attach; actor isolation makes this attach-exactly-once regardless of caller
+  /// threading. The generator's surface is seeded synchronously from `initialSurface`, then kept
+  /// current by a task consuming the attachment's ordered event stream.
+  private func attachIfNeeded() throws {
+    guard attachment == nil else {
+      return
+    }
+    logger?.log("Image Generator \(imageGenerator) not attached, attaching")
+    let attachment = try framebuffer.attach()
+    self.attachment = attachment
+    if let surface = attachment.initialSurface {
+      logger?.log("Surface \(surface) immediately available, adding to Image Generator \(imageGenerator)")
+      imageGenerator.updateSurface(surface)
+    } else {
+      logger?.log("Surface for ImageGenerator not immediately available")
+    }
+    eventTask = Task { [weak self] in
+      for await event in attachment.events {
+        guard case let .surfaceChanged(surface) = event else {
+          continue
+        }
+        await self?.applySurface(surface)
+      }
+    }
+  }
+
+  private func applySurface(_ surface: IOSurface?) {
+    imageGenerator.updateSurface(surface)
+  }
+
+  // MARK: - Encoding
+
+  private static func jpegImageData(from image: CGImage?) throws -> Data {
     try imageData(from: image, type: .jpeg)
   }
 
-  private class func pngImageData(from image: CGImage?) throws -> Data {
+  private static func pngImageData(from image: CGImage?) throws -> Data {
     try imageData(from: image, type: .png)
   }
 
-  private class func imageData(from image: CGImage?, type: UTType) throws -> Data {
+  private static func imageData(from image: CGImage?, type: UTType) throws -> Data {
     guard let image else {
       throw
         FBSimulatorError
