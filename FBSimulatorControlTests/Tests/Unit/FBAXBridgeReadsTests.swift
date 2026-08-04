@@ -256,7 +256,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
     // The fused read resolves the frontmost app AND reads its tree in one call, so the response carries
     // the resolved pid the host tags elements with — it did not know the pid in advance.
     let tree: [String: Any] = [FBAXWire.Node.label.rawValue: "Settings"]
-    let data = try envelope(["ok": true, "tree": tree, "pid": 8865, "method": "system_wide_hit_test", "truncated": false])
+    let data = try envelope(["ok": true, "tree": tree, "pid": 8865, "method": "center-point", "truncated": false])
     let parsed = try FBAXBridgeResponse.frontmostTree(fromResponse: data)
     XCTAssertEqual(parsed.pid, 8865)
     XCTAssertEqual(parsed.tree[FBAXWire.Node.label.rawValue] as? String, "Settings")

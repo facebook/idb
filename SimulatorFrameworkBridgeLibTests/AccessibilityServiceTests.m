@@ -72,15 +72,16 @@ static NSDictionary *FBAXTestsParse(NSData *data)
   XCTAssertEqualObjects(parsed[@"truncated"], @YES, @"the truncation flag must survive serialization");
 }
 
-// A frontmost response carries the resolved foreground pid and the method that resolved it. Both must
-// survive serialization so the host can read the pid and surface which mechanism answered.
+// A frontmost response carries the resolved foreground pid and the method that resolved it, spelled with
+// the same selector the request uses so the host can decode it back into `FBAXBridgeFrontmostMethod`.
+// Both must survive serialization so the host can read the pid and surface which mechanism answered.
 - (void)testFrontmostResponseSerializesPidAndMethod
 {
-  NSDictionary *response = @{@"ok" : @YES, @"pid" : @1234, @"method" : @"system_wide_hit_test"};
+  NSDictionary *response = @{@"ok" : @YES, @"pid" : @1234, @"method" : @"center-point"};
   NSDictionary *parsed = FBAXTestsParse(FBAXBridgeSerializeResponse(response));
   XCTAssertEqualObjects(parsed[@"ok"], @YES);
   XCTAssertEqualObjects(parsed[@"pid"], @1234, @"the resolved pid must survive serialization");
-  XCTAssertEqualObjects(parsed[@"method"], @"system_wide_hit_test");
+  XCTAssertEqualObjects(parsed[@"method"], @"center-point");
 }
 
 // A fullscreen-modal descriptor added to a describe response must survive serialization so the host can
@@ -115,7 +116,7 @@ static NSDictionary *FBAXTestsParse(NSData *data)
 // the `XC_kAXXC*` node keys, the request/envelope keys, the modal-descriptor keys, and the
 // frontmost-method selectors. A rename on either side is a silent protocol break, so this pins the
 // guest's constants to the byte-identical literals the host pins in `FBAXWireContractTests` (node keys
-// against `FBRemoteAutomationAXAttribute`, request selectors against `FBAXBridgeFrontmostMethod`); the
+// against `FBAXWire.Node`, request selectors against `FBAXBridgeFrontmostMethod`); the
 // two files agreeing on these strings is what enforces the contract.
 - (void)testGuestWireConstantsMatchTheHostContract
 {
@@ -157,9 +158,6 @@ static NSDictionary *FBAXTestsParse(NSData *data)
     @"method.centerPoint" : @"center-point",
     @"method.windowServer" : @"window-server",
     @"method.runningBoard" : @"runningboard",
-    @"methodResponse.systemWideHitTest" : @"system_wide_hit_test",
-    @"methodResponse.windowServer" : @"window_server",
-    @"methodResponse.runningBoard" : @"running_board",
   };
   // Whole-dictionary equality also fails on any guest constant this test forgot to pin (or any removed),
   // not just a changed value.

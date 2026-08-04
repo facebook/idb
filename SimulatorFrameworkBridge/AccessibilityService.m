@@ -22,8 +22,8 @@
 
 #import <CoreGraphics/CoreGraphics.h>
 
-// The `XC_kAXXC*` attribute keys. These MUST match `FBRemoteAutomationAXAttribute` host-side so the
-// emitted tree feeds the shared serializer (`FBRemoteAutomationPlatformElement`) unchanged.
+// The `XC_kAXXC*` attribute keys. These MUST match `FBAXWire.Node` host-side so the emitted tree feeds
+// the shared serializer (via `FBRemoteAutomationPlatformElement`) unchanged.
 static NSString *const kAXElementType = @"XC_kAXXCAttributeElementType";
 static NSString *const kAXElementBaseType = @"XC_kAXXCAttributeElementBaseType";
 static NSString *const kAXLabel = @"XC_kAXXCAttributeLabel";
@@ -79,19 +79,15 @@ static NSString *const kVerbDescribe = @"describe";
 static NSString *const kVerbHitTest = @"hittest";
 static NSString *const kActionServe = @"serve";
 
-// The `method` a successful `frontmost` response reports (the mechanism that answered).
-static NSString *const kFrontmostMethodSystemWideHitTest = @"system_wide_hit_test";
-static NSString *const kFrontmostMethodWindowServer = @"window_server";
-static NSString *const kFrontmostMethodRunningBoard = @"running_board";
-
 // The private AccessibilityPlatformTranslation framework, loaded from the booted runtime root — the same
 // AXPTranslator the host bridges to for a window-server frontmost, driven here entirely in-guest.
 static NSString *const kAXPTranslationPath =
 @"/System/Library/PrivateFrameworks/AccessibilityPlatformTranslation.framework/AccessibilityPlatformTranslation";
 
-// Frontmost-resolution methods a request may select (the `method` request key). `center-point` is the
-// positional system-wide hit-test (default); other methods are added in later changes and slot into the
-// resolution dispatcher below.
+// The frontmost-resolution methods, shared by the request `method` selector and the response `method`
+// value: a request selects a strategy with one of these, and a fused frontmost response echoes back the
+// one that answered, so a guest-reported `method` round-trips into the host's `FBAXBridgeFrontmostMethod`.
+// `center-point` is the positional system-wide hit-test — the default when a request names no method.
 static NSString *const kMethodCenterPoint = @"center-point";
 static NSString *const kMethodWindowServer = @"window-server";
 static NSString *const kMethodRunningBoard = @"runningboard";
@@ -526,7 +522,7 @@ static BOOL FBAXBridgeCopyWindowServerFrontmostPid(pid_t *pidOut, NSString *_Nul
     *pidOut = pid;
   }
   if (methodOut) {
-    *methodOut = kFrontmostMethodWindowServer;
+    *methodOut = kMethodWindowServer;
   }
   return YES;
 }
@@ -617,7 +613,7 @@ static BOOL FBAXBridgeCopyRunningBoardFrontmostPid(pid_t *pidOut, NSString *_Nul
         *pidOut = pid;
       }
       if (methodOut) {
-        *methodOut = kFrontmostMethodRunningBoard;
+        *methodOut = kMethodRunningBoard;
       }
       return YES;
     }
@@ -688,7 +684,7 @@ static BOOL FBAXBridgeCopyForegroundPid(float x, float y, pid_t *pidOut, NSStrin
     *pidOut = pid;
   }
   if (methodOut) {
-    *methodOut = kFrontmostMethodSystemWideHitTest;
+    *methodOut = kMethodCenterPoint;
   }
   return YES;
 }
@@ -1137,8 +1133,5 @@ NSDictionary<NSString *, NSString *> *FBAXBridgeWireConstantsForTesting(void)
     @"method.centerPoint" : kMethodCenterPoint,
     @"method.windowServer" : kMethodWindowServer,
     @"method.runningBoard" : kMethodRunningBoard,
-    @"methodResponse.systemWideHitTest" : kFrontmostMethodSystemWideHitTest,
-    @"methodResponse.windowServer" : kFrontmostMethodWindowServer,
-    @"methodResponse.runningBoard" : kFrontmostMethodRunningBoard,
   };
 }
