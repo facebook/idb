@@ -250,55 +250,6 @@ final class FBAXBridgeReadsTests: XCTestCase {
     }
   }
 
-  // MARK: - FBAXBridgeResponse frontmost parsing
-
-  func testFrontmostParsesResolvedPid() throws {
-    let data = try envelope(["ok": true, "pid": 8865, "method": "system_wide_hit_test"])
-    XCTAssertEqual(try FBAXBridgeResponse.frontmostPid(fromResponse: data), 8865)
-  }
-
-  func testFrontmostThrowsFrontmostUnavailableOnGuestFailure() throws {
-    // A guest that could not resolve the frontmost app (e.g. the anchor had no element mid-launch)
-    // reports `ok:false`; that maps to the typed `frontmostUnavailable`, which the poll path treats as
-    // "not up yet" rather than a hard error.
-    let data = try envelope(["ok": false, "error": "system-wide hit-test at (201.0, 437.0) found no element (axError -25202)"])
-    XCTAssertThrowsError(try FBAXBridgeResponse.frontmostPid(fromResponse: data)) { error in
-      guard case FBAXBridgeError.frontmostUnavailable = error else {
-        return XCTFail("a failed frontmost resolution should be frontmostUnavailable, got: \(error)")
-      }
-    }
-  }
-
-  func testFrontmostThrowsWhenPidMissing() throws {
-    let data = try envelope(["ok": true, "method": "system_wide_hit_test"])
-    XCTAssertThrowsError(try FBAXBridgeResponse.frontmostPid(fromResponse: data)) { error in
-      guard case FBAXBridgeError.frontmostUnavailable = error else {
-        return XCTFail("an ok response without a pid should be frontmostUnavailable, got: \(error)")
-      }
-    }
-  }
-
-  func testFrontmostThrowsOnNonPositivePid() throws {
-    // A zero or negative pid names no real process — treat it as unresolved rather than handing it back.
-    let data = try envelope(["ok": true, "pid": 0])
-    XCTAssertThrowsError(try FBAXBridgeResponse.frontmostPid(fromResponse: data)) { error in
-      guard case FBAXBridgeError.frontmostUnavailable = error else {
-        return XCTFail("a non-positive pid should be frontmostUnavailable, got: \(error)")
-      }
-    }
-  }
-
-  func testFrontmostThrowsGuestFailureOnMalformedResponse() {
-    // An unparseable payload is a broken reader, not an unresolved frontmost — a distinct case so the
-    // two are not conflated.
-    let data = Data("not json".utf8)
-    XCTAssertThrowsError(try FBAXBridgeResponse.frontmostPid(fromResponse: data)) { error in
-      guard case FBAXBridgeError.guestFailure = error else {
-        return XCTFail("an unparseable response should be guestFailure, got: \(error)")
-      }
-    }
-  }
-
   // MARK: - FBAXBridgeResponse fused frontmost tree parsing
 
   func testFrontmostTreeParsesTreeAndResolvedPid() throws {
