@@ -19,7 +19,7 @@ import Foundation
 /// statically known, so no scalar is round-tripped through an untyped `NSNumber`.
 /// `axValue()` is the one exception — it is genuinely `Any` — and is the only value
 /// classified via `FBJSONValue(foundation:)`.
-enum FBSimulatorAccessibilitySerializer {
+enum FBAXNodeSerializer {
 
   // MARK: - Entry points
 

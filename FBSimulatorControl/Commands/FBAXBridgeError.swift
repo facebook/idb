@@ -29,7 +29,7 @@ public enum FBAXBridgeError: LocalizedError, Sendable {
     case .bridgeUnavailable:
       return "The SimulatorFrameworkBridge guest binary was not found in the companion Resources directory"
     case .frontmostUnavailable:
-      return "axbridge could not resolve the frontmost application's pid. \(FBAXTreeSerialization.accessibilityHint)"
+      return "axbridge could not resolve the frontmost application's pid. \(FBAXTreeWalk.accessibilityHint)"
     case let .guestFailure(message):
       return "The axbridge guest reader failed: \(message)"
     case let .applicationUnavailable(pid):

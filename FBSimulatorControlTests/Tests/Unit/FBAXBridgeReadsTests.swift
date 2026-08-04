@@ -138,7 +138,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
   // the same element whichever backend serves the read, or `--api` silently changes what `tap General`
   // hits. This pins the substring contract stated on FBAccessibilityElementQuery.marker.
   func testMarkerMatchesBySubstring() throws {
-    let elements = FBAXTreeSerialization.describeAllElements(
+    let elements = FBAXTreeWalk.describeAllElements(
       fromTree: [
         FBAXWire.Node.label.rawValue: "root",
         FBAXWire.Node.children.rawValue: [
@@ -147,7 +147,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
       ],
       keys: FBAXKeys.defaultSet, nestedFormat: false, pid: 1
     )
-    let match = FBAXTreeSerialization.matchingElement(inElements: elements, markerValue: "General", key: .label)
+    let match = FBAXTreeWalk.matchingElement(inElements: elements, markerValue: "General", key: .label)
     guard case let .object(fields)? = match, case let .string(label)? = fields[FBAXSearchableKey.label.rawValue] else {
       return XCTFail("a substring marker must match, got: \(String(describing: match))")
     }
@@ -157,7 +157,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
   func testMarkerFrameCentreMatchesBySubstring() throws {
     // `tap`/`wait`/`set-value` resolve through frameCenter, so it must use the same predicate as the
     // describe matcher — otherwise a marker could be describable but not tappable.
-    let elements = FBAXTreeSerialization.describeAllElements(
+    let elements = FBAXTreeWalk.describeAllElements(
       fromTree: [
         FBAXWire.Node.label.rawValue: "General Settings",
         FBAXWire.Node.frame.rawValue: CGRectCreateDictionaryRepresentation(CGRect(x: 10, y: 20, width: 100, height: 50)) as NSDictionary,
@@ -165,7 +165,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
       ],
       keys: FBAXKeys.defaultSet, nestedFormat: false, pid: 1
     )
-    let centre = FBAXTreeSerialization.frameCenter(inElements: elements, markerValue: "General", key: .label)
+    let centre = FBAXTreeWalk.frameCenter(inElements: elements, markerValue: "General", key: .label)
     XCTAssertEqual(centre?.x, 60)
     XCTAssertEqual(centre?.y, 45)
   }
@@ -192,15 +192,15 @@ final class FBAXBridgeReadsTests: XCTestCase {
       FBAXWire.Node.children.rawValue: [[String: Any]](),
     ]
     let requested: Set<FBAXKeys> = [.value]
-    let withoutSearchedKey = FBAXTreeSerialization.describeAllElements(fromTree: tree, keys: requested, nestedFormat: false, pid: 1)
+    let withoutSearchedKey = FBAXTreeWalk.describeAllElements(fromTree: tree, keys: requested, nestedFormat: false, pid: 1)
     XCTAssertNil(
-      FBAXTreeSerialization.matchingElement(inElements: withoutSearchedKey, markerValue: "General", key: .label),
+      FBAXTreeWalk.matchingElement(inElements: withoutSearchedKey, markerValue: "General", key: .label),
       "a key absent from the serialized set must not resolve a marker"
     )
-    let withSearchedKey = FBAXTreeSerialization.describeAllElements(
+    let withSearchedKey = FBAXTreeWalk.describeAllElements(
       fromTree: tree, keys: requested.union([FBAXSearchableKey.label.serializationKey]), nestedFormat: false, pid: 1
     )
-    guard case let .object(fields)? = FBAXTreeSerialization.matchingElement(inElements: withSearchedKey, markerValue: "General", key: .label),
+    guard case let .object(fields)? = FBAXTreeWalk.matchingElement(inElements: withSearchedKey, markerValue: "General", key: .label),
       case let .string(label)? = fields[FBAXSearchableKey.label.rawValue]
     else {
       return XCTFail("unioning the searched key must make the marker resolve regardless of the requested keys")
@@ -363,7 +363,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
     let data = try envelope(["ok": true, "tree": tree])
     let parsed = try FBAXTreeRead(wholeTreeResponse: data, pid: 99)
 
-    let elements = FBAXTreeSerialization.describeAllElements(
+    let elements = FBAXTreeWalk.describeAllElements(
       fromTree: parsed.tree, keys: FBAXKeys.defaultSet, nestedFormat: false, pid: 99
     )
     XCTAssertEqual(elements.count, 2, "expected the root plus its one child, flattened")

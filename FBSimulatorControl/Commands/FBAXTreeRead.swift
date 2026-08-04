@@ -13,7 +13,7 @@ import Foundation
 /// descriptor the read surfaced. One value type for what both XCUI-grade backends produce from a raw
 /// read, replacing the ad-hoc `(tree, truncated, pid, modal)` tuple each used to destructure.
 ///
-/// The serialize step (`FBAXTreeSerialization.describeAllElements`) and the truncation warning happen
+/// The serialize step (`FBAXTreeWalk.describeAllElements`) and the truncation warning happen
 /// once, in the shared `describeTree`, over this value — so a `.marker` poll that reads without
 /// describing does not re-run either.
 ///

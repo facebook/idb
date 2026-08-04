@@ -16,7 +16,7 @@ import Foundation
 /// One-shot per read: each verb resolves the target pid (frontmost via the CoreSimulator AX path, or a
 /// given application pid), spawns the guest with `accessibility describe --pid <pid>`, parses its JSON
 /// tree, and feeds it through the **same** serializer path the `testmanagerd` backend uses
-/// (`FBRemoteAutomationPlatformElement` -> `FBSimulatorAccessibilitySerializer`), because the guest
+/// (`FBRemoteAutomationPlatformElement` -> `FBAXNodeSerializer`), because the guest
 /// emits the identical `XC_kAXXC*` node shape. The output schema is therefore byte-identical across
 /// the two backends and needs no new serialization code.
 ///
@@ -82,13 +82,13 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
     try await translatingSeamErrors {
       if case let .application(pid) = query {
         let response = try await transport.read(
-          pid: pid, maxDepth: FBAXTreeSerialization.maxReadDepth, maxNodes: FBAXTreeSerialization.maxReadNodes
+          pid: pid, maxDepth: FBAXReadLimits.maxReadDepth, maxNodes: FBAXReadLimits.maxReadNodes
         )
         return try FBAXTreeRead(wholeTreeResponse: response, pid: pid)
       }
       let anchor = frontmostAnchor()
       let response = try await transport.readFrontmost(
-        x: anchor.x, y: anchor.y, maxDepth: FBAXTreeSerialization.maxReadDepth, maxNodes: FBAXTreeSerialization.maxReadNodes, method: frontmostMethod
+        x: anchor.x, y: anchor.y, maxDepth: FBAXReadLimits.maxReadDepth, maxNodes: FBAXReadLimits.maxReadNodes, method: frontmostMethod
       )
       return try FBAXTreeRead(frontmostResponse: response)
     }
@@ -106,8 +106,8 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
       guard let hit = try FBAXTreeRead(hitTestResponse: response) else {
         return nil
       }
-      let element = FBAXTreeSerialization.buildPlatformElementTree(from: hit.tree, pid: hit.pid)
-      let formatted = FBSimulatorAccessibilitySerializer.formattedDescription(
+      let element = FBAXTreeWalk.buildPlatformElementTree(from: hit.tree, pid: hit.pid)
+      let formatted = FBAXNodeSerializer.formattedDescription(
         ofElement: element, token: "", nestedFormat: false, keys: options.keys, collector: nil, coverageGrid: nil
       )
       return FBAccessibilityElementsResponse(elements: formatted)
@@ -128,10 +128,10 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
         // A poll reads the raw tree directly (not through `describeTree`), so `warnIfTruncated` is not
         // called on every poll iteration — matching the describe-path-only warning.
         let read = try await self.readRawTree(for: .frontmost)
-        let elements = FBAXTreeSerialization.describeAllElements(
+        let elements = FBAXTreeWalk.describeAllElements(
           fromTree: read.tree, keys: FBAXKeys.defaultSet.union([key.serializationKey]), nestedFormat: false, pid: read.pid
         )
-        return FBAXTreeSerialization.matchingElement(inElements: elements, markerValue: markerValue, key: key) != nil ? true : nil
+        return FBAXTreeWalk.matchingElement(inElements: elements, markerValue: markerValue, key: key) != nil ? true : nil
       } catch let error as FBAXBridgeError {
         // A frontmost that isn't up yet, a tree that isn't readable yet, or a pid that names no
         // readable app (an app still launching) is "not there yet" — keep polling. A missing guest
@@ -185,6 +185,6 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
   /// the `async` protocol requirement.
   func warnIfTruncated(_ truncated: Bool) {
     guard truncated else { return }
-    _ = simulator.logger?.log("axbridge read hit the bound (maxDepth \(FBAXTreeSerialization.maxReadDepth), maxNodes \(FBAXTreeSerialization.maxReadNodes)); the returned tree is truncated and incomplete.")
+    _ = simulator.logger?.log("axbridge read hit the bound (maxDepth \(FBAXReadLimits.maxReadDepth), maxNodes \(FBAXReadLimits.maxReadNodes)); the returned tree is truncated and incomplete.")
   }
 }

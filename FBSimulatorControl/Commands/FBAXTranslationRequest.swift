@@ -101,7 +101,7 @@ public final class FBAXTranslationRequest {
 
   private func runPoint(_ element: FBAXPlatformElement, options: FBAccessibilityRequestOptions) -> FBAccessibilityElementsResponse {
     let serializationStart = CFAbsoluteTimeGetCurrent()
-    let elements = FBSimulatorAccessibilitySerializer.formattedDescription(
+    let elements = FBAXNodeSerializer.formattedDescription(
       ofElement: element,
       token: token,
       nestedFormat: options.nestedFormat,
@@ -128,7 +128,7 @@ public final class FBAXTranslationRequest {
     let serializationStart = CFAbsoluteTimeGetCurrent()
 
     // Serialize, passing the grid to be populated during traversal.
-    let mainAppElements = FBSimulatorAccessibilitySerializer.recursiveDescription(
+    let mainAppElements = FBAXNodeSerializer.recursiveDescription(
       fromElement: element,
       token: token,
       nestedFormat: options.nestedFormat,
@@ -240,7 +240,7 @@ public final class FBAXTranslationRequest {
 
         coverageGrid?.markFilled(with: hitFrame)
 
-        let elemDict = FBSimulatorAccessibilitySerializer.decoratedDictionary(
+        let elemDict = FBAXNodeSerializer.decoratedDictionary(
           forElement: hitElement,
           token: token,
           keys: keysWithFrame,

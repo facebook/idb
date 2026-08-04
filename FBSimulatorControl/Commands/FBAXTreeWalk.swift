@@ -8,19 +8,13 @@
 import FBControlCore
 import Foundation
 
-/// Backend-neutral serialization of an `XC_kAXXC*` attribute-dictionary tree into the shared
-/// accessibility schema. Both XCUI-grade backends emit this node shape — the `testmanagerd`
-/// remote-automation session and the `axbridge` guest reader — so the tree→element serialization,
-/// marker matching, and frame-centre geometry live here, in a type neither backend owns, rather than
-/// on one backend that the other has to reach into.
-enum FBAXTreeSerialization {
-
-  /// The bounds every whole-tree read is taken under, shared by both XCUI-grade backends so their
-  /// output is comparable: a tree read over one backend truncates at the same point as the other.
-  /// The guest reader is *told* these rather than keeping its own copy, so there is one authority for
-  /// how much tree a read returns.
-  static let maxReadDepth = 50
-  static let maxReadNodes = 3000
+/// Backend-neutral walk over an `XC_kAXXC*` attribute-dictionary tree, plus the marker matcher and
+/// frame-centre geometry that run over the walk's result. Both XCUI-grade backends emit this node
+/// shape — the `testmanagerd` remote-automation session and the `axbridge` guest reader — so the tree
+/// walk, marker matching, and frame-centre geometry live here, in a type neither backend owns, rather
+/// than on one backend that the other has to reach into. Per-node serialization is delegated to
+/// `FBAXNodeSerializer`.
+enum FBAXTreeWalk {
 
   /// Appended to read-failure errors. An empty tree/element almost always means the target app's
   /// in-process accessibility server never started — that requires `ApplicationAccessibilityEnabled`
@@ -34,7 +28,7 @@ enum FBAXTreeSerialization {
   /// element is tagged with the owning app's real pid, discovered during the tree read.
   static func describeAllElements(fromTree tree: [String: Any], keys: Set<FBAXKeys>, nestedFormat: Bool, pid: pid_t, filter: FBAccessibilityElementFilter = .all) -> [FBJSONValue] {
     let root = buildPlatformElementTree(from: tree, pid: pid)
-    return FBSimulatorAccessibilitySerializer.recursiveDescription(
+    return FBAXNodeSerializer.recursiveDescription(
       fromElement: root,
       token: "",
       nestedFormat: nestedFormat,

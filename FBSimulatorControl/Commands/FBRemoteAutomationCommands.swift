@@ -218,8 +218,8 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
         return nil
       }
       guard let root = tree.root as? [String: Any] else { return nil }
-      let elements = FBAXTreeSerialization.describeAllElements(fromTree: root, keys: FBAXKeys.defaultSet.union([key.serializationKey]), nestedFormat: false, pid: tree.processIdentifier)
-      return FBAXTreeSerialization.frameCenter(inElements: elements, markerValue: markerValue, key: key) != nil ? true : nil
+      let elements = FBAXTreeWalk.describeAllElements(fromTree: root, keys: FBAXKeys.defaultSet.union([key.serializationKey]), nestedFormat: false, pid: tree.processIdentifier)
+      return FBAXTreeWalk.frameCenter(inElements: elements, markerValue: markerValue, key: key) != nil ? true : nil
     }
   }
 
@@ -286,8 +286,8 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
       forPid: pid,
       attributes: FBAXWire.Node.fetchList,
       childrenAttribute: FBAXWire.Node.children.rawValue,
-      maxDepth: FBAXTreeSerialization.maxReadDepth,
-      maxNodes: FBAXTreeSerialization.maxReadNodes
+      maxDepth: FBAXReadLimits.maxReadDepth,
+      maxNodes: FBAXReadLimits.maxReadNodes
     )
   }
 
@@ -298,8 +298,8 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
       anchorX: x, y: y,
       attributes: FBAXWire.Node.fetchList,
       childrenAttribute: FBAXWire.Node.children.rawValue,
-      maxDepth: FBAXTreeSerialization.maxReadDepth,
-      maxNodes: FBAXTreeSerialization.maxReadNodes
+      maxDepth: FBAXReadLimits.maxReadDepth,
+      maxNodes: FBAXReadLimits.maxReadNodes
     )
   }
 
@@ -309,7 +309,7 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
   /// An actor-isolated witness satisfies the `async` protocol requirement.
   func warnIfTruncated(_ truncated: Bool) {
     guard truncated else { return }
-    _ = simulator?.logger?.log("Remote-automation read hit the bound (maxDepth \(FBAXTreeSerialization.maxReadDepth), maxNodes \(FBAXTreeSerialization.maxReadNodes)); the returned tree is truncated and incomplete.")
+    _ = simulator?.logger?.log("Remote-automation read hit the bound (maxDepth \(FBAXReadLimits.maxReadDepth), maxNodes \(FBAXReadLimits.maxReadNodes)); the returned tree is truncated and incomplete.")
   }
 
   /// The screen-point centre of the frontmost-tree element a `.marker` names — the shared preamble for
@@ -318,8 +318,8 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
   private func markerCenter(_ markerValue: String, key: FBAXSearchableKey) async throws -> (x: Double, y: Double) {
     let read = try await readRawTree(for: .frontmost)
     warnIfTruncated(read.truncated)
-    let elements = FBAXTreeSerialization.describeAllElements(fromTree: read.tree, keys: FBAXKeys.defaultSet.union([key.serializationKey]), nestedFormat: false, pid: read.pid)
-    switch FBAXTreeSerialization.resolveMarker(inElements: elements, markerValue: markerValue, key: key) {
+    let elements = FBAXTreeWalk.describeAllElements(fromTree: read.tree, keys: FBAXKeys.defaultSet.union([key.serializationKey]), nestedFormat: false, pid: read.pid)
+    switch FBAXTreeWalk.resolveMarker(inElements: elements, markerValue: markerValue, key: key) {
     case let .resolved(x, y):
       return (x, y)
     case .offScreen:
@@ -339,7 +339,7 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
       return nil
     }
     let platformElement = FBRemoteAutomationPlatformElement(attributes: hit.attributes, children: [], pid: hit.pid)
-    return FBSimulatorAccessibilitySerializer.formattedDescription(
+    return FBAXNodeSerializer.formattedDescription(
       ofElement: platformElement,
       token: "",
       nestedFormat: false,

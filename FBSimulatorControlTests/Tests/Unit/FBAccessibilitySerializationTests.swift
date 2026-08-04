@@ -46,7 +46,7 @@ final class FBAccessibilitySerializationTests: XCTestCase {
   }
 
   private func serializedJSON(nestedFormat: Bool) throws -> String {
-    let elements = FBAXTreeSerialization.describeAllElements(
+    let elements = FBAXTreeWalk.describeAllElements(
       fromTree: Self.sampleTree(), keys: FBAXKeys.defaultSet, nestedFormat: nestedFormat, pid: 7
     )
     let response = FBAccessibilityElementsResponse(
@@ -69,22 +69,22 @@ final class FBAccessibilitySerializationTests: XCTestCase {
   // This invariant is what lets `nodeDictionary` be the single source of node bytes while
   // `decoratedDictionary` layers on traversal-level concerns.
   func testNodeDictionaryIsCollectorNeutral() throws {
-    let root = FBAXTreeSerialization.buildPlatformElementTree(from: Self.sampleTree(), pid: 7)
+    let root = FBAXTreeWalk.buildPlatformElementTree(from: Self.sampleTree(), pid: 7)
     let grid = try XCTUnwrap(FBAccessibilityCoverageGrid(screenBounds: CGRect(x: 0, y: 0, width: 390, height: 844)))
     var elements: [FBAXPlatformElement] = [root]
     elements.append(contentsOf: root.axChildren())
     for element in elements {
-      let bare = FBSimulatorAccessibilitySerializer.nodeDictionary(
+      let bare = FBAXNodeSerializer.nodeDictionary(
         forElement: element, token: "", keys: FBAXKeys.defaultSet,
         collector: nil, coverageGrid: nil
       )
-      let instrumented = FBSimulatorAccessibilitySerializer.nodeDictionary(
+      let instrumented = FBAXNodeSerializer.nodeDictionary(
         forElement: element, token: "", keys: FBAXKeys.defaultSet,
         collector: FBAccessibilityProfilingCollector(), coverageGrid: grid
       )
       XCTAssertEqual(bare, instrumented, "profiling/coverage side-channels must not change the node output")
 
-      let decorated = FBSimulatorAccessibilitySerializer.decoratedDictionary(
+      let decorated = FBAXNodeSerializer.decoratedDictionary(
         forElement: element, token: "", keys: FBAXKeys.defaultSet,
         collector: FBAccessibilityProfilingCollector(), coverageGrid: grid, seenPids: SeenPIDs(), isRemote: true
       )
@@ -97,23 +97,23 @@ final class FBAccessibilitySerializationTests: XCTestCase {
   // old discovery-method string. The default set never carries the key, so a default response is
   // byte-identical to the bare node core.
   func testDecoratorTagsIsRemoteProvenanceAsBool() throws {
-    let root = FBAXTreeSerialization.buildPlatformElementTree(from: Self.sampleTree(), pid: 7)
+    let root = FBAXTreeWalk.buildPlatformElementTree(from: Self.sampleTree(), pid: 7)
     var keysWithRemote = FBAXKeys.defaultSet
     keysWithRemote.insert(.isRemote)
 
-    let local = FBSimulatorAccessibilitySerializer.decoratedDictionary(
+    let local = FBAXNodeSerializer.decoratedDictionary(
       forElement: root, token: "", keys: keysWithRemote,
       collector: nil, coverageGrid: nil, seenPids: nil, isRemote: false
     )
     XCTAssertEqual(try XCTUnwrap(local[FBAXKeys.isRemote.rawValue]), .bool(false), "main-tree nodes tag is_remote=false")
 
-    let remote = FBSimulatorAccessibilitySerializer.decoratedDictionary(
+    let remote = FBAXNodeSerializer.decoratedDictionary(
       forElement: root, token: "", keys: keysWithRemote,
       collector: nil, coverageGrid: nil, seenPids: nil, isRemote: true
     )
     XCTAssertEqual(try XCTUnwrap(remote[FBAXKeys.isRemote.rawValue]), .bool(true), "remote-discovered nodes tag is_remote=true")
 
-    let defaultSet = FBSimulatorAccessibilitySerializer.decoratedDictionary(
+    let defaultSet = FBAXNodeSerializer.decoratedDictionary(
       forElement: root, token: "", keys: FBAXKeys.defaultSet,
       collector: nil, coverageGrid: nil, seenPids: nil, isRemote: true
     )
@@ -130,7 +130,7 @@ final class FBAccessibilitySerializationTests: XCTestCase {
       FBAXWire.Node.label.rawValue: "icon",
       FBAXWire.Node.frame.rawValue: frameDict,
     ]
-    let elements = FBAXTreeSerialization.describeAllElements(
+    let elements = FBAXTreeWalk.describeAllElements(
       fromTree: tree, keys: [.label, .frameDict], nestedFormat: false, pid: 7
     )
     let response = FBAccessibilityElementsResponse(
@@ -165,7 +165,7 @@ final class FBAccessibilitySerializationTests: XCTestCase {
   }
 
   func testInteractableFilterDropsUnlabeledContainersFlat() {
-    let flat = FBAXTreeSerialization.describeAllElements(
+    let flat = FBAXTreeWalk.describeAllElements(
       fromTree: Self.filterTree(), keys: [.label], nestedFormat: false, pid: 7, filter: .interactable
     )
     XCTAssertEqual(Set(Self.labels(flat)), ["root", "leaf", "sibling"], "the unlabeled container is dropped, its leaf kept")
@@ -173,7 +173,7 @@ final class FBAccessibilitySerializationTests: XCTestCase {
   }
 
   func testInteractableFilterHoistsChildrenOfDroppedContainerNested() throws {
-    let nested = FBAXTreeSerialization.describeAllElements(
+    let nested = FBAXTreeWalk.describeAllElements(
       fromTree: Self.filterTree(), keys: [.label], nestedFormat: true, pid: 7, filter: .interactable
     )
     guard case let .object(rootNode)? = nested.first, case let .array(children)? = rootNode["children"] else {
@@ -183,7 +183,7 @@ final class FBAccessibilitySerializationTests: XCTestCase {
   }
 
   func testAllFilterKeepsEveryNode() {
-    let flat = FBAXTreeSerialization.describeAllElements(
+    let flat = FBAXTreeWalk.describeAllElements(
       fromTree: Self.filterTree(), keys: [.label], nestedFormat: false, pid: 7, filter: .all
     )
     XCTAssertEqual(flat.count, 4, "the default filter keeps the unlabeled container too")
