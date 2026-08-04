@@ -479,4 +479,27 @@ final class FBSimulatorVideoStreamDeliveryTests: XCTestCase {
     }
     try await stream.stopStreaming()
   }
+
+  func testDroppedStreamIsReleasedOnceSurfaceReleasesCallbacks() async throws {
+    let surface = FakeFramebufferSurface()
+    surface.immediateSurface = makeTestIOSurface()
+    let consumer = FBDataBuffer.accumulatingBuffer()
+    let eager = FBVideoStreamConfiguration(
+      format: .bgra, framesPerSecond: 20, rateControl: nil, scaleFactor: nil, keyFrameRate: nil)
+    var stream: FBSimulatorVideoStream? = makeStream(surface: surface, configuration: eager)
+    weak var weakStream = stream
+
+    try await stream?.startStreaming(consumer)
+
+    // Drop every external retention: this test's reference and the surface's callback blocks (as
+    // the real proxy does at its own teardown). Only the push-loop task could still hold the
+    // stream — and it must not, or a stream dropped without stopStreaming pushes frames forever
+    // and the deinit backstop can never run.
+    stream = nil
+    surface.releaseCallbacks()
+
+    try await expectEventually("dropping the last external reference must release the stream") {
+      weakStream == nil
+    }
+  }
 }

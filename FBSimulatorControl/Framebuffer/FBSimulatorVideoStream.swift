@@ -908,9 +908,10 @@ public final class FBSimulatorVideoStream: FBFramebufferConsumer, FBVideoStream,
   }
 
   deinit {
-    // Backstop: ensure the cadence task is cancelled if the stream is torn down without a clean
-    // stopStreaming (which already ends the loop by cancelling the task). No-op in `.lazy` mode,
-    // where the task is never started.
+    // Backstop: ensure the push-loop task is cancelled if the stream is torn down without a clean
+    // stopStreaming (which already ends the loop by cancelling the task). Reachable while the loop
+    // runs because the task holds the stream weakly; the loop also exits on its own at the next
+    // trigger once the stream is gone.
     framePusherTask?.cancel()
   }
 
@@ -1136,20 +1137,21 @@ public final class FBSimulatorVideoStream: FBFramebufferConsumer, FBVideoStream,
     // `pixelBuffer` for the running loop to pick up. The stimulus differs by cadence: `.eager`
     // iterates the fixed-rate `FrameCadence` clock; `.lazy` iterates `LazyFrameTriggers`, poked by
     // the framebuffer callbacks (`didRenderFrame`/`updateOverlayBuffer`). Both feed the same
-    // loop. `self` is captured: mutable state is confined to `writeQueue` (where the push runs) and
-    // the class is `@unchecked Sendable`.
+    // loop. The task holds the stream weakly (upgraded per trigger inside the loop): a strong
+    // capture would make the task and the stream keep each other alive, so a stream released
+    // without `stopStreaming` would push frames forever and the `deinit` backstop could never run.
     guard framePusherTask == nil else { return }
     switch cadence {
     case let .eager(framesPerSecond):
-      framePusherTask = Task { [self] in
+      framePusherTask = Task { [weak self, logger] in
         let stats = CadenceStats(frameIntervalNanos: NSEC_PER_SEC / UInt64(framesPerSecond), logger: logger)
-        await runFramePushLoop(stimulus: FrameCadence(framesPerSecond: framesPerSecond, logger: logger), stats: stats)
+        await Self.runFramePushLoop(stimulus: FrameCadence(framesPerSecond: framesPerSecond, logger: logger), stats: stats, logger: logger) { self }
       }
     case .lazy:
       let triggers = LazyFrameTriggers()
       lazyTriggers = triggers
-      framePusherTask = Task { [self] in
-        await runFramePushLoop(stimulus: triggers, stats: nil)
+      framePusherTask = Task { [weak self, logger] in
+        await Self.runFramePushLoop(stimulus: triggers, stats: nil, logger: logger) { self }
       }
     }
   }
@@ -1474,15 +1476,22 @@ public final class FBSimulatorVideoStream: FBFramebufferConsumer, FBVideoStream,
   /// The loop ends when the task is cancelled (`stopStreaming`/`cadenceTeardown` cancel it, and
   /// `deinit` cancels as a backstop) or the stimulus finishes (the `.lazy` teardown finishes the
   /// stream).
-  private func runFramePushLoop<Stimulus: AsyncSequence>(stimulus: Stimulus, stats: CadenceStats?) async
-  where Stimulus.Element == FrameTrigger {
+  private static func runFramePushLoop<Stimulus: AsyncSequence>(
+    stimulus: Stimulus,
+    stats: CadenceStats?,
+    logger: any FBControlCoreLogger,
+    stream: () -> FBSimulatorVideoStream?
+  ) async where Stimulus.Element == FrameTrigger {
     var stats = stats
     do {
       // A generic `AsyncSequence` has a throwing `next()`; `FrameCadence` and `AsyncStream` are both
       // non-throwing, so the catch is unreachable in practice and exists only to satisfy `for try await`.
       for try await trigger in stimulus {
         guard !Task.isCancelled else { break }
-        let pushDurationMach = await pushOnWriteQueue(forceKeyFrame: trigger.forceKeyFrame)
+        // Upgrade the weak stream per trigger, never across the loop: a strong reference held for
+        // the loop's lifetime would recreate the task↔stream cycle this shape exists to avoid.
+        guard let stream = stream() else { break }
+        let pushDurationMach = await stream.pushOnWriteQueue(forceKeyFrame: trigger.forceKeyFrame)
         stats?.record(pushDurationMach: pushDurationMach, overran: trigger.overran)
       }
     } catch {

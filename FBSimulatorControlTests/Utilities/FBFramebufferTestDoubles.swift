@@ -42,6 +42,14 @@ final class FakeFramebufferSurface: FBFramebufferSurface {
   func unregisterCallbacks(token: UUID) {
     unregisteredTokens.append(token)
   }
+
+  /// Simulates the display surface letting go of the registered callback blocks (as the real
+  /// CoreSimulator proxy does at its own teardown), dropping the callback-held references to the
+  /// consumer so lifetime tests can observe what else still retains it.
+  func releaseCallbacks() {
+    ioSurfaceChanged = nil
+    frameRendered = nil
+  }
 }
 
 /// A fake `FBFramebufferConsumer` that records what it receives. The `onSurface`/`onFrameRendered`
