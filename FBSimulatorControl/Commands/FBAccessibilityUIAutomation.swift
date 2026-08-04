@@ -71,17 +71,16 @@ final class FBAccessibilityUIAutomation: FBUIAutomation, @unchecked Sendable {
 
   func tap(
     _ query: FBAccessibilityElementQuery,
-    expectedValue: String?,
-    expectedKey: FBAXSearchableKey
+    options: FBTapOptions
   ) async throws {
     try await Self.translatingSeamErrors(query) {
       let element = try await operations.resolveElement(for: query)
       defer { element.close() }
-      if let expectedValue {
-        let actual = try element.stringValue(forSearchableKey: expectedKey)
-        guard actual == expectedValue else {
+      if let assertion = options.assertion {
+        let actual = try element.stringValue(forSearchableKey: assertion.key)
+        guard actual == assertion.value else {
           throw FBUIAutomationError.valueMismatch(
-            backend: .accessibility, key: expectedKey.rawValue, expected: expectedValue, actual: actual
+            backend: .accessibility, key: assertion.key.rawValue, expected: assertion.value, actual: actual
           )
         }
       }

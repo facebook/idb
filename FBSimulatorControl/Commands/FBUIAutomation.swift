@@ -35,6 +35,38 @@ public enum FBUIAutomationBackend: Sendable, Equatable {
   case axBridge(persistence: FBAXBridgePersistence, frontmostMethod: FBAXBridgeFrontmostMethod)
 }
 
+/// Options for a `tap`: an optional hold duration and an optional pre-tap value assertion. Both default
+/// off, so `FBTapOptions()` is an instantaneous, unconditional tap and `tap(_ query)` covers the common
+/// case without constructing one.
+public struct FBTapOptions: Sendable, Equatable {
+
+  /// A pre-tap value assertion: read `key` on the resolved element and tap only if it equals `value`,
+  /// else throw `FBUIAutomationError.valueMismatch`. Accessibility-only — only that backend can
+  /// read-and-assert atomically; the remote backend rejects a non-nil assertion rather than tap with it
+  /// silently dropped.
+  public struct Assertion: Sendable, Equatable {
+    public var key: FBAXSearchableKey
+    public var value: String
+
+    public init(key: FBAXSearchableKey, value: String) {
+      self.key = key
+      self.value = value
+    }
+  }
+
+  /// The hold duration — a long-press. `nil` is an instantaneous tap. Honoured by the coordinate
+  /// (HID-delivered) backends; the accessibility backend performs an instantaneous AXPress and ignores
+  /// it.
+  public var duration: TimeInterval?
+  /// The pre-tap value assertion, or `nil` to tap unconditionally. See `Assertion`.
+  public var assertion: Assertion?
+
+  public init(duration: TimeInterval? = nil, assertion: Assertion? = nil) {
+    self.duration = duration
+    self.assertion = assertion
+  }
+}
+
 /// The converged UI-automation surface: element reads and element-targeted
 /// actions, expressed once against an `FBAccessibilityElementQuery` target and run by the selected
 /// backend. `FBSimulator.uiAutomation(backend:)` vends the backend that implements it.
@@ -62,13 +94,14 @@ public protocol FBUIAutomation: Sendable {
   ) async throws -> FBAccessibilityElementsResponse?
 
   /// Taps the element named by `query`. `.point` taps the coordinate; `.marker` finds the element and
-  /// taps its centre. `expectedValue`, when given, asserts the element's value for `expectedKey`
-  /// before tapping — accessibility only; ignored over remote automation. `.frontmost` taps the
+  /// taps its centre. `options.assertion`, when given, asserts the element's value for its key before
+  /// tapping — accessibility only; rejected (not silently dropped) over remote automation.
+  /// `options.duration`, when given, holds the tap as a long-press on the coordinate backends; the
+  /// accessibility backend performs an instantaneous press and ignores it. `.frontmost` taps the
   /// frontmost element over accessibility but is rejected over remote automation.
   func tap(
     _ query: FBAccessibilityElementQuery,
-    expectedValue: String?,
-    expectedKey: FBAXSearchableKey
+    options: FBTapOptions
   ) async throws
 
   /// Sets `value` on the element named by `query`. `.point`/`.marker` targets only.
@@ -100,9 +133,9 @@ public protocol FBUIAutomation: Sendable {
 
 public extension FBUIAutomation {
 
-  /// Taps the element named by `query` with no value assertion.
+  /// Taps the element named by `query` with no hold duration and no value assertion.
   func tap(_ query: FBAccessibilityElementQuery) async throws {
-    try await tap(query, expectedValue: nil, expectedKey: .label)
+    try await tap(query, options: FBTapOptions())
   }
 }
 

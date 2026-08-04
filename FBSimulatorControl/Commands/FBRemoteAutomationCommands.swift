@@ -141,20 +141,24 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
     }
   }
 
-  /// Taps the element named by `query`. `.point` taps the coordinate directly; `.marker` finds the
-  /// element in the frontmost tree and taps its frame centre. `.frontmost` is not a tappable target
-  /// over remote automation. Asserting an `expectedValue` before tapping is accessibility-only; the
-  /// remote backend cannot read-and-assert the element's value atomically, so a non-nil `expectedValue`
-  /// is rejected rather than tapped with the assertion silently dropped.
+  /// Taps the element named by `query`. `.point` taps the coordinate directly, holding it for
+  /// `options.duration` when given (a long-press); `.marker` finds the element in the frontmost tree and
+  /// taps its frame centre. `.frontmost` is not a tappable target over remote automation. A value
+  /// assertion (`options.assertion`) before tapping is accessibility-only; the remote backend cannot
+  /// read-and-assert the element's value atomically, so a non-nil assertion is rejected rather than
+  /// tapped with the assertion silently dropped.
   public func tap(
     _ query: FBAccessibilityElementQuery,
-    expectedValue: String?,
-    expectedKey: FBAXSearchableKey
+    options: FBTapOptions
   ) async throws {
-    try Self.rejectValueAssertion(expectedValue)
+    try Self.rejectValueAssertion(options.assertion?.value)
     switch query {
     case let .point(point):
-      try await sendHIDEvent(.tapAt(x: Double(point.x), y: Double(point.y)))
+      let event =
+        options.duration.map {
+          FBSimulatorHIDEvent.tapAt(x: Double(point.x), y: Double(point.y), duration: $0)
+        } ?? FBSimulatorHIDEvent.tapAt(x: Double(point.x), y: Double(point.y))
+      try await sendHIDEvent(event)
     case let .marker(markerValue, key, _):
       let center = try await markerCenter(markerValue, key: key)
       try await withSession { session in

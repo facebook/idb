@@ -151,8 +151,7 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
 
   func tap(
     _ query: FBAccessibilityElementQuery,
-    expectedValue: String?,
-    expectedKey: FBAXSearchableKey
+    options: FBTapOptions
   ) async throws {
     throw FBUIAutomationError.operationUnsupported(backend: backend, operation: "A tap")
   }

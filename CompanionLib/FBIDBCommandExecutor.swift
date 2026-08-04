@@ -141,7 +141,8 @@ import XCTestBootstrap
     guard let simulator = target as? FBSimulator else {
       throw FBIDBError.describe("Target is not a simulator, cannot tap by accessibility: \(target)").build()
     }
-    try await simulator.uiAutomation(backend: .accessibility).tap(query, expectedValue: expectedValue, expectedKey: expectedKey)
+    let assertion = expectedValue.map { FBTapOptions.Assertion(key: expectedKey, value: $0) }
+    try await simulator.uiAutomation(backend: .accessibility).tap(query, options: FBTapOptions(assertion: assertion))
   }
 
   public func accessibility_describe(query: FBAccessibilityElementQuery, nested: Bool) async throws -> Data {
