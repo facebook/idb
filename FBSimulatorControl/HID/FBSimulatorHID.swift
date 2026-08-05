@@ -29,17 +29,12 @@ import Foundation
  */
 public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable {
 
-  /// Default Mach send timeout (in milliseconds) for the `sendPurpleEvent:` convenience wrapper.
-  /// Healthy round-trips return in low single-digit milliseconds; 2000ms absorbs scheduler jitter
-  /// while bounding the wedge condition where SpringBoard's PurpleWorkspacePort receive queue fills.
-  private static let defaultPurpleSendTimeoutMs: mach_msg_timeout_t = 2000
-
   // MARK: Properties
 
   /// The transport for the touch / button / keyboard primitives.
   private let transport: FBSimulatorHIDTransport
-  /// The Purple/GSEvent payload builder (orientation, lock).
-  public let purple: FBSimulatorPurpleHID
+  /// The transport for GSEvents (orientation, lock).
+  private let purple: FBSimulatorPurpleHIDTransport
 
   private weak var simulator: FBSimulator?
 
@@ -65,7 +60,7 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
     case .dtuhid:
       transport = .dtuhid(try FBSimulatorDTUHIDTransport.dtuhid(for: simulator))
     }
-    self.init(transport: transport, purple: FBSimulatorPurpleHID(), simulator: simulator)
+    self.init(transport: transport, purple: FBSimulatorPurpleHIDTransport(simulator: simulator), simulator: simulator)
   }
 
   /// The designated initializer.
@@ -73,7 +68,7 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
   /// `simulator` is held weakly and may be absent. The Purple and Darwin paths need it and throw
   /// `FBWeakTargetError.simulator` without one; the transport primitives never touch it. That
   /// asymmetry is what lets a test drive the transport with no simulator attached.
-  init(transport: FBSimulatorHIDTransport, purple: FBSimulatorPurpleHID, simulator: FBSimulator?) {
+  init(transport: FBSimulatorHIDTransport, purple: FBSimulatorPurpleHIDTransport, simulator: FBSimulator?) {
     self.transport = transport
     self.purple = purple
     self.simulator = simulator
@@ -140,55 +135,14 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
 
   // MARK: Purple / GSEvents
 
-  /**
-   Sends a raw mach message to the simulator's PurpleWorkspacePort using a default 2000ms send timeout.
-   */
-  public func sendPurpleEvent(_ data: Data) throws {
-    try sendPurpleEvent(data, timeoutMs: FBSimulatorHID.defaultPurpleSendTimeoutMs)
+  /// Rotates the device. Delivered as a GSEvent over Purple, not through the HID transport.
+  func sendOrientation(_ orientation: FBSimulatorHIDDeviceOrientation) throws {
+    try purple.sendOrientation(orientation)
   }
 
-  /**
-   Sends a raw mach message to the simulator's PurpleWorkspacePort, bounded by an explicit send-side timeout.
-   The `msgh_remote_port` field is patched with the PurpleWorkspacePort looked up from the simulator's
-   bootstrap namespace. The send always uses `mach_msg(MACH_SEND_TIMEOUT)`; on `MACH_SEND_TIMED_OUT` the
-   kernel guarantees the message is not enqueued.
-   */
-  public func sendPurpleEvent(_ data: Data, timeoutMs: mach_msg_timeout_t) throws {
-    guard let simulator else {
-      throw FBWeakTargetError.simulator
-    }
-
-    var lookupError: NSError?
-    let purplePort = simulator.device.lookup("PurpleWorkspacePort", error: &lookupError)
-    if purplePort == 0 {
-      throw FBSimulatorHIDError.purpleWorkspacePortUnavailable(underlying: lookupError)
-    }
-
-    // Copy the payload and patch msgh_remote_port with the looked-up port.
-    var mutableData = data
-    let kr: kern_return_t = mutableData.withUnsafeMutableBytes { (buffer: UnsafeMutableRawBufferPointer) -> kern_return_t in
-      guard let base = buffer.baseAddress else { return KERN_FAILURE }
-      let header = base.assumingMemoryBound(to: mach_msg_header_t.self)
-      header.pointee.msgh_remote_port = purplePort
-      return mach_msg(
-        header,
-        MACH_SEND_MSG | MACH_SEND_TIMEOUT,
-        header.pointee.msgh_size,
-        0,
-        mach_port_t(MACH_PORT_NULL),
-        timeoutMs,
-        mach_port_t(MACH_PORT_NULL))
-    }
-
-    if kr == KERN_SUCCESS {
-      return
-    }
-    if kr == MACH_SEND_TIMED_OUT {
-      throw FBSimulatorHIDError.machSendTimedOut(
-        port: purplePort, timeoutMs: timeoutMs, detail: String(cString: mach_error_string(kr)))
-    }
-    throw FBSimulatorHIDError.machSendFailed(
-      port: purplePort, detail: String(cString: mach_error_string(kr)), code: kr)
+  /// Locks the device. Delivered as a GSEvent over Purple, not through the HID transport.
+  func sendLockDevice() throws {
+    try purple.sendLockDevice()
   }
 
   // MARK: Darwin Notifications

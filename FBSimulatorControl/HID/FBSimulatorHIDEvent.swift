@@ -82,13 +82,13 @@ public extension FBSimulatorHIDEvent {
     case let .delay(duration):
       try await Task.sleep(nanoseconds: UInt64(max(0, duration) * 1_000_000_000))
     case let .deviceOrientation(orientation):
-      try hid.sendPurpleEvent(hid.purple.orientationEvent(orientation))
+      try hid.sendOrientation(orientation)
     case .shake:
       try hid.postDarwinNotification(shakeDarwinNotification)
     case .toggleInCallStatusBar:
       try hid.postDarwinNotification(inCallStatusBarNotification)
     case .lockDevice:
-      try hid.sendPurpleEvent(hid.purple.lockDeviceEvent())
+      try hid.sendLockDevice()
     case let .composite(events):
       for event in events {
         try await event.sendAsync(on: hid)
