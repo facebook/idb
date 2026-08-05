@@ -110,7 +110,7 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
       let formatted = FBAXNodeSerializer.formattedDescription(
         ofElement: element, token: "", nestedFormat: false, keys: options.serializationKeys, collector: nil, coverageGrid: nil
       )
-      return FBAccessibilityElementsResponse(elements: formatted)
+      return FBAccessibilityElementsResponse(elements: .single(formatted))
         .withProvenance(backend: backend.documentName, target: .point(point))
     }
   }

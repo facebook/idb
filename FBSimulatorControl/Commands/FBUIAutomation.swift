@@ -169,13 +169,20 @@ public extension FBAccessibilityElementsResponse {
   /// renderer beside this one: two encoders is how the formats would come to disagree about anything
   /// they are meant to share.
   ///
-  /// `complete` is a typed `Encodable` tree, so its shape is fixed by the model rather than assembled
-  /// as an untyped dictionary on the way out. The legacy envelope keeps its existing encoding, whose
-  /// bytes are frozen by the goldens.
+  /// Both formats render the same typed elements; they differ in which spelling they use, how much of
+  /// the read they report, and — deliberately — which writer produces the bytes.
+  ///
+  /// `complete` is new, so it is encoded from its `Encodable` model. The legacy formats are written by
+  /// `JSONSerialization`, because their exact byte form is part of a contract consumers already parse
+  /// and the two writers disagree on non-integral doubles: `JSONSerialization` emits 17 significant
+  /// digits where `JSONEncoder` emits the shortest round-tripping form. A sub-point frame edge is enough
+  /// to diverge.
   func formattedOutputJSON(format: FBAccessibilityOutputFormat) throws -> Data {
     switch format {
     case .default, .nested:
-      return try JSONSerialization.data(withJSONObject: asDictionary(), options: .sortedKeys)
+      return try JSONSerialization.data(
+        withJSONObject: ["elements": elements.legacyFoundationObject], options: .sortedKeys
+      )
     case .complete:
       let encoder = JSONEncoder()
       encoder.outputFormatting = .sortedKeys
@@ -192,7 +199,7 @@ public extension FBAccessibilityElementsResponse {
     target: FBAccessibilityTargetDescriptor
   ) throws -> Data {
     let response = FBAccessibilityElementsResponse(
-      elements: .null, backend: backend.documentName, target: target
+      elements: .empty, backend: backend.documentName, target: target
     )
     return try response.formattedOutputJSON(format: format)
   }

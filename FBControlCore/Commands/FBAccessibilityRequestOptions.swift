@@ -60,6 +60,17 @@ public struct FBAccessibilityRequestOptions: Sendable {
   /// caller asking for either would otherwise get nothing back for it. Reading the counterpart too is
   /// what keeps "an attribute you asked for is present in the output" true under that format.
   public var serializationKeys: Set<FBAXKeys> {
+    Self.serializationKeys(for: keys, format: format)
+  }
+
+  /// The same expansion over an arbitrary key set, for the marker read — which unions the key it
+  /// searched on and must expand that too, or `--match-key role` matches on an attribute `complete`
+  /// then reports under neither name.
+  public func serializationKeys(including extraKeys: Set<FBAXKeys>) -> Set<FBAXKeys> {
+    Self.serializationKeys(for: keys.union(extraKeys), format: format)
+  }
+
+  private static func serializationKeys(for keys: Set<FBAXKeys>, format: FBAccessibilityOutputFormat) -> Set<FBAXKeys> {
     guard format == .complete else {
       return keys
     }

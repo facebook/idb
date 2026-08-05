@@ -11,7 +11,7 @@ import Foundation
 /// Which backend produced a read. Named here rather than reusing the backend enum itself, because that
 /// enum belongs to the simulator layer and this is the value the *document* carries; the simulator
 /// layer maps its own cases onto these names.
-public enum FBAccessibilityBackendName: String, Sendable, CaseIterable, Encodable {
+public enum FBAccessibilityBackendName: String, Sendable, Encodable {
   case ax
   case axBridge = "axbridge"
   case axBridgePersistent = "axbridge-persistent"
@@ -82,7 +82,13 @@ public struct FBAccessibilityScreenInfo: Sendable, Equatable, Encodable {
   public let height: Double
   public let coordinateSpace: FBAccessibilityCoordinateSpace
 
-  public init(width: Double, height: Double, coordinateSpace: FBAccessibilityCoordinateSpace = .screen) {
+  /// A non-finite bound has no JSON form and is reported as unknown, the same normalization
+  /// `FBAccessibilityFrame` applies to an edge. An off-screen element can report one, so the encoder
+  /// must never be handed it: it would throw and fail the entire read.
+  public init?(width: Double, height: Double, coordinateSpace: FBAccessibilityCoordinateSpace = .screen) {
+    guard width.isFinite, height.isFinite else {
+      return nil
+    }
     self.width = width
     self.height = height
     self.coordinateSpace = coordinateSpace
@@ -140,7 +146,9 @@ public struct FBAccessibilityTargetDescriptor: Sendable, Equatable, Encodable {
   }
 
   public static func point(_ point: CGPoint) -> FBAccessibilityTargetDescriptor {
-    FBAccessibilityTargetDescriptor(kind: .point, x: Double(point.x), y: Double(point.y))
+    let x = Double(point.x)
+    let y = Double(point.y)
+    return FBAccessibilityTargetDescriptor(kind: .point, x: x.isFinite ? x : nil, y: y.isFinite ? y : nil)
   }
 
   public static func marker(value: String, matchKey: String) -> FBAccessibilityTargetDescriptor {
@@ -238,10 +246,16 @@ public struct FBAccessibilityDocumentElement: Sendable, Equatable, Encodable {
   public var customActions: [String]??
   public var traits: [String]??
   public var pid: Int64??
-  /// Always reported: children come from the traversal, not from an attribute read.
-  public var children: [FBAccessibilityDocumentElement]
+  /// The raw role (`AXButton`) and the stringified frame. `complete` reports these through `type` and
+  /// `frame` instead, so they are absent from its `CodingKeys` — they exist for the legacy spelling,
+  /// which emits both.
+  public var role: String??
+  public var axFrame: String??
+  /// The nested children, or `nil` for a flat read — which lists every node separately and carries no
+  /// `children` key at all. Not an attribute: it comes from the traversal.
+  public var children: [FBAccessibilityDocumentElement]?
 
-  public init(children: [FBAccessibilityDocumentElement] = []) {
+  public init(children: [FBAccessibilityDocumentElement]? = nil) {
     self.children = children
   }
 
@@ -271,15 +285,57 @@ public struct FBAccessibilityDocumentElement: Sendable, Equatable, Encodable {
 }
 
 /// An element's `value`, which the platform reports as an untyped object — usually a string, sometimes
-/// a number or a flag (a slider's position, a switch's state).
+/// a number or a flag (a slider's position, a switch's state), and occasionally a collection.
 ///
-/// A closed set of the shapes that attribute actually takes, rather than an open JSON value: it keeps
-/// the reported type intact without letting arbitrary structure into the schema.
+/// This is the one attribute whose shape the platform does not fix, so it is the one place a value tree
+/// is warranted. It stays a closed set scoped to this attribute rather than a general-purpose JSON type:
+/// nothing else in the schema is dynamic.
 public enum FBAccessibilityAttributeValue: Sendable, Equatable, Encodable {
   case string(String)
   case bool(Bool)
   case int(Int64)
   case double(Double)
+  case array([FBAccessibilityAttributeValue])
+  case object([String: FBAccessibilityAttributeValue])
+  /// A null held *inside* a collection. Absence at the top level is carried by the element's own
+  /// optional, so this case exists only for the position where that optional cannot reach.
+  case null
+
+  /// Classifies the platform's untyped `accessibilityValue`. Collections are carried through as
+  /// collections — flattening one to its `String(describing:)` form would change what a consumer reads.
+  /// An object of no recognized kind does become that description, which is the long-standing fallback.
+  ///
+  /// Fails only for `nil`/`NSNull`, which is how a caller reading a single attribute distinguishes "no
+  /// value" — see `member(_:)` for why a collection cannot use that same signal.
+  public init?(_ object: Any?) {
+    guard let object, !(object is NSNull) else {
+      return nil
+    }
+    switch object {
+    case let value as String:
+      self = .string(value)
+    case let value as NSNumber:
+      if CFGetTypeID(value) == CFBooleanGetTypeID() {
+        self = .bool(value.boolValue)
+      } else {
+        let objCType = String(cString: value.objCType)
+        self = (objCType == "f" || objCType == "d") ? .double(value.doubleValue) : .int(value.int64Value)
+      }
+    case let value as [Any]:
+      self = .array(value.map(Self.member))
+    case let value as [String: Any]:
+      self = .object(value.mapValues(Self.member))
+    default:
+      self = .string(String(describing: object))
+    }
+  }
+
+  /// A member of a collection value. `init?` reports `nil` only for `nil`/`NSNull` — every other object
+  /// classifies, falling back to its description — so a failure here means the member was null, and a
+  /// null that is a member of a collection has to stay in place rather than read as an absent value.
+  private static func member(_ object: Any) -> FBAccessibilityAttributeValue {
+    FBAccessibilityAttributeValue(object) ?? .null
+  }
 
   public func encode(to encoder: Encoder) throws {
     var container = encoder.singleValueContainer()
@@ -293,6 +349,12 @@ public enum FBAccessibilityAttributeValue: Sendable, Equatable, Encodable {
     case let .double(value):
       // JSON cannot represent a non-finite number; report it as absent rather than fail the encode.
       try value.isFinite ? container.encode(value) : container.encodeNil()
+    case let .array(value):
+      try container.encode(value)
+    case let .object(value):
+      try container.encode(value)
+    case .null:
+      try container.encodeNil()
     }
   }
 }
@@ -361,5 +423,129 @@ public struct FBAccessibilityDocument: Sendable, Encodable {
     try container.encode(target, forKey: .target)
     try container.encode(profile, forKey: .profile)
     try container.encode(coverage, forKey: .coverage)
+  }
+}
+
+public extension FBAccessibilityDocumentElement {
+  /// The value a marker match reads for `key`. A marker is matched over the *serialized* element, so an
+  /// attribute the read did not carry simply does not match.
+  func searchableValue(for key: FBAXSearchableKey) -> String? {
+    switch key {
+    case .label: return label ?? nil
+    case .uniqueID: return identifier ?? nil
+    case .value:
+      guard case let .string(string)? = (value ?? nil) else { return nil }
+      return string
+    case .title: return title ?? nil
+    case .role: return role ?? nil
+    case .roleDescription: return roleDescription ?? nil
+    case .subrole: return subrole ?? nil
+    case .help: return help ?? nil
+    case .placeholder: return placeholder ?? nil
+    }
+  }
+}
+
+/// What a read produced: a whole tree, a single element, or nothing.
+///
+/// The distinction is real and observable — a point or marker read emits a bare object where a
+/// whole-tree read emits an array — so it is modelled rather than left implicit in the shape of an
+/// untyped payload. `complete` flattens all three to an array; the legacy formats preserve them.
+public enum FBAccessibilityElementPayload: Sendable, Equatable {
+  case tree([FBAccessibilityDocumentElement])
+  case single(FBAccessibilityDocumentElement)
+  /// A hit-test that found nothing: a successful empty result, distinct from a failed read.
+  case empty
+
+  /// The elements as a list, which is how `complete` always reports them.
+  public var elements: [FBAccessibilityDocumentElement] {
+    switch self {
+    case let .tree(elements): return elements
+    case let .single(element): return [element]
+    case .empty: return []
+    }
+  }
+}
+
+public extension FBAccessibilityElementPayload {
+  /// The legacy-spelled elements as a Foundation object.
+  ///
+  /// The legacy formats are rendered by `JSONSerialization`, not by `JSONEncoder`, and the difference is
+  /// not cosmetic: the two disagree on how a non-integral double is written. `JSONSerialization` emits
+  /// the full 17 significant digits (`0.33333333333333331`) where `JSONEncoder` emits the shortest form
+  /// that round-trips (`0.3333333333333333`). Sub-point frame edges and fractional element values are
+  /// commonplace, so encoding these through `JSONEncoder` would silently change the bytes of a format
+  /// whose output consumers already parse. The typed model stays the source of truth; this is only
+  /// about which writer produces the frozen wire form.
+  var legacyFoundationObject: Any {
+    switch self {
+    case let .tree(elements):
+      return elements.map { $0.legacyFoundationObject }
+    case let .single(element):
+      return element.legacyFoundationObject
+    case .empty:
+      return NSNull()
+    }
+  }
+}
+
+public extension FBAccessibilityDocumentElement {
+  /// This element under the legacy key names, as Foundation. A requested attribute is present — `NSNull`
+  /// when it has no value — and an unrequested one is absent, the same three states the typed model
+  /// carries.
+  var legacyFoundationObject: [String: Any] {
+    var object: [String: Any] = [:]
+    func put(_ attribute: Any??, _ key: String) {
+      guard let value = attribute else {
+        return
+      }
+      object[key] = value ?? NSNull()
+    }
+    put(label, "AXLabel")
+    put(axFrame, "AXFrame")
+    put(value.map { $0?.legacyFoundationValue }, "AXValue")
+    put(identifier, "AXUniqueId")
+    put(type, "type")
+    put(title, "title")
+    put(frame.map { $0?.legacyFoundationObject }, "frame")
+    put(help, "help")
+    put(enabled, "enabled")
+    put(customActions, "custom_actions")
+    put(role, "role")
+    put(roleDescription, "role_description")
+    put(subrole, "subrole")
+    put(contentRequired, "content_required")
+    put(pid, "pid")
+    put(traits, "traits")
+    put(expanded, "expanded")
+    put(placeholder, "placeholder")
+    put(hidden, "hidden")
+    put(focused, "focused")
+    put(isRemote, "is_remote")
+    if let children {
+      object["children"] = children.map { $0.legacyFoundationObject }
+    }
+    return object
+  }
+}
+
+public extension FBAccessibilityFrame {
+  /// Every edge is present, `NSNull` where it is not representable.
+  var legacyFoundationObject: [String: Any] {
+    ["x": x ?? NSNull(), "y": y ?? NSNull(), "width": width ?? NSNull(), "height": height ?? NSNull()]
+  }
+}
+
+public extension FBAccessibilityAttributeValue {
+  var legacyFoundationValue: Any {
+    switch self {
+    case let .string(value): return value
+    case let .bool(value): return value
+    case let .int(value): return value
+    case let .double(value): return value.isFinite ? value : NSNull()
+    case let .array(value): return value.map { $0.legacyFoundationValue }
+    case let .object(value): return value.mapValues { $0.legacyFoundationValue }
+    case .null: return NSNull()
+    }
   }
 }

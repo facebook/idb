@@ -26,7 +26,7 @@ enum FBAXTreeWalk {
   /// Serializes an attribute-dictionary tree (as emitted by either XCUI-grade backend) into the
   /// schema, building an `FBAXPlatformElement` tree and running the shared recursive serializer. Each
   /// element is tagged with the owning app's real pid, discovered during the tree read.
-  static func describeAllElements(fromTree tree: [String: Any], keys: Set<FBAXKeys>, nestedFormat: Bool, pid: pid_t, filter: FBAccessibilityElementFilter = .all) -> [FBJSONValue] {
+  static func describeAllElements(fromTree tree: [String: Any], keys: Set<FBAXKeys>, nestedFormat: Bool, pid: pid_t, filter: FBAccessibilityElementFilter = .all) -> [FBAccessibilityDocumentElement] {
     let root = buildPlatformElementTree(from: tree, pid: pid)
     return FBAXNodeSerializer.recursiveDescription(
       fromElement: root,
@@ -67,9 +67,9 @@ enum FBAXTreeWalk {
   /// describe-by-marker. Substring, matching `FBAccessibilityElementQuery.marker` — the accessibility
   /// backend walks the live tree and matches the same way, so a marker resolves to the same element
   /// whichever backend serves the read.
-  static func matchingElement(inElements elements: [FBJSONValue], markerValue: String, key: FBAXSearchableKey) -> FBJSONValue? {
+  static func matchingElement(inElements elements: [FBAccessibilityDocumentElement], markerValue: String, key: FBAXSearchableKey) -> FBAccessibilityDocumentElement? {
     elements.first { element in
-      guard case let .object(fields) = element, case let .string(value)? = fields[key.rawValue] else {
+      guard let value = element.searchableValue(for: key) else {
         return false
       }
       return value.contains(markerValue)
@@ -91,25 +91,15 @@ enum FBAXTreeWalk {
   /// Resolves `markerValue` to the centre of the first matching element that has a usable frame (the
   /// same substring match as `matchingElement`), reporting whether a match without a usable frame
   /// existed so a caller can tell an off-screen element apart from an absent one.
-  static func resolveMarker(inElements elements: [FBJSONValue], markerValue: String, key: FBAXSearchableKey) -> MarkerResolution {
-    func number(_ value: FBJSONValue?) -> Double? {
-      switch value {
-      case let .double(number): return number
-      case let .int(number): return Double(number)
-      default: return nil
-      }
-    }
+  static func resolveMarker(inElements elements: [FBAccessibilityDocumentElement], markerValue: String, key: FBAXSearchableKey) -> MarkerResolution {
     var matched = false
     for element in elements {
-      guard case let .object(fields) = element,
-        case let .string(value)? = fields[key.rawValue], value.contains(markerValue)
-      else {
+      guard let value = element.searchableValue(for: key), value.contains(markerValue) else {
         continue
       }
       matched = true
-      guard case let .object(frame)? = fields[FBAXKeys.frameDict.rawValue],
-        let x = number(frame["x"]), let y = number(frame["y"]),
-        let width = number(frame["width"]), let height = number(frame["height"])
+      guard let frame = element.frame ?? nil,
+        let x = frame.x, let y = frame.y, let width = frame.width, let height = frame.height
       else {
         continue
       }
@@ -122,7 +112,7 @@ enum FBAXTreeWalk {
   /// nothing *or* every match is off-screen. A `resolveMarker` wrapper for the `wait` poll, which
   /// treats both nil cases alike (keep polling); tap/set-value call `resolveMarker` directly to tell an
   /// off-screen match from a genuine miss.
-  static func frameCenter(inElements elements: [FBJSONValue], markerValue: String, key: FBAXSearchableKey) -> (x: Double, y: Double)? {
+  static func frameCenter(inElements elements: [FBAccessibilityDocumentElement], markerValue: String, key: FBAXSearchableKey) -> (x: Double, y: Double)? {
     guard case let .resolved(x, y) = resolveMarker(inElements: elements, markerValue: markerValue, key: key) else {
       return nil
     }

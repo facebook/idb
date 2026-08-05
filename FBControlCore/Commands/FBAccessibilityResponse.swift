@@ -141,13 +141,12 @@ public struct FBAccessibilityModalInfo: Sendable, Equatable, Encodable {
 
 /// Response object containing accessibility elements and optional profiling data.
 ///
-/// `elements` is the serializer's JSON payload as a `Sendable` `FBJSONValue` — an object (single
-/// element) or an array (flat/nested tree) — so a response can cross concurrency domains (e.g. the
+/// `elements` is a `Sendable` value type, so a response can cross concurrency domains (e.g. the
 /// remote-automation actor) without an `@unchecked` conformance.
 public struct FBAccessibilityElementsResponse: Sendable {
 
   /// The accessibility elements: an object (single element) or an array (flat/nested tree).
-  public let elements: FBJSONValue
+  public let elements: FBAccessibilityElementPayload
 
   /// Profiling data collected during the operation, if profiling was enabled.
   public let profilingData: FBAccessibilityProfilingData?
@@ -160,9 +159,9 @@ public struct FBAccessibilityElementsResponse: Sendable {
   /// Nil if remote content discovery was not performed or found nothing.
   public let additionalFrameCoverage: Double?
 
-  /// A fullscreen modal / alert present over the read target, when one was detected. Emitted by
-  /// the `complete` document and **deliberately excluded from `asDictionary()`**, whose bytes are
-  /// frozen by the goldens.
+  /// A fullscreen modal / alert present over the read target, when one was detected. Emitted by the
+  /// `complete` document and **deliberately absent from the legacy envelope**, whose bytes are frozen
+  /// by the goldens.
   public let modal: FBAccessibilityModalInfo?
 
   /// Whether the read's tree walk was cut short by a depth or node bound, so the elements are a
@@ -179,7 +178,7 @@ public struct FBAccessibilityElementsResponse: Sendable {
   public let target: FBAccessibilityTargetDescriptor?
 
   public init(
-    elements: FBJSONValue,
+    elements: FBAccessibilityElementPayload,
     profilingData: FBAccessibilityProfilingData? = nil,
     frameCoverage: Double? = nil,
     additionalFrameCoverage: Double? = nil,
@@ -243,26 +242,13 @@ public struct FBAccessibilityElementsResponse: Sendable {
     )
   }
 
-  /// The `default` and `nested` output formats: `{"elements": <elements>}`, with `elements` an object
-  /// for a single-element read and an array for a tree.
-  ///
-  /// Everything else the read carries — `modal`, `truncated`, `screen`, `backend`, `target`, and the
-  /// collected `profile`/`coverage` — is intentionally **not** serialized here. This envelope's bytes
-  /// are frozen by the goldens and by consumers parsing them today, so it can only ever say what it
-  /// already says; the `complete` document is where a read reports what it actually learned. Keep
-  /// these fields out of this method.
-  public func asDictionary() -> [String: Any] {
-    ["elements": elements.toFoundationObject()]
-  }
-
   /// The `complete` output format for this read.
   ///
   /// The document is a plain `Encodable` tree, so the emitted shape is fixed by the types rather than
-  /// assembled as an untyped dictionary. The only mapping this does is turn the serializer's
-  /// attribute-keyed nodes into typed elements.
+  /// assembled as an untyped dictionary.
   public var document: FBAccessibilityDocument {
     FBAccessibilityDocument(
-      elements: Self.completeElements(from: elements),
+      elements: elements.elements,
       modal: modal,
       truncated: truncated,
       screen: screen,
@@ -272,97 +258,6 @@ public struct FBAccessibilityElementsResponse: Sendable {
       coverage: frameCoverage.map { FBAccessibilityCoverage(frame: $0, additional: additionalFrameCoverage) }
     )
   }
-
-  /// The serialized nodes as typed elements: always an array, even for a single-element read.
-  ///
-  /// Mapping the already-serialized payload — rather than re-reading the elements under a second key
-  /// vocabulary — keeps one attribute-read pass as the single source of every value, so the two
-  /// schemas cannot disagree about what an element *is*, only about how it is spelled and typed.
-  static func completeElements(from elements: FBJSONValue) -> [FBAccessibilityDocumentElement] {
-    switch elements {
-    case let .array(nodes):
-      return nodes.compactMap(completeElement)
-    case .object:
-      return [completeElement(elements)].compactMap { $0 }
-    case .null, .string, .bool, .int, .double:
-      return []
-    }
-  }
-
-  private static func completeElement(_ node: FBJSONValue) -> FBAccessibilityDocumentElement? {
-    guard case let .object(fields) = node else {
-      return nil
-    }
-    // An attribute the read did not carry stays `nil` (omitted); one it carried resolves to
-    // `.some(value-or-nil)`, so a requested-but-empty attribute survives as an explicit null.
-    func attribute<T>(_ key: FBAXKeys, _ extract: (FBJSONValue) -> T?) -> T?? {
-      guard let raw = fields[key.rawValue] else {
-        return nil
-      }
-      return .some(extract(raw))
-    }
-    func asString(_ value: FBJSONValue) -> String? {
-      guard case let .string(string) = value else { return nil }
-      return string
-    }
-    func asBool(_ value: FBJSONValue) -> Bool? {
-      guard case let .bool(bool) = value else { return nil }
-      return bool
-    }
-    func asStrings(_ value: FBJSONValue) -> [String]? {
-      guard case let .array(values) = value else { return nil }
-      return values.compactMap(asString)
-    }
-    func number(_ value: FBJSONValue?) -> Double? {
-      switch value {
-      case let .double(number): return number
-      case let .int(number): return Double(number)
-      default: return nil
-      }
-    }
-
-    var element = FBAccessibilityDocumentElement(
-      children: completeElements(from: fields[childrenKey] ?? .array([]))
-    )
-    element.label = attribute(.label, asString)
-    element.identifier = attribute(.uniqueID, asString)
-    element.type = attribute(.type, asString)
-    element.title = attribute(.title, asString)
-    element.help = attribute(.help, asString)
-    element.roleDescription = attribute(.roleDescription, asString)
-    element.subrole = attribute(.subrole, asString)
-    element.placeholder = attribute(.placeholder, asString)
-    element.enabled = attribute(.enabled, asBool)
-    element.contentRequired = attribute(.contentRequired, asBool)
-    element.expanded = attribute(.expanded, asBool)
-    element.hidden = attribute(.hidden, asBool)
-    element.focused = attribute(.focused, asBool)
-    element.isRemote = attribute(.isRemote, asBool)
-    element.customActions = attribute(.customActions, asStrings)
-    element.traits = attribute(.traits, asStrings)
-    element.pid = attribute(.pid) { if case let .int(pid) = $0 { return pid } else { return nil } }
-    element.frame = attribute(.frameDict) { value in
-      guard case let .object(frame) = value else { return nil }
-      return FBAccessibilityFrame(
-        x: number(frame["x"]), y: number(frame["y"]),
-        width: number(frame["width"]), height: number(frame["height"])
-      )
-    }
-    element.value = attribute(.value) { value in
-      switch value {
-      case let .string(string): return .string(string)
-      case let .bool(bool): return .bool(bool)
-      case let .int(int): return .int(int)
-      case let .double(double): return .double(double)
-      case .array, .object, .null: return nil
-      }
-    }
-    return element
-  }
-
-  /// The serializer's own key for a node's children — not an `FBAXKeys` attribute, since it is a
-  /// product of the traversal rather than something read off an element.
-  private static let childrenKey = "children"
 
 }
 

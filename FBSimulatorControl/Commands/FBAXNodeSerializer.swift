@@ -14,11 +14,10 @@ import Foundation
 /// for downstream compatibility.
 ///
 /// Driven entirely from Swift (`FBAXTranslationRequest` and its remote-content
-/// code), so it is a plain Swift namespace returning `FBJSONValue`. Each attribute
-/// is turned into its `FBJSONValue` case at the read site, where its Swift type is
-/// statically known, so no scalar is round-tripped through an untyped `NSNumber`.
-/// `axValue()` is the one exception — it is genuinely `Any` — and is the only value
-/// classified via `FBJSONValue(foundation:)`.
+/// code), so it is a plain Swift namespace returning a typed element. Each attribute
+/// is read into a statically-typed field, so no scalar is round-tripped through an
+/// untyped `NSNumber`. `axValue()` is the one exception — it is genuinely `Any` — and
+/// is classified into the closed `FBAccessibilityAttributeValue` set at the read site.
 enum FBAXNodeSerializer {
 
   // MARK: - Entry points
@@ -32,15 +31,12 @@ enum FBAXNodeSerializer {
     coverageGrid: FBAccessibilityCoverageGrid?,
     seenPids: SeenPIDs?,
     filter: FBAccessibilityElementFilter = .all
-  ) -> [FBJSONValue] {
+  ) -> [FBAccessibilityDocumentElement] {
     element.axSetBridgeDelegateToken(token)
-    let dictionaries: [[String: FBJSONValue]]
     if nestedFormat {
-      dictionaries = nestedRecursiveDescription(fromElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids, filter: filter)
-    } else {
-      dictionaries = flatRecursiveDescription(fromElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids, filter: filter)
+      return nestedRecursiveDescription(fromElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids, filter: filter)
     }
-    return dictionaries.map { .object($0) }
+    return flatRecursiveDescription(fromElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids, filter: filter)
   }
 
   static func formattedDescription(
@@ -50,53 +46,51 @@ enum FBAXNodeSerializer {
     keys: Set<FBAXKeys>,
     collector: FBAccessibilityProfilingCollector?,
     coverageGrid: FBAccessibilityCoverageGrid?
-  ) -> FBJSONValue {
+  ) -> FBAccessibilityDocumentElement {
     element.axSetBridgeDelegateToken(token)
     if nestedFormat {
       // A single element (describe-point) is always the target — never filtered.
-      return .object(nestedRecursiveDescription(fromElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: nil, filter: .all).first ?? [:])
+      return nestedRecursiveDescription(fromElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: nil, filter: .all).first
+        ?? FBAccessibilityDocumentElement()
     }
-    return .object(decoratedDictionary(forElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: nil, isRemote: false))
+    return decoratedElement(forElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: nil, isRemote: false)
   }
 
   // MARK: - Node
 
-  /// Builds the `FBJSONValue` node dictionary for a single element over `keys`. The values mirror the old
-  /// SimulatorBridge implementation for downstream compatibility.
+  /// Builds the node for a single element over `keys`.
+  ///
+  /// An attribute is read only when requested, and the result records that: a requested attribute is
+  /// `.some(value-or-nil)` and an unrequested one stays `nil`, which is what lets the encodings emit an
+  /// explicit null for the former and nothing at all for the latter.
   ///
   /// `collector` and `coverageGrid` are pure side-channels intrinsic to the attribute-read pass: the
   /// collector tallies each fetch (and the coverage grid marks the frame it reads) without altering the
-  /// returned dictionary — proven by `testNodeDictionaryIsCollectorNeutral`. They stay in the core
-  /// because the tallies (and the exact `nil`-key coverage read) are a byte-for-byte consequence of the
-  /// read order. The traversal-level concerns the core omits — seen-pid dedup and the `is_remote`
-  /// provenance tag — live in `decoratedDictionary`.
-  static func nodeDictionary(
+  /// returned node — proven by `testNodeDictionaryIsCollectorNeutral`. They stay in the core because the
+  /// tallies (and the exact `nil`-key coverage read) are a byte-for-byte consequence of the read order,
+  /// so the order below is deliberate and must not be rearranged. The traversal-level concerns the core
+  /// omits — seen-pid dedup and the `is_remote` provenance tag — live in `decoratedElement`.
+  static func nodeElement(
     forElement element: FBAXPlatformElement,
     token: String,
     keys: Set<FBAXKeys>,
     collector: FBAccessibilityProfilingCollector?,
     coverageGrid: FBAccessibilityCoverageGrid?
-  ) -> [String: FBJSONValue] {
+  ) -> FBAccessibilityDocumentElement {
     // The token must always be set so that the right callback is called.
     element.axSetBridgeDelegateToken(token)
 
     collector?.incrementElementCount()
 
-    var values: [String: FBJSONValue] = [:]
+    var node = FBAccessibilityDocumentElement()
 
-    func string(_ value: String?) -> FBJSONValue {
-      value.map(FBJSONValue.string) ?? .null
-    }
-
-    // Includes a key only when requested, incrementing the profiling counter and
-    // reading the value lazily so attribute access is tracked exactly as the ObjC
-    // macro did.
-    func include(_ key: FBAXKeys, _ value: @autoclosure () -> FBJSONValue) {
+    // Reads an attribute only when it was requested, tallying the fetch exactly as the ObjC macro did.
+    func read<T>(_ key: FBAXKeys, _ value: @autoclosure () -> T?) -> T?? {
       guard keys.contains(key) else {
-        return
+        return nil
       }
       collector?.incrementAttributeFetchCount(forKey: key.rawValue)
-      values[key.rawValue] = value()
+      return .some(value())
     }
 
     // Frame is always computed since it is used by multiple keys and the coverage grid.
@@ -110,7 +104,7 @@ enum FBAXNodeSerializer {
     if keys.contains(.role) {
       collector?.incrementAttributeFetchCount(forKey: FBAXKeys.role.rawValue)
       rawRole = element.axRole()
-      values[FBAXKeys.role.rawValue] = string(rawRole)
+      node.role = .some(rawRole)
     }
     if keys.contains(.type) {
       if rawRole == nil {
@@ -135,54 +129,49 @@ enum FBAXNodeSerializer {
     }
 
     // Legacy values that mirror SimulatorBridge.
-    include(.label, string(element.axLabel()))
+    node.label = read(.label, element.axLabel())
     if keys.contains(.frame) {
-      values[FBAXKeys.frame.rawValue] = .string(NSStringFromRect(frame))
+      node.axFrame = .some(NSStringFromRect(frame))
     }
-    include(.value, FBJSONValue(foundation: element.axValue()))
-    include(.uniqueID, string(element.axIdentifier()))
+    node.value = read(.value, FBAccessibilityAttributeValue(element.axValue()))
+    node.identifier = read(.uniqueID, element.axIdentifier())
 
     // Synthetic values.
     if keys.contains(.type) {
-      values[FBAXKeys.type.rawValue] = string(role)
+      node.type = .some(role)
     }
 
     // New values.
-    include(.title, string(element.axTitle()))
+    node.title = read(.title, element.axTitle())
     if keys.contains(.frameDict) {
       collector?.incrementAttributeFetchCount(forKey: FBAXKeys.frameDict.rawValue)
-      values[FBAXKeys.frameDict.rawValue] = .object([
-        "x": .double(Double(frame.origin.x)),
-        "y": .double(Double(frame.origin.y)),
-        "width": .double(Double(frame.size.width)),
-        "height": .double(Double(frame.size.height)),
-      ])
+      node.frame = .some(FBAccessibilityFrame(frame))
     }
-    include(.help, string(element.axHelp()))
-    include(.enabled, .bool(element.axIsEnabled()))
-    include(.customActions, .array(element.axCustomActionNames().map(FBJSONValue.string)))
-    include(.roleDescription, string(element.axRoleDescription()))
-    include(.subrole, string(element.axSubrole()))
-    include(.contentRequired, .bool(element.axIsRequired()))
-    include(.pid, .int(Int64(element.axTranslationPid)))
+    node.help = read(.help, element.axHelp())
+    node.enabled = read(.enabled, element.axIsEnabled())
+    node.customActions = read(.customActions, element.axCustomActionNames())
+    node.roleDescription = read(.roleDescription, element.axRoleDescription())
+    node.subrole = read(.subrole, element.axSubrole())
+    node.contentRequired = read(.contentRequired, element.axIsRequired())
+    node.pid = read(.pid, Int64(element.axTranslationPid))
     if keys.contains(.traits) {
       collector?.incrementAttributeFetchCount(forKey: FBAXKeys.traits.rawValue)
-      values[FBAXKeys.traits.rawValue] = element.axTraits().map { .array($0.map(FBJSONValue.string)) } ?? .null
+      node.traits = .some(element.axTraits())
     }
-    include(.expanded, .bool(element.axIsExpanded()))
-    include(.placeholder, string(element.axPlaceholderValue()))
-    include(.hidden, .bool(element.axIsHidden()))
-    include(.focused, .bool(element.axIsFocused()))
+    node.expanded = read(.expanded, element.axIsExpanded())
+    node.placeholder = read(.placeholder, element.axPlaceholderValue())
+    node.hidden = read(.hidden, element.axIsHidden())
+    node.focused = read(.focused, element.axIsFocused())
 
-    return values
+    return node
   }
 
-  /// Wraps `nodeDictionary` with the two traversal-level concerns the pure core omits: recording the
+  /// Wraps `nodeElement` with the two traversal-level concerns the pure core omits: recording the
   /// element's pid in `seenPids` (so remote-content hit-testing can skip processes already present in the
   /// main tree) and, when `.isRemote` is requested, tagging the node's provenance — `true` for nodes
   /// discovered by remote grid hit-testing, `false` for the main-tree traversal. `.isRemote` is not in
-  /// `FBAXKeys.defaultSet`, so a default response is byte-identical to the bare core.
-  static func decoratedDictionary(
+  /// `FBAXKeys.defaultSet`, so a default response is unchanged by the decorator.
+  static func decoratedElement(
     forElement element: FBAXPlatformElement,
     token: String,
     keys: Set<FBAXKeys>,
@@ -190,19 +179,20 @@ enum FBAXNodeSerializer {
     coverageGrid: FBAccessibilityCoverageGrid?,
     seenPids: SeenPIDs?,
     isRemote: Bool
-  ) -> [String: FBJSONValue] {
-    var values = nodeDictionary(forElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid)
+  ) -> FBAccessibilityDocumentElement {
+    var node = nodeElement(forElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid)
     seenPids?.insert(element.axTranslationPid)
     if keys.contains(.isRemote) {
       collector?.incrementAttributeFetchCount(forKey: FBAXKeys.isRemote.rawValue)
-      values[FBAXKeys.isRemote.rawValue] = .bool(isRemote)
+      node.isRemote = .some(isRemote)
     }
-    return values
+    return node
   }
 
   // MARK: - Recursion
 
-  // Non-hierarchical (flat) output: frames are relative to the root, as in SimulatorBridge.
+  // Non-hierarchical (flat) output: frames are relative to the root, as in SimulatorBridge. A flat node
+  // carries no children — the traversal lists every node separately — which is why `children` stays nil.
   private static func flatRecursiveDescription(
     fromElement element: FBAXPlatformElement,
     token: String,
@@ -211,10 +201,10 @@ enum FBAXNodeSerializer {
     coverageGrid: FBAccessibilityCoverageGrid?,
     seenPids: SeenPIDs?,
     filter: FBAccessibilityElementFilter
-  ) -> [[String: FBJSONValue]] {
-    var values: [[String: FBJSONValue]] = []
+  ) -> [FBAccessibilityDocumentElement] {
+    var values: [FBAccessibilityDocumentElement] = []
     if passes(element, filter: filter) {
-      values.append(decoratedDictionary(forElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids, isRemote: false))
+      values.append(decoratedElement(forElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids, isRemote: false))
     }
     for child in element.axChildren() {
       child.axSetBridgeDelegateToken(token)
@@ -233,8 +223,8 @@ enum FBAXNodeSerializer {
     coverageGrid: FBAccessibilityCoverageGrid?,
     seenPids: SeenPIDs?,
     filter: FBAccessibilityElementFilter
-  ) -> [[String: FBJSONValue]] {
-    var childrenValues: [[String: FBJSONValue]] = []
+  ) -> [FBAccessibilityDocumentElement] {
+    var childrenValues: [FBAccessibilityDocumentElement] = []
     for child in element.axChildren() {
       child.axSetBridgeDelegateToken(token)
       childrenValues.append(contentsOf: nestedRecursiveDescription(fromElement: child, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids, filter: filter))
@@ -242,8 +232,8 @@ enum FBAXNodeSerializer {
     guard passes(element, filter: filter) else {
       return childrenValues
     }
-    var values = decoratedDictionary(forElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids, isRemote: false)
-    values["children"] = .array(childrenValues.map { .object($0) })
+    var values = decoratedElement(forElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids, isRemote: false)
+    values.children = childrenValues
     return [values]
   }
 

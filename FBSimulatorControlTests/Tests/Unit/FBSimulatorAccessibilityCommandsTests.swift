@@ -131,7 +131,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     let response = try! element.serialize(with: options)
     element.close()
 
-    let result = response.elements.toFoundationObject() as! [Any]
+    let result = response.legacyElementsObject() as! [Any]
     XCTAssertEqual(result.count, 4, "Flat format should have 4 elements (root + 3 children)")
 
     // Expected full output for all 4 elements
@@ -250,7 +250,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     let response = try! element.serialize(with: options)
     element.close()
 
-    let result = response.elements.toFoundationObject() as! [String: Any]
+    let result = response.legacyElementsObject() as! [String: Any]
     XCTAssertEqual(result as NSDictionary, expected as NSDictionary)
     XCTAssertTrue(JSONSerialization.isValidJSONObject(result))
 
@@ -280,7 +280,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     let response = try! element.serialize(with: options)
     element.close()
 
-    let result = response.elements.toFoundationObject() as! [Any]
+    let result = response.legacyElementsObject() as! [Any]
     XCTAssertEqual(result.count, 1, "Nested format should have 1 root element")
 
     // Expected full nested output
@@ -401,7 +401,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     let response = try! element.serialize(with: options)
     element.close()
 
-    let result = response.elements.toFoundationObject() as! [Any]
+    let result = response.legacyElementsObject() as! [Any]
     XCTAssertEqual(result.count, 4, "Should have 4 elements")
 
     // Expected output with only the requested keys
@@ -465,7 +465,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     let response = try! element.serialize(with: options)
     element.close()
 
-    let result = response.elements.toFoundationObject() as! [String: Any]
+    let result = response.legacyElementsObject() as! [String: Any]
 
     let expected: [String: Any] = [
       "AXLabel": "Confirm Action",
@@ -612,7 +612,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     options.format = .nested
     let response = try! element.serialize(with: options)
 
-    let result = response.elements.toFoundationObject() as! [String: Any]
+    let result = response.legacyElementsObject() as! [String: Any]
     let expected: [String: Any] = [
       "AXLabel": "OK",
       "AXFrame": "{{20, 750}, {150, 44}}",
@@ -909,7 +909,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
 
     XCTAssertNotNil(response.additionalFrameCoverage, "additionalFrameCoverage should be set when remote content is discovered")
 
-    let elements = response.elements.toFoundationObject() as! [Any]
+    let elements = response.legacyElementsObject() as! [Any]
     let labels = elements.compactMap { ($0 as? [String: Any])?["AXLabel"] as? String }
     XCTAssertEqual(elements.count, 2, "App element plus one discovered remote element")
     XCTAssertTrue(labels.contains("Remote WebView Content"), "Discovered remote element should be merged into the output")
@@ -1041,7 +1041,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     let response = try element.serialize(with: FBAccessibilityRequestOptions())
     element.close()
 
-    let dict = response.asDictionary()
+    let dict = try response.legacyEnvelopeObject()
     XCTAssertEqual(Set(dict.keys), ["elements"], "Default envelope must carry elements only")
   }
 
@@ -1055,7 +1055,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     let response = try element.serialize(with: options)
     element.close()
 
-    XCTAssertEqual(Set(response.asDictionary().keys), ["elements"], "the legacy envelope never carries profiling")
+    XCTAssertEqual(Set(try response.legacyEnvelopeObject().keys), ["elements"], "the legacy envelope never carries profiling")
 
     let dict = Self.documentObject(response)
     let profile = try XCTUnwrap(dict["profile"] as? [String: Any])
@@ -1082,7 +1082,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     let response = try element.serialize(with: options)
     element.close()
 
-    XCTAssertEqual(Set(response.asDictionary().keys), ["elements"], "the legacy envelope never carries coverage")
+    XCTAssertEqual(Set(try response.legacyEnvelopeObject().keys), ["elements"], "the legacy envelope never carries coverage")
 
     let coverage = try XCTUnwrap(Self.documentObject(response)["coverage"] as? [String: Any])
     XCTAssertNotNil(coverage["frame"], "Coverage must carry frame")
@@ -1125,7 +1125,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     ]
 
     XCTAssertEqual(
-      try canonicalJSONString(response.elements.toFoundationObject()),
+      try canonicalJSONString(response.legacyElementsObject()),
       try canonicalJSONString(expected),
       "gRPC elements-only JSON bytes changed"
     )
@@ -1137,7 +1137,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     let response = try element.serialize(with: FBAccessibilityRequestOptions())
     element.close()
 
-    let envelope = response.asDictionary()
+    let envelope = try response.legacyEnvelopeObject()
     let first = try JSONSerialization.data(withJSONObject: envelope, options: [.sortedKeys])
     let second = try JSONSerialization.data(withJSONObject: envelope, options: [.sortedKeys])
     XCTAssertEqual(first, second, "sorted-keys serialization must be deterministic")

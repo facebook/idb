@@ -110,7 +110,7 @@ public final class FBAXTranslationRequest {
       coverageGrid: nil
     )
     // A point resolves one element, so there are no screen bounds to report.
-    return buildResponse(elements: elements, serializationStart: serializationStart, frameCoverage: nil, additionalFrameCoverage: nil, screen: nil)
+    return buildResponse(elements: .single(elements), serializationStart: serializationStart, frameCoverage: nil, additionalFrameCoverage: nil, screen: nil)
   }
 
   // MARK: - Frontmost Application
@@ -152,7 +152,7 @@ public final class FBAXTranslationRequest {
     // Remote content fetching (only when requested and a translator is present).
     guard let remoteOptions = options.remoteContentOptions, let translator else {
       return buildResponse(
-        elements: .array(mainAppElements),
+        elements: .tree(mainAppElements),
         serializationStart: serializationStart,
         frameCoverage: frameCoverage,
         additionalFrameCoverage: nil,
@@ -188,8 +188,8 @@ public final class FBAXTranslationRequest {
     keys: Set<FBAXKeys>,
     remoteOptions: FBAccessibilityRemoteContentOptions,
     translator: AXPTranslator
-  ) -> [FBJSONValue] {
-    var discoveredElements: [FBJSONValue] = []
+  ) -> [FBAccessibilityDocumentElement] {
+    var discoveredElements: [FBAccessibilityDocumentElement] = []
     var discoveredFrames = Set<String>()
 
     // Always include AXFrame for hit-tested elements (needed for nesting and coverage).
@@ -247,7 +247,7 @@ public final class FBAXTranslationRequest {
 
         coverageGrid?.markFilled(with: hitFrame)
 
-        let elemDict = FBAXNodeSerializer.decoratedDictionary(
+        let discovered = FBAXNodeSerializer.decoratedElement(
           forElement: hitElement,
           token: token,
           keys: keysWithFrame,
@@ -256,7 +256,7 @@ public final class FBAXTranslationRequest {
           seenPids: nil, // already filtered
           isRemote: true
         )
-        discoveredElements.append(.object(elemDict))
+        discoveredElements.append(discovered)
 
         x += stepSize
       }
@@ -271,7 +271,7 @@ public final class FBAXTranslationRequest {
 
   // Process remote-content discovery and merge with the main elements.
   private func processRemoteContent(
-    mainAppElements: [FBJSONValue],
+    mainAppElements: [FBAccessibilityDocumentElement],
     nestedFormat: Bool,
     screenBounds: CGRect,
     frontmostPid: pid_t,
@@ -305,16 +305,10 @@ public final class FBAXTranslationRequest {
 
     var elements = mainAppElements
     if !discoveredElements.isEmpty {
-      if nestedFormat, let first = elements.first, case let .object(existingFields) = first {
+      if nestedFormat, var applicationElement = elements.first {
         // Append to the root Application element's children (nested format).
-        var applicationElement = existingFields
-        var children: [FBJSONValue] = []
-        if case let .array(existing)? = applicationElement["children"] {
-          children = existing
-        }
-        children.append(contentsOf: discoveredElements)
-        applicationElement["children"] = .array(children)
-        elements[0] = .object(applicationElement)
+        applicationElement.children = (applicationElement.children ?? []) + discoveredElements
+        elements[0] = applicationElement
       } else {
         // Append to the flat array.
         elements.append(contentsOf: discoveredElements)
@@ -322,7 +316,7 @@ public final class FBAXTranslationRequest {
     }
 
     return buildResponse(
-      elements: .array(elements),
+      elements: .tree(elements),
       serializationStart: serializationStart,
       frameCoverage: frameCoverage,
       additionalFrameCoverage: additionalFrameCoverage,
@@ -338,7 +332,7 @@ public final class FBAXTranslationRequest {
   // `truncated` is always false here: this path walks the live element tree with no depth or node
   // bound, so unlike the guest-backed readers it never returns a partial view.
   private func buildResponse(
-    elements: FBJSONValue,
+    elements: FBAccessibilityElementPayload,
     serializationStart: CFAbsoluteTime,
     frameCoverage: Double?,
     additionalFrameCoverage: Double?,

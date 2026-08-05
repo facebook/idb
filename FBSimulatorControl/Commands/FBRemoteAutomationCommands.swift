@@ -109,7 +109,7 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
       return nil
     }
     return FBAccessibilityElementsResponse(
-      elements: element
+      elements: .single(element)
     ).withProvenance(backend: backend.documentName, target: .point(point))
   }
 
@@ -334,7 +334,7 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
   /// `nil` when no element sits at the point (a valid empty hit-test result, not a failure). The
   /// element is tagged with the pid of the process that owns it — resolved inside the session with the
   /// attributes, so the (non-Sendable) element handle never crosses the actor boundary.
-  static func hitTestElement(atX x: Double, y: Double, using session: FBRemoteAutomationSession, keys: Set<FBAXKeys>) async throws -> FBJSONValue? {
+  static func hitTestElement(atX x: Double, y: Double, using session: FBRemoteAutomationSession, keys: Set<FBAXKeys>) async throws -> FBAccessibilityDocumentElement? {
     guard let hit = try await session.elementAttributes(atX: x, y: y, attributes: FBAXWire.Node.fetchList) else {
       return nil
     }

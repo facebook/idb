@@ -148,7 +148,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
       keys: FBAXKeys.defaultSet, nestedFormat: false, pid: 1
     )
     let match = FBAXTreeWalk.matchingElement(inElements: elements, markerValue: "General", key: .label)
-    guard case let .object(fields)? = match, case let .string(label)? = fields[FBAXSearchableKey.label.rawValue] else {
+    guard let label = match?.label ?? nil else {
       return XCTFail("a substring marker must match, got: \(String(describing: match))")
     }
     XCTAssertEqual(label, "General Settings")
@@ -200,8 +200,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
     let withSearchedKey = FBAXTreeWalk.describeAllElements(
       fromTree: tree, keys: requested.union([FBAXSearchableKey.label.serializationKey]), nestedFormat: false, pid: 1
     )
-    guard case let .object(fields)? = FBAXTreeWalk.matchingElement(inElements: withSearchedKey, markerValue: "General", key: .label),
-      case let .string(label)? = fields[FBAXSearchableKey.label.rawValue]
+    guard let label = FBAXTreeWalk.matchingElement(inElements: withSearchedKey, markerValue: "General", key: .label)?.label ?? nil
     else {
       return XCTFail("unioning the searched key must make the marker resolve regardless of the requested keys")
     }
@@ -335,10 +334,10 @@ final class FBAXBridgeReadsTests: XCTestCase {
     // The modal field enriches the host view but MUST NOT change the emitted CLI/gRPC JSON — a response
     // with a modal must serialize byte-identically to one without.
     let modal = FBAccessibilityModalInfo(kind: .system, elementType: "SBAlertItemWindow", label: "Allow")
-    let withModal = FBAccessibilityElementsResponse(elements: .array([]), modal: modal)
-    let without = FBAccessibilityElementsResponse(elements: .array([]))
-    let a = try JSONSerialization.data(withJSONObject: withModal.asDictionary(), options: .sortedKeys)
-    let b = try JSONSerialization.data(withJSONObject: without.asDictionary(), options: .sortedKeys)
+    let withModal = FBAccessibilityElementsResponse(elements: .tree([]), modal: modal)
+    let without = FBAccessibilityElementsResponse(elements: .tree([]))
+    let a = try withModal.legacyJSONData()
+    let b = try without.legacyJSONData()
     XCTAssertEqual(a, b, "the modal descriptor must not appear in the serialized output")
   }
 
@@ -369,9 +368,9 @@ final class FBAXBridgeReadsTests: XCTestCase {
     XCTAssertEqual(elements.count, 2, "expected the root plus its one child, flattened")
 
     let response = FBAccessibilityElementsResponse(
-      elements: .array(elements)
+      elements: .tree(elements)
     )
-    let json = try JSONSerialization.data(withJSONObject: response.asDictionary(), options: .sortedKeys)
+    let json = try response.legacyJSONData()
     let serialized = String(data: json, encoding: .utf8) ?? ""
     XCTAssertTrue(serialized.contains("com.apple.settings.general"), "missing identifier in \(serialized)")
     // automationType 9 maps to the readable XCUIElementType name via the shared serializer.
@@ -406,7 +405,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
     for query in [FBAccessibilityElementQuery.frontmost, .application(pid: 99)] {
       let reader = StubTreeReader(read: Self.stubRead())
       let response = try await reader.describeTree(query, options: FBAccessibilityRequestOptions())
-      guard case let .array(elements) = response.elements else {
+      guard case let .tree(elements) = response.elements else {
         return XCTFail("\(query) must serialize to an array, got \(response.elements)")
       }
       XCTAssertEqual(elements.count, 2, "the whole tree is flattened to root plus child")
@@ -421,10 +420,10 @@ final class FBAXBridgeReadsTests: XCTestCase {
     let response = try await reader.describeTree(
       .marker(value: "General", key: .label, depth: 10), options: FBAccessibilityRequestOptions()
     )
-    guard case let .object(fields) = response.elements else {
+    guard case let .single(element) = response.elements else {
       return XCTFail("a marker must serialize to a single object, got \(response.elements)")
     }
-    XCTAssertEqual(fields[FBAXKeys.label.rawValue], .string("General Settings"))
+    XCTAssertEqual(element.label, .some("General Settings"))
   }
 
   func testDescribeTreeCarriesTheModalDescriptorOutOfTheRead() async throws {
@@ -452,10 +451,10 @@ final class FBAXBridgeReadsTests: XCTestCase {
     let response = try await reader.describeTree(
       .marker(value: "General", key: .label, depth: 10), options: options
     )
-    guard case let .object(fields) = response.elements else {
+    guard case let .single(element) = response.elements else {
       return XCTFail("expected a single object, got \(response.elements)")
     }
-    XCTAssertNotNil(fields[FBAXKeys.label.rawValue], "the searched key must be serialized even when unrequested")
+    XCTAssertNotNil(element.label, "the searched key must be serialized even when unrequested")
   }
 
   // A marker's match runs over a flattened tree regardless of the caller's format, so a nested request
@@ -466,24 +465,24 @@ final class FBAXBridgeReadsTests: XCTestCase {
     let response = try await reader.describeTree(
       .marker(value: "General", key: .label, depth: 10), options: options
     )
-    guard case let .object(fields) = response.elements else {
+    guard case let .single(element) = response.elements else {
       return XCTFail("expected a single object, got \(response.elements)")
     }
-    XCTAssertEqual(fields[FBAXKeys.label.rawValue], .string("General Settings"))
-    XCTAssertNil(fields["children"], "the marker match is serialized flat, so the node carries no children")
+    XCTAssertEqual(element.label, .some("General Settings"))
+    XCTAssertNil(element.children, "the marker match is serialized flat, so the node carries no children")
   }
 
   func testDescribeTreeHonoursTheRequestedNestedFormatForWholeTreeQueries() async throws {
     let response = try await StubTreeReader(read: Self.stubRead())
       .describeTree(.frontmost, options: FBAccessibilityRequestOptions(format: .nested))
-    guard case let .array(elements) = response.elements, case let .object(root)? = elements.first else {
+    guard case let .tree(elements) = response.elements, let root = elements.first else {
       return XCTFail("expected a nested root, got \(response.elements)")
     }
     XCTAssertEqual(elements.count, 1, "nested output carries the child inside the root, not beside it")
-    guard case let .array(children)? = root["children"], case let .object(child)? = children.first else {
-      return XCTFail("expected the child nested under the root, got \(String(describing: root["children"]))")
+    guard let children = root.children, let child = children.first else {
+      return XCTFail("expected the child nested under the root, got \(String(describing: root.children))")
     }
-    XCTAssertEqual(child[FBAXKeys.label.rawValue], .string("General Settings"))
+    XCTAssertEqual(child.label, .some("General Settings"))
   }
 
   func testDescribeTreeHonoursTheRequestedFilterForWholeTreeQueries() async throws {
@@ -495,7 +494,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
     ]
     let reader = StubTreeReader(read: FBAXTreeRead(tree: tree, pid: 99, truncated: false, modal: nil))
     let response = try await reader.describeTree(.frontmost, options: FBAccessibilityRequestOptions(filter: .interactable))
-    guard case let .array(elements) = response.elements else {
+    guard case let .tree(elements) = response.elements else {
       return XCTFail("expected an array, got \(response.elements)")
     }
     XCTAssertEqual(elements.count, 1, "the unlabeled container is filtered out, its labeled child kept")
@@ -519,16 +518,22 @@ final class FBAXBridgeReadsTests: XCTestCase {
   // "no element" (nil) into a throw, which is what makes `describe(.point:)` throwing while `hitTest`
   // stays optional.
   func testDescribeTreeDelegatesAPointToHitTestWithoutReadingATree() async throws {
-    let hit = FBAccessibilityElementsResponse(elements: .object([FBAXKeys.label.rawValue: .string("hit")]))
+    let hit = FBAccessibilityElementsResponse(
+      elements: .single(
+        {
+          var e = FBAccessibilityDocumentElement()
+          e.label = .some("hit")
+          return e
+        }()))
     let reader = StubTreeReader(read: Self.stubRead(), hitTestResult: hit)
     let response = try await reader.describeTree(.point(CGPoint(x: 3, y: 4)), options: FBAccessibilityRequestOptions())
     XCTAssertEqual(reader.hitTestPoints, [CGPoint(x: 3, y: 4)])
     XCTAssertEqual(reader.readCount, 0, "a point must not read a whole tree")
     XCTAssertTrue(reader.truncationWarnings.isEmpty, "a point read has no tree to warn about")
-    guard case let .object(fields) = response.elements else {
+    guard case let .single(element) = response.elements else {
       return XCTFail("expected the hit-test's element, got \(response.elements)")
     }
-    XCTAssertEqual(fields[FBAXKeys.label.rawValue], .string("hit"))
+    XCTAssertEqual(element.label, .some("hit"))
   }
 
   // MARK: - Provenance stamping
@@ -536,7 +541,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
   // The backend and the query are known here, not by the front-end that asked for a format, so
   // `describeTree` stamps them on the way out. These fields feed the `complete` document only.
   func testDescribeTreeStampsBackendAndTargetForEveryQueryKind() async throws {
-    let hit = FBAccessibilityElementsResponse(elements: .object([:]))
+    let hit = FBAccessibilityElementsResponse(elements: .single(FBAccessibilityDocumentElement()))
     let cases: [(FBAccessibilityElementQuery, FBAccessibilityTargetDescriptor.Kind)] = [
       (.frontmost, .frontmost),
       (.application(pid: 99), .application),
@@ -572,7 +577,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
   // A hit-test resolves one element with no tree behind it, so there is nothing to say about the
   // screen or truncation — but which backend answered and what was asked for are still known.
   func testDescribeTreeStampsAPointWithoutScreenOrTruncation() async throws {
-    let hit = FBAccessibilityElementsResponse(elements: .object([:]))
+    let hit = FBAccessibilityElementsResponse(elements: .single(FBAccessibilityDocumentElement()))
     let reader = StubTreeReader(read: Self.stubRead(truncated: true), hitTestResult: hit)
     let response = try await reader.describeTree(.point(CGPoint(x: 3, y: 4)), options: FBAccessibilityRequestOptions())
     XCTAssertEqual(response.target, .point(CGPoint(x: 3, y: 4)))
@@ -584,10 +589,8 @@ final class FBAXBridgeReadsTests: XCTestCase {
   func testProvenanceDoesNotChangeTheLegacyEnvelope() async throws {
     let reader = StubTreeReader(read: Self.stubRead())
     let response = try await reader.describeTree(.frontmost, options: FBAccessibilityRequestOptions())
-    let stamped = try JSONSerialization.data(withJSONObject: response.asDictionary(), options: .sortedKeys)
-    let bare = try JSONSerialization.data(
-      withJSONObject: FBAccessibilityElementsResponse(elements: response.elements).asDictionary(), options: .sortedKeys
-    )
+    let stamped = try response.legacyJSONData()
+    let bare = try FBAccessibilityElementsResponse(elements: response.elements).legacyJSONData()
     XCTAssertEqual(stamped, bare, "provenance must stay out of the legacy envelope")
   }
 
@@ -596,7 +599,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
   // `withProvenance` cannot withdraw a field — hence a dedicated way to clear it.
   func testWithoutScreenClearsBoundsAndKeepsEverythingElse() throws {
     let hit = FBAccessibilityElementsResponse(
-      elements: .object([:]),
+      elements: .single(FBAccessibilityDocumentElement()),
       truncated: true,
       screen: FBAccessibilityScreenInfo(width: 370, height: 52),
       backend: .ax,
@@ -619,7 +622,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
   func testMarkerReportsTheRootBoundsAndNeverTheMatchs() throws {
     let root = try XCTUnwrap(FBAccessibilityScreenInfo(width: 402, height: 874))
     let matchSized = FBAccessibilityElementsResponse(
-      elements: .object([:]),
+      elements: .single(FBAccessibilityDocumentElement()),
       screen: FBAccessibilityScreenInfo(width: 370, height: 52),
       backend: .ax
     )

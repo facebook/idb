@@ -74,7 +74,7 @@ final class FBRemoteAutomationDescribeTests: XCTestCase {
       atX: 200, y: 406, using: session, keys: FBAXKeys.defaultSet
     )
     let value = try XCTUnwrap(hit)
-    let dict = try XCTUnwrap(value.toFoundationObject() as? [String: Any])
+    let dict = value.legacyObject()
 
     XCTAssertEqual(dict[FBAXKeys.label.rawValue] as? String, "General")
     XCTAssertEqual(dict[FBAXKeys.value.rawValue] as? String, "On")
@@ -113,7 +113,7 @@ final class FBRemoteAutomationDescribeTests: XCTestCase {
     let hit = try await FBSimulatorRemoteAutomation.hitTestElement(
       atX: 200, y: 406, using: session, keys: FBAXKeys.defaultSet
     )
-    let dict = try XCTUnwrap(try XCTUnwrap(hit).toFoundationObject() as? [String: Any])
+    let dict = try XCTUnwrap(hit).legacyObject()
     XCTAssertEqual((dict[FBAXKeys.pid.rawValue] as? NSNumber)?.intValue, 4321)
   }
 
@@ -134,7 +134,7 @@ final class FBRemoteAutomationDescribeTests: XCTestCase {
       fromTree: Self.sampleTree(), keys: FBAXKeys.defaultSet, nestedFormat: false, pid: 0
     )
     XCTAssertEqual(elements.count, 2)
-    let labels = elements.compactMap { ($0.toFoundationObject() as? [String: Any])?[FBAXKeys.label.rawValue] as? String }
+    let labels = elements.compactMap { $0.label ?? nil }
     XCTAssertTrue(labels.contains("root"))
     XCTAssertTrue(labels.contains("child"))
   }
@@ -144,7 +144,7 @@ final class FBRemoteAutomationDescribeTests: XCTestCase {
       fromTree: Self.sampleTree(), keys: FBAXKeys.defaultSet, nestedFormat: true, pid: 0
     )
     XCTAssertEqual(elements.count, 1)
-    let root = try XCTUnwrap(elements[0].toFoundationObject() as? [String: Any])
+    let root = elements[0].legacyObject()
     XCTAssertEqual(root[FBAXKeys.label.rawValue] as? String, "root")
     let children = try XCTUnwrap(root["children"] as? [[String: Any]])
     XCTAssertEqual(children.count, 1)
@@ -158,9 +158,9 @@ final class FBRemoteAutomationDescribeTests: XCTestCase {
   }
 
   func testFrameCenterFindsMatchingElement() {
-    let elements: [FBJSONValue] = [
-      FBJSONValue(foundation: [FBAXKeys.label.rawValue: "Other", FBAXKeys.frameDict.rawValue: ["x": 0.0, "y": 0.0, "width": 10.0, "height": 10.0]]),
-      FBJSONValue(foundation: [FBAXKeys.label.rawValue: "General", FBAXKeys.frameDict.rawValue: ["x": 16.0, "y": 380.0, "width": 370.0, "height": 52.0]]),
+    let elements: [FBAccessibilityDocumentElement] = [
+      .testElement(label: "Other", frame: FBAccessibilityFrame(x: 0, y: 0, width: 10, height: 10)),
+      .testElement(label: "General", frame: FBAccessibilityFrame(x: 16, y: 380, width: 370, height: 52)),
     ]
     let center = FBAXTreeWalk.frameCenter(inElements: elements, markerValue: "General", key: .label)
     XCTAssertEqual(center?.x ?? -1, 201, accuracy: 0.001)
@@ -172,19 +172,18 @@ final class FBRemoteAutomationDescribeTests: XCTestCase {
   }
 
   func testMatchingElementFindsByMarker() {
-    let elements: [FBJSONValue] = [
-      FBJSONValue(foundation: [FBAXKeys.label.rawValue: "Other"]),
-      FBJSONValue(foundation: [FBAXKeys.label.rawValue: "General", FBAXKeys.uniqueID.rawValue: "com.apple.settings.general"]),
+    let elements: [FBAccessibilityDocumentElement] = [
+      .testElement(label: "Other"),
+      .testElement(label: "General", identifier: "com.apple.settings.general"),
     ]
     let match = FBAXTreeWalk.matchingElement(inElements: elements, markerValue: "General", key: .label)
-    let matchDict = match?.toFoundationObject() as? [String: Any]
-    XCTAssertEqual(matchDict?[FBAXKeys.uniqueID.rawValue] as? String, "com.apple.settings.general")
+    XCTAssertEqual(match?.identifier, .some("com.apple.settings.general"))
     XCTAssertNil(FBAXTreeWalk.matchingElement(inElements: elements, markerValue: "Nope", key: .label))
   }
 
   func testResolveMarkerResolvesAMatchThatHasAFrame() {
-    let elements: [FBJSONValue] = [
-      FBJSONValue(foundation: [FBAXKeys.label.rawValue: "General", FBAXKeys.frameDict.rawValue: ["x": 16.0, "y": 380.0, "width": 370.0, "height": 52.0]])
+    let elements: [FBAccessibilityDocumentElement] = [
+      .testElement(label: "General", frame: FBAccessibilityFrame(x: 16, y: 380, width: 370, height: 52))
     ]
     XCTAssertEqual(
       FBAXTreeWalk.resolveMarker(inElements: elements, markerValue: "General", key: .label),
@@ -195,9 +194,7 @@ final class FBRemoteAutomationDescribeTests: XCTestCase {
   func testResolveMarkerReportsOffScreenForAFramelessMatch() {
     // The element matches the marker but carries no frame dictionary (off-screen or still settling),
     // so there is no point to tap — distinct from the marker matching nothing.
-    let elements: [FBJSONValue] = [
-      FBJSONValue(foundation: [FBAXKeys.label.rawValue: "General"])
-    ]
+    let elements: [FBAccessibilityDocumentElement] = [.testElement(label: "General")]
     XCTAssertEqual(
       FBAXTreeWalk.resolveMarker(inElements: elements, markerValue: "General", key: .label),
       .offScreen
@@ -205,8 +202,8 @@ final class FBRemoteAutomationDescribeTests: XCTestCase {
   }
 
   func testResolveMarkerReportsNotFoundWhenNoMatch() {
-    let elements: [FBJSONValue] = [
-      FBJSONValue(foundation: [FBAXKeys.label.rawValue: "Other", FBAXKeys.frameDict.rawValue: ["x": 0.0, "y": 0.0, "width": 10.0, "height": 10.0]])
+    let elements: [FBAccessibilityDocumentElement] = [
+      .testElement(label: "Other", frame: FBAccessibilityFrame(x: 0, y: 0, width: 10, height: 10))
     ]
     XCTAssertEqual(
       FBAXTreeWalk.resolveMarker(inElements: elements, markerValue: "General", key: .label),
@@ -216,9 +213,9 @@ final class FBRemoteAutomationDescribeTests: XCTestCase {
 
   func testResolveMarkerPrefersAMatchWithAFrameOverAFramelessOne() {
     // A frameless match must not mask a later on-screen match: the resolution is the framed element.
-    let elements: [FBJSONValue] = [
-      FBJSONValue(foundation: [FBAXKeys.label.rawValue: "General"]),
-      FBJSONValue(foundation: [FBAXKeys.label.rawValue: "General", FBAXKeys.frameDict.rawValue: ["x": 16.0, "y": 380.0, "width": 370.0, "height": 52.0]]),
+    let elements: [FBAccessibilityDocumentElement] = [
+      .testElement(label: "General"),
+      .testElement(label: "General", frame: FBAccessibilityFrame(x: 16, y: 380, width: 370, height: 52)),
     ]
     XCTAssertEqual(
       FBAXTreeWalk.resolveMarker(inElements: elements, markerValue: "General", key: .label),
