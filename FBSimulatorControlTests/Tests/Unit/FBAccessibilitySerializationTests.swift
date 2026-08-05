@@ -176,6 +176,58 @@ final class FBAccessibilitySerializationTests: XCTestCase {
     elements.compactMap { $0.label ?? nil }
   }
 
+  // A match carrying only a value: `--match-key AXValue` finds it, and `.interactable` would drop it,
+  // since it has no label, no identifier and no actionable role.
+  private static func valueOnlyMatchTree() -> [String: Any] {
+    [
+      FBAXWire.Node.value.rawValue: "42",
+      FBAXWire.Node.children.rawValue: [
+        [FBAXWire.Node.label.rawValue: "leaf"] as [String: Any]
+      ],
+    ]
+  }
+
+  private static func markerMatchResponse(filter: FBAccessibilityElementFilter) throws -> FBAccessibilityElementsResponse {
+    // The accessibility backend resolves a marker by descending from the frontmost root, then hands the
+    // *match* to a handle that still carries the root's `.frontmostApplication` request. This reproduces
+    // that: the request kind says "tree", the element is the match.
+    let match = FBAXTreeWalk.buildPlatformElementTree(from: Self.valueOnlyMatchTree(), pid: 7)
+    var options = FBAccessibilityRequestOptions()
+    options.keys = [.label, .value]
+    options.filter = filter
+    return try FBAXTranslationRequest(kind: .frontmostApplication).run(match, options: options)
+  }
+
+  // MARK: - The ax marker read's shape
+
+  // A marker read over the accessibility backend serializes the match *as a tree* — the match becomes
+  // the root of a whole-tree walk — so `elements` is an array of the match plus its flattened subtree.
+  // Every other backend resolves a marker to a single element. Pinned before changing it, because it is
+  // reachable from `sime2e ui describe <marker>` and from the gRPC `accessibility_info --marker`.
+  func testAxMarkerReadSerializesTheMatchAsASubtreeArray() throws {
+    let response = try Self.markerMatchResponse(filter: .all)
+    guard case let .tree(elements) = response.elements else {
+      return XCTFail("the ax marker read yields a tree, got \(response.elements)")
+    }
+    XCTAssertEqual(elements.count, 2, "the match and its leaf are both reported, flattened")
+    XCTAssertEqual(Self.labels(elements), ["leaf"], "the match itself carries no label, only a value")
+  }
+
+  // Because that walk treats the match as an ordinary tree node, the match is subject to the filter —
+  // so `--filter interactable` can drop the very element the caller named and hoist its descendants
+  // into its place. The single-element path other backends use exempts the named target.
+  func testAxMarkerMatchIsItselfSubjectToTheFilter() throws {
+    let response = try Self.markerMatchResponse(filter: .interactable)
+    guard case let .tree(elements) = response.elements else {
+      return XCTFail("the ax marker read yields a tree, got \(response.elements)")
+    }
+    XCTAssertEqual(
+      Self.labels(elements), ["leaf"],
+      "the named match is dropped by the filter and its labeled leaf is hoisted into its place"
+    )
+    XCTAssertEqual(elements.count, 1, "only the hoisted leaf survives — the match the caller asked for is gone")
+  }
+
   func testInteractableFilterDropsUnlabeledContainersFlat() {
     let flat = FBAXTreeWalk.describeAllElements(
       fromTree: Self.filterTree(), keys: [.label], nestedFormat: false, pid: 7, filter: .interactable
