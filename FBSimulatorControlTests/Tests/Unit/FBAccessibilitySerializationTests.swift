@@ -599,6 +599,35 @@ final class FBAccessibilitySerializationTests: XCTestCase {
     Set(documentObject(response).keys)
   }
 
+  // MARK: - Children reporting
+
+  // Whether an element carries `children` under `complete` depends on how the read walked it. A flat
+  // read — the shape a guest-backed hit-test produces, since those resolve one node and never look
+  // further — omits the key entirely, while a read that walked a subtree carries it. So `describe <x>
+  // <y> --format complete` describes the same element with a different key set depending on `--api`,
+  // which is the one thing the document's fixed key set is supposed to rule out. Pinned before it is
+  // unified.
+  func testCompleteReportsChildrenOnlyWhereTheReadWalkedThem() throws {
+    let flat = FBAXTreeWalk.describeAllElements(
+      fromTree: Self.sampleTree(), keys: [.label], nestedFormat: false, pid: 7
+    )
+    let response = FBAccessibilityElementsResponse(elements: .single(try XCTUnwrap(flat.first)))
+    let element = try XCTUnwrap((documentObject(response)["elements"] as? [[String: Any]])?.first)
+    XCTAssertNil(element["children"], "a flat read's element carries no children key at all")
+
+    let nested = FBAXTreeWalk.describeAllElements(
+      fromTree: Self.sampleTree(), keys: [.label], nestedFormat: true, pid: 7
+    )
+    let nestedResponse = FBAccessibilityElementsResponse(elements: .tree(nested))
+    let root = try XCTUnwrap((documentObject(nestedResponse)["elements"] as? [[String: Any]])?.first)
+    XCTAssertNotNil(root["children"], "a read that walked a subtree does carry the key")
+    let children = try XCTUnwrap(root["children"] as? [[String: Any]])
+    XCTAssertEqual(
+      (children[0]["children"] as? [Any])?.count, 0,
+      "within such a read every node carries it, empty at the leaves — so the divergence is between reads, not depths"
+    )
+  }
+
   // The clean-schema assertions below read the document as untyped Foundation, which is what a consumer
   // parsing the emitted JSON actually sees — the production path stays typed end to end.
 
