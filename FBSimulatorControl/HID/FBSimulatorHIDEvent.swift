@@ -39,6 +39,24 @@ public indirect enum FBSimulatorHIDEvent: Equatable, Hashable, Sendable {
     }
     return events
   }
+
+  /// Whether delivering this event writes to the HID transport, and so leaves something for the
+  /// post-gesture drain to wait on.
+  ///
+  /// Not every case of this enum is a HID event. Orientation and lock go out as Purple mach messages,
+  /// shake and the in-call status bar as Darwin notifications, and `.delay` writes nothing at all —
+  /// none of them touch the transport, so there is nothing for `flush()` to drain afterwards. A
+  /// `.composite` writes if any of its sub-events do.
+  public var writesToTransport: Bool {
+    switch self {
+    case .touch, .button, .keyboard, .twoFingerTouch, .trackpad:
+      return true
+    case .deviceOrientation, .lockDevice, .shake, .toggleInCallStatusBar, .delay:
+      return false
+    case let .composite(events):
+      return events.contains { $0.writesToTransport }
+    }
+  }
 }
 
 // MARK: - Dispatch
@@ -97,7 +115,12 @@ public extension FBSimulatorHID {
         try await subEvent.sendAsync(on: self)
       }
     }
-    try await flush()
+    // Only a gesture that wrote to the transport has anything to drain. Orientation, lock, shake and
+    // the in-call status bar go out over Purple or as Darwin notifications, and a delay writes nothing
+    // — draining after those buys nothing and costs `drainNanos` on DTUHID.
+    if event.writesToTransport {
+      try await flush()
+    }
   }
 }
 

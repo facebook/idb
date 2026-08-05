@@ -83,24 +83,60 @@ final class FBSimulatorHIDDrainTests: XCTestCase {
     FBControlCoreGlobalConfiguration.defaultLogger
   }
 
-  // A `.delay` writes nothing to the transport — it is `Task.sleep`, pure sequencing — and the drain
-  // still runs. On the DTUHID transport that drain is an 80ms sleep, so this is not free.
-  func testAnEventThatWritesNothingStillDrainsTheTransport() async throws {
+  // A `.delay` writes nothing to the transport — it is `Task.sleep`, pure sequencing — so there is
+  // nothing to drain. It used to be drained anyway, which on DTUHID is an 80ms sleep for no reason.
+  func testAnEventThatWritesNothingDoesNotDrainTheTransport() async throws {
     let transport = RecordingHIDTransport()
     try await makeHID(transport).send(event: .delay(0), logger: logger)
 
     XCTAssertEqual(transport.primitiveCount, 0, "a delay writes no primitive")
-    XCTAssertEqual(transport.flushCount, 1, "yet the transport is drained anyway")
+    XCTAssertEqual(transport.flushCount, 0, "so nothing is drained")
   }
 
   // A composite of nothing but non-transport events is the same story, and is what `ui rotate` or a
   // scripted `ui shell` line built from delays amounts to.
-  func testACompositeThatWritesNothingStillDrainsTheTransport() async throws {
+  func testACompositeThatWritesNothingDoesNotDrainTheTransport() async throws {
     let transport = RecordingHIDTransport()
     try await makeHID(transport).send(event: .composite([.delay(0), .delay(0)]), logger: logger)
 
     XCTAssertEqual(transport.primitiveCount, 0, "still nothing written")
-    XCTAssertEqual(transport.flushCount, 1, "still drained")
+    XCTAssertEqual(transport.flushCount, 0, "so still nothing drained")
+  }
+
+  // The rule is about what a case *does*, not which case it is, so it is stated on the event itself.
+  // The Purple and Darwin cases cannot be dispatched here — they need a simulator — but the property
+  // that decides their drain can be, and it is the same property the dispatch consults.
+  func testOnlyTransportCasesReportWritingToTheTransport() {
+    let writes: [FBSimulatorHIDEvent] = [
+      .touch(direction: .down, x: 1, y: 2),
+      .button(direction: .down, button: .sideButton),
+      .keyboard(direction: .down, keyCode: 4),
+      .twoFingerTouch(direction: .down, finger1: .zero, finger2: .zero),
+      .trackpad(phase: .began, point: .zero),
+    ]
+    for event in writes {
+      XCTAssertTrue(event.writesToTransport, "\(event) rides the transport")
+    }
+
+    let doesNotWrite: [FBSimulatorHIDEvent] = [
+      .deviceOrientation(.landscapeLeft), // Purple mach message
+      .lockDevice, // Purple mach message
+      .shake, // Darwin notification
+      .toggleInCallStatusBar, // Darwin notification
+      .delay(0), // pure sequencing
+    ]
+    for event in doesNotWrite {
+      XCTAssertFalse(event.writesToTransport, "\(event) never reaches the transport")
+    }
+
+    XCTAssertFalse(
+      FBSimulatorHIDEvent.composite([.shake, .delay(0)]).writesToTransport,
+      "a composite of non-transport events writes nothing"
+    )
+    XCTAssertTrue(
+      FBSimulatorHIDEvent.composite([.shake, .touch(direction: .up, x: 0, y: 0)]).writesToTransport,
+      "one sub-event writing is enough to need the drain"
+    )
   }
 
   // The case the drain is actually for: a gesture writes primitives, and is drained once at the end
