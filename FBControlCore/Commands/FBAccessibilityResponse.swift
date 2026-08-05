@@ -248,7 +248,7 @@ public struct FBAccessibilityElementsResponse: Sendable {
   /// assembled as an untyped dictionary.
   public var document: FBAccessibilityDocument {
     FBAccessibilityDocument(
-      elements: elements.elements,
+      elements: elements.elements.map { $0.reportingChildren() },
       modal: modal,
       truncated: truncated,
       screen: screen,

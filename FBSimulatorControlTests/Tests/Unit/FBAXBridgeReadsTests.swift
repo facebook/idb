@@ -458,7 +458,8 @@ final class FBAXBridgeReadsTests: XCTestCase {
   }
 
   // A marker's match runs over a flattened tree regardless of the caller's format, so a nested request
-  // still resolves the element rather than searching only the root.
+  // still resolves the element rather than searching only the root — and the match it returns reports
+  // children like any other single-element read of that format, empty because none were walked.
   func testDescribeTreeMatchesAMarkerFlatEvenWhenNestedIsRequested() async throws {
     let reader = StubTreeReader(read: Self.stubRead())
     let options = FBAccessibilityRequestOptions(format: .nested)
@@ -469,7 +470,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
       return XCTFail("expected a single object, got \(response.elements)")
     }
     XCTAssertEqual(element.label, .some("General Settings"))
-    XCTAssertNil(element.children, "the marker match is serialized flat, so the node carries no children")
+    XCTAssertEqual(element.children, [], "the match reports children, empty because the search walk was flat")
   }
 
   func testDescribeTreeHonoursTheRequestedNestedFormatForWholeTreeQueries() async throws {

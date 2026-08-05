@@ -251,9 +251,26 @@ public struct FBAccessibilityDocumentElement: Sendable, Equatable, Encodable {
   /// which emits both.
   public var role: String??
   public var axFrame: String??
-  /// The nested children, or `nil` for a flat read — which lists every node separately and carries no
-  /// `children` key at all. Not an attribute: it comes from the traversal.
+  /// The nested children, or `nil` when the read did not walk them — a flat read lists every node
+  /// separately and carries no `children` key at all. Not an attribute: it comes from the traversal.
+  ///
+  /// A format that asks for a tree reports this on every element (see `reportingChildren()`); the flat
+  /// format reports it on none. Either way the key set does not vary with the backend.
   public var children: [FBAccessibilityDocumentElement]?
+
+  /// A copy that reports `children` on every node, empty where the read walked none.
+  ///
+  /// Which single-element reads walk children differs by backend — the accessibility backend serializes
+  /// a point or marker through the tree path and gets a real subtree, while the guest-backed readers
+  /// resolve one node and never look further. Left alone that difference reaches the output, so the same
+  /// command describes the same element with a different key set depending on `--api`. Normalizing here
+  /// keeps the shape fixed while letting the contents say what each backend actually read: the key is
+  /// always present, and an empty array means "no children in what was read".
+  public func reportingChildren() -> FBAccessibilityDocumentElement {
+    var copy = self
+    copy.children = (children ?? []).map { $0.reportingChildren() }
+    return copy
+  }
 
   public init(children: [FBAccessibilityDocumentElement]? = nil) {
     self.children = children
@@ -456,6 +473,15 @@ public enum FBAccessibilityElementPayload: Sendable, Equatable {
   case single(FBAccessibilityDocumentElement)
   /// A hit-test that found nothing: a successful empty result, distinct from a failed read.
   case empty
+
+  /// A copy whose elements all report `children`, for the formats that describe a tree.
+  public func reportingChildren() -> FBAccessibilityElementPayload {
+    switch self {
+    case let .tree(elements): return .tree(elements.map { $0.reportingChildren() })
+    case let .single(element): return .single(element.reportingChildren())
+    case .empty: return .empty
+    }
+  }
 
   /// The elements as a list, which is how `complete` always reports them.
   public var elements: [FBAccessibilityDocumentElement] {

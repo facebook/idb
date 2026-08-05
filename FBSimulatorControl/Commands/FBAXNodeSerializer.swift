@@ -48,12 +48,26 @@ enum FBAXNodeSerializer {
     coverageGrid: FBAccessibilityCoverageGrid?
   ) -> FBAccessibilityDocumentElement {
     element.axSetBridgeDelegateToken(token)
-    if nestedFormat {
-      // A single element (describe-point) is always the target — never filtered.
-      return nestedRecursiveDescription(fromElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: nil, filter: .all).first
-        ?? FBAccessibilityDocumentElement()
+    var node = decoratedElement(forElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: nil, isRemote: false)
+    guard nestedFormat else {
+      return node
     }
-    return decoratedElement(forElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: nil, isRemote: false)
+    // The target is never filtered: the caller named this element by point or marker, so answering with
+    // nothing — or with one of its descendants hoisted into its place — would not answer the question.
+    // Building it directly, rather than taking the first result of a filtered walk over it, is what lets
+    // the target always be reported and always carry a `children` array.
+    var children: [FBAccessibilityDocumentElement] = []
+    for child in element.axChildren() {
+      child.axSetBridgeDelegateToken(token)
+      children.append(
+        contentsOf: nestedRecursiveDescription(
+          fromElement: child, token: token, keys: keys, collector: collector,
+          coverageGrid: coverageGrid, seenPids: nil, filter: .all
+        )
+      )
+    }
+    node.children = children
+    return node
   }
 
   // MARK: - Node

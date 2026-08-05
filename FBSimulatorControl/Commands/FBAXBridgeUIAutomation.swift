@@ -108,7 +108,7 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
       }
       let element = FBAXTreeWalk.buildPlatformElementTree(from: hit.tree, pid: hit.pid)
       let formatted = FBAXNodeSerializer.formattedDescription(
-        ofElement: element, token: "", nestedFormat: false, keys: options.serializationKeys, collector: nil, coverageGrid: nil
+        ofElement: element, token: "", nestedFormat: options.nestedFormat, keys: options.serializationKeys, collector: nil, coverageGrid: nil
       )
       return FBAccessibilityElementsResponse(elements: .single(formatted))
         .withProvenance(backend: backend.documentName, target: .point(point))

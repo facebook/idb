@@ -545,6 +545,16 @@ final class FBAccessibilitySerializationTests: XCTestCase {
     XCTAssertNil(flat["children"], "a flat read carries no children key")
   }
 
+  // The legacy formats are untouched by that normalization: a flat read still carries no `children` key,
+  // which is what their consumers already parse.
+  func testLegacyFormatsStillOmitChildrenForAFlatRead() throws {
+    let flat = FBAXTreeWalk.describeAllElements(
+      fromTree: Self.sampleTree(), keys: [.label], nestedFormat: false, pid: 7
+    )
+    let response = FBAccessibilityElementsResponse(elements: .single(try XCTUnwrap(flat.first)))
+    XCTAssertEqual(try renderedJSON(response), #"{"elements":{"AXLabel":"root"}}"#)
+  }
+
   // MARK: - Non-finite geometry in the complete document
 
   // An off-screen element can report a non-finite frame, and the root frame is where screen bounds come
@@ -601,31 +611,32 @@ final class FBAccessibilitySerializationTests: XCTestCase {
 
   // MARK: - Children reporting
 
-  // Whether an element carries `children` under `complete` depends on how the read walked it. A flat
-  // read — the shape a guest-backed hit-test produces, since those resolve one node and never look
-  // further — omits the key entirely, while a read that walked a subtree carries it. So `describe <x>
-  // <y> --format complete` describes the same element with a different key set depending on `--api`,
-  // which is the one thing the document's fixed key set is supposed to rule out. Pinned before it is
-  // unified.
-  func testCompleteReportsChildrenOnlyWhereTheReadWalkedThem() throws {
+  // `complete` reports `children` on every element, whatever the read walked. It used to follow the
+  // walk instead: a flat read — the shape a guest-backed hit-test produces, since those resolve one
+  // node and never look further — omitted the key entirely, so `describe <x> <y> --format complete`
+  // described the same element with a different key set depending on `--api`. That is the one thing
+  // the document's fixed key set exists to rule out.
+  func testCompleteAlwaysReportsChildrenWhateverTheReadWalked() throws {
     let flat = FBAXTreeWalk.describeAllElements(
       fromTree: Self.sampleTree(), keys: [.label], nestedFormat: false, pid: 7
     )
+    XCTAssertNil(try XCTUnwrap(flat.first).children, "the model still records that nothing was walked")
+
     let response = FBAccessibilityElementsResponse(elements: .single(try XCTUnwrap(flat.first)))
     let element = try XCTUnwrap((documentObject(response)["elements"] as? [[String: Any]])?.first)
-    XCTAssertNil(element["children"], "a flat read's element carries no children key at all")
+    XCTAssertEqual(
+      (element["children"] as? [Any])?.count, 0,
+      "the key is reported regardless, empty where nothing was walked"
+    )
 
     let nested = FBAXTreeWalk.describeAllElements(
       fromTree: Self.sampleTree(), keys: [.label], nestedFormat: true, pid: 7
     )
     let nestedResponse = FBAccessibilityElementsResponse(elements: .tree(nested))
     let root = try XCTUnwrap((documentObject(nestedResponse)["elements"] as? [[String: Any]])?.first)
-    XCTAssertNotNil(root["children"], "a read that walked a subtree does carry the key")
     let children = try XCTUnwrap(root["children"] as? [[String: Any]])
-    XCTAssertEqual(
-      (children[0]["children"] as? [Any])?.count, 0,
-      "within such a read every node carries it, empty at the leaves — so the divergence is between reads, not depths"
-    )
+    XCTAssertEqual(children.count, 1, "a read that walked a subtree still reports what it walked")
+    XCTAssertEqual((children[0]["children"] as? [Any])?.count, 0, "and its leaf reports an empty array")
   }
 
   // The clean-schema assertions below read the document as untyped Foundation, which is what a consumer

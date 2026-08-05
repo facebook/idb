@@ -102,8 +102,9 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
     options: FBAccessibilityRequestOptions
   ) async throws -> FBAccessibilityElementsResponse? {
     let keys = options.serializationKeys
+    let nestedFormat = options.nestedFormat
     let hit = try await withSession { session in
-      try await Self.hitTestElement(atX: Double(point.x), y: Double(point.y), using: session, keys: keys)
+      try await Self.hitTestElement(atX: Double(point.x), y: Double(point.y), using: session, keys: keys, nestedFormat: nestedFormat)
     }
     guard let element = hit else {
       return nil
@@ -334,7 +335,7 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
   /// `nil` when no element sits at the point (a valid empty hit-test result, not a failure). The
   /// element is tagged with the pid of the process that owns it — resolved inside the session with the
   /// attributes, so the (non-Sendable) element handle never crosses the actor boundary.
-  static func hitTestElement(atX x: Double, y: Double, using session: FBRemoteAutomationSession, keys: Set<FBAXKeys>) async throws -> FBAccessibilityDocumentElement? {
+  static func hitTestElement(atX x: Double, y: Double, using session: FBRemoteAutomationSession, keys: Set<FBAXKeys>, nestedFormat: Bool = false) async throws -> FBAccessibilityDocumentElement? {
     guard let hit = try await session.elementAttributes(atX: x, y: y, attributes: FBAXWire.Node.fetchList) else {
       return nil
     }
@@ -342,7 +343,7 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
     return FBAXNodeSerializer.formattedDescription(
       ofElement: platformElement,
       token: "",
-      nestedFormat: false,
+      nestedFormat: nestedFormat,
       keys: keys,
       collector: nil,
       coverageGrid: nil

@@ -66,7 +66,10 @@ extension FBAXTreeReader {
       guard let match = FBAXTreeWalk.matchingElement(inElements: elements, markerValue: value, key: key) else {
         throw FBUIAutomationError.elementNotFound(backend: backend, key: key.rawValue, value: value)
       }
-      return FBAccessibilityElementsResponse(elements: .single(match), modal: read.modal)
+      // The match came from a flattened walk, so it carries no children of its own; reporting them
+      // keeps a marker read the same shape as any other single-element read of the same format.
+      let matched = options.nestedFormat ? match.reportingChildren() : match
+      return FBAccessibilityElementsResponse(elements: .single(matched), modal: read.modal)
         .withProvenance(
           backend: backend.documentName,
           target: query.targetDescriptor,
