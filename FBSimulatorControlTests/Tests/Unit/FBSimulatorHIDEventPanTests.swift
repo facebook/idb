@@ -40,6 +40,23 @@ final class FBSimulatorHIDEventPanTests: XCTestCase {
     XCTAssertEqual(delays.count, 4, "steps + 1 interleaved delays")
   }
 
+  // The trackpad surface is absolute-normalized — `FBSimulatorHIDTransport.sendTrackpad` documents
+  // `point` as 0..1 — but that contract lives only in prose. `pan` takes bare `Double`s and wraps them
+  // in a `CGPoint`, the same type `.twoFingerTouch` uses for screen points, so a caller passing screen
+  // coordinates gets no complaint from the compiler or from here: they reach the transport unchanged
+  // and land wherever the daemon puts them. Pinned before the surface gets a type of its own.
+  func testPanAcceptsCoordinatesOutsideTheTrackpadSurface() throws {
+    let pan = FBSimulatorHIDEvent.pan(fromX: 100, fromY: 200, toX: 300, toY: 400, steps: 1, duration: 0)
+    let subs = try XCTUnwrap(pan.subEvents, "pan should be a composite")
+
+    let points: [CGPoint] = subs.compactMap {
+      if case let .trackpad(_, point) = $0 { return point }
+      return nil
+    }
+    XCTAssertEqual(points.first, CGPoint(x: 100, y: 200), "screen coordinates pass straight through")
+    XCTAssertEqual(points.last, CGPoint(x: 300, y: 400), "and are never checked against the unit square")
+  }
+
   func testPanClampsStepsToAtLeastOne() throws {
     // steps <= 0 must not trap; it degrades to a single changed sample.
     let pan = FBSimulatorHIDEvent.pan(fromX: 0, fromY: 0, toX: 1, toY: 1, steps: 0, duration: 0.1)
