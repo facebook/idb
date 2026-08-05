@@ -61,9 +61,9 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
     let transport: FBSimulatorHIDTransport
     switch transportType ?? simulator.defaultHIDTransport {
     case .indigo:
-      transport = try FBSimulatorIndigoHIDTransport.indigo(for: simulator)
+      transport = .indigo(try FBSimulatorIndigoHIDTransport.indigo(for: simulator))
     case .dtuhid:
-      transport = try FBSimulatorDTUHIDTransport.dtuhid(for: simulator)
+      transport = .dtuhid(try FBSimulatorDTUHIDTransport.dtuhid(for: simulator))
     }
     self.init(transport: transport, purple: FBSimulatorPurpleHID(), simulator: simulator)
   }
@@ -110,17 +110,32 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
     try await transport.sendKeyboard(direction: direction, keyCode: keyCode)
   }
 
-  /// Drains the transport once a gesture's primitives have all been sent (see
-  /// `FBSimulatorHIDTransport.flush`). `FBSimulatorHIDEvent.send(on:logger:)` calls this once per
+  /// Drains the transport once a gesture's primitives have all been sent, so `dtuhidd` consumes them
+  /// before the connection is torn down. `FBSimulatorHIDEvent.send(on:logger:)` calls this once per
   /// dispatched event; the individual `send*` primitives do not.
+  ///
+  /// Only DTUHID has anything to drain. Indigo's client is synchronous, so there is nothing waiting on
+  /// the far side and no drain to perform — which is why `flush` is not on the transport at all.
   func flush() async throws {
-    try await transport.flush()
+    guard case let .dtuhid(dtuhid) = transport else {
+      return
+    }
+    try await dtuhid.flush()
   }
 
-  /// Sends one phase of a tvOS Siri Remote trackpad gesture over the selected transport (Indigo-only;
-  /// the DTUHID transport throws, as `dtuhidd` does not expose the trackpad).
+  /// Sends one phase of a tvOS Siri Remote trackpad gesture.
+  ///
+  /// The trackpad rides the dedicated Indigo trackpad service, which `dtuhidd` does not expose: its
+  /// digitizer targets are displays (`DigitizerTarget` = mainScreen/display1..10) and its scroll targets
+  /// are rotary devices (`ScrollTarget` = digitalCrown/dial) — none is the trackpad, and the tvOS guest
+  /// registers no trackpad/pointer service. Asked here rather than on the transport, so DTUHID never
+  /// declares a method it could only throw from.
   func sendTrackpad(point: FBSimulatorTrackpadPoint, phase: FBSimulatorTrackpadPhase) async throws {
-    try await transport.sendTrackpad(point: point, phase: phase)
+    guard case let .indigo(indigo) = transport else {
+      throw FBSimulatorHIDError.notImplementedOnDTUHIDTransport(
+        operation: "trackpad pan — the tvOS Siri Remote trackpad is not exposed by dtuhidd")
+    }
+    try await indigo.sendTrackpad(point: point, phase: phase)
   }
 
   // MARK: Purple / GSEvents

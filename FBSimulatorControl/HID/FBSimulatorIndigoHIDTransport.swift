@@ -19,7 +19,7 @@ import Foundation
 
  An `actor`, so sends are serialized by actor isolation (no `@unchecked Sendable`).
  */
-actor FBSimulatorIndigoHIDTransport: FBSimulatorHIDTransport {
+actor FBSimulatorIndigoHIDTransport {
 
   /// Delivers the built Indigo message bytes to the simulator. `Sendable`, so `disconnect()` can
   /// reach it from a `nonisolated` context.
@@ -69,7 +69,7 @@ actor FBSimulatorIndigoHIDTransport: FBSimulatorHIDTransport {
     self.productFamily = productFamily
   }
 
-  // MARK: FBSimulatorHIDTransport
+  // MARK: Sends
 
   nonisolated func disconnect() {
     indigoClient.disconnect()
@@ -109,9 +109,6 @@ actor FBSimulatorIndigoHIDTransport: FBSimulatorHIDTransport {
     }
     try await indigoClient.send(indigo.keyboard(with: direction, keyCode: keyCode))
   }
-
-  /// No-op: the legacy client awaits delivery on every `send`, so there is nothing left to drain.
-  func flush() async throws {}
 
   // No tvOS guard — the trackpad is exactly what Apple TV targets need (unlike the touchscreen).
   func sendTrackpad(point: FBSimulatorTrackpadPoint, phase: FBSimulatorTrackpadPhase) async throws {

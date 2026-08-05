@@ -50,7 +50,7 @@ struct DigitizerContactTracker {
  An `actor`: the mutable contact state is actor-isolated, so the type needs no `@unchecked Sendable`.
  The XPC connection handle is thread-safe, so `disconnect()` cancels it from a `nonisolated` context.
  */
-actor FBSimulatorDTUHIDTransport: FBSimulatorHIDTransport {
+actor FBSimulatorDTUHIDTransport {
 
   static let digitizerServiceName = "com.apple.coredevice.feature.remote.hid.digitizer"
 
@@ -130,7 +130,7 @@ actor FBSimulatorDTUHIDTransport: FBSimulatorHIDTransport {
     return unsafeBitCast(sym, to: type)
   }
 
-  // MARK: FBSimulatorHIDTransport
+  // MARK: Sends
 
   nonisolated func disconnect() {
     xpc_connection_cancel(connection)
@@ -171,15 +171,6 @@ actor FBSimulatorDTUHIDTransport: FBSimulatorHIDTransport {
     try await send(
       messageType: "IndigoKeyboardButtonEvent",
       payload: IndigoKeyboardButtonEvent(usageCode: UInt64(keyCode), state: state))
-  }
-
-  // The tvOS Siri Remote trackpad is not exposed by `dtuhidd`: its digitizer targets are displays
-  // (`DigitizerTarget` = mainScreen/display1..10) and its scroll targets are rotary devices
-  // (`ScrollTarget` = digitalCrown/dial) — none is the trackpad, and the tvOS guest registers no
-  // trackpad/pointer service. So the trackpad pan is the legacy Indigo transport's job.
-  func sendTrackpad(point: FBSimulatorTrackpadPoint, phase: FBSimulatorTrackpadPhase) async throws {
-    throw FBSimulatorHIDError.notImplementedOnDTUHIDTransport(
-      operation: "trackpad pan — the tvOS Siri Remote trackpad is not exposed by dtuhidd")
   }
 
   // MARK: Sending

@@ -16,30 +16,60 @@ public enum FBSimulatorHIDTransportType: Equatable, Sendable {
   case dtuhid
 }
 
-/// A transport for the Indigo-family HID primitives (touch, two-finger touch, button, keyboard).
+/// The transport carrying the Indigo-family HID primitives — touch, two-finger touch, button and
+/// keyboard — and which of the two it is.
 ///
-/// `FBSimulatorHID` routes exactly these four primitives through the selected transport. Device
-/// orientation, lock, shake, and the in-call status bar are not transport-switchable and stay on
-/// `FBSimulatorHID`'s Purple / Darwin paths.
+/// A closed enum rather than a protocol. There are exactly two, they are chosen at runtime, and they
+/// differ in what they can carry. A protocol has to declare every capability on both, which is how
+/// Indigo came to implement `flush()` as an empty body — it holds a synchronous client with nothing to
+/// drain — and DTUHID to implement `sendTrackpad` only in order to throw. As cases, each capability
+/// lives on the transport that has it and the caller switches for the rest.
 ///
-/// Conformers serialize their own sends, so the protocol refines `Sendable`.
-protocol FBSimulatorHIDTransport: Sendable {
+/// Device orientation, lock, shake and the in-call status bar are not carried here at all. They are not
+/// transport-switchable and go out over Purple mach messages and Darwin notifications.
+enum FBSimulatorHIDTransport: Sendable {
+  case indigo(FBSimulatorIndigoHIDTransport)
+  case dtuhid(FBSimulatorDTUHIDTransport)
+
   /// Tears down any resources held by the transport.
-  func disconnect()
+  func disconnect() {
+    switch self {
+    case let .indigo(indigo): indigo.disconnect()
+    case let .dtuhid(dtuhid): dtuhid.disconnect()
+    }
+  }
+
   /// Sends a single-finger touch at the given point (in points).
-  func sendTouch(direction: FBSimulatorHIDDirection, x: Double, y: Double) async throws
+  func sendTouch(direction: FBSimulatorHIDDirection, x: Double, y: Double) async throws {
+    switch self {
+    case let .indigo(indigo): try await indigo.sendTouch(direction: direction, x: x, y: y)
+    case let .dtuhid(dtuhid): try await dtuhid.sendTouch(direction: direction, x: x, y: y)
+    }
+  }
+
   /// Sends a two-finger touch (for multi-touch gestures) at the given points (in points).
-  func sendTwoFingerTouch(direction: FBSimulatorHIDDirection, finger1: CGPoint, finger2: CGPoint) async throws
+  func sendTwoFingerTouch(direction: FBSimulatorHIDDirection, finger1: CGPoint, finger2: CGPoint) async throws {
+    switch self {
+    case let .indigo(indigo):
+      try await indigo.sendTwoFingerTouch(direction: direction, finger1: finger1, finger2: finger2)
+    case let .dtuhid(dtuhid):
+      try await dtuhid.sendTwoFingerTouch(direction: direction, finger1: finger1, finger2: finger2)
+    }
+  }
+
   /// Sends a hardware button event.
-  func sendButton(direction: FBSimulatorHIDDirection, button: FBSimulatorHIDButton) async throws
+  func sendButton(direction: FBSimulatorHIDDirection, button: FBSimulatorHIDButton) async throws {
+    switch self {
+    case let .indigo(indigo): try await indigo.sendButton(direction: direction, button: button)
+    case let .dtuhid(dtuhid): try await dtuhid.sendButton(direction: direction, button: button)
+    }
+  }
+
   /// Sends a keyboard key event.
-  func sendKeyboard(direction: FBSimulatorHIDDirection, keyCode: UInt32) async throws
-  /// Sends one phase of a tvOS Siri Remote trackpad gesture. `point` is absolute-normalized (0..1).
-  /// Indigo-only: the trackpad rides the dedicated Indigo trackpad service, which the `dtuhidd` daemon
-  /// does not expose (the DTUHID impl throws `notImplementedOnDTUHIDTransport`).
-  func sendTrackpad(point: FBSimulatorTrackpadPoint, phase: FBSimulatorTrackpadPhase) async throws
-  /// Drains the transport after a gesture's events have all been sent, so the daemon consumes them
-  /// before the connection is torn down. Called once per dispatched `FBSimulatorHIDEvent` (i.e. once
-  /// per gesture), not once per primitive.
-  func flush() async throws
+  func sendKeyboard(direction: FBSimulatorHIDDirection, keyCode: UInt32) async throws {
+    switch self {
+    case let .indigo(indigo): try await indigo.sendKeyboard(direction: direction, keyCode: keyCode)
+    case let .dtuhid(dtuhid): try await dtuhid.sendKeyboard(direction: direction, keyCode: keyCode)
+    }
+  }
 }
