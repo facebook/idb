@@ -45,7 +45,8 @@ enum FBAXNodeSerializer {
     nestedFormat: Bool,
     keys: Set<FBAXKeys>,
     collector: FBAccessibilityProfilingCollector?,
-    coverageGrid: FBAccessibilityCoverageGrid?
+    coverageGrid: FBAccessibilityCoverageGrid?,
+    filter: FBAccessibilityElementFilter = .all
   ) -> FBAccessibilityDocumentElement {
     element.axSetBridgeDelegateToken(token)
     var node = decoratedElement(forElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: nil, isRemote: false)
@@ -56,13 +57,16 @@ enum FBAXNodeSerializer {
     // nothing — or with one of its descendants hoisted into its place — would not answer the question.
     // Building it directly, rather than taking the first result of a filtered walk over it, is what lets
     // the target always be reported and always carry a `children` array.
+    //
+    // Its descendants are a tree like any other and honour the filter, as a whole-tree read does. This
+    // costs nothing under the default `.all`, which passes every node without reading an attribute.
     var children: [FBAccessibilityDocumentElement] = []
     for child in element.axChildren() {
       child.axSetBridgeDelegateToken(token)
       children.append(
         contentsOf: nestedRecursiveDescription(
           fromElement: child, token: token, keys: keys, collector: collector,
-          coverageGrid: coverageGrid, seenPids: nil, filter: .all
+          coverageGrid: coverageGrid, seenPids: nil, filter: filter
         )
       )
     }

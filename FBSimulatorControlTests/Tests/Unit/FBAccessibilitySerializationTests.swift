@@ -626,17 +626,17 @@ final class FBAccessibilitySerializationTests: XCTestCase {
 
   // MARK: - The element filter on a single-element read
 
-  // Two halves of one rule, only one of which holds today.
+  // Both halves of the rule now hold.
   //
   // The target is never filtered — a caller who named an element by point or marker asked about that
-  // element, so it is built directly rather than taken from a walk over it. That already holds, and the
+  // element, so it is built directly rather than taken from a walk over it. That already held, and the
   // fixture makes it observable: the target here would not survive `.interactable` were it any other
   // node, carrying no label, no identifier and no actionable role.
   //
-  // Its descendants, though, are walked with the filter hard-coded off, so `describe <x> <y> --nested
-  // --filter interactable` returns every one of them while `describe-all --filter interactable` prunes
-  // them. Same flag, honoured by one verb and silently dropped by the other.
-  func testSingleElementReadKeepsTheTargetAndIgnoresTheFilterOnItsDescendants() throws {
+  // Its descendants are now walked with the caller's filter, as a whole-tree read already did. They
+  // used to be walked with it hard-coded off, so `describe <x> <y> --nested --filter interactable`
+  // returned every one of them while `describe-all --filter interactable` pruned them.
+  func testSingleElementReadKeepsTheTargetAndFiltersItsDescendants() throws {
     let element = FBAXTreeWalk.buildPlatformElementTree(from: Self.unlabeledTargetTree(), pid: 7)
     var options = FBAccessibilityRequestOptions()
     options.keys = [.label]
@@ -652,10 +652,10 @@ final class FBAccessibilitySerializationTests: XCTestCase {
       "the unlabeled target is reported as itself, not replaced by a labeled descendant"
     )
     XCTAssertEqual(
-      Set((target.children ?? []).compactMap { $0.label ?? nil }), ["sibling"],
-      "the unlabeled container survives unfiltered, so its labeled leaf stays hidden a level down"
+      Set((target.children ?? []).compactMap { $0.label ?? nil }), ["leaf", "sibling"],
+      "the unlabeled container is dropped and its labeled leaf hoisted, as a whole-tree read already did"
     )
-    XCTAssertEqual(target.children?.count, 2, "both children are reported — the filter reached nothing")
+    XCTAssertEqual(target.children?.count, 2, "two children either way — only which two changes")
   }
 
   // MARK: - Children reporting

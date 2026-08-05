@@ -107,7 +107,8 @@ public final class FBAXTranslationRequest {
       nestedFormat: options.nestedFormat,
       keys: Self.serializerKeys(options),
       collector: collector,
-      coverageGrid: nil
+      coverageGrid: nil,
+      filter: options.filter
     )
     // A point resolves one element, so there are no screen bounds to report.
     return buildResponse(elements: .single(elements), serializationStart: serializationStart, frameCoverage: nil, additionalFrameCoverage: nil, screen: nil)
