@@ -137,7 +137,7 @@ final class FBSimulatorControlTransientTests: XCTestCase {
   }
 
   func testShortKeyPressSequenceProducesCorrectCount() {
-    let keyCodes: [NSNumber] = [0x00, 0x01, 0x02] // a, s, d
+    let keyCodes: [UInt32] = [0x00, 0x01, 0x02] // a, s, d
     let sequence = FBSimulatorHIDEvent.shortKeyPressSequence(keyCodes)
     XCTAssertEqual(sequence.subEvents?.count, 6, "3 keys should produce 6 sub-events (3 down + 3 up)")
   }

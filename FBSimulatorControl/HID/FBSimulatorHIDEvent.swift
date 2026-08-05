@@ -162,11 +162,11 @@ public extension FBSimulatorHIDEvent {
     ])
   }
 
-  static func shortKeyPressSequence(_ sequence: [NSNumber]) -> FBSimulatorHIDEvent {
+  static func shortKeyPressSequence(_ sequence: [UInt32]) -> FBSimulatorHIDEvent {
     var events: [FBSimulatorHIDEvent] = []
     for keyCode in sequence {
-      events.append(.keyboard(direction: .down, keyCode: keyCode.uint32Value))
-      events.append(.keyboard(direction: .up, keyCode: keyCode.uint32Value))
+      events.append(.keyboard(direction: .down, keyCode: keyCode))
+      events.append(.keyboard(direction: .up, keyCode: keyCode))
     }
     return .composite(events)
   }
