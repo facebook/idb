@@ -9,9 +9,6 @@ import CoreGraphics
 import FBControlCore
 import Foundation
 
-private let shakeDarwinNotification = "com.apple.UIKit.SimulatorShake"
-private let inCallStatusBarNotification = "com.apple.iphonesimulator.toggleincallstatusbar"
-
 // MARK: - FBSimulatorHIDEvent
 
 /// A HID event that can be sent to a Simulator. A discriminated union of the primitive
@@ -84,9 +81,9 @@ public extension FBSimulatorHIDEvent {
     case let .deviceOrientation(orientation):
       try hid.sendOrientation(orientation)
     case .shake:
-      try hid.postDarwinNotification(shakeDarwinNotification)
+      try hid.sendShake()
     case .toggleInCallStatusBar:
-      try hid.postDarwinNotification(inCallStatusBarNotification)
+      try hid.sendToggleInCallStatusBar()
     case .lockDevice:
       try hid.sendLockDevice()
     case let .composite(events):

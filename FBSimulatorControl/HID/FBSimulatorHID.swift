@@ -35,6 +35,8 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
   private let transport: FBSimulatorHIDTransport
   /// The transport for GSEvents (orientation, lock).
   private let purple: FBSimulatorPurpleHIDTransport
+  /// The transport for the Darwin-notification inputs (shake, in-call status bar).
+  private let notification: FBSimulatorDarwinNotificationTransport
 
   private weak var simulator: FBSimulator?
 
@@ -60,7 +62,11 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
     case .dtuhid:
       transport = .dtuhid(try FBSimulatorDTUHIDTransport.dtuhid(for: simulator))
     }
-    self.init(transport: transport, purple: FBSimulatorPurpleHIDTransport(simulator: simulator), simulator: simulator)
+    self.init(
+      transport: transport,
+      purple: FBSimulatorPurpleHIDTransport(simulator: simulator),
+      notification: FBSimulatorDarwinNotificationTransport(simulator: simulator),
+      simulator: simulator)
   }
 
   /// The designated initializer.
@@ -68,9 +74,15 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
   /// `simulator` is held weakly and may be absent. The Purple and Darwin paths need it and throw
   /// `FBWeakTargetError.simulator` without one; the transport primitives never touch it. That
   /// asymmetry is what lets a test drive the transport with no simulator attached.
-  init(transport: FBSimulatorHIDTransport, purple: FBSimulatorPurpleHIDTransport, simulator: FBSimulator?) {
+  init(
+    transport: FBSimulatorHIDTransport,
+    purple: FBSimulatorPurpleHIDTransport,
+    notification: FBSimulatorDarwinNotificationTransport,
+    simulator: FBSimulator?
+  ) {
     self.transport = transport
     self.purple = purple
+    self.notification = notification
     self.simulator = simulator
   }
 
@@ -147,14 +159,14 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
 
   // MARK: Darwin Notifications
 
-  /**
-   Posts a Darwin notification to the simulator (e.g. shake, in-call status bar). Synchronous.
-   */
-  public func postDarwinNotification(_ notificationName: String) throws {
-    guard let simulator else {
-      throw FBWeakTargetError.simulator
-    }
-    try simulator.device.postDarwinNotification(notificationName)
+  /// Shakes the device. Posted as a Darwin notification, not through the HID transport.
+  func sendShake() throws {
+    try notification.sendShake()
+  }
+
+  /// Toggles the in-call status bar. Posted as a Darwin notification, not through the HID transport.
+  func sendToggleInCallStatusBar() throws {
+    try notification.sendToggleInCallStatusBar()
   }
 
   // MARK: CustomStringConvertible
