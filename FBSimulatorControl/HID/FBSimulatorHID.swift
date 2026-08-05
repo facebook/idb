@@ -68,7 +68,12 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
     self.init(transport: transport, purple: FBSimulatorPurpleHID(), simulator: simulator)
   }
 
-  private init(transport: FBSimulatorHIDTransport, purple: FBSimulatorPurpleHID, simulator: FBSimulator) {
+  /// The designated initializer.
+  ///
+  /// `simulator` is held weakly and may be absent. The Purple and Darwin paths need it and throw
+  /// `FBWeakTargetError.simulator` without one; the transport primitives never touch it. That
+  /// asymmetry is what lets a test drive the transport with no simulator attached.
+  init(transport: FBSimulatorHIDTransport, purple: FBSimulatorPurpleHID, simulator: FBSimulator?) {
     self.transport = transport
     self.purple = purple
     self.simulator = simulator
