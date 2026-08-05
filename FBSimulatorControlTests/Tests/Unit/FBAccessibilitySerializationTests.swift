@@ -347,6 +347,278 @@ final class FBAccessibilitySerializationTests: XCTestCase {
     )
   }
 
+  // MARK: - The `complete` document
+
+  /// The document encoded exactly as a caller receives it.
+  private func documentJSON(_ response: FBAccessibilityElementsResponse) throws -> String {
+    let encoder = JSONEncoder()
+    encoder.outputFormatting = .sortedKeys
+    return String(decoding: try encoder.encode(response.document), as: UTF8.self)
+  }
+
+  /// The document as untyped Foundation — what a consumer parsing the emitted JSON sees. Test-local, so
+  /// the production path never hands out an `Any`.
+  private func documentObject(_ response: FBAccessibilityElementsResponse) -> [String: Any] {
+    guard let data = try? JSONEncoder().encode(response.document),
+      let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+    else {
+      return [:]
+    }
+    return object
+  }
+
+  private func documentKeys(_ response: FBAccessibilityElementsResponse) -> Set<String> {
+    Set(documentObject(response).keys)
+  }
+
+  // The clean-schema assertions below read the document as untyped Foundation, which is what a consumer
+  // parsing the emitted JSON actually sees — the production path stays typed end to end.
+
+  // The clean schema re-spells the AX-prefixed holdovers and drops the two attributes that merely
+  // restate another (`AXFrame` for the `frame` object, raw `role` for the normalized `type`).
+  func testCompleteElementsUseTheCleanSchema() throws {
+    let elements = FBAXTreeWalk.describeAllElements(
+      fromTree: Self.sampleTree(), keys: FBAXKeys.defaultSet, nestedFormat: true, pid: 7
+    )
+    let response = FBAccessibilityElementsResponse(elements: .array(elements))
+    let document = try XCTUnwrap(documentObject(response)["elements"] as? [[String: Any]])
+    let root = try XCTUnwrap(document.first)
+
+    XCTAssertEqual(root["label"] as? String, "root", "AXLabel is re-spelled")
+    XCTAssertEqual(root["value"] as? String, "on", "AXValue is re-spelled")
+    XCTAssertEqual(root["identifier"] as? String, "com.example.root", "AXUniqueId is re-spelled")
+    XCTAssertEqual(root["type"] as? String, "Button", "the normalized role is the canonical type")
+    XCTAssertNotNil(root["frame"] as? [String: Any], "the frame object is kept")
+
+    XCTAssertNil(root["AXLabel"], "the legacy spelling is gone")
+    XCTAssertNil(root["AXValue"], "the legacy spelling is gone")
+    XCTAssertNil(root["AXUniqueId"], "the legacy spelling is gone")
+    XCTAssertNil(root["AXFrame"], "the stringified frame is dropped as a duplicate of `frame`")
+    XCTAssertNil(root["role"], "the raw role is dropped as a duplicate of `type`")
+
+    // Attributes that carry information `type` does not are kept, with their keys retained even when null.
+    for kept in ["role_description", "subrole", "title", "help", "enabled", "custom_actions", "content_required", "pid", "traits"] {
+      XCTAssertTrue(root.keys.contains(kept), "\(kept) must survive the clean schema")
+    }
+  }
+
+  func testCompleteElementsRecurseIntoChildren() throws {
+    let elements = FBAXTreeWalk.describeAllElements(
+      fromTree: Self.sampleTree(), keys: FBAXKeys.defaultSet, nestedFormat: true, pid: 7
+    )
+    let response = FBAccessibilityElementsResponse(elements: .array(elements))
+    let document = try XCTUnwrap(documentObject(response)["elements"] as? [[String: Any]])
+    let children = try XCTUnwrap(try XCTUnwrap(document.first)["children"] as? [[String: Any]])
+    let child = try XCTUnwrap(children.first)
+    XCTAssertEqual(child["label"] as? String, "child", "a nested node is normalized too")
+    XCTAssertNil(child["AXLabel"], "nesting must not smuggle the legacy spelling through")
+    XCTAssertEqual(child["type"] as? String, "Cell")
+    XCTAssertNil(child["role"], "the raw AXCell role is dropped at every depth")
+  }
+
+  // A single-element read is an object in the legacy envelope; `complete` always presents an array so a
+  // consumer never branches on the shape.
+  func testCompleteElementsIsAlwaysAnArray() throws {
+    let single = try XCTUnwrap(flatElements().first)
+    let cases: [(String, FBJSONValue, Int)] = [
+      ("a whole-tree read", .array(flatElements()), 2),
+      ("a single-element read", single, 1),
+      ("an empty read", .array([]), 0),
+      ("an absent element", .null, 0),
+    ]
+    for (name, elements, count) in cases {
+      let response = FBAccessibilityElementsResponse(elements: elements)
+      let document = documentObject(response)["elements"] as? [Any]
+      XCTAssertEqual(document?.count, count, "\(name) must present \(count) element(s) in an array")
+    }
+  }
+
+  // The document's key set never varies: what a verb or backend cannot supply is an explicit null, so
+  // one parser serves every describe verb.
+  func testCompleteDocumentKeySetIsFixedAcrossReads() throws {
+    let expected: Set<String> = ["elements", "modal", "truncated", "screen", "backend", "target", "profile", "coverage"]
+    let bare = FBAccessibilityElementsResponse(elements: .array([]))
+    let full = FBAccessibilityElementsResponse(
+      elements: .array(flatElements()),
+      profilingData: Self.sampleProfilingData(),
+      frameCoverage: 0.5,
+      additionalFrameCoverage: 0.25,
+      modal: FBAccessibilityModalInfo(kind: .system, elementType: "SBAlertItemWindow", label: "Allow"),
+      truncated: true,
+      screen: FBAccessibilityScreenInfo(width: 390, height: 844),
+      backend: .axBridge,
+      target: .point(CGPoint(x: 10, y: 20))
+    )
+    XCTAssertEqual(documentKeys(bare), expected, "an empty read still carries every key")
+    XCTAssertEqual(documentKeys(full), expected)
+  }
+
+  func testCompleteDocumentEmitsAbsentSignalsAsNull() throws {
+    let response = FBAccessibilityElementsResponse(elements: .array([]))
+    XCTAssertEqual(
+      try documentJSON(response),
+      #"{"backend":null,"coverage":null,"elements":[],"modal":null,"profile":null,"screen":null,"target":null,"truncated":false}"#
+    )
+  }
+
+  func testCompleteDocumentCarriesTheReadsSignals() throws {
+    let response = FBAccessibilityElementsResponse(
+      elements: .array([]),
+      profilingData: Self.sampleProfilingData(),
+      frameCoverage: 0.5,
+      modal: FBAccessibilityModalInfo(kind: .system, elementType: "SBAlertItemWindow", label: "Allow"),
+      truncated: true,
+      screen: FBAccessibilityScreenInfo(width: 390, height: 844),
+      backend: .axBridge,
+      target: .marker(value: "General", matchKey: FBAXSearchableKey.label.rawValue)
+    )
+    let document = documentObject(response)
+
+    XCTAssertEqual(document["backend"] as? String, "axbridge")
+    XCTAssertEqual(document["truncated"] as? Bool, true)
+
+    let modal = try XCTUnwrap(document["modal"] as? [String: Any])
+    XCTAssertEqual(modal["kind"] as? String, "system")
+    XCTAssertEqual(modal["element_type"] as? String, "SBAlertItemWindow")
+    XCTAssertEqual(modal["label"] as? String, "Allow")
+
+    let screen = try XCTUnwrap(document["screen"] as? [String: Any])
+    XCTAssertEqual(screen["width"] as? Double, 390)
+    XCTAssertEqual(screen["coordinate_space"] as? String, "screen")
+
+    // A target keeps every key so the shape does not vary with the verb; only the values differ.
+    let target = try XCTUnwrap(document["target"] as? [String: Any])
+    XCTAssertEqual(target["kind"] as? String, "marker")
+    XCTAssertEqual(target["value"] as? String, "General")
+    XCTAssertEqual(target["match_key"] as? String, "AXLabel")
+    XCTAssertTrue(target["x"] is NSNull, "a marker has no point, but keeps the key")
+    XCTAssertTrue(target["pid"] is NSNull, "a marker has no pid, but keeps the key")
+
+    // Coverage keeps `additional` as null when remote-content discovery found nothing.
+    let coverage = try XCTUnwrap(document["coverage"] as? [String: Any])
+    XCTAssertEqual(coverage["frame"] as? Double, 0.5)
+    XCTAssertTrue(coverage["additional"] is NSNull)
+
+    XCTAssertEqual((document["profile"] as? [String: NSNumber])?["element_count"], NSNumber(value: 2))
+  }
+
+  func testCompleteDocumentTargetKindsCarryTheirOwnFields() throws {
+    let targets: [(FBAccessibilityTargetDescriptor, String, String, Any?)] = [
+      (.frontmost, "frontmost", "pid", nil),
+      (.application(pid: 60924), "application", "pid", 60924),
+      (.point(CGPoint(x: 10, y: 20)), "point", "x", 10.0),
+    ]
+    for (target, kind, key, value) in targets {
+      let document = documentObject(FBAccessibilityElementsResponse(elements: .array([]), target: target))
+      let emitted = try XCTUnwrap(document["target"] as? [String: Any])
+      XCTAssertEqual(emitted["kind"] as? String, kind)
+      XCTAssertEqual(
+        Set(emitted.keys), ["kind", "pid", "x", "y", "value", "match_key"],
+        "every target kind emits the same keys"
+      )
+      // Compared as numbers rather than by concrete Swift type: a pid is emitted as an integer and a
+      // coordinate as a double, and the assertion is about the value, not which width it bridges to.
+      switch value {
+      case let expected as Int:
+        XCTAssertEqual((emitted[key] as? NSNumber)?.intValue, expected)
+      case let expected as Double:
+        XCTAssertEqual((emitted[key] as? NSNumber)?.doubleValue, expected)
+      default:
+        XCTAssertTrue(emitted[key] is NSNull, "\(kind) has no \(key), but keeps the key")
+      }
+    }
+  }
+
+  // An attribute that was requested but has no value is `null`; one that was never requested is absent.
+  // Collapsing both to `null` would leave a consumer unable to tell "not asked for" from "asked for and
+  // empty", and would stop `--key` from trimming the payload it exists to trim.
+  func testCompleteElementsOmitUnrequestedAttributesButNullRequestedEmptyOnes() throws {
+    // The sample root has a label but no title, so `title` is requested-and-empty here.
+    let elements = FBAXTreeWalk.describeAllElements(
+      fromTree: Self.sampleTree(), keys: [.label, .title], nestedFormat: false, pid: 7
+    )
+    let response = FBAccessibilityElementsResponse(elements: .array(elements))
+    let root = try XCTUnwrap(documentObject(response)["elements"] as? [[String: Any]]).first ?? [:]
+
+    XCTAssertEqual(root["label"] as? String, "root")
+    XCTAssertTrue(root["title"] is NSNull, "a requested attribute with no value stays as an explicit null")
+    for unrequested in ["identifier", "type", "frame", "enabled", "pid", "traits", "placeholder", "is_remote"] {
+      XCTAssertNil(root[unrequested], "\(unrequested) was not requested, so it must be absent, not null")
+    }
+    XCTAssertNotNil(root["children"], "children come from the traversal, so they are always reported")
+  }
+
+  // Narrowing the key set must actually narrow the payload — that is what --key is for.
+  func testCompleteElementsShrinkWithTheRequestedKeySet() throws {
+    func keyCount(_ keys: Set<FBAXKeys>) throws -> Int {
+      let elements = FBAXTreeWalk.describeAllElements(fromTree: Self.sampleTree(), keys: keys, nestedFormat: false, pid: 7)
+      let response = FBAccessibilityElementsResponse(elements: .array(elements))
+      let root = try XCTUnwrap(documentObject(response)["elements"] as? [[String: Any]]).first ?? [:]
+      return root.keys.count
+    }
+    let narrow = try keyCount([.label])
+    let wide = try keyCount(FBAXKeys.defaultSet)
+    XCTAssertLessThan(narrow, wide, "a narrowed read must emit fewer element keys")
+    XCTAssertEqual(narrow, 2, "just `label` plus the always-reported `children`")
+  }
+
+  // Whatever a caller asks for comes back. `complete` reports two attributes only through their
+  // canonical counterparts, so a request for the deduplicated spelling has to resolve to the one that
+  // carries it — otherwise asking for `AXFrame` or `role` would silently yield nothing.
+  func testEveryRequestedKeyIsPresentInTheCompleteOutput() throws {
+    for key in FBAXKeys.allCases {
+      var options = FBAccessibilityRequestOptions(format: .complete)
+      options.keys = [key]
+      let elements = FBAXTreeWalk.describeAllElements(
+        fromTree: Self.sampleTree(), keys: options.serializationKeys, nestedFormat: false, pid: 7
+      )
+      let response = FBAccessibilityElementsResponse(elements: .array(elements))
+      let root = try XCTUnwrap(documentObject(response)["elements"] as? [[String: Any]]).first ?? [:]
+      let expected = Self.completeName(for: key)
+      XCTAssertTrue(
+        root.keys.contains(expected),
+        "--key \(key.rawValue) must yield `\(expected)`, got \(root.keys.sorted())"
+      )
+    }
+  }
+
+  /// The clean-schema key a requested attribute is reported under.
+  private static func completeName(for key: FBAXKeys) -> String {
+    switch key {
+    case .label: return "label"
+    case .value: return "value"
+    case .uniqueID: return "identifier"
+    // The two the schema deduplicates: reported through the attribute that carries them.
+    case .frame, .frameDict: return "frame"
+    case .role, .type: return "type"
+    case .title: return "title"
+    case .help: return "help"
+    case .enabled: return "enabled"
+    case .customActions: return "custom_actions"
+    case .roleDescription: return "role_description"
+    case .subrole: return "subrole"
+    case .contentRequired: return "content_required"
+    case .pid: return "pid"
+    case .traits: return "traits"
+    case .expanded: return "expanded"
+    case .placeholder: return "placeholder"
+    case .hidden: return "hidden"
+    case .focused: return "focused"
+    case .isRemote: return "is_remote"
+    }
+  }
+
+  // An opt-in key is already snake_case, so the clean schema keeps its spelling — but it must still be
+  // carried through rather than dropped for not being in the rename table's "renamed" half.
+  func testCompleteElementsKeepOptInKeys() throws {
+    var keys = FBAXKeys.defaultSet
+    keys.insert(.placeholder)
+    let elements = FBAXTreeWalk.describeAllElements(fromTree: Self.sampleTree(), keys: keys, nestedFormat: false, pid: 7)
+    let response = FBAccessibilityElementsResponse(elements: .array(elements))
+    let document = try XCTUnwrap(documentObject(response)["elements"] as? [[String: Any]])
+    XCTAssertTrue(try XCTUnwrap(document.first).keys.contains("placeholder"))
+  }
+
   private static let expectedSingleElementJSON =
     #"{"elements":{"AXFrame":"{{16, 380}, {370, 52}}","AXLabel":"root","AXUniqueId":"com.example.root","AXValue":"on","content_required":false,"custom_actions":[],"enabled":true,"frame":{"height":52,"width":370,"x":16,"y":380},"help":null,"pid":7,"role":"Button","role_description":null,"subrole":null,"title":null,"traits":null,"type":"Button"}}"#
 

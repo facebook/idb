@@ -101,7 +101,7 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
     at point: CGPoint,
     options: FBAccessibilityRequestOptions
   ) async throws -> FBAccessibilityElementsResponse? {
-    let keys = options.keys
+    let keys = options.serializationKeys
     let hit = try await withSession { session in
       try await Self.hitTestElement(atX: Double(point.x), y: Double(point.y), using: session, keys: keys)
     }

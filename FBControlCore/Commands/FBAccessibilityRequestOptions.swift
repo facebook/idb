@@ -53,6 +53,26 @@ public struct FBAccessibilityRequestOptions: Sendable {
   /// How the read is rendered. Default: `.default` (a flat array).
   public var format: FBAccessibilityOutputFormat
 
+  /// The attribute keys a read should actually fetch.
+  ///
+  /// `complete` reports two attributes only through their canonical counterparts — the stringified
+  /// `AXFrame` through the `frame` object, and the raw `role` through the normalized `type` — so a
+  /// caller asking for either would otherwise get nothing back for it. Reading the counterpart too is
+  /// what keeps "an attribute you asked for is present in the output" true under that format.
+  public var serializationKeys: Set<FBAXKeys> {
+    guard format == .complete else {
+      return keys
+    }
+    var expanded = keys
+    if keys.contains(.frame) {
+      expanded.insert(.frameDict)
+    }
+    if keys.contains(.role) {
+      expanded.insert(.type)
+    }
+    return expanded
+  }
+
   /// Whether the serializer builds a tree rather than a flat list. Derived from `format` — every format
   /// but `.default` carries children — so the two can never disagree.
   public var nestedFormat: Bool { format != .default }

@@ -339,6 +339,6 @@ public final class FBAXTranslationRequest {
 
   // The keys to serialize.
   private static func serializerKeys(_ options: FBAccessibilityRequestOptions) -> Set<FBAXKeys> {
-    options.keys
+    options.serializationKeys
   }
 }

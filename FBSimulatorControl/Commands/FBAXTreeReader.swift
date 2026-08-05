@@ -59,7 +59,7 @@ extension FBAXTreeReader {
       let read = try await readRawTree(for: query)
       await warnIfTruncated(read.truncated)
       let elements = FBAXTreeWalk.describeAllElements(
-        fromTree: read.tree, keys: options.keys.union([key.serializationKey]), nestedFormat: false, pid: read.pid, filter: .all
+        fromTree: read.tree, keys: options.serializationKeys.union([key.serializationKey]), nestedFormat: false, pid: read.pid, filter: .all
       )
       guard let match = FBAXTreeWalk.matchingElement(inElements: elements, markerValue: value, key: key) else {
         throw FBUIAutomationError.elementNotFound(backend: backend, key: key.rawValue, value: value)
@@ -69,7 +69,7 @@ extension FBAXTreeReader {
       let read = try await readRawTree(for: query)
       await warnIfTruncated(read.truncated)
       let elements = FBAXTreeWalk.describeAllElements(
-        fromTree: read.tree, keys: options.keys, nestedFormat: options.nestedFormat, pid: read.pid, filter: options.filter
+        fromTree: read.tree, keys: options.serializationKeys, nestedFormat: options.nestedFormat, pid: read.pid, filter: options.filter
       )
       return FBAccessibilityElementsResponse(elements: .array(elements), modal: read.modal)
     }
