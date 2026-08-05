@@ -294,6 +294,23 @@ final class FBAccessibilitySerializationTests: XCTestCase {
     )
   }
 
+  // A null *inside* a collection value is a member of that collection, so it has to survive as JSON
+  // `null`. It is a distinct case from a null value at the top level, which the element's own optional
+  // already carries — a classifier that reports "no value" for both collapses the two, and the nested
+  // one has nowhere else to go but a placeholder string. The collection goldens above are all
+  // null-free, so nothing catches that.
+  func testNullInsideACollectionAttributeValueStaysNull() throws {
+    let tree: [String: Any] = [FBAXWire.Node.value.rawValue: ["alpha", NSNull(), "beta"] as [Any]]
+    let elements = FBAXTreeWalk.describeAllElements(
+      fromTree: tree, keys: [.value], nestedFormat: false, pid: 7
+    )
+    XCTAssertEqual(
+      try renderedJSON(FBAccessibilityElementsResponse(elements: .array(elements))),
+      #"{"elements":[{"AXValue":["alpha",null,"beta"]}]}"#,
+      "a null element of an array value is null, not a stringified placeholder"
+    )
+  }
+
   // A point or marker read yields a single element, so `elements` is a bare *object* rather than an
   // array — the shape divergence a consumer has to branch on today.
   func testRenderedSingleElementIsAnObjectNotAnArray() throws {
@@ -394,6 +411,116 @@ final class FBAccessibilitySerializationTests: XCTestCase {
       totalXPCDuration: 0.0625,
       fetchedKeys: []
     )
+  }
+
+  // MARK: - Serialized value types
+
+  /// The rendered element, parsed back — what a consumer actually receives.
+  ///
+  /// These assert the *JSON* type of each attribute rather than the serializer's internal one, so they
+  /// keep their meaning across a change of representation: that is the point of pinning them.
+  private func renderedElement(keys: Set<FBAXKeys>, tree: [String: Any] = FBAccessibilitySerializationTests.sampleTree()) throws -> [String: Any] {
+    let elements = FBAXTreeWalk.describeAllElements(fromTree: tree, keys: keys, nestedFormat: false, pid: 7)
+    let response = FBAccessibilityElementsResponse(elements: .array(elements))
+    let object =
+      try JSONSerialization.jsonObject(
+        with: JSONSerialization.data(withJSONObject: response.asDictionary())
+      ) as? [String: Any]
+    let rendered = (object?["elements"] as? [[String: Any]])?.first
+    return try XCTUnwrap(rendered)
+  }
+
+  // The byte goldens cover two key sets. These pin the *type* each attribute is emitted as, which is
+  // what a change of internal representation is most likely to get subtly wrong: a bool becoming
+  // `"true"`, an integer widening to a double, a null collapsing into a missing key.
+  func testSerializedAttributeTypesArePinnedPerKey() throws {
+    let element = try renderedElement(keys: Set(FBAXKeys.allCases))
+
+    // Strings, present and absent — an absent one is null, never a missing key or an empty string.
+    XCTAssertEqual(element[FBAXKeys.label.rawValue] as? String, "root")
+    XCTAssertEqual(element[FBAXKeys.uniqueID.rawValue] as? String, "com.example.root")
+    XCTAssertEqual(element[FBAXKeys.value.rawValue] as? String, "on")
+    for absent: FBAXKeys in [.title, .help, .roleDescription, .subrole, .placeholder] {
+      XCTAssertTrue(element[absent.rawValue] is NSNull, "\(absent.rawValue) must be an explicit null")
+      XCTAssertNotNil(element.index(forKey: absent.rawValue), "\(absent.rawValue) must keep its key")
+    }
+
+    // Bools stay bools rather than becoming their string spellings or 0/1.
+    for flag: FBAXKeys in [.enabled, .contentRequired, .expanded, .hidden, .focused] {
+      let value = try XCTUnwrap(element[flag.rawValue] as? NSNumber, "\(flag.rawValue) must be present")
+      XCTAssertEqual(CFGetTypeID(value), CFBooleanGetTypeID(), "\(flag.rawValue) must be a JSON bool")
+    }
+
+    // pid is an integer, not a double and not a string.
+    let pid = try XCTUnwrap(element[FBAXKeys.pid.rawValue] as? NSNumber)
+    XCTAssertEqual(String(cString: pid.objCType), "q", "pid must be an integer")
+    XCTAssertEqual(pid.int64Value, 7)
+
+    // Arrays stay arrays; `traits` is null-or-array and is null on this element.
+    XCTAssertEqual(element[FBAXKeys.customActions.rawValue] as? [String], [])
+    XCTAssertTrue(element[FBAXKeys.traits.rawValue] is NSNull)
+
+    // The two frame representations are different types, which is why one of them is redundant.
+    XCTAssertEqual(element[FBAXKeys.frame.rawValue] as? String, "{{16, 380}, {370, 52}}")
+    let frame = try XCTUnwrap(element[FBAXKeys.frameDict.rawValue] as? [String: Double])
+    XCTAssertEqual(frame, ["x": 16, "y": 380, "width": 370, "height": 52])
+
+    // `role` is the raw spelling and `type` the normalized one; both strings.
+    XCTAssertEqual(element[FBAXKeys.role.rawValue] as? String, "Button")
+    XCTAssertEqual(element[FBAXKeys.type.rawValue] as? String, "Button")
+  }
+
+  // The child carries a string automationType, where role and type genuinely diverge.
+  func testRawRoleAndNormalizedTypeDivergeOnTheChild() throws {
+    let elements = FBAXTreeWalk.describeAllElements(
+      fromTree: Self.sampleTree(), keys: [.role, .type], nestedFormat: false, pid: 7
+    )
+    let response = FBAccessibilityElementsResponse(elements: .array(elements))
+    let rendered = try XCTUnwrap(
+      try JSONSerialization.jsonObject(with: JSONSerialization.data(withJSONObject: response.asDictionary()))
+        as? [String: Any]
+    )
+    let child = try XCTUnwrap((rendered["elements"] as? [[String: Any]])?.last)
+    XCTAssertEqual(child[FBAXKeys.role.rawValue] as? String, "AXCell", "role keeps the AX prefix")
+    XCTAssertEqual(child[FBAXKeys.type.rawValue] as? String, "Cell", "type strips it")
+  }
+
+  // A non-finite coordinate has no JSON form, so each edge degrades independently to null while the
+  // finite ones survive.
+  func testNonFiniteFrameEdgesDegradeIndependently() throws {
+    let rect = CGRect(x: CGFloat.infinity, y: 0, width: CGFloat.nan, height: 20)
+    let tree: [String: Any] = [
+      FBAXWire.Node.label.rawValue: "icon",
+      FBAXWire.Node.frame.rawValue: CGRectCreateDictionaryRepresentation(rect) as NSDictionary,
+    ]
+    let element = try renderedElement(keys: [.frameDict], tree: tree)
+    let frame = try XCTUnwrap(element[FBAXKeys.frameDict.rawValue] as? [String: Any])
+    XCTAssertTrue(frame["x"] is NSNull, "an infinite edge renders as null")
+    XCTAssertTrue(frame["width"] is NSNull, "a NaN edge renders as null")
+    XCTAssertEqual(frame["y"] as? Double, 0, "a finite edge survives")
+    XCTAssertEqual(frame["height"] as? Double, 20)
+  }
+
+  // Nesting is a `children` array on each node, all the way down, and a leaf carries an empty one rather
+  // than omitting the key. A flat read carries no `children` key at all.
+  func testNestedChildrenShapeIsPinnedAtDepth() throws {
+    let nested = FBAXTreeWalk.describeAllElements(
+      fromTree: Self.sampleTree(), keys: [.label], nestedFormat: true, pid: 7
+    )
+    let response = FBAccessibilityElementsResponse(elements: .array(nested))
+    let rendered =
+      try JSONSerialization.jsonObject(
+        with: JSONSerialization.data(withJSONObject: response.asDictionary())
+      ) as? [String: Any]
+    let root = try XCTUnwrap((rendered?["elements"] as? [[String: Any]])?.first)
+    XCTAssertEqual(root[FBAXKeys.label.rawValue] as? String, "root")
+    let children = try XCTUnwrap(root["children"] as? [[String: Any]])
+    let child = try XCTUnwrap(children.first)
+    XCTAssertEqual(child[FBAXKeys.label.rawValue] as? String, "child")
+    XCTAssertEqual((child["children"] as? [Any])?.count, 0, "a leaf carries an empty children array")
+
+    let flat = try renderedElement(keys: [.label])
+    XCTAssertNil(flat["children"], "a flat read carries no children key")
   }
 
   // MARK: - The `complete` document
