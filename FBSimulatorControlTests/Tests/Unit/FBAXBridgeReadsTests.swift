@@ -412,9 +412,8 @@ final class FBAXBridgeReadsTests: XCTestCase {
     }
   }
 
-  // A marker resolves to one element, so the response carries a bare object — the shape divergence a
-  // consumer branches on. (The accessibility backend instead serializes a marker as its whole subtree,
-  // i.e. an array, so the two backends disagree here.)
+  // A marker resolves to one element, so the response carries a bare object — the same shape the
+  // accessibility backend now returns, so a consumer no longer branches on `--api` here.
   func testDescribeTreeReturnsABareObjectForAMarkerQuery() async throws {
     let reader = StubTreeReader(read: Self.stubRead())
     let response = try await reader.describeTree(

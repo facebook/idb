@@ -88,18 +88,35 @@ public final class FBAXTranslationRequest {
   /// Serializes the resolved element into a response. The frontmost-application
   /// path additionally computes frame coverage and merges remote (separate-process)
   /// content; the point path is a single-element description.
-  func run(_ element: FBAXPlatformElement, options: FBAccessibilityRequestOptions) throws -> FBAccessibilityElementsResponse {
+  /// `namesTheTarget` says `element` is the one element the caller asked for, rather than the tree this
+  /// request resolved.
+  ///
+  /// A marker match is reached by descending from the frontmost tree, so its request still reads
+  /// `.frontmostApplication` even though the caller named the match. Serializing it by `kind` alone
+  /// would make the match the root of a whole-tree walk — which is how it used to be reported as a
+  /// subtree, and how the filter used to be able to drop it. A named element is serialized as one
+  /// element wherever it came from.
+  func run(
+    _ element: FBAXPlatformElement,
+    options: FBAccessibilityRequestOptions,
+    namesTheTarget: Bool = false
+  ) throws -> FBAccessibilityElementsResponse {
+    guard !namesTheTarget else {
+      return runNamedElement(element, options: options)
+    }
     switch kind {
     case .point:
-      return runPoint(element, options: options)
+      return runNamedElement(element, options: options)
     case .frontmostApplication, .applicationForPid:
       return runFrontmostApplication(element, options: options)
     }
   }
 
-  // MARK: - Point
+  // MARK: - A single named element
 
-  private func runPoint(_ element: FBAXPlatformElement, options: FBAccessibilityRequestOptions) -> FBAccessibilityElementsResponse {
+  /// Serializes the one element a caller named — by point, or by a marker match. The element itself is
+  /// always reported; only its descendants are subject to the filter.
+  private func runNamedElement(_ element: FBAXPlatformElement, options: FBAccessibilityRequestOptions) -> FBAccessibilityElementsResponse {
     let serializationStart = CFAbsoluteTimeGetCurrent()
     let elements = FBAXNodeSerializer.formattedDescription(
       ofElement: element,
@@ -110,7 +127,8 @@ public final class FBAXTranslationRequest {
       coverageGrid: nil,
       filter: options.filter
     )
-    // A point resolves one element, so there are no screen bounds to report.
+    // A named element is one element, with no tree behind it to speak for the screen. A marker match
+    // does know its bounds — the root it descended from — and the backend stamps them on the way out.
     return buildResponse(elements: .single(elements), serializationStart: serializationStart, frameCoverage: nil, additionalFrameCoverage: nil, screen: nil)
   }
 

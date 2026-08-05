@@ -190,42 +190,42 @@ final class FBAccessibilitySerializationTests: XCTestCase {
   private static func markerMatchResponse(filter: FBAccessibilityElementFilter) throws -> FBAccessibilityElementsResponse {
     // The accessibility backend resolves a marker by descending from the frontmost root, then hands the
     // *match* to a handle that still carries the root's `.frontmostApplication` request. This reproduces
-    // that: the request kind says "tree", the element is the match.
+    // that: the request kind says "tree", the element is the match, and `namesTheTarget` is what tells
+    // the request the caller asked for this element rather than the tree it was found in.
     let match = FBAXTreeWalk.buildPlatformElementTree(from: Self.valueOnlyMatchTree(), pid: 7)
     var options = FBAccessibilityRequestOptions()
     options.keys = [.label, .value]
     options.filter = filter
-    return try FBAXTranslationRequest(kind: .frontmostApplication).run(match, options: options)
+    return try FBAXTranslationRequest(kind: .frontmostApplication).run(match, options: options, namesTheTarget: true)
   }
 
   // MARK: - The ax marker read's shape
 
-  // A marker read over the accessibility backend serializes the match *as a tree* — the match becomes
-  // the root of a whole-tree walk — so `elements` is an array of the match plus its flattened subtree.
-  // Every other backend resolves a marker to a single element. Pinned before changing it, because it is
-  // reachable from `sime2e ui describe <marker>` and from the gRPC `accessibility_info --marker`.
-  func testAxMarkerReadSerializesTheMatchAsASubtreeArray() throws {
+  // A marker read resolves one element, so it serializes as one element — the same shape every other
+  // backend already returned. It used to serialize as a tree instead, because the match arrives still
+  // carrying the frontmost request it was found through, so `elements` was the match plus its flattened
+  // subtree and a consumer had to branch on `--api`.
+  func testAxMarkerReadSerializesTheMatchAsASingleElement() throws {
     let response = try Self.markerMatchResponse(filter: .all)
-    guard case let .tree(elements) = response.elements else {
-      return XCTFail("the ax marker read yields a tree, got \(response.elements)")
+    guard case let .single(element) = response.elements else {
+      return XCTFail("a marker read yields one element, got \(response.elements)")
     }
-    XCTAssertEqual(elements.count, 2, "the match and its leaf are both reported, flattened")
-    XCTAssertEqual(Self.labels(elements), ["leaf"], "the match itself carries no label, only a value")
+    XCTAssertEqual(element.value ?? nil, .string("42"), "the element reported is the match itself")
+    XCTAssertNil(element.children ?? nil, "a flat read carries no children key")
   }
 
-  // Because that walk treats the match as an ordinary tree node, the match is subject to the filter —
-  // so `--filter interactable` can drop the very element the caller named and hoist its descendants
-  // into its place. The single-element path other backends use exempts the named target.
-  func testAxMarkerMatchIsItselfSubjectToTheFilter() throws {
+  // And because it is a named element rather than a node of a walk, the filter cannot drop it. It used
+  // to be able to: `--filter interactable` would remove the very element the caller named and hoist its
+  // descendants into its place.
+  func testAxMarkerMatchSurvivesTheFilterThatWouldDropIt() throws {
     let response = try Self.markerMatchResponse(filter: .interactable)
-    guard case let .tree(elements) = response.elements else {
-      return XCTFail("the ax marker read yields a tree, got \(response.elements)")
+    guard case let .single(element) = response.elements else {
+      return XCTFail("a marker read yields one element, got \(response.elements)")
     }
     XCTAssertEqual(
-      Self.labels(elements), ["leaf"],
-      "the named match is dropped by the filter and its labeled leaf is hoisted into its place"
+      element.value ?? nil, .string("42"),
+      "the match has no label, no identifier and no actionable role, yet is reported because it was named"
     )
-    XCTAssertEqual(elements.count, 1, "only the hoisted leaf survives — the match the caller asked for is gone")
   }
 
   func testInteractableFilterDropsUnlabeledContainersFlat() {

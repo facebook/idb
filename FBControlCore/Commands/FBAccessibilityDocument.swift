@@ -260,9 +260,9 @@ public struct FBAccessibilityDocumentElement: Sendable, Equatable, Encodable {
 
   /// A copy that reports `children` on every node, empty where the read walked none.
   ///
-  /// Which single-element reads walk children differs by backend — the accessibility backend serializes
-  /// a point or marker through the tree path and gets a real subtree, while the guest-backed readers
-  /// resolve one node and never look further. Left alone that difference reaches the output, so the same
+  /// How much of a subtree a single-element read walks differs by backend — the accessibility backend
+  /// can walk its element's children, while the guest-backed readers resolve one node from a hit-test
+  /// and never look further. Left alone that difference reaches the output, so the same
   /// command describes the same element with a different key set depending on `--api`. Normalizing here
   /// keeps the shape fixed while letting the contents say what each backend actually read: the key is
   /// always present, and an empty array means "no children in what was read".

@@ -77,7 +77,14 @@ final class FBAccessibilityElement {
     // callbacks (which capture `request.logger`) actually emit request/response
     // logging during the serialization walk. Mirrors the `collector` wiring above.
     request.logger = options.enableLogging ? simulator?.logger : nil
-    return try request.run(element, options: options)
+    return try request.run(element, options: options, namesTheTarget: namesTheTarget)
+  }
+
+  /// Whether this handle names the one element the caller asked for, rather than the tree its request
+  /// resolved. True exactly for a marker match, which `findElement` reached by descending from the root
+  /// — the same descent that captured `rootBounds`, which is why that is the signal.
+  private var namesTheTarget: Bool {
+    rootBounds != nil
   }
 
   /// Read the string value of a searchable accessibility key from this element.
