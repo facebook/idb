@@ -262,7 +262,7 @@ final class FBSimulatorControlTransientTests: XCTestCase {
   }
 
   func testSwipeWithZeroDeltaUsesDefault() {
-    // When delta <= 0, DEFAULT_SWIPE_DELTA (10.0) is used: 100 points / 10.0 = 10 steps
+    // When delta <= 0, defaultSwipeDelta (10.0) is used: 100 points / 10.0 = 10 steps
     let swipe = FBSimulatorHIDEvent.swipe(0, yStart: 0, xEnd: 100, yEnd: 0, delta: 0, duration: 1.0)
     let expectedSteps = 10
     let expectedEvents = (expectedSteps + 1) * 2 + 2 + 1
@@ -327,9 +327,9 @@ final class FBSimulatorControlTransientTests: XCTestCase {
     XCTAssertNotEqual(FBSimulatorHIDEvent.delay(1.0), .touch(direction: .down, x: 0, y: 0))
   }
 
-  // MARK: DEFAULT_SWIPE_DELTA constant
+  // MARK: defaultSwipeDelta constant
 
   func testDefaultSwipeDeltaValue() {
-    XCTAssertEqual(DEFAULT_SWIPE_DELTA, 10.0, accuracy: 0.001)
+    XCTAssertEqual(FBSimulatorHIDEvent.defaultSwipeDelta, 10.0, accuracy: 0.001)
   }
 }

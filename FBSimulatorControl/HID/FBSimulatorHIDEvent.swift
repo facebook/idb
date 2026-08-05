@@ -9,8 +9,6 @@ import CoreGraphics
 import FBControlCore
 import Foundation
 
-public let DEFAULT_SWIPE_DELTA: Double = 10.0
-
 private let shakeDarwinNotification = "com.apple.UIKit.SimulatorShake"
 private let inCallStatusBarNotification = "com.apple.iphonesimulator.toggleincallstatusbar"
 
@@ -20,6 +18,10 @@ private let inCallStatusBarNotification = "com.apple.iphonesimulator.toggleincal
 /// payloads (touch, button, keyboard, two-finger touch, orientation, shake, lock, in-call
 /// status bar, delay) plus a `composite` of ordered events.
 public indirect enum FBSimulatorHIDEvent: Equatable, Hashable, Sendable {
+
+  /// The per-sample step, in points, a swipe is broken into when the caller does not choose one.
+  public static let defaultSwipeDelta: Double = 10.0
+
   case touch(direction: FBSimulatorHIDDirection, x: Double, y: Double)
   case button(direction: FBSimulatorHIDDirection, button: FBSimulatorHIDButton)
   case keyboard(direction: FBSimulatorHIDDirection, keyCode: UInt32)
@@ -185,7 +187,7 @@ public extension FBSimulatorHIDEvent {
     let distance = sqrt(pow(yEnd - yStart, 2) + pow(xEnd - xStart, 2))
     var effectiveDelta = delta
     if effectiveDelta <= 0.0 {
-      effectiveDelta = DEFAULT_SWIPE_DELTA
+      effectiveDelta = defaultSwipeDelta
     }
     let steps = max(1, Int(distance / effectiveDelta))
 
@@ -240,7 +242,7 @@ public extension FBSimulatorHIDEvent {
     let endRadius = radius * scale
     let fingerDistance = abs(endRadius - startRadius)
 
-    let delta = DEFAULT_SWIPE_DELTA
+    let delta = defaultSwipeDelta
     var steps = Int(fingerDistance / delta)
     if steps < 2 { steps = 2 }
     let stepDelay = duration / Double(steps + 2)

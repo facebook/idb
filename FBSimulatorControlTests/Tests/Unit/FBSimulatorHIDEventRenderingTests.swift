@@ -135,9 +135,9 @@ final class FBSimulatorHIDEventRenderingTests: XCTestCase {
   }
 
   func testSwipeNonPositiveDeltaUsesDefault() throws {
-    // delta <= 0 falls back to DEFAULT_SWIPE_DELTA (10), so distance 100 still yields 10 steps.
+    // delta <= 0 falls back to defaultSwipeDelta (10), so distance 100 still yields 10 steps.
     let withZero = FBSimulatorHIDEvent.swipe(0, yStart: 0, xEnd: 0, yEnd: 100, delta: 0, duration: 0.3)
-    let withDefault = FBSimulatorHIDEvent.swipe(0, yStart: 0, xEnd: 0, yEnd: 100, delta: DEFAULT_SWIPE_DELTA, duration: 0.3)
+    let withDefault = FBSimulatorHIDEvent.swipe(0, yStart: 0, xEnd: 0, yEnd: 100, delta: FBSimulatorHIDEvent.defaultSwipeDelta, duration: 0.3)
     XCTAssertEqual(try touches(withZero).count, try touches(withDefault).count)
   }
 
