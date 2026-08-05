@@ -142,6 +142,21 @@ final class FBAccessibilitySerializationTests: XCTestCase {
     XCTAssertTrue(json.contains("\"height\":20"), "finite frame values must be preserved, got: \(json)")
   }
 
+  // The same shape as `filterTree`, but with an unlabeled root — an element `.interactable` would drop
+  // were it not the one the caller named, which is what makes the target exemption observable.
+  private static func unlabeledTargetTree() -> [String: Any] {
+    [
+      FBAXWire.Node.children.rawValue: [
+        [
+          FBAXWire.Node.children.rawValue: [
+            [FBAXWire.Node.label.rawValue: "leaf"] as [String: Any]
+          ]
+        ] as [String: Any],
+        [FBAXWire.Node.label.rawValue: "sibling"] as [String: Any],
+      ]
+    ]
+  }
+
   // A tree: root (labeled) → container (unlabeled, no role) → leaf (labeled); plus sibling (labeled).
   private static func filterTree() -> [String: Any] {
     [
@@ -607,6 +622,40 @@ final class FBAccessibilitySerializationTests: XCTestCase {
 
   private func documentKeys(_ response: FBAccessibilityElementsResponse) -> Set<String> {
     Set(documentObject(response).keys)
+  }
+
+  // MARK: - The element filter on a single-element read
+
+  // Two halves of one rule, only one of which holds today.
+  //
+  // The target is never filtered — a caller who named an element by point or marker asked about that
+  // element, so it is built directly rather than taken from a walk over it. That already holds, and the
+  // fixture makes it observable: the target here would not survive `.interactable` were it any other
+  // node, carrying no label, no identifier and no actionable role.
+  //
+  // Its descendants, though, are walked with the filter hard-coded off, so `describe <x> <y> --nested
+  // --filter interactable` returns every one of them while `describe-all --filter interactable` prunes
+  // them. Same flag, honoured by one verb and silently dropped by the other.
+  func testSingleElementReadKeepsTheTargetAndIgnoresTheFilterOnItsDescendants() throws {
+    let element = FBAXTreeWalk.buildPlatformElementTree(from: Self.unlabeledTargetTree(), pid: 7)
+    var options = FBAccessibilityRequestOptions()
+    options.keys = [.label]
+    options.filter = .interactable
+    options.format = .nested
+
+    let response = try FBAXTranslationRequest(kind: .point(.zero)).run(element, options: options)
+    guard case let .single(target) = response.elements else {
+      return XCTFail("a point read yields one element, got \(response.elements)")
+    }
+    XCTAssertNil(
+      target.label ?? nil,
+      "the unlabeled target is reported as itself, not replaced by a labeled descendant"
+    )
+    XCTAssertEqual(
+      Set((target.children ?? []).compactMap { $0.label ?? nil }), ["sibling"],
+      "the unlabeled container survives unfiltered, so its labeled leaf stays hidden a level down"
+    )
+    XCTAssertEqual(target.children?.count, 2, "both children are reported — the filter reached nothing")
   }
 
   // MARK: - Children reporting
