@@ -217,14 +217,17 @@ final class FBAccessibilitySerializationTests: XCTestCase {
     XCTAssertEqual(fields[FBAXKeys.title.rawValue], .null, "a requested attribute with no value is an explicit null")
   }
 
-  // MARK: - Rendered output (`sortedKeysJSON`)
+  // MARK: - Rendered output (`formattedOutputJSON`)
 
-  /// `sortedKeysJSON()` is the one encoding every CLI and gRPC front-end emits, yet it was reachable in
-  /// tests only indirectly through `asDictionary()`. These pin the rendered bytes in each shape a
-  /// response takes, so how output is *rendered* cannot change without moving a golden — the envelope
-  /// tests below it constrain only what goes into the envelope, not what comes out of the encoder.
-  private func renderedJSON(_ response: FBAccessibilityElementsResponse) throws -> String {
-    String(decoding: try response.sortedKeysJSON(), as: UTF8.self)
+  /// `formattedOutputJSON` is the one encoding every CLI and gRPC front-end emits. These pin the
+  /// rendered bytes in each shape a response takes, so how output is *rendered* cannot change without
+  /// moving a golden — the envelope tests constrain only what goes into the envelope, not what comes
+  /// out of the encoder.
+  private func renderedJSON(
+    _ response: FBAccessibilityElementsResponse,
+    format: FBAccessibilityOutputFormat = .default
+  ) throws -> String {
+    String(decoding: try response.formattedOutputJSON(format: format), as: UTF8.self)
   }
 
   private func flatElements() -> [FBJSONValue] {
@@ -298,28 +301,43 @@ final class FBAccessibilitySerializationTests: XCTestCase {
     XCTAssertEqual(try renderedJSON(response), Self.expectedSingleElementJSON)
   }
 
-  // Profiling and coverage ride in the same envelope beside `elements`, keyed `profile`/`coverage`, and
-  // are present only when collected. Durations are held as seconds and emitted as milliseconds.
-  func testRenderedEnvelopeCarriesProfileAndCoverage() throws {
+  // Profiling and coverage are reported by `complete` alone. The legacy envelope's bytes are frozen, so
+  // collecting either leaves it untouched rather than growing a key onto it.
+  func testProfileAndCoverageAppearOnlyInTheCompleteFormat() throws {
     let response = FBAccessibilityElementsResponse(
       elements: .array([]),
       profilingData: Self.sampleProfilingData(),
       frameCoverage: 0.5,
       additionalFrameCoverage: 0.25
     )
-    XCTAssertEqual(try renderedJSON(response), Self.expectedProfiledJSON)
+    for format: FBAccessibilityOutputFormat in [.default, .nested] {
+      XCTAssertEqual(
+        try renderedJSON(response, format: format), #"{"elements":[]}"#,
+        "\(format.rawValue) must not grow keys for collected data it cannot carry"
+      )
+    }
+    XCTAssertEqual(try renderedJSON(response, format: .complete), Self.expectedProfiledDocumentJSON)
   }
 
-  // Coverage without remote-content discovery omits `additional` but keeps `frame`.
-  func testRenderedCoverageOmitsAdditionalWhenNotDiscovered() throws {
-    let response = FBAccessibilityElementsResponse(elements: .array([]), frameCoverage: 0.25)
-    XCTAssertEqual(try renderedJSON(response), #"{"coverage":{"frame":0.25},"elements":[]}"#)
+  // `default` and `nested` differ only in the elements the serializer already produced, so both render
+  // the same envelope; only `complete` changes the document around them.
+  func testDefaultAndNestedRenderTheLegacyEnvelope() throws {
+    let response = FBAccessibilityElementsResponse(elements: .array(flatElements()))
+    XCTAssertEqual(try renderedJSON(response, format: .default), Self.expectedFlatJSON)
+    XCTAssertEqual(try renderedJSON(response, format: .nested), Self.expectedFlatJSON)
+
+    let nested = FBAccessibilityElementsResponse(
+      elements: .array(
+        FBAXTreeWalk.describeAllElements(
+          fromTree: Self.sampleTree(), keys: FBAXKeys.defaultSet, nestedFormat: true, pid: 7
+        ))
+    )
+    XCTAssertEqual(try renderedJSON(nested, format: .nested), Self.expectedNestedJSON)
   }
 
-  // The renderer is exactly "the envelope, sorted-keys encoded" — no shaping of its own. This is what
-  // makes `asDictionary()` the single definition of the emitted shape, and it is the property that has
-  // to be revisited deliberately if rendering ever forks by output format.
-  func testRenderedJSONIsTheSortedKeysEncodingOfTheEnvelope() throws {
+  // The renderer is exactly "the format's dictionary, sorted-keys encoded" — no shaping of its own, so
+  // the shape is defined once per format rather than partly in the encoder.
+  func testRenderedJSONIsTheSortedKeysEncodingOfTheFormatsDictionary() throws {
     let responses: [FBAccessibilityElementsResponse] = [
       FBAccessibilityElementsResponse(elements: .array(flatElements())),
       FBAccessibilityElementsResponse(elements: try XCTUnwrap(flatElements().first)),
@@ -328,9 +346,40 @@ final class FBAccessibilitySerializationTests: XCTestCase {
       FBAccessibilityElementsResponse(elements: .array([]), frameCoverage: 0.5, additionalFrameCoverage: 0.25),
     ]
     for response in responses {
-      let expected = try JSONSerialization.data(withJSONObject: response.asDictionary(), options: .sortedKeys)
-      XCTAssertEqual(try response.sortedKeysJSON(), expected, "rendering must not reshape \(response)")
+      for format: FBAccessibilityOutputFormat in [.default, .nested, .complete] {
+        let expected: Data
+        if format == .complete {
+          let encoder = JSONEncoder()
+          encoder.outputFormatting = .sortedKeys
+          expected = try encoder.encode(response.document)
+        } else {
+          expected = try JSONSerialization.data(withJSONObject: response.asDictionary(), options: .sortedKeys)
+        }
+        XCTAssertEqual(
+          try response.formattedOutputJSON(format: format), expected,
+          "\(format.rawValue) rendering must not reshape \(response)"
+        )
+      }
     }
+  }
+
+  // An empty hit-test is a successful result, not a failure, and it stays parseable the same way as an
+  // occupied one: the legacy sentinel under the legacy formats, an ordinary document under `complete`.
+  func testEmptyHitTestRendersInEveryFormat() throws {
+    let backend = FBUIAutomationBackend.axBridge(persistence: .persistent, frontmostMethod: .centerPoint)
+    func rendered(_ format: FBAccessibilityOutputFormat) throws -> String {
+      let data = try FBAccessibilityElementsResponse.emptyOutputJSON(
+        format: format, backend: backend, target: .point(CGPoint(x: 5, y: 6))
+      )
+      return String(decoding: data, as: UTF8.self)
+    }
+    for format: FBAccessibilityOutputFormat in [.default, .nested] {
+      XCTAssertEqual(try rendered(format), #"{"elements":null}"#, "the legacy empty sentinel is unchanged")
+    }
+    XCTAssertEqual(
+      try rendered(.complete),
+      #"{"backend":"axbridge-persistent","coverage":null,"elements":[],"modal":null,"profile":null,"screen":null,"target":{"kind":"point","match_key":null,"pid":null,"value":null,"x":5,"y":6},"truncated":false}"#
+    )
   }
 
   // Fixed, exactly-representable durations so the millisecond conversion has a stable byte form.
@@ -622,8 +671,8 @@ final class FBAccessibilitySerializationTests: XCTestCase {
   private static let expectedSingleElementJSON =
     #"{"elements":{"AXFrame":"{{16, 380}, {370, 52}}","AXLabel":"root","AXUniqueId":"com.example.root","AXValue":"on","content_required":false,"custom_actions":[],"enabled":true,"frame":{"height":52,"width":370,"x":16,"y":380},"help":null,"pid":7,"role":"Button","role_description":null,"subrole":null,"title":null,"traits":null,"type":"Button"}}"#
 
-  private static let expectedProfiledJSON =
-    #"{"coverage":{"additional":0.25,"frame":0.5},"elements":[],"profile":{"attribute_fetch_count":3,"element_conversion_duration_ms":250,"element_count":2,"serialization_duration_ms":125,"total_xpc_duration_ms":62.5,"translation_duration_ms":500,"xpc_call_count":4}}"#
+  private static let expectedProfiledDocumentJSON =
+    #"{"backend":null,"coverage":{"additional":0.25,"frame":0.5},"elements":[],"modal":null,"profile":{"attribute_fetch_count":3,"element_conversion_duration_ms":250,"element_count":2,"serialization_duration_ms":125,"total_xpc_duration_ms":62.5,"translation_duration_ms":500,"xpc_call_count":4},"screen":null,"target":null,"truncated":false}"#
 
   private static let expectedFlatJSON =
     #"{"elements":[{"AXFrame":"{{16, 380}, {370, 52}}","AXLabel":"root","AXUniqueId":"com.example.root","AXValue":"on","content_required":false,"custom_actions":[],"enabled":true,"frame":{"height":52,"width":370,"x":16,"y":380},"help":null,"pid":7,"role":"Button","role_description":null,"subrole":null,"title":null,"traits":null,"type":"Button"},{"AXFrame":"{{0, 0}, {0, 0}}","AXLabel":"child","AXUniqueId":null,"AXValue":null,"content_required":false,"custom_actions":[],"enabled":true,"frame":{"height":0,"width":0,"x":0,"y":0},"help":null,"pid":7,"role":"AXCell","role_description":null,"subrole":null,"title":null,"traits":null,"type":"Cell"}]}"#

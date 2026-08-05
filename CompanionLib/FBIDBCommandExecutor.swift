@@ -150,7 +150,8 @@ import XCTestBootstrap
       throw FBIDBError.describe("Target is not a simulator, cannot describe accessibility: \(target)").build()
     }
     let options = FBAccessibilityRequestOptions(format: format, enableLogging: true)
-    return try await simulator.uiAutomation(backend: .accessibility).describe(query, options: options).sortedKeysJSON()
+    return try await simulator.uiAutomation(backend: .accessibility).describe(query, options: options)
+      .formattedOutputJSON(format: format)
   }
 
   public func accessibility_scroll(query: FBAccessibilityElementQuery, direction: FBAccessibilityScrollDirection) async throws {

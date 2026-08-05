@@ -79,19 +79,6 @@ public struct FBAccessibilityProfilingData: Sendable, Encodable {
     try container.encode(serializationDuration * 1000, forKey: .serializationDurationMs)
     try container.encode(totalXPCDuration * 1000, forKey: .totalXpcDurationMs)
   }
-
-  /// The profile as it appears in the legacy envelope, whose bytes are frozen by the goldens.
-  func legacyDictionary() -> [String: NSNumber] {
-    [
-      "element_count": NSNumber(value: elementCount),
-      "attribute_fetch_count": NSNumber(value: attributeFetchCount),
-      "xpc_call_count": NSNumber(value: xpcCallCount),
-      "translation_duration_ms": NSNumber(value: translationDuration * 1000),
-      "element_conversion_duration_ms": NSNumber(value: elementConversionDuration * 1000),
-      "serialization_duration_ms": NSNumber(value: serializationDuration * 1000),
-      "total_xpc_duration_ms": NSNumber(value: totalXPCDuration * 1000),
-    ]
-  }
 }
 
 extension FBAccessibilityProfilingData: CustomStringConvertible {
@@ -256,26 +243,16 @@ public struct FBAccessibilityElementsResponse: Sendable {
     )
   }
 
-  /// A JSON-serializable dictionary with elements always embedded.
-  /// Format: `{"elements": <elements>, "profile": <profile>, "coverage": <coverage>}`.
-  /// `profile` and `coverage` are included only when the corresponding data is present.
+  /// The `default` and `nested` output formats: `{"elements": <elements>}`, with `elements` an object
+  /// for a single-element read and an array for a tree.
   ///
-  /// The signals the read also carries — `modal`, `truncated`, `screen`, `backend`, `target` — are
-  /// intentionally **not** serialized here: this envelope's bytes are frozen by the goldens, and every
-  /// one of them is surfaced by the `complete` document instead. Keep them out of this method.
+  /// Everything else the read carries — `modal`, `truncated`, `screen`, `backend`, `target`, and the
+  /// collected `profile`/`coverage` — is intentionally **not** serialized here. This envelope's bytes
+  /// are frozen by the goldens and by consumers parsing them today, so it can only ever say what it
+  /// already says; the `complete` document is where a read reports what it actually learned. Keep
+  /// these fields out of this method.
   public func asDictionary() -> [String: Any] {
-    var dict: [String: Any] = ["elements": elements.toFoundationObject()]
-    if let profilingData {
-      dict["profile"] = profilingData.legacyDictionary()
-    }
-    if let frameCoverage {
-      var coverage: [String: Any] = ["frame": frameCoverage]
-      if let additionalFrameCoverage {
-        coverage["additional"] = additionalFrameCoverage
-      }
-      dict["coverage"] = coverage
-    }
-    return dict
+    ["elements": elements.toFoundationObject()]
   }
 
   /// The `complete` output format for this read.

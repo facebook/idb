@@ -1015,6 +1015,16 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     XCTAssertEqual(try found.stringValue(forSearchableKey: .label), "Deep")
   }
 
+  /// The `complete` document as untyped Foundation — what a consumer parsing the emitted JSON sees.
+  private static func documentObject(_ response: FBAccessibilityElementsResponse) -> [String: Any] {
+    guard let data = try? JSONEncoder().encode(response.document),
+      let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+    else {
+      return [:]
+    }
+    return object
+  }
+
   // MARK: - Serialize-to-Data Golden / Envelope Tests
 
   /// Canonical (sorted-keys) JSON string for an object — the exact encoding both
@@ -1035,16 +1045,19 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     XCTAssertEqual(Set(dict.keys), ["elements"], "Default envelope must carry elements only")
   }
 
-  func testSerializedEnvelopeWithProfilingContainsProfile() async throws {
+  // Profiling is reported by the `complete` document, not the legacy envelope: the envelope's bytes are
+  // frozen, so a caller asking for timings gets them by asking for the format that can carry them.
+  func testCompleteDocumentWithProfilingContainsProfile() async throws {
     setUp(withRootElement: defaultElementTree)
     let element = try await simulator.resolveElement(for: .frontmost)
-    var options = FBAccessibilityRequestOptions()
+    var options = FBAccessibilityRequestOptions(format: .complete)
     options.enableProfiling = true
     let response = try element.serialize(with: options)
     element.close()
 
-    let dict = response.asDictionary()
-    XCTAssertEqual(Set(dict.keys), ["elements", "profile"])
+    XCTAssertEqual(Set(response.asDictionary().keys), ["elements"], "the legacy envelope never carries profiling")
+
+    let dict = Self.documentObject(response)
     let profile = try XCTUnwrap(dict["profile"] as? [String: Any])
     XCTAssertEqual(
       Set(profile.keys),
@@ -1061,19 +1074,19 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     )
   }
 
-  func testSerializedEnvelopeWithCoverageContainsCoverage() async throws {
+  func testCompleteDocumentWithCoverageContainsCoverage() async throws {
     setUp(withRootElement: defaultElementTree)
     let element = try await simulator.resolveElement(for: .frontmost)
-    var options = FBAccessibilityRequestOptions()
+    var options = FBAccessibilityRequestOptions(format: .complete)
     options.collectFrameCoverage = true
     let response = try element.serialize(with: options)
     element.close()
 
-    let dict = response.asDictionary()
-    XCTAssertEqual(Set(dict.keys), ["elements", "coverage"])
-    let coverage = try XCTUnwrap(dict["coverage"] as? [String: Any])
-    XCTAssertNotNil(coverage["frame"], "Coverage envelope must carry frame")
-    XCTAssertNil(coverage["additional"], "No remote content -> no additional coverage")
+    XCTAssertEqual(Set(response.asDictionary().keys), ["elements"], "the legacy envelope never carries coverage")
+
+    let coverage = try XCTUnwrap(Self.documentObject(response)["coverage"] as? [String: Any])
+    XCTAssertNotNil(coverage["frame"], "Coverage must carry frame")
+    XCTAssertTrue(coverage["additional"] is NSNull, "No remote content -> additional is null, but keeps its key")
   }
 
   func testGRPCElementsOnlyBytesMatchExpected() async throws {

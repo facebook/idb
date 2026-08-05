@@ -161,10 +161,40 @@ public extension FBUIAutomation {
 }
 
 public extension FBAccessibilityElementsResponse {
-  /// The canonical sorted-keys JSON encoding CLI front-ends emit for an element response — one
-  /// definition, so the byte form can't drift between the describe and hit-test call sites that apply it.
-  func sortedKeysJSON() throws -> Data {
-    try JSONSerialization.data(withJSONObject: asDictionary(), options: .sortedKeys)
+  /// The response encoded in `format` — the one definition of how a read reaches a caller, so the byte
+  /// form cannot drift between the describe and hit-test call sites that apply it.
+  ///
+  /// `default` and `nested` differ only in the elements the serializer already produced, so both emit
+  /// the legacy envelope; `complete` emits the consolidated document. There is deliberately no second
+  /// renderer beside this one: two encoders is how the formats would come to disagree about anything
+  /// they are meant to share.
+  ///
+  /// `complete` is a typed `Encodable` tree, so its shape is fixed by the model rather than assembled
+  /// as an untyped dictionary on the way out. The legacy envelope keeps its existing encoding, whose
+  /// bytes are frozen by the goldens.
+  func formattedOutputJSON(format: FBAccessibilityOutputFormat) throws -> Data {
+    switch format {
+    case .default, .nested:
+      return try JSONSerialization.data(withJSONObject: asDictionary(), options: .sortedKeys)
+    case .complete:
+      let encoder = JSONEncoder()
+      encoder.outputFormatting = .sortedKeys
+      return try encoder.encode(document)
+    }
+  }
+
+  /// The encoding of a hit-test that found nothing — a successful empty result, distinct from a failed
+  /// read. `default` and `nested` emit `{"elements":null}`; `complete` emits the ordinary document with
+  /// no elements, so a consumer parses one shape whether or not the point was occupied.
+  static func emptyOutputJSON(
+    format: FBAccessibilityOutputFormat,
+    backend: FBUIAutomationBackend,
+    target: FBAccessibilityTargetDescriptor
+  ) throws -> Data {
+    let response = FBAccessibilityElementsResponse(
+      elements: .null, backend: backend.documentName, target: target
+    )
+    return try response.formattedOutputJSON(format: format)
   }
 }
 
