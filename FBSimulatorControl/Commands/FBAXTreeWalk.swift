@@ -40,6 +40,21 @@ enum FBAXTreeWalk {
     )
   }
 
+  /// The bounds a whole-tree read's frames are relative to, taken from the root node's own frame — for
+  /// an application read the root is the application element, which spans the screen. `nil` when the
+  /// root reports no usable frame, so an unknown screen is reported as unknown rather than as zero.
+  ///
+  /// Reads the frame through the same element type the serializer uses, so this cannot disagree with
+  /// the frames on the elements it describes.
+  static func screenInfo(fromTree tree: [String: Any]) -> FBAccessibilityScreenInfo? {
+    let root = FBRemoteAutomationPlatformElement(attributes: tree, children: [], pid: 0)
+    let frame = root.axFrame()
+    guard frame.width > 0, frame.height > 0 else {
+      return nil
+    }
+    return FBAccessibilityScreenInfo(width: Double(frame.width), height: Double(frame.height))
+  }
+
   /// Recursively builds an `FBRemoteAutomationPlatformElement` from a nested attribute-dictionary
   /// node, tagging every node with the owning application's pid.
   static func buildPlatformElementTree(from node: [String: Any], pid: pid_t) -> FBRemoteAutomationPlatformElement {

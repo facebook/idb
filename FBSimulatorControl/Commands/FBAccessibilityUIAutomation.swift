@@ -32,7 +32,26 @@ final class FBAccessibilityUIAutomation: FBUIAutomation, @unchecked Sendable {
     try await Self.translatingSeamErrors(query) {
       let element = try await operations.resolveElement(for: query)
       defer { element.close() }
-      return try element.serialize(with: options)
+      let response = try element.serialize(with: options)
+        .withProvenance(backend: FBUIAutomationBackend.accessibility.documentName, target: query.targetDescriptor)
+      // A point or marker resolves one element and is then serialized through the frontmost path, which
+      // reads screen bounds off whatever element it is handed. For those queries that element is the
+      // match rather than the application root, so the bounds it reports describe the match — they have
+      // to be discarded, and replaced where the read does know better.
+      switch query {
+      case .point:
+        // A hit-test resolves its element directly, with no root above it, so this read does not know
+        // the screen. Neither does any other backend's point read, which never walks a tree either.
+        return response.withoutScreen()
+      case .marker:
+        // A marker read does know the screen: it descended from the application root, whose frame was
+        // captured on the way down. Reporting it keeps a marker read's bounds the same here as on the
+        // backends that search a tree they already hold.
+        return response.withoutScreen()
+          .withProvenance(screen: element.rootBounds.flatMap(FBAXTranslationRequest.screenInfo(fromBounds:)))
+      case .frontmost, .application:
+        return response
+      }
     }
   }
 
@@ -62,6 +81,7 @@ final class FBAccessibilityUIAutomation: FBUIAutomation, @unchecked Sendable {
       let element = try await operations.resolveElement(for: .point(point))
       defer { element.close() }
       return try element.serialize(with: options)
+        .withProvenance(backend: FBUIAutomationBackend.accessibility.documentName, target: .point(point))
     } catch let error as FBAccessibilityError {
       // A point that resolves to no element is a valid empty hit-test result, not a failure.
       if case .elementNotFound = error { return nil }

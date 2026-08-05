@@ -35,6 +35,27 @@ public enum FBUIAutomationBackend: Sendable, Equatable {
   case axBridge(persistence: FBAXBridgePersistence, frontmostMethod: FBAXBridgeFrontmostMethod)
 }
 
+public extension FBUIAutomationBackend {
+  /// How this backend names itself in the `complete` output document. The persistence of the axbridge
+  /// transport is part of the name because it is what a caller chose between, and it is the difference
+  /// a read's timing profile reflects.
+  var documentName: FBAccessibilityBackendName {
+    switch self {
+    case .accessibility:
+      return .ax
+    case .remoteAutomation:
+      return .testmanagerd
+    case let .axBridge(persistence, _):
+      switch persistence {
+      case .oneShot:
+        return .axBridge
+      case .persistent:
+        return .axBridgePersistent
+      }
+    }
+  }
+}
+
 /// Options for a `tap`: an optional hold duration and an optional pre-tap value assertion. Both default
 /// off, so `FBTapOptions()` is an instantaneous, unconditional tap and `tap(_ query)` covers the common
 /// case without constructing one.

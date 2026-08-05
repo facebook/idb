@@ -109,7 +109,8 @@ public final class FBAXTranslationRequest {
       collector: collector,
       coverageGrid: nil
     )
-    return buildResponse(elements: elements, serializationStart: serializationStart, frameCoverage: nil, additionalFrameCoverage: nil)
+    // A point resolves one element, so there are no screen bounds to report.
+    return buildResponse(elements: elements, serializationStart: serializationStart, frameCoverage: nil, additionalFrameCoverage: nil, screen: nil)
   }
 
   // MARK: - Frontmost Application
@@ -150,7 +151,13 @@ public final class FBAXTranslationRequest {
 
     // Remote content fetching (only when requested and a translator is present).
     guard let remoteOptions = options.remoteContentOptions, let translator else {
-      return buildResponse(elements: .array(mainAppElements), serializationStart: serializationStart, frameCoverage: frameCoverage, additionalFrameCoverage: nil)
+      return buildResponse(
+        elements: .array(mainAppElements),
+        serializationStart: serializationStart,
+        frameCoverage: frameCoverage,
+        additionalFrameCoverage: nil,
+        screen: Self.screenInfo(fromBounds: screenBounds)
+      )
     }
 
     let frontmostPid = element.axTranslationPid
@@ -314,18 +321,28 @@ public final class FBAXTranslationRequest {
       }
     }
 
-    return buildResponse(elements: .array(elements), serializationStart: serializationStart, frameCoverage: frameCoverage, additionalFrameCoverage: additionalFrameCoverage)
+    return buildResponse(
+      elements: .array(elements),
+      serializationStart: serializationStart,
+      frameCoverage: frameCoverage,
+      additionalFrameCoverage: additionalFrameCoverage,
+      screen: Self.screenInfo(fromBounds: screenBounds)
+    )
   }
 
   // MARK: - Helpers
 
   // Builds the response, finalizing profiling timing — the Swift equivalent of the
   // old `FBAccessibilityElementsResponse (ResponseBuilder)` ObjC category.
+  //
+  // `truncated` is always false here: this path walks the live element tree with no depth or node
+  // bound, so unlike the guest-backed readers it never returns a partial view.
   private func buildResponse(
     elements: FBJSONValue,
     serializationStart: CFAbsoluteTime,
     frameCoverage: Double?,
-    additionalFrameCoverage: Double?
+    additionalFrameCoverage: Double?,
+    screen: FBAccessibilityScreenInfo?
   ) -> FBAccessibilityElementsResponse {
     let serializationDuration = CFAbsoluteTimeGetCurrent() - serializationStart
     let profilingData = collector?.finalize(withSerializationDuration: serializationDuration)
@@ -333,8 +350,22 @@ public final class FBAXTranslationRequest {
       elements: elements,
       profilingData: profilingData,
       frameCoverage: frameCoverage,
-      additionalFrameCoverage: additionalFrameCoverage
+      additionalFrameCoverage: additionalFrameCoverage,
+      truncated: false,
+      screen: screen
     )
+  }
+
+  // The application root's frame is the screen for a whole-tree read; a degenerate one is reported as
+  // unknown rather than as a zero-sized screen.
+  /// The screen bounds a read's frames are relative to, or `nil` when the rectangle does not describe
+  /// a screen. Shared with the marker path, which knows its bounds from the root it descended through
+  /// rather than from the element it ends up serializing.
+  static func screenInfo(fromBounds bounds: CGRect) -> FBAccessibilityScreenInfo? {
+    guard bounds.width > 0, bounds.height > 0 else {
+      return nil
+    }
+    return FBAccessibilityScreenInfo(width: Double(bounds.width), height: Double(bounds.height))
   }
 
   // The keys to serialize.

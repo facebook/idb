@@ -32,3 +32,20 @@ public enum FBAccessibilityElementQuery: Equatable, Sendable {
   /// bundle id to a pid (`FBSimulator.processID(forBundleID:)`) before building this.
   case application(pid: pid_t)
 }
+
+public extension FBAccessibilityElementQuery {
+  /// How this query appears in the `complete` output document. Every describe verb emits the same
+  /// document shape, so this is what tells a consumer which verb produced the one it is holding.
+  var targetDescriptor: FBAccessibilityTargetDescriptor {
+    switch self {
+    case let .point(point):
+      return .point(point)
+    case let .marker(value, key, _):
+      return .marker(value: value, matchKey: key.rawValue)
+    case .frontmost:
+      return .frontmost
+    case let .application(pid):
+      return .application(pid: pid)
+    }
+  }
+}

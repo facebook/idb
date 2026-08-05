@@ -213,6 +213,49 @@ public struct FBAccessibilityElementsResponse: Sendable {
     self.target = target
   }
 
+  /// A copy carrying the provenance of the read that produced it. The backend and the query are known
+  /// at the read site rather than by the caller that asked for a format, so each backend stamps what it
+  /// knows on its way out instead of every front-end having to describe the read it just made.
+  public func withProvenance(
+    backend: FBAccessibilityBackendName? = nil,
+    target: FBAccessibilityTargetDescriptor? = nil,
+    screen: FBAccessibilityScreenInfo? = nil,
+    truncated: Bool? = nil
+  ) -> FBAccessibilityElementsResponse {
+    FBAccessibilityElementsResponse(
+      elements: elements,
+      profilingData: profilingData,
+      frameCoverage: frameCoverage,
+      additionalFrameCoverage: additionalFrameCoverage,
+      modal: modal,
+      truncated: truncated ?? self.truncated,
+      screen: screen ?? self.screen,
+      backend: backend ?? self.backend,
+      target: target ?? self.target
+    )
+  }
+
+  /// A copy that reports no screen bounds.
+  ///
+  /// `withProvenance` can only supply bounds, never withdraw them, because it defaults each field to
+  /// what the response already carries. A read that resolved a single element needs the opposite: the
+  /// serializer takes a read's bounds from the element it is handed, and for a single element that is
+  /// the element's own frame, which describes the element rather than the screen. Reporting that would
+  /// be worse than reporting nothing.
+  public func withoutScreen() -> FBAccessibilityElementsResponse {
+    FBAccessibilityElementsResponse(
+      elements: elements,
+      profilingData: profilingData,
+      frameCoverage: frameCoverage,
+      additionalFrameCoverage: additionalFrameCoverage,
+      modal: modal,
+      truncated: truncated,
+      screen: nil,
+      backend: backend,
+      target: target
+    )
+  }
+
   /// A JSON-serializable dictionary with elements always embedded.
   /// Format: `{"elements": <elements>, "profile": <profile>, "coverage": <coverage>}`.
   /// `profile` and `coverage` are included only when the corresponding data is present.

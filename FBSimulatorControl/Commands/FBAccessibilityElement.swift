@@ -26,11 +26,26 @@ final class FBAccessibilityElement {
   private weak var simulator: FBSimulator?
   private var closed: Bool = false
 
-  init(element: FBAXWritableElement, request: FBAXTranslationRequest, dispatcher: FBAXTranslationDispatcher, simulator: FBSimulator) {
+  /// The frame of the root this element was found under, for an element reached by descending a tree.
+  ///
+  /// Such an element knows the bounds its own frame is relative to, but cannot report them: the
+  /// serializer takes a read's screen bounds from the element it is handed, and for a descendant that
+  /// is the descendant's frame. So the root's frame is captured at the descent and carried here. `nil`
+  /// for an element read directly, which has no root to speak for.
+  let rootBounds: CGRect?
+
+  init(
+    element: FBAXWritableElement,
+    request: FBAXTranslationRequest,
+    dispatcher: FBAXTranslationDispatcher,
+    simulator: FBSimulator,
+    rootBounds: CGRect? = nil
+  ) {
     self.element = element
     self.request = request
     self.dispatcher = dispatcher
     self.simulator = simulator
+    self.rootBounds = rootBounds
   }
 
   deinit {
@@ -144,7 +159,13 @@ final class FBAccessibilityElement {
     guard let simulator else {
       throw FBWeakTargetError.simulator
     }
-    let newHandle = FBAccessibilityElement(element: found, request: request, dispatcher: dispatcher, simulator: simulator)
+    // Read before handing ownership on: this element is the root the match was found under, and once
+    // the new handle is serializing there is nothing left that knows the bounds the match's frame is
+    // relative to.
+    element.axSetBridgeDelegateToken(request.token)
+    let newHandle = FBAccessibilityElement(
+      element: found, request: request, dispatcher: dispatcher, simulator: simulator, rootBounds: element.axFrame()
+    )
     closed = true
     return newHandle
   }

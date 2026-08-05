@@ -54,7 +54,9 @@ extension FBAXTreeReader {
       guard let response = try await hitTest(at: point, options: options) else {
         throw FBUIAutomationError.noElementAtPoint(backend: backend, x: Double(point.x), y: Double(point.y))
       }
-      return response
+      // A hit-test resolves one element with no tree behind it, so there is no screen or truncation to
+      // report — only which backend answered and what was asked for.
+      return response.withProvenance(backend: backend.documentName, target: query.targetDescriptor)
     case let .marker(value, key, _):
       let read = try await readRawTree(for: query)
       await warnIfTruncated(read.truncated)
@@ -65,6 +67,12 @@ extension FBAXTreeReader {
         throw FBUIAutomationError.elementNotFound(backend: backend, key: key.rawValue, value: value)
       }
       return FBAccessibilityElementsResponse(elements: match, modal: read.modal)
+        .withProvenance(
+          backend: backend.documentName,
+          target: query.targetDescriptor,
+          screen: FBAXTreeWalk.screenInfo(fromTree: read.tree),
+          truncated: read.truncated
+        )
     case .frontmost, .application:
       let read = try await readRawTree(for: query)
       await warnIfTruncated(read.truncated)
@@ -72,6 +80,12 @@ extension FBAXTreeReader {
         fromTree: read.tree, keys: options.serializationKeys, nestedFormat: options.nestedFormat, pid: read.pid, filter: options.filter
       )
       return FBAccessibilityElementsResponse(elements: .array(elements), modal: read.modal)
+        .withProvenance(
+          backend: backend.documentName,
+          target: query.targetDescriptor,
+          screen: FBAXTreeWalk.screenInfo(fromTree: read.tree),
+          truncated: read.truncated
+        )
     }
   }
 }

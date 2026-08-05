@@ -531,6 +531,125 @@ final class FBAXBridgeReadsTests: XCTestCase {
     XCTAssertEqual(fields[FBAXKeys.label.rawValue], .string("hit"))
   }
 
+  // MARK: - Provenance stamping
+
+  // The backend and the query are known here, not by the front-end that asked for a format, so
+  // `describeTree` stamps them on the way out. These fields feed the `complete` document only.
+  func testDescribeTreeStampsBackendAndTargetForEveryQueryKind() async throws {
+    let hit = FBAccessibilityElementsResponse(elements: .object([:]))
+    let cases: [(FBAccessibilityElementQuery, FBAccessibilityTargetDescriptor.Kind)] = [
+      (.frontmost, .frontmost),
+      (.application(pid: 99), .application),
+      (.marker(value: "General", key: .label, depth: 10), .marker),
+      (.point(CGPoint(x: 3, y: 4)), .point),
+    ]
+    for (query, kind) in cases {
+      let reader = StubTreeReader(read: Self.stubRead(), hitTestResult: hit)
+      let response = try await reader.describeTree(query, options: FBAccessibilityRequestOptions())
+      XCTAssertEqual(response.backend, .axBridge, "\(query) must record which backend answered")
+      XCTAssertEqual(response.target?.kind, kind, "\(query) must record what was asked for")
+    }
+  }
+
+  func testDescribeTreeStampsTruncationAndScreenForTreeReads() async throws {
+    // The stub tree's root reports no frame, so the screen is unknown rather than zero-sized.
+    let reader = StubTreeReader(read: Self.stubRead(truncated: true))
+    let response = try await reader.describeTree(.frontmost, options: FBAccessibilityRequestOptions())
+    XCTAssertTrue(response.truncated, "a partial walk must be reported as partial")
+    XCTAssertNil(response.screen, "a root with no frame yields no screen bounds")
+
+    let sized: [String: Any] = [
+      FBAXWire.Node.label.rawValue: "root",
+      FBAXWire.Node.frame.rawValue: CGRectCreateDictionaryRepresentation(CGRect(x: 0, y: 0, width: 390, height: 844)) as NSDictionary,
+      FBAXWire.Node.children.rawValue: [[String: Any]](),
+    ]
+    let sizedReader = StubTreeReader(read: FBAXTreeRead(tree: sized, pid: 99, truncated: false, modal: nil))
+    let sizedResponse = try await sizedReader.describeTree(.frontmost, options: FBAccessibilityRequestOptions())
+    XCTAssertEqual(sizedResponse.screen, FBAccessibilityScreenInfo(width: 390, height: 844))
+    XCTAssertFalse(sizedResponse.truncated)
+  }
+
+  // A hit-test resolves one element with no tree behind it, so there is nothing to say about the
+  // screen or truncation — but which backend answered and what was asked for are still known.
+  func testDescribeTreeStampsAPointWithoutScreenOrTruncation() async throws {
+    let hit = FBAccessibilityElementsResponse(elements: .object([:]))
+    let reader = StubTreeReader(read: Self.stubRead(truncated: true), hitTestResult: hit)
+    let response = try await reader.describeTree(.point(CGPoint(x: 3, y: 4)), options: FBAccessibilityRequestOptions())
+    XCTAssertEqual(response.target, .point(CGPoint(x: 3, y: 4)))
+    XCTAssertNil(response.screen)
+    XCTAssertFalse(response.truncated, "the unread tree's truncation must not leak onto a hit-test")
+  }
+
+  // Stamping is provenance only: it must not disturb the elements or the legacy envelope's bytes.
+  func testProvenanceDoesNotChangeTheLegacyEnvelope() async throws {
+    let reader = StubTreeReader(read: Self.stubRead())
+    let response = try await reader.describeTree(.frontmost, options: FBAccessibilityRequestOptions())
+    let stamped = try JSONSerialization.data(withJSONObject: response.asDictionary(), options: .sortedKeys)
+    let bare = try JSONSerialization.data(
+      withJSONObject: FBAccessibilityElementsResponse(elements: response.elements).asDictionary(), options: .sortedKeys
+    )
+    XCTAssertEqual(stamped, bare, "provenance must stay out of the legacy envelope")
+  }
+
+  // The serializer takes a read's screen bounds from the element it is handed, so a single-element read
+  // arrives carrying the element's own frame as the screen. That is worse than reporting nothing, and
+  // `withProvenance` cannot withdraw a field — hence a dedicated way to clear it.
+  func testWithoutScreenClearsBoundsAndKeepsEverythingElse() throws {
+    let hit = FBAccessibilityElementsResponse(
+      elements: .object([:]),
+      truncated: true,
+      screen: FBAccessibilityScreenInfo(width: 370, height: 52),
+      backend: .ax,
+      target: .marker(value: "General", matchKey: "AXLabel")
+    )
+    XCTAssertNotNil(hit.screen, "the fixture starts with the misleading element-sized bounds")
+
+    let stripped = hit.withoutScreen()
+    XCTAssertNil(stripped.screen, "the element's own frame is not the screen")
+    XCTAssertEqual(stripped.elements, hit.elements)
+    XCTAssertEqual(stripped.truncated, hit.truncated)
+    XCTAssertEqual(stripped.backend, hit.backend)
+    XCTAssertEqual(stripped.target, hit.target)
+  }
+
+  // A marker read descends from the application root, so unlike a point read it *can* say what its
+  // frames are relative to. Clear-then-stamp is the sequence the `ax` backend performs; the clear is
+  // what makes it safe when the root's frame turns out not to describe a screen, since `withProvenance`
+  // falls back to whatever the response already carries — which is the match's frame.
+  func testMarkerReportsTheRootBoundsAndNeverTheMatchs() throws {
+    let root = try XCTUnwrap(FBAccessibilityScreenInfo(width: 402, height: 874))
+    let matchSized = FBAccessibilityElementsResponse(
+      elements: .object([:]),
+      screen: FBAccessibilityScreenInfo(width: 370, height: 52),
+      backend: .ax
+    )
+
+    let restamped = matchSized.withoutScreen().withProvenance(screen: root)
+    XCTAssertEqual(restamped.screen, root, "a marker read reports the root's bounds, not the match's")
+    XCTAssertEqual(restamped.backend, .ax, "clearing the screen does not disturb the rest of the provenance")
+
+    XCTAssertNil(
+      matchSized.withoutScreen().withProvenance(screen: nil).screen,
+      "with no usable root bounds a marker reports none, rather than falling back to the match's frame"
+    )
+    XCTAssertEqual(
+      matchSized.withProvenance(screen: nil).screen,
+      matchSized.screen,
+      "stamping alone cannot withdraw the match's frame — which is why the ax path clears first"
+    )
+  }
+
+  func testBackendNamesCoverEveryBackend() {
+    XCTAssertEqual(FBUIAutomationBackend.accessibility.documentName, .ax)
+    XCTAssertEqual(FBUIAutomationBackend.remoteAutomation.documentName, .testmanagerd)
+    XCTAssertEqual(FBUIAutomationBackend.axBridge(persistence: .oneShot, frontmostMethod: .centerPoint).documentName, .axBridge)
+    XCTAssertEqual(
+      FBUIAutomationBackend.axBridge(persistence: .persistent, frontmostMethod: .centerPoint).documentName,
+      .axBridgePersistent,
+      "the persistent transport is a distinct backend to a consumer reading timings"
+    )
+  }
+
   func testDescribeTreeThrowsForAnEmptyPoint() async throws {
     let reader = StubTreeReader(read: Self.stubRead(), hitTestResult: nil)
     do {
