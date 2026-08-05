@@ -114,7 +114,9 @@ actor FBSimulatorIndigoHIDTransport: FBSimulatorHIDTransport {
   func flush() async throws {}
 
   // No tvOS guard — the trackpad is exactly what Apple TV targets need (unlike the touchscreen).
-  func sendTrackpad(point: CGPoint, phase: FBSimulatorTrackpadPhase) async throws {
-    try await indigoClient.send(indigo.trackpad(point: point, phase: phase))
+  func sendTrackpad(point: FBSimulatorTrackpadPoint, phase: FBSimulatorTrackpadPhase) async throws {
+    // The Indigo payload builder speaks `CGPoint`; the unit-square guarantee is the caller's, and is
+    // discharged by the time the value reaches this boundary.
+    try await indigoClient.send(indigo.trackpad(point: CGPoint(x: point.x, y: point.y), phase: phase))
   }
 }

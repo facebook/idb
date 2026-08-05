@@ -119,7 +119,7 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
 
   /// Sends one phase of a tvOS Siri Remote trackpad gesture over the selected transport (Indigo-only;
   /// the DTUHID transport throws, as `dtuhidd` does not expose the trackpad).
-  func sendTrackpad(point: CGPoint, phase: FBSimulatorTrackpadPhase) async throws {
+  func sendTrackpad(point: FBSimulatorTrackpadPoint, phase: FBSimulatorTrackpadPhase) async throws {
     try await transport.sendTrackpad(point: point, phase: phase)
   }
 

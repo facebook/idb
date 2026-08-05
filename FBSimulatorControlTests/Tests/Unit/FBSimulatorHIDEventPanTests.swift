@@ -16,10 +16,12 @@ import XCTest
 final class FBSimulatorHIDEventPanTests: XCTestCase {
 
   func testPanExpandsToPhasedGesture() throws {
-    let pan = FBSimulatorHIDEvent.pan(fromX: 0.5, fromY: 0.2, toX: 0.5, toY: 0.8, steps: 3, duration: 0.3)
+    let from = try XCTUnwrap(FBSimulatorTrackpadPoint(x: 0.5, y: 0.2))
+    let to = try XCTUnwrap(FBSimulatorTrackpadPoint(x: 0.5, y: 0.8))
+    let pan = FBSimulatorHIDEvent.pan(from: from, to: to, steps: 3, duration: 0.3)
     let subs = try XCTUnwrap(pan.subEvents, "pan should be a composite")
 
-    let trackpads: [(FBSimulatorTrackpadPhase, CGPoint)] = subs.compactMap {
+    let trackpads: [(FBSimulatorTrackpadPhase, FBSimulatorTrackpadPoint)] = subs.compactMap {
       if case let .trackpad(phase, point) = $0 { return (phase, point) }
       return nil
     }
@@ -27,9 +29,9 @@ final class FBSimulatorHIDEventPanTests: XCTestCase {
     // began + (steps) changed + ended.
     XCTAssertEqual(trackpads.count, 5, "began + 3 changed + ended")
     XCTAssertEqual(trackpads.first?.0, .began)
-    XCTAssertEqual(trackpads.first?.1, CGPoint(x: 0.5, y: 0.2), "began at the start point")
+    XCTAssertEqual(trackpads.first?.1, from, "began at the start point")
     XCTAssertEqual(trackpads.last?.0, .ended)
-    XCTAssertEqual(trackpads.last?.1, CGPoint(x: 0.5, y: 0.8), "ended at the end point")
+    XCTAssertEqual(trackpads.last?.1, to, "ended at the end point")
     XCTAssertEqual(Array(trackpads[1...3]).map(\.0), [.changed, .changed, .changed], "interior samples are changed")
 
     // A delay precedes each changed sample and the ended sample (steps + 1 delays).
@@ -40,26 +42,24 @@ final class FBSimulatorHIDEventPanTests: XCTestCase {
     XCTAssertEqual(delays.count, 4, "steps + 1 interleaved delays")
   }
 
-  // The trackpad surface is absolute-normalized — `FBSimulatorHIDTransport.sendTrackpad` documents
-  // `point` as 0..1 — but that contract lives only in prose. `pan` takes bare `Double`s and wraps them
-  // in a `CGPoint`, the same type `.twoFingerTouch` uses for screen points, so a caller passing screen
-  // coordinates gets no complaint from the compiler or from here: they reach the transport unchanged
-  // and land wherever the daemon puts them. Pinned before the surface gets a type of its own.
-  func testPanAcceptsCoordinatesOutsideTheTrackpadSurface() throws {
-    let pan = FBSimulatorHIDEvent.pan(fromX: 100, fromY: 200, toX: 300, toY: 400, steps: 1, duration: 0)
-    let subs = try XCTUnwrap(pan.subEvents, "pan should be a composite")
+  // The trackpad surface is absolute-normalized, and now says so in the type. Screen coordinates used
+  // to pass straight through `pan` — it took bare `Double`s and wrapped them in a `CGPoint`, the same
+  // type `.twoFingerTouch` uses for screen points — and landed wherever the daemon put them. They can
+  // no longer be built, so `pan` cannot be handed them.
+  func testTrackpadPointRejectsCoordinatesOutsideTheSurface() throws {
+    XCTAssertNil(FBSimulatorTrackpadPoint(x: 100, y: 200), "screen coordinates are not surface coordinates")
+    XCTAssertNil(FBSimulatorTrackpadPoint(x: 0.5, y: 1.5), "one axis outside the unit square is enough")
+    XCTAssertNil(FBSimulatorTrackpadPoint(x: -0.1, y: 0.5), "and so is a negative one")
 
-    let points: [CGPoint] = subs.compactMap {
-      if case let .trackpad(_, point) = $0 { return point }
-      return nil
-    }
-    XCTAssertEqual(points.first, CGPoint(x: 100, y: 200), "screen coordinates pass straight through")
-    XCTAssertEqual(points.last, CGPoint(x: 300, y: 400), "and are never checked against the unit square")
+    XCTAssertNotNil(FBSimulatorTrackpadPoint(x: 0, y: 0), "the corners are on the surface")
+    XCTAssertNotNil(FBSimulatorTrackpadPoint(x: 1, y: 1), "including the far one")
   }
 
   func testPanClampsStepsToAtLeastOne() throws {
     // steps <= 0 must not trap; it degrades to a single changed sample.
-    let pan = FBSimulatorHIDEvent.pan(fromX: 0, fromY: 0, toX: 1, toY: 1, steps: 0, duration: 0.1)
+    let from = try XCTUnwrap(FBSimulatorTrackpadPoint(x: 0, y: 0))
+    let to = try XCTUnwrap(FBSimulatorTrackpadPoint(x: 1, y: 1))
+    let pan = FBSimulatorHIDEvent.pan(from: from, to: to, steps: 0, duration: 0.1)
     let trackpads = try XCTUnwrap(pan.subEvents).filter {
       if case .trackpad = $0 { return true }
       return false

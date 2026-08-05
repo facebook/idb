@@ -70,6 +70,29 @@ public enum FBSimulatorHIDRemoteButton: Int32, Sendable, CaseIterable {
   }
 }
 
+/// A point on the tvOS Siri Remote trackpad surface, in absolute-normalized coordinates: `(0, 0)` is
+/// the top-left of the surface and `(1, 1)` the bottom-right.
+///
+/// A distinct type rather than a `CGPoint` because the trackpad surface and the screen are different
+/// coordinate spaces, and `CGPoint` is what `.twoFingerTouch` already uses for screen points. Sharing
+/// one type across both leaves the compiler unable to tell them apart, which makes confusing them a
+/// silent mistake rather than a build failure.
+public struct FBSimulatorTrackpadPoint: Equatable, Hashable, Sendable {
+
+  public let x: Double
+  public let y: Double
+
+  /// Fails outside the unit square rather than clamping. A caller passing screen coordinates has a
+  /// bug, and quietly landing the gesture in a corner hides it.
+  public init?(x: Double, y: Double) {
+    guard (0...1).contains(x), (0...1).contains(y) else {
+      return nil
+    }
+    self.x = x
+    self.y = y
+  }
+}
+
 /// The phase of a tvOS Siri Remote trackpad gesture. A pan is a began → changed×N → ended sequence;
 /// the phase selects which digitizer fields the Indigo trackpad message carries so the tvOS focus
 /// engine reads a lifting gesture (a bare stream of positions never moves focus).

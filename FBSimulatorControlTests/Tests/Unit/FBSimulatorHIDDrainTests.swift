@@ -50,7 +50,7 @@ private final class RecordingHIDTransport: FBSimulatorHIDTransport, @unchecked S
     recordPrimitive()
   }
 
-  func sendTrackpad(point: CGPoint, phase: FBSimulatorTrackpadPhase) async throws {
+  func sendTrackpad(point: FBSimulatorTrackpadPoint, phase: FBSimulatorTrackpadPhase) async throws {
     recordPrimitive()
   }
 
@@ -106,13 +106,14 @@ final class FBSimulatorHIDDrainTests: XCTestCase {
   // The rule is about what a case *does*, not which case it is, so it is stated on the event itself.
   // The Purple and Darwin cases cannot be dispatched here — they need a simulator — but the property
   // that decides their drain can be, and it is the same property the dispatch consults.
-  func testOnlyTransportCasesReportWritingToTheTransport() {
+  func testOnlyTransportCasesReportWritingToTheTransport() throws {
+    let surfaceOrigin = try XCTUnwrap(FBSimulatorTrackpadPoint(x: 0, y: 0))
     let writes: [FBSimulatorHIDEvent] = [
       .touch(direction: .down, x: 1, y: 2),
       .button(direction: .down, button: .sideButton),
       .keyboard(direction: .down, keyCode: 4),
       .twoFingerTouch(direction: .down, finger1: .zero, finger2: .zero),
-      .trackpad(phase: .began, point: .zero),
+      .trackpad(phase: .began, point: surfaceOrigin),
     ]
     for event in writes {
       XCTAssertTrue(event.writesToTransport, "\(event) rides the transport")

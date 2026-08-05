@@ -24,7 +24,7 @@ public indirect enum FBSimulatorHIDEvent: Equatable, Hashable, Sendable {
   case button(direction: FBSimulatorHIDDirection, button: FBSimulatorHIDButton)
   case keyboard(direction: FBSimulatorHIDDirection, keyCode: UInt32)
   case twoFingerTouch(direction: FBSimulatorHIDDirection, finger1: CGPoint, finger2: CGPoint)
-  case trackpad(phase: FBSimulatorTrackpadPhase, point: CGPoint)
+  case trackpad(phase: FBSimulatorTrackpadPhase, point: FBSimulatorTrackpadPoint)
   case delay(TimeInterval)
   case deviceOrientation(FBSimulatorHIDDeviceOrientation)
   case shake
@@ -211,19 +211,25 @@ public extension FBSimulatorHIDEvent {
   /// (0..1, top-left). Expands to a began → changed×steps → ended gesture; the interpolated changed
   /// samples with small delays give the focus engine the velocity it needs to move focus. Drained once
   /// by `send(event:logger:)`. Indigo-only (the DTUHID transport has no trackpad).
+  /// Interpolated samples stay inside the unit square because both endpoints do, so the intermediate
+  /// points cannot fail to construct — hence the `?? from` fallbacks, which are unreachable.
   static func pan(
-    fromX: Double, fromY: Double, toX: Double, toY: Double, steps: Int, duration: Double
+    from: FBSimulatorTrackpadPoint, to: FBSimulatorTrackpadPoint, steps: Int, duration: Double
   ) -> FBSimulatorHIDEvent {
     let n = max(1, steps)
     let stepDelay = duration / Double(n + 1)
-    var events: [FBSimulatorHIDEvent] = [.trackpad(phase: .began, point: CGPoint(x: fromX, y: fromY))]
+    var events: [FBSimulatorHIDEvent] = [.trackpad(phase: .began, point: from)]
     for i in 1...n {
       let t = Double(i) / Double(n + 1)
+      let sample =
+        FBSimulatorTrackpadPoint(
+          x: from.x + (to.x - from.x) * t, y: from.y + (to.y - from.y) * t
+        ) ?? from
       events.append(.delay(stepDelay))
-      events.append(.trackpad(phase: .changed, point: CGPoint(x: fromX + (toX - fromX) * t, y: fromY + (toY - fromY) * t)))
+      events.append(.trackpad(phase: .changed, point: sample))
     }
     events.append(.delay(stepDelay))
-    events.append(.trackpad(phase: .ended, point: CGPoint(x: toX, y: toY)))
+    events.append(.trackpad(phase: .ended, point: to))
     return .composite(events)
   }
 

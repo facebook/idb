@@ -177,7 +177,7 @@ actor FBSimulatorDTUHIDTransport: FBSimulatorHIDTransport {
   // (`DigitizerTarget` = mainScreen/display1..10) and its scroll targets are rotary devices
   // (`ScrollTarget` = digitalCrown/dial) — none is the trackpad, and the tvOS guest registers no
   // trackpad/pointer service. So the trackpad pan is the legacy Indigo transport's job.
-  func sendTrackpad(point: CGPoint, phase: FBSimulatorTrackpadPhase) async throws {
+  func sendTrackpad(point: FBSimulatorTrackpadPoint, phase: FBSimulatorTrackpadPhase) async throws {
     throw FBSimulatorHIDError.notImplementedOnDTUHIDTransport(
       operation: "trackpad pan — the tvOS Siri Remote trackpad is not exposed by dtuhidd")
   }
