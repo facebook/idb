@@ -480,6 +480,117 @@ final class FBSimulatorVideoStreamDeliveryTests: XCTestCase {
     try await stream.stopStreaming()
   }
 
+  /// Creates an IOSurface with no pixel format: `CVPixelBufferCreateWithIOSurface` rejects it
+  /// (-6661), so mounting it always fails — the trigger for the failed-initial-mount path.
+  private func makeUnmountableIOSurface() -> IOSurface {
+    let width = 16
+    let height = 16
+    let bytesPerElement = 4
+    let bytesPerRow = IOSurfaceAlignProperty(kIOSurfaceBytesPerRow, width * bytesPerElement)
+    let properties: [IOSurfacePropertyKey: Any] = [
+      .width: width,
+      .height: height,
+      .bytesPerElement: bytesPerElement,
+      .bytesPerRow: bytesPerRow,
+      .allocSize: bytesPerRow * height,
+    ]
+    guard let surface = IOSurface(properties: properties) else {
+      fatalError("Failed to create format-less test IOSurface")
+    }
+    return surface
+  }
+
+  /// Thread-safe completion latch for observing whether a task settled.
+  // SAFETY: every access to `settled` is serialized behind `lock`. NSLock rather than METAMutex
+  // because idb is mirrored to public GitHub and must stay stdlib-only.
+  // patternlint-disable-next-line unchecked-sendable
+  private final class SettledFlag: @unchecked Sendable {
+    private let lock = NSLock()
+    private var settled = false
+    func markSettled() {
+      lock.lock()
+      settled = true
+      lock.unlock()
+    }
+    var isSettled: Bool {
+      lock.lock()
+      defer { lock.unlock() }
+      return settled
+    }
+  }
+
+  /// True if `task` has neither returned nor thrown within `nanoseconds`. Observed via a detached
+  /// flag-setter rather than a task group racing `task.value`: awaiting a hung task can never be
+  /// abandoned (`Task.value` ignores the awaiter's cancellation), so a group child doing that await
+  /// would keep the group — and the test — suspended forever. The observer task is deliberately
+  /// leaked while the pinned hang exists; it completes naturally once the bug is fixed.
+  private func isStillPending(_ task: Task<Void, Error>, after nanoseconds: UInt64) async -> Bool {
+    let flag = SettledFlag()
+    Task {
+      _ = try? await task.value
+      flag.markSettled()
+    }
+    try? await Task.sleep(nanoseconds: nanoseconds)
+    return !flag.isSettled
+  }
+
+  func testStartStreamingWhenStoppedBeforeFirstSurfaceMount() async throws {
+    let surface = FakeFramebufferSurface()
+    let consumer = FBDataBuffer.accumulatingBuffer()
+    let stream = makeStream(surface: surface)
+
+    // No immediately-available surface: startStreaming attaches, then suspends awaiting the first
+    // mount. Wait for the registration so the stop below is ordered after the suspension.
+    let startTask = Task { try await stream.startStreaming(consumer) }
+    try await expectEventually("attach must register the surface callbacks") {
+      surface.ioSurfaceChanged != nil
+    }
+
+    try await stream.stopStreaming()
+
+    // BUG: stopStreaming never resumes the pending start awaiters, so the startStreaming caller
+    // stays suspended forever after a stop — flipped in the following commit to throw promptly.
+    let pending = await isStillPending(startTask, after: 200_000_000)
+    XCTAssertTrue(pending, "startStreaming remains suspended after stopStreaming (current, wrong behavior)")
+  }
+
+  func testStartStreamingWhenInitialSurfaceIsUnmountable() async throws {
+    let surface = FakeFramebufferSurface()
+    surface.immediateSurface = makeUnmountableIOSurface()
+    let consumer = FBDataBuffer.accumulatingBuffer()
+    let stream = makeStream(surface: surface)
+
+    // The attach-time surface cannot be wrapped by CVPixelBufferCreateWithIOSurface, so the initial
+    // mount fails.
+    let startTask = Task { try await stream.startStreaming(consumer) }
+
+    // BUG: the mount failure is swallowed (`try? mountSurface`), the started latch never sets, and
+    // the startStreaming caller suspends forever with no error — flipped in the following commit to
+    // surface the mount error.
+    let pending = await isStillPending(startTask, after: 200_000_000)
+    XCTAssertTrue(pending, "startStreaming remains suspended after a failed initial mount (current, wrong behavior)")
+  }
+
+  func testStartStreamingWhenLateSurfaceCannotBeMounted() async throws {
+    let surface = FakeFramebufferSurface()
+    let consumer = FBDataBuffer.accumulatingBuffer()
+    let stream = makeStream(surface: surface)
+
+    // No attach-time surface: startStreaming suspends awaiting the first mount, which arrives via
+    // the event stream and fails.
+    let startTask = Task { try await stream.startStreaming(consumer) }
+    try await expectEventually("attach must register the surface callbacks") {
+      surface.ioSurfaceChanged != nil
+    }
+    surface.ioSurfaceChanged?(makeUnmountableIOSurface())
+
+    // BUG: the event-path mount failure is swallowed (`try? mountSurface`), so the startStreaming
+    // caller stays suspended forever — flipped in the following commit to throw and unwind the
+    // pending start.
+    let pending = await isStillPending(startTask, after: 200_000_000)
+    XCTAssertTrue(pending, "startStreaming remains suspended after a failed late mount (current, wrong behavior)")
+  }
+
   func testDroppedStreamIsReleasedOnceSurfaceReleasesCallbacks() async throws {
     let surface = FakeFramebufferSurface()
     surface.immediateSurface = makeTestIOSurface()
