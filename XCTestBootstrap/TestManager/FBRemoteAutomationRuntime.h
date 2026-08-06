@@ -7,7 +7,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import "FBRemoteAutomationProtocols.h"
+#import <XCTestBootstrap/FBRemoteAutomationProtocols.h>
 
 @class DTXConnection;
 @class DTXProxyChannel;
