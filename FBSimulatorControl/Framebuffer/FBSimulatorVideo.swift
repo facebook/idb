@@ -14,31 +14,29 @@ import Foundation
 /// `FBSimulatorVideoStream` encode pipeline at an eager (constant-frame-rate) cadence and muxes the
 /// encoded frames into an `.mp4` via `FBSimulatorVideoFileWriter` (`AVAssetWriter`). The byte-stream consumer is
 /// a discard; only the `.mp4` is produced.
-// @unchecked Sendable: an in-process recording operation handle, used across async boundaries by the
-// recording commands and the sime2e record path. All mutable state is confined to its serial `queue`
-// (and `hasStopped` guards the single stop), and its `stream`/`fileWriter` are themselves
-// `@unchecked Sendable`, matching the sibling `FBSimulatorVideoStream`.
-public final class FBSimulatorVideo: @unchecked Sendable {
+///
+/// An actor: `hasStopped` guards the single stop and is set before the first suspension, so
+/// concurrent `stop()` calls cannot both finalize.
+public actor FBSimulatorVideo {
 
   // MARK: - Properties
 
-  private let queue: DispatchQueue
   /// The URL of the `.mp4` this recording writes.
   let outputURL: URL
   /// The underlying encode pipeline. Exposed so the sime2e record path can drive stdin-controlled
-  /// overlay/chapter/screenshot on the live stream, mirroring how `videoStream(...)` returns the stream.
-  public let stream: FBSimulatorVideoStream
+  /// overlay/chapter/screenshot on the live stream, mirroring how `videoStream(...)` returns the
+  /// stream. `nonisolated`: a constant of Sendable (actor) type, readable cross-module without a hop.
+  public nonisolated let stream: FBSimulatorVideoStream
   private let fileWriter: FBSimulatorVideoFileWriter
   private var hasStopped = false
 
   // MARK: - Initializers
 
-  public class func video(withFramebuffer framebuffer: FBFramebuffer, configuration: FBVideoStreamConfiguration, filePath: String, edgeInsets: FBVideoStreamEdgeInsets = FBVideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0), chaptersEnabled: Bool = false, logger: any FBControlCoreLogger) -> FBSimulatorVideo {
+  public static func video(withFramebuffer framebuffer: FBFramebuffer, configuration: FBVideoStreamConfiguration, filePath: String, edgeInsets: FBVideoStreamEdgeInsets = FBVideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0), chaptersEnabled: Bool = false, logger: any FBControlCoreLogger) -> FBSimulatorVideo {
     FBSimulatorVideo(framebuffer: framebuffer, configuration: configuration, filePath: filePath, edgeInsets: edgeInsets, chaptersEnabled: chaptersEnabled, logger: logger)
   }
 
   private init(framebuffer: FBFramebuffer, configuration: FBVideoStreamConfiguration, filePath: String, edgeInsets: FBVideoStreamEdgeInsets, chaptersEnabled: Bool, logger: any FBControlCoreLogger) {
-    self.queue = DispatchQueue(label: "com.facebook.simulatorvideo")
     self.outputURL = URL(fileURLWithPath: filePath)
     let fileWriter = FBSimulatorVideoFileWriter(filePath: filePath, chaptersEnabled: chaptersEnabled, logger: logger)
     self.fileWriter = fileWriter
