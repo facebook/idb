@@ -112,7 +112,7 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
         filter: options.filter
       )
       return FBAccessibilityElementsResponse(elements: .single(formatted))
-        .withProvenance(backend: backend.documentName, target: .point(point))
+        .withProvenance(backend: backend.name, target: .point(point))
     }
   }
 

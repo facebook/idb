@@ -111,7 +111,7 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
     }
     return FBAccessibilityElementsResponse(
       elements: .single(element)
-    ).withProvenance(backend: backend.documentName, target: .point(point))
+    ).withProvenance(backend: backend.name, target: .point(point))
   }
 
   // MARK: - Anchor

@@ -8,10 +8,11 @@
 import CoreGraphics
 import Foundation
 
-/// Which backend produced a read. Named here rather than reusing the backend enum itself, because that
-/// enum belongs to the simulator layer and this is the value the *document* carries; the simulator
-/// layer maps its own cases onto these names.
-public enum FBAccessibilityBackendName: String, Sendable, Encodable {
+/// The canonical name of a UI-automation backend: the value the `complete` document carries, and the
+/// token a consumer selects a backend by. Named here rather than reusing the backend enum itself,
+/// because that enum belongs to the simulator layer, which maps its cases to and from these names —
+/// both directions live on `FBUIAutomationBackend`, pinned as a total bijection over `allCases`.
+public enum FBUIAutomationBackendName: String, Sendable, Encodable, CaseIterable {
   case ax
   case axBridge = "axbridge"
   case axBridgePersistent = "axbridge-persistent"
@@ -394,7 +395,7 @@ public struct FBAccessibilityDocument: Sendable, Encodable {
   public let modal: FBAccessibilityModalInfo?
   public let truncated: Bool
   public let screen: FBAccessibilityScreenInfo?
-  public let backend: FBAccessibilityBackendName?
+  public let backend: FBUIAutomationBackendName?
   public let target: FBAccessibilityTargetDescriptor?
   public let profile: FBAccessibilityProfilingData?
   public let coverage: FBAccessibilityCoverage?
@@ -404,7 +405,7 @@ public struct FBAccessibilityDocument: Sendable, Encodable {
     modal: FBAccessibilityModalInfo? = nil,
     truncated: Bool = false,
     screen: FBAccessibilityScreenInfo? = nil,
-    backend: FBAccessibilityBackendName? = nil,
+    backend: FBUIAutomationBackendName? = nil,
     target: FBAccessibilityTargetDescriptor? = nil,
     profile: FBAccessibilityProfilingData? = nil,
     coverage: FBAccessibilityCoverage? = nil

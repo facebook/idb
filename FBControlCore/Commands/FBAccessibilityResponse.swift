@@ -172,7 +172,7 @@ public struct FBAccessibilityElementsResponse: Sendable {
   public let screen: FBAccessibilityScreenInfo?
 
   /// Which backend produced the read.
-  public let backend: FBAccessibilityBackendName?
+  public let backend: FBUIAutomationBackendName?
 
   /// What the read was asked for.
   public let target: FBAccessibilityTargetDescriptor?
@@ -185,7 +185,7 @@ public struct FBAccessibilityElementsResponse: Sendable {
     modal: FBAccessibilityModalInfo? = nil,
     truncated: Bool = false,
     screen: FBAccessibilityScreenInfo? = nil,
-    backend: FBAccessibilityBackendName? = nil,
+    backend: FBUIAutomationBackendName? = nil,
     target: FBAccessibilityTargetDescriptor? = nil
   ) {
     self.elements = elements
@@ -203,7 +203,7 @@ public struct FBAccessibilityElementsResponse: Sendable {
   /// at the read site rather than by the caller that asked for a format, so each backend stamps what it
   /// knows on its way out instead of every front-end having to describe the read it just made.
   public func withProvenance(
-    backend: FBAccessibilityBackendName? = nil,
+    backend: FBUIAutomationBackendName? = nil,
     target: FBAccessibilityTargetDescriptor? = nil,
     screen: FBAccessibilityScreenInfo? = nil,
     truncated: Bool? = nil

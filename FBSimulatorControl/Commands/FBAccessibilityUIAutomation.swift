@@ -33,7 +33,7 @@ final class FBAccessibilityUIAutomation: FBUIAutomation, @unchecked Sendable {
       let element = try await operations.resolveElement(for: query)
       defer { element.close() }
       let response = try element.serialize(with: options)
-        .withProvenance(backend: FBUIAutomationBackend.accessibility.documentName, target: query.targetDescriptor)
+        .withProvenance(backend: FBUIAutomationBackend.accessibility.name, target: query.targetDescriptor)
       // A point or marker resolves one element and is then serialized through the frontmost path, which
       // reads screen bounds off whatever element it is handed. For those queries that element is the
       // match rather than the application root, so the bounds it reports describe the match — they have
@@ -81,7 +81,7 @@ final class FBAccessibilityUIAutomation: FBUIAutomation, @unchecked Sendable {
       let element = try await operations.resolveElement(for: .point(point))
       defer { element.close() }
       return try element.serialize(with: options)
-        .withProvenance(backend: FBUIAutomationBackend.accessibility.documentName, target: .point(point))
+        .withProvenance(backend: FBUIAutomationBackend.accessibility.name, target: .point(point))
     } catch let error as FBAccessibilityError {
       // A point that resolves to no element is a valid empty hit-test result, not a failure.
       if case .elementNotFound = error { return nil }

@@ -56,7 +56,7 @@ extension FBAXTreeReader {
       }
       // A hit-test resolves one element with no tree behind it, so there is no screen or truncation to
       // report — only which backend answered and what was asked for.
-      return response.withProvenance(backend: backend.documentName, target: query.targetDescriptor)
+      return response.withProvenance(backend: backend.name, target: query.targetDescriptor)
     case let .marker(value, key, _):
       let read = try await readRawTree(for: query)
       await warnIfTruncated(read.truncated)
@@ -71,7 +71,7 @@ extension FBAXTreeReader {
       let matched = options.nestedFormat ? match.reportingChildren() : match
       return FBAccessibilityElementsResponse(elements: .single(matched), modal: read.modal)
         .withProvenance(
-          backend: backend.documentName,
+          backend: backend.name,
           target: query.targetDescriptor,
           screen: FBAXTreeWalk.screenInfo(fromTree: read.tree),
           truncated: read.truncated
@@ -84,7 +84,7 @@ extension FBAXTreeReader {
       )
       return FBAccessibilityElementsResponse(elements: .tree(elements), modal: read.modal)
         .withProvenance(
-          backend: backend.documentName,
+          backend: backend.name,
           target: query.targetDescriptor,
           screen: FBAXTreeWalk.screenInfo(fromTree: read.tree),
           truncated: read.truncated

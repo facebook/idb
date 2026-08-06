@@ -642,14 +642,24 @@ final class FBAXBridgeReadsTests: XCTestCase {
     )
   }
 
-  func testBackendNamesCoverEveryBackend() {
-    XCTAssertEqual(FBUIAutomationBackend.accessibility.documentName, .ax)
-    XCTAssertEqual(FBUIAutomationBackend.remoteAutomation.documentName, .testmanagerd)
-    XCTAssertEqual(FBUIAutomationBackend.axBridge(persistence: .oneShot, frontmostMethod: .centerPoint).documentName, .axBridge)
+  func testBackendNameIsATotalBijection() {
+    // Total over allCases: a backend added without teaching both directions fails here, not at a
+    // consumer that silently cannot name (or select) it.
+    for name in FBUIAutomationBackendName.allCases {
+      XCTAssertEqual(
+        FBUIAutomationBackend(name).name, name,
+        "\(name.rawValue) must round-trip through the backend it selects"
+      )
+    }
     XCTAssertEqual(
-      FBUIAutomationBackend.axBridge(persistence: .persistent, frontmostMethod: .centerPoint).documentName,
+      FBUIAutomationBackend.axBridge(persistence: .persistent, frontmostMethod: .centerPoint).name,
       .axBridgePersistent,
       "the persistent transport is a distinct backend to a consumer reading timings"
+    )
+    XCTAssertEqual(
+      FBUIAutomationBackend(.axBridgePersistent, frontmostMethod: .windowServer).name,
+      .axBridgePersistent,
+      "the frontmost method rides the axbridge case without disturbing its name"
     )
   }
 

@@ -36,10 +36,10 @@ public enum FBUIAutomationBackend: Sendable, Equatable {
 }
 
 public extension FBUIAutomationBackend {
-  /// How this backend names itself in the `complete` output document. The persistence of the axbridge
-  /// transport is part of the name because it is what a caller chose between, and it is the difference
-  /// a read's timing profile reflects.
-  var documentName: FBAccessibilityBackendName {
+  /// How this backend names itself — in the `complete` output document, and to any consumer selecting
+  /// a backend by name. The persistence of the axbridge transport is part of the name because it is
+  /// what a caller chose between, and it is the difference a read's timing profile reflects.
+  var name: FBUIAutomationBackendName {
     switch self {
     case .accessibility:
       return .ax
@@ -52,6 +52,23 @@ public extension FBUIAutomationBackend {
       case .persistent:
         return .axBridgePersistent
       }
+    }
+  }
+
+  /// The backend a name selects — the inverse of `name`, kept beside it so the two directions form one
+  /// bijection in one place; the round-trip is pinned over every case, so a new backend cannot be added
+  /// without teaching both directions. `frontmostMethod` is carried into the axbridge cases, the only
+  /// ones it applies to; the other backends ignore it.
+  init(_ name: FBUIAutomationBackendName, frontmostMethod: FBAXBridgeFrontmostMethod = .centerPoint) {
+    switch name {
+    case .ax:
+      self = .accessibility
+    case .testmanagerd:
+      self = .remoteAutomation
+    case .axBridge:
+      self = .axBridge(persistence: .oneShot, frontmostMethod: frontmostMethod)
+    case .axBridgePersistent:
+      self = .axBridge(persistence: .persistent, frontmostMethod: frontmostMethod)
     }
   }
 }
@@ -199,7 +216,7 @@ public extension FBAccessibilityElementsResponse {
     target: FBAccessibilityTargetDescriptor
   ) throws -> Data {
     let response = FBAccessibilityElementsResponse(
-      elements: .empty, backend: backend.documentName, target: target
+      elements: .empty, backend: backend.name, target: target
     )
     return try response.formattedOutputJSON(format: format)
   }
