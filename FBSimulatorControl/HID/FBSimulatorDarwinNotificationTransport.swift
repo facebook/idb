@@ -18,7 +18,9 @@ import Foundation
  strings with the thing that posts them.
 
  Connectionless: each post goes straight to the device, so there is nothing to hold open, drain or tear
- down.
+ down. The post is a synchronous hop into CoreSimulator, so it runs on a private serial queue and the
+ caller awaits it, for the same reason the Purple transport does — a cooperative thread should not be
+ held by a blocking call.
 
  SAFETY: holds only an immutable weak reference to the target and posts through it.
  */
@@ -28,6 +30,8 @@ final class FBSimulatorDarwinNotificationTransport: @unchecked Sendable {
   private static let shake = "com.apple.UIKit.SimulatorShake"
   private static let inCallStatusBar = "com.apple.iphonesimulator.toggleincallstatusbar"
 
+  /// Serial, so the blocking post never runs on a cooperative thread.
+  private let postQueue = DispatchQueue(label: "com.facebook.FBSimulatorControl.darwin-notification")
   private weak var simulator: FBSimulator?
 
   init(simulator: FBSimulator?) {
@@ -37,18 +41,31 @@ final class FBSimulatorDarwinNotificationTransport: @unchecked Sendable {
   // MARK: Sends
 
   /// Shakes the device.
-  func sendShake() throws {
-    try post(Self.shake)
+  func sendShake() async throws {
+    try await post(Self.shake)
   }
 
   /// Toggles the in-call status bar.
-  func sendToggleInCallStatusBar() throws {
-    try post(Self.inCallStatusBar)
+  func sendToggleInCallStatusBar() async throws {
+    try await post(Self.inCallStatusBar)
   }
 
   // MARK: Transit
 
-  private func post(_ notificationName: String) throws {
+  private func post(_ notificationName: String) async throws {
+    try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+      postQueue.async {
+        do {
+          try self.postBlocking(notificationName)
+          continuation.resume()
+        } catch {
+          continuation.resume(throwing: error)
+        }
+      }
+    }
+  }
+
+  private func postBlocking(_ notificationName: String) throws {
     guard let simulator else {
       throw FBWeakTargetError.simulator
     }

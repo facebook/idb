@@ -148,25 +148,25 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
   // MARK: Purple / GSEvents
 
   /// Rotates the device. Delivered as a GSEvent over Purple, not through the HID transport.
-  func sendOrientation(_ orientation: FBSimulatorHIDDeviceOrientation) throws {
-    try purple.sendOrientation(orientation)
+  func sendOrientation(_ orientation: FBSimulatorHIDDeviceOrientation) async throws {
+    try await purple.sendOrientation(orientation)
   }
 
   /// Locks the device. Delivered as a GSEvent over Purple, not through the HID transport.
-  func sendLockDevice() throws {
-    try purple.sendLockDevice()
+  func sendLockDevice() async throws {
+    try await purple.sendLockDevice()
   }
 
   // MARK: Darwin Notifications
 
   /// Shakes the device. Posted as a Darwin notification, not through the HID transport.
-  func sendShake() throws {
-    try notification.sendShake()
+  func sendShake() async throws {
+    try await notification.sendShake()
   }
 
   /// Toggles the in-call status bar. Posted as a Darwin notification, not through the HID transport.
-  func sendToggleInCallStatusBar() throws {
-    try notification.sendToggleInCallStatusBar()
+  func sendToggleInCallStatusBar() async throws {
+    try await notification.sendToggleInCallStatusBar()
   }
 
   // MARK: Dispatch
@@ -225,16 +225,16 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
       try await sendTrackpad(point: point, phase: phase)
       return true
     case let .deviceOrientation(orientation):
-      try sendOrientation(orientation)
+      try await sendOrientation(orientation)
       return false
     case .lockDevice:
-      try sendLockDevice()
+      try await sendLockDevice()
       return false
     case .shake:
-      try sendShake()
+      try await sendShake()
       return false
     case .toggleInCallStatusBar:
-      try sendToggleInCallStatusBar()
+      try await sendToggleInCallStatusBar()
       return false
     case let .delay(duration):
       try await Task.sleep(nanoseconds: UInt64(max(0, duration) * 1_000_000_000))

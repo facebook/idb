@@ -21,6 +21,11 @@ import Foundation
 
  Connectionless: the port is looked up per send, so there is nothing to hold open, drain or tear down.
 
+ `mach_msg` blocks the calling thread for up to the send timeout, so sends run on a private serial queue
+ and the caller awaits the result. Running it directly from the dispatch would occupy a cooperative
+ thread — of which there are only as many as cores — for as long as SpringBoard's receive queue stays
+ full, stalling unrelated concurrent work.
+
  SAFETY: holds only an immutable weak reference to the target; the mach send owns no shared state.
  */
 // patternlint-disable-next-line unchecked-sendable
@@ -33,6 +38,9 @@ final class FBSimulatorPurpleHIDTransport: @unchecked Sendable {
 
   /// The GSEvent payload builder.
   private let purple: FBSimulatorPurpleHID
+  /// Serial, so concurrent sends to the same port queue behind one another rather than racing, and so
+  /// the blocking `mach_msg` never runs on a cooperative thread.
+  private let sendQueue = DispatchQueue(label: "com.facebook.FBSimulatorControl.purple-hid")
   private weak var simulator: FBSimulator?
 
   init(purple: FBSimulatorPurpleHID = FBSimulatorPurpleHID(), simulator: FBSimulator?) {
@@ -43,13 +51,13 @@ final class FBSimulatorPurpleHIDTransport: @unchecked Sendable {
   // MARK: Sends
 
   /// Rotates the device.
-  func sendOrientation(_ orientation: FBSimulatorHIDDeviceOrientation) throws {
-    try send(purple.orientationEvent(orientation))
+  func sendOrientation(_ orientation: FBSimulatorHIDDeviceOrientation) async throws {
+    try await send(purple.orientationEvent(orientation))
   }
 
   /// Locks the device.
-  func sendLockDevice() throws {
-    try send(purple.lockDeviceEvent())
+  func sendLockDevice() async throws {
+    try await send(purple.lockDeviceEvent())
   }
 
   // MARK: Mach transit
@@ -60,7 +68,20 @@ final class FBSimulatorPurpleHIDTransport: @unchecked Sendable {
    bootstrap namespace. The send always uses `mach_msg(MACH_SEND_TIMEOUT)`; on `MACH_SEND_TIMED_OUT` the
    kernel guarantees the message is not enqueued.
    */
-  private func send(_ data: Data, timeoutMs: mach_msg_timeout_t = defaultSendTimeoutMs) throws {
+  private func send(_ data: Data, timeoutMs: mach_msg_timeout_t = defaultSendTimeoutMs) async throws {
+    try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+      sendQueue.async {
+        do {
+          try self.sendBlocking(data, timeoutMs: timeoutMs)
+          continuation.resume()
+        } catch {
+          continuation.resume(throwing: error)
+        }
+      }
+    }
+  }
+
+  private func sendBlocking(_ data: Data, timeoutMs: mach_msg_timeout_t) throws {
     guard let simulator else {
       throw FBWeakTargetError.simulator
     }
