@@ -955,10 +955,16 @@ public actor FBSimulatorVideoStream: FBVideoStream {
           }
         }
         if let surface = attachment.initialSurface {
-          handle(.surfaceChanged(surface))
+          try mountSurface(surface)
+          pushFrame(forceKeyFrame: false)
         }
       } catch {
+        // Unwind the partial start so the failure is observable and nothing stays registered.
         self.consumer = nil
+        eventTask?.cancel()
+        eventTask = nil
+        self.attachment?.cancel()
+        self.attachment = nil
         throw error
       }
     }
@@ -1000,6 +1006,7 @@ public actor FBSimulatorVideoStream: FBVideoStream {
     cadenceTeardown()
     isStopped = true
     resumeStopAwaiters()
+    failStartAwaiters(with: FBSimulatorVideoStreamError.startWhenStopped)
   }
 
   /// Resume everyone awaiting completion.
@@ -1009,6 +1016,32 @@ public actor FBSimulatorVideoStream: FBVideoStream {
     for awaiter in awaiters {
       awaiter.resume()
     }
+  }
+
+  /// Fail everyone still awaiting the initial mount — the stream stopped or the mount failed, so
+  /// the start can never complete.
+  private func failStartAwaiters(with error: Error) {
+    let awaiters = startAwaiters
+    startAwaiters = []
+    for awaiter in awaiters {
+      awaiter.resume(throwing: error)
+    }
+  }
+
+  /// Unwind a start still awaiting its first mount because that mount failed: the caller is failed
+  /// and the session is torn down, so a stream that reported a failed start can never quietly
+  /// self-start on a later surface. A no-op once started — a failed mid-stream surface swap keeps
+  /// streaming the previous surface.
+  private func failPendingStart(with error: Error) {
+    guard !hasStarted else {
+      return
+    }
+    self.consumer = nil
+    eventTask?.cancel()
+    eventTask = nil
+    attachment?.cancel()
+    attachment = nil
+    failStartAwaiters(with: error)
   }
 
   // MARK: - Private
@@ -1035,7 +1068,13 @@ public actor FBSimulatorVideoStream: FBVideoStream {
     switch event {
     case let .surfaceChanged(surface):
       guard let surface else { return }
-      try? mountSurface(surface)
+      do {
+        try mountSurface(surface)
+      } catch {
+        logger.log("Failed to mount incoming surface: \(error)")
+        failPendingStart(with: error)
+        return
+      }
       pushFrame(forceKeyFrame: false)
     case .frameRendered:
       switch cadence {

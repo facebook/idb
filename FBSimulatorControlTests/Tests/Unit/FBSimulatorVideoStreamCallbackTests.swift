@@ -548,10 +548,16 @@ final class FBSimulatorVideoStreamDeliveryTests: XCTestCase {
 
     try await stream.stopStreaming()
 
-    // BUG: stopStreaming never resumes the pending start awaiters, so the startStreaming caller
-    // stays suspended forever after a stop — flipped in the following commit to throw promptly.
+    // Stopping before any surface mounted fails the pending start promptly — it can never complete.
     let pending = await isStillPending(startTask, after: 200_000_000)
-    XCTAssertTrue(pending, "startStreaming remains suspended after stopStreaming (current, wrong behavior)")
+    XCTAssertFalse(pending, "startStreaming must settle promptly after stopStreaming")
+    guard !pending else { return } // a hung start can never be awaited to completion
+    do {
+      try await startTask.value
+      XCTFail("startStreaming must throw after the stream stopped before mounting")
+    } catch {
+      XCTAssertTrue(String(describing: error).contains("startWhenStopped"), "unexpected error: \(error)")
+    }
   }
 
   func testStartStreamingWhenInitialSurfaceIsUnmountable() async throws {
@@ -564,11 +570,16 @@ final class FBSimulatorVideoStreamDeliveryTests: XCTestCase {
     // mount fails.
     let startTask = Task { try await stream.startStreaming(consumer) }
 
-    // BUG: the mount failure is swallowed (`try? mountSurface`), the started latch never sets, and
-    // the startStreaming caller suspends forever with no error — flipped in the following commit to
-    // surface the mount error.
+    // The failed initial mount surfaces as a thrown error rather than a suspended caller.
     let pending = await isStillPending(startTask, after: 200_000_000)
-    XCTAssertTrue(pending, "startStreaming remains suspended after a failed initial mount (current, wrong behavior)")
+    XCTAssertFalse(pending, "startStreaming must settle promptly when the initial mount fails")
+    guard !pending else { return } // a hung start can never be awaited to completion
+    do {
+      try await startTask.value
+      XCTFail("startStreaming must throw when the initial surface cannot be mounted")
+    } catch {
+      XCTAssertTrue(String(describing: error).contains("failedToCreatePixelBufferFromSurface"), "unexpected error: \(error)")
+    }
   }
 
   func testStartStreamingWhenLateSurfaceCannotBeMounted() async throws {
@@ -584,11 +595,18 @@ final class FBSimulatorVideoStreamDeliveryTests: XCTestCase {
     }
     surface.ioSurfaceChanged?(makeUnmountableIOSurface())
 
-    // BUG: the event-path mount failure is swallowed (`try? mountSurface`), so the startStreaming
-    // caller stays suspended forever — flipped in the following commit to throw and unwind the
-    // pending start.
+    // The event-path mount failure fails the pending start promptly and unwinds the session, so a
+    // stream that reported a failed start can never quietly self-start on a later surface.
     let pending = await isStillPending(startTask, after: 200_000_000)
-    XCTAssertTrue(pending, "startStreaming remains suspended after a failed late mount (current, wrong behavior)")
+    XCTAssertFalse(pending, "startStreaming must settle promptly when the late mount fails")
+    guard !pending else { return } // a hung start can never be awaited to completion
+    do {
+      try await startTask.value
+      XCTFail("startStreaming must throw when the late surface cannot be mounted")
+    } catch {
+      XCTAssertTrue(String(describing: error).contains("failedToCreatePixelBufferFromSurface"), "unexpected error: \(error)")
+    }
+    XCTAssertEqual(surface.unregisteredTokens.count, 1, "a failed pending start must unregister from the surface")
   }
 
   func testDroppedStreamIsReleasedOnceSurfaceReleasesCallbacks() async throws {
