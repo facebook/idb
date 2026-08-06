@@ -504,12 +504,14 @@ class Client(ClientBase):
         target: AccessibilityTarget | None,
         options: AccessibilityInfoOptions,
     ) -> AccessibilityInfo:
+        if options.format is not None:
+            wire_format = options.format.value
+        elif options.nested:
+            wire_format = AccessibilityInfoRequest.NESTED
+        else:
+            wire_format = AccessibilityInfoRequest.LEGACY
         request = AccessibilityInfoRequest(
-            format=(
-                AccessibilityInfoRequest.NESTED
-                if options.nested
-                else AccessibilityInfoRequest.LEGACY
-            ),
+            format=wire_format,
             keys=options.keys or [],
         )
         # Unset means "unspecified" on the wire: the companion's historical

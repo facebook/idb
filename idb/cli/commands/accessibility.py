@@ -6,15 +6,19 @@
 
 # pyre-strict
 
+import json
+import sys
 from argparse import ArgumentParser, Namespace
 
 from idb.cli import ClientCommand
 from idb.common.types import (
     ACCESSIBILITY_BACKEND_BY_NAME,
+    ACCESSIBILITY_FORMAT_BY_NAME,
     ACCESSIBILITY_KEY_BY_NAME,
     AccessibilityBackend,
     AccessibilityInfoOptions,
     AccessibilityMarker,
+    AccessibilityOutputFormat,
     AccessibilityPoint,
     AccessibilityScrollDirection,
     AccessibilitySearchableKey,
@@ -81,6 +85,57 @@ def _backend(args: Namespace) -> AccessibilityBackend | None:
     return ACCESSIBILITY_BACKEND_BY_NAME[api] if api else None
 
 
+def _add_format_arg(parser: ArgumentParser) -> None:
+    parser.add_argument(
+        "--format",
+        dest="format",
+        choices=list(ACCESSIBILITY_FORMAT_BY_NAME),
+        default=None,
+        help=(
+            "Output format: default (the flat element array), nested (each "
+            "element carries its children), or complete (a consolidated "
+            "document that also reports which backend served the read, the "
+            "target, screen bounds, truncation and any blocking modal). "
+            "--nested is a deprecated alias for --format nested. A companion "
+            "that predates format selection returns the default format; "
+            "requesting complete against one prints a warning."
+        ),
+    )
+
+
+def _format(args: Namespace) -> AccessibilityOutputFormat | None:
+    name = getattr(args, "format", None)
+    if name is None:
+        return None
+    if args.nested:
+        raise IdbException(
+            "--nested is a deprecated alias for --format nested; pass one or the other"
+        )
+    return ACCESSIBILITY_FORMAT_BY_NAME[name]
+
+
+def _warn_if_complete_downgraded(
+    requested: AccessibilityOutputFormat | None, payload: str
+) -> None:
+    # The complete document is an object naming the backend that served it; a
+    # legacy-shaped response to a COMPLETE request means the companion ignored
+    # the unknown format value — the one silent skew case, surfaced here.
+    if requested != AccessibilityOutputFormat.COMPLETE:
+        return
+    try:
+        document = json.loads(payload)
+    except json.JSONDecodeError:
+        return
+    if isinstance(document, dict) and "backend" in document:
+        return
+    print(
+        "warning: the companion does not support --format complete (it "
+        "predates format selection); the read was served in the legacy "
+        "format by the default backend",
+        file=sys.stderr,
+    )
+
+
 class AccessibilityInfoAllCommand(ClientCommand):
     @property
     def description(self) -> str:
@@ -100,14 +155,20 @@ class AccessibilityInfoAllCommand(ClientCommand):
         )
         _add_enricher_args(parser)
         _add_backend_arg(parser)
+        _add_format_arg(parser)
 
     async def run_with_client(self, args: Namespace, client: Client) -> None:
+        requested_format = _format(args)
         info = await client.accessibility_info(
             target=None,
             options=AccessibilityInfoOptions(
-                nested=args.nested, keys=args.keys, backend=_backend(args)
+                nested=args.nested,
+                keys=args.keys,
+                backend=_backend(args),
+                format=requested_format,
             ),
         )
+        _warn_if_complete_downgraded(requested_format, info.json)
         print(info.json)
 
 
@@ -132,14 +193,20 @@ class AccessibilityInfoAtPointCommand(ClientCommand):
         parser.add_argument("y", help="The y-coordinate", type=int)
         _add_enricher_args(parser)
         _add_backend_arg(parser)
+        _add_format_arg(parser)
 
     async def run_with_client(self, args: Namespace, client: Client) -> None:
+        requested_format = _format(args)
         info = await client.accessibility_info(
             target=AccessibilityPoint(x=args.x, y=args.y),
             options=AccessibilityInfoOptions(
-                nested=args.nested, keys=args.keys, backend=_backend(args)
+                nested=args.nested,
+                keys=args.keys,
+                backend=_backend(args),
+                format=requested_format,
             ),
         )
+        _warn_if_complete_downgraded(requested_format, info.json)
         print(info.json)
 
 
@@ -174,8 +241,10 @@ class AccessibilityDescribeMarkerCommand(ClientCommand):
             help="Report data in the nested format rather than the flat one",
         )
         _add_backend_arg(parser)
+        _add_format_arg(parser)
 
     async def run_with_client(self, args: Namespace, client: Client) -> None:
+        requested_format = _format(args)
         info = await client.accessibility_info(
             target=AccessibilityMarker(
                 value=args.marker,
@@ -183,9 +252,12 @@ class AccessibilityDescribeMarkerCommand(ClientCommand):
                 depth=args.depth,
             ),
             options=AccessibilityInfoOptions(
-                nested=args.nested, backend=_backend(args)
+                nested=args.nested,
+                backend=_backend(args),
+                format=requested_format,
             ),
         )
+        _warn_if_complete_downgraded(requested_format, info.json)
         print(info.json)
 
 

@@ -238,6 +238,22 @@ ACCESSIBILITY_BACKEND_BY_NAME: dict[str, AccessibilityBackend] = {
 }
 
 
+# The output format of an accessibility read. Values match the wire protocol;
+# None on the options defers to the deprecated `nested` flag, preserving the
+# historical request shape.
+class AccessibilityOutputFormat(Enum):
+    LEGACY = 0
+    NESTED = 1
+    COMPLETE = 2
+
+
+ACCESSIBILITY_FORMAT_BY_NAME: dict[str, AccessibilityOutputFormat] = {
+    "default": AccessibilityOutputFormat.LEGACY,
+    "nested": AccessibilityOutputFormat.NESTED,
+    "complete": AccessibilityOutputFormat.COMPLETE,
+}
+
+
 # Shapes the accessibility_info request: the format, which accessibility
 # keys are reported, and which backend serves the read. This grows as
 # describe-all gains enrichers.
@@ -246,6 +262,7 @@ class AccessibilityInfoOptions:
     nested: bool = False
     keys: list[str] | None = None
     backend: AccessibilityBackend | None = None
+    format: AccessibilityOutputFormat | None = None
 
 
 class AccessibilityScrollDirection(Enum):

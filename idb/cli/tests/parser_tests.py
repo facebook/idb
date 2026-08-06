@@ -24,6 +24,7 @@ from idb.common.types import (
     AccessibilityInfo,
     AccessibilityInfoOptions,
     AccessibilityMarker,
+    AccessibilityOutputFormat,
     AccessibilityPoint,
     AccessibilityScrollDirection,
     AccessibilitySearchableKey,
@@ -1359,6 +1360,50 @@ class TestParser(TestCase):
                 nested=False, backend=AccessibilityBackend.AXBRIDGE
             ),
         )
+
+    async def test_accessibility_info_all_format_complete(self) -> None:
+        self.client_mock.accessibility_info = AsyncMock(
+            return_value=AccessibilityInfo(json='{"backend": "ax", "elements": []}')
+        )
+        await cli_main(cmd_input=["ui", "describe-all", "--format", "complete"])
+        self.client_mock.accessibility_info.assert_called_once_with(
+            target=None,
+            options=AccessibilityInfoOptions(
+                nested=False, format=AccessibilityOutputFormat.COMPLETE
+            ),
+        )
+
+    async def test_accessibility_info_at_point_format_nested(self) -> None:
+        self.client_mock.accessibility_info = AsyncMock(
+            return_value=AccessibilityInfo(json="[]")
+        )
+        await cli_main(
+            cmd_input=["ui", "describe-point", "10", "20", "--format", "nested"]
+        )
+        self.client_mock.accessibility_info.assert_called_once_with(
+            target=AccessibilityPoint(x=10, y=20),
+            options=AccessibilityInfoOptions(
+                nested=False, format=AccessibilityOutputFormat.NESTED
+            ),
+        )
+
+    async def test_accessibility_info_rejects_nested_with_format(self) -> None:
+        self.client_mock.accessibility_info = AsyncMock()
+        exit_code = await cli_main(
+            cmd_input=["ui", "describe-all", "--nested", "--format", "complete"]
+        )
+        self.assertEqual(exit_code, 1)
+        self.client_mock.accessibility_info.assert_not_called()
+
+    async def test_format_enum_matches_wire_values(self) -> None:
+        # --format nested must put the exact value on the wire that the
+        # deprecated --nested boolean always has, so an older companion —
+        # which knows nothing of this enum — serves both identically.
+        for fmt in AccessibilityOutputFormat:
+            self.assertEqual(
+                fmt.value,
+                getattr(AccessibilityInfoRequest, fmt.name),
+            )
 
     async def test_describe_marker_api(self) -> None:
         self.client_mock.accessibility_info = AsyncMock(
