@@ -623,6 +623,90 @@ final class FBSimulatorVideoStreamDeliveryTests: XCTestCase {
     XCTAssertFalse(pending, "a cancelled awaitCompletion must return promptly")
   }
 
+  /// `.compressedVideo` h264 over Annex-B with no `framesPerSecond`: the lazy cadence with a real
+  /// VideoToolbox encode, so keyframe decisions are observable as IDR NAL units in the output bytes.
+  private static let h264Configuration = FBVideoStreamConfiguration(
+    format: .compressedVideo(withCodec: .h264, transport: .annexB), framesPerSecond: nil, rateControl: nil, scaleFactor: nil, keyFrameRate: nil)
+
+  /// A small BGRA overlay buffer for compositing over the fake surface's frames.
+  private func makeOverlayBuffer() -> CVPixelBuffer {
+    let attrs: [String: Any] = [kCVPixelBufferIOSurfacePropertiesKey as String: [:]]
+    var pixelBuffer: CVPixelBuffer?
+    let status = CVPixelBufferCreate(nil, 128, 128, kCVPixelFormatType_32BGRA, attrs as CFDictionary, &pixelBuffer)
+    precondition(status == kCVReturnSuccess, "CVPixelBufferCreate failed: \(status)")
+    return pixelBuffer!
+  }
+
+  /// Counts IDR slices (NAL unit type 5) in an Annex-B H.264 elementary stream.
+  private func countIDRNALUnits(in data: Data) -> Int {
+    let bytes = [UInt8](data)
+    var count = 0
+    var i = 0
+    while i + 3 < bytes.count {
+      guard bytes[i] == 0, bytes[i + 1] == 0 else {
+        i += 1
+        continue
+      }
+      var nalStart = -1
+      if bytes[i + 2] == 1 {
+        nalStart = i + 3
+      } else if bytes[i + 2] == 0, i + 4 < bytes.count, bytes[i + 3] == 1 {
+        nalStart = i + 4
+      }
+      guard nalStart > 0, nalStart < bytes.count else {
+        i += 1
+        continue
+      }
+      if bytes[nalStart] & 0x1F == 5 {
+        count += 1
+      }
+      i = nalStart
+    }
+    return count
+  }
+
+  func testKeyframesAcrossOverlayUpdates() async throws {
+    let surface = FakeFramebufferSurface()
+    surface.immediateSurface = makeTestIOSurface(width: 128, height: 128)
+    let consumer = FBDataBuffer.accumulatingBuffer()
+    let stream = makeStream(surface: surface, configuration: Self.h264Configuration)
+
+    try await stream.startStreaming(consumer)
+    try await expectEventually("the initial mount must produce encoded output") {
+      !consumer.data().isEmpty
+    }
+
+    // Phase 1: setting an overlay swaps the buffer in — a keyframe so a decoder can show it whole.
+    let overlay = makeOverlayBuffer()
+    var before = consumer.data().count
+    await stream.updateOverlayBuffer(overlay)
+    try await expectEventually("an overlay swap pushes a frame") { consumer.data().count > before }
+    let idrAfterSwap = countIDRNALUnits(in: consumer.data())
+
+    // Phase 2: four in-place content updates (the same buffer reference — how the overlay effect
+    // timer animates), each awaited so trigger coalescing cannot merge them.
+    for _ in 0..<4 {
+      before = consumer.data().count
+      await stream.updateOverlayBuffer(overlay)
+      try await expectEventually("an in-place overlay update pushes a frame") { consumer.data().count > before }
+    }
+    let idrAfterInPlace = countIDRNALUnits(in: consumer.data())
+
+    // Phase 3: swapping to a different buffer.
+    before = consumer.data().count
+    await stream.updateOverlayBuffer(makeOverlayBuffer())
+    try await expectEventually("an overlay buffer swap pushes a frame") { consumer.data().count > before }
+    let idrAfterSecondSwap = countIDRNALUnits(in: consumer.data())
+
+    // BUG: every in-place overlay update forces an IDR — at the effect timer's ~30fps animation
+    // cadence this turns the whole stream into keyframes, starving the motion budget. Flipped in
+    // the following commit so in-place updates push plain frames.
+    XCTAssertGreaterThanOrEqual(idrAfterInPlace - idrAfterSwap, 4, "in-place overlay updates each force an IDR (current, wrong behavior)")
+    XCTAssertGreaterThanOrEqual(idrAfterSecondSwap - idrAfterInPlace, 1, "an overlay buffer swap forces an IDR")
+
+    try await stream.stopStreaming()
+  }
+
   func testDroppedStreamIsReleasedOnceSurfaceReleasesCallbacks() async throws {
     let surface = FakeFramebufferSurface()
     surface.immediateSurface = makeTestIOSurface()
