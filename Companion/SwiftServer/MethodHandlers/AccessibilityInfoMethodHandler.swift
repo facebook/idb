@@ -17,79 +17,21 @@ struct AccessibilityInfoMethodHandler {
   let commandExecutor: FBIDBCommandExecutor
 
   func handle(request: Idb_AccessibilityInfoRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_AccessibilityInfoResponse {
-    let format = outputFormat(from: request.format)
+    let format = AccessibilityInfoRequestTranslation.outputFormat(from: request.format)
     // A marker selects a single element to describe; without one the request
     // describes the element at a point, or the whole frontmost app.
-    if !request.marker.isEmpty {
-      let query: FBAccessibilityElementQuery = .marker(
-        value: request.marker, key: searchableKey(from: request.matchKey), depth: UInt(request.depth))
+    if let query = AccessibilityInfoRequestTranslation.markerQuery(from: request) {
       let data = try await commandExecutor.accessibility_describe(query: query, format: format)
       return .with {
         $0.json = String(data: data, encoding: .utf8) ?? ""
       }
     }
-    var point: NSValue?
-    if request.hasPoint {
-      point = NSValue(point: .init(x: request.point.x, y: request.point.y))
-    }
-    // Reject an all-invalid --key list rather than silently falling back to the
-    // default set and masking the caller's typo; an empty list means "defaults".
-    let mappedKeys = Set(request.keys.compactMap { FBAXKeys(rawValue: $0) })
-    if !request.keys.isEmpty && mappedKeys.isEmpty {
-      throw GRPCStatus(
-        code: .invalidArgument,
-        message: "no recognized accessibility keys in \(request.keys)")
-    }
-    let keys = mappedKeys.isEmpty ? FBAXKeys.defaultSet : mappedKeys
-    let options = FBAccessibilityRequestOptions(
-      format: format,
-      keys: keys,
-      enableLogging: true,
-      enableProfiling: false,
-      collectFrameCoverage: false)
-    let response = try await commandExecutor.accessibility_info_at_point(point, options: options)
-    let jsonData = try JSONSerialization.data(withJSONObject: response.elements.legacyFoundationObject)
+    let options = try AccessibilityInfoRequestTranslation.options(from: request, format: format)
+    let response = try await commandExecutor.accessibility_info_at_point(
+      AccessibilityInfoRequestTranslation.point(from: request), options: options)
+    let jsonData = try AccessibilityInfoRequestTranslation.legacyJSON(from: response)
     return .with {
       $0.json = String(data: jsonData, encoding: .utf8) ?? ""
-    }
-  }
-
-  /// The wire format the request asked for. `LEGACY` is the flat array the gRPC surface has always
-  /// returned by default; an unrecognized value from a newer client falls back to it rather than
-  /// failing the call.
-  private func outputFormat(from format: Idb_AccessibilityInfoRequest.Format) -> FBAccessibilityOutputFormat {
-    switch format {
-    case .legacy:
-      return .default
-    case .nested:
-      return .nested
-    case .UNRECOGNIZED:
-      return .default
-    }
-  }
-
-  private func searchableKey(from key: Idb_AccessibilityActionRequest.SearchableKey) -> FBAXSearchableKey {
-    switch key {
-    case .label:
-      return .label
-    case .uniqueID:
-      return .uniqueID
-    case .value:
-      return .value
-    case .title:
-      return .title
-    case .role:
-      return .role
-    case .roleDescription:
-      return .roleDescription
-    case .subrole:
-      return .subrole
-    case .help:
-      return .help
-    case .placeholder:
-      return .placeholder
-    case .UNRECOGNIZED:
-      return .label
     }
   }
 }
