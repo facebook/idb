@@ -70,13 +70,17 @@ final class FBDataConsumerTests: XCTestCase {
   func testLineBufferedConsumerAsync() {
     let queue = DispatchQueue(label: "testLineBufferedConsumerAsync")
     var lines: [String] = []
+    let bothLines = expectation(description: "both lines delivered to the consumer")
     let consumer = FBBlockDataConsumer.asynchronousLineConsumer { line in
-      queue.sync { lines.append(line) }
+      queue.sync {
+        lines.append(line)
+        if lines.count == 2 { bothLines.fulfill() }
+      }
     }
 
     consumer.consumeData("FOO\n".data(using: .utf8)!)
     consumer.consumeData("BAR\n".data(using: .utf8)!)
-    usleep(1000)
+    wait(for: [bothLines], timeout: FBControlCoreGlobalConfiguration.fastTimeout)
     queue.sync { XCTAssertEqual(lines, ["FOO", "BAR"]) }
     XCTAssertFalse(consumer.finishedConsuming.hasCompleted)
 
@@ -118,15 +122,17 @@ final class FBDataConsumerTests: XCTestCase {
   func testUnbufferedConsumerAsync() {
     let expected = "FOOBARBAZ".data(using: .utf8)!
     let actual = NSMutableData()
+    let allChunks = expectation(description: "all three chunks delivered to the consumer")
     let consumer = FBBlockDataConsumer.asynchronousDataConsumer { incremental in
       actual.append(incremental)
+      if actual.length == expected.count { allChunks.fulfill() }
     }
 
     XCTAssertFalse(consumer.finishedConsuming.hasCompleted)
     consumer.consumeData("FOO".data(using: .utf8)!)
     consumer.consumeData("BAR".data(using: .utf8)!)
     consumer.consumeData("BAZ".data(using: .utf8)!)
-    usleep(1000)
+    wait(for: [allChunks], timeout: FBControlCoreGlobalConfiguration.fastTimeout)
     XCTAssertEqual(expected, actual as Data)
     XCTAssertFalse(consumer.finishedConsuming.hasCompleted)
 
