@@ -75,6 +75,15 @@ static NSString *const kModalLabel = @"label";
 static NSString *const kSystemAlertWindowClass = @"SBAlertItemWindow";
 static NSString *const kAlertControllerClassPrefix = @"_UIAlertController";
 
+// `kAXErrorServerNotFound`, from the AX runtime's C ABI — no SDK header available here declares it. The
+// runtime returns it when a process has no accessibility server to answer: the pid is dead, or names a
+// process that is not an application. It is what separates an unreadable application from the neighbouring
+// codes — `kAXErrorIPCTimeout` (-25216) for a live app that is not responding, and
+// `kAXErrorInvalidUIElement` (-25202) for a hit-test on genuinely empty space.
+static const int32_t kAXErrorServerNotFound = -25215;
+// The key `-attributesForElement:attributes:error:` reports the underlying AX runtime code under.
+static NSString *const kAXAccessibilityErrorKey = @"accessibility-error";
+
 static NSString *const kVerbDescribe = @"describe";
 static NSString *const kVerbHitTest = @"hittest";
 static NSString *const kActionServe = @"serve";
@@ -293,18 +302,26 @@ static id FBAXBridgeJSONSafeValue(id _Nullable value, NSString *key)
 
 // One mach round-trip per node: read the element's attributes, coerce them to JSON, then recurse into
 // its children (replacing the child `XCAccessibilityElement`s with their read dictionaries in place).
+//
+// `errorOut` reports why *this* element could not be read, and is the read's only window onto the AX
+// runtime's own error. Only the root caller passes one: a child that fails to read is dropped from the
+// tree rather than failing the whole read, so a child's error is not the read's error.
 static NSDictionary *_Nullable FBAXBridgeBuildNode(XCTAccessibilityFramework *framework,
                                                    id element,
                                                    int depth,
                                                    int maxDepth,
                                                    int *budget,
-                                                   BOOL *truncated)
+                                                   BOOL *truncated,
+                                                   NSError *_Nullable *_Nullable errorOut)
 {
   NSError *error = nil;
   NSDictionary *attributes = [framework attributesForElement:element
                                                   attributes:FBAXBridgeFetchList()
                                                        error:&error];
   if (![attributes isKindOfClass:NSDictionary.class]) {
+    if (errorOut) {
+      *errorOut = error;
+    }
     return nil;
   }
 
@@ -326,7 +343,7 @@ static NSDictionary *_Nullable FBAXBridgeBuildNode(XCTAccessibilityFramework *fr
         break;
       }
       (*budget)--;
-      NSDictionary *childNode = FBAXBridgeBuildNode(framework, child, depth + 1, maxDepth, budget, truncated);
+      NSDictionary *childNode = FBAXBridgeBuildNode(framework, child, depth + 1, maxDepth, budget, truncated, NULL);
       if (childNode) {
         [children addObject:childNode];
       }
@@ -730,6 +747,15 @@ static NSDictionary *FBAXBridgeApplicationUnavailableResponse(NSString *message)
   return @{kResponseOk : @NO, kResponseError : message, kResponseErrorKind : kErrorKindApplicationUnavailable};
 }
 
+// Whether a read failed because the process has no accessibility server to answer it, rather than
+// because the read itself went wrong. This is the one failure the host maps onto a typed,
+// backend-neutral error, so it is recognised by the runtime's own code rather than inferred.
+static BOOL FBAXBridgeIsApplicationUnavailableError(NSError *_Nullable error)
+{
+  NSNumber *code = error.userInfo[kAXAccessibilityErrorKey];
+  return [code isKindOfClass:NSNumber.class] && code.intValue == kAXErrorServerNotFound;
+}
+
 NSData *FBAXBridgeSerializeResponse(NSDictionary<NSString *, id> *response)
 {
   // Sanitize first (non-finite numbers would otherwise raise), then still guard the call: an
@@ -780,11 +806,11 @@ static NSDictionary *FBAXBridgeHitTest(XCTAccessibilityFramework *framework,
   // Resolve the seed: a specific app element for an explicit pid, otherwise the system-wide element.
   // Owned (+1) either way, so the ref outlives whatever vended it and both branches release alike.
   void *seed = NULL;
-  NSNumber *pidNumber = request[kRequestPid];
-  if ([pidNumber isKindOfClass:NSNumber.class]) {
+  NSNumber *pidNumber = [request[kRequestPid] isKindOfClass:NSNumber.class] ? request[kRequestPid] : nil;
+  if (pidNumber) {
     XCAccessibilityElement *root = [(id)elementClass elementWithProcessIdentifier:pidNumber.intValue];
     if (!root) {
-      return FBAXBridgeApplicationUnavailableResponse([NSString stringWithFormat:@"no application element for pid %d", pidNumber.intValue]);
+      return FBAXBridgeErrorResponse([NSString stringWithFormat:@"no application element for pid %d", pidNumber.intValue]);
     }
     void *applicationElement = [root AXUIElement];
     if (!applicationElement) {
@@ -805,20 +831,41 @@ static NSDictionary *FBAXBridgeHitTest(XCTAccessibilityFramework *framework,
   void *hit = NULL;
   int32_t axError = copyElementAtPosition(seed, (float)xNumber.doubleValue, (float)yNumber.doubleValue, &hit);
   CFRelease(seed);
+  if (axError == kAXErrorServerNotFound) {
+    // Nothing answered the hit-test at all. Reporting that as an empty result would tell the caller the
+    // app is on screen with nothing under the point, which is the opposite of what happened.
+    return FBAXBridgeApplicationUnavailableResponse(
+      pidNumber ? [NSString stringWithFormat:@"pid %d has no accessibility server to hit-test", pidNumber.intValue]
+      : @"no accessibility server answered the system-wide hit-test"
+    );
+  }
   if (axError != 0 || !hit) {
     // No element at the point is a valid empty result, not a failure: a caller doing a streaming
     // hit-test (e.g. after a tap) must be able to tell "empty space" apart from "the reader broke".
     return @{kResponseOk : @YES, kResponseEmpty : @YES};
   }
+  // The host tags the hit element with its owning process, so an unattributable hit is not a result. A
+  // seeded hit-test already knows the pid and falls back to it; a system-wide one has no other source.
   pid_t owningPid = 0;
-  getPid(hit, &owningPid);
+  int32_t pidError = getPid(hit, &owningPid);
+  if (pidError != 0 || owningPid <= 0) {
+    if (!pidNumber) {
+      CFRelease(hit);
+      return FBAXBridgeErrorResponse([NSString stringWithFormat:@"could not resolve the owning pid of the hit element (%d)", pidError]);
+    }
+    owningPid = pidNumber.intValue;
+  }
   XCAccessibilityElement *hitElement = [(id)elementClass elementWithAXUIElement:hit];
   int budget = 1;
   BOOL truncated = NO;  // a hit-test reads only the leaf at the point; truncation is not meaningful here
+  NSError *readError = nil;
   // maxDepth 0 reads just the hit element's own attributes (no child recursion) — the leaf at the point.
-  NSDictionary *node = hitElement ? FBAXBridgeBuildNode(framework, hitElement, 0, 0, &budget, &truncated) : nil;
+  NSDictionary *node = hitElement ? FBAXBridgeBuildNode(framework, hitElement, 0, 0, &budget, &truncated, &readError) : nil;
   CFRelease(hit);  // +1-retained by the Copy; the node has already been read from it above.
   if (!node) {
+    if (FBAXBridgeIsApplicationUnavailableError(readError)) {
+      return FBAXBridgeApplicationUnavailableResponse([NSString stringWithFormat:@"pid %d has no accessibility server", owningPid]);
+    }
     return FBAXBridgeErrorResponse(@"failed to read the hit element");
   }
   return @{kResponseOk : @YES, kResponseTree : node, kResponsePid : @(owningPid)};
@@ -834,6 +881,14 @@ NSDictionary<NSString *, id> *FBAXBridgeHandleRequest(NSDictionary<NSString *, i
   BOOL isHitTest = [verb isEqualToString:kVerbHitTest];
   if (!isDescribe && !isHitTest) {
     return FBAXBridgeErrorResponse([NSString stringWithFormat:@"unsupported verb: %@", requestedVerb ?: @"(nil)"]);
+  }
+
+  // Both verbs take a `pid`, and a non-positive one names no process. The accessibility runtime does not
+  // reject it — pid 0 reads back as an application with an empty tree — so it is rejected here, before
+  // any setup, and both verbs answer alike.
+  NSNumber *requestedPid = [request[kRequestPid] isKindOfClass:NSNumber.class] ? request[kRequestPid] : nil;
+  if (requestedPid && requestedPid.intValue <= 0) {
+    return FBAXBridgeApplicationUnavailableResponse([NSString stringWithFormat:@"pid %d names no application", requestedPid.intValue]);
   }
 
   NSString *setupError = nil;
@@ -858,9 +913,8 @@ NSDictionary<NSString *, id> *FBAXBridgeHandleRequest(NSDictionary<NSString *, i
   // its tree in this one call, with no separate pid round-trip.
   pid_t pid = 0;
   NSString *frontmostMethod = nil;  // non-nil when the pid was resolved in-guest (fused frontmost read)
-  NSNumber *pidNumber = request[kRequestPid];
-  if ([pidNumber isKindOfClass:NSNumber.class]) {
-    pid = pidNumber.intValue;
+  if (requestedPid) {
+    pid = requestedPid.intValue;
   } else {
     NSNumber *xNumber = request[kRequestX];
     NSNumber *yNumber = request[kRequestY];
@@ -876,7 +930,7 @@ NSDictionary<NSString *, id> *FBAXBridgeHandleRequest(NSDictionary<NSString *, i
 
   XCAccessibilityElement *root = [(id)elementClass elementWithProcessIdentifier:pid];
   if (!root) {
-    return FBAXBridgeApplicationUnavailableResponse([NSString stringWithFormat:@"no application element for pid %d", pid]);
+    return FBAXBridgeErrorResponse([NSString stringWithFormat:@"no application element for pid %d", pid]);
   }
 
   int maxDepth = [request[kRequestMaxDepth] isKindOfClass:NSNumber.class]
@@ -886,9 +940,17 @@ NSDictionary<NSString *, id> *FBAXBridgeHandleRequest(NSDictionary<NSString *, i
   ? [(NSNumber *)request[kRequestMaxNodes] intValue]
   : kDefaultNodeBudget;
   BOOL truncated = NO;
-  NSDictionary *tree = FBAXBridgeBuildNode(framework, root, 0, maxDepth, &budget, &truncated);
+  NSError *readError = nil;
+  NSDictionary *tree = FBAXBridgeBuildNode(framework, root, 0, maxDepth, &budget, &truncated, &readError);
   if (!tree) {
-    return FBAXBridgeErrorResponse([NSString stringWithFormat:@"failed to read the element tree for pid %d", pid]);
+    if (FBAXBridgeIsApplicationUnavailableError(readError)) {
+      return FBAXBridgeApplicationUnavailableResponse([NSString stringWithFormat:@"pid %d has no accessibility server", pid]);
+    }
+    return FBAXBridgeErrorResponse(
+      [NSString stringWithFormat:@"failed to read the element tree for pid %d: %@",
+       pid,
+       readError.localizedDescription ?: @"the accessibility runtime reported no error"]
+    );
   }
   // Always report the pid read, so the host tags elements with it — for a fused frontmost read the host
   // does not know the pid until now. `method` rides along when the pid was resolved in-guest.

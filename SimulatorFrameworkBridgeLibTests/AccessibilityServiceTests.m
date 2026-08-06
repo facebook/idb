@@ -149,10 +149,8 @@ static NSDictionary *FBAXTestsParse(NSData *data)
   ];
   for (NSDictionary *request in requests) {
     NSDictionary *response = FBAXBridgeHandleRequest(request);
-    // BUG: the pid is passed straight to the accessibility runtime, which answers for it rather than
-    // rejecting it, so the failure (when there is one at all) is reported as a generic read failure with
-    // no kind. Flipped in the following commit.
-    XCTAssertNotEqualObjects(
+    XCTAssertEqualObjects(response[@"ok"], @NO, @"%@ pid %@", request[@"verb"], request[@"pid"]);
+    XCTAssertEqualObjects(
       response[@"error_kind"],
       @"application_unavailable",
       @"%@ pid %@",
