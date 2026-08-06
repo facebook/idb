@@ -522,12 +522,12 @@ final class FBSimulatorVideoStreamDeliveryTests: XCTestCase {
   /// True if `task` has neither returned nor thrown within `nanoseconds`. Observed via a detached
   /// flag-setter rather than a task group racing `task.value`: awaiting a hung task can never be
   /// abandoned (`Task.value` ignores the awaiter's cancellation), so a group child doing that await
-  /// would keep the group — and the test — suspended forever. The observer task is deliberately
-  /// leaked while the pinned hang exists; it completes naturally once the bug is fixed.
-  private func isStillPending(_ task: Task<Void, Error>, after nanoseconds: UInt64) async -> Bool {
+  /// would keep the group — and the test — suspended forever. The observer task is abandoned if the
+  /// observed task never settles; it completes once the task does.
+  private func isStillPending<Success: Sendable, Failure>(_ task: Task<Success, Failure>, after nanoseconds: UInt64) async -> Bool {
     let flag = SettledFlag()
     Task {
-      _ = try? await task.value
+      _ = await task.result
       flag.markSettled()
     }
     try? await Task.sleep(nanoseconds: nanoseconds)
@@ -607,6 +607,22 @@ final class FBSimulatorVideoStreamDeliveryTests: XCTestCase {
       XCTAssertTrue(String(describing: error).contains("failedToCreatePixelBufferFromSurface"), "unexpected error: \(error)")
     }
     XCTAssertEqual(surface.unregisteredTokens.count, 1, "a failed pending start must unregister from the surface")
+  }
+
+  func testAwaitCompletionCancellationOnNeverStartedStream() async throws {
+    let surface = FakeFramebufferSurface()
+    let stream = makeStream(surface: surface)
+
+    // Await completion of a stream that was never started, then cancel the await.
+    let awaitTask = Task { await stream.awaitCompletion() }
+    try await Task.sleep(nanoseconds: 100_000_000)
+    awaitTask.cancel()
+
+    // BUG: cancellation runs `try? stopStreaming()`, which throws on a never-started stream; the
+    // error is swallowed and the completion awaiter is never resumed, so the cancelled await
+    // remains suspended forever — flipped in the following commit to return promptly.
+    let pending = await isStillPending(awaitTask, after: 200_000_000)
+    XCTAssertTrue(pending, "awaitCompletion remains suspended after cancellation (current, wrong behavior)")
   }
 
   func testDroppedStreamIsReleasedOnceSurfaceReleasesCallbacks() async throws {
