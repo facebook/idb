@@ -18,6 +18,9 @@ public final class FBSurfaceImageGenerator {
 
   private let logger: (any FBControlCoreLogger)?
   private let scaleFilter: CIFilter?
+  /// Created once and reused across renders: CIContext construction is expensive (it builds a GPU
+  /// pipeline) and the context carries no per-image state.
+  private let context = CIContext(options: nil)
 
   private var surface: IOSurface?
 
@@ -47,7 +50,6 @@ public final class FBSurfaceImageGenerator {
     guard let surface = self.surface else {
       return nil
     }
-    let context = CIContext(options: nil)
     var ciImage = CIImage(ioSurface: unsafeBitCast(surface, to: IOSurfaceRef.self))
     if let scaleFilter = self.scaleFilter {
       scaleFilter.setValue(ciImage, forKey: kCIInputImageKey)
