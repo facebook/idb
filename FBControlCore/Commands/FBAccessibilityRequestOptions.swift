@@ -36,8 +36,10 @@ extension FBAccessibilityRemoteContentOptions: CustomStringConvertible {
 }
 
 /// Filters which elements a describe-all read returns, applied in the shared serializer so both the
-/// accessibility and remote-automation backends honor it identically.
-public enum FBAccessibilityElementFilter: Sendable {
+/// accessibility and remote-automation backends honor it identically. The raw values are the filter's
+/// canonical tokens — what a CLI accepts — so a consumer selects a filter without re-declaring the
+/// case list.
+public enum FBAccessibilityElementFilter: String, Sendable, CaseIterable {
   /// Every element in the tree (default).
   case all
   /// Only "interactable" elements — those with a label, an identifier, or an actionable role
