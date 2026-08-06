@@ -28,7 +28,6 @@ private enum FBSimulatorVideoStreamError: Error {
   case startWhenStopped
   case startAlreadyStarted
   case stopWithoutConsumer
-  case stopNotAttachedToSurface
   case failedToTearDownFramePusher(errorDescription: String)
   case failedToCreatePixelBufferFromSurface(status: CVReturn)
   case failedToCreatePixelBufferFromSurfaceNil
@@ -61,8 +60,6 @@ extension FBSimulatorVideoStreamError: LocalizedError {
       return "Cannot start streaming, since streaming has already has started"
     case .stopWithoutConsumer:
       return "Cannot stop streaming, no consumer attached"
-    case .stopNotAttachedToSurface:
-      return "Cannot stop streaming, is not attached to a surface"
     case .failedToTearDownFramePusher(let errorDescription):
       return "Failed to tear down frame pusher: \(errorDescription)"
     case .failedToCreatePixelBufferFromSurface(let status):
@@ -804,25 +801,46 @@ public actor FBSimulatorVideoStream: FBVideoStream {
   let encodedSampleConsumerOverride: FBEncodedSampleConsumer?
   let logger: any FBControlCoreLogger
 
-  // Actor-isolated lifecycle state. `hasStarted` latches once the first surface mounts (a stream
-  // cannot be restarted); `isStopped` latches on teardown and is the sole stop-idempotency guard.
-  // `startAwaiters`/`stopAwaiters` hold continuations resumed on those transitions, so
-  // `startStreaming`/`awaitCompletion` can await them natively.
-  private var hasStarted = false
-  private var isStopped = false
-  private var startAwaiters: [CheckedContinuation<Void, Error>] = []
-  /// Keyed by awaiter so a cancelled `awaitCompletion` can resume its own continuation even when
-  /// the stream cannot be stopped (nothing was ever started).
+  // MARK: - Lifecycle
+
+  /// What a started stream holds: the consumer, the framebuffer attachment (whose `cancel()`
+  /// detaches this stream), and the task consuming the attachment's ordered event stream onto the
+  /// actor (surface changes mount, frame-rendered events poke the `.lazy` trigger; it ends when the
+  /// attachment cancels, finishing the stream).
+  /// Sendable so the nonisolated `deinit` backstop can reach the attachment and event task.
+  private struct Session: Sendable {
+    // SAFETY: FBDataConsumer is a thread-safe ObjC protocol that predates Sendable auditing — the
+    // `startStreaming` shim already carries it across the boundary on the same justification.
+    // patternlint-disable-next-line swift-nonisolated-unsafe
+    nonisolated(unsafe) let consumer: any FBDataConsumer
+    let attachment: FBFramebufferAttachment
+    let eventTask: Task<Void, Never>
+  }
+
+  /// The stream lifecycle, advanced only by `startStreaming`, the first surface mount, and
+  /// `stopStreaming`. One-way: `.idle` → `.starting` → `.streaming` → `.stopped` (a stop is legal
+  /// from `.starting`, and a failed initial mount unwinds `.starting` back to `.idle`). Holding the
+  /// session and the start awaiters as payloads of the phase they belong to makes the previously
+  /// representable invalid states — a stopped stream with pending start awaiters, a mounted stream
+  /// without a consumer — unrepresentable, and each transition resumes exactly the awaiters that
+  /// can no longer progress.
+  private enum Lifecycle: Sendable {
+    /// Never started; a `startStreaming` may begin.
+    case idle
+    /// Attached, awaiting the first surface mount; the awaiters are suspended `startStreaming` callers.
+    case starting(Session, startAwaiters: [CheckedContinuation<Void, Error>])
+    /// The first surface mounted; frames flow.
+    case streaming(Session)
+    /// Terminal; the stream cannot be restarted.
+    case stopped
+  }
+
+  private var lifecycle: Lifecycle = .idle
+
+  /// Completion awaiters, keyed per await so a cancelled `awaitCompletion` can resume its own
+  /// continuation even when the stream cannot be stopped. Kept outside `Lifecycle` because
+  /// completion can be awaited in any phase, including before a start.
   private var stopAwaiters: [UUID: CheckedContinuation<Void, Never>] = [:]
-
-  /// The framebuffer attachment held while streaming; `cancel()` (or release) detaches this stream.
-  /// Nil before start and after stop.
-  private var attachment: FBFramebufferAttachment?
-
-  /// The task consuming the attachment's ordered framebuffer event stream onto the actor: surface
-  /// changes mount, damage pokes the `.lazy` trigger. Ends when the attachment cancels (finishing
-  /// the stream). Started in `startStreaming`, cancelled as a backstop in teardown/`deinit`.
-  private var eventTask: Task<Void, Never>?
 
   /// The push-loop task that drives frame pushes (nil before `mountSurface` starts it). It iterates a
   /// stimulus `AsyncSequence` of `FrameTrigger`s: `FrameCadence` (the fixed-rate clock) in `.eager`
@@ -841,7 +859,15 @@ public actor FBSimulatorVideoStream: FBVideoStream {
   var timeAtLastPush: CFTimeInterval = 0
   var frameNumber: UInt = 0
   var pixelBufferAttributes: [String: Any]?
-  var consumer: (any FBDataConsumer)?
+  /// The session's consumer while started, nil otherwise — the mount and push paths read this.
+  var consumer: (any FBDataConsumer)? {
+    switch lifecycle {
+    case .idle, .stopped:
+      return nil
+    case .starting(let session, _), .streaming(let session):
+      return session.consumer
+    }
+  }
   var framePusher: (any FBSimulatorVideoStreamFramePusher)?
   /// The timed-metadata (chapter) sink: the streaming transport writer, or (recording) the file
   /// writer's chapter track. Resolved in `mountSurface`, cleared in `stopStreaming`.
@@ -918,9 +944,15 @@ public actor FBSimulatorVideoStream: FBVideoStream {
     // Backstop teardown if the stream is dropped without a clean stopStreaming: cancel the
     // attachment (finishing the event stream, which ends the event task) and both tasks.
     // Reachable while the push loop runs because it holds the stream weakly; that loop also exits
-    // on its own at the next trigger once the stream is gone.
-    attachment?.cancel()
-    eventTask?.cancel()
+    // on its own at the next trigger once the stream is gone. A `.starting` phase with pending
+    // awaiters cannot reach deinit — a suspended caller keeps the actor alive.
+    switch lifecycle {
+    case .starting(let session, _), .streaming(let session):
+      session.attachment.cancel()
+      session.eventTask.cancel()
+    case .idle, .stopped:
+      break
+    }
     framePusherTask?.cancel()
   }
 
@@ -935,68 +967,78 @@ public actor FBSimulatorVideoStream: FBVideoStream {
   }
 
   private func isolatedStartStreaming(_ consumer: any FBDataConsumer) async throws {
-    if hasStarted {
-      throw FBSimulatorVideoStreamError.startWhenStopped
-    }
-    if self.consumer != nil {
+    switch lifecycle {
+    case .starting, .streaming:
       throw FBSimulatorVideoStreamError.startAlreadyStarted
+    case .stopped:
+      throw FBSimulatorVideoStreamError.startWhenStopped
+    case .idle:
+      break
     }
-    self.consumer = consumer
-    // Attach to the framebuffer; when a surface is already available this mounts it synchronously
-    // (latching `hasStarted`), otherwise the first surface event does.
-    if attachment == nil {
-      do {
-        let attachment = try framebuffer.attach()
-        self.attachment = attachment
-        // Consume the attachment's ordered event stream onto the actor. `[weak self]` so the task
-        // never keeps the stream alive; the strong `attachment` capture ends when the stream
-        // finishes (attachment cancel), completing the loop.
-        eventTask = Task { [weak self] in
-          for await event in attachment.events {
-            await self?.handle(event)
-          }
-        }
-        if let surface = attachment.initialSurface {
-          try mountSurface(surface)
-          pushFrame(forceKeyFrame: false)
-        }
-      } catch {
-        // Unwind the partial start so the failure is observable and nothing stays registered.
-        self.consumer = nil
-        eventTask?.cancel()
-        eventTask = nil
-        self.attachment?.cancel()
-        self.attachment = nil
-        throw error
+    let attachment = try framebuffer.attach()
+    // Consume the attachment's ordered event stream onto the actor. `[weak self]` so the task
+    // never keeps the stream alive; the strong `attachment` capture ends when the stream
+    // finishes (attachment cancel), completing the loop.
+    let eventTask = Task { [weak self] in
+      for await event in attachment.events {
+        await self?.handle(event)
       }
     }
-    if hasStarted {
-      return
+    lifecycle = .starting(Session(consumer: consumer, attachment: attachment, eventTask: eventTask), startAwaiters: [])
+    // When a surface is already available this mounts it synchronously (transitioning to
+    // `.streaming`), otherwise the first surface event does.
+    if let surface = attachment.initialSurface {
+      do {
+        try mountSurface(surface)
+      } catch {
+        // Unwind the partial start so the failure is observable and nothing stays registered.
+        eventTask.cancel()
+        attachment.cancel()
+        lifecycle = .idle
+        throw error
+      }
+      pushFrame(forceKeyFrame: false)
+    }
+    guard case .starting = lifecycle else {
+      return // mounted synchronously — already streaming
     }
     try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-      startAwaiters.append(continuation)
+      guard case .starting(let session, var awaiters) = lifecycle else {
+        continuation.resume()
+        return
+      }
+      awaiters.append(continuation)
+      lifecycle = .starting(session, startAwaiters: awaiters)
     }
   }
 
   public func stopStreaming() async throws {
-    if isStopped {
+    let session: Session
+    let pendingStartAwaiters: [CheckedContinuation<Void, Error>]
+    switch lifecycle {
+    case .stopped:
       return
-    }
-    guard let consumer = self.consumer else {
+    case .idle:
       throw FBSimulatorVideoStreamError.stopWithoutConsumer
+    case .starting(let active, let awaiters):
+      session = active
+      pendingStartAwaiters = awaiters
+    case .streaming(let active):
+      session = active
+      pendingStartAwaiters = []
     }
-    guard let attachment = self.attachment else {
-      throw FBSimulatorVideoStreamError.stopNotAttachedToSurface
-    }
-    self.consumer = nil
-    attachment.cancel()
-    self.attachment = nil
-    consumer.consumeEndOfFile()
+    // The transition is unconditional: even a failing frame-pusher teardown leaves the stream
+    // `.stopped` with every awaiter resumed — "torn down but not stopped" is unrepresentable.
+    lifecycle = .stopped
+    session.attachment.cancel()
+    session.eventTask.cancel()
+    session.consumer.consumeEndOfFile()
+    var tearDownError: Error?
     if let framePusher {
       do {
         try framePusher.tearDown()
       } catch {
-        throw FBSimulatorVideoStreamError.failedToTearDownFramePusher(errorDescription: "\(error)")
+        tearDownError = error
       }
     }
     timedMetadataConsumer = nil
@@ -1006,9 +1048,13 @@ public actor FBSimulatorVideoStream: FBVideoStream {
     // Tear down the cadence machinery: cancels the push-loop task (the loop exits on
     // `Task.isCancelled`) and, in `.lazy` mode, finishes the trigger stream.
     cadenceTeardown()
-    isStopped = true
     resumeStopAwaiters()
-    failStartAwaiters(with: FBSimulatorVideoStreamError.startWhenStopped)
+    for awaiter in pendingStartAwaiters {
+      awaiter.resume(throwing: FBSimulatorVideoStreamError.startWhenStopped)
+    }
+    if let tearDownError {
+      throw FBSimulatorVideoStreamError.failedToTearDownFramePusher(errorDescription: "\(tearDownError)")
+    }
   }
 
   /// Resume everyone awaiting completion.
@@ -1020,44 +1066,33 @@ public actor FBSimulatorVideoStream: FBVideoStream {
     }
   }
 
-  /// Fail everyone still awaiting the initial mount — the stream stopped or the mount failed, so
-  /// the start can never complete.
-  private func failStartAwaiters(with error: Error) {
-    let awaiters = startAwaiters
-    startAwaiters = []
+  /// Unwind a start still awaiting its first mount because that mount failed: the awaiters are
+  /// failed and the session is torn down (back to `.idle`), so a stream that reported a failed
+  /// start can never quietly self-start on a later surface. A no-op once `.streaming` — a failed
+  /// mid-stream surface swap keeps streaming the previous surface.
+  private func failPendingStart(with error: Error) {
+    guard case .starting(let session, let awaiters) = lifecycle else {
+      return
+    }
+    lifecycle = .idle
+    session.eventTask.cancel()
+    session.attachment.cancel()
     for awaiter in awaiters {
       awaiter.resume(throwing: error)
     }
   }
 
-  /// Unwind a start still awaiting its first mount because that mount failed: the caller is failed
-  /// and the session is torn down, so a stream that reported a failed start can never quietly
-  /// self-start on a later surface. A no-op once started — a failed mid-stream surface swap keeps
-  /// streaming the previous surface.
-  private func failPendingStart(with error: Error) {
-    guard !hasStarted else {
-      return
-    }
-    self.consumer = nil
-    eventTask?.cancel()
-    eventTask = nil
-    attachment?.cancel()
-    attachment = nil
-    failStartAwaiters(with: error)
-  }
-
   // MARK: - Private
 
   /// Tear down the push-loop machinery, called from `stopStreaming`. Finishes the `.lazy` trigger
-  /// stream (ending its `for await`) and cancels the push-loop and event tasks — cancellation also
-  /// wakes the `.eager` loop if it is suspended in `Task.sleep`.
+  /// stream (ending its `for await`) and cancels the push-loop task — cancellation also wakes the
+  /// `.eager` loop if it is suspended in `Task.sleep`. The event task is the session's and is
+  /// cancelled by `stopStreaming` alongside the attachment.
   func cadenceTeardown() {
     lazyTriggers?.finish()
     lazyTriggers = nil
     framePusherTask?.cancel()
     framePusherTask = nil
-    eventTask?.cancel()
-    eventTask = nil
   }
 
   // MARK: - Framebuffer Events
@@ -1177,11 +1212,10 @@ public actor FBSimulatorVideoStream: FBVideoStream {
       logger.info().log("Composited pool includes edge insets (t=\(insets.top) b=\(insets.bottom) l=\(insets.left) r=\(insets.right)): w=\(compositedWidth)/h=\(compositedHeight)")
     }
 
-    // Signal that we've started, resuming anyone awaiting the initial surface mount.
-    if !hasStarted {
-      hasStarted = true
-      let awaiters = startAwaiters
-      startAwaiters = []
+    // The first mount transitions `.starting` → `.streaming`, resuming anyone awaiting it. A
+    // re-mount (surface swap) is already `.streaming` and transitions nothing.
+    if case .starting(let session, let awaiters) = lifecycle {
+      lifecycle = .streaming(session)
       for awaiter in awaiters {
         awaiter.resume()
       }
@@ -1500,7 +1534,7 @@ public actor FBSimulatorVideoStream: FBVideoStream {
     let id = UUID()
     await withTaskCancellationHandler {
       await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
-        if isStopped {
+        if case .stopped = lifecycle {
           continuation.resume()
           return
         }
