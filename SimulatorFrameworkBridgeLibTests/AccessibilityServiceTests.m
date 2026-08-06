@@ -110,6 +110,37 @@ static NSDictionary *FBAXTestsParse(NSData *data)
   XCTAssertNotNil(parsed[@"error"]);
 }
 
+#pragma mark - Request validation
+
+// A request frame is JSON decoded off the wire, so `verb` arrives as whatever type the host sent — a
+// number, an object, an array, or null — and the reader must answer every one of them with an error
+// frame. It is the only field read before the request is dispatched, so getting it wrong takes down the
+// whole reader rather than failing the one request.
+- (void)testNonStringVerbIsRejectedWithAnErrorFrame
+{
+  for (id verb in @[@123, @{@"a" : @1}, @[@"describe"], NSNull.null]) {
+    // BUG: sends `isEqualToString:` to the value unconditionally, so a non-string raises
+    // `NSInvalidArgumentException` and aborts the reader process — on the persistent `serve` transport
+    // that severs the client's connection. Flipped in the following commit.
+    XCTAssertThrowsSpecificNamed(
+      FBAXBridgeHandleRequest(@{@"verb" : verb}),
+      NSException,
+      NSInvalidArgumentException,
+      @"a %@ verb must not raise",
+      [verb class]
+    );
+  }
+}
+
+// A `verb` that is absent entirely is already answered with an error frame — `nil` takes
+// `isEqualToString:` without complaint — so only the wrong-type case above is broken.
+- (void)testMissingVerbIsRejectedWithAnErrorFrame
+{
+  NSDictionary *response = FBAXBridgeHandleRequest(@{@"pid" : @1234});
+  XCTAssertEqualObjects(response[@"ok"], @NO);
+  XCTAssertEqualObjects(response[@"error"], @"unsupported verb: (nil)");
+}
+
 #pragma mark - Wire contract
 
 // The guest and host cross the accessibility boundary with no shared header — each holds its own copy of
