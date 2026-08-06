@@ -122,6 +122,29 @@ final class AccessibilityInfoRequestTranslationTests: XCTestCase {
     XCTAssertFalse(options.collectFrameCoverage)
   }
 
+  // MARK: - Backend selection
+
+  func testUnspecifiedBackendPreservesTheHistoricalPath() {
+    XCTAssertEqual(AccessibilityInfoRequestTranslation.backend(from: .unspecified), .accessibility)
+  }
+
+  func testBackendMapsThroughTheSharedVocabulary() {
+    XCTAssertEqual(AccessibilityInfoRequestTranslation.backend(from: .ax), .accessibility)
+    XCTAssertEqual(
+      AccessibilityInfoRequestTranslation.backend(from: .axbridge),
+      .axBridge(persistence: .oneShot, frontmostMethod: .centerPoint)
+    )
+    XCTAssertEqual(
+      AccessibilityInfoRequestTranslation.backend(from: .axbridgePersistent),
+      .axBridge(persistence: .persistent, frontmostMethod: .centerPoint),
+      "the persistent transport is selected for a long-lived server, which amortizes its warm reads"
+    )
+  }
+
+  func testUnrecognizedBackendPreservesTheHistoricalPath() {
+    XCTAssertEqual(AccessibilityInfoRequestTranslation.backend(from: .UNRECOGNIZED(9)), .accessibility)
+  }
+
   // MARK: - Legacy output shape
 
   func testTreeSerializesAsABareArray() throws {

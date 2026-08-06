@@ -53,6 +53,24 @@ enum AccessibilityInfoRequestTranslation {
       collectFrameCoverage: false)
   }
 
+  /// The backend a request selects, through the framework's name bijection. `UNSPECIFIED` — an older
+  /// client, or one that did not ask — and an unrecognized value from a newer client both preserve the
+  /// historical CoreSimulator path rather than failing the call.
+  static func backend(from wire: Idb_AccessibilityInfoRequest.Backend) -> FBUIAutomationBackend {
+    switch wire {
+    case .unspecified:
+      return .accessibility
+    case .ax:
+      return FBUIAutomationBackend(.ax)
+    case .axbridge:
+      return FBUIAutomationBackend(.axBridge)
+    case .axbridgePersistent:
+      return FBUIAutomationBackend(.axBridgePersistent)
+    case .UNRECOGNIZED:
+      return .accessibility
+    }
+  }
+
   /// The wire format the request asked for. `LEGACY` is the flat array the gRPC surface has always
   /// returned by default; an unrecognized value from a newer client falls back to it rather than
   /// failing the call.

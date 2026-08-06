@@ -244,6 +244,16 @@ message AccessibilityInfoRequest {
     LEGACY = 0;
     NESTED = 1;
   }
+  // Which backend serves the read. UNSPECIFIED preserves the historical
+  // behaviour, so an older client — or one that does not ask — is unaffected;
+  // an older server ignores this field entirely and serves the read as if it
+  // were unset.
+  enum Backend {
+    BACKEND_UNSPECIFIED = 0;
+    AX = 1;
+    AXBRIDGE = 2;
+    AXBRIDGE_PERSISTENT = 3;
+  }
   Point point = 2;
   Format format = 3;
   // Optional: describe a single element by marker (substring match against
@@ -254,6 +264,7 @@ message AccessibilityInfoRequest {
   // Restricts the described accessibility keys to this set; an empty list
   // returns the default key set.
   repeated string keys = 7;
+  Backend backend = 8;
 }
 
 message AccessibilityInfoResponse {
