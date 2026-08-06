@@ -241,6 +241,31 @@ private func createNV12PixelBufferPool(width: Int, height: Int) -> CVPixelBuffer
   return pool
 }
 
+/// The output dimensions shared by the encoder pipeline and the composited-frame pool: the source
+/// scaled by the optional factor (only factors strictly between 0 and 1 apply), expanded by the edge
+/// insets, then rounded up to even — H.264 and NV12 require even dimensions. The VideoToolbox
+/// session and the composited pool must agree on these exactly (a mismatch feeds the encoder frames
+/// of a different size than it was created for, distorting the output), so both sites derive them
+/// from this single computation.
+struct FBVideoOutputDimensions: Equatable {
+  let width: Int
+  let height: Int
+
+  static func calculate(sourceWidth: Int, sourceHeight: Int, scaleFactor: Double?, edgeInsets: FBVideoStreamEdgeInsets) -> FBVideoOutputDimensions {
+    var width = sourceWidth
+    var height = sourceHeight
+    if let scaleFactor, scaleFactor > 0, scaleFactor < 1 {
+      width = Int(floor(scaleFactor * Double(sourceWidth)))
+      height = Int(floor(scaleFactor * Double(sourceHeight)))
+    }
+    width += Int(edgeInsets.left + edgeInsets.right)
+    height += Int(edgeInsets.top + edgeInsets.bottom)
+    width += width % 2
+    height += height % 2
+    return FBVideoOutputDimensions(width: width, height: height)
+  }
+}
+
 /// Render an `OSType` four-char code as its ASCII string (e.g. `kCVPixelFormatType_32BGRA` → "BGRA"),
 /// matching the diagnostic `format` string the ObjC code produced via `UTCreateStringForOSType`
 /// (which is deprecated). Falls back to the numeric value for non-printable codes.
@@ -570,20 +595,16 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: FBSimulatorVideoStre
 
     let sourceWidth = CVPixelBufferGetWidth(pixelBuffer)
     let sourceHeight = CVPixelBufferGetHeight(pixelBuffer)
-    var destinationWidth = sourceWidth
-    var destinationHeight = sourceHeight
+    // The composited frame includes the edge insets, so the NV12 pool and compression session must
+    // accommodate the full output size — the same `FBVideoOutputDimensions` the composited pool uses.
+    let dimensions = FBVideoOutputDimensions.calculate(
+      sourceWidth: sourceWidth, sourceHeight: sourceHeight,
+      scaleFactor: configuration.scaleFactor, edgeInsets: edgeInsets)
+    let destinationWidth = dimensions.width
+    let destinationHeight = dimensions.height
     if let scaleFactor = configuration.scaleFactor, scaleFactor > 0, scaleFactor < 1 {
-      destinationWidth = Int(floor(scaleFactor * Double(sourceWidth)))
-      destinationHeight = Int(floor(scaleFactor * Double(sourceHeight)))
-      logger.info().log("Applying \(scaleFactor) scale from w=\(sourceWidth)/h=\(sourceHeight) to w=\(destinationWidth)/h=\(destinationHeight)")
+      logger.info().log("Applying \(scaleFactor) scale from w=\(sourceWidth)/h=\(sourceHeight) to output w=\(destinationWidth)/h=\(destinationHeight)")
     }
-    // Add edge insets to output dimensions. The composited frame includes the insets,
-    // so the NV12 pool and compression session must accommodate the full output size.
-    destinationWidth += Int(edgeInsets.left + edgeInsets.right)
-    destinationHeight += Int(edgeInsets.top + edgeInsets.bottom)
-    // H.264 and NV12 require even dimensions.
-    destinationWidth += destinationWidth % 2
-    destinationHeight += destinationHeight % 2
 
     // Always create a VTPixelTransferSession to convert BGRA→NV12 (and scale if needed).
     // VTCompressionSession's native input format is NV12 (420v). Feeding it BGRA causes
@@ -1183,20 +1204,13 @@ public actor FBSimulatorVideoStream: FBVideoStream {
     // IOSurface-backed BGRA pixel buffer pool for composited output (ARC-managed).
     // Include edge insets in the pool dimensions so the composited frame has room for overlay content.
     compositedBufferPool = nil
-    let width = CVPixelBufferGetWidth(buffer)
-    let height = CVPixelBufferGetHeight(buffer)
-    var compositedWidth = width
-    var compositedHeight = height
-    if let scaleFactor = configuration.scaleFactor, scaleFactor > 0, scaleFactor < 1 {
-      compositedWidth = Int(floor(scaleFactor * Double(width)))
-      compositedHeight = Int(floor(scaleFactor * Double(height)))
-    }
     let insets = edgeInsets
-    compositedWidth += Int(insets.left + insets.right)
-    compositedHeight += Int(insets.top + insets.bottom)
-    // H.264 and NV12 require even dimensions.
-    compositedWidth += compositedWidth % 2
-    compositedHeight += compositedHeight % 2
+    // Must agree exactly with the encoder's dimensions — both derive from FBVideoOutputDimensions.
+    let dimensions = FBVideoOutputDimensions.calculate(
+      sourceWidth: CVPixelBufferGetWidth(buffer), sourceHeight: CVPixelBufferGetHeight(buffer),
+      scaleFactor: configuration.scaleFactor, edgeInsets: insets)
+    let compositedWidth = dimensions.width
+    let compositedHeight = dimensions.height
     self.compositedWidth = compositedWidth
     self.compositedHeight = compositedHeight
     let compositedPoolAttrs: [String: Any] = [
