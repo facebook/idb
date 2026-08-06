@@ -133,6 +133,9 @@ static const int kIdleTimeoutSeconds = 300;
 // The bridge to/from the raw AXRuntime `AXUIElementRef` (an opaque CFType, held as `void *` here so we
 // avoid linking the AX C types): `AXUIElement` unwraps the application element for a point hit-test,
 // and `elementWithAXUIElement:` re-wraps the hit result so the normal attribute reader can read it.
+//
+// `AXUIElement` returns a *borrowed* ref owned by the element: it dies with the element, and ARC is free
+// to release the element at its last use, so a caller that outlives that use must retain the ref.
 + (nullable instancetype)elementWithAXUIElement:(void *)axUIElement;
 - (void *)AXUIElement;
 @end
@@ -775,35 +778,33 @@ static NSDictionary *FBAXBridgeHitTest(XCTAccessibilityFramework *framework,
   }
 
   // Resolve the seed: a specific app element for an explicit pid, otherwise the system-wide element.
+  // Owned (+1) either way, so the ref outlives whatever vended it and both branches release alike.
   void *seed = NULL;
-  void *systemWide = NULL;  // +1-retained only in the system-wide case; released after the hit-test
   NSNumber *pidNumber = request[kRequestPid];
   if ([pidNumber isKindOfClass:NSNumber.class]) {
     XCAccessibilityElement *root = [(id)elementClass elementWithProcessIdentifier:pidNumber.intValue];
     if (!root) {
       return FBAXBridgeApplicationUnavailableResponse([NSString stringWithFormat:@"no application element for pid %d", pidNumber.intValue]);
     }
-    seed = [root AXUIElement];
-    if (!seed) {
+    void *applicationElement = [root AXUIElement];
+    if (!applicationElement) {
       return FBAXBridgeErrorResponse([NSString stringWithFormat:@"no AXUIElement for pid %d", pidNumber.intValue]);
     }
+    seed = (void *)CFRetain(applicationElement);
   } else {
     FBAXCreateSystemWideFn createSystemWide = dlsym(RTLD_DEFAULT, "AXUIElementCreateSystemWide");
     if (!createSystemWide) {
       return FBAXBridgeErrorResponse(@"AXUIElementCreateSystemWide unavailable");
     }
-    systemWide = createSystemWide();
-    if (!systemWide) {
+    seed = createSystemWide();
+    if (!seed) {
       return FBAXBridgeErrorResponse(@"AXUIElementCreateSystemWide returned NULL");
     }
-    seed = systemWide;
   }
 
   void *hit = NULL;
   int32_t axError = copyElementAtPosition(seed, (float)xNumber.doubleValue, (float)yNumber.doubleValue, &hit);
-  if (systemWide) {
-    CFRelease(systemWide);
-  }
+  CFRelease(seed);
   if (axError != 0 || !hit) {
     // No element at the point is a valid empty result, not a failure: a caller doing a streaming
     // hit-test (e.g. after a tap) must be able to tell "empty space" apart from "the reader broke".
