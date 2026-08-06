@@ -145,12 +145,12 @@ import XCTestBootstrap
     try await simulator.uiAutomation(backend: .accessibility).tap(query, options: FBTapOptions(assertion: assertion))
   }
 
-  public func accessibility_describe(query: FBAccessibilityElementQuery, format: FBAccessibilityOutputFormat) async throws -> Data {
+  public func accessibility_describe(query: FBAccessibilityElementQuery, format: FBAccessibilityOutputFormat, backend: FBUIAutomationBackend = .accessibility) async throws -> Data {
     guard let simulator = target as? FBSimulator else {
       throw FBIDBError.describe("Target is not a simulator, cannot describe accessibility: \(target)").build()
     }
     let options = FBAccessibilityRequestOptions(format: format, enableLogging: true)
-    return try await simulator.uiAutomation(backend: .accessibility).describe(query, options: options)
+    return try await simulator.uiAutomation(backend: backend).describe(query, options: options)
       .formattedOutputJSON(format: format)
   }
 
@@ -173,12 +173,12 @@ import XCTestBootstrap
       value, options: FBAccessibilityRequestOptions(format: format, enableLogging: true))
   }
 
-  public func accessibility_info_at_point(_ value: NSValue?, options: FBAccessibilityRequestOptions) async throws -> FBAccessibilityElementsResponse {
+  public func accessibility_info_at_point(_ value: NSValue?, options: FBAccessibilityRequestOptions, backend: FBUIAutomationBackend = .accessibility) async throws -> FBAccessibilityElementsResponse {
     guard let simulator = target as? FBSimulator else {
       throw FBIDBError.describe("Target is not a simulator, cannot provide accessibility commands: \(target)").build()
     }
     let query: FBAccessibilityElementQuery = value.map { .point($0.pointValue) } ?? .frontmost
-    return try await simulator.uiAutomation(backend: .accessibility).describe(query, options: options)
+    return try await simulator.uiAutomation(backend: backend).describe(query, options: options)
   }
 
   // MARK: - REPL screenshot & recording
