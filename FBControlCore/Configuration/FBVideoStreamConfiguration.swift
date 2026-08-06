@@ -56,10 +56,18 @@ extension FBVideoStreamFormat: CustomStringConvertible {
   }
 }
 
-/// The rate-control strategy for VTCompression: a target quality (0–1) or an average bitrate (in bits
-/// per second). Modeled as a sum so quality stays a `Double` and bitrate an `Int` — the encoder wants
-/// each as the corresponding CoreFoundation number type.
+/// The rate-control strategy for VTCompression: derived automatically, a target quality (0–1), or an
+/// average bitrate (in bits per second). Modeled as a sum so quality stays a `Double` and bitrate an
+/// `Int` — the encoder wants each as the corresponding CoreFoundation number type.
 public enum FBVideoStreamRateControl: Hashable, Sendable {
+  /// The default: derive a rate from what is being encoded. JPEG formats (MJPEG/Minicap) use their
+  /// quality knob; H.264/HEVC derive an average bitrate from the encoded output dimensions at
+  /// session setup. An explicit `quality` is NOT a substitute for H.264/HEVC — the low-latency
+  /// hardware encoder accepts the Quality property but ignores it, falling back to its internal
+  /// default bitrate (~2 Mbps regardless of resolution), which macroblocks badly under motion.
+  case automatic
+  /// A constant target quality (0–1). Honored by the JPEG formats; ignored by the low-latency
+  /// hardware H.264/HEVC encoder (see `automatic`).
   case quality(Double)
   case bitrate(Int)
 }
@@ -67,6 +75,8 @@ public enum FBVideoStreamRateControl: Hashable, Sendable {
 extension FBVideoStreamRateControl: CustomStringConvertible {
   public var description: String {
     switch self {
+    case .automatic:
+      return "Automatic"
     case let .quality(quality):
       return "Quality \(quality)"
     case let .bitrate(bitrate):
@@ -91,7 +101,7 @@ public struct FBVideoEncodeOptions: Hashable, Sendable {
 
   public init(framesPerSecond: Int?, rateControl: FBVideoStreamRateControl?, scaleFactor: Double?, keyFrameRate: Double?) {
     self.framesPerSecond = framesPerSecond
-    self.rateControl = rateControl ?? .quality(0.75)
+    self.rateControl = rateControl ?? .automatic
     self.scaleFactor = scaleFactor
     self.keyFrameRate = keyFrameRate ?? 1.0
   }

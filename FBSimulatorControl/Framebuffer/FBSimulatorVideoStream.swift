@@ -712,6 +712,16 @@ public actor FBSimulatorVideoStream: FBVideoStream {
     ]
 
     switch configuration.rateControl {
+    case .automatic:
+      // JPEG formats honor the quality knob (the value the pre-automatic default used). For
+      // H.264/HEVC no rate key is set here: the VideoToolbox pusher derives an average bitrate at
+      // session setup, where the encoded output dimensions are known.
+      switch configuration.format {
+      case .mjpeg, .minicap:
+        derived[kVTCompressionPropertyKey_Quality as String] = 0.75
+      case .compressedVideo, .bgra:
+        break
+      }
     case let .bitrate(bitrate):
       // Explicit bitrate: AverageBitRate is in bits/sec
       derived[kVTCompressionPropertyKey_AverageBitRate as String] = bitrate

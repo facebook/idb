@@ -501,7 +501,21 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: FBSimulatorVideoStre
       throw FBSimulatorVideoStreamError.compressionSessionNil
     }
 
-    let propertiesStatus = VTSessionSetProperties(compressionSession, propertyDictionary: compressionSessionProperties as CFDictionary)
+    // Resolve `.automatic` rate control: when neither a bitrate nor a quality was specified, target
+    // a constant bits-per-pixel budget at the actual encoded size. Without an AverageBitRate the
+    // low-latency hardware encoder falls back to its internal default (~2 Mbps regardless of
+    // resolution), which macroblocks full-screen motion badly at retina sizes; the Quality property
+    // is accepted but ignored by that encoder, so it cannot serve as the default either.
+    var sessionProperties = compressionSessionProperties
+    if sessionProperties[kVTCompressionPropertyKey_AverageBitRate as String] == nil,
+      sessionProperties[kVTCompressionPropertyKey_Quality as String] == nil
+    {
+      let automaticBitRate = Self.automaticAverageBitRate(width: destinationWidth, height: destinationHeight)
+      sessionProperties[kVTCompressionPropertyKey_AverageBitRate as String] = automaticBitRate
+      logger.info().log("Derived automatic average bitrate \(automaticBitRate) bps for w=\(destinationWidth)/h=\(destinationHeight)")
+    }
+
+    let propertiesStatus = VTSessionSetProperties(compressionSession, propertyDictionary: sessionProperties as CFDictionary)
     if propertiesStatus != noErr {
       throw FBSimulatorVideoStreamError.failedToSetCompressionSessionProperties(status: propertiesStatus)
     }
@@ -510,6 +524,14 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: FBSimulatorVideoStre
       throw FBSimulatorVideoStreamError.failedToPrepareCompressionSession(status: prepareStatus)
     }
     self.compressionSession = compressionSession
+  }
+
+  /// The `.automatic` rate-control budget: 4 bits per output pixel per second (≈0.08 bits/pixel per
+  /// frame at a 50fps pan). Measured on the liquid-glass home screen: below ≈0.05 bpp the hardware
+  /// encoder visibly macroblocks smooth gradients during full-screen motion, and it saturates around
+  /// ≈14 Mbps at native retina size, so a larger budget buys little. Scales with `--scale`.
+  static func automaticAverageBitRate(width: Int, height: Int) -> Int {
+    width * height * 4
   }
 
   static func encoderSpecification(for format: FBVideoStreamFormat) -> [String: Any] {

@@ -159,8 +159,9 @@ final class FBSimulatorVideoStreamCompressionPropertiesTests: XCTestCase {
     let props = FBSimulatorVideoStream.compressionSessionProperties(for: config, callerProperties: [:])
     XCTAssertEqual(props[kVTCompressionPropertyKey_RealTime as String] as? NSNumber, true)
     XCTAssertEqual(props[kVTCompressionPropertyKey_AllowFrameReordering as String] as? NSNumber, false)
-    // No rateControl set: quality mode with default 0.75
-    XCTAssertEqual(props[kVTCompressionPropertyKey_Quality as String] as? NSNumber, 0.75)
+    // No rateControl set: `.automatic` — the pusher derives an AverageBitRate at session setup, so
+    // the properties dictionary carries no rate key for compressed video.
+    XCTAssertNil(props[kVTCompressionPropertyKey_Quality as String])
     XCTAssertNil(props[kVTCompressionPropertyKey_AverageBitRate as String])
     XCTAssertEqual(props[kVTCompressionPropertyKey_MaxKeyFrameIntervalDuration as String] as? NSNumber, 1.0)
   }
@@ -214,6 +215,43 @@ final class FBSimulatorVideoStreamCompressionPropertiesTests: XCTestCase {
     )
     let props = FBSimulatorVideoStream.compressionSessionProperties(for: config, callerProperties: [:])
     XCTAssertEqual(props[kVTCompressionPropertyKey_Quality as String] as? NSNumber, 0.5)
+  }
+
+  func testAutomaticRateControlAddsNoRateKeyForH264() {
+    // `.automatic` defers to session setup, where the output dimensions derive an AverageBitRate;
+    // the properties dictionary itself must carry neither a bitrate nor the (encoder-ignored)
+    // Quality key.
+    let config = FBVideoStreamConfiguration(
+      format: FBVideoStreamFormat.compressedVideo(withCodec: .h264, transport: .annexB),
+      framesPerSecond: nil,
+      rateControl: nil,
+      scaleFactor: nil,
+      keyFrameRate: nil
+    )
+    let props = FBSimulatorVideoStream.compressionSessionProperties(for: config, callerProperties: [:])
+    XCTAssertNil(props[kVTCompressionPropertyKey_AverageBitRate as String])
+    XCTAssertNil(props[kVTCompressionPropertyKey_Quality as String])
+  }
+
+  func testAutomaticRateControlUsesQualityForMJPEG() {
+    // JPEG encoders honor the quality knob, so `.automatic` keeps the pre-automatic default there.
+    let config = FBVideoStreamConfiguration(
+      format: FBVideoStreamFormat.mjpeg(encoder: .requireHardware),
+      framesPerSecond: nil,
+      rateControl: nil,
+      scaleFactor: nil,
+      keyFrameRate: nil
+    )
+    let props = FBSimulatorVideoStream.compressionSessionProperties(for: config, callerProperties: [:])
+    XCTAssertEqual(props[kVTCompressionPropertyKey_Quality as String] as? NSNumber, 0.75)
+    XCTAssertNil(props[kVTCompressionPropertyKey_AverageBitRate as String])
+  }
+
+  func testAutomaticAverageBitRateScalesWithOutputPixels() {
+    // 4 bits per output pixel per second: native 3x retina, half scale, and a small stream.
+    XCTAssertEqual(FBSimulatorVideoStreamFramePusher_VideoToolbox.automaticAverageBitRate(width: 1206, height: 2622), 12_648_528)
+    XCTAssertEqual(FBSimulatorVideoStreamFramePusher_VideoToolbox.automaticAverageBitRate(width: 604, height: 1312), 3_169_792)
+    XCTAssertEqual(FBSimulatorVideoStreamFramePusher_VideoToolbox.automaticAverageBitRate(width: 640, height: 480), 1_228_800)
   }
 
   // MARK: - H264 Encoding-Specific Properties
