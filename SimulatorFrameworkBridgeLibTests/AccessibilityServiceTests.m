@@ -134,6 +134,34 @@ static NSDictionary *FBAXTestsParse(NSData *data)
   XCTAssertEqualObjects(response[@"error"], @"unsupported verb: (nil)");
 }
 
+// `pid 0` and negative pids name no process. The host distinguishes "this pid names no readable
+// application" from every other failure by the `application_unavailable` kind on the envelope — it maps
+// that one kind onto a backend-neutral typed error and leaves the rest as opaque guest failures — so a
+// pid that cannot name an application has to carry the kind, whatever else the reader can or cannot
+// reach. Both verbs take a `pid`, so both must answer alike.
+- (void)testNonPositivePidIsReportedAsAnUnavailableApplication
+{
+  NSArray<NSDictionary *> *requests = @[
+    @{@"verb" : @"describe", @"pid" : @0},
+    @{@"verb" : @"describe", @"pid" : @(-1)},
+    @{@"verb" : @"hittest", @"pid" : @0, @"x" : @200, @"y" : @400},
+    @{@"verb" : @"hittest", @"pid" : @(-1), @"x" : @200, @"y" : @400},
+  ];
+  for (NSDictionary *request in requests) {
+    NSDictionary *response = FBAXBridgeHandleRequest(request);
+    // BUG: the pid is passed straight to the accessibility runtime, which answers for it rather than
+    // rejecting it, so the failure (when there is one at all) is reported as a generic read failure with
+    // no kind. Flipped in the following commit.
+    XCTAssertNotEqualObjects(
+      response[@"error_kind"],
+      @"application_unavailable",
+      @"%@ pid %@",
+      request[@"verb"],
+      request[@"pid"]
+    );
+  }
+}
+
 #pragma mark - Wire contract
 
 // The guest and host cross the accessibility boundary with no shared header — each holds its own copy of
