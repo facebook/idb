@@ -1020,29 +1020,34 @@ static int FBAXBridgeServe(NSString *socketPath)
     struct timeval recvTimeout = {.tv_sec = kIdleTimeoutSeconds, .tv_usec = 0};
     setsockopt(connection, SOL_SOCKET, SO_RCVTIMEO, &recvTimeout, sizeof(recvTimeout));
     while (YES) {
-      uint32_t frameLength = 0;
-      if (!FBAXBridgeReadFully(connection, &frameLength, sizeof(frameLength))) {
-        break;
-      }
-      frameLength = ntohl(frameLength);
-      if (frameLength == 0 || frameLength > kMaxFrameBytes) {
-        break;
-      }
-      NSMutableData *requestData = [NSMutableData dataWithLength:frameLength];
-      if (!FBAXBridgeReadFully(connection, requestData.mutableBytes, frameLength)) {
-        break;
-      }
-      id parsed = [NSJSONSerialization JSONObjectWithData:requestData options:0 error:NULL];
-      NSDictionary *response = [parsed isKindOfClass:NSDictionary.class]
-      ? FBAXBridgeHandleRequest(parsed)
-      : FBAXBridgeErrorResponse(@"malformed request frame");
-      NSData *responseData = FBAXBridgeSerializeResponse(response);
-      uint32_t responseLength = htonl((uint32_t)responseData.length);
-      if (!FBAXBridgeWriteFully(connection, &responseLength, sizeof(responseLength))) {
-        break;
-      }
-      if (!FBAXBridgeWriteFully(connection, responseData.bytes, responseData.length)) {
-        break;
+      // A pool per request. `serve` never returns, so the process-lifetime pool `main` opens is never
+      // popped: without this, every tree, node dictionary and attribute string autoreleased while
+      // answering a request is held until the serve exits.
+      @autoreleasepool {
+        uint32_t frameLength = 0;
+        if (!FBAXBridgeReadFully(connection, &frameLength, sizeof(frameLength))) {
+          break;
+        }
+        frameLength = ntohl(frameLength);
+        if (frameLength == 0 || frameLength > kMaxFrameBytes) {
+          break;
+        }
+        NSMutableData *requestData = [NSMutableData dataWithLength:frameLength];
+        if (!FBAXBridgeReadFully(connection, requestData.mutableBytes, frameLength)) {
+          break;
+        }
+        id parsed = [NSJSONSerialization JSONObjectWithData:requestData options:0 error:NULL];
+        NSDictionary *response = [parsed isKindOfClass:NSDictionary.class]
+        ? FBAXBridgeHandleRequest(parsed)
+        : FBAXBridgeErrorResponse(@"malformed request frame");
+        NSData *responseData = FBAXBridgeSerializeResponse(response);
+        uint32_t responseLength = htonl((uint32_t)responseData.length);
+        if (!FBAXBridgeWriteFully(connection, &responseLength, sizeof(responseLength))) {
+          break;
+        }
+        if (!FBAXBridgeWriteFully(connection, responseData.bytes, responseData.length)) {
+          break;
+        }
       }
     }
     close(connection);
