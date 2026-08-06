@@ -80,6 +80,8 @@ enum AccessibilityInfoRequestTranslation {
       return .default
     case .nested:
       return .nested
+    case .complete:
+      return .complete
     case .UNRECOGNIZED:
       return .default
     }

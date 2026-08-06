@@ -31,6 +31,10 @@ final class AccessibilityInfoRequestTranslationTests: XCTestCase {
     )
   }
 
+  func testCompleteFormatMapsThroughUnchanged() {
+    XCTAssertEqual(AccessibilityInfoRequestTranslation.outputFormat(from: .complete), .complete)
+  }
+
   // MARK: - Searchable-key mapping
 
   func testSearchableKeyMapsEveryWireValue() {

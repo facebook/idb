@@ -243,6 +243,11 @@ message AccessibilityInfoRequest {
   enum Format {
     LEGACY = 0;
     NESTED = 1;
+    // A consolidated document: the element tree plus the read's provenance
+    // (which backend served it, what was asked, screen bounds, truncation,
+    // any blocking modal). An older server does not recognize this value and
+    // falls back to LEGACY — a caller can detect that by the response shape.
+    COMPLETE = 2;
   }
   // Which backend serves the read. UNSPECIFIED preserves the historical
   // behaviour, so an older client — or one that does not ask — is unaffected;
