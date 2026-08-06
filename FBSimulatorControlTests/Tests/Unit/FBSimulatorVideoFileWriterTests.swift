@@ -162,3 +162,93 @@ final class FBSimulatorVideoFileWriterTests: XCTestCase {
     return copy!
   }
 }
+
+/// Lifecycle tests for `FBSimulatorVideo`, the in-process recorder wrapping the stream + file
+/// writer, driven end-to-end over a fake display surface with a real VideoToolbox encode.
+final class FBSimulatorVideoTests: XCTestCase {
+
+  /// A recorder over a fake display surface writing to a temp path removed at teardown. The eager
+  /// cadence (positive framesPerSecond) pushes frames on the clock from the mounted surface without
+  /// needing frame-rendered events from the fake.
+  private func makeRecordingFixture(immediateSurface: IOSurface?) -> (video: FBSimulatorVideo, path: String) {
+    let path = (NSTemporaryDirectory() as NSString).appendingPathComponent("FBSimulatorVideoTests-\(UUID().uuidString).mp4")
+    addTeardownBlock { try? FileManager.default.removeItem(atPath: path) }
+    let surface = FakeFramebufferSurface()
+    surface.immediateSurface = immediateSurface
+    let framebuffer = FBFramebuffer(surface: surface, logger: FBCapturingLogger())
+    let configuration = FBVideoStreamConfiguration(
+      format: .compressedVideo(withCodec: .h264, transport: .fmp4),
+      framesPerSecond: 30,
+      rateControl: nil,
+      scaleFactor: nil,
+      keyFrameRate: nil)
+    let video = FBSimulatorVideo.video(withFramebuffer: framebuffer, configuration: configuration, filePath: path, logger: FBCapturingLogger())
+    return (video, path)
+  }
+
+  /// Wait until the recording's output file exists — the writer creates it when the encoder emits
+  /// its first sample — rather than sleeping a fixed interval, which flakes on loaded machines.
+  private func waitForFirstSample(at path: String, timeout: TimeInterval = 10) async throws {
+    let deadline = Date().addingTimeInterval(timeout)
+    while Date() < deadline {
+      if FileManager.default.fileExists(atPath: path) {
+        return
+      }
+      try await Task.sleep(nanoseconds: 100_000_000)
+    }
+    XCTFail("the recording never produced its first sample at \(path)")
+  }
+
+  func testRecordingProducesReadableMp4() async throws {
+    let (video, path) = makeRecordingFixture(immediateSurface: makeTestIOSurface(width: 128, height: 128))
+
+    try await video.startRecording()
+    try await waitForFirstSample(at: path)
+    let url = try await video.stop()
+
+    XCTAssertEqual(url.path, path)
+    XCTAssertTrue(FileManager.default.fileExists(atPath: path), "recording must finalize a file")
+    let asset = AVURLAsset(url: url)
+    let tracks = try await asset.loadTracks(withMediaType: .video)
+    XCTAssertEqual(tracks.count, 1, "recording must contain one video track")
+    let reader = try AVAssetReader(asset: asset)
+    let output = AVAssetReaderTrackOutput(track: tracks[0], outputSettings: nil)
+    reader.add(output)
+    XCTAssertTrue(reader.startReading())
+    var readSamples = 0
+    while let sample = output.copyNextSampleBuffer() {
+      if CMSampleBufferGetNumSamples(sample) > 0 {
+        readSamples += 1
+      }
+    }
+    XCTAssertEqual(reader.status, .completed)
+    XCTAssertGreaterThan(readSamples, 0, "recorded frames must be readable back")
+  }
+
+  func testSecondStopReturnsSameURLWithoutRefinalizing() async throws {
+    let (video, path) = makeRecordingFixture(immediateSurface: makeTestIOSurface(width: 128, height: 128))
+
+    try await video.startRecording()
+    try await waitForFirstSample(at: path)
+    let first = try await video.stop()
+    let second = try await video.stop()
+
+    XCTAssertEqual(first, second, "a second stop returns the same URL without re-finalizing")
+  }
+
+  func testStopBeforeStartThrowsAndLatchesStopped() async throws {
+    let (video, path) = makeRecordingFixture(immediateSurface: nil)
+
+    // Stopping a recording that never started throws (there is no stream to stop), and latches the
+    // stopped flag so a subsequent stop reports the output URL without touching the stream again.
+    do {
+      _ = try await video.stop()
+      XCTFail("stop before start must throw")
+      return
+    } catch {
+      XCTAssertTrue(String(describing: error).contains("stopWithoutConsumer"), "unexpected error: \(error)")
+    }
+    let url = try await video.stop()
+    XCTAssertEqual(url.path, path)
+  }
+}
