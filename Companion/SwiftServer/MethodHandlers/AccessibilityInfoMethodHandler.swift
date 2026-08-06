@@ -30,7 +30,7 @@ struct AccessibilityInfoMethodHandler {
     let options = try AccessibilityInfoRequestTranslation.options(from: request, format: format)
     let response = try await commandExecutor.accessibility_info_at_point(
       AccessibilityInfoRequestTranslation.point(from: request), options: options, backend: backend)
-    let jsonData = try AccessibilityInfoRequestTranslation.legacyJSON(from: response)
+    let jsonData = try AccessibilityInfoRequestTranslation.responseJSON(from: response, format: format)
     return .with {
       $0.json = String(data: jsonData, encoding: .utf8) ?? ""
     }

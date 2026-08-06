@@ -161,4 +161,26 @@ final class AccessibilityInfoRequestTranslationTests: XCTestCase {
     let data = try AccessibilityInfoRequestTranslation.legacyJSON(from: response)
     XCTAssertEqual(String(data: data, encoding: .utf8), "{}")
   }
+
+  func testResponseJSONKeepsTheLegacyShapesByteIdentical() throws {
+    let response = FBAccessibilityElementsResponse(elements: .tree([FBAccessibilityDocumentElement()]))
+    for format in [FBAccessibilityOutputFormat.default, .nested] {
+      XCTAssertEqual(
+        try AccessibilityInfoRequestTranslation.responseJSON(from: response, format: format),
+        try AccessibilityInfoRequestTranslation.legacyJSON(from: response),
+        "the legacy formats are byte-untouched by the format-aware encoder"
+      )
+    }
+  }
+
+  func testResponseJSONEmitsTheCompleteDocument() throws {
+    let response = FBAccessibilityElementsResponse(elements: .tree([FBAccessibilityDocumentElement()]), backend: .ax)
+    let data = try AccessibilityInfoRequestTranslation.responseJSON(from: response, format: .complete)
+    let document = try XCTUnwrap(try JSONSerialization.jsonObject(with: data) as? [String: Any])
+    XCTAssertEqual(document["backend"] as? String, "ax")
+    XCTAssertNotNil(
+      document["elements"],
+      "the complete document is the client-detectable shape: an object naming the backend that served it"
+    )
+  }
 }

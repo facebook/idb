@@ -115,4 +115,15 @@ enum AccessibilityInfoRequestTranslation {
   static func legacyJSON(from response: FBAccessibilityElementsResponse) throws -> Data {
     try JSONSerialization.data(withJSONObject: response.elements.legacyFoundationObject)
   }
+
+  /// The response bytes for a point / frontmost read: the historical bare shape for the legacy
+  /// formats, byte-untouched, and the consolidated document for `complete`.
+  static func responseJSON(from response: FBAccessibilityElementsResponse, format: FBAccessibilityOutputFormat) throws -> Data {
+    switch format {
+    case .default, .nested:
+      return try legacyJSON(from: response)
+    case .complete:
+      return try response.formattedOutputJSON(format: format)
+    }
+  }
 }
