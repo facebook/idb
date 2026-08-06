@@ -44,10 +44,6 @@ public actor FBSimulatorImage {
 
   public func image() throws -> CGImage? {
     try attachIfNeeded()
-    let img = imageGenerator.image()
-    if img != nil {
-      return img
-    }
     return imageGenerator.image()
   }
 

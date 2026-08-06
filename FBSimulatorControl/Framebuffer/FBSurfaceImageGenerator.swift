@@ -20,7 +20,6 @@ public final class FBSurfaceImageGenerator {
   private let scaleFilter: CIFilter?
 
   private var surface: IOSurface?
-  private var lastSeedValue: UInt32 = 0
 
   // MARK: - Initializers
 
@@ -31,7 +30,6 @@ public final class FBSurfaceImageGenerator {
 
   private init(scale: NSDecimalNumber, logger: (any FBControlCoreLogger)?) {
     self.logger = logger
-    self.lastSeedValue = 0
 
     if scale.isEqual(to: NSDecimalNumber.one) {
       self.scaleFilter = nil
@@ -45,18 +43,6 @@ public final class FBSurfaceImageGenerator {
 
   // MARK: - Public
 
-  public func availableImage() -> CGImage? {
-    guard let surface = self.surface else {
-      return nil
-    }
-    let currentSeed = surface.seed
-    if currentSeed == lastSeedValue {
-      return nil
-    }
-    lastSeedValue = currentSeed
-    return image()
-  }
-
   public func image() -> CGImage? {
     guard let surface = self.surface else {
       return nil
@@ -69,7 +55,6 @@ public final class FBSurfaceImageGenerator {
         return nil
       }
       ciImage = scaled
-      scaleFilter.setValue(ciImage, forKey: kCIInputImageKey)
     }
 
     return context.createCGImage(ciImage, from: ciImage.extent)
@@ -78,7 +63,6 @@ public final class FBSurfaceImageGenerator {
   // MARK: - Surface
 
   public func updateSurface(_ surface: IOSurface?) {
-    lastSeedValue = 0
     if let oldSurface = self.surface {
       logger?.info().log("Removing old surface \(oldSurface)")
       oldSurface.decrementUseCount()
