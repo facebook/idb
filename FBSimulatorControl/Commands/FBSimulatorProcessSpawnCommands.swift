@@ -9,6 +9,20 @@
 @preconcurrency import FBControlCore
 import Foundation
 
+// Internal (not private) so the rejection can be matched exactly by unit tests; see FBSimulatorProcessSpawnCommandsTests.
+enum FBSimulatorProcessSpawnError: Error {
+  case stdInUnsupported
+}
+
+extension FBSimulatorProcessSpawnError: LocalizedError {
+  var errorDescription: String? {
+    switch self {
+    case .stdInUnsupported:
+      return "A process cannot be spawned on a Simulator with a stdin attached, as SimDevice provides no way of connecting one"
+    }
+  }
+}
+
 public final class FBSimulatorProcessSpawnCommands: NSObject, FBiOSTargetCommand {
 
   // MARK: - Properties
@@ -43,6 +57,12 @@ public final class FBSimulatorProcessSpawnCommands: NSObject, FBiOSTargetCommand
   fileprivate func launchProcess(_ configuration: FBProcessSpawnConfiguration) async throws -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
     guard let simulator else {
       throw FBWeakTargetError.simulator
+    }
+    // Rejected before attaching, so that no file descriptor is opened for an input
+    // that could never be read: SimDevice's launch options address stdout and stderr
+    // by file descriptor and have no equivalent for stdin.
+    guard configuration.io.stdIn == nil else {
+      throw FBSimulatorProcessSpawnError.stdInUnsupported
     }
     let attachment = try await bridgeFBFuture(configuration.io.attach())
     return try await FBSimulatorProcessSpawnCommands.launchProcess(

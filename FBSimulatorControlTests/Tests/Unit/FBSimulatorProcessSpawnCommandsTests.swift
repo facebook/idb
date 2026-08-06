@@ -14,7 +14,7 @@ import XCTest
 /// hold without a booted simulator and lock the behavior that the spawn-path
 /// consolidation must preserve (argv[0] handling, `standalone` resolution, stdio keys).
 /// The stdin case drives the whole launcher against a recording device double,
-/// because what it records is the absence of a key rather than the value of one.
+/// because what it asserts is that the device is never reached at all.
 final class FBSimulatorProcessSpawnCommandsTests: XCTestCase {
 
   // MARK: - Helpers
@@ -109,7 +109,7 @@ final class FBSimulatorProcessSpawnCommandsTests: XCTestCase {
 
   // MARK: - stdin on the raw spawn path
 
-  func testRawSpawnAcceptsAConfigurationCarryingStdIn() async throws {
+  func testRawSpawnRejectsAConfigurationCarryingStdIn() async throws {
     let device = RecordingSpawnDevice()
     let simulator = FBSimulatorTestSupport.testableSimulator(withDevice: device)
     let stdIn = unsafeBitCast(FBProcessInput<NSObject>.fromConsumer(), to: FBProcessInput<AnyObject>.self)
@@ -121,20 +121,17 @@ final class FBSimulatorProcessSpawnCommandsTests: XCTestCase {
       io: FBProcessIO<AnyObject, AnyObject, AnyObject>(stdIn: stdIn, stdOut: stdOut, stdErr: nil),
       mode: .posixSpawn)
 
-    // BUG: the launch is accepted and the caller's input is dropped on the floor.
     // `SimDevice`'s option dictionary carries stdout and stderr as file
     // descriptors but has no stdin key at all, so there is nowhere for the
-    // attached input to go. Rejected in the following commit.
-    let process = try await simulator.launchProcess(configuration)
-    XCTAssertEqual(process.processIdentifier, RecordingSpawnDevice.stubbedProcessIdentifier)
+    // attached input to go.
+    do {
+      _ = try await simulator.launchProcess(configuration)
+      XCTFail("Expected the launch to be rejected, but a process was returned")
+    } catch FBSimulatorProcessSpawnError.stdInUnsupported {
+      // Expected.
+    }
 
-    let options = try XCTUnwrap(device.spawnedOptions)
-    XCTAssertNotNil(options["stdout"], "stdout reaches the child as a file descriptor")
-    XCTAssertNil(options["stdin"], "but there is no key through which stdin could reach it")
-
-    device.terminate(statLoc: 0)
-    let exitCode = try await bridgeFBFuture(process.exitCode)
-    XCTAssertEqual(exitCode.int32Value, 0)
+    XCTAssertNil(device.spawnedOptions, "The rejection precedes the spawn, so the device is never handed any options")
   }
 
   // MARK: - Application launch options
@@ -178,18 +175,15 @@ private final class StubStateDevice: NSObject {
   }
 }
 
-/// Device double for the raw-spawn path. Records the option dictionary it is
-/// handed, reports a fixed pid, and holds the termination callback until the
-/// test fires it, so a launch can be observed end-to-end without CoreSimulator.
+/// Device double for the raw-spawn path. Records the option dictionary it is handed,
+/// so a test can distinguish a launch that reached `SimDevice` from one rejected before
+/// it. The spawn completes rather than hanging, so a regression surfaces as a failed
+/// assertion rather than as a timeout.
 private final class RecordingSpawnDevice: NSObject, @unchecked Sendable {
-  static let stubbedProcessIdentifier: pid_t = 4242
-
   @objc(UDID) let udid = NSUUID()
   @objc let state = UInt64(FBiOSTargetState.booted.rawValue)
 
   private(set) var spawnedOptions: [String: Any]?
-  private var terminationQueue: DispatchQueue?
-  private var terminationHandler: ((Int32) -> Void)?
 
   @objc(spawnAsyncWithPath:options:terminationQueue:terminationHandler:completionQueue:completionHandler:)
   func spawnAsync(
@@ -201,15 +195,6 @@ private final class RecordingSpawnDevice: NSObject, @unchecked Sendable {
     completionHandler: @escaping (NSError?, pid_t) -> Void
   ) {
     spawnedOptions = options
-    self.terminationQueue = terminationQueue
-    self.terminationHandler = terminationHandler
-    completionQueue.async { completionHandler(nil, Self.stubbedProcessIdentifier) }
-  }
-
-  func terminate(statLoc: Int32) {
-    guard let terminationQueue, let terminationHandler else {
-      return XCTFail("The device was never asked to spawn, so there is no termination handler to fire")
-    }
-    terminationQueue.async { terminationHandler(statLoc) }
+    completionQueue.async { completionHandler(nil, 4242) }
   }
 }
