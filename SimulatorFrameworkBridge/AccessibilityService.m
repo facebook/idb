@@ -22,6 +22,11 @@
 
 #import <CoreGraphics/CoreGraphics.h>
 
+#import "AXPTranslationPrivate.h"
+#import "AXRuntimePrivate.h"
+#import "RunningBoardServicesPrivate.h"
+#import "XCTAutomationSupportPrivate.h"
+
 // The `XC_kAXXC*` attribute keys. These MUST match `FBAXWire.Node` host-side so the emitted tree feeds
 // the shared serializer (via `FBRemoteAutomationPlatformElement`) unchanged.
 static NSString *const kAXElementType = @"XC_kAXXCAttributeElementType";
@@ -75,23 +80,9 @@ static NSString *const kModalLabel = @"label";
 static NSString *const kSystemAlertWindowClass = @"SBAlertItemWindow";
 static NSString *const kAlertControllerClassPrefix = @"_UIAlertController";
 
-// `kAXErrorServerNotFound`, from the AX runtime's C ABI — no SDK header available here declares it. The
-// runtime returns it when a process has no accessibility server to answer: the pid is dead, or names a
-// process that is not an application. It is what separates an unreadable application from the neighbouring
-// codes — `kAXErrorIPCTimeout` (-25216) for a live app that is not responding, and
-// `kAXErrorInvalidUIElement` (-25202) for a hit-test on genuinely empty space.
-static const int32_t kAXErrorServerNotFound = -25215;
-// The key `-attributesForElement:attributes:error:` reports the underlying AX runtime code under.
-static NSString *const kAXAccessibilityErrorKey = @"accessibility-error";
-
 static NSString *const kVerbDescribe = @"describe";
 static NSString *const kVerbHitTest = @"hittest";
 static NSString *const kActionServe = @"serve";
-
-// The private AccessibilityPlatformTranslation framework, loaded from the booted runtime root — the same
-// AXPTranslator the host bridges to for a window-server frontmost, driven here entirely in-guest.
-static NSString *const kAXPTranslationPath =
-@"/System/Library/PrivateFrameworks/AccessibilityPlatformTranslation.framework/AccessibilityPlatformTranslation";
 
 // The frontmost-resolution methods, shared by the request `method` selector and the response `method`
 // value: a request selects a strategy with one of these, and a fused frontmost response echoes back the
@@ -105,13 +96,6 @@ static NSString *const kMethodRunningBoard = @"runningboard";
 // error rather than allocating unbounded memory. This is a property of the wire protocol, so the host
 // client caps reads at the same value — keep the two in step.
 static const uint32_t kMaxFrameBytes = 16 * 1024 * 1024;
-
-// The private frameworks are loaded from the booted runtime root at these paths (spike-proven via
-// `simctl spawn`); they are driven through the ObjC runtime, never linked.
-static NSString *const kAXRuntimePath =
-@"/System/Library/PrivateFrameworks/AXRuntime.framework/AXRuntime";
-static NSString *const kXCTAutomationSupportPath =
-@"/Developer/Library/PrivateFrameworks/XCTAutomationSupport.framework/XCTAutomationSupport";
 
 // A depth cap and a total-node budget guard against pathological trees. A request carries the
 // caller's own bounds (the host sets them so every backend truncates alike); these apply only when it
@@ -127,52 +111,12 @@ static const int kDefaultNodeBudget = 5000;
 // read, so this only ever costs a re-spawn, never correctness.
 static const int kIdleTimeoutSeconds = 300;
 
-// File-local declarations of the private classes we drive. The classes are `dlopen`-loaded and
-// resolved via `objc_lookUpClass`, so we never reference the class symbols at link time; these
-// interfaces exist only to type the instance/class messages (avoiding raw `objc_msgSend`).
-@interface XCTAccessibilityFramework : NSObject
-- (instancetype)initForRemoteAccess;
-- (nullable NSDictionary *)attributesForElement:(id)element
-                                     attributes:(NSArray<NSString *> *)attributes
-                                          error:(NSError **)error;
-@end
-
-@interface XCAccessibilityElement : NSObject
-+ (nullable instancetype)elementWithProcessIdentifier:(pid_t)pid;
-// The bridge to/from the raw AXRuntime `AXUIElementRef` (an opaque CFType, held as `void *` here so we
-// avoid linking the AX C types): `AXUIElement` unwraps the application element for a point hit-test,
-// and `elementWithAXUIElement:` re-wraps the hit result so the normal attribute reader can read it.
-//
-// `AXUIElement` returns a *borrowed* ref owned by the element: it dies with the element, and ARC is free
-// to release the element at its last use, so a caller that outlives that use must retain the ref.
-+ (nullable instancetype)elementWithAXUIElement:(void *)axUIElement;
-- (void *)AXUIElement;
-@end
-
-// `AXUIElementCopyElementAtPosition(app, x, y, &out)` (AXRuntime) — a single-round-trip hit-test that
-// returns just the element at a point, resolved by `dlsym` because AXRuntime is `dlopen`-loaded rather
-// than linked. Returns 0 (kAXErrorSuccess) and a +1-retained element on success; x/y are 32-bit float.
-typedef int32_t (*FBAXCopyElementAtPositionFn)(void *application, float x, float y, void **element);
-
-// The AXRuntime C functions used to resolve the frontmost application in-guest, resolved by `dlsym` for
-// the same reason (AXRuntime is `dlopen`-loaded, not linked). AXUIElementRefs are opaque CFTypes held
-// as `void *` here to avoid linking the AX C types.
-//   - `AXUIElementCreateSystemWide()` returns the +1-retained system-wide element — the seed for a
-//     display-wide (rather than pid-scoped) hit-test.
-//   - `AXUIElementGetPid(el, &pid)` reads an element's owning pid (no ownership transfer), which for the
-//     element hit at the screen anchor is the frontmost app's pid.
-//
-// `AXFocusedApplication` on the system-wide element is deliberately *not* used: the simulator's AX
-// server reports it as kAXErrorNoValue (unlike macOS), so focus is resolved positionally instead.
-typedef void *(*FBAXCreateSystemWideFn)(void);
-typedef int32_t (*FBAXGetPidFn)(void *element, pid_t *pid);
-
 #pragma mark - AX client setup
 
 static XCTAccessibilityFramework *_Nullable FBAXBridgeMakeFramework(NSString *_Nullable *_Nullable error)
 {
-  dlopen(kAXRuntimePath.fileSystemRepresentation, RTLD_NOW);
-  dlopen(kXCTAutomationSupportPath.fileSystemRepresentation, RTLD_NOW);
+  dlopen(FBAXPathAXRuntime, RTLD_NOW);
+  dlopen(FBAXPathXCTAutomationSupport, RTLD_NOW);
   Class frameworkClass = objc_lookUpClass("XCTAccessibilityFramework");
   if (!frameworkClass) {
     if (error) {
@@ -471,7 +415,7 @@ static id _Nullable FBAXBridgeWindowServerTranslator(NSString *_Nullable *_Nulla
   static NSString *cachedError;
   static dispatch_once_t onceToken;
   dispatch_once(&onceToken, ^{
-    dlopen(kAXPTranslationPath.fileSystemRepresentation, RTLD_NOW);
+    dlopen(FBAXPathAXPTranslation, RTLD_NOW);
     SEL sharedSelector = NSSelectorFromString(@"sharediOSInstance");
     Class translatorClass = objc_lookUpClass("AXPTranslator");
     if (!translatorClass || ![translatorClass respondsToSelector:sharedSelector]) {
@@ -547,13 +491,6 @@ static BOOL FBAXBridgeCopyWindowServerFrontmostPid(pid_t *pidOut, NSString *_Nul
   return YES;
 }
 
-// The RunningBoardServices framework, loaded from the booted runtime root — driven through the ObjC
-// runtime, never linked. Enumerating another process's state requires the private
-// `com.apple.runningboard.process-state` entitlement, which the guest binary carries (ad-hoc signed); the
-// simulator's runningboardd honors it.
-static NSString *const kRunningBoardServicesPath =
-@"/System/Library/PrivateFrameworks/RunningBoardServices.framework/RunningBoardServices";
-
 // The endowment namespace RunningBoard grants a process whose scene is on-screen. The foreground app is
 // the launch-services process that holds it.
 static NSString *const kFrontboardVisibilityEndowment = @"com.apple.frontboard.visibility";
@@ -569,7 +506,7 @@ static NSString *const kFrontboardVisibilityEndowment = @"com.apple.frontboard.v
 // name (they are not declared to this translation unit) and messaged defensively.
 static BOOL FBAXBridgeCopyRunningBoardFrontmostPid(pid_t *pidOut, NSString *_Nullable *_Nullable methodOut, NSString *_Nullable *_Nullable errorOut)
 {
-  dlopen(kRunningBoardServicesPath.fileSystemRepresentation, RTLD_NOW);
+  dlopen(FBAXPathRunningBoardServices, RTLD_NOW);
   Class predicateClass = objc_lookUpClass("RBSProcessPredicate");
   Class stateClass = objc_lookUpClass("RBSProcessState");
   Class descriptorClass = objc_lookUpClass("RBSProcessStateDescriptor");
@@ -681,7 +618,7 @@ static BOOL FBAXBridgeCopyForegroundPid(float x, float y, pid_t *pidOut, NSStrin
   void *hit = NULL;
   int32_t axError = copyElementAtPosition(systemWide, x, y, &hit);
   CFRelease(systemWide);
-  if (axError != 0 || !hit) {
+  if (axError != FBAXErrorSuccess || !hit) {
     // No element at the anchor: an app mid-launch whose AX tree is not up yet, or a genuinely empty
     // point. The host treats this as "not ready" and retries, so surface it as a resolution failure.
     if (errorOut) {
@@ -693,7 +630,7 @@ static BOOL FBAXBridgeCopyForegroundPid(float x, float y, pid_t *pidOut, NSStrin
   pid_t pid = 0;
   axError = getPid(hit, &pid);
   CFRelease(hit);
-  if (axError != 0 || pid <= 0) {
+  if (axError != FBAXErrorSuccess || pid <= 0) {
     if (errorOut) {
       *errorOut = [NSString stringWithFormat:@"AXUIElementGetPid failed (axError %d, pid %d)", axError, pid];
     }
@@ -752,8 +689,8 @@ static NSDictionary *FBAXBridgeApplicationUnavailableResponse(NSString *message)
 // backend-neutral error, so it is recognised by the runtime's own code rather than inferred.
 static BOOL FBAXBridgeIsApplicationUnavailableError(NSError *_Nullable error)
 {
-  NSNumber *code = error.userInfo[kAXAccessibilityErrorKey];
-  return [code isKindOfClass:NSNumber.class] && code.intValue == kAXErrorServerNotFound;
+  NSNumber *code = error.userInfo[FBAXAccessibilityErrorKey];
+  return [code isKindOfClass:NSNumber.class] && code.intValue == FBAXErrorServerNotFound;
 }
 
 NSData *FBAXBridgeSerializeResponse(NSDictionary<NSString *, id> *response)
@@ -831,7 +768,7 @@ static NSDictionary *FBAXBridgeHitTest(XCTAccessibilityFramework *framework,
   void *hit = NULL;
   int32_t axError = copyElementAtPosition(seed, (float)xNumber.doubleValue, (float)yNumber.doubleValue, &hit);
   CFRelease(seed);
-  if (axError == kAXErrorServerNotFound) {
+  if (axError == FBAXErrorServerNotFound) {
     // Nothing answered the hit-test at all. Reporting that as an empty result would tell the caller the
     // app is on screen with nothing under the point, which is the opposite of what happened.
     return FBAXBridgeApplicationUnavailableResponse(
@@ -839,7 +776,7 @@ static NSDictionary *FBAXBridgeHitTest(XCTAccessibilityFramework *framework,
       : @"no accessibility server answered the system-wide hit-test"
     );
   }
-  if (axError != 0 || !hit) {
+  if (axError != FBAXErrorSuccess || !hit) {
     // No element at the point is a valid empty result, not a failure: a caller doing a streaming
     // hit-test (e.g. after a tap) must be able to tell "empty space" apart from "the reader broke".
     return @{kResponseOk : @YES, kResponseEmpty : @YES};
@@ -848,7 +785,7 @@ static NSDictionary *FBAXBridgeHitTest(XCTAccessibilityFramework *framework,
   // seeded hit-test already knows the pid and falls back to it; a system-wide one has no other source.
   pid_t owningPid = 0;
   int32_t pidError = getPid(hit, &owningPid);
-  if (pidError != 0 || owningPid <= 0) {
+  if (pidError != FBAXErrorSuccess || owningPid <= 0) {
     if (!pidNumber) {
       CFRelease(hit);
       return FBAXBridgeErrorResponse([NSString stringWithFormat:@"could not resolve the owning pid of the hit element (%d)", pidError]);
