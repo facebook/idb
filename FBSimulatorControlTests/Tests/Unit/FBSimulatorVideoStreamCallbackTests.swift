@@ -698,10 +698,9 @@ final class FBSimulatorVideoStreamDeliveryTests: XCTestCase {
     try await expectEventually("an overlay buffer swap pushes a frame") { consumer.data().count > before }
     let idrAfterSecondSwap = countIDRNALUnits(in: consumer.data())
 
-    // BUG: every in-place overlay update forces an IDR — at the effect timer's ~30fps animation
-    // cadence this turns the whole stream into keyframes, starving the motion budget. Flipped in
-    // the following commit so in-place updates push plain frames.
-    XCTAssertGreaterThanOrEqual(idrAfterInPlace - idrAfterSwap, 4, "in-place overlay updates each force an IDR (current, wrong behavior)")
+    // In-place overlay updates push plain frames — only a swap changes what a joining decoder must
+    // see whole, so only swaps force an IDR.
+    XCTAssertEqual(idrAfterInPlace - idrAfterSwap, 0, "in-place overlay updates must not force IDRs")
     XCTAssertGreaterThanOrEqual(idrAfterSecondSwap - idrAfterInPlace, 1, "an overlay buffer swap forces an IDR")
 
     try await stream.stopStreaming()

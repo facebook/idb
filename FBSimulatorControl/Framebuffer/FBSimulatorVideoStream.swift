@@ -814,7 +814,11 @@ public actor FBSimulatorVideoStream: FBVideoStream {
   /// Update the overlay buffer and push a frame to encode the change.
   /// Pass nil to clear the overlay.
   ///
-  /// In lazy/VFR mode: signals the push loop to encode a keyframe so the overlay change is immediately decodable.
+  /// In lazy/VFR mode: signals the push loop so the change is encoded promptly. Swapping the buffer
+  /// in or out forces a keyframe so consumers that need one to start rendering (e.g. ffplay) see the
+  /// change whole; an in-place content update pushes a plain frame — those arrive at the overlay
+  /// effect timer's animation cadence (~30fps), and forcing an IDR for each turns the entire stream
+  /// into keyframes, starving the motion budget.
   /// In eager/CFR mode: no extra push — the next cadence tick picks up the change without disrupting frame timing.
   public func updateOverlayBuffer(_ overlayBuffer: CVPixelBuffer?) {
     let sameReference = (overlayBuffer === self.overlayBuffer)
@@ -827,13 +831,13 @@ public actor FBSimulatorVideoStream: FBVideoStream {
     let stateDescription = overlayBuffer != nil ? (sameReference ? "contents updated" : "buffer swapped") : "cleared"
     logger.log("Overlay \(stateDescription) (frame=\(frameNumber))")
 
-    // In lazy/VFR mode: trigger a keyframe push (through the shared loop) so overlay changes are
-    // immediately decodable by consumers (e.g. ffplay) that need a keyframe to start rendering.
-    // In eager/CFR mode: the push loop runs at fixed cadence and picks up the change on the next
-    // tick — an extra push would disrupt frame timing.
     switch cadence {
     case .lazy:
-      lazyTriggers?.signalKeyFrame()
+      if sameReference {
+        lazyTriggers?.signalFrameRendered()
+      } else {
+        lazyTriggers?.signalKeyFrame()
+      }
     case .eager:
       break
     }
