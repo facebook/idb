@@ -618,11 +618,9 @@ final class FBSimulatorVideoStreamDeliveryTests: XCTestCase {
     try await Task.sleep(nanoseconds: 100_000_000)
     awaitTask.cancel()
 
-    // BUG: cancellation runs `try? stopStreaming()`, which throws on a never-started stream; the
-    // error is swallowed and the completion awaiter is never resumed, so the cancelled await
-    // remains suspended forever — flipped in the following commit to return promptly.
+    // Cancellation resumes the cancelled awaiter promptly even though there is nothing to stop.
     let pending = await isStillPending(awaitTask, after: 200_000_000)
-    XCTAssertTrue(pending, "awaitCompletion remains suspended after cancellation (current, wrong behavior)")
+    XCTAssertFalse(pending, "a cancelled awaitCompletion must return promptly")
   }
 
   func testDroppedStreamIsReleasedOnceSurfaceReleasesCallbacks() async throws {

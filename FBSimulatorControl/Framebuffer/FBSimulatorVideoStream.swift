@@ -811,7 +811,9 @@ public actor FBSimulatorVideoStream: FBVideoStream {
   private var hasStarted = false
   private var isStopped = false
   private var startAwaiters: [CheckedContinuation<Void, Error>] = []
-  private var stopAwaiters: [CheckedContinuation<Void, Never>] = []
+  /// Keyed by awaiter so a cancelled `awaitCompletion` can resume its own continuation even when
+  /// the stream cannot be stopped (nothing was ever started).
+  private var stopAwaiters: [UUID: CheckedContinuation<Void, Never>] = [:]
 
   /// The framebuffer attachment held while streaming; `cancel()` (or release) detaches this stream.
   /// Nil before start and after stop.
@@ -1012,8 +1014,8 @@ public actor FBSimulatorVideoStream: FBVideoStream {
   /// Resume everyone awaiting completion.
   private func resumeStopAwaiters() {
     let awaiters = stopAwaiters
-    stopAwaiters = []
-    for awaiter in awaiters {
+    stopAwaiters = [:]
+    for awaiter in awaiters.values {
       awaiter.resume()
     }
   }
@@ -1495,16 +1497,28 @@ public actor FBSimulatorVideoStream: FBVideoStream {
   // MARK: - FBVideoStream
 
   public func awaitCompletion() async {
+    let id = UUID()
     await withTaskCancellationHandler {
-      if isStopped {
-        return
-      }
       await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
-        stopAwaiters.append(continuation)
+        if isStopped {
+          continuation.resume()
+          return
+        }
+        stopAwaiters[id] = continuation
       }
     } onCancel: {
       // Cancelling a completion await stops the stream (mirrors a cancellable completion signal).
-      Task { [weak self] in try? await self?.stopStreaming() }
+      Task { [weak self] in await self?.completionAwaitCancelled(id) }
+    }
+  }
+
+  /// Stop on behalf of a cancelled completion await, then resume that await regardless of whether
+  /// the stop could proceed — a never-started stream has nothing to stop, but the cancelled awaiter
+  /// must still return. A successful stop resumes every awaiter, so the removal here finds nothing.
+  private func completionAwaitCancelled(_ id: UUID) async {
+    try? await stopStreaming()
+    if let continuation = stopAwaiters.removeValue(forKey: id) {
+      continuation.resume()
     }
   }
 
