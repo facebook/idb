@@ -396,9 +396,23 @@ final class FBSubprocessTests: XCTestCase {
   }
 
   func testHUPBackoffToKILL() throws {
+    // The child has to be ignoring SIGHUP before the signal is sent, otherwise it
+    // dies of SIGHUP and never backs off to SIGKILL. Launching `/usr/bin/nohup`
+    // and signalling as soon as `posix_spawn` returns races the moment `nohup`
+    // installs `SIG_IGN`, which is flaky under load. Install the disposition in a
+    // shell instead, have it announce readiness on stdout, and `exec` so the
+    // sleeping process keeps the pid that already ignores SIGHUP.
+    let ignoringHUP = XCTestExpectation(description: "Child Has Ignored SIGHUP")
     let process = startSynchronously(
-      FBProcessBuilder<NSNull, NSData, NSData>.withLaunchPath("/usr/bin/nohup", arguments: ["/bin/sleep", "10000000"])
+      FBProcessBuilder<NSNull, NSData, NSData>
+        .withLaunchPath("/bin/sh", arguments: ["-c", "trap '' HUP; echo ready; exec /bin/sleep 10000000"])
+        .withStdOutLineReader { line in
+          if line == "ready" {
+            ignoringHUP.fulfill()
+          }
+        }
     )
+    wait(for: [ignoringHUP], timeout: FBControlCoreGlobalConfiguration.fastTimeout)
 
     XCTAssertEqual(process.statLoc.state, FBFutureState.running)
     XCTAssertEqual(process.exitCode.state, FBFutureState.running)

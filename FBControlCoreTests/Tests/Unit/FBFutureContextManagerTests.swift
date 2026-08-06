@@ -87,7 +87,6 @@ final class FBFutureContextManagerTests: XCTestCase, FBFutureContextManagerDeleg
     let manager = self.manager
     let queue = self.queue!
     let logger = self.logger!
-    let concurrent = DispatchQueue(label: "com.facebook.fbcontrolcore.tests.future_context.concurrent", attributes: .concurrent)
     let future0 = FBMutableFuture<AnyObject>()
     let future1 = FBMutableFuture<AnyObject>()
     let future2 = FBMutableFuture<AnyObject>()
@@ -129,11 +128,21 @@ final class FBFutureContextManagerTests: XCTestCase, FBFutureContextManagerDeleg
       (future2 as! FBMutableFuture).resolve(from: inner)
     }
 
-    concurrent.async(execute: block0)
-    concurrent.async(execute: block1)
-    concurrent.async(execute: block2)
+    // All three consumers must be registered with the manager before the first one
+    // releases the context. `contextPoolTimeout` is 0, so if consumer 0 finishes
+    // while nothing else is queued the context is torn down and the next consumer
+    // forces a second prepare. Dispatching to a concurrent queue leaves that
+    // ordering to the scheduler and is flaky under load. `-utilizeWithPurpose:`
+    // enqueues its acquisition with `dispatch_async` onto `queue`, so building all
+    // three chains from a block already running on `queue` places the three
+    // acquisitions ahead of every continuation they go on to spawn.
+    queue.sync {
+      block0()
+      block1()
+      block2()
+    }
 
-    let value = try? FBFuture<AnyObject>.combine([future0, future1, future2]).await(withTimeout: 1) as NSArray?
+    let value = try? FBFuture<AnyObject>.combine([future0, future1, future2]).await(withTimeout: 10) as NSArray?
     XCTAssertNotNil(value)
     XCTAssertEqual(value as? NSArray, [0, 1, 2] as NSArray)
 
