@@ -10,7 +10,9 @@ from argparse import ArgumentParser, Namespace
 
 from idb.cli import ClientCommand
 from idb.common.types import (
+    ACCESSIBILITY_BACKEND_BY_NAME,
     ACCESSIBILITY_KEY_BY_NAME,
+    AccessibilityBackend,
     AccessibilityInfoOptions,
     AccessibilityMarker,
     AccessibilityPoint,
@@ -59,6 +61,26 @@ def _add_enricher_args(parser: ArgumentParser) -> None:
     )
 
 
+def _add_backend_arg(parser: ArgumentParser) -> None:
+    parser.add_argument(
+        "--api",
+        choices=list(ACCESSIBILITY_BACKEND_BY_NAME),
+        default=None,
+        help=(
+            "Which backend serves the read (default: the companion's standard "
+            "accessibility backend). axbridge spawns a guest reader per read; "
+            "axbridge-persistent keeps that reader alive on the companion for "
+            "fast repeated reads. A companion that predates backend selection "
+            "ignores this and serves the default backend."
+        ),
+    )
+
+
+def _backend(args: Namespace) -> AccessibilityBackend | None:
+    api = getattr(args, "api", None)
+    return ACCESSIBILITY_BACKEND_BY_NAME[api] if api else None
+
+
 class AccessibilityInfoAllCommand(ClientCommand):
     @property
     def description(self) -> str:
@@ -77,11 +99,14 @@ class AccessibilityInfoAllCommand(ClientCommand):
             default=False,
         )
         _add_enricher_args(parser)
+        _add_backend_arg(parser)
 
     async def run_with_client(self, args: Namespace, client: Client) -> None:
         info = await client.accessibility_info(
             target=None,
-            options=AccessibilityInfoOptions(nested=args.nested, keys=args.keys),
+            options=AccessibilityInfoOptions(
+                nested=args.nested, keys=args.keys, backend=_backend(args)
+            ),
         )
         print(info.json)
 
@@ -106,11 +131,14 @@ class AccessibilityInfoAtPointCommand(ClientCommand):
         parser.add_argument("x", help="The x-coordinate", type=int)
         parser.add_argument("y", help="The y-coordinate", type=int)
         _add_enricher_args(parser)
+        _add_backend_arg(parser)
 
     async def run_with_client(self, args: Namespace, client: Client) -> None:
         info = await client.accessibility_info(
             target=AccessibilityPoint(x=args.x, y=args.y),
-            options=AccessibilityInfoOptions(nested=args.nested, keys=args.keys),
+            options=AccessibilityInfoOptions(
+                nested=args.nested, keys=args.keys, backend=_backend(args)
+            ),
         )
         print(info.json)
 
@@ -145,6 +173,7 @@ class AccessibilityDescribeMarkerCommand(ClientCommand):
             default=False,
             help="Report data in the nested format rather than the flat one",
         )
+        _add_backend_arg(parser)
 
     async def run_with_client(self, args: Namespace, client: Client) -> None:
         info = await client.accessibility_info(
@@ -153,7 +182,9 @@ class AccessibilityDescribeMarkerCommand(ClientCommand):
                 match_key=ACCESSIBILITY_KEY_BY_NAME[args.match_key],
                 depth=args.depth,
             ),
-            options=AccessibilityInfoOptions(nested=args.nested),
+            options=AccessibilityInfoOptions(
+                nested=args.nested, backend=_backend(args)
+            ),
         )
         print(info.json)
 

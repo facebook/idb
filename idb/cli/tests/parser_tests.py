@@ -20,6 +20,7 @@ from idb.cli.main import gen_main as cli_main, get_default_companion_path
 from idb.common import plugin
 from idb.common.command import Command, CommandGroup
 from idb.common.types import (
+    AccessibilityBackend,
     AccessibilityInfo,
     AccessibilityInfoOptions,
     AccessibilityMarker,
@@ -39,6 +40,7 @@ from idb.common.types import (
     Permission,
     TCPAddress,
 )
+from idb.grpc.idb_pb2 import AccessibilityInfoRequest
 from idb.utils.testing import AsyncContextManagerMock, AsyncMock, TestCase
 
 
@@ -1335,6 +1337,55 @@ class TestParser(TestCase):
             target=AccessibilityPoint(x=10, y=20),
             options=AccessibilityInfoOptions(nested=True),
         )
+
+    async def test_accessibility_info_all_api(self) -> None:
+        self.client_mock.accessibility_info = AsyncMock()
+        await cli_main(cmd_input=["ui", "describe-all", "--api", "axbridge-persistent"])
+        self.client_mock.accessibility_info.assert_called_once_with(
+            target=None,
+            options=AccessibilityInfoOptions(
+                nested=False, backend=AccessibilityBackend.AXBRIDGE_PERSISTENT
+            ),
+        )
+
+    async def test_accessibility_info_at_point_api(self) -> None:
+        self.client_mock.accessibility_info = AsyncMock()
+        await cli_main(
+            cmd_input=["ui", "describe-point", "10", "20", "--api", "axbridge"]
+        )
+        self.client_mock.accessibility_info.assert_called_once_with(
+            target=AccessibilityPoint(x=10, y=20),
+            options=AccessibilityInfoOptions(
+                nested=False, backend=AccessibilityBackend.AXBRIDGE
+            ),
+        )
+
+    async def test_describe_marker_api(self) -> None:
+        self.client_mock.accessibility_info = AsyncMock(
+            return_value=AccessibilityInfo(json="[]")
+        )
+        await cli_main(cmd_input=["ui", "describe", "Login", "--api", "ax"])
+        self.client_mock.accessibility_info.assert_called_once_with(
+            target=AccessibilityMarker(
+                value="Login",
+                match_key=AccessibilitySearchableKey.LABEL,
+                depth=10,
+            ),
+            options=AccessibilityInfoOptions(
+                nested=False, backend=AccessibilityBackend.AX
+            ),
+        )
+
+    async def test_backend_enum_matches_wire_values(self) -> None:
+        # The typed backend must emit the exact values the proto declares, by
+        # name and by number — an unset backend is BACKEND_UNSPECIFIED, the
+        # only thing an older companion understands.
+        self.assertEqual(AccessibilityInfoRequest.BACKEND_UNSPECIFIED, 0)
+        for backend in AccessibilityBackend:
+            self.assertEqual(
+                backend.value,
+                getattr(AccessibilityInfoRequest, backend.name),
+            )
 
     async def test_accessibility_info_all_keys(self) -> None:
         self.client_mock.accessibility_info = AsyncMock()

@@ -222,12 +222,30 @@ ACCESSIBILITY_KEY_BY_NAME: dict[str, AccessibilitySearchableKey] = {
 }
 
 
-# Shapes the accessibility_info response: the format and which accessibility
-# keys are reported. This grows as describe-all gains enrichers.
+# Which backend serves an accessibility read. Values match the wire protocol;
+# None on the options means "unspecified" — the companion's historical default
+# backend, and the only value an older companion understands.
+class AccessibilityBackend(Enum):
+    AX = 1
+    AXBRIDGE = 2
+    AXBRIDGE_PERSISTENT = 3
+
+
+ACCESSIBILITY_BACKEND_BY_NAME: dict[str, AccessibilityBackend] = {
+    "ax": AccessibilityBackend.AX,
+    "axbridge": AccessibilityBackend.AXBRIDGE,
+    "axbridge-persistent": AccessibilityBackend.AXBRIDGE_PERSISTENT,
+}
+
+
+# Shapes the accessibility_info request: the format, which accessibility
+# keys are reported, and which backend serves the read. This grows as
+# describe-all gains enrichers.
 @dataclass(frozen=True)
 class AccessibilityInfoOptions:
     nested: bool = False
     keys: list[str] | None = None
+    backend: AccessibilityBackend | None = None
 
 
 class AccessibilityScrollDirection(Enum):

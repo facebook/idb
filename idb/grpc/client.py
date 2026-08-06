@@ -512,6 +512,10 @@ class Client(ClientBase):
             ),
             keys=options.keys or [],
         )
+        # Unset means "unspecified" on the wire: the companion's historical
+        # default backend, and the only thing an older companion understands.
+        if options.backend is not None:
+            request.backend = options.backend.value
         if isinstance(target, AccessibilityMarker):
             request.marker = target.value
             request.match_key = target.match_key.value
