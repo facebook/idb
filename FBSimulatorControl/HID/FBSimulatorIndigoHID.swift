@@ -12,7 +12,7 @@ import Foundation
 @_implementationOnly import SimulatorApp
 
 /// Translates FBSimulatorHID events into Indigo structs.
-public final class FBSimulatorIndigoHID {
+final class FBSimulatorIndigoHID {
 
   // The SimulatorKit `IndigoHIDMessageFor*` functions, resolved at runtime via dlsym.
   private typealias MessageForButtonFn = @convention(c) (Int32, Int32, Int32) -> UnsafeMutablePointer<IndigoMessage>
@@ -66,14 +66,14 @@ public final class FBSimulatorIndigoHID {
   // MARK: Public
 
   /// A keyboard event. The keycodes are 'Hardware Independent' as described in `<HIToolbox/Events.h>`.
-  public func keyboard(with direction: FBSimulatorHIDDirection, keyCode: UInt32) -> Data {
+  func keyboard(with direction: FBSimulatorHIDDirection, keyCode: UInt32) -> Data {
     let message = messageForKeyboardArbitrary(Int32(bitPattern: keyCode), direction.rawValue)
     return FBSimulatorIndigoHID.data(fromMallocedMessage: message)
   }
 
   /// A button event, or `nil` when the button has no legacy Indigo source (a Consumer-page button
   /// such as `play_pause` that only the DTUHID transport can deliver).
-  public func button(with direction: FBSimulatorHIDDirection, button: FBSimulatorHIDButton) -> Data? {
+  func button(with direction: FBSimulatorHIDDirection, button: FBSimulatorHIDButton) -> Data? {
     guard let source = button.indigoEventSource else {
       return nil
     }
@@ -106,7 +106,7 @@ public final class FBSimulatorIndigoHID {
   /// `secondPayloadWireOffset` (0xC0). Both carry the digitizer state in `IndigoTouch.eventMask`
   /// (IOHIDDigitizerEventMask: Range 0x1 | Touch 0x2 | Position 0x4 | Identity 0x20), `range`, and
   /// `touch`; the builder defaults to a Position/touch-down "changed" contact.
-  public func trackpad(point: CGPoint, phase: FBSimulatorTrackpadPhase) throws -> Data {
+  func trackpad(point: CGPoint, phase: FBSimulatorTrackpadPhase) throws -> Data {
     let message = messageForTrackpadMoveEvent(point, FBSimulatorIndigoHID.trackpadTarget)
     let secondary = FBSimulatorIndigoHID.payload(at: FBSimulatorIndigoHID.secondPayloadWireOffset, of: message)
     switch phase {
@@ -127,7 +127,7 @@ public final class FBSimulatorIndigoHID {
   }
 
   /// A single-finger touch event. `x`/`y` are in points; `screenSize` is in pixels.
-  public func touchScreenSize(
+  func touchScreenSize(
     _ screenSize: CGSize, screenScale: Float, direction: FBSimulatorHIDDirection, x: Double, y: Double
   ) -> Data {
     // Convert Screen Offset to Ratio for Indigo.
@@ -136,7 +136,7 @@ public final class FBSimulatorIndigoHID {
   }
 
   /// A two-finger touch event for multi-touch gestures (pinch, rotate, etc.).
-  public func twoFingerTouchScreenSize(
+  func twoFingerTouchScreenSize(
     _ screenSize: CGSize, screenScale: Float, direction: FBSimulatorHIDDirection, finger1: CGPoint, finger2: CGPoint
   ) -> Data {
     var ratio1 = FBSimulatorIndigoHID.screenRatio(from: finger1, screenSize: screenSize, screenScale: screenScale)
