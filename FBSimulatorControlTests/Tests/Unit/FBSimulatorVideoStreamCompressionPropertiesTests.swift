@@ -163,7 +163,7 @@ final class FBSimulatorVideoStreamCompressionPropertiesTests: XCTestCase {
     // the properties dictionary carries no rate key for compressed video.
     XCTAssertNil(props[kVTCompressionPropertyKey_Quality as String])
     XCTAssertNil(props[kVTCompressionPropertyKey_AverageBitRate as String])
-    XCTAssertEqual(props[kVTCompressionPropertyKey_MaxKeyFrameIntervalDuration as String] as? NSNumber, 1.0)
+    XCTAssertEqual(props[kVTCompressionPropertyKey_MaxKeyFrameIntervalDuration as String] as? NSNumber, 4.0)
   }
 
   func testCallerPropertiesMerged() {

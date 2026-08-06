@@ -103,7 +103,11 @@ public struct FBVideoEncodeOptions: Hashable, Sendable {
     self.framesPerSecond = framesPerSecond
     self.rateControl = rateControl ?? .automatic
     self.scaleFactor = scaleFactor
-    self.keyFrameRate = keyFrameRate ?? 1.0
+    // Four seconds between forced keyframes: at retina sizes each IDR costs tens of kilobytes and
+    // resets temporal prediction, so a one-second cadence taxed the motion budget noticeably.
+    // Consumers that join mid-stream wait at most this long for a sync point; WebRTC re-syncs
+    // explicitly via requestKeyFrame.
+    self.keyFrameRate = keyFrameRate ?? 4.0
   }
 }
 

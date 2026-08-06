@@ -28,7 +28,7 @@ final class FBVideoStreamConfigurationTests: XCTestCase {
       scaleFactor: nil,
       keyFrameRate: nil
     )
-    XCTAssertEqual(config.keyFrameRate, 1.0)
+    XCTAssertEqual(config.keyFrameRate, 4.0)
   }
 
   func testExplicitQualityPreserved() {
