@@ -52,11 +52,13 @@ extension FBSimulatorVideoFileWriterError: LocalizedError {
 /// buffered as they arrive (timestamped at the current video position) and written as text samples in
 /// `finish`, once every chapter's end boundary (the next chapter, or the end of video) is known.
 ///
-/// @unchecked Sendable: the encoded-frame path (`consume`/`finish`) is confined to the owning stream's
-/// `writeQueue` (with which the VideoToolbox output handler runs serially), and `finish` is only
-/// called after the encoder has completed every frame, so `consume` and `finish` never overlap. The
-/// timed-metadata path (`writeTimedMetadata`) runs off that queue (the stdin handler), so the chapter
-/// state it shares with `consume`/`finish` is guarded by `chapterLock`.
+/// @unchecked Sendable: `consume` runs inside the VideoToolbox output handler, whose invocations
+/// alternate one frame at a time with the stream actor's encode submissions (the session is
+/// configured with `MaxFrameDelayCount: 0` — see the pusher's own concurrency doc), so consumes
+/// never overlap each other. `finish` is called once, from the recorder, after `stopStreaming` has
+/// flushed the encoder (`VTCompressionSessionCompleteFrames`), so it never overlaps `consume`. The
+/// timed-metadata path (`writeTimedMetadata`) arrives from other isolation domains (the stdin
+/// handler), so the chapter state it shares with `consume`/`finish` is guarded by `chapterLock`.
 final class FBSimulatorVideoFileWriter: FBEncodedSampleConsumer, FBTimedMetadataConsumer, @unchecked Sendable {
   private let outputURL: URL
   private let fileType: AVFileType
