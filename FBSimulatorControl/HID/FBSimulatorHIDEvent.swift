@@ -39,87 +39,19 @@ public indirect enum FBSimulatorHIDEvent: Equatable, Hashable, Sendable {
     return events
   }
 
-  /// Whether delivering this event writes to the HID transport, and so leaves something for the
-  /// post-gesture drain to wait on.
-  ///
-  /// Not every case of this enum is a HID event. Orientation and lock go out as Purple mach messages,
-  /// shake and the in-call status bar as Darwin notifications, and `.delay` writes nothing at all —
-  /// none of them touch the transport, so there is nothing for `flush()` to drain afterwards. A
-  /// `.composite` writes if any of its sub-events do.
-  public var writesToTransport: Bool {
-    switch self {
-    case .touch, .button, .keyboard, .twoFingerTouch, .trackpad:
-      return true
-    case .deviceOrientation, .lockDevice, .shake, .toggleInCallStatusBar, .delay:
-      return false
-    case let .composite(events):
-      return events.contains { $0.writesToTransport }
-    }
-  }
 }
 
 // MARK: - Dispatch
 
 public extension FBSimulatorHIDEvent {
 
-  /// Sends the event on the provided HID, completing when delivery is acknowledged.
-  /// A `.composite` sends its sub-events in order; `.delay` suspends the task.
-  func sendAsync(on hid: FBSimulatorHID) async throws {
-    switch self {
-    case let .touch(direction, x, y):
-      try await hid.sendTouch(direction: direction, x: x, y: y)
-    case let .button(direction, button):
-      try await hid.sendButton(direction: direction, button: button)
-    case let .keyboard(direction, keyCode):
-      try await hid.sendKeyboard(direction: direction, keyCode: keyCode)
-    case let .twoFingerTouch(direction, finger1, finger2):
-      try await hid.sendTwoFingerTouch(direction: direction, finger1: finger1, finger2: finger2)
-    case let .trackpad(phase, point):
-      try await hid.sendTrackpad(point: point, phase: phase)
-    case let .delay(duration):
-      try await Task.sleep(nanoseconds: UInt64(max(0, duration) * 1_000_000_000))
-    case let .deviceOrientation(orientation):
-      try hid.sendOrientation(orientation)
-    case .shake:
-      try hid.sendShake()
-    case .toggleInCallStatusBar:
-      try hid.sendToggleInCallStatusBar()
-    case .lockDevice:
-      try hid.sendLockDevice()
-    case let .composite(events):
-      for event in events {
-        try await event.sendAsync(on: hid)
-      }
-    }
-  }
-}
-
-public extension FBSimulatorHID {
-
-  /// Sends a (possibly composite) HID event, then drains the transport exactly once.
+  /// Sends the event on the provided HID without draining afterwards.
   ///
-  /// A `.composite` is flattened to its ordered sub-events so each is logged individually, and a
-  /// `.delay` suspends the task; the single drain (`flush()`) then runs after the whole event. So a
-  /// tap (down + up) or a typed string settles once, not after every primitive — which keeps the
-  /// gesture intact before the connection is torn down while avoiding a per-primitive stall (e.g.
-  /// slow typing on the DTUHID transport).
-  func send(event: FBSimulatorHIDEvent, logger: FBControlCoreLogger) async throws {
-    for subEvent in event.subEvents ?? [event] {
-      switch subEvent {
-      case let .delay(duration):
-        logger.log("Delay \(duration)s")
-        try await Task.sleep(nanoseconds: UInt64(max(0, duration) * 1_000_000_000))
-      default:
-        logger.log("Sending \(subEvent)")
-        try await subEvent.sendAsync(on: self)
-      }
-    }
-    // Only a gesture that wrote to the transport has anything to drain. Orientation, lock, shake and
-    // the in-call status bar go out over Purple or as Darwin notifications, and a delay writes nothing
-    // — draining after those buys nothing and costs `drainNanos` on DTUHID.
-    if event.writesToTransport {
-      try await flush()
-    }
+  /// The gRPC companion has always sent this way and so has never drained; keeping the entry point
+  /// preserves that until it is addressed on its own terms. Prefer `FBSimulatorHID.send(event:logger:)`,
+  /// which drains once per gesture.
+  func sendAsync(on hid: FBSimulatorHID) async throws {
+    _ = try await hid.deliver(self)
   }
 }
 

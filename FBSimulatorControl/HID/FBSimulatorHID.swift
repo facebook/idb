@@ -169,6 +169,85 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
     try notification.sendToggleInCallStatusBar()
   }
 
+  // MARK: Dispatch
+
+  /// Sends a (possibly composite) HID event, then drains the transport if anything reached it.
+  ///
+  /// A `.composite` is flattened to its ordered sub-events so each is logged individually, and a
+  /// `.delay` suspends the task; the single drain then runs after the whole event. So a tap (down + up)
+  /// or a typed string settles once, not after every primitive — which keeps the gesture intact before
+  /// the connection is torn down while avoiding a per-primitive stall on the DTUHID transport.
+  ///
+  /// The drain follows what was *written*, not what the event said it would write. Only DTUHID has
+  /// anything to drain; Indigo's client is synchronous and has no `flush` to call.
+  public func send(event: FBSimulatorHIDEvent, logger: FBControlCoreLogger) async throws {
+    var wroteToTransport = false
+    for subEvent in event.subEvents ?? [event] {
+      // Listed rather than defaulted so a new case has to decide how it reads in the log, the same
+      // way `deliver` makes it decide which transport carries it.
+      switch subEvent {
+      case let .delay(duration):
+        logger.log("Delay \(duration)s")
+      case .touch, .button, .keyboard, .twoFingerTouch, .trackpad,
+        .deviceOrientation, .lockDevice, .shake, .toggleInCallStatusBar, .composite:
+        logger.log("Sending \(subEvent)")
+      }
+      if try await deliver(subEvent) {
+        wroteToTransport = true
+      }
+    }
+    if wroteToTransport, case let .dtuhid(dtuhid) = transport {
+      try await dtuhid.flush()
+    }
+  }
+
+  /// Routes one event to the transport that carries it, reporting whether that transport was the HID
+  /// one — which is what decides the drain.
+  ///
+  /// Exhaustive, so a new case cannot be added without deciding which transport delivers it. That is
+  /// the whole reason the routing lives here rather than being predicted by a property on the event:
+  /// a prediction can disagree with the dispatch, an observation cannot.
+  func deliver(_ event: FBSimulatorHIDEvent) async throws -> Bool {
+    switch event {
+    case let .touch(direction, x, y):
+      try await transport.sendTouch(direction: direction, x: x, y: y)
+      return true
+    case let .button(direction, button):
+      try await transport.sendButton(direction: direction, button: button)
+      return true
+    case let .keyboard(direction, keyCode):
+      try await transport.sendKeyboard(direction: direction, keyCode: keyCode)
+      return true
+    case let .twoFingerTouch(direction, finger1, finger2):
+      try await transport.sendTwoFingerTouch(direction: direction, finger1: finger1, finger2: finger2)
+      return true
+    case let .trackpad(phase, point):
+      try await sendTrackpad(point: point, phase: phase)
+      return true
+    case let .deviceOrientation(orientation):
+      try sendOrientation(orientation)
+      return false
+    case .lockDevice:
+      try sendLockDevice()
+      return false
+    case .shake:
+      try sendShake()
+      return false
+    case .toggleInCallStatusBar:
+      try sendToggleInCallStatusBar()
+      return false
+    case let .delay(duration):
+      try await Task.sleep(nanoseconds: UInt64(max(0, duration) * 1_000_000_000))
+      return false
+    case let .composite(events):
+      var wrote = false
+      for event in events where try await deliver(event) {
+        wrote = true
+      }
+      return wrote
+    }
+  }
+
   // MARK: CustomStringConvertible
 
   public var description: String {
