@@ -826,11 +826,14 @@ static NSDictionary *FBAXBridgeHitTest(XCTAccessibilityFramework *framework,
 
 NSDictionary<NSString *, id> *FBAXBridgeHandleRequest(NSDictionary<NSString *, id> *request)
 {
-  NSString *verb = request[kRequestVerb];
+  // The frame is JSON from the client, so the value can be of any type — narrow it to a string before
+  // comparing, rather than sending `isEqualToString:` to whatever arrived.
+  id requestedVerb = request[kRequestVerb];
+  NSString *verb = [requestedVerb isKindOfClass:NSString.class] ? requestedVerb : nil;
   BOOL isDescribe = [verb isEqualToString:kVerbDescribe];
   BOOL isHitTest = [verb isEqualToString:kVerbHitTest];
   if (!isDescribe && !isHitTest) {
-    return FBAXBridgeErrorResponse([NSString stringWithFormat:@"unsupported verb: %@", verb ?: @"(nil)"]);
+    return FBAXBridgeErrorResponse([NSString stringWithFormat:@"unsupported verb: %@", requestedVerb ?: @"(nil)"]);
   }
 
   NSString *setupError = nil;

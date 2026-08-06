@@ -119,16 +119,9 @@ static NSDictionary *FBAXTestsParse(NSData *data)
 - (void)testNonStringVerbIsRejectedWithAnErrorFrame
 {
   for (id verb in @[@123, @{@"a" : @1}, @[@"describe"], NSNull.null]) {
-    // BUG: sends `isEqualToString:` to the value unconditionally, so a non-string raises
-    // `NSInvalidArgumentException` and aborts the reader process — on the persistent `serve` transport
-    // that severs the client's connection. Flipped in the following commit.
-    XCTAssertThrowsSpecificNamed(
-      FBAXBridgeHandleRequest(@{@"verb" : verb}),
-      NSException,
-      NSInvalidArgumentException,
-      @"a %@ verb must not raise",
-      [verb class]
-    );
+    NSDictionary *response = FBAXBridgeHandleRequest(@{@"verb" : verb});
+    XCTAssertEqualObjects(response[@"ok"], @NO, @"a %@ verb must be rejected", [verb class]);
+    XCTAssertNotNil(response[@"error"], @"a %@ verb must carry an error message", [verb class]);
   }
 }
 
