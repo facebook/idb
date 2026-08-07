@@ -446,11 +446,33 @@ static id _Nullable FBAXBridgeWindowServerTranslator(NSString *_Nullable *_Nulla
   return translator;
 }
 
-// Resolves the frontmost application's pid via the in-guest window-server query — the authoritative
-// frontmost the host obtains through AXPTranslator, obtained here with no host round-trip. Asks the
-// wired iOS translator for `frontmostApplicationWithDisplayId:0` and reads the owning pid of the
-// returned application object.
-static BOOL FBAXBridgeCopyWindowServerFrontmostPid(pid_t *pidOut, NSString *_Nullable *_Nullable methodOut, NSString *_Nullable *_Nullable errorOut)
+// Runs `block` somewhere other than the main queue and waits for it to finish.
+//
+// AXPTranslator lazily enables its bridge runtime on first use, and that path asserts it is *not* running
+// on the main queue (`-[AXPTranslator_iOS _enableAccessibilityBridgeRuntime]` calls
+// `dispatch_assert_queue_not`). The in-guest self-service delegate re-enters the translator on whichever
+// thread called in, so driving it from the reader's main thread trips the assert and traps the process.
+//
+// Blocking the caller is deliberate: the reader handles one request at a time, so the main thread has
+// nothing else to do while the translator answers.
+static void FBAXBridgeRunOffMainQueue(dispatch_block_t block)
+{
+  if (!NSThread.isMainThread) {
+    block();
+    return;
+  }
+  dispatch_semaphore_t completed = dispatch_semaphore_create(0);
+  dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
+    block();
+    dispatch_semaphore_signal(completed);
+  });
+  dispatch_semaphore_wait(completed, DISPATCH_TIME_FOREVER);
+}
+
+// The window-server frontmost query itself, which must already be off the main queue — see
+// `FBAXBridgeRunOffMainQueue`. Asks the wired iOS translator for `frontmostApplicationWithDisplayId:0`
+// and reads the owning pid of the returned application object.
+static BOOL FBAXBridgeCopyWindowServerFrontmostPidOffMain(pid_t *pidOut, NSString *_Nullable *_Nullable errorOut)
 {
   NSString *setupError = nil;
   id translator = FBAXBridgeWindowServerTranslator(&setupError);
@@ -479,6 +501,28 @@ static BOOL FBAXBridgeCopyWindowServerFrontmostPid(pid_t *pidOut, NSString *_Nul
   if (pid <= 0) {
     if (errorOut) {
       *errorOut = [NSString stringWithFormat:@"window-server frontmost returned no pid (%d)", pid];
+    }
+    return NO;
+  }
+  if (pidOut) {
+    *pidOut = pid;
+  }
+  return YES;
+}
+
+// Resolves the frontmost application's pid via the in-guest window-server query — the authoritative
+// frontmost the host obtains through AXPTranslator, obtained here with no host round-trip.
+static BOOL FBAXBridgeCopyWindowServerFrontmostPid(pid_t *pidOut, NSString *_Nullable *_Nullable methodOut, NSString *_Nullable *_Nullable errorOut)
+{
+  __block BOOL resolved = NO;
+  __block pid_t pid = 0;
+  __block NSString *queryError = nil;
+  FBAXBridgeRunOffMainQueue(^{
+    resolved = FBAXBridgeCopyWindowServerFrontmostPidOffMain(&pid, &queryError);
+  });
+  if (!resolved) {
+    if (errorOut) {
+      *errorOut = queryError ?: @"window-server frontmost resolution failed";
     }
     return NO;
   }
