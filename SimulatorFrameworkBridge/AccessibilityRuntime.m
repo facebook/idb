@@ -177,6 +177,61 @@ typedef struct {
   int32_t (*getPid)(void *element, pid_t *pid);                               // borrows
 } FBAXRuntimeFunctions;
 
+#pragma mark - Owned AXUIElement references
+
+// The one owner of a raw AXUIElementRef in the product.
+//
+// The AX runtime's C entry points transfer +1 references that have to be released exactly once on every
+// path out of the function that took them. In a method with eight early returns that is a rule no reader
+// can check by looking, and the failure modes are a leak or a use-after-free. Wrapping the reference at
+// the moment it is acquired makes the release ARC's job, so it happens on every path — including paths
+// added later by someone who never read this comment.
+@interface FBAXElementRef : NSObject
+
+/** Takes ownership of an already-retained (+1) reference — what the AX runtime's Create and Copy give. */
+- (instancetype)initWithOwnedElement:(void *)element NS_DESIGNATED_INITIALIZER;
+
+/**
+ * Takes a reference of its own on a borrowed one.
+ *
+ * `-[XCAccessibilityElement AXUIElement]` returns a reference it continues to own, so it dies with the
+ * element that vended it. Retaining is what let the seed of a hit-test outlive that element — reading it
+ * without doing so is the SIGSEGV this whole layer exists to prevent.
+ */
++ (instancetype)retainingBorrowedElement:(void *)element;
+
++ (instancetype)new NS_UNAVAILABLE;
+- (instancetype)init NS_UNAVAILABLE;
+
+@property (nonatomic, readonly) void *element;
+
+@end
+
+@implementation FBAXElementRef
+
+- (instancetype)initWithOwnedElement:(void *)element
+{
+  NSParameterAssert(element);
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+  _element = element;
+  return self;
+}
+
++ (instancetype)retainingBorrowedElement:(void *)element
+{
+  return [[self alloc] initWithOwnedElement:(void *)CFRetain(element)];
+}
+
+- (void)dealloc
+{
+  CFRelease(_element);
+}
+
+@end
+
 #pragma mark - The in-guest window-server bridge delegate
 
 // The bridge/token delegate for the in-guest AXPTranslator window-server frontmost. The host normally
@@ -399,14 +454,18 @@ static NSString *const kFrontboardVisibilityEndowment = @"com.apple.frontboard.v
   return [FBAXReadOutcome read:read];
 }
 
-// Every raw AXUIElementRef in the product begins and ends inside this method: the seed and the copied hit
-// are both +1, and the hit is handed back already wrapped as an opaque element handle, so nothing outside
-// can outlive or over-release either.
+// Every raw AXUIElementRef in the product is acquired inside this method and owned by an `FBAXElementRef`
+// from the moment it is, and the hit is handed back already wrapped as an opaque element handle — so
+// nothing outside can outlive or over-release either, and nothing inside has to remember to.
 - (FBAXHitTestOutcome *)hitTestAtPoint:(CGPoint)point processIdentifier:(pid_t)pid
 {
+  // Both references below are declared NS_VALID_UNTIL_END_OF_SCOPE. `-element` hands out a non-object
+  // pointer, so ARC cannot see that the C call using it depends on the wrapper still being alive, and
+  // would otherwise be free to release the wrapper — and with it the reference — before the call returns.
+  //
   // Resolve the seed: a specific app element for an explicit pid, otherwise the system-wide element.
-  // Owned (+1) either way, so the ref outlives whatever vended it and both branches release alike.
-  void *seed = NULL;
+  // Owned either way, so it outlives whatever vended it and both branches are released alike.
+  NS_VALID_UNTIL_END_OF_SCOPE FBAXElementRef *seed = nil;
   if (pid > 0) {
     XCAccessibilityElement *root = [(id)_elementClass elementWithProcessIdentifier:pid];
     if (!root) {
@@ -416,18 +475,24 @@ static NSString *const kFrontboardVisibilityEndowment = @"com.apple.frontboard.v
     if (!applicationElement) {
       return [FBAXHitTestOutcome failed:[NSString stringWithFormat:@"no AXUIElement for pid %d", pid]];
     }
-    seed = (void *)CFRetain(applicationElement);
+    seed = [FBAXElementRef retainingBorrowedElement:applicationElement];
   } else {
-    seed = _functions.createSystemWide();
-    if (!seed) {
+    void *systemWide = _functions.createSystemWide();
+    if (!systemWide) {
       return [FBAXHitTestOutcome failed:@"AXUIElementCreateSystemWide returned NULL"];
     }
+    seed = [[FBAXElementRef alloc] initWithOwnedElement:systemWide];
   }
 
-  void *hit = NULL;
-  int32_t axError = _functions.copyElementAtPosition(seed, (float)point.x, (float)point.y, &hit);
-  CFRelease(seed);
-  FBAXHitTestOutcome *unresolved = [FBAXHitTestOutcome outcomeForHitTestError:axError hasElement:hit != NULL];
+  void *copied = NULL;
+  int32_t axError = _functions.copyElementAtPosition(seed.element, (float)point.x, (float)point.y, &copied);
+  // Wrapped before anything else can fail. The copy is +1 whenever it produced one, so from here every
+  // exit releases it without having to say so — including the error paths, where the runtime is not
+  // supposed to have produced an element at all but nothing stops it.
+  NS_VALID_UNTIL_END_OF_SCOPE FBAXElementRef *hit =
+  copied ? [[FBAXElementRef alloc] initWithOwnedElement:copied] : nil;
+
+  FBAXHitTestOutcome *unresolved = [FBAXHitTestOutcome outcomeForHitTestError:axError hasElement:hit != nil];
   if (unresolved) {
     return unresolved;
   }
@@ -435,17 +500,16 @@ static NSString *const kFrontboardVisibilityEndowment = @"com.apple.frontboard.v
   // The host tags the hit element with its owning process, so an unattributable hit is not a result. A
   // seeded hit-test already knows the pid and falls back to it; a system-wide one has no other source.
   pid_t owningPid = 0;
-  int32_t pidError = _functions.getPid(hit, &owningPid);
+  int32_t pidError = _functions.getPid(hit.element, &owningPid);
   if (pidError != FBAXErrorSuccess || owningPid <= 0) {
     if (pid <= 0) {
-      CFRelease(hit);
       return [FBAXHitTestOutcome failed:[NSString stringWithFormat:@"could not resolve the owning pid of the hit element (%d)", pidError]];
     }
     owningPid = pid;
   }
 
-  XCAccessibilityElement *hitElement = [(id)_elementClass elementWithAXUIElement:hit];
-  CFRelease(hit);  // +1 from the Copy; `elementWithAXUIElement:` took its own reference.
+  // `elementWithAXUIElement:` takes a reference of its own, so the wrapper's goes when it leaves scope.
+  XCAccessibilityElement *hitElement = [(id)_elementClass elementWithAXUIElement:hit.element];
   if (!hitElement) {
     return [FBAXHitTestOutcome failed:@"failed to read the hit element"];
   }
