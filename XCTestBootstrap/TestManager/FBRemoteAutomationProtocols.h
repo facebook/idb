@@ -17,7 +17,10 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @protocol FBRemoteAutomationReceipt <NSObject>
 
-- (void)handleCompletion:(void (^)(id _Nullable value, NSError *_Nullable error))completion;
+// The daemon hands the value over and keeps no reference to it, so Swift can treat it as
+// transferred rather than shared. Without this the value imports as task-isolated and cannot be
+// passed to a continuation without an unsafe opt-out.
+- (void)handleCompletion:(void (^)(id _Nullable NS_SWIFT_SENDING value, NSError *_Nullable error))completion;
 
 @end
 

@@ -6,7 +6,6 @@
  */
 
 import Foundation
-@_implementationOnly import SwiftConcurrencyUtils
 
 /// Failures of the *invocation* layer — a remote call that did not complete, or a runtime-loaded
 /// payload that was unavailable. Distinct from the UI-automation errors the caller-facing backend
@@ -59,15 +58,17 @@ public extension RemoteInvoking {
 ///
 // SAFETY: every read/write of the continuation and flags is serialized by `lock`, and the
 // continuation is resumed only after the lock is released, so no external code runs under
-// the lock. `AssertingSafeContinuation` additionally tolerates redundant resumes.
+// the lock. `resolve` and `cancel` are mutually exclusive through `finished`, and the
+// `store` cancellation path runs only when `cancel` found no continuation to resume, so the
+// continuation is resumed exactly once.
 // patternlint-disable-next-line unchecked-sendable
 private final class InvocationBridge: @unchecked Sendable {
   private let lock = NSLock()
-  private var continuation: AssertingSafeContinuation<Any?, Error>?
+  private var continuation: CheckedContinuation<Any?, Error>?
   private var finished = false
   private var pendingCancellation = false
 
-  func store(_ continuation: AssertingSafeContinuation<Any?, Error>) {
+  func store(_ continuation: CheckedContinuation<Any?, Error>) {
     lock.lock()
     if pendingCancellation {
       lock.unlock()
@@ -78,7 +79,7 @@ private final class InvocationBridge: @unchecked Sendable {
     lock.unlock()
   }
 
-  func resolve(_ result: Result<Any?, Error>) {
+  func resolve(_ result: sending Result<Any?, Error>) {
     lock.lock()
     if finished {
       lock.unlock()
@@ -193,7 +194,7 @@ func awaitRemoteReceipt(
   }
   let bridge = InvocationBridge()
   return try await withTaskCancellationHandler {
-    try await withAssertingSafeThrowingContinuation { (continuation: AssertingSafeContinuation<Any?, Error>) in
+    try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Any?, Error>) in
       bridge.store(continuation)
       let timeout = DispatchWorkItem {
         bridge.resolve(.failure(FBRemoteInvocationError.invocationTimedOut(operation: operation, deadline: deadline)))

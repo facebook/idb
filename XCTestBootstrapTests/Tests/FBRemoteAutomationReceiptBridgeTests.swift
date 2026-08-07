@@ -25,14 +25,14 @@ private final class ImmediateReceipt: NSObject, FBRemoteAutomationReceipt {
     self.error = error
   }
 
-  func handleCompletion(_ completion: @escaping (Any?, (any Error)?) -> Void) {
+  func handleCompletion(_ completion: @escaping (sending Any?, (any Error)?) -> Void) {
     completion(value, error)
   }
 }
 
 /// Fires the completion twice, to prove the bridge resolves exactly once.
 private final class DoubleFireReceipt: NSObject, FBRemoteAutomationReceipt {
-  func handleCompletion(_ completion: @escaping (Any?, (any Error)?) -> Void) {
+  func handleCompletion(_ completion: @escaping (sending Any?, (any Error)?) -> Void) {
     completion("first" as NSString, nil)
     completion("second" as NSString, nil)
   }
@@ -40,7 +40,7 @@ private final class DoubleFireReceipt: NSObject, FBRemoteAutomationReceipt {
 
 /// Never fires, so the deadline timer or task cancellation is the only way out.
 private final class SilentReceipt: NSObject, FBRemoteAutomationReceipt {
-  func handleCompletion(_ completion: @escaping (Any?, (any Error)?) -> Void) {}
+  func handleCompletion(_ completion: @escaping (sending Any?, (any Error)?) -> Void) {}
 }
 
 final class FBRemoteAutomationReceiptBridgeTests: XCTestCase {
