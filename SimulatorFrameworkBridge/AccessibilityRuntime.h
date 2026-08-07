@@ -109,6 +109,19 @@ typedef NS_ENUM(NSUInteger, FBAXHitTestStatus) {
 + (instancetype)applicationUnavailable;
 + (instancetype)failed:(NSString *)failureReason;
 
+/**
+ * Classifies the AXError from `AXUIElementCopyElementAtPosition`, given whether it also produced an
+ * element, into the outcome that error implies.
+ *
+ * Returns nil — and only then — when the point resolved to an element the caller should go on to
+ * attribute and wrap. Every other answer is complete, so a caller that gets non-nil is done.
+ *
+ * Split out from the hit-test itself because that method cannot be constructed off a simulator, which
+ * left this judgement — the one that decides whether the host is told "nothing is there", "nothing
+ * answered" or "the read broke" — reachable only by manufacturing the condition on a booted device.
+ */
++ (nullable instancetype)outcomeForHitTestError:(int32_t)axError hasElement:(BOOL)hasElement;
+
 @end
 
 #pragma mark - Frontmost

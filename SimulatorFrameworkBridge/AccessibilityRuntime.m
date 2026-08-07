@@ -113,6 +113,21 @@
                         failureReason:failureReason];
 }
 
++ (nullable instancetype)outcomeForHitTestError:(int32_t)axError hasElement:(BOOL)hasElement
+{
+  if (axError == FBAXErrorServerNotFound) {
+    // Nothing answered the hit-test at all. Reporting that as an empty result would tell the caller the
+    // app is on screen with nothing under the point, which is the opposite of what happened.
+    return [self applicationUnavailable];
+  }
+  if (axError != FBAXErrorSuccess || !hasElement) {
+    // No element at the point is a valid empty result, not a failure: a caller doing a streaming
+    // hit-test (e.g. after a tap) must be able to tell "empty space" apart from "the reader broke".
+    return [self empty];
+  }
+  return nil;
+}
+
 @end
 
 @implementation FBAXFrontmostOutcome
@@ -406,15 +421,9 @@ static NSString *const kFrontboardVisibilityEndowment = @"com.apple.frontboard.v
   void *hit = NULL;
   int32_t axError = _functions.copyElementAtPosition(seed, (float)point.x, (float)point.y, &hit);
   CFRelease(seed);
-  if (axError == FBAXErrorServerNotFound) {
-    // Nothing answered the hit-test at all. Reporting that as an empty result would tell the caller the
-    // app is on screen with nothing under the point, which is the opposite of what happened.
-    return [FBAXHitTestOutcome applicationUnavailable];
-  }
-  if (axError != FBAXErrorSuccess || !hit) {
-    // No element at the point is a valid empty result, not a failure: a caller doing a streaming
-    // hit-test (e.g. after a tap) must be able to tell "empty space" apart from "the reader broke".
-    return [FBAXHitTestOutcome empty];
+  FBAXHitTestOutcome *unresolved = [FBAXHitTestOutcome outcomeForHitTestError:axError hasElement:hit != NULL];
+  if (unresolved) {
+    return unresolved;
   }
 
   // The host tags the hit element with its owning process, so an unattributable hit is not a result. A
