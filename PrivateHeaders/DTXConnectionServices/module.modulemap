@@ -1,0 +1,5 @@
+module DTXConnectionServices {
+    umbrella "."
+    export *
+    module * { export * }
+}

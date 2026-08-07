@@ -93,6 +93,7 @@ targets:
         SWIFT_VERSION: "6.0"
         MODULEMAP_FILE: $(SRCROOT)/XCTestBootstrap/module.modulemap
         HEADER_SEARCH_PATHS: $(inherited) $(SRCROOT)/Shims/Shimulator/Tools
+        OTHER_SWIFT_FLAGS: $(inherited) -Xcc -fmodule-map-file=$(SRCROOT)/PrivateHeaders/DTXConnectionServices/module.modulemap
     dependencies:
       - target: FBControlCore
         embed: false
