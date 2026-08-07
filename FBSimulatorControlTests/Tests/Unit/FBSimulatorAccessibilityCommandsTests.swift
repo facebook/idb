@@ -845,6 +845,36 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     XCTAssertEqual(coverage, 0.0, accuracy: 0.001, "Coverage should be 0 when only Application element exists")
   }
 
+  // Coverage is marked from the frame the walk fetches unconditionally, not from the frame it
+  // *reports*, so narrowing `--key` past the frame does not starve it. Pinned because computing
+  // coverage from the serialized model instead would read a frame a narrow key set omits, and would
+  // silently start reporting nothing here.
+  func testCoverageIsCollectedWhenFramesAreNotRequested() async throws {
+    let bar = FBAccessibilityTestElementBuilder.staticText(
+      withLabel: "Navigation Bar",
+      frame: NSRect(x: 0, y: 0, width: 390, height: 422)
+    )
+    setUp(
+      withRootElement: FBAccessibilityTestElementBuilder.application(
+        withLabel: "App Window",
+        frame: NSRect(x: 0, y: 0, width: 390, height: 844),
+        children: [bar]
+      ))
+
+    let element = try await simulator.resolveElement(for: .frontmost)
+    var options = FBAccessibilityRequestOptions()
+    options.keys = [.label]
+    options.collectFrameCoverage = true
+    let response = try element.serialize(with: options)
+    element.close()
+
+    let coverage = try XCTUnwrap(response.frameCoverage, "coverage does not depend on the requested keys")
+    XCTAssertEqual(coverage, 0.5, accuracy: 0.01, "the bar covers the upper half; the Application root is skipped")
+
+    let first = try XCTUnwrap((response.legacyElementsObject() as? [Any])?.first as? [String: Any])
+    XCTAssertEqual(Set(first.keys), [FBAXKeys.label.rawValue], "the narrow key set still governs what is reported")
+  }
+
   func testAdditionalFrameCoverageIsNilWithoutRemoteContent() async throws {
     // Test that additionalFrameCoverage is nil when no remote content is discovered
     setUp(withRootElement: defaultElementTree)
@@ -913,6 +943,84 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     let labels = elements.compactMap { ($0 as? [String: Any])?["AXLabel"] as? String }
     XCTAssertEqual(elements.count, 2, "App element plus one discovered remote element")
     XCTAssertTrue(labels.contains("Remote WebView Content"), "Discovered remote element should be merged into the output")
+  }
+
+  // MARK: - The element filter inside the walk
+
+  /// A root whose three children are one keeper and two elements `.interactable` drops — no label, no
+  /// identifier, and `StaticText`, which is not an actionable role.
+  private func filterableRoot() -> FBSimulatorControlTests_AXPMacPlatformElement_Double {
+    FBAccessibilityTestElementBuilder.application(
+      withLabel: "App Window",
+      frame: NSRect(x: 0, y: 0, width: 390, height: 844),
+      children: [
+        FBAccessibilityTestElementBuilder.button(
+          withLabel: "OK", identifier: "ok_button", frame: NSRect(x: 0, y: 0, width: 100, height: 44)
+        ),
+        FBAccessibilityTestElementBuilder.staticText(withLabel: "", frame: NSRect(x: 0, y: 100, width: 390, height: 44)),
+        FBAccessibilityTestElementBuilder.staticText(withLabel: "", frame: NSRect(x: 0, y: 200, width: 390, height: 44)),
+      ]
+    )
+  }
+
+  /// Profiles a whole-tree read of `filterableRoot()` under `filter`. Installs the fixture, so it may
+  /// be called only once per test — the translator swizzle refuses a second install.
+  private func profile(withFilter filter: FBAccessibilityElementFilter) async throws -> FBAccessibilityProfilingData? {
+    setUp(withRootElement: filterableRoot())
+    let element = try await simulator.resolveElement(for: .frontmost)
+    var options = FBAccessibilityRequestOptions()
+    options.enableProfiling = true
+    options.filter = filter
+    let response = try element.serialize(with: options)
+    element.close()
+    return response.profilingData
+  }
+
+  // The baseline the filtered read below is measured against: every node serialized.
+  func testAllFilterProfileCountsCoverEveryNode() async throws {
+    assertProfilingData(try await profile(withFilter: .all), expectedElements: 4, expectedAttributeFetches: 60)
+  }
+
+  // The filter runs inside the walk, so a dropped node is never serialized: it contributes nothing to
+  // the element count and none of the per-element fetches. What it *does* cost — the label, identifier
+  // and role probes `passes` makes — is not tallied at all, so these numbers understate the read.
+  // Pinned because filtering the serialized model instead makes the walk serialize every node, which
+  // moves both counts up to the unfiltered figures above.
+  func testInteractableFilterProfileCountsOmitDroppedNodes() async throws {
+    assertProfilingData(try await profile(withFilter: .interactable), expectedElements: 2, expectedAttributeFetches: 30)
+  }
+
+  // Remote content is discovered after the walk and appended straight to the output, so it never meets
+  // `passes`: an element the filter would drop survives purely because of where it was found. Pinned
+  // because filtering the serialized model subjects the merged list to the filter uniformly.
+  func testRemoteContentDiscoveryBypassesTheElementFilter() async throws {
+    let appElement = FBAccessibilityTestElementBuilder.application(
+      withLabel: "App", frame: NSRect(x: 0, y: 0, width: 390, height: 844), children: []
+    )
+    // Unlabeled, unidentified StaticText — exactly what `.interactable` exists to drop.
+    let remoteElement = FBAccessibilityTestElementBuilder.staticText(
+      withLabel: "", frame: NSRect(x: 0, y: 400, width: 390, height: 100)
+    )
+    setUp(withRootElement: appElement)
+
+    let remoteTranslation = FBSimulatorControlTests_AXPTranslationObject_Double()
+    remoteTranslation.pid = 99999
+    fixture!.translator.objectAtPointResult = remoteTranslation
+    fixture!.translator.macPlatformElementResultsByPid = [99999: remoteElement]
+
+    let element = try await simulator.resolveElement(for: .frontmost)
+    var options = FBAccessibilityRequestOptions()
+    options.filter = .interactable
+    options.collectFrameCoverage = true
+    options.remoteContentOptions = FBAccessibilityRemoteContentOptions(gridStepSize: 50)
+    let response = try element.serialize(with: options)
+    element.close()
+
+    let elements = try XCTUnwrap(response.legacyElementsObject() as? [Any])
+    XCTAssertEqual(
+      elements.count, 2,
+      "the app root plus the discovered element, which the filter would have dropped had it been walked"
+    )
   }
 
   // MARK: - Marker Search Tests (accessibilityElementMatching)

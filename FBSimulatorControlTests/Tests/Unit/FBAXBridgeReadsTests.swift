@@ -500,6 +500,58 @@ final class FBAXBridgeReadsTests: XCTestCase {
     XCTAssertEqual(elements.count, 1, "the unlabeled container is filtered out, its labeled child kept")
   }
 
+  // MARK: - Frame coverage
+
+  /// A root spanning a 390x844 screen with one child covering its lower half — enough for a coverage
+  /// calculation to have both a screen to measure against and an element to measure. The element types
+  /// are `XCUIElementType` raw values, which is how the guest reports a role: 2 is Application, 9 is
+  /// Button.
+  private static func sizedTree() -> [String: Any] {
+    [
+      FBAXWire.Node.label.rawValue: "root",
+      FBAXWire.Node.elementType.rawValue: NSNumber(value: 2),
+      FBAXWire.Node.frame.rawValue: CGRectCreateDictionaryRepresentation(CGRect(x: 0, y: 0, width: 390, height: 844)) as NSDictionary,
+      FBAXWire.Node.children.rawValue: [
+        [
+          FBAXWire.Node.label.rawValue: "Lower Half",
+          FBAXWire.Node.elementType.rawValue: NSNumber(value: 9),
+          FBAXWire.Node.frame.rawValue: CGRectCreateDictionaryRepresentation(CGRect(x: 0, y: 422, width: 390, height: 422)) as NSDictionary,
+          FBAXWire.Node.children.rawValue: [[String: Any]](),
+        ] as [String: Any]
+      ],
+    ]
+  }
+
+  // `describeTree` is the read path every backend but `ax` funnels through, and it never consults
+  // `collectFrameCoverage` — the option is accepted, carried the whole way down, and dropped. Both
+  // inputs a coverage calculation needs are present and asserted below, so what is pinned here is the
+  // drop itself rather than a fixture that could not have been measured.
+  func testDescribeTreeDropsTheRequestedFrameCoverage() async throws {
+    let reader = StubTreeReader(read: FBAXTreeRead(tree: Self.sizedTree(), pid: 99, truncated: false, modal: nil))
+    var options = FBAccessibilityRequestOptions(format: .complete)
+    options.collectFrameCoverage = true
+    let response = try await reader.describeTree(.frontmost, options: options)
+
+    XCTAssertEqual(
+      response.screen, FBAccessibilityScreenInfo(width: 390, height: 844),
+      "the bounds a coverage calculation would measure against are known"
+    )
+    guard case let .tree(elements) = response.elements, let root = elements.first else {
+      return XCTFail("expected a nested root, got \(response.elements)")
+    }
+    // `complete` is a nested format, so the child rides inside the root rather than beside it.
+    let heights = ([root] + (root.children ?? [])).compactMap { element -> Double? in
+      guard let frame = element.frame ?? nil else { return nil }
+      return frame.height
+    }
+    XCTAssertEqual(heights, [844, 422], "and every element carries the frame it would be measured by")
+
+    // BUG: axbridge, axbridge-persistent and testmanagerd silently drop --collect-frame-coverage,
+    // so `complete` reports `coverage: null` where `ax` reports a ratio — flipped in a later commit.
+    XCTAssertNil(response.frameCoverage, "the guest backends collect no coverage")
+    XCTAssertNil(response.document.coverage, "so the complete document reports none")
+  }
+
   func testDescribeTreeThrowsWhenNoElementMatchesTheMarker() async throws {
     let reader = StubTreeReader(read: Self.stubRead())
     do {
