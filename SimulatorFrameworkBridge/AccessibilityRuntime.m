@@ -120,6 +120,12 @@
     // app is on screen with nothing under the point, which is the opposite of what happened.
     return [self applicationUnavailable];
   }
+  if (axError == FBAXErrorIPCTimeout) {
+    // The application is there and did not answer in time. Empty would tell a caller the point is blank,
+    // which is what it looks like after a tap that is still being processed — so this stays a failure the
+    // caller can retry, and is not tagged unavailable, because the application has not gone away.
+    return [self failed:@"the application did not answer the hit-test in time"];
+  }
   if (axError != FBAXErrorSuccess || !hasElement) {
     // No element at the point is a valid empty result, not a failure: a caller doing a streaming
     // hit-test (e.g. after a tap) must be able to tell "empty space" apart from "the reader broke".

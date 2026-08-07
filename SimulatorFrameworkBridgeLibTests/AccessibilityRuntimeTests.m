@@ -117,12 +117,10 @@ static NSError *FBAXTestsErrorWithCode(int32_t code)
     FBAXHitTestStatusEmpty,
     @"a genuinely empty point"
   );
-  // BUG: `FBAXErrorIPCTimeout` means a live application stopped answering, which is reported to the host
-  // as empty space at the point — indistinguishable from a successful read of a blank area. Flipped in
-  // the following commit.
   XCTAssertEqual(
     [FBAXHitTestOutcome outcomeForHitTestError:FBAXErrorIPCTimeout hasElement:NO].status,
-    FBAXHitTestStatusEmpty
+    FBAXHitTestStatusFailed,
+    @"a live application that did not answer is not an empty point"
   );
 }
 
