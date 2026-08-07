@@ -93,6 +93,39 @@ static NSError *FBAXTestsErrorWithCode(int32_t code)
 
 #pragma mark - Hit-test outcomes
 
+// The other half of the AX-error classification: what the hit-test itself makes of the code
+// `AXUIElementCopyElementAtPosition` returned. Nil means an element came back and the caller wraps it;
+// every other answer is the complete outcome.
+- (void)testHitTestErrorClassification
+{
+  XCTAssertNil(
+    [FBAXHitTestOutcome outcomeForHitTestError:FBAXErrorSuccess hasElement:YES],
+    @"success with an element is the caller's to wrap"
+  );
+  // Success with no element out is still nothing at the point, not a contradiction to report.
+  XCTAssertEqual(
+    [FBAXHitTestOutcome outcomeForHitTestError:FBAXErrorSuccess hasElement:NO].status,
+    FBAXHitTestStatusEmpty
+  );
+  XCTAssertEqual(
+    [FBAXHitTestOutcome outcomeForHitTestError:FBAXErrorServerNotFound hasElement:NO].status,
+    FBAXHitTestStatusApplicationUnavailable,
+    @"nothing answered at all is not an empty point"
+  );
+  XCTAssertEqual(
+    [FBAXHitTestOutcome outcomeForHitTestError:FBAXErrorInvalidUIElement hasElement:NO].status,
+    FBAXHitTestStatusEmpty,
+    @"a genuinely empty point"
+  );
+  // BUG: `FBAXErrorIPCTimeout` means a live application stopped answering, which is reported to the host
+  // as empty space at the point — indistinguishable from a successful read of a blank area. Flipped in
+  // the following commit.
+  XCTAssertEqual(
+    [FBAXHitTestOutcome outcomeForHitTestError:FBAXErrorIPCTimeout hasElement:NO].status,
+    FBAXHitTestStatusEmpty
+  );
+}
+
 - (void)testHitOnASeededPointAnswersWithTheElementAndItsOwningPid
 {
   _runtime.hitTestOutcome = [FBAXHitTestOutcome hit:[FBAXFakeElement readable:@"XCUIElementTypeButton"]
