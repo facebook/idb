@@ -7,6 +7,8 @@
 
 #import <Foundation/Foundation.h>
 
+#import "AccessibilityRuntime.h"
+
 NS_ASSUME_NONNULL_BEGIN
 
 /**
@@ -32,5 +34,16 @@ NSDictionary<NSString *, NSString *> *FBAXBridgeWireConstantsForTesting(void);
  * enrichment a describe response puts on the wire.
  */
 NSDictionary<NSString *, NSString *> *_Nullable FBAXBridgeModalDescriptor(NSDictionary<NSString *, id> *tree);
+
+/**
+ * Substitutes `runtime` for the live accessibility runtime every request is served from, or restores the
+ * live one when passed nil.
+ *
+ * This is the whole point of `FBAXRuntime` being an interface rather than a set of functions: with a fake
+ * conformer, `FBAXBridgeHandleRequest` can be driven through every read, hit-test and frontmost outcome —
+ * including the ones only a broken or unresponsive application produces — on macOS, with nothing booted.
+ * A test that sets this must clear it again, since the substitution is process-wide.
+ */
+void FBAXBridgeSetRuntimeForTesting(id<FBAXRuntime> _Nullable runtime);
 
 NS_ASSUME_NONNULL_END

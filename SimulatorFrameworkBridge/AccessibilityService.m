@@ -9,11 +9,8 @@
 #import "AccessibilityService+Testing.h"
 
 #import <arpa/inet.h>
-#import <dlfcn.h>
 #import <errno.h>
 #import <math.h>
-#import <objc/message.h>
-#import <objc/runtime.h>
 #import <poll.h>
 #import <sys/socket.h>
 #import <sys/time.h>
@@ -22,11 +19,7 @@
 
 #import <CoreGraphics/CoreGraphics.h>
 
-#import "AXPTranslationPrivate.h"
-#import "AXRuntimePrivate.h"
 #import "AccessibilityRuntime.h"
-#import "RunningBoardServicesPrivate.h"
-#import "XCTAutomationSupportPrivate.h"
 
 // The `XC_kAXXC*` attribute keys. These MUST match `FBAXWire.Node` host-side so the emitted tree feeds
 // the shared serializer (via `FBRemoteAutomationPlatformElement`) unchanged.
@@ -114,45 +107,35 @@ static const int kIdleTimeoutSeconds = 300;
 
 #pragma mark - AX client setup
 
-static XCTAccessibilityFramework *_Nullable FBAXBridgeMakeFramework(NSString *_Nullable *_Nullable error)
-{
-  dlopen(FBAXPathAXRuntime, RTLD_NOW);
-  dlopen(FBAXPathXCTAutomationSupport, RTLD_NOW);
-  Class frameworkClass = objc_lookUpClass("XCTAccessibilityFramework");
-  if (!frameworkClass) {
-    if (error) {
-      *error = @"XCTAccessibilityFramework unavailable — is XCTAutomationSupport loaded?";
-    }
-    return nil;
-  }
-  XCTAccessibilityFramework *framework =
-  [(XCTAccessibilityFramework *)[frameworkClass alloc] initForRemoteAccess];
-  if (!framework) {
-    if (error) {
-      *error = @"initForRemoteAccess returned nil";
-    }
-    return nil;
-  }
-  return framework;
-}
+// Set by `FBAXBridgeSetRuntimeForTesting` to stand in for the live runtime. Nil in the product, and the
+// only reason this file knows the runtime has more than one possible conformer.
+static id<FBAXRuntime> gInjectedRuntime = nil;
 
-// The framework is created once and reused across requests: `dlopen` + `initForRemoteAccess` is the
+// The runtime is bound once and reused across requests: `dlopen` + `initForRemoteAccess` is the
 // dominant setup cost (~260ms), so caching it is what makes the persistent `serve` mode fast (the
-// oneshot path creates it once too). Not thread-safe by design — requests are handled serially.
-static XCTAccessibilityFramework *_Nullable FBAXBridgeSharedFramework(NSString *_Nullable *_Nullable error)
+// oneshot path binds it once too). Not thread-safe by design — requests are handled serially.
+static id<FBAXRuntime> _Nullable FBAXBridgeSharedRuntime(NSString *_Nullable *_Nullable error)
 {
-  static XCTAccessibilityFramework *shared;
+  if (gInjectedRuntime) {
+    return gInjectedRuntime;
+  }
+  static FBAXLiveRuntime *shared;
   static NSString *cachedError;
   static dispatch_once_t onceToken;
   dispatch_once(&onceToken, ^{
     NSString *setupError = nil;
-    shared = FBAXBridgeMakeFramework(&setupError);
+    shared = [[FBAXLiveRuntime alloc] initWithError:&setupError];
     cachedError = setupError;
   });
   if (!shared && error) {
     *error = cachedError ?: @"accessibility setup failed";
   }
   return shared;
+}
+
+void FBAXBridgeSetRuntimeForTesting(id<FBAXRuntime> _Nullable runtime)
+{
+  gInjectedRuntime = runtime;
 }
 
 static NSArray<NSString *> *FBAXBridgeFetchList(void)
@@ -250,20 +233,18 @@ static id FBAXBridgeJSONSafeValue(id _Nullable value, NSString *key)
 //
 // The outcome describes only *this* element. A child that fails to read is dropped from the tree rather
 // than failing the whole read, so a child's outcome never becomes the caller's.
-static FBAXReadOutcome *FBAXBridgeBuildNode(XCTAccessibilityFramework *framework,
+static FBAXReadOutcome *FBAXBridgeBuildNode(id<FBAXRuntime> runtime,
                                             id element,
                                             int depth,
                                             int maxDepth,
                                             int *budget,
                                             BOOL *truncated)
 {
-  NSError *error = nil;
-  NSDictionary *attributes = [framework attributesForElement:element
-                                                  attributes:FBAXBridgeFetchList()
-                                                       error:&error];
-  if (![attributes isKindOfClass:NSDictionary.class]) {
-    return [FBAXReadOutcome failureForAttributeError:error];
+  FBAXReadOutcome *outcome = [runtime readAttributes:FBAXBridgeFetchList() ofElement:element];
+  if (outcome.status != FBAXReadStatusRead) {
+    return outcome;
   }
+  NSDictionary<NSString *, id> *attributes = (NSDictionary *)outcome.attributes;
 
   NSMutableDictionary *node = [NSMutableDictionary dictionaryWithCapacity:attributes.count];
   for (NSString *key in attributes) {
@@ -283,7 +264,7 @@ static FBAXReadOutcome *FBAXBridgeBuildNode(XCTAccessibilityFramework *framework
         break;
       }
       (*budget)--;
-      FBAXReadOutcome *childOutcome = FBAXBridgeBuildNode(framework, child, depth + 1, maxDepth, budget, truncated);
+      FBAXReadOutcome *childOutcome = FBAXBridgeBuildNode(runtime, child, depth + 1, maxDepth, budget, truncated);
       if (childOutcome.status == FBAXReadStatusRead) {
         [children addObject:(NSDictionary *)childOutcome.attributes];
       }
@@ -351,365 +332,56 @@ NSDictionary<NSString *, NSString *> *_Nullable FBAXBridgeModalDescriptor(NSDict
 
 #pragma mark - Frontmost resolution
 
-// The bridge/token delegate for the in-guest AXPTranslator window-server frontmost. The host normally
-// provides this delegate and services each per-element request over CoreSimulator; in-guest we close the
-// loop locally: the callback routes every request the translator emits back into the translator's own
-// `processTranslatorRequest:`, which resolves it against the guest AX server. This makes the iOS
-// translator resolve the true window-server frontmost with no host round-trip. Requests are serviced
-// serially by the guest, so the depth guard only bounds re-entrant sub-reads.
-static NSInteger gAXPSelfServiceDepth = 0;
-
-@interface FBAXWindowServerDelegate : NSObject
-@property (nonatomic, weak) id translator;
-@end
-@implementation FBAXWindowServerDelegate
-- (id)selfServiceCallback
-{
-  id translator = self.translator;
-  // Resolved by name (the AXPTranslator selectors are not declared to this translation unit).
-  SEL processSelector = NSSelectorFromString(@"processTranslatorRequest:");
-  return ^id (id request) {
-    if (gAXPSelfServiceDepth > 500) {
-      return nil;
-    }
-    gAXPSelfServiceDepth++;
-    id result = nil;
-    if (translator && [translator respondsToSelector:processSelector]) {
-      @try {
-        result = ((id (*)(id, SEL, id)) objc_msgSend)(translator, processSelector, request);
-      } @catch (NSException *exception) {
-        result = nil;
-      }
-    }
-    gAXPSelfServiceDepth--;
-    return result;
-  };
-}
-
-- (id)accessibilityTranslationDelegateBridgeCallbackWithToken:(NSString *)token { return [self selfServiceCallback]; }
-
-- (id)accessibilityTranslationDelegateBridgeCallback { return [self selfServiceCallback]; }
-
-- (CGRect)accessibilityTranslationConvertPlatformFrameToSystem:(CGRect)rect withToken:(NSString *)token { return rect; }
-
-- (CGRect)accessibilityTranslationConvertPlatformFrameToSystem:(CGRect)rect { return rect; }
-
-- (id)accessibilityTranslationRootParentWithToken:(NSString *)token { return nil; }
-
-- (id)accessibilityTranslationRootParent { return nil; }
-
-@end
-
-// The AXPTranslator (iOS instance) wired for in-guest window-server frontmost, set up once and reused
-// (installing the self-service delegate is the one-time cost). The delegate is retained here so it
-// outlives the translator's weak/assign reference. Returns nil (with `*error` set) if AXPTranslator is
-// unavailable.
-static id _Nullable FBAXBridgeWindowServerTranslator(NSString *_Nullable *_Nullable error)
-{
-  static id translator;
-  static FBAXWindowServerDelegate *delegate;
-  static NSString *cachedError;
-  static dispatch_once_t onceToken;
-  dispatch_once(&onceToken, ^{
-    dlopen(FBAXPathAXPTranslation, RTLD_NOW);
-    SEL sharedSelector = NSSelectorFromString(@"sharediOSInstance");
-    Class translatorClass = objc_lookUpClass("AXPTranslator");
-    if (!translatorClass || ![translatorClass respondsToSelector:sharedSelector]) {
-      cachedError = @"AXPTranslator unavailable — is AccessibilityPlatformTranslation loaded?";
-      return;
-    }
-    id instance = ((id (*)(id, SEL)) objc_msgSend)(translatorClass, sharedSelector);
-    if (!instance) {
-      cachedError = @"AXPTranslator sharediOSInstance was nil";
-      return;
-    }
-    FBAXWindowServerDelegate *serviceDelegate = [FBAXWindowServerDelegate new];
-    serviceDelegate.translator = instance;
-    @try {
-      [instance setValue:serviceDelegate forKey:@"bridgeTokenDelegate"];
-      [instance setValue:@YES forKey:@"supportsDelegateTokens"];
-    } @catch (NSException *exception) {
-      cachedError = exception.reason ?: @"failed to wire the AXPTranslator bridge delegate";
-      return;
-    }
-    translator = instance;
-    delegate = serviceDelegate;
-  });
-  (void)delegate;  // retained only to outlive the translator's weak reference to its bridge delegate
-  if (!translator && error) {
-    *error = cachedError ?: @"AXPTranslator setup failed";
-  }
-  return translator;
-}
-
-// Runs `block` somewhere other than the main queue and waits for it to finish.
+// Resolves the frontmost application positionally: a system-wide hit-test at the caller's screen anchor
+// (the screen centre — the anchor the testmanagerd backend also uses) reads whichever element owns that
+// point, and its owning pid is the frontmost app.
 //
-// AXPTranslator lazily enables its bridge runtime on first use, and that path asserts it is *not* running
-// on the main queue (`-[AXPTranslator_iOS _enableAccessibilityBridgeRuntime]` calls
-// `dispatch_assert_queue_not`). The in-guest self-service delegate re-enters the translator on whichever
-// thread called in, so driving it from the reader's main thread trips the assert and traps the process.
+// This is a *positional* proxy for frontmost, not the window server's notion of frontmost. It agrees with
+// it for a fullscreen app or the home screen, but can differ for a centred element owned by another
+// process (e.g. a system modal). The other two methods resolve the authoritative frontmost.
+static FBAXFrontmostOutcome *FBAXBridgeCenterPointFrontmost(id<FBAXRuntime> runtime, CGPoint anchor)
+{
+  FBAXHitTestOutcome *outcome = [runtime hitTestAtPoint:anchor processIdentifier:0];
+  switch (outcome.status) {
+    case FBAXHitTestStatusHit:
+      return [FBAXFrontmostOutcome resolved:outcome.owningProcessIdentifier];
+    case FBAXHitTestStatusEmpty:
+      // Nothing at the anchor: an app mid-launch whose AX tree is not up yet, or a genuinely empty point.
+      // The host treats this as "not ready" and retries, so the same outcome that answers a `hittest` with
+      // an empty result answers a frontmost query with a resolution failure.
+      return [FBAXFrontmostOutcome unresolved:
+              [NSString stringWithFormat:@"system-wide hit-test at (%.1f, %.1f) found no element", anchor.x, anchor.y]];
+    case FBAXHitTestStatusApplicationUnavailable:
+      return [FBAXFrontmostOutcome unresolved:
+              [NSString stringWithFormat:@"no accessibility server answered the system-wide hit-test at (%.1f, %.1f)", anchor.x, anchor.y]];
+    // `default` sits with the failure case rather than alone: a status this does not know never resolves
+    // to a pid.
+    case FBAXHitTestStatusFailed:
+    default:
+      return [FBAXFrontmostOutcome unresolved:outcome.failureReason ?: @"the system-wide hit-test failed"];
+  }
+}
+
+// Resolves the frontmost application by the named `method`: `center-point` (the default) is the positional
+// system-wide hit-test at `anchor`; `window-server` is the in-guest AXPTranslator query; `runningboard`
+// reads the foreground app from RunningBoard's visibility endowment. `anchor` is ignored by the latter two.
 //
-// Blocking the caller is deliberate: the reader handles one request at a time, so the main thread has
-// nothing else to do while the translator answers.
-static void FBAXBridgeRunOffMainQueue(dispatch_block_t block)
+// A request names exactly one method and gets exactly that one — there is deliberately no fallback between
+// them, because a caller that asked for the authoritative frontmost is not served by silently receiving the
+// positional proxy instead. The caller therefore already knows which method answered, which is why nothing
+// below reports one back.
+static FBAXFrontmostOutcome *FBAXBridgeResolveFrontmost(id<FBAXRuntime> runtime, NSString *method, CGPoint anchor)
 {
-  if (!NSThread.isMainThread) {
-    block();
-    return;
-  }
-  dispatch_semaphore_t completed = dispatch_semaphore_create(0);
-  dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
-    block();
-    dispatch_semaphore_signal(completed);
-  });
-  dispatch_semaphore_wait(completed, DISPATCH_TIME_FOREVER);
-}
-
-// The window-server frontmost query itself, which must already be off the main queue — see
-// `FBAXBridgeRunOffMainQueue`. Asks the wired iOS translator for `frontmostApplicationWithDisplayId:0`
-// and reads the owning pid of the returned application object.
-static BOOL FBAXBridgeCopyWindowServerFrontmostPidOffMain(pid_t *pidOut, NSString *_Nullable *_Nullable errorOut)
-{
-  NSString *setupError = nil;
-  id translator = FBAXBridgeWindowServerTranslator(&setupError);
-  if (!translator) {
-    if (errorOut) {
-      *errorOut = setupError ?: @"AXPTranslator unavailable";
-    }
-    return NO;
-  }
-  SEL frontmostSelector = NSSelectorFromString(@"frontmostApplicationWithDisplayId:bridgeDelegateToken:");
-  if (![translator respondsToSelector:frontmostSelector]) {
-    if (errorOut) {
-      *errorOut = @"AXPTranslator does not respond to frontmostApplicationWithDisplayId:";
-    }
-    return NO;
-  }
-  SEL pidSelector = NSSelectorFromString(@"pid");
-  id application = ((id (*)(id, SEL, unsigned int, id)) objc_msgSend)(translator, frontmostSelector, 0, @"axbridge");
-  if (!application || ![application respondsToSelector:pidSelector]) {
-    if (errorOut) {
-      *errorOut = @"window-server frontmost returned no application object";
-    }
-    return NO;
-  }
-  pid_t pid = ((int (*)(id, SEL)) objc_msgSend)(application, pidSelector);
-  if (pid <= 0) {
-    if (errorOut) {
-      *errorOut = [NSString stringWithFormat:@"window-server frontmost returned no pid (%d)", pid];
-    }
-    return NO;
-  }
-  if (pidOut) {
-    *pidOut = pid;
-  }
-  return YES;
-}
-
-// Resolves the frontmost application's pid via the in-guest window-server query — the authoritative
-// frontmost the host obtains through AXPTranslator, obtained here with no host round-trip.
-static BOOL FBAXBridgeCopyWindowServerFrontmostPid(pid_t *pidOut, NSString *_Nullable *_Nullable methodOut, NSString *_Nullable *_Nullable errorOut)
-{
-  __block BOOL resolved = NO;
-  __block pid_t pid = 0;
-  __block NSString *queryError = nil;
-  FBAXBridgeRunOffMainQueue(^{
-    resolved = FBAXBridgeCopyWindowServerFrontmostPidOffMain(&pid, &queryError);
-  });
-  if (!resolved) {
-    if (errorOut) {
-      *errorOut = queryError ?: @"window-server frontmost resolution failed";
-    }
-    return NO;
-  }
-  if (pidOut) {
-    *pidOut = pid;
-  }
-  if (methodOut) {
-    *methodOut = kMethodWindowServer;
-  }
-  return YES;
-}
-
-// The endowment namespace RunningBoard grants a process whose scene is on-screen. The foreground app is
-// the launch-services process that holds it.
-static NSString *const kFrontboardVisibilityEndowment = @"com.apple.frontboard.visibility";
-
-// Resolves the frontmost application's pid via RunningBoard: enumerate every launch-services process and
-// return the one endowed with on-screen visibility (`com.apple.frontboard.visibility`). This reads the
-// window server's own notion of foreground — the same pid the window-server method resolves — from the
-// process-lifecycle daemon rather than the accessibility stack, so it needs neither a screen anchor nor
-// the AX server.
-//
-// Enumerating other processes' state requires the `com.apple.runningboard.process-state` entitlement;
-// without it runningboardd rejects the query with "Client not entitled". The RBS classes are resolved by
-// name (they are not declared to this translation unit) and messaged defensively.
-static BOOL FBAXBridgeCopyRunningBoardFrontmostPid(pid_t *pidOut, NSString *_Nullable *_Nullable methodOut, NSString *_Nullable *_Nullable errorOut)
-{
-  dlopen(FBAXPathRunningBoardServices, RTLD_NOW);
-  Class predicateClass = objc_lookUpClass("RBSProcessPredicate");
-  Class stateClass = objc_lookUpClass("RBSProcessState");
-  Class descriptorClass = objc_lookUpClass("RBSProcessStateDescriptor");
-  SEL statesSelector = NSSelectorFromString(@"statesForPredicate:withDescriptor:error:");
-  if (!predicateClass || !stateClass || ![stateClass respondsToSelector:statesSelector]) {
-    if (errorOut) {
-      *errorOut = @"RunningBoardServices unavailable — is RunningBoardServices loaded?";
-    }
-    return NO;
-  }
-
-  id predicate = ((id (*)(id, SEL)) objc_msgSend)(predicateClass, NSSelectorFromString(@"predicateMatchingLaunchServicesProcesses"));
-
-  // The descriptor selects which fields RunningBoard populates. Request the endowment namespaces so each
-  // returned state carries its visibility endowment: the concrete "values" bitmask is not stable across
-  // OS versions, so it is set to all-bits defensively and the specific endowment namespace is named too.
-  id descriptor = nil;
-  if (descriptorClass) {
-    descriptor = ((id (*)(id, SEL)) objc_msgSend)(descriptorClass, NSSelectorFromString(@"descriptor"));
-    @try {
-      SEL setValues = NSSelectorFromString(@"setValues:");
-      if ([descriptor respondsToSelector:setValues]) {
-        ((void (*)(id, SEL, unsigned long long)) objc_msgSend)(descriptor, setValues, ~0ull);
-      }
-      SEL setEndowments = NSSelectorFromString(@"setEndowmentNamespaces:");
-      if ([descriptor respondsToSelector:setEndowments]) {
-        ((void (*)(id, SEL, id)) objc_msgSend)(descriptor, setEndowments, @[kFrontboardVisibilityEndowment]);
-      }
-    } @catch (NSException *exception) {
-      // fall through with the default descriptor
-    }
-  }
-
-  NSError *error = nil;
-  NSArray *states = ((id (*)(id, SEL, id, id, NSError **)) objc_msgSend)(stateClass, statesSelector, predicate, descriptor, &error);
-  if (![states isKindOfClass:NSArray.class]) {
-    if (errorOut) {
-      *errorOut = [NSString stringWithFormat:@"RunningBoard process-state query failed: %@", error ?: @"(no states returned)"];
-    }
-    return NO;
-  }
-
-  SEL endowmentsSelector = NSSelectorFromString(@"endowmentNamespaces");
-  SEL processSelector = NSSelectorFromString(@"process");
-  SEL pidSelector = NSSelectorFromString(@"pid");
-  for (id state in states) {
-    if (![state respondsToSelector:endowmentsSelector]) {
-      continue;
-    }
-    id endowments = ((id (*)(id, SEL)) objc_msgSend)(state, endowmentsSelector);
-    if (![endowments containsObject:kFrontboardVisibilityEndowment]) {
-      continue;
-    }
-    id process = [state respondsToSelector:processSelector] ? ((id (*)(id, SEL)) objc_msgSend)(state, processSelector) : nil;
-    if (!process || ![process respondsToSelector:pidSelector]) {
-      continue;
-    }
-    pid_t pid = ((int (*)(id, SEL)) objc_msgSend)(process, pidSelector);
-    if (pid > 0) {
-      if (pidOut) {
-        *pidOut = pid;
-      }
-      if (methodOut) {
-        *methodOut = kMethodRunningBoard;
-      }
-      return YES;
-    }
-  }
-
-  if (errorOut) {
-    *errorOut = @"no launch-services process holds the on-screen visibility endowment";
-  }
-  return NO;
-}
-
-// Resolves the frontmost application's pid entirely in-guest, with no host-side CoreSimulator AX
-// round-trip: a system-wide hit-test at the caller's screen anchor (the screen centre — the anchor the
-// testmanagerd backend also uses) reads whichever element owns that point, and its owning pid is the
-// frontmost app.
-//
-// This is a *positional* proxy for frontmost, not the window server's notion of frontmost. It agrees
-// with it for a fullscreen app or the home screen, but can differ for a centred element owned by another
-// process (e.g. a system modal). Alternate methods that resolve the authoritative frontmost are added in
-// later changes and dispatched through `FBAXBridgeResolveFrontmostPid`.
-//
-// The AX runtime must already be loaded (the caller warms `FBAXBridgeSharedFramework` first, which
-// `dlopen`s AXRuntime and registers the remote-access client context the AX server answers to). Returns
-// YES with `*pidOut`/`*methodOut` set, or NO with `*errorOut` set to a diagnostic message.
-static BOOL FBAXBridgeCopyForegroundPid(float x, float y, pid_t *pidOut, NSString *_Nullable *_Nullable methodOut, NSString *_Nullable *_Nullable errorOut)
-{
-  FBAXCreateSystemWideFn createSystemWide = dlsym(RTLD_DEFAULT, "AXUIElementCreateSystemWide");
-  FBAXCopyElementAtPositionFn copyElementAtPosition = dlsym(RTLD_DEFAULT, "AXUIElementCopyElementAtPosition");
-  FBAXGetPidFn getPid = dlsym(RTLD_DEFAULT, "AXUIElementGetPid");
-  if (!createSystemWide || !copyElementAtPosition || !getPid) {
-    if (errorOut) {
-      *errorOut = @"AXUIElementCreateSystemWide/CopyElementAtPosition/GetPid unavailable";
-    }
-    return NO;
-  }
-
-  void *systemWide = createSystemWide();
-  if (!systemWide) {
-    if (errorOut) {
-      *errorOut = @"AXUIElementCreateSystemWide returned NULL";
-    }
-    return NO;
-  }
-
-  void *hit = NULL;
-  int32_t axError = copyElementAtPosition(systemWide, x, y, &hit);
-  CFRelease(systemWide);
-  if (axError != FBAXErrorSuccess || !hit) {
-    // No element at the anchor: an app mid-launch whose AX tree is not up yet, or a genuinely empty
-    // point. The host treats this as "not ready" and retries, so surface it as a resolution failure.
-    if (errorOut) {
-      *errorOut = [NSString stringWithFormat:@"system-wide hit-test at (%.1f, %.1f) found no element (axError %d)", x, y, axError];
-    }
-    return NO;
-  }
-
-  pid_t pid = 0;
-  axError = getPid(hit, &pid);
-  CFRelease(hit);
-  if (axError != FBAXErrorSuccess || pid <= 0) {
-    if (errorOut) {
-      *errorOut = [NSString stringWithFormat:@"AXUIElementGetPid failed (axError %d, pid %d)", axError, pid];
-    }
-    return NO;
-  }
-
-  if (pidOut) {
-    *pidOut = pid;
-  }
-  if (methodOut) {
-    *methodOut = kMethodCenterPoint;
-  }
-  return YES;
-}
-
-// Resolves the frontmost pid by the requested `method`. `center-point` (default) is the positional
-// system-wide hit-test at (x, y); `window-server` is the in-guest AXPTranslator query; `runningboard`
-// reads the foreground app from RunningBoard's visibility endowment. `x`/`y` are the screen anchor for
-// the positional method and ignored by the others.
-static BOOL FBAXBridgeResolveFrontmostPid(NSString *_Nullable method,
-                                          float x,
-                                          float y,
-                                          pid_t *pidOut,
-                                          NSString *_Nullable *_Nullable methodOut,
-                                          NSString *_Nullable *_Nullable errorOut)
-{
-  if (!method || [method isEqualToString:kMethodCenterPoint]) {
-    return FBAXBridgeCopyForegroundPid(x, y, pidOut, methodOut, errorOut);
+  if ([method isEqualToString:kMethodCenterPoint]) {
+    return FBAXBridgeCenterPointFrontmost(runtime, anchor);
   }
   if ([method isEqualToString:kMethodWindowServer]) {
-    return FBAXBridgeCopyWindowServerFrontmostPid(pidOut, methodOut, errorOut);
+    return [runtime windowServerFrontmost];
   }
   if ([method isEqualToString:kMethodRunningBoard]) {
-    return FBAXBridgeCopyRunningBoardFrontmostPid(pidOut, methodOut, errorOut);
+    return [runtime runningBoardFrontmost];
   }
-  if (errorOut) {
-    *errorOut = [NSString stringWithFormat:@"unsupported frontmost method: %@", method];
-  }
-  return NO;
+  return [FBAXFrontmostOutcome unresolved:[NSString stringWithFormat:@"unsupported frontmost method: %@", method]];
 }
 
 #pragma mark - Request handling
@@ -748,90 +420,13 @@ NSData *FBAXBridgeSerializeResponse(NSDictionary<NSString *, id> *response)
   return [NSData dataWithBytes:fallback length:strlen(fallback)];
 }
 
-// A single-round-trip hit-test: `AXUIElementCopyElementAtPosition` returns just the element at (x, y),
-// which is re-wrapped so it can be read once (no tree walk) — ~1 mach round-trip vs the whole-tree walk's N.
-//
-// The hit-test seed is the system-wide element when `pidNumber` is nil — a display-wide hit-test that
-// finds whichever app owns the point, so the host needs no separate frontmost pid query (one IPC hop for
-// `describe(.point)` / `hitTest`) — or that pid's app element otherwise. The owning pid of the hit element
-// is always reported, so the host can tag it (for the system-wide case it did not know the pid in advance).
-//
-// Every raw AXUIElementRef begins and ends here: the seed and the copied hit are both +1, and the hit is
-// handed back already wrapped, so no caller can outlive or over-release either.
-static FBAXHitTestOutcome *FBAXBridgeCopyHitTestOutcome(Class elementClass,
-                                                        NSNumber *_Nullable pidNumber,
-                                                        float x,
-                                                        float y)
-{
-  FBAXCopyElementAtPositionFn copyElementAtPosition = dlsym(RTLD_DEFAULT, "AXUIElementCopyElementAtPosition");
-  FBAXGetPidFn getPid = dlsym(RTLD_DEFAULT, "AXUIElementGetPid");
-  if (!copyElementAtPosition || !getPid) {
-    return [FBAXHitTestOutcome failed:@"AXUIElementCopyElementAtPosition/GetPid unavailable"];
-  }
-
-  // Resolve the seed: a specific app element for an explicit pid, otherwise the system-wide element.
-  // Owned (+1) either way, so the ref outlives whatever vended it and both branches release alike.
-  void *seed = NULL;
-  if (pidNumber) {
-    XCAccessibilityElement *root = [(id)elementClass elementWithProcessIdentifier:pidNumber.intValue];
-    if (!root) {
-      return [FBAXHitTestOutcome failed:[NSString stringWithFormat:@"no application element for pid %d", pidNumber.intValue]];
-    }
-    void *applicationElement = [root AXUIElement];
-    if (!applicationElement) {
-      return [FBAXHitTestOutcome failed:[NSString stringWithFormat:@"no AXUIElement for pid %d", pidNumber.intValue]];
-    }
-    seed = (void *)CFRetain(applicationElement);
-  } else {
-    FBAXCreateSystemWideFn createSystemWide = dlsym(RTLD_DEFAULT, "AXUIElementCreateSystemWide");
-    if (!createSystemWide) {
-      return [FBAXHitTestOutcome failed:@"AXUIElementCreateSystemWide unavailable"];
-    }
-    seed = createSystemWide();
-    if (!seed) {
-      return [FBAXHitTestOutcome failed:@"AXUIElementCreateSystemWide returned NULL"];
-    }
-  }
-
-  void *hit = NULL;
-  int32_t axError = copyElementAtPosition(seed, x, y, &hit);
-  CFRelease(seed);
-  if (axError == FBAXErrorServerNotFound) {
-    // Nothing answered the hit-test at all. Reporting that as an empty result would tell the caller the
-    // app is on screen with nothing under the point, which is the opposite of what happened.
-    return [FBAXHitTestOutcome applicationUnavailable];
-  }
-  if (axError != FBAXErrorSuccess || !hit) {
-    // No element at the point is a valid empty result, not a failure: a caller doing a streaming
-    // hit-test (e.g. after a tap) must be able to tell "empty space" apart from "the reader broke".
-    return [FBAXHitTestOutcome empty];
-  }
-
-  // The host tags the hit element with its owning process, so an unattributable hit is not a result. A
-  // seeded hit-test already knows the pid and falls back to it; a system-wide one has no other source.
-  pid_t owningPid = 0;
-  int32_t pidError = getPid(hit, &owningPid);
-  if (pidError != FBAXErrorSuccess || owningPid <= 0) {
-    if (!pidNumber) {
-      CFRelease(hit);
-      return [FBAXHitTestOutcome failed:[NSString stringWithFormat:@"could not resolve the owning pid of the hit element (%d)", pidError]];
-    }
-    owningPid = pidNumber.intValue;
-  }
-
-  XCAccessibilityElement *hitElement = [(id)elementClass elementWithAXUIElement:hit];
-  CFRelease(hit);  // +1 from the Copy; `elementWithAXUIElement:` took its own reference.
-  if (!hitElement) {
-    return [FBAXHitTestOutcome failed:@"failed to read the hit element"];
-  }
-  return [FBAXHitTestOutcome hit:hitElement owningProcessIdentifier:owningPid];
-}
-
 // Answers `hittest` from the outcome of the hit-test at the requested point: the runtime says what
 // happened, and this decides what the client is told about it.
-static NSDictionary *FBAXBridgeHitTest(XCTAccessibilityFramework *framework,
-                                       Class elementClass,
-                                       NSDictionary *request)
+//
+// A hit-test is a single round trip that reads only the element at the point (no tree walk), which is what
+// makes it cheap next to a whole-tree describe. With no pid it is display-wide, so the host gets the app
+// owning the point without a separate frontmost query.
+static NSDictionary *FBAXBridgeHitTest(id<FBAXRuntime> runtime, NSDictionary *request)
 {
   NSNumber *xNumber = request[kRequestX];
   NSNumber *yNumber = request[kRequestY];
@@ -840,12 +435,8 @@ static NSDictionary *FBAXBridgeHitTest(XCTAccessibilityFramework *framework,
   }
   NSNumber *pidNumber = [request[kRequestPid] isKindOfClass:NSNumber.class] ? request[kRequestPid] : nil;
 
-  FBAXHitTestOutcome *outcome = FBAXBridgeCopyHitTestOutcome(
-    elementClass,
-    pidNumber,
-    (float)xNumber.doubleValue,
-    (float)yNumber.doubleValue
-  );
+  FBAXHitTestOutcome *outcome = [runtime hitTestAtPoint:CGPointMake(xNumber.doubleValue, yNumber.doubleValue)
+                                      processIdentifier:pidNumber ? pidNumber.intValue : 0];
   switch (outcome.status) {
     case FBAXHitTestStatusHit:
       break;
@@ -866,7 +457,7 @@ static NSDictionary *FBAXBridgeHitTest(XCTAccessibilityFramework *framework,
   int budget = 1;
   BOOL truncated = NO;  // a hit-test reads only the leaf at the point; truncation is not meaningful here
   // maxDepth 0 reads just the hit element's own attributes (no child recursion) — the leaf at the point.
-  FBAXReadOutcome *read = FBAXBridgeBuildNode(framework, (id)outcome.element, 0, 0, &budget, &truncated);
+  FBAXReadOutcome *read = FBAXBridgeBuildNode(runtime, (id)outcome.element, 0, 0, &budget, &truncated);
   switch (read.status) {
     case FBAXReadStatusRead:
       break;
@@ -906,20 +497,15 @@ NSDictionary<NSString *, id> *FBAXBridgeHandleRequest(NSDictionary<NSString *, i
   }
 
   NSString *setupError = nil;
-  XCTAccessibilityFramework *framework = FBAXBridgeSharedFramework(&setupError);
-  if (!framework) {
+  id<FBAXRuntime> runtime = FBAXBridgeSharedRuntime(&setupError);
+  if (!runtime) {
     return FBAXBridgeErrorResponse(setupError ?: @"accessibility setup failed");
   }
 
-  Class elementClass = objc_lookUpClass("XCAccessibilityElement");
-  if (!elementClass) {
-    return FBAXBridgeErrorResponse(@"XCAccessibilityElement unavailable");
-  }
-
-  // `hittest` is self-contained: with a pid it hit-tests that app; with no pid it hit-tests the
-  // system-wide element — the app owning the point, resolved in-guest, with no frontmost pid query.
+  // `hittest` is self-contained: with a pid it hit-tests that app; with no pid it hit-tests display-wide
+  // — the app owning the point, resolved in-guest, with no frontmost pid query.
   if (isHitTest) {
-    return FBAXBridgeHitTest(framework, elementClass, request);
+    return FBAXBridgeHitTest(runtime, request);
   }
 
   // `describe`: an explicit `pid` names the app directly; with no pid it is a fused frontmost read — the
@@ -935,14 +521,20 @@ NSDictionary<NSString *, id> *FBAXBridgeHandleRequest(NSDictionary<NSString *, i
     if (![xNumber isKindOfClass:NSNumber.class] || ![yNumber isKindOfClass:NSNumber.class]) {
       return FBAXBridgeErrorResponse(@"describe requires either a numeric pid or the frontmost anchor (x, y)");
     }
-    NSString *frontmostError = nil;
     NSString *requestedMethod = [request[kRequestMethod] isKindOfClass:NSString.class] ? request[kRequestMethod] : nil;
-    if (!FBAXBridgeResolveFrontmostPid(requestedMethod, xNumber.floatValue, yNumber.floatValue, &pid, &frontmostMethod, &frontmostError)) {
-      return FBAXBridgeErrorResponse(frontmostError ?: @"could not resolve the frontmost application pid");
+    NSString *method = requestedMethod ?: kMethodCenterPoint;
+    FBAXFrontmostOutcome *frontmost =
+    FBAXBridgeResolveFrontmost(runtime, method, CGPointMake(xNumber.doubleValue, yNumber.doubleValue));
+    if (frontmost.status != FBAXFrontmostStatusResolved) {
+      return FBAXBridgeErrorResponse(frontmost.failureReason ?: @"could not resolve the frontmost application pid");
     }
+    pid = frontmost.processIdentifier;
+    // The method that answered is the method that was asked for, so the response echoes back what the
+    // request selected rather than something the resolver had to report.
+    frontmostMethod = method;
   }
 
-  XCAccessibilityElement *root = [(id)elementClass elementWithProcessIdentifier:pid];
+  id root = [runtime applicationElementForProcessIdentifier:pid];
   if (!root) {
     return FBAXBridgeErrorResponse([NSString stringWithFormat:@"no application element for pid %d", pid]);
   }
@@ -954,7 +546,7 @@ NSDictionary<NSString *, id> *FBAXBridgeHandleRequest(NSDictionary<NSString *, i
   ? [(NSNumber *)request[kRequestMaxNodes] intValue]
   : kDefaultNodeBudget;
   BOOL truncated = NO;
-  FBAXReadOutcome *read = FBAXBridgeBuildNode(framework, root, 0, maxDepth, &budget, &truncated);
+  FBAXReadOutcome *read = FBAXBridgeBuildNode(runtime, root, 0, maxDepth, &budget, &truncated);
   switch (read.status) {
     case FBAXReadStatusRead:
       break;
@@ -1068,9 +660,9 @@ static int FBAXBridgeServe(NSString *socketPath)
     return 1;
   }
 
-  // Warm the framework up front so the first served request is already fast.
+  // Warm the runtime up front so the first served request is already fast.
   NSString *warmupError = nil;
-  FBAXBridgeSharedFramework(&warmupError);
+  FBAXBridgeSharedRuntime(&warmupError);
   NSLog(@"[AccessibilityService] serving accessibility on %@", socketPath);
 
   while (YES) {
