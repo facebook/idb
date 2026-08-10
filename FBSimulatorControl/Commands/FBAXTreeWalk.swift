@@ -16,13 +16,6 @@ import Foundation
 /// `FBAXNodeSerializer`.
 enum FBAXTreeWalk {
 
-  /// Appended to read-failure errors. An empty tree/element almost always means the target app's
-  /// in-process accessibility server never started — that requires `ApplicationAccessibilityEnabled`
-  /// (`com.apple.Accessibility`) to have been set *before* the app launched. The flag is consumed at
-  /// launch (a live read clears it), so it is an unreliable proxy to gate on up front; the guidance is
-  /// surfaced only when a read genuinely comes back empty rather than blocking the read path.
-  static let accessibilityHint = "If reads consistently return nothing, the app's accessibility server is likely not running: set ApplicationAccessibilityEnabled (com.apple.Accessibility) before the app launches — e.g. `xcrun simctl spawn <UDID> defaults write com.apple.Accessibility ApplicationAccessibilityEnabled -bool true` — then relaunch the app."
-
   /// Serializes an attribute-dictionary tree (as emitted by either XCUI-grade backend) into the
   /// schema, building an `FBAXPlatformElement` tree and running the shared recursive serializer. Each
   /// element is tagged with the owning app's real pid, discovered during the tree read.

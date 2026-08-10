@@ -22,7 +22,7 @@ public enum FBRemoteAutomationError: LocalizedError, Sendable {
   public var errorDescription: String? {
     switch self {
     case let .treeUnavailable(x, y):
-      return "Remote automation could not read the frontmost application tree at (\(x), \(y)). \(FBAXTreeWalk.accessibilityHint)"
+      return "Remote automation could not read the frontmost application tree at (\(x), \(y)). \(FBAccessibilityGuidance.accessibilityServer)"
     case let .unavailable(underlying):
       return "Remote automation is unavailable on this simulator: testmanagerd is not advertising its remote-automation listener (\(remoteAutomationSockEnvKey)). This requires a simulator runtime whose testmanagerd exposes the remote-automation channel (iOS 27+ / Xcode 27). Underlying error: \(underlying)"
     case .eventMissingTouchSteps:

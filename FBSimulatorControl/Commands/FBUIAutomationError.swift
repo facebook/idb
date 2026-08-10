@@ -47,9 +47,9 @@ public enum FBUIAutomationError: LocalizedError, Sendable {
     case let .elementNotOnScreen(backend, key, value):
       return "\(backend.displayName) matched an element whose \(key) contains \"\(value)\", but it is off-screen and has no frame to interact with"
     case let .noElementAtPoint(backend, x, y):
-      return "\(backend.displayName) found no element at (\(x), \(y)). \(FBAXTreeWalk.accessibilityHint)"
+      return "\(backend.displayName) found no element at (\(x), \(y)). \(FBAccessibilityGuidance.accessibilityServer)"
     case let .timedOut(backend, key, value, timeout):
-      return "\(backend.displayName) timed out after \(timeout)s waiting for \(key) containing \"\(value)\". \(FBAXTreeWalk.accessibilityHint)"
+      return "\(backend.displayName) timed out after \(timeout)s waiting for \(key) containing \"\(value)\". \(FBAccessibilityGuidance.accessibilityServer)"
     case let .markerRequired(_, operation):
       return "\(operation) requires a marker target, not a point or a whole-tree query"
     case let .pointOrMarkerRequired(_, operation):
@@ -59,7 +59,7 @@ public enum FBUIAutomationError: LocalizedError, Sendable {
     case let .operationUnsupported(backend, operation):
       return "\(operation) is not supported over the \(backend.displayName) backend"
     case let .applicationUnavailable(backend, pid):
-      return "\(backend.displayName) could not read the application with pid \(pid): it is not a running app, or its accessibility server has not started. \(FBAXTreeWalk.accessibilityHint)"
+      return "\(backend.displayName) could not read the application with pid \(pid): it is not a running app, or its accessibility server has not started. \(FBAccessibilityGuidance.accessibilityServer)"
     case let .valueMismatch(backend, key, expected, actual):
       return "\(backend.displayName) expected \(key) to equal \"\(expected)\" before tapping, but it was \"\(actual)\""
     }
