@@ -65,11 +65,15 @@ extension FBAXTreeRead {
     guard let tree = response[FBAXWire.Envelope.tree.rawValue] as? [String: Any] else {
       throw FBAXBridgeError.guestFailure("fused frontmost describe response without a tree")
     }
-    guard let pid = response[FBAXWire.Envelope.pid.rawValue] as? Int, pid > 0 else {
+    // `exactly:` inside the guard, so a pid too large for a `pid_t` is a response the parser rejects
+    // rather than a value the conversion traps on.
+    guard let reported = response[FBAXWire.Envelope.pid.rawValue] as? Int,
+      let pid = pid_t(exactly: reported), pid > 0
+    else {
       throw FBAXBridgeError.guestFailure("fused frontmost describe response without a resolved pid")
     }
     let truncated = (response[FBAXWire.Envelope.truncated.rawValue] as? Bool) ?? false
-    self.init(tree: tree, pid: pid_t(pid), truncated: truncated, modal: Self.modal(fromResponse: response))
+    self.init(tree: tree, pid: pid, truncated: truncated, modal: Self.modal(fromResponse: response))
   }
 
   /// Parses a system-wide hit-test read: the hit node and the owning pid of the element there (the host
@@ -90,10 +94,12 @@ extension FBAXTreeRead {
     guard let node = response[FBAXWire.Envelope.tree.rawValue] as? [String: Any] else {
       throw FBAXBridgeError.guestFailure("hit-test ok response without a tree or empty flag")
     }
-    guard let pid = response[FBAXWire.Envelope.pid.rawValue] as? Int, pid > 0 else {
+    guard let reported = response[FBAXWire.Envelope.pid.rawValue] as? Int,
+      let pid = pid_t(exactly: reported), pid > 0
+    else {
       throw FBAXBridgeError.guestFailure("hit-test response without an owning pid")
     }
-    self.init(tree: node, pid: pid_t(pid), truncated: false, modal: nil)
+    self.init(tree: node, pid: pid, truncated: false, modal: nil)
   }
 
   /// Decodes the optional `modal` descriptor the guest adds to a describe response into a typed value,

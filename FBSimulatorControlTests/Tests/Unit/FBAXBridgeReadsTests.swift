@@ -500,31 +500,26 @@ final class FBAXBridgeReadsTests: XCTestCase {
     }
   }
 
-  // BUG: both success paths admit any positive `Int` from the envelope and then convert it with the
-  // non-failable `pid_t.init`, which traps on anything above `Int32.max`. Every other malformed field in
-  // these parsers degrades to a `guestFailure`; this one takes the process down.
-  //
-  // The pin is commented out rather than asserted, because the unfixed behaviour is a trap: run against
-  // this commit it would abort the test runner, not fail red. Commented, it still states the defect and
-  // shows exactly what the fix has to make true — and the next commit uncomments it alongside the guard,
-  // so the delta a reviewer reads is the behaviour change sitting next to the code that caused it.
-  //
-  //  func testAnOutOfRangeResolvedPidIsRejectedRatherThanTrapping() throws {
-  //    let tree: [String: Any] = [FBAXWire.Node.label.rawValue: "root"]
-  //    let frontmost = try envelope(["ok": true, "tree": tree, "pid": 99_999_999_999])
-  //    XCTAssertThrowsError(try FBAXTreeRead(frontmostResponse: frontmost, method: .centerPoint)) { error in
-  //      guard case FBAXBridgeError.guestFailure = error else {
-  //        return XCTFail("expected guestFailure, got: \(error)")
-  //      }
-  //    }
-  //
-  //    let hit = try envelope(["ok": true, "tree": tree, "pid": 99_999_999_999])
-  //    XCTAssertThrowsError(try FBAXTreeRead(hitTestResponse: hit)) { error in
-  //      guard case FBAXBridgeError.guestFailure = error else {
-  //        return XCTFail("expected guestFailure, got: \(error)")
-  //      }
-  //    }
-  //  }
+  // Both success paths admitted any positive `Int` and then converted it, so a pid above `Int32.max`
+  // trapped the host at parse time. Uncommented here, alongside the guard that makes it pass: against the
+  // previous commit it would have aborted the runner rather than failed, which is why it was pinned
+  // commented out.
+  func testAnOutOfRangeResolvedPidIsRejectedRatherThanTrapping() throws {
+    let tree: [String: Any] = [FBAXWire.Node.label.rawValue: "root"]
+    let frontmost = try envelope(["ok": true, "tree": tree, "pid": 99_999_999_999])
+    XCTAssertThrowsError(try FBAXTreeRead(frontmostResponse: frontmost, method: .centerPoint)) { error in
+      guard case FBAXBridgeError.guestFailure = error else {
+        return XCTFail("expected guestFailure, got: \(error)")
+      }
+    }
+
+    let hit = try envelope(["ok": true, "tree": tree, "pid": 99_999_999_999])
+    XCTAssertThrowsError(try FBAXTreeRead(hitTestResponse: hit)) { error in
+      guard case FBAXBridgeError.guestFailure = error else {
+        return XCTFail("expected guestFailure, got: \(error)")
+      }
+    }
+  }
 
   func testFrontmostTreeThrowsWhenResolvedPidMissing() throws {
     // An ok response with a tree but no pid is a protocol violation — the host cannot tag the elements.
