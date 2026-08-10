@@ -29,12 +29,8 @@ final class FBRemoteAutomationPlatformElement: FBAXPlatformElement {
     // The daemon serializes the frame as a CGRect dictionary representation (mirroring the CGPoint
     // dictionary `requestElementAtPoint:` consumes); tolerate an `NSValue` rect as a fallback.
     var rect = CGRect.zero
-    // A frame member can arrive as JSON null: an off-screen or still-settling element reports a
-    // non-finite coordinate, which the guest emits as null (JSON has no infinity or NaN).
-    // `CGRectMakeWithDictionaryRepresentation` sends a number selector to every member, so a null one
-    // crashes it — and a frame with a non-numeric member has no usable geometry regardless.
-    if let dict = raw as? NSDictionary, dict.allValues.allSatisfy({ $0 is NSNumber }),
-      CGRectMakeWithDictionaryRepresentation(dict as CFDictionary, &rect)
+    if let dict = raw as? NSDictionary,
+      CGRectMakeWithDictionaryRepresentation(Self.restoringNonFinite(dict) as CFDictionary, &rect)
     {
       return rect
     }
@@ -42,6 +38,29 @@ final class FBRemoteAutomationPlatformElement: FBAXPlatformElement {
       return value.rectValue
     }
     return .zero
+  }
+
+  /// A frame dictionary with each JSON null restored to the non-finite number it stands for.
+  ///
+  /// The guest cannot send a non-finite coordinate — JSON has neither infinity nor NaN — so it emits
+  /// null instead, and an element that is off-screen or still being laid out reports one routinely.
+  /// Undoing that here is what lets the rest of the read treat the value as the host's own element
+  /// already does: `FBAccessibilityFrame` normalizes each edge independently, so the unreadable one
+  /// becomes null and the others survive.
+  ///
+  /// The alternative is losing the whole rectangle to one member, since
+  /// `CGRectMakeWithDictionaryRepresentation` sends a number selector to every value and a null would
+  /// crash it. That reports an off-screen element as sitting at the origin with no size — which reads
+  /// as a real position rather than an absent one, and is worse than reporting nothing.
+  private static func restoringNonFinite(_ dictionary: NSDictionary) -> NSDictionary {
+    guard dictionary.allValues.contains(where: { $0 is NSNull }) else {
+      return dictionary
+    }
+    let restored = NSMutableDictionary(dictionary: dictionary)
+    for (key, value) in dictionary where value is NSNull {
+      restored[key] = NSNumber(value: Double.infinity)
+    }
+    return restored
   }
 
   func axRole() -> String? {

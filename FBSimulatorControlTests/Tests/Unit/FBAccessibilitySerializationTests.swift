@@ -169,37 +169,52 @@ final class FBAccessibilitySerializationTests: XCTestCase {
     return elements.first?.frame
   }
 
-  // The host cannot parse the null the guest sends, and discards the whole rectangle rather than the
-  // one member it could not read. `CGRectMakeWithDictionaryRepresentation` sends a number selector to
-  // every member, so the parse is guarded by an all-numbers check that a null fails — and the fallback
-  // is `.zero`.
-  //
-  // The cost is not confined to the unreadable edge: the three coordinates the guest *did* send are
-  // thrown away with it, so an element that is merely off-screen is reported as sitting at the origin
-  // with no size. `FBAccessibilityFrame` carries per-edge optionals precisely so this does not have to
-  // happen, and never gets the chance to apply them.
-  func testGuestNullFrameMemberCollapsesTheEntireFrame() throws {
+  // Only the edge the guest could not send is unknown; the ones it did send survive. This is the same
+  // result the host's own element produces for the same condition, which is what makes an off-screen
+  // element read identically whichever backend served it.
+  func testGuestNullFrameMemberLosesOnlyThatEdge() throws {
     let frame = try guestFrameDictionary(nulling: "X", of: CGRect(x: 5, y: 10, width: 100, height: 200))
     let serialized = try XCTUnwrap(serializedFrame(fromGuestFrame: frame))
 
-    // BUG: the readable edges are discarded along with the unreadable one — flipped in the next commit.
-    XCTAssertEqual(serialized?.x, 0, "the null x becomes zero rather than staying unknown")
-    XCTAssertEqual(serialized?.y, 0, "and y is lost with it")
-    XCTAssertEqual(serialized?.width, 0, "as is the width the guest did send")
-    XCTAssertEqual(serialized?.height, 0, "as is the height")
+    XCTAssertNil(serialized?.x, "the coordinate the guest could not represent is unknown, not zero")
+    XCTAssertEqual(serialized?.y, 10, "the coordinates it did send are kept")
+    XCTAssertEqual(serialized?.width, 100)
+    XCTAssertEqual(serialized?.height, 200)
   }
 
-  // The same collapse is what makes a whole-tree read report no screen: the bounds come from the root
-  // element's frame, so a root with one unreadable coordinate reports no bounds at all rather than the
-  // width and height it did send.
-  func testGuestNullFrameMemberOnTheRootLosesTheScreenBounds() throws {
+  // And because the edges survive, a root with one unreadable coordinate still reports the bounds it
+  // did send — which is what a whole-tree read needs to say what its frames are relative to.
+  func testGuestNullFrameMemberOnTheRootKeepsTheScreenBounds() throws {
     let tree: [String: Any] = [
       FBAXWire.Node.label.rawValue: "root",
       FBAXWire.Node.frame.rawValue: try guestFrameDictionary(nulling: "X", of: CGRect(x: 0, y: 0, width: 390, height: 844)),
     ]
-    // BUG: the root's width and height are readable, yet the screen is reported as unknown — flipped
-    // in the next commit.
-    XCTAssertNil(FBAXTreeWalk.screenInfo(fromTree: tree), "the whole frame collapsed, so there are no bounds")
+    XCTAssertEqual(FBAXTreeWalk.screenInfo(fromTree: tree), FBAccessibilityScreenInfo(width: 390, height: 844))
+  }
+
+  // An element with an unreadable coordinate has nowhere to be tapped, and the marker resolver says so
+  // rather than resolving to the origin. `.offScreen` exists to separate that from a marker that
+  // matched nothing; the collapse used to defeat it by making every edge present and zero.
+  func testMarkerOnAnElementWithAnUnreadableCoordinateResolvesAsOffScreen() throws {
+    let tree: [String: Any] = [
+      FBAXWire.Node.label.rawValue: "root",
+      FBAXWire.Node.frame.rawValue: CGRectCreateDictionaryRepresentation(CGRect(x: 0, y: 0, width: 390, height: 844)) as NSDictionary,
+      FBAXWire.Node.children.rawValue: [
+        [
+          FBAXWire.Node.label.rawValue: "Offscreen Icon",
+          FBAXWire.Node.frame.rawValue: try guestFrameDictionary(nulling: "X", of: CGRect(x: 0, y: 40, width: 60, height: 60)),
+          FBAXWire.Node.children.rawValue: [[String: Any]](),
+        ] as [String: Any]
+      ],
+    ]
+    let elements = FBAXTreeWalk.describeAllElements(
+      fromTree: tree, keys: [.label, .frameDict], nestedFormat: false, pid: 7
+    )
+    XCTAssertEqual(
+      FBAXTreeWalk.resolveMarker(inElements: elements, markerValue: "Offscreen Icon", key: .label),
+      .offScreen,
+      "a matched element with no usable frame is off-screen, not a tap at the origin"
+    )
   }
 
   // The same shape as `filterTree`, but with an unlabeled root — an element `.interactable` would drop
