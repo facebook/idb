@@ -75,10 +75,30 @@ The output will show which targets do and don't have companions associated with 
 ### Boot a simulator
 
 ```
-idb --boot UDID
+idb boot UDID
 ```
 
 This will only apply to iOS Simulators.
+
+### Simulator lifecycle
+
+The remaining lifecycle commands also apply to iOS Simulators only, and only when `idb` is running on macOS.
+
+```
+# Create a simulator from a device type and an OS version, printing the new UDID
+idb create "iPhone 15" "iOS 17.0"
+# Shut a booted simulator down
+idb shutdown UDID
+# Erase a simulator's contents and settings
+idb erase UDID
+# Clone a simulator, printing the new UDID
+idb clone UDID
+# Delete a simulator, or every simulator in the set
+idb delete UDID
+idb delete-all
+```
+
+Each of these takes the UDID as an optional positional argument, falling back to the `IDB_UDID` environment variable.
 
 ### Describe a target
 
@@ -100,11 +120,26 @@ Returns metadata about the specified target, including:
 
 In addition to arguments that are relevant to specific commands, there are other optional arguments that apply to all commands.
 
-| Argument | Description | Default
-|----------|-------------|--------
-|--udid UDID | UDID of the target | If only one target is connected it'll use that one |
-|--log \{DEBUG,INFO,WARNING,ERROR,CRITICAL\} | Set the log level | CRITICAL |
-|--json | JSON structured output where applicable | False |
+| Argument | Description | Default |
+|----------|-------------|---------|
+| `--udid UDID` | UDID of the target. Can also be set with the `IDB_UDID` environment variable | If only one target is connected it'll use that one |
+| `--json` | JSON structured output where applicable | `False` |
+| `--reason REASON` | A free-form note describing why the command was run | None |
+
+A second set of arguments configures the `idb` cli itself rather than the command being run, so they are placed *before* the command name:
+
+| Argument | Description | Default |
+|----------|-------------|---------|
+| `--log {DEBUG,INFO,WARNING,ERROR,CRITICAL}` | Set the log level | `WARNING` |
+| `--companion HOSTNAME:PORT` | Address a companion directly instead of via a UDID. Can also be set with the `IDB_COMPANION` environment variable | Resolved from local state |
+| `--companion-path PATH` | Path to the `idb_companion` binary used for companions that `idb` starts itself. macOS only | The `idb_companion` found on the host |
+| `--companion-tls` | Connect to the companion over TLS. Can also be set with the `IDB_COMPANION_TLS` environment variable | `False` |
+| `--compression ALGORITHM` | Compression algorithm for payloads sent to the companion. The decompressor must be available where the companion runs | `GZIP` |
+| `--no-prune-dead-companion` | Leave local state alone when a companion is found to be unresponsive, instead of forgetting it | Prunes |
+
+```
+$ idb --log DEBUG describe --udid TARGET_UDID
+```
 
 
 ## Apps
@@ -227,78 +262,35 @@ idb debugserver status
 
 Display metadata about any running debug sessions.
 
-
-## Interact
-
-For simulators we provide a handful of commands for emulating HID events.
-
-### Tap
+### Debug Adapter Protocol
 
 ```
+idb dap /path/to/dap_package
+```
+
+Installs a Debug Adapter Protocol package on the target and spawns a debug server speaking it, relaying the protocol over `stdin` and `stdout`. This is what an editor or IDE attaches to, rather than something you would usually run by hand.
+
+
+## UI Automation
+
+The `idb ui` command group reads the screen through the target's accessibility system, acts on the elements it reports, and synthesizes HID events. It has a page of its own: [UI Automation](ui.mdx) documents the whole group, and [Accessibility](accessibility.mdx) covers the backends that serve a read and the formats a read comes back in.
+
+```
+# Read the screen
+idb ui describe-all
+idb ui describe-point X Y
+idb ui describe MARKER
+# Act on an element, by coordinate or by accessibility marker
 idb ui tap X Y
-```
-
-Taps a location on the screen specified in the points coordinate system.
-The tap duration can be set with `--duration`
-
-### Swipe
-
-```
+idb ui tap MARKER
+idb ui scroll down
+idb ui set-value MARKER --value VALUE
+# Synthesize input
 idb ui swipe X_START Y_START X_END Y_END
-```
-
-Swipes from the specified start point to the end.
-By default this will be done by a touch down at the start point, followed by moving 10 points at a time until the end point is reached. The size of each step can be specified with `--delta`.
-
-### Press a button
-
-```
 idb ui button {APPLE_PAY,HOME,LOCK,SIDE_BUTTON,SIRI}
-```
-
-Simulates a press of the specified button.
-The press duration can be set with `--duration`.
-
-### Inputting text
-
-```
 idb ui text "some text"
-```
-
-Types the specified text into the target.
-
-```
 idb ui key 4
 ```
-
-Simulates the press of a key specified by its keycode.
-The key presses duration can be set with `--duration`.
-
-
-```
-idb ui key-sequence 4 5 6
-```
-
-Inputs multiple key events sequentially.
-
-
-## Accessibility info
-
-### Describe the whole screen
-
-```
-idb ui describe-all
-```
-
-Returns a JSON formatted list of all the elements currently on screen, including their bounds and accessibility information.
-
-### Describe a point
-
-```
-idb ui describe-point X Y
-```
-
-Returns JSON formatted information about a specific point on the screen, if an element exists there.
 
 
 ## Misc
@@ -326,6 +318,24 @@ idb dylib install test.dylib
 
 Installs a `.dylib` on the target. This can then be injected into apps on launch.
 
+### Install a .framework
+
+```
+idb framework install My.framework
+```
+
+Installs a `.framework` bundle on the target, for a binary that expects to link against it at runtime.
+
+### Install debug symbols
+
+```
+idb dsym install MyApp.app.dSYM
+# Or place them inside an installed app's container
+idb dsym install MyApp.app.dSYM --bundle-id com.foo.bar
+```
+
+Installs a `dSYM` bundle so that backtraces from the target symbolicate. With `--bundle-id` the symbols are written inside that app's container instead of alongside the target's other symbols.
+
 ### Instruments
 
 ```
@@ -334,13 +344,43 @@ idb instruments TEMPLATE
 
 Starts instruments running connected to the target
 
+### Record a trace
+
+```
+idb xctrace record --template 'Time Profiler' --all-processes --output out.trace
+idb xctrace record --template 'Time Profiler' --launch com.foo.bar --time-limit 30s
+```
+
+Records an Instruments trace on the target and writes the `.trace` bundle back to the host, mirroring the options of `xctrace record`. Exactly one of `--all-processes`, `--attach <pid|name>` or `--launch <command>` selects what is recorded, and `--template` is required. `--time-limit` bounds the recording; otherwise it runs until `^C`. Environment variables prefixed with `IDB_` are passed through to a launched process with that prefix removed, as they are for `idb launch`.
+
+### Take a screenshot
+
+```
+idb screenshot OUTPUT_PNG
+# Or write the image to stdout
+idb screenshot -
+```
+
+Captures the target's screen as a PNG.
+
 ### Record a video
 
 ```
-idb record video OUTPUT_MP4
+idb video OUTPUT_MP4
 ```
 
-Starts recording the targets screen, outputting the content to the specified path. The recording can be stopped by pressing `^C`.
+Starts recording the target's screen, outputting the content to the specified path. The recording can be stopped by pressing `^C`. `idb record video OUTPUT_MP4` is an equivalent, older spelling of the same command.
+
+### Stream video
+
+```
+# Stream H264 to a file
+idb video-stream OUTPUT_FILE
+# Stream MJPEG to stdout at a fixed framerate
+idb video-stream --format mjpeg --fps 30
+```
+
+Streams the target's screen as it is encoded, rather than writing a single file at the end. With no output file the stream is written to `stdout`, so it can be piped into another process. `--format` is one of `h264`, `rbga`, `mjpeg` or `minicap`, `--fps` fixes the framerate (dynamic by default), and `--compression-quality` and `--scale-factor` (each between `0` and `1.0`) trade image quality for bandwidth.
 
 ### Log
 
@@ -349,6 +389,14 @@ idb log
 ```
 
 Tail logs from a target, uses the standard log(1) stream arguments
+
+### Companion log
+
+```
+idb companion log
+```
+
+Tails the log of the companion backing the target, rather than the log of the target itself. This is the first place to look when a command fails for a reason the client cannot see.
 
 ### Open a url
 
@@ -359,10 +407,26 @@ idb open https://facebook.com
 Opens the specified URL on the target.
 This works both with web addresses and URL schemes present on the target.
 
+### Send a push notification
+
+```
+idb send-notification com.apple.Maps '{"aps": {"alert": "Hello"}}'
+```
+
+Delivers a push notification payload to an installed app, without any of the certificate or network setup a real push would need. The payload is the JSON that the app would have received from APNs.
+
+### Simulate a memory warning
+
+```
+idb simulate-memory-warning
+```
+
+Delivers a memory warning to the target, so an app's response to memory pressure can be exercised on demand.
+
 ### Clear the keychain
 
 ```
-idb clear_keychain
+idb clear-keychain
 ```
 
 For simulators idb can clear the entire keychain.
@@ -370,10 +434,29 @@ For simulators idb can clear the entire keychain.
 ### Set a simulators location
 
 ```
-idb set_location LAT LONG
+idb set-location LAT LONG
 ```
 
 Overrides a simulators location to the latitude, longitude pair specified.
+
+### Read and write preferences
+
+```
+# Read a preference from the global domain
+idb get AppleLanguages
+# Read from a specific domain
+idb get --domain com.apple.Accessibility ApplicationAccessibilityEnabled
+# Write a preference, with an explicit value type
+idb set --domain com.apple.Accessibility ApplicationAccessibilityEnabled --type bool true
+```
+
+Reads and writes the target's preferences, in the same way `defaults(1)` does on macOS. `--domain` defaults to the Apple Global Domain, and `--type` defaults to `string`; the supported types are those `defaults` itself accepts. Most apps read their preferences at launch, so relaunch after writing one.
+
+```
+idb list locale
+```
+
+Lists the locale identifiers the target supports, which is where the value for a locale preference comes from.
 
 ### Add media
 
@@ -384,17 +467,30 @@ idb add-media cat.jpg dog.mov
 Files supplied to this command will be placed in the targets camera roll.
 Most common image and video file formats are supported.
 
-### Approve
+### Clear the photo library
+
+```
+idb photos clear
+```
+
+Empties the target's camera roll, undoing an `add-media` and returning a simulator to a known state between runs.
+
+### Approve and revoke permissions
 
 ```
 idb approve com.apple.Maps photos camera
+idb revoke com.apple.Maps photos camera
 ```
 
-For simulators idb can programmatically approve permission for an app.
-Currently idb can approve:
+For simulators idb can programmatically grant or withdraw an app's permissions, so a permission prompt never has to be dismissed by hand. Both commands take one or more of:
+
 - `photos` - Permission to view the camera roll
 - `camera` - Permission to access the camera
 - `contacts` - Permission to access the targets contacts
+- `location` - Permission to access the targets location
+- `microphone` - Permission to record audio
+- `notification` - Permission to deliver notifications
+- `url` - Permission to open a URL scheme. Requires `--scheme` naming the scheme in question
 
 ### Add contacts
 
@@ -403,6 +499,20 @@ idb contacts update db.sqlite
 ```
 
 For simulators idb can overwrite the simulators contacts db.
+
+```
+idb contacts clear
+```
+
+Empties the contacts database instead of replacing it.
+
+### Interactive shell
+
+```
+idb shell
+```
+
+Opens a prompt that accepts `idb` commands one after another, holding the connection to the companion open between them. This is a shell for `idb` itself, not a shell on the target — it saves the per-command startup and connection cost when running a sequence of commands by hand.
 
 
 ## Crash logs
@@ -456,11 +566,18 @@ There are a number of additional switches for altering companion behaviour. Thes
 
 
 | Argument | Description | Default |
-|----------|-------------|--------|
-|--udid UDID | Specify the target device / simulator |
-|--port PORT | The TCP port to start the `gRPC` Server on | 10882 |
-|--log-file-path PATH | Path to write companion logs to  | Will log to `stderr` |
-|--device-set-path PATH | iOS Simulator custom device set path | `~/Library/Developer/CoreSimulator/Devices` |
+|----------|-------------|---------|
+| `--udid UDID` | Specify the target device / simulator. `mac` runs a companion for the host itself, `only` for the sole target available | |
+| `--grpc-port PORT` | The TCP port to start the `gRPC` Server on | `10882` |
+| `--grpc-domain-sock PATH` | Unix domain socket path to serve on. Supersedes `--grpc-port` | Binds TCP |
+| `--tls-cert-path PATH` | Serve over a TLS enabled socket, using this certificate | No TLS |
+| `--log-file-path PATH` | Path to write companion logs to | Will log to `stderr` |
+| `--log-level info\|debug` | How much the companion logs | `debug` |
+| `--device-set-path PATH` | iOS Simulator custom device set path | `~/Library/Developer/CoreSimulator/Devices` |
+| `--only simulator\|device\|ecid:ECID` | Limit the companion to a subset of the available targets | All targets |
+| `--headless VALUE` | Tie the simulator boot's lifecycle to this invocation, so shutting the companion down shuts the simulator down | `false` |
+| `--terminate-offline VALUE` | Exit when the target goes offline, instead of staying alive | Stays alive |
+| `--idle-shutdown-time SECS` | Exit after this many seconds with no active or newly received `gRPC` requests | Stays alive |
 
 When using the `idb` cli directly on iOS targets local to your Mac you won't need to start companions manually. However, it can be handy to use this for debugging or manually managing companions. You might wish to manually manage companions when exposing a companion over the network to another machine, or if you have an Application built on top of `idb` where you wish to precisely control the lifecycle of the companion and it's logs.
 

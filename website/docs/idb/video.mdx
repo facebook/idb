@@ -7,13 +7,13 @@ title: Video
 
 ## Recording
 
-If you wish to make a recording for a target you can use `idb record-video FILE_PATH`.
+If you wish to make a recording for a target you can use `idb video FILE_PATH`.
 
 This can be used to record an mp4 file to disk. The specified `FILE_PATH` can be any location on disk, regardless of the extension it will be an `mp4` video. The video recording will start upon invoking the command, the recording can be stopped by sending a `SIGTERM` to the process (i.e. Ctrl-C in a terminal). The video file will only be written to disk upon exit of the `idb` process.
 
 ## Streaming
 
-Video streaming allows for live frames to be captured from the iOS Target. Typically, this stream should be piped through another application for consumption, depending on the use-case. `idb` provides raw access to the video, in a variety of encodings, it's left to the user to decide how to combine this with a downstream video streaming pipeline. Streaming video pairs well with [Accessibility commands.](accessibility)
+Video streaming allows for live frames to be captured from the iOS Target. Typically, this stream should be piped through another application for consumption, depending on the use-case. `idb` provides raw access to the video, in a variety of encodings, it's left to the user to decide how to combine this with a downstream video streaming pipeline. Streaming video pairs well with the [UI Automation commands](ui.mdx).
 
 Projects such as [`ffmpeg`](https://www.ffmpeg.org) or [`gstreamer`](https://gstreamer.freedesktop.org) are examples of these applications. For example, `ffmpeg` can accept streamed `h264` video and expose this over a UDP socket with intermediate transcoding of data.
 
@@ -33,7 +33,8 @@ Breaking this command down:
   - `mjpeg` is an stream of encoed JPEG images, [typically called MJPEG](https://en.wikipedia.org/wiki/Motion_JPEG).
   - `minicap` is [format used by the minicap project](https://github.com/openstf/minicap). It's fundementally a MJPEG stream with a header at the start of the stream and length [headers per frame](https://github.com/openstf/minicap#global-header-binary-format).
 - `--compression-quality 1.0` represents the quality level used for encoded frames, this is a value between 0.0 and 1.0. It applies to all formats except for the raw `rbga` format.
-- `idb video-stream` takes a positional argument for a file path to stream to. When this is not provided, video will be streamed to `stdout`, this can also be achieved by passing `-` as the file path argument.
+- `--scale-factor` scales the source video down before it is encoded, as a value between 0.0 and 1.0. Reducing it is the cheapest way to cut the bandwidth of a stream, at the cost of resolution.
+- `idb video-stream` takes a positional argument for a file path to stream to. When this is not provided, video will be streamed to `stdout`.
   - The output of the idb command is piped to `ffmpeg` in the shell. Pipelining via `stdout` is the easiest way of sending video data from `idb` to an external program (as opposed to using a file).
 - The arguments for `ffmpeg` relate to:
   - The parsing of input video from `stdin`: `-f h264 -i pipe:0`.
