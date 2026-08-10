@@ -19,6 +19,9 @@ targets:
   FBControlCore:
     type: framework
     platform: macOS
+    scheme:
+      testTargets:
+        - FBControlCoreTests
     configFiles:
       Debug: FBControlCore/FBControlCore.xcconfig
       Release: FBControlCore/FBControlCore.xcconfig
@@ -71,6 +74,9 @@ targets:
   XCTestBootstrap:
     type: framework
     platform: macOS
+    scheme:
+      testTargets:
+        - XCTestBootstrapTests
     configFiles:
       Debug: XCTestBootstrap/XCTestBootstrap.xcconfig
       Release: XCTestBootstrap/XCTestBootstrap.xcconfig
@@ -124,6 +130,9 @@ targets:
   FBSimulatorControl:
     type: framework
     platform: macOS
+    scheme:
+      testTargets:
+        - FBSimulatorControlTests
     configFiles:
       Debug: FBSimulatorControl/FBSimulatorControl.xcconfig
       Release: FBSimulatorControl/FBSimulatorControl.xcconfig
@@ -201,6 +210,9 @@ targets:
   FBDeviceControl:
     type: framework
     platform: macOS
+    scheme:
+      testTargets:
+        - FBDeviceControlTests
     configFiles:
       Debug: FBDeviceControl/FBDeviceControl.xcconfig
       Release: FBDeviceControl/FBDeviceControl.xcconfig
