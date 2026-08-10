@@ -228,28 +228,41 @@ final class FBAccessibilitySerializationTests: XCTestCase {
     )
   }
 
-  func testInteractableFilterDropsUnlabeledContainersFlat() {
-    let flat = FBAXTreeWalk.describeAllElements(
-      fromTree: Self.filterTree(), keys: [.label], nestedFormat: false, pid: 7, filter: .interactable
+  /// Serializes the filter fixture and narrows it the way a read does — walk everything, then keep what
+  /// the filter keeps.
+  private static func filtered(
+    _ filter: FBAccessibilityElementFilter, nestedFormat: Bool
+  ) -> [FBAccessibilityDocumentElement] {
+    let walked = FBAXTreeWalk.describeAllElements(
+      fromTree: filterTree(), keys: [.label, .uniqueID, .role], nestedFormat: nestedFormat, pid: 7
     )
+    return filter.apply(to: walked)
+  }
+
+  func testInteractableFilterDropsUnlabeledContainersFlat() {
+    let flat = Self.filtered(.interactable, nestedFormat: false)
     XCTAssertEqual(Set(Self.labels(flat)), ["root", "leaf", "sibling"], "the unlabeled container is dropped, its leaf kept")
     XCTAssertEqual(flat.count, 3, "only the three labeled elements remain")
   }
 
   func testInteractableFilterHoistsChildrenOfDroppedContainerNested() throws {
-    let nested = FBAXTreeWalk.describeAllElements(
-      fromTree: Self.filterTree(), keys: [.label], nestedFormat: true, pid: 7, filter: .interactable
-    )
+    let nested = Self.filtered(.interactable, nestedFormat: true)
     guard let children = nested.first?.children else {
       return XCTFail("expected a nested root with a children array")
     }
     XCTAssertEqual(Set(Self.labels(children)), ["leaf", "sibling"], "the dropped container's leaf is hoisted to root")
   }
 
+  // A flat read carries no `children` key, and filtering it must not grow one — the filter narrows a
+  // list, it does not re-shape it.
+  func testFilteringAFlatReadDoesNotIntroduceChildren() {
+    for element in Self.filtered(.interactable, nestedFormat: false) {
+      XCTAssertNil(element.children, "a filtered flat element stays flat")
+    }
+  }
+
   func testAllFilterKeepsEveryNode() {
-    let flat = FBAXTreeWalk.describeAllElements(
-      fromTree: Self.filterTree(), keys: [.label], nestedFormat: false, pid: 7, filter: .all
-    )
+    let flat = Self.filtered(.all, nestedFormat: false)
     XCTAssertEqual(flat.count, 4, "the default filter keeps the unlabeled container too")
   }
 

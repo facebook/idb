@@ -29,14 +29,13 @@ enum FBAXNodeSerializer {
     keys: Set<FBAXKeys>,
     collector: FBAccessibilityProfilingCollector?,
     coverageGrid: FBAccessibilityCoverageGrid?,
-    seenPids: SeenPIDs?,
-    filter: FBAccessibilityElementFilter = .all
+    seenPids: SeenPIDs?
   ) -> [FBAccessibilityDocumentElement] {
     element.axSetBridgeDelegateToken(token)
     if nestedFormat {
-      return nestedRecursiveDescription(fromElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids, filter: filter)
+      return nestedRecursiveDescription(fromElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids)
     }
-    return flatRecursiveDescription(fromElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids, filter: filter)
+    return flatRecursiveDescription(fromElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids)
   }
 
   static func formattedDescription(
@@ -45,28 +44,25 @@ enum FBAXNodeSerializer {
     nestedFormat: Bool,
     keys: Set<FBAXKeys>,
     collector: FBAccessibilityProfilingCollector?,
-    coverageGrid: FBAccessibilityCoverageGrid?,
-    filter: FBAccessibilityElementFilter = .all
+    coverageGrid: FBAccessibilityCoverageGrid?
   ) -> FBAccessibilityDocumentElement {
     element.axSetBridgeDelegateToken(token)
     var node = decoratedElement(forElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: nil, isRemote: false)
     guard nestedFormat else {
       return node
     }
-    // The target is never filtered: the caller named this element by point or marker, so answering with
-    // nothing — or with one of its descendants hoisted into its place — would not answer the question.
-    // Building it directly, rather than taking the first result of a filtered walk over it, is what lets
-    // the target always be reported and always carry a `children` array.
-    //
-    // Its descendants are a tree like any other and honour the filter, as a whole-tree read does. This
-    // costs nothing under the default `.all`, which passes every node without reading an attribute.
+    // The target's descendants are built as a subtree of their own, rather than by walking the target
+    // itself, so that the target is always reported and always carries a `children` array. A caller who
+    // named an element by point or marker asked about *that* element; answering with nothing — or with
+    // one of its descendants hoisted into its place — would not answer the question, which is what a
+    // filtered walk rooted at the target would do. The caller filters these children afterwards.
     var children: [FBAccessibilityDocumentElement] = []
     for child in element.axChildren() {
       child.axSetBridgeDelegateToken(token)
       children.append(
         contentsOf: nestedRecursiveDescription(
           fromElement: child, token: token, keys: keys, collector: collector,
-          coverageGrid: coverageGrid, seenPids: nil, filter: filter
+          coverageGrid: coverageGrid, seenPids: nil
         )
       )
     }
@@ -217,57 +213,34 @@ enum FBAXNodeSerializer {
     keys: Set<FBAXKeys>,
     collector: FBAccessibilityProfilingCollector?,
     coverageGrid: FBAccessibilityCoverageGrid?,
-    seenPids: SeenPIDs?,
-    filter: FBAccessibilityElementFilter
+    seenPids: SeenPIDs?
   ) -> [FBAccessibilityDocumentElement] {
-    var values: [FBAccessibilityDocumentElement] = []
-    if passes(element, filter: filter) {
-      values.append(decoratedElement(forElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids, isRemote: false))
-    }
+    var values: [FBAccessibilityDocumentElement] = [
+      decoratedElement(forElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids, isRemote: false)
+    ]
     for child in element.axChildren() {
       child.axSetBridgeDelegateToken(token)
-      values.append(contentsOf: flatRecursiveDescription(fromElement: child, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids, filter: filter))
+      values.append(contentsOf: flatRecursiveDescription(fromElement: child, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids))
     }
     return values
   }
 
-  // Returns the element as a single nested node, or — when it is filtered out — its kept descendants
-  // hoisted, for the caller to splice into the nearest kept ancestor.
+  // Returns the element as a single nested node carrying its serialized subtree.
   private static func nestedRecursiveDescription(
     fromElement element: FBAXPlatformElement,
     token: String,
     keys: Set<FBAXKeys>,
     collector: FBAccessibilityProfilingCollector?,
     coverageGrid: FBAccessibilityCoverageGrid?,
-    seenPids: SeenPIDs?,
-    filter: FBAccessibilityElementFilter
+    seenPids: SeenPIDs?
   ) -> [FBAccessibilityDocumentElement] {
     var childrenValues: [FBAccessibilityDocumentElement] = []
     for child in element.axChildren() {
       child.axSetBridgeDelegateToken(token)
-      childrenValues.append(contentsOf: nestedRecursiveDescription(fromElement: child, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids, filter: filter))
-    }
-    guard passes(element, filter: filter) else {
-      return childrenValues
+      childrenValues.append(contentsOf: nestedRecursiveDescription(fromElement: child, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids))
     }
     var values = decoratedElement(forElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids, isRemote: false)
     values.children = childrenValues
     return [values]
-  }
-
-  // MARK: - Filter
-
-  /// Whether an element is kept under `filter`. `.interactable` keeps elements carrying a label, an
-  /// identifier, or an actionable role — dropping unlabeled structural containers.
-  private static func passes(_ element: FBAXPlatformElement, filter: FBAccessibilityElementFilter) -> Bool {
-    switch filter {
-    case .all:
-      return true
-    case .interactable:
-      if let label = element.axLabel(), !label.isEmpty { return true }
-      if let identifier = element.axIdentifier(), !identifier.isEmpty { return true }
-      if let role = element.axRole(), FBAXRoleVocabulary.isInteractable(role: role) { return true }
-      return false
-    }
   }
 }

@@ -26,7 +26,11 @@ enum FBAXTreeWalk {
   /// Serializes an attribute-dictionary tree (as emitted by either XCUI-grade backend) into the
   /// schema, building an `FBAXPlatformElement` tree and running the shared recursive serializer. Each
   /// element is tagged with the owning app's real pid, discovered during the tree read.
-  static func describeAllElements(fromTree tree: [String: Any], keys: Set<FBAXKeys>, nestedFormat: Bool, pid: pid_t, filter: FBAccessibilityElementFilter = .all) -> [FBAccessibilityDocumentElement] {
+  ///
+  /// The result is unfiltered. `FBAccessibilityElementFilter.apply(to:)` narrows it afterwards, so a
+  /// caller that wants the whole tree as well as the reported subset — a coverage calculation, say —
+  /// can have both from one walk.
+  static func describeAllElements(fromTree tree: [String: Any], keys: Set<FBAXKeys>, nestedFormat: Bool, pid: pid_t) -> [FBAccessibilityDocumentElement] {
     let root = buildPlatformElementTree(from: tree, pid: pid)
     return FBAXNodeSerializer.recursiveDescription(
       fromElement: root,
@@ -35,8 +39,7 @@ enum FBAXTreeWalk {
       keys: keys,
       collector: nil,
       coverageGrid: nil,
-      seenPids: nil,
-      filter: filter
+      seenPids: nil
     )
   }
 

@@ -118,15 +118,19 @@ public final class FBAXTranslationRequest {
   /// always reported; only its descendants are subject to the filter.
   private func runNamedElement(_ element: FBAXPlatformElement, options: FBAccessibilityRequestOptions) -> FBAccessibilityElementsResponse {
     let serializationStart = CFAbsoluteTimeGetCurrent()
-    let elements = FBAXNodeSerializer.formattedDescription(
+    var elements = FBAXNodeSerializer.formattedDescription(
       ofElement: element,
       token: token,
       nestedFormat: options.nestedFormat,
       keys: Self.serializerKeys(options),
       collector: collector,
-      coverageGrid: nil,
-      filter: options.filter
+      coverageGrid: nil
     )
+    // The target itself is exempt from the filter — it is the element the caller named — while its
+    // descendants are a tree like any other and honour it.
+    if let children = elements.children {
+      elements.children = options.filter.apply(to: children)
+    }
     // A named element is one element, with no tree behind it to speak for the screen. A marker match
     // does know its bounds — the root it descended from — and the backend stamps them on the way out.
     return buildResponse(elements: .single(elements), serializationStart: serializationStart, frameCoverage: nil, additionalFrameCoverage: nil, screen: nil)
@@ -155,8 +159,7 @@ public final class FBAXTranslationRequest {
       keys: keys,
       collector: collector,
       coverageGrid: grid,
-      seenPids: seenPids,
-      filter: options.filter
+      seenPids: seenPids
     )
 
     // Base coverage after the main traversal.
@@ -171,7 +174,7 @@ public final class FBAXTranslationRequest {
     // Remote content fetching (only when requested and a translator is present).
     guard let remoteOptions = options.remoteContentOptions, let translator else {
       return buildResponse(
-        elements: .tree(mainAppElements),
+        elements: .tree(options.filter.apply(to: mainAppElements)),
         serializationStart: serializationStart,
         frameCoverage: frameCoverage,
         additionalFrameCoverage: nil,
@@ -183,6 +186,7 @@ public final class FBAXTranslationRequest {
     return processRemoteContent(
       mainAppElements: mainAppElements,
       nestedFormat: options.nestedFormat,
+      filter: options.filter,
       screenBounds: screenBounds,
       frontmostPid: frontmostPid,
       seenPids: seenPids,
@@ -292,6 +296,7 @@ public final class FBAXTranslationRequest {
   private func processRemoteContent(
     mainAppElements: [FBAccessibilityDocumentElement],
     nestedFormat: Bool,
+    filter: FBAccessibilityElementFilter,
     screenBounds: CGRect,
     frontmostPid: pid_t,
     seenPids: SeenPIDs,
@@ -334,8 +339,10 @@ public final class FBAXTranslationRequest {
       }
     }
 
+    // The filter applies to the merged list: an element is kept or dropped on what it is, not on
+    // whether the main traversal or the remote hit-test happened to find it.
     return buildResponse(
-      elements: .tree(elements),
+      elements: .tree(filter.apply(to: elements)),
       serializationStart: serializationStart,
       frameCoverage: frameCoverage,
       additionalFrameCoverage: additionalFrameCoverage,

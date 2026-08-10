@@ -981,19 +981,23 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     assertProfilingData(try await profile(withFilter: .all), expectedElements: 4, expectedAttributeFetches: 60)
   }
 
-  // The filter runs inside the walk, so a dropped node is never serialized: it contributes nothing to
-  // the element count and none of the per-element fetches. What it *does* cost — the label, identifier
-  // and role probes `passes` makes — is not tallied at all, so these numbers understate the read.
-  // Pinned because filtering the serialized model instead makes the walk serialize every node, which
-  // moves both counts up to the unfiltered figures above.
-  func testInteractableFilterProfileCountsOmitDroppedNodes() async throws {
-    assertProfilingData(try await profile(withFilter: .interactable), expectedElements: 2, expectedAttributeFetches: 30)
+  // The filter no longer changes what the walk does, so it no longer changes what the walk costs: both
+  // filters serialize all four nodes for the same 60 fetches, and the filter decides afterwards which
+  // two are reported.
+  //
+  // These counts went up. Previously a dropped node was never serialized, so it contributed neither an
+  // element nor any of its 15 fetches — but it was still probed for a label, an identifier and a role,
+  // and those three fetches were never tallied. The old figures were the cost of a *different* walk,
+  // understated; these are the cost of this one.
+  func testInteractableFilterProfileCountsMatchTheUnfilteredWalk() async throws {
+    assertProfilingData(try await profile(withFilter: .interactable), expectedElements: 4, expectedAttributeFetches: 60)
   }
 
-  // Remote content is discovered after the walk and appended straight to the output, so it never meets
-  // `passes`: an element the filter would drop survives purely because of where it was found. Pinned
-  // because filtering the serialized model subjects the merged list to the filter uniformly.
-  func testRemoteContentDiscoveryBypassesTheElementFilter() async throws {
+  // Remote content is discovered after the walk and appended to the output, and the filter now runs
+  // over that merged list — so an element is kept or dropped on what it is, not on whether the main
+  // traversal or the remote hit-test happened to find it. It used to be appended straight past the
+  // filter, so the element below survived purely because of where it was found.
+  func testRemoteContentDiscoveryHonoursTheElementFilter() async throws {
     let appElement = FBAccessibilityTestElementBuilder.application(
       withLabel: "App", frame: NSRect(x: 0, y: 0, width: 390, height: 844), children: []
     )
@@ -1016,11 +1020,12 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     let response = try element.serialize(with: options)
     element.close()
 
-    let elements = try XCTUnwrap(response.legacyElementsObject() as? [Any])
-    XCTAssertEqual(
-      elements.count, 2,
-      "the app root plus the discovered element, which the filter would have dropped had it been walked"
+    XCTAssertNotNil(
+      response.additionalFrameCoverage,
+      "the element was discovered — its coverage is counted even though the filter then drops it"
     )
+    let elements = try XCTUnwrap(response.legacyElementsObject() as? [Any])
+    XCTAssertEqual(elements.count, 1, "only the labeled app root survives; the discovered element is filtered out")
   }
 
   // MARK: - Marker Search Tests (accessibilityElementMatching)

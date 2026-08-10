@@ -46,6 +46,21 @@ public enum FBAccessibilityElementFilter: String, Sendable, CaseIterable {
   /// (Button, Cell, TextField, …). Unlabeled structural container nodes are dropped; in nested output
   /// a dropped container's matching descendants are hoisted to its nearest kept ancestor.
   case interactable
+
+  /// The attributes this filter reads to decide what to keep.
+  ///
+  /// The filter runs over the serialized model, so an attribute the read did not serialize is one it
+  /// cannot match on — an element would be dropped for lacking a label that was simply never fetched.
+  /// `serializationKeys` unions these in so narrowing `--key` narrows the *output* without also
+  /// changing which elements survive.
+  public var requiredKeys: Set<FBAXKeys> {
+    switch self {
+    case .all:
+      return []
+    case .interactable:
+      return [.label, .uniqueID, .role]
+    }
+  }
 }
 
 /// Request options for accessibility operations. Consolidates all parameters
@@ -61,27 +76,38 @@ public struct FBAccessibilityRequestOptions: Sendable {
   /// `AXFrame` through the `frame` object, and the raw `role` through the normalized `type` — so a
   /// caller asking for either would otherwise get nothing back for it. Reading the counterpart too is
   /// what keeps "an attribute you asked for is present in the output" true under that format.
+  ///
+  /// The enrichers that run over the serialized model widen it too. They read the model rather than the
+  /// live element, so an attribute the read did not serialize is one they cannot see: a narrow `--key`
+  /// would otherwise silently disable them rather than narrow the output. The cost is only in bytes —
+  /// the walk fetches the frame for every node regardless of the key set.
   public var serializationKeys: Set<FBAXKeys> {
-    Self.serializationKeys(for: keys, format: format)
+    Self.serializationKeys(for: keys, format: format, filter: filter)
   }
 
   /// The same expansion over an arbitrary key set, for the marker read — which unions the key it
   /// searched on and must expand that too, or `--match-key role` matches on an attribute `complete`
   /// then reports under neither name.
   public func serializationKeys(including extraKeys: Set<FBAXKeys>) -> Set<FBAXKeys> {
-    Self.serializationKeys(for: keys.union(extraKeys), format: format)
+    Self.serializationKeys(for: keys.union(extraKeys), format: format, filter: filter)
   }
 
-  private static func serializationKeys(for keys: Set<FBAXKeys>, format: FBAccessibilityOutputFormat) -> Set<FBAXKeys> {
-    guard format == .complete else {
-      return keys
-    }
+  private static func serializationKeys(
+    for keys: Set<FBAXKeys>,
+    format: FBAccessibilityOutputFormat,
+    filter: FBAccessibilityElementFilter
+  ) -> Set<FBAXKeys> {
     var expanded = keys
-    if keys.contains(.frame) {
-      expanded.insert(.frameDict)
+    if format == .complete {
+      if keys.contains(.frame) {
+        expanded.insert(.frameDict)
+      }
+      if keys.contains(.role) {
+        expanded.insert(.type)
+      }
     }
-    if keys.contains(.role) {
-      expanded.insert(.type)
+    if filter != .all {
+      expanded.formUnion(filter.requiredKeys)
     }
     return expanded
   }
