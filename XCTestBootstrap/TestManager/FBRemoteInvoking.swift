@@ -205,6 +205,15 @@ func awaitRemoteReceipt(
         if let error {
           bridge.resolve(.failure(error))
         } else {
+          // SAFETY: DTX invokes the completion exactly once and never touches `value`
+          // afterwards. The block parameter is already declared `sending` at the ObjC
+          // boundary (NS_SWIFT_SENDING on `handleCompletion:` in
+          // FBRemoteAutomationProtocols.h) for exactly this handoff, but newer Swift
+          // compilers no longer treat the annotated parameter as region-disconnected at
+          // this call site, so the already-declared transfer is restated locally. Delete
+          // this binding once toolchains honor the declaration again.
+          // patternlint-disable-next-line swift-nonisolated-unsafe
+          nonisolated(unsafe) let value = value
           bridge.resolve(.success(value))
         }
       }
