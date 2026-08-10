@@ -233,6 +233,16 @@ function generate_proto() {
   echo "Generated gRPC Swift files in $output_dir"
 }
 
+function generate_companion_project() {
+  echo "Generating idb_companion project..."
+  generate_xcodeproj "Companion" "idb_companion"
+
+  # xcodegen ignores `embed: false` for a tool target dependency, so strip the
+  # leftover entry here.
+  sed -i '' '/IDBGRPCSwift.framework in Embed Frameworks/d' \
+    Companion/idb_companion.xcodeproj/project.pbxproj
+}
+
 function regenerate_projects() {
   check_xcodegen
 
@@ -244,13 +254,7 @@ function regenerate_projects() {
   generate_xcodeproj "Shims/Repl" "Repl"
   echo "Generating SimulatorFrameworkBridge project..."
   generate_xcodeproj "SimulatorFrameworkBridge" "SimulatorFrameworkBridge"
-  echo "Generating idb_companion project..."
-  generate_xcodeproj "Companion" "idb_companion"
-
-  # xcodegen ignores `embed: false` for a tool target dependency, so strip the
-  # leftover entry here.
-  sed -i '' '/IDBGRPCSwift.framework in Embed Frameworks/d' \
-    Companion/idb_companion.xcodeproj/project.pbxproj
+  generate_companion_project
 }
 
 # =============================================================================
@@ -370,6 +374,11 @@ function build_idb_companion() {
   if [ ! -f "IDBGRPCSwift/idb.grpc.swift" ] || [ ! -f "IDBGRPCSwift/idb.pb.swift" ]; then
     echo "Proto files not found, generating..."
     generate_proto
+    # XcodeGen resolves source globs at generation time, so a project generated
+    # before the gRPC sources existed (a fresh clone) has an empty IDBGRPCSwift
+    # target and the companion fails with "no such module". Regenerate now that
+    # the sources are on disk.
+    generate_companion_project
   fi
   # Build frameworks first in Release (idb_companion depends on them and is built in Release)
   build_target FBControlCore Release
@@ -397,6 +406,9 @@ function build_idb_repl() {
   if [ ! -f "IDBGRPCSwift/idb.grpc.swift" ] || [ ! -f "IDBGRPCSwift/idb.pb.swift" ]; then
     echo "Proto files not found, generating..."
     generate_proto
+    # See build_idb_companion: the project must be regenerated once the
+    # generated sources exist, or the IDBGRPCSwift target is empty.
+    generate_companion_project
   fi
   # Build the idb-repl CLI from the idb_companion project (shares IDBGRPCSwift).
   invoke_xcodebuild \
