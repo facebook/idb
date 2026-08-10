@@ -48,10 +48,15 @@
 
 #pragma mark - handleDnsAction
 
-- (void)testHandleDnsActionListCompletes
+// `SCDynamicStoreCreate` returns NULL for a sandboxed app, and an XCTest bundle runs inside
+// one, so no action that needs a store can get past that point here. In production the bridge
+// is `simctl spawn`'d rather than launched as an app and does get a store, which is why these
+// tests can only pin the store-unavailable path. Everything above this point is pure and is
+// covered for real.
+- (void)testHandleDnsActionListReturnsFailureWithoutADynamicStore
 {
   int result = handleDnsAction(@"list", @[]);
-  XCTAssertEqual(result, 0);
+  XCTAssertEqual(result, 1);
 }
 
 - (void)testHandleDnsActionSetMissingArgsReturnsFailure

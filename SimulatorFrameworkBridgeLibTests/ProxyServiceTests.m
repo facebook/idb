@@ -111,10 +111,12 @@
 
 #pragma mark - handleProxyAction list
 
-- (void)testHandleProxyActionListCompletes
+// See the note in DnsServiceTests: a sandboxed XCTest host cannot create an SCDynamicStore,
+// so `list` reports failure here where the `simctl spawn`'d bridge would succeed.
+- (void)testHandleProxyActionListReturnsFailureWithoutADynamicStore
 {
   int result = handleProxyAction(@"list", @[]);
-  XCTAssertEqual(result, 0);
+  XCTAssertEqual(result, 1);
 }
 
 @end

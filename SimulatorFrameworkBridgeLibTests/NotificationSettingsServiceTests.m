@@ -14,28 +14,33 @@
 
 @implementation NotificationSettingsServiceTests
 
-// BulletinBoard.framework is not available on macOS, so loadGateway()
-// returns nil and all actions return 1. These tests verify the error path
-// when the gateway is unavailable.
+// BulletinBoard is present in the simulator, so every action reaches a real BBSettingsGateway.
+// `approve` on an unknown section ID is still a success: the service creates a default section
+// info rather than requiring the app to have launched and asked for authorization first.
 
-- (void)testApproveReturnsFailureWhenGatewayUnavailable
+- (void)testApproveSucceeds
 {
-  XCTAssertEqual(handleNotificationSettingsAction(@"approve", @"com.example.test"), 1);
+  XCTAssertEqual(handleNotificationSettingsAction(@"approve", @"com.example.test"), 0);
 }
 
-- (void)testRevokeReturnsFailureWhenGatewayUnavailable
+- (void)testRevokeSucceeds
 {
-  XCTAssertEqual(handleNotificationSettingsAction(@"revoke", @"com.example.test"), 1);
+  XCTAssertEqual(handleNotificationSettingsAction(@"revoke", @"com.example.test"), 0);
 }
 
-- (void)testCheckReturnsFailureWhenGatewayUnavailable
+- (void)testCheckSucceeds
 {
-  XCTAssertEqual(handleNotificationSettingsAction(@"check", @"com.example.test"), 1);
+  XCTAssertEqual(handleNotificationSettingsAction(@"check", @"com.example.test"), 0);
 }
 
-- (void)testListReturnsFailureWhenGatewayUnavailable
+- (void)testListWithoutABundleIDSucceeds
 {
-  XCTAssertEqual(handleNotificationSettingsAction(@"list", nil), 1);
+  XCTAssertEqual(handleNotificationSettingsAction(@"list", nil), 0);
+}
+
+- (void)testUnknownActionReturnsFailure
+{
+  XCTAssertEqual(handleNotificationSettingsAction(@"frobnicate", @"com.example.test"), 1);
 }
 
 @end

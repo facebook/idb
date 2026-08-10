@@ -60,20 +60,18 @@
 
 - (void)testDispatchNotificationsRoutes
 {
-  // BulletinBoard unavailable on macOS → returns 1
-  XCTAssertEqual(dispatchService(@"notifications", @"approve", @[@"com.test"]), 1);
+  XCTAssertEqual(dispatchService(@"notifications", @"approve", @[@"com.test"]), 0);
 }
 
 - (void)testDispatchNotificationsPassesBundleID
 {
-  // "check" with a bundleID — gateway fails but bundleID is passed through
-  XCTAssertEqual(dispatchService(@"notifications", @"check", @[@"com.test"]), 1);
+  XCTAssertEqual(dispatchService(@"notifications", @"check", @[@"com.test"]), 0);
 }
 
 - (void)testDispatchNotificationsNoBundleID
 {
-  // "list" with no arguments — bundleID is nil
-  XCTAssertEqual(dispatchService(@"notifications", @"list", @[]), 1);
+  // "list" with no arguments — bundleID is nil, so every section is reported
+  XCTAssertEqual(dispatchService(@"notifications", @"list", @[]), 0);
 }
 
 #pragma mark - Proxy routing
