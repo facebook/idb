@@ -97,6 +97,33 @@ final class FBAXWireContractTests: XCTestCase {
     XCTAssertTrue(FBAXKeys.defaultSet.isDisjoint(with: optIn), "the opt-in keys must stay out of the default set")
   }
 
+  // MARK: - Failure kinds
+
+  // `error_kind` is how the host decides what a failure *was* without matching on the guest's free-text
+  // message, so each spelling is as much a part of the contract as a node key. Pinned over `allCases`, so
+  // a kind added host-side without a guest that emits it fails here rather than silently never matching.
+  func testFailureKindWireValues() {
+    let expected: [FBAXWire.ErrorKind: String] = [
+      .applicationUnavailable: "application_unavailable",
+      .applicationNotResponding: "application_not_responding",
+      .frontmostUnresolved: "frontmost_unresolved",
+      .readerUnavailable: "reader_unavailable",
+      .badRequest: "bad_request",
+    ]
+    XCTAssertEqual(Set(FBAXWire.ErrorKind.allCases), Set(expected.keys), "every failure kind must have its wire value pinned")
+    for (kind, wireValue) in expected {
+      XCTAssertEqual(kind.rawValue, wireValue)
+      XCTAssertEqual(FBAXWire.ErrorKind(rawValue: wireValue), kind, "\(kind) must round-trip through its wire value")
+    }
+  }
+
+  // A kind this host has never heard of has to parse as "no kind" — an opaque reader failure — rather
+  // than as anything the host would act on. That is what lets the guest gain a kind ahead of the host it
+  // is talking to and cost only precision.
+  func testAnUnknownFailureKindIsNotAKnownOne() {
+    XCTAssertNil(FBAXWire.ErrorKind(rawValue: "application_on_fire"))
+  }
+
   // MARK: - Frontmost-method request selectors
 
   // `FBAXBridgeFrontmostMethod`'s raw values are the selectors the host sends the guest to pick a

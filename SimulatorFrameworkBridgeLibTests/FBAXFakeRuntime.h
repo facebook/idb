@@ -33,6 +33,8 @@ NS_ASSUME_NONNULL_BEGIN
 + (instancetype)readable:(NSString *)elementType;
 /** An element whose read reports that its application has no accessibility server. */
 + (instancetype)applicationUnavailable;
+/** An element whose read reports that its application did not answer in time. */
++ (instancetype)applicationNotResponding;
 /** An element whose read fails, carrying `error` (which may be nil). */
 + (instancetype)failed:(nullable NSError *)error;
 

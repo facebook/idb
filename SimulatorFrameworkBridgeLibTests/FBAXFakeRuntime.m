@@ -39,6 +39,13 @@ static NSString *const kAXChildren = @"XC_kAXXCAttributeChildren";
   return element;
 }
 
++ (instancetype)applicationNotResponding
+{
+  FBAXFakeElement *element = [self new];
+  element.readStatus = FBAXReadStatusApplicationNotResponding;
+  return element;
+}
+
 + (instancetype)failed:(nullable NSError *)error
 {
   FBAXFakeElement *element = [self new];
@@ -79,6 +86,8 @@ static NSString *const kAXChildren = @"XC_kAXXCAttributeChildren";
       break;
     case FBAXReadStatusApplicationUnavailable:
       return [FBAXReadOutcome applicationUnavailable];
+    case FBAXReadStatusApplicationNotResponding:
+      return [FBAXReadOutcome applicationNotResponding];
     case FBAXReadStatusFailed:
     default:
       return [FBAXReadOutcome failed:fake.readError];

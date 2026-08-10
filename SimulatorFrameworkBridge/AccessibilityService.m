@@ -47,11 +47,26 @@ static NSString *const kResponseError = @"error";
 // A successful hit-test that found no element at the point: `{ok:true, empty:true}` — distinct from a
 // reader failure (`{ok:false, error:...}`), so the host can tell empty space from a broken reader.
 static NSString *const kResponseEmpty = @"empty";
-// A machine-readable failure kind. The host maps exactly one failure — a pid that names no readable
-// application — to a backend-neutral error; tagging it here lets the host recognize it structurally
-// rather than matching the free-text `error` string. Every other failure carries no kind.
+// A machine-readable failure kind: what went wrong, as a closed vocabulary, so the host chooses what to
+// tell the user structurally rather than by matching the free-text `error` string. The `error` still
+// carries the detail — the kind decides which remedy, if any, applies to it.
+//
+// A failure with no kind is a reader failure with nothing further to say about it. That is the default,
+// and a host that does not know a kind must treat it as one, so adding a value here degrades an older
+// host's precision rather than breaking it.
 static NSString *const kResponseErrorKind = @"error_kind";
+// The named process has no accessibility server: a dead pid, or a process that is not an application.
 static NSString *const kErrorKindApplicationUnavailable = @"application_unavailable";
+// The named process has one and it did not answer in time — alive but busy, suspended or wedged.
+static NSString *const kErrorKindApplicationNotResponding = @"application_not_responding";
+// The selected frontmost strategy could not name an application, for a reason that is about the strategy
+// rather than about any one application.
+static NSString *const kErrorKindFrontmostUnresolved = @"frontmost_unresolved";
+// The reader could not bind the private frameworks it reads through, so no request can be served. The
+// `error` names what was missing and what else about the runtime has moved.
+static NSString *const kErrorKindReaderUnavailable = @"reader_unavailable";
+// The request itself was malformed — an unknown verb, or a missing or wrongly-typed argument.
+static NSString *const kErrorKindBadRequest = @"bad_request";
 // A whole-tree read whose walk was cut short by the depth cap or the node budget: the returned tree is
 // a partial view, so the host can warn rather than pass it off as complete. Absent or `false` means the
 // walk visited every element within the bounds.
@@ -351,9 +366,15 @@ static FBAXFrontmostOutcome *FBAXBridgeCenterPointFrontmost(id<FBAXRuntime> runt
       // an empty result answers a frontmost query with a resolution failure.
       return [FBAXFrontmostOutcome unresolved:
               [NSString stringWithFormat:@"system-wide hit-test at (%.1f, %.1f) found no element", anchor.x, anchor.y]];
+    // The next two carry the hit-test's own judgement through rather than flattening it into a generic
+    // unresolved: whether the frontmost app is absent or merely slow is the difference between the caller
+    // reconfiguring accessibility and the caller waiting, and only the runtime knows which it was.
     case FBAXHitTestStatusApplicationUnavailable:
-      return [FBAXFrontmostOutcome unresolved:
+      return [FBAXFrontmostOutcome applicationUnavailable:
               [NSString stringWithFormat:@"no accessibility server answered the system-wide hit-test at (%.1f, %.1f)", anchor.x, anchor.y]];
+    case FBAXHitTestStatusApplicationNotResponding:
+      return [FBAXFrontmostOutcome applicationNotResponding:
+              [NSString stringWithFormat:@"the application at (%.1f, %.1f) did not answer the system-wide hit-test in time", anchor.x, anchor.y]];
     // `default` sits with the failure case rather than alone: a status this does not know never resolves
     // to a pid.
     case FBAXHitTestStatusFailed:
@@ -391,9 +412,17 @@ static NSDictionary *FBAXBridgeErrorResponse(NSString *message)
   return @{kResponseOk : @NO, kResponseError : message};
 }
 
-static NSDictionary *FBAXBridgeApplicationUnavailableResponse(NSString *message)
+// A failure the host can act on: the message says what happened, the kind says what class of thing it
+// was, and the pid names the process it was about when there is one. A display-wide hit-test that nothing
+// answers has no pid to name, so it is optional rather than a sentinel the host has to know to ignore.
+static NSDictionary *FBAXBridgeTaggedErrorResponse(NSString *message, NSString *kind, NSNumber *_Nullable pid)
 {
-  return @{kResponseOk : @NO, kResponseError : message, kResponseErrorKind : kErrorKindApplicationUnavailable};
+  NSMutableDictionary *response =
+  [@{kResponseOk : @NO, kResponseError : message, kResponseErrorKind : kind} mutableCopy];
+  if (pid) {
+    response[kResponsePid] = pid;
+  }
+  return response;
 }
 
 NSData *FBAXBridgeSerializeResponse(NSDictionary<NSString *, id> *response)
@@ -431,7 +460,7 @@ static NSDictionary *FBAXBridgeHitTest(id<FBAXRuntime> runtime, NSDictionary *re
   NSNumber *xNumber = request[kRequestX];
   NSNumber *yNumber = request[kRequestY];
   if (![xNumber isKindOfClass:NSNumber.class] || ![yNumber isKindOfClass:NSNumber.class]) {
-    return FBAXBridgeErrorResponse(@"hittest requires numeric x and y");
+    return FBAXBridgeTaggedErrorResponse(@"hittest requires numeric x and y", kErrorKindBadRequest, nil);
   }
   NSNumber *pidNumber = [request[kRequestPid] isKindOfClass:NSNumber.class] ? request[kRequestPid] : nil;
 
@@ -441,9 +470,18 @@ static NSDictionary *FBAXBridgeHitTest(id<FBAXRuntime> runtime, NSDictionary *re
     case FBAXHitTestStatusHit:
       break;
     case FBAXHitTestStatusApplicationUnavailable:
-      return FBAXBridgeApplicationUnavailableResponse(
+      return FBAXBridgeTaggedErrorResponse(
         pidNumber ? [NSString stringWithFormat:@"pid %d has no accessibility server to hit-test", pidNumber.intValue]
-        : @"no accessibility server answered the system-wide hit-test"
+        : @"no accessibility server answered the system-wide hit-test",
+        kErrorKindApplicationUnavailable,
+        pidNumber
+      );
+    case FBAXHitTestStatusApplicationNotResponding:
+      return FBAXBridgeTaggedErrorResponse(
+        pidNumber ? [NSString stringWithFormat:@"pid %d did not answer the hit-test in time", pidNumber.intValue]
+        : @"the application at the hit-test point did not answer in time",
+        kErrorKindApplicationNotResponding,
+        pidNumber
       );
     case FBAXHitTestStatusEmpty:
       return @{kResponseOk : @YES, kResponseEmpty : @YES};
@@ -462,8 +500,17 @@ static NSDictionary *FBAXBridgeHitTest(id<FBAXRuntime> runtime, NSDictionary *re
     case FBAXReadStatusRead:
       break;
     case FBAXReadStatusApplicationUnavailable:
-      return FBAXBridgeApplicationUnavailableResponse(
-        [NSString stringWithFormat:@"pid %d has no accessibility server", outcome.owningProcessIdentifier]
+      return FBAXBridgeTaggedErrorResponse(
+        [NSString stringWithFormat:@"pid %d has no accessibility server", outcome.owningProcessIdentifier],
+        kErrorKindApplicationUnavailable,
+        @(outcome.owningProcessIdentifier)
+      );
+    case FBAXReadStatusApplicationNotResponding:
+      return FBAXBridgeTaggedErrorResponse(
+        [NSString stringWithFormat:@"pid %d did not answer the read of the hit element in time",
+         outcome.owningProcessIdentifier],
+        kErrorKindApplicationNotResponding,
+        @(outcome.owningProcessIdentifier)
       );
     case FBAXReadStatusFailed:
     default:
@@ -485,7 +532,11 @@ NSDictionary<NSString *, id> *FBAXBridgeHandleRequest(NSDictionary<NSString *, i
   BOOL isDescribe = [verb isEqualToString:kVerbDescribe];
   BOOL isHitTest = [verb isEqualToString:kVerbHitTest];
   if (!isDescribe && !isHitTest) {
-    return FBAXBridgeErrorResponse([NSString stringWithFormat:@"unsupported verb: %@", requestedVerb ?: @"(nil)"]);
+    return FBAXBridgeTaggedErrorResponse(
+      [NSString stringWithFormat:@"unsupported verb: %@", requestedVerb ?: @"(nil)"],
+      kErrorKindBadRequest,
+      nil
+    );
   }
 
   // Both verbs take a `pid`, and a non-positive one names no process. The accessibility runtime does not
@@ -493,13 +544,24 @@ NSDictionary<NSString *, id> *FBAXBridgeHandleRequest(NSDictionary<NSString *, i
   // any setup, and both verbs answer alike.
   NSNumber *requestedPid = [request[kRequestPid] isKindOfClass:NSNumber.class] ? request[kRequestPid] : nil;
   if (requestedPid && requestedPid.intValue <= 0) {
-    return FBAXBridgeApplicationUnavailableResponse([NSString stringWithFormat:@"pid %d names no application", requestedPid.intValue]);
+    return FBAXBridgeTaggedErrorResponse(
+      [NSString stringWithFormat:@"pid %d names no application", requestedPid.intValue],
+      kErrorKindApplicationUnavailable,
+      requestedPid
+    );
   }
 
   NSString *setupError = nil;
   id<FBAXRuntime> runtime = FBAXBridgeSharedRuntime(&setupError);
   if (!runtime) {
-    return FBAXBridgeErrorResponse(setupError ?: @"accessibility setup failed");
+    // Its own kind because it is the one failure that is about neither the request nor the application:
+    // no configuration of either fixes a reader that cannot bind, and the message is the only place the
+    // missing class and the drifted signatures are named.
+    return FBAXBridgeTaggedErrorResponse(
+      setupError ?: @"accessibility setup failed",
+      kErrorKindReaderUnavailable,
+      nil
+    );
   }
 
   // `hittest` is self-contained: with a pid it hit-tests that app; with no pid it hit-tests display-wide
@@ -519,14 +581,42 @@ NSDictionary<NSString *, id> *FBAXBridgeHandleRequest(NSDictionary<NSString *, i
     NSNumber *xNumber = request[kRequestX];
     NSNumber *yNumber = request[kRequestY];
     if (![xNumber isKindOfClass:NSNumber.class] || ![yNumber isKindOfClass:NSNumber.class]) {
-      return FBAXBridgeErrorResponse(@"describe requires either a numeric pid or the frontmost anchor (x, y)");
+      return FBAXBridgeTaggedErrorResponse(
+        @"describe requires either a numeric pid or the frontmost anchor (x, y)",
+        kErrorKindBadRequest,
+        nil
+      );
     }
     NSString *requestedMethod = [request[kRequestMethod] isKindOfClass:NSString.class] ? request[kRequestMethod] : nil;
     NSString *method = requestedMethod ?: kMethodCenterPoint;
     FBAXFrontmostOutcome *frontmost =
     FBAXBridgeResolveFrontmost(runtime, method, CGPointMake(xNumber.doubleValue, yNumber.doubleValue));
-    if (frontmost.status != FBAXFrontmostStatusResolved) {
-      return FBAXBridgeErrorResponse(frontmost.failureReason ?: @"could not resolve the frontmost application pid");
+    // A frontmost that did not resolve says why in its own terms. The kind is what the resolver decided,
+    // not "the frontmost query failed" — a fused read of an app with no accessibility server is the same
+    // condition as a `--pid` read of one, and answering it differently is what left the host guessing.
+    switch (frontmost.status) {
+      case FBAXFrontmostStatusResolved:
+        break;
+      case FBAXFrontmostStatusApplicationUnavailable:
+        return FBAXBridgeTaggedErrorResponse(
+          frontmost.failureReason ?: @"nothing frontmost has an accessibility server",
+          kErrorKindApplicationUnavailable,
+          nil
+        );
+      case FBAXFrontmostStatusApplicationNotResponding:
+        return FBAXBridgeTaggedErrorResponse(
+          frontmost.failureReason ?: @"the frontmost application did not answer in time",
+          kErrorKindApplicationNotResponding,
+          nil
+        );
+      // `default` sits with the unresolved case: a status this does not know has not named a pid.
+      case FBAXFrontmostStatusUnresolved:
+      default:
+        return FBAXBridgeTaggedErrorResponse(
+          frontmost.failureReason ?: @"could not resolve the frontmost application pid",
+          kErrorKindFrontmostUnresolved,
+          nil
+        );
     }
     pid = frontmost.processIdentifier;
     // The method that answered is the method that was asked for, so the response echoes back what the
@@ -551,7 +641,17 @@ NSDictionary<NSString *, id> *FBAXBridgeHandleRequest(NSDictionary<NSString *, i
     case FBAXReadStatusRead:
       break;
     case FBAXReadStatusApplicationUnavailable:
-      return FBAXBridgeApplicationUnavailableResponse([NSString stringWithFormat:@"pid %d has no accessibility server", pid]);
+      return FBAXBridgeTaggedErrorResponse(
+        [NSString stringWithFormat:@"pid %d has no accessibility server", pid],
+        kErrorKindApplicationUnavailable,
+        @(pid)
+      );
+    case FBAXReadStatusApplicationNotResponding:
+      return FBAXBridgeTaggedErrorResponse(
+        [NSString stringWithFormat:@"pid %d did not answer the read of its element tree in time", pid],
+        kErrorKindApplicationNotResponding,
+        @(pid)
+      );
     case FBAXReadStatusFailed:
     default:
       return FBAXBridgeErrorResponse(
@@ -710,7 +810,7 @@ static int FBAXBridgeServe(NSString *socketPath)
         id parsed = [NSJSONSerialization JSONObjectWithData:requestData options:0 error:NULL];
         NSDictionary *response = [parsed isKindOfClass:NSDictionary.class]
         ? FBAXBridgeHandleRequest(parsed)
-        : FBAXBridgeErrorResponse(@"malformed request frame");
+        : FBAXBridgeTaggedErrorResponse(@"malformed request frame", kErrorKindBadRequest, nil);
         NSData *responseData = FBAXBridgeSerializeResponse(response);
         uint32_t responseLength = htonl((uint32_t)responseData.length);
         if (!FBAXBridgeWriteFully(connection, &responseLength, sizeof(responseLength))) {
@@ -797,6 +897,10 @@ NSDictionary<NSString *, NSString *> *FBAXBridgeWireConstantsForTesting(void)
     @"envelope.empty" : kResponseEmpty,
     @"envelope.errorKind" : kResponseErrorKind,
     @"envelope.errorKindApplicationUnavailable" : kErrorKindApplicationUnavailable,
+    @"envelope.errorKindApplicationNotResponding" : kErrorKindApplicationNotResponding,
+    @"envelope.errorKindFrontmostUnresolved" : kErrorKindFrontmostUnresolved,
+    @"envelope.errorKindReaderUnavailable" : kErrorKindReaderUnavailable,
+    @"envelope.errorKindBadRequest" : kErrorKindBadRequest,
     @"envelope.truncated" : kResponseTruncated,
     @"envelope.pid" : kResponsePid,
     @"envelope.method" : kResponseMethod,

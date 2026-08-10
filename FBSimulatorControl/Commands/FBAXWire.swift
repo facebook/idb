@@ -50,6 +50,26 @@ enum FBAXWire {
     case modal
   }
 
+  /// What class of thing went wrong, as the guest's `error_kind` reports it.
+  ///
+  /// The kind decides what the host *tells* the caller — which typed error it raises and whether any
+  /// remedy applies — while the envelope's `error` carries the detail. A failure with no kind, or with
+  /// one this host does not know, is a reader failure with nothing further to say about it: an unknown
+  /// value must degrade to that rather than fail to parse, so a guest ahead of its host loses precision
+  /// and no more.
+  enum ErrorKind: String, CaseIterable {
+    /// The process has no accessibility server: a dead pid, or a process that is not an application.
+    case applicationUnavailable = "application_unavailable"
+    /// The process has one and it did not answer in time — alive but busy, suspended or wedged.
+    case applicationNotResponding = "application_not_responding"
+    /// The selected frontmost strategy could not name an application.
+    case frontmostUnresolved = "frontmost_unresolved"
+    /// The guest could not bind the private frameworks it reads through, so no request can be served.
+    case readerUnavailable = "reader_unavailable"
+    /// The request was malformed — an unknown verb, or a missing or wrongly-typed argument.
+    case badRequest = "bad_request"
+  }
+
   /// The guest read verbs — the one-shot CLI subcommand and the persistent-transport `verb` value
   /// share this spelling.
   enum Verb: String {

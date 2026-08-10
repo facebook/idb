@@ -122,6 +122,7 @@ static NSDictionary *FBAXTestsParse(NSData *data)
     NSDictionary *response = FBAXBridgeHandleRequest(@{@"verb" : verb});
     XCTAssertEqualObjects(response[@"ok"], @NO, @"a %@ verb must be rejected", [verb class]);
     XCTAssertNotNil(response[@"error"], @"a %@ verb must carry an error message", [verb class]);
+    XCTAssertEqualObjects(response[@"error_kind"], @"bad_request", @"a %@ verb", [verb class]);
   }
 }
 
@@ -132,6 +133,7 @@ static NSDictionary *FBAXTestsParse(NSData *data)
   NSDictionary *response = FBAXBridgeHandleRequest(@{@"pid" : @1234});
   XCTAssertEqualObjects(response[@"ok"], @NO);
   XCTAssertEqualObjects(response[@"error"], @"unsupported verb: (nil)");
+  XCTAssertEqualObjects(response[@"error_kind"], @"bad_request");
 }
 
 // `pid 0` and negative pids name no process. The host distinguishes "this pid names no readable
@@ -157,6 +159,7 @@ static NSDictionary *FBAXTestsParse(NSData *data)
       request[@"verb"],
       request[@"pid"]
     );
+    XCTAssertEqualObjects(response[@"pid"], request[@"pid"], @"the rejected pid must be named back");
   }
 }
 
@@ -192,6 +195,10 @@ static NSDictionary *FBAXTestsParse(NSData *data)
     @"envelope.empty" : @"empty",
     @"envelope.errorKind" : @"error_kind",
     @"envelope.errorKindApplicationUnavailable" : @"application_unavailable",
+    @"envelope.errorKindApplicationNotResponding" : @"application_not_responding",
+    @"envelope.errorKindFrontmostUnresolved" : @"frontmost_unresolved",
+    @"envelope.errorKindReaderUnavailable" : @"reader_unavailable",
+    @"envelope.errorKindBadRequest" : @"bad_request",
     @"envelope.truncated" : @"truncated",
     @"envelope.pid" : @"pid",
     @"envelope.method" : @"method",

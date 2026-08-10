@@ -40,6 +40,8 @@ typedef NS_ENUM(NSUInteger, FBAXReadStatus) {
   FBAXReadStatusRead,
   /** The owning process has no accessibility server to answer the read. */
   FBAXReadStatusApplicationUnavailable,
+  /** The owning process has an accessibility server that did not answer in time. */
+  FBAXReadStatusApplicationNotResponding,
   /** The read went wrong; `error` holds why, if the runtime said. */
   FBAXReadStatusFailed,
 };
@@ -60,12 +62,13 @@ typedef NS_ENUM(NSUInteger, FBAXReadStatus) {
 
 + (instancetype)read:(NSDictionary<NSString *, id> *)attributes;
 + (instancetype)applicationUnavailable;
++ (instancetype)applicationNotResponding;
 + (instancetype)failed:(nullable NSError *)error;
 
 /**
  * Classifies a failed `-[XCTAccessibilityFramework attributesForElement:attributes:error:]` into
- * `ApplicationUnavailable` or `Failed`, from the FBAXError the reader reported under
- * FBAXAccessibilityErrorKey.
+ * `ApplicationUnavailable`, `ApplicationNotResponding` or `Failed`, from the FBAXError the reader
+ * reported under FBAXAccessibilityErrorKey.
  *
  * This is the only place that judgement is made, so every read answers alike and callers switch on the
  * status rather than re-inspecting the error.
@@ -84,6 +87,14 @@ typedef NS_ENUM(NSUInteger, FBAXHitTestStatus) {
   FBAXHitTestStatusEmpty,
   /** Nothing answered the hit-test: the process has no accessibility server. */
   FBAXHitTestStatusApplicationUnavailable,
+  /**
+   * The process has an accessibility server and it did not answer in time.
+   *
+   * Held apart from `Empty` because the two look identical to a caller and mean opposite things: an app
+   * that is busy or suspended reads as blank space, which is exactly what a caller sees after a tap it is
+   * still processing. Held apart from `ApplicationUnavailable` because the application has not gone away.
+   */
+  FBAXHitTestStatusApplicationNotResponding,
   /** The hit-test went wrong; `failureReason` says how. */
   FBAXHitTestStatusFailed,
 };
@@ -107,11 +118,13 @@ typedef NS_ENUM(NSUInteger, FBAXHitTestStatus) {
 + (instancetype)hit:(id)element owningProcessIdentifier:(pid_t)pid;
 + (instancetype)empty;
 + (instancetype)applicationUnavailable;
++ (instancetype)applicationNotResponding;
 + (instancetype)failed:(NSString *)failureReason;
 
 /**
  * Classifies the AXError from `AXUIElementCopyElementAtPosition`, given whether it also produced an
- * element, into the outcome that error implies.
+ * element, into the outcome that error implies. The wording of what the caller is eventually told is
+ * the caller's — this decides only which of the four things happened.
  *
  * Returns nil — and only then — when the point resolved to an element the caller should go on to
  * attribute and wrap. Every other answer is complete, so a caller that gets non-nil is done.
@@ -130,6 +143,10 @@ typedef NS_ENUM(NSUInteger, FBAXHitTestStatus) {
 typedef NS_ENUM(NSUInteger, FBAXFrontmostStatus) {
   /** The frontmost application is `processIdentifier`. */
   FBAXFrontmostStatusResolved,
+  /** Whatever is frontmost has no accessibility server, so the query could not name it. */
+  FBAXFrontmostStatusApplicationUnavailable,
+  /** Whatever is frontmost has an accessibility server that did not answer in time. */
+  FBAXFrontmostStatusApplicationNotResponding,
   /** The frontmost application could not be determined; `failureReason` says why. */
   FBAXFrontmostStatusUnresolved,
 };
@@ -140,16 +157,22 @@ typedef NS_ENUM(NSUInteger, FBAXFrontmostStatus) {
  * It carries no notion of *which* strategy answered. A resolver reports only what it found, and the
  * caller that chose the resolver is the one that names it on the wire — so a response whose `method`
  * disagrees with the resolver that ran is not something this can express.
+ *
+ * It does distinguish *why* it did not answer. "Nothing on screen has an accessibility server" and
+ * "AXPTranslator is not in this runtime" are both a frontmost that could not be named, and they need
+ * opposite things done about them, so they are separate cases rather than two spellings of one.
  */
 @interface FBAXFrontmostOutcome : NSObject
 
 @property (nonatomic, readonly) FBAXFrontmostStatus status;
 /** The frontmost application's process. Always positive when `Resolved`. */
 @property (nonatomic, readonly) pid_t processIdentifier;
-/** A diagnostic for the caller. Non-nil iff `Unresolved`. */
+/** A diagnostic for the caller. Non-nil unless `Resolved`. */
 @property (nullable, nonatomic, readonly, copy) NSString *failureReason;
 
 + (instancetype)resolved:(pid_t)pid;
++ (instancetype)applicationUnavailable:(NSString *)failureReason;
++ (instancetype)applicationNotResponding:(NSString *)failureReason;
 + (instancetype)unresolved:(NSString *)failureReason;
 
 @end

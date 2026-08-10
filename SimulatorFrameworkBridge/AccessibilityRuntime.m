@@ -43,6 +43,11 @@
   return [[self alloc] initWithStatus:FBAXReadStatusApplicationUnavailable attributes:nil error:nil];
 }
 
++ (instancetype)applicationNotResponding
+{
+  return [[self alloc] initWithStatus:FBAXReadStatusApplicationNotResponding attributes:nil error:nil];
+}
+
 + (instancetype)failed:(nullable NSError *)error
 {
   return [[self alloc] initWithStatus:FBAXReadStatusFailed attributes:nil error:error];
@@ -50,14 +55,24 @@
 
 + (instancetype)failureForAttributeError:(nullable NSError *)error
 {
-  // FBAXErrorServerNotFound means nothing answered, rather than that the answer was bad — the one failure
-  // the host maps onto a typed, backend-neutral error, so it is recognised by the code the runtime
-  // reports rather than by matching on a message.
+  // Both codes below are recognised by the code the runtime reports rather than by matching on a message,
+  // and both become a kind the host maps onto a typed error. Everything else is an opaque failure whose
+  // only content is whatever the runtime said.
   NSNumber *code = error.userInfo[FBAXAccessibilityErrorKey];
-  if ([code isKindOfClass:NSNumber.class] && code.intValue == FBAXErrorServerNotFound) {
-    return [self applicationUnavailable];
+  if (![code isKindOfClass:NSNumber.class]) {
+    return [self failed:error];
   }
-  return [self failed:error];
+  switch (code.intValue) {
+    // Nothing answered, rather than the answer being bad.
+    case FBAXErrorServerNotFound:
+      return [self applicationUnavailable];
+    // Something is there and did not answer in time — the application has not gone away, so telling the
+    // caller it is unreadable would send them after the wrong thing.
+    case FBAXErrorIPCTimeout:
+      return [self applicationNotResponding];
+    default:
+      return [self failed:error];
+  }
 }
 
 @end
@@ -104,6 +119,14 @@
                         failureReason:nil];
 }
 
++ (instancetype)applicationNotResponding
+{
+  return [[self alloc] initWithStatus:FBAXHitTestStatusApplicationNotResponding
+                              element:nil
+              owningProcessIdentifier:0
+                        failureReason:nil];
+}
+
 + (instancetype)failed:(NSString *)failureReason
 {
   return [[self alloc] initWithStatus:FBAXHitTestStatusFailed
@@ -121,9 +144,9 @@
   }
   if (axError == FBAXErrorIPCTimeout) {
     // The application is there and did not answer in time. Empty would tell a caller the point is blank,
-    // which is what it looks like after a tap that is still being processed — so this stays a failure the
-    // caller can retry, and is not tagged unavailable, because the application has not gone away.
-    return [self failed:@"the application did not answer the hit-test in time"];
+    // which is what it looks like after a tap that is still being processed; unavailable would tell them
+    // the application has gone, which it has not. Its own case, so the caller can say which it was.
+    return [self applicationNotResponding];
   }
   if (axError != FBAXErrorSuccess || !hasElement) {
     // No element at the point is a valid empty result, not a failure: a caller doing a streaming
@@ -154,6 +177,20 @@
 + (instancetype)resolved:(pid_t)pid
 {
   return [[self alloc] initWithStatus:FBAXFrontmostStatusResolved processIdentifier:pid failureReason:nil];
+}
+
++ (instancetype)applicationUnavailable:(NSString *)failureReason
+{
+  return [[self alloc] initWithStatus:FBAXFrontmostStatusApplicationUnavailable
+                    processIdentifier:0
+                        failureReason:failureReason];
+}
+
++ (instancetype)applicationNotResponding:(NSString *)failureReason
+{
+  return [[self alloc] initWithStatus:FBAXFrontmostStatusApplicationNotResponding
+                    processIdentifier:0
+                        failureReason:failureReason];
 }
 
 + (instancetype)unresolved:(NSString *)failureReason

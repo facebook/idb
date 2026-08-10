@@ -222,19 +222,23 @@ typedef struct FBAXPair {
 
 #pragma mark - Read-error classification
 
-// `FBAXErrorServerNotFound` is the one AX error the host maps onto a typed, backend-neutral error, so the
-// classifier has to recognise it by the code the runtime reports and treat every other code as an opaque
-// failure. Getting this wrong in either direction is invisible on the wire until a real app misbehaves:
-// too broad and a genuine reader bug is reported to the host as "the app isn't there", too narrow and a
-// dead app produces an untyped error the host cannot act on.
-- (void)testOnlyServerNotFoundClassifiesAsAnUnavailableApplication
+// Two AX codes name a condition the host can act on, and the classifier has to recognise each by the code
+// the runtime reports and treat every other code as an opaque failure. Getting this wrong in either
+// direction is invisible on the wire until a real app misbehaves: too broad and a genuine reader bug is
+// reported as "the app isn't there", too narrow and a dead app produces an untyped error the host cannot
+// act on. The two are held apart from each other because an app that is gone and an app that is merely
+// slow need opposite things done about them.
+- (void)testEachActionableAXCodeClassifiesAsItsOwnCondition
 {
   FBAXReadOutcome *unavailable = [FBAXReadOutcome failureForAttributeError:FBAXTestsErrorWithCode(FBAXErrorServerNotFound)];
   XCTAssertEqual(unavailable.status, FBAXReadStatusApplicationUnavailable);
 
-  for (NSNumber *code in @[@(FBAXErrorInvalidUIElement), @(FBAXErrorIPCTimeout), @(FBAXErrorSuccess), @(-1)]) {
+  FBAXReadOutcome *notResponding = [FBAXReadOutcome failureForAttributeError:FBAXTestsErrorWithCode(FBAXErrorIPCTimeout)];
+  XCTAssertEqual(notResponding.status, FBAXReadStatusApplicationNotResponding, @"a live app that did not answer has not gone away");
+
+  for (NSNumber *code in @[@(FBAXErrorInvalidUIElement), @(FBAXErrorSuccess), @(-1)]) {
     FBAXReadOutcome *outcome = [FBAXReadOutcome failureForAttributeError:FBAXTestsErrorWithCode(code.intValue)];
-    XCTAssertEqual(outcome.status, FBAXReadStatusFailed, @"AX code %@ must not be tagged unavailable", code);
+    XCTAssertEqual(outcome.status, FBAXReadStatusFailed, @"AX code %@ must stay an opaque failure", code);
   }
 }
 
@@ -278,8 +282,8 @@ typedef struct FBAXPair {
   );
   XCTAssertEqual(
     [FBAXHitTestOutcome outcomeForHitTestError:FBAXErrorIPCTimeout hasElement:NO].status,
-    FBAXHitTestStatusFailed,
-    @"a live application that did not answer is not an empty point"
+    FBAXHitTestStatusApplicationNotResponding,
+    @"a live application that did not answer is neither an empty point nor an absent app"
   );
 }
 
@@ -335,9 +339,31 @@ typedef struct FBAXPair {
   XCTAssertEqualObjects(seeded[@"error_kind"], @"application_unavailable");
   XCTAssertEqualObjects(seeded[@"error"], @"pid 4321 has no accessibility server to hit-test");
 
+  XCTAssertEqualObjects(seeded[@"pid"], @(kAppPid), @"a tagged failure names the process it is about");
+
   NSDictionary *systemWide = FBAXBridgeHandleRequest(@{@"verb" : @"hittest", @"x" : @1, @"y" : @2});
   XCTAssertEqualObjects(systemWide[@"error_kind"], @"application_unavailable");
   XCTAssertEqualObjects(systemWide[@"error"], @"no accessibility server answered the system-wide hit-test");
+  XCTAssertNil(systemWide[@"pid"], @"a display-wide hit-test nothing answered has no process to name");
+}
+
+// An application that is there and did not answer in time. Its own kind because the two remedies diverge:
+// an unavailable application is reconfigured or relaunched, one that did not answer is waited for. Empty
+// would be worse than either — it says the point is blank, which is exactly what a busy app looks like.
+- (void)testAnApplicationThatDidNotAnswerIsTaggedApartFromOneThatIsAbsent
+{
+  _runtime.hitTestOutcome = [FBAXHitTestOutcome applicationNotResponding];
+
+  NSDictionary *seeded = FBAXBridgeHandleRequest(@{@"verb" : @"hittest", @"pid" : @(kAppPid), @"x" : @1, @"y" : @2});
+  XCTAssertEqualObjects(seeded[@"ok"], @NO);
+  XCTAssertEqualObjects(seeded[@"error_kind"], @"application_not_responding");
+  XCTAssertEqualObjects(seeded[@"error"], @"pid 4321 did not answer the hit-test in time");
+  XCTAssertEqualObjects(seeded[@"pid"], @(kAppPid));
+
+  NSDictionary *systemWide = FBAXBridgeHandleRequest(@{@"verb" : @"hittest", @"x" : @1, @"y" : @2});
+  XCTAssertEqualObjects(systemWide[@"error_kind"], @"application_not_responding");
+  XCTAssertEqualObjects(systemWide[@"error"], @"the application at the hit-test point did not answer in time");
+  XCTAssertNil(systemWide[@"empty"], @"an app that did not answer must never read as empty space");
 }
 
 // A hit-test that went wrong is an opaque failure carrying the runtime's reason, and must *not* pick up
@@ -361,13 +387,37 @@ typedef struct FBAXPair {
   NSDictionary *unavailable = FBAXBridgeHandleRequest(@{@"verb" : @"hittest", @"x" : @1, @"y" : @2});
   XCTAssertEqualObjects(unavailable[@"error_kind"], @"application_unavailable");
   XCTAssertEqualObjects(unavailable[@"error"], @"pid 4321 has no accessibility server");
+  XCTAssertEqualObjects(unavailable[@"pid"], @(kAppPid), @"the pid the hit-test attributed it to is still named");
 
-  _runtime.hitTestOutcome = [FBAXHitTestOutcome hit:[FBAXFakeElement failed:FBAXTestsErrorWithCode(FBAXErrorIPCTimeout)]
+  _runtime.hitTestOutcome = [FBAXHitTestOutcome hit:[FBAXFakeElement applicationNotResponding]
+                             owningProcessIdentifier:kAppPid];
+  NSDictionary *notResponding = FBAXBridgeHandleRequest(@{@"verb" : @"hittest", @"x" : @1, @"y" : @2});
+  XCTAssertEqualObjects(notResponding[@"error_kind"], @"application_not_responding");
+  XCTAssertEqualObjects(notResponding[@"error"], @"pid 4321 did not answer the read of the hit element in time");
+
+  _runtime.hitTestOutcome = [FBAXHitTestOutcome hit:[FBAXFakeElement failed:FBAXTestsErrorWithCode(FBAXErrorInvalidUIElement)]
                              owningProcessIdentifier:kAppPid];
   NSDictionary *failed = FBAXBridgeHandleRequest(@{@"verb" : @"hittest", @"x" : @1, @"y" : @2});
   XCTAssertEqualObjects(failed[@"ok"], @NO);
   XCTAssertEqualObjects(failed[@"error"], @"failed to read the hit element");
   XCTAssertNil(failed[@"error_kind"]);
+}
+
+#pragma mark - Request validation
+
+// A malformed request is the caller's to fix, and is held apart from every failure of the reader or of
+// the application so it is never reported as either. Both verbs reject their own arguments, past the
+// point where the runtime has been reached — hence a fake one, rather than the bundle's live bind.
+- (void)testMalformedArgumentsAreReportedAsABadRequest
+{
+  NSDictionary *hitTest = FBAXBridgeHandleRequest(@{@"verb" : @"hittest", @"x" : @"left", @"y" : @2});
+  XCTAssertEqualObjects(hitTest[@"error"], @"hittest requires numeric x and y");
+  XCTAssertEqualObjects(hitTest[@"error_kind"], @"bad_request");
+  XCTAssertEqual(_runtime.hitTestCount, 0u, @"a rejected request must not reach the runtime");
+
+  NSDictionary *describe = FBAXBridgeHandleRequest(@{@"verb" : @"describe"});
+  XCTAssertEqualObjects(describe[@"error"], @"describe requires either a numeric pid or the frontmost anchor (x, y)");
+  XCTAssertEqualObjects(describe[@"error_kind"], @"bad_request");
 }
 
 #pragma mark - Describe outcomes
@@ -403,13 +453,27 @@ typedef struct FBAXPair {
   XCTAssertEqualObjects(response[@"ok"], @NO);
   XCTAssertEqualObjects(response[@"error_kind"], @"application_unavailable");
   XCTAssertEqualObjects(response[@"error"], @"pid 4321 has no accessibility server");
+  XCTAssertEqualObjects(response[@"pid"], @(kAppPid));
+}
+
+// A root belonging to an app that did not answer. `describe` and `hittest` classify the same condition
+// the same way, so a wedged app reads alike whichever verb found it.
+- (void)testDescribeOfARootThatDidNotAnswerIsTaggedNotResponding
+{
+  _runtime.applicationElements[@(kAppPid)] = [FBAXFakeElement applicationNotResponding];
+
+  NSDictionary *response = FBAXBridgeHandleRequest(@{@"verb" : @"describe", @"pid" : @(kAppPid)});
+  XCTAssertEqualObjects(response[@"ok"], @NO);
+  XCTAssertEqualObjects(response[@"error_kind"], @"application_not_responding");
+  XCTAssertEqualObjects(response[@"error"], @"pid 4321 did not answer the read of its element tree in time");
+  XCTAssertEqualObjects(response[@"pid"], @(kAppPid));
 }
 
 // A root that failed for any other reason is an opaque failure quoting what the runtime said — and when
 // the runtime said nothing, the message says that rather than trailing off into `(null)`.
 - (void)testDescribeOfAFailedRootQuotesTheRuntimeOrSaysItReportedNothing
 {
-  _runtime.applicationElements[@(kAppPid)] = [FBAXFakeElement failed:FBAXTestsErrorWithCode(FBAXErrorIPCTimeout)];
+  _runtime.applicationElements[@(kAppPid)] = [FBAXFakeElement failed:FBAXTestsErrorWithCode(FBAXErrorInvalidUIElement)];
   NSDictionary *quoted = FBAXBridgeHandleRequest(@{@"verb" : @"describe", @"pid" : @(kAppPid)});
   XCTAssertEqualObjects(quoted[@"ok"], @NO);
   XCTAssertNil(quoted[@"error_kind"]);
@@ -533,18 +597,25 @@ typedef struct FBAXPair {
   FBAXBridgeHandleRequest(@{@"verb" : @"describe", @"x" : @1, @"y" : @2, @"method" : @"window-server"});
   XCTAssertEqualObjects(response[@"ok"], @NO);
   XCTAssertEqualObjects(response[@"error"], @"the window server did not answer");
+  // A strategy that could not answer is about the strategy, not about any one application — so it is its
+  // own kind, and must not be reported as an application the caller should go and reconfigure.
+  XCTAssertEqualObjects(response[@"error_kind"], @"frontmost_unresolved");
   XCTAssertEqual(_runtime.hitTestCount, 0u, @"no fallback to the positional resolver");
   XCTAssertEqual(_runtime.runningBoardCount, 0u, @"no fallback to RunningBoard");
 }
 
-// The positional resolver's two non-resolving outcomes get distinct messages: nothing at the anchor (an
-// app mid-launch, or genuinely empty space) versus nothing answering at all.
-- (void)testCenterPointReportsAnEmptyAnchorAndAnUnanswerableOneDifferently
+// The positional resolver's non-resolving outcomes get distinct messages *and* distinct kinds: nothing at
+// the anchor (an app mid-launch, or genuinely empty space) versus nothing answering at all versus an app
+// that is there and slow. A fused frontmost read of an app with no accessibility server is the same
+// condition as a `--pid` read of one, and answering it as a generic frontmost failure is what left the
+// host unable to say which had happened.
+- (void)testCenterPointCarriesEachNonResolvingOutcomeThroughAsItsOwnKind
 {
   _runtime.hitTestOutcome = [FBAXHitTestOutcome empty];
   NSDictionary *empty = FBAXBridgeHandleRequest(@{@"verb" : @"describe", @"x" : @9999, @"y" : @9999});
   XCTAssertEqualObjects(empty[@"ok"], @NO);
   XCTAssertEqualObjects(empty[@"error"], @"system-wide hit-test at (9999.0, 9999.0) found no element");
+  XCTAssertEqualObjects(empty[@"error_kind"], @"frontmost_unresolved");
 
   _runtime.hitTestOutcome = [FBAXHitTestOutcome applicationUnavailable];
   NSDictionary *unavailable = FBAXBridgeHandleRequest(@{@"verb" : @"describe", @"x" : @5, @"y" : @6});
@@ -552,9 +623,16 @@ typedef struct FBAXPair {
     unavailable[@"error"],
     @"no accessibility server answered the system-wide hit-test at (5.0, 6.0)"
   );
-  // Deliberately untagged: the host treats `application_unavailable` as "this pid names no readable app",
-  // and a frontmost query has no pid to say that about.
-  XCTAssertNil(unavailable[@"error_kind"]);
+  XCTAssertEqualObjects(unavailable[@"error_kind"], @"application_unavailable");
+  XCTAssertNil(unavailable[@"pid"], @"a frontmost query that resolved nothing has no process to name");
+
+  _runtime.hitTestOutcome = [FBAXHitTestOutcome applicationNotResponding];
+  NSDictionary *notResponding = FBAXBridgeHandleRequest(@{@"verb" : @"describe", @"x" : @5, @"y" : @6});
+  XCTAssertEqualObjects(
+    notResponding[@"error"],
+    @"the application at (5.0, 6.0) did not answer the system-wide hit-test in time"
+  );
+  XCTAssertEqualObjects(notResponding[@"error_kind"], @"application_not_responding");
 }
 
 - (void)testAnUnsupportedFrontmostMethodConsultsNoResolver
@@ -563,6 +641,7 @@ typedef struct FBAXPair {
   FBAXBridgeHandleRequest(@{@"verb" : @"describe", @"x" : @1, @"y" : @2, @"method" : @"telepathy"});
   XCTAssertEqualObjects(response[@"ok"], @NO);
   XCTAssertEqualObjects(response[@"error"], @"unsupported frontmost method: telepathy");
+  XCTAssertEqualObjects(response[@"error_kind"], @"frontmost_unresolved");
   XCTAssertEqual(_runtime.hitTestCount, 0u);
   XCTAssertEqual(_runtime.windowServerCount, 0u);
   XCTAssertEqual(_runtime.runningBoardCount, 0u);
