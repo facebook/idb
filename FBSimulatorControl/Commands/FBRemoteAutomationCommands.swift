@@ -345,8 +345,7 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
       token: "",
       nestedFormat: nestedFormat,
       keys: keys,
-      collector: nil,
-      coverageGrid: nil
+      collector: nil
     )
   }
 

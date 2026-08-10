@@ -123,8 +123,7 @@ public final class FBAXTranslationRequest {
       token: token,
       nestedFormat: options.nestedFormat,
       keys: Self.serializerKeys(options),
-      collector: collector,
-      coverageGrid: nil
+      collector: collector
     )
     // The target itself is exempt from the filter — it is the element the caller named — while its
     // descendants are a tree like any other and honour it.
@@ -142,39 +141,33 @@ public final class FBAXTranslationRequest {
     // Screen bounds for coverage calculation and remote content fetching.
     let screenBounds = element.axFrame()
 
-    // Coverage grid (populated during traversal) when requested.
-    let grid: FBAccessibilityCoverageGrid? = options.collectFrameCoverage ? FBAccessibilityCoverageGrid(screenBounds: screenBounds) : nil
-
     // PIDs seen during traversal, for dedup during remote-content discovery.
     let seenPids = SeenPIDs()
 
     let keys = Self.serializerKeys(options)
     let serializationStart = CFAbsoluteTimeGetCurrent()
 
-    // Serialize, passing the grid to be populated during traversal.
-    let mainAppElements = FBAXNodeSerializer.recursiveDescription(
+    let walked = FBAXNodeSerializer.recursiveDescription(
       fromElement: element,
       token: token,
       nestedFormat: options.nestedFormat,
       keys: keys,
       collector: collector,
-      coverageGrid: grid,
       seenPids: seenPids
     )
+    let mainAppElements = options.filter.apply(to: walked)
 
-    // Base coverage after the main traversal.
-    var frameCoverage: Double?
-    if let grid {
-      let baseCoverage = grid.coverageRatio()
-      if baseCoverage >= 0 {
-        frameCoverage = Double(baseCoverage)
-      }
-    }
+    // Coverage over the elements the read reports, marked from the serialized model rather than
+    // accumulated during the walk — the same calculation every backend runs.
+    let grid: FBAccessibilityCoverageGrid? =
+      options.collectFrameCoverage ? FBAccessibilityCoverageGrid(screenBounds: screenBounds) : nil
+    grid?.markFilled(withElements: mainAppElements)
+    let frameCoverage = grid.map(Self.ratio(of:)) ?? nil
 
     // Remote content fetching (only when requested and a translator is present).
     guard let remoteOptions = options.remoteContentOptions, let translator else {
       return buildResponse(
-        elements: .tree(options.filter.apply(to: mainAppElements)),
+        elements: .tree(mainAppElements),
         serializationStart: serializationStart,
         frameCoverage: frameCoverage,
         additionalFrameCoverage: nil,
@@ -197,6 +190,12 @@ public final class FBAXTranslationRequest {
       remoteOptions: remoteOptions,
       translator: translator
     )
+  }
+
+  /// A grid's coverage ratio, or `nil` for a degenerate grid that has nothing to report.
+  private static func ratio(of grid: FBAccessibilityCoverageGrid) -> Double? {
+    let ratio = grid.coverageRatio()
+    return ratio >= 0 ? Double(ratio) : nil
   }
 
   // MARK: Remote content
@@ -275,7 +274,6 @@ public final class FBAXTranslationRequest {
           token: token,
           keys: keysWithFrame,
           collector: collector,
-          coverageGrid: nil, // already marked above
           seenPids: nil, // already filtered
           isRemote: true
         )
@@ -327,22 +325,25 @@ public final class FBAXTranslationRequest {
       }
     }
 
+    // Discovered elements are kept or dropped on what they are, not on whether the main traversal or
+    // the remote hit-test found them. `additionalFrameCoverage` above is deliberately measured before
+    // this: it reports how much content the hit-test found that the element tree did not expose, which
+    // is the question it exists to answer, and a filter narrowing the output does not unfind it.
+    let keptDiscovered = filter.apply(to: discoveredElements)
     var elements = mainAppElements
-    if !discoveredElements.isEmpty {
+    if !keptDiscovered.isEmpty {
       if nestedFormat, var applicationElement = elements.first {
         // Append to the root Application element's children (nested format).
-        applicationElement.children = (applicationElement.children ?? []) + discoveredElements
+        applicationElement.children = (applicationElement.children ?? []) + keptDiscovered
         elements[0] = applicationElement
       } else {
         // Append to the flat array.
-        elements.append(contentsOf: discoveredElements)
+        elements.append(contentsOf: keptDiscovered)
       }
     }
 
-    // The filter applies to the merged list: an element is kept or dropped on what it is, not on
-    // whether the main traversal or the remote hit-test happened to find it.
     return buildResponse(
-      elements: .tree(filter.apply(to: elements)),
+      elements: .tree(elements),
       serializationStart: serializationStart,
       frameCoverage: frameCoverage,
       additionalFrameCoverage: additionalFrameCoverage,

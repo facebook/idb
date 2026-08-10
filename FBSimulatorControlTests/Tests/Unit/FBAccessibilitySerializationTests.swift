@@ -64,29 +64,31 @@ final class FBAccessibilitySerializationTests: XCTestCase {
     XCTAssertEqual(try serializedJSON(nestedFormat: true), Self.expectedNestedJSON)
   }
 
-  // The profiling collector and coverage grid are pure side-channels of the node core, and the decorator's
-  // seen-pid/is_remote layer adds nothing over the default key set: neither may change the serialized node.
-  // This invariant is what lets `nodeDictionary` be the single source of node bytes while
-  // `decoratedDictionary` layers on traversal-level concerns.
+  // The profiling collector is a pure side-channel of the node core, and the decorator's
+  // seen-pid/is_remote layer adds nothing over the default key set: neither may change the serialized
+  // node. This invariant is what lets `nodeElement` be the single source of node bytes while
+  // `decoratedElement` layers on traversal-level concerns.
+  //
+  // The coverage grid used to be a third side-channel here. It is no longer passed to the serializer at
+  // all — coverage is computed from the serialized elements — so that half of the invariant is now
+  // structural rather than tested.
   func testNodeDictionaryIsCollectorNeutral() throws {
     let root = FBAXTreeWalk.buildPlatformElementTree(from: Self.sampleTree(), pid: 7)
-    let grid = try XCTUnwrap(FBAccessibilityCoverageGrid(screenBounds: CGRect(x: 0, y: 0, width: 390, height: 844)))
     var elements: [FBAXPlatformElement] = [root]
     elements.append(contentsOf: root.axChildren())
     for element in elements {
       let bare = FBAXNodeSerializer.nodeElement(
-        forElement: element, token: "", keys: FBAXKeys.defaultSet,
-        collector: nil, coverageGrid: nil
+        forElement: element, token: "", keys: FBAXKeys.defaultSet, collector: nil
       )
       let instrumented = FBAXNodeSerializer.nodeElement(
         forElement: element, token: "", keys: FBAXKeys.defaultSet,
-        collector: FBAccessibilityProfilingCollector(), coverageGrid: grid
+        collector: FBAccessibilityProfilingCollector()
       )
-      XCTAssertEqual(bare, instrumented, "profiling/coverage side-channels must not change the node output")
+      XCTAssertEqual(bare, instrumented, "the profiling side-channel must not change the node output")
 
       let decorated = FBAXNodeSerializer.decoratedElement(
         forElement: element, token: "", keys: FBAXKeys.defaultSet,
-        collector: FBAccessibilityProfilingCollector(), coverageGrid: grid, seenPids: SeenPIDs(), isRemote: true
+        collector: FBAccessibilityProfilingCollector(), seenPids: SeenPIDs(), isRemote: true
       )
       XCTAssertEqual(bare, decorated, "the seen-pid/is_remote decorator must not alter default-set node output")
     }
@@ -103,19 +105,19 @@ final class FBAccessibilitySerializationTests: XCTestCase {
 
     let local = FBAXNodeSerializer.decoratedElement(
       forElement: root, token: "", keys: keysWithRemote,
-      collector: nil, coverageGrid: nil, seenPids: nil, isRemote: false
+      collector: nil, seenPids: nil, isRemote: false
     )
     XCTAssertEqual(local.isRemote, .some(false), "main-tree nodes tag is_remote=false")
 
     let remote = FBAXNodeSerializer.decoratedElement(
       forElement: root, token: "", keys: keysWithRemote,
-      collector: nil, coverageGrid: nil, seenPids: nil, isRemote: true
+      collector: nil, seenPids: nil, isRemote: true
     )
     XCTAssertEqual(remote.isRemote, .some(true), "remote-discovered nodes tag is_remote=true")
 
     let defaultSet = FBAXNodeSerializer.decoratedElement(
       forElement: root, token: "", keys: FBAXKeys.defaultSet,
-      collector: nil, coverageGrid: nil, seenPids: nil, isRemote: true
+      collector: nil, seenPids: nil, isRemote: true
     )
     XCTAssertNil(defaultSet.isRemote, "is_remote stays absent unless explicitly requested")
   }

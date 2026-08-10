@@ -28,14 +28,13 @@ enum FBAXNodeSerializer {
     nestedFormat: Bool,
     keys: Set<FBAXKeys>,
     collector: FBAccessibilityProfilingCollector?,
-    coverageGrid: FBAccessibilityCoverageGrid?,
     seenPids: SeenPIDs?
   ) -> [FBAccessibilityDocumentElement] {
     element.axSetBridgeDelegateToken(token)
     if nestedFormat {
-      return nestedRecursiveDescription(fromElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids)
+      return nestedRecursiveDescription(fromElement: element, token: token, keys: keys, collector: collector, seenPids: seenPids)
     }
-    return flatRecursiveDescription(fromElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids)
+    return flatRecursiveDescription(fromElement: element, token: token, keys: keys, collector: collector, seenPids: seenPids)
   }
 
   static func formattedDescription(
@@ -43,11 +42,10 @@ enum FBAXNodeSerializer {
     token: String,
     nestedFormat: Bool,
     keys: Set<FBAXKeys>,
-    collector: FBAccessibilityProfilingCollector?,
-    coverageGrid: FBAccessibilityCoverageGrid?
+    collector: FBAccessibilityProfilingCollector?
   ) -> FBAccessibilityDocumentElement {
     element.axSetBridgeDelegateToken(token)
-    var node = decoratedElement(forElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: nil, isRemote: false)
+    var node = decoratedElement(forElement: element, token: token, keys: keys, collector: collector, seenPids: nil, isRemote: false)
     guard nestedFormat else {
       return node
     }
@@ -62,7 +60,7 @@ enum FBAXNodeSerializer {
       children.append(
         contentsOf: nestedRecursiveDescription(
           fromElement: child, token: token, keys: keys, collector: collector,
-          coverageGrid: coverageGrid, seenPids: nil
+          seenPids: nil
         )
       )
     }
@@ -78,18 +76,16 @@ enum FBAXNodeSerializer {
   /// `.some(value-or-nil)` and an unrequested one stays `nil`, which is what lets the encodings emit an
   /// explicit null for the former and nothing at all for the latter.
   ///
-  /// `collector` and `coverageGrid` are pure side-channels intrinsic to the attribute-read pass: the
-  /// collector tallies each fetch (and the coverage grid marks the frame it reads) without altering the
-  /// returned node — proven by `testNodeDictionaryIsCollectorNeutral`. They stay in the core because the
-  /// tallies (and the exact `nil`-key coverage read) are a byte-for-byte consequence of the read order,
-  /// so the order below is deliberate and must not be rearranged. The traversal-level concerns the core
-  /// omits — seen-pid dedup and the `is_remote` provenance tag — live in `decoratedElement`.
+  /// `collector` is a pure side-channel intrinsic to the attribute-read pass: it tallies each fetch
+  /// without altering the returned node — proven by `testNodeDictionaryIsCollectorNeutral`. It stays in
+  /// the core because the tallies are a byte-for-byte consequence of the read order, so the order below
+  /// is deliberate and must not be rearranged. The traversal-level concerns the core omits — seen-pid
+  /// dedup and the `is_remote` provenance tag — live in `decoratedElement`.
   static func nodeElement(
     forElement element: FBAXPlatformElement,
     token: String,
     keys: Set<FBAXKeys>,
-    collector: FBAccessibilityProfilingCollector?,
-    coverageGrid: FBAccessibilityCoverageGrid?
+    collector: FBAccessibilityProfilingCollector?
   ) -> FBAccessibilityDocumentElement {
     // The token must always be set so that the right callback is called.
     element.axSetBridgeDelegateToken(token)
@@ -107,7 +103,7 @@ enum FBAXNodeSerializer {
       return .some(value())
     }
 
-    // Frame is always computed since it is used by multiple keys and the coverage grid.
+    // Frame is always computed since it is used by multiple keys.
     collector?.incrementAttributeFetchCount(forKey: FBAXKeys.frame.rawValue)
     let frame = element.axFrame()
 
@@ -128,18 +124,6 @@ enum FBAXNodeSerializer {
       // accessibilityRole may be prefixed with "AX"; strip it to match the
       // SimulatorBridge implementation.
       role = rawRole.map(FBAXRoleVocabulary.normalizeRole)
-    }
-
-    // Mark frame in coverage grid (for non-Application elements).
-    if let coverageGrid {
-      if rawRole == nil {
-        collector?.incrementAttributeFetchCount(forKey: nil)
-        rawRole = element.axRole()
-      }
-      let isApplication = rawRole == "AXApplication" || rawRole == "Application"
-      if !isApplication {
-        coverageGrid.markFilled(with: frame)
-      }
     }
 
     // Legacy values that mirror SimulatorBridge.
@@ -190,11 +174,10 @@ enum FBAXNodeSerializer {
     token: String,
     keys: Set<FBAXKeys>,
     collector: FBAccessibilityProfilingCollector?,
-    coverageGrid: FBAccessibilityCoverageGrid?,
     seenPids: SeenPIDs?,
     isRemote: Bool
   ) -> FBAccessibilityDocumentElement {
-    var node = nodeElement(forElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid)
+    var node = nodeElement(forElement: element, token: token, keys: keys, collector: collector)
     seenPids?.insert(element.axTranslationPid)
     if keys.contains(.isRemote) {
       collector?.incrementAttributeFetchCount(forKey: FBAXKeys.isRemote.rawValue)
@@ -212,15 +195,14 @@ enum FBAXNodeSerializer {
     token: String,
     keys: Set<FBAXKeys>,
     collector: FBAccessibilityProfilingCollector?,
-    coverageGrid: FBAccessibilityCoverageGrid?,
     seenPids: SeenPIDs?
   ) -> [FBAccessibilityDocumentElement] {
     var values: [FBAccessibilityDocumentElement] = [
-      decoratedElement(forElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids, isRemote: false)
+      decoratedElement(forElement: element, token: token, keys: keys, collector: collector, seenPids: seenPids, isRemote: false)
     ]
     for child in element.axChildren() {
       child.axSetBridgeDelegateToken(token)
-      values.append(contentsOf: flatRecursiveDescription(fromElement: child, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids))
+      values.append(contentsOf: flatRecursiveDescription(fromElement: child, token: token, keys: keys, collector: collector, seenPids: seenPids))
     }
     return values
   }
@@ -231,15 +213,14 @@ enum FBAXNodeSerializer {
     token: String,
     keys: Set<FBAXKeys>,
     collector: FBAccessibilityProfilingCollector?,
-    coverageGrid: FBAccessibilityCoverageGrid?,
     seenPids: SeenPIDs?
   ) -> [FBAccessibilityDocumentElement] {
     var childrenValues: [FBAccessibilityDocumentElement] = []
     for child in element.axChildren() {
       child.axSetBridgeDelegateToken(token)
-      childrenValues.append(contentsOf: nestedRecursiveDescription(fromElement: child, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids))
+      childrenValues.append(contentsOf: nestedRecursiveDescription(fromElement: child, token: token, keys: keys, collector: collector, seenPids: seenPids))
     }
-    var values = decoratedElement(forElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids, isRemote: false)
+    var values = decoratedElement(forElement: element, token: token, keys: keys, collector: collector, seenPids: seenPids, isRemote: false)
     values.children = childrenValues
     return [values]
   }

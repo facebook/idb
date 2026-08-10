@@ -845,11 +845,14 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     XCTAssertEqual(coverage, 0.0, accuracy: 0.001, "Coverage should be 0 when only Application element exists")
   }
 
-  // Coverage is marked from the frame the walk fetches unconditionally, not from the frame it
-  // *reports*, so narrowing `--key` past the frame does not starve it. Pinned because computing
-  // coverage from the serialized model instead would read a frame a narrow key set omits, and would
-  // silently start reporting nothing here.
-  func testCoverageIsCollectedWhenFramesAreNotRequested() async throws {
+  // Coverage is computed from the serialized model, so it can only measure frames the read actually
+  // serialized. Requesting it therefore widens the key set with what it reads — the frame to measure and
+  // the type that identifies the application root it must skip — rather than silently reporting nothing
+  // for a narrow `--key`.
+  //
+  // This costs no extra work on the wire: the walk fetches the frame for every node regardless of the
+  // key set, so the widening only changes what is emitted.
+  func testRequestingCoverageWidensTheKeySetToTheAttributesItReads() async throws {
     let bar = FBAccessibilityTestElementBuilder.staticText(
       withLabel: "Navigation Bar",
       frame: NSRect(x: 0, y: 0, width: 390, height: 422)
@@ -868,11 +871,15 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     let response = try element.serialize(with: options)
     element.close()
 
-    let coverage = try XCTUnwrap(response.frameCoverage, "coverage does not depend on the requested keys")
+    let coverage = try XCTUnwrap(response.frameCoverage, "coverage is collected despite the narrow key set")
     XCTAssertEqual(coverage, 0.5, accuracy: 0.01, "the bar covers the upper half; the Application root is skipped")
 
     let first = try XCTUnwrap((response.legacyElementsObject() as? [Any])?.first as? [String: Any])
-    XCTAssertEqual(Set(first.keys), [FBAXKeys.label.rawValue], "the narrow key set still governs what is reported")
+    XCTAssertEqual(
+      Set(first.keys),
+      [FBAXKeys.label.rawValue, FBAXKeys.frameDict.rawValue, FBAXKeys.type.rawValue],
+      "the requested key, widened by exactly the two the calculation reads"
+    )
   }
 
   func testAdditionalFrameCoverageIsNilWithoutRemoteContent() async throws {

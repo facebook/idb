@@ -82,20 +82,27 @@ public struct FBAccessibilityRequestOptions: Sendable {
   /// would otherwise silently disable them rather than narrow the output. The cost is only in bytes —
   /// the walk fetches the frame for every node regardless of the key set.
   public var serializationKeys: Set<FBAXKeys> {
-    Self.serializationKeys(for: keys, format: format, filter: filter)
+    Self.serializationKeys(for: keys, format: format, filter: filter, collectFrameCoverage: collectFrameCoverage)
   }
 
   /// The same expansion over an arbitrary key set, for the marker read — which unions the key it
   /// searched on and must expand that too, or `--match-key role` matches on an attribute `complete`
   /// then reports under neither name.
   public func serializationKeys(including extraKeys: Set<FBAXKeys>) -> Set<FBAXKeys> {
-    Self.serializationKeys(for: keys.union(extraKeys), format: format, filter: filter)
+    Self.serializationKeys(
+      for: keys.union(extraKeys), format: format, filter: filter, collectFrameCoverage: collectFrameCoverage
+    )
   }
+
+  /// The attributes a frame-coverage calculation reads: the geometry to measure, and the type that
+  /// identifies the application root it must skip.
+  private static let frameCoverageKeys: Set<FBAXKeys> = [.frameDict, .type]
 
   private static func serializationKeys(
     for keys: Set<FBAXKeys>,
     format: FBAccessibilityOutputFormat,
-    filter: FBAccessibilityElementFilter
+    filter: FBAccessibilityElementFilter,
+    collectFrameCoverage: Bool
   ) -> Set<FBAXKeys> {
     var expanded = keys
     if format == .complete {
@@ -108,6 +115,9 @@ public struct FBAccessibilityRequestOptions: Sendable {
     }
     if filter != .all {
       expanded.formUnion(filter.requiredKeys)
+    }
+    if collectFrameCoverage {
+      expanded.formUnion(frameCoverageKeys)
     }
     return expanded
   }

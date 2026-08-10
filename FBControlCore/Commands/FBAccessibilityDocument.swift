@@ -76,6 +76,19 @@ public struct FBAccessibilityFrame: Sendable, Equatable, Encodable {
   }
 }
 
+public extension FBAccessibilityFrame {
+  /// The rectangle this frame describes, or `nil` when any edge was not representable.
+  ///
+  /// Each edge degrades to `nil` independently, but a rectangle missing one is not a smaller rectangle
+  /// — it is no rectangle. A geometric consumer gets nothing rather than a plausible wrong shape.
+  var rect: CGRect? {
+    guard let x, let y, let width, let height else {
+      return nil
+    }
+    return CGRect(x: x, y: y, width: width, height: height)
+  }
+}
+
 /// The bounds a read's frames are relative to.
 public struct FBAccessibilityScreenInfo: Sendable, Equatable, Encodable {
 

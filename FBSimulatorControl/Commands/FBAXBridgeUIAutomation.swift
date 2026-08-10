@@ -108,7 +108,7 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
       }
       let element = FBAXTreeWalk.buildPlatformElementTree(from: hit.tree, pid: hit.pid)
       var formatted = FBAXNodeSerializer.formattedDescription(
-        ofElement: element, token: "", nestedFormat: options.nestedFormat, keys: options.serializationKeys, collector: nil, coverageGrid: nil
+        ofElement: element, token: "", nestedFormat: options.nestedFormat, keys: options.serializationKeys, collector: nil
       )
       // The hit element is the one the caller named, so it is exempt; its descendants honour the filter.
       if let children = formatted.children {

@@ -38,7 +38,6 @@ enum FBAXTreeWalk {
       nestedFormat: nestedFormat,
       keys: keys,
       collector: nil,
-      coverageGrid: nil,
       seenPids: nil
     )
   }
