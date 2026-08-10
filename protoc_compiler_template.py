@@ -3,17 +3,12 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# EASY-INSTALL-ENTRY-SCRIPT: 'grpclib==0.4.1','console_scripts','protoc-gen-python_grpc'
-__requires__ = "grpclib==0.4.1"
-import re
+# Protoc plugin shim for grpclib's python_grpc generator. setup.py writes this
+# file out as an executable named `protoc-gen-python_grpc`, prefixed with the
+# build interpreter's shebang, so `grpc_tools.protoc` can spawn it from PATH.
 import sys
 
-from pkg_resources import load_entry_point
+from grpclib.plugin.main import main
 
 if __name__ == "__main__":
-    sys.argv[0] = re.sub(r"(-script\.pyw?|\.exe)?$", "", sys.argv[0])
-    sys.exit(
-        load_entry_point(
-            "grpclib==0.4.1", "console_scripts", "protoc-gen-python_grpc"
-        )()
-    )
+    sys.exit(main())

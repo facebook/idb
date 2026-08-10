@@ -1,0 +1,11 @@
+[build-system]
+# grpcio-tools and grpclib are needed at wheel-build time: setup.py generates
+# the python gRPC stubs from proto/idb.proto during build_py. Modern pip builds
+# in an isolated environment where the legacy setup_requires mechanism no
+# longer provides them.
+requires = [
+    "setuptools>=61",
+    "grpcio-tools>=1.29.0",
+    "grpclib>=0.4.0",
+]
+build-backend = "setuptools.build_meta"
