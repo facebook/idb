@@ -79,4 +79,26 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
+/**
+ * The class-side interfaces, for messaging classes resolved with `objc_lookUpClass`.
+ *
+ * A `Class` carries no type, so a send to one is resolved against whatever declaration in the translation
+ * unit happens to share the selector. `+descriptor` in particular collides with
+ * `+[NSAppleEventDescriptor descriptor]`, which Foundation brings in. Casting the looked-up class to the
+ * matching `Class<...>` names the declaration to check against.
+ */
+@protocol RBSProcessPredicateClass <NSObject>
++ (RBSProcessPredicate *)predicateMatchingLaunchServicesProcesses;
+@end
+
+@protocol RBSProcessStateDescriptorClass <NSObject>
++ (RBSProcessStateDescriptor *)descriptor;
+@end
+
+@protocol RBSProcessStateClass <NSObject>
++ (nullable NSArray<RBSProcessState *> *)statesForPredicate:(RBSProcessPredicate *)predicate
+                                             withDescriptor:(nullable RBSProcessStateDescriptor *)descriptor
+                                                      error:(NSError **)error;
+@end
+
 NS_ASSUME_NONNULL_END

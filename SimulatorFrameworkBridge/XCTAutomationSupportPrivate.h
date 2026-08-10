@@ -82,4 +82,17 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
+/**
+ * The class-side interface, for messaging a class resolved with `objc_lookUpClass`.
+ *
+ * A `Class` carries no type, so a send to one is resolved against whatever declaration in the translation
+ * unit happens to share the selector — which is the wrong class's declaration as easily as the right one.
+ * Casting the looked-up class to `Class<XCAccessibilityElementClass>` names the declaration to check
+ * against.
+ */
+@protocol XCAccessibilityElementClass <NSObject>
++ (nullable XCAccessibilityElement *)elementWithProcessIdentifier:(pid_t)pid;
++ (nullable XCAccessibilityElement *)elementWithAXUIElement:(void *)axUIElement;
+@end
+
 NS_ASSUME_NONNULL_END

@@ -8,7 +8,6 @@
 #import "AccessibilityRuntime.h"
 
 #import <dlfcn.h>
-#import <objc/message.h>
 #import <objc/runtime.h>
 
 #import "AXPTranslationPrivate.h"
@@ -223,13 +222,14 @@ NSString *_Nullable FBAXSignatureMismatch(const char *className,
   return [NSString stringWithFormat:@"%@ is %@ but %@ was assumed", name, actual, assumed];
 }
 
-// Every private selector this file reaches through a declaration or an `objc_msgSend` cast, with the
-// signature that declaration or cast assumes.
+// Every private selector this file sends, with the signature its declaration assumes.
 //
 // The encodings were taken from `method_getTypeEncoding` on the runtime the reader is written against, so
-// this table is the assumption made explicit and checkable rather than left implicit in the casts. The
-// KVC-driven setters are here too: KVC ends up calling them, so their shape matters as much as the ones
-// messaged directly.
+// this table is the assumption made explicit and checkable rather than left implicit in the headers.
+//
+// `-[AXPTranslator setSupportsDelegateTokens:]` is deliberately absent. Its only argument is a `BOOL`,
+// which the runtime encodes as `B` on arm64 and `c` on x86_64, so there is no one encoding to compare
+// against and checking it would report a mismatch on a simulator where nothing is wrong.
 typedef struct {
   const char *className;
   const char *selectorName;
@@ -248,6 +248,7 @@ static const FBAXBoundSelector kFBAXBoundSelectors[] = {
   {"AXPTranslator", "sharediOSInstance", YES, "@@:"},
   {"AXPTranslator", "frontmostApplicationWithDisplayId:bridgeDelegateToken:", NO, "@@:I@"},
   {"AXPTranslator", "processTranslatorRequest:", NO, "@@:@"},
+  {"AXPTranslator", "setBridgeTokenDelegate:", NO, "v@:@"},
   {"AXPTranslationObject", "pid", NO, "i@:"},
   // RunningBoardServices
   {"RBSProcessPredicate", "predicateMatchingLaunchServicesProcesses", YES, "@@:"},
@@ -369,24 +370,26 @@ typedef struct {
 // serially by the guest, so the depth guard only bounds re-entrant sub-reads.
 static NSInteger gAXPSelfServiceDepth = 0;
 
-@interface FBAXWindowServerDelegate : NSObject
-@property (nonatomic, weak) id translator;
+@interface FBAXWindowServerDelegate : NSObject <AXPTranslationTokenDelegateHelper>
+@property (nonatomic, weak) AXPTranslator *translator;
 @end
 @implementation FBAXWindowServerDelegate
-- (id)selfServiceCallback
+- (nullable AXPTranslationBridgeCallback)selfServiceCallback
 {
-  id translator = self.translator;
-  // Resolved by name (the AXPTranslator selectors are not declared to this translation unit).
-  SEL processSelector = NSSelectorFromString(@"processTranslatorRequest:");
-  return ^id (id request) {
+  // Captured strongly by the block: the property is weak so the translator can go, but a callback the
+  // translator is in the middle of calling must not have it vanish underneath.
+  AXPTranslator *translator = self.translator;
+  return ^id _Nullable (id request) {
     if (gAXPSelfServiceDepth > 500) {
       return nil;
     }
     gAXPSelfServiceDepth++;
     id result = nil;
-    if (translator && [translator respondsToSelector:processSelector]) {
+    // Declaring the selector says what its signature is if the runtime has it, not that the runtime has
+    // it — so the guard stays.
+    if ([translator respondsToSelector:@selector(processTranslatorRequest:)]) {
       @try {
-        result = ((id (*)(id, SEL, id)) objc_msgSend)(translator, processSelector, request);
+        result = [translator processTranslatorRequest:request];
       } @catch (NSException *exception) {
         result = nil;
       }
@@ -396,17 +399,17 @@ static NSInteger gAXPSelfServiceDepth = 0;
   };
 }
 
-- (id)accessibilityTranslationDelegateBridgeCallbackWithToken:(NSString *)token { return [self selfServiceCallback]; }
+- (nullable AXPTranslationBridgeCallback)accessibilityTranslationDelegateBridgeCallbackWithToken:(NSString *)token { return [self selfServiceCallback]; }
 
-- (id)accessibilityTranslationDelegateBridgeCallback { return [self selfServiceCallback]; }
+- (nullable AXPTranslationBridgeCallback)accessibilityTranslationDelegateBridgeCallback { return [self selfServiceCallback]; }
 
 - (CGRect)accessibilityTranslationConvertPlatformFrameToSystem:(CGRect)rect withToken:(NSString *)token { return rect; }
 
 - (CGRect)accessibilityTranslationConvertPlatformFrameToSystem:(CGRect)rect { return rect; }
 
-- (id)accessibilityTranslationRootParentWithToken:(NSString *)token { return nil; }
+- (nullable id)accessibilityTranslationRootParentWithToken:(NSString *)token { return nil; }
 
-- (id)accessibilityTranslationRootParent { return nil; }
+- (nullable id)accessibilityTranslationRootParent { return nil; }
 
 @end
 
@@ -414,30 +417,34 @@ static NSInteger gAXPSelfServiceDepth = 0;
 // (installing the self-service delegate is the one-time cost). The delegate is retained here so it
 // outlives the translator's weak/assign reference. Returns nil (with `*error` set) if AXPTranslator is
 // unavailable.
-static id _Nullable FBAXBridgeWindowServerTranslator(NSString *_Nullable *_Nullable error)
+static AXPTranslator *_Nullable FBAXBridgeWindowServerTranslator(NSString *_Nullable *_Nullable error)
 {
-  static id translator;
+  static AXPTranslator *translator;
   static FBAXWindowServerDelegate *delegate;
   static NSString *cachedError;
   static dispatch_once_t onceToken;
   dispatch_once(&onceToken, ^{
     dlopen(FBAXPathAXPTranslation, RTLD_NOW);
-    SEL sharedSelector = NSSelectorFromString(@"sharediOSInstance");
-    Class translatorClass = objc_lookUpClass("AXPTranslator");
-    if (!translatorClass || ![translatorClass respondsToSelector:sharedSelector]) {
+    // The class is still looked up by name — nothing in AXPTranslationPrivate.h is linked against, so
+    // naming `AXPTranslator` as a receiver directly would be an undefined symbol. The `Class<...>` cast is
+    // what lets the compiler check the class-method send against that class's own declaration.
+    Class<AXPTranslatorClass> translatorClass = (Class<AXPTranslatorClass>)objc_lookUpClass("AXPTranslator");
+    if (!translatorClass || ![translatorClass respondsToSelector:@selector(sharediOSInstance)]) {
       cachedError = @"AXPTranslator unavailable — is AccessibilityPlatformTranslation loaded?";
       return;
     }
-    id instance = ((id (*)(id, SEL)) objc_msgSend)(translatorClass, sharedSelector);
+    AXPTranslator *instance = [translatorClass sharediOSInstance];
     if (!instance) {
       cachedError = @"AXPTranslator sharediOSInstance was nil";
       return;
     }
     FBAXWindowServerDelegate *serviceDelegate = [FBAXWindowServerDelegate new];
     serviceDelegate.translator = instance;
+    // Still guarded: a runtime without these setters raises rather than returning, and the reader would
+    // rather report that than trap.
     @try {
-      [instance setValue:serviceDelegate forKey:@"bridgeTokenDelegate"];
-      [instance setValue:@YES forKey:@"supportsDelegateTokens"];
+      instance.bridgeTokenDelegate = serviceDelegate;
+      instance.supportsDelegateTokens = YES;
     } @catch (NSException *exception) {
       cachedError = exception.reason ?: @"failed to wire the AXPTranslator bridge delegate";
       return;
@@ -481,20 +488,18 @@ static void FBAXBridgeRunOffMainQueue(dispatch_block_t block)
 static FBAXFrontmostOutcome *FBAXBridgeWindowServerFrontmostOffMain(void)
 {
   NSString *setupError = nil;
-  id translator = FBAXBridgeWindowServerTranslator(&setupError);
+  AXPTranslator *translator = FBAXBridgeWindowServerTranslator(&setupError);
   if (!translator) {
     return [FBAXFrontmostOutcome unresolved:setupError ?: @"AXPTranslator unavailable"];
   }
-  SEL frontmostSelector = NSSelectorFromString(@"frontmostApplicationWithDisplayId:bridgeDelegateToken:");
-  if (![translator respondsToSelector:frontmostSelector]) {
+  if (![translator respondsToSelector:@selector(frontmostApplicationWithDisplayId:bridgeDelegateToken:)]) {
     return [FBAXFrontmostOutcome unresolved:@"AXPTranslator does not respond to frontmostApplicationWithDisplayId:"];
   }
-  SEL pidSelector = NSSelectorFromString(@"pid");
-  id application = ((id (*)(id, SEL, unsigned int, id)) objc_msgSend)(translator, frontmostSelector, 0, @"axbridge");
-  if (!application || ![application respondsToSelector:pidSelector]) {
+  AXPTranslationObject *application = [translator frontmostApplicationWithDisplayId:0 bridgeDelegateToken:@"axbridge"];
+  if (!application || ![application respondsToSelector:@selector(pid)]) {
     return [FBAXFrontmostOutcome unresolved:@"window-server frontmost returned no application object"];
   }
-  pid_t pid = ((int (*)(id, SEL)) objc_msgSend)(application, pidSelector);
+  pid_t pid = application.pid;
   if (pid <= 0) {
     return [FBAXFrontmostOutcome unresolved:[NSString stringWithFormat:@"window-server frontmost returned no pid (%d)", pid]];
   }
@@ -510,7 +515,7 @@ static NSString *const kFrontboardVisibilityEndowment = @"com.apple.frontboard.v
 @implementation FBAXLiveRuntime
 {
   XCTAccessibilityFramework *_framework;
-  Class _elementClass;
+  Class<XCAccessibilityElementClass> _elementClass;
   FBAXRuntimeFunctions _functions;
 }
 
@@ -541,7 +546,7 @@ static NSString *const kFrontboardVisibilityEndowment = @"com.apple.frontboard.v
     return nil;
   }
 
-  _elementClass = objc_lookUpClass("XCAccessibilityElement");
+  _elementClass = (Class<XCAccessibilityElementClass>)objc_lookUpClass("XCAccessibilityElement");
   if (!_elementClass) {
     if (error) {
       *error = FBAXSetupFailure(@"XCAccessibilityElement unavailable");
@@ -568,7 +573,7 @@ static NSString *const kFrontboardVisibilityEndowment = @"com.apple.frontboard.v
 
 - (nullable id)applicationElementForProcessIdentifier:(pid_t)pid
 {
-  return [(id)_elementClass elementWithProcessIdentifier:pid];
+  return [_elementClass elementWithProcessIdentifier:pid];
 }
 
 - (FBAXReadOutcome *)readAttributes:(NSArray<NSString *> *)attributes ofElement:(id)element
@@ -596,7 +601,7 @@ static NSString *const kFrontboardVisibilityEndowment = @"com.apple.frontboard.v
   // Owned either way, so it outlives whatever vended it and both branches are released alike.
   NS_VALID_UNTIL_END_OF_SCOPE FBAXElementRef *seed = nil;
   if (pid > 0) {
-    XCAccessibilityElement *root = [(id)_elementClass elementWithProcessIdentifier:pid];
+    XCAccessibilityElement *root = [_elementClass elementWithProcessIdentifier:pid];
     if (!root) {
       return [FBAXHitTestOutcome failed:[NSString stringWithFormat:@"no application element for pid %d", pid]];
     }
@@ -638,7 +643,7 @@ static NSString *const kFrontboardVisibilityEndowment = @"com.apple.frontboard.v
   }
 
   // `elementWithAXUIElement:` takes a reference of its own, so the wrapper's goes when it leaves scope.
-  XCAccessibilityElement *hitElement = [(id)_elementClass elementWithAXUIElement:hit.element];
+  XCAccessibilityElement *hitElement = [_elementClass elementWithAXUIElement:hit.element];
   if (!hitElement) {
     return [FBAXHitTestOutcome failed:@"failed to read the hit element"];
   }
@@ -667,30 +672,31 @@ static NSString *const kFrontboardVisibilityEndowment = @"com.apple.frontboard.v
 - (FBAXFrontmostOutcome *)runningBoardFrontmost
 {
   dlopen(FBAXPathRunningBoardServices, RTLD_NOW);
-  Class predicateClass = objc_lookUpClass("RBSProcessPredicate");
-  Class stateClass = objc_lookUpClass("RBSProcessState");
-  Class descriptorClass = objc_lookUpClass("RBSProcessStateDescriptor");
-  SEL statesSelector = NSSelectorFromString(@"statesForPredicate:withDescriptor:error:");
-  if (!predicateClass || !stateClass || ![stateClass respondsToSelector:statesSelector]) {
+  // Looked up by name for the same reason as AXPTranslator: nothing in RunningBoardServicesPrivate.h is
+  // linked against, so the classes cannot be named as receivers directly. The `Class<...>` casts matter
+  // beyond tidiness here — `+descriptor` also exists on NSAppleEventDescriptor, and an untyped receiver
+  // resolves the send against whichever declaration the translation unit saw, not the intended class.
+  Class<RBSProcessPredicateClass> predicateClass = (Class<RBSProcessPredicateClass>)objc_lookUpClass("RBSProcessPredicate");
+  Class<RBSProcessStateClass> stateClass = (Class<RBSProcessStateClass>)objc_lookUpClass("RBSProcessState");
+  Class<RBSProcessStateDescriptorClass> descriptorClass = (Class<RBSProcessStateDescriptorClass>)objc_lookUpClass("RBSProcessStateDescriptor");
+  if (!predicateClass || !stateClass || ![stateClass respondsToSelector:@selector(statesForPredicate:withDescriptor:error:)]) {
     return [FBAXFrontmostOutcome unresolved:@"RunningBoardServices unavailable — is RunningBoardServices loaded?"];
   }
 
-  id predicate = ((id (*)(id, SEL)) objc_msgSend)(predicateClass, NSSelectorFromString(@"predicateMatchingLaunchServicesProcesses"));
+  RBSProcessPredicate *predicate = [predicateClass predicateMatchingLaunchServicesProcesses];
 
   // The descriptor selects which fields RunningBoard populates. Request the endowment namespaces so each
   // returned state carries its visibility endowment: the concrete "values" bitmask is not stable across
   // OS versions, so it is set to all-bits defensively and the specific endowment namespace is named too.
-  id descriptor = nil;
+  RBSProcessStateDescriptor *descriptor = nil;
   if (descriptorClass) {
-    descriptor = ((id (*)(id, SEL)) objc_msgSend)(descriptorClass, NSSelectorFromString(@"descriptor"));
+    descriptor = [descriptorClass descriptor];
     @try {
-      SEL setValues = NSSelectorFromString(@"setValues:");
-      if ([descriptor respondsToSelector:setValues]) {
-        ((void (*)(id, SEL, unsigned long long)) objc_msgSend)(descriptor, setValues, ~0ull);
+      if ([descriptor respondsToSelector:@selector(setValues:)]) {
+        descriptor.values = ~0ull;
       }
-      SEL setEndowments = NSSelectorFromString(@"setEndowmentNamespaces:");
-      if ([descriptor respondsToSelector:setEndowments]) {
-        ((void (*)(id, SEL, id)) objc_msgSend)(descriptor, setEndowments, @[kFrontboardVisibilityEndowment]);
+      if ([descriptor respondsToSelector:@selector(setEndowmentNamespaces:)]) {
+        descriptor.endowmentNamespaces = @[kFrontboardVisibilityEndowment];
       }
     } @catch (NSException *exception) {
       // fall through with the default descriptor
@@ -698,30 +704,25 @@ static NSString *const kFrontboardVisibilityEndowment = @"com.apple.frontboard.v
   }
 
   NSError *error = nil;
-  NSArray *states = ((id (*)(id, SEL, id, id, NSError **)) objc_msgSend)(stateClass, statesSelector, predicate, descriptor, &error);
+  NSArray<RBSProcessState *> *states = [stateClass statesForPredicate:predicate withDescriptor:descriptor error:&error];
   if (![states isKindOfClass:NSArray.class]) {
     return [FBAXFrontmostOutcome unresolved:
             [NSString stringWithFormat:@"RunningBoard process-state query failed: %@", error ?: @"(no states returned)"]];
   }
 
-  SEL endowmentsSelector = NSSelectorFromString(@"endowmentNamespaces");
-  SEL processSelector = NSSelectorFromString(@"process");
-  SEL pidSelector = NSSelectorFromString(@"pid");
-  for (id state in states) {
-    if (![state respondsToSelector:endowmentsSelector]) {
+  for (RBSProcessState *state in states) {
+    if (![state respondsToSelector:@selector(endowmentNamespaces)]) {
       continue;
     }
-    id endowments = ((id (*)(id, SEL)) objc_msgSend)(state, endowmentsSelector);
-    if (![endowments containsObject:kFrontboardVisibilityEndowment]) {
+    if (![state.endowmentNamespaces containsObject:kFrontboardVisibilityEndowment]) {
       continue;
     }
-    id process = [state respondsToSelector:processSelector] ? ((id (*)(id, SEL)) objc_msgSend)(state, processSelector) : nil;
-    if (!process || ![process respondsToSelector:pidSelector]) {
+    RBSProcessHandle *process = [state respondsToSelector:@selector(process)] ? state.process : nil;
+    if (!process || ![process respondsToSelector:@selector(pid)]) {
       continue;
     }
-    pid_t pid = ((int (*)(id, SEL)) objc_msgSend)(process, pidSelector);
-    if (pid > 0) {
-      return [FBAXFrontmostOutcome resolved:pid];
+    if (process.pid > 0) {
+      return [FBAXFrontmostOutcome resolved:process.pid];
     }
   }
 

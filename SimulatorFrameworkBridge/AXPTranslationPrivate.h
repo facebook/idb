@@ -70,6 +70,8 @@ typedef id _Nullable (^AXPTranslationBridgeCallback)(id request);
  * The platform accessibility translator. The iOS instance is the one that answers against the guest's
  * own window server.
  */
+@protocol AXPTranslatorClass;
+
 @interface AXPTranslator : NSObject
 
 /** The process-wide iOS translator. */
@@ -93,6 +95,17 @@ typedef id _Nullable (^AXPTranslationBridgeCallback)(id request);
 /** Whether the translator passes a token to its bridge delegate. */
 @property (nonatomic) BOOL supportsDelegateTokens;
 
+@end
+
+/**
+ * The class-side interface, for messaging a class resolved with `objc_lookUpClass`.
+ *
+ * A `Class` carries no type, so a send to one is resolved against whatever declaration in the translation
+ * unit happens to share the selector — which is the wrong class's declaration as easily as the right one.
+ * Casting the looked-up class to `Class<AXPTranslatorClass>` names the declaration to check against.
+ */
+@protocol AXPTranslatorClass <NSObject>
++ (nullable AXPTranslator *)sharediOSInstance;
 @end
 
 NS_ASSUME_NONNULL_END
