@@ -72,3 +72,26 @@ public enum FBAXBridgeError: LocalizedError, Sendable {
 extension FBAXBridgeError: CustomStringConvertible {
   public var description: String { errorDescription ?? "FBAXBridgeError" }
 }
+
+extension FBAXBridgeError {
+
+  /// Whether a read failure met while polling for a marker is worth polling through.
+  ///
+  /// A wait is for something that has not happened *yet*, so a failure is worth swallowing only when
+  /// waiting could plausibly change it. An app still launching has no frontmost, no readable tree and no
+  /// accessibility server, and acquires all three shortly — so all of those are "not there yet" and the
+  /// poll continues. A failure of the reader or its plumbing is not that: it answers the same way on
+  /// every poll, and swallowing it spends the caller's whole timeout only to report a timeout, hiding
+  /// the diagnosis the failure already carried.
+  ///
+  /// A predicate rather than a `switch` inside the poll closure, because the closure needs a live
+  /// simulator to reach and this decision is the part worth testing.
+  var isTransientWhileWaitingForAMarker: Bool {
+    switch self {
+    case .frontmostUnresolved, .guestFailure, .applicationUnavailable, .applicationNotResponding, .readerUnavailable:
+      return true
+    case .bridgeUnavailable:
+      return false
+    }
+  }
+}

@@ -140,16 +140,12 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
         )
         return FBAXTreeWalk.matchingElement(inElements: elements, markerValue: markerValue, key: key) != nil ? true : nil
       } catch let error as FBAXBridgeError {
-        // A frontmost that isn't up yet, a tree that isn't readable yet, an app that hasn't answered
-        // yet, or a pid that names no readable app (an app still launching) is "not there yet" — keep
-        // polling. A missing guest binary won't resolve by waiting, so surface it (and any unexpected
-        // non-bridge error) at once rather than burning the whole timeout.
-        switch error {
-        case .frontmostUnresolved, .guestFailure, .applicationUnavailable, .applicationNotResponding, .readerUnavailable:
-          return nil
-        case .bridgeUnavailable:
+        // Which failures are worth polling through is `isTransientWhileWaitingForAMarker`; anything else
+        // (and any unexpected non-bridge error) ends the wait at once rather than burning the timeout.
+        guard error.isTransientWhileWaitingForAMarker else {
           throw error
         }
+        return nil
       }
     }
   }
