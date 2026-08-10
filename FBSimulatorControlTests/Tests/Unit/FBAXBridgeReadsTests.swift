@@ -522,11 +522,10 @@ final class FBAXBridgeReadsTests: XCTestCase {
     ]
   }
 
-  // `describeTree` is the read path every backend but `ax` funnels through, and it never consults
-  // `collectFrameCoverage` — the option is accepted, carried the whole way down, and dropped. Both
-  // inputs a coverage calculation needs are present and asserted below, so what is pinned here is the
-  // drop itself rather than a fixture that could not have been measured.
-  func testDescribeTreeDropsTheRequestedFrameCoverage() async throws {
+  // `describeTree` is the read path every backend but `ax` funnels through. It used to ignore
+  // `collectFrameCoverage` entirely — the option was accepted, carried the whole way down, and dropped,
+  // so those backends reported `coverage: null` however it was asked for.
+  func testDescribeTreeReportsTheRequestedFrameCoverage() async throws {
     let reader = StubTreeReader(read: FBAXTreeRead(tree: Self.sizedTree(), pid: 99, truncated: false, modal: nil))
     var options = FBAccessibilityRequestOptions(format: .complete)
     options.collectFrameCoverage = true
@@ -546,12 +545,13 @@ final class FBAXBridgeReadsTests: XCTestCase {
     }
     XCTAssertEqual(heights, [844, 422], "and every element carries the frame it would be measured by")
 
-    // BUG: axbridge, axbridge-persistent and testmanagerd silently drop --collect-frame-coverage,
-    // so `complete` reports `coverage: null` where `ax` reports a ratio — flipped in a later commit.
-    XCTAssertNil(response.coverage?.frame, "the guest backends collect no coverage")
-    XCTAssertNil(response.document.coverage, "so the complete document reports none")
+    let coverage = try XCTUnwrap(response.coverage, "the guest backends collect coverage too")
+    // The child covers the screen's lower half; the application root is excluded.
+    XCTAssertEqual(coverage.frame, 0.5, accuracy: 0.01)
+    XCTAssertEqual(coverage.walked, 0.5, accuracy: 0.01, "nothing was filtered, so the two ratios agree")
+    XCTAssertNil(coverage.additional, "remote-content discovery is accessibility-only")
+    XCTAssertEqual(response.document.coverage, coverage, "and the complete document reports it")
   }
-
   func testDescribeTreeThrowsWhenNoElementMatchesTheMarker() async throws {
     let reader = StubTreeReader(read: Self.stubRead())
     do {

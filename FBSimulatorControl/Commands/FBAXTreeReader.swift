@@ -83,11 +83,20 @@ extension FBAXTreeReader {
         fromTree: read.tree, keys: options.serializationKeys, nestedFormat: options.nestedFormat, pid: read.pid
       )
       let elements = options.filter.apply(to: walked)
-      return FBAccessibilityElementsResponse(elements: .tree(elements), modal: read.modal)
+      let screen = FBAXTreeWalk.screenInfo(fromTree: read.tree)
+      // Coverage is a calculation over the serialized model, so it is the same one the accessibility
+      // backend runs — a whole-tree read reports it whichever backend served it. Remote-content
+      // discovery is accessibility-only, so `additional` stays absent here.
+      let coverage: FBAccessibilityCoverage? =
+        options.collectFrameCoverage
+        ? screen.flatMap {
+          .measured(reported: elements, walked: walked, screenBounds: FBAccessibilityCoverage.bounds(of: $0))
+        } : nil
+      return FBAccessibilityElementsResponse(elements: .tree(elements), coverage: coverage, modal: read.modal)
         .withProvenance(
           backend: backend.name,
           target: query.targetDescriptor,
-          screen: FBAXTreeWalk.screenInfo(fromTree: read.tree),
+          screen: screen,
           truncated: read.truncated
         )
     }

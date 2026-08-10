@@ -166,14 +166,14 @@ public final class FBAXTranslationRequest {
     let grid: FBAccessibilityCoverageGrid? =
       options.collectFrameCoverage ? FBAccessibilityCoverageGrid(screenBounds: screenBounds) : nil
     grid?.markFilled(withElements: mainAppElements)
-    let walkedCoverage = Self.coverageRatio(of: walked, screenBounds: screenBounds, when: options.collectFrameCoverage)
 
     // Remote content fetching (only when requested and a translator is present).
     guard let remoteOptions = options.remoteContentOptions, let translator else {
       return buildResponse(
         elements: .tree(mainAppElements),
         serializationStart: serializationStart,
-        coverage: Self.coverage(frame: grid.flatMap(Self.ratio(of:)), walked: walkedCoverage, additional: nil),
+        coverage: options.collectFrameCoverage
+          ? .measured(reported: mainAppElements, walked: walked, screenBounds: screenBounds) : nil,
         screen: Self.screenInfo(fromBounds: screenBounds)
       )
     }
@@ -187,39 +187,13 @@ public final class FBAXTranslationRequest {
       frontmostPid: frontmostPid,
       seenPids: seenPids,
       coverageGrid: grid,
-      walkedCoverage: walkedCoverage,
+      walkedElements: walked,
+      collectFrameCoverage: options.collectFrameCoverage,
       serializationStart: serializationStart,
       keys: keys,
       remoteOptions: remoteOptions,
       translator: translator
     )
-  }
-
-  /// A grid's coverage ratio, or `nil` for a degenerate grid that has nothing to report.
-  private static func ratio(of grid: FBAccessibilityCoverageGrid) -> Double? {
-    let ratio = grid.coverageRatio()
-    return ratio >= 0 ? Double(ratio) : nil
-  }
-
-  /// The proportion of `screenBounds` that `elements` cover, or `nil` when coverage was not requested
-  /// or the bounds do not make a usable grid.
-  private static func coverageRatio(
-    of elements: [FBAccessibilityDocumentElement], screenBounds: CGRect, when collect: Bool
-  ) -> Double? {
-    guard collect, let grid = FBAccessibilityCoverageGrid(screenBounds: screenBounds) else {
-      return nil
-    }
-    grid.markFilled(withElements: elements)
-    return ratio(of: grid)
-  }
-
-  /// The reported coverage, or `nil` when there is no ratio to report. `frame` and `walked` are computed
-  /// from the same read, so either both are present or neither is.
-  private static func coverage(frame: Double?, walked: Double?, additional: Double?) -> FBAccessibilityCoverage? {
-    guard let frame, let walked else {
-      return nil
-    }
-    return FBAccessibilityCoverage(frame: frame, walked: walked, additional: additional)
   }
 
   // MARK: Remote content
@@ -323,14 +297,13 @@ public final class FBAXTranslationRequest {
     frontmostPid: pid_t,
     seenPids: SeenPIDs,
     coverageGrid: FBAccessibilityCoverageGrid?,
-    walkedCoverage: Double?,
+    walkedElements: [FBAccessibilityDocumentElement],
+    collectFrameCoverage: Bool,
     serializationStart: CFAbsoluteTime,
     keys: Set<FBAXKeys>,
     remoteOptions: FBAccessibilityRemoteContentOptions,
     translator: AXPTranslator
   ) -> FBAccessibilityElementsResponse {
-    // The ratio of the reported elements, before hit-testing marks anything else into the grid.
-    let frameCoverage = coverageGrid.flatMap(Self.ratio(of:))
     let coverageBefore = coverageGrid?.coverageRatio() ?? 0
 
     let discoveredElements = discoverRemoteElements(
@@ -371,7 +344,11 @@ public final class FBAXTranslationRequest {
     return buildResponse(
       elements: .tree(elements),
       serializationStart: serializationStart,
-      coverage: Self.coverage(frame: frameCoverage, walked: walkedCoverage, additional: additionalFrameCoverage),
+      coverage: collectFrameCoverage
+        ? .measured(
+          reported: mainAppElements, walked: walkedElements, screenBounds: screenBounds,
+          additional: additionalFrameCoverage
+        ) : nil,
       screen: Self.screenInfo(fromBounds: screenBounds)
     )
   }

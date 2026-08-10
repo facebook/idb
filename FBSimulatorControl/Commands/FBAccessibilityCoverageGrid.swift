@@ -117,6 +117,22 @@ final class FBAccessibilityCoverageGrid {
   /// `Application` the guest backends do.
   private static let applicationType = "Application"
 
+  /// The proportion of `screenBounds` that `elements` cover, or `nil` when the bounds do not make a
+  /// usable grid.
+  static func ratio(of elements: [FBAccessibilityDocumentElement], screenBounds: CGRect) -> Double? {
+    guard let grid = FBAccessibilityCoverageGrid(screenBounds: screenBounds) else {
+      return nil
+    }
+    grid.markFilled(withElements: elements)
+    return grid.ratio
+  }
+
+  /// This grid's coverage as a proportion, or `nil` for a degenerate grid with nothing to report.
+  var ratio: Double? {
+    let ratio = coverageRatio()
+    return ratio >= 0 ? Double(ratio) : nil
+  }
+
   /// Coverage ratio for the entire screen (0.0–1.0), or -1 if the grid is invalid.
   func coverageRatio() -> CGFloat {
     let totalCells = Int(width * height)
@@ -127,5 +143,36 @@ final class FBAccessibilityCoverageGrid {
       if cell != 0 { count += 1 }
     }
     return CGFloat(filledCells) / CGFloat(totalCells)
+  }
+}
+
+extension FBAccessibilityCoverage {
+
+  /// The coverage a read reports, measured over its serialized elements.
+  ///
+  /// The one definition, shared by every backend. Both ratios come from the same model the read
+  /// returned, so a backend cannot accidentally measure something different from another — which is
+  /// what a per-backend calculation had already allowed to happen once, when only the accessibility
+  /// path had one at all.
+  ///
+  /// `nil` when the bounds are unusable, so an unmeasurable read reports nothing rather than zero.
+  static func measured(
+    reported: [FBAccessibilityDocumentElement],
+    walked: [FBAccessibilityDocumentElement],
+    screenBounds: CGRect,
+    additional: Double? = nil
+  ) -> FBAccessibilityCoverage? {
+    guard let frame = FBAccessibilityCoverageGrid.ratio(of: reported, screenBounds: screenBounds),
+      let walkedRatio = FBAccessibilityCoverageGrid.ratio(of: walked, screenBounds: screenBounds)
+    else {
+      return nil
+    }
+    return FBAccessibilityCoverage(frame: frame, walked: walkedRatio, additional: additional)
+  }
+
+  /// The bounds a read's screen info describes. The frames the calculation measures are in screen
+  /// space, so the rectangle is anchored at the origin.
+  static func bounds(of screen: FBAccessibilityScreenInfo) -> CGRect {
+    CGRect(x: 0, y: 0, width: screen.width, height: screen.height)
   }
 }
