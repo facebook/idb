@@ -7,6 +7,7 @@
 
 #import "FBProcessStream.h"
 
+#import <fcntl.h>
 #import <sys/stat.h>
 #import <sys/types.h>
 
@@ -1279,14 +1280,21 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
     return -1;
   }
   self.status = NSStreamStatusWriting;
-  ssize_t result = write(self.fileDescriptor, buffer, len);
-  self.status = NSStreamStatusOpen;
-  if (result == -1) {
-    [self resolveError:[[NSString alloc] initWithCString:strerror(errno) encoding:NSASCIIStringEncoding]];
-    return -1;
+  NSUInteger totalWritten = 0;
+  while (totalWritten < len) {
+    ssize_t result = write(self.fileDescriptor, buffer + totalWritten, len - totalWritten);
+    if (result == -1 && errno == EINTR) {
+      continue;
+    }
+    if (result <= 0) {
+      [self resolveError:[[NSString alloc] initWithCString:strerror(errno) encoding:NSASCIIStringEncoding]];
+      return -1;
+    }
+    totalWritten += result;
   }
-  self.bytesWritten += result;
-  return result;
+  self.status = NSStreamStatusOpen;
+  self.bytesWritten += totalWritten;
+  return totalWritten;
 }
 
 - (void)open
@@ -1298,6 +1306,10 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
   self.status = NSStreamStatusOpening;
   NSNumber *fileDescriptor = [self.writeFuture block:nil];
   self.fileDescriptor = fileDescriptor.intValue;
+  if (fcntl(self.fileDescriptor, F_SETNOSIGPIPE, 1) == -1) {
+    [self resolveError:[[NSString alloc] initWithCString:strerror(errno) encoding:NSASCIIStringEncoding]];
+    return;
+  }
   self.status = NSStreamStatusOpen;
 }
 

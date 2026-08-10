@@ -317,6 +317,27 @@ final class FBSubprocessTests: XCTestCase {
     XCTAssertEqual(expected, process.stdOut as! String)
   }
 
+  func testInputStreamReportsBrokenPipeAfterReaderExits() throws {
+    let input = FBProcessInput<OutputStream>.fromStream()
+    let stream = input.contents
+
+    let process = startSynchronously(
+      FBProcessBuilder<NSNull, NSData, NSData>
+        .withLaunchPath("/usr/bin/true", arguments: [])
+        .withStdIn(unsafeBitCast(input, to: FBProcessInput<AnyObject>.self))
+        .withStdOutToDevNull()
+        .withStdErrToDevNull()
+    )
+
+    stream.open()
+    _ = try process.exitCode.await(withTimeout: 2)
+
+    let bytes = Array("payload".utf8)
+    XCTAssertEqual(stream.write(bytes, maxLength: bytes.count), -1)
+    XCTAssertNotNil(stream.streamError)
+    stream.close()
+  }
+
   func testOutputStream() throws {
     let expected = "FOO BAR BAZ"
 

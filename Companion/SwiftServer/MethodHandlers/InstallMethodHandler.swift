@@ -131,8 +131,22 @@ struct InstallMethodHandler: @unchecked Sendable {
 
     switch source {
     case let .data(data):
-      let dataStream = pipeToInputOutput(initial: data, requestStream: requestStream) as! FBProcessInput<AnyObject>
-      return try await installSource(dataStream: dataStream, skipSigningBundles: skipSigningBundles)
+      if destination == .app && isZipArchive(data) {
+        return try await installZipArchive(
+          initial: data,
+          requestStream: requestStream,
+          makeDebuggable: makeDebuggable,
+          overrideModificationTime: overrideModificationTime)
+      }
+
+      let input = FBProcessInput<OutputStream>.fromStream()
+      let output = input.contents
+      async let writePayload: Void = writePayload(initial: data, requestStream: requestStream, output: output)
+      let artifact = try await installSource(
+        dataStream: unsafeBitCast(input, to: FBProcessInput<AnyObject>.self),
+        skipSigningBundles: skipSigningBundles)
+      try await writePayload
+      return artifact
 
     case let .url(urlString):
       guard let url = URL(string: urlString) else {
@@ -164,31 +178,67 @@ struct InstallMethodHandler: @unchecked Sendable {
     }
   }
 
-  private func pipeToInputOutput(initial: Data, requestStream: GRPCAsyncRequestStream<Idb_InstallRequest>) -> FBProcessInput<OutputStream> {
-    let input = FBProcessInput<OutputStream>.fromStream()
-    let appStream = input.contents
-    Task {
-      appStream.open()
-      defer { appStream.close() }
+  private func isZipArchive(_ data: Data) -> Bool {
+    data.starts(with: [0x50, 0x4B, 0x03, 0x04])
+  }
 
-      var buffer = [UInt8](initial)
-      appStream.write(&buffer, maxLength: buffer.count)
+  private func installZipArchive(
+    initial: Data,
+    requestStream: GRPCAsyncRequestStream<Idb_InstallRequest>,
+    makeDebuggable: Bool,
+    overrideModificationTime: Bool
+  ) async throws -> FBInstalledArtifact {
+    let archiveURL = FileManager.default.temporaryDirectory
+      .appendingPathComponent(UUID().uuidString)
+      .appendingPathExtension("ipa")
+    guard FileManager.default.createFile(atPath: archiveURL.path, contents: nil) else {
+      throw GRPCStatus(code: .internalError, message: "Failed to create temporary install archive")
+    }
+    defer { try? FileManager.default.removeItem(at: archiveURL) }
 
-      do {
-        for try await request in requestStream {
-          guard let data = request.extractDataFrame() else {
-            continue
-          }
-
-          var buffer = [UInt8](data)
-          appStream.write(&buffer, maxLength: buffer.count)
+    let file = try FileHandle(forWritingTo: archiveURL)
+    do {
+      try file.write(contentsOf: initial)
+      for try await request in requestStream {
+        guard let data = request.extractDataFrame() else {
+          continue
         }
-      } catch {
-        targetLogger.error().log("Failed to read install payload from request stream: \(error)")
+        try file.write(contentsOf: data)
       }
+      try file.close()
+    } catch {
+      try? file.close()
+      throw error
     }
 
-    return input
+    return try await commandExecutor.install_app_file_path(
+      archiveURL.path,
+      make_debuggable: makeDebuggable,
+      override_modification_time: overrideModificationTime)
+  }
+
+  private func writePayload(
+    initial: Data,
+    requestStream: GRPCAsyncRequestStream<Idb_InstallRequest>,
+    output: OutputStream
+  ) async throws {
+    output.open()
+    defer { output.close() }
+
+    try write(initial, to: output)
+    for try await request in requestStream {
+      guard let data = request.extractDataFrame() else {
+        continue
+      }
+      try write(data, to: output)
+    }
+  }
+
+  private func write(_ data: Data, to output: OutputStream) throws {
+    var buffer = [UInt8](data)
+    guard output.write(&buffer, maxLength: buffer.count) == buffer.count else {
+      throw output.streamError ?? GRPCStatus(code: .internalError, message: "Failed to write install payload")
+    }
   }
 
   private func readLinkBundleToDsym(from link: Idb_InstallRequest.LinkDsymToBundle) -> FBDsymInstallLinkToBundle {
