@@ -23,6 +23,7 @@ module.exports = {
         "idb/video",
         "idb/test-execution",
         "idb/file-containers",
+        "idb/ui",
         "idb/accessibility"
       ]
     },

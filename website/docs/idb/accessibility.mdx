@@ -1,76 +1,145 @@
 ---
 id: accessibility
-title: Accessibility Automation
+title: Accessibility
 ---
 
-## Introduction
+`idb` can read the entire accessibility hierarchy of an iOS Simulator, and act on the elements in it. The commands that do so are documented in [UI Automation](ui.mdx); this page covers what sits behind them — which backend serves a read, what shape the result comes back in, and what to do when a read comes back emptier than the screen looks.
 
-`idb` offers some new primitives for iOS Simulators that provides access to all accessibility information on an iOS Simulator. Additionally, there are commands for synthesizing input events like tapping on the touch screen.
+These primitives support a number of scenarios:
 
-These primitives can be used for a number of scenarios:
+- UI testing without `XCTest`, by reading the UI state and then driving the screen.
+- Remote access to an iOS Simulator, and screencasting.
+- Accessibility auditing, by reading the whole hierarchy and applying heuristics to it.
 
-- UI Testing without using `XCTest` based on reading the UI state and then manipulating the touch screen/keyboard.
-- Remote access to an iOS Simulator & Screencasting.
-- Accessibility auditing by reading the entire Accessibility heirarchy and having heuristic for determining if UI elements are accessible.
+## Backends
 
-All of these commands live under the `ui` subcommand prefix in `idb`.
+A read is served by one of three backends, selected with `--api` on `idb ui describe-all`, `idb ui describe-point` and `idb ui describe`. They differ in *where the read runs*, which is what determines how much of the screen they can see and how much each read costs.
 
-## `idb ui describe-all`
+### `--api ax` — the accessibility backend
 
-Prints the entire UI heirarchy of the iOS Simulator.
+The default, and what `idb` has always used. The companion asks the Simulator's accessibility server, from the host, for the frontmost application's elements.
 
-```
-idb ui describe-all
-[{"AXFrame":"{{0, 0}, {375, 667}}","AXUniqueId":null,"frame":{"y":0,"x":0,"width":375,"height":667},"role_description":"application","AXLabel":" ","content_required":false,"type":"Application","title":null,"help":null,"custom_actions":[],"AXValue":null,"enabled":true,"role":"AXApplication","subrole":null},{"AXFrame":"{{0, 0}, {375, 667}}","AXUniqueId":null,"frame":{"y":0,"x":0,"width":375,"height":667},"role_description":"group","AXLabel":null,"content_required":false,"type":"Group","title":null,"help":null,"custom_actions":[],"AXValue":null,"enabled":true,"role":"AXGroup","subrole":null},{"AXFrame":"{{21.5, 28}, {72, 87.5}}","AXUniqueId":"Calendar","frame":{"y":28,"x":21.5,"width":72,"height":87.5},"role_description":"button","AXLabel":"Calendar","content_required":false,"type":"Button","title":null,"help":null,"custom_actions":["Edit mode","Today"],"AXValue":"Wednesday, October 14","enabled":true,"role":"AXButton","subrole":null},{"AXFrame":"{{112, 28}, {64, 87.5}}","AXUniqueId":"Photos","frame":{"y":28,"x":112,"width":64,"height":87.5},"role_description":"button","AXLabel":"Photos","content_required":false,"type":"Button","title":null,"help":null,"custom_actions":["Edit mode","Today"],"AXValue":"","enabled":true,"role":"AXButton","subrole":null},{"AXFrame":"{{199, 28}, {64, 87.5}}","AXUniqueId":"Maps","frame":{"y":28,"x":199,"width":64,"height":87.5},"role_description":"button","AXLabel":"Maps","content_required":false,"type":"Button","title":null,"help":null,"custom_actions":["Edit mode","Today"],"AXValue":"","enabled":true,"role":"AXButton","subrole":null},{"AXFrame":"{{277.5, 28}, {81.5, 87.5}}","AXUniqueId":"Reminders","frame":{"y":28,"x":277.5,"width":81.5,"height":87.5},"role_description":"button","AXLabel":"Reminders","content_required":false,"type":"Button","title":null,"help":null,"custom_actions":["Edit mode","Today"],"AXValue":"","enabled":true,"role":"AXButton","subrole":null},{"AXFrame":"{{25, 116}, {64, 87.5}}","AXUniqueId":"News","frame":{"y":116,"x":25,"width":64,"height":87.5},"role_description":"button","AXLabel":"News","content_required":false,"type":"Button","title":null,"help":null,"custom_actions":["Edit mode","Today"],"AXValue":"","enabled":true,"role":"AXButton","subrole":null},{"AXFrame":"{{112, 116}, {64, 87.5}}","AXUniqueId":"Health","frame":{"y":116,"x":112,"width":64,"height":87.5},"role_description":"button","AXLabel":"Health","content_required":false,"type":"Button","title":null,"help":null,"custom_actions":["Edit mode","Today"],"AXValue":"","enabled":true,"role":"AXButton","subrole":null},{"AXFrame":"{{199, 116}, {64, 87.5}}","AXUniqueId":"Wallet","frame":{"y":116,"x":199,"width":64,"height":87.5},"role_description":"button","AXLabel":"Wallet","content_required":false,"type":"Button","title":null,"help":null,"custom_actions":["Edit mode","Today"],"AXValue":"","enabled":true,"role":"AXButton","subrole":null},{"AXFrame":"{{284, 116}, {68.5, 87.5}}","AXUniqueId":"Settings","frame":{"y":116,"x":284,"width":68.5,"height":87.5},"role_description":"button","AXLabel":"Settings","content_required":false,"type":"Button","title":null,"help":null,"custom_actions":["Edit mode","Today"],"AXValue":"","enabled":true,"role":"AXButton","subrole":null},{"AXFrame":"{{146, 546.5}, {83.5, 25}}","AXUniqueId":"Page control","frame":{"y":546.5,"x":146,"width":83.5,"height":25},"role_description":"slider","AXLabel":null,"content_required":false,"type":"Slider","title":null,"help":null,"custom_actions":[],"AXValue":"Page 1 of 2","enabled":true,"role":"AXSlider","subrole":null},{"AXFrame":"{{0, 575}, {375, 92}}","AXUniqueId":null,"frame":{"y":575,"x":0,"width":375,"height":92},"role_description":"group","AXLabel":"Dock","content_required":false,"type":"Group","title":null,"help":null,"custom_actions":[],"AXValue":null,"enabled":true,"role":"AXGroup","subrole":null},{"AXFrame":"{{112, 589}, {64, 64}}","AXUniqueId":"Safari","frame":{"y":589,"x":112,"width":64,"height":64},"role_description":"button","AXLabel":"Safari","content_required":false,"type":"Button","title":null,"help":null,"custom_actions":["Edit mode","Today"],"AXValue":"","enabled":true,"role":"AXButton","subrole":null},{"AXFrame":"{{199, 589}, {64, 64}}","AXUniqueId":"Messages","frame":{"y":589,"x":199,"width":64,"height":64},"role_description":"button","AXLabel":"Messages","content_required":false,"type":"Button","title":null,"help":null,"custom_actions":["Edit mode","Today"],"AXValue":"","enabled":true,"role":"AXButton","subrole":null}]
-```
+This is the same view an assistive technology gets. It is cheap and needs nothing installed in the Simulator, but it is a summary rather than a transcript: a view that draws its own content and describes itself with a single label — a custom collection view cell, a composed row of text and images — is reported as that one element, not as the parts it was built from.
 
-The output here is an example of a fresh iOS Simulator booted into the Home Screen. Each of the App icons is represented as an entry within the heirarchy. Using [`jq`](https://stedolan.github.io/jq/) is an effective way of formatting this output for humans. This output is easily machine-readable being a JSON structure.
+### `--api axbridge` — the guest reader
 
-## `idb ui describe-point x y`
+The read runs *inside* the Simulator. The companion spawns the bundled `SimulatorFrameworkBridge` helper, which attaches to the target application's own in-process accessibility server, walks its element tree, and returns it as JSON.
 
-Returns the accessibility element at given co-ordinates on the iOS Simulator's screen. This is useful for "hit test" style queries, or understanding what is under a screen pointer.
+Because it reads the application from the inside, it sees the structure the application actually built, at the granularity `XCUITest` would see — typed, labelled elements where the host-side view reports one composite. It needs no test bundle, no test runner and no automation daemon: the helper is spawned, answers one read, and exits.
 
-```
-idb ui describe-point 200 200
-{"AXFrame":"{{199, 116}, {64, 87.5}}","AXUniqueId":"Wallet","frame":{"y":116,"x":199,"width":64,"height":87.5},"role_description":"button","AXLabel":"Wallet","content_required":false,"type":"Button","title":null,"help":null,"custom_actions":["Edit mode","Today"],"AXValue":"","enabled":true,"role":"AXButton","subrole":null}
-```
+The cost is that spawn. The helper has to start and load the accessibility frameworks on every read, which dominates the time a single read takes — roughly 600ms, against roughly 20ms for the walk itself.
 
-This example shows selection of the "Wallet" app, which is 200 points in x/y from the origin (top-left) of the screen.
+### `--api axbridge-persistent` — the guest reader, kept warm
 
-## `idb ui tap X Y`
+The same reader, spawned once instead of once per read. The companion starts `SimulatorFrameworkBridge` in `serve` mode and talks to it over a Unix domain socket, so the framework loading is paid once and every subsequent read is just the walk — around 20ms, roughly 30x faster than re-spawning.
 
-Taps the screen at the given X/Y co-ordinates from the origin.
+That amortization only pays off across reads by a *long-lived* process holding one connection: a driver, a REPL, an interactive session. A single `idb ui describe-all` from a shell spawns the reader, reads once and tears it down, which is strictly slower than `--api axbridge` doing the same thing without the socket. Use `axbridge` for one-shot commands and `axbridge-persistent` for a process that will read repeatedly.
 
-```
-idb ui tap 200 200
-```
+The connection is self-healing: if the reader dies — the Simulator shut down, the process was killed — the next read re-establishes it and retries once, rather than wedging on a dead socket.
 
-From the home-screen this will open the Wallet App, as the home screen icon for this app is at these co-ordinates.
+### Choosing between them
 
-## `idb button BUTTON_NAME`
+| | `ax` | `axbridge` | `axbridge-persistent` |
+|---|---|---|---|
+| Where the read runs | Host | Inside the Simulator | Inside the Simulator |
+| Detail | Assistive-technology view | Full application tree | Full application tree |
+| Cost per read | Low | ~600ms, spawn-dominated | ~20ms warm, after a one-off start |
+| Needs `SimulatorFrameworkBridge` | No | Yes | Yes |
+| Best for | Quick checks; anything the composite view is enough for | A one-shot read that needs full detail | Repeated reads from one long-lived process |
 
-Simulates a button press on the iOS Simulator. For example
+### Compatibility
 
-```
-idb button LOCK
-```
+`--api` can never break an existing workflow. Omitting it preserves the historical behaviour exactly, and the field is only set on the wire when you actually ask for a backend. A companion that predates backend selection ignores the field entirely and serves the read as if it were unset, so a new client against an old companion behaves precisely as it did before.
 
-Will send the iOS Simulator to the lockscreen. All button types are available with `--help`
+When a backend is selected but cannot run, the read fails with a clear error rather than quietly falling back to a different one — a silent downgrade would report a smaller tree as if it were the whole screen.
 
-```
-idb ui button --help
-usage: idb ui button [-h] [--duration DURATION] [--udid UDID] [--log {DEBUG,INFO,WARNING,ERROR,CRITICAL}] [--json] {APPLE_PAY,HOME,LOCK,SIDE_BUTTON,SIRI}
-positional arguments:
-  {APPLE_PAY,HOME,LOCK,SIDE_BUTTON,SIRI}
-```
+### Requirements
 
-## `idb text 'hello world'`
-
-Sends keyboard events to the iOS Simulator. This can be used at any time and are equivalent to sending events via a hardware keyboard.
+The axbridge backends are iOS Simulator only, and need the `SimulatorFrameworkBridge` helper alongside the companion binary. A companion built as a distribution (see [Development](development.mdx)) has it in the sibling `Resources` directory, which is the layout `idb_companion` expects at runtime; a bare binary moved out of that layout does not, and a read reports:
 
 ```
-idb text 'hello world'
+The SimulatorFrameworkBridge guest binary was not found in the companion Resources directory
 ```
 
-Note that this accepts a single argument, so providing text entry with spaces will require quoting
+### Read bounds
 
+Whole-tree reads are bounded, so a pathological hierarchy cannot hang a read or return an unbounded payload. The host sets the bounds — a maximum depth of 50 and a budget of 3000 nodes — and both backends truncate at the same point, so a tree read over one is comparable with the same tree read over the other. A read that hit those bounds reports `truncated` in the `complete` format below.
+
+## Output formats
+
+`--format` selects the shape of the result, on the same three read commands.
+
+### `--format default`
+
+The historical format, and what you get if you ask for nothing: a flat JSON array of every element, each a dictionary of attributes under their original `AX`-prefixed names.
+
+```
+$ idb ui describe-point 201 286
+{"AXFrame":"{{20, 264}, {362, 44}}","AXUniqueId":"com.apple.settings.general","frame":{"y":264,"x":20,"width":362,"height":44},"role_description":"button","AXLabel":"General","content_required":false,"type":"Button","title":null,"help":null,"custom_actions":[],"AXValue":"","enabled":true,"role":"AXButton","subrole":null}
+```
+
+A whole-screen read emits an array; a point or marker read emits a bare object, or `null` for a point with nothing under it.
+
+The attributes are `AXLabel`, `AXFrame`, `AXValue`, `AXUniqueId`, `type`, `title`, `frame`, `help`, `enabled`, `custom_actions`, `role`, `role_description`, `subrole`, `content_required`, `pid`, `traits`, `expanded`, `placeholder`, `hidden`, `focused` and `is_remote`. An attribute you did not ask for with `--key` is absent; one that was asked for but has no value is present and `null`.
+
+### `--format nested`
+
+The same elements and the same attribute names, but each element carries its descendants under a `children` key, so the output is one tree rather than a flat list. `--nested` is a deprecated alias for this; pass one or the other, not both.
+
+### `--format complete`
+
+A consolidated document: the elements, plus everything the read learned about the state they were read in.
+
+```
+$ idb ui describe General --format complete | jq '{backend, truncated, target, screen}'
+{
+  "backend": "axbridge",
+  "truncated": false,
+  "target": {
+    "kind": "marker",
+    "pid": null,
+    "x": null,
+    "y": null,
+    "value": "General",
+    "match_key": "AXLabel"
+  },
+  "screen": { "width": 402, "height": 874, "coordinate_space": "screen" }
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `elements` | The elements, always an array — even for a single-element read, which the other formats emit as a bare object |
+| `backend` | Which backend served the read: `ax`, `axbridge`, `axbridge-persistent` or `testmanagerd` |
+| `target` | What was asked for: `kind` is `frontmost`, `application`, `point` or `marker`, with the `pid`, `x`/`y` or `value`/`match_key` that named it |
+| `screen` | The bounds element frames are relative to |
+| `truncated` | Whether the read hit the depth or node bounds and stopped short of the whole tree |
+| `modal` | The blocking alert on screen, if there is one: whether it belongs to the system or the app, its element type, and its title |
+| `coverage` | How much of the screen the read's element frames cover, along several dimensions |
+| `profile` | Timing and call counts for the read, where the backend collects them |
+
+Two things make this format easier to consume than the others. Its **key set is fixed**: every field is always present, `null` where it does not apply, so one parser handles every read command — a point read and a whole-screen read differ in their values, never in their shape, and `target` rather than the shape tells you which command produced the document. And its **element names are the clean ones**: `label` rather than `AXLabel`, `identifier` rather than `AXUniqueId`, `role_description` rather than a mix. The two attributes that merely restated another are gone — the stringified `AXFrame`, since `frame` carries the same rectangle structurally, and the raw `role`, since `type` is its normalised form.
+
+The document is expected to grow. New fields are added additively, and a consumer should ignore fields it does not know rather than reject the document; there is deliberately no version to check.
+
+A companion that predates format selection does not recognise `complete` and answers in the default format. `idb` detects that by the response shape and warns on `stderr`:
+
+```
+warning: the companion does not support --format complete (it predates format selection); the read was served in the legacy format by the default backend
+```
+
+## When a read comes back empty
+
+A read that reports far fewer elements than the screen shows is usually one of these:
+
+- **The application does not expose its content.** A `WKWebView` or other remote content is a single element to the accessibility system unless the application marks up what is inside it. In the `complete` format this shows as a large gap between the `leaf` and `content` coverage ratios: area the application draws, but does not describe.
+- **The backend is the composite one.** A custom-drawn view described by one label reports as one element over `--api ax`. Read the same screen with `--api axbridge` to see whether the detail is there and just not surfaced host-side.
+- **Accessibility is off for the application.** Reads depend on the target's accessibility server having started. If a read reports nothing at all, check that `ApplicationAccessibilityEnabled` is set in the `com.apple.Accessibility` domain on the target:
+
+  ```
+  idb get --domain com.apple.Accessibility ApplicationAccessibilityEnabled
+  idb set --domain com.apple.Accessibility ApplicationAccessibilityEnabled --type bool true
+  ```
+
+  Relaunch the application afterwards; the setting is read at startup.
+- **The read was truncated.** A very deep or very large hierarchy stops at the bounds above. `--format complete` reports `truncated: true` when that happened, which distinguishes "this is the whole screen" from "this is as much of it as was read".
