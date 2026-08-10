@@ -122,8 +122,17 @@ final class AccessibilityInfoRequestTranslationTests: XCTestCase {
     let options = try AccessibilityInfoRequestTranslation.options(from: .init(), format: .nested)
     XCTAssertEqual(options.format, .nested)
     XCTAssertTrue(options.enableLogging)
-    XCTAssertFalse(options.enableProfiling)
-    XCTAssertFalse(options.collectFrameCoverage)
+    XCTAssertFalse(options.enableProfiling, "profiling is collected only when the request asks")
+    XCTAssertFalse(options.collectFrameCoverage, "frame coverage is collected only when the request asks")
+  }
+
+  func testOptionsThreadTheEnrichers() throws {
+    var request = Idb_AccessibilityInfoRequest()
+    request.profile = true
+    request.collectFrameCoverage = true
+    let options = try AccessibilityInfoRequestTranslation.options(from: request, format: .complete)
+    XCTAssertTrue(options.enableProfiling)
+    XCTAssertTrue(options.collectFrameCoverage)
   }
 
   // MARK: - Backend selection

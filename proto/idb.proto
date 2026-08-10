@@ -270,6 +270,13 @@ message AccessibilityInfoRequest {
   // returns the default key set.
   repeated string keys = 7;
   Backend backend = 8;
+  // Collect element counts and timings for the read. Reported by the COMPLETE
+  // format only; the legacy formats collect but have nowhere to report, so
+  // their output is unchanged.
+  bool profile = 9;
+  // Collect upper-region frame coverage for the read. Reported by the
+  // COMPLETE format only, like profile.
+  bool collect_frame_coverage = 10;
 }
 
 message AccessibilityInfoResponse {

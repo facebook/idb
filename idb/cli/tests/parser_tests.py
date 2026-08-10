@@ -1395,6 +1395,30 @@ class TestParser(TestCase):
         self.assertEqual(exit_code, 1)
         self.client_mock.accessibility_info.assert_not_called()
 
+    async def test_accessibility_info_all_enrichers(self) -> None:
+        self.client_mock.accessibility_info = AsyncMock(
+            return_value=AccessibilityInfo(json='{"backend": "ax", "elements": []}')
+        )
+        await cli_main(
+            cmd_input=[
+                "ui",
+                "describe-all",
+                "--profile",
+                "--collect-frame-coverage",
+                "--format",
+                "complete",
+            ]
+        )
+        self.client_mock.accessibility_info.assert_called_once_with(
+            target=None,
+            options=AccessibilityInfoOptions(
+                nested=False,
+                format=AccessibilityOutputFormat.COMPLETE,
+                profile=True,
+                collect_frame_coverage=True,
+            ),
+        )
+
     async def test_format_enum_matches_wire_values(self) -> None:
         # --format nested must put the exact value on the wire that the
         # deprecated --nested boolean always has, so an older companion —

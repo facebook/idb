@@ -513,6 +513,8 @@ class Client(ClientBase):
         request = AccessibilityInfoRequest(
             format=wire_format,
             keys=options.keys or [],
+            profile=options.profile,
+            collect_frame_coverage=options.collect_frame_coverage,
         )
         # Unset means "unspecified" on the wire: the companion's historical
         # default backend, and the only thing an older companion understands.

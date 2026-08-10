@@ -49,8 +49,8 @@ enum AccessibilityInfoRequestTranslation {
       format: format,
       keys: keys,
       enableLogging: true,
-      enableProfiling: false,
-      collectFrameCoverage: false)
+      enableProfiling: request.profile,
+      collectFrameCoverage: request.collectFrameCoverage)
   }
 
   /// The backend a request selects, through the framework's name bijection. `UNSPECIFIED` — an older

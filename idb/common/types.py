@@ -261,6 +261,8 @@ class AccessibilityInfoOptions:
     keys: list[str] | None = None
     backend: AccessibilityBackend | None = None
     format: AccessibilityOutputFormat | None = None
+    profile: bool = False
+    collect_frame_coverage: bool = False
 
 
 class AccessibilityScrollDirection(Enum):

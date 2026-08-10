@@ -63,6 +63,25 @@ def _add_enricher_args(parser: ArgumentParser) -> None:
         default=None,
         help="Accessibility key to include (repeatable); all keys if omitted",
     )
+    parser.add_argument(
+        "--profile",
+        action="store_true",
+        default=False,
+        help=(
+            "Collect element counts and timings for the read. Reported by "
+            "--format complete only; the other formats collect but have "
+            "nowhere to report, so their output is unchanged."
+        ),
+    )
+    parser.add_argument(
+        "--collect-frame-coverage",
+        action="store_true",
+        default=False,
+        help=(
+            "Collect upper-region frame coverage for the read. Reported by "
+            "--format complete only, like --profile."
+        ),
+    )
 
 
 def _add_backend_arg(parser: ArgumentParser) -> None:
@@ -166,6 +185,8 @@ class AccessibilityInfoAllCommand(ClientCommand):
                 keys=args.keys,
                 backend=_backend(args),
                 format=requested_format,
+                profile=args.profile,
+                collect_frame_coverage=args.collect_frame_coverage,
             ),
         )
         _warn_if_complete_downgraded(requested_format, info.json)
@@ -204,6 +225,8 @@ class AccessibilityInfoAtPointCommand(ClientCommand):
                 keys=args.keys,
                 backend=_backend(args),
                 format=requested_format,
+                profile=args.profile,
+                collect_frame_coverage=args.collect_frame_coverage,
             ),
         )
         _warn_if_complete_downgraded(requested_format, info.json)
