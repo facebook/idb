@@ -552,6 +552,58 @@ final class FBAXBridgeReadsTests: XCTestCase {
     XCTAssertNil(coverage.additional, "remote-content discovery is accessibility-only")
     XCTAssertEqual(response.document.coverage, coverage, "and the complete document reports it")
   }
+
+  // Coverage stays opt-in: a read that did not ask for it reports none rather than a zero.
+  func testDescribeTreeReportsNoCoverageUnlessAsked() async throws {
+    let reader = StubTreeReader(read: FBAXTreeRead(tree: Self.sizedTree(), pid: 99, truncated: false, modal: nil))
+    let response = try await reader.describeTree(.frontmost, options: FBAccessibilityRequestOptions(format: .complete))
+    XCTAssertNil(response.coverage)
+    XCTAssertNil(response.document.coverage)
+  }
+
+  // A read whose root reports no usable frame has no screen to measure against, so it reports no
+  // coverage rather than measuring against a zero-sized grid.
+  func testDescribeTreeReportsNoCoverageWithoutUsableScreenBounds() async throws {
+    let reader = StubTreeReader(read: Self.stubRead())
+    var options = FBAccessibilityRequestOptions(format: .complete)
+    options.collectFrameCoverage = true
+    let response = try await reader.describeTree(.frontmost, options: options)
+    XCTAssertNil(response.screen, "the stub tree's root reports no frame")
+    XCTAssertNil(response.coverage, "so there is nothing to measure against")
+  }
+
+  /// `sizedTree()` with the lower half's label removed, so `.interactable` drops it: element type 1 is
+  /// Other, which is not an actionable role.
+  private static func sizedTreeWithUnlabeledLowerHalf() -> [String: Any] {
+    [
+      FBAXWire.Node.label.rawValue: "root",
+      FBAXWire.Node.elementType.rawValue: NSNumber(value: 2),
+      FBAXWire.Node.frame.rawValue: CGRectCreateDictionaryRepresentation(CGRect(x: 0, y: 0, width: 390, height: 844)) as NSDictionary,
+      FBAXWire.Node.children.rawValue: [
+        [
+          FBAXWire.Node.elementType.rawValue: NSNumber(value: 1),
+          FBAXWire.Node.frame.rawValue: CGRectCreateDictionaryRepresentation(CGRect(x: 0, y: 422, width: 390, height: 422)) as NSDictionary,
+          FBAXWire.Node.children.rawValue: [[String: Any]](),
+        ] as [String: Any]
+      ],
+    ]
+  }
+
+  // The two ratios diverge on the guest backends the same way they do on the accessibility one — the
+  // calculation is shared, so the gap cannot come to mean different things per backend.
+  func testDescribeTreeReportsWalkedCoverageAboveReportedWhenFiltering() async throws {
+    let reader = StubTreeReader(
+      read: FBAXTreeRead(tree: Self.sizedTreeWithUnlabeledLowerHalf(), pid: 99, truncated: false, modal: nil)
+    )
+    var options = FBAccessibilityRequestOptions(format: .complete)
+    options.collectFrameCoverage = true
+    options.filter = .interactable
+    let response = try await reader.describeTree(.frontmost, options: options)
+
+    let coverage = try XCTUnwrap(response.coverage)
+    XCTAssertEqual(coverage.walked, 0.5, accuracy: 0.01, "the walk saw the unlabeled element covering the lower half")
+    XCTAssertEqual(coverage.frame, 0, accuracy: 0.01, "the filter dropped it, so the report covers nothing")
+  }
   func testDescribeTreeThrowsWhenNoElementMatchesTheMarker() async throws {
     let reader = StubTreeReader(read: Self.stubRead())
     do {
