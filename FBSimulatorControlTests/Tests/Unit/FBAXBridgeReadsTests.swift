@@ -230,22 +230,50 @@ final class FBAXBridgeReadsTests: XCTestCase {
 
   private static let axBridge = FBUIAutomationBackend.axBridge(persistence: .oneShot, frontmostMethod: .centerPoint)
 
-  func testEveryReadFailureCarriesTheAccessibilityServerGuidance() {
-    // BUG: the same `ApplicationAccessibilityEnabled` paragraph is appended to three unrelated
-    // conditions. Only `applicationUnavailable` is about a missing accessibility server: an empty point
-    // is a *successful* read of blank space, and a timeout means a marker never appeared, which the flag
-    // has nothing to do with. Scoped in the following commit.
-    let errors: [String: FBUIAutomationError] = [
-      "noElementAtPoint": .noElementAtPoint(backend: Self.axBridge, x: 2000, y: 2000),
-      "timedOut": .timedOut(backend: Self.axBridge, key: "AXLabel", value: "General", timeout: 5),
-      "applicationUnavailable": .applicationUnavailable(backend: Self.axBridge, pid: 8865),
+  // An application with no accessibility server is the one condition the flag addresses, and the only
+  // neutral case that offers it. The other two are not accessibility-configuration problems at all: an
+  // empty point is a successful read of blank space, and a marker that never appeared is about the app's
+  // state, so each states its own cause and points somewhere that can help.
+  func testOnlyAnUnreadableApplicationOffersTheAccessibilityServerGuidance() {
+    let unavailable = FBUIAutomationError.applicationUnavailable(backend: Self.axBridge, pid: 8865)
+    XCTAssertTrue(unavailable.description.contains("ApplicationAccessibilityEnabled"), "got: \(unavailable.description)")
+    XCTAssertTrue(unavailable.description.contains("pid 8865"), "the message must name the process: \(unavailable.description)")
+
+    let empty = FBUIAutomationError.noElementAtPoint(backend: Self.axBridge, x: 2000, y: 2000)
+    XCTAssertFalse(empty.description.contains("ApplicationAccessibilityEnabled"), "got: \(empty.description)")
+    XCTAssertTrue(empty.description.contains("the point is empty"), "an empty point must say so: \(empty.description)")
+
+    let timedOut = FBUIAutomationError.timedOut(backend: Self.axBridge, key: "AXLabel", value: "General", timeout: 5)
+    XCTAssertFalse(timedOut.description.contains("ApplicationAccessibilityEnabled"), "got: \(timedOut.description)")
+    XCTAssertTrue(timedOut.description.contains("never appeared"), "a timeout must say what did not happen: \(timedOut.description)")
+  }
+
+  // A display-wide read that resolved nothing has no pid, so the message says where it looked instead of
+  // printing a zero — and still offers the guidance, the condition being the same one.
+  func testAnUnreadableApplicationWithNoResolvedPidSaysWhereItLooked() {
+    let error = FBUIAutomationError.applicationUnavailable(backend: Self.axBridge, pid: nil)
+    XCTAssertTrue(error.description.contains("at that point"), "got: \(error.description)")
+    XCTAssertFalse(error.description.contains("pid 0"), "a missing pid must not print as zero: \(error.description)")
+    XCTAssertTrue(error.description.contains("ApplicationAccessibilityEnabled"), "got: \(error.description)")
+  }
+
+  // Each of these states a different cause, so a reader can tell them apart without the backend having
+  // to be asked. This is the whole point of the stack: one message per condition.
+  func testEachFailureModeStatesItsOwnCause() {
+    let cases: [(any LocalizedError, String)] = [
+      (FBAXBridgeError.readerUnavailable("XCTAccessibilityFramework unavailable"), "could not bind"),
+      (FBAXBridgeError.frontmostUnresolved(method: .runningBoard, reason: "Client not entitled"), "runningboard strategy"),
+      (FBUIAutomationError.applicationNotResponding(backend: Self.axBridge, pid: 8865), "did not answer in time"),
+      (FBUIAutomationError.applicationUnavailable(backend: Self.axBridge, pid: 8865), "accessibility server has not started"),
+      (FBUIAutomationError.noElementAtPoint(backend: Self.axBridge, x: 1, y: 2), "the point is empty"),
     ]
-    for (name, error) in errors {
-      XCTAssertTrue(
-        error.description.contains("ApplicationAccessibilityEnabled"),
-        "\(name) currently carries the guidance: \(error.description)"
-      )
+    var descriptions: Set<String> = []
+    for (error, expected) in cases {
+      let description = error.errorDescription ?? ""
+      XCTAssertTrue(description.contains(expected), "expected \"\(expected)\" in: \(description)")
+      descriptions.insert(description)
     }
+    XCTAssertEqual(descriptions.count, cases.count, "no two failure modes may share a message")
   }
 
   // The remote backend's read failure genuinely is about the flag — that session documents

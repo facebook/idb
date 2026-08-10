@@ -16,13 +16,20 @@ import Foundation
 /// That is what lets `catch FBUIAutomationError.elementNotFound` work regardless of the backend in
 /// hand. Failures that genuinely belong to one transport (a missing guest binary, an unadvertised
 /// daemon, a dead accessibility dispatcher) stay in that backend's own error type.
+///
+/// A case appends remediation only where that remedy plausibly applies to it. `applicationUnavailable`
+/// is the one condition `ApplicationAccessibilityEnabled` addresses; a point that is empty and a marker
+/// that never appeared are not accessibility-configuration problems, and telling a reader they might be
+/// is what makes the advice ignorable on the case where it is right.
 public enum FBUIAutomationError: LocalizedError, Sendable {
   /// No element matched the marker `value` for `key`.
   case elementNotFound(backend: FBUIAutomationBackend, key: String, value: String)
   /// A marker matched an element, but it reports no on-screen frame — off-screen or still settling —
   /// so there is no point to interact with. Distinct from `elementNotFound`: the element exists.
   case elementNotOnScreen(backend: FBUIAutomationBackend, key: String, value: String)
-  /// No element sits at the requested point.
+  /// No element sits at the requested point. A successful read of empty space, raised as an error only
+  /// because `describe(.point:)` has to answer with an element — so it carries no remediation, there
+  /// being nothing wrong to remedy.
   case noElementAtPoint(backend: FBUIAutomationBackend, x: Double, y: Double)
   /// The wait for a marker element elapsed.
   case timedOut(backend: FBUIAutomationBackend, key: String, value: String, timeout: TimeInterval)
@@ -52,9 +59,9 @@ public enum FBUIAutomationError: LocalizedError, Sendable {
     case let .elementNotOnScreen(backend, key, value):
       return "\(backend.displayName) matched an element whose \(key) contains \"\(value)\", but it is off-screen and has no frame to interact with"
     case let .noElementAtPoint(backend, x, y):
-      return "\(backend.displayName) found no element at (\(x), \(y)). \(FBAccessibilityGuidance.accessibilityServer)"
+      return "\(backend.displayName) found no element at (\(x), \(y)); the point is empty"
     case let .timedOut(backend, key, value, timeout):
-      return "\(backend.displayName) timed out after \(timeout)s waiting for \(key) containing \"\(value)\". \(FBAccessibilityGuidance.accessibilityServer)"
+      return "\(backend.displayName) timed out after \(timeout)s waiting for \(key) containing \"\(value)\"; it never appeared. Describe the tree to see what is on screen"
     case let .markerRequired(_, operation):
       return "\(operation) requires a marker target, not a point or a whole-tree query"
     case let .pointOrMarkerRequired(_, operation):
