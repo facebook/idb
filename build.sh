@@ -627,7 +627,7 @@ Examples:
   ./build.sh test FBSimulatorControl  # Test specific framework
 
 Prerequisites:
-  - Xcode 14.0+
+  - Xcode 26.0+
   - XcodeGen: brew install xcodegen
   - For idb_companion: brew install protobuf swift-protobuf
 EOF

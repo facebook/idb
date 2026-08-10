@@ -27,7 +27,7 @@ jobs:
 
   mac-frameworks:
     name: Build frameworks (macOS)
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 45
     env:
       # Runner filesystems support xattrs; generate projects in place rather
@@ -44,7 +44,7 @@ jobs:
 
   mac-tests:
     name: Test ${{ matrix.target }} (macOS)
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 60
     env:
       XCODEGEN_STRIP_XATTRS: 'false'
@@ -65,7 +65,7 @@ jobs:
 
   mac-companion:
     name: Build companion + distribution (macOS)
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 90
     env:
       XCODEGEN_STRIP_XATTRS: 'false'
