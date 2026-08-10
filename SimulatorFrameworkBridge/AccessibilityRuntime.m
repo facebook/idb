@@ -166,6 +166,133 @@
 
 @end
 
+#pragma mark - Bound signatures
+
+// Contract and rationale are on the declaration in AccessibilityRuntime.h.
+NSString *FBAXTypesOnly(const char *encoding)
+{
+  NSMutableString *types = [NSMutableString string];
+  NSInteger depth = 0;
+  for (const char *character = encoding; *character; character++) {
+    switch (*character) {
+      case '{':
+      case '(':
+      case '[':
+        depth++;
+        break;
+      case '}':
+      case ')':
+      case ']':
+        depth--;
+        break;
+      default:
+        break;
+    }
+    if (depth == 0 && *character >= '0' && *character <= '9') {
+      continue;
+    }
+    [types appendFormat:@"%c", *character];
+  }
+  return types;
+}
+
+NSString *_Nullable FBAXSignatureMismatch(const char *className,
+                                          const char *selectorName,
+                                          BOOL isClassMethod,
+                                          const char *expected)
+{
+  NSString *name = [NSString stringWithFormat:@"%c[%s %s]", isClassMethod ? '+' : '-', className, selectorName];
+  Class cls = objc_lookUpClass(className);
+  if (!cls) {
+    return [NSString stringWithFormat:@"%@ cannot be checked: %s is not in the runtime", name, className];
+  }
+  SEL selector = sel_registerName(selectorName);
+  Method method = isClassMethod ? class_getClassMethod(cls, selector) : class_getInstanceMethod(cls, selector);
+  if (!method) {
+    return [NSString stringWithFormat:@"%@ is not in the runtime", name];
+  }
+  const char *encoding = method_getTypeEncoding(method);
+  if (!encoding) {
+    return [NSString stringWithFormat:@"%@ has no type encoding", name];
+  }
+  NSString *actual = FBAXTypesOnly(encoding);
+  NSString *assumed = FBAXTypesOnly(expected);
+  if ([actual isEqualToString:assumed]) {
+    return nil;
+  }
+  return [NSString stringWithFormat:@"%@ is %@ but %@ was assumed", name, actual, assumed];
+}
+
+// Every private selector this file reaches through a declaration or an `objc_msgSend` cast, with the
+// signature that declaration or cast assumes.
+//
+// The encodings were taken from `method_getTypeEncoding` on the runtime the reader is written against, so
+// this table is the assumption made explicit and checkable rather than left implicit in the casts. The
+// KVC-driven setters are here too: KVC ends up calling them, so their shape matters as much as the ones
+// messaged directly.
+typedef struct {
+  const char *className;
+  const char *selectorName;
+  BOOL isClassMethod;
+  const char *expected;
+} FBAXBoundSelector;
+
+static const FBAXBoundSelector kFBAXBoundSelectors[] = {
+  // XCTAutomationSupport
+  {"XCTAccessibilityFramework", "initForRemoteAccess", NO, "@@:"},
+  {"XCTAccessibilityFramework", "attributesForElement:attributes:error:", NO, "@@:@@^@"},
+  {"XCAccessibilityElement", "elementWithProcessIdentifier:", YES, "@@:i"},
+  {"XCAccessibilityElement", "elementWithAXUIElement:", YES, "@@:^{__AXUIElement=}"},
+  {"XCAccessibilityElement", "AXUIElement", NO, "^{__AXUIElement=}@:"},
+  // AccessibilityPlatformTranslation
+  {"AXPTranslator", "sharediOSInstance", YES, "@@:"},
+  {"AXPTranslator", "frontmostApplicationWithDisplayId:bridgeDelegateToken:", NO, "@@:I@"},
+  {"AXPTranslator", "processTranslatorRequest:", NO, "@@:@"},
+  {"AXPTranslationObject", "pid", NO, "i@:"},
+  // RunningBoardServices
+  {"RBSProcessPredicate", "predicateMatchingLaunchServicesProcesses", YES, "@@:"},
+  {"RBSProcessState", "statesForPredicate:withDescriptor:error:", YES, "@@:@@o^@"},
+  {"RBSProcessState", "endowmentNamespaces", NO, "@@:"},
+  {"RBSProcessState", "process", NO, "@@:"},
+  {"RBSProcessStateDescriptor", "descriptor", YES, "@@:"},
+  {"RBSProcessStateDescriptor", "setValues:", NO, "v@:Q"},
+  {"RBSProcessStateDescriptor", "setEndowmentNamespaces:", NO, "v@:@"},
+  {"RBSProcessHandle", "pid", NO, "i@:"},
+};
+
+NSArray<NSString *> *FBAXSignatureWarnings(void)
+{
+  // Opened here rather than relied on being open, so the sweep sees every bound selector however it was
+  // reached. dlopen on an already-open image is a refcount bump.
+  dlopen(FBAXPathAXRuntime, RTLD_NOW);
+  dlopen(FBAXPathXCTAutomationSupport, RTLD_NOW);
+  dlopen(FBAXPathAXPTranslation, RTLD_NOW);
+  dlopen(FBAXPathRunningBoardServices, RTLD_NOW);
+
+  NSMutableArray<NSString *> *warnings = [NSMutableArray array];
+  for (size_t index = 0; index < sizeof(kFBAXBoundSelectors) / sizeof(*kFBAXBoundSelectors); index++) {
+    const FBAXBoundSelector bound = kFBAXBoundSelectors[index];
+    NSString *mismatch = FBAXSignatureMismatch(bound.className, bound.selectorName, bound.isClassMethod, bound.expected);
+    if (mismatch) {
+      [warnings addObject:mismatch];
+    }
+  }
+  return warnings;
+}
+
+// Composes a setup failure with whatever else about the runtime does not match, so a bind that fails on a
+// missing class says alongside it what other shapes moved. Swept here and nowhere else: a signature that
+// moved is the likeliest reason a class or selector went missing beside it, and a process that bound
+// cleanly has nothing to report.
+static NSString *FBAXSetupFailure(NSString *reason)
+{
+  NSArray<NSString *> *warnings = FBAXSignatureWarnings();
+  if (warnings.count == 0) {
+    return reason;
+  }
+  return [NSString stringWithFormat:@"%@ (also: %@)", reason, [warnings componentsJoinedByString:@"; "]];
+}
+
 #pragma mark - The AXRuntime C entry points
 
 // The three AXRuntime entry points, resolved once, with the ownership each one transfers restated where
@@ -394,20 +521,22 @@ static NSString *const kFrontboardVisibilityEndowment = @"com.apple.frontboard.v
     return nil;
   }
 
+  // Only the two this bind needs. The frontmost resolvers open the other two at their own call sites, so
+  // neither depends on this one having run.
   dlopen(FBAXPathAXRuntime, RTLD_NOW);
   dlopen(FBAXPathXCTAutomationSupport, RTLD_NOW);
 
   Class frameworkClass = objc_lookUpClass("XCTAccessibilityFramework");
   if (!frameworkClass) {
     if (error) {
-      *error = @"XCTAccessibilityFramework unavailable — is XCTAutomationSupport loaded?";
+      *error = FBAXSetupFailure(@"XCTAccessibilityFramework unavailable — is XCTAutomationSupport loaded?");
     }
     return nil;
   }
   _framework = [(XCTAccessibilityFramework *)[frameworkClass alloc] initForRemoteAccess];
   if (!_framework) {
     if (error) {
-      *error = @"initForRemoteAccess returned nil";
+      *error = FBAXSetupFailure(@"initForRemoteAccess returned nil");
     }
     return nil;
   }
@@ -415,7 +544,7 @@ static NSString *const kFrontboardVisibilityEndowment = @"com.apple.frontboard.v
   _elementClass = objc_lookUpClass("XCAccessibilityElement");
   if (!_elementClass) {
     if (error) {
-      *error = @"XCAccessibilityElement unavailable";
+      *error = FBAXSetupFailure(@"XCAccessibilityElement unavailable");
     }
     return nil;
   }

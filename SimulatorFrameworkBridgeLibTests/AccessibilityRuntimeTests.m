@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#import <objc/runtime.h>
+
 #import <XCTest/XCTest.h>
 
 #import <SimulatorFrameworkBridgeLib/AXRuntimePrivate.h>
@@ -29,6 +31,30 @@ static NSError *FBAXTestsErrorWithCode(int32_t code)
                              code:1
                          userInfo:@{FBAXAccessibilityErrorKey : @(code), NSLocalizedDescriptionKey : @"runtime said no"}];
 }
+
+// Carries an aggregate signature for the encoding-comparison tests. Foundation has plenty of selectors to
+// compare against, but none whose encoding contains a digit that is part of the type rather than an
+// offset, which is the case the comparison has to get right.
+typedef struct FBAXQuad {
+  int values[4];
+} FBAXQuad;
+
+typedef struct FBAXPair {
+  int first;
+  int second;
+} FBAXPair;
+
+@interface FBAXSignatureProbe : NSObject
+- (FBAXQuad)quadFromPair:(FBAXPair)pair;
+@end
+
+@implementation FBAXSignatureProbe
+- (FBAXQuad)quadFromPair:(FBAXPair)pair
+{
+  return (FBAXQuad) {{pair.first, pair.second, 0, 0}};
+}
+
+@end
 
 /**
  * Drives `FBAXBridgeHandleRequest` against a fake `FBAXRuntime`.
@@ -59,6 +85,139 @@ static NSError *FBAXTestsErrorWithCode(int32_t code)
   FBAXBridgeSetRuntimeForTesting(nil);
   _runtime = nil;
   [super tearDown];
+}
+
+#pragma mark - Encoding normalisation
+
+// `FBAXTypesOnly` is the whole of what makes the signature comparison trustworthy, and every other test
+// here reaches it only through `FBAXSignatureMismatch` against whatever encodings Foundation happens to
+// have. A table says what it does far more plainly, and covers shapes no Foundation selector produces.
+- (void)testTypesOnlyDropsOffsetsAndKeepsTypes
+{
+  NSDictionary<NSString *, NSString *> *examples = @{
+    // Already normalised: nothing to drop.
+    @"v@:" : @"v@:",
+    @"Q@:" : @"Q@:",
+    // The common case — a return, self, selector and their offsets.
+    @"Q16@0:8" : @"Q@:",
+    @"@24@0:8Q16" : @"@@:Q",
+    @"v24@0:8@16" : @"v@:@",
+    // Blocks, out-parameters, const char * and bare pointers keep their punctuation.
+    @"v32@0:8@?24" : @"v@:@?",
+    @"@40@0:8@16^@24@32" : @"@@:@^@@",
+    @"@24@0:8r*16" : @"@@:r*",
+    // A pointer to an opaque struct — the shape `AXUIElementRef` arrives as.
+    @"^{__AXUIElement=}16@0:8" : @"^{__AXUIElement=}@:",
+    // Digits inside an aggregate are part of the type and survive; the frame numbers around them do not.
+    @"{FBAXQuad=[4i]}32@0:8{FBAXPair=ii}16" : @"{FBAXQuad=[4i]}@:{FBAXPair=ii}",
+    @"[8i]16@0:8" : @"[8i]@:",
+    @"(u=i[2c])16@0:8" : @"(u=i[2c])@:",
+    // Nested aggregates: the depth counter has to come back to zero before dropping resumes.
+    @"{a={b=[4i]}}24@0:8i16" : @"{a={b=[4i]}}@:i",
+    // The empty encoding is not a crash.
+    @"" : @"",
+  };
+  for (NSString *encoding in examples) {
+    XCTAssertEqualObjects(
+      FBAXTypesOnly(encoding.UTF8String),
+      examples[encoding],
+      @"normalising %@",
+      encoding
+    );
+  }
+}
+
+// The property the comparison actually depends on: an encoding straight from the runtime and the same
+// signature written down without offsets have to normalise to the same string. That is what lets the
+// table in the runtime be written either way.
+- (void)testTypesOnlyMakesRuntimeAndHandWrittenEncodingsAgree
+{
+  Method length = class_getInstanceMethod(NSString.class, @selector(length));
+  XCTAssertEqualObjects(FBAXTypesOnly(method_getTypeEncoding(length)), FBAXTypesOnly("Q@:"));
+
+  Method objectAtIndex = class_getInstanceMethod(NSArray.class, @selector(objectAtIndex:));
+  XCTAssertEqualObjects(FBAXTypesOnly(method_getTypeEncoding(objectAtIndex)), FBAXTypesOnly("@@:Q"));
+}
+
+// Normalising is idempotent — an already-normalised encoding is left alone — so it does not matter
+// whether a caller has been through it once or twice.
+- (void)testTypesOnlyIsIdempotent
+{
+  for (NSString *encoding in @[@"Q16@0:8", @"{FBAXQuad=[4i]}32@0:8{FBAXPair=ii}16", @"v32@0:8@?24"]) {
+    NSString *once = FBAXTypesOnly(encoding.UTF8String);
+    XCTAssertEqualObjects(FBAXTypesOnly(once.UTF8String), once, @"normalising %@ twice", encoding);
+  }
+}
+
+#pragma mark - Bound signature checking
+
+// A red test is the whole point: a private API that changed shape has to arrive as a signal somebody acts
+// on, not as a line in a log on a booted simulator that nobody reads. This bundle runs inside a simulator,
+// so the frameworks swept here are the guest's copies — the ones the reader sends messages to. All four
+// exist on macOS too, and a shape that moved only inside an iOS runtime image would pass against those.
+- (void)testEveryBoundSignatureAgreesWithTheRuntime
+{
+  NSArray<NSString *> *warnings = FBAXSignatureWarnings();
+  XCTAssertEqualObjects(warnings, @[], @"%@", [warnings componentsJoinedByString:@"\n"]);
+}
+
+// The comparison the sweep above is only as good as, checked against Foundation — it does not care whose
+// selector it is given, and Foundation is the one runtime guaranteed present.
+- (void)testSignatureAgreesWithTheRuntime
+{
+  XCTAssertNil(FBAXSignatureMismatch("NSString", "length", NO, "Q@:"));
+  XCTAssertNil(FBAXSignatureMismatch("NSString", "stringWithUTF8String:", YES, "@@:r*"));
+  XCTAssertNil(FBAXSignatureMismatch("NSArray", "objectAtIndex:", NO, "@@:Q"));
+}
+
+// The expected encoding may be pasted straight out of `method_getTypeEncoding`, offsets and all, which is
+// how the table in the runtime was built. Dropping them is what keeps the check from firing on an ABI
+// where the types are unchanged but the numbers are not.
+- (void)testSignatureIgnoresFrameSizesAndOffsets
+{
+  XCTAssertNil(FBAXSignatureMismatch("NSString", "length", NO, "Q16@0:8"));
+  XCTAssertNil(FBAXSignatureMismatch("NSArray", "objectAtIndex:", NO, "@24@0:8Q16"));
+}
+
+// Digits inside a struct or array encoding are part of the type, so they survive — otherwise a bound API
+// taking a differently-shaped struct would compare equal to one taking the right shape.
+- (void)testSignatureKeepsDigitsInsideAggregateEncodings
+{
+  XCTAssertNil(FBAXSignatureMismatch("FBAXSignatureProbe", "quadFromPair:", NO, "{FBAXQuad=[4i]}@:{FBAXPair=ii}"));
+
+  NSString *mismatch = FBAXSignatureMismatch("FBAXSignatureProbe", "quadFromPair:", NO, "{FBAXQuad=[8i]}@:{FBAXPair=ii}");
+  XCTAssertNotNil(mismatch, @"an array length inside the struct is a different type and must not be dropped");
+}
+
+// The diagnostic has to carry both encodings: a mismatch is triaged by someone who has neither the runtime
+// nor this table in front of them, and "the signature changed" on its own says nothing actionable.
+- (void)testSignatureMismatchNamesWhatItFoundAndWhatItAssumed
+{
+  NSString *mismatch = FBAXSignatureMismatch("NSString", "length", NO, "i@:");
+  XCTAssertNotNil(mismatch);
+  XCTAssertTrue([mismatch containsString:@"-[NSString length]"], @"%@", mismatch);
+  XCTAssertTrue([mismatch containsString:@"Q@:"], @"the encoding found must be named: %@", mismatch);
+  XCTAssertTrue([mismatch containsString:@"i@:"], @"the encoding assumed must be named: %@", mismatch);
+}
+
+// A class or selector that has gone is the same failure as one that changed shape, and is reported the
+// same way rather than passing silently for want of anything to compare.
+- (void)testSignatureReportsWhatIsNotInTheRuntimeAtAll
+{
+  NSString *absentClass = FBAXSignatureMismatch("FBAXNoSuchClass", "length", NO, "Q@:");
+  XCTAssertNotNil(absentClass);
+  XCTAssertTrue([absentClass containsString:@"FBAXNoSuchClass"], @"%@", absentClass);
+
+  XCTAssertNotNil(FBAXSignatureMismatch("NSString", "fbaxNoSuchSelector", NO, "Q@:"));
+}
+
+// The class/instance distinction is part of the binding: `+elementWithProcessIdentifier:` and
+// `-AXUIElement` are both bound, and checking one against the other's method list would pass on a runtime
+// that has neither where it is expected.
+- (void)testSignatureDistinguishesClassFromInstanceMethods
+{
+  XCTAssertNotNil(FBAXSignatureMismatch("NSString", "length", YES, "Q@:"));
+  XCTAssertNotNil(FBAXSignatureMismatch("NSString", "stringWithUTF8String:", NO, "@@:r*"));
 }
 
 #pragma mark - Read-error classification

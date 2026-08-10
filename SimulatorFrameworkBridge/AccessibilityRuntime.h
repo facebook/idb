@@ -154,6 +154,62 @@ typedef NS_ENUM(NSUInteger, FBAXFrontmostStatus) {
 
 @end
 
+#pragma mark - Bound signatures
+
+/**
+ * A method type encoding with its frame size and argument offsets dropped, leaving only the types.
+ *
+ * `method_getTypeEncoding` returns the types interleaved with byte offsets — `Q16@0:8` is a `Q` return,
+ * `@` self at 0, `:` selector at 8, in a 16-byte frame. The numbers are derived from the types by the
+ * ABI, so they add no detection power and differ between architectures; comparing them would make the
+ * signature check fire where nothing had actually changed.
+ *
+ * Digits *inside* a struct, union or array encoding are part of the type and are kept: `{Q=[4i]}` and
+ * `{Q=[8i]}` are different types, and collapsing them would let a bound API taking one compare equal to
+ * one taking the other.
+ *
+ * Exported for its own tests. It is the whole of what makes the comparison below trustworthy, and it is
+ * easier to say what it does with a table of examples than with prose.
+ */
+extern NSString *FBAXTypesOnly(const char *encoding);
+
+/**
+ * Checks a private API's signature against the one this code was written for.
+ *
+ * Returns nil when they agree, and otherwise a diagnostic naming both — including when the class or the
+ * selector is not in the runtime at all, which is the same problem arriving a different way.
+ *
+ * A private API can change shape under a new Xcode or a new OS with nothing to say so. The declaration or
+ * the `objc_msgSend` cast at the call site keeps compiling, and the process goes on reading arguments and
+ * return values off offsets that are no longer where the runtime puts them. `method_getTypeEncoding` is
+ * the runtime's own record of the real signature, so comparing it against a written-down constant is what
+ * turns that into something with a name.
+ *
+ * Only the types are compared. The frame size and argument offsets an encoding also carries are derived
+ * from the types by the ABI, so they add no detection power — and they are ABI-dependent, so comparing
+ * them would make the check fire on an architecture where nothing has actually changed. `expected` may
+ * therefore be written either verbatim from `method_getTypeEncoding` or with the numbers already dropped.
+ */
+extern NSString *_Nullable FBAXSignatureMismatch(
+  const char *className,
+  const char *selectorName,
+  BOOL isClassMethod,
+  const char *expected);
+
+/**
+ * Every bound private API whose runtime signature disagrees with the one this code assumes, named.
+ *
+ * Empty on a runtime the reader agrees with. `SimulatorFrameworkBridgeLibTests` asserts exactly that, and
+ * runs inside a booted simulator, which is where a drifting signature is meant to be caught: a failing test
+ * is a signal somebody acts on, where a warning logged by a guest process on a booted simulator is not. The
+ * simulator is what makes the assertion worth anything -- the four frameworks exist on macOS too, and a
+ * shape that moved only inside an iOS runtime image would pass against the host's copies.
+ *
+ * The product itself calls this only when a bind has already failed, to say alongside the missing class
+ * what else about the runtime moved. A process that bound cleanly never sweeps.
+ */
+extern NSArray<NSString *> *FBAXSignatureWarnings(void);
+
 #pragma mark - The runtime
 
 /**
