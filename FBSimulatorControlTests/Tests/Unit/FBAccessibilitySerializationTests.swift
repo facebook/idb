@@ -399,7 +399,7 @@ final class FBAccessibilitySerializationTests: XCTestCase {
     let response = FBAccessibilityElementsResponse(
       elements: .tree([]),
       profilingData: Self.sampleProfilingData(),
-      coverage: FBAccessibilityCoverage(frame: 0.5, walked: 0.5, additional: 0.25)
+      coverage: FBAccessibilityCoverage(frame: 0.5, walked: 0.5, content: 0.5, leaf: 0.5, additional: 0.25)
     )
     for format: FBAccessibilityOutputFormat in [.default, .nested] {
       XCTAssertEqual(
@@ -435,7 +435,7 @@ final class FBAccessibilitySerializationTests: XCTestCase {
       FBAccessibilityElementsResponse(elements: .single(try XCTUnwrap(flatElements().first))),
       FBAccessibilityElementsResponse(elements: .tree([])),
       FBAccessibilityElementsResponse(elements: .tree([]), profilingData: Self.sampleProfilingData()),
-      FBAccessibilityElementsResponse(elements: .tree([]), coverage: FBAccessibilityCoverage(frame: 0.5, walked: 0.5, additional: 0.25)),
+      FBAccessibilityElementsResponse(elements: .tree([]), coverage: FBAccessibilityCoverage(frame: 0.5, walked: 0.5, content: 0.5, leaf: 0.5, additional: 0.25)),
     ]
     for response in responses {
       // `default` and `nested` differ only in what the serializer already produced, so for one set of
@@ -823,7 +823,7 @@ final class FBAccessibilitySerializationTests: XCTestCase {
     let full = FBAccessibilityElementsResponse(
       elements: .tree(flatElements()),
       profilingData: Self.sampleProfilingData(),
-      coverage: FBAccessibilityCoverage(frame: 0.5, walked: 0.5, additional: 0.25),
+      coverage: FBAccessibilityCoverage(frame: 0.5, walked: 0.5, content: 0.5, leaf: 0.5, additional: 0.25),
       modal: FBAccessibilityModalInfo(kind: .system, elementType: "SBAlertItemWindow", label: "Allow"),
       truncated: true,
       screen: FBAccessibilityScreenInfo(width: 390, height: 844),
@@ -846,7 +846,7 @@ final class FBAccessibilitySerializationTests: XCTestCase {
     let response = FBAccessibilityElementsResponse(
       elements: .tree([]),
       profilingData: Self.sampleProfilingData(),
-      coverage: FBAccessibilityCoverage(frame: 0.5, walked: 0.5, additional: nil),
+      coverage: FBAccessibilityCoverage(frame: 0.5, walked: 0.5, content: 0.5, leaf: 0.5, additional: nil),
       modal: FBAccessibilityModalInfo(kind: .system, elementType: "SBAlertItemWindow", label: "Allow"),
       truncated: true,
       screen: FBAccessibilityScreenInfo(width: 390, height: 844),
@@ -1005,7 +1005,7 @@ final class FBAccessibilitySerializationTests: XCTestCase {
     #"{"elements":{"AXFrame":"{{16, 380}, {370, 52}}","AXLabel":"root","AXUniqueId":"com.example.root","AXValue":"on","content_required":false,"custom_actions":[],"enabled":true,"frame":{"height":52,"width":370,"x":16,"y":380},"help":null,"pid":7,"role":"Button","role_description":null,"subrole":null,"title":null,"traits":null,"type":"Button"}}"#
 
   private static let expectedProfiledDocumentJSON =
-    #"{"backend":null,"coverage":{"additional":0.25,"frame":0.5,"walked":0.5},"elements":[],"modal":null,"profile":{"attribute_fetch_count":3,"element_conversion_duration_ms":250,"element_count":2,"serialization_duration_ms":125,"total_xpc_duration_ms":62.5,"translation_duration_ms":500,"xpc_call_count":4},"screen":null,"target":null,"truncated":false}"#
+    #"{"backend":null,"coverage":{"additional":0.25,"content":0.5,"frame":0.5,"leaf":0.5,"walked":0.5},"elements":[],"modal":null,"profile":{"attribute_fetch_count":3,"element_conversion_duration_ms":250,"element_count":2,"serialization_duration_ms":125,"total_xpc_duration_ms":62.5,"translation_duration_ms":500,"xpc_call_count":4},"screen":null,"target":null,"truncated":false}"#
 
   private static let expectedFlatJSON =
     #"{"elements":[{"AXFrame":"{{16, 380}, {370, 52}}","AXLabel":"root","AXUniqueId":"com.example.root","AXValue":"on","content_required":false,"custom_actions":[],"enabled":true,"frame":{"height":52,"width":370,"x":16,"y":380},"help":null,"pid":7,"role":"Button","role_description":null,"subrole":null,"title":null,"traits":null,"type":"Button"},{"AXFrame":"{{0, 0}, {0, 0}}","AXLabel":"child","AXUniqueId":null,"AXValue":null,"content_required":false,"custom_actions":[],"enabled":true,"frame":{"height":0,"width":0,"x":0,"y":0},"help":null,"pid":7,"role":"AXCell","role_description":null,"subrole":null,"title":null,"traits":null,"type":"Cell"}]}"#

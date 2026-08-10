@@ -878,7 +878,8 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     XCTAssertEqual(
       Set(first.keys),
       [FBAXKeys.label.rawValue, FBAXKeys.frameDict.rawValue, FBAXKeys.type.rawValue],
-      "the requested key, widened by exactly the two the calculation reads"
+      "the requested key, widened by exactly what the dimensions read: the frame to measure, the type "
+        + "identifying the root to skip, and the label `content` counts as perceivable"
     )
   }
 
@@ -1015,6 +1016,83 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
       coverage.walked, coverage.frame,
       "the dropped static texts are counted by the walk and not by the report"
     )
+  }
+
+  /// A screen shaped like a real one: full-screen containers nesting a little actual content. This is
+  /// what saturates a single coverage ratio — the containers alone cover the whole screen — so it is
+  /// what the dimensions have to tell apart.
+  private func containerHeavyRoot() -> FBSimulatorControlTests_AXPMacPlatformElement_Double {
+    let button = FBAccessibilityTestElementBuilder.button(
+      withLabel: "OK", identifier: "ok_button", frame: NSRect(x: 0, y: 0, width: 390, height: 211)
+    )
+    let innerContainer = FBAccessibilityTestElementBuilder.staticText(
+      withLabel: "", frame: NSRect(x: 0, y: 0, width: 390, height: 844)
+    )
+    return FBAccessibilityTestElementBuilder.application(
+      withLabel: "App Window",
+      frame: NSRect(x: 0, y: 0, width: 390, height: 844),
+      children: [
+        FBAccessibilityTestElementBuilder.application(
+          withLabel: "Inner", frame: NSRect(x: 0, y: 0, width: 390, height: 844), children: [button, innerContainer]
+        )
+      ]
+    )
+  }
+
+  // The point of reporting several ratios: on a container-heavy screen the aggregate one saturates and
+  // says nothing, while the dimensions measured over the same walk still discriminate. Here the
+  // unlabeled full-screen container fills `walked`, and only the quarter-screen button is interactable.
+  func testCoverageDimensionsDiscriminateWhereTheAggregateSaturates() async throws {
+    setUp(withRootElement: containerHeavyRoot())
+    let element = try await simulator.resolveElement(for: .frontmost)
+    var options = FBAccessibilityRequestOptions()
+    options.format = .nested
+    options.collectFrameCoverage = true
+    let response = try element.serialize(with: options)
+    element.close()
+
+    let coverage = try XCTUnwrap(response.coverage)
+    XCTAssertEqual(coverage.walked, 1.0, accuracy: 0.01, "the full-screen container covers everything")
+    XCTAssertEqual(coverage.frame, 1.0, accuracy: 0.01, "nothing was filtered, so the report matches the walk")
+    XCTAssertEqual(try XCTUnwrap(coverage.content), 0.25, accuracy: 0.01, "only the labelled button is perceivable content")
+    XCTAssertEqual(
+      try XCTUnwrap(coverage.leaf), 1.0, accuracy: 0.01,
+      "both leaves count — the unlabeled container is childless, so it is one"
+    )
+  }
+
+  // A flat read carries no `children`, so it cannot say which elements are leaves and declines to guess
+  // rather than calling every element one.
+  func testLeafAndContentCoverageAreAbsentForAFlatRead() async throws {
+    setUp(withRootElement: containerHeavyRoot())
+    let element = try await simulator.resolveElement(for: .frontmost)
+    var options = FBAccessibilityRequestOptions()
+    options.format = .default
+    options.collectFrameCoverage = true
+    let response = try element.serialize(with: options)
+    element.close()
+
+    let coverage = try XCTUnwrap(response.coverage)
+    XCTAssertNil(coverage.leaf, "a flat read has no tree structure to read leaves from")
+    XCTAssertNil(coverage.content, "content is leaf-based too, so a flat read cannot report it either")
+  }
+
+  // The interactable dimension is measured over the walk, so asking to be shown less does not change
+  // what it reports — which is the whole reason it exists rather than being reached via `--filter`.
+  func testContentCoverageIsIndependentOfTheRequestedFilter() async throws {
+    setUp(withRootElement: containerHeavyRoot())
+    let element = try await simulator.resolveElement(for: .frontmost)
+    var options = FBAccessibilityRequestOptions()
+    options.format = .nested
+    options.collectFrameCoverage = true
+    options.filter = .interactable
+    let response = try element.serialize(with: options)
+    element.close()
+
+    let coverage = try XCTUnwrap(response.coverage)
+    XCTAssertEqual(try XCTUnwrap(coverage.content), 0.25, accuracy: 0.01, "the same number the unfiltered read reports")
+    XCTAssertEqual(coverage.frame, 0.25, accuracy: 0.01, "while the reported coverage follows the filter")
+    XCTAssertEqual(coverage.walked, 1.0, accuracy: 0.01, "and the walk is unchanged")
   }
 
   // The baseline the filtered read below is measured against: every node serialized.

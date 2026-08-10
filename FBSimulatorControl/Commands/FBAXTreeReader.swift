@@ -90,7 +90,10 @@ extension FBAXTreeReader {
       let coverage: FBAccessibilityCoverage? =
         options.collectFrameCoverage
         ? screen.flatMap {
-          .measured(reported: elements, walked: walked, screenBounds: FBAccessibilityCoverage.bounds(of: $0))
+          .measured(
+            reported: elements, walked: walked, screenBounds: FBAccessibilityCoverage.bounds(of: $0),
+            nested: options.nestedFormat
+          )
         } : nil
       return FBAccessibilityElementsResponse(elements: .tree(elements), coverage: coverage, modal: read.modal)
         .withProvenance(

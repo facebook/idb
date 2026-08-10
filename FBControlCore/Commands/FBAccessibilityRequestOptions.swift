@@ -94,9 +94,9 @@ public struct FBAccessibilityRequestOptions: Sendable {
     )
   }
 
-  /// The attributes a frame-coverage calculation reads: the geometry to measure, and the type that
-  /// identifies the application root it must skip.
-  private static let frameCoverageKeys: Set<FBAXKeys> = [.frameDict, .type]
+  /// The attributes a frame-coverage calculation reads: the geometry to measure, the type identifying
+  /// the application root it must skip, and the label its `content` dimension counts as perceivable.
+  private static let frameCoverageKeys: Set<FBAXKeys> = [.frameDict, .type, .label]
 
   private static func serializationKeys(
     for keys: Set<FBAXKeys>,

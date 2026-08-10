@@ -589,6 +589,122 @@ final class FBAXBridgeReadsTests: XCTestCase {
     ]
   }
 
+  // MARK: - What `content` has to get right
+
+  // These are synthetic trees standing for the tree *shapes* real apps produce, not captured traces.
+  // Each states what a content measure must say about it, and together they are why `content` counts a
+  // labelled leaf rather than anything looser: every weaker predicate gets at least one of them wrong.
+  //
+  // The shape that breaks the loose predicates is the container chain. A guest backend wraps its content
+  // in a named window, an application element, a scroll view carrying an identifier, and a run of
+  // anonymous layout nodes — every one of them full-screen. Coverage is a union of areas, so a single
+  // full-screen element that passes the predicate saturates the whole measure at `1.0`.
+
+  private static let syntheticScreen = CGRect(x: 0, y: 0, width: 400, height: 800)
+
+  private static func node(
+    _ type: Int, _ frame: CGRect, label: String? = nil, identifier: String? = nil,
+    children: [[String: Any]] = []
+  ) -> [String: Any] {
+    var node: [String: Any] = [
+      FBAXWire.Node.elementType.rawValue: NSNumber(value: type),
+      FBAXWire.Node.frame.rawValue: CGRectCreateDictionaryRepresentation(frame) as NSDictionary,
+      FBAXWire.Node.children.rawValue: children,
+    ]
+    if let label { node[FBAXWire.Node.label.rawValue] = label }
+    if let identifier { node[FBAXWire.Node.identifier.rawValue] = identifier }
+    return node
+  }
+
+  /// The guest shape: a named window over an application element over an identified scroll view over a
+  /// run of anonymous full-screen layout nodes, with `content` at the bottom. Element types are
+  /// `XCUIElementType` raw values — 1 Other, 2 Application, 9 Button, 48 StaticText.
+  private static func containerChain(wrapping content: [[String: Any]]) -> [String: Any] {
+    let full = syntheticScreen
+    var innermost = node(1, full, children: content)
+    for _ in 0..<4 {
+      innermost = node(1, full, children: [innermost])
+    }
+    let scrollView = node(1, full, identifier: "scroll-view", children: [innermost])
+    let application = node(2, full, identifier: "app-window", children: [scrollView])
+    return node(1, full, label: "App Title", children: [application])
+  }
+
+  private func contentCoverage(of tree: [String: Any]) async throws -> Double? {
+    let reader = StubTreeReader(read: FBAXTreeRead(tree: tree, pid: 99, truncated: false, modal: nil))
+    var options = FBAccessibilityRequestOptions(format: .complete)
+    options.collectFrameCoverage = true
+    return try await reader.describeTree(.frontmost, options: options).coverage?.content
+  }
+
+  // Text filling most of the screen is content, whether or not containers are wrapped around it. The
+  // chain must not change the answer — that is the whole point of measuring leaves.
+  func testContentCoverageIsHighForDenseTextWithAndWithoutAContainerChain() async throws {
+    let text = [Self.node(48, CGRect(x: 0, y: 80, width: 400, height: 640), label: "lots of text")]
+    let bare = Self.node(2, Self.syntheticScreen, label: "App", children: text)
+
+    let bareMeasured = try await contentCoverage(of: bare)
+    let chainedMeasured = try await contentCoverage(of: Self.containerChain(wrapping: text))
+    let bareCoverage = try XCTUnwrap(bareMeasured)
+    let chainedCoverage = try XCTUnwrap(chainedMeasured)
+    XCTAssertEqual(bareCoverage, 0.8, accuracy: 0.02, "the text covers four fifths of the screen")
+    XCTAssertEqual(chainedCoverage, bareCoverage, accuracy: 0.001, "wrapping it in containers changes nothing")
+  }
+
+  // The case coverage exists to detect: a full-screen region the app draws but does not describe, with
+  // only a nav bar exposed above it. It must read as low however deeply it is wrapped.
+  //
+  // This is what rules out counting an identifier. The unexposed region carries one — a developer handle
+  // for automation — and every predicate that accepts an identifier calls this screen fully covered.
+  func testContentCoverageIsLowForAnUndescribedRegion() async throws {
+    let sparse = [
+      Self.node(9, CGRect(x: 0, y: 0, width: 400, height: 60), label: "Nav"),
+      Self.node(1, CGRect(x: 0, y: 60, width: 400, height: 740), identifier: "webview"),
+    ]
+    let bare = Self.node(2, Self.syntheticScreen, label: "App", children: sparse)
+
+    let bareMeasured = try await contentCoverage(of: bare)
+    let chainedMeasured = try await contentCoverage(of: Self.containerChain(wrapping: sparse))
+    let bareCoverage = try XCTUnwrap(bareMeasured)
+    let chainedCoverage = try XCTUnwrap(chainedMeasured)
+    XCTAssertLessThan(bareCoverage, 0.1, "only the nav bar is described")
+    XCTAssertEqual(chainedCoverage, bareCoverage, accuracy: 0.001, "and the chain does not describe it either")
+  }
+
+  // An app icon is a labelled button wrapping an unlabelled image, and a user plainly perceives all of
+  // it. This is what rules out requiring childlessness: under that rule the button is skipped for having
+  // a child and the image for having no label, so a screen full of icons measures zero.
+  //
+  // What disowns a label is a *labelled* descendant — the element the label decorates rather than
+  // describes — so the button counts and its image does not, and the region is counted once.
+  func testContentCoverageCountsALabelledElementWrappingUnlabelledDecoration() async throws {
+    let icons = [
+      Self.node(
+        9, CGRect(x: 0, y: 0, width: 100, height: 100), label: "Maps",
+        children: [Self.node(1, CGRect(x: 0, y: 0, width: 100, height: 100))]
+      ),
+      Self.node(
+        9, CGRect(x: 100, y: 0, width: 100, height: 100), label: "Photos",
+        children: [Self.node(1, CGRect(x: 100, y: 0, width: 100, height: 100))]
+      ),
+    ]
+    let measured = try await contentCoverage(of: Self.containerChain(wrapping: icons))
+    let coverage = try XCTUnwrap(measured)
+    XCTAssertEqual(coverage, 0.07, accuracy: 0.02, "the two icons, counted once each rather than not at all")
+  }
+
+  // A handful of small labelled widgets on an otherwise empty screen is low coverage, not the `1.0` the
+  // enclosing named window would report on its own.
+  func testContentCoverageIsLowForSparseWidgetsInAContainerChain() async throws {
+    let widgets = [
+      Self.node(9, CGRect(x: 0, y: 0, width: 200, height: 100), label: "A"),
+      Self.node(9, CGRect(x: 0, y: 700, width: 400, height: 100), label: "B"),
+    ]
+    let measured = try await contentCoverage(of: Self.containerChain(wrapping: widgets))
+    let coverage = try XCTUnwrap(measured)
+    XCTAssertEqual(coverage, 0.19, accuracy: 0.02, "the two widgets, and none of the containers holding them")
+  }
+
   // The two ratios diverge on the guest backends the same way they do on the accessibility one — the
   // calculation is shared, so the gap cannot come to mean different things per backend.
   func testDescribeTreeReportsWalkedCoverageAboveReportedWhenFiltering() async throws {

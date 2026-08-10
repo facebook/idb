@@ -191,7 +191,22 @@ public struct FBAccessibilityTargetDescriptor: Sendable, Equatable, Encodable {
   }
 }
 
-/// The proportion of the screen covered by element frames.
+/// How much of the screen a read's element frames cover, measured along several dimensions.
+///
+/// One ratio was not enough to answer the question coverage exists for. Every backend exposes a chain
+/// of full-screen containers — a window, an application element, a stack of layout groups — so a ratio
+/// over *every* element saturates at `1.0` on almost any real screen and discriminates nothing. The
+/// signal is in the **spread** between these:
+///
+/// - `walked` high and `content` low is a container-heavy tree: plenty of structure, little that a
+///   user can actually perceive.
+/// - `leaf` high and `content` low is area the app draws but does not describe — the unexposed WebView
+///   case that motivated collecting coverage in the first place.
+/// - `frame` far below `walked` means the caller's `--filter` hid most of what was read, which is a
+///   fact about the request rather than about the screen.
+///
+/// Every ratio comes from the same grid over the same single walk, differing only in which subset of
+/// elements is marked into it, so the set costs no extra traversal and no extra IPC over reporting one.
 public struct FBAccessibilityCoverage: Sendable, Equatable, Encodable {
 
   /// Coverage of the elements the read *reports* — what a consumer actually receives.
@@ -210,18 +225,49 @@ public struct FBAccessibilityCoverage: Sendable, Equatable, Encodable {
   /// or other remote content.
   public let walked: Double
 
+  /// Coverage of the walked elements a user could actually perceive: those carrying a label and having
+  /// no children.
+  ///
+  /// Both halves are load-bearing, and each is what makes the number survive a real tree.
+  ///
+  /// **Labelled, not identified.** An identifier is a developer handle for automation — `app-window`,
+  /// `scroll-view`, the identifier on an unexposed `WKWebView`. It says nothing about whether a user can
+  /// perceive anything there, so counting it reports an empty WebView as fully covered, which is the
+  /// exact condition coverage exists to detect. A label is what a user perceives.
+  ///
+  /// **Innermost, not merely childless.** A label is disowned by a *labelled* descendant, not by having
+  /// children at all. Counting a labelled ancestor would let a single window carrying a title cover the
+  /// screen on its own, since coverage is a union of areas and one full-screen element saturates it.
+  /// Requiring childlessness instead goes too far the other way: an app icon is a labelled button
+  /// wrapping an unlabelled image, so a home screen full of them would measure zero.
+  ///
+  /// Measured over the walk, not over what `--filter` left behind, so it answers the same question
+  /// whatever the caller asked to be *shown*.
+  ///
+  /// `nil` for a flat read, which carries no `children` and so cannot tell a leaf from a container.
+  public let content: Double?
+
+  /// Coverage of the walked elements with no children, labelled or not. Read against `content`: a `leaf`
+  /// far above `content` is unlabelled leaf area — a region the app draws but does not describe.
+  /// `nil` for a flat read, for the same reason.
+  public let leaf: Double?
+
   /// Coverage found by grid hit-testing for remote (separate-process) content, when that ran.
   public let additional: Double?
 
-  public init(frame: Double, walked: Double, additional: Double?) {
+  public init(frame: Double, walked: Double, content: Double?, leaf: Double?, additional: Double?) {
     self.frame = frame
     self.walked = walked
+    self.content = content
+    self.leaf = leaf
     self.additional = additional
   }
 
   enum CodingKeys: String, CodingKey {
     case frame
     case walked
+    case content
+    case leaf
     case additional
   }
 
@@ -229,6 +275,8 @@ public struct FBAccessibilityCoverage: Sendable, Equatable, Encodable {
     var container = encoder.container(keyedBy: CodingKeys.self)
     try container.encode(frame, forKey: .frame)
     try container.encode(walked, forKey: .walked)
+    try container.encode(content, forKey: .content)
+    try container.encode(leaf, forKey: .leaf)
     try container.encode(additional, forKey: .additional)
   }
 }

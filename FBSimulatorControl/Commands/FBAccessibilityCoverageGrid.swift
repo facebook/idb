@@ -156,10 +156,15 @@ extension FBAccessibilityCoverage {
   /// path had one at all.
   ///
   /// `nil` when the bounds are unusable, so an unmeasurable read reports nothing rather than zero.
+  ///
+  /// `nested` says whether the walk carries `children`. A flat read does not, so it cannot say which of
+  /// its elements are leaves and reports no `leaf` ratio rather than one that would call every element
+  /// a leaf.
   static func measured(
     reported: [FBAccessibilityDocumentElement],
     walked: [FBAccessibilityDocumentElement],
     screenBounds: CGRect,
+    nested: Bool,
     additional: Double? = nil
   ) -> FBAccessibilityCoverage? {
     guard let frame = FBAccessibilityCoverageGrid.ratio(of: reported, screenBounds: screenBounds),
@@ -167,7 +172,60 @@ extension FBAccessibilityCoverage {
     else {
       return nil
     }
-    return FBAccessibilityCoverage(frame: frame, walked: walkedRatio, additional: additional)
+    // Both leaf-based dimensions are measured over the walk rather than over `reported`, so the
+    // dimension a caller filtered by does not change the dimension they are told about.
+    let leaf =
+      nested ? FBAccessibilityCoverageGrid.ratio(of: Self.leaves(of: walked), screenBounds: screenBounds) : nil
+    let content =
+      nested
+      ? FBAccessibilityCoverageGrid.ratio(of: Self.innermostLabelled(in: walked), screenBounds: screenBounds) : nil
+    return FBAccessibilityCoverage(
+      frame: frame, walked: walkedRatio, content: content, leaf: leaf, additional: additional
+    )
+  }
+
+  /// The innermost labelled elements: those carrying a label with no labelled descendant.
+  ///
+  /// "Innermost" rather than "childless" because a labelled element is not a container merely for having
+  /// children — an app icon is a labelled button wrapping an unlabelled image, and a home screen full of
+  /// them measures zero under a childless rule while a user plainly perceives every one. What disowns a
+  /// label is a *labelled* descendant: that is the element the label is decorating rather than
+  /// describing, and counting both would count the same region twice.
+  private static func innermostLabelled(
+    in elements: [FBAccessibilityDocumentElement]
+  ) -> [FBAccessibilityDocumentElement] {
+    elements.flatMap { element -> [FBAccessibilityDocumentElement] in
+      let inner = innermostLabelled(in: element.children ?? [])
+      guard inner.isEmpty, isLabelled(element) else {
+        return inner
+      }
+      var innermost = element
+      innermost.children = nil
+      return [innermost]
+    }
+  }
+
+  /// Whether an element carries a label — something a user perceives, as distinct from an identifier,
+  /// which is a developer handle for automation and is present on plenty of elements that show nothing.
+  private static func isLabelled(_ element: FBAccessibilityDocumentElement) -> Bool {
+    guard let label = element.label ?? nil else {
+      return false
+    }
+    return !label.isEmpty
+  }
+
+  /// The childless elements of a nested walk, flattened. Reported without `children` so the grid marks
+  /// each one and recurses no further.
+  private static func leaves(of elements: [FBAccessibilityDocumentElement]) -> [FBAccessibilityDocumentElement] {
+    elements.flatMap { element -> [FBAccessibilityDocumentElement] in
+      let children = element.children ?? []
+      guard !children.isEmpty else {
+        var leaf = element
+        leaf.children = nil
+        return [leaf]
+      }
+      return leaves(of: children)
+    }
   }
 
   /// The bounds a read's screen info describes. The frames the calculation measures are in screen

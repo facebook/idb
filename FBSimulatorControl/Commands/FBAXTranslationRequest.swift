@@ -173,7 +173,10 @@ public final class FBAXTranslationRequest {
         elements: .tree(mainAppElements),
         serializationStart: serializationStart,
         coverage: options.collectFrameCoverage
-          ? .measured(reported: mainAppElements, walked: walked, screenBounds: screenBounds) : nil,
+          ? .measured(
+            reported: mainAppElements, walked: walked, screenBounds: screenBounds,
+            nested: options.nestedFormat
+          ) : nil,
         screen: Self.screenInfo(fromBounds: screenBounds)
       )
     }
@@ -347,7 +350,7 @@ public final class FBAXTranslationRequest {
       coverage: collectFrameCoverage
         ? .measured(
           reported: mainAppElements, walked: walkedElements, screenBounds: screenBounds,
-          additional: additionalFrameCoverage
+          nested: nestedFormat, additional: additionalFrameCoverage
         ) : nil,
       screen: Self.screenInfo(fromBounds: screenBounds)
     )
