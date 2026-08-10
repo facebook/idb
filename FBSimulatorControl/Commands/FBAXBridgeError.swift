@@ -88,9 +88,11 @@ extension FBAXBridgeError {
   /// simulator to reach and this decision is the part worth testing.
   var isTransientWhileWaitingForAMarker: Bool {
     switch self {
-    case .frontmostUnresolved, .guestFailure, .applicationUnavailable, .applicationNotResponding, .readerUnavailable:
+    case .frontmostUnresolved, .guestFailure, .applicationUnavailable, .applicationNotResponding:
       return true
-    case .bridgeUnavailable:
+    // Nothing about the target makes a reader that cannot bind bind, so both of these are the same on
+    // the last poll as on the first.
+    case .bridgeUnavailable, .readerUnavailable:
       return false
     }
   }

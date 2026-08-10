@@ -337,15 +337,13 @@ final class FBAXBridgeReadsTests: XCTestCase {
     }
   }
 
-  func testAWaitPollsThroughAGuestThatCannotBind() {
-    // BUG: a reader that could not bind answers the same way on every poll, so the wait spends the
-    // caller's whole timeout and then reports a timeout — replacing a failure that names the missing
-    // private class with "the element never appeared". Flipped in the following commit.
-    XCTAssertTrue(
+  // Neither of these changes by being asked again, so both end the wait with what they already know
+  // rather than being replaced by a timeout once the deadline passes.
+  func testAWaitEndsAtOnceOnAFailureThatCannotResolveItself() {
+    XCTAssertFalse(
       FBAXBridgeError.readerUnavailable("XCTAccessibilityFramework unavailable").isTransientWhileWaitingForAMarker,
-      "a bind failure is currently polled through to the deadline"
+      "a reader that cannot bind will not bind by being polled"
     )
-    // The one failure already treated as terminal, for exactly the same reason.
     XCTAssertFalse(FBAXBridgeError.bridgeUnavailable.isTransientWhileWaitingForAMarker)
   }
 
