@@ -67,6 +67,80 @@ final class FBAXBridgeReadsTests: XCTestCase {
     }
   }
 
+  // MARK: - What the parser does with the guest's failure kind and reason
+
+  // The guest names what went wrong and why; these pin how much of that reaches a caller today.
+
+  func testFusedFrontmostDiscardsTheGuestsKindAndReason() throws {
+    // BUG: every `ok:false` on the fused frontmost path collapses to `frontmostUnavailable`, dropping the
+    // `error_kind` *and* the message. A reader that could not bind names the missing class and every
+    // drifted signature — the most actionable text the guest produces — and none of it survives. Carried
+    // through in the following commit.
+    let data = try envelope([
+      "ok": false,
+      "error": "XCTAccessibilityFramework unavailable — is XCTAutomationSupport loaded?",
+      "error_kind": "reader_unavailable",
+    ])
+    XCTAssertThrowsError(try FBAXTreeRead(frontmostResponse: data)) { error in
+      guard case FBAXBridgeError.frontmostUnavailable = error else {
+        return XCTFail("expected the collapsed case, got: \(error)")
+      }
+      XCTAssertFalse(
+        "\(error)".contains("XCTAccessibilityFramework"),
+        "the guest's reason is discarded, not surfaced: \(error)"
+      )
+    }
+  }
+
+  func testFusedFrontmostReportsAnUnreadableApplicationAsAFrontmostFailure() throws {
+    // BUG: the guest tagged this `application_unavailable` — the one condition the host has a typed,
+    // backend-neutral error for — and the fused path throws it away, so the same condition is reported
+    // one way through `--pid` and another way through a frontmost read.
+    let data = try envelope([
+      "ok": false,
+      "error": "no accessibility server answered the system-wide hit-test at (201.0, 437.0)",
+      "error_kind": "application_unavailable",
+    ])
+    XCTAssertThrowsError(try FBAXTreeRead(frontmostResponse: data)) { error in
+      guard case FBAXBridgeError.frontmostUnavailable = error else {
+        return XCTFail("expected the collapsed case, got: \(error)")
+      }
+    }
+  }
+
+  func testHitTestIgnoresTheGuestsFailureKind() throws {
+    // BUG: the hit-test parser reads the message but never the kind, so a tagged failure arrives as an
+    // opaque `guestFailure` that no caller can match on. Only the whole-tree parser reads the tag today.
+    let data = try envelope([
+      "ok": false,
+      "error": "pid 8865 has no accessibility server to hit-test",
+      "error_kind": "application_unavailable",
+      "pid": 8865,
+    ])
+    XCTAssertThrowsError(try FBAXTreeRead(hitTestResponse: data)) { error in
+      guard case FBAXBridgeError.guestFailure = error else {
+        return XCTFail("expected the untyped case, got: \(error)")
+      }
+    }
+  }
+
+  func testWholeTreeIgnoresEveryKindButTheOneItKnows() throws {
+    // BUG: `application_not_responding` is a live app that did not answer — distinct from one that is
+    // gone, and the reason the guest classifies the AX timeout at all. The host has no case for it, so it
+    // lands in the same opaque bucket as a reader bug.
+    let data = try envelope([
+      "ok": false,
+      "error": "pid 8865 did not answer the read of its element tree in time",
+      "error_kind": "application_not_responding",
+      "pid": 8865,
+    ])
+    XCTAssertThrowsError(try FBAXTreeRead(wholeTreeResponse: data, pid: 8865)) { error in
+      guard case FBAXBridgeError.guestFailure = error else {
+        return XCTFail("expected the untyped case, got: \(error)")
+      }
+    }
+  }
+
   func testThrowsOnMalformedResponse() {
     let data = Data("this is not json".utf8)
     XCTAssertThrowsError(try FBAXTreeRead(wholeTreeResponse: data, pid: 1))
