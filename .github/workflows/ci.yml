@@ -29,6 +29,12 @@ jobs:
     name: Build frameworks (macOS)
     runs-on: macos-15
     timeout-minutes: 45
+    env:
+      # Runner filesystems support xattrs; generate projects in place rather
+      # than through the temp-dir workaround for xattr-restricted filesystems,
+      # whose pbxproj path rewrite mangles references reaching more than one
+      # directory level up.
+      XCODEGEN_STRIP_XATTRS: 'false'
     steps:
       - uses: actions/checkout@v4
       - name: Install tools
@@ -40,6 +46,8 @@ jobs:
     name: Test ${{ matrix.target }} (macOS)
     runs-on: macos-15
     timeout-minutes: 60
+    env:
+      XCODEGEN_STRIP_XATTRS: 'false'
     strategy:
       fail-fast: false
       matrix:
@@ -59,6 +67,8 @@ jobs:
     name: Build companion + distribution (macOS)
     runs-on: macos-15
     timeout-minutes: 90
+    env:
+      XCODEGEN_STRIP_XATTRS: 'false'
     steps:
       - uses: actions/checkout@v4
       - name: Install tools
