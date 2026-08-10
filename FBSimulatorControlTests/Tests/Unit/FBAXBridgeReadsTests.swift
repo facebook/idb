@@ -321,6 +321,34 @@ final class FBAXBridgeReadsTests: XCTestCase {
     XCTAssertTrue(description.contains("On") && description.contains("Off"), "message should name both values: \(description)")
   }
 
+  // MARK: - Which read failures a marker wait polls through
+
+  // An app still launching has no frontmost, no readable tree and no accessibility server, and acquires
+  // all three shortly, so a wait is right to keep polling through those.
+  func testAWaitPollsThroughTheFailuresAnAppStillLaunchingProduces() {
+    let transient: [String: FBAXBridgeError] = [
+      "frontmostUnresolved": .frontmostUnresolved(method: .centerPoint, reason: "found no element"),
+      "applicationUnavailable": .applicationUnavailable(pid: 8865),
+      "applicationNotResponding": .applicationNotResponding(pid: 8865),
+      "guestFailure": .guestFailure("something transient"),
+    ]
+    for (name, error) in transient {
+      XCTAssertTrue(error.isTransientWhileWaitingForAMarker, "\(name) must not end the wait")
+    }
+  }
+
+  func testAWaitPollsThroughAGuestThatCannotBind() {
+    // BUG: a reader that could not bind answers the same way on every poll, so the wait spends the
+    // caller's whole timeout and then reports a timeout — replacing a failure that names the missing
+    // private class with "the element never appeared". Flipped in the following commit.
+    XCTAssertTrue(
+      FBAXBridgeError.readerUnavailable("XCTAccessibilityFramework unavailable").isTransientWhileWaitingForAMarker,
+      "a bind failure is currently polled through to the deadline"
+    )
+    // The one failure already treated as terminal, for exactly the same reason.
+    XCTAssertFalse(FBAXBridgeError.bridgeUnavailable.isTransientWhileWaitingForAMarker)
+  }
+
   // MARK: - Marker matching agrees with the accessibility backend
 
   // The accessibility backend walks the live tree and matches a marker by substring, so the
