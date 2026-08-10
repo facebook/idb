@@ -123,6 +123,7 @@ targets:
         INFOPLIST_FILE: $(SRCROOT)/XCTestBootstrapTests/XCTestBootstrapTests-Info.plist
         PRODUCT_BUNDLE_IDENTIFIER: com.facebook.XCTestBootstrapTests
         PRODUCT_NAME: XCTestBootstrapTests
+        SWIFT_OBJC_BRIDGING_HEADER: $(SRCROOT)/XCTestBootstrapTests/XCTestBootstrapTests-Bridging-Header.h
     dependencies:
       - target: XCTestBootstrap
       - sdk: XCTest.framework
@@ -200,6 +201,7 @@ targets:
         INFOPLIST_FILE: $(SRCROOT)/FBSimulatorControlTests/FBSimulatorControlTests-Info.plist
         PRODUCT_BUNDLE_IDENTIFIER: com.facebook.FBSimulatorControlTests
         PRODUCT_NAME: FBSimulatorControlTests
+        SWIFT_OBJC_BRIDGING_HEADER: $(SRCROOT)/FBSimulatorControlTests/FBSimulatorControlTests-Bridging-Header.h
     dependencies:
       - target: FBControlCore
       - target: XCTestBootstrap
@@ -259,6 +261,7 @@ targets:
         INFOPLIST_FILE: $(SRCROOT)/FBDeviceControlTests/FBDeviceControlTests-Info.plist
         PRODUCT_BUNDLE_IDENTIFIER: com.facebook.FBDeviceControlTests
         PRODUCT_NAME: FBDeviceControlTests
+        SWIFT_OBJC_BRIDGING_HEADER: $(SRCROOT)/FBDeviceControlTests/FBDeviceControlTests-Bridging-Header.h
     dependencies:
       - target: FBControlCore
       - target: XCTestBootstrap
