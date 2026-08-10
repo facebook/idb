@@ -7,7 +7,6 @@
 import hashlib
 import os
 import subprocess
-import tempfile
 
 
 class bcolors:
@@ -20,8 +19,6 @@ release = os.getenv("NEW")
 if not release:
     raise Exception("set release via `export NEW=<release>`")
 
-dirpath = tempfile.mkdtemp()
-
 
 print(
     bcolors.HEADER
@@ -30,13 +27,14 @@ print(
 )
 print('    gh release create v$NEW -t "<RELEASE_DATE>" -d --repo facebook/idb\n')
 
-print(bcolors.OKGREEN + "Step 1. " + bcolors.ENDC + "Building to", dirpath)
-subprocess.run(["./idb_build.sh", "idb_companion", "build", dirpath], check=True)
+print(bcolors.OKGREEN + "Step 1. " + bcolors.ENDC + "Building the distribution")
+subprocess.run(["./build.sh", "build", "all"], check=True)
 
 print(bcolors.OKGREEN + "Step 2. " + bcolors.ENDC + "Compressing the build")
 
 subprocess.run(
-    ["tar", "-cjf", "idb-companion.universal.tar.gz", "-C", dirpath, "."], check=True
+    ["tar", "-cjf", "idb-companion.universal.tar.gz", "-C", "Build/Distribution", "."],
+    check=True,
 )
 
 
@@ -82,7 +80,7 @@ subprocess.run(
         "sed",
         "-i",
         "",
-        's/url ".*"/url "https://github.com/facebook/idb/releases/download/v{}/idb-companion.universal.tar.gz"/g'.format(
+        's|url ".*"|url "https://github.com/facebook/idb/releases/download/v{}/idb-companion.universal.tar.gz"|g'.format(
             release
         ),
         "idb-companion.rb",
