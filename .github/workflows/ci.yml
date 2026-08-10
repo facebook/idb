@@ -1,0 +1,79 @@
+name: CI
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  python-client:
+    name: Python client (Linux)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install fb-idb from source
+        run: FB_IDB_VERSION=0.0.0 pip install .
+      - name: Smoke test the CLI
+        run: idb --help
+
+  mac-frameworks:
+    name: Build frameworks (macOS)
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install tools
+        run: brew install xcodegen
+      - name: Build frameworks
+        run: ./build.sh build frameworks
+
+  mac-tests:
+    name: Test ${{ matrix.target }} (macOS)
+    runs-on: macos-15
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - FBControlCore
+          - XCTestBootstrap
+          - FBSimulatorControl
+          - FBDeviceControl
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install tools
+        run: brew install xcodegen
+      - name: Test ${{ matrix.target }}
+        run: ./build.sh test ${{ matrix.target }}
+
+  mac-companion:
+    name: Build companion + distribution (macOS)
+    runs-on: macos-15
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install tools
+        run: brew install xcodegen protobuf swift-protobuf
+      # build.sh compiles protoc-gen-grpc-swift from source on first run;
+      # cache that build to keep this job fast.
+      - name: Cache grpc-swift plugin
+        uses: actions/cache@v4
+        with:
+          path: Build/grpc-swift
+          key: grpc-swift-1.23.1-${{ runner.os }}
+      - name: Build everything and assemble the distribution
+        run: ./build.sh build all
+      - name: Upload distribution
+        uses: actions/upload-artifact@v4
+        with:
+          name: idb-companion-distribution
+          path: Build/Distribution
