@@ -14,11 +14,9 @@ from collections.abc import AsyncGenerator, AsyncIterable, AsyncIterator, Mappin
 from contextlib import asynccontextmanager
 from dataclasses import asdict, dataclass, field
 from datetime import timedelta
-from enum import Enum
+from enum import Enum, StrEnum
 from io import StringIO
 from typing import IO, List, Optional, Set, Tuple, Union
-
-from python.migrations.py310 import StrEnum310
 
 
 LoggingMetadata = dict[str, Optional[Union[str, list[str], int, float]]]
@@ -42,7 +40,7 @@ class Permission(Enum):
     MICROPHONE = 6
 
 
-class TargetType(StrEnum310):
+class TargetType(StrEnum):
     DEVICE = "device"
     SIMULATOR = "simulator"
     MAC = "mac"

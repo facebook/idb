@@ -18,11 +18,10 @@ from collections.abc import Awaitable, Callable
 from functools import wraps
 from logging import Logger
 from types import ModuleType
-from typing import Any, Dict, List, Optional, overload, TypeVar
+from typing import Any, cast, Dict, List, Optional, overload, ParamSpec, TypeVar
 
 from idb.common.command import Command
 from idb.common.types import IdbException, LoggingMetadata
-from pyre_extensions import ParameterSpecification
 
 
 def package_exists(package_name: str) -> bool:
@@ -62,7 +61,7 @@ def load_cli_plugins() -> None:
     )
 
 
-P = ParameterSpecification("P")
+P = ParamSpec("P")
 T = TypeVar("T")
 
 
@@ -95,12 +94,15 @@ def swallow_exceptions(
                 logger.exception(f"{f.__name__} plugin failed, swallowing exception")
 
     else:
+        # iscoroutinefunction does not narrow the union type of f for type
+        # checkers; the else branch can only be the synchronous callable.
+        sync_f = cast(Callable[P, T], f)
 
         @wraps(f)
         # pyrefly: ignore [not-a-type]
         def inner(*args: P.args, **kwargs: P.kwargs) -> T | None:
             try:
-                return f(*args, **kwargs)
+                return sync_f(*args, **kwargs)
             except Exception:
                 logger.exception(f"{f.__name__} plugin failed, swallowing exception")
 
