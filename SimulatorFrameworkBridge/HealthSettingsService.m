@@ -226,15 +226,42 @@ static int handleSetAction(HKAuthorizationStore *authStore,
   __block BOOL setOK = NO;
   __block NSError *setError = nil;
   dispatch_semaphore_t setSem = dispatch_semaphore_create(0);
-  [authStore setAuthorizationStatuses:statuses
-                   authorizationModes:@{}
-                  forBundleIdentifier:bundleID
-                              options:nil
-                           completion:^(BOOL ok, NSError *_Nullable err) {
-                             setOK = ok;
-                             setError = err;
-                             dispatch_semaphore_signal(setSem);
-                           }];
+  void (^setCompletion)(BOOL, NSError *_Nullable) = ^(BOOL ok, NSError *_Nullable err) {
+    setOK = ok;
+    setError = err;
+    dispatch_semaphore_signal(setSem);
+  };
+  // The selector was renamed in iOS 27 to take `modeInfos:`. Exactly one spelling is present on any
+  // runtime, so ask rather than assume: sending the wrong one raises out of a service entry point that
+  // has to answer with an exit code. Both are declared in HealthKitPrivate.h, so these are checked sends
+  // rather than casts, and `options` is the integer both runtimes actually take.
+  if ([authStore respondsToSelector:@selector(setAuthorizationStatuses:authorizationModes:modeInfos:forBundleIdentifier:options:completion:)]) {
+    [authStore setAuthorizationStatuses:statuses
+                     authorizationModes:@{}
+                              modeInfos:@{}
+                    forBundleIdentifier:bundleID
+                                options:0
+                             completion:setCompletion];
+  } else if ([authStore respondsToSelector:@selector(setAuthorizationStatuses:authorizationModes:forBundleIdentifier:options:completion:)]) {
+    [authStore setAuthorizationStatuses:statuses
+                     authorizationModes:@{}
+                    forBundleIdentifier:bundleID
+                                options:0
+                             completion:setCompletion];
+  } else {
+    // A runtime with neither spelling is a third rename. Report it as the failure it is, naming what was
+    // looked for, rather than raising or reporting a write that never happened as a success.
+    NSDictionary *output = @{
+      @"action" : actionName,
+      @"bundleID" : bundleID,
+      @"ok" : @NO,
+      @"error" : @"HKAuthorizationStore declares no known setAuthorizationStatuses: spelling",
+      @"resolvedTypes" : resolvedIdentifiers,
+      @"unresolvedTypes" : unresolvedIdentifiers,
+    };
+    printf("%s\n", jsonStringFromObject(output).UTF8String);
+    return 1;
+  }
   dispatch_semaphore_wait(setSem, dispatch_time(DISPATCH_TIME_NOW, 5 * NSEC_PER_SEC));
 
   NSDictionary *output = @{

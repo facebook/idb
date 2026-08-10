@@ -44,14 +44,41 @@ NS_ASSUME_NONNULL_BEGIN
  * authorisation request entries from its database. The Health-app
  * UI always passes an empty modes dict.
  *
+ * `options` is a bitmask, **not an object** — both runtimes encode it
+ * as `Q`. It was declared here as an `NSDictionary *` for a long time;
+ * the only caller passed nil, which marshals as 0, so the mistake never
+ * surfaced. Zero is the value the Health-app UI passes.
+ *
  * Prerequisite: a matching `setRequestedAuthorizationForBundleIdentifier:`
  * call must have created an authorisation request for each (bundleID,
  * type) pair, otherwise the row is silently dropped on the daemon side.
+ *
+ * **This is the iOS 26.x spelling.** iOS 27 renamed it to the
+ * `modeInfos:` variant below. Exactly one of the two is present on any
+ * given runtime, so a caller must ask with `respondsToSelector:` and
+ * send whichever answers — see `HealthSettingsService`.
+ *
+ * Encoding on iOS 26.5 (23F77): `v56@0:8@16@24@32Q40@?48`.
  */
 - (void)setAuthorizationStatuses:(NSDictionary<HKObjectType *, NSNumber *> *)statuses
               authorizationModes:(NSDictionary<HKObjectType *, NSNumber *> *)modes
              forBundleIdentifier:(NSString *)bundleID
-                         options:(nullable NSDictionary *)options
+                         options:(NSUInteger)options
+                      completion:(void (^)(BOOL success, NSError *_Nullable error))completion;
+
+/**
+ * The iOS 27 spelling of the method above, taking an extra `modeInfos:`
+ * dictionary between the modes and the bundle identifier. Passing an
+ * empty dictionary matches what the Health-app UI does, the same way an
+ * empty `modes` does.
+ *
+ * Encoding on iOS 27.0 (24A5390f): `v64@0:8@16@24@32@40Q48@?56`.
+ */
+- (void)setAuthorizationStatuses:(NSDictionary<HKObjectType *, NSNumber *> *)statuses
+              authorizationModes:(NSDictionary<HKObjectType *, NSNumber *> *)modes
+                       modeInfos:(NSDictionary *)modeInfos
+             forBundleIdentifier:(NSString *)bundleID
+                         options:(NSUInteger)options
                       completion:(void (^)(BOOL success, NSError *_Nullable error))completion;
 
 /**

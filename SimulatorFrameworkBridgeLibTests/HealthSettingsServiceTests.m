@@ -56,47 +56,29 @@ static BOOL FBHealthRuntimeDeclaresSelector(NSString *selectorName)
 
 #pragma mark - The drifted authorization selector
 
-// BUG: `approve` and `revoke` work or raise depending on which runtime they are run against, because
-// `HealthSettingsService` sends the five-part spelling unconditionally. iOS 26.x declares it and the
-// verbs return a status; iOS 27 renamed it to take `modeInfos:`, so the send finds no such selector and
-// raises out of a service entry point that is supposed to always answer with an exit code.
-//
-// Pinned by asking the runtime what it declares, rather than asserting the raise outright: this bundle
-// runs on whichever simulator it is given, so a pin that only holds on one runtime is as version-
-// dependent as the bug it is pinning, and would be red wherever the other runtime is used. Stating the
-// defect as what it is — a contract that holds on one runtime and not the other — is what makes it true
-// everywhere. Flipped to an unconditional no-throw by the fix, further up the stack.
+// `approve` and `revoke` answer with an exit code on every runtime, whichever spelling of
+// `setAuthorizationStatuses:…` it declares. Unconditional, where these were previously split on the
+// runtime: that split *was* the bug, and a service entry point that raises on half the fleet is not a
+// service entry point.
 
-- (void)testApproveOnlyAnswersOnARuntimeDeclaringTheLegacySelector
+- (void)testApproveAnswersWithAStatusOnAnyRuntime
 {
-  if (FBHealthRuntimeDeclaresSelector(kLegacyAuthorizationSelector)) {
-    XCTAssertNoThrow(handleHealthSettingsAction(@"approve", @"com.example.test", @[@"HKQuantityTypeIdentifierStepCount"]));
-  } else {
-    XCTAssertThrows(handleHealthSettingsAction(@"approve", @"com.example.test", @[@"HKQuantityTypeIdentifierStepCount"]));
-  }
+  XCTAssertNoThrow(handleHealthSettingsAction(@"approve", @"com.example.test", @[@"HKQuantityTypeIdentifierStepCount"]));
 }
 
-- (void)testApproveWithDefaultTypesOnlyAnswersOnARuntimeDeclaringTheLegacySelector
+- (void)testApproveWithDefaultTypesAnswersWithAStatusOnAnyRuntime
 {
-  if (FBHealthRuntimeDeclaresSelector(kLegacyAuthorizationSelector)) {
-    XCTAssertNoThrow(handleHealthSettingsAction(@"approve", @"com.example.test", @[]));
-  } else {
-    XCTAssertThrows(handleHealthSettingsAction(@"approve", @"com.example.test", @[]));
-  }
+  XCTAssertNoThrow(handleHealthSettingsAction(@"approve", @"com.example.test", @[]));
 }
 
-- (void)testRevokeOnlyAnswersOnARuntimeDeclaringTheLegacySelector
+- (void)testRevokeAnswersWithAStatusOnAnyRuntime
 {
-  if (FBHealthRuntimeDeclaresSelector(kLegacyAuthorizationSelector)) {
-    XCTAssertNoThrow(handleHealthSettingsAction(@"revoke", @"com.example.test", @[]));
-  } else {
-    XCTAssertThrows(handleHealthSettingsAction(@"revoke", @"com.example.test", @[]));
-  }
+  XCTAssertNoThrow(handleHealthSettingsAction(@"revoke", @"com.example.test", @[]));
 }
 
-// Exactly one of the two spellings is present, whichever runtime this is. That is what makes a
-// `respondsToSelector:` dispatch between them a total decision rather than a guess with a hole in it,
-// and if a third rename ever lands, this is what says so.
+// Exactly one of the two spellings is present, whichever runtime this is. That is what makes the
+// service's `respondsToSelector:` dispatch between them a total decision rather than a guess with a hole
+// in it — and if a third rename ever lands, this is what says so.
 - (void)testTheRuntimeDeclaresExactlyOneAuthorizationSpelling
 {
   XCTAssertNotNil(FBHealthAuthorizationStoreClass(), @"HealthKit must be loadable for any of this to mean anything");
@@ -105,23 +87,16 @@ static BOOL FBHealthRuntimeDeclaresSelector(NSString *selectorName)
   XCTAssertNotEqual(legacy, modeInfos, @"expected one spelling, got legacy=%d modeInfos=%d", legacy, modeInfos);
 }
 
-// BUG: the header declares `options:` as an `NSDictionary *`, but every runtime encodes it as `Q` — an
-// NSUInteger. The service only ever passes `nil`, which marshals as 0 and hides the mistake, so the
-// declaration has been wrong for as long as it has existed and would miscompile the moment a real
-// options value was passed. Corrected by the fix, which flips this to an agreement assertion.
-//
-// Separated from the selector-drift pins below the stack only because it needs `FBAXSignatureMismatch`,
-// which does not exist until two commits later.
-- (void)testTheAuthorizationSelectorTakesAnIntegerOptionsArgumentAndNotADictionary
+// Whichever spelling this runtime has, the header now declares it with the signature the runtime reports
+// — `options:` included, which is the integer both take and which the header spelled as an object until
+// this fix. A rename or a retyped argument is a red test here rather than a silent miscompile at the send.
+- (void)testTheDeclaredAuthorizationSignatureAgreesWithTheRuntime
 {
-  NSString *declared = FBHealthRuntimeDeclaresSelector(kLegacyAuthorizationSelector)
-  ? kLegacyAuthorizationSelector
-  : kModeInfosAuthorizationSelector;
-  NSString *asObject = [declared isEqualToString:kLegacyAuthorizationSelector] ? @"v@:@@@@@?" : @"v@:@@@@@@?";
-  XCTAssertNotNil(
-    FBAXSignatureMismatch("HKAuthorizationStore", declared.UTF8String, NO, asObject.UTF8String),
-    @"the header's object-typed `options:` must not agree with the runtime — if it does, this pin is stale"
-  );
+  BOOL legacy = FBHealthRuntimeDeclaresSelector(kLegacyAuthorizationSelector);
+  NSString *declared = legacy ? kLegacyAuthorizationSelector : kModeInfosAuthorizationSelector;
+  const char *expected = legacy ? "v@:@@@Q@?" : "v@:@@@@Q@?";
+  NSString *mismatch = FBAXSignatureMismatch("HKAuthorizationStore", declared.UTF8String, NO, expected);
+  XCTAssertNil(mismatch, @"%@", mismatch);
 }
 
 - (void)testUnknownActionReturnsFailure
