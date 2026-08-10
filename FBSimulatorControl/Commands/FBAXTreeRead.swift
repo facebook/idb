@@ -50,15 +50,17 @@ extension FBAXTreeRead {
   /// Parses a fused frontmost read (the guest resolved the frontmost app and read its tree in one
   /// call): the tree, whether the walk was truncated, and the pid the guest resolved and read — the
   /// host does not know that pid in advance, so it rides back in the envelope and tags the serialized
-  /// elements. Any `ok:false` (no element at the anchor mid-launch, or the resolved app's accessibility
-  /// server not up yet) is `frontmostUnavailable`, which the read poll treats as "not up yet"; a
-  /// missing tree or pid on an `ok` response is a protocol violation (`guestFailure`).
-  init(frontmostResponse data: Data) throws {
+  /// elements. An `ok:false` is classified by the guest's own failure kind, so a resolved app with no
+  /// accessibility server reads the same here as it does through `--pid` rather than becoming a generic
+  /// frontmost failure; a missing tree or pid on an `ok` response is a protocol violation
+  /// (`guestFailure`). `method` is the strategy the caller selected, named in the error when the
+  /// strategy itself is what could not answer.
+  init(frontmostResponse data: Data, method: FBAXBridgeFrontmostMethod) throws {
     guard let object = try? JSONSerialization.jsonObject(with: data), let response = object as? [String: Any] else {
       throw FBAXBridgeError.guestFailure("unparseable fused frontmost describe response")
     }
     guard (response[FBAXWire.Envelope.ok.rawValue] as? Bool) == true else {
-      throw FBAXBridgeError.frontmostUnavailable
+      throw Self.failure(fromResponse: response, pid: nil, frontmostMethod: method)
     }
     guard let tree = response[FBAXWire.Envelope.tree.rawValue] as? [String: Any] else {
       throw FBAXBridgeError.guestFailure("fused frontmost describe response without a tree")
@@ -72,16 +74,15 @@ extension FBAXTreeRead {
 
   /// Parses a system-wide hit-test read: the hit node and the owning pid of the element there (the host
   /// does not know it in advance — the guest resolved which app owns the point), or `nil` when the
-  /// guest reports no element at the point (a valid empty result). A failure throws, so a caller can
-  /// tell empty space from a broken reader. A hit is a single element, so it carries no truncation flag
-  /// or modal.
+  /// guest reports no element at the point (a valid empty result). A failure throws, classified by the
+  /// guest's kind, so a caller can tell empty space from an app that did not answer from a broken
+  /// reader. A hit is a single element, so it carries no truncation flag or modal.
   init?(hitTestResponse data: Data) throws {
     guard let object = try? JSONSerialization.jsonObject(with: data), let response = object as? [String: Any] else {
       throw FBAXBridgeError.guestFailure("unparseable hit-test response")
     }
     guard (response[FBAXWire.Envelope.ok.rawValue] as? Bool) == true else {
-      let message = (response[FBAXWire.Envelope.error.rawValue] as? String) ?? "the guest reported a failure with no message"
-      throw FBAXBridgeError.guestFailure(message)
+      throw Self.failure(fromResponse: response, pid: nil, frontmostMethod: nil)
     }
     if (response[FBAXWire.Envelope.empty.rawValue] as? Bool) == true {
       return nil
@@ -109,22 +110,64 @@ extension FBAXTreeRead {
   }
 
   /// Parses the guest JSON and validates its `ok`/error framing, returning the top-level response
-  /// dictionary of a successful response. A failed response (`{ ok: false, error }`) throws: the typed
-  /// dead-pid case for `application_unavailable` (so the conformer re-raises the backend-neutral
-  /// `FBUIAutomationError.applicationUnavailable`, matching the remote backend), otherwise an opaque
-  /// `guestFailure` carrying the guest's own message.
+  /// dictionary of a successful response. A failed response throws whatever the guest's kind says it is.
   private static func validatedResponse(fromResponse data: Data, pid: pid_t) throws -> [String: Any] {
     guard let object = try? JSONSerialization.jsonObject(with: data), let response = object as? [String: Any] else {
       throw FBAXBridgeError.guestFailure("pid \(pid): unparseable guest response")
     }
     guard (response[FBAXWire.Envelope.ok.rawValue] as? Bool) == true else {
-      if (response[FBAXWire.Envelope.errorKind.rawValue] as? String) == "application_unavailable" {
-        throw FBAXBridgeError.applicationUnavailable(pid: pid)
-      }
-      let message = (response[FBAXWire.Envelope.error.rawValue] as? String) ?? "the guest reported a failure with no message"
-      throw FBAXBridgeError.guestFailure("pid \(pid): \(message)")
+      throw Self.failure(fromResponse: response, pid: pid, frontmostMethod: nil)
     }
     return response
+  }
+
+  /// The typed error a failed guest response means, from the kind the guest tagged it with.
+  ///
+  /// One function for all three parsers, because a failure means the same thing whichever verb met it —
+  /// an application with no accessibility server is that whether it was named by `--pid`, resolved as
+  /// frontmost, or found under a point. Classifying per parser is what let the fused frontmost path
+  /// answer differently from the others for identical conditions.
+  ///
+  /// An unrecognized kind, or none, is a `guestFailure` carrying the guest's own message — so a guest
+  /// that gains a kind ahead of the host it is talking to degrades to today's behaviour rather than
+  /// failing to parse.
+  ///
+  /// `pid` is the process the caller named, used when the guest did not report one; `frontmostMethod` is
+  /// non-nil only for a fused frontmost read, where a failure of the strategy itself is expressible.
+  private static func failure(
+    fromResponse response: [String: Any],
+    pid: pid_t?,
+    frontmostMethod: FBAXBridgeFrontmostMethod?
+  ) -> FBAXBridgeError {
+    let message = (response[FBAXWire.Envelope.error.rawValue] as? String) ?? "the guest reported a failure with no message"
+    // The guest names the process a tagged failure is about when it knows it, which for a frontmost or
+    // display-wide read is the only place that pid can come from. `exactly:` because this is JSON off the
+    // wire: the non-failable conversion traps on a value too large for a `pid_t`, which would turn a
+    // malformed response into a host crash — the one thing this classifier exists to avoid.
+    let reportedPid = (response[FBAXWire.Envelope.pid.rawValue] as? Int).flatMap(pid_t.init(exactly:)) ?? pid
+    let rawKind = response[FBAXWire.Envelope.errorKind.rawValue] as? String
+    switch rawKind.flatMap(FBAXWire.ErrorKind.init(rawValue:)) {
+    case .applicationUnavailable:
+      return .applicationUnavailable(pid: reportedPid)
+    case .applicationNotResponding:
+      return .applicationNotResponding(pid: reportedPid)
+    case .readerUnavailable:
+      return .readerUnavailable(message)
+    case .frontmostUnresolved:
+      // Only a fused frontmost read asked for a strategy. The kind arriving on any other verb is a guest
+      // that answered something it was not asked, so it degrades rather than inventing a method to blame.
+      guard let frontmostMethod else {
+        return .guestFailure(message)
+      }
+      return .frontmostUnresolved(method: frontmostMethod, reason: message)
+    case .badRequest, .none:
+      // A malformed request is a host bug, not something a user can act on, so it stays opaque and
+      // carries the guest's description of what it rejected.
+      guard let pid else {
+        return .guestFailure(message)
+      }
+      return .guestFailure("pid \(pid): \(message)")
+    }
   }
 
   /// The node a successful response carries, or `nil` for a successful *empty* result

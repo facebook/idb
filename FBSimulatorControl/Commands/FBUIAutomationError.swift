@@ -34,8 +34,13 @@ public enum FBUIAutomationError: LocalizedError, Sendable {
   case invalidPollInterval(backend: FBUIAutomationBackend, pollInterval: TimeInterval)
   /// A verb this backend does not implement.
   case operationUnsupported(backend: FBUIAutomationBackend, operation: String)
-  /// A by-pid read found no tree: the pid is not a live app, or its accessibility server never started.
-  case applicationUnavailable(backend: FBUIAutomationBackend, pid: pid_t)
+  /// A read found no tree: the pid is not a live app, or its accessibility server never started. `pid` is
+  /// nil when the read resolved no application to name — a point read that nothing answered.
+  case applicationUnavailable(backend: FBUIAutomationBackend, pid: pid_t?)
+  /// The application has an accessibility server and did not answer in time. A fact about the
+  /// application rather than the transport, like `applicationUnavailable`, and held apart from it because
+  /// the application has not gone away — so it is a wait, not a reconfiguration.
+  case applicationNotResponding(backend: FBUIAutomationBackend, pid: pid_t?)
   /// A `tap` asserted the element's value for `key` (via `FBTapOptions.assertion`) before tapping, but
   /// the element's actual value did not match.
   case valueMismatch(backend: FBUIAutomationBackend, key: String, expected: String, actual: String)
@@ -59,10 +64,21 @@ public enum FBUIAutomationError: LocalizedError, Sendable {
     case let .operationUnsupported(backend, operation):
       return "\(operation) is not supported over the \(backend.displayName) backend"
     case let .applicationUnavailable(backend, pid):
-      return "\(backend.displayName) could not read the application with pid \(pid): it is not a running app, or its accessibility server has not started. \(FBAccessibilityGuidance.accessibilityServer)"
+      return "\(backend.displayName) could not read the application \(Self.naming(pid)): it is not a running app, or its accessibility server has not started. \(FBAccessibilityGuidance.accessibilityServer)"
+    case let .applicationNotResponding(backend, pid):
+      return "\(backend.displayName) asked the application \(Self.naming(pid)) for accessibility and it did not answer in time"
     case let .valueMismatch(backend, key, expected, actual):
       return "\(backend.displayName) expected \(key) to equal \"\(expected)\" before tapping, but it was \"\(actual)\""
     }
+  }
+
+  /// How a message refers to the application it is about. A read that resolved nothing has no pid to
+  /// print, and saying where it looked beats printing a zero.
+  private static func naming(_ pid: pid_t?) -> String {
+    guard let pid else {
+      return "at that point"
+    }
+    return "with pid \(pid)"
   }
 }
 

@@ -69,48 +69,65 @@ final class FBAXBridgeReadsTests: XCTestCase {
 
   // MARK: - What the parser does with the guest's failure kind and reason
 
-  // The guest names what went wrong and why; these pin how much of that reaches a caller today.
+  // The guest names what went wrong and why; these cover how much of that reaches a caller.
 
-  func testFusedFrontmostDiscardsTheGuestsKindAndReason() throws {
-    // BUG: every `ok:false` on the fused frontmost path collapses to `frontmostUnavailable`, dropping the
-    // `error_kind` *and* the message. A reader that could not bind names the missing class and every
-    // drifted signature — the most actionable text the guest produces — and none of it survives. Carried
-    // through in the following commit.
+  func testFusedFrontmostRaisesTheGuestsKindAndCarriesItsReason() throws {
+    // A reader that could not bind names the missing class and every drifted signature beside it — the
+    // most actionable text the guest produces. It reaches the caller intact and as its own case, rather
+    // than being replaced by a fixed sentence about resolving the frontmost app.
     let data = try envelope([
       "ok": false,
       "error": "XCTAccessibilityFramework unavailable — is XCTAutomationSupport loaded?",
       "error_kind": "reader_unavailable",
     ])
-    XCTAssertThrowsError(try FBAXTreeRead(frontmostResponse: data)) { error in
-      guard case FBAXBridgeError.frontmostUnavailable = error else {
-        return XCTFail("expected the collapsed case, got: \(error)")
+    XCTAssertThrowsError(try FBAXTreeRead(frontmostResponse: data, method: .centerPoint)) { error in
+      guard case let FBAXBridgeError.readerUnavailable(reason) = error else {
+        return XCTFail("expected readerUnavailable, got: \(error)")
       }
-      XCTAssertFalse(
-        "\(error)".contains("XCTAccessibilityFramework"),
-        "the guest's reason is discarded, not surfaced: \(error)"
-      )
+      XCTAssertEqual(reason, "XCTAccessibilityFramework unavailable — is XCTAutomationSupport loaded?")
+      XCTAssertTrue("\(error)".contains("XCTAccessibilityFramework"), "the reason must reach the message: \(error)")
     }
   }
 
-  func testFusedFrontmostReportsAnUnreadableApplicationAsAFrontmostFailure() throws {
-    // BUG: the guest tagged this `application_unavailable` — the one condition the host has a typed,
-    // backend-neutral error for — and the fused path throws it away, so the same condition is reported
-    // one way through `--pid` and another way through a frontmost read.
+  func testFusedFrontmostReportsAnUnreadableApplicationAsSuchAndNotAsAFrontmostFailure() throws {
+    // The guest tagged this `application_unavailable`, and it means the same thing here as it does on a
+    // `--pid` read: nothing frontmost has an accessibility server. Reporting it as a frontmost-strategy
+    // failure sent the caller after the wrong thing. There is no pid because nothing resolved.
     let data = try envelope([
       "ok": false,
       "error": "no accessibility server answered the system-wide hit-test at (201.0, 437.0)",
       "error_kind": "application_unavailable",
     ])
-    XCTAssertThrowsError(try FBAXTreeRead(frontmostResponse: data)) { error in
-      guard case FBAXBridgeError.frontmostUnavailable = error else {
-        return XCTFail("expected the collapsed case, got: \(error)")
+    XCTAssertThrowsError(try FBAXTreeRead(frontmostResponse: data, method: .centerPoint)) { error in
+      guard case let FBAXBridgeError.applicationUnavailable(pid) = error else {
+        return XCTFail("expected applicationUnavailable, got: \(error)")
       }
+      XCTAssertNil(pid, "a frontmost read that resolved nothing has no pid to name")
     }
   }
 
-  func testHitTestIgnoresTheGuestsFailureKind() throws {
-    // BUG: the hit-test parser reads the message but never the kind, so a tagged failure arrives as an
-    // opaque `guestFailure` that no caller can match on. Only the whole-tree parser reads the tag today.
+  // A strategy that could not answer is the case that keeps `frontmostUnresolved`, and it names the
+  // strategy the caller selected — the other two may well answer, so which one was asked for is the
+  // actionable half.
+  func testFusedFrontmostNamesTheStrategyThatCouldNotAnswer() throws {
+    let data = try envelope([
+      "ok": false,
+      "error": "AXPTranslator unavailable — is AccessibilityPlatformTranslation loaded?",
+      "error_kind": "frontmost_unresolved",
+    ])
+    XCTAssertThrowsError(try FBAXTreeRead(frontmostResponse: data, method: .windowServer)) { error in
+      guard case let FBAXBridgeError.frontmostUnresolved(method, reason) = error else {
+        return XCTFail("expected frontmostUnresolved, got: \(error)")
+      }
+      XCTAssertEqual(method, .windowServer)
+      XCTAssertEqual(reason, "AXPTranslator unavailable — is AccessibilityPlatformTranslation loaded?")
+      XCTAssertTrue("\(error)".contains("window-server"), "the message must name the strategy: \(error)")
+    }
+  }
+
+  func testHitTestRaisesTheGuestsFailureKind() throws {
+    // All three parsers classify alike now: a tagged hit-test failure is the typed case, not an opaque
+    // one, and the pid the guest reported rides with it.
     let data = try envelope([
       "ok": false,
       "error": "pid 8865 has no accessibility server to hit-test",
@@ -118,16 +135,16 @@ final class FBAXBridgeReadsTests: XCTestCase {
       "pid": 8865,
     ])
     XCTAssertThrowsError(try FBAXTreeRead(hitTestResponse: data)) { error in
-      guard case FBAXBridgeError.guestFailure = error else {
-        return XCTFail("expected the untyped case, got: \(error)")
+      guard case let FBAXBridgeError.applicationUnavailable(pid) = error else {
+        return XCTFail("expected applicationUnavailable, got: \(error)")
       }
+      XCTAssertEqual(pid, 8865, "the guest's reported pid must ride out on the error")
     }
   }
 
-  func testWholeTreeIgnoresEveryKindButTheOneItKnows() throws {
-    // BUG: `application_not_responding` is a live app that did not answer — distinct from one that is
-    // gone, and the reason the guest classifies the AX timeout at all. The host has no case for it, so it
-    // lands in the same opaque bucket as a reader bug.
+  func testAnApplicationThatDidNotAnswerIsItsOwnCase() throws {
+    // A live app that did not answer is distinct from one that is gone — the reason the guest classifies
+    // the AX timeout at all — so it must not land in the same bucket as a reader bug.
     let data = try envelope([
       "ok": false,
       "error": "pid 8865 did not answer the read of its element tree in time",
@@ -135,9 +152,40 @@ final class FBAXBridgeReadsTests: XCTestCase {
       "pid": 8865,
     ])
     XCTAssertThrowsError(try FBAXTreeRead(wholeTreeResponse: data, pid: 8865)) { error in
-      guard case FBAXBridgeError.guestFailure = error else {
-        return XCTFail("expected the untyped case, got: \(error)")
+      guard case let FBAXBridgeError.applicationNotResponding(pid) = error else {
+        return XCTFail("expected applicationNotResponding, got: \(error)")
       }
+      XCTAssertEqual(pid, 8865)
+    }
+  }
+
+  // The reported pid is JSON off the wire, so a value too large for a `pid_t` has to degrade like any
+  // other malformed field. The non-failable conversion traps, which would make a bad response crash the
+  // host at parse time — the opposite of what this classifier promises.
+  func testAnOutOfRangeReportedPidDegradesRatherThanTrapping() throws {
+    let data = try envelope([
+      "ok": false,
+      "error": "pid 8865 has no accessibility server",
+      "error_kind": "application_unavailable",
+      "pid": 99_999_999_999,
+    ])
+    XCTAssertThrowsError(try FBAXTreeRead(wholeTreeResponse: data, pid: 42)) { error in
+      guard case let FBAXBridgeError.applicationUnavailable(pid) = error else {
+        return XCTFail("expected applicationUnavailable, got: \(error)")
+      }
+      XCTAssertEqual(pid, 42, "an unusable reported pid falls back to the one the caller named")
+    }
+  }
+
+  // A kind this host has never heard of has to degrade to what an untagged failure already does, so a
+  // guest running ahead of its host costs precision and nothing else.
+  func testAnUnknownFailureKindDegradesToAnOpaqueFailureCarryingTheMessage() throws {
+    let data = try envelope(["ok": false, "error": "something new went wrong", "error_kind": "application_on_fire"])
+    XCTAssertThrowsError(try FBAXTreeRead(frontmostResponse: data, method: .centerPoint)) { error in
+      guard case FBAXBridgeError.guestFailure = error else {
+        return XCTFail("expected guestFailure, got: \(error)")
+      }
+      XCTAssertTrue("\(error)".contains("something new went wrong"), "the message must survive: \(error)")
     }
   }
 
@@ -330,7 +378,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
     // the resolved pid the host tags elements with — it did not know the pid in advance.
     let tree: [String: Any] = [FBAXWire.Node.label.rawValue: "Settings"]
     let data = try envelope(["ok": true, "tree": tree, "pid": 8865, "method": "center-point", "truncated": false])
-    let parsed = try FBAXTreeRead(frontmostResponse: data)
+    let parsed = try FBAXTreeRead(frontmostResponse: data, method: .centerPoint)
     XCTAssertEqual(parsed.pid, 8865)
     XCTAssertEqual(parsed.tree[FBAXWire.Node.label.rawValue] as? String, "Settings")
     XCTAssertFalse(parsed.truncated)
@@ -338,24 +386,30 @@ final class FBAXBridgeReadsTests: XCTestCase {
 
   func testFrontmostTreeSurfacesTruncation() throws {
     let data = try envelope(["ok": true, "tree": [FBAXWire.Node.label.rawValue: "root"], "pid": 1, "truncated": true])
-    XCTAssertTrue(try FBAXTreeRead(frontmostResponse: data).truncated)
+    XCTAssertTrue(try FBAXTreeRead(frontmostResponse: data, method: .centerPoint).truncated)
   }
 
-  func testFrontmostTreeThrowsFrontmostUnavailableOnFailure() throws {
-    // A fused read that couldn't resolve/read the frontmost app maps to frontmostUnavailable, which the
-    // read poll retries.
-    let data = try envelope(["ok": false, "error": "system-wide hit-test at (201.0, 437.0) found no element"])
-    XCTAssertThrowsError(try FBAXTreeRead(frontmostResponse: data)) { error in
-      guard case FBAXBridgeError.frontmostUnavailable = error else {
-        return XCTFail("a failed fused read should be frontmostUnavailable, got: \(error)")
+  func testFrontmostTreeThrowsFrontmostUnresolvedOnAnEmptyAnchor() throws {
+    // Nothing at the anchor — an app mid-launch, or genuinely empty space. The strategy ran and named
+    // nothing, so it is `frontmostUnresolved`, which the read poll retries.
+    let data = try envelope([
+      "ok": false,
+      "error": "system-wide hit-test at (201.0, 437.0) found no element",
+      "error_kind": "frontmost_unresolved",
+    ])
+    XCTAssertThrowsError(try FBAXTreeRead(frontmostResponse: data, method: .centerPoint)) { error in
+      guard case let FBAXBridgeError.frontmostUnresolved(method, reason) = error else {
+        return XCTFail("a strategy that named nothing should be frontmostUnresolved, got: \(error)")
       }
+      XCTAssertEqual(method, .centerPoint)
+      XCTAssertEqual(reason, "system-wide hit-test at (201.0, 437.0) found no element")
     }
   }
 
   func testFrontmostTreeThrowsWhenResolvedPidMissing() throws {
     // An ok response with a tree but no pid is a protocol violation — the host cannot tag the elements.
     let data = try envelope(["ok": true, "tree": [FBAXWire.Node.label.rawValue: "x"]])
-    XCTAssertThrowsError(try FBAXTreeRead(frontmostResponse: data)) { error in
+    XCTAssertThrowsError(try FBAXTreeRead(frontmostResponse: data, method: .centerPoint)) { error in
       guard case FBAXBridgeError.guestFailure = error else {
         return XCTFail("a fused response without a pid should be guestFailure, got: \(error)")
       }
@@ -364,7 +418,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
 
   func testFrontmostTreeThrowsWhenTreeMissing() throws {
     let data = try envelope(["ok": true, "pid": 8865])
-    XCTAssertThrowsError(try FBAXTreeRead(frontmostResponse: data)) { error in
+    XCTAssertThrowsError(try FBAXTreeRead(frontmostResponse: data, method: .centerPoint)) { error in
       guard case FBAXBridgeError.guestFailure = error else {
         return XCTFail("a fused response without a tree should be guestFailure, got: \(error)")
       }
@@ -398,7 +452,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
   func testFrontmostTreeCarriesModalDescriptor() throws {
     let tree: [String: Any] = [FBAXWire.Node.label.rawValue: "root"]
     let data = try envelope(["ok": true, "tree": tree, "pid": 20475, "modal": ["kind": "system", "elementType": "SBAlertItemWindow", "label": "Allow"]])
-    let parsed = try FBAXTreeRead(frontmostResponse: data)
+    let parsed = try FBAXTreeRead(frontmostResponse: data, method: .centerPoint)
     XCTAssertEqual(parsed.pid, 20475)
     XCTAssertEqual(parsed.modal?.kind, .system)
     XCTAssertEqual(parsed.modal?.elementType, "SBAlertItemWindow")

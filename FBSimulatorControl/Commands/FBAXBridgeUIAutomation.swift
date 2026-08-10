@@ -60,15 +60,17 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
 
   nonisolated var backend: FBUIAutomationBackend { .axBridge(persistence: persistence, frontmostMethod: frontmostMethod) }
 
-  /// Re-raises the transport-level `FBAXBridgeError.applicationUnavailable` as the backend-neutral
-  /// `FBUIAutomationError.applicationUnavailable`, so a caller holding `any FBUIAutomation` sees the
-  /// same typed error for a dead pid regardless of which backend served the read (the remote backend
-  /// throws the neutral case directly). Other bridge errors pass through untouched.
+  /// Re-raises the two transport-level failures that are really facts about the application as their
+  /// backend-neutral cases, so a caller holding `any FBUIAutomation` sees the same typed error for a dead
+  /// or wedged app regardless of which backend served the read (the remote backend throws the neutral
+  /// case directly). Every other bridge error is about this transport and passes through untouched.
   private func translatingSeamErrors<T>(_ body: () async throws -> T) async throws -> T {
     do {
       return try await body()
     } catch let FBAXBridgeError.applicationUnavailable(pid) {
       throw FBUIAutomationError.applicationUnavailable(backend: backend, pid: pid)
+    } catch let FBAXBridgeError.applicationNotResponding(pid) {
+      throw FBUIAutomationError.applicationNotResponding(backend: backend, pid: pid)
     }
   }
 
@@ -90,7 +92,7 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
       let response = try await transport.readFrontmost(
         x: anchor.x, y: anchor.y, maxDepth: FBAXReadLimits.maxReadDepth, maxNodes: FBAXReadLimits.maxReadNodes, method: frontmostMethod
       )
-      return try FBAXTreeRead(frontmostResponse: response)
+      return try FBAXTreeRead(frontmostResponse: response, method: frontmostMethod)
     }
   }
 
@@ -138,12 +140,12 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
         )
         return FBAXTreeWalk.matchingElement(inElements: elements, markerValue: markerValue, key: key) != nil ? true : nil
       } catch let error as FBAXBridgeError {
-        // A frontmost that isn't up yet, a tree that isn't readable yet, or a pid that names no
-        // readable app (an app still launching) is "not there yet" — keep polling. A missing guest
-        // binary won't resolve by waiting, so surface it (and any unexpected non-bridge error) at once
-        // rather than burning the whole timeout.
+        // A frontmost that isn't up yet, a tree that isn't readable yet, an app that hasn't answered
+        // yet, or a pid that names no readable app (an app still launching) is "not there yet" — keep
+        // polling. A missing guest binary won't resolve by waiting, so surface it (and any unexpected
+        // non-bridge error) at once rather than burning the whole timeout.
         switch error {
-        case .frontmostUnavailable, .guestFailure, .applicationUnavailable:
+        case .frontmostUnresolved, .guestFailure, .applicationUnavailable, .applicationNotResponding, .readerUnavailable:
           return nil
         case .bridgeUnavailable:
           throw error
