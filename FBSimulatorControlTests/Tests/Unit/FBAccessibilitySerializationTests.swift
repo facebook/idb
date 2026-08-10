@@ -144,6 +144,64 @@ final class FBAccessibilitySerializationTests: XCTestCase {
     XCTAssertTrue(json.contains("\"height\":20"), "finite frame values must be preserved, got: \(json)")
   }
 
+  /// A frame as the **guest actually sends it** when one coordinate is non-finite.
+  ///
+  /// The test above builds the frame with a non-finite `NSNumber`, which is the shape the host's own
+  /// element reports. It is not the shape that arrives over the wire: the guest sanitizes a non-finite
+  /// number to JSON null before serializing (`AccessibilityService.m`, `FBAXBridgeJSONSafeNumber`),
+  /// because JSON can represent neither infinity nor NaN.
+  private func guestFrameDictionary(nulling member: String, of rect: CGRect) throws -> NSDictionary {
+    let representation = try XCTUnwrap(CGRectCreateDictionaryRepresentation(rect) as? [String: Any])
+    XCTAssertNotNil(representation[member], "expected \(member) among the frame keys \(representation.keys.sorted())")
+    var nulled = representation
+    nulled[member] = NSNull()
+    return nulled as NSDictionary
+  }
+
+  private func serializedFrame(fromGuestFrame frame: NSDictionary) -> FBAccessibilityFrame?? {
+    let tree: [String: Any] = [
+      FBAXWire.Node.label.rawValue: "icon",
+      FBAXWire.Node.frame.rawValue: frame,
+    ]
+    let elements = FBAXTreeWalk.describeAllElements(
+      fromTree: tree, keys: [.label, .frameDict], nestedFormat: false, pid: 7
+    )
+    return elements.first?.frame
+  }
+
+  // The host cannot parse the null the guest sends, and discards the whole rectangle rather than the
+  // one member it could not read. `CGRectMakeWithDictionaryRepresentation` sends a number selector to
+  // every member, so the parse is guarded by an all-numbers check that a null fails — and the fallback
+  // is `.zero`.
+  //
+  // The cost is not confined to the unreadable edge: the three coordinates the guest *did* send are
+  // thrown away with it, so an element that is merely off-screen is reported as sitting at the origin
+  // with no size. `FBAccessibilityFrame` carries per-edge optionals precisely so this does not have to
+  // happen, and never gets the chance to apply them.
+  func testGuestNullFrameMemberCollapsesTheEntireFrame() throws {
+    let frame = try guestFrameDictionary(nulling: "X", of: CGRect(x: 5, y: 10, width: 100, height: 200))
+    let serialized = try XCTUnwrap(serializedFrame(fromGuestFrame: frame))
+
+    // BUG: the readable edges are discarded along with the unreadable one — flipped in the next commit.
+    XCTAssertEqual(serialized?.x, 0, "the null x becomes zero rather than staying unknown")
+    XCTAssertEqual(serialized?.y, 0, "and y is lost with it")
+    XCTAssertEqual(serialized?.width, 0, "as is the width the guest did send")
+    XCTAssertEqual(serialized?.height, 0, "as is the height")
+  }
+
+  // The same collapse is what makes a whole-tree read report no screen: the bounds come from the root
+  // element's frame, so a root with one unreadable coordinate reports no bounds at all rather than the
+  // width and height it did send.
+  func testGuestNullFrameMemberOnTheRootLosesTheScreenBounds() throws {
+    let tree: [String: Any] = [
+      FBAXWire.Node.label.rawValue: "root",
+      FBAXWire.Node.frame.rawValue: try guestFrameDictionary(nulling: "X", of: CGRect(x: 0, y: 0, width: 390, height: 844)),
+    ]
+    // BUG: the root's width and height are readable, yet the screen is reported as unknown — flipped
+    // in the next commit.
+    XCTAssertNil(FBAXTreeWalk.screenInfo(fromTree: tree), "the whole frame collapsed, so there are no bounds")
+  }
+
   // The same shape as `filterTree`, but with an unlabeled root — an element `.interactable` would drop
   // were it not the one the caller named, which is what makes the target exemption observable.
   private static func unlabeledTargetTree() -> [String: Any] {
