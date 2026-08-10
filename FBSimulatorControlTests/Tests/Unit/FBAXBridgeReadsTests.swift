@@ -226,11 +226,51 @@ final class FBAXBridgeReadsTests: XCTestCase {
     }
   }
 
-  func testEmptyPointErrorCarriesTheAccessibilityHint() {
-    // An empty read is most often a missing accessibility server, so the actionable hint rides on the
-    // error rather than being re-stated by each backend.
-    let error = FBUIAutomationError.noElementAtPoint(backend: .axBridge(persistence: .oneShot, frontmostMethod: .centerPoint), x: 2000, y: 2000)
+  // MARK: - Where the accessibility-server remediation is offered
+
+  private static let axBridge = FBUIAutomationBackend.axBridge(persistence: .oneShot, frontmostMethod: .centerPoint)
+
+  func testEveryReadFailureCarriesTheAccessibilityServerGuidance() {
+    // BUG: the same `ApplicationAccessibilityEnabled` paragraph is appended to three unrelated
+    // conditions. Only `applicationUnavailable` is about a missing accessibility server: an empty point
+    // is a *successful* read of blank space, and a timeout means a marker never appeared, which the flag
+    // has nothing to do with. Scoped in the following commit.
+    let errors: [String: FBUIAutomationError] = [
+      "noElementAtPoint": .noElementAtPoint(backend: Self.axBridge, x: 2000, y: 2000),
+      "timedOut": .timedOut(backend: Self.axBridge, key: "AXLabel", value: "General", timeout: 5),
+      "applicationUnavailable": .applicationUnavailable(backend: Self.axBridge, pid: 8865),
+    ]
+    for (name, error) in errors {
+      XCTAssertTrue(
+        error.description.contains("ApplicationAccessibilityEnabled"),
+        "\(name) currently carries the guidance: \(error.description)"
+      )
+    }
+  }
+
+  // The remote backend's read failure genuinely is about the flag — that session documents
+  // `ApplicationAccessibilityEnabled=1` as a precondition — so its guidance stays put throughout.
+  func testTheRemoteBackendTreeFailureCarriesTheAccessibilityServerGuidance() {
+    let error = FBRemoteAutomationError.treeUnavailable(x: 201, y: 437)
     XCTAssertTrue(error.description.contains("ApplicationAccessibilityEnabled"), "got: \(error.description)")
+  }
+
+  // The failures that were never about the flag, and must stay that way. `frontmostUnresolved` is among
+  // them because it replaced the case that *did* carry the guidance: it now states the guest's own reason
+  // instead, and the sub-case that really is a missing accessibility server no longer reaches it — the
+  // guest tags that `application_unavailable`, so it arrives as the case below that does carry guidance.
+  func testTheFailuresThatAreNotAboutTheFlagOfferNoAccessibilityGuidance() {
+    let errors: [String: any LocalizedError] = [
+      "readerUnavailable": FBAXBridgeError.readerUnavailable("XCTAccessibilityFramework unavailable"),
+      "frontmostUnresolved": FBAXBridgeError.frontmostUnresolved(method: .windowServer, reason: "AXPTranslator unavailable"),
+      "applicationNotResponding": FBUIAutomationError.applicationNotResponding(backend: Self.axBridge, pid: 8865),
+    ]
+    for (name, error) in errors {
+      XCTAssertFalse(
+        (error.errorDescription ?? "").contains("ApplicationAccessibilityEnabled"),
+        "\(name) must not offer a remedy that cannot apply to it: \(error.errorDescription ?? "")"
+      )
+    }
   }
 
   func testValueMismatchIsSeamCatchableAndNamesTheMismatch() {
