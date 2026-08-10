@@ -10,6 +10,7 @@
 
 #import <XCTest/XCTest.h>
 
+#import <SimulatorFrameworkBridgeLib/AccessibilityRuntime.h>
 #import <SimulatorFrameworkBridgeLib/HealthSettingsService.h>
 
 // The two spellings `-[HKAuthorizationStore setAuthorizationStatuses:…]` has had. iOS 26.x declares the
@@ -102,6 +103,25 @@ static BOOL FBHealthRuntimeDeclaresSelector(NSString *selectorName)
   BOOL legacy = FBHealthRuntimeDeclaresSelector(kLegacyAuthorizationSelector);
   BOOL modeInfos = FBHealthRuntimeDeclaresSelector(kModeInfosAuthorizationSelector);
   XCTAssertNotEqual(legacy, modeInfos, @"expected one spelling, got legacy=%d modeInfos=%d", legacy, modeInfos);
+}
+
+// BUG: the header declares `options:` as an `NSDictionary *`, but every runtime encodes it as `Q` — an
+// NSUInteger. The service only ever passes `nil`, which marshals as 0 and hides the mistake, so the
+// declaration has been wrong for as long as it has existed and would miscompile the moment a real
+// options value was passed. Corrected by the fix, which flips this to an agreement assertion.
+//
+// Separated from the selector-drift pins below the stack only because it needs `FBAXSignatureMismatch`,
+// which does not exist until two commits later.
+- (void)testTheAuthorizationSelectorTakesAnIntegerOptionsArgumentAndNotADictionary
+{
+  NSString *declared = FBHealthRuntimeDeclaresSelector(kLegacyAuthorizationSelector)
+  ? kLegacyAuthorizationSelector
+  : kModeInfosAuthorizationSelector;
+  NSString *asObject = [declared isEqualToString:kLegacyAuthorizationSelector] ? @"v@:@@@@@?" : @"v@:@@@@@@?";
+  XCTAssertNotNil(
+    FBAXSignatureMismatch("HKAuthorizationStore", declared.UTF8String, NO, asObject.UTF8String),
+    @"the header's object-typed `options:` must not agree with the runtime — if it does, this pin is stale"
+  );
 }
 
 - (void)testUnknownActionReturnsFailure
