@@ -151,13 +151,11 @@ public struct FBAccessibilityElementsResponse: Sendable {
   /// Profiling data collected during the operation, if profiling was enabled.
   public let profilingData: FBAccessibilityProfilingData?
 
-  /// The proportion of the screen covered by accessibility element frames (0.0 - 1.0).
-  /// Nil if coverage calculation was not requested. Low values suggest remote content.
-  public let frameCoverage: Double?
-
-  /// Additional coverage discovered via grid-based hit-testing for remote content.
-  /// Nil if remote content discovery was not performed or found nothing.
-  public let additionalFrameCoverage: Double?
+  /// How much of the screen the read's element frames cover, or `nil` when coverage was not requested.
+  ///
+  /// One value rather than a field per ratio: the reported and walked coverages are computed from the
+  /// same pass over the same read, so a response can never hold one without the other.
+  public let coverage: FBAccessibilityCoverage?
 
   /// A fullscreen modal / alert present over the read target, when one was detected. Emitted by the
   /// `complete` document and **deliberately absent from the legacy envelope**, whose bytes are frozen
@@ -180,8 +178,7 @@ public struct FBAccessibilityElementsResponse: Sendable {
   public init(
     elements: FBAccessibilityElementPayload,
     profilingData: FBAccessibilityProfilingData? = nil,
-    frameCoverage: Double? = nil,
-    additionalFrameCoverage: Double? = nil,
+    coverage: FBAccessibilityCoverage? = nil,
     modal: FBAccessibilityModalInfo? = nil,
     truncated: Bool = false,
     screen: FBAccessibilityScreenInfo? = nil,
@@ -190,8 +187,7 @@ public struct FBAccessibilityElementsResponse: Sendable {
   ) {
     self.elements = elements
     self.profilingData = profilingData
-    self.frameCoverage = frameCoverage
-    self.additionalFrameCoverage = additionalFrameCoverage
+    self.coverage = coverage
     self.modal = modal
     self.truncated = truncated
     self.screen = screen
@@ -211,8 +207,7 @@ public struct FBAccessibilityElementsResponse: Sendable {
     FBAccessibilityElementsResponse(
       elements: elements,
       profilingData: profilingData,
-      frameCoverage: frameCoverage,
-      additionalFrameCoverage: additionalFrameCoverage,
+      coverage: coverage,
       modal: modal,
       truncated: truncated ?? self.truncated,
       screen: screen ?? self.screen,
@@ -232,8 +227,7 @@ public struct FBAccessibilityElementsResponse: Sendable {
     FBAccessibilityElementsResponse(
       elements: elements,
       profilingData: profilingData,
-      frameCoverage: frameCoverage,
-      additionalFrameCoverage: additionalFrameCoverage,
+      coverage: coverage,
       modal: modal,
       truncated: truncated,
       screen: nil,
@@ -255,7 +249,7 @@ public struct FBAccessibilityElementsResponse: Sendable {
       backend: backend,
       target: target,
       profile: profilingData,
-      coverage: frameCoverage.map { FBAccessibilityCoverage(frame: $0, additional: additionalFrameCoverage) }
+      coverage: coverage
     )
   }
 
@@ -263,6 +257,6 @@ public struct FBAccessibilityElementsResponse: Sendable {
 
 extension FBAccessibilityElementsResponse: CustomStringConvertible {
   public var description: String {
-    "<FBAccessibilityElementsResponse: elements=\(Swift.type(of: elements)), profiling=\(String(describing: profilingData)), frameCoverage=\(String(describing: frameCoverage)), additionalFrameCoverage=\(String(describing: additionalFrameCoverage)), modal=\(String(describing: modal))>"
+    "<FBAccessibilityElementsResponse: elements=\(Swift.type(of: elements)), profiling=\(String(describing: profilingData)), coverage=\(String(describing: coverage)), modal=\(String(describing: modal))>"
   }
 }

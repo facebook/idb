@@ -132,7 +132,7 @@ public final class FBAXTranslationRequest {
     }
     // A named element is one element, with no tree behind it to speak for the screen. A marker match
     // does know its bounds — the root it descended from — and the backend stamps them on the way out.
-    return buildResponse(elements: .single(elements), serializationStart: serializationStart, frameCoverage: nil, additionalFrameCoverage: nil, screen: nil)
+    return buildResponse(elements: .single(elements), serializationStart: serializationStart, coverage: nil, screen: nil)
   }
 
   // MARK: - Frontmost Application
@@ -157,20 +157,23 @@ public final class FBAXTranslationRequest {
     )
     let mainAppElements = options.filter.apply(to: walked)
 
-    // Coverage over the elements the read reports, marked from the serialized model rather than
-    // accumulated during the walk — the same calculation every backend runs.
+    // Coverage of what the read reports and of what it walked, both marked from the serialized model
+    // rather than accumulated during the walk — the same calculation every backend runs. The unfiltered
+    // elements are still in hand, so the second ratio costs no extra traversal of the live tree.
+    //
+    // The live grid stays: remote-content discovery asks it which points the reported elements already
+    // cover, and marks what it hit-tests into it.
     let grid: FBAccessibilityCoverageGrid? =
       options.collectFrameCoverage ? FBAccessibilityCoverageGrid(screenBounds: screenBounds) : nil
     grid?.markFilled(withElements: mainAppElements)
-    let frameCoverage = grid.map(Self.ratio(of:)) ?? nil
+    let walkedCoverage = Self.coverageRatio(of: walked, screenBounds: screenBounds, when: options.collectFrameCoverage)
 
     // Remote content fetching (only when requested and a translator is present).
     guard let remoteOptions = options.remoteContentOptions, let translator else {
       return buildResponse(
         elements: .tree(mainAppElements),
         serializationStart: serializationStart,
-        frameCoverage: frameCoverage,
-        additionalFrameCoverage: nil,
+        coverage: Self.coverage(frame: grid.flatMap(Self.ratio(of:)), walked: walkedCoverage, additional: nil),
         screen: Self.screenInfo(fromBounds: screenBounds)
       )
     }
@@ -184,7 +187,7 @@ public final class FBAXTranslationRequest {
       frontmostPid: frontmostPid,
       seenPids: seenPids,
       coverageGrid: grid,
-      frameCoverage: frameCoverage,
+      walkedCoverage: walkedCoverage,
       serializationStart: serializationStart,
       keys: keys,
       remoteOptions: remoteOptions,
@@ -196,6 +199,27 @@ public final class FBAXTranslationRequest {
   private static func ratio(of grid: FBAccessibilityCoverageGrid) -> Double? {
     let ratio = grid.coverageRatio()
     return ratio >= 0 ? Double(ratio) : nil
+  }
+
+  /// The proportion of `screenBounds` that `elements` cover, or `nil` when coverage was not requested
+  /// or the bounds do not make a usable grid.
+  private static func coverageRatio(
+    of elements: [FBAccessibilityDocumentElement], screenBounds: CGRect, when collect: Bool
+  ) -> Double? {
+    guard collect, let grid = FBAccessibilityCoverageGrid(screenBounds: screenBounds) else {
+      return nil
+    }
+    grid.markFilled(withElements: elements)
+    return ratio(of: grid)
+  }
+
+  /// The reported coverage, or `nil` when there is no ratio to report. `frame` and `walked` are computed
+  /// from the same read, so either both are present or neither is.
+  private static func coverage(frame: Double?, walked: Double?, additional: Double?) -> FBAccessibilityCoverage? {
+    guard let frame, let walked else {
+      return nil
+    }
+    return FBAccessibilityCoverage(frame: frame, walked: walked, additional: additional)
   }
 
   // MARK: Remote content
@@ -299,12 +323,14 @@ public final class FBAXTranslationRequest {
     frontmostPid: pid_t,
     seenPids: SeenPIDs,
     coverageGrid: FBAccessibilityCoverageGrid?,
-    frameCoverage: Double?,
+    walkedCoverage: Double?,
     serializationStart: CFAbsoluteTime,
     keys: Set<FBAXKeys>,
     remoteOptions: FBAccessibilityRemoteContentOptions,
     translator: AXPTranslator
   ) -> FBAccessibilityElementsResponse {
+    // The ratio of the reported elements, before hit-testing marks anything else into the grid.
+    let frameCoverage = coverageGrid.flatMap(Self.ratio(of:))
     let coverageBefore = coverageGrid?.coverageRatio() ?? 0
 
     let discoveredElements = discoverRemoteElements(
@@ -345,8 +371,7 @@ public final class FBAXTranslationRequest {
     return buildResponse(
       elements: .tree(elements),
       serializationStart: serializationStart,
-      frameCoverage: frameCoverage,
-      additionalFrameCoverage: additionalFrameCoverage,
+      coverage: Self.coverage(frame: frameCoverage, walked: walkedCoverage, additional: additionalFrameCoverage),
       screen: Self.screenInfo(fromBounds: screenBounds)
     )
   }
@@ -361,8 +386,7 @@ public final class FBAXTranslationRequest {
   private func buildResponse(
     elements: FBAccessibilityElementPayload,
     serializationStart: CFAbsoluteTime,
-    frameCoverage: Double?,
-    additionalFrameCoverage: Double?,
+    coverage: FBAccessibilityCoverage?,
     screen: FBAccessibilityScreenInfo?
   ) -> FBAccessibilityElementsResponse {
     let serializationDuration = CFAbsoluteTimeGetCurrent() - serializationStart
@@ -370,8 +394,7 @@ public final class FBAXTranslationRequest {
     return FBAccessibilityElementsResponse(
       elements: elements,
       profilingData: profilingData,
-      frameCoverage: frameCoverage,
-      additionalFrameCoverage: additionalFrameCoverage,
+      coverage: coverage,
       truncated: false,
       screen: screen
     )

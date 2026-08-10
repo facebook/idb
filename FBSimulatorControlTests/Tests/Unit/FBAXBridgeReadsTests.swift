@@ -548,7 +548,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
 
     // BUG: axbridge, axbridge-persistent and testmanagerd silently drop --collect-frame-coverage,
     // so `complete` reports `coverage: null` where `ax` reports a ratio — flipped in a later commit.
-    XCTAssertNil(response.frameCoverage, "the guest backends collect no coverage")
+    XCTAssertNil(response.coverage?.frame, "the guest backends collect no coverage")
     XCTAssertNil(response.document.coverage, "so the complete document reports none")
   }
 

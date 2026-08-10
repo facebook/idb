@@ -738,7 +738,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     let options = FBAccessibilityRequestOptions()
     let response = try element.serialize(with: options)
     element.close()
-    XCTAssertNil(response.frameCoverage, "Coverage should be nil when collectFrameCoverage is not enabled")
+    XCTAssertNil(response.coverage?.frame, "Coverage should be nil when collectFrameCoverage is not enabled")
   }
 
   func testCoverageCalculationWithDefaultFixture() async throws {
@@ -751,9 +751,9 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     options.collectFrameCoverage = true
     let response = try element.serialize(with: options)
     element.close()
-    XCTAssertNotNil(response.frameCoverage, "Coverage should be returned when collectFrameCoverage is enabled")
+    XCTAssertNotNil(response.coverage?.frame, "Coverage should be returned when collectFrameCoverage is enabled")
 
-    let coverage = response.frameCoverage!
+    let coverage = response.coverage!.frame
     XCTAssertGreaterThan(coverage, 0.0, "Coverage should be greater than 0")
     XCTAssertLessThan(coverage, 0.15, "Coverage should be low since only 3 small elements")
   }
@@ -788,9 +788,9 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     options.collectFrameCoverage = true
     let response = try element.serialize(with: options)
     element.close()
-    XCTAssertNotNil(response.frameCoverage)
+    XCTAssertNotNil(response.coverage?.frame)
 
-    let coverage = response.frameCoverage!
+    let coverage = response.coverage!.frame
     XCTAssertGreaterThan(coverage, 0.2, "Coverage should be > 20% from bars")
     XCTAssertLessThan(coverage, 0.4, "Coverage should be < 40% due to empty WebView area")
   }
@@ -816,9 +816,9 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     options.collectFrameCoverage = true
     let response = try element.serialize(with: options)
     element.close()
-    XCTAssertNotNil(response.frameCoverage)
+    XCTAssertNotNil(response.coverage?.frame)
 
-    let coverage = response.frameCoverage!
+    let coverage = response.coverage!.frame
     XCTAssertGreaterThanOrEqual(coverage, 0.99, "Coverage should be near 100% when element covers full screen")
   }
 
@@ -838,10 +838,10 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     options.collectFrameCoverage = true
     let response = try element.serialize(with: options)
     element.close()
-    XCTAssertNotNil(response.frameCoverage)
+    XCTAssertNotNil(response.coverage?.frame)
 
     // Application element is skipped, so coverage should be 0
-    let coverage = response.frameCoverage!
+    let coverage = response.coverage!.frame
     XCTAssertEqual(coverage, 0.0, accuracy: 0.001, "Coverage should be 0 when only Application element exists")
   }
 
@@ -871,7 +871,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     let response = try element.serialize(with: options)
     element.close()
 
-    let coverage = try XCTUnwrap(response.frameCoverage, "coverage is collected despite the narrow key set")
+    let coverage = try XCTUnwrap(response.coverage?.frame, "coverage is collected despite the narrow key set")
     XCTAssertEqual(coverage, 0.5, accuracy: 0.01, "the bar covers the upper half; the Application root is skipped")
 
     let first = try XCTUnwrap((response.legacyElementsObject() as? [Any])?.first as? [String: Any])
@@ -883,7 +883,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
   }
 
   func testAdditionalFrameCoverageIsNilWithoutRemoteContent() async throws {
-    // Test that additionalFrameCoverage is nil when no remote content is discovered
+    // Test that the additional coverage is nil when no remote content is discovered
     setUp(withRootElement: defaultElementTree)
 
     let element = try await simulator.resolveElement(for: .frontmost)
@@ -892,12 +892,12 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     options.collectFrameCoverage = true
     let response = try element.serialize(with: options)
     element.close()
-    XCTAssertNotNil(response.frameCoverage, "frameCoverage should be set when collectFrameCoverage is enabled")
-    XCTAssertNil(response.additionalFrameCoverage, "additionalFrameCoverage should be nil when no remote content is discovered")
+    XCTAssertNotNil(response.coverage?.frame, "coverage should be reported when collectFrameCoverage is enabled")
+    XCTAssertNil(response.coverage?.additional, "the additional coverage should be nil when no remote content is discovered")
   }
 
   func testAdditionalFrameCoverageIsNilWithoutRemoteContentOptions() async throws {
-    // Test that additionalFrameCoverage is nil when remote content options are not set
+    // Test that the additional coverage is nil when remote content options are not set
     setUp(withRootElement: defaultElementTree)
 
     let element = try await simulator.resolveElement(for: .frontmost)
@@ -907,14 +907,14 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     // remoteContentOptions is nil by default
     let response = try element.serialize(with: options)
     element.close()
-    XCTAssertNil(response.additionalFrameCoverage, "additionalFrameCoverage should be nil without remoteContentOptions")
+    XCTAssertNil(response.coverage?.additional, "the additional coverage should be nil without remoteContentOptions")
   }
 
   func testRemoteContentDiscoveryMergesDiscoveredElement() async throws {
     // The frontmost app (pid 12345) is an AXApplication with no children, so the
     // main traversal marks no coverage. A separate-process element (pid 99999)
     // sits mid-screen and must be found via grid hit-testing and merged into the
-    // flat output, with additionalFrameCoverage reflecting the newly covered area.
+    // flat output, with the additional coverage reflecting the newly covered area.
     let appElement = FBAccessibilityTestElementBuilder.application(
       withLabel: "App",
       frame: NSRect(x: 0, y: 0, width: 390, height: 844),
@@ -944,7 +944,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     let response = try element.serialize(with: options)
     element.close()
 
-    XCTAssertNotNil(response.additionalFrameCoverage, "additionalFrameCoverage should be set when remote content is discovered")
+    XCTAssertNotNil(response.coverage?.additional, "the additional coverage should be set when remote content is discovered")
 
     let elements = response.legacyElementsObject() as! [Any]
     let labels = elements.compactMap { ($0 as? [String: Any])?["AXLabel"] as? String }
@@ -981,6 +981,40 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     let response = try element.serialize(with: options)
     element.close()
     return response.profilingData
+  }
+
+  /// Reads `filterableRoot()` under `filter` with coverage on. Installs the fixture, so it may be
+  /// called only once per test.
+  private func coverage(withFilter filter: FBAccessibilityElementFilter) async throws -> FBAccessibilityCoverage? {
+    setUp(withRootElement: filterableRoot())
+    let element = try await simulator.resolveElement(for: .frontmost)
+    var options = FBAccessibilityRequestOptions()
+    options.collectFrameCoverage = true
+    options.filter = filter
+    let response = try element.serialize(with: options)
+    element.close()
+    return response.coverage
+  }
+
+  // Under the default filter nothing is dropped, so the two ratios describe the same set of elements
+  // and must agree exactly.
+  func testWalkedCoverageEqualsReportedCoverageUnderTheDefaultFilter() async throws {
+    let measured = try await coverage(withFilter: .all)
+    let coverage = try XCTUnwrap(measured)
+    XCTAssertEqual(coverage.walked, coverage.frame, accuracy: 0.0001, "with nothing dropped the two are one number")
+    XCTAssertGreaterThan(coverage.frame, 0, "the fixture's children cover part of the screen")
+  }
+
+  // Under a filter that drops elements the two diverge, and that gap is the point: `frame` is what the
+  // caller receives, `walked` is what was there to receive. The fixture drops two static texts that
+  // between them cover more screen than the one button that survives.
+  func testWalkedCoverageExceedsReportedCoverageWhenTheFilterDrops() async throws {
+    let measured = try await coverage(withFilter: .interactable)
+    let coverage = try XCTUnwrap(measured)
+    XCTAssertGreaterThan(
+      coverage.walked, coverage.frame,
+      "the dropped static texts are counted by the walk and not by the report"
+    )
   }
 
   // The baseline the filtered read below is measured against: every node serialized.
@@ -1028,7 +1062,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     element.close()
 
     XCTAssertNotNil(
-      response.additionalFrameCoverage,
+      response.coverage?.additional,
       "the element was discovered — its coverage is counted even though the filter then drops it"
     )
     let elements = try XCTUnwrap(response.legacyElementsObject() as? [Any])

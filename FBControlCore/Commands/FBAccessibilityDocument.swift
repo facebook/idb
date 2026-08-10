@@ -194,23 +194,41 @@ public struct FBAccessibilityTargetDescriptor: Sendable, Equatable, Encodable {
 /// The proportion of the screen covered by element frames.
 public struct FBAccessibilityCoverage: Sendable, Equatable, Encodable {
 
+  /// Coverage of the elements the read *reports* — what a consumer actually receives.
   public let frame: Double
+
+  /// Coverage of the elements the read *walked*, before `--filter` narrowed them. Equal to `frame`
+  /// under the default filter, which drops nothing.
+  ///
+  /// Named for the walk rather than for the tree because the two are not always the same: the guest
+  /// backends bound their walk by depth and node count, and a read that hit those bounds reports
+  /// `truncated` and never saw the rest of the tree. This is what was read, which is the most any
+  /// calculation over the result can honestly claim.
+  ///
+  /// The pair is the useful signal. A `frame` far below `walked` means the filter hid most of the
+  /// screen's content; both being low means the app is not exposing it in the first place — a WebView
+  /// or other remote content.
+  public let walked: Double
+
   /// Coverage found by grid hit-testing for remote (separate-process) content, when that ran.
   public let additional: Double?
 
-  public init(frame: Double, additional: Double?) {
+  public init(frame: Double, walked: Double, additional: Double?) {
     self.frame = frame
+    self.walked = walked
     self.additional = additional
   }
 
   enum CodingKeys: String, CodingKey {
     case frame
+    case walked
     case additional
   }
 
   public func encode(to encoder: Encoder) throws {
     var container = encoder.container(keyedBy: CodingKeys.self)
     try container.encode(frame, forKey: .frame)
+    try container.encode(walked, forKey: .walked)
     try container.encode(additional, forKey: .additional)
   }
 }
