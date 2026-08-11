@@ -1290,11 +1290,11 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
       [self resolveError:[[NSString alloc] initWithCString:strerror(errno) encoding:NSASCIIStringEncoding]];
       return -1;
     }
-    totalWritten += result;
+    totalWritten += (NSUInteger)result;
   }
   self.status = NSStreamStatusOpen;
-  self.bytesWritten += totalWritten;
-  return totalWritten;
+  self.bytesWritten += (ssize_t)totalWritten;
+  return (NSInteger)totalWritten;
 }
 
 - (void)open
