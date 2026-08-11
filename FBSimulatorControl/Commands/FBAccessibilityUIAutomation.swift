@@ -93,6 +93,12 @@ final class FBAccessibilityUIAutomation: FBUIAutomation, @unchecked Sendable {
     _ query: FBAccessibilityElementQuery,
     options: FBTapOptions
   ) async throws {
+    // A hold is a property of a synthesized touch, and this backend does not synthesize one — `AXPress`
+    // is instantaneous with nowhere to put a duration. Rejected rather than dropped: a long-press that
+    // silently becomes a tap is a test passing for the wrong reason.
+    guard options.duration == nil else {
+      throw FBUIAutomationError.operationUnsupported(backend: .accessibility, operation: "A tap with a hold duration")
+    }
     try await Self.translatingSeamErrors(query) {
       let element = try await operations.resolveElement(for: query)
       defer { element.close() }

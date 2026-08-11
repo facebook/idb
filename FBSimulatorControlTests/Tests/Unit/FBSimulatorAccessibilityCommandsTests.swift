@@ -587,12 +587,9 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
   }
 
   // `FBTapOptions.duration` asks for a long-press. The accessibility backend performs `AXPress`, which is
-  // instantaneous and has nowhere to put a hold, so the duration is dropped and the caller is told nothing
-  // — a test asking for a long-press gets an ordinary tap and passes.
-  //
-  // BUG: the tap completes and lands as an ordinary press instead of refusing the hold it cannot perform
-  // — flipped in the following commit.
-  func testAccessibilityTapIgnoresAHoldDuration() async throws {
+  // instantaneous and has nowhere to put a hold, so the request is refused rather than quietly served as
+  // an ordinary tap — a test asking for a long-press and getting a tap passes for the wrong reason.
+  func testAccessibilityTapRefusesAHoldDuration() async throws {
     setUp(withRootElement: defaultElementTree)
     let okButton = FBAccessibilityTestElementBuilder.button(
       withLabel: "OK",
@@ -602,11 +599,20 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     fixture!.translator.macPlatformElementResult = okButton
 
     let automation = try simulator.uiAutomation(backend: .accessibility)
-    try await automation.tap(.point(CGPoint(x: 95, y: 772)), options: FBTapOptions(duration: 2))
+    do {
+      try await automation.tap(.point(CGPoint(x: 95, y: 772)), options: FBTapOptions(duration: 2))
+      XCTFail("a hold this backend cannot perform must be refused")
+    } catch let error as FBUIAutomationError {
+      guard case let .operationUnsupported(backend, operation) = error else {
+        return XCTFail("expected operationUnsupported, got \(error)")
+      }
+      XCTAssertEqual(backend, .accessibility)
+      XCTAssertEqual(operation, "A tap with a hold duration")
+    }
 
-    XCTAssertTrue(
+    XCTAssertFalse(
       okButton.accessedProperties.contains("accessibilityActionNames"),
-      "the tap reached the element and pressed it, hold and all"
+      "a refused tap must not reach the element at all"
     )
   }
 
