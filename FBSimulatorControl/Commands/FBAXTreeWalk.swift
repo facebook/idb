@@ -93,8 +93,13 @@ enum FBAXTreeWalk {
         continue
       }
       matched = true
+      // A rectangle with no area is not somewhere a caller can be aimed at, and it is not rare: an
+      // element whose frame never reached the wire is normalized to a zero rectangle on the way in, so it
+      // arrives with all four components present and would otherwise resolve to the origin. Treated as no
+      // usable frame, alongside a frame that is absent outright — the same thing said two ways.
       guard let frame = element.frame ?? nil,
-        let x = frame.x, let y = frame.y, let width = frame.width, let height = frame.height
+        let x = frame.x, let y = frame.y, let width = frame.width, let height = frame.height,
+        width > 0, height > 0
       else {
         continue
       }

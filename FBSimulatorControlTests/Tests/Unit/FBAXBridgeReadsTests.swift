@@ -1332,22 +1332,21 @@ final class FBAXBridgeReadsTests: XCTestCase {
     }
   }
 
-  // An element carrying no frame on the wire is normalized to a zero rectangle on the way in, so it
-  // resolves to the origin rather than reporting itself off-screen — the same rectangle `frame` reports
-  // for that element, and the same point the remote backend's marker tap resolves, since both go through
-  // `resolveMarker`. Pinned because it is a write landing somewhere the caller did not name: the
-  // resolution cannot tell "at the origin" from "no geometry", and the assertion the write carries is
-  // what stops it acting on whatever happens to be there.
-  //
-  // BUG: a write resolves to the origin instead of refusing an element with no usable frame — flipped in
-  // the following commit, along with the `resolveMarker` decision underneath it.
-  func testAMarkerWithNoFrameResolvesToTheOriginRatherThanReportingItselfOffScreen() async throws {
-    let target = try await Self.framedReader(child: nil).writeTarget(for: Self.marker, operation: "A tap")
-    XCTAssertEqual(target.point, .zero)
-    XCTAssertEqual(
-      target.assertion, FBAXBridgeWriteAssertion(key: .label, value: "General Settings"),
-      "the assertion is the only thing standing between this and a write at the origin"
-    )
+  // An element carrying no frame on the wire is normalized to a zero rectangle on the way in, which is a
+  // rectangle with no area rather than an absent one. A write refuses it instead of resolving it to the
+  // centre of nothing, which is the origin — a point the caller never named and something is usually
+  // drawn at.
+  func testAMarkerWithNoFrameIsRefusedRatherThanResolvedToTheOrigin() async throws {
+    do {
+      _ = try await Self.framedReader(child: nil).writeTarget(for: Self.marker, operation: "A tap")
+      XCTFail("an element with no usable frame must not resolve a point to write to")
+    } catch let error as FBUIAutomationError {
+      guard case let .elementNotOnScreen(_, key, value) = error else {
+        return XCTFail("expected elementNotOnScreen, got \(error)")
+      }
+      XCTAssertEqual(key, "AXLabel")
+      XCTAssertEqual(value, "General")
+    }
   }
 
   // MARK: - The caller's own pre-write assertion
