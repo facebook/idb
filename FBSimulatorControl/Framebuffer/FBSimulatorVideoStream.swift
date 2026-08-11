@@ -375,10 +375,10 @@ public actor FBSimulatorVideoStream: FBVideoStream {
       do {
         try mountSurface(surface)
       } catch {
-        // Unwind the partial start so the failure is observable and nothing stays registered.
-        eventTask.cancel()
-        attachment.cancel()
-        lifecycle = .idle
+        // Unwind the partial start so the failure is observable and nothing stays registered. The
+        // awaiter list is still empty here, so this only tears the session down — the error reaches
+        // the caller by being thrown rather than resumed.
+        failPendingStart(with: error)
         throw error
       }
       pushFrame(forceKeyFrame: false)
