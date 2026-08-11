@@ -531,10 +531,6 @@ public actor FBSimulatorVideoStream: FBVideoStream {
     let attributes = bitmapStreamPixelBufferAttributes(from: buffer)
     logger.log("Mounting Surface with Attributes: \(FBCollectionInformation.oneLineDescription(from: attributes))")
 
-    // Swap the pixel buffers.
-    self.pixelBuffer = buffer
-    self.pixelBufferAttributes = attributes
-
     let framePusher = try Self.framePusher(
       configuration: configuration,
       compressionSessionProperties: compressionSessionProperties,
@@ -542,6 +538,12 @@ public actor FBSimulatorVideoStream: FBVideoStream {
       encodedSampleConsumerOverride: encodedSampleConsumerOverride,
       logger: logger)
     try framePusher.setup(with: buffer, edgeInsets: edgeInsets)
+
+    // Published only once every throwing step is past, so a mount is all-or-nothing: a failed one
+    // leaves the previous surface installed rather than a new `pixelBuffer` behind a pusher never
+    // set up for it.
+    self.pixelBuffer = buffer
+    self.pixelBufferAttributes = attributes
     self.framePusher = framePusher
     let transportTimedMetadataWriter =
       (framePusher as? FBSimulatorVideoStreamFramePusher_VideoToolbox)?.timedMetadataWriter
