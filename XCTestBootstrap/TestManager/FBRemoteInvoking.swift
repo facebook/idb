@@ -196,7 +196,11 @@ func awaitRemoteReceipt(
   return try await withTaskCancellationHandler {
     try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Any?, Error>) in
       bridge.store(continuation)
-      let timeout = DispatchWorkItem {
+      // SAFETY: `timeout` crosses into the completion block only to be cancelled, and
+      // DispatchWorkItem.cancel() is thread-safe; the work item's closure itself only
+      // touches the Sendable `bridge`.
+      // patternlint-disable-next-line swift-nonisolated-unsafe
+      nonisolated(unsafe) let timeout = DispatchWorkItem {
         bridge.resolve(.failure(FBRemoteInvocationError.invocationTimedOut(operation: operation, deadline: deadline)))
       }
       queue.asyncAfter(deadline: .now() + deadline, execute: timeout)
