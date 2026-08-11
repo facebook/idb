@@ -404,6 +404,28 @@ typedef struct FBAXPair {
   XCTAssertNil(failed[@"error_kind"]);
 }
 
+#pragma mark - The default frontmost method
+
+// A fused frontmost read that names no method resolves positionally: a system-wide hit-test at the anchor,
+// whose owning process is taken for the frontmost app. That is a proxy rather than the thing itself, and it
+// answers only when something occupies the anchor — so an app mid-transition, or a screen whose centre
+// falls between elements, fails a read the window server could have answered without looking at a pixel.
+//
+// BUG: the default resolves a positional proxy and fails where the authoritative resolver would not —
+// flipped in the following commit.
+- (void)testAFrontmostReadWithNoMethodResolvesPositionally
+{
+  _runtime.hitTestOutcome = [FBAXHitTestOutcome empty];
+  _runtime.windowServerOutcome = [FBAXFrontmostOutcome resolved:kAppPid];
+  _runtime.applicationElements[@(kAppPid)] = [FBAXFakeElement readable:@"UIApplication"];
+
+  NSDictionary *response = FBAXBridgeHandleRequest(@{@"verb" : @"describe", @"x" : @201, @"y" : @437});
+  XCTAssertEqualObjects(response[@"ok"], @NO);
+  XCTAssertEqualObjects(response[@"error_kind"], @"frontmost_unresolved");
+  XCTAssertEqual(_runtime.hitTestCount, 1u, @"the anchor was consulted");
+  XCTAssertEqual(_runtime.windowServerCount, 0u, @"the window server could have answered and was never asked");
+}
+
 #pragma mark - Request validation
 
 // A malformed request is the caller's to fix, and is held apart from every failure of the reader or of
