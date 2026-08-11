@@ -166,9 +166,11 @@ extension FBAXTreeRead {
         return .guestFailure(message)
       }
       return .frontmostUnresolved(method: frontmostMethod, reason: message)
-    case .badRequest, .none:
+    case .badRequest, .assertionFailed, .none:
       // A malformed request is a host bug, not something a user can act on, so it stays opaque and
-      // carries the guest's description of what it rejected.
+      // carries the guest's description of what it rejected. `assertionFailed` only answers a write, and
+      // this classifies the read verbs, so on a read it is a guest answering something it was not asked
+      // — opaque for the same reason.
       guard let pid else {
         return .guestFailure(message)
       }

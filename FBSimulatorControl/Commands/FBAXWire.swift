@@ -68,12 +68,33 @@ enum FBAXWire {
     case readerUnavailable = "reader_unavailable"
     /// The request was malformed — an unknown verb, or a missing or wrongly-typed argument.
     case badRequest = "bad_request"
+    /// A write was refused before it was attempted: the element found at the point is not the one the
+    /// caller named. Distinct from `badRequest` because the request was well-formed — the screen moved.
+    case assertionFailed = "assertion_failed"
   }
 
-  /// The guest read verbs — the one-shot CLI subcommand and the persistent-transport `verb` value
-  /// share this spelling.
-  enum Verb: String {
+  /// The guest verbs — the one-shot CLI subcommand and the persistent-transport `verb` value share this
+  /// spelling.
+  enum Verb: String, CaseIterable {
     case describe
     case hitTest = "hittest"
+    case perform
+    case setValue = "setvalue"
+  }
+
+  /// The semantic actions a `perform` can ask for.
+  ///
+  /// These are accessibility actions the application runs itself, not synthesized touches — the guest
+  /// hands the numeric identifier to the AX runtime, and the element's own implementation decides what
+  /// happens. The HID path is what simulates input; this is what asks.
+  enum Action: String, CaseIterable {
+    /// Activate the element — the semantic equivalent of tapping it.
+    case press
+    case scrollUp = "scroll-up"
+    case scrollDown = "scroll-down"
+    case scrollLeft = "scroll-left"
+    case scrollRight = "scroll-right"
+    /// Bring the element into its scroll container's viewport.
+    case scrollToVisible = "scroll-to-visible"
   }
 }

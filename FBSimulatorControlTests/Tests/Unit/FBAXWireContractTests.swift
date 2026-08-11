@@ -109,6 +109,7 @@ final class FBAXWireContractTests: XCTestCase {
       .frontmostUnresolved: "frontmost_unresolved",
       .readerUnavailable: "reader_unavailable",
       .badRequest: "bad_request",
+      .assertionFailed: "assertion_failed",
     ]
     XCTAssertEqual(Set(FBAXWire.ErrorKind.allCases), Set(expected.keys), "every failure kind must have its wire value pinned")
     for (kind, wireValue) in expected {
@@ -122,6 +123,94 @@ final class FBAXWireContractTests: XCTestCase {
   // is talking to and cost only precision.
   func testAnUnknownFailureKindIsNotAKnownOne() {
     XCTAssertNil(FBAXWire.ErrorKind(rawValue: "application_on_fire"))
+  }
+
+  // MARK: - Verbs and actions
+
+  // The verb is the first thing the guest reads off a request, and it is spelled the same as the
+  // one-shot CLI subcommand — so a rename here breaks both transports at once. Pinned over `allCases`
+  // so a verb added host-side without a guest that answers it fails here.
+  func testVerbWireValues() {
+    let expected: [FBAXWire.Verb: String] = [
+      .describe: "describe",
+      .hitTest: "hittest",
+      .perform: "perform",
+      .setValue: "setvalue",
+    ]
+    XCTAssertEqual(Set(FBAXWire.Verb.allCases), Set(expected.keys), "every verb must have its wire value pinned")
+    for (verb, wireValue) in expected {
+      XCTAssertEqual(verb.rawValue, wireValue)
+    }
+  }
+
+  // The action names a `perform` sends. The guest maps each back to a numeric AX identifier, so an
+  // unrecognised spelling is refused outright rather than quietly becoming a press.
+  func testActionWireValues() {
+    let expected: [FBAXWire.Action: String] = [
+      .press: "press",
+      .scrollUp: "scroll-up",
+      .scrollDown: "scroll-down",
+      .scrollLeft: "scroll-left",
+      .scrollRight: "scroll-right",
+      .scrollToVisible: "scroll-to-visible",
+    ]
+    XCTAssertEqual(Set(FBAXWire.Action.allCases), Set(expected.keys), "every action must have its wire value pinned")
+    for (action, wireValue) in expected {
+      XCTAssertEqual(action.rawValue, wireValue)
+    }
+  }
+
+  // MARK: - Write requests
+
+  // The two transports send the same write in different shapes, so the shapes are pinned together: a
+  // field added to one rendering and forgotten in the other is a write that behaves differently
+  // depending on which transport the caller happens to hold.
+  func testAWriteRendersTheSameFieldsForBothTransports() {
+    let request = FBAXBridgeWriteRequest(
+      kind: .perform(.press),
+      x: 201,
+      y: 406,
+      pid: 4321,
+      assertion: FBAXBridgeWriteAssertion(key: .label, value: "General")
+    )
+    XCTAssertEqual(
+      request.arguments,
+      [
+        "accessibility", "perform", "--x", "201.0", "--y", "406.0", "--pid", "4321",
+        "--action", "press", "--assert-key", "XC_kAXXCAttributeLabel", "--assert-value", "General",
+      ]
+    )
+    XCTAssertEqual(
+      request.payload as NSDictionary,
+      [
+        "verb": "perform", "x": 201.0, "y": 406.0, "pid": 4321,
+        "action": "press", "assertKey": "XC_kAXXCAttributeLabel", "assertValue": "General",
+      ] as NSDictionary
+    )
+  }
+
+  func testASetValueRendersItsValueRatherThanAnAction() {
+    let request = FBAXBridgeWriteRequest(kind: .setValue("hello"), x: 1, y: 2, pid: nil, assertion: nil)
+    XCTAssertEqual(request.verb, .setValue)
+    XCTAssertEqual(request.arguments, ["accessibility", "setvalue", "--x", "1.0", "--y", "2.0", "--value", "hello"])
+    XCTAssertEqual(
+      request.payload as NSDictionary,
+      ["verb": "setvalue", "x": 1.0, "y": 2.0, "value": "hello"] as NSDictionary
+    )
+  }
+
+  // An absent pid and an absent assertion contribute nothing at all. The guest reads argv in flag/value
+  // pairs and rejects a pid that is present and non-positive, so an option rendered as an empty string
+  // or a zero would be read as a request the caller never made.
+  func testAbsentOptionsAreOmittedRatherThanSentEmpty() {
+    let request = FBAXBridgeWriteRequest(kind: .perform(.scrollDown), x: 10, y: 20, pid: nil, assertion: nil)
+    XCTAssertEqual(request.arguments, ["accessibility", "perform", "--x", "10.0", "--y", "20.0", "--action", "scroll-down"])
+    XCTAssertFalse(request.arguments.contains("--pid"))
+    XCTAssertFalse(request.arguments.contains("--assert-key"))
+    XCTAssertNil(request.payload["pid"])
+    XCTAssertNil(request.payload["assertKey"])
+    XCTAssertNil(request.payload["assertValue"])
+    XCTAssertEqual(request.arguments.count % 2, 0, "the guest reads argv in pairs, so a flag must never be left without a value")
   }
 
   // MARK: - Frontmost-method request selectors

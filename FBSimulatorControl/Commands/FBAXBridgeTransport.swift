@@ -31,6 +31,83 @@ public enum FBAXBridgeFrontmostMethod: String, Sendable, CaseIterable {
   case runningBoard = "runningboard"
 }
 
+/// What the element at a write's point must still be for the write to go ahead: one node attribute and
+/// the value it has to equal, compared by the guest against whatever it actually hit-tests there.
+///
+/// The key is an `FBAXWire.Node` rather than a string because only the attributes the tree walk fetches
+/// can be asserted on — the assertion is built from a node the host read off this same wire, so a key
+/// outside that set could not have come from there, and the guest refuses it as a bad request.
+struct FBAXBridgeWriteAssertion: Sendable, Equatable {
+  let key: FBAXWire.Node
+  let value: String
+}
+
+/// One point-addressed write, in the two shapes the transports send it as.
+///
+/// Both renderings live here rather than in the conformers because a write has to mean the same thing
+/// over either transport — that is the point of addressing writes by point at all, and two hand-written
+/// copies of the same request are exactly how the two would drift apart.
+struct FBAXBridgeWriteRequest: Sendable, Equatable {
+  /// Which write, and the one argument that write takes.
+  enum Kind: Sendable, Equatable {
+    case perform(FBAXWire.Action)
+    case setValue(String)
+  }
+
+  let kind: Kind
+  let x: Double
+  let y: Double
+  /// The application to hit-test within. `nil` hit-tests display-wide, resolving the owning app in-guest;
+  /// the guest rejects a pid that is present and non-positive rather than reading it as "no pid".
+  let pid: pid_t?
+  let assertion: FBAXBridgeWriteAssertion?
+
+  var verb: FBAXWire.Verb {
+    switch kind {
+    case .perform: .perform
+    case .setValue: .setValue
+    }
+  }
+
+  /// The one-shot spawn's argv. The guest's front-end reads flags in pairs, so every flag carries a
+  /// value and an absent option contributes nothing rather than an empty argument.
+  var arguments: [String] {
+    var arguments = ["accessibility", verb.rawValue, "--x", "\(x)", "--y", "\(y)"]
+    if let pid {
+      arguments += ["--pid", "\(pid)"]
+    }
+    switch kind {
+    case let .perform(action):
+      arguments += ["--action", action.rawValue]
+    case let .setValue(value):
+      arguments += ["--value", value]
+    }
+    if let assertion {
+      arguments += ["--assert-key", assertion.key.rawValue, "--assert-value", assertion.value]
+    }
+    return arguments
+  }
+
+  /// The persistent transport's JSON request object, carrying the same fields the argv above does.
+  var payload: [String: Any] {
+    var payload: [String: Any] = ["verb": verb.rawValue, "x": x, "y": y]
+    if let pid {
+      payload["pid"] = Int(pid)
+    }
+    switch kind {
+    case let .perform(action):
+      payload["action"] = action.rawValue
+    case let .setValue(value):
+      payload["value"] = value
+    }
+    if let assertion {
+      payload["assertKey"] = assertion.key.rawValue
+      payload["assertValue"] = assertion.value
+    }
+    return payload
+  }
+}
+
 protocol FBAXBridgeTransport {
   /// Reads the whole element tree for `pid` (the guest `describe` verb), bounded by the caller's
   /// depth and node budget — the host owns those bounds so both XCUI-grade backends truncate alike.
@@ -45,6 +122,12 @@ protocol FBAXBridgeTransport {
   /// hit-test that resolves the element and its owning app in-guest in one round-trip, with no walk and
   /// no separate frontmost pid query. The response carries the owning pid alongside the hit node.
   func hitTest(x: Double, y: Double) async throws -> Data
+  /// Sends one point-addressed write (the guest `perform` or `setvalue` verb) and returns its envelope.
+  ///
+  /// One entry point rather than one per verb: the guest splits them because performing an action and
+  /// setting an attribute are different runtime calls, but a transport only ships the request, and the
+  /// request already says which it is.
+  func write(_ request: FBAXBridgeWriteRequest) async throws -> Data
 }
 
 // MARK: - One-shot transport
@@ -63,6 +146,10 @@ struct FBAXBridgeOneshotTransport: FBAXBridgeTransport {
 
   func hitTest(x: Double, y: Double) async throws -> Data {
     try await spawn(["accessibility", FBAXWire.Verb.hitTest.rawValue, "--x", "\(x)", "--y", "\(y)"])
+  }
+
+  func write(_ request: FBAXBridgeWriteRequest) async throws -> Data {
+    try await spawn(request.arguments)
   }
 
   private func spawn(_ arguments: [String]) async throws -> Data {
@@ -103,6 +190,34 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
 
   func hitTest(x: Double, y: Double) async throws -> Data {
     try await roundTripWithRecovery(["verb": FBAXWire.Verb.hitTest.rawValue, "x": x, "y": y])
+  }
+
+  func write(_ request: FBAXBridgeWriteRequest) async throws -> Data {
+    try await roundTripWithoutResend(request.payload)
+  }
+
+  /// Sends one request over the reused connection and never re-sends it, for requests that are not safe
+  /// to run twice.
+  ///
+  /// `roundTripWithRecovery` retries a failed round-trip, which is right for a read and wrong for a
+  /// write: a round-trip that fails after the request reached the guest — a lost response frame, a
+  /// `recv` deadline that elapsed while the application was still running the action — is
+  /// indistinguishable from one that failed before it, so retrying risks pressing a button twice. A
+  /// failed write is reported instead, and the dead connection is dropped so the caller's next attempt
+  /// establishes a fresh serve rather than reusing it.
+  private func roundTripWithoutResend(_ request: [String: Any]) async throws -> Data {
+    let requestData = try JSONSerialization.data(withJSONObject: request)
+    let (connection, generation) = try await self.connection()
+    do {
+      return try await connection.roundTrip(requestData)
+    } catch {
+      // Compare-and-clear on the generation that failed, for the reason `roundTripWithRecovery` gives:
+      // a concurrent caller may already have replaced this connection with a healthy one.
+      if connectionGeneration == generation {
+        connectionTask = nil
+      }
+      throw error
+    }
   }
 
   /// Sends one request over the reused connection, recovering from a terminated serve process.
