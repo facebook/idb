@@ -19,8 +19,8 @@ final class FBiOSTargetDouble: NSObject, FBiOSTarget {
   var customDeviceSetPath: String?
   var state: FBiOSTargetState = .unknown
   var targetType: FBiOSTargetType = .simulator
-  var deviceType: FBDeviceType!
-  var osVersion: FBOSVersion!
+  var deviceType: FBDeviceType = .generic(withName: "FBiOSTargetDouble")
+  var osVersion: FBOSVersion = .generic(withName: "FBiOSTargetDouble")
 
   // MARK: FBiOSTarget - synthesized properties
 
@@ -29,7 +29,7 @@ final class FBiOSTargetDouble: NSObject, FBiOSTarget {
   var platformRootDirectory: String = ""
   var runtimeRootDirectory: String = ""
   var screenInfo: FBiOSTargetScreenInfo?
-  var temporaryDirectory: FBTemporaryDirectory!
+  var temporaryDirectory: FBTemporaryDirectory = .temporaryDirectory(logger: FBControlCoreLoggerDouble())
 
   // MARK: FBiOSTargetCommand
 
