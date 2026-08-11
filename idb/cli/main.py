@@ -71,6 +71,7 @@ from idb.cli.commands.file import (
 )
 from idb.cli.commands.focus import FocusCommand
 from idb.cli.commands.framework import FrameworkInstallCommand
+from idb.cli.commands.help import HelpCommand
 from idb.cli.commands.hid import (
     ButtonCommand,
     KeyCommand,
@@ -209,6 +210,7 @@ async def gen_main(cmd_input: list[str] | None = None) -> SysExitArg:
     )
     shell_command = ShellCommand(parser=parser)
     commands: list[Command] = [
+        HelpCommand(),
         AppInstallCommand(),
         AppUninstallCommand(),
         AppListCommand(),
