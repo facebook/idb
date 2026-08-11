@@ -8,6 +8,7 @@
 
 from argparse import ArgumentParser, Namespace
 
+import idb.common.plugin as plugin
 from idb.cli import BaseCommand
 from idb.common.types import IdbException
 
@@ -90,6 +91,12 @@ class HelpCommand(BaseCommand):
             print(_topic_list())
             return
         topic = _TOPICS.get(key)
-        if topic is None:
+        # Plugins may extend a topic or serve topics of their own, so an
+        # unknown key only fails once the plugins had their say.
+        contributed = plugin.get_agent_instructions(names=list(args.topic))
+        if topic is None and not contributed:
             raise IdbException(f"No help topic '{key}'.\n{_topic_list()}")
-        print(topic[1])
+        sections = [
+            section for section in (topic[1] if topic else "", contributed) if section
+        ]
+        print("\n".join(sections))

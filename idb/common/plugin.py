@@ -215,6 +215,27 @@ def on_invocation_result(
     return updates
 
 
+def get_agent_instructions(names: List[str]) -> str:
+    # Help output must survive a broken plugin: failures are isolated per
+    # plugin, and a failed plugin contributes nothing.
+    sections: List[str] = []
+    for plugin in PLUGINS:
+        method = getattr(plugin, "get_agent_instructions", None)
+        if not method:
+            continue
+        try:
+            section = method(names=names)
+        except Exception:
+            logger.exception(
+                f"get_agent_instructions plugin {plugin.__name__} failed, "
+                "swallowing exception"
+            )
+            continue
+        if section:
+            sections.append(section)
+    return "\n".join(sections)
+
+
 def resolve_metadata(
     logger: Logger,
     command: Command | None = None,

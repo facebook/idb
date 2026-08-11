@@ -8,9 +8,24 @@
 
 import contextlib
 import io
+from types import ModuleType
+from unittest import mock
 
 from idb.cli.main import gen_main as cli_main
+from idb.common import plugin
 from idb.utils.testing import TestCase
+
+
+class _InstructingPlugin(ModuleType):
+    def __init__(self, section: str, only_names: list[str] | None = None) -> None:
+        super().__init__("instructing")
+        self.section = section
+        self.only_names = only_names
+
+    def get_agent_instructions(self, names: list[str]) -> str:
+        if self.only_names is not None and names != self.only_names:
+            return ""
+        return self.section
 
 
 async def _run(cmd_input: list[str]) -> tuple[int, str]:
@@ -53,6 +68,25 @@ class HelpCommandTest(TestCase):
         self.assertEqual(exit_code, 1)
         self.assertIn("No help topic 'nonsense'", err.getvalue())
         self.assertIn("agent", err.getvalue())
+
+    async def test_plugin_contribution_appends_after_base_content(self) -> None:
+        contributing = _InstructingPlugin("EXTRA INTERNAL GUIDANCE")
+        with mock.patch.object(plugin, "PLUGINS", [contributing]):
+            (exit_code, output) = await _run(["help", "agent"])
+        self.assertEqual(exit_code, 0)
+        self.assertLess(
+            output.index("CODING_AGENT_METADATA"),
+            output.index("EXTRA INTERNAL GUIDANCE"),
+        )
+
+    async def test_plugin_only_topic_resolves(self) -> None:
+        contributing = _InstructingPlugin(
+            "plugin topic body", only_names=["internal", "topic"]
+        )
+        with mock.patch.object(plugin, "PLUGINS", [contributing]):
+            (exit_code, output) = await _run(["help", "internal", "topic"])
+        self.assertEqual(exit_code, 0)
+        self.assertIn("plugin topic body", output)
 
     async def test_help_requires_no_companion_or_target(self) -> None:
         # The command must run to completion with no companion configured;

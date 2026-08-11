@@ -68,6 +68,50 @@ class _FailingResultPlugin(ModuleType):
         raise RuntimeError("plugin failure")
 
 
+class _InstructingPlugin(ModuleType):
+    def __init__(self, name: str, section: str) -> None:
+        super().__init__(name)
+        self.section = section
+        self.names: list[str] | None = None
+
+    def get_agent_instructions(self, names: list[str]) -> str:
+        self.names = list(names)
+        return self.section
+
+
+class _FailingInstructionsPlugin(ModuleType):
+    def get_agent_instructions(self, names: list[str]) -> str:
+        raise RuntimeError("instructions failure")
+
+
+class GetAgentInstructionsTest(TestCase):
+    def test_contributions_join_in_plugin_order(self) -> None:
+        first = _InstructingPlugin("first", "first section")
+        second = _InstructingPlugin("second", "second section")
+        with mock.patch.object(plugin, "PLUGINS", [first, second]):
+            joined = plugin.get_agent_instructions(names=["agent"])
+        self.assertEqual(joined, "first section\nsecond section")
+        self.assertEqual(first.names, ["agent"])
+        self.assertEqual(second.names, ["agent"])
+
+    def test_plugin_failure_is_swallowed_and_later_plugins_contribute(self) -> None:
+        failing = _FailingInstructionsPlugin("failing")
+        contributing = _InstructingPlugin("contributing", "still here")
+        with mock.patch.object(plugin, "PLUGINS", [failing, contributing]):
+            self.assertEqual(
+                plugin.get_agent_instructions(names=["agent"]), "still here"
+            )
+
+    def test_empty_contributions_are_skipped(self) -> None:
+        silent = _InstructingPlugin("silent", "")
+        with mock.patch.object(plugin, "PLUGINS", [silent]):
+            self.assertEqual(plugin.get_agent_instructions(names=["agent"]), "")
+
+    def test_no_plugins_yield_empty_instructions(self) -> None:
+        with mock.patch.object(plugin, "PLUGINS", []):
+            self.assertEqual(plugin.get_agent_instructions(names=["agent"]), "")
+
+
 class PluginDispatchTest(TestCase):
     def test_rejection_propagates(self) -> None:
         rejecting = _RejectingPlugin("rejecting")
