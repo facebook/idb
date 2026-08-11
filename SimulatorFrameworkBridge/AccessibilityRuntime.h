@@ -137,6 +137,86 @@ typedef NS_ENUM(NSUInteger, FBAXHitTestStatus) {
 
 @end
 
+#pragma mark - Writes
+
+/**
+ * A semantic action an element can be asked to perform.
+ *
+ * The numbers the AX runtime takes stay below this line: an action crosses the interface as what it means,
+ * so a runtime that renumbers them is one table in the implementation rather than a constant threaded
+ * through the service, the wire and the host.
+ *
+ * Only actions with a caller are listed. Increment and Decrement exist in the runtime and are deliberately
+ * absent — nothing above the seam can ask for them, and an action no caller can reach is a case every
+ * switch has to handle for nothing.
+ */
+typedef NS_ENUM(NSUInteger, FBAXAction) {
+  /** Activate the element — the semantic equivalent of tapping it. */
+  FBAXActionPress,
+  FBAXActionScrollUp,
+  FBAXActionScrollDown,
+  FBAXActionScrollLeft,
+  FBAXActionScrollRight,
+  /** Bring the element into its scroll container's viewport. */
+  FBAXActionScrollToVisible,
+};
+
+/** How a write to an element turned out. */
+typedef NS_ENUM(NSUInteger, FBAXWriteStatus) {
+  /** The application accepted the write. */
+  FBAXWriteStatusWritten,
+  /** Nothing was at the point, so there was nothing to write to — a valid result, not a failure. */
+  FBAXWriteStatusEmpty,
+  /** The element at the point is not the one the caller named; `failureReason` says how it differed. */
+  FBAXWriteStatusAssertionFailed,
+  /** The owning process has no accessibility server to accept the write. */
+  FBAXWriteStatusApplicationUnavailable,
+  /** It has one and did not answer in time, so whether the write ran is unknown. */
+  FBAXWriteStatusApplicationNotResponding,
+  /** The write went wrong; `failureReason` says how. */
+  FBAXWriteStatusFailed,
+};
+
+/**
+ * The result of a write interaction.
+ *
+ * Unlike the read outcomes this one has two producers, and the status says which. The runtime produces
+ * `Written`, `ApplicationUnavailable`, `ApplicationNotResponding` and `Failed` — everything an AXError can
+ * mean. The other two are decided before the runtime is ever asked: nothing was at the point, or what was
+ * there is not the element the caller named. They share one type because a write reports one outcome, and a
+ * caller made to switch over two types to learn whether its tap landed has been handed back the problem the
+ * outcomes exist to remove.
+ */
+@interface FBAXWriteOutcome : NSObject
+
+@property (nonatomic, readonly) FBAXWriteStatus status;
+/** A diagnostic for the caller. Non-nil iff `AssertionFailed` or `Failed`. */
+@property (nullable, nonatomic, readonly, copy) NSString *failureReason;
+
++ (instancetype)written;
++ (instancetype)empty;
++ (instancetype)assertionFailed:(NSString *)failureReason;
++ (instancetype)applicationUnavailable;
++ (instancetype)applicationNotResponding;
++ (instancetype)failed:(NSString *)failureReason;
+
+/**
+ * Classifies the AXError from `AXUIElementPerformAction` or `AXUIElementSetAttributeValue` into the outcome
+ * it implies, including success.
+ *
+ * Unlike the hit-test classifier this one is total — a write either happened or it did not, so there is no
+ * "the caller finishes this" case.
+ *
+ * There is deliberately no "the element does not accept this action" outcome. The AX runtime has a code for
+ * it and does not emit it, and nothing an element advertises can be consulted instead:
+ * `XC_kAXXCAttributeUserTestingActions` is absent on every element (a sweep of SpringBoard and Settings
+ * found it on none of 206 nodes). An action an element ignores is therefore reported as a plain success,
+ * and there is no honest way to tell that apart from a write that landed.
+ */
++ (instancetype)outcomeForWriteError:(int32_t)axError;
+
+@end
+
 #pragma mark - Frontmost
 
 /** How a frontmost-application query turned out. */
@@ -265,6 +345,18 @@ extern NSArray<NSString *> *FBAXSignatureWarnings(void);
  * Either way the owning process comes back on the outcome.
  */
 - (FBAXHitTestOutcome *)hitTestAtPoint:(CGPoint)point processIdentifier:(pid_t)pid;
+
+/**
+ * Performs a semantic action on an element handle, in one round trip.
+ *
+ * The handle is the one a hit-test vends, so a write takes the same opaque element a read does. Whether
+ * the element advertises the action is not asked here — the runtime performs what it is told and reports
+ * an unadvertised action as a success, so that judgement belongs to the caller that read the element.
+ */
+- (FBAXWriteOutcome *)performAction:(FBAXAction)action onElement:(id)element;
+
+/** Writes an element handle's value attribute, in one round trip. */
+- (FBAXWriteOutcome *)setValue:(id)value onElement:(id)element;
 
 /** The frontmost application according to the window server, via the in-guest AXPTranslator. */
 - (FBAXFrontmostOutcome *)windowServerFrontmost;

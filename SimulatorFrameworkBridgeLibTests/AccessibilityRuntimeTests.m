@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#import <dlfcn.h>
 #import <objc/runtime.h>
 
 #import <XCTest/XCTest.h>
@@ -418,6 +419,66 @@ typedef struct FBAXPair {
   NSDictionary *describe = FBAXBridgeHandleRequest(@{@"verb" : @"describe"});
   XCTAssertEqualObjects(describe[@"error"], @"describe requires either a numeric pid or the frontmost anchor (x, y)");
   XCTAssertEqualObjects(describe[@"error_kind"], @"bad_request");
+}
+
+#pragma mark - Write outcomes
+
+// The AX runtime reports every write with a code and nothing else, so this classifier is the only thing
+// standing between "the app has gone" and "the writer is broken" — the same distinction the read and
+// hit-test classifiers make, made once more for the codes a write can come back with.
+- (void)testWriteErrorClassification
+{
+  XCTAssertEqual([FBAXWriteOutcome outcomeForWriteError:FBAXErrorSuccess].status, FBAXWriteStatusWritten);
+  XCTAssertEqual(
+    [FBAXWriteOutcome outcomeForWriteError:FBAXErrorServerNotFound].status,
+    FBAXWriteStatusApplicationUnavailable
+  );
+
+  // A timeout is the application being slow, not the application being gone — tagging it unavailable would
+  // tell the host to stop retrying something that is still there. It is not a plain failure either: a plain
+  // failure means the write did not happen, and a timeout does not say that.
+  XCTAssertEqual(
+    [FBAXWriteOutcome outcomeForWriteError:FBAXErrorIPCTimeout].status,
+    FBAXWriteStatusApplicationNotResponding
+  );
+
+  // Every other code is opaque, and the diagnostic has to carry it: triage happens from the wire response
+  // alone, and "the write failed" without the number says nothing actionable.
+  FBAXWriteOutcome *rejected = [FBAXWriteOutcome outcomeForWriteError:-25201];
+  XCTAssertEqual(rejected.status, FBAXWriteStatusFailed);
+  XCTAssertTrue([rejected.failureReason containsString:@"-25201"], @"%@", rejected.failureReason);
+}
+
+// The factories are the enforcement — a caller cannot build an outcome carrying a payload its status does
+// not license, so switching on the status is enough to know what is readable.
+- (void)testEachWriteOutcomeCarriesOnlyItsOwnPayload
+{
+  for (FBAXWriteOutcome *empty in @[[FBAXWriteOutcome written],
+                                    [FBAXWriteOutcome empty],
+                                    [FBAXWriteOutcome applicationUnavailable],
+                                    [FBAXWriteOutcome applicationNotResponding]]) {
+    XCTAssertNil(empty.failureReason);
+  }
+
+  FBAXWriteOutcome *assertionFailed = [FBAXWriteOutcome assertionFailed:@"expected General, found Wi-Fi"];
+  XCTAssertEqual(assertionFailed.status, FBAXWriteStatusAssertionFailed);
+  XCTAssertEqualObjects(assertionFailed.failureReason, @"expected General, found Wi-Fi");
+
+  FBAXWriteOutcome *failed = [FBAXWriteOutcome failed:@"the element has no AXUIElement to act on"];
+  XCTAssertEqual(failed.status, FBAXWriteStatusFailed);
+  XCTAssertEqualObjects(failed.failureReason, @"the element has no AXUIElement to act on");
+}
+
+// A dlsym'd C entry point is checked by a null test at bind time and by nothing else —
+// `FBAXSignatureWarnings` sweeps ObjC selectors, and there is no equivalent record of a C function's shape
+// to compare against. Asserting the two write entry points are in the runtime at all is the only part of
+// that binding a test can carry, and it is worth carrying because this bundle runs inside a simulator: the
+// symbols swept here are the guest's, on the runtime image the writer actually sends to.
+- (void)testTheAXRuntimeWriteEntryPointsResolve
+{
+  XCTAssertTrue(dlopen(FBAXPathAXRuntime, RTLD_NOW) != NULL, @"AXRuntime could not be opened");
+  XCTAssertTrue(dlsym(RTLD_DEFAULT, "AXUIElementPerformAction") != NULL);
+  XCTAssertTrue(dlsym(RTLD_DEFAULT, "AXUIElementSetAttributeValue") != NULL);
 }
 
 #pragma mark - Describe outcomes

@@ -68,6 +68,7 @@ static NSString *const kAXChildren = @"XC_kAXXCAttributeChildren";
   _hitTestOutcome = [FBAXHitTestOutcome empty];
   _windowServerOutcome = [FBAXFrontmostOutcome unresolved:@"no window-server outcome configured"];
   _runningBoardOutcome = [FBAXFrontmostOutcome unresolved:@"no running-board outcome configured"];
+  _writeOutcome = [FBAXWriteOutcome written];
   return self;
 }
 
@@ -105,6 +106,22 @@ static NSString *const kAXChildren = @"XC_kAXXCAttributeChildren";
   _lastHitTestPoint = point;
   _lastHitTestProcessIdentifier = pid;
   return self.hitTestOutcome;
+}
+
+- (FBAXWriteOutcome *)performAction:(FBAXAction)action onElement:(id)element
+{
+  _performCount++;
+  _lastPerformedAction = action;
+  _lastWrittenElement = element;
+  return self.writeOutcome;
+}
+
+- (FBAXWriteOutcome *)setValue:(id)value onElement:(id)element
+{
+  _setValueCount++;
+  _lastWrittenElement = element;
+  _lastWrittenValue = value;
+  return self.writeOutcome;
 }
 
 - (FBAXFrontmostOutcome *)windowServerFrontmost

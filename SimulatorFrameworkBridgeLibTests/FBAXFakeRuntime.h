@@ -59,14 +59,28 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong) FBAXFrontmostOutcome *windowServerOutcome;
 /** What `-runningBoardFrontmost` answers with. */
 @property (nonatomic, strong) FBAXFrontmostOutcome *runningBoardOutcome;
+/** What both write methods answer with. */
+@property (nonatomic, strong) FBAXWriteOutcome *writeOutcome;
 
 /** How many times each interaction was asked for — the evidence that a resolver did or did not run. */
 @property (nonatomic, readonly) NSUInteger hitTestCount;
 @property (nonatomic, readonly) NSUInteger windowServerCount;
 @property (nonatomic, readonly) NSUInteger runningBoardCount;
+@property (nonatomic, readonly) NSUInteger performCount;
+@property (nonatomic, readonly) NSUInteger setValueCount;
 /** The point of the most recent hit-test, and the pid it was scoped to (0 for display-wide). */
 @property (nonatomic, readonly) CGPoint lastHitTestPoint;
 @property (nonatomic, readonly) pid_t lastHitTestProcessIdentifier;
+/**
+ * What the most recent write was asked to do.
+ *
+ * `FBAXAction` has no "nothing yet" case, so `lastPerformedAction` reads as `FBAXActionPress` on a runtime
+ * that was never asked to perform anything — assert `performCount` before believing it.
+ */
+@property (nonatomic, readonly) FBAXAction lastPerformedAction;
+/** The element handle the most recent write of either kind was given, and the value a set-value wrote. */
+@property (nullable, nonatomic, readonly, strong) id lastWrittenElement;
+@property (nullable, nonatomic, readonly, strong) id lastWrittenValue;
 
 @end
 

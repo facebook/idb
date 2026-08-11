@@ -158,6 +158,70 @@
 
 @end
 
+@implementation FBAXWriteOutcome
+
+- (instancetype)initWithStatus:(FBAXWriteStatus)status failureReason:(nullable NSString *)failureReason
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+  _status = status;
+  _failureReason = [failureReason copy];
+  return self;
+}
+
++ (instancetype)written
+{
+  return [[self alloc] initWithStatus:FBAXWriteStatusWritten failureReason:nil];
+}
+
++ (instancetype)empty
+{
+  return [[self alloc] initWithStatus:FBAXWriteStatusEmpty failureReason:nil];
+}
+
++ (instancetype)assertionFailed:(NSString *)failureReason
+{
+  return [[self alloc] initWithStatus:FBAXWriteStatusAssertionFailed failureReason:failureReason];
+}
+
++ (instancetype)applicationUnavailable
+{
+  return [[self alloc] initWithStatus:FBAXWriteStatusApplicationUnavailable failureReason:nil];
+}
+
++ (instancetype)applicationNotResponding
+{
+  return [[self alloc] initWithStatus:FBAXWriteStatusApplicationNotResponding failureReason:nil];
+}
+
++ (instancetype)failed:(NSString *)failureReason
+{
+  return [[self alloc] initWithStatus:FBAXWriteStatusFailed failureReason:failureReason];
+}
+
++ (instancetype)outcomeForWriteError:(int32_t)axError
+{
+  if (axError == FBAXErrorSuccess) {
+    return [self written];
+  }
+  if (axError == FBAXErrorServerNotFound) {
+    // Nothing answered, so nothing was written. Tagged apart from a plain failure for the same reason a
+    // read is: it is the one failure the host can attribute to the application rather than to the writer.
+    return [self applicationUnavailable];
+  }
+  if (axError == FBAXErrorIPCTimeout) {
+    // The application is there and did not answer in time, which says nothing about whether the action ran.
+    // Held apart from an absent application because the two need opposite things done about them, and apart
+    // from a plain failure because a plain failure means the write did not happen.
+    return [self applicationNotResponding];
+  }
+  return [self failed:[NSString stringWithFormat:@"the accessibility runtime rejected the write (%d)", axError]];
+}
+
+@end
+
 @implementation FBAXFrontmostOutcome
 
 - (instancetype)initWithStatus:(FBAXFrontmostStatus)status
@@ -333,14 +397,51 @@ static NSString *FBAXSetupFailure(NSString *reason)
 
 #pragma mark - The AXRuntime C entry points
 
-// The three AXRuntime entry points, resolved once, with the ownership each one transfers restated where
-// the table is declared. `AXRuntimePrivate.h` carries the full contract; this is the reminder at the only
+// The AXRuntime entry points, resolved once, with the ownership each one transfers restated where the
+// table is declared. `AXRuntimePrivate.h` carries the full contract; this is the reminder at the only
 // place a raw AXUIElementRef is ever held.
 typedef struct {
   void *(*createSystemWide)(void);                                            // returns +1
   int32_t (*copyElementAtPosition)(void *app, float x, float y, void **out);  // out-parameter is +1
   int32_t (*getPid)(void *element, pid_t *pid);                               // borrows
+  int32_t (*performAction)(void *element, uint32_t action);                   // borrows
+  int32_t (*setAttributeValue)(void *element, uint32_t attribute, const void *value);  // borrows both
 } FBAXRuntimeFunctions;
+
+// The one place a semantic action becomes the number the C ABI takes, so a runtime that renumbers them is
+// a single table to correct rather than a constant threaded through the guest, the wire and the host.
+//
+// `-Wswitch-default` requires the default, which costs the exhaustiveness warning an action added without
+// a number would otherwise produce. It falls through to 0 rather than to some other action's number, and 0
+// is not an action the runtime performs — an unmapped action is rejected by the AX server and reported as
+// a failure, rather than silently doing something the caller did not ask for.
+static uint32_t FBAXActionIdentifierForAction(FBAXAction action)
+{
+  uint32_t identifier = 0;
+  switch (action) {
+    case FBAXActionPress:
+      identifier = FBAXActionIdentifierPress;
+      break;
+    case FBAXActionScrollUp:
+      identifier = FBAXActionIdentifierScrollUpByPage;
+      break;
+    case FBAXActionScrollDown:
+      identifier = FBAXActionIdentifierScrollDownByPage;
+      break;
+    case FBAXActionScrollLeft:
+      identifier = FBAXActionIdentifierScrollLeftByPage;
+      break;
+    case FBAXActionScrollRight:
+      identifier = FBAXActionIdentifierScrollRightByPage;
+      break;
+    case FBAXActionScrollToVisible:
+      identifier = FBAXActionIdentifierScrollToVisible;
+      break;
+    default:
+      break;
+  }
+  return identifier;
+}
 
 #pragma mark - Owned AXUIElement references
 
@@ -596,14 +697,39 @@ static NSString *const kFrontboardVisibilityEndowment = @"com.apple.frontboard.v
   _functions.createSystemWide = dlsym(RTLD_DEFAULT, "AXUIElementCreateSystemWide");
   _functions.copyElementAtPosition = dlsym(RTLD_DEFAULT, "AXUIElementCopyElementAtPosition");
   _functions.getPid = dlsym(RTLD_DEFAULT, "AXUIElementGetPid");
-  if (!_functions.createSystemWide || !_functions.copyElementAtPosition || !_functions.getPid) {
+  _functions.performAction = dlsym(RTLD_DEFAULT, "AXUIElementPerformAction");
+  _functions.setAttributeValue = dlsym(RTLD_DEFAULT, "AXUIElementSetAttributeValue");
+  if (!_functions.createSystemWide || !_functions.copyElementAtPosition || !_functions.getPid
+      || !_functions.performAction || !_functions.setAttributeValue) {
     if (error) {
-      *error = @"AXUIElementCreateSystemWide/CopyElementAtPosition/GetPid unavailable";
+      *error = @"AXUIElementCreateSystemWide/CopyElementAtPosition/GetPid/PerformAction/SetAttributeValue unavailable";
     }
     return nil;
   }
 
   return self;
+}
+
+#pragma mark Element references
+
+// A reference of this runtime's own on the AXUIElementRef behind an element handle, for the duration of a
+// call that needs the raw pointer.
+//
+// `-[XCAccessibilityElement AXUIElement]` returns a reference it goes on owning, so it dies with the handle
+// that vended it. Retaining is what makes the write safe against a handle released mid-call — the same
+// reason a hit-test seed is retained rather than borrowed.
+- (nullable FBAXElementRef *)referenceForElement:(id)element
+{
+  // The handle is opaque above this line, so nothing stops a caller passing something that is not one. A
+  // named failure beats an unrecognised selector taking the process down.
+  if (![element respondsToSelector:@selector(AXUIElement)]) {
+    return nil;
+  }
+  void *raw = [(XCAccessibilityElement *)element AXUIElement];
+  if (!raw) {
+    return nil;
+  }
+  return [FBAXElementRef retainingBorrowedElement:raw];
 }
 
 #pragma mark FBAXRuntime
@@ -685,6 +811,36 @@ static NSString *const kFrontboardVisibilityEndowment = @"com.apple.frontboard.v
     return [FBAXHitTestOutcome failed:@"failed to read the hit element"];
   }
   return [FBAXHitTestOutcome hit:hitElement owningProcessIdentifier:owningPid];
+}
+
+- (FBAXWriteOutcome *)performAction:(FBAXAction)action onElement:(id)element
+{
+  // NS_VALID_UNTIL_END_OF_SCOPE for the reason given in `-hitTestAtPoint:processIdentifier:`: `-element`
+  // hands out a non-object pointer, so ARC cannot see that the C call depends on the wrapper still being
+  // alive. A write is the shape most exposed to that — the reference is live across a cross-process round
+  // trip that can take as long as the application takes to run the action.
+  NS_VALID_UNTIL_END_OF_SCOPE FBAXElementRef *reference = [self referenceForElement:element];
+  if (!reference) {
+    return [FBAXWriteOutcome failed:@"the element has no AXUIElement to act on"];
+  }
+  int32_t axError = _functions.performAction(reference.element, FBAXActionIdentifierForAction(action));
+  return [FBAXWriteOutcome outcomeForWriteError:axError];
+}
+
+- (FBAXWriteOutcome *)setValue:(id)value onElement:(id)element
+{
+  NS_VALID_UNTIL_END_OF_SCOPE FBAXElementRef *reference = [self referenceForElement:element];
+  if (!reference) {
+    return [FBAXWriteOutcome failed:@"the element has no AXUIElement to write to"];
+  }
+  // __bridge and not __bridge_retained: the runtime borrows the value, and `value` is an argument the
+  // caller owns for longer than this call takes.
+  int32_t axError = _functions.setAttributeValue(
+    reference.element,
+    FBAXAttributeIdentifierValue,
+    (__bridge const void *)value
+  );
+  return [FBAXWriteOutcome outcomeForWriteError:axError];
 }
 
 // The authoritative frontmost the host obtains through AXPTranslator, obtained here with no host

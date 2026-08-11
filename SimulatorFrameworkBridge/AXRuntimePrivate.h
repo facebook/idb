@@ -41,6 +41,47 @@ typedef NS_ENUM(int32_t, FBAXError) {
 };
 
 /**
+ * The AX runtime's identifiers for the semantic actions an element can perform, as observed in the
+ * translation table AccessibilityPlatformTranslation maps its own AXPAction constants through — no SDK
+ * header available to the guest declares them.
+ *
+ * On iOS an action is a 32-bit integer rather than the CFString macOS uses. Actions and attributes are
+ * separate namespaces whose numbers overlap: `FBAXActionIdentifierScrollDownByPage` and
+ * `FBAXAttributeIdentifierValue` are both 0x7d6 and have nothing to do with each other, so the two are
+ * named apart here to stop one being passed where the other belongs.
+ *
+ * Only the actions the writer performs are listed.
+ */
+typedef NS_ENUM(uint32_t, FBAXActionIdentifier) {
+  /** AXPActionScrollToVisible: bring the element into its scroll container's viewport. */
+  FBAXActionIdentifierScrollToVisible = 0x7d3,
+  /** AXPActionScrollDownByPage. */
+  FBAXActionIdentifierScrollDownByPage = 0x7d6,
+  /** AXPActionScrollUpByPage. */
+  FBAXActionIdentifierScrollUpByPage = 0x7d7,
+  /** AXPActionScrollLeftByPage. */
+  FBAXActionIdentifierScrollLeftByPage = 0x7d8,
+  /** AXPActionScrollRightByPage. */
+  FBAXActionIdentifierScrollRightByPage = 0x7d9,
+  /** AXPActionPress: activate the element, the semantic equivalent of a tap on it. */
+  FBAXActionIdentifierPress = 0x7da,
+};
+
+/**
+ * The AX runtime's identifiers for the attributes an element exposes, as observed in the lookup table
+ * `AXAttributeForXCAttribute` translates through.
+ *
+ * A read never needs these: XCTAutomationSupport takes attribute *names* ("XC_kAXXCAttributeValue") and
+ * does the translation itself. A write goes straight to the C ABI below, which takes the number.
+ *
+ * See `FBAXActionIdentifier` for why the two namespaces are kept apart.
+ */
+typedef NS_ENUM(uint32_t, FBAXAttributeIdentifier) {
+  /** kAXXCAttributeValue: the element's value — what a set-value writes. */
+  FBAXAttributeIdentifierValue = 0x7d6,
+};
+
+/**
  * AXUIElementCopyElementAtPosition(application, x, y, &element) — a single-round-trip hit-test
  * returning just the element at a point. x and y are 32-bit floats.
  *
@@ -62,3 +103,21 @@ typedef void *(*FBAXCreateSystemWideFn)(void);
  * transfers no ownership.
  */
 typedef int32_t (*FBAXGetPidFn)(void *element, pid_t *pid);
+
+/**
+ * AXUIElementPerformAction(element, action) — performs one semantic action on an element, in a single
+ * round trip to the owning application's accessibility server. `action` is an `FBAXActionIdentifier`.
+ *
+ * **Borrows** the element and transfers no ownership.
+ */
+typedef int32_t (*FBAXPerformActionFn)(void *element, uint32_t action);
+
+/**
+ * AXUIElementSetAttributeValue(element, attribute, value) — writes one attribute on an element, in a single
+ * round trip. `attribute` is an `FBAXAttributeIdentifier`; `value` is a CFTypeRef, held as const void * for
+ * the same reason an element is held as void *.
+ *
+ * **Borrows** both the element and the value, and transfers no ownership of either — the caller still owns
+ * the value after the call returns.
+ */
+typedef int32_t (*FBAXSetAttributeValueFn)(void *element, uint32_t attribute, const void *value);
