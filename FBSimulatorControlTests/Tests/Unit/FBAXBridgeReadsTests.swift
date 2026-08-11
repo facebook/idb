@@ -1338,6 +1338,9 @@ final class FBAXBridgeReadsTests: XCTestCase {
   // `resolveMarker`. Pinned because it is a write landing somewhere the caller did not name: the
   // resolution cannot tell "at the origin" from "no geometry", and the assertion the write carries is
   // what stops it acting on whatever happens to be there.
+  //
+  // BUG: a write resolves to the origin instead of refusing an element with no usable frame — flipped in
+  // the following commit, along with the `resolveMarker` decision underneath it.
   func testAMarkerWithNoFrameResolvesToTheOriginRatherThanReportingItselfOffScreen() async throws {
     let target = try await Self.framedReader(child: nil).writeTarget(for: Self.marker, operation: "A tap")
     XCTAssertEqual(target.point, .zero)

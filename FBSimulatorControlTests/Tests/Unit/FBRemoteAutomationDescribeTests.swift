@@ -211,6 +211,39 @@ final class FBRemoteAutomationDescribeTests: XCTestCase {
     )
   }
 
+  // A frame that is *present but degenerate* is not the same as one that is absent. An element whose
+  // frame never reached the wire is normalized to a zero rectangle on the way in, so it arrives carrying
+  // all four components and passes the frameless check above — and resolves to the origin, which is a
+  // point no caller named and something is usually drawn at.
+  //
+  // Both callers of `resolveMarker` act on that point: the remote backend's marker tap and the axbridge
+  // write path. Pinned here rather than at either of them, because it is one decision serving both.
+  //
+  // BUG: a degenerate rectangle resolves to (0, 0) instead of reporting no usable frame — flipped in the
+  // following commit.
+  func testResolveMarkerResolvesADegenerateFrameToTheOrigin() {
+    let elements: [FBAccessibilityDocumentElement] = [
+      .testElement(label: "General", frame: FBAccessibilityFrame(x: 0, y: 0, width: 0, height: 0))
+    ]
+    XCTAssertEqual(
+      FBAXTreeWalk.resolveMarker(inElements: elements, markerValue: "General", key: .label),
+      .resolved(x: 0, y: 0)
+    )
+  }
+
+  // A zero-sized element anywhere on screen has the same problem; the origin is only the most common
+  // case of it, because that is where a normalized empty rectangle sits.
+  func testResolveMarkerResolvesAZeroSizedFrameToItsOwnCorner() {
+    let elements: [FBAccessibilityDocumentElement] = [
+      .testElement(label: "General", frame: FBAccessibilityFrame(x: 40, y: 60, width: 0, height: 0))
+    ]
+    // BUG: a rectangle with no area is not something a caller can aim at — flipped in the following commit.
+    XCTAssertEqual(
+      FBAXTreeWalk.resolveMarker(inElements: elements, markerValue: "General", key: .label),
+      .resolved(x: 40, y: 60)
+    )
+  }
+
   func testResolveMarkerPrefersAMatchWithAFrameOverAFramelessOne() {
     // A frameless match must not mask a later on-screen match: the resolution is the framed element.
     let elements: [FBAccessibilityDocumentElement] = [
