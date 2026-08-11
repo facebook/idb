@@ -29,6 +29,13 @@ final class FBFutureContextManagerTests: XCTestCase, FBFutureContextManagerDeleg
     resetFailPrepare = false
   }
 
+  // The delegate increments the counters on `queue`; a resolving future does
+  // not order those writes before the test thread's reads. Drain the queue so
+  // the prepare/teardown work items are complete before asserting on them.
+  private func drainCounterQueue() {
+    queue.sync {}
+  }
+
   var manager: FBFutureContextManager<NSNumber> {
     return FBFutureContextManager<NSNumber>(queue: queue, delegate: self, logger: logger)
   }
@@ -46,6 +53,7 @@ final class FBFutureContextManagerTests: XCTestCase, FBFutureContextManagerDeleg
     let value = try? future.await(withTimeout: 1) as? NSNumber
     XCTAssertEqual(value, 123)
 
+    drainCounterQueue()
     XCTAssertEqual(prepareCalled, 1)
     XCTAssertEqual(teardownCalled, 1)
   }
@@ -65,6 +73,7 @@ final class FBFutureContextManagerTests: XCTestCase, FBFutureContextManagerDeleg
     var value = try? future0.await(withTimeout: 1) as? NSNumber
     XCTAssertEqual(value, 0)
 
+    drainCounterQueue()
     XCTAssertEqual(prepareCalled, 1)
     XCTAssertEqual(teardownCalled, 1)
 
@@ -79,6 +88,7 @@ final class FBFutureContextManagerTests: XCTestCase, FBFutureContextManagerDeleg
     value = try? future1.await(withTimeout: 1) as? NSNumber
     XCTAssertEqual(value, 1)
 
+    drainCounterQueue()
     XCTAssertEqual(prepareCalled, 2)
     XCTAssertEqual(teardownCalled, 2)
   }
@@ -146,6 +156,7 @@ final class FBFutureContextManagerTests: XCTestCase, FBFutureContextManagerDeleg
     XCTAssertNotNil(value)
     XCTAssertEqual(value, [0, 1, 2] as NSArray)
 
+    drainCounterQueue()
     XCTAssertEqual(prepareCalled, 1)
     XCTAssertEqual(teardownCalled, 1)
   }
@@ -228,6 +239,7 @@ final class FBFutureContextManagerTests: XCTestCase, FBFutureContextManagerDeleg
     XCTAssertNotNil(value)
     XCTAssertEqual(value, [0, 1, 2] as NSArray)
 
+    drainCounterQueue()
     XCTAssertEqual(prepareCalled, 1)
     XCTAssertEqual(teardownCalled, 1)
   }
@@ -251,6 +263,7 @@ final class FBFutureContextManagerTests: XCTestCase, FBFutureContextManagerDeleg
       // Expected error
     }
 
+    drainCounterQueue()
     XCTAssertEqual(prepareCalled, 1)
     XCTAssertEqual(teardownCalled, 0)
 
@@ -266,6 +279,7 @@ final class FBFutureContextManagerTests: XCTestCase, FBFutureContextManagerDeleg
     let value = try? future1.await(withTimeout: 1) as? NSNumber
     XCTAssertEqual(value, 1)
 
+    drainCounterQueue()
     XCTAssertEqual(prepareCalled, 2)
     XCTAssertEqual(teardownCalled, 1)
   }
@@ -335,6 +349,7 @@ final class FBFutureContextManagerTests: XCTestCase, FBFutureContextManagerDeleg
     XCTAssertEqual(values.count, 2)
     XCTAssertEqual(errors.count, 1)
 
+    drainCounterQueue()
     XCTAssertEqual(prepareCalled, 2)
     XCTAssertEqual(teardownCalled, 1)
   }
