@@ -1230,6 +1230,284 @@ final class FBAXBridgeReadsTests: XCTestCase {
       XCTAssertTrue(description.contains(backend.displayName), "message should name the backend: \(description)")
     }
   }
+
+  // MARK: - Shared `writeTarget` resolution
+
+  // A write is point-addressed, so everything that decides *which* point — and what the guest must still
+  // find there — happens before the request is built. That resolution is what these cover; the request
+  // it turns into is pinned in `FBAXWireContractTests`.
+
+  private static let marker = FBAccessibilityElementQuery.marker(value: "General", key: .label, depth: 10)
+
+  // A coordinate names no element, so it is sent exactly as given: nothing to look up, nothing to assert
+  // about, and no tree read to pay for.
+  func testAPointWriteTargetsTheCoordinateItself() async throws {
+    let reader = Self.framedReader()
+    let target = try await reader.writeTarget(for: .point(CGPoint(x: 12, y: 34)), operation: "A tap")
+    XCTAssertEqual(target, FBAXWriteTarget(point: CGPoint(x: 12, y: 34), pid: nil, assertion: nil))
+    XCTAssertEqual(reader.readCount, 0, "a point write must not read a tree to find a point it was given")
+  }
+
+  // A marker resolves to the centre of the element it matched, scoped to the application the read
+  // resolved so the guest hit-tests inside it rather than display-wide.
+  func testAMarkerWriteTargetsTheMatchedElementsCentre() async throws {
+    let target = try await Self.framedReader().writeTarget(for: Self.marker, operation: "A tap")
+    XCTAssertEqual(target.point, CGPoint(x: Self.childRect.midX, y: Self.childRect.midY))
+    XCTAssertEqual(target.pid, 99)
+  }
+
+  // The assertion carries what the element *actually* reports, not what the caller searched for. Markers
+  // match by substring, so sending the marker text would refuse every marker that is a prefix of the
+  // label it matched — "General" would never equal "General Settings".
+  func testAMarkerAssertionCarriesTheMatchedValueRatherThanTheMarkerText() async throws {
+    let target = try await Self.framedReader().writeTarget(for: Self.marker, operation: "A tap")
+    XCTAssertEqual(target.assertion, FBAXBridgeWriteAssertion(key: .label, value: "General Settings"))
+  }
+
+  // Only the attributes this wire carries can be asserted on; a marker searched on a host-side
+  // derivation still writes, unasserted, rather than not at all.
+  func testAMarkerOnANonAssertableKeyStillResolvesWithoutAnAssertion() async throws {
+    let tree: [String: Any] = [
+      FBAXWire.Node.elementType.rawValue: "Button",
+      FBAXWire.Node.frame.rawValue: CGRectCreateDictionaryRepresentation(Self.childRect) as NSDictionary,
+      FBAXWire.Node.children.rawValue: [[String: Any]](),
+    ]
+    let reader = StubTreeReader(read: FBAXTreeRead(tree: tree, pid: 99, truncated: false, modal: nil))
+    let target = try await reader.writeTarget(
+      for: .marker(value: "Button", key: .role, depth: 10), operation: "A tap"
+    )
+    XCTAssertEqual(target.point, CGPoint(x: Self.childRect.midX, y: Self.childRect.midY))
+    XCTAssertNil(target.assertion, "a key this wire does not carry must not become an assertion the guest cannot check")
+  }
+
+  // The mapping the assertion rests on, over every searchable key. The three that map are the ones whose
+  // value comes straight off the wire; the rest are host-side derivations (`role` normalizes an element
+  // type to a readable name, and the others are answered nil over this wire), so asserting on them would
+  // compare the host's rendering against the guest's raw attribute and never match.
+  func testOnlyWireBackedSearchKeysAreAssertable() {
+    let expected: [FBAXSearchableKey: FBAXWire.Node?] = [
+      .label: .label,
+      .value: .value,
+      .uniqueID: .identifier,
+      .title: nil,
+      .role: nil,
+      .roleDescription: nil,
+      .subrole: nil,
+      .help: nil,
+      .placeholder: nil,
+    ]
+    for (key, node) in expected {
+      XCTAssertEqual(FBAXWire.Node(assertableSearchKey: key), node, "\(key)")
+    }
+  }
+
+  // A point-addressed write acts on the deepest element under the point, so a whole-tree query would
+  // silently become "whatever is in the middle of the screen" rather than the thing the caller named.
+  func testWholeTreeQueriesAreRefusedForWrites() async throws {
+    for query in [FBAccessibilityElementQuery.frontmost, .application(pid: 99)] {
+      do {
+        _ = try await Self.framedReader().writeTarget(for: query, operation: "A tap")
+        XCTFail("\(query) must not resolve to a point to write to")
+      } catch let error as FBUIAutomationError {
+        guard case let .pointOrMarkerRequired(_, operation) = error else {
+          return XCTFail("expected pointOrMarkerRequired, got \(error)")
+        }
+        XCTAssertEqual(operation, "A tap", "the error must name the verb that was refused")
+      }
+    }
+  }
+
+  func testAMarkerThatMatchesNothingIsNotFound() async throws {
+    do {
+      _ = try await Self.framedReader().writeTarget(
+        for: .marker(value: "Wi-Fi", key: .label, depth: 10), operation: "A tap"
+      )
+      XCTFail("a marker matching nothing must not resolve a point")
+    } catch let error as FBUIAutomationError {
+      guard case let .elementNotFound(_, key, value) = error else {
+        return XCTFail("expected elementNotFound, got \(error)")
+      }
+      XCTAssertEqual(key, "AXLabel")
+      XCTAssertEqual(value, "Wi-Fi")
+    }
+  }
+
+  // An element carrying no frame on the wire is normalized to a zero rectangle on the way in, so it
+  // resolves to the origin rather than reporting itself off-screen — the same rectangle `frame` reports
+  // for that element, and the same point the remote backend's marker tap resolves, since both go through
+  // `resolveMarker`. Pinned because it is a write landing somewhere the caller did not name: the
+  // resolution cannot tell "at the origin" from "no geometry", and the assertion the write carries is
+  // what stops it acting on whatever happens to be there.
+  func testAMarkerWithNoFrameResolvesToTheOriginRatherThanReportingItselfOffScreen() async throws {
+    let target = try await Self.framedReader(child: nil).writeTarget(for: Self.marker, operation: "A tap")
+    XCTAssertEqual(target.point, .zero)
+    XCTAssertEqual(
+      target.assertion, FBAXBridgeWriteAssertion(key: .label, value: "General Settings"),
+      "the assertion is the only thing standing between this and a write at the origin"
+    )
+  }
+
+  // MARK: - The caller's own pre-write assertion
+
+  func testACallerAssertionThatMatchesLetsAMarkerWriteThrough() async throws {
+    let target = try await Self.framedReader().writeTarget(
+      for: Self.marker,
+      operation: "A tap",
+      callerAssertion: FBTapOptions.Assertion(key: .label, value: "General Settings")
+    )
+    XCTAssertEqual(target.point, CGPoint(x: Self.childRect.midX, y: Self.childRect.midY))
+  }
+
+  // The caller's assertion is an equality check on the value they named, and it is reported with both
+  // sides — unlike the derived one, the host holds the actual value here and can say what it found.
+  func testACallerAssertionThatDoesNotMatchRefusesTheWrite() async throws {
+    do {
+      _ = try await Self.framedReader().writeTarget(
+        for: Self.marker,
+        operation: "A tap",
+        callerAssertion: FBTapOptions.Assertion(key: .label, value: "General")
+      )
+      XCTFail("a caller assertion that does not match must refuse the write")
+    } catch let error as FBUIAutomationError {
+      guard case let .valueMismatch(_, key, expected, actual) = error else {
+        return XCTFail("expected valueMismatch, got \(error)")
+      }
+      XCTAssertEqual(key, "AXLabel")
+      XCTAssertEqual(expected, "General")
+      XCTAssertEqual(actual, "General Settings", "a substring is not a match for an equality assertion")
+    }
+  }
+
+  // A coordinate carries no value, so honouring a caller's assertion on one costs the read a bare point
+  // write does not do — and it must actually be done rather than skipped for being inconvenient.
+  func testACallerAssertionOnAPointReadsTheElementFirst() async throws {
+    var hit = FBAccessibilityDocumentElement()
+    hit.label = .some("Wi-Fi")
+    let reader = StubTreeReader(
+      read: Self.stubRead(), hitTestResult: FBAccessibilityElementsResponse(elements: .single(hit))
+    )
+    do {
+      _ = try await reader.writeTarget(
+        for: .point(CGPoint(x: 5, y: 6)),
+        operation: "A tap",
+        callerAssertion: FBTapOptions.Assertion(key: .label, value: "General")
+      )
+      XCTFail("a caller assertion on a point must be checked against the element there")
+    } catch let error as FBUIAutomationError {
+      guard case let .valueMismatch(_, _, expected, actual) = error else {
+        return XCTFail("expected valueMismatch, got \(error)")
+      }
+      XCTAssertEqual(expected, "General")
+      XCTAssertEqual(actual, "Wi-Fi")
+    }
+    XCTAssertEqual(reader.hitTestPoints, [CGPoint(x: 5, y: 6)], "the assertion must be read at the point being written to")
+  }
+
+  func testACallerAssertionOnAnEmptyPointReportsTheEmptyPoint() async throws {
+    let reader = StubTreeReader(read: Self.stubRead(), hitTestResult: nil)
+    do {
+      _ = try await reader.writeTarget(
+        for: .point(CGPoint(x: 5, y: 6)),
+        operation: "A tap",
+        callerAssertion: FBTapOptions.Assertion(key: .label, value: "General")
+      )
+      XCTFail("there is nothing at the point to assert about")
+    } catch let error as FBUIAutomationError {
+      guard case .noElementAtPoint = error else {
+        return XCTFail("expected noElementAtPoint, got \(error)")
+      }
+    }
+  }
+
+  // MARK: - An unoccupied write target
+
+  // The guest answers an unoccupied point the same way whichever query sent the write there, so the
+  // error has to be chosen from what the caller named rather than from what the guest was sent.
+
+  // A marker write reports its element as moved — the same condition, and the same error, as the guest
+  // finding a *different* element under the point. Both are the screen changing between the read that
+  // resolved the marker and the write that acted on it.
+  func testAnEmptyTargetIsReportedAsAMovedElementForAMarker() {
+    let error = Self.framedReader().emptyWriteTargetError(for: Self.marker, at: CGPoint(x: 195, y: 122))
+    guard case let .elementMoved(_, key, value) = error else {
+      return XCTFail("expected elementMoved, got \(error)")
+    }
+    XCTAssertEqual(key, "AXLabel")
+    XCTAssertEqual(value, "General")
+    XCTAssertFalse(error.description.contains("195"), "a marker caller never chose a coordinate: \(error.description)")
+  }
+
+  // Only a caller who named a coordinate is told about a coordinate.
+  func testAnEmptyTargetIsReportedAsAnEmptyPointForAPoint() {
+    let error = Self.framedReader().emptyWriteTargetError(
+      for: .point(CGPoint(x: 12, y: 34)), at: CGPoint(x: 12, y: 34)
+    )
+    guard case let .noElementAtPoint(_, x, y) = error else {
+      return XCTFail("expected noElementAtPoint, got \(error)")
+    }
+    XCTAssertEqual(x, 12)
+    XCTAssertEqual(y, 34)
+  }
+
+  // MARK: - Write envelope parsing
+
+  func testAWriteEnvelopeReportsWhetherItLanded() throws {
+    XCTAssertTrue(try FBAXTreeRead.writeLanded(fromResponse: Self.json(["ok": true, "pid": 4321])))
+    XCTAssertFalse(
+      try FBAXTreeRead.writeLanded(fromResponse: Self.json(["ok": true, "empty": true])),
+      "an unoccupied point is a successful answer of nothing, not a write that landed"
+    )
+  }
+
+  // A refused assertion is its own condition all the way up: the guest knows what it found under the
+  // point, and only the host knows which marker sent the write there, so the two are joined at the
+  // backend rather than collapsing into an opaque failure here.
+  func testARefusedAssertionParsesAsItsOwnFailure() throws {
+    do {
+      _ = try FBAXTreeRead.writeLanded(
+        fromResponse: Self.json([
+          "ok": false, "error": "the element at (1.0, 2.0) has XC_kAXXCAttributeLabel Wi-Fi, expected General",
+          "error_kind": "assertion_failed",
+        ])
+      )
+      XCTFail("a refused write must throw")
+    } catch let error as FBAXBridgeError {
+      guard case let .assertionFailed(message) = error else {
+        return XCTFail("expected assertionFailed, got \(error)")
+      }
+      XCTAssertTrue(message.contains("expected General"), message)
+    }
+  }
+
+  // A write meets the same application conditions a read does, and classifies them the same way — that
+  // is the whole reason the write envelope is parsed beside the read envelopes.
+  func testAWriteClassifiesApplicationFailuresLikeARead() throws {
+    let cases: [(String, (FBAXBridgeError) -> Bool)] = [
+      ("application_unavailable", { if case .applicationUnavailable = $0 { true } else { false } }),
+      ("application_not_responding", { if case .applicationNotResponding = $0 { true } else { false } }),
+      ("bad_request", { if case .guestFailure = $0 { true } else { false } }),
+      ("reader_unavailable", { if case .readerUnavailable = $0 { true } else { false } }),
+    ]
+    for (kind, matches) in cases {
+      do {
+        _ = try FBAXTreeRead.writeLanded(
+          fromResponse: Self.json(["ok": false, "error": "no", "error_kind": kind, "pid": 4321])
+        )
+        XCTFail("\(kind) must throw")
+      } catch let error as FBAXBridgeError {
+        XCTAssertTrue(matches(error), "\(kind) classified as \(error)")
+      }
+    }
+  }
+
+  func testAnUnparseableWriteEnvelopeIsAGuestFailure() throws {
+    XCTAssertThrowsError(try FBAXTreeRead.writeLanded(fromResponse: Data("not json".utf8)))
+  }
+
+  private static func json(_ object: [String: Any]) -> Data {
+    // swiftlint:disable:next force_try
+    try! JSONSerialization.data(withJSONObject: object)
+  }
 }
 
 /// A minimal `FBAXTreeReader` serving a canned read, so the shared `describeTree` composition can be

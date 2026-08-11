@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import FBControlCore
 import Foundation
 
 /// The host side of the guest⇄host accessibility wire contract, in one place. The guest
@@ -35,6 +36,26 @@ enum FBAXWire {
     static let fetchList: [String] = [
       elementType, elementBaseType, label, value, identifier, frame, automationType, children,
     ].map(\.rawValue)
+
+    /// The node a marker's searched key reads, for the keys a write can assert on — or nil when this
+    /// wire carries no such attribute.
+    ///
+    /// Only three of the searchable keys name something the guest fetches, because the rest are host-side
+    /// derivations `FBRemoteAutomationPlatformElement` answers nil for over this wire in the first place.
+    /// A marker on one of those still writes; it just goes unasserted, which is what every write over the
+    /// remote backend does today.
+    init?(assertableSearchKey key: FBAXSearchableKey) {
+      switch key {
+      case .label:
+        self = .label
+      case .value:
+        self = .value
+      case .uniqueID:
+        self = .identifier
+      case .title, .role, .roleDescription, .subrole, .help, .placeholder:
+        return nil
+      }
+    }
   }
 
   /// Top-level keys of the guest's `{ ok, tree | error, ... }` response envelope, parsed by

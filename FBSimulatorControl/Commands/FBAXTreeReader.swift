@@ -37,6 +37,14 @@ protocol FBAXTreeReader: FBUIAutomation {
   func warnIfTruncated(_ truncated: Bool) async
 }
 
+/// Where a point-addressed write lands, and what the element there must still be for it to go ahead.
+struct FBAXWriteTarget: Equatable {
+  let point: CGPoint
+  /// The application to hit-test within, or nil to resolve the owning app from the point itself.
+  let pid: pid_t?
+  let assertion: FBAXBridgeWriteAssertion?
+}
+
 extension FBAXTreeReader {
 
   /// `describe` for any tree-reading backend: resolve what the query means, read the raw tree, warn if it
@@ -102,6 +110,115 @@ extension FBAXTreeReader {
           screen: screen,
           truncated: read.truncated
         )
+    }
+  }
+
+  /// Resolves a query to the point a write acts on, plus the assertion that keeps a two-step write honest.
+  ///
+  /// Shared for the same reason `describeTree` is: deciding what a query means, matching a marker and
+  /// choosing the error are identical whoever performs the write, and only the performing differs.
+  ///
+  /// `.point` goes straight through — a coordinate names no element, so there is nothing to assert about
+  /// it and nothing to read first. `.marker` reads the tree, matches, and takes the matched element's
+  /// centre, deriving its assertion from the element it actually found rather than from the marker
+  /// string: markers match by substring, so asserting the caller's text would refuse every marker that is
+  /// a prefix of the label it matched.
+  ///
+  /// Whole-tree queries are refused. A point-addressed write acts on the deepest element under the point,
+  /// so "the frontmost application" would silently become "whatever sits in the middle of the screen" —
+  /// not the element the accessibility backend acts on for the same query, and not one the caller named.
+  func writeTarget(
+    for query: FBAccessibilityElementQuery,
+    operation: String,
+    callerAssertion: FBTapOptions.Assertion? = nil
+  ) async throws -> FBAXWriteTarget {
+    switch query {
+    case let .point(point):
+      if let callerAssertion {
+        // The caller asked for a value to be checked and a bare coordinate carries none, so the element
+        // has to be read first — the one case a point write costs two round trips instead of one.
+        try await assertBeforeWriting(callerAssertion, atPoint: point)
+      }
+      return FBAXWriteTarget(point: point, pid: nil, assertion: nil)
+    case let .marker(value, key, _):
+      let read = try await readRawTree(for: query)
+      await warnIfTruncated(read.truncated)
+      // Unfiltered, like the marker branch of `describeTree`: a write resolves the element the caller
+      // named, and a caller's `--filter` is about what a read reports, not about what exists to act on.
+      let elements = FBAXTreeWalk.describeAllElements(
+        fromTree: read.tree,
+        keys: FBAXKeys.defaultSet.union([key.serializationKey]),
+        nestedFormat: false,
+        pid: read.pid
+      )
+      guard let match = FBAXTreeWalk.matchingElement(inElements: elements, markerValue: value, key: key) else {
+        throw FBUIAutomationError.elementNotFound(backend: backend, key: key.rawValue, value: value)
+      }
+      if let callerAssertion {
+        let actual = match.searchableValue(for: callerAssertion.key) ?? ""
+        guard actual == callerAssertion.value else {
+          throw FBUIAutomationError.valueMismatch(
+            backend: backend, key: callerAssertion.key.rawValue, expected: callerAssertion.value, actual: actual
+          )
+        }
+      }
+      switch FBAXTreeWalk.resolveMarker(inElements: elements, markerValue: value, key: key) {
+      case let .resolved(x, y):
+        return FBAXWriteTarget(
+          point: CGPoint(x: x, y: y),
+          pid: read.pid,
+          assertion: Self.derivedAssertion(from: match, key: key)
+        )
+      case .offScreen:
+        throw FBUIAutomationError.elementNotOnScreen(backend: backend, key: key.rawValue, value: value)
+      case .notFound:
+        throw FBUIAutomationError.elementNotFound(backend: backend, key: key.rawValue, value: value)
+      }
+    case .frontmost, .application:
+      throw FBUIAutomationError.pointOrMarkerRequired(backend: backend, operation: operation)
+    }
+  }
+
+  /// What an unoccupied write target means, told in the terms the caller used to name it.
+  ///
+  /// A marker write is reported as its element having moved, the same as when something *else* is found
+  /// under the point. Both are the screen changing between the read that resolved the marker and the
+  /// write that acted on it, so reporting one of them against coordinates the caller never chose would
+  /// make one condition look like two. Only a caller who named a coordinate is told about a coordinate.
+  func emptyWriteTargetError(for query: FBAccessibilityElementQuery, at point: CGPoint) -> FBUIAutomationError {
+    guard case let .marker(value, key, _) = query else {
+      return .noElementAtPoint(backend: backend, x: Double(point.x), y: Double(point.y))
+    }
+    return .elementMoved(backend: backend, key: key.rawValue, value: value)
+  }
+
+  /// The assertion a marker write carries: the attribute the marker searched on, and the value the
+  /// element it matched actually reports for it. Nil when this wire carries no such attribute, in which
+  /// case the write goes unasserted rather than not at all.
+  private static func derivedAssertion(
+    from match: FBAccessibilityDocumentElement,
+    key: FBAXSearchableKey
+  ) -> FBAXBridgeWriteAssertion? {
+    guard let node = FBAXWire.Node(assertableSearchKey: key), let actual = match.searchableValue(for: key) else {
+      return nil
+    }
+    return FBAXBridgeWriteAssertion(key: node, value: actual)
+  }
+
+  /// Checks a caller's pre-write assertion against the element at a point, which needs a read of its own
+  /// — unlike a marker write, which already holds the element it resolved.
+  private func assertBeforeWriting(_ assertion: FBTapOptions.Assertion, atPoint point: CGPoint) async throws {
+    let options = FBAccessibilityRequestOptions(keys: FBAXKeys.defaultSet.union([assertion.key.serializationKey]))
+    guard let response = try await hitTest(at: point, options: options),
+      let element = response.elements.elements.first
+    else {
+      throw FBUIAutomationError.noElementAtPoint(backend: backend, x: Double(point.x), y: Double(point.y))
+    }
+    let actual = element.searchableValue(for: assertion.key) ?? ""
+    guard actual == assertion.value else {
+      throw FBUIAutomationError.valueMismatch(
+        backend: backend, key: assertion.key.rawValue, expected: assertion.value, actual: actual
+      )
     }
   }
 

@@ -20,10 +20,12 @@ import Foundation
 /// emits the identical `XC_kAXXC*` node shape. The output schema is therefore byte-identical across
 /// the two backends and needs no new serialization code.
 ///
-/// Reads only for now. Element writes (tap/scroll/set-value, via in-guest HID synthesis) land in a
-/// later change; until then those verbs throw `FBAXBridgeError.operationUnsupported`. The spawn goes
-/// through a small internal seam so a persistent-socket transport can replace it later without
-/// touching this verb logic.
+/// Writes are semantic accessibility actions, not synthesized input: the guest hands the AX runtime a
+/// press or a scroll and the element's own implementation decides what happens, which is the whole
+/// reason to use this rather than the HID path. They are addressed by point, because a one-shot guest
+/// exits between requests and so cannot hold an element handle across one; a `.marker` write resolves
+/// its point host-side from a tree read and carries an assertion the guest re-checks, so the write
+/// cannot land on whatever moved under the point in between.
 ///
 // SAFETY: immutable after init — it holds the target and a transport; the persistent transport is an
 // actor and the one-shot transport is a stateless value, and the verb logic keeps no mutable state.
@@ -150,21 +152,85 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
     }
   }
 
-  // MARK: - Writes (added in a later change)
+  // MARK: - Writes
 
   func tap(
     _ query: FBAccessibilityElementQuery,
     options: FBTapOptions
   ) async throws {
-    throw FBUIAutomationError.operationUnsupported(backend: backend, operation: "A tap")
+    // A hold is a property of a synthesized touch, and this backend does not synthesize one — the AX
+    // runtime's press is instantaneous and has nowhere to put a duration. Rejected rather than dropped:
+    // a long-press that silently becomes a tap is a test that passes for the wrong reason.
+    guard options.duration == nil else {
+      throw FBUIAutomationError.operationUnsupported(backend: backend, operation: "A tap with a hold duration")
+    }
+    let target = try await writeTarget(for: query, operation: "A tap", callerAssertion: options.assertion)
+    try await write(.perform(.press), to: target, query: query)
   }
 
   func setValue(_ value: String, for query: FBAccessibilityElementQuery) async throws {
-    throw FBUIAutomationError.operationUnsupported(backend: backend, operation: "Setting a value")
+    let target = try await writeTarget(for: query, operation: "Setting a value", callerAssertion: nil)
+    try await write(.setValue(value), to: target, query: query)
   }
 
   func scroll(_ query: FBAccessibilityElementQuery, direction: FBAccessibilityScrollDirection) async throws {
-    throw FBUIAutomationError.operationUnsupported(backend: backend, operation: "Scroll")
+    let target = try await writeTarget(for: query, operation: "Scroll", callerAssertion: nil)
+    try await write(.perform(Self.action(for: direction)), to: target, query: query)
+  }
+
+  /// The semantic action a scroll direction asks for. Total over the direction, so a direction added to
+  /// the enum has to be given a meaning here rather than silently scrolling somewhere.
+  private static func action(for direction: FBAccessibilityScrollDirection) -> FBAXWire.Action {
+    switch direction {
+    case .up: .scrollUp
+    case .down: .scrollDown
+    case .left: .scrollLeft
+    case .right: .scrollRight
+    case .visible: .scrollToVisible
+    }
+  }
+
+  /// Sends the write and turns the guest's envelope into the verb's outcome.
+  ///
+  /// An empty point is a successful read of nothing, which for a write means the thing the caller aimed
+  /// at was not there — so it is an error rather than a write that passed. Which error depends on what
+  /// the caller named, not on what the guest was sent: a marker write reports that its element moved, the
+  /// same as when the guest finds a *different* element under the point. Both are the screen changing
+  /// between the read that resolved the marker and the write that acted on it, and reporting one of them
+  /// against coordinates the caller never chose would make the pair look like different conditions.
+  private func write(
+    _ kind: FBAXBridgeWriteRequest.Kind,
+    to target: FBAXWriteTarget,
+    query: FBAccessibilityElementQuery
+  ) async throws {
+    try await translatingWriteErrors(query) {
+      let response = try await transport.write(
+        FBAXBridgeWriteRequest(
+          kind: kind,
+          x: Double(target.point.x),
+          y: Double(target.point.y),
+          pid: target.pid,
+          assertion: target.assertion
+        )
+      )
+      guard try FBAXTreeRead.writeLanded(fromResponse: response) else {
+        throw self.emptyWriteTargetError(for: query, at: target.point)
+      }
+    }
+  }
+
+  /// The seam translation for a write: the two application-level failures, plus the refused assertion,
+  /// which only a write can meet. The guest reports what it found under the point; naming the marker that
+  /// sent the write there is the host's half, so the two are joined here.
+  private func translatingWriteErrors(_ query: FBAccessibilityElementQuery, _ body: () async throws -> Void) async throws {
+    do {
+      try await translatingSeamErrors(body)
+    } catch let FBAXBridgeError.assertionFailed(message) {
+      guard case let .marker(value, key, _) = query else {
+        throw FBAXBridgeError.assertionFailed(message)
+      }
+      throw FBUIAutomationError.elementMoved(backend: backend, key: key.rawValue, value: value)
+    }
   }
 
   // MARK: - Geometry

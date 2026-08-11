@@ -38,6 +38,10 @@ public enum FBAXBridgeError: LocalizedError, Sendable {
   /// `applicationUnavailable` because the application has not gone away, and distinct from an empty
   /// result because it is not an answer at all.
   case applicationNotResponding(pid: pid_t?)
+  /// A write carried an assertion about the element at its point and the guest found something else
+  /// there, so nothing was written. Its own case so the conformer can re-raise it as the neutral
+  /// `FBUIAutomationError.elementMoved` naming the query, which is the part the guest cannot know.
+  case assertionFailed(String)
   /// The guest binary exited non-zero, produced unparseable output, or reported a failure with nothing
   /// further to say about it. Also where a failure kind this host does not recognize lands.
   case guestFailure(String)
@@ -54,6 +58,8 @@ public enum FBAXBridgeError: LocalizedError, Sendable {
       return "The axbridge guest found no readable application \(Self.naming(pid))"
     case let .applicationNotResponding(pid):
       return "The axbridge guest asked the application \(Self.naming(pid)) for accessibility and it did not answer in time"
+    case let .assertionFailed(message):
+      return "The axbridge guest refused the write: \(message)"
     case let .guestFailure(message):
       return "The axbridge guest reader failed: \(message)"
     }
@@ -91,8 +97,9 @@ extension FBAXBridgeError {
     case .frontmostUnresolved, .guestFailure, .applicationUnavailable, .applicationNotResponding:
       return true
     // Nothing about the target makes a reader that cannot bind bind, so both of these are the same on
-    // the last poll as on the first.
-    case .bridgeUnavailable, .readerUnavailable:
+    // the last poll as on the first. A refused write cannot arise here at all — a poll only reads — and
+    // waiting would not make one land, so it is not something to poll through either.
+    case .bridgeUnavailable, .readerUnavailable, .assertionFailed:
       return false
     }
   }

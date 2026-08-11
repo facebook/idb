@@ -102,6 +102,24 @@ extension FBAXTreeRead {
     self.init(tree: node, pid: pid, truncated: false, modal: nil)
   }
 
+  /// Parses a write envelope (`perform` or `setvalue`), answering whether the write landed or found
+  /// nothing at the point, and throwing whatever the guest's failure kind says it was.
+  ///
+  /// A write returns no tree, so this reads the framing alone. `empty` is not a failure — it is the
+  /// point being unoccupied, which only the caller can say is wrong — so it comes back as a value and
+  /// each verb decides. It lives beside the read parsers to share `failure(fromResponse:)`: an
+  /// application that has gone, or is not answering, means the same thing whether the request read or
+  /// wrote, and classifying it twice is how the two would come to disagree.
+  static func writeLanded(fromResponse data: Data) throws -> Bool {
+    guard let object = try? JSONSerialization.jsonObject(with: data), let response = object as? [String: Any] else {
+      throw FBAXBridgeError.guestFailure("unparseable write response")
+    }
+    guard (response[FBAXWire.Envelope.ok.rawValue] as? Bool) == true else {
+      throw Self.failure(fromResponse: response, pid: nil, frontmostMethod: nil)
+    }
+    return (response[FBAXWire.Envelope.empty.rawValue] as? Bool) != true
+  }
+
   /// Decodes the optional `modal` descriptor the guest adds to a describe response into a typed value,
   /// or nil when no modal is present. Host-facing enrichment — never emitted in the serialized output.
   static func modal(fromResponse response: [String: Any]) -> FBAccessibilityModalInfo? {
@@ -166,11 +184,13 @@ extension FBAXTreeRead {
         return .guestFailure(message)
       }
       return .frontmostUnresolved(method: frontmostMethod, reason: message)
-    case .badRequest, .assertionFailed, .none:
+    case .assertionFailed:
+      // Only a write can provoke this, and the conformer re-raises it against the query it resolved —
+      // the guest knows what it found under the point, but not which marker sent the write there.
+      return .assertionFailed(message)
+    case .badRequest, .none:
       // A malformed request is a host bug, not something a user can act on, so it stays opaque and
-      // carries the guest's description of what it rejected. `assertionFailed` only answers a write, and
-      // this classifies the read verbs, so on a read it is a guest answering something it was not asked
-      // — opaque for the same reason.
+      // carries the guest's description of what it rejected.
       guard let pid else {
         return .guestFailure(message)
       }

@@ -56,6 +56,11 @@ public enum FBUIAutomationError: LocalizedError, Sendable {
   /// A `tap` asserted the element's value for `key` (via `FBTapOptions.assertion`) before tapping, but
   /// the element's actual value did not match.
   case valueMismatch(backend: FBUIAutomationBackend, key: String, expected: String, actual: String)
+  /// A write resolved its target by reading a tree and then acted on the point that element occupied,
+  /// and by the time it landed the element there was no longer the one the query named. Distinct from
+  /// `elementNotFound`, which is a marker that matched nothing at all: this one matched, and then the
+  /// screen moved out from under it.
+  case elementMoved(backend: FBUIAutomationBackend, key: String, value: String)
 
   public var errorDescription: String? {
     switch self {
@@ -83,6 +88,8 @@ public enum FBUIAutomationError: LocalizedError, Sendable {
       return "\(backend.displayName) asked the application \(Self.naming(pid)) for accessibility and it did not answer in time"
     case let .valueMismatch(backend, key, expected, actual):
       return "\(backend.displayName) expected \(key) to equal \"\(expected)\" before tapping, but it was \"\(actual)\""
+    case let .elementMoved(backend, key, value):
+      return "\(backend.displayName) resolved \(key) containing \"\(value)\" and the element had moved by the time the write reached it; nothing was written. Read the tree again and retry"
     }
   }
 
