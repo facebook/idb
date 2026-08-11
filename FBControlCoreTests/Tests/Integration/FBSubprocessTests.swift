@@ -13,7 +13,7 @@ final class FBSubprocessTests: XCTestCase {
 
   private func startSynchronously<S: AnyObject, O: AnyObject, E: AnyObject>(_ builder: FBProcessBuilder<S, O, E>) -> FBSubprocess<S, O, E> {
     let future = builder.start()
-    return try! future.`await`() as! FBSubprocess<S, O, E>
+    return try! future.`await`()
   }
 
   private func runAndWaitForTaskFuture<S: AnyObject, O: AnyObject, E: AnyObject>(_ future: FBFuture<FBSubprocess<S, O, E>>) -> FBSubprocess<S, O, E> {
@@ -251,13 +251,13 @@ final class FBSubprocessTests: XCTestCase {
     )
 
     XCTAssertTrue((process.stdIn as AnyObject).conforms(to: FBDataConsumer.self))
-    (process.stdIn as! FBDataConsumer).consumeData(expected)
-    (process.stdIn as! FBDataConsumer).consumeEndOfFile()
+    let stdIn = try XCTUnwrap(process.stdIn)
+    stdIn.consumeData(expected)
+    stdIn.consumeEndOfFile()
 
-    let waitSuccess = try process.exitCode.await(withTimeout: 2) != nil
-    XCTAssertTrue(waitSuccess)
+    _ = try process.exitCode.await(withTimeout: 2)
 
-    XCTAssertEqual(expected, process.stdOut as! Data)
+    XCTAssertEqual(expected, try XCTUnwrap(process.stdOut) as Data)
   }
 
   func testInputStream() throws {
@@ -274,17 +274,15 @@ final class FBSubprocessTests: XCTestCase {
         .withStdErrToDevNull()
     )
 
-    XCTAssertTrue(stream is OutputStream)
     XCTAssertTrue(process.stdIn is OutputStream)
     stream.open()
     let bytes = Array(expected.utf8)
     stream.write(bytes, maxLength: bytes.count)
     stream.close()
 
-    let waitSuccess = try process.exitCode.await(withTimeout: 2) != nil
-    XCTAssertTrue(waitSuccess)
+    _ = try process.exitCode.await(withTimeout: 2)
 
-    XCTAssertEqual(expected, process.stdOut as! String)
+    XCTAssertEqual(expected, try XCTUnwrap(process.stdOut) as String)
   }
 
   func testInputStreamWithBrokenPipe() throws {
@@ -301,7 +299,6 @@ final class FBSubprocessTests: XCTestCase {
         .withStdErrToDevNull()
     )
 
-    XCTAssertTrue(stream is OutputStream)
     XCTAssertTrue(process.stdIn is OutputStream)
     stream.open()
     let bytes = Array(expected.utf8)
@@ -311,10 +308,9 @@ final class FBSubprocessTests: XCTestCase {
     XCTAssertEqual(stream.write(bytes, maxLength: bytes.count), -1)
     XCTAssertNotNil(stream.streamError)
 
-    let waitSuccess = try process.exitCode.await(withTimeout: 2) != nil
-    XCTAssertTrue(waitSuccess)
+    _ = try process.exitCode.await(withTimeout: 2)
 
-    XCTAssertEqual(expected, process.stdOut as! String)
+    XCTAssertEqual(expected, try XCTUnwrap(process.stdOut) as String)
   }
 
   func testInputStreamReportsBrokenPipeAfterReaderExits() throws {
@@ -348,8 +344,7 @@ final class FBSubprocessTests: XCTestCase {
         .withStdOutToInputStream()
     )
 
-    let stream = process.stdOut as! InputStream
-    XCTAssertTrue(stream is InputStream)
+    let stream = try XCTUnwrap(process.stdOut)
     stream.open()
 
     var output = Data()
@@ -364,8 +359,7 @@ final class FBSubprocessTests: XCTestCase {
     let actual = String(data: output, encoding: .ascii)!.trimmingCharacters(in: .newlines)
     XCTAssertEqual(expected, actual)
 
-    let waitSuccess = try process.exitCode.await(withTimeout: 2) != nil
-    XCTAssertTrue(waitSuccess)
+    _ = try process.exitCode.await(withTimeout: 2)
   }
 
   func testInputFromData() throws {
@@ -379,10 +373,9 @@ final class FBSubprocessTests: XCTestCase {
         .withStdErrToDevNull()
     )
 
-    let waitSuccess = try process.exitCode.await(withTimeout: 2) != nil
-    XCTAssertTrue(waitSuccess)
+    _ = try process.exitCode.await(withTimeout: 2)
 
-    XCTAssertEqual(expected, process.stdOut as! Data)
+    XCTAssertEqual(expected, try XCTUnwrap(process.stdOut) as Data)
   }
 
   func testSendingSIGINT() throws {

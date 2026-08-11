@@ -219,7 +219,7 @@ final class FBAMDeviceTests: XCTestCase {
     ]
     XCTAssertEqual(expected, actual)
 
-    try? FBFuture<NSNull>(delay: 0.5, future: FBFuture<NSNull>.empty()).await()
+    _ = try? FBFuture<NSNull>(delay: 0.5, future: FBFuture<NSNull>.empty()).await()
     actual = sAMDeviceEvents
     expected = [
       "connect",

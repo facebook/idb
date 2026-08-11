@@ -93,7 +93,7 @@ final class FBAFCConnectionTests: XCTestCase {
   private var events: [String: [Any]] {
     var result: [String: [Any]] = [:]
     for (key, value) in sEvents {
-      result[key] = value as! [Any]
+      result[key] = (value as! [Any])
     }
     return result
   }
@@ -207,7 +207,7 @@ final class FBAFCConnectionTests: XCTestCase {
         return 1
       }
       let fileData = fileContents.data(using: .ascii)!
-      fileData.withUnsafeBytes { bytes in
+      _ = fileData.withUnsafeBytes { bytes in
         memcpy(buffer, bytes.baseAddress, fileData.count)
       }
       return 0

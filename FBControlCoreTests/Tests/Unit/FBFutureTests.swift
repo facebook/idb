@@ -1364,7 +1364,6 @@ final class FBFutureTests: XCTestCase {
     let error = NSError(domain: "foo", code: 2, userInfo: nil)
 
     var pushCalled = false
-    var outerTeardownCalled = false
     let completionExpectation = XCTestExpectation(description: "Resolved Completion")
     let outerTeardownExpectation = XCTestExpectation(description: "Resolved Outer Teardown")
 
@@ -1375,7 +1374,6 @@ final class FBFutureTests: XCTestCase {
           XCTAssertTrue(pushCalled)
           XCTAssertEqual(value as? NSNumber, NSNumber(value: 1))
           XCTAssertEqual(state, .failed)
-          outerTeardownCalled = true
           outerTeardownExpectation.fulfill()
           return FBFuture<NSNull>.empty()
         }

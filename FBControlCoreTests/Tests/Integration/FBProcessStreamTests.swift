@@ -19,11 +19,11 @@ final class FBProcessStreamTests: XCTestCase {
     XCTAssertEqual(attachment.mode, FBProcessStreamAttachmentMode.output)
 
     var data = "HELLO WORLD\n".data(using: .utf8)!
-    data.withUnsafeBytes { buffer in
+    _ = data.withUnsafeBytes { buffer in
       Darwin.write(attachment.fileDescriptor, buffer.baseAddress!, buffer.count)
     }
     data = "HELLO AGAIN".data(using: .utf8)!
-    data.withUnsafeBytes { buffer in
+    _ = data.withUnsafeBytes { buffer in
       Darwin.write(attachment.fileDescriptor, buffer.baseAddress!, buffer.count)
     }
 
@@ -49,7 +49,7 @@ final class FBProcessStreamTests: XCTestCase {
     try buffer.finishedConsuming.`await`()
 
     let expected: [String] = ["HELLO WORLD", "HELLO AGAIN"]
-    XCTAssertEqual(buffer.lines() as! [String], expected)
+    XCTAssertEqual(buffer.lines(), expected)
   }
 
   func testFileToFileDoesNotInvolveIndirection() throws {
@@ -88,9 +88,9 @@ final class FBProcessStreamTests: XCTestCase {
     }
     group.wait()
 
-    try? firstAttempt.`await`()
-    try? secondAttempt.`await`()
-    try? thirdAttempt.`await`()
+    _ = try? firstAttempt.`await`()
+    _ = try? secondAttempt.`await`()
+    _ = try? thirdAttempt.`await`()
 
     var successes: UInt = 0
     if firstAttempt.state == FBFutureState.done {

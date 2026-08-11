@@ -33,13 +33,19 @@ private final class CapturingApplicationCommands: FBSimulatorApplicationCommands
   }
 
   override func launchApplication(_ configuration: FBApplicationLaunchConfiguration) async throws -> FBLaunchedApplication {
-    lock.lock()
-    _capturedConfiguration = configuration
-    lock.unlock()
+    capture(configuration)
     // Throw to unwind launchDebugServer before it reaches the
     // (process-spawning) debugServerTask path. The thrown error never
     // surfaces — tests poll the captured configuration directly.
     throw LaunchCaptureStop()
+  }
+
+  // NSLock.lock/unlock are unavailable from async contexts; scope the locking
+  // in a synchronous helper instead.
+  private func capture(_ configuration: FBApplicationLaunchConfiguration) {
+    lock.lock()
+    defer { lock.unlock() }
+    _capturedConfiguration = configuration
   }
 }
 

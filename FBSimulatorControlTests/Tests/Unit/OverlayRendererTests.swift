@@ -446,7 +446,7 @@ class OverlayRendererTests: XCTestCase {
   }
 
   func testClearRemovesAnimatingShapes() {
-    var clock: CFTimeInterval = 1000.0
+    let clock: CFTimeInterval = 1000.0
     let renderer = FBOverlayRenderer(width: 100, height: 100)
     renderer.currentTime = { clock }
 
@@ -482,7 +482,7 @@ class OverlayRendererTests: XCTestCase {
   // MARK: - Animated Snapshot Tests (clock-cranked)
 
   func testSnapshotFadeoutCircleStart() {
-    var clock: CFTimeInterval = 1000.0
+    let clock: CFTimeInterval = 1000.0
     let renderer = FBOverlayRenderer(transform: iPhone11Transform())
     renderer.currentTime = { clock }
 

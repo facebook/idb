@@ -713,7 +713,7 @@ final class FBSimulatorVideoStreamDeliveryTests: XCTestCase {
     let eager = FBVideoStreamConfiguration(
       format: .bgra, framesPerSecond: 20, rateControl: nil, scaleFactor: nil, keyFrameRate: nil)
     var stream: FBSimulatorVideoStream? = makeStream(surface: surface, configuration: eager)
-    weak var weakStream = stream
+    weak let weakStream = stream
 
     try await stream?.startStreaming(consumer)
 

@@ -696,7 +696,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
     guard case let .single(element) = response.elements else {
       return XCTFail("expected a single object, got \(response.elements)")
     }
-    XCTAssertNotNil(element.label, "the searched key must be serialized even when unrequested")
+    XCTAssertNotNil(element.label as Any?, "the searched key must be serialized even when unrequested")
   }
 
   // A marker's match runs over a flattened tree regardless of the caller's format, so a nested request

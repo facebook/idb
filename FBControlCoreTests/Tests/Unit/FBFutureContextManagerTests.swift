@@ -144,7 +144,7 @@ final class FBFutureContextManagerTests: XCTestCase, FBFutureContextManagerDeleg
 
     let value = try? FBFuture<AnyObject>.combine([future0, future1, future2]).await(withTimeout: 10) as NSArray?
     XCTAssertNotNil(value)
-    XCTAssertEqual(value as? NSArray, [0, 1, 2] as NSArray)
+    XCTAssertEqual(value, [0, 1, 2] as NSArray)
 
     XCTAssertEqual(prepareCalled, 1)
     XCTAssertEqual(teardownCalled, 1)
@@ -226,7 +226,7 @@ final class FBFutureContextManagerTests: XCTestCase, FBFutureContextManagerDeleg
 
     let value = try? FBFuture<AnyObject>.combine([future0, future1, future2]).await(withTimeout: 10) as NSArray?
     XCTAssertNotNil(value)
-    XCTAssertEqual(value as? NSArray, [0, 1, 2] as NSArray)
+    XCTAssertEqual(value, [0, 1, 2] as NSArray)
 
     XCTAssertEqual(prepareCalled, 1)
     XCTAssertEqual(teardownCalled, 1)
@@ -343,7 +343,7 @@ final class FBFutureContextManagerTests: XCTestCase, FBFutureContextManagerDeleg
     let manager = self.manager
 
     let context = try manager.utilizeNow(withPurpose: "A Test")
-    XCTAssertEqual(context as? NSNumber, 0)
+    XCTAssertEqual(context, 0)
 
     try manager.returnNow(withPurpose: "A Test")
   }

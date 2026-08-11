@@ -119,7 +119,7 @@ final class FBAccessibilitySerializationTests: XCTestCase {
       forElement: root, token: "", keys: FBAXKeys.defaultSet,
       collector: nil, seenPids: nil, isRemote: true
     )
-    XCTAssertNil(defaultSet.isRemote, "is_remote stays absent unless explicitly requested")
+    XCTAssertNil(defaultSet.isRemote as Any?, "is_remote stays absent unless explicitly requested")
   }
 
   // An off-screen element (e.g. a SpringBoard icon) can report a non-finite frame coordinate. JSON

@@ -22,9 +22,7 @@ final class FBTestConfigurationTests: XCTestCase {
       xcTestConfiguration: xcTestConfig
     )
 
-    XCTAssertTrue(testConfiguration is FBTestConfiguration)
     XCTAssertEqual(testConfiguration.sessionIdentifier, sessionIdentifier)
-    XCTAssertTrue(testConfiguration is FBTestConfiguration)
     XCTAssertEqual(testConfiguration.testBundlePath, "BundlePath")
     XCTAssertEqual(testConfiguration.path, "ConfigPath")
     XCTAssertTrue(testConfiguration.shouldInitializeForUITesting)

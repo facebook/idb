@@ -42,7 +42,7 @@ private func CreateH264SampleBuffer(isKeyFrame: Bool) -> CMSampleBuffer {
   var formatDesc: CMFormatDescription?
   let status = sps.withUnsafeBufferPointer { spsPtr in
     pps.withUnsafeBufferPointer { ppsPtr in
-      var paramSets: [UnsafePointer<UInt8>] = [spsPtr.baseAddress!, ppsPtr.baseAddress!]
+      let paramSets: [UnsafePointer<UInt8>] = [spsPtr.baseAddress!, ppsPtr.baseAddress!]
       return paramSets.withUnsafeBufferPointer { paramSetsPtr in
         paramSizes.withUnsafeBufferPointer { paramSizesPtr in
           CMVideoFormatDescriptionCreateFromH264ParameterSets(
@@ -133,7 +133,7 @@ private func CreateNotReadySampleBuffer() -> CMSampleBuffer {
   var formatDesc: CMFormatDescription?
   let status = sps.withUnsafeBufferPointer { spsPtr in
     pps.withUnsafeBufferPointer { ppsPtr in
-      var paramSets: [UnsafePointer<UInt8>] = [spsPtr.baseAddress!, ppsPtr.baseAddress!]
+      let paramSets: [UnsafePointer<UInt8>] = [spsPtr.baseAddress!, ppsPtr.baseAddress!]
       return paramSets.withUnsafeBufferPointer { paramSetsPtr in
         paramSizes.withUnsafeBufferPointer { paramSizesPtr in
           CMVideoFormatDescriptionCreateFromH264ParameterSets(

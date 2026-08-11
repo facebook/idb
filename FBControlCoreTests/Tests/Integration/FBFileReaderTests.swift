@@ -67,7 +67,7 @@ final class FBFileReaderTests: XCTestCase, FBDataConsumer {
 
     let writerFuture = FBFileWriter.asyncWriter(forFilePath: fifoPath)
     let readerFuture = FBFileReader.reader(withFilePath: fifoPath, consumer: self, logger: nil)
-    let writerAndReader = try FBFuture<AnyObject>.combine([writerFuture as! FBFuture<AnyObject>, readerFuture as! FBFuture<AnyObject>]).`await`() as NSArray?
+    let writerAndReader = try FBFuture<AnyObject>.combine([writerFuture, readerFuture as! FBFuture<AnyObject>]).`await`() as NSArray?
     XCTAssertNotNil(writerAndReader)
 
     // swiftlint:disable force_cast
@@ -222,9 +222,9 @@ final class FBFileReaderTests: XCTestCase, FBDataConsumer {
     }
     group.wait()
 
-    try? firstAttempt.`await`()
-    try? secondAttempt.`await`()
-    try? thirdAttempt.`await`()
+    _ = try? firstAttempt.`await`()
+    _ = try? secondAttempt.`await`()
+    _ = try? thirdAttempt.`await`()
     XCTAssertEqual(reader.state, FBFileReaderState.reading)
 
     var successes: UInt = 0

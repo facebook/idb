@@ -20,7 +20,6 @@ final class FBControlCoreLoggerTests: XCTestCase {
     fileHandle.synchronizeFile()
     fileHandle.closeFile()
 
-    var error: NSError?
     let fileContent = try XCTUnwrap(try? String(contentsOfFile: temporaryFilePath, encoding: .utf8))
     XCTAssertTrue(fileContent.hasSuffix("Some content\n"), "Unexpected fileContent: \(fileContent)")
   }
