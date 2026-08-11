@@ -40,11 +40,11 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
   /// caller selected; the injected transport already encodes the behavioural difference.
   private let persistence: FBAXBridgePersistence
 
-  /// How frontmost reads resolve the foreground app. Defaults to the positional `.centerPoint`; a caller
-  /// (e.g. sime2e) can select `.windowServer` or `.runningBoard`.
+  /// How frontmost reads resolve the foreground app. Defaults to the authoritative `.windowServer`; a
+  /// caller (e.g. sime2e) can select the positional `.centerPoint` or `.runningBoard`.
   private let frontmostMethod: FBAXBridgeFrontmostMethod
 
-  init(simulator: FBSimulator, transport: any FBAXBridgeTransport, persistence: FBAXBridgePersistence, frontmostMethod: FBAXBridgeFrontmostMethod = .centerPoint) {
+  init(simulator: FBSimulator, transport: any FBAXBridgeTransport, persistence: FBAXBridgePersistence, frontmostMethod: FBAXBridgeFrontmostMethod = .windowServer) {
     self.simulator = simulator
     self.transport = transport
     self.persistence = persistence

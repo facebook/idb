@@ -406,24 +406,22 @@ typedef struct FBAXPair {
 
 #pragma mark - The default frontmost method
 
-// A fused frontmost read that names no method resolves positionally: a system-wide hit-test at the anchor,
-// whose owning process is taken for the frontmost app. That is a proxy rather than the thing itself, and it
-// answers only when something occupies the anchor — so an app mid-transition, or a screen whose centre
-// falls between elements, fails a read the window server could have answered without looking at a pixel.
-//
-// BUG: the default resolves a positional proxy and fails where the authoritative resolver would not —
-// flipped in the following commit.
-- (void)testAFrontmostReadWithNoMethodResolvesPositionally
+// A fused frontmost read that names no method gets the authoritative frontmost: the window server's, which
+// answers without looking at a pixel. The positional resolver is still there for a caller who wants the
+// process owning a particular point, but it is a different question and no longer the one asked by default
+// — it fails where nothing occupies the anchor, and answers the wrong application where something else does.
+- (void)testAFrontmostReadWithNoMethodAsksTheWindowServer
 {
   _runtime.hitTestOutcome = [FBAXHitTestOutcome empty];
   _runtime.windowServerOutcome = [FBAXFrontmostOutcome resolved:kAppPid];
   _runtime.applicationElements[@(kAppPid)] = [FBAXFakeElement readable:@"UIApplication"];
 
   NSDictionary *response = FBAXBridgeHandleRequest(@{@"verb" : @"describe", @"x" : @201, @"y" : @437});
-  XCTAssertEqualObjects(response[@"ok"], @NO);
-  XCTAssertEqualObjects(response[@"error_kind"], @"frontmost_unresolved");
-  XCTAssertEqual(_runtime.hitTestCount, 1u, @"the anchor was consulted");
-  XCTAssertEqual(_runtime.windowServerCount, 0u, @"the window server could have answered and was never asked");
+  XCTAssertEqualObjects(response[@"ok"], @YES);
+  XCTAssertEqualObjects(response[@"pid"], @(kAppPid));
+  XCTAssertEqualObjects(response[@"method"], @"window-server", @"the response names the resolver that ran");
+  XCTAssertEqual(_runtime.windowServerCount, 1u);
+  XCTAssertEqual(_runtime.hitTestCount, 0u, @"the anchor is not consulted for the authoritative frontmost");
 }
 
 #pragma mark - Request validation
@@ -913,12 +911,14 @@ static NSDictionary *FBAXTestsPress(void)
 
 #pragma mark - Frontmost dispatch
 
-- (void)testCenterPointIsTheDefaultMethodAndIsEchoedBack
+- (void)testCenterPointResolvesTheAnchorsOwnerAndIsEchoedBack
 {
   _runtime.hitTestOutcome = [FBAXHitTestOutcome hit:[FBAXFakeElement readable:@"leaf"] owningProcessIdentifier:kAppPid];
   _runtime.applicationElements[@(kAppPid)] = [FBAXFakeElement readable:@"UIApplication"];
 
-  NSDictionary *response = FBAXBridgeHandleRequest(@{@"verb" : @"describe", @"x" : @201, @"y" : @437});
+  NSDictionary *response = FBAXBridgeHandleRequest(
+    @{@"verb" : @"describe", @"x" : @201, @"y" : @437, @"method" : @"center-point"}
+  );
   XCTAssertEqualObjects(response[@"ok"], @YES);
   XCTAssertEqualObjects(response[@"pid"], @(kAppPid));
   XCTAssertEqualObjects(response[@"method"], @"center-point");
@@ -975,13 +975,17 @@ static NSDictionary *FBAXTestsPress(void)
 - (void)testCenterPointCarriesEachNonResolvingOutcomeThroughAsItsOwnKind
 {
   _runtime.hitTestOutcome = [FBAXHitTestOutcome empty];
-  NSDictionary *empty = FBAXBridgeHandleRequest(@{@"verb" : @"describe", @"x" : @9999, @"y" : @9999});
+  NSDictionary *empty = FBAXBridgeHandleRequest(
+    @{@"verb" : @"describe", @"x" : @9999, @"y" : @9999, @"method" : @"center-point"}
+  );
   XCTAssertEqualObjects(empty[@"ok"], @NO);
   XCTAssertEqualObjects(empty[@"error"], @"system-wide hit-test at (9999.0, 9999.0) found no element");
   XCTAssertEqualObjects(empty[@"error_kind"], @"frontmost_unresolved");
 
   _runtime.hitTestOutcome = [FBAXHitTestOutcome applicationUnavailable];
-  NSDictionary *unavailable = FBAXBridgeHandleRequest(@{@"verb" : @"describe", @"x" : @5, @"y" : @6});
+  NSDictionary *unavailable = FBAXBridgeHandleRequest(
+    @{@"verb" : @"describe", @"x" : @5, @"y" : @6, @"method" : @"center-point"}
+  );
   XCTAssertEqualObjects(
     unavailable[@"error"],
     @"no accessibility server answered the system-wide hit-test at (5.0, 6.0)"
@@ -990,7 +994,9 @@ static NSDictionary *FBAXTestsPress(void)
   XCTAssertNil(unavailable[@"pid"], @"a frontmost query that resolved nothing has no process to name");
 
   _runtime.hitTestOutcome = [FBAXHitTestOutcome applicationNotResponding];
-  NSDictionary *notResponding = FBAXBridgeHandleRequest(@{@"verb" : @"describe", @"x" : @5, @"y" : @6});
+  NSDictionary *notResponding = FBAXBridgeHandleRequest(
+    @{@"verb" : @"describe", @"x" : @5, @"y" : @6, @"method" : @"center-point"}
+  );
   XCTAssertEqualObjects(
     notResponding[@"error"],
     @"the application at (5.0, 6.0) did not answer the system-wide hit-test in time"
@@ -1017,9 +1023,11 @@ static NSDictionary *FBAXTestsPress(void)
   _runtime.hitTestOutcome = [FBAXHitTestOutcome hit:[FBAXFakeElement readable:@"leaf"] owningProcessIdentifier:kAppPid];
   _runtime.applicationElements[@(kAppPid)] = [FBAXFakeElement readable:@"UIApplication"];
 
+  _runtime.windowServerOutcome = [FBAXFrontmostOutcome resolved:kAppPid];
+
   NSDictionary *response = FBAXBridgeHandleRequest(@{@"verb" : @"describe", @"x" : @1, @"y" : @2, @"method" : @7});
-  XCTAssertEqualObjects(response[@"method"], @"center-point");
-  XCTAssertEqual(_runtime.hitTestCount, 1u);
+  XCTAssertEqualObjects(response[@"method"], @"window-server");
+  XCTAssertEqual(_runtime.windowServerCount, 1u);
 }
 
 @end

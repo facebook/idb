@@ -39,7 +39,7 @@ static NSString *const kRequestMaxNodes = @"maxNodes";
 static NSString *const kRequestX = @"x";
 static NSString *const kRequestY = @"y";
 // Selects how a fused frontmost read (a `describe` with no pid) resolves the foreground app. Optional;
-// defaults to `center-point` (the positional system-wide hit-test).
+// defaults to `window-server` (the authoritative query).
 static NSString *const kRequestMethod = @"method";
 // The semantic action a `perform` asks for, and the string a `setvalue` writes.
 static NSString *const kRequestAction = @"action";
@@ -120,7 +120,8 @@ static NSString *const kActionScrollToVisible = @"scroll-to-visible";
 // The frontmost-resolution methods, shared by the request `method` selector and the response `method`
 // value: a request selects a strategy with one of these, and a fused frontmost response echoes back the
 // one that answered, so a guest-reported `method` round-trips into the host's `FBAXBridgeFrontmostMethod`.
-// `center-point` is the positional system-wide hit-test — the default when a request names no method.
+// `center-point` is the positional system-wide hit-test; `window-server` is the authoritative query, and
+// the default when a request names no method.
 static NSString *const kMethodCenterPoint = @"center-point";
 static NSString *const kMethodWindowServer = @"window-server";
 static NSString *const kMethodRunningBoard = @"runningboard";
@@ -407,8 +408,8 @@ static FBAXFrontmostOutcome *FBAXBridgeCenterPointFrontmost(id<FBAXRuntime> runt
   }
 }
 
-// Resolves the frontmost application by the named `method`: `center-point` (the default) is the positional
-// system-wide hit-test at `anchor`; `window-server` is the in-guest AXPTranslator query; `runningboard`
+// Resolves the frontmost application by the named `method`: `center-point` is the positional system-wide
+// hit-test at `anchor`; `window-server` (the default) is the in-guest AXPTranslator query; `runningboard`
 // reads the foreground app from RunningBoard's visibility endowment. `anchor` is ignored by the latter two.
 //
 // A request names exactly one method and gets exactly that one — there is deliberately no fallback between
@@ -853,7 +854,11 @@ NSDictionary<NSString *, id> *FBAXBridgeHandleRequest(NSDictionary<NSString *, i
       );
     }
     NSString *requestedMethod = [request[kRequestMethod] isKindOfClass:NSString.class] ? request[kRequestMethod] : nil;
-    NSString *method = requestedMethod ?: kMethodCenterPoint;
+    // A request that names no method gets the authoritative frontmost, not the positional proxy. The proxy
+    // answers a different question — which process owns the anchor pixel — and coincides with the frontmost
+    // only while the frontmost app covers that pixel, so it both fails on an anchor nothing occupies and
+    // answers the wrong application for one something else does. A caller who wants the pixel can ask.
+    NSString *method = requestedMethod ?: kMethodWindowServer;
     FBAXFrontmostOutcome *frontmost =
     FBAXBridgeResolveFrontmost(runtime, method, CGPointMake(xNumber.doubleValue, yNumber.doubleValue));
     // A frontmost that did not resolve says why in its own terms. The kind is what the resolver decided,

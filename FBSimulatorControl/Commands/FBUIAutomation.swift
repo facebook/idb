@@ -59,7 +59,7 @@ public extension FBUIAutomationBackend {
   /// bijection in one place; the round-trip is pinned over every case, so a new backend cannot be added
   /// without teaching both directions. `frontmostMethod` is carried into the axbridge cases, the only
   /// ones it applies to; the other backends ignore it.
-  init(_ name: FBUIAutomationBackendName, frontmostMethod: FBAXBridgeFrontmostMethod = .centerPoint) {
+  init(_ name: FBUIAutomationBackendName, frontmostMethod: FBAXBridgeFrontmostMethod = .windowServer) {
     switch name {
     case .ax:
       self = .accessibility
