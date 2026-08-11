@@ -1137,6 +1137,99 @@ final class FBAXBridgeReadsTests: XCTestCase {
       }
     }
   }
+
+  // MARK: - Shared `frameFromTree` composition
+
+  // `frame` over a tree-reading backend is `describeTree` narrowed to the geometry key, so what it has
+  // to get right is which element of the response answers each query shape, and what happens when that
+  // element reports no rectangle.
+
+  private static let rootRect = CGRect(x: 0, y: 0, width: 390, height: 844)
+  private static let childRect = CGRect(x: 16, y: 100, width: 358, height: 44)
+
+  private static func framedReader(child: CGRect? = childRect) -> StubTreeReader {
+    func node(_ label: String, _ rect: CGRect?, children: [[String: Any]]) -> [String: Any] {
+      var node: [String: Any] = [
+        FBAXWire.Node.label.rawValue: label,
+        FBAXWire.Node.children.rawValue: children,
+      ]
+      if let rect {
+        node[FBAXWire.Node.frame.rawValue] = CGRectCreateDictionaryRepresentation(rect) as NSDictionary
+      }
+      return node
+    }
+    let tree = node("root", rootRect, children: [node("General Settings", child, children: [])])
+    return StubTreeReader(read: FBAXTreeRead(tree: tree, pid: 99, truncated: false, modal: nil))
+  }
+
+  // A whole-tree query has no element in mind, so it answers with the root's — the application's own
+  // rectangle, which is what the accessibility backend reports for the same query.
+  func testFrameFromTreeAnswersWithTheRootRectangleForWholeTreeQueries() async throws {
+    for query in [FBAccessibilityElementQuery.frontmost, .application(pid: 99)] {
+      let frame = try await Self.framedReader().frameFromTree(query)
+      XCTAssertEqual(frame, Self.rootRect, "\(query) must answer with the application root's frame")
+    }
+  }
+
+  // The narrowed key set is the part most likely to break a marker: the searched key is unioned in by
+  // `describeTree`, so asking for geometry alone still resolves the element rather than matching nothing.
+  func testFrameFromTreeAnswersWithTheMatchedElementsRectangleForAMarker() async throws {
+    let frame = try await Self.framedReader().frameFromTree(.marker(value: "General", key: .label, depth: 10))
+    XCTAssertEqual(frame, Self.childRect, "a marker must answer with the matched element's frame, not the root's")
+  }
+
+  func testFrameFromTreeAnswersWithTheHitElementsRectangleForAPoint() async throws {
+    var hit = FBAccessibilityDocumentElement()
+    hit.frame = .some(FBAccessibilityFrame(Self.childRect))
+    let reader = StubTreeReader(read: Self.stubRead(), hitTestResult: FBAccessibilityElementsResponse(elements: .single(hit)))
+    let frame = try await reader.frameFromTree(.point(CGPoint(x: 20, y: 110)))
+    XCTAssertEqual(frame, Self.childRect)
+    XCTAssertEqual(reader.readCount, 0, "a point reads no tree to answer about its own frame")
+  }
+
+  // An element with no frame on the wire reports a zero rectangle, not an error — JSON carries no
+  // infinity, so the guest emits nulls for a non-finite edge and `axFrame` normalizes the whole thing to
+  // zero on the way in. `frame` therefore answers exactly what a describe of the same element reports;
+  // the two must not disagree about geometry the read already resolved.
+  func testFrameFromTreeReportsAZeroRectangleForAnElementWithNoFrameOnTheWire() async throws {
+    let frame = try await Self.framedReader(child: nil).frameFromTree(.marker(value: "General", key: .label, depth: 10))
+    XCTAssertEqual(frame, .zero)
+  }
+
+  // The guard on the total mapping from an optional-bearing response to a rectangle. A backend cannot
+  // reach it — `frameFromTree` requests the frame key, so the read always carries one — but the response
+  // type permits it, and a zero rect is not an answer a caller could tell apart from the origin.
+  func testFrameFromTreeThrowsWhenTheReadCarriesNoFrame() async throws {
+    let query = FBAccessibilityElementQuery.point(CGPoint(x: 20, y: 110))
+    let frameless = FBAccessibilityElementsResponse(elements: .single(FBAccessibilityDocumentElement()))
+    do {
+      _ = try await StubTreeReader(read: Self.stubRead(), hitTestResult: frameless).frameFromTree(query)
+      XCTFail("a read carrying no frame must throw rather than answer with the origin")
+    } catch let error as FBUIAutomationError {
+      guard case let .frameUnavailable(backend, thrownQuery) = error else {
+        return XCTFail("expected frameUnavailable, got \(error)")
+      }
+      XCTAssertEqual(backend, .axBridge(persistence: .oneShot, frontmostMethod: .centerPoint))
+      XCTAssertEqual(thrownQuery, query, "the error must name the target that was asked about")
+    }
+  }
+
+  // Every query shape can be asked for a frame, so the error names whichever was asked — unlike
+  // `elementNotOnScreen`, which can only speak about a marker.
+  func testFrameUnavailableNamesEveryTargetShape() {
+    let backend = FBUIAutomationBackend.axBridge(persistence: .oneShot, frontmostMethod: .centerPoint)
+    let expectations: [(FBAccessibilityElementQuery, String)] = [
+      (.frontmost, "the frontmost application"),
+      (.application(pid: 99), "pid 99"),
+      (.marker(value: "General", key: .label, depth: 10), "AXLabel"),
+      (.point(CGPoint(x: 3, y: 4)), "(3.0, 4.0)"),
+    ]
+    for (query, expected) in expectations {
+      let description = FBUIAutomationError.frameUnavailable(backend: backend, query: query).description
+      XCTAssertTrue(description.contains(expected), "\(query) should be named by \"\(expected)\": \(description)")
+      XCTAssertTrue(description.contains(backend.displayName), "message should name the backend: \(description)")
+    }
+  }
 }
 
 /// A minimal `FBAXTreeReader` serving a canned read, so the shared `describeTree` composition can be

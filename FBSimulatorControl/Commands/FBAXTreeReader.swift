@@ -104,4 +104,30 @@ extension FBAXTreeReader {
         )
     }
   }
+
+  /// `frame` for a tree-reading backend: the rectangle of the element a query names, in points.
+  ///
+  /// Geometry is an attribute of the tree, so this is `describeTree` asking for the frame key alone —
+  /// there is nothing to read that a describe does not already read, and no backend-specific step, which
+  /// is why it composes here rather than once per backend. Narrowing the key set to `.frameDict` is not
+  /// an optimisation of the read (the guest walks the whole bounded tree either way) but of the
+  /// serialization, which would otherwise fetch fifteen attributes per node to answer about one.
+  ///
+  /// A whole-tree query answers with the application root's frame, matching what the accessibility
+  /// backend reports for the same query: a flat walk lists the root first, and `.point`/`.marker` answer
+  /// with the single element they resolved, so the head of the response is the named element in
+  /// every case.
+  func frameFromTree(_ query: FBAccessibilityElementQuery) async throws -> CGRect {
+    let response = try await describeTree(query, options: FBAccessibilityRequestOptions(keys: [.frameDict]))
+    // Requesting `.frameDict` is what makes the frame present, so the guard is on a response shape the
+    // types permit rather than one a backend produces. It throws rather than substituting a zero rect,
+    // which a caller could not tell apart from an element genuinely at the origin.
+    guard let element = response.elements.elements.first,
+      let frame = element.frame ?? nil,
+      let x = frame.x, let y = frame.y, let width = frame.width, let height = frame.height
+    else {
+      throw FBUIAutomationError.frameUnavailable(backend: backend, query: query)
+    }
+    return CGRect(x: x, y: y, width: width, height: height)
+  }
 }

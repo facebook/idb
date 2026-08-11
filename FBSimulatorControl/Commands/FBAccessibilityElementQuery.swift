@@ -49,3 +49,20 @@ public extension FBAccessibilityElementQuery {
     }
   }
 }
+
+extension FBAccessibilityElementQuery: CustomStringConvertible {
+  /// How this query names its target in an error a user reads, phrased as a noun so it reads inside a
+  /// sentence. The machine-readable counterpart is `targetDescriptor`.
+  public var description: String {
+    switch self {
+    case let .point(point):
+      return "the element at (\(Double(point.x)), \(Double(point.y)))"
+    case let .marker(value, key, _):
+      return "the element whose \(key.rawValue) contains \"\(value)\""
+    case .frontmost:
+      return "the frontmost application"
+    case let .application(pid):
+      return "the application with pid \(pid)"
+    }
+  }
+}

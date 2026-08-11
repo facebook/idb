@@ -27,6 +27,11 @@ public enum FBUIAutomationError: LocalizedError, Sendable {
   /// A marker matched an element, but it reports no on-screen frame — off-screen or still settling —
   /// so there is no point to interact with. Distinct from `elementNotFound`: the element exists.
   case elementNotOnScreen(backend: FBUIAutomationBackend, key: String, value: String)
+  /// A read answered without geometry: no element, or an element carrying no frame. Distinct from
+  /// `elementNotOnScreen`, which is about an element whose frame puts it out of reach — here there is no
+  /// frame to judge. It names whichever target shape was asked, because a frame can be read of a whole
+  /// tree as well as of a marker.
+  case frameUnavailable(backend: FBUIAutomationBackend, query: FBAccessibilityElementQuery)
   /// No element sits at the requested point. A successful read of empty space, raised as an error only
   /// because `describe(.point:)` has to answer with an element — so it carries no remediation, there
   /// being nothing wrong to remedy.
@@ -58,6 +63,8 @@ public enum FBUIAutomationError: LocalizedError, Sendable {
       return "\(backend.displayName) found no element whose \(key) contains \"\(value)\""
     case let .elementNotOnScreen(backend, key, value):
       return "\(backend.displayName) matched an element whose \(key) contains \"\(value)\", but it is off-screen and has no frame to interact with"
+    case let .frameUnavailable(backend, query):
+      return "\(backend.displayName) read \(query), but the read carried no frame to report"
     case let .noElementAtPoint(backend, x, y):
       return "\(backend.displayName) found no element at (\(x), \(y)); the point is empty"
     case let .timedOut(backend, key, value, timeout):

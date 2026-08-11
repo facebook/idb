@@ -167,8 +167,13 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
     throw FBUIAutomationError.operationUnsupported(backend: backend, operation: "Scroll")
   }
 
+  // MARK: - Geometry
+
+  /// Filed with the writes because that is the company `FBUIAutomation` keeps it in, but it is a pure
+  /// read: `AXFrame` is an attribute of the tree the other verbs already read, so it is served by the
+  /// shared tree-reader path with no wire verb and no guest change.
   func frame(_ query: FBAccessibilityElementQuery) async throws -> CGRect {
-    throw FBUIAutomationError.operationUnsupported(backend: backend, operation: "Reading an element frame")
+    try await frameFromTree(query)
   }
 
   // MARK: - Frontmost anchor
