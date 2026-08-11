@@ -140,7 +140,7 @@ static NSDictionary *FBAXTestsParse(NSData *data)
 // application" from every other failure by the `application_unavailable` kind on the envelope — it maps
 // that one kind onto a backend-neutral typed error and leaves the rest as opaque guest failures — so a
 // pid that cannot name an application has to carry the kind, whatever else the reader can or cannot
-// reach. Both verbs take a `pid`, so both must answer alike.
+// reach. Every verb takes a `pid`, so all of them must answer alike.
 - (void)testNonPositivePidIsReportedAsAnUnavailableApplication
 {
   NSArray<NSDictionary *> *requests = @[
@@ -148,6 +148,10 @@ static NSDictionary *FBAXTestsParse(NSData *data)
     @{@"verb" : @"describe", @"pid" : @(-1)},
     @{@"verb" : @"hittest", @"pid" : @0, @"x" : @200, @"y" : @400},
     @{@"verb" : @"hittest", @"pid" : @(-1), @"x" : @200, @"y" : @400},
+    @{@"verb" : @"perform", @"pid" : @0, @"x" : @200, @"y" : @400, @"action" : @"press"},
+    @{@"verb" : @"perform", @"pid" : @(-1), @"x" : @200, @"y" : @400, @"action" : @"press"},
+    @{@"verb" : @"setvalue", @"pid" : @0, @"x" : @200, @"y" : @400, @"value" : @"hello"},
+    @{@"verb" : @"setvalue", @"pid" : @(-1), @"x" : @200, @"y" : @400, @"value" : @"hello"},
   ];
   for (NSDictionary *request in requests) {
     NSDictionary *response = FBAXBridgeHandleRequest(request);
@@ -189,6 +193,10 @@ static NSDictionary *FBAXTestsParse(NSData *data)
     @"request.x" : @"x",
     @"request.y" : @"y",
     @"request.method" : @"method",
+    @"request.action" : @"action",
+    @"request.value" : @"value",
+    @"request.assertKey" : @"assertKey",
+    @"request.assertValue" : @"assertValue",
     @"envelope.ok" : @"ok",
     @"envelope.tree" : @"tree",
     @"envelope.error" : @"error",
@@ -199,6 +207,7 @@ static NSDictionary *FBAXTestsParse(NSData *data)
     @"envelope.errorKindFrontmostUnresolved" : @"frontmost_unresolved",
     @"envelope.errorKindReaderUnavailable" : @"reader_unavailable",
     @"envelope.errorKindBadRequest" : @"bad_request",
+    @"envelope.errorKindAssertionFailed" : @"assertion_failed",
     @"envelope.truncated" : @"truncated",
     @"envelope.pid" : @"pid",
     @"envelope.method" : @"method",
@@ -212,6 +221,14 @@ static NSDictionary *FBAXTestsParse(NSData *data)
     @"modal.alertControllerClassPrefix" : @"_UIAlertController",
     @"verb.describe" : @"describe",
     @"verb.hittest" : @"hittest",
+    @"verb.perform" : @"perform",
+    @"verb.setvalue" : @"setvalue",
+    @"action.press" : @"press",
+    @"action.scrollUp" : @"scroll-up",
+    @"action.scrollDown" : @"scroll-down",
+    @"action.scrollLeft" : @"scroll-left",
+    @"action.scrollRight" : @"scroll-right",
+    @"action.scrollToVisible" : @"scroll-to-visible",
     @"method.centerPoint" : @"center-point",
     @"method.windowServer" : @"window-server",
     @"method.runningBoard" : @"runningboard",

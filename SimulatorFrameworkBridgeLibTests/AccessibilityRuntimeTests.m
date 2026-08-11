@@ -481,6 +481,286 @@ typedef struct FBAXPair {
   XCTAssertTrue(dlsym(RTLD_DEFAULT, "AXUIElementSetAttributeValue") != NULL);
 }
 
+#pragma mark - Write dispatch
+
+// Seeds the hit-test so a point-addressed write lands on an element reporting `attributes`, and hands the
+// element back so a test can assert the write acted on that one.
+- (FBAXFakeElement *)seedHitElementWithAttributes:(NSDictionary<NSString *, id> *)attributes
+{
+  FBAXFakeElement *element = [FBAXFakeElement new];
+  element.attributes = attributes;
+  _runtime.hitTestOutcome = [FBAXHitTestOutcome hit:element owningProcessIdentifier:kAppPid];
+  return element;
+}
+
+static NSDictionary *FBAXTestsPress(void)
+{
+  return @{@"verb" : @"perform", @"x" : @1, @"y" : @2, @"action" : @"press"};
+}
+
+// The wire spelling of an action is the host's whole vocabulary for what a write does, so every name has to
+// arrive at the runtime as the action it names. A name that silently became a press would be a tap where
+// the caller asked for a scroll — visible only as a test that navigated somewhere unexpected.
+- (void)testEveryActionNameReachesTheRuntimeAsItsSemanticAction
+{
+  NSDictionary<NSString *, NSNumber *> *actions = @{
+    @"press" : @(FBAXActionPress),
+    @"scroll-up" : @(FBAXActionScrollUp),
+    @"scroll-down" : @(FBAXActionScrollDown),
+    @"scroll-left" : @(FBAXActionScrollLeft),
+    @"scroll-right" : @(FBAXActionScrollRight),
+    @"scroll-to-visible" : @(FBAXActionScrollToVisible),
+  };
+  NSUInteger performed = 0;
+  for (NSString *name in actions) {
+    [self seedHitElementWithAttributes:@{}];
+    NSDictionary *response =
+    FBAXBridgeHandleRequest(@{@"verb" : @"perform", @"x" : @10, @"y" : @20, @"action" : name});
+    XCTAssertEqualObjects(response[@"ok"], @YES, @"%@", name);
+    XCTAssertEqualObjects(response[@"pid"], @(kAppPid), @"%@", name);
+    performed++;
+    XCTAssertEqual(_runtime.performCount, performed, @"%@ must reach the runtime", name);
+    XCTAssertEqual((NSUInteger)_runtime.lastPerformedAction, actions[name].unsignedIntegerValue, @"%@", name);
+  }
+}
+
+// An action name the guest cannot map has no number to perform, so it is refused outright rather than
+// falling through to whichever action happens to be first in the enum.
+- (void)testAnUnknownActionIsRefusedBeforeAnythingIsTouched
+{
+  [self seedHitElementWithAttributes:@{}];
+  for (id action in @[@"pres", @"AXPress", @"", @123, NSNull.null]) {
+    NSDictionary *response =
+    FBAXBridgeHandleRequest(@{@"verb" : @"perform", @"x" : @1, @"y" : @2, @"action" : action});
+    XCTAssertEqualObjects(response[@"ok"], @NO, @"%@", action);
+    XCTAssertTrue([response[@"error"] hasPrefix:@"unsupported action:"], @"%@", response[@"error"]);
+  }
+  XCTAssertEqualObjects(
+    FBAXBridgeHandleRequest(@{@"verb" : @"perform", @"x" : @1, @"y" : @2})[@"error"],
+    @"unsupported action: (nil)"
+  );
+  XCTAssertEqual(_runtime.hitTestCount, 0, @"a request that cannot be understood must not reach the application");
+  XCTAssertEqual(_runtime.performCount, 0);
+}
+
+// A write is addressed by point and nothing else, so coordinates that are absent or not numbers leave it
+// with no target — and hit-testing (0, 0) instead would act on whatever is in the corner of the screen.
+- (void)testAWriteRequiresNumericCoordinates
+{
+  [self seedHitElementWithAttributes:@{}];
+  NSArray<NSDictionary *> *requests = @[
+    @{@"verb" : @"perform", @"action" : @"press"},
+    @{@"verb" : @"perform", @"action" : @"press", @"x" : @1},
+    @{@"verb" : @"perform", @"action" : @"press", @"x" : @"1", @"y" : @2},
+    @{@"verb" : @"setvalue", @"value" : @"hello"},
+    @{@"verb" : @"setvalue", @"value" : @"hello", @"x" : @1, @"y" : NSNull.null},
+  ];
+  for (NSDictionary *request in requests) {
+    NSDictionary *response = FBAXBridgeHandleRequest(request);
+    XCTAssertEqualObjects(response[@"ok"], @NO, @"%@", request);
+    XCTAssertEqualObjects(response[@"error"], @"a write requires numeric x and y", @"%@", request);
+  }
+  XCTAssertEqual(_runtime.hitTestCount, 0);
+}
+
+// Empty space is a successful result for a write for the same reason it is for a hit-test: the host has to
+// tell "there was nothing to tap" apart from "the write broke", and only one of those is worth retrying.
+- (void)testAWriteOnEmptySpaceIsASuccessfulEmptyResult
+{
+  _runtime.hitTestOutcome = [FBAXHitTestOutcome empty];
+  NSArray<NSDictionary *> *requests = @[
+    FBAXTestsPress(),
+    @{@"verb" : @"setvalue", @"x" : @1, @"y" : @2, @"value" : @"hello"},
+  ];
+  for (NSDictionary *request in requests) {
+    NSDictionary *response = FBAXBridgeHandleRequest(request);
+    XCTAssertEqualObjects(response[@"ok"], @YES, @"%@", request[@"verb"]);
+    XCTAssertEqualObjects(response[@"empty"], @YES, @"%@", request[@"verb"]);
+    XCTAssertNil(response[@"error"], @"%@", request[@"verb"]);
+  }
+  XCTAssertEqual(_runtime.performCount, 0, @"nothing at the point means nothing to write to");
+  XCTAssertEqual(_runtime.setValueCount, 0);
+}
+
+// An application that has gone can take a write out at either step, and the diagnostic differs by what was
+// known when: nothing answered the hit-test at all, or the app the hit-test attributed the element to died
+// before the write reached it.
+- (void)testAWriteToAnUnavailableApplicationIsTaggedAndNamesThePidWhenKnown
+{
+  _runtime.hitTestOutcome = [FBAXHitTestOutcome applicationUnavailable];
+  NSDictionary *unhit = FBAXBridgeHandleRequest(FBAXTestsPress());
+  XCTAssertEqualObjects(unhit[@"ok"], @NO);
+  XCTAssertEqualObjects(unhit[@"error_kind"], @"application_unavailable");
+  XCTAssertEqualObjects(unhit[@"error"], @"no accessibility server answered the write");
+
+  [self seedHitElementWithAttributes:@{}];
+  _runtime.writeOutcome = [FBAXWriteOutcome applicationUnavailable];
+  NSDictionary *died = FBAXBridgeHandleRequest(FBAXTestsPress());
+  XCTAssertEqualObjects(died[@"error_kind"], @"application_unavailable");
+  XCTAssertEqualObjects(died[@"error"], @"pid 4321 has no accessibility server to accept the write");
+}
+
+// Nothing stands between a resolved element and the perform. `XC_kAXXCAttributeUserTestingActions` looks
+// like the way to pre-check that an element accepts an action, and is not: no element populates it, so a
+// guard built on it refuses nothing and charges every perform an extra attribute read for the privilege.
+- (void)testAnActionIsPerformedWhateverTheElementAdvertises
+{
+  for (id advertised in @[@[@"AXScrollToVisible"], @[], NSNull.null]) {
+    [self seedHitElementWithAttributes:@{@"XC_kAXXCAttributeUserTestingActions" : advertised}];
+    XCTAssertEqualObjects(FBAXBridgeHandleRequest(FBAXTestsPress())[@"ok"], @YES, @"%@", advertised);
+  }
+  XCTAssertEqual(_runtime.performCount, 3);
+}
+
+// A marker is resolved host-side against a tree that was read earlier, so the element under the point can
+// have changed by the time the write arrives. The assertion is what catches that, and the diagnostic has to
+// say what was found as well as what was expected — otherwise the caller cannot tell a moved screen from a
+// wrong marker.
+- (void)testAnAssertionThatDoesNotMatchRefusesTheWrite
+{
+  [self seedHitElementWithAttributes:@{kAXLabel : @"Wi-Fi"}];
+
+  NSDictionary *response = FBAXBridgeHandleRequest(
+    @{
+      @"verb" : @"perform",
+      @"x" : @200,
+      @"y" : @711,
+      @"action" : @"press",
+      @"assertKey" : kAXLabel,
+      @"assertValue" : @"General",
+    }
+  );
+  XCTAssertEqualObjects(response[@"ok"], @NO);
+  XCTAssertEqualObjects(response[@"error_kind"], @"assertion_failed");
+  XCTAssertEqualObjects(
+    response[@"error"],
+    @"the element at (200.0, 711.0) has XC_kAXXCAttributeLabel Wi-Fi, expected General"
+  );
+  XCTAssertEqual(_runtime.performCount, 0, @"a write must not land on an element that is not the one named");
+}
+
+- (void)testAnAssertionThatMatchesAllowsTheWrite
+{
+  [self seedHitElementWithAttributes:@{kAXLabel : @"General"}];
+
+  NSDictionary *pressed = FBAXBridgeHandleRequest(
+    @{
+      @"verb" : @"perform",
+      @"x" : @1,
+      @"y" : @2,
+      @"action" : @"press",
+      @"assertKey" : kAXLabel,
+      @"assertValue" : @"General",
+    }
+  );
+  XCTAssertEqualObjects(pressed[@"ok"], @YES);
+  XCTAssertEqual(_runtime.performCount, 1);
+
+  NSDictionary *written = FBAXBridgeHandleRequest(
+    @{
+      @"verb" : @"setvalue",
+      @"x" : @1,
+      @"y" : @2,
+      @"value" : @"hello",
+      @"assertKey" : kAXLabel,
+      @"assertValue" : @"General",
+    }
+  );
+  XCTAssertEqualObjects(written[@"ok"], @YES, @"the assertion is not specific to one write verb");
+  XCTAssertEqual(_runtime.setValueCount, 1);
+}
+
+// Half an assertion is a request the caller got wrong, and answering it either way — checking nothing, or
+// checking against nil — would silently do something other than what was asked.
+- (void)testAnAssertionKeyAndValueAreOnlyMeaningfulTogether
+{
+  [self seedHitElementWithAttributes:@{kAXLabel : @"General"}];
+  for (NSDictionary *partial in @[@{@"assertKey" : kAXLabel}, @{@"assertValue" : @"General"}]) {
+    NSMutableDictionary *request = [FBAXTestsPress() mutableCopy];
+    [request addEntriesFromDictionary:partial];
+    NSDictionary *response = FBAXBridgeHandleRequest(request);
+    XCTAssertEqualObjects(response[@"ok"], @NO, @"%@", partial);
+    XCTAssertEqualObjects(response[@"error"], @"assertKey and assertValue are only meaningful together");
+  }
+  XCTAssertEqual(_runtime.hitTestCount, 0);
+}
+
+// The host builds an assertion out of a node it read off this wire, so a key that never appears in a node
+// is one it could not have come from there — and passing an unknown key through to the runtime would make
+// an unreadable attribute look like an element that moved.
+- (void)testAnAssertionOnAnAttributeTheReaderDoesNotFetchIsRejected
+{
+  [self seedHitElementWithAttributes:@{kAXLabel : @"General"}];
+  NSMutableDictionary *request = [FBAXTestsPress() mutableCopy];
+  request[@"assertKey"] = @"XC_kAXXCAttributeTraits";
+  request[@"assertValue"] = @"button";
+
+  NSDictionary *response = FBAXBridgeHandleRequest(request);
+  XCTAssertEqualObjects(response[@"ok"], @NO);
+  XCTAssertEqualObjects(response[@"error"], @"XC_kAXXCAttributeTraits is not an attribute a write can assert on");
+  XCTAssertEqual(_runtime.hitTestCount, 0);
+}
+
+- (void)testSetValueSendsTheValueAndTheHitElementToTheRuntime
+{
+  FBAXFakeElement *element = [self seedHitElementWithAttributes:@{kAXLabel : @"Name"}];
+
+  NSDictionary *response =
+  FBAXBridgeHandleRequest(@{@"verb" : @"setvalue", @"x" : @30, @"y" : @40, @"value" : @"hello"});
+  XCTAssertEqualObjects(response[@"ok"], @YES);
+  XCTAssertEqualObjects(response[@"pid"], @(kAppPid));
+  XCTAssertEqual(_runtime.setValueCount, 1);
+  XCTAssertEqualObjects(_runtime.lastWrittenValue, @"hello");
+  XCTAssertEqualObjects(_runtime.lastWrittenElement, element, @"the write must act on the element the hit-test found");
+  XCTAssertEqual(_runtime.performCount, 0, @"a set-value is not an action");
+}
+
+// The value is JSON off the wire, so it arrives as whatever the client sent. Anything but a string is
+// rejected rather than stringified — writing "1" because the caller sent the number 1 is a guess.
+- (void)testSetValueRequiresAStringValue
+{
+  [self seedHitElementWithAttributes:@{}];
+  for (id value in @[@123, @[@"hello"], @{@"a" : @1}, NSNull.null]) {
+    NSDictionary *response = FBAXBridgeHandleRequest(@{@"verb" : @"setvalue", @"x" : @1, @"y" : @2, @"value" : value});
+    XCTAssertEqualObjects(response[@"ok"], @NO, @"%@", [value class]);
+    XCTAssertEqualObjects(response[@"error"], @"setvalue requires a string value", @"%@", [value class]);
+  }
+  XCTAssertEqualObjects(
+    FBAXBridgeHandleRequest(@{@"verb" : @"setvalue", @"x" : @1, @"y" : @2})[@"error"],
+    @"setvalue requires a string value"
+  );
+  XCTAssertEqual(_runtime.hitTestCount, 0);
+  XCTAssertEqual(_runtime.setValueCount, 0);
+}
+
+// A write that went wrong carries the runtime's reason and must *not* pick up an error kind — the host acts
+// on those kinds, and a slow application is neither an absent one nor an element that moved.
+- (void)testAFailedWriteIsAnOpaqueFailureCarryingTheRuntimeReason
+{
+  [self seedHitElementWithAttributes:@{}];
+  _runtime.writeOutcome = [FBAXWriteOutcome failed:@"the application did not answer the write in time"];
+
+  NSDictionary *response = FBAXBridgeHandleRequest(FBAXTestsPress());
+  XCTAssertEqualObjects(response[@"ok"], @NO);
+  XCTAssertEqualObjects(response[@"error"], @"the application did not answer the write in time");
+  XCTAssertNil(response[@"error_kind"]);
+}
+
+// A write with an explicit pid scopes the hit-test to that application, exactly as a `hittest` does — a
+// write aimed at one app must not land on whatever is drawn over it.
+- (void)testAWriteWithAnExplicitPidScopesTheHitTest
+{
+  [self seedHitElementWithAttributes:@{}];
+  NSMutableDictionary *request = [FBAXTestsPress() mutableCopy];
+  request[@"pid"] = @(kAppPid);
+
+  XCTAssertEqualObjects(FBAXBridgeHandleRequest(request)[@"ok"], @YES);
+  XCTAssertEqual(_runtime.lastHitTestProcessIdentifier, kAppPid);
+
+  XCTAssertEqualObjects(FBAXBridgeHandleRequest(FBAXTestsPress())[@"ok"], @YES);
+  XCTAssertEqual(_runtime.lastHitTestProcessIdentifier, 0, @"no pid means a display-wide hit-test");
+}
+
 #pragma mark - Describe outcomes
 
 - (void)testDescribeReadsTheTreeAndReportsThePid

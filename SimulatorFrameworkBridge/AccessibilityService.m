@@ -41,6 +41,13 @@ static NSString *const kRequestY = @"y";
 // Selects how a fused frontmost read (a `describe` with no pid) resolves the foreground app. Optional;
 // defaults to `center-point` (the positional system-wide hit-test).
 static NSString *const kRequestMethod = @"method";
+// The semantic action a `perform` asks for, and the string a `setvalue` writes.
+static NSString *const kRequestAction = @"action";
+static NSString *const kRequestValue = @"value";
+// What the element at the point must still be for the write to go ahead: one node attribute key and the
+// value it has to equal. Optional, and only meaningful together.
+static NSString *const kRequestAssertKey = @"assertKey";
+static NSString *const kRequestAssertValue = @"assertValue";
 static NSString *const kResponseOk = @"ok";
 static NSString *const kResponseTree = @"tree";
 static NSString *const kResponseError = @"error";
@@ -67,6 +74,9 @@ static NSString *const kErrorKindFrontmostUnresolved = @"frontmost_unresolved";
 static NSString *const kErrorKindReaderUnavailable = @"reader_unavailable";
 // The request itself was malformed — an unknown verb, or a missing or wrongly-typed argument.
 static NSString *const kErrorKindBadRequest = @"bad_request";
+// A write was refused before it was attempted: the element found at the point is not the one the caller
+// named. Held apart from `bad_request` because the request was well-formed — the screen moved.
+static NSString *const kErrorKindAssertionFailed = @"assertion_failed";
 // A whole-tree read whose walk was cut short by the depth cap or the node budget: the returned tree is
 // a partial view, so the host can warn rather than pass it off as complete. Absent or `false` means the
 // walk visited every element within the bounds.
@@ -91,7 +101,21 @@ static NSString *const kAlertControllerClassPrefix = @"_UIAlertController";
 
 static NSString *const kVerbDescribe = @"describe";
 static NSString *const kVerbHitTest = @"hittest";
+// Two write verbs rather than one: performing a semantic action and setting an attribute are separate
+// runtime calls that take different arguments, and fusing them would leave every request carrying a field
+// the other kind ignores.
+static NSString *const kVerbPerform = @"perform";
+static NSString *const kVerbSetValue = @"setvalue";
 static NSString *const kActionServe = @"serve";
+
+// The semantic actions a `perform` request can name — the wire spelling of `FBAXAction`, which is what the
+// host sends and what the guest maps back. Unrelated to `kActionServe`, which is an argv sub-command.
+static NSString *const kActionPress = @"press";
+static NSString *const kActionScrollUp = @"scroll-up";
+static NSString *const kActionScrollDown = @"scroll-down";
+static NSString *const kActionScrollLeft = @"scroll-left";
+static NSString *const kActionScrollRight = @"scroll-right";
+static NSString *const kActionScrollToVisible = @"scroll-to-visible";
 
 // The frontmost-resolution methods, shared by the request `method` selector and the response `method`
 // value: a request selects a strategy with one of these, and a fused frontmost response echoes back the
@@ -523,6 +547,235 @@ static NSDictionary *FBAXBridgeHitTest(id<FBAXRuntime> runtime, NSDictionary *re
   };
 }
 
+#pragma mark - Writes
+
+// The semantic action a wire name asks for. Answers NO for a name this guest does not know, leaving
+// `*action` untouched — an unrecognised action must be refused rather than quietly becoming a press.
+static BOOL FBAXBridgeActionForName(NSString *name, FBAXAction *action)
+{
+  if ([name isEqualToString:kActionPress]) {
+    *action = FBAXActionPress;
+  } else if ([name isEqualToString:kActionScrollUp]) {
+    *action = FBAXActionScrollUp;
+  } else if ([name isEqualToString:kActionScrollDown]) {
+    *action = FBAXActionScrollDown;
+  } else if ([name isEqualToString:kActionScrollLeft]) {
+    *action = FBAXActionScrollLeft;
+  } else if ([name isEqualToString:kActionScrollRight]) {
+    *action = FBAXActionScrollRight;
+  } else if ([name isEqualToString:kActionScrollToVisible]) {
+    *action = FBAXActionScrollToVisible;
+  } else {
+    return NO;
+  }
+  return YES;
+}
+
+// Compares an already-JSON-coerced attribute against the assertion's wire value. The assertion is a string
+// because the host derived it from a tree it read off this same wire, so the comparison is made in the form
+// the wire carried — anything else would have the guest and the host disagreeing about what they both read.
+static BOOL FBAXBridgeAttributeMatches(id _Nullable actual, NSString *expected)
+{
+  if ([actual isKindOfClass:NSString.class]) {
+    return [(NSString *)actual isEqualToString:expected];
+  }
+  if (!actual || actual == NSNull.null) {
+    return NO;
+  }
+  return [[actual description] isEqualToString:expected];
+}
+
+// The arguments every write shares, checked before anything is touched. Answers the response the request is
+// refused with, or nil when it is well-formed. A malformed request is the caller's to fix and is held apart
+// from every failure of the reader or of the application, exactly as the read verbs hold it apart.
+static NSDictionary *_Nullable FBAXBridgeWriteArgumentError(NSDictionary *request)
+{
+  if (![request[kRequestX] isKindOfClass:NSNumber.class] || ![request[kRequestY] isKindOfClass:NSNumber.class]) {
+    return FBAXBridgeTaggedErrorResponse(@"a write requires numeric x and y", kErrorKindBadRequest, nil);
+  }
+  NSString *assertKey = [request[kRequestAssertKey] isKindOfClass:NSString.class] ? request[kRequestAssertKey] : nil;
+  NSString *assertValue = [request[kRequestAssertValue] isKindOfClass:NSString.class] ? request[kRequestAssertValue] : nil;
+  if ((assertKey == nil) != (assertValue == nil)) {
+    return FBAXBridgeTaggedErrorResponse(
+      [NSString stringWithFormat:@"%@ and %@ are only meaningful together", kRequestAssertKey, kRequestAssertValue],
+      kErrorKindBadRequest,
+      nil
+    );
+  }
+  // Only the attributes the tree walk fetches can be asserted on. That is not a restriction so much as the
+  // contract: the host builds an assertion out of a node it read, and a key that never appears in a node is
+  // one it could not have got from there.
+  if (assertKey && ![FBAXBridgeFetchList() containsObject:assertKey]) {
+    return FBAXBridgeTaggedErrorResponse(
+      [NSString stringWithFormat:@"%@ is not an attribute a write can assert on", assertKey],
+      kErrorKindBadRequest,
+      nil
+    );
+  }
+  return nil;
+}
+
+// Resolves what a write acts on: the element at the requested point, checked against the caller's assertion.
+// The request's arguments are assumed well-formed — `FBAXBridgeWriteArgumentError` has already run.
+//
+// Answers nil — and only then — when the write should go ahead, having filled `element` and `pid`. Every
+// other answer is the outcome the request is reported with, so a caller that gets non-nil is done. Same
+// shape as `+outcomeForHitTestError:hasElement:`, for the same reason: most of the answers are not failures.
+//
+// The assertion is what makes a two-step write safe. A marker is resolved host-side against a tree it read
+// and reaches the guest as a point, so between that read and this hit-test the element under the point can
+// have changed — an occluding view, a non-rectangular element, or a screen that moved on. Verifying one
+// attribute of the element actually found there is what stops the action landing somewhere else.
+static FBAXWriteOutcome *_Nullable FBAXBridgeResolveWriteTarget(id<FBAXRuntime> runtime,
+                                                                NSDictionary *request,
+                                                                id _Nullable *element,
+                                                                pid_t *pid)
+{
+  NSNumber *xNumber = request[kRequestX];
+  NSNumber *yNumber = request[kRequestY];
+  NSString *assertKey = [request[kRequestAssertKey] isKindOfClass:NSString.class] ? request[kRequestAssertKey] : nil;
+  NSString *assertValue = [request[kRequestAssertValue] isKindOfClass:NSString.class] ? request[kRequestAssertValue] : nil;
+
+  NSNumber *pidNumber = [request[kRequestPid] isKindOfClass:NSNumber.class] ? request[kRequestPid] : nil;
+  FBAXHitTestOutcome *hit = [runtime hitTestAtPoint:CGPointMake(xNumber.doubleValue, yNumber.doubleValue)
+                                  processIdentifier:pidNumber ? pidNumber.intValue : 0];
+  switch (hit.status) {
+    case FBAXHitTestStatusHit:
+      break;
+    case FBAXHitTestStatusEmpty:
+      return [FBAXWriteOutcome empty];
+    case FBAXHitTestStatusApplicationUnavailable:
+      return [FBAXWriteOutcome applicationUnavailable];
+    case FBAXHitTestStatusApplicationNotResponding:
+      return [FBAXWriteOutcome applicationNotResponding];
+    // `default` sits with the failure case rather than alone: a status this does not know never becomes an
+    // element something is written to.
+    case FBAXHitTestStatusFailed:
+    default:
+      return [FBAXWriteOutcome failed:hit.failureReason ?: @"the hit-test failed"];
+  }
+  id hitElement = (id)hit.element;  // non-nil on a `Hit`, which the switch above has established
+
+  if (assertKey) {
+    FBAXReadOutcome *read = [runtime readAttributes:@[assertKey] ofElement:hitElement];
+    switch (read.status) {
+      case FBAXReadStatusRead:
+        break;
+      case FBAXReadStatusApplicationUnavailable:
+        return [FBAXWriteOutcome applicationUnavailable];
+      case FBAXReadStatusApplicationNotResponding:
+        return [FBAXWriteOutcome applicationNotResponding];
+      // An assertion that cannot be read is not an assertion that failed — the caller is owed the
+      // difference between "the screen moved" and "the element could not be inspected".
+      case FBAXReadStatusFailed:
+      default:
+        return [FBAXWriteOutcome failed:
+                [NSString stringWithFormat:@"could not read %@ to check the assertion", assertKey]];
+    }
+    id actual = FBAXBridgeJSONSafeValue(read.attributes[assertKey], assertKey);
+    if (!FBAXBridgeAttributeMatches(actual, assertValue)) {
+      return [FBAXWriteOutcome assertionFailed:
+              [NSString stringWithFormat:@"the element at (%.1f, %.1f) has %@ %@, expected %@",
+               xNumber.doubleValue, yNumber.doubleValue, assertKey, actual, assertValue]];
+    }
+  }
+
+  *element = hitElement;
+  *pid = hit.owningProcessIdentifier;
+  return nil;
+}
+
+// The envelope a write outcome is reported in. Total over the status, so every way a write can end has one
+// answer decided in one place rather than per verb.
+static NSDictionary *FBAXBridgeWriteResponse(FBAXWriteOutcome *outcome, pid_t pid)
+{
+  switch (outcome.status) {
+    case FBAXWriteStatusWritten:
+      return @{kResponseOk : @YES, kResponsePid : @(pid)};
+    case FBAXWriteStatusEmpty:
+      return @{kResponseOk : @YES, kResponseEmpty : @YES};
+    case FBAXWriteStatusAssertionFailed:
+      return @{
+        kResponseOk : @NO,
+        kResponseError : outcome.failureReason ?: @"the element at the point is not the one named",
+        kResponseErrorKind : kErrorKindAssertionFailed,
+      };
+    case FBAXWriteStatusApplicationUnavailable:
+      return FBAXBridgeTaggedErrorResponse(
+        pid > 0 ? [NSString stringWithFormat:@"pid %d has no accessibility server to accept the write", pid]
+        : @"no accessibility server answered the write",
+        kErrorKindApplicationUnavailable,
+        pid > 0 ? @(pid) : nil
+      );
+    case FBAXWriteStatusApplicationNotResponding:
+      return FBAXBridgeTaggedErrorResponse(
+        pid > 0 ? [NSString stringWithFormat:@"pid %d did not answer the write in time", pid]
+        : @"the application did not answer the write in time",
+        kErrorKindApplicationNotResponding,
+        pid > 0 ? @(pid) : nil
+      );
+    // `default` sits with the failure case rather than alone: a status this does not know is reported as a
+    // failure, never mistaken for a write that landed.
+    case FBAXWriteStatusFailed:
+    default:
+      return FBAXBridgeErrorResponse(outcome.failureReason ?: @"the write failed");
+  }
+}
+
+// Answers `perform`: resolve the element at the point, then act on it.
+//
+// Nothing pre-checks that the element accepts the action. `XC_kAXXCAttributeUserTestingActions` is the
+// obvious candidate and is the wrong tool: no element populates it — a sweep of SpringBoard and Settings
+// found it absent on all 206 nodes — so a guard built on it refuses nothing and only makes every perform
+// pay an extra attribute read. The runtime's own answer is the judgement.
+static NSDictionary *FBAXBridgePerform(id<FBAXRuntime> runtime, NSDictionary *request)
+{
+  id requestedAction = request[kRequestAction];
+  NSString *name = [requestedAction isKindOfClass:NSString.class] ? requestedAction : nil;
+  FBAXAction action = FBAXActionPress;
+  if (!name || !FBAXBridgeActionForName(name, &action)) {
+    return FBAXBridgeTaggedErrorResponse(
+      [NSString stringWithFormat:@"unsupported action: %@", requestedAction ?: @"(nil)"],
+      kErrorKindBadRequest,
+      nil
+    );
+  }
+  NSDictionary *argumentError = FBAXBridgeWriteArgumentError(request);
+  if (argumentError) {
+    return argumentError;
+  }
+
+  id element = nil;
+  pid_t pid = 0;
+  FBAXWriteOutcome *outcome = FBAXBridgeResolveWriteTarget(runtime, request, &element, &pid);
+  if (!outcome) {
+    outcome = [runtime performAction:action onElement:element];
+  }
+  return FBAXBridgeWriteResponse(outcome, pid);
+}
+
+// Answers `setvalue`. Nothing an element reports says whether its value is writable, so — as with a
+// `perform` — the runtime's own answer is the only judgement.
+static NSDictionary *FBAXBridgeSetValue(id<FBAXRuntime> runtime, NSDictionary *request)
+{
+  id requestedValue = request[kRequestValue];
+  if (![requestedValue isKindOfClass:NSString.class]) {
+    return FBAXBridgeTaggedErrorResponse(@"setvalue requires a string value", kErrorKindBadRequest, nil);
+  }
+  NSDictionary *argumentError = FBAXBridgeWriteArgumentError(request);
+  if (argumentError) {
+    return argumentError;
+  }
+
+  id element = nil;
+  pid_t pid = 0;
+  FBAXWriteOutcome *outcome = FBAXBridgeResolveWriteTarget(runtime, request, &element, &pid);
+  if (!outcome) {
+    outcome = [runtime setValue:requestedValue onElement:element];
+  }
+  return FBAXBridgeWriteResponse(outcome, pid);
+}
+
 NSDictionary<NSString *, id> *FBAXBridgeHandleRequest(NSDictionary<NSString *, id> *request)
 {
   // The frame is JSON from the client, so the value can be of any type — narrow it to a string before
@@ -531,7 +784,9 @@ NSDictionary<NSString *, id> *FBAXBridgeHandleRequest(NSDictionary<NSString *, i
   NSString *verb = [requestedVerb isKindOfClass:NSString.class] ? requestedVerb : nil;
   BOOL isDescribe = [verb isEqualToString:kVerbDescribe];
   BOOL isHitTest = [verb isEqualToString:kVerbHitTest];
-  if (!isDescribe && !isHitTest) {
+  BOOL isPerform = [verb isEqualToString:kVerbPerform];
+  BOOL isSetValue = [verb isEqualToString:kVerbSetValue];
+  if (!isDescribe && !isHitTest && !isPerform && !isSetValue) {
     return FBAXBridgeTaggedErrorResponse(
       [NSString stringWithFormat:@"unsupported verb: %@", requestedVerb ?: @"(nil)"],
       kErrorKindBadRequest,
@@ -539,9 +794,9 @@ NSDictionary<NSString *, id> *FBAXBridgeHandleRequest(NSDictionary<NSString *, i
     );
   }
 
-  // Both verbs take a `pid`, and a non-positive one names no process. The accessibility runtime does not
+  // Every verb takes a `pid`, and a non-positive one names no process. The accessibility runtime does not
   // reject it — pid 0 reads back as an application with an empty tree — so it is rejected here, before
-  // any setup, and both verbs answer alike.
+  // any setup, and every verb answers alike.
   NSNumber *requestedPid = [request[kRequestPid] isKindOfClass:NSNumber.class] ? request[kRequestPid] : nil;
   if (requestedPid && requestedPid.intValue <= 0) {
     return FBAXBridgeTaggedErrorResponse(
@@ -568,6 +823,16 @@ NSDictionary<NSString *, id> *FBAXBridgeHandleRequest(NSDictionary<NSString *, i
   // — the app owning the point, resolved in-guest, with no frontmost pid query.
   if (isHitTest) {
     return FBAXBridgeHitTest(runtime, request);
+  }
+
+  // The write verbs are point-addressed for the same reason: a one-shot guest exits between requests, so an
+  // element handle cannot survive one. Naming the target and acting on it in a single request is what makes
+  // a write work identically on both transports.
+  if (isPerform) {
+    return FBAXBridgePerform(runtime, request);
+  }
+  if (isSetValue) {
+    return FBAXBridgeSetValue(runtime, request);
   }
 
   // `describe`: an explicit `pid` names the app directly; with no pid it is a fused frontmost read — the
@@ -861,6 +1126,14 @@ int handleAccessibilityAction(NSString *action, NSArray<NSString *> *arguments)
       request[kRequestY] = @(argValue.doubleValue);
     } else if ([flag isEqualToString:@"--method"]) {
       request[kRequestMethod] = argValue;
+    } else if ([flag isEqualToString:@"--action"]) {
+      request[kRequestAction] = argValue;
+    } else if ([flag isEqualToString:@"--value"]) {
+      request[kRequestValue] = argValue;
+    } else if ([flag isEqualToString:@"--assert-key"]) {
+      request[kRequestAssertKey] = argValue;
+    } else if ([flag isEqualToString:@"--assert-value"]) {
+      request[kRequestAssertValue] = argValue;
     }
   }
 
@@ -891,6 +1164,10 @@ NSDictionary<NSString *, NSString *> *FBAXBridgeWireConstantsForTesting(void)
     @"request.x" : kRequestX,
     @"request.y" : kRequestY,
     @"request.method" : kRequestMethod,
+    @"request.action" : kRequestAction,
+    @"request.value" : kRequestValue,
+    @"request.assertKey" : kRequestAssertKey,
+    @"request.assertValue" : kRequestAssertValue,
     @"envelope.ok" : kResponseOk,
     @"envelope.tree" : kResponseTree,
     @"envelope.error" : kResponseError,
@@ -901,6 +1178,7 @@ NSDictionary<NSString *, NSString *> *FBAXBridgeWireConstantsForTesting(void)
     @"envelope.errorKindFrontmostUnresolved" : kErrorKindFrontmostUnresolved,
     @"envelope.errorKindReaderUnavailable" : kErrorKindReaderUnavailable,
     @"envelope.errorKindBadRequest" : kErrorKindBadRequest,
+    @"envelope.errorKindAssertionFailed" : kErrorKindAssertionFailed,
     @"envelope.truncated" : kResponseTruncated,
     @"envelope.pid" : kResponsePid,
     @"envelope.method" : kResponseMethod,
@@ -914,6 +1192,14 @@ NSDictionary<NSString *, NSString *> *FBAXBridgeWireConstantsForTesting(void)
     @"modal.alertControllerClassPrefix" : kAlertControllerClassPrefix,
     @"verb.describe" : kVerbDescribe,
     @"verb.hittest" : kVerbHitTest,
+    @"verb.perform" : kVerbPerform,
+    @"verb.setvalue" : kVerbSetValue,
+    @"action.press" : kActionPress,
+    @"action.scrollUp" : kActionScrollUp,
+    @"action.scrollDown" : kActionScrollDown,
+    @"action.scrollLeft" : kActionScrollLeft,
+    @"action.scrollRight" : kActionScrollRight,
+    @"action.scrollToVisible" : kActionScrollToVisible,
     @"method.centerPoint" : kMethodCenterPoint,
     @"method.windowServer" : kMethodWindowServer,
     @"method.runningBoard" : kMethodRunningBoard,
