@@ -8,3 +8,8 @@ INFOPLIST_FILE = $(SRCROOT)/FBDeviceControlTests/FBDeviceControlTests-Info.plist
 LD_RUNPATH_SEARCH_PATHS = $(inherited) @executable_path/../Frameworks @loader_path/../Frameworks
 PRODUCT_BUNDLE_IDENTIFIER = com.facebook.FBDeviceControlTests
 PRODUCT_NAME = $(TARGET_NAME)
+
+// Load every object file from linked static libraries: the test-support
+// Objective-C categories (e.g. FBFuture await helpers) are reached only via
+// the runtime, and without -all_load the linker dead-strips them.
+OTHER_LDFLAGS = $(inherited) -all_load

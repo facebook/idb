@@ -8,3 +8,8 @@ PRODUCT_BUNDLE_IDENTIFIER = com.facebook.FBControlCoreTests;
 PRODUCT_NAME = FBControlCoreTests
 // Only expose PrivateHeaders to Framework targets. Framework targets never expose PrivateHeader imports themselves.
 HEADER_SEARCH_PATHS = $(inherited) $(SRCROOT)/PrivateHeaders
+
+// Load every object file from linked static libraries: the test-support
+// Objective-C categories (e.g. FBFuture await helpers) are reached only via
+// the runtime, and without -all_load the linker dead-strips them.
+OTHER_LDFLAGS = $(inherited) -all_load
