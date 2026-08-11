@@ -10,4 +10,9 @@ PRODUCT_NAME = FBSimulatorControlTests
 // Load every object file from linked static libraries: the test-support
 // Objective-C categories (e.g. FBFuture await helpers) are reached only via
 // the runtime, and without -all_load the linker dead-strips them.
-OTHER_LDFLAGS = $(inherited) -all_load
+//
+// -all_load also pulls in code emitting class-metadata references to
+// CoreSimulator and AccessibilityPlatformTranslation classes. Both frameworks
+// are loaded at runtime by FBSimulatorControlFrameworkLoader; weak-link their
+// TBD stubs so the linker is satisfied and the classes resolve at runtime.
+OTHER_LDFLAGS = $(inherited) -all_load -weak_library $(SRCROOT)/PrivateHeaders/CoreSimulator/CoreSimulator.tbd -weak_library $(SRCROOT)/PrivateHeaders/AccessibilityPlatformTranslation/AccessibilityPlatformTranslation.tbd
