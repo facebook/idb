@@ -586,6 +586,30 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     XCTAssertEqual(response.profilingData!.fetchedKeys, expectedKeys, "fetchedKeys should match exactly the keys that were requested")
   }
 
+  // `FBTapOptions.duration` asks for a long-press. The accessibility backend performs `AXPress`, which is
+  // instantaneous and has nowhere to put a hold, so the duration is dropped and the caller is told nothing
+  // — a test asking for a long-press gets an ordinary tap and passes.
+  //
+  // BUG: the tap completes and lands as an ordinary press instead of refusing the hold it cannot perform
+  // — flipped in the following commit.
+  func testAccessibilityTapIgnoresAHoldDuration() async throws {
+    setUp(withRootElement: defaultElementTree)
+    let okButton = FBAccessibilityTestElementBuilder.button(
+      withLabel: "OK",
+      identifier: "ok_button",
+      frame: NSRect(x: 20, y: 750, width: 150, height: 44)
+    )
+    fixture!.translator.macPlatformElementResult = okButton
+
+    let automation = try simulator.uiAutomation(backend: .accessibility)
+    try await automation.tap(.point(CGPoint(x: 95, y: 772)), options: FBTapOptions(duration: 2))
+
+    XCTAssertTrue(
+      okButton.accessedProperties.contains("accessibilityActionNames"),
+      "the tap reached the element and pressed it, hold and all"
+    )
+  }
+
   func testAccessibilityPerformTapOnButtonSucceeds() async throws {
     setUp(withRootElement: defaultElementTree)
 
