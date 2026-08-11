@@ -23,12 +23,13 @@ import Testing
 @Suite
 struct FBSubprocessTerminationTests {
 
-  private typealias Subprocess = FBSubprocess<NSNull, NSData, NSData>
+  private typealias Subprocess = FBSubprocess<NSNull, NSString, NSData>
 
   private static func start(_ script: String) async throws -> Subprocess {
     try await bridgeFBFuture(
       FBProcessBuilder<NSNull, NSData, NSData>
         .withLaunchPath("/bin/sh", arguments: ["-c", script])
+        .withStdOutInMemoryAsString()
         .start())
   }
 
@@ -138,7 +139,7 @@ struct FBSubprocessTerminationTests {
     let process = try await Self.start("/usr/bin/seq 1 200000")
     _ = try await bridgeFBFuture(process.statLoc)
 
-    let stdOut = try #require(process.stdOut as? String)
+    let stdOut = try #require(process.stdOut) as String
     #expect(stdOut.hasSuffix("200000"))
     #expect(stdOut.components(separatedBy: "\n").count == 200_000)
   }

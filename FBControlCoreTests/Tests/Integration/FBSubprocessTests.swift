@@ -50,7 +50,7 @@ final class FBSubprocessTests: XCTestCase {
     XCTAssertThrowsError(try future.`await`())
   }
 
-  func testEnvironment() {
+  func testEnvironment() throws {
     let environment: [String: String] = [
       "FOO0": "BAR0",
       "FOO1": "BAR1",
@@ -61,56 +61,60 @@ final class FBSubprocessTests: XCTestCase {
     let futureProcess = FBProcessBuilder<NSNull, NSData, NSData>
       .withLaunchPath("/usr/bin/env")
       .withEnvironment(environment)
+      .withStdOutInMemoryAsString()
       .runUntilCompletion(withAcceptableExitCodes: nil)
 
     let process = runAndWaitForTaskFuture(futureProcess)
     XCTAssertEqual(process.exitCode.result, 0)
-    let stdOut = process.stdOut as! String
+    let stdOut = try XCTUnwrap(process.stdOut) as String
     for key in environment.keys {
       let expected = "\(key)=\(environment[key]!)"
       XCTAssertTrue(stdOut.contains(expected))
     }
   }
 
-  func testBase64Matches() {
+  func testBase64Matches() throws {
     let filePath = TestFixtures.assetsdCrashPathWithCustomDeviceSet
     let expected = (try! Data(contentsOf: URL(fileURLWithPath: filePath))).base64EncodedString(options: [])
 
     let futureProcess = FBProcessBuilder<NSNull, NSData, NSData>
       .withLaunchPath("/usr/bin/base64", arguments: ["-i", filePath])
+      .withStdOutInMemoryAsString()
       .runUntilCompletion(withAcceptableExitCodes: nil)
     let process = runAndWaitForTaskFuture(futureProcess)
 
     XCTAssertEqual(process.statLoc.state, FBFutureState.done)
     XCTAssertEqual(process.exitCode.state, FBFutureState.done)
     XCTAssertEqual(process.signal.state, FBFutureState.failed)
-    XCTAssertEqual(process.stdOut as! String, expected)
+    XCTAssertEqual(try XCTUnwrap(process.stdOut) as String, expected)
     XCTAssertGreaterThan(process.processIdentifier, 1)
   }
 
-  func testStringsOfCurrentBinary() {
+  func testStringsOfCurrentBinary() throws {
     let bundlePath = Bundle(for: type(of: self)).bundlePath
     let binaryName = ((bundlePath as NSString).lastPathComponent as NSString).deletingPathExtension
     let binaryPath = ((bundlePath as NSString).appendingPathComponent("Contents/MacOS") as NSString).appendingPathComponent(binaryName)
 
     let futureProcess = FBProcessBuilder<NSNull, NSData, NSData>
       .withLaunchPath("/usr/bin/strings", arguments: [binaryPath])
+      .withStdOutInMemoryAsString()
       .runUntilCompletion(withAcceptableExitCodes: nil)
     let process = runAndWaitForTaskFuture(futureProcess)
 
     XCTAssertEqual(process.statLoc.state, FBFutureState.done)
     XCTAssertEqual(process.exitCode.state, FBFutureState.done)
     XCTAssertEqual(process.signal.state, FBFutureState.failed)
-    XCTAssertTrue((process.stdOut as! String).contains("testStringsOfCurrentBinary"))
+    XCTAssertTrue((try XCTUnwrap(process.stdOut) as String).contains("testStringsOfCurrentBinary"))
     XCTAssertGreaterThan(process.processIdentifier, 1)
   }
 
-  func testBundleContents() {
+  func testBundleContents() throws {
     let bundle = Bundle(for: type(of: self))
     let resourcesPath = (bundle.bundlePath as NSString).appendingPathComponent("Contents/Resources")
 
     let futureProcess = FBProcessBuilder<NSNull, NSData, NSData>
       .withLaunchPath("/bin/ls", arguments: ["-1", resourcesPath])
+      .withStdOutInMemoryAsString()
       .runUntilCompletion(withAcceptableExitCodes: nil)
     let process = runAndWaitForTaskFuture(futureProcess)
 
@@ -119,7 +123,7 @@ final class FBSubprocessTests: XCTestCase {
     XCTAssertEqual(process.signal.state, FBFutureState.failed)
     XCTAssertGreaterThan(process.processIdentifier, 1)
 
-    let fileNames = (process.stdOut as! String).components(separatedBy: .newlines)
+    let fileNames = (try XCTUnwrap(process.stdOut) as String).components(separatedBy: .newlines)
     XCTAssertGreaterThanOrEqual(fileNames.count, 2)
 
     for fileName in fileNames {
