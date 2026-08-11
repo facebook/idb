@@ -15,6 +15,15 @@ final class FBMacDeviceTests: XCTestCase {
   var installedApp: FBInstalledApplication!
   var tempInstallDir: String?
 
+  override func setUpWithError() throws {
+    // These tests install and launch a real application on the host mac;
+    // hosted CI runners cannot support that, so skip there and keep the
+    // suite running everywhere else.
+    try XCTSkipIf(
+      ProcessInfo.processInfo.environment["GITHUB_ACTIONS"] == "true",
+      "FBMacDevice install/launch is not supported on hosted CI runners")
+  }
+
   override func setUp() {
     super.setUp()
     device = FBMacDevice()
