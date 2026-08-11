@@ -1504,6 +1504,26 @@ final class FBAXBridgeReadsTests: XCTestCase {
     XCTAssertThrowsError(try FBAXTreeRead.writeLanded(fromResponse: Data("not json".utf8)))
   }
 
+  // Every other message opens with the backend's name, so `displayName` is capitalised and ends in
+  // "backend"; this one names it part-way through a sentence, where both of those read as a stutter.
+  func testAnUnsupportedOperationNamesTheBackendOnceAndInLowerCase() {
+    let backends: [FBUIAutomationBackend] = [
+      .accessibility, .remoteAutomation, .axBridge(persistence: .oneShot, frontmostMethod: .centerPoint),
+    ]
+    for backend in backends {
+      let description = FBUIAutomationError.operationUnsupported(backend: backend, operation: "Scroll").description
+      XCTAssertFalse(description.contains("the The"), description)
+      XCTAssertFalse(description.contains("backend backend"), description)
+      XCTAssertTrue(description.hasSuffix(backend.inlineName), description)
+    }
+    XCTAssertEqual(
+      FBUIAutomationError.operationUnsupported(
+        backend: .axBridge(persistence: .oneShot, frontmostMethod: .centerPoint), operation: "Scroll"
+      ).description,
+      "Scroll is not supported over the axbridge backend"
+    )
+  }
+
   private static func json(_ object: [String: Any]) -> Data {
     // swiftlint:disable:next force_try
     try! JSONSerialization.data(withJSONObject: object)

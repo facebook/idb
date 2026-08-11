@@ -81,7 +81,7 @@ public enum FBUIAutomationError: LocalizedError, Sendable {
     case let .invalidPollInterval(backend, pollInterval):
       return "\(backend.displayName) was given a negative poll interval (\(pollInterval)s); it must be zero or positive"
     case let .operationUnsupported(backend, operation):
-      return "\(operation) is not supported over the \(backend.displayName) backend"
+      return "\(operation) is not supported over \(backend.inlineName)"
     case let .applicationUnavailable(backend, pid):
       return "\(backend.displayName) could not read the application \(Self.naming(pid)): it is not a running app, or its accessibility server has not started. \(FBAccessibilityGuidance.accessibilityServer)"
     case let .applicationNotResponding(backend, pid):
@@ -108,6 +108,16 @@ extension FBUIAutomationError: CustomStringConvertible {
 }
 
 public extension FBUIAutomationBackend {
+  /// How this backend names itself part-way through a sentence, rather than at the start of one.
+  ///
+  /// `displayName` leads with a capitalised "The" because nearly every message opens with it. A message
+  /// that names the backend mid-sentence needs the article in lower case, and needs not to append a
+  /// second "backend" to a phrase that already ends in one.
+  var inlineName: String {
+    let name = displayName
+    return name.prefix(1).lowercased() + name.dropFirst()
+  }
+
   /// How this backend names itself in an error a user reads.
   var displayName: String {
     switch self {
