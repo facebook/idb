@@ -7,27 +7,20 @@
 
 import Foundation
 
-@objc(FBXCTraceRecordConfiguration)
-public final class FBXCTraceRecordConfiguration: NSObject, NSCopying {
+public struct FBXCTraceRecordConfiguration {
 
-  @objc public let templateName: String
-  @objc public let timeLimit: TimeInterval
-  @objc public let package: String?
-  @objc public let allProcesses: Bool
-  @objc public let processToAttach: String?
-  @objc public let processToLaunch: String?
-  @objc public let launchArgs: [String]?
-  @objc public let targetStdin: String?
-  @objc public let targetStdout: String?
-  @objc public let processEnv: [String: String]?
-  @objc public let shim: FBXCTestShimConfiguration?
+  public let templateName: String
+  public let timeLimit: TimeInterval
+  public let package: String?
+  public let allProcesses: Bool
+  public let processToAttach: String?
+  public let processToLaunch: String?
+  public let launchArgs: [String]?
+  public let targetStdin: String?
+  public let targetStdout: String?
+  public let processEnv: [String: String]?
+  public let shim: FBXCTestShimConfiguration?
 
-  @objc(RecordWithTemplateName:timeLimit:package:allProcesses:processToAttach:processToLaunch:launchArgs:targetStdin:targetStdout:processEnv:shim:)
-  public class func record(withTemplateName templateName: String, timeLimit: TimeInterval, package: String?, allProcesses: Bool, processToAttach: String?, processToLaunch: String?, launchArgs: [String]?, targetStdin: String?, targetStdout: String?, processEnv: [String: String]?, shim: FBXCTestShimConfiguration?) -> FBXCTraceRecordConfiguration {
-    FBXCTraceRecordConfiguration(templateName: templateName, timeLimit: timeLimit, package: package, allProcesses: allProcesses, processToAttach: processToAttach, processToLaunch: processToLaunch, launchArgs: launchArgs, targetStdin: targetStdin, targetStdout: targetStdout, processEnv: processEnv, shim: shim)
-  }
-
-  @objc
   public init(templateName: String, timeLimit: TimeInterval, package: String?, allProcesses: Bool, processToAttach: String?, processToLaunch: String?, launchArgs: [String]?, targetStdin: String?, targetStdout: String?, processEnv: [String: String]?, shim: FBXCTestShimConfiguration?) {
     self.templateName = templateName
     self.timeLimit = timeLimit
@@ -40,21 +33,20 @@ public final class FBXCTraceRecordConfiguration: NSObject, NSCopying {
     self.targetStdout = targetStdout
     self.processEnv = processEnv
     self.shim = shim
-    super.init()
   }
 
-  @objc
   public func withShim(_ shim: FBXCTestShimConfiguration) -> FBXCTraceRecordConfiguration {
     FBXCTraceRecordConfiguration(templateName: templateName, timeLimit: timeLimit, package: package, allProcesses: allProcesses, processToAttach: processToAttach, processToLaunch: processToLaunch, launchArgs: launchArgs, targetStdin: targetStdin, targetStdout: targetStdout, processEnv: processEnv, shim: shim)
   }
+}
 
-  public override var description: String {
+// MARK: - CustomStringConvertible
+
+extension FBXCTraceRecordConfiguration: CustomStringConvertible {
+
+  public var description: String {
     let launchArgsDesc = launchArgs.map { FBCollectionInformation.oneLineDescription(from: $0) } ?? "nil"
     let processEnvDesc = processEnv.map { FBCollectionInformation.oneLineDescription(from: $0) } ?? "nil"
     return "xctrace record: template \(templateName) | duration \(timeLimit) | process to launch \(processToLaunch ?? "nil") | process to attach \(processToAttach ?? "nil") | package \(package ?? "nil") | target stdin \(targetStdin ?? "nil") | target stdout \(targetStdout ?? "nil") | target arguments \(launchArgsDesc) | target environment \(processEnvDesc) | record all processes \(allProcesses ? "Yes" : "No")"
-  }
-
-  public func copy(with zone: NSZone? = nil) -> Any {
-    self
   }
 }
