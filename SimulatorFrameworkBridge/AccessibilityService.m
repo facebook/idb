@@ -186,6 +186,17 @@ static NSArray<NSString *> *FBAXBridgeFetchList(void)
   ];
 }
 
+// A union that arrived in a shape its own constructors cannot produce — a `Read` with no attributes, a
+// `Hit` with no element. Unreachable while the outcome types are built only through their factories, and
+// reported rather than trusted because the alternative is putting a null tree on the wire.
+//
+// An error and not an exception: this guest serves requests on a long-lived connection, and the one thing
+// a malformed answer must not become is a dead reader that takes every later request with it.
+static NSError *FBAXBridgeInvariantError(NSString *description)
+{
+  return [NSError errorWithDomain:@"FBAXBridgeInvariant" code:1 userInfo:@{NSLocalizedDescriptionKey : description}];
+}
+
 #pragma mark - JSON coercion
 
 // The frame arrives from `attributesForElement:` as an `NSValue`-wrapped `CGRect` (or, tolerantly, an
@@ -284,7 +295,10 @@ static FBAXReadOutcome *FBAXBridgeBuildNode(id<FBAXRuntime> runtime,
   if (outcome.status != FBAXReadStatusRead) {
     return outcome;
   }
-  NSDictionary<NSString *, id> *attributes = (NSDictionary *)outcome.attributes;
+  NSDictionary<NSString *, id> *attributes = outcome.attributes;
+  if (!attributes) {
+    return [FBAXReadOutcome failed:FBAXBridgeInvariantError(@"a read reported success and carried no attributes")];
+  }
 
   NSMutableDictionary *node = [NSMutableDictionary dictionaryWithCapacity:attributes.count];
   for (NSString *key in attributes) {
@@ -520,7 +534,11 @@ static NSDictionary *FBAXBridgeHitTest(id<FBAXRuntime> runtime, NSDictionary *re
   int budget = 1;
   BOOL truncated = NO;  // a hit-test reads only the leaf at the point; truncation is not meaningful here
   // maxDepth 0 reads just the hit element's own attributes (no child recursion) — the leaf at the point.
-  FBAXReadOutcome *read = FBAXBridgeBuildNode(runtime, (id)outcome.element, 0, 0, &budget, &truncated);
+  id hitElement = outcome.element;
+  if (!hitElement) {
+    return FBAXBridgeErrorResponse(@"the hit-test reported an element and carried none");
+  }
+  FBAXReadOutcome *read = FBAXBridgeBuildNode(runtime, hitElement, 0, 0, &budget, &truncated);
   switch (read.status) {
     case FBAXReadStatusRead:
       break;
@@ -541,9 +559,13 @@ static NSDictionary *FBAXBridgeHitTest(id<FBAXRuntime> runtime, NSDictionary *re
     default:
       return FBAXBridgeErrorResponse(@"failed to read the hit element");
   }
+  NSDictionary<NSString *, id> *node = read.attributes;
+  if (!node) {
+    return FBAXBridgeErrorResponse(@"the hit element read reported success and carried no attributes");
+  }
   return @{
     kResponseOk : @YES,
-    kResponseTree : (NSDictionary *)read.attributes,
+    kResponseTree : node,
     kResponsePid : @(outcome.owningProcessIdentifier),
   };
 }
@@ -655,7 +677,10 @@ static FBAXWriteOutcome *_Nullable FBAXBridgeResolveWriteTarget(id<FBAXRuntime> 
     default:
       return [FBAXWriteOutcome failed:hit.failureReason ?: @"the hit-test failed"];
   }
-  id hitElement = (id)hit.element;  // non-nil on a `Hit`, which the switch above has established
+  id hitElement = hit.element;
+  if (!hitElement) {
+    return [FBAXWriteOutcome failed:@"the hit-test reported an element and carried none"];
+  }
 
   if (assertKey) {
     FBAXReadOutcome *read = [runtime readAttributes:@[assertKey] ofElement:hitElement];
@@ -930,7 +955,10 @@ NSDictionary<NSString *, id> *FBAXBridgeHandleRequest(NSDictionary<NSString *, i
          read.error.localizedDescription ?: @"the accessibility runtime reported no error"]
       );
   }
-  NSDictionary *tree = (NSDictionary *)read.attributes;
+  NSDictionary *tree = read.attributes;
+  if (!tree) {
+    return FBAXBridgeErrorResponse(@"the tree read reported success and carried no attributes");
+  }
   // Always report the pid read, so the host tags elements with it — for a fused frontmost read the host
   // does not know the pid until now. `method` rides along when the pid was resolved in-guest.
   NSMutableDictionary *response =
