@@ -13,15 +13,13 @@ private let keyMacTestShim = "mac_test_shim"
 private let shimulatorFileName = "libShimulator-iOS.dylib"
 private let maculatorShimFileName = "libShimulator-macOS.dylib"
 
-@objc(FBXCTestShimConfiguration)
 public class FBXCTestShimConfiguration: NSObject, NSCopying {
 
-  @objc public let iOSSimulatorTestShimPath: String
-  @objc public let macOSTestShimPath: String
+  public let iOSSimulatorTestShimPath: String
+  public let macOSTestShimPath: String
 
   // MARK: Initializers
 
-  @objc
   public init(iOSSimulatorTestShimPath: String, macOSTestShimPath: String) {
     assert(!iOSSimulatorTestShimPath.isEmpty)
     assert(!macOSTestShimPath.isEmpty)
@@ -65,7 +63,6 @@ public class FBXCTestShimConfiguration: NSObject, NSCopying {
       .mapReplace(shimPath as AnyObject)
   }
 
-  @objc
   public class func findShimDirectory(onQueue queue: DispatchQueue, logger: FBControlCoreLogger?) -> FBFuture<NSString> {
     let future: FBFuture<AnyObject> = FBFuture.onQueue(
       queue,
@@ -96,7 +93,6 @@ public class FBXCTestShimConfiguration: NSObject, NSCopying {
   nonisolated(unsafe) private static var _sharedShimFuture: FBFuture<FBXCTestShimConfiguration>?
   private static let _sharedShimLock = NSLock()
 
-  @objc(sharedShimConfigurationWithLogger:)
   public class func sharedShimConfiguration(with logger: FBControlCoreLogger?) -> FBFuture<FBXCTestShimConfiguration> {
     _sharedShimLock.lock()
     defer { _sharedShimLock.unlock() }
@@ -108,7 +104,6 @@ public class FBXCTestShimConfiguration: NSObject, NSCopying {
     return result
   }
 
-  @objc
   public class func defaultShimConfiguration(with logger: FBControlCoreLogger?) -> FBFuture<FBXCTestShimConfiguration> {
     let queue = createWorkQueue()
     let future: FBFuture<AnyObject> = (findShimDirectory(onQueue: queue, logger: logger) as! FBFuture<AnyObject>)
@@ -121,7 +116,6 @@ public class FBXCTestShimConfiguration: NSObject, NSCopying {
     return unsafeBitCast(future, to: FBFuture<FBXCTestShimConfiguration>.self)
   }
 
-  @objc
   public class func shimConfiguration(withDirectory directory: String, logger: FBControlCoreLogger?) -> FBFuture<FBXCTestShimConfiguration> {
     let queue = createWorkQueue()
     let future: FBFuture<AnyObject> = confirmExistenceOfRequiredShims(inDirectory: directory, logger: logger)
