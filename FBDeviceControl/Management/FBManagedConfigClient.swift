@@ -33,7 +33,6 @@ private final class ManagedConfigDataBox: @unchecked Sendable {
   }
 }
 
-@objc(FBManagedConfigClient)
 public class FBManagedConfigClient: NSObject {
   private let connection: FBAMDServiceConnection
   private let queue: DispatchQueue
@@ -41,7 +40,7 @@ public class FBManagedConfigClient: NSObject {
 
   // MARK: ObjC-visible Constants
 
-  @objc public static let serviceName: String = "com.apple.mobile.MCInstall"
+  public static let serviceName: String = "com.apple.mobile.MCInstall"
 
   private static let wallpaperWhereForName: [String: NSNumber] = [
     FBWallpaperName.homescreen.rawValue: 0,
@@ -50,7 +49,7 @@ public class FBManagedConfigClient: NSObject {
 
   // MARK: Initializers
 
-  @objc public static func managedConfigClient(connection: FBAMDServiceConnection, logger: any FBControlCoreLogger) -> FBManagedConfigClient {
+  public static func managedConfigClient(connection: FBAMDServiceConnection, logger: any FBControlCoreLogger) -> FBManagedConfigClient {
     let queue = DispatchQueue(label: "com.facebook.FBDeviceControl.managed_config")
     return FBManagedConfigClient(connection: connection, queue: queue, logger: logger)
   }
@@ -68,32 +67,32 @@ public class FBManagedConfigClient: NSObject {
 
   // MARK: Public Methods (legacy FBFuture entry points)
 
-  @objc public func getCloudConfiguration() -> FBFuture<NSDictionary> {
+  public func getCloudConfiguration() -> FBFuture<NSDictionary> {
     fbFutureFromAsync { [self] in
       try await getCloudConfigurationAsync() as NSDictionary
     }
   }
 
-  @objc public func changeWallpaper(withName name: String, data: Data) -> FBFuture<NSNull> {
+  public func changeWallpaper(withName name: String, data: Data) -> FBFuture<NSNull> {
     fbFutureFromAsync { [self] in
       try await changeWallpaperAsync(name: name, data: data)
       return NSNull()
     }
   }
 
-  @objc public func getProfileList() -> FBFuture<NSArray> {
+  public func getProfileList() -> FBFuture<NSArray> {
     fbFutureFromAsync { [self] in
       try await getProfileListAsync() as NSArray
     }
   }
 
-  @objc public func installProfile(_ payload: Data) -> FBFuture<NSDictionary> {
+  public func installProfile(_ payload: Data) -> FBFuture<NSDictionary> {
     fbFutureFromAsync { [self] in
       try await installProfileAsync(payload) as NSDictionary
     }
   }
 
-  @objc public func removeProfile(_ profileName: String) -> FBFuture<NSNull> {
+  public func removeProfile(_ profileName: String) -> FBFuture<NSNull> {
     fbFutureFromAsync { [self] in
       try await removeProfileAsync(profileName)
       return NSNull()

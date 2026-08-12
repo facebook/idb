@@ -62,7 +62,6 @@ private final class SpringboardDataBox: @unchecked Sendable {
   }
 }
 
-@objc(FBSpringboardServicesClient)
 public class FBSpringboardServicesClient: NSObject {
   private let connection: FBAMDServiceConnection
   fileprivate let queue: DispatchQueue
@@ -70,18 +69,18 @@ public class FBSpringboardServicesClient: NSObject {
 
   // MARK: ObjC-visible Constants
 
-  @objc public static let wallpaperNameHomescreen: String = "homescreen"
-  @objc public static let wallpaperNameLockscreen: String = "lockscreen"
-  @objc public static let serviceName: String = "com.apple.springboardservices"
+  public static let wallpaperNameHomescreen: String = "homescreen"
+  public static let wallpaperNameLockscreen: String = "lockscreen"
+  public static let serviceName: String = "com.apple.springboardservices"
 
   // MARK: Initializers
 
-  @objc public static func springboardServicesClient(connection: FBAMDServiceConnection, logger: any FBControlCoreLogger) -> FBSpringboardServicesClient {
+  public static func springboardServicesClient(connection: FBAMDServiceConnection, logger: any FBControlCoreLogger) -> FBSpringboardServicesClient {
     let queue = DispatchQueue(label: "com.facebook.FBDeviceControl.springboard_services")
     return FBSpringboardServicesClient(connection: connection, queue: queue, logger: logger)
   }
 
-  @objc public convenience init(connection: FBAMDServiceConnection, logger: any FBControlCoreLogger) {
+  public convenience init(connection: FBAMDServiceConnection, logger: any FBControlCoreLogger) {
     let queue = DispatchQueue(label: "com.facebook.FBDeviceControl.springboard_services")
     self.init(connection: connection, queue: queue, logger: logger)
   }
@@ -99,7 +98,7 @@ public class FBSpringboardServicesClient: NSObject {
 
   // MARK: Public Methods (legacy FBFuture entry points)
 
-  @objc public func wallpaperImageData(forKind name: String) -> FBFuture<NSData> {
+  public func wallpaperImageData(forKind name: String) -> FBFuture<NSData> {
     fbFutureFromAsync { [self] in
       try await wallpaperImageDataAsync(forKind: name) as NSData
     }

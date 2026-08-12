@@ -105,7 +105,6 @@ private class FBDeviceDebugServer_TwistedPairFiles: NSObject {
   }
 }
 
-@objc(FBDeviceDebugServer)
 public class FBDeviceDebugServer: NSObject, FBSocketServerDelegate, FBDebugServer {
   private let serviceConnection: FBAMDServiceConnection
   private lazy var tcpServer: FBSocketServer = FBSocketServer(onPort: self.port, delegate: self)
@@ -116,16 +115,16 @@ public class FBDeviceDebugServer: NSObject, FBSocketServerDelegate, FBDebugServe
 
   // MARK: - FBDebugServer
 
-  @objc public let lldbBootstrapCommands: [String]
+  public let lldbBootstrapCommands: [String]
 
   // MARK: - FBSocketServerDelegate
 
-  @objc public let queue: DispatchQueue
+  public let queue: DispatchQueue
 
   // MARK: - Initializers
 
   /// Factory method: creates and starts a debug server from a future-wrapped service connection.
-  @objc public static func debugServer(
+  public static func debugServer(
     forServiceConnection service: FBFutureContext<FBAMDServiceConnection>,
     port: in_port_t,
     lldbBootstrapCommands: [String],
@@ -171,7 +170,7 @@ public class FBDeviceDebugServer: NSObject, FBSocketServerDelegate, FBDebugServe
 
   // MARK: - FBSocketServerDelegate
 
-  @objc public func socketServer(
+  public func socketServer(
     _ server: FBSocketServer,
     clientConnected address: in6_addr,
     fileDescriptor: Int32
