@@ -13,7 +13,7 @@ private let XcodebuildEnvironmentDeviceSetPath = "SIM_DEVICE_SET_PATH"
 private let XcodebuildEnvironmentInsertDylib = "DYLD_INSERT_LIBRARIES"
 private let XcodebuildDestinationTimeoutSecs = "180"
 
-@objc public final class FBXcodeBuildOperation: NSObject {
+public final class FBXcodeBuildOperation: NSObject {
 
   // MARK: Initializers
 
@@ -116,7 +116,7 @@ private let XcodebuildDestinationTimeoutSecs = "180"
     return path
   }
 
-  @objc public static func terminateAbandonedXcodebuildProcesses(forUDID udid: String, processFetcher: FBProcessFetcher, queue: DispatchQueue, logger: FBControlCoreLogger) -> FBFuture<NSArray> {
+  public static func terminateAbandonedXcodebuildProcesses(forUDID udid: String, processFetcher: FBProcessFetcher, queue: DispatchQueue, logger: FBControlCoreLogger) -> FBFuture<NSArray> {
     let processes = FBXcodeBuildOperation.activeXcodebuildProcesses(forUDID: udid, processFetcher: processFetcher)
     if processes.isEmpty {
       logger.log("No processes for \(udid) to terminate")
@@ -132,7 +132,7 @@ private let XcodebuildDestinationTimeoutSecs = "180"
     return FBFuture<AnyObject>.combine(futures)
   }
 
-  @objc(xcodeBuildPathWithError:) public static func xcodeBuildPath() throws -> String {
+  public static func xcodeBuildPath() throws -> String {
     let path = (FBXcodeConfiguration.developerDirectory as NSString).appendingPathComponent("/usr/bin/xcodebuild")
     if !FileManager.default.fileExists(atPath: path) {
       throw XCTestBootstrapError.describe("xcodebuild does not exist at expected path \(path)").build()
@@ -140,7 +140,7 @@ private let XcodebuildDestinationTimeoutSecs = "180"
     return path
   }
 
-  @objc public static func overwriteXCTestRunProperties(withBaseProperties baseProperties: [String: Any], newProperties: [String: Any]) -> NSDictionary {
+  public static func overwriteXCTestRunProperties(withBaseProperties baseProperties: [String: Any], newProperties: [String: Any]) -> NSDictionary {
     let defaultTestProperties = newProperties["StubBundleId"] as? [String: Any] ?? [:]
     var mutableTestRunProperties: [String: Any] = [:]
     for (testId, value) in baseProperties {

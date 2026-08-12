@@ -13,10 +13,10 @@ private let xctoolOutputLogDirectoryEnv = "XCTOOL_TEST_ENV_FB_LOG_DIRECTORY"
 
 // SAFETY: all stored state is immutable; thread-safety of logging delegates to the base logger,
 // which the FBControlCoreLogger contract requires to be thread-safe.
-@objc public final class FBXCTestLogger: NSObject, FBControlCoreLogger, @unchecked Sendable {
+public final class FBXCTestLogger: NSObject, FBControlCoreLogger, @unchecked Sendable {
 
   private let baseLogger: FBControlCoreLogger
-  @objc public let logDirectory: String
+  public let logDirectory: String
 
   private init(baseLogger: FBControlCoreLogger, logDirectory: String) {
     self.baseLogger = baseLogger
@@ -45,19 +45,19 @@ private let xctoolOutputLogDirectoryEnv = "XCTOOL_TEST_ENV_FB_LOG_DIRECTORY"
     "\(ProcessInfo.processInfo.globallyUniqueString)_test.log"
   }
 
-  @objc public static func defaultLoggerInDefaultDirectory() -> FBXCTestLogger {
+  public static func defaultLoggerInDefaultDirectory() -> FBXCTestLogger {
     loggerInDefaultDirectory(defaultLogName())
   }
 
-  @objc public static func loggerInDefaultDirectory(_ name: String) -> FBXCTestLogger {
+  public static func loggerInDefaultDirectory(_ name: String) -> FBXCTestLogger {
     logger(inDirectory: defaultLogDirectory(), name: name)
   }
 
-  @objc public static func defaultLogger(inDirectory directory: String) -> FBXCTestLogger {
+  public static func defaultLogger(inDirectory directory: String) -> FBXCTestLogger {
     logger(inDirectory: directory, name: defaultLogName())
   }
 
-  @objc public static func logger(inDirectory directory: String, name: String) -> FBXCTestLogger {
+  public static func logger(inDirectory directory: String, name: String) -> FBXCTestLogger {
     let success = (try? FileManager.default.createDirectory(atPath: directory, withIntermediateDirectories: true, attributes: nil)) != nil
     assert(success, "Expected to create directory at path \(directory)")
 
@@ -80,42 +80,42 @@ private let xctoolOutputLogDirectoryEnv = "XCTOOL_TEST_ENV_FB_LOG_DIRECTORY"
   // MARK: FBControlCoreLogger
 
   @discardableResult
-  @objc public func log(_ string: String) -> FBControlCoreLogger {
+  public func log(_ string: String) -> FBControlCoreLogger {
     baseLogger.log(string)
     return self
   }
 
-  @objc public func info() -> FBControlCoreLogger {
+  public func info() -> FBControlCoreLogger {
     FBXCTestLogger(baseLogger: baseLogger.info(), logDirectory: logDirectory)
   }
 
-  @objc public func debug() -> FBControlCoreLogger {
+  public func debug() -> FBControlCoreLogger {
     FBXCTestLogger(baseLogger: baseLogger.debug(), logDirectory: logDirectory)
   }
 
-  @objc public func error() -> FBControlCoreLogger {
+  public func error() -> FBControlCoreLogger {
     FBXCTestLogger(baseLogger: baseLogger.error(), logDirectory: logDirectory)
   }
 
-  @objc public func withName(_ prefix: String) -> FBControlCoreLogger {
+  public func withName(_ prefix: String) -> FBControlCoreLogger {
     FBXCTestLogger(baseLogger: baseLogger.withName(prefix), logDirectory: logDirectory)
   }
 
-  @objc public func withDateFormatEnabled(_ enabled: Bool) -> FBControlCoreLogger {
+  public func withDateFormatEnabled(_ enabled: Bool) -> FBControlCoreLogger {
     FBXCTestLogger(baseLogger: baseLogger.withDateFormatEnabled(enabled), logDirectory: logDirectory)
   }
 
-  @objc public var name: String? {
+  public var name: String? {
     baseLogger.name
   }
 
-  @objc public var level: FBControlCoreLogLevel {
+  public var level: FBControlCoreLogLevel {
     baseLogger.level
   }
 
   // MARK: Log Consumption
 
-  @objc public func logConsumption(of consumer: FBDataConsumer, toFileNamed fileName: String, logger: FBControlCoreLogger) -> FBFuture<AnyObject> {
+  public func logConsumption(of consumer: FBDataConsumer, toFileNamed fileName: String, logger: FBControlCoreLogger) -> FBFuture<AnyObject> {
     let queue = DispatchQueue.global(qos: .userInitiated)
     let filePath = (logDirectory as NSString).appendingPathComponent(fileName)
 

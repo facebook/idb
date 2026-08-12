@@ -86,11 +86,11 @@ private func dateFromString(_ date: String) -> Date? {
   return FBXCTestResultBundleParser_dateFormatter.date(from: date)
 }
 
-@objc public final class FBXCTestResultBundleParser: NSObject {
+public final class FBXCTestResultBundleParser: NSObject {
 
   // MARK: Public
 
-  @objc public static func parse(_ resultBundlePath: String, target: FBiOSTarget, reporter: FBXCTestReporter, logger: FBControlCoreLogger, extractScreenshots: Bool) -> FBFuture<NSNull> {
+  public static func parse(_ resultBundlePath: String, target: FBiOSTarget, reporter: FBXCTestReporter, logger: FBControlCoreLogger, extractScreenshots: Bool) -> FBFuture<NSNull> {
     logger.log("Parsing the result bundle \(resultBundlePath)")
 
     let testSummariesPath = (resultBundlePath as NSString).appendingPathComponent("TestSummaries.plist")
