@@ -50,7 +50,7 @@ extension IDBXCTestReporter {
   }
 }
 
-@objc final class IDBXCTestReporter: NSObject, FBXCTestReporter, FBDataConsumer, @unchecked Sendable {
+final class IDBXCTestReporter: NSObject, FBXCTestReporter, FBDataConsumer, @unchecked Sendable {
 
   private let reportingTerminated = AsyncPromise<Int>()
 
@@ -81,19 +81,19 @@ extension IDBXCTestReporter {
 
   // MARK: - FBDataConsumer implementation
 
-  @objc func consumeData(_ data: Data) {
+  func consumeData(_ data: Data) {
     let logOutput = String(data: data, encoding: .utf8) ?? ""
     let response = createResponse(logOutput: logOutput)
     write(response: response)
   }
 
-  @objc func consumeEndOfFile() {
+  func consumeEndOfFile() {
     // Implementation not required
   }
 
   // MARK: - FBXCTestReporter implementation
 
-  @objc func processWaitingForDebugger(withProcessIdentifier pid: pid_t) {
+  func processWaitingForDebugger(withProcessIdentifier pid: pid_t) {
     logger.info().log("Tests waiting for debugger. To debug run: lldb -p \(pid)")
     let response = Idb_XctestRunResponse.with {
       $0.status = .running
@@ -105,26 +105,26 @@ extension IDBXCTestReporter {
     write(response: response)
   }
 
-  @objc func didBeginExecutingTestPlan() {
+  func didBeginExecutingTestPlan() {
     // Implementation not required
   }
 
-  @objc func didFinishExecutingTestPlan() {
+  func didFinishExecutingTestPlan() {
     let response = Idb_XctestRunResponse.with {
       $0.status = .terminatedNormally
     }
     write(response: response)
   }
 
-  @objc func processUnderTestDidExit() {
+  func processUnderTestDidExit() {
     processUnderTestExited.resolve(())
   }
 
-  @objc func testSuite(_ testSuite: String, didStartAt startTime: String) {
+  func testSuite(_ testSuite: String, didStartAt startTime: String) {
     _currentInfo.sync { $0.bundleName = testSuite }
   }
 
-  @objc func testCaseDidFinish(forTestClass testClass: String, method: String, with status: FBTestReportStatus, duration: TimeInterval, logs: [String]?) {
+  func testCaseDidFinish(forTestClass testClass: String, method: String, with status: FBTestReportStatus, duration: TimeInterval, logs: [String]?) {
     do {
       let info = try createRunInfo(testClass: testClass, method: method, status: status, duration: duration, logs: logs ?? [])
       write(testRunInfo: info)
@@ -134,7 +134,7 @@ extension IDBXCTestReporter {
     }
   }
 
-  @objc func testCaseDidFail(forTestClass testClass: String, method: String, exceptions: [FBExceptionInfo]) {
+  func testCaseDidFail(forTestClass testClass: String, method: String, exceptions: [FBExceptionInfo]) {
     let currentInfo = self.currentInfo
     if testClass == currentInfo.testClass && method != currentInfo.testMethod {
       logger.log("Got failure info for \(testClass)/\(method) but the current known executing test is \(currentInfo.testClass)\(currentInfo.testMethod). Ignoring it")
@@ -150,43 +150,43 @@ extension IDBXCTestReporter {
     }
   }
 
-  @objc func testCaseDidStart(forTestClass testClass: String, method: String) {
+  func testCaseDidStart(forTestClass testClass: String, method: String) {
     _currentInfo.sync {
       $0.testClass = testClass
       $0.testMethod = method
     }
   }
 
-  @objc func testPlanDidFail(withMessage message: String) {
+  func testPlanDidFail(withMessage message: String) {
     let response = responseFor(crashMessage: message)
     write(response: response)
   }
 
-  @objc func testCase(_ testClass: String, method: String, didFinishActivity activity: FBActivityRecord) {
+  func testCase(_ testClass: String, method: String, didFinishActivity activity: FBActivityRecord) {
     _currentInfo.sync {
       $0.activityRecords.append(activity)
     }
   }
 
-  @objc func finished(with summary: FBTestManagerResultSummary) {
+  func finished(with summary: FBTestManagerResultSummary) {
     // didFinishExecutingTestPlan should be used to signify completion instead
   }
 
-  @objc func testHadOutput(_ output: String) {
+  func testHadOutput(_ output: String) {
     let response = createResponseExtractingFailureInfo(from: output)
     write(response: response)
   }
 
-  @objc func handleExternalEvent(_ event: String) {
+  func handleExternalEvent(_ event: String) {
     let response = createResponseExtractingFailureInfo(from: event)
     write(response: response)
   }
 
-  @objc func printReport() throws {
+  func printReport() throws {
     // Warning! This method is bridged to swift incorrectly and loses bool return type. Adapt and use with extra care
   }
 
-  @objc func didCrashDuringTest(_ error: Error) {
+  func didCrashDuringTest(_ error: Error) {
     let response = responseFor(crashMessage: error.localizedDescription)
     write(response: response)
   }
