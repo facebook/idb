@@ -200,6 +200,11 @@ final class FBSimulatorVideoTests: XCTestCase {
   }
 
   func testRecordingProducesReadableMp4() async throws {
+    // Hardware video encoding is unavailable on hosted CI runners: the encoder
+    // never produces output, so the assertions cannot be exercised there.
+    try XCTSkipIf(
+      ProcessInfo.processInfo.environment["GITHUB_ACTIONS"] == "true",
+      "video encoding is not available on hosted CI runners")
     let (video, path) = makeRecordingFixture(immediateSurface: makeTestIOSurface(width: 128, height: 128))
 
     try await video.startRecording()
@@ -226,6 +231,11 @@ final class FBSimulatorVideoTests: XCTestCase {
   }
 
   func testSecondStopReturnsSameURLWithoutRefinalizing() async throws {
+    // Hardware video encoding is unavailable on hosted CI runners: the encoder
+    // never produces output, so the assertions cannot be exercised there.
+    try XCTSkipIf(
+      ProcessInfo.processInfo.environment["GITHUB_ACTIONS"] == "true",
+      "video encoding is not available on hosted CI runners")
     let (video, path) = makeRecordingFixture(immediateSurface: makeTestIOSurface(width: 128, height: 128))
 
     try await video.startRecording()
