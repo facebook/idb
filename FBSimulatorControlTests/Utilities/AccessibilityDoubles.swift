@@ -274,7 +274,7 @@ class FBSimulatorControlTests_SimDevice_Accessibility_Double: NSObject {
 
 // MARK: - AXPTranslator Swizzling
 
-class FBAccessibilityTranslatorSwizzler: NSObject {
+class FBAccessibilityTranslatorSwizzler {
   private static var installedMockTranslator: FBSimulatorControlTests_AXPTranslator_Double?
   private static var originalSharedInstanceIMP: IMP?
   private static var swizzleInstalled = false
@@ -321,7 +321,7 @@ class FBAccessibilityTranslatorSwizzler: NSObject {
 
 // MARK: - Element Builder
 
-class FBAccessibilityTestElementBuilder: NSObject {
+class FBAccessibilityTestElementBuilder {
 
   class func element(withLabel label: String, frame: NSRect, children: [FBSimulatorControlTests_AXPMacPlatformElement_Double]?) -> FBSimulatorControlTests_AXPMacPlatformElement_Double {
     return FBSimulatorControlTests_AXPMacPlatformElement_Double(

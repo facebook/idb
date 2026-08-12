@@ -9,7 +9,7 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-public final class FBSimulatorBootVerificationStrategy: NSObject {
+public final class FBSimulatorBootVerificationStrategy {
 
   // MARK: - Properties
 
@@ -26,7 +26,6 @@ public final class FBSimulatorBootVerificationStrategy: NSObject {
 
   private init(simulator: FBSimulator) {
     self.simulator = simulator
-    super.init()
   }
 
   // MARK: - Public Methods

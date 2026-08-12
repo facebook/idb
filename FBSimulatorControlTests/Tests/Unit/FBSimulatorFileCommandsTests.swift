@@ -13,13 +13,12 @@ import XCTest
 /// container-selection producers be exercised without a booted simulator. `FBSimulator`'s
 /// initializer only reads `device.UDID.UUIDString`, so `UDID` plus `installedAppsWithError:`
 /// is the whole surface these tests touch.
-private final class InstalledAppsStubDevice: NSObject {
+private final class InstalledAppsStubDevice {
   @objc let UDID = NSUUID()
   private let apps: [String: Any]
 
   init(apps: [String: Any]) {
     self.apps = apps
-    super.init()
   }
 
   @objc(installedAppsWithError:)

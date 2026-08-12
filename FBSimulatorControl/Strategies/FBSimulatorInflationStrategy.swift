@@ -9,7 +9,7 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-public final class FBSimulatorInflationStrategy: NSObject {
+public final class FBSimulatorInflationStrategy {
 
   // MARK: - Properties
 
@@ -23,7 +23,6 @@ public final class FBSimulatorInflationStrategy: NSObject {
 
   private init(set: FBSimulatorSet) {
     self.set = set
-    super.init()
   }
 
   // MARK: - Public Methods

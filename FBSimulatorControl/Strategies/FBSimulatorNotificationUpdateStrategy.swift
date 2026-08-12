@@ -9,7 +9,7 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-public final class FBSimulatorNotificationUpdateStrategy: NSObject, @unchecked Sendable {
+public final class FBSimulatorNotificationUpdateStrategy: @unchecked Sendable {
 
   // MARK: - Properties
 
@@ -26,7 +26,6 @@ public final class FBSimulatorNotificationUpdateStrategy: NSObject, @unchecked S
 
   private init(set: FBSimulatorSet) {
     self.set = set
-    super.init()
   }
 
   deinit {

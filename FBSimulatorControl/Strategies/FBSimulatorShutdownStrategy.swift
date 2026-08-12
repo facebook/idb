@@ -11,7 +11,7 @@ import Foundation
 
 // swiftlint:disable force_cast
 
-public final class FBSimulatorShutdownStrategy: NSObject {
+public final class FBSimulatorShutdownStrategy {
 
   // MARK: - Public Methods
 

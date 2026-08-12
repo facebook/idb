@@ -9,7 +9,7 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-public final class FBCoreSimulatorNotifier: NSObject {
+public final class FBCoreSimulatorNotifier {
 
   // MARK: - Properties
 
@@ -69,12 +69,10 @@ public final class FBCoreSimulatorNotifier: NSObject {
     // nil for test doubles; mirror ObjC nil-messaging with a 0 handle.
     guard let notifier = notifier as? SimDeviceNotifier else {
       self.handle = 0
-      super.init()
       return
     }
     self.handle = notifier.registerNotificationHandler(on: queue) { info in
       block((info as? [String: Any]) ?? [:])
     }
-    super.init()
   }
 }

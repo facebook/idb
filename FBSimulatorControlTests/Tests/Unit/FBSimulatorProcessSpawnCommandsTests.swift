@@ -165,13 +165,12 @@ final class FBSimulatorProcessSpawnCommandsTests: XCTestCase {
 /// `FBSimulator` reads here: `-UDID` (logger naming at init) and `-state`
 /// (consulted by `shouldLaunchStandalone`). Passed through `id`, so a Swift class
 /// suffices — it never reaches real CoreSimulator.
-private final class StubStateDevice: NSObject {
+private final class StubStateDevice {
   @objc(UDID) let udid = NSUUID()
   @objc let state: UInt64
 
   init(state: FBiOSTargetState) {
     self.state = UInt64(state.rawValue)
-    super.init()
   }
 }
 
@@ -179,7 +178,7 @@ private final class StubStateDevice: NSObject {
 /// so a test can distinguish a launch that reached `SimDevice` from one rejected before
 /// it. The spawn completes rather than hanging, so a regression surfaces as a failed
 /// assertion rather than as a timeout.
-private final class RecordingSpawnDevice: NSObject, @unchecked Sendable {
+private final class RecordingSpawnDevice: @unchecked Sendable {
   @objc(UDID) let udid = NSUUID()
   @objc let state = UInt64(FBiOSTargetState.booted.rawValue)
 

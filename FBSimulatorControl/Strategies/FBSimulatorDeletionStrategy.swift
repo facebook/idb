@@ -9,7 +9,7 @@
 @preconcurrency import FBControlCore
 @preconcurrency import Foundation
 
-public final class FBSimulatorDeletionStrategy: NSObject {
+public final class FBSimulatorDeletionStrategy {
 
   // MARK: - Public Methods
 

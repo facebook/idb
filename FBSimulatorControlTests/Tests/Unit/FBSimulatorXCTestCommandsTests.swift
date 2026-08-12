@@ -13,13 +13,12 @@ import XCTest
 /// A `SimDevice` stand-in that returns canned `getenv` values keyed by name, so the testmanagerd
 /// socket-path poll can be exercised without a booted simulator. `FBSimulator`'s initializer
 /// only reads `device.UDID.UUIDString`, so `UDID` plus `getenv:error:` is the whole surface.
-private final class GetenvStubDevice: NSObject {
+private final class GetenvStubDevice {
   @objc let UDID = NSUUID()
   private let values: [String: String]
 
   init(getenvValues: [String: String]) {
     self.values = getenvValues
-    super.init()
   }
 
   @objc(getenv:error:)

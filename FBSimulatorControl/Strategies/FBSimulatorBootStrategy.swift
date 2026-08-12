@@ -9,7 +9,7 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-public final class FBSimulatorBootStrategy: NSObject {
+public final class FBSimulatorBootStrategy {
 
   // MARK: - Public Methods
 
