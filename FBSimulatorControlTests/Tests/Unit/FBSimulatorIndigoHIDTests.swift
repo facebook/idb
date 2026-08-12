@@ -5,12 +5,26 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import FBControlCore
 @testable import FBSimulatorControl
 // Matches the existing XCTest-based FBSimulatorControl unit suite (FBSimulatorPurpleHIDTests et al.).
 // ast-grep-ignore: swift-testing/swift/no-new-xctest
 import XCTest
 
-/// Byte-level coverage of the Indigo payloads produced by `FBSimulatorIndigoHID`.
+/// Counts `loadPrivateFrameworks` calls without dlopening anything, so a test can observe whether the
+/// code under test asks for its frameworks. The process-global load state cannot answer that: the
+/// other suites in this test bundle share the process and have already loaded them.
+private final class RecordingFrameworkLoader: FBControlCoreFrameworkLoader {
+
+  private(set) var loadCount = 0
+
+  override func loadPrivateFrameworks(_ logger: FBControlCoreLogger?) throws {
+    loadCount += 1
+  }
+}
+
+/// Byte-level coverage of the Indigo payloads produced by `FBSimulatorIndigoHID`, plus the
+/// resolution of the runtime-only client class that carries them.
 /// Offsets are taken from `Source/PrivateHeaders/SimulatorApp/Indigo.h`. These tests
 /// pin the wire format so the ObjC -> Swift migration of the builder is provably a no-op.
 final class FBSimulatorIndigoHIDTests: XCTestCase {
@@ -211,6 +225,20 @@ final class FBSimulatorIndigoHIDTests: XCTestCase {
     XCTAssertEqual(uint32(at: 0x34, in: up), 2, "up eventType")
     XCTAssertEqual(uint32(at: 0x38, in: down), 0x64, "eventTarget should be keyboard")
     XCTAssertEqual(uint32(at: 0x3c, in: down), 0x04, "keyCode flows to 0x3c")
+  }
+
+  // MARK: - Client class resolution
+
+  // `SimDeviceLegacyHIDClient` is vended by SimulatorKit, which only the `xcodeFrameworks` loader
+  // dlopens — `FBSimulatorControl` on its own loads just the essential set (CoreSimulator).
+  func testResolvingTheClientClassLoadsTheXcodeFrameworks() {
+    let loader = RecordingFrameworkLoader(name: "SimulatorKit", frameworks: [])
+    // `try?`: the class itself has relocated across Xcodes, so whether the lookup succeeds on the
+    // host running this test is beside the point — what is pinned is the loading, not the result.
+    _ = try? FBSimulatorIndigoHIDClient.resolveClientClass(loader: loader)
+    // BUG: resolution never asks the loader, so a host that has not separately loaded the Xcode
+    // frameworks fails with `clientClassUnavailable` — flipped in the following commit.
+    XCTAssertEqual(loader.loadCount, 0)
   }
 
   // MARK: - Trackpad (tvOS)
