@@ -10,7 +10,7 @@ import Foundation
 
 // MARK: - FBDeviceLogOperation
 
-public class FBDeviceLogOperation: NSObject, LogOperation {
+public class FBDeviceLogOperation: LogOperation {
   public let consumer: any FBDataConsumer
   private let readCompleted: FBFuture<NSNull>
   private let serviceCompleted: FBMutableFuture<NSNull>
@@ -25,7 +25,6 @@ public class FBDeviceLogOperation: NSObject, LogOperation {
     self.consumer = consumer
     self.readCompleted = readCompleted
     self.serviceCompleted = serviceCompleted
-    super.init()
   }
 
   // MARK: LogOperation

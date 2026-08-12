@@ -33,7 +33,7 @@ private final class ManagedConfigDataBox: @unchecked Sendable {
   }
 }
 
-public class FBManagedConfigClient: NSObject {
+public class FBManagedConfigClient {
   private let connection: FBAMDServiceConnection
   private let queue: DispatchQueue
   private let logger: any FBControlCoreLogger
@@ -62,7 +62,6 @@ public class FBManagedConfigClient: NSObject {
     self.connection = connection
     self.queue = queue
     self.logger = logger
-    super.init()
   }
 
   // MARK: Public Methods (legacy FBFuture entry points)

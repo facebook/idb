@@ -10,7 +10,7 @@ import Foundation
 
 private let connectionReadSizeLimit: size_t = 1024
 
-private class FBDeviceDebugServer_TwistedPairFiles: NSObject {
+private class FBDeviceDebugServer_TwistedPairFiles {
   let socket: Int32
   let connection: FBAMDServiceConnection
   let logger: any FBControlCoreLogger
@@ -27,7 +27,6 @@ private class FBDeviceDebugServer_TwistedPairFiles: NSObject {
     self.logger = logger
     self.socketToConnectionQueue = DispatchQueue(label: "com.facebook.fbdevicecontrol.debugserver.socket_to_connection")
     self.connectionToSocketQueue = DispatchQueue(label: "com.facebook.fbdevicecontrol.debugserver.connection_to_socket")
-    super.init()
   }
 
   func start() -> FBFuture<NSNull>? {

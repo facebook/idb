@@ -7,7 +7,7 @@
 
 import Foundation
 
-public class FBAppleDevicectlCommandExecutor: NSObject {
+public class FBAppleDevicectlCommandExecutor {
 
   let logger: FBControlCoreLogger?
   let device: FBDevice
@@ -15,7 +15,6 @@ public class FBAppleDevicectlCommandExecutor: NSObject {
   @objc public init(device: FBDevice) {
     logger = device.logger?.withName("devicectl")
     self.device = device
-    super.init()
   }
 
   @objc public func taskBuilder(arguments: [String]) -> FBProcessBuilder<NSNull, NSString, NSString> {

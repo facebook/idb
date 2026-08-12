@@ -12,7 +12,7 @@ import Foundation
 
 // MARK: - FBDeviceWorkflowStatistics
 
-private class FBDeviceWorkflowStatistics: NSObject {
+private class FBDeviceWorkflowStatistics {
   let workflowType: String
   let logger: any FBControlCoreLogger
   var lastEvent: [String: Any]?
@@ -20,7 +20,6 @@ private class FBDeviceWorkflowStatistics: NSObject {
   init(workflowType: String, logger: any FBControlCoreLogger) {
     self.workflowType = workflowType
     self.logger = logger
-    super.init()
   }
 
   func pushProgress(_ event: [String: Any]) {
@@ -44,7 +43,7 @@ private func workflowCallback(_ callbackDictionary: [String: Any]?, _ context: U
 
 // MARK: - FBDeviceLaunchedApplication
 
-private class FBDeviceLaunchedApplication: NSObject, FBLaunchedApplication {
+private class FBDeviceLaunchedApplication: FBLaunchedApplication {
   let processIdentifier: pid_t
   private let _configuration: FBApplicationLaunchConfiguration
   private let commands: FBDeviceApplicationCommands
@@ -55,7 +54,6 @@ private class FBDeviceLaunchedApplication: NSObject, FBLaunchedApplication {
     self._configuration = configuration
     self.commands = commands
     self.queue = queue
-    super.init()
   }
 
   func waitForTermination() async throws {

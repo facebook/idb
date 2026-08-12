@@ -62,7 +62,7 @@ private final class SpringboardDataBox: @unchecked Sendable {
   }
 }
 
-public class FBSpringboardServicesClient: NSObject {
+public class FBSpringboardServicesClient {
   private let connection: FBAMDServiceConnection
   fileprivate let queue: DispatchQueue
   private let logger: any FBControlCoreLogger
@@ -93,7 +93,6 @@ public class FBSpringboardServicesClient: NSObject {
     self.connection = connection
     self.queue = queue
     self.logger = logger
-    super.init()
   }
 
   // MARK: Public Methods (legacy FBFuture entry points)
@@ -205,14 +204,13 @@ public class FBSpringboardServicesClient: NSObject {
 
 private typealias IconLayoutJSONType = [[String]]
 
-class FBSpringboardServicesIconContainer: NSObject, AsyncFileContainer {
+class FBSpringboardServicesIconContainer: AsyncFileContainer {
   private let client: FBSpringboardServicesClient
   private let validFilenames: [String]
 
   init(client: FBSpringboardServicesClient) {
     self.client = client
     self.validFilenames = [IconPlistFile, IconJSONFile]
-    super.init()
   }
 
   // MARK: AsyncFileContainer

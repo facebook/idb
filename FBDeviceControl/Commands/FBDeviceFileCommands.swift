@@ -22,14 +22,13 @@ private final class AFCConnectionBox: @unchecked Sendable {
 
 // MARK: - FBDeviceFileContainer
 
-public class FBDeviceFileContainer: NSObject, AsyncFileContainer {
+public class FBDeviceFileContainer: AsyncFileContainer {
   private let queue: DispatchQueue
   private let connectionBox: AFCConnectionBox
 
   public init(afcConnection connection: FBAFCConnection, queue: DispatchQueue) {
     self.connectionBox = AFCConnectionBox(connection)
     self.queue = queue
-    super.init()
   }
 
   // MARK: AsyncFileContainer
@@ -140,7 +139,7 @@ public class FBDeviceFileContainer: NSObject, AsyncFileContainer {
 
 // MARK: - FBDeviceFileContainer_Wallpaper
 
-private class FBDeviceFileContainer_Wallpaper: NSObject, AsyncFileContainer {
+private class FBDeviceFileContainer_Wallpaper: AsyncFileContainer {
   let queue: DispatchQueue
   let springboard: FBSpringboardServicesClient
   let managedConfig: FBManagedConfigClient
@@ -149,7 +148,6 @@ private class FBDeviceFileContainer_Wallpaper: NSObject, AsyncFileContainer {
     self.springboard = springboard
     self.managedConfig = managedConfig
     self.queue = queue
-    super.init()
   }
 
   func copy(fromHost sourcePath: String, toContainer destinationPath: String) async throws {
@@ -186,14 +184,13 @@ private class FBDeviceFileContainer_Wallpaper: NSObject, AsyncFileContainer {
 
 // MARK: - FBDeviceFileContainer_MDMProfiles
 
-private class FBDeviceFileContainer_MDMProfiles: NSObject, AsyncFileContainer {
+private class FBDeviceFileContainer_MDMProfiles: AsyncFileContainer {
   let queue: DispatchQueue
   let managedConfig: FBManagedConfigClient
 
   init(managedConfig: FBManagedConfigClient, queue: DispatchQueue) {
     self.managedConfig = managedConfig
     self.queue = queue
-    super.init()
   }
 
   func copy(fromHost sourcePath: String, toContainer destinationPath: String) async throws {
@@ -228,14 +225,13 @@ private class FBDeviceFileContainer_MDMProfiles: NSObject, AsyncFileContainer {
 
 // MARK: - FBDeviceFileCommands_DiskImages
 
-private class FBDeviceFileCommands_DiskImages: NSObject, AsyncFileContainer {
+private class FBDeviceFileCommands_DiskImages: AsyncFileContainer {
   let commands: any DeveloperDiskImageCommands
   let queue: DispatchQueue
 
   init(commands: any DeveloperDiskImageCommands, queue: DispatchQueue) {
     self.commands = commands
     self.queue = queue
-    super.init()
   }
 
   // MARK: AsyncFileContainer
@@ -346,14 +342,13 @@ private class FBDeviceFileCommands_DiskImages: NSObject, AsyncFileContainer {
 
 // MARK: - FBDeviceFileCommands_Symbols
 
-private class FBDeviceFileCommands_Symbols: NSObject, AsyncFileContainer {
+private class FBDeviceFileCommands_Symbols: AsyncFileContainer {
   let commands: any DebugSymbolsCommands
   let queue: DispatchQueue
 
   init(commands: any DebugSymbolsCommands, queue: DispatchQueue) {
     self.commands = commands
     self.queue = queue
-    super.init()
   }
 
   func copy(fromHost sourcePath: String, toContainer destinationPath: String) async throws {
