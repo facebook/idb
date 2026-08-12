@@ -8,14 +8,14 @@
 import FBControlCore
 import Foundation
 
-@objc public final class FBMacLaunchedApplication: NSObject, FBLaunchedApplication {
+public final class FBMacLaunchedApplication: NSObject, FBLaunchedApplication {
 
-  @objc public let bundleID: String
-  @objc public let processIdentifier: pid_t
+  public let bundleID: String
+  public let processIdentifier: pid_t
   private weak var device: FBMacDevice?
   private let queue: DispatchQueue
 
-  @objc public init(bundleID: String, processIdentifier: pid_t, device: FBMacDevice, queue: DispatchQueue) {
+  public init(bundleID: String, processIdentifier: pid_t, device: FBMacDevice, queue: DispatchQueue) {
     self.bundleID = bundleID
     self.processIdentifier = processIdentifier
     self.device = device

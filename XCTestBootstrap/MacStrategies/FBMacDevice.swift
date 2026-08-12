@@ -15,23 +15,23 @@ import IOKit
   func _XCT_requestConnectedSocketForTransport(_ arg1: @escaping (FileHandle?, Error?) -> Void)
 }
 
-@objc public final class FBMacDevice: NSObject, FBiOSTarget {
+public final class FBMacDevice: NSObject, FBiOSTarget {
 
   // MARK: - FBiOSTarget synthesized properties
 
-  @objc public let architectures: [FBArchitecture]
-  @objc public let asyncQueue: DispatchQueue
-  @objc public let auxillaryDirectory: String
-  @objc public var name: String
-  @objc public var logger: (any FBControlCoreLogger)?
-  @objc public let osVersion: FBOSVersion
-  @objc public var state: FBiOSTargetState
-  @objc public let targetType: FBiOSTargetType
-  @objc public let workQueue: DispatchQueue
-  @objc public let screenInfo: FBiOSTargetScreenInfo?
-  @objc public var deviceType: FBDeviceType = FBDeviceType.generic(withName: "Mac")
-  @objc public let udid: String
-  @objc public let temporaryDirectory: FBTemporaryDirectory
+  public let architectures: [FBArchitecture]
+  public let asyncQueue: DispatchQueue
+  public let auxillaryDirectory: String
+  public var name: String
+  public var logger: (any FBControlCoreLogger)?
+  public let osVersion: FBOSVersion
+  public var state: FBiOSTargetState
+  public let targetType: FBiOSTargetType
+  public let workQueue: DispatchQueue
+  public let screenInfo: FBiOSTargetScreenInfo?
+  public var deviceType: FBDeviceType = FBDeviceType.generic(withName: "Mac")
+  public let udid: String
+  public let temporaryDirectory: FBTemporaryDirectory
 
   // MARK: - Private properties
 
@@ -49,11 +49,11 @@ import IOKit
     return (parentDir as NSString).appendingPathComponent(uuid)
   }()
 
-  @objc public static var applicationInstallDirectory: String {
+  public static var applicationInstallDirectory: String {
     _applicationInstallDirectory
   }
 
-  @objc public static func fetchInstalledApplications() -> NSMutableDictionary {
+  public static func fetchInstalledApplications() -> NSMutableDictionary {
     let mapping = NSMutableDictionary()
     let content = try? FileManager.default.contentsOfDirectory(atPath: applicationInstallDirectory)
     for fileOrDirectory in content ?? [] {
@@ -70,7 +70,7 @@ import IOKit
 
   // MARK: - Initializers
 
-  @objc public override init() {
+  public override init() {
     architectures = Array(FBArchitectureProcessAdapter.hostMachineSupportedArchitectures())
     asyncQueue = DispatchQueue.global(qos: .userInitiated)
     let explicitTmpDirectory = ProcessInfo.processInfo.environment["IDB_MAC_AUXILLIARY_DIR"]
@@ -95,11 +95,11 @@ import IOKit
     super.init()
   }
 
-  @objc public convenience init(logger: FBControlCoreLogger) {
+  public convenience init(logger: FBControlCoreLogger) {
     self.init(logger: logger, catalyst: false)
   }
 
-  @objc public init(logger: FBControlCoreLogger, catalyst: Bool) {
+  public init(logger: FBControlCoreLogger, catalyst: Bool) {
     architectures = Array(FBArchitectureProcessAdapter.hostMachineSupportedArchitectures())
     asyncQueue = DispatchQueue.global(qos: .userInitiated)
     let explicitTmpDirectory = ProcessInfo.processInfo.environment["IDB_MAC_AUXILLIARY_DIR"]
@@ -126,7 +126,7 @@ import IOKit
 
   // MARK: - Public
 
-  @objc public func restorePrimaryDeviceState() -> FBFuture<NSNull> {
+  public func restorePrimaryDeviceState() -> FBFuture<NSNull> {
     var queuedFutures: [FBFuture<AnyObject>] = []
 
     var killFutures: [FBFuture<AnyObject>] = []
@@ -153,15 +153,15 @@ import IOKit
 
   // MARK: - Paths
 
-  @objc public var runtimeRootDirectory: String {
+  public var runtimeRootDirectory: String {
     platformRootDirectory
   }
 
-  @objc public var platformRootDirectory: String {
+  public var platformRootDirectory: String {
     (FBXcodeConfiguration.developerDirectory as NSString).appendingPathComponent("Platforms/MacOSX.platform")
   }
 
-  @objc public var xctestPath: String {
+  public var xctestPath: String {
     (FBXcodeConfiguration.developerDirectory as NSString).appendingPathComponent("usr/bin/xctest")
   }
 
@@ -190,7 +190,7 @@ import IOKit
 
   // MARK: - Transport
 
-  @objc public func transportForTestManagerService() -> FBFutureContext<NSNumber> {
+  public func transportForTestManagerService() -> FBFutureContext<NSNumber> {
     let logger = self.logger
     let connection = NSXPCConnection(machServiceName: "com.apple.testmanagerd.control", options: [])
     let interface = NSXPCInterface(with: XCTestManager_XPCControl.self)
@@ -252,7 +252,7 @@ import IOKit
 
   // MARK: - Process ID
 
-  @objc public func processID(withBundleID bundleID: String) -> FBFuture<NSNumber> {
+  public func processID(withBundleID bundleID: String) -> FBFuture<NSNumber> {
     guard let task = bundleIDToRunningTask[bundleID] as? FBSubprocess<AnyObject, AnyObject, AnyObject> else {
       let error = XCTestBootstrapError.error(forDescription: "Application with bundleID (\(bundleID)) was not launched by XCTestBootstrap")
       return FBFuture(error: error)
@@ -262,23 +262,23 @@ import IOKit
 
   // MARK: - Not supported
 
-  @objc public var consoleString: String {
+  public var consoleString: String {
     assertionFailure("consoleString is not yet supported")
     return ""
   }
 
   // MARK: - FBiOSTarget
 
-  @objc public func requiresBundlesToBeSigned() -> Bool {
+  public func requiresBundlesToBeSigned() -> Bool {
     false
   }
 
-  @objc public static func commands(with target: FBiOSTarget) -> Self {
+  public static func commands(with target: FBiOSTarget) -> Self {
     assertionFailure("commandsWithTarget is not yet supported")
     return unsafeBitCast(NSNull(), to: Self.self)
   }
 
-  @objc public func installApplication(withPath path: String) -> FBFuture<FBInstalledApplication> {
+  public func installApplication(withPath path: String) -> FBFuture<FBInstalledApplication> {
     do {
       let bundle = try FBBundleDescriptor.bundle(fromPath: path)
       bundleIDToProductMap[bundle.identifier] = bundle
@@ -288,7 +288,7 @@ import IOKit
     }
   }
 
-  @objc public func uninstallApplication(withBundleID bundleID: String) -> FBFuture<NSNull> {
+  public func uninstallApplication(withBundleID bundleID: String) -> FBFuture<NSNull> {
     guard let bundle = bundleIDToProductMap[bundleID] as? FBBundleDescriptor else {
       return unsafeBitCast(
         XCTestBootstrapError.describe("Application with bundleID (\(bundleID)) was not installed by XCTestBootstrap").failFuture(),
@@ -309,7 +309,7 @@ import IOKit
     return FBFuture(result: NSNull())
   }
 
-  @objc public func installedApplications() -> FBFuture<NSArray> {
+  public func installedApplications() -> FBFuture<NSArray> {
     let result = NSMutableArray()
     for bundleID in bundleIDToProductMap.allKeys as! [String] {
       guard let existingBundle = bundleIDToProductMap[bundleID] as? FBBundleDescriptor else { continue }
@@ -323,7 +323,7 @@ import IOKit
     return FBFuture(result: result)
   }
 
-  @objc public func installedApplication(withBundleID bundleID: String) -> FBFuture<FBInstalledApplication> {
+  public func installedApplication(withBundleID bundleID: String) -> FBFuture<FBInstalledApplication> {
     guard let existingBundle = bundleIDToProductMap[bundleID] as? FBBundleDescriptor else {
       return FBFuture(error: NSError(domain: "FBMacDevice", code: 0, userInfo: [NSLocalizedDescriptionKey: "No bundle for \(bundleID)"]))
     }
@@ -336,7 +336,7 @@ import IOKit
     }
   }
 
-  @objc public func killApplication(withBundleID bundleID: String) -> FBFuture<NSNull> {
+  public func killApplication(withBundleID bundleID: String) -> FBFuture<NSNull> {
     guard let task = bundleIDToRunningTask[bundleID] as? FBSubprocess<AnyObject, AnyObject, AnyObject> else {
       let error = XCTestBootstrapError.error(forDescription: "Application with bundleID (\(bundleID)) was not launched by XCTestBootstrap")
       return FBFuture(error: error)
@@ -390,27 +390,27 @@ import IOKit
     )
   }
 
-  @objc public var uniqueIdentifier: String {
+  public var uniqueIdentifier: String {
     udid
   }
 
-  @objc public var extendedInformation: [String: Any] {
+  public var extendedInformation: [String: Any] {
     [:]
   }
 
-  @objc public func compare(_ target: FBiOSTarget) -> ComparisonResult {
+  public func compare(_ target: FBiOSTarget) -> ComparisonResult {
     .orderedSame
   }
 
-  @objc public var customDeviceSetPath: String? {
+  public var customDeviceSetPath: String? {
     nil
   }
 
-  @objc public func replacementMapping() -> [String: String] {
+  public func replacementMapping() -> [String: String] {
     [:]
   }
 
-  @objc public func environmentAdditions() -> [String: String] {
+  public func environmentAdditions() -> [String: String] {
     if catalyst {
       return ["DYLD_FORCE_PLATFORM": "6"]
     } else {
@@ -420,7 +420,7 @@ import IOKit
 
   // MARK: - FBXCTestExtendedCommands
 
-  @objc public func extendedTestShim() -> FBFuture<NSString> {
+  public func extendedTestShim() -> FBFuture<NSString> {
     return unsafeBitCast(
       unsafeBitCast(
         FBXCTestShimConfiguration.sharedShimConfiguration(with: self.logger),
@@ -437,7 +437,6 @@ import IOKit
     )
   }
 
-  @objc(listTestsForBundleAtPath:timeout:withAppAtPath:)
   public func listTests(forBundleAtPath bundlePath: String, timeout: TimeInterval, withAppAtPath appPath: String?) -> FBFuture<NSArray> {
     let bundleDescriptor: FBBundleDescriptor
     do {
@@ -459,7 +458,6 @@ import IOKit
     return FBListTestStrategy(target: self, configuration: configuration, logger: self.logger!).listTests()
   }
 
-  @objc(notifyOfCrash:)
   public func notifyOfCrash(_ predicate: NSPredicate) -> FBFuture<FBCrashLogInfo> {
     return FBCrashLogNotifier.sharedInstance.nextCrashLog(forPredicate: predicate)
   }
