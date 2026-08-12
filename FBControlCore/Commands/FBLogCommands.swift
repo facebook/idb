@@ -7,7 +7,7 @@
 
 import Foundation
 
-public class FBProcessLogOperation: NSObject, LogOperation {
+public class FBProcessLogOperation: LogOperation {
 
   // MARK: Properties
 
@@ -21,7 +21,6 @@ public class FBProcessLogOperation: NSObject, LogOperation {
     self.process = process
     self.consumer = consumer
     self.queue = queue
-    super.init()
   }
 
   // MARK: LogOperation

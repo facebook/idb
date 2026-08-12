@@ -7,7 +7,7 @@
 
 import Foundation
 
-public class FBCrashLogNotifier: NSObject {
+public class FBCrashLogNotifier {
 
   // MARK: Properties
 
@@ -19,7 +19,6 @@ public class FBCrashLogNotifier: NSObject {
   internal init(logger: any FBControlCoreLogger) {
     self.store = FBCrashLogStore.store(forDirectories: FBCrashLogInfo.diagnosticReportsPaths, logger: logger)
     self.sinceDate = Date()
-    super.init()
   }
 
   public class var sharedInstance: FBCrashLogNotifier {

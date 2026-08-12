@@ -7,7 +7,7 @@
 
 import Foundation
 
-public class FBStorageUtils: NSObject {
+public class FBStorageUtils {
 
   // MARK: Finding Files
 

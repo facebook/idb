@@ -7,7 +7,7 @@
 
 @preconcurrency import Foundation
 
-private final class FBConcurrentCollectionOperations_FilterTerminal: NSObject, @unchecked Sendable {
+private final class FBConcurrentCollectionOperations_FilterTerminal: @unchecked Sendable {
   static let terminal = FBConcurrentCollectionOperations_FilterTerminal()
 }
 
@@ -16,7 +16,7 @@ private final class UncheckedSendableBox<T>: @unchecked Sendable {
   init(_ value: T) { self.value = value }
 }
 
-public final class FBConcurrentCollectionOperations: NSObject {
+public final class FBConcurrentCollectionOperations {
 
   public class func generate(_ count: UInt, withBlock block: @Sendable @escaping (UInt) -> Any) -> [Any] {
     let array = NSMutableArray(capacity: Int(count))
