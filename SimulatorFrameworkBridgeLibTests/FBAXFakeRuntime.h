@@ -62,6 +62,14 @@ NS_ASSUME_NONNULL_BEGIN
 /** What both write methods answer with. */
 @property (nonatomic, strong) FBAXWriteOutcome *writeOutcome;
 
+/**
+ * When set, `-readAttributes:ofElement:` raises with this reason rather than answering.
+ *
+ * Stands in for the four private frameworks the live runtime reaches, which raise where they are meant to
+ * return — the condition the reader's outcome types cannot express, because a raise is not a value.
+ */
+@property (nullable, nonatomic, copy) NSString *readRaiseReason;
+
 /** How many times each interaction was asked for — the evidence that a resolver did or did not run. */
 @property (nonatomic, readonly) NSUInteger hitTestCount;
 @property (nonatomic, readonly) NSUInteger windowServerCount;

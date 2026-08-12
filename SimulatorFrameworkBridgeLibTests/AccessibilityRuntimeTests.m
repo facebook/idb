@@ -424,6 +424,27 @@ typedef struct FBAXPair {
   XCTAssertEqual(_runtime.hitTestCount, 0u, @"the anchor is not consulted for the authoritative frontmost");
 }
 
+#pragma mark - Raises while answering
+
+// The reader reaches four private frameworks, and a private API is exactly the thing that starts raising
+// where it used to return. Nothing above the three call sites that catch stops such a raise unwinding out
+// of the serve loop and taking the reader with it — costing a client every later request on that
+// connection, with no frame to say why.
+//
+// BUG: the raise escapes the reader instead of coming back as a response — flipped in the following
+// commit.
+- (void)testARaiseWhileAnsweringEscapesTheReader
+{
+  _runtime.applicationElements[@(kAppPid)] = [FBAXFakeElement readable:@"UIApplication"];
+  _runtime.readRaiseReason = @"the runtime went away mid-read";
+
+  XCTAssertThrowsSpecificNamed(
+    FBAXBridgeHandleRequest(@{@"verb" : @"describe", @"pid" : @(kAppPid)}),
+    NSException,
+    NSInternalInconsistencyException
+  );
+}
+
 #pragma mark - Request validation
 
 // A malformed request is the caller's to fix, and is held apart from every failure of the reader or of

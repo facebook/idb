@@ -81,6 +81,9 @@ static NSString *const kAXChildren = @"XC_kAXXCAttributeChildren";
 
 - (FBAXReadOutcome *)readAttributes:(NSArray<NSString *> *)attributes ofElement:(id)element
 {
+  if (self.readRaiseReason) {
+    [NSException raise:NSInternalInconsistencyException format:@"%@", self.readRaiseReason];
+  }
   FBAXFakeElement *fake = element;
   switch (fake.readStatus) {
     case FBAXReadStatusRead:
