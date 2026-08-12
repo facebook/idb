@@ -63,7 +63,7 @@ final class FBDataDownloadInputTests: XCTestCase {
 
   /// Downloads from the stubbed URL and extracts the result, exactly as the URL
   /// install path composes the two.
-  private func downloadAndExtract() throws -> String {
+  private func downloadAndExtract() async throws -> String {
     let destination = (tempDirectory as NSString).appendingPathComponent(UUID().uuidString)
     try FileManager.default.createDirectory(
       atPath: destination, withIntermediateDirectories: true)
@@ -76,21 +76,35 @@ final class FBDataDownloadInputTests: XCTestCase {
       withURL: url,
       configuration: configuration,
       logger: logger)
-    let future = FBArchiveOperations.extractArchive(
+    let extraction = FBArchiveOperations.extractArchive(
       fromStream: download.input,
       toPath: destination,
       overrideModificationTime: false,
       logger: logger,
       compression: .GZIP)
-    return try future.`await`() as String
+    // A data consumer carries only bytes and an end of file, so a failed download
+    // reaches the extractor as nothing more than a short stream. Its outcome has
+    // to be consulted alongside the extraction's.
+    try await download.completed()
+    return try extraction.`await`() as String
+  }
+
+  /// Runs the download and expects it to fail, handing the error to `inspect`.
+  private func assertThrows(_ inspect: (Error) -> Void) async {
+    do {
+      _ = try await downloadAndExtract()
+      XCTFail("Expected the download to fail")
+    } catch {
+      inspect(error)
+    }
   }
 
   // MARK: - Success
 
-  func testDownload_WhenResponseIsOK_ExtractsTheDownloadedArchive() throws {
+  func testDownload_WhenResponseIsOK_ExtractsTheDownloadedArchive() async throws {
     StubURLProtocol.behaviour = .respond(statusCode: 200, body: try makeArchiveData())
 
-    let destination = try downloadAndExtract()
+    let destination = try await downloadAndExtract()
 
     XCTAssertEqual(
       try String(
@@ -101,75 +115,67 @@ final class FBDataDownloadInputTests: XCTestCase {
 
   // MARK: - HTTP errors
 
-  // BUG: the response status is never inspected, so an error page is piped into
-  // the extractor as though it were the archive. The caller is told the archive
-  // is malformed, and never that the server returned 404.
-  func testDownload_WhenResponseIsNotFound_FeedsTheErrorPageToTheExtractor() throws {
+  func testDownload_WhenResponseIsNotFound_FailsWithTheHTTPStatus() async throws {
     let errorPage = Data("<html><title>404 Not Found</title></html>".utf8)
     StubURLProtocol.behaviour = .respond(statusCode: 404, body: errorPage)
 
-    XCTAssertThrowsError(try downloadAndExtract()) { error in
-      let description = (error as NSError).localizedDescription
-      XCTAssertFalse(
-        description.localizedCaseInsensitiveContains("404"),
-        "BUG: the HTTP status is nowhere in the failure, got: \(description)")
-      XCTAssertFalse(
-        description.localizedCaseInsensitiveContains("http"),
-        "BUG: the failure does not mention HTTP at all, got: \(description)")
+    await assertThrows { error in
+      guard case .httpStatus(_, let statusCode)? = error as? FBInstallError else {
+        XCTFail("Expected an HTTP status failure, got: \(error)")
+        return
+      }
+      XCTAssertEqual(statusCode, 404)
+      XCTAssertTrue(
+        (error as NSError).localizedDescription.localizedCaseInsensitiveContains("404"),
+        "The description carries the status across the ObjC boundary too")
     }
   }
 
-  // BUG: a 500 is indistinguishable from a 404 for the same reason -- neither is
-  // looked at, so both surface as an unreadable archive.
-  func testDownload_WhenResponseIsServerError_FeedsTheErrorPageToTheExtractor() throws {
+  func testDownload_WhenResponseIsServerError_FailsWithTheHTTPStatus() async throws {
     StubURLProtocol.behaviour = .respond(
       statusCode: 500, body: Data("internal server error".utf8))
 
-    XCTAssertThrowsError(try downloadAndExtract()) { error in
-      let description = (error as NSError).localizedDescription
-      XCTAssertFalse(
-        description.localizedCaseInsensitiveContains("500"),
-        "BUG: the HTTP status is nowhere in the failure, got: \(description)")
+    await assertThrows { error in
+      guard case .httpStatus(_, let statusCode)? = error as? FBInstallError else {
+        XCTFail("Expected an HTTP status failure, got: \(error)")
+        return
+      }
+      XCTAssertEqual(statusCode, 500)
     }
   }
 
-  // BUG: worse than the cases above -- a non-200 with an empty body reaches the
-  // extractor as an empty stream, which bsdtar treats as a valid empty archive
-  // and exits 0. The download reports outright success, and the request is only
-  // discovered to have failed further along, when no app can be found in what
-  // was supposedly unpacked.
-  func testDownload_WhenResponseIsNotFoundWithNoBody_ExtractionSucceedsWithNothing() throws {
+  /// The case that used to be reported as an outright success: an empty body is a
+  /// valid empty archive as far as the extractor is concerned, so nothing
+  /// downstream could tell that the request had been rejected.
+  func testDownload_WhenResponseIsNotFoundWithNoBody_FailsWithTheHTTPStatus() async throws {
     StubURLProtocol.behaviour = .respond(statusCode: 404, body: Data())
 
-    let destination = try downloadAndExtract()
-
-    XCTAssertEqual(
-      try FileManager.default.contentsOfDirectory(atPath: destination), [],
-      "BUG: a rejected request extracts to an empty directory and is reported as a success")
+    await assertThrows { error in
+      guard case .httpStatus(_, let statusCode)? = error as? FBInstallError else {
+        XCTFail("Expected an HTTP status failure, got: \(error)")
+        return
+      }
+      XCTAssertEqual(statusCode, 404)
+    }
   }
 
   // MARK: - Transport errors
 
-  // BUG: a connection dropped mid-transfer is logged and then reported to the
-  // extractor as a clean end of file, so the network error is swallowed entirely.
-  // Extraction does at least fail, because the archive it was handed is
-  // truncated, but all the caller is told is that a process exited non-zero.
-  func testDownload_WhenTransportFailsMidStream_SwallowsTheNetworkError() throws {
+  /// Previously reported only as a process exiting non-zero on a truncated
+  /// archive, with the transport error logged and discarded.
+  func testDownload_WhenTransportFailsMidStream_FailsWithTheNetworkError() async throws {
     let archive = try makeArchiveData(padding: 512 * 1024)
     StubURLProtocol.behaviour = .truncate(
       statusCode: 200, body: archive, bytesBeforeFailure: archive.count / 2)
 
-    XCTAssertThrowsError(try downloadAndExtract()) { error in
-      let description = (error as NSError).localizedDescription
-      XCTAssertTrue(
-        description.localizedCaseInsensitiveContains("exit code"),
-        "BUG: the only signal is a non-zero exit, got: \(description)")
-      XCTAssertFalse(
-        description.localizedCaseInsensitiveContains("network"),
-        "BUG: the underlying network error is swallowed, got: \(description)")
-      XCTAssertFalse(
-        description.localizedCaseInsensitiveContains("connection"),
-        "BUG: the underlying network error is swallowed, got: \(description)")
+    await assertThrows { error in
+      guard case .transferFailed(_, let underlying)? = error as? FBInstallError else {
+        XCTFail("Expected a transfer failure, got: \(error)")
+        return
+      }
+      let nsError = underlying as NSError
+      XCTAssertEqual(nsError.domain, NSURLErrorDomain)
+      XCTAssertEqual(nsError.code, URLError.Code.networkConnectionLost.rawValue)
     }
   }
 }
