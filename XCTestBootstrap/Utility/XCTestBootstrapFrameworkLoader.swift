@@ -8,9 +8,9 @@
 import FBControlCore
 import Foundation
 
-@objc public final class XCTestBootstrapFrameworkLoader: FBControlCoreFrameworkLoader {
+public final class XCTestBootstrapFrameworkLoader: FBControlCoreFrameworkLoader {
 
-  @objc public static nonisolated(unsafe) let allDependentFrameworks: XCTestBootstrapFrameworkLoader = {
+  public static nonisolated(unsafe) let allDependentFrameworks: XCTestBootstrapFrameworkLoader = {
     return XCTestBootstrapFrameworkLoader(
       name: "XCTestBootstrap",
       frameworks: [

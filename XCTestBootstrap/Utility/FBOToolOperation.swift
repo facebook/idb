@@ -8,9 +8,9 @@
 import FBControlCore
 import Foundation
 
-@objc public final class FBOToolOperation: NSObject {
+public final class FBOToolOperation: NSObject {
 
-  @objc public static func listSanitiserDylibsRequired(byBundle testBundlePath: String, onQueue queue: DispatchQueue) -> FBFuture<NSArray> {
+  public static func listSanitiserDylibsRequired(byBundle testBundlePath: String, onQueue queue: DispatchQueue) -> FBFuture<NSArray> {
     guard let bundle = Bundle(path: testBundlePath) else {
       let message = "Bundle '\(testBundlePath)' does not identify an accessible bundle directory."
       return FBFuture(error: XCTestBootstrapError.describe(message).build())

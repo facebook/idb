@@ -15,7 +15,7 @@ import Foundation
   }
 }
 
-@objc public final class FBXCTestError: FBControlCoreError {
+public final class FBXCTestError: FBControlCoreError {
   public required init() {
     super.init()
     self.inDomain(FBTestErrorDomain)
