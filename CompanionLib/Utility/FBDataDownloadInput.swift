@@ -15,17 +15,22 @@ public final class FBDataDownloadInput: NSObject, @unchecked Sendable {
   private let logger: FBControlCoreLogger
 
   public static func dataDownload(withURL url: URL, logger: FBControlCoreLogger) -> FBDataDownloadInput {
-    let download = FBDataDownloadInput(url: url, logger: logger)
+    return dataDownload(withURL: url, configuration: .default, logger: logger)
+  }
+
+  /// Downloads over a caller-supplied session configuration, so that timeouts,
+  /// caching policy and protocol handling are the caller's to decide.
+  public static func dataDownload(withURL url: URL, configuration: URLSessionConfiguration, logger: FBControlCoreLogger) -> FBDataDownloadInput {
+    let download = FBDataDownloadInput(url: url, configuration: configuration, logger: logger)
     download.urlSessionTask.resume()
     return download
   }
 
-  private init(url: URL, logger: FBControlCoreLogger) {
+  private init(url: URL, configuration: URLSessionConfiguration, logger: FBControlCoreLogger) {
     self.logger = logger
     let rawInput = FBProcessInput<NSObject>.fromConsumer()
     self.input = unsafeBitCast(rawInput, to: FBProcessInput<AnyObject>.self)
     super.init()
-    let configuration = URLSessionConfiguration.default
     let delegateQueue = OperationQueue()
     delegateQueue.name = "CompanionLib.FBDataDownloadInput.urlSessionDelegate"
     let session = URLSession(configuration: configuration, delegate: self, delegateQueue: delegateQueue)
