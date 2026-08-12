@@ -171,14 +171,18 @@ final class FBAMDeviceTests: XCTestCase {
       return 0
     }
 
-    let schedule = DispatchQueue(label: "com.facebook.fbdevicecontrol.amdevicetests.schedule", attributes: .concurrent)
     let map = DispatchQueue(label: "com.facebook.fbdevicecontrol.amdevicetests.map")
     let device = makeDevice(connectionReuseTimeout: 0.5, serviceReuseTimeout: 0.3)
     let future0: FBMutableFuture<NSNumber> = FBMutableFuture()
     let future1: FBMutableFuture<NSNumber> = FBMutableFuture()
     let future2: FBMutableFuture<NSNumber> = FBMutableFuture()
 
-    schedule.async {
+    // Register the three consumers from this one thread, in order: dispatching
+    // the registrations onto a concurrent queue leaves their ordering to the
+    // scheduler, and under loaded CI hosts one can slip past another's release
+    // and reuse window, splitting the shared connection into a second connect
+    // sequence and flaking the call-order assertions below.
+    do {
       let inner = device.houseArrestAFCConnection(forBundleID: "com.foo.bar", afcCalls: afcCalls)
         .onQueue(
           map,
@@ -187,7 +191,7 @@ final class FBAMDeviceTests: XCTestCase {
           })
       future0.resolve(from: inner)
     }
-    schedule.async {
+    do {
       let inner = device.houseArrestAFCConnection(forBundleID: "com.foo.bar", afcCalls: afcCalls)
         .onQueue(
           map,
@@ -196,7 +200,7 @@ final class FBAMDeviceTests: XCTestCase {
           })
       future1.resolve(from: inner)
     }
-    schedule.async {
+    do {
       let inner = device.houseArrestAFCConnection(forBundleID: "com.foo.bar", afcCalls: afcCalls)
         .onQueue(
           map,
@@ -235,7 +239,6 @@ final class FBAMDeviceTests: XCTestCase {
   }
 
   func testConcurrentUtilizationHasSharedConnection() throws {
-    let schedule = DispatchQueue(label: "com.facebook.fbdevicecontrol.amdevicetests.schedule", attributes: .concurrent)
     let map = DispatchQueue(label: "com.facebook.fbdevicecontrol.amdevicetests.map")
     let future0: FBMutableFuture<NSNumber> = FBMutableFuture()
     let future1: FBMutableFuture<NSNumber> = FBMutableFuture()
@@ -243,7 +246,12 @@ final class FBAMDeviceTests: XCTestCase {
 
     let device = self.device
 
-    schedule.async {
+    // Register the three consumers from this one thread, in order: dispatching
+    // the registrations onto a concurrent queue leaves their ordering to the
+    // scheduler, and under loaded CI hosts one can slip past another's release
+    // and reuse window, splitting the shared connection into a second connect
+    // sequence and flaking the call-order assertions below.
+    do {
       let future = device.connectionContextManager.utilize(withPurpose: "test")
         .onQueue(
           map,
@@ -252,7 +260,7 @@ final class FBAMDeviceTests: XCTestCase {
           })
       future0.resolve(from: future)
     }
-    schedule.async {
+    do {
       let future = device.connectionContextManager.utilize(withPurpose: "test")
         .onQueue(
           map,
@@ -261,7 +269,7 @@ final class FBAMDeviceTests: XCTestCase {
           })
       future1.resolve(from: future)
     }
-    schedule.async {
+    do {
       let future = device.connectionContextManager.utilize(withPurpose: "test")
         .onQueue(
           map,
