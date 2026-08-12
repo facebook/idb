@@ -14,19 +14,19 @@ import XCTestBootstrap
 
 // swiftlint:disable force_cast force_unwrapping
 
-@objc public final class FBIDBCommandExecutor: NSObject {
+public final class FBIDBCommandExecutor: NSObject {
 
   private let target: any FBiOSTarget & AsynciOSTarget
   private let logger: FBIDBLogger
   private let debugserverPort: in_port_t
 
-  @objc public let storageManager: FBIDBStorageManager
+  public let storageManager: FBIDBStorageManager
   public var debugServer: FBDebugServer?
-  @objc public let temporaryDirectory: FBTemporaryDirectory
+  public let temporaryDirectory: FBTemporaryDirectory
 
   // MARK: - Initializers
 
-  @objc public static func commandExecutor(forTarget target: FBiOSTarget, storageManager: FBIDBStorageManager, temporaryDirectory: FBTemporaryDirectory, debugserverPort: in_port_t, logger: FBIDBLogger) -> FBIDBCommandExecutor {
+  public static func commandExecutor(forTarget target: FBiOSTarget, storageManager: FBIDBStorageManager, temporaryDirectory: FBTemporaryDirectory, debugserverPort: in_port_t, logger: FBIDBLogger) -> FBIDBCommandExecutor {
     let asyncTarget = target as! any FBiOSTarget & AsynciOSTarget
     return FBIDBCommandExecutor(target: asyncTarget, storageManager: storageManager, temporaryDirectory: temporaryDirectory, debugserverPort: debugserverPort, logger: logger.withName("grpc_handler") as! FBIDBLogger)
   }
@@ -486,7 +486,7 @@ import XCTestBootstrap
     try await simulatorTarget().getCurrentPreference("AppleLocale", domain: nil)
   }
 
-  @objc public func list_locale_identifiers() -> [String] {
+  public func list_locale_identifiers() -> [String] {
     return NSLocale.availableLocaleIdentifiers
   }
 

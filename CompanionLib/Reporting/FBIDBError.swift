@@ -10,7 +10,7 @@ import Foundation
 
 public let FBIDBErrorDomain: String = "com.facebook.idb"
 
-@objc public final class FBIDBError: FBControlCoreError {
+public final class FBIDBError: FBControlCoreError {
 
   public required init() {
     super.init()
