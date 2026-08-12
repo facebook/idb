@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@preconcurrency import CompanionLib
 @preconcurrency import FBControlCore
 import XCTest
 

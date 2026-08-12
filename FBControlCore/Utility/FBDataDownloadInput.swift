@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@preconcurrency import FBControlCore
 import Foundation
 
 public final class FBDataDownloadInput: NSObject, @unchecked Sendable {
