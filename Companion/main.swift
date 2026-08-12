@@ -91,9 +91,7 @@ private func writeJSONToStdOut(_ json: Any) {
 }
 
 private func writeTargetToStdOut(_ target: FBiOSTargetInfo) {
-  if let description = FBiOSTargetDescription(target: target) {
-    writeJSONToStdOut(description.asJSON)
-  }
+  writeJSONToStdOut(FBiOSTargetDescription(target: target).asJSON)
 }
 
 private func simulatorSetWithPath(_ deviceSetPath: String?, logger: FBControlCoreLogger, reporter: FBEventReporter) throws -> FBSimulatorSet {
