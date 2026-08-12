@@ -48,7 +48,7 @@ enum AccessibilityInfoRequestTranslation {
     return FBAccessibilityRequestOptions(
       format: format,
       keys: keys,
-      enableLogging: true,
+      enableLogging: false,
       enableProfiling: request.profile,
       collectFrameCoverage: request.collectFrameCoverage)
   }

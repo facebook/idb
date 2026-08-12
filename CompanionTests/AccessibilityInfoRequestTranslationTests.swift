@@ -121,7 +121,10 @@ final class AccessibilityInfoRequestTranslationTests: XCTestCase {
   func testOptionsPinTheHandlerDefaults() throws {
     let options = try AccessibilityInfoRequestTranslation.options(from: .init(), format: .nested)
     XCTAssertEqual(options.format, .nested)
-    XCTAssertTrue(options.enableLogging)
+    // Per-element round-trip logging is off by default: it floods stderr with
+    // element identifiers and label text on the serialization critical path.
+    // Debugging opts in by constructing options with logging enabled.
+    XCTAssertFalse(options.enableLogging)
     XCTAssertFalse(options.enableProfiling, "profiling is collected only when the request asks")
     XCTAssertFalse(options.collectFrameCoverage, "frame coverage is collected only when the request asks")
   }

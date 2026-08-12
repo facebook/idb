@@ -148,7 +148,7 @@ public final class FBIDBCommandExecutor {
     guard let simulator = target as? FBSimulator else {
       throw FBIDBError.describe("Target is not a simulator, cannot describe accessibility: \(target)").build()
     }
-    let options = FBAccessibilityRequestOptions(format: format, enableLogging: true)
+    let options = FBAccessibilityRequestOptions(format: format, enableLogging: false)
     return try await simulator.uiAutomation(backend: backend).describe(query, options: options)
       .formattedOutputJSON(format: format)
   }
@@ -169,7 +169,7 @@ public final class FBIDBCommandExecutor {
 
   public func accessibility_info_at_point(_ value: NSValue?, format: FBAccessibilityOutputFormat) async throws -> FBAccessibilityElementsResponse {
     return try await accessibility_info_at_point(
-      value, options: FBAccessibilityRequestOptions(format: format, enableLogging: true))
+      value, options: FBAccessibilityRequestOptions(format: format, enableLogging: false))
   }
 
   public func accessibility_info_at_point(_ value: NSValue?, options: FBAccessibilityRequestOptions, backend: FBUIAutomationBackend = .accessibility) async throws -> FBAccessibilityElementsResponse {
