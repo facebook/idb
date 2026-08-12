@@ -40,23 +40,23 @@ public extension FBXCTestDescriptor {
 
 // MARK: - FBXCTestBootstrapDescriptor
 
-@objc public final class FBXCTestBootstrapDescriptor: NSObject, FBXCTestDescriptor {
+public final class FBXCTestBootstrapDescriptor: NSObject, FBXCTestDescriptor {
 
-  @objc public let url: URL
-  @objc public let name: String
-  @objc public let testBundle: FBBundleDescriptor
+  public let url: URL
+  public let name: String
+  public let testBundle: FBBundleDescriptor
   private var targetAuxillaryDirectory: String = ""
 
-  @objc public var testBundleID: String {
+  public var testBundleID: String {
     testBundle.identifier
   }
 
-  @objc public var architectures: Set<String> {
+  public var architectures: Set<String> {
     guard let arch = testBundle.binary?.architectures else { return [] }
     return Set(arch.map(\.rawValue))
   }
 
-  @objc public init(url: URL, name: String, testBundle: FBBundleDescriptor) {
+  public init(url: URL, name: String, testBundle: FBBundleDescriptor) {
     self.url = url
     self.name = name
     self.testBundle = testBundle
@@ -85,7 +85,7 @@ public extension FBXCTestDescriptor {
 
   // MARK: - FBXCTestDescriptor
 
-  @objc public func setup(with request: FBXCTestRunRequest, target: FBiOSTarget) -> FBFuture<NSNull> {
+  public func setup(with request: FBXCTestRunRequest, target: FBiOSTarget) -> FBFuture<NSNull> {
     targetAuxillaryDirectory = target.auxillaryDirectory
     if request.isLogicTest {
       return FBFuture<NSNull>.empty()
@@ -93,7 +93,7 @@ public extension FBXCTestDescriptor {
     return FBXCTestBootstrapDescriptor.killAllRunningApplications(target).mapReplace(NSNull()) as! FBFuture<NSNull>
   }
 
-  @objc public func testAppPair(for request: FBXCTestRunRequest, target: FBiOSTarget) -> FBFuture<FBTestApplicationsPair> {
+  public func testAppPair(for request: FBXCTestRunRequest, target: FBiOSTarget) -> FBFuture<FBTestApplicationsPair> {
     if request.isLogicTest {
       return FBFuture(result: FBTestApplicationsPair(applicationUnderTest: nil, testHostApp: nil))
     }
@@ -125,7 +125,7 @@ public extension FBXCTestDescriptor {
     }
   }
 
-  @objc public func testConfig(withRunRequest request: FBXCTestRunRequest, testApps: FBTestApplicationsPair, logDirectoryPath: String?, logger: FBControlCoreLogger, queue: DispatchQueue) -> FBFuture<FBIDBAppHostedTestConfiguration> {
+  public func testConfig(withRunRequest request: FBXCTestRunRequest, testApps: FBTestApplicationsPair, logDirectoryPath: String?, logger: FBControlCoreLogger, queue: DispatchQueue) -> FBFuture<FBIDBAppHostedTestConfiguration> {
     let appLaunchConfigFuture = buildAppLaunchConfig(
       bundleID: testApps.testHostApp!.bundle.identifier,
       environment: request.environment,
@@ -180,24 +180,24 @@ public extension FBXCTestDescriptor {
 
 // MARK: - FBXCodebuildTestRunDescriptor
 
-@objc public final class FBXCodebuildTestRunDescriptor: NSObject, FBXCTestDescriptor {
+public final class FBXCodebuildTestRunDescriptor: NSObject, FBXCTestDescriptor {
 
-  @objc public let url: URL
-  @objc public let name: String
-  @objc public let testBundle: FBBundleDescriptor
-  @objc public let testHostBundle: FBBundleDescriptor
+  public let url: URL
+  public let name: String
+  public let testBundle: FBBundleDescriptor
+  public let testHostBundle: FBBundleDescriptor
   private var targetAuxillaryDirectory: String = ""
 
-  @objc public var testBundleID: String {
+  public var testBundleID: String {
     testBundle.identifier
   }
 
-  @objc public var architectures: Set<String> {
+  public var architectures: Set<String> {
     guard let arch = testHostBundle.binary?.architectures else { return [] }
     return Set(arch.map(\.rawValue))
   }
 
-  @objc public init(url: URL, name: String, testBundle: FBBundleDescriptor, testHostBundle: FBBundleDescriptor) {
+  public init(url: URL, name: String, testBundle: FBBundleDescriptor, testHostBundle: FBBundleDescriptor) {
     self.url = url
     self.name = name
     self.testBundle = testBundle
@@ -211,16 +211,16 @@ public extension FBXCTestDescriptor {
 
   // MARK: - FBXCTestDescriptor
 
-  @objc public func setup(with request: FBXCTestRunRequest, target: FBiOSTarget) -> FBFuture<NSNull> {
+  public func setup(with request: FBXCTestRunRequest, target: FBiOSTarget) -> FBFuture<NSNull> {
     targetAuxillaryDirectory = target.auxillaryDirectory
     return FBFuture<NSNull>.empty()
   }
 
-  @objc public func testAppPair(for request: FBXCTestRunRequest, target: FBiOSTarget) -> FBFuture<FBTestApplicationsPair> {
+  public func testAppPair(for request: FBXCTestRunRequest, target: FBiOSTarget) -> FBFuture<FBTestApplicationsPair> {
     FBFuture(result: FBTestApplicationsPair(applicationUnderTest: nil, testHostApp: nil))
   }
 
-  @objc public func testConfig(withRunRequest request: FBXCTestRunRequest, testApps: FBTestApplicationsPair, logDirectoryPath: String?, logger: FBControlCoreLogger, queue: DispatchQueue) -> FBFuture<FBIDBAppHostedTestConfiguration> {
+  public func testConfig(withRunRequest request: FBXCTestRunRequest, testApps: FBTestApplicationsPair, logDirectoryPath: String?, logger: FBControlCoreLogger, queue: DispatchQueue) -> FBFuture<FBIDBAppHostedTestConfiguration> {
     let resultBundleName = "resultbundle_\(UUID().uuidString)"
     let resultBundlePath = (targetAuxillaryDirectory as NSString).appendingPathComponent(resultBundleName)
 
