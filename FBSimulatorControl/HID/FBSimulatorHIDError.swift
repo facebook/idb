@@ -29,8 +29,8 @@ public enum FBSimulatorHIDError: Error, LocalizedError {
   case machSendFailed(port: mach_port_t, detail: String, code: kern_return_t)
   /// The SimulatorKit framework executable could not be opened.
   case simulatorKitUnavailable
-  /// The legacy keyboard HID service is suppressed because `dtuhidd` is active (Xcode 27+).
-  case keyboardSuppressedByActiveDTUHIDD
+  /// The legacy keyboard HID service has been handed over to `dtuhidd` (Xcode 27+).
+  case keyboardSuppressedByDTUHIDD
   /// A primitive is not (yet) implemented on the DTUHID transport.
   case notImplementedOnDTUHIDTransport(operation: String)
   /// A primitive has no legacy Indigo representation (e.g. a Consumer-page button); use DTUHID.
@@ -61,9 +61,9 @@ public enum FBSimulatorHIDError: Error, LocalizedError {
       return "mach_msg to PurpleWorkspacePort \(port) failed: \(detail) (kr=0x\(String(code, radix: 16)))"
     case .simulatorKitUnavailable:
       return "Could not open the SimulatorKit framework executable"
-    case .keyboardSuppressedByActiveDTUHIDD:
+    case .keyboardSuppressedByDTUHIDD:
       return
-        "Keyboard HID is suppressed because dtuhidd is active (Device Hub is open, or a CoreDevice HID client attached). Boot a fresh simulator with Device Hub closed, or use the CoreDevice HID transport. (Xcode 27 / CoreSimulator-1155.4)"
+        "Keyboard HID is suppressed: CoreSimulator-1155.4 (Xcode 27) and later hand the legacy keyboard service over to dtuhidd for the lifetime of the boot. Use the DTUHID transport, which is the default on this CoreSimulator."
     case let .notImplementedOnDTUHIDTransport(operation):
       return "\(operation) is not implemented on the DTUHID transport"
     case let .notImplementedOnIndigoTransport(operation):

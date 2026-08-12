@@ -69,26 +69,12 @@ struct FBSimulatorHIDTransportSelectionTests {
 
   @Test("A toolchain without dtuhidd never suppresses the legacy HID")
   func legacyHIDIsNotSuppressedBeforeXcode27() {
-    #expect(
-      !FBSimulatorHIDTransportSelection.isLegacyHIDSuppressed(
-        coreSimulatorVersion: "1140.0", isDTUHIDDRunning: { true }))
+    #expect(!FBSimulatorHIDTransportSelection.isLegacyHIDSuppressed(coreSimulatorVersion: "1140.0"))
   }
 
-  @Test("A running dtuhidd suppresses the legacy HID")
-  func legacyHIDIsSuppressedWithDTUHIDDRunning() {
-    #expect(
-      FBSimulatorHIDTransportSelection.isLegacyHIDSuppressed(
-        coreSimulatorVersion: "1169.1", isDTUHIDDRunning: { true }))
-  }
-
-  @Test("A dtuhidd that is not currently running does not suppress the legacy HID")
-  func legacyHIDIsNotSuppressedWithDTUHIDDStopped() {
-    // BUG: reports the legacy HID as healthy whenever `dtuhidd` is not resident, but `dtuhidd` is
-    // demand-launched and pressured-exit, so it is normally *not* running on a CoreSimulator that
-    // suppresses the legacy HID unconditionally — flipped in the following commit.
-    #expect(
-      !FBSimulatorHIDTransportSelection.isLegacyHIDSuppressed(
-        coreSimulatorVersion: "1169.1", isDTUHIDDRunning: { false }))
+  @Test("A toolchain that ships dtuhidd suppresses the legacy HID")
+  func legacyHIDIsSuppressedFromXcode27() {
+    #expect(FBSimulatorHIDTransportSelection.isLegacyHIDSuppressed(coreSimulatorVersion: "1169.1"))
   }
 
   // MARK: Default transport
@@ -97,23 +83,20 @@ struct FBSimulatorHIDTransportSelectionTests {
   func defaultTransportBeforeXcode27() {
     #expect(
       FBSimulatorHIDTransportSelection.defaultTransport(
-        coreSimulatorVersion: "1140.0", isDTUHIDDRunning: { false }) == .indigo)
+        coreSimulatorVersion: "1140.0", productFamily: .familyiPhone) == .indigo)
   }
 
-  @Test("A running dtuhidd gets the DTUHID transport")
-  func defaultTransportWithDTUHIDDRunning() {
+  @Test("A toolchain that ships dtuhidd gets the DTUHID transport")
+  func defaultTransportFromXcode27() {
     #expect(
       FBSimulatorHIDTransportSelection.defaultTransport(
-        coreSimulatorVersion: "1169.1", isDTUHIDDRunning: { true }) == .dtuhid)
+        coreSimulatorVersion: "1169.1", productFamily: .familyiPhone) == .dtuhid)
   }
 
-  @Test("A dtuhidd that is not currently running gets the legacy Indigo transport")
-  func defaultTransportWithDTUHIDDStopped() {
-    // BUG: hands back the legacy Indigo transport, which delivers nothing at all on
-    // CoreSimulator-1155.4+ — touch, buttons and keyboard are all silently dropped. `dtuhidd` being
-    // idle says nothing about whether it can be reached — flipped in the following commit.
+  @Test("An Apple TV target stays on the legacy Indigo transport, for the Siri Remote trackpad")
+  func defaultTransportOnAppleTV() {
     #expect(
       FBSimulatorHIDTransportSelection.defaultTransport(
-        coreSimulatorVersion: "1169.1", isDTUHIDDRunning: { false }) == .indigo)
+        coreSimulatorVersion: "1169.1", productFamily: .familyAppleTV) == .indigo)
   }
 }

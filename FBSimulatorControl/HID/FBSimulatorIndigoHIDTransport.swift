@@ -30,7 +30,7 @@ actor FBSimulatorIndigoHIDTransport {
   private let mainScreenSize: CGSize
   /// The scale of the main screen.
   private let mainScreenScale: Float
-  /// Whether an active `dtuhidd` has suppressed this simulator's legacy keyboard HID, captured from
+  /// Whether the guest has handed its legacy keyboard HID over to `dtuhidd`, captured from
   /// `FBSimulator.isLegacyHIDSuppressed` when the transport is built. `sendKeyboard` fails loudly on
   /// it rather than typing into the void; the DTUHID transport is the workaround.
   private let legacyKeyboardSuppressed: Bool
@@ -101,11 +101,11 @@ actor FBSimulatorIndigoHIDTransport {
   }
 
   func sendKeyboard(direction: FBSimulatorHIDDirection, keyCode: UInt32) async throws {
-    // On Xcode 27 (CoreSimulator-1155.4)+ an active dtuhidd disconnects the legacy
-    // `ExternalKeyboardService`, so legacy keyboard events deliver byte-correctly but produce no
-    // text. Fail loudly rather than typing into the void — the DTUHID transport is the workaround.
+    // On Xcode 27 (CoreSimulator-1155.4)+ the guest disconnects the legacy `ExternalKeyboardService`
+    // in favour of dtuhidd, so legacy keyboard events deliver byte-correctly but produce no text.
+    // Fail loudly rather than typing into the void — the DTUHID transport is the workaround.
     if legacyKeyboardSuppressed {
-      throw FBSimulatorHIDError.keyboardSuppressedByActiveDTUHIDD
+      throw FBSimulatorHIDError.keyboardSuppressedByDTUHIDD
     }
     try await indigoClient.send(indigo.keyboard(with: direction, keyCode: keyCode))
   }

@@ -45,28 +45,60 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
   /**
    Creates a `FBSimulatorHID` for the provided Simulator.
 
-   `transport` selects the HID path. When `nil` (the default) it is resolved with
-   `FBSimulator.defaultHIDTransport` — the DTUHID transport when an active `dtuhidd` has suppressed
-   the legacy HID, and the legacy Indigo path otherwise — so a caller that does not care gets a
-   working transport without choosing one. Pass an explicit value to force a specific transport. Will
-   fail if the chosen transport cannot be established for the provided Simulator (registration may
-   need to occur prior to booting).
+   `transport` selects the HID path. Pass an explicit value to force one; pass `nil` (the default) to
+   have one negotiated, so a caller that does not care gets a working transport without choosing one.
+   Will fail if the chosen transport cannot be established for the provided Simulator (registration
+   may need to occur prior to booting).
    */
   public convenience init(
     for simulator: FBSimulator, transport transportType: FBSimulatorHIDTransportType? = nil
   ) throws {
-    let transport: FBSimulatorHIDTransport
-    switch transportType ?? simulator.defaultHIDTransport {
-    case .indigo:
-      transport = .indigo(try FBSimulatorIndigoHIDTransport.indigo(for: simulator))
-    case .dtuhid:
-      transport = .dtuhid(try FBSimulatorDTUHIDTransport.dtuhid(for: simulator))
-    }
     self.init(
-      transport: transport,
+      transport: try Self.transport(for: simulator, requested: transportType),
       purple: FBSimulatorPurpleHIDTransport(simulator: simulator),
       notification: FBSimulatorDarwinNotificationTransport(simulator: simulator),
       simulator: simulator)
+  }
+
+  /// Establishes the transport the caller asked for, or negotiates one if they asked for nothing.
+  ///
+  /// A caller that named a transport gets that transport or an error — forcing `.dtuhid` to debug a
+  /// DTUHID problem must not quietly hand back Indigo. A caller that named none gets
+  /// `FBSimulator.defaultHIDTransport`, and if that turns out to be unreachable on this host, the
+  /// other one. Only `isDTUHIDUnreachable` failures are negotiated around; a fault in a transport
+  /// that was successfully established is a real error and surfaces.
+  ///
+  /// The preference cannot be resolved to a certainty up front: `dtuhidd` is demand-launched, so the
+  /// only way to know whether it can be reached is to look its service up, which is what building the
+  /// transport does.
+  private static func transport(
+    for simulator: FBSimulator, requested: FBSimulatorHIDTransportType?
+  ) throws -> FBSimulatorHIDTransport {
+    if let requested {
+      return try transport(requested, for: simulator)
+    }
+    let logger = FBControlCoreGlobalConfiguration.defaultLogger
+    let preferred = simulator.defaultHIDTransport
+    do {
+      let transport = try transport(preferred, for: simulator)
+      logger.log("Negotiated the \(preferred) HID transport")
+      return transport
+    } catch let error as FBSimulatorHIDError where error.isDTUHIDUnreachable {
+      logger.log(
+        "dtuhidd is unreachable (\(error.localizedDescription)), falling back to the legacy Indigo HID transport")
+      return .indigo(try FBSimulatorIndigoHIDTransport.indigo(for: simulator))
+    }
+  }
+
+  private static func transport(
+    _ type: FBSimulatorHIDTransportType, for simulator: FBSimulator
+  ) throws -> FBSimulatorHIDTransport {
+    switch type {
+    case .indigo:
+      return .indigo(try FBSimulatorIndigoHIDTransport.indigo(for: simulator))
+    case .dtuhid:
+      return .dtuhid(try FBSimulatorDTUHIDTransport.dtuhid(for: simulator))
+    }
   }
 
   /// The designated initializer.
