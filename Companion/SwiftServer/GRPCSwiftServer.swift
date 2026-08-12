@@ -17,8 +17,7 @@ import NIOSSL
 
 struct IDBUnixDomainSocketPathWrongType: Error {}
 
-@objc
-final class GRPCSwiftServer: NSObject, @unchecked Sendable {
+final class GRPCSwiftServer: @unchecked Sendable {
 
   private struct TLSCertificates {
     let certificates: [NIOSSLCertificateSource]
@@ -87,7 +86,6 @@ final class GRPCSwiftServer: NSObject, @unchecked Sendable {
     self.logger = logger
     self.onShutdownStarted = onShutdownStarted
 
-    super.init()
   }
 
   func start() async throws -> [String: Any] {
