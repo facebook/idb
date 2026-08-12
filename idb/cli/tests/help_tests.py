@@ -49,6 +49,7 @@ class HelpCommandTest(TestCase):
         self.assertIn("describe-all --json", output)
         self.assertIn("--reason", output)
         self.assertIn("CODING_AGENT_METADATA", output)
+        self.assertIn("AI_AGENT", output)
         self.assertIn("last resort", output)
 
     async def test_subtopic_words_join_to_a_key(self) -> None:

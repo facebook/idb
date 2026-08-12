@@ -46,10 +46,14 @@ Record intent
   itself, and always for coordinate taps and screenshots.
 
 Identify yourself
-- Set the CODING_AGENT_METADATA environment variable so tooling can
-  distinguish agent traffic: comma-separated key=value pairs, for example
-  `CODING_AGENT_METADATA=id=<agent-product>,session_id=<uuid>`. The `id`
-  key names the agent product; other keys are optional.
+- idb recognizes standard agent environment signals, in priority order:
+  AI_AGENT (user-agent style, `AI_AGENT=<product>/<version>/<mode>` - the
+  preferred contract), AGENT (a bare product name), CODING_AGENT_METADATA
+  (the structured channel: comma-separated key=value pairs, for example
+  `CODING_AGENT_METADATA=id=<agent-product>,session_id=<uuid>`, carrying
+  session and invocation identity), and CLAUDECODE=1.
+- If your harness sets none of these, export one so tooling can
+  distinguish agent traffic from human sessions.
 """
 
 # Topic key -> (one-line summary, body). Subtopic words join with "-", so
