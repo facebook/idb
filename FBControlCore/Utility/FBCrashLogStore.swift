@@ -9,7 +9,6 @@ import Foundation
 
 private let FBCrashLogAppeared = NSNotification.Name("FBCrashLogAppeared")
 
-@objc(FBCrashLogStore)
 public class FBCrashLogStore: NSObject {
 
   // MARK: Properties
@@ -21,7 +20,6 @@ public class FBCrashLogStore: NSObject {
 
   // MARK: Initializers
 
-  @objc(storeForDirectories:logger:)
   public class func store(forDirectories directories: [String], logger: any FBControlCoreLogger) -> Self {
     return self.init(directories: directories, logger: logger)
   }
@@ -36,7 +34,7 @@ public class FBCrashLogStore: NSObject {
 
   // MARK: Ingestion
 
-  @discardableResult @objc public func ingestAllExistingInDirectory() -> [FBCrashLogInfo] {
+  @discardableResult public func ingestAllExistingInDirectory() -> [FBCrashLogInfo] {
     var ingested: [FBCrashLogInfo] = []
     for directory in directories {
       let crashLogs = ingestCrashLogInDirectory(directory)
@@ -45,7 +43,6 @@ public class FBCrashLogStore: NSObject {
     return ingested
   }
 
-  @objc(ingestCrashLogAtPath:)
   public func ingestCrashLog(atPath path: String) -> FBCrashLogInfo? {
     if hasIngestedCrashLog(withName: (path as NSString).lastPathComponent) {
       return nil
@@ -57,7 +54,6 @@ public class FBCrashLogStore: NSObject {
     return ingestCrashLog(crashLog)
   }
 
-  @objc(ingestCrashLogData:name:)
   public func ingestCrashLogData(_ data: Data, name: String) -> FBCrashLogInfo? {
     if hasIngestedCrashLog(withName: name) {
       return nil
@@ -80,7 +76,6 @@ public class FBCrashLogStore: NSObject {
     return nil
   }
 
-  @objc(removeCrashLogAtPath:)
   public func removeCrashLog(atPath path: String) -> FBCrashLogInfo? {
     let key = (path as NSString).lastPathComponent
     guard let crashLog = ingestedCrashLog(withName: key) else {
@@ -92,16 +87,14 @@ public class FBCrashLogStore: NSObject {
 
   // MARK: Fetching
 
-  @objc(ingestedCrashLogWithName:)
   public func ingestedCrashLog(withName name: String) -> FBCrashLogInfo? {
     return ingestedCrashLogs[name] as? FBCrashLogInfo
   }
 
-  @objc public func allIngestedCrashLogs() -> [FBCrashLogInfo] {
+  public func allIngestedCrashLogs() -> [FBCrashLogInfo] {
     return ingestedCrashLogs.allValues as! [FBCrashLogInfo]
   }
 
-  @objc(nextCrashLogForMatchingPredicate:)
   public func nextCrashLog(forMatchingPredicate predicate: NSPredicate) -> FBFuture<FBCrashLogInfo> {
     fbFutureFromAsync { [self] in
       try await nextCrashLogAsync(forMatchingPredicate: predicate)
@@ -137,12 +130,10 @@ public class FBCrashLogStore: NSObject {
     return box.value
   }
 
-  @objc(ingestedCrashLogsMatchingPredicate:)
   public func ingestedCrashLogs(matchingPredicate predicate: NSPredicate) -> [FBCrashLogInfo] {
     return (ingestedCrashLogs.allValues as NSArray).filtered(using: predicate) as! [FBCrashLogInfo]
   }
 
-  @objc(pruneCrashLogsMatchingPredicate:)
   public func pruneCrashLogs(matchingPredicate predicate: NSPredicate) -> [FBCrashLogInfo] {
     var keys: [String] = []
     var crashLogs: [FBCrashLogInfo] = []

@@ -36,7 +36,6 @@ extension FBVideoFileWriterError: LocalizedError {
   }
 }
 
-@objc(FBVideoFileWriter)
 public class FBVideoFileWriter: NSObject, AVCaptureFileOutputRecordingDelegate {
 
   // MARK: Properties
@@ -53,7 +52,6 @@ public class FBVideoFileWriter: NSObject, AVCaptureFileOutputRecordingDelegate {
 
   // MARK: Initializers
 
-  @objc(writerWithSession:filePath:logger:error:)
   public class func writer(withSession session: AVCaptureSession, filePath: String, logger: any FBControlCoreLogger) throws -> Self {
     let output = AVCaptureMovieFileOutput()
     if !session.canAddOutput(output) {
