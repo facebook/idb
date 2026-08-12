@@ -43,7 +43,7 @@ private final class FBListTestStrategy_ReporterWrapped: NSObject, FBXCTestRunner
   }
 }
 
-public final class FBListTestStrategy: NSObject {
+public final class FBListTestStrategy {
 
   let target: FBiOSTarget & ProcessSpawnCommands & XCTestExtendedCommands
   private let configuration: FBListTestConfiguration
@@ -53,7 +53,6 @@ public final class FBListTestStrategy: NSObject {
     self.target = target
     self.configuration = configuration
     self.logger = logger
-    super.init()
   }
 
   public func listTests() -> FBFuture<NSArray> {

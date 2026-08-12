@@ -13,7 +13,7 @@ private let SipsPath = "/usr/bin/sips"
 private let HEIC = "public.heic"
 private let JPEG = "public.jpeg"
 
-public final class FBXCTestResultToolOperation: NSObject {
+public final class FBXCTestResultToolOperation {
 
   // MARK: Private
 

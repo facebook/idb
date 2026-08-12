@@ -8,7 +8,7 @@
 import FBControlCore
 import Foundation
 
-public final class FBMacLaunchedApplication: NSObject, FBLaunchedApplication {
+public final class FBMacLaunchedApplication: FBLaunchedApplication {
 
   public let bundleID: String
   public let processIdentifier: pid_t
@@ -20,7 +20,6 @@ public final class FBMacLaunchedApplication: NSObject, FBLaunchedApplication {
     self.processIdentifier = processIdentifier
     self.device = device
     self.queue = queue
-    super.init()
   }
 
   public func waitForTermination() async throws {

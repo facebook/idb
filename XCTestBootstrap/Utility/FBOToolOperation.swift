@@ -8,7 +8,7 @@
 import FBControlCore
 import Foundation
 
-public final class FBOToolOperation: NSObject {
+public final class FBOToolOperation {
 
   public static func listSanitiserDylibsRequired(byBundle testBundlePath: String, onQueue queue: DispatchQueue) -> FBFuture<NSArray> {
     guard let bundle = Bundle(path: testBundlePath) else {

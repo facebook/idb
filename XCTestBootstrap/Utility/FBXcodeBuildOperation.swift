@@ -13,7 +13,7 @@ private let XcodebuildEnvironmentDeviceSetPath = "SIM_DEVICE_SET_PATH"
 private let XcodebuildEnvironmentInsertDylib = "DYLD_INSERT_LIBRARIES"
 private let XcodebuildDestinationTimeoutSecs = "180"
 
-public final class FBXcodeBuildOperation: NSObject {
+public final class FBXcodeBuildOperation {
 
   // MARK: Initializers
 

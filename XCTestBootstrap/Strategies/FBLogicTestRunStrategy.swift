@@ -10,7 +10,7 @@ import Foundation
 
 private let EndOfFileFromStopReadingTimeout: TimeInterval = 5
 
-private final class FBLogicTestRunOutputs: NSObject {
+private final class FBLogicTestRunOutputs {
   let stdOutConsumer: FBDataConsumer & FBDataConsumerLifecycle
   let stdErrConsumer: FBDataConsumer & FBDataConsumerLifecycle
   let stdErrBuffer: FBConsumableBuffer
@@ -23,7 +23,6 @@ private final class FBLogicTestRunOutputs: NSObject {
     self.stdErrBuffer = stdErrBuffer
     self.shimConsumer = shimConsumer
     self.shimOutput = shimOutput
-    super.init()
   }
 }
 

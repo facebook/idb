@@ -86,7 +86,7 @@ private func dateFromString(_ date: String) -> Date? {
   return FBXCTestResultBundleParser_dateFormatter.date(from: date)
 }
 
-public final class FBXCTestResultBundleParser: NSObject {
+public final class FBXCTestResultBundleParser {
 
   // MARK: Public
 

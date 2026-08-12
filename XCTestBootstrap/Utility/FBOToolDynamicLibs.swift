@@ -8,7 +8,7 @@
 import FBControlCore
 import Foundation
 
-public final class FBOToolDynamicLibs: NSObject {
+public final class FBOToolDynamicLibs {
 
   public static func findFullPath(forSanitiserDyldInBundle bundlePath: String, onQueue queue: DispatchQueue) -> FBFuture<NSArray> {
     return unsafeBitCast(
