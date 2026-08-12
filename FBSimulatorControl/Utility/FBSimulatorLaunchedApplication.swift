@@ -7,13 +7,12 @@
 
 import Foundation
 
-@objc(FBSimulatorLaunchedApplication)
 public class FBSimulatorLaunchedApplication: NSObject, FBLaunchedApplication {
 
   // MARK: - Properties
 
-  @objc public let configuration: FBApplicationLaunchConfiguration
-  @objc public let processIdentifier: pid_t
+  public let configuration: FBApplicationLaunchConfiguration
+  public let processIdentifier: pid_t
   private let applicationTerminated: FBFuture<NSNull>
 
   // MARK: - Private Properties
@@ -23,7 +22,7 @@ public class FBSimulatorLaunchedApplication: NSObject, FBLaunchedApplication {
 
   // MARK: - FBLaunchedApplication Protocol
 
-  @objc public var bundleID: String {
+  public var bundleID: String {
     configuration.bundleID
   }
 
@@ -35,17 +34,16 @@ public class FBSimulatorLaunchedApplication: NSObject, FBLaunchedApplication {
     try await bridgeFBFutureVoid(applicationTerminated.cancel())
   }
 
-  @objc public var stdOut: (any FBProcessFileOutput)? {
+  public var stdOut: (any FBProcessFileOutput)? {
     attachment.stdOut
   }
 
-  @objc public var stdErr: (any FBProcessFileOutput)? {
+  public var stdErr: (any FBProcessFileOutput)? {
     attachment.stdErr
   }
 
   // MARK: - Factory
 
-  @objc
   public class func application(
     withSimulator simulator: FBSimulator,
     configuration: FBApplicationLaunchConfiguration,
@@ -72,7 +70,6 @@ public class FBSimulatorLaunchedApplication: NSObject, FBLaunchedApplication {
 
   // MARK: - Helpers
 
-  @objc
   public class func terminationFuture(
     forSimulator simulator: FBSimulator,
     processIdentifier: pid_t
