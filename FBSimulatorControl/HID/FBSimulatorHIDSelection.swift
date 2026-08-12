@@ -10,6 +10,62 @@ import Darwin
 @preconcurrency import FBControlCore
 import Foundation
 
+// MARK: - Transport selection policy
+
+/// Decides which HID transport a caller that did not request one gets, and whether the legacy Indigo
+/// path is functional at all.
+///
+/// A namespace of pure functions over injected host facts rather than methods on `FBSimulator`, so
+/// the policy is unit-testable without a booted simulator. `FBSimulator` supplies the real facts in
+/// the adapter below.
+enum FBSimulatorHIDTransportSelection {
+
+  /// The first CoreSimulator version to inject `dtuhidd` into the guest. Older toolchains have no
+  /// DTUHID transport at all.
+  static let firstDTUHIDCoreSimulatorVersion = "1155.4"
+
+  /// Whether `coreSimulatorVersion` is new enough to ship `dtuhidd`. Compared numerically, so that
+  /// `1155.10` sorts above `1155.4` rather than lexicographically below it.
+  static func shipsDTUHID(coreSimulatorVersion: String?) -> Bool {
+    guard let coreSimulatorVersion else {
+      return false
+    }
+    return coreSimulatorVersion.compare(firstDTUHIDCoreSimulatorVersion, options: .numeric) != .orderedAscending
+  }
+
+  /// Whether `productFamily` can be driven over DTUHID at all.
+  ///
+  /// The tvOS Siri Remote trackpad rides a dedicated Indigo trackpad service that `dtuhidd` does not
+  /// expose — its digitizer targets are displays and its scroll targets are rotary devices — so Apple
+  /// TV targets have to stay on Indigo to keep the remote working.
+  static func supportsDTUHID(productFamily: FBControlCoreProductFamily) -> Bool {
+    productFamily != .familyAppleTV
+  }
+
+  /// Whether an active `dtuhidd` has suppressed this simulator's legacy HID services.
+  static func isLegacyHIDSuppressed(
+    coreSimulatorVersion: String?,
+    isDTUHIDDRunning: () -> Bool
+  ) -> Bool {
+    // Only CoreSimulator-1155.4+ (Xcode 27) ships the dtuhidd suppression machinery; older toolchains
+    // have no `dtuhidd`, so skip the host probe entirely.
+    guard shipsDTUHID(coreSimulatorVersion: coreSimulatorVersion) else {
+      return false
+    }
+    return isDTUHIDDRunning()
+  }
+
+  /// The transport to use when a caller does not request one.
+  static func defaultTransport(
+    coreSimulatorVersion: String?,
+    isDTUHIDDRunning: () -> Bool
+  ) -> FBSimulatorHIDTransportType {
+    let suppressed = isLegacyHIDSuppressed(
+      coreSimulatorVersion: coreSimulatorVersion, isDTUHIDDRunning: isDTUHIDDRunning)
+    return suppressed ? .dtuhid : .indigo
+  }
+}
+
 // MARK: - Legacy HID suppression
 
 extension FBSimulator {
@@ -22,16 +78,9 @@ extension FBSimulator {
   /// host-side — the authoritative guest notify state `com.apple.coredevice.dtuhidd.active` is not
   /// host-bridged — by locating `dtuhidd` in this simulator's `launchd_sim` process subtree.
   var isLegacyHIDSuppressed: Bool {
-    // Only CoreSimulator-1155.4+ (Xcode 27) ships the dtuhidd suppression machinery; older toolchains
-    // have no `dtuhidd`, so skip the process-tree walk entirely.
-    guard let version = FBSimulatorControlFrameworkLoader.loadedCoreSimulatorVersion,
-      version.compare("1155.4", options: .numeric) != .orderedAscending
-    else {
-      return false
-    }
-    // `dtuhidd` runs as a child of the simulator's `launchd_sim`; its presence in the process subtree
-    // is the per-simulator signal.
-    return FBProcessFetcher().simulatorSubprocess(named: "dtuhidd", forSimulatorUDID: udid) != nil
+    FBSimulatorHIDTransportSelection.isLegacyHIDSuppressed(
+      coreSimulatorVersion: FBSimulatorControlFrameworkLoader.loadedCoreSimulatorVersion,
+      isDTUHIDDRunning: { self.isDTUHIDDRunning })
   }
 
   /// The HID transport to use when a caller does not request one: the DTUHID transport when an active
@@ -39,7 +88,16 @@ extension FBSimulator {
   /// criteria are deliberately the same as the suppression detection (`isLegacyHIDSuppressed`); this
   /// can be refined independently later if the two ever need to diverge.
   var defaultHIDTransport: FBSimulatorHIDTransportType {
-    isLegacyHIDSuppressed ? .dtuhid : .indigo
+    FBSimulatorHIDTransportSelection.defaultTransport(
+      coreSimulatorVersion: FBSimulatorControlFrameworkLoader.loadedCoreSimulatorVersion,
+      isDTUHIDDRunning: { self.isDTUHIDDRunning })
+  }
+
+  /// Whether a `dtuhidd` process is running in this simulator's `launchd_sim` subtree. `dtuhidd` runs
+  /// as a child of the simulator's `launchd_sim`, so its presence in the process subtree is the
+  /// per-simulator signal.
+  private var isDTUHIDDRunning: Bool {
+    FBProcessFetcher().simulatorSubprocess(named: "dtuhidd", forSimulatorUDID: udid) != nil
   }
 }
 
