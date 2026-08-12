@@ -8,13 +8,12 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-@objc public final class FBDataDownloadInput: NSObject, @unchecked Sendable {
+public final class FBDataDownloadInput: NSObject, @unchecked Sendable {
 
-  @objc public let input: FBProcessInput<AnyObject>
+  public let input: FBProcessInput<AnyObject>
   private var urlSessionTask: URLSessionTask!
   private let logger: FBControlCoreLogger
 
-  @objc(dataDownloadWithURL:logger:)
   public static func dataDownload(withURL url: URL, logger: FBControlCoreLogger) -> FBDataDownloadInput {
     let download = FBDataDownloadInput(url: url, logger: logger)
     download.urlSessionTask.resume()

@@ -11,9 +11,9 @@ import FBSimulatorControl
 import Foundation
 import XCTestBootstrap
 
-@objc public final class FBiOSTargetProvider: NSObject {
+public final class FBiOSTargetProvider: NSObject {
 
-  @objc public static func target(withUDID udid: String, targetSets: [FBiOSTargetSet], warmUp: Bool, logger: FBControlCoreLogger) -> FBFuture<AnyObject> {
+  public static func target(withUDID udid: String, targetSets: [FBiOSTargetSet], warmUp: Bool, logger: FBControlCoreLogger) -> FBFuture<AnyObject> {
     let target: FBiOSTarget
     do {
       switch udid.lowercased() {

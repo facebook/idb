@@ -58,11 +58,11 @@ private final class FBIDBLoggerOperation: NSObject, LogOperation, @unchecked Sen
 
 // Restates the base class's @unchecked Sendable, as required for subclasses; all added state is
 // immutable or confined to `loggerQueue`.
-@objc public final class FBIDBLogger: FBCompositeLogger, @unchecked Sendable {
+public final class FBIDBLogger: FBCompositeLogger, @unchecked Sendable {
 
   private static let loggerQueue: DispatchQueue = DispatchQueue(label: "com.facebook.idb.logger")
 
-  @objc public static func logger(withUserDefaults userDefaults: UserDefaults) -> FBIDBLogger {
+  public static func logger(withUserDefaults userDefaults: UserDefaults) -> FBIDBLogger {
     let debugLogging = userDefaults.string(forKey: "-log-level")?.lowercased() == "info" ? false : true
     let systemLogger = FBControlCoreLoggerFactory.systemLoggerWriting(toStderr: true, withDebugLogging: debugLogging)
     let loggers: NSMutableArray = NSMutableArray(object: systemLogger)
@@ -91,11 +91,11 @@ private final class FBIDBLoggerOperation: NSObject, LogOperation, @unchecked Sen
     return logger
   }
 
-  @objc public override init(loggers: [FBControlCoreLogger]) {
+  public override init(loggers: [FBControlCoreLogger]) {
     super.init(loggers: loggers)
   }
 
-  @objc public override var loggers: [FBControlCoreLogger] {
+  public override var loggers: [FBControlCoreLogger] {
     var all = super.loggers
     globalLoggersLock.lock()
     let global = globalLoggers as! [FBControlCoreLogger]
