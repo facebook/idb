@@ -65,7 +65,6 @@ extension FBDeviceVideoStreamError: LocalizedError {
 // @unchecked Sendable: like FBSimulatorVideoStream, this is a plain NSObject whose frame state is
 // confined to `writeQueue` (the AVCapture delegate queue), and whose lifecycle state below is guarded
 // by `lifecycleLock`. The conformance lets the async completion await use a cancellation handler.
-@objc(FBDeviceVideoStream)
 public class FBDeviceVideoStream: NSObject, FBVideoStream, @unchecked Sendable {
   let logger: any FBControlCoreLogger
   private let session: AVCaptureSession
