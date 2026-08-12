@@ -10,8 +10,54 @@ import XCTest
 
 final class FBFutureContextManagerTests: XCTestCase, FBFutureContextManagerDelegate {
   var queue: DispatchQueue!
-  var prepareCalled: UInt = 0
-  var teardownCalled: UInt = 0
+
+  // The manager invokes the delegate on its own execution context, not on
+  // `queue`, so draining `queue` alone does not order the counter writes
+  // before the test thread's reads — the counters must carry their own
+  // synchronization for both visibility and atomicity.
+  private let counterLock = NSLock()
+  private var _prepareCalled: UInt = 0
+  private var _teardownCalled: UInt = 0
+  var prepareCalled: UInt {
+    get {
+      counterLock.lock()
+      defer { counterLock.unlock() }
+      return _prepareCalled
+    }
+    set {
+      counterLock.lock()
+      defer { counterLock.unlock() }
+      _prepareCalled = newValue
+    }
+  }
+  var teardownCalled: UInt {
+    get {
+      counterLock.lock()
+      defer { counterLock.unlock() }
+      return _teardownCalled
+    }
+    set {
+      counterLock.lock()
+      defer { counterLock.unlock() }
+      _teardownCalled = newValue
+    }
+  }
+
+  // `prepareCalled += 1` through the properties would drop the lock between the
+  // read and the write; the manager can invoke the delegate concurrently (the
+  // concurrent-acquire tests assert exact counts), so increments must hold the
+  // lock across the read-modify-write.
+  private func incrementPrepareCalled() {
+    counterLock.lock()
+    defer { counterLock.unlock() }
+    _prepareCalled += 1
+  }
+
+  private func incrementTeardownCalled() {
+    counterLock.lock()
+    defer { counterLock.unlock() }
+    _teardownCalled += 1
+  }
   var contextPoolTimeout: NSNumber? = 0
   var failPrepare: Bool = false
   var resetFailPrepare: Bool = false
@@ -370,7 +416,7 @@ final class FBFutureContextManagerTests: XCTestCase, FBFutureContextManagerDeleg
   }
 
   func prepare(_ logger: FBControlCoreLogger) -> FBFuture<AnyObject> {
-    prepareCalled += 1
+    incrementPrepareCalled()
     if failPrepare {
       if resetFailPrepare {
         failPrepare = false
@@ -382,7 +428,7 @@ final class FBFutureContextManagerTests: XCTestCase, FBFutureContextManagerDeleg
   }
 
   func teardown(_ context: Any, logger: FBControlCoreLogger) -> FBFuture<NSNull> {
-    teardownCalled += 1
+    incrementTeardownCalled()
     return FBFuture<NSNull>.empty()
   }
 }
