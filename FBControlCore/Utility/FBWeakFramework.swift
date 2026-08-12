@@ -55,8 +55,10 @@ public class FBWeakFramework: NSObject {
 
   // MARK: Public Methods
 
+  /// `logger` is optional: the Objective-C loaders that call this vend a nullable logger, and a
+  /// process that has not configured one loads frameworks silently rather than trapping.
   @objc(loadWithLogger:error:)
-  public func load(with logger: any FBControlCoreLogger) throws {
+  public func load(with logger: (any FBControlCoreLogger)?) throws {
     try loadFromRelativeDirectory(basePath, logger: logger)
   }
 
@@ -70,10 +72,10 @@ public class FBWeakFramework: NSObject {
     }
   }
 
-  private func loadFromRelativeDirectory(_ relativeDirectory: String, logger: any FBControlCoreLogger) throws {
+  private func loadFromRelativeDirectory(_ relativeDirectory: String, logger: (any FBControlCoreLogger)?) throws {
     // Check if classes are already loaded
     if (try? allRequiredClassesExist()) != nil && !requiredClassNames.isEmpty {
-      logger.debug().log("\(name): Already loaded, skipping")
+      logger?.debug().log("\(name): Already loaded, skipping")
       try verifyIfLoaded(with: logger)
       return
     }
@@ -93,21 +95,21 @@ public class FBWeakFramework: NSObject {
       throw FBControlCoreError.describe("Failed to load the bundle for path \(path)").build()
     }
 
-    logger.debug().log("\(name): Loading from \(path) ")
+    logger?.debug().log("\(name): Loading from \(path) ")
     try bundle.loadAndReturnError()
 
-    logger.debug().log("\(name): Successfully loaded")
+    logger?.debug().log("\(name): Successfully loaded")
     try allRequiredClassesExist()
     try verifyIfLoaded(with: logger)
   }
 
-  private func verifyIfLoaded(with logger: any FBControlCoreLogger) throws {
+  private func verifyIfLoaded(with logger: (any FBControlCoreLogger)?) throws {
     for requiredClassName in requiredClassNames {
       try verifyRelativeDirectory(forPrivateClass: requiredClassName, logger: logger)
     }
   }
 
-  private func verifyRelativeDirectory(forPrivateClass className: String, logger: any FBControlCoreLogger) throws {
+  private func verifyRelativeDirectory(forPrivateClass className: String, logger: (any FBControlCoreLogger)?) throws {
     guard let cls = NSClassFromString(className) else {
       throw FBControlCoreError.describe("Could not obtain Framework bundle for class named \(className)").build()
     }
@@ -119,6 +121,6 @@ public class FBWeakFramework: NSObject {
     if !bundle.bundlePath.hasPrefix(commonBasePath) {
       throw FBControlCoreError.describe("Expected Framework \((bundle.bundlePath as NSString).lastPathComponent) to be loaded for Developer Directory at path \(bundle.bundlePath), but was loaded from \(basePath)").build()
     }
-    logger.debug().log("\(name): \(className) has correct path of \(commonBasePath)")
+    logger?.debug().log("\(name): \(className) has correct path of \(commonBasePath)")
   }
 }
