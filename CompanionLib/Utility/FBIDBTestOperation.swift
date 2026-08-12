@@ -18,12 +18,28 @@ public enum FBIDBTestOperationState: UInt {
 
 public final class FBIDBTestOperation: CustomStringConvertible {
 
+  /// The configuration the run was started from. A logic test and an app-hosted test are
+  /// configured by unrelated types, and only one of the two is ever in play.
+  public enum Configuration: CustomStringConvertible {
+    case logic(FBLogicTestConfiguration)
+    case appHosted(FBTestLaunchConfiguration)
+
+    public var description: String {
+      switch self {
+      case let .logic(configuration):
+        return String(describing: configuration)
+      case let .appHosted(configuration):
+        return String(describing: configuration)
+      }
+    }
+  }
+
   public let completed: FBFuture<NSNull>
   public let logger: FBControlCoreLogger
   public let queue: DispatchQueue
   public let reporter: FBXCTestReporter
   public let reporterConfiguration: FBXCTestReporterConfiguration
-  private let configuration: Any
+  private let configuration: Configuration
 
   public var state: FBIDBTestOperationState {
     if completed.error != nil {
@@ -32,7 +48,7 @@ public final class FBIDBTestOperation: CustomStringConvertible {
     return completed.hasCompleted ? .terminatedNormally : .running
   }
 
-  public init(configuration: Any, reporterConfiguration: FBXCTestReporterConfiguration, reporter: FBXCTestReporter, logger: FBControlCoreLogger, completed: FBFuture<NSNull>, queue: DispatchQueue) {
+  public init(configuration: Configuration, reporterConfiguration: FBXCTestReporterConfiguration, reporter: FBXCTestReporter, logger: FBControlCoreLogger, completed: FBFuture<NSNull>, queue: DispatchQueue) {
     self.configuration = configuration
     self.reporterConfiguration = reporterConfiguration
     self.reporter = reporter

@@ -221,7 +221,7 @@ private class FBXCTestRunRequest_LogicTest: FBXCTestRunRequest {
       reportResultBundle: collectResultBundle
     )
     return FBIDBTestOperation(
-      configuration: configuration,
+      configuration: .logic(configuration),
       reporterConfiguration: reporterConfiguration,
       reporter: reporter,
       logger: logger,
@@ -274,7 +274,7 @@ private class FBXCTestRunRequest_AppTest: FBXCTestRunRequest {
       reportResultBundle: reportResultBundle
     )
     return FBIDBTestOperation(
-      configuration: testLaunchConfiguration,
+      configuration: .appHosted(testLaunchConfiguration),
       reporterConfiguration: reporterConfiguration,
       reporter: reporter,
       logger: logger,
