@@ -15,10 +15,10 @@ import XCTest
  A test double conforming to FBDataConsumerAsync with a controllable unprocessedDataCount.
  Used to test checkConsumerBufferLimit overflow behavior.
  */
-@objc class FBOverflownConsumerDouble: NSObject, FBDataConsumer, FBDataConsumerAsync {
+class FBOverflownConsumerDouble: NSObject, FBDataConsumer, FBDataConsumerAsync {
   private var _unprocessedDataCount: Int = 0
 
-  @objc func unprocessedDataCount() -> Int {
+  func unprocessedDataCount() -> Int {
     return _unprocessedDataCount
   }
 
@@ -26,9 +26,9 @@ import XCTest
     _unprocessedDataCount = value
   }
 
-  @objc func consumeData(_ data: Data) {}
+  func consumeData(_ data: Data) {}
 
-  @objc func consumeEndOfFile() {}
+  func consumeEndOfFile() {}
 }
 
 // MARK: - Helpers
