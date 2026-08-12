@@ -52,6 +52,7 @@ static const char *LoggerSubsystem = "com.facebook.fbcontrolcore";
     case FBControlCoreLogLevelDebug:
       os_log_debug(self.client, "%{public}s", message.UTF8String);
       break;
+    case FBControlCoreLogLevelMultiple:
     default:
       os_log(self.client, "%{public}s", message.UTF8String);
       break;
