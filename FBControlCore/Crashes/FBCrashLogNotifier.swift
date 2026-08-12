@@ -7,12 +7,11 @@
 
 import Foundation
 
-@objc(FBCrashLogNotifier)
 public class FBCrashLogNotifier: NSObject {
 
   // MARK: Properties
 
-  @objc public let store: FBCrashLogStore
+  public let store: FBCrashLogStore
   internal var sinceDate: Date
 
   // MARK: Initializers
@@ -23,7 +22,7 @@ public class FBCrashLogNotifier: NSObject {
     super.init()
   }
 
-  @objc public class var sharedInstance: FBCrashLogNotifier {
+  public class var sharedInstance: FBCrashLogNotifier {
     _sharedInstance
   }
 
@@ -33,12 +32,11 @@ public class FBCrashLogNotifier: NSObject {
 
   // MARK: Notifications
 
-  @objc public func startListening(_ onlyNew: Bool) -> Bool {
+  public func startListening(_ onlyNew: Bool) -> Bool {
     sinceDate = onlyNew ? Date() : .distantPast
     return true
   }
 
-  @objc(nextCrashLogForPredicate:)
   public func nextCrashLog(forPredicate predicate: NSPredicate) -> FBFuture<FBCrashLogInfo> {
     _ = startListening(true)
 
