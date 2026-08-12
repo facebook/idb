@@ -9,11 +9,11 @@ import CompanionUtilities
 import FBControlCore
 import Foundation
 
-class IDBConfiguration: NSObject {
+enum IDBConfiguration {
 
   // Set once at process startup before any request handling, so unsynchronized
   // access is safe.
-  @objc nonisolated(unsafe) static var eventReporter: FBEventReporter = EmptyEventReporter.shared
+  nonisolated(unsafe) static var eventReporter: FBEventReporter = EmptyEventReporter.shared
 
   nonisolated(unsafe) static var idbKillswitch: IDBKillswitch = EmptyIDBKillswitch()
 }
