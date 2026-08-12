@@ -39,6 +39,42 @@ final class FBiOSTargetConfigurationTests: XCTestCase {
     assertEqualityOfCopy(configurations)
   }
 
+  func testDeviceTypeEqualityConsidersOnlyTheModel() {
+    guard let catalogued = FBiOSTargetConfigurationTests.deviceTypeConfigurations.first(where: { !$0.productTypes.isEmpty }) else {
+      return XCTFail("No catalogued device type carries product types")
+    }
+    let generic = FBDeviceType.generic(withName: catalogued.model.rawValue)
+
+    XCTAssertNotEqual(catalogued.productTypes, generic.productTypes)
+    XCTAssertNotEqual(catalogued.family, generic.family)
+
+    // Equality and hashing are by model alone; every other field is catalogue data derived from it.
+    XCTAssertEqual(catalogued, generic)
+    XCTAssertEqual(catalogued.hash, generic.hash)
+  }
+
+  func testOSVersionEqualityConsidersOnlyTheName() {
+    guard let catalogued = FBiOSTargetConfigurationTests.osVersionConfigurations.first(where: { !$0.families.isEmpty }) else {
+      return XCTFail("No catalogued OS version carries families")
+    }
+    let generic = FBOSVersion.generic(withName: catalogued.name.rawValue)
+
+    XCTAssertNotEqual(catalogued.families, generic.families)
+
+    // Equality and hashing are by name alone; families is catalogue data derived from it.
+    XCTAssertEqual(catalogued, generic)
+    XCTAssertEqual(catalogued.hash, generic.hash)
+  }
+
+  func testScreenInfoHashTruncatesScale() {
+    let integral = FBiOSTargetScreenInfo(widthPixels: 640, heightPixels: 960, scale: 2)
+    let fractional = FBiOSTargetScreenInfo(widthPixels: 640, heightPixels: 960, scale: 2.5)
+
+    // `hash` casts the scale to Int, so a fractional difference collides while `isEqual` still separates them.
+    XCTAssertNotEqual(integral, fractional)
+    XCTAssertEqual(integral.hash, fractional.hash)
+  }
+
   // Inlined from FBControlCoreValueTestCase since Swift can't see same-target ObjC headers
   private func assertEqualityOfCopy(_ values: [NSObject]) {
     for value in values {
