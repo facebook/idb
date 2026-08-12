@@ -12,18 +12,17 @@ private let kEnvWaitForDebugger = "XCTOOL_WAIT_FOR_DEBUGGER"
 private let kEnvLLVMProfileFile = "LLVM_PROFILE_FILE"
 private let kEnvLogDirectoryPath = "LOG_DIRECTORY_PATH"
 
-@objc(FBTestRunnerConfiguration)
 public class FBTestRunnerConfiguration: NSObject, NSCopying {
 
   // MARK: Properties
 
-  @objc public let sessionIdentifier: UUID
-  @objc public let testRunner: FBBundleDescriptor
-  @objc public let launchEnvironment: [String: String]
-  @objc public let testedApplicationAdditionalEnvironment: [String: String]
-  @objc public let testConfiguration: FBTestConfiguration
+  public let sessionIdentifier: UUID
+  public let testRunner: FBBundleDescriptor
+  public let launchEnvironment: [String: String]
+  public let testedApplicationAdditionalEnvironment: [String: String]
+  public let testConfiguration: FBTestConfiguration
 
-  @objc public var launchArguments: [String] {
+  public var launchArguments: [String] {
     [
       "-NSTreatUnknownArgumentsAsOpen", "NO",
       "-ApplePersistenceIgnoreState", "YES",
@@ -32,7 +31,6 @@ public class FBTestRunnerConfiguration: NSObject, NSCopying {
 
   // MARK: Initializers
 
-  @objc
   public init(sessionIdentifier: UUID, testRunner: FBBundleDescriptor, launchEnvironment: [String: String], testedApplicationAdditionalEnvironment: [String: String], testConfiguration: FBTestConfiguration) {
     self.sessionIdentifier = sessionIdentifier
     self.testRunner = testRunner
@@ -69,7 +67,6 @@ public class FBTestRunnerConfiguration: NSObject, NSCopying {
     return prepareConfigurationAfterCodesignatureCheck(withTarget: target, testLaunchConfiguration: testLaunchConfiguration, workingDirectory: workingDirectory)
   }
 
-  @objc(launchEnvironmentWithHostApplication:hostApplicationAdditionalEnvironment:testBundle:testConfigurationPath:frameworkSearchPaths:)
   public class func launchEnvironment(withHostApplication hostApplication: FBBundleDescriptor, hostApplicationAdditionalEnvironment: [String: String], testBundle: FBBundleDescriptor, testConfigurationPath: String, frameworkSearchPaths: [String]) -> [String: String] {
     var environmentVariables = hostApplicationAdditionalEnvironment
     let frameworkSearchPath = frameworkSearchPaths.joined(separator: ":")
