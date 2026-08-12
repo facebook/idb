@@ -411,36 +411,36 @@ typedef struct {
 // The one place a semantic action becomes the number the C ABI takes, so a runtime that renumbers them is
 // a single table to correct rather than a constant threaded through the guest, the wire and the host.
 //
-// `-Wswitch-default` requires the default, which costs the exhaustiveness warning an action added without
-// a number would otherwise produce. It falls through to 0 rather than to some other action's number, and 0
-// is not an action the runtime performs — an unmapped action is rejected by the AX server and reported as
-// a failure, rather than silently doing something the caller did not ask for.
-static uint32_t FBAXActionIdentifierForAction(FBAXAction action)
+// Answers NO for an action with no number, leaving `*identifier` untouched. `-Wswitch-default` requires
+// the `default`, which costs the exhaustiveness warning an action added without a number would otherwise
+// produce — so the miss has to be caught at run time instead, and the only safe thing to do with it is
+// refuse. Falling through to a number would send the AX server an action nobody asked for, and there is
+// no number that reliably means "none": the C ABI tests the action against zero rather than rejecting it,
+// so zero is a value with behaviour, not an absence.
+static BOOL FBAXActionIdentifierForAction(FBAXAction action, uint32_t *identifier)
 {
-  uint32_t identifier = 0;
   switch (action) {
     case FBAXActionPress:
-      identifier = FBAXActionIdentifierPress;
-      break;
+      *identifier = FBAXActionIdentifierPress;
+      return YES;
     case FBAXActionScrollUp:
-      identifier = FBAXActionIdentifierScrollUpByPage;
-      break;
+      *identifier = FBAXActionIdentifierScrollUpByPage;
+      return YES;
     case FBAXActionScrollDown:
-      identifier = FBAXActionIdentifierScrollDownByPage;
-      break;
+      *identifier = FBAXActionIdentifierScrollDownByPage;
+      return YES;
     case FBAXActionScrollLeft:
-      identifier = FBAXActionIdentifierScrollLeftByPage;
-      break;
+      *identifier = FBAXActionIdentifierScrollLeftByPage;
+      return YES;
     case FBAXActionScrollRight:
-      identifier = FBAXActionIdentifierScrollRightByPage;
-      break;
+      *identifier = FBAXActionIdentifierScrollRightByPage;
+      return YES;
     case FBAXActionScrollToVisible:
-      identifier = FBAXActionIdentifierScrollToVisible;
-      break;
+      *identifier = FBAXActionIdentifierScrollToVisible;
+      return YES;
     default:
-      break;
+      return NO;
   }
-  return identifier;
 }
 
 #pragma mark - Owned AXUIElement references
@@ -853,6 +853,13 @@ static NSString *const kFrontboardVisibilityEndowment = @"com.apple.frontboard.v
 
 - (FBAXWriteOutcome *)performAction:(FBAXAction)action onElement:(id)element
 {
+  // Resolved before the element is touched: an action this runtime has no number for is a gap in the
+  // table above, and sending the AX server something else in its place is the one outcome worth ruling
+  // out. Unreachable while every `FBAXAction` is mapped, which is exactly when a new one is not.
+  uint32_t identifier = 0;
+  if (!FBAXActionIdentifierForAction(action, &identifier)) {
+    return [FBAXWriteOutcome failed:[NSString stringWithFormat:@"no AX runtime identifier for action %lu", (unsigned long)action]];
+  }
   FBAXElementRef *reference = [self referenceForElement:element];
   if (!reference) {
     return [FBAXWriteOutcome failed:@"the element has no AXUIElement to act on"];
@@ -861,7 +868,7 @@ static NSString *const kFrontboardVisibilityEndowment = @"com.apple.frontboard.v
   // cross-process round trip that lasts as long as the application takes to run the action.
   // `-axErrorFromElement:` is what holds it open for that.
   int32_t axError = [reference axErrorFromElement:^int32_t (void *raw) {
-    return self->_functions.performAction(raw, FBAXActionIdentifierForAction(action));
+    return self->_functions.performAction(raw, identifier);
   }];
   return [FBAXWriteOutcome outcomeForWriteError:axError];
 }
