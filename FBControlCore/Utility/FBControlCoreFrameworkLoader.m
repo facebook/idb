@@ -7,23 +7,9 @@
 
 #import "FBControlCoreFrameworkLoader.h"
 
-#include <dlfcn.h>
-
 #import "FBControlCore-Swift.h"
 #import "FBControlCore-SwiftImport.h"
 #import "FBControlCoreLogger.h"
-
-void *FBGetSymbolFromHandle(void *handle, const char *name)
-{
-  void *function = FBGetSymbolFromHandleOptional(handle, name);
-  NSCAssert(function, @"%s could not be located", name);
-  return function;
-}
-
-void *FBGetSymbolFromHandleOptional(void *handle, const char *name)
-{
-  return dlsym(handle, name);
-}
 
 @implementation FBControlCoreFrameworkLoader
 
@@ -101,19 +87,6 @@ void *FBGetSymbolFromHandleOptional(void *handle, const char *name)
   }
 
   return YES;
-}
-
-@end
-
-@implementation NSBundle (FBControlCoreFrameworkLoader)
-
-- (void *)dlopenExecutablePath
-{
-  NSAssert(self.loaded, @"%@ is not loaded", self);
-  NSString *path = [self executablePath];
-  void *handle = dlopen(path.UTF8String, RTLD_LAZY);
-  NSAssert(handle, @"%@ dlopen handle from %@ could not be obtained", self, path);
-  return handle;
 }
 
 @end

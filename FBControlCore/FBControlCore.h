@@ -33,6 +33,7 @@
 #import <FBControlCore/FBScreenshotCommands.h>
 #import <FBControlCore/FBSocketServer.h>
 #import <FBControlCore/FBSubprocess.h>
+#import <FBControlCore/FBSymbolLoading.h>
 #import <FBControlCore/FBXCTraceOperation.h>
 #import <FBControlCore/FBiOSTarget.h>
 #import <FBControlCore/FBiOSTargetConfiguration.h>
