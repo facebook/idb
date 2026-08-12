@@ -69,7 +69,7 @@ enum GRPCConnectionTarget: CustomStringConvertible {
   }
 }
 
-@objc final class IDBPortsConfiguration: NSObject {
+struct IDBPortsConfiguration {
 
   private enum Key {
     static let debugPort = "-debug-port"
@@ -85,7 +85,7 @@ enum GRPCConnectionTarget: CustomStringConvertible {
   private let grpcPort: Int
 
   /// The debugserver port
-  @objc let debugserverPort: Int
+  let debugserverPort: Int
 
   /// The TLS server cert path. If not specified grpcPort will be listening on unencrypted socket
   let tlsCertPath: String?
@@ -99,7 +99,7 @@ enum GRPCConnectionTarget: CustomStringConvertible {
   }
 
   /// Construct a ports object.
-  @objc init(arguments: UserDefaults) {
+  init(arguments: UserDefaults) {
     self.debugserverPort = arguments.string(forKey: Key.debugPort).flatMap(Int.init) ?? 10881
     self.grpcPort = arguments.string(forKey: Key.grpcPort).flatMap(Int.init) ?? 10882
     self.grpcDomainSocket = arguments.string(forKey: Key.grpcDomainSock)
