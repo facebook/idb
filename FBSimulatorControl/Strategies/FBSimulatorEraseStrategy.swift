@@ -9,7 +9,6 @@
 @preconcurrency import FBControlCore
 @preconcurrency import Foundation
 
-@objc(FBSimulatorEraseStrategy)
 public final class FBSimulatorEraseStrategy: NSObject {
 
   // MARK: - Public

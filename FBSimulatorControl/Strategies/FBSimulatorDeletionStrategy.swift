@@ -9,12 +9,10 @@
 @preconcurrency import FBControlCore
 @preconcurrency import Foundation
 
-@objc(FBSimulatorDeletionStrategy)
 public final class FBSimulatorDeletionStrategy: NSObject {
 
   // MARK: - Public Methods
 
-  @objc
   public class func delete(_ simulator: FBSimulator) -> FBFuture<NSNull> {
     fbFutureFromAsync {
       try await deleteAsync(simulator)
@@ -22,7 +20,6 @@ public final class FBSimulatorDeletionStrategy: NSObject {
     }
   }
 
-  @objc
   public class func deleteAll(_ simulators: [FBSimulator]) -> FBFuture<NSNull> {
     fbFutureFromAsync {
       try await deleteAllAsync(simulators)

@@ -9,12 +9,10 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-@objc(FBSimulatorBootStrategy)
 public final class FBSimulatorBootStrategy: NSObject {
 
   // MARK: - Public Methods
 
-  @objc(boot:withConfiguration:)
   public class func boot(_ simulator: FBSimulator, with configuration: FBSimulatorBootConfiguration) -> FBFuture<NSNull> {
     fbFutureFromAsync {
       try await bootAsync(simulator, with: configuration)

@@ -9,7 +9,6 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-@objc(FBSimulatorNotificationUpdateStrategy)
 public final class FBSimulatorNotificationUpdateStrategy: NSObject, @unchecked Sendable {
 
   // MARK: - Properties
@@ -19,7 +18,6 @@ public final class FBSimulatorNotificationUpdateStrategy: NSObject, @unchecked S
 
   // MARK: - Initializers
 
-  @objc(strategyWithSet:)
   public class func strategy(with set: FBSimulatorSet) -> FBSimulatorNotificationUpdateStrategy {
     let strategy = FBSimulatorNotificationUpdateStrategy(set: set)
     strategy.startNotifyingOfStateChanges()

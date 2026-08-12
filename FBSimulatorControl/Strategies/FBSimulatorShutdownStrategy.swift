@@ -11,12 +11,10 @@ import Foundation
 
 // swiftlint:disable force_cast
 
-@objc(FBSimulatorShutdownStrategy)
 public final class FBSimulatorShutdownStrategy: NSObject {
 
   // MARK: - Public Methods
 
-  @objc
   public class func shutdown(_ simulator: FBSimulator) -> FBFuture<NSNull> {
     fbFutureFromAsync {
       try await shutdownAsync(simulator)
@@ -24,7 +22,6 @@ public final class FBSimulatorShutdownStrategy: NSObject {
     }
   }
 
-  @objc
   public class func shutdownAll(_ simulators: [FBSimulator]) -> FBFuture<NSNull> {
     fbFutureFromAsync {
       try await shutdownAllAsync(simulators)

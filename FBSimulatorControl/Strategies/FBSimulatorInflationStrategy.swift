@@ -9,7 +9,6 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-@objc(FBSimulatorInflationStrategy)
 public final class FBSimulatorInflationStrategy: NSObject {
 
   // MARK: - Properties
@@ -18,7 +17,6 @@ public final class FBSimulatorInflationStrategy: NSObject {
 
   // MARK: - Initializers
 
-  @objc(strategyForSet:)
   public class func strategy(for set: FBSimulatorSet) -> FBSimulatorInflationStrategy {
     FBSimulatorInflationStrategy(set: set)
   }
@@ -30,7 +28,6 @@ public final class FBSimulatorInflationStrategy: NSObject {
 
   // MARK: - Public Methods
 
-  @objc(inflateFromDevices:exitingSimulators:)
   public func inflate(fromDevices simDevices: [Any], exitingSimulators simulators: [FBSimulator]) -> [FBSimulator] {
     let existingSimulatorUDIDs = Set(simulators.map { $0.udid })
     var availableDevices: [String: SimDevice] = [:]

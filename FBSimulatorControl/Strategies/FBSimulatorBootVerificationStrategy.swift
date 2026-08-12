@@ -9,7 +9,6 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-@objc(FBSimulatorBootVerificationStrategy)
 public final class FBSimulatorBootVerificationStrategy: NSObject {
 
   // MARK: - Properties
@@ -32,7 +31,6 @@ public final class FBSimulatorBootVerificationStrategy: NSObject {
 
   // MARK: - Public Methods
 
-  @objc
   public class func verifySimulatorIsBooted(_ simulator: FBSimulator) -> FBFuture<NSNull> {
     fbFutureFromAsync {
       try await verifySimulatorIsBootedAsync(simulator)
