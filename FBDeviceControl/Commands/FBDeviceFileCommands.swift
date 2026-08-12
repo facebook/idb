@@ -22,12 +22,11 @@ private final class AFCConnectionBox: @unchecked Sendable {
 
 // MARK: - FBDeviceFileContainer
 
-@objc(FBDeviceFileContainer)
 public class FBDeviceFileContainer: NSObject, AsyncFileContainer {
   private let queue: DispatchQueue
   private let connectionBox: AFCConnectionBox
 
-  @objc public init(afcConnection connection: FBAFCConnection, queue: DispatchQueue) {
+  public init(afcConnection connection: FBAFCConnection, queue: DispatchQueue) {
     self.connectionBox = AFCConnectionBox(connection)
     self.queue = queue
     super.init()

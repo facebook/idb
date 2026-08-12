@@ -10,7 +10,6 @@ import Foundation
 
 // MARK: - FBDeviceLogOperation
 
-@objc(FBDeviceLogOperation)
 public class FBDeviceLogOperation: NSObject, LogOperation {
   public let consumer: any FBDataConsumer
   private let readCompleted: FBFuture<NSNull>
