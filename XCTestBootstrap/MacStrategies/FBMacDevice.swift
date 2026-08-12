@@ -376,7 +376,6 @@ public final class FBMacDevice: NSObject, FBiOSTarget {
     )
   }
 
-  @objc(runTestWithLaunchConfiguration:reporter:logger:)
   public func runTest(withLaunchConfiguration testLaunchConfiguration: FBTestLaunchConfiguration, reporter: AnyObject, logger: FBControlCoreLogger) -> FBFuture<NSNull> {
     // swiftlint:disable:next force_cast
     let typedReporter = reporter as! FBXCTestReporter

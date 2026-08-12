@@ -7,27 +7,25 @@
 
 import Foundation
 
-@objc(FBTestLaunchConfiguration)
-public final class FBTestLaunchConfiguration: NSObject, NSCopying {
+public struct FBTestLaunchConfiguration {
 
-  @objc public let testBundle: FBBundleDescriptor
-  @objc public let applicationLaunchConfiguration: FBApplicationLaunchConfiguration
-  @objc public let testHostBundle: FBBundleDescriptor?
-  @objc public let timeout: TimeInterval
-  @objc public let shouldInitializeUITesting: Bool
-  @objc public let shouldUseXcodebuild: Bool
-  @objc public let testsToRun: Set<String>?
-  @objc public let testsToSkip: Set<String>?
-  @objc public let targetApplicationBundle: FBBundleDescriptor?
-  @objc public let xcTestRunProperties: [String: Any]?
-  @objc public let resultBundlePath: String?
-  @objc public let reportActivities: Bool
-  @objc public let coverageDirectoryPath: String?
-  @objc public let shouldEnableContinuousCoverageCollection: Bool
-  @objc public let logDirectoryPath: String?
-  @objc public let reportResultBundle: Bool
+  public let testBundle: FBBundleDescriptor
+  public let applicationLaunchConfiguration: FBApplicationLaunchConfiguration
+  public let testHostBundle: FBBundleDescriptor?
+  public let timeout: TimeInterval
+  public let shouldInitializeUITesting: Bool
+  public let shouldUseXcodebuild: Bool
+  public let testsToRun: Set<String>?
+  public let testsToSkip: Set<String>?
+  public let targetApplicationBundle: FBBundleDescriptor?
+  public let xcTestRunProperties: [String: Any]?
+  public let resultBundlePath: String?
+  public let reportActivities: Bool
+  public let coverageDirectoryPath: String?
+  public let shouldEnableContinuousCoverageCollection: Bool
+  public let logDirectoryPath: String?
+  public let reportResultBundle: Bool
 
-  @objc
   public init(testBundle: FBBundleDescriptor, applicationLaunchConfiguration: FBApplicationLaunchConfiguration, testHostBundle: FBBundleDescriptor?, timeout: TimeInterval, initializeUITesting: Bool, useXcodebuild: Bool, testsToRun: Set<String>?, testsToSkip: Set<String>?, targetApplicationBundle: FBBundleDescriptor?, xcTestRunProperties: [String: Any]?, resultBundlePath: String?, reportActivities: Bool, coverageDirectoryPath: String?, enableContinuousCoverageCollection: Bool, logDirectoryPath: String?, reportResultBundle: Bool) {
     self.testBundle = testBundle
     self.applicationLaunchConfiguration = applicationLaunchConfiguration
@@ -45,55 +43,14 @@ public final class FBTestLaunchConfiguration: NSObject, NSCopying {
     self.shouldEnableContinuousCoverageCollection = enableContinuousCoverageCollection
     self.logDirectoryPath = logDirectoryPath
     self.reportResultBundle = reportResultBundle
-    super.init()
   }
+}
 
-  // MARK: NSCopying
+// MARK: - CustomStringConvertible
 
-  public func copy(with zone: NSZone? = nil) -> Any {
-    self
-  }
+extension FBTestLaunchConfiguration: CustomStringConvertible {
 
-  // MARK: NSObject
-
-  public override func isEqual(_ object: Any?) -> Bool {
-    guard let other = object as? FBTestLaunchConfiguration else { return false }
-    return testBundle == other.testBundle
-      && applicationLaunchConfiguration == other.applicationLaunchConfiguration
-      && testHostBundle == other.testHostBundle
-      && targetApplicationBundle == other.targetApplicationBundle
-      && testsToRun == other.testsToRun
-      && testsToSkip == other.testsToSkip
-      && timeout == other.timeout
-      && shouldInitializeUITesting == other.shouldInitializeUITesting
-      && shouldUseXcodebuild == other.shouldUseXcodebuild
-      && (xcTestRunProperties as NSDictionary?) == (other.xcTestRunProperties as NSDictionary?)
-      && resultBundlePath == other.resultBundlePath
-      && coverageDirectoryPath == other.coverageDirectoryPath
-      && shouldEnableContinuousCoverageCollection == other.shouldEnableContinuousCoverageCollection
-      && logDirectoryPath == other.logDirectoryPath
-      && reportResultBundle == other.reportResultBundle
-  }
-
-  public override var hash: Int {
-    var h = testBundle.hash
-    h ^= applicationLaunchConfiguration.hash
-    h ^= testHostBundle?.hash ?? 0
-    h ^= Int(timeout)
-    h ^= shouldInitializeUITesting ? 1 : 0
-    h ^= shouldUseXcodebuild ? 1 : 0
-    h ^= (testsToRun as NSSet?)?.hash ?? 0
-    h ^= (testsToSkip as NSSet?)?.hash ?? 0
-    h ^= targetApplicationBundle?.hash ?? 0
-    h ^= (xcTestRunProperties as NSDictionary?)?.hash ?? 0
-    h ^= resultBundlePath?.hash ?? 0
-    h ^= coverageDirectoryPath?.hash ?? 0
-    h ^= shouldEnableContinuousCoverageCollection ? 1 : 0
-    h ^= logDirectoryPath?.hash ?? 0
-    return h
-  }
-
-  public override var description: String {
+  public var description: String {
     "FBTestLaunchConfiguration TestBundle \(testBundle) | AppConfig \(applicationLaunchConfiguration) | HostBundle \(testHostBundle.map(String.init(describing:)) ?? "(nil)") | UITesting \(shouldInitializeUITesting ? 1 : 0) | UseXcodebuild \(shouldUseXcodebuild ? 1 : 0) | TestsToRun \(testsToRun.map(String.init(describing:)) ?? "(nil)") | TestsToSkip \(testsToSkip.map(String.init(describing:)) ?? "(nil)") | Target application bundle \(targetApplicationBundle.map(String.init(describing:)) ?? "(nil)") xcTestRunProperties \(xcTestRunProperties.map(String.init(describing:)) ?? "(nil)") | ResultBundlePath \(resultBundlePath ?? "(nil)") | CoverageDirPath \(coverageDirectoryPath ?? "(nil)") | EnableContinuousCoverageCollection \(shouldEnableContinuousCoverageCollection ? 1 : 0) | LogDirectoryPath \(logDirectoryPath ?? "(nil)") | ReportResultBundle \(reportResultBundle ? 1 : 0)"
   }
 }

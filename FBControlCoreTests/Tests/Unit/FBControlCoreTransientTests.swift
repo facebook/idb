@@ -513,37 +513,6 @@ final class FBControlCoreTransientTests: XCTestCase {
     XCTAssertTrue(config.reportResultBundle)
   }
 
-  func testTestLaunchConfigurationCopy() {
-    let testBundle = makeBundle(name: "Tests", identifier: "com.test.unit", path: "/tmp/Tests.xctest")
-    let appLaunch = makeAppLaunch()
-
-    let config = FBTestLaunchConfiguration(
-      testBundle: testBundle,
-      applicationLaunchConfiguration: appLaunch,
-      testHostBundle: nil,
-      timeout: 60,
-      initializeUITesting: false,
-      useXcodebuild: false,
-      testsToRun: nil,
-      testsToSkip: nil,
-      targetApplicationBundle: nil,
-      xcTestRunProperties: nil,
-      resultBundlePath: nil,
-      reportActivities: false,
-      coverageDirectoryPath: nil,
-      enableContinuousCoverageCollection: false,
-      logDirectoryPath: nil,
-      reportResultBundle: false
-    )
-
-    let copy = config.copy() as! FBTestLaunchConfiguration
-
-    XCTAssertEqual(copy.testBundle.name, config.testBundle.name)
-    XCTAssertEqual(copy.testBundle.identifier, config.testBundle.identifier)
-    XCTAssertEqual(copy.timeout, config.timeout)
-    XCTAssertEqual(copy.shouldInitializeUITesting, config.shouldInitializeUITesting)
-  }
-
   // MARK: FBArchitecture Constants
 
   func testArchitectureConstants() {

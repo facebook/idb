@@ -10,7 +10,7 @@ import Foundation
 
 public final class FBManagedTestRunStrategy {
 
-  @objc public static func runToCompletion(withTarget target: FBiOSTarget, configuration: FBTestLaunchConfiguration, codesign: FBCodesignProvider?, workingDirectory: String, reporter: FBXCTestReporter, logger: FBControlCoreLogger) -> FBFuture<NSNull> {
+  public static func runToCompletion(withTarget target: FBiOSTarget, configuration: FBTestLaunchConfiguration, codesign: FBCodesignProvider?, workingDirectory: String, reporter: FBXCTestReporter, logger: FBControlCoreLogger) -> FBFuture<NSNull> {
     do {
       try XCTestBootstrapFrameworkLoader.allDependentFrameworks.loadPrivateFrameworks(target.logger)
     } catch {
@@ -40,6 +40,7 @@ public final class FBManagedTestRunStrategy {
         .onQueue(
           target.workQueue,
           fmap: { runnerConfigObj -> FBFuture<AnyObject> in
+            // swiftlint:disable:next force_cast
             let runnerConfiguration = runnerConfigObj as! FBTestRunnerConfiguration
 
             let testHostLaunchConfiguration = FBManagedTestRunStrategy.prepareApplicationLaunchConfiguration(applicationLaunchConfiguration, withTestRunnerConfiguration: runnerConfiguration)

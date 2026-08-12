@@ -17,7 +17,7 @@ public final class FBXcodeBuildOperation {
 
   // MARK: Initializers
 
-  @objc public static func operation(withUDID udid: String, configuration: FBTestLaunchConfiguration, xcodeBuildPath: String, testRunFilePath: String, simDeviceSet simDeviceSetPath: String?, macOSTestShimPath: String?, queue: DispatchQueue, logger: FBControlCoreLogger?) -> FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>> {
+  public static func operation(withUDID udid: String, configuration: FBTestLaunchConfiguration, xcodeBuildPath: String, testRunFilePath: String, simDeviceSet simDeviceSetPath: String?, macOSTestShimPath: String?, queue: DispatchQueue, logger: FBControlCoreLogger?) -> FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>> {
     var arguments = [
       "test-without-building",
       "-xctestrun", testRunFilePath,
@@ -80,7 +80,7 @@ public final class FBXcodeBuildOperation {
 
   // MARK: Public Methods
 
-  @objc public static func xctestRunProperties(_ testLaunch: FBTestLaunchConfiguration) -> [String: Any] {
+  public static func xctestRunProperties(_ testLaunch: FBTestLaunchConfiguration) -> [String: Any] {
     return [
       "StubBundleId": [
         "TestHostPath": testLaunch.testHostBundle?.path as Any,
@@ -97,7 +97,7 @@ public final class FBXcodeBuildOperation {
     ]
   }
 
-  @objc public static func createXCTestRunFile(at directory: String, fromConfiguration configuration: FBTestLaunchConfiguration) throws -> String {
+  public static func createXCTestRunFile(at directory: String, fromConfiguration configuration: FBTestLaunchConfiguration) throws -> String {
     let fileName = ProcessInfo.processInfo.globallyUniqueString.appending(".xctestrun")
     let path = (directory as NSString).appendingPathComponent(fileName)
 
@@ -155,7 +155,7 @@ public final class FBXcodeBuildOperation {
     return mutableTestRunProperties as NSDictionary
   }
 
-  @objc public static func confirmExit(ofXcodebuildOperation task: FBSubprocess<AnyObject, AnyObject, AnyObject>, configuration: FBTestLaunchConfiguration, reporter: FBXCTestReporter, target: FBiOSTarget, logger: FBControlCoreLogger) -> FBFuture<NSNull> {
+  public static func confirmExit(ofXcodebuildOperation task: FBSubprocess<AnyObject, AnyObject, AnyObject>, configuration: FBTestLaunchConfiguration, reporter: FBXCTestReporter, target: FBiOSTarget, logger: FBControlCoreLogger) -> FBFuture<NSNull> {
     return unsafeBitCast(
       unsafeBitCast(
         task.exited(withCodes: [0, 65]),

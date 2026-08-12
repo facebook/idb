@@ -8,12 +8,14 @@
 import Foundation
 import XCTestBootstrap
 
-@objc public final class FBIDBAppHostedTestConfiguration: NSObject {
+/// Remains a class rather than a struct because it is carried through `FBFuture`, which is
+/// constrained to class types.
+public final class FBIDBAppHostedTestConfiguration: NSObject {
 
-  @objc public let testLaunchConfiguration: FBTestLaunchConfiguration
-  @objc public let coverageConfiguration: FBCodeCoverageConfiguration?
+  public let testLaunchConfiguration: FBTestLaunchConfiguration
+  public let coverageConfiguration: FBCodeCoverageConfiguration?
 
-  @objc public init(testLaunchConfiguration: FBTestLaunchConfiguration, coverageConfiguration: FBCodeCoverageConfiguration?) {
+  public init(testLaunchConfiguration: FBTestLaunchConfiguration, coverageConfiguration: FBCodeCoverageConfiguration?) {
     self.testLaunchConfiguration = testLaunchConfiguration
     self.coverageConfiguration = coverageConfiguration
     super.init()

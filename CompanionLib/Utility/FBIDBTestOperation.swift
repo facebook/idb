@@ -23,7 +23,7 @@ public final class FBIDBTestOperation: CustomStringConvertible {
   public let queue: DispatchQueue
   public let reporter: FBXCTestReporter
   public let reporterConfiguration: FBXCTestReporterConfiguration
-  private let configuration: AnyObject
+  private let configuration: Any
 
   public var state: FBIDBTestOperationState {
     if completed.error != nil {
@@ -32,7 +32,7 @@ public final class FBIDBTestOperation: CustomStringConvertible {
     return completed.hasCompleted ? .terminatedNormally : .running
   }
 
-  public init(configuration: AnyObject, reporterConfiguration: FBXCTestReporterConfiguration, reporter: FBXCTestReporter, logger: FBControlCoreLogger, completed: FBFuture<NSNull>, queue: DispatchQueue) {
+  public init(configuration: Any, reporterConfiguration: FBXCTestReporterConfiguration, reporter: FBXCTestReporter, logger: FBControlCoreLogger, completed: FBFuture<NSNull>, queue: DispatchQueue) {
     self.configuration = configuration
     self.reporterConfiguration = reporterConfiguration
     self.reporter = reporter
