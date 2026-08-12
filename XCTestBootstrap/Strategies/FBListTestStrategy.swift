@@ -43,7 +43,7 @@ private final class FBListTestStrategy_ReporterWrapped: NSObject, FBXCTestRunner
   }
 }
 
-@objc public final class FBListTestStrategy: NSObject {
+public final class FBListTestStrategy: NSObject {
 
   let target: FBiOSTarget & ProcessSpawnCommands & XCTestExtendedCommands
   private let configuration: FBListTestConfiguration
@@ -56,7 +56,7 @@ private final class FBListTestStrategy_ReporterWrapped: NSObject, FBXCTestRunner
     super.init()
   }
 
-  @objc public func listTests() -> FBFuture<NSArray> {
+  public func listTests() -> FBFuture<NSArray> {
     let shimBuffer = FBDataBuffer.consumableBuffer()
     let target = self.target
     let shimFuture: FBFuture<AnyObject> = fbFutureFromAsync {
@@ -85,7 +85,7 @@ private final class FBListTestStrategy_ReporterWrapped: NSObject, FBXCTestRunner
     )
   }
 
-  @objc public func wrapInReporter(_ reporter: FBXCTestReporter) -> FBXCTestRunner {
+  public func wrapInReporter(_ reporter: FBXCTestReporter) -> FBXCTestRunner {
     FBListTestStrategy_ReporterWrapped(strategy: self, reporter: reporter)
   }
 

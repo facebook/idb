@@ -12,7 +12,7 @@ private let CrashLogStartDateFuzz: TimeInterval = -20
 private let CrashLogWaitTime: TimeInterval = 180
 private let KillBackoffTimeout: TimeInterval = 1
 
-@objc public final class FBXCTestProcess: NSObject {
+public final class FBXCTestProcess: NSObject {
 
   public static func ensureProcess(_ process: FBSubprocess<AnyObject, AnyObject, AnyObject>, completesWithin timeout: TimeInterval, crashLogCommands: (any CrashLogCommands)?, queue: DispatchQueue, logger: FBControlCoreLogger) -> FBFuture<NSNumber> {
     let startDate = Date(timeIntervalSinceNow: CrashLogStartDateFuzz)
@@ -49,7 +49,7 @@ private let KillBackoffTimeout: TimeInterval = 1
     )
   }
 
-  @objc public static func describeFailingExitCode(_ exitCode: Int32) -> String? {
+  public static func describeFailingExitCode(_ exitCode: Int32) -> String? {
     switch exitCode {
     case 0, 1:
       return nil

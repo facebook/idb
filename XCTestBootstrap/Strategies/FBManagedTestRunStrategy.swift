@@ -8,7 +8,7 @@
 import FBControlCore
 import Foundation
 
-@objc public final class FBManagedTestRunStrategy: NSObject {
+public final class FBManagedTestRunStrategy: NSObject {
 
   @objc public static func runToCompletion(withTarget target: FBiOSTarget, configuration: FBTestLaunchConfiguration, codesign: FBCodesignProvider?, workingDirectory: String, reporter: FBXCTestReporter, logger: FBControlCoreLogger) -> FBFuture<NSNull> {
     do {

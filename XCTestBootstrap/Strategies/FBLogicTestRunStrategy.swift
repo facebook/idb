@@ -27,7 +27,7 @@ private final class FBLogicTestRunOutputs: NSObject {
   }
 }
 
-@objc public final class FBLogicTestRunStrategy: NSObject, FBXCTestRunner {
+public final class FBLogicTestRunStrategy: NSObject, FBXCTestRunner {
 
   private let target: FBiOSTarget & ProcessSpawnCommands & XCTestExtendedCommands
   private let configuration: FBLogicTestConfiguration
@@ -44,7 +44,7 @@ private final class FBLogicTestRunOutputs: NSObject {
 
   // MARK: FBXCTestRunner
 
-  @objc public func execute() -> FBFuture<NSNull> {
+  public func execute() -> FBFuture<NSNull> {
     return testFuture()
   }
 
