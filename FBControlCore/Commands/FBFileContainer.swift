@@ -291,7 +291,6 @@ public final class FBContainedFile_ContainedRoot: NSObject, AsyncFileContainer {
 }
 
 /// File container backed by `ProvisioningProfileCommands`.
-@objc(FBFileContainer_ProvisioningProfile)
 public final class FBFileContainer_ProvisioningProfile: NSObject, AsyncFileContainer {
 
   private let commandsBox: ProvisioningCommandsBox

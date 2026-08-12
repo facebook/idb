@@ -7,16 +7,14 @@
 
 import Foundation
 
-@objc(FBXCTraceRecordCommands)
 public class FBXCTraceRecordCommands: NSObject, FBiOSTargetCommand {
 
   // MARK: Properties
 
-  @objc public let target: any FBiOSTarget
+  public let target: any FBiOSTarget
 
   // MARK: Initializers
 
-  @objc(commandsWithTarget:)
   public class func commands(with target: any FBiOSTarget) -> Self {
     self.init(target: target)
   }

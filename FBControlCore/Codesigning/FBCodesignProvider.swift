@@ -7,23 +7,20 @@
 
 import Foundation
 
-@objc(FBCodesignProvider)
 public class FBCodesignProvider: NSObject {
 
   // MARK: Properties
 
-  @objc public let identityName: String
+  public let identityName: String
   private let logger: FBControlCoreLogger?
   private let queue: DispatchQueue
 
   // MARK: Initializers
 
-  @objc(codeSignCommandWithIdentityName:logger:)
   public class func codeSignCommand(withIdentityName identityName: String, logger: FBControlCoreLogger?) -> Self {
     self.init(identityName: identityName, logger: logger)
   }
 
-  @objc(codeSignCommandWithAdHocIdentityWithLogger:)
   public class func codeSignCommandWithAdHocIdentity(logger: FBControlCoreLogger?) -> Self {
     self.init(identityName: "-", logger: logger)
   }
@@ -63,7 +60,6 @@ public class FBCodesignProvider: NSObject {
 
   // MARK: Public Methods
 
-  @objc(signBundleAtPath:)
   public func signBundle(atPath bundlePath: String) -> FBFuture<NSNull> {
     do {
       try makeCodesignatureWritable(bundlePath)
@@ -97,7 +93,6 @@ public class FBCodesignProvider: NSObject {
     )
   }
 
-  @objc(recursivelySignBundleAtPath:)
   public func recursivelySignBundle(atPath bundlePath: String) -> FBFuture<NSNull> {
     var pathsToSign = [bundlePath]
     let fileManager = FileManager.default
@@ -125,7 +120,6 @@ public class FBCodesignProvider: NSObject {
     )
   }
 
-  @objc(cdHashForBundleAtPath:)
   public func cdHashForBundle(atPath bundlePath: String) -> FBFuture<NSString> {
     logger?.log("Obtaining CDHash for bundle at path \(bundlePath)")
     return unsafeBitCast(
