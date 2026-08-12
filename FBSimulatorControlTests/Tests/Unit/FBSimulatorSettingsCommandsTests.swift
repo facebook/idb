@@ -117,6 +117,76 @@ final class FBSimulatorSettingsCommandsTests: XCTestCase {
       "iOS 17 rows should contain boot_uuid placeholder")
   }
 
+  func testPostiOS17InsertNamesColumnsForForwardCompatibility() {
+    let schema = "CREATE TABLE access (last_reminded INTEGER, future_column_1 INTEGER DEFAULT 0, future_column_2 INTEGER DEFAULT 0)"
+    let query = FBSimulatorSettingsCommands.approvalInsertQuery(
+      forAccessSchema: schema,
+      bundleIDs: ["com.test.app"],
+      services: [.microphone])
+
+    XCTAssertTrue(
+      query.hasPrefix("INSERT or REPLACE INTO access (service, client, client_type"),
+      "Post-iOS 17 inserts should name columns instead of matching table width")
+    XCTAssertTrue(
+      query.contains("boot_uuid, last_reminded) VALUES"),
+      "Post-iOS 17 inserts should cover every value emitted by the row builder")
+    XCTAssertFalse(
+      query.contains("INSERT or REPLACE INTO access VALUES"),
+      "Post-iOS 17 inserts should allow newer columns to use their defaults")
+  }
+
+  func testPostiOS17InsertPairsEveryColumnNameWithExactlyOneValue() {
+    let query = FBSimulatorSettingsCommands.approvalInsertQuery(
+      forAccessSchema: "CREATE TABLE access (last_reminded INTEGER)",
+      bundleIDs: ["com.test.app"],
+      services: [.microphone])
+
+    guard let namesOpen = query.firstIndex(of: "("),
+      let separator = query.range(of: ") VALUES ("),
+      let valuesClose = query.lastIndex(of: ")")
+    else {
+      XCTFail("Could not parse the generated insert: \(query)")
+      return
+    }
+
+    let names = query[query.index(after: namesOpen)..<separator.lowerBound]
+      .components(separatedBy: ",")
+      .map { $0.trimmingCharacters(in: .whitespaces) }
+    let values = query[separator.upperBound..<valuesClose]
+      .components(separatedBy: ",")
+      .map { $0.trimmingCharacters(in: .whitespaces) }
+
+    XCTAssertEqual(
+      names.count, values.count,
+      "Every named column needs exactly one value. An arity mismatch here is the same defect as the positional insert's 'table access has 19 columns but 17 values were supplied'")
+
+    // Pinning the full list, not a prefix: INSERT or REPLACE substitutes the column default
+    // rather than failing when a mis-paired NULL lands in a NOT NULL DEFAULT column, so a
+    // transposition writes a row that exists but grants nothing, with no error.
+    XCTAssertEqual(
+      names,
+      [
+        "service",
+        "client",
+        "client_type",
+        "auth_value",
+        "auth_reason",
+        "auth_version",
+        "csreq",
+        "policy_id",
+        "indirect_object_identifier_type",
+        "indirect_object_identifier",
+        "indirect_object_code_identity",
+        "flags",
+        "last_modified",
+        "pid",
+        "pid_version",
+        "boot_uuid",
+        "last_reminded",
+      ],
+      "Column names must stay in the order postiOS17ApprovalRows emits its values")
+  }
+
   func testApprovalRowsGenerateCorrectCountForMultipleInputs() {
     let bundleIDs: Set<String> = ["com.app1", "com.app2"]
     let services: Set<FBTargetSettingsService> = [.contacts, .photos]

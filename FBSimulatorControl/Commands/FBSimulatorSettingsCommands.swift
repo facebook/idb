@@ -568,6 +568,26 @@ public final class FBSimulatorSettingsCommands: NSObject, FBiOSTargetCommand {
     FBTargetSettingsService.microphone: "kTCCServiceMicrophone",
   ]
 
+  private static let postiOS17AccessColumns = [
+    "service",
+    "client",
+    "client_type",
+    "auth_value",
+    "auth_reason",
+    "auth_version",
+    "csreq",
+    "policy_id",
+    "indirect_object_identifier_type",
+    "indirect_object_identifier",
+    "indirect_object_code_identity",
+    "flags",
+    "last_modified",
+    "pid",
+    "pid_version",
+    "boot_uuid",
+    "last_reminded",
+  ].joined(separator: ", ")
+
   private static let coreSimulatorSettingMappingPreIos13: [FBTargetSettingsService: String] = [
     FBTargetSettingsService.contacts: "kTCCServiceContactsFull",
     FBTargetSettingsService.photos: "kTCCServicePhotos",
@@ -594,8 +614,8 @@ public final class FBSimulatorSettingsCommands: NSObject, FBiOSTargetCommand {
   }
 
   fileprivate func grantAccessInTCCDatabaseAsync(_ databasePath: String, bundleIDs: Set<String>, services: Set<FBTargetSettingsService>, queue: DispatchQueue, logger: (any FBControlCoreLogger)?) async throws {
-    let rows = try await FBSimulatorSettingsCommands.buildRowsAsync(forDatabase: databasePath, bundleIDs: bundleIDs, services: services, queue: queue, logger: logger)
-    _ = try await FBSimulatorSettingsCommands.runSqliteCommandAsync(onDatabase: databasePath, arguments: ["INSERT or REPLACE INTO access VALUES \(rows)"], queue: queue, logger: logger)
+    let query = try await FBSimulatorSettingsCommands.buildApprovalInsertQueryAsync(forDatabase: databasePath, bundleIDs: bundleIDs, services: services, queue: queue, logger: logger)
+    _ = try await FBSimulatorSettingsCommands.runSqliteCommandAsync(onDatabase: databasePath, arguments: [query], queue: queue, logger: logger)
   }
 
   fileprivate func revokeAccessInTCCDatabaseAsync(_ databasePath: String, bundleIDs: Set<String>, services: Set<FBTargetSettingsService>, queue: DispatchQueue, logger: (any FBControlCoreLogger)?) async throws {
@@ -616,17 +636,26 @@ public final class FBSimulatorSettingsCommands: NSObject, FBiOSTargetCommand {
       logger: logger)
   }
 
-  fileprivate class func buildRowsAsync(forDatabase databasePath: String, bundleIDs: Set<String>, services: Set<FBTargetSettingsService>, queue: DispatchQueue, logger: (any FBControlCoreLogger)?) async throws -> String {
-    let result = try await runSqliteCommandAsync(onDatabase: databasePath, arguments: [".schema access"], queue: queue, logger: logger)
-    if result.contains("last_reminded") {
-      return postiOS17ApprovalRows(forBundleIDs: bundleIDs, services: services)
-    } else if result.contains("auth_value") {
-      return postiOS15ApprovalRows(forBundleIDs: bundleIDs, services: services)
-    } else if result.contains("last_modified") {
-      return postiOS12ApprovalRows(forBundleIDs: bundleIDs, services: services)
-    } else {
-      return preiOS12ApprovalRows(forBundleIDs: bundleIDs, services: services)
+  fileprivate class func buildApprovalInsertQueryAsync(forDatabase databasePath: String, bundleIDs: Set<String>, services: Set<FBTargetSettingsService>, queue: DispatchQueue, logger: (any FBControlCoreLogger)?) async throws -> String {
+    let schema = try await runSqliteCommandAsync(onDatabase: databasePath, arguments: [".schema access"], queue: queue, logger: logger)
+    return approvalInsertQuery(forAccessSchema: schema, bundleIDs: bundleIDs, services: services)
+  }
+
+  internal class func approvalInsertQuery(forAccessSchema schema: String, bundleIDs: Set<String>, services: Set<FBTargetSettingsService>) -> String {
+    if schema.contains("last_reminded") {
+      let rows = postiOS17ApprovalRows(forBundleIDs: bundleIDs, services: services)
+      return "INSERT or REPLACE INTO access (\(postiOS17AccessColumns)) VALUES \(rows)"
     }
+
+    let rows: String
+    if schema.contains("auth_value") {
+      rows = postiOS15ApprovalRows(forBundleIDs: bundleIDs, services: services)
+    } else if schema.contains("last_modified") {
+      rows = postiOS12ApprovalRows(forBundleIDs: bundleIDs, services: services)
+    } else {
+      rows = preiOS12ApprovalRows(forBundleIDs: bundleIDs, services: services)
+    }
+    return "INSERT or REPLACE INTO access VALUES \(rows)"
   }
 
   internal class func preiOS12ApprovalRows(forBundleIDs bundleIDs: Set<String>, services: Set<FBTargetSettingsService>) -> String {
