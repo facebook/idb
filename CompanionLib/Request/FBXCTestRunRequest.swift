@@ -182,7 +182,7 @@ private class FBXCTestRunRequest_LogicTest: FBXCTestRunRequest {
     }
     let testFilter = testsToRunArray.first
 
-    let timeout = testTimeout?.boolValue == true ? testTimeout!.doubleValue : FBLogicTestTimeout
+    let timeout = testTimeout.flatMap { $0.boolValue ? $0.doubleValue : nil } ?? FBLogicTestTimeout
     let configuration = FBLogicTestConfiguration(
       environment: environment,
       workingDirectory: workingDirectory.path,
