@@ -17,12 +17,12 @@ public let IdbFrameworksFolder: String = "idb-frameworks"
 
 // MARK: - FBInstalledArtifact
 
-@objc public final class FBInstalledArtifact: NSObject {
-  @objc public let name: String
-  @objc public let uuid: NSUUID?
-  @objc public let path: URL
+public final class FBInstalledArtifact: NSObject {
+  public let name: String
+  public let uuid: NSUUID?
+  public let path: URL
 
-  @objc public init(name: String, uuid: NSUUID?, path: URL) {
+  public init(name: String, uuid: NSUUID?, path: URL) {
     self.name = name
     self.uuid = uuid
     self.path = path
@@ -32,13 +32,13 @@ public let IdbFrameworksFolder: String = "idb-frameworks"
 
 // MARK: - FBIDBStorage
 
-@objc public class FBIDBStorage: NSObject {
-  @objc public let target: FBiOSTarget
-  @objc public let basePath: URL
-  @objc public let queue: DispatchQueue
-  @objc public let logger: FBControlCoreLogger
+public class FBIDBStorage: NSObject {
+  public let target: FBiOSTarget
+  public let basePath: URL
+  public let queue: DispatchQueue
+  public let logger: FBControlCoreLogger
 
-  @objc public init(target: FBiOSTarget, basePath: URL, queue: DispatchQueue, logger: FBControlCoreLogger) {
+  public init(target: FBiOSTarget, basePath: URL, queue: DispatchQueue, logger: FBControlCoreLogger) {
     self.target = target
     self.basePath = basePath
     self.queue = queue
@@ -46,7 +46,7 @@ public let IdbFrameworksFolder: String = "idb-frameworks"
     super.init()
   }
 
-  @objc public func clean() throws {
+  public func clean() throws {
     let urls = try FileManager.default.contentsOfDirectory(at: basePath, includingPropertiesForKeys: nil, options: [])
     for url in urls {
       try FileManager.default.removeItem(atPath: url.path)
@@ -58,7 +58,7 @@ public let IdbFrameworksFolder: String = "idb-frameworks"
     return FBFileContainer.fileContainer(forBasePath: basePath.path) as! FBContainedFile_ContainedRoot
   }
 
-  @objc public var replacementMapping: [String: String] {
+  public var replacementMapping: [String: String] {
     var mapping: [String: String] = [:]
     let urls = try? FileManager.default.contentsOfDirectory(at: basePath, includingPropertiesForKeys: nil, options: [])
     if let urls {
@@ -72,13 +72,13 @@ public let IdbFrameworksFolder: String = "idb-frameworks"
 
 // MARK: - FBFileStorage
 
-@objc public final class FBFileStorage: FBIDBStorage {
+public final class FBFileStorage: FBIDBStorage {
 
-  @objc public func saveFile(_ url: URL) throws -> FBInstalledArtifact {
+  public func saveFile(_ url: URL) throws -> FBInstalledArtifact {
     return try copyInto(basePath, from: url)
   }
 
-  @objc public func saveFileInUniquePath(_ url: URL) throws -> FBInstalledArtifact {
+  public func saveFileInUniquePath(_ url: URL) throws -> FBInstalledArtifact {
     var baseURL = basePath
     baseURL = baseURL.appendingPathComponent(NSUUID().uuidString)
     try FileManager.default.createDirectory(at: baseURL, withIntermediateDirectories: true, attributes: nil)
@@ -96,15 +96,15 @@ public let IdbFrameworksFolder: String = "idb-frameworks"
 
 // MARK: - FBBundleStorage
 
-@objc public class FBBundleStorage: FBIDBStorage {
-  @objc public let relocateLibraries: Bool
+public class FBBundleStorage: FBIDBStorage {
+  public let relocateLibraries: Bool
 
-  @objc public init(target: FBiOSTarget, basePath: URL, queue: DispatchQueue, logger: FBControlCoreLogger, relocateLibraries: Bool) {
+  public init(target: FBiOSTarget, basePath: URL, queue: DispatchQueue, logger: FBControlCoreLogger, relocateLibraries: Bool) {
     self.relocateLibraries = relocateLibraries
     super.init(target: target, basePath: basePath, queue: queue, logger: logger)
   }
 
-  @objc public func checkArchitecture(_ bundle: FBBundleDescriptor) throws {
+  public func checkArchitecture(_ bundle: FBBundleDescriptor) throws {
     let binaryArchitectures = Set(bundle.binary!.architectures.map { $0.rawValue })
     let targetArchs = target.architectures
     let supportedArchitectures = Set(FBiOSTargetConfiguration.baseArchsToCompatibleArch(targetArchs).map { $0.rawValue })
@@ -117,11 +117,11 @@ public let IdbFrameworksFolder: String = "idb-frameworks"
     }
   }
 
-  @objc public func saveBundle(_ bundle: FBBundleDescriptor) -> FBFuture<FBInstalledArtifact> {
+  public func saveBundle(_ bundle: FBBundleDescriptor) -> FBFuture<FBInstalledArtifact> {
     return saveBundle(bundle, usingSymlink: true, skipSigningBundles: false)
   }
 
-  @objc public func saveBundle(_ bundle: FBBundleDescriptor, usingSymlink useSymlink: Bool, skipSigningBundles: Bool) -> FBFuture<FBInstalledArtifact> {
+  public func saveBundle(_ bundle: FBBundleDescriptor, usingSymlink useSymlink: Bool, skipSigningBundles: Bool) -> FBFuture<FBInstalledArtifact> {
     fbFutureFromAsync { [self] in
       try await saveBundleAsync(bundle, usingSymlink: useSymlink, skipSigningBundles: skipSigningBundles)
     }
@@ -158,12 +158,12 @@ public let IdbFrameworksFolder: String = "idb-frameworks"
     return artifact
   }
 
-  @objc public var persistedBundleIDs: Set<String> {
+  public var persistedBundleIDs: Set<String> {
     let contents = try? FileManager.default.contentsOfDirectory(atPath: basePath.path)
     return Set(contents ?? [])
   }
 
-  @objc public var persistedBundles: [String: FBBundleDescriptor] {
+  public var persistedBundles: [String: FBBundleDescriptor] {
     var mapping: [String: FBBundleDescriptor] = [:]
     guard let enumerator = FileManager.default.enumerator(at: basePath, includingPropertiesForKeys: nil, options: .skipsSubdirectoryDescendants, errorHandler: nil) else {
       return mapping
@@ -183,7 +183,7 @@ public let IdbFrameworksFolder: String = "idb-frameworks"
     return mapping
   }
 
-  @objc public override var replacementMapping: [String: String] {
+  public override var replacementMapping: [String: String] {
     let bundles = persistedBundles
     var mapping: [String: String] = [:]
     for (_, bundle) in bundles {
@@ -208,9 +208,9 @@ public let IdbFrameworksFolder: String = "idb-frameworks"
 private let XctestExtension = "xctest"
 private let XctestRunExtension = "xctestrun"
 
-@objc public final class FBXCTestBundleStorage: FBBundleStorage {
+public final class FBXCTestBundleStorage: FBBundleStorage {
 
-  @objc public func saveBundleOrTestRunFromBaseDirectory(_ baseDirectory: URL, skipSigningBundles: Bool) -> FBFuture<FBInstalledArtifact> {
+  public func saveBundleOrTestRunFromBaseDirectory(_ baseDirectory: URL, skipSigningBundles: Bool) -> FBFuture<FBInstalledArtifact> {
     fbFutureFromAsync { [self] in
       try await saveBundleOrTestRunFromBaseDirectoryAsync(baseDirectory, skipSigningBundles: skipSigningBundles)
     }
@@ -241,7 +241,7 @@ private let XctestRunExtension = "xctestrun"
     throw FBIDBError.describe(".xctest bundle (\(String(describing: xctestBundleURL))) or .xctestrun (\(String(describing: xctestrunURL))) file was not saved").build()
   }
 
-  @objc public func saveBundleOrTestRun(_ filePath: URL, skipSigningBundles: Bool) -> FBFuture<FBInstalledArtifact> {
+  public func saveBundleOrTestRun(_ filePath: URL, skipSigningBundles: Bool) -> FBFuture<FBInstalledArtifact> {
     fbFutureFromAsync { [self] in
       try await saveBundleOrTestRunAsync(filePath, skipSigningBundles: skipSigningBundles)
     }
@@ -257,7 +257,7 @@ private let XctestRunExtension = "xctestrun"
     throw FBControlCoreError.describe("The path extension (\(filePath.pathExtension)) of the provided bundle (\(filePath)) is not .xctest or .xctestrun").build()
   }
 
-  @objc public func listTestDescriptors() throws -> [FBXCTestDescriptor] {
+  public func listTestDescriptors() throws -> [FBXCTestDescriptor] {
     var testDescriptors: [FBXCTestDescriptor] = []
 
     let testURLs = try listTestBundles()
@@ -285,7 +285,7 @@ private let XctestRunExtension = "xctestrun"
     return testDescriptors
   }
 
-  @objc public func testDescriptor(withID bundleId: String) throws -> FBXCTestDescriptor {
+  public func testDescriptor(withID bundleId: String) throws -> FBXCTestDescriptor {
     let testDescriptors = try listTestDescriptors()
     for testDescriptor in testDescriptors {
       if testDescriptor.testBundleID == bundleId {
@@ -295,7 +295,7 @@ private let XctestRunExtension = "xctestrun"
     throw FBIDBError.describe("Couldn't find test with id: \(bundleId)").build()
   }
 
-  @objc public func getXCTestRunDescriptors(from xctestrunURL: URL) throws -> [FBXCTestDescriptor] {
+  public func getXCTestRunDescriptors(from xctestrunURL: URL) throws -> [FBXCTestDescriptor] {
     let contentDict = try FBXCTestRunFileReader.readContents(of: xctestrunURL, expandPlaceholderWithPath: target.auxillaryDirectory)
     let xctestrunMetadata = contentDict["__xctestrun_metadata__"] as? [String: NSNumber]
     if let xctestrunMetadata {
@@ -441,13 +441,13 @@ private let XctestRunExtension = "xctestrun"
 
 // MARK: - FBIDBStorageManager
 
-@objc public final class FBIDBStorageManager: NSObject {
-  @objc public let xctest: FBXCTestBundleStorage
-  @objc public let application: FBBundleStorage
-  @objc public let dylib: FBFileStorage
-  @objc public let dsym: FBFileStorage
-  @objc public let framework: FBBundleStorage
-  @objc public let logger: FBControlCoreLogger
+public final class FBIDBStorageManager: NSObject {
+  public let xctest: FBXCTestBundleStorage
+  public let application: FBBundleStorage
+  public let dylib: FBFileStorage
+  public let dsym: FBFileStorage
+  public let framework: FBBundleStorage
+  public let logger: FBControlCoreLogger
 
   private init(xctest: FBXCTestBundleStorage, application: FBBundleStorage, dylib: FBFileStorage, dsym: FBFileStorage, framework: FBBundleStorage, logger: FBControlCoreLogger) {
     self.xctest = xctest
@@ -459,7 +459,7 @@ private let XctestRunExtension = "xctestrun"
     super.init()
   }
 
-  @objc public static func manager(forTarget target: FBiOSTarget, logger: FBControlCoreLogger) throws -> FBIDBStorageManager {
+  public static func manager(forTarget target: FBiOSTarget, logger: FBControlCoreLogger) throws -> FBIDBStorageManager {
     let queue = DispatchQueue(label: "com.facebook.idb.bundle_storage")
 
     let xctestBasePath = try prepareStoragePath(withName: IdbTestBundlesFolder, target: target)
@@ -480,7 +480,7 @@ private let XctestRunExtension = "xctestrun"
     return FBIDBStorageManager(xctest: xctest, application: application, dylib: dylib, dsym: dsym, framework: framework, logger: logger)
   }
 
-  @objc public func clean() throws {
+  public func clean() throws {
     try xctest.clean()
     try application.clean()
     try dylib.clean()
@@ -488,7 +488,7 @@ private let XctestRunExtension = "xctestrun"
     try framework.clean()
   }
 
-  @objc public func interpolateArgumentReplacements(_ arguments: [String]?) -> [String] {
+  public func interpolateArgumentReplacements(_ arguments: [String]?) -> [String] {
     guard let arguments else { return [] }
     logger.log("Original arguments: \(arguments)")
     let nameToPath = replacementMapping
@@ -500,7 +500,7 @@ private let XctestRunExtension = "xctestrun"
     return interpolatedArguments
   }
 
-  @objc public var replacementMapping: [String: String] {
+  public var replacementMapping: [String: String] {
     var combined: [String: String] = [:]
     for mapping in [application.replacementMapping, dylib.replacementMapping, framework.replacementMapping, dsym.replacementMapping] {
       combined.merge(mapping) { _, new in new }
