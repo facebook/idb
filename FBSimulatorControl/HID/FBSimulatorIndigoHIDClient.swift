@@ -48,7 +48,9 @@ final class FBSimulatorIndigoHIDClient: @unchecked Sendable {
   // SimDeviceLegacyHIDClientMessaging). Messaged via unsafeBitCast to that protocol.
   private var client: AnyObject?
 
-  /// Resolves the runtime-only `SimDeviceLegacyHIDClient` class.
+  /// Resolves the runtime-only `SimDeviceLegacyHIDClient` class, dlopening the Xcode frameworks that
+  /// vend it first — `FBSimulatorControl` itself loads only the essential set (CoreSimulator), so
+  /// otherwise there is nothing for the lookup to find. Mirrors `FBSimulatorIndigoHID.init()`.
   ///
   /// `loader` is injectable because the process-global framework load state cannot answer whether
   /// resolution asked for the Xcode frameworks — sibling suites in the same test process have
@@ -56,6 +58,7 @@ final class FBSimulatorIndigoHIDClient: @unchecked Sendable {
   static func resolveClientClass(
     loader: FBControlCoreFrameworkLoader = FBSimulatorControlFrameworkLoader.xcodeFrameworks
   ) throws -> AnyClass {
+    try loader.loadPrivateFrameworks(nil)
     guard let clientClass = objc_lookUpClass(clientClassName) else {
       throw FBSimulatorHIDError.clientClassUnavailable(className: clientClassName)
     }

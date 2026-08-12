@@ -236,9 +236,7 @@ final class FBSimulatorIndigoHIDTests: XCTestCase {
     // `try?`: the class itself has relocated across Xcodes, so whether the lookup succeeds on the
     // host running this test is beside the point — what is pinned is the loading, not the result.
     _ = try? FBSimulatorIndigoHIDClient.resolveClientClass(loader: loader)
-    // BUG: resolution never asks the loader, so a host that has not separately loaded the Xcode
-    // frameworks fails with `clientClassUnavailable` — flipped in the following commit.
-    XCTAssertEqual(loader.loadCount, 0)
+    XCTAssertEqual(loader.loadCount, 1)
   }
 
   // MARK: - Trackpad (tvOS)
