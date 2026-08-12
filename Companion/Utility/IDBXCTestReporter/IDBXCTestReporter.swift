@@ -53,7 +53,9 @@ extension IDBXCTestReporter {
 @objc final class IDBXCTestReporter: NSObject, FBXCTestReporter, FBDataConsumer, @unchecked Sendable {
 
   private let reportingTerminated = AsyncPromise<Int>()
-  var configuration: Configuration!
+
+  /// Set once the test operation has started, which is the earliest point the configuration is known.
+  var configuration: Configuration?
 
   @Atomic private var responseStream: GRPCAsyncResponseStreamWriter<Idb_XctestRunResponse>?
 
@@ -223,7 +225,8 @@ extension IDBXCTestReporter {
   }
 
   private func translate(activity: FBActivityRecord) throws -> Idb_XctestRunResponse.TestRunInfo.TestActivity {
-    let subactivities = activity.subactivities as! [FBActivityRecord]
+    let subactivities = activity.subactivities.compactMap { $0 as? FBActivityRecord }
+    let reportAttachments = configuration?.reportAttachments ?? false
     return try Idb_XctestRunResponse.TestRunInfo.TestActivity.with {
       $0.title = activity.title
       $0.duration = activity.duration
@@ -232,7 +235,7 @@ extension IDBXCTestReporter {
       $0.start = activity.start.timeIntervalSince1970
       $0.finish = activity.finish.timeIntervalSince1970
       $0.name = activity.name
-      if configuration.reportAttachments {
+      if reportAttachments {
         $0.attachments = try activity.attachments.map { attachment in
           try .with {
             $0.payload = attachment.payload ?? Data()
@@ -305,14 +308,23 @@ extension IDBXCTestReporter {
   private func insertFinalDataThenWriteResponse(response: Idb_XctestRunResponse) async throws {
     var response = response
 
+    guard let configuration else {
+      logger.error().log("Finalizing a test run that was never configured, no artifacts will be attached")
+      try await writeResponseFinal(response: response)
+      return
+    }
+
     // Run the three independent finalization steps concurrently, restoring the parallelism of the
     // original ObjC reporter (`+[FBFuture futureWithFutures:]`). A task group keeps this consistent
     // with the companion's other concurrent work (LaunchMethodHandler, ConcurrentForEach).
     let artifacts: [FinalArtifact] = try await withThrowingTaskGroup(of: FinalArtifact?.self) { group in
-      if !configuration.resultBundlePath.isEmpty && configuration.reportResultBundle {
+      let resultBundlePath = configuration.resultBundlePath
+      let binariesPath = configuration.binariesPath
+
+      if !resultBundlePath.isEmpty && configuration.reportResultBundle {
         group.addTask {
           do {
-            return .resultBundle(try await self.gzipFolder(at: self.configuration.resultBundlePath))
+            return .resultBundle(try await self.gzipFolder(at: resultBundlePath))
           } catch {
             self.logger.info().log("Failed to create result bundle \(error.localizedDescription)")
             return nil
@@ -320,10 +332,13 @@ extension IDBXCTestReporter {
         }
       }
 
-      if let coverageConfig = configuration.coverageConfiguration, !coverageConfig.coverageDirectory.isEmpty {
+      // Read back through `self` rather than the local binding: `FBCodeCoverageConfiguration` is a
+      // non-Sendable ObjC class, so a value derived from the local would stay in this function's
+      // isolation region and could not be captured by the child task.
+      if let coverageConfig = self.configuration?.coverageConfiguration, !coverageConfig.coverageDirectory.isEmpty {
         group.addTask {
           do {
-            return .coverage(try await self.getCoverageResponseData(config: coverageConfig))
+            return .coverage(try await self.getCoverageResponseData(config: coverageConfig, binariesPath: binariesPath))
           } catch {
             self.logger.info().log("Failed to get coverage data: \(error.localizedDescription)")
             return nil
@@ -395,11 +410,11 @@ extension IDBXCTestReporter {
       logger: logger)
   }
 
-  private func getCoverageResponseData(config: FBCodeCoverageConfiguration) async throws -> Data {
+  private func getCoverageResponseData(config: FBCodeCoverageConfiguration, binariesPath: [String]) async throws -> Data {
     try await processUnderTestExited.value
     switch config.format {
     case .exported:
-      let data = try await getCoverageDataExported(config: config)
+      let data = try await getCoverageDataExported(config: config, binariesPath: binariesPath)
       return data as Data
 
     case .raw:
@@ -410,12 +425,12 @@ extension IDBXCTestReporter {
     }
   }
 
-  private func getCoverageDataExported(config: FBCodeCoverageConfiguration) async throws -> Data {
+  private func getCoverageDataExported(config: FBCodeCoverageConfiguration, binariesPath: [String]) async throws -> Data {
     let coverageDirectory = URL(fileURLWithPath: config.coverageDirectory)
     let profdataPath = coverageDirectory.appendingPathComponent("coverage.profdata")
 
     try await mergeRawCoverage(coverageDirectory: coverageDirectory, profdataPath: profdataPath)
-    return try await exportCoverage(profdataPath: profdataPath, binariesPath: configuration.binariesPath)
+    return try await exportCoverage(profdataPath: profdataPath, binariesPath: binariesPath)
   }
 
   private func mergeRawCoverage(coverageDirectory: URL, profdataPath: URL) async throws {
