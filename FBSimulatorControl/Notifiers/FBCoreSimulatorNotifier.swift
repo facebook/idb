@@ -9,7 +9,6 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-@objc(FBCoreSimulatorNotifier)
 public final class FBCoreSimulatorNotifier: NSObject {
 
   // MARK: - Properties
@@ -19,13 +18,11 @@ public final class FBCoreSimulatorNotifier: NSObject {
 
   // MARK: - Public
 
-  @objc(notifierForSimDevice:queue:block:)
   public class func notifier(for simDevice: SimDevice, queue: DispatchQueue, block: @escaping @Sendable ([String: Any]) -> Void) -> FBCoreSimulatorNotifier {
     let notifier = simDevice.notificationManager as AnyObject?
     return FBCoreSimulatorNotifier(notifier: notifier, queue: queue, block: block)
   }
 
-  @objc(resolveLeavesState:forSimDevice:)
   public class func resolveLeavesState(_ state: FBiOSTargetState, for device: SimDevice) -> FBFuture<NSNull> {
     let future = FBMutableFuture<NSNull>()
     let queue = DispatchQueue(label: "com.facebook.fbsimulatorcontrol.resolve_state")
@@ -52,7 +49,6 @@ public final class FBCoreSimulatorNotifier: NSObject {
         })
   }
 
-  @objc
   public func terminate() {
     guard let notifier = notifierObj else { return }
     (notifier as! SimDeviceNotifier).unregisterNotificationHandler(handle, error: nil)
@@ -60,7 +56,6 @@ public final class FBCoreSimulatorNotifier: NSObject {
 
   // MARK: - Internal
 
-  @objc(notifierForSet:queue:block:)
   class func notifier(for set: FBSimulatorSet, queue: DispatchQueue, block: @escaping @Sendable ([String: Any]) -> Void) -> FBCoreSimulatorNotifier {
     // notificationManager may be nil in test doubles (ObjC nil messaging returns nil).
     let notifier = (set.deviceSet as AnyObject).notificationManager as AnyObject?
