@@ -17,7 +17,7 @@ public let IdbFrameworksFolder: String = "idb-frameworks"
 
 // MARK: - FBInstalledArtifact
 
-public final class FBInstalledArtifact: NSObject {
+public final class FBInstalledArtifact {
   public let name: String
   public let uuid: NSUUID?
   public let path: URL
@@ -26,7 +26,6 @@ public final class FBInstalledArtifact: NSObject {
     self.name = name
     self.uuid = uuid
     self.path = path
-    super.init()
   }
 }
 
@@ -441,7 +440,7 @@ public final class FBXCTestBundleStorage: FBBundleStorage {
 
 // MARK: - FBIDBStorageManager
 
-public final class FBIDBStorageManager: NSObject {
+public final class FBIDBStorageManager {
   public let xctest: FBXCTestBundleStorage
   public let application: FBBundleStorage
   public let dylib: FBFileStorage
@@ -456,7 +455,6 @@ public final class FBIDBStorageManager: NSObject {
     self.dsym = dsym
     self.framework = framework
     self.logger = logger
-    super.init()
   }
 
   public static func manager(forTarget target: FBiOSTarget, logger: FBControlCoreLogger) throws -> FBIDBStorageManager {

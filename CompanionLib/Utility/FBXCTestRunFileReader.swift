@@ -9,7 +9,7 @@ import FBControlCore
 import Foundation
 import XCTestBootstrap
 
-public final class FBXCTestRunFileReader: NSObject {
+public final class FBXCTestRunFileReader {
 
   public static func readContents(of xctestrunURL: URL, expandPlaceholderWithPath path: String) throws -> [String: Any] {
     let fileManager = FileManager.default

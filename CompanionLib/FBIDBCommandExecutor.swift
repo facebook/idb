@@ -14,7 +14,7 @@ import XCTestBootstrap
 
 // swiftlint:disable force_cast force_unwrapping
 
-public final class FBIDBCommandExecutor: NSObject {
+public final class FBIDBCommandExecutor {
 
   private let target: any FBiOSTarget & AsynciOSTarget
   private let logger: FBIDBLogger
@@ -37,7 +37,6 @@ public final class FBIDBCommandExecutor: NSObject {
     self.temporaryDirectory = temporaryDirectory
     self.debugserverPort = debugserverPort
     self.logger = logger
-    super.init()
   }
 
   // MARK: - Installation
