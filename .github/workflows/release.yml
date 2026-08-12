@@ -1,0 +1,92 @@
+name: Release
+on:
+  push:
+    tags:
+      - 'v*'
+  # Allows the build and packaging legs to be exercised without cutting a tag;
+  # the release-creation steps only run on tag pushes.
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  companion:
+    name: Build and publish idb_companion
+    runs-on: macos-26
+    timeout-minutes: 120
+    env:
+      XCODEGEN_STRIP_XATTRS: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install tools
+        run: brew install xcodegen protobuf swift-protobuf
+      - name: Cache grpc-swift plugin
+        uses: actions/cache@v4
+        with:
+          path: Build/grpc-swift
+          key: grpc-swift-1.23.1-${{ runner.os }}
+      - name: Build everything and assemble the distribution
+        run: ./build.sh build all
+      - name: Package
+        id: package
+        run: |
+          tar -C Build/Distribution -czf idb-companion.universal.tar.gz .
+          shasum -a 256 idb-companion.universal.tar.gz | tee idb-companion.universal.tar.gz.sha256
+          echo "sha256=$(cut -d' ' -f1 idb-companion.universal.tar.gz.sha256)" >> "$GITHUB_OUTPUT"
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: idb-companion
+          path: idb-companion.universal.tar.gz*
+      - name: Create release and upload
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" --prerelease --title "$GITHUB_REF_NAME" --generate-notes --repo "$GITHUB_REPOSITORY" || true
+          gh release upload "$GITHUB_REF_NAME" idb-companion.universal.tar.gz idb-companion.universal.tar.gz.sha256 --clobber --repo "$GITHUB_REPOSITORY"
+      - name: Homebrew formula update instructions
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          {
+            echo '## Update the homebrew formula'
+            echo 'In the `facebook/fb` tap, point `idb-companion.rb` at this release:'
+            echo '```ruby'
+            echo "url \"https://github.com/$GITHUB_REPOSITORY/releases/download/$GITHUB_REF_NAME/idb-companion.universal.tar.gz\""
+            echo "sha256 \"${{ steps.package.outputs.sha256 }}\""
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  python-client:
+    name: Build fb-idb distributions
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Build sdist and wheel
+        run: |
+          pip install build
+          # On workflow_dispatch the ref is a branch name, which is not a valid
+          # PEP 440 version; use a placeholder so the build legs stay
+          # exercisable without a tag.
+          case "$GITHUB_REF" in
+            refs/tags/v*) FB_IDB_VERSION="${GITHUB_REF_NAME#v}" ;;
+            *) FB_IDB_VERSION="0.0.0.dev0" ;;
+          esac
+          FB_IDB_VERSION="$FB_IDB_VERSION" python -m build
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: fb-idb-dist
+          path: dist/*
+      - name: Attach to release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" --prerelease --title "$GITHUB_REF_NAME" --generate-notes --repo "$GITHUB_REPOSITORY" || true
+          gh release upload "$GITHUB_REF_NAME" dist/* --clobber --repo "$GITHUB_REPOSITORY"
