@@ -21,7 +21,7 @@ import Foundation
 /// runs synchronously and then `expired` resolves. Deciding what to do when idle
 /// (e.g. shutting the companion down) is left to whoever observes `expired`; the
 /// monitor itself is not shutdown-specific.
-@objc final class IdleMonitor: NSObject, @unchecked Sendable {
+final class IdleMonitor: @unchecked Sendable {
 
   private let expiredPromise = AsyncPromise<Void>()
 
@@ -53,7 +53,6 @@ import Foundation
     self.idleTime = idleTime
     self.logger = logger
     self.onShutdownStarted = onShutdownStarted
-    super.init()
   }
 
   /// Starts the idle countdown if nothing is in flight. Call once the server is
