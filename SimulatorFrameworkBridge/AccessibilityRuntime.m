@@ -469,11 +469,32 @@ static uint32_t FBAXActionIdentifierForAction(FBAXAction action)
 + (instancetype)new NS_UNAVAILABLE;
 - (instancetype)init NS_UNAVAILABLE;
 
-@property (nonatomic, readonly) void *element;
+/**
+ * Runs `body` with the raw reference, keeping this wrapper — and so the reference — alive for all of it.
+ *
+ * The pointer is never vended, and that is the point. A `void *` is invisible to ARC: nothing about a
+ * caller holding one says the wrapper must outlive the C call using it, so ARC is free to release the
+ * wrapper — and release the reference — while the call is still running. Handing the pointer out made
+ * that every call site's problem to remember, which is a rule stated five times and enforced none, over
+ * exactly the reference whose mishandling this class exists to prevent. Held here instead, once, where
+ * forgetting it is not something a caller can do.
+ *
+ * `NS_NOESCAPE`: the reference is guaranteed only for the call, and a body that stored it would be back
+ * to owning a lifetime it cannot see.
+ */
+- (int32_t)axErrorFromElement:(NS_NOESCAPE int32_t (^)(void *element))body;
+
+/** As above, for the one caller that wants an object back rather than an AX error code. */
+- (nullable id)objectFromElement:(NS_NOESCAPE id _Nullable (^)(void *element))body;
 
 @end
 
 @implementation FBAXElementRef
+{
+  // An ivar rather than a property: a property would vend the pointer again, which is the thing the
+  // scoped accessors exist to stop.
+  void *_element;
+}
 
 - (instancetype)initWithOwnedElement:(void *)element
 {
@@ -494,6 +515,20 @@ static uint32_t FBAXActionIdentifierForAction(FBAXAction action)
 - (void)dealloc
 {
   CFRelease(_element);
+}
+
+- (int32_t)axErrorFromElement:(NS_NOESCAPE int32_t (^)(void *element))body
+{
+  // The local is what keeps the wrapper alive across the call: reading the ivar through a reference ARC
+  // can see, rather than handing the pointer to someone it cannot.
+  NS_VALID_UNTIL_END_OF_SCOPE FBAXElementRef *alive = self;
+  return body(alive->_element);
+}
+
+- (nullable id)objectFromElement:(NS_NOESCAPE id _Nullable (^)(void *element))body
+{
+  NS_VALID_UNTIL_END_OF_SCOPE FBAXElementRef *alive = self;
+  return body(alive->_element);
 }
 
 @end
@@ -756,13 +791,11 @@ static NSString *const kFrontboardVisibilityEndowment = @"com.apple.frontboard.v
 // nothing outside can outlive or over-release either, and nothing inside has to remember to.
 - (FBAXHitTestOutcome *)hitTestAtPoint:(CGPoint)point processIdentifier:(pid_t)pid
 {
-  // Both references below are declared NS_VALID_UNTIL_END_OF_SCOPE. `-element` hands out a non-object
-  // pointer, so ARC cannot see that the C call using it depends on the wrapper still being alive, and
-  // would otherwise be free to release the wrapper — and with it the reference — before the call returns.
-  //
   // Resolve the seed: a specific app element for an explicit pid, otherwise the system-wide element.
-  // Owned either way, so it outlives whatever vended it and both branches are released alike.
-  NS_VALID_UNTIL_END_OF_SCOPE FBAXElementRef *seed = nil;
+  // Owned either way, so it outlives whatever vended it and both branches are released alike. Every use
+  // of the raw reference below goes through `-axErrorFromElement:`, which is what keeps the wrapper alive
+  // for the duration of the C call rather than leaving that to each of these call sites.
+  FBAXElementRef *seed = nil;
   if (pid > 0) {
     XCAccessibilityElement *root = [_elementClass elementWithProcessIdentifier:pid];
     if (!root) {
@@ -781,13 +814,14 @@ static NSString *const kFrontboardVisibilityEndowment = @"com.apple.frontboard.v
     seed = [[FBAXElementRef alloc] initWithOwnedElement:systemWide];
   }
 
-  void *copied = NULL;
-  int32_t axError = _functions.copyElementAtPosition(seed.element, (float)point.x, (float)point.y, &copied);
+  __block void *copied = NULL;
+  int32_t axError = [seed axErrorFromElement:^int32_t (void *element) {
+    return self->_functions.copyElementAtPosition(element, (float)point.x, (float)point.y, &copied);
+  }];
   // Wrapped before anything else can fail. The copy is +1 whenever it produced one, so from here every
   // exit releases it without having to say so — including the error paths, where the runtime is not
   // supposed to have produced an element at all but nothing stops it.
-  NS_VALID_UNTIL_END_OF_SCOPE FBAXElementRef *hit =
-  copied ? [[FBAXElementRef alloc] initWithOwnedElement:copied] : nil;
+  FBAXElementRef *hit = copied ? [[FBAXElementRef alloc] initWithOwnedElement:copied] : nil;
 
   FBAXHitTestOutcome *unresolved = [FBAXHitTestOutcome outcomeForHitTestError:axError hasElement:hit != nil];
   if (unresolved) {
@@ -796,8 +830,10 @@ static NSString *const kFrontboardVisibilityEndowment = @"com.apple.frontboard.v
 
   // The host tags the hit element with its owning process, so an unattributable hit is not a result. A
   // seeded hit-test already knows the pid and falls back to it; a system-wide one has no other source.
-  pid_t owningPid = 0;
-  int32_t pidError = _functions.getPid(hit.element, &owningPid);
+  __block pid_t owningPid = 0;
+  int32_t pidError = [hit axErrorFromElement:^int32_t (void *element) {
+    return self->_functions.getPid(element, &owningPid);
+  }];
   if (pidError != FBAXErrorSuccess || owningPid <= 0) {
     if (pid <= 0) {
       return [FBAXHitTestOutcome failed:[NSString stringWithFormat:@"could not resolve the owning pid of the hit element (%d)", pidError]];
@@ -806,7 +842,9 @@ static NSString *const kFrontboardVisibilityEndowment = @"com.apple.frontboard.v
   }
 
   // `elementWithAXUIElement:` takes a reference of its own, so the wrapper's goes when it leaves scope.
-  XCAccessibilityElement *hitElement = [_elementClass elementWithAXUIElement:hit.element];
+  XCAccessibilityElement *hitElement = [hit objectFromElement:^id _Nullable (void *element) {
+    return [self->_elementClass elementWithAXUIElement:element];
+  }];
   if (!hitElement) {
     return [FBAXHitTestOutcome failed:@"failed to read the hit element"];
   }
@@ -815,31 +853,30 @@ static NSString *const kFrontboardVisibilityEndowment = @"com.apple.frontboard.v
 
 - (FBAXWriteOutcome *)performAction:(FBAXAction)action onElement:(id)element
 {
-  // NS_VALID_UNTIL_END_OF_SCOPE for the reason given in `-hitTestAtPoint:processIdentifier:`: `-element`
-  // hands out a non-object pointer, so ARC cannot see that the C call depends on the wrapper still being
-  // alive. A write is the shape most exposed to that — the reference is live across a cross-process round
-  // trip that can take as long as the application takes to run the action.
-  NS_VALID_UNTIL_END_OF_SCOPE FBAXElementRef *reference = [self referenceForElement:element];
+  FBAXElementRef *reference = [self referenceForElement:element];
   if (!reference) {
     return [FBAXWriteOutcome failed:@"the element has no AXUIElement to act on"];
   }
-  int32_t axError = _functions.performAction(reference.element, FBAXActionIdentifierForAction(action));
+  // A write is the shape most exposed to the reference dying under the call — it is live across a
+  // cross-process round trip that lasts as long as the application takes to run the action.
+  // `-axErrorFromElement:` is what holds it open for that.
+  int32_t axError = [reference axErrorFromElement:^int32_t (void *raw) {
+    return self->_functions.performAction(raw, FBAXActionIdentifierForAction(action));
+  }];
   return [FBAXWriteOutcome outcomeForWriteError:axError];
 }
 
 - (FBAXWriteOutcome *)setValue:(id)value onElement:(id)element
 {
-  NS_VALID_UNTIL_END_OF_SCOPE FBAXElementRef *reference = [self referenceForElement:element];
+  FBAXElementRef *reference = [self referenceForElement:element];
   if (!reference) {
     return [FBAXWriteOutcome failed:@"the element has no AXUIElement to write to"];
   }
   // __bridge and not __bridge_retained: the runtime borrows the value, and `value` is an argument the
   // caller owns for longer than this call takes.
-  int32_t axError = _functions.setAttributeValue(
-    reference.element,
-    FBAXAttributeIdentifierValue,
-    (__bridge const void *)value
-  );
+  int32_t axError = [reference axErrorFromElement:^int32_t (void *raw) {
+    return self->_functions.setAttributeValue(raw, FBAXAttributeIdentifierValue, (__bridge const void *)value);
+  }];
   return [FBAXWriteOutcome outcomeForWriteError:axError];
 }
 
