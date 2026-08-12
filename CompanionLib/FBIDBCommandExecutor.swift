@@ -779,12 +779,12 @@ public final class FBIDBCommandExecutor {
       return artifact
     }
     let bundlePathURL: URL
-    if linkTo.bundle_type == .app {
-      let app = try await target.installedApplication(bundleID: linkTo.bundle_id)
+    if linkTo.bundleType == .app {
+      let app = try await target.installedApplication(bundleID: linkTo.bundleID)
       logger.log("Going to create a symlink for app bundle: \(app.bundle.name)")
       bundlePathURL = URL(fileURLWithPath: app.bundle.path)
     } else {
-      let testDescriptor = try storageManager.xctest.testDescriptor(withID: linkTo.bundle_id)
+      let testDescriptor = try storageManager.xctest.testDescriptor(withID: linkTo.bundleID)
       logger.log("Going to create a symlink for test bundle: \(testDescriptor.name)")
       bundlePathURL = testDescriptor.url
     }

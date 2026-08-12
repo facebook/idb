@@ -184,15 +184,15 @@ final class CompanionLibTransientTests: XCTestCase {
   // MARK: - FBDsymInstallLinkToBundle Tests
 
   func testDsymInstallLinkToBundleXCTest() {
-    let link = FBDsymInstallLinkToBundle("com.example.test", bundle_type: .xcTest)
-    XCTAssertEqual(link.bundle_id, "com.example.test")
-    XCTAssertEqual(link.bundle_type, .xcTest)
+    let link = FBDsymInstallLinkToBundle(bundleID: "com.example.test", bundleType: .xcTest)
+    XCTAssertEqual(link.bundleID, "com.example.test")
+    XCTAssertEqual(link.bundleType, .xcTest)
   }
 
   func testDsymInstallLinkToBundleApp() {
-    let link = FBDsymInstallLinkToBundle("com.example.app", bundle_type: .app)
-    XCTAssertEqual(link.bundle_id, "com.example.app")
-    XCTAssertEqual(link.bundle_type, .app)
+    let link = FBDsymInstallLinkToBundle(bundleID: "com.example.app", bundleType: .app)
+    XCTAssertEqual(link.bundleID, "com.example.app")
+    XCTAssertEqual(link.bundleType, .app)
   }
 
   // MARK: - FBXCTestRunRequest Factory & Property Tests

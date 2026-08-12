@@ -70,7 +70,7 @@ struct InstallMethodHandler: @unchecked Sendable {
 
     // (2022-03-02) REMOVE! Keeping only for retrocompatibility
     if case let .bundleID(id) = request.value {
-      linkToBundle = .init(id, bundle_type: .app)
+      linkToBundle = .init(bundleID: id, bundleType: .app)
       request = try await requestStream.requiredNext
     }
 
@@ -243,8 +243,8 @@ struct InstallMethodHandler: @unchecked Sendable {
 
   private func readLinkBundleToDsym(from link: Idb_InstallRequest.LinkDsymToBundle) -> FBDsymInstallLinkToBundle {
     return .init(
-      link.bundleID,
-      bundle_type: readDsymBundleType(from: link.bundleType))
+      bundleID: link.bundleID,
+      bundleType: readDsymBundleType(from: link.bundleType))
   }
 
   private func readDsymBundleType(from bundleType: Idb_InstallRequest.LinkDsymToBundle.BundleType) -> FBDsymBundleType {

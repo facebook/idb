@@ -7,19 +7,18 @@
 
 import Foundation
 
-@objc public enum FBDsymBundleType: Int {
+public enum FBDsymBundleType {
   case xcTest
   case app
 }
 
-@objc public final class FBDsymInstallLinkToBundle: NSObject {
+public struct FBDsymInstallLinkToBundle {
 
-  @objc public let bundle_id: String
-  @objc public let bundle_type: FBDsymBundleType
+  public let bundleID: String
+  public let bundleType: FBDsymBundleType
 
-  @objc public init(_ bundle_id: String, bundle_type: FBDsymBundleType) {
-    self.bundle_id = bundle_id
-    self.bundle_type = bundle_type
-    super.init()
+  public init(bundleID: String, bundleType: FBDsymBundleType) {
+    self.bundleID = bundleID
+    self.bundleType = bundleType
   }
 }
