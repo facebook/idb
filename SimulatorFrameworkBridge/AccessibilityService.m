@@ -464,6 +464,35 @@ static NSDictionary *FBAXBridgeTaggedErrorResponse(NSString *message, NSString *
   return response;
 }
 
+// Defined below, after the verbs it dispatches to.
+static NSDictionary<NSString *, id> *FBAXBridgeDispatchRequest(NSDictionary<NSString *, id> *request);
+
+// Answers a request, turning an exception raised while answering into a response.
+//
+// The boundary is the exported function rather than something beside it, so there is no unguarded way in:
+// the serve loop, the argv front-end and the tests all reach the dispatcher only through here.
+//
+// The reader is a long-lived process answering requests on one connection, and it reaches four private
+// frameworks to do it. Those raise; three call sites catch where a raise is known to be possible, and a
+// private API is exactly the thing that gains a fourth without announcing it. Unguarded, the first such
+// raise unwinds out of the serve loop and takes the reader with it — so a client loses not the request
+// that provoked it but every request after it, and learns nothing, the frame it was waiting for simply
+// never arriving.
+//
+// Distinct from an unserializable response, which `FBAXBridgeSerializeResponse` already guards for the
+// same reason: this is the answer failing to be produced rather than failing to be written.
+NSDictionary<NSString *, id> *FBAXBridgeHandleRequest(NSDictionary<NSString *, id> *request)
+{
+  @try {
+    return FBAXBridgeDispatchRequest(request);
+  } @catch (NSException *exception) {
+    NSLog(@"[AccessibilityService] answering a request raised: %@", exception);
+    return FBAXBridgeErrorResponse(
+      [NSString stringWithFormat:@"the reader raised while answering: %@", exception.reason ?: exception.name]
+    );
+  }
+}
+
 NSData *FBAXBridgeSerializeResponse(NSDictionary<NSString *, id> *response)
 {
   // Sanitize first (non-finite numbers would otherwise raise), then still guard the call: an
@@ -802,7 +831,7 @@ static NSDictionary *FBAXBridgeSetValue(id<FBAXRuntime> runtime, NSDictionary *r
   return FBAXBridgeWriteResponse(outcome, pid);
 }
 
-NSDictionary<NSString *, id> *FBAXBridgeHandleRequest(NSDictionary<NSString *, id> *request)
+static NSDictionary<NSString *, id> *FBAXBridgeDispatchRequest(NSDictionary<NSString *, id> *request)
 {
   // The frame is JSON from the client, so the value can be of any type — narrow it to a string before
   // comparing, rather than sending `isEqualToString:` to whatever arrived.

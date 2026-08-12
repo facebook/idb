@@ -427,22 +427,26 @@ typedef struct FBAXPair {
 #pragma mark - Raises while answering
 
 // The reader reaches four private frameworks, and a private API is exactly the thing that starts raising
-// where it used to return. Nothing above the three call sites that catch stops such a raise unwinding out
-// of the serve loop and taking the reader with it — costing a client every later request on that
-// connection, with no frame to say why.
-//
-// BUG: the raise escapes the reader instead of coming back as a response — flipped in the following
-// commit.
-- (void)testARaiseWhileAnsweringEscapesTheReader
+// where it used to return. Unguarded, the first raise unwinds out of the serve loop and takes the reader
+// with it — costing a client every later request on that connection, with no frame to say why. It comes
+// back as a response instead, and the reader is still answering afterwards.
+- (void)testARaiseWhileAnsweringBecomesAResponseAndLeavesTheReaderAnswering
 {
   _runtime.applicationElements[@(kAppPid)] = [FBAXFakeElement readable:@"UIApplication"];
   _runtime.readRaiseReason = @"the runtime went away mid-read";
 
-  XCTAssertThrowsSpecificNamed(
-    FBAXBridgeHandleRequest(@{@"verb" : @"describe", @"pid" : @(kAppPid)}),
-    NSException,
-    NSInternalInconsistencyException
+  NSDictionary *raised = FBAXBridgeHandleRequest(@{@"verb" : @"describe", @"pid" : @(kAppPid)});
+  XCTAssertEqualObjects(raised[@"ok"], @NO);
+  XCTAssertTrue(
+    [raised[@"error"] containsString:@"the runtime went away mid-read"],
+    @"the response must carry what was raised: %@",
+    raised[@"error"]
   );
+
+  // The point of answering rather than aborting: the next request is still served.
+  _runtime.readRaiseReason = nil;
+  NSDictionary *after = FBAXBridgeHandleRequest(@{@"verb" : @"describe", @"pid" : @(kAppPid)});
+  XCTAssertEqualObjects(after[@"ok"], @YES, @"the reader must still answer after a raise: %@", after);
 }
 
 #pragma mark - Request validation
