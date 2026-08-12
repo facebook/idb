@@ -72,37 +72,44 @@ struct FBAXBridgeWriteRequest: Sendable, Equatable {
   /// The one-shot spawn's argv. The guest's front-end reads flags in pairs, so every flag carries a
   /// value and an absent option contributes nothing rather than an empty argument.
   var arguments: [String] {
-    var arguments = ["accessibility", verb.rawValue, "--x", "\(x)", "--y", "\(y)"]
+    var arguments = ["accessibility", verb.rawValue]
+    arguments += FBAXWire.Request.x.argument("\(x)")
+    arguments += FBAXWire.Request.y.argument("\(y)")
     if let pid {
-      arguments += ["--pid", "\(pid)"]
+      arguments += FBAXWire.Request.pid.argument("\(pid)")
     }
     switch kind {
     case let .perform(action):
-      arguments += ["--action", action.rawValue]
+      arguments += FBAXWire.Request.action.argument(action.rawValue)
     case let .setValue(value):
-      arguments += ["--value", value]
+      arguments += FBAXWire.Request.value.argument(value)
     }
     if let assertion {
-      arguments += ["--assert-key", assertion.key.rawValue, "--assert-value", assertion.value]
+      arguments += FBAXWire.Request.assertKey.argument(assertion.key.rawValue)
+      arguments += FBAXWire.Request.assertValue.argument(assertion.value)
     }
     return arguments
   }
 
   /// The persistent transport's JSON request object, carrying the same fields the argv above does.
   var payload: [String: Any] {
-    var payload: [String: Any] = ["verb": verb.rawValue, "x": x, "y": y]
+    var payload: [String: Any] = [
+      FBAXWire.Request.verb.key: verb.rawValue,
+      FBAXWire.Request.x.key: x,
+      FBAXWire.Request.y.key: y,
+    ]
     if let pid {
-      payload["pid"] = Int(pid)
+      payload[FBAXWire.Request.pid.key] = Int(pid)
     }
     switch kind {
     case let .perform(action):
-      payload["action"] = action.rawValue
+      payload[FBAXWire.Request.action.key] = action.rawValue
     case let .setValue(value):
-      payload["value"] = value
+      payload[FBAXWire.Request.value.key] = value
     }
     if let assertion {
-      payload["assertKey"] = assertion.key.rawValue
-      payload["assertValue"] = assertion.value
+      payload[FBAXWire.Request.assertKey.key] = assertion.key.rawValue
+      payload[FBAXWire.Request.assertValue.key] = assertion.value
     }
     return payload
   }
@@ -137,15 +144,31 @@ struct FBAXBridgeOneshotTransport: FBAXBridgeTransport {
   let simulator: FBSimulator
 
   func read(pid: pid_t, maxDepth: Int, maxNodes: Int) async throws -> Data {
-    try await spawn(["accessibility", FBAXWire.Verb.describe.rawValue, "--pid", "\(pid)", "--max-depth", "\(maxDepth)", "--max-nodes", "\(maxNodes)"])
+    try await spawn(
+      ["accessibility", FBAXWire.Verb.describe.rawValue]
+        + FBAXWire.Request.pid.argument("\(pid)")
+        + FBAXWire.Request.maxDepth.argument("\(maxDepth)")
+        + FBAXWire.Request.maxNodes.argument("\(maxNodes)")
+    )
   }
 
   func readFrontmost(x: Double, y: Double, maxDepth: Int, maxNodes: Int, method: FBAXBridgeFrontmostMethod) async throws -> Data {
-    try await spawn(["accessibility", FBAXWire.Verb.describe.rawValue, "--x", "\(x)", "--y", "\(y)", "--max-depth", "\(maxDepth)", "--max-nodes", "\(maxNodes)", "--method", method.rawValue])
+    try await spawn(
+      ["accessibility", FBAXWire.Verb.describe.rawValue]
+        + FBAXWire.Request.x.argument("\(x)")
+        + FBAXWire.Request.y.argument("\(y)")
+        + FBAXWire.Request.maxDepth.argument("\(maxDepth)")
+        + FBAXWire.Request.maxNodes.argument("\(maxNodes)")
+        + FBAXWire.Request.method.argument(method.rawValue)
+    )
   }
 
   func hitTest(x: Double, y: Double) async throws -> Data {
-    try await spawn(["accessibility", FBAXWire.Verb.hitTest.rawValue, "--x", "\(x)", "--y", "\(y)"])
+    try await spawn(
+      ["accessibility", FBAXWire.Verb.hitTest.rawValue]
+        + FBAXWire.Request.x.argument("\(x)")
+        + FBAXWire.Request.y.argument("\(y)")
+    )
   }
 
   func write(_ request: FBAXBridgeWriteRequest) async throws -> Data {
@@ -181,15 +204,31 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
   }
 
   func read(pid: pid_t, maxDepth: Int, maxNodes: Int) async throws -> Data {
-    try await roundTripWithRecovery(["verb": FBAXWire.Verb.describe.rawValue, "pid": Int(pid), "maxDepth": maxDepth, "maxNodes": maxNodes])
+    try await roundTripWithRecovery([
+      FBAXWire.Request.verb.key: FBAXWire.Verb.describe.rawValue,
+      FBAXWire.Request.pid.key: Int(pid),
+      FBAXWire.Request.maxDepth.key: maxDepth,
+      FBAXWire.Request.maxNodes.key: maxNodes,
+    ])
   }
 
   func readFrontmost(x: Double, y: Double, maxDepth: Int, maxNodes: Int, method: FBAXBridgeFrontmostMethod) async throws -> Data {
-    try await roundTripWithRecovery(["verb": FBAXWire.Verb.describe.rawValue, "x": x, "y": y, "maxDepth": maxDepth, "maxNodes": maxNodes, "method": method.rawValue])
+    try await roundTripWithRecovery([
+      FBAXWire.Request.verb.key: FBAXWire.Verb.describe.rawValue,
+      FBAXWire.Request.x.key: x,
+      FBAXWire.Request.y.key: y,
+      FBAXWire.Request.maxDepth.key: maxDepth,
+      FBAXWire.Request.maxNodes.key: maxNodes,
+      FBAXWire.Request.method.key: method.rawValue,
+    ])
   }
 
   func hitTest(x: Double, y: Double) async throws -> Data {
-    try await roundTripWithRecovery(["verb": FBAXWire.Verb.hitTest.rawValue, "x": x, "y": y])
+    try await roundTripWithRecovery([
+      FBAXWire.Request.verb.key: FBAXWire.Verb.hitTest.rawValue,
+      FBAXWire.Request.x.key: x,
+      FBAXWire.Request.y.key: y,
+    ])
   }
 
   func write(_ request: FBAXBridgeWriteRequest) async throws -> Data {

@@ -160,6 +160,40 @@ final class FBAXWireContractTests: XCTestCase {
     }
   }
 
+  // MARK: - Request fields
+
+  // The fields a request carries, in both spellings the guest accepts. Pinned over `allCases` and in one
+  // table, so the JSON key and the argv flag for a field cannot drift apart — the two transports send the
+  // same request, and a field that means one thing over the socket and another over argv is a request
+  // whose behaviour depends on which transport the caller happens to hold.
+  func testRequestFieldWireSpellings() {
+    let expected: [FBAXWire.Request: (key: String, flag: String?)] = [
+      .verb: ("verb", nil),
+      .pid: ("pid", "--pid"),
+      .maxDepth: ("maxDepth", "--max-depth"),
+      .maxNodes: ("maxNodes", "--max-nodes"),
+      .x: ("x", "--x"),
+      .y: ("y", "--y"),
+      .method: ("method", "--method"),
+      .action: ("action", "--action"),
+      .value: ("value", "--value"),
+      .assertKey: ("assertKey", "--assert-key"),
+      .assertValue: ("assertValue", "--assert-value"),
+    ]
+    XCTAssertEqual(Set(FBAXWire.Request.allCases), Set(expected.keys), "every request field must have its spellings pinned")
+    for (field, spelling) in expected {
+      XCTAssertEqual(field.key, spelling.key, "\(field) JSON key")
+      XCTAssertEqual(field.flag, spelling.flag, "\(field) argv flag")
+    }
+  }
+
+  // The verb is the CLI's subcommand rather than an option, so it contributes no argv pair at all — the
+  // guest reads argv strictly two at a time, and a lone flag would shift every field after it.
+  func testTheVerbContributesNoArgvPair() {
+    XCTAssertEqual(FBAXWire.Request.verb.argument("describe"), [])
+    XCTAssertEqual(FBAXWire.Request.maxNodes.argument("5000"), ["--max-nodes", "5000"])
+  }
+
   // MARK: - Write requests
 
   // The two transports send the same write in different shapes, so the shapes are pinned together: a

@@ -103,6 +103,60 @@ enum FBAXWire {
     case setValue = "setvalue"
   }
 
+  /// The fields of a request, in both spellings the guest accepts them in.
+  ///
+  /// One case per field rather than two vocabularies, because the persistent transport sends JSON and the
+  /// one-shot transport sends argv for the *same* request — declaring the pair together is what stops the
+  /// two drifting into requests that mean different things depending on which transport is holding them.
+  ///
+  /// These were the last of the wire spelled as bare literals at each call site. The node keys, verbs,
+  /// actions and failure kinds were all pinned; a field name was not, so a typo in `maxNodes` reached the
+  /// guest as a field it does not read, and the read silently fell back to the guest's own budget instead
+  /// of the caller's.
+  enum Request: String, CaseIterable {
+    case verb
+    case pid
+    case maxDepth
+    case maxNodes
+    case x
+    case y
+    case method
+    case action
+    case value
+    case assertKey
+    case assertValue
+
+    /// The JSON object key the persistent transport sends this field under.
+    var key: String { rawValue }
+
+    /// The argv flag the one-shot transport sends it as, or nil for the one field that is not an option:
+    /// the verb, which the CLI takes as its subcommand.
+    var flag: String? {
+      switch self {
+      case .verb: nil
+      case .pid: "--pid"
+      case .maxDepth: "--max-depth"
+      case .maxNodes: "--max-nodes"
+      case .x: "--x"
+      case .y: "--y"
+      case .method: "--method"
+      case .action: "--action"
+      case .value: "--value"
+      case .assertKey: "--assert-key"
+      case .assertValue: "--assert-value"
+      }
+    }
+
+    /// This field as the flag/value pair the guest's argv parser reads, which takes its arguments strictly
+    /// two at a time — so a field that is not an option contributes neither half rather than a stray one.
+    func argument(_ value: String) -> [String] {
+      guard let flag else {
+        return []
+      }
+      return [flag, value]
+    }
+  }
+
   /// The semantic actions a `perform` can ask for.
   ///
   /// These are accessibility actions the application runs itself, not synthesized touches — the guest
