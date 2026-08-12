@@ -48,6 +48,10 @@ jobs:
     timeout-minutes: 60
     env:
       XCODEGEN_STRIP_XATTRS: 'false'
+      # xcodebuild only forwards TEST_RUNNER_-prefixed variables into the test
+      # process; the in-test environment gates (XCTSkipIf on GITHUB_ACTIONS)
+      # never see the job env without this.
+      TEST_RUNNER_GITHUB_ACTIONS: 'true'
     strategy:
       fail-fast: false
       matrix:
