@@ -700,7 +700,6 @@ static void SwizzleXcodebuildMethods(void)
       exit(1);
     }
     XTSwizzleSelectorForFunction(
-      // @lint-ignore FBOBJCDISCOURAGEDFUNCTION
       objc_getClass("SimServiceContext"),
       @selector(deviceSetWithPath:error:),
       (IMP)SimServiceContext_deviceSetWithPath_error

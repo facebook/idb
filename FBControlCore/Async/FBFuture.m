@@ -617,7 +617,6 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
       // resolved before returning from the constructor.
       // It's OK to use dispatch_sync here: queue is local; there is no dispatch
       // calls within futureCompleted().
-      // @lint-ignore FBOBJCDISCOURAGEDFUNCTION
       dispatch_sync(queue, ^{
         futureCompleted(future, index);
       });
@@ -672,7 +671,6 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
       // resolved before returning from the constructor.
       // It's OK to use dispatch_sync here: queue is local; there is no dispatch
       // calls within futureCompleted()
-      // @lint-ignore FBOBJCDISCOURAGEDFUNCTION
       dispatch_sync(queue, ^{
         futureCompleted(future);
       });
