@@ -10,7 +10,7 @@ import CompanionUtilities
 import FBControlCore
 import Foundation
 
-@objc final class FBiOSTargetStateChangeNotifier: NSObject, FBiOSTargetSetDelegate {
+final class FBiOSTargetStateChangeNotifier: NSObject, FBiOSTargetSetDelegate {
 
   private let filePath: String?
   private let targetSets: [FBiOSTargetSet]
