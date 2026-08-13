@@ -58,7 +58,7 @@ final class FBFileWriterTests: XCTestCase {
     XCTAssertNotNil(results)
 
     // swiftlint:disable force_cast
-    let writer = results![0] as! FBDataConsumer
+    let writer = results![0] as! FBDataConsumer & FBDataConsumerLifecycle
     let reader = results![1] as! FBFileReader
     // swiftlint:enable force_cast
 
@@ -67,6 +67,11 @@ final class FBFileWriterTests: XCTestCase {
     writer.consumeData("HELLO\n".data(using: .utf8)!)
     writer.consumeData("THERE\n".data(using: .utf8)!)
     writer.consumeEndOfFile()
+    // Wait for the writer's channel teardown to close the write end before
+    // winding down the reader: dispatch_io cannot interrupt an operation that
+    // is already inside a syscall, so stopping the reader while the write end
+    // may still be open races teardown against an unbounded read.
+    try writer.finishedConsuming.`await`()
 
     try reader.stopReading().`await`()
 

@@ -71,7 +71,7 @@ final class FBFileReaderTests: XCTestCase, FBDataConsumer {
     XCTAssertNotNil(writerAndReader)
 
     // swiftlint:disable force_cast
-    let writer = writerAndReader![0] as! FBDataConsumer
+    let writer = writerAndReader![0] as! FBDataConsumer & FBDataConsumerLifecycle
     let reader = writerAndReader![1] as! FBFileReader
     // swiftlint:enable force_cast
 
@@ -84,6 +84,10 @@ final class FBFileReaderTests: XCTestCase, FBDataConsumer {
     try reader.stopReading().`await`()
 
     XCTAssertTrue(didRecieveEOF)
+
+    // Drain the writer's asynchronous channel teardown before the test ends,
+    // so its deferred fd close cannot race into later tests' fd lifecycles.
+    try writer.finishedConsuming.`await`()
   }
 
   func testCanStopReadingBeforeEOFResolvesWhenPipeCloses() throws {
