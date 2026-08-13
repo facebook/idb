@@ -98,15 +98,16 @@ public class FBXcodeConfiguration: NSObject {
     ((developerDirectory as NSString).deletingLastPathComponent as NSString).appendingPathComponent("Info.plist")
   }
 
+  // A missing or unreadable plist is an expected runtime condition — hosts without a
+  // full Xcode install resolve an empty developer directory, making these paths
+  // relative and nonexistent. Callers tolerate nil, so this must not assert: the
+  // version statics run at process startup, and an assertions-enabled companion
+  // would abort on every launch on such hosts.
   class func readValue(forKey key: String, fromPlistAtPath plistPath: String) -> Any? {
-    assert(FileManager.default.fileExists(atPath: plistPath), "plist does not exist at path '\(plistPath)'")
     guard let infoPlist = NSDictionary(contentsOfFile: plistPath) else {
-      assertionFailure("Could not read plist at '\(plistPath)'")
       return nil
     }
-    let value = infoPlist[key]
-    assert(value != nil, "'\(key)' does not exist in plist '\(infoPlist.allKeys)'")
-    return value
+    return infoPlist[key]
   }
 
 }
