@@ -6,6 +6,8 @@
 
 # pyre-strict
 
+from collections.abc import AsyncIterator
+from concurrent.futures import CancelledError
 from types import ModuleType
 from unittest import mock
 
@@ -103,3 +105,41 @@ class LogCallResultMetadataTest(TestCase):
         self.assertNotIn("ax_element_count", telemetry.started[1])
         self.assertNotIn("ax_element_count", telemetry.succeeded[1])
         self.assertEqual(telemetry.succeeded[1].get("grpc_method_name"), "fetch")
+
+
+class LogCallCancellationTest(TestCase):
+    """A cancelled invocation must still reach the terminal telemetry hook:
+    it dispatches a success-typed event carrying the cancelled flag, from
+    both the coroutine and the async-generator wrappers."""
+
+    async def test_cancelled_invocation_emits_terminal_success_event(self) -> None:
+        telemetry = _TelemetryPlugin(updates_per_call=[])
+
+        @log_call(name="record")
+        async def record() -> None:
+            raise CancelledError()
+
+        with mock.patch.object(plugin, "PLUGINS", [telemetry]):
+            with self.assertRaises(CancelledError):
+                await record()
+        self.assertEqual(len(telemetry.started), 1)
+        self.assertEqual(len(telemetry.failed), 0)
+        self.assertEqual(len(telemetry.succeeded), 1)
+        self.assertEqual(telemetry.succeeded[0].get("cancelled"), True)
+
+    async def test_cancelled_generator_emits_terminal_success_event(self) -> None:
+        telemetry = _TelemetryPlugin(updates_per_call=[])
+
+        @log_call(name="stream")
+        async def stream() -> AsyncIterator[int]:
+            yield 1
+            raise CancelledError()
+
+        with mock.patch.object(plugin, "PLUGINS", [telemetry]):
+            with self.assertRaises(CancelledError):
+                async for _ in stream():
+                    pass
+        self.assertEqual(len(telemetry.started), 1)
+        self.assertEqual(len(telemetry.failed), 0)
+        self.assertEqual(len(telemetry.succeeded), 1)
+        self.assertEqual(telemetry.succeeded[0].get("cancelled"), True)
