@@ -17,7 +17,10 @@ private let ConfirmShimsAreSignedEnv = "FBCONTROLCORE_CONFIRM_SIGNED_SHIMS"
 @objc(FBControlCoreGlobalConfiguration)
 public class FBControlCoreGlobalConfiguration: NSObject {
 
+  // Guarded by _loggerLock. nonisolated(unsafe) only silences static-variable isolation
+  // checking; the lock is what provides the synchronization.
   nonisolated(unsafe) private static var _logger: (any FBControlCoreLogger)?
+  private static let _loggerLock = NSLock()
 
   // MARK: Timeouts
 
@@ -40,16 +43,23 @@ public class FBControlCoreGlobalConfiguration: NSObject {
   /// somewhere they will actually look should pass their own logger instead of relying on nil.
   @objc public class var defaultLogger: any FBControlCoreLogger {
     get {
+      _loggerLock.lock()
+      defer { _loggerLock.unlock() }
       if let existing = _logger { return existing }
       let created = createDefaultLogger()
       _logger = created
       return created
     }
     set {
-      if _logger != nil {
+      _loggerLock.lock()
+      let previous = _logger
+      _logger = newValue
+      _loggerLock.unlock()
+      // Outside the critical section: logging through an arbitrary logger implementation must
+      // not run under the lock.
+      if previous != nil {
         newValue.debug().log("Overriding the Default Logger with \(newValue)")
       }
-      _logger = newValue
     }
   }
 
@@ -72,7 +82,9 @@ public class FBControlCoreGlobalConfiguration: NSObject {
   // MARK: NSObject
 
   override public class func description() -> String {
-    "Default Logger \(_logger.map(String.init(describing:)) ?? "(nil)")"
+    _loggerLock.lock()
+    defer { _loggerLock.unlock() }
+    return "Default Logger \(_logger.map(String.init(describing:)) ?? "(nil)")"
   }
 
   public override var description: String {
