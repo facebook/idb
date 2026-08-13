@@ -98,7 +98,7 @@ public class FBXcodeConfiguration: NSObject {
     ((developerDirectory as NSString).deletingLastPathComponent as NSString).appendingPathComponent("Info.plist")
   }
 
-  fileprivate class func readValue(forKey key: String, fromPlistAtPath plistPath: String) -> Any? {
+  class func readValue(forKey key: String, fromPlistAtPath plistPath: String) -> Any? {
     assert(FileManager.default.fileExists(atPath: plistPath), "plist does not exist at path '\(plistPath)'")
     guard let infoPlist = NSDictionary(contentsOfFile: plistPath) else {
       assertionFailure("Could not read plist at '\(plistPath)'")
