@@ -106,15 +106,4 @@ public class FBControlCoreGlobalConfiguration: NSObject {
     guard let value = ProcessInfo.processInfo.environment[FBControlCoreDebugLogging] else { return false }
     return (value as NSString).boolValue
   }
-
-  private class func readValue(forKey key: String, fromPlistAtPath plistPath: String) -> Any? {
-    assert(FileManager.default.fileExists(atPath: plistPath), "plist does not exist at path '\(plistPath)'")
-    guard let infoPlist = NSDictionary(contentsOfFile: plistPath) else {
-      assertionFailure("Could not read plist at '\(plistPath)'")
-      return nil
-    }
-    let value = infoPlist[key]
-    assert(value != nil, "'\(key)' does not exist in plist '\(infoPlist.allKeys)'")
-    return value
-  }
 }
