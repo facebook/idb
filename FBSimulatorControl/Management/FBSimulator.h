@@ -151,5 +151,6 @@ NS_SWIFT_SENDABLE
 
 // The accessibility translation dispatcher accessors
 // (`createAccessibilityTranslationDispatcher(withTranslator:)` and
-// `accessibilityTranslationDispatcher`) are now provided by a Swift extension on
-// FBSimulator (see FBSimulatorAccessibilityCommands.swift).
+// `accessibilityTranslationDispatcher`) are module-internal Swift, provided by an
+// extension on FBSimulator (see FBSimulatorAccessibilityCommands.swift). They are
+// not exposed to Objective-C or to importers of this framework.
