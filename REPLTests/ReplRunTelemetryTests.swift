@@ -78,6 +78,21 @@ struct ReplRunTelemetryTests {
     #expect(subject.normals.isEmpty)
   }
 
+  @Test
+  func sessionEndSubjectCarriesRunCountAndSessionDuration() {
+    let start = Date(timeIntervalSince1970: 1000)
+    let subject = ReplRunTelemetry.subject(
+      name: "session_end",
+      start: start,
+      ints: ["runs": 3],
+      failure: nil,
+      now: Date(timeIntervalSince1970: 1005))
+    #expect(subject.eventName == "session_end")
+    #expect(subject.eventType == .success)
+    #expect(subject.ints == ["runs": 3])
+    #expect(subject.duration == NSNumber(value: 5000))
+  }
+
   // MARK: - wire formats
 
   @Test

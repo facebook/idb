@@ -61,6 +61,12 @@ final class ReplSession {
 
   private let config: ReplSessionConfig
   private let reporter: FBEventReporter
+  /// When the session began connecting; the `session_end` event's duration
+  /// measures from here.
+  private let startedAt: Date
+  /// How many blocks this session attempted to execute (successes and
+  /// failures alike); reported on the `session_end` event.
+  private var runsExecuted = 0
   private let group: MultiThreadedEventLoopGroup
   private let channel: GRPCChannel
   private let call: GRPCAsyncBidirectionalStreamingCall<Idb_ReplRequest, Idb_ReplResponse>
@@ -78,6 +84,7 @@ final class ReplSession {
   private init(
     config: ReplSessionConfig,
     reporter: FBEventReporter,
+    startedAt: Date,
     group: MultiThreadedEventLoopGroup,
     channel: GRPCChannel,
     call: GRPCAsyncBidirectionalStreamingCall<Idb_ReplRequest, Idb_ReplResponse>,
@@ -99,6 +106,7 @@ final class ReplSession {
   ) {
     self.config = config
     self.reporter = reporter
+    self.startedAt = startedAt
     self.group = group
     self.channel = channel
     self.call = call
@@ -284,6 +292,7 @@ final class ReplSession {
     return ReplSession(
       config: config,
       reporter: reporter,
+      startedAt: sessionStart,
       group: group,
       channel: channel,
       call: call,
@@ -312,6 +321,7 @@ final class ReplSession {
   func execute(code: String) async throws -> ExecutionResult {
     let index = nextRunIndex
     let start = Date()
+    runsExecuted += 1
     // Advanced as the run progresses, so a failure row records the phase the
     // run was in when it failed.
     var stage = ReplRunStage.compile
@@ -381,8 +391,13 @@ final class ReplSession {
   }
 
   /// Closes the report and tears down the gRPC stream, channel, and event-loop group,
-  /// then cleans up the session's scratch directory.
+  /// then cleans up the session's scratch directory. Reports the `session_end`
+  /// event carrying the session's duration and how many runs it executed —
+  /// which makes sessions that never ran code visible.
   func finish() async {
+    reporter.report(
+      ReplRunTelemetry.subject(
+        name: "session_end", start: startedAt, ints: ["runs": runsExecuted], failure: nil))
     reportWriter?.close()
     try? await call.requestStream.finish()
     try? await channel.close().get()
