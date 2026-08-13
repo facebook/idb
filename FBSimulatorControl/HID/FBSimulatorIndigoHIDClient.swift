@@ -119,7 +119,10 @@ final class FBSimulatorIndigoHIDClient: @unchecked Sendable {
   }
 
   /// Sends the message bytes synchronously. Callers must guarantee all calls are from `queue`.
-  private func sendData(_ data: Data, completionQueue: DispatchQueue, completion: @escaping @Sendable (Error?) -> Void) {
+  ///
+  /// Internal rather than private so that tests can drive a send without the hop that `send(_:)`
+  /// makes onto `queue`, which would put a raise on a thread they have no way to guard.
+  func sendData(_ data: Data, completionQueue: DispatchQueue, completion: @escaping @Sendable (Error?) -> Void) {
     // The event is delivered asynchronously. Copy the message and let the client manage its lifecycle:
     // the free of the buffer is performed by the client (freeWhenDone) and the Data frees when out of scope.
     let size = data.count

@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import Darwin
 import FBControlCore
 @testable import FBSimulatorControl
 import Foundation
@@ -35,7 +36,61 @@ private final class NilReturningLegacyHIDClientStub: NSObject {
   }
 }
 
-@Suite("Legacy Indigo HID client creation")
+/// Stands in for a client that was built against a live device and then had it shut down underneath
+/// it: the initializer succeeded, the send raises. `-[SimDeviceIOClient ioPorts]` is reached from
+/// both, so a client surviving construction is no guarantee its sends will.
+private final class RaisingSendLegacyHIDClientStub: NSObject {
+  static let reason = "SimDeviceIOClient has no ioPorts"
+
+  @objc(initWithDevice:error:)
+  func initWithDevice(_ device: Any, error: AutoreleasingUnsafeMutablePointer<AnyObject?>?) -> AnyObject? {
+    self
+  }
+
+  @objc(sendWithMessage:freeWhenDone:completionQueue:completion:)
+  func send(
+    withMessage message: UnsafeMutableRawPointer,
+    freeWhenDone: Bool,
+    completionQueue: DispatchQueue,
+    completion: @escaping @Sendable (Error?) -> Void
+  ) {
+    // Deliberately does not free: a raising callee gives no way to know whether it took ownership of
+    // the buffer first, which is the same bind the client is in.
+    NSException(name: .internalInconsistencyException, reason: Self.reason, userInfo: nil).raise()
+  }
+}
+
+/// Stands in for a client that takes the message and reports a delivery failure by contract.
+private final class FailingSendLegacyHIDClientStub: NSObject {
+  static let reason = "The HID server is not accepting messages"
+
+  @objc(initWithDevice:error:)
+  func initWithDevice(_ device: Any, error: AutoreleasingUnsafeMutablePointer<AnyObject?>?) -> AnyObject? {
+    self
+  }
+
+  @objc(sendWithMessage:freeWhenDone:completionQueue:completion:)
+  func send(
+    withMessage message: UnsafeMutableRawPointer,
+    freeWhenDone: Bool,
+    completionQueue: DispatchQueue,
+    completion: @escaping @Sendable (Error?) -> Void
+  ) {
+    if freeWhenDone {
+      free(message)
+    }
+    completion(
+      NSError(domain: "SimDeviceLegacyHIDClient", code: 2, userInfo: [NSLocalizedDescriptionKey: Self.reason]))
+  }
+}
+
+/// Holds what a `@Sendable` completion was handed, which it cannot do by capturing a local.
+private final class CompletionCapture: @unchecked Sendable {
+  var wasCalled = false
+  var error: Error?
+}
+
+@Suite("Legacy Indigo HID client")
 struct FBSimulatorIndigoHIDClientTests {
 
   @Test("An initializer that raises surfaces the raise as a client creation failure")
@@ -88,5 +143,49 @@ struct FBSimulatorIndigoHIDClientTests {
     }
     #expect(className == NSStringFromClass(NilReturningLegacyHIDClientStub.self))
     #expect((try #require(underlying) as NSError).localizedDescription == NilReturningLegacyHIDClientStub.reason)
+  }
+
+  @Test("A send the client reports as failed is delivered to the completion")
+  func sendReportsClientFailure() throws {
+    let client = try FBSimulatorIndigoHIDClient(
+      device: NSObject(), clientClass: FBObjCRuntimeClass(FailingSendLegacyHIDClientStub.self))
+    let capture = CompletionCapture()
+
+    client.sendData(Data([0x01, 0x02]), completionQueue: .main) {
+      capture.wasCalled = true
+      capture.error = $0
+    }
+
+    #expect(capture.wasCalled)
+    #expect(try #require(capture.error).localizedDescription == FailingSendLegacyHIDClientStub.reason)
+  }
+
+  @Test("A send whose client raises reports the raise to the completion")
+  func sendRaises() throws {
+    let client = try FBSimulatorIndigoHIDClient(
+      device: NSObject(), clientClass: FBObjCRuntimeClass(RaisingSendLegacyHIDClientStub.self))
+    let capture = CompletionCapture()
+    var raised: Error?
+    do {
+      // `sendData` rather than `send(_:)`: the async entry point hops onto the client's own queue,
+      // putting the raise on a thread no caller can wrap. The guard here is only so that a regression
+      // fails this test instead of aborting the test process, as it does to `idb_companion`.
+      try FBObjCExceptionGuard.run {
+        client.sendData(Data([0x01, 0x02]), completionQueue: .main) {
+          capture.wasCalled = true
+          capture.error = $0
+        }
+      }
+    } catch {
+      raised = error
+    }
+
+    // BUG: the raise unwinds straight out of the client, so the completion never runs and whoever
+    // asked for the event waits on a continuation that is never resumed — flipped in the following
+    // commit.
+    #expect(!capture.wasCalled)
+    let raisedError = try #require(raised) as NSError
+    #expect(raisedError.domain == FBObjCExceptionGuardErrorDomain)
+    #expect(raisedError.localizedDescription == RaisingSendLegacyHIDClientStub.reason)
   }
 }
