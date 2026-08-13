@@ -109,9 +109,9 @@ struct ReplRunner: ParsableArguments {
   var code: String?
 
   func run(context: Context) async throws {
-    let session = try await ReplSession.start(
-      context: context,
-      config: connection.sessionConfig(report: report))
+    var config = connection.sessionConfig(report: report)
+    config.mode = code != nil ? .oneshot : .interactive
+    let session = try await ReplSession.start(context: context, config: config)
 
     // One-shot mode: when a line of code is supplied on the command line, compile
     // and run just that, print the result to stdout, and exit instead of starting

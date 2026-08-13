@@ -26,6 +26,11 @@ public final class FBEventReporterSubject: NSObject {
   public let duration: NSNumber?
   public let size: NSNumber?
   public let message: String?
+  /// Additional per-event string columns attached to this subject alone —
+  /// unlike reporter metadata, which applies to every subsequent event.
+  public let normals: [String: String]
+  /// Additional per-event integer columns attached to this subject alone.
+  public let ints: [String: Int]
 
   // MARK: Convenience Initializers
 
@@ -36,7 +41,9 @@ public final class FBEventReporterSubject: NSObject {
       arguments: nil,
       duration: nil,
       size: nil,
-      message: nil
+      message: nil,
+      normals: [:],
+      ints: [:]
     )
   }
 
@@ -47,29 +54,50 @@ public final class FBEventReporterSubject: NSObject {
       arguments: arguments,
       duration: nil,
       size: nil,
-      message: nil
+      message: nil,
+      normals: [:],
+      ints: [:]
     )
   }
 
-  public convenience init(forSuccessfulCall call: String, duration: TimeInterval, size: NSNumber?, arguments: [String]) {
+  public convenience init(
+    forSuccessfulCall call: String,
+    duration: TimeInterval,
+    size: NSNumber?,
+    arguments: [String],
+    normals: [String: String] = [:],
+    ints: [String: Int] = [:]
+  ) {
     self.init(
       eventName: call,
       eventType: .success,
       arguments: arguments,
       duration: FBEventReporterSubject.durationMilliseconds(duration),
       size: size,
-      message: nil
+      message: nil,
+      normals: normals,
+      ints: ints
     )
   }
 
-  public convenience init(forFailingCall call: String, duration: TimeInterval, message: String, size: NSNumber?, arguments: [String]) {
+  public convenience init(
+    forFailingCall call: String,
+    duration: TimeInterval,
+    message: String,
+    size: NSNumber?,
+    arguments: [String],
+    normals: [String: String] = [:],
+    ints: [String: Int] = [:]
+  ) {
     self.init(
       eventName: call,
       eventType: .failure,
       arguments: arguments,
       duration: FBEventReporterSubject.durationMilliseconds(duration),
       size: size,
-      message: message
+      message: message,
+      normals: normals,
+      ints: ints
     )
   }
 
@@ -107,13 +135,15 @@ public final class FBEventReporterSubject: NSObject {
     return NSNumber(value: milliseconds)
   }
 
-  private init(eventName: String, eventType: FBEventType, arguments: [String]?, duration: NSNumber?, size: NSNumber?, message: String?) {
+  private init(eventName: String, eventType: FBEventType, arguments: [String]?, duration: NSNumber?, size: NSNumber?, message: String?, normals: [String: String], ints: [String: Int]) {
     self.eventName = eventName
     self.eventType = eventType
     self.arguments = arguments
     self.duration = duration
     self.size = size
     self.message = message
+    self.normals = normals
+    self.ints = ints
     super.init()
   }
 }

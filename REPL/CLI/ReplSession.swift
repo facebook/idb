@@ -27,6 +27,7 @@ struct ReplSessionConfig {
   var reportPath: String?
   var reportFailures: Bool
   var reason: String?
+  var mode: ReplSessionMode = .interactive
 }
 
 /// The outcome of executing one block of code: the output the target returned (already
@@ -128,7 +129,8 @@ final class ReplSession {
 
     let reporter = ReplTelemetry.makeReporter()
     var sessionMetadata = [
-      "context": context.telemetryName
+      "context": context.telemetryName,
+      "mode": config.mode.rawValue,
     ]
     if let udid = config.udid {
       sessionMetadata["udid"] = udid
@@ -250,10 +252,12 @@ final class ReplSession {
       linkerArguments = try resolveLinkerArguments(platform: platform, runtimeOSVersion: osVersion)
       FileHandle.standardError.write(Data("idb-repl: compiling injected code for \(targetTriple)\n".utf8))
     } catch {
-      reportCall(reporter, "start_session", start: sessionStart, arguments: [], failure: "\(error)")
+      reporter.report(
+        ReplRunTelemetry.subject(
+          name: "start_session", start: sessionStart, failure: "\(error)", stage: .connect))
       throw error
     }
-    reportCall(reporter, "start_session", start: sessionStart, arguments: [], failure: nil)
+    reporter.report(ReplRunTelemetry.subject(name: "start_session", start: sessionStart, failure: nil))
 
     // The app was freshly launched iff the companion resumes numbering from zero (no
     // prior runs from a reattached REPL). Recorded for app sessions so `replay` can
@@ -308,6 +312,9 @@ final class ReplSession {
   func execute(code: String) async throws -> ExecutionResult {
     let index = nextRunIndex
     let start = Date()
+    // Advanced as the run progresses, so a failure row records the phase the
+    // run was in when it failed.
+    var stage = ReplRunStage.compile
     do {
       let parameters = ReplCompileParameters(
         targetTriple: targetTriple,
@@ -326,6 +333,7 @@ final class ReplSession {
       case let .failure(compilerOutput):
         throw ReplExecutionError.compileFailed(compilerOutput)
       }
+      stage = .inject
       try await call.requestStream.send(
         .with {
           $0.control = .execute(
@@ -334,13 +342,20 @@ final class ReplSession {
               $0.symbol = symbol
             })
         })
+      stage = .execute
       switch try await responses.next()?.event {
       case let .result(result):
         let artifactFilenames = await Self.transferArtifacts(result.artifacts, client: client, into: reportWriter)
         reportWriter?.recordRun(index: index, code: code, output: result.output, artifactFilenames: artifactFilenames, at: Date())
         let rawNext = Int(result.nextRunIndex)
         nextRunIndex = rawNext >= 0 ? rawNext : 0
-        Self.reportCall(reporter, "run", start: start, arguments: Self.codeMetadata(code), failure: nil)
+        reporter.report(
+          ReplRunTelemetry.subject(
+            name: "run",
+            start: start,
+            arguments: Self.codeMetadata(code),
+            ints: ReplRunTelemetry.codeMetrics(code),
+            failure: nil))
         return ExecutionResult(output: result.output, nextIndex: rawNext, artifactFilenames: artifactFilenames)
       case let .stopped(stopped):
         throw ReplExecutionError.sessionStopped(stopped.desc)
@@ -353,7 +368,14 @@ final class ReplSession {
       if config.reportFailures, case let ReplExecutionError.compileFailed(compilerOutput) = error {
         reportWriter?.recordCompileFailure(index: index, code: code, compilerOutput: compilerOutput, at: Date())
       }
-      Self.reportCall(reporter, "run", start: start, arguments: Self.codeMetadata(code), failure: "\(error)")
+      reporter.report(
+        ReplRunTelemetry.subject(
+          name: "run",
+          start: start,
+          arguments: Self.codeMetadata(code),
+          ints: ReplRunTelemetry.codeMetrics(code),
+          failure: "\(error)",
+          stage: stage))
       throw error
     }
   }
@@ -422,24 +444,14 @@ final class ReplSession {
 
   // MARK: - Telemetry
 
-  /// Coarse telemetry metadata describing a block of code — its character count
-  /// and its significant line count — as `key=value` elements for a call's
-  /// `arguments`.
+  /// Legacy stringly rendering of the code size metrics into `call_arguments`.
+  /// The typed `code_size`/`code_lines` int columns carry the same values;
+  /// kept for one release of query continuity, then dropped.
   private static func codeMetadata(_ code: String) -> [String] {
     [
       "size=\(code.count)",
       "lines=\(ReplSourceMetadata.countSignificantLinesOfCode(in: code))",
     ]
-  }
-
-  /// Reports the outcome of a timed call (`nil` failure means success).
-  private static func reportCall(_ reporter: FBEventReporter, _ name: String, start: Date, arguments: [String], failure: String?) {
-    let duration = Date().timeIntervalSince(start)
-    if let failure {
-      reporter.report(FBEventReporterSubject(forFailingCall: name, duration: duration, message: failure, size: nil, arguments: arguments))
-    } else {
-      reporter.report(FBEventReporterSubject(forSuccessfulCall: name, duration: duration, size: nil, arguments: arguments))
-    }
   }
 
   // MARK: - Artifacts

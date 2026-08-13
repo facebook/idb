@@ -57,9 +57,11 @@ struct ReplayCommand: AsyncParsableCommand {
       return
     }
 
+    var config = connection.sessionConfig(report: report)
+    config.mode = .replay
     let session = try await ReplSession.start(
       context: parsed.context.asContext(forceNewSession: newSession),
-      config: connection.sessionConfig(report: report))
+      config: config)
 
     // Absolute offsets from replay start, so a slow replay never sleeps and the gaps
     // left by skipped compile failures are still reflected. Empty unless --realtime.
