@@ -28,6 +28,9 @@ public final class FBSimulatorSet: NSObject, FBiOSTargetSet {
 
   // MARK: - Initializers
 
+  /// - Parameter logger: nil means `FBControlCoreGlobalConfiguration.defaultLogger`, which is
+  ///   os_log-only unless the `FBCONTROLCORE_LOGGING`/`FBCONTROLCORE_DEBUG_LOGGING` environment
+  ///   variables are set — see its documentation. The resolved logger is stored non-optionally.
   @objc(setWithConfiguration:deviceSet:delegate:logger:reporter:error:)
   public class func set(withConfiguration configuration: FBSimulatorControlConfiguration, deviceSet: SimDeviceSet, delegate: (any FBiOSTargetSetDelegate)?, logger: (any FBControlCoreLogger)?, reporter: (any FBEventReporter)?) throws -> FBSimulatorSet {
     let resolvedLogger = logger ?? FBControlCoreGlobalConfiguration.defaultLogger

@@ -7,7 +7,9 @@
 
 import Foundation
 
+/// Environment variable; when truthy, the default logger mirrors its output to stderr.
 public let FBControlCoreStderrLogging = "FBCONTROLCORE_LOGGING"
+/// Environment variable; when truthy, the default logger emits debug-level output.
 public let FBControlCoreDebugLogging = "FBCONTROLCORE_DEBUG_LOGGING"
 
 private let ConfirmShimsAreSignedEnv = "FBCONTROLCORE_CONFIRM_SIGNED_SHIMS"
@@ -25,6 +27,17 @@ public class FBControlCoreGlobalConfiguration: NSObject {
 
   // MARK: Logger
 
+  /// The logger used wherever a nullable logger parameter is passed as nil.
+  ///
+  /// By default this logger is close to silent from a consumer's point of view: it writes to
+  /// os_log (subsystem `com.facebook.fbcontrolcore`) at info level and nowhere else. In a process
+  /// without a terminal — a GUI app, a launchd job — nothing reaches stderr, so framework
+  /// diagnostics (including framework-loading failures) are only visible via
+  /// `log stream --predicate 'subsystem == "com.facebook.fbcontrolcore"'`.
+  ///
+  /// Two environment variables lift this: `FBCONTROLCORE_LOGGING` mirrors output to stderr, and
+  /// `FBCONTROLCORE_DEBUG_LOGGING` raises the level to debug. Consumers that want diagnostics
+  /// somewhere they will actually look should pass their own logger instead of relying on nil.
   @objc public class var defaultLogger: any FBControlCoreLogger {
     get {
       if let existing = _logger { return existing }

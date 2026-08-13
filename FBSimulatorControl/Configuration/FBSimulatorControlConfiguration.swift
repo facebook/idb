@@ -28,6 +28,9 @@ public class FBSimulatorControlConfiguration: NSObject, NSCopying {
 
   // MARK: - Initializers
 
+  /// - Parameter logger: nil means `FBControlCoreGlobalConfiguration.defaultLogger`, which is
+  ///   os_log-only unless the `FBCONTROLCORE_LOGGING`/`FBCONTROLCORE_DEBUG_LOGGING` environment
+  ///   variables are set — see its documentation.
   @objc(configurationWithDeviceSetPath:logger:reporter:)
   public class func configuration(
     withDeviceSetPath deviceSetPath: String?,
@@ -41,6 +44,8 @@ public class FBSimulatorControlConfiguration: NSObject, NSCopying {
     )
   }
 
+  /// - Parameter logger: nil means `FBControlCoreGlobalConfiguration.defaultLogger` (os_log-only
+  ///   by default — see its documentation).
   @objc
   public init(deviceSetPath: String?, logger: (any FBControlCoreLogger)?, reporter: (any FBEventReporter)?) {
     self.deviceSetPath = deviceSetPath

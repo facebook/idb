@@ -58,7 +58,8 @@
  Confirms that the current user can load Frameworks.
  Subclasses should load the frameworks upon which they depend.
 
- @param logger the Logger to log events to.
+ @param logger the Logger to log events to. nil loads silently: diagnostics go to the os_log-only
+ default logger (see FBControlCoreGlobalConfiguration.defaultLogger).
  @param error any error that occurred during performing the preconditions.
  @return YES if FBSimulatorControl is usable, NO otherwise.
  */
