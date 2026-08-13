@@ -12,8 +12,8 @@ import Foundation
 ///
 /// Previously these were stringly-typed `FBSimulatorError` `NSError`s. No consumer inspects their
 /// domain or code — they are surfaced only as messages — so they are modelled here as a typed enum
-/// that enumerates the failure modes. `errorDescription` reproduces the original message strings
-/// verbatim, so the text surfaced to callers is unchanged.
+/// that enumerates the failure modes. `errorDescription` reproduces the original message strings,
+/// extended only where a case carries an underlying error whose own message the caller needs.
 public enum FBSimulatorHIDError: Error, LocalizedError {
   /// The runtime-only `SimDeviceLegacyHIDClient` class could not be looked up by name.
   case clientClassUnavailable(className: String)
@@ -48,8 +48,11 @@ public enum FBSimulatorHIDError: Error, LocalizedError {
     switch self {
     case let .clientClassUnavailable(className):
       return "Could not look up class \(className)"
-    case let .clientCreationFailed(clientClass, _):
-      return "Could not create instance of \(clientClass)"
+    case let .clientCreationFailed(clientClass, underlying):
+      guard let underlying else {
+        return "Could not create instance of \(clientClass)"
+      }
+      return "Could not create instance of \(clientClass): \(underlying.localizedDescription)"
     case .clientDisposed:
       return "Cannot Connect, HID client has already been disposed of"
     case .purpleWorkspacePortUnavailable:

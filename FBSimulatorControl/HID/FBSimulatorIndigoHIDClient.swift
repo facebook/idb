@@ -9,16 +9,20 @@
 import Darwin
 @preconcurrency import FBControlCore
 import Foundation
-import ObjectiveC
 
 /// Informal protocol for messaging the runtime-only `SimDeviceLegacyHIDClient` class.
 /// That class historically lived in SimulatorKit and has since relocated (e.g. to CoreDeviceIO
 /// in newer Xcodes), and is loaded on demand via dlopen by `FBSimulatorControlFrameworkLoader`.
 /// We therefore never reference it as a Swift type — doing so would emit a link-time
 /// `_OBJC_CLASS_$_SimDeviceLegacyClient` symbol pinned to a single framework, which breaks when
-/// the class moves. Instead we look the class up by name, allocate it with `class_createInstance`,
+/// the class moves. Instead we look the class up by name, allocate it with `FBObjCRuntimeClass`,
 /// and message it via `unsafeBitCast` to this protocol — mirroring exactly why the original
 /// Objective-C used `objc_lookUpClass` + `id`.
+///
+/// Every send through this protocol has to be guarded with `FBObjCExceptionGuard`. It lands in
+/// CoreSimulator code that asserts on state this process does not own — a device that has been
+/// shut down, a `SimDeviceIO` connection that has gone away — and an `NSException` unwinding
+/// through a Swift frame reaches `libc++abi` and aborts the companion.
 @objc private protocol SimDeviceLegacyHIDClientMessaging {
   @objc(initWithDevice:error:)
   func initWithDevice(_ device: Any, error: AutoreleasingUnsafeMutablePointer<AnyObject?>?) -> AnyObject?
@@ -73,14 +77,17 @@ final class FBSimulatorIndigoHIDClient: @unchecked Sendable {
   /// Allocates and initializes `clientClass` for `device`. Separate from `init(for:)` so that tests
   /// can stand a class of their own in place of the runtime-only one.
   convenience init(device: Any, clientClass: FBObjCRuntimeClass) throws {
-    // Allocate + initialize the runtime-only client without a link-time class reference.
-    let allocated = class_createInstance(clientClass.cls, 0) as AnyObject
     var clientError: AnyObject?
-    guard
-      let client = unsafeBitCast(allocated, to: SimDeviceLegacyHIDClientMessaging.self)
-        .initWithDevice(device, error: &clientError)
-    else {
-      throw FBSimulatorHIDError.clientCreationFailed(clientClass: clientClass.name, underlying: clientError as? Error)
+    let client: AnyObject
+    do {
+      client = try clientClass.instantiate(as: SimDeviceLegacyHIDClientMessaging.self) {
+        $0.initWithDevice(device, error: &clientError)
+      }
+    } catch {
+      // `clientError` first: when the client declines by contract it says why, and that is more
+      // specific than "the initializer returned nil".
+      throw FBSimulatorHIDError.clientCreationFailed(
+        clientClass: clientClass.name, underlying: (clientError as? Error) ?? error)
     }
     self.init(
       client: client, queue: DispatchQueue(label: "com.facebook.fbsimulatorcontrol.hid"))

@@ -38,15 +38,16 @@ private final class NilReturningLegacyHIDClientStub: NSObject {
 @Suite("Legacy Indigo HID client creation")
 struct FBSimulatorIndigoHIDClientTests {
 
-  @Test("An initializer that raises takes the process with it")
+  @Test("An initializer that raises surfaces the raise as a client creation failure")
   func clientInitializerRaises() throws {
     let clientClass = FBObjCRuntimeClass(RaisingLegacyHIDClientStub.self)
     var thrown: Error?
     var raised: Error?
     do {
-      // The guard sits in the test, not in the client — which is the bug being pinned. In
-      // `idb_companion` there is no `@catch` anywhere on the stack between the gRPC `hid` handler
-      // and this initializer, so the raise reaches `libc++abi` and aborts the whole process.
+      // The client is expected to convert the raise itself; this guard is only here so that a
+      // regression fails one test rather than aborting the whole test process, which is what it
+      // does to `idb_companion` — nothing between the gRPC `hid` handler and this initializer
+      // catches an `NSException`.
       try FBObjCExceptionGuard.run {
         do {
           _ = try FBSimulatorIndigoHIDClient(device: NSObject(), clientClass: clientClass)
@@ -58,12 +59,21 @@ struct FBSimulatorIndigoHIDClientTests {
       raised = error
     }
 
-    // BUG: nothing is thrown, because the raise unwinds straight out of the client and is only
-    // stopped by this test's own guard — flipped in the following commit.
-    #expect(thrown == nil)
-    let raisedError = try #require(raised) as NSError
-    #expect(raisedError.domain == FBObjCExceptionGuardErrorDomain)
-    #expect(raisedError.localizedDescription == RaisingLegacyHIDClientStub.reason)
+    #expect(raised == nil)
+    let hidError = try #require(thrown as? FBSimulatorHIDError)
+    guard case let .clientCreationFailed(className, underlying) = hidError else {
+      Issue.record("Expected clientCreationFailed, got \(hidError)")
+      return
+    }
+    #expect(className == NSStringFromClass(RaisingLegacyHIDClientStub.self))
+    guard case let .initializerRaised(_, guardError)? = underlying as? FBObjCRuntimeClassError else {
+      Issue.record("Expected initializerRaised, got \(String(describing: underlying))")
+      return
+    }
+    #expect((guardError as NSError).domain == FBObjCExceptionGuardErrorDomain)
+    #expect(guardError.localizedDescription == RaisingLegacyHIDClientStub.reason)
+    // The reason the raise carried has to reach whoever asked for the HID, not stop here.
+    #expect(hidError.localizedDescription.hasSuffix(RaisingLegacyHIDClientStub.reason))
   }
 
   @Test("An initializer that returns nil surfaces the error it wrote out")
