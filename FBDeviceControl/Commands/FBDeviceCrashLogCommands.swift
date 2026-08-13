@@ -23,7 +23,7 @@ public class FBDeviceCrashLogCommands: NSObject, FBiOSTargetCommand {
 
   public class func commands(with target: any FBiOSTarget) -> Self {
     let storeDirectory = (target.auxillaryDirectory as NSString).appendingPathComponent("crash_store")
-    let store = FBCrashLogStore.store(forDirectories: [storeDirectory], logger: target.logger!)
+    let store = FBCrashLogStore.store(forDirectories: [storeDirectory], logger: target.logger)
     return self.init(device: target as! FBDevice, store: store)
   }
 
@@ -61,11 +61,11 @@ public class FBDeviceCrashLogCommands: NSObject, FBiOSTargetCommand {
     guard let device else {
       throw FBDeviceControlError().describe("Device is nil").build()
     }
-    let logger = device.logger?.withName("crash_remove")
+    let logger = device.logger.withName("crash_remove")
     _ = try await ingestAllCrashLogsAsync(useCache: true)
     let pruned = store.pruneCrashLogs(matchingPredicate: predicate)
     let names = (pruned as NSArray).value(forKeyPath: "name") as! [Any]
-    logger?.log("Pruned \(FBCollectionInformation.oneLineDescription(from: names)) logs from local cache")
+    logger.log("Pruned \(FBCollectionInformation.oneLineDescription(from: names)) logs from local cache")
     return try await removeCrashLogsFromDeviceAsync(pruned, logger: logger)
   }
 
@@ -106,7 +106,7 @@ public class FBDeviceCrashLogCommands: NSObject, FBiOSTargetCommand {
           let crash = try self.crashLogInfo(afc: afc, path: path)
           crashes.append(crash)
         } catch {
-          logger?.log("Failed to ingest crash log \(path): \(error)")
+          logger.log("Failed to ingest crash log \(path): \(error)")
         }
       }
       return crashes
@@ -135,7 +135,7 @@ public class FBDeviceCrashLogCommands: NSObject, FBiOSTargetCommand {
   private func crashLogInfo(afc: FBAFCConnection, path: String) throws -> FBCrashLogInfo {
     let name = path
     if let existing = store.ingestedCrashLog(withName: path) {
-      device?.logger?.log("No need to re-ingest \(path)")
+      device?.logger.log("No need to re-ingest \(path)")
       return existing
     }
     let data = try afc.contents(ofPath: path)
@@ -183,7 +183,7 @@ public class FBDeviceCrashLogCommands: NSObject, FBiOSTargetCommand {
       .onQueue(
         device.workQueue,
         push: { connection -> FBFutureContext<AnyObject> in
-          FBAFCConnection.afc(from: connection, calls: FBAFCConnection.defaultCalls, logger: device.logger!, queue: device.workQueue) as! FBFutureContext<AnyObject>
+          FBAFCConnection.afc(from: connection, calls: FBAFCConnection.defaultCalls, logger: device.logger, queue: device.workQueue) as! FBFutureContext<AnyObject>
         }) as! FBFutureContext<FBAFCConnection>
   }
 }

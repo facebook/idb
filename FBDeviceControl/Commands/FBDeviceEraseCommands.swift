@@ -139,7 +139,7 @@ public final class FBDeviceEraseCommands: NSObject, FBiOSTargetCommand, EraseCom
     guard let device else {
       throw FBDeviceControlError().describe("Device is nil").build()
     }
-    let logger = device.logger?.withName("erase_\(device.udid)") ?? FBControlCoreGlobalConfiguration.defaultLogger
+    let logger = device.logger.withName("erase_\(device.udid)")
     try await device.activate()
     let operation = FBDeviceEraseOperation(device: device, logger: logger)
     try await operation.erase()

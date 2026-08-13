@@ -48,7 +48,7 @@ public class FBSimulatorApplicationCommands: NSObject, FBiOSTargetCommand {
 
     // Retry install if the first attempt failed with 'Failed to load Info.plist...'.
     if let err = installError, err.description.contains("Failed to load Info.plist from bundle at path") {
-      simulator.logger?.log("Retrying install due to reinstall bug")
+      simulator.logger.log("Retrying install due to reinstall bug")
       if (try? simulator.device.installApplication(appURL, withOptions: options as [AnyHashable: Any])) != nil {
         return try await installedApplication(withBundleID: appBundle.identifier)
       }
@@ -203,15 +203,15 @@ public class FBSimulatorApplicationCommands: NSObject, FBiOSTargetCommand {
 
     let logger = simulator.logger
     let bundleID = configuration.bundleID
-    logger?.log("Launching Application \(bundleID) with \(FBCollectionInformation.oneLineDescription(from: configuration.arguments)) \(FBCollectionInformation.oneLineDescription(from: configuration.environment))")
+    logger.log("Launching Application \(bundleID) with \(FBCollectionInformation.oneLineDescription(from: configuration.arguments)) \(FBCollectionInformation.oneLineDescription(from: configuration.environment))")
 
     let pid = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<pid_t, Error>) in
       simulator.device.launchApplicationAsync(withID: bundleID, options: options, completionQueue: simulator.workQueue) { error, pid in
         if let error {
-          logger?.log("Failed to launch Application \(bundleID) \(error)")
+          logger.log("Failed to launch Application \(bundleID) \(error)")
           continuation.resume(throwing: error)
         } else {
-          logger?.log("Launched Application \(bundleID) with pid \(pid)")
+          logger.log("Launched Application \(bundleID) with pid \(pid)")
           continuation.resume(returning: pid)
         }
       }

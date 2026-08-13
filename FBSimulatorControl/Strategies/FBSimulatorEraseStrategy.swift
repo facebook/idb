@@ -23,13 +23,13 @@ public final class FBSimulatorEraseStrategy {
   private static func eraseContentsAndSettings(_ simulator: FBSimulator) async throws {
     let logger = simulator.logger
     let description = "\(simulator)"
-    logger?.log("Erasing \(description)")
+    logger.log("Erasing \(description)")
     try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
       simulator.device.eraseContentsAndSettingsAsync(withCompletionQueue: simulator.workQueue) { error in
         if let error {
           continuation.resume(throwing: error)
         } else {
-          logger?.log("Erased \(description)")
+          logger.log("Erased \(description)")
           continuation.resume(returning: ())
         }
       }

@@ -17,7 +17,7 @@ public final class FBSimulatorSet: NSObject, FBiOSTargetSet {
   @objc public let configuration: FBSimulatorControlConfiguration
   @objc public let deviceSet: SimDeviceSet
   @objc public weak var delegate: (any FBiOSTargetSetDelegate)?
-  @objc public let logger: (any FBControlCoreLogger)?
+  @objc public let logger: any FBControlCoreLogger
   @objc public let reporter: (any FBEventReporter)?
   @objc public let workQueue: DispatchQueue
   @objc public let asyncQueue: DispatchQueue
@@ -30,11 +30,12 @@ public final class FBSimulatorSet: NSObject, FBiOSTargetSet {
 
   @objc(setWithConfiguration:deviceSet:delegate:logger:reporter:error:)
   public class func set(withConfiguration configuration: FBSimulatorControlConfiguration, deviceSet: SimDeviceSet, delegate: (any FBiOSTargetSetDelegate)?, logger: (any FBControlCoreLogger)?, reporter: (any FBEventReporter)?) throws -> FBSimulatorSet {
-    try FBSimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworks(logger)
-    return FBSimulatorSet(configuration: configuration, deviceSet: deviceSet, delegate: delegate, logger: logger, reporter: reporter)
+    let resolvedLogger = logger ?? FBControlCoreGlobalConfiguration.defaultLogger
+    try FBSimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworks(resolvedLogger)
+    return FBSimulatorSet(configuration: configuration, deviceSet: deviceSet, delegate: delegate, logger: resolvedLogger, reporter: reporter)
   }
 
-  private init(configuration: FBSimulatorControlConfiguration, deviceSet: SimDeviceSet, delegate: (any FBiOSTargetSetDelegate)?, logger: (any FBControlCoreLogger)?, reporter: (any FBEventReporter)?) {
+  private init(configuration: FBSimulatorControlConfiguration, deviceSet: SimDeviceSet, delegate: (any FBiOSTargetSetDelegate)?, logger: any FBControlCoreLogger, reporter: (any FBEventReporter)?) {
     self.configuration = configuration
     self.deviceSet = deviceSet
     self.delegate = delegate
@@ -92,11 +93,11 @@ public final class FBSimulatorSet: NSObject, FBiOSTargetSet {
     }
 
     // First, create the device.
-    logger?.debug().log("Creating device with Type \(deviceType) Runtime \(runtime)")
+    logger.debug().log("Creating device with Type \(deviceType) Runtime \(runtime)")
     let device = try await Self.createDeviceAsync(on: deviceSet, type: deviceType, runtime: runtime, name: model, queue: asyncQueue)
     let simulator = try fetchNewlyMadeSimulatorOrThrow(device)
     simulator.configuration = configuration
-    logger?.debug().log("Created Simulator \(simulator.udid) for configuration \(configuration)")
+    logger.debug().log("Created Simulator \(simulator.udid) for configuration \(configuration)")
     do {
       try await FBSimulatorShutdownStrategy.shutdownAsync(simulator)
     } catch {

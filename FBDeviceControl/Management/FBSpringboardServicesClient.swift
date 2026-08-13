@@ -335,9 +335,6 @@ extension FBDevice {
   private func withSpringboardServicesClient<R>(
     body: (FBSpringboardServicesClient) async throws -> R
   ) async throws -> R {
-    guard let logger else {
-      throw FBDeviceControlError().describe("Device logger is nil").build()
-    }
     return try await withFBFutureContext(startService(FBSpringboardServicesClient.serviceName)) { connection in
       let client = FBSpringboardServicesClient(connection: connection, logger: logger)
       return try await body(client)

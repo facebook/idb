@@ -184,7 +184,7 @@ private func awaitTargetOffline(_ target: FBiOSTarget, logger: FBControlCoreLogg
     throw FBIDBError.describe("\(target) does not support LifecycleCommands").build()
   }
   try await asyncTarget.resolveLeavesState(.booted)
-  target.logger?.log("Target is no longer booted, companion going offline")
+  target.logger.log("Target is no longer booted, companion going offline")
 }
 
 private func runBoot(_ udid: String, userDefaults: UserDefaults, logger: FBControlCoreLogger, reporter: FBEventReporter) async throws {

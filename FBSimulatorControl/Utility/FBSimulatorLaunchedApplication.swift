@@ -83,7 +83,7 @@ public class FBSimulatorLaunchedApplication: NSObject, FBLaunchedApplication {
         simulator.workQueue,
         respondToCancellation: {
           FBProcessTerminationStrategy
-            .strategy(withProcessFetcher: FBProcessFetcher(), workQueue: simulator.workQueue, logger: simulator.logger!)
+            .strategy(withProcessFetcher: FBProcessFetcher(), workQueue: simulator.workQueue, logger: simulator.logger)
             .killProcessIdentifier(processIdentifier)
         })
   }

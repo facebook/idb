@@ -33,13 +33,13 @@ public final class FBSimulatorShutdownStrategy {
 
   static func shutdownAsync(_ simulator: FBSimulator) async throws {
     let logger = simulator.logger
-    logger?.debug().log("Starting Safe Shutdown of \(simulator.udid)")
+    logger.debug().log("Starting Safe Shutdown of \(simulator.udid)")
 
     if simulator.state == .unknown {
       throw FBSimulatorError.describe("Failed to prepare simulator for usage as it is in an unknown state").build()
     }
     if simulator.state == .shutdown {
-      logger?.debug().log("Shutdown of \(simulator.udid) succeeded as it is already shutdown")
+      logger.debug().log("Shutdown of \(simulator.udid) succeeded as it is already shutdown")
       return
     }
     if simulator.state == .creating {
@@ -63,11 +63,11 @@ public final class FBSimulatorShutdownStrategy {
     let logger = simulator.logger
     let errorCode = shutdownWhenShuttingDownErrorCode
 
-    logger?.debug().log("Shutting down Simulator \(simulator.udid)")
+    logger.debug().log("Shutting down Simulator \(simulator.udid)")
     try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
       simulator.device.shutdownAsync(withCompletionQueue: simulator.asyncQueue) { error in
         if let error = error as NSError?, error.code == errorCode {
-          logger?.log("Got Error Code \(error.code) from shutdown, simulator is already shutdown")
+          logger.log("Got Error Code \(error.code) from shutdown, simulator is already shutdown")
           continuation.resume(returning: ())
         } else if let error {
           continuation.resume(throwing: error)
@@ -94,7 +94,7 @@ public final class FBSimulatorShutdownStrategy {
 
   private static func eraseSimulatorAsync(_ simulator: FBSimulator) async throws {
     let logger = simulator.logger
-    logger?.debug().log("Erasing Simulator \(simulator.udid)")
+    logger.debug().log("Erasing Simulator \(simulator.udid)")
     try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
       simulator.device.eraseContentsAndSettingsAsync(withCompletionQueue: simulator.asyncQueue) { error in
         if let error {

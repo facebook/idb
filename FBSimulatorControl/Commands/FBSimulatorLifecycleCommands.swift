@@ -153,7 +153,7 @@ public final class FBSimulatorLifecycleCommands: NSObject, FBiOSTargetCommand {
     guard let simulator = self.simulator else {
       throw FBWeakTargetError.simulator
     }
-    return try FBFramebuffer.mainScreenSurface(for: simulator, logger: simulator.logger!)
+    return try FBFramebuffer.mainScreenSurface(for: simulator, logger: simulator.logger)
   }
 
   fileprivate func connectToHIDAsync() async throws -> FBSimulatorHID {

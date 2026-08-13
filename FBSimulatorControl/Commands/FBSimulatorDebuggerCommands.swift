@@ -121,10 +121,8 @@ public final class FBSimulatorDebuggerCommands: NSObject, FBiOSTargetCommand {
     FBProcessBuilder<NSNull, AnyObject, AnyObject>
       .withLaunchPath(debugServerPath)
       .withArguments(["localhost:\(port)", "--attach", "\(processIdentifier)"])
-      // swiftlint:disable:next force_unwrapping
-      .withStdOut(to: simulator.logger!)
-      // swiftlint:disable:next force_unwrapping
-      .withStdErr(to: simulator.logger!)
+      .withStdOut(to: simulator.logger)
+      .withStdErr(to: simulator.logger)
       // swiftlint:disable:next force_cast
       .start() as! FBFuture<AnyObject>
   }

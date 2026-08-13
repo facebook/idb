@@ -26,9 +26,7 @@ struct PullMethodHandler {
   }
 
   private func sendRawData(request: Idb_PullRequest, responseStream: GRPCAsyncResponseStreamWriter<Idb_PullResponse>) async throws {
-    guard let logger = target.logger else {
-      throw GRPCStatus(code: .internalError, message: "Internal logger not configured")
-    }
+    let logger = target.logger
     let path = request.srcPath as NSString
     let fileContainer = FileContainerValueTransformer.rawFileContainer(from: request.container)
     let url = commandExecutor.temporaryDirectory.temporaryDirectory()

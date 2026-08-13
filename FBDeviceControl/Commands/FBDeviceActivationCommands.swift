@@ -36,11 +36,11 @@ public class FBDeviceActivationCommands: NSObject, FBiOSTargetCommand {
     let logger = device.logger
     let state = try await activationStateAsync()
     if state == FBDeviceActivationState.activated {
-      logger?.log("Device is already activated, nothing to activate")
+      logger.log("Device is already activated, nothing to activate")
       return
     }
     if state == FBDeviceActivationState.unactivated {
-      logger?.log("Device is not activated, starting activation")
+      logger.log("Device is not activated, starting activation")
       try await performActivationAsync()
       return
     }
@@ -62,13 +62,13 @@ public class FBDeviceActivationCommands: NSObject, FBiOSTargetCommand {
     }
     let logger = device.logger
     try await confirmActivationStateAsync(FBDeviceActivationState.unactivated)
-    logger?.log("Building DRM Handshake Payload")
+    logger.log("Building DRM Handshake Payload")
     let drmHandshakePayload = try await buildDRMHandshakePayloadAsync()
-    logger?.log("Obtaining Activation record from DRM Handshake Payload")
+    logger.log("Obtaining Activation record from DRM Handshake Payload")
     let activationRecordPayload = try await activationRecordFromDRMHandshakePayloadAsync(drmHandshakePayload)
-    logger?.log("Performing activation from activation record")
+    logger.log("Performing activation from activation record")
     try await activateFromActivationRecordAsync(activationRecordPayload)
-    logger?.log("Confirming activation state is Activated")
+    logger.log("Confirming activation state is Activated")
     try await confirmActivationStateAsync(FBDeviceActivationState.activated)
   }
 

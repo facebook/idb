@@ -33,9 +33,7 @@ public final class FBSimulatorReplCommands: NSObject, FBiOSTargetCommand {
     guard let simulator = self.simulator else {
       throw FBWeakTargetError.simulator
     }
-    guard let logger = simulator.logger else {
-      throw FBSimulatorError.describe("Simulator has no logger").build()
-    }
+    let logger = simulator.logger
 
     // Resolve the REPL shim, which is bundled alongside the other shims, as is the
     // IDBAPI module's .swiftinterface (reported to the driver, which auto-imports it
@@ -136,9 +134,7 @@ public final class FBSimulatorReplCommands: NSObject, FBiOSTargetCommand {
     guard let simulator = self.simulator else {
       throw FBWeakTargetError.simulator
     }
-    guard let logger = simulator.logger else {
-      throw FBSimulatorError.describe("Simulator has no logger").build()
-    }
+    let logger = simulator.logger
 
     // Report the IDB API's .swiftinterface (bundled beside libRepl) so the driver
     // auto-imports it and injected app code can call IDB.*, as the test and

@@ -73,9 +73,10 @@ public class FBDeviceVideoRecordingCommands: NSObject, FBiOSTargetCommand {
   }
 
   fileprivate func createStreamAsync(with configuration: FBVideoStreamConfiguration, to consumer: any FBDataConsumer) async throws -> any FBVideoStream {
-    guard let device, let logger = device.logger else {
+    guard let device else {
       throw FBDeviceVideoRecordingCommandError.missingDevice
     }
+    let logger = device.logger
     let session = try await FBDeviceVideo.captureSessionAsync(for: device)
     let stream = try FBDeviceVideoStream.stream(withSession: session, configuration: configuration, logger: logger)
     try await stream.startStreaming(consumer)

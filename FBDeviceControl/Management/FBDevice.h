@@ -37,7 +37,7 @@
 @property (nonnull, nonatomic, readonly, copy) NSDictionary<NSString *, id> *extendedInformation;
 @property (nonatomic, readonly, assign) FBiOSTargetType targetType;
 @property (nonatomic, readonly, assign) FBiOSTargetState state;
-@property (nullable, nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
+@property (nonnull, nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
 @property (nullable, nonatomic, readonly, copy) NSString *customDeviceSetPath;
 @property (nonnull, nonatomic, readonly, strong) FBTemporaryDirectory *temporaryDirectory;
 @property (nonnull, nonatomic, readonly, copy) NSString *auxillaryDirectory;

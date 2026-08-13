@@ -259,6 +259,6 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
   /// the `async` protocol requirement.
   func warnIfTruncated(_ truncated: Bool) {
     guard truncated else { return }
-    _ = simulator.logger?.log("axbridge read hit the bound (maxDepth \(FBAXReadLimits.maxReadDepth), maxNodes \(FBAXReadLimits.maxReadNodes)); the returned tree is truncated and incomplete.")
+    _ = simulator.logger.log("axbridge read hit the bound (maxDepth \(FBAXReadLimits.maxReadDepth), maxNodes \(FBAXReadLimits.maxReadNodes)); the returned tree is truncated and incomplete.")
   }
 }

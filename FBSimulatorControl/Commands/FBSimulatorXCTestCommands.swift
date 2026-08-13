@@ -139,7 +139,7 @@ public final class FBSimulatorXCTestCommands: NSObject, FBiOSTargetCommand {
       architectures: architectures)
 
     return try await bridgeFBFutureArray(
-      FBListTestStrategy(target: simulator as any FBiOSTarget & ProcessSpawnCommands & XCTestExtendedCommands, configuration: configuration, logger: simulator.logger!)
+      FBListTestStrategy(target: simulator as any FBiOSTarget & ProcessSpawnCommands & XCTestExtendedCommands, configuration: configuration, logger: simulator.logger)
         .listTests())
   }
 

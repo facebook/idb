@@ -81,7 +81,7 @@ public class FBDeviceDebuggerCommands: NSObject, FBiOSTargetCommand {
       port: port,
       lldbBootstrapCommands: commands,
       queue: device.workQueue,
-      logger: device.logger ?? FBControlCoreGlobalConfiguration.defaultLogger
+      logger: device.logger
     )
     let result = try await bridgeFBFuture(server)
     return result as! any FBDebugServer
@@ -107,14 +107,14 @@ public class FBDeviceDebuggerCommands: NSObject, FBiOSTargetCommand {
     }
     let platformSelectCommand = "platform select remote-ios"
     guard let buildVersion = device.buildVersion else {
-      device.logger?.log("No build version available for \(device), no symbolication of system libraries will occur.")
+      device.logger.log("No build version available for \(device), no symbolication of system libraries will occur.")
       return platformSelectCommand
     }
     do {
-      let developerSymbolsPath = try FBDeveloperDiskImage.pathForDeveloperSymbols(buildVersion, logger: device.logger ?? FBControlCoreGlobalConfiguration.defaultLogger)
+      let developerSymbolsPath = try FBDeveloperDiskImage.pathForDeveloperSymbols(buildVersion, logger: device.logger)
       return platformSelectCommand + " --sysroot '\(developerSymbolsPath)'"
     } catch {
-      device.logger?.log("Failed to get developer symbols for \(device), no symbolication of system libraries will occur. To fix ensure developer symbols are downloaded from the device using the 'Devices and Simulators' tool within Xcode: \(error)")
+      device.logger.log("Failed to get developer symbols for \(device), no symbolication of system libraries will occur. To fix ensure developer symbols are downloaded from the device using the 'Devices and Simulators' tool within Xcode: \(error)")
       return platformSelectCommand
     }
   }

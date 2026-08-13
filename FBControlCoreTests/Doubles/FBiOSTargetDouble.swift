@@ -25,7 +25,7 @@ final class FBiOSTargetDouble: NSObject, FBiOSTarget {
   // MARK: FBiOSTarget - synthesized properties
 
   var architectures: [FBArchitecture] = []
-  var logger: (any FBControlCoreLogger)?
+  var logger: any FBControlCoreLogger = FBControlCoreLoggerDouble()
   var platformRootDirectory: String = ""
   var runtimeRootDirectory: String = ""
   var screenInfo: FBiOSTargetScreenInfo?

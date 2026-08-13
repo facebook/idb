@@ -59,7 +59,7 @@ import Foundation
 @objc public protocol FBiOSTarget: NSObjectProtocol, FBiOSTargetInfo, FBiOSTargetCommand {
 
   /// The Target's Logger.
-  var logger: (any FBControlCoreLogger)? { get }
+  var logger: any FBControlCoreLogger { get }
 
   /// The path to the custom (non-default) device set if applicable.
   var customDeviceSetPath: String? { get }

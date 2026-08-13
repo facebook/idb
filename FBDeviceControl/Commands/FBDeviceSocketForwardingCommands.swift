@@ -41,7 +41,7 @@ public class FBDeviceSocketForwardingCommands: NSObject, FBiOSTargetCommand {
     try await withFBFutureContext(device.connectToDevice(withPurpose: "Socket Connection")) { connectedDevice in
       let localSocket = try Self.openLocalSocket(toRemotePort: Int(remotePort), on: connectedDevice, logger: device.logger)
       defer {
-        device.logger?.log("Closing local socket \(localSocket)")
+        device.logger.log("Closing local socket \(localSocket)")
         close(localSocket)
       }
       var writerError: NSError?

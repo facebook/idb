@@ -479,7 +479,7 @@ public final class FBSimulatorSettingsCommands: NSObject, FBiOSTargetCommand {
       let stderr = String(data: output.stderr, encoding: .utf8) ?? ""
       throw FBSimulatorError.describe("SimulatorFrameworkBridge \(service) \(action) failed with exit code \(output.exitCode): \(stderr)").build()
     }
-    simulator.logger?.log("SimulatorFrameworkBridge \(service) \(action) completed successfully")
+    simulator.logger.log("SimulatorFrameworkBridge \(service) \(action) completed successfully")
     return String(data: output.stdout, encoding: .utf8) ?? ""
   }
 
@@ -533,7 +533,7 @@ public final class FBSimulatorSettingsCommands: NSObject, FBiOSTargetCommand {
       throw FBSimulatorError.describe("Database file at path \(databasePath) is not writable").build()
     }
 
-    let logger = simulator.logger?.withName("sqlite_auth")
+    let logger = simulator.logger.withName("sqlite_auth")
     let queue = simulator.asyncQueue
 
     if grantAccess {

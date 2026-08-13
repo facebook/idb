@@ -65,7 +65,7 @@ public class FBDeviceLogCommands: NSObject, FBiOSTargetCommand {
       if let data = unsupportedArgumentsMessage.data(using: .utf8) {
         consumer.consumeData(data)
       }
-      device.logger?.log(unsupportedArgumentsMessage)
+      device.logger.log(unsupportedArgumentsMessage)
     }
     let queue = device.asyncQueue
     let readQueue = DispatchQueue(label: "com.facebook.fbdevicecontrol.device_log_consumer")

@@ -37,29 +37,29 @@ public final class FBSimulatorDeletionStrategy {
     let logger = simulator.logger
 
     // Kill the Simulator before deleting it.
-    logger?.log("Killing Simulator, in preparation for deletion \(simulator)")
+    logger.log("Killing Simulator, in preparation for deletion \(simulator)")
     try await FBSimulatorShutdownStrategy.shutdownAsync(simulator)
 
     // Then follow through with the actual deletion of the Simulator, which will remove it from the set.
-    logger?.log("Deleting Simulator \(simulator)")
+    logger.log("Deleting Simulator \(simulator)")
     try await performDeletionAsync(of: simulator.device, on: simulator.set.deviceSet, queue: simulator.asyncQueue)
 
-    logger?.log("Simulator \(udid) Deleted")
+    logger.log("Simulator \(udid) Deleted")
 
     // The Logfiles now need disposing of.
     if FileManager.default.fileExists(atPath: coreSimulatorLogsDirectory) {
-      logger?.log("Deleting Simulator Log Directory at \(coreSimulatorLogsDirectory)")
+      logger.log("Deleting Simulator Log Directory at \(coreSimulatorLogsDirectory)")
       do {
         try FileManager.default.removeItem(atPath: coreSimulatorLogsDirectory)
-        logger?.log("Deleted Simulator Log Directory at \(coreSimulatorLogsDirectory)")
+        logger.log("Deleted Simulator Log Directory at \(coreSimulatorLogsDirectory)")
       } catch {
-        logger?.error().log("Failed to delete Simulator Log Directory \(coreSimulatorLogsDirectory): \(error)")
+        logger.error().log("Failed to delete Simulator Log Directory \(coreSimulatorLogsDirectory): \(error)")
       }
     }
 
-    logger?.log("Confirming \(udid) has been removed from set")
+    logger.log("Confirming \(udid) has been removed from set")
     try await confirmSimulatorUDIDAsync(udid, isRemovedFromSet: set)
-    logger?.log("\(udid) has been removed from set")
+    logger.log("\(udid) has been removed from set")
   }
 
   static func deleteAllAsync(_ simulators: [FBSimulator]) async throws {

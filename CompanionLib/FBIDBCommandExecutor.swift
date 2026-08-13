@@ -526,7 +526,7 @@ public final class FBIDBCommandExecutor {
       try await self.withFileContainer(for: containerType) { container in
         _ = try await container.copy(fromContainer: path, toHost: tempPath)
       }
-      return try await FBArchiveOperations.createGzippedTarDataAsync(forPath: tempPath, queue: self.target.workQueue, logger: self.target.logger!)
+      return try await FBArchiveOperations.createGzippedTarDataAsync(forPath: tempPath, queue: self.target.workQueue, logger: self.target.logger)
     }
   }
 

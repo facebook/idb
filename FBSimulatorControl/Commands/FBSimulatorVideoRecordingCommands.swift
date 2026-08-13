@@ -8,7 +8,7 @@
 import FBControlCore
 import Foundation
 
-// swiftlint:disable force_cast force_unwrapping
+// swiftlint:disable force_cast
 
 private enum FBSimulatorVideoRecordingCommandError: Error {
   case recordingAlreadyActive
@@ -70,7 +70,7 @@ public final class FBSimulatorVideoRecordingCommands: NSObject, FBiOSTargetComma
       throw FBSimulatorVideoRecordingCommandError.recordingAlreadyActive
     }
     let framebuffer = try await simulator.connectToFramebuffer()
-    let video = FBSimulatorVideo.video(withFramebuffer: framebuffer, configuration: configuration, filePath: filePath, logger: simulator.logger!)
+    let video = FBSimulatorVideo.video(withFramebuffer: framebuffer, configuration: configuration, filePath: filePath, logger: simulator.logger)
     try await video.startRecording()
     self.video = video
     return FBVideoRecordingHandle {
@@ -93,7 +93,7 @@ public final class FBSimulatorVideoRecordingCommands: NSObject, FBiOSTargetComma
     }
     let logger = simulator.logger
     let framebuffer = try await simulator.connectToFramebuffer()
-    return try await FBSimulatorVideoStream.start(framebuffer: framebuffer, configuration: configuration, to: consumer, logger: logger!)
+    return try await FBSimulatorVideoStream.start(framebuffer: framebuffer, configuration: configuration, to: consumer, logger: logger)
   }
 }
 

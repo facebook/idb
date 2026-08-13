@@ -13,7 +13,7 @@ public class FBAppleDevicectlCommandExecutor {
   let device: FBDevice
 
   @objc public init(device: FBDevice) {
-    logger = device.logger?.withName("devicectl")
+    logger = device.logger.withName("devicectl")
     self.device = device
   }
 

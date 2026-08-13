@@ -186,7 +186,7 @@ final class FBSimulatorAccessibilityCommands: AccessibilityOperations {
     if pidIsLive {
       return false
     }
-    simulator.logger?.log("Frontmost accessibility hierarchy is stale: the root element has a zero frame and its owning pid \(pid) is no longer a registered launchd service. SpringBoard has crashed and CoreSimulator's \(Self.coreSimulatorBridgeServiceName) is still bound to the dead pid; restarting \(Self.coreSimulatorBridgeServiceName) to recover.")
+    simulator.logger.log("Frontmost accessibility hierarchy is stale: the root element has a zero frame and its owning pid \(pid) is no longer a registered launchd service. SpringBoard has crashed and CoreSimulator's \(Self.coreSimulatorBridgeServiceName) is still bound to the dead pid; restarting \(Self.coreSimulatorBridgeServiceName) to recover.")
     return true
   }
 

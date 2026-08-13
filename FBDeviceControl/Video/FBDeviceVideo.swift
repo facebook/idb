@@ -84,7 +84,7 @@ public final class FBDeviceVideo {
 
   public class func videoAsync(for device: FBDevice, filePath: String) async throws -> FBDeviceVideo {
     let session = try await captureSessionAsync(for: device)
-    let encoder = try FBVideoFileWriter.writer(withSession: session, filePath: filePath, logger: device.logger ?? FBControlCoreGlobalConfiguration.defaultLogger)
+    let encoder = try FBVideoFileWriter.writer(withSession: session, filePath: filePath, logger: device.logger)
     return FBDeviceVideo(encoder: encoder)
   }
 

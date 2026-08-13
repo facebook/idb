@@ -80,12 +80,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider, @unchec
   var interceptors: Idb_CompanionServiceServerInterceptorFactoryProtocol? { interceptorFactory }
 
   private var targetLogger: FBControlCoreLogger {
-    get throws {
-      guard let logger = target.logger else {
-        throw GRPCStatus(code: .internalError, message: "Target logger not configured")
-      }
-      return logger
-    }
+    target.logger
   }
 
   func connect(request: Idb_ConnectRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_ConnectResponse {

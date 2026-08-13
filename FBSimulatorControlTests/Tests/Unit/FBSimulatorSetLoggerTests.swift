@@ -30,15 +30,11 @@ struct FBSimulatorSetLoggerTests {
     return CreateSimulatorSetWithFakeDeviceSetAndLogger(configuration, deviceSet, logger)
   }
 
-  @Test("A nil logger is retained as nil")
-  func nilLoggerIsRetainedAsNil() {
+  @Test("A nil logger is defaulted at the factory boundary")
+  func nilLoggerIsDefaulted() {
     let set = Self.makeSet(logger: nil)
-    // BUG: the @objc factory invites `logger: nil` and stores the nil as-is. It flows through to
-    // FBSimulator.logger, which production paths force-unwrap (FBAppleSimctlCommandExecutor,
-    // FBSimulatorVideoRecordingCommands, FBSimulatorLifecycleCommands, ...), trapping on first
-    // use. Flipped in the following commit, which defaults a nil logger at the factory boundary.
-    #expect(set.logger == nil)
-    #expect(set.allSimulators.first?.logger == nil)
+    #expect(set.logger === FBControlCoreGlobalConfiguration.defaultLogger)
+    #expect(set.allSimulators.first?.logger != nil)
   }
 
   @Test("An explicit logger is retained")

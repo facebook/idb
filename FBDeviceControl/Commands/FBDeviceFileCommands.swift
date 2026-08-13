@@ -8,6 +8,8 @@
 @preconcurrency import FBControlCore
 import Foundation
 
+// swiftlint:disable force_cast force_unwrapping
+
 private let MountRootPath = "mounted"
 private let ExtractedSymbolsDirectory = "Symbols"
 
@@ -419,22 +421,18 @@ public class FBDeviceFileCommands: NSObject, FBiOSTargetCommand {
   }
 
   fileprivate func fileCommandsForAuxillary() -> FBFutureContext<FBContainedFile_ContainedRoot> {
-    // swiftlint:disable:next force_cast force_unwrapping
     FBFutureContext(result: FBFileContainer.fileContainer(forBasePath: device!.auxillaryDirectory) as! FBContainedFile_ContainedRoot)
   }
 
   fileprivate func fileCommandsForApplicationContainers() -> FBFutureContext<FBDeviceFileContainer> {
-    // swiftlint:disable:next force_cast
     FBControlCoreError.describe("\(#function) not supported on devices, requires a rooted device").failFutureContext() as! FBFutureContext<FBDeviceFileContainer>
   }
 
   fileprivate func fileCommandsForGroupContainers() -> FBFutureContext<FBDeviceFileContainer> {
-    // swiftlint:disable:next force_cast
     FBControlCoreError.describe("\(#function) not supported on devices, requires a rooted device").failFutureContext() as! FBFutureContext<FBDeviceFileContainer>
   }
 
   fileprivate func fileCommandsForRootFilesystem() -> FBFutureContext<FBDeviceFileContainer> {
-    // swiftlint:disable:next force_cast
     FBControlCoreError.describe("\(#function) not supported on devices, requires a rooted device").failFutureContext() as! FBFutureContext<FBDeviceFileContainer>
   }
 
@@ -449,7 +447,6 @@ public class FBDeviceFileCommands: NSObject, FBiOSTargetCommand {
   }
 
   fileprivate func fileCommandsForProvisioningProfiles() -> FBFutureContext<FBFileContainer_ProvisioningProfile> {
-    // swiftlint:disable:next force_unwrapping
     FBFutureContext(result: FBFileContainer_ProvisioningProfile(commands: FBDeviceProvisioningProfileCommands.commands(with: device!)))
   }
 
@@ -459,7 +456,7 @@ public class FBDeviceFileCommands: NSObject, FBiOSTargetCommand {
         device!.asyncQueue,
         pend: { (connection: AnyObject) -> FBFuture<AnyObject> in
           let conn = connection as! FBAMDServiceConnection
-          let managedConfig = FBManagedConfigClient.managedConfigClient(connection: conn, logger: self.device!.logger!)
+          let managedConfig = FBManagedConfigClient.managedConfigClient(connection: conn, logger: self.device!.logger)
           return FBFuture(result: FBDeviceFileContainer_MDMProfiles(managedConfig: managedConfig, queue: self.device!.workQueue) as AnyObject)
         }) as! FBFutureContext<FBDeviceFileContainer_MDMProfiles>
   }
@@ -473,19 +470,17 @@ public class FBDeviceFileCommands: NSObject, FBiOSTargetCommand {
       device!.asyncQueue,
       pend: { (connections: AnyObject) -> FBFuture<AnyObject> in
         let conns = connections as! NSArray
-        let springboard = FBSpringboardServicesClient.springboardServicesClient(connection: conns[0] as! FBAMDServiceConnection, logger: self.device!.logger!)
-        let managedConfig = FBManagedConfigClient.managedConfigClient(connection: conns[1] as! FBAMDServiceConnection, logger: self.device!.logger!)
+        let springboard = FBSpringboardServicesClient.springboardServicesClient(connection: conns[0] as! FBAMDServiceConnection, logger: self.device!.logger)
+        let managedConfig = FBManagedConfigClient.managedConfigClient(connection: conns[1] as! FBAMDServiceConnection, logger: self.device!.logger)
         return FBFuture(result: FBDeviceFileContainer_Wallpaper(springboard: springboard, managedConfig: managedConfig, queue: self.device!.workQueue) as AnyObject)
       }) as! FBFutureContext<FBDeviceFileContainer_Wallpaper>
   }
 
   fileprivate func fileCommandsForDiskImages() -> FBFutureContext<FBDeviceFileCommands_DiskImages> {
-    // swiftlint:disable:next force_unwrapping
     FBFutureContext(result: FBDeviceFileCommands_DiskImages(commands: device! as any DeveloperDiskImageCommands, queue: device!.asyncQueue))
   }
 
   fileprivate func fileCommandsForSymbols() -> FBFutureContext<FBDeviceFileCommands_Symbols> {
-    // swiftlint:disable:next force_unwrapping
     FBFutureContext(result: FBDeviceFileCommands_Symbols(commands: device! as any DebugSymbolsCommands, queue: device!.asyncQueue))
   }
 }
@@ -546,9 +541,6 @@ extension FBDevice: FileCommands {
   public func withFileCommandsForSpringboardIconLayout<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    guard let logger else {
-      throw FBDeviceControlError().describe("Device logger is nil").build()
-    }
     return try await withFBFutureContext(startService(FBSpringboardServicesClient.serviceName)) { connection in
       let client = FBSpringboardServicesClient.springboardServicesClient(connection: connection, logger: logger)
       return try await body(client.iconContainer())

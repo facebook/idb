@@ -106,7 +106,7 @@ public class FBDeviceApplicationCommands: NSObject, FBiOSTargetCommand {
       "ShadowParentKey": deltaUpdateDirectory,
     ]
     try await withFBFutureContext(device.connectToDevice(withPurpose: "install")) { connectedDevice in
-      device.logger?.log("Installing Application \(appURL)")
+      device.logger.log("Installing Application \(appURL)")
       let statistics = FBDeviceWorkflowStatistics(workflowType: "Install", logger: connectedDevice.logger)
       let context = Unmanaged.passUnretained(statistics).toOpaque()
       let status =
@@ -121,7 +121,7 @@ public class FBDeviceApplicationCommands: NSObject, FBiOSTargetCommand {
         let errorMessage = connectedDevice.calls.CopyErrorText?(status)?.takeRetainedValue() as String? ?? "Unknown error"
         throw FBDeviceControlError.describe("Failed to install application \(appURL.lastPathComponent) 0x\(String(UInt32(bitPattern: status), radix: 16)) (\(errorMessage)). \(statistics.summaryOfRecentEvents)").build()
       }
-      device.logger?.log("Installed Application \(appURL)")
+      device.logger.log("Installed Application \(appURL)")
     }
     return try await installedApplicationAsync(withBundleID: bundle.identifier)
   }
@@ -132,7 +132,7 @@ public class FBDeviceApplicationCommands: NSObject, FBiOSTargetCommand {
     }
     try await withFBFutureContext(device.connectToDevice(withPurpose: "uninstall_\(bundleID)")) { connectedDevice in
       let statistics = FBDeviceWorkflowStatistics(workflowType: "Uninstall", logger: connectedDevice.logger)
-      device.logger?.log("Uninstalling Application \(bundleID)")
+      device.logger.log("Uninstalling Application \(bundleID)")
       let context = Unmanaged.passUnretained(statistics).toOpaque()
       let status =
         connectedDevice.calls.SecureUninstallApplication?(
@@ -147,7 +147,7 @@ public class FBDeviceApplicationCommands: NSObject, FBiOSTargetCommand {
         let internalMessage = connectedDevice.calls.CopyErrorText?(status)?.takeRetainedValue() as String? ?? "Unknown error"
         throw FBDeviceControlError.describe("Failed to uninstall application '\(bundleID)' with error 0x\(String(UInt32(bitPattern: status), radix: 16)) (\(internalMessage)). \(statistics.summaryOfRecentEvents)").build()
       }
-      device.logger?.log("Uninstalled Application \(bundleID)")
+      device.logger.log("Uninstalled Application \(bundleID)")
     }
   }
 
@@ -274,7 +274,7 @@ public class FBDeviceApplicationCommands: NSObject, FBiOSTargetCommand {
     _ = try await bridgeFBFuture(device.ensureDeveloperDiskImageIsMounted())
     let serviceName = usesSecureConnection ? "com.apple.instruments.remoteserver.DVTSecureSocketProxy" : "com.apple.instruments.remoteserver"
     return try await withFBFutureContext(device.startService(serviceName)) { connection in
-      let client = try await bridgeFBFuture(FBInstrumentsClient.instrumentsClient(with: connection, logger: device.logger!))
+      let client = try await bridgeFBFuture(FBInstrumentsClient.instrumentsClient(with: connection, logger: device.logger))
       return try await body(client)
     }
   }

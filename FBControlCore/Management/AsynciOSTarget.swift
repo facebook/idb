@@ -42,7 +42,7 @@ public protocol AsynciOSTarget: AnyObject,
 
   // MARK: Shared FBiOSTarget properties (sync, no FBFuture involved)
 
-  var logger: (any FBControlCoreLogger)? { get }
+  var logger: any FBControlCoreLogger { get }
   var customDeviceSetPath: String? { get }
   var temporaryDirectory: FBTemporaryDirectory { get }
   var auxillaryDirectory: String { get }

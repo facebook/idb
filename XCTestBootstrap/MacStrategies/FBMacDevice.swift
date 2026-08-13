@@ -23,7 +23,7 @@ public final class FBMacDevice: NSObject, FBiOSTarget {
   public let asyncQueue: DispatchQueue
   public let auxillaryDirectory: String
   public var name: String
-  public var logger: (any FBControlCoreLogger)?
+  public var logger: any FBControlCoreLogger
   public let osVersion: FBOSVersion
   public var state: FBiOSTargetState
   public let targetType: FBiOSTargetType
@@ -89,7 +89,7 @@ public final class FBMacDevice: NSObject, FBiOSTarget {
     screenInfo = nil
     osVersion = FBOSVersion.generic(withName: "mac")
     name = Host.current().localizedName ?? ""
-    self.logger = nil
+    self.logger = FBControlCoreGlobalConfiguration.defaultLogger
     self.catalyst = false
     temporaryDirectory = FBTemporaryDirectory(logger: FBControlCoreGlobalConfiguration.defaultLogger)
     super.init()
@@ -197,17 +197,17 @@ public final class FBMacDevice: NSObject, FBiOSTarget {
     connection.remoteObjectInterface = interface
     connection.interruptionHandler = { [weak self] in
       self?.connection = nil
-      logger?.log("Connection with test manager daemon was interrupted")
+      logger.log("Connection with test manager daemon was interrupted")
     }
     connection.invalidationHandler = { [weak self] in
       self?.connection = nil
-      logger?.log("Invalidated connection with test manager daemon")
+      logger.log("Invalidated connection with test manager daemon")
     }
     connection.resume()
     var proxyError: Error?
     let proxy =
       connection.synchronousRemoteObjectProxyWithErrorHandler { [weak self] error in
-        logger?.log("Error occurred during synchronousRemoteObjectProxyWithErrorHandler call: \(error.localizedDescription)")
+        logger.log("Error occurred during synchronousRemoteObjectProxyWithErrorHandler call: \(error.localizedDescription)")
         self?.connection = nil
         proxyError = error
       } as! XCTestManager_XPCControl
@@ -217,7 +217,7 @@ public final class FBMacDevice: NSObject, FBiOSTarget {
     var transport: FileHandle?
     proxy._XCT_requestConnectedSocketForTransport { file, xctError in
       if file == nil {
-        logger?.log("Error requesting connection with test manager daemon: \(xctError?.localizedDescription ?? "")")
+        logger.log("Error requesting connection with test manager daemon: \(xctError?.localizedDescription ?? "")")
         error = xctError
         return
       }
@@ -454,7 +454,7 @@ public final class FBMacDevice: NSObject, FBiOSTarget {
       architectures: Set(bundleDescriptor.binary!.architectures.map { $0.rawValue })
     )
 
-    return FBListTestStrategy(target: self, configuration: configuration, logger: self.logger!).listTests()
+    return FBListTestStrategy(target: self, configuration: configuration, logger: self.logger).listTests()
   }
 
   public func notifyOfCrash(_ predicate: NSPredicate) -> FBFuture<FBCrashLogInfo> {
@@ -470,7 +470,7 @@ extension FBMacDevice: ProcessSpawnCommands {
   public func launchProcess(
     _ configuration: FBProcessSpawnConfiguration
   ) async throws -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
-    let logger = self.logger ?? FBControlCoreGlobalConfiguration.defaultLogger
+    let logger = self.logger
     return try await bridgeFBFuture(FBSubprocess<AnyObject, AnyObject, AnyObject>.launchProcess(with: configuration, logger: logger))
   }
 }

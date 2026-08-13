@@ -48,7 +48,7 @@ public final class FBSimulatorDapServerCommand: NSObject, FBiOSTargetCommand {
         .build()
     }
 
-    simulator.logger?.debug().log("Dap Command: Launching dap server logging at path \(logString)")
+    simulator.logger.debug().log("Dap Command: Launching dap server logging at path \(logString)")
     let envs: [String: String] = [
       "LLDBVSCODE_LOG": logString
     ]

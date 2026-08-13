@@ -81,9 +81,9 @@ public final class FBSimulatorBootVerificationStrategy {
       if updateInterval < stallInterval {
         return
       }
-      logger?.log("Boot Status has not changed from '\(FBSimulatorBootVerificationStrategy.describeBootInfo(bootInfo))' for \(updateInterval) seconds")
+      logger.log("Boot Status has not changed from '\(FBSimulatorBootVerificationStrategy.describeBootInfo(bootInfo))' for \(updateInterval) seconds")
     } else {
-      logger?.debug().log("Boot Status Changed: \(FBSimulatorBootVerificationStrategy.describeBootInfo(bootInfo))")
+      logger.debug().log("Boot Status Changed: \(FBSimulatorBootVerificationStrategy.describeBootInfo(bootInfo))")
       lastBootInfo = bootInfo
       lastInfoUpdateDate = Date()
     }

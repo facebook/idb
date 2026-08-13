@@ -310,7 +310,7 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
   /// An actor-isolated witness satisfies the `async` protocol requirement.
   func warnIfTruncated(_ truncated: Bool) {
     guard truncated else { return }
-    _ = simulator?.logger?.log("Remote-automation read hit the bound (maxDepth \(FBAXReadLimits.maxReadDepth), maxNodes \(FBAXReadLimits.maxReadNodes)); the returned tree is truncated and incomplete.")
+    _ = simulator?.logger.log("Remote-automation read hit the bound (maxDepth \(FBAXReadLimits.maxReadDepth), maxNodes \(FBAXReadLimits.maxReadNodes)); the returned tree is truncated and incomplete.")
   }
 
   /// The screen-point centre of the frontmost-tree element a `.marker` names — the shared preamble for
