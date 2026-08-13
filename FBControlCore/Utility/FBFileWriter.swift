@@ -89,6 +89,13 @@ public class FBFileWriter: NSObject {
         } catch {
           return FBFuture(error: error)
         }
+        // Mark the descriptor non-blocking before DispatchIO sees it, so that
+        // dispatch_io's deferred restore of the original flags is a no-op —
+        // a stale restore against a recycled descriptor number can otherwise
+        // strip O_NONBLOCK from an unrelated live channel and wedge it in an
+        // uninterruptible blocking syscall. Only this async path is marked:
+        // the sync writer's raw write(2) loop relies on blocking semantics.
+        _ = fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) | O_NONBLOCK)
         let writer = FBFileWriter_Async(fileDescriptor: fd, closeOnEndOfFile: true, writeQueue: queue)
         do {
           try writer.startWriting()

@@ -68,6 +68,16 @@ public class FBFileReader: NSObject, FBFileReaderProtocol {
               .describe("open of \(filePath) returned an error '\(String(cString: strerror(errno)))'")
               .failFuture()
           }
+          // Mark the descriptor non-blocking before DispatchIO sees it.
+          // dispatch_io restores a descriptor's original flags on an
+          // asynchronously-drained queue after the channel winds down; if the
+          // original flags were blocking, that deferred restore can strip
+          // O_NONBLOCK from a recycled descriptor number and turn a stream
+          // read into an uninterruptible blocking read(2) that wedges the
+          // channel teardown. Pre-setting O_NONBLOCK makes the restore a
+          // no-op. DispatchIO forces non-blocking IO on the descriptor
+          // anyway, so reads through the channel behave identically.
+          _ = fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) | O_NONBLOCK)
           return FBFuture(
             result: FBFileReader(
               fileDescriptor: fd,
