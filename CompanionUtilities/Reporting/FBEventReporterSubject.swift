@@ -130,9 +130,18 @@ public final class FBEventReporterSubject: NSObject {
 
   // MARK: Private
 
+  // Saturating on purpose: durations can arrive negative (wall clocks step
+  // backwards under NTP between a call's start and end) or non-finite, and
+  // UInt.init traps on both, killing the process for a telemetry value.
   private class func durationMilliseconds(_ timeInterval: TimeInterval) -> NSNumber {
-    let milliseconds = UInt(timeInterval * 1000)
-    return NSNumber(value: milliseconds)
+    let milliseconds = timeInterval * 1000
+    guard milliseconds.isFinite, milliseconds > 0 else {
+      return NSNumber(value: UInt(0))
+    }
+    guard milliseconds < Double(UInt.max) else {
+      return NSNumber(value: UInt.max)
+    }
+    return NSNumber(value: UInt(milliseconds))
   }
 
   private init(eventName: String, eventType: FBEventType, arguments: [String]?, duration: NSNumber?, size: NSNumber?, message: String?, normals: [String: String], ints: [String: Int]) {

@@ -90,11 +90,13 @@ struct CompanionTelemetry {
     arguments: [String],
     body: () async throws -> R
   ) async throws -> R {
-    let start = Date()
+    // Monotonic on purpose: a wall clock can step backwards (NTP) across the
+    // await, producing negative durations.
+    let start = DispatchTime.now()
     logger.info().log("\(method) called with: \(oneLineDescription(arguments))")
     do {
       let result = try await body()
-      let duration = Date().timeIntervalSince(start)
+      let duration = Self.secondsSince(start)
       logger.debug().log("\(method) succeeded")
       reporter.report(
         FBEventReporterSubject(
@@ -104,7 +106,7 @@ struct CompanionTelemetry {
           arguments: arguments))
       return result
     } catch {
-      let duration = Date().timeIntervalSince(start)
+      let duration = Self.secondsSince(start)
       let message = (error as NSError).localizedDescription
       logger.debug().log("\(method) failed with: \(message)")
       reporter.report(
@@ -116,6 +118,10 @@ struct CompanionTelemetry {
           arguments: arguments))
       throw error
     }
+  }
+
+  private static func secondsSince(_ start: DispatchTime) -> TimeInterval {
+    TimeInterval(DispatchTime.now().uptimeNanoseconds - start.uptimeNanoseconds) / 1_000_000_000
   }
 
   // MARK: - Argument description (Mirror-based, mirrors FBLoggingWrapper's intent)
