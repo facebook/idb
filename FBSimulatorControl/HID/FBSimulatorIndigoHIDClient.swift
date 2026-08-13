@@ -57,9 +57,9 @@ final class FBSimulatorIndigoHIDClient: @unchecked Sendable {
   /// already loaded them.
   static func resolveClientClass(
     loader: FBControlCoreFrameworkLoader = FBSimulatorControlFrameworkLoader.xcodeFrameworks
-  ) throws -> AnyClass {
+  ) throws -> FBObjCRuntimeClass {
     try loader.loadPrivateFrameworks(nil)
-    guard let clientClass = objc_lookUpClass(clientClassName) else {
+    guard let clientClass = FBObjCRuntimeClass(name: clientClassName) else {
       throw FBSimulatorHIDError.clientClassUnavailable(className: clientClassName)
     }
     return clientClass
@@ -67,15 +67,20 @@ final class FBSimulatorIndigoHIDClient: @unchecked Sendable {
 
   /// Looks up, allocates and initializes the runtime-only HID client for the provided device.
   convenience init(for device: SimDevice) throws {
-    let clientClass: AnyClass = try Self.resolveClientClass()
+    try self.init(device: device, clientClass: Self.resolveClientClass())
+  }
+
+  /// Allocates and initializes `clientClass` for `device`. Separate from `init(for:)` so that tests
+  /// can stand a class of their own in place of the runtime-only one.
+  convenience init(device: Any, clientClass: FBObjCRuntimeClass) throws {
     // Allocate + initialize the runtime-only client without a link-time class reference.
-    let allocated = class_createInstance(clientClass, 0) as AnyObject
+    let allocated = class_createInstance(clientClass.cls, 0) as AnyObject
     var clientError: AnyObject?
     guard
       let client = unsafeBitCast(allocated, to: SimDeviceLegacyHIDClientMessaging.self)
         .initWithDevice(device, error: &clientError)
     else {
-      throw FBSimulatorHIDError.clientCreationFailed(clientClass: "\(clientClass)", underlying: clientError as? Error)
+      throw FBSimulatorHIDError.clientCreationFailed(clientClass: clientClass.name, underlying: clientError as? Error)
     }
     self.init(
       client: client, queue: DispatchQueue(label: "com.facebook.fbsimulatorcontrol.hid"))
