@@ -10,9 +10,12 @@ import Foundation
 
 @objc(FBDeviceSet)
 public class FBDeviceSet: NSObject, FBiOSTargetSet, FBiOSTargetSetDelegate {
-  private static let _ensureFrameworksLoaded: Void = {
-    FBDeviceControlFrameworkLoader().loadPrivateFrameworksOrAbort()
-  }()
+  // Memoized so the load (and AMDevice's InitializeMobileDevice) runs once per process, matching
+  // the previous static-let semantics while letting the failure surface: a failed load is cached
+  // and rethrown by every subsequent init instead of aborting the process.
+  private static let _frameworksLoadResult: Result<Void, Error> = Result {
+    try FBDeviceControlFrameworkLoader().loadPrivateFrameworks(FBControlCoreGlobalConfiguration.defaultLogger)
+  }
 
   private let amDeviceManager: FBAMDeviceManager
   private let restorableDeviceManager: FBAMRestorableDeviceManager
@@ -24,7 +27,7 @@ public class FBDeviceSet: NSObject, FBiOSTargetSet, FBiOSTargetSetDelegate {
 
   @objc(setWithLogger:delegate:ecidFilter:error:)
   public convenience init(logger: any FBControlCoreLogger, delegate: (any FBiOSTargetSetDelegate)?, ecidFilter: String?) throws {
-    Self._ensureFrameworksLoaded
+    try Self._frameworksLoadResult.get()
     let calls = FBDeviceControlFrameworkLoader.amDeviceCalls
     let workQueue = DispatchQueue.main
     let asyncQueue = DispatchQueue.global(qos: .userInitiated)

@@ -22,10 +22,10 @@ public final class FBSimulatorControl: NSObject {
 
   @objc(withConfiguration:error:)
   public class func withConfiguration(_ configuration: FBSimulatorControlConfiguration) throws -> FBSimulatorControl {
-    FBSimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworksOrAbort()
+    try FBSimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworks(configuration.logger)
     let serviceContext = try FBSimulatorServiceContext.sharedServiceContext(withLogger: configuration.logger)
     let deviceSet = try serviceContext.createDeviceSet(with: configuration)
-    let set = FBSimulatorSet.set(
+    let set = try FBSimulatorSet.set(
       withConfiguration: configuration,
       deviceSet: deviceSet,
       delegate: nil,

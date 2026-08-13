@@ -13,13 +13,9 @@ import Testing
 @Suite("FBSimulatorSet factory contract")
 struct FBSimulatorSetFactoryContractTests {
 
-  @Test("The factory exposes no error channel for framework loading")
+  @Test("The factory carries an error channel for framework loading")
   func factoryExposesNoErrorChannel() {
-    // BUG: the factory routes framework-load failure to loadPrivateFrameworksOrAbort() — log,
-    // NSAssert, abort() — instead of the NSError out-parameter an @objc factory could carry, so a
-    // consumer that does not pre-load the private frameworks dies before it can present an error.
-    // Flipped in the following commit, which makes the factory throwing.
-    #expect(FBSimulatorSet.responds(to: NSSelectorFromString("setWithConfiguration:deviceSet:delegate:logger:reporter:")))
-    #expect(!FBSimulatorSet.responds(to: NSSelectorFromString("setWithConfiguration:deviceSet:delegate:logger:reporter:error:")))
+    #expect(!FBSimulatorSet.responds(to: NSSelectorFromString("setWithConfiguration:deviceSet:delegate:logger:reporter:")))
+    #expect(FBSimulatorSet.responds(to: NSSelectorFromString("setWithConfiguration:deviceSet:delegate:logger:reporter:error:")))
   }
 }

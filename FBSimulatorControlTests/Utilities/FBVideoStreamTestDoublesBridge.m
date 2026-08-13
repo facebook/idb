@@ -15,11 +15,15 @@
 FBSimulatorSet *CreateSimulatorSetWithFakeDeviceSet(FBSimulatorControlConfiguration *configuration,
                                                     NSObject *fakeDeviceSet)
 {
-  return [FBSimulatorSet setWithConfiguration:configuration
-                                    deviceSet:(SimDeviceSet *)fakeDeviceSet
-                                     delegate:nil
-                                       logger:nil
-                                     reporter:nil];
+  NSError *error = nil;
+  FBSimulatorSet *set = [FBSimulatorSet setWithConfiguration:configuration
+                                                   deviceSet:(SimDeviceSet *)fakeDeviceSet
+                                                    delegate:nil
+                                                      logger:nil
+                                                    reporter:nil
+                                                       error:&error];
+  NSCAssert(set, @"Failed to create the simulator set: %@", error);
+  return set;
 }
 
 #pragma mark - CheckRuntimeRequirements

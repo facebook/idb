@@ -13,6 +13,9 @@ public class FBSimulatorControlConfiguration: NSObject, NSCopying {
 
   // MARK: - Class Initialization
 
+  // Retained only for `defaultDeviceSetPath`, a non-throwing `@objc` class var with no error
+  // channel: this load aborts the process when CoreSimulator cannot be loaded. Callers needing
+  // an error instead should load `FBSimulatorControlFrameworkLoader.essentialFrameworks` first.
   private static let loadFrameworks: Void = {
     FBSimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworksOrAbort()
   }()
@@ -40,7 +43,6 @@ public class FBSimulatorControlConfiguration: NSObject, NSCopying {
 
   @objc
   public init(deviceSetPath: String?, logger: (any FBControlCoreLogger)?, reporter: (any FBEventReporter)?) {
-    _ = FBSimulatorControlConfiguration.loadFrameworks
     self.deviceSetPath = deviceSetPath
     self.logger = logger ?? FBControlCoreGlobalConfiguration.defaultLogger
     self.reporter = reporter

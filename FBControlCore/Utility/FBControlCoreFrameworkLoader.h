@@ -65,7 +65,9 @@
 - (BOOL)loadPrivateFrameworks:(nullable id<FBControlCoreLogger>)logger error:(NSError * _Nullable * _Nullable)error;
 
 /**
- Calls +[FBControlCore loadPrivateFrameworks:error], aborting in the event the Frameworks could not be loaded
+ Calls -loadPrivateFrameworks:error:, aborting the process in the event the Frameworks could not be loaded.
+ Retained only for static contexts that have no error channel; prefer -loadPrivateFrameworks:error:,
+ which surfaces the failure to the caller instead of terminating the host process.
  */
 - (void)loadPrivateFrameworksOrAbort;
 

@@ -35,7 +35,11 @@ public final class FBSimulatorConfiguration: NSObject, NSCopying {
   // Memoized so the default is computed (and the developer directory resolved) at most once,
   // matching the previous `static let` semantics while letting the resolution error surface.
   private nonisolated(unsafe) static let _defaultConfiguration: Result<FBSimulatorConfiguration, Error> = {
-    FBSimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworksOrAbort()
+    do {
+      try FBSimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworks(FBControlCoreGlobalConfiguration.defaultLogger)
+    } catch {
+      return .failure(error)
+    }
     let model = FBDeviceModel(rawValue: "iPhone 6")
     guard let device = FBiOSTargetConfiguration.nameToDevice[model] else {
       return .failure(FBSimulatorConfigurationError.noDefaultDeviceTypeRegistered(model: model.rawValue))

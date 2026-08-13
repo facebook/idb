@@ -28,9 +28,9 @@ public final class FBSimulatorSet: NSObject, FBiOSTargetSet {
 
   // MARK: - Initializers
 
-  @objc(setWithConfiguration:deviceSet:delegate:logger:reporter:)
-  public class func set(withConfiguration configuration: FBSimulatorControlConfiguration, deviceSet: SimDeviceSet, delegate: (any FBiOSTargetSetDelegate)?, logger: (any FBControlCoreLogger)?, reporter: (any FBEventReporter)?) -> FBSimulatorSet {
-    FBSimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworksOrAbort()
+  @objc(setWithConfiguration:deviceSet:delegate:logger:reporter:error:)
+  public class func set(withConfiguration configuration: FBSimulatorControlConfiguration, deviceSet: SimDeviceSet, delegate: (any FBiOSTargetSetDelegate)?, logger: (any FBControlCoreLogger)?, reporter: (any FBEventReporter)?) throws -> FBSimulatorSet {
+    try FBSimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworks(logger)
     return FBSimulatorSet(configuration: configuration, deviceSet: deviceSet, delegate: delegate, logger: logger, reporter: reporter)
   }
 
