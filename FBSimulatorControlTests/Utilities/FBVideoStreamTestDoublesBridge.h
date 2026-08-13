@@ -25,6 +25,14 @@ FBSimulatorSet *CreateSimulatorSetWithFakeDeviceSet(
   NSObject *fakeDeviceSet);
 
 /**
+ As CreateSimulatorSetWithFakeDeviceSet, threading a logger through to the set factory.
+ */
+FBSimulatorSet *CreateSimulatorSetWithFakeDeviceSetAndLogger(
+  FBSimulatorControlConfiguration *configuration,
+  NSObject *fakeDeviceSet,
+  id<FBControlCoreLogger> _Nullable logger);
+
+/**
  Wraps checkRuntimeRequirementsReturningError: because the FBSimulatorConfiguration (CoreSimulator) category
  is not visible in Swift due to forward-declared private framework types (SimDevice, SimRuntime).
  */
