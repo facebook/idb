@@ -7,7 +7,6 @@
 
 #import "FBSimulatorControlFrameworkLoader.h"
 
-#import <CoreSimulatorUtilities/NSUserDefaults-SimDefaults.h>
 #import <FBControlCore/FBControlCore.h>
 
 static void FBSimulatorControl_SimLogHandler(int level, const char *function, int lineNumber, NSString *format, ...)
@@ -82,25 +81,11 @@ static void FBSimulatorControl_SimLogHandler(int level, const char *function, in
   if (loaded) {
     // Hook the default handler to call us instead.
     [FBSimulatorControlFrameworkLoader_Essential setInternalLogHandler];
-    // Set CoreSimulator Logging since it is now loaded.
-    [FBSimulatorControlFrameworkLoader_Essential setCoreSimulatorLoggingEnabled:(logger.level >= FBControlCoreLogLevelDebug)];
   }
   return loaded;
 }
 
 #pragma mark Private Methods
-
-+ (void)setCoreSimulatorLoggingEnabled:(BOOL)enabled
-{
-  if (![NSUserDefaults respondsToSelector:@selector(simulatorDefaults)]) {
-    return;
-  }
-  // These are stored at ~/Library/Preferences/com.apple.CoreSimulator.plist
-  // This will also be picked up by CoreSimulatorService, which itself links CoreSimulator and uses -[NSUserDefaults(SimDefaults) simulatorDefaults]
-  NSUserDefaults *simulatorDefaults = [NSUserDefaults simulatorDefaults];
-  [simulatorDefaults setBool:enabled forKey:@"DebugLogging"];
-  [simulatorDefaults synchronize];
-}
 
 + (BOOL)setInternalLogHandler
 {
