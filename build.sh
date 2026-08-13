@@ -540,11 +540,18 @@ function build() {
 
 function test_target() {
   local name=$1
+  # Per-test time allowances turn a hung test into a named failure in about a
+  # minute; without them a single hang stalls the suite until the CI job's
+  # 60-minute timeout cancels it with no indication of which test hung. The
+  # slowest legitimate test across all four suites runs in under 5 seconds.
   invoke_xcodebuild \
     -project FBSimulatorControl.xcodeproj \
     -scheme "$name" \
     -sdk macosx \
     -derivedDataPath "$BUILD_DIRECTORY" \
+    -test-timeouts-enabled YES \
+    -default-test-execution-time-allowance 60 \
+    -maximum-test-execution-time-allowance 180 \
     test
 }
 
