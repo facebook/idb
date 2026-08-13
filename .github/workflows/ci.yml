@@ -12,9 +12,15 @@ concurrency:
 
 jobs:
   python-client:
-    name: Python client (Linux)
-    runs-on: ubuntu-latest
+    name: Python client (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-26
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -24,6 +30,12 @@ jobs:
         run: FB_IDB_VERSION=0.0.0 pip install .
       - name: Smoke test the CLI
         run: idb --help
+      - name: Run unit tests
+        # The suites ship inside the package as *_tests.py, which pytest's
+        # default discovery pattern does not match.
+        run: |
+          pip install pytest
+          python -m pytest --pyargs idb -o python_files='*_tests.py'
 
   mac-frameworks:
     name: Build frameworks (macOS)
