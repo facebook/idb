@@ -137,7 +137,18 @@ final class FBSimulatorIndigoHIDClient: @unchecked Sendable {
       free(raw)
       return
     }
-    unsafeBitCast(client, to: SimDeviceLegacyHIDClientMessaging.self)
-      .send(withMessage: raw, freeWhenDone: true, completionQueue: completionQueue, completion: completion)
+    do {
+      try FBObjCExceptionGuard.run {
+        unsafeBitCast(client, to: SimDeviceLegacyHIDClientMessaging.self)
+          .send(withMessage: raw, freeWhenDone: true, completionQueue: completionQueue, completion: completion)
+      }
+    } catch {
+      // `raw` is deliberately not freed. Ownership passes to the client with `freeWhenDone`, and a
+      // raise leaves no way to tell whether it got that far; one leaked message beats a double free.
+      //
+      // Delivering here assumes the client cannot have already run `completion` before raising —
+      // true of every observed raise, which come from `-[SimDeviceIOClient ioPorts]` on the way in.
+      completion(error)
+    }
   }
 }

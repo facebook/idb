@@ -168,8 +168,9 @@ struct FBSimulatorIndigoHIDClientTests {
     var raised: Error?
     do {
       // `sendData` rather than `send(_:)`: the async entry point hops onto the client's own queue,
-      // putting the raise on a thread no caller can wrap. The guard here is only so that a regression
-      // fails this test instead of aborting the test process, as it does to `idb_companion`.
+      // putting the raise on a thread no caller can wrap. The client is expected to convert the raise
+      // itself; this guard is only here so that a regression fails one test rather than aborting the
+      // whole test process, which is what it does to `idb_companion`.
       try FBObjCExceptionGuard.run {
         client.sendData(Data([0x01, 0x02]), completionQueue: .main) {
           capture.wasCalled = true
@@ -180,12 +181,10 @@ struct FBSimulatorIndigoHIDClientTests {
       raised = error
     }
 
-    // BUG: the raise unwinds straight out of the client, so the completion never runs and whoever
-    // asked for the event waits on a continuation that is never resumed — flipped in the following
-    // commit.
-    #expect(!capture.wasCalled)
-    let raisedError = try #require(raised) as NSError
-    #expect(raisedError.domain == FBObjCExceptionGuardErrorDomain)
-    #expect(raisedError.localizedDescription == RaisingSendLegacyHIDClientStub.reason)
+    #expect(raised == nil)
+    #expect(capture.wasCalled)
+    let completionError = try #require(capture.error) as NSError
+    #expect(completionError.domain == FBObjCExceptionGuardErrorDomain)
+    #expect(completionError.localizedDescription == RaisingSendLegacyHIDClientStub.reason)
   }
 }
