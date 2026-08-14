@@ -13,10 +13,6 @@ import XCTest
 
 final class FBEventReporterSubjectTests: XCTestCase {
 
-  // BUG: durations <= -1ms and non-finite values trap in the millisecond
-  // conversion's UInt.init — made saturating in a following commit. The trap
-  // cannot be pinned here, since it aborts the test runner.
-
   func testSuccessfulCallDurationConvertsSecondsToMilliseconds() {
     let subject = FBEventReporterSubject(forSuccessfulCall: "list_apps", duration: 1.5, size: nil, arguments: [])
     XCTAssertEqual(subject.duration, NSNumber(value: UInt(1500)))
@@ -35,5 +31,35 @@ final class FBEventReporterSubjectTests: XCTestCase {
   func testSubMillisecondNegativeDurationTruncatesToZero() {
     let subject = FBEventReporterSubject(forSuccessfulCall: "list_apps", duration: -0.0005, size: nil, arguments: [])
     XCTAssertEqual(subject.duration, NSNumber(value: UInt(0)))
+  }
+
+  func testNegativeDurationSaturatesToZero() {
+    let subject = FBEventReporterSubject(forSuccessfulCall: "list_apps", duration: -5, size: nil, arguments: [])
+    XCTAssertEqual(subject.duration, NSNumber(value: UInt(0)))
+  }
+
+  func testNegativeMillisecondDurationSaturatesToZero() {
+    let subject = FBEventReporterSubject(forFailingCall: "list_apps", duration: -0.001, message: "failed", size: nil, arguments: [])
+    XCTAssertEqual(subject.duration, NSNumber(value: UInt(0)))
+  }
+
+  func testNaNDurationSaturatesToZero() {
+    let subject = FBEventReporterSubject(forSuccessfulCall: "list_apps", duration: .nan, size: nil, arguments: [])
+    XCTAssertEqual(subject.duration, NSNumber(value: UInt(0)))
+  }
+
+  func testInfiniteDurationSaturatesToZero() {
+    let subject = FBEventReporterSubject(forSuccessfulCall: "list_apps", duration: .infinity, size: nil, arguments: [])
+    XCTAssertEqual(subject.duration, NSNumber(value: UInt(0)))
+  }
+
+  func testNegativeInfiniteDurationSaturatesToZero() {
+    let subject = FBEventReporterSubject(forSuccessfulCall: "list_apps", duration: -.infinity, size: nil, arguments: [])
+    XCTAssertEqual(subject.duration, NSNumber(value: UInt(0)))
+  }
+
+  func testOverflowingDurationSaturatesToUIntMax() {
+    let subject = FBEventReporterSubject(forSuccessfulCall: "list_apps", duration: 1e30, size: nil, arguments: [])
+    XCTAssertEqual(subject.duration, NSNumber(value: UInt.max))
   }
 }
