@@ -83,8 +83,11 @@ public class FBControlCoreGlobalConfiguration: NSObject {
 
   override public class func description() -> String {
     _loggerLock.lock()
-    defer { _loggerLock.unlock() }
-    return "Default Logger \(_logger.map(String.init(describing:)) ?? "(nil)")"
+    let logger = _logger
+    _loggerLock.unlock()
+    // Stringified outside the critical section: an arbitrary logger implementation must not run
+    // under the lock.
+    return "Default Logger \(logger.map(String.init(describing:)) ?? "(nil)")"
   }
 
   public override var description: String {
