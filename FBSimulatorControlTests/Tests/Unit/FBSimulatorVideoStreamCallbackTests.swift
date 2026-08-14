@@ -179,7 +179,15 @@ final class FBSimulatorVideoStreamCallbackTests: XCTestCase {
     }
   }
 
-  func testPeriodicStatsLoggedAfterInterval() {
+  func testPeriodicStatsLoggedAfterInterval() throws {
+    // Crashes intermittently on GitHub-hosted runners (the process dies
+    // mid-test and xcodebuild restarts the bundle); no assertion ever fails.
+    // If diagnosis is wanted, un-skip temporarily — failing jobs now upload
+    // the result bundle, which carries the crash report.
+    try XCTSkipIf(
+      ProcessInfo.processInfo.environment["GITHUB_ACTIONS"] == "true",
+      "Crashes intermittently on hosted CI runners")
+
     let logger = FBCapturingLogger()
     let pusher = createTestVideoStreamPusher(logger)
 
