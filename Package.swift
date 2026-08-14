@@ -20,7 +20,7 @@ import PackageDescription
 let package = Package(
   name: "idb",
   platforms: [
-    .macOS(.v12)
+    .macOS(.v15)
   ],
   products: [
     .executable(name: "idb-repl", targets: ["idb-repl"])

@@ -2,7 +2,7 @@ name: idb_companion
 
 options:
   deploymentTarget:
-    macOS: "12.0"
+    macOS: "15.0"
   createIntermediateGroups: true
   groupSortPosition: top
   bundleIdPrefix: com.facebook
@@ -45,7 +45,7 @@ targets:
   IDBGRPCSwift:
     type: framework
     platform: macOS
-    deploymentTarget: "12.0"
+    deploymentTarget: "15.0"
     preBuildScripts:
       - name: Check gRPC Swift files exist
         script: |
@@ -69,7 +69,7 @@ targets:
         optional: true
     settings:
       base:
-        MACOSX_DEPLOYMENT_TARGET: "12.0"
+        MACOSX_DEPLOYMENT_TARGET: "15.0"
         PRODUCT_BUNDLE_IDENTIFIER: com.facebook.IDBGRPCSwift
         PRODUCT_NAME: IDBGRPCSwift
         DEFINES_MODULE: YES
@@ -96,12 +96,12 @@ targets:
   ReplProtocol:
     type: framework
     platform: macOS
-    deploymentTarget: "12.0"
+    deploymentTarget: "15.0"
     sources:
       - path: ../REPL/ReplProtocol
     settings:
       base:
-        MACOSX_DEPLOYMENT_TARGET: "12.0"
+        MACOSX_DEPLOYMENT_TARGET: "15.0"
         PRODUCT_BUNDLE_IDENTIFIER: com.facebook.ReplProtocol
         PRODUCT_NAME: ReplProtocol
         DEFINES_MODULE: YES
@@ -115,7 +115,7 @@ targets:
   idb_companion:
     type: tool
     platform: macOS
-    deploymentTarget: "12.0"
+    deploymentTarget: "15.0"
     sources:
       - path: .
         excludes:
@@ -147,7 +147,7 @@ targets:
           - $(DERIVED_FILE_DIR)/BuildInfo.swift
     settings:
       base:
-        MACOSX_DEPLOYMENT_TARGET: "12.0"
+        MACOSX_DEPLOYMENT_TARGET: "15.0"
         PRODUCT_NAME: idb_companion
         SWIFT_VERSION: "6.0"
         SWIFT_OBJC_INTERFACE_HEADER_NAME: idb-Swift.h
@@ -194,12 +194,12 @@ targets:
   CompanionDiscovery:
     type: framework
     platform: macOS
-    deploymentTarget: "12.0"
+    deploymentTarget: "15.0"
     sources:
       - path: ../CompanionDiscovery
     settings:
       base:
-        MACOSX_DEPLOYMENT_TARGET: "12.0"
+        MACOSX_DEPLOYMENT_TARGET: "15.0"
         PRODUCT_BUNDLE_IDENTIFIER: com.facebook.CompanionDiscovery
         PRODUCT_NAME: CompanionDiscovery
         DEFINES_MODULE: YES
@@ -215,12 +215,12 @@ targets:
   ReplCompiler:
     type: framework
     platform: macOS
-    deploymentTarget: "12.0"
+    deploymentTarget: "15.0"
     sources:
       - path: ../REPL/Compiler
     settings:
       base:
-        MACOSX_DEPLOYMENT_TARGET: "12.0"
+        MACOSX_DEPLOYMENT_TARGET: "15.0"
         PRODUCT_BUNDLE_IDENTIFIER: com.facebook.ReplCompiler
         PRODUCT_NAME: ReplCompiler
         DEFINES_MODULE: YES
@@ -239,7 +239,7 @@ targets:
   idb-repl:
     type: tool
     platform: macOS
-    deploymentTarget: "12.0"
+    deploymentTarget: "15.0"
     sources:
       - path: ../REPL/CLI
       # BuildInfo.swift is generated into DERIVED_FILE_DIR by the preBuildScript
@@ -264,7 +264,7 @@ targets:
           - $(DERIVED_FILE_DIR)/BuildInfo.swift
     settings:
       base:
-        MACOSX_DEPLOYMENT_TARGET: "12.0"
+        MACOSX_DEPLOYMENT_TARGET: "15.0"
         PRODUCT_NAME: idb-repl
         SWIFT_VERSION: "6.0"
         GENERATE_INFOPLIST_FILE: YES

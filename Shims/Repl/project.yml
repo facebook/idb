@@ -51,7 +51,7 @@ targets:
   Repl-macOS:
     type: library.dynamic
     platform: macOS
-    deploymentTarget: "12.0"
+    deploymentTarget: "15.0"
     sources:
       - path: .
         excludes:
@@ -70,7 +70,7 @@ targets:
     settings:
       base:
         SDKROOT: macosx
-        MACOSX_DEPLOYMENT_TARGET: "12.0"
+        MACOSX_DEPLOYMENT_TARGET: "15.0"
         PRODUCT_NAME: Repl-macOS
         EXECUTABLE_PREFIX: lib
         CURRENT_PROJECT_VERSION: 1

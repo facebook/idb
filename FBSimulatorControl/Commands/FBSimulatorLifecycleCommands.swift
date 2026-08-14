@@ -108,7 +108,7 @@ public final class FBSimulatorLifecycleCommands: NSObject, FBiOSTargetCommand {
 
     // Otherwise we have a single Simulator App to activate.
     let simulatorApp = simulatorApps.first!
-    if !simulatorApp.activate(options: .activateIgnoringOtherApps) {
+    if !simulatorApp.activate() {
       throw FBSimulatorError.describe("Failed to focus \(simulatorApp)").build()
     }
   }
