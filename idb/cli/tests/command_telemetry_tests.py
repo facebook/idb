@@ -6,7 +6,6 @@
 
 # pyre-strict
 
-import json
 from argparse import Namespace
 from types import ModuleType
 from unittest import mock
@@ -59,19 +58,15 @@ def _args(**overrides: object) -> Namespace:
 
 
 class CommandTelemetryMetadataTest(TestCase):
-    async def test_command_metadata_carries_parsed_arguments_json(self) -> None:
+    async def test_command_metadata_carries_no_parsed_arguments_json(self) -> None:
         telemetry = _RecordingTelemetryPlugin()
         args = _args(udid="SIM-1")
         with mock.patch.object(plugin, "PLUGINS", [telemetry]):
             await _NoopCommand().run(args)
         self.assertEqual(len(telemetry.succeeded), 1)
-        # Pinned: every command row duplicates the parsed argparse Namespace
-        # (defaults included) as JSON — dropped in the following commit. The
-        # command_line normvector carries the canonical CLI arguments.
-        self.assertEqual(
-            telemetry.succeeded[0].get("arguments"),
-            json.dumps(args.__dict__, default=str),
-        )
+        # The command_line normvector carries the canonical CLI arguments;
+        # command rows no longer duplicate the parsed Namespace as JSON.
+        self.assertNotIn("arguments", telemetry.succeeded[0])
 
     async def test_command_metadata_carries_truncated_reason(self) -> None:
         telemetry = _RecordingTelemetryPlugin()

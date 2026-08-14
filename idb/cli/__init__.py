@@ -6,7 +6,6 @@
 
 # pyre-strict
 
-import json
 import logging
 import os
 from abc import ABCMeta, abstractmethod
@@ -110,7 +109,6 @@ class BaseCommand(Command, metaclass=ABCMeta):
         metadata: LoggingMetadata = plugin.resolve_metadata(
             logger=self.logger, command=self, args=args
         )
-        metadata["arguments"] = json.dumps(args.__dict__, default=lambda v: str(v))
         if args.reason:
             metadata["reason"] = args.reason[:200]
         async with log_call(
