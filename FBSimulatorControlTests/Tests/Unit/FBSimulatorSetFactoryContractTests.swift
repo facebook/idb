@@ -14,7 +14,7 @@ import Testing
 struct FBSimulatorSetFactoryContractTests {
 
   @Test("The factory carries an error channel for framework loading")
-  func factoryExposesNoErrorChannel() {
+  func factoryCarriesAnErrorChannel() {
     #expect(!FBSimulatorSet.responds(to: NSSelectorFromString("setWithConfiguration:deviceSet:delegate:logger:reporter:")))
     #expect(FBSimulatorSet.responds(to: NSSelectorFromString("setWithConfiguration:deviceSet:delegate:logger:reporter:error:")))
   }
