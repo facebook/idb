@@ -32,7 +32,10 @@ jobs:
         run: idb --help
       - name: Run unit tests
         # The suites ship inside the package as *_tests.py, which pytest's
-        # default discovery pattern does not match.
+        # default discovery pattern does not match. Run outside the checkout:
+        # from the repo root the source idb/ tree — which lacks the generated
+        # gRPC modules — shadows the installed package and breaks collection.
+        working-directory: ${{ runner.temp }}
         run: |
           pip install pytest
           python -m pytest --pyargs idb -o python_files='*_tests.py'
