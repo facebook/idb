@@ -81,6 +81,17 @@ jobs:
         run: brew install xcodegen
       - name: Test ${{ matrix.target }}
         run: ./build.sh test ${{ matrix.target }}
+      # Hosted runners otherwise yield nothing beyond a failing test's name;
+      # the result bundle carries per-test failure detail and, for tests
+      # killed by the time allowance, a snapshot of where they were stuck.
+      - name: Upload result bundle on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target }}-xcresult
+          path: Build/Logs/Test/*.xcresult
+          if-no-files-found: ignore
+          retention-days: 14
 
   mac-companion:
     name: Build companion + distribution (macOS)
