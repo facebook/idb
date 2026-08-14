@@ -48,24 +48,6 @@
   return result;
 }
 
-- (void)loadPrivateFrameworksOrAbort
-{
-  id<FBControlCoreLogger> logger = [FBControlCoreGlobalConfiguration.defaultLogger withName:@"framework_loader"];
-  NSError *error = nil;
-  BOOL success = [self loadPrivateFrameworks:logger.debug error:&error];
-  if (success) {
-    return;
-  }
-  NSString *message = [NSString stringWithFormat:@"Failed to private frameworks for %@ with error %@", self.frameworkName, error];
-
-  // Log the message.
-  [logger.error log:message];
-  // Assertions give a better message in the crash report.
-  NSAssert(NO, message);
-  // However if assertions are compiled out, then we still need to abort.
-  abort();
-}
-
 #pragma mark Private
 
 + (BOOL)loadPrivateFrameworks:(NSArray<FBWeakFramework *> *)weakFrameworks logger:(id<FBControlCoreLogger>)logger error:(NSError **)error

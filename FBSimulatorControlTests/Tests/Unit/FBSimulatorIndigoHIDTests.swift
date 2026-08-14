@@ -29,14 +29,15 @@ private final class RecordingFrameworkLoader: FBControlCoreFrameworkLoader {
 /// pin the wire format so the ObjC -> Swift migration of the builder is provably a no-op.
 final class FBSimulatorIndigoHIDTests: XCTestCase {
 
-  override class func setUp() {
-    super.setUp()
+  override func setUpWithError() throws {
+    try super.setUpWithError()
     // FBSimulatorIndigoHID() dlopens SimulatorKit. Pre-load the private
     // frameworks with the default logger (CoreSimulator, then SimulatorKit) so that the
     // builder's internal load is a no-op — its nil-logger load path would otherwise crash
-    // when it is the first loader call in a bare unit-test process.
-    FBSimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworksOrAbort()
-    FBSimulatorControlFrameworkLoader.xcodeFrameworks.loadPrivateFrameworksOrAbort()
+    // when it is the first loader call in a bare unit-test process. The loads are memoized,
+    // so per-test invocation is a no-op after the first.
+    try FBSimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworks(FBControlCoreGlobalConfiguration.defaultLogger)
+    try FBSimulatorControlFrameworkLoader.xcodeFrameworks.loadPrivateFrameworks(FBControlCoreGlobalConfiguration.defaultLogger)
   }
 
   // MARK: - Helpers

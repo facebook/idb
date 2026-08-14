@@ -9,21 +9,8 @@ import FBControlCore
 import Foundation
 import Testing
 
-/// Counts `loadPrivateFrameworks` calls without dlopening anything, in the style of the double in
-/// `FBSimulatorIndigoHIDTests`.
-private final class RecordingFrameworkLoader: FBControlCoreFrameworkLoader {
-
-  private(set) var loadCount = 0
-
-  override func loadPrivateFrameworks(_ logger: FBControlCoreLogger?) throws {
-    loadCount += 1
-  }
-}
-
-/// The two sides of the loader's error contract: the throwing entry point produces a descriptive
-/// error, while `loadPrivateFrameworksOrAbort()` can only be observed on its success path — its
-/// failure branch logs, asserts, and `abort()`s, which kills the test runner and so cannot be
-/// pinned in-process.
+/// The loader's error contract: a failed load produces a descriptive error through the throwing
+/// entry point.
 @Suite("Framework loader error contract")
 struct FBControlCoreFrameworkLoaderErrorTests {
 
@@ -45,12 +32,4 @@ struct FBControlCoreFrameworkLoaderErrorTests {
     #expect(description.contains(missingPath))
   }
 
-  @Test("loadPrivateFrameworksOrAbort returns normally when loading succeeds")
-  func orAbortReturnsNormallyWhenLoadingSucceeds() {
-    let loader = RecordingFrameworkLoader(name: "TestFrameworks", frameworks: [])
-
-    loader.loadPrivateFrameworksOrAbort()
-
-    #expect(loader.loadCount == 1)
-  }
 }

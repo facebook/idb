@@ -53,7 +53,6 @@ class FBSimulatorControlTestCase: XCTestCase {
       setenv(FBControlCoreDebugLogging, "NO", 1)
     }
     FBControlCoreGlobalConfiguration.defaultLogger.log("Current Configuration => \(String(describing: FBControlCoreGlobalConfiguration.description))")
-    FBSimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworksOrAbort()
   }
 
   class var isRunningOnTravis: Bool {
@@ -93,6 +92,9 @@ class FBSimulatorControlTestCase: XCTestCase {
 
   override func setUpWithError() throws {
     continueAfterFailure = false
+    // Memoized: a no-op after the first test's load. Throwing here turns a load failure into a
+    // per-test failure instead of killing the runner.
+    try FBSimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworks(FBControlCoreGlobalConfiguration.defaultLogger)
     simulatorConfiguration = try FBSimulatorConfiguration.defaultConfiguration().withDeviceModel(.modeliPhone16)
     bootConfiguration = FBSimulatorBootConfiguration(options: FBSimulatorControlTestCase.bootOptions, environment: [:])
     deviceSetPath = FBSimulatorControlTestCase.defaultDeviceSetPath
