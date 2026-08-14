@@ -11,15 +11,6 @@ import Foundation
 @objc(FBSimulatorControlConfiguration)
 public class FBSimulatorControlConfiguration: NSObject, NSCopying {
 
-  // MARK: - Class Initialization
-
-  // Retained only for `defaultDeviceSetPath`, a non-throwing `@objc` class var with no error
-  // channel: this load aborts the process when CoreSimulator cannot be loaded. Callers needing
-  // an error instead should load `FBSimulatorControlFrameworkLoader.essentialFrameworks` first.
-  private static let loadFrameworks: Void = {
-    FBSimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworksOrAbort()
-  }()
-
   // MARK: - Properties
 
   @objc public let deviceSetPath: String?
@@ -79,19 +70,24 @@ public class FBSimulatorControlConfiguration: NSObject, NSCopying {
 
   // MARK: - Helpers
 
-  @objc(defaultDeviceSetPath)
-  public class var defaultDeviceSetPath: String {
-    _ = loadFrameworks
-    let deviceSetClass: AnyClass? = objc_lookUpClass("SimDeviceSet")
-    assert(deviceSetClass != nil, "Expected SimDeviceSet to be loaded")
-    let cls = deviceSetClass! as AnyObject
-    let defaultSetPathSel = NSSelectorFromString("defaultSetPath")
-    if let result = cls.perform(defaultSetPathSel)?.takeUnretainedValue() as? String {
+  /// The default CoreSimulator device-set path. Loads the private frameworks on demand and throws
+  /// when they cannot be loaded or the path cannot be resolved.
+  @objc(defaultDeviceSetPathAndReturnError:)
+  public class func defaultDeviceSetPath() throws -> String {
+    try FBSimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworks(nil)
+    guard let deviceSetClass = objc_lookUpClass("SimDeviceSet") else {
+      throw FBControlCoreError.describe("SimDeviceSet is not present after loading CoreSimulator").build()
+    }
+    let cls = deviceSetClass as AnyObject
+    if let result = cls.perform(NSSelectorFromString("defaultSetPath"))?.takeUnretainedValue() as? String {
       return result
     }
-    let defaultSetSel = NSSelectorFromString("defaultSet")
-    let setPathSel = NSSelectorFromString("setPath")
-    let defaultSet = cls.perform(defaultSetSel)!.takeUnretainedValue()
-    return (defaultSet as AnyObject).perform(setPathSel)!.takeUnretainedValue() as! String
+    guard
+      let defaultSet = cls.perform(NSSelectorFromString("defaultSet"))?.takeUnretainedValue(),
+      let setPath = (defaultSet as AnyObject).perform(NSSelectorFromString("setPath"))?.takeUnretainedValue() as? String
+    else {
+      throw FBControlCoreError.describe("SimDeviceSet did not provide a default device set path").build()
+    }
+    return setPath
   }
 }
