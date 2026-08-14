@@ -363,7 +363,6 @@ final class ReplSession {
           ReplRunTelemetry.subject(
             name: "run",
             start: start,
-            arguments: Self.codeMetadata(code),
             ints: ReplRunTelemetry.codeMetrics(code),
             failure: nil))
         return ExecutionResult(output: result.output, nextIndex: rawNext, artifactFilenames: artifactFilenames)
@@ -382,7 +381,6 @@ final class ReplSession {
         ReplRunTelemetry.subject(
           name: "run",
           start: start,
-          arguments: Self.codeMetadata(code),
           ints: ReplRunTelemetry.codeMetrics(code),
           failure: "\(error)",
           stage: stage))
@@ -455,18 +453,6 @@ final class ReplSession {
     case let .tcp(host, port):
       return .hostAndPort(host, port)
     }
-  }
-
-  // MARK: - Telemetry
-
-  /// Legacy stringly rendering of the code size metrics into `call_arguments`.
-  /// The typed `code_size`/`code_lines` int columns carry the same values;
-  /// kept for one release of query continuity, then dropped.
-  private static func codeMetadata(_ code: String) -> [String] {
-    [
-      "size=\(code.count)",
-      "lines=\(ReplSourceMetadata.countSignificantLinesOfCode(in: code))",
-    ]
   }
 
   // MARK: - Artifacts
