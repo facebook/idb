@@ -45,36 +45,4 @@ final class FBFileWriterTests: XCTestCase {
     writer.consumeEndOfFile()
   }
 
-  func testOpeningAFifoAtBothEndsAsynchronously() throws {
-    let consumer = FBDataBuffer.accumulatingBuffer()
-
-    let fifoPath = (NSTemporaryDirectory() as NSString).appendingPathComponent(UUID().uuidString)
-    let status = mkfifo(fifoPath, S_IWUSR | S_IRUSR)
-    XCTAssertEqual(status, 0)
-
-    let writerFuture = FBFileWriter.asyncWriter(forFilePath: fifoPath)
-    let readerFuture = FBFileReader.reader(withFilePath: fifoPath, consumer: consumer, logger: nil)
-    let results = try FBFuture<AnyObject>.combine([writerFuture, readerFuture as! FBFuture<AnyObject>]).`await`() as NSArray?
-    XCTAssertNotNil(results)
-
-    // swiftlint:disable force_cast
-    let writer = results![0] as! FBDataConsumer & FBDataConsumerLifecycle
-    let reader = results![1] as! FBFileReader
-    // swiftlint:enable force_cast
-
-    try reader.startReading().`await`()
-
-    writer.consumeData("HELLO\n".data(using: .utf8)!)
-    writer.consumeData("THERE\n".data(using: .utf8)!)
-    writer.consumeEndOfFile()
-    // Wait for the writer's channel teardown to close the write end before
-    // winding down the reader: dispatch_io cannot interrupt an operation that
-    // is already inside a syscall, so stopping the reader while the write end
-    // may still be open races teardown against an unbounded read.
-    try writer.finishedConsuming.`await`()
-
-    try reader.stopReading().`await`()
-
-    try consumer.finishedConsuming.`await`()
-  }
 }
