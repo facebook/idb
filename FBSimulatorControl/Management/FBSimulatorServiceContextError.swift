@@ -15,6 +15,10 @@ import Foundation
 /// than the error object itself, keeping the enum a `Sendable` value type.
 public enum FBSimulatorServiceContextError: LocalizedError, Sendable {
 
+  /// The `SimServiceContext` class is not present in the process even though CoreSimulator
+  /// reported a successful load.
+  case serviceContextClassUnavailable
+
   /// No full Xcode is selected, so `FBXcodeConfiguration.developerDirectory` is empty. Resolving a
   /// `SimServiceContext` against an empty developer directory crashes CoreSimulator with an opaque
   /// `NSException`, so this is thrown up-front instead.
@@ -37,6 +41,8 @@ public enum FBSimulatorServiceContextError: LocalizedError, Sendable {
 
   public var errorDescription: String? {
     switch self {
+    case .serviceContextClassUnavailable:
+      return "The SimServiceContext class is not present after loading CoreSimulator."
     case .noFullXcodeSelected:
       return "No full Xcode developer directory is selected. Select one with `xcode-select -s` or set DEVELOPER_DIR."
     case .serviceContextUnavailable(let developerDirectory, let reason):

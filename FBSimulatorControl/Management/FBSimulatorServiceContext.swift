@@ -41,10 +41,13 @@ public final class FBSimulatorServiceContext: NSObject {
   // MARK: - Private Initialization
 
   private class func createServiceContext(withLogger logger: (any FBControlCoreLogger)?) throws -> FBSimulatorServiceContext {
-    let serviceContextClass: AnyClass? = NSClassFromString("SimServiceContext")
-    assert(
-      serviceContextClass != nil && serviceContextClass!.responds(to: NSSelectorFromString("sharedServiceContextForDeveloperDir:error:")),
-      "Service Context cannot be instantiated")
+    try FBSimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworks(logger)
+    guard
+      let serviceContextClass = NSClassFromString("SimServiceContext") as? SimServiceContext.Type,
+      serviceContextClass.responds(to: NSSelectorFromString("sharedServiceContextForDeveloperDir:error:"))
+    else {
+      throw FBSimulatorServiceContextError.serviceContextClassUnavailable
+    }
     // An empty developer directory makes -[SimServiceContext sharedServiceContextForDeveloperDir:error:]
     // crash with an opaque NSException; throw a clear error instead.
     let developerDirectory = FBXcodeConfiguration.developerDirectory
@@ -53,7 +56,8 @@ public final class FBSimulatorServiceContext: NSObject {
     }
 
     var innerError: AnyObject?
-    let serviceContext = (serviceContextClass as! SimServiceContext.Type)
+    let serviceContext =
+      serviceContextClass
       .sharedServiceContext(forDeveloperDir: developerDirectory, error: &innerError)
     guard let serviceContext = serviceContext as? SimServiceContext else {
       throw FBSimulatorServiceContextError.serviceContextUnavailable(
