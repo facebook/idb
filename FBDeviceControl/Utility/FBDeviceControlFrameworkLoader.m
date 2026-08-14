@@ -64,9 +64,6 @@ DYLD_INTERPOSE(FBDeviceControlFrameworkLoader_asl_open, asl_open);
     calls.InitializeMobileDevice();
     IsInitializing = NO;
   }
-  if (logger.level >= FBControlCoreLogLevelDebug) {
-    [FBDeviceControlFrameworkLoader setDefaultLogLevel:9 logFilePath:@"/tmp/FBDeviceControl_MobileDevice.txt"];
-  }
   return result;
 }
 
@@ -145,21 +142,6 @@ DYLD_INTERPOSE(FBDeviceControlFrameworkLoader_asl_open, asl_open);
   calls->StopSession = FBGetSymbolFromHandle(handle, "AMDeviceStopSession");
   calls->USBMuxConnectByPort = FBGetSymbolFromHandle(handle, "USBMuxConnectByPort");
   calls->ValidatePairing = FBGetSymbolFromHandle(handle, "AMDeviceValidatePairing");
-}
-
-/**
- Sets the Default Log Level and File Path for MobileDevice.framework.
- Called after MobileDevice framework initialization to configure logging preferences.
- Logging goes via asl instead of os_log, so logging to a file path may be unpredicatable.
-
- @param level the Log Level to use.
- @param logFilePath the file path to log to.
- */
-+ (void)setDefaultLogLevel:(int)level logFilePath:(NSString *)logFilePath
-{
-  NSNumber *levelNumber = @(level);
-  CFPreferencesSetAppValue(CFSTR("LogLevel"), (__bridge CFPropertyListRef _Nullable)(levelNumber), CFSTR("com.apple.MobileDevice"));
-  CFPreferencesSetAppValue(CFSTR("LogFile"), (__bridge CFPropertyListRef _Nullable)(logFilePath), CFSTR("com.apple.MobileDevice"));
 }
 
 @end
