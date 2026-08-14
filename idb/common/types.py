@@ -14,7 +14,7 @@ from collections.abc import AsyncGenerator, AsyncIterable, AsyncIterator, Mappin
 from contextlib import asynccontextmanager
 from dataclasses import asdict, dataclass, field
 from datetime import timedelta
-from enum import Enum, StrEnum
+from enum import Enum
 from io import StringIO
 from typing import IO, List, Optional, Set, Tuple, Union
 
@@ -40,10 +40,16 @@ class Permission(Enum):
     MICROPHONE = 6
 
 
-class TargetType(StrEnum):
+class TargetType(str, Enum):
     DEVICE = "device"
     SIMULATOR = "simulator"
     MAC = "mac"
+
+    # enum.StrEnum is python 3.11+, and the client is installed onto older
+    # interpreters. These are the two assignments StrEnum makes over a str
+    # mixin: stringify and format as the value, not as "TargetType.DEVICE".
+    __str__ = str.__str__
+    __format__ = str.__format__
 
 
 @dataclass(frozen=True)

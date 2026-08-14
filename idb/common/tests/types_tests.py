@@ -56,7 +56,9 @@ class TargetTypeTests(TestCase):
         self.assertEqual(format(TargetType.MAC, ">6"), "   mac")
 
     def test_importable_outside_of_meta(self) -> None:
-        # BUG: the module imports only on python 3.11 and newer, where
-        # enum.StrEnum exists — flipped in the following commit.
-        with self.assertRaises(ImportError), _open_source_environment():
-            _reimport_types()
+        with _open_source_environment():
+            module = _reimport_types()
+        self.assertEqual(
+            [str(member) for member in module.TargetType],
+            ["device", "simulator", "mac"],
+        )
