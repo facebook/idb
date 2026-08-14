@@ -73,7 +73,8 @@ public struct FBObjCRuntimeClass {
 
    `Messaging` is an `@objc` protocol declaring the initializer's selector. The fresh allocation is
    `unsafeBitCast` to it, which is what lets `initialize` express the send in Swift without the
-   class ever being named as a type.
+   class ever being named as a type. The cast is only defined when `Messaging` is laid out as an
+   object pointer, which is what the `AnyObject` constraint holds callers to.
 
    - Parameter initialize: Sends the designated initializer to the allocation, returning whatever it
      returned. Must not escape the instance it is passed — until the initializer returns, the object
@@ -82,7 +83,7 @@ public struct FBObjCRuntimeClass {
      `FBObjCRuntimeClassError.initializerRaised` if the initializer raised an `NSException`,
      `FBObjCRuntimeClassError.initializerReturnedNil` if it returned nil.
    */
-  public func instantiate<Messaging>(
+  public func instantiate<Messaging: AnyObject>(
     as _: Messaging.Type,
     _ initialize: (Messaging) -> AnyObject?
   ) throws -> AnyObject {
