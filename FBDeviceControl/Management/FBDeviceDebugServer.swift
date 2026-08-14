@@ -30,10 +30,6 @@ private class FBDeviceDebugServer_TwistedPairFiles {
   }
 
   func start() -> FBFuture<NSNull>? {
-    guard #available(macOS 10.15, *) else {
-      return nil
-    }
-
     // FBMutableFuture is a thread-safe ObjC type that isn't Sendable.
     let logger = self.logger
     let socket = self.socket

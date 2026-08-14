@@ -32,7 +32,6 @@ private enum FBDeviceVideoStreamError: Error {
   case invalidStreamFormat(String)
   case cannotAddDataOutput
   case noCaptureConnection
-  case cannotSetFPSBeforeMacOS1015
   case consumerAlreadyAttached
   case noConsumerAttached
   case unsupportedBGRAOutput
@@ -48,8 +47,6 @@ extension FBDeviceVideoStreamError: LocalizedError {
       return "Cannot add Data Output to session"
     case .noCaptureConnection:
       return "No capture connection available!"
-    case .cannotSetFPSBeforeMacOS1015:
-      return "Cannot set FPS on an OS prior to 10.15"
     case .consumerAlreadyAttached:
       return "Cannot start streaming, a consumer is already attached"
     case .noConsumerAttached:
@@ -99,15 +96,11 @@ public class FBDeviceVideoStream: NSObject, FBVideoStream, @unchecked Sendable {
     session.addOutput(output)
 
     if let fps = configuration.framesPerSecond {
-      if #available(macOS 10.15, *) {
-        guard let connection = session.connections.first else {
-          throw FBDeviceVideoStreamError.noCaptureConnection
-        }
-        let frameTime: Float64 = 1.0 / Float64(fps)
-        connection.videoMinFrameDuration = CMTimeMakeWithSeconds(frameTime, preferredTimescale: Int32(NSEC_PER_SEC))
-      } else {
-        throw FBDeviceVideoStreamError.cannotSetFPSBeforeMacOS1015
+      guard let connection = session.connections.first else {
+        throw FBDeviceVideoStreamError.noCaptureConnection
       }
+      let frameTime: Float64 = 1.0 / Float64(fps)
+      connection.videoMinFrameDuration = CMTimeMakeWithSeconds(frameTime, preferredTimescale: Int32(NSEC_PER_SEC))
     }
 
     let writeQueue = DispatchQueue(label: "com.facebook.fbdevicecontrol.streamencoder")
