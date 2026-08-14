@@ -739,18 +739,11 @@ public actor FBSimulatorVideoStream: FBVideoStream {
     if case let .compressedVideo(codec, _) = configuration.format {
       switch codec {
       case .h264:
-        derived[kVTCompressionPropertyKey_ProfileLevel as String] = kVTProfileLevel_H264_Baseline_AutoLevel as String
-        derived[kVTCompressionPropertyKey_H264EntropyMode as String] = kVTH264EntropyMode_CAVLC as String
-        if #available(macOS 12.1, *) {
-          derived[kVTCompressionPropertyKey_ProfileLevel as String] = kVTProfileLevel_H264_High_AutoLevel as String
-          derived[kVTCompressionPropertyKey_H264EntropyMode as String] = kVTH264EntropyMode_CABAC as String
-        }
+        derived[kVTCompressionPropertyKey_ProfileLevel as String] = kVTProfileLevel_H264_High_AutoLevel as String
+        derived[kVTCompressionPropertyKey_H264EntropyMode as String] = kVTH264EntropyMode_CABAC as String
       case .hevc:
         derived[kVTCompressionPropertyKey_AllowOpenGOP as String] = false
-        derived[kVTCompressionPropertyKey_ProfileLevel as String] = kVTProfileLevel_HEVC_Main_AutoLevel as String
-        if #available(macOS 13.0, *) {
-          derived[kVTCompressionPropertyKey_ProfileLevel as String] = kVTProfileLevel_HEVC_Main10_AutoLevel as String
-        }
+        derived[kVTCompressionPropertyKey_ProfileLevel as String] = kVTProfileLevel_HEVC_Main10_AutoLevel as String
       }
     }
     return derived

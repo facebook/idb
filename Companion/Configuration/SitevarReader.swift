@@ -10,7 +10,6 @@ import Foundation
 /// Reads sitevar value from interngraph via http request.
 /// Batch sitevar request is not implemented.
 /// To use that reader you should create and FB application using https://www.internalfb.com/intern/wiki/XcontrollerGuide/XInternGraphController/#creating-an-app-id-and-t
-@available(macOSApplicationExtension 10.15, *)
 public final class SitevarReader {
 
   private let reader: InternGraphCachableReader<FBApplicationBasedSitevarRequestor>

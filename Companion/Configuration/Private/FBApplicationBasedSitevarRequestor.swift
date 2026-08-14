@@ -8,7 +8,6 @@
 import Foundation
 
 /// Fetches values from `XInternGraphSVController.php`
-@available(macOSApplicationExtension 10.15, *)
 final class FBApplicationBasedSitevarRequestor: InternGraphRequestor {
   private let appID: String
   private let token: String

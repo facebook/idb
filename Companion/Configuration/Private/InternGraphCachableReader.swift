@@ -7,7 +7,6 @@
 
 import Foundation
 
-@available(macOSApplicationExtension 10.15, *)
 actor InternGraphCachableReader<Requestor: InternGraphRequestor> {
 
   private let internGraphRequestor: Requestor

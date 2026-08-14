@@ -35,12 +35,7 @@ public extension FBAppleDevicectlCommandExecutor {
 
   func launchApplicationAsync(configuration: FBApplicationLaunchConfiguration) async throws -> NSNumber {
     let tmpPath = try FileManager.default.temporaryFile(extension: "json")
-    let tmpPathStr: String
-    if #available(macOS 13.0, *) {
-      tmpPathStr = tmpPath.path()
-    } else {
-      tmpPathStr = tmpPath.path
-    }
+    let tmpPathStr = tmpPath.path()
     var arguments = [
       "device",
       "process",

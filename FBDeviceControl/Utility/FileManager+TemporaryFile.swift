@@ -10,10 +10,6 @@ import Foundation
 extension FileManager {
   func temporaryFile(extension fileExtension: String) throws -> URL {
     let tmpPath = try url(for: .itemReplacementDirectory, in: .userDomainMask, appropriateFor: URL(fileURLWithPath: "/tmp"), create: true)
-    if #available(macOS 13.0, *) {
-      return tmpPath.appending(component: "\(ProcessInfo().globallyUniqueString).\(fileExtension)")
-    } else {
-      return tmpPath.appendingPathComponent("\(ProcessInfo().globallyUniqueString)", isDirectory: false)
-    }
+    return tmpPath.appending(component: "\(ProcessInfo().globallyUniqueString).\(fileExtension)")
   }
 }

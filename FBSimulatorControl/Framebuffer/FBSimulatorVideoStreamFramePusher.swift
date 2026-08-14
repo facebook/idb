@@ -540,14 +540,9 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: FBSimulatorVideoStre
         kVTVideoEncoderSpecification_EnableHardwareAcceleratedVideoEncoder as String: true
       ]
     }
-    if #available(macOS 12.1, *) {
-      return [
-        kVTVideoEncoderSpecification_RequireHardwareAcceleratedVideoEncoder as String: true,
-        kVTVideoEncoderSpecification_EnableLowLatencyRateControl as String: true,
-      ]
-    }
     return [
-      kVTVideoEncoderSpecification_EnableHardwareAcceleratedVideoEncoder as String: true
+      kVTVideoEncoderSpecification_RequireHardwareAcceleratedVideoEncoder as String: true,
+      kVTVideoEncoderSpecification_EnableLowLatencyRateControl as String: true,
     ]
   }
 

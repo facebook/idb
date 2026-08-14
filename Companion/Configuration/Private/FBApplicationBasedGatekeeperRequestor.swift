@@ -13,7 +13,6 @@ struct GatekeeperRequest: Hashable {
 }
 
 /// Fetches values from `XInternGraphEmployeeGKController.php`
-@available(macOSApplicationExtension 10.15, *)
 final class FBApplicationBasedGatekeeperRequestor: InternGraphRequestor {
 
   private let appID: String
