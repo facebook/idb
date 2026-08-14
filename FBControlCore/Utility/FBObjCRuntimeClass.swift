@@ -10,6 +10,8 @@ import ObjectiveC
 
 /// The ways instantiating a runtime-resolved class can fail.
 public enum FBObjCRuntimeClassError: Error, LocalizedError {
+  /// The instance could not be allocated, so no initializer was ever sent.
+  case allocationFailed(className: String)
   /// The designated initializer raised an `NSException` instead of returning.
   case initializerRaised(className: String, underlying: Error)
   /// The designated initializer returned nil.
@@ -17,6 +19,8 @@ public enum FBObjCRuntimeClassError: Error, LocalizedError {
 
   public var errorDescription: String? {
     switch self {
+    case let .allocationFailed(className):
+      return "An instance of \(className) could not be allocated"
     case let .initializerRaised(className, underlying):
       return "The initializer of \(className) raised: \(underlying.localizedDescription)"
     case let .initializerReturnedNil(className):
@@ -74,14 +78,20 @@ public struct FBObjCRuntimeClass {
    - Parameter initialize: Sends the designated initializer to the allocation, returning whatever it
      returned. Must not escape the instance it is passed — until the initializer returns, the object
      is not fully formed.
-   - Throws: `FBObjCRuntimeClassError.initializerRaised` if the initializer raised an `NSException`,
+   - Throws: `FBObjCRuntimeClassError.allocationFailed` if the instance could not be allocated,
+     `FBObjCRuntimeClassError.initializerRaised` if the initializer raised an `NSException`,
      `FBObjCRuntimeClassError.initializerReturnedNil` if it returned nil.
    */
   public func instantiate<Messaging>(
     as _: Messaging.Type,
     _ initialize: (Messaging) -> AnyObject?
   ) throws -> AnyObject {
-    let allocated = unsafeBitCast(class_createInstance(cls, 0) as AnyObject, to: Messaging.self)
+    // Unwrapped rather than bridged: `Optional.none as AnyObject` boxes into a non-nil `NSNull`, so a
+    // failed allocation would go on to be messaged and be reported as a raising initializer.
+    guard let instance = class_createInstance(cls, 0) else {
+      throw FBObjCRuntimeClassError.allocationFailed(className: name)
+    }
+    let allocated = unsafeBitCast(instance as AnyObject, to: Messaging.self)
     let initialized: AnyObject?
     do {
       initialized = try FBObjCExceptionGuard.guarded { initialize(allocated) }
