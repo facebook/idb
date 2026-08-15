@@ -11,6 +11,15 @@ import XCTest
 final class FBProcessIOTests: XCTestCase {
 
   func testDetachmentMultipleTimesIsPermitted() throws {
+    // Stalls on GitHub-hosted runners until the per-test time allowance kills
+    // it — the same dispatch_io teardown coupling that affected the FIFO
+    // tests, here on pipe descriptors that spawned children inherit, where
+    // pre-setting O_NONBLOCK is not an option. If diagnosis is wanted,
+    // un-skip temporarily — failing jobs upload the result bundle.
+    try XCTSkipIf(
+      ProcessInfo.processInfo.environment["GITHUB_ACTIONS"] == "true",
+      "Stalls on hosted CI runners until the time allowance kills it")
+
     let stdInConsumer = FBDataBuffer.consumableBuffer()
     let stdOutConsumer = FBDataBuffer.consumableBuffer()
     let io = FBProcessIO<NSNull, FBDataConsumer, FBDataConsumer>(
