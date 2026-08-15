@@ -195,4 +195,56 @@ final class FBSimulatorHIDEventRenderingTests: XCTestCase {
     // initial down + 2 interpolated downs + 1 duplicated final down + 1 up.
     XCTAssertEqual(try twoFingerTouches(pinch).count, 5)
   }
+
+  // MARK: - Description rendering
+
+  /// Runs `body` with detailed HID event logging enabled, as deployments that
+  /// diagnose HID traffic configure the companion.
+  private func withHIDDetailLogging(_ body: () -> Void) {
+    setenv("FBSIMULATORCONTROL_LOG_HID_DETAILS", "1", 1)
+    defer { unsetenv("FBSIMULATORCONTROL_LOG_HID_DETAILS") }
+    body()
+  }
+
+  func testTouchDescriptionRendersDirectionAndCoordinates() {
+    withHIDDetailLogging {
+      // BUG: coordinates are rendered through a UInt conversion, which drops
+      // the fraction — and traps at runtime for negative coordinates, killing
+      // the process that renders the log line. Flipped in the following commit
+      // to render the raw values like the sibling cases below.
+      XCTAssertEqual(
+        FBSimulatorHIDEvent.touch(direction: .down, x: 10.5, y: 20.0).description,
+        "Touch down at (10,20)")
+    }
+  }
+
+  func testTwoFingerTouchDescriptionRendersBothFingersVerbatim() {
+    withHIDDetailLogging {
+      XCTAssertEqual(
+        FBSimulatorHIDEvent.twoFingerTouch(
+          direction: .up,
+          finger1: CGPoint(x: 10.5, y: 20.0),
+          finger2: CGPoint(x: -30.0, y: 40.0)
+        ).description,
+        "TwoFingerTouch up at (10.5,20.0) (-30.0,40.0)")
+    }
+  }
+
+  func testKeyboardDescriptionRendersKeyCodeAndDirection() {
+    withHIDDetailLogging {
+      XCTAssertEqual(
+        FBSimulatorHIDEvent.keyboard(direction: .down, keyCode: 40).description,
+        "Keyboard Code=40 down")
+    }
+  }
+
+  func testDescriptionsAreHiddenWithoutDetailLogging() {
+    unsetenv("FBSIMULATORCONTROL_LOG_HID_DETAILS")
+    XCTAssertEqual(
+      FBSimulatorHIDEvent.touch(direction: .down, x: 10.0, y: 20.0).description,
+      "Touch <hidden>")
+    XCTAssertEqual(
+      FBSimulatorHIDEvent.keyboard(direction: .down, keyCode: 40).description,
+      "Key <hidden>")
+  }
 }
