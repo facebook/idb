@@ -254,6 +254,8 @@ function regenerate_projects() {
   generate_xcodeproj "Shims/Repl" "Repl"
   echo "Generating SimulatorFrameworkBridge project..."
   generate_xcodeproj "SimulatorFrameworkBridge" "SimulatorFrameworkBridge"
+  echo "Generating ReplHost project..."
+  generate_xcodeproj "REPLHost" "ReplHost"
   generate_companion_project
 }
 
@@ -367,6 +369,21 @@ function build_simulator_framework_bridge() {
     build
 }
 
+function build_repl_host() {
+  # An empty SwiftUI app bundled into the distribution's Resources/ as
+  # ReplHost.app: the default host app for `idb-repl app` without --bundle-id,
+  # installed on demand by idb_companion (see
+  # FBIDBCommandExecutor.ensureReplHostAppInstalled).
+  invoke_xcodebuild \
+    ONLY_ACTIVE_ARCH=NO \
+    -project REPLHost/ReplHost.xcodeproj \
+    -scheme ReplHost \
+    -sdk iphonesimulator \
+    -derivedDataPath "$BUILD_DIRECTORY" \
+    -configuration Release \
+    build
+}
+
 function build_idb_companion() {
   check_protobuf
   build_idb_deps
@@ -434,6 +451,8 @@ function build_idb_repl() {
 #       libRepl-iOS.dylib
 #       libRepl-macOS.dylib
 #       SimulatorFrameworkBridge
+#       ReplHost.app
+#       IDBAPI.swiftinterface
 #
 function build_distribution() {
   local release="$BUILD_DIRECTORY/Products/Release"
@@ -451,6 +470,7 @@ function build_distribution() {
     "$sim/libRepl-iOS.dylib"
     "$release/libRepl-macOS.dylib"
     "$sim/SimulatorFrameworkBridge"
+    "$sim/ReplHost.app"
   )
   local path
   for path in "${required[@]}"; do
@@ -482,6 +502,15 @@ function build_distribution() {
   cp "$release/libRepl-macOS.dylib" "$dist/Resources/"
   cp "$sim/SimulatorFrameworkBridge" "$dist/Resources/"
 
+  # ReplHost.app: the default host app for `idb-repl app`, installed on demand
+  # by the companion. Already ad-hoc signed at build time (CODE_SIGN_IDENTITY in
+  # REPLHost/project.yml), like SimulatorFrameworkBridge and the shim dylibs.
+  ditto "$sim/ReplHost.app" "$dist/Resources/ReplHost.app"
+
+  # The checked-in IDBAPI module interface, reported to the REPL driver so
+  # injected code can auto-import the `IDB` namespace.
+  cp "REPL/IDB/IDBAPI.swiftinterface" "$dist/Resources/"
+
   echo "Distribution ready at $dist"
 }
 
@@ -489,6 +518,7 @@ function build_all() {
   # build_idb_companion already builds frameworks first
   build_shims
   build_simulator_framework_bridge
+  build_repl_host
   build_idb_companion
   build_idb_repl
   build_distribution
@@ -518,6 +548,8 @@ function build() {
         build_shim Repl-macOS macosx Shims/Repl/Repl.xcodeproj;;
       SimulatorFrameworkBridge)
         build_simulator_framework_bridge;;
+      ReplHost)
+        build_repl_host;;
       idb_companion)
         build_idb_companion;;
       idb-repl)
@@ -528,7 +560,7 @@ function build() {
         build_target "$target";;
       *)
         echo "Unknown target: $target"
-        echo "Valid targets: all, frameworks, shims, idb_companion, idb-repl, FBControlCore, XCTestBootstrap, FBSimulatorControl, FBDeviceControl, Shimulator-iOS, Shimulator-macOS, Repl-iOS, Repl-macOS, SimulatorFrameworkBridge, distribution"
+        echo "Valid targets: all, frameworks, shims, idb_companion, idb-repl, FBControlCore, XCTestBootstrap, FBSimulatorControl, FBDeviceControl, Shimulator-iOS, Shimulator-macOS, Repl-iOS, Repl-macOS, ReplHost, SimulatorFrameworkBridge, distribution"
         exit 1;;
     esac
   fi
@@ -619,6 +651,7 @@ Commands:
       FBSimulatorControl Build FBSimulatorControl framework
       Repl-iOS        Build Repl-iOS dylib (iOS simulator)
       Repl-macOS      Build Repl-macOS dylib (macOS)
+      ReplHost        Build the ReplHost.app host app (iOS simulator)
       Shimulator-iOS  Build Shimulator-iOS dylib (iOS simulator)
       Shimulator-macOS Build Shimulator-macOS dylib (macOS)
       SimulatorFrameworkBridge Build SimulatorFrameworkBridge executable (iOS simulator)

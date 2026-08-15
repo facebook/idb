@@ -1,0 +1,39 @@
+name: ReplHost
+
+options:
+  createIntermediateGroups: true
+
+targets:
+  # An empty SwiftUI app, built for the iOS simulator and bundled into the
+  # distribution's Resources/ as ReplHost.app. It is the default host app for the
+  # `app` REPL context: `idb-repl app` without --bundle-id has the companion
+  # install this app on demand (FBIDBCommandExecutor.ensureReplHostAppInstalled)
+  # and drive the REPL against it. Mirrors the Buck `ReplHost` apple_bundle.
+  ReplHost:
+    type: application
+    platform: iOS
+    deploymentTarget: "15.0"
+    sources:
+      - path: .
+        excludes:
+          - "Info.plist"
+          - "Entitlements.plist"
+          - "**/*.xcodeproj"
+          - "project.yml"
+          - "Build"
+    settings:
+      base:
+        SDKROOT: iphonesimulator
+        IPHONEOS_DEPLOYMENT_TARGET: "15.0"
+        PRODUCT_NAME: ReplHost
+        # Must match FBIDBCommandExecutor.replHostBundleID -- the companion
+        # resolves the installed app by this bundle id.
+        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.idb.replhost
+        INFOPLIST_FILE: Info.plist
+        SWIFT_VERSION: "6.0"
+        CODE_SIGN_IDENTITY: "-"
+        CODE_SIGN_ENTITLEMENTS: Entitlements.plist
+    dependencies:
+      - sdk: Foundation.framework
+      - sdk: SwiftUI.framework
+      - sdk: UIKit.framework

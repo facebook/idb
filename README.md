@@ -86,7 +86,7 @@ Head over [to the main documentation](https://www.fbidb.io) for more details on 
 ### Building
 
 ```bash
-# Build everything: frameworks, shims, SimulatorFrameworkBridge and
+# Build everything: frameworks, shims, SimulatorFrameworkBridge, ReplHost and
 # idb_companion, then assemble the runnable distribution
 ./build.sh build
 
@@ -117,6 +117,8 @@ Build/Distribution/
     libRepl-iOS.dylib
     libRepl-macOS.dylib
     SimulatorFrameworkBridge
+    ReplHost.app
+    IDBAPI.swiftinterface
 ```
 
 `idb_companion` discovers the shims and `SimulatorFrameworkBridge` from the

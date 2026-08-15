@@ -395,7 +395,8 @@ public final class FBIDBCommandExecutor {
     return try await replTarget.startReplApp(bundleID: bundleID, reuseSession: reuseSession)
   }
 
-  // Keep in sync with defs.bzl `make_repl_host_app` PRODUCT_BUNDLE_IDENTIFIER.
+  // Keep in sync with the PRODUCT_BUNDLE_IDENTIFIER in defs.bzl
+  // `make_repl_host_app` and in REPLHost/project.yml.
   static let replHostBundleID = "com.facebook.idb.replhost"
 
   /// Ensures the bundled ReplHost app is installed on the target and returns its
