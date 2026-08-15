@@ -208,13 +208,14 @@ final class FBSimulatorHIDEventRenderingTests: XCTestCase {
 
   func testTouchDescriptionRendersDirectionAndCoordinates() {
     withHIDDetailLogging {
-      // BUG: coordinates are rendered through a UInt conversion, which drops
-      // the fraction — and traps at runtime for negative coordinates, killing
-      // the process that renders the log line. Flipped in the following commit
-      // to render the raw values like the sibling cases below.
       XCTAssertEqual(
         FBSimulatorHIDEvent.touch(direction: .down, x: 10.5, y: 20.0).description,
-        "Touch down at (10,20)")
+        "Touch down at (10.5,20.0)")
+      // Negative coordinates arrive unvalidated from the wire (off-screen
+      // swipe endpoints); rendering them must not trap.
+      XCTAssertEqual(
+        FBSimulatorHIDEvent.touch(direction: .up, x: -5.0, y: -0.5).description,
+        "Touch up at (-5.0,-0.5)")
     }
   }
 

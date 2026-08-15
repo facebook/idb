@@ -231,7 +231,7 @@ extension FBSimulatorHIDEvent: CustomStringConvertible {
     switch self {
     case let .touch(direction, x, y):
       guard shouldLogHIDEventDetails() else { return "Touch <hidden>" }
-      return "Touch \(direction.name) at (\(UInt(x)),\(UInt(y)))"
+      return "Touch \(direction.name) at (\(x),\(y))"
     case let .button(direction, button):
       guard shouldLogHIDEventDetails() else { return "Button <hidden>" }
       return "Button \(button.name) \(direction.name)"
