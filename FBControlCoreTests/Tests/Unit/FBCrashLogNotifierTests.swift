@@ -51,5 +51,12 @@ final class FBCrashLogNotifierTests: XCTestCase {
     XCTAssertThrowsError(
       try future.`await`(withTimeout: 0.2),
       "Future should produce an error (timeout) when no crash log matches")
+
+    // The poller behind this future retries until it resolves or is
+    // cancelled. An always-false predicate never resolves, so without this
+    // cancellation the poller outlives the test, re-scanning the host's
+    // crash-log directories concurrently for the remainder of the bundle —
+    // enough to starve unrelated tests of worker threads on small CI hosts.
+    _ = try? future.cancel().`await`(withTimeout: 5.0)
   }
 }
