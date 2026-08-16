@@ -569,10 +569,6 @@ private func waitForAnySignal(_ signals: [(code: Int32, message: String)], logge
   return try await Task.select(tasks).value
 }
 
-private func envDescription() -> String {
-  return FBCollectionInformation.oneLineDescription(from: FBControlCoreGlobalConfiguration.safeSubprocessEnvironment)
-}
-
 private func archName() -> String {
   #if arch(arm64)
   return "arm64"
@@ -586,7 +582,7 @@ private func archName() -> String {
 private func logStartupInfo(_ logger: FBIDBLogger) {
   logger.info().log("IDB Companion Built at \(kBuildDate) \(kBuildTime)")
   logger.info().log("IDB Companion architecture \(archName())")
-  logger.info().log("Invoked with args=\(FBCollectionInformation.oneLineDescription(from: ProcessInfo.processInfo.arguments)) env=\(envDescription())")
+  logger.info().log("Invoked with args=\(FBCollectionInformation.oneLineDescription(from: ProcessInfo.processInfo.arguments))")
 }
 
 private func idbMain() async -> Int32 {

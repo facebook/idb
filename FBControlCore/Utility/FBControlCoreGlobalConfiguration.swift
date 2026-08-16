@@ -70,15 +70,6 @@ public class FBControlCoreGlobalConfiguration: NSObject {
     return (value as NSString).boolValue
   }
 
-  @objc public class var safeSubprocessEnvironment: [String: String] {
-    var modified: [String: String] = [:]
-    for (key, value) in ProcessInfo.processInfo.environment {
-      if key.contains("TERMCAP") { continue }
-      modified[key] = value
-    }
-    return modified
-  }
-
   // MARK: NSObject
 
   override public class func description() -> String {
