@@ -8,8 +8,6 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-// swiftlint:disable force_cast force_unwrapping
-
 private let MountRootPath = "mounted"
 private let ExtractedSymbolsDirectory = "Symbols"
 
@@ -410,82 +408,99 @@ public class FBDeviceFileCommands: NSObject {
 
   // MARK: FBFileCommands
 
-  fileprivate func fileCommandsForContainerApplication(_ bundleID: String) -> FBFutureContext<FBDeviceFileContainer> {
-    device!.houseArrestAFCConnection(forBundleID: bundleID, afcCalls: afcCalls)
+  private func requireDevice() throws -> FBDevice {
+    guard let device else {
+      throw FBDeviceControlError.describe("The device that these file commands were created for has been deallocated").build()
+    }
+    return device
+  }
+
+  fileprivate func fileCommandsForContainerApplication(_ bundleID: String) throws -> FBFutureContext<FBDeviceFileContainer> {
+    let device = try requireDevice()
+    let queue = device.asyncQueue
+    return
+      device
+      .houseArrestAFCConnection(forBundleID: bundleID, afcCalls: afcCalls)
       .onQueue(
-        device!.asyncQueue,
-        pend: { (connection: AnyObject) -> FBFuture<AnyObject> in
-          let conn = connection as! FBAFCConnection
-          return FBFuture(result: FBDeviceFileContainer(afcConnection: conn, queue: self.device!.asyncQueue) as AnyObject)
+        queue,
+        pend: { connection -> FBFuture<AnyObject> in
+          FBFuture(result: FBDeviceFileContainer(afcConnection: connection, queue: queue) as AnyObject)
         }
       ).retyped(FBFutureContext<FBDeviceFileContainer>.self)
   }
 
-  fileprivate func fileCommandsForAuxillary() -> FBFutureContext<FBContainedFile_ContainedRoot> {
-    FBFutureContext(result: FBFileContainer.fileContainer(forBasePath: device!.auxillaryDirectory) as! FBContainedFile_ContainedRoot)
+  fileprivate func fileCommandsForAuxillary() throws -> FBFutureContext<FBContainedFile_ContainedRoot> {
+    let device = try requireDevice()
+    guard let container = FBFileContainer.fileContainer(forBasePath: device.auxillaryDirectory) as? FBContainedFile_ContainedRoot else {
+      throw FBDeviceControlError.describe("The auxillary directory container is not a contained root").build()
+    }
+    return FBFutureContext(result: container)
   }
 
-  fileprivate func fileCommandsForApplicationContainers() -> FBFutureContext<FBDeviceFileContainer> {
-    FBControlCoreError.describe("\(#function) not supported on devices, requires a rooted device").failFutureContext() as! FBFutureContext<FBDeviceFileContainer>
-  }
-
-  fileprivate func fileCommandsForGroupContainers() -> FBFutureContext<FBDeviceFileContainer> {
-    FBControlCoreError.describe("\(#function) not supported on devices, requires a rooted device").failFutureContext() as! FBFutureContext<FBDeviceFileContainer>
-  }
-
-  fileprivate func fileCommandsForRootFilesystem() -> FBFutureContext<FBDeviceFileContainer> {
-    FBControlCoreError.describe("\(#function) not supported on devices, requires a rooted device").failFutureContext() as! FBFutureContext<FBDeviceFileContainer>
-  }
-
-  fileprivate func fileCommandsForMediaDirectory() -> FBFutureContext<FBDeviceFileContainer> {
-    device!.startAFCService("com.apple.afc")
+  fileprivate func fileCommandsForMediaDirectory() throws -> FBFutureContext<FBDeviceFileContainer> {
+    let device = try requireDevice()
+    let queue = device.asyncQueue
+    return
+      device
+      .startAFCService("com.apple.afc")
       .onQueue(
-        device!.asyncQueue,
-        pend: { (connection: AnyObject) -> FBFuture<AnyObject> in
-          let conn = connection as! FBAFCConnection
-          return FBFuture(result: FBDeviceFileContainer(afcConnection: conn, queue: self.device!.asyncQueue) as AnyObject)
+        queue,
+        pend: { connection -> FBFuture<AnyObject> in
+          FBFuture(result: FBDeviceFileContainer(afcConnection: connection, queue: queue) as AnyObject)
         }
       ).retyped(FBFutureContext<FBDeviceFileContainer>.self)
   }
 
-  fileprivate func fileCommandsForProvisioningProfiles() -> FBFutureContext<FBFileContainer_ProvisioningProfile> {
-    FBFutureContext(result: FBFileContainer_ProvisioningProfile(commands: FBDeviceProvisioningProfileCommands.commands(with: device!)))
+  fileprivate func fileCommandsForProvisioningProfiles() throws -> FBFutureContext<FBFileContainer_ProvisioningProfile> {
+    let device = try requireDevice()
+    return FBFutureContext(result: FBFileContainer_ProvisioningProfile(commands: FBDeviceProvisioningProfileCommands.commands(with: device)))
   }
 
-  fileprivate func fileCommandsForMDMProfiles() -> FBFutureContext<FBDeviceFileContainer_MDMProfiles> {
-    device!.startService(FBManagedConfigClient.serviceName)
+  fileprivate func fileCommandsForMDMProfiles() throws -> FBFutureContext<FBDeviceFileContainer_MDMProfiles> {
+    let device = try requireDevice()
+    let logger = device.logger
+    let workQueue = device.workQueue
+    return
+      device
+      .startService(FBManagedConfigClient.serviceName)
       .onQueue(
-        device!.asyncQueue,
-        pend: { (connection: AnyObject) -> FBFuture<AnyObject> in
-          let conn = connection as! FBAMDServiceConnection
-          let managedConfig = FBManagedConfigClient.managedConfigClient(connection: conn, logger: self.device!.logger)
-          return FBFuture(result: FBDeviceFileContainer_MDMProfiles(managedConfig: managedConfig, queue: self.device!.workQueue) as AnyObject)
+        device.asyncQueue,
+        pend: { connection -> FBFuture<AnyObject> in
+          let managedConfig = FBManagedConfigClient.managedConfigClient(connection: connection, logger: logger)
+          return FBFuture(result: FBDeviceFileContainer_MDMProfiles(managedConfig: managedConfig, queue: workQueue) as AnyObject)
         }
       ).retyped(FBFutureContext<FBDeviceFileContainer_MDMProfiles>.self)
   }
 
-  fileprivate func fileCommandsForWallpaper() -> FBFutureContext<FBDeviceFileContainer_Wallpaper> {
-    FBFutureContext(futureContexts: [
-      unsafeBitCast(device!.startService(FBSpringboardServicesClient.serviceName), to: FBFutureContext<AnyObject>.self),
-      unsafeBitCast(device!.startService(FBManagedConfigClient.serviceName), to: FBFutureContext<AnyObject>.self),
+  fileprivate func fileCommandsForWallpaper() throws -> FBFutureContext<FBDeviceFileContainer_Wallpaper> {
+    let device = try requireDevice()
+    let logger = device.logger
+    let workQueue = device.workQueue
+    return FBFutureContext(futureContexts: [
+      device.startService(FBSpringboardServicesClient.serviceName).retyped(FBFutureContext<AnyObject>.self),
+      device.startService(FBManagedConfigClient.serviceName).retyped(FBFutureContext<AnyObject>.self),
     ])
     .onQueue(
-      device!.asyncQueue,
-      pend: { (connections: AnyObject) -> FBFuture<AnyObject> in
-        let conns = connections as! NSArray
-        let springboard = FBSpringboardServicesClient.springboardServicesClient(connection: conns[0] as! FBAMDServiceConnection, logger: self.device!.logger)
-        let managedConfig = FBManagedConfigClient.managedConfigClient(connection: conns[1] as! FBAMDServiceConnection, logger: self.device!.logger)
-        return FBFuture(result: FBDeviceFileContainer_Wallpaper(springboard: springboard, managedConfig: managedConfig, queue: self.device!.workQueue) as AnyObject)
+      device.asyncQueue,
+      pend: { (started: NSArray) -> FBFuture<AnyObject> in
+        guard let connections = started as? [FBAMDServiceConnection], connections.count == 2 else {
+          return FBDeviceControlError.describe("Expected the springboard and managed configuration connections, got \(started)").failFuture()
+        }
+        let springboard = FBSpringboardServicesClient.springboardServicesClient(connection: connections[0], logger: logger)
+        let managedConfig = FBManagedConfigClient.managedConfigClient(connection: connections[1], logger: logger)
+        return FBFuture(result: FBDeviceFileContainer_Wallpaper(springboard: springboard, managedConfig: managedConfig, queue: workQueue) as AnyObject)
       }
     ).retyped(FBFutureContext<FBDeviceFileContainer_Wallpaper>.self)
   }
 
-  fileprivate func fileCommandsForDiskImages() -> FBFutureContext<FBDeviceFileCommands_DiskImages> {
-    FBFutureContext(result: FBDeviceFileCommands_DiskImages(commands: device! as any DeveloperDiskImageCommands, queue: device!.asyncQueue))
+  fileprivate func fileCommandsForDiskImages() throws -> FBFutureContext<FBDeviceFileCommands_DiskImages> {
+    let device = try requireDevice()
+    return FBFutureContext(result: FBDeviceFileCommands_DiskImages(commands: device as any DeveloperDiskImageCommands, queue: device.asyncQueue))
   }
 
-  fileprivate func fileCommandsForSymbols() -> FBFutureContext<FBDeviceFileCommands_Symbols> {
-    FBFutureContext(result: FBDeviceFileCommands_Symbols(commands: device! as any DebugSymbolsCommands, queue: device!.asyncQueue))
+  fileprivate func fileCommandsForSymbols() throws -> FBFutureContext<FBDeviceFileCommands_Symbols> {
+    let device = try requireDevice()
+    return FBFutureContext(result: FBDeviceFileCommands_Symbols(commands: device as any DebugSymbolsCommands, queue: device.asyncQueue))
   }
 }
 
@@ -509,19 +524,19 @@ extension FBDevice: FileCommands {
   public func withFileCommandsForApplicationContainers<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await withFileContainer(fileCommands().fileCommandsForApplicationContainers(), body: body)
+    throw FBControlCoreError.describe("\(#function) not supported on devices, requires a rooted device").build()
   }
 
   public func withFileCommandsForGroupContainers<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await withFileContainer(fileCommands().fileCommandsForGroupContainers(), body: body)
+    throw FBControlCoreError.describe("\(#function) not supported on devices, requires a rooted device").build()
   }
 
   public func withFileCommandsForRootFilesystem<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await withFileContainer(fileCommands().fileCommandsForRootFilesystem(), body: body)
+    throw FBControlCoreError.describe("\(#function) not supported on devices, requires a rooted device").build()
   }
 
   public func withFileCommandsForMediaDirectory<R>(
