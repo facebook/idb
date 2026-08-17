@@ -94,7 +94,7 @@ extension FBAXTreeReader {
       let walked = FBAXTreeWalk.describeAllElements(
         fromTree: read.tree, keys: options.serializationKeys, nestedFormat: options.nestedFormat, pid: read.pid
       )
-      let elements = options.filter.apply(to: walked)
+      let elements = try await namingOccluders(options.filter.apply(to: walked), options: options)
       let screen = FBAXTreeWalk.screenInfo(fromTree: read.tree)
       // Coverage is a calculation over the serialized model, so it is the same one the accessibility
       // backend runs — a whole-tree read reports it whichever backend served it. Remote-content
@@ -115,6 +115,82 @@ extension FBAXTreeReader {
           truncated: read.truncated
         )
     }
+  }
+
+  /// Names the element covering the centre of every element already reported as `occluded`, by
+  /// hit-testing that centre.
+  ///
+  /// This is the only part of the read that costs extra round trips, which is why it runs only when
+  /// `occludedBy` was requested and only for elements the cheap attributes *already* found occluded. The
+  /// cost is therefore proportional to the occluded set rather than to the node count — a handful of
+  /// elements on a real screen, not the whole tree — which is what makes naming the occluder affordable
+  /// at all.
+  ///
+  /// It is also what closes the one gap the attributes cannot: they come from the application's own
+  /// render tree and cannot see another process compositing on top, whereas a hit-test resolves whatever
+  /// is actually there. A hit-test that fails or finds nothing leaves the reason unenriched rather than
+  /// failing the read — the occlusion was reported by the attributes and stands on its own.
+  private func namingOccluders(
+    _ elements: [FBAccessibilityDocumentElement],
+    options: FBAccessibilityRequestOptions
+  ) async throws -> [FBAccessibilityDocumentElement] {
+    guard options.keys.contains(.occludedBy) else {
+      return elements
+    }
+    var named: [FBAccessibilityDocumentElement] = []
+    named.reserveCapacity(elements.count)
+    for element in elements {
+      named.append(await namingOccluder(of: element))
+    }
+    return named
+  }
+
+  private func namingOccluder(of element: FBAccessibilityDocumentElement) async -> FBAccessibilityDocumentElement {
+    var element = element
+    if let children = element.children {
+      var named: [FBAccessibilityDocumentElement] = []
+      named.reserveCapacity(children.count)
+      for child in children {
+        named.append(await namingOccluder(of: child))
+      }
+      element.children = named
+    }
+    guard case let .blocked(reasons)?? = element.interactable,
+      reasons.contains(where: { if case .occluded(nil) = $0 { return true } else { return false } }),
+      let centre = (element.frame ?? nil)?.rect.map({ CGPoint(x: $0.midX, y: $0.midY) })
+    else {
+      return element
+    }
+    let occluder = await occluder(atCentre: centre)
+    element.interactable = .some(
+      .blocked(
+        reasons: reasons.map { reason in
+          if case .occluded(nil) = reason { return .occluded(by: occluder) }
+          return reason
+        }
+      )
+    )
+    return element
+  }
+
+  /// The element a hit-test finds at a point, as an occluder descriptor. Nil when nothing is there or the
+  /// hit-test fails, both of which leave the occlusion reported but unattributed.
+  private func occluder(atCentre centre: CGPoint) async -> FBAccessibilityOccluder? {
+    // Only the descriptive attributes, because that is all an occluder carries; asking for `interactable`
+    // here would recurse into another hit-test for an element nobody asked about.
+    let options = FBAccessibilityRequestOptions(keys: [.label, .uniqueID, .type, .role, .frameDict, .pid])
+    guard let response = try? await hitTest(at: centre, options: options),
+      let found = response.elements.elements.first
+    else {
+      return nil
+    }
+    return FBAccessibilityOccluder(
+      type: found.type ?? nil,
+      identifier: found.identifier ?? nil,
+      label: found.label ?? nil,
+      frame: found.frame ?? nil,
+      pid: found.pid ?? nil
+    )
   }
 
   /// Resolves a query to the point a write acts on, plus the assertion that keeps a two-step write honest.

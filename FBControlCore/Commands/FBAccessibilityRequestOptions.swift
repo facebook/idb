@@ -105,6 +105,11 @@ public struct FBAccessibilityRequestOptions: Sendable {
     collectFrameCoverage: Bool
   ) -> Set<FBAXKeys> {
     var expanded = keys
+    // `occluded_by` enriches `interactable`'s reasons rather than emitting a field of its own, so asking
+    // for it asks for the thing it enriches.
+    if expanded.contains(.occludedBy) {
+      expanded.insert(.interactable)
+    }
     if format == .complete {
       if keys.contains(.frame) {
         expanded.insert(.frameDict)

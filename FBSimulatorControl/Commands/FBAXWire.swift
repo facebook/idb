@@ -62,7 +62,7 @@ enum FBAXWire {
     /// Nil rather than "the default list" so the caller can omit the request field entirely: an absent
     /// field is what makes a default read byte-identical to one from a host that predates it.
     static func fetchList(for keys: Set<FBAXKeys>) -> [String]? {
-      guard keys.contains(.interactable) else {
+      guard keys.contains(.interactable) || keys.contains(.occludedBy) else {
         return nil
       }
       return defaultFetchList + interactableAttributes.map(\.rawValue)

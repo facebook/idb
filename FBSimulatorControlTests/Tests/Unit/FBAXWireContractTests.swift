@@ -77,6 +77,7 @@ final class FBAXWireContractTests: XCTestCase {
       .focused: "focused",
       .isRemote: "is_remote",
       .interactable: "interactable",
+      .occludedBy: "occluded_by",
     ]
     // Pinned over `allCases` rather than against a count, so a case added without a pinned wire value
     // fails here instead of silently going unchecked — which is what a bare count let through.
@@ -101,7 +102,7 @@ final class FBAXWireContractTests: XCTestCase {
     // Every case that is not in the default set is opt-in, derived rather than listed, so a new key is
     // covered by this the moment it exists.
     let optIn = Set(FBAXKeys.allCases).subtracting(FBAXKeys.defaultSet)
-    XCTAssertEqual(optIn, [.expanded, .placeholder, .hidden, .focused, .isRemote, .interactable])
+    XCTAssertEqual(optIn, [.expanded, .placeholder, .hidden, .focused, .isRemote, .interactable, .occludedBy])
     XCTAssertTrue(FBAXKeys.defaultSet.isDisjoint(with: optIn), "the opt-in keys must stay out of the default set")
   }
 

@@ -344,13 +344,23 @@ final class FBAccessibilitySerializationTests: XCTestCase {
   // Asking for an attribute gets you that attribute: the serializer emits every requested key, using an
   // explicit null when the element has no value for it, and nothing for a key that was not asked for.
   // That is the contract `--key` rests on, and it holds for every key in the schema.
+  //
+  // `occluded_by` is the one key that names no field of its own — it enriches `interactable`'s `occluded`
+  // reason with the element covering the centre — so it is asserted against what it actually emits rather
+  // than exempted from the contract.
   func testEveryRequestedKeyIsPresentInTheSerializedElement() throws {
     for key in FBAXKeys.allCases {
+      // Through `serializationKeys` rather than the bare key, because that is the path a `--key` request
+      // actually takes — and it is where `occluded_by` picks up the `interactable` it enriches.
       let elements = FBAXTreeWalk.describeAllElements(
-        fromTree: Self.sampleTree(), keys: [key], nestedFormat: false, pid: 7
+        fromTree: Self.sampleTree(),
+        keys: FBAccessibilityRequestOptions(keys: [key]).serializationKeys,
+        nestedFormat: false,
+        pid: 7
       )
       let rendered = try XCTUnwrap(elements.first).legacyObject()
-      XCTAssertEqual(Set(rendered.keys), [key.rawValue], "--key \(key.rawValue) must emit exactly that key")
+      let expected: Set<String> = key == .occludedBy ? [FBAXKeys.interactable.rawValue] : [key.rawValue]
+      XCTAssertEqual(Set(rendered.keys), expected, "--key \(key.rawValue) must emit exactly \(expected)")
     }
   }
 
@@ -1061,6 +1071,9 @@ final class FBAccessibilitySerializationTests: XCTestCase {
     case .focused: return "focused"
     case .isRemote: return "is_remote"
     case .interactable: return "interactable"
+    // Enriches `interactable`'s reasons rather than emitting a field of its own, so that is what
+    // requesting it makes appear.
+    case .occludedBy: return "interactable"
     }
   }
 

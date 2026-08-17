@@ -36,6 +36,10 @@ public enum FBAXKeys: String, Sendable, CaseIterable {
   /// Whether the element can be acted on, and why not when it cannot. Deliberately out of `defaultSet`:
   /// it costs four extra attributes per element on the guest wire, so only a caller that asks pays.
   case interactable = "interactable"
+  /// Names the element covering an occluded element's centre, under `interactable`'s `occluded` reason.
+  /// The only key that costs extra round trips — one hit-test per occluded element — so it is separate
+  /// from `interactable` rather than folded into it, and implies it.
+  case occludedBy = "occluded_by"
 
   /// Default set of keys returned when no specific keys are requested.
   public static let defaultSet: Set<FBAXKeys> = [
