@@ -588,8 +588,10 @@ private func logStartupInfo(_ logger: FBIDBLogger) {
 private func idbMain() async -> Int32 {
   let arguments = ProcessInfo.processInfo.arguments
   if arguments.contains("--help") {
-    fputs(kUsageHelpMessage, stderr)
-    return 1
+    // A requested help message is not an error: print to stdout and exit 0.
+    // `print` appends the trailing newline the multiline constant lacks.
+    print(kUsageHelpMessage)
+    return 0
   }
   if arguments.contains("--version") {
     writeJSONToStdOut(["build_time": kBuildTime, "build_date": kBuildDate])
