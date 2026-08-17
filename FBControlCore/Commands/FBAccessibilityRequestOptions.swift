@@ -42,9 +42,23 @@ extension FBAccessibilityRemoteContentOptions: CustomStringConvertible {
 public enum FBAccessibilityElementFilter: String, Sendable, CaseIterable {
   /// Every element in the tree (default).
   case all
-  /// Only "interactable" elements — those with a label, an identifier, or an actionable role
-  /// (Button, Cell, TextField, …). Unlabeled structural container nodes are dropped; in nested output
-  /// a dropped container's matching descendants are hoisted to its nearest kept ancestor.
+  /// Elements that can actually be interacted with.
+  ///
+  /// Answered from the backend's own verdict where there is one: an element survives only when
+  /// `interactable` reports it actionable, so anything covered, disabled, zero-sized or not taking
+  /// touches is dropped however button-like it looks. For a caller choosing something to tap, this is
+  /// the list worth choosing from.
+  ///
+  /// On a backend that cannot judge interactability — the legacy accessibility path, which has no
+  /// counterpart for the attributes the verdict is derived from — it falls back to the structural
+  /// heuristic it used to be: keep an element carrying a label, an identifier, or an actionable role.
+  /// The intent of the flag is the same either way, and the precision follows the backend. Falling back
+  /// beats reporting nothing, which is what a strict reading would do on `--api ax`.
+  ///
+  /// **It drops occluded elements**, which is the point of asking, and worth knowing when debugging: a
+  /// covered button is exactly what this hides. To see one *and* why it is blocked, read with `.all` and
+  /// `--key interactable`. Marker lookup and writes are unfiltered, so this never affects whether an
+  /// element can be found or acted on — only what a describe reports.
   case interactable
 
   /// The attributes this filter reads to decide what to keep.
@@ -58,7 +72,9 @@ public enum FBAccessibilityElementFilter: String, Sendable, CaseIterable {
     case .all:
       return []
     case .interactable:
-      return [.label, .uniqueID, .role]
+      // Both signals: the verdict where the backend has one, and the label/identifier/role the fallback
+      // matches on where it does not.
+      return [.label, .uniqueID, .role, .interactable]
     }
   }
 }

@@ -158,6 +158,63 @@ final class FBAXInteractableTests: XCTestCase {
     }
   }
 
+  // MARK: - The `actionable` filter
+
+  /// A two-element flat read: a reachable button and a covered one, both button-like.
+  private static func mixedRead() -> [FBAccessibilityDocumentElement] {
+    var reachable = FBAccessibilityDocumentElement()
+    reachable.label = .some("StandBy")
+    reachable.role = .some("AXButton")
+    reachable.interactable = .some(.actionable(at: FBAccessibilityPoint(x: 201, y: 770)))
+    var covered = FBAccessibilityDocumentElement()
+    covered.label = .some("Screen Time")
+    covered.role = .some("AXButton")
+    covered.interactable = .some(.blocked(reasons: [.notHittable]))
+    return [reachable, covered]
+  }
+
+  // The filter keeps what can actually be acted on. The covered button is button-like by every
+  // structural measure — it has a label and an actionable role — and is dropped anyway, which is the
+  // behaviour change: previously both of these survived.
+  func testTheFilterKeepsOnlyElementsTheBackendReportsActionable() {
+    let kept = FBAccessibilityElementFilter.interactable.apply(to: Self.mixedRead())
+    XCTAssertEqual(kept.compactMap { $0.label ?? nil }, ["StandBy"])
+  }
+
+  // Where the backend returned no verdict, the structural heuristic still answers — so the flag degrades
+  // in precision on the legacy path rather than reporting an empty screen.
+  func testTheFilterFallsBackToTheHeuristicWhenTheBackendCannotAnswer() {
+    var unjudged = FBAccessibilityDocumentElement()
+    unjudged.label = .some("Screen Time")
+    unjudged.role = .some("AXButton")
+    unjudged.interactable = .some(nil)
+    XCTAssertEqual(FBAccessibilityElementFilter.interactable.apply(to: [unjudged]).count, 1)
+
+    var unlabelledContainer = FBAccessibilityDocumentElement()
+    unlabelledContainer.interactable = .some(nil)
+    XCTAssertTrue(
+      FBAccessibilityElementFilter.interactable.apply(to: [unlabelledContainer]).isEmpty,
+      "the fallback is the old heuristic, not keep-everything"
+    )
+  }
+
+  // A verdict is never second-guessed by the heuristic: an element the backend judged blocked is dropped
+  // even though its label and role would have carried it through the fallback.
+  func testAVerdictIsNotOverriddenByTheHeuristic() {
+    let covered = Self.mixedRead()[1]
+    XCTAssertEqual(covered.label ?? nil, "Screen Time", "precondition: the labelled, button-role element")
+    XCTAssertTrue(FBAccessibilityElementFilter.interactable.apply(to: [covered]).isEmpty)
+  }
+
+  // Requesting the filter is what puts the verdict on the wire; without this it would silently fall back
+  // to the heuristic on every backend, having been given no verdict to match on.
+  func testTheFilterRequestsTheVerdictItMatchesOn() {
+    var options = FBAccessibilityRequestOptions()
+    options.filter = .interactable
+    XCTAssertTrue(options.serializationKeys.contains(.interactable))
+    XCTAssertNotNil(FBAXWire.Node.fetchList(for: options.serializationKeys))
+  }
+
   private static func encode(_ value: FBAccessibilityInteractable) throws -> [String: Any] {
     let data = try JSONEncoder().encode(value)
     return try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])

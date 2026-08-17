@@ -48,9 +48,12 @@ extension FBAccessibilityElementFilter {
     return [kept]
   }
 
-  /// Whether an element survives this filter. `.interactable` keeps elements carrying a label, an
-  /// identifier, or an actionable role — dropping the unlabeled structural containers that make up most
-  /// of a tree.
+  /// Whether an element survives this filter.
+  ///
+  /// `.interactable` asks the backend's own verdict, so a covered, disabled or zero-sized element is
+  /// dropped however button-like it looks. Only where the backend returned no verdict at all does it
+  /// fall back to the structural heuristic — a label, an identifier, or an actionable role — which is
+  /// all that was ever available before the verdict existed.
   ///
   /// An attribute the read did not serialize cannot be matched on, which is why requesting a filter
   /// widens the serialized key set (`FBAccessibilityRequestOptions.serializationKeys`).
@@ -59,6 +62,14 @@ extension FBAccessibilityElementFilter {
     case .all:
       return true
     case .interactable:
+      // The verdict is the answer wherever there is one; the heuristic below is reached only by a
+      // backend that could not judge, never as a second opinion on one that did.
+      if let verdict = element.interactable ?? nil {
+        guard case .actionable = verdict else {
+          return false
+        }
+        return true
+      }
       if let label = element.label ?? nil, !label.isEmpty {
         return true
       }
