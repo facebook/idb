@@ -82,4 +82,25 @@ final class FBProcessIOTests: XCTestCase {
 
     try attachment.detach().`await`()
   }
+
+  func testDetachClosesConsumerBackedAttachmentDescriptors() throws {
+    let io = FBProcessIO<NSNull, FBDataConsumer, FBDataConsumer>(
+      stdIn: nil,
+      stdOut: FBProcessOutput<FBDataConsumer>(for: FBDataBuffer.consumableBuffer()),
+      stdErr: FBProcessOutput<FBDataConsumer>(for: FBDataBuffer.consumableBuffer())
+    )
+
+    let attachment = try io.attach().`await`()
+    let stdOut = try XCTUnwrap(attachment.stdOut)
+    let stdErr = try XCTUnwrap(attachment.stdErr)
+    XCTAssertNotEqual(fcntl(stdOut.fileDescriptor, F_GETFD), -1)
+    XCTAssertNotEqual(fcntl(stdErr.fileDescriptor, F_GETFD), -1)
+
+    try attachment.detach().`await`()
+
+    // Detach owns closing the attachment's descriptors; closing them anywhere
+    // else double-closes a recycled descriptor number.
+    XCTAssertEqual(fcntl(stdOut.fileDescriptor, F_GETFD), -1)
+    XCTAssertEqual(fcntl(stdErr.fileDescriptor, F_GETFD), -1)
+  }
 }
