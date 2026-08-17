@@ -107,7 +107,7 @@ final class FBSimulatorIndigoHIDClient: @unchecked Sendable {
   func send(_ data: Data) async throws {
     try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
       queue.async { [self] in
-        sendData(data, completionQueue: queue) { error in
+        sendData(data) { error in
           if let error {
             continuation.resume(throwing: error)
           } else {
@@ -118,11 +118,12 @@ final class FBSimulatorIndigoHIDClient: @unchecked Sendable {
     }
   }
 
-  /// Sends the message bytes synchronously. Callers must guarantee all calls are from `queue`.
+  /// Sends the message bytes synchronously, reporting the outcome to `completion`. Callers must
+  /// guarantee all calls are from `queue`, which is also the queue the client completes on.
   ///
   /// Internal rather than private so that tests can drive a send without the hop that `send(_:)`
   /// makes onto `queue`, which would put a raise on a thread they have no way to guard.
-  func sendData(_ data: Data, completionQueue: DispatchQueue, completion: @escaping @Sendable (Error?) -> Void) {
+  func sendData(_ data: Data, completion: @escaping @Sendable (Error?) -> Void) {
     // The event is delivered asynchronously. Copy the message and let the client manage its lifecycle:
     // the free of the buffer is performed by the client (freeWhenDone) and the Data frees when out of scope.
     let size = data.count
@@ -140,7 +141,7 @@ final class FBSimulatorIndigoHIDClient: @unchecked Sendable {
     do {
       try FBObjCExceptionGuard.run {
         unsafeBitCast(client, to: SimDeviceLegacyHIDClientMessaging.self)
-          .send(withMessage: raw, freeWhenDone: true, completionQueue: completionQueue, completion: completion)
+          .send(withMessage: raw, freeWhenDone: true, completionQueue: queue, completion: completion)
       }
     } catch {
       // `raw` is deliberately not freed. Ownership passes to the client with `freeWhenDone`, and a

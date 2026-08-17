@@ -151,7 +151,7 @@ struct FBSimulatorIndigoHIDClientTests {
       device: NSObject(), clientClass: FBObjCRuntimeClass(FailingSendLegacyHIDClientStub.self))
     let capture = CompletionCapture()
 
-    client.sendData(Data([0x01, 0x02]), completionQueue: .main) {
+    client.sendData(Data([0x01, 0x02])) {
       capture.wasCalled = true
       capture.error = $0
     }
@@ -172,7 +172,7 @@ struct FBSimulatorIndigoHIDClientTests {
       // itself; this guard is only here so that a regression fails one test rather than aborting the
       // whole test process, which is what it does to `idb_companion`.
       try FBObjCExceptionGuard.run {
-        client.sendData(Data([0x01, 0x02]), completionQueue: .main) {
+        client.sendData(Data([0x01, 0x02])) {
           capture.wasCalled = true
           capture.error = $0
         }
