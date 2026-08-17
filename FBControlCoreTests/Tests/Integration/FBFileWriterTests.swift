@@ -45,4 +45,44 @@ final class FBFileWriterTests: XCTestCase {
     writer.consumeEndOfFile()
   }
 
+  func testStopThenCloseTeardownOfSocketReaderAndDuplicatedWriter() throws {
+    var descriptors: [Int32] = [0, 0]
+    XCTAssertEqual(socketpair(AF_UNIX, SOCK_STREAM, 0, &descriptors), 0)
+    let localSocket = descriptors[0]
+    let remoteSocket = descriptors[1]
+
+    // The writer gets its own duplicate of the socket, owned and closed by its
+    // channel. Two dispatch io channels must not share one descriptor: they
+    // share a per-descriptor entry inside libdispatch, and one channel's
+    // cleanup is deferred behind the other's outstanding operations — a writer
+    // ended while a reader is still armed on the same descriptor never
+    // delivers its cleanup, wedging teardown.
+    let writerDescriptor = dup(localSocket)
+    XCTAssertGreaterThanOrEqual(writerDescriptor, 0)
+    var writeError: NSError?
+    guard let writer = FBFileWriter.asyncWriter(withFileDescriptor: writerDescriptor, closeOnEndOfFile: true, error: &writeError) else {
+      throw writeError!
+    }
+    let reader = FBFileReader.reader(withFileDescriptor: localSocket, closeOnEndOfFile: false, consumer: FBFileWriter.nullWriter, logger: nil)
+    _ = try reader.startReading().`await`(withTimeout: 10)
+
+    // Traffic in both directions, so teardown runs against live channels.
+    writer.consumeData("ping".data(using: .utf8)!)
+    let pong = "pong".data(using: .utf8)!
+    pong.withUnsafeBytes { buffer in
+      XCTAssertEqual(write(remoteSocket, buffer.baseAddress, buffer.count), pong.count)
+    }
+
+    // Teardown: end the writer and wait for its channel to close its duplicate,
+    // wind down the reader with a bounded drain, and only then close the
+    // socket. All waits are bounded so a teardown wedge fails this test alone
+    // rather than timing out the whole target.
+    writer.consumeEndOfFile()
+    _ = try writer.finishedConsuming.`await`(withTimeout: 10)
+    XCTAssertEqual(fcntl(writerDescriptor, F_GETFD), -1)
+    _ = try reader.finishedReading(withTimeout: 4).`await`(withTimeout: 10)
+
+    XCTAssertEqual(close(localSocket), 0)
+    XCTAssertEqual(close(remoteSocket), 0)
+  }
 }
