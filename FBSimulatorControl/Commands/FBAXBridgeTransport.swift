@@ -454,10 +454,10 @@ final class FBAXBridgeConnection: @unchecked Sendable {
     // continuation is safe here (unlike the DTX receipt path, which needs AssertingSafeContinuation
     // to arbitrate a receipt/deadline/cancel three-way race).
     try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Data, Error>) in
-      queue.async { [fileDescriptor] in
+      queue.async { [fileDescriptor, process] in
         do {
           try FBAXBridgeConnection.writeFrame(fileDescriptor, requestData)
-          let responseData = try FBAXBridgeConnection.readFrame(fileDescriptor)
+          let responseData = try FBAXBridgeConnection.readFrame(fileDescriptor, guest: process)
           continuation.resume(returning: responseData)
         } catch {
           continuation.resume(throwing: error)
@@ -527,8 +527,11 @@ final class FBAXBridgeConnection: @unchecked Sendable {
     try writeAll(fileDescriptor, payload)
   }
 
-  private static func readFrame(_ fileDescriptor: Int32) throws -> Data {
-    let header = try readAll(fileDescriptor, count: 4)
+  private static func readFrame(
+    _ fileDescriptor: Int32,
+    guest: FBSubprocess<AnyObject, AnyObject, AnyObject>?
+  ) throws -> Data {
+    let header = try readAll(fileDescriptor, count: 4, guest: guest)
     let length = decodeLength(header)
     // A zero-length frame is never valid: the guest always sends a non-empty JSON envelope
     // ({"ok":...}), so length 0 (or an absurd length) means a desynced/corrupt stream, not empty data.
@@ -537,7 +540,7 @@ final class FBAXBridgeConnection: @unchecked Sendable {
     guard length > 0, length < 16 * 1024 * 1024 else {
       throw FBAXBridgeError.guestFailure("invalid response frame length \(length)")
     }
-    return try readAll(fileDescriptor, count: length)
+    return try readAll(fileDescriptor, count: length, guest: guest)
   }
 
   private static func encodeLength(_ count: Int) -> Data {
@@ -577,11 +580,52 @@ final class FBAXBridgeConnection: @unchecked Sendable {
   /// The guest going away is detected immediately, so the useful question is not *when* but *why* — a
   /// reader that was killed, that exited cleanly, and that crashed are three different problems with
   /// three different owners, and "closed by peer" distinguishes none of them.
+  ///
+  /// The answer is already to hand and was simply not being passed on: the connection holds the guest's
+  /// subprocess, whose exit futures have resolved by the time its socket reaches EOF. Read without
+  /// waiting — `hasCompleted` first — because this runs on the read path and a caller waiting to be told
+  /// why its read failed must not be made to wait on the telling. A future that has somehow not resolved
+  /// yields the bare message rather than a stall.
   static func socketClosedMessage(process: FBSubprocess<AnyObject, AnyObject, AnyObject>?) -> String {
-    "serve socket closed by peer"
+    guard let process else {
+      return socketClosedMessage(pid: nil, signal: nil, exitCode: nil)
+    }
+    // Read without waiting — `hasCompleted` first — because this runs on the read path, and a caller
+    // waiting to be told why its read failed must not be made to wait on the telling. A future that has
+    // somehow not resolved contributes nothing rather than stalling.
+    return socketClosedMessage(
+      pid: process.processIdentifier,
+      signal: process.signal.hasCompleted ? process.signal.result?.intValue : nil,
+      exitCode: process.exitCode.hasCompleted ? process.exitCode.result?.intValue : nil
+    )
   }
 
-  private static func readAll(_ fileDescriptor: Int32, count: Int) throws -> Data {
+  /// The message itself, over the values rather than the process that carries them.
+  ///
+  /// Split out so the wording is coverable without constructing a subprocess: the part worth testing is
+  /// which of three answers a caller gets, and that does not need a real process to exercise.
+  static func socketClosedMessage(pid: pid_t?, signal: Int?, exitCode: Int?) -> String {
+    let base = "serve socket closed by peer"
+    guard let pid else {
+      return base
+    }
+    // A signalled exit takes precedence and is the more actionable of the two: it means something outside
+    // the reader ended it — the system reclaiming memory, or a stray kill — rather than the reader
+    // deciding to stop.
+    if let signal, signal != 0 {
+      return "\(base): the guest (pid \(pid)) was killed by signal \(signal)"
+    }
+    if let exitCode {
+      return "\(base): the guest (pid \(pid)) exited with code \(exitCode)"
+    }
+    return "\(base): the guest (pid \(pid)) is gone, with no exit status recorded"
+  }
+
+  private static func readAll(
+    _ fileDescriptor: Int32,
+    count: Int,
+    guest: FBSubprocess<AnyObject, AnyObject, AnyObject>?
+  ) throws -> Data {
     var buffer = Data(count: count)
     try buffer.withUnsafeMutableBytes { raw in
       guard let base = raw.baseAddress else { return }
@@ -600,7 +644,7 @@ final class FBAXBridgeConnection: @unchecked Sendable {
         if got == 0 {
           // EOF: the serve process is gone. Detected promptly — this is not the 30s timeout above — but
           // the message says only that it went away, not why.
-          throw FBAXBridgeError.guestFailure(FBAXBridgeConnection.socketClosedMessage(process: nil))
+          throw FBAXBridgeError.guestFailure(FBAXBridgeConnection.socketClosedMessage(process: guest))
         }
         offset += got
       }

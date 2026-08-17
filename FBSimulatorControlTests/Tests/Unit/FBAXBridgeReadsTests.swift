@@ -1538,15 +1538,50 @@ final class FBAXBridgeReadsTests: XCTestCase {
 /// *content* of the message, which is the part a caller debugs from.
 final class FBAXBridgeGuestDeathTests: XCTestCase {
 
-  // BUG: the message says the guest went away and nothing about why. A reader killed by the system, one
-  // that exited cleanly, and one that crashed are three different problems with three different owners,
-  // and this distinguishes none of them — a caller sees the same sentence and has to go and find the
-  // simulator log themselves. Flipped in the following commit.
-  func testTheGuestDeathMessageOmitsWhyTheGuestWentAway() {
-    let message = FBAXBridgeConnection.socketClosedMessage(process: nil)
-    XCTAssertEqual(message, "serve socket closed by peer")
-    XCTAssertFalse(message.contains("signal"), "it does not say the guest was killed")
-    XCTAssertFalse(message.contains("exit"), "nor that it exited, nor with what")
+  // The case that sent me here: a guest killed by the system. The signal is what points at the
+  // environment rather than at whatever change the caller happens to be testing.
+  func testAKilledGuestIsReportedWithItsSignal() {
+    let message = FBAXBridgeConnection.socketClosedMessage(pid: 4321, signal: 9, exitCode: nil)
+    XCTAssertTrue(message.contains("killed by signal 9"), message)
+    XCTAssertTrue(message.contains("pid 4321"), message)
+  }
+
+  func testAGuestThatExitedIsReportedWithItsCode() {
+    let message = FBAXBridgeConnection.socketClosedMessage(pid: 4321, signal: nil, exitCode: 3)
+    XCTAssertTrue(message.contains("exited with code 3"), message)
+  }
+
+  // A signalled exit wins over an exit code, because it names something outside the reader as the cause
+  // and that is the more actionable of the two.
+  func testASignalTakesPrecedenceOverAnExitCode() {
+    let message = FBAXBridgeConnection.socketClosedMessage(pid: 4321, signal: 9, exitCode: 0)
+    XCTAssertTrue(message.contains("killed by signal 9"), message)
+    XCTAssertFalse(message.contains("exited with code"), message)
+  }
+
+  // Exit code 0 with no signal is still a death worth reporting — the guest is gone either way, and
+  // "exited cleanly" is a different problem from "was killed", which is the whole point of saying which.
+  func testACleanExitIsStillReported() {
+    XCTAssertTrue(
+      FBAXBridgeConnection.socketClosedMessage(pid: 4321, signal: 0, exitCode: 0).contains("exited with code 0")
+    )
+  }
+
+  // Nothing to consult, nothing added: a caller is told what is true and no more.
+  func testTheMessageIsBareWhenThereIsNothingToAsk() {
+    XCTAssertEqual(
+      FBAXBridgeConnection.socketClosedMessage(pid: nil, signal: nil, exitCode: nil),
+      "serve socket closed by peer"
+    )
+    XCTAssertEqual(FBAXBridgeConnection.socketClosedMessage(process: nil), "serve socket closed by peer")
+  }
+
+  // A process whose exit status never resolved is still named, rather than the message pretending it
+  // knows or the read stalling to find out.
+  func testAGuestWithNoRecordedStatusIsStillNamed() {
+    let message = FBAXBridgeConnection.socketClosedMessage(pid: 4321, signal: nil, exitCode: nil)
+    XCTAssertTrue(message.contains("no exit status recorded"), message)
+    XCTAssertTrue(message.contains("pid 4321"), message)
   }
 }
 
