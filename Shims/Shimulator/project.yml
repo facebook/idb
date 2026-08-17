@@ -25,6 +25,9 @@ targets:
         CLANG_ENABLE_OBJC_ARC: NO
         GCC_PREPROCESSOR_DEFINITIONS: $(inherited) SENTEST_IGNORE_DEPRECATION_WARNING=1
         OTHER_CFLAGS: $(inherited) -Wno-deprecated-declarations
+        # Package managers rewrite the dylib install ID to their install
+        # prefix; leave header slack so the longer path fits without relinking.
+        OTHER_LDFLAGS: $(inherited) -headerpad_max_install_names
     dependencies:
       - sdk: Foundation.framework
       - sdk: UIKit.framework
@@ -50,6 +53,8 @@ targets:
         CLANG_ENABLE_OBJC_ARC: NO
         GCC_PREPROCESSOR_DEFINITIONS: $(inherited) SENTEST_IGNORE_DEPRECATION_WARNING=1
         OTHER_CFLAGS: $(inherited) -Wno-deprecated-declarations
+        # See Shimulator-iOS: header slack for install-name rewriting.
+        OTHER_LDFLAGS: $(inherited) -headerpad_max_install_names
     dependencies:
       - sdk: Foundation.framework
       - sdk: AppKit.framework
