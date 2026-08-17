@@ -21,6 +21,8 @@
 static NSString *const kAXElementType = @"XC_kAXXCAttributeElementType";
 static NSString *const kAXLabel = @"XC_kAXXCAttributeLabel";
 static NSString *const kAXChildren = @"XC_kAXXCAttributeChildren";
+static NSString *const kAXFrame = @"XC_kAXXCAttributeFrame";
+static NSString *const kAXVisiblePoint = @"XC_kAXXCAttributeVisiblePoint";
 
 // The pid every test that needs a readable application uses. Arbitrary, but a plausible one — nothing in
 // the reader treats any particular value specially beyond the non-positive rejection.
@@ -804,6 +806,44 @@ static NSDictionary *FBAXTestsPress(void)
 
   XCTAssertEqualObjects(FBAXBridgeHandleRequest(FBAXTestsPress())[@"ok"], @YES);
   XCTAssertEqual(_runtime.lastHitTestProcessIdentifier, 0, @"no pid means a display-wide hit-test");
+}
+
+#pragma mark - Attribute value coercion
+
+// The tree walk coerces every attribute value into something JSON can carry, but only the frame gets a
+// structural representation — every other object is flattened with `-description`. The accessibility
+// runtime reports its geometric attributes as `X`/`Y`(`/Width`/`Height`) dictionaries, so any such
+// attribute other than the frame reaches the host as the text `NSDictionary` happens to print, and a
+// consumer cannot read a coordinate out of it without parsing prose.
+//
+// BUG: a point-valued attribute serializes as its `-description` string instead of a structured
+// object — flipped in the following commit.
+- (void)testPointValuedAttributeIsFlattenedToItsDescription
+{
+  NSDictionary *point = @{@"X" : @201, @"Y" : @789.5};
+  FBAXFakeElement *root = [FBAXFakeElement readable:@"UIApplication"];
+  root.attributes = @{kAXElementType : @"UIApplication", kAXVisiblePoint : point};
+  _runtime.applicationElements[@(kAppPid)] = root;
+
+  id emitted = FBAXBridgeHandleRequest(@{@"verb" : @"describe", @"pid" : @(kAppPid)})[@"tree"][kAXVisiblePoint];
+  XCTAssertTrue([emitted isKindOfClass:NSString.class], @"a point is flattened to text, got %@", [emitted class]);
+  XCTAssertEqualObjects(emitted, point.description);
+}
+
+// The contrast that makes the above a statement about the *key* rather than about dictionaries: the
+// frame, given the identical shape, is carried through structurally. Unchanged by the following commit.
+- (void)testTheFrameAttributeIsCarriedThroughStructurally
+{
+  FBAXFakeElement *root = [FBAXFakeElement readable:@"UIApplication"];
+  root.attributes = @{
+    kAXElementType : @"UIApplication",
+    kAXFrame : @{@"X" : @0, @"Y" : @791, @"Width" : @402, @"Height" : @83},
+  };
+  _runtime.applicationElements[@(kAppPid)] = root;
+
+  id emitted = FBAXBridgeHandleRequest(@{@"verb" : @"describe", @"pid" : @(kAppPid)})[@"tree"][kAXFrame];
+  XCTAssertTrue([emitted isKindOfClass:NSDictionary.class], @"the frame stays structured, got %@", [emitted class]);
+  XCTAssertEqualObjects(emitted[@"Width"], @402);
 }
 
 #pragma mark - Describe outcomes
