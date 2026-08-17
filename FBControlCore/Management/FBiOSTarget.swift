@@ -242,7 +242,7 @@ func FBiOSTargetPredicateForUDID(_ udid: NSString) -> NSPredicate {
 /// Constructs an NSPredicate matching the specified UDIDs.
 @_cdecl("FBiOSTargetPredicateForUDIDs")
 func FBiOSTargetPredicateForUDIDs(_ udids: NSArray) -> NSPredicate {
-  let udidsSet = Set(udids as! [String])
+  let udidsSet = Set(udids.compactMap { $0 as? String })
   return NSPredicate { (evaluatedObject, _) -> Bool in
     guard let candidate = evaluatedObject as? FBiOSTarget else {
       return false

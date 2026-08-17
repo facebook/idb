@@ -17,7 +17,9 @@ public final class FBCollectionInformation: NSObject {
 
   @objc(oneLineDescriptionFromArray:atKeyPath:)
   public class func oneLineDescription(from array: [Any], atKeyPath keyPath: String) -> String {
-    let descriptions = (array as NSArray).value(forKeyPath: keyPath) as! [Any]
+    // A keyPath that isn't a per-element property (an aggregate operator, say) resolves to a scalar;
+    // describe the elements themselves rather than dropping them from the description entirely.
+    let descriptions = (array as NSArray).value(forKeyPath: keyPath) as? [Any] ?? array
     let joined = descriptions.map { String(describing: $0) }.joined(separator: ", ")
     return "[\(joined)]"
   }

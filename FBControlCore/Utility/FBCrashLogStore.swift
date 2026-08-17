@@ -92,7 +92,7 @@ public class FBCrashLogStore: NSObject {
   }
 
   public func allIngestedCrashLogs() -> [FBCrashLogInfo] {
-    return ingestedCrashLogs.allValues as! [FBCrashLogInfo]
+    return ingestedCrashLogs.allValues.compactMap { $0 as? FBCrashLogInfo }
   }
 
   public func nextCrashLog(forMatchingPredicate predicate: NSPredicate) -> FBFuture<FBCrashLogInfo> {
@@ -131,13 +131,13 @@ public class FBCrashLogStore: NSObject {
   }
 
   public func ingestedCrashLogs(matchingPredicate predicate: NSPredicate) -> [FBCrashLogInfo] {
-    return (ingestedCrashLogs.allValues as NSArray).filtered(using: predicate) as! [FBCrashLogInfo]
+    return allIngestedCrashLogs().filter(predicate.evaluate(with:))
   }
 
   public func pruneCrashLogs(matchingPredicate predicate: NSPredicate) -> [FBCrashLogInfo] {
     var keys: [String] = []
     var crashLogs: [FBCrashLogInfo] = []
-    for crashLog in ingestedCrashLogs.allValues as! [FBCrashLogInfo] {
+    for crashLog in allIngestedCrashLogs() {
       if !predicate.evaluate(with: crashLog) {
         continue
       }

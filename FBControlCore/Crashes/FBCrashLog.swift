@@ -180,7 +180,9 @@ public class FBCrashLogInfo: NSObject, NSCopying {
         fileNames as [Any],
         predicate: predicate,
         map: { item -> Any in
-          let fileName = item as! String
+          guard let fileName = item as? String else {
+            return NSNull()
+          }
           let path = (basePath as NSString).appendingPathComponent(fileName)
           do {
             return try FBCrashLogInfo.fromCrashLog(atPath: path)
@@ -190,8 +192,7 @@ public class FBCrashLogInfo: NSObject, NSCopying {
           }
         }
       )
-      let filtered = (crashInfos as NSArray).filtered(using: NSPredicate.notNullPredicate()) as! [FBCrashLogInfo]
-      allCrashInfos.append(contentsOf: filtered)
+      allCrashInfos.append(contentsOf: crashInfos.compactMap { $0 as? FBCrashLogInfo })
     }
 
     return allCrashInfos

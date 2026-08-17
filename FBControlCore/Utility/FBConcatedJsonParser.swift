@@ -15,7 +15,7 @@ public final class FBConcatedJsonParser {
     var inString = false
     var parseError: Error?
 
-    let concatenatedJson = NSMutableDictionary()
+    var concatenatedJson: [String: Any] = [:]
     var json = ""
 
     str.enumerateSubstrings(
@@ -61,7 +61,7 @@ public final class FBConcatedJsonParser {
             stop = true
             return
           }
-          concatenatedJson.addEntries(from: dict)
+          concatenatedJson.merge(dict) { _, new in new }
         } catch {
           parseError = error
           stop = true
@@ -74,6 +74,6 @@ public final class FBConcatedJsonParser {
       throw error
     }
 
-    return concatenatedJson as! [String: Any]
+    return concatenatedJson
   }
 }
