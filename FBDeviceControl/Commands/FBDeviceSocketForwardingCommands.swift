@@ -40,21 +40,58 @@ public class FBDeviceSocketForwardingCommands: NSObject, FBiOSTargetCommand {
     }
     try await withFBFutureContext(device.connectToDevice(withPurpose: "Socket Connection")) { connectedDevice in
       let localSocket = try Self.openLocalSocket(toRemotePort: Int(remotePort), on: connectedDevice, logger: device.logger)
-      defer {
-        device.logger.log("Closing local socket \(localSocket)")
+      // The writer gets its own duplicate of the socket, owned and closed by
+      // its channel. Two dispatch io channels must not share one descriptor:
+      // they share a per-descriptor entry inside libdispatch, and one
+      // channel's cleanup is deferred behind the other's outstanding
+      // operations, wedging teardown (pinned in FBFileWriterTests).
+      let writerDescriptor = dup(localSocket)
+      guard writerDescriptor >= 0 else {
         close(localSocket)
+        throw FBDeviceControlError.describe("Could not duplicate socket descriptor: \(String(cString: strerror(errno)))").build()
       }
       var writerError: NSError?
-      guard let remoteWriter = FBFileWriter.asyncWriter(withFileDescriptor: localSocket, closeOnEndOfFile: false, error: &writerError) else {
+      guard let remoteWriter = FBFileWriter.asyncWriter(withFileDescriptor: writerDescriptor, closeOnEndOfFile: true, error: &writerError) else {
+        close(writerDescriptor)
+        close(localSocket)
         throw writerError!
       }
       let remoteReader = FBFileReader.reader(withFileDescriptor: localSocket, closeOnEndOfFile: false, consumer: localConsumer, logger: nil)
-      try await bridgeFBFutureVoid(remoteReader.startReading())
-
       let inputReader = FBFileReader.reader(withFileDescriptor: localFileDescriptorInput, closeOnEndOfFile: false, consumer: remoteWriter, logger: nil)
-      try await bridgeFBFutureVoid(inputReader.startReading())
-      _ = try await bridgeFBFuture(inputReader.finishedReading)
+      do {
+        try await bridgeFBFutureVoid(remoteReader.startReading())
+        try await bridgeFBFutureVoid(inputReader.startReading())
+        _ = try await bridgeFBFuture(inputReader.finishedReading)
+      } catch {
+        await Self.stopForwarding(inputReader: inputReader, remoteReader: remoteReader, remoteWriter: remoteWriter, localSocket: localSocket, logger: device.logger)
+        throw error
+      }
+      await Self.stopForwarding(inputReader: inputReader, remoteReader: remoteReader, remoteWriter: remoteWriter, localSocket: localSocket, logger: device.logger)
     }
+  }
+
+  /// Matches `FBProcessOutput`'s detach drain timeout: how long to wait for a
+  /// reader to finish naturally before stopping it.
+  private static let teardownDrainTimeout: TimeInterval = 4
+
+  // The reader dispatch io channel must relinquish localSocket before it is
+  // closed: closing a descriptor that a dispatch source still monitors
+  // crashes libdispatch with EV_VANISHED. The writer is wound down first so
+  // outbound bytes flush before responses stop being read; its channel closes
+  // its own duplicated descriptor. Reader drains are time-bounded.
+  private static func stopForwarding(
+    inputReader: FBFileReader,
+    remoteReader: FBFileReader,
+    remoteWriter: FBDataConsumer & FBDataConsumerLifecycle,
+    localSocket: Int32,
+    logger: (any FBControlCoreLogger)?
+  ) async {
+    remoteWriter.consumeEndOfFile()
+    try? await bridgeFBFutureVoid(remoteWriter.finishedConsuming)
+    _ = try? await bridgeFBFuture(inputReader.finishedReading(withTimeout: teardownDrainTimeout))
+    _ = try? await bridgeFBFuture(remoteReader.finishedReading(withTimeout: teardownDrainTimeout))
+    logger?.log("Closing local socket \(localSocket)")
+    close(localSocket)
   }
 
   // MARK: Private
