@@ -209,8 +209,10 @@ struct FBSimulatorIndigoHIDClientTests {
     // outstanding for good.
     try await Task.sleep(nanoseconds: 200 * NSEC_PER_MSEC)
 
-    // BUG: the continuation is dropped rather than resumed, so the caller waits on it forever —
-    // flipped in the following commit.
-    #expect(!outcome.returned)
+    #expect(outcome.returned)
+    guard case .clientDisposed? = outcome.error as? FBSimulatorHIDError else {
+      Issue.record("Expected clientDisposed, got \(String(describing: outcome.error))")
+      return
+    }
   }
 }

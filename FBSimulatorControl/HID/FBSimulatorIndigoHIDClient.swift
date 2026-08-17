@@ -121,9 +121,8 @@ final class FBSimulatorIndigoHIDClient: @unchecked Sendable {
           raw.copyMemory(from: base, byteCount: size)
         }
         guard let client else {
-          // FIXME: leaves the continuation unresumed, so a send after `disconnect()` never returns.
-          // Pre-existing, carried across unchanged rather than fixed here so this stays a refactor.
           free(raw)
+          continuation.resume(throwing: FBSimulatorHIDError.clientDisposed)
           return
         }
         do {
