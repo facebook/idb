@@ -22,8 +22,8 @@ jobs:
           - ubuntu-latest
           - macos-26
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
       - name: Install fb-idb from source
@@ -51,7 +51,7 @@ jobs:
       # directory level up.
       XCODEGEN_STRIP_XATTRS: 'false'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install tools
         run: brew install xcodegen
       - name: Build frameworks
@@ -76,7 +76,7 @@ jobs:
           - FBSimulatorControl
           - FBDeviceControl
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install tools
         run: brew install xcodegen
       - name: Test ${{ matrix.target }}
@@ -86,7 +86,7 @@ jobs:
       # killed by the time allowance, a snapshot of where they were stuck.
       - name: Upload result bundle on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ matrix.target }}-xcresult
           path: Build/Logs/Test/*.xcresult
@@ -100,20 +100,20 @@ jobs:
     env:
       XCODEGEN_STRIP_XATTRS: 'false'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install tools
         run: brew install xcodegen protobuf swift-protobuf
       # build.sh compiles protoc-gen-grpc-swift from source on first run;
       # cache that build to keep this job fast.
       - name: Cache grpc-swift plugin
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: Build/grpc-swift
           key: grpc-swift-1.23.1-${{ runner.os }}
       - name: Build everything and assemble the distribution
         run: ./build.sh build all
       - name: Upload distribution
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: idb-companion-distribution
           path: Build/Distribution

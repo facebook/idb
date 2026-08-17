@@ -45,11 +45,11 @@ jobs:
     env:
       XCODEGEN_STRIP_XATTRS: 'false'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install tools
         run: brew install xcodegen protobuf swift-protobuf
       - name: Cache grpc-swift plugin
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: Build/grpc-swift
           key: grpc-swift-1.23.1-${{ runner.os }}
@@ -62,7 +62,7 @@ jobs:
           shasum -a 256 idb-companion.universal.tar.gz | tee idb-companion.universal.tar.gz.sha256
           echo "sha256=$(cut -d' ' -f1 idb-companion.universal.tar.gz.sha256)" >> "$GITHUB_OUTPUT"
       - name: Upload build artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: idb-companion
           path: idb-companion.universal.tar.gz*
@@ -97,8 +97,8 @@ jobs:
     needs: [create-release]
     if: ${{ !cancelled() && (needs.create-release.result == 'success' || needs.create-release.result == 'skipped') }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
       - name: Build sdist and wheel
@@ -113,7 +113,7 @@ jobs:
           esac
           FB_IDB_VERSION="$FB_IDB_VERSION" python -m build
       - name: Upload build artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: fb-idb-dist
           path: dist/*
