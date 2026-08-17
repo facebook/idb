@@ -84,6 +84,31 @@ private final class FailingSendLegacyHIDClientStub: NSObject {
   }
 }
 
+/// Records whether a send started on another task has come back, and with what. Locked because the
+/// send resolves on the client's queue while the test reads from its own thread.
+private final class SendOutcome: @unchecked Sendable {
+  private let lock = NSLock()
+  private var state: (returned: Bool, error: Error?) = (false, nil)
+
+  func record(_ error: Error?) {
+    lock.lock()
+    defer { lock.unlock() }
+    state = (true, error)
+  }
+
+  var returned: Bool {
+    lock.lock()
+    defer { lock.unlock() }
+    return state.returned
+  }
+
+  var error: Error? {
+    lock.lock()
+    defer { lock.unlock() }
+    return state.error
+  }
+}
+
 @Suite("Legacy Indigo HID client")
 struct FBSimulatorIndigoHIDClientTests {
 
@@ -161,5 +186,31 @@ struct FBSimulatorIndigoHIDClientTests {
     }
     #expect((error as NSError).domain == FBObjCExceptionGuardErrorDomain)
     #expect(error.localizedDescription == RaisingSendLegacyHIDClientStub.reason)
+  }
+
+  @Test("A send after the client is disconnected comes back to the caller")
+  func sendAfterDisconnect() async throws {
+    let client = try FBSimulatorIndigoHIDClient(
+      device: NSObject(), clientClass: FBObjCRuntimeClass(FailingSendLegacyHIDClientStub.self))
+    client.disconnect()
+
+    let outcome = SendOutcome()
+    Task {
+      do {
+        try await client.send(Data([0x01, 0x02]))
+        outcome.record(nil)
+      } catch {
+        outcome.record(error)
+      }
+    }
+    // Bounded rather than awaited, because what is being measured is whether the send comes back at
+    // all. Nothing here reaches the HID server — the client is released before any of it is
+    // attempted — so a send that resolves resolves at once, and one still outstanding after this is
+    // outstanding for good.
+    try await Task.sleep(nanoseconds: 200 * NSEC_PER_MSEC)
+
+    // BUG: the continuation is dropped rather than resumed, so the caller waits on it forever —
+    // flipped in the following commit.
+    #expect(!outcome.returned)
   }
 }
