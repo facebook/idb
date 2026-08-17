@@ -572,6 +572,15 @@ final class FBAXBridgeConnection: @unchecked Sendable {
     }
   }
 
+  /// What a caller is told when the guest's socket reaches EOF.
+  ///
+  /// The guest going away is detected immediately, so the useful question is not *when* but *why* — a
+  /// reader that was killed, that exited cleanly, and that crashed are three different problems with
+  /// three different owners, and "closed by peer" distinguishes none of them.
+  static func socketClosedMessage(process: FBSubprocess<AnyObject, AnyObject, AnyObject>?) -> String {
+    "serve socket closed by peer"
+  }
+
   private static func readAll(_ fileDescriptor: Int32, count: Int) throws -> Data {
     var buffer = Data(count: count)
     try buffer.withUnsafeMutableBytes { raw in
@@ -589,7 +598,9 @@ final class FBAXBridgeConnection: @unchecked Sendable {
           throw FBAXBridgeError.guestFailure("socket read failed: \(String(cString: strerror(errno)))")
         }
         if got == 0 {
-          throw FBAXBridgeError.guestFailure("serve socket closed by peer") // EOF: serve process gone
+          // EOF: the serve process is gone. Detected promptly — this is not the 30s timeout above — but
+          // the message says only that it went away, not why.
+          throw FBAXBridgeError.guestFailure(FBAXBridgeConnection.socketClosedMessage(process: nil))
         }
         offset += got
       }

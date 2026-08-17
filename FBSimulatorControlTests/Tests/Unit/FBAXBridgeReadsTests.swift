@@ -1532,6 +1532,24 @@ final class FBAXBridgeReadsTests: XCTestCase {
   }
 }
 
+/// What the transport tells a caller when the in-guest reader disappears mid-request.
+///
+/// EOF on the serve socket is noticed immediately — that part works — so what is worth covering is the
+/// *content* of the message, which is the part a caller debugs from.
+final class FBAXBridgeGuestDeathTests: XCTestCase {
+
+  // BUG: the message says the guest went away and nothing about why. A reader killed by the system, one
+  // that exited cleanly, and one that crashed are three different problems with three different owners,
+  // and this distinguishes none of them — a caller sees the same sentence and has to go and find the
+  // simulator log themselves. Flipped in the following commit.
+  func testTheGuestDeathMessageOmitsWhyTheGuestWentAway() {
+    let message = FBAXBridgeConnection.socketClosedMessage(process: nil)
+    XCTAssertEqual(message, "serve socket closed by peer")
+    XCTAssertFalse(message.contains("signal"), "it does not say the guest was killed")
+    XCTAssertFalse(message.contains("exit"), "nor that it exited, nor with what")
+  }
+}
+
 /// A minimal `FBAXTreeReader` serving a canned read, so the shared `describeTree` composition can be
 /// observed without a simulator. `readRawTree`, `warnIfTruncated` and `hitTest` are the three seams
 /// `describeTree` drives; every other `FBUIAutomation` verb is an unused conformance stub.
