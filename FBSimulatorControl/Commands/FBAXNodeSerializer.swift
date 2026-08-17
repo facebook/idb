@@ -209,17 +209,16 @@ enum FBAXNodeSerializer {
 
     let hittablePoint = element.axHittablePoint().flatMap(FBAccessibilityPoint.init)
     if !hittable {
-      // No reachable point at all. Which of covered, clipped, transparent or scrolled away it is cannot
-      // be told from this attribute — naming the cause needs the hit-test `occludedBy` pays for.
+      // No reachable point at all. Which of covered, clipped, transparent or handled by a relative it is
+      // cannot be told from this attribute — naming the cause needs the hit-test `occludedBy` pays for.
       reasons.append(.notHittable)
-    } else if let hittablePoint, let centre = element.axCentrePoint().flatMap(FBAccessibilityPoint.init),
-      hittablePoint != centre
-    {
-      // Reachable, but not where automation aims. The occluder is named only if a hit-test was paid for;
-      // the reason itself is free, and is the signal that a centre-based tap would miss.
-      reasons.append(.occluded(by: nil))
     }
 
+    // A reachable point makes the element actionable, whether or not that point is its centre. For a
+    // partially covered element the centre is exactly what fails and this is the point that does not, so
+    // reporting it is the difference between a caller succeeding and a caller being told it cannot act on
+    // something it demonstrably can. Nothing is lost by not flagging the divergence: a caller that cares
+    // can compare `at` against the frame it already has.
     guard reasons.isEmpty, let hittablePoint else {
       return .blocked(reasons: (reasons.isEmpty ? [.notHittable] : reasons).mostSpecificFirst)
     }

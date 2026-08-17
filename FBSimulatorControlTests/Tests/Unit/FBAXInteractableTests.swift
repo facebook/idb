@@ -63,15 +63,16 @@ final class FBAXInteractableTests: XCTestCase {
   // MARK: - Blocked
 
   // The motivating case, with the numbers measured on a real Explore grid: the element is hittable, but
-  // not at its centre, because the Liquid Glass tab bar covers the bottom of the cell. Every field
-  // automation consults today — enabled, userInteractionEnabled, and hittability itself — says go ahead.
-  func testAnElementWhoseCentreIsCoveredIsBlockedAsOccluded() throws {
+  // not at its centre, because the Liquid Glass tab bar covers the bottom of the cell. It is actionable,
+  // and `at` is the point that works — 4.83pt above the centre, which is the whole difference between
+  // opening the cell and opening Direct messages.
+  func testAnElementWhoseCentreIsCoveredIsActionableAtTheReachablePoint() throws {
     let value = try XCTUnwrap(
       Self.interactable(
         Self.node(visiblePoint: CGPoint(x: 201, y: 789.5), centrePoint: CGPoint(x: 201, y: 794.33))
       ) ?? nil
     )
-    XCTAssertEqual(value, .blocked(reasons: [.occluded(by: nil)]))
+    XCTAssertEqual(value, .actionable(at: FBAccessibilityPoint(x: 201, y: 789.5)))
   }
 
   // No reachable point at all. The `(-1, -1)` sentinel the runtime reports must not surface as a point.
