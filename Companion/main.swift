@@ -106,7 +106,16 @@ private func simulatorSet(_ userDefaults: UserDefaults, logger: FBControlCoreLog
   return try simulatorSetWithPath(deviceSetPath, logger: logger, reporter: reporter)
 }
 
-private func deviceSet(_ logger: FBControlCoreLogger, ecidFilter: String?) async throws -> FBDeviceSet {
+/// How long a device-targeted invocation waits for MobileDevice to report a
+/// device before giving up and letting the caller report an empty set. Sized
+/// well above observed discovery times, since overshooting only costs a host
+/// with no device attached, while undershooting fails the whole session.
+private let deviceDiscoveryTimeout: TimeInterval = 5
+private let deviceDiscoveryPollInterval: TimeInterval = 0.1
+/// Unconditional nap retained for callers that tolerate an empty device set.
+private let restorableDevicePopulationNap: UInt64 = 200_000_000
+
+private func deviceSet(_ logger: FBControlCoreLogger, ecidFilter: String?, waitForDevices: Bool = false) async throws -> FBDeviceSet {
   // `FBDeviceSet` hardcodes `DispatchQueue.main` for its device managers and
   // registers MobileDevice notifications that expect the main run loop, so it
   // must be created on the main thread.
@@ -121,9 +130,41 @@ private func deviceSet(_ logger: FBControlCoreLogger, ecidFilter: String?) async
       }
     }
   }
-  // This is needed to give the Restorable Devices time to populate.
-  try await Task.sleep(nanoseconds: 200_000_000)
+  guard waitForDevices else {
+    // This is needed to give the Restorable Devices time to populate.
+    try await Task.sleep(nanoseconds: restorableDevicePopulationNap)
+    return set
+  }
+  try await awaitDevicePopulation(of: set, logger: logger)
   return set
+}
+
+/// Waits for at least one device to land in `set`.
+///
+/// Devices arrive asynchronously, over MobileDevice notifications delivered to
+/// the main run loop, so a freshly constructed set is briefly empty. A caller
+/// resolving `--udid only` against it therefore sees no targets at all unless it
+/// waits, and a fixed nap loses that race whenever discovery runs slower than
+/// the nap -- leaving the companion to exit before it ever binds its socket.
+///
+/// `allTargetInfos` is polled rather than `allDevices` because that is what
+/// target resolution reads, though on `FBDeviceSet` the two are the same list.
+///
+/// Timing out is not an error here: a host with no device attached should still
+/// get the caller's usual "no targets" message rather than one about discovery.
+private func awaitDevicePopulation(of set: FBDeviceSet, logger: FBControlCoreLogger) async throws {
+  do {
+    try await Task.timeout(nanoseconds: UInt64(deviceDiscoveryTimeout * Double(NSEC_PER_SEC))) {
+      // The set is mutated on the main queue, so the condition is polled there.
+      try await pollUntilTrue(on: .main, interval: deviceDiscoveryPollInterval) {
+        !set.allTargetInfos.isEmpty
+      }
+    }
+  } catch {
+    // A timeout is tolerated, but cancellation must still propagate.
+    try Task.checkCancellation()
+    logger.log("No devices appeared within \(deviceDiscoveryTimeout)s of creating the device set")
+  }
 }
 
 private func defaultTargetSets(_ userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBControlCoreLogger, reporter: FBEventReporter) async throws -> [FBiOSTargetSet] {
@@ -135,18 +176,18 @@ private func defaultTargetSets(_ userDefaults: UserDefaults, xcodeAvailable: Boo
     }
     if only.lowercased().contains("device") {
       logger.log("'--only' set for Devices")
-      return [try await deviceSet(logger, ecidFilter: nil)]
+      return [try await deviceSet(logger, ecidFilter: nil, waitForDevices: true)]
     }
     if only.lowercased().hasPrefix("ecid:") {
       let ecid = only.lowercased().replacingOccurrences(of: "ecid:", with: "")
       logger.log("ECID filter of \(ecid)")
-      return [try await deviceSet(logger, ecidFilter: ecid)]
+      return [try await deviceSet(logger, ecidFilter: ecid, waitForDevices: true)]
     }
     throw FBIDBError.describe("\(only) is not a valid argument for '--only'").build()
   }
   if !xcodeAvailable {
     logger.log("Xcode is not available, only Devices will be provided")
-    return [try await deviceSet(logger, ecidFilter: nil)]
+    return [try await deviceSet(logger, ecidFilter: nil, waitForDevices: true)]
   }
   logger.log("Providing targets across Simulator and Device sets.")
   return [
@@ -162,7 +203,7 @@ private func targetForUDID(_ udid: String, userDefaults: UserDefaults, xcodeAvai
 }
 
 private func deviceForECID(_ ecid: String, logger: FBControlCoreLogger) async throws -> FBDevice {
-  let set = try await deviceSet(logger, ecidFilter: ecid.replacingOccurrences(of: "ecid:", with: ""))
+  let set = try await deviceSet(logger, ecidFilter: ecid.replacingOccurrences(of: "ecid:", with: ""), waitForDevices: true)
   let devices = set.allDevices
   if devices.isEmpty {
     throw FBIDBError.describe("No devices \(FBCollectionInformation.oneLineDescription(from: devices)) matching \(ecid)").build()
