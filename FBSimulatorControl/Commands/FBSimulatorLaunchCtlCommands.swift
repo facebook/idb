@@ -9,9 +9,9 @@
 @preconcurrency import FBControlCore
 @preconcurrency import Foundation
 
-// swiftlint:disable force_cast force_try force_unwrapping
+// swiftlint:disable force_try force_unwrapping
 
-public final class FBSimulatorLaunchCtlCommands: NSObject, FBiOSTargetCommand {
+public final class FBSimulatorLaunchCtlCommands: NSObject {
 
   // MARK: - Properties
 
@@ -28,8 +28,7 @@ public final class FBSimulatorLaunchCtlCommands: NSObject, FBiOSTargetCommand {
     return binary.path
   }
 
-  public class func commands(with target: any FBiOSTarget) -> FBSimulatorLaunchCtlCommands {
-    let simulator = target as! FBSimulator
+  public class func commands(with simulator: FBSimulator) -> FBSimulatorLaunchCtlCommands {
     let launchctlLaunchPath = try! launchCtlLaunchPath(for: simulator)
     return FBSimulatorLaunchCtlCommands(simulator: simulator, launchctlLaunchPath: launchctlLaunchPath)
   }

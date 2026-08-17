@@ -14,20 +14,20 @@ private let CrashReportMoverService = "com.apple.crashreportmover"
 private let CrashReportCopyService = "com.apple.crashreportcopymobile"
 private let PingSuccess = "ping"
 
-public class FBDeviceCrashLogCommands: NSObject, FBiOSTargetCommand {
+public class FBDeviceCrashLogCommands: NSObject {
   private weak var device: FBDevice?
   private let store: FBCrashLogStore
   private var hasPerformedInitialIngestion: Bool = false
 
   // MARK: - Initializers
 
-  public class func commands(with target: any FBiOSTarget) -> Self {
-    let storeDirectory = (target.auxillaryDirectory as NSString).appendingPathComponent("crash_store")
-    let store = FBCrashLogStore.store(forDirectories: [storeDirectory], logger: target.logger)
-    return self.init(device: target as! FBDevice, store: store)
+  public class func commands(with device: FBDevice) -> FBDeviceCrashLogCommands {
+    let storeDirectory = (device.auxillaryDirectory as NSString).appendingPathComponent("crash_store")
+    let store = FBCrashLogStore.store(forDirectories: [storeDirectory], logger: device.logger)
+    return FBDeviceCrashLogCommands(device: device, store: store)
   }
 
-  required init(device: FBDevice, store: FBCrashLogStore) {
+  init(device: FBDevice, store: FBCrashLogStore) {
     self.device = device
     self.store = store
     super.init()

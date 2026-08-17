@@ -8,9 +8,7 @@
 import FBControlCore
 import Foundation
 
-// swiftlint:disable force_cast
-
-public final class FBSimulatorCrashLogCommands: NSObject, FBiOSTargetCommand {
+public final class FBSimulatorCrashLogCommands: NSObject {
 
   // MARK: - Properties
 
@@ -20,9 +18,9 @@ public final class FBSimulatorCrashLogCommands: NSObject, FBiOSTargetCommand {
 
   // MARK: - Initializers
 
-  public class func commands(with target: any FBiOSTarget) -> FBSimulatorCrashLogCommands {
+  public class func commands(with simulator: FBSimulator) -> FBSimulatorCrashLogCommands {
     FBSimulatorCrashLogCommands(
-      simulator: target as! FBSimulator,
+      simulator: simulator,
       notifier: FBCrashLogNotifier.sharedInstance
     )
   }

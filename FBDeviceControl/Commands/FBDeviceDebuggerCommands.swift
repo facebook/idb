@@ -24,16 +24,16 @@ Much of the implementation here comes from:
   - To trace stacks of all API calls: `sudo dtrace -n 'objc$target:LLDBRPCDebugger:*:entry { ustack(); }'  -p XCODE_PID`
  - It is also possible to use lldb's internal logging to see the API calls that it is making. This is done by configuring lldb via adding a line in ~/.lldbinit (e.g `log enable -v -f /tmp/lldb.log lldb api`)
  */
-public class FBDeviceDebuggerCommands: NSObject, FBiOSTargetCommand {
+public class FBDeviceDebuggerCommands: NSObject {
   private weak var device: FBDevice?
 
   // MARK: - Initializers
 
-  public class func commands(with target: any FBiOSTarget) -> Self {
-    self.init(device: target as! FBDevice)
+  public class func commands(with device: FBDevice) -> FBDeviceDebuggerCommands {
+    FBDeviceDebuggerCommands(device: device)
   }
 
-  required init(device: FBDevice) {
+  init(device: FBDevice) {
     self.device = device
     super.init()
   }

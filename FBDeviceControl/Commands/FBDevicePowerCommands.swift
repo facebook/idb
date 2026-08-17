@@ -8,16 +8,16 @@
 import FBControlCore
 import Foundation
 
-public class FBDevicePowerCommands: NSObject, FBiOSTargetCommand {
+public class FBDevicePowerCommands: NSObject {
   private weak var device: FBDevice?
 
   // MARK: - Initializers
 
-  public class func commands(with target: any FBiOSTarget) -> Self {
-    self.init(device: target as! FBDevice)
+  public class func commands(with device: FBDevice) -> FBDevicePowerCommands {
+    FBDevicePowerCommands(device: device)
   }
 
-  required init(device: FBDevice) {
+  init(device: FBDevice) {
     self.device = device
     super.init()
   }

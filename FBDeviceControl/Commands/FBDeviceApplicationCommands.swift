@@ -71,16 +71,15 @@ private class FBDeviceLaunchedApplication: FBLaunchedApplication {
 
 // MARK: - FBDeviceApplicationCommands
 
-public class FBDeviceApplicationCommands: NSObject, FBiOSTargetCommand {
+public class FBDeviceApplicationCommands: NSObject {
   fileprivate weak var device: FBDevice?
   private let deltaUpdateDirectory: URL
 
   // MARK: Initializers
 
-  public class func commands(with target: any FBiOSTarget) -> Self {
-    let device = target as! FBDevice
+  public class func commands(with device: FBDevice) -> FBDeviceApplicationCommands {
     let deltaUpdateDirectory = device.temporaryDirectory.temporaryDirectory()
-    return unsafeDowncast(FBDeviceApplicationCommands(device: device, deltaUpdateDirectory: deltaUpdateDirectory), to: self)
+    return FBDeviceApplicationCommands(device: device, deltaUpdateDirectory: deltaUpdateDirectory)
   }
 
   init(device: FBDevice, deltaUpdateDirectory: URL) {

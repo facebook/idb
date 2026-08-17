@@ -15,7 +15,7 @@ import Foundation
 private let testmanagerdSimSockTimeout: TimeInterval = 5
 private let simSockEnvKey = "TESTMANAGERD_SIM_SOCK"
 
-public final class FBSimulatorXCTestCommands: NSObject, FBiOSTargetCommand {
+public final class FBSimulatorXCTestCommands: NSObject {
 
   // MARK: - Properties
 
@@ -24,8 +24,8 @@ public final class FBSimulatorXCTestCommands: NSObject, FBiOSTargetCommand {
 
   // MARK: - Initializers
 
-  public class func commands(with target: any FBiOSTarget) -> FBSimulatorXCTestCommands {
-    return FBSimulatorXCTestCommands(simulator: target as! FBSimulator)
+  public class func commands(with simulator: FBSimulator) -> FBSimulatorXCTestCommands {
+    return FBSimulatorXCTestCommands(simulator: simulator)
   }
 
   private init(simulator: FBSimulator) {

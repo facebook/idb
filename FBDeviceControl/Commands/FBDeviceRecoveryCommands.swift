@@ -8,15 +8,14 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-public class FBDeviceRecoveryCommands: NSObject, FBiOSTargetCommand {
+public class FBDeviceRecoveryCommands: NSObject {
   private(set) weak var device: FBDevice?
 
   // MARK: Initializers
 
   @objc
-  public class func commands(with target: any FBiOSTarget) -> Self {
-    // swiftlint:disable:next force_cast
-    unsafeDowncast(FBDeviceRecoveryCommands(device: target as! FBDevice), to: self)
+  public class func commands(with device: FBDevice) -> FBDeviceRecoveryCommands {
+    FBDeviceRecoveryCommands(device: device)
   }
 
   init(device: FBDevice) {

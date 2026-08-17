@@ -28,18 +28,17 @@ extension FBDeviceVideoRecordingCommandError: LocalizedError {
   }
 }
 
-public class FBDeviceVideoRecordingCommands: NSObject, FBiOSTargetCommand {
+public class FBDeviceVideoRecordingCommands: NSObject {
   private weak var device: FBDevice?
   private var video: FBDeviceVideo?
 
   // MARK: - Initializers
 
-  public class func commands(with target: any FBiOSTarget) -> Self {
-    // swiftlint:disable:next force_cast
-    self.init(device: target as! FBDevice)
+  public class func commands(with device: FBDevice) -> FBDeviceVideoRecordingCommands {
+    FBDeviceVideoRecordingCommands(device: device)
   }
 
-  required init(device: FBDevice) {
+  init(device: FBDevice) {
     self.device = device
     super.init()
   }

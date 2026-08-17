@@ -13,16 +13,16 @@ import Foundation
 private let DefaultDRMHandshakeURL = "https://albert.apple.com/deviceservices/drmHandshake"
 private let DefaultDeviceActivationURL = "https://albert.apple.com/deviceservices/deviceActivation"
 
-public class FBDeviceActivationCommands: NSObject, FBiOSTargetCommand {
+public class FBDeviceActivationCommands: NSObject {
   private weak var device: FBDevice?
 
   // MARK: - Initializers
 
-  public class func commands(with target: any FBiOSTarget) -> Self {
-    self.init(device: target as! FBDevice)
+  public class func commands(with device: FBDevice) -> FBDeviceActivationCommands {
+    FBDeviceActivationCommands(device: device)
   }
 
-  required init(device: FBDevice) {
+  init(device: FBDevice) {
     self.device = device
     super.init()
   }

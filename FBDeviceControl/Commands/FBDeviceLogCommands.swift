@@ -40,16 +40,16 @@ public class FBDeviceLogOperation: LogOperation {
 
 // MARK: - FBDeviceLogCommands
 
-public class FBDeviceLogCommands: NSObject, FBiOSTargetCommand {
+public class FBDeviceLogCommands: NSObject {
   private weak var device: FBDevice?
 
   // MARK: - Initializers
 
-  public class func commands(with target: any FBiOSTarget) -> Self {
-    self.init(device: target as! FBDevice)
+  public class func commands(with device: FBDevice) -> FBDeviceLogCommands {
+    FBDeviceLogCommands(device: device)
   }
 
-  required init(device: FBDevice) {
+  init(device: FBDevice) {
     self.device = device
     super.init()
   }

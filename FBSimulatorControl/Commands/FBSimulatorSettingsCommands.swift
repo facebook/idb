@@ -9,7 +9,7 @@
 @preconcurrency import FBControlCore
 @preconcurrency import Foundation
 
-// swiftlint:disable force_cast force_unwrapping
+// swiftlint:disable force_unwrapping
 
 /// Dark/Light mode appearance.
 /// Values match UIUserInterfaceStyle used by SimDevice's setUIInterfaceStyle:error:.
@@ -37,7 +37,7 @@ public enum FBSimulatorContentSizeCategory: Int, Sendable {
 
 private let slowAnimationsNotification = "com.apple.UIKit.SimulatorSlowMotionAnimationState"
 
-public final class FBSimulatorSettingsCommands: NSObject, FBiOSTargetCommand {
+public final class FBSimulatorSettingsCommands: NSObject {
 
   // MARK: - Properties
 
@@ -45,8 +45,8 @@ public final class FBSimulatorSettingsCommands: NSObject, FBiOSTargetCommand {
 
   // MARK: - Initializers
 
-  public class func commands(with target: any FBiOSTarget) -> FBSimulatorSettingsCommands {
-    FBSimulatorSettingsCommands(simulator: target as! FBSimulator)
+  public class func commands(with simulator: FBSimulator) -> FBSimulatorSettingsCommands {
+    FBSimulatorSettingsCommands(simulator: simulator)
   }
 
   internal init(simulator: FBSimulator) {

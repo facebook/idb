@@ -11,9 +11,7 @@ import Foundation
 import ImageIO
 import UniformTypeIdentifiers
 
-// swiftlint:disable force_cast
-
-public final class FBSimulatorScreenshotCommands: NSObject, FBiOSTargetCommand {
+public final class FBSimulatorScreenshotCommands: NSObject {
 
   // MARK: - Properties
 
@@ -22,8 +20,8 @@ public final class FBSimulatorScreenshotCommands: NSObject, FBiOSTargetCommand {
 
   // MARK: - Initializers
 
-  public class func commands(with target: any FBiOSTarget) -> FBSimulatorScreenshotCommands {
-    FBSimulatorScreenshotCommands(simulator: target as! FBSimulator)
+  public class func commands(with simulator: FBSimulator) -> FBSimulatorScreenshotCommands {
+    FBSimulatorScreenshotCommands(simulator: simulator)
   }
 
   private init(simulator: FBSimulator) {

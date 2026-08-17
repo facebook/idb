@@ -8,7 +8,7 @@
 import FBControlCore
 import Foundation
 
-public final class FBSimulatorDapServerCommand: NSObject, FBiOSTargetCommand {
+public final class FBSimulatorDapServerCommand: NSObject {
 
   // MARK: - Properties
 
@@ -16,8 +16,8 @@ public final class FBSimulatorDapServerCommand: NSObject, FBiOSTargetCommand {
 
   // MARK: - Initializers
 
-  public class func commands(with target: any FBiOSTarget) -> FBSimulatorDapServerCommand {
-    FBSimulatorDapServerCommand(simulator: target as! FBSimulator)
+  public class func commands(with simulator: FBSimulator) -> FBSimulatorDapServerCommand {
+    FBSimulatorDapServerCommand(simulator: simulator)
   }
 
   private init(simulator: FBSimulator) {

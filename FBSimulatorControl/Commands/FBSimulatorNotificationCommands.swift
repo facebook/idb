@@ -9,7 +9,7 @@
 import FBControlCore
 import Foundation
 
-public final class FBSimulatorNotificationCommands: NSObject, FBiOSTargetCommand {
+public final class FBSimulatorNotificationCommands: NSObject {
 
   // MARK: - Properties
 
@@ -17,8 +17,8 @@ public final class FBSimulatorNotificationCommands: NSObject, FBiOSTargetCommand
 
   // MARK: - Initializers
 
-  public class func commands(with target: any FBiOSTarget) -> FBSimulatorNotificationCommands {
-    FBSimulatorNotificationCommands(simulator: target as! FBSimulator)
+  public class func commands(with simulator: FBSimulator) -> FBSimulatorNotificationCommands {
+    FBSimulatorNotificationCommands(simulator: simulator)
   }
 
   private init(simulator: FBSimulator) {

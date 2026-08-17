@@ -12,16 +12,16 @@ import Foundation
 
 private let StartCommand: UInt32 = 0x00000000
 
-public class FBDeviceLocationCommands: NSObject, FBiOSTargetCommand {
+public class FBDeviceLocationCommands: NSObject {
   private weak var device: FBDevice?
 
   // MARK: - Initializers
 
-  public class func commands(with target: any FBiOSTarget) -> Self {
-    self.init(device: target as! FBDevice)
+  public class func commands(with device: FBDevice) -> FBDeviceLocationCommands {
+    FBDeviceLocationCommands(device: device)
   }
 
-  required init(device: FBDevice) {
+  init(device: FBDevice) {
     self.device = device
     super.init()
   }

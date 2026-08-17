@@ -5,13 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// swiftlint:disable force_cast
-
 @preconcurrency import CoreSimulator
 import FBControlCore
 import Foundation
 
-public final class FBSimulatorLocationCommands: NSObject, FBiOSTargetCommand {
+public final class FBSimulatorLocationCommands: NSObject {
 
   // MARK: - Properties
 
@@ -19,8 +17,8 @@ public final class FBSimulatorLocationCommands: NSObject, FBiOSTargetCommand {
 
   // MARK: - Initializers
 
-  public class func commands(with target: any FBiOSTarget) -> FBSimulatorLocationCommands {
-    FBSimulatorLocationCommands(simulator: target as! FBSimulator)
+  public class func commands(with simulator: FBSimulator) -> FBSimulatorLocationCommands {
+    FBSimulatorLocationCommands(simulator: simulator)
   }
 
   private init(simulator: FBSimulator) {

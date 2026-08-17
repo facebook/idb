@@ -9,7 +9,7 @@
 import FBControlCore
 import Foundation
 
-public final class FBSimulatorMemoryCommands: NSObject, FBiOSTargetCommand {
+public final class FBSimulatorMemoryCommands: NSObject {
 
   // MARK: - Properties
 
@@ -17,8 +17,8 @@ public final class FBSimulatorMemoryCommands: NSObject, FBiOSTargetCommand {
 
   // MARK: - Initializers
 
-  public class func commands(with target: any FBiOSTarget) -> FBSimulatorMemoryCommands {
-    FBSimulatorMemoryCommands(simulator: target as! FBSimulator)
+  public class func commands(with simulator: FBSimulator) -> FBSimulatorMemoryCommands {
+    FBSimulatorMemoryCommands(simulator: simulator)
   }
 
   private init(simulator: FBSimulator) {

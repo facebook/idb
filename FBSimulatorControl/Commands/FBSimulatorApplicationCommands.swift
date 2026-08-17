@@ -9,9 +9,9 @@
 @preconcurrency import FBControlCore
 @preconcurrency import Foundation
 
-// swiftlint:disable force_cast force_try force_unwrapping
+// swiftlint:disable force_try force_unwrapping
 
-public class FBSimulatorApplicationCommands: NSObject, FBiOSTargetCommand {
+public class FBSimulatorApplicationCommands: NSObject {
 
   // MARK: - Properties
 
@@ -19,12 +19,11 @@ public class FBSimulatorApplicationCommands: NSObject, FBiOSTargetCommand {
 
   // MARK: - Initializers
 
-  public class func commands(with target: any FBiOSTarget) -> Self {
-    let simulator = target as! FBSimulator
-    return Self(simulator: simulator)
+  public class func commands(with simulator: FBSimulator) -> FBSimulatorApplicationCommands {
+    return FBSimulatorApplicationCommands(simulator: simulator)
   }
 
-  internal required init(simulator: FBSimulator) {
+  internal init(simulator: FBSimulator) {
     self.simulator = simulator
     super.init()
   }

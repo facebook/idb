@@ -11,7 +11,7 @@ import XCTestBootstrap
 
 // swiftlint:disable force_cast
 
-public class FBDeviceXCTestCommands: NSObject, FBiOSTargetCommand {
+public class FBDeviceXCTestCommands: NSObject {
   private(set) weak var device: FBDevice?
   private(set) var workingDirectory: String
   private(set) var processFetcher: FBProcessFetcher
@@ -20,8 +20,8 @@ public class FBDeviceXCTestCommands: NSObject, FBiOSTargetCommand {
   // MARK: Initializers
 
   @objc
-  public class func commands(with target: any FBiOSTarget) -> Self {
-    unsafeDowncast(FBDeviceXCTestCommands(device: target as! FBDevice, workingDirectory: NSTemporaryDirectory()), to: self)
+  public class func commands(with device: FBDevice) -> FBDeviceXCTestCommands {
+    FBDeviceXCTestCommands(device: device, workingDirectory: NSTemporaryDirectory())
   }
 
   init(device: FBDevice, workingDirectory: String) {

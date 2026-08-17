@@ -13,7 +13,7 @@ import UniformTypeIdentifiers
 
 // swiftlint:disable force_cast
 
-public final class FBSimulatorMediaCommands: NSObject, FBiOSTargetCommand {
+public final class FBSimulatorMediaCommands: NSObject {
 
   // MARK: - Properties
 
@@ -21,8 +21,8 @@ public final class FBSimulatorMediaCommands: NSObject, FBiOSTargetCommand {
 
   // MARK: - Initializers
 
-  public class func commands(with target: any FBiOSTarget) -> FBSimulatorMediaCommands {
-    FBSimulatorMediaCommands(simulator: target as! FBSimulator)
+  public class func commands(with simulator: FBSimulator) -> FBSimulatorMediaCommands {
+    FBSimulatorMediaCommands(simulator: simulator)
   }
 
   private init(simulator: FBSimulator) {

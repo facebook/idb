@@ -173,10 +173,10 @@ private func deviceForECID(_ ecid: String, logger: FBControlCoreLogger) async th
 private func resolveSimulator(_ udid: String, userDefaults: UserDefaults, logger: FBControlCoreLogger, reporter: FBEventReporter) async throws -> FBSimulator {
   let set = try simulatorSet(userDefaults, logger: logger, reporter: reporter)
   let target = try await bridgeFBFuture(FBiOSTargetProvider.target(withUDID: udid, targetSets: [set], warmUp: false, logger: logger))
-  guard target is SimulatorLifecycleCommands else {
+  guard target is SimulatorLifecycleCommands, let simulator = target as? FBSimulator else {
     throw FBIDBError.describe("\(target) does not support Simulator Lifecycle commands").build()
   }
-  return target as! FBSimulator
+  return simulator
 }
 
 private func awaitTargetOffline(_ target: FBiOSTarget, logger: FBControlCoreLogger) async throws {

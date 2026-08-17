@@ -23,7 +23,7 @@ extension FBSimulatorProcessSpawnError: LocalizedError {
   }
 }
 
-public final class FBSimulatorProcessSpawnCommands: NSObject, FBiOSTargetCommand {
+public final class FBSimulatorProcessSpawnCommands: NSObject {
 
   // MARK: - Properties
 
@@ -31,8 +31,8 @@ public final class FBSimulatorProcessSpawnCommands: NSObject, FBiOSTargetCommand
 
   // MARK: - Initializers
 
-  public class func commands(with target: any FBiOSTarget) -> FBSimulatorProcessSpawnCommands {
-    return FBSimulatorProcessSpawnCommands(simulator: target as! FBSimulator)
+  public class func commands(with simulator: FBSimulator) -> FBSimulatorProcessSpawnCommands {
+    return FBSimulatorProcessSpawnCommands(simulator: simulator)
   }
 
   private init(simulator: FBSimulator) {

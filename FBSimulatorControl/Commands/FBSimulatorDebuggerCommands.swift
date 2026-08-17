@@ -60,7 +60,7 @@ private final class FBSimulatorDebugServer: FBDebugServer {
 
 // MARK: - FBSimulatorDebuggerCommands
 
-public final class FBSimulatorDebuggerCommands: NSObject, FBiOSTargetCommand {
+public final class FBSimulatorDebuggerCommands: NSObject {
 
   // MARK: - Properties
 
@@ -76,10 +76,9 @@ public final class FBSimulatorDebuggerCommands: NSObject, FBiOSTargetCommand {
 
   // MARK: - Initializers
 
-  public class func commands(with target: any FBiOSTarget) -> FBSimulatorDebuggerCommands {
+  public class func commands(with simulator: FBSimulator) -> FBSimulatorDebuggerCommands {
     FBSimulatorDebuggerCommands(
-      // swiftlint:disable:next force_cast
-      simulator: target as! FBSimulator,
+      simulator: simulator,
       debugServerPath: resolveDebugServerPath()
     )
   }

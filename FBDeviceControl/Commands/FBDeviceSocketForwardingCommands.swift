@@ -8,15 +8,15 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-// swiftlint:disable force_cast force_unwrapping
+// swiftlint:disable force_unwrapping
 
-public class FBDeviceSocketForwardingCommands: NSObject, FBiOSTargetCommand {
+public class FBDeviceSocketForwardingCommands: NSObject {
   private(set) weak var device: FBDevice?
 
   // MARK: Initializers
 
-  public class func commands(with target: any FBiOSTarget) -> Self {
-    unsafeDowncast(FBDeviceSocketForwardingCommands(device: target as! FBDevice), to: self)
+  public class func commands(with device: FBDevice) -> FBDeviceSocketForwardingCommands {
+    FBDeviceSocketForwardingCommands(device: device)
   }
 
   init(device: FBDevice) {

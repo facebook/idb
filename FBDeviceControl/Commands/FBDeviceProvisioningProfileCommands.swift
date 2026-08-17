@@ -8,13 +8,13 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-public class FBDeviceProvisioningProfileCommands: NSObject, FBiOSTargetCommand, ProvisioningProfileCommands {
+public class FBDeviceProvisioningProfileCommands: NSObject, ProvisioningProfileCommands {
   private(set) weak var device: FBDevice?
 
   // MARK: Public
 
-  public class func commands(with target: any FBiOSTarget) -> Self {
-    return unsafeDowncast(FBDeviceProvisioningProfileCommands(device: target as! FBDevice), to: self)
+  public class func commands(with device: FBDevice) -> FBDeviceProvisioningProfileCommands {
+    return FBDeviceProvisioningProfileCommands(device: device)
   }
 
   public init(device: FBDevice) {

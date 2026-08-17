@@ -8,8 +8,6 @@
 import FBControlCore
 import Foundation
 
-// swiftlint:disable force_cast
-
 private enum FBSimulatorVideoRecordingCommandError: Error {
   case recordingAlreadyActive
   case missingVideo(simulatorDescription: String)
@@ -26,7 +24,7 @@ extension FBSimulatorVideoRecordingCommandError: LocalizedError {
   }
 }
 
-public final class FBSimulatorVideoRecordingCommands: NSObject, FBiOSTargetCommand {
+public final class FBSimulatorVideoRecordingCommands: NSObject {
 
   // MARK: - Properties
 
@@ -35,8 +33,8 @@ public final class FBSimulatorVideoRecordingCommands: NSObject, FBiOSTargetComma
 
   // MARK: - Initializers
 
-  public class func commands(with target: any FBiOSTarget) -> FBSimulatorVideoRecordingCommands {
-    FBSimulatorVideoRecordingCommands(simulator: target as! FBSimulator)
+  public class func commands(with simulator: FBSimulator) -> FBSimulatorVideoRecordingCommands {
+    FBSimulatorVideoRecordingCommands(simulator: simulator)
   }
 
   private init(simulator: FBSimulator) {
