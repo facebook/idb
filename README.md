@@ -76,7 +76,7 @@ Head over [to the main documentation](https://www.fbidb.io) for more details on 
 
 ### Prerequisites
 
-- **Xcode 14.0+**
+- **Xcode 26.0+**
 - **XcodeGen**: `brew install xcodegen`
 - **For idb_companion**: protobuf and gRPC Swift plugins
   ```

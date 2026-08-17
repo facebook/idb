@@ -263,6 +263,31 @@ function regenerate_projects() {
 # Build Utilities
 # =============================================================================
 
+# The minimum Xcode major version required to build, matching the prerequisite
+# documented in print_usage and README.md: the codebase requires Swift 6.2 and
+# a macOS 15 deployment target, both of which need Xcode 26.
+XCODE_MIN_MAJOR=26
+
+function check_xcode_version() {
+  if ! command -v xcodebuild &> /dev/null; then
+    echo "error: xcodebuild not found. Install Xcode ${XCODE_MIN_MAJOR}.0 or newer and select it with xcode-select."
+    exit 1
+  fi
+  local version_line
+  version_line=$(xcodebuild -version 2>/dev/null | head -n 1)
+  local major
+  major=$(printf '%s' "$version_line" | sed -n 's/^Xcode \([0-9][0-9]*\).*/\1/p')
+  if [[ -z $major ]]; then
+    echo "error: could not parse the Xcode version from 'xcodebuild -version' output: ${version_line:-<empty>}"
+    exit 1
+  fi
+  if (( major < XCODE_MIN_MAJOR )); then
+    echo "error: Xcode ${XCODE_MIN_MAJOR}.0 or newer is required to build idb, found: ${version_line}"
+    echo "Select a newer Xcode with: sudo xcode-select --switch /Applications/Xcode.app"
+    exit 1
+  fi
+}
+
 function invoke_xcodebuild() {
   local symroot="$BUILD_DIRECTORY/Products"
   local objroot="$BUILD_DIRECTORY/Intermediates"
@@ -711,9 +736,11 @@ case $COMMAND in
   generate-proto)
     generate_proto;;
   build)
+    check_xcode_version
     regenerate_projects
     build "$TARGET_ARG";;
   test)
+    check_xcode_version
     regenerate_projects
     run_tests "$TARGET_ARG";;
   *)
