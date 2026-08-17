@@ -92,18 +92,14 @@ public final class FBXCTestProcess {
   private static func performCrashLogQuery(forProcess process: FBSubprocess<AnyObject, AnyObject, AnyObject>, startDate: Date, crashLogCommands: any CrashLogCommands, crashLogWaitTime: TimeInterval, queue: DispatchQueue, logger: FBControlCoreLogger) -> FBFuture<NSNumber> {
     logger.log("xctest process (\(process.processIdentifier)) died prematurely, checking for crash log for \(crashLogWaitTime) seconds")
     return unsafeBitCast(
-      unsafeBitCast(
-        FBXCTestProcess.crashLogs(forTerminationOfProcess: process, since: startDate, crashLogCommands: crashLogCommands, crashLogWaitTime: crashLogWaitTime, queue: queue),
-        to: FBFuture<AnyObject>.self
-      )
-      .rephraseFailure("xctest process (\(process.processIdentifier)) exited abnormally with no crash log, to check for yourself look in ~/Library/Logs/DiagnosticReports")
-      .onQueue(
-        queue,
-        fmap: { crashInfo -> FBFuture<AnyObject> in
-          let info = crashInfo as! FBCrashLogInfo
-          let rawLog = (try? info.loadRawCrashLogString()) ?? ""
-          return FBXCTestError.describe("xctest process crashed\n\(info)\n\nRaw Crash File Contents\n\(rawLog)").failFuture()
-        }),
+      FBXCTestProcess.crashLogs(forTerminationOfProcess: process, since: startDate, crashLogCommands: crashLogCommands, crashLogWaitTime: crashLogWaitTime, queue: queue)
+        .rephraseFailure("xctest process (\(process.processIdentifier)) exited abnormally with no crash log, to check for yourself look in ~/Library/Logs/DiagnosticReports")
+        .onQueue(
+          queue,
+          fmap: { info -> FBFuture<AnyObject> in
+            let rawLog = (try? info.loadRawCrashLogString()) ?? ""
+            return FBXCTestError.describe("xctest process crashed\n\(info)\n\nRaw Crash File Contents\n\(rawLog)").failFuture()
+          }),
       to: FBFuture<NSNumber>.self
     )
   }

@@ -67,8 +67,12 @@ public final class FBLogicTestRunStrategy: NSObject, FBXCTestRunner {
           target.workQueue,
           fmap: { tupleObj -> FBFuture<AnyObject> in
             let tuple = tupleObj as [AnyObject]
-            let outputs = tuple[0] as! FBLogicTestRunOutputs
-            let shimPath = tuple[1] as! String
+            guard tuple.count == 2,
+              let outputs = tuple[0] as? FBLogicTestRunOutputs,
+              let shimPath = tuple[1] as? String
+            else {
+              return XCTestBootstrapError.describe("Expected the test outputs and the shim path, got \(tuple)").failFuture()
+            }
             return unsafeBitCast(
               self.testFuture(withOutputs: outputs, shimPath: shimPath, uuid: uuid),
               to: FBFuture<AnyObject>.self
@@ -88,36 +92,33 @@ public final class FBLogicTestRunStrategy: NSObject, FBXCTestRunner {
     let arguments = ["-XCTest", testSpecifier, configuration.testBundlePath]
 
     return unsafeBitCast(
-      unsafeBitCast(
-        FBTemporaryDirectory(logger: logger).withTemporaryDirectory(),
-        to: FBFutureContext<AnyObject>.self
-      )
-      .onQueue(
-        target.workQueue,
-        pop: { temporaryDirectory -> FBFuture<AnyObject> in
-          let temporaryDirectoryURL = temporaryDirectory as! NSURL
-          return unsafeBitCast(
-            FBOToolDynamicLibs.findFullPath(forSanitiserDyldInBundle: self.configuration.testBundlePath, onQueue: self.target.workQueue),
-            to: FBFuture<AnyObject>.self
-          )
-          .onQueue(
-            self.target.workQueue,
-            fmap: { librariesObj -> FBFuture<AnyObject> in
-              let libraries = librariesObj as! [String]
-              let environment = FBLogicTestRunStrategy.setupEnvironment(withDylibs: self.configuration.processUnderTestEnvironment, withLibraries: libraries, injectLibraries: self.configuration.injectLibraries, shimOutputFilePath: outputs.shimOutput.filePath, shimPath: shimPath, bundlePath: self.configuration.testBundlePath, coverageConfiguration: self.configuration.coverageConfiguration, logDirectoryPath: self.configuration.logDirectoryPath, waitForDebugger: self.configuration.waitForDebugger, target: self.target)
+      FBTemporaryDirectory(logger: logger).withTemporaryDirectory()
+        .onQueue(
+          target.workQueue,
+          pop: { temporaryDirectoryURL -> FBFuture<AnyObject> in
+            FBOToolDynamicLibs.findFullPath(forSanitiserDyldInBundle: self.configuration.testBundlePath, onQueue: self.target.workQueue)
+              .onQueue(
+                self.target.workQueue,
+                fmap: { librariesObj -> FBFuture<AnyObject> in
+                  guard let libraries = librariesObj as? [String] else {
+                    return XCTestBootstrapError.describe("Expected a list of sanitiser dylib paths, got \(librariesObj)").failFuture()
+                  }
+                  let environment = FBLogicTestRunStrategy.setupEnvironment(withDylibs: self.configuration.processUnderTestEnvironment, withLibraries: libraries, injectLibraries: self.configuration.injectLibraries, shimOutputFilePath: outputs.shimOutput.filePath, shimPath: shimPath, bundlePath: self.configuration.testBundlePath, coverageConfiguration: self.configuration.coverageConfiguration, logDirectoryPath: self.configuration.logDirectoryPath, waitForDebugger: self.configuration.waitForDebugger, target: self.target)
 
-              return self.startTestProcess(withLaunchPath: launchPath, arguments: arguments, environment: environment, outputs: outputs, temporaryDirectory: temporaryDirectoryURL as URL)
-                .onQueue(
-                  self.target.workQueue,
-                  fmap: { exitCodeFutureObj -> FBFuture<AnyObject> in
-                    let exitCodeFuture = exitCodeFutureObj as! FBFuture<NSNumber>
-                    return unsafeBitCast(
-                      self.completeLaunchedProcess(exitCodeFuture, outputs: outputs),
-                      to: FBFuture<AnyObject>.self
-                    )
-                  })
-            })
-        }),
+                  return self.startTestProcess(withLaunchPath: launchPath, arguments: arguments, environment: environment, outputs: outputs, temporaryDirectory: temporaryDirectoryURL as URL)
+                    .onQueue(
+                      self.target.workQueue,
+                      fmap: { exitCodeFutureObj -> FBFuture<AnyObject> in
+                        guard let exitCodeFuture = exitCodeFutureObj as? FBFuture<NSNumber> else {
+                          return XCTestBootstrapError.describe("Expected the test process to resolve to its exit code, got \(exitCodeFutureObj)").failFuture()
+                        }
+                        return unsafeBitCast(
+                          self.completeLaunchedProcess(exitCodeFuture, outputs: outputs),
+                          to: FBFuture<AnyObject>.self
+                        )
+                      })
+                })
+          }),
       to: FBFuture<NSNull>.self
     )
   }
@@ -221,7 +222,9 @@ public final class FBLogicTestRunStrategy: NSObject, FBXCTestRunner {
         .onQueue(
           queue,
           fmap: { exitCodeObj -> FBFuture<AnyObject> in
-            let exitCodeNumber = exitCodeObj as! NSNumber
+            guard let exitCodeNumber = exitCodeObj as? NSNumber else {
+              return FBControlCoreError.describe("Expected the xctest process to resolve to its exit code, got \(exitCodeObj)").failFuture()
+            }
             logger.log("xctest process terminated, exited with \(exitCodeNumber), checking status code")
             let exitCodeValue = exitCodeNumber.int32Value
             if let descriptionOfExit = FBXCTestProcess.describeFailingExitCode(exitCodeValue) {
@@ -322,19 +325,19 @@ public final class FBLogicTestRunStrategy: NSObject, FBXCTestRunner {
         target.workQueue,
         fmap: { outputsObj -> FBFuture<AnyObject> in
           let outputsArray = outputsObj as [AnyObject]
-          let resolvedStdOut = outputsArray[0] as! FBDataConsumer & FBDataConsumerLifecycle
-          let resolvedStdErr = outputsArray[1] as! FBDataConsumer & FBDataConsumerLifecycle
-          let resolvedShim = outputsArray[2] as! FBDataConsumer & FBDataConsumerLifecycle
-          return unsafeBitCast(
-            FBProcessOutput<AnyObject>(for: resolvedShim).providedThroughFile(),
-            to: FBFuture<AnyObject>.self
-          )
-          .onQueue(
-            queue,
-            map: { shimOutputObj -> AnyObject in
-              let shimOutput = shimOutputObj as! FBProcessFileOutput
-              return FBLogicTestRunOutputs(stdOutConsumer: resolvedStdOut, stdErrConsumer: resolvedStdErr, stdErrBuffer: stdErrBuffer, shimConsumer: resolvedShim, shimOutput: shimOutput)
-            })
+          guard outputsArray.count == 3,
+            let resolvedStdOut = outputsArray[0] as? FBDataConsumer & FBDataConsumerLifecycle,
+            let resolvedStdErr = outputsArray[1] as? FBDataConsumer & FBDataConsumerLifecycle,
+            let resolvedShim = outputsArray[2] as? FBDataConsumer & FBDataConsumerLifecycle
+          else {
+            return XCTestBootstrapError.describe("Expected stdout, stderr and shim consumers, got \(outputsArray)").failFuture()
+          }
+          return FBProcessOutput<AnyObject>(for: resolvedShim).providedThroughFile()
+            .onQueue(
+              queue,
+              map: { shimOutput -> AnyObject in
+                FBLogicTestRunOutputs(stdOutConsumer: resolvedStdOut, stdErrConsumer: resolvedStdErr, stdErrBuffer: stdErrBuffer, shimConsumer: resolvedShim, shimOutput: shimOutput)
+              })
         })
   }
 
@@ -352,37 +355,30 @@ public final class FBLogicTestRunStrategy: NSObject, FBXCTestRunner {
     let spawnConfig = FBProcessSpawnConfiguration(launchPath: launchPath, arguments: arguments, environment: environment, io: io, mode: .posixSpawn)
     let adapter = FBArchitectureProcessAdapter()
 
-    return unsafeBitCast(
-      adapter.adaptProcessConfiguration(spawnConfig, toAnyArchitectureIn: Set(configuration.architectures.map { FBArchitecture(rawValue: $0) }), queue: queue, temporaryDirectory: temporaryDirectory),
-      to: FBFuture<AnyObject>.self
-    )
-    .onQueue(
-      queue,
-      fmap: { mappedConfigObj -> FBFuture<AnyObject> in
-        let mappedConfig = mappedConfigObj as! FBProcessSpawnConfiguration
-        let target = self.target
-        let launchFuture: FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>> = fbFutureFromAsync {
-          try await target.launchProcess(mappedConfig)
-        }
-        return unsafeBitCast(launchFuture, to: FBFuture<AnyObject>.self)
-      }
-    )
-    .onQueue(
-      queue,
-      map: { processObj -> AnyObject in
-        let process = processObj as! FBSubprocess<AnyObject, AnyObject, AnyObject>
-        let debuggerFuture = FBLogicTestRunStrategy.fromQueue(queue, reportWaitForDebugger: self.configuration.waitForDebugger, forProcessIdentifier: process.processIdentifier, reporter: reporter)
-        let result = unsafeBitCast(debuggerFuture, to: FBFuture<AnyObject>.self)
-          .onQueue(
+    return adapter.adaptProcessConfiguration(spawnConfig, toAnyArchitectureIn: Set(configuration.architectures.map { FBArchitecture(rawValue: $0) }), queue: queue, temporaryDirectory: temporaryDirectory)
+      .onQueue(
+        queue,
+        fmap: { mappedConfig -> FBFuture<AnyObject> in
+          let target = self.target
+          let launchFuture: FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>> = fbFutureFromAsync {
+            try await target.launchProcess(mappedConfig)
+          }
+          return launchFuture.onQueue(
             queue,
-            fmap: { _ -> FBFuture<AnyObject> in
-              let crashCommands = self.target as? any CrashLogCommands
-              return unsafeBitCast(
-                FBXCTestProcess.ensureProcess(process, completesWithin: timeout, crashLogCommands: crashCommands, queue: queue, logger: logger),
-                to: FBFuture<AnyObject>.self
-              )
+            map: { process -> AnyObject in
+              let debuggerFuture = FBLogicTestRunStrategy.fromQueue(queue, reportWaitForDebugger: self.configuration.waitForDebugger, forProcessIdentifier: process.processIdentifier, reporter: reporter)
+              return unsafeBitCast(debuggerFuture, to: FBFuture<AnyObject>.self)
+                .onQueue(
+                  queue,
+                  fmap: { _ -> FBFuture<AnyObject> in
+                    let crashCommands = self.target as? any CrashLogCommands
+                    return unsafeBitCast(
+                      FBXCTestProcess.ensureProcess(process, completesWithin: timeout, crashLogCommands: crashCommands, queue: queue, logger: logger),
+                      to: FBFuture<AnyObject>.self
+                    )
+                  })
             })
-        return result as AnyObject
-      })
+        }
+      )
   }
 }
