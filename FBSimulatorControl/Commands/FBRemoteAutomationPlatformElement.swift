@@ -86,6 +86,11 @@ final class FBRemoteAutomationPlatformElement: FBAXPlatformElement {
   func axIsExpanded() -> Bool { false }
   func axIsHidden() -> Bool { false }
   func axIsFocused() -> Bool { false }
+
+  func axIsHittable() -> Bool? { boolAttribute(FBAXWire.Node.isVisible.rawValue) }
+  func axHittablePoint() -> CGPoint? { pointAttribute(FBAXWire.Node.visiblePoint.rawValue) }
+  func axCentrePoint() -> CGPoint? { pointAttribute(FBAXWire.Node.centerPoint.rawValue) }
+  func axIsUserInteractionEnabled() -> Bool? { boolAttribute(FBAXWire.Node.userInteractionEnabled.rawValue) }
   func axCustomActionNames() -> [String] { [] }
   func axActionNames() -> [String] { [] }
   func axTraits() -> [String]? { nil }
@@ -93,6 +98,30 @@ final class FBRemoteAutomationPlatformElement: FBAXPlatformElement {
 
   var axTranslationPid: pid_t { pid }
   func axSetBridgeDelegateToken(_ token: String?) {}
+
+  /// A boolean attribute, or nil when the read did not carry it — which is the case for every read that
+  /// did not ask for it, and is what makes "not requested" distinguishable from a definite `false`.
+  private func boolAttribute(_ key: String) -> Bool? {
+    (attributes[key] as? NSNumber)?.boolValue
+  }
+
+  /// A point attribute, as the guest emits it: an `X`/`Y` dictionary, tolerating an `NSValue` as the
+  /// frame's accessor does. The accessibility server's `(-1, -1)` "nothing is reachable" sentinel is
+  /// carried through unchanged — turning it into an absent point is the serializer's job, where it
+  /// becomes the absence of the actionable case rather than a coordinate anyone has to recognise.
+  private func pointAttribute(_ key: String) -> CGPoint? {
+    guard let raw = attributes[key] else { return nil }
+    var point = CGPoint.zero
+    if let dictionary = raw as? NSDictionary,
+      CGPointMakeWithDictionaryRepresentation(dictionary as CFDictionary, &point)
+    {
+      return point
+    }
+    if let value = raw as? NSValue {
+      return value.pointValue
+    }
+    return nil
+  }
 
   // The daemon returns most attributes as strings, but the element-type attributes can arrive as
   // numbers; coerce so callers see a stable `String?`.

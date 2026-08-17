@@ -1060,6 +1060,7 @@ final class FBAccessibilitySerializationTests: XCTestCase {
     case .hidden: return "hidden"
     case .focused: return "focused"
     case .isRemote: return "is_remote"
+    case .interactable: return "interactable"
     }
   }
 

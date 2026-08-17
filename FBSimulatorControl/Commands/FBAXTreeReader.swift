@@ -29,7 +29,10 @@ protocol FBAXTreeReader: FBUIAutomation {
   /// the whole bounded tree and key selection happens at serialize. `FBAXTreeRead` also carries the
   /// fullscreen-modal descriptor the read surfaced (host-facing enrichment, not serialized) and whether
   /// the guest's walk was truncated.
-  func readRawTree(for query: FBAccessibilityElementQuery) async throws -> FBAXTreeRead
+  /// `attributes` names what the guest fetches per element, or nil to leave it on its default list.
+  /// Derived from the caller's requested keys, so an attribute only reaches the wire when a key that
+  /// needs it was asked for.
+  func readRawTree(for query: FBAccessibilityElementQuery, attributes: [String]?) async throws -> FBAXTreeRead
 
   /// Warns that a read's tree was truncated by the depth or node bound, so an incomplete tree is never
   /// passed off as whole. Per backend because each logs through its own target; `describeTree` calls it
@@ -66,10 +69,11 @@ extension FBAXTreeReader {
       // report — only which backend answered and what was asked for.
       return response.withProvenance(backend: backend.name, target: query.targetDescriptor)
     case let .marker(value, key, _):
-      let read = try await readRawTree(for: query)
+      let markerKeys = options.serializationKeys(including: [key.serializationKey])
+      let read = try await readRawTree(for: query, attributes: FBAXWire.Node.fetchList(for: markerKeys))
       await warnIfTruncated(read.truncated)
       let elements = FBAXTreeWalk.describeAllElements(
-        fromTree: read.tree, keys: options.serializationKeys(including: [key.serializationKey]), nestedFormat: false, pid: read.pid
+        fromTree: read.tree, keys: markerKeys, nestedFormat: false, pid: read.pid
       )
       guard let match = FBAXTreeWalk.matchingElement(inElements: elements, markerValue: value, key: key) else {
         throw FBUIAutomationError.elementNotFound(backend: backend, key: key.rawValue, value: value)
@@ -85,7 +89,7 @@ extension FBAXTreeReader {
           truncated: read.truncated
         )
     case .frontmost, .application:
-      let read = try await readRawTree(for: query)
+      let read = try await readRawTree(for: query, attributes: FBAXWire.Node.fetchList(for: options.serializationKeys))
       await warnIfTruncated(read.truncated)
       let walked = FBAXTreeWalk.describeAllElements(
         fromTree: read.tree, keys: options.serializationKeys, nestedFormat: options.nestedFormat, pid: read.pid
@@ -141,7 +145,7 @@ extension FBAXTreeReader {
       }
       return FBAXWriteTarget(point: point, pid: nil, assertion: nil)
     case let .marker(value, key, _):
-      let read = try await readRawTree(for: query)
+      let read = try await readRawTree(for: query, attributes: nil)
       await warnIfTruncated(read.truncated)
       // Unfiltered, like the marker branch of `describeTree`: a write resolves the element the caller
       // named, and a caller's `--filter` is about what a read reports, not about what exists to act on.

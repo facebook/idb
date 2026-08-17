@@ -281,6 +281,178 @@ public struct FBAccessibilityCoverage: Sendable, Equatable, Encodable {
   }
 }
 
+/// Whether an element can be acted on, and — when it cannot — why.
+///
+/// One field rather than a handful of raw booleans, because the raw values are only meaningful in
+/// combination and publishing them separately invites the naive conjunction that `enabled` already
+/// suffers from. Automation asks one question; this answers it.
+///
+/// A sum type, so **the point exists only on the actionable case**. There is no representable state in
+/// which a caller holds a tap point for an element it cannot tap, and none in which a reason sits beside
+/// a point that contradicts it. It also keeps the accessibility server's `(-1, -1)` "nothing is
+/// reachable" sentinel off the wire entirely: no reachable point is the *absence* of `.actionable`,
+/// not a magic coordinate every consumer has to know to test for.
+///
+/// **`.actionable` must not be read as "a tap will land".** It is derived from the application's own
+/// render tree, which cannot see another process compositing on top of it — a system alert or SpringBoard
+/// chrome over the app does not change any of these attributes. What it warrants is narrower and exact:
+/// nothing *this application* knows about blocks interaction, and `at` is where the application believes
+/// a touch reaches. Naming an occluder in another process needs a hit-test, which is what
+/// `FBAXKeys.occludedBy` buys.
+public enum FBAccessibilityInteractable: Sendable, Equatable {
+
+  /// The element can be acted on, at this point. Not necessarily the frame centre: for a partially
+  /// covered element the centre is exactly what fails, and this is the point that does not.
+  case actionable(at: FBAccessibilityPoint)
+
+  /// The element cannot be acted on, for at least one reason. Never empty — an empty reason list is the
+  /// actionable case, and the type makes that unrepresentable.
+  case blocked(reasons: [Reason])
+
+  /// Why an element cannot be acted on. A closed vocabulary, each case traceable to an attribute that was
+  /// actually read rather than to a heuristic over geometry.
+  public enum Reason: Sendable, Equatable {
+    /// The accessibility server reports no reachable point on the element at all. Covers being covered
+    /// outright, clipped by an ancestor, fully transparent, or scrolled out of its container — which of
+    /// those it is cannot be told apart from this attribute alone.
+    case notHittable
+    /// The element has a reachable point, but it is not the centre — so the centre is covered, and
+    /// automation aiming there hits whatever is on top. `by` names that element when a hit-test was paid
+    /// for, and is nil otherwise.
+    case occluded(by: FBAccessibilityOccluder?)
+    /// The view has `userInteractionEnabled` off.
+    case userInteractionDisabled
+    /// The element reports itself disabled.
+    case disabled
+    /// The element declares itself hidden from accessibility.
+    case hidden
+    /// The element has no area to tap.
+    case zeroSize
+  }
+}
+
+/// A point in the same screen space element frames are expressed in.
+public struct FBAccessibilityPoint: Sendable, Equatable, Encodable {
+  public let x: Double
+  public let y: Double
+
+  public init(x: Double, y: Double) {
+    self.x = x
+    self.y = y
+  }
+
+  /// Nil when either coordinate is not representable, for the reason `FBAccessibilityFrame` normalizes
+  /// its edges: a point missing one coordinate is not a nearer point, it is no point.
+  public init?(_ point: CGPoint) {
+    guard point.x.isFinite, point.y.isFinite else {
+      return nil
+    }
+    self.init(x: Double(point.x), y: Double(point.y))
+  }
+}
+
+/// The element found covering another element's centre. Descriptive rather than a handle: a hit-test
+/// resolves an element with no identity that outlives the call, so what can honestly be reported is what
+/// it looked like.
+public struct FBAccessibilityOccluder: Sendable, Equatable, Encodable {
+  public let type: String?
+  public let identifier: String?
+  public let label: String?
+  public let frame: FBAccessibilityFrame?
+  public let pid: Int64?
+
+  public init(type: String?, identifier: String?, label: String?, frame: FBAccessibilityFrame?, pid: Int64?) {
+    self.type = type
+    self.identifier = identifier
+    self.label = label
+    self.frame = frame
+    self.pid = pid
+  }
+
+  enum CodingKeys: String, CodingKey {
+    case type
+    case identifier
+    case label
+    case frame
+    case pid
+  }
+
+  // Every key emitted, `null` where absent, so the shape does not vary with what the hit-test could read.
+  public func encode(to encoder: Encoder) throws {
+    var container = encoder.container(keyedBy: CodingKeys.self)
+    try container.encode(type, forKey: .type)
+    try container.encode(identifier, forKey: .identifier)
+    try container.encode(label, forKey: .label)
+    try container.encode(frame, forKey: .frame)
+    try container.encode(pid, forKey: .pid)
+  }
+}
+
+public extension FBAccessibilityInteractable {
+
+  /// The union is **internally tagged**: every value is an object and the shapes differ by case, so a
+  /// consumer discriminates on `status` rather than probing for which key happens to be present.
+  ///
+  /// A literal tag is what lets TypeScript — the main consumer — narrow the union; probing for `at` would
+  /// read a malformed or future payload as blocked; and a third case can later be added additively
+  /// instead of breaking discrimination.
+  enum CodingKeys: String, CodingKey {
+    case status
+    case at
+    case reasons
+  }
+
+  enum Status: String, Sendable, Encodable {
+    case actionable
+    case blocked
+  }
+}
+
+extension FBAccessibilityInteractable: Encodable {
+  public func encode(to encoder: Encoder) throws {
+    var container = encoder.container(keyedBy: CodingKeys.self)
+    switch self {
+    case let .actionable(at):
+      try container.encode(Status.actionable, forKey: .status)
+      try container.encode(at, forKey: .at)
+    case let .blocked(reasons):
+      try container.encode(Status.blocked, forKey: .status)
+      try container.encode(reasons, forKey: .reasons)
+    }
+  }
+}
+
+extension FBAccessibilityInteractable.Reason: Encodable {
+
+  /// `kind` rather than `reason`, so a member of `reasons` does not read as `{"reason": …}` repeated.
+  enum CodingKeys: String, CodingKey {
+    case kind
+    case by
+  }
+
+  /// The wire spelling of each reason. Pinned by test — these are the tokens a consumer branches on.
+  public var kind: String {
+    switch self {
+    case .notHittable: return "not_hittable"
+    case .occluded: return "occluded"
+    case .userInteractionDisabled: return "user_interaction_disabled"
+    case .disabled: return "disabled"
+    case .hidden: return "hidden"
+    case .zeroSize: return "zero_size"
+    }
+  }
+
+  public func encode(to encoder: Encoder) throws {
+    var container = encoder.container(keyedBy: CodingKeys.self)
+    try container.encode(kind, forKey: .kind)
+    // `by` is emitted only by the case that can have one, and only when a hit-test named it — the reason
+    // the occluder lives on the case rather than beside it.
+    if case let .occluded(by) = self, let by {
+      try container.encode(by, forKey: .by)
+    }
+  }
+}
+
 /// An accessibility element in the `complete` output format.
 ///
 /// A struct rather than an untyped bag: every attribute the schema can carry is a named, typed field.
@@ -323,6 +495,10 @@ public struct FBAccessibilityDocumentElement: Sendable, Equatable, Encodable {
   public var hidden: Bool??
   public var focused: Bool??
   public var isRemote: Bool??
+  /// Whether the element can be acted on, and why not when it cannot. `.some(nil)` — an explicit `null` —
+  /// on a backend that cannot answer: the legacy accessibility path has no counterpart for the attributes
+  /// this is derived from, and saying so is what keeps the key set fixed across backends.
+  public var interactable: FBAccessibilityInteractable??
   public var customActions: [String]??
   public var traits: [String]??
   public var pid: Int64??
@@ -373,6 +549,7 @@ public struct FBAccessibilityDocumentElement: Sendable, Equatable, Encodable {
     case hidden
     case focused
     case isRemote = "is_remote"
+    case interactable
     case customActions = "custom_actions"
     case traits
     case pid
@@ -628,6 +805,7 @@ public extension FBAccessibilityDocumentElement {
     put(hidden, "hidden")
     put(focused, "focused")
     put(isRemote, "is_remote")
+    put(interactable.map { $0?.legacyFoundationObject }, "interactable")
     if let children {
       object["children"] = children.map { $0.legacyFoundationObject }
     }
@@ -639,6 +817,43 @@ public extension FBAccessibilityFrame {
   /// Every edge is present, `NSNull` where it is not representable.
   var legacyFoundationObject: [String: Any] {
     ["x": x ?? NSNull(), "y": y ?? NSNull(), "width": width ?? NSNull(), "height": height ?? NSNull()]
+  }
+}
+
+public extension FBAccessibilityInteractable {
+  /// The same internally-tagged shape the `complete` encoder emits, as Foundation.
+  ///
+  /// Rendered by hand rather than through `JSONEncoder` for the reason the legacy formats exist at all:
+  /// they are written by `JSONSerialization`, and the two writers disagree on how a non-integral double
+  /// is spelled. Reusing the encoder here would change the bytes of a frozen format.
+  var legacyFoundationObject: [String: Any] {
+    switch self {
+    case let .actionable(at):
+      return ["status": Status.actionable.rawValue, "at": ["x": at.x, "y": at.y]]
+    case let .blocked(reasons):
+      return ["status": Status.blocked.rawValue, "reasons": reasons.map { $0.legacyFoundationObject }]
+    }
+  }
+}
+
+public extension FBAccessibilityInteractable.Reason {
+  var legacyFoundationObject: [String: Any] {
+    guard case let .occluded(by) = self, let by else {
+      return ["kind": kind]
+    }
+    return ["kind": kind, "by": by.legacyFoundationObject]
+  }
+}
+
+public extension FBAccessibilityOccluder {
+  var legacyFoundationObject: [String: Any] {
+    [
+      "type": type ?? NSNull(),
+      "identifier": identifier ?? NSNull(),
+      "label": label ?? NSNull(),
+      "frame": frame?.legacyFoundationObject ?? NSNull(),
+      "pid": pid ?? NSNull(),
+    ]
   }
 }
 

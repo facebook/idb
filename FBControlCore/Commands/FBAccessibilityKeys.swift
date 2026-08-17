@@ -33,6 +33,9 @@ public enum FBAXKeys: String, Sendable, CaseIterable {
   case hidden = "hidden"
   case focused = "focused"
   case isRemote = "is_remote"
+  /// Whether the element can be acted on, and why not when it cannot. Deliberately out of `defaultSet`:
+  /// it costs four extra attributes per element on the guest wire, so only a caller that asks pays.
+  case interactable = "interactable"
 
   /// Default set of keys returned when no specific keys are requested.
   public static let defaultSet: Set<FBAXKeys> = [

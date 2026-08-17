@@ -76,15 +76,18 @@ final class FBAXWireContractTests: XCTestCase {
       .hidden: "hidden",
       .focused: "focused",
       .isRemote: "is_remote",
+      .interactable: "interactable",
     ]
-    XCTAssertEqual(expected.count, 21, "every FBAXKeys case must have its wire value pinned")
+    // Pinned over `allCases` rather than against a count, so a case added without a pinned wire value
+    // fails here instead of silently going unchecked — which is what a bare count let through.
+    XCTAssertEqual(Set(FBAXKeys.allCases), Set(expected.keys), "every FBAXKeys case must have its wire value pinned")
     for (key, wireValue) in expected {
       XCTAssertEqual(key.rawValue, wireValue, "\(key) must serialize under its pinned wire key")
     }
   }
 
-  // The default set is the schema emitted when no keys are requested; it must stay exactly these 16,
-  // with the 5 opt-in keys (`expanded`/`placeholder`/`hidden`/`focused`/`is_remote`) out of it.
+  // The default set is the schema emitted when no keys are requested; it must stay exactly these 16, so
+  // that adding a key never changes the bytes of a read that did not ask for it.
   func testDefaultKeySetMembership() {
     XCTAssertEqual(
       FBAXKeys.defaultSet,
@@ -95,7 +98,10 @@ final class FBAXWireContractTests: XCTestCase {
       ]
     )
     XCTAssertEqual(FBAXKeys.defaultSet.count, 16)
-    let optIn: Set<FBAXKeys> = [.expanded, .placeholder, .hidden, .focused, .isRemote]
+    // Every case that is not in the default set is opt-in, derived rather than listed, so a new key is
+    // covered by this the moment it exists.
+    let optIn = Set(FBAXKeys.allCases).subtracting(FBAXKeys.defaultSet)
+    XCTAssertEqual(optIn, [.expanded, .placeholder, .hidden, .focused, .isRemote, .interactable])
     XCTAssertTrue(FBAXKeys.defaultSet.isDisjoint(with: optIn), "the opt-in keys must stay out of the default set")
   }
 

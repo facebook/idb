@@ -1543,6 +1543,9 @@ private final class StubTreeReader: FBAXTreeReader, @unchecked Sendable {
   private let hitTestResult: FBAccessibilityElementsResponse?
 
   private(set) var readCount = 0
+  /// The attribute list each read was asked for — how a test asserts that requesting a key put its
+  /// attributes on the wire, and that not requesting it left them off.
+  private(set) var readAttributes: [[String]?] = []
   private(set) var truncationWarnings: [Bool] = []
   private(set) var hitTestPoints: [CGPoint] = []
 
@@ -1551,8 +1554,9 @@ private final class StubTreeReader: FBAXTreeReader, @unchecked Sendable {
     self.hitTestResult = hitTestResult
   }
 
-  func readRawTree(for query: FBAccessibilityElementQuery) async throws -> FBAXTreeRead {
+  func readRawTree(for query: FBAccessibilityElementQuery, attributes: [String]?) async throws -> FBAXTreeRead {
     readCount += 1
+    readAttributes.append(attributes)
     return read
   }
 

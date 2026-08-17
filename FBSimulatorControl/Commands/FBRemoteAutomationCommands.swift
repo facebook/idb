@@ -76,17 +76,18 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
   /// pid, falling back to a screen-centre probe. Returns the raw tree with the owning pid and whether
   /// the walk hit the depth or node bound. The remote backend does not surface fullscreen-modal
   /// information (yet), so `modal` is always `nil`.
-  func readRawTree(for query: FBAccessibilityElementQuery) async throws -> FBAXTreeRead {
+  func readRawTree(for query: FBAccessibilityElementQuery, attributes: [String]?) async throws -> FBAXTreeRead {
+    let fetchList = attributes ?? FBAXWire.Node.defaultFetchList
     let tree: FBRemoteAutomationElementTree
     let root: [String: Any]
     if case let .application(pid) = query {
-      tree = try await withSession { try await Self.applicationTree(forPid: pid, using: $0) }
+      tree = try await withSession { try await Self.applicationTree(forPid: pid, attributes: fetchList, using: $0) }
       guard let applicationRoot = tree.root as? [String: Any] else {
         throw FBUIAutomationError.applicationUnavailable(backend: .remoteAutomation, pid: pid)
       }
       root = applicationRoot
     } else {
-      tree = try await withSession { try await frontmostTree(using: $0) }
+      tree = try await withSession { try await frontmostTree(attributes: fetchList, using: $0) }
       guard let frontmostRoot = tree.root as? [String: Any] else {
         let anchor = anchorPoint()
         throw FBRemoteAutomationError.treeUnavailable(x: anchor.x, y: anchor.y)
@@ -212,9 +213,11 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
       // instead of throwing, and the truncation warning is not logged on every poll iteration.
       let tree: FBRemoteAutomationElementTree
       if pid > 0 {
-        tree = try await Self.applicationTree(forPid: pid, using: session)
+        tree = try await Self.applicationTree(forPid: pid, attributes: FBAXWire.Node.defaultFetchList, using: session)
       } else if let fallbackAnchor {
-        tree = try await Self.applicationTree(anchorX: fallbackAnchor.x, y: fallbackAnchor.y, using: session)
+        tree = try await Self.applicationTree(
+          anchorX: fallbackAnchor.x, y: fallbackAnchor.y, attributes: FBAXWire.Node.defaultFetchList, using: session
+        )
       } else {
         return nil
       }
@@ -270,22 +273,22 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
   /// Reads the frontmost app's element tree, anchoring on the AX-resolved pid; falls back to the
   /// screen-midpoint hit-test only when the AX pid is unavailable. Used by the frontmost branch of
   /// `readRawTree`.
-  private func frontmostTree(using session: FBRemoteAutomationSession) async throws -> FBRemoteAutomationElementTree {
+  private func frontmostTree(attributes: [String], using session: FBRemoteAutomationSession) async throws -> FBRemoteAutomationElementTree {
     let pid = await frontmostApplicationPid()
     if pid > 0 {
-      return try await Self.applicationTree(forPid: pid, using: session)
+      return try await Self.applicationTree(forPid: pid, attributes: attributes, using: session)
     }
     let anchor = anchorPoint()
-    return try await Self.applicationTree(anchorX: anchor.x, y: anchor.y, using: session)
+    return try await Self.applicationTree(anchorX: anchor.x, y: anchor.y, attributes: attributes, using: session)
   }
 
   /// Reads an application's element tree with the standard remote read configuration — the full
   /// attribute fetch-list, the children attribute, and the shared depth/node bounds — anchored on
   /// `pid`. One definition of that configuration so every read requests the same tree shape.
-  private static func applicationTree(forPid pid: pid_t, using session: FBRemoteAutomationSession) async throws -> FBRemoteAutomationElementTree {
+  private static func applicationTree(forPid pid: pid_t, attributes: [String], using session: FBRemoteAutomationSession) async throws -> FBRemoteAutomationElementTree {
     try await session.applicationElementTree(
       forPid: pid,
-      attributes: FBAXWire.Node.defaultFetchList,
+      attributes: attributes,
       childrenAttribute: FBAXWire.Node.children.rawValue,
       maxDepth: FBAXReadLimits.maxReadDepth,
       maxNodes: FBAXReadLimits.maxReadNodes
@@ -294,10 +297,10 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
 
   /// As `applicationTree(forPid:using:)`, but anchored on a screen point — the fallback used when the
   /// frontmost pid can't be resolved via the AX path.
-  private static func applicationTree(anchorX x: Double, y: Double, using session: FBRemoteAutomationSession) async throws -> FBRemoteAutomationElementTree {
+  private static func applicationTree(anchorX x: Double, y: Double, attributes: [String], using session: FBRemoteAutomationSession) async throws -> FBRemoteAutomationElementTree {
     try await session.applicationElementTree(
       anchorX: x, y: y,
-      attributes: FBAXWire.Node.defaultFetchList,
+      attributes: attributes,
       childrenAttribute: FBAXWire.Node.children.rawValue,
       maxDepth: FBAXReadLimits.maxReadDepth,
       maxNodes: FBAXReadLimits.maxReadNodes
@@ -317,7 +320,7 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
   /// the marker write verbs (tap, set-value). Throws `elementNotFound` when nothing matches the marker,
   /// or `elementNotOnScreen` when an element matches but reports no on-screen frame to interact with.
   private func markerCenter(_ markerValue: String, key: FBAXSearchableKey) async throws -> (x: Double, y: Double) {
-    let read = try await readRawTree(for: .frontmost)
+    let read = try await readRawTree(for: .frontmost, attributes: nil)
     warnIfTruncated(read.truncated)
     let elements = FBAXTreeWalk.describeAllElements(fromTree: read.tree, keys: FBAXKeys.defaultSet.union([key.serializationKey]), nestedFormat: false, pid: read.pid)
     switch FBAXTreeWalk.resolveMarker(inElements: elements, markerValue: markerValue, key: key) {
@@ -336,7 +339,8 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
   /// element is tagged with the pid of the process that owns it — resolved inside the session with the
   /// attributes, so the (non-Sendable) element handle never crosses the actor boundary.
   static func hitTestElement(atX x: Double, y: Double, using session: FBRemoteAutomationSession, keys: Set<FBAXKeys>, nestedFormat: Bool = false) async throws -> FBAccessibilityDocumentElement? {
-    guard let hit = try await session.elementAttributes(atX: x, y: y, attributes: FBAXWire.Node.defaultFetchList) else {
+    let fetchList = FBAXWire.Node.fetchList(for: keys) ?? FBAXWire.Node.defaultFetchList
+    guard let hit = try await session.elementAttributes(atX: x, y: y, attributes: fetchList) else {
       return nil
     }
     let platformElement = FBRemoteAutomationPlatformElement(attributes: hit.attributes, children: [], pid: hit.pid)

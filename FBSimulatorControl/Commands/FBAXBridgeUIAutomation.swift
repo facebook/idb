@@ -82,18 +82,18 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
   /// hit-test at the screen-centre anchor) and reads its tree in one IPC hop, reporting the pid it
   /// resolved. No host-side CoreSimulator query and no separate pid round-trip. `.point` does not use
   /// this — it uses the targeted `transport.hitTest`.
-  func readRawTree(for query: FBAccessibilityElementQuery) async throws -> FBAXTreeRead {
+  func readRawTree(for query: FBAccessibilityElementQuery, attributes: [String]?) async throws -> FBAXTreeRead {
     try await translatingSeamErrors {
       if case let .application(pid) = query {
         let response = try await transport.read(
-          pid: pid, maxDepth: FBAXReadLimits.maxReadDepth, maxNodes: FBAXReadLimits.maxReadNodes, attributes: nil
+          pid: pid, maxDepth: FBAXReadLimits.maxReadDepth, maxNodes: FBAXReadLimits.maxReadNodes, attributes: attributes
         )
         return try FBAXTreeRead(wholeTreeResponse: response, pid: pid)
       }
       let anchor = frontmostAnchor()
       let response = try await transport.readFrontmost(
         x: anchor.x, y: anchor.y, maxDepth: FBAXReadLimits.maxReadDepth, maxNodes: FBAXReadLimits.maxReadNodes,
-        method: frontmostMethod, attributes: nil
+        method: frontmostMethod, attributes: attributes
       )
       return try FBAXTreeRead(frontmostResponse: response, method: frontmostMethod)
     }
@@ -107,7 +107,9 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
       // A single system-wide guest hit-test resolves the element at the point and its owning app
       // in-guest — no host-side CoreSimulator frontmost query, one IPC hop. `.point` is positional, so
       // a system-wide hit-test is exactly its semantics (unlike a whole-tree read of "frontmost").
-      let response = try await transport.hitTest(x: Double(point.x), y: Double(point.y), attributes: nil)
+      let response = try await transport.hitTest(
+        x: Double(point.x), y: Double(point.y), attributes: FBAXWire.Node.fetchList(for: options.serializationKeys)
+      )
       guard let hit = try FBAXTreeRead(hitTestResponse: response) else {
         return nil
       }
@@ -137,7 +139,7 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
       do {
         // A poll reads the raw tree directly (not through `describeTree`), so `warnIfTruncated` is not
         // called on every poll iteration — matching the describe-path-only warning.
-        let read = try await self.readRawTree(for: .frontmost)
+        let read = try await self.readRawTree(for: .frontmost, attributes: nil)
         let elements = FBAXTreeWalk.describeAllElements(
           fromTree: read.tree, keys: FBAXKeys.defaultSet.union([key.serializationKey]), nestedFormat: false, pid: read.pid
         )

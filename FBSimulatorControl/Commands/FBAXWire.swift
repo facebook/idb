@@ -30,6 +30,18 @@ enum FBAXWire {
     case frame = "XC_kAXXCAttributeFrame"
     case automationType = "XC_kAXXCAttributeAutomationType"
     case children = "XC_kAXXCAttributeChildren"
+    /// Whether the accessibility server believes a touch reaches this element at all. The primitive
+    /// XCUITest's `isHittable` is built on — *not* "is on screen": a full-screen container that passes
+    /// touches through to its children reports `false`.
+    case isVisible = "XC_kAXXCAttributeIsVisible"
+    /// The point the accessibility server believes a touch actually reaches, or `(-1, -1)` when it
+    /// believes none does. For a partially covered element this is *not* the centre, which is the whole
+    /// signal: tapping the centre lands on whatever covers it.
+    case visiblePoint = "XC_kAXXCAttributeVisiblePoint"
+    /// The element's own centre — what automation taps today. Read only to compare against
+    /// `visiblePoint`; a divergence is what identifies a partially covered element.
+    case centerPoint = "XC_kAXXCAttributeCenterPoint"
+    case userInteractionEnabled = "XC_kAXXCAttributeIsUserInteractionEnabled"
 
     /// The attribute list a read requests for each element when it names none of its own. Membership
     /// *and* order are part of the contract: the guest fetches and echoes back exactly this sequence.
@@ -39,6 +51,22 @@ enum FBAXWire {
     static let defaultFetchList: [String] = [
       elementType, elementBaseType, label, value, identifier, frame, automationType, children,
     ].map(\.rawValue)
+
+    /// The attributes `FBAXKeys.interactable` is derived from. Fetched only when that key is requested,
+    /// which is what keeps them off the wire for every read that does not ask.
+    static let interactableAttributes: [Node] = [.isVisible, .visiblePoint, .centerPoint, .userInteractionEnabled]
+
+    /// The attribute list a read must request to serialize `keys`, or nil when the default list already
+    /// carries everything needed.
+    ///
+    /// Nil rather than "the default list" so the caller can omit the request field entirely: an absent
+    /// field is what makes a default read byte-identical to one from a host that predates it.
+    static func fetchList(for keys: Set<FBAXKeys>) -> [String]? {
+      guard keys.contains(.interactable) else {
+        return nil
+      }
+      return defaultFetchList + interactableAttributes.map(\.rawValue)
+    }
 
     /// The node a marker's searched key reads, for the keys a write can assert on — or nil when this
     /// wire carries no such attribute.

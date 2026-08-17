@@ -40,6 +40,19 @@ protocol FBAXPlatformElement: AnyObject {
   func axIsExpanded() -> Bool
   func axIsHidden() -> Bool
   func axIsFocused() -> Bool
+
+  /// Whether the accessibility server believes a touch reaches this element at all, the point it
+  /// believes a touch reaches, the element's own centre, and whether the view takes touches.
+  ///
+  /// Optional throughout, because "cannot answer" is a real answer here and has to be distinguishable
+  /// from a definite `false`: these come from `XC_kAXXC*` attributes that only the guest-backed wires
+  /// carry, and the legacy `AXPMacPlatformElement` path has no NSAccessibility counterpart for any of
+  /// them. A backend that answers nil reports `interactable` as an explicit null rather than fabricating
+  /// a judgement from attributes it never read.
+  func axIsHittable() -> Bool?
+  func axHittablePoint() -> CGPoint?
+  func axCentrePoint() -> CGPoint?
+  func axIsUserInteractionEnabled() -> Bool?
   func axCustomActionNames() -> [String]
   func axActionNames() -> [String]
   func axTraits() -> [String]?
@@ -77,6 +90,13 @@ extension AXPMacPlatformElement: FBAXPlatformElement {
   func axIsExpanded() -> Bool { isAccessibilityExpanded() }
   func axIsHidden() -> Bool { isAccessibilityHidden() }
   func axIsFocused() -> Bool { isAccessibilityFocused() }
+
+  // NSAccessibility has no counterpart for any of these — `isAccessibilityHidden` is a self-declared
+  // property, not "something is on top of me" — so this backend declines to answer rather than guessing.
+  func axIsHittable() -> Bool? { nil }
+  func axHittablePoint() -> CGPoint? { nil }
+  func axCentrePoint() -> CGPoint? { nil }
+  func axIsUserInteractionEnabled() -> Bool? { nil }
   func axCustomActionNames() -> [String] { (accessibilityCustomActions() ?? []).map { $0.name } }
   func axActionNames() -> [String] {
     // Read by message: the instance `accessibilityActionNames` is shadowed by a

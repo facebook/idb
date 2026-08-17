@@ -164,6 +164,12 @@ extension FBSimulatorControlTests_AXPMacPlatformElement_Double: FBAXPlatformElem
   func axIsExpanded() -> Bool { false }
   func axIsHidden() -> Bool { false }
   func axIsFocused() -> Bool { false }
+  // This double stands in for the legacy `AXPMacPlatformElement`, which has no counterpart for any of
+  // these, so declining to answer is what the real backend does too.
+  func axIsHittable() -> Bool? { nil }
+  func axHittablePoint() -> CGPoint? { nil }
+  func axCentrePoint() -> CGPoint? { nil }
+  func axIsUserInteractionEnabled() -> Bool? { nil }
   func axCustomActionNames() -> [String] {
     (accessibilityCustomActions ?? []).compactMap { ($0 as? NSAccessibilityCustomAction)?.name }
   }

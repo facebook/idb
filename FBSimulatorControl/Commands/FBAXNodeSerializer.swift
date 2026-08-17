@@ -160,8 +160,61 @@ enum FBAXNodeSerializer {
     node.placeholder = read(.placeholder, element.axPlaceholderValue())
     node.hidden = read(.hidden, element.axIsHidden())
     node.focused = read(.focused, element.axIsFocused())
+    if keys.contains(.interactable) {
+      collector?.incrementAttributeFetchCount(forKey: FBAXKeys.interactable.rawValue)
+      node.interactable = .some(interactable(forElement: element, frame: frame))
+    }
 
     return node
+  }
+
+  /// Whether an element can be acted on, derived from the attributes just read.
+  ///
+  /// Nil — an explicit null downstream — when the backend cannot answer. `axIsHittable()` is the witness:
+  /// a backend that has no hittability attribute has none of the others either, and inventing a verdict
+  /// from `enabled` alone would reproduce the very conflation this key exists to replace.
+  ///
+  /// Reasons accumulate rather than short-circuit, because an element is often blocked more than one way
+  /// and a caller told only the first would fix it and hit the next.
+  private static func interactable(
+    forElement element: FBAXPlatformElement,
+    frame: NSRect
+  ) -> FBAccessibilityInteractable? {
+    guard let hittable = element.axIsHittable() else {
+      return nil
+    }
+
+    var reasons: [FBAccessibilityInteractable.Reason] = []
+    if frame.width == 0 || frame.height == 0 {
+      reasons.append(.zeroSize)
+    }
+    if element.axIsHidden() {
+      reasons.append(.hidden)
+    }
+    if !element.axIsEnabled() {
+      reasons.append(.disabled)
+    }
+    if element.axIsUserInteractionEnabled() == false {
+      reasons.append(.userInteractionDisabled)
+    }
+
+    let hittablePoint = element.axHittablePoint().flatMap(FBAccessibilityPoint.init)
+    if !hittable {
+      // No reachable point at all. Which of covered, clipped, transparent or scrolled away it is cannot
+      // be told from this attribute — naming the cause needs the hit-test `occludedBy` pays for.
+      reasons.append(.notHittable)
+    } else if let hittablePoint, let centre = element.axCentrePoint().flatMap(FBAccessibilityPoint.init),
+      hittablePoint != centre
+    {
+      // Reachable, but not where automation aims. The occluder is named only if a hit-test was paid for;
+      // the reason itself is free, and is the signal that a centre-based tap would miss.
+      reasons.append(.occluded(by: nil))
+    }
+
+    guard reasons.isEmpty, let hittablePoint else {
+      return .blocked(reasons: reasons.isEmpty ? [.notHittable] : reasons)
+    }
+    return .actionable(at: hittablePoint)
   }
 
   /// Wraps `nodeElement` with the two traversal-level concerns the pure core omits: recording the
