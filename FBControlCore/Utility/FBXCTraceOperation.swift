@@ -105,7 +105,7 @@ public final class FBXCTraceRecordOperation {
       queue,
       resolve: {
         self.logger.log("Terminating xctrace record \(self.task). Backoff Timeout \(timeout)")
-        return self.task.sendSignal(SIGINT, backingOffToKillWithTimeout: timeout, logger: self.logger) as! FBFuture<AnyObject>
+        return self.task.sendSignal(SIGINT, backingOffToKillWithTimeout: timeout, logger: self.logger).retyped(FBFuture<AnyObject>.self)
       }
     ).chainReplace(
       self.task.exitCode

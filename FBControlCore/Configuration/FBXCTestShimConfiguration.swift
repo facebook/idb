@@ -106,12 +106,12 @@ public class FBXCTestShimConfiguration: NSObject, NSCopying {
 
   public class func defaultShimConfiguration(with logger: FBControlCoreLogger?) -> FBFuture<FBXCTestShimConfiguration> {
     let queue = createWorkQueue()
-    let future: FBFuture<AnyObject> = (findShimDirectory(onQueue: queue, logger: logger) as! FBFuture<AnyObject>)
+    let future: FBFuture<AnyObject> = findShimDirectory(onQueue: queue, logger: logger).retyped(FBFuture<AnyObject>.self)
       .onQueue(
         queue,
         fmap: { result -> FBFuture<AnyObject> in
           let directory = result as! String
-          return shimConfiguration(withDirectory: directory, logger: logger) as! FBFuture<AnyObject>
+          return shimConfiguration(withDirectory: directory, logger: logger).retyped(FBFuture<AnyObject>.self)
         })
     return unsafeBitCast(future, to: FBFuture<FBXCTestShimConfiguration>.self)
   }

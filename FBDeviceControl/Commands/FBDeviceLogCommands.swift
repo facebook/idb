@@ -77,13 +77,14 @@ public class FBDeviceLogCommands: NSObject, FBiOSTargetCommand {
         enter: { connection, teardown -> Any in
           let reader = connection.readFromConnectionWriting(to: consumer, on: readQueue)
           reader.startReading()
-          let readCompleted = reader.finishedReading(withTimeout: .infinity).mapReplace(NSNull()) as! FBFuture<NSNull>
+          let readCompleted = reader.finishedReading(withTimeout: .infinity).mapReplace(NSNull()).retyped(FBFuture<NSNull>.self)
           return FBDeviceLogOperation(
             consumer: consumer,
             readCompleted: readCompleted,
             serviceCompleted: teardown
           )
-        }) as! FBFuture<FBDeviceLogOperation>
+        }
+      ).retyped(FBFuture<FBDeviceLogOperation>.self)
   }
 }
 

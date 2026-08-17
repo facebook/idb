@@ -65,7 +65,8 @@ public class FBSimulatorLaunchedApplication: NSObject, FBLaunchedApplication {
           processIdentifier: processIdentifier,
           terminationFuture: terminationFuture
         )
-      }) as! FBFuture<FBSimulatorLaunchedApplication>
+      }
+    ).retyped(FBFuture<FBSimulatorLaunchedApplication>.self)
   }
 
   // MARK: - Helpers
@@ -76,7 +77,7 @@ public class FBSimulatorLaunchedApplication: NSObject, FBLaunchedApplication {
   ) -> FBFuture<NSNull> {
     let notifierFuture =
       processTerminationFutureNotifier(forProcessIdentifier: processIdentifier)
-      .mapReplace(NSNull()) as! FBFuture<NSNull>
+      .mapReplace(NSNull()).retyped(FBFuture<NSNull>.self)
     return
       notifierFuture
       .onQueue(
@@ -106,7 +107,8 @@ public class FBSimulatorLaunchedApplication: NSObject, FBLaunchedApplication {
         simulator.workQueue,
         chain: { future in
           attachment.detach().chainReplace(future)
-        }) as! FBFuture<NSNull>
+        }
+      ).retyped(FBFuture<NSNull>.self)
     super.init()
   }
 

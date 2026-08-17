@@ -83,7 +83,8 @@ public class FBTemporaryDirectory: NSObject {
           let resultURL = result as URL
           return FBArchiveOperations.extractGzip(fromStream: input, toPath: resultURL.path, logger: self.logger)
             .mapReplace(resultURL as NSURL)
-        }) as! FBFutureContext<NSURL>
+        }
+      ).retyped(FBFutureContext<NSURL>.self)
   }
 
   @objc(withArchiveExtracted:)
@@ -106,7 +107,8 @@ public class FBTemporaryDirectory: NSObject {
           let tempDir = result as URL
           return FBArchiveOperations.extractArchive(fromStream: input, toPath: tempDir.path, overrideModificationTime: overrideMTime, logger: self.logger, compression: compression)
             .mapReplace(tempDir as NSURL)
-        }) as! FBFutureContext<NSURL>
+        }
+      ).retyped(FBFutureContext<NSURL>.self)
   }
 
   @objc(withArchiveExtractedFromFile:)
@@ -123,7 +125,8 @@ public class FBTemporaryDirectory: NSObject {
           let tempDir = result as URL
           return FBArchiveOperations.extractArchive(atPath: filePath, toPath: tempDir.path, overrideModificationTime: overrideMTime, logger: self.logger)
             .mapReplace(tempDir as NSURL)
-        }) as! FBFutureContext<NSURL>
+        }
+      ).retyped(FBFutureContext<NSURL>.self)
   }
 
   @objc(filesFromSubdirs:)
@@ -145,7 +148,8 @@ public class FBTemporaryDirectory: NSObject {
           } catch {
             return FBFuture<AnyObject>(error: error as NSError)
           }
-        }) as! FBFutureContext<NSArray>
+        }
+      ).retyped(FBFutureContext<NSArray>.self)
   }
 
   // MARK: Temporary Directory
@@ -171,7 +175,7 @@ public class FBTemporaryDirectory: NSObject {
         FBControlCoreError
         .describe("Failed to create Temp Dir \(tempDirectory)")
         .caused(by: error as NSError)
-        .failFutureContext() as! FBFutureContext<NSURL>
+        .failFutureContext().retyped(FBFutureContext<NSURL>.self)
     }
     return FBFuture<NSURL>(result: tempDirectory as NSURL)
       .onQueue(
@@ -211,6 +215,7 @@ public class FBTemporaryDirectory: NSObject {
             self.logger.log("Failed to delete Temp File \(tempFile): \(error)")
           }
           return FBFuture<NSNull>.empty()
-        }) as! FBFutureContext<NSURL>
+        }
+      ).retyped(FBFutureContext<NSURL>.self)
   }
 }

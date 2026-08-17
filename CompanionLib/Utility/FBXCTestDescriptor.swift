@@ -90,7 +90,7 @@ public final class FBXCTestBootstrapDescriptor: NSObject, FBXCTestDescriptor {
     if request.isLogicTest {
       return FBFuture<NSNull>.empty()
     }
-    return FBXCTestBootstrapDescriptor.killAllRunningApplications(target).mapReplace(NSNull()) as! FBFuture<NSNull>
+    return FBXCTestBootstrapDescriptor.killAllRunningApplications(target).mapReplace(NSNull()).retyped(FBFuture<NSNull>.self)
   }
 
   public func testAppPair(for request: FBXCTestRunRequest, target: FBiOSTarget) -> FBFuture<FBTestApplicationsPair> {
@@ -99,7 +99,7 @@ public final class FBXCTestBootstrapDescriptor: NSObject, FBXCTestDescriptor {
     }
     if request.isUITest {
       guard let testTargetAppBundleID = request.testTargetAppBundleID else {
-        return FBIDBError.describe("Request for UI Test, but no app_bundle_id provided").failFuture() as! FBFuture<FBTestApplicationsPair>
+        return FBIDBError.describe("Request for UI Test, but no app_bundle_id provided").failFuture().retyped(FBFuture<FBTestApplicationsPair>.self)
       }
       let testHostBundleID = request.testHostAppBundleID ?? "com.apple.Preferences"
       let pairFuture: FBFuture<FBTestApplicationsPair> = fbFutureFromAsync {
@@ -114,7 +114,7 @@ public final class FBXCTestBootstrapDescriptor: NSObject, FBXCTestDescriptor {
     }
     // App Test
     guard let bundleID = request.testHostAppBundleID else {
-      return FBIDBError.describe("Request for Application Test, but no app_bundle_id or test_host_app_bundle_id provided").failFuture() as! FBFuture<FBTestApplicationsPair>
+      return FBIDBError.describe("Request for Application Test, but no app_bundle_id or test_host_app_bundle_id provided").failFuture().retyped(FBFuture<FBTestApplicationsPair>.self)
     }
     return fbFutureFromAsync {
       guard let asyncTarget = target as? any ApplicationCommands else {
@@ -174,7 +174,8 @@ public final class FBXCTestBootstrapDescriptor: NSObject, FBXCTestDescriptor {
           reportResultBundle: request.collectResultBundle
         )
         return FBIDBAppHostedTestConfiguration(testLaunchConfiguration: testLaunchConfig, coverageConfiguration: coverageConfig)
-      }) as! FBFuture<FBIDBAppHostedTestConfiguration>
+      }
+    ).retyped(FBFuture<FBIDBAppHostedTestConfiguration>.self)
   }
 }
 

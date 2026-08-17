@@ -417,7 +417,8 @@ public class FBDeviceFileCommands: NSObject, FBiOSTargetCommand {
         pend: { (connection: AnyObject) -> FBFuture<AnyObject> in
           let conn = connection as! FBAFCConnection
           return FBFuture(result: FBDeviceFileContainer(afcConnection: conn, queue: self.device!.asyncQueue) as AnyObject)
-        }) as! FBFutureContext<FBDeviceFileContainer>
+        }
+      ).retyped(FBFutureContext<FBDeviceFileContainer>.self)
   }
 
   fileprivate func fileCommandsForAuxillary() -> FBFutureContext<FBContainedFile_ContainedRoot> {
@@ -443,7 +444,8 @@ public class FBDeviceFileCommands: NSObject, FBiOSTargetCommand {
         pend: { (connection: AnyObject) -> FBFuture<AnyObject> in
           let conn = connection as! FBAFCConnection
           return FBFuture(result: FBDeviceFileContainer(afcConnection: conn, queue: self.device!.asyncQueue) as AnyObject)
-        }) as! FBFutureContext<FBDeviceFileContainer>
+        }
+      ).retyped(FBFutureContext<FBDeviceFileContainer>.self)
   }
 
   fileprivate func fileCommandsForProvisioningProfiles() -> FBFutureContext<FBFileContainer_ProvisioningProfile> {
@@ -458,7 +460,8 @@ public class FBDeviceFileCommands: NSObject, FBiOSTargetCommand {
           let conn = connection as! FBAMDServiceConnection
           let managedConfig = FBManagedConfigClient.managedConfigClient(connection: conn, logger: self.device!.logger)
           return FBFuture(result: FBDeviceFileContainer_MDMProfiles(managedConfig: managedConfig, queue: self.device!.workQueue) as AnyObject)
-        }) as! FBFutureContext<FBDeviceFileContainer_MDMProfiles>
+        }
+      ).retyped(FBFutureContext<FBDeviceFileContainer_MDMProfiles>.self)
   }
 
   fileprivate func fileCommandsForWallpaper() -> FBFutureContext<FBDeviceFileContainer_Wallpaper> {
@@ -473,7 +476,8 @@ public class FBDeviceFileCommands: NSObject, FBiOSTargetCommand {
         let springboard = FBSpringboardServicesClient.springboardServicesClient(connection: conns[0] as! FBAMDServiceConnection, logger: self.device!.logger)
         let managedConfig = FBManagedConfigClient.managedConfigClient(connection: conns[1] as! FBAMDServiceConnection, logger: self.device!.logger)
         return FBFuture(result: FBDeviceFileContainer_Wallpaper(springboard: springboard, managedConfig: managedConfig, queue: self.device!.workQueue) as AnyObject)
-      }) as! FBFutureContext<FBDeviceFileContainer_Wallpaper>
+      }
+    ).retyped(FBFutureContext<FBDeviceFileContainer_Wallpaper>.self)
   }
 
   fileprivate func fileCommandsForDiskImages() -> FBFutureContext<FBDeviceFileCommands_DiskImages> {

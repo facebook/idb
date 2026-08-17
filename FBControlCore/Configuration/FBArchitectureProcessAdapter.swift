@@ -68,7 +68,7 @@ public class FBArchitectureProcessAdapter: NSObject {
       return
         FBControlCoreError
         .describe("Could not select an architecture from \(FBCollectionInformation.oneLineDescription(from: Array(requestedArchitectures))) compatible with \(FBCollectionInformation.oneLineDescription(from: Array(hostArchitectures)))")
-        .failFuture() as! FBFuture<FBProcessSpawnConfiguration>
+        .failFuture().retyped(FBFuture<FBProcessSpawnConfiguration>.self)
     }
 
     return unsafeBitCast(

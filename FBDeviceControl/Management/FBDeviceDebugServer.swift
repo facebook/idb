@@ -137,7 +137,7 @@ public class FBDeviceDebugServer: NSObject, FBSocketServerDelegate, FBDebugServe
           queue: queue,
           logger: logger
         )
-        return server.startListening() as! FBFutureContext<AnyObject>
+        return server.startListening().retyped(FBFutureContext<AnyObject>.self)
       }
     ).onQueue(
       queue,
@@ -223,6 +223,7 @@ public class FBDeviceDebugServer: NSObject, FBSocketServerDelegate, FBDebugServe
         pend: { [self] (_: AnyObject) -> FBFuture<AnyObject> in
           self.logger.log("TCP Server now running, bootstrap commands for lldb are \(self.lldbBootstrapCommands.joined(separator: "\n"))")
           return FBFuture<AnyObject>(result: self)
-        }) as! FBFutureContext<FBDeviceDebugServer>
+        }
+      ).retyped(FBFutureContext<FBDeviceDebugServer>.self)
   }
 }

@@ -81,7 +81,7 @@ public class FBProcessTerminationStrategy: NSObject {
       return
         FBControlCoreError
         .describe("Could not find that process \(processIdentifier) exists")
-        .failFuture() as! FBFuture<NSNull>
+        .failFuture().retyped(FBFuture<NSNull>.self)
     }
 
     // Kill the process with kill(2).
@@ -90,7 +90,7 @@ public class FBProcessTerminationStrategy: NSObject {
       return
         FBControlCoreError
         .describe("Failed to kill \(processIdentifier): '\(String(cString: strerror(errno)))'")
-        .failFuture() as! FBFuture<NSNull>
+        .failFuture().retyped(FBFuture<NSNull>.self)
     }
 
     let checkDeath = hasOption(.checkDeathAfterSignal)
@@ -119,7 +119,7 @@ public class FBProcessTerminationStrategy: NSObject {
         chain: { (future: FBFuture<AnyObject>) -> FBFuture<AnyObject> in
           if future.result != nil {
             self.logger.debug().log("Process \(processIdentifier) terminated")
-            return FBFuture<NSNull>.empty() as! FBFuture<AnyObject>
+            return FBFuture<NSNull>.empty().retyped(FBFuture<AnyObject>.self)
           }
           let backoff = self.hasOption(.backoffToSIGKILL)
           if self.configuration.signo == SIGKILL || !backoff {
@@ -151,7 +151,8 @@ public class FBProcessTerminationStrategy: NSObject {
               }
               return innerFuture
             })
-        }) as! FBFuture<NSNull>
+        }
+      ).retyped(FBFuture<NSNull>.self)
   }
 
   // MARK: Private

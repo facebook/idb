@@ -188,7 +188,7 @@ public final class FBLogicTestRunStrategy: NSObject, FBXCTestRunner {
           handleError: { error -> FBFuture<AnyObject> in
             logger.log("Abnormal exit of xctest process \(error)")
             reporter.didCrashDuringTest(error as NSError)
-            return FBFuture(error: error) as! FBFuture<AnyObject>
+            return FBFuture<AnyObject>(error: error)
           }),
       to: FBFuture<NSNull>.self
     )

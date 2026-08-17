@@ -175,12 +175,12 @@ public final class FBListTestStrategy {
               guard let parsed = try JSONSerialization.jsonObject(with: data, options: []) as? [[String: String]] else {
                 NSLog("Shimulator buffer data (should contain test information): %@", String(data: data, encoding: .utf8) ?? "")
                 let error = NSError(domain: "FBListTestStrategy", code: 0, userInfo: [NSLocalizedDescriptionKey: "Failed to parse test list JSON"])
-                return FBFuture(error: error) as! FBFuture<AnyObject>
+                return FBFuture<AnyObject>(error: error)
               }
               tests = parsed
             } catch {
               NSLog("Shimulator buffer data (should contain test information): %@", String(data: data, encoding: .utf8) ?? "")
-              return FBFuture(error: error) as! FBFuture<AnyObject>
+              return FBFuture<AnyObject>(error: error)
             }
             var testNames: [String] = []
             for test in tests {
@@ -238,7 +238,7 @@ public final class FBListTestStrategy {
       do {
         appBundle = try FBBundleDescriptor.bundle(fromPath: runnerAppPath)
       } catch {
-        return FBFuture(error: error) as! FBFuture<AnyObject>
+        return FBFuture<AnyObject>(error: error)
       }
       launchPath = appBundle.binary?.path ?? launchPath
       let spawnConfiguration = FBProcessSpawnConfiguration(launchPath: launchPath, arguments: [], environment: env, io: io, mode: .default)
