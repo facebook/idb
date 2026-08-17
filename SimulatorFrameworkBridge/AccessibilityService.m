@@ -31,6 +31,12 @@ static NSString *const kAXIdentifier = @"XC_kAXXCAttributeIdentifier";
 static NSString *const kAXFrame = @"XC_kAXXCAttributeFrame";
 static NSString *const kAXAutomationType = @"XC_kAXXCAttributeAutomationType";
 static NSString *const kAXChildren = @"XC_kAXXCAttributeChildren";
+// The two attributes the runtime answers with a CGPoint. `VisiblePoint` is the point the accessibility
+// server believes a touch actually reaches, and reads `(-1, -1)` when it believes none does; `CenterPoint`
+// is the element's own centre. They are carried verbatim — the sentinel included — because deciding what
+// an unreachable element means is the host's job, not the reader's.
+static NSString *const kAXVisiblePoint = @"XC_kAXXCAttributeVisiblePoint";
+static NSString *const kAXCenterPoint = @"XC_kAXXCAttributeCenterPoint";
 
 static NSString *const kRequestVerb = @"verb";
 static NSString *const kRequestPid = @"pid";
@@ -221,6 +227,39 @@ static NSDictionary *FBAXBridgeFrameDictionary(id frameValue)
   return dictionary ?: @{};
 }
 
+// Whether an attribute is one the runtime answers with a CGPoint.
+//
+// An allowlist keyed on the attribute name, exactly as the frame's coercion is, rather than a test of the
+// value's shape: an attribute that merely happens to arrive as an `X`/`Y` pair must not be silently
+// reinterpreted as a coordinate.
+static BOOL FBAXBridgeIsPointAttribute(NSString *key)
+{
+  return [key isEqualToString:kAXVisiblePoint] || [key isEqualToString:kAXCenterPoint];
+}
+
+// A point attribute arrives as a `CGPoint` dictionary representation (an `X`/`Y` pair), or tolerantly as
+// an `NSValue`-wrapped `CGPoint`. Emit the dictionary representation the host consumes via
+// `CGPointMakeWithDictionaryRepresentation` — the same treatment, and for the same reason, that the frame
+// gets: flattened through `-description` a coordinate reaches the host as prose no caller can read.
+static NSDictionary *FBAXBridgePointDictionary(id pointValue)
+{
+  CGPoint point = CGPointZero;
+  if ([pointValue isKindOfClass:NSDictionary.class]) {
+    if (CGPointMakeWithDictionaryRepresentation((__bridge CFDictionaryRef)pointValue, &point)) {
+      return (NSDictionary *)pointValue;
+    }
+  } else if ([pointValue isKindOfClass:NSValue.class]) {
+    NSValue *value = (NSValue *)pointValue;
+    if (strcmp(value.objCType, @encode(CGPoint)) == 0) {
+      [value getValue:&point size:sizeof(point)];
+    }
+  } else if (pointValue) {
+    NSLog(@"[AccessibilityService] unexpected point value class: %@", [pointValue class]);
+  }
+  NSDictionary *dictionary = (NSDictionary *)CFBridgingRelease(CGPointCreateDictionaryRepresentation(point));
+  return dictionary ?: @{};
+}
+
 // JSON cannot represent infinity or NaN: `NSJSONSerialization` *raises* an `NSInvalidArgumentException`
 // on a non-finite number rather than returning an error, which would abort this process and drop the
 // client's connection mid-read. An element that is off-screen or still being laid out (common on the
@@ -270,6 +309,9 @@ static id FBAXBridgeJSONSafeValue(id _Nullable value, NSString *key)
   }
   if ([key isEqualToString:kAXFrame]) {
     return FBAXBridgeFrameDictionary(value);
+  }
+  if (FBAXBridgeIsPointAttribute(key)) {
+    return FBAXBridgePointDictionary(value);
   }
   if ([value isKindOfClass:NSString.class] || [value isKindOfClass:NSNumber.class]) {
     return value;

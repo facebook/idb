@@ -810,15 +810,11 @@ static NSDictionary *FBAXTestsPress(void)
 
 #pragma mark - Attribute value coercion
 
-// The tree walk coerces every attribute value into something JSON can carry, but only the frame gets a
-// structural representation — every other object is flattened with `-description`. The accessibility
-// runtime reports its geometric attributes as `X`/`Y`(`/Width`/`Height`) dictionaries, so any such
-// attribute other than the frame reaches the host as the text `NSDictionary` happens to print, and a
-// consumer cannot read a coordinate out of it without parsing prose.
-//
-// BUG: a point-valued attribute serializes as its `-description` string instead of a structured
-// object — flipped in the following commit.
-- (void)testPointValuedAttributeIsFlattenedToItsDescription
+// The tree walk coerces every attribute value into something JSON can carry. The accessibility runtime
+// reports its geometric attributes as `X`/`Y`(`/Width`/`Height`) dictionaries, and a point attribute is
+// given the same structural treatment the frame gets, so a consumer reads a coordinate rather than the
+// text `NSDictionary` happens to print.
+- (void)testPointValuedAttributeIsCarriedThroughStructurally
 {
   NSDictionary *point = @{@"X" : @201, @"Y" : @789.5};
   FBAXFakeElement *root = [FBAXFakeElement readable:@"UIApplication"];
@@ -826,8 +822,9 @@ static NSDictionary *FBAXTestsPress(void)
   _runtime.applicationElements[@(kAppPid)] = root;
 
   id emitted = FBAXBridgeHandleRequest(@{@"verb" : @"describe", @"pid" : @(kAppPid)})[@"tree"][kAXVisiblePoint];
-  XCTAssertTrue([emitted isKindOfClass:NSString.class], @"a point is flattened to text, got %@", [emitted class]);
-  XCTAssertEqualObjects(emitted, point.description);
+  XCTAssertTrue([emitted isKindOfClass:NSDictionary.class], @"a point stays structured, got %@", [emitted class]);
+  XCTAssertEqualObjects(emitted[@"X"], @201);
+  XCTAssertEqualObjects(emitted[@"Y"], @789.5);
 }
 
 // The contrast that makes the above a statement about the *key* rather than about dictionaries: the
