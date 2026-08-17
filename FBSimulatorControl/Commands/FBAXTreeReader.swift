@@ -186,7 +186,7 @@ extension FBAXTreeReader {
         reasons: reasons.map { reason in
           if case .occluded(nil) = reason { return .occluded(by: occluder) }
           return reason
-        }
+        }.mostSpecificFirst
       )
     )
     return element
@@ -370,14 +370,14 @@ enum FBAXScreenBoundsClassifier {
   ) -> FBAccessibilityDocumentElement {
     guard let screen,
       case let .blocked(reasons)?? = element.interactable,
-      !reasons.contains(.clippedByScreen),
+      !reasons.contains(.clippedByScreen), // idempotent: ordering is guaranteed at encode, not here
       let frame = (element.frame ?? nil)?.rect,
       frame.minX < 0 || frame.minY < 0 || frame.maxX > screen.width || frame.maxY > screen.height
     else {
       return element
     }
     var element = element
-    element.interactable = .some(.blocked(reasons: reasons + [.clippedByScreen]))
+    element.interactable = .some(.blocked(reasons: (reasons + [.clippedByScreen]).mostSpecificFirst))
     return element
   }
 }

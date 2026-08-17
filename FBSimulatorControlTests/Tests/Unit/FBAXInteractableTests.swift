@@ -107,7 +107,9 @@ final class FBAXInteractableTests: XCTestCase {
         )
       ) ?? nil
     )
-    XCTAssertEqual(value, .blocked(reasons: [.zeroSize, .userInteractionDisabled, .notHittable]))
+    XCTAssertEqual(
+      value, .blocked(reasons: [.zeroSize, .userInteractionDisabled, .notHittable]),
+      "explanations keep their derivation order; the bare observation sorts last")
   }
 
   // MARK: - Cannot answer
@@ -179,19 +181,19 @@ final class FBAXInteractableTests: XCTestCase {
   func testAnElementStraddlingTheTopEdgeIsNotedAsClipped() {
     XCTAssertEqual(
       Self.clipped(frame: CGRect(x: 16, y: -21.3, width: 370, height: 52)),
-      .blocked(reasons: [.notHittable, .clippedByScreen]))
+      .blocked(reasons: [.clippedByScreen, .notHittable]))
   }
 
   func testAnElementStraddlingTheBottomEdgeIsNotedAsClipped() {
     XCTAssertEqual(
       Self.clipped(frame: CGRect(x: 16, y: 850, width: 370, height: 52)),
-      .blocked(reasons: [.notHittable, .clippedByScreen]))
+      .blocked(reasons: [.clippedByScreen, .notHittable]))
   }
 
   func testAnElementStraddlingASideEdgeIsNotedAsClipped() {
     XCTAssertEqual(
       Self.clipped(frame: CGRect(x: -30, y: 400, width: 370, height: 52)),
-      .blocked(reasons: [.notHittable, .clippedByScreen]))
+      .blocked(reasons: [.clippedByScreen, .notHittable]))
   }
 
   // Wholly within the screen: whatever blocks it, the edge is not part of it.
@@ -210,12 +212,21 @@ final class FBAXInteractableTests: XCTestCase {
     )
   }
 
-  // Idempotent, so a refinement that runs twice cannot double the reason.
+  // Idempotent, so a refinement that runs twice cannot double the reason. The value is returned
+  // untouched, ordering included — the ordering guarantee is applied at encode, so no construction or
+  // early-return path can bypass it.
   func testClippingIsNotAddedTwice() {
     XCTAssertEqual(
       Self.clipped(frame: CGRect(x: 16, y: -10, width: 370, height: 52), reasons: [.notHittable, .clippedByScreen]),
       .blocked(reasons: [.notHittable, .clippedByScreen])
     )
+  }
+
+  // Whatever order a value was built in, the encoded form leads with an explanation.
+  func testTheEncodedFormIsAlwaysOrderedMostSpecificFirst() throws {
+    let encoded = try Self.encode(.blocked(reasons: [.notHittable, .clippedByScreen]))
+    let reasons = try XCTUnwrap(encoded["reasons"] as? [[String: Any]])
+    XCTAssertEqual(reasons.map { $0["kind"] as? String }, ["clipped_by_screen", "not_hittable"])
   }
 
   // An actionable element is never annotated: it carries a reachable point and nothing else, so there is
@@ -227,6 +238,27 @@ final class FBAXInteractableTests: XCTestCase {
     let refined: FBAccessibilityInteractable? =
       FBAXScreenBoundsClassifier.notingScreenClipping(element, screen: Self.screen).interactable ?? nil
     XCTAssertEqual(refined, FBAccessibilityInteractable.actionable(at: FBAccessibilityPoint(x: 201, y: 20)))
+  }
+
+  // The whole point of the ordering: a consumer that reads only `reasons[0]` gets the most actionable
+  // thing known, never the bare observation that explains nothing.
+  func testTheBareObservationSortsBehindEveryExplanation() {
+    let reasons: [FBAccessibilityInteractable.Reason] =
+      [.notHittable, .clippedByScreen, .userInteractionDisabled]
+    XCTAssertEqual(reasons.mostSpecificFirst, [.clippedByScreen, .userInteractionDisabled, .notHittable])
+    XCTAssertFalse(reasons.mostSpecificFirst[0].isBareObservation)
+  }
+
+  // Ordering is a partition, not a sort, so explanations keep the order the checks derived them in.
+  func testExplanationsKeepTheirDerivationOrder() {
+    let reasons: [FBAccessibilityInteractable.Reason] =
+      [.zeroSize, .notHittable, .hidden, .disabled]
+    XCTAssertEqual(reasons.mostSpecificFirst, [.zeroSize, .hidden, .disabled, .notHittable])
+  }
+
+  // A lone bare observation is left alone — it is the commonest blocked shape, not a degenerate one.
+  func testALoneObservationIsUnchanged() {
+    XCTAssertEqual([FBAccessibilityInteractable.Reason.notHittable].mostSpecificFirst, [.notHittable])
   }
 
   // MARK: - The `interactable` filter

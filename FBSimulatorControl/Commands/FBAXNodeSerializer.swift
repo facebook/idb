@@ -212,7 +212,7 @@ enum FBAXNodeSerializer {
     }
 
     guard reasons.isEmpty, let hittablePoint else {
-      return .blocked(reasons: reasons.isEmpty ? [.notHittable] : reasons)
+      return .blocked(reasons: (reasons.isEmpty ? [.notHittable] : reasons).mostSpecificFirst)
     }
     return .actionable(at: hittablePoint)
   }

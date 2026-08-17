@@ -307,14 +307,41 @@ public enum FBAccessibilityInteractable: Sendable, Equatable {
 
   /// The element cannot be acted on, for at least one reason. Never empty — an empty reason list is the
   /// actionable case, and the type makes that unrepresentable.
+  ///
+  /// **Ordered most specific first.** `reasons[0]` is the most actionable thing known about the element,
+  /// so a consumer that reads only the first gets the best answer rather than an arbitrary one. The
+  /// general observation `notHittable` — the accessibility server saying it found no reachable point,
+  /// without saying why — always sorts last, behind anything that explains it.
   case blocked(reasons: [Reason])
 
   /// Why an element cannot be acted on. A closed vocabulary, each case traceable to an attribute that was
   /// actually read rather than to a heuristic over geometry.
+  ///
+  /// Two tiers. Every case but `notHittable` names a cause and says what to do about it; `notHittable` is
+  /// the bare observation that the accessibility server found no reachable point and did not say why. The
+  /// tiers accumulate rather than compete — an element is routinely both unreachable and clipped — and
+  /// the ordering in `blocked` keeps the explanations ahead of the observation.
   public enum Reason: Sendable, Equatable {
-    /// The accessibility server reports no reachable point on the element at all. Covers being covered
-    /// outright, clipped by an ancestor, fully transparent, or scrolled out of its container — which of
-    /// those it is cannot be told apart from this attribute alone.
+    /// The accessibility server can name no point at which a touch reaches this element, and has not
+    /// said why.
+    ///
+    /// An observation, not a cause — the only case here that explains nothing. It is `IsVisible == false`
+    /// read straight through, and it is the most common blocked shape by some margin, so it is worth
+    /// being exact about what it does *not* mean:
+    ///
+    /// - **Not "off screen".** An element entirely outside the screen is absent from the tree altogether.
+    /// - **Not "hidden".** A full-screen pass-through container reports it while being plainly visible.
+    /// - **Not "something is on top".** Elements sharing a frame can all report a reachable point.
+    ///
+    /// What it does cover is at least four situations needing four different responses: a label inside a
+    /// tappable control (act on the parent), a pass-through container (act on the child), an element
+    /// genuinely covered by an unrelated one (move the occluder), and one that is transparent or clipped
+    /// by an ancestor (nothing will help). Only a hit-test can separate them, which is why this cannot be
+    /// removed in favour of more precise cases — none of the freely-available signals discriminate. In
+    /// particular "an actionable ancestor exists" does not: the application root is itself actionable and
+    /// full-screen, so it is true of every element on the screen.
+    ///
+    /// Because it explains nothing it sorts last in `reasons`, behind anything that does.
     case notHittable
     /// The element has a reachable point, but it is not the centre — so the centre is covered, and
     /// automation aiming there hits whatever is on top. `by` names that element when a hit-test was paid
@@ -400,6 +427,29 @@ public struct FBAccessibilityOccluder: Sendable, Equatable, Encodable {
   }
 }
 
+public extension FBAccessibilityInteractable.Reason {
+  /// Whether this reason merely observes that the element is unreachable, without explaining it.
+  ///
+  /// Exactly one case is an observation today. It is expressed as a property rather than an equality
+  /// check so that a second one added later sorts correctly by saying so, rather than by someone
+  /// remembering to update a sort.
+  var isBareObservation: Bool {
+    if case .notHittable = self { return true }
+    return false
+  }
+}
+
+public extension Array where Element == FBAccessibilityInteractable.Reason {
+  /// The reasons with every explanation ahead of every bare observation, each group keeping the order it
+  /// was derived in.
+  ///
+  /// A partition rather than a sort: Swift's sort is not guaranteed stable, and the derivation order
+  /// within a group is meaningful — it is the order the checks run in, which the tests pin.
+  var mostSpecificFirst: [FBAccessibilityInteractable.Reason] {
+    filter { !$0.isBareObservation } + filter { $0.isBareObservation }
+  }
+}
+
 public extension FBAccessibilityInteractable {
 
   /// The union is **internally tagged**: every value is an object and the shapes differ by case, so a
@@ -429,7 +479,10 @@ extension FBAccessibilityInteractable: Encodable {
       try container.encode(at, forKey: .at)
     case let .blocked(reasons):
       try container.encode(Status.blocked, forKey: .status)
-      try container.encode(reasons, forKey: .reasons)
+      // Ordered here rather than trusting every construction site: the guarantee that `reasons[0]` is the
+      // most actionable thing known belongs to the wire, and a refinement pass that returns early must not
+      // be able to bypass it.
+      try container.encode(reasons.mostSpecificFirst, forKey: .reasons)
     }
   }
 }
@@ -844,7 +897,10 @@ public extension FBAccessibilityInteractable {
     case let .actionable(at):
       return ["status": Status.actionable.rawValue, "at": ["x": at.x, "y": at.y]]
     case let .blocked(reasons):
-      return ["status": Status.blocked.rawValue, "reasons": reasons.map { $0.legacyFoundationObject }]
+      return [
+        "status": Status.blocked.rawValue,
+        "reasons": reasons.mostSpecificFirst.map { $0.legacyFoundationObject },
+      ]
     }
   }
 }
