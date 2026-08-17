@@ -11,10 +11,37 @@ permissions:
   contents: write
 
 jobs:
+  # The single owner of `gh release create`: with both build jobs creating the
+  # release concurrently, whichever won the race decided the release's title
+  # and notes. Skipped on workflow_dispatch (no tag to release); the build jobs
+  # tolerate that skip explicitly below.
+  create-release:
+    name: Create the GitHub release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Tolerate re-runs of the same tag: only create the release if it
+          # does not already exist, and never mask a genuine creation failure.
+          if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            echo "Release $GITHUB_REF_NAME already exists, leaving it as-is"
+          else
+            gh release create "$GITHUB_REF_NAME" --prerelease --title "$GITHUB_REF_NAME" --generate-notes --repo "$GITHUB_REPOSITORY"
+          fi
+
   companion:
     name: Build and publish idb_companion
     runs-on: macos-26
     timeout-minutes: 120
+    # `!cancelled()` suppresses the implicit success() so this still runs when
+    # create-release is skipped (workflow_dispatch), while a failed or
+    # cancelled create-release still blocks the upload legs.
+    needs: [create-release]
+    if: ${{ !cancelled() && (needs.create-release.result == 'success' || needs.create-release.result == 'skipped') }}
     env:
       XCODEGEN_STRIP_XATTRS: 'false'
     steps:
@@ -39,12 +66,11 @@ jobs:
         with:
           name: idb-companion
           path: idb-companion.universal.tar.gz*
-      - name: Create release and upload
+      - name: Upload to release
         if: startsWith(github.ref, 'refs/tags/v')
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" --prerelease --title "$GITHUB_REF_NAME" --generate-notes --repo "$GITHUB_REPOSITORY" || true
           gh release upload "$GITHUB_REF_NAME" idb-companion.universal.tar.gz idb-companion.universal.tar.gz.sha256 --clobber --repo "$GITHUB_REPOSITORY"
       - name: Homebrew formula update instructions
         if: startsWith(github.ref, 'refs/tags/v')
@@ -62,6 +88,9 @@ jobs:
     name: Build fb-idb distributions
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    # See companion: run on dispatch (create-release skipped), block on failure.
+    needs: [create-release]
+    if: ${{ !cancelled() && (needs.create-release.result == 'success' || needs.create-release.result == 'skipped') }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -88,5 +117,4 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" --prerelease --title "$GITHUB_REF_NAME" --generate-notes --repo "$GITHUB_REPOSITORY" || true
           gh release upload "$GITHUB_REF_NAME" dist/* --clobber --repo "$GITHUB_REPOSITORY"
