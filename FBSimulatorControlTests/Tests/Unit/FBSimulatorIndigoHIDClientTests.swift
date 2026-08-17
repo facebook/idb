@@ -84,12 +84,6 @@ private final class FailingSendLegacyHIDClientStub: NSObject {
   }
 }
 
-/// Holds what a `@Sendable` completion was handed, which it cannot do by capturing a local.
-private final class CompletionCapture: @unchecked Sendable {
-  var wasCalled = false
-  var error: Error?
-}
-
 @Suite("Legacy Indigo HID client")
 struct FBSimulatorIndigoHIDClientTests {
 
@@ -145,46 +139,27 @@ struct FBSimulatorIndigoHIDClientTests {
     #expect((try #require(underlying) as NSError).localizedDescription == NilReturningLegacyHIDClientStub.reason)
   }
 
-  @Test("A send the client reports as failed is delivered to the completion")
-  func sendReportsClientFailure() throws {
+  @Test("A send the client reports as failed throws to the caller")
+  func sendReportsClientFailure() async throws {
     let client = try FBSimulatorIndigoHIDClient(
       device: NSObject(), clientClass: FBObjCRuntimeClass(FailingSendLegacyHIDClientStub.self))
-    let capture = CompletionCapture()
-
-    client.sendData(Data([0x01, 0x02])) {
-      capture.wasCalled = true
-      capture.error = $0
+    let error = try await #require(throws: (any Error).self) {
+      try await client.send(Data([0x01, 0x02]))
     }
-
-    #expect(capture.wasCalled)
-    #expect(try #require(capture.error).localizedDescription == FailingSendLegacyHIDClientStub.reason)
+    #expect(error.localizedDescription == FailingSendLegacyHIDClientStub.reason)
   }
 
-  @Test("A send whose client raises reports the raise to the completion")
-  func sendRaises() throws {
+  @Test("A send whose client raises throws the raise to the caller")
+  func sendRaises() async throws {
     let client = try FBSimulatorIndigoHIDClient(
       device: NSObject(), clientClass: FBObjCRuntimeClass(RaisingSendLegacyHIDClientStub.self))
-    let capture = CompletionCapture()
-    var raised: Error?
-    do {
-      // `sendData` rather than `send(_:)`: the async entry point hops onto the client's own queue,
-      // putting the raise on a thread no caller can wrap. The client is expected to convert the raise
-      // itself; this guard is only here so that a regression fails one test rather than aborting the
-      // whole test process, which is what it does to `idb_companion`.
-      try FBObjCExceptionGuard.run {
-        client.sendData(Data([0x01, 0x02])) {
-          capture.wasCalled = true
-          capture.error = $0
-        }
-      }
-    } catch {
-      raised = error
+    // Returning here at all is half of what this pins. The send runs on the client's own queue, so
+    // nothing on the test's side can wrap it — an unguarded raise would reach `libc++abi` and abort
+    // the test process, exactly as it does `idb_companion`.
+    let error = try await #require(throws: (any Error).self) {
+      try await client.send(Data([0x01, 0x02]))
     }
-
-    #expect(raised == nil)
-    #expect(capture.wasCalled)
-    let completionError = try #require(capture.error) as NSError
-    #expect(completionError.domain == FBObjCExceptionGuardErrorDomain)
-    #expect(completionError.localizedDescription == RaisingSendLegacyHIDClientStub.reason)
+    #expect((error as NSError).domain == FBObjCExceptionGuardErrorDomain)
+    #expect(error.localizedDescription == RaisingSendLegacyHIDClientStub.reason)
   }
 }

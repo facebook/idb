@@ -103,53 +103,49 @@ final class FBSimulatorIndigoHIDClient: @unchecked Sendable {
     client = nil
   }
 
-  /// Sends the message bytes, completing when the client acknowledges delivery.
+  /// Sends the message bytes, returning when the client acknowledges delivery.
+  ///
+  /// The send is made on `queue`, which serializes it against the `disconnect()` that can arrive
+  /// from any thread.
   func send(_ data: Data) async throws {
     try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
       queue.async { [self] in
-        sendData(data) { error in
-          if let error {
-            continuation.resume(throwing: error)
-          } else {
-            continuation.resume()
+        // The event is delivered asynchronously. Copy the message and let the client manage its lifecycle:
+        // the free of the buffer is performed by the client (freeWhenDone) and the Data frees when out of scope.
+        let size = data.count
+        guard let raw = malloc(size) else {
+          fatalError("Failed to allocate \(size) bytes for an Indigo message")
+        }
+        data.withUnsafeBytes { (buffer: UnsafeRawBufferPointer) in
+          guard let base = buffer.baseAddress else { return }
+          raw.copyMemory(from: base, byteCount: size)
+        }
+        guard let client else {
+          // FIXME: leaves the continuation unresumed, so a send after `disconnect()` never returns.
+          // Pre-existing, carried across unchanged rather than fixed here so this stays a refactor.
+          free(raw)
+          return
+        }
+        do {
+          try FBObjCExceptionGuard.run {
+            unsafeBitCast(client, to: SimDeviceLegacyHIDClientMessaging.self)
+              .send(withMessage: raw, freeWhenDone: true, completionQueue: queue) { error in
+                if let error {
+                  continuation.resume(throwing: error)
+                } else {
+                  continuation.resume()
+                }
+              }
           }
+        } catch {
+          // `raw` is deliberately not freed. Ownership passes to the client with `freeWhenDone`, and a
+          // raise leaves no way to tell whether it got that far; one leaked message beats a double free.
+          //
+          // Resuming here assumes the client cannot have already completed before raising — true of
+          // every observed raise, which come from `-[SimDeviceIOClient ioPorts]` on the way in.
+          continuation.resume(throwing: error)
         }
       }
-    }
-  }
-
-  /// Sends the message bytes synchronously, reporting the outcome to `completion`. Callers must
-  /// guarantee all calls are from `queue`, which is also the queue the client completes on.
-  ///
-  /// Internal rather than private so that tests can drive a send without the hop that `send(_:)`
-  /// makes onto `queue`, which would put a raise on a thread they have no way to guard.
-  func sendData(_ data: Data, completion: @escaping @Sendable (Error?) -> Void) {
-    // The event is delivered asynchronously. Copy the message and let the client manage its lifecycle:
-    // the free of the buffer is performed by the client (freeWhenDone) and the Data frees when out of scope.
-    let size = data.count
-    guard let raw = malloc(size) else {
-      fatalError("Failed to allocate \(size) bytes for an Indigo message")
-    }
-    data.withUnsafeBytes { (buffer: UnsafeRawBufferPointer) in
-      guard let base = buffer.baseAddress else { return }
-      raw.copyMemory(from: base, byteCount: size)
-    }
-    guard let client else {
-      free(raw)
-      return
-    }
-    do {
-      try FBObjCExceptionGuard.run {
-        unsafeBitCast(client, to: SimDeviceLegacyHIDClientMessaging.self)
-          .send(withMessage: raw, freeWhenDone: true, completionQueue: queue, completion: completion)
-      }
-    } catch {
-      // `raw` is deliberately not freed. Ownership passes to the client with `freeWhenDone`, and a
-      // raise leaves no way to tell whether it got that far; one leaked message beats a double free.
-      //
-      // Delivering here assumes the client cannot have already run `completion` before raising —
-      // true of every observed raise, which come from `-[SimDeviceIOClient ioPorts]` on the way in.
-      completion(error)
     }
   }
 }
