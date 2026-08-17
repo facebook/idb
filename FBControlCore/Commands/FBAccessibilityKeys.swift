@@ -41,6 +41,16 @@ public enum FBAXKeys: String, Sendable, CaseIterable {
   /// from `interactable` rather than folded into it, and implies it.
   case occludedBy = "occluded_by"
 
+  /// What `occluded_by` needs serialized to do its work.
+  ///
+  /// It hit-tests an element's centre and then has to recognise whether the element that answered is a
+  /// relative of the target or a stranger. Both halves need fields: the centre comes from the frame, and
+  /// the recognition compares what the two reads can both see. A field present on one side and absent on
+  /// the other never matches, so a relative reads as a stranger and a label inside its own button gets
+  /// reported as *covered by* something — a confident, wrong answer. Requesting them together is what
+  /// keeps the comparison symmetric.
+  public static let occluderIdentityKeys: Set<FBAXKeys> = [.interactable, .frameDict, .type, .uniqueID, .label]
+
   /// Default set of keys returned when no specific keys are requested.
   public static let defaultSet: Set<FBAXKeys> = [
     .label, .frame, .value, .uniqueID, .type, .title, .frameDict, .help,

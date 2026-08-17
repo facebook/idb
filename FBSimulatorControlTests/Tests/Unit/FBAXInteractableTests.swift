@@ -267,17 +267,16 @@ final class FBAXInteractableTests: XCTestCase {
   // answered is a relative of the target. Both halves need serialized fields it does not ask for: the
   // centre comes from the frame, and the recognition compares what the two reads can both see.
   //
-  // BUG: requesting it implies only `interactable`, so without an explicit `--key frame` the enrichment
-  // finds no centre and silently does nothing — indistinguishable from an element that needed none — and
-  // the identity comparison is asymmetric, so a relative can read as a stranger. Flipped in the following
-  // commit.
-  func testOccludedByDoesNotImplyTheKeysItsHitTestNeeds() {
+  // Requesting it therefore implies all of them, which is what keeps the enrichment able to run and the
+  // identity comparison symmetric.
+  func testOccludedByImpliesTheKeysItsHitTestNeeds() {
     let keys = FBAccessibilityRequestOptions(keys: [.occludedBy]).serializationKeys
-    XCTAssertTrue(keys.contains(.interactable), "it does imply the thing it enriches")
-    XCTAssertFalse(keys.contains(.frameDict), "but not the frame its hit-test is aimed by")
-    XCTAssertFalse(keys.contains(.uniqueID), "nor the fields identity is compared on")
-    XCTAssertFalse(keys.contains(.type))
-    XCTAssertFalse(keys.contains(.label))
+    XCTAssertTrue(keys.contains(.interactable), "the thing it enriches")
+    XCTAssertTrue(keys.contains(.frameDict), "the frame its hit-test is aimed by")
+    XCTAssertTrue(keys.contains(.uniqueID), "and the fields identity is compared on")
+    XCTAssertTrue(keys.contains(.type))
+    XCTAssertTrue(keys.contains(.label))
+    XCTAssertTrue(keys.isSuperset(of: FBAXKeys.occluderIdentityKeys))
   }
 
   // MARK: - Explanatory power

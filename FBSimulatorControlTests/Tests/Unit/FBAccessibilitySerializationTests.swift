@@ -345,9 +345,10 @@ final class FBAccessibilitySerializationTests: XCTestCase {
   // explicit null when the element has no value for it, and nothing for a key that was not asked for.
   // That is the contract `--key` rests on, and it holds for every key in the schema.
   //
-  // `occluded_by` is the one key that names no field of its own — it enriches `interactable`'s `occluded`
-  // reason with the element covering the centre — so it is asserted against what it actually emits rather
-  // than exempted from the contract.
+  // `occluded_by` is the one key that names no field of its own. It enriches `interactable`'s reasons
+  // with the element that received the touch, and to do that it needs the frame its hit-test is aimed by
+  // and the fields the resulting identity is compared on — so requesting it emits those too, and it is
+  // asserted against what it actually emits rather than exempted from the contract.
   func testEveryRequestedKeyIsPresentInTheSerializedElement() throws {
     for key in FBAXKeys.allCases {
       // Through `serializationKeys` rather than the bare key, because that is the path a `--key` request
@@ -359,7 +360,10 @@ final class FBAccessibilitySerializationTests: XCTestCase {
         pid: 7
       )
       let rendered = try XCTUnwrap(elements.first).legacyObject()
-      let expected: Set<String> = key == .occludedBy ? [FBAXKeys.interactable.rawValue] : [key.rawValue]
+      let expected: Set<String> =
+        key == .occludedBy
+        ? Set(FBAXKeys.occluderIdentityKeys.map { $0 == .frameDict ? "frame" : $0.rawValue })
+        : [key.rawValue]
       XCTAssertEqual(Set(rendered.keys), expected, "--key \(key.rawValue) must emit exactly \(expected)")
     }
   }

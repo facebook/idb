@@ -346,7 +346,15 @@ public enum FBAccessibilityInteractable: Sendable, Equatable {
     /// The element has a reachable point, but it is not the centre — so the centre is covered, and
     /// automation aiming there hits whatever is on top. `by` names that element when a hit-test was paid
     /// for, and is nil otherwise.
-    case occluded(by: FBAccessibilityOccluder?)
+    case occluded(by: FBAccessibilityElementRef?)
+    /// A touch aimed here is delivered to a relative instead — an ancestor that owns this element, or a
+    /// descendant it passes through to. The element is not independently interactive and was never meant
+    /// to be: a label inside a button, or a container laying out the control that does the work.
+    ///
+    /// Not a fault, and the recovery is neither scrolling nor moving anything: act on the named element.
+    /// Requires a hit-test, so it appears only when `occludedBy` was requested — without it these fall
+    /// back to the bare observation.
+    case handledBy(FBAccessibilityElementRef?)
     /// The view has `userInteractionEnabled` off.
     case userInteractionDisabled
     /// The element reports itself disabled.
@@ -390,10 +398,13 @@ public struct FBAccessibilityPoint: Sendable, Equatable, Encodable {
   }
 }
 
-/// The element found covering another element's centre. Descriptive rather than a handle: a hit-test
-/// resolves an element with no identity that outlives the call, so what can honestly be reported is what
-/// it looked like.
-public struct FBAccessibilityOccluder: Sendable, Equatable, Encodable {
+/// An element resolved by a hit-test — whatever actually receives a touch aimed at another element.
+///
+/// Descriptive rather than a handle: a hit-test resolves an element with no identity that outlives the
+/// call, so what can honestly be reported is what it looked like. Used for both an unrelated element
+/// covering the target and a relative of the target that takes the touch on its behalf, because from the
+/// hit-test's point of view those are the same answer read two different ways.
+public struct FBAccessibilityElementRef: Sendable, Equatable, Encodable {
   public let type: String?
   public let identifier: String?
   public let label: String?
@@ -500,6 +511,7 @@ extension FBAccessibilityInteractable.Reason: Encodable {
     switch self {
     case .notHittable: return "not_hittable"
     case .occluded: return "occluded"
+    case .handledBy: return "handled_by"
     case .userInteractionDisabled: return "user_interaction_disabled"
     case .disabled: return "disabled"
     case .hidden: return "hidden"
@@ -511,10 +523,13 @@ extension FBAccessibilityInteractable.Reason: Encodable {
   public func encode(to encoder: Encoder) throws {
     var container = encoder.container(keyedBy: CodingKeys.self)
     try container.encode(kind, forKey: .kind)
-    // `by` is emitted only by the case that can have one, and only when a hit-test named it — the reason
-    // the occluder lives on the case rather than beside it.
-    if case let .occluded(by) = self, let by {
-      try container.encode(by, forKey: .by)
+    // `by` is emitted only by the cases that can have one, and only when a hit-test named it — the reason
+    // the reference lives on the case rather than beside it.
+    switch self {
+    case let .occluded(by), let .handledBy(by):
+      try container.encodeIfPresent(by, forKey: .by)
+    default:
+      break
     }
   }
 }
@@ -993,14 +1008,17 @@ public extension FBAccessibilityInteractable {
 
 public extension FBAccessibilityInteractable.Reason {
   var legacyFoundationObject: [String: Any] {
-    guard case let .occluded(by) = self, let by else {
+    switch self {
+    case let .occluded(by), let .handledBy(by):
+      guard let by else { return ["kind": kind] }
+      return ["kind": kind, "by": by.legacyFoundationObject]
+    default:
       return ["kind": kind]
     }
-    return ["kind": kind, "by": by.legacyFoundationObject]
   }
 }
 
-public extension FBAccessibilityOccluder {
+public extension FBAccessibilityElementRef {
   var legacyFoundationObject: [String: Any] {
     [
       "type": type ?? NSNull(),

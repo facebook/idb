@@ -122,9 +122,11 @@ public struct FBAccessibilityRequestOptions: Sendable {
   ) -> Set<FBAXKeys> {
     var expanded = keys
     // `occluded_by` enriches `interactable`'s reasons rather than emitting a field of its own, so asking
-    // for it asks for the thing it enriches.
+    // for it asks for the thing it enriches — and for the frame, since the hit-test it performs is aimed
+    // at the element's centre and has nowhere else to get one. Without the frame it silently found no
+    // centre and enriched nothing, which looked exactly like an element that needed no enrichment.
     if expanded.contains(.occludedBy) {
-      expanded.insert(.interactable)
+      expanded.formUnion(FBAXKeys.occluderIdentityKeys)
     }
     if format == .complete {
       if keys.contains(.frame) {

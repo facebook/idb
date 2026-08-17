@@ -149,22 +149,26 @@ extension FBAXTreeReader {
     var refined: [FBAccessibilityDocumentElement] = []
     refined.reserveCapacity(elements.count)
     for element in elements {
-      refined.append(await refiningInteractable(of: element, screen: screen, options: options))
+      refined.append(await refiningInteractable(of: element, ancestors: [], screen: screen, options: options))
     }
     return refined
   }
 
   private func refiningInteractable(
     of element: FBAccessibilityDocumentElement,
+    ancestors: [FBAXElementIdentity],
     screen: FBAccessibilityScreenInfo?,
     options: FBAccessibilityRequestOptions
   ) async -> FBAccessibilityDocumentElement {
     var element = element
+    let ancestryForChildren = ancestors + [FBAXElementIdentity(element)]
     if let children = element.children {
       var refined: [FBAccessibilityDocumentElement] = []
       refined.reserveCapacity(children.count)
       for child in children {
-        refined.append(await refiningInteractable(of: child, screen: screen, options: options))
+        refined.append(
+          await refiningInteractable(of: child, ancestors: ancestryForChildren, screen: screen, options: options)
+        )
       }
       element.children = refined
     }
@@ -175,26 +179,61 @@ extension FBAXTreeReader {
       return element
     }
     guard case let .blocked(reasons)?? = element.interactable,
-      reasons.contains(where: { if case .occluded(nil) = $0 { return true } else { return false } }),
       let centre = (element.frame ?? nil)?.rect.map({ CGPoint(x: $0.midX, y: $0.midY) })
     else {
       return element
     }
-    let occluder = await occluder(atCentre: centre)
+    // Two reasons are worth a hit-test: one already known to be occluded but not yet named, and the bare
+    // observation, which a hit-test can usually turn into an explanation. Anything else is already
+    // explained and would only be paying for an answer it has.
+    let needsNaming = reasons.contains { if case .occluded(nil) = $0 { return true } else { return false } }
+    let needsExplaining = reasons.contains(.notHittable)
+    guard needsNaming || needsExplaining else {
+      return element
+    }
+    guard let found = await elementRef(atCentre: centre) else {
+      return element
+    }
+    // Whether the element that took the touch is a relative decides which answer this is. A relative
+    // means the element was never independently interactive — a label inside its button, or a container
+    // passing through to its child — and the caller should act on that relative. Anything else is
+    // genuinely in the way.
+    let isRelative =
+      ancestors.contains(found.identity) || Self.descendantIdentities(of: element).contains(found.identity)
     element.interactable = .some(
       .blocked(
         reasons: reasons.map { reason in
-          if case .occluded(nil) = reason { return .occluded(by: occluder) }
+          if case .occluded(nil) = reason {
+            return isRelative ? .handledBy(found.reference) : .occluded(by: found.reference)
+          }
+          if case .notHittable = reason {
+            return isRelative ? .handledBy(found.reference) : .occluded(by: found.reference)
+          }
           return reason
-        }.mostSpecificFirst
+        }
       )
     )
     return element
   }
 
-  /// The element a hit-test finds at a point, as an occluder descriptor. Nil when nothing is there or the
-  /// hit-test fails, both of which leave the occlusion reported but unattributed.
-  private func occluder(atCentre centre: CGPoint) async -> FBAccessibilityOccluder? {
+  /// The identities of everything below `element`, for recognising a hit result as its own descendant.
+  private static func descendantIdentities(of element: FBAccessibilityDocumentElement) -> Set<FBAXElementIdentity> {
+    var identities: Set<FBAXElementIdentity> = []
+    func visit(_ children: [FBAccessibilityDocumentElement]?) {
+      for child in children ?? [] {
+        identities.insert(FBAXElementIdentity(child))
+        visit(child.children)
+      }
+    }
+    visit(element.children)
+    return identities
+  }
+
+  /// The element a hit-test finds at a point, as a descriptor plus the identity used to recognise it as a
+  /// relative. Nil when nothing is there or the hit-test fails, both of which leave the reason as it was.
+  private func elementRef(
+    atCentre centre: CGPoint
+  ) async -> (reference: FBAccessibilityElementRef, identity: FBAXElementIdentity)? {
     // Only the descriptive attributes, because that is all an occluder carries; asking for `interactable`
     // here would recurse into another hit-test for an element nobody asked about.
     let options = FBAccessibilityRequestOptions(keys: [.label, .uniqueID, .type, .role, .frameDict, .pid])
@@ -203,13 +242,14 @@ extension FBAXTreeReader {
     else {
       return nil
     }
-    return FBAccessibilityOccluder(
+    let reference = FBAccessibilityElementRef(
       type: found.type ?? nil,
       identifier: found.identifier ?? nil,
       label: found.label ?? nil,
       frame: found.frame ?? nil,
       pid: found.pid ?? nil
     )
+    return (reference, FBAXElementIdentity(found))
   }
 
   /// Resolves a query to the point a write acts on, plus the assertion that keeps a two-step write honest.
@@ -379,5 +419,31 @@ enum FBAXScreenBoundsClassifier {
     var element = element
     element.interactable = .some(.blocked(reasons: (reasons + [.clippedByScreen]).mostSpecificFirst))
     return element
+  }
+}
+
+/// What makes two serialized elements the same element, for recognising a hit-test result inside the tree
+/// it came from.
+///
+/// A hit-test resolves an element with no identity that outlives the call, so identity has to be
+/// reconstructed from what both sides can see: what it is, what it is called, and where it sits. The frame
+/// is what does most of the work — type and label repeat freely across a screen, geometry rarely does.
+struct FBAXElementIdentity: Hashable {
+  private let type: String?
+  private let identifier: String?
+  private let label: String?
+  private let frame: [Double]
+
+  init(_ element: FBAccessibilityDocumentElement) {
+    self.type = element.type ?? nil
+    self.identifier = element.identifier ?? nil
+    self.label = element.label ?? nil
+    let rect = (element.frame ?? nil)?.rect
+    // Rounded, because the two reads reach the same coordinate by different arithmetic and an exact
+    // Double comparison would make identity depend on the last bit.
+    self.frame =
+      rect.map { r -> [Double] in
+        [Double(r.minX), Double(r.minY), Double(r.width), Double(r.height)].map { (($0 * 100).rounded()) / 100 }
+      } ?? []
   }
 }
