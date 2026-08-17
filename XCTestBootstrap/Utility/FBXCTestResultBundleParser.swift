@@ -37,9 +37,16 @@ private func readStringFromDict(_ dict: NSDictionary, _ key: String) -> String {
   return val
 }
 
-private func readArrayFromDict(_ dict: NSDictionary, _ key: String) -> NSArray {
-  guard let val = readFromDict(dict, key) as? NSArray else {
-    preconditionFailure("\(key) is not a NSArray")
+private func readDictionaryFromDict(_ dict: NSDictionary, _ key: String) -> NSDictionary {
+  guard let val = readFromDict(dict, key) as? NSDictionary else {
+    preconditionFailure("\(key) is not a NSDictionary")
+  }
+  return val
+}
+
+private func readDictionaryArrayFromDict(_ dict: NSDictionary, _ key: String) -> [NSDictionary] {
+  guard let val = readFromDict(dict, key) as? [NSDictionary] else {
+    preconditionFailure("\(key) is not an array of NSDictionary")
   }
   return val
 }
@@ -115,10 +122,13 @@ public final class FBXCTestResultBundleParser {
         .onQueue(
           target.workQueue,
           fmap: { actionsInvocationRecord -> FBFuture<AnyObject> in
-            let record = actionsInvocationRecord as! NSDictionary
-            let actions = record["actions"] as! NSDictionary
+            guard let record = actionsInvocationRecord as? NSDictionary,
+              let actions = record["actions"] as? NSDictionary
+            else {
+              return XCTestBootstrapError.describe("Test result bundle root record does not contain any actions").failFuture()
+            }
             let ids = parseActions(actions, logger: logger)
-            var operations: [AnyObject] = []
+            var operations: [FBFuture<AnyObject>] = []
             for bundleObjectId in ids {
               let operation = unsafeBitCast(
                 FBXCTestResultToolOperation.getJSON(from: resultBundlePath, forId: bundleObjectId, queue: target.workQueue, logger: logger),
@@ -127,15 +137,18 @@ public final class FBXCTestResultBundleParser {
               .onQueue(
                 target.workQueue,
                 doOnResolved: { xcresults in
-                  let xcresultsDict = xcresults as! NSDictionary
+                  guard let xcresultsDict = xcresults as? NSDictionary else {
+                    logger.log("Skipping summaries for id \(bundleObjectId), the result is not a dictionary")
+                    return
+                  }
                   logger.log("Parsing summaries for id \(bundleObjectId)")
                   let summaries = accessAndUnwrapValues(xcresultsDict, "summaries", logger)
                   reportSummaries(summaries, reporter: reporter, queue: target.asyncQueue, resultBundlePath: resultBundlePath, logger: logger, extractScreenshots: extractScreenshots)
                   logger.log("Done parsing summaries for id \(bundleObjectId)")
                 })
-              operations.append(operation as AnyObject)
+              operations.append(operation)
             }
-            return unsafeBitCast(FBFuture<AnyObject>.combine(operations as! [FBFuture<AnyObject>]), to: FBFuture<AnyObject>.self)
+            return unsafeBitCast(FBFuture<AnyObject>.combine(operations), to: FBFuture<AnyObject>.self)
           }),
         to: FBFuture<NSNull>.self
       )
@@ -222,12 +235,12 @@ public final class FBXCTestResultBundleParser {
       status = .failed
     }
 
-    let activitySummaries = readArrayFromDict(testMethod, "ActivitySummaries") as! [NSDictionary]
+    let activitySummaries = readDictionaryArrayFromDict(testMethod, "ActivitySummaries")
     let logs = buildTestLogLegacy(activitySummaries, testBundleName: testBundleName, testClassName: testClassName, testMethodName: testMethodName, testPassed: status == .passed, duration: duration.doubleValue)
 
     reporter.testCaseDidStart(forTestClass: testClassName, method: testMethodName)
     if status == .failed {
-      let failureSummaries = readArrayFromDict(testMethod, "FailureSummaries") as! [NSDictionary]
+      let failureSummaries = readDictionaryArrayFromDict(testMethod, "FailureSummaries")
       reporter.testCaseDidFail(
         forTestClass: testClassName, method: testMethodName,
         exceptions: [
@@ -298,17 +311,18 @@ public final class FBXCTestResultBundleParser {
   }
 
   private static func parseAction(_ action: NSDictionary, logger: FBControlCoreLogger) -> String {
-    let actionResult = action["actionResult"] as! NSDictionary
-    return parseActionResult(actionResult, logger: logger)
+    parseActionResult(readDictionaryFromDict(action, "actionResult"), logger: logger)
   }
 
   private static func parseActionResult(_ actionResult: NSDictionary, logger: FBControlCoreLogger) -> String {
-    let testsRef = actionResult["testsRef"] as! NSDictionary
-    return parseTestsRef(testsRef, logger: logger)
+    parseTestsRef(readDictionaryFromDict(actionResult, "testsRef"), logger: logger)
   }
 
   private static func parseTestsRef(_ testsRef: NSDictionary, logger: FBControlCoreLogger) -> String {
-    accessAndUnwrapValue(testsRef, "id", logger) as! String
+    guard let id = accessAndUnwrapValue(testsRef, "id", logger) as? String else {
+      preconditionFailure("testsRef id is not a String")
+    }
+    return id
   }
 
   private static func reportSummaries(_ summaries: NSArray?, reporter: FBXCTestReporter, queue: DispatchQueue, resultBundlePath: String, logger: FBControlCoreLogger, extractScreenshots: Bool) {
@@ -575,15 +589,15 @@ public final class FBXCTestResultBundleParser {
     for attachment in attachments {
       guard let filename = accessAndUnwrapValue(attachment, "filename", logger) as? String else { continue }
       let matchResult = FBXCTestResultBundleParser.screenshotFilenameRegex.firstMatch(in: filename, options: [], range: NSRange(location: 0, length: (filename as NSString).length))
-      if attachment["payloadRef"] != nil && matchResult != nil {
-        let timestamp = accessAndUnwrapValue(attachment, "timestamp", logger) as? String ?? ""
-        let jpgFilename = (filename as NSString).deletingPathExtension.appending(".jpg")
-        let exportPath = (destination as NSString).appendingPathComponent("\(timestamp)_\(jpgFilename)")
-        let payloadRef = attachment["payloadRef"] as! NSDictionary
-        let screenshotId = accessAndUnwrapValue(payloadRef, "id", logger) as! String
-        let screenshotType = accessAndUnwrapValue(attachment, "uniformTypeIdentifier", logger) as! String
-        _ = try? FBXCTestResultToolOperation.exportJPEG(from: resultBundlePath, to: exportPath, forId: screenshotId, type: screenshotType, queue: queue, logger: logger).await(withTimeout: XCTestOperationTimeoutSecs)
-      }
+      guard matchResult != nil,
+        let payloadRef = attachment["payloadRef"] as? NSDictionary,
+        let screenshotId = accessAndUnwrapValue(payloadRef, "id", logger) as? String,
+        let screenshotType = accessAndUnwrapValue(attachment, "uniformTypeIdentifier", logger) as? String
+      else { continue }
+      let timestamp = accessAndUnwrapValue(attachment, "timestamp", logger) as? String ?? ""
+      let jpgFilename = (filename as NSString).deletingPathExtension.appending(".jpg")
+      let exportPath = (destination as NSString).appendingPathComponent("\(timestamp)_\(jpgFilename)")
+      _ = try? FBXCTestResultToolOperation.exportJPEG(from: resultBundlePath, to: exportPath, forId: screenshotId, type: screenshotType, queue: queue, logger: logger).await(withTimeout: XCTestOperationTimeoutSecs)
     }
   }
 
