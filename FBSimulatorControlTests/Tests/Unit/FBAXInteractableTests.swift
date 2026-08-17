@@ -261,6 +261,67 @@ final class FBAXInteractableTests: XCTestCase {
     XCTAssertEqual([FBAccessibilityInteractable.Reason.notHittable].mostSpecificFirst, [.notHittable])
   }
 
+  // MARK: - Explanatory power
+
+  private static func element(_ value: FBAccessibilityInteractable?) -> FBAccessibilityDocumentElement {
+    var element = FBAccessibilityDocumentElement()
+    element.interactable = .some(value)
+    return element
+  }
+
+  func testTheSummaryCountsVerdictsByOutcome() throws {
+    let summary = try XCTUnwrap(
+      FBAccessibilityInteractionSummary(elements: [
+        Self.element(.actionable(at: FBAccessibilityPoint(x: 1, y: 2))),
+        Self.element(.blocked(reasons: [.notHittable])),
+        Self.element(.blocked(reasons: [.clippedByScreen, .notHittable])),
+      ]))
+    XCTAssertEqual(summary.actionable, 1)
+    XCTAssertEqual(summary.blocked, 2)
+  }
+
+  // The number the whole summary exists for: only an element blocked with *nothing but* the bare
+  // observation counts as unexplained. One that also carries a cause is explained, even though it still
+  // carries the observation alongside.
+  func testUnexplainedCountsOnlyElementsWithNoExplanationAtAll() throws {
+    let summary = try XCTUnwrap(
+      FBAccessibilityInteractionSummary(elements: [
+        Self.element(.blocked(reasons: [.notHittable])),
+        Self.element(.blocked(reasons: [.clippedByScreen, .notHittable])),
+        Self.element(.blocked(reasons: [.userInteractionDisabled])),
+      ]))
+    XCTAssertEqual(summary.blocked, 3)
+    XCTAssertEqual(summary.unexplained, 1, "only the bare-observation-only element is unexplained")
+    XCTAssertEqual(try XCTUnwrap(summary.unexplainedRatio), 1.0 / 3.0, accuracy: 0.0001)
+  }
+
+  // Children are counted, not just roots — a nested read is the normal shape.
+  func testTheSummaryCountsNestedElements() throws {
+    var root = Self.element(.actionable(at: FBAccessibilityPoint(x: 1, y: 2)))
+    root.children = [Self.element(.blocked(reasons: [.notHittable]))]
+    let summary = try XCTUnwrap(FBAccessibilityInteractionSummary(elements: [root]))
+    XCTAssertEqual(summary.actionable, 1)
+    XCTAssertEqual(summary.unexplained, 1)
+  }
+
+  // Nil rather than zeroes when nothing carried a verdict, so a backend that cannot judge is not
+  // mistaken for a screen with nothing blocked.
+  func testTheSummaryIsAbsentWhenNothingCarriedAVerdict() {
+    XCTAssertNil(FBAccessibilityInteractionSummary(elements: [Self.element(nil), Self.element(nil)]))
+    XCTAssertNil(FBAccessibilityInteractionSummary(elements: []))
+  }
+
+  // No blocked elements means the ratio has no denominator, and reporting 0.0 would read as "perfectly
+  // explained" rather than "nothing to explain".
+  func testTheRatioIsAbsentWhenNothingIsBlocked() throws {
+    let summary = try XCTUnwrap(
+      FBAccessibilityInteractionSummary(
+        elements: [Self.element(.actionable(at: FBAccessibilityPoint(x: 1, y: 2)))]
+      ))
+    XCTAssertEqual(summary.blocked, 0)
+    XCTAssertNil(summary.unexplainedRatio)
+  }
+
   // MARK: - The `interactable` filter
 
   /// A two-element flat read: a reachable button and a covered one, both button-like.

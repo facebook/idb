@@ -519,6 +519,85 @@ extension FBAccessibilityInteractable.Reason: Encodable {
   }
 }
 
+/// How well this read could explain the elements it found blocked.
+///
+/// Exists to make the vocabulary's own quality measurable from any read, rather than something you learn
+/// by analysing output offline. `notHittable` is the bare observation — the accessibility server saying
+/// it found no reachable point, without saying why — and the goal for it is to trend towards never being
+/// the *only* thing reported about an element. `unexplained` counts exactly that case, so a consumer or a
+/// dashboard can watch the ratio fall as more precise reasons are added, and notice if it climbs.
+///
+/// It deliberately does not hide the bare observation to flatter the number: an element nothing explains
+/// is still reported as blocked, because a caller acting on it needs to know it cannot act, whether or
+/// not we can say why.
+public struct FBAccessibilityInteractionSummary: Sendable, Equatable, Encodable {
+
+  /// Elements reported actionable.
+  public let actionable: Int
+  /// Elements reported blocked, for any reason.
+  public let blocked: Int
+  /// Of those, the ones carrying *only* a bare observation — blocked with nothing that explains it.
+  public let unexplained: Int
+  /// `unexplained / blocked`, or nil when nothing was blocked. The number to watch: it should fall.
+  public let unexplainedRatio: Double?
+
+  public init(actionable: Int, blocked: Int, unexplained: Int) {
+    self.actionable = actionable
+    self.blocked = blocked
+    self.unexplained = unexplained
+    self.unexplainedRatio = blocked > 0 ? Double(unexplained) / Double(blocked) : nil
+  }
+
+  /// Tallies a serialized read, or nil when no element carried a verdict at all.
+  ///
+  /// Nil rather than zeroes, because "not requested" and "requested, and the backend could not answer"
+  /// must not read as "a screen with nothing blocked". A legacy-backend read, where every verdict is
+  /// null, reports nothing here rather than a flattering 0 unexplained.
+  public init?(elements: [FBAccessibilityDocumentElement]) {
+    var actionable = 0
+    var blocked = 0
+    var unexplained = 0
+    func visit(_ element: FBAccessibilityDocumentElement) {
+      switch element.interactable ?? nil {
+      case .actionable:
+        actionable += 1
+      case let .blocked(reasons):
+        blocked += 1
+        if reasons.allSatisfy(\.isBareObservation) {
+          unexplained += 1
+        }
+      case nil:
+        break
+      }
+      for child in element.children ?? [] {
+        visit(child)
+      }
+    }
+    for element in elements {
+      visit(element)
+    }
+    guard actionable > 0 || blocked > 0 else {
+      return nil
+    }
+    self.init(actionable: actionable, blocked: blocked, unexplained: unexplained)
+  }
+
+  enum CodingKeys: String, CodingKey {
+    case actionable
+    case blocked
+    case unexplained
+    case unexplainedRatio = "unexplained_ratio"
+  }
+
+  public func encode(to encoder: Encoder) throws {
+    var container = encoder.container(keyedBy: CodingKeys.self)
+    try container.encode(actionable, forKey: .actionable)
+    try container.encode(blocked, forKey: .blocked)
+    try container.encode(unexplained, forKey: .unexplained)
+    try container.encode(unexplainedRatio, forKey: .unexplainedRatio)
+  }
+}
+
 /// An accessibility element in the `complete` output format.
 ///
 /// A struct rather than an untyped bag: every attribute the schema can carry is a named, typed field.
@@ -721,6 +800,9 @@ public struct FBAccessibilityDocument: Sendable, Encodable {
   public let target: FBAccessibilityTargetDescriptor?
   public let profile: FBAccessibilityProfilingData?
   public let coverage: FBAccessibilityCoverage?
+  /// How much of what this read found blocked it could explain. Nil when `interactable` was not
+  /// requested, since there is then nothing to summarize.
+  public let interaction: FBAccessibilityInteractionSummary?
 
   public init(
     elements: [FBAccessibilityDocumentElement],
@@ -730,7 +812,8 @@ public struct FBAccessibilityDocument: Sendable, Encodable {
     backend: FBUIAutomationBackendName? = nil,
     target: FBAccessibilityTargetDescriptor? = nil,
     profile: FBAccessibilityProfilingData? = nil,
-    coverage: FBAccessibilityCoverage? = nil
+    coverage: FBAccessibilityCoverage? = nil,
+    interaction: FBAccessibilityInteractionSummary? = nil
   ) {
     self.elements = elements
     self.modal = modal
@@ -740,6 +823,7 @@ public struct FBAccessibilityDocument: Sendable, Encodable {
     self.target = target
     self.profile = profile
     self.coverage = coverage
+    self.interaction = interaction
   }
 
   enum CodingKeys: String, CodingKey {
@@ -751,6 +835,7 @@ public struct FBAccessibilityDocument: Sendable, Encodable {
     case target
     case profile
     case coverage
+    case interaction
   }
 
   public func encode(to encoder: Encoder) throws {
@@ -763,6 +848,7 @@ public struct FBAccessibilityDocument: Sendable, Encodable {
     try container.encode(target, forKey: .target)
     try container.encode(profile, forKey: .profile)
     try container.encode(coverage, forKey: .coverage)
+    try container.encode(interaction, forKey: .interaction)
   }
 }
 

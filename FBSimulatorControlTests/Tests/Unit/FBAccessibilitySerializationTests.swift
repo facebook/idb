@@ -593,7 +593,7 @@ final class FBAccessibilitySerializationTests: XCTestCase {
     }
     XCTAssertEqual(
       try rendered(.complete),
-      #"{"backend":"axbridge-persistent","coverage":null,"elements":[],"modal":null,"profile":null,"screen":null,"target":{"kind":"point","match_key":null,"pid":null,"value":null,"x":5,"y":6},"truncated":false}"#
+      #"{"backend":"axbridge-persistent","coverage":null,"elements":[],"interaction":null,"modal":null,"profile":null,"screen":null,"target":{"kind":"point","match_key":null,"pid":null,"value":null,"x":5,"y":6},"truncated":false}"#
     )
   }
 
@@ -734,7 +734,7 @@ final class FBAccessibilitySerializationTests: XCTestCase {
     )
     let document = documentObject(response)
     XCTAssertTrue(document["screen"] is NSNull, "unknown bounds are null, and the read still renders")
-    XCTAssertEqual(Set(document.keys).count, 8, "the document keeps its fixed key set")
+    XCTAssertEqual(Set(document.keys).count, 9, "the document keeps its fixed key set")
   }
 
   // The same hazard on a hit-tested coordinate: `ui shell` parses one with `Double(_:)`, which accepts
@@ -901,7 +901,7 @@ final class FBAccessibilitySerializationTests: XCTestCase {
   // The document's key set never varies: what a verb or backend cannot supply is an explicit null, so
   // one parser serves every describe verb.
   func testCompleteDocumentKeySetIsFixedAcrossReads() throws {
-    let expected: Set<String> = ["elements", "modal", "truncated", "screen", "backend", "target", "profile", "coverage"]
+    let expected: Set<String> = ["elements", "modal", "truncated", "screen", "backend", "target", "profile", "coverage", "interaction"]
     let bare = FBAccessibilityElementsResponse(elements: .tree([]))
     let full = FBAccessibilityElementsResponse(
       elements: .tree(flatElements()),
@@ -921,7 +921,7 @@ final class FBAccessibilitySerializationTests: XCTestCase {
     let response = FBAccessibilityElementsResponse(elements: .tree([]))
     XCTAssertEqual(
       try documentJSON(response),
-      #"{"backend":null,"coverage":null,"elements":[],"modal":null,"profile":null,"screen":null,"target":null,"truncated":false}"#
+      #"{"backend":null,"coverage":null,"elements":[],"interaction":null,"modal":null,"profile":null,"screen":null,"target":null,"truncated":false}"#
     )
   }
 
@@ -1092,7 +1092,7 @@ final class FBAccessibilitySerializationTests: XCTestCase {
     #"{"elements":{"AXFrame":"{{16, 380}, {370, 52}}","AXLabel":"root","AXUniqueId":"com.example.root","AXValue":"on","content_required":false,"custom_actions":[],"enabled":true,"frame":{"height":52,"width":370,"x":16,"y":380},"help":null,"pid":7,"role":"Button","role_description":null,"subrole":null,"title":null,"traits":null,"type":"Button"}}"#
 
   private static let expectedProfiledDocumentJSON =
-    #"{"backend":null,"coverage":{"additional":0.25,"content":0.5,"frame":0.5,"leaf":0.5,"walked":0.5},"elements":[],"modal":null,"profile":{"attribute_fetch_count":3,"element_conversion_duration_ms":250,"element_count":2,"serialization_duration_ms":125,"total_xpc_duration_ms":62.5,"translation_duration_ms":500,"xpc_call_count":4},"screen":null,"target":null,"truncated":false}"#
+    #"{"backend":null,"coverage":{"additional":0.25,"content":0.5,"frame":0.5,"leaf":0.5,"walked":0.5},"elements":[],"interaction":null,"modal":null,"profile":{"attribute_fetch_count":3,"element_conversion_duration_ms":250,"element_count":2,"serialization_duration_ms":125,"total_xpc_duration_ms":62.5,"translation_duration_ms":500,"xpc_call_count":4},"screen":null,"target":null,"truncated":false}"#
 
   private static let expectedFlatJSON =
     #"{"elements":[{"AXFrame":"{{16, 380}, {370, 52}}","AXLabel":"root","AXUniqueId":"com.example.root","AXValue":"on","content_required":false,"custom_actions":[],"enabled":true,"frame":{"height":52,"width":370,"x":16,"y":380},"help":null,"pid":7,"role":"Button","role_description":null,"subrole":null,"title":null,"traits":null,"type":"Button"},{"AXFrame":"{{0, 0}, {0, 0}}","AXLabel":"child","AXUniqueId":null,"AXValue":null,"content_required":false,"custom_actions":[],"enabled":true,"frame":{"height":0,"width":0,"x":0,"y":0},"help":null,"pid":7,"role":"AXCell","role_description":null,"subrole":null,"title":null,"traits":null,"type":"Cell"}]}"#

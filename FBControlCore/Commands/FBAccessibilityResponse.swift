@@ -241,15 +241,19 @@ public struct FBAccessibilityElementsResponse: Sendable {
   /// The document is a plain `Encodable` tree, so the emitted shape is fixed by the types rather than
   /// assembled as an untyped dictionary.
   public var document: FBAccessibilityDocument {
-    FBAccessibilityDocument(
-      elements: elements.elements.map { $0.reportingChildren() },
+    let reported = elements.elements.map { $0.reportingChildren() }
+    return FBAccessibilityDocument(
+      elements: reported,
       modal: modal,
       truncated: truncated,
       screen: screen,
       backend: backend,
       target: target,
       profile: profilingData,
-      coverage: coverage
+      coverage: coverage,
+      // Derived from the elements rather than threaded through the read: it is a tally of what was just
+      // serialized, so computing it anywhere else would only create a way for the two to disagree.
+      interaction: FBAccessibilityInteractionSummary(elements: reported)
     )
   }
 
