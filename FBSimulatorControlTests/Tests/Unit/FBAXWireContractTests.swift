@@ -31,11 +31,13 @@ final class FBAXWireContractTests: XCTestCase {
     XCTAssertEqual(FBAXWire.Node.children.rawValue, "XC_kAXXCAttributeChildren")
   }
 
-  // The read requests exactly this ordered set — the guest fetches and echoes back these keys, so both
-  // the membership and the order are part of the contract.
-  func testFetchListIsTheOrderedReadAttributeSet() {
+  // A read that names no attributes gets exactly this ordered set — the guest fetches and echoes back
+  // these keys, so both the membership and the order are part of the contract. A read that *does* name
+  // attributes gets those instead; this is the fallback both sides must agree on for a default read to
+  // stay byte-identical.
+  func testDefaultFetchListIsTheOrderedReadAttributeSet() {
     XCTAssertEqual(
-      FBAXWire.Node.fetchList,
+      FBAXWire.Node.defaultFetchList,
       [
         "XC_kAXXCAttributeElementType",
         "XC_kAXXCAttributeElementBaseType",
@@ -172,6 +174,7 @@ final class FBAXWireContractTests: XCTestCase {
       .pid: ("pid", "--pid"),
       .maxDepth: ("maxDepth", "--max-depth"),
       .maxNodes: ("maxNodes", "--max-nodes"),
+      .attributes: ("attributes", "--attributes"),
       .x: ("x", "--x"),
       .y: ("y", "--y"),
       .method: ("method", "--method"),

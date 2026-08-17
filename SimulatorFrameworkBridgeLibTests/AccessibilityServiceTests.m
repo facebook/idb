@@ -190,6 +190,7 @@ static NSDictionary *FBAXTestsParse(NSData *data)
     @"request.pid" : @"pid",
     @"request.maxDepth" : @"maxDepth",
     @"request.maxNodes" : @"maxNodes",
+    @"request.attributes" : @"attributes",
     @"request.x" : @"x",
     @"request.y" : @"y",
     @"request.method" : @"method",

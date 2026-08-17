@@ -843,6 +843,111 @@ static NSDictionary *FBAXTestsPress(void)
   XCTAssertEqualObjects(emitted[@"Width"], @402);
 }
 
+#pragma mark - Request-named attributes
+
+// A request that names attributes is read with exactly those. The fake echoes back whatever it holds
+// rather than filtering, so what this proves is that the *request's* list reached the runtime — which is
+// the whole mechanism.
+- (void)testARequestNamingAttributesIsReadWithThem
+{
+  FBAXFakeElement *root = [FBAXFakeElement readable:@"UIApplication"];
+  _runtime.applicationElements[@(kAppPid)] = root;
+
+  FBAXBridgeHandleRequest(
+    @{
+      @"verb" : @"describe",
+      @"pid" : @(kAppPid),
+      @"attributes" : @[kAXLabel, kAXVisiblePoint],
+    }
+  );
+  XCTAssertEqualObjects(_runtime.lastReadAttributes, (@[kAXLabel, kAXVisiblePoint, kAXChildren]));
+}
+
+// A request that names none is read with the default list, unchanged — this is what keeps a default read
+// byte-identical to one issued by a host that predates the field.
+- (void)testARequestNamingNoAttributesIsReadWithTheDefaultList
+{
+  _runtime.applicationElements[@(kAppPid)] = [FBAXFakeElement readable:@"UIApplication"];
+
+  FBAXBridgeHandleRequest(@{@"verb" : @"describe", @"pid" : @(kAppPid)});
+  XCTAssertEqualObjects(
+    _runtime.lastReadAttributes,
+    (@[
+      @"XC_kAXXCAttributeElementType", @"XC_kAXXCAttributeElementBaseType", kAXLabel,
+      @"XC_kAXXCAttributeValue", @"XC_kAXXCAttributeIdentifier", kAXFrame,
+      @"XC_kAXXCAttributeAutomationType", kAXChildren,
+      ])
+  );
+}
+
+// The children key is what the walk recurses on, so a request that omits it must still get it — narrowing
+// the attributes must narrow the read, not flatten the tree to its root.
+- (void)testTheChildrenAttributeIsAlwaysRead
+{
+  FBAXFakeElement *root = [FBAXFakeElement readable:@"UIApplication"];
+  root.children = @[[FBAXFakeElement readable:@"XCUIElementTypeWindow"]];
+  _runtime.applicationElements[@(kAppPid)] = root;
+
+  NSDictionary *response =
+  FBAXBridgeHandleRequest(@{@"verb" : @"describe", @"pid" : @(kAppPid), @"attributes" : @[kAXLabel]});
+  XCTAssertTrue([_runtime.lastReadAttributes containsObject:kAXChildren], @"children is always read");
+  XCTAssertEqualObjects(response[@"tree"][kAXChildren][0][kAXElementType], @"XCUIElementTypeWindow");
+}
+
+// A malformed list is the caller's mistake and must not fail an otherwise well-formed read: a non-array,
+// an empty array, and an array of no usable names all fall back to the default rather than reading
+// nothing. A non-string member is dropped and the rest of the list survives.
+- (void)testAMalformedAttributeListFallsBackToTheDefault
+{
+  _runtime.applicationElements[@(kAppPid)] = [FBAXFakeElement readable:@"UIApplication"];
+  NSUInteger defaultCount = 8;
+
+  for (id malformed in @[@"XC_kAXXCAttributeLabel", @[], @[@123], @{@"a" : @1}]) {
+    FBAXBridgeHandleRequest(@{@"verb" : @"describe", @"pid" : @(kAppPid), @"attributes" : malformed});
+    XCTAssertEqual(_runtime.lastReadAttributes.count, defaultCount, @"a %@ list falls back", [malformed class]);
+  }
+
+  FBAXBridgeHandleRequest(
+    @{
+      @"verb" : @"describe",
+      @"pid" : @(kAppPid),
+      @"attributes" : @[kAXLabel, @123, kAXVisiblePoint],
+    }
+  );
+  XCTAssertEqualObjects(
+    _runtime.lastReadAttributes,
+    (@[kAXLabel, kAXVisiblePoint, kAXChildren]),
+    @"a non-string member is dropped and the rest survives"
+  );
+}
+
+// A write asserts on an attribute of the element found under its point, and the guard is that the key is
+// one the request actually fetches. A non-default key is therefore assertable exactly when the write names
+// it, which is the same condition the read that produced the assertion had to meet.
+- (void)testAWriteCanAssertOnlyOnAnAttributeItNames
+{
+  _runtime.hitTestOutcome = [FBAXHitTestOutcome hit:[FBAXFakeElement readable:@"XCUIElementTypeButton"]
+                             owningProcessIdentifier:kAppPid];
+
+  NSDictionary *unnamed = FBAXBridgeHandleRequest(
+    @{
+      @"verb" : @"perform", @"x" : @10, @"y" : @20, @"action" : @"press",
+      @"assertKey" : kAXVisiblePoint, @"assertValue" : @"anything",
+    }
+  );
+  XCTAssertEqualObjects(unnamed[@"ok"], @NO, @"an unfetched key is not assertable");
+  XCTAssertEqualObjects(unnamed[@"error_kind"], @"bad_request");
+
+  NSDictionary *named = FBAXBridgeHandleRequest(
+    @{
+      @"verb" : @"perform", @"x" : @10, @"y" : @20, @"action" : @"press",
+      @"attributes" : @[kAXVisiblePoint],
+      @"assertKey" : kAXVisiblePoint, @"assertValue" : @"anything",
+    }
+  );
+  XCTAssertNotEqualObjects(named[@"error_kind"], @"bad_request", @"naming the key makes it assertable");
+}
+
 #pragma mark - Describe outcomes
 
 - (void)testDescribeReadsTheTreeAndReportsThePid

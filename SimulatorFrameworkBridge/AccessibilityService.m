@@ -42,6 +42,12 @@ static NSString *const kRequestVerb = @"verb";
 static NSString *const kRequestPid = @"pid";
 static NSString *const kRequestMaxDepth = @"maxDepth";
 static NSString *const kRequestMaxNodes = @"maxNodes";
+// The attributes a read fetches for each element. Optional: a request that names none gets
+// `FBAXBridgeDefaultFetchList()`, so a caller that does not know about this field reads exactly what it
+// always did. The host owns the choice for the same reason it owns the depth and node bounds — so every
+// backend fetches alike — and naming them per request is what keeps an attribute nobody asked for off
+// the wire entirely rather than merely out of the serialized output.
+static NSString *const kRequestAttributes = @"attributes";
 static NSString *const kRequestX = @"x";
 static NSString *const kRequestY = @"y";
 // Selects how a fused frontmost read (a `describe` with no pid) resolves the foreground app. Optional;
@@ -184,12 +190,45 @@ void FBAXBridgeSetRuntimeForTesting(id<FBAXRuntime> _Nullable runtime)
   gInjectedRuntime = runtime;
 }
 
-static NSArray<NSString *> *FBAXBridgeFetchList(void)
+// The attributes a read fetches when the request names none. Membership *and* order are part of the wire
+// contract, mirrored host-side by `FBAXWire.Node.defaultFetchList`.
+static NSArray<NSString *> *FBAXBridgeDefaultFetchList(void)
 {
   return @[
     kAXElementType, kAXElementBaseType, kAXLabel, kAXValue, kAXIdentifier, kAXFrame, kAXAutomationType,
     kAXChildren
   ];
+}
+
+// The attributes this request asks each element to be read with.
+//
+// A request that names none — or names them malformed — gets the default list, so an older host, and any
+// caller that does not know the field exists, reads exactly what it always did. The list is filtered to
+// strings rather than rejected wholesale on one bad member: `attributesForElement:` takes an array of
+// names, and a non-string in it is the caller's mistake to lose, not grounds to fail a read that is
+// otherwise well formed.
+//
+// The children key is always appended when absent. It is what the walk recurses on, so a request that
+// omitted it would not narrow the read — it would flatten the tree to its root.
+static NSArray<NSString *> *FBAXBridgeFetchListForRequest(NSDictionary<NSString *, id> *request)
+{
+  id requested = request[kRequestAttributes];
+  if (![requested isKindOfClass:NSArray.class]) {
+    return FBAXBridgeDefaultFetchList();
+  }
+  NSMutableArray<NSString *> *attributes = [NSMutableArray array];
+  for (id name in (NSArray *)requested) {
+    if ([name isKindOfClass:NSString.class]) {
+      [attributes addObject:name];
+    }
+  }
+  if (attributes.count == 0) {
+    return FBAXBridgeDefaultFetchList();
+  }
+  if (![attributes containsObject:kAXChildren]) {
+    [attributes addObject:kAXChildren];
+  }
+  return attributes;
 }
 
 // A union that arrived in a shape its own constructors cannot produce — a `Read` with no attributes, a
@@ -328,12 +367,13 @@ static id FBAXBridgeJSONSafeValue(id _Nullable value, NSString *key)
 // than failing the whole read, so a child's outcome never becomes the caller's.
 static FBAXReadOutcome *FBAXBridgeBuildNode(id<FBAXRuntime> runtime,
                                             id element,
+                                            NSArray<NSString *> *fetchList,
                                             int depth,
                                             int maxDepth,
                                             int *budget,
                                             BOOL *truncated)
 {
-  FBAXReadOutcome *outcome = [runtime readAttributes:FBAXBridgeFetchList() ofElement:element];
+  FBAXReadOutcome *outcome = [runtime readAttributes:fetchList ofElement:element];
   if (outcome.status != FBAXReadStatusRead) {
     return outcome;
   }
@@ -360,7 +400,8 @@ static FBAXReadOutcome *FBAXBridgeBuildNode(id<FBAXRuntime> runtime,
         break;
       }
       (*budget)--;
-      FBAXReadOutcome *childOutcome = FBAXBridgeBuildNode(runtime, child, depth + 1, maxDepth, budget, truncated);
+      FBAXReadOutcome *childOutcome =
+      FBAXBridgeBuildNode(runtime, child, fetchList, depth + 1, maxDepth, budget, truncated);
       if (childOutcome.status == FBAXReadStatusRead) {
         [children addObject:(NSDictionary *)childOutcome.attributes];
       }
@@ -609,7 +650,8 @@ static NSDictionary *FBAXBridgeHitTest(id<FBAXRuntime> runtime, NSDictionary *re
   if (!hitElement) {
     return FBAXBridgeErrorResponse(@"the hit-test reported an element and carried none");
   }
-  FBAXReadOutcome *read = FBAXBridgeBuildNode(runtime, hitElement, 0, 0, &budget, &truncated);
+  FBAXReadOutcome *read =
+  FBAXBridgeBuildNode(runtime, hitElement, FBAXBridgeFetchListForRequest(request), 0, 0, &budget, &truncated);
   switch (read.status) {
     case FBAXReadStatusRead:
       break;
@@ -696,10 +738,11 @@ static NSDictionary *_Nullable FBAXBridgeWriteArgumentError(NSDictionary *reques
       nil
     );
   }
-  // Only the attributes the tree walk fetches can be asserted on. That is not a restriction so much as the
+  // Only the attributes *this request* fetches can be asserted on. That is not a restriction so much as the
   // contract: the host builds an assertion out of a node it read, and a key that never appears in a node is
-  // one it could not have got from there.
-  if (assertKey && ![FBAXBridgeFetchList() containsObject:assertKey]) {
+  // one it could not have got from there. A write that wants to assert on a non-default attribute names it
+  // in `attributes`, exactly as the read that produced the assertion had to.
+  if (assertKey && ![FBAXBridgeFetchListForRequest(request) containsObject:assertKey]) {
     return FBAXBridgeTaggedErrorResponse(
       [NSString stringWithFormat:@"%@ is not an attribute a write can assert on", assertKey],
       kErrorKindBadRequest,
@@ -1002,7 +1045,8 @@ static NSDictionary<NSString *, id> *FBAXBridgeDispatchRequest(NSDictionary<NSSt
   ? [(NSNumber *)request[kRequestMaxNodes] intValue]
   : kDefaultNodeBudget;
   BOOL truncated = NO;
-  FBAXReadOutcome *read = FBAXBridgeBuildNode(runtime, root, 0, maxDepth, &budget, &truncated);
+  FBAXReadOutcome *read =
+  FBAXBridgeBuildNode(runtime, root, FBAXBridgeFetchListForRequest(request), 0, maxDepth, &budget, &truncated);
   switch (read.status) {
     case FBAXReadStatusRead:
       break;
@@ -1224,6 +1268,10 @@ int handleAccessibilityAction(NSString *action, NSArray<NSString *> *arguments)
       request[kRequestMaxDepth] = @(argValue.intValue);
     } else if ([flag isEqualToString:@"--max-nodes"]) {
       request[kRequestMaxNodes] = @(argValue.intValue);
+    } else if ([flag isEqualToString:@"--attributes"]) {
+      // Comma-separated, because argv is read strictly in flag/value pairs and an attribute name never
+      // contains a comma. The socket transport sends the same field as a JSON array.
+      request[kRequestAttributes] = [argValue componentsSeparatedByString:@","];
     } else if ([flag isEqualToString:@"--x"]) {
       request[kRequestX] = @(argValue.doubleValue);
     } else if ([flag isEqualToString:@"--y"]) {
@@ -1265,6 +1313,7 @@ NSDictionary<NSString *, NSString *> *FBAXBridgeWireConstantsForTesting(void)
     @"request.pid" : kRequestPid,
     @"request.maxDepth" : kRequestMaxDepth,
     @"request.maxNodes" : kRequestMaxNodes,
+    @"request.attributes" : kRequestAttributes,
     @"request.x" : kRequestX,
     @"request.y" : kRequestY,
     @"request.method" : kRequestMethod,

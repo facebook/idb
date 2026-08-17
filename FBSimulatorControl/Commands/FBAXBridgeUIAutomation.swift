@@ -86,13 +86,14 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
     try await translatingSeamErrors {
       if case let .application(pid) = query {
         let response = try await transport.read(
-          pid: pid, maxDepth: FBAXReadLimits.maxReadDepth, maxNodes: FBAXReadLimits.maxReadNodes
+          pid: pid, maxDepth: FBAXReadLimits.maxReadDepth, maxNodes: FBAXReadLimits.maxReadNodes, attributes: nil
         )
         return try FBAXTreeRead(wholeTreeResponse: response, pid: pid)
       }
       let anchor = frontmostAnchor()
       let response = try await transport.readFrontmost(
-        x: anchor.x, y: anchor.y, maxDepth: FBAXReadLimits.maxReadDepth, maxNodes: FBAXReadLimits.maxReadNodes, method: frontmostMethod
+        x: anchor.x, y: anchor.y, maxDepth: FBAXReadLimits.maxReadDepth, maxNodes: FBAXReadLimits.maxReadNodes,
+        method: frontmostMethod, attributes: nil
       )
       return try FBAXTreeRead(frontmostResponse: response, method: frontmostMethod)
     }
@@ -106,7 +107,7 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
       // A single system-wide guest hit-test resolves the element at the point and its owning app
       // in-guest — no host-side CoreSimulator frontmost query, one IPC hop. `.point` is positional, so
       // a system-wide hit-test is exactly its semantics (unlike a whole-tree read of "frontmost").
-      let response = try await transport.hitTest(x: Double(point.x), y: Double(point.y))
+      let response = try await transport.hitTest(x: Double(point.x), y: Double(point.y), attributes: nil)
       guard let hit = try FBAXTreeRead(hitTestResponse: response) else {
         return nil
       }

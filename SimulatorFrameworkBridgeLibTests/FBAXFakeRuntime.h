@@ -76,6 +76,15 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, readonly) NSUInteger runningBoardCount;
 @property (nonatomic, readonly) NSUInteger performCount;
 @property (nonatomic, readonly) NSUInteger setValueCount;
+/**
+ * The attribute list the most recent read was asked for.
+ *
+ * Records the request's own choice rather than the fake's answer: the fake echoes back whatever the
+ * element holds, so this is the only way to assert *what was asked*, which is the whole of the
+ * request-named-attributes mechanism.
+ */
+@property (nullable, nonatomic, readonly, copy) NSArray<NSString *> *lastReadAttributes;
+
 /** The point of the most recent hit-test, and the pid it was scoped to (0 for display-wide). */
 @property (nonatomic, readonly) CGPoint lastHitTestPoint;
 @property (nonatomic, readonly) pid_t lastHitTestProcessIdentifier;

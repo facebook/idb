@@ -285,7 +285,7 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
   private static func applicationTree(forPid pid: pid_t, using session: FBRemoteAutomationSession) async throws -> FBRemoteAutomationElementTree {
     try await session.applicationElementTree(
       forPid: pid,
-      attributes: FBAXWire.Node.fetchList,
+      attributes: FBAXWire.Node.defaultFetchList,
       childrenAttribute: FBAXWire.Node.children.rawValue,
       maxDepth: FBAXReadLimits.maxReadDepth,
       maxNodes: FBAXReadLimits.maxReadNodes
@@ -297,7 +297,7 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
   private static func applicationTree(anchorX x: Double, y: Double, using session: FBRemoteAutomationSession) async throws -> FBRemoteAutomationElementTree {
     try await session.applicationElementTree(
       anchorX: x, y: y,
-      attributes: FBAXWire.Node.fetchList,
+      attributes: FBAXWire.Node.defaultFetchList,
       childrenAttribute: FBAXWire.Node.children.rawValue,
       maxDepth: FBAXReadLimits.maxReadDepth,
       maxNodes: FBAXReadLimits.maxReadNodes
@@ -336,7 +336,7 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
   /// element is tagged with the pid of the process that owns it — resolved inside the session with the
   /// attributes, so the (non-Sendable) element handle never crosses the actor boundary.
   static func hitTestElement(atX x: Double, y: Double, using session: FBRemoteAutomationSession, keys: Set<FBAXKeys>, nestedFormat: Bool = false) async throws -> FBAccessibilityDocumentElement? {
-    guard let hit = try await session.elementAttributes(atX: x, y: y, attributes: FBAXWire.Node.fetchList) else {
+    guard let hit = try await session.elementAttributes(atX: x, y: y, attributes: FBAXWire.Node.defaultFetchList) else {
       return nil
     }
     let platformElement = FBRemoteAutomationPlatformElement(attributes: hit.attributes, children: [], pid: hit.pid)

@@ -118,17 +118,20 @@ struct FBAXBridgeWriteRequest: Sendable, Equatable {
 protocol FBAXBridgeTransport {
   /// Reads the whole element tree for `pid` (the guest `describe` verb), bounded by the caller's
   /// depth and node budget — the host owns those bounds so both XCUI-grade backends truncate alike.
-  func read(pid: pid_t, maxDepth: Int, maxNodes: Int) async throws -> Data
+  ///
+  /// `attributes` names what to fetch per element; nil leaves the guest on `Node.defaultFetchList`, so a
+  /// default read is byte-identical on the wire to one from a host that did not know the field existed.
+  func read(pid: pid_t, maxDepth: Int, maxNodes: Int, attributes: [String]?) async throws -> Data
   /// Fused frontmost read (the guest `describe` verb with no pid): the guest resolves the frontmost app
   /// in-guest via `method` (anchored at the given screen point for `.centerPoint`) AND reads its tree in
   /// this one round-trip — no host-side CoreSimulator query and no separate pid call. The response
   /// envelope carries the resolved pid alongside the tree. This is the axbridge frontmost optimization:
   /// one IPC hop.
-  func readFrontmost(x: Double, y: Double, maxDepth: Int, maxNodes: Int, method: FBAXBridgeFrontmostMethod) async throws -> Data
+  func readFrontmost(x: Double, y: Double, maxDepth: Int, maxNodes: Int, method: FBAXBridgeFrontmostMethod, attributes: [String]?) async throws -> Data
   /// Reads just the element at a screen point (the guest `hittest` verb with no pid) — a system-wide
   /// hit-test that resolves the element and its owning app in-guest in one round-trip, with no walk and
   /// no separate frontmost pid query. The response carries the owning pid alongside the hit node.
-  func hitTest(x: Double, y: Double) async throws -> Data
+  func hitTest(x: Double, y: Double, attributes: [String]?) async throws -> Data
   /// Sends one point-addressed write (the guest `perform` or `setvalue` verb) and returns its envelope.
   ///
   /// One entry point rather than one per verb: the guest splits them because performing an action and
@@ -143,16 +146,17 @@ protocol FBAXBridgeTransport {
 struct FBAXBridgeOneshotTransport: FBAXBridgeTransport {
   let simulator: FBSimulator
 
-  func read(pid: pid_t, maxDepth: Int, maxNodes: Int) async throws -> Data {
+  func read(pid: pid_t, maxDepth: Int, maxNodes: Int, attributes: [String]?) async throws -> Data {
     try await spawn(
       ["accessibility", FBAXWire.Verb.describe.rawValue]
         + FBAXWire.Request.pid.argument("\(pid)")
         + FBAXWire.Request.maxDepth.argument("\(maxDepth)")
         + FBAXWire.Request.maxNodes.argument("\(maxNodes)")
+        + Self.attributeArgument(attributes)
     )
   }
 
-  func readFrontmost(x: Double, y: Double, maxDepth: Int, maxNodes: Int, method: FBAXBridgeFrontmostMethod) async throws -> Data {
+  func readFrontmost(x: Double, y: Double, maxDepth: Int, maxNodes: Int, method: FBAXBridgeFrontmostMethod, attributes: [String]?) async throws -> Data {
     try await spawn(
       ["accessibility", FBAXWire.Verb.describe.rawValue]
         + FBAXWire.Request.x.argument("\(x)")
@@ -160,15 +164,27 @@ struct FBAXBridgeOneshotTransport: FBAXBridgeTransport {
         + FBAXWire.Request.maxDepth.argument("\(maxDepth)")
         + FBAXWire.Request.maxNodes.argument("\(maxNodes)")
         + FBAXWire.Request.method.argument(method.rawValue)
+        + Self.attributeArgument(attributes)
     )
   }
 
-  func hitTest(x: Double, y: Double) async throws -> Data {
+  func hitTest(x: Double, y: Double, attributes: [String]?) async throws -> Data {
     try await spawn(
       ["accessibility", FBAXWire.Verb.hitTest.rawValue]
         + FBAXWire.Request.x.argument("\(x)")
         + FBAXWire.Request.y.argument("\(y)")
+        + Self.attributeArgument(attributes)
     )
+  }
+
+  /// The attribute list as the one-shot front-end takes it: comma-separated, because the guest reads argv
+  /// strictly in flag/value pairs and an attribute name never contains a comma. Absent for a default read,
+  /// so the argv of one is unchanged.
+  private static func attributeArgument(_ attributes: [String]?) -> [String] {
+    guard let attributes, !attributes.isEmpty else {
+      return []
+    }
+    return FBAXWire.Request.attributes.argument(attributes.joined(separator: ","))
   }
 
   func write(_ request: FBAXBridgeWriteRequest) async throws -> Data {
@@ -203,32 +219,52 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
     self.simulator = simulator
   }
 
-  func read(pid: pid_t, maxDepth: Int, maxNodes: Int) async throws -> Data {
-    try await roundTripWithRecovery([
-      FBAXWire.Request.verb.key: FBAXWire.Verb.describe.rawValue,
-      FBAXWire.Request.pid.key: Int(pid),
-      FBAXWire.Request.maxDepth.key: maxDepth,
-      FBAXWire.Request.maxNodes.key: maxNodes,
-    ])
+  func read(pid: pid_t, maxDepth: Int, maxNodes: Int, attributes: [String]?) async throws -> Data {
+    try await roundTripWithRecovery(
+      Self.adding(
+        attributes,
+        to: [
+          FBAXWire.Request.verb.key: FBAXWire.Verb.describe.rawValue,
+          FBAXWire.Request.pid.key: Int(pid),
+          FBAXWire.Request.maxDepth.key: maxDepth,
+          FBAXWire.Request.maxNodes.key: maxNodes,
+        ]))
   }
 
-  func readFrontmost(x: Double, y: Double, maxDepth: Int, maxNodes: Int, method: FBAXBridgeFrontmostMethod) async throws -> Data {
-    try await roundTripWithRecovery([
-      FBAXWire.Request.verb.key: FBAXWire.Verb.describe.rawValue,
-      FBAXWire.Request.x.key: x,
-      FBAXWire.Request.y.key: y,
-      FBAXWire.Request.maxDepth.key: maxDepth,
-      FBAXWire.Request.maxNodes.key: maxNodes,
-      FBAXWire.Request.method.key: method.rawValue,
-    ])
+  func readFrontmost(x: Double, y: Double, maxDepth: Int, maxNodes: Int, method: FBAXBridgeFrontmostMethod, attributes: [String]?) async throws -> Data {
+    try await roundTripWithRecovery(
+      Self.adding(
+        attributes,
+        to: [
+          FBAXWire.Request.verb.key: FBAXWire.Verb.describe.rawValue,
+          FBAXWire.Request.x.key: x,
+          FBAXWire.Request.y.key: y,
+          FBAXWire.Request.maxDepth.key: maxDepth,
+          FBAXWire.Request.maxNodes.key: maxNodes,
+          FBAXWire.Request.method.key: method.rawValue,
+        ]))
   }
 
-  func hitTest(x: Double, y: Double) async throws -> Data {
-    try await roundTripWithRecovery([
-      FBAXWire.Request.verb.key: FBAXWire.Verb.hitTest.rawValue,
-      FBAXWire.Request.x.key: x,
-      FBAXWire.Request.y.key: y,
-    ])
+  func hitTest(x: Double, y: Double, attributes: [String]?) async throws -> Data {
+    try await roundTripWithRecovery(
+      Self.adding(
+        attributes,
+        to: [
+          FBAXWire.Request.verb.key: FBAXWire.Verb.hitTest.rawValue,
+          FBAXWire.Request.x.key: x,
+          FBAXWire.Request.y.key: y,
+        ]))
+  }
+
+  /// Adds the attribute list to a request payload, or leaves the payload untouched for a default read —
+  /// an absent field is what makes that read's bytes identical to a host that predates the field.
+  private static func adding(_ attributes: [String]?, to payload: [String: Any]) -> [String: Any] {
+    guard let attributes, !attributes.isEmpty else {
+      return payload
+    }
+    var payload = payload
+    payload[FBAXWire.Request.attributes.key] = attributes
+    return payload
   }
 
   func write(_ request: FBAXBridgeWriteRequest) async throws -> Data {

@@ -31,9 +31,12 @@ enum FBAXWire {
     case automationType = "XC_kAXXCAttributeAutomationType"
     case children = "XC_kAXXCAttributeChildren"
 
-    /// The attribute list requested for each element during a read. Membership *and* order are part of
-    /// the contract: the guest fetches and echoes back exactly this sequence.
-    static let fetchList: [String] = [
+    /// The attribute list a read requests for each element when it names none of its own. Membership
+    /// *and* order are part of the contract: the guest fetches and echoes back exactly this sequence.
+    ///
+    /// A read may name a different list through `Request.attributes`; this is what both sides fall back
+    /// to when it does not, which is what keeps a default read byte-identical on the wire.
+    static let defaultFetchList: [String] = [
       elementType, elementBaseType, label, value, identifier, frame, automationType, children,
     ].map(\.rawValue)
 
@@ -118,6 +121,9 @@ enum FBAXWire {
     case pid
     case maxDepth
     case maxNodes
+    /// The attributes the guest fetches per element. Omitted for a default read, which is what keeps
+    /// that read byte-identical on the wire; the guest falls back to `Node.defaultFetchList`.
+    case attributes
     case x
     case y
     case method
@@ -137,6 +143,7 @@ enum FBAXWire {
       case .pid: "--pid"
       case .maxDepth: "--max-depth"
       case .maxNodes: "--max-nodes"
+      case .attributes: "--attributes"
       case .x: "--x"
       case .y: "--y"
       case .method: "--method"

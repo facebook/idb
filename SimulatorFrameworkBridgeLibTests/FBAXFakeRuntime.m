@@ -81,6 +81,8 @@ static NSString *const kAXChildren = @"XC_kAXXCAttributeChildren";
 
 - (FBAXReadOutcome *)readAttributes:(NSArray<NSString *> *)attributes ofElement:(id)element
 {
+  // Recorded before the outcome switch, so a read that fails still evidences what it asked for.
+  _lastReadAttributes = [attributes copy];
   if (self.readRaiseReason) {
     [NSException raise:NSInternalInconsistencyException format:@"%@", self.readRaiseReason];
   }
