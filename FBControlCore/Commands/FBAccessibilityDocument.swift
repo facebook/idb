@@ -667,6 +667,13 @@ public struct FBAccessibilityDocumentElement: Sendable, Equatable, Encodable {
   /// which emits both.
   public var role: String??
   public var axFrame: String??
+  /// What a hit-test at this element's centre found, as the backend reported it.
+  ///
+  /// Not part of the emitted schema and absent from `CodingKeys`: it is an *input* to deciding why an
+  /// element is blocked, consumed by the refinement that turns it into a reason and never emitted on its
+  /// own. Carrying it on the element is what lets the guest answer once, inline, instead of the host
+  /// asking per element.
+  public var explainedBy: FBAccessibilityElementRef?
   /// The nested children, or `nil` when the read did not walk them — a flat read lists every node
   /// separately and carries no `children` key at all. Not an attribute: it comes from the traversal.
   ///

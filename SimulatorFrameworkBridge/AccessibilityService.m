@@ -37,6 +37,9 @@ static NSString *const kAXChildren = @"XC_kAXXCAttributeChildren";
 // an unreachable element means is the host's job, not the reader's.
 static NSString *const kAXVisiblePoint = @"XC_kAXXCAttributeVisiblePoint";
 static NSString *const kAXCenterPoint = @"XC_kAXXCAttributeCenterPoint";
+// Whether the accessibility server can name any point at which a touch reaches the element. Read by the
+// walk to decide which nodes are worth explaining; the host reads it too, for its own verdict.
+static NSString *const kAXIsVisible = @"XC_kAXXCAttributeIsVisible";
 
 static NSString *const kRequestVerb = @"verb";
 static NSString *const kRequestPid = @"pid";
@@ -48,6 +51,19 @@ static NSString *const kRequestMaxNodes = @"maxNodes";
 // backend fetches alike — and naming them per request is what keeps an attribute nobody asked for off
 // the wire entirely rather than merely out of the serialized output.
 static NSString *const kRequestAttributes = @"attributes";
+// Asks the walk to explain each element the accessibility server reports unreachable, by hit-testing that
+// element's centre and reporting whatever answered. Optional and off by default: it costs an extra AX
+// round trip per unreachable element, and only a caller that intends to use the answer should pay.
+//
+// Done in-guest rather than by the host issuing one hit-test per element. The host has no cheaper way to
+// ask — every hit-test would be a separate spawn or socket exchange — whereas here the runtime is already
+// bound, the tree is already being walked, and the answers ride home inside the response that was coming
+// anyway. One round trip instead of one per element.
+static NSString *const kRequestExplainUnreachable = @"explainUnreachable";
+// The synthetic per-node key the explanation is reported under. Not an `XC_kAXXC*` attribute — the
+// accessibility server does not vend this; the reader derives it — so it is spelled in the reader's own
+// namespace to keep the two kinds of key distinguishable on the wire.
+static NSString *const kNodeExplainedBy = @"FBExplainedBy";
 static NSString *const kRequestX = @"x";
 static NSString *const kRequestY = @"y";
 // Selects how a fused frontmost read (a `describe` with no pid) resolves the foreground app. Optional;
@@ -192,6 +208,14 @@ void FBAXBridgeSetRuntimeForTesting(id<FBAXRuntime> _Nullable runtime)
 
 // The attributes a read fetches when the request names none. Membership *and* order are part of the wire
 // contract, mirrored host-side by `FBAXWire.Node.defaultFetchList`.
+// What an explanation reports about the element that answered a hit-test: enough for the host to
+// recognise it inside the tree it already holds, and to name it to a caller. Deliberately short — this is
+// read once per unreachable element, so every name here is paid for many times over.
+static NSArray<NSString *> *FBAXBridgeExplanationFetchList(void)
+{
+  return @[kAXElementType, kAXLabel, kAXIdentifier, kAXFrame, kAXAutomationType];
+}
+
 static NSArray<NSString *> *FBAXBridgeDefaultFetchList(void)
 {
   return @[
@@ -365,9 +389,57 @@ static id FBAXBridgeJSONSafeValue(id _Nullable value, NSString *key)
 //
 // The outcome describes only *this* element. A child that fails to read is dropped from the tree rather
 // than failing the whole read, so a child's outcome never becomes the caller's.
+// Whether the accessibility server said this node is reachable. Absent or non-boolean counts as
+// reachable, so an explanation is never attempted for a node the caller did not ask visibility about.
+static BOOL FBAXBridgeNodeIsUnreachable(NSDictionary<NSString *, id> *node)
+{
+  id visible = node[kAXIsVisible];
+  return [visible isKindOfClass:NSNumber.class] && ![(NSNumber *)visible boolValue];
+}
+
+// The element a display-wide hit-test finds at `point`, described by the short explanation attribute set,
+// or nil when nothing is there or the hit-test fails.
+//
+// Display-wide rather than scoped to the application, because part of the value is catching another
+// process compositing on top — an element covered by system chrome is covered whoever drew it, and a
+// hit-test scoped to the app would report the app's own view underneath and call it the answer.
+static NSDictionary<NSString *, id> *_Nullable FBAXBridgeExplanationAtPoint(id<FBAXRuntime> runtime, CGPoint point)
+{
+  FBAXHitTestOutcome *hit = [runtime hitTestAtPoint:point processIdentifier:0];
+  if (hit.status != FBAXHitTestStatusHit) {
+    return nil;
+  }
+  id hitElement = hit.element;
+  if (!hitElement) {
+    return nil;
+  }
+  FBAXReadOutcome *read = [runtime readAttributes:FBAXBridgeExplanationFetchList() ofElement:hitElement];
+  if (read.status != FBAXReadStatusRead || !read.attributes) {
+    return nil;
+  }
+  NSMutableDictionary *explanation = [NSMutableDictionary dictionaryWithCapacity:read.attributes.count];
+  for (NSString *key in read.attributes) {
+    explanation[key] = FBAXBridgeJSONSafeValue(read.attributes[key], key);
+  }
+  return explanation;
+}
+
+// The point a hit-test aimed at this node should use: its own centre, as the runtime reports it. Read
+// from the node rather than derived from the frame so the two agree — the server's notion of an element's
+// centre is what its own reachability is measured against.
+static BOOL FBAXBridgeNodeCentre(NSDictionary<NSString *, id> *node, CGPoint *point)
+{
+  id centre = node[kAXCenterPoint];
+  if (![centre isKindOfClass:NSDictionary.class]) {
+    return NO;
+  }
+  return CGPointMakeWithDictionaryRepresentation((__bridge CFDictionaryRef)centre, point);
+}
+
 static FBAXReadOutcome *FBAXBridgeBuildNode(id<FBAXRuntime> runtime,
                                             id element,
                                             NSArray<NSString *> *fetchList,
+                                            BOOL explainUnreachable,
                                             int depth,
                                             int maxDepth,
                                             int *budget,
@@ -401,7 +473,7 @@ static FBAXReadOutcome *FBAXBridgeBuildNode(id<FBAXRuntime> runtime,
       }
       (*budget)--;
       FBAXReadOutcome *childOutcome =
-      FBAXBridgeBuildNode(runtime, child, fetchList, depth + 1, maxDepth, budget, truncated);
+      FBAXBridgeBuildNode(runtime, child, fetchList, explainUnreachable, depth + 1, maxDepth, budget, truncated);
       if (childOutcome.status == FBAXReadStatusRead) {
         [children addObject:(NSDictionary *)childOutcome.attributes];
       }
@@ -410,6 +482,16 @@ static FBAXReadOutcome *FBAXBridgeBuildNode(id<FBAXRuntime> runtime,
     *truncated = YES;  // the depth cap stopped descent into this node's existing children
   }
   node[kAXChildren] = children;
+
+  // Only an unreachable node is worth an explanation: a reachable one already answers the caller's
+  // question, and hit-testing it would spend a round trip to be told what it already knows.
+  CGPoint centre = CGPointZero;
+  if (explainUnreachable && FBAXBridgeNodeIsUnreachable(node) && FBAXBridgeNodeCentre(node, &centre)) {
+    NSDictionary *explanation = FBAXBridgeExplanationAtPoint(runtime, centre);
+    if (explanation) {
+      node[kNodeExplainedBy] = explanation;
+    }
+  }
   return [FBAXReadOutcome read:node];
 }
 
@@ -651,7 +733,7 @@ static NSDictionary *FBAXBridgeHitTest(id<FBAXRuntime> runtime, NSDictionary *re
     return FBAXBridgeErrorResponse(@"the hit-test reported an element and carried none");
   }
   FBAXReadOutcome *read =
-  FBAXBridgeBuildNode(runtime, hitElement, FBAXBridgeFetchListForRequest(request), 0, 0, &budget, &truncated);
+  FBAXBridgeBuildNode(runtime, hitElement, FBAXBridgeFetchListForRequest(request), NO, 0, 0, &budget, &truncated);
   switch (read.status) {
     case FBAXReadStatusRead:
       break;
@@ -1046,7 +1128,16 @@ static NSDictionary<NSString *, id> *FBAXBridgeDispatchRequest(NSDictionary<NSSt
   : kDefaultNodeBudget;
   BOOL truncated = NO;
   FBAXReadOutcome *read =
-  FBAXBridgeBuildNode(runtime, root, FBAXBridgeFetchListForRequest(request), 0, maxDepth, &budget, &truncated);
+  FBAXBridgeBuildNode(
+    runtime,
+    root,
+    FBAXBridgeFetchListForRequest(request),
+    [request[kRequestExplainUnreachable] boolValue],
+    0,
+    maxDepth,
+    &budget,
+    &truncated
+  );
   switch (read.status) {
     case FBAXReadStatusRead:
       break;
@@ -1268,6 +1359,8 @@ int handleAccessibilityAction(NSString *action, NSArray<NSString *> *arguments)
       request[kRequestMaxDepth] = @(argValue.intValue);
     } else if ([flag isEqualToString:@"--max-nodes"]) {
       request[kRequestMaxNodes] = @(argValue.intValue);
+    } else if ([flag isEqualToString:@"--explain-unreachable"]) {
+      request[kRequestExplainUnreachable] = @([argValue boolValue]);
     } else if ([flag isEqualToString:@"--attributes"]) {
       // Comma-separated, because argv is read strictly in flag/value pairs and an attribute name never
       // contains a comma. The socket transport sends the same field as a JSON array.
@@ -1314,6 +1407,8 @@ NSDictionary<NSString *, NSString *> *FBAXBridgeWireConstantsForTesting(void)
     @"request.maxDepth" : kRequestMaxDepth,
     @"request.maxNodes" : kRequestMaxNodes,
     @"request.attributes" : kRequestAttributes,
+    @"request.explainUnreachable" : kRequestExplainUnreachable,
+    @"node.explainedBy" : kNodeExplainedBy,
     @"request.x" : kRequestX,
     @"request.y" : kRequestY,
     @"request.method" : kRequestMethod,

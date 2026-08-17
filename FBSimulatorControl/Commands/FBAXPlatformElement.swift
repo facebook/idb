@@ -53,6 +53,14 @@ protocol FBAXPlatformElement: AnyObject {
   func axHittablePoint() -> CGPoint?
   func axCentrePoint() -> CGPoint?
   func axIsUserInteractionEnabled() -> Bool?
+
+  /// The element a hit-test at this one's centre found, as the backend was able to establish it. Nil when
+  /// the read did not ask, the backend cannot answer, or nothing was there.
+  ///
+  /// Answered by the backend rather than by the caller hit-testing, because the backend can do it where
+  /// it is cheap: the guest reader is already walking the tree with the runtime bound, so it resolves
+  /// this inline instead of the host paying a round trip per element.
+  func axExplainedBy() -> FBAXPlatformElement?
   func axCustomActionNames() -> [String]
   func axActionNames() -> [String]
   func axTraits() -> [String]?
@@ -97,6 +105,7 @@ extension AXPMacPlatformElement: FBAXPlatformElement {
   func axHittablePoint() -> CGPoint? { nil }
   func axCentrePoint() -> CGPoint? { nil }
   func axIsUserInteractionEnabled() -> Bool? { nil }
+  func axExplainedBy() -> FBAXPlatformElement? { nil }
   func axCustomActionNames() -> [String] { (accessibilityCustomActions() ?? []).map { $0.name } }
   func axActionNames() -> [String] {
     // Read by message: the instance `accessibilityActionNames` is shadowed by a

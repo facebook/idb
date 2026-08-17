@@ -261,6 +261,56 @@ final class FBAXInteractableTests: XCTestCase {
     XCTAssertEqual([FBAccessibilityInteractable.Reason.notHittable].mostSpecificFirst, [.notHittable])
   }
 
+  // MARK: - Handled by a relative
+
+  func testHandledByHasItsOwnWireSpelling() {
+    XCTAssertEqual(FBAccessibilityInteractable.Reason.handledBy(nil).kind, "handled_by")
+  }
+
+  // Both cases that can name an element encode it under the same key, so a consumer reads `by` once
+  // rather than once per reason kind.
+  func testHandledByEncodesTheElementThatTookTheTouch() throws {
+    let owner = FBAccessibilityElementRef(
+      type: "Button", identifier: "standby", label: "StandBy",
+      frame: FBAccessibilityFrame(CGRect(x: 16, y: 744, width: 370, height: 52)), pid: 3283
+    )
+    let encoded = try Self.encode(.blocked(reasons: [.handledBy(owner)]))
+    let reasons = try XCTUnwrap(encoded["reasons"] as? [[String: Any]])
+    XCTAssertEqual(reasons[0]["kind"] as? String, "handled_by")
+    let by = try XCTUnwrap(reasons[0]["by"] as? [String: Any])
+    XCTAssertEqual(by["label"] as? String, "StandBy")
+    XCTAssertEqual(by["type"] as? String, "Button")
+  }
+
+  // Unnamed when no hit-test was paid for, the same as an unnamed occluder — the shape does not change,
+  // only what is known.
+  func testHandledByOmitsTheElementWhenNoHitTestWasPaidFor() throws {
+    let encoded = try Self.encode(.blocked(reasons: [.handledBy(nil)]))
+    let reasons = try XCTUnwrap(encoded["reasons"] as? [[String: Any]])
+    XCTAssertEqual(reasons[0]["kind"] as? String, "handled_by")
+    XCTAssertNil(reasons[0]["by"])
+  }
+
+  // It explains, so it sorts ahead of the bare observation like every other explanation.
+  func testHandledByIsAnExplanationNotAnObservation() {
+    XCTAssertFalse(FBAccessibilityInteractable.Reason.handledBy(nil).isBareObservation)
+    XCTAssertEqual(
+      [FBAccessibilityInteractable.Reason.notHittable, .handledBy(nil)].mostSpecificFirst,
+      [.handledBy(nil), .notHittable]
+    )
+  }
+
+  // An element explained by a relative is no longer unexplained, which is the whole point of adding it.
+  func testAnElementHandledByARelativeIsNotUnexplained() throws {
+    var handled = FBAccessibilityDocumentElement()
+    handled.interactable = .some(.blocked(reasons: [.handledBy(nil)]))
+    var bare = FBAccessibilityDocumentElement()
+    bare.interactable = .some(.blocked(reasons: [.notHittable]))
+    let summary = try XCTUnwrap(FBAccessibilityInteractionSummary(elements: [handled, bare]))
+    XCTAssertEqual(summary.blocked, 2)
+    XCTAssertEqual(summary.unexplained, 1)
+  }
+
   // MARK: - What `occluded_by` needs serialized
 
   // `occluded_by` hit-tests an element's centre and then has to recognise whether the element that

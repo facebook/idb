@@ -163,6 +163,15 @@ enum FBAXNodeSerializer {
     if keys.contains(.interactable) {
       collector?.incrementAttributeFetchCount(forKey: FBAXKeys.interactable.rawValue)
       node.interactable = .some(interactable(forElement: element, frame: frame))
+      node.explainedBy = element.axExplainedBy().map { explanation in
+        FBAccessibilityElementRef(
+          type: explanation.axRole().map(FBAXRoleVocabulary.normalizeRole),
+          identifier: explanation.axIdentifier(),
+          label: explanation.axLabel(),
+          frame: FBAccessibilityFrame(explanation.axFrame()),
+          pid: Int64(explanation.axTranslationPid)
+        )
+      }
     }
 
     return node

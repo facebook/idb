@@ -76,7 +76,11 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
   /// pid, falling back to a screen-centre probe. Returns the raw tree with the owning pid and whether
   /// the walk hit the depth or node bound. The remote backend does not surface fullscreen-modal
   /// information (yet), so `modal` is always `nil`.
-  func readRawTree(for query: FBAccessibilityElementQuery, attributes: [String]?) async throws -> FBAXTreeRead {
+  func readRawTree(
+    for query: FBAccessibilityElementQuery,
+    attributes: [String]?,
+    explainUnreachable: Bool
+  ) async throws -> FBAXTreeRead {
     let fetchList = attributes ?? FBAXWire.Node.defaultFetchList
     let tree: FBRemoteAutomationElementTree
     let root: [String: Any]
@@ -320,7 +324,7 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
   /// the marker write verbs (tap, set-value). Throws `elementNotFound` when nothing matches the marker,
   /// or `elementNotOnScreen` when an element matches but reports no on-screen frame to interact with.
   private func markerCenter(_ markerValue: String, key: FBAXSearchableKey) async throws -> (x: Double, y: Double) {
-    let read = try await readRawTree(for: .frontmost, attributes: nil)
+    let read = try await readRawTree(for: .frontmost, attributes: nil, explainUnreachable: false)
     warnIfTruncated(read.truncated)
     let elements = FBAXTreeWalk.describeAllElements(fromTree: read.tree, keys: FBAXKeys.defaultSet.union([key.serializationKey]), nestedFormat: false, pid: read.pid)
     switch FBAXTreeWalk.resolveMarker(inElements: elements, markerValue: markerValue, key: key) {

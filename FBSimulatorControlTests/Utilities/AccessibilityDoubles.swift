@@ -170,6 +170,7 @@ extension FBSimulatorControlTests_AXPMacPlatformElement_Double: FBAXPlatformElem
   func axHittablePoint() -> CGPoint? { nil }
   func axCentrePoint() -> CGPoint? { nil }
   func axIsUserInteractionEnabled() -> Bool? { nil }
+  func axExplainedBy() -> FBAXPlatformElement? { nil }
   func axCustomActionNames() -> [String] {
     (accessibilityCustomActions ?? []).compactMap { ($0 as? NSAccessibilityCustomAction)?.name }
   }

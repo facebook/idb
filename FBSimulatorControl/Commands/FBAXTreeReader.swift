@@ -32,7 +32,11 @@ protocol FBAXTreeReader: FBUIAutomation {
   /// `attributes` names what the guest fetches per element, or nil to leave it on its default list.
   /// Derived from the caller's requested keys, so an attribute only reaches the wire when a key that
   /// needs it was asked for.
-  func readRawTree(for query: FBAccessibilityElementQuery, attributes: [String]?) async throws -> FBAXTreeRead
+  func readRawTree(
+    for query: FBAccessibilityElementQuery,
+    attributes: [String]?,
+    explainUnreachable: Bool
+  ) async throws -> FBAXTreeRead
 
   /// Warns that a read's tree was truncated by the depth or node bound, so an incomplete tree is never
   /// passed off as whole. Per backend because each logs through its own target; `describeTree` calls it
@@ -70,7 +74,7 @@ extension FBAXTreeReader {
       return response.withProvenance(backend: backend.name, target: query.targetDescriptor)
     case let .marker(value, key, _):
       let markerKeys = options.serializationKeys(including: [key.serializationKey])
-      let read = try await readRawTree(for: query, attributes: FBAXWire.Node.fetchList(for: markerKeys))
+      let read = try await readRawTree(for: query, attributes: FBAXWire.Node.fetchList(for: markerKeys), explainUnreachable: false)
       await warnIfTruncated(read.truncated)
       let elements = FBAXTreeWalk.describeAllElements(
         fromTree: read.tree, keys: markerKeys, nestedFormat: false, pid: read.pid
@@ -89,7 +93,12 @@ extension FBAXTreeReader {
           truncated: read.truncated
         )
     case .frontmost, .application:
-      let read = try await readRawTree(for: query, attributes: FBAXWire.Node.fetchList(for: options.serializationKeys))
+      let read = try await readRawTree(
+        for: query,
+        attributes: FBAXWire.Node.fetchList(for: options.serializationKeys),
+        // Only a read that asked to name what is in the way pays for the guest to work it out.
+        explainUnreachable: options.keys.contains(.occludedBy)
+      )
       await warnIfTruncated(read.truncated)
       let walked = FBAXTreeWalk.describeAllElements(
         fromTree: read.tree, keys: options.serializationKeys, nestedFormat: options.nestedFormat, pid: read.pid
@@ -178,38 +187,31 @@ extension FBAXTreeReader {
     guard options.keys.contains(.occludedBy) else {
       return element
     }
-    guard case let .blocked(reasons)?? = element.interactable,
-      let centre = (element.frame ?? nil)?.rect.map({ CGPoint(x: $0.midX, y: $0.midY) })
-    else {
+    guard case let .blocked(reasons)?? = element.interactable else {
       return element
     }
-    // Two reasons are worth a hit-test: one already known to be occluded but not yet named, and the bare
-    // observation, which a hit-test can usually turn into an explanation. Anything else is already
-    // explained and would only be paying for an answer it has.
-    let needsNaming = reasons.contains { if case .occluded(nil) = $0 { return true } else { return false } }
-    let needsExplaining = reasons.contains(.notHittable)
-    guard needsNaming || needsExplaining else {
+    // The guest already hit-tested this element's centre during its walk and sent the answer back with
+    // the tree, so there is nothing to ask for here — only an answer to interpret. That is the whole
+    // difference between one round trip and one per unreachable element.
+    guard let found = element.explainedBy else {
       return element
     }
-    guard let found = await elementRef(atCentre: centre) else {
-      return element
-    }
+    let foundIdentity = FBAXElementIdentity(found)
     // Whether the element that took the touch is a relative decides which answer this is. A relative
     // means the element was never independently interactive — a label inside its button, or a container
     // passing through to its child — and the caller should act on that relative. Anything else is
     // genuinely in the way.
     let isRelative =
-      ancestors.contains(found.identity) || Self.descendantIdentities(of: element).contains(found.identity)
+      ancestors.contains(foundIdentity) || Self.descendantIdentities(of: element).contains(foundIdentity)
     element.interactable = .some(
       .blocked(
         reasons: reasons.map { reason in
-          if case .occluded(nil) = reason {
-            return isRelative ? .handledBy(found.reference) : .occluded(by: found.reference)
+          switch reason {
+          case .occluded(nil), .notHittable:
+            return isRelative ? .handledBy(found) : .occluded(by: found)
+          default:
+            return reason
           }
-          if case .notHittable = reason {
-            return isRelative ? .handledBy(found.reference) : .occluded(by: found.reference)
-          }
-          return reason
         }
       )
     )
@@ -280,7 +282,7 @@ extension FBAXTreeReader {
       }
       return FBAXWriteTarget(point: point, pid: nil, assertion: nil)
     case let .marker(value, key, _):
-      let read = try await readRawTree(for: query, attributes: nil)
+      let read = try await readRawTree(for: query, attributes: nil, explainUnreachable: false)
       await warnIfTruncated(read.truncated)
       // Unfiltered, like the marker branch of `describeTree`: a write resolves the element the caller
       // named, and a caller's `--filter` is about what a read reports, not about what exists to act on.
@@ -434,11 +436,23 @@ struct FBAXElementIdentity: Hashable {
   private let label: String?
   private let frame: [Double]
 
+  /// The element as the guest described whatever answered a hit-test.
+  init(_ reference: FBAccessibilityElementRef) {
+    self.init(
+      type: reference.type, identifier: reference.identifier, label: reference.label,
+      rect: reference.frame?.rect)
+  }
+
   init(_ element: FBAccessibilityDocumentElement) {
-    self.type = element.type ?? nil
-    self.identifier = element.identifier ?? nil
-    self.label = element.label ?? nil
-    let rect = (element.frame ?? nil)?.rect
+    self.init(
+      type: element.type ?? nil, identifier: element.identifier ?? nil,
+      label: element.label ?? nil, rect: (element.frame ?? nil)?.rect)
+  }
+
+  private init(type: String?, identifier: String?, label: String?, rect: CGRect?) {
+    self.type = type
+    self.identifier = identifier
+    self.label = label
     // Rounded, because the two reads reach the same coordinate by different arithmetic and an exact
     // Double comparison would make identity depend on the last bit.
     self.frame =

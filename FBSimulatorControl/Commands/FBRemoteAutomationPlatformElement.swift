@@ -91,6 +91,15 @@ final class FBRemoteAutomationPlatformElement: FBAXPlatformElement {
   func axHittablePoint() -> CGPoint? { pointAttribute(FBAXWire.Node.visiblePoint.rawValue) }
   func axCentrePoint() -> CGPoint? { pointAttribute(FBAXWire.Node.centerPoint.rawValue) }
   func axIsUserInteractionEnabled() -> Bool? { boolAttribute(FBAXWire.Node.userInteractionEnabled.rawValue) }
+
+  /// What the guest's hit-test at this element's centre found, when the read asked it to look. Nil when
+  /// it did not ask, when the element is reachable, or when nothing answered.
+  func axExplainedBy() -> FBAXPlatformElement? {
+    guard let attributes = self.attributes[FBAXWire.Node.explainedBy.rawValue] as? [String: Any] else {
+      return nil
+    }
+    return FBRemoteAutomationPlatformElement(attributes: attributes, children: [], pid: pid)
+  }
   func axCustomActionNames() -> [String] { [] }
   func axActionNames() -> [String] { [] }
   func axTraits() -> [String]? { nil }
