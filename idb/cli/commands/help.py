@@ -35,9 +35,13 @@ Interact by element identity, not coordinates
   element and invokes its press action, so it does not drift with layout,
   scale, or scroll position the way coordinate taps do.
 - `idb ui set-value` and `idb ui scroll` address elements the same way.
+- When an element exposes no AXUniqueId but you can name what is on
+  screen, tap it by its visible label: `idb ui tap "<label>"` - the label
+  is the default match key, and it works on surfaces that never set
+  identifiers.
 - Coordinate taps (`idb ui tap <x> <y>`) are a last resort for targets
-  without accessibility identity. When one is genuinely required, record
-  why with `--reason`.
+  with neither identifier nor label. When one is genuinely required,
+  record why with `--reason`.
 
 Record intent
 - `--reason "<why>"` is accepted by every command and records the intent

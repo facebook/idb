@@ -50,6 +50,7 @@ class HelpCommandTest(TestCase):
         self.assertIn("--reason", output)
         self.assertIn("CODING_AGENT_METADATA", output)
         self.assertIn("AI_AGENT", output)
+        self.assertIn('tap it by its visible label: `idb ui tap "<label>"`', output)
         self.assertIn("last resort", output)
 
     async def test_subtopic_words_join_to_a_key(self) -> None:
