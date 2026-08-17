@@ -204,10 +204,11 @@ public class FBTemporaryDirectory: NSObject {
           return FBFuture<AnyObject>(result: tempFile as NSURL)
         }
       )
+      .retyped(FBFutureContext<NSURL>.self)
       .onQueue(
         queue,
         contextualTeardown: { (result, _) -> FBFuture<NSNull> in
-          let tempFile = result as! URL
+          let tempFile = result as URL
           do {
             try FileManager.default.removeItem(at: tempFile)
             self.logger.log("Deleted Temp File \(tempFile)")

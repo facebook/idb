@@ -74,8 +74,10 @@ public final class FBBundleDescriptor: NSObject, NSCopying, Sendable {
     return replacementsForBinary()
       .onQueue(
         queue,
-        fmap: { (result: AnyObject) -> FBFuture<AnyObject> in
-          let replacements = result as! NSDictionary as! [String: String]
+        fmap: { replacementsDictionary -> FBFuture<AnyObject> in
+          guard let replacements = replacementsDictionary as? [String: String] else {
+            return FBControlCoreError.describe("Expected the rpath replacements to be strings, got \(replacementsDictionary)").failFuture()
+          }
           if replacements.isEmpty {
             return FBFuture(result: replacements as NSDictionary)
           }
@@ -97,10 +99,10 @@ public final class FBBundleDescriptor: NSObject, NSCopying, Sendable {
             .mapReplace(replacements as NSDictionary)
         }
       )
+      .retyped(FBFuture<NSDictionary>.self)
       .onQueue(
         queue,
-        fmap: { (result: AnyObject) -> FBFuture<AnyObject> in
-          let replacements = result as! NSDictionary
+        fmap: { replacements -> FBFuture<AnyObject> in
           logger.log("Re-Codesigning after rpath update \(self.path)")
           return codesign.signBundle(atPath: self.path).mapReplace(replacements)
         })
@@ -121,7 +123,7 @@ public final class FBBundleDescriptor: NSObject, NSCopying, Sendable {
       ?? ((bundle.bundlePath as NSString).deletingPathExtension as NSString).lastPathComponent
   }
 
-  private func replacementsForBinary() -> FBFuture<AnyObject> {
+  private func replacementsForBinary() -> FBFuture<NSDictionary> {
     do {
       let rpaths = try binary?.rpaths()
       guard let rpaths else {

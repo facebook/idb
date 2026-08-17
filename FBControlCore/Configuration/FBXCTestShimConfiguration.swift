@@ -7,11 +7,27 @@
 
 import Foundation
 
-private let keySimulatorTestShim = "ios_simulator_test_shim"
-private let keyMacTestShim = "mac_test_shim"
-
 private let shimulatorFileName = "libShimulator-iOS.dylib"
 private let maculatorShimFileName = "libShimulator-macOS.dylib"
+
+private enum CanonicalShim: CaseIterable {
+  case iOSSimulatorTest
+  case macTest
+
+  var filename: String {
+    switch self {
+    case .iOSSimulatorTest: return shimulatorFileName
+    case .macTest: return maculatorShimFileName
+    }
+  }
+
+  var codesigningRequired: Bool {
+    switch self {
+    case .iOSSimulatorTest: return FBControlCoreGlobalConfiguration.confirmCodesignaturesAreValid
+    case .macTest: return false
+    }
+  }
+}
 
 public class FBXCTestShimConfiguration: NSObject, NSCopying {
 
@@ -32,30 +48,14 @@ public class FBXCTestShimConfiguration: NSObject, NSCopying {
     DispatchQueue(label: "com.facebook.xctestbootstrap.shims")
   }
 
-  private class var canonicalShimNameToShimFilenames: [String: String] {
-    [
-      keySimulatorTestShim: shimulatorFileName,
-      keyMacTestShim: maculatorShimFileName,
-    ]
-  }
-
-  private class var canonicalShimNameToCodesigningRequired: [String: Bool] {
-    [
-      keySimulatorTestShim: FBControlCoreGlobalConfiguration.confirmCodesignaturesAreValid,
-      keyMacTestShim: false,
-    ]
-  }
-
-  private class func pathForCanonicallyNamedShim(_ canonicalName: String, inDirectory directory: String, logger: FBControlCoreLogger?) -> FBFuture<AnyObject> {
-    let filename = canonicalShimNameToShimFilenames[canonicalName]!
+  private class func pathForCanonicallyNamedShim(_ shim: CanonicalShim, inDirectory directory: String, logger: FBControlCoreLogger?) -> FBFuture<AnyObject> {
     let codesign = FBCodesignProvider.codeSignCommand(withIdentityName: "-", logger: nil)
-    let signingRequired = canonicalShimNameToCodesigningRequired[canonicalName]!
 
-    let shimPath = (directory as NSString).appendingPathComponent(filename)
+    let shimPath = (directory as NSString).appendingPathComponent(shim.filename)
     if !FileManager.default.fileExists(atPath: shimPath) {
       return FBControlCoreError.describe("No shim located at expected location of \(shimPath)").failFuture()
     }
-    if !signingRequired {
+    if !shim.codesigningRequired {
       return FBFuture(result: shimPath as AnyObject)
     }
     return codesign.cdHashForBundle(atPath: shimPath)
@@ -72,7 +72,7 @@ public class FBXCTestShimConfiguration: NSObject, NSCopying {
         }
 
         let searchFuture: FBFuture<AnyObject> = confirmExistenceOfRequiredShims(inDirectory: searchPath, logger: logger)
-        let shimNames = Array(self.canonicalShimNameToShimFilenames.values)
+        let shimNames = CanonicalShim.allCases.map(\.filename)
         return searchFuture.rephraseFailure("Could not find all shims \(FBCollectionInformation.oneLineDescription(from: shimNames)) in the expected directory \(searchPath)")
       })
     return unsafeBitCast(future, to: FBFuture<NSString>.self)
@@ -82,10 +82,7 @@ public class FBXCTestShimConfiguration: NSObject, NSCopying {
     if !FileManager.default.fileExists(atPath: directory) {
       return FBControlCoreError.describe("A shim directory was searched for at '\(directory)', but it was not there").failFuture()
     }
-    var futures: [FBFuture<AnyObject>] = []
-    for canonicalName in canonicalShimNameToShimFilenames.keys {
-      futures.append(pathForCanonicallyNamedShim(canonicalName, inDirectory: directory, logger: logger))
-    }
+    let futures = CanonicalShim.allCases.map { pathForCanonicallyNamedShim($0, inDirectory: directory, logger: logger) }
     let combined = FBFuture<AnyObject>.combine(futures)
     return combined.mapReplace(directory as AnyObject)
   }
@@ -106,12 +103,11 @@ public class FBXCTestShimConfiguration: NSObject, NSCopying {
 
   public class func defaultShimConfiguration(with logger: FBControlCoreLogger?) -> FBFuture<FBXCTestShimConfiguration> {
     let queue = createWorkQueue()
-    let future: FBFuture<AnyObject> = findShimDirectory(onQueue: queue, logger: logger).retyped(FBFuture<AnyObject>.self)
+    let future: FBFuture<AnyObject> = findShimDirectory(onQueue: queue, logger: logger)
       .onQueue(
         queue,
-        fmap: { result -> FBFuture<AnyObject> in
-          let directory = result as! String
-          return shimConfiguration(withDirectory: directory, logger: logger).retyped(FBFuture<AnyObject>.self)
+        fmap: { directory -> FBFuture<AnyObject> in
+          shimConfiguration(withDirectory: directory as String, logger: logger).retyped(FBFuture<AnyObject>.self)
         })
     return unsafeBitCast(future, to: FBFuture<FBXCTestShimConfiguration>.self)
   }
@@ -121,21 +117,25 @@ public class FBXCTestShimConfiguration: NSObject, NSCopying {
     let future: FBFuture<AnyObject> = confirmExistenceOfRequiredShims(inDirectory: directory, logger: logger)
       .onQueue(
         queue,
-        fmap: { result -> FBFuture<AnyObject> in
-          let shimDirectory = result as! String
-          let futures: [FBFuture<AnyObject>] = [
-            pathForCanonicallyNamedShim(keySimulatorTestShim, inDirectory: shimDirectory, logger: logger),
-            pathForCanonicallyNamedShim(keyMacTestShim, inDirectory: shimDirectory, logger: logger),
+        fmap: { _ -> FBFuture<AnyObject> in
+          let futures = [
+            pathForCanonicallyNamedShim(.iOSSimulatorTest, inDirectory: directory, logger: logger),
+            pathForCanonicallyNamedShim(.macTest, inDirectory: directory, logger: logger),
           ]
-          return unsafeBitCast(FBFuture<AnyObject>.combine(futures), to: FBFuture<AnyObject>.self)
+          return FBFuture<AnyObject>.combine(futures)
+            .onQueue(
+              queue,
+              fmap: { shims -> FBFuture<AnyObject> in
+                guard shims.count == 2,
+                  let iOSSimulatorTestShimPath = shims[0] as? String,
+                  let macOSTestShimPath = shims[1] as? String
+                else {
+                  return FBControlCoreError.describe("Expected the iOS simulator and macOS shim paths, got \(shims)").failFuture()
+                }
+                return FBFuture(result: FBXCTestShimConfiguration(iOSSimulatorTestShimPath: iOSSimulatorTestShimPath, macOSTestShimPath: macOSTestShimPath))
+              })
         }
       )
-      .onQueue(
-        queue,
-        map: { result -> AnyObject in
-          let shims = result as! [String]
-          return FBXCTestShimConfiguration(iOSSimulatorTestShimPath: shims[0], macOSTestShimPath: shims[1])
-        })
     return unsafeBitCast(future, to: FBFuture<FBXCTestShimConfiguration>.self)
   }
 

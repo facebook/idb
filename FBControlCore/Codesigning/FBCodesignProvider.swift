@@ -77,8 +77,7 @@ public class FBCodesignProvider: NSObject {
         .runUntilCompletion(withAcceptableExitCodes: nil)
         .onQueue(
           queue,
-          fmap: { [logger] (taskObj: AnyObject) -> FBFuture<AnyObject> in
-            let task = taskObj as! FBSubprocess<NSNull, NSString, NSString>
+          fmap: { [logger] task -> FBFuture<AnyObject> in
             let exitCode = task.exitCode.result
             if exitCode != 0 {
               return
@@ -131,8 +130,7 @@ public class FBCodesignProvider: NSObject {
         .runUntilCompletion(withAcceptableExitCodes: nil)
         .onQueue(
           queue,
-          fmap: { [logger] (taskObj: AnyObject) -> FBFuture<AnyObject> in
-            let task = taskObj as! FBSubprocess<NSNull, NSString, NSString>
+          fmap: { [logger] task -> FBFuture<AnyObject> in
             let exitCode = task.exitCode.result
             if exitCode != 0 {
               return

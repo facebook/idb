@@ -82,22 +82,21 @@ public class FBArchitectureProcessAdapter: NSObject {
               .mapReplace(filePath.path as NSString)
           }
         )
+        .retyped(FBFuture<NSString>.self)
         .onQueue(
           queue,
-          fmap: { (extractedBinaryObj: AnyObject) -> FBFuture<AnyObject> in
-            let extractedBinary = extractedBinaryObj as! String
+          fmap: { extractedBinary -> FBFuture<AnyObject> in
             return self.getFixedupDyldFrameworkPath(fromOriginalBinary: processConfiguration.launchPath, queue: queue)
               .onQueue(
                 queue,
-                map: { (dyldFrameworkPathObj: AnyObject) -> AnyObject in
-                  let dyldFrameworkPath = dyldFrameworkPathObj as! String
+                map: { dyldFrameworkPath -> AnyObject in
                   var updatedEnvironment = processConfiguration.environment as [String: String]
                   // DYLD_FRAMEWORK_PATH adds additional search paths for required "*.framework"s in binary
                   // DYLD_LIBRARY_PATH adds additional search paths for required "*.dylib"s in binary
-                  updatedEnvironment["DYLD_FRAMEWORK_PATH"] = dyldFrameworkPath
-                  updatedEnvironment["DYLD_LIBRARY_PATH"] = dyldFrameworkPath
+                  updatedEnvironment["DYLD_FRAMEWORK_PATH"] = dyldFrameworkPath as String
+                  updatedEnvironment["DYLD_LIBRARY_PATH"] = dyldFrameworkPath as String
                   return FBProcessSpawnConfiguration(
-                    launchPath: extractedBinary,
+                    launchPath: extractedBinary as String,
                     arguments: processConfiguration.arguments,
                     environment: updatedEnvironment as [String: String],
                     io: processConfiguration.io,
@@ -172,32 +171,20 @@ public class FBArchitectureProcessAdapter: NSObject {
   ) -> FBFuture<NSString> {
     let binaryFolder = ((binary as NSString).resolvingSymlinksInPath as NSString).deletingLastPathComponent
 
-    return unsafeBitCast(
-      unsafeBitCast(
-        getOtoolInfo(fromBinary: binary, queue: queue),
-        to: FBFuture<AnyObject>.self
-      )
+    return getOtoolInfo(fromBinary: binary, queue: queue)
       .onQueue(
         queue,
-        map: { (resultObj: AnyObject) -> AnyObject in
-          let result = resultObj as! String
-          return self.extractRpaths(fromOtoolOutput: result) as NSSet
-        }
-      )
-      .onQueue(
-        queue,
-        map: { (resultObj: AnyObject) -> AnyObject in
-          let result = resultObj as! Set<String>
+        map: { otoolOutput -> AnyObject in
           var rpaths: [String] = []
-          for binaryRpath in result {
+          for binaryRpath in self.extractRpaths(fromOtoolOutput: otoolOutput as String) {
             if binaryRpath.hasPrefix("@executable_path") {
               rpaths.append(binaryRpath.replacingOccurrences(of: "@executable_path", with: binaryFolder))
             }
           }
           return rpaths.joined(separator: ":") as NSString
-        }),
-      to: FBFuture<NSString>.self
-    )
+        }
+      )
+      .retyped(FBFuture<NSString>.self)
   }
 
   private func getOtoolInfo(
@@ -214,8 +201,7 @@ public class FBArchitectureProcessAdapter: NSObject {
         .rephraseFailure("Failed query otool -l from \(binary)")
         .onQueue(
           queue,
-          fmap: { task -> FBFuture<AnyObject> in
-            let subprocess = task as! FBSubprocess<AnyObject, NSString, NSNull>
+          fmap: { subprocess -> FBFuture<AnyObject> in
             if let stdOut = subprocess.stdOut {
               return FBFuture<AnyObject>(result: stdOut)
             }
