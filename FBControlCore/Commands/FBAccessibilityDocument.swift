@@ -328,6 +328,18 @@ public enum FBAccessibilityInteractable: Sendable, Equatable {
     case hidden
     /// The element has no area to tap.
     case zeroSize
+    /// Part of the element's frame lies outside the screen.
+    ///
+    /// A geometric fact rather than a claim about cause — it accumulates alongside whatever else blocks
+    /// the element rather than replacing it, because being clipped by the edge and being covered are not
+    /// alternatives and an element is often both. It earns a place in the vocabulary by licensing a
+    /// recovery none of the others do: bring the element fully into view and try again.
+    ///
+    /// The accessibility server never reports this. It is not "off screen" — an element entirely outside
+    /// the screen is absent from the tree altogether, which is the server behaving correctly — but the
+    /// partially-clipped case is both real and common, and is plain geometry against the screen bounds
+    /// the document already carries.
+    case clippedByScreen
   }
 }
 
@@ -439,6 +451,7 @@ extension FBAccessibilityInteractable.Reason: Encodable {
     case .disabled: return "disabled"
     case .hidden: return "hidden"
     case .zeroSize: return "zero_size"
+    case .clippedByScreen: return "clipped_by_screen"
     }
   }
 

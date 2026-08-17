@@ -147,6 +147,7 @@ final class FBAXInteractableTests: XCTestCase {
   func testReasonWireSpellings() {
     let expected: [(FBAccessibilityInteractable.Reason, String)] = [
       (.notHittable, "not_hittable"),
+      (.clippedByScreen, "clipped_by_screen"),
       (.occluded(by: nil), "occluded"),
       (.userInteractionDisabled, "user_interaction_disabled"),
       (.disabled, "disabled"),
@@ -158,7 +159,77 @@ final class FBAXInteractableTests: XCTestCase {
     }
   }
 
-  // MARK: - The `actionable` filter
+  // MARK: - Clipped by the screen edge
+
+  private static let screen = FBAccessibilityScreenInfo(width: 402, height: 874)
+
+  /// Runs the post-serialization refinement the way `describeTree` does.
+  private static func clipped(
+    frame: CGRect,
+    reasons: [FBAccessibilityInteractable.Reason] = [.notHittable]
+  ) -> FBAccessibilityInteractable? {
+    var element = FBAccessibilityDocumentElement()
+    element.frame = .some(FBAccessibilityFrame(frame))
+    element.interactable = .some(.blocked(reasons: reasons))
+    return FBAXScreenBoundsClassifier.notingScreenClipping(element, screen: screen).interactable ?? nil
+  }
+
+  // The measured case: a row scrolled so its top is above the screen. Both facts are reported — it cannot
+  // be reached, and the edge is cutting it off — because they license different recoveries.
+  func testAnElementStraddlingTheTopEdgeIsNotedAsClipped() {
+    XCTAssertEqual(
+      Self.clipped(frame: CGRect(x: 16, y: -21.3, width: 370, height: 52)),
+      .blocked(reasons: [.notHittable, .clippedByScreen]))
+  }
+
+  func testAnElementStraddlingTheBottomEdgeIsNotedAsClipped() {
+    XCTAssertEqual(
+      Self.clipped(frame: CGRect(x: 16, y: 850, width: 370, height: 52)),
+      .blocked(reasons: [.notHittable, .clippedByScreen]))
+  }
+
+  func testAnElementStraddlingASideEdgeIsNotedAsClipped() {
+    XCTAssertEqual(
+      Self.clipped(frame: CGRect(x: -30, y: 400, width: 370, height: 52)),
+      .blocked(reasons: [.notHittable, .clippedByScreen]))
+  }
+
+  // Wholly within the screen: whatever blocks it, the edge is not part of it.
+  func testAnElementWithinTheScreenIsNotNotedAsClipped() {
+    XCTAssertEqual(
+      Self.clipped(frame: CGRect(x: 16, y: 400, width: 370, height: 52)),
+      .blocked(reasons: [.notHittable]))
+  }
+
+  // Accumulates against whatever was already there rather than replacing it, and does not assume the
+  // element is unreachable for a geometric reason — a disabled control clipped by the edge is both.
+  func testClippingAccumulatesAgainstAnyOtherReason() {
+    XCTAssertEqual(
+      Self.clipped(frame: CGRect(x: 16, y: -10, width: 370, height: 52), reasons: [.userInteractionDisabled]),
+      .blocked(reasons: [.userInteractionDisabled, .clippedByScreen])
+    )
+  }
+
+  // Idempotent, so a refinement that runs twice cannot double the reason.
+  func testClippingIsNotAddedTwice() {
+    XCTAssertEqual(
+      Self.clipped(frame: CGRect(x: 16, y: -10, width: 370, height: 52), reasons: [.notHittable, .clippedByScreen]),
+      .blocked(reasons: [.notHittable, .clippedByScreen])
+    )
+  }
+
+  // An actionable element is never annotated: it carries a reachable point and nothing else, so there is
+  // no state in which a caller holds both a usable point and a complaint about the edge.
+  func testAnActionableElementIsNeverNotedAsClipped() {
+    var element = FBAccessibilityDocumentElement()
+    element.frame = .some(FBAccessibilityFrame(CGRect(x: 16, y: -10, width: 370, height: 52)))
+    element.interactable = .some(.actionable(at: FBAccessibilityPoint(x: 201, y: 20)))
+    let refined: FBAccessibilityInteractable? =
+      FBAXScreenBoundsClassifier.notingScreenClipping(element, screen: Self.screen).interactable ?? nil
+    XCTAssertEqual(refined, FBAccessibilityInteractable.actionable(at: FBAccessibilityPoint(x: 201, y: 20)))
+  }
+
+  // MARK: - The `interactable` filter
 
   /// A two-element flat read: a reachable button and a covered one, both button-like.
   private static func mixedRead() -> [FBAccessibilityDocumentElement] {

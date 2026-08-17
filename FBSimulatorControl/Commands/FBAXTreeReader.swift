@@ -94,8 +94,10 @@ extension FBAXTreeReader {
       let walked = FBAXTreeWalk.describeAllElements(
         fromTree: read.tree, keys: options.serializationKeys, nestedFormat: options.nestedFormat, pid: read.pid
       )
-      let elements = try await namingOccluders(options.filter.apply(to: walked), options: options)
       let screen = FBAXTreeWalk.screenInfo(fromTree: read.tree)
+      let elements = try await refiningInteractable(
+        options.filter.apply(to: walked), screen: screen, options: options
+      )
       // Coverage is a calculation over the serialized model, so it is the same one the accessibility
       // backend runs — a whole-tree read reports it whichever backend served it. Remote-content
       // discovery is accessibility-only, so `additional` stays absent here.
@@ -130,30 +132,47 @@ extension FBAXTreeReader {
   /// render tree and cannot see another process compositing on top, whereas a hit-test resolves whatever
   /// is actually there. A hit-test that fails or finds nothing leaves the reason unenriched rather than
   /// failing the read — the occlusion was reported by the attributes and stands on its own.
-  private func namingOccluders(
+  /// The two refinements that need context a single element does not carry: the screen bounds, which say
+  /// whether the edge is cutting the element off, and a hit-test, which names what is covering it.
+  ///
+  /// Runs after the filter so no hit-test is spent on an element about to be dropped. Neither refinement
+  /// changes an element's `status`, only which reasons it carries, so filtering on the verdict first
+  /// cannot select differently for having run first.
+  private func refiningInteractable(
     _ elements: [FBAccessibilityDocumentElement],
+    screen: FBAccessibilityScreenInfo?,
     options: FBAccessibilityRequestOptions
   ) async throws -> [FBAccessibilityDocumentElement] {
-    guard options.keys.contains(.occludedBy) else {
+    guard options.keys.contains(.occludedBy) || screen != nil else {
       return elements
     }
-    var named: [FBAccessibilityDocumentElement] = []
-    named.reserveCapacity(elements.count)
+    var refined: [FBAccessibilityDocumentElement] = []
+    refined.reserveCapacity(elements.count)
     for element in elements {
-      named.append(await namingOccluder(of: element))
+      refined.append(await refiningInteractable(of: element, screen: screen, options: options))
     }
-    return named
+    return refined
   }
 
-  private func namingOccluder(of element: FBAccessibilityDocumentElement) async -> FBAccessibilityDocumentElement {
+  private func refiningInteractable(
+    of element: FBAccessibilityDocumentElement,
+    screen: FBAccessibilityScreenInfo?,
+    options: FBAccessibilityRequestOptions
+  ) async -> FBAccessibilityDocumentElement {
     var element = element
     if let children = element.children {
-      var named: [FBAccessibilityDocumentElement] = []
-      named.reserveCapacity(children.count)
+      var refined: [FBAccessibilityDocumentElement] = []
+      refined.reserveCapacity(children.count)
       for child in children {
-        named.append(await namingOccluder(of: child))
+        refined.append(await refiningInteractable(of: child, screen: screen, options: options))
       }
-      element.children = named
+      element.children = refined
+    }
+    // Free, and done first: whether the screen edge is cutting the element off is geometry the caller
+    // already has the inputs for, and it licenses a recovery the other reasons do not.
+    element = FBAXScreenBoundsClassifier.notingScreenClipping(element, screen: screen)
+    guard options.keys.contains(.occludedBy) else {
+      return element
     }
     guard case let .blocked(reasons)?? = element.interactable,
       reasons.contains(where: { if case .occluded(nil) = $0 { return true } else { return false } }),
@@ -326,5 +345,39 @@ extension FBAXTreeReader {
       throw FBUIAutomationError.frameUnavailable(backend: backend, query: query)
     }
     return CGRect(x: x, y: y, width: width, height: height)
+  }
+}
+
+/// Noting where the screen edge, rather than another element, is part of why something cannot be reached.
+///
+/// Its own type rather than a member of the reader: it is pure geometry over a serialized element and a
+/// screen rectangle, with no dependence on a backend, a transport or a read — which is also what makes it
+/// coverable without one.
+enum FBAXScreenBoundsClassifier {
+
+  /// Adds `clippedByScreen` to a blocked element whose frame is not wholly within the screen.
+  ///
+  /// Accumulates rather than replaces: being cut off by the edge and being covered are not alternatives,
+  /// and an element scrolled under a navigation bar is usually both. Nothing here claims the clipping is
+  /// *why* the element is blocked — only that it is true, and that bringing the element fully into view
+  /// is worth trying.
+  ///
+  /// Only the blocked case, because the actionable case carries a reachable point and nothing else: an
+  /// element you can tap does not need to be told part of it is off the edge.
+  static func notingScreenClipping(
+    _ element: FBAccessibilityDocumentElement,
+    screen: FBAccessibilityScreenInfo?
+  ) -> FBAccessibilityDocumentElement {
+    guard let screen,
+      case let .blocked(reasons)?? = element.interactable,
+      !reasons.contains(.clippedByScreen),
+      let frame = (element.frame ?? nil)?.rect,
+      frame.minX < 0 || frame.minY < 0 || frame.maxX > screen.width || frame.maxY > screen.height
+    else {
+      return element
+    }
+    var element = element
+    element.interactable = .some(.blocked(reasons: reasons + [.clippedByScreen]))
+    return element
   }
 }
