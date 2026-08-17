@@ -98,6 +98,11 @@ public final class FBSimulatorProcessSpawnCommands: NSObject, FBiOSTargetCommand
       options: options,
       terminationQueue: simulator.workQueue,
       terminationHandler: { (statLocValue: Int32) in
+        // The attachment descriptors are closed exactly once, by the detach that
+        // resolveProcessFinished runs. Closing them here as well would race that
+        // asynchronous teardown and double-close recycled descriptor numbers,
+        // which crashes whichever component now owns them (EV_VANISHED on
+        // dispatch-source-monitored descriptors, EBADF traps in SwiftNIO).
         FBProcessSpawnCommandHelpers.resolveProcessFinished(
           withStatLoc: statLocValue,
           inTeardownOfIOAttachment: attachment,
@@ -109,8 +114,6 @@ public final class FBSimulatorProcessSpawnCommands: NSObject, FBiOSTargetCommand
           queue: simulator.workQueue,
           logger: logger
         )
-        attachment.stdOut?.close()
-        attachment.stdErr?.close()
       },
       completionQueue: simulator.workQueue
     )
