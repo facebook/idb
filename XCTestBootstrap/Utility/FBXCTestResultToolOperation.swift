@@ -46,8 +46,11 @@ public final class FBXCTestResultToolOperation {
   }
 
   private static func getJSON(fromTask task: FBSubprocess<AnyObject, AnyObject, AnyObject>) -> NSDictionary {
-    let stdOut = task.stdOut as! NSString
-    let data = stdOut.data(using: String.Encoding.utf8.rawValue)!
+    guard let stdOut = task.stdOut as? NSString,
+      let data = stdOut.data(using: String.Encoding.utf8.rawValue)
+    else {
+      return NSDictionary()
+    }
     return (try? JSONSerialization.jsonObject(with: data, options: [])) as? NSDictionary ?? NSDictionary()
   }
 
@@ -60,16 +63,12 @@ public final class FBXCTestResultToolOperation {
       arguments.append(contentsOf: ["--id", bundleObjectId])
     }
     return unsafeBitCast(
-      unsafeBitCast(
-        FBXCTestResultToolOperation.internalOperation(withArguments: arguments, queue: queue, logger: logger),
-        to: FBFuture<AnyObject>.self
-      )
-      .onQueue(
-        queue,
-        map: { task -> AnyObject in
-          let subprocess = task as! FBSubprocess<AnyObject, AnyObject, AnyObject>
-          return FBXCTestResultToolOperation.getJSON(fromTask: subprocess)
-        }),
+      FBXCTestResultToolOperation.internalOperation(withArguments: arguments, queue: queue, logger: logger)
+        .onQueue(
+          queue,
+          map: { subprocess -> AnyObject in
+            FBXCTestResultToolOperation.getJSON(fromTask: subprocess)
+          }),
       to: FBFuture<NSDictionary>.self
     )
   }
@@ -106,16 +105,12 @@ public final class FBXCTestResultToolOperation {
   public static func describeFormat(_ queue: DispatchQueue, logger: FBControlCoreLogger?) -> FBFuture<NSDictionary> {
     let arguments = ["formatDescription"]
     return unsafeBitCast(
-      unsafeBitCast(
-        FBXCTestResultToolOperation.internalOperation(withArguments: arguments, queue: queue, logger: logger),
-        to: FBFuture<AnyObject>.self
-      )
-      .onQueue(
-        queue,
-        map: { task -> AnyObject in
-          let subprocess = task as! FBSubprocess<AnyObject, AnyObject, AnyObject>
-          return FBXCTestResultToolOperation.getJSON(fromTask: subprocess)
-        }),
+      FBXCTestResultToolOperation.internalOperation(withArguments: arguments, queue: queue, logger: logger)
+        .onQueue(
+          queue,
+          map: { subprocess -> AnyObject in
+            FBXCTestResultToolOperation.getJSON(fromTask: subprocess)
+          }),
       to: FBFuture<NSDictionary>.self
     )
   }

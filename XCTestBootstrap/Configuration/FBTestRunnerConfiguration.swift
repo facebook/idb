@@ -180,10 +180,13 @@ public class FBTestRunnerConfiguration: NSObject, NSCopying {
       ])
       .onQueue(
         target.asyncQueue,
-        map: { (tupleObj: AnyObject) -> AnyObject in
-          let tuple = tupleObj as! NSArray
-          let hostApplication = tuple[0] as! FBInstalledApplication
-          let shimPath = tuple[1] as! String
+        fmap: { tuple -> FBFuture<AnyObject> in
+          guard tuple.count == 2,
+            let hostApplication = tuple[0] as? FBInstalledApplication,
+            let shimPath = tuple[1] as? String
+          else {
+            return XCTestBootstrapError.describe("Expected the host application and the shim path, got \(tuple)").failFuture()
+          }
 
           var hostApplicationAdditionalEnvironment: [String: String] = [:]
           hostApplicationAdditionalEnvironment[kEnvShimStartXCTest] = "1"
@@ -217,13 +220,14 @@ public class FBTestRunnerConfiguration: NSObject, NSCopying {
             frameworkSearchPaths: frameworkSearchPaths
           )
 
-          return FBTestRunnerConfiguration(
-            sessionIdentifier: sessionIdentifier,
-            testRunner: hostApplication.bundle,
-            launchEnvironment: launchEnvironment,
-            testedApplicationAdditionalEnvironment: testedApplicationAdditionalEnvironment,
-            testConfiguration: testConfiguration
-          )
+          return FBFuture<AnyObject>(
+            result: FBTestRunnerConfiguration(
+              sessionIdentifier: sessionIdentifier,
+              testRunner: hostApplication.bundle,
+              launchEnvironment: launchEnvironment,
+              testedApplicationAdditionalEnvironment: testedApplicationAdditionalEnvironment,
+              testConfiguration: testConfiguration
+            ))
         }),
       to: FBFuture<FBTestRunnerConfiguration>.self
     )

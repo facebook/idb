@@ -24,16 +24,12 @@ public final class FBOToolOperation {
     let withStdOut = base.withStdOutInMemoryAsString()
     let configured = withStdOut.withStdErrInMemoryAsString()
     return unsafeBitCast(
-      unsafeBitCast(
-        configured.runUntilCompletion(withAcceptableExitCodes: [0]),
-        to: FBFuture<AnyObject>.self
-      )
-      .onQueue(
-        queue,
-        map: { task -> AnyObject in
-          let subprocess = task as! FBSubprocess<AnyObject, NSString, NSString>
-          return FBOToolOperation.extractSanitiserDylibs(fromOtoolOutput: subprocess.stdOut! as String) as NSArray
-        }),
+      configured.runUntilCompletion(withAcceptableExitCodes: [0])
+        .onQueue(
+          queue,
+          map: { subprocess -> AnyObject in
+            FBOToolOperation.extractSanitiserDylibs(fromOtoolOutput: (subprocess.stdOut as String?) ?? "") as NSArray
+          }),
       to: FBFuture<NSArray>.self
     )
   }

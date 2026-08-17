@@ -121,13 +121,17 @@ public final class FBXCTestLogger: NSObject, FBControlCoreLogger, @unchecked Sen
 
     return FBFileWriter.asyncWriter(forFilePath: filePath).onQueue(
       queue,
-      map: { writer -> AnyObject in
+      fmap: { writer -> FBFuture<AnyObject> in
+        guard let writer = writer as? FBDataConsumer else {
+          return FBControlCoreError.describe("Expected a data consumer writing to \(filePath), got \(writer)").failFuture()
+        }
         logger.info().log("Mirroring output to \(filePath)")
-        return FBCompositeDataConsumer(consumers: [
-          consumer,
-          writer as! FBDataConsumer,
-          FBLoggingDataConsumer(logger: logger),
-        ])
+        return FBFuture<AnyObject>(
+          result: FBCompositeDataConsumer(consumers: [
+            consumer,
+            writer,
+            FBLoggingDataConsumer(logger: logger),
+          ]))
       })
   }
 }

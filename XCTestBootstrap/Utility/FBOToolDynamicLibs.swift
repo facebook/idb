@@ -12,11 +12,13 @@ public final class FBOToolDynamicLibs {
 
   public static func findFullPath(forSanitiserDyldInBundle bundlePath: String, onQueue queue: DispatchQueue) -> FBFuture<NSArray> {
     return unsafeBitCast(
-      unsafeBitCast(FBOToolOperation.listSanitiserDylibsRequired(byBundle: bundlePath, onQueue: queue), to: FBFuture<AnyObject>.self)
+      FBOToolOperation.listSanitiserDylibsRequired(byBundle: bundlePath, onQueue: queue)
         .onQueue(
           queue,
           fmap: { result -> FBFuture<AnyObject> in
-            let libsList = result as! [String]
+            guard let libsList = result as? [String] else {
+              return FBControlCoreError.describe("Expected a list of dylib names from otool, got \(result)").failFuture()
+            }
             let clangLocation = (FBXcodeConfiguration.developerDirectory as NSString).appendingPathComponent("Toolchains/XcodeDefault.xctoolchain/usr/lib/clang")
             let fileList: [URL]
             do {
