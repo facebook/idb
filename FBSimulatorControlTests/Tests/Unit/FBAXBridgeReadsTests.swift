@@ -1532,6 +1532,68 @@ final class FBAXBridgeReadsTests: XCTestCase {
   }
 }
 
+/// What the log says when the transport reaps its guest on teardown.
+///
+/// The reap is a `SIGKILL`, so the process-exit reporter emits "exited with signal 9" — a line that
+/// reads exactly like a crash. Whether teardown says anything to distinguish the two is what these
+/// pin: a log that cannot separate healthy from broken is what sends people hunting the wrong fault.
+final class FBAXBridgeTeardownLoggingTests: XCTestCase {
+
+  /// A logger whose output can be read back, built from stock pieces so no test double is needed.
+  private func captureLogger() -> (logger: any FBControlCoreLogger, read: () -> String) {
+    let buffer = FBDataBuffer.accumulatingBuffer()
+    let logger = FBControlCoreLoggerFactory.logger(to: buffer)
+    return (logger, { String(data: buffer.data(), encoding: .utf8) ?? "" })
+  }
+
+  /// A throwaway child to stand in for the guest, so teardown can be driven without a simulator.
+  ///
+  /// The `Process` is returned alongside the pid because Foundation reaps its own children: a bare
+  /// `waitpid` here races that reaper and intermittently reports failure for a child that did die.
+  private func spawnSleeper() throws -> (process: Process, pid: pid_t) {
+    let process = Process()
+    process.executableURL = URL(fileURLWithPath: "/bin/sleep")
+    process.arguments = ["30"]
+    try process.run()
+    return (process, process.processIdentifier)
+  }
+
+  func testTeardownKillsTheGuest() throws {
+    let (process, pid) = try spawnSleeper()
+    let socketPath = NSTemporaryDirectory() + "/axteardown-\(UUID().uuidString).sock"
+    let capture = captureLogger()
+
+    FBAXBridgeConnection.teardown(
+      fileDescriptor: nil,
+      processIdentifier: pid,
+      socketPath: socketPath,
+      logger: capture.logger
+    )
+
+    process.waitUntilExit()
+    XCTAssertEqual(process.terminationReason, .uncaughtSignal)
+    XCTAssertEqual(process.terminationStatus, SIGKILL)
+  }
+
+  func testTeardownSaysNothingAboutTerminatingTheGuest() throws {
+    let (process, pid) = try spawnSleeper()
+    let socketPath = NSTemporaryDirectory() + "/axteardown-\(UUID().uuidString).sock"
+    let capture = captureLogger()
+
+    FBAXBridgeConnection.teardown(
+      fileDescriptor: nil,
+      processIdentifier: pid,
+      socketPath: socketPath,
+      logger: capture.logger
+    )
+    process.waitUntilExit()
+
+    // BUG: teardown SIGKILLs the guest and says nothing, so the only trace is the process reporter's
+    // "exited with signal 9" — indistinguishable from a crash. Flipped in the following commit.
+    XCTAssertEqual(capture.read(), "")
+  }
+}
+
 /// What the transport tells a caller when the in-guest reader disappears mid-request.
 ///
 /// EOF on the serve socket is noticed immediately — that part works — so what is worth covering is the

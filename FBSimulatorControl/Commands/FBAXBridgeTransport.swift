@@ -391,11 +391,21 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
     let process = try await simulator.launchProcess(configuration)
     do {
       let fileDescriptor = try await FBAXBridgeConnection.connect(path: socketPath, timeout: 10)
-      return FBAXBridgeConnection(fileDescriptor: fileDescriptor, process: process, socketPath: socketPath)
+      return FBAXBridgeConnection(
+        fileDescriptor: fileDescriptor,
+        process: process,
+        socketPath: socketPath,
+        logger: simulator.logger
+      )
     } catch {
       // Connecting failed, so the `FBAXBridgeConnection` that tears the serve down on deinit was never
       // created — reap the just-spawned serve here so it does not leak as an orphan.
-      FBAXBridgeConnection.teardown(fileDescriptor: nil, process: process, socketPath: socketPath)
+      FBAXBridgeConnection.teardown(
+        fileDescriptor: nil,
+        processIdentifier: process.processIdentifier,
+        socketPath: socketPath,
+        logger: simulator.logger
+      )
       throw error
     }
   }
@@ -416,6 +426,7 @@ final class FBAXBridgeConnection: @unchecked Sendable {
   private let fileDescriptor: Int32
   private let process: FBSubprocess<AnyObject, AnyObject, AnyObject>
   private let socketPath: String
+  private let logger: (any FBControlCoreLogger)?
   private let queue = DispatchQueue(label: "com.facebook.FBSimulatorControl.axbridge.connection")
 
   /// Per-`recv` deadline (SO_RCVTIMEO) so a hung or dead guest can't wedge a round-trip forever;
@@ -423,21 +434,35 @@ final class FBAXBridgeConnection: @unchecked Sendable {
   /// round-trip recovery drops and re-establishes the connection.
   private static let roundTripTimeoutSeconds = 30
 
-  init(fileDescriptor: Int32, process: FBSubprocess<AnyObject, AnyObject, AnyObject>, socketPath: String) {
+  init(
+    fileDescriptor: Int32,
+    process: FBSubprocess<AnyObject, AnyObject, AnyObject>,
+    socketPath: String,
+    logger: (any FBControlCoreLogger)?
+  ) {
     self.fileDescriptor = fileDescriptor
     self.process = process
     self.socketPath = socketPath
+    self.logger = logger
   }
 
   /// Releases everything a connection attempt can own: the socket, the long-lived serve process, and
   /// the socket file. Shared by `deinit` and the establish-failure path, which owns everything except
   /// the descriptor (`nil`) — so both reap a serve the same way and neither can drift from the other.
-  static func teardown(fileDescriptor: Int32?, process: FBSubprocess<AnyObject, AnyObject, AnyObject>, socketPath: String) {
+  ///
+  /// Takes the pid rather than the process because that is all it needs, which also lets a test drive
+  /// it against a throwaway child instead of a spawned guest.
+  static func teardown(
+    fileDescriptor: Int32?,
+    processIdentifier: pid_t,
+    socketPath: String,
+    logger: (any FBControlCoreLogger)?
+  ) {
     if let fileDescriptor {
       close(fileDescriptor)
     }
-    if process.processIdentifier > 0 {
-      kill(process.processIdentifier, SIGKILL)
+    if processIdentifier > 0 {
+      kill(processIdentifier, SIGKILL)
     }
     unlink(socketPath)
   }
@@ -445,7 +470,12 @@ final class FBAXBridgeConnection: @unchecked Sendable {
   deinit {
     // Best-effort teardown when the reader holding this connection is released (e.g. the host process
     // exits gracefully).
-    Self.teardown(fileDescriptor: fileDescriptor, process: process, socketPath: socketPath)
+    Self.teardown(
+      fileDescriptor: fileDescriptor,
+      processIdentifier: process.processIdentifier,
+      socketPath: socketPath,
+      logger: logger
+    )
   }
 
   func roundTrip(_ requestData: Data) async throws -> Data {
