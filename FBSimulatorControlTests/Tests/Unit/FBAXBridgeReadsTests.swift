@@ -1575,7 +1575,7 @@ final class FBAXBridgeTeardownLoggingTests: XCTestCase {
     XCTAssertEqual(process.terminationStatus, SIGKILL)
   }
 
-  func testTeardownSaysNothingAboutTerminatingTheGuest() throws {
+  func testTeardownSaysItIsTerminatingTheGuest() throws {
     let (process, pid) = try spawnSleeper()
     let socketPath = NSTemporaryDirectory() + "/axteardown-\(UUID().uuidString).sock"
     let capture = captureLogger()
@@ -1588,9 +1588,10 @@ final class FBAXBridgeTeardownLoggingTests: XCTestCase {
     )
     process.waitUntilExit()
 
-    // BUG: teardown SIGKILLs the guest and says nothing, so the only trace is the process reporter's
-    // "exited with signal 9" — indistinguishable from a crash. Flipped in the following commit.
-    XCTAssertEqual(capture.read(), "")
+    let logged = capture.read()
+    XCTAssertTrue(logged.contains("\(pid)"), "the line must name the pid that is about to die: \(logged)")
+    XCTAssertTrue(logged.contains("SIGKILL"), "the line must name the signal the reporter will report: \(logged)")
+    XCTAssertTrue(logged.contains("expected"), "the line must mark the exit as routine: \(logged)")
   }
 }
 

@@ -462,6 +462,10 @@ final class FBAXBridgeConnection: @unchecked Sendable {
       close(fileDescriptor)
     }
     if processIdentifier > 0 {
+      // Said before the kill, because the process-exit reporter's "exited with signal 9" is otherwise
+      // indistinguishable from a crash — and a log that cannot separate a routine reap from a dead
+      // guest sends whoever reads it after the wrong fault.
+      logger?.log("Releasing axbridge connection: terminating guest serve process \(processIdentifier) with SIGKILL, this exit is expected")
       kill(processIdentifier, SIGKILL)
     }
     unlink(socketPath)
