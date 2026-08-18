@@ -89,13 +89,6 @@ public class FBFileWriter: NSObject {
         } catch {
           return FBFuture(error: error)
         }
-        // Mark the descriptor non-blocking before DispatchIO sees it, so that
-        // dispatch_io's deferred restore of the original flags is a no-op —
-        // a stale restore against a recycled descriptor number can otherwise
-        // strip O_NONBLOCK from an unrelated live channel and wedge it in an
-        // uninterruptible blocking syscall. Only this async path is marked:
-        // the sync writer's raw write(2) loop relies on blocking semantics.
-        _ = fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) | O_NONBLOCK)
         let writer = FBFileWriter_Async(fileDescriptor: fd, closeOnEndOfFile: true, writeQueue: queue)
         do {
           try writer.startWriting()
@@ -193,18 +186,17 @@ private class FBFileWriter_Async: FBFileWriter, FBDispatchDataConsumer, FBDataCo
   func startWriting() throws {
     assert(io == nil)
 
-    // For an owned descriptor, dispatch_io's deferred restore of the original
-    // flags is at best pointless (the descriptor is closed on wind-down) and
-    // at worst harmful: restoring blocking flags reaches through the shared
-    // open file description of any duplicate, stripping O_NONBLOCK from a
-    // reader channel still armed on the other duplicate and wedging it in an
-    // uninterruptible blocking read(2). Pre-setting O_NONBLOCK makes the
-    // restore a no-op; the channel forces non-blocking IO regardless.
-    // Unowned descriptors are left alone: their post-teardown flags belong to
-    // the caller.
-    if closeOnEndOfFile {
-      _ = fcntl(fileDescriptor, F_SETFL, fcntl(fileDescriptor, F_GETFL) | O_NONBLOCK)
-    }
+    // Mark the descriptor non-blocking before DispatchIO snapshots its flags,
+    // so the original flags libdispatch restores on wind-down always include
+    // O_NONBLOCK — regardless of ownership. The restore runs on an
+    // asynchronously-drained queue the caller cannot await: restoring
+    // blocking flags reaches through shared open file descriptions — and
+    // through descriptor numbers recycled after close — stripping O_NONBLOCK
+    // from an unrelated live channel and wedging it in an uninterruptible
+    // blocking read(2). The channel forces non-blocking IO while armed
+    // regardless, so only post-teardown flags change, and no caller can
+    // reliably observe those through the racy restore anyway.
+    _ = fcntl(fileDescriptor, F_SETFL, fcntl(fileDescriptor, F_GETFL) | O_NONBLOCK)
 
     let finishedConsuming = finishedConsumingMutable
 

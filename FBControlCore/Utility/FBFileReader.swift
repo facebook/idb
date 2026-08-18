@@ -68,16 +68,6 @@ public class FBFileReader: NSObject, FBFileReaderProtocol {
               .describe("open of \(filePath) returned an error '\(String(cString: strerror(errno)))'")
               .failFuture()
           }
-          // Mark the descriptor non-blocking before DispatchIO sees it.
-          // dispatch_io restores a descriptor's original flags on an
-          // asynchronously-drained queue after the channel winds down; if the
-          // original flags were blocking, that deferred restore can strip
-          // O_NONBLOCK from a recycled descriptor number and turn a stream
-          // read into an uninterruptible blocking read(2) that wedges the
-          // channel teardown. Pre-setting O_NONBLOCK makes the restore a
-          // no-op. DispatchIO forces non-blocking IO on the descriptor
-          // anyway, so reads through the channel behave identically.
-          _ = fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) | O_NONBLOCK)
           return FBFuture(
             result: FBFileReader(
               fileDescriptor: fd,
@@ -173,6 +163,18 @@ public class FBFileReader: NSObject, FBFileReaderProtocol {
     // Get locals to be captured by the read, rather than self.
     let consumer = self.consumer
     var readErrorCode: Int32 = 0
+
+    // Mark the descriptor non-blocking before DispatchIO snapshots its flags,
+    // so the original flags libdispatch restores on wind-down always include
+    // O_NONBLOCK. The restore runs on an asynchronously-drained queue the
+    // caller cannot await: restoring blocking flags reaches through shared
+    // open file descriptions — and through descriptor numbers recycled after
+    // close — stripping O_NONBLOCK from an unrelated live channel and wedging
+    // it in an uninterruptible blocking read(2). The channel forces
+    // non-blocking IO while armed regardless, so only post-teardown flags
+    // change, and no caller can reliably observe those through the racy
+    // restore anyway.
+    _ = fcntl(fileDescriptor, F_SETFL, fcntl(fileDescriptor, F_GETFL) | O_NONBLOCK)
 
     // If there is an error creating the IO Object, the errorCode will be delivered asynchronously.
     // The self-capture is intentional - we need to keep it alive until the IO channel is done.

@@ -105,17 +105,12 @@ final class FBFileWriterTests: XCTestCase {
     var buffer = [UInt8](repeating: 0, count: 4)
     XCTAssertEqual(recv(remoteSocket, &buffer, 4, MSG_DONTWAIT), 4)
 
-    // BUG: winding down restores the original blocking flags onto a
-    // descriptor the channel never owned, on an asynchronously-drained queue
-    // the caller cannot await. A restore that lands after the caller closed
-    // the descriptor re-blocks whatever open file description has since been
-    // recycled onto the number, wedging any channel armed on it in an
-    // uninterruptible blocking read(2) — flipped in the following commit.
-    let restored = NSPredicate { _, _ in
-      fcntl(localSocket, F_GETFL) & O_NONBLOCK == 0
-    }
-    wait(for: [expectation(for: restored, evaluatedWith: self, handler: nil)], timeout: FBControlCoreGlobalConfiguration.fastTimeout)
-    XCTAssertEqual(fcntl(localSocket, F_GETFL) & O_NONBLOCK, 0)
+    // Winding down must not restore the original blocking flags onto a
+    // descriptor the channel never owned: that restore lands on an
+    // asynchronously-drained queue, possibly after the caller has closed the
+    // descriptor and the number has been recycled, re-blocking an unrelated
+    // live channel. The borrowed socket stays non-blocking.
+    XCTAssertNotEqual(fcntl(localSocket, F_GETFL) & O_NONBLOCK, 0)
   }
 
   func testStopThenCloseTeardownOfSocketReaderAndDuplicatedWriter() throws {
