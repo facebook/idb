@@ -58,20 +58,20 @@ jobs:
       - name: Package
         id: package
         run: |
-          tar -C Build/Distribution -czf idb-companion.universal.tar.gz .
-          shasum -a 256 idb-companion.universal.tar.gz | tee idb-companion.universal.tar.gz.sha256
-          echo "sha256=$(cut -d' ' -f1 idb-companion.universal.tar.gz.sha256)" >> "$GITHUB_OUTPUT"
+          tar -C Build/Distribution -czf idb-companion.macos-arm64.tar.gz .
+          shasum -a 256 idb-companion.macos-arm64.tar.gz | tee idb-companion.macos-arm64.tar.gz.sha256
+          echo "sha256=$(cut -d' ' -f1 idb-companion.macos-arm64.tar.gz.sha256)" >> "$GITHUB_OUTPUT"
       - name: Upload build artifact
         uses: actions/upload-artifact@v5
         with:
           name: idb-companion
-          path: idb-companion.universal.tar.gz*
+          path: idb-companion.macos-arm64.tar.gz*
       - name: Upload to release
         if: startsWith(github.ref, 'refs/tags/v')
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release upload "$GITHUB_REF_NAME" idb-companion.universal.tar.gz idb-companion.universal.tar.gz.sha256 --clobber --repo "$GITHUB_REPOSITORY"
+          gh release upload "$GITHUB_REF_NAME" idb-companion.macos-arm64.tar.gz idb-companion.macos-arm64.tar.gz.sha256 --clobber --repo "$GITHUB_REPOSITORY"
       - name: Homebrew formula update instructions
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
@@ -79,9 +79,9 @@ jobs:
             echo '## Update the homebrew formulae'
             echo 'In the `facebook/fb` tap, this release is shipped as three formulae: `idb-companion.rb` (the companion server), `idb-cli.rb` (the python CLI), and `idb.rb` (a meta-formula that only depends on the other two). Update them for this release:'
             echo ''
-            echo '- In `idb-companion.rb`, point the `url`/`sha256` at this tarball. The digest below is also published as the `idb-companion.universal.tar.gz.sha256` release asset:'
+            echo '- In `idb-companion.rb`, point the `url`/`sha256` at this tarball. The digest below is also published as the `idb-companion.macos-arm64.tar.gz.sha256` release asset:'
             echo '```ruby'
-            echo "url \"https://github.com/$GITHUB_REPOSITORY/releases/download/$GITHUB_REF_NAME/idb-companion.universal.tar.gz\""
+            echo "url \"https://github.com/$GITHUB_REPOSITORY/releases/download/$GITHUB_REF_NAME/idb-companion.macos-arm64.tar.gz\""
             echo "sha256 \"${{ steps.package.outputs.sha256 }}\""
             echo '```'
             echo '- In `idb-companion.rb`, also update the explicit `version` stanza to match the tag: Homebrew mis-parses prerelease suffixes out of the URL.'
