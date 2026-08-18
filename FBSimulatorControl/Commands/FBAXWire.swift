@@ -140,6 +140,8 @@ enum FBAXWire {
     case hitTest = "hittest"
     case perform
     case setValue = "setvalue"
+    /// Asks a persistent `serve` guest to exit. Only a `serve` process has anything to answer.
+    case shutdown
   }
 
   /// The fields of a request, in both spellings the guest accepts them in.

@@ -126,6 +126,26 @@ static NSDictionary *FBAXTestsParse(NSData *data)
   }
 }
 
+// Shutdown is answered without binding the runtime and without a pid, because neither is needed to
+// exit — and a reader that cannot bind is exactly the one a caller most wants to be able to reap.
+- (void)testShutdownIsAnsweredWithoutARuntimeOrAPid
+{
+  FBAXBridgeSetRuntimeForTesting(nil);
+  NSDictionary *response = FBAXBridgeHandleRequest(@{@"verb" : @"shutdown"});
+  XCTAssertEqualObjects(response[@"ok"], @YES);
+  XCTAssertEqualObjects(response[@"shutdown"], @YES);
+  XCTAssertNil(response[@"error"]);
+}
+
+// The non-positive pid that every other verb rejects must not stop a shutdown: the caller reaping an
+// orphan has no application in mind, and refusing here would make the orphan unreapable.
+- (void)testShutdownIgnoresAnUnusablePid
+{
+  NSDictionary *response = FBAXBridgeHandleRequest(@{@"verb" : @"shutdown", @"pid" : @0});
+  XCTAssertEqualObjects(response[@"ok"], @YES);
+  XCTAssertEqualObjects(response[@"shutdown"], @YES);
+}
+
 // A `verb` that is absent entirely is already answered with an error frame — `nil` takes
 // `isEqualToString:` without complaint — so only the wrong-type case above is broken.
 - (void)testMissingVerbIsRejectedWithAnErrorFrame
@@ -226,6 +246,7 @@ static NSDictionary *FBAXTestsParse(NSData *data)
     @"verb.hittest" : @"hittest",
     @"verb.perform" : @"perform",
     @"verb.setvalue" : @"setvalue",
+    @"verb.shutdown" : @"shutdown",
     @"action.press" : @"press",
     @"action.scrollUp" : @"scroll-up",
     @"action.scrollDown" : @"scroll-down",

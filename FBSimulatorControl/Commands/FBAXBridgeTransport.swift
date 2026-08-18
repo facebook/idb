@@ -377,7 +377,7 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
     guard let helperPath = BundledResources.path(forItem: "SimulatorFrameworkBridge") else {
       throw FBAXBridgeError.bridgeUnavailable
     }
-    let socketPath = "/tmp/idb_axbridge_\(UUID().uuidString).sock"
+    let socketPath = FBAXBridgeSocket.path(forConnection: UUID().uuidString)
     let io = FBProcessIO<AnyObject, AnyObject, AnyObject>.outputToDevNull()
     let configuration = FBProcessSpawnConfiguration(
       launchPath: helperPath,
@@ -556,12 +556,12 @@ final class FBAXBridgeConnection: @unchecked Sendable {
 
   // MARK: - Framing
 
-  private static func writeFrame(_ fileDescriptor: Int32, _ payload: Data) throws {
+  static func writeFrame(_ fileDescriptor: Int32, _ payload: Data) throws {
     try writeAll(fileDescriptor, encodeLength(payload.count))
     try writeAll(fileDescriptor, payload)
   }
 
-  private static func readFrame(
+  static func readFrame(
     _ fileDescriptor: Int32,
     guest: FBSubprocess<AnyObject, AnyObject, AnyObject>?
   ) throws -> Data {

@@ -146,6 +146,7 @@ final class FBAXWireContractTests: XCTestCase {
       .hitTest: "hittest",
       .perform: "perform",
       .setValue: "setvalue",
+      .shutdown: "shutdown",
     ]
     XCTAssertEqual(Set(FBAXWire.Verb.allCases), Set(expected.keys), "every verb must have its wire value pinned")
     for (verb, wireValue) in expected {

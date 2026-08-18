@@ -64,6 +64,9 @@ static NSString *const kRequestExplainUnreachable = @"explainUnreachable";
 // accessibility server does not vend this; the reader derives it — so it is spelled in the reader's own
 // namespace to keep the two kinds of key distinguishable on the wire.
 static NSString *const kNodeExplainedBy = @"FBExplainedBy";
+// Echoed back by the shutdown verb so a caller can tell an honoured shutdown from an ok-shaped response
+// to something else.
+static NSString *const kResponseShutdown = @"shutdown";
 static NSString *const kRequestX = @"x";
 static NSString *const kRequestY = @"y";
 // Selects how a fused frontmost read (a `describe` with no pid) resolves the foreground app. Optional;
@@ -132,6 +135,15 @@ static NSString *const kVerbHitTest = @"hittest";
 // Two write verbs rather than one: performing a semantic action and setting an attribute are separate
 // runtime calls that take different arguments, and fusing them would leave every request carrying a field
 // the other kind ignores.
+// Asks a `serve` process to exit. Answered before exiting so the caller learns it was honoured, and
+// honoured only by `serve` — a one-shot `describe` has nothing to shut down and says so.
+//
+// The serve loop accepts one client at a time and stays inside that connection until the client goes
+// away, so a caller that gets *any* answer is the only client there is. That is what makes a reap safe
+// without asking the guest who else is attached: being answered is the proof.
+static NSString *const kVerbShutdown = @"shutdown";
+// Set by the shutdown verb and read by the serve loop after the response is written.
+static BOOL gShutdownRequested = NO;
 static NSString *const kVerbPerform = @"perform";
 static NSString *const kVerbSetValue = @"setvalue";
 static NSString *const kActionServe = @"serve";
@@ -1008,6 +1020,12 @@ static NSDictionary<NSString *, id> *FBAXBridgeDispatchRequest(NSDictionary<NSSt
   BOOL isHitTest = [verb isEqualToString:kVerbHitTest];
   BOOL isPerform = [verb isEqualToString:kVerbPerform];
   BOOL isSetValue = [verb isEqualToString:kVerbSetValue];
+  if ([verb isEqualToString:kVerbShutdown]) {
+    // Answered here, above the pid check and the runtime bind: shutting down needs neither, and a
+    // reader that cannot bind is exactly the one a caller most wants to be able to reap.
+    gShutdownRequested = YES;
+    return @{kResponseOk : @YES, kResponseShutdown : @YES};
+  }
   if (!isDescribe && !isHitTest && !isPerform && !isSetValue) {
     return FBAXBridgeTaggedErrorResponse(
       [NSString stringWithFormat:@"unsupported verb: %@", requestedVerb ?: @"(nil)"],
@@ -1323,9 +1341,18 @@ static int FBAXBridgeServe(NSString *socketPath)
         if (!FBAXBridgeWriteFully(connection, responseData.bytes, responseData.length)) {
           break;
         }
+        if (gShutdownRequested) {
+          // After the write, so the caller is told the shutdown was honoured rather than seeing the
+          // socket close under it — which is the shape of a crash, not a reap.
+          break;
+        }
       }
     }
     close(connection);
+    if (gShutdownRequested) {
+      NSLog(@"[AccessibilityService] shutdown requested by client; exiting");
+      break;
+    }
     // Loop back to accept: the host may reconnect within the session. The process is torn down by the
     // host at end of session.
   }
@@ -1442,6 +1469,7 @@ NSDictionary<NSString *, NSString *> *FBAXBridgeWireConstantsForTesting(void)
     @"verb.hittest" : kVerbHitTest,
     @"verb.perform" : kVerbPerform,
     @"verb.setvalue" : kVerbSetValue,
+    @"verb.shutdown" : kVerbShutdown,
     @"action.press" : kActionPress,
     @"action.scrollUp" : kActionScrollUp,
     @"action.scrollDown" : kActionScrollDown,
