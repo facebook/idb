@@ -87,25 +87,24 @@ final class FBAXInteractableTests: XCTestCase {
   // namespace at all (`IsUserInteractionEnabled` is the only enabled-ish one, and it is a different
   // question). So `enabled` on a guest-backed read is invented by the host rather than measured.
   //
-  // BUG: it is invented as `true`, which is indistinguishable from a measured `true`, and the
-  // `disabled` reason keys off it — so a guest-backed read can never report `disabled`, however
-  // disabled the element is. Both assertions are flipped in the following commit.
-  func testEnabledIsFabricatedOnAGuestBackedRead() throws {
+  // So it answers nil, and `disabled` is claimed only when the answer is a definite false. An element
+  // the guest cannot vouch for either way is still actionable — the absence of a measurement is not
+  // evidence of a disabled control.
+  func testEnabledIsUnknownOnAGuestBackedRead() throws {
     let element = FBRemoteAutomationPlatformElement(attributes: [:], children: [], pid: 0)
-    XCTAssertTrue(element.axIsEnabled())
+    XCTAssertNil(element.axIsEnabled())
 
     let value = try XCTUnwrap(Self.interactable(Self.node()) ?? nil)
     XCTAssertEqual(value, .actionable(at: FBAccessibilityPoint(x: 201, y: 794.33)))
   }
 
-  // The serialized `enabled` a guest-backed read reports, for the same reason.
-  func testTheSerializedEnabledIsFabricatedOnAGuestBackedRead() throws {
+  // The serialized `enabled` a guest-backed read reports, for the same reason: an explicit null, the
+  // same way `interactable` reports what a backend cannot answer.
+  func testTheSerializedEnabledIsNullOnAGuestBackedRead() throws {
     let node = FBAXTreeWalk.describeAllElements(
       fromTree: Self.node(), keys: [.enabled], nestedFormat: false, pid: 13515
     ).first
-    // BUG: reports a definite `true` for something the wire never carried. Flipped in the following
-    // commit to an explicit null, the same way `interactable` reports what a backend cannot answer.
-    XCTAssertEqual(try XCTUnwrap(node?.enabled), true)
+    XCTAssertNil(try XCTUnwrap(node?.enabled))
   }
 
   func testAViewThatTakesNoTouchesIsBlocked() throws {

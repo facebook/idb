@@ -81,7 +81,7 @@ final class FBRemoteAutomationPlatformElement: FBAXPlatformElement {
   func axRoleDescription() -> String? { nil }
   func axSubrole() -> String? { nil }
   func axPlaceholderValue() -> String? { nil }
-  func axIsEnabled() -> Bool { true }
+  func axIsEnabled() -> Bool? { nil }
   func axIsRequired() -> Bool { false }
   func axIsExpanded() -> Bool { false }
   func axIsHidden() -> Bool { false }

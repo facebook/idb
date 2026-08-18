@@ -200,7 +200,7 @@ enum FBAXNodeSerializer {
     if element.axIsHidden() {
       reasons.append(.hidden)
     }
-    if !element.axIsEnabled() {
+    if element.axIsEnabled() == false {
       reasons.append(.disabled)
     }
     if element.axIsUserInteractionEnabled() == false {

@@ -159,7 +159,7 @@ extension FBSimulatorControlTests_AXPMacPlatformElement_Double: FBAXPlatformElem
   func axRoleDescription() -> String? { accessibilityRoleDescription }
   func axSubrole() -> String? { accessibilitySubrole?.rawValue }
   func axPlaceholderValue() -> String? { nil }
-  func axIsEnabled() -> Bool { isAccessibilityEnabled }
+  func axIsEnabled() -> Bool? { isAccessibilityEnabled }
   func axIsRequired() -> Bool { isAccessibilityRequired }
   func axIsExpanded() -> Bool { false }
   func axIsHidden() -> Bool { false }

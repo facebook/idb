@@ -35,7 +35,12 @@ protocol FBAXPlatformElement: AnyObject {
   func axRoleDescription() -> String?
   func axSubrole() -> String?
   func axPlaceholderValue() -> String?
-  func axIsEnabled() -> Bool
+  /// Whether the element is enabled, or nil when the backend cannot tell.
+  ///
+  /// Optional for the same reason as the attributes below: the guest-backed wires have no `enabled` to
+  /// send — the `XC_kAXXCAttribute*` namespace has no such member — so a definite `true` from them would
+  /// be invented rather than measured, and indistinguishable from a measured one.
+  func axIsEnabled() -> Bool?
   func axIsRequired() -> Bool
   func axIsExpanded() -> Bool
   func axIsHidden() -> Bool
@@ -93,7 +98,7 @@ extension AXPMacPlatformElement: FBAXPlatformElement {
   func axRoleDescription() -> String? { accessibilityRoleDescription() }
   func axSubrole() -> String? { accessibilitySubrole()?.rawValue }
   func axPlaceholderValue() -> String? { accessibilityPlaceholderValue() }
-  func axIsEnabled() -> Bool { isAccessibilityEnabled() }
+  func axIsEnabled() -> Bool? { isAccessibilityEnabled() }
   func axIsRequired() -> Bool { isAccessibilityRequired() }
   func axIsExpanded() -> Bool { isAccessibilityExpanded() }
   func axIsHidden() -> Bool { isAccessibilityHidden() }
