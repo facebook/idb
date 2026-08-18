@@ -24,6 +24,8 @@ static NSString *const kAXLabel = @"XC_kAXXCAttributeLabel";
 static NSString *const kAXChildren = @"XC_kAXXCAttributeChildren";
 static NSString *const kAXFrame = @"XC_kAXXCAttributeFrame";
 static NSString *const kAXVisiblePoint = @"XC_kAXXCAttributeVisiblePoint";
+static NSString *const kNodeIsEnabled = @"FBIsEnabled";
+static NSString *const kNodeTranslatorRole = @"FBTranslatorRole";
 
 // The pid every test that needs a readable application uses. Arbitrary, but a plausible one — nothing in
 // the reader treats any particular value specially beyond the non-positive rejection.
@@ -876,6 +878,89 @@ static NSDictionary *FBAXTestsPress(void)
                                    @(FBAXPAttributeIdentifier)]
                        ofElement:[FBAXFakeElement readable:@"UIView"]];
   XCTAssertEqual(_runtime.translatorReadCount, 1u);
+}
+
+// Every test above this line drives the seam directly, which pins what the fake echoes rather than what a
+// read emits. These drive `describe` itself, so they fail if the build step stops emitting an attribute it
+// fetched — the way `enabled` and `role` were both fetched and dropped on the floor.
+
+// `enabled` is the one answer this vocabulary has that XCTest's does not, and fetching it without emitting
+// it is indistinguishable at the wire from not supporting it at all.
+- (void)testATranslatorReadEmitsTheEnabledAnswerItFetched
+{
+  _runtime.applicationElements[@(kAppPid)] = [FBAXFakeElement readable:@"UIApplication"];
+  _runtime.translatorAttributeValues = @{@(FBAXPAttributeLabel) : @"General", @(FBAXPAttributeIsEnabled) : @NO};
+
+  NSDictionary *response =
+  FBAXBridgeHandleRequest(@{@"verb" : @"describe", @"pid" : @(kAppPid), @"translatorVocabulary" : @YES});
+
+  XCTAssertEqualObjects(response[@"ok"], @YES);
+  XCTAssertEqualObjects(response[@"tree"][kNodeIsEnabled], @NO, @"the fetched enabled answer must reach the wire");
+}
+
+// The role rides the wire as the translator's own integer and is deliberately not merged into
+// `elementType`, which carries `XCUIElementType` names. Pinned because emitting it under the wrong key
+// would be read as a type name by every existing consumer.
+- (void)testATranslatorReadEmitsTheTranslatorsOwnRoleUnmapped
+{
+  _runtime.applicationElements[@(kAppPid)] = [FBAXFakeElement readable:@"UIApplication"];
+  _runtime.translatorAttributeValues = @{@(FBAXPAttributeRole) : @9};
+
+  NSDictionary *tree =
+  FBAXBridgeHandleRequest(@{@"verb" : @"describe", @"pid" : @(kAppPid), @"translatorVocabulary" : @YES})[@"tree"];
+
+  XCTAssertEqualObjects(tree[kNodeTranslatorRole], @9);
+  XCTAssertNil(tree[kAXElementType], @"an unmapped translator role must not masquerade as an XCUIElementType");
+}
+
+// A translator read that could not be performed answers nil, which is not the same as an element with no
+// attributes. Building a node from it emits a childless, attribute-less tree, so a failed bind reports as a
+// successful read of an application with no content — a wrong answer that looks entirely healthy.
+- (void)testATranslatorReadThatCannotBePerformedIsAFailureNotAnEmptyTree
+{
+  _runtime.applicationElements[@(kAppPid)] = [FBAXFakeElement readable:@"UIApplication"];
+  _runtime.translatorAttributeValues = nil;
+
+  NSDictionary *response =
+  FBAXBridgeHandleRequest(@{@"verb" : @"describe", @"pid" : @(kAppPid), @"translatorVocabulary" : @YES});
+
+  XCTAssertEqualObjects(response[@"ok"], @NO);
+  XCTAssertNil(response[@"tree"], @"a read that could not be performed must not answer with a tree");
+}
+
+// The runtime vends an application element for any pid, including one that names no process, and the
+// translator answers against it with synthesized defaults rather than failing. So a read through this
+// vocabulary answered `ok:true` with a fabricated root — carrying a role and an enabled value — for a
+// process that does not exist. Nothing about that response looks wrong to a caller, which is the same
+// shape as the fabricated `enabled` this stack already has a bugfix for.
+- (void)testATranslatorReadOfAnUnavailableApplicationFailsRatherThanFabricatingARoot
+{
+  _runtime.applicationElements[@(kAppPid)] = [FBAXFakeElement applicationUnavailable];
+  _runtime.translatorAttributeValues = @{@(FBAXPAttributeRole) : @1, @(FBAXPAttributeIsEnabled) : @YES};
+
+  NSDictionary *response =
+  FBAXBridgeHandleRequest(@{@"verb" : @"describe", @"pid" : @(kAppPid), @"translatorVocabulary" : @YES});
+
+  XCTAssertEqualObjects(response[@"ok"], @NO);
+  XCTAssertEqualObjects(response[@"error_kind"], @"application_unavailable");
+  XCTAssertNil(response[@"tree"], @"a process with no accessibility server must not answer with a root");
+}
+
+// The envelope a translator read answers with is the same envelope every other read answers with. It was
+// assembled separately, so a fused frontmost read through this vocabulary lost the `method` telling the
+// host which resolver had run.
+- (void)testAFusedFrontmostTranslatorReadStillNamesTheResolverThatRan
+{
+  _runtime.windowServerOutcome = [FBAXFrontmostOutcome resolved:kAppPid];
+  _runtime.applicationElements[@(kAppPid)] = [FBAXFakeElement readable:@"UIApplication"];
+  _runtime.translatorAttributeValues = @{@(FBAXPAttributeLabel) : @"SampleApp"};
+
+  NSDictionary *response =
+  FBAXBridgeHandleRequest(@{@"verb" : @"describe", @"x" : @201, @"y" : @437, @"translatorVocabulary" : @YES});
+
+  XCTAssertEqualObjects(response[@"ok"], @YES);
+  XCTAssertEqualObjects(response[@"pid"], @(kAppPid));
+  XCTAssertEqualObjects(response[@"method"], @"window-server");
 }
 
 #pragma mark - The AXP attribute vocabulary

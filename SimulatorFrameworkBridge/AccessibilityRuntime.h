@@ -372,6 +372,10 @@ extern NSArray<NSString *> *FBAXSignatureWarnings(void);
  * disagree on some screens — the translator answers what an out-of-process client sees, which is not
  * always what XCTest's attribute bundle reports.
  *
+ * `element` may be either an element handle from this seam or a translation object returned by an
+ * earlier translator read — a walk hands its own children straight back in, and having to remember
+ * which kind is in hand at each level is a bug waiting to happen.
+ *
  * `attributes` are `FBAXPAttribute` values. The result is keyed by those same values, and omits any the
  * server did not answer. Nil means the read could not be performed at all, which is distinct from a read
  * that succeeded and returned nothing.

@@ -19,6 +19,7 @@
 
 #import <CoreGraphics/CoreGraphics.h>
 
+#import "AXPAttributes.h"
 #import "AccessibilityRuntime.h"
 
 // The `XC_kAXXC*` attribute keys. These MUST match `FBAXWire.Node` host-side so the emitted tree feeds
@@ -60,10 +61,25 @@ static NSString *const kRequestAttributes = @"attributes";
 // bound, the tree is already being walked, and the answers ride home inside the response that was coming
 // anyway. One round trip instead of one per element.
 static NSString *const kRequestExplainUnreachable = @"explainUnreachable";
+// Reads through the accessibility translator's vocabulary instead of XCTest's. Off by default and
+// opt-in per request: the two disagree on some screens, and which one a caller wants is not a decision
+// this reader should make for them silently.
+static NSString *const kRequestTranslatorVocabulary = @"translatorVocabulary";
 // The synthetic per-node key the explanation is reported under. Not an `XC_kAXXC*` attribute — the
 // accessibility server does not vend this; the reader derives it — so it is spelled in the reader's own
 // namespace to keep the two kinds of key distinguishable on the wire.
 static NSString *const kNodeExplainedBy = @"FBExplainedBy";
+// The translator's own `enabled` answer, in the reader's namespace for the same reason: XCTest's
+// vocabulary has no counterpart, which is exactly why a read through it reports `enabled` as an explicit
+// null. Only a read through the translator's vocabulary carries this.
+static NSString *const kNodeIsEnabled = @"FBIsEnabled";
+// The translator's `role`, carried as the translator's own integer.
+//
+// Deliberately not folded into `elementType`: that field carries `XCUIElementType` names, the mapping
+// from these integers onto them is only partly known, and a number where every consumer expects a name
+// is worse than an absent field. It rides the wire unmapped so the mapping can be derived from real
+// screens. The host maps the identified integers and leaves the rest unmapped.
+static NSString *const kNodeTranslatorRole = @"FBTranslatorRole";
 // Echoed back by the shutdown verb so a caller can tell an honoured shutdown from an ok-shaped response
 // to something else.
 static NSString *const kResponseShutdown = @"shutdown";
@@ -507,6 +523,82 @@ static FBAXReadOutcome *FBAXBridgeBuildNode(id<FBAXRuntime> runtime,
   return [FBAXReadOutcome read:node];
 }
 
+#pragma mark - Translator vocabulary
+
+// Builds a node through the translator's vocabulary, keyed the same way the XCTest walk keys it where the
+// two vocabularies agree, so the serializer above needs no knowledge of which one produced a tree. The two
+// attributes XCTest has no counterpart for — `enabled` and the translator's own `role` — are keyed in the
+// reader's namespace instead; see `kNodeIsEnabled` and `kNodeTranslatorRole`.
+static NSDictionary *_Nullable FBAXBridgeBuildTranslatorNode(id<FBAXRuntime> runtime,
+                                                             id element,
+                                                             int depth,
+                                                             int maxDepth,
+                                                             int *budget,
+                                                             BOOL *truncated)
+{
+  if (*budget <= 0) {
+    *truncated = YES;
+    return nil;
+  }
+  (*budget)--;
+
+  NSArray<NSNumber *> *wanted = @[
+    @(FBAXPAttributeLabel), @(FBAXPAttributeFrame), @(FBAXPAttributeIdentifier),
+    @(FBAXPAttributeValue), @(FBAXPAttributeIsVisible), @(FBAXPAttributeIsEnabled),
+    @(FBAXPAttributeRole),
+  ];
+  NSDictionary<NSNumber *, id> *values = [runtime translatorAttributes:wanted ofElement:element];
+  // Nil is "the read could not be performed", which is not the same answer as an element that answered
+  // nothing. Building a node from it would emit a childless, attribute-less node that a caller cannot
+  // tell from a real empty element — at the root, a failed translator bind reported as a successful read
+  // of an application with no content.
+  if (!values) {
+    return nil;
+  }
+  NSMutableDictionary *node = [NSMutableDictionary dictionary];
+  if (values[@(FBAXPAttributeLabel)]) {
+    node[kAXLabel] = values[@(FBAXPAttributeLabel)];
+  }
+  if (values[@(FBAXPAttributeIdentifier)]) {
+    node[kAXIdentifier] = values[@(FBAXPAttributeIdentifier)];
+  }
+  if (values[@(FBAXPAttributeValue)]) {
+    node[kAXValue] = FBAXBridgeJSONSafeValue(values[@(FBAXPAttributeValue)], kAXValue);
+  }
+  if (values[@(FBAXPAttributeFrame)]) {
+    node[kAXFrame] = FBAXBridgeJSONSafeValue(values[@(FBAXPAttributeFrame)], kAXFrame);
+  }
+  if (values[@(FBAXPAttributeIsVisible)]) {
+    node[kAXIsVisible] = values[@(FBAXPAttributeIsVisible)];
+  }
+  if (values[@(FBAXPAttributeIsEnabled)]) {
+    node[kNodeIsEnabled] = values[@(FBAXPAttributeIsEnabled)];
+  }
+  if (values[@(FBAXPAttributeRole)]) {
+    node[kNodeTranslatorRole] = values[@(FBAXPAttributeRole)];
+  }
+
+  NSMutableArray *children = [NSMutableArray array];
+  if (depth < maxDepth) {
+    // Children are a separate request: the handler special-cases the attribute rather than returning it
+    // in a batch alongside the rest.
+    NSDictionary<NSNumber *, id> *kids = [runtime translatorAttributes:@[@(FBAXPAttributeChildren)] ofElement:element];
+    id list = kids[@(FBAXPAttributeChildren)];
+    if ([list isKindOfClass:NSArray.class]) {
+      for (id child in (NSArray *)list) {
+        NSDictionary *built = FBAXBridgeBuildTranslatorNode(runtime, child, depth + 1, maxDepth, budget, truncated);
+        if (built) {
+          [children addObject:built];
+        }
+      }
+    }
+  } else if (values.count > 0) {
+    *truncated = YES;
+  }
+  node[kAXChildren] = children;
+  return node;
+}
+
 #pragma mark - Modal detection
 
 // Recursively scans a built node for the concrete alert classes. `SBAlertItemWindow` (a SpringBoard
@@ -639,6 +731,38 @@ static NSDictionary *FBAXBridgeTaggedErrorResponse(NSString *message, NSString *
     response[kResponsePid] = pid;
   }
   return response;
+}
+
+// The response a failed read answers with, or nil when the read succeeded and the caller should carry on.
+//
+// Shared by both vocabularies so a pid that names no process is reported alike whichever one was asked
+// for. Only the XCTest read produces these statuses, which is why the translator path spends a round trip
+// to obtain one.
+static NSDictionary *_Nullable FBAXBridgeReadFailureResponse(FBAXReadOutcome *read, pid_t pid)
+{
+  switch (read.status) {
+    case FBAXReadStatusRead:
+      return nil;
+    case FBAXReadStatusApplicationUnavailable:
+      return FBAXBridgeTaggedErrorResponse(
+        [NSString stringWithFormat:@"pid %d has no accessibility server", pid],
+        kErrorKindApplicationUnavailable,
+        @(pid)
+      );
+    case FBAXReadStatusApplicationNotResponding:
+      return FBAXBridgeTaggedErrorResponse(
+        [NSString stringWithFormat:@"pid %d did not answer the read of its element tree in time", pid],
+        kErrorKindApplicationNotResponding,
+        @(pid)
+      );
+    case FBAXReadStatusFailed:
+    default:
+      return FBAXBridgeErrorResponse(
+        [NSString stringWithFormat:@"failed to read the element tree for pid %d: %@",
+         pid,
+         read.error.localizedDescription ?: @"the accessibility runtime reported no error"]
+      );
+  }
 }
 
 // Defined below, after the verbs it dispatches to.
@@ -1145,43 +1269,41 @@ static NSDictionary<NSString *, id> *FBAXBridgeDispatchRequest(NSDictionary<NSSt
   ? [(NSNumber *)request[kRequestMaxNodes] intValue]
   : kDefaultNodeBudget;
   BOOL truncated = NO;
-  FBAXReadOutcome *read =
-  FBAXBridgeBuildNode(
-    runtime,
-    root,
-    FBAXBridgeFetchListForRequest(request),
-    [request[kRequestExplainUnreachable] boolValue],
-    0,
-    maxDepth,
-    &budget,
-    &truncated
-  );
-  switch (read.status) {
-    case FBAXReadStatusRead:
-      break;
-    case FBAXReadStatusApplicationUnavailable:
-      return FBAXBridgeTaggedErrorResponse(
-        [NSString stringWithFormat:@"pid %d has no accessibility server", pid],
-        kErrorKindApplicationUnavailable,
-        @(pid)
-      );
-    case FBAXReadStatusApplicationNotResponding:
-      return FBAXBridgeTaggedErrorResponse(
-        [NSString stringWithFormat:@"pid %d did not answer the read of its element tree in time", pid],
-        kErrorKindApplicationNotResponding,
-        @(pid)
-      );
-    case FBAXReadStatusFailed:
-    default:
-      return FBAXBridgeErrorResponse(
-        [NSString stringWithFormat:@"failed to read the element tree for pid %d: %@",
-         pid,
-         read.error.localizedDescription ?: @"the accessibility runtime reported no error"]
-      );
-  }
-  NSDictionary *tree = read.attributes;
-  if (!tree) {
-    return FBAXBridgeErrorResponse(@"the tree read reported success and carried no attributes");
+  NSDictionary *tree = nil;
+  if ([request[kRequestTranslatorVocabulary] boolValue]) {
+    // Whether the application is there at all is a question only the XCTest read answers. The runtime
+    // vends an application element for any pid, including one that names no process, and the translator
+    // answers against it with synthesized defaults rather than failing — so this read reported a healthy
+    // tree for a dead process until it asked. One extra round trip, on the opt-in path only.
+    NSDictionary *unavailable =
+    FBAXBridgeReadFailureResponse([runtime readAttributes:@[kAXElementType] ofElement:root], pid);
+    if (unavailable) {
+      return unavailable;
+    }
+    tree = FBAXBridgeBuildTranslatorNode(runtime, root, 0, maxDepth, &budget, &truncated);
+    if (!tree) {
+      return FBAXBridgeErrorResponse(@"the translator vocabulary answered nothing for this element");
+    }
+  } else {
+    FBAXReadOutcome *read =
+    FBAXBridgeBuildNode(
+      runtime,
+      root,
+      FBAXBridgeFetchListForRequest(request),
+      [request[kRequestExplainUnreachable] boolValue],
+      0,
+      maxDepth,
+      &budget,
+      &truncated
+    );
+    NSDictionary *failure = FBAXBridgeReadFailureResponse(read, pid);
+    if (failure) {
+      return failure;
+    }
+    tree = read.attributes;
+    if (!tree) {
+      return FBAXBridgeErrorResponse(@"the tree read reported success and carried no attributes");
+    }
   }
   // Always report the pid read, so the host tags elements with it — for a fused frontmost read the host
   // does not know the pid until now. `method` rides along when the pid was resolved in-guest.
@@ -1386,6 +1508,10 @@ int handleAccessibilityAction(NSString *action, NSArray<NSString *> *arguments)
       request[kRequestMaxDepth] = @(argValue.intValue);
     } else if ([flag isEqualToString:@"--max-nodes"]) {
       request[kRequestMaxNodes] = @(argValue.intValue);
+    } else if ([flag isEqualToString:@"--translator-vocabulary"]) {
+      // Takes a value like every other flag: the argv parser walks pairs, so a valueless flag is
+      // silently dropped rather than rejected.
+      request[kRequestTranslatorVocabulary] = @(argValue.boolValue);
     } else if ([flag isEqualToString:@"--explain-unreachable"]) {
       request[kRequestExplainUnreachable] = @([argValue boolValue]);
     } else if ([flag isEqualToString:@"--attributes"]) {
@@ -1434,8 +1560,11 @@ NSDictionary<NSString *, NSString *> *FBAXBridgeWireConstantsForTesting(void)
     @"request.maxDepth" : kRequestMaxDepth,
     @"request.maxNodes" : kRequestMaxNodes,
     @"request.attributes" : kRequestAttributes,
+    @"request.translatorVocabulary" : kRequestTranslatorVocabulary,
     @"request.explainUnreachable" : kRequestExplainUnreachable,
     @"node.explainedBy" : kNodeExplainedBy,
+    @"node.isEnabled" : kNodeIsEnabled,
+    @"node.translatorRole" : kNodeTranslatorRole,
     @"request.x" : kRequestX,
     @"request.y" : kRequestY,
     @"request.method" : kRequestMethod,

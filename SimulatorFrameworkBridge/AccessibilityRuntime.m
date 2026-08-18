@@ -922,11 +922,17 @@ static NSString *const kFrontboardVisibilityEndowment = @"com.apple.frontboard.v
     if (!translator) {
       return;
     }
-    void *raw = [(XCAccessibilityElement *)element AXUIElement];
-    if (!raw) {
-      return;
+    // The root arrives as an `XCAccessibilityElement`; the children this read returns are already
+    // translation objects and come straight back in on the recursive call. Accept both rather than
+    // making every caller remember which it is holding.
+    id translation = element;
+    if ([element respondsToSelector:@selector(AXUIElement)]) {
+      void *raw = [(XCAccessibilityElement *)element AXUIElement];
+      if (!raw) {
+        return;
+      }
+      translation = [translator translationObjectFromPlatformElement:raw];
     }
-    id translation = [translator translationObjectFromPlatformElement:raw];
     if (!translation) {
       return;
     }
