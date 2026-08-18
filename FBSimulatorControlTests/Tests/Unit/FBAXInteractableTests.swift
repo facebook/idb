@@ -83,6 +83,31 @@ final class FBAXInteractableTests: XCTestCase {
     XCTAssertEqual(value, .blocked(reasons: [.notHittable]))
   }
 
+  // The guest has no `enabled` to send: there is no such attribute in the `XC_kAXXCAttribute*`
+  // namespace at all (`IsUserInteractionEnabled` is the only enabled-ish one, and it is a different
+  // question). So `enabled` on a guest-backed read is invented by the host rather than measured.
+  //
+  // BUG: it is invented as `true`, which is indistinguishable from a measured `true`, and the
+  // `disabled` reason keys off it — so a guest-backed read can never report `disabled`, however
+  // disabled the element is. Both assertions are flipped in the following commit.
+  func testEnabledIsFabricatedOnAGuestBackedRead() throws {
+    let element = FBRemoteAutomationPlatformElement(attributes: [:], children: [], pid: 0)
+    XCTAssertTrue(element.axIsEnabled())
+
+    let value = try XCTUnwrap(Self.interactable(Self.node()) ?? nil)
+    XCTAssertEqual(value, .actionable(at: FBAccessibilityPoint(x: 201, y: 794.33)))
+  }
+
+  // The serialized `enabled` a guest-backed read reports, for the same reason.
+  func testTheSerializedEnabledIsFabricatedOnAGuestBackedRead() throws {
+    let node = FBAXTreeWalk.describeAllElements(
+      fromTree: Self.node(), keys: [.enabled], nestedFormat: false, pid: 13515
+    ).first
+    // BUG: reports a definite `true` for something the wire never carried. Flipped in the following
+    // commit to an explicit null, the same way `interactable` reports what a backend cannot answer.
+    XCTAssertEqual(try XCTUnwrap(node?.enabled), true)
+  }
+
   func testAViewThatTakesNoTouchesIsBlocked() throws {
     let value = try XCTUnwrap(Self.interactable(Self.node(userInteractionEnabled: false)) ?? nil)
     XCTAssertEqual(value, .blocked(reasons: [.userInteractionDisabled]))
