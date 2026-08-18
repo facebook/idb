@@ -16,6 +16,7 @@
 #import <SimulatorFrameworkBridgeLib/AccessibilityService+Testing.h>
 #import <SimulatorFrameworkBridgeLib/XCTAutomationSupportPrivate.h>
 
+#import "AXPAttributes.h"
 #import "FBAXFakeRuntime.h"
 
 static NSString *const kAXElementType = @"XC_kAXXCAttributeElementType";
@@ -841,6 +842,35 @@ static NSDictionary *FBAXTestsPress(void)
   id emitted = FBAXBridgeHandleRequest(@{@"verb" : @"describe", @"pid" : @(kAppPid)})[@"tree"][kAXFrame];
   XCTAssertTrue([emitted isKindOfClass:NSDictionary.class], @"the frame stays structured, got %@", [emitted class]);
   XCTAssertEqualObjects(emitted[@"Width"], @402);
+}
+
+#pragma mark - The AXP attribute vocabulary
+
+// These values are read off a private binary rather than a header, so they are pinned here: a runtime
+// that renumbers them would otherwise be discovered as a reader silently fetching the wrong attribute,
+// which reads as missing data rather than as a broken constant.
+//
+// `Children` is the one with two independent derivations — the `__AXPAttributeToString` table and the
+// dispatch jump table that routes both 8 and 9 to the children handler — so it is the canary.
+- (void)testTheAXPAttributeVocabularyIsPinned
+{
+  XCTAssertEqual(FBAXPAttributeChildren, 8);
+  XCTAssertEqual(FBAXPAttributeChildrenInNavigationOrder, 9);
+  XCTAssertEqual(FBAXPAttributeLabel, 33);
+  XCTAssertEqual(FBAXPAttributeFrame, 21);
+  XCTAssertEqual(FBAXPAttributeIdentifier, 25);
+  XCTAssertEqual(FBAXPAttributeValue, 53);
+  XCTAssertEqual(FBAXPAttributeRole, 45);
+  XCTAssertEqual(FBAXPAttributeIsVisible, 32);
+  XCTAssertEqual(FBAXPAttributeIsEnabled, 27);
+}
+
+// The two request kinds a reader uses. `MultipleAttribute` is called out because passing its attribute
+// list as an array rather than under the `attributes` key throws inside the guest.
+- (void)testTheAXPRequestTypesArePinned
+{
+  XCTAssertEqual(FBAXPRequestTypeAttribute, 2);
+  XCTAssertEqual(FBAXPRequestTypeMultipleAttribute, 5);
 }
 
 #pragma mark - Request-named attributes
