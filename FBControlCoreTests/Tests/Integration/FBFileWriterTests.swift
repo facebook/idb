@@ -80,6 +80,44 @@ final class FBFileWriterTests: XCTestCase {
     XCTAssertNotEqual(fcntl(localSocket, F_GETFL) & O_NONBLOCK, 0)
   }
 
+  func testNonBlockingFlagAfterTeardownOfUnownedSocketWriter() throws {
+    var descriptors: [Int32] = [0, 0]
+    XCTAssertEqual(socketpair(AF_UNIX, SOCK_STREAM, 0, &descriptors), 0)
+    let localSocket = descriptors[0]
+    let remoteSocket = descriptors[1]
+    defer {
+      close(localSocket)
+      close(remoteSocket)
+    }
+
+    var writeError: NSError?
+    guard let writer = FBFileWriter.asyncWriter(withFileDescriptor: localSocket, closeOnEndOfFile: false, error: &writeError) else {
+      throw writeError!
+    }
+
+    // A write arms the channel: libdispatch records the descriptor's
+    // original (blocking) flags and forces O_NONBLOCK onto it.
+    writer.consumeData("ping".data(using: .utf8)!)
+    writer.consumeEndOfFile()
+    _ = try writer.finishedConsuming.`await`(withTimeout: 10)
+
+    // The write was flushed before the channel wound down.
+    var buffer = [UInt8](repeating: 0, count: 4)
+    XCTAssertEqual(recv(remoteSocket, &buffer, 4, MSG_DONTWAIT), 4)
+
+    // BUG: winding down restores the original blocking flags onto a
+    // descriptor the channel never owned, on an asynchronously-drained queue
+    // the caller cannot await. A restore that lands after the caller closed
+    // the descriptor re-blocks whatever open file description has since been
+    // recycled onto the number, wedging any channel armed on it in an
+    // uninterruptible blocking read(2) — flipped in the following commit.
+    let restored = NSPredicate { _, _ in
+      fcntl(localSocket, F_GETFL) & O_NONBLOCK == 0
+    }
+    wait(for: [expectation(for: restored, evaluatedWith: self, handler: nil)], timeout: FBControlCoreGlobalConfiguration.fastTimeout)
+    XCTAssertEqual(fcntl(localSocket, F_GETFL) & O_NONBLOCK, 0)
+  }
+
   func testStopThenCloseTeardownOfSocketReaderAndDuplicatedWriter() throws {
     var descriptors: [Int32] = [0, 0]
     XCTAssertEqual(socketpair(AF_UNIX, SOCK_STREAM, 0, &descriptors), 0)

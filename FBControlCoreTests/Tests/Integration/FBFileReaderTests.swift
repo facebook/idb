@@ -245,6 +245,48 @@ final class FBFileReaderTests: XCTestCase, FBDataConsumer {
     XCTAssertEqual(successes, 1)
   }
 
+  func testNonBlockingFlagAfterTeardownOfUnownedSocketReader() throws {
+    var descriptors: [Int32] = [0, 0]
+    XCTAssertEqual(socketpair(AF_UNIX, SOCK_STREAM, 0, &descriptors), 0)
+    let localSocket = descriptors[0]
+    let remoteSocket = descriptors[1]
+    defer {
+      close(localSocket)
+      close(remoteSocket)
+    }
+
+    let consumer = FBDataBuffer.accumulatingBuffer()
+    let reader = FBFileReader.reader(withFileDescriptor: localSocket, closeOnEndOfFile: false, consumer: consumer, logger: nil)
+    try reader.startReading().`await`()
+
+    // Traffic through the channel guarantees libdispatch has armed the
+    // descriptor: its per-descriptor entry exists, the original (blocking)
+    // flags are recorded, and O_NONBLOCK is forced on.
+    let expected = "ping".data(using: .utf8)!
+    expected.withUnsafeBytes { buffer in
+      XCTAssertEqual(write(remoteSocket, buffer.baseAddress, buffer.count), expected.count)
+    }
+    let consumed = NSPredicate { _, _ in
+      expected == consumer.data()
+    }
+    wait(for: [expectation(for: consumed, evaluatedWith: self, handler: nil)], timeout: FBControlCoreGlobalConfiguration.fastTimeout)
+    XCTAssertNotEqual(fcntl(localSocket, F_GETFL) & O_NONBLOCK, 0)
+
+    _ = try reader.stopReading().`await`()
+
+    // BUG: winding down restores the original blocking flags onto a
+    // descriptor the channel never owned, on an asynchronously-drained queue
+    // the caller cannot await. A restore that lands after the caller closed
+    // the descriptor re-blocks whatever open file description has since been
+    // recycled onto the number, wedging any channel armed on it in an
+    // uninterruptible blocking read(2) — flipped in the following commit.
+    let restored = NSPredicate { _, _ in
+      fcntl(localSocket, F_GETFL) & O_NONBLOCK == 0
+    }
+    wait(for: [expectation(for: restored, evaluatedWith: self, handler: nil)], timeout: FBControlCoreGlobalConfiguration.fastTimeout)
+    XCTAssertEqual(fcntl(localSocket, F_GETFL) & O_NONBLOCK, 0)
+  }
+
   func testAttemptingToReadAGarbageFileDescriptor() throws {
     let reader = FBFileReader.reader(withFileDescriptor: 92123, closeOnEndOfFile: false, consumer: self, logger: nil)
     XCTAssertEqual(reader.state, FBFileReaderState.notStarted)
