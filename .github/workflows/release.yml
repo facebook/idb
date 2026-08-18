@@ -76,17 +76,18 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
           {
-            echo '## Update the homebrew formula'
-            echo 'In the `facebook/fb` tap, update `idb.rb` (it installs the companion and the python CLI together) for this release:'
+            echo '## Update the homebrew formulae'
+            echo 'In the `facebook/fb` tap, this release is shipped as three formulae: `idb-companion.rb` (the companion server), `idb-cli.rb` (the python CLI), and `idb.rb` (a meta-formula that only depends on the other two). Update them for this release:'
             echo ''
-            echo '- Point the companion `url`/`sha256` at this tarball. The digest below is also published as the `idb-companion.universal.tar.gz.sha256` release asset:'
+            echo '- In `idb-companion.rb`, point the `url`/`sha256` at this tarball. The digest below is also published as the `idb-companion.universal.tar.gz.sha256` release asset:'
             echo '```ruby'
             echo "url \"https://github.com/$GITHUB_REPOSITORY/releases/download/$GITHUB_REF_NAME/idb-companion.universal.tar.gz\""
             echo "sha256 \"${{ steps.package.outputs.sha256 }}\""
             echo '```'
-            echo '- Update the explicit `version` stanza to match the tag: Homebrew mis-parses prerelease suffixes out of the URL.'
-            echo '- The python CLI is consumed as a formula `resource` from the `fb_idb-*.tar.gz` sdist attached to this release, so update the `url` and `sha256` of that resource too.'
-            echo '- If the tarball layout changed since the previous release, review the formula `install` block as well: a url/sha bump alone can ship a formula that fails to install or installs a companion that crashes at runtime.'
+            echo '- In `idb-companion.rb`, also update the explicit `version` stanza to match the tag: Homebrew mis-parses prerelease suffixes out of the URL.'
+            echo '- In `idb-cli.rb`, update the `url` and `sha256` of the python sdist `resource` to the `fb_idb-*.tar.gz` attached to this release.'
+            echo '- `idb.rb` only depends on the other two formulae, so it normally needs no change.'
+            echo '- If the tarball layout changed since the previous release, review the `idb-companion.rb` `install` block as well: a url/sha bump alone can ship a formula that fails to install or installs a companion that crashes at runtime.'
           } >> "$GITHUB_STEP_SUMMARY"
 
   python-client:
