@@ -45,6 +45,42 @@ final class FBFileWriterTests: XCTestCase {
     writer.consumeEndOfFile()
   }
 
+  func testNonBlockingFlagAfterTeardownOfDuplicatedSocketWriter() throws {
+    var descriptors: [Int32] = [0, 0]
+    XCTAssertEqual(socketpair(AF_UNIX, SOCK_STREAM, 0, &descriptors), 0)
+    let localSocket = descriptors[0]
+    let remoteSocket = descriptors[1]
+    defer {
+      close(localSocket)
+      close(remoteSocket)
+    }
+
+    // The two descriptors share one open file description, so file status
+    // flags set through either are visible through both.
+    let writerDescriptor = dup(localSocket)
+    XCTAssertGreaterThanOrEqual(writerDescriptor, 0)
+    var writeError: NSError?
+    guard let writer = FBFileWriter.asyncWriter(withFileDescriptor: writerDescriptor, closeOnEndOfFile: true, error: &writeError) else {
+      throw writeError!
+    }
+
+    // A write arms the channel: libdispatch records the description's
+    // original (blocking) flags and forces O_NONBLOCK onto it.
+    writer.consumeData("ping".data(using: .utf8)!)
+    writer.consumeEndOfFile()
+    _ = try writer.finishedConsuming.`await`(withTimeout: 10)
+
+    // The write was flushed before the channel wound down.
+    var buffer = [UInt8](repeating: 0, count: 4)
+    XCTAssertEqual(recv(remoteSocket, &buffer, 4, MSG_DONTWAIT), 4)
+
+    // BUG: winding down restores the duplicate's original blocking flags onto
+    // the shared open file description, stripping O_NONBLOCK from the
+    // still-open localSocket — a reader channel armed on it can then wedge in
+    // an uninterruptible blocking read(2) — flipped in the following commit.
+    XCTAssertEqual(fcntl(localSocket, F_GETFL) & O_NONBLOCK, 0)
+  }
+
   func testStopThenCloseTeardownOfSocketReaderAndDuplicatedWriter() throws {
     var descriptors: [Int32] = [0, 0]
     XCTAssertEqual(socketpair(AF_UNIX, SOCK_STREAM, 0, &descriptors), 0)
