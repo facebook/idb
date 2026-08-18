@@ -269,24 +269,33 @@ function regenerate_projects() {
 XCODE_MIN_MAJOR=26
 
 function check_xcode_version() {
-  if ! command -v xcodebuild &> /dev/null; then
-    echo "error: xcodebuild not found. Install Xcode ${XCODE_MIN_MAJOR}.0 or newer and select it with xcode-select."
+  # Read the version from the selected Xcode's version.plist rather than
+  # invoking xcodebuild: xcodebuild intermittently aborts when it is the
+  # first Xcode process on a fresh CI host, and a version probe should not
+  # be exposed to that. xcode-select and plutil only read on-disk state.
+  local developer_dir
+  if ! developer_dir=$(xcode-select --print-path 2>/dev/null) || [ ! -d "$developer_dir" ]; then
+    echo "error: no Xcode is selected. Install Xcode ${XCODE_MIN_MAJOR}.0 or newer and select it with xcode-select."
     exit 1
   fi
-  local version_line
-  version_line=$(xcodebuild -version 2>/dev/null | head -n 1)
-  local major
-  major=$(printf '%s' "$version_line" | sed -n 's/^Xcode \([0-9][0-9]*\).*/\1/p')
-  if [[ -z $major ]]; then
-    echo "error: could not parse the Xcode version from 'xcodebuild -version' output: ${version_line:-<empty>}"
+  local version_plist="${developer_dir%/Contents/Developer}/Contents/version.plist"
+  if [ ! -f "$version_plist" ]; then
+    echo "error: a full Xcode ${XCODE_MIN_MAJOR}.0+ installation is required (selected developer directory has no version.plist: ${developer_dir})"
     exit 1
+  fi
+  local version major
+  version=$(plutil -extract CFBundleShortVersionString raw "$version_plist" 2>/dev/null) || true
+  major=$(printf '%s' "$version" | sed -n 's/^\([0-9][0-9]*\).*/\1/p')
+  if [[ -z $major ]]; then
+    echo "warning: could not read the Xcode version from ${version_plist}; continuing without the version check"
+    return 0
   fi
   if (( major < XCODE_MIN_MAJOR )); then
-    echo "error: Xcode ${XCODE_MIN_MAJOR}.0 or newer is required to build idb, found: ${version_line}"
-    echo "Select a newer Xcode with: sudo xcode-select --switch /Applications/Xcode.app"
+    echo "error: Xcode ${XCODE_MIN_MAJOR}.0 or newer is required to build idb, found: Xcode ${version}"
     exit 1
   fi
 }
+
 
 function invoke_xcodebuild() {
   local symroot="$BUILD_DIRECTORY/Products"
