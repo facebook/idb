@@ -364,6 +364,21 @@ extern NSArray<NSString *> *FBAXSignatureWarnings(void);
 /** The frontmost application according to RunningBoard's on-screen visibility endowment. */
 - (FBAXFrontmostOutcome *)runningBoardFrontmost;
 
+/**
+ * Reads `attributes` off `element` through the in-guest accessibility translator, in one round trip.
+ *
+ * A second vocabulary alongside `-readAttributes:ofElement:`, which asks in XCTest's `XC_kAXXCAttribute*`
+ * names. Both reach the same server, but they are separate namespaces with separate handlers and the two
+ * disagree on some screens — the translator answers what an out-of-process client sees, which is not
+ * always what XCTest's attribute bundle reports.
+ *
+ * `attributes` are `FBAXPAttribute` values. The result is keyed by those same values, and omits any the
+ * server did not answer. Nil means the read could not be performed at all, which is distinct from a read
+ * that succeeded and returned nothing.
+ */
+- (nullable NSDictionary<NSNumber *, id> *)translatorAttributes:(NSArray<NSNumber *> *)attributes
+                                                      ofElement:(id)element;
+
 @end
 
 /**

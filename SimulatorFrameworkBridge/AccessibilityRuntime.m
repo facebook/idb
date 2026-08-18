@@ -10,6 +10,7 @@
 #import <dlfcn.h>
 #import <objc/runtime.h>
 
+#import "AXPAttributes.h"
 #import "AXPTranslationPrivate.h"
 #import "AXRuntimePrivate.h"
 #import "RunningBoardServicesPrivate.h"
@@ -350,7 +351,14 @@ static const FBAXBoundSelector kFBAXBoundSelectors[] = {
   {"AXPTranslator", "frontmostApplicationWithDisplayId:bridgeDelegateToken:", NO, "@@:I@"},
   {"AXPTranslator", "processTranslatorRequest:", NO, "@@:@"},
   {"AXPTranslator", "setBridgeTokenDelegate:", NO, "v@:@"},
+  // Declared by the concrete iOS subclass `sharediOSInstance` vends, not by `AXPTranslator` itself.
+  {"AXPTranslator_iOS", "translationObjectFromPlatformElement:", NO, "@@:^{__AXUIElement=}"},
   {"AXPTranslationObject", "pid", NO, "i@:"},
+  {"AXPTranslatorRequest", "requestWithTranslation:", YES, "@@:@"},
+  {"AXPTranslatorRequest", "setRequestType:", NO, "v@:Q"},
+  {"AXPTranslatorRequest", "setAttributeType:", NO, "v@:Q"},
+  {"AXPTranslatorRequest", "setParameters:", NO, "v@:@"},
+  {"AXPTranslatorResponse", "resultData", NO, "@@:"},
   // RunningBoardServices
   {"RBSProcessPredicate", "predicateMatchingLaunchServicesProcesses", YES, "@@:"},
   {"RBSProcessState", "statesForPredicate:withDescriptor:error:", YES, "@@:@@o^@"},
@@ -896,6 +904,49 @@ static NSString *const kFrontboardVisibilityEndowment = @"com.apple.frontboard.v
     outcome = FBAXBridgeWindowServerFrontmostOffMain();
   });
   return outcome ?: [FBAXFrontmostOutcome unresolved:@"window-server frontmost resolution failed"];
+}
+
+// Reads a batch of attributes through the translator rather than through XCTest's attribute bundle. The
+// element may be an `XCAccessibilityElement` or a translation object the translator itself returned, and
+// both are accepted so a walk can hand its own children straight back in.
+- (nullable NSDictionary<NSNumber *, id> *)translatorAttributes:(NSArray<NSNumber *> *)attributes
+                                                      ofElement:(id)element
+{
+  if (attributes.count == 0 || !element) {
+    return nil;
+  }
+  __block NSDictionary *result = nil;
+  FBAXBridgeRunOffMainQueue(^{
+    NSString *setupError = nil;
+    AXPTranslator *translator = FBAXBridgeWindowServerTranslator(&setupError);
+    if (!translator) {
+      return;
+    }
+    void *raw = [(XCAccessibilityElement *)element AXUIElement];
+    if (!raw) {
+      return;
+    }
+    id translation = [translator translationObjectFromPlatformElement:raw];
+    if (!translation) {
+      return;
+    }
+    Class requestClass = objc_lookUpClass("AXPTranslatorRequest");
+    if (!requestClass) {
+      return;
+    }
+    AXPTranslatorRequest *request = [requestClass requestWithTranslation:translation];
+    request.requestType = FBAXPRequestTypeMultipleAttribute;
+    // The handler subscripts `parameters` by this key; an array here throws and takes the reader down.
+    request.parameters = @{@"attributes" : attributes};
+    @try {
+      AXPTranslatorResponse *response = [translator processTranslatorRequest:request];
+      id data = response.resultData;
+      result = [data isKindOfClass:NSDictionary.class] ? data : nil;
+    } @catch (NSException *exception) {
+      result = nil;
+    }
+  });
+  return result;
 }
 
 // Enumerates every launch-services process and returns the one endowed with on-screen visibility

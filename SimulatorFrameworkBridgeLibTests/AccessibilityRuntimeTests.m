@@ -844,6 +844,40 @@ static NSDictionary *FBAXTestsPress(void)
   XCTAssertEqualObjects(emitted[@"Width"], @402);
 }
 
+#pragma mark - The translator vocabulary seam
+
+// The seam carries the ask through verbatim. Worth pinning because the attribute list is the whole
+// request: the wrong numbers reach the server as a different question, and the answer still looks valid.
+- (void)testATranslatorReadPassesTheAttributesThrough
+{
+  _runtime.translatorAttributeValues = @{@(FBAXPAttributeLabel) : @"General"};
+  NSArray *asked = @[@(FBAXPAttributeLabel), @(FBAXPAttributeFrame)];
+
+  NSDictionary *read = [_runtime translatorAttributes:asked ofElement:[FBAXFakeElement readable:@"UIView"]];
+
+  XCTAssertEqualObjects(read[@(FBAXPAttributeLabel)], @"General");
+  XCTAssertEqualObjects(_runtime.lastTranslatorAttributes, asked);
+}
+
+// Nil is "the read could not be performed", which a caller must be able to tell from a read that
+// succeeded and returned nothing — the same distinction the outcome types elsewhere exist to preserve.
+- (void)testATranslatorReadThatCannotBePerformedAnswersNil
+{
+  _runtime.translatorAttributeValues = nil;
+  XCTAssertNil([_runtime translatorAttributes:@[@(FBAXPAttributeLabel)] ofElement:[FBAXFakeElement readable:@"UIView"]]);
+}
+
+// One read per node is the reason the batched request type exists; a caller that regressed to one read
+// per attribute would still be correct and would cost eight times as many round trips.
+- (void)testABatchedReadIsOneRoundTripForManyAttributes
+{
+  _runtime.translatorAttributeValues = @{};
+  [_runtime translatorAttributes:@[@(FBAXPAttributeLabel), @(FBAXPAttributeRole), @(FBAXPAttributeFrame),
+                                   @(FBAXPAttributeIdentifier)]
+                       ofElement:[FBAXFakeElement readable:@"UIView"]];
+  XCTAssertEqual(_runtime.translatorReadCount, 1u);
+}
+
 #pragma mark - The AXP attribute vocabulary
 
 // These values are read off a private binary rather than a header, so they are pinned here: a runtime

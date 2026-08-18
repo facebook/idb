@@ -57,6 +57,10 @@ static NSString *const kAXChildren = @"XC_kAXXCAttributeChildren";
 @end
 
 @implementation FBAXFakeRuntime
+{
+  NSUInteger _translatorReadCount;
+  NSArray<NSNumber *> *_lastTranslatorAttributes;
+}
 
 - (instancetype)init
 {
@@ -133,6 +137,14 @@ static NSString *const kAXChildren = @"XC_kAXXCAttributeChildren";
 {
   _windowServerCount++;
   return self.windowServerOutcome;
+}
+
+- (nullable NSDictionary<NSNumber *, id> *)translatorAttributes:(NSArray<NSNumber *> *)attributes
+                                                      ofElement:(id)element
+{
+  _translatorReadCount++;
+  _lastTranslatorAttributes = [attributes copy];
+  return self.translatorAttributeValues;
 }
 
 - (FBAXFrontmostOutcome *)runningBoardFrontmost

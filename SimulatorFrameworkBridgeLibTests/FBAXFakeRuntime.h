@@ -59,6 +59,15 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong) FBAXFrontmostOutcome *windowServerOutcome;
 /** What `-runningBoardFrontmost` answers with. */
 @property (nonatomic, strong) FBAXFrontmostOutcome *runningBoardOutcome;
+
+/** What `-translatorAttributes:ofElement:` answers with. Nil means the read could not be performed. */
+@property (nullable, nonatomic, copy) NSDictionary<NSNumber *, id> *translatorAttributeValues;
+
+/** The attributes the last `-translatorAttributes:ofElement:` asked for, so a test can assert the ask. */
+@property (nullable, nonatomic, readonly, copy) NSArray<NSNumber *> *lastTranslatorAttributes;
+
+/** How many translator reads have been made — one request per node is the point of the batched form. */
+@property (nonatomic, readonly) NSUInteger translatorReadCount;
 /** What both write methods answer with. */
 @property (nonatomic, strong) FBAXWriteOutcome *writeOutcome;
 

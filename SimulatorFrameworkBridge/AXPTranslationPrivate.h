@@ -72,6 +72,32 @@ typedef id _Nullable (^AXPTranslationBridgeCallback)(id request);
  */
 @protocol AXPTranslatorClass;
 
+/**
+ * One request to the translator. `requestType` selects the kind (see `FBAXPRequestType`); `attributeType`
+ * names a single attribute for an attribute request; `parameters` carries everything else.
+ *
+ * A multiple-attribute request passes its list as `parameters[@"attributes"]`. **The handler subscripts
+ * `parameters` by key** — passing an array in its place raises inside the guest and takes the reader
+ * process down with it.
+ */
+@interface AXPTranslatorRequest : NSObject
+
+/** Addresses the element the request is about. */
++ (nullable instancetype)requestWithTranslation:(id)translation;
+
+@property (nonatomic, assign) NSUInteger requestType;
+@property (nonatomic, assign) NSUInteger attributeType;
+@property (nullable, nonatomic, strong) id parameters;
+
+@end
+
+/** The answer to one request. `resultData` is nil when the translator could not answer. */
+@interface AXPTranslatorResponse : NSObject
+
+@property (nullable, nonatomic, strong) id resultData;
+
+@end
+
 @interface AXPTranslator : NSObject
 
 /** The process-wide iOS translator. */
@@ -87,7 +113,15 @@ typedef id _Nullable (^AXPTranslationBridgeCallback)(id request);
                                                  bridgeDelegateToken:(NSString *)token;
 
 /** Resolves one translator request against the local AX server. This is what a bridge callback calls. */
-- (nullable id)processTranslatorRequest:(id)request;
+- (nullable AXPTranslatorResponse *)processTranslatorRequest:(AXPTranslatorRequest *)request;
+
+/**
+ * Wraps an `AXUIElementRef` as the translation object a request addresses.
+ *
+ * **Borrows** the reference: the returned object does not extend its lifetime, so the caller must keep
+ * the ref alive for as long as it uses the translation.
+ */
+- (nullable id)translationObjectFromPlatformElement:(void *)element;
 
 /** The bridge delegate, held **weakly** — an installed delegate must be retained elsewhere. */
 @property (nullable, nonatomic, weak) id<AXPTranslationTokenDelegateHelper> bridgeTokenDelegate;
