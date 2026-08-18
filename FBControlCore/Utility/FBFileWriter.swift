@@ -193,6 +193,19 @@ private class FBFileWriter_Async: FBFileWriter, FBDispatchDataConsumer, FBDataCo
   func startWriting() throws {
     assert(io == nil)
 
+    // For an owned descriptor, dispatch_io's deferred restore of the original
+    // flags is at best pointless (the descriptor is closed on wind-down) and
+    // at worst harmful: restoring blocking flags reaches through the shared
+    // open file description of any duplicate, stripping O_NONBLOCK from a
+    // reader channel still armed on the other duplicate and wedging it in an
+    // uninterruptible blocking read(2). Pre-setting O_NONBLOCK makes the
+    // restore a no-op; the channel forces non-blocking IO regardless.
+    // Unowned descriptors are left alone: their post-teardown flags belong to
+    // the caller.
+    if closeOnEndOfFile {
+      _ = fcntl(fileDescriptor, F_SETFL, fcntl(fileDescriptor, F_GETFL) | O_NONBLOCK)
+    }
+
     let finishedConsuming = finishedConsumingMutable
 
     // Use weak self to avoid retain cycle (see comments in ObjC implementation)

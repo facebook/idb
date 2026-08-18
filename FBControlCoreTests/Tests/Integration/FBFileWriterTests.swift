@@ -74,11 +74,10 @@ final class FBFileWriterTests: XCTestCase {
     var buffer = [UInt8](repeating: 0, count: 4)
     XCTAssertEqual(recv(remoteSocket, &buffer, 4, MSG_DONTWAIT), 4)
 
-    // BUG: winding down restores the duplicate's original blocking flags onto
-    // the shared open file description, stripping O_NONBLOCK from the
-    // still-open localSocket — a reader channel armed on it can then wedge in
-    // an uninterruptible blocking read(2) — flipped in the following commit.
-    XCTAssertEqual(fcntl(localSocket, F_GETFL) & O_NONBLOCK, 0)
+    // Winding down must not restore the duplicate's original blocking flags
+    // onto the shared open file description: localSocket keeps O_NONBLOCK, so
+    // a reader channel armed on it can never wedge in a blocking read(2).
+    XCTAssertNotEqual(fcntl(localSocket, F_GETFL) & O_NONBLOCK, 0)
   }
 
   func testStopThenCloseTeardownOfSocketReaderAndDuplicatedWriter() throws {
