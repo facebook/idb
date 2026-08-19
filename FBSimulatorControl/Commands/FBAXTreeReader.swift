@@ -51,6 +51,11 @@ protocol FBAXTreeReader: FBUIAutomation {
   /// passed off as whole. Per backend because each logs through its own target; `describeTree` calls it
   /// once per describe, and never on the `.marker` wait poll, which reads without describing.
   func warnIfTruncated(_ truncated: Bool) async
+
+  /// Warns that most of a read's elements carry no rectangle, which can mean the target is serving stale
+  /// cached children. Per backend for the same reason as `warnIfTruncated` — each logs through its own
+  /// target — and called only on a whole-tree describe, since a single element has no ratio to judge.
+  func warnIfGeometrySuspect(_ frames: FBAccessibilityFrameSummary?) async
 }
 
 /// Where a point-addressed write lands, and what the element there must still be for it to go ahead.
@@ -135,6 +140,9 @@ extension FBAXTreeReader {
             nested: options.nestedFormat
           )
         } : nil
+      // Judged on what is reported rather than on what was walked: the caller's `--filter` decides what
+      // they see, and advice about a tree they were not shown would be unactionable.
+      await warnIfGeometrySuspect(FBAccessibilityFrameSummary(elements: elements))
       return FBAccessibilityElementsResponse(elements: .tree(elements), coverage: coverage, modal: read.modal)
         .withProvenance(
           backend: backend.name,

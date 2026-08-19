@@ -321,6 +321,40 @@ final class FBAXBridgeReadsTests: XCTestCase {
     XCTAssertTrue(description.contains("On") && description.contains("Off"), "message should name both values: \(description)")
   }
 
+  // MARK: - Suspect-geometry guidance
+
+  private func summary(total: Int, zeroFrame: Int) -> FBAccessibilityFrameSummary {
+    FBAccessibilityFrameSummary(total: total, framed: total - zeroFrame, zeroFrame: zeroFrame)
+  }
+
+  // The signature the advice exists for: a read that is well-formed, untruncated and error-free, whose
+  // elements have simply lost their geometry. Nothing else in the response distinguishes it, which is why
+  // this is the one place in the read path allowed a threshold.
+  func testMostlyUnframedReadsAreAdvisedAboutAutomationMode() {
+    let advice = FBAccessibilityGuidance.suspectGeometry(summary(total: 190, zeroFrame: 167))
+    XCTAssertNotNil(advice)
+    XCTAssertTrue(advice?.contains("AutomationEnabled") == true, "got: \(advice ?? "nil")")
+  }
+
+  func testFullyFramedReadsAreNotAdvised() {
+    XCTAssertNil(FBAccessibilityGuidance.suspectGeometry(summary(total: 176, zeroFrame: 0)))
+  }
+
+  // A handful of unframed elements is ordinary. The advice is about a whole screen having lost its
+  // geometry, not about any element that reports none.
+  func testASmallReadIsNotJudged() {
+    XCTAssertNil(
+      FBAccessibilityGuidance.suspectGeometry(summary(total: 4, zeroFrame: 4)),
+      "a four-element read has no statistical claim either way, whatever its ratio"
+    )
+  }
+
+  // Nil rather than zeroes means the read carried no frames at all, which is a caller's choice via
+  // `--key`. Advising on it would be answering a question they did not ask.
+  func testAReadCarryingNoFramesIsNotAdvised() {
+    XCTAssertNil(FBAccessibilityGuidance.suspectGeometry(nil))
+  }
+
   // MARK: - Which read failures a marker wait polls through
 
   // An app still launching has no frontmost, no readable tree and no accessibility server, and acquires
@@ -1718,7 +1752,8 @@ final class FBAXBridgeGuestDeathTests: XCTestCase {
 }
 
 /// A minimal `FBAXTreeReader` serving a canned read, so the shared `describeTree` composition can be
-/// observed without a simulator. `readRawTree`, `warnIfTruncated` and `hitTest` are the three seams
+/// observed without a simulator. `readRawTree`, `warnIfTruncated`, `warnIfGeometrySuspect` and `hitTest`
+/// are the seams
 /// `describeTree` drives; every other `FBUIAutomation` verb is an unused conformance stub.
 private final class StubTreeReader: FBAXTreeReader, @unchecked Sendable {
 
@@ -1765,6 +1800,12 @@ private final class StubTreeReader: FBAXTreeReader, @unchecked Sendable {
 
   func warnIfTruncated(_ truncated: Bool) async {
     truncationWarnings.append(truncated)
+  }
+
+  private(set) var geometryWarnings: [FBAccessibilityFrameSummary?] = []
+
+  func warnIfGeometrySuspect(_ frames: FBAccessibilityFrameSummary?) async {
+    geometryWarnings.append(frames)
   }
 
   func hitTest(at point: CGPoint, options: FBAccessibilityRequestOptions) async throws -> FBAccessibilityElementsResponse? {

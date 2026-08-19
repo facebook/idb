@@ -324,6 +324,11 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
     _ = simulator?.logger.log("Remote-automation read hit the bound (maxDepth \(FBAXReadLimits.maxReadDepth), maxNodes \(FBAXReadLimits.maxReadNodes)); the returned tree is truncated and incomplete.")
   }
 
+  func warnIfGeometrySuspect(_ frames: FBAccessibilityFrameSummary?) {
+    guard let advice = FBAccessibilityGuidance.suspectGeometry(frames), let frames else { return }
+    _ = simulator?.logger.log("Remote-automation read reported \(frames.zeroFrame) of \(frames.total) elements with no frame. \(advice)")
+  }
+
   /// The screen-point centre of the frontmost-tree element a `.marker` names — the shared preamble for
   /// the marker write verbs (tap, set-value). Throws `elementNotFound` when nothing matches the marker,
   /// or `elementNotOnScreen` when an element matches but reports no on-screen frame to interact with.

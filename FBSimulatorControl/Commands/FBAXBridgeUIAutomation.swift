@@ -285,4 +285,9 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
     guard truncated else { return }
     _ = simulator.logger.log("axbridge read hit the bound (maxDepth \(FBAXReadLimits.maxReadDepth), maxNodes \(FBAXReadLimits.maxReadNodes)); the returned tree is truncated and incomplete.")
   }
+
+  func warnIfGeometrySuspect(_ frames: FBAccessibilityFrameSummary?) {
+    guard let advice = FBAccessibilityGuidance.suspectGeometry(frames), let frames else { return }
+    _ = simulator.logger.log("axbridge read reported \(frames.zeroFrame) of \(frames.total) elements with no frame. \(advice)")
+  }
 }
