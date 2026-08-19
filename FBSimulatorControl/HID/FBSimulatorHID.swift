@@ -40,6 +40,19 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
 
   private weak var simulator: FBSimulator?
 
+  /// Whether `send(event:logger:)` flushes the transport after every event.
+  ///
+  /// The flush exists so a short-lived host process does not tear the connection down before the
+  /// guest has consumed the gesture (see `FBSimulatorDTUHIDTransport.drainNanos`). It is a fixed
+  /// wait, so it costs the same whether or not a teardown is coming.
+  ///
+  /// A caller that holds one `FBSimulatorHID` open across many gestures — a persistent session
+  /// streaming a continuous gesture — has no teardown between events, so that wait is pure
+  /// per-event latency, and at one flush per event it caps throughput well below the rate such a
+  /// gesture produces. Those callers set this to `false` and call `flush()` once before releasing
+  /// the HID. Defaults to `true`, so one-shot callers keep the safe behaviour without opting in.
+  public var flushesAfterEachEvent = true
+
   // MARK: Initializers
 
   /**
@@ -155,7 +168,10 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
   ///
   /// Only DTUHID has anything to drain. Indigo's client is synchronous, so there is nothing waiting on
   /// the far side and no drain to perform — which is why `flush` is not on the transport at all.
-  func flush() async throws {
+  ///
+  /// `send(event:logger:)` calls this for you unless `flushesAfterEachEvent` is `false`, in which case
+  /// a caller streaming a continuous gesture calls it once at the end rather than paying it per event.
+  public func flush() async throws {
     guard case let .dtuhid(dtuhid) = transport else {
       return
     }
@@ -228,8 +244,8 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
         wroteToTransport = true
       }
     }
-    if wroteToTransport, case let .dtuhid(dtuhid) = transport {
-      try await dtuhid.flush()
+    if wroteToTransport, flushesAfterEachEvent {
+      try await flush()
     }
   }
 
