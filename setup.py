@@ -101,7 +101,14 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    install_requires=["aiofiles", "grpclib >= 0.4.0", "protobuf", "treelib"],
+    install_requires=[
+        "aiofiles",
+        "grpclib >= 0.4.0",
+        # The lower bound must track the ValidateProtobufRuntimeVersion call
+        # baked into the pb2 modules generated at build time.
+        "protobuf >= 7.35.1",
+        "treelib",
+    ],
     setup_requires=["grpcio-tools >= 1.29.0", "grpclib >= 0.3.2"],
     entry_points={"console_scripts": ["idb = idb.cli.main:main"]},
     python_requires=">=3.10",
