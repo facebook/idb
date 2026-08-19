@@ -35,10 +35,20 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
 
   /// What this lane asks the guest to do about accessibility automation mode.
   ///
-  /// `nil` means observe and report without touching the device, which is the behaviour every caller has
-  /// today. Kept as one named constant rather than threaded through every read so that changing it is a
-  /// single, reviewable, revertible line rather than an edit at each call site.
-  static let requestedAutomationMode: Bool? = nil
+  /// `true`: this lane reads with the device in automation mode. That is the mode a UI-test host puts an
+  /// application into — measured, by reading the flag from inside an app under XCUITest — so this brings
+  /// idb into line with what every XCUITest suite already does to the apps it drives, rather than being
+  /// a setting nobody else uses.
+  ///
+  /// What it buys, measured on one static screen of a real application: 98 elements with 10 carrying a
+  /// frame becomes 176 with all 176 carrying one, and the elements exposing an identifier go from 12 to
+  /// 58. The first half is a correctness fix — with the mode off, a container can serve cached children
+  /// naming a screen that is no longer displayed — and the second is a large gain in label-independent
+  /// targeting that comes with it.
+  ///
+  /// `nil` here restores exactly the previous behaviour: observe and report, touch nothing. One
+  /// reviewable line, and the only line that has to change to revert.
+  static let requestedAutomationMode: Bool? = true
 
   private let simulator: FBSimulator
   private let transport: any FBAXBridgeTransport

@@ -350,6 +350,18 @@ final class FBAXBridgeReadsTests: XCTestCase {
     XCTAssertTrue(description.contains("On") && description.contains("Off"), "message should name both values: \(description)")
   }
 
+  // MARK: - The lane's automation-mode default
+
+  // Pinned as its own assertion because it is the one line in this stack that changes what a device does,
+  // and it is a single value that could be edited without anything else failing. A test naming it means
+  // the change is deliberate rather than incidental.
+  func testTheAxbridgeLaneReadsInAutomationMode() {
+    XCTAssertEqual(
+      FBAXBridgeUIAutomation.requestedAutomationMode, true,
+      "the axbridge lane asserts automation mode; nil would restore observe-only behaviour"
+    )
+  }
+
   // MARK: - Suspect-geometry guidance
 
   private func summary(total: Int, zeroFrame: Int) -> FBAccessibilityFrameSummary {
