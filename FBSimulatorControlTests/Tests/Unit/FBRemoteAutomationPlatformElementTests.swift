@@ -115,6 +115,53 @@ final class FBRemoteAutomationPlatformElementTests: XCTestCase {
     XCTAssertEqual(element.axRole(), "9999")
   }
 
+  // `Any` is `XCUIElementType` 0 — the automation type reporting that it has no type for this element,
+  // not a type of its own. Because it is a *successful* lookup rather than a miss, it short-circuits the
+  // chain and the concrete class name the read already carried is never consulted. An app's own
+  // `UIControl` subclass is the case that costs the most: it reports `Any` and is unidentifiable.
+  func testRoleReportsAnyEvenWhenAConcreteElementTypeIsPresent() {
+    let element = FBRemoteAutomationPlatformElement(
+      attributes: [
+        FBAXWire.Node.automationType.rawValue: NSNumber(value: 0),
+        FBAXWire.Node.elementType.rawValue: "AppRefreshControl",
+      ],
+      children: [],
+      pid: 0
+    )
+
+    // BUG: reports `Any` and discards `AppRefreshControl` — flipped in the following commit.
+    XCTAssertEqual(element.axRole(), "Any")
+  }
+
+  // The same ordering defect one step further down the chain, and the reason the fix has to be a reorder
+  // rather than a special case for `Any`: an automation type that resolves to no name at all still beats
+  // the concrete class name, because the stringified-number term sits above it.
+  func testRoleReportsAStringifiedAutomationTypeEvenWhenAConcreteElementTypeIsPresent() {
+    let element = FBRemoteAutomationPlatformElement(
+      attributes: [
+        FBAXWire.Node.automationType.rawValue: NSNumber(value: 9999),
+        FBAXWire.Node.elementType.rawValue: "AppRefreshControl",
+      ],
+      children: [],
+      pid: 0
+    )
+
+    // BUG: reports the bare number and discards `AppRefreshControl` — flipped in the following commit.
+    XCTAssertEqual(element.axRole(), "9999")
+  }
+
+  // An element with nothing better than `Any` must keep reporting it. Pinned alongside the two above so
+  // the fix cannot buy a concrete name at the cost of turning this into the literal string "0".
+  func testRoleStillReportsAnyWhenThereIsNoConcreteElementType() {
+    let element = FBRemoteAutomationPlatformElement(
+      attributes: [FBAXWire.Node.automationType.rawValue: NSNumber(value: 0)],
+      children: [],
+      pid: 0
+    )
+
+    XCTAssertEqual(element.axRole(), "Any")
+  }
+
   func testChildrenAreExposed() {
     let child = FBRemoteAutomationPlatformElement(
       attributes: [FBAXWire.Node.label.rawValue: "About"],
