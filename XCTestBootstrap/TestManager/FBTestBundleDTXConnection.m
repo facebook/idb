@@ -136,11 +136,21 @@ static NSTimeInterval const DaemonSessionReadyTimeout = 60; // Time for `_IDE_in
   int socket = self.testManagerdSocket;
   id<FBControlCoreLogger> logger = self.logger;
   [logger log:[NSString stringWithFormat:@"Wrapping testmanagerd socket (%d) in DTXTransport and DTXConnection", socket]];
-  DTXTransport *transport = [[objc_lookUpClass("DTXSocketTransport") alloc] initWithConnectedSocket:socket
-                                                                                   disconnectAction:^{
-                                                                                     [logger log:@"Notified that daemon socket disconnected"];
-                                                                                   }];
-  DTXConnection *connection = [[objc_lookUpClass("DTXConnection") alloc] initWithTransport:transport];
+  DTXConnection *connection;
+  // DTX asserts internally on a dead socket; the raise would otherwise cross
+  // Swift frames, where it cannot be caught, and abort the process.
+  @try {
+    DTXTransport *transport = [[objc_lookUpClass("DTXSocketTransport") alloc] initWithConnectedSocket:socket
+                                                                                     disconnectAction:^{
+                                                                                       [logger log:@"Notified that daemon socket disconnected"];
+                                                                                     }];
+    connection = [[objc_lookUpClass("DTXConnection") alloc] initWithTransport:transport];
+  } @catch (NSException *exception) {
+    return [FBFutureContext futureContextWithError:
+            [[FBXCTestError
+              describe:[NSString stringWithFormat:@"Failed to wrap testmanagerd socket %d in DTXConnection: %@", socket, exception]]
+             build]];
+  }
   [connection registerDisconnectHandler:^{
     [logger log:@"Notified that testmanagerd connection disconnected"];
     [self.bundleDisconnected resolveWithResult:NSNull.null];
