@@ -25,6 +25,7 @@ final class FBAXWireContractTests: XCTestCase {
     XCTAssertEqual(FBAXWire.Node.isEnabled.rawValue, "FBIsEnabled")
     XCTAssertEqual(FBAXWire.Node.translatorRole.rawValue, "FBTranslatorRole")
     XCTAssertEqual(FBAXWire.Node.translatorSubrole.rawValue, "FBTranslatorSubrole")
+    XCTAssertEqual(FBAXWire.Node.traits.rawValue, "FBTraits")
     XCTAssertEqual(FBAXWire.Node.elementType.rawValue, "XC_kAXXCAttributeElementType")
     XCTAssertEqual(FBAXWire.Node.elementBaseType.rawValue, "XC_kAXXCAttributeElementBaseType")
     XCTAssertEqual(FBAXWire.Node.label.rawValue, "XC_kAXXCAttributeLabel")

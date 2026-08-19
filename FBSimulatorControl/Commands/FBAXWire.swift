@@ -69,6 +69,9 @@ enum FBAXWire {
     /// toggle is a check box with a switch subrole, a search field a text field with a search subrole.
     /// `FBAXRoleVocabulary.name(forTranslatorSubrole:)` maps the identified integers.
     case translatorSubrole = "FBTranslatorSubrole"
+    /// The `UIAccessibilityTraits` bitmask, as the translator answers it. Carried raw: the trait
+    /// constants live in a macOS-only header the guest cannot import, and nothing decodes it yet.
+    case traits = "FBTraits"
 
     /// The attribute list a read requests for each element when it names none of its own. Membership
     /// *and* order are part of the contract: the guest fetches and echoes back exactly this sequence.

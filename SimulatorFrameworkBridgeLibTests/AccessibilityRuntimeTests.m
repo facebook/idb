@@ -929,6 +929,19 @@ static NSDictionary *FBAXTestsPress(void)
   XCTAssertEqualObjects(tree[@"XC_kAXXCAttributeVisiblePoint"][@"Y"], @311);
 }
 
+// The traits bitmask is the input the translator's own role handler classifies; carrying it lets a caller
+// reach a distinction the role collapsed.
+- (void)testATranslatorReadEmitsTheTraitsBitmask
+{
+  _runtime.applicationElements[@(kAppPid)] = [FBAXFakeElement readable:@"UIApplication"];
+  _runtime.translatorAttributeValues = @{@(FBAXPAttributeTraits) : @(1 << 6)};
+
+  NSDictionary *tree =
+  FBAXBridgeHandleRequest(@{@"verb" : @"describe", @"pid" : @(kAppPid), @"translatorVocabulary" : @YES})[@"tree"];
+
+  XCTAssertEqualObjects(tree[@"FBTraits"], @(1 << 6));
+}
+
 // A translator read that could not be performed answers nil, which is not the same as an element with no
 // attributes. Building a node from it emits a childless, attribute-less tree, so a failed bind reports as a
 // successful read of an application with no content — a wrong answer that looks entirely healthy.
@@ -990,6 +1003,7 @@ static NSDictionary *FBAXTestsPress(void)
 - (void)testTheAXPAttributeVocabularyIsPinned
 {
   XCTAssertEqual(FBAXPAttributeVisiblePoint, 112);
+  XCTAssertEqual(FBAXPAttributeTraits, 77);
   XCTAssertEqual(FBAXPAttributeChildren, 8);
   XCTAssertEqual(FBAXPAttributeChildrenInNavigationOrder, 9);
   XCTAssertEqual(FBAXPAttributeLabel, 33);

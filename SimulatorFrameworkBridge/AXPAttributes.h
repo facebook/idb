@@ -49,6 +49,10 @@ typedef NS_ENUM(NSInteger, FBAXPAttribute) {
   FBAXPAttributeSubrole = 51,
   FBAXPAttributeValue = 53,
   FBAXPAttributeIsRemoteElement = 66,
+  /** The `UIAccessibilityTraits` bitmask. The role is *derived* from this — the translator's role handler
+      branches on `kAXButtonTrait`, `kAXHeaderTrait`, `kAXTextEntryTrait` and the rest — so this is the
+      un-lossy input to a classification the role only reports the output of. */
+  FBAXPAttributeTraits = 77,
   /** The point the accessibility server believes a touch reaches, the translator's counterpart to
       `XC_kAXXCAttributeVisiblePoint`. Recovered the same way as the rest and checked against three
       simulator runtimes (26.4, 26.5, 27.0), which agree on the index. */
