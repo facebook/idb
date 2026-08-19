@@ -23,6 +23,11 @@ public final class FBSimulatorSet: NSObject, FBiOSTargetSet {
   @objc public let asyncQueue: DispatchQueue
 
   private var _allSimulators: [FBSimulator]
+  // Guards _allSimulators: the allSimulators getter re-inflates and swaps the
+  // backing array, and is called from arbitrary threads (lookups at companion
+  // startup, delegate notification, description). Unsynchronized, the swap
+  // races iteration in concurrent callers.
+  private let simulatorsLock = NSLock()
   private var inflationStrategy: FBSimulatorInflationStrategy!
   private var notificationUpdateStrategy: FBSimulatorNotificationUpdateStrategy!
 
@@ -171,6 +176,8 @@ public final class FBSimulatorSet: NSObject, FBiOSTargetSet {
 
   @objc
   public var allSimulators: [FBSimulator] {
+    simulatorsLock.lock()
+    defer { simulatorsLock.unlock() }
     _allSimulators = inflationStrategy.inflate(
       fromDevices: deviceSet.availableDevices,
       exitingSimulators: _allSimulators
