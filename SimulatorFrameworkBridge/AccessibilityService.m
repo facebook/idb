@@ -90,6 +90,10 @@ static NSString *const kNodeTraits = @"FBTraits";
 // A per-element identity from the translator. Carried so two reads can be compared element by element —
 // which is what distinguishes "this tree is the previous screen" from "this tree happens to look alike".
 static NSString *const kNodeElementIdentity = @"FBElementIdentity";
+// Present only on a node where at least one attribute failed to read, mapping the attribute's key to the
+// reason. Separate from the attributes themselves because a failure is not a value: the key it failed for
+// reads as null, and this says why rather than leaving the caller to guess it was never asked for.
+static NSString *const kNodeAttributeReadFailures = @"FBAttributeReadFailures";
 // Echoed back by the shutdown verb so a caller can tell an honoured shutdown from an ok-shaped response
 // to something else.
 static NSString *const kResponseShutdown = @"shutdown";
@@ -417,6 +421,14 @@ static id FBAXBridgeJSONSafeValue(id _Nullable value, NSString *key)
   if ([value isKindOfClass:NSString.class] || [value isKindOfClass:NSNumber.class]) {
     return value;
   }
+  // The framework reports a failed attribute by returning the error in place of the value, so an error
+  // arrives in the same shape as an answer. Stringifying it would describe the element as having that
+  // string as the attribute — a label of "Error Domain=..." reads as a real label to anything matching on
+  // one. Absent a value, the honest answer is that there is none; `kNodeAttributeReadFailures` carries
+  // which keys failed and why.
+  if ([value isKindOfClass:NSError.class]) {
+    return NSNull.null;
+  }
   return [value description];
 }
 
@@ -493,11 +505,22 @@ static FBAXReadOutcome *FBAXBridgeBuildNode(id<FBAXRuntime> runtime,
   }
 
   NSMutableDictionary *node = [NSMutableDictionary dictionaryWithCapacity:attributes.count];
+  NSMutableDictionary<NSString *, NSString *> *readFailures = nil;
   for (NSString *key in attributes) {
     if ([key isEqualToString:kAXChildren]) {
       continue;
     }
-    node[key] = FBAXBridgeJSONSafeValue(attributes[key], key);
+    id value = attributes[key];
+    if ([value isKindOfClass:NSError.class]) {
+      if (!readFailures) {
+        readFailures = [NSMutableDictionary dictionary];
+      }
+      readFailures[key] = [(NSError *)value localizedDescription] ?: [value description];
+    }
+    node[key] = FBAXBridgeJSONSafeValue(value, key);
+  }
+  if (readFailures) {
+    node[kNodeAttributeReadFailures] = readFailures;
   }
 
   NSMutableArray<NSDictionary *> *children = [NSMutableArray array];

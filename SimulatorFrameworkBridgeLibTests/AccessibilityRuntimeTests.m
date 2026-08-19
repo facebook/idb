@@ -859,10 +859,13 @@ static NSDictionary *FBAXTestsPress(void)
   root.attributes = @{kAXElementType : @"UIApplication", kAXLabel : failure};
   _runtime.applicationElements[@(kAppPid)] = root;
 
-  id emitted = FBAXBridgeHandleRequest(@{@"verb" : @"describe", @"pid" : @(kAppPid)})[@"tree"][kAXLabel];
-  // BUG: the label reads as the stringified failure, so a caller matching on labels is handed
-  // "Error Domain=AXError Code=-25204 ..." as the element's label — flipped in the following commit.
-  XCTAssertEqualObjects(emitted, failure.description);
+  NSDictionary *tree = FBAXBridgeHandleRequest(@{@"verb" : @"describe", @"pid" : @(kAppPid)})[@"tree"];
+  XCTAssertEqualObjects(tree[kAXLabel], NSNull.null, @"a failure is not the attribute's value");
+  XCTAssertEqualObjects(
+    tree[@"FBAttributeReadFailures"][kAXLabel],
+    @"kAXErrorCannotComplete",
+    @"the failed key is named with its reason rather than silently reading as no value"
+  );
 }
 
 #pragma mark - The translator vocabulary seam
