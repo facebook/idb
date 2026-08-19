@@ -143,3 +143,17 @@ A read that reports far fewer elements than the screen shows is usually one of t
 
   Relaunch the application afterwards; the setting is read at startup.
 - **The read was truncated.** A very deep or very large hierarchy stops at the bounds above. `--format complete` reports `truncated: true` when that happened, which distinguishes "this is the whole screen" from "this is as much of it as was read".
+- **The target is not in automation mode.** Separate from the setting above, and it changes how much structure the accessibility system exposes at all:
+
+  ```
+  idb get --domain com.apple.Accessibility AutomationEnabled
+  idb set --domain com.apple.Accessibility AutomationEnabled --type bool true
+  ```
+
+  With automation mode off, UIKit collapses subtrees behind opaque element providers and caches a container's children. With it on, the full structure is exposed and children are recomputed per read. On one measured screen the same read went from 98 elements with 10 carrying a frame, to 176 elements all of which carry one — and the count of elements exposing an identifier went from 12 to 58, which matters more than the node count if you are targeting by identifier rather than by label.
+
+  This is the mode a UI-test host puts an application into, so a screen read under XCUITest and the same screen read by `idb` are not necessarily the same tree today.
+
+  Unlike `ApplicationAccessibilityEnabled`, this one is **consulted per read rather than at launch**, so it takes effect on an already-running application without a relaunch.
+
+  It is a device-wide setting and it affects every accessibility consumer on that simulator, not just your read.
