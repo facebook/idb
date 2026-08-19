@@ -883,6 +883,30 @@ static NSDictionary *FBAXTestsPress(void)
   XCTAssertEqualObjects(_runtime.lastTranslatorAttributes, asked);
 }
 
+// Both walks are asked for the same depth cap by the same request, so a read should mean the same thing by
+// it. The view-hierarchy walk marks a read truncated only where the node it stopped at *had* children;
+// this pins the translator walk deciding from the node's own attribute count instead.
+- (void)testATranslatorReadOfALeafAtTheDepthCapReportsTruncation
+{
+  FBAXFakeElement *root = [FBAXFakeElement readable:@"UIApplication"];
+  root.attributes = @{kAXElementType : @"UIApplication"};
+  _runtime.applicationElements[@(kAppPid)] = root;
+  _runtime.translatorAttributeValues = @{@(FBAXPAttributeLabel) : @"Settings"};
+
+  NSDictionary *response = FBAXBridgeHandleRequest(
+    @{
+      @"verb" : @"describe",
+      @"pid" : @(kAppPid),
+      @"translatorVocabulary" : @YES,
+      @"maxDepth" : @0,
+    }
+  );
+
+  // BUG: nothing was omitted — this root has no children at all — but the read reports truncation
+  // because the node answered at least one attribute of its own. Flipped in the following commit.
+  XCTAssertEqualObjects(response[@"truncated"], @YES);
+}
+
 // Nil is "the read could not be performed", which a caller must be able to tell from a read that
 // succeeded and returned nothing — the same distinction the outcome types elsewhere exist to preserve.
 - (void)testATranslatorReadThatCannotBePerformedAnswersNil
