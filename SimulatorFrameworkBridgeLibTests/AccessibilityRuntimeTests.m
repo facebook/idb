@@ -846,6 +846,25 @@ static NSDictionary *FBAXTestsPress(void)
   XCTAssertEqualObjects(emitted[@"Width"], @402);
 }
 
+// XCTest's reader returns an `NSError` *as an attribute's value* for any AX failure other than no-value or
+// unsupported, so a failed read arrives in the same shape as a successful one. Nothing downstream expects an
+// error object, and the JSON coercion stringifies whatever it does not recognise.
+- (void)testAnAttributeThatFailedToReadIsEmittedAsItsValue
+{
+  NSError *failure = [NSError
+                      errorWithDomain:@"AXError"
+                      code:-25204
+                      userInfo:@{NSLocalizedDescriptionKey : @"kAXErrorCannotComplete"}];
+  FBAXFakeElement *root = [FBAXFakeElement readable:@"UIApplication"];
+  root.attributes = @{kAXElementType : @"UIApplication", kAXLabel : failure};
+  _runtime.applicationElements[@(kAppPid)] = root;
+
+  id emitted = FBAXBridgeHandleRequest(@{@"verb" : @"describe", @"pid" : @(kAppPid)})[@"tree"][kAXLabel];
+  // BUG: the label reads as the stringified failure, so a caller matching on labels is handed
+  // "Error Domain=AXError Code=-25204 ..." as the element's label — flipped in the following commit.
+  XCTAssertEqualObjects(emitted, failure.description);
+}
+
 #pragma mark - The translator vocabulary seam
 
 // The seam carries the ask through verbatim. Worth pinning because the attribute list is the whole
