@@ -41,6 +41,42 @@
 @implementation FBStubEventReporter
 @end
 
+// Named stand-ins for `SimDevice.runtime` / `SimDevice.deviceType`. Only `-name` is
+// read, by the configuration synthesis below.
+@interface FBStubSimNamed : NSObject
+@property (nonatomic, copy) NSString *name;
+@end
+
+@implementation FBStubSimNamed
++ (instancetype)named:(NSString *)name
+{
+  FBStubSimNamed *stub = [self new];
+  stub.name = name;
+  return stub;
+}
+
+@end
+
+// A device whose runtime and device-type names are always present, used solely to
+// synthesize a configuration for the tests.
+@interface FBStubConfigurationSimDevice : NSObject
+@property (nonatomic, strong) FBStubSimNamed *runtime;
+@property (nonatomic, strong) FBStubSimNamed *deviceType;
+@end
+
+@implementation FBStubConfigurationSimDevice
+- (instancetype)init
+{
+  self = [super init];
+  if (self) {
+    _runtime = [FBStubSimNamed named:@"iOS 17.0"];
+    _deviceType = [FBStubSimNamed named:@"iPhone 15"];
+  }
+  return self;
+}
+
+@end
+
 @implementation FBSimulatorTestSupport
 
 + (FBSimulator *)testableSimulator
@@ -52,9 +88,13 @@
 {
   id<FBControlCoreLogger> logger = [FBControlCoreLoggerFactory loggerToConsumer:[FBNullDataConsumer new]];
   id stubReporter = [FBStubEventReporter new];
-  NSError *configurationError = nil;
-  FBSimulatorConfiguration *configuration = [FBSimulatorConfiguration defaultConfigurationAndReturnError:&configurationError];
-  NSAssert(configuration, @"Could not build the default simulator configuration: %@", configurationError);
+  // Synthesize the configuration from a stub rather than asking for the default one.
+  // `+defaultConfiguration` pins a hardcoded device model and then resolves the newest
+  // *installed* runtime that supports it, so it returns nil on a host whose runtimes have
+  // dropped that model — a host dependency these tests should not have. They never read the
+  // configuration back; `-initWithDevice:` only stores it.
+  FBSimulatorConfiguration *configuration =
+  [FBSimulatorConfiguration inferSimulatorConfigurationFromDeviceSynthesizingMissing:(id)[FBStubConfigurationSimDevice new]];
   // Cast through `id` so the type checker accepts the substitution as
   // `SimDevice *`. The init only stores fields and reads `device.UDID.UUIDString`.
   return [[FBSimulator alloc] initWithDevice:device

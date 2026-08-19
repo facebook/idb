@@ -10,6 +10,17 @@ import XCTest
 
 final class FBSimulatorConfigurationTests: XCTestCase {
 
+  override func setUpWithError() throws {
+    try super.setUpWithError()
+    // Every test here seeds from `defaultConfiguration()`, which resolves the newest runtime
+    // *installed on this host* that supports its device family. A host with no simulator runtimes
+    // cannot satisfy that, so these need one rather than being pure unit tests. Skip explicitly
+    // instead of failing, so the suite distinguishes "not exercised here" from "broken".
+    if (try? FBSimulatorConfiguration.defaultConfiguration()) == nil {
+      throw XCTSkip("Requires at least one installed simulator runtime")
+    }
+  }
+
   func testDefaultIsIphone() throws {
     let configuration = try FBSimulatorConfiguration.defaultConfiguration()
     XCTAssertTrue(configuration.device.model.rawValue.contains("iPhone"))
