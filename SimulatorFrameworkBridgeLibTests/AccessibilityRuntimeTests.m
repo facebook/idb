@@ -913,6 +913,22 @@ static NSDictionary *FBAXTestsPress(void)
   XCTAssertNil(tree[kAXElementType], @"an unmapped translator role must not masquerade as an XCUIElementType");
 }
 
+// The point is what lets the host judge reachability on this path: it derives `interactable` from the
+// same key an XCTest read supplies, so a walk that answers hittability and no point reports no verdict.
+- (void)testATranslatorReadEmitsTheVisiblePoint
+{
+  _runtime.applicationElements[@(kAppPid)] = [FBAXFakeElement readable:@"UIApplication"];
+  _runtime.translatorAttributeValues = @{
+    @(FBAXPAttributeVisiblePoint) : [NSValue valueWithCGPoint:CGPointMake(201, 311)],
+  };
+
+  NSDictionary *tree =
+  FBAXBridgeHandleRequest(@{@"verb" : @"describe", @"pid" : @(kAppPid), @"translatorVocabulary" : @YES})[@"tree"];
+
+  XCTAssertEqualObjects(tree[@"XC_kAXXCAttributeVisiblePoint"][@"X"], @201);
+  XCTAssertEqualObjects(tree[@"XC_kAXXCAttributeVisiblePoint"][@"Y"], @311);
+}
+
 // A translator read that could not be performed answers nil, which is not the same as an element with no
 // attributes. Building a node from it emits a childless, attribute-less tree, so a failed bind reports as a
 // successful read of an application with no content — a wrong answer that looks entirely healthy.
@@ -973,6 +989,7 @@ static NSDictionary *FBAXTestsPress(void)
 // dispatch jump table that routes both 8 and 9 to the children handler — so it is the canary.
 - (void)testTheAXPAttributeVocabularyIsPinned
 {
+  XCTAssertEqual(FBAXPAttributeVisiblePoint, 112);
   XCTAssertEqual(FBAXPAttributeChildren, 8);
   XCTAssertEqual(FBAXPAttributeChildrenInNavigationOrder, 9);
   XCTAssertEqual(FBAXPAttributeLabel, 33);

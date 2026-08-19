@@ -545,7 +545,7 @@ static NSDictionary *_Nullable FBAXBridgeBuildTranslatorNode(id<FBAXRuntime> run
   NSArray<NSNumber *> *wanted = @[
     @(FBAXPAttributeLabel), @(FBAXPAttributeFrame), @(FBAXPAttributeIdentifier),
     @(FBAXPAttributeValue), @(FBAXPAttributeIsVisible), @(FBAXPAttributeIsEnabled),
-    @(FBAXPAttributeRole),
+    @(FBAXPAttributeRole), @(FBAXPAttributeVisiblePoint),
   ];
   NSDictionary<NSNumber *, id> *values = [runtime translatorAttributes:wanted ofElement:element];
   // Nil is "the read could not be performed", which is not the same answer as an element that answered
@@ -576,6 +576,12 @@ static NSDictionary *_Nullable FBAXBridgeBuildTranslatorNode(id<FBAXRuntime> run
   }
   if (values[@(FBAXPAttributeRole)]) {
     node[kNodeTranslatorRole] = values[@(FBAXPAttributeRole)];
+  }
+  // Keyed as XCTest names it, because the host derives `interactable` from that key and the two answer
+  // the same question. Without it the derivation has hittability and no point, which is the shape it
+  // reports as no verdict at all.
+  if (values[@(FBAXPAttributeVisiblePoint)]) {
+    node[kAXVisiblePoint] = FBAXBridgeJSONSafeValue(values[@(FBAXPAttributeVisiblePoint)], kAXVisiblePoint);
   }
 
   NSMutableArray *children = [NSMutableArray array];
