@@ -1508,4 +1508,55 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
 
     XCTAssertEqual(element.processIdentifier, 777, "a by-pid resolve reads the app with that pid")
   }
+
+  // MARK: - Concurrent access to the shared translator
+
+  func testConcurrentResolutionsOverlapInsideTheSharedTranslator() async throws {
+    try setUp(withRootElement: defaultElementTree)
+    let tracker = TranslatorEntryTracker()
+    fixture!.translator.resolutionEnterHook = { tracker.enter() }
+
+    let sim = simulator!
+    async let first = sim.resolveElement(for: .frontmost)
+    async let second = sim.resolveElement(for: .frontmost)
+    let elements = try await [first, second]
+    for element in elements {
+      element.close()
+    }
+
+    // BUG: both resolutions are inside the process-wide AXPTranslator at the same time.
+    // The translator singleton's internal state is not synchronized (nonatomic
+    // properties, shared element caches), so concurrent translation work over-releases
+    // shared bridge-delegate token storage — EXC_BAD_ACCESS in
+    // FBAXTranslationRequest.deinit. Flipped to serialized (maxActive == 1) in the
+    // following commit.
+    XCTAssertEqual(tracker.maxActive, 2, "concurrent resolutions enter the shared translator together")
+  }
+}
+
+/// Counts how many resolutions are inside the translator at once. `enter()` brackets
+/// the translator call: the first caller is held until a peer arrives (or the bounded
+/// wait elapses), giving an overlap every chance to be observed — so a serialized
+/// implementation shows `maxActive == 1` deterministically rather than by lucky timing.
+private final class TranslatorEntryTracker: @unchecked Sendable {
+  private let lock = NSLock()
+  private let peerArrived = DispatchSemaphore(value: 0)
+  private var active = 0
+  private(set) var maxActive = 0
+
+  func enter() {
+    lock.lock()
+    active += 1
+    maxActive = max(maxActive, active)
+    let sawPeer = active >= 2
+    lock.unlock()
+    if sawPeer {
+      peerArrived.signal()
+    } else {
+      _ = peerArrived.wait(timeout: .now() + 2.0)
+    }
+    lock.lock()
+    active -= 1
+    lock.unlock()
+  }
 }

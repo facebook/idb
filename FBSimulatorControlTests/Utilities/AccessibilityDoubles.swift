@@ -205,8 +205,13 @@ class FBSimulatorControlTests_AXPTranslator_Double: NSObject {
   var macPlatformElementResultsByPid: [pid_t: FBSimulatorControlTests_AXPMacPlatformElement_Double] = [:]
   weak var bridgeTokenDelegate: AnyObject?
   private(set) var methodCalls = NSMutableArray()
+  /// Invoked at the top of each frontmost resolution, on the thread driving it. Lets a
+  /// test observe — or deliberately hold open — the window in which a resolution is
+  /// inside the shared translator, so overlap between concurrent resolutions is testable.
+  var resolutionEnterHook: (() -> Void)?
 
   func frontmostApplication(withDisplayId displayId: Int32, bridgeDelegateToken token: String) -> FBSimulatorControlTests_AXPTranslationObject_Double? {
+    resolutionEnterHook?()
     methodCalls.add("frontmostApplicationWithDisplayId:\(displayId) token:\(token)")
     let result = frontmostApplicationResult
     result?.bridgeDelegateToken = token
