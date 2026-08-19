@@ -383,6 +383,32 @@ extern NSArray<NSString *> *FBAXSignatureWarnings(void);
 - (nullable NSDictionary<NSNumber *, id> *)translatorAttributes:(NSArray<NSNumber *> *)attributes
                                                       ofElement:(id)element;
 
+/**
+ * Whether the device is in accessibility automation mode.
+ *
+ * This is `_AXSAutomationEnabled()` — a device-wide setting, not a property of this process or of the
+ * target. With it off, UIKit collapses subtrees behind opaque element providers and caches a container's
+ * children; with it on, the full structure is exposed and children are recomputed per read.
+ *
+ * Read in the *guest*, which is not the target application. The value is the same device-wide setting
+ * either way, but the target caches its own view of it behind a notification observer, so a read here
+ * says what the device is set to and not that the target has already observed it.
+ */
+- (BOOL)automationModeEnabled;
+
+/**
+ * Asks the device for automation mode, and reports what the flag reads back as afterwards.
+ *
+ * Returns the read-back state rather than whether the write was attempted, because the two differ: this
+ * writes a preference through `AXSettings`, and a preference write can fail silently. A caller that
+ * assumed success would report a mode the device is not in.
+ *
+ * Device-wide and persistent. It is not restored when this process exits, and `AXRuntime` clears it
+ * unconditionally when an accessibility observer client dies — so a caller must not assume a value it set
+ * earlier is still in force.
+ */
+- (BOOL)setAutomationModeEnabled:(BOOL)enabled;
+
 @end
 
 /**

@@ -69,6 +69,7 @@ static NSString *const kAXChildren = @"XC_kAXXCAttributeChildren";
     return nil;
   }
   _applicationElements = [NSMutableDictionary dictionary];
+  _automationModeWrites = [NSMutableArray array];
   _hitTestOutcome = [FBAXHitTestOutcome empty];
   _windowServerOutcome = [FBAXFrontmostOutcome unresolved:@"no window-server outcome configured"];
   _runningBoardOutcome = [FBAXFrontmostOutcome unresolved:@"no running-board outcome configured"];
@@ -151,6 +152,24 @@ static NSString *const kAXChildren = @"XC_kAXXCAttributeChildren";
 {
   _runningBoardCount++;
   return self.runningBoardOutcome;
+}
+
+#pragma mark Automation mode
+
+- (BOOL)automationModeEnabled
+{
+  return self.automationMode;
+}
+
+- (BOOL)setAutomationModeEnabled:(BOOL)enabled
+{
+  [self.automationModeWrites addObject:@(enabled)];
+  if (!self.automationModeWriteFails) {
+    self.automationMode = enabled;
+  }
+  // Read back, exactly as the live runtime does: what a caller learns is the state afterwards, not that
+  // the write was attempted.
+  return self.automationMode;
 }
 
 @end

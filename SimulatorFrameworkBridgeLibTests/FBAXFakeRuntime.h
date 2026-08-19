@@ -60,6 +60,16 @@ NS_ASSUME_NONNULL_BEGIN
 /** What `-runningBoardFrontmost` answers with. */
 @property (nonatomic, strong) FBAXFrontmostOutcome *runningBoardOutcome;
 
+/** What `-automationModeEnabled` answers with, and what a successful `-setAutomationModeEnabled:` sets. */
+@property (nonatomic, assign) BOOL automationMode;
+/**
+ * When YES, `-setAutomationModeEnabled:` leaves `automationMode` untouched — the shape of a preference
+ * write that is accepted and silently does not take, which is the case a caller must not read as success.
+ */
+@property (nonatomic, assign) BOOL automationModeWriteFails;
+/** Every value passed to `-setAutomationModeEnabled:`, in order. Empty when nothing asked. */
+@property (nonatomic, strong) NSMutableArray<NSNumber *> *automationModeWrites;
+
 /** What `-translatorAttributes:ofElement:` answers with. Nil means the read could not be performed. */
 @property (nullable, nonatomic, copy) NSDictionary<NSNumber *, id> *translatorAttributeValues;
 

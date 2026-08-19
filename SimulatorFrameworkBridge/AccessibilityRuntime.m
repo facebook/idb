@@ -8,6 +8,7 @@
 #import "AccessibilityRuntime.h"
 
 #import <dlfcn.h>
+#import <objc/message.h>
 #import <objc/runtime.h>
 
 #import "AXPAttributes.h"
@@ -414,6 +415,10 @@ typedef struct {
   int32_t (*getPid)(void *element, pid_t *pid);                               // borrows
   int32_t (*performAction)(void *element, uint32_t action);                   // borrows
   int32_t (*setAttributeValue)(void *element, uint32_t attribute, const void *value);  // borrows both
+  // Device-wide accessibility automation mode. Optional: a runtime without it is not a setup failure,
+  // because every read this bundle performs works either way — the flag changes how much structure the
+  // target exposes, not whether it answers.
+  bool (*automationEnabled)(void);
 } FBAXRuntimeFunctions;
 
 // The one place a semantic action becomes the number the C ABI takes, so a runtime that renumbers them is
@@ -742,6 +747,9 @@ static NSString *const kFrontboardVisibilityEndowment = @"com.apple.frontboard.v
   _functions.getPid = dlsym(RTLD_DEFAULT, "AXUIElementGetPid");
   _functions.performAction = dlsym(RTLD_DEFAULT, "AXUIElementPerformAction");
   _functions.setAttributeValue = dlsym(RTLD_DEFAULT, "AXUIElementSetAttributeValue");
+  // Not part of the null check below: this one is optional, so a runtime without it degrades to
+  // "cannot say" rather than failing a bind that every read would otherwise have survived.
+  _functions.automationEnabled = dlsym(RTLD_DEFAULT, "_AXSAutomationEnabled");
   if (!_functions.createSystemWide || !_functions.copyElementAtPosition || !_functions.getPid
       || !_functions.performAction || !_functions.setAttributeValue) {
     if (error) {
@@ -751,6 +759,45 @@ static NSString *const kFrontboardVisibilityEndowment = @"com.apple.frontboard.v
   }
 
   return self;
+}
+
+#pragma mark Automation mode
+
+// The settings facade that owns this preference. Reached by name rather than by linking, and guarded by
+// `respondsToSelector:`, which is the pattern WebDriverAgent uses for the same class in this repo.
+//
+// Deliberately NOT in `kFBAXBoundSelectors`: that sweep runs in the unit tests on macOS, and reports a
+// class the runtime does not have as a mismatch. AccessibilityUtilities is not guaranteed there, so
+// adding it would turn a host-only absence into a failing signature test. The `respondsToSelector:`
+// guard below is the check instead, performed where it is true — in the guest.
+static NSString *const kFBAXSettingsClassName = @"AXSettings";
+
+- (BOOL)automationModeEnabled
+{
+  if (!_functions.automationEnabled) {
+    return NO;
+  }
+  return _functions.automationEnabled();
+}
+
+- (BOOL)setAutomationModeEnabled:(BOOL)enabled
+{
+  Class settingsClass = NSClassFromString(kFBAXSettingsClassName);
+  SEL sharedInstance = NSSelectorFromString(@"sharedInstance");
+  SEL setter = NSSelectorFromString(@"setAutomationEnabled:");
+  if (![settingsClass respondsToSelector:sharedInstance]) {
+    return [self automationModeEnabled];
+  }
+  id settings = ((id (*)(id, SEL)) objc_msgSend)(settingsClass, sharedInstance);
+  if (![settings respondsToSelector:setter]) {
+    return [self automationModeEnabled];
+  }
+  ((void (*)(id, SEL, BOOL)) objc_msgSend)(settings, setter, enabled);
+
+  // Read back rather than reporting the write. A preference write can fail silently — the sandbox
+  // refuses it outright on a real device — and the target consults the preference per read, so what
+  // matters to a caller is what the device now says, not that we asked.
+  return [self automationModeEnabled];
 }
 
 #pragma mark Element references

@@ -531,6 +531,32 @@ typedef struct FBAXPair {
   XCTAssertTrue(dlsym(RTLD_DEFAULT, "AXUIElementSetAttributeValue") != NULL);
 }
 
+// The automation-mode read is bound the same way and therefore checked the same way. It is deliberately
+// optional in the live runtime — a runtime without it degrades to "cannot say" rather than failing a
+// bind — so this asserts it is present today rather than that the code requires it.
+- (void)testTheAutomationModeReadEntryPointResolves
+{
+  XCTAssertTrue(dlopen(FBAXPathAXRuntime, RTLD_NOW) != NULL, @"AXRuntime could not be opened");
+  XCTAssertTrue(dlsym(RTLD_DEFAULT, "_AXSAutomationEnabled") != NULL);
+}
+
+// The fake has to behave like the live runtime on the one point a caller can get wrong: a write that is
+// accepted and does not take must read back as the state the device is actually in, not as the state
+// that was asked for. Pinned on the fake because commit-level coverage of the real setter needs a device.
+- (void)testAWriteThatDoesNotTakeReadsBackAsTheUnchangedState
+{
+  FBAXFakeRuntime *runtime = [FBAXFakeRuntime new];
+  runtime.automationMode = NO;
+  runtime.automationModeWriteFails = YES;
+
+  XCTAssertFalse([runtime setAutomationModeEnabled:YES], @"a silent write failure must not report success");
+  XCTAssertFalse([runtime automationModeEnabled]);
+  XCTAssertEqualObjects(runtime.automationModeWrites, @[@YES], @"the write is still attempted, and recorded");
+
+  runtime.automationModeWriteFails = NO;
+  XCTAssertTrue([runtime setAutomationModeEnabled:YES], @"a write that takes reads back as the new state");
+}
+
 #pragma mark - Write dispatch
 
 // Seeds the hit-test so a point-addressed write lands on an element reporting `attributes`, and hands the
