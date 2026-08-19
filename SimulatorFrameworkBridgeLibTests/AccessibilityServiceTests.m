@@ -218,6 +218,7 @@ static NSDictionary *FBAXTestsParse(NSData *data)
     @"node.translatorRole" : @"FBTranslatorRole",
     @"node.translatorSubrole" : @"FBTranslatorSubrole",
     @"node.traits" : @"FBTraits",
+    @"node.elementIdentity" : @"FBElementIdentity",
     @"request.x" : @"x",
     @"request.y" : @"y",
     @"request.method" : @"method",

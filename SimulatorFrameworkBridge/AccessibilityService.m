@@ -87,6 +87,9 @@ static NSString *const kNodeTranslatorSubrole = @"FBTranslatorSubrole";
 // The `UIAccessibilityTraits` bitmask, carried raw. Decoding it needs the trait constants, which live in
 // a macOS-only header this binary cannot import — so the number rides the wire and the host names it.
 static NSString *const kNodeTraits = @"FBTraits";
+// A per-element identity from the translator. Carried so two reads can be compared element by element —
+// which is what distinguishes "this tree is the previous screen" from "this tree happens to look alike".
+static NSString *const kNodeElementIdentity = @"FBElementIdentity";
 // Echoed back by the shutdown verb so a caller can tell an honoured shutdown from an ok-shaped response
 // to something else.
 static NSString *const kResponseShutdown = @"shutdown";
@@ -553,7 +556,7 @@ static NSDictionary *_Nullable FBAXBridgeBuildTranslatorNode(id<FBAXRuntime> run
     @(FBAXPAttributeLabel), @(FBAXPAttributeFrame), @(FBAXPAttributeIdentifier),
     @(FBAXPAttributeValue), @(FBAXPAttributeIsVisible), @(FBAXPAttributeIsEnabled),
     @(FBAXPAttributeRole), @(FBAXPAttributeSubrole), @(FBAXPAttributeVisiblePoint),
-    @(FBAXPAttributeTraits),
+    @(FBAXPAttributeTraits), @(FBAXPAttributeMemoryAddress),
   ];
   NSDictionary<NSNumber *, id> *values = [runtime translatorAttributes:wanted ofElement:element];
   // Nil is "the read could not be performed", which is not the same answer as an element that answered
@@ -590,6 +593,9 @@ static NSDictionary *_Nullable FBAXBridgeBuildTranslatorNode(id<FBAXRuntime> run
   }
   if (values[@(FBAXPAttributeTraits)]) {
     node[kNodeTraits] = values[@(FBAXPAttributeTraits)];
+  }
+  if (values[@(FBAXPAttributeMemoryAddress)]) {
+    node[kNodeElementIdentity] = values[@(FBAXPAttributeMemoryAddress)];
   }
   // Keyed as XCTest names it, because the host derives `interactable` from that key and the two answer
   // the same question. Without it the derivation has hittability and no point, which is the shape it
@@ -1599,6 +1605,7 @@ NSDictionary<NSString *, NSString *> *FBAXBridgeWireConstantsForTesting(void)
     @"node.translatorRole" : kNodeTranslatorRole,
     @"node.translatorSubrole" : kNodeTranslatorSubrole,
     @"node.traits" : kNodeTraits,
+    @"node.elementIdentity" : kNodeElementIdentity,
     @"request.x" : kRequestX,
     @"request.y" : kRequestY,
     @"request.method" : kRequestMethod,

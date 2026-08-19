@@ -57,6 +57,10 @@ typedef NS_ENUM(NSInteger, FBAXPAttribute) {
       `XC_kAXXCAttributeVisiblePoint`. Recovered the same way as the rest and checked against three
       simulator runtimes (26.4, 26.5, 27.0), which agree on the index. */
   FBAXPAttributeVisiblePoint = 112,
+  /** A per-element identity, stable for as long as the element lives. No counterpart exists in the
+      `XC_kAXXCAttribute*` namespace, so it is the only way to tell one element from another across two
+      reads without comparing every attribute and hoping the combination is unique. */
+  FBAXPAttributeMemoryAddress = 128,
 };
 
 /**

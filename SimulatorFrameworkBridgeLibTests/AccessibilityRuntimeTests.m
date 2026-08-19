@@ -942,6 +942,19 @@ static NSDictionary *FBAXTestsPress(void)
   XCTAssertEqualObjects(tree[@"FBTraits"], @(1 << 6));
 }
 
+// Identity is what makes two reads comparable element by element. Without it, deciding whether a tree is
+// the previous screen means comparing every attribute and trusting the combination to be unique.
+- (void)testATranslatorReadEmitsAPerElementIdentity
+{
+  _runtime.applicationElements[@(kAppPid)] = [FBAXFakeElement readable:@"UIApplication"];
+  _runtime.translatorAttributeValues = @{@(FBAXPAttributeMemoryAddress) : @(0x600001234560)};
+
+  NSDictionary *tree =
+  FBAXBridgeHandleRequest(@{@"verb" : @"describe", @"pid" : @(kAppPid), @"translatorVocabulary" : @YES})[@"tree"];
+
+  XCTAssertEqualObjects(tree[@"FBElementIdentity"], @(0x600001234560));
+}
+
 // A translator read that could not be performed answers nil, which is not the same as an element with no
 // attributes. Building a node from it emits a childless, attribute-less tree, so a failed bind reports as a
 // successful read of an application with no content — a wrong answer that looks entirely healthy.
@@ -1004,6 +1017,7 @@ static NSDictionary *FBAXTestsPress(void)
 {
   XCTAssertEqual(FBAXPAttributeVisiblePoint, 112);
   XCTAssertEqual(FBAXPAttributeTraits, 77);
+  XCTAssertEqual(FBAXPAttributeMemoryAddress, 128);
   XCTAssertEqual(FBAXPAttributeChildren, 8);
   XCTAssertEqual(FBAXPAttributeChildrenInNavigationOrder, 9);
   XCTAssertEqual(FBAXPAttributeLabel, 33);

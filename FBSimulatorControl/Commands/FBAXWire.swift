@@ -72,6 +72,9 @@ enum FBAXWire {
     /// The `UIAccessibilityTraits` bitmask, as the translator answers it. Carried raw: the trait
     /// constants live in a macOS-only header the guest cannot import, and nothing decodes it yet.
     case traits = "FBTraits"
+    /// A per-element identity from the translator, stable while the element lives. The `XC_kAXXCAttribute*`
+    /// namespace has no counterpart, so this is what lets two reads be compared element by element.
+    case elementIdentity = "FBElementIdentity"
 
     /// The attribute list a read requests for each element when it names none of its own. Membership
     /// *and* order are part of the contract: the guest fetches and echoes back exactly this sequence.
