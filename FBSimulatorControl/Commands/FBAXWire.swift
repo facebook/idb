@@ -133,6 +133,14 @@ enum FBAXWire {
     case tree
     case pid
     case modal
+    case automation
+  }
+
+  /// Keys of the envelope's `automation` object: the device's accessibility automation mode as it stood
+  /// for the read, and whether the read changed it.
+  enum Automation: String {
+    case enabled
+    case asserted
   }
 
   /// What class of thing went wrong, as the guest's `error_kind` reports it.

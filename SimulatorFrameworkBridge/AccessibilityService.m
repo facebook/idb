@@ -147,6 +147,13 @@ static NSString *const kResponseTruncated = @"truncated";
 // pid also tags the owning element of a hit-test result.
 static NSString *const kResponsePid = @"pid";
 static NSString *const kResponseMethod = @"method";
+// The device's accessibility automation mode as it stood for this read, and whether this read changed it.
+// Reported on every describe rather than only when it changes: a caller cannot otherwise tell a tree read
+// with subtree collapsing on from the same tree read with it off, and the two are genuinely different
+// answers to the same question.
+static NSString *const kResponseAutomation = @"automation";
+static NSString *const kAutomationEnabled = @"enabled";
+static NSString *const kAutomationAsserted = @"asserted";
 // A fullscreen modal/alert descriptor added to a describe response when one is detected in the tree.
 // Host-facing enrichment on the wire; the host does not put it in the serialized CLI output.
 static NSString *const kResponseModal = @"modal";
@@ -1366,6 +1373,12 @@ static NSDictionary<NSString *, id> *FBAXBridgeDispatchRequest(NSDictionary<NSSt
   // does not know the pid until now. `method` rides along when the pid was resolved in-guest.
   NSMutableDictionary *response =
   [@{kResponseOk : @YES, kResponseTree : tree, kResponseTruncated : @(truncated), kResponsePid : @(pid)} mutableCopy];
+  // Observation only at this point: nothing in this request asserts the mode, so `asserted` is always
+  // false here. The field exists now so that the state is visible before anything starts changing it.
+  response[kResponseAutomation] = @{
+    kAutomationEnabled : @([runtime automationModeEnabled]),
+    kAutomationAsserted : @NO,
+  };
   if (frontmostMethod) {
     response[kResponseMethod] = frontmostMethod;
   }
@@ -1659,6 +1672,9 @@ NSDictionary<NSString *, NSString *> *FBAXBridgeWireConstantsForTesting(void)
     @"envelope.pid" : kResponsePid,
     @"envelope.method" : kResponseMethod,
     @"envelope.modal" : kResponseModal,
+    @"envelope.automation" : kResponseAutomation,
+    @"automation.enabled" : kAutomationEnabled,
+    @"automation.asserted" : kAutomationAsserted,
     @"modal.kind" : kModalKind,
     @"modal.kindSystem" : kModalKindSystem,
     @"modal.kindApp" : kModalKindApp,

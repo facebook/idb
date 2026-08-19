@@ -42,6 +42,35 @@ final class FBAXBridgeReadsTests: XCTestCase {
     XCTAssertTrue(parsed.truncated, "the guest's truncation flag must be surfaced to the caller")
   }
 
+  func testParsesTheAutomationStateFromTheEnvelope() throws {
+    let tree: [String: Any] = [FBAXWire.Node.label.rawValue: "root"]
+    let data = try envelope([
+      "ok": true, "tree": tree, "automation": ["enabled": true, "asserted": false],
+    ])
+    let parsed = try FBAXTreeRead(wholeTreeResponse: data, pid: 42)
+    XCTAssertEqual(parsed.automation?.enabled, true)
+    XCTAssertEqual(parsed.automation?.asserted, false)
+  }
+
+  // Nil, not `enabled: false`. A guest predating the field did not say what mode the device was in, and
+  // that is a different fact from saying it was off — collapsing them would report every older guest's
+  // reads as definitely-not-in-automation-mode.
+  func testAnEnvelopeWithoutAutomationReportsNothingRatherThanOff() throws {
+    let tree: [String: Any] = [FBAXWire.Node.label.rawValue: "root"]
+    let data = try envelope(["ok": true, "tree": tree])
+    let parsed = try FBAXTreeRead(wholeTreeResponse: data, pid: 42)
+    XCTAssertNil(parsed.automation, "an absent automation object must not read as automation mode being off")
+  }
+
+  // `asserted` absent is the state before anything asserts, and false is the truthful answer for it.
+  func testAutomationAssertedDefaultsToFalseWhenOmitted() throws {
+    let tree: [String: Any] = [FBAXWire.Node.label.rawValue: "root"]
+    let data = try envelope(["ok": true, "tree": tree, "automation": ["enabled": true]])
+    let parsed = try FBAXTreeRead(wholeTreeResponse: data, pid: 42)
+    XCTAssertEqual(parsed.automation?.enabled, true)
+    XCTAssertEqual(parsed.automation?.asserted, false)
+  }
+
   func testSurfacesGuestErrorMessage() throws {
     // An untagged failure (no `error_kind`) is an opaque `guestFailure` carrying the guest's own
     // message, so callers see the real cause.

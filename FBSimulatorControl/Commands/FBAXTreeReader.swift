@@ -143,13 +143,15 @@ extension FBAXTreeReader {
       // Judged on what is reported rather than on what was walked: the caller's `--filter` decides what
       // they see, and advice about a tree they were not shown would be unactionable.
       await warnIfGeometrySuspect(FBAccessibilityFrameSummary(elements: elements))
-      return FBAccessibilityElementsResponse(elements: .tree(elements), coverage: coverage, modal: read.modal)
-        .withProvenance(
-          backend: backend.name,
-          target: query.targetDescriptor,
-          screen: screen,
-          truncated: read.truncated
-        )
+      return FBAccessibilityElementsResponse(
+        elements: .tree(elements), coverage: coverage, modal: read.modal, automation: read.automation
+      )
+      .withProvenance(
+        backend: backend.name,
+        target: query.targetDescriptor,
+        screen: screen,
+        truncated: read.truncated
+      )
     }
   }
 

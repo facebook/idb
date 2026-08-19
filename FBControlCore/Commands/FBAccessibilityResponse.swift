@@ -175,6 +175,9 @@ public struct FBAccessibilityElementsResponse: Sendable {
   /// What the read was asked for.
   public let target: FBAccessibilityTargetDescriptor?
 
+  /// The device's accessibility automation mode for this read, when the backend reported it.
+  public let automation: FBAccessibilityAutomationState?
+
   public init(
     elements: FBAccessibilityElementPayload,
     profilingData: FBAccessibilityProfilingData? = nil,
@@ -183,7 +186,8 @@ public struct FBAccessibilityElementsResponse: Sendable {
     truncated: Bool = false,
     screen: FBAccessibilityScreenInfo? = nil,
     backend: FBUIAutomationBackendName? = nil,
-    target: FBAccessibilityTargetDescriptor? = nil
+    target: FBAccessibilityTargetDescriptor? = nil,
+    automation: FBAccessibilityAutomationState? = nil
   ) {
     self.elements = elements
     self.profilingData = profilingData
@@ -193,6 +197,7 @@ public struct FBAccessibilityElementsResponse: Sendable {
     self.screen = screen
     self.backend = backend
     self.target = target
+    self.automation = automation
   }
 
   /// A copy carrying the provenance of the read that produced it. The backend and the query are known
@@ -212,7 +217,8 @@ public struct FBAccessibilityElementsResponse: Sendable {
       truncated: truncated ?? self.truncated,
       screen: screen ?? self.screen,
       backend: backend ?? self.backend,
-      target: target ?? self.target
+      target: target ?? self.target,
+      automation: automation
     )
   }
 
@@ -232,7 +238,8 @@ public struct FBAccessibilityElementsResponse: Sendable {
       truncated: truncated,
       screen: nil,
       backend: backend,
-      target: target
+      target: target,
+      automation: automation
     )
   }
 
@@ -254,7 +261,8 @@ public struct FBAccessibilityElementsResponse: Sendable {
       // Derived from the elements rather than threaded through the read: it is a tally of what was just
       // serialized, so computing it anywhere else would only create a way for the two to disagree.
       interaction: FBAccessibilityInteractionSummary(elements: reported),
-      frames: FBAccessibilityFrameSummary(elements: reported)
+      frames: FBAccessibilityFrameSummary(elements: reported),
+      automation: automation
     )
   }
 

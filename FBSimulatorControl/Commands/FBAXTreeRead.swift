@@ -26,12 +26,33 @@ struct FBAXTreeRead: @unchecked Sendable {
   let pid: pid_t
   let truncated: Bool
   let modal: FBAccessibilityModalInfo?
+  /// The device's accessibility automation mode as the guest saw it. Nil from a guest predating the
+  /// field, which is why it is optional rather than defaulted — "an older guest did not say" and "the
+  /// device was not in automation mode" are different facts and must not collapse.
+  var automation: FBAccessibilityAutomationState?
 }
 
 // MARK: - Guest JSON response parsing
 
 /// Parses the guest's `{ "ok": Bool, "tree": {...} | "error": String }` response envelope into a read.
 extension FBAXTreeRead {
+
+  init(tree: [String: Any], pid: pid_t, truncated: Bool, modal: FBAccessibilityModalInfo?) {
+    self.init(tree: tree, pid: pid, truncated: truncated, modal: modal, automation: nil)
+  }
+
+  /// The envelope's automation object, or nil when the guest did not send one.
+  static func automation(fromResponse response: [String: Any]) -> FBAccessibilityAutomationState? {
+    guard let object = response[FBAXWire.Envelope.automation.rawValue] as? [String: Any],
+      let enabled = object[FBAXWire.Automation.enabled.rawValue] as? Bool
+    else {
+      return nil
+    }
+    // `asserted` absent reads as false: a guest that reports the mode but does not yet change it is
+    // exactly the state before anything asserts, and false is the truthful answer for it.
+    let asserted = (object[FBAXWire.Automation.asserted.rawValue] as? Bool) ?? false
+    return FBAccessibilityAutomationState(enabled: enabled, asserted: asserted)
+  }
 
   /// Parses a whole-tree read for `pid`: the tree, plus whether the guest's walk was cut short by the
   /// depth or node bound (so the caller can warn the tree is incomplete). A tree read has no empty
@@ -44,7 +65,10 @@ extension FBAXTreeRead {
       throw FBAXBridgeError.guestFailure("pid \(pid): empty response to a whole-tree read")
     }
     let truncated = (response[FBAXWire.Envelope.truncated.rawValue] as? Bool) ?? false
-    self.init(tree: tree, pid: pid, truncated: truncated, modal: Self.modal(fromResponse: response))
+    self.init(
+      tree: tree, pid: pid, truncated: truncated, modal: Self.modal(fromResponse: response),
+      automation: Self.automation(fromResponse: response)
+    )
   }
 
   /// Parses a fused frontmost read (the guest resolved the frontmost app and read its tree in one
@@ -73,7 +97,10 @@ extension FBAXTreeRead {
       throw FBAXBridgeError.guestFailure("fused frontmost describe response without a resolved pid")
     }
     let truncated = (response[FBAXWire.Envelope.truncated.rawValue] as? Bool) ?? false
-    self.init(tree: tree, pid: pid, truncated: truncated, modal: Self.modal(fromResponse: response))
+    self.init(
+      tree: tree, pid: pid, truncated: truncated, modal: Self.modal(fromResponse: response),
+      automation: Self.automation(fromResponse: response)
+    )
   }
 
   /// Parses a system-wide hit-test read: the hit node and the owning pid of the element there (the host

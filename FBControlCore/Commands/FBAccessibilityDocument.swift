@@ -686,6 +686,35 @@ public struct FBAccessibilityFrameSummary: Sendable, Equatable, Encodable {
   }
 }
 
+/// The device's accessibility automation mode as it stood for a read, and whether the read changed it.
+///
+/// Reported on every whole-tree read rather than only when it changes, because the two states are
+/// genuinely different answers to the same question: with automation mode off UIKit collapses subtrees
+/// behind opaque element providers and caches a container's children, and with it on the full structure
+/// is exposed and children are recomputed. A caller comparing two reads cannot otherwise tell which they
+/// got.
+///
+/// `asserted` exists so that a read which *changed* the device is distinguishable from one that merely
+/// found it that way. A reader that silently alters global state is worse than one that does not alter it
+/// at all, and this is the field that stops it being silent.
+public struct FBAccessibilityAutomationState: Sendable, Equatable, Encodable {
+
+  /// Whether the device was in automation mode for this read.
+  public let enabled: Bool
+  /// Whether this read put it there. False when it was already set, or when nothing asked.
+  public let asserted: Bool
+
+  public init(enabled: Bool, asserted: Bool) {
+    self.enabled = enabled
+    self.asserted = asserted
+  }
+
+  enum CodingKeys: String, CodingKey {
+    case enabled
+    case asserted
+  }
+}
+
 /// An accessibility element in the `complete` output format.
 ///
 /// A struct rather than an untyped bag: every attribute the schema can carry is a named, typed field.
@@ -900,6 +929,9 @@ public struct FBAccessibilityDocument: Sendable, Encodable {
   public let interaction: FBAccessibilityInteractionSummary?
   /// How many of the read's elements carry a usable rectangle. Nil when `frame` was not requested.
   public let frames: FBAccessibilityFrameSummary?
+  /// The device's accessibility automation mode for this read. Nil when the backend cannot report it —
+  /// a single-element read, or a guest predating the field.
+  public let automation: FBAccessibilityAutomationState?
 
   public init(
     elements: [FBAccessibilityDocumentElement],
@@ -911,7 +943,8 @@ public struct FBAccessibilityDocument: Sendable, Encodable {
     profile: FBAccessibilityProfilingData? = nil,
     coverage: FBAccessibilityCoverage? = nil,
     interaction: FBAccessibilityInteractionSummary? = nil,
-    frames: FBAccessibilityFrameSummary? = nil
+    frames: FBAccessibilityFrameSummary? = nil,
+    automation: FBAccessibilityAutomationState? = nil
   ) {
     self.elements = elements
     self.modal = modal
@@ -923,6 +956,7 @@ public struct FBAccessibilityDocument: Sendable, Encodable {
     self.coverage = coverage
     self.interaction = interaction
     self.frames = frames
+    self.automation = automation
   }
 
   enum CodingKeys: String, CodingKey {
@@ -936,6 +970,7 @@ public struct FBAccessibilityDocument: Sendable, Encodable {
     case coverage
     case interaction
     case frames
+    case automation
   }
 
   public func encode(to encoder: Encoder) throws {
@@ -950,6 +985,7 @@ public struct FBAccessibilityDocument: Sendable, Encodable {
     try container.encode(coverage, forKey: .coverage)
     try container.encode(interaction, forKey: .interaction)
     try container.encode(frames, forKey: .frames)
+    try container.encode(automation, forKey: .automation)
   }
 }
 
