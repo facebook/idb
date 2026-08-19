@@ -50,10 +50,8 @@ static int32_t EndOfFileReceive(CFTypeRef connection, void *buffer, size_t bytes
   XCTAssertNotNil([reader.startReading awaitWithTimeout:5 error:&error]);
   XCTAssertNotNil([consumer.finishedConsuming awaitWithTimeout:5 error:&error]);
 
-  // BUG: finishedReading never resolves when the read loop exits at end of
-  // file — only stopReading resolves it — so waiters hang. Flipped in the
-  // following commit, which resolves it as the loop exits.
-  XCTAssertEqual(reader.finishedReading.state, FBFutureStateRunning);
+  NSNumber *finished = [reader.finishedReading awaitWithTimeout:5 error:&error];
+  XCTAssertEqualObjects(finished, @(FBFileReaderStateFinishedReadingNormally));
 }
 
 @end

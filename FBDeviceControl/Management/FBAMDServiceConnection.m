@@ -17,7 +17,13 @@ static const NSUInteger HeaderLength = sizeof(HeaderIntType);
 // There's an upper limit on the number of bytes we can read at once
 static size_t ReadBufferSize = 1024 * 4;
 
+// How long invalidation waits for an in-flight read loop to exit before the
+// underlying connection is released.
+static NSTimeInterval const ReaderDrainTimeout = 5;
+
 @interface FBAMDServiceConnection ()
+
+@property (nullable, nonatomic, readwrite, strong) FBFuture<NSNumber *> *activeReaderFinished;
 
 - (ssize_t)send:(const void *)buffer size:(size_t)size;
 - (ssize_t)receive:(void *)buffer size:(size_t)size;
@@ -75,6 +81,9 @@ static size_t ReadBufferSize = 1024 * 4;
     }
     [consumer consumeEndOfFile];
     self->_state = FBFileReaderStateFinishedReadingNormally;
+    // Resolution is tolerant of stopReading having resolved first; without
+    // this, waiters on natural end-of-file hang forever.
+    [self.finishedReadingMutable resolveWithResult:@(FBFileReaderStateFinishedReadingNormally)];
   });
   _state = FBFileReaderStateReading;
 
@@ -204,6 +213,14 @@ static size_t ReadBufferSize = 1024 * 4;
             failBool:error];
   }
   [self.logger log:[NSString stringWithFormat:@"Invalidated connection %@", connectionDescription]];
+  // The read loop may still be inside ServiceConnectionReceive; the
+  // invalidation above unblocks it, but the connection must stay alive until
+  // the loop has actually exited — releasing it mid-read reads freed memory
+  // inside the SSL layer.
+  FBFuture<NSNumber *> *readerFinished = self.activeReaderFinished;
+  if (readerFinished) {
+    [readerFinished awaitWithTimeout:ReaderDrainTimeout error:nil];
+  }
   // AMDServiceConnectionInvalidate does not release the connection.
   CFRelease(_connection);
   _connection = NULL;
@@ -362,7 +379,9 @@ static size_t SendBufferSize = 1024 * 4;
 
 - (id<FBFileReaderProtocol>)readFromConnectionWritingToConsumer:(id<FBDataConsumer>)consumer onQueue:(dispatch_queue_t)queue
 {
-  return [[FBAMDServiceConnection_FileReader alloc] initWithServiceConnection:self consumer:consumer queue:queue];
+  FBAMDServiceConnection_FileReader *reader = [[FBAMDServiceConnection_FileReader alloc] initWithServiceConnection:self consumer:consumer queue:queue];
+  self.activeReaderFinished = reader.finishedReading;
+  return reader;
 }
 
 - (id<FBDataConsumer, FBDataConsumerLifecycle>)writeWithConsumerWritingOnQueue:(dispatch_queue_t)queue
