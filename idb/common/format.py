@@ -8,9 +8,9 @@
 
 import base64
 import json
+from dataclasses import dataclass
 from textwrap import indent
 from typing import Any, Dict, List, Optional, Union
-from uuid import uuid4
 
 from idb.common.types import (
     AppProcessState,
@@ -26,7 +26,6 @@ from idb.common.types import (
     TestActivity,
     TestRunInfo,
 )
-from treelib import Tree
 
 
 def target_type_from_string(output: str) -> TargetType:
@@ -74,32 +73,50 @@ def human_format_test_info(test: TestRunInfo) -> str:
     return output
 
 
-def human_format_activities(activities: list[TestActivity]) -> str:
-    tree: Tree = Tree()
-    start: float = activities[0].start
+@dataclass(frozen=True)
+class _ActivityNode:
+    start: float
+    label: str
+    children: list["_ActivityNode"]
 
-    def process_activity(activity: TestActivity, parent: str | None = None) -> None:
-        tree.create_node(
-            f"{activity.name} ({activity.finish - start:.2f}s)",
-            activity.uuid,
-            parent=parent,
-            data={"start": activity.start},
+
+def _activity_node(activity: TestActivity, base: float) -> _ActivityNode:
+    children = [
+        # An attachment has no start of its own; it inherits its parent
+        # activity's so it orders among that activity's sub-activities.
+        _ActivityNode(
+            start=activity.start,
+            label=f"Attachment: {attachment.name}",
+            children=[],
         )
-        for attachment in activity.attachments:
-            tree.create_node(
-                f"Attachment: {attachment.name}",
-                uuid4(),
-                parent=activity.uuid,
-                data={"start": activity.start},
-            )
-        for sub_activity in activity.sub_activities:
-            process_activity(sub_activity, parent=activity.uuid)
+        for attachment in activity.attachments
+    ]
+    children.extend(
+        _activity_node(sub_activity, base) for sub_activity in activity.sub_activities
+    )
+    return _ActivityNode(
+        start=activity.start,
+        label=f"{activity.name} ({activity.finish - base:.2f}s)",
+        children=children,
+    )
 
-    tree.create_node("Activities", "activities", data={"start": 0})
-    for activity in activities:
-        process_activity(activity, "activities")
 
-    return tree.show(key=lambda n: n.data["start"], stdout=False)
+def _render_children(nodes: list[_ActivityNode], prefix: str) -> list[str]:
+    lines: list[str] = []
+    ordered = sorted(nodes, key=lambda node: node.start)
+    for index, node in enumerate(ordered):
+        last = index == len(ordered) - 1
+        lines.append(f"{prefix}{'└── ' if last else '├── '}{node.label}")
+        lines.extend(
+            _render_children(node.children, prefix + ("    " if last else "│   "))
+        )
+    return lines
+
+
+def human_format_activities(activities: list[TestActivity]) -> str:
+    base: float = activities[0].start
+    nodes = [_activity_node(activity, base) for activity in activities]
+    return "\n".join(["Activities", *_render_children(nodes, "")]) + "\n"
 
 
 def json_format_test_info(test: TestRunInfo) -> str:
