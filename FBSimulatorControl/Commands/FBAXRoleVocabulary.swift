@@ -16,6 +16,11 @@ enum FBAXRoleVocabulary {
 
   private static let axPrefix = "AX"
 
+  /// The name `XCUIElementType` 0 maps to — the automation type reporting that it has no type for an
+  /// element, rather than a type of its own. Named because it is a *successful* lookup: a caller
+  /// resolving a type has to be able to tell "answered, and the answer is no type" from a miss.
+  static let untypedName = "Any"
+
   /// The readable name for an `XCUIElementType` raw value (e.g. 9 -> "Button"), or `nil` when the number
   /// is not a known type — letting the caller fall back to the raw value.
   static func name(forElementType rawValue: Int) -> String? {

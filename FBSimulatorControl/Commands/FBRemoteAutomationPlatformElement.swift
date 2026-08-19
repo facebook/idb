@@ -67,8 +67,23 @@ final class FBRemoteAutomationPlatformElement: FBAXPlatformElement {
     // The daemon reports the automation/element type as an `XCUIElementType` raw value; map it to a
     // readable name (e.g. 9 -> "Button") so the serialized role is legible rather than a bare number.
     // An already-string value (or an unmapped number) passes through unchanged.
-    elementTypeName(FBAXWire.Node.automationType.rawValue)
+    //
+    // `Any` is excluded from the first term because it is the automation type reporting that it has no
+    // type for this element, not a type. It maps like any other value, so taking it would end the search
+    // on a successful lookup that says nothing, discarding a class name the read already carried.
+    //
+    // A class name outranks a stringified number for the same reason: a class name identifies the
+    // element and `0` or `9999` identifies nothing. That ordering is the whole fix — skipping `Any`
+    // alone would simply hand the answer to the stringify term below.
+    let automationName = elementTypeName(FBAXWire.Node.automationType.rawValue)
+    let identifying =
+      (automationName == FBAXRoleVocabulary.untypedName ? nil : automationName)
       ?? elementTypeName(FBAXWire.Node.elementType.rawValue)
+      ?? className(FBAXWire.Node.elementType.rawValue)
+    // `Any` returns as the last resort, so an element with nothing more specific reports what it always
+    // did rather than a bare number.
+    return identifying
+      ?? automationName
       ?? stringAttribute(FBAXWire.Node.automationType.rawValue)
       ?? stringAttribute(FBAXWire.Node.elementType.rawValue)
   }
@@ -140,6 +155,15 @@ final class FBRemoteAutomationPlatformElement: FBAXPlatformElement {
     guard let raw = attributes[key] else { return nil }
     if let string = raw as? String { return string }
     return String(describing: raw)
+  }
+
+  /// The attribute as the class name it already is, or nil when it is a number.
+  ///
+  /// A numeric type has had its chance to resolve to an `XCUIElementType` name by the time this is
+  /// reached; stringifying it here would report `0` or `9999`, which names nothing. Only a value that
+  /// arrived as a string — an app's own view class, or one of Apple's private ones — identifies it.
+  private func className(_ key: String) -> String? {
+    attributes[key] as? String
   }
 
   /// The readable name for an `XCUIElementType`-valued attribute, or `nil` when the attribute is

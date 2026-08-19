@@ -119,7 +119,7 @@ final class FBRemoteAutomationPlatformElementTests: XCTestCase {
   // not a type of its own. Because it is a *successful* lookup rather than a miss, it short-circuits the
   // chain and the concrete class name the read already carried is never consulted. An app's own
   // `UIControl` subclass is the case that costs the most: it reports `Any` and is unidentifiable.
-  func testRoleReportsAnyEvenWhenAConcreteElementTypeIsPresent() {
+  func testRoleReportsTheConcreteElementTypeRatherThanAny() {
     let element = FBRemoteAutomationPlatformElement(
       attributes: [
         FBAXWire.Node.automationType.rawValue: NSNumber(value: 0),
@@ -129,14 +129,13 @@ final class FBRemoteAutomationPlatformElementTests: XCTestCase {
       pid: 0
     )
 
-    // BUG: reports `Any` and discards `AppRefreshControl` — flipped in the following commit.
-    XCTAssertEqual(element.axRole(), "Any")
+    XCTAssertEqual(element.axRole(), "AppRefreshControl")
   }
 
   // The same ordering defect one step further down the chain, and the reason the fix has to be a reorder
   // rather than a special case for `Any`: an automation type that resolves to no name at all still beats
   // the concrete class name, because the stringified-number term sits above it.
-  func testRoleReportsAStringifiedAutomationTypeEvenWhenAConcreteElementTypeIsPresent() {
+  func testRoleReportsTheConcreteElementTypeRatherThanAStringifiedAutomationType() {
     let element = FBRemoteAutomationPlatformElement(
       attributes: [
         FBAXWire.Node.automationType.rawValue: NSNumber(value: 9999),
@@ -146,8 +145,7 @@ final class FBRemoteAutomationPlatformElementTests: XCTestCase {
       pid: 0
     )
 
-    // BUG: reports the bare number and discards `AppRefreshControl` — flipped in the following commit.
-    XCTAssertEqual(element.axRole(), "9999")
+    XCTAssertEqual(element.axRole(), "AppRefreshControl")
   }
 
   // An element with nothing better than `Any` must keep reporting it. Pinned alongside the two above so
