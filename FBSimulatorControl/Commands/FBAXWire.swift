@@ -50,6 +50,20 @@ enum FBAXWire {
     /// walking the tree with the runtime bound, so it answers inline for the price of the response that
     /// was coming anyway.
     case explainedBy = "FBExplainedBy"
+    /// Whether the element is enabled, as the accessibility translator answers it.
+    ///
+    /// The reader's own namespace because XCTest's vocabulary has no counterpart — which is precisely why
+    /// a read through it reports `enabled` as an explicit null. Only a read through the translator's
+    /// vocabulary carries this key, so its absence keeps every other read answering null as before.
+    case isEnabled = "FBIsEnabled"
+    /// The translator's `role`, as the translator's own integer.
+    ///
+    /// Deliberately *not* mapped onto `elementType`, which carries `XCUIElementType` names: the mapping
+    /// from these integers onto those names is only partly known, and a number where consumers expect a
+    /// name is worse than an absent field. Declared here because this enum is the wire vocabulary rather
+    /// than the subset the host happens to read — nothing consumes it yet; it rides the wire so the
+    /// mapping can be derived from real screens.
+    case translatorRole = "FBTranslatorRole"
 
     /// The attribute list a read requests for each element when it names none of its own. Membership
     /// *and* order are part of the contract: the guest fetches and echoes back exactly this sequence.
@@ -159,6 +173,9 @@ enum FBAXWire {
     case pid
     case maxDepth
     case maxNodes
+    /// Reads through the accessibility translator's vocabulary rather than XCTest's. Off unless asked
+    /// for: the two disagree on some screens, and which one a caller wants is not the reader's choice.
+    case translatorVocabulary
     /// The attributes the guest fetches per element. Omitted for a default read, which is what keeps
     /// that read byte-identical on the wire; the guest falls back to `Node.defaultFetchList`.
     case attributes
@@ -184,6 +201,7 @@ enum FBAXWire {
       case .pid: "--pid"
       case .maxDepth: "--max-depth"
       case .maxNodes: "--max-nodes"
+      case .translatorVocabulary: "--translator-vocabulary"
       case .attributes: "--attributes"
       case .explainUnreachable: "--explain-unreachable"
       case .x: "--x"

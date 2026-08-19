@@ -81,7 +81,9 @@ final class FBRemoteAutomationPlatformElement: FBAXPlatformElement {
   func axRoleDescription() -> String? { nil }
   func axSubrole() -> String? { nil }
   func axPlaceholderValue() -> String? { nil }
-  func axIsEnabled() -> Bool? { nil }
+  // Answered only by a read through the translator's vocabulary, which is the only one that fetches it.
+  // Absent on every other read, so those still report `enabled` as unknown rather than fabricating it.
+  func axIsEnabled() -> Bool? { boolAttribute(FBAXWire.Node.isEnabled.rawValue) }
   func axIsRequired() -> Bool { false }
   func axIsExpanded() -> Bool { false }
   func axIsHidden() -> Bool { false }

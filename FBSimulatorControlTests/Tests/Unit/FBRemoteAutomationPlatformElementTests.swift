@@ -132,6 +132,26 @@ final class FBRemoteAutomationPlatformElementTests: XCTestCase {
     XCTAssertEqual(children.first?.axLabel(), "About")
   }
 
+  // A translator-vocabulary read is the only one that carries an `enabled` answer, and it carries it under
+  // the reader's own key rather than an `XC_kAXXC*` name. Both halves are pinned together because the
+  // value of answering it at all depends on the other reads still reporting unknown: a wire with no such
+  // key must not start reporting a fabricated `false`, which is the bug this whole seam already had once.
+  func testEnabledIsReadFromATranslatorNodeAndStaysUnknownOnEveryOtherRead() {
+    let translator = FBRemoteAutomationPlatformElement(
+      attributes: [FBAXWire.Node.isEnabled.rawValue: false],
+      children: [],
+      pid: 7
+    )
+    XCTAssertEqual(translator.axIsEnabled(), false, "the translator's enabled answer must be reported")
+
+    let xctest = FBRemoteAutomationPlatformElement(
+      attributes: [FBAXWire.Node.label.rawValue: "General"],
+      children: [],
+      pid: 7
+    )
+    XCTAssertNil(xctest.axIsEnabled(), "a read carrying no enabled answer must stay unknown")
+  }
+
   func testAbsentAttributesUseSafeDefaults() {
     let element = FBRemoteAutomationPlatformElement(attributes: [:], children: [], pid: 0)
 

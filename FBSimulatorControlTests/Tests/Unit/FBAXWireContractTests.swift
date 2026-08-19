@@ -22,6 +22,8 @@ final class FBAXWireContractTests: XCTestCase {
 
   func testNodeAttributeWireKeys() {
     XCTAssertEqual(FBAXWire.Node.explainedBy.rawValue, "FBExplainedBy")
+    XCTAssertEqual(FBAXWire.Node.isEnabled.rawValue, "FBIsEnabled")
+    XCTAssertEqual(FBAXWire.Node.translatorRole.rawValue, "FBTranslatorRole")
     XCTAssertEqual(FBAXWire.Node.elementType.rawValue, "XC_kAXXCAttributeElementType")
     XCTAssertEqual(FBAXWire.Node.elementBaseType.rawValue, "XC_kAXXCAttributeElementBaseType")
     XCTAssertEqual(FBAXWire.Node.label.rawValue, "XC_kAXXCAttributeLabel")
@@ -184,6 +186,7 @@ final class FBAXWireContractTests: XCTestCase {
       .maxDepth: ("maxDepth", "--max-depth"),
       .maxNodes: ("maxNodes", "--max-nodes"),
       .attributes: ("attributes", "--attributes"),
+      .translatorVocabulary: ("translatorVocabulary", "--translator-vocabulary"),
       .explainUnreachable: ("explainUnreachable", "--explain-unreachable"),
       .x: ("x", "--x"),
       .y: ("y", "--y"),
