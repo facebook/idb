@@ -51,6 +51,19 @@ public enum FBAXKeys: String, Sendable, CaseIterable {
   /// keeps the comparison symmetric.
   public static let occluderIdentityKeys: Set<FBAXKeys> = [.interactable, .frameDict, .type, .uniqueID, .label]
 
+  /// Every key this reader can answer.
+  ///
+  /// Derived from `allCases` rather than listed, so a key added to the enum joins it automatically. A
+  /// hand-written set would drift the moment someone added one, and drift silently — the caller asking
+  /// for everything is the least likely to notice a missing field.
+  ///
+  /// **Costs more than the default set, and not only in bytes.** It includes `interactable` and
+  /// `occludedBy`, which widen the attributes the guest fetches per element, and `occludedBy` makes the
+  /// guest hit-test the centre of every element it judges unreachable. On a large tree that is a real
+  /// per-element cost, so this is for a caller that wants a complete dump and has accepted paying for it
+  /// — not a better default.
+  public static let everything: Set<FBAXKeys> = Set(allCases)
+
   /// Default set of keys returned when no specific keys are requested.
   public static let defaultSet: Set<FBAXKeys> = [
     .label, .frame, .value, .uniqueID, .type, .title, .frameDict, .help,
