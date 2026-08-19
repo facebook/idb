@@ -6,3 +6,4 @@
  */
 
 #import "FBDeviceControlTestHelpers.h"
+#import "FBDeviceManagerDouble.h"
