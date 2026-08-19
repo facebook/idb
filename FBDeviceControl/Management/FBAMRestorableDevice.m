@@ -34,9 +34,20 @@ static NSString *const kUnknownValue = @"unknown";
 
 #pragma mark FBiOSTargetInfo
 
+// Restore info dictionaries are populated by MobileDevice and may omit keys or
+// carry unexpectedly-typed values; these accessors feed Swift's nonnull String
+// bridging, so anything unexpected must degrade to the unknown value rather
+// than trap.
 - (NSString *)uniqueIdentifier
 {
-  return [self.allValues[FBDeviceKeyUniqueChipID] stringValue] ?: kUnknownValue;
+  id value = self.allValues[FBDeviceKeyUniqueChipID];
+  if ([value isKindOfClass:NSNumber.class]) {
+    return [value stringValue];
+  }
+  if ([value isKindOfClass:NSString.class]) {
+    return value;
+  }
+  return kUnknownValue;
 }
 
 - (NSString *)udid
@@ -46,7 +57,8 @@ static NSString *const kUnknownValue = @"unknown";
 
 - (NSString *)name
 {
-  return self.allValues[FBDeviceKeyDeviceName] ?: kUnknownValue;
+  id value = self.allValues[FBDeviceKeyDeviceName];
+  return [value isKindOfClass:NSString.class] ? value : kUnknownValue;
 }
 
 - (FBiOSTargetState)state
@@ -70,7 +82,10 @@ static NSString *const kUnknownValue = @"unknown";
 
 - (FBDeviceType *)deviceType
 {
-  NSString *productString = self.allValues[FBDeviceKeyProductType];
+  id productString = self.allValues[FBDeviceKeyProductType];
+  if (![productString isKindOfClass:NSString.class]) {
+    productString = kUnknownValue;
+  }
   return [FBDeviceType genericWithName:productString];
 }
 
