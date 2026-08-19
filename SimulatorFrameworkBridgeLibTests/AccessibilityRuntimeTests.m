@@ -909,6 +909,33 @@ static NSDictionary *FBAXTestsPress(void)
   );
 }
 
+// Round trips are the cost of a translator walk, not attribute count: every request hops onto the
+// application's main thread and blocks there, so the number of requests is what a deep read pays. Pinning
+// it per node makes a regression to more visible, which reading the code does not.
+- (void)testATranslatorWalkCostsTwoRoundTripsPerNode
+{
+  FBAXFakeElement *root = [FBAXFakeElement readable:@"UIApplication"];
+  root.attributes = @{kAXElementType : @"UIApplication"};
+  _runtime.applicationElements[@(kAppPid)] = root;
+  _runtime.translatorAttributeValues = @{
+    @(FBAXPAttributeLabel) : @"Settings",
+    @(FBAXPAttributeChildren) : @[[FBAXFakeElement readable:@"UIView"], [FBAXFakeElement readable:@"UIView"]],
+  };
+
+  FBAXBridgeHandleRequest(
+    @{
+      @"verb" : @"describe",
+      @"pid" : @(kAppPid),
+      @"translatorVocabulary" : @YES,
+      @"maxDepth" : @1,
+    }
+  );
+
+  // Three nodes: the root and its two children. Two requests each — one batch of attributes, one for
+  // children, which the handler special-cases out of the batch and so cannot be folded into it.
+  XCTAssertEqual(_runtime.translatorReadCount, 6u);
+}
+
 // Nil is "the read could not be performed", which a caller must be able to tell from a read that
 // succeeded and returned nothing — the same distinction the outcome types elsewhere exist to preserve.
 - (void)testATranslatorReadThatCannotBePerformedAnswersNil
