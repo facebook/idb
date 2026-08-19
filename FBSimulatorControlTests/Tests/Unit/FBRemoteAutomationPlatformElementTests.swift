@@ -201,6 +201,43 @@ final class FBRemoteAutomationPlatformElementTests: XCTestCase {
     }
   }
 
+  // The two cases the subrole exists to fix. Both refined names are `XCUIElementType` members and are in
+  // the interactable role set; neither bare role is, so reporting the role alone loses the useful answer.
+  func testASubroleRefinesTheRoleItAccompanies() {
+    let toggle = FBRemoteAutomationPlatformElement(
+      attributes: [
+        FBAXWire.Node.translatorRole.rawValue: NSNumber(value: 3),
+        FBAXWire.Node.translatorSubrole.rawValue: NSNumber(value: 3),
+      ],
+      children: [],
+      pid: 0
+    )
+    XCTAssertEqual(toggle.axRole(), "Switch", "a toggle is a check box with a switch subrole")
+
+    let search = FBRemoteAutomationPlatformElement(
+      attributes: [
+        FBAXWire.Node.translatorRole.rawValue: NSNumber(value: 15),
+        FBAXWire.Node.translatorSubrole.rawValue: NSNumber(value: 1),
+      ],
+      children: [],
+      pid: 0
+    )
+    XCTAssertEqual(search.axRole(), "SearchField", "a search field is a text field with a search subrole")
+  }
+
+  // An unidentified subrole must not hide the role, which is a real answer on its own.
+  func testAnUnidentifiedSubroleFallsBackToTheRole() {
+    let element = FBRemoteAutomationPlatformElement(
+      attributes: [
+        FBAXWire.Node.translatorRole.rawValue: NSNumber(value: 2),
+        FBAXWire.Node.translatorSubrole.rawValue: NSNumber(value: 99),
+      ],
+      children: [],
+      pid: 0
+    )
+    XCTAssertEqual(element.axRole(), "Button")
+  }
+
   // The XCTest vocabulary keeps precedence where both are present: it names types in the vocabulary the
   // wire already speaks, and the translator numbering is a second scheme that only it uses.
   func testXCUIElementTypeOutranksTheTranslatorRole() {

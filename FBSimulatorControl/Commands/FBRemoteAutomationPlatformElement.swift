@@ -82,6 +82,9 @@ final class FBRemoteAutomationPlatformElement: FBAXPlatformElement {
       // The translator numbers its roles in its own scheme, and on a semantic read that role is the only
       // type on the wire — so this is the term that answers there. Unidentified integers stay nil rather
       // than stringifying: a role number means nothing to a caller expecting an `XCUIElementType` name.
+      // Subrole before role: it refines it, and the refinement is the name a caller wants — `Switch`
+      // rather than `CheckBox`, `SearchField` rather than `TextField`.
+      ?? translatorSubroleName()
       ?? translatorRoleName()
       ?? className(FBAXWire.Node.elementType.rawValue)
     // `Any` comes back as the last resort, so an element with nothing more specific still reports `Any`
@@ -159,6 +162,15 @@ final class FBRemoteAutomationPlatformElement: FBAXPlatformElement {
     guard let raw = attributes[key] else { return nil }
     if let string = raw as? String { return string }
     return String(describing: raw)
+  }
+
+  /// The name for the translator's subrole integer, or nil when the wire carries none or it is not
+  /// identified.
+  private func translatorSubroleName() -> String? {
+    guard let raw = (attributes[FBAXWire.Node.translatorSubrole.rawValue] as? NSNumber)?.intValue else {
+      return nil
+    }
+    return FBAXRoleVocabulary.name(forTranslatorSubrole: raw)
   }
 
   /// The role name for the translator's own role integer, or nil when the wire carries none or the

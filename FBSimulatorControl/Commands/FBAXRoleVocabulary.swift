@@ -37,6 +37,14 @@ enum FBAXRoleVocabulary {
     translatorRoleNames[rawValue]
   }
 
+  /// The name for a translator subrole integer, or nil when that integer has not been identified.
+  ///
+  /// Worth preferring over the role where both are present: the subrole is what distinguishes a switch
+  /// from a plain check box and a search field from a plain text field.
+  static func name(forTranslatorSubrole rawValue: Int) -> String? {
+    translatorSubroleNames[rawValue]
+  }
+
   /// A role name with the accessibility `AX` prefix stripped (`AXButton` -> `Button`), matching the
   /// SimulatorBridge role spelling. A name without the prefix passes through unchanged.
   static func normalizeRole(_ role: String) -> String {
@@ -64,11 +72,8 @@ enum FBAXRoleVocabulary {
   /// on attribute 45 through a 21-entry jump table; 18 of the entries load an AppKit `NSAccessibility*Role`
   /// global and three are string constants AppKit has no name for. 0 and anything above 21 are not roles.
   ///
-  /// Two values are narrower than they look, because the distinguishing part lives in the *subrole*
-  /// (attribute 51), which nothing reads yet:
-  ///
-  /// - a toggle is `CheckBox` here and carries subrole `AXSwitch`
-  /// - a search field is `TextField` here and carries subrole `AXSearchField`
+  /// Two entries are coarser than the element a reader would name: `CheckBox` covers toggles and
+  /// `TextField` covers search fields. `translatorSubroleNames` carries the refinement.
   ///
   /// `Heading` has no `XCUIElementType` counterpart at all, which is why XCTest types such an element as
   /// `Any` — there is no name in that vocabulary to map it to.
@@ -78,6 +83,27 @@ enum FBAXRoleVocabulary {
     11: "ScrollBar", 12: "TabGroup", 13: "Slider", 14: "StaticText", 15: "TextField",
     16: "WebArea", 17: "TextArea", 18: "Splitter", 19: "PopUpButton", 20: "Sheet",
     21: "Grid",
+  ]
+
+  /// The translator's subrole numbering, decoded the same way as the roles.
+  ///
+  /// A subrole refines a role rather than replacing it, and for two of these the refinement is the name a
+  /// caller actually wants: a toggle is role `CheckBox` with subrole `Switch`, and a search field is role
+  /// `TextField` with subrole `SearchField`. Both refined names are `XCUIElementType` members and are in
+  /// `interactableRoles`; neither bare role is. So where a subrole is identified it is the better answer.
+  ///
+  /// Derivation, for anyone extending this. The producer is
+  /// `-[AXPTranslator_iOS _processSubroleAttributeRequest:traits:error:]` in the guest's
+  /// `AccessibilityPlatformTranslation`, a trait decision tree: `kAXSearchFieldTrait` -> 1,
+  /// `kAXTabButtonTrait` -> 2, `kAXToggleTrait` -> 3, `kAXMapTrait` -> 4, `kAXSecureTextFieldTrait` -> 5.
+  /// The names come from the macOS copy of the same framework, where
+  /// `-[AXPMacPlatformElement _convertTranslatorResponse:forAttribute:]` switches attribute 51 through a
+  /// jump table whose entries load AppKit `NSAccessibility*Subrole` globals; resolving those globals in a
+  /// loaded image gives the strings. The guest has no name table for either roles or subroles — only the
+  /// macOS side carries one, which is why reading the simulator runtime alone does not answer this.
+  private static let translatorSubroleNames: [Int: String] = [
+    1: "SearchField", 2: "TabButton", 3: "Switch", 4: "MapArea",
+    5: "SecureTextField", 6: "MapItem",
   ]
 
   /// `XCUIElementType` raw values -> readable names, mirroring Apple's enum (not linked host-side).

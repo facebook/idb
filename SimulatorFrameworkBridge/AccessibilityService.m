@@ -80,6 +80,10 @@ static NSString *const kNodeIsEnabled = @"FBIsEnabled";
 // is worse than an absent field. It rides the wire unmapped so the mapping can be derived from real
 // screens. The host maps the identified integers and leaves the rest unmapped.
 static NSString *const kNodeTranslatorRole = @"FBTranslatorRole";
+// The translator's `subrole`, again as its own integer. It refines the role rather than replacing it —
+// a toggle is a check box with a switch subrole, a search field is a text field with a search subrole —
+// so the two are carried separately and the host decides which name to report.
+static NSString *const kNodeTranslatorSubrole = @"FBTranslatorSubrole";
 // Echoed back by the shutdown verb so a caller can tell an honoured shutdown from an ok-shaped response
 // to something else.
 static NSString *const kResponseShutdown = @"shutdown";
@@ -545,7 +549,7 @@ static NSDictionary *_Nullable FBAXBridgeBuildTranslatorNode(id<FBAXRuntime> run
   NSArray<NSNumber *> *wanted = @[
     @(FBAXPAttributeLabel), @(FBAXPAttributeFrame), @(FBAXPAttributeIdentifier),
     @(FBAXPAttributeValue), @(FBAXPAttributeIsVisible), @(FBAXPAttributeIsEnabled),
-    @(FBAXPAttributeRole), @(FBAXPAttributeVisiblePoint),
+    @(FBAXPAttributeRole), @(FBAXPAttributeSubrole), @(FBAXPAttributeVisiblePoint),
   ];
   NSDictionary<NSNumber *, id> *values = [runtime translatorAttributes:wanted ofElement:element];
   // Nil is "the read could not be performed", which is not the same answer as an element that answered
@@ -576,6 +580,9 @@ static NSDictionary *_Nullable FBAXBridgeBuildTranslatorNode(id<FBAXRuntime> run
   }
   if (values[@(FBAXPAttributeRole)]) {
     node[kNodeTranslatorRole] = values[@(FBAXPAttributeRole)];
+  }
+  if (values[@(FBAXPAttributeSubrole)]) {
+    node[kNodeTranslatorSubrole] = values[@(FBAXPAttributeSubrole)];
   }
   // Keyed as XCTest names it, because the host derives `interactable` from that key and the two answer
   // the same question. Without it the derivation has hittability and no point, which is the shape it
@@ -1583,6 +1590,7 @@ NSDictionary<NSString *, NSString *> *FBAXBridgeWireConstantsForTesting(void)
     @"node.explainedBy" : kNodeExplainedBy,
     @"node.isEnabled" : kNodeIsEnabled,
     @"node.translatorRole" : kNodeTranslatorRole,
+    @"node.translatorSubrole" : kNodeTranslatorSubrole,
     @"request.x" : kRequestX,
     @"request.y" : kRequestY,
     @"request.method" : kRequestMethod,

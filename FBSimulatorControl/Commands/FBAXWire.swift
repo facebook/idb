@@ -65,6 +65,10 @@ enum FBAXWire {
     /// identified integers; the rest ride the wire unmapped so the mapping can be extended from real
     /// screens.
     case translatorRole = "FBTranslatorRole"
+    /// The translator's `subrole`, as its own integer. It refines the role rather than replacing it: a
+    /// toggle is a check box with a switch subrole, a search field a text field with a search subrole.
+    /// `FBAXRoleVocabulary.name(forTranslatorSubrole:)` maps the identified integers.
+    case translatorSubrole = "FBTranslatorSubrole"
 
     /// The attribute list a read requests for each element when it names none of its own. Membership
     /// *and* order are part of the contract: the guest fetches and echoes back exactly this sequence.
