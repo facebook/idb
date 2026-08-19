@@ -107,6 +107,26 @@ class LogCallResultMetadataTest(TestCase):
         self.assertEqual(telemetry.succeeded[1].get("grpc_method_name"), "fetch")
 
 
+class LogCallEventIdentityTest(TestCase):
+    async def test_invocation_metadata_carries_a_per_invocation_event_uuid(
+        self,
+    ) -> None:
+        telemetry = _TelemetryPlugin(updates_per_call=[])
+
+        @log_call(name="fetch")
+        async def fetch() -> None:
+            return None
+
+        with mock.patch.object(plugin, "PLUGINS", [telemetry]):
+            await fetch()
+        # Pinned: every decorated invocation stamps a fresh event_uuid into
+        # its metadata, shared by the started and terminal dispatches —
+        # dropped in the following commit.
+        started_uuid = telemetry.started[0].get("event_uuid")
+        self.assertEqual(len(str(started_uuid)), 36)
+        self.assertEqual(telemetry.succeeded[0].get("event_uuid"), started_uuid)
+
+
 class LogCallCancellationTest(TestCase):
     """A cancelled invocation must still reach the terminal telemetry hook:
     it dispatches a success-typed event carrying the cancelled flag, from
