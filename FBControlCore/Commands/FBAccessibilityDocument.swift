@@ -613,6 +613,79 @@ public struct FBAccessibilityInteractionSummary: Sendable, Equatable, Encodable 
   }
 }
 
+/// How many of a read's elements carry a usable rectangle.
+///
+/// A read can be well-formed, untruncated, error-free and still describe a screen that is not there. When
+/// that happens the elements are real objects read live, so their labels are current and plausible, but
+/// they are no longer in a window — and a view out of its window reports `CGRectZero` while keeping its
+/// label. Geometry is therefore the one attribute that degrades when the tree does, which makes this
+/// tally the cheapest available signal for a class of fault that every count- and size-based measure
+/// reads as perfectly healthy.
+///
+/// Raw counts, no ratio and no verdict. What proportion is suspicious depends on the screen — a
+/// scrolled-away list legitimately contributes zero-framed elements — so the threshold belongs to
+/// whoever is analysing, not here.
+///
+/// **`total` is not "things on screen".** A single visible row routinely contributes more than one
+/// element — the actionable cell and the non-hittable label inside it are both real, both carry frames,
+/// and both are counted. That is correct accessibility structure rather than duplication, but it makes
+/// the absolute numbers unsuitable for anything but comparison against each other. The signal is the
+/// framed-to-zero-framed split within one read, which is unaffected: whatever the multiplier, it applies
+/// to both sides of it.
+///
+/// `nil` when the read did not carry `frame` at all, which is a caller's choice via `--key`. Nil rather
+/// than zeroes, for the reason `FBAccessibilityInteractionSummary` uses: "not requested" must not read
+/// as "every element is framed".
+public struct FBAccessibilityFrameSummary: Sendable, Equatable, Encodable {
+
+  /// Elements carrying a `frame` attribute, whatever its value.
+  public let total: Int
+  /// Of those, the ones with a positive-area rectangle.
+  public let framed: Int
+  /// Of those, the ones whose rectangle has no area, or whose edges were not representable. These keep
+  /// their labels, which is what makes them indistinguishable from healthy elements by content alone.
+  public let zeroFrame: Int
+
+  public init(total: Int, framed: Int, zeroFrame: Int) {
+    self.total = total
+    self.framed = framed
+    self.zeroFrame = zeroFrame
+  }
+
+  /// Tallies a serialized read, or nil when no element carried a frame.
+  public init?(elements: [FBAccessibilityDocumentElement]) {
+    var total = 0
+    var framed = 0
+    func visit(_ element: FBAccessibilityDocumentElement) {
+      if let frame = element.frame {
+        total += 1
+        // A rectangle counts as framed only with area on both axes. A missing edge is not a smaller
+        // rectangle — `FBAccessibilityFrame.rect` already declines to invent one — so it falls through
+        // to the zero-frame side rather than being silently dropped from the tally.
+        if let rect = frame?.rect, rect.width > 0, rect.height > 0 {
+          framed += 1
+        }
+      }
+      for child in element.children ?? [] {
+        visit(child)
+      }
+    }
+    for element in elements {
+      visit(element)
+    }
+    guard total > 0 else {
+      return nil
+    }
+    self.init(total: total, framed: framed, zeroFrame: total - framed)
+  }
+
+  enum CodingKeys: String, CodingKey {
+    case total
+    case framed
+    case zeroFrame = "zero_frame"
+  }
+}
+
 /// An accessibility element in the `complete` output format.
 ///
 /// A struct rather than an untyped bag: every attribute the schema can carry is a named, typed field.
@@ -825,6 +898,8 @@ public struct FBAccessibilityDocument: Sendable, Encodable {
   /// How much of what this read found blocked it could explain. Nil when `interactable` was not
   /// requested, since there is then nothing to summarize.
   public let interaction: FBAccessibilityInteractionSummary?
+  /// How many of the read's elements carry a usable rectangle. Nil when `frame` was not requested.
+  public let frames: FBAccessibilityFrameSummary?
 
   public init(
     elements: [FBAccessibilityDocumentElement],
@@ -835,7 +910,8 @@ public struct FBAccessibilityDocument: Sendable, Encodable {
     target: FBAccessibilityTargetDescriptor? = nil,
     profile: FBAccessibilityProfilingData? = nil,
     coverage: FBAccessibilityCoverage? = nil,
-    interaction: FBAccessibilityInteractionSummary? = nil
+    interaction: FBAccessibilityInteractionSummary? = nil,
+    frames: FBAccessibilityFrameSummary? = nil
   ) {
     self.elements = elements
     self.modal = modal
@@ -846,6 +922,7 @@ public struct FBAccessibilityDocument: Sendable, Encodable {
     self.profile = profile
     self.coverage = coverage
     self.interaction = interaction
+    self.frames = frames
   }
 
   enum CodingKeys: String, CodingKey {
@@ -858,6 +935,7 @@ public struct FBAccessibilityDocument: Sendable, Encodable {
     case profile
     case coverage
     case interaction
+    case frames
   }
 
   public func encode(to encoder: Encoder) throws {
@@ -871,6 +949,7 @@ public struct FBAccessibilityDocument: Sendable, Encodable {
     try container.encode(profile, forKey: .profile)
     try container.encode(coverage, forKey: .coverage)
     try container.encode(interaction, forKey: .interaction)
+    try container.encode(frames, forKey: .frames)
   }
 }
 

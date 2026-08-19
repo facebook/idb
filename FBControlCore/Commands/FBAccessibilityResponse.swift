@@ -253,7 +253,8 @@ public struct FBAccessibilityElementsResponse: Sendable {
       coverage: coverage,
       // Derived from the elements rather than threaded through the read: it is a tally of what was just
       // serialized, so computing it anywhere else would only create a way for the two to disagree.
-      interaction: FBAccessibilityInteractionSummary(elements: reported)
+      interaction: FBAccessibilityInteractionSummary(elements: reported),
+      frames: FBAccessibilityFrameSummary(elements: reported)
     )
   }
 

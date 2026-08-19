@@ -597,7 +597,7 @@ final class FBAccessibilitySerializationTests: XCTestCase {
     }
     XCTAssertEqual(
       try rendered(.complete),
-      #"{"backend":"axbridge-persistent","coverage":null,"elements":[],"interaction":null,"modal":null,"profile":null,"screen":null,"target":{"kind":"point","match_key":null,"pid":null,"value":null,"x":5,"y":6},"truncated":false}"#
+      #"{"backend":"axbridge-persistent","coverage":null,"elements":[],"frames":null,"interaction":null,"modal":null,"profile":null,"screen":null,"target":{"kind":"point","match_key":null,"pid":null,"value":null,"x":5,"y":6},"truncated":false}"#
     )
   }
 
@@ -740,7 +740,7 @@ final class FBAccessibilitySerializationTests: XCTestCase {
     )
     let document = documentObject(response)
     XCTAssertTrue(document["screen"] is NSNull, "unknown bounds are null, and the read still renders")
-    XCTAssertEqual(Set(document.keys).count, 9, "the document keeps its fixed key set")
+    XCTAssertEqual(Set(document.keys).count, 10, "the document keeps its fixed key set")
   }
 
   // The same hazard on a hit-tested coordinate: `ui shell` parses one with `Double(_:)`, which accepts
@@ -907,7 +907,7 @@ final class FBAccessibilitySerializationTests: XCTestCase {
   // The document's key set never varies: what a verb or backend cannot supply is an explicit null, so
   // one parser serves every describe verb.
   func testCompleteDocumentKeySetIsFixedAcrossReads() throws {
-    let expected: Set<String> = ["elements", "modal", "truncated", "screen", "backend", "target", "profile", "coverage", "interaction"]
+    let expected: Set<String> = ["elements", "modal", "truncated", "screen", "backend", "target", "profile", "coverage", "interaction", "frames"]
     let bare = FBAccessibilityElementsResponse(elements: .tree([]))
     let full = FBAccessibilityElementsResponse(
       elements: .tree(flatElements()),
@@ -927,7 +927,7 @@ final class FBAccessibilitySerializationTests: XCTestCase {
     let response = FBAccessibilityElementsResponse(elements: .tree([]))
     XCTAssertEqual(
       try documentJSON(response),
-      #"{"backend":null,"coverage":null,"elements":[],"interaction":null,"modal":null,"profile":null,"screen":null,"target":null,"truncated":false}"#
+      #"{"backend":null,"coverage":null,"elements":[],"frames":null,"interaction":null,"modal":null,"profile":null,"screen":null,"target":null,"truncated":false}"#
     )
   }
 
@@ -970,6 +970,38 @@ final class FBAccessibilitySerializationTests: XCTestCase {
     XCTAssertTrue(coverage["additional"] is NSNull)
 
     XCTAssertEqual((document["profile"] as? [String: NSNumber])?["element_count"], NSNumber(value: 2))
+  }
+
+  // The sample tree is one element with area and one collapsed to a zero rect, which is the shape a read
+  // takes when an element is no longer in a window: the label survives, the geometry does not.
+  func testTheFrameSummaryCountsElementsWithoutArea() throws {
+    let response = FBAccessibilityElementsResponse(elements: .tree(flatElements()))
+    let frames = try XCTUnwrap(documentObject(response)["frames"] as? [String: Any])
+    XCTAssertEqual(frames["total"] as? Int, 2)
+    XCTAssertEqual(frames["framed"] as? Int, 1)
+    XCTAssertEqual(frames["zero_frame"] as? Int, 1)
+  }
+
+  // Counted over the whole tree, not just the roots — a nested read carries most of its elements as
+  // descendants, and a summary that stopped at the top level would report almost nothing.
+  func testTheFrameSummaryDescendsIntoChildren() throws {
+    let nested = FBAXTreeWalk.describeAllElements(
+      fromTree: Self.sampleTree(), keys: FBAXKeys.defaultSet, nestedFormat: true, pid: 7
+    )
+    let response = FBAccessibilityElementsResponse(elements: .tree(nested))
+    let frames = try XCTUnwrap(documentObject(response)["frames"] as? [String: Any])
+    XCTAssertEqual(frames["total"] as? Int, 2, "the child is tallied even though it is not a root")
+    XCTAssertEqual(frames["zero_frame"] as? Int, 1)
+  }
+
+  // Nil rather than zeroes when the caller did not ask for frames: "not requested" must not read as
+  // "every element is framed", which is the same distinction the interaction summary draws.
+  func testTheFrameSummaryIsAbsentWhenNoElementCarriesAFrame() throws {
+    let response = FBAccessibilityElementsResponse(elements: .tree([FBAccessibilityDocumentElement()]))
+    XCTAssertTrue(
+      documentObject(response)["frames"] is NSNull,
+      "a read carrying no frame attribute reports no summary rather than a flattering zero"
+    )
   }
 
   func testCompleteDocumentTargetKindsCarryTheirOwnFields() throws {
@@ -1098,7 +1130,7 @@ final class FBAccessibilitySerializationTests: XCTestCase {
     #"{"elements":{"AXFrame":"{{16, 380}, {370, 52}}","AXLabel":"root","AXUniqueId":"com.example.root","AXValue":"on","content_required":false,"custom_actions":[],"enabled":null,"frame":{"height":52,"width":370,"x":16,"y":380},"help":null,"pid":7,"role":"Button","role_description":null,"subrole":null,"title":null,"traits":null,"type":"Button"}}"#
 
   private static let expectedProfiledDocumentJSON =
-    #"{"backend":null,"coverage":{"additional":0.25,"content":0.5,"frame":0.5,"leaf":0.5,"walked":0.5},"elements":[],"interaction":null,"modal":null,"profile":{"attribute_fetch_count":3,"element_conversion_duration_ms":250,"element_count":2,"serialization_duration_ms":125,"total_xpc_duration_ms":62.5,"translation_duration_ms":500,"xpc_call_count":4},"screen":null,"target":null,"truncated":false}"#
+    #"{"backend":null,"coverage":{"additional":0.25,"content":0.5,"frame":0.5,"leaf":0.5,"walked":0.5},"elements":[],"frames":null,"interaction":null,"modal":null,"profile":{"attribute_fetch_count":3,"element_conversion_duration_ms":250,"element_count":2,"serialization_duration_ms":125,"total_xpc_duration_ms":62.5,"translation_duration_ms":500,"xpc_call_count":4},"screen":null,"target":null,"truncated":false}"#
 
   private static let expectedFlatJSON =
     #"{"elements":[{"AXFrame":"{{16, 380}, {370, 52}}","AXLabel":"root","AXUniqueId":"com.example.root","AXValue":"on","content_required":false,"custom_actions":[],"enabled":null,"frame":{"height":52,"width":370,"x":16,"y":380},"help":null,"pid":7,"role":"Button","role_description":null,"subrole":null,"title":null,"traits":null,"type":"Button"},{"AXFrame":"{{0, 0}, {0, 0}}","AXLabel":"child","AXUniqueId":null,"AXValue":null,"content_required":false,"custom_actions":[],"enabled":null,"frame":{"height":0,"width":0,"x":0,"y":0},"help":null,"pid":7,"role":"AXCell","role_description":null,"subrole":null,"title":null,"traits":null,"type":"Cell"}]}"#
