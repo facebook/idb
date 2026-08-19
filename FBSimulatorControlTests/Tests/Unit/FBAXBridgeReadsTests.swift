@@ -240,7 +240,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
   // its backend, so "not found" has to be catchable without knowing. One catch clause must handle
   // every backend, and the message must still say which one spoke.
   func testOneCatchClauseHandlesEveryBackend() {
-    let backends: [FBUIAutomationBackend] = [.accessibility, .remoteAutomation, .axBridge(persistence: .oneShot, frontmostMethod: .centerPoint), .axBridge(persistence: .persistent, frontmostMethod: .centerPoint)]
+    let backends: [FBUIAutomationBackend] = [.accessibility, .remoteAutomation, .axBridge(persistence: .oneShot, frontmostMethod: .centerPoint, automationMode: true), .axBridge(persistence: .persistent, frontmostMethod: .centerPoint, automationMode: true)]
     for backend in backends {
       let thrown: Error = FBUIAutomationError.elementNotFound(backend: backend, key: "AXLabel", value: "General")
       guard case let FBUIAutomationError.elementNotFound(caught, key, value) = thrown else {
@@ -257,7 +257,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
 
   // MARK: - Where the accessibility-server remediation is offered
 
-  private static let axBridge = FBUIAutomationBackend.axBridge(persistence: .oneShot, frontmostMethod: .centerPoint)
+  private static let axBridge = FBUIAutomationBackend.axBridge(persistence: .oneShot, frontmostMethod: .centerPoint, automationMode: true)
 
   // An application with no accessibility server is the one condition the flag addresses, and the only
   // neutral case that offers it. The other two are not accessibility-configuration problems at all: an
@@ -352,14 +352,28 @@ final class FBAXBridgeReadsTests: XCTestCase {
 
   // MARK: - The lane's automation-mode default
 
-  // Pinned as its own assertion because it is the one line in this stack that changes what a device does,
-  // and it is a single value that could be edited without anything else failing. A test naming it means
-  // the change is deliberate rather than incidental.
-  func testTheAxbridgeLaneReadsInAutomationMode() {
-    XCTAssertEqual(
-      FBAXBridgeUIAutomation.requestedAutomationMode, true,
-      "the axbridge lane asserts automation mode; nil would restore observe-only behaviour"
-    )
+  // Pinned because selecting the lane by name is how almost every caller reaches it, so this is the
+  // value that decides what a device does in practice. It is now a payload rather than a constant, so a
+  // test naming it is what keeps a change to the default deliberate.
+  func testSelectingTheAxbridgeLaneByNameAssertsAutomationMode() {
+    for name in [FBUIAutomationBackendName.axBridge, .axBridgePersistent] {
+      guard case let .axBridge(_, _, automationMode) = FBUIAutomationBackend(name) else {
+        return XCTFail("\(name) did not select an axbridge backend")
+      }
+      XCTAssertEqual(automationMode, true, "selecting \(name) by name asserts automation mode")
+    }
+  }
+
+  // The tri-state has to survive the enum, not just the wire. `false` is what reproduces the child-cache
+  // fault and what measures the mode's cost, and it must not collapse into "did not ask".
+  func testTheAxbridgeBackendCarriesAnExplicitlyDisabledAutomationMode() {
+    guard case let .axBridge(_, _, off) = FBUIAutomationBackend(.axBridge, automationMode: false),
+      case let .axBridge(_, _, unset) = FBUIAutomationBackend(.axBridge, automationMode: nil)
+    else {
+      return XCTFail("expected axbridge backends")
+    }
+    XCTAssertEqual(off, false, "explicitly off is carried, not dropped")
+    XCTAssertNil(unset, "and is distinct from observing without asking")
   }
 
   // MARK: - Suspect-geometry guidance
@@ -1219,7 +1233,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
       )
     }
     XCTAssertEqual(
-      FBUIAutomationBackend.axBridge(persistence: .persistent, frontmostMethod: .centerPoint).name,
+      FBUIAutomationBackend.axBridge(persistence: .persistent, frontmostMethod: .centerPoint, automationMode: true).name,
       .axBridgePersistent,
       "the persistent transport is a distinct backend to a consumer reading timings"
     )
@@ -1313,7 +1327,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
       guard case let .frameUnavailable(backend, thrownQuery) = error else {
         return XCTFail("expected frameUnavailable, got \(error)")
       }
-      XCTAssertEqual(backend, .axBridge(persistence: .oneShot, frontmostMethod: .centerPoint))
+      XCTAssertEqual(backend, .axBridge(persistence: .oneShot, frontmostMethod: .centerPoint, automationMode: true))
       XCTAssertEqual(thrownQuery, query, "the error must name the target that was asked about")
     }
   }
@@ -1321,7 +1335,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
   // Every query shape can be asked for a frame, so the error names whichever was asked — unlike
   // `elementNotOnScreen`, which can only speak about a marker.
   func testFrameUnavailableNamesEveryTargetShape() {
-    let backend = FBUIAutomationBackend.axBridge(persistence: .oneShot, frontmostMethod: .centerPoint)
+    let backend = FBUIAutomationBackend.axBridge(persistence: .oneShot, frontmostMethod: .centerPoint, automationMode: true)
     let expectations: [(FBAccessibilityElementQuery, String)] = [
       (.frontmost, "the frontmost application"),
       (.application(pid: 99), "pid 99"),
@@ -1614,7 +1628,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
   // "backend"; this one names it part-way through a sentence, where both of those read as a stutter.
   func testAnUnsupportedOperationNamesTheBackendOnceAndInLowerCase() {
     let backends: [FBUIAutomationBackend] = [
-      .accessibility, .remoteAutomation, .axBridge(persistence: .oneShot, frontmostMethod: .centerPoint),
+      .accessibility, .remoteAutomation, .axBridge(persistence: .oneShot, frontmostMethod: .centerPoint, automationMode: true),
     ]
     for backend in backends {
       let description = FBUIAutomationError.operationUnsupported(backend: backend, operation: "Scroll").description
@@ -1624,7 +1638,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
     }
     XCTAssertEqual(
       FBUIAutomationError.operationUnsupported(
-        backend: .axBridge(persistence: .oneShot, frontmostMethod: .centerPoint), operation: "Scroll"
+        backend: .axBridge(persistence: .oneShot, frontmostMethod: .centerPoint, automationMode: true), operation: "Scroll"
       ).description,
       "Scroll is not supported over the axbridge backend"
     )
@@ -1798,7 +1812,7 @@ final class FBAXBridgeGuestDeathTests: XCTestCase {
 /// `describeTree` drives; every other `FBUIAutomation` verb is an unused conformance stub.
 private final class StubTreeReader: FBAXTreeReader, @unchecked Sendable {
 
-  let backend: FBUIAutomationBackend = .axBridge(persistence: .oneShot, frontmostMethod: .centerPoint)
+  let backend: FBUIAutomationBackend = .axBridge(persistence: .oneShot, frontmostMethod: .centerPoint, automationMode: true)
 
   private let read: FBAXTreeRead
   private let hitTestResult: FBAccessibilityElementsResponse?

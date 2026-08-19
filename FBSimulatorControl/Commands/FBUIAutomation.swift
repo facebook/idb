@@ -30,9 +30,19 @@ public enum FBUIAutomationBackend: Sendable, Equatable {
   /// The bundle-free guest AX-C reader: the `SimulatorFrameworkBridge` `accessibility` service spawned
   /// in the simulator. XCUI-grade like `.remoteAutomation`, light like `.accessibility`. `persistence`
   /// picks a fresh spawn per read or a reused `serve` process; `frontmostMethod` is how it resolves the
-  /// foreground app. Both apply only to this backend, so they are payloads of the case rather than
+  /// foreground app; `automationMode` is what the read asks the device's accessibility automation mode
+  /// to be. All three apply only to this backend, so they are payloads of the case rather than
   /// parameters every backend would have to ignore.
-  case axBridge(persistence: FBAXBridgePersistence, frontmostMethod: FBAXBridgeFrontmostMethod)
+  ///
+  /// `automationMode` is tri-state for the reason the guest is: `true` asserts the mode, `false` asserts
+  /// it off, and `nil` observes without touching the device. `false` is not a synonym for `nil` — it is
+  /// what reads the tree as it would have been read before this mode was asserted, which is what
+  /// reproducing the child-cache fault and measuring the mode's cost both need.
+  case axBridge(
+    persistence: FBAXBridgePersistence,
+    frontmostMethod: FBAXBridgeFrontmostMethod,
+    automationMode: Bool?
+  )
 }
 
 public extension FBUIAutomationBackend {
@@ -45,7 +55,7 @@ public extension FBUIAutomationBackend {
       return .ax
     case .remoteAutomation:
       return .testmanagerd
-    case let .axBridge(persistence, _):
+    case let .axBridge(persistence, _, _):
       switch persistence {
       case .oneShot:
         return .axBridge
@@ -57,18 +67,27 @@ public extension FBUIAutomationBackend {
 
   /// The backend a name selects — the inverse of `name`, kept beside it so the two directions form one
   /// bijection in one place; the round-trip is pinned over every case, so a new backend cannot be added
-  /// without teaching both directions. `frontmostMethod` is carried into the axbridge cases, the only
-  /// ones it applies to; the other backends ignore it.
-  init(_ name: FBUIAutomationBackendName, frontmostMethod: FBAXBridgeFrontmostMethod = .windowServer) {
+  /// without teaching both directions. `frontmostMethod` and `automationMode` are carried into the
+  /// axbridge cases, the only ones they apply to; the other backends ignore them.
+  ///
+  /// `automationMode` defaults to asserting the mode, which is what selecting the axbridge lane by name
+  /// means today. A caller that wants the pre-assertion behaviour — reproducing the child-cache fault,
+  /// or measuring what the mode costs — passes `false` explicitly rather than getting it by omission.
+  init(
+    _ name: FBUIAutomationBackendName,
+    frontmostMethod: FBAXBridgeFrontmostMethod = .windowServer,
+    automationMode: Bool? = true
+  ) {
     switch name {
     case .ax:
       self = .accessibility
     case .testmanagerd:
       self = .remoteAutomation
     case .axBridge:
-      self = .axBridge(persistence: .oneShot, frontmostMethod: frontmostMethod)
+      self = .axBridge(persistence: .oneShot, frontmostMethod: frontmostMethod, automationMode: automationMode)
     case .axBridgePersistent:
-      self = .axBridge(persistence: .persistent, frontmostMethod: frontmostMethod)
+      self = .axBridge(
+        persistence: .persistent, frontmostMethod: frontmostMethod, automationMode: automationMode)
     }
   }
 }
@@ -241,14 +260,15 @@ public extension FBSimulator {
       return FBAccessibilityUIAutomation(operations: self)
     case .remoteAutomation:
       return try remoteAutomation()
-    case let .axBridge(persistence, frontmostMethod):
+    case let .axBridge(persistence, frontmostMethod, automationMode):
       let transport: any FBAXBridgeTransport =
         switch persistence {
         case .oneShot: FBAXBridgeOneshotTransport(simulator: self)
         case .persistent: FBAXBridgePersistentTransport(simulator: self)
         }
       return FBAXBridgeUIAutomation(
-        simulator: self, transport: transport, persistence: persistence, frontmostMethod: frontmostMethod
+        simulator: self, transport: transport, persistence: persistence, frontmostMethod: frontmostMethod,
+        automationMode: automationMode
       )
     }
   }

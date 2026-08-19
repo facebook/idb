@@ -33,22 +33,17 @@ import Foundation
 // patternlint-disable-next-line unchecked-sendable
 final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
 
-  /// What this lane asks the guest to do about accessibility automation mode.
+  /// What this read asks the guest to do about accessibility automation mode.
   ///
-  /// `true`: this lane reads with the device in automation mode. That is the mode a UI-test host puts an
-  /// application into — measured, by reading the flag from inside an app under XCUITest — so this brings
-  /// idb into line with what every XCUITest suite already does to the apps it drives, rather than being
-  /// a setting nobody else uses.
+  /// Tri-state, matching the guest: `true` asserts the mode, `false` asserts it off, `nil` observes
+  /// without touching the device. Selecting the axbridge lane by name yields `true`, because that is the
+  /// mode a UI-test host puts an application into and reading without it means UIKit collapses subtrees
+  /// and can serve cached children describing a screen that is no longer displayed.
   ///
-  /// What it buys, measured on one static screen of a real application: 98 elements with 10 carrying a
-  /// frame becomes 176 with all 176 carrying one, and the elements exposing an identifier go from 12 to
-  /// 58. The first half is a correctness fix — with the mode off, a container can serve cached children
-  /// naming a screen that is no longer displayed — and the second is a large gain in label-independent
-  /// targeting that comes with it.
-  ///
-  /// `nil` here restores exactly the previous behaviour: observe and report, touch nothing. One
-  /// reviewable line, and the only line that has to change to revert.
-  static let requestedAutomationMode: Bool? = true
+  /// Carried per instance rather than as a constant so a caller can have both answers on one device in
+  /// one process — which is what measuring the mode's cost needs, and what showing the fault and the fix
+  /// without swapping binaries needs.
+  let requestedAutomationMode: Bool?
 
   private let simulator: FBSimulator
   private let transport: any FBAXBridgeTransport
@@ -61,11 +56,18 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
   /// caller (e.g. sime2e) can select the positional `.centerPoint` or `.runningBoard`.
   private let frontmostMethod: FBAXBridgeFrontmostMethod
 
-  init(simulator: FBSimulator, transport: any FBAXBridgeTransport, persistence: FBAXBridgePersistence, frontmostMethod: FBAXBridgeFrontmostMethod = .windowServer) {
+  init(
+    simulator: FBSimulator,
+    transport: any FBAXBridgeTransport,
+    persistence: FBAXBridgePersistence,
+    frontmostMethod: FBAXBridgeFrontmostMethod = .windowServer,
+    automationMode: Bool? = true
+  ) {
     self.simulator = simulator
     self.transport = transport
     self.persistence = persistence
     self.frontmostMethod = frontmostMethod
+    self.requestedAutomationMode = automationMode
   }
 
   // MARK: - Reads
@@ -77,7 +79,10 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
     try await describeTree(query, options: options)
   }
 
-  nonisolated var backend: FBUIAutomationBackend { .axBridge(persistence: persistence, frontmostMethod: frontmostMethod) }
+  nonisolated var backend: FBUIAutomationBackend {
+    .axBridge(
+      persistence: persistence, frontmostMethod: frontmostMethod, automationMode: requestedAutomationMode)
+  }
 
   /// Re-raises the two transport-level failures that are really facts about the application as their
   /// backend-neutral cases, so a caller holding `any FBUIAutomation` sees the same typed error for a dead
@@ -110,7 +115,7 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
         let response = try await transport.read(
           pid: pid, maxDepth: FBAXReadLimits.maxReadDepth, maxNodes: FBAXReadLimits.maxReadNodes,
           attributes: attributes, explainUnreachable: explainUnreachable, strategy: strategy,
-          automationMode: Self.requestedAutomationMode
+          automationMode: requestedAutomationMode
         )
         return try FBAXTreeRead(wholeTreeResponse: response, pid: pid)
       }
@@ -118,7 +123,7 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
       let response = try await transport.readFrontmost(
         x: anchor.x, y: anchor.y, maxDepth: FBAXReadLimits.maxReadDepth, maxNodes: FBAXReadLimits.maxReadNodes,
         method: frontmostMethod, attributes: attributes, explainUnreachable: explainUnreachable,
-        strategy: strategy, automationMode: Self.requestedAutomationMode
+        strategy: strategy, automationMode: requestedAutomationMode
       )
       return try FBAXTreeRead(frontmostResponse: response, method: frontmostMethod)
     }

@@ -148,11 +148,11 @@ final class AccessibilityInfoRequestTranslationTests: XCTestCase {
     XCTAssertEqual(AccessibilityInfoRequestTranslation.backend(from: .ax), .accessibility)
     XCTAssertEqual(
       AccessibilityInfoRequestTranslation.backend(from: .axbridge),
-      .axBridge(persistence: .oneShot, frontmostMethod: .windowServer)
+      .axBridge(persistence: .oneShot, frontmostMethod: .windowServer, automationMode: true)
     )
     XCTAssertEqual(
       AccessibilityInfoRequestTranslation.backend(from: .axbridgePersistent),
-      .axBridge(persistence: .persistent, frontmostMethod: .windowServer),
+      .axBridge(persistence: .persistent, frontmostMethod: .windowServer, automationMode: true),
       "the persistent transport is selected for a long-lived server, which amortizes its warm reads"
     )
   }
