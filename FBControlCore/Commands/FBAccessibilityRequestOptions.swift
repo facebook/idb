@@ -90,6 +90,19 @@ public enum FBAccessibilityElementFilter: String, Sendable, CaseIterable {
 /// traversal, transport and frontmost are independent. Welding them together is what made the semantic
 /// tree cost a host round trip.
 ///
+/// **A reachability verdict is scoped to what the strategy returned, not to what is on screen.** `semantic`
+/// answers reachability for every element it returns, and on a feed returns fewer elements than
+/// `viewHierarchy` — 11 against 30. So "reachable 100%" from a semantic read means "everything this read
+/// found is reachable", not "everything on the screen is reachable". The two are independent: a strategy can
+/// be right about reachability and incomplete about content at once, and comparing coverage across
+/// strategies compares two different denominators.
+///
+/// Which strategy returns more is a property of the screen, not of the strategies. The two read different
+/// child relations, and an app can leave either one wrong: on a screen whose window serves a stale
+/// automation-elements override, `viewHierarchy` returns the previous screen's subtree while `semantic`
+/// returns the current one. So a smaller count is not evidence of a less complete read, and neither
+/// strategy's count can be treated as the denominator the other should be measured against.
+///
 /// A strategy need not answer everything for every element: `semantic` answers `type` only for the
 /// translator roles that have been identified. A key it cannot always satisfy is warned about rather than
 /// silently absent, so "the app set no type" stays distinguishable from "this read could not ask".
