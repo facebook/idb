@@ -148,6 +148,22 @@ final class FBAXInteractableTests: XCTestCase {
     XCTAssertNil(value ?? nil, "and its value must be an explicit null")
   }
 
+  // A read that answers hittability and carries no point. The derivation checks hittability first to
+  // catch a backend that answered nothing at all; this read answers it, so that check passes and the
+  // derivation runs on to find no point.
+  //
+  // The shape a read produces whenever the server answers `isVisible` for an element and declines its
+  // visible point.
+  func testHittableWithNoPointFabricatesNotHittable() throws {
+    let value = try XCTUnwrap(
+      Self.interactable(Self.node(visiblePoint: nil, centrePoint: nil, userInteractionEnabled: nil))
+    )
+
+    // BUG: manufactures a definite `notHittable` for a question the read never asked — the server said
+    // this element *is* reachable and simply named no point. Flipped in the following commit.
+    XCTAssertEqual(value, .blocked(reasons: [.notHittable]))
+  }
+
   // MARK: - Encoding
 
   // The union is internally tagged, so a consumer branches on `status` rather than probing for whichever
