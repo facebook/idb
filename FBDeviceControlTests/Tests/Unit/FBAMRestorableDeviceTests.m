@@ -59,4 +59,28 @@
   XCTAssertEqualObjects(device.uniqueIdentifier, @"unknown");
 }
 
+- (void)testMissingProductTypeFallsBackToUnknownDeviceType
+{
+  FBAMRestorableDevice *device = [self deviceWithAllValues:@{}];
+  XCTAssertEqualObjects(device.deviceType.model, @"unknown");
+}
+
+- (void)testNonStringProductTypeFallsBackToUnknownDeviceType
+{
+  FBAMRestorableDevice *device = [self deviceWithAllValues:@{FBDeviceKeyProductType : @42}];
+  XCTAssertEqualObjects(device.deviceType.model, @"unknown");
+}
+
+- (void)testStringUniqueChipIDFlowsIntoUniqueIdentifier
+{
+  FBAMRestorableDevice *device = [self deviceWithAllValues:@{FBDeviceKeyUniqueChipID : @"chip-as-string"}];
+  XCTAssertEqualObjects(device.uniqueIdentifier, @"chip-as-string");
+}
+
+- (void)testNonStringDeviceNameFallsBackToUnknown
+{
+  FBAMRestorableDevice *device = [self deviceWithAllValues:@{FBDeviceKeyDeviceName : @99}];
+  XCTAssertEqualObjects(device.name, @"unknown");
+}
+
 @end
