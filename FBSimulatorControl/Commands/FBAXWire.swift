@@ -61,8 +61,9 @@ enum FBAXWire {
     /// Deliberately *not* mapped onto `elementType`, which carries `XCUIElementType` names: the mapping
     /// from these integers onto those names is only partly known, and a number where consumers expect a
     /// name is worse than an absent field. Declared here because this enum is the wire vocabulary rather
-    /// than the subset the host happens to read — nothing consumes it yet; it rides the wire so the
-    /// mapping can be derived from real screens.
+    /// than the subset the host happens to read. `FBAXRoleVocabulary.name(forTranslatorRole:)` maps the
+    /// identified integers; the rest ride the wire unmapped so the mapping can be extended from real
+    /// screens.
     case translatorRole = "FBTranslatorRole"
 
     /// The attribute list a read requests for each element when it names none of its own. Membership

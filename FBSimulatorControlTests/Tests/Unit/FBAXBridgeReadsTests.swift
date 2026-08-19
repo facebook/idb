@@ -696,7 +696,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
 
   // The warning is what makes an absent field readable as "this traversal could not ask", so it belongs
   // on the describe that actually reports fields — not only on the marker branch.
-  func testDescribeTreeWarnsAboutTheKeysItsTraversalCannotAnswer() async throws {
+  func testDescribeTreeWarnsAboutUnsatisfiableKeys() async throws {
     let reader = StubTreeReader(read: Self.stubRead())
     _ = try? await reader.describeTree(
       .frontmost, options: FBAccessibilityRequestOptions(keys: [.type, .label], traversalStrategy: .semantic)
@@ -1641,9 +1641,11 @@ final class FBAXTraversalStrategyTests: XCTestCase {
     XCTAssertTrue(options.unsatisfiableKeys.isEmpty)
   }
 
-  // The semantic traversal has no element type to give. Naming it is what separates "the app set no
-  // type" from "this read could not ask", which are the same absence in the output otherwise.
-  func testTheSemanticTraversalCannotAnswerTheElementType() {
+  // The semantic traversal answers `type` from the translator's own role numbering, and only the roles
+  // identified so far map onto a name — so it answers for most elements and not for all. The key stays
+  // listed because the contract is about what a traversal can answer for *every* element: a caller
+  // holding a node with no type has to be able to tell "the app set none" from "this read could not ask".
+  func testSemanticCannotTypeEveryElement() {
     XCTAssertEqual(FBAXTraversalStrategy.semantic.unsatisfiableKeys, [.type])
   }
 

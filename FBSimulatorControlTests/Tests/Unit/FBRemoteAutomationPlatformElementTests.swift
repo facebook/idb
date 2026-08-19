@@ -160,6 +160,61 @@ final class FBRemoteAutomationPlatformElementTests: XCTestCase {
     XCTAssertEqual(element.axRole(), "Any")
   }
 
+  // A semantic-vocabulary node carries no `elementType` or `automationType` at all — the translator's own
+  // role numbering is the only type on that wire, so this term is the one that answers there.
+  func testTranslatorRoleAnswersWhenItIsTheOnlyType() {
+    let element = FBRemoteAutomationPlatformElement(
+      attributes: [FBAXWire.Node.translatorRole.rawValue: NSNumber(value: 2)],
+      children: [],
+      pid: 0
+    )
+    XCTAssertEqual(element.axRole(), "Button")
+  }
+
+  // An unidentified role reports no type rather than its number. The mapping is partial by construction —
+  // it holds only the integers with evidence — and a bare role number means nothing to a caller expecting
+  // an `XCUIElementType` name, so it must not reach them as one.
+  func testUnidentifiedTranslatorRoleReportsNoType() {
+    let element = FBRemoteAutomationPlatformElement(
+      attributes: [FBAXWire.Node.translatorRole.rawValue: NSNumber(value: 99)],
+      children: [],
+      pid: 0
+    )
+    XCTAssertNil(element.axRole(), "an unidentified role must not surface as a number")
+  }
+
+  // Spot-checks across the decoded table, including the two whose role is narrower than the element a
+  // reader would call it: a toggle is `CheckBox` and a search field is `TextField`, because `Switch` and
+  // `SearchField` live in the subrole, which nothing reads yet.
+  func testTranslatorRolesAreMappedAcrossTheDecodedTable() {
+    let cases: [(Int, String)] = [
+      (1, "Application"), (2, "Button"), (3, "CheckBox"), (5, "Group"),
+      (6, "Heading"), (14, "StaticText"), (15, "TextField"), (21, "Grid"),
+    ]
+    for (raw, expected) in cases {
+      let element = FBRemoteAutomationPlatformElement(
+        attributes: [FBAXWire.Node.translatorRole.rawValue: NSNumber(value: raw)],
+        children: [],
+        pid: 0
+      )
+      XCTAssertEqual(element.axRole(), expected, "translator role \(raw)")
+    }
+  }
+
+  // The XCTest vocabulary keeps precedence where both are present: it names types in the vocabulary the
+  // wire already speaks, and the translator numbering is a second scheme that only it uses.
+  func testXCUIElementTypeOutranksTheTranslatorRole() {
+    let element = FBRemoteAutomationPlatformElement(
+      attributes: [
+        FBAXWire.Node.automationType.rawValue: NSNumber(value: 48),
+        FBAXWire.Node.translatorRole.rawValue: NSNumber(value: 2),
+      ],
+      children: [],
+      pid: 0
+    )
+    XCTAssertEqual(element.axRole(), "StaticText")
+  }
+
   func testChildrenAreExposed() {
     let child = FBRemoteAutomationPlatformElement(
       attributes: [FBAXWire.Node.label.rawValue: "About"],

@@ -90,14 +90,19 @@ public enum FBAccessibilityElementFilter: String, Sendable, CaseIterable {
 /// traversal, transport and frontmost are independent. Welding them together is what made the semantic
 /// tree cost a host round trip.
 ///
-/// A strategy need not answer everything: `semantic` carries no element type today. A key it cannot
-/// satisfy is warned about rather than silently absent, so "the app set no type" stays distinguishable
-/// from "this read could not ask".
+/// A strategy need not answer everything for every element: `semantic` answers `type` only for the
+/// translator roles that have been identified. A key it cannot always satisfy is warned about rather than
+/// silently absent, so "the app set no type" stays distinguishable from "this read could not ask".
 public enum FBAXTraversalStrategy: String, Sendable, CaseIterable {
   case viewHierarchy = "view-hierarchy"
   case semantic = "semantic"
 
-  /// The keys this traversal cannot answer, whatever the caller asks for.
+  /// The keys this traversal cannot answer for every element, whatever the caller asks for.
+  ///
+  /// A key is listed when the traversal itself — not the app — can leave an element without it.
+  /// `semantic` answers `type` from the translator's own role numbering, and only the identified roles
+  /// map onto an `XCUIElementType` name, so a missing type on one of its elements may mean the read could
+  /// not ask rather than that the element has no type.
   public var unsatisfiableKeys: Set<FBAXKeys> {
     switch self {
     case .viewHierarchy: []
@@ -198,14 +203,15 @@ public struct FBAccessibilityRequestOptions: Sendable {
   /// How the read traverses. Default: `.viewHierarchy`, which is what every caller got before this existed.
   public var traversalStrategy: FBAXTraversalStrategy
 
-  /// The keys this read asked for that its traversal cannot answer. Empty for the default traversal.
+  /// The keys this read asked for that its traversal cannot answer for every element. Empty for the
+  /// default traversal.
   public var unsatisfiableKeys: Set<FBAXKeys> {
     serializationKeys.intersection(traversalStrategy.unsatisfiableKeys)
   }
 
   /// The same intersection over the marker read's widened key set, so the key it searched on is warned
-  /// about too — a `--match-key type` against a traversal with no type is the case most worth naming,
-  /// and checking against `serializationKeys` alone is exactly the check that misses it.
+  /// about too. `--match-key type` against a traversal that cannot type is the case that matters, and
+  /// intersecting `serializationKeys` alone would miss it.
   public func unsatisfiableKeys(including extraKeys: Set<FBAXKeys>) -> Set<FBAXKeys> {
     serializationKeys(including: extraKeys).intersection(traversalStrategy.unsatisfiableKeys)
   }

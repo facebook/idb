@@ -27,6 +27,16 @@ enum FBAXRoleVocabulary {
     elementTypeNames[rawValue]
   }
 
+  /// The role name for an integer in the translator's own role numbering, or nil when the integer is not
+  /// one of the 21 in the table.
+  ///
+  /// Most names coincide with an `XCUIElementType`; `GenericElement`, `Heading`, `ScrollArea`, `WebArea`
+  /// and `TextArea` have no counterpart there, so a caller matching against `XCUIElementType` will not
+  /// recognise them.
+  static func name(forTranslatorRole rawValue: Int) -> String? {
+    translatorRoleNames[rawValue]
+  }
+
   /// A role name with the accessibility `AX` prefix stripped (`AXButton` -> `Button`), matching the
   /// SimulatorBridge role spelling. A name without the prefix passes through unchanged.
   static func normalizeRole(_ role: String) -> String {
@@ -43,6 +53,31 @@ enum FBAXRoleVocabulary {
     "Button", "Cell", "TextField", "SecureTextField", "SearchField", "Switch", "Toggle", "Link",
     "MenuItem", "Slider", "CheckBox", "RadioButton", "SegmentedControl", "Stepper", "PopUpButton",
     "Picker", "PickerWheel", "Tab", "Key", "DisclosureTriangle",
+  ]
+
+  /// The translator's own role numbering, decoded from the framework rather than observed.
+  ///
+  /// A separate scheme from `XCUIElementType` — `Button` is 2 here and 9 there. The names are Apple's
+  /// `AX*` role constants with the prefix dropped, matching how every other role reaches the serializer.
+  ///
+  /// Recovered from `-[AXPMacPlatformElement _convertTranslatorResponse:forAttribute:]`, which switches
+  /// on attribute 45 through a 21-entry jump table; 18 of the entries load an AppKit `NSAccessibility*Role`
+  /// global and three are string constants AppKit has no name for. 0 and anything above 21 are not roles.
+  ///
+  /// Two values are narrower than they look, because the distinguishing part lives in the *subrole*
+  /// (attribute 51), which nothing reads yet:
+  ///
+  /// - a toggle is `CheckBox` here and carries subrole `AXSwitch`
+  /// - a search field is `TextField` here and carries subrole `AXSearchField`
+  ///
+  /// `Heading` has no `XCUIElementType` counterpart at all, which is why XCTest types such an element as
+  /// `Any` — there is no name in that vocabulary to map it to.
+  private static let translatorRoleNames: [Int: String] = [
+    1: "Application", 2: "Button", 3: "CheckBox", 4: "GenericElement", 5: "Group",
+    6: "Heading", 7: "Image", 8: "Link", 9: "RadioButton", 10: "ScrollArea",
+    11: "ScrollBar", 12: "TabGroup", 13: "Slider", 14: "StaticText", 15: "TextField",
+    16: "WebArea", 17: "TextArea", 18: "Splitter", 19: "PopUpButton", 20: "Sheet",
+    21: "Grid",
   ]
 
   /// `XCUIElementType` raw values -> readable names, mirroring Apple's enum (not linked host-side).

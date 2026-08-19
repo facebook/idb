@@ -272,7 +272,8 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
     _ = simulator.logger.log(
       "the \(strategy.rawValue) traversal cannot answer "
         + keys.map(\.rawValue).sorted().joined(separator: ", ")
-        + "; a missing value there means this read could not ask, not that the element has none"
+        + " for every element; a missing value there may mean this read could not ask, not that the "
+        + "element has none"
     )
   }
 

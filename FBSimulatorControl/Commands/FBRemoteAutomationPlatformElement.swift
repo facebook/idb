@@ -72,16 +72,20 @@ final class FBRemoteAutomationPlatformElement: FBAXPlatformElement {
     // type for this element, not a type. It maps like any other value, so taking it would end the search
     // on a successful lookup that says nothing, discarding a class name the read already carried.
     //
-    // A class name outranks a stringified number for the same reason: a class name identifies the
-    // element and `0` or `9999` identifies nothing. That ordering is the whole fix — skipping `Any`
-    // alone would simply hand the answer to the stringify term below.
+    // A class name also outranks a stringified number, for the same reason: a class name identifies the
+    // element, `0` and `9999` identify nothing. Skipping `Any` without that second reorder would just
+    // hand the answer to the stringify term below.
     let automationName = elementTypeName(FBAXWire.Node.automationType.rawValue)
     let identifying =
       (automationName == FBAXRoleVocabulary.untypedName ? nil : automationName)
       ?? elementTypeName(FBAXWire.Node.elementType.rawValue)
+      // The translator numbers its roles in its own scheme, and on a semantic read that role is the only
+      // type on the wire — so this is the term that answers there. Unidentified integers stay nil rather
+      // than stringifying: a role number means nothing to a caller expecting an `XCUIElementType` name.
+      ?? translatorRoleName()
       ?? className(FBAXWire.Node.elementType.rawValue)
-    // `Any` returns as the last resort, so an element with nothing more specific reports what it always
-    // did rather than a bare number.
+    // `Any` comes back as the last resort, so an element with nothing more specific still reports `Any`
+    // rather than a bare number.
     return identifying
       ?? automationName
       ?? stringAttribute(FBAXWire.Node.automationType.rawValue)
@@ -157,11 +161,20 @@ final class FBRemoteAutomationPlatformElement: FBAXPlatformElement {
     return String(describing: raw)
   }
 
-  /// The attribute as the class name it already is, or nil when it is a number.
+  /// The role name for the translator's own role integer, or nil when the wire carries none or the
+  /// integer is not in the table.
+  private func translatorRoleName() -> String? {
+    guard let raw = (attributes[FBAXWire.Node.translatorRole.rawValue] as? NSNumber)?.intValue else {
+      return nil
+    }
+    return FBAXRoleVocabulary.name(forTranslatorRole: raw)
+  }
+
+  /// The attribute when it already arrived as a class name, or nil when it arrived as a number.
   ///
-  /// A numeric type has had its chance to resolve to an `XCUIElementType` name by the time this is
-  /// reached; stringifying it here would report `0` or `9999`, which names nothing. Only a value that
-  /// arrived as a string — an app's own view class, or one of Apple's private ones — identifies it.
+  /// Every term above this one has already tried to resolve a numeric type to an `XCUIElementType` name,
+  /// so stringifying here would only ever produce `0` or `9999`. A string value — an app's own view
+  /// class, or one of Apple's private ones — is the only kind that names the element.
   private func className(_ key: String) -> String? {
     attributes[key] as? String
   }
