@@ -199,4 +199,28 @@ final class AccessibilityInfoRequestTranslationTests: XCTestCase {
       "the complete document is the client-detectable shape: an object naming the backend that served it"
     )
   }
+
+  // `--key all` is the whole point of the token: a caller wanting a full dump should not have to name
+  // twenty-odd keys and keep the list current as the vocabulary grows.
+  func testTheAllTokenExpandsToEveryKey() throws {
+    var request = Idb_AccessibilityInfoRequest()
+    request.keys = [FBAXKeys.everythingToken]
+    let options = try AccessibilityInfoRequestTranslation.options(from: request, format: .default)
+    XCTAssertEqual(options.keys, FBAXKeys.everything)
+  }
+
+  // `all` alongside a named key still means all. Intersecting them would answer with less than either
+  // request would have on its own, which is the one outcome the caller cannot have meant.
+  func testTheAllTokenWinsOverKeysNamedBesideIt() throws {
+    var request = Idb_AccessibilityInfoRequest()
+    request.keys = ["AXLabel", FBAXKeys.everythingToken]
+    let options = try AccessibilityInfoRequestTranslation.options(from: request, format: .default)
+    XCTAssertEqual(options.keys, FBAXKeys.everything)
+  }
+
+  // The token is not a key: it names no field and must never reach a node as one.
+  func testTheAllTokenIsNotItselfAKey() {
+    XCTAssertNil(FBAXKeys(rawValue: FBAXKeys.everythingToken))
+  }
+
 }

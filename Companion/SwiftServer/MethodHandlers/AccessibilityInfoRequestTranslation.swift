@@ -36,9 +36,10 @@ enum AccessibilityInfoRequestTranslation {
 
   /// The request options for a point / frontmost read. Rejects an all-invalid `--key` list rather
   /// than silently falling back to the default set and masking the caller's typo; an empty list means
-  /// "defaults", and unrecognized keys in a partially-valid list are dropped.
+  /// "defaults", and unrecognized keys in a partially-valid list are dropped. `--key all` expands to
+  /// every key the reader can answer.
   static func options(from request: Idb_AccessibilityInfoRequest, format: FBAccessibilityOutputFormat) throws -> FBAccessibilityRequestOptions {
-    let mappedKeys = Set(request.keys.compactMap { FBAXKeys(rawValue: $0) })
+    let mappedKeys = FBAXKeys.requested(request.keys)
     if !request.keys.isEmpty && mappedKeys.isEmpty {
       throw GRPCStatus(
         code: .invalidArgument,

@@ -64,6 +64,31 @@ public enum FBAXKeys: String, Sendable, CaseIterable {
   /// — not a better default.
   public static let everything: Set<FBAXKeys> = Set(allCases)
 
+  /// The token a caller passes instead of naming every key: `--key all`.
+  ///
+  /// Reserved rather than a case of the enum, because it is not a key — it does not name a field, and a
+  /// node never carries it. Kept here so the spelling lives beside the vocabulary it expands to.
+  public static let everythingToken = "all"
+
+  /// Every value `--key` accepts: the token, then the keys themselves.
+  ///
+  /// Derived here rather than assembled at the command line, so a front end cannot list a set that has
+  /// drifted from the one `requested(_:)` actually parses.
+  public static var allArgumentStrings: [String] { [everythingToken] + allCases.map(\.rawValue) }
+
+  /// Whether a `--key` value is one this vocabulary accepts, token included.
+  public static func acceptsArgument(_ raw: String) -> Bool {
+    raw == everythingToken || FBAXKeys(rawValue: raw) != nil
+  }
+
+  /// The keys a caller asked for, expanding `all` and dropping anything unrecognised.
+  ///
+  /// `all` wins over anything alongside it: a caller who asked for everything and one specific key wants
+  /// everything, and intersecting the two would answer with less than either request on its own.
+  public static func requested(_ raw: [String]) -> Set<FBAXKeys> {
+    raw.contains(everythingToken) ? everything : Set(raw.compactMap(FBAXKeys.init(rawValue:)))
+  }
+
   /// Default set of keys returned when no specific keys are requested.
   public static let defaultSet: Set<FBAXKeys> = [
     .label, .frame, .value, .uniqueID, .type, .title, .frameDict, .help,
