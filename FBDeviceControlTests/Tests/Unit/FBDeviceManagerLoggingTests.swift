@@ -43,10 +43,8 @@ final class FBDeviceManagerLoggingTests: XCTestCase {
   func testConnectionLogsIdentifyTheDeviceWithoutDereferencingTheRef() {
     let logger = connectDevice(identifier: "chip-id-1")
     let allOutput = logger.lines.joined(separator: "\n")
-    // BUG: connection logs render the unowned callback ref with %@, which
-    // dereferences it for its description; a dead ref crashes the process.
-    // Flipped in the following commit to log the identifier instead.
-    XCTAssertTrue(allOutput.contains("recognizable-private-ref-description"), "unexpected log output: \(allOutput)")
+    XCTAssertFalse(allOutput.contains("recognizable-private-ref-description"), "unexpected log output: \(allOutput)")
+    XCTAssertTrue(allOutput.contains("chip-id-1"), "unexpected log output: \(allOutput)")
   }
 
   func testDisconnectionLogsIdentifyTheDeviceWithoutDereferencingTheRef() {
@@ -54,7 +52,7 @@ final class FBDeviceManagerLoggingTests: XCTestCase {
     let manager = FBDeviceManagerDouble(logger: logger)
     manager.deviceDisconnected(privateDevice, identifier: "chip-id-2")
     let allOutput = logger.lines.joined(separator: "\n")
-    // BUG: as above — flipped in the following commit.
-    XCTAssertTrue(allOutput.contains("recognizable-private-ref-description"), "unexpected log output: \(allOutput)")
+    XCTAssertFalse(allOutput.contains("recognizable-private-ref-description"), "unexpected log output: \(allOutput)")
+    XCTAssertTrue(allOutput.contains("chip-id-2"), "unexpected log output: \(allOutput)")
   }
 }

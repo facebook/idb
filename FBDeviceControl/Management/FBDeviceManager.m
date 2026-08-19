@@ -71,7 +71,10 @@
 
 - (void)deviceConnected:(PrivateDevice)privateDevice identifier:(NSString *)identifier info:(NSDictionary<NSString *, id> *)info
 {
-  [self.logger log:[NSString stringWithFormat:@"Device Connected %@", privateDevice]];
+  // The private refs handed to connection callbacks are unowned and may
+  // already be dead; they must never be dereferenced (%@ formats via
+  // description), only logged by identifier and address.
+  [self.logger log:[NSString stringWithFormat:@"Device Connected %@ (%p)", identifier, privateDevice]];
 
   // Make sure that we pull from all known instances created by this class.
   // We do this instead of the attached ones.
@@ -89,13 +92,13 @@
   // See whether the Private API reference represents a replacement of something we already know bout.
   PrivateDevice oldPrivateDevice = [self.class extractPrivateReference:device];
   if (oldPrivateDevice == NULL) {
-    [self.logger log:[NSString stringWithFormat:@"New '%@' appeared for the first time", privateDevice]];
+    [self.logger log:[NSString stringWithFormat:@"New '%@' (%p) appeared for the first time", identifier, privateDevice]];
     [self.class updatePublicReference:device privateDevice:privateDevice identifier:identifier info:info];
   } else if (privateDevice != oldPrivateDevice) {
-    [self.logger log:[NSString stringWithFormat:@"New '%@' replaces Old Device '%@'", privateDevice, oldPrivateDevice]];
+    [self.logger log:[NSString stringWithFormat:@"New '%@' (%p) replaces Old Device (%p)", identifier, privateDevice, oldPrivateDevice]];
     [self.class updatePublicReference:device privateDevice:privateDevice identifier:identifier info:info];
   } else {
-    [self.logger log:[NSString stringWithFormat:@"Existing Device %@ is the same as the old", privateDevice]];
+    [self.logger log:[NSString stringWithFormat:@"Existing Device '%@' (%p) is the same as the old", identifier, privateDevice]];
   }
 
   // Update the internal state
@@ -107,7 +110,7 @@
 
 - (void)deviceDisconnected:(PrivateDevice)privateDevice identifier:(NSString *)identifier
 {
-  [self.logger log:[NSString stringWithFormat:@"Device Disconnected %@", privateDevice]];
+  [self.logger log:[NSString stringWithFormat:@"Device Disconnected %@ (%p)", identifier, privateDevice]];
   id device = [self.storage deviceForKey:identifier];
   if (!device) {
     [self.logger log:[NSString stringWithFormat:@"No Device named %@ from attached devices, nothing to remove", identifier]];
