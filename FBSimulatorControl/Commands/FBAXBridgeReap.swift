@@ -19,6 +19,17 @@ enum FBAXBridgeSocket {
   static let prefix = "idb_axbridge_"
   static let suffix = ".sock"
 
+  /// The backlog the guest's `serve` loop listens with, mirrored here because the reaper's classification
+  /// depends on it.
+  ///
+  /// The probe reads a refused connection as "nothing is bound, the file is stale" and deletes the
+  /// socket. That is only safe while a live guest still has a queue slot to accept the probe into: on BSD
+  /// a connect to a Unix socket whose backlog is full fails with `ECONNREFUSED`, which is the same errno
+  /// as nothing listening. The serve loop only ever handles one client at a time, so the backlog exists
+  /// purely to keep a probe from being refused while somebody else is connected. Pinned guest-side by
+  /// `AccessibilityServiceTests`.
+  static let guestListenBacklog: Int32 = 1
+
   static func path(forConnection identifier: String) -> String {
     "\(directory)/\(prefix)\(identifier)\(suffix)"
   }

@@ -37,7 +37,12 @@ final class FBAXBridgeReapTests: XCTestCase {
 
   /// A listener that answers one shutdown probe the way the guest does, then stops.
   @discardableResult
-  private func startFakeGuest(at path: String, answering: Bool, reply: String = #"{"ok":true,"shutdown":true}"#) throws -> Int32 {
+  private func startFakeGuest(
+    at path: String,
+    answering: Bool,
+    backlog: Int32 = 4,
+    reply: String = #"{"ok":true,"shutdown":true}"#
+  ) throws -> Int32 {
     let listener = socket(AF_UNIX, SOCK_STREAM, 0)
     var address = sockaddr_un()
     address.sun_family = sa_family_t(AF_UNIX)
@@ -50,7 +55,7 @@ final class FBAXBridgeReapTests: XCTestCase {
       }
     }
     XCTAssertTrue(bound, "failed to bind \(path)")
-    XCTAssertEqual(listen(listener, 4), 0)
+    XCTAssertEqual(listen(listener, backlog), 0)
     guard answering else {
       // Bound and listening but never accepting — the shape of a guest already serving somebody.
       return listener
@@ -74,6 +79,56 @@ final class FBAXBridgeReapTests: XCTestCase {
       close(listener)
     }
     return listener
+  }
+
+  /// Occupies `count` slots of a listener's accept queue and keeps them open, the way another host
+  /// holding a connection does. Returns the client descriptors so the caller can close them.
+  private func occupyBacklog(at path: String, count: Int) -> [Int32] {
+    var clients: [Int32] = []
+    for _ in 0..<count {
+      let client = socket(AF_UNIX, SOCK_STREAM, 0)
+      guard client >= 0 else { continue }
+      var address = sockaddr_un()
+      address.sun_family = sa_family_t(AF_UNIX)
+      _ = withUnsafeMutablePointer(to: &address.sun_path) { raw in
+        path.withCString { strcpy(UnsafeMutableRawPointer(raw).assumingMemoryBound(to: CChar.self), $0) }
+      }
+      let connected = withUnsafePointer(to: &address) { raw in
+        raw.withMemoryRebound(to: sockaddr.self, capacity: 1) {
+          Darwin.connect(client, $0, socklen_t(MemoryLayout<sockaddr_un>.size)) == 0
+        }
+      }
+      if connected {
+        clients.append(client)
+      } else {
+        close(client)
+      }
+    }
+    return clients
+  }
+
+  // A live guest can be refused, and the reaper cannot tell that from a guest that has gone. The serve
+  // loop handles one client at a time, so a second host connecting sits in the accept queue — and with
+  // the backlog the guest listens with, one waiting connection fills it. On BSD a connect to a Unix
+  // socket whose queue is full fails with `ECONNREFUSED`, the same errno as nothing being bound at all.
+  //
+  // The reaper reads that as a stale file and unlinks it, so a healthy guest with a client attached
+  // loses its socket and is left running with no path back to it: unreachable and unreapable at once.
+  // Reachable whenever two hosts touch one simulator, which is the normal case here.
+  func testALiveGuestWhoseBacklogIsFullHasItsSocketDeleted() throws {
+    let path = socketPath()
+    let listener = try startFakeGuest(at: path, answering: false, backlog: FBAXBridgeSocket.guestListenBacklog)
+    defer { close(listener) }
+    let clients = occupyBacklog(at: path, count: 1)
+    defer { clients.forEach { close($0) } }
+
+    let summary = FBAXBridgeReap.reapIdleGuests(inDirectory: directory, probeTimeout: 1)
+
+    // BUG: a live listener's socket is removed as though the guest had gone — flipped in the following
+    // commit, where the guest gains enough backlog for the probe to queue instead of being refused.
+    XCTAssertEqual(summary.removedStaleSockets, [path])
+    XCTAssertFalse(FileManager.default.fileExists(atPath: path), "BUG: the live guest's socket is gone")
+    XCTAssertTrue(summary.busy.isEmpty)
   }
 
   func testAGuestThatAnswersIsReaped() throws {

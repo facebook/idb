@@ -265,6 +265,18 @@ static NSDictionary *FBAXTestsParse(NSData *data)
   XCTAssertEqualObjects(FBAXBridgeWireConstantsForTesting(), expected);
 }
 
+// The serve loop handles one client at a time, so the accept queue exists only to hold a probe while
+// somebody else is connected. It is pinned because the reaper's safety depends on the number: a connect
+// to a Unix socket whose backlog is full fails with `ECONNREFUSED`, the same errno as nothing being
+// bound, and the reaper deletes the socket on that errno. Every free slot is one more reason a refusal
+// really does mean the guest has gone. Mirrored host-side as `FBAXBridgeSocket.guestListenBacklog`.
+- (void)testTheServeBacklogIsPinned
+{
+  // BUG: one waiting client fills the queue, so the next probe is refused and the reaper deletes a live
+  // guest's socket — raised in the following commit.
+  XCTAssertEqual(FBAXBridgeServeBacklogForTesting(), 1);
+}
+
 #pragma mark - Modal detection
 
 // A SpringBoard system alert window anywhere in the tree marks a `system` modal. With no

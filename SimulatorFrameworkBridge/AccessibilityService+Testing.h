@@ -28,6 +28,15 @@ NS_ASSUME_NONNULL_BEGIN
 NSDictionary<NSString *, NSString *> *FBAXBridgeWireConstantsForTesting(void);
 
 /**
+ * The backlog the `serve` loop listens with.
+ *
+ * Exposed because the reaper's safety depends on the number rather than on anything observable in a
+ * response: a connect to a Unix socket whose accept queue is full fails with the same errno as nothing
+ * being bound, and the reaper deletes a socket on that errno.
+ */
+int FBAXBridgeServeBacklogForTesting(void);
+
+/**
  * Builds the fullscreen-modal descriptor for a built `XC_kAXXC*`-keyed attribute tree, or nil when
  * neither a system (`SBAlertItemWindow`) nor an app (`_UIAlertController*`) alert is present. The
  * descriptor carries `kind` (`system`/`app`), `elementType`, and an optional `label` — the same `modal`
