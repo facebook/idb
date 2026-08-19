@@ -902,9 +902,11 @@ static NSDictionary *FBAXTestsPress(void)
     }
   );
 
-  // BUG: nothing was omitted — this root has no children at all — but the read reports truncation
-  // because the node answered at least one attribute of its own. Flipped in the following commit.
-  XCTAssertEqualObjects(response[@"truncated"], @YES);
+  XCTAssertEqualObjects(
+    response[@"truncated"],
+    @NO,
+    @"a cap that hid nothing is not a truncated read"
+  );
 }
 
 // Nil is "the read could not be performed", which a caller must be able to tell from a read that

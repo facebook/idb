@@ -628,21 +628,22 @@ static NSDictionary *_Nullable FBAXBridgeBuildTranslatorNode(id<FBAXRuntime> run
   }
 
   NSMutableArray *children = [NSMutableArray array];
+  // Children are a separate request: the handler special-cases the attribute rather than returning it
+  // in a batch alongside the rest. Asked for even at the depth cap, because "did the cap hide anything"
+  // cannot be answered without knowing whether this node has children — the view-hierarchy walk gets
+  // that for free in its batch, and this walk has to pay a request for it.
+  NSDictionary<NSNumber *, id> *kids = [runtime translatorAttributes:@[@(FBAXPAttributeChildren)] ofElement:element];
+  id list = kids[@(FBAXPAttributeChildren)];
+  NSArray *childElements = [list isKindOfClass:NSArray.class] ? (NSArray *)list : nil;
   if (depth < maxDepth) {
-    // Children are a separate request: the handler special-cases the attribute rather than returning it
-    // in a batch alongside the rest.
-    NSDictionary<NSNumber *, id> *kids = [runtime translatorAttributes:@[@(FBAXPAttributeChildren)] ofElement:element];
-    id list = kids[@(FBAXPAttributeChildren)];
-    if ([list isKindOfClass:NSArray.class]) {
-      for (id child in (NSArray *)list) {
-        NSDictionary *built = FBAXBridgeBuildTranslatorNode(runtime, child, depth + 1, maxDepth, budget, truncated);
-        if (built) {
-          [children addObject:built];
-        }
+    for (id child in childElements) {
+      NSDictionary *built = FBAXBridgeBuildTranslatorNode(runtime, child, depth + 1, maxDepth, budget, truncated);
+      if (built) {
+        [children addObject:built];
       }
     }
-  } else if (values.count > 0) {
-    *truncated = YES;
+  } else if (childElements.count > 0) {
+    *truncated = YES;  // the depth cap stopped descent into this node's existing children
   }
   node[kAXChildren] = children;
   return node;
