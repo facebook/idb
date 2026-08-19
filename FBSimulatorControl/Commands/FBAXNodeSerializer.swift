@@ -179,9 +179,10 @@ enum FBAXNodeSerializer {
 
   /// Whether an element can be acted on, derived from the attributes just read.
   ///
-  /// Nil — an explicit null downstream — when the backend cannot answer. `axIsHittable()` is the witness:
-  /// a backend that has no hittability attribute has none of the others either, and inventing a verdict
-  /// from `enabled` alone would reproduce the very conflation this key exists to replace.
+  /// Nil — an explicit null downstream — when the backend cannot answer. Hittability is checked first
+  /// because a backend that answers nothing carries no hittability attribute, so the guard catches it
+  /// before any other attribute is consulted. Falling back to `enabled` would confuse "disabled" with
+  /// "unreachable", which is the distinction this key exists for.
   ///
   /// Reasons accumulate rather than short-circuit, because an element is often blocked more than one way
   /// and a caller told only the first would fix it and hit the next.
@@ -214,14 +215,24 @@ enum FBAXNodeSerializer {
       reasons.append(.notHittable)
     }
 
+    guard reasons.isEmpty else {
+      return .blocked(reasons: reasons.mostSpecificFirst)
+    }
+
+    // Reachable, nothing against it, and no point to act at. "The read carried no point" and "the server
+    // reports no reachable point" are different facts, and `hittable` being false already caught the
+    // second. The `axIsHittable()` guard assumes a backend answering hittability answers the rest, which
+    // holds while a read fetches the attributes as a group. Where a wire answers hittability and carries
+    // no point, returning `notHittable` would call a reachable element unreachable and give a reason.
+    guard let hittablePoint else {
+      return nil
+    }
+
     // A reachable point makes the element actionable, whether or not that point is its centre. For a
     // partially covered element the centre is exactly what fails and this is the point that does not, so
     // reporting it is the difference between a caller succeeding and a caller being told it cannot act on
     // something it demonstrably can. Nothing is lost by not flagging the divergence: a caller that cares
     // can compare `at` against the frame it already has.
-    guard reasons.isEmpty, let hittablePoint else {
-      return .blocked(reasons: (reasons.isEmpty ? [.notHittable] : reasons).mostSpecificFirst)
-    }
     return .actionable(at: hittablePoint)
   }
 

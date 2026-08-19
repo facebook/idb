@@ -154,14 +154,13 @@ final class FBAXInteractableTests: XCTestCase {
   //
   // The shape a read produces whenever the server answers `isVisible` for an element and declines its
   // visible point.
-  func testHittableWithNoPointFabricatesNotHittable() throws {
+  func testHittableWithNoPointReportsNoVerdict() throws {
     let value = try XCTUnwrap(
-      Self.interactable(Self.node(visiblePoint: nil, centrePoint: nil, userInteractionEnabled: nil))
+      Self.interactable(Self.node(visiblePoint: nil, centrePoint: nil, userInteractionEnabled: nil)),
+      "the key was requested, so it must be present"
     )
 
-    // BUG: manufactures a definite `notHittable` for a question the read never asked — the server said
-    // this element *is* reachable and simply named no point. Flipped in the following commit.
-    XCTAssertEqual(value, .blocked(reasons: [.notHittable]))
+    XCTAssertNil(value, "no point was read, so there is nothing to judge — and no reason to invent one")
   }
 
   // MARK: - Encoding
