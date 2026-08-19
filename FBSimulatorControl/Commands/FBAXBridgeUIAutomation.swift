@@ -85,20 +85,22 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
   func readRawTree(
     for query: FBAccessibilityElementQuery,
     attributes: [String]?,
-    explainUnreachable: Bool
+    explainUnreachable: Bool,
+    strategy: FBAXTraversalStrategy
   ) async throws -> FBAXTreeRead {
     try await translatingSeamErrors {
       if case let .application(pid) = query {
         let response = try await transport.read(
           pid: pid, maxDepth: FBAXReadLimits.maxReadDepth, maxNodes: FBAXReadLimits.maxReadNodes,
-          attributes: attributes, explainUnreachable: explainUnreachable
+          attributes: attributes, explainUnreachable: explainUnreachable, strategy: strategy
         )
         return try FBAXTreeRead(wholeTreeResponse: response, pid: pid)
       }
       let anchor = frontmostAnchor()
       let response = try await transport.readFrontmost(
         x: anchor.x, y: anchor.y, maxDepth: FBAXReadLimits.maxReadDepth, maxNodes: FBAXReadLimits.maxReadNodes,
-        method: frontmostMethod, attributes: attributes, explainUnreachable: explainUnreachable
+        method: frontmostMethod, attributes: attributes, explainUnreachable: explainUnreachable,
+        strategy: strategy
       )
       return try FBAXTreeRead(frontmostResponse: response, method: frontmostMethod)
     }
@@ -144,7 +146,7 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
       do {
         // A poll reads the raw tree directly (not through `describeTree`), so `warnIfTruncated` is not
         // called on every poll iteration — matching the describe-path-only warning.
-        let read = try await self.readRawTree(for: .frontmost, attributes: nil, explainUnreachable: false)
+        let read = try await self.readRawTree(for: .frontmost, attributes: nil, explainUnreachable: false, strategy: .viewHierarchy)
         let elements = FBAXTreeWalk.describeAllElements(
           fromTree: read.tree, keys: FBAXKeys.defaultSet.union([key.serializationKey]), nestedFormat: false, pid: read.pid
         )
@@ -258,6 +260,19 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
     let info = simulator.screenInfo
     return FBSimulatorRemoteAutomation.anchorPoint(
       widthPixels: info?.widthPixels ?? 828, heightPixels: info?.heightPixels ?? 1792, scale: info?.scale ?? 2
+    )
+  }
+
+  /// Warns that the traversal could not answer keys the caller asked for, so a caller can tell "this read
+  /// could not ask" from "the app set nothing". A synchronous witness satisfies the `async` requirement.
+  func warnIfUnsatisfiable(_ keys: Set<FBAXKeys>, strategy: FBAXTraversalStrategy) {
+    guard !keys.isEmpty else {
+      return
+    }
+    _ = simulator.logger.log(
+      "the \(strategy.rawValue) traversal cannot answer "
+        + keys.map(\.rawValue).sorted().joined(separator: ", ")
+        + "; a missing value there means this read could not ask, not that the element has none"
     )
   }
 

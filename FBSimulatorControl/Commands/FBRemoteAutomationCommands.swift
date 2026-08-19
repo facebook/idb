@@ -79,7 +79,8 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
   func readRawTree(
     for query: FBAccessibilityElementQuery,
     attributes: [String]?,
-    explainUnreachable: Bool
+    explainUnreachable: Bool,
+    strategy: FBAXTraversalStrategy
   ) async throws -> FBAXTreeRead {
     let fetchList = attributes ?? FBAXWire.Node.defaultFetchList
     let tree: FBRemoteAutomationElementTree
@@ -311,10 +312,13 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
     )
   }
 
+  /// One traversal on this backend, so nothing a caller asks for is unsatisfiable on strategy grounds.
+  func warnIfUnsatisfiable(_ keys: Set<FBAXKeys>, strategy: FBAXTraversalStrategy) {
+  }
+
   /// Warns when a whole-tree read hit the depth or node bound, so a truncated tree is never passed off
   /// as complete. Called once per describe by the shared `describeTree`, and once per marker write by
   /// `markerCenter`; the `wait` poll reads directly without describing, so it never warns per iteration.
-  /// An actor-isolated witness satisfies the `async` protocol requirement.
   func warnIfTruncated(_ truncated: Bool) {
     guard truncated else { return }
     _ = simulator?.logger.log("Remote-automation read hit the bound (maxDepth \(FBAXReadLimits.maxReadDepth), maxNodes \(FBAXReadLimits.maxReadNodes)); the returned tree is truncated and incomplete.")
@@ -324,7 +328,7 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
   /// the marker write verbs (tap, set-value). Throws `elementNotFound` when nothing matches the marker,
   /// or `elementNotOnScreen` when an element matches but reports no on-screen frame to interact with.
   private func markerCenter(_ markerValue: String, key: FBAXSearchableKey) async throws -> (x: Double, y: Double) {
-    let read = try await readRawTree(for: .frontmost, attributes: nil, explainUnreachable: false)
+    let read = try await readRawTree(for: .frontmost, attributes: nil, explainUnreachable: false, strategy: .viewHierarchy)
     warnIfTruncated(read.truncated)
     let elements = FBAXTreeWalk.describeAllElements(fromTree: read.tree, keys: FBAXKeys.defaultSet.union([key.serializationKey]), nestedFormat: false, pid: read.pid)
     switch FBAXTreeWalk.resolveMarker(inElements: elements, markerValue: markerValue, key: key) {

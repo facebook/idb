@@ -685,6 +685,35 @@ final class FBAXBridgeReadsTests: XCTestCase {
     XCTAssertEqual(reader.truncationWarnings, [true], "one warning carrying the read's flag")
   }
 
+  // The choice is only worth having if it reaches the wire, on every query that reads a tree.
+  func testDescribeTreeCarriesTheChosenTraversalToTheRead() async throws {
+    for query in [FBAccessibilityElementQuery.frontmost, .marker(value: "General", key: .label, depth: 10)] {
+      let reader = StubTreeReader(read: Self.stubRead())
+      _ = try? await reader.describeTree(query, options: FBAccessibilityRequestOptions(traversalStrategy: .semantic))
+      XCTAssertEqual(reader.strategies, [.semantic], "\(query) must carry the caller's choice to the read")
+    }
+  }
+
+  // The warning is what makes an absent field readable as "this traversal could not ask", so it belongs
+  // on the describe that actually reports fields — not only on the marker branch.
+  func testDescribeTreeWarnsAboutTheKeysItsTraversalCannotAnswer() async throws {
+    let reader = StubTreeReader(read: Self.stubRead())
+    _ = try? await reader.describeTree(
+      .frontmost, options: FBAccessibilityRequestOptions(keys: [.type, .label], traversalStrategy: .semantic)
+    )
+    XCTAssertEqual(reader.unsatisfiableWarnings, [[.type]], "a frontmost describe must warn it cannot type")
+  }
+
+  // A view-hierarchy read answers everything, so the warning must carry an empty set rather than be
+  // skipped — an absent warning and a warning about nothing are the same thing to a caller.
+  func testDescribeTreeWarnsAboutNothingOnASatisfiableTraversal() async throws {
+    let reader = StubTreeReader(read: Self.stubRead())
+    _ = try? await reader.describeTree(
+      .frontmost, options: FBAccessibilityRequestOptions(keys: [.type, .label], traversalStrategy: .viewHierarchy)
+    )
+    XCTAssertEqual(reader.unsatisfiableWarnings, [[]], "nothing is unsatisfiable on the view hierarchy")
+  }
+
   // A marker is matched over the *serialized* element, so the searched key is unioned into the read key
   // set — otherwise a marker on a key the caller did not request could never resolve.
   func testDescribeTreeUnionsTheSearchedKeyForAMarker() async throws {
@@ -1595,6 +1624,44 @@ final class FBAXBridgeTeardownLoggingTests: XCTestCase {
   }
 }
 
+/// Choosing a traversal per read.
+final class FBAXTraversalStrategyTests: XCTestCase {
+
+  // The default is what every caller got before the choice existed, so an existing caller cannot be
+  // moved onto a different tree by upgrading.
+  func testTheDefaultTraversalIsTheViewHierarchy() {
+    XCTAssertEqual(FBAccessibilityRequestOptions().traversalStrategy, .viewHierarchy)
+  }
+
+  // The structural traversal answers everything; nothing a caller asks for is unsatisfiable on its
+  // account, so it must never produce a warning.
+  func testTheViewHierarchyCanAnswerEveryKey() {
+    XCTAssertTrue(FBAXTraversalStrategy.viewHierarchy.unsatisfiableKeys.isEmpty)
+    let options = FBAccessibilityRequestOptions(keys: Set(FBAXKeys.allCases), traversalStrategy: .viewHierarchy)
+    XCTAssertTrue(options.unsatisfiableKeys.isEmpty)
+  }
+
+  // The semantic traversal has no element type to give. Naming it is what separates "the app set no
+  // type" from "this read could not ask", which are the same absence in the output otherwise.
+  func testTheSemanticTraversalCannotAnswerTheElementType() {
+    XCTAssertEqual(FBAXTraversalStrategy.semantic.unsatisfiableKeys, [.type])
+  }
+
+  // Only keys the read actually asked for are reported. A caller that never wanted the type should not
+  // be warned about it.
+  func testOnlyRequestedKeysAreReportedUnsatisfiable() {
+    let asking = FBAccessibilityRequestOptions(keys: [.type, .label], traversalStrategy: .semantic)
+    XCTAssertEqual(asking.unsatisfiableKeys, [.type])
+
+    let notAsking = FBAccessibilityRequestOptions(keys: [.label], traversalStrategy: .semantic)
+    XCTAssertTrue(
+      notAsking.unsatisfiableKeys.isEmpty,
+      "a caller that did not ask for the type must not be warned about it, got \(notAsking.unsatisfiableKeys)"
+    )
+  }
+
+}
+
 /// What the transport tells a caller when the in-guest reader disappears mid-request.
 ///
 /// EOF on the serve socket is noticed immediately — that part works — so what is worth covering is the
@@ -1666,6 +1733,10 @@ private final class StubTreeReader: FBAXTreeReader, @unchecked Sendable {
   /// cost is only incurred when the key that needs it was requested.
   private(set) var explainRequests: [Bool] = []
   private(set) var truncationWarnings: [Bool] = []
+  /// The traversal each read asked for — how a test asserts a caller's choice reached the wire.
+  private(set) var strategies: [FBAXTraversalStrategy] = []
+  /// The keys each read reported it could not answer.
+  private(set) var unsatisfiableWarnings: [Set<FBAXKeys>] = []
   private(set) var hitTestPoints: [CGPoint] = []
 
   init(read: FBAXTreeRead, hitTestResult: FBAccessibilityElementsResponse? = nil) {
@@ -1676,12 +1747,18 @@ private final class StubTreeReader: FBAXTreeReader, @unchecked Sendable {
   func readRawTree(
     for query: FBAccessibilityElementQuery,
     attributes: [String]?,
-    explainUnreachable: Bool
+    explainUnreachable: Bool,
+    strategy: FBAXTraversalStrategy
   ) async throws -> FBAXTreeRead {
     readCount += 1
     readAttributes.append(attributes)
     explainRequests.append(explainUnreachable)
+    strategies.append(strategy)
     return read
+  }
+
+  func warnIfUnsatisfiable(_ keys: Set<FBAXKeys>, strategy: FBAXTraversalStrategy) async {
+    unsatisfiableWarnings.append(keys)
   }
 
   func warnIfTruncated(_ truncated: Bool) async {

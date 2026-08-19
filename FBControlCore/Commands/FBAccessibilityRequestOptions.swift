@@ -79,8 +79,34 @@ public enum FBAccessibilityElementFilter: String, Sendable, CaseIterable {
   }
 }
 
-/// Request options for accessibility operations. Consolidates all parameters
-/// needed for an accessibility query.
+/// How a read traverses the application, and therefore which attribute vocabulary answers it.
+///
+/// Not a quality ordering — the two answer different questions. `viewHierarchy` is what the app built:
+/// deep, structural, every container. `semantic` is what an accessibility client sees: flat and labelled.
+/// A caller making structural assertions wants the first; one asking what it can interact with wants the
+/// second.
+///
+/// Chosen per read rather than per backend, and kept separate from persistence and frontmost resolution:
+/// traversal, transport and frontmost are independent. Welding them together is what made the semantic
+/// tree cost a host round trip.
+///
+/// A strategy need not answer everything: `semantic` carries no element type today. A key it cannot
+/// satisfy is warned about rather than silently absent, so "the app set no type" stays distinguishable
+/// from "this read could not ask".
+public enum FBAXTraversalStrategy: String, Sendable, CaseIterable {
+  case viewHierarchy = "view-hierarchy"
+  case semantic = "semantic"
+
+  /// The keys this traversal cannot answer, whatever the caller asks for.
+  public var unsatisfiableKeys: Set<FBAXKeys> {
+    switch self {
+    case .viewHierarchy: []
+    case .semantic: [.type]
+    }
+  }
+}
+
+/// Request options for accessibility operations. Consolidates all parameters needed for a query.
 public struct FBAccessibilityRequestOptions: Sendable {
 
   /// How the read is rendered. Default: `.default` (a flat array).
@@ -169,6 +195,21 @@ public struct FBAccessibilityRequestOptions: Sendable {
   /// Which elements to include in a describe-all read. Default: `.all`.
   public var filter: FBAccessibilityElementFilter
 
+  /// How the read traverses. Default: `.viewHierarchy`, which is what every caller got before this existed.
+  public var traversalStrategy: FBAXTraversalStrategy
+
+  /// The keys this read asked for that its traversal cannot answer. Empty for the default traversal.
+  public var unsatisfiableKeys: Set<FBAXKeys> {
+    serializationKeys.intersection(traversalStrategy.unsatisfiableKeys)
+  }
+
+  /// The same intersection over the marker read's widened key set, so the key it searched on is warned
+  /// about too — a `--match-key type` against a traversal with no type is the case most worth naming,
+  /// and checking against `serializationKeys` alone is exactly the check that misses it.
+  public func unsatisfiableKeys(including extraKeys: Set<FBAXKeys>) -> Set<FBAXKeys> {
+    serializationKeys(including: extraKeys).intersection(traversalStrategy.unsatisfiableKeys)
+  }
+
   public init(
     format: FBAccessibilityOutputFormat = .default,
     keys: Set<FBAXKeys> = FBAXKeys.defaultSet,
@@ -176,7 +217,8 @@ public struct FBAccessibilityRequestOptions: Sendable {
     enableProfiling: Bool = false,
     collectFrameCoverage: Bool = false,
     remoteContentOptions: FBAccessibilityRemoteContentOptions? = nil,
-    filter: FBAccessibilityElementFilter = .all
+    filter: FBAccessibilityElementFilter = .all,
+    traversalStrategy: FBAXTraversalStrategy = .viewHierarchy
   ) {
     self.format = format
     self.keys = keys
@@ -185,11 +227,12 @@ public struct FBAccessibilityRequestOptions: Sendable {
     self.collectFrameCoverage = collectFrameCoverage
     self.remoteContentOptions = remoteContentOptions
     self.filter = filter
+    self.traversalStrategy = traversalStrategy
   }
 }
 
 extension FBAccessibilityRequestOptions: CustomStringConvertible {
   public var description: String {
-    "<FBAccessibilityRequestOptions: format=\(format.rawValue), keys=\(keys), logging=\(enableLogging), profiling=\(enableProfiling), collectFrameCoverage=\(collectFrameCoverage), remote=\(String(describing: remoteContentOptions))>"
+    "<FBAccessibilityRequestOptions: format=\(format.rawValue), keys=\(keys), logging=\(enableLogging), profiling=\(enableProfiling), collectFrameCoverage=\(collectFrameCoverage), remote=\(String(describing: remoteContentOptions)), traversal=\(traversalStrategy.rawValue)>"
   }
 }

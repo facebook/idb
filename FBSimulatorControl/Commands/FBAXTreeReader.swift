@@ -32,11 +32,20 @@ protocol FBAXTreeReader: FBUIAutomation {
   /// `attributes` names what the guest fetches per element, or nil to leave it on its default list.
   /// Derived from the caller's requested keys, so an attribute only reaches the wire when a key that
   /// needs it was asked for.
+  ///
+  /// `strategy` chooses how the tree is traversed, and therefore which vocabulary answers. Per read: the
+  /// same caller wants the structural tree for one question and the semantic one for another.
   func readRawTree(
     for query: FBAccessibilityElementQuery,
     attributes: [String]?,
-    explainUnreachable: Bool
+    explainUnreachable: Bool,
+    strategy: FBAXTraversalStrategy
   ) async throws -> FBAXTreeRead
+
+  /// Warns that the traversal could not answer keys the caller asked for, so a caller can tell "this read
+  /// could not ask" from "the app set nothing". Same contract as `warnIfTruncated`: say what the read
+  /// could not do rather than let the output imply it did.
+  func warnIfUnsatisfiable(_ keys: Set<FBAXKeys>, strategy: FBAXTraversalStrategy) async
 
   /// Warns that a read's tree was truncated by the depth or node bound, so an incomplete tree is never
   /// passed off as whole. Per backend because each logs through its own target; `describeTree` calls it
@@ -74,8 +83,14 @@ extension FBAXTreeReader {
       return response.withProvenance(backend: backend.name, target: query.targetDescriptor)
     case let .marker(value, key, _):
       let markerKeys = options.serializationKeys(including: [key.serializationKey])
-      let read = try await readRawTree(for: query, attributes: FBAXWire.Node.fetchList(for: markerKeys), explainUnreachable: false)
+      let read = try await readRawTree(
+        for: query, attributes: FBAXWire.Node.fetchList(for: markerKeys),
+        explainUnreachable: false, strategy: options.traversalStrategy
+      )
       await warnIfTruncated(read.truncated)
+      await warnIfUnsatisfiable(
+        options.unsatisfiableKeys(including: [key.serializationKey]), strategy: options.traversalStrategy
+      )
       let elements = FBAXTreeWalk.describeAllElements(
         fromTree: read.tree, keys: markerKeys, nestedFormat: false, pid: read.pid
       )
@@ -97,9 +112,11 @@ extension FBAXTreeReader {
         for: query,
         attributes: FBAXWire.Node.fetchList(for: options.serializationKeys),
         // Only a read that asked to name what is in the way pays for the guest to work it out.
-        explainUnreachable: options.keys.contains(.occludedBy)
+        explainUnreachable: options.keys.contains(.occludedBy),
+        strategy: options.traversalStrategy
       )
       await warnIfTruncated(read.truncated)
+      await warnIfUnsatisfiable(options.unsatisfiableKeys, strategy: options.traversalStrategy)
       let walked = FBAXTreeWalk.describeAllElements(
         fromTree: read.tree, keys: options.serializationKeys, nestedFormat: options.nestedFormat, pid: read.pid
       )
@@ -282,7 +299,11 @@ extension FBAXTreeReader {
       }
       return FBAXWriteTarget(point: point, pid: nil, assertion: nil)
     case let .marker(value, key, _):
-      let read = try await readRawTree(for: query, attributes: nil, explainUnreachable: false)
+      // Structural traversal regardless of what a read would have asked for: resolving a write target is
+      // about finding the element to act on, and the semantic traversal cannot name element types.
+      let read = try await readRawTree(
+        for: query, attributes: nil, explainUnreachable: false, strategy: .viewHierarchy
+      )
       await warnIfTruncated(read.truncated)
       // Unfiltered, like the marker branch of `describeTree`: a write resolves the element the caller
       // named, and a caller's `--filter` is about what a read reports, not about what exists to act on.
