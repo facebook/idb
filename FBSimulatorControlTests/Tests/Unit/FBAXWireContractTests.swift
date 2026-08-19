@@ -188,6 +188,7 @@ final class FBAXWireContractTests: XCTestCase {
       .pid: ("pid", "--pid"),
       .maxDepth: ("maxDepth", "--max-depth"),
       .maxNodes: ("maxNodes", "--max-nodes"),
+      .automationMode: ("automationMode", "--automation-mode"),
       .attributes: ("attributes", "--attributes"),
       .translatorVocabulary: ("translatorVocabulary", "--translator-vocabulary"),
       .explainUnreachable: ("explainUnreachable", "--explain-unreachable"),

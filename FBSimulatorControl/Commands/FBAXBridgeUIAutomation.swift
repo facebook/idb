@@ -33,6 +33,13 @@ import Foundation
 // patternlint-disable-next-line unchecked-sendable
 final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
 
+  /// What this lane asks the guest to do about accessibility automation mode.
+  ///
+  /// `nil` means observe and report without touching the device, which is the behaviour every caller has
+  /// today. Kept as one named constant rather than threaded through every read so that changing it is a
+  /// single, reviewable, revertible line rather than an edit at each call site.
+  static let requestedAutomationMode: Bool? = nil
+
   private let simulator: FBSimulator
   private let transport: any FBAXBridgeTransport
 
@@ -92,7 +99,8 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
       if case let .application(pid) = query {
         let response = try await transport.read(
           pid: pid, maxDepth: FBAXReadLimits.maxReadDepth, maxNodes: FBAXReadLimits.maxReadNodes,
-          attributes: attributes, explainUnreachable: explainUnreachable, strategy: strategy
+          attributes: attributes, explainUnreachable: explainUnreachable, strategy: strategy,
+          automationMode: Self.requestedAutomationMode
         )
         return try FBAXTreeRead(wholeTreeResponse: response, pid: pid)
       }
@@ -100,7 +108,7 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
       let response = try await transport.readFrontmost(
         x: anchor.x, y: anchor.y, maxDepth: FBAXReadLimits.maxReadDepth, maxNodes: FBAXReadLimits.maxReadNodes,
         method: frontmostMethod, attributes: attributes, explainUnreachable: explainUnreachable,
-        strategy: strategy
+        strategy: strategy, automationMode: Self.requestedAutomationMode
       )
       return try FBAXTreeRead(frontmostResponse: response, method: frontmostMethod)
     }

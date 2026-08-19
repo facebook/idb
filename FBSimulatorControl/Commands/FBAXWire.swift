@@ -192,6 +192,10 @@ enum FBAXWire {
     case pid
     case maxDepth
     case maxNodes
+    /// Whether this read wants the device in accessibility automation mode. Tri-state: omitted means
+    /// observe without touching the device, which is what a host predating the field sends; `true` and
+    /// `false` each assert that state. Omitted and `false` are different requests.
+    case automationMode
     /// Reads through the accessibility translator's vocabulary rather than XCTest's. Off unless asked
     /// for: the two disagree on some screens, and which one a caller wants is not the reader's choice.
     case translatorVocabulary
@@ -220,6 +224,7 @@ enum FBAXWire {
       case .pid: "--pid"
       case .maxDepth: "--max-depth"
       case .maxNodes: "--max-nodes"
+      case .automationMode: "--automation-mode"
       case .translatorVocabulary: "--translator-vocabulary"
       case .attributes: "--attributes"
       case .explainUnreachable: "--explain-unreachable"

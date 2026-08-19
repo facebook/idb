@@ -52,6 +52,11 @@ static NSString *const kRequestMaxNodes = @"maxNodes";
 // backend fetches alike — and naming them per request is what keeps an attribute nobody asked for off
 // the wire entirely rather than merely out of the serialized output.
 static NSString *const kRequestAttributes = @"attributes";
+// Whether this read wants the device in accessibility automation mode. Tri-state on purpose: **absent**
+// means observe and report without touching the device, which is what a host that does not know about
+// this field gets; `true` and `false` each assert that state. Absent and `false` are not the same thing —
+// one leaves the device alone and the other actively turns the mode off.
+static NSString *const kRequestAutomationMode = @"automationMode";
 // Asks the walk to explain each element the accessibility server reports unreachable, by hit-testing that
 // element's centre and reporting whatever answered. Optional and off by default: it costs an extra AX
 // round trip per unreachable element, and only a caller that intends to use the answer should pay.
@@ -1321,6 +1326,23 @@ static NSDictionary<NSString *, id> *FBAXBridgeDispatchRequest(NSDictionary<NSSt
     frontmostMethod = method;
   }
 
+  // Asserted before the tree is read, not after: the mode decides how much structure the read sees, so
+  // asking for it afterwards would report a state this read did not benefit from.
+  BOOL automationAsserted = NO;
+  BOOL automationEnabled = [runtime automationModeEnabled];
+  id requestedAutomation = request[kRequestAutomationMode];
+  if ([requestedAutomation isKindOfClass:NSNumber.class]) {
+    const BOOL wanted = [(NSNumber *)requestedAutomation boolValue];
+    // Only write when it would change something. A no-op write is still a preference write, and
+    // reporting `asserted` for one would tell a caller this read altered a device it left alone.
+    if (wanted != automationEnabled) {
+      automationEnabled = [runtime setAutomationModeEnabled:wanted];
+      // True only if the write actually took. A preference write can be accepted and not apply, and a
+      // caller told `asserted` for one of those would believe the device is in a mode it is not in.
+      automationAsserted = (automationEnabled == wanted);
+    }
+  }
+
   id root = [runtime applicationElementForProcessIdentifier:pid];
   if (!root) {
     return FBAXBridgeErrorResponse([NSString stringWithFormat:@"no application element for pid %d", pid]);
@@ -1373,11 +1395,9 @@ static NSDictionary<NSString *, id> *FBAXBridgeDispatchRequest(NSDictionary<NSSt
   // does not know the pid until now. `method` rides along when the pid was resolved in-guest.
   NSMutableDictionary *response =
   [@{kResponseOk : @YES, kResponseTree : tree, kResponseTruncated : @(truncated), kResponsePid : @(pid)} mutableCopy];
-  // Observation only at this point: nothing in this request asserts the mode, so `asserted` is always
-  // false here. The field exists now so that the state is visible before anything starts changing it.
   response[kResponseAutomation] = @{
-    kAutomationEnabled : @([runtime automationModeEnabled]),
-    kAutomationAsserted : @NO,
+    kAutomationEnabled : @(automationEnabled),
+    kAutomationAsserted : @(automationAsserted),
   };
   if (frontmostMethod) {
     response[kResponseMethod] = frontmostMethod;
@@ -1641,6 +1661,7 @@ NSDictionary<NSString *, NSString *> *FBAXBridgeWireConstantsForTesting(void)
     @"request.pid" : kRequestPid,
     @"request.maxDepth" : kRequestMaxDepth,
     @"request.maxNodes" : kRequestMaxNodes,
+    @"request.automationMode" : kRequestAutomationMode,
     @"request.attributes" : kRequestAttributes,
     @"request.translatorVocabulary" : kRequestTranslatorVocabulary,
     @"request.explainUnreachable" : kRequestExplainUnreachable,
