@@ -942,6 +942,13 @@ static NSString *const kFrontboardVisibilityEndowment = @"com.apple.frontboard.v
     }
     AXPTranslatorRequest *request = [requestClass requestWithTranslation:translation];
     request.requestType = FBAXPRequestTypeMultipleAttribute;
+    // `clientType` is deliberately left unset, and setting it would be a regression rather than an
+    // improvement. The app-side children handler this request reaches is gated on whether the requesting
+    // client "deserves automation": one that does is answered from the app's own stored `automationElements`
+    // override, and everything else gets a live traversal. Since nothing in the frameworks ever invalidates
+    // that override, an app which leaves a stale one on a long-lived object serves the previous screen to
+    // automation clients and the current screen to everyone else. Presenting no client type is what keeps
+    // this read on the live side of that gate.
     // The handler subscripts `parameters` by this key; an array here throws and takes the reader down.
     request.parameters = @{@"attributes" : attributes};
     @try {

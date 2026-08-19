@@ -276,6 +276,13 @@ static NSArray<NSString *> *FBAXBridgeDefaultFetchList(void)
 //
 // The children key is always appended when absent. It is what the walk recurses on, so a request that
 // omitted it would not narrow the read — it would flatten the tree to its root.
+// Names are forwarded as the caller gave them, deliberately: the vocabulary is far wider than the handful
+// this file names constants for, so filtering against a known set here would reject legitimate attributes.
+//
+// The hazard that leaves is worth knowing. The framework maps each name to a number and drops any it has no
+// number for, then treats the resulting count mismatch as a failure of the whole read — so a single name it
+// does not recognise costs every attribute for that node rather than just itself. A caller that finds a
+// whole read failing after adding one key should suspect the key before suspecting the element.
 static NSArray<NSString *> *FBAXBridgeFetchListForRequest(NSDictionary<NSString *, id> *request)
 {
   id requested = request[kRequestAttributes];

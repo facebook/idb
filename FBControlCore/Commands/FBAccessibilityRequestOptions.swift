@@ -112,6 +112,13 @@ public enum FBAXTraversalStrategy: String, Sendable, CaseIterable {
 
   /// The keys this traversal cannot answer for every element, whatever the caller asks for.
   ///
+  /// Distinct from two things a read can do that no key list describes. **An absent attribute means the app
+  /// answered nothing for it**, and is indistinguishable from an attribute that was never asked for — both
+  /// vocabularies drop a key rather than carry an empty value, and the translator additionally drops a key
+  /// whose failure it could not convert. **A zero is a real answer, not a missing one**: several attributes
+  /// are inherited getters whose default implementation returns zero for every element, so reading `0` means
+  /// the app said zero and not that the read could not ask.
+  ///
   /// A key is listed when the traversal itself — not the app — can leave an element without it.
   /// `semantic` answers `type` from the translator's own role numbering, and only the identified roles
   /// map onto an `XCUIElementType` name, so a missing type on one of its elements may mean the read could
