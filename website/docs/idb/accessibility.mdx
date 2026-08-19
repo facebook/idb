@@ -130,6 +130,23 @@ warning: the companion does not support --format complete (it predates format se
 
 ## When a read comes back empty
 
+:::note Reading a simulator changes one of its settings
+
+`idb ui describe-all --api axbridge` puts the target into accessibility automation mode and **leaves it
+there**. If you inspect a simulator afterwards you will find `AutomationEnabled` set in the
+`com.apple.Accessibility` domain, with nothing obviously responsible for it — this is that.
+
+It is deliberate: the mode is what a UI-test host puts an application into, and reading without it means
+UIKit collapses subtrees and can serve cached children describing a screen that is no longer displayed.
+Restoring it after each read would mean flipping a device-wide setting twice per read, with a window in
+which a concurrent reader sees the wrong value.
+
+`--format complete` reports what happened, under `automation`: `enabled` is the mode the read ran in, and
+`asserted` says whether this read is what turned it on. To read without changing anything, use
+`--api ax`.
+
+:::
+
 A read that reports far fewer elements than the screen shows is usually one of these:
 
 - **The application does not expose its content.** A `WKWebView` or other remote content is a single element to the accessibility system unless the application marks up what is inside it. In the `complete` format this shows as a large gap between the `leaf` and `content` coverage ratios: area the application draws, but does not describe.
@@ -157,3 +174,9 @@ A read that reports far fewer elements than the screen shows is usually one of t
   Unlike `ApplicationAccessibilityEnabled`, this one is **consulted per read rather than at launch**, so it takes effect on an already-running application without a relaunch.
 
   It is a device-wide setting and it affects every accessibility consumer on that simulator, not just your read.
+
+  **`--api axbridge` now asserts this mode on every read.** Three consequences worth knowing before they surprise you:
+
+  - **The setting persists after the read.** A simulator that has served an axbridge read is left in automation mode; nothing restores it when the process exits. That is deliberate — the alternative is flipping a device-wide setting twice per read, with a window in which a concurrent reader sees the wrong value — but it means a later `--api ax` read, or another tool entirely, sees a device someone else configured.
+  - **The read says whether it changed anything.** `--format complete` carries an `automation` object with `enabled` and `asserted`: whether the device was in the mode, and whether this read put it there. A read that found the mode already on reports `asserted: false`.
+  - **The mode can be cleared underneath you.** The accessibility runtime turns it off when an accessibility observer client exits, so it is not something a caller can set once and rely on. Each axbridge read asserts it again, which is why a read that finds it off still returns a correct tree.
