@@ -66,7 +66,7 @@ final class FBAccessibilityElement {
   // MARK: - Serialization
 
   /// Serialize the element to a full response (preserves profiling/coverage data).
-  func serialize(with options: FBAccessibilityRequestOptions) throws -> FBAccessibilityElementsResponse {
+  func serialize(with options: FBAccessibilityRequestOptions) async throws -> FBAccessibilityElementsResponse {
     if closed {
       throw FBAccessibilityError.closedElement(operation: "serialize")
     }
@@ -88,7 +88,7 @@ final class FBAccessibilityElement {
   }
 
   /// Read the string value of a searchable accessibility key from this element.
-  func stringValue(forSearchableKey key: FBAXSearchableKey) throws -> String {
+  func stringValue(forSearchableKey key: FBAXSearchableKey) async throws -> String {
     if closed {
       throw FBAccessibilityError.closedElement(operation: "read from")
     }
@@ -101,7 +101,7 @@ final class FBAccessibilityElement {
   // MARK: - Actions
 
   /// Perform an unconditional accessibility tap (AXPress) without any label verification.
-  func tap() throws {
+  func tap() async throws {
     if closed {
       throw FBAccessibilityError.closedElement(operation: "tap")
     }
@@ -115,7 +115,7 @@ final class FBAccessibilityElement {
   }
 
   /// Perform an accessibility scroll on the element.
-  func scroll(with direction: FBAccessibilityScrollDirection) throws {
+  func scroll(with direction: FBAccessibilityScrollDirection) async throws {
     if closed {
       throw FBAccessibilityError.closedElement(operation: "scroll")
     }
@@ -123,7 +123,7 @@ final class FBAccessibilityElement {
   }
 
   /// Set the accessibility value of the element (e.g., text field content, slider position).
-  func setValue(_ value: String) throws {
+  func setValue(_ value: String) async throws {
     if closed {
       throw FBAccessibilityError.closedElement(operation: "set value on")
     }
@@ -133,7 +133,7 @@ final class FBAccessibilityElement {
   // MARK: - Geometry
 
   /// The element's frame in screen points. The element must be open.
-  func frame() throws -> CGRect {
+  func frame() async throws -> CGRect {
     if closed {
       throw FBAccessibilityError.closedElement(operation: "read the frame of")
     }
@@ -154,7 +154,7 @@ final class FBAccessibilityElement {
   /// transferred to a new handle wrapping the found element, and the receiver is
   /// closed without popping. If not found, the receiver is closed and an error
   /// is thrown.
-  func findElement(withValue value: String, forKey key: FBAXSearchableKey, depth: UInt) throws -> FBAccessibilityElement {
+  func findElement(withValue value: String, forKey key: FBAXSearchableKey, depth: UInt) async throws -> FBAccessibilityElement {
     // The legacy accessibility tree is composed entirely of `AXPMacPlatformElement`, so any matched
     // descendant is writable; the cast is total in practice. A (structurally impossible) read-only
     // match is reported as not-found rather than wrapped in a handle whose actions could not dispatch.

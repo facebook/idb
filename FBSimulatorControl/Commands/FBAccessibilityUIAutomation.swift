@@ -32,7 +32,7 @@ final class FBAccessibilityUIAutomation: FBUIAutomation, @unchecked Sendable {
     try await Self.translatingSeamErrors(query) {
       let element = try await operations.resolveElement(for: query)
       defer { element.close() }
-      let response = try element.serialize(with: options)
+      let response = try await element.serialize(with: options)
         .withProvenance(backend: FBUIAutomationBackend.accessibility.name, target: query.targetDescriptor)
       // A point or marker resolves one element and is then serialized through the frontmost path, which
       // reads screen bounds off whatever element it is handed. For those queries that element is the
@@ -80,7 +80,7 @@ final class FBAccessibilityUIAutomation: FBUIAutomation, @unchecked Sendable {
     do {
       let element = try await operations.resolveElement(for: .point(point))
       defer { element.close() }
-      return try element.serialize(with: options)
+      return try await element.serialize(with: options)
         .withProvenance(backend: FBUIAutomationBackend.accessibility.name, target: .point(point))
     } catch let error as FBAccessibilityError {
       // A point that resolves to no element is a valid empty hit-test result, not a failure.
@@ -103,14 +103,14 @@ final class FBAccessibilityUIAutomation: FBUIAutomation, @unchecked Sendable {
       let element = try await operations.resolveElement(for: query)
       defer { element.close() }
       if let assertion = options.assertion {
-        let actual = try element.stringValue(forSearchableKey: assertion.key)
+        let actual = try await element.stringValue(forSearchableKey: assertion.key)
         guard actual == assertion.value else {
           throw FBUIAutomationError.valueMismatch(
             backend: .accessibility, key: assertion.key.rawValue, expected: assertion.value, actual: actual
           )
         }
       }
-      try element.tap()
+      try await element.tap()
     }
   }
 
@@ -118,7 +118,7 @@ final class FBAccessibilityUIAutomation: FBUIAutomation, @unchecked Sendable {
     try await Self.translatingSeamErrors(query) {
       let element = try await operations.resolveElement(for: query)
       defer { element.close() }
-      try element.setValue(value)
+      try await element.setValue(value)
     }
   }
 
@@ -149,7 +149,7 @@ final class FBAccessibilityUIAutomation: FBUIAutomation, @unchecked Sendable {
     try await Self.translatingSeamErrors(query) {
       let element = try await operations.resolveElement(for: query)
       defer { element.close() }
-      try element.scroll(with: direction)
+      try await element.scroll(with: direction)
     }
   }
 
@@ -157,7 +157,7 @@ final class FBAccessibilityUIAutomation: FBUIAutomation, @unchecked Sendable {
     try await Self.translatingSeamErrors(query) {
       let element = try await operations.resolveElement(for: query)
       defer { element.close() }
-      return try element.frame()
+      return try await element.frame()
     }
   }
 }
