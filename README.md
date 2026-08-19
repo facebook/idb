@@ -15,7 +15,7 @@ We've given a talk about `idb` at F8, so that you can learn more about what `idb
 
 ## Quick Start
 
-`idb` is made up of 2 major components, each of which needs to be installed separately.
+`idb` is made up of 2 major components, both of which are installed by a single brew formula.
 
 ### `idb` companion
 
@@ -24,8 +24,7 @@ Each target (simulator/device) will have a companion process attached allowing `
 The `idb` companion can be installed via brew or built from [source](https://github.com/facebook/idb)
 
 ```
-brew tap facebook/fb
-brew install idb-companion
+brew install facebook/fb/idb
 ```
 Note: Instructions on how to install brew can be found [here](https://brew.sh)
 
@@ -33,7 +32,7 @@ Note: Instructions on how to install brew can be found [here](https://brew.sh)
 
 A cli tool and python client is provided to interact with `idb`.
 
-It can be installed via pip:
+It is installed alongside the companion by the brew formula above. It can also be installed separately via pip (releases publish to PyPI):
 
 ```
 pip3 install fb-idb
@@ -76,7 +75,7 @@ Head over [to the main documentation](https://www.fbidb.io) for more details on 
 
 ### Prerequisites
 
-- **Xcode 26.0+**
+- **macOS 15+** with **Xcode 26.0+**
 - **XcodeGen**: `brew install xcodegen`
 - **For idb_companion**: protobuf and gRPC Swift plugins
   ```
