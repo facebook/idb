@@ -28,7 +28,7 @@ enum FBAXBridgeSocket {
   /// as nothing listening. The serve loop only ever handles one client at a time, so the backlog exists
   /// purely to keep a probe from being refused while somebody else is connected. Pinned guest-side by
   /// `AccessibilityServiceTests`.
-  static let guestListenBacklog: Int32 = 1
+  static let guestListenBacklog: Int32 = 16
 
   static func path(forConnection identifier: String) -> String {
     "\(directory)/\(prefix)\(identifier)\(suffix)"

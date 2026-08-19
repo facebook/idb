@@ -272,9 +272,7 @@ static NSDictionary *FBAXTestsParse(NSData *data)
 // really does mean the guest has gone. Mirrored host-side as `FBAXBridgeSocket.guestListenBacklog`.
 - (void)testTheServeBacklogIsPinned
 {
-  // BUG: one waiting client fills the queue, so the next probe is refused and the reaper deletes a live
-  // guest's socket — raised in the following commit.
-  XCTAssertEqual(FBAXBridgeServeBacklogForTesting(), 1);
+  XCTAssertEqual(FBAXBridgeServeBacklogForTesting(), 16);
 }
 
 #pragma mark - Modal detection

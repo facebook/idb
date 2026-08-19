@@ -107,15 +107,15 @@ final class FBAXBridgeReapTests: XCTestCase {
     return clients
   }
 
-  // A live guest can be refused, and the reaper cannot tell that from a guest that has gone. The serve
-  // loop handles one client at a time, so a second host connecting sits in the accept queue — and with
-  // the backlog the guest listens with, one waiting connection fills it. On BSD a connect to a Unix
-  // socket whose queue is full fails with `ECONNREFUSED`, the same errno as nothing being bound at all.
+  // A refused connection is what the reaper reads as "the guest has gone", and on BSD a full accept queue
+  // is refused with the same errno as nothing being bound. The serve loop handles one client at a time,
+  // so a second host sits in the queue — and the backlog is what decides whether the probe after it is
+  // queued or refused. With room, a live guest is correctly reported busy and keeps its socket.
   //
-  // The reaper reads that as a stale file and unlinks it, so a healthy guest with a client attached
-  // loses its socket and is left running with no path back to it: unreachable and unreapable at once.
-  // Reachable whenever two hosts touch one simulator, which is the normal case here.
-  func testALiveGuestWhoseBacklogIsFullHasItsSocketDeleted() throws {
+  // Sized off the guest's real backlog rather than a number chosen here, so this tracks the guest: if the
+  // backlog is ever reduced to one again, this fails rather than quietly going back to deleting a live
+  // guest's socket.
+  func testALiveGuestWithAClientQueuedKeepsItsSocket() throws {
     let path = socketPath()
     let listener = try startFakeGuest(at: path, answering: false, backlog: FBAXBridgeSocket.guestListenBacklog)
     defer { close(listener) }
@@ -124,11 +124,9 @@ final class FBAXBridgeReapTests: XCTestCase {
 
     let summary = FBAXBridgeReap.reapIdleGuests(inDirectory: directory, probeTimeout: 1)
 
-    // BUG: a live listener's socket is removed as though the guest had gone — flipped in the following
-    // commit, where the guest gains enough backlog for the probe to queue instead of being refused.
-    XCTAssertEqual(summary.removedStaleSockets, [path])
-    XCTAssertFalse(FileManager.default.fileExists(atPath: path), "BUG: the live guest's socket is gone")
-    XCTAssertTrue(summary.busy.isEmpty)
+    XCTAssertEqual(summary.busy, [path])
+    XCTAssertTrue(summary.removedStaleSockets.isEmpty, "a live guest's socket must survive the reap")
+    XCTAssertTrue(FileManager.default.fileExists(atPath: path))
   }
 
   func testAGuestThatAnswersIsReaped() throws {

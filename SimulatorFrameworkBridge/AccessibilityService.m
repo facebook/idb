@@ -68,13 +68,6 @@ static NSString *const kRequestTranslatorVocabulary = @"translatorVocabulary";
 // The synthetic per-node key the explanation is reported under. Not an `XC_kAXXC*` attribute — the
 // accessibility server does not vend this; the reader derives it — so it is spelled in the reader's own
 // namespace to keep the two kinds of key distinguishable on the wire.
-// The `serve` accept queue. The loop handles one client at a time, so the queue exists only to hold a
-// probe while another host is connected. The reaper deletes a socket whose connect is refused, and a
-// full queue is refused with the same errno as nothing being bound — so every free slot here is one
-// more reason a refusal really does mean the guest has gone. Mirrored host-side as
-// `FBAXBridgeSocket.guestListenBacklog`.
-static const int kServeBacklog = 1;
-
 static NSString *const kNodeExplainedBy = @"FBExplainedBy";
 // The translator's own `enabled` answer, in the reader's namespace for the same reason: XCTest's
 // vocabulary has no counterpart, which is exactly why a read through it reports `enabled` as an explicit
@@ -1329,6 +1322,13 @@ static NSDictionary<NSString *, id> *FBAXBridgeDispatchRequest(NSDictionary<NSSt
 }
 
 #pragma mark - Persistent serve transport
+
+// The `serve` accept queue. The loop handles one client at a time, so the queue exists only to hold a
+// probe while another host is connected. The reaper deletes a socket whose connect is refused, and a
+// full queue is refused with the same errno as nothing being bound — so every free slot here is one
+// more reason a refusal really does mean the guest has gone. Mirrored host-side as
+// `FBAXBridgeSocket.guestListenBacklog`.
+static const int kServeBacklog = 16;
 
 static BOOL FBAXBridgeWriteFully(int fd, const void *buffer, size_t length)
 {
