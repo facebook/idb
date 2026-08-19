@@ -1018,6 +1018,12 @@ static NSDictionary *FBAXTestsPress(void)
   XCTAssertEqual(FBAXPAttributeVisiblePoint, 112);
   XCTAssertEqual(FBAXPAttributeTraits, 77);
   XCTAssertEqual(FBAXPAttributeMemoryAddress, 128);
+  XCTAssertEqual(FBAXPAttributeIsElement, 26);
+  XCTAssertEqual(FBAXPAttributeWindowSections, 79);
+  XCTAssertEqual(FBAXPAttributeContainerType, 80);
+  XCTAssertEqual(FBAXPAttributeViewControllerDescription, 82);
+  XCTAssertEqual(FBAXPAttributeUserInputLabels, 87);
+  XCTAssertEqual(FBAXPAttributeCustomContent, 89);
   XCTAssertEqual(FBAXPAttributeChildren, 8);
   XCTAssertEqual(FBAXPAttributeChildrenInNavigationOrder, 9);
   XCTAssertEqual(FBAXPAttributeLabel, 33);
