@@ -557,6 +557,83 @@ typedef struct FBAXPair {
   XCTAssertTrue([runtime setAutomationModeEnabled:YES], @"a write that takes reads back as the new state");
 }
 
+#pragma mark - Automation mode on the describe path
+
+// The tri-state the wire carries, driven end to end through the request handler rather than against the
+// runtime directly, because the thing that can regress is the handler's decision about when to write.
+
+// ABSENT is the case most likely to break silently: a host that does not know about this field, or a
+// caller that does not care, must leave the device exactly as it found it.
+- (void)testAnAbsentAutomationFieldMutatesNothing
+{
+  _runtime.applicationElements[@(kAppPid)] = [FBAXFakeElement readable:@"UIApplication"];
+  _runtime.automationMode = NO;
+
+  NSDictionary *response = FBAXBridgeHandleRequest(@{@"verb" : @"describe", @"pid" : @(kAppPid)});
+
+  XCTAssertEqualObjects(_runtime.automationModeWrites, @[], @"an absent field must not write");
+  XCTAssertEqualObjects(response[@"automation"][@"enabled"], @NO, @"the state is still reported");
+  XCTAssertEqualObjects(response[@"automation"][@"asserted"], @NO);
+}
+
+- (void)testRequestingAutomationModeAssertsItAndSaysSo
+{
+  _runtime.applicationElements[@(kAppPid)] = [FBAXFakeElement readable:@"UIApplication"];
+  _runtime.automationMode = NO;
+
+  NSDictionary *response =
+  FBAXBridgeHandleRequest(@{@"verb" : @"describe", @"pid" : @(kAppPid), @"automationMode" : @YES});
+
+  XCTAssertEqualObjects(_runtime.automationModeWrites, @[@YES]);
+  XCTAssertEqualObjects(response[@"automation"][@"enabled"], @YES);
+  XCTAssertEqualObjects(response[@"automation"][@"asserted"], @YES, @"this read changed the device");
+}
+
+// A no-op write is still a preference write, and `asserted` on one would tell a caller this read altered
+// a device it left alone.
+- (void)testRequestingAModeTheDeviceIsAlreadyInWritesNothing
+{
+  _runtime.applicationElements[@(kAppPid)] = [FBAXFakeElement readable:@"UIApplication"];
+  _runtime.automationMode = YES;
+
+  NSDictionary *response =
+  FBAXBridgeHandleRequest(@{@"verb" : @"describe", @"pid" : @(kAppPid), @"automationMode" : @YES});
+
+  XCTAssertEqualObjects(_runtime.automationModeWrites, @[], @"nothing to change, so nothing is written");
+  XCTAssertEqualObjects(response[@"automation"][@"enabled"], @YES);
+  XCTAssertEqualObjects(response[@"automation"][@"asserted"], @NO, @"it was already in that mode");
+}
+
+// Explicitly false is a different request from absent: it turns the mode off rather than leaving it be.
+- (void)testRequestingAutomationModeOffTurnsItOff
+{
+  _runtime.applicationElements[@(kAppPid)] = [FBAXFakeElement readable:@"UIApplication"];
+  _runtime.automationMode = YES;
+
+  NSDictionary *response =
+  FBAXBridgeHandleRequest(@{@"verb" : @"describe", @"pid" : @(kAppPid), @"automationMode" : @NO});
+
+  XCTAssertEqualObjects(_runtime.automationModeWrites, @[@NO]);
+  XCTAssertEqualObjects(response[@"automation"][@"enabled"], @NO);
+  XCTAssertEqualObjects(response[@"automation"][@"asserted"], @YES);
+}
+
+// The readback is the point. A preference write can be accepted and silently not apply, and a caller
+// told `asserted` for one of those would believe the device is in a mode it is not in.
+- (void)testAWriteThatDoesNotTakeIsReportedRatherThanAssumed
+{
+  _runtime.applicationElements[@(kAppPid)] = [FBAXFakeElement readable:@"UIApplication"];
+  _runtime.automationMode = NO;
+  _runtime.automationModeWriteFails = YES;
+
+  NSDictionary *response =
+  FBAXBridgeHandleRequest(@{@"verb" : @"describe", @"pid" : @(kAppPid), @"automationMode" : @YES});
+
+  XCTAssertEqualObjects(_runtime.automationModeWrites, @[@YES], @"the write was attempted");
+  XCTAssertEqualObjects(response[@"automation"][@"enabled"], @NO, @"and the device is still not in it");
+  XCTAssertEqualObjects(response[@"automation"][@"asserted"], @NO, @"so the read must not claim it was");
+}
+
 #pragma mark - Write dispatch
 
 // Seeds the hit-test so a point-addressed write lands on an element reporting `attributes`, and hands the
