@@ -14,7 +14,6 @@ from collections.abc import Sequence
 from concurrent.futures import CancelledError
 from types import TracebackType
 from typing import Any, AsyncContextManager, Optional, Tuple, Type
-from uuid import uuid4
 
 import idb.common.plugin as plugin
 from idb.common.types import LoggingMetadata
@@ -32,7 +31,6 @@ def _initial_info(
         self_meta: LoggingMetadata | None = getattr(args[0], "metadata", None)
         if self_meta:
             _metadata.update(self_meta)
-    _metadata["event_uuid"] = str(uuid4())
     start = int(time.time())
     return (_metadata, start)
 

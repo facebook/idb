@@ -119,12 +119,8 @@ class LogCallEventIdentityTest(TestCase):
 
         with mock.patch.object(plugin, "PLUGINS", [telemetry]):
             await fetch()
-        # Pinned: every decorated invocation stamps a fresh event_uuid into
-        # its metadata, shared by the started and terminal dispatches —
-        # dropped in the following commit.
-        started_uuid = telemetry.started[0].get("event_uuid")
-        self.assertEqual(len(str(started_uuid)), 36)
-        self.assertEqual(telemetry.succeeded[0].get("event_uuid"), started_uuid)
+        self.assertNotIn("event_uuid", telemetry.started[0])
+        self.assertNotIn("event_uuid", telemetry.succeeded[0])
 
 
 class LogCallCancellationTest(TestCase):
