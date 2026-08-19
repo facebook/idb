@@ -128,7 +128,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     options.enableLogging = true
     options.enableProfiling = enableProfiling
 
-    let response = try! element.serialize(with: options)
+    let response = try element.serialize(with: options)
     element.close()
 
     let result = response.legacyElementsObject() as! [Any]
@@ -247,7 +247,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     options.enableLogging = true
     options.enableProfiling = enableProfiling
 
-    let response = try! element.serialize(with: options)
+    let response = try element.serialize(with: options)
     element.close()
 
     let result = response.legacyElementsObject() as! [String: Any]
@@ -277,7 +277,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     options.enableLogging = true
     options.enableProfiling = enableProfiling
 
-    let response = try! element.serialize(with: options)
+    let response = try element.serialize(with: options)
     element.close()
 
     let result = response.legacyElementsObject() as! [Any]
@@ -398,7 +398,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     options.enableLogging = true
     options.enableProfiling = enableProfiling
 
-    let response = try! element.serialize(with: options)
+    let response = try element.serialize(with: options)
     element.close()
 
     let result = response.legacyElementsObject() as! [Any]
@@ -462,7 +462,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     options.enableLogging = true
     options.enableProfiling = enableProfiling
 
-    let response = try! element.serialize(with: options)
+    let response = try element.serialize(with: options)
     element.close()
 
     let result = response.legacyElementsObject() as! [String: Any]
@@ -631,16 +631,16 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     let element = try await simulator.resolveElement(for: .point(CGPoint(x: 95, y: 772)))
 
     // Read the label using the decomposed API and verify it
-    let label = try! element.stringValue(forSearchableKey: .label)
+    let label = try element.stringValue(forSearchableKey: .label)
     XCTAssertEqual(label, "OK")
 
     // Perform the unconditional tap
-    try! (element as FBAccessibilityElement).tap()
+    try (element as FBAccessibilityElement).tap()
 
     // Serialize and verify structure — same expected dict as element-at-point tests
     var options = FBAccessibilityRequestOptions()
     options.format = .nested
-    let response = try! element.serialize(with: options)
+    let response = try element.serialize(with: options)
 
     let result = response.legacyElementsObject() as! [String: Any]
     let expected: [String: Any] = [
