@@ -151,8 +151,12 @@ public struct FBAccessibilityRequestOptions: Sendable {
   ///
   /// The enrichers that run over the serialized model widen it too. They read the model rather than the
   /// live element, so an attribute the read did not serialize is one they cannot see: a narrow `--key`
-  /// would otherwise silently disable them rather than narrow the output. The cost is only in bytes —
-  /// the walk fetches the frame for every node regardless of the key set.
+  /// would otherwise silently disable them rather than narrow the output. For those the cost is only in
+  /// bytes — the walk fetches the frame for every node regardless of the key set.
+  ///
+  /// That is not true of every widening. `interactable` and `occludedBy` add attributes the application
+  /// has to hit-test to answer, for every node in the tree. Adding either to this set costs far more than
+  /// the extra bytes.
   public var serializationKeys: Set<FBAXKeys> {
     Self.serializationKeys(for: keys, format: format, filter: filter, collectFrameCoverage: collectFrameCoverage)
   }

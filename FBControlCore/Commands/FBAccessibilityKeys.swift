@@ -33,8 +33,14 @@ public enum FBAXKeys: String, Sendable, CaseIterable {
   case hidden = "hidden"
   case focused = "focused"
   case isRemote = "is_remote"
-  /// Whether the element can be acted on, and why not when it cannot. Deliberately out of `defaultSet`:
-  /// it costs four extra attributes per element on the guest wire, so only a caller that asks pays.
+  /// Whether the element can be acted on, and why not when it cannot.
+  ///
+  /// Not in `defaultSet`, and it should stay out. `isVisible` and `visiblePoint` cannot be looked up: the
+  /// application hit-tests the element to answer them, so requesting them for a whole tree makes it
+  /// hit-test every node. The cost is per node and much larger than the extra bytes suggest.
+  ///
+  /// Only the guest lanes are affected. `axIsHittable()` returns nil on the translator lane, which has no
+  /// equivalent attributes, so the verdict is null there and nothing extra is fetched.
   case interactable = "interactable"
   /// Names the element covering an occluded element's centre, under `interactable`'s `occluded` reason.
   /// The only key that costs extra round trips — one hit-test per occluded element — so it is separate
