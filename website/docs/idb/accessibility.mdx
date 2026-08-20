@@ -217,8 +217,19 @@ A read that reports far fewer elements than the screen shows is usually one of t
 
   It is a device-wide setting and it affects every accessibility consumer on that simulator, not just your read.
 
-  **`--api axbridge` now asserts this mode on every read.** Three consequences worth knowing before they surprise you:
+  **`--api axbridge` now asserts this mode on every read.** Four consequences worth knowing before they surprise you:
 
   - **The setting persists after the read.** A simulator that has served an axbridge read is left in automation mode; nothing restores it when the process exits. That is deliberate — the alternative is flipping a device-wide setting twice per read, with a window in which a concurrent reader sees the wrong value — but it means a later `--api ax` read, or another tool entirely, sees a device someone else configured.
   - **The read says whether it changed anything.** `--format complete` carries an `automation` object with `enabled` and `asserted`: whether the device was in the mode, and whether this read put it there. A read that found the mode already on reports `asserted: false`.
   - **The mode can be cleared underneath you.** The accessibility runtime turns it off when an accessibility observer client exits, so it is not something a caller can set once and rely on. Each axbridge read asserts it again, which is why a read that finds it off still returns a correct tree.
+  - **Reads get slower, and a caller with a tuned timeout may fail in a way that does not look like a timeout.** The mode is what makes the tree correct — subtrees that were collapsed are now exposed — and a bigger tree costs more to walk. On a small screen the difference is lost in fixed overhead; on a large production application, paired measurements on one binary put it at roughly **1.8× wall clock** for about 15% more reported elements. See below.
+
+  ### If you poll or wait on a read, check the budget
+
+  This is the one consequence that has already caught a caller, and it is worth stating plainly because of how it presents.
+
+  A poll loop with a four-second budget was generous when a read took a few hundred milliseconds. If a single read now takes five or six seconds, the budget expires *during the first read*: the loop gets one attempt, against a screen that may not have finished transitioning when that attempt started. The failure surfaces as **the thing being waited for never arrived** — a correctness-shaped report with a timing cause — rather than as a timeout.
+
+  Any caller whose waits were calibrated against pre-assertion latency should re-check them. A budget that assumed several attempts should be raised until it affords several attempts again, and preferably made configurable rather than re-guessed.
+
+  Two things make this easy to miss. The read still succeeds, so nothing logs an error; and the tree it returns is *more* correct than before, so the change that caused the failure is the change that fixed a different one.
