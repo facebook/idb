@@ -134,6 +134,15 @@ enum FBAXWire {
     case pid
     case modal
     case automation
+    case phases
+  }
+
+  /// Keys of the envelope's `phases` object — what the guest measured of its own work. The host's own
+  /// phases are not here: it measures those itself, and a duration is only trustworthy from the process
+  /// that holds both ends of it.
+  enum Phase: String {
+    case traverse = "traverse_ms"
+    case machRoundTrips = "mach_round_trips"
   }
 
   /// Keys of the envelope's `automation` object: the device's accessibility automation mode as it stood

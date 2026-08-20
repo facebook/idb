@@ -30,6 +30,41 @@ struct FBAXTreeRead: @unchecked Sendable {
   /// field, which is why it is optional rather than defaulted — "an older guest did not say" and "the
   /// device was not in automation mode" are different facts and must not collapse.
   var automation: FBAccessibilityAutomationState?
+  /// What the guest measured of its own work, and what the host measured around the wire.
+  ///
+  /// Separate from `automation` because they answer different questions and one can be present without
+  /// the other: a guest predating the phases still reports its mode, and a read that failed to parse
+  /// still cost the host a round trip.
+  var timings: FBAXReadTimings?
+  /// The guest's reported phases, taken off the envelope this read already parsed. Held so the host does
+  /// not parse the response a second time to read two numbers out of it — on a large tree that second
+  /// parse costs as much as the first.
+  var phases: (traverse: CFAbsoluteTime?, machRoundTrips: Int64?) = (nil, nil)
+}
+
+/// Where a guest-backed read's time went, from both sides of the boundary.
+///
+/// The host cannot see inside the guest and the guest cannot time its own encoding — the encode duration
+/// is only known once the dictionary carrying it is already bytes. So `residual` is named as what it is:
+/// the round trip less the walk, holding spawn or connect, the guest's bind, its JSON encoding and the
+/// IPC itself. On a one-shot read it is expected to be most of the total, and saying "residual" rather
+/// than "spawn" keeps that a finding rather than an assumption.
+struct FBAXReadTimings: Equatable {
+  /// Wall time of the whole transport call, host-side: request out, guest work, response back.
+  let roundTrip: CFAbsoluteTime
+  /// Decoding the guest's JSON, host-side. One half of a boundary these payloads cross twice.
+  let decode: CFAbsoluteTime
+  /// The guest's own walk, as it reported it.
+  let traverse: CFAbsoluteTime?
+  /// Round trips to the application's accessibility server, as the guest counted them.
+  let machRoundTrips: Int64?
+  /// Bytes the guest sent back.
+  let responseBytes: Int64
+
+  /// The round trip less the guest's walk: acquisition, bind, guest encoding and IPC, undivided.
+  var residual: CFAbsoluteTime {
+    max(0, roundTrip - (traverse ?? 0))
+  }
 }
 
 // MARK: - Guest JSON response parsing
@@ -39,6 +74,17 @@ extension FBAXTreeRead {
 
   init(tree: [String: Any], pid: pid_t, truncated: Bool, modal: FBAccessibilityModalInfo?) {
     self.init(tree: tree, pid: pid, truncated: truncated, modal: modal, automation: nil)
+  }
+
+  /// The guest's reported phases, or nil from a guest predating them.
+  static func guestPhases(fromResponse response: [String: Any]) -> (traverse: CFAbsoluteTime?, machRoundTrips: Int64?) {
+    guard let phases = response[FBAXWire.Envelope.phases.rawValue] as? [String: Any] else {
+      return (nil, nil)
+    }
+    // Milliseconds on the wire, seconds in the model, matching every other duration here.
+    let traverse = (phases[FBAXWire.Phase.traverse.rawValue] as? Double).map { $0 / 1000 }
+    let roundTrips = (phases[FBAXWire.Phase.machRoundTrips.rawValue] as? NSNumber)?.int64Value
+    return (traverse, roundTrips)
   }
 
   /// The envelope's automation object, or nil when the guest did not send one.
@@ -69,6 +115,7 @@ extension FBAXTreeRead {
       tree: tree, pid: pid, truncated: truncated, modal: Self.modal(fromResponse: response),
       automation: Self.automation(fromResponse: response)
     )
+    self.phases = Self.guestPhases(fromResponse: response)
   }
 
   /// Parses a fused frontmost read (the guest resolved the frontmost app and read its tree in one
@@ -101,6 +148,7 @@ extension FBAXTreeRead {
       tree: tree, pid: pid, truncated: truncated, modal: Self.modal(fromResponse: response),
       automation: Self.automation(fromResponse: response)
     )
+    self.phases = Self.guestPhases(fromResponse: response)
   }
 
   /// Parses a system-wide hit-test read: the hit node and the owning pid of the element there (the host

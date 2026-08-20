@@ -56,6 +56,31 @@ protocol FBAXTreeReader: FBUIAutomation {
   /// cached children. Per backend for the same reason as `warnIfTruncated` — each logs through its own
   /// target — and called only on a whole-tree describe, since a single element has no ratio to judge.
   func warnIfGeometrySuspect(_ frames: FBAccessibilityFrameSummary?) async
+
+  /// Where this read spent its time, in whatever shape this backend measures. Nil from a backend that
+  /// does not measure — which is not the same as a read that took no time, and is why this is optional
+  /// rather than a zeroed profile.
+  func profile(
+    for read: FBAXTreeRead, elementCount: Int, serializeDuration: CFAbsoluteTime
+  ) -> FBAccessibilityProfile?
+}
+
+extension FBAXTreeReader {
+
+  /// Elements in the serialized read, counted through `children`.
+  ///
+  /// The `complete` format is always nested, so the top level is a single root and `count` would report 1
+  /// for any tree — where the translator lane counts every node.
+  static func nodeCount(of elements: [FBAccessibilityDocumentElement]) -> Int {
+    elements.reduce(0) { $0 + 1 + nodeCount(of: $1.children ?? []) }
+  }
+
+  /// Backends that do not measure report nothing rather than zeroes.
+  func profile(
+    for read: FBAXTreeRead, elementCount: Int, serializeDuration: CFAbsoluteTime
+  ) -> FBAccessibilityProfile? {
+    nil
+  }
 }
 
 /// Where a point-addressed write lands, and what the element there must still be for it to go ahead.
@@ -122,6 +147,7 @@ extension FBAXTreeReader {
       )
       await warnIfTruncated(read.truncated)
       await warnIfUnsatisfiable(options.unsatisfiableKeys, strategy: options.traversalStrategy)
+      let serializeStarted = CFAbsoluteTimeGetCurrent()
       let walked = FBAXTreeWalk.describeAllElements(
         fromTree: read.tree, keys: options.serializationKeys, nestedFormat: options.nestedFormat, pid: read.pid
       )
@@ -129,6 +155,9 @@ extension FBAXTreeReader {
       let elements = try await refiningInteractable(
         options.filter.apply(to: walked), screen: screen, options: options
       )
+      // Closed here, after the walk is serialized and refined and before the response is assembled, so
+      // it measures turning the read into what the caller asked for.
+      let serializeDuration = CFAbsoluteTimeGetCurrent() - serializeStarted
       // Coverage is a calculation over the serialized model, so it is the same one the accessibility
       // backend runs — a whole-tree read reports it whichever backend served it. Remote-content
       // discovery is accessibility-only, so `additional` stays absent here.
@@ -144,7 +173,11 @@ extension FBAXTreeReader {
       // they see, and advice about a tree they were not shown would be unactionable.
       await warnIfGeometrySuspect(FBAccessibilityFrameSummary(elements: elements))
       return FBAccessibilityElementsResponse(
-        elements: .tree(elements), coverage: coverage, modal: read.modal, automation: read.automation
+        elements: .tree(elements),
+        profilingData: profile(
+          for: read, elementCount: Self.nodeCount(of: elements), serializeDuration: serializeDuration
+        ),
+        coverage: coverage, modal: read.modal, automation: read.automation
       )
       .withProvenance(
         backend: backend.name,

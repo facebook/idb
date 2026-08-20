@@ -98,6 +98,22 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
     }
   }
 
+  /// Assembles what both sides measured. The phases come off the envelope `FBAXTreeRead` already parsed,
+  /// so this adds a dictionary lookup rather than a second parse of the whole tree.
+  private static func timings(
+    response: Data, sent: CFAbsoluteTime, returned: CFAbsoluteTime, read: FBAXTreeRead
+  ) -> FBAXReadTimings {
+    let decoded = CFAbsoluteTimeGetCurrent()
+    let phases = read.phases
+    return FBAXReadTimings(
+      roundTrip: returned - sent,
+      decode: decoded - returned,
+      traverse: phases.traverse,
+      machRoundTrips: phases.machRoundTrips,
+      responseBytes: Int64(response.count)
+    )
+  }
+
   /// Reads the whole bounded attribute tree a query targets, through the configured transport (one-shot
   /// spawn or persistent socket). `.application` reads the named pid; every other query is a frontmost
   /// read served by a single fused guest query — the guest resolves the frontmost app (system-wide
@@ -112,20 +128,30 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
   ) async throws -> FBAXTreeRead {
     try await translatingSeamErrors {
       if case let .application(pid) = query {
+        // Timed around the transport rather than inside it: what a caller waited for is the whole round
+        // trip, and splitting it further from out here would be guesswork about the other process.
+        let sent = CFAbsoluteTimeGetCurrent()
         let response = try await transport.read(
           pid: pid, maxDepth: FBAXReadLimits.maxReadDepth, maxNodes: FBAXReadLimits.maxReadNodes,
           attributes: attributes, explainUnreachable: explainUnreachable, strategy: strategy,
           automationMode: requestedAutomationMode
         )
-        return try FBAXTreeRead(wholeTreeResponse: response, pid: pid)
+        let returned = CFAbsoluteTimeGetCurrent()
+        var read = try FBAXTreeRead(wholeTreeResponse: response, pid: pid)
+        read.timings = Self.timings(response: response, sent: sent, returned: returned, read: read)
+        return read
       }
       let anchor = frontmostAnchor()
+      let sent = CFAbsoluteTimeGetCurrent()
       let response = try await transport.readFrontmost(
         x: anchor.x, y: anchor.y, maxDepth: FBAXReadLimits.maxReadDepth, maxNodes: FBAXReadLimits.maxReadNodes,
         method: frontmostMethod, attributes: attributes, explainUnreachable: explainUnreachable,
         strategy: strategy, automationMode: requestedAutomationMode
       )
-      return try FBAXTreeRead(frontmostResponse: response, method: frontmostMethod)
+      let returned = CFAbsoluteTimeGetCurrent()
+      var read = try FBAXTreeRead(frontmostResponse: response, method: frontmostMethod)
+      read.timings = Self.timings(response: response, sent: sent, returned: returned, read: read)
+      return read
     }
   }
 
@@ -307,6 +333,31 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
   func warnIfTruncated(_ truncated: Bool) {
     guard truncated else { return }
     _ = simulator.logger.log("axbridge read hit the bound (maxDepth \(FBAXReadLimits.maxReadDepth), maxNodes \(FBAXReadLimits.maxReadNodes)); the returned tree is truncated and incomplete.")
+  }
+
+  /// The guest lanes' profile.
+  ///
+  /// `acquire` is the round trip less the guest's walk, and it is a **residual**: it holds getting a
+  /// usable guest, the guest's JSON encoding and the IPC, undivided, because neither side can separate
+  /// them from where it stands. `responseBytes` over `acquire` is the throughput that says whether a
+  /// large residual is payload-bound — which is the question the residual cannot answer on its own.
+  func profile(
+    for read: FBAXTreeRead, elementCount: Int, serializeDuration: CFAbsoluteTime
+  ) -> FBAccessibilityProfile? {
+    guard let timings = read.timings else {
+      return nil
+    }
+    return .guestBridge(
+      FBAXBridgeProfile(
+        elementCount: Int64(elementCount),
+        totalDuration: timings.roundTrip + timings.decode + serializeDuration,
+        acquireDuration: timings.residual,
+        readDuration: timings.traverse ?? 0,
+        serializeDuration: serializeDuration,
+        machRoundTrips: timings.machRoundTrips,
+        hostDecodeDuration: timings.decode,
+        responseBytes: timings.responseBytes
+      ))
   }
 
   func warnIfGeometrySuspect(_ frames: FBAccessibilityFrameSummary?) {
