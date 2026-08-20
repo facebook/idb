@@ -624,35 +624,29 @@ static NSDictionary *FBAXTestsSnapshotRequest(NSDictionary<NSString *, id> *extr
   XCTAssertTrue(CGRectEqualToRect(rect, CGRectMake(1, 2, 3, 4)), @"a rejected value must leave the rect untouched");
 }
 
-// BUG: an unrecognised frame value — not a dictionary, not an `NSValue`, rejected by the runtime — is
-// emitted as `{"X":0,"Y":0,"Width":0,"Height":0}`. The host cannot tell that from a real frame at the
-// origin. A missing attribute is emitted as null; a rejected one should be too. Flipped in the following
-// commit.
-- (void)testAnUnrecognisedFrameValueIsEmittedAsAZeroedFrame
+// An unrecognised frame value — not a dictionary, not an `NSValue`, rejected by the runtime — is
+// emitted as null, the same answer a missing attribute gets. Never as a zeroed rect, which the host
+// could not tell from a real frame at the origin.
+- (void)testAnUnrecognisedFrameValueIsEmittedAsNull
 {
   _runtime.applicationElements[@(kAppPid)] = FBAXTestsNode(@{kAXFrame : @"not a frame"}, @[]);
 
-  NSDictionary *frame = FBAXBridgeHandleRequest(FBAXTestsSnapshotRequest(@{}))[@"tree"][kAXFrame];
-  XCTAssertEqualObjects(frame[@"X"], @0);
-  XCTAssertEqualObjects(frame[@"Y"], @0);
-  XCTAssertEqualObjects(frame[@"Width"], @0);
-  XCTAssertEqualObjects(frame[@"Height"], @0);
+  id frame = FBAXBridgeHandleRequest(FBAXTestsSnapshotRequest(@{}))[@"tree"][kAXFrame];
+  XCTAssertEqualObjects(frame, NSNull.null);
 }
 
-// BUG: an unrecognised point value is emitted as `{"X":0,"Y":0}` — the screen origin, a plausible
-// tap target. Same defect as the frame above, and more dangerous: the host taps points. Flipped in the
-// following commit.
-- (void)testAnUnrecognisedPointValueIsEmittedAsAZeroedPoint
+// An unrecognised point value is emitted as null. The zeroed alternative is worse here than for
+// the frame: the host taps points, and `{0,0}` is a plausible tap target.
+- (void)testAnUnrecognisedPointValueIsEmittedAsNull
 {
   _runtime.applicationElements[@(kAppPid)] = FBAXTestsNode(@{kAXVisiblePoint : @"not a point"}, @[]);
 
-  NSDictionary *point = FBAXBridgeHandleRequest(
+  id point = FBAXBridgeHandleRequest(
     FBAXTestsSnapshotRequest(
       @{@"attributes" : @[kAXVisiblePoint]}
     )
   )[@"tree"][kAXVisiblePoint];
-  XCTAssertEqualObjects(point[@"X"], @0);
-  XCTAssertEqualObjects(point[@"Y"], @0);
+  XCTAssertEqualObjects(point, NSNull.null);
 }
 
 #pragma mark - Write outcomes

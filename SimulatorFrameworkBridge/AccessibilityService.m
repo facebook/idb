@@ -362,29 +362,40 @@ static NSError *FBAXBridgeInvariantError(NSString *description)
 
 #pragma mark - JSON coercion
 
+// A geometry value none of a coercion's branches recognises. Answered as null — the same answer a
+// missing attribute gets — never as a zeroed dictionary, which is well-formed geometry at the screen
+// origin and indistinguishable from a real answer.
+static id FBAXBridgeRejectedGeometry(NSString *kind, id value)
+{
+  NSLog(@"[AccessibilityService] unexpected %@ value class: %@", kind, [value class]);
+  return NSNull.null;
+}
+
 // The frame arrives from `attributesForElement:` as an `NSValue`-wrapped `CGRect` (or, tolerantly, an
 // existing dictionary representation). Emit the CGRect dictionary representation the host consumes via
 // `CGRectMakeWithDictionaryRepresentation`.
-static NSDictionary *FBAXBridgeFrameDictionary(id frameValue)
+static id FBAXBridgeFrameDictionary(id frameValue)
 {
   CGRect rect = CGRectZero;
   if ([frameValue isKindOfClass:NSDictionary.class]) {
-    if (CGRectMakeWithDictionaryRepresentation((__bridge CFDictionaryRef)frameValue, &rect)) {
-      return (NSDictionary *)frameValue;
+    if (!CGRectMakeWithDictionaryRepresentation((__bridge CFDictionaryRef)frameValue, &rect)) {
+      return FBAXBridgeRejectedGeometry(@"frame", frameValue);
     }
-  } else if ([frameValue isKindOfClass:NSValue.class]) {
+    return (NSDictionary *)frameValue;
+  }
+  if ([frameValue isKindOfClass:NSValue.class]) {
     NSValue *value = (NSValue *)frameValue;
-    if (strcmp(value.objCType, @encode(CGRect)) == 0) {
-      [value getValue:&rect size:sizeof(rect)];
+    if (strcmp(value.objCType, @encode(CGRect)) != 0) {
+      return FBAXBridgeRejectedGeometry(@"frame", frameValue);
     }
+    [value getValue:&rect size:sizeof(rect)];
   } else if (frameValue && [FBAXBridgeSharedRuntime(NULL) getRect:&rect fromValue:frameValue]) {
     // An `AXValue`-wrapped rect, which is how the single-fetch read answers. Not an `NSValue`: it is a
     // CFType with its own accessor, so the `NSValue` branch above sees only `__NSCFType` and drops it.
-  } else if (frameValue) {
-    NSLog(@"[AccessibilityService] unexpected frame value class: %@", [frameValue class]);
+  } else {
+    return FBAXBridgeRejectedGeometry(@"frame", frameValue);
   }
-  NSDictionary *dictionary = (NSDictionary *)CFBridgingRelease(CGRectCreateDictionaryRepresentation(rect));
-  return dictionary ?: @{};
+  return (NSDictionary *)CFBridgingRelease(CGRectCreateDictionaryRepresentation(rect));
 }
 
 // Whether an attribute is one the runtime answers with a CGPoint.
@@ -399,25 +410,27 @@ static BOOL FBAXBridgeIsPointAttribute(NSString *key)
 
 // A point attribute arrives as a `CGPoint` dictionary representation (an `X`/`Y` pair), or tolerantly as
 // an `NSValue`-wrapped `CGPoint`. Emit the dictionary representation the host consumes via
-// `CGPointMakeWithDictionaryRepresentation` — the same treatment, and for the same reason, that the frame
-// gets: flattened through `-description` a coordinate reaches the host as prose no caller can read.
-static NSDictionary *FBAXBridgePointDictionary(id pointValue)
+// `CGPointMakeWithDictionaryRepresentation`, as the frame's coercion does: left to `-description`, a
+// coordinate reaches the host as a string it cannot parse. Rejection matters more here than for the
+// frame — the host taps the points this function emits, and `{0,0}` is a plausible tap target.
+static id FBAXBridgePointDictionary(id pointValue)
 {
   CGPoint point = CGPointZero;
   if ([pointValue isKindOfClass:NSDictionary.class]) {
-    if (CGPointMakeWithDictionaryRepresentation((__bridge CFDictionaryRef)pointValue, &point)) {
-      return (NSDictionary *)pointValue;
+    if (!CGPointMakeWithDictionaryRepresentation((__bridge CFDictionaryRef)pointValue, &point)) {
+      return FBAXBridgeRejectedGeometry(@"point", pointValue);
     }
-  } else if ([pointValue isKindOfClass:NSValue.class]) {
-    NSValue *value = (NSValue *)pointValue;
-    if (strcmp(value.objCType, @encode(CGPoint)) == 0) {
-      [value getValue:&point size:sizeof(point)];
-    }
-  } else if (pointValue) {
-    NSLog(@"[AccessibilityService] unexpected point value class: %@", [pointValue class]);
+    return (NSDictionary *)pointValue;
   }
-  NSDictionary *dictionary = (NSDictionary *)CFBridgingRelease(CGPointCreateDictionaryRepresentation(point));
-  return dictionary ?: @{};
+  if ([pointValue isKindOfClass:NSValue.class]) {
+    NSValue *value = (NSValue *)pointValue;
+    if (strcmp(value.objCType, @encode(CGPoint)) != 0) {
+      return FBAXBridgeRejectedGeometry(@"point", pointValue);
+    }
+    [value getValue:&point size:sizeof(point)];
+    return (NSDictionary *)CFBridgingRelease(CGPointCreateDictionaryRepresentation(point));
+  }
+  return FBAXBridgeRejectedGeometry(@"point", pointValue);
 }
 
 // JSON cannot represent infinity or NaN: `NSJSONSerialization` *raises* an `NSInvalidArgumentException`
