@@ -643,6 +643,15 @@ static NSDictionary *FBAXTestsSnapshotRequest(NSDictionary<NSString *, id> *extr
   XCTAssertTrue(CGRectEqualToRect(rect, CGRectMake(1, 2, 3, 4)), @"a rejected value must leave the rect untouched");
 }
 
+// The point counterpart of the rect test above: rejection must leave `*point` untouched, so a bad
+// value becomes null on the wire rather than a zeroed coordinate.
+- (void)testAValueThatIsNotAPointDoesNotBecomeAZeroPoint
+{
+  CGPoint point = CGPointMake(5, 6);
+  XCTAssertFalse([_runtime getPoint:&point fromValue:@"not a point"]);
+  XCTAssertTrue(CGPointEqualToPoint(point, CGPointMake(5, 6)), @"a rejected value must leave the point untouched");
+}
+
 // An unrecognised frame value — not a dictionary, not an `NSValue`, rejected by the runtime — is
 // emitted as null, the same answer a missing attribute gets. Never as a zeroed rect, which the host
 // could not tell from a real frame at the origin.
