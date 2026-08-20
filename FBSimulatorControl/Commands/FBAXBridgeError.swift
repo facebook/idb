@@ -57,7 +57,7 @@ public enum FBAXBridgeError: LocalizedError, Sendable {
     case let .applicationUnavailable(pid):
       return "The axbridge guest found no readable application \(Self.pidPhrase(pid))"
     case let .applicationNotResponding(pid):
-      return "The axbridge guest asked the application \(Self.pidPhrase(pid)) for accessibility and it did not answer in time"
+      return "The axbridge guest requested accessibility from the application \(Self.pidPhrase(pid)), which did not answer in time"
     case let .assertionFailed(message):
       return "The axbridge guest refused the write: \(message)"
     case let .guestFailure(message):

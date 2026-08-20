@@ -25,7 +25,7 @@ enum FBAccessibilityGuidance {
   /// For a whole-tree read that asked for reachability, which the application answers by hit-testing
   /// every node (see `FBAXKeys.interactable`). Logged at the read because the read still succeeds, so
   /// nothing else in the output explains the latency.
-  static let reachabilityAcrossTree = "This read asked for reachability (interactable / occluded_by) across a whole tree, which makes the application hit-test every node — typically the dominant cost of the read. Reachability answers a question about one element: consider reading the tree without it and asking `ui describe-point <x> <y> --key interactable` for the element you are about to act on."
+  static let reachabilityAcrossTree = "Requesting reachability (interactable / occluded_by) across a whole tree makes the application hit-test every node, which is usually the dominant cost of the read. For a single element, use `ui describe-point <x> <y> --key interactable` instead."
 
   /// Reads below this are not judged: a handful of elements with no frame is ordinary, and below this
   /// size the ratio is noise.

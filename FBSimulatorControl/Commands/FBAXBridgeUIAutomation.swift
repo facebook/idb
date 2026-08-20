@@ -309,10 +309,9 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
       return
     }
     _ = simulator.logger.log(
-      "the \(strategy.rawValue) traversal cannot answer "
+      "The \(strategy.rawValue) traversal cannot fetch "
         + keys.map(\.rawValue).sorted().joined(separator: ", ")
-        + " for every element; a missing value there may mean this read could not ask, not that the "
-        + "element has none"
+        + " for every element; a missing value may mean the attribute was unfetchable, not unset"
     )
   }
 

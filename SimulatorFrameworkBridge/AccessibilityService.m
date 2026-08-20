@@ -559,7 +559,7 @@ static FBAXReadOutcome *FBAXBridgeBuildNode(id<FBAXRuntime> runtime,
   }
   NSDictionary<NSString *, id> *attributes = outcome.attributes;
   if (!attributes) {
-    return [FBAXReadOutcome failed:FBAXBridgeInvariantError(@"a read reported success and carried no attributes")];
+    return [FBAXReadOutcome failed:FBAXBridgeInvariantError(@"a read reported success but returned no attributes")];
   }
 
   NSMutableDictionary *node = [NSMutableDictionary dictionaryWithCapacity:attributes.count];
@@ -1046,7 +1046,7 @@ static NSDictionary *FBAXBridgeHitTest(id<FBAXRuntime> runtime, NSDictionary *re
   // maxDepth 0 reads just the hit element's own attributes (no child recursion) — the leaf at the point.
   id hitElement = outcome.element;
   if (!hitElement) {
-    return FBAXBridgeErrorResponse(@"the hit-test reported an element and carried none");
+    return FBAXBridgeErrorResponse(@"the hit-test reported an element but returned none");
   }
   FBAXReadOutcome *read =
   FBAXBridgeBuildNode(runtime, hitElement, FBAXBridgeFetchListForRequest(request), NO, 0, 0, &budget, &truncated);
@@ -1072,7 +1072,7 @@ static NSDictionary *FBAXBridgeHitTest(id<FBAXRuntime> runtime, NSDictionary *re
   }
   NSDictionary<NSString *, id> *node = read.attributes;
   if (!node) {
-    return FBAXBridgeErrorResponse(@"the hit element read reported success and carried no attributes");
+    return FBAXBridgeErrorResponse(@"the hit element read reported success but returned no attributes");
   }
   return @{
     kResponseOk : @YES,
@@ -1192,7 +1192,7 @@ static FBAXWriteOutcome *_Nullable FBAXBridgeResolveWriteTarget(id<FBAXRuntime> 
   }
   id hitElement = hit.element;
   if (!hitElement) {
-    return [FBAXWriteOutcome failed:@"the hit-test reported an element and carried none"];
+    return [FBAXWriteOutcome failed:@"the hit-test reported an element but returned none"];
   }
 
   if (assertKey) {
@@ -1484,7 +1484,7 @@ static NSDictionary<NSString *, id> *FBAXBridgeDispatchRequest(NSDictionary<NSSt
                                        error:&snapshotError];
     if (!snapshot) {
       return FBAXBridgeTaggedErrorResponse(
-        snapshotError.localizedDescription ?: @"the single-fetch read answered nothing",
+        snapshotError.localizedDescription ?: @"the single-fetch read returned no tree",
         kErrorKindApplicationNotResponding,
         @(pid)
       );
@@ -1507,7 +1507,7 @@ static NSDictionary<NSString *, id> *FBAXBridgeDispatchRequest(NSDictionary<NSSt
     }
     tree = FBAXBridgeBuildTranslatorNode(runtime, root, 0, maxDepth, &budget, &truncated);
     if (!tree) {
-      return FBAXBridgeErrorResponse(@"the translator vocabulary answered nothing for this element");
+      return FBAXBridgeErrorResponse(@"the translator vocabulary returned no attributes for this element");
     }
   } else {
     FBAXReadOutcome *read =
@@ -1527,7 +1527,7 @@ static NSDictionary<NSString *, id> *FBAXBridgeDispatchRequest(NSDictionary<NSSt
     }
     tree = read.attributes;
     if (!tree) {
-      return FBAXBridgeErrorResponse(@"the tree read reported success and carried no attributes");
+      return FBAXBridgeErrorResponse(@"the tree read reported success but returned no attributes");
     }
   }
   // Closed before the response is assembled, so it measures the walk and not the bookkeeping after it.

@@ -85,7 +85,7 @@ public enum FBUIAutomationError: LocalizedError, Sendable {
     case let .applicationUnavailable(backend, pid):
       return "\(backend.displayName) could not read the application \(Self.pidPhrase(pid)): it is not a running app, or its accessibility server has not started. \(FBAccessibilityGuidance.accessibilityServer)"
     case let .applicationNotResponding(backend, pid):
-      return "\(backend.displayName) asked the application \(Self.pidPhrase(pid)) for accessibility and it did not answer in time"
+      return "\(backend.displayName) requested accessibility from the application \(Self.pidPhrase(pid)), which did not answer in time"
     case let .valueMismatch(backend, key, expected, actual):
       return "\(backend.displayName) expected \(key) to equal \"\(expected)\" before tapping, but it was \"\(actual)\""
     case let .elementMoved(backend, key, value):
