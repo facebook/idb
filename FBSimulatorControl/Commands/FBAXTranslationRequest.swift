@@ -90,7 +90,7 @@ final class FBAXTranslationRequest {
   /// Serializes the resolved element into a response. The frontmost-application
   /// path additionally computes frame coverage and merges remote (separate-process)
   /// content; the point path is a single-element description.
-  /// `namesTheTarget` says `element` is the one element the caller asked for, rather than the tree this
+  /// `isMarkerMatch` says `element` is the one element the caller asked for, rather than the tree this
   /// request resolved.
   ///
   /// A marker match is reached by descending from the frontmost tree, so its request still reads
@@ -100,9 +100,9 @@ final class FBAXTranslationRequest {
   func run(
     _ element: FBAXPlatformElement,
     options: FBAccessibilityRequestOptions,
-    namesTheTarget: Bool = false
+    isMarkerMatch: Bool = false
   ) throws -> FBAccessibilityElementsResponse {
-    guard !namesTheTarget else {
+    guard !isMarkerMatch else {
       return runNamedElement(element, options: options)
     }
     switch kind {

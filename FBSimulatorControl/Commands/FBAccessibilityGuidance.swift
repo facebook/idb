@@ -29,19 +29,19 @@ enum FBAccessibilityGuidance {
 
   /// Reads below this are not judged: a handful of elements with no frame is ordinary, and below this
   /// size the ratio is noise.
-  private static let minimumElementsToJudge = 20
+  private static let minimumElementsForRatio = 20
 
   /// Observed clean reads: 0% zero-framed elements; faulted reads: 38-90%. A quarter sits well clear
   /// of zero; note the clean-read sample was small.
-  private static let suspectZeroFrameRatio = 0.25
+  private static let zeroFrameWarningRatio = 0.25
 
   /// Advice for a read whose geometry looks degenerate, or nil when it does not. A threshold
   /// heuristic; a wrong answer here only costs an ignorable advice line.
-  static func suspectGeometry(_ frames: FBAccessibilityFrameSummary?) -> String? {
-    guard let frames, frames.total >= minimumElementsToJudge else {
+  static func zeroFrameAdvice(_ frames: FBAccessibilityFrameSummary?) -> String? {
+    guard let frames, frames.total >= minimumElementsForRatio else {
       return nil
     }
     let ratio = Double(frames.zeroFrame) / Double(frames.total)
-    return ratio >= suspectZeroFrameRatio ? automationMode : nil
+    return ratio >= zeroFrameWarningRatio ? automationMode : nil
   }
 }

@@ -468,20 +468,20 @@ final class FBAXBridgeReadsTests: XCTestCase {
   // elements have simply lost their geometry. Nothing else in the response distinguishes it, which is why
   // this is the one place in the read path allowed a threshold.
   func testMostlyUnframedReadsAreAdvisedAboutAutomationMode() {
-    let advice = FBAccessibilityGuidance.suspectGeometry(summary(total: 190, zeroFrame: 167))
+    let advice = FBAccessibilityGuidance.zeroFrameAdvice(summary(total: 190, zeroFrame: 167))
     XCTAssertNotNil(advice)
     XCTAssertTrue(advice?.contains("AutomationEnabled") == true, "got: \(advice ?? "nil")")
   }
 
   func testFullyFramedReadsAreNotAdvised() {
-    XCTAssertNil(FBAccessibilityGuidance.suspectGeometry(summary(total: 176, zeroFrame: 0)))
+    XCTAssertNil(FBAccessibilityGuidance.zeroFrameAdvice(summary(total: 176, zeroFrame: 0)))
   }
 
   // A handful of unframed elements is ordinary. The advice is about a whole screen having lost its
   // geometry, not about any element that reports none.
   func testASmallReadIsNotJudged() {
     XCTAssertNil(
-      FBAccessibilityGuidance.suspectGeometry(summary(total: 4, zeroFrame: 4)),
+      FBAccessibilityGuidance.zeroFrameAdvice(summary(total: 4, zeroFrame: 4)),
       "a four-element read has no statistical claim either way, whatever its ratio"
     )
   }
@@ -489,7 +489,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
   // Nil rather than zeroes means the read carried no frames at all, which is a caller's choice via
   // `--key`. Advising on it would be answering a question they did not ask.
   func testAReadCarryingNoFramesIsNotAdvised() {
-    XCTAssertNil(FBAccessibilityGuidance.suspectGeometry(nil))
+    XCTAssertNil(FBAccessibilityGuidance.zeroFrameAdvice(nil))
   }
 
   // MARK: - Which read failures a marker wait polls through
@@ -504,7 +504,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
       "guestFailure": .guestFailure("something transient"),
     ]
     for (name, error) in transient {
-      XCTAssertTrue(error.isTransientWhileWaitingForAMarker, "\(name) must not end the wait")
+      XCTAssertTrue(error.isTransientDuringMarkerWait, "\(name) must not end the wait")
     }
   }
 
@@ -512,10 +512,10 @@ final class FBAXBridgeReadsTests: XCTestCase {
   // rather than being replaced by a timeout once the deadline passes.
   func testAWaitEndsAtOnceOnAFailureThatCannotResolveItself() {
     XCTAssertFalse(
-      FBAXBridgeError.readerUnavailable("XCTAccessibilityFramework unavailable").isTransientWhileWaitingForAMarker,
+      FBAXBridgeError.readerUnavailable("XCTAccessibilityFramework unavailable").isTransientDuringMarkerWait,
       "a reader that cannot bind will not bind by being polled"
     )
-    XCTAssertFalse(FBAXBridgeError.bridgeUnavailable.isTransientWhileWaitingForAMarker)
+    XCTAssertFalse(FBAXBridgeError.bridgeUnavailable.isTransientDuringMarkerWait)
   }
 
   // MARK: - Marker matching agrees with the accessibility backend
@@ -1903,7 +1903,7 @@ final class FBAXBridgeGuestDeathTests: XCTestCase {
 }
 
 /// A minimal `FBAXTreeReader` serving a canned read, so the shared `describeTree` composition can be
-/// observed without a simulator. `readRawTree`, `warnIfTruncated`, `warnIfGeometrySuspect` and `hitTest`
+/// observed without a simulator. `readRawTree`, `warnIfTruncated`, `warnIfMostElementsUnframed` and `hitTest`
 /// are the seams
 /// `describeTree` drives; every other `FBUIAutomation` verb is an unused conformance stub.
 private final class StubTreeReader: FBAXTreeReader, @unchecked Sendable {
@@ -1964,7 +1964,7 @@ private final class StubTreeReader: FBAXTreeReader, @unchecked Sendable {
 
   private(set) var geometryWarnings: [FBAccessibilityFrameSummary?] = []
 
-  func warnIfGeometrySuspect(_ frames: FBAccessibilityFrameSummary?) async {
+  func warnIfMostElementsUnframed(_ frames: FBAccessibilityFrameSummary?) async {
     geometryWarnings.append(frames)
   }
 

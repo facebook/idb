@@ -134,7 +134,7 @@ final class FBAXInteractableTests: XCTestCase {
     )
     XCTAssertEqual(
       value, .blocked(reasons: [.zeroSize, .userInteractionDisabled, .notHittable]),
-      "explanations keep their derivation order; the bare observation sorts last")
+      "explanations keep their derivation order; notHittable sorts last")
   }
 
   // MARK: - Cannot answer
@@ -281,12 +281,12 @@ final class FBAXInteractableTests: XCTestCase {
   }
 
   // The whole point of the ordering: a consumer that reads only `reasons[0]` gets the most actionable
-  // thing known, never the bare observation that explains nothing.
-  func testTheBareObservationSortsBehindEveryExplanation() {
+  // thing known, never `notHittable`, which explains nothing.
+  func testNotHittableSortsBehindEveryExplanation() {
     let reasons: [FBAccessibilityInteractable.Reason] =
       [.notHittable, .clippedByScreen, .userInteractionDisabled]
     XCTAssertEqual(reasons.mostSpecificFirst, [.clippedByScreen, .userInteractionDisabled, .notHittable])
-    XCTAssertFalse(reasons.mostSpecificFirst[0].isBareObservation)
+    XCTAssertFalse(reasons.mostSpecificFirst[0].isUnexplained)
   }
 
   // Ordering is a partition, not a sort, so explanations keep the order the checks derived them in.
@@ -296,7 +296,7 @@ final class FBAXInteractableTests: XCTestCase {
     XCTAssertEqual(reasons.mostSpecificFirst, [.zeroSize, .hidden, .disabled, .notHittable])
   }
 
-  // A lone bare observation is left alone — it is the commonest blocked shape, not a degenerate one.
+  // A lone `notHittable` is left alone — it is the commonest blocked shape, not a degenerate one.
   func testALoneObservationIsUnchanged() {
     XCTAssertEqual([FBAccessibilityInteractable.Reason.notHittable].mostSpecificFirst, [.notHittable])
   }
@@ -331,9 +331,9 @@ final class FBAXInteractableTests: XCTestCase {
     XCTAssertNil(reasons[0]["by"])
   }
 
-  // It explains, so it sorts ahead of the bare observation like every other explanation.
+  // It explains, so it sorts ahead of `notHittable` like every other explanation.
   func testHandledByIsAnExplanationNotAnObservation() {
-    XCTAssertFalse(FBAccessibilityInteractable.Reason.handledBy(nil).isBareObservation)
+    XCTAssertFalse(FBAccessibilityInteractable.Reason.handledBy(nil).isUnexplained)
     XCTAssertEqual(
       [FBAccessibilityInteractable.Reason.notHittable, .handledBy(nil)].mostSpecificFirst,
       [.handledBy(nil), .notHittable]

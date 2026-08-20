@@ -83,9 +83,9 @@ public enum FBUIAutomationError: LocalizedError, Sendable {
     case let .operationUnsupported(backend, operation):
       return "\(operation) is not supported over \(backend.inlineName)"
     case let .applicationUnavailable(backend, pid):
-      return "\(backend.displayName) could not read the application \(Self.naming(pid)): it is not a running app, or its accessibility server has not started. \(FBAccessibilityGuidance.accessibilityServer)"
+      return "\(backend.displayName) could not read the application \(Self.pidPhrase(pid)): it is not a running app, or its accessibility server has not started. \(FBAccessibilityGuidance.accessibilityServer)"
     case let .applicationNotResponding(backend, pid):
-      return "\(backend.displayName) asked the application \(Self.naming(pid)) for accessibility and it did not answer in time"
+      return "\(backend.displayName) asked the application \(Self.pidPhrase(pid)) for accessibility and it did not answer in time"
     case let .valueMismatch(backend, key, expected, actual):
       return "\(backend.displayName) expected \(key) to equal \"\(expected)\" before tapping, but it was \"\(actual)\""
     case let .elementMoved(backend, key, value):
@@ -95,7 +95,7 @@ public enum FBUIAutomationError: LocalizedError, Sendable {
 
   /// How a message refers to the application it is about. A read that resolved nothing has no pid to
   /// print, and saying where it looked beats printing a zero.
-  private static func naming(_ pid: pid_t?) -> String {
+  private static func pidPhrase(_ pid: pid_t?) -> String {
     guard let pid else {
       return "at that point"
     }

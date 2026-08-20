@@ -261,13 +261,13 @@ final class FBAccessibilitySerializationTests: XCTestCase {
   private static func markerMatchResponse(filter: FBAccessibilityElementFilter) throws -> FBAccessibilityElementsResponse {
     // The accessibility backend resolves a marker by descending from the frontmost root, then hands the
     // *match* to a handle that still carries the root's `.frontmostApplication` request. This reproduces
-    // that: the request kind says "tree", the element is the match, and `namesTheTarget` is what tells
+    // that: the request kind says "tree", the element is the match, and `isMarkerMatch` is what tells
     // the request the caller asked for this element rather than the tree it was found in.
     let match = FBAXTreeWalk.buildPlatformElementTree(from: Self.valueOnlyMatchTree(), pid: 7)
     var options = FBAccessibilityRequestOptions()
     options.keys = [.label, .value]
     options.filter = filter
-    return try FBAXTranslationRequest(kind: .frontmostApplication).run(match, options: options, namesTheTarget: true)
+    return try FBAXTranslationRequest(kind: .frontmostApplication).run(match, options: options, isMarkerMatch: true)
   }
 
   // MARK: - The ax marker read's shape

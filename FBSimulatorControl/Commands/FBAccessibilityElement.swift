@@ -72,15 +72,15 @@ final class FBAccessibilityElement {
     request.logger = options.enableLogging ? simulator?.logger : nil
     let request = self.request
     let element = self.element
-    let namesTheTarget = self.namesTheTarget
+    let isMarkerMatch = self.isMarkerMatch
     return try await dispatcher.performSerialized {
-      try request.run(element, options: options, namesTheTarget: namesTheTarget)
+      try request.run(element, options: options, isMarkerMatch: isMarkerMatch)
     }
   }
 
   /// Whether this handle names the one element the caller asked for, rather than the tree its request
   /// resolved. True exactly for a marker match: `findElement` sets `rootBounds` only on that path.
-  private var namesTheTarget: Bool {
+  private var isMarkerMatch: Bool {
     rootBounds != nil
   }
 

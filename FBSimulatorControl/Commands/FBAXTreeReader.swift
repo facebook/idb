@@ -57,7 +57,7 @@ protocol FBAXTreeReader: FBUIAutomation {
   /// Warns that most of a read's elements carry no rectangle, which can mean the target is serving stale
   /// cached children. Per backend for the same reason as `warnIfTruncated` — each logs through its own
   /// target — and called only on a whole-tree describe, since a single element has no ratio to judge.
-  func warnIfGeometrySuspect(_ frames: FBAccessibilityFrameSummary?) async
+  func warnIfMostElementsUnframed(_ frames: FBAccessibilityFrameSummary?) async
 
   /// Where this read spent its time, in whatever shape this backend measures. Nil from a backend that
   /// does not measure, which is distinct from a zeroed profile.
@@ -173,7 +173,7 @@ extension FBAXTreeReader {
           )
         } : nil
       // Judged on the reported elements — what the caller's `--filter` shows them.
-      await warnIfGeometrySuspect(FBAccessibilityFrameSummary(elements: elements))
+      await warnIfMostElementsUnframed(FBAccessibilityFrameSummary(elements: elements))
       return FBAccessibilityElementsResponse(
         elements: .tree(elements),
         profilingData: options.enableProfiling

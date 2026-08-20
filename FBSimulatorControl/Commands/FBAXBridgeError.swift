@@ -55,9 +55,9 @@ public enum FBAXBridgeError: LocalizedError, Sendable {
     case let .frontmostUnresolved(method, reason):
       return "axbridge could not resolve the frontmost application using the \(method.rawValue) strategy: \(reason)"
     case let .applicationUnavailable(pid):
-      return "The axbridge guest found no readable application \(Self.naming(pid))"
+      return "The axbridge guest found no readable application \(Self.pidPhrase(pid))"
     case let .applicationNotResponding(pid):
-      return "The axbridge guest asked the application \(Self.naming(pid)) for accessibility and it did not answer in time"
+      return "The axbridge guest asked the application \(Self.pidPhrase(pid)) for accessibility and it did not answer in time"
     case let .assertionFailed(message):
       return "The axbridge guest refused the write: \(message)"
     case let .guestFailure(message):
@@ -67,7 +67,7 @@ public enum FBAXBridgeError: LocalizedError, Sendable {
 
   /// How a message refers to the process it is about. A display-wide read resolved nothing, so there is
   /// no pid to print and saying so beats printing a zero.
-  private static func naming(_ pid: pid_t?) -> String {
+  private static func pidPhrase(_ pid: pid_t?) -> String {
     guard let pid else {
       return "at that point"
     }
@@ -92,7 +92,7 @@ extension FBAXBridgeError {
   ///
   /// A predicate rather than a `switch` inside the poll closure, because the closure needs a live
   /// simulator to reach and this decision is the part worth testing.
-  var isTransientWhileWaitingForAMarker: Bool {
+  var isTransientDuringMarkerWait: Bool {
     switch self {
     case .frontmostUnresolved, .guestFailure, .applicationUnavailable, .applicationNotResponding:
       return true

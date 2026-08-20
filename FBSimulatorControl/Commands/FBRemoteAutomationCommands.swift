@@ -328,8 +328,8 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
   /// takes, so the request costs nothing.
   func warnIfReachabilityAcrossTree(_ keys: Set<FBAXKeys>) {}
 
-  func warnIfGeometrySuspect(_ frames: FBAccessibilityFrameSummary?) {
-    guard let advice = FBAccessibilityGuidance.suspectGeometry(frames), let frames else { return }
+  func warnIfMostElementsUnframed(_ frames: FBAccessibilityFrameSummary?) {
+    guard let advice = FBAccessibilityGuidance.zeroFrameAdvice(frames), let frames else { return }
     _ = simulator?.logger.log("Remote-automation read reported \(frames.zeroFrame) of \(frames.total) elements with no frame. \(advice)")
   }
 

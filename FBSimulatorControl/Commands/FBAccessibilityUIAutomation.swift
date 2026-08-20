@@ -28,7 +28,7 @@ final class FBAccessibilityUIAutomation: FBUIAutomation, @unchecked Sendable {
     _ query: FBAccessibilityElementQuery,
     options: FBAccessibilityRequestOptions
   ) async throws -> FBAccessibilityElementsResponse {
-    try await Self.translatingSeamErrors(query) {
+    try await Self.translatingBackendErrors(query) {
       let element = try await operations.resolveElement(for: query)
       defer { element.close() }
       let response = try await element.serialize(with: options)
@@ -53,7 +53,7 @@ final class FBAccessibilityUIAutomation: FBUIAutomation, @unchecked Sendable {
   /// `FBUIAutomationError`, so a caller holding `any FBUIAutomation` can catch it without knowing
   /// which backend it holds. Every other accessibility failure is transport-specific and passes
   /// through untouched.
-  private static func translatingSeamErrors<T>(
+  private static func translatingBackendErrors<T>(
     _ query: FBAccessibilityElementQuery,
     _ body: () async throws -> T
   ) async throws -> T {
@@ -90,7 +90,7 @@ final class FBAccessibilityUIAutomation: FBUIAutomation, @unchecked Sendable {
     guard options.duration == nil else {
       throw FBUIAutomationError.operationUnsupported(backend: .accessibility, operation: "A tap with a hold duration")
     }
-    try await Self.translatingSeamErrors(query) {
+    try await Self.translatingBackendErrors(query) {
       let element = try await operations.resolveElement(for: query)
       defer { element.close() }
       if let assertion = options.assertion {
@@ -106,7 +106,7 @@ final class FBAccessibilityUIAutomation: FBUIAutomation, @unchecked Sendable {
   }
 
   func setValue(_ value: String, for query: FBAccessibilityElementQuery) async throws {
-    try await Self.translatingSeamErrors(query) {
+    try await Self.translatingBackendErrors(query) {
       let element = try await operations.resolveElement(for: query)
       defer { element.close() }
       try await element.setValue(value)
@@ -137,7 +137,7 @@ final class FBAccessibilityUIAutomation: FBUIAutomation, @unchecked Sendable {
   }
 
   func scroll(_ query: FBAccessibilityElementQuery, direction: FBAccessibilityScrollDirection) async throws {
-    try await Self.translatingSeamErrors(query) {
+    try await Self.translatingBackendErrors(query) {
       let element = try await operations.resolveElement(for: query)
       defer { element.close() }
       try await element.scroll(with: direction)
@@ -145,7 +145,7 @@ final class FBAccessibilityUIAutomation: FBUIAutomation, @unchecked Sendable {
   }
 
   func frame(_ query: FBAccessibilityElementQuery) async throws -> CGRect {
-    try await Self.translatingSeamErrors(query) {
+    try await Self.translatingBackendErrors(query) {
       let element = try await operations.resolveElement(for: query)
       defer { element.close() }
       return try await element.frame()

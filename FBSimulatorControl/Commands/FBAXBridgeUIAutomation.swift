@@ -86,7 +86,7 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
   /// backend-neutral cases, so a caller holding `any FBUIAutomation` sees the same typed error for a dead
   /// or wedged app regardless of which backend served the read (the remote backend throws the neutral
   /// case directly). Every other bridge error is about this transport and passes through untouched.
-  private func translatingSeamErrors<T>(_ body: () async throws -> T) async throws -> T {
+  private func translatingBackendErrors<T>(_ body: () async throws -> T) async throws -> T {
     do {
       return try await body()
     } catch let FBAXBridgeError.applicationUnavailable(pid) {
@@ -123,7 +123,7 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
     explainUnreachable: Bool,
     strategy: FBAXTraversalStrategy
   ) async throws -> FBAXTreeRead {
-    try await translatingSeamErrors {
+    try await translatingBackendErrors {
       if case let .application(pid) = query {
         // Timed around the transport: what the caller waited for is the whole round trip.
         let sent = CFAbsoluteTimeGetCurrent()
@@ -155,7 +155,7 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
     at point: CGPoint,
     options: FBAccessibilityRequestOptions
   ) async throws -> FBAccessibilityElementsResponse? {
-    try await translatingSeamErrors {
+    try await translatingBackendErrors {
       // A single system-wide guest hit-test resolves the element at the point and its owning app
       // in-guest — no host-side CoreSimulator frontmost query, one IPC hop. `.point` is positional, so
       // a system-wide hit-test is exactly its semantics (unlike a whole-tree read of "frontmost").
@@ -197,9 +197,9 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
         )
         return FBAXTreeWalk.matchingElement(inElements: elements, markerValue: markerValue, key: key) != nil ? true : nil
       } catch let error as FBAXBridgeError {
-        // Which failures are worth polling through is `isTransientWhileWaitingForAMarker`; anything else
+        // Which failures are worth polling through is `isTransientDuringMarkerWait`; anything else
         // (and any unexpected non-bridge error) ends the wait at once rather than burning the timeout.
-        guard error.isTransientWhileWaitingForAMarker else {
+        guard error.isTransientDuringMarkerWait else {
           throw error
         }
         return nil
@@ -269,12 +269,12 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
     }
   }
 
-  /// The seam translation for a write: the two application-level failures, plus the refused assertion,
+  /// The backend-error translation for a write: the two application-level failures, plus the refused assertion,
   /// which only a write can meet. The guest reports what it found under the point; naming the marker that
   /// sent the write there is the host's half, so the two are joined here.
   private func translatingWriteErrors(_ query: FBAccessibilityElementQuery, _ body: () async throws -> Void) async throws {
     do {
-      try await translatingSeamErrors(body)
+      try await translatingBackendErrors(body)
     } catch let FBAXBridgeError.assertionFailed(message) {
       guard case let .marker(value, key, _) = query else {
         throw FBAXBridgeError.assertionFailed(message)
@@ -349,8 +349,8 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
     _ = simulator.logger.log(FBAccessibilityGuidance.reachabilityAcrossTree)
   }
 
-  func warnIfGeometrySuspect(_ frames: FBAccessibilityFrameSummary?) {
-    guard let advice = FBAccessibilityGuidance.suspectGeometry(frames), let frames else { return }
+  func warnIfMostElementsUnframed(_ frames: FBAccessibilityFrameSummary?) {
+    guard let advice = FBAccessibilityGuidance.zeroFrameAdvice(frames), let frames else { return }
     _ = simulator.logger.log("axbridge read reported \(frames.zeroFrame) of \(frames.total) elements with no frame. \(advice)")
   }
 }

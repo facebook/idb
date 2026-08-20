@@ -279,8 +279,8 @@ public enum FBAccessibilityInteractable: Sendable, Equatable {
   /// Why an element cannot be acted on. A closed vocabulary, each case traceable to an attribute that was
   /// actually read rather than to a heuristic over geometry.
   ///
-  /// Every case but `notHittable` names a cause; `notHittable` is the bare observation that the server
-  /// found no reachable point. Reasons accumulate — an element is routinely both unreachable and
+  /// Every case but `notHittable` names a cause; `notHittable` only reports that the server found no
+  /// reachable point. Reasons accumulate — an element is routinely both unreachable and
   /// clipped — and `blocked` orders explanations ahead of the observation.
   public enum Reason: Sendable, Equatable {
     /// The accessibility server can name no point at which a touch reaches this element, and has not
@@ -300,7 +300,7 @@ public enum FBAccessibilityInteractable: Sendable, Equatable {
     ///
     /// Not a fault, and the recovery is neither scrolling nor moving anything: act on the named element.
     /// Requires a hit-test, so it appears only when `occludedBy` was requested — without it these fall
-    /// back to the bare observation.
+    /// back to plain `notHittable`.
     case handledBy(FBAccessibilityElementRef?)
     /// The view has `userInteractionEnabled` off.
     case userInteractionDisabled
@@ -380,20 +380,20 @@ public struct FBAccessibilityElementRef: Sendable, Equatable, Encodable {
 
 public extension FBAccessibilityInteractable.Reason {
   /// Whether this reason merely observes that the element is unreachable, without explaining it.
-  var isBareObservation: Bool {
+  var isUnexplained: Bool {
     if case .notHittable = self { return true }
     return false
   }
 }
 
 public extension Array where Element == FBAccessibilityInteractable.Reason {
-  /// The reasons with every explanation ahead of every bare observation, each group keeping the order it
+  /// The reasons with every explaining reason ahead of `notHittable`, each group keeping the order it
   /// was derived in.
   ///
   /// A partition rather than a sort: Swift's sort is not guaranteed stable, and the derivation order
   /// within a group is meaningful — it is the order the checks run in, which the tests pin.
   var mostSpecificFirst: [FBAccessibilityInteractable.Reason] {
-    filter { !$0.isBareObservation } + filter { $0.isBareObservation }
+    filter { !$0.isUnexplained } + filter { $0.isUnexplained }
   }
 }
 
@@ -476,7 +476,7 @@ public struct FBAccessibilityInteractionSummary: Sendable, Equatable, Encodable 
   public let actionable: Int
   /// Elements reported blocked, for any reason.
   public let blocked: Int
-  /// Of those, the ones carrying *only* a bare observation — blocked with nothing that explains it.
+  /// Of those, the ones carrying only `notHittable` — blocked with nothing that explains it.
   public let unexplained: Int
   /// `unexplained / blocked`, or nil when nothing was blocked.
   public let unexplainedRatio: Double?
@@ -503,7 +503,7 @@ public struct FBAccessibilityInteractionSummary: Sendable, Equatable, Encodable 
         actionable += 1
       case let .blocked(reasons):
         blocked += 1
-        if reasons.allSatisfy(\.isBareObservation) {
+        if reasons.allSatisfy(\.isUnexplained) {
           unexplained += 1
         }
       case nil:
