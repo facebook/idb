@@ -109,12 +109,12 @@ final class FBAXTranslationDispatcher: NSObject, AXPTranslationTokenDelegateHelp
         guard let translator, let translation = request.perform(withTranslator: translator) else {
           throw FBAccessibilityError.noTranslationObject
         }
-        collector?.translationDuration = CFAbsoluteTimeGetCurrent() - translationStart
+        collector.translationDuration = CFAbsoluteTimeGetCurrent() - translationStart
         translation.bridgeDelegateToken = request.token
 
         let conversionStart = CFAbsoluteTimeGetCurrent()
         let rawElement = translator.macPlatformElement(fromTranslation: translation)
-        collector?.elementConversionDuration = CFAbsoluteTimeGetCurrent() - conversionStart
+        collector.elementConversionDuration = CFAbsoluteTimeGetCurrent() - conversionStart
 
         guard let element = rawElement as? FBAXWritableElement else {
           throw FBAccessibilityError.noTranslationObject
@@ -190,7 +190,7 @@ final class FBAXTranslationDispatcher: NSObject, AXPTranslationTokenDelegateHelp
         group.leave()
       }
       let waitResult = group.wait(timeout: .now() + timeoutSeconds)
-      collector?.addXPCCallDuration(CFAbsoluteTimeGetCurrent() - xpcStart)
+      collector.addXPCCallDuration(CFAbsoluteTimeGetCurrent() - xpcStart)
 
       if waitResult == .timedOut {
         logger?.log("Accessibility request \(String(describing: axRequest)) timed out after \(timeoutSeconds)s — returning empty response")

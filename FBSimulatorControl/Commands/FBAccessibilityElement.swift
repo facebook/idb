@@ -70,19 +70,9 @@ final class FBAccessibilityElement {
     if closed {
       throw FBAccessibilityError.closedElement(operation: "serialize")
     }
-    // Unconditional, not gated on `enableProfiling`. Measured cost is ~250 us of lock traffic for a
-    // 200-element read against a read measured in hundreds of milliseconds — about 0.1% — and an opt-in
-    // diagnostic produces no data: `--collect-frame-coverage`, the comparable flag, was used once in 22
-    // days across the fleet. It also brings `profile` into line with its neighbours in the document,
-    // where a null means "the backend cannot say" rather than "you did not ask".
-    //
-    // `--profile` still selects the tier that costs per element rather than per read.
-    if request.collector == nil {
-      request.collector = FBAccessibilityProfilingCollector()
-    }
     // Wire the per-request logger from the option so the dispatcher's XPC
     // callbacks (which capture `request.logger`) actually emit request/response
-    // logging during the serialization walk. Mirrors the `collector` wiring above.
+    // logging during the serialization walk.
     request.logger = options.enableLogging ? simulator?.logger : nil
     let request = self.request
     let element = self.element

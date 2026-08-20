@@ -1132,15 +1132,12 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
   // MARK: - When the profiling collector starts existing
 
   // The dispatcher times both acquisition phases — `perform(withTranslator:)` and
-  // `macPlatformElement(fromTranslation:)` — and writes each to `request.collector`. The collector is
-  // created in `serialize`, which runs *after* resolution has finished, so at the moment of those two
-  // writes the optional is nil and both are discarded.
+  // `macPlatformElement(fromTranslation:)` — and writes each to `request.collector`, which exists from
+  // the moment the request does.
   //
-  // The double burns 20 ms in each of those calls, so the two phases together have at least 40 ms to
-  // report. This asserts they report none of it.
-  //
-  // BUG: acquisition is reported as taking exactly no time — flipped in the following commit.
-  func testTheTranslatorProfileReportsNoAcquisitionTime() async throws {
+  // The double burns 20 ms in each of those calls, so each phase has 20 ms to report. Asserting a floor
+  // rather than a sign is what distinguishes a wired-up measurement from a discarded one.
+  func testTheTranslatorProfileReportsAcquisitionTime() async throws {
     try setUp(withRootElement: defaultRoot(withChildren: []))
     fixture!.translator.frontmostApplicationDelay = 0.02
     fixture!.translator.macPlatformElementDelay = 0.02
@@ -1152,18 +1149,15 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     let response = try await element.serialize(with: options)
     let profile = try XCTUnwrap(response.profilingData?.translatorProfile)
 
-    XCTAssertEqual(profile.translationDuration, 0, "the 20 ms spent resolving the translation is not reported")
-    XCTAssertEqual(profile.elementConversionDuration, 0, "nor the 20 ms spent converting it to an element")
-    XCTAssertGreaterThan(profile.serializationDuration, 0, "while the phase measured after the collector exists is")
+    XCTAssertGreaterThanOrEqual(profile.translationDuration, 0.02, "the 20 ms spent resolving the translation is reported")
+    XCTAssertGreaterThanOrEqual(profile.elementConversionDuration, 0.02, "as is the 20 ms spent converting it to an element")
+    XCTAssertGreaterThan(profile.serializationDuration, 0, "alongside the phase that was already measured")
   }
 
-  // The mechanism behind the above, pinned directly rather than through a read: a request begins life
-  // with nowhere to record. Every dispatcher measurement taken between here and `serialize` is written
-  // to a nil optional.
-  //
-  // BUG: the collector outlives only part of the read it profiles — flipped in the following commit.
-  func testARequestBeginsWithNoCollector() {
-    XCTAssertNil(FBAXTranslationRequest(kind: .frontmostApplication).collector)
+  // The mechanism behind the above, pinned directly rather than through a read: a request has somewhere
+  // to record from the moment it exists, so every dispatcher measurement taken before `serialize` lands.
+  func testARequestBeginsWithACollector() {
+    XCTAssertNotNil(FBAXTranslationRequest(kind: .frontmostApplication).collector)
   }
 
   // The baseline the filtered read below is measured against: every node serialized.

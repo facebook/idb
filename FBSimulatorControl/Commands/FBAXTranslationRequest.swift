@@ -52,7 +52,10 @@ final class FBAXTranslationRequest {
   let kind: Kind
   let token: String
   var device: SimDevice?
-  var collector: FBAccessibilityProfilingCollector?
+  /// Non-optional and owned from construction, because the request *is* the read: the dispatcher
+  /// measures acquisition before the caller ever reaches `serialize`, and a collector attached later
+  /// would have those writes land on nil.
+  var collector: FBAccessibilityProfilingCollector
   var logger: FBControlCoreLogger?
   var translator: AXPTranslator?
 
@@ -65,12 +68,18 @@ final class FBAXTranslationRequest {
     self.kind = kind
     self.token = UUID().uuidString
     self.requestTimeoutSeconds = Self.defaultRequestTimeoutSeconds
+    self.collector = FBAccessibilityProfilingCollector()
   }
 
   /// A fresh request of the same kind with a new token, used to retry after
   /// SpringBoard remediation.
+  ///
+  /// The collector carries over rather than starting again: the caller waited for the failed attempt
+  /// too, and a profile that begins at the retry describes a read that did not happen.
   func cloneWithNewToken() -> FBAXTranslationRequest {
-    FBAXTranslationRequest(kind: kind)
+    let clone = FBAXTranslationRequest(kind: kind)
+    clone.collector = collector
+    return clone
   }
 
   /// Resolves the root translation object for this request's kind.
@@ -381,7 +390,7 @@ final class FBAXTranslationRequest {
     // Collected either way; reported only when asked. Collection is cheap enough to leave on, and a
     // number nobody collected cannot be recovered afterwards — but a caller that did not ask for timings
     // should not have to parse them.
-    let profilingData = reportProfile ? collector?.finalize(withSerializationDuration: serializationDuration) : nil
+    let profilingData = reportProfile ? collector.finalize(withSerializationDuration: serializationDuration) : nil
     return FBAccessibilityElementsResponse(
       elements: elements,
       profilingData: profilingData.map { .translator($0) },
