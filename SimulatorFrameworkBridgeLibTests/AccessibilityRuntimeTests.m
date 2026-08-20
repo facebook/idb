@@ -1123,7 +1123,7 @@ static NSDictionary *FBAXTestsPress(void)
 }
 
 // The contrast that makes the above a statement about the *key* rather than about dictionaries: the
-// frame, given the identical shape, is carried through structurally. Unchanged by the following commit.
+// frame, given the identical shape, is carried through structurally.
 - (void)testTheFrameAttributeIsCarriedThroughStructurally
 {
   FBAXFakeElement *root = [FBAXFakeElement readable:@"UIApplication"];
@@ -1202,8 +1202,8 @@ static NSDictionary *FBAXTestsPress(void)
 }
 
 // Round trips are the cost of a translator walk, not attribute count: every request hops onto the
-// application's main thread and blocks there, so the number of requests is what a deep read pays. Pinning
-// it per node makes a regression to more visible, which reading the code does not.
+// application's main thread and blocks there, so the number of requests is what a deep read pays.
+// Pinning it per node makes a regression to more round trips visible.
 - (void)testATranslatorWalkCostsTwoRoundTripsPerNode
 {
   FBAXFakeElement *root = [FBAXFakeElement readable:@"UIApplication"];
@@ -1248,8 +1248,8 @@ static NSDictionary *FBAXTestsPress(void)
 }
 
 // Every test above this line drives the seam directly, which pins what the fake echoes rather than what a
-// read emits. These drive `describe` itself, so they fail if the build step stops emitting an attribute it
-// fetched — the way `enabled` and `role` were both fetched and dropped on the floor.
+// read emits. These drive `describe` itself, so they fail if the build step stops emitting an attribute
+// it fetched.
 
 // `enabled` is the one answer this vocabulary has that XCTest's does not, and fetching it without emitting
 // it is indistinguishable at the wire from not supporting it at all.
@@ -1338,10 +1338,10 @@ static NSDictionary *FBAXTestsPress(void)
 }
 
 // The runtime vends an application element for any pid, including one that names no process, and the
-// translator answers against it with synthesized defaults rather than failing. So a read through this
-// vocabulary answered `ok:true` with a fabricated root — carrying a role and an enabled value — for a
-// process that does not exist. Nothing about that response looks wrong to a caller, which is the same
-// shape as the fabricated `enabled` this stack already has a bugfix for.
+// translator answers against it with synthesized defaults rather than failing. Without the availability
+// probe, a read through this vocabulary would answer `ok:true` with a fabricated root — carrying a role
+// and an enabled value — for a process that does not exist, and nothing about that response would look
+// wrong to a caller.
 - (void)testATranslatorReadOfAnUnavailableApplicationFailsRatherThanFabricatingARoot
 {
   _runtime.applicationElements[@(kAppPid)] = [FBAXFakeElement applicationUnavailable];
@@ -1355,9 +1355,8 @@ static NSDictionary *FBAXTestsPress(void)
   XCTAssertNil(response[@"tree"], @"a process with no accessibility server must not answer with a root");
 }
 
-// The envelope a translator read answers with is the same envelope every other read answers with. It was
-// assembled separately, so a fused frontmost read through this vocabulary lost the `method` telling the
-// host which resolver had run.
+// The envelope a translator read answers with is the same envelope every other read answers with,
+// `method` included.
 - (void)testAFusedFrontmostTranslatorReadStillNamesTheResolverThatRan
 {
   _runtime.windowServerOutcome = [FBAXFrontmostOutcome resolved:kAppPid];

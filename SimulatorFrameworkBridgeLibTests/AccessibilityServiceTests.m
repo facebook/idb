@@ -127,7 +127,7 @@ static NSDictionary *FBAXTestsParse(NSData *data)
 }
 
 // Shutdown is answered without binding the runtime and without a pid, because neither is needed to
-// exit — and a reader that cannot bind is exactly the one a caller most wants to be able to reap.
+// exit.
 - (void)testShutdownIsAnsweredWithoutARuntimeOrAPid
 {
   FBAXBridgeSetRuntimeForTesting(nil);
@@ -146,8 +146,8 @@ static NSDictionary *FBAXTestsParse(NSData *data)
   XCTAssertEqualObjects(response[@"shutdown"], @YES);
 }
 
-// A `verb` that is absent entirely is already answered with an error frame — `nil` takes
-// `isEqualToString:` without complaint — so only the wrong-type case above is broken.
+// An absent `verb` is rejected the same way as a wrong-typed one: `nil` takes `isEqualToString:`
+// without complaint and matches no verb.
 - (void)testMissingVerbIsRejectedWithAnErrorFrame
 {
   NSDictionary *response = FBAXBridgeHandleRequest(@{@"pid" : @1234});

@@ -469,8 +469,7 @@ static BOOL FBAXActionIdentifierForAction(FBAXAction action, uint32_t *identifie
 // The AX runtime's C entry points transfer +1 references that have to be released exactly once on every
 // path out of the function that took them. In a method with eight early returns that is a rule no reader
 // can check by looking, and the failure modes are a leak or a use-after-free. Wrapping the reference at
-// the moment it is acquired makes the release ARC's job, so it happens on every path — including paths
-// added later by someone who never read this comment.
+// the moment it is acquired makes the release ARC's job, so it happens on every path.
 @interface FBAXElementRef : NSObject
 
 /** Takes ownership of an already-retained (+1) reference — what the AX runtime's Create and Copy give. */
@@ -491,12 +490,9 @@ static BOOL FBAXActionIdentifierForAction(FBAXAction action, uint32_t *identifie
 /**
  * Runs `body` with the raw reference, keeping this wrapper — and so the reference — alive for all of it.
  *
- * The pointer is never vended, and that is the point. A `void *` is invisible to ARC: nothing about a
- * caller holding one says the wrapper must outlive the C call using it, so ARC is free to release the
- * wrapper — and release the reference — while the call is still running. Handing the pointer out made
- * that every call site's problem to remember, which is a rule stated five times and enforced none, over
- * exactly the reference whose mishandling this class exists to prevent. Held here instead, once, where
- * forgetting it is not something a caller can do.
+ * The raw pointer is never vended. A `void *` is invisible to ARC, so nothing ties the wrapper's
+ * lifetime to a C call using the pointer — ARC could release the wrapper, and the reference, while
+ * the call is still running. Scoping the access here keeps the wrapper alive for exactly the call.
  *
  * `NS_NOESCAPE`: the reference is guaranteed only for the call, and a body that stored it would be back
  * to owning a lifetime it cannot see.
@@ -996,7 +992,7 @@ static NSError *FBAXSnapshotFailure(NSInteger code, NSString *description)
 {
   // Resolved before the element is touched: an action this runtime has no number for is a gap in the
   // table above, and sending the AX server something else in its place is the one outcome worth ruling
-  // out. Unreachable while every `FBAXAction` is mapped, which is exactly when a new one is not.
+  // out. Only reachable when a new `FBAXAction` case is added without a mapping.
   uint32_t identifier = 0;
   if (!FBAXActionIdentifierForAction(action, &identifier)) {
     return [FBAXWriteOutcome failed:[NSString stringWithFormat:@"no AX runtime identifier for action %lu", (unsigned long)action]];
