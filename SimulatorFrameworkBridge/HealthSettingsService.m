@@ -203,8 +203,8 @@ static int handleSetAction(HKAuthorizationStore *authStore,
     return 1;
   }
 
-  // Step 1: seed the authorisation request rows. Without this, the
-  // daemon silently drops status writes for unseen (bundleID, type) pairs.
+  // Seed the authorisation request rows first: the daemon silently drops
+  // status writes for unseen (bundleID, type) pairs.
   __block BOOL seedOK = NO;
   __block NSError *seedError = nil;
   dispatch_semaphore_t seedSem = dispatch_semaphore_create(0);
@@ -218,7 +218,6 @@ static int handleSetAction(HKAuthorizationStore *authStore,
                                                }];
   dispatch_semaphore_wait(seedSem, dispatch_time(DISPATCH_TIME_NOW, 5 * NSEC_PER_SEC));
 
-  // Step 2: write the requested status for every resolved type.
   NSMutableDictionary *statuses = [NSMutableDictionary dictionary];
   for (id type in resolvedTypes) {
     statuses[type] = @(statusCode);

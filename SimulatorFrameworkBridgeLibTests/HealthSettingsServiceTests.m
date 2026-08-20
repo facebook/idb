@@ -57,9 +57,7 @@ static BOOL FBHealthRuntimeDeclaresSelector(NSString *selectorName)
 #pragma mark - The drifted authorization selector
 
 // `approve` and `revoke` answer with an exit code on every runtime, whichever spelling of
-// `setAuthorizationStatuses:…` it declares. Unconditional, where these were previously split on the
-// runtime: that split *was* the bug, and a service entry point that raises on half the fleet is not a
-// service entry point.
+// `setAuthorizationStatuses:…` it declares.
 
 - (void)testApproveAnswersWithAStatusOnAnyRuntime
 {
@@ -76,9 +74,8 @@ static BOOL FBHealthRuntimeDeclaresSelector(NSString *selectorName)
   XCTAssertNoThrow(handleHealthSettingsAction(@"revoke", @"com.example.test", @[]));
 }
 
-// Exactly one of the two spellings is present, whichever runtime this is. That is what makes the
-// service's `respondsToSelector:` dispatch between them a total decision rather than a guess with a hole
-// in it — and if a third rename ever lands, this is what says so.
+// Exactly one of the two spellings is present on any runtime, so the service's
+// `respondsToSelector:` dispatch between them is total. A third rename shows up as a failure here.
 - (void)testTheRuntimeDeclaresExactlyOneAuthorizationSpelling
 {
   XCTAssertNotNil(FBHealthAuthorizationStoreClass(), @"HealthKit must be loadable for any of this to mean anything");
@@ -87,9 +84,8 @@ static BOOL FBHealthRuntimeDeclaresSelector(NSString *selectorName)
   XCTAssertNotEqual(legacy, modeInfos, @"expected one spelling, got legacy=%d modeInfos=%d", legacy, modeInfos);
 }
 
-// Whichever spelling this runtime has, the header now declares it with the signature the runtime reports
-// — `options:` included, which is the integer both take and which the header spelled as an object until
-// this fix. A rename or a retyped argument is a red test here rather than a silent miscompile at the send.
+// The header declares whichever spelling the runtime reports, with `options:` as the integer both
+// take. A rename or a retyped argument is a red test here rather than a silent miscompile at the send.
 - (void)testTheDeclaredAuthorizationSignatureAgreesWithTheRuntime
 {
   BOOL legacy = FBHealthRuntimeDeclaresSelector(kLegacyAuthorizationSelector);
