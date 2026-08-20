@@ -105,4 +105,51 @@ final class FBProcessIOTests: XCTestCase {
     XCTAssertEqual(fcntl(stdOut.fileDescriptor, F_GETFD), -1)
     XCTAssertEqual(fcntl(stdErr.fileDescriptor, F_GETFD), -1)
   }
+
+  func testAttachWithNilStreamsReturnsNilAttachments() throws {
+    let io = FBProcessIO<NSNull, NSNull, NSNull>(
+      stdIn: nil,
+      stdOut: nil,
+      stdErr: nil
+    )
+
+    let attachment = try io.attach().`await`()
+
+    XCTAssertNil(attachment.stdIn)
+    XCTAssertNil(attachment.stdOut)
+    XCTAssertNil(attachment.stdErr)
+    try attachment.detach().`await`()
+  }
+
+  func testAttachViaFileReturnsNullDeviceOutputs() throws {
+    let io = FBProcessIO<NSNull, NSNull, NSNull>.outputToDevNull()
+
+    let attachment = try io.attachViaFile().`await`()
+
+    XCTAssertEqual(attachment.stdOut?.filePath, "/dev/null")
+    XCTAssertEqual(attachment.stdErr?.filePath, "/dev/null")
+    try attachment.detach().`await`()
+  }
+
+  func testAttachViaFileWithNilOutputsReturnsNilFileOutputs() throws {
+    let io = FBProcessIO<NSNull, NSNull, NSNull>(
+      stdIn: nil,
+      stdOut: nil,
+      stdErr: nil
+    )
+
+    let attachment = try io.attachViaFile().`await`()
+
+    XCTAssertNil(attachment.stdOut)
+    XCTAssertNil(attachment.stdErr)
+    try attachment.detach().`await`()
+  }
+
+  func testAttachViaFileRejectsSecondAttachment() throws {
+    let io = FBProcessIO<NSNull, NSNull, NSNull>.outputToDevNull()
+    let attachment = try io.attachViaFile().`await`()
+
+    XCTAssertThrowsError(try io.attachViaFile().`await`())
+    try attachment.detach().`await`()
+  }
 }
