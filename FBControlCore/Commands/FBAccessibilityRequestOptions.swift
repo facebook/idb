@@ -78,12 +78,15 @@ public enum FBAccessibilityElementFilter: String, Sendable, CaseIterable {
   }
 }
 
-/// How a read traverses the application, and therefore which attribute vocabulary answers it.
+/// How a read traverses the application, and therefore which set of attributes the returned elements
+/// carry.
 ///
-/// Not a quality ordering — the two answer different questions. `viewHierarchy` is what the app built:
-/// deep, structural, every container. `semantic` is what an accessibility client sees: flat and labelled.
-/// A caller making structural assertions wants the first; one asking what it can interact with wants the
-/// second.
+/// Two kinds of choice share this enum. `viewHierarchy` and `semantic` choose what is read, and neither
+/// is better than the other — they answer different questions. `viewHierarchy` returns the view tree the
+/// app built: deep, structural, every container; use it for structural assertions. `semantic` returns
+/// what an accessibility client sees: flat and labelled; use it to ask what a user can interact with.
+/// `singleFetch` is not a third answer to that question — it returns the same tree and attributes as
+/// `viewHierarchy`, fetched in one call instead of one per node, so it is cheaper on large trees.
 ///
 /// Chosen per read rather than per backend, and kept separate from persistence and frontmost resolution:
 /// traversal, transport and frontmost are independent.
