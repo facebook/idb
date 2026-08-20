@@ -41,6 +41,32 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 /**
+ * A rect only the fake runtime can unwrap, standing in for the `AXValue` a single fetch answers a frame
+ * with.
+ *
+ * An `AXValue` cannot be constructed in a test: it is a CFType private to the real runtime. What a test
+ * needs from a stand-in is only that no production branch recognises it, so that asking the runtime is
+ * the only way to unwrap it. An `NSValue` would not do — the coercions unwrap `NSValue` themselves,
+ * before asking the runtime, so a test feeding one never exercises the runtime's unwrapping at all.
+ */
+@interface FBAXFakeRectValue : NSObject
+
++ (instancetype)withRect:(CGRect)rect;
+
+@property (nonatomic, readonly, assign) CGRect rect;
+
+@end
+
+/** A point only the fake runtime can unwrap; see `FBAXFakeRectValue`. */
+@interface FBAXFakePointValue : NSObject
+
++ (instancetype)withPoint:(CGPoint)point;
+
+@property (nonatomic, readonly, assign) CGPoint point;
+
+@end
+
+/**
  * A fake `FBAXRuntime`, wired into the service by `FBAXBridgeSetRuntimeForTesting`.
  *
  * Reaches the outcomes the live runtime only produces against a broken, dead or unresponsive

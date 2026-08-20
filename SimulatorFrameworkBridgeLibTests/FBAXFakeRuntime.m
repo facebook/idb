@@ -56,6 +56,28 @@ static NSString *const kAXChildren = @"XC_kAXXCAttributeChildren";
 
 @end
 
+@implementation FBAXFakeRectValue
+
++ (instancetype)withRect:(CGRect)rect
+{
+  FBAXFakeRectValue *value = [self new];
+  value->_rect = rect;
+  return value;
+}
+
+@end
+
+@implementation FBAXFakePointValue
+
++ (instancetype)withPoint:(CGPoint)point
+{
+  FBAXFakePointValue *value = [self new];
+  value->_point = point;
+  return value;
+}
+
+@end
+
 @implementation FBAXFakeRuntime
 {
   NSUInteger _translatorReadCount;
@@ -151,18 +173,13 @@ static NSDictionary *FBAXFakeSnapshotNode(FBAXFakeElement *element,
 
 - (BOOL)getRect:(CGRect *)rect fromValue:(id)value
 {
-  // The live runtime unwraps an AXValue, which cannot be constructed here. An `NSValue`-boxed rect stands
-  // in for one: what the caller is being tested on is that it asks the seam rather than that it knows the
-  // CFType. Anything else answers NO, which is the branch that matters — an unrecognised value must leave
-  // the rect alone rather than produce a zero frame.
-  if (!rect || ![value isKindOfClass:NSValue.class]) {
+  // Only the sentinel answers, and deliberately not an `NSValue`: see `FBAXFakeRectValue`. Anything else
+  // answers NO, which is the branch that matters — an unrecognised value must leave the rect alone rather
+  // than produce a zero frame.
+  if (!rect || ![value isKindOfClass:FBAXFakeRectValue.class]) {
     return NO;
   }
-  NSValue *boxed = value;
-  if (strcmp(boxed.objCType, @encode(CGRect)) != 0) {
-    return NO;
-  }
-  [boxed getValue:rect size:sizeof(*rect)];
+  *rect = ((FBAXFakeRectValue *)value).rect;
   return YES;
 }
 
