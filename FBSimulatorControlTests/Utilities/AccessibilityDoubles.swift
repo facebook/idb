@@ -416,12 +416,8 @@ class FBAccessibilityTestFixture: NSObject {
     super.init()
   }
 
-  class func bootedSimulatorFixture() -> FBAccessibilityTestFixture {
-    return FBAccessibilityTestFixture()
-  }
-
   class func bootedSimulator() -> FBAccessibilityTestFixture {
-    return bootedSimulatorFixture()
+    return FBAccessibilityTestFixture()
   }
 
   /// Installs the AXPTranslator swizzle and wires the translator's results.
