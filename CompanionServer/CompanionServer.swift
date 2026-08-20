@@ -321,9 +321,8 @@ public final class CompanionServer: @unchecked Sendable {
     }
   }
 
-  /// Ensures the base directory exists and clears a stale socket file, mirroring
-  /// the companion's careful cleanup: only an existing *socket* is unlinked, so a
-  /// real file at the path is never clobbered.
+  /// Ensures the base directory exists and clears a stale socket file: only an
+  /// existing *socket* is unlinked, so a real file at the path is never clobbered.
   private func prepareSocketPath(_ path: String) throws {
     try paths.ensureBaseDirectory()
     var info = stat()
