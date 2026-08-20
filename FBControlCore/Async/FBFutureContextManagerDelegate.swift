@@ -31,7 +31,6 @@ import Foundation
   @objc var contextName: String { get }
 
   /// The amount of time to allow the resource to be held with no-one utilizing it.
-  /// This is useful for ensuring that the same connection
   @objc var contextPoolTimeout: NSNumber? { get }
 
   /// Allows the context to be shared.
