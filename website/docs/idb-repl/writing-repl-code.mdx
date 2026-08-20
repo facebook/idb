@@ -7,21 +7,21 @@ title: Writing REPL Code
 ### Structure of REPL code
 
 - A block of REPL code is the code that will be injected and executed. In [one-shot mode](examples.mdx#two-ways-to-run) it's the trailing `code` argument; in interactive mode it's the lines you enter before `/run`. *(Note: The interactive editor is currently considered experimental.)*
-- **A block can be as much code as you like.** Blocks don't have to be a single line or a single expression. A block can define its own `func`s, `struct`s, and `class`es alongside the code that uses them; they're all compiled together and usable within that submission. In one-shot mode the whole block is passed as a single string argument (which can span multiple lines), so the requirement is *one argument*, not *one line*.
-- **Every block must `return` a value.** This value will be converted to a `String` through standard Swift String interpolation. For a void action (such as `IDB.ui.tap`), add a trailing `return "done"`.
-- **Each run starts fresh.** Declarations don't carry over between runs. Even within one live session, a run can't see the `func`s, `let`s, `var`s, or types declared by an earlier run; each submission is compiled on its own, so it must be self-contained. (In the app context, the *process's* own state still persists across runs — objects you stored on the app, navigation, and other side effects — but the REPL code's top-level symbols do not.) *(An option to let each run build directly on top of previous runs is coming soon.)*
-- **Uncaught errors are returned, not fatal.** If your code throws an error you don't catch, the REPL catches it and returns it as the result instead of ending the session — so a thrown error comes back to you just like a returned value.
-- **A crash ends the session.** Returning a value or throwing a Swift error is safe (above), but if your code *crashes* the process — a runtime trap (force-unwrapping `nil`, an out-of-bounds index), a `fatalError`, or anything else that kills the process — the session ends immediately. You'll need to start a new one (in the app context, relaunch or attach again with a fresh command).
+- A block can be as much code as you like. It can define its own `func`s, `struct`s, and `class`es alongside the code that uses them; they're all compiled together and usable within that submission. In one-shot mode the whole block is passed as a single string argument (which can span multiple lines), so the requirement is *one argument*, not *one line*.
+- Every block must `return` a value. This value will be converted to a `String` through standard Swift String interpolation. For a void action (such as `IDB.ui.tap`), add a trailing `return "done"`.
+- Each run starts fresh. Declarations don't carry over between runs: each submission is compiled on its own, so it must be self-contained. (In the app context, the *process's* own state still persists across runs — objects you stored on the app, navigation, and other side effects — but the REPL code's top-level symbols do not.)
+- Uncaught errors are returned, not fatal. If your code throws an error you don't catch, the REPL catches it and returns it as the result instead of ending the session.
+- A crash ends the session. If your code *crashes* the process — a runtime trap (force-unwrapping `nil`, an out-of-bounds index), a `fatalError`, or anything else that kills the process — the session ends immediately and you'll need to start a new one (in the app context, relaunch or attach again with a fresh command).
 
 ### Imports and available modules
 
 - `Foundation` and the built-in [`IDB` API](built-in-idb-api.mdx) are available automatically in every context.
 - Add `import` statements for anything else you need.
-- Modules from the **target** — the installed app or the test bundle — should be importable, so your code can call into the target's own types and functions. **This feature is experimental** so not every symbol is guaranteed to be available.
+- Modules from the **target** — the installed app or the test bundle — are importable, so your code can call into the target's own types and functions. This is experimental: not every symbol is guaranteed to resolve.
 
 ### Async work
 
-- REPL code can start async work, but mind its lifetime: a **detached `Task`** you spawn keeps running after the submission returns. In a long-running app-context session, detached `Task`s will continue inside the app process even once your REPL code has exited. This is a feature!
+- REPL code can start async work, but mind its lifetime: a **detached `Task`** you spawn keeps running after the submission returns. In a long-running app-context session, detached `Task`s continue inside the app process even once your REPL code has exited.
 
 ## The three contexts
 
@@ -40,18 +40,11 @@ idb-repl --reason "<why>" app --udid <udid> [--bundle-id <app-bundle-id>] [swift
 Runs your code inside an app process.
 
 - **With `--bundle-id`**, it targets an **installed** app (find bundle ids with `idb list-apps --udid <udid>`). Your code runs in the app's process, so it can call into the app and see or modify its live state.
-- **Without `--bundle-id`**, it uses a **default empty host app** — a generic app (`Foundation` + `UIKit` + the `IDB` API) that needs nothing installed, ideal for quick `SwiftUI`/`UIKit` visualization and experiments. The companion installs this host app into the simulator if it isn't already present.
+- **Without `--bundle-id`**, it uses a **default empty host app** — a generic app (`Foundation` + `UIKit` + the `IDB` API) that needs nothing installed, useful for quick UIKit/SwiftUI experiments. The companion installs this host app into the simulator if it isn't already present.
 
 #### Attach vs. relaunch
 
-By default, the app context **attaches to an already-running REPL for the same app**, launching it only if one isn't already live. This means you can fire many one-shot commands at the *same* process and have in-memory state, navigation, and setup persist between them:
-
-```bash
-UDID=<udid>; APP=<app-bundle-id>; WHY="scripting the app"
-idb-repl --reason "$WHY" app --udid $UDID --bundle-id $APP 'return "pid=\(ProcessInfo.processInfo.processIdentifier)"'
-idb-repl --reason "$WHY" app --udid $UDID --bundle-id $APP 'IDB.ui.tap(marker: "Settings"); return "tapped"'
-idb-repl --reason "$WHY" app --udid $UDID --bundle-id $APP 'return IDB.ui.describeAll()?.children.count ?? 0'
-```
+By default, the app context **attaches to an already-running REPL for the same app**, launching it only if one isn't already live. This means you can fire many one-shot commands at the *same* process and have in-memory state, navigation, and setup persist between them — see [Examples → Scripting a live app across many calls](examples.mdx#scripting-a-live-app-across-many-calls).
 
 Pass `--new-session` to force a clean relaunch (a fresh process) instead of attaching. The app keeps running after the session ends, ready for a later attach.
 
@@ -77,7 +70,7 @@ Any later `idb-repl app` for the same bundle id attaches to that running app ins
 idb-repl --reason "<why>" simulator --udid <udid> [swift-code]
 ```
 
-Injects into the simulator as its own **background process** — no app or test bundle required, and **it does not attach to or disturb the foreground app**. It runs as a standalone ("bare metal") process on the simulator, so you can run code without disturbing an app in the foreground. Your code has `Foundation` plus the built-in `IDB` API. Even though code in this context does not run inside an app, you can still **drive whatever is on screen**: tap, type, swipe, screenshot, record, and read the accessibility tree with the [`IDB` commands](built-in-idb-api.mdx).
+Injects into the simulator as its own standalone **background process** — no app or test bundle required, and it does not attach to or disturb the foreground app. Your code has `Foundation` plus the built-in `IDB` API. Even though code in this context does not run inside an app, you can still **drive whatever is on screen**: tap, type, swipe, screenshot, record, and read the accessibility tree with the [`IDB` commands](built-in-idb-api.mdx).
 
 Each `simulator` run is a fresh session (not currently reattachable).
 

@@ -2,7 +2,7 @@
 title: Reports and replay
 ---
 
-`idb-repl` can record a session to a Markdown **report** and later **replay** it. Together these let you capture an exploration or automation run, share it as a readable document, and re-run it deterministically.
+`idb-repl` can record a session to a Markdown **report** and later **replay** it. Together these let you capture an exploration or automation run, share it as a readable document, and re-run it later.
 
 ## Recording a report — `--report-path`
 
@@ -28,7 +28,7 @@ While a report is being written, several built-in [`IDB` commands](built-in-idb-
 
 Captured artifacts are saved into a folder next to the report (a `report.md` uses a `report/` folder) and linked from the run that captured them, so the report reads as a self-contained record of the session.
 
-**Saving artifacts requires the report to be saved.** Capturing an artifact adds it to the *current* report, so you must be running with `--report-path` for it to be kept — without a saved report there is nowhere to collect it. (Calls such as `IDB.screenshot.capture()` that also return a path still write that file on the companion regardless; see [Built-in IDB API → Behaviour](built-in-idb-api.mdx#behaviour).)
+Artifacts are only kept when running with `--report-path`. (Calls such as `IDB.screenshot.capture()` that also return a path still write that file on the companion regardless; see [Built-in IDB API → Behaviour](built-in-idb-api.mdx#behaviour).)
 
 ## Replaying a report — `replay`
 

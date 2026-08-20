@@ -8,7 +8,7 @@ You can omit `--udid` only when **exactly one** simulator is booted. If several 
 
 ## My code failed but the shell exit code is still 0
 
-`idb-repl` **always exits 0**, whether your code succeeded or failed. Do not branch on the exit code. Instead, check the **prefix** of the output:
+A submission that fails still **exits 0** — nonzero exits are reserved for argument and connection errors. Do not branch on the exit code for your code's success. Instead, check the **prefix** of the output:
 
 - `Result:` followed by the value ⇒ success.
 - `Error:` followed by a message ⇒ failure (e.g. a compile error).
@@ -35,7 +35,7 @@ If you pass a trailing `code` argument, `idb-repl` runs in one-shot mode and ign
 
 ## A screenshot/video path doesn't exist locally
 
-Paths returned by `IDB.screenshot` / `IDB.video` are on the same filesystem as the **simulator**, not necessarily your local machine — relevant when using a remote `--companion`. To collect artifacts locally, run with `--report-path`, which gathers captured files along with the report. See [Reports and replay](reports-and-replay.mdx).
+Paths returned by `IDB.screenshot` / `IDB.video` are on the filesystem of the **machine running the companion**, not necessarily your local machine — relevant when using a remote `--companion`. To collect artifacts locally, run with `--report-path`, which gathers captured files along with the report. See [Reports and replay](reports-and-replay.mdx).
 
 ## Wrong Swift toolchain
 

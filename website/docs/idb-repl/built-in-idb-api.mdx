@@ -11,7 +11,7 @@ These commands drive the connected simulator directly, so they work in the `app`
 - **The calls do not throw.** Instead of surfacing a catchable error on every call, failures are usually silent no-ops or `nil` values.
 - Most `IDB.ui` commands return `Void`; `describeAll`, the `IDB.screenshot` captures, and the `IDB.video` calls return values. Every submission must still end in a `return` — follow a void action with e.g. `return "done"`.
 - `CGPoint` and `CGRect` are available (CoreGraphics).
-- **Paths** returned by the `IDB.screenshot.capture(...)` and `IDB.video` calls point at files on the **simulator host's** filesystem, and are handed back so your REPL code can interact with them directly (read, process, or pass them to another command). If a [session report](reports-and-replay.mdx) is being written, they will be collected for the session report at the end of a run.
+- **Paths** returned by the `IDB.screenshot.capture(...)` and `IDB.video` calls point at files on the filesystem of the **machine running the companion**, and are handed back so your REPL code can interact with them directly (read, process, or pass them to another command). If a [session report](reports-and-replay.mdx) is being written, they will be collected for the session report at the end of a run.
 - **Artifacts produced without a path** — such as an in-memory `IDB.screenshot.captureImage()` — are only available in REPL code and will not be saved.
 
 ## UI automation — `IDB.ui`

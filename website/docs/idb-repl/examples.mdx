@@ -2,7 +2,7 @@
 title: Examples
 ---
 
-All examples pass `--reason "<why>"` before the subcommand (not necessary for humans, but required for agents) and use `--udid <udid>`. *(You can omit `--udid` when exactly one simulator is booted.)*
+All examples pass `--reason "<why>"` before the subcommand and use `--udid <udid>`. *(You can omit `--udid` when exactly one simulator is booted.)*
 
 ## Two ways to run
 
@@ -16,7 +16,7 @@ idb-repl --reason "quick math" simulator --udid <udid> 'return "answer: \(6 * 7)
 
 The code must still end in a `return` of the value to surface. Single-quote it so Swift string interpolation (`\(...)`) passes through untouched.
 
-**One-shot is not limited to one line.** The trailing argument just has to be a single *string* — it can hold as much Swift as you like, including your own `func`, `struct`, and `class` definitions, all compiled together and usable within that submission. A single-quoted shell argument can span multiple lines:
+The trailing argument is a single *string*, but it can span multiple lines and hold as much Swift as you like — see [Writing REPL code](writing-repl-code.mdx#structure-of-repl-code):
 
 ```bash
 idb-repl --reason "multi-line one-shot" simulator --udid <udid> '
@@ -50,7 +50,7 @@ Don't pass a trailing `code` argument when piping — that switches to one-shot 
   ```
 
 - On failure (e.g. a compile error), **stdout** carries `Error: <message>` instead.
-- Either way `idb-repl` **exits 0** — check for the `Result:` / `Error:` prefix, not the exit code.
+- A failed submission still **exits 0** — check for the `Result:` / `Error:` prefix, not the exit code. (Argument and connection errors do exit nonzero.)
 - Diagnostics (interfaces received, the target triple) go to **stderr**. Redirect with `2>/dev/null` if you only want the result.
 
 ## Simulator context
@@ -68,7 +68,7 @@ idb-repl --reason "drive UI" simulator --udid <udid> \
   'IDB.ui.tap(marker: "Settings"); return IDB.ui.describeAll()?.children.count ?? 0'
 ```
 
-Take a screenshot (the returned path is on the companion's filesystem):
+Take a screenshot (the returned path is on the machine running the companion):
 
 ```bash
 idb-repl --reason "screenshot" simulator --udid <udid> \

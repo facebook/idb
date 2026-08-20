@@ -19,13 +19,13 @@ idb-repl [--reason "<why>"] <subcommand> [options] [swift-code]
 | `test` | Run code inside a logic-test (`.xctest`) bundle. See [Writing REPL code → Test](writing-repl-code.mdx#test-context). |
 | `replay` | Re-run a recorded session from its report. See [Reports and replay](reports-and-replay.mdx). |
 
-Each of `app` / `simulator` / `test` takes an optional trailing `code` argument — a single string of Swift. Supplied ⇒ one-shot (run it, print, exit); omitted ⇒ interactive REPL (**experimental** — see [Interactive commands](#interactive-commands)).
+Each of `app` / `simulator` / `test` takes an optional trailing `code` argument — a single string of Swift. With code supplied it runs once, prints, and exits; with no code it starts the interactive REPL (**experimental** — see [Interactive commands](#interactive-commands)).
 
 ## Root options
 
 | Option | Description |
 |---|---|
-| `--reason <string>` | Why you're running the tool. Not necessary for humans, but **required for automation**. Goes before the subcommand. |
+| `--reason <string>` | Why you're running the tool; goes before the subcommand. Automation should always pass it. |
 | `--version`, `-v` | Print build information, then exit. |
 
 ## Common options (`app` / `simulator` / `test`)
@@ -65,7 +65,7 @@ See [Reports and replay](reports-and-replay.mdx) for the full replay workflow.
 
 ## Interactive commands
 
-**Interactive mode is experimental and incomplete.** Entering and running Swift code line by line works, but it has rough edges and missing features. For reliable, scriptable use, prefer one-shot mode — pass the Swift code as a trailing `code` argument.
+**Interactive mode is experimental.** Entering and running Swift code line by line works; for scripting, prefer one-shot mode — pass the Swift code as a trailing `code` argument.
 
 In an interactive session (a subcommand with no trailing code), any line **not** starting with `/` is collected as Swift; commands start with `/`:
 

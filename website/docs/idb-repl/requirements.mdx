@@ -4,11 +4,9 @@ title: Requirements
 
 `idb-repl` runs Swift code inside a process on an iOS **Simulator** via an `idb` companion. Here's what your setup needs.
 
-## The client (macOS today; Linux coming soon)
+## The client
 
-`idb-repl` currently runs on **macOS**. It compiles the Swift you enter **locally**, so today you need **Xcode installed locally** to provide the Swift toolchain — this is true even when you are working with a remote simulator.
-
-A **Linux client is coming soon**. With remote compilation, the Swift code is compiled on the remote host instead of on your machine, so a local Xcode install (and a Mac) will no longer be required.
+`idb-repl` runs on **macOS**. It compiles the Swift you enter **locally**, so you need **Xcode installed locally** to provide the Swift toolchain — this is true even when you are working with a remote simulator.
 
 `idb-repl` targets iOS **Simulators**. REPL injection and UI automation are simulator features — it is not a way to inject code for physical devices.
 
@@ -38,6 +36,6 @@ You may omit `--udid` **only when exactly one simulator is booted**; if several 
 
 To drive a **remote** simulator, set up `idb_companion` on the remote host yourself and connect to it explicitly with `--companion <host:port>`. Unlike local use, this is **not** set up automatically — there is currently no discovery for remote companions. See [Examples → Remote companion](examples.mdx#remote-companion) and the [CLI reference](cli-reference.mdx).
 
-## `--reason` (required for automation)
+## `--reason`
 
-`idb-repl` accepts a global `--reason "<why>"` explaining why you are running it, placed **before** the subcommand. It is not necessary for humans, but is **required for agents**. All examples in this documentation include it.
+`idb-repl` accepts a global `--reason "<why>"` explaining why you are running it, placed **before** the subcommand. Automation should always pass it, and all examples in this documentation include it.

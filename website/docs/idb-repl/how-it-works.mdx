@@ -2,8 +2,6 @@
 title: How it works
 ---
 
-This page describes what actually happens when you are running code.
-
 ## The pieces
 
 - **`idb-repl` (the driver).** The CLI you run. It takes your Swift code, compiles it, and orchestrates the session. It does **not** talk to the target process directly.
@@ -20,7 +18,7 @@ This page describes what actually happens when you are running code.
 
 1. **Connect to a companion.** `idb-repl` finds or starts an `idb_companion` for your target.
 2. **Prepare the target.** Depending on the [context](writing-repl-code.mdx), the companion attaches to a running app, (re)launches one with the REPL enabled, targets the simulator itself, or loads a test bundle.
-3. **Compile.** The driver compiles the Swift code you entered and sends it to the companion. *(Remote compilation is coming soon.)*
+3. **Compile.** The driver compiles the Swift code you entered and sends it to the companion.
 4. **Inject and execute.** The companion loads the executable code into the target process and triggers execution.
 5. **Return the result.** The value you `return` is streamed back and printed.
 
