@@ -116,7 +116,7 @@ $ idb ui describe General --format complete | jq '{backend, truncated, target, s
 | `truncated` | Whether the read hit the depth or node bounds and stopped short of the whole tree |
 | `modal` | The blocking alert on screen, if there is one: whether it belongs to the system or the app, its element type, and its title |
 | `coverage` | How much of the screen the read's element frames cover, along several dimensions |
-| `profile` | Timing and call counts for the read, where the backend collects them |
+| `profile` | Where the read spent its time, and how many calls it took — see [Reading `profile`](#reading-profile) |
 
 Two things make this format easier to consume than the others. Its **key set is fixed**: every field is always present, `null` where it does not apply, so one parser handles every read command — a point read and a whole-screen read differ in their values, never in their shape, and `target` rather than the shape tells you which command produced the document. And its **element names are the clean ones**: `label` rather than `AXLabel`, `identifier` rather than `AXUniqueId`, `role_description` rather than a mix. The two attributes that merely restated another are gone — the stringified `AXFrame`, since `frame` carries the same rectangle structurally, and the raw `role`, since `type` is its normalised form.
 
@@ -127,6 +127,48 @@ A companion that predates format selection does not recognise `complete` and ans
 ```
 warning: the companion does not support --format complete (it predates format selection); the read was served in the legacy format by the default backend
 ```
+
+### Reading `profile`
+
+Every read reports a profile — there is no flag to turn it on. It is present on the `complete` format only, since that is the only format with room for it.
+
+**The core is the same on every backend**, so two reads served by different backends can be compared without knowing which is which:
+
+| Field | What it measures | What it excludes |
+|-------|------------------|------------------|
+| `element_count` | Elements in the serialized read | Elements walked and then dropped by a filter |
+| `total_duration_ms` | Wall time for the whole read: the number you waited | Time in `idb` itself, and the gRPC hop from `idb` to the companion |
+| `acquire_duration_ms` | Getting into a position to read at all | Any reading — this is setup, before a single attribute is fetched |
+| `read_duration_ms` | Pulling the tree out of the application | Turning what came back into output |
+| `serialize_duration_ms` | Turning what was read into the format you asked for | Waiting on the application, which is `read` |
+
+The three phases do not have to add up to the total, and normally fall a little short — a read does small amounts of work between them. In practice they account for 98–100%.
+
+**Everything else in `profile` is specific to the backend that served the read**, and `backend` is what tells you how to read it. There is no discriminator inside `profile`; a second one could disagree with the first.
+
+On `ax`, the tree is fetched attribute by attribute over XPC, so the phases decompose like this:
+
+| Field | What it measures |
+|-------|------------------|
+| `translation_duration_ms` | Obtaining the translation object. A component of `acquire` |
+| `element_conversion_duration_ms` | Turning that into a platform element. The other component of `acquire` |
+| `attribute_fetch_count` | Attribute reads across the walk — one per property per element |
+| `xpc_call_count` | Round trips to the simulator's accessibility service |
+| `total_xpc_duration_ms` | XPC wait across the **whole** read. Larger than `read_duration_ms`, which counts only the walk's share — acquisition's XPC is reported as its wall time instead |
+
+On `axbridge` and `axbridge-persistent`, the tree is walked in-process by a guest reader and shipped back as JSON, so the interesting split is transport against traversal:
+
+| Field | What it measures |
+|-------|------------------|
+| `mach_round_trips` | Round trips to the application's accessibility server. What makes `read_duration_ms` interpretable rather than merely large |
+| `host_decode_duration_ms` | Decoding that JSON. The other half of a boundary these payloads cross twice |
+| `response_bytes` | Response size. Divide it by `acquire_duration_ms` for throughput — that is what says whether a large residual is payload-bound |
+
+  Note that `acquire_duration_ms` on these lanes is a **residual**, not a measurement: it is the round trip less the guest's walk, holding acquisition, the guest's JSON encoding and the IPC, undivided. Neither transport separates its own spawn or connect out of it. On a warm persistent read the residual is mostly encoding and IPC rather than acquisition, so reading it as "how long connecting took" will be wrong by most of its value.
+
+A `null` here means *this transport does not have this phase* — not that the phase took no time, and not that the field is missing. A phase that took no measurable time reports `0`.
+
+**A cold read costs far more than a warm one, on every backend.** The first read of a screen pays for caches nothing has filled yet, and the difference is one or two orders of magnitude rather than a few per cent. Comparing a cold read against a warm one and concluding something about the backend is the most common way to misread these numbers.
 
 ## When a read comes back empty
 
