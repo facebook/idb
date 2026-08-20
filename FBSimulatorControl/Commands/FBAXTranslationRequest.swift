@@ -25,9 +25,6 @@ final class SeenPIDs {
 /// the synchronous XPC timeout. The `kind` selects how the root element is
 /// obtained (the frontmost application or the element at a point) and how the
 /// response is serialized.
-///
-/// Created and driven entirely from Swift in this module (the dispatcher, the
-/// element handle, and the facade), so it is a plain Swift class.
 final class FBAXTranslationRequest {
 
   /// What the request resolves and how it serializes.
@@ -43,18 +40,15 @@ final class FBAXTranslationRequest {
   }
 
   // Default timeout (in seconds) for synchronous accessibility XPC round-trips.
-  // Healthy SpringBoard responses return well under 1s; 5s comfortably absorbs
-  // scheduler jitter and slow-element edge cases while bounding the wedge condition
-  // where the accessibility XPC service stalls and the caller would otherwise hang
-  // indefinitely on a `DispatchGroup.wait`.
+  // Healthy responses return well under 1s; 5s bounds a stalled accessibility XPC
+  // service so the caller never hangs on `DispatchGroup.wait`.
   private static let defaultRequestTimeoutSeconds: TimeInterval = 5.0
 
   let kind: Kind
   let token: String
   var device: SimDevice?
-  /// Non-optional and owned from construction, because the request *is* the read: the dispatcher
-  /// measures acquisition before the caller ever reaches `serialize`, and a collector attached later
-  /// would have those writes land on nil.
+  /// Owned from construction: the dispatcher records acquisition timings before the caller reaches
+  /// `serialize`.
   var collector: FBAccessibilityProfilingCollector
   var logger: FBControlCoreLogger?
   var translator: AXPTranslator?
@@ -74,8 +68,7 @@ final class FBAXTranslationRequest {
   /// A fresh request of the same kind with a new token, used to retry after
   /// SpringBoard remediation.
   ///
-  /// The collector carries over rather than starting again: the caller waited for the failed attempt
-  /// too, and a profile that begins at the retry describes a read that did not happen.
+  /// The collector carries over so the profile spans the failed attempt the caller also waited through.
   func cloneWithNewToken() -> FBAXTranslationRequest {
     let clone = FBAXTranslationRequest(kind: kind)
     clone.collector = collector
@@ -102,9 +95,8 @@ final class FBAXTranslationRequest {
   ///
   /// A marker match is reached by descending from the frontmost tree, so its request still reads
   /// `.frontmostApplication` even though the caller named the match. Serializing it by `kind` alone
-  /// would make the match the root of a whole-tree walk — which is how it used to be reported as a
-  /// subtree, and how the filter used to be able to drop it. A named element is serialized as one
-  /// element wherever it came from.
+  /// would make the match the root of a whole-tree walk; a named element is serialized as one element
+  /// wherever it came from.
   func run(
     _ element: FBAXPlatformElement,
     options: FBAccessibilityRequestOptions,
@@ -140,8 +132,8 @@ final class FBAXTranslationRequest {
     if let children = elements.children {
       elements.children = options.filter.apply(to: children)
     }
-    // A named element is one element, with no tree behind it to speak for the screen. A marker match
-    // does know its bounds — the root it descended from — and the backend stamps them on the way out.
+    // A named element carries no screen info of its own; a marker match's bounds come from the root it
+    // descended from, stamped by the backend on the way out.
     return buildResponse(
       elements: .single(elements), walkStart: walkStart, coverage: nil, screen: nil,
       reportProfile: options.enableProfiling
@@ -151,8 +143,7 @@ final class FBAXTranslationRequest {
   // MARK: - Frontmost Application
 
   private func runFrontmostApplication(_ element: FBAXPlatformElement, options: FBAccessibilityRequestOptions) -> FBAccessibilityElementsResponse {
-    // Marked before the screen-bounds fetch rather than before the walk, because that fetch is a read of
-    // the application like any other — measured from here, no part of the read falls outside a phase.
+    // Marked before the screen-bounds fetch so that fetch is inside the measured walk.
     let walkStart = CFAbsoluteTimeGetCurrent()
     collector.markWalkStart()
 
@@ -174,9 +165,8 @@ final class FBAXTranslationRequest {
     )
     let mainAppElements = options.filter.apply(to: walked)
 
-    // Coverage of what the read reports and of what it walked, both marked from the serialized model
-    // rather than accumulated during the walk — the same calculation every backend runs. The unfiltered
-    // elements are still in hand, so the second ratio costs no extra traversal of the live tree.
+    // Coverage of what the read reports and of what it walked; the unfiltered elements are still in
+    // hand, so the second ratio costs no extra traversal of the live tree.
     //
     // The live grid stays: remote-content discovery asks it which points the reported elements already
     // cover, and marks what it hit-tests into it.
@@ -347,10 +337,9 @@ final class FBAXTranslationRequest {
       }
     }
 
-    // Discovered elements are kept or dropped on what they are, not on whether the main traversal or
-    // the remote hit-test found them. `additionalFrameCoverage` above is deliberately measured before
-    // this: it reports how much content the hit-test found that the element tree did not expose, which
-    // is the question it exists to answer, and a filter narrowing the output does not unfind it.
+    // Discovered elements are kept or dropped on what they are, not on which traversal found them.
+    // `additionalFrameCoverage` is measured before the filter: it reports what the hit-test found that
+    // the element tree did not expose, independent of what the filter keeps.
     let keptDiscovered = filter.apply(to: discoveredElements)
     var elements = mainAppElements
     if !keptDiscovered.isEmpty {
@@ -379,8 +368,7 @@ final class FBAXTranslationRequest {
 
   // MARK: - Helpers
 
-  // Builds the response, finalizing profiling timing — the Swift equivalent of the
-  // old `FBAccessibilityElementsResponse (ResponseBuilder)` ObjC category.
+  // Builds the response, finalizing profiling timing.
   //
   // `truncated` is always false here: this path walks the live element tree with no depth or node
   // bound, so unlike the guest-backed readers it never returns a partial view.
@@ -392,8 +380,7 @@ final class FBAXTranslationRequest {
     reportProfile: Bool
   ) -> FBAccessibilityElementsResponse {
     let walkDuration = CFAbsoluteTimeGetCurrent() - walkStart
-    // Collected either way; reported only when asked. A number nobody collected cannot be recovered
-    // afterwards, and collection is cheap enough to leave on.
+    // Collected always (cheap); reported only when profiling was requested.
     let profilingData = reportProfile ? collector.finalize(withWalkDuration: walkDuration) : nil
     return FBAccessibilityElementsResponse(
       elements: elements,
@@ -404,11 +391,9 @@ final class FBAXTranslationRequest {
     )
   }
 
-  // The application root's frame is the screen for a whole-tree read; a degenerate one is reported as
-  // unknown rather than as a zero-sized screen.
   /// The screen bounds a read's frames are relative to, or `nil` when the rectangle does not describe
-  /// a screen. Shared with the marker path, which knows its bounds from the root it descended through
-  /// rather than from the element it ends up serializing.
+  /// a screen — a degenerate rectangle is reported as unknown rather than as a zero-sized screen.
+  /// Shared with the marker path, whose bounds come from the root it descended through.
   static func screenInfo(fromBounds bounds: CGRect) -> FBAccessibilityScreenInfo? {
     guard bounds.width > 0, bounds.height > 0 else {
       return nil
@@ -416,7 +401,6 @@ final class FBAXTranslationRequest {
     return FBAccessibilityScreenInfo(width: Double(bounds.width), height: Double(bounds.height))
   }
 
-  // The keys to serialize.
   private static func serializerKeys(_ options: FBAccessibilityRequestOptions) -> Set<FBAXKeys> {
     options.serializationKeys
   }

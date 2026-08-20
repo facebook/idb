@@ -40,9 +40,7 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
   /// mode a UI-test host puts an application into and reading without it means UIKit collapses subtrees
   /// and can serve cached children describing a screen that is no longer displayed.
   ///
-  /// Carried per instance rather than as a constant so a caller can have both answers on one device in
-  /// one process — which is what measuring the mode's cost needs, and what showing the fault and the fix
-  /// without swapping binaries needs.
+  /// Carried per instance so one process can hold readers with both settings against the same device.
   let requestedAutomationMode: Bool?
 
   private let simulator: FBSimulator
@@ -98,8 +96,7 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
     }
   }
 
-  /// Assembles what both sides measured. The phases come off the envelope `FBAXTreeRead` already parsed,
-  /// so this adds a dictionary lookup rather than a second parse of the whole tree.
+  /// Assembles what both sides measured; the phases come off the envelope `FBAXTreeRead` already parsed.
   private static func timings(
     response: Data, sent: CFAbsoluteTime, returned: CFAbsoluteTime, read: FBAXTreeRead
   ) -> FBAXReadTimings {
@@ -128,8 +125,7 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
   ) async throws -> FBAXTreeRead {
     try await translatingSeamErrors {
       if case let .application(pid) = query {
-        // Timed around the transport rather than inside it: what a caller waited for is the whole round
-        // trip, and splitting it further from out here would be guesswork about the other process.
+        // Timed around the transport: what the caller waited for is the whole round trip.
         let sent = CFAbsoluteTimeGetCurrent()
         let response = try await transport.read(
           pid: pid, maxDepth: FBAXReadLimits.maxReadDepth, maxNodes: FBAXReadLimits.maxReadNodes,
@@ -217,9 +213,8 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
     _ query: FBAccessibilityElementQuery,
     options: FBTapOptions
   ) async throws {
-    // A hold is a property of a synthesized touch, and this backend does not synthesize one — the AX
-    // runtime's press is instantaneous and has nowhere to put a duration. Rejected rather than dropped:
-    // a long-press that silently becomes a tap is a test that passes for the wrong reason.
+    // The AX runtime's press is instantaneous with nowhere to put a hold; reject `duration` rather
+    // than silently downgrading a long-press to a tap.
     guard options.duration == nil else {
       throw FBUIAutomationError.operationUnsupported(backend: backend, operation: "A tap with a hold duration")
     }
@@ -237,8 +232,7 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
     try await write(.perform(Self.action(for: direction)), to: target, query: query)
   }
 
-  /// The semantic action a scroll direction asks for. Total over the direction, so a direction added to
-  /// the enum has to be given a meaning here rather than silently scrolling somewhere.
+  /// The semantic action a scroll direction asks for.
   private static func action(for direction: FBAccessibilityScrollDirection) -> FBAXWire.Action {
     switch direction {
     case .up: .scrollUp
@@ -251,12 +245,9 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
 
   /// Sends the write and turns the guest's envelope into the verb's outcome.
   ///
-  /// An empty point is a successful read of nothing, which for a write means the thing the caller aimed
-  /// at was not there — so it is an error rather than a write that passed. Which error depends on what
-  /// the caller named, not on what the guest was sent: a marker write reports that its element moved, the
-  /// same as when the guest finds a *different* element under the point. Both are the screen changing
-  /// between the read that resolved the marker and the write that acted on it, and reporting one of them
-  /// against coordinates the caller never chose would make the pair look like different conditions.
+  /// An empty point means the thing the caller aimed at was not there — an error, not a write that
+  /// passed. A marker write reports `elementMoved` rather than a coordinate the caller never chose;
+  /// see `emptyWriteTargetError`.
   private func write(
     _ kind: FBAXBridgeWriteRequest.Kind,
     to target: FBAXWriteTarget,
@@ -294,9 +285,8 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
 
   // MARK: - Geometry
 
-  /// Filed with the writes because that is the company `FBUIAutomation` keeps it in, but it is a pure
-  /// read: `AXFrame` is an attribute of the tree the other verbs already read, so it is served by the
-  /// shared tree-reader path with no wire verb and no guest change.
+  /// A pure read: `AXFrame` is an attribute of the tree the other verbs already read, so it is served
+  /// by the shared tree-reader path with no wire verb and no guest change.
   func frame(_ query: FBAccessibilityElementQuery) async throws -> CGRect {
     try await frameFromTree(query)
   }
@@ -313,7 +303,7 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
   }
 
   /// Warns that the traversal could not answer keys the caller asked for, so a caller can tell "this read
-  /// could not ask" from "the app set nothing". A synchronous witness satisfies the `async` requirement.
+  /// could not ask" from "the app set nothing".
   func warnIfUnsatisfiable(_ keys: Set<FBAXKeys>, strategy: FBAXTraversalStrategy) {
     guard !keys.isEmpty else {
       return
@@ -328,19 +318,13 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
 
   /// Warns when a whole-tree read hit the depth or node bound, so a truncated tree is never passed off
   /// as complete. Called once per describe by the shared `describeTree`; the `wait` poll reads via
-  /// `readRawTree` without describing, so it never warns per iteration. A synchronous witness satisfies
-  /// the `async` protocol requirement.
+  /// `readRawTree` without describing, so it never warns per iteration.
   func warnIfTruncated(_ truncated: Bool) {
     guard truncated else { return }
     _ = simulator.logger.log("axbridge read hit the bound (maxDepth \(FBAXReadLimits.maxReadDepth), maxNodes \(FBAXReadLimits.maxReadNodes)); the returned tree is truncated and incomplete.")
   }
 
-  /// The guest lanes' profile.
-  ///
-  /// `acquire` is the round trip less the guest's walk, and it is a **residual**: it holds getting a
-  /// usable guest, the guest's JSON encoding and the IPC, undivided, because neither side can separate
-  /// them from where it stands. `responseBytes` over `acquire` is the throughput that says whether a
-  /// large residual is payload-bound — which is the question the residual cannot answer on its own.
+  /// The guest lanes' profile. `acquire` is `FBAXReadTimings.residual` — see there.
   func profile(
     for read: FBAXTreeRead, elementCount: Int, serializeDuration: CFAbsoluteTime
   ) -> FBAccessibilityProfile? {

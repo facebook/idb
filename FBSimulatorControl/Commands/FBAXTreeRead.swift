@@ -11,7 +11,7 @@ import Foundation
 /// A parsed accessibility read: the raw `XC_kAXXC*` attribute tree the guest returned, the pid that
 /// owns it, whether the guest's walk was cut short by the depth or node bound, and any fullscreen-modal
 /// descriptor the read surfaced. One value type for what both XCUI-grade backends produce from a raw
-/// read, replacing the ad-hoc `(tree, truncated, pid, modal)` tuple each used to destructure.
+/// read.
 ///
 /// The serialize step (`FBAXTreeWalk.describeAllElements`) and the truncation warning happen
 /// once, in the shared `describeTree`, over this value — so a `.marker` poll that reads without
@@ -31,28 +31,20 @@ struct FBAXTreeRead: @unchecked Sendable {
   /// device was not in automation mode" are different facts and must not collapse.
   var automation: FBAccessibilityAutomationState?
   /// What the guest measured of its own work, and what the host measured around the wire.
-  ///
-  /// Separate from `automation` because they answer different questions and one can be present without
-  /// the other: a guest predating the phases still reports its mode, and a read that failed to parse
-  /// still cost the host a round trip.
   var timings: FBAXReadTimings?
-  /// The guest's reported phases, taken off the envelope this read already parsed. Held so the host does
-  /// not parse the response a second time to read two numbers out of it — on a large tree that second
-  /// parse costs as much as the first.
+  /// The guest's reported phases, taken off the envelope this read already parsed so the host does not
+  /// parse the response a second time.
   var phases: (traverse: CFAbsoluteTime?, machRoundTrips: Int64?) = (nil, nil)
 }
 
 /// Where a guest-backed read's time went, from both sides of the boundary.
 ///
-/// The host cannot see inside the guest and the guest cannot time its own encoding — the encode duration
-/// is only known once the dictionary carrying it is already bytes. So `residual` is named as what it is:
-/// the round trip less the walk, holding spawn or connect, the guest's bind, its JSON encoding and the
-/// IPC itself. On a one-shot read it is expected to be most of the total, and saying "residual" rather
-/// than "spawn" keeps that a finding rather than an assumption.
+/// `residual` is the round trip less the guest's walk. It lumps spawn or connect, the guest's bind,
+/// its JSON encoding and the IPC, undivided — neither side can split them.
 struct FBAXReadTimings: Equatable {
   /// Wall time of the whole transport call, host-side: request out, guest work, response back.
   let roundTrip: CFAbsoluteTime
-  /// Decoding the guest's JSON, host-side. One half of a boundary these payloads cross twice.
+  /// Decoding the guest's JSON, host-side.
   let decode: CFAbsoluteTime
   /// The guest's own walk, as it reported it.
   let traverse: CFAbsoluteTime?
@@ -94,8 +86,7 @@ extension FBAXTreeRead {
     else {
       return nil
     }
-    // `asserted` absent reads as false: a guest that reports the mode but does not yet change it is
-    // exactly the state before anything asserts, and false is the truthful answer for it.
+    // `asserted` absent reads as false: a guest that only reports the mode has asserted nothing.
     let asserted = (object[FBAXWire.Automation.asserted.rawValue] as? Bool) ?? false
     return FBAccessibilityAutomationState(enabled: enabled, asserted: asserted)
   }

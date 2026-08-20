@@ -191,8 +191,8 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
     // midpoint hit-test only when the AX pid is unavailable.
     let pid = await frontmostApplicationPid()
     let fallbackAnchor = pid > 0 ? nil : anchorPoint()
-    // A wait holds one session for its whole duration, so if that session dies mid-wait the failure
-    // propagates out and the memo must be dropped — otherwise the next operation reuses the corpse.
+    // A wait holds one session for its whole duration; if it dies mid-wait, drop the memo so the next
+    // operation re-establishes (see `withSession`).
     do {
       try await pollForMarker(query, session: session, pid: pid, fallbackAnchor: fallbackAnchor, timeout: timeout, pollInterval: pollInterval)
     } catch {
@@ -324,9 +324,8 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
     _ = simulator?.logger.log("Remote-automation read hit the bound (maxDepth \(FBAXReadLimits.maxReadDepth), maxNodes \(FBAXReadLimits.maxReadNodes)); the returned tree is truncated and incomplete.")
   }
 
-  // Silent here. This lane's reachability comes back with the snapshot the automation session already
-  // takes rather than from per-node hit-testing, so the request costs nothing and there is nothing to
-  // warn about.
+  /// No warning: this lane's reachability comes with the snapshot the automation session already
+  /// takes, so the request costs nothing.
   func warnIfReachabilityAcrossTree(_ keys: Set<FBAXKeys>) {}
 
   func warnIfGeometrySuspect(_ frames: FBAccessibilityFrameSummary?) {
@@ -378,12 +377,9 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
   // amortize by holding this instance across operations rather than re-creating it per call — one
   // session per held instance, torn down when the instance is released.
 
-  /// Runs `body` against the memoized session, dropping that session if the operation fails.
-  ///
-  /// Without this a session that dies mid-lifetime — the daemon restarted, the simulator shut down,
-  /// the channel dropped — is never replaced, because a memo that resolved successfully was only ever
-  /// cleared on an establish failure. Every later operation then reuses the corpse and the instance is
-  /// wedged for good.
+  /// Runs `body` against the memoized session, dropping the memo on failure so a dead session — the
+  /// daemon restarted, the simulator shut down, the channel dropped — is replaced by the next
+  /// operation instead of being reused forever.
   ///
   /// Deliberately no automatic retry: remote operations include writes (tap, set-value, device
   /// events), and replaying one that may already have been applied could double-apply it. Dropping the
@@ -504,8 +500,8 @@ public extension FBSimulator {
   ///
   /// **Hold the returned instance to amortize the session cost.** Each call returns a fresh
   /// `FBSimulatorRemoteAutomation` that owns its own `FBRemoteAutomationSession`; the first operation
-  /// on an instance establishes it — socket connect, private-framework load, DTX handshake, and settle
-  /// (~1.8–4.75s) — and every later operation on that same instance reuses it. A long-lived caller
+  /// on an instance establishes it — socket connect, private-framework load, DTX handshake, and settle,
+  /// taking several seconds — and every later operation on that same instance reuses it. A long-lived caller
   /// (the idb companion, or a persistent driver) holds one instance and pays that cost once; dropping
   /// the instance tears the session down. A one-shot CLI invocation establishes the session once and
   /// lets it go on exit.

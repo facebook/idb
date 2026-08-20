@@ -50,20 +50,16 @@ enum FBAXWire {
     /// walking the tree with the runtime bound, so it answers inline for the price of the response that
     /// was coming anyway.
     case explainedBy = "FBExplainedBy"
-    /// Whether the element is enabled, as the accessibility translator answers it.
-    ///
-    /// The reader's own namespace because XCTest's vocabulary has no counterpart — which is precisely why
-    /// a read through it reports `enabled` as an explicit null. Only a read through the translator's
-    /// vocabulary carries this key, so its absence keeps every other read answering null as before.
+    /// Whether the element is enabled, as the accessibility translator answers it. Reader-namespaced:
+    /// XCTest's vocabulary has no counterpart, so only a read through the translator's vocabulary
+    /// carries this key, and every other read reports `enabled` as an explicit null.
     case isEnabled = "FBIsEnabled"
     /// The translator's `role`, as the translator's own integer.
     ///
     /// Deliberately *not* mapped onto `elementType`, which carries `XCUIElementType` names: the mapping
-    /// from these integers onto those names is only partly known, and a number where consumers expect a
-    /// name is worse than an absent field. Declared here because this enum is the wire vocabulary rather
-    /// than the subset the host happens to read. `FBAXRoleVocabulary.name(forTranslatorRole:)` maps the
-    /// identified integers; the rest ride the wire unmapped so the mapping can be extended from real
-    /// screens.
+    /// from these integers onto those names is only partly known.
+    /// `FBAXRoleVocabulary.name(forTranslatorRole:)` maps the identified integers; the rest ride the
+    /// wire unmapped.
     case translatorRole = "FBTranslatorRole"
     /// The translator's `subrole`, as its own integer. It refines the role rather than replacing it: a
     /// toggle is a check box with a switch subrole, a search field a text field with a search subrole.
@@ -72,28 +68,27 @@ enum FBAXWire {
     /// The `UIAccessibilityTraits` bitmask, as the translator answers it. Carried raw: the trait
     /// constants live in a macOS-only header the guest cannot import, and nothing decodes it yet.
     case traits = "FBTraits"
-    /// A per-element identity from the translator, stable while the element lives. The `XC_kAXXCAttribute*`
-    /// namespace has no counterpart, so this is what lets two reads be compared element by element.
+    /// A per-element identity from the translator, stable while the element lives — so two reads can be
+    /// compared element by element. The `XC_kAXXCAttribute*` namespace has no counterpart.
     case elementIdentity = "FBElementIdentity"
 
     /// The attribute list a read requests for each element when it names none of its own. Membership
     /// *and* order are part of the contract: the guest fetches and echoes back exactly this sequence.
     ///
-    /// A read may name a different list through `Request.attributes`; this is what both sides fall back
-    /// to when it does not, which is what keeps a default read byte-identical on the wire.
+    /// A read may name a different list through `Request.attributes`; both sides fall back to this
+    /// when it does not.
     static let defaultFetchList: [String] = [
       elementType, elementBaseType, label, value, identifier, frame, automationType, children,
     ].map(\.rawValue)
 
-    /// The attributes `FBAXKeys.interactable` is derived from. Fetched only when that key is requested,
-    /// which is what keeps them off the wire for every read that does not ask.
+    /// The attributes `FBAXKeys.interactable` is derived from. Fetched only when that key is requested.
     static let interactableAttributes: [Node] = [.isVisible, .visiblePoint, .centerPoint, .userInteractionEnabled]
 
     /// The attribute list a read must request to serialize `keys`, or nil when the default list already
     /// carries everything needed.
     ///
-    /// Nil rather than "the default list" so the caller can omit the request field entirely: an absent
-    /// field is what makes a default read byte-identical to one from a host that predates it.
+    /// Nil rather than "the default list" so the caller can omit the request field entirely, keeping a
+    /// default read byte-identical to one from a host that predates the field.
     static func fetchList(for keys: Set<FBAXKeys>) -> [String]? {
       guard keys.contains(.interactable) || keys.contains(.occludedBy) else {
         return nil
@@ -106,8 +101,7 @@ enum FBAXWire {
     ///
     /// Only three of the searchable keys name something the guest fetches, because the rest are host-side
     /// derivations `FBRemoteAutomationPlatformElement` answers nil for over this wire in the first place.
-    /// A marker on one of those still writes; it just goes unasserted, which is what every write over the
-    /// remote backend does today.
+    /// A marker on one of those still writes; it just goes unasserted.
     init?(assertableSearchKey key: FBAXSearchableKey) {
       switch key {
       case .label:
@@ -138,8 +132,7 @@ enum FBAXWire {
   }
 
   /// Keys of the envelope's `phases` object — what the guest measured of its own work. The host's own
-  /// phases are not here: it measures those itself, and a duration is only trustworthy from the process
-  /// that holds both ends of it.
+  /// phases are not here: it measures those itself.
   enum Phase: String {
     case traverse = "traverse_ms"
     case machRoundTrips = "mach_round_trips"
@@ -155,10 +148,8 @@ enum FBAXWire {
   /// What class of thing went wrong, as the guest's `error_kind` reports it.
   ///
   /// The kind decides what the host *tells* the caller — which typed error it raises and whether any
-  /// remedy applies — while the envelope's `error` carries the detail. A failure with no kind, or with
-  /// one this host does not know, is a reader failure with nothing further to say about it: an unknown
-  /// value must degrade to that rather than fail to parse, so a guest ahead of its host loses precision
-  /// and no more.
+  /// remedy applies — while the envelope's `error` carries the detail. An unknown or absent kind
+  /// degrades to a generic reader failure rather than failing to parse.
   enum ErrorKind: String, CaseIterable {
     /// The process has no accessibility server: a dead pid, or a process that is not an application.
     case applicationUnavailable = "application_unavailable"
@@ -188,14 +179,8 @@ enum FBAXWire {
 
   /// The fields of a request, in both spellings the guest accepts them in.
   ///
-  /// One case per field rather than two vocabularies, because the persistent transport sends JSON and the
-  /// one-shot transport sends argv for the *same* request — declaring the pair together is what stops the
-  /// two drifting into requests that mean different things depending on which transport is holding them.
-  ///
-  /// These were the last of the wire spelled as bare literals at each call site. The node keys, verbs,
-  /// actions and failure kinds were all pinned; a field name was not, so a typo in `maxNodes` reached the
-  /// guest as a field it does not read, and the read silently fell back to the guest's own budget instead
-  /// of the caller's.
+  /// One case per field: the persistent transport sends JSON and the one-shot transport sends argv for
+  /// the *same* request, so the two renderings are declared together and cannot drift.
   enum Request: String, CaseIterable {
     case verb
     case pid
@@ -209,8 +194,8 @@ enum FBAXWire {
     /// for: the two disagree on some screens, and which one a caller wants is not the reader's choice.
     case translatorVocabulary
     case snapshotTree
-    /// The attributes the guest fetches per element. Omitted for a default read, which is what keeps
-    /// that read byte-identical on the wire; the guest falls back to `Node.defaultFetchList`.
+    /// The attributes the guest fetches per element. Omitted for a default read; the guest falls back
+    /// to `Node.defaultFetchList`.
     case attributes
     /// Asks the guest to explain each unreachable element by hit-testing its centre. Omitted unless
     /// `occludedBy` was requested, so a read that does not want the explanation does not pay for it.
@@ -263,7 +248,7 @@ enum FBAXWire {
   ///
   /// These are accessibility actions the application runs itself, not synthesized touches — the guest
   /// hands the numeric identifier to the AX runtime, and the element's own implementation decides what
-  /// happens. The HID path is what simulates input; this is what asks.
+  /// happens.
   enum Action: String, CaseIterable {
     /// Activate the element — the semantic equivalent of tapping it.
     case press

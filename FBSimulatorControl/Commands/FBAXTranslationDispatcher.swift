@@ -47,10 +47,9 @@ private final class AXPSerializedJob<T>: @unchecked Sendable {
 /// per request, performs the translator handshake and converts the lazy AXP
 /// attribute callbacks into synchronous CoreSimulator XPC round-trips.
 ///
-/// Created and driven entirely from Swift in this module (see
-/// `FBSimulatorAccessibilityCommands`). It remains an `@objc`/`NSObject` class
-/// only because it conforms to the Objective-C `AXPTranslationTokenDelegateHelper`
-/// protocol and is installed as `AXPTranslator`'s bridge-token delegate.
+/// An `@objc`/`NSObject` class only because it conforms to the Objective-C
+/// `AXPTranslationTokenDelegateHelper` protocol and is installed as
+/// `AXPTranslator`'s bridge-token delegate.
 @objc(FBAXTranslationDispatcher)
 final class FBAXTranslationDispatcher: NSObject, AXPTranslationTokenDelegateHelper {
 

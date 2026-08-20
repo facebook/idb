@@ -13,10 +13,10 @@ import Foundation
 /// service. The verb logic in the conformer is transport-agnostic; only the mechanism differs:
 ///
 /// - `FBAXBridgeOneshotTransport` spawns the guest per read (`accessibility describe`), simple but
-///   pays the ~610ms spawn+dlopen cost every read.
+///   pays the spawn+dlopen cost every read.
 /// - `FBAXBridgePersistentTransport` spawns the guest once (`accessibility serve <socket>`) and reads
-///   over a reused Unix-domain socket, so warm reads are ~20ms (~30x faster) — the path a long-lived
-///   host process (companion, `ui shell`, a streaming hit-test server) should use.
+///   over a reused Unix-domain socket, so warm reads avoid that cost — the path a long-lived host
+///   process (companion, `ui shell`, a streaming hit-test server) should use.
 ///
 /// `read` returns the guest's raw JSON response bytes (a `Sendable` `Data`, so it crosses the actor
 /// boundary cleanly); the conformer parses the `{ "ok", "tree" | "error" }` envelope.
@@ -42,11 +42,8 @@ struct FBAXBridgeWriteAssertion: Sendable, Equatable {
   let value: String
 }
 
-/// One point-addressed write, in the two shapes the transports send it as.
-///
-/// Both renderings live here rather than in the conformers because a write has to mean the same thing
-/// over either transport — that is the point of addressing writes by point at all, and two hand-written
-/// copies of the same request are exactly how the two would drift apart.
+/// One point-addressed write, in the two shapes the transports send it as. Both renderings are
+/// declared together so a write means the same thing over either transport.
 struct FBAXBridgeWriteRequest: Sendable, Equatable {
   /// Which write, and the one argument that write takes.
   enum Kind: Sendable, Equatable {
@@ -201,9 +198,6 @@ struct FBAXBridgeOneshotTransport: FBAXBridgeTransport {
     return FBAXWire.Request.explainUnreachable.argument("1")
   }
 
-  /// The attribute list as the one-shot front-end takes it: comma-separated, because the guest reads argv
-  /// strictly in flag/value pairs and an attribute name never contains a comma. Absent for a default read,
-  /// so its argv is unchanged.
   /// Absent unless the caller asked, so a read that does not care leaves the device alone and its argv
   /// stays byte-identical to what a guest predating the field expects.
   private static func automationArgument(_ automationMode: Bool?) -> [String] {
@@ -213,6 +207,9 @@ struct FBAXBridgeOneshotTransport: FBAXBridgeTransport {
     return FBAXWire.Request.automationMode.argument(automationMode ? "1" : "0")
   }
 
+  /// The attribute list as the one-shot front-end takes it: comma-separated, because the guest reads argv
+  /// strictly in flag/value pairs and an attribute name never contains a comma. Absent for a default
+  /// read, so its argv is unchanged.
   private static func attributeArgument(_ attributes: [String]?) -> [String] {
     guard let attributes, !attributes.isEmpty else {
       return []
@@ -291,8 +288,7 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
         false,
         // A hit-test resolves one element positionally; there is no traversal to choose.
         .viewHierarchy,
-        // A hit-test does not assert the mode. It resolves one element rather than walking a tree, so it
-        // has nothing to gain from the mode and no business changing the device to get it.
+        // A hit-test never asserts the mode: it resolves one element, not a tree.
         nil,
         to: [
           FBAXWire.Request.verb.key: FBAXWire.Verb.hitTest.rawValue,
@@ -476,15 +472,10 @@ final class FBAXBridgeConnection: @unchecked Sendable {
 
   /// Per-`recv` deadline (SO_RCVTIMEO), so a hung or dead guest cannot wedge a round trip forever.
   ///
-  /// **This bounds silence, not slowness, and the distinction is the whole point.** `readAll` loops
-  /// `recv`, and each call gets the full deadline — so every chunk that arrives resets it. A read that
-  /// takes a minute never trips this as long as bytes keep coming; only a guest that says nothing at all
-  /// for the deadline does, after which the recovery path drops and re-establishes the connection.
-  ///
-  /// So the figure is deliberately not derived from what a read costs. Read durations span four orders
-  /// of magnitude across applications — sub-millisecond per query on a simple app, tens of milliseconds
-  /// on a heavy one — and a deadline calibrated against any of them would be wrong for the others and
-  /// would rot the first time an application got slower.
+  /// This bounds silence, not total read time: `readAll` loops `recv` and each call gets the full
+  /// deadline, so every chunk that arrives resets it. Only a guest that says nothing at all for the
+  /// deadline trips it, after which the recovery path drops and re-establishes the connection.
+  /// Deliberately not derived from read cost, which varies by orders of magnitude across applications.
   private static let receiveTimeoutSeconds = 30
 
   init(
@@ -515,9 +506,8 @@ final class FBAXBridgeConnection: @unchecked Sendable {
       close(fileDescriptor)
     }
     if processIdentifier > 0 {
-      // Said before the kill, because the process-exit reporter's "exited with signal 9" is otherwise
-      // indistinguishable from a crash — and a log that cannot separate a routine reap from a dead
-      // guest sends whoever reads it after the wrong fault.
+      // Logged before the kill so the exit reporter's "exited with signal 9" reads as expected
+      // teardown, not a crash.
       logger?.log("Releasing axbridge connection: terminating guest serve process \(processIdentifier) with SIGKILL, this exit is expected")
       kill(processIdentifier, SIGKILL)
     }
@@ -568,8 +558,7 @@ final class FBAXBridgeConnection: @unchecked Sendable {
             if connectSocket(fileDescriptor, toPath: path) {
               var noSigPipe: Int32 = 1
               setsockopt(fileDescriptor, SOL_SOCKET, SO_NOSIGPIPE, &noSigPipe, socklen_t(MemoryLayout<Int32>.size))
-              // Bound each blocking `recv` so a hung/dead guest can't wedge the caller forever; a read
-              // that stalls past the deadline fails and the round-trip recovery re-establishes.
+              // SO_RCVTIMEO — see receiveTimeoutSeconds.
               var readTimeout = timeval(tv_sec: receiveTimeoutSeconds, tv_usec: 0)
               setsockopt(fileDescriptor, SOL_SOCKET, SO_RCVTIMEO, &readTimeout, socklen_t(MemoryLayout<timeval>.size))
               continuation.resume(returning: fileDescriptor)
@@ -620,10 +609,8 @@ final class FBAXBridgeConnection: @unchecked Sendable {
   ) throws -> Data {
     let header = try readAll(fileDescriptor, count: 4, guest: guest)
     let length = decodeLength(header)
-    // A zero-length frame is never valid: the guest always sends a non-empty JSON envelope
-    // ({"ok":...}), so length 0 (or an absurd length) means a desynced/corrupt stream, not empty data.
-    // Matches the guest's frame cap: a length outside it means a desynced or corrupt stream, not a
-    // huge tree. Keep the two in step — the guest rejects (and never writes) frames above this.
+    // The guest always sends a non-empty JSON envelope and never writes frames above this cap (keep
+    // the two in step), so a length outside the range means a desynced or corrupt stream.
     guard length > 0, length < 16 * 1024 * 1024 else {
       throw FBAXBridgeError.guestFailure("invalid response frame length \(length)")
     }
@@ -662,24 +649,15 @@ final class FBAXBridgeConnection: @unchecked Sendable {
     }
   }
 
-  /// What a caller is told when the guest's socket reaches EOF.
-  ///
-  /// The guest going away is detected immediately, so the useful question is not *when* but *why* — a
-  /// reader that was killed, that exited cleanly, and that crashed are three different problems with
-  /// three different owners, and "closed by peer" distinguishes none of them.
-  ///
-  /// The answer is already to hand and was simply not being passed on: the connection holds the guest's
-  /// subprocess, whose exit futures have resolved by the time its socket reaches EOF. Read without
-  /// waiting — `hasCompleted` first — because this runs on the read path and a caller waiting to be told
-  /// why its read failed must not be made to wait on the telling. A future that has somehow not resolved
-  /// yields the bare message rather than a stall.
+  /// What a caller is told when the guest's socket reaches EOF: a reader that was killed, exited
+  /// cleanly, or crashed are three different problems, and "closed by peer" distinguishes none of
+  /// them — so the guest subprocess's exit status is folded into the message. An unresolved exit
+  /// future contributes nothing; the message then reports that no exit status was recorded.
   static func socketClosedMessage(process: FBSubprocess<AnyObject, AnyObject, AnyObject>?) -> String {
     guard let process else {
       return socketClosedMessage(pid: nil, signal: nil, exitCode: nil)
     }
-    // Read without waiting — `hasCompleted` first — because this runs on the read path, and a caller
-    // waiting to be told why its read failed must not be made to wait on the telling. A future that has
-    // somehow not resolved contributes nothing rather than stalling.
+    // `hasCompleted` first — never block the read path to report why the read failed.
     return socketClosedMessage(
       pid: process.processIdentifier,
       signal: process.signal.hasCompleted ? process.signal.result?.intValue : nil,

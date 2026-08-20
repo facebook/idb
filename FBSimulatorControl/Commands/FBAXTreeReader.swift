@@ -12,10 +12,9 @@ import Foundation
 /// A backend that answers a query by reading a whole `XC_kAXXC*` attribute tree and matching over the
 /// result — the shape both XCUI-grade backends share.
 ///
-/// What actually differs between them is narrow: where the tree comes from (a `testmanagerd` session
-/// versus a guest reader) and how a point is hit-tested. Everything above that — deciding what a query
-/// means, flattening the tree, matching a marker, wrapping the response, and choosing the error — is
-/// identical, so it is written once here rather than once per backend.
+/// Backends differ only in where the tree comes from (a `testmanagerd` session versus a guest reader)
+/// and how a point is hit-tested; query semantics, marker matching, response wrapping and errors are
+/// shared here.
 protocol FBAXTreeReader: FBUIAutomation {
   /// Which backend this is, for the errors the shared verbs raise.
   nonisolated var backend: FBUIAutomationBackend { get }
@@ -43,8 +42,7 @@ protocol FBAXTreeReader: FBUIAutomation {
   ) async throws -> FBAXTreeRead
 
   /// Warns that the traversal could not answer keys the caller asked for, so a caller can tell "this read
-  /// could not ask" from "the app set nothing". Same contract as `warnIfTruncated`: say what the read
-  /// could not do rather than let the output imply it did.
+  /// could not ask" from "the app set nothing".
   func warnIfUnsatisfiable(_ keys: Set<FBAXKeys>, strategy: FBAXTraversalStrategy) async
 
   /// Warns that a read's tree was truncated by the depth or node bound, so an incomplete tree is never
@@ -62,8 +60,7 @@ protocol FBAXTreeReader: FBUIAutomation {
   func warnIfGeometrySuspect(_ frames: FBAccessibilityFrameSummary?) async
 
   /// Where this read spent its time, in whatever shape this backend measures. Nil from a backend that
-  /// does not measure — which is not the same as a read that took no time, and is why this is optional
-  /// rather than a zeroed profile.
+  /// does not measure, which is distinct from a zeroed profile.
   func profile(
     for read: FBAXTreeRead, elementCount: Int, serializeDuration: CFAbsoluteTime
   ) -> FBAccessibilityProfile?
@@ -163,12 +160,10 @@ extension FBAXTreeReader {
       let elements = try await refiningInteractable(
         options.filter.apply(to: walked), screen: screen, options: options
       )
-      // Closed here, after the walk is serialized and refined and before the response is assembled, so
-      // it measures turning the read into what the caller asked for.
+      // Measures serialize + refine, closed before response assembly.
       let serializeDuration = CFAbsoluteTimeGetCurrent() - serializeStarted
-      // Coverage is a calculation over the serialized model, so it is the same one the accessibility
-      // backend runs — a whole-tree read reports it whichever backend served it. Remote-content
-      // discovery is accessibility-only, so `additional` stays absent here.
+      // Coverage is a calculation over the serialized model, the same one every backend runs.
+      // Remote-content discovery is accessibility-only, so `additional` stays absent here.
       let coverage: FBAccessibilityCoverage? =
         options.collectFrameCoverage
         ? screen.flatMap {
@@ -177,8 +172,7 @@ extension FBAXTreeReader {
             nested: options.nestedFormat
           )
         } : nil
-      // Judged on what is reported rather than on what was walked: the caller's `--filter` decides what
-      // they see, and advice about a tree they were not shown would be unactionable.
+      // Judged on the reported elements — what the caller's `--filter` shows them.
       await warnIfGeometrySuspect(FBAccessibilityFrameSummary(elements: elements))
       return FBAccessibilityElementsResponse(
         elements: .tree(elements),
@@ -197,25 +191,13 @@ extension FBAXTreeReader {
     }
   }
 
-  /// Names the element covering the centre of every element already reported as `occluded`, by
-  /// hit-testing that centre.
+  /// Refines each blocked element's reasons with the two pieces of context a single element does not
+  /// carry: the screen bounds (whether the edge is clipping it) and the guest's hit-test answer
+  /// (`explainedBy`, naming what is covering it or which relative handles the touch).
   ///
-  /// This is the only part of the read that costs extra round trips, which is why it runs only when
-  /// `occludedBy` was requested and only for elements the cheap attributes *already* found occluded. The
-  /// cost is therefore proportional to the occluded set rather than to the node count — a handful of
-  /// elements on a real screen, not the whole tree — which is what makes naming the occluder affordable
-  /// at all.
-  ///
-  /// It is also what closes the one gap the attributes cannot: they come from the application's own
-  /// render tree and cannot see another process compositing on top, whereas a hit-test resolves whatever
-  /// is actually there. A hit-test that fails or finds nothing leaves the reason unenriched rather than
-  /// failing the read — the occlusion was reported by the attributes and stands on its own.
-  /// The two refinements that need context a single element does not carry: the screen bounds, which say
-  /// whether the edge is cutting the element off, and a hit-test, which names what is covering it.
-  ///
-  /// Runs after the filter so no hit-test is spent on an element about to be dropped. Neither refinement
-  /// changes an element's `status`, only which reasons it carries, so filtering on the verdict first
-  /// cannot select differently for having run first.
+  /// The hit-test answer arrived with the tree, so nothing here costs a round trip; a missing answer
+  /// leaves the reason unenriched rather than failing the read. Runs after the filter, and neither
+  /// refinement changes an element's `status` — only which reasons it carries.
   private func refiningInteractable(
     _ elements: [FBAccessibilityDocumentElement],
     screen: FBAccessibilityScreenInfo?,
@@ -250,8 +232,7 @@ extension FBAXTreeReader {
       }
       element.children = refined
     }
-    // Free, and done first: whether the screen edge is cutting the element off is geometry the caller
-    // already has the inputs for, and it licenses a recovery the other reasons do not.
+    // Screen-edge clipping first: pure geometry, no round trip.
     element = FBAXScreenBoundsClassifier.notingScreenClipping(element, screen: screen)
     guard options.keys.contains(.occludedBy) else {
       return element
@@ -325,9 +306,6 @@ extension FBAXTreeReader {
 
   /// Resolves a query to the point a write acts on, plus the assertion that keeps a two-step write honest.
   ///
-  /// Shared for the same reason `describeTree` is: deciding what a query means, matching a marker and
-  /// choosing the error are identical whoever performs the write, and only the performing differs.
-  ///
   /// `.point` goes straight through — a coordinate names no element, so there is nothing to assert about
   /// it and nothing to read first. `.marker` reads the tree, matches, and takes the matched element's
   /// centre, deriving its assertion from the element it actually found rather than from the marker
@@ -393,12 +371,8 @@ extension FBAXTreeReader {
     }
   }
 
-  /// What an unoccupied write target means, told in the terms the caller used to name it.
-  ///
-  /// A marker write is reported as its element having moved, the same as when something *else* is found
-  /// under the point. Both are the screen changing between the read that resolved the marker and the
-  /// write that acted on it, so reporting one of them against coordinates the caller never chose would
-  /// make one condition look like two. Only a caller who named a coordinate is told about a coordinate.
+  /// What an unoccupied write target means, told in the terms the caller used to name it: a marker
+  /// write reports `elementMoved`, and only a caller who named a coordinate is told about a coordinate.
   func emptyWriteTargetError(for query: FBAccessibilityElementQuery, at point: CGPoint) -> FBUIAutomationError {
     guard case let .marker(value, key, _) = query else {
       return .noElementAtPoint(backend: backend, x: Double(point.x), y: Double(point.y))
@@ -438,11 +412,8 @@ extension FBAXTreeReader {
 
   /// `frame` for a tree-reading backend: the rectangle of the element a query names, in points.
   ///
-  /// Geometry is an attribute of the tree, so this is `describeTree` asking for the frame key alone —
-  /// there is nothing to read that a describe does not already read, and no backend-specific step, which
-  /// is why it composes here rather than once per backend. Narrowing the key set to `.frameDict` is not
-  /// an optimisation of the read (the guest walks the whole bounded tree either way) but of the
-  /// serialization, which would otherwise fetch fifteen attributes per node to answer about one.
+  /// This is `describeTree` asking for the frame key alone. Narrowing to `.frameDict` optimises the
+  /// serialization, not the read — the guest walks the whole bounded tree either way.
   ///
   /// A whole-tree query answers with the application root's frame, matching what the accessibility
   /// backend reports for the same query: a flat walk lists the root first, and `.point`/`.marker` answer
@@ -450,9 +421,8 @@ extension FBAXTreeReader {
   /// every case.
   func frameFromTree(_ query: FBAccessibilityElementQuery) async throws -> CGRect {
     let response = try await describeTree(query, options: FBAccessibilityRequestOptions(keys: [.frameDict]))
-    // Requesting `.frameDict` is what makes the frame present, so the guard is on a response shape the
-    // types permit rather than one a backend produces. It throws rather than substituting a zero rect,
-    // which a caller could not tell apart from an element genuinely at the origin.
+    // Throws rather than substituting a zero rect, which a caller could not tell apart from an element
+    // genuinely at the origin.
     guard let element = response.elements.elements.first,
       let frame = element.frame ?? nil,
       let x = frame.x, let y = frame.y, let width = frame.width, let height = frame.height
@@ -464,21 +434,13 @@ extension FBAXTreeReader {
 }
 
 /// Noting where the screen edge, rather than another element, is part of why something cannot be reached.
-///
-/// Its own type rather than a member of the reader: it is pure geometry over a serialized element and a
-/// screen rectangle, with no dependence on a backend, a transport or a read — which is also what makes it
-/// coverable without one.
 enum FBAXScreenBoundsClassifier {
 
   /// Adds `clippedByScreen` to a blocked element whose frame is not wholly within the screen.
   ///
-  /// Accumulates rather than replaces: being cut off by the edge and being covered are not alternatives,
-  /// and an element scrolled under a navigation bar is usually both. Nothing here claims the clipping is
-  /// *why* the element is blocked — only that it is true, and that bringing the element fully into view
-  /// is worth trying.
-  ///
-  /// Only the blocked case, because the actionable case carries a reachable point and nothing else: an
-  /// element you can tap does not need to be told part of it is off the edge.
+  /// Accumulates rather than replaces: clipping and occlusion are not alternatives, and an element
+  /// scrolled under a navigation bar is usually both. Blocked case only — an actionable element
+  /// already carries a reachable point.
   static func notingScreenClipping(
     _ element: FBAccessibilityDocumentElement,
     screen: FBAccessibilityScreenInfo?
