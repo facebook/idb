@@ -85,21 +85,16 @@ Head over [to the main documentation](https://www.fbidb.io) for more details on 
 ### Building
 
 ```bash
-# Build everything: frameworks, shims, SimulatorFrameworkBridge, ReplHost and
-# idb_companion, then assemble the runnable distribution
+# Build everything and assemble the runnable distribution
 ./build.sh build
 
-# Build only the frameworks
+# Or build a subset: frameworks, shims, idb_companion, or a specific framework
 ./build.sh build frameworks
-
-# Build the shim dylibs (Shimulator + Repl, iOS + macOS)
-./build.sh build shims
-
-# Build only idb_companion
 ./build.sh build idb_companion
-
-# Build a specific framework
 ./build.sh build FBControlCore
+
+# All options
+./build.sh help
 ```
 
 The individual build products are written under `Build/Products/Release`. A
@@ -140,22 +135,6 @@ The Xcode project files are generated from `project.yml` using XcodeGen. To rege
 
 ```bash
 ./build.sh generate
-```
-
-### Build Script Reference
-
-```bash
-./build.sh help                          # Show all options
-./build.sh generate                      # Regenerate Xcode projects
-./build.sh build                         # Build all targets and package the distribution
-./build.sh build distribution            # Assemble Build/Distribution from built products
-./build.sh build frameworks              # Build all frameworks
-./build.sh build idb_companion           # Build idb_companion
-./build.sh build shims                   # Build all shim dylibs (Shimulator + Repl, iOS + macOS)
-./build.sh build SimulatorFrameworkBridge # Build the SimulatorFrameworkBridge helper
-./build.sh build FBControlCore           # Build specific framework
-./build.sh test                          # Run all tests
-./build.sh test FBSimulatorControl       # Test specific framework
 ```
 
 ## Documentation
