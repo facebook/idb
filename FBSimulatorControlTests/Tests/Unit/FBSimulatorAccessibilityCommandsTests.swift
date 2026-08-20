@@ -99,12 +99,16 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
 
   /// Asserts profiling data metrics with expected counts
   private func assertProfilingData(
-    _ profilingData: FBAccessibilityProfilingData?,
+    _ profile: FBAccessibilityProfile?,
     expectedElements: Int64,
     expectedAttributeFetches: Int64
   ) {
-    XCTAssertNotNil(profilingData, "Profiling data should be present")
-    guard let profilingData else { return }
+    XCTAssertNotNil(profile, "Profiling data should be present")
+    // The accessibility backend is the translator lane, so it must be that case and not the guest one —
+    // asserting the case is what stops a future change quietly serving the wrong profile shape here.
+    guard case let .translator(profilingData)? = profile else {
+      return XCTFail("the accessibility backend must report a translator profile, got \(String(describing: profile))")
+    }
     XCTAssertEqual(profilingData.elementCount, expectedElements, "Element count mismatch")
     XCTAssertEqual(profilingData.attributeFetchCount, expectedAttributeFetches, "Attribute fetch count mismatch")
     XCTAssertGreaterThanOrEqual(profilingData.xpcCallCount, 0, "XPC call count should be non-negative")
@@ -583,7 +587,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
 
     // Verify fetched keys match exactly the keys that were requested
     let expectedKeys: Set<String> = Set([FBAXKeys.frame.rawValue, FBAXKeys.label.rawValue, FBAXKeys.frameDict.rawValue])
-    XCTAssertEqual(response.profilingData!.fetchedKeys, expectedKeys, "fetchedKeys should match exactly the keys that were requested")
+    XCTAssertEqual(response.profilingData?.translatorProfile?.fetchedKeys, expectedKeys, "fetchedKeys should match exactly the keys that were requested")
   }
 
   // `FBTapOptions.duration` asks for a long-press. The accessibility backend performs `AXPress`, which is
@@ -755,7 +759,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
 
     // Verify fetched keys match exactly the keys that were requested
     let expectedKeys: Set<String> = Set([FBAXKeys.frame.rawValue, FBAXKeys.label.rawValue, FBAXKeys.type.rawValue, FBAXKeys.frameDict.rawValue])
-    XCTAssertEqual(response.profilingData!.fetchedKeys, expectedKeys, "fetchedKeys should match exactly the keys that were requested")
+    XCTAssertEqual(response.profilingData?.translatorProfile?.fetchedKeys, expectedKeys, "fetchedKeys should match exactly the keys that were requested")
   }
 
   // MARK: - Coverage Calculation Tests
@@ -1003,7 +1007,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
 
   /// Profiles a whole-tree read of `filterableRoot()` under `filter`. Installs the fixture, so it may
   /// be called only once per test — the translator swizzle refuses a second install.
-  private func profile(withFilter filter: FBAccessibilityElementFilter) async throws -> FBAccessibilityProfilingData? {
+  private func profile(withFilter filter: FBAccessibilityElementFilter) async throws -> FBAccessibilityProfile? {
     try setUp(withRootElement: filterableRoot())
     let element = try await simulator.resolveElement(for: .frontmost)
     var options = FBAccessibilityRequestOptions()

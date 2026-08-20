@@ -373,7 +373,7 @@ final class FBAXTranslationRequest {
     let profilingData = collector?.finalize(withSerializationDuration: serializationDuration)
     return FBAccessibilityElementsResponse(
       elements: elements,
-      profilingData: profilingData,
+      profilingData: profilingData.map { .translator($0) },
       coverage: coverage,
       truncated: false,
       screen: screen

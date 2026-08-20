@@ -9,7 +9,7 @@ import Foundation
 
 /// Profiling data collected during an accessibility operation. Provides
 /// visibility into the performance characteristics of the AX subsystem.
-public struct FBAccessibilityProfilingData: Sendable, Encodable {
+public struct FBAccessibilityProfilingData: Sendable, Equatable, Encodable {
 
   /// The number of accessibility elements that were serialized.
   public let elementCount: Int64
@@ -148,8 +148,11 @@ public struct FBAccessibilityElementsResponse: Sendable {
   /// The accessibility elements: an object (single element) or an array (flat/nested tree).
   public let elements: FBAccessibilityElementPayload
 
-  /// Profiling data collected during the operation, if profiling was enabled.
-  public let profilingData: FBAccessibilityProfilingData?
+  /// Where the read spent its time, when the backend measured it.
+  ///
+  /// Typed per backend rather than shared: `.translator` and `.guestBridge` measure disjoint phases, and
+  /// the document's `backend` already says which to expect.
+  public let profilingData: FBAccessibilityProfile?
 
   /// How much of the screen the read's element frames cover, or `nil` when coverage was not requested.
   ///
@@ -180,7 +183,7 @@ public struct FBAccessibilityElementsResponse: Sendable {
 
   public init(
     elements: FBAccessibilityElementPayload,
-    profilingData: FBAccessibilityProfilingData? = nil,
+    profilingData: FBAccessibilityProfile? = nil,
     coverage: FBAccessibilityCoverage? = nil,
     modal: FBAccessibilityModalInfo? = nil,
     truncated: Bool = false,

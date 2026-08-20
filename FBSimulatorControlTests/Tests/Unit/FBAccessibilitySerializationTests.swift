@@ -485,7 +485,7 @@ final class FBAccessibilitySerializationTests: XCTestCase {
   func testProfileAndCoverageAppearOnlyInTheCompleteFormat() throws {
     let response = FBAccessibilityElementsResponse(
       elements: .tree([]),
-      profilingData: Self.sampleProfilingData(),
+      profilingData: .translator(Self.sampleProfilingData()),
       coverage: FBAccessibilityCoverage(frame: 0.5, walked: 0.5, content: 0.5, leaf: 0.5, additional: 0.25)
     )
     for format: FBAccessibilityOutputFormat in [.default, .nested] {
@@ -521,7 +521,7 @@ final class FBAccessibilitySerializationTests: XCTestCase {
       FBAccessibilityElementsResponse(elements: .tree(flatElements())),
       FBAccessibilityElementsResponse(elements: .single(try XCTUnwrap(flatElements().first))),
       FBAccessibilityElementsResponse(elements: .tree([])),
-      FBAccessibilityElementsResponse(elements: .tree([]), profilingData: Self.sampleProfilingData()),
+      FBAccessibilityElementsResponse(elements: .tree([]), profilingData: .translator(Self.sampleProfilingData())),
       FBAccessibilityElementsResponse(elements: .tree([]), coverage: FBAccessibilityCoverage(frame: 0.5, walked: 0.5, content: 0.5, leaf: 0.5, additional: 0.25)),
     ]
     for response in responses {
@@ -911,7 +911,7 @@ final class FBAccessibilitySerializationTests: XCTestCase {
     let bare = FBAccessibilityElementsResponse(elements: .tree([]))
     let full = FBAccessibilityElementsResponse(
       elements: .tree(flatElements()),
-      profilingData: Self.sampleProfilingData(),
+      profilingData: .translator(Self.sampleProfilingData()),
       coverage: FBAccessibilityCoverage(frame: 0.5, walked: 0.5, content: 0.5, leaf: 0.5, additional: 0.25),
       modal: FBAccessibilityModalInfo(kind: .system, elementType: "SBAlertItemWindow", label: "Allow"),
       truncated: true,
@@ -934,7 +934,7 @@ final class FBAccessibilitySerializationTests: XCTestCase {
   func testCompleteDocumentCarriesTheReadsSignals() throws {
     let response = FBAccessibilityElementsResponse(
       elements: .tree([]),
-      profilingData: Self.sampleProfilingData(),
+      profilingData: .translator(Self.sampleProfilingData()),
       coverage: FBAccessibilityCoverage(frame: 0.5, walked: 0.5, content: 0.5, leaf: 0.5, additional: nil),
       modal: FBAccessibilityModalInfo(kind: .system, elementType: "SBAlertItemWindow", label: "Allow"),
       truncated: true,
@@ -1002,6 +1002,30 @@ final class FBAccessibilitySerializationTests: XCTestCase {
       documentObject(response)["frames"] is NSNull,
       "a read carrying no frame attribute reports no summary rather than a flattering zero"
     )
+  }
+
+  // The two profiles are disjoint types sharing one slot, so the wire must carry exactly one struct's
+  // fields with no wrapper and no discriminator. The document's `backend` is the discriminator.
+  func testTheGuestProfileEncodesItsOwnFieldsAndNoTranslatorOnes() throws {
+    let response = FBAccessibilityElementsResponse(
+      elements: .tree([]),
+      profilingData: .guestBridge(
+        FBAXBridgeProfile(
+          elementCount: 176, totalDuration: 0.4, acquireDuration: 0.36, readDuration: 0.03,
+          serializeDuration: 0.01, machRoundTrips: 176
+        ))
+    )
+    let profile = try XCTUnwrap(documentObject(response)["profile"] as? [String: Any])
+
+    XCTAssertEqual(profile["element_count"] as? Int, 176)
+    XCTAssertEqual(profile["read_duration_ms"] as? Double, 30)
+    XCTAssertEqual(profile["mach_round_trips"] as? Int, 176)
+    XCTAssertTrue(profile["mach_round_trips"] is NSNumber, "the guest reports its own round-trip count")
+
+    for translatorOnly in ["xpc_call_count", "translation_duration_ms", "element_conversion_duration_ms"] {
+      XCTAssertNil(profile[translatorOnly], "a guest profile must not carry \(translatorOnly)")
+    }
+    XCTAssertNil(profile["case"], "the sum is a Swift-level one; nothing wraps it on the wire")
   }
 
   func testCompleteDocumentTargetKindsCarryTheirOwnFields() throws {

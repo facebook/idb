@@ -686,6 +686,125 @@ public struct FBAccessibilityFrameSummary: Sendable, Equatable, Encodable {
   }
 }
 
+/// Where a guest-backed read spent its time.
+///
+/// A separate type from `FBAccessibilityProfilingData` rather than a widening of it, because the two
+/// backends measure disjoint things: `translationDuration` is not a concept a guest read has, and
+/// `spawn` is not one the translator has. A single struct carrying both would be mostly nulls on either
+/// lane, and would give `null` a third meaning — "not applicable to this backend" — in an envelope that
+/// keeps it at one.
+///
+/// Nothing discriminates between the two at this level and nothing needs to: the document already
+/// carries `backend`, so a consumer knows which shape it is holding before it looks.
+///
+/// The first five fields are the core: the phases every backend can report, spelled identically
+/// wherever they appear. That is a convention, not inheritance — telemetry needs one comparable number
+/// across lanes or "which lane is slow" cannot be asked, and duplicating five names is cheaper than a
+/// base type that has to widen whenever either lane learns to measure something new.
+public struct FBAXBridgeProfile: Sendable, Equatable, Encodable {
+
+  // MARK: The core, spelled identically in every backend's profile
+
+  /// Elements in the serialized read.
+  public let elementCount: Int64
+  /// Wall time for the whole read, host-side: the number a caller waited.
+  public let totalDuration: CFAbsoluteTime
+  /// Everything the round trip was not the guest's walk: getting a usable guest, the guest's own JSON
+  /// encoding, and the IPC. A **residual**, not a measurement — neither side can separate those three
+  /// from where it stands, and on a warm persistent read it is mostly the last two rather than the first.
+  public let acquireDuration: CFAbsoluteTime
+  /// Pulling the tree out of the application.
+  public let readDuration: CFAbsoluteTime
+  /// Turning what was read into what the caller asked for.
+  public let serializeDuration: CFAbsoluteTime
+
+  // MARK: What only a guest-backed read has
+
+  /// Round trips to the application's accessibility server — one per node today. What makes
+  /// `traverseDuration` interpretable rather than just large.
+  public let machRoundTrips: Int64?
+  /// Decoding that JSON, host-side. The other half of a boundary these payloads cross twice.
+  public let hostDecodeDuration: CFAbsoluteTime?
+  /// Response size. Pairs with the two encode/decode figures to give throughput rather than duration.
+  public let responseBytes: Int64?
+
+  public init(
+    elementCount: Int64,
+    totalDuration: CFAbsoluteTime,
+    acquireDuration: CFAbsoluteTime,
+    readDuration: CFAbsoluteTime,
+    serializeDuration: CFAbsoluteTime,
+    machRoundTrips: Int64? = nil,
+    hostDecodeDuration: CFAbsoluteTime? = nil,
+    responseBytes: Int64? = nil
+  ) {
+    self.elementCount = elementCount
+    self.totalDuration = totalDuration
+    self.acquireDuration = acquireDuration
+    self.readDuration = readDuration
+    self.serializeDuration = serializeDuration
+    self.machRoundTrips = machRoundTrips
+    self.hostDecodeDuration = hostDecodeDuration
+    self.responseBytes = responseBytes
+  }
+
+  enum CodingKeys: String, CodingKey {
+    case elementCount = "element_count"
+    case totalDurationMs = "total_duration_ms"
+    case acquireDurationMs = "acquire_duration_ms"
+    case readDurationMs = "read_duration_ms"
+    case serializeDurationMs = "serialize_duration_ms"
+    case machRoundTrips = "mach_round_trips"
+    case hostDecodeDurationMs = "host_decode_duration_ms"
+    case responseBytes = "response_bytes"
+  }
+
+  /// Durations are emitted in milliseconds, matching the translator profile. A phase that does not apply
+  /// to this transport keeps its key with a null value rather than vanishing — absent would mean "this
+  /// build does not report it", and nil here means "this transport does not have this phase".
+  public func encode(to encoder: Encoder) throws {
+    var container = encoder.container(keyedBy: CodingKeys.self)
+    try container.encode(elementCount, forKey: .elementCount)
+    try container.encode(totalDuration * 1000, forKey: .totalDurationMs)
+    try container.encode(acquireDuration * 1000, forKey: .acquireDurationMs)
+    try container.encode(readDuration * 1000, forKey: .readDurationMs)
+    try container.encode(serializeDuration * 1000, forKey: .serializeDurationMs)
+    try container.encode(machRoundTrips, forKey: .machRoundTrips)
+    try container.encode(hostDecodeDuration.map { $0 * 1000 }, forKey: .hostDecodeDurationMs)
+    try container.encode(responseBytes, forKey: .responseBytes)
+  }
+}
+
+/// Which backend's profile a document carries.
+///
+/// A Swift-level sum so the two disjoint types can share one slot; **not** a tagged union on the wire.
+/// It encodes transparently, so the emitted JSON is exactly one struct's fields with no discriminator
+/// wrapping them — the document's `backend` is the discriminator, and duplicating it here would be state
+/// that can disagree with itself.
+public enum FBAccessibilityProfile: Sendable, Equatable, Encodable {
+  case translator(FBAccessibilityProfilingData)
+  case guestBridge(FBAXBridgeProfile)
+
+  /// The translator profile, or nil on a guest-backed read. A convenience for callers that only ever
+  /// deal with the accessibility backend; anything reasoning about both lanes should switch instead.
+  public var translatorProfile: FBAccessibilityProfilingData? {
+    guard case let .translator(profile) = self else {
+      return nil
+    }
+    return profile
+  }
+
+  public func encode(to encoder: Encoder) throws {
+    var container = encoder.singleValueContainer()
+    switch self {
+    case let .translator(profile):
+      try container.encode(profile)
+    case let .guestBridge(profile):
+      try container.encode(profile)
+    }
+  }
+}
+
 /// The device's accessibility automation mode as it stood for a read, and whether the read changed it.
 ///
 /// Reported on every whole-tree read rather than only when it changes, because the two states are
@@ -922,7 +1041,7 @@ public struct FBAccessibilityDocument: Sendable, Encodable {
   public let screen: FBAccessibilityScreenInfo?
   public let backend: FBUIAutomationBackendName?
   public let target: FBAccessibilityTargetDescriptor?
-  public let profile: FBAccessibilityProfilingData?
+  public let profile: FBAccessibilityProfile?
   public let coverage: FBAccessibilityCoverage?
   /// How much of what this read found blocked it could explain. Nil when `interactable` was not
   /// requested, since there is then nothing to summarize.
@@ -940,7 +1059,7 @@ public struct FBAccessibilityDocument: Sendable, Encodable {
     screen: FBAccessibilityScreenInfo? = nil,
     backend: FBUIAutomationBackendName? = nil,
     target: FBAccessibilityTargetDescriptor? = nil,
-    profile: FBAccessibilityProfilingData? = nil,
+    profile: FBAccessibilityProfile? = nil,
     coverage: FBAccessibilityCoverage? = nil,
     interaction: FBAccessibilityInteractionSummary? = nil,
     frames: FBAccessibilityFrameSummary? = nil,
