@@ -185,6 +185,22 @@ The reason is what those attributes mean. `isVisible` and `visiblePoint` cannot 
 
 Every other key set leaves the read on the default fetch list, which carries no reachability and costs milliseconds. So a read is cheap unless it asks one of those two questions, and a caller who has not asked for them is already on the fast path and does not need to do anything.
 
+**A point read reports no `profile` on the guest lanes.** It resolves one element rather than walking a tree, so there is no traversal to time; `--api ax` does report one. Keep that in mind when comparing a point read's cost across backends.
+
+**Ask about one element, not the whole tree.** The point read already does this: `idb ui describe-point <x> <y> --key interactable` hit-tests that point, reads that element's attributes and nothing else. One element's worth of hit-testing rather than the tree's — around 18 ms instead of two seconds.
+
+So a live view has two calls rather than one expensive one:
+
+```
+# every frame: the cheap read. No reachability, milliseconds.
+idb ui describe-all --format complete
+
+# about to act on something: the accurate question, for one element.
+idb ui describe-point 201 286 --key interactable
+```
+
+The frames from the first are what give you the point for the second. `--filter interactable` on the periodic read matches on label, identifier and role, which costs nothing and does not answer whether an element is covered; the point read answers that for the one element you are about to act on.
+
 **Request reachability per interaction, not per frame.** This follows from the pricing and is the mistake most easily made by anyone building a live view. `isVisible` and `visiblePoint` are priced *per node*, so a poll loop that asks for them is paying to hit-test the whole tree on every tick — a one-second poll over a tree that takes two seconds to hit-test asks for more work than there is time to do it in, forever. Reachability answers a question about a single element a caller is about to act on ("can I tap this?"), so fetch it when that question is asked. Keep the periodic read on the ordinary key set, where it costs milliseconds.
 
 Two consequences. **Never compare a per-round-trip figure across reads with different `--key` sets** — that comparison says nothing about the applications and everything about what you asked. And if a read is slow, check the key set before anything else: dropping reachability from a read that does not need it is worth two orders of magnitude, and no other tuning available here comes close.
