@@ -204,10 +204,9 @@ public actor FBSimulatorVideoStream: FBVideoStream {
   /// The stream lifecycle, advanced only by `startStreaming`, the first surface mount, and
   /// `stopStreaming`. One-way: `.idle` → `.starting` → `.streaming` → `.stopped` (a stop is legal
   /// from `.starting`, and a failed initial mount unwinds `.starting` back to `.idle`). Holding the
-  /// session and the start awaiters as payloads of the phase they belong to makes the previously
-  /// representable invalid states — a stopped stream with pending start awaiters, a mounted stream
-  /// without a consumer — unrepresentable, and each transition resumes exactly the awaiters that
-  /// can no longer progress.
+  /// session and the start awaiters as payloads of the phase they belong to makes the invalid
+  /// states — a stopped stream with pending start awaiters, a mounted stream without a consumer —
+  /// unrepresentable, and each transition resumes exactly the awaiters that can no longer progress.
   private enum Lifecycle: Sendable {
     /// Never started; a `startStreaming` may begin.
     case idle
@@ -658,7 +657,6 @@ public actor FBSimulatorVideoStream: FBVideoStream {
   }
 
   func pushFrame(forceKeyFrame: Bool) {
-    // Ensure that we have all preconditions in place before pushing.
     guard let pixelBuffer, let consumer, let framePusher else {
       return
     }

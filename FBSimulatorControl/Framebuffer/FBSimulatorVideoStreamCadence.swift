@@ -103,9 +103,8 @@ final class LazyFrameTriggers: AsyncSequence, @unchecked Sendable {
 /// surrounding `Task` is cancelled.
 ///
 /// Note: an overrun (a push that overshoots its deadline) is detected on the *following* `next()`,
-/// when the clock finds it is already past the deadline. The immediate "exceeded budget" log fires
-/// at the same moment and with the same content as before; only the attribution of the overrun
-/// *count* to a 5s stats window can shift by one push at a window boundary, which is immaterial.
+/// when the clock finds it is already past the deadline — so at a window boundary the overrun
+/// *count* can attribute to the next 5s stats window.
 struct FrameCadence: AsyncSequence {
   typealias Element = FrameTrigger
 

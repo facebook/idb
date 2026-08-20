@@ -29,7 +29,7 @@ public enum FBOverlayCoordSpace: String {
 /// - `.composed` (default): historical semantics — `insetCorrection.y` is zero (or near
 ///   zero modulo integer truncation) so overlay y is taken at face value in buffer space.
 /// - `.device`: `insetCorrection.y == scaledBorderTop` so overlay y=0 lands at the top
-///   of the device image and shape geometry no longer needs to know about the header.
+///   of the device image and shape geometry does not need to know about the header.
 public struct FBOverlayCoordinateTransform {
   public let bufferWidth: Int
   public let bufferHeight: Int

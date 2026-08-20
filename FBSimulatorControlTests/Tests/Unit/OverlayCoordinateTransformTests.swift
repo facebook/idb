@@ -269,8 +269,8 @@ class FBOverlayCoordinateTransformTests: XCTestCase {
   // MARK: - Inset correction is zero under correct scaling
 
   func testInsetCorrectionIsZeroAtAllScales() {
-    // After the bugfix, when scaledBorderTop is correctly set to borderTop * videoScale * retinaScale,
-    // insetCorrection.y is 0 — overlay shape coords map 1:1 to buffer coords (within the reserved region).
+    // When scaledBorderTop is borderTop * videoScale * retinaScale, insetCorrection.y is 0 —
+    // overlay shape coords map 1:1 to buffer coords (within the reserved region).
     let cases: [(retina: CGFloat, scale: CGFloat, border: Int)] = [
       (1.0, 1.0, 0),
       (2.0, 0.5, 24),

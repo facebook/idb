@@ -91,12 +91,10 @@ final class FBSimulatorVideoStreamCallbackTests: XCTestCase {
     let logger = FBCapturingLogger()
     let pusher = createTestVideoStreamPusher(logger)
 
-    // First, complete warmup with a ready buffer
     let ready = makeReadySampleBuffer()
     pusher.handleCompressedSampleBuffer(ready, encodeStatus: noErr, infoFlags: VTEncodeInfoFlags())
     XCTAssertTrue(pusher.warmupComplete)
 
-    // Now send 10 not-ready buffers post-warmup
     for _ in 0..<10 {
       let notReady = makeNotReadySampleBuffer()
       pusher.handleCompressedSampleBuffer(notReady, encodeStatus: noErr, infoFlags: VTEncodeInfoFlags())
