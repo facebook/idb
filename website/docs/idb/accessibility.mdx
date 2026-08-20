@@ -49,6 +49,18 @@ The connection is self-healing: if the reader dies — the Simulator shut down, 
 | Needs `SimulatorFrameworkBridge` | No | Yes | Yes |
 | Best for | Quick checks; anything the composite view is enough for | A one-shot read that needs full detail | Repeated reads from one long-lived process |
 
+### How the axbridge backends fetch the tree
+
+Both axbridge backends ask the application for the whole tree in **one** call. The alternative, one call per node, reads the same tree and the same attributes for more round trips; `profile` reports which one served a read, as `traversal`.
+
+On a 167-element Settings screen the one call costs 1 mach round trip instead of 167, for the same document. On an idle screen the read time is comparable for either traversal (roughly 30ms); the saving is the round trips, so it grows with tree size and with how busy the application is, and it is what a warm `--api axbridge-persistent` reader benefits from — on a one-shot `--api axbridge` read the spawn still dominates.
+
+**A read that asks about reachability takes the per-node walk instead.** The application hit-tests every node to answer `interactable` or `occluded_by`, and a single call asking for them times out rather than answering: on that same idle screen it fails every time at around four seconds, where the walk answers in about 1.6s. Nothing is needed from the caller — such a read reports `traversal: view-hierarchy`. A caller who explicitly asks for the single fetch together with a reachability key is refused with an error naming the keys, rather than left to that timeout.
+
+`--filter interactable` does not put a read on that path. The filter matches on label, identifier and role, none of which are hit-tested, so a filtered read keeps the one-call fetch.
+
+`--api ax` is unaffected. It fetches attribute by attribute over XPC and reports no `traversal` at all.
+
 ### Compatibility
 
 Omitting `--api` preserves the historical behaviour, and the field is only set on the wire when a backend is asked for. A companion that predates backend selection ignores the field and serves the read as if it were unset.
@@ -163,7 +175,7 @@ On `axbridge` and `axbridge-persistent`, the tree is walked in-process by a gues
 
 | Field | What it measures |
 |-------|------------------|
-| `traversal` | The traversal that produced this read — `view-hierarchy`, `semantic` or `single-fetch`. Read `mach_round_trips` against it: the same tree costs one round trip or one per node depending on the traversal |
+| `traversal` | The traversal that produced this read — `view-hierarchy`, `semantic` or `single-fetch`. Read `mach_round_trips` against it: the same tree costs one round trip or one per node depending on the traversal. Which traversal a read gets is described in [How the axbridge backends fetch the tree](#how-the-axbridge-backends-fetch-the-tree) |
 | `mach_round_trips` | Round trips to the application's accessibility server |
 | `host_decode_duration_ms` | Decoding the guest's JSON response on the host |
 | `response_bytes` | Response size. Divided by `acquire_duration_ms`, it gives transport throughput |
@@ -174,7 +186,7 @@ A `null` here means *this transport does not have this phase* — not that the p
 
 **Divide `read_duration_ms` by `mach_round_trips` before concluding anything.** That ratio is what one query to the application's accessibility server costs, and on a slow read it is the largest term by a wide margin.
 
-**The key set, not the application, is what moves that ratio.** Measured on one running application, one screen, the same 118 round trips, varying only what was asked for:
+**The key set, not the application, is what moves that ratio.** Measured on one running application, one screen, over the per-node walk in both rows so the round trips are the same 118 and the only variable is what was asked for:
 
 | requested | per round trip | total |
 |---|---|---|
@@ -185,7 +197,7 @@ A factor of about 130, from the key set alone. For comparison, an ordinary read 
 
 The reason is what those attributes mean: `isVisible` and `visiblePoint` cannot be looked up, so the application has to hit-test the element to answer them, and asking for them on a whole tree hit-tests every node.
 
-**Two keys put a read on the expensive path, and nothing else does.** Asking for `interactable` or `occluded_by` widens the fetch list — for every node — with `isVisible`, `visiblePoint`, `centerPoint` and `userInteractionEnabled`; the first two are the ones that cost. `occluded_by` additionally hit-tests the centre of each element already found occluded, a cost proportional to the occluded set rather than to the tree. Every other key set stays on the default fetch list, which carries no reachability and costs milliseconds.
+**Two keys put a read on the expensive path, and nothing else does.** Asking for `interactable` or `occluded_by` widens the fetch list — for every node — with `isVisible`, `visiblePoint`, `centerPoint` and `userInteractionEnabled`; the first two are the ones that cost. `occluded_by` additionally hit-tests the centre of each element already found occluded, a cost proportional to the occluded set rather than to the tree. Every other key set stays on the default fetch list, which carries no reachability and costs milliseconds. On the axbridge backends those same two keys also move the read to the per-node walk, because one call asking for them times out — see [How the axbridge backends fetch the tree](#how-the-axbridge-backends-fetch-the-tree).
 
 **A point read reports no `profile` on the guest lanes.** It resolves one element rather than walking a tree, so there is no traversal to time; `--api ax` does report one. Keep that in mind when comparing a point read's cost across backends.
 
