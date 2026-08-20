@@ -597,7 +597,7 @@ static void listBundle(NSString *testBundlePath, NSString *outputFile)
     NSLog(@"Principal Class %@ initialized", principalObject);
   }
 
-  // Ensure that the principal class exists.
+  // Assert that the XCTestSuite class is present.
   Class testSuiteClass = NSClassFromString(XCTestSuiteClassName);
   NSCAssert(testSuiteClass, @"Should have %@ class", XCTestFrameworkName);
 

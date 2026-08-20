@@ -112,7 +112,7 @@ public final class FBTestManagerAPIMediator: NSObject, @unchecked Sendable {
   private func runUntilCompletion(launchedApplication: FBLaunchedApplication, timeout: TimeInterval) async throws {
     let work: FBFuture<AnyObject> = fbFutureFromAsync { () -> AnyObject in
       // Open the testmanagerd transport over async and hand the socket down to the Objective-C
-      // bundle connection (which no longer acquires the transport itself). The socket stays open
+      // bundle connection (which does not acquire the transport itself). The socket stays open
       // for the duration of the connection and is closed when this scope ends.
       try await self.asyncXCTestTarget.withTransportForTestManagerService { socket in
         let connection = FBTestBundleConnection(
