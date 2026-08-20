@@ -360,6 +360,11 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
       ))
   }
 
+  func warnIfReachabilityAcrossTree(_ keys: Set<FBAXKeys>) {
+    guard keys.contains(.interactable) || keys.contains(.occludedBy) else { return }
+    _ = simulator.logger.log(FBAccessibilityGuidance.reachabilityAcrossTree)
+  }
+
   func warnIfGeometrySuspect(_ frames: FBAccessibilityFrameSummary?) {
     guard let advice = FBAccessibilityGuidance.suspectGeometry(frames), let frames else { return }
     _ = simulator.logger.log("axbridge read reported \(frames.zeroFrame) of \(frames.total) elements with no frame. \(advice)")

@@ -31,6 +31,14 @@ enum FBAccessibilityGuidance {
   /// attribute that degrades with it, which is why the tally is worth saying something about.
   static let automationMode = "Most elements in this read carry no frame. If the tree describes a screen other than the one displayed, the target may be caching stale accessibility children: set AutomationEnabled (com.apple.Accessibility) — e.g. `xcrun simctl spawn <UDID> defaults write com.apple.Accessibility AutomationEnabled -bool true` — which takes effect on the next read without relaunching."
 
+  /// For a whole-tree read that asked for reachability. The attributes behind `interactable` and
+  /// `occluded_by` cannot be looked up — the application hit-tests the element to answer them — so asking
+  /// across a tree makes it hit-test every node.
+  ///
+  /// Logged at the point of the read rather than left to the docs: the read still succeeds, so nothing
+  /// else in the output explains why it took seconds.
+  static let reachabilityAcrossTree = "This read asked for reachability (interactable / occluded_by) across a whole tree, which makes the application hit-test every node — typically the dominant cost of the read. Reachability answers a question about one element: consider reading the tree without it and asking `ui describe-point <x> <y> --key interactable` for the element you are about to act on."
+
   /// Reads below this are not judged. A handful of elements with no frame is ordinary; the same ratio
   /// over a whole screen is not, and a small read has no statistical claim either way.
   private static let minimumElementsToJudge = 20

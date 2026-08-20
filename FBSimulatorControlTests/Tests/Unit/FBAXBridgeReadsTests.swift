@@ -1955,6 +1955,15 @@ private final class StubTreeReader: FBAXTreeReader, @unchecked Sendable {
     unsatisfiableWarnings.append(keys)
   }
 
+  /// Records the key set of any read that would have warned about per-node hit-testing.
+  private(set) var reachabilityWarnings: [Set<FBAXKeys>] = []
+
+  func warnIfReachabilityAcrossTree(_ keys: Set<FBAXKeys>) async {
+    if keys.contains(.interactable) || keys.contains(.occludedBy) {
+      reachabilityWarnings.append(keys)
+    }
+  }
+
   func warnIfTruncated(_ truncated: Bool) async {
     truncationWarnings.append(truncated)
   }

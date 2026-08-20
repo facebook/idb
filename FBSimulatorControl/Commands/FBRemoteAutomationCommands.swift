@@ -324,6 +324,11 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
     _ = simulator?.logger.log("Remote-automation read hit the bound (maxDepth \(FBAXReadLimits.maxReadDepth), maxNodes \(FBAXReadLimits.maxReadNodes)); the returned tree is truncated and incomplete.")
   }
 
+  // Silent here. This lane's reachability comes back with the snapshot the automation session already
+  // takes rather than from per-node hit-testing, so the request costs nothing and there is nothing to
+  // warn about.
+  func warnIfReachabilityAcrossTree(_ keys: Set<FBAXKeys>) {}
+
   func warnIfGeometrySuspect(_ frames: FBAccessibilityFrameSummary?) {
     guard let advice = FBAccessibilityGuidance.suspectGeometry(frames), let frames else { return }
     _ = simulator?.logger.log("Remote-automation read reported \(frames.zeroFrame) of \(frames.total) elements with no frame. \(advice)")

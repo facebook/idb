@@ -52,6 +52,10 @@ protocol FBAXTreeReader: FBUIAutomation {
   /// once per describe, and never on the `.marker` wait poll, which reads without describing.
   func warnIfTruncated(_ truncated: Bool) async
 
+  /// Warns when a whole-tree read asked for reachability. Guest lanes only: the translator lane has no
+  /// counterpart for these attributes, so the same request costs nothing there.
+  func warnIfReachabilityAcrossTree(_ keys: Set<FBAXKeys>) async
+
   /// Warns that most of a read's elements carry no rectangle, which can mean the target is serving stale
   /// cached children. Per backend for the same reason as `warnIfTruncated` — each logs through its own
   /// target — and called only on a whole-tree describe, since a single element has no ratio to judge.
@@ -121,6 +125,9 @@ extension FBAXTreeReader {
       await warnIfUnsatisfiable(
         options.unsatisfiableKeys(including: [key.serializationKey]), strategy: options.traversalStrategy
       )
+      // A marker read walks the whole tree to find one element, so it costs the same per-node
+      // hit-testing a describe-all does while returning far less.
+      await warnIfReachabilityAcrossTree(markerKeys)
       let elements = FBAXTreeWalk.describeAllElements(
         fromTree: read.tree, keys: markerKeys, nestedFormat: false, pid: read.pid
       )
@@ -147,6 +154,7 @@ extension FBAXTreeReader {
       )
       await warnIfTruncated(read.truncated)
       await warnIfUnsatisfiable(options.unsatisfiableKeys, strategy: options.traversalStrategy)
+      await warnIfReachabilityAcrossTree(options.serializationKeys)
       let serializeStarted = CFAbsoluteTimeGetCurrent()
       let walked = FBAXTreeWalk.describeAllElements(
         fromTree: read.tree, keys: options.serializationKeys, nestedFormat: options.nestedFormat, pid: read.pid
