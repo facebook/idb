@@ -71,9 +71,6 @@
 
 - (void)deviceConnected:(PrivateDevice)privateDevice identifier:(NSString *)identifier info:(NSDictionary<NSString *, id> *)info
 {
-  // The private refs handed to connection callbacks are unowned and may
-  // already be dead; they must never be dereferenced (%@ formats via
-  // description), only logged by identifier and address.
   [self.logger log:[NSString stringWithFormat:@"Device Connected %@ (%p)", identifier, privateDevice]];
 
   // Make sure that we pull from all known instances created by this class.
@@ -110,6 +107,8 @@
 
 - (void)deviceDisconnected:(PrivateDevice)privateDevice identifier:(NSString *)identifier
 {
+  // The private ref may already be dead by the time a disconnect callback fires, so log it by
+  // identifier and address only; never dereference it (%@ formats via description).
   [self.logger log:[NSString stringWithFormat:@"Device Disconnected %@ (%p)", identifier, privateDevice]];
   id device = [self.storage deviceForKey:identifier];
   if (!device) {
