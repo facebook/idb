@@ -225,7 +225,6 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     XCTAssertEqual(result as NSArray, expected as NSArray)
     XCTAssertTrue(JSONSerialization.isValidJSONObject(result))
 
-    // Verify property access tracking - all serialization properties should be accessed
     XCTAssertEqual(
       fixture!.rootElement!.accessedProperties as! Set<String>,
       allSerializationProperties,
@@ -266,7 +265,6 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     XCTAssertEqual(result as NSDictionary, expected as NSDictionary)
     XCTAssertTrue(JSONSerialization.isValidJSONObject(result))
 
-    // Verify property access tracking - single element doesn't recurse children
     XCTAssertEqual(
       elementDouble.accessedProperties as! Set<String>,
       singleElementSerializationProperties,
@@ -379,7 +377,6 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     XCTAssertEqual(result as NSArray, expected as NSArray)
     XCTAssertTrue(JSONSerialization.isValidJSONObject(result))
 
-    // Verify property access tracking - all serialization properties should be accessed
     XCTAssertEqual(
       fixture!.rootElement!.accessedProperties as! Set<String>,
       allSerializationProperties,
@@ -439,7 +436,6 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     XCTAssertEqual(result as NSArray, expected as NSArray)
     XCTAssertTrue(JSONSerialization.isValidJSONObject(result))
 
-    // Verify property access tracking - only filtered properties should be accessed
     XCTAssertEqual(
       fixture!.rootElement!.accessedProperties as! Set<String>,
       labelAndFrameFilteredProperties,
@@ -459,7 +455,6 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
   /// Core test for element at point with key filtering - returns response for optional profiling assertions
   @discardableResult
   private func assertElementAtPointKeyFiltering(withProfiling enableProfiling: Bool) async throws -> FBAccessibilityElementsResponse {
-    // Configure objectAtPointResult to return the title label element
     let titleLabel = FBAccessibilityTestElementBuilder.staticText(
       withLabel: "Confirm Action",
       frame: NSRect(x: 20, y: 100, width: 350, height: 30)
@@ -488,7 +483,6 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     XCTAssertEqual(result as NSDictionary, expected as NSDictionary)
     XCTAssertTrue(JSONSerialization.isValidJSONObject(result))
 
-    // Verify property access tracking - only filtered properties should be accessed
     XCTAssertEqual(
       titleLabel.accessedProperties as! Set<String>,
       labelTypeFrameFilteredProperties,
@@ -593,7 +587,6 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     // 4 elements x 3 properties (AXFrame always, label, frame dict) = 12 attribute fetches
     assertProfilingData(response.profilingData, expectedElements: 4, expectedAttributeFetches: 12)
 
-    // Verify fetched keys match exactly the keys that were requested
     let expectedKeys: Set<String> = Set([FBAXKeys.frame.rawValue, FBAXKeys.label.rawValue, FBAXKeys.frameDict.rawValue])
     XCTAssertEqual(response.profilingData?.translatorProfile?.fetchedKeys, expectedKeys, "fetchedKeys should match exactly the keys that were requested")
   }
@@ -631,7 +624,6 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
   func testAccessibilityPerformTapOnButtonSucceeds() async throws {
     try setUp(withRootElement: defaultElementTree)
 
-    // Configure objectAtPointResult to return the OK button element
     let okButton = FBAccessibilityTestElementBuilder.button(
       withLabel: "OK",
       identifier: "ok_button",
@@ -639,17 +631,13 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     )
     fixture!.translator.macPlatformElementResult = okButton
 
-    // Acquire element handle then perform tap
     let element = try await simulator.resolveElement(for: .point(CGPoint(x: 95, y: 772)))
 
-    // Read the label using the decomposed API and verify it
     let label = try await element.stringValue(forSearchableKey: .label)
     XCTAssertEqual(label, "OK")
 
-    // Perform the unconditional tap
     try await (element as FBAccessibilityElement).tap()
 
-    // Serialize and verify structure — same expected dict as element-at-point tests
     var options = FBAccessibilityRequestOptions()
     options.format = .nested
     let response = try await element.serialize(with: options)
@@ -679,7 +667,6 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
 
     element.close()
 
-    // Verify property access tracking - tap + serialization accesses
     XCTAssertTrue(
       okButton.accessedProperties.contains("accessibilityLabel"),
       "Tap operation should access label"
@@ -765,7 +752,6 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     // 1 element x 4 properties (AXFrame always, label, role for type, frame dict) = 4 attribute fetches
     assertProfilingData(response.profilingData, expectedElements: 1, expectedAttributeFetches: 4)
 
-    // Verify fetched keys match exactly the keys that were requested
     let expectedKeys: Set<String> = Set([FBAXKeys.frame.rawValue, FBAXKeys.label.rawValue, FBAXKeys.type.rawValue, FBAXKeys.frameDict.rawValue])
     XCTAssertEqual(response.profilingData?.translatorProfile?.fetchedKeys, expectedKeys, "fetchedKeys should match exactly the keys that were requested")
   }
@@ -784,7 +770,6 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
   }
 
   func testCoverageCalculationWithDefaultFixture() async throws {
-    // Simple test verifying coverage is returned when enabled
     try setUp(withRootElement: defaultElementTree)
 
     let element = try await simulator.resolveElement(for: .frontmost)
@@ -838,7 +823,6 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
   }
 
   func testCoverageCalculationWithFullCoverage() async throws {
-    // Create an element that covers the entire screen
     let fullCoverageElement = FBAccessibilityTestElementBuilder.staticText(
       withLabel: "Full Coverage",
       frame: NSRect(x: 0, y: 0, width: 390, height: 844)
@@ -865,7 +849,6 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
   }
 
   func testCoverageCalculationSkipsApplicationElement() async throws {
-    // Create a tree with ONLY an Application element (no children)
     let root = FBAccessibilityTestElementBuilder.application(
       withLabel: "App Window",
       frame: NSRect(x: 0, y: 0, width: 390, height: 844),
@@ -882,7 +865,6 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     element.close()
     XCTAssertNotNil(response.coverage?.frame)
 
-    // Application element is skipped, so coverage should be 0
     let coverage = response.coverage!.frame
     XCTAssertEqual(coverage, 0.0, accuracy: 0.001, "Coverage should be 0 when only Application element exists")
   }
@@ -926,7 +908,6 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
   }
 
   func testAdditionalFrameCoverageIsNilWithoutRemoteContent() async throws {
-    // Test that the additional coverage is nil when no remote content is discovered
     try setUp(withRootElement: defaultElementTree)
 
     let element = try await simulator.resolveElement(for: .frontmost)
@@ -940,14 +921,12 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
   }
 
   func testAdditionalFrameCoverageIsNilWithoutRemoteContentOptions() async throws {
-    // Test that the additional coverage is nil when remote content options are not set
     try setUp(withRootElement: defaultElementTree)
 
     let element = try await simulator.resolveElement(for: .frontmost)
 
     var options = FBAccessibilityRequestOptions()
     options.collectFrameCoverage = true
-    // remoteContentOptions is nil by default
     let response = try await element.serialize(with: options)
     element.close()
     XCTAssertNil(response.coverage?.additional, "the additional coverage should be nil without remoteContentOptions")
@@ -1137,7 +1116,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     XCTAssertEqual(coverage.walked, 1.0, accuracy: 0.01, "and the walk is unchanged")
   }
 
-  // MARK: - When the profiling collector starts existing
+  // MARK: - Profiling collector lifetime
 
   // The dispatcher times both acquisition phases — `perform(withTranslator:)` and
   // `macPlatformElement(fromTranslation:)` — and writes each to `request.collector`, which exists from
@@ -1183,27 +1162,16 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     assertProfilingData(try await profile(withFilter: .all), expectedElements: 4, expectedAttributeFetches: 60)
   }
 
-  // The filter no longer changes what the walk does, so it no longer changes what the walk costs: both
-  // filters serialize all four nodes for the same 60 fetches, and the filter decides afterwards which
-  // two are reported.
-  //
-  // These counts went up. Previously a dropped node was never serialized, so it contributed neither an
-  // element nor any of its 15 fetches — but it was still probed for a label, an identifier and a role,
-  // and those three fetches were never tallied. The old figures were the cost of a *different* walk,
-  // understated; these are the cost of this one.
-  // Exactly the unfiltered walk's count, because the filter no longer requests the verdict it could match
-  // on. It used to cost four more — one per element — for a verdict that is null on this backend anyway.
-  //
-  // On the guest lanes the same four attributes are hit-tested by the application per node rather than
-  // read locally, so this count is the cheap end of the same change.
+  // The filter does not change what the walk does or costs: both filters serialize all four nodes for
+  // the same 60 fetches, and the filter decides afterwards which two are reported. The count matches
+  // the unfiltered walk exactly because the filter never requests the verdict it could match on — a
+  // verdict that is null on this backend anyway.
   func testInteractableFilterProfileCountsMatchTheUnfilteredWalk() async throws {
     assertProfilingData(try await profile(withFilter: .interactable), expectedElements: 4, expectedAttributeFetches: 60)
   }
 
-  // Remote content is discovered after the walk and appended to the output, and the filter now runs
-  // over that merged list — so an element is kept or dropped on what it is, not on whether the main
-  // traversal or the remote hit-test happened to find it. It used to be appended straight past the
-  // filter, so the element below survived purely because of where it was found.
+  // Remote content is discovered after the walk and appended to the output, and the filter runs over
+  // that merged list — an element is kept or dropped on what it is, not on which traversal found it.
   func testRemoteContentDiscoveryHonoursTheElementFilter() async throws {
     let appElement = FBAccessibilityTestElementBuilder.application(
       withLabel: "App", frame: NSRect(x: 0, y: 0, width: 390, height: 844), children: []

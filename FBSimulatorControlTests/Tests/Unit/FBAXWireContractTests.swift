@@ -13,9 +13,8 @@ import XCTest
 /// Byte-level pins for the host side of the axbridge wire contract: the `XC_kAXXC*` node-attribute
 /// keys the read path fetches, the output-schema keys (`FBAXKeys`), and the frontmost-method request
 /// selectors. These strings cross the guest↔host boundary with no shared header, so a rename here is a
-/// silent protocol break; pinning them exactly is what makes the later single-sourcing (folding the
-/// scattered literals into `FBAXWire`) provably byte-preserving. The guest-side agreement is pinned
-/// against these same literals in the `SimulatorFrameworkBridge` tests.
+/// silent protocol break; pinning them exactly keeps `FBAXWire` byte-identical to the wire. The
+/// guest-side agreement is pinned against these same literals in the `SimulatorFrameworkBridge` tests.
 final class FBAXWireContractTests: XCTestCase {
 
   // MARK: - Node-attribute keys (the `_XCTD_fetchAttributes:` request/echo keys)
@@ -86,7 +85,7 @@ final class FBAXWireContractTests: XCTestCase {
       .occludedBy: "occluded_by",
     ]
     // Pinned over `allCases` rather than against a count, so a case added without a pinned wire value
-    // fails here instead of silently going unchecked — which is what a bare count let through.
+    // fails here instead of silently going unchecked.
     XCTAssertEqual(Set(FBAXKeys.allCases), Set(expected.keys), "every FBAXKeys case must have its wire value pinned")
     for (key, wireValue) in expected {
       XCTAssertEqual(key.rawValue, wireValue, "\(key) must serialize under its pinned wire key")
@@ -134,8 +133,8 @@ final class FBAXWireContractTests: XCTestCase {
   }
 
   // A kind this host has never heard of has to parse as "no kind" — an opaque reader failure — rather
-  // than as anything the host would act on. That is what lets the guest gain a kind ahead of the host it
-  // is talking to and cost only precision.
+  // than as anything the host would act on. A newer guest can then emit kinds an older host does not
+  // know, degrading precision instead of breaking parsing.
   func testAnUnknownFailureKindIsNotAKnownOne() {
     XCTAssertNil(FBAXWire.ErrorKind(rawValue: "application_on_fire"))
   }
@@ -271,8 +270,8 @@ final class FBAXWireContractTests: XCTestCase {
   // MARK: - Frontmost-method request selectors
 
   // `FBAXBridgeFrontmostMethod`'s raw values are the selectors the host sends the guest to pick a
-  // frontmost-resolution strategy; each must round-trip through its raw value. Once the guest response
-  // spelling is unified, the guest-reported `method` decodes back into these same cases.
+  // frontmost-resolution strategy; each must round-trip through its raw value, and the guest-reported
+  // `method` decodes back into these same cases.
   func testFrontmostMethodRequestSelectors() {
     let expected: [FBAXBridgeFrontmostMethod: String] = [
       .centerPoint: "center-point",

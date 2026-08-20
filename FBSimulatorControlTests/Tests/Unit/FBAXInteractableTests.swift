@@ -140,8 +140,8 @@ final class FBAXInteractableTests: XCTestCase {
   // MARK: - Cannot answer
 
   // A read that did not fetch the visibility attributes cannot judge interactability, and says so with an
-  // explicit null rather than inventing a verdict from `enabled` — which is a hardcoded `true` on this
-  // backend and the exact conflation this key exists to replace.
+  // explicit null rather than inventing a verdict from `enabled` — which is hardcoded `true` on this
+  // backend and conflates two different questions.
   func testABackendWithoutTheAttributesReportsNull() {
     let value = Self.interactable(Self.node(isVisible: nil, visiblePoint: nil, centrePoint: nil, userInteractionEnabled: nil))
     XCTAssertNotNil(value, "the key was requested, so it must be present")
@@ -340,7 +340,7 @@ final class FBAXInteractableTests: XCTestCase {
     )
   }
 
-  // An element explained by a relative is no longer unexplained, which is the whole point of adding it.
+  // An element explained by a relative counts as explained in the summary.
   func testAnElementHandledByARelativeIsNotUnexplained() throws {
     var handled = FBAccessibilityDocumentElement()
     handled.interactable = .some(.blocked(reasons: [.handledBy(nil)]))
@@ -446,8 +446,8 @@ final class FBAXInteractableTests: XCTestCase {
   }
 
   // The filter keeps what can actually be acted on. The covered button is button-like by every
-  // structural measure — it has a label and an actionable role — and is dropped anyway, which is the
-  // behaviour change: previously both of these survived.
+  // structural measure — it has a label and an actionable role — and is dropped anyway, because the
+  // backend's verdict outranks the structural heuristic.
   func testTheFilterKeepsOnlyElementsTheBackendReportsActionable() {
     let kept = FBAccessibilityElementFilter.interactable.apply(to: Self.mixedRead())
     XCTAssertEqual(kept.compactMap { $0.label ?? nil }, ["StandBy"])
@@ -478,9 +478,9 @@ final class FBAXInteractableTests: XCTestCase {
     XCTAssertTrue(FBAccessibilityElementFilter.interactable.apply(to: [covered]).isEmpty)
   }
 
-  // Without `--key interactable` the filter matches on the heuristic, on every backend, which is what the
-  // translator lane has always done. This is deliberate: the verdict costs a hit-test per node, and
-  // choosing which elements to report should not incur that.
+  // Without `--key interactable` the filter matches on the heuristic, on every backend. This is
+  // deliberate: the verdict costs a hit-test per node, and choosing which elements to report should
+  // not incur that.
   func testTheFilterDoesNotRequestTheVerdictItCanMatchOn() {
     var options = FBAccessibilityRequestOptions()
     options.filter = .interactable

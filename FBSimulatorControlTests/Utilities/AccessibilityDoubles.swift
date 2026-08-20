@@ -145,7 +145,7 @@ class FBSimulatorControlTests_AXPMacPlatformElement_Double: NSObject {
 }
 
 // Conforms the element double to the production seam. Each accessor routes through
-// the existing tracked properties so `accessedProperties` behavior is unchanged.
+// the tracked properties, so accesses are recorded in `accessedProperties`.
 // Attributes the double does not model (placeholder/expanded/hidden/focused) are
 // inert — none are in the default key set, so the unit suites never exercise them.
 extension FBSimulatorControlTests_AXPMacPlatformElement_Double: FBAXPlatformElement {
@@ -420,7 +420,6 @@ class FBAccessibilityTestFixture: NSObject {
     return FBAccessibilityTestFixture()
   }
 
-  // Convenience for call sites using bootedSimulator() style
   class func bootedSimulator() -> FBAccessibilityTestFixture {
     return bootedSimulatorFixture()
   }

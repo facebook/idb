@@ -155,7 +155,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
   }
 
   func testHitTestRaisesTheGuestsFailureKind() throws {
-    // All three parsers classify alike now: a tagged hit-test failure is the typed case, not an opaque
+    // All three parsers classify alike: a tagged hit-test failure is the typed case, not an opaque
     // one, and the pid the guest reported rides with it.
     let data = try envelope([
       "ok": false,
@@ -278,8 +278,8 @@ final class FBAXBridgeReadsTests: XCTestCase {
     )
   }
 
-  // A filter chooses which elements to report. It no longer changes what the read fetches, so
-  // `--filter interactable` does not make the application hit-test every node.
+  // A filter chooses which elements to report, not what the read fetches, so `--filter interactable`
+  // does not make the application hit-test every node.
   func testTheInteractableFilterDoesNotWidenTheRead() {
     var options = FBAccessibilityRequestOptions()
     options.filter = .interactable
@@ -338,8 +338,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
     XCTAssertTrue(error.description.contains("ApplicationAccessibilityEnabled"), "got: \(error.description)")
   }
 
-  // Each of these states a different cause, so a reader can tell them apart without the backend having
-  // to be asked. This is the whole point of the stack: one message per condition.
+  // One message per condition, so a reader can tell the causes apart without asking the backend.
   func testEachFailureModeStatesItsOwnCause() {
     let cases: [(any LocalizedError, String)] = [
       (FBAXBridgeError.readerUnavailable("XCTAccessibilityFramework unavailable"), "could not bind"),
@@ -358,16 +357,15 @@ final class FBAXBridgeReadsTests: XCTestCase {
   }
 
   // The remote backend's read failure genuinely is about the flag — that session documents
-  // `ApplicationAccessibilityEnabled=1` as a precondition — so its guidance stays put throughout.
+  // `ApplicationAccessibilityEnabled=1` as a precondition — so it carries the guidance.
   func testTheRemoteBackendTreeFailureCarriesTheAccessibilityServerGuidance() {
     let error = FBRemoteAutomationError.treeUnavailable(x: 201, y: 437)
     XCTAssertTrue(error.description.contains("ApplicationAccessibilityEnabled"), "got: \(error.description)")
   }
 
-  // The failures that were never about the flag, and must stay that way. `frontmostUnresolved` is among
-  // them because it replaced the case that *did* carry the guidance: it now states the guest's own reason
-  // instead, and the sub-case that really is a missing accessibility server no longer reaches it — the
-  // guest tags that `application_unavailable`, so it arrives as the case below that does carry guidance.
+  // The failures that are not about the flag must not carry its guidance. `frontmostUnresolved` states
+  // the guest's own reason; a genuinely missing accessibility server is tagged `application_unavailable`
+  // by the guest and arrives as the case that does carry guidance.
   func testTheFailuresThatAreNotAboutTheFlagOfferNoAccessibilityGuidance() {
     let errors: [String: any LocalizedError] = [
       "readerUnavailable": FBAXBridgeError.readerUnavailable("XCTAccessibilityFramework unavailable"),
@@ -405,8 +403,8 @@ final class FBAXBridgeReadsTests: XCTestCase {
   // MARK: - The lane's automation-mode default
 
   // Pinned because selecting the lane by name is how almost every caller reaches it, so this is the
-  // value that decides what a device does in practice. It is now a payload rather than a constant, so a
-  // test naming it is what keeps a change to the default deliberate.
+  // value that decides what a device does in practice. It is a payload rather than a constant, so this
+  // test keeps a change to the default deliberate.
   func testSelectingTheAxbridgeLaneByNameAssertsAutomationMode() {
     for name in [FBUIAutomationBackendName.axBridge, .axBridgePersistent] {
       guard case let .axBridge(_, _, automationMode) = FBUIAutomationBackend(name) else {
@@ -573,9 +571,8 @@ final class FBAXBridgeReadsTests: XCTestCase {
   }
 
   func testMarkerMatchesWhenSearchedKeyIsOutsideTheRequestedKeySet() {
-    // describe serialized with the caller's requested keys and the marker verbs with the default set,
-    // so a searched key outside that set — a restricted key request, or `.placeholder`, which the
-    // default set omits — was silently unmatchable even when a matching element was present.
+    // The marker union below is what makes a searched key outside the requested set — a restricted key
+    // request, or `.placeholder`, which the default set omits — matchable at all.
     let tree: [String: Any] = [
       FBAXWire.Node.label.rawValue: "General Settings",
       FBAXWire.Node.children.rawValue: [[String: Any]](),
@@ -673,10 +670,8 @@ final class FBAXBridgeReadsTests: XCTestCase {
     }
   }
 
-  // Both success paths admitted any positive `Int` and then converted it, so a pid above `Int32.max`
-  // trapped the host at parse time. Uncommented here, alongside the guard that makes it pass: against the
-  // previous commit it would have aborted the runner rather than failed, which is why it was pinned
-  // commented out.
+  // A pid above `Int32.max` must be rejected as a guest failure rather than trapping in the
+  // non-failable `Int32` conversion.
   func testAnOutOfRangeResolvedPidIsRejectedRatherThanTrapping() throws {
     let tree: [String: Any] = [FBAXWire.Node.label.rawValue: "root"]
     let frontmost = try envelope(["ok": true, "tree": tree, "pid": 99_999_999_999])
@@ -829,7 +824,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
   }
 
   // A marker resolves to one element, so the response carries a bare object — the same shape the
-  // accessibility backend now returns, so a consumer no longer branches on `--api` here.
+  // accessibility backend returns, so a consumer never branches on `--api` here.
   func testDescribeTreeReturnsABareObjectForAMarkerQuery() async throws {
     let reader = StubTreeReader(read: Self.stubRead())
     let response = try await reader.describeTree(
@@ -985,9 +980,8 @@ final class FBAXBridgeReadsTests: XCTestCase {
     ]
   }
 
-  // `describeTree` is the read path every backend but `ax` funnels through. It used to ignore
-  // `collectFrameCoverage` entirely — the option was accepted, carried the whole way down, and dropped,
-  // so those backends reported `coverage: null` however it was asked for.
+  // `describeTree` is the read path every backend but `ax` funnels through, so it must honour
+  // `collectFrameCoverage` for all of them.
   func testDescribeTreeReportsTheRequestedFrameCoverage() async throws {
     let reader = StubTreeReader(read: FBAXTreeRead(tree: Self.sizedTree(), pid: 99, truncated: false, modal: nil))
     var options = FBAccessibilityRequestOptions(format: .complete)
@@ -1861,8 +1855,8 @@ final class FBAXTraversalStrategyTests: XCTestCase {
 /// *content* of the message, which is the part a caller debugs from.
 final class FBAXBridgeGuestDeathTests: XCTestCase {
 
-  // The case that sent me here: a guest killed by the system. The signal is what points at the
-  // environment rather than at whatever change the caller happens to be testing.
+  // The motivating case: a guest killed by the system. The signal points at the environment rather
+  // than at whatever change the caller happens to be testing.
   func testAKilledGuestIsReportedWithItsSignal() {
     let message = FBAXBridgeConnection.socketClosedMessage(pid: 4321, signal: 9, exitCode: nil)
     XCTAssertTrue(message.contains("killed by signal 9"), message)

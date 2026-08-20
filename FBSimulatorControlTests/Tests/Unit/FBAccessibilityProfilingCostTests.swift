@@ -12,12 +12,8 @@ import XCTest
 /// Properties of the profiling collector that the read path depends on.
 final class FBAccessibilityProfilingCostTests: XCTestCase {
 
-  /// A large-but-real tree, at the default fetch list's width.
-  private static let elements = 200
-  private static let attributesPerElement = 8
-
-  // The set insert is the part that is not a counter, and the one that grows with the caller's key set
-  // rather than staying constant. Pinned separately so a change to it is attributable.
+  // `fetchedKeys` is a set bounded by distinct keys; `attributeFetchCount` is a counter. Pinned
+  // separately so a change to either is attributable.
   func testTheFetchedKeySetDoesNotGrowWithCallCount() {
     let collector = FBAccessibilityProfilingCollector()
     for _ in 0..<10000 {

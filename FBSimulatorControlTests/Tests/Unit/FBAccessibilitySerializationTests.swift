@@ -66,12 +66,9 @@ final class FBAccessibilitySerializationTests: XCTestCase {
 
   // The profiling collector is a pure side-channel of the node core, and the decorator's
   // seen-pid/is_remote layer adds nothing over the default key set: neither may change the serialized
-  // node. This invariant is what lets `nodeElement` be the single source of node bytes while
-  // `decoratedElement` layers on traversal-level concerns.
-  //
-  // The coverage grid used to be a third side-channel here. It is no longer passed to the serializer at
-  // all — coverage is computed from the serialized elements — so that half of the invariant is now
-  // structural rather than tested.
+  // node, so `nodeElement` stays the single source of node bytes while `decoratedElement` layers on
+  // traversal-level concerns. (Coverage is computed from the serialized elements, so it cannot alter
+  // node output structurally.)
   func testNodeDictionaryIsCollectorNeutral() throws {
     let root = FBAXTreeWalk.buildPlatformElementTree(from: Self.sampleTree(), pid: 7)
     var elements: [FBAXPlatformElement] = [root]
@@ -95,9 +92,8 @@ final class FBAccessibilitySerializationTests: XCTestCase {
   }
 
   // `is_remote` is opt-in (absent from `defaultSet`) and, when requested, is a *bool* recording node
-  // provenance — `false` for the main-tree traversal, `true` for remote grid hit-testing — replacing the
-  // old discovery-method string. The default set never carries the key, so a default response is
-  // byte-identical to the bare node core.
+  // provenance — `false` for the main-tree traversal, `true` for remote grid hit-testing. The default
+  // set never carries the key, so a default response is byte-identical to the bare node core.
   func testDecoratorTagsIsRemoteProvenanceAsBool() throws {
     let root = FBAXTreeWalk.buildPlatformElementTree(from: Self.sampleTree(), pid: 7)
     var keysWithRemote = FBAXKeys.defaultSet
@@ -194,7 +190,7 @@ final class FBAccessibilitySerializationTests: XCTestCase {
 
   // An element with an unreadable coordinate has nowhere to be tapped, and the marker resolver says so
   // rather than resolving to the origin. `.offScreen` exists to separate that from a marker that
-  // matched nothing; the collapse used to defeat it by making every edge present and zero.
+  // matched nothing.
   func testMarkerOnAnElementWithAnUnreadableCoordinateResolvesAsOffScreen() throws {
     let tree: [String: Any] = [
       FBAXWire.Node.label.rawValue: "root",
@@ -277,9 +273,7 @@ final class FBAccessibilitySerializationTests: XCTestCase {
   // MARK: - The ax marker read's shape
 
   // A marker read resolves one element, so it serializes as one element — the same shape every other
-  // backend already returned. It used to serialize as a tree instead, because the match arrives still
-  // carrying the frontmost request it was found through, so `elements` was the match plus its flattened
-  // subtree and a consumer had to branch on `--api`.
+  // backend returns, so a consumer never branches on `--api`.
   func testAxMarkerReadSerializesTheMatchAsASingleElement() throws {
     let response = try Self.markerMatchResponse(filter: .all)
     guard case let .single(element) = response.elements else {
@@ -289,9 +283,7 @@ final class FBAccessibilitySerializationTests: XCTestCase {
     XCTAssertNil(element.children ?? nil, "a flat read carries no children key")
   }
 
-  // And because it is a named element rather than a node of a walk, the filter cannot drop it. It used
-  // to be able to: `--filter interactable` would remove the very element the caller named and hoist its
-  // descendants into its place.
+  // Because it is a named element rather than a node of a walk, the filter cannot drop it.
   func testAxMarkerMatchSurvivesTheFilterThatWouldDropIt() throws {
     let response = try Self.markerMatchResponse(filter: .interactable)
     guard case let .single(element) = response.elements else {
@@ -525,8 +517,6 @@ final class FBAccessibilitySerializationTests: XCTestCase {
       FBAccessibilityElementsResponse(elements: .tree([]), coverage: FBAccessibilityCoverage(frame: 0.5, walked: 0.5, content: 0.5, leaf: 0.5, additional: 0.25)),
     ]
     for response in responses {
-      // `default` and `nested` differ only in what the serializer already produced, so for one set of
-      // elements they must render identically.
       XCTAssertEqual(
         try response.formattedOutputJSON(format: .default),
         try response.formattedOutputJSON(format: .nested),
@@ -736,8 +726,7 @@ final class FBAccessibilitySerializationTests: XCTestCase {
     XCTAssertNil(flat["children"], "a flat read carries no children key")
   }
 
-  // The legacy formats are untouched by that normalization: a flat read still carries no `children` key,
-  // which is what their consumers already parse.
+  // The legacy formats omit `children` for a flat read, which is what their consumers parse.
   func testLegacyFormatsStillOmitChildrenForAFlatRead() throws {
     let flat = FBAXTreeWalk.describeAllElements(
       fromTree: Self.sampleTree(), keys: [.label], nestedFormat: false, pid: 7
@@ -802,16 +791,11 @@ final class FBAccessibilitySerializationTests: XCTestCase {
 
   // MARK: - The element filter on a single-element read
 
-  // Both halves of the rule now hold.
-  //
   // The target is never filtered — a caller who named an element by point or marker asked about that
-  // element, so it is built directly rather than taken from a walk over it. That already held, and the
-  // fixture makes it observable: the target here would not survive `.interactable` were it any other
-  // node, carrying no label, no identifier and no actionable role.
-  //
-  // Its descendants are now walked with the caller's filter, as a whole-tree read already did. They
-  // used to be walked with it hard-coded off, so `describe <x> <y> --nested --filter interactable`
-  // returned every one of them while `describe-all --filter interactable` pruned them.
+  // element, so it is built directly rather than taken from a walk over it. The fixture makes that
+  // observable: the target here would not survive `.interactable` were it any other node, carrying no
+  // label, no identifier and no actionable role. Its descendants are walked with the caller's filter,
+  // exactly as a whole-tree read walks them.
   func testSingleElementReadKeepsTheTargetAndFiltersItsDescendants() throws {
     let element = FBAXTreeWalk.buildPlatformElementTree(from: Self.unlabeledTargetTree(), pid: 7)
     var options = FBAccessibilityRequestOptions()
@@ -836,11 +820,8 @@ final class FBAccessibilitySerializationTests: XCTestCase {
 
   // MARK: - Children reporting
 
-  // `complete` reports `children` on every element, whatever the read walked. It used to follow the
-  // walk instead: a flat read — the shape a guest-backed hit-test produces, since those resolve one
-  // node and never look further — omitted the key entirely, so `describe <x> <y> --format complete`
-  // described the same element with a different key set depending on `--api`. That is the one thing
-  // the document's fixed key set exists to rule out.
+  // `complete` reports `children` on every element, whatever the read walked — the document's fixed
+  // key set exists to rule out per-`--api` shape differences.
   func testCompleteAlwaysReportsChildrenWhateverTheReadWalked() throws {
     let flat = FBAXTreeWalk.describeAllElements(
       fromTree: Self.sampleTree(), keys: [.label], nestedFormat: false, pid: 7
@@ -1043,9 +1024,7 @@ final class FBAccessibilitySerializationTests: XCTestCase {
     XCTAssertEqual(profile["mach_round_trips"] as? Int, 176)
     XCTAssertTrue(profile["mach_round_trips"] is NSNumber, "the guest reports its own round-trip count")
 
-    // Neither transport measures its own acquisition, so neither claims to. Both figures were the same
-    // undivided residual under two names, and a reader took `connect` at face value on a transport whose
-    // connection is memoized and had not connected at all.
+    // Neither transport measures its own acquisition, so neither claims to.
     for unmeasured in ["spawn_duration_ms", "connect_duration_ms"] {
       XCTAssertNil(profile[unmeasured], "\(unmeasured) is not measured and must not be reported")
     }
