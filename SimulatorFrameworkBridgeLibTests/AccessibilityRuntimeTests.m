@@ -1178,7 +1178,7 @@ static NSDictionary *FBAXTestsPress(void)
 // Both walks are asked for the same depth cap by the same request, so a read should mean the same thing by
 // it. The view-hierarchy walk marks a read truncated only where the node it stopped at *had* children;
 // this pins the translator walk deciding from the node's own attribute count instead.
-- (void)testATranslatorReadOfALeafAtTheDepthCapReportsTruncation
+- (void)testATranslatorReadOfALeafAtTheDepthCapDoesNotReportTruncation
 {
   FBAXFakeElement *root = [FBAXFakeElement readable:@"UIApplication"];
   root.attributes = @{kAXElementType : @"UIApplication"};
