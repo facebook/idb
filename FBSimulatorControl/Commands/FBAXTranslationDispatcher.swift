@@ -18,6 +18,30 @@ private final class AXPResponseBox: @unchecked Sendable {
   var response: AXPTranslatorResponse?
 }
 
+/// One unit of translator work and its result, carried across the hop onto the AXP
+/// work queue and back. SAFETY: the body runs exactly once, on the serial AXP work
+/// queue; the continuation resume that follows it establishes the happens-before for
+/// the result read after the await. The queue is the synchronization.
+// patternlint-disable-next-line unchecked-sendable
+private final class AXPSerializedJob<T>: @unchecked Sendable {
+  private struct NeverRan: Error {}
+
+  private let body: () throws -> T
+  private var result: Result<T, Error> = .failure(NeverRan())
+
+  init(_ body: @escaping () throws -> T) {
+    self.body = body
+  }
+
+  func run() {
+    result = Result(catching: body)
+  }
+
+  func takeResult() throws -> T {
+    try result.get()
+  }
+}
+
 /// Bridges the asynchronous CoreSimulator accessibility API to the synchronous
 /// callback model `AXPTranslator` expects. Holds the token→request registry and,
 /// per request, performs the translator handshake and converts the lazy AXP
@@ -36,6 +60,15 @@ final class FBAXTranslationDispatcher: NSObject, AXPTranslationTokenDelegateHelp
   private let lock = NSLock()
   private var tokenToRequest: [String: FBAXTranslationRequest] = [:]
 
+  // AXPTranslator is a process-wide singleton whose internal state (nonatomic
+  // properties, shared element caches) is not synchronized, so its API contract is
+  // single-threaded. Concurrent translation work over-releases shared
+  // bridge-delegate token storage (EXC_BAD_ACCESS in FBAXTranslationRequest.deinit),
+  // so every touch of the translator or its elements funnels through this one serial
+  // queue — process-wide, matching the singleton it guards. Running the walks here
+  // also keeps their synchronous XPC waits off the cooperative thread pool.
+  private static let axpWorkQueue = DispatchQueue(label: "com.facebook.fbsimulatorcontrol.accessibility_translator.work")
+
   init(translator: AXPTranslator, logger: FBControlCoreLogger?) {
     self.translator = translator
     self.logger = logger
@@ -45,32 +78,54 @@ final class FBAXTranslationDispatcher: NSObject, AXPTranslationTokenDelegateHelp
 
   // MARK: - Public
 
+  /// Runs `operation` on the process-wide AXP work queue, awaiting its result. All
+  /// translator interaction — the translation handshake, serialization walks,
+  /// attribute reads, and actions — must go through here; the queue is what upholds
+  /// the translator singleton's single-threaded contract.
+  func performSerialized<T>(_ operation: @escaping () throws -> T) async throws -> T {
+    let job = AXPSerializedJob(operation)
+    await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+      Self.axpWorkQueue.async {
+        job.run()
+        continuation.resume()
+      }
+    }
+    return try job.takeResult()
+  }
+
   func platformElement(withRequest request: FBAXTranslationRequest, simulator: FBSimulator) async throws -> FBAXWritableElement {
-    // The synchronous XPC round-trips driven below (via the delegate callback)
-    // must never run on the main queue. This `nonisolated` async method runs on
-    // the cooperative executor, off the main actor.
+    // The synchronous XPC round-trips driven by the delegate callback must never
+    // run on the main queue; the serialized hop below moves them to the AXP work
+    // queue, off the main actor and off the cooperative executor.
     request.device = simulator.device
     request.translator = self.translator
     self.pushRequest(request)
-    let collector = request.collector
+    let translator = self.translator
 
-    let translationStart = CFAbsoluteTimeGetCurrent()
-    guard let translator = self.translator, let translation = request.perform(withTranslator: translator) else {
+    do {
+      return try await performSerialized { () throws -> FBAXWritableElement in
+        let collector = request.collector
+        let translationStart = CFAbsoluteTimeGetCurrent()
+        guard let translator, let translation = request.perform(withTranslator: translator) else {
+          throw FBAccessibilityError.noTranslationObject
+        }
+        collector?.translationDuration = CFAbsoluteTimeGetCurrent() - translationStart
+        translation.bridgeDelegateToken = request.token
+
+        let conversionStart = CFAbsoluteTimeGetCurrent()
+        let rawElement = translator.macPlatformElement(fromTranslation: translation)
+        collector?.elementConversionDuration = CFAbsoluteTimeGetCurrent() - conversionStart
+
+        guard let element = rawElement as? FBAXWritableElement else {
+          throw FBAccessibilityError.noTranslationObject
+        }
+        element.axSetBridgeDelegateToken(request.token)
+        return element
+      }
+    } catch {
       self.popRequest(request)
-      throw FBAccessibilityError.noTranslationObject
+      throw error
     }
-    collector?.translationDuration = CFAbsoluteTimeGetCurrent() - translationStart
-    translation.bridgeDelegateToken = request.token
-
-    let conversionStart = CFAbsoluteTimeGetCurrent()
-    let rawElement = translator.macPlatformElement(fromTranslation: translation)
-    collector?.elementConversionDuration = CFAbsoluteTimeGetCurrent() - conversionStart
-
-    guard let element = rawElement as? FBAXWritableElement else {
-      throw FBAccessibilityError.noTranslationObject
-    }
-    element.axSetBridgeDelegateToken(request.token)
-    return element
   }
 
   // MARK: - Private

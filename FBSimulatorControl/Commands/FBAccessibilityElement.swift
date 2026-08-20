@@ -77,7 +77,12 @@ final class FBAccessibilityElement {
     // callbacks (which capture `request.logger`) actually emit request/response
     // logging during the serialization walk. Mirrors the `collector` wiring above.
     request.logger = options.enableLogging ? simulator?.logger : nil
-    return try request.run(element, options: options, namesTheTarget: namesTheTarget)
+    let request = self.request
+    let element = self.element
+    let namesTheTarget = self.namesTheTarget
+    return try await dispatcher.performSerialized {
+      try request.run(element, options: options, namesTheTarget: namesTheTarget)
+    }
   }
 
   /// Whether this handle names the one element the caller asked for, rather than the tree its request
@@ -92,7 +97,8 @@ final class FBAccessibilityElement {
     if closed {
       throw FBAccessibilityError.closedElement(operation: "read from")
     }
-    guard let value = Self.stringValue(forKey: key, from: element) else {
+    let element = self.element
+    guard let value = try await dispatcher.performSerialized({ Self.stringValue(forKey: key, from: element) }) else {
       throw FBAccessibilityError.noStringValue(key: key.rawValue)
     }
     return value
@@ -105,12 +111,15 @@ final class FBAccessibilityElement {
     if closed {
       throw FBAccessibilityError.closedElement(operation: "tap")
     }
-    let actionNames = element.axActionNames()
-    guard actionNames.contains("AXPress") else {
-      throw FBAccessibilityError.pressUnsupported(supportedActions: FBCollectionInformation.oneLineDescription(from: actionNames))
-    }
-    guard element.axPerformPress() else {
-      throw FBAccessibilityError.pressFailed
+    let element = self.element
+    try await dispatcher.performSerialized {
+      let actionNames = element.axActionNames()
+      guard actionNames.contains("AXPress") else {
+        throw FBAccessibilityError.pressUnsupported(supportedActions: FBCollectionInformation.oneLineDescription(from: actionNames))
+      }
+      guard element.axPerformPress() else {
+        throw FBAccessibilityError.pressFailed
+      }
     }
   }
 
@@ -119,7 +128,8 @@ final class FBAccessibilityElement {
     if closed {
       throw FBAccessibilityError.closedElement(operation: "scroll")
     }
-    element.axScroll(direction)
+    let element = self.element
+    try await dispatcher.performSerialized { element.axScroll(direction) }
   }
 
   /// Set the accessibility value of the element (e.g., text field content, slider position).
@@ -127,7 +137,8 @@ final class FBAccessibilityElement {
     if closed {
       throw FBAccessibilityError.closedElement(operation: "set value on")
     }
-    element.axSetValue(value)
+    let element = self.element
+    try await dispatcher.performSerialized { element.axSetValue(value) }
   }
 
   // MARK: - Geometry
@@ -137,8 +148,12 @@ final class FBAccessibilityElement {
     if closed {
       throw FBAccessibilityError.closedElement(operation: "read the frame of")
     }
-    element.axSetBridgeDelegateToken(request.token)
-    return element.axFrame()
+    let element = self.element
+    let token = request.token
+    return try await dispatcher.performSerialized {
+      element.axSetBridgeDelegateToken(token)
+      return element.axFrame()
+    }
   }
 
   /// The pid of the backing translation object (0 when absent). A zero-serialization identity read —
@@ -158,7 +173,20 @@ final class FBAccessibilityElement {
     // The legacy accessibility tree is composed entirely of `AXPMacPlatformElement`, so any matched
     // descendant is writable; the cast is total in practice. A (structurally impossible) read-only
     // match is reported as not-found rather than wrapped in a handle whose actions could not dispatch.
-    guard let found = Self.findElement(withValue: value, forKey: key, in: element, token: request.token, remainingDepth: depth) as? FBAXWritableElement else {
+    //
+    // The root's bounds are read in the same serialized hop, before handing ownership on: this element
+    // is the root the match was found under, and once the new handle is serializing there is nothing
+    // left that knows the bounds the match's frame is relative to.
+    let element = self.element
+    let token = request.token
+    let match = try await dispatcher.performSerialized { () -> (found: FBAXWritableElement, rootBounds: CGRect)? in
+      guard let found = Self.findElement(withValue: value, forKey: key, in: element, token: token, remainingDepth: depth) as? FBAXWritableElement else {
+        return nil
+      }
+      element.axSetBridgeDelegateToken(token)
+      return (found, element.axFrame())
+    }
+    guard let match else {
       close()
       throw FBAccessibilityError.elementNotFound(key: key.rawValue, value: value, depth: depth)
     }
@@ -166,12 +194,8 @@ final class FBAccessibilityElement {
     guard let simulator else {
       throw FBWeakTargetError.simulator
     }
-    // Read before handing ownership on: this element is the root the match was found under, and once
-    // the new handle is serializing there is nothing left that knows the bounds the match's frame is
-    // relative to.
-    element.axSetBridgeDelegateToken(request.token)
     let newHandle = FBAccessibilityElement(
-      element: found, request: request, dispatcher: dispatcher, simulator: simulator, rootBounds: element.axFrame()
+      element: match.found, request: request, dispatcher: dispatcher, simulator: simulator, rootBounds: match.rootBounds
     )
     closed = true
     return newHandle

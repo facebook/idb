@@ -161,7 +161,8 @@ final class FBSimulatorAccessibilityCommands: AccessibilityOperations {
     if !remediationPermitted {
       return FBAccessibilityElement(element: element, request: request, dispatcher: dispatcher, simulator: simulator)
     }
-    if await !remediationRequired(forSimulator: simulator, element: element) {
+    let requiresRemediation = try await remediationRequired(forSimulator: simulator, element: element, dispatcher: dispatcher)
+    if !requiresRemediation {
       return FBAccessibilityElement(element: element, request: request, dispatcher: dispatcher, simulator: simulator)
     }
     // The request's token was pushed by the dispatcher but is not yet wrapped in an
@@ -172,9 +173,11 @@ final class FBSimulatorAccessibilityCommands: AccessibilityOperations {
     return try await accessibilityElement(request: nextRequest, remediationPermitted: false)
   }
 
-  private func remediationRequired(forSimulator simulator: FBSimulator, element: FBAXPlatformElement) async -> Bool {
+  private func remediationRequired(forSimulator simulator: FBSimulator, element: FBAXPlatformElement, dispatcher: FBAXTranslationDispatcher) async throws -> Bool {
     // A quick check: a non-zero accessibility frame indicates a healthy element.
-    if !element.axFrame().equalTo(.zero) {
+    // An attribute read, so it takes the serialized hop like every other translator touch.
+    let frame = try await dispatcher.performSerialized { element.axFrame() }
+    if !frame.equalTo(.zero) {
       return false
     }
     // Otherwise the zero-framed root is stale unless its owning pid is still a live launchd

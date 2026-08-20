@@ -1530,13 +1530,10 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
       element.close()
     }
 
-    // BUG: both resolutions are inside the process-wide AXPTranslator at the same time.
-    // The translator singleton's internal state is not synchronized (nonatomic
-    // properties, shared element caches), so concurrent translation work over-releases
-    // shared bridge-delegate token storage — EXC_BAD_ACCESS in
-    // FBAXTranslationRequest.deinit. Flipped to serialized (maxActive == 1) in the
-    // following commit.
-    XCTAssertEqual(tracker.maxActive, 2, "concurrent resolutions enter the shared translator together")
+    // The translator singleton's internal state is not synchronized, so all translator
+    // work is serialized onto one queue: concurrent resolutions enter it strictly one
+    // at a time, even with the first held open waiting for a peer.
+    XCTAssertEqual(tracker.maxActive, 1, "resolutions enter the shared translator strictly one at a time")
   }
 }
 
