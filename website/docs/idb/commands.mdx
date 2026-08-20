@@ -268,12 +268,12 @@ Display metadata about any running debug sessions.
 idb dap /path/to/dap_package
 ```
 
-Installs a Debug Adapter Protocol package on the target and spawns a debug server speaking it, relaying the protocol over `stdin` and `stdout`. This is what an editor or IDE attaches to, rather than something you would usually run by hand.
+Installs a Debug Adapter Protocol package on the target and spawns a debug server speaking it, relaying the protocol over `stdin` and `stdout`. Intended for editors and IDEs to attach to.
 
 
 ## UI Automation
 
-The `idb ui` command group reads the screen through the target's accessibility system, acts on the elements it reports, and synthesizes HID events. It has a page of its own: [UI Automation](ui.mdx) documents the whole group, and [Accessibility](accessibility.mdx) covers the backends that serve a read and the formats a read comes back in.
+The `idb ui` command group reads the screen through the target's accessibility system, acts on the elements it reports, and synthesizes HID events. It has a page of its own: [UI Automation](ui.mdx) documents the whole group, and [Accessibility](accessibility.mdx) covers the read backends and output formats.
 
 ```
 # Read the screen
@@ -396,7 +396,7 @@ Tail logs from a target, uses the standard log(1) stream arguments
 idb companion log
 ```
 
-Tails the log of the companion backing the target, rather than the log of the target itself. This is the first place to look when a command fails for a reason the client cannot see.
+Tails the log of the companion backing the target, rather than the log of the target itself. Useful when a command fails and the client-side error is uninformative.
 
 ### Open a url
 
@@ -413,7 +413,7 @@ This works both with web addresses and URL schemes present on the target.
 idb send-notification com.apple.Maps '{"aps": {"alert": "Hello"}}'
 ```
 
-Delivers a push notification payload to an installed app, without any of the certificate or network setup a real push would need. The payload is the JSON that the app would have received from APNs.
+Delivers a push notification payload to an installed app, with no APNs certificate or network setup. The payload is the JSON the app would receive from APNs.
 
 ### Simulate a memory warning
 
@@ -421,7 +421,7 @@ Delivers a push notification payload to an installed app, without any of the cer
 idb simulate-memory-warning
 ```
 
-Delivers a memory warning to the target, so an app's response to memory pressure can be exercised on demand.
+Delivers a memory warning to the target.
 
 ### Clear the keychain
 
@@ -473,7 +473,7 @@ Most common image and video file formats are supported.
 idb photos clear
 ```
 
-Empties the target's camera roll, undoing an `add-media` and returning a simulator to a known state between runs.
+Empties the target's camera roll.
 
 ### Approve and revoke permissions
 
@@ -482,7 +482,7 @@ idb approve com.apple.Maps photos camera
 idb revoke com.apple.Maps photos camera
 ```
 
-For simulators idb can programmatically grant or withdraw an app's permissions, so a permission prompt never has to be dismissed by hand. Both commands take one or more of:
+For simulators idb can programmatically grant or withdraw an app's permissions. Both commands take one or more of:
 
 - `photos` - Permission to view the camera roll
 - `camera` - Permission to access the camera
@@ -512,7 +512,7 @@ Empties the contacts database instead of replacing it.
 idb shell
 ```
 
-Opens a prompt that accepts `idb` commands one after another, holding the connection to the companion open between them. This is a shell for `idb` itself, not a shell on the target — it saves the per-command startup and connection cost when running a sequence of commands by hand.
+Opens a prompt that accepts `idb` commands one after another, holding the connection to the companion open between them. This is a shell for `idb` itself, not a shell on the target.
 
 
 ## Crash logs

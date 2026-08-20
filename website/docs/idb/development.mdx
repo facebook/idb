@@ -58,7 +58,7 @@ Once `idb_companion` has launched, it will output the TCP port upon which the co
 {"grpc_port":10882}
 ```
 
-By default this port is `10882`, it can be bound on a random port with `--port 0` or a port of your choosing. You'll now be able to direct `idb` commands against this companion with the `IDB_COMPANION` environment variable passed to the cli:
+By default this port is `10882`, it can be bound on a random port with `--grpc-port 0` or a port of your choosing. You'll now be able to direct `idb` commands against this companion with the `IDB_COMPANION` environment variable passed to the cli:
 
 ```
 $ IDB_COMPANION=localhost:10882 idb describe
