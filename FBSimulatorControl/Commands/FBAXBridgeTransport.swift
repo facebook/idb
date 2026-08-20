@@ -467,10 +467,18 @@ final class FBAXBridgeConnection: @unchecked Sendable {
   private let logger: (any FBControlCoreLogger)?
   private let queue = DispatchQueue(label: "com.facebook.FBSimulatorControl.axbridge.connection")
 
-  /// Per-`recv` deadline (SO_RCVTIMEO) so a hung or dead guest can't wedge a round-trip forever;
-  /// generous relative to a warm read (~20ms), so it only trips on a genuine stall, after which the
-  /// round-trip recovery drops and re-establishes the connection.
-  private static let roundTripTimeoutSeconds = 30
+  /// Per-`recv` deadline (SO_RCVTIMEO), so a hung or dead guest cannot wedge a round trip forever.
+  ///
+  /// **This bounds silence, not slowness, and the distinction is the whole point.** `readAll` loops
+  /// `recv`, and each call gets the full deadline — so every chunk that arrives resets it. A read that
+  /// takes a minute never trips this as long as bytes keep coming; only a guest that says nothing at all
+  /// for the deadline does, after which the recovery path drops and re-establishes the connection.
+  ///
+  /// So the figure is deliberately not derived from what a read costs. Read durations span four orders
+  /// of magnitude across applications — sub-millisecond per query on a simple app, tens of milliseconds
+  /// on a heavy one — and a deadline calibrated against any of them would be wrong for the others and
+  /// would rot the first time an application got slower.
+  private static let receiveTimeoutSeconds = 30
 
   init(
     fileDescriptor: Int32,
@@ -555,7 +563,7 @@ final class FBAXBridgeConnection: @unchecked Sendable {
               setsockopt(fileDescriptor, SOL_SOCKET, SO_NOSIGPIPE, &noSigPipe, socklen_t(MemoryLayout<Int32>.size))
               // Bound each blocking `recv` so a hung/dead guest can't wedge the caller forever; a read
               // that stalls past the deadline fails and the round-trip recovery re-establishes.
-              var readTimeout = timeval(tv_sec: roundTripTimeoutSeconds, tv_usec: 0)
+              var readTimeout = timeval(tv_sec: receiveTimeoutSeconds, tv_usec: 0)
               setsockopt(fileDescriptor, SOL_SOCKET, SO_RCVTIMEO, &readTimeout, socklen_t(MemoryLayout<timeval>.size))
               continuation.resume(returning: fileDescriptor)
               return
@@ -709,7 +717,7 @@ final class FBAXBridgeConnection: @unchecked Sendable {
           if errno == EAGAIN || errno == EWOULDBLOCK {
             // The SO_RCVTIMEO deadline elapsed with no data — the guest is hung or gone. Surface a
             // timeout so the round-trip recovery drops this connection and re-establishes a fresh serve.
-            throw FBAXBridgeError.guestFailure("serve read timed out after \(roundTripTimeoutSeconds)s")
+            throw FBAXBridgeError.guestFailure("serve read timed out after \(receiveTimeoutSeconds)s with no data")
           }
           throw FBAXBridgeError.guestFailure("socket read failed: \(String(cString: strerror(errno)))")
         }
