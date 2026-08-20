@@ -73,6 +73,23 @@ NS_ASSUME_NONNULL_BEGIN
 /** What `-translatorAttributes:ofElement:` answers with. Nil means the read could not be performed. */
 @property (nullable, nonatomic, copy) NSDictionary<NSNumber *, id> *translatorAttributeValues;
 
+/**
+ * When set, `-snapshotOfElement:…` reports this instead of answering — the shape of a runtime with no
+ * snapshot support, or an application that did not answer the one fetch in time.
+ */
+@property (nullable, nonatomic, strong) NSError *snapshotError;
+/**
+ * When YES, `-snapshotOfElement:…` answers nil with no error — what the accessibility server does when
+ * handed options it will not accept, which is the failure that reads as an empty screen rather than as
+ * an error.
+ */
+@property (nonatomic, assign) BOOL snapshotAnswersNothing;
+
+/** How many snapshots were fetched — one for a whole tree is the point of the single-fetch path. */
+@property (nonatomic, readonly) NSUInteger snapshotCount;
+/** The attribute names the most recent snapshot was asked for, so a test can assert the ask. */
+@property (nullable, nonatomic, readonly, copy) NSArray<NSString *> *lastSnapshotAttributeNames;
+
 /** The attributes the last `-translatorAttributes:ofElement:` asked for, so a test can assert the ask. */
 @property (nullable, nonatomic, readonly, copy) NSArray<NSNumber *> *lastTranslatorAttributes;
 

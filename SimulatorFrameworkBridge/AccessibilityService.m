@@ -9,8 +9,10 @@
 #import "AccessibilityService+Testing.h"
 
 #import <arpa/inet.h>
+#import <dlfcn.h>
 #import <errno.h>
 #import <math.h>
+#import <objc/message.h>
 #import <poll.h>
 #import <sys/socket.h>
 #import <sys/time.h>
@@ -70,6 +72,10 @@ static NSString *const kRequestExplainUnreachable = @"explainUnreachable";
 // opt-in per request: the two disagree on some screens, and which one a caller wants is not a decision
 // this reader should make for them silently.
 static NSString *const kRequestTranslatorVocabulary = @"translatorVocabulary";
+// Reads the whole subtree in one call, through `userTestingSnapshotForElement:options:error:`, instead
+// of one call per node. Selected by the host's `single-fetch` traversal; the per-node walk is still the
+// default.
+static NSString *const kRequestSnapshotTree = @"snapshotTree";
 // The synthetic per-node key the explanation is reported under. Not an `XC_kAXXC*` attribute — the
 // accessibility server does not vend this; the reader derives it — so it is spelled in the reader's own
 // namespace to keep the two kinds of key distinguishable on the wire.
@@ -376,6 +382,9 @@ static NSDictionary *FBAXBridgeFrameDictionary(id frameValue)
     if (strcmp(value.objCType, @encode(CGRect)) == 0) {
       [value getValue:&rect size:sizeof(rect)];
     }
+  } else if (frameValue && [FBAXBridgeSharedRuntime(NULL) getRect:&rect fromValue:frameValue]) {
+    // An `AXValue`-wrapped rect, which is how the single-fetch read answers. Not an `NSValue`: it is a
+    // CFType with its own accessor, so the `NSValue` branch above sees only `__NSCFType` and drops it.
   } else if (frameValue) {
     NSLog(@"[AccessibilityService] unexpected frame value class: %@", [frameValue class]);
   }
@@ -872,7 +881,74 @@ static NSDictionary *_Nullable FBAXBridgeReadFailureResponse(FBAXReadOutcome *re
   }
 }
 
-// Defined below, after the verbs it dispatches to.
+// The snapshot API's own keys. Its nodes nest under `Children` and carry attributes keyed by number
+// under `Attributes`, rather than the `XC_kAXXCAttribute*` names the per-node walk produces.
+static NSString *const kSnapshotAttributes = @"UIAccessibilitySnapshotKeyAttributes";
+static NSString *const kSnapshotChildren = @"UIAccessibilitySnapshotKeyChildren";
+
+// Turns one snapshot node into the node the rest of this file produces, and recurses.
+//
+// `namesByNumber` inverts the attribute conversion: `XCAXAccessibilityAttributesForStringAttributes`
+// returns numbers positionally for the names it was given, so zipping the two recovers the mapping
+// without hardcoding a single attribute number — which matters because those numbers are the runtime's,
+// not ours, and nothing promises they are stable across versions.
+//
+// Bounded by the same depth and node budget the walk uses, so a tree read one way truncates where the
+// same tree read the other way does. The server's own `maxDepth`/`maxChildren` are set generously and
+// the host's bounds are applied here instead, which keeps `truncated` meaning what it means everywhere.
+static NSDictionary *_Nullable FBAXBridgeNodeFromSnapshot(id snapshotNode,
+                                                          NSDictionary<NSNumber *, NSString *> *namesByNumber,
+                                                          int depth,
+                                                          int maxDepth,
+                                                          int *budget,
+                                                          BOOL *truncated
+)
+{
+  if (![snapshotNode isKindOfClass:NSDictionary.class]) {
+    return nil;
+  }
+  if (*budget <= 0) {
+    *truncated = YES;
+    return nil;
+  }
+  (*budget)--;
+
+  NSDictionary *attributes = ((NSDictionary *)snapshotNode)[kSnapshotAttributes];
+  NSMutableDictionary *node = [NSMutableDictionary dictionary];
+  if ([attributes isKindOfClass:NSDictionary.class]) {
+    for (NSNumber *number in attributes) {
+      NSString *name = namesByNumber[number];
+      // The children attribute is answered from the snapshot's own nesting below, not copied across: it
+      // arrives as raw element references, which are no use to a host reading a materialized tree.
+      if (!name || [name isEqualToString:kAXChildren]) {
+        continue;
+      }
+      // The same coercion the per-node walk applies. Without it an attribute the server answers with an
+      // object — a point, an error, anything not a string or number — reaches the encoder raw and fails
+      // the whole read rather than that one value.
+      node[name] = FBAXBridgeJSONSafeValue(attributes[number], name);
+    }
+  }
+
+  if (depth >= maxDepth) {
+    id children = ((NSDictionary *)snapshotNode)[kSnapshotChildren];
+    if ([children isKindOfClass:NSArray.class] && ((NSArray *)children).count > 0) {
+      *truncated = YES;
+    }
+    return node;
+  }
+
+  NSMutableArray *children = [NSMutableArray array];
+  for (id child in (NSArray *)(((NSDictionary *)snapshotNode)[kSnapshotChildren] ?: @[])) {
+    NSDictionary *built = FBAXBridgeNodeFromSnapshot(child, namesByNumber, depth + 1, maxDepth, budget, truncated);
+    if (built) {
+      [children addObject:built];
+    }
+  }
+  node[kAXChildren] = children;
+  return node;
+}
+
 static NSDictionary<NSString *, id> *FBAXBridgeDispatchRequest(NSDictionary<NSString *, id> *request);
 
 // Answers a request, turning an exception raised while answering into a response.
@@ -1398,11 +1474,33 @@ static NSDictionary<NSString *, id> *FBAXBridgeDispatchRequest(NSDictionary<NSSt
   int budget = [request[kRequestMaxNodes] isKindOfClass:NSNumber.class]
   ? [(NSNumber *)request[kRequestMaxNodes] intValue]
   : kDefaultNodeBudget;
+
   BOOL truncated = NO;
   NSDictionary *tree = nil;
   gRoundTrips = 0;
   const CFAbsoluteTime traverseStarted = CFAbsoluteTimeGetCurrent();
-  if ([request[kRequestTranslatorVocabulary] boolValue]) {
+  if ([request[kRequestSnapshotTree] boolValue]) {
+    NSArray<NSString *> *names = FBAXBridgeFetchListForRequest(request);
+    NSDictionary<NSNumber *, NSString *> *namesByNumber = nil;
+    NSError *snapshotError = nil;
+    id snapshot = [runtime snapshotOfElement:root
+                              attributeNames:names
+                               namesByNumber:&namesByNumber
+                                       error:&snapshotError];
+    if (!snapshot) {
+      return FBAXBridgeTaggedErrorResponse(
+        snapshotError.localizedDescription ?: @"the single-fetch read answered nothing",
+        kErrorKindApplicationNotResponding,
+        @(pid)
+      );
+    }
+    tree = FBAXBridgeNodeFromSnapshot(snapshot, namesByNumber, 0, maxDepth, &budget, &truncated);
+    if (!tree) {
+      return FBAXBridgeErrorResponse(@"the single-fetch read returned a shape with no root node");
+    }
+    // One fetch for the whole tree.
+    gRoundTrips = 1;
+  } else if ([request[kRequestTranslatorVocabulary] boolValue]) {
     // Whether the application is there at all is a question only the XCTest read answers. The runtime
     // vends an application element for any pid, including one that names no process, and the translator
     // answers against it with synthesized defaults rather than failing — so this read reported a healthy
@@ -1448,7 +1546,6 @@ static NSDictionary<NSString *, id> *FBAXBridgeDispatchRequest(NSDictionary<NSSt
     kAutomationEnabled : @(automationEnabled),
     kAutomationAsserted : @(automationAsserted),
   };
-  // `nodesRead` counts one round trip per node, which is what the walk performs.
   response[kResponsePhases] = [@{
                                  kPhaseTraverse : @(traverseDuration * 1000),
                                  kPhaseMachRoundTrips : @(gRoundTrips),
@@ -1663,6 +1760,8 @@ int handleAccessibilityAction(NSString *action, NSArray<NSString *> *arguments)
       // Takes a value like every other flag: the argv parser walks pairs, so a valueless flag is
       // silently dropped rather than rejected.
       request[kRequestTranslatorVocabulary] = @(argValue.boolValue);
+    } else if ([flag isEqualToString:@"--snapshot-tree"]) {
+      request[kRequestSnapshotTree] = @([argValue boolValue]);
     } else if ([flag isEqualToString:@"--explain-unreachable"]) {
       request[kRequestExplainUnreachable] = @([argValue boolValue]);
     } else if ([flag isEqualToString:@"--attributes"]) {

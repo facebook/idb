@@ -208,6 +208,7 @@ enum FBAXWire {
     /// Reads through the accessibility translator's vocabulary rather than XCTest's. Off unless asked
     /// for: the two disagree on some screens, and which one a caller wants is not the reader's choice.
     case translatorVocabulary
+    case snapshotTree
     /// The attributes the guest fetches per element. Omitted for a default read, which is what keeps
     /// that read byte-identical on the wire; the guest falls back to `Node.defaultFetchList`.
     case attributes
@@ -235,6 +236,7 @@ enum FBAXWire {
       case .maxNodes: "--max-nodes"
       case .automationMode: "--automation-mode"
       case .translatorVocabulary: "--translator-vocabulary"
+      case .snapshotTree: "--snapshot-tree"
       case .attributes: "--attributes"
       case .explainUnreachable: "--explain-unreachable"
       case .x: "--x"

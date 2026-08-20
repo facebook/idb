@@ -109,6 +109,9 @@ public enum FBAccessibilityElementFilter: String, Sendable, CaseIterable {
 public enum FBAXTraversalStrategy: String, Sendable, CaseIterable {
   case viewHierarchy = "view-hierarchy"
   case semantic = "semantic"
+  /// Reads the whole bounded subtree in one call instead of one call per node. The tree and the
+  /// attributes are the same; the difference is that the application is asked once rather than N times.
+  case singleFetch = "single-fetch"
 
   /// The keys this traversal cannot answer for every element, whatever the caller asks for.
   ///
@@ -127,6 +130,8 @@ public enum FBAXTraversalStrategy: String, Sendable, CaseIterable {
     switch self {
     case .viewHierarchy: []
     case .semantic: [.type]
+    // Same walk as the default, so it answers the same keys.
+    case .singleFetch: []
     }
   }
 }

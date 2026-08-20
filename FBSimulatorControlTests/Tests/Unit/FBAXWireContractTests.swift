@@ -191,6 +191,7 @@ final class FBAXWireContractTests: XCTestCase {
       .automationMode: ("automationMode", "--automation-mode"),
       .attributes: ("attributes", "--attributes"),
       .translatorVocabulary: ("translatorVocabulary", "--translator-vocabulary"),
+      .snapshotTree: ("snapshotTree", "--snapshot-tree"),
       .explainUnreachable: ("explainUnreachable", "--explain-unreachable"),
       .x: ("x", "--x"),
       .y: ("y", "--y"),

@@ -419,6 +419,12 @@ typedef struct {
   // because every read this bundle performs works either way — the flag changes how much structure the
   // target exposes, not whether it answers.
   bool (*automationEnabled)(void);
+  // The single-fetch read's entry points. Optional as a group, for the same reason the snapshot selector
+  // is resolved lazily: a runtime without them loses that one path and keeps every other.
+  FBAXValueGetTypeFn valueGetType;                                  // borrows
+  FBAXValueGetValueFn valueGetValue;                                // borrows
+  FBAXDefaultSnapshotParametersFn defaultSnapshotParameters;
+  FBAXAttributeNumbersForNamesFn attributeNumbersForNames;
 } FBAXRuntimeFunctions;
 
 // The one place a semantic action becomes the number the C ABI takes, so a runtime that renumbers them is
@@ -750,6 +756,11 @@ static NSString *const kFrontboardVisibilityEndowment = @"com.apple.frontboard.v
   // Not part of the null check below: this one is optional, so a runtime without it degrades to
   // "cannot say" rather than failing a bind that every read would otherwise have survived.
   _functions.automationEnabled = dlsym(RTLD_DEFAULT, "_AXSAutomationEnabled");
+  // Optional for the same reason, and checked where the single-fetch read uses them.
+  _functions.valueGetType = dlsym(RTLD_DEFAULT, "AXValueGetType");
+  _functions.valueGetValue = dlsym(RTLD_DEFAULT, "AXValueGetValue");
+  _functions.defaultSnapshotParameters = dlsym(RTLD_DEFAULT, "XCTDefaultSnapshotParameters");
+  _functions.attributeNumbersForNames = dlsym(RTLD_DEFAULT, "XCAXAccessibilityAttributesForStringAttributes");
   if (!_functions.createSystemWide || !_functions.copyElementAtPosition || !_functions.getPid
       || !_functions.performAction || !_functions.setAttributeValue) {
     if (error) {
@@ -827,6 +838,81 @@ static NSString *const kFBAXSettingsClassName = @"AXSettings";
 - (nullable id)applicationElementForProcessIdentifier:(pid_t)pid
 {
   return [_elementClass elementWithProcessIdentifier:pid];
+}
+
+// The snapshot path's failures, kept together so each one names what is missing rather than sharing a
+// code with the others.
+static NSError *FBAXSnapshotFailure(NSInteger code, NSString *description)
+{
+  return [NSError errorWithDomain:@"FBAXBridgeSnapshot"
+                             code:code
+                         userInfo:@{NSLocalizedDescriptionKey : description}];
+}
+
+- (nullable id)snapshotOfElement:(id)element
+                  attributeNames:(NSArray<NSString *> *)names
+                   namesByNumber:(NSDictionary<NSNumber *, NSString *> *_Nullable *_Nonnull)namesByNumber
+                           error:(NSError **)error
+{
+  SEL selector = @selector(userTestingSnapshotForElement:options:error:);
+  if (![_framework respondsToSelector:selector]) {
+    if (error) {
+      *error = FBAXSnapshotFailure(1, @"this runtime's XCTAccessibilityFramework has no userTestingSnapshotForElement:options:error:");
+    }
+    return nil;
+  }
+  if (!_functions.defaultSnapshotParameters || !_functions.attributeNumbersForNames) {
+    if (error) {
+      *error = FBAXSnapshotFailure(3, @"this runtime has no XCTDefaultSnapshotParameters/XCAXAccessibilityAttributesForStringAttributes");
+    }
+    return nil;
+  }
+
+  // Positional: the numbers come back in the order the names went in, so zipping the two recovers the
+  // mapping the snapshot's numeric keys are read through. A result of another length cannot be zipped,
+  // and guessing at the alignment would mislabel every attribute in the tree.
+  NSArray<NSNumber *> *numbers = _functions.attributeNumbersForNames(names);
+  if (![numbers isKindOfClass:NSArray.class] || numbers.count != names.count) {
+    if (error) {
+      *error = FBAXSnapshotFailure(4, @"the attribute name conversion answered a list of a different length");
+    }
+    return nil;
+  }
+  NSMutableDictionary<NSNumber *, NSString *> *inverse = [NSMutableDictionary dictionary];
+  [numbers enumerateObjectsUsingBlock:^(id number, NSUInteger index, BOOL *stop) {
+    if ([number isKindOfClass:NSNumber.class]) {
+      inverse[number] = names[index];
+    }
+  }];
+  *namesByNumber = inverse;
+
+  NSMutableDictionary *options = [_functions.defaultSnapshotParameters() mutableCopy] ?: [NSMutableDictionary dictionary];
+  options[@"attributes"] = numbers;
+
+  // The framework passes its argument straight to the accessibility call without unwrapping it, so it
+  // needs the raw reference rather than the element wrapper every other method here takes. Unwrapped on
+  // this side of the seam, where the accessor is declared and its signature is checked.
+  XCAccessibilityElement *wrapper = element;
+  void *reference = [wrapper respondsToSelector:@selector(AXUIElement)] ? [wrapper AXUIElement] : NULL;
+  if (!reference) {
+    if (error) {
+      *error = FBAXSnapshotFailure(2, @"the element carries no AXUIElement to snapshot");
+    }
+    return nil;
+  }
+  return [_framework userTestingSnapshotForElement:(__bridge id)reference options:options error:error];
+}
+
+- (BOOL)getRect:(CGRect *)rect fromValue:(id)value
+{
+  if (!rect || !value || !_functions.valueGetType || !_functions.valueGetValue) {
+    return NO;
+  }
+  CFTypeRef reference = (__bridge CFTypeRef)value;
+  if (_functions.valueGetType(reference) != FBAXValueTypeCGRect) {
+    return NO;
+  }
+  return _functions.valueGetValue(reference, FBAXValueTypeCGRect, rect) ? YES : NO;
 }
 
 - (FBAXReadOutcome *)readAttributes:(NSArray<NSString *> *)attributes ofElement:(id)element

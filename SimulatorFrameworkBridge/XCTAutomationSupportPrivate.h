@@ -30,6 +30,24 @@ NS_ASSUME_NONNULL_BEGIN
 #define FBAXAccessibilityErrorKey @"accessibility-error"
 
 /**
+ * XCTDefaultSnapshotParameters() — the option dictionary a snapshot must start from.
+ *
+ * `userTestingSnapshotForElement:options:error:` hands its options to the accessibility server verbatim.
+ * A dictionary not built from these defaults makes the server answer NULL under kAXErrorSuccess, which is
+ * indistinguishable from any other mistake, so this is not an optional convenience.
+ */
+typedef NSDictionary<NSString *, id> *_Nullable (*FBAXDefaultSnapshotParametersFn)(void);
+
+/**
+ * XCAXAccessibilityAttributesForStringAttributes(names) — converts `XC_kAXXCAttribute*` names into the
+ * numbers a snapshot's `attributes` option takes, positionally.
+ *
+ * The numbers are the runtime's own and nothing promises they are stable across versions, so a snapshot's
+ * numeric keys are mapped back through the result of this call rather than through any hardcoded table.
+ */
+typedef NSArray<NSNumber *> *_Nullable (*FBAXAttributeNumbersForNamesFn)(NSArray<NSString *> *names);
+
+/**
  * The accessibility client XCTest drives a device's AX server through.
  */
 @interface XCTAccessibilityFramework : NSObject
@@ -49,6 +67,25 @@ NS_ASSUME_NONNULL_BEGIN
 - (nullable NSDictionary<NSString *, id> *)attributesForElement:(id)element
                                                      attributes:(NSArray<NSString *> *)attributes
                                                           error:(NSError **)error;
+
+/**
+ * Reads a whole bounded subtree in **one** round trip — the call XCUITest walks hierarchies with.
+ *
+ * Its body is a single `AXUIElementCopyParameterizedAttributeValue` for attribute `0x1731e`, with
+ * `options` handed to the accessibility server verbatim; the method itself reads only
+ * `options[@"attributes"]`, and only to log it. So the contract is the server's, not this framework's.
+ *
+ * Recognised option keys, from the framework binary: `maxDepth`, `maxChildren`, `maxArrayCount`,
+ * `snapshotAttributes`, `attributes`, `snapshotKeyHonorModalViews`, `traverseFromParentsToChildren`,
+ * `maximumCompression`. XCTest sanitises them in `XCTest.framework` before calling, which this guest
+ * does not have, so a malformed dictionary reaches the server unfiltered.
+ *
+ * **Not equivalent to N calls to `attributesForElement:`.** This one sets the AX requesting client (that
+ * method does not), so client-sensitive attributes can answer differently.
+ */
+- (nullable id)userTestingSnapshotForElement:(id)element
+                                     options:(NSDictionary<NSString *, id> *)options
+                                       error:(NSError **)error;
 
 @end
 

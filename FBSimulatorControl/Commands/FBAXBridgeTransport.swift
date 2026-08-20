@@ -186,7 +186,11 @@ struct FBAXBridgeOneshotTransport: FBAXBridgeTransport {
   /// Sent only for a non-default traversal, so a default read's argv stays byte-identical to what a guest
   /// predating the field expects.
   private static func strategyArgument(_ strategy: FBAXTraversalStrategy) -> [String] {
-    strategy == .semantic ? FBAXWire.Request.translatorVocabulary.argument("1") : []
+    switch strategy {
+    case .semantic: FBAXWire.Request.translatorVocabulary.argument("1")
+    case .singleFetch: FBAXWire.Request.snapshotTree.argument("1")
+    case .viewHierarchy: []
+    }
   }
 
   /// Absent unless asked for, so the argv of a read that wants no explanations is unchanged.
@@ -315,6 +319,9 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
     }
     if strategy == .semantic {
       payload[FBAXWire.Request.translatorVocabulary.key] = true
+    }
+    if strategy == .singleFetch {
+      payload[FBAXWire.Request.snapshotTree.key] = true
     }
     // Present only when the caller asked, so an unset request leaves the device alone rather than
     // asserting a default the caller did not choose.

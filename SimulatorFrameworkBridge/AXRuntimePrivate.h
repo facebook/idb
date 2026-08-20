@@ -82,6 +82,35 @@ typedef NS_ENUM(uint32_t, FBAXAttributeIdentifier) {
 };
 
 /**
+ * The geometry types an `AXValue` wraps, as the runtime numbers them — no SDK header available to the
+ * guest declares them. The numbers come from the type name the runtime prints in an AXValue's
+ * description. Only the type the reader unwraps is listed.
+ */
+typedef NS_ENUM(uint32_t, FBAXValueType) {
+  /** kAXValueCGRectType. */
+  FBAXValueTypeCGRect = 3,
+};
+
+/**
+ * AXValueGetType(value) — the `FBAXValueType` an AXValue wraps, for anything that is one.
+ *
+ * **Borrows** the value and transfers no ownership. Held as const void * for the same reason an element
+ * is held as void *.
+ */
+typedef uint32_t (*FBAXValueGetTypeFn)(const void *value);
+
+/**
+ * AXValueGetValue(value, type, out) — unwraps an AXValue into `out`, which must point at storage for
+ * `type`. Answers false and leaves `out` untouched when the value does not hold that type.
+ *
+ * The type is not inferred from `out`, so a rect read out of a point-typed value is a silent wrong
+ * answer rather than a failure — check `AXValueGetType` first.
+ *
+ * **Borrows** the value and transfers no ownership.
+ */
+typedef Boolean (*FBAXValueGetValueFn)(const void *value, uint32_t type, void *out);
+
+/**
  * AXUIElementCopyElementAtPosition(application, x, y, &element) — a single-round-trip hit-test
  * returning just the element at a point. x and y are 32-bit floats.
  *

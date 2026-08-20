@@ -815,6 +815,24 @@ final class FBAXBridgeReadsTests: XCTestCase {
     }
   }
 
+  // The single fetch is a traversal choice, so it has to reach the read like the other two do.
+  func testDescribeTreeCarriesTheSingleFetchToTheRead() async throws {
+    for query in [FBAccessibilityElementQuery.frontmost, .marker(value: "General", key: .label, depth: 10)] {
+      let reader = StubTreeReader(read: Self.stubRead())
+      _ = try? await reader.describeTree(query, options: FBAccessibilityRequestOptions(traversalStrategy: .singleFetch))
+      XCTAssertEqual(reader.strategies, [.singleFetch], "\(query) must carry the caller's choice to the read")
+    }
+  }
+
+  // It is the default walk done in one call, so it answers the same keys.
+  func testTheSingleFetchAnswersEveryKeyTheDefaultWalkDoes() {
+    XCTAssertEqual(FBAXTraversalStrategy.singleFetch.unsatisfiableKeys, [])
+    XCTAssertEqual(
+      FBAXTraversalStrategy.singleFetch.unsatisfiableKeys,
+      FBAXTraversalStrategy.viewHierarchy.unsatisfiableKeys
+    )
+  }
+
   // The warning is what makes an absent field readable as "this traversal could not ask", so it belongs
   // on the describe that actually reports fields — not only on the marker branch.
   func testDescribeTreeWarnsAboutUnsatisfiableKeys() async throws {

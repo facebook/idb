@@ -471,6 +471,159 @@ typedef struct FBAXPair {
   XCTAssertEqualObjects(describe[@"error_kind"], @"bad_request");
 }
 
+#pragma mark - The single-fetch read
+
+// A fake element carrying `attributes`, with `children` beneath it.
+static FBAXFakeElement *FBAXTestsNode(NSDictionary<NSString *, id> *attributes, NSArray<FBAXFakeElement *> *children)
+{
+  FBAXFakeElement *element = [FBAXFakeElement readable:@"UIView"];
+  element.attributes = attributes;
+  element.children = children;
+  return element;
+}
+
+static NSDictionary *FBAXTestsSnapshotRequest(NSDictionary<NSString *, id> *extra)
+{
+  NSMutableDictionary *request =
+  [@{@"verb" : @"describe", @"pid" : @(kAppPid), @"snapshotTree" : @YES} mutableCopy];
+  [request addEntriesFromDictionary:extra];
+  return request;
+}
+
+// The whole point of the path: one fetch for a tree, rather than one read per node. The per-node walk is
+// what it is being measured against, so both are driven over the same tree and the counters compared.
+- (void)testTheSingleFetchReadCostsOneRoundTripForTheWholeTree
+{
+  _runtime.applicationElements[@(kAppPid)] = FBAXTestsNode(
+    @{@"XC_kAXXCAttributeLabel" : @"root"},
+    @[FBAXTestsNode(@{@"XC_kAXXCAttributeLabel" : @"a"}, @[]), FBAXTestsNode(@{@"XC_kAXXCAttributeLabel" : @"b"}, @[])]
+  );
+
+  NSDictionary *response = FBAXBridgeHandleRequest(FBAXTestsSnapshotRequest(@{}));
+  XCTAssertEqualObjects(response[@"ok"], @YES, @"the single fetch must answer: %@", response);
+  XCTAssertEqual(_runtime.snapshotCount, 1u, @"a three-node tree must cost exactly one fetch");
+  XCTAssertEqualObjects(response[@"phases"][@"mach_round_trips"], @1);
+}
+
+// The snapshot answers keyed by attribute number, and the numbers are the runtime's own. Mapping them
+// back through the conversion that produced them is what keeps a hardcoded number out of the reader —
+// so the fake numbers them differently from the runtime, and the names must still come out right.
+- (void)testSnapshotAttributesAreMappedBackFromNumbersToNames
+{
+  _runtime.applicationElements[@(kAppPid)] =
+  FBAXTestsNode(@{@"XC_kAXXCAttributeLabel" : @"Cancel", @"XC_kAXXCAttributeIdentifier" : @"cancel-button"}, @[]);
+
+  NSDictionary *tree = FBAXBridgeHandleRequest(FBAXTestsSnapshotRequest(@{}))[@"tree"];
+  XCTAssertEqualObjects(tree[@"XC_kAXXCAttributeLabel"], @"Cancel");
+  XCTAssertEqualObjects(tree[@"XC_kAXXCAttributeIdentifier"], @"cancel-button");
+  XCTAssertTrue(
+    [_runtime.lastSnapshotAttributeNames containsObject:@"XC_kAXXCAttributeLabel"],
+    @"the fetch must ask for the names the request resolved to, got: %@",
+    _runtime.lastSnapshotAttributeNames
+  );
+}
+
+// The snapshot nests its children under its own key, and separately answers a children *attribute* full
+// of raw element references. Copying that attribute across would put unusable references in the tree, so
+// the nesting is the only source of children.
+- (void)testSnapshotChildrenComeFromTheNestingAndNotTheChildrenAttribute
+{
+  FBAXFakeElement *child = FBAXTestsNode(@{@"XC_kAXXCAttributeLabel" : @"child"}, @[]);
+  FBAXFakeElement *root = FBAXTestsNode(
+    @{@"XC_kAXXCAttributeLabel" : @"root", @"XC_kAXXCAttributeChildren" : @[@"a raw element reference"]},
+    @[child]
+  );
+  _runtime.applicationElements[@(kAppPid)] = root;
+
+  NSDictionary *tree = FBAXBridgeHandleRequest(FBAXTestsSnapshotRequest(@{}))[@"tree"];
+  NSArray *children = tree[@"XC_kAXXCAttributeChildren"];
+  XCTAssertEqual(children.count, 1u, @"children must come from the nesting: %@", children);
+  XCTAssertEqualObjects(children.firstObject[@"XC_kAXXCAttributeLabel"], @"child");
+}
+
+// The server's own bounds are set generously and the host's are applied while building the tree, so that
+// a tree read this way truncates where the same tree read per node does.
+- (void)testTheSingleFetchReadHonoursTheDepthBound
+{
+  _runtime.applicationElements[@(kAppPid)] = FBAXTestsNode(
+    @{@"XC_kAXXCAttributeLabel" : @"root"},
+    @[FBAXTestsNode(@{@"XC_kAXXCAttributeLabel" : @"deep"}, @[])]
+  );
+
+  NSDictionary *response = FBAXBridgeHandleRequest(FBAXTestsSnapshotRequest(@{@"maxDepth" : @0}));
+  XCTAssertEqualObjects(response[@"truncated"], @YES, @"a tree cut at the depth bound reports truncation");
+  XCTAssertNil(response[@"tree"][@"XC_kAXXCAttributeChildren"], @"nothing below the bound is reported");
+}
+
+- (void)testTheSingleFetchReadHonoursTheNodeBudget
+{
+  _runtime.applicationElements[@(kAppPid)] = FBAXTestsNode(
+    @{@"XC_kAXXCAttributeLabel" : @"root"},
+    @[FBAXTestsNode(@{}, @[]), FBAXTestsNode(@{}, @[])]
+  );
+
+  // Two nodes of budget for a three-node tree: the root and one child fit, the second does not.
+  NSDictionary *response = FBAXBridgeHandleRequest(FBAXTestsSnapshotRequest(@{@"maxNodes" : @2}));
+  XCTAssertEqualObjects(response[@"truncated"], @YES);
+  XCTAssertEqual([response[@"tree"][@"XC_kAXXCAttributeChildren"] count], 1u);
+}
+
+// A runtime that cannot perform the fetch must say so. Answering an empty tree instead would report a
+// working application as a blank screen, which is the failure this path is most likely to produce.
+- (void)testARuntimeWithoutSnapshotSupportIsReportedRatherThanReadAsEmpty
+{
+  _runtime.applicationElements[@(kAppPid)] = FBAXTestsNode(@{@"XC_kAXXCAttributeLabel" : @"root"}, @[]);
+  _runtime.snapshotError = [NSError errorWithDomain:@"FBAXBridgeSnapshot"
+                                               code:1
+                                           userInfo:@{NSLocalizedDescriptionKey : @"no userTestingSnapshotForElement:"}];
+
+  NSDictionary *response = FBAXBridgeHandleRequest(FBAXTestsSnapshotRequest(@{}));
+  XCTAssertEqualObjects(response[@"ok"], @NO);
+  XCTAssertTrue(
+    [response[@"error"] containsString:@"no userTestingSnapshotForElement:"],
+    @"the response must carry why the fetch could not be performed: %@",
+    response[@"error"]
+  );
+}
+
+// The server answers NULL under kAXErrorSuccess when it will not accept the options — no error, just
+// nothing. That has to become a failure too, for the same reason.
+- (void)testASnapshotThatAnswersNothingIsAFailureRatherThanAnEmptyTree
+{
+  _runtime.applicationElements[@(kAppPid)] = FBAXTestsNode(@{@"XC_kAXXCAttributeLabel" : @"root"}, @[]);
+  _runtime.snapshotAnswersNothing = YES;
+
+  NSDictionary *response = FBAXBridgeHandleRequest(FBAXTestsSnapshotRequest(@{}));
+  XCTAssertEqualObjects(response[@"ok"], @NO);
+  XCTAssertNil(response[@"tree"]);
+}
+
+// A frame comes back from the snapshot as an AXValue rather than the NSValue the per-node walk answers
+// with, so it is unwrapped through the seam. Whichever form it takes, the host receives the same
+// dictionary representation.
+- (void)testASnapshotFrameIsUnwrappedThroughTheSeam
+{
+  _runtime.applicationElements[@(kAppPid)] = FBAXTestsNode(
+    @{@"XC_kAXXCAttributeFrame" : [NSValue valueWithBytes:&(CGRect) {{16, 293}, {370, 52}} objCType:@encode(CGRect)]},
+    @[]
+  );
+
+  NSDictionary *frame = FBAXBridgeHandleRequest(FBAXTestsSnapshotRequest(@{}))[@"tree"][@"XC_kAXXCAttributeFrame"];
+  XCTAssertEqualObjects(frame[@"X"], @16);
+  XCTAssertEqualObjects(frame[@"Y"], @293);
+  XCTAssertEqualObjects(frame[@"Width"], @370);
+  XCTAssertEqualObjects(frame[@"Height"], @52);
+}
+
+// A value that is not a rect must leave the frame alone rather than unwrap to zero: a point read as a
+// rect would be reported as a real frame at the origin, which nothing downstream could tell from one.
+- (void)testAValueThatIsNotARectDoesNotBecomeAZeroFrame
+{
+  CGRect rect = CGRectMake(1, 2, 3, 4);
+  XCTAssertFalse([_runtime getRect:&rect fromValue:@"not a rect"]);
+  XCTAssertTrue(CGRectEqualToRect(rect, CGRectMake(1, 2, 3, 4)), @"a rejected value must leave the rect untouched");
+}
+
 #pragma mark - Write outcomes
 
 // The AX runtime reports every write with a code and nothing else, so this classifier is the only thing

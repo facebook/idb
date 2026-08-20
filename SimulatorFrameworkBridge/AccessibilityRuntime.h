@@ -338,6 +338,38 @@ extern NSArray<NSString *> *FBAXSignatureWarnings(void);
 - (FBAXReadOutcome *)readAttributes:(NSArray<NSString *> *)attributes ofElement:(id)element;
 
 /**
+ * A whole bounded subtree in **one** round trip, via the call XCUITest walks hierarchies with.
+ *
+ * The alternative to `-readAttributes:ofElement:` per node. A tree of N nodes costs N round trips that
+ * way and one this way, which matters because each round trip is a rendezvous with the target's main
+ * thread — on a busy application that wait, not the work, is the dominant cost of a read.
+ *
+ * Resolved lazily rather than through `kFBAXBoundSelectors`, so a runtime without the selector loses this
+ * path and keeps every other one. Nil means the read could not be performed — including "this runtime
+ * does not have the selector", which `*error` distinguishes.
+ *
+ * `names` are the same `XC_kAXXCAttribute*` names `-readAttributes:ofElement:` takes, but a snapshot
+ * answers keyed by the numbers they convert to, so `namesByNumber` comes back carrying that mapping.
+ * Building the options is part of this interaction rather than the caller's: the server rejects a
+ * dictionary not derived from its own defaults by answering nothing, which reads as an empty screen.
+ */
+- (nullable id)snapshotOfElement:(id)element
+                  attributeNames:(NSArray<NSString *> *)names
+                   namesByNumber:(NSDictionary<NSNumber *, NSString *> *_Nullable *_Nonnull)namesByNumber
+                           error:(NSError **)error;
+
+/**
+ * Unwraps the `CGRect` an `AXValue` wraps, which is the form a snapshot answers frames in.
+ *
+ * An `AXValue` is a CFType with its own accessor rather than an `NSValue`, so a caller that only knows
+ * about `NSValue` sees `__NSCFType` and drops the frame.
+ *
+ * NO when the value does not hold a rect, leaving `*rect` untouched. Unwrapping is type-checked here
+ * because the runtime does not check it: a point read as a rect answers with a frame rather than failing.
+ */
+- (BOOL)getRect:(CGRect *)rect fromValue:(id)value;
+
+/**
  * The element at a point, in one round trip.
  *
  * A positive `pid` scopes the hit-test to that application; a non-positive one makes it display-wide, so
