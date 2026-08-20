@@ -172,6 +172,18 @@ extension FBAXTreeReader {
         )
     case .frontmost, .application:
       let traversal = Self.resolvedTraversal(for: options)
+      // An explicit single fetch cannot answer reachability: the application hit-tests every node for
+      // these keys, and a snapshot asking for them times out rather than answering. `.auto` routes such
+      // a read to the per-node walk, so only an explicit choice can get here — refused up front rather
+      // than left to time out in the guest.
+      let unanswerable = options.serializationKeys.intersection(FBAXKeys.reachabilityKeys)
+      if traversal == .singleFetch, !unanswerable.isEmpty {
+        throw FBUIAutomationError.traversalCannotAnswer(
+          backend: backend,
+          traversal: FBAXTraversal.singleFetch.rawValue,
+          keys: unanswerable.map(\.rawValue).sorted()
+        )
+      }
       let read = try await readRawTree(
         for: query,
         attributes: FBAXWire.Node.fetchList(for: options.serializationKeys),
@@ -338,7 +350,9 @@ extension FBAXTreeReader {
       return FBAXWriteTarget(point: point, pid: nil, assertion: nil)
     case let .marker(value, key, _):
       // Structural traversal regardless of what a read would have asked for: resolving a write target is
-      // about finding the element to act on, and the semantic traversal cannot name element types.
+      // about finding the element to act on, and the semantic traversal cannot name element types. The
+      // per-node walk is named rather than the single fetch, deliberately: the single-fetch default is
+      // a read-path decision and does not change how writes resolve their targets.
       let read = try await readRawTree(
         for: query, attributes: nil, explainUnreachable: false, traversal: .viewHierarchy
       )

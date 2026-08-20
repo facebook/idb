@@ -120,7 +120,9 @@ public enum FBAXTraversal: String, Sendable, CaseIterable {
     switch self {
     case .viewHierarchy: []
     case .semantic: [.type]
-    // Same walk as the default, so it answers the same keys.
+    // Answers the same keys as the walk, except reachability — and that is a refusal in `describeTree`,
+    // not an entry here: this list means "may be missing per element", and a fetch that cannot return at
+    // all is not that.
     case .singleFetch: []
     }
   }

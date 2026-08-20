@@ -111,9 +111,19 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
     )
   }
 
-  /// What the guest lanes read when the caller named no traversal.
+  /// What this backend reads when the caller named no traversal: one fetch for the whole tree, unless
+  /// the read asks whether its elements can be reached.
+  ///
+  /// The application hit-tests every node to answer reachability, and a single fetch that asks for it
+  /// times out rather than answering — three reads of an Instagram feed timed out at 3.1-3.4s where the
+  /// walk answered in 100-135ms, and three reads of an idle 167-element Settings screen timed out at
+  /// 4.0-4.6s where the walk answered in 1.6-1.7s. The fallback is a correctness requirement, not a
+  /// preference.
   static func autoTraversal(for options: FBAccessibilityRequestOptions) -> FBAXTraversal {
-    .viewHierarchy
+    guard options.serializationKeys.isDisjoint(with: FBAXKeys.reachabilityKeys) else {
+      return .viewHierarchy
+    }
+    return .singleFetch
   }
 
   /// Reads the whole bounded attribute tree a query targets, through the configured transport (one-shot
@@ -196,6 +206,8 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
       do {
         // A poll reads the raw tree directly (not through `describeTree`), so `warnIfTruncated` is not
         // called on every poll iteration — matching the describe-path-only warning.
+        // The poll stays on the per-node walk deliberately: it runs while the screen is transitioning,
+        // where the single fetch is unmeasured, and a wait's cost is dominated by the poll interval.
         let read = try await self.readRawTree(for: .frontmost, attributes: nil, explainUnreachable: false, traversal: .viewHierarchy)
         let elements = FBAXTreeWalk.describeAllElements(
           fromTree: read.tree, keys: FBAXKeys.defaultSet.union([key.serializationKey]), nestedFormat: false, pid: read.pid

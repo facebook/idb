@@ -899,13 +899,30 @@ final class FBAXBridgeReadsTests: XCTestCase {
     XCTAssertEqual(reader.profiledTraversals, [], "an unprofiled read must not build a profile at all")
   }
 
-  // It is the default walk done in one call, so it answers the same keys.
+  // The walk done in one call, so per-element answers match — reachability is a whole-read refusal in
+  // `describeTree`, not a per-element gap, which is why it does not appear here.
   func testTheSingleFetchAnswersEveryKeyTheDefaultWalkDoes() {
     XCTAssertEqual(FBAXTraversal.singleFetch.unsatisfiableKeys, [])
     XCTAssertEqual(
       FBAXTraversal.singleFetch.unsatisfiableKeys,
       FBAXTraversal.viewHierarchy.unsatisfiableKeys
     )
+  }
+
+  // An explicit single fetch asking for reachability is refused before any read is attempted: the guest
+  // would time out rather than answer, so the combination fails fast with the keys it cannot serve.
+  func testAnExplicitSingleFetchAskingForReachabilityIsRefused() async throws {
+    let reader = StubTreeReader(read: Self.stubRead())
+    do {
+      _ = try await reader.describeTree(
+        .frontmost, options: FBAccessibilityRequestOptions(keys: [.interactable], traversalStrategy: .singleFetch)
+      )
+      XCTFail("expected the read to be refused")
+    } catch let FBUIAutomationError.traversalCannotAnswer(_, traversal, keys) {
+      XCTAssertEqual(traversal, "single-fetch")
+      XCTAssertEqual(keys, ["interactable"])
+    }
+    XCTAssertEqual(reader.traversals, [], "the refusal must happen before any read is attempted")
   }
 
   // The warning is what makes an absent field readable as "this traversal could not ask", so it belongs
@@ -1895,30 +1912,33 @@ final class FBAXTraversalStrategyTests: XCTestCase {
 /// it reads without standing up something to read from.
 final class FBAXAutoTraversalTests: XCTestCase {
 
-  // FBAXBridgeUIAutomation walks the view hierarchy node by node for a read that named nothing —
-  // including a read asking for reachability.
-  func testAxbridgeWalksPerNodeWhenTheCallerNamesNothing() {
-    XCTAssertEqual(FBAXBridgeUIAutomation.autoTraversal(for: FBAccessibilityRequestOptions()), .viewHierarchy)
+  // FBAXBridgeUIAutomation takes the whole tree in one fetch for a read that named nothing, and falls
+  // back to the per-node walk for one asking about reachability — the only key set the application has
+  // to hit-test.
+  func testAxbridgeReadsInOneFetchWhenTheCallerNamesNothing() {
+    XCTAssertEqual(FBAXBridgeUIAutomation.autoTraversal(for: FBAccessibilityRequestOptions()), .singleFetch)
     XCTAssertEqual(
       FBAXBridgeUIAutomation.autoTraversal(for: FBAccessibilityRequestOptions(keys: [.interactable, .occludedBy])),
       .viewHierarchy
     )
   }
 
-  // A default read is indistinguishable on the wire from one sent by a host predating the traversal
-  // field: nothing added to the argv, nothing added to the socket payload. Both transports, because the
-  // guest reads one request whichever one carried it.
-  func testADefaultGuestReadAsksTheGuestForNoSnapshot() {
+  // A default read asks the guest for a snapshot over either transport — the guest reads one request
+  // whichever one carried it, and a default that snapshots over argv but walks over the socket would be
+  // a read whose cost depends on how the host happened to connect.
+  func testADefaultGuestReadAsksTheGuestForASnapshot() {
     let traversal = FBAXBridgeUIAutomation.autoTraversal(for: FBAccessibilityRequestOptions())
-    XCTAssertEqual(FBAXBridgeOneshotTransport.traversalArgument(traversal), [])
-    XCTAssertTrue(
+    XCTAssertEqual(FBAXBridgeOneshotTransport.traversalArgument(traversal), ["--snapshot-tree", "1"])
+    XCTAssertEqual(
       FBAXBridgePersistentTransport.adding(
         attributes: nil, explainUnreachable: false, traversal: traversal, automationMode: nil, to: [:]
-      ).isEmpty)
+      ) as NSDictionary,
+      ["snapshotTree": true] as NSDictionary
+    )
   }
 
-  // The same wire pin for a reachability read: its resolution keeps the walk, so its argv and payload
-  // stay empty too.
+  // The same wire pin for a reachability read: it resolves to the walk, so its argv and payload stay
+  // empty.
   func testAReachabilityReadAsksTheGuestForNoSnapshot() {
     let traversal = FBAXBridgeUIAutomation.autoTraversal(for: FBAccessibilityRequestOptions(keys: [.interactable]))
     XCTAssertEqual(FBAXBridgeOneshotTransport.traversalArgument(traversal), [])
@@ -1928,8 +1948,8 @@ final class FBAXAutoTraversalTests: XCTestCase {
       ).isEmpty)
   }
 
-  // The traversal a caller can ask for instead. Without this, an empty argv in the pins above could
-  // mean the wire simply never carries a traversal.
+  // The explicit single fetch is pinned in its own right, not only as today's default, so its argv and
+  // payload stay asserted if the default ever moves again.
   func testTheSingleFetchAsksTheGuestForASnapshot() {
     XCTAssertEqual(FBAXBridgeOneshotTransport.traversalArgument(.singleFetch), ["--snapshot-tree", "1"])
     XCTAssertEqual(

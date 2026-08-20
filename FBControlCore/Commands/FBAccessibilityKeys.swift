@@ -53,6 +53,11 @@ public enum FBAXKeys: String, Sendable, CaseIterable {
   /// on either side never matches, so these must be requested together.
   public static let occluderIdentityKeys: Set<FBAXKeys> = [.interactable, .frameDict, .type, .uniqueID, .label]
 
+  /// The keys the application answers by hit-testing every node, which is what makes a read asking for
+  /// them expensive. Asking for `occludedBy` already implies `interactable`, but both are named so a
+  /// change to that expansion cannot quietly change what counts as a reachability read.
+  public static let reachabilityKeys: Set<FBAXKeys> = [.interactable, .occludedBy]
+
   /// Every key this reader can answer. Derived from `allCases`, so a key added to the enum joins
   /// automatically.
   ///

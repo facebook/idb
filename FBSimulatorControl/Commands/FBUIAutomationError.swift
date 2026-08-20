@@ -62,6 +62,10 @@ public enum FBUIAutomationError: LocalizedError, Sendable {
   /// screen moved out from under it.
   case elementMoved(backend: FBUIAutomationBackend, key: String, value: String)
 
+  /// The caller explicitly named a traversal that cannot answer keys they also asked for. Refused up
+  /// front rather than attempted: the read would time out in the guest, not fail cleanly.
+  case traversalCannotAnswer(backend: FBUIAutomationBackend, traversal: String, keys: [String])
+
   public var errorDescription: String? {
     switch self {
     case let .elementNotFound(backend, key, value):
@@ -90,6 +94,8 @@ public enum FBUIAutomationError: LocalizedError, Sendable {
       return "\(backend.displayName) expected \(key) to equal \"\(expected)\" before tapping, but it was \"\(actual)\""
     case let .elementMoved(backend, key, value):
       return "\(backend.displayName) resolved \(key) containing \"\(value)\" and the element had moved by the time the write reached it; nothing was written. Read the tree again and retry"
+    case let .traversalCannotAnswer(_, traversal, keys):
+      return "the \(traversal) traversal cannot answer \(keys.joined(separator: ", ")); drop --traversal to let the backend choose, or name view-hierarchy"
     }
   }
 
