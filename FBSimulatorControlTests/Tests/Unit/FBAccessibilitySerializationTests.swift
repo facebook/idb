@@ -1022,6 +1022,13 @@ final class FBAccessibilitySerializationTests: XCTestCase {
     XCTAssertEqual(profile["mach_round_trips"] as? Int, 176)
     XCTAssertTrue(profile["mach_round_trips"] is NSNumber, "the guest reports its own round-trip count")
 
+    // Neither transport measures its own acquisition, so neither claims to. Both figures were the same
+    // undivided residual under two names, and a reader took `connect` at face value on a transport whose
+    // connection is memoized and had not connected at all.
+    for unmeasured in ["spawn_duration_ms", "connect_duration_ms"] {
+      XCTAssertNil(profile[unmeasured], "\(unmeasured) is not measured and must not be reported")
+    }
+
     for translatorOnly in ["xpc_call_count", "translation_duration_ms", "element_conversion_duration_ms"] {
       XCTAssertNil(profile[translatorOnly], "a guest profile must not carry \(translatorOnly)")
     }

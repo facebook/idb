@@ -376,6 +376,38 @@ final class FBAXBridgeReadsTests: XCTestCase {
     XCTAssertNil(unset, "and is distinct from observing without asking")
   }
 
+  // MARK: - Profile shape per backend
+
+  private func timings(
+    roundTrip: CFAbsoluteTime, decode: CFAbsoluteTime, traverse: CFAbsoluteTime?, machRoundTrips: Int64?,
+    responseBytes: Int64 = 1024
+  ) -> FBAXReadTimings {
+    FBAXReadTimings(
+      roundTrip: roundTrip, decode: decode, traverse: traverse, machRoundTrips: machRoundTrips,
+      responseBytes: responseBytes)
+  }
+
+  // The whole point of the residual: on a one-shot read most of the round trip is not the walk, and the
+  // profile has to attribute it somewhere honest rather than losing it.
+  func testTheResidualIsTheRoundTripLessTheWalk() {
+    let t = timings(roundTrip: 0.387, decode: 0.004, traverse: 0.023, machRoundTrips: 134)
+    XCTAssertEqual(t.residual, 0.364, accuracy: 0.0001, "387ms round trip less a 23ms walk")
+  }
+
+  // A guest that does not report its walk must not make the residual look like the whole read *plus* a
+  // phantom walk, nor go negative.
+  func testTheResidualDegradesToTheRoundTripWhenTheGuestDidNotReportAWalk() {
+    let t = timings(roundTrip: 0.2, decode: 0.001, traverse: nil, machRoundTrips: nil)
+    XCTAssertEqual(t.residual, 0.2, accuracy: 0.0001)
+  }
+
+  // Clocks are not monotonic across processes, and a guest reporting a walk longer than the host's round
+  // trip is possible. A negative duration is worse than a clamped one: it would poison any aggregate.
+  func testTheResidualNeverGoesNegative() {
+    let t = timings(roundTrip: 0.010, decode: 0.001, traverse: 0.050, machRoundTrips: 10)
+    XCTAssertEqual(t.residual, 0, "a walk longer than the round trip clamps rather than going negative")
+  }
+
   // MARK: - Suspect-geometry guidance
 
   private func summary(total: Int, zeroFrame: Int) -> FBAccessibilityFrameSummary {
