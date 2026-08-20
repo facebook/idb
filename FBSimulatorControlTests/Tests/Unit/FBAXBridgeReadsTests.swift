@@ -1887,6 +1887,84 @@ final class FBAXTraversalStrategyTests: XCTestCase {
 
 }
 
+/// What each backend reads when the caller named no traversal.
+///
+/// Asserted against the real backends rather than `StubTreeReader`: these pins exist to catch a change
+/// to a backend's own default, and a stub agreeing with itself proves nothing about either backend. Both
+/// are reachable without a simulator: the resolution is static precisely so a backend can be asked what
+/// it reads without standing up something to read from.
+final class FBAXAutoTraversalTests: XCTestCase {
+
+  // FBAXBridgeUIAutomation walks the view hierarchy node by node for a read that named nothing —
+  // including a read asking for reachability.
+  func testAxbridgeWalksPerNodeWhenTheCallerNamesNothing() {
+    XCTAssertEqual(FBAXBridgeUIAutomation.autoTraversal(for: FBAccessibilityRequestOptions()), .viewHierarchy)
+    XCTAssertEqual(
+      FBAXBridgeUIAutomation.autoTraversal(for: FBAccessibilityRequestOptions(keys: [.interactable, .occludedBy])),
+      .viewHierarchy
+    )
+  }
+
+  // A default read is indistinguishable on the wire from one sent by a host predating the traversal
+  // field: nothing added to the argv, nothing added to the socket payload. Both transports, because the
+  // guest reads one request whichever one carried it.
+  func testADefaultGuestReadAsksTheGuestForNoSnapshot() {
+    let traversal = FBAXBridgeUIAutomation.autoTraversal(for: FBAccessibilityRequestOptions())
+    XCTAssertEqual(FBAXBridgeOneshotTransport.traversalArgument(traversal), [])
+    XCTAssertTrue(
+      FBAXBridgePersistentTransport.adding(
+        attributes: nil, explainUnreachable: false, traversal: traversal, automationMode: nil, to: [:]
+      ).isEmpty)
+  }
+
+  // The same wire pin for a reachability read: its resolution keeps the walk, so its argv and payload
+  // stay empty too.
+  func testAReachabilityReadAsksTheGuestForNoSnapshot() {
+    let traversal = FBAXBridgeUIAutomation.autoTraversal(for: FBAccessibilityRequestOptions(keys: [.interactable]))
+    XCTAssertEqual(FBAXBridgeOneshotTransport.traversalArgument(traversal), [])
+    XCTAssertTrue(
+      FBAXBridgePersistentTransport.adding(
+        attributes: nil, explainUnreachable: false, traversal: traversal, automationMode: nil, to: [:]
+      ).isEmpty)
+  }
+
+  // The traversal a caller can ask for instead. Without this, an empty argv in the pins above could
+  // mean the wire simply never carries a traversal.
+  func testTheSingleFetchAsksTheGuestForASnapshot() {
+    XCTAssertEqual(FBAXBridgeOneshotTransport.traversalArgument(.singleFetch), ["--snapshot-tree", "1"])
+    XCTAssertEqual(
+      FBAXBridgePersistentTransport.adding(
+        attributes: nil, explainUnreachable: false, traversal: .singleFetch, automationMode: nil, to: [:]
+      ) as NSDictionary,
+      ["snapshotTree": true] as NSDictionary
+    )
+  }
+
+  // FBSimulatorRemoteAutomation serves one snapshot shape and its read takes no traversal into account
+  // at all, so its answer cannot depend on the key set — and it has no argv of its own to pin.
+  func testRemoteAutomationWalksPerNodeForEveryKeySet() {
+    XCTAssertEqual(FBSimulatorRemoteAutomation.autoTraversal(for: FBAccessibilityRequestOptions()), .viewHierarchy)
+    XCTAssertEqual(
+      FBSimulatorRemoteAutomation.autoTraversal(for: FBAccessibilityRequestOptions(keys: Set(FBAXKeys.allCases))),
+      .viewHierarchy
+    )
+  }
+
+  // A named traversal reaches the read unchanged. Pinned against the real backends rather than the
+  // strategy's own resolution test: an explicit `--traversal view-hierarchy` must keep selecting the
+  // walk after the default changes.
+  func testANamedTraversalOverridesTheBackendDefault() {
+    for traversal in FBAXTraversal.allCases {
+      guard let strategy = FBAXTraversalStrategy(rawValue: traversal.rawValue) else {
+        return XCTFail("no strategy names \(traversal)")
+      }
+      let options = FBAccessibilityRequestOptions(traversalStrategy: strategy)
+      XCTAssertEqual(FBAXBridgeUIAutomation.resolvedTraversal(for: options), traversal)
+      XCTAssertEqual(FBSimulatorRemoteAutomation.resolvedTraversal(for: options), traversal)
+    }
+  }
+}
+
 /// What the transport tells a caller when the in-guest reader disappears mid-request.
 ///
 /// EOF on the serve socket is noticed immediately — that part works — so what is worth covering is the

@@ -182,7 +182,7 @@ struct FBAXBridgeOneshotTransport: FBAXBridgeTransport {
 
   /// Sent only for a non-default traversal, so a default read's argv stays byte-identical to what a guest
   /// predating the field expects.
-  private static func traversalArgument(_ traversal: FBAXTraversal) -> [String] {
+  static func traversalArgument(_ traversal: FBAXTraversal) -> [String] {
     switch traversal {
     case .semantic: FBAXWire.Request.translatorVocabulary.argument("1")
     case .singleFetch: FBAXWire.Request.snapshotTree.argument("1")
@@ -252,10 +252,10 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
   func read(pid: pid_t, maxDepth: Int, maxNodes: Int, attributes: [String]?, explainUnreachable: Bool, traversal: FBAXTraversal, automationMode: Bool?) async throws -> Data {
     try await roundTripWithRecovery(
       Self.adding(
-        attributes,
-        explainUnreachable,
-        traversal,
-        automationMode,
+        attributes: attributes,
+        explainUnreachable: explainUnreachable,
+        traversal: traversal,
+        automationMode: automationMode,
         to: [
           FBAXWire.Request.verb.key: FBAXWire.Verb.describe.rawValue,
           FBAXWire.Request.pid.key: Int(pid),
@@ -267,10 +267,10 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
   func readFrontmost(x: Double, y: Double, maxDepth: Int, maxNodes: Int, method: FBAXBridgeFrontmostMethod, attributes: [String]?, explainUnreachable: Bool, traversal: FBAXTraversal, automationMode: Bool?) async throws -> Data {
     try await roundTripWithRecovery(
       Self.adding(
-        attributes,
-        explainUnreachable,
-        traversal,
-        automationMode,
+        attributes: attributes,
+        explainUnreachable: explainUnreachable,
+        traversal: traversal,
+        automationMode: automationMode,
         to: [
           FBAXWire.Request.verb.key: FBAXWire.Verb.describe.rawValue,
           FBAXWire.Request.x.key: x,
@@ -284,12 +284,12 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
   func hitTest(x: Double, y: Double, attributes: [String]?) async throws -> Data {
     try await roundTripWithRecovery(
       Self.adding(
-        attributes,
-        false,
+        attributes: attributes,
+        explainUnreachable: false,
         // A hit-test resolves one element positionally; there is no traversal to choose.
-        .viewHierarchy,
+        traversal: .viewHierarchy,
         // A hit-test never asserts the mode: it resolves one element, not a tree.
-        nil,
+        automationMode: nil,
         to: [
           FBAXWire.Request.verb.key: FBAXWire.Verb.hitTest.rawValue,
           FBAXWire.Request.x.key: x,
@@ -299,11 +299,11 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
 
   /// Adds the attribute list to a request payload, or leaves the payload untouched for a default read —
   /// an absent field is what makes that read's bytes identical to a host that predates the field.
-  private static func adding(
-    _ attributes: [String]?,
-    _ explainUnreachable: Bool,
-    _ traversal: FBAXTraversal,
-    _ automationMode: Bool?,
+  static func adding(
+    attributes: [String]?,
+    explainUnreachable: Bool,
+    traversal: FBAXTraversal,
+    automationMode: Bool?,
     to payload: [String: Any]
   ) -> [String: Any] {
     var payload = payload
