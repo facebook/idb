@@ -278,6 +278,28 @@ final class FBAXBridgeReadsTests: XCTestCase {
     )
   }
 
+  // The filter adds the reachability attributes to the request for every node, so `--filter interactable`
+  // makes the application hit-test the whole tree even though the caller only chose which elements to
+  // report.
+  //
+  // BUG: choosing a filter changes what the read fetches. Flipped in the following commit.
+  func testTheInteractableFilterWidensEveryNode() {
+    var options = FBAccessibilityRequestOptions()
+    options.filter = .interactable
+    XCTAssertTrue(
+      options.serializationKeys.contains(.interactable),
+      "the filter pulls the verdict into the key set the caller did not ask for"
+    )
+    let fetchList = FBAXWire.Node.fetchList(for: options.serializationKeys)
+    XCTAssertNotNil(fetchList, "and so the read names attributes on the wire that a default read does not")
+    for reachability in FBAXWire.Node.interactableAttributes {
+      XCTAssertTrue(
+        fetchList?.contains(reachability.rawValue) ?? false,
+        "\(reachability.rawValue) is fetched for every node because a filter asked"
+      )
+    }
+  }
+
   // MARK: - Where the accessibility-server remediation is offered
 
   private static let axBridge = FBUIAutomationBackend.axBridge(persistence: .oneShot, frontmostMethod: .centerPoint, automationMode: true)
