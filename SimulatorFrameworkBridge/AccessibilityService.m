@@ -428,9 +428,13 @@ static id FBAXBridgePointDictionary(id pointValue)
       return FBAXBridgeRejectedGeometry(@"point", pointValue);
     }
     [value getValue:&point size:sizeof(point)];
-    return (NSDictionary *)CFBridgingRelease(CGPointCreateDictionaryRepresentation(point));
+  } else if (pointValue && [FBAXBridgeSharedRuntime(NULL) getPoint:&point fromValue:pointValue]) {
+    // An `AXValue`-wrapped point, which is how the single-fetch read answers. Not an `NSValue`: it is a
+    // CFType with its own accessor, so the `NSValue` branch above sees only `__NSCFType` and drops it.
+  } else {
+    return FBAXBridgeRejectedGeometry(@"point", pointValue);
   }
-  return FBAXBridgeRejectedGeometry(@"point", pointValue);
+  return (NSDictionary *)CFBridgingRelease(CGPointCreateDictionaryRepresentation(point));
 }
 
 // JSON cannot represent infinity or NaN: `NSJSONSerialization` *raises* an `NSInvalidArgumentException`

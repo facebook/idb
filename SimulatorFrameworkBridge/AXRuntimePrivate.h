@@ -84,9 +84,11 @@ typedef NS_ENUM(uint32_t, FBAXAttributeIdentifier) {
 /**
  * The geometry types an `AXValue` wraps, as the runtime numbers them — no SDK header available to the
  * guest declares them. The numbers come from the type name the runtime prints in an AXValue's
- * description. Only the type the reader unwraps is listed.
+ * description. Only the types the reader unwraps are listed.
  */
 typedef NS_ENUM(uint32_t, FBAXValueType) {
+  /** kAXValueCGPointType. */
+  FBAXValueTypeCGPoint = 1,
   /** kAXValueCGRectType. */
   FBAXValueTypeCGRect = 3,
 };

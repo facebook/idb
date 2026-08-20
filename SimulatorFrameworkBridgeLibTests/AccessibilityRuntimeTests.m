@@ -613,11 +613,10 @@ static NSDictionary *FBAXTestsSnapshotRequest(NSDictionary<NSString *, id> *extr
   XCTAssertEqualObjects(frame[@"Height"], @52);
 }
 
-// BUG: a snapshot's visible point is lost. The point coercion never asks the runtime, so the `AXValue`
-// a snapshot answers with is rejected and emitted as null — while the frame on the same node, arriving
-// in the same form, unwraps correctly. Flipped in the following commit. Both attributes are named in
-// the request because the visible point is a reachability key, so a default read does not ask for it.
-- (void)testASnapshotVisiblePointIsNotUnwrappedFromAnAXValue
+// The visible point arrives from a snapshot in the same `AXValue` form as the frame, and unwraps the
+// same way. Both attributes are named in the request because the visible point is a reachability key,
+// so a default read does not ask for it.
+- (void)testASnapshotVisiblePointIsUnwrappedFromAnAXValue
 {
   _runtime.applicationElements[@(kAppPid)] = FBAXTestsNode(
     @{
@@ -630,8 +629,9 @@ static NSDictionary *FBAXTestsSnapshotRequest(NSDictionary<NSString *, id> *extr
   NSDictionary *tree = FBAXBridgeHandleRequest(
     FBAXTestsSnapshotRequest(@{@"attributes" : @[kAXFrame, kAXVisiblePoint]})
   )[@"tree"];
-  XCTAssertEqualObjects(tree[kAXVisiblePoint], NSNull.null);
-  XCTAssertEqualObjects(tree[kAXFrame][@"X"], @16, @"the frame on the same node must still unwrap");
+  XCTAssertEqualObjects(tree[kAXVisiblePoint][@"X"], @201);
+  XCTAssertEqualObjects(tree[kAXVisiblePoint][@"Y"], @319);
+  XCTAssertEqualObjects(tree[kAXFrame][@"X"], @16, @"the frame on the same node is unwrapped the same way");
 }
 
 // A value that is not a rect must leave the frame alone rather than unwrap to zero: a point read as a

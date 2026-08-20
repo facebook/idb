@@ -183,6 +183,15 @@ static NSDictionary *FBAXFakeSnapshotNode(FBAXFakeElement *element,
   return YES;
 }
 
+- (BOOL)getPoint:(CGPoint *)point fromValue:(id)value
+{
+  if (!point || ![value isKindOfClass:FBAXFakePointValue.class]) {
+    return NO;
+  }
+  *point = ((FBAXFakePointValue *)value).point;
+  return YES;
+}
+
 - (FBAXReadOutcome *)readAttributes:(NSArray<NSString *> *)attributes ofElement:(id)element
 {
   // Recorded before the outcome switch, so a read that fails still evidences what it asked for.

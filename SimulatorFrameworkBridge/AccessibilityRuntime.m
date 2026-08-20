@@ -911,6 +911,18 @@ static NSError *FBAXSnapshotFailure(NSInteger code, NSString *description)
   return _functions.valueGetValue(reference, FBAXValueTypeCGRect, rect) ? YES : NO;
 }
 
+- (BOOL)getPoint:(CGPoint *)point fromValue:(id)value
+{
+  if (!point || !value || !_functions.valueGetType || !_functions.valueGetValue) {
+    return NO;
+  }
+  CFTypeRef reference = (__bridge CFTypeRef)value;
+  if (_functions.valueGetType(reference) != FBAXValueTypeCGPoint) {
+    return NO;
+  }
+  return _functions.valueGetValue(reference, FBAXValueTypeCGPoint, point) ? YES : NO;
+}
+
 - (FBAXReadOutcome *)readAttributes:(NSArray<NSString *> *)attributes ofElement:(id)element
 {
   NSError *error = nil;

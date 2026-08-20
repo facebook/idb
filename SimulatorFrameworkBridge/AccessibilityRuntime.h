@@ -370,6 +370,16 @@ extern NSArray<NSString *> *FBAXSignatureWarnings(void);
 - (BOOL)getRect:(CGRect *)rect fromValue:(id)value;
 
 /**
+ * Unwraps the `CGPoint` an `AXValue` wraps, which is the form a snapshot answers the reachability hit
+ * points in. The counterpart to `-getRect:fromValue:` for `kAXValueCGPointType`.
+ *
+ * NO when the value does not hold a point, leaving `*point` untouched. Unwrapping is type-checked here
+ * because the runtime does not check it: a rect read as a point answers with a coordinate rather than
+ * failing, and the host taps the points this method unwraps.
+ */
+- (BOOL)getPoint:(CGPoint *)point fromValue:(id)value;
+
+/**
  * The element at a point, in one round trip.
  *
  * A positive `pid` scopes the hit-test to that application; a non-positive one makes it display-wide, so
