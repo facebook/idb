@@ -42,10 +42,8 @@ final class FBSimulatorHIDEventPanTests: XCTestCase {
     XCTAssertEqual(delays.count, 4, "steps + 1 interleaved delays")
   }
 
-  // The trackpad surface is absolute-normalized, and now says so in the type. Screen coordinates used
-  // to pass straight through `pan` — it took bare `Double`s and wrapped them in a `CGPoint`, the same
-  // type `.twoFingerTouch` uses for screen points — and landed wherever the daemon put them. They can
-  // no longer be built, so `pan` cannot be handed them.
+  // The trackpad surface is absolute-normalized and the type enforces it: screen coordinates
+  // cannot be represented as an FBSimulatorTrackpadPoint, so `pan` cannot be handed them.
   func testTrackpadPointRejectsCoordinatesOutsideTheSurface() throws {
     XCTAssertNil(FBSimulatorTrackpadPoint(x: 100, y: 200), "screen coordinates are not surface coordinates")
     XCTAssertNil(FBSimulatorTrackpadPoint(x: 0.5, y: 1.5), "one axis outside the unit square is enough")

@@ -41,7 +41,7 @@
 @implementation _FBTestSimDeviceSet
 @end
 
-// Comprehensive stub for SimDevice used by FBSimulator.
+// Stub for SimDevice used by FBSimulator.
 @interface _FBTestSimDevice : NSObject
 @property (nonatomic, strong) NSUUID *UDID;
 @property (nonatomic, copy) NSString *name;

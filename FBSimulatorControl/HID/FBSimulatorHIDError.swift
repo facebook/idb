@@ -8,12 +8,8 @@
 import Darwin
 import Foundation
 
-/// The failure cases of the HID layer.
-///
-/// Previously these were stringly-typed `FBSimulatorError` `NSError`s. No consumer inspects their
-/// domain or code — they are surfaced only as messages — so they are modelled here as a typed enum
-/// that enumerates the failure modes. `errorDescription` reproduces the original message strings,
-/// extended only where a case carries an underlying error whose own message the caller needs.
+/// The failure cases of the HID layer. They are surfaced only as messages — no consumer inspects
+/// domain or code.
 public enum FBSimulatorHIDError: Error, LocalizedError {
   /// The runtime-only `SimDeviceLegacyHIDClient` class could not be looked up by name.
   case clientClassUnavailable(className: String)
