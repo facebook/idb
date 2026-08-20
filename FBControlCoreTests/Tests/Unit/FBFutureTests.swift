@@ -691,6 +691,49 @@ final class FBFutureTests: XCTestCase {
     XCTAssertEqual(cancelFuture.state, .cancelled)
   }
 
+  func testResolveValueReturnsResultSynchronously() {
+    let future = FBFuture<AnyObject>.resolveValue { _ in
+      NSNumber(value: 7)
+    }
+
+    XCTAssertEqual(future.state, .done)
+    XCTAssertEqual(future.result as? NSNumber, NSNumber(value: 7))
+    XCTAssertNil(future.error)
+  }
+
+  func testResolveValueUsesErrorWhenBlockReturnsNil() {
+    let expectedError = NSError(domain: "resolve-value", code: 3, userInfo: nil)
+
+    let future = FBFuture<AnyObject>.resolveValue { error in
+      error?.pointee = expectedError
+      return nil
+    }
+
+    XCTAssertEqual(future.state, .failed)
+    XCTAssertEqual(future.error as NSError?, expectedError)
+    XCTAssertNil(future.result)
+  }
+
+  func testAsyncResolveValueResolvesOnProvidedQueue() {
+    let resolverCalled = XCTestExpectation(description: "Resolver called")
+    let completionCalled = XCTestExpectation(description: "Completion called")
+    let future = FBFuture<AnyObject>.onQueue(
+      queue,
+      resolveValue: { _ in
+        resolverCalled.fulfill()
+        return NSNumber(value: 11)
+      })
+    future.onQueue(
+      queue,
+      notifyOfCompletion: { completed in
+        XCTAssertEqual(completed.state, FBFutureState.done)
+        XCTAssertEqual(completed.result as? NSNumber, NSNumber(value: 11))
+        completionCalled.fulfill()
+      })
+
+    wait(for: [resolverCalled, completionCalled], timeout: FBControlCoreGlobalConfiguration.fastTimeout)
+  }
+
   func testTimedOutIn() {
     let future = FBMutableFuture<NSNumber>()
       .onQueue(
@@ -1041,6 +1084,52 @@ final class FBFutureTests: XCTestCase {
 
     wait(for: [delayedCompletionCalled, immediateCompletionCalled, raceCompletionCalled], timeout: FBControlCoreGlobalConfiguration.fastTimeout)
     XCTAssertEqual(raced.result as? NSNumber, NSNumber(value: true))
+  }
+
+  func testDelayedFutureResolvesFromWrappedFuture() {
+    let future = FBFuture<AnyObject>(result: NSNumber(value: 21)).delay(0.1)
+
+    wait(
+      for: [
+        keyValueObservingExpectation(for: future, keyPath: "result", expectedValue: NSNumber(value: 21)),
+        keyValueObservingExpectation(for: future, keyPath: "state", expectedValue: FBFutureState.done.rawValue as NSNumber),
+      ], timeout: FBControlCoreGlobalConfiguration.fastTimeout)
+  }
+
+  func testRephraseFailureReplacesErrorDescription() {
+    let completionCalled = XCTestExpectation(description: "Completion called")
+    let underlyingError = NSError(
+      domain: "underlying",
+      code: 12,
+      userInfo: [NSLocalizedDescriptionKey: "low level failure"])
+    let future = FBFuture<AnyObject>(error: underlyingError).rephraseFailure("higher level operation failed")
+    future.onQueue(
+      queue,
+      notifyOfCompletion: { completed in
+        XCTAssertEqual(completed.state, FBFutureState.failed)
+        XCTAssertTrue(completed.error?.localizedDescription.contains("higher level operation failed") ?? false)
+        XCTAssertNotEqual(completed.error as NSError?, underlyingError)
+        completionCalled.fulfill()
+      })
+
+    wait(for: [completionCalled], timeout: FBControlCoreGlobalConfiguration.fastTimeout)
+  }
+
+  func testLogCompletionIncludesPurposeAndResolvedState() {
+    let logger = CapturingFutureLogger()
+    let completionLogged = XCTestExpectation(description: "Completion logged")
+    logger.onLog = {
+      completionLogged.fulfill()
+    }
+
+    FBFuture<AnyObject>(result: NSNumber(value: 5))
+      .named("Fetch")
+      .logCompletion(logger, withPurpose: "loading value")
+
+    wait(for: [completionLogged], timeout: FBControlCoreGlobalConfiguration.fastTimeout)
+    XCTAssertEqual(logger.messages.count, 1)
+    XCTAssertTrue(logger.messages[0].contains("loading value"))
+    XCTAssertTrue(logger.messages[0].contains("Fetch Future done"))
   }
 
   func testContextualTeardownOrdering() {
@@ -1542,4 +1631,33 @@ final class FBFutureTests: XCTestCase {
 
     wait(for: expectations, timeout: FBControlCoreGlobalConfiguration.fastTimeout)
   }
+}
+
+private final class CapturingFutureLogger: NSObject, FBControlCoreLogger, @unchecked Sendable {
+  private let lock = NSLock()
+  private var storedMessages: [String] = []
+  var onLog: (() -> Void)?
+  var name: String? { nil }
+  var level: FBControlCoreLogLevel { .multiple }
+
+  var messages: [String] {
+    lock.lock()
+    defer { lock.unlock() }
+    return storedMessages
+  }
+
+  func log(_ message: String) -> any FBControlCoreLogger {
+    lock.lock()
+    storedMessages.append(message)
+    let handler = onLog
+    lock.unlock()
+    handler?()
+    return self
+  }
+
+  func info() -> any FBControlCoreLogger { self }
+  func debug() -> any FBControlCoreLogger { self }
+  func error() -> any FBControlCoreLogger { self }
+  func withName(_ name: String) -> any FBControlCoreLogger { self }
+  func withDateFormatEnabled(_ enabled: Bool) -> any FBControlCoreLogger { self }
 }
