@@ -1986,19 +1986,21 @@ private final class StubTreeReader: FBAXTreeReader, @unchecked Sendable {
   func scroll(_ query: FBAccessibilityElementQuery, direction: FBAccessibilityScrollDirection) async throws {}
 
   func frame(_ query: FBAccessibilityElementQuery) async throws -> CGRect { .zero }
+}
 
-  // Derived, not listed. The assertion is not that the two happen to match today — it is that they cannot
-  // stop matching, which is what a hand-written set could not promise.
+/// The composition of the key vocabulary's derived sets.
+final class FBAXKeySetTests: XCTestCase {
+
+  // Derived from `allCases`, so a new key joins `everything` automatically.
   func testEverythingIsEveryKey() {
     XCTAssertEqual(FBAXKeys.everything, Set(FBAXKeys.allCases))
     XCTAssertTrue(FBAXKeys.everything.isSuperset(of: FBAXKeys.defaultSet))
   }
 
-  // The expensive keys are in it deliberately: a caller asking for everything is asking for the fields
-  // that cost extra guest work, and getting a quietly cheaper answer would be the wrong surprise.
+  // The expensive keys are included deliberately: a caller asking for everything is asking for the
+  // fields that cost extra guest work.
   func testEverythingIncludesTheKeysThatCostExtraGuestWork() {
     XCTAssertTrue(FBAXKeys.everything.contains(.interactable))
     XCTAssertTrue(FBAXKeys.everything.contains(.occludedBy))
   }
-
 }
