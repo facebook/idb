@@ -13,13 +13,13 @@ These primitives support a number of scenarios:
 
 ## Backends
 
-A read is served by one of three backends, selected with `--api` on `idb ui describe-all`, `idb ui describe-point` and `idb ui describe`. They differ in *where the read runs*, which is what determines how much of the screen they can see and how much each read costs.
+A read is served by one of three backends, selected with `--api` on `idb ui describe-all`, `idb ui describe-point` and `idb ui describe`. They differ in where the read runs, which determines how much of the screen they can see and how much each read costs.
 
 ### `--api ax` — the accessibility backend
 
-The default, and what `idb` has always used. The companion asks the Simulator's accessibility server, from the host, for the frontmost application's elements.
+The default. The companion asks the Simulator's accessibility server, from the host, for the frontmost application's elements.
 
-This is the same view an assistive technology gets. It is cheap and needs nothing installed in the Simulator, but it is a summary rather than a transcript: a view that draws its own content and describes itself with a single label — a custom collection view cell, a composed row of text and images — is reported as that one element, not as the parts it was built from.
+This is the same view an assistive technology gets. It is cheap and needs nothing installed in the Simulator, but composed views report as single elements: a view that draws its own content and describes itself with a single label — a custom collection view cell, a composed row of text and images — is reported as that one element, not as the parts it was built from.
 
 ### `--api axbridge` — the guest reader
 
@@ -27,13 +27,15 @@ The read runs *inside* the Simulator. The companion spawns the bundled `Simulato
 
 Because it reads the application from the inside, it sees the structure the application actually built, at the granularity `XCUITest` would see — typed, labelled elements where the host-side view reports one composite. It needs no test bundle, no test runner and no automation daemon: the helper is spawned, answers one read, and exits.
 
-The cost is that spawn. The helper has to start and load the accessibility frameworks on every read, which dominates the time a single read takes — roughly 600ms, against roughly 20ms for the walk itself.
+The cost is the spawn: the helper has to start and load the accessibility frameworks on every read, which dominates the time a single read takes — roughly 600ms, against roughly 20ms for the walk itself.
+
+A guest read also puts the target into automation mode and leaves it there — see [Automation mode](#automation-mode).
 
 ### `--api axbridge-persistent` — the guest reader, kept warm
 
 The same reader, spawned once instead of once per read. The companion starts `SimulatorFrameworkBridge` in `serve` mode and talks to it over a Unix domain socket, so the framework loading is paid once and every subsequent read is just the walk — around 20ms, roughly 30x faster than re-spawning.
 
-That amortization only pays off across reads by a *long-lived* process holding one connection: a driver, a REPL, an interactive session. A single `idb ui describe-all` from a shell spawns the reader, reads once and tears it down, which is strictly slower than `--api axbridge` doing the same thing without the socket. Use `axbridge` for one-shot commands and `axbridge-persistent` for a process that will read repeatedly.
+The saving only applies to a long-lived process holding one connection: a driver, a REPL, an interactive session. A single `idb ui describe-all` from a shell spawns the reader, reads once and tears it down, which is strictly slower than `--api axbridge` doing the same thing without the socket. Use `axbridge` for one-shot commands and `axbridge-persistent` for a process that will read repeatedly.
 
 The connection is self-healing: if the reader dies — the Simulator shut down, the process was killed — the next read re-establishes it and retries once, rather than wedging on a dead socket.
 
@@ -49,9 +51,9 @@ The connection is self-healing: if the reader dies — the Simulator shut down, 
 
 ### Compatibility
 
-`--api` can never break an existing workflow. Omitting it preserves the historical behaviour exactly, and the field is only set on the wire when you actually ask for a backend. A companion that predates backend selection ignores the field entirely and serves the read as if it were unset, so a new client against an old companion behaves precisely as it did before.
+Omitting `--api` preserves the historical behaviour, and the field is only set on the wire when a backend is asked for. A companion that predates backend selection ignores the field and serves the read as if it were unset.
 
-When a backend is selected but cannot run, the read fails with a clear error rather than quietly falling back to a different one — a silent downgrade would report a smaller tree as if it were the whole screen.
+When a backend is selected but cannot run, the read fails with a clear error rather than falling back to a different one — a silent downgrade would report a smaller tree as if it were the whole screen.
 
 ### Requirements
 
@@ -115,10 +117,11 @@ $ idb ui describe General --format complete | jq '{backend, truncated, target, s
 | `screen` | The bounds element frames are relative to |
 | `truncated` | Whether the read hit the depth or node bounds and stopped short of the whole tree |
 | `modal` | The blocking alert on screen, if there is one: whether it belongs to the system or the app, its element type, and its title |
+| `automation` | The automation mode the read ran in, and whether this read asserted it — see [Automation mode](#automation-mode) |
 | `coverage` | How much of the screen the read's element frames cover, along several dimensions |
 | `profile` | Where the read spent its time, and how many calls it took — see [Reading `profile`](#reading-profile) |
 
-Two things make this format easier to consume than the others. Its **key set is fixed**: every field is always present, `null` where it does not apply, so one parser handles every read command — a point read and a whole-screen read differ in their values, never in their shape, and `target` rather than the shape tells you which command produced the document. And its **element names are the clean ones**: `label` rather than `AXLabel`, `identifier` rather than `AXUniqueId`, `role_description` rather than a mix. The two attributes that merely restated another are gone — the stringified `AXFrame`, since `frame` carries the same rectangle structurally, and the raw `role`, since `type` is its normalised form.
+This format is the easiest one to consume. Its **key set is fixed**: every field is always present, `null` where it does not apply, so one parser handles every read command, and `target` — not the shape — says which command produced the document. Its **element attribute names are the clean ones**: `label` rather than `AXLabel`, `identifier` rather than `AXUniqueId`. Two attributes that restated another are absent: the stringified `AXFrame` (`frame` carries the same rectangle structurally) and the raw `role` (`type` is its normalised form).
 
 The document is expected to grow. New fields are added additively, and a consumer should ignore fields it does not know rather than reject the document; there is deliberately no version to check.
 
@@ -130,21 +133,21 @@ warning: the companion does not support --format complete (it predates format se
 
 ### Reading `profile`
 
-Every read reports a profile — there is no flag to turn it on. It is present on the `complete` format only, since that is the only format with room for it.
+Every read reports a profile — there is no flag to turn it on. It is present on the `complete` format only.
 
-**The core is the same on every backend**, so two reads served by different backends can be compared without knowing which is which:
+The core is the same on every backend, so two reads served by different backends can be compared:
 
 | Field | What it measures | What it excludes |
 |-------|------------------|------------------|
 | `element_count` | Elements in the serialized read | Elements walked and then dropped by a filter |
-| `total_duration_ms` | Wall time for the whole read: the number you waited | Time in `idb` itself, and the gRPC hop from `idb` to the companion |
+| `total_duration_ms` | Wall time for the whole read | Time in `idb` itself, and the gRPC hop from `idb` to the companion |
 | `acquire_duration_ms` | Getting into a position to read at all | Any reading — this is setup, before a single attribute is fetched |
 | `read_duration_ms` | Pulling the tree out of the application | Turning what came back into output |
 | `serialize_duration_ms` | Turning what was read into the format you asked for | Waiting on the application, which is `read` |
 
-The three phases do not have to add up to the total, and normally fall a little short — a read does small amounts of work between them. In practice they account for 98–100%.
+The three phases do not have to add up to the total — a read does small amounts of work between them. In practice they account for 98–100%.
 
-**Everything else in `profile` is specific to the backend that served the read**, and `backend` is what tells you how to read it. There is no discriminator inside `profile`; a second one could disagree with the first.
+Everything else in `profile` is specific to the backend that served the read, and `backend` says how to read it.
 
 On `ax`, the tree is fetched attribute by attribute over XPC, so the phases decompose like this:
 
@@ -160,34 +163,32 @@ On `axbridge` and `axbridge-persistent`, the tree is walked in-process by a gues
 
 | Field | What it measures |
 |-------|------------------|
-| `mach_round_trips` | Round trips to the application's accessibility server. What makes `read_duration_ms` interpretable rather than merely large |
-| `host_decode_duration_ms` | Decoding that JSON. The other half of a boundary these payloads cross twice |
-| `response_bytes` | Response size. Divide it by `acquire_duration_ms` for throughput — that is what says whether a large residual is payload-bound |
+| `mach_round_trips` | Round trips to the application's accessibility server |
+| `host_decode_duration_ms` | Decoding the guest's JSON response on the host |
+| `response_bytes` | Response size. Divided by `acquire_duration_ms`, it gives transport throughput |
 
-  Note that `acquire_duration_ms` on these lanes is a **residual**, not a measurement: it is the round trip less the guest's walk, holding acquisition, the guest's JSON encoding and the IPC, undivided. Neither transport separates its own spawn or connect out of it. On a warm persistent read the residual is mostly encoding and IPC rather than acquisition, so reading it as "how long connecting took" will be wrong by most of its value.
+On these lanes `acquire_duration_ms` is a **residual**, not a measurement: the round trip less the guest's walk, holding acquisition, the guest's JSON encoding and the IPC, undivided. Neither transport separates its own spawn or connect out of it, and on a warm persistent read the residual is mostly encoding and IPC — it is not a connect time.
 
 A `null` here means *this transport does not have this phase* — not that the phase took no time, and not that the field is missing. A phase that took no measurable time reports `0`.
 
-**Divide `traverse_duration_ms` by `mach_round_trips` before concluding anything.** That ratio is what one query to the application's accessibility server costs, and on a slow read it is the largest term by a wide margin — larger than the transport, the payload, or anything `idb` controls.
+**Divide `read_duration_ms` by `mach_round_trips` before concluding anything.** That ratio is what one query to the application's accessibility server costs, and on a slow read it is the largest term by a wide margin.
 
-**What moves that ratio is the key set, not the application.** Measured on one running application, one screen, the same 118 round trips, varying only what was asked for:
+**The key set, not the application, is what moves that ratio.** Measured on one running application, one screen, the same 118 round trips, varying only what was asked for:
 
 | requested | per round trip | total |
 |---|---|---|
 | ordinary attributes | ~0.14 ms | 16 ms |
 | plus `isVisible` / `visiblePoint` | ~18 ms | 2148 ms |
 
-A factor of about 130, from the key set alone. For comparison, an ordinary read of a simple system application runs ~0.18 ms per round trip — indistinguishable from the heavy application's ordinary read. **Applications are not meaningfully faster or slower than each other at answering an ordinary query.**
+A factor of about 130, from the key set alone. For comparison, an ordinary read of a simple system application runs ~0.18 ms per round trip — indistinguishable from the heavy application's ordinary read. Applications do not differ meaningfully at answering an ordinary query.
 
-The reason is what those attributes mean. `isVisible` and `visiblePoint` cannot be looked up; the application has to hit-test the element to answer them. Asking for them on a whole tree asks it to hit-test every node, and that is a real cost of a real feature rather than a defect in any layer.
+The reason is what those attributes mean: `isVisible` and `visiblePoint` cannot be looked up, so the application has to hit-test the element to answer them, and asking for them on a whole tree hit-tests every node.
 
-**Two keys put a read on the expensive path, and nothing else does.** Asking for `interactable` or `occluded_by` widens the fetch list — for *every node* — with `isVisible`, `visiblePoint`, `centerPoint` and `userInteractionEnabled`. The first two are the ones that cost: they cannot be looked up, so the application hit-tests the element to answer them. `occluded_by` also asks the reader to hit-test the centre of each element already found occluded, though that cost is proportional to the occluded set rather than to the tree.
-
-Every other key set leaves the read on the default fetch list, which carries no reachability and costs milliseconds. So a read is cheap unless it asks one of those two questions, and a caller who has not asked for them is already on the fast path and does not need to do anything.
+**Two keys put a read on the expensive path, and nothing else does.** Asking for `interactable` or `occluded_by` widens the fetch list — for every node — with `isVisible`, `visiblePoint`, `centerPoint` and `userInteractionEnabled`; the first two are the ones that cost. `occluded_by` additionally hit-tests the centre of each element already found occluded, a cost proportional to the occluded set rather than to the tree. Every other key set stays on the default fetch list, which carries no reachability and costs milliseconds.
 
 **A point read reports no `profile` on the guest lanes.** It resolves one element rather than walking a tree, so there is no traversal to time; `--api ax` does report one. Keep that in mind when comparing a point read's cost across backends.
 
-**Ask about one element, not the whole tree.** The point read already does this: `idb ui describe-point <x> <y> --key interactable` hit-tests that point, reads that element's attributes and nothing else. One element's worth of hit-testing rather than the tree's — around 18 ms instead of two seconds.
+**Ask about one element, not the whole tree.** The point read already does this: `idb ui describe-point <x> <y> --key interactable` hit-tests that point and reads that element's attributes — one element's worth of hit-testing rather than the tree's, around 18 ms instead of two seconds.
 
 So a live view has two calls rather than one expensive one:
 
@@ -199,32 +200,15 @@ idb ui describe-all --format complete
 idb ui describe-point 201 286 --key interactable
 ```
 
-The frames from the first are what give you the point for the second. `--filter interactable` on the periodic read matches on label, identifier and role, which costs nothing and does not answer whether an element is covered; the point read answers that for the one element you are about to act on.
+The frames from the first give you the point for the second. `--filter interactable` on the periodic read matches on label, identifier and role, which costs nothing and does not answer whether an element is covered; the point read answers that for the one element you are about to act on.
 
-**Request reachability per interaction, not per frame.** This follows from the pricing and is the mistake most easily made by anyone building a live view. `isVisible` and `visiblePoint` are priced *per node*, so a poll loop that asks for them is paying to hit-test the whole tree on every tick — a one-second poll over a tree that takes two seconds to hit-test asks for more work than there is time to do it in, forever. Reachability answers a question about a single element a caller is about to act on ("can I tap this?"), so fetch it when that question is asked. Keep the periodic read on the ordinary key set, where it costs milliseconds.
+**Request reachability per interaction, not per frame.** `isVisible` and `visiblePoint` are priced per node, so a poll loop that asks for them hit-tests the whole tree on every tick — a one-second poll over a tree that takes two seconds to hit-test can never keep up. Fetch reachability when about to act on a specific element; keep the periodic read on the ordinary key set.
 
-Two consequences. **Never compare a per-round-trip figure across reads with different `--key` sets** — that comparison says nothing about the applications and everything about what you asked. And if a read is slow, check the key set before anything else: dropping reachability from a read that does not need it is worth two orders of magnitude, and no other tuning available here comes close.
+Never compare a per-round-trip figure across reads with different `--key` sets — that comparison reflects what was asked for, not the applications. And if a read is slow, check the key set before anything else: dropping reachability from a read that does not need it is worth two orders of magnitude, and no other tuning here comes close.
 
-**A cold read costs far more than a warm one, on every backend.** The first read of a screen pays for caches nothing has filled yet, and the difference is one or two orders of magnitude rather than a few per cent. Comparing a cold read against a warm one and concluding something about the backend is the most common way to misread these numbers.
+**A cold read costs far more than a warm one, on every backend.** The first read of a screen pays for caches nothing has filled yet, and the difference is one or two orders of magnitude. Compare warm reads against warm reads.
 
 ## When a read comes back empty
-
-:::note Reading a simulator changes one of its settings
-
-`idb ui describe-all --api axbridge` puts the target into accessibility automation mode and **leaves it
-there**. If you inspect a simulator afterwards you will find `AutomationEnabled` set in the
-`com.apple.Accessibility` domain, with nothing obviously responsible for it — this is that.
-
-It is deliberate: the mode is what a UI-test host puts an application into, and reading without it means
-UIKit collapses subtrees and can serve cached children describing a screen that is no longer displayed.
-Restoring it after each read would mean flipping a device-wide setting twice per read, with a window in
-which a concurrent reader sees the wrong value.
-
-`--format complete` reports what happened, under `automation`: `enabled` is the mode the read ran in, and
-`asserted` says whether this read is what turned it on. To read without changing anything, use
-`--api ax`.
-
-:::
 
 A read that reports far fewer elements than the screen shows is usually one of these:
 
@@ -239,34 +223,26 @@ A read that reports far fewer elements than the screen shows is usually one of t
 
   Relaunch the application afterwards; the setting is read at startup.
 - **The read was truncated.** A very deep or very large hierarchy stops at the bounds above. `--format complete` reports `truncated: true` when that happened, which distinguishes "this is the whole screen" from "this is as much of it as was read".
-- **The target is not in automation mode.** Separate from the setting above, and it changes how much structure the accessibility system exposes at all:
+- **The target is not in automation mode.** With automation mode off, UIKit collapses subtrees behind opaque element providers and caches a container's children; with it on, the full structure is exposed and children are recomputed per read. On one measured screen the same read went from 98 elements with 10 carrying a frame, to 176 elements all of which carry one — and the count of elements exposing an identifier went from 12 to 58, which matters more than the node count if you target by identifier rather than by label. The guest lanes assert the mode on every read, so this mainly affects `--api ax`; check and set it with:
 
   ```
   idb get --domain com.apple.Accessibility AutomationEnabled
   idb set --domain com.apple.Accessibility AutomationEnabled --type bool true
   ```
 
-  With automation mode off, UIKit collapses subtrees behind opaque element providers and caches a container's children. With it on, the full structure is exposed and children are recomputed per read. On one measured screen the same read went from 98 elements with 10 carrying a frame, to 176 elements all of which carry one — and the count of elements exposing an identifier went from 12 to 58, which matters more than the node count if you are targeting by identifier rather than by label.
+  Unlike `ApplicationAccessibilityEnabled`, this setting is consulted per read rather than at launch, so it takes effect on an already-running application without a relaunch. See [Automation mode](#automation-mode) for what the mode is and what asserting it costs.
 
-  This is the mode a UI-test host puts an application into, so a screen read under XCUITest and the same screen read by `idb` are not necessarily the same tree today.
+## Automation mode
 
-  Unlike `ApplicationAccessibilityEnabled`, this one is **consulted per read rather than at launch**, so it takes effect on an already-running application without a relaunch.
+Automation mode (`AutomationEnabled` in the `com.apple.Accessibility` domain) is the mode a UI-test host puts an application into; a read without it can see a different, smaller tree than `XCUITest` would. It is a device-wide simulator setting and affects every accessibility consumer on that simulator, not just your read.
 
-  It is a device-wide setting and it affects every accessibility consumer on that simulator, not just your read.
+`--api axbridge` and `--api axbridge-persistent` assert the mode on every read. What that means in practice:
 
-  **`--api axbridge` now asserts this mode on every read.** Four consequences worth knowing before they surprise you:
+- **The setting persists after the read.** Nothing restores it when the process exits, because restoring would flip a device-wide setting twice per read, with a window in which a concurrent reader sees the wrong value. A later `--api ax` read, or another tool entirely, sees a device left in the mode. To read without changing anything, use `--api ax`.
+- **The read says whether it changed anything.** `--format complete` carries an `automation` object with `enabled` and `asserted`: the mode the read ran in, and whether this read put it there. A read that found the mode already on reports `asserted: false`.
+- **The mode can be cleared underneath you.** The accessibility runtime turns it off when an accessibility observer client exits, so it is not something a caller can set once and rely on. Each guest read asserts it again, which is why a read that finds it off still returns a correct tree.
+- **Mode-asserted reads are slower.** The mode exposes subtrees that were collapsed, and a bigger tree costs more to walk. On a small screen the difference is lost in fixed overhead; on a large production application, paired measurements on one binary put it at roughly **1.8× wall clock** for about 15% more reported elements.
 
-  - **The setting persists after the read.** A simulator that has served an axbridge read is left in automation mode; nothing restores it when the process exits. That is deliberate — the alternative is flipping a device-wide setting twice per read, with a window in which a concurrent reader sees the wrong value — but it means a later `--api ax` read, or another tool entirely, sees a device someone else configured.
-  - **The read says whether it changed anything.** `--format complete` carries an `automation` object with `enabled` and `asserted`: whether the device was in the mode, and whether this read put it there. A read that found the mode already on reports `asserted: false`.
-  - **The mode can be cleared underneath you.** The accessibility runtime turns it off when an accessibility observer client exits, so it is not something a caller can set once and rely on. Each axbridge read asserts it again, which is why a read that finds it off still returns a correct tree.
-  - **Reads get slower, and a caller with a tuned timeout may fail in a way that does not look like a timeout.** The mode is what makes the tree correct — subtrees that were collapsed are now exposed — and a bigger tree costs more to walk. On a small screen the difference is lost in fixed overhead; on a large production application, paired measurements on one binary put it at roughly **1.8× wall clock** for about 15% more reported elements. See below.
+### If you poll or wait on a read, check the budget
 
-  ### If you poll or wait on a read, check the budget
-
-  This is the one consequence that has already caught a caller, and it is worth stating plainly because of how it presents.
-
-  A poll loop with a four-second budget was generous when a read took a few hundred milliseconds. If a single read now takes five or six seconds, the budget expires *during the first read*: the loop gets one attempt, against a screen that may not have finished transitioning when that attempt started. The failure surfaces as **the thing being waited for never arrived** — a correctness-shaped report with a timing cause — rather than as a timeout.
-
-  Any caller whose waits were calibrated against pre-assertion latency should re-check them. A budget that assumed several attempts should be raised until it affords several attempts again, and preferably made configurable rather than re-guessed.
-
-  Two things make this easy to miss. The read still succeeds, so nothing logs an error; and the tree it returns is *more* correct than before, so the change that caused the failure is the change that fixed a different one.
+A poll budget calibrated when a read took a few hundred milliseconds can expire during a single mode-asserted read of a large application. The loop then gets one attempt, possibly against a screen that had not finished transitioning, and the failure surfaces as the awaited element never appearing — not as a timeout, and with the read itself still succeeding. Re-check any wait calibrated against pre-assertion latency; a budget that assumed several attempts should afford several attempts again, and is better made configurable than re-guessed.
