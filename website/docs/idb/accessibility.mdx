@@ -168,6 +168,27 @@ On `axbridge` and `axbridge-persistent`, the tree is walked in-process by a gues
 
 A `null` here means *this transport does not have this phase* — not that the phase took no time, and not that the field is missing. A phase that took no measurable time reports `0`.
 
+**Divide `traverse_duration_ms` by `mach_round_trips` before concluding anything.** That ratio is what one query to the application's accessibility server costs, and on a slow read it is the largest term by a wide margin — larger than the transport, the payload, or anything `idb` controls.
+
+**What moves that ratio is the key set, not the application.** Measured on one running application, one screen, the same 118 round trips, varying only what was asked for:
+
+| requested | per round trip | total |
+|---|---|---|
+| ordinary attributes | ~0.14 ms | 16 ms |
+| plus `isVisible` / `visiblePoint` | ~18 ms | 2148 ms |
+
+A factor of about 130, from the key set alone. For comparison, an ordinary read of a simple system application runs ~0.18 ms per round trip — indistinguishable from the heavy application's ordinary read. **Applications are not meaningfully faster or slower than each other at answering an ordinary query.**
+
+The reason is what those attributes mean. `isVisible` and `visiblePoint` cannot be looked up; the application has to hit-test the element to answer them. Asking for them on a whole tree asks it to hit-test every node, and that is a real cost of a real feature rather than a defect in any layer.
+
+**Two keys put a read on the expensive path, and nothing else does.** Asking for `interactable` or `occluded_by` widens the fetch list — for *every node* — with `isVisible`, `visiblePoint`, `centerPoint` and `userInteractionEnabled`. The first two are the ones that cost: they cannot be looked up, so the application hit-tests the element to answer them. `occluded_by` also asks the reader to hit-test the centre of each element already found occluded, though that cost is proportional to the occluded set rather than to the tree.
+
+Every other key set leaves the read on the default fetch list, which carries no reachability and costs milliseconds. So a read is cheap unless it asks one of those two questions, and a caller who has not asked for them is already on the fast path and does not need to do anything.
+
+**Request reachability per interaction, not per frame.** This follows from the pricing and is the mistake most easily made by anyone building a live view. `isVisible` and `visiblePoint` are priced *per node*, so a poll loop that asks for them is paying to hit-test the whole tree on every tick — a one-second poll over a tree that takes two seconds to hit-test asks for more work than there is time to do it in, forever. Reachability answers a question about a single element a caller is about to act on ("can I tap this?"), so fetch it when that question is asked. Keep the periodic read on the ordinary key set, where it costs milliseconds.
+
+Two consequences. **Never compare a per-round-trip figure across reads with different `--key` sets** — that comparison says nothing about the applications and everything about what you asked. And if a read is slow, check the key set before anything else: dropping reachability from a read that does not need it is worth two orders of magnitude, and no other tuning available here comes close.
+
 **A cold read costs far more than a warm one, on every backend.** The first read of a screen pays for caches nothing has filled yet, and the difference is one or two orders of magnitude rather than a few per cent. Comparing a cold read against a warm one and concluding something about the backend is the most common way to misread these numbers.
 
 ## When a read comes back empty
