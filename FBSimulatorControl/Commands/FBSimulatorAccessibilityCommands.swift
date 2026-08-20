@@ -16,10 +16,8 @@ import Foundation
 extension FBSimulator {
 
   /// Builds a dispatcher for the given translator and wires it up as the
-  /// translator's token delegate. `translator` is typed `Any` to accept the test
-  /// fixture's mock `AXPTranslator` (mirrors the original `id` parameter). Swift-only
-  /// (not `@objc`): an `@objc` `Any` parameter double-visions as `Any`/`Any!` and
-  /// makes the call ambiguous; nothing in Objective-C calls this anymore.
+  /// translator's token delegate. `translator` is typed `Any` so tests can pass
+  /// a mock `AXPTranslator`.
   static func createAccessibilityTranslationDispatcher(withTranslator translator: Any) -> FBAXTranslationDispatcher {
     let axTranslator = unsafeBitCast(translator as AnyObject, to: AXPTranslator.self)
     let dispatcher = FBAXTranslationDispatcher(translator: axTranslator, logger: nil)
@@ -30,8 +28,6 @@ extension FBSimulator {
   // Process-wide singleton: AXPTranslator is itself a singleton with a single
   // bridgeTokenDelegate slot, so exactly one dispatcher backs every simulator (it
   // disambiguates concurrent requests by token, guarded internally by a lock).
-  // The lazy `static let` initialiser is thread-safe; `nonisolated(unsafe)` opts
-  // this shared instance out of Swift 6 Sendable checking accordingly.
   private nonisolated(unsafe) static let sharedAccessibilityTranslationDispatcher: FBAXTranslationDispatcher = {
     let translator = unsafeBitCast(AXPTranslator.sharedInstance() as AnyObject, to: AXPTranslator.self)
     return FBSimulator.createAccessibilityTranslationDispatcher(withTranslator: translator)
@@ -47,9 +43,6 @@ extension FBSimulator {
 /// Simulator implementation of the accessibility command surface. Resolves the
 /// frontmost / at-point / matching accessibility element via the translation
 /// dispatcher, applying SpringBoard-crash remediation for frontmost lookups.
-///
-/// Plain Swift, no `NSObject`/`@objc`: nothing in Objective-C references this class, and the
-/// command cache (`FBTargetCommandCache`) stores values as `Any`, so it imposes no such requirement.
 final class FBSimulatorAccessibilityCommands: AccessibilityOperations {
 
   private static let coreSimulatorBridgeServiceName = "com.apple.CoreSimulator.bridge"
@@ -76,14 +69,10 @@ final class FBSimulatorAccessibilityCommands: AccessibilityOperations {
 
   // MARK: Translation Dispatcher
 
-  /// The translation dispatcher for accessibility requests: the supplied one when
-  /// present, otherwise the simulator's process-wide shared dispatcher.
   private var resolvedDispatcher: FBAXTranslationDispatcher? {
     translationDispatcher ?? simulator?.accessibilityTranslationDispatcher
   }
 
-  /// The launchctl command surface for service-liveness checks: the supplied one when
-  /// present, otherwise the simulator itself.
   private func resolvedLaunchCtl(_ simulator: FBSimulator) -> any LaunchCtlCommands {
     launchCtl ?? simulator
   }
@@ -130,13 +119,9 @@ final class FBSimulatorAccessibilityCommands: AccessibilityOperations {
     try FBSimulatorControlFrameworkLoader.accessibilityFrameworks.loadPrivateFrameworks(simulator.logger)
   }
 
-  // Returns an FBAccessibilityElement wrapping the platform element for the given request.
-  // The handle owns the request's token and pops it on close.
-  //
-  // When remediationPermitted and a stale SpringBoard is detected (zero accessibility frame +
-  // dead pid), the original request's token is popped manually (it is not wrapped in a handle
-  // yet at that point), CoreSimulatorBridge is restarted, and the lookup retries with a fresh
-  // request. The retry passes remediationPermitted=false, bounding it to a single attempt.
+  // Returns an FBAccessibilityElement wrapping the platform element for the given request;
+  // the handle owns the request's token and pops it on close. Stale-SpringBoard remediation
+  // retries with remediationPermitted=false, bounding it to a single attempt.
   private func accessibilityElement(request: FBAXTranslationRequest, remediationPermitted: Bool) async throws -> FBAccessibilityElement {
     guard let simulator else {
       throw FBWeakTargetError.simulator
@@ -180,10 +165,8 @@ final class FBSimulatorAccessibilityCommands: AccessibilityOperations {
     if !frame.equalTo(.zero) {
       return false
     }
-    // Otherwise the zero-framed root is stale unless its owning pid is still a live launchd
-    // service. A dead pid means SpringBoard crashed; restarting CoreSimulatorBridge lets
-    // launchd bring a fresh SpringBoard (and bridge) back up. A launchctl failure is treated
-    // as "not live" so recovery is still attempted.
+    // A zero-framed root is stale unless its owning pid is still a live launchd service.
+    // A launchctl failure is treated as "not live" so recovery is still attempted.
     let pid = element.axTranslationPid
     let pidIsLive = (try? await resolvedLaunchCtl(simulator).processIsRunning(withProcessIdentifier: pid)) ?? false
     if pidIsLive {

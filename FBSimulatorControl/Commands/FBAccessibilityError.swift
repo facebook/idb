@@ -8,38 +8,29 @@
 import Foundation
 
 /// Errors thrown by the simulator accessibility command surface.
-///
-/// Typed cases let callers pattern-match (`catch FBAccessibilityError.elementNotFound`),
-/// while `LocalizedError.errorDescription` preserves the human-readable messages that
-/// flow through `error.localizedDescription` (sime2e output, gRPC status, logs).
 public enum FBAccessibilityError: LocalizedError, Sendable {
 
   /// An operation was attempted on an element handle that has been closed.
   /// `operation` is the verb phrase, e.g. "serialize", "tap", "set value on".
   case closedElement(operation: String)
 
-  /// The requested searchable key had no string value on the element.
   case noStringValue(key: String)
 
   /// The element does not support an accessibility press.
   case pressUnsupported(supportedActions: String)
 
-  /// `accessibilityPerformPress` returned `false`.
   case pressFailed
 
   /// No descendant matched the search within the depth bound.
   case elementNotFound(key: String, value: String, depth: UInt)
 
-  /// The simulator is not booted.
   case simulatorNotBooted(description: String)
 
   /// The host lacks the CoreSimulator accessibility API (Xcode 12+ required).
   case accessibilityUnavailable
 
-  /// The accessibility translation dispatcher could not be resolved.
   case dispatcherUnavailable
 
-  /// CoreSimulator returned no translation object for the request.
   case noTranslationObject
 
   /// SpringBoard crashed and the CoreSimulatorBridge restart that would recover it failed.

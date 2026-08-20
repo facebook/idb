@@ -10,14 +10,8 @@ import Foundation
 
 /// Applying `FBAccessibilityElementFilter` to a serialized read.
 ///
-/// The filter is an output concern, not a traversal one: it decides what a read *reports*, never where
-/// the walk goes. Expressing it over the serialized model rather than inside the walk is what makes it
-/// one implementation for every backend — the accessibility walk over live elements and the guest
-/// backends' walk over a materialized attribute tree produce the same model, so they can only agree
-/// here.
-///
-/// It also makes the predicate testable without a simulator: it reads the attributes off the element
-/// instead of calling back into the platform for them.
+/// The filter decides what a read *reports*, never where the walk goes. Running it over the
+/// serialized model gives one implementation for every backend, testable without a simulator.
 extension FBAccessibilityElementFilter {
 
   /// The elements this filter keeps, hoisting a dropped element's kept descendants into its place.
@@ -25,9 +19,8 @@ extension FBAccessibilityElementFilter {
   /// Hoisting is what stops the filter over-reaching: an interactable element nested inside an
   /// unlabeled container is kept, taking the container's position, rather than being lost with it.
   ///
-  /// Shape is preserved rather than normalized. A flat read's elements carry no `children` key and must
-  /// not grow one, so an element whose `children` is `nil` keeps it `nil`; the flat list is one level
-  /// deep, and filtering it is the degenerate case of the same recursion.
+  /// Shape is preserved rather than normalized: a flat read's elements carry no `children` key and
+  /// must not grow one, so an element whose `children` is `nil` keeps it `nil`.
   func apply(to elements: [FBAccessibilityDocumentElement]) -> [FBAccessibilityDocumentElement] {
     guard self != .all else {
       return elements
@@ -51,9 +44,8 @@ extension FBAccessibilityElementFilter {
   /// Whether an element survives this filter.
   ///
   /// `.interactable` asks the backend's own verdict, so a covered, disabled or zero-sized element is
-  /// dropped however button-like it looks. Only where the backend returned no verdict at all does it
-  /// fall back to the structural heuristic — a label, an identifier, or an actionable role — which is
-  /// all that was ever available before the verdict existed.
+  /// dropped however button-like it looks. The structural heuristic — a label, an identifier, or an
+  /// actionable role — applies only when the backend returned no verdict.
   ///
   /// An attribute the read did not serialize cannot be matched on, which is why requesting a filter
   /// widens the serialized key set (`FBAccessibilityRequestOptions.serializationKeys`).
@@ -62,8 +54,6 @@ extension FBAccessibilityElementFilter {
     case .all:
       return true
     case .interactable:
-      // The verdict is the answer wherever there is one; the heuristic below is reached only by a
-      // backend that could not judge, never as a second opinion on one that did.
       if let verdict = element.interactable ?? nil {
         guard case .actionable = verdict else {
           return false

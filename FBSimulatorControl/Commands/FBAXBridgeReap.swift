@@ -68,8 +68,7 @@ public struct FBAXBridgeReapSummary: Sendable, Equatable {
   public let busy: [String]
   /// Guests that answered — so they are provably idle — but rejected the shutdown verb, which means
   /// they were built before it existed. Nothing here can be collected until the host that spawns them
-  /// is rebuilt; they are reported separately rather than as `busy` because they are not busy, and a
-  /// caller chasing a leak is owed the difference.
+  /// is rebuilt; they are reported separately from `busy` because they are not busy.
   public let unreapable: [String]
 
   public var isEmpty: Bool {

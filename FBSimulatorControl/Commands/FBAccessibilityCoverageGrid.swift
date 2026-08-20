@@ -10,14 +10,12 @@ import Foundation
 
 /// Grid-based coverage tracking for accessibility elements. Uses a coarse grid
 /// (default 10pt cells) to track which areas of the screen are covered by
-/// accessibility element frames; overlapping elements are handled correctly
-/// (a cell is filled or not).
+/// accessibility element frames; overlap cannot double-count, as a cell is
+/// filled or not.
 ///
 /// Filled from a serialized read rather than during the walk that produced it, so every backend gets
 /// the same calculation from the same input. It stays mutable because remote-content discovery marks
 /// into a live grid as it hit-tests, and asks it which points are already covered.
-///
-/// Created and used entirely from Swift, so it is a plain Swift class.
 final class FBAccessibilityCoverageGrid {
 
   let screenBounds: CGRect
@@ -46,7 +44,7 @@ final class FBAccessibilityCoverageGrid {
     self.grid = [UInt8](repeating: 0, count: Int(computedWidth * computedHeight))
   }
 
-  /// Mark cells covered by the given frame. Handles out-of-bounds frames safely.
+  /// Mark cells covered by the given frame.
   func markFilled(with frame: CGRect) {
     guard !frame.isEmpty, !frame.isNull else {
       return
@@ -95,10 +93,9 @@ final class FBAccessibilityCoverageGrid {
 
   /// Mark every element's frame, and its descendants'.
   ///
-  /// The application root is skipped. It spans the screen by definition, so counting it would pin every
-  /// read at full coverage and answer nothing — the question coverage exists to answer is how much of
-  /// the screen the app's *content* accounts for, which is how a mostly-unexposed WebView shows up as a
-  /// low number.
+  /// The application root is skipped: it spans the screen by definition, so counting it would pin
+  /// every read at full coverage. Coverage measures how much of the screen the app's *content*
+  /// accounts for.
   ///
   /// A read that did not serialize the type cannot recognise the root, and one that did not serialize
   /// frames has nothing to mark; requesting coverage widens the key set so that neither happens
@@ -150,10 +147,8 @@ extension FBAccessibilityCoverage {
 
   /// The coverage a read reports, measured over its serialized elements.
   ///
-  /// The one definition, shared by every backend. Both ratios come from the same model the read
-  /// returned, so a backend cannot accidentally measure something different from another — which is
-  /// what a per-backend calculation had already allowed to happen once, when only the accessibility
-  /// path had one at all.
+  /// One shared definition: both ratios come from the same model the read returned, so backends
+  /// cannot measure differently from each other.
   ///
   /// `nil` when the bounds are unusable, so an unmeasurable read reports nothing rather than zero.
   ///
@@ -185,12 +180,7 @@ extension FBAccessibilityCoverage {
   }
 
   /// The innermost labelled elements: those carrying a label with no labelled descendant.
-  ///
-  /// "Innermost" rather than "childless" because a labelled element is not a container merely for having
-  /// children — an app icon is a labelled button wrapping an unlabelled image, and a home screen full of
-  /// them measures zero under a childless rule while a user plainly perceives every one. What disowns a
-  /// label is a *labelled* descendant: that is the element the label is decorating rather than
-  /// describing, and counting both would count the same region twice.
+  /// Counting an element and its labelled descendant would count the same region twice.
   private static func innermostLabelled(
     in elements: [FBAccessibilityDocumentElement]
   ) -> [FBAccessibilityDocumentElement] {
@@ -205,8 +195,7 @@ extension FBAccessibilityCoverage {
     }
   }
 
-  /// Whether an element carries a label — something a user perceives, as distinct from an identifier,
-  /// which is a developer handle for automation and is present on plenty of elements that show nothing.
+  /// Whether an element carries a non-empty label — user-perceived, unlike an identifier.
   private static func isLabelled(_ element: FBAccessibilityDocumentElement) -> Bool {
     guard let label = element.label ?? nil else {
       return false

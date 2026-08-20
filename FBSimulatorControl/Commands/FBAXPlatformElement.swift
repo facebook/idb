@@ -15,15 +15,12 @@ import Foundation
 /// types. Element actions live in `FBAXWritableElement`, so a tree that can only be read —
 /// the remote-automation projection — conforms here without pretending it can act.
 ///
-/// `AXPMacPlatformElement` is a private-framework class the unit tests cannot
-/// subclass, so they previously flowed message-responding doubles through the code
-/// via `unsafeBitCast(... to: AXPMacPlatformElement.self)`. Routing the production
-/// code through this protocol instead lets both the real element (which conforms via
-/// the adapter extension below) and the test doubles participate with no unsafe
-/// casts. Expressing it as an adapter — rather than mirroring the overlay's own
-/// signatures — also keeps the `NSAccessibility.Role`/`.Action` overlay types out of
-/// callers, and folds in the `objc_msgSend`-forcing `as AnyObject` reads, the
-/// `accessibilityAttributeValue:` traits reflection, and the children casting.
+/// `AXPMacPlatformElement` is a private-framework class the unit tests cannot subclass, so a
+/// protocol seam lets both the real element (which conforms via the adapter extension below)
+/// and test doubles participate with no unsafe casts. Expressing it as an adapter — rather
+/// than mirroring the overlay's own signatures — also keeps the `NSAccessibility.Role`/`.Action`
+/// overlay types out of callers, and folds in the `objc_msgSend`-forcing `as AnyObject` reads,
+/// the `accessibilityAttributeValue:` traits reflection, and the children casting.
 protocol FBAXPlatformElement: AnyObject {
   func axFrame() -> NSRect
   func axRole() -> String?

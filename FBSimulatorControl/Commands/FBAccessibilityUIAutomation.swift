@@ -10,8 +10,7 @@ import Foundation
 
 /// The `FBUIAutomation` backend over the CoreSimulator accessibility-translation path. Resolves a
 /// query to an `FBAccessibilityElement` via the accessibility primitives and serializes it through
-/// the shared schema — the same handle-based mechanism the accessibility command surface has always
-/// used, expressed as the converged verb set.
+/// the shared schema.
 ///
 // SAFETY: holds only an immutable reference to the target; each verb resolves and closes its own
 // element handle, so no mutable state is shared across calls, and the target's accessibility request
@@ -40,13 +39,8 @@ final class FBAccessibilityUIAutomation: FBUIAutomation, @unchecked Sendable {
       // to be discarded, and replaced where the read does know better.
       switch query {
       case .point:
-        // A hit-test resolves its element directly, with no root above it, so this read does not know
-        // the screen. Neither does any other backend's point read, which never walks a tree either.
         return response.withoutScreen()
       case .marker:
-        // A marker read does know the screen: it descended from the application root, whose frame was
-        // captured on the way down. Reporting it keeps a marker read's bounds the same here as on the
-        // backends that search a tree they already hold.
         return response.withoutScreen()
           .withProvenance(screen: element.rootBounds.flatMap(FBAXTranslationRequest.screenInfo(fromBounds:)))
       case .frontmost, .application:
@@ -55,12 +49,10 @@ final class FBAccessibilityUIAutomation: FBUIAutomation, @unchecked Sendable {
     }
   }
 
-  /// Runs an accessibility resolution, re-raising the one failure that is a fact about the *query*
-  /// rather than about this transport as the backend-neutral `FBUIAutomationError`. The AX stack
-  /// raises its own rich error deep in the element walk; translating it here is what lets a caller
-  /// holding `any FBUIAutomation` catch "not found" without knowing which backend it holds. Every
-  /// other accessibility failure (dispatcher, SpringBoard, a closed handle) is transport-specific and
-  /// passes through untouched.
+  /// Re-raises the accessibility stack's "element not found" as the backend-neutral
+  /// `FBUIAutomationError`, so a caller holding `any FBUIAutomation` can catch it without knowing
+  /// which backend it holds. Every other accessibility failure is transport-specific and passes
+  /// through untouched.
   private static func translatingSeamErrors<T>(
     _ query: FBAccessibilityElementQuery,
     _ body: () async throws -> T
@@ -93,9 +85,8 @@ final class FBAccessibilityUIAutomation: FBUIAutomation, @unchecked Sendable {
     _ query: FBAccessibilityElementQuery,
     options: FBTapOptions
   ) async throws {
-    // A hold is a property of a synthesized touch, and this backend does not synthesize one — `AXPress`
-    // is instantaneous with nowhere to put a duration. Rejected rather than dropped: a long-press that
-    // silently becomes a tap is a test passing for the wrong reason.
+    // AXPress is instantaneous with nowhere to put a hold; reject `duration` rather than silently
+    // downgrading a long-press to a tap.
     guard options.duration == nil else {
       throw FBUIAutomationError.operationUnsupported(backend: .accessibility, operation: "A tap with a hold duration")
     }

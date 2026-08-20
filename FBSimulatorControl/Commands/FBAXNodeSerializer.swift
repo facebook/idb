@@ -13,11 +13,10 @@ import Foundation
 /// accessibility commands. The values mirror the old SimulatorBridge implementation
 /// for downstream compatibility.
 ///
-/// Driven entirely from Swift (`FBAXTranslationRequest` and its remote-content
-/// code), so it is a plain Swift namespace returning a typed element. Each attribute
-/// is read into a statically-typed field, so no scalar is round-tripped through an
-/// untyped `NSNumber`. `axValue()` is the one exception — it is genuinely `Any` — and
-/// is classified into the closed `FBAccessibilityAttributeValue` set at the read site.
+/// Each attribute is read into a statically-typed field, so no scalar is round-tripped
+/// through an untyped `NSNumber`. `axValue()` is the one exception — it is genuinely
+/// `Any` — and is classified into the closed `FBAccessibilityAttributeValue` set at the
+/// read site.
 enum FBAXNodeSerializer {
 
   // MARK: - Entry points
@@ -50,10 +49,8 @@ enum FBAXNodeSerializer {
       return node
     }
     // The target's descendants are built as a subtree of their own, rather than by walking the target
-    // itself, so that the target is always reported and always carries a `children` array. A caller who
-    // named an element by point or marker asked about *that* element; answering with nothing — or with
-    // one of its descendants hoisted into its place — would not answer the question, which is what a
-    // filtered walk rooted at the target would do. The caller filters these children afterwards.
+    // itself, so the target is always reported and always carries a `children` array — a filtered walk
+    // rooted at the target could drop or replace it. The caller filters these children afterwards.
     var children: [FBAccessibilityDocumentElement] = []
     for child in element.axChildren() {
       child.axSetBridgeDelegateToken(token)
@@ -210,8 +207,8 @@ enum FBAXNodeSerializer {
 
     let hittablePoint = element.axHittablePoint().flatMap(FBAccessibilityPoint.init)
     if !hittable {
-      // No reachable point at all. Which of covered, clipped, transparent or handled by a relative it is
-      // cannot be told from this attribute — naming the cause needs the hit-test `occludedBy` pays for.
+      // No reachable point at all. This attribute cannot say whether the element is covered, clipped,
+      // transparent or handled by a relative — naming the cause needs the `occludedBy` hit-test.
       reasons.append(.notHittable)
     }
 
@@ -228,11 +225,9 @@ enum FBAXNodeSerializer {
       return nil
     }
 
-    // A reachable point makes the element actionable, whether or not that point is its centre. For a
-    // partially covered element the centre is exactly what fails and this is the point that does not, so
-    // reporting it is the difference between a caller succeeding and a caller being told it cannot act on
-    // something it demonstrably can. Nothing is lost by not flagging the divergence: a caller that cares
-    // can compare `at` against the frame it already has.
+    // A reachable point makes the element actionable even when that point is not its centre — for a
+    // partially covered element the centre is exactly what fails. A caller that cares can compare `at`
+    // against the frame it already has.
     return .actionable(at: hittablePoint)
   }
 
