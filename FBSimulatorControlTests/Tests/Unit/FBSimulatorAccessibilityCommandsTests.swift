@@ -1191,11 +1191,13 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
   // element nor any of its 15 fetches — but it was still probed for a label, an identifier and a role,
   // and those three fetches were never tallied. The old figures were the cost of a *different* walk,
   // understated; these are the cost of this one.
-  // Four more fetches than the unfiltered walk, one per element: the filter now matches on the
-  // `interactable` verdict, so it requests it. On this backend the verdict is null — there is nothing to
-  // derive it from — and the read is still charged for asking, which is what the count records.
+  // Exactly the unfiltered walk's count, because the filter no longer requests the verdict it could match
+  // on. It used to cost four more — one per element — for a verdict that is null on this backend anyway.
+  //
+  // On the guest lanes the same four attributes are hit-tested by the application per node rather than
+  // read locally, so this count is the cheap end of the same change.
   func testInteractableFilterProfileCountsMatchTheUnfilteredWalk() async throws {
-    assertProfilingData(try await profile(withFilter: .interactable), expectedElements: 4, expectedAttributeFetches: 64)
+    assertProfilingData(try await profile(withFilter: .interactable), expectedElements: 4, expectedAttributeFetches: 60)
   }
 
   // Remote content is discovered after the walk and appended to the output, and the filter now runs

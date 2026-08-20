@@ -72,9 +72,17 @@ public enum FBAccessibilityElementFilter: String, Sendable, CaseIterable {
     case .all:
       return []
     case .interactable:
-      // Both signals: the verdict where the backend has one, and the label/identifier/role the fallback
-      // matches on where it does not.
-      return [.label, .uniqueID, .role, .interactable]
+      // The structural signals only, not the verdict.
+      //
+      // A filter chooses which elements to report. Including `interactable` here also made it choose what
+      // to fetch, and what it fetched was the reachability attributes, which the application hit-tests per
+      // node. That meant choosing a filter made the application hit-test the whole tree.
+      //
+      // The filter now matches on what the read already serialized, which is the rule stated two comments
+      // above. With `--key interactable` the verdict is present and the filter uses it, so occluded
+      // elements are dropped. Without it the filter matches on label, identifier and role, which is what
+      // the translator lane has always done.
+      return [.label, .uniqueID, .role]
     }
   }
 }

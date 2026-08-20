@@ -278,24 +278,31 @@ final class FBAXBridgeReadsTests: XCTestCase {
     )
   }
 
-  // The filter adds the reachability attributes to the request for every node, so `--filter interactable`
-  // makes the application hit-test the whole tree even though the caller only chose which elements to
-  // report.
-  //
-  // BUG: choosing a filter changes what the read fetches. Flipped in the following commit.
-  func testTheInteractableFilterWidensEveryNode() {
+  // A filter chooses which elements to report. It no longer changes what the read fetches, so
+  // `--filter interactable` does not make the application hit-test every node.
+  func testTheInteractableFilterDoesNotWidenTheRead() {
     var options = FBAccessibilityRequestOptions()
     options.filter = .interactable
-    XCTAssertTrue(
+    XCTAssertFalse(
       options.serializationKeys.contains(.interactable),
-      "the filter pulls the verdict into the key set the caller did not ask for"
+      "a filter must not pull the verdict into a key set the caller did not ask for"
     )
+    XCTAssertNil(
+      FBAXWire.Node.fetchList(for: options.serializationKeys),
+      "so a filtered read still names no attributes on the wire, exactly like an unfiltered one"
+    )
+  }
+
+  // Asking for the verdict still fetches the attributes it is derived from.
+  func testAskingForTheVerdictStillFetchesWhatDerivesIt() {
+    var options = FBAccessibilityRequestOptions()
+    options.filter = .interactable
+    options.keys = FBAXKeys.defaultSet.union([.interactable])
     let fetchList = FBAXWire.Node.fetchList(for: options.serializationKeys)
-    XCTAssertNotNil(fetchList, "and so the read names attributes on the wire that a default read does not")
     for reachability in FBAXWire.Node.interactableAttributes {
       XCTAssertTrue(
         fetchList?.contains(reachability.rawValue) ?? false,
-        "\(reachability.rawValue) is fetched for every node because a filter asked"
+        "\(reachability.rawValue) is fetched because the caller asked for the verdict, not because a filter did"
       )
     }
   }

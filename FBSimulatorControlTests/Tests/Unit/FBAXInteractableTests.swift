@@ -478,13 +478,14 @@ final class FBAXInteractableTests: XCTestCase {
     XCTAssertTrue(FBAccessibilityElementFilter.interactable.apply(to: [covered]).isEmpty)
   }
 
-  // Requesting the filter is what puts the verdict on the wire; without this it would silently fall back
-  // to the heuristic on every backend, having been given no verdict to match on.
-  func testTheFilterRequestsTheVerdictItMatchesOn() {
+  // Without `--key interactable` the filter matches on the heuristic, on every backend, which is what the
+  // translator lane has always done. This is deliberate: the verdict costs a hit-test per node, and
+  // choosing which elements to report should not incur that.
+  func testTheFilterDoesNotRequestTheVerdictItCanMatchOn() {
     var options = FBAccessibilityRequestOptions()
     options.filter = .interactable
-    XCTAssertTrue(options.serializationKeys.contains(.interactable))
-    XCTAssertNotNil(FBAXWire.Node.fetchList(for: options.serializationKeys))
+    XCTAssertFalse(options.serializationKeys.contains(.interactable))
+    XCTAssertNil(FBAXWire.Node.fetchList(for: options.serializationKeys))
   }
 
   private static func encode(_ value: FBAccessibilityInteractable) throws -> [String: Any] {
