@@ -46,9 +46,12 @@ enum FBAXRoleVocabulary {
   }
 
   /// A role name with the accessibility `AX` prefix stripped (`AXButton` -> `Button`), matching the
-  /// SimulatorBridge role spelling. A name without the prefix passes through unchanged.
+  /// SimulatorBridge role spelling, and legacy-mangled Swift class names demangled
+  /// (`_TtGC7SwiftUI15CellHostingView…` -> `CellHostingView`). A name needing neither passes
+  /// through unchanged.
   static func normalizeRole(_ role: String) -> String {
-    role.hasPrefix(axPrefix) ? String(role.dropFirst(axPrefix.count)) : role
+    let stripped = role.hasPrefix(axPrefix) ? String(role.dropFirst(axPrefix.count)) : role
+    return FBSwiftClassNameDemangler.demangle(stripped)
   }
 
   /// Whether a role — in either its raw or `AX`-prefixed spelling — is one the `.interactable` filter keeps.

@@ -684,6 +684,24 @@ final class FBAccessibilitySerializationTests: XCTestCase {
     XCTAssertEqual(child[FBAXKeys.type.rawValue] as? String, "Cell", "type strips it")
   }
 
+  // A SwiftUI-backed element reports its class name in the legacy Swift mangling — the guest sends
+  // it as the string `elementType`, the class-name fallback of `axRole()`. The same raw-vs-normalized
+  // divergence applies: `role` carries the wire spelling, `type` the demangled class name.
+  func testMangledSwiftClassNameDemanglesInTypeButNotRole() throws {
+    let mangled = "_TtGC7SwiftUI15CellHostingViewGVS_15ModifiedContentVS_14_ViewList_ViewVS_26CollectionViewCellModifier__"
+    let tree: [String: Any] = [
+      FBAXWire.Node.label.rawValue: "cell",
+      FBAXWire.Node.elementType.rawValue: mangled,
+    ]
+    let elements = FBAXTreeWalk.describeAllElements(
+      fromTree: tree, keys: [.role, .type], nestedFormat: false, pid: 7
+    )
+    let response = FBAccessibilityElementsResponse(elements: .tree(elements))
+    let element = try XCTUnwrap((try response.legacyEnvelopeObject()["elements"] as? [[String: Any]])?.first)
+    XCTAssertEqual(element[FBAXKeys.role.rawValue] as? String, mangled, "role keeps the raw class name")
+    XCTAssertEqual(element[FBAXKeys.type.rawValue] as? String, "CellHostingView", "type demangles it")
+  }
+
   // A non-finite coordinate has no JSON form, so each edge degrades independently to null while the
   // finite ones survive.
   func testNonFiniteFrameEdgesDegradeIndependently() throws {
