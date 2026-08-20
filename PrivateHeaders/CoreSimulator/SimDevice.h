@@ -81,6 +81,10 @@
 - (BOOL)setKeyboardLanguage:(NSString *)arg1 error:(NSError **)arg2;
 - (BOOL)addVideo:(NSURL *)path error:(NSError **)arg2;
 - (BOOL)addPhoto:(NSURL *)path error:(NSError **)arg2;
+// May raise NSInvalidArgumentException instead of returning NO: on bridge-request
+// failure CoreSimulator constructs the failure NSError with a nil domain, which
+// raises out of -[NSError initWithDomain:code:userInfo:]. Call through an ObjC
+// exception guard.
 - (BOOL)addMedia:(NSArray<NSURL *> *)paths error:(NSError **)arg2;
 - (BOOL)openURL:(NSURL *)arg1 error:(NSError **)arg2;
 - (NSUUID *)hostSupportPortWithError:(NSError **)arg1;

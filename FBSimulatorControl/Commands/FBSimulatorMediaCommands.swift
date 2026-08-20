@@ -84,7 +84,9 @@ public final class FBSimulatorMediaCommands: NSObject {
       ) as! [URL]
     if !photosAndVideos.isEmpty {
       do {
-        try simulator.device.addMedia(photosAndVideos)
+        try FBObjCExceptionGuard.guarded {
+          try simulator.device.addMedia(photosAndVideos)
+        }
       } catch {
         throw FBSimulatorError.describe("Failed to add media \(photosAndVideos)").caused(by: error as NSError).build()
       }
@@ -93,7 +95,9 @@ public final class FBSimulatorMediaCommands: NSObject {
     let contacts = (mediaFileURLs as NSArray).filtered(using: FBSimulatorMediaCommands.predicateForContactPaths) as! [URL]
     if !contacts.isEmpty {
       do {
-        try simulator.device.addMedia(contacts)
+        try FBObjCExceptionGuard.guarded {
+          try simulator.device.addMedia(contacts)
+        }
       } catch {
         throw FBSimulatorError.describe("Failed to add contacts \(contacts)").caused(by: error as NSError).build()
       }
