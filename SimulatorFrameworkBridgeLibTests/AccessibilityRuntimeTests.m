@@ -557,6 +557,42 @@ typedef struct FBAXPair {
   XCTAssertTrue([runtime setAutomationModeEnabled:YES], @"a write that takes reads back as the new state");
 }
 
+#pragma mark - Guest phase reporting
+
+// The counts are what make the durations interpretable, so they are pinned against a tree of known
+// shape rather than asserted to be merely present.
+- (void)testADescribeReportsItsWalkAndRoundTripCount
+{
+  FBAXFakeElement *leaf = [FBAXFakeElement readable:@"UIButton"];
+  FBAXFakeElement *root = [FBAXFakeElement readable:@"UIApplication"];
+  root.children = @[leaf];
+  _runtime.applicationElements[@(kAppPid)] = root;
+
+  NSDictionary *response = FBAXBridgeHandleRequest(@{@"verb" : @"describe", @"pid" : @(kAppPid)});
+  NSDictionary *phases = response[@"phases"];
+
+  XCTAssertNotNil(phases, @"every describe reports its phases; this is not behind a flag");
+  XCTAssertEqualObjects(phases[@"mach_round_trips"], @2, @"one round trip per node, root plus leaf");
+  XCTAssertNotNil(phases[@"traverse_ms"]);
+  XCTAssertGreaterThanOrEqual([phases[@"traverse_ms"] doubleValue], 0.0);
+}
+
+// A round-trip count that does not track the tree is worse than none: it would make a per-node cost
+// look constant while the tree grew.
+- (void)testTheRoundTripCountTracksTheTree
+{
+  FBAXFakeElement *root = [FBAXFakeElement readable:@"UIApplication"];
+  NSMutableArray *children = [NSMutableArray array];
+  for (NSUInteger index = 0; index < 5; index++) {
+    [children addObject:[FBAXFakeElement readable:@"UIButton"]];
+  }
+  root.children = children;
+  _runtime.applicationElements[@(kAppPid)] = root;
+
+  NSDictionary *response = FBAXBridgeHandleRequest(@{@"verb" : @"describe", @"pid" : @(kAppPid)});
+  XCTAssertEqualObjects(response[@"phases"][@"mach_round_trips"], @6, @"root plus five children");
+}
+
 #pragma mark - Automation mode on the describe path
 
 // The tri-state the wire carries, driven end to end through the request handler rather than against the

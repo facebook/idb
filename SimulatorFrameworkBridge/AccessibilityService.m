@@ -157,6 +157,22 @@ static NSString *const kResponseMethod = @"method";
 // with subtree collapsing on from the same tree read with it off, and the two are genuinely different
 // answers to the same question.
 static NSString *const kResponseAutomation = @"automation";
+// Where the guest spent its time, and how many round trips it took to get there. Reported on every
+// describe rather than behind a flag: it is a handful of clock reads against a walk measured in
+// milliseconds, and a diagnostic nobody remembers to ask for is a diagnostic that produces no data.
+//
+// The guest reports only what the guest can see. Spawn, connect, transport and decode all happen on the
+// host side of the boundary and are the host's to measure — a duration is only trustworthy from the
+// process that holds both ends of it.
+//
+// Guest-side JSON encoding is deliberately **not** reported, because it cannot honestly be: the encode
+// duration is only known once the response has been encoded, and by then the dictionary that would have
+// carried it is already bytes. Measuring it would mean encoding twice, or carrying it out of band. It
+// therefore falls into the host's residual — total, less what the guest reports, less what the host
+// measures either side of the wire — and the host names it as a residual rather than as a measurement.
+static NSString *const kResponsePhases = @"phases";
+static NSString *const kPhaseTraverse = @"traverse_ms";
+static NSString *const kPhaseMachRoundTrips = @"mach_round_trips";
 static NSString *const kAutomationEnabled = @"enabled";
 static NSString *const kAutomationAsserted = @"asserted";
 // A fullscreen modal/alert descriptor added to a describe response when one is detected in the tree.
@@ -314,6 +330,22 @@ static NSArray<NSString *> *FBAXBridgeFetchListForRequest(NSDictionary<NSString 
     [attributes addObject:kAXChildren];
   }
   return attributes;
+}
+
+// Round trips to the application's accessibility server, counted rather than inferred.
+//
+// Inferring from the node count was wrong for two of the three walks: the translator vocabulary asks for
+// attributes and children separately, so it costs two per node, and explaining an unreachable element
+// adds a hit-test and a read that no node accounts for. A caller dividing the walk's duration by this
+// number to get a per-query cost was reading a figure up to twice the truth.
+//
+// A file-static is safe here: a one-shot guest answers a single request per process, and the serve loop
+// answers one at a time.
+static int64_t gRoundTrips;
+
+static void FBAXBridgeCountRoundTrip(void)
+{
+  gRoundTrips++;
 }
 
 // A union that arrived in a shape its own constructors cannot produce — a `Read` with no attributes, a
@@ -474,6 +506,7 @@ static BOOL FBAXBridgeNodeIsUnreachable(NSDictionary<NSString *, id> *node)
 // hit-test scoped to the app would report the app's own view underneath and call it the answer.
 static NSDictionary<NSString *, id> *_Nullable FBAXBridgeExplanationAtPoint(id<FBAXRuntime> runtime, CGPoint point)
 {
+  FBAXBridgeCountRoundTrip();
   FBAXHitTestOutcome *hit = [runtime hitTestAtPoint:point processIdentifier:0];
   if (hit.status != FBAXHitTestStatusHit) {
     return nil;
@@ -482,6 +515,7 @@ static NSDictionary<NSString *, id> *_Nullable FBAXBridgeExplanationAtPoint(id<F
   if (!hitElement) {
     return nil;
   }
+  FBAXBridgeCountRoundTrip();
   FBAXReadOutcome *read = [runtime readAttributes:FBAXBridgeExplanationFetchList() ofElement:hitElement];
   if (read.status != FBAXReadStatusRead || !read.attributes) {
     return nil;
@@ -514,6 +548,7 @@ static FBAXReadOutcome *FBAXBridgeBuildNode(id<FBAXRuntime> runtime,
                                             int *budget,
                                             BOOL *truncated)
 {
+  FBAXBridgeCountRoundTrip();
   FBAXReadOutcome *outcome = [runtime readAttributes:fetchList ofElement:element];
   if (outcome.status != FBAXReadStatusRead) {
     return outcome;
@@ -600,6 +635,7 @@ static NSDictionary *_Nullable FBAXBridgeBuildTranslatorNode(id<FBAXRuntime> run
     @(FBAXPAttributeRole), @(FBAXPAttributeSubrole), @(FBAXPAttributeVisiblePoint),
     @(FBAXPAttributeTraits), @(FBAXPAttributeMemoryAddress),
   ];
+  FBAXBridgeCountRoundTrip();
   NSDictionary<NSNumber *, id> *values = [runtime translatorAttributes:wanted ofElement:element];
   // Nil is "the read could not be performed", which is not the same answer as an element that answered
   // nothing. Building a node from it would emit a childless, attribute-less node that a caller cannot
@@ -651,6 +687,7 @@ static NSDictionary *_Nullable FBAXBridgeBuildTranslatorNode(id<FBAXRuntime> run
   // in a batch alongside the rest. Asked for even at the depth cap, because "did the cap hide anything"
   // cannot be answered without knowing whether this node has children — the view-hierarchy walk gets
   // that for free in its batch, and this walk has to pay a request for it.
+  FBAXBridgeCountRoundTrip();
   NSDictionary<NSNumber *, id> *kids = [runtime translatorAttributes:@[@(FBAXPAttributeChildren)] ofElement:element];
   id list = kids[@(FBAXPAttributeChildren)];
   NSArray *childElements = [list isKindOfClass:NSArray.class] ? (NSArray *)list : nil;
@@ -733,6 +770,7 @@ NSDictionary<NSString *, NSString *> *_Nullable FBAXBridgeModalDescriptor(NSDict
 // process (e.g. a system modal). The other two methods resolve the authoritative frontmost.
 static FBAXFrontmostOutcome *FBAXBridgeCenterPointFrontmost(id<FBAXRuntime> runtime, CGPoint anchor)
 {
+  FBAXBridgeCountRoundTrip();
   FBAXHitTestOutcome *outcome = [runtime hitTestAtPoint:anchor processIdentifier:0];
   switch (outcome.status) {
     case FBAXHitTestStatusHit:
@@ -902,6 +940,8 @@ static NSDictionary *FBAXBridgeHitTest(id<FBAXRuntime> runtime, NSDictionary *re
   }
   NSNumber *pidNumber = [request[kRequestPid] isKindOfClass:NSNumber.class] ? request[kRequestPid] : nil;
 
+  FBAXBridgeCountRoundTrip();
+
   FBAXHitTestOutcome *outcome = [runtime hitTestAtPoint:CGPointMake(xNumber.doubleValue, yNumber.doubleValue)
                                       processIdentifier:pidNumber ? pidNumber.intValue : 0];
   switch (outcome.status) {
@@ -1061,6 +1101,7 @@ static FBAXWriteOutcome *_Nullable FBAXBridgeResolveWriteTarget(id<FBAXRuntime> 
   NSString *assertValue = [request[kRequestAssertValue] isKindOfClass:NSString.class] ? request[kRequestAssertValue] : nil;
 
   NSNumber *pidNumber = [request[kRequestPid] isKindOfClass:NSNumber.class] ? request[kRequestPid] : nil;
+  FBAXBridgeCountRoundTrip();
   FBAXHitTestOutcome *hit = [runtime hitTestAtPoint:CGPointMake(xNumber.doubleValue, yNumber.doubleValue)
                                   processIdentifier:pidNumber ? pidNumber.intValue : 0];
   switch (hit.status) {
@@ -1084,6 +1125,7 @@ static FBAXWriteOutcome *_Nullable FBAXBridgeResolveWriteTarget(id<FBAXRuntime> 
   }
 
   if (assertKey) {
+    FBAXBridgeCountRoundTrip();
     FBAXReadOutcome *read = [runtime readAttributes:@[assertKey] ofElement:hitElement];
     switch (read.status) {
       case FBAXReadStatusRead:
@@ -1176,6 +1218,7 @@ static NSDictionary *FBAXBridgePerform(id<FBAXRuntime> runtime, NSDictionary *re
   pid_t pid = 0;
   FBAXWriteOutcome *outcome = FBAXBridgeResolveWriteTarget(runtime, request, &element, &pid);
   if (!outcome) {
+    FBAXBridgeCountRoundTrip();
     outcome = [runtime performAction:action onElement:element];
   }
   return FBAXBridgeWriteResponse(outcome, pid);
@@ -1198,6 +1241,7 @@ static NSDictionary *FBAXBridgeSetValue(id<FBAXRuntime> runtime, NSDictionary *r
   pid_t pid = 0;
   FBAXWriteOutcome *outcome = FBAXBridgeResolveWriteTarget(runtime, request, &element, &pid);
   if (!outcome) {
+    FBAXBridgeCountRoundTrip();
     outcome = [runtime setValue:requestedValue onElement:element];
   }
   return FBAXBridgeWriteResponse(outcome, pid);
@@ -1356,6 +1400,8 @@ static NSDictionary<NSString *, id> *FBAXBridgeDispatchRequest(NSDictionary<NSSt
   : kDefaultNodeBudget;
   BOOL truncated = NO;
   NSDictionary *tree = nil;
+  gRoundTrips = 0;
+  const CFAbsoluteTime traverseStarted = CFAbsoluteTimeGetCurrent();
   if ([request[kRequestTranslatorVocabulary] boolValue]) {
     // Whether the application is there at all is a question only the XCTest read answers. The runtime
     // vends an application element for any pid, including one that names no process, and the translator
@@ -1391,6 +1437,9 @@ static NSDictionary<NSString *, id> *FBAXBridgeDispatchRequest(NSDictionary<NSSt
       return FBAXBridgeErrorResponse(@"the tree read reported success and carried no attributes");
     }
   }
+  // Closed before the response is assembled, so it measures the walk and not the bookkeeping after it.
+  const CFAbsoluteTime traverseDuration = CFAbsoluteTimeGetCurrent() - traverseStarted;
+
   // Always report the pid read, so the host tags elements with it — for a fused frontmost read the host
   // does not know the pid until now. `method` rides along when the pid was resolved in-guest.
   NSMutableDictionary *response =
@@ -1399,6 +1448,11 @@ static NSDictionary<NSString *, id> *FBAXBridgeDispatchRequest(NSDictionary<NSSt
     kAutomationEnabled : @(automationEnabled),
     kAutomationAsserted : @(automationAsserted),
   };
+  // `nodesRead` counts one round trip per node, which is what the walk performs.
+  response[kResponsePhases] = [@{
+                                 kPhaseTraverse : @(traverseDuration * 1000),
+                                 kPhaseMachRoundTrips : @(gRoundTrips),
+                               } mutableCopy];
   if (frontmostMethod) {
     response[kResponseMethod] = frontmostMethod;
   }
@@ -1694,6 +1748,9 @@ NSDictionary<NSString *, NSString *> *FBAXBridgeWireConstantsForTesting(void)
     @"envelope.method" : kResponseMethod,
     @"envelope.modal" : kResponseModal,
     @"envelope.automation" : kResponseAutomation,
+    @"envelope.phases" : kResponsePhases,
+    @"phases.traverse" : kPhaseTraverse,
+    @"phases.machRoundTrips" : kPhaseMachRoundTrips,
     @"automation.enabled" : kAutomationEnabled,
     @"automation.asserted" : kAutomationAsserted,
     @"modal.kind" : kModalKind,
