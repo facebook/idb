@@ -281,29 +281,6 @@ extension FBAXTreeReader {
     return identities
   }
 
-  /// The element a hit-test finds at a point, as a descriptor plus the identity used to recognise it as a
-  /// relative. Nil when nothing is there or the hit-test fails, both of which leave the reason as it was.
-  private func elementRef(
-    atCentre centre: CGPoint
-  ) async -> (reference: FBAccessibilityElementRef, identity: FBAXElementIdentity)? {
-    // Only the descriptive attributes, because that is all an occluder carries; asking for `interactable`
-    // here would recurse into another hit-test for an element nobody asked about.
-    let options = FBAccessibilityRequestOptions(keys: [.label, .uniqueID, .type, .role, .frameDict, .pid])
-    guard let response = try? await hitTest(at: centre, options: options),
-      let found = response.elements.elements.first
-    else {
-      return nil
-    }
-    let reference = FBAccessibilityElementRef(
-      type: found.type ?? nil,
-      identifier: found.identifier ?? nil,
-      label: found.label ?? nil,
-      frame: found.frame ?? nil,
-      pid: found.pid ?? nil
-    )
-    return (reference, FBAXElementIdentity(found))
-  }
-
   /// Resolves a query to the point a write acts on, plus the assertion that keeps a two-step write honest.
   ///
   /// `.point` goes straight through — a coordinate names no element, so there is nothing to assert about
