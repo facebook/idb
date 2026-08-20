@@ -255,6 +255,29 @@ final class FBAXBridgeReadsTests: XCTestCase {
     }
   }
 
+  // MARK: - What a read costs is decided by its key set
+
+  // Requesting the reachability attributes makes the application hit-test every node, so the default set
+  // must not contain them. This checks that, rather than relying on the comment that says so.
+  func testTheDefaultKeySetAsksForNoReachabilityAttribute() {
+    for expensive: FBAXKeys in [.interactable, .occludedBy] {
+      XCTAssertFalse(
+        FBAXKeys.defaultSet.contains(expensive),
+        "\(expensive.rawValue) costs a hit-test per node and must stay out of the default set"
+      )
+    }
+  }
+
+  // A default read sends no attribute list at all, so the guest uses its own default. That keeps the
+  // request identical to one from a host that predates the field, and guarantees nothing extra is
+  // fetched.
+  func testADefaultReadNamesNoAttributesOnTheWire() {
+    XCTAssertNil(
+      FBAXWire.Node.fetchList(for: FBAXKeys.defaultSet),
+      "a default read must leave the attribute list off the wire entirely"
+    )
+  }
+
   // MARK: - Where the accessibility-server remediation is offered
 
   private static let axBridge = FBUIAutomationBackend.axBridge(persistence: .oneShot, frontmostMethod: .centerPoint, automationMode: true)
