@@ -35,9 +35,8 @@ public enum FBAXKeys: String, Sendable, CaseIterable {
   case isRemote = "is_remote"
   /// Whether the element can be acted on, and why not when it cannot.
   ///
-  /// Not in `defaultSet`, and it should stay out. `isVisible` and `visiblePoint` cannot be looked up: the
-  /// application hit-tests the element to answer them, so requesting them for a whole tree makes it
-  /// hit-test every node. The cost is per node and much larger than the extra bytes suggest.
+  /// Not in `defaultSet`: `isVisible` and `visiblePoint` cannot be looked up — the application
+  /// hit-tests the element to answer them — so requesting them for a whole tree hit-tests every node.
   ///
   /// Only the guest lanes are affected. `axIsHittable()` returns nil on the translator lane, which has no
   /// equivalent attributes, so the verdict is null there and nothing extra is fetched.
@@ -49,37 +48,22 @@ public enum FBAXKeys: String, Sendable, CaseIterable {
 
   /// What `occluded_by` needs serialized to do its work.
   ///
-  /// It hit-tests an element's centre and then has to recognise whether the element that answered is a
-  /// relative of the target or a stranger. Both halves need fields: the centre comes from the frame, and
-  /// the recognition compares what the two reads can both see. A field present on one side and absent on
-  /// the other never matches, so a relative reads as a stranger and a label inside its own button gets
-  /// reported as *covered by* something — a confident, wrong answer. Requesting them together is what
-  /// keeps the comparison symmetric.
+  /// The hit-test aims at the frame's centre, then compares serialized fields on both sides to
+  /// recognise whether the answering element is a relative of the target or a stranger. A field absent
+  /// on either side never matches, so these must be requested together.
   public static let occluderIdentityKeys: Set<FBAXKeys> = [.interactable, .frameDict, .type, .uniqueID, .label]
 
-  /// Every key this reader can answer.
+  /// Every key this reader can answer. Derived from `allCases`, so a key added to the enum joins
+  /// automatically.
   ///
-  /// Derived from `allCases` rather than listed, so a key added to the enum joins it automatically. A
-  /// hand-written set would drift the moment someone added one, and drift silently — the caller asking
-  /// for everything is the least likely to notice a missing field.
-  ///
-  /// **Costs more than the default set, and not only in bytes.** It includes `interactable` and
-  /// `occludedBy`, which widen the attributes the guest fetches per element, and `occludedBy` makes the
-  /// guest hit-test the centre of every element it judges unreachable. On a large tree that is a real
-  /// per-element cost, so this is for a caller that wants a complete dump and has accepted paying for it
-  /// — not a better default.
+  /// Includes `interactable` and `occludedBy`, which are costly — see those keys.
   public static let everything: Set<FBAXKeys> = Set(allCases)
 
-  /// The token a caller passes instead of naming every key: `--key all`.
-  ///
-  /// Reserved rather than a case of the enum, because it is not a key — it does not name a field, and a
-  /// node never carries it. Kept here so the spelling lives beside the vocabulary it expands to.
+  /// The token a caller passes instead of naming every key: `--key all`. Not a case of the enum: it
+  /// names no field, and a node never carries it.
   public static let everythingToken = "all"
 
   /// Every value `--key` accepts: the token, then the keys themselves.
-  ///
-  /// Derived here rather than assembled at the command line, so a front end cannot list a set that has
-  /// drifted from the one `requested(_:)` actually parses.
   public static var allArgumentStrings: [String] { [everythingToken] + allCases.map(\.rawValue) }
 
   /// Whether a `--key` value is one this vocabulary accepts, token included.
@@ -87,10 +71,8 @@ public enum FBAXKeys: String, Sendable, CaseIterable {
     raw == everythingToken || FBAXKeys(rawValue: raw) != nil
   }
 
-  /// The keys a caller asked for, expanding `all` and dropping anything unrecognised.
-  ///
-  /// `all` wins over anything alongside it: a caller who asked for everything and one specific key wants
-  /// everything, and intersecting the two would answer with less than either request on its own.
+  /// The keys a caller asked for, expanding `all` and dropping anything unrecognised. `all` wins over
+  /// any keys listed alongside it.
   public static func requested(_ raw: [String]) -> Set<FBAXKeys> {
     raw.contains(everythingToken) ? everything : Set(raw.compactMap(FBAXKeys.init(rawValue:)))
   }

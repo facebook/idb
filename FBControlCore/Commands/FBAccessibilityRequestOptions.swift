@@ -50,13 +50,10 @@ public enum FBAccessibilityElementFilter: String, Sendable, CaseIterable {
   /// the list worth choosing from.
   ///
   /// On a backend that cannot judge interactability — the legacy accessibility path, which has no
-  /// counterpart for the attributes the verdict is derived from — it falls back to the structural
-  /// heuristic it used to be: keep an element carrying a label, an identifier, or an actionable role.
-  /// The intent of the flag is the same either way, and the precision follows the backend. Falling back
-  /// beats reporting nothing, which is what a strict reading would do on `--api ax`.
+  /// counterpart for the attributes the verdict is derived from — it falls back to a structural
+  /// heuristic: keep an element carrying a label, an identifier, or an actionable role.
   ///
-  /// **It drops occluded elements**, which is the point of asking, and worth knowing when debugging: a
-  /// covered button is exactly what this hides. To see one *and* why it is blocked, read with `.all` and
+  /// It drops occluded elements. To see a covered element and why it is blocked, read with `.all` and
   /// `--key interactable`. Marker lookup and writes are unfiltered, so this never affects whether an
   /// element can be found or acted on — only what a describe reports.
   case interactable
@@ -72,16 +69,10 @@ public enum FBAccessibilityElementFilter: String, Sendable, CaseIterable {
     case .all:
       return []
     case .interactable:
-      // The structural signals only, not the verdict.
-      //
-      // A filter chooses which elements to report. Including `interactable` here also made it choose what
-      // to fetch, and what it fetched was the reachability attributes, which the application hit-tests per
-      // node. That meant choosing a filter made the application hit-test the whole tree.
-      //
-      // The filter now matches on what the read already serialized, which is the rule stated two comments
-      // above. With `--key interactable` the verdict is present and the filter uses it, so occluded
-      // elements are dropped. Without it the filter matches on label, identifier and role, which is what
-      // the translator lane has always done.
+      // Structural signals only, never the verdict: including `interactable` here would force fetching
+      // the reachability attributes, which the application answers by hit-testing every node. When the
+      // read serialized the verdict (`--key interactable`) the filter uses it, so occluded elements are
+      // dropped; otherwise it matches on label, identifier and role.
       return [.label, .uniqueID, .role]
     }
   }
@@ -95,21 +86,16 @@ public enum FBAccessibilityElementFilter: String, Sendable, CaseIterable {
 /// second.
 ///
 /// Chosen per read rather than per backend, and kept separate from persistence and frontmost resolution:
-/// traversal, transport and frontmost are independent. Welding them together is what made the semantic
-/// tree cost a host round trip.
+/// traversal, transport and frontmost are independent.
 ///
-/// **A reachability verdict is scoped to what the strategy returned, not to what is on screen.** `semantic`
-/// answers reachability for every element it returns, and on a feed returns fewer elements than
-/// `viewHierarchy` — 11 against 30. So "reachable 100%" from a semantic read means "everything this read
-/// found is reachable", not "everything on the screen is reachable". The two are independent: a strategy can
-/// be right about reachability and incomplete about content at once, and comparing coverage across
-/// strategies compares two different denominators.
+/// **A reachability verdict is scoped to what the strategy returned, not to what is on screen.**
+/// `semantic` typically returns fewer elements than `viewHierarchy`, so "reachable 100%" from a
+/// semantic read means "everything this read found is reachable", not "everything on the screen is
+/// reachable". A strategy can be right about reachability and incomplete about content at once.
 ///
-/// Which strategy returns more is a property of the screen, not of the strategies. The two read different
-/// child relations, and an app can leave either one wrong: on a screen whose window serves a stale
-/// automation-elements override, `viewHierarchy` returns the previous screen's subtree while `semantic`
-/// returns the current one. So a smaller count is not evidence of a less complete read, and neither
-/// strategy's count can be treated as the denominator the other should be measured against.
+/// Which strategy returns more is a property of the screen, not of the strategies: they read different
+/// child relations, and an app can leave either one wrong (a stale automation-elements override, for
+/// example). Neither strategy's count is the denominator the other should be measured against.
 ///
 /// A strategy need not answer everything for every element: `semantic` answers `type` only for the
 /// translator roles that have been identified. A key it cannot always satisfy is warned about rather than
@@ -122,13 +108,6 @@ public enum FBAXTraversalStrategy: String, Sendable, CaseIterable {
   case singleFetch = "single-fetch"
 
   /// The keys this traversal cannot answer for every element, whatever the caller asks for.
-  ///
-  /// Distinct from two things a read can do that no key list describes. **An absent attribute means the app
-  /// answered nothing for it**, and is indistinguishable from an attribute that was never asked for — both
-  /// vocabularies drop a key rather than carry an empty value, and the translator additionally drops a key
-  /// whose failure it could not convert. **A zero is a real answer, not a missing one**: several attributes
-  /// are inherited getters whose default implementation returns zero for every element, so reading `0` means
-  /// the app said zero and not that the read could not ask.
   ///
   /// A key is listed when the traversal itself — not the app — can leave an element without it.
   /// `semantic` answers `type` from the translator's own role numbering, and only the identified roles
@@ -154,17 +133,16 @@ public struct FBAccessibilityRequestOptions: Sendable {
   ///
   /// `complete` reports two attributes only through their canonical counterparts — the stringified
   /// `AXFrame` through the `frame` object, and the raw `role` through the normalized `type` — so a
-  /// caller asking for either would otherwise get nothing back for it. Reading the counterpart too is
-  /// what keeps "an attribute you asked for is present in the output" true under that format.
+  /// caller asking for either would otherwise get nothing back for it. Reading the counterpart too
+  /// keeps "an attribute you asked for is present in the output" true under that format.
   ///
   /// The enrichers that run over the serialized model widen it too. They read the model rather than the
   /// live element, so an attribute the read did not serialize is one they cannot see: a narrow `--key`
   /// would otherwise silently disable them rather than narrow the output. For those the cost is only in
   /// bytes — the walk fetches the frame for every node regardless of the key set.
   ///
-  /// That is not true of every widening. `interactable` and `occludedBy` add attributes the application
-  /// has to hit-test to answer, for every node in the tree. Adding either to this set costs far more than
-  /// the extra bytes.
+  /// That is not true of every widening: `interactable` and `occludedBy` are costly to fetch — see
+  /// `FBAXKeys.interactable`.
   public var serializationKeys: Set<FBAXKeys> {
     Self.serializationKeys(for: keys, format: format, filter: filter, collectFrameCoverage: collectFrameCoverage)
   }
@@ -191,8 +169,7 @@ public struct FBAccessibilityRequestOptions: Sendable {
     var expanded = keys
     // `occluded_by` enriches `interactable`'s reasons rather than emitting a field of its own, so asking
     // for it asks for the thing it enriches — and for the frame, since the hit-test it performs is aimed
-    // at the element's centre and has nowhere else to get one. Without the frame it silently found no
-    // centre and enriched nothing, which looked exactly like an element that needed no enrichment.
+    // at the element's centre and has nowhere else to get one.
     if expanded.contains(.occludedBy) {
       expanded.formUnion(FBAXKeys.occluderIdentityKeys)
     }
@@ -218,8 +195,7 @@ public struct FBAccessibilityRequestOptions: Sendable {
   public var nestedFormat: Bool { format != .default }
 
   /// Which properties a read returns. Defaults to `FBAXKeys.defaultSet` (the standard keys); pass an
-  /// explicit set to narrow it. Not optional: "unset" and "the default set" are the same request, and
-  /// making that one value keeps every backend from inventing its own reading of an absent set.
+  /// explicit set to narrow it. Not optional: "unset" and "the default set" are the same request.
   public var keys: Set<FBAXKeys>
 
   /// Log accessibility requests and responses to the simulator's logger. Default: `false`.
@@ -237,7 +213,7 @@ public struct FBAccessibilityRequestOptions: Sendable {
   /// Which elements to include in a describe-all read. Default: `.all`.
   public var filter: FBAccessibilityElementFilter
 
-  /// How the read traverses. Default: `.viewHierarchy`, which is what every caller got before this existed.
+  /// How the read traverses. Default: `.viewHierarchy`.
   public var traversalStrategy: FBAXTraversalStrategy
 
   /// The keys this read asked for that its traversal cannot answer for every element. Empty for the

@@ -9,9 +9,7 @@ import CoreGraphics
 import Foundation
 
 /// The canonical name of a UI-automation backend: the value the `complete` document carries, and the
-/// token a consumer selects a backend by. Named here rather than reusing the backend enum itself,
-/// because that enum belongs to the simulator layer, which maps its cases to and from these names —
-/// both directions live on `FBUIAutomationBackend`, pinned as a total bijection over `allCases`.
+/// token a consumer selects a backend by. The simulator layer's backend enum maps to and from these names.
 public enum FBUIAutomationBackendName: String, Sendable, Encodable, CaseIterable {
   case ax
   case axBridge = "axbridge"
@@ -19,9 +17,7 @@ public enum FBUIAutomationBackendName: String, Sendable, Encodable, CaseIterable
   case testmanagerd
 }
 
-/// The space an element frame is expressed in. A single case today; it exists so that a read expressed
-/// against something other than the whole screen has a place to say so, rather than callers having to
-/// infer it.
+/// The space an element frame is expressed in.
 public enum FBAccessibilityCoordinateSpace: String, Sendable, Encodable {
   case screen
 }
@@ -78,9 +74,6 @@ public struct FBAccessibilityFrame: Sendable, Equatable, Encodable {
 
 public extension FBAccessibilityFrame {
   /// The rectangle this frame describes, or `nil` when any edge was not representable.
-  ///
-  /// Each edge degrades to `nil` independently, but a rectangle missing one is not a smaller rectangle
-  /// — it is no rectangle. A geometric consumer gets nothing rather than a plausible wrong shape.
   var rect: CGRect? {
     guard let x, let y, let width, let height else {
       return nil
@@ -193,20 +186,8 @@ public struct FBAccessibilityTargetDescriptor: Sendable, Equatable, Encodable {
 
 /// How much of the screen a read's element frames cover, measured along several dimensions.
 ///
-/// One ratio was not enough to answer the question coverage exists for. Every backend exposes a chain
-/// of full-screen containers — a window, an application element, a stack of layout groups — so a ratio
-/// over *every* element saturates at `1.0` on almost any real screen and discriminates nothing. The
-/// signal is in the **spread** between these:
-///
-/// - `walked` high and `content` low is a container-heavy tree: plenty of structure, little that a
-///   user can actually perceive.
-/// - `leaf` high and `content` low is area the app draws but does not describe — the unexposed WebView
-///   case that motivated collecting coverage in the first place.
-/// - `frame` far below `walked` means the caller's `--filter` hid most of what was read, which is a
-///   fact about the request rather than about the screen.
-///
 /// Every ratio comes from the same grid over the same single walk, differing only in which subset of
-/// elements is marked into it, so the set costs no extra traversal and no extra IPC over reporting one.
+/// elements is marked into it.
 public struct FBAccessibilityCoverage: Sendable, Equatable, Encodable {
 
   /// Coverage of the elements the read *reports* — what a consumer actually receives.
@@ -215,36 +196,22 @@ public struct FBAccessibilityCoverage: Sendable, Equatable, Encodable {
   /// Coverage of the elements the read *walked*, before `--filter` narrowed them. Equal to `frame`
   /// under the default filter, which drops nothing.
   ///
-  /// Named for the walk rather than for the tree because the two are not always the same: the guest
-  /// backends bound their walk by depth and node count, and a read that hit those bounds reports
-  /// `truncated` and never saw the rest of the tree. This is what was read, which is the most any
-  /// calculation over the result can honestly claim.
+  /// Named for the walk rather than for the tree: the guest backends bound their walk by depth and
+  /// node count, and a truncated read never saw the rest of the tree.
   ///
-  /// The pair is the useful signal. A `frame` far below `walked` means the filter hid most of the
-  /// screen's content; both being low means the app is not exposing it in the first place — a WebView
-  /// or other remote content.
+  /// A `frame` far below `walked` means the filter hid most of the screen's content; both being low
+  /// means the app is not exposing it in the first place — a WebView or other remote content.
   public let walked: Double
 
-  /// Coverage of the walked elements a user could actually perceive: those carrying a label and having
-  /// no children.
+  /// Coverage of the walked elements a user could perceive: those carrying a label with no labelled
+  /// descendant.
   ///
-  /// Both halves are load-bearing, and each is what makes the number survive a real tree.
+  /// Labelled, not identified: an identifier is a developer handle and says nothing about what a user
+  /// perceives. Innermost, not childless: a label is disowned only by a *labelled* descendant, so an
+  /// app icon — a labelled button wrapping an unlabelled image — still counts.
   ///
-  /// **Labelled, not identified.** An identifier is a developer handle for automation — `app-window`,
-  /// `scroll-view`, the identifier on an unexposed `WKWebView`. It says nothing about whether a user can
-  /// perceive anything there, so counting it reports an empty WebView as fully covered, which is the
-  /// exact condition coverage exists to detect. A label is what a user perceives.
-  ///
-  /// **Innermost, not merely childless.** A label is disowned by a *labelled* descendant, not by having
-  /// children at all. Counting a labelled ancestor would let a single window carrying a title cover the
-  /// screen on its own, since coverage is a union of areas and one full-screen element saturates it.
-  /// Requiring childlessness instead goes too far the other way: an app icon is a labelled button
-  /// wrapping an unlabelled image, so a home screen full of them would measure zero.
-  ///
-  /// Measured over the walk, not over what `--filter` left behind, so it answers the same question
-  /// whatever the caller asked to be *shown*.
-  ///
-  /// `nil` for a flat read, which carries no `children` and so cannot tell a leaf from a container.
+  /// Measured over the walk, not over what `--filter` left behind. `nil` for a flat read, which
+  /// carries no `children` and so cannot tell a leaf from a container.
   public let content: Double?
 
   /// Coverage of the walked elements with no children, labelled or not. Read against `content`: a `leaf`
@@ -283,22 +250,17 @@ public struct FBAccessibilityCoverage: Sendable, Equatable, Encodable {
 
 /// Whether an element can be acted on, and — when it cannot — why.
 ///
-/// One field rather than a handful of raw booleans, because the raw values are only meaningful in
-/// combination and publishing them separately invites the naive conjunction that `enabled` already
-/// suffers from. Automation asks one question; this answers it.
-///
 /// A sum type, so **the point exists only on the actionable case**. There is no representable state in
 /// which a caller holds a tap point for an element it cannot tap, and none in which a reason sits beside
 /// a point that contradicts it. It also keeps the accessibility server's `(-1, -1)` "nothing is
 /// reachable" sentinel off the wire entirely: no reachable point is the *absence* of `.actionable`,
 /// not a magic coordinate every consumer has to know to test for.
 ///
-/// **`.actionable` must not be read as "a tap will land".** It is derived from the application's own
-/// render tree, which cannot see another process compositing on top of it — a system alert or SpringBoard
-/// chrome over the app does not change any of these attributes. What it warrants is narrower and exact:
-/// nothing *this application* knows about blocks interaction, and `at` is where the application believes
-/// a touch reaches. Naming an occluder in another process needs a hit-test, which is what
-/// `FBAXKeys.occludedBy` buys.
+/// `.actionable` does not mean "a tap will land": it is derived from the application's own render
+/// tree, which cannot see another process compositing on top of it — a system alert or SpringBoard
+/// chrome over the app does not change these attributes. It means nothing *this application* knows
+/// about blocks interaction, and `at` is where the application believes a touch reaches. Naming an
+/// occluder in another process requires the `FBAXKeys.occludedBy` hit-test.
 public enum FBAccessibilityInteractable: Sendable, Equatable {
 
   /// The element can be acted on, at this point. Not necessarily the frame centre: for a partially
@@ -317,31 +279,16 @@ public enum FBAccessibilityInteractable: Sendable, Equatable {
   /// Why an element cannot be acted on. A closed vocabulary, each case traceable to an attribute that was
   /// actually read rather than to a heuristic over geometry.
   ///
-  /// Two tiers. Every case but `notHittable` names a cause and says what to do about it; `notHittable` is
-  /// the bare observation that the accessibility server found no reachable point and did not say why. The
-  /// tiers accumulate rather than compete — an element is routinely both unreachable and clipped — and
-  /// the ordering in `blocked` keeps the explanations ahead of the observation.
+  /// Every case but `notHittable` names a cause; `notHittable` is the bare observation that the server
+  /// found no reachable point. Reasons accumulate — an element is routinely both unreachable and
+  /// clipped — and `blocked` orders explanations ahead of the observation.
   public enum Reason: Sendable, Equatable {
     /// The accessibility server can name no point at which a touch reaches this element, and has not
-    /// said why.
+    /// said why: `IsVisible == false` read straight through.
     ///
-    /// An observation, not a cause — the only case here that explains nothing. It is `IsVisible == false`
-    /// read straight through, and it is the most common blocked shape by some margin, so it is worth
-    /// being exact about what it does *not* mean:
-    ///
-    /// - **Not "off screen".** An element entirely outside the screen is absent from the tree altogether.
-    /// - **Not "hidden".** A full-screen pass-through container reports it while being plainly visible.
-    /// - **Not "something is on top".** Elements sharing a frame can all report a reachable point.
-    ///
-    /// What it does cover is at least four situations needing four different responses: a label inside a
-    /// tappable control (act on the parent), a pass-through container (act on the child), an element
-    /// genuinely covered by an unrelated one (move the occluder), and one that is transparent or clipped
-    /// by an ancestor (nothing will help). Only a hit-test can separate them, which is why this cannot be
-    /// removed in favour of more precise cases — none of the freely-available signals discriminate. In
-    /// particular "an actionable ancestor exists" does not: the application root is itself actionable and
-    /// full-screen, so it is true of every element on the screen.
-    ///
-    /// Because it explains nothing it sorts last in `reasons`, behind anything that does.
+    /// Covers several situations only a hit-test can separate — a label inside a tappable control, a
+    /// pass-through container, an element genuinely covered by an unrelated one, and one transparent
+    /// or clipped by an ancestor. Because it explains nothing it sorts last in `reasons`.
     case notHittable
     /// The element has a reachable point, but it is not the centre — so the centre is covered, and
     /// automation aiming there hits whatever is on top. `by` names that element when a hit-test was paid
@@ -363,17 +310,12 @@ public enum FBAccessibilityInteractable: Sendable, Equatable {
     case hidden
     /// The element has no area to tap.
     case zeroSize
-    /// Part of the element's frame lies outside the screen.
+    /// Part of the element's frame lies outside the screen. The recovery is to bring the element fully
+    /// into view and try again.
     ///
-    /// A geometric fact rather than a claim about cause — it accumulates alongside whatever else blocks
-    /// the element rather than replacing it, because being clipped by the edge and being covered are not
-    /// alternatives and an element is often both. It earns a place in the vocabulary by licensing a
-    /// recovery none of the others do: bring the element fully into view and try again.
-    ///
-    /// The accessibility server never reports this. It is not "off screen" — an element entirely outside
-    /// the screen is absent from the tree altogether, which is the server behaving correctly — but the
-    /// partially-clipped case is both real and common, and is plain geometry against the screen bounds
-    /// the document already carries.
+    /// Never reported by the server; computed from plain geometry against the screen bounds the
+    /// document carries. Accumulates alongside other reasons — clipped and covered are not
+    /// alternatives, and an element is often both.
     case clippedByScreen
   }
 }
@@ -388,8 +330,7 @@ public struct FBAccessibilityPoint: Sendable, Equatable, Encodable {
     self.y = y
   }
 
-  /// Nil when either coordinate is not representable, for the reason `FBAccessibilityFrame` normalizes
-  /// its edges: a point missing one coordinate is not a nearer point, it is no point.
+  /// Nil when either coordinate is non-finite, as `FBAccessibilityFrame` normalizes its edges.
   public init?(_ point: CGPoint) {
     guard point.x.isFinite, point.y.isFinite else {
       return nil
@@ -401,9 +342,8 @@ public struct FBAccessibilityPoint: Sendable, Equatable, Encodable {
 /// An element resolved by a hit-test — whatever actually receives a touch aimed at another element.
 ///
 /// Descriptive rather than a handle: a hit-test resolves an element with no identity that outlives the
-/// call, so what can honestly be reported is what it looked like. Used for both an unrelated element
-/// covering the target and a relative of the target that takes the touch on its behalf, because from the
-/// hit-test's point of view those are the same answer read two different ways.
+/// call. Used both for an unrelated element covering the target and for a relative of the target that
+/// takes the touch on its behalf.
 public struct FBAccessibilityElementRef: Sendable, Equatable, Encodable {
   public let type: String?
   public let identifier: String?
@@ -440,10 +380,6 @@ public struct FBAccessibilityElementRef: Sendable, Equatable, Encodable {
 
 public extension FBAccessibilityInteractable.Reason {
   /// Whether this reason merely observes that the element is unreachable, without explaining it.
-  ///
-  /// Exactly one case is an observation today. It is expressed as a property rather than an equality
-  /// check so that a second one added later sorts correctly by saying so, rather than by someone
-  /// remembering to update a sort.
   var isBareObservation: Bool {
     if case .notHittable = self { return true }
     return false
@@ -465,10 +401,6 @@ public extension FBAccessibilityInteractable {
 
   /// The union is **internally tagged**: every value is an object and the shapes differ by case, so a
   /// consumer discriminates on `status` rather than probing for which key happens to be present.
-  ///
-  /// A literal tag is what lets TypeScript — the main consumer — narrow the union; probing for `at` would
-  /// read a malformed or future payload as blocked; and a third case can later be added additively
-  /// instead of breaking discrimination.
   enum CodingKeys: String, CodingKey {
     case status
     case at
@@ -500,7 +432,6 @@ extension FBAccessibilityInteractable: Encodable {
 
 extension FBAccessibilityInteractable.Reason: Encodable {
 
-  /// `kind` rather than `reason`, so a member of `reasons` does not read as `{"reason": …}` repeated.
   enum CodingKeys: String, CodingKey {
     case kind
     case by
@@ -536,15 +467,9 @@ extension FBAccessibilityInteractable.Reason: Encodable {
 
 /// How well this read could explain the elements it found blocked.
 ///
-/// Exists to make the vocabulary's own quality measurable from any read, rather than something you learn
-/// by analysing output offline. `notHittable` is the bare observation — the accessibility server saying
-/// it found no reachable point, without saying why — and the goal for it is to trend towards never being
-/// the *only* thing reported about an element. `unexplained` counts exactly that case, so a consumer or a
-/// dashboard can watch the ratio fall as more precise reasons are added, and notice if it climbs.
-///
-/// It deliberately does not hide the bare observation to flatter the number: an element nothing explains
-/// is still reported as blocked, because a caller acting on it needs to know it cannot act, whether or
-/// not we can say why.
+/// `unexplained` counts elements whose only reason is the bare `notHittable` observation. An element
+/// nothing explains is still reported as blocked: a caller acting on it needs to know it cannot act,
+/// whether or not the reason is known.
 public struct FBAccessibilityInteractionSummary: Sendable, Equatable, Encodable {
 
   /// Elements reported actionable.
@@ -553,7 +478,7 @@ public struct FBAccessibilityInteractionSummary: Sendable, Equatable, Encodable 
   public let blocked: Int
   /// Of those, the ones carrying *only* a bare observation — blocked with nothing that explains it.
   public let unexplained: Int
-  /// `unexplained / blocked`, or nil when nothing was blocked. The number to watch: it should fall.
+  /// `unexplained / blocked`, or nil when nothing was blocked.
   public let unexplainedRatio: Double?
 
   public init(actionable: Int, blocked: Int, unexplained: Int) {
@@ -567,7 +492,7 @@ public struct FBAccessibilityInteractionSummary: Sendable, Equatable, Encodable 
   ///
   /// Nil rather than zeroes, because "not requested" and "requested, and the backend could not answer"
   /// must not read as "a screen with nothing blocked". A legacy-backend read, where every verdict is
-  /// null, reports nothing here rather than a flattering 0 unexplained.
+  /// null, reports nothing here rather than 0 unexplained.
   public init?(elements: [FBAccessibilityDocumentElement]) {
     var actionable = 0
     var blocked = 0
@@ -615,35 +540,24 @@ public struct FBAccessibilityInteractionSummary: Sendable, Equatable, Encodable 
 
 /// How many of a read's elements carry a usable rectangle.
 ///
-/// A read can be well-formed, untruncated, error-free and still describe a screen that is not there. When
-/// that happens the elements are real objects read live, so their labels are current and plausible, but
-/// they are no longer in a window — and a view out of its window reports `CGRectZero` while keeping its
-/// label. Geometry is therefore the one attribute that degrades when the tree does, which makes this
-/// tally the cheapest available signal for a class of fault that every count- and size-based measure
-/// reads as perfectly healthy.
+/// A view out of its window reports `CGRectZero` while keeping its label, so geometry is the one
+/// attribute that degrades when the tree does; the framed-to-zero-framed split within one read is the
+/// signal. Raw counts, no ratio and no verdict: what proportion is suspicious depends on the screen —
+/// a scrolled-away list legitimately contributes zero-framed elements — so the threshold belongs to
+/// the consumer.
 ///
-/// Raw counts, no ratio and no verdict. What proportion is suspicious depends on the screen — a
-/// scrolled-away list legitimately contributes zero-framed elements — so the threshold belongs to
-/// whoever is analysing, not here.
+/// `total` counts elements carrying a `frame` attribute, not "things on screen": a single visible row
+/// routinely contributes several framed elements.
 ///
-/// **`total` is not "things on screen".** A single visible row routinely contributes more than one
-/// element — the actionable cell and the non-hittable label inside it are both real, both carry frames,
-/// and both are counted. That is correct accessibility structure rather than duplication, but it makes
-/// the absolute numbers unsuitable for anything but comparison against each other. The signal is the
-/// framed-to-zero-framed split within one read, which is unaffected: whatever the multiplier, it applies
-/// to both sides of it.
-///
-/// `nil` when the read did not carry `frame` at all, which is a caller's choice via `--key`. Nil rather
-/// than zeroes, for the reason `FBAccessibilityInteractionSummary` uses: "not requested" must not read
-/// as "every element is framed".
+/// `nil` when the read did not carry `frame` at all. Nil rather than zeroes, as in
+/// `FBAccessibilityInteractionSummary`: "not requested" must not read as "every element is framed".
 public struct FBAccessibilityFrameSummary: Sendable, Equatable, Encodable {
 
   /// Elements carrying a `frame` attribute, whatever its value.
   public let total: Int
   /// Of those, the ones with a positive-area rectangle.
   public let framed: Int
-  /// Of those, the ones whose rectangle has no area, or whose edges were not representable. These keep
-  /// their labels, which is what makes them indistinguishable from healthy elements by content alone.
+  /// Of those, the ones whose rectangle has no area, or whose edges were not representable.
   public let zeroFrame: Int
 
   public init(total: Int, framed: Int, zeroFrame: Int) {
@@ -659,9 +573,8 @@ public struct FBAccessibilityFrameSummary: Sendable, Equatable, Encodable {
     func visit(_ element: FBAccessibilityDocumentElement) {
       if let frame = element.frame {
         total += 1
-        // A rectangle counts as framed only with area on both axes. A missing edge is not a smaller
-        // rectangle — `FBAccessibilityFrame.rect` already declines to invent one — so it falls through
-        // to the zero-frame side rather than being silently dropped from the tally.
+        // Counts as framed only with area on both axes; a frame with a missing edge (`rect == nil`)
+        // falls to the zero-frame side rather than being dropped from the tally.
         if let rect = frame?.rect, rect.width > 0, rect.height > 0 {
           framed += 1
         }
@@ -688,30 +601,21 @@ public struct FBAccessibilityFrameSummary: Sendable, Equatable, Encodable {
 
 /// Where a guest-backed read spent its time.
 ///
-/// A separate type from `FBAccessibilityProfilingData` rather than a widening of it, because the two
-/// backends measure disjoint things: `translationDuration` is not a concept a guest read has, and
-/// `spawn` is not one the translator has. A single struct carrying both would be mostly nulls on either
-/// lane, and would give `null` a third meaning — "not applicable to this backend" — in an envelope that
-/// keeps it at one.
+/// A separate type from `FBAccessibilityProfilingData` because the two backends measure disjoint
+/// phases; the document's `backend` field says which shape a consumer is holding.
 ///
-/// Nothing discriminates between the two at this level and nothing needs to: the document already
-/// carries `backend`, so a consumer knows which shape it is holding before it looks.
-///
-/// The first five fields are the core: the phases every backend can report, spelled identically
-/// wherever they appear. That is a convention, not inheritance — telemetry needs one comparable number
-/// across lanes or "which lane is slow" cannot be asked, and duplicating five names is cheaper than a
-/// base type that has to widen whenever either lane learns to measure something new.
+/// The first five fields are the core, spelled identically in both profiles so the lanes stay
+/// comparable.
 public struct FBAXBridgeProfile: Sendable, Equatable, Encodable {
 
   // MARK: The core, spelled identically in every backend's profile
 
   /// Elements in the serialized read.
   public let elementCount: Int64
-  /// Wall time for the whole read, host-side: the number a caller waited.
+  /// Wall time for the whole read, host-side.
   public let totalDuration: CFAbsoluteTime
   /// Everything the round trip was not the guest's walk: getting a usable guest, the guest's own JSON
-  /// encoding, and the IPC. A **residual**, not a measurement — neither side can separate those three
-  /// from where it stands, and on a warm persistent read it is mostly the last two rather than the first.
+  /// encoding, and the IPC. A **residual**, not a measurement — neither side can separate the three.
   public let acquireDuration: CFAbsoluteTime
   /// Pulling the tree out of the application.
   public let readDuration: CFAbsoluteTime
@@ -720,12 +624,11 @@ public struct FBAXBridgeProfile: Sendable, Equatable, Encodable {
 
   // MARK: What only a guest-backed read has
 
-  /// Round trips to the application's accessibility server — one per node today. What makes
-  /// `traverseDuration` interpretable rather than just large.
+  /// Round trips to the application's accessibility server — one per node.
   public let machRoundTrips: Int64?
-  /// Decoding that JSON, host-side. The other half of a boundary these payloads cross twice.
+  /// Host-side decode of the guest's JSON response.
   public let hostDecodeDuration: CFAbsoluteTime?
-  /// Response size. Pairs with the two encode/decode figures to give throughput rather than duration.
+  /// Response size.
   public let responseBytes: Int64?
 
   public init(
@@ -778,15 +681,13 @@ public struct FBAXBridgeProfile: Sendable, Equatable, Encodable {
 /// Which backend's profile a document carries.
 ///
 /// A Swift-level sum so the two disjoint types can share one slot; **not** a tagged union on the wire.
-/// It encodes transparently, so the emitted JSON is exactly one struct's fields with no discriminator
-/// wrapping them — the document's `backend` is the discriminator, and duplicating it here would be state
-/// that can disagree with itself.
+/// It encodes transparently — the emitted JSON is exactly one struct's fields with no discriminator
+/// wrapping them; the document's `backend` field is the discriminator.
 public enum FBAccessibilityProfile: Sendable, Equatable, Encodable {
   case translator(FBAccessibilityProfilingData)
   case guestBridge(FBAXBridgeProfile)
 
-  /// The translator profile, or nil on a guest-backed read. A convenience for callers that only ever
-  /// deal with the accessibility backend; anything reasoning about both lanes should switch instead.
+  /// The translator profile, or nil on a guest-backed read.
   public var translatorProfile: FBAccessibilityProfilingData? {
     guard case let .translator(profile) = self else {
       return nil
@@ -807,15 +708,10 @@ public enum FBAccessibilityProfile: Sendable, Equatable, Encodable {
 
 /// The device's accessibility automation mode as it stood for a read, and whether the read changed it.
 ///
-/// Reported on every whole-tree read rather than only when it changes, because the two states are
-/// genuinely different answers to the same question: with automation mode off UIKit collapses subtrees
-/// behind opaque element providers and caches a container's children, and with it on the full structure
-/// is exposed and children are recomputed. A caller comparing two reads cannot otherwise tell which they
-/// got.
-///
-/// `asserted` exists so that a read which *changed* the device is distinguishable from one that merely
-/// found it that way. A reader that silently alters global state is worse than one that does not alter it
-/// at all, and this is the field that stops it being silent.
+/// Reported on every whole-tree read: with the mode off UIKit collapses subtrees behind opaque element
+/// providers and caches a container's children; with it on the full structure is exposed and children
+/// are recomputed per read. `asserted` distinguishes a read that changed the device setting from one
+/// that found it already set.
 public struct FBAccessibilityAutomationState: Sendable, Equatable, Encodable {
 
   /// Whether the device was in automation mode for this read.
@@ -878,7 +774,7 @@ public struct FBAccessibilityDocumentElement: Sendable, Equatable, Encodable {
   public var isRemote: Bool??
   /// Whether the element can be acted on, and why not when it cannot. `.some(nil)` — an explicit `null` —
   /// on a backend that cannot answer: the legacy accessibility path has no counterpart for the attributes
-  /// this is derived from, and saying so is what keeps the key set fixed across backends.
+  /// this is derived from, and the explicit null keeps the key set fixed across backends.
   public var interactable: FBAccessibilityInteractable??
   public var customActions: [String]??
   public var traits: [String]??
@@ -891,9 +787,8 @@ public struct FBAccessibilityDocumentElement: Sendable, Equatable, Encodable {
   /// What a hit-test at this element's centre found, as the backend reported it.
   ///
   /// Not part of the emitted schema and absent from `CodingKeys`: it is an *input* to deciding why an
-  /// element is blocked, consumed by the refinement that turns it into a reason and never emitted on its
-  /// own. Carrying it on the element is what lets the guest answer once, inline, instead of the host
-  /// asking per element.
+  /// element is blocked, consumed by the refinement that turns it into a reason and never emitted on
+  /// its own. Carried on the element so the guest answers once, inline with the tree.
   public var explainedBy: FBAccessibilityElementRef?
   /// The nested children, or `nil` when the read did not walk them — a flat read lists every node
   /// separately and carries no `children` key at all. Not an attribute: it comes from the traversal.
@@ -1231,9 +1126,7 @@ public extension FBAccessibilityFrame {
 public extension FBAccessibilityInteractable {
   /// The same internally-tagged shape the `complete` encoder emits, as Foundation.
   ///
-  /// Rendered by hand rather than through `JSONEncoder` for the reason the legacy formats exist at all:
-  /// they are written by `JSONSerialization`, and the two writers disagree on how a non-integral double
-  /// is spelled. Reusing the encoder here would change the bytes of a frozen format.
+  /// Rendered by hand for `JSONSerialization` — see `FBAccessibilityElementPayload.legacyFoundationObject`.
   var legacyFoundationObject: [String: Any] {
     switch self {
     case let .actionable(at):
