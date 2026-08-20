@@ -7,12 +7,29 @@
 
 import Foundation
 
-/// Profiling data collected during an accessibility operation. Provides
-/// visibility into the performance characteristics of the AX subsystem.
+/// Where a translator-backed read spent its time.
+///
+/// Disjoint from `FBAXBridgeProfile`, the guest lanes' equivalent — see the note there for why the two
+/// are separate types rather than one widened to hold both. What they share is the spelling of the
+/// first five fields, so a fleet can ask which lane is slow without knowing either shape.
 public struct FBAccessibilityProfilingData: Sendable, Equatable, Encodable {
 
-  /// The number of accessibility elements that were serialized.
+  // MARK: The core, spelled identically in every backend's profile
+
+  /// Elements in the serialized read.
   public let elementCount: Int64
+  /// Wall time for the whole read: the number a caller waited.
+  public let totalDuration: CFAbsoluteTime
+  /// Getting into a position to read at all — the translation object, and the platform element made
+  /// from it.
+  public let acquireDuration: CFAbsoluteTime
+  /// Pulling the tree out of the application. On this lane that is the walk's XPC wait: attributes are
+  /// fetched one round trip at a time, and the waiting is the pulling.
+  public let readDuration: CFAbsoluteTime
+  /// Turning what was read into what the caller asked for — the walk's time less what it spent waiting.
+  public let serializeDuration: CFAbsoluteTime
+
+  // MARK: What only a translator-backed read has
 
   /// The number of attribute fetches made on accessibility elements. Each
   /// property access (accessibilityLabel, accessibilityFrame, etc.) counts as one.
@@ -21,16 +38,16 @@ public struct FBAccessibilityProfilingData: Sendable, Equatable, Encodable {
   /// The number of XPC calls made to the simulator's accessibility service.
   public let xpcCallCount: Int64
 
-  /// The time spent in performWithTranslator (getting the translation object).
+  /// The time spent in performWithTranslator (getting the translation object). A component of
+  /// `acquireDuration`.
   public let translationDuration: CFAbsoluteTime
 
-  /// The time spent converting the translation object to a platform element.
+  /// The time spent converting the translation object to a platform element. The other component of
+  /// `acquireDuration`.
   public let elementConversionDuration: CFAbsoluteTime
 
-  /// The time spent serializing the accessibility tree.
-  public let serializationDuration: CFAbsoluteTime
-
-  /// The total time spent in XPC calls.
+  /// The total time spent in XPC calls, across the whole read. Larger than `readDuration` by whatever
+  /// acquisition itself spent on XPC, which is reported there as wall time instead.
   public let totalXPCDuration: CFAbsoluteTime
 
   /// The set of keys that were fetched during serialization. Useful for tests
@@ -39,31 +56,40 @@ public struct FBAccessibilityProfilingData: Sendable, Equatable, Encodable {
 
   public init(
     elementCount: Int64,
+    totalDuration: CFAbsoluteTime,
+    acquireDuration: CFAbsoluteTime,
+    readDuration: CFAbsoluteTime,
+    serializeDuration: CFAbsoluteTime,
     attributeFetchCount: Int64,
     xpcCallCount: Int64,
     translationDuration: CFAbsoluteTime,
     elementConversionDuration: CFAbsoluteTime,
-    serializationDuration: CFAbsoluteTime,
     totalXPCDuration: CFAbsoluteTime,
     fetchedKeys: Set<String>
   ) {
     self.elementCount = elementCount
+    self.totalDuration = totalDuration
+    self.acquireDuration = acquireDuration
+    self.readDuration = readDuration
+    self.serializeDuration = serializeDuration
     self.attributeFetchCount = attributeFetchCount
     self.xpcCallCount = xpcCallCount
     self.translationDuration = translationDuration
     self.elementConversionDuration = elementConversionDuration
-    self.serializationDuration = serializationDuration
     self.totalXPCDuration = totalXPCDuration
     self.fetchedKeys = fetchedKeys
   }
 
   enum CodingKeys: String, CodingKey {
     case elementCount = "element_count"
+    case totalDurationMs = "total_duration_ms"
+    case acquireDurationMs = "acquire_duration_ms"
+    case readDurationMs = "read_duration_ms"
+    case serializeDurationMs = "serialize_duration_ms"
     case attributeFetchCount = "attribute_fetch_count"
     case xpcCallCount = "xpc_call_count"
     case translationDurationMs = "translation_duration_ms"
     case elementConversionDurationMs = "element_conversion_duration_ms"
-    case serializationDurationMs = "serialization_duration_ms"
     case totalXpcDurationMs = "total_xpc_duration_ms"
   }
 
@@ -72,11 +98,14 @@ public struct FBAccessibilityProfilingData: Sendable, Equatable, Encodable {
   public func encode(to encoder: Encoder) throws {
     var container = encoder.container(keyedBy: CodingKeys.self)
     try container.encode(elementCount, forKey: .elementCount)
+    try container.encode(totalDuration * 1000, forKey: .totalDurationMs)
+    try container.encode(acquireDuration * 1000, forKey: .acquireDurationMs)
+    try container.encode(readDuration * 1000, forKey: .readDurationMs)
+    try container.encode(serializeDuration * 1000, forKey: .serializeDurationMs)
     try container.encode(attributeFetchCount, forKey: .attributeFetchCount)
     try container.encode(xpcCallCount, forKey: .xpcCallCount)
     try container.encode(translationDuration * 1000, forKey: .translationDurationMs)
     try container.encode(elementConversionDuration * 1000, forKey: .elementConversionDurationMs)
-    try container.encode(serializationDuration * 1000, forKey: .serializationDurationMs)
     try container.encode(totalXPCDuration * 1000, forKey: .totalXpcDurationMs)
   }
 }
@@ -84,11 +113,12 @@ public struct FBAccessibilityProfilingData: Sendable, Equatable, Encodable {
 extension FBAccessibilityProfilingData: CustomStringConvertible {
   public var description: String {
     String(
-      format: "<FBAccessibilityProfilingData: elements=%lld, xpc_calls=%lld, translation=%.2fms, serialization=%.2fms>",
+      format: "<FBAccessibilityProfilingData: elements=%lld, total=%.2fms, acquire=%.2fms, read=%.2fms, serialize=%.2fms>",
       elementCount,
-      xpcCallCount,
-      translationDuration * 1000,
-      serializationDuration * 1000
+      totalDuration * 1000,
+      acquireDuration * 1000,
+      readDuration * 1000,
+      serializeDuration * 1000
     )
   }
 }

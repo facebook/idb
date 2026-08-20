@@ -114,7 +114,15 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     XCTAssertGreaterThanOrEqual(profilingData.xpcCallCount, 0, "XPC call count should be non-negative")
     XCTAssertGreaterThanOrEqual(profilingData.translationDuration, 0, "Translation duration should be non-negative")
     XCTAssertGreaterThanOrEqual(profilingData.elementConversionDuration, 0, "Element conversion duration should be non-negative")
-    XCTAssertGreaterThanOrEqual(profilingData.serializationDuration, 0, "Serialization duration should be non-negative")
+    XCTAssertGreaterThanOrEqual(profilingData.serializeDuration, 0, "Serialize duration should be non-negative")
+    // The core, which telemetry reads across both lanes by name. A read cannot have taken less time in
+    // total than the phases it is made of.
+    XCTAssertGreaterThan(profilingData.totalDuration, 0, "Total duration should be positive")
+    XCTAssertGreaterThanOrEqual(
+      profilingData.totalDuration,
+      profilingData.acquireDuration + profilingData.readDuration + profilingData.serializeDuration,
+      "The phases must fit inside the total"
+    )
   }
 
   // MARK: - Core Test Helpers
@@ -1151,13 +1159,23 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
 
     XCTAssertGreaterThanOrEqual(profile.translationDuration, 0.02, "the 20 ms spent resolving the translation is reported")
     XCTAssertGreaterThanOrEqual(profile.elementConversionDuration, 0.02, "as is the 20 ms spent converting it to an element")
-    XCTAssertGreaterThan(profile.serializationDuration, 0, "alongside the phase that was already measured")
+    XCTAssertGreaterThan(profile.serializeDuration, 0, "alongside the phase that was already measured")
+    XCTAssertGreaterThanOrEqual(profile.acquireDuration, 0.04, "and the core rolls both acquisition phases up")
   }
 
   // The mechanism behind the above, pinned directly rather than through a read: a request has somewhere
   // to record from the moment it exists, so every dispatcher measurement taken before `serialize` lands.
   func testARequestBeginsWithACollector() {
     XCTAssertNotNil(FBAXTranslationRequest(kind: .frontmostApplication).collector)
+  }
+
+  // A SpringBoard remediation retry replaces the request but not the read: the caller waited for the
+  // failed attempt as well, so the clone keeps the original collector rather than starting a new one.
+  func testARetriedRequestKeepsTheOriginalCollector() {
+    let request = FBAXTranslationRequest(kind: .frontmostApplication)
+    let clone = request.cloneWithNewToken()
+    XCTAssertNotEqual(clone.token, request.token)
+    XCTAssertTrue(clone.collector === request.collector)
   }
 
   // The baseline the filtered read below is measured against: every node serialized.
@@ -1368,16 +1386,53 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     XCTAssertEqual(
       Set(profile.keys),
       [
+        // The core, spelled the same on every backend.
         "element_count",
+        "total_duration_ms",
+        "acquire_duration_ms",
+        "read_duration_ms",
+        "serialize_duration_ms",
+        // What only this lane has.
         "attribute_fetch_count",
         "xpc_call_count",
         "translation_duration_ms",
         "element_conversion_duration_ms",
-        "serialization_duration_ms",
         "total_xpc_duration_ms",
       ],
       "Profile envelope keys changed"
     )
+  }
+
+  // The one thing that makes the two lanes comparable is that they spell the core the same way, and
+  // nothing structural enforces it — the profile types are deliberately disjoint. This is the enforcement.
+  func testBothLanesSpellTheProfileCoreTheSameWay() throws {
+    let translator = FBAccessibilityElementsResponse(
+      elements: .tree([]),
+      profilingData: .translator(
+        FBAccessibilityProfilingData(
+          elementCount: 1, totalDuration: 1, acquireDuration: 0.5, readDuration: 0.25,
+          serializeDuration: 0.25, attributeFetchCount: 1, xpcCallCount: 1, translationDuration: 0.5,
+          elementConversionDuration: 0, totalXPCDuration: 0.25, fetchedKeys: []
+        ))
+    )
+    let guestBridge = FBAccessibilityElementsResponse(
+      elements: .tree([]),
+      profilingData: .guestBridge(
+        FBAXBridgeProfile(
+          elementCount: 1, totalDuration: 1, acquireDuration: 0.5, readDuration: 0.25,
+          serializeDuration: 0.25
+        ))
+    )
+    let core: Set<String> = [
+      "element_count", "total_duration_ms", "acquire_duration_ms", "read_duration_ms", "serialize_duration_ms",
+    ]
+    for response in [translator, guestBridge] {
+      let profile = try XCTUnwrap(Self.documentObject(response)["profile"] as? [String: Any])
+      XCTAssertTrue(
+        core.isSubset(of: Set(profile.keys)),
+        "the core is missing from \(String(describing: response.profilingData)): \(core.subtracting(Set(profile.keys)))"
+      )
+    }
   }
 
   func testCompleteDocumentWithCoverageContainsCoverage() async throws {

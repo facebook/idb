@@ -126,7 +126,8 @@ final class FBAXTranslationRequest {
   /// Serializes the one element a caller named — by point, or by a marker match. The element itself is
   /// always reported; only its descendants are subject to the filter.
   private func runNamedElement(_ element: FBAXPlatformElement, options: FBAccessibilityRequestOptions) -> FBAccessibilityElementsResponse {
-    let serializationStart = CFAbsoluteTimeGetCurrent()
+    let walkStart = CFAbsoluteTimeGetCurrent()
+    collector.markWalkStart()
     var elements = FBAXNodeSerializer.formattedDescription(
       ofElement: element,
       token: token,
@@ -142,7 +143,7 @@ final class FBAXTranslationRequest {
     // A named element is one element, with no tree behind it to speak for the screen. A marker match
     // does know its bounds — the root it descended from — and the backend stamps them on the way out.
     return buildResponse(
-      elements: .single(elements), serializationStart: serializationStart, coverage: nil, screen: nil,
+      elements: .single(elements), walkStart: walkStart, coverage: nil, screen: nil,
       reportProfile: options.enableProfiling
     )
   }
@@ -150,6 +151,11 @@ final class FBAXTranslationRequest {
   // MARK: - Frontmost Application
 
   private func runFrontmostApplication(_ element: FBAXPlatformElement, options: FBAccessibilityRequestOptions) -> FBAccessibilityElementsResponse {
+    // Marked before the screen-bounds fetch rather than before the walk, because that fetch is a read of
+    // the application like any other — measured from here, no part of the read falls outside a phase.
+    let walkStart = CFAbsoluteTimeGetCurrent()
+    collector.markWalkStart()
+
     // Screen bounds for coverage calculation and remote content fetching.
     let screenBounds = element.axFrame()
 
@@ -157,7 +163,6 @@ final class FBAXTranslationRequest {
     let seenPids = SeenPIDs()
 
     let keys = Self.serializerKeys(options)
-    let serializationStart = CFAbsoluteTimeGetCurrent()
 
     let walked = FBAXNodeSerializer.recursiveDescription(
       fromElement: element,
@@ -183,7 +188,7 @@ final class FBAXTranslationRequest {
     guard let remoteOptions = options.remoteContentOptions, let translator else {
       return buildResponse(
         elements: .tree(mainAppElements),
-        serializationStart: serializationStart,
+        walkStart: walkStart,
         coverage: options.collectFrameCoverage
           ? .measured(
             reported: mainAppElements, walked: walked, screenBounds: screenBounds,
@@ -206,7 +211,7 @@ final class FBAXTranslationRequest {
       walkedElements: walked,
       collectFrameCoverage: options.collectFrameCoverage,
       reportProfile: options.enableProfiling,
-      serializationStart: serializationStart,
+      walkStart: walkStart,
       keys: keys,
       remoteOptions: remoteOptions,
       translator: translator
@@ -317,7 +322,7 @@ final class FBAXTranslationRequest {
     walkedElements: [FBAccessibilityDocumentElement],
     collectFrameCoverage: Bool,
     reportProfile: Bool,
-    serializationStart: CFAbsoluteTime,
+    walkStart: CFAbsoluteTime,
     keys: Set<FBAXKeys>,
     remoteOptions: FBAccessibilityRemoteContentOptions,
     translator: AXPTranslator
@@ -361,7 +366,7 @@ final class FBAXTranslationRequest {
 
     return buildResponse(
       elements: .tree(elements),
-      serializationStart: serializationStart,
+      walkStart: walkStart,
       coverage: collectFrameCoverage
         ? .measured(
           reported: mainAppElements, walked: walkedElements, screenBounds: screenBounds,
@@ -381,16 +386,15 @@ final class FBAXTranslationRequest {
   // bound, so unlike the guest-backed readers it never returns a partial view.
   private func buildResponse(
     elements: FBAccessibilityElementPayload,
-    serializationStart: CFAbsoluteTime,
+    walkStart: CFAbsoluteTime,
     coverage: FBAccessibilityCoverage?,
     screen: FBAccessibilityScreenInfo?,
     reportProfile: Bool
   ) -> FBAccessibilityElementsResponse {
-    let serializationDuration = CFAbsoluteTimeGetCurrent() - serializationStart
-    // Collected either way; reported only when asked. Collection is cheap enough to leave on, and a
-    // number nobody collected cannot be recovered afterwards — but a caller that did not ask for timings
-    // should not have to parse them.
-    let profilingData = reportProfile ? collector.finalize(withSerializationDuration: serializationDuration) : nil
+    let walkDuration = CFAbsoluteTimeGetCurrent() - walkStart
+    // Collected either way; reported only when asked. A number nobody collected cannot be recovered
+    // afterwards, and collection is cheap enough to leave on.
+    let profilingData = reportProfile ? collector.finalize(withWalkDuration: walkDuration) : nil
     return FBAccessibilityElementsResponse(
       elements: elements,
       profilingData: profilingData.map { .translator($0) },

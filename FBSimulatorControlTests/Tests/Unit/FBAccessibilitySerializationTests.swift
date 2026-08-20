@@ -605,11 +605,14 @@ final class FBAccessibilitySerializationTests: XCTestCase {
   private static func sampleProfilingData() -> FBAccessibilityProfilingData {
     FBAccessibilityProfilingData(
       elementCount: 2,
+      totalDuration: 1,
+      acquireDuration: 0.75,
+      readDuration: 0.0625,
+      serializeDuration: 0.125,
       attributeFetchCount: 3,
       xpcCallCount: 4,
       translationDuration: 0.5,
       elementConversionDuration: 0.25,
-      serializationDuration: 0.125,
       totalXPCDuration: 0.0625,
       fetchedKeys: []
     )
@@ -1161,7 +1164,7 @@ final class FBAccessibilitySerializationTests: XCTestCase {
     #"{"elements":{"AXFrame":"{{16, 380}, {370, 52}}","AXLabel":"root","AXUniqueId":"com.example.root","AXValue":"on","content_required":false,"custom_actions":[],"enabled":null,"frame":{"height":52,"width":370,"x":16,"y":380},"help":null,"pid":7,"role":"Button","role_description":null,"subrole":null,"title":null,"traits":null,"type":"Button"}}"#
 
   private static let expectedProfiledDocumentJSON =
-    #"{"automation":null,"backend":null,"coverage":{"additional":0.25,"content":0.5,"frame":0.5,"leaf":0.5,"walked":0.5},"elements":[],"frames":null,"interaction":null,"modal":null,"profile":{"attribute_fetch_count":3,"element_conversion_duration_ms":250,"element_count":2,"serialization_duration_ms":125,"total_xpc_duration_ms":62.5,"translation_duration_ms":500,"xpc_call_count":4},"screen":null,"target":null,"truncated":false}"#
+    #"{"automation":null,"backend":null,"coverage":{"additional":0.25,"content":0.5,"frame":0.5,"leaf":0.5,"walked":0.5},"elements":[],"frames":null,"interaction":null,"modal":null,"profile":{"acquire_duration_ms":750,"attribute_fetch_count":3,"element_conversion_duration_ms":250,"element_count":2,"read_duration_ms":62.5,"serialize_duration_ms":125,"total_duration_ms":1000,"total_xpc_duration_ms":62.5,"translation_duration_ms":500,"xpc_call_count":4},"screen":null,"target":null,"truncated":false}"#
 
   private static let expectedFlatJSON =
     #"{"elements":[{"AXFrame":"{{16, 380}, {370, 52}}","AXLabel":"root","AXUniqueId":"com.example.root","AXValue":"on","content_required":false,"custom_actions":[],"enabled":null,"frame":{"height":52,"width":370,"x":16,"y":380},"help":null,"pid":7,"role":"Button","role_description":null,"subrole":null,"title":null,"traits":null,"type":"Button"},{"AXFrame":"{{0, 0}, {0, 0}}","AXLabel":"child","AXUniqueId":null,"AXValue":null,"content_required":false,"custom_actions":[],"enabled":null,"frame":{"height":0,"width":0,"x":0,"y":0},"help":null,"pid":7,"role":"AXCell","role_description":null,"subrole":null,"title":null,"traits":null,"type":"Cell"}]}"#
