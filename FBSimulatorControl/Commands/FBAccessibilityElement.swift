@@ -15,9 +15,6 @@ import Foundation
 /// by token). Actions (tap, scroll) are direct calls on the element and do not
 /// require the token. Call `close()` when done to deregister the token; after
 /// close, serialization fails.
-///
-/// A pure-Swift class in FBSimulatorControl (FBControlCore never consumed it —
-/// only the simulator-side facade does, which is now Swift too).
 final class FBAccessibilityElement {
 
   private let element: FBAXWritableElement
@@ -28,10 +25,9 @@ final class FBAccessibilityElement {
 
   /// The frame of the root this element was found under, for an element reached by descending a tree.
   ///
-  /// Such an element knows the bounds its own frame is relative to, but cannot report them: the
-  /// serializer takes a read's screen bounds from the element it is handed, and for a descendant that
-  /// is the descendant's frame. So the root's frame is captured at the descent and carried here. `nil`
-  /// for an element read directly, which has no root to speak for.
+  /// The serializer takes a read's screen bounds from the element it is handed, and for a descendant
+  /// that is the descendant's own frame — so the root's frame is captured at the descent and carried
+  /// here. `nil` for an element read directly.
   let rootBounds: CGRect?
 
   init(
@@ -83,8 +79,7 @@ final class FBAccessibilityElement {
   }
 
   /// Whether this handle names the one element the caller asked for, rather than the tree its request
-  /// resolved. True exactly for a marker match, which `findElement` reached by descending from the root
-  /// — the same descent that captured `rootBounds`, which is why that is the signal.
+  /// resolved. True exactly for a marker match: `findElement` sets `rootBounds` only on that path.
   private var namesTheTarget: Bool {
     rootBounds != nil
   }
@@ -153,8 +148,7 @@ final class FBAccessibilityElement {
     }
   }
 
-  /// The pid of the backing translation object (0 when absent). A zero-serialization identity read —
-  /// used to anchor a remote-automation frontmost read on the app's pid instead of a screen hit-test.
+  /// The pid of the backing translation object (0 when absent); reading it performs no serialization.
   var processIdentifier: pid_t {
     element.axTranslationPid
   }
@@ -167,9 +161,8 @@ final class FBAccessibilityElement {
   /// closed without popping. If not found, the receiver is closed and an error
   /// is thrown.
   func findElement(withValue value: String, forKey key: FBAXSearchableKey, depth: UInt) async throws -> FBAccessibilityElement {
-    // The legacy accessibility tree is composed entirely of `AXPMacPlatformElement`, so any matched
-    // descendant is writable; the cast is total in practice. A (structurally impossible) read-only
-    // match is reported as not-found rather than wrapped in a handle whose actions could not dispatch.
+    // The legacy accessibility tree is composed entirely of `AXPMacPlatformElement`, so a matched
+    // descendant is always writable; a non-writable match is treated as not found.
     //
     // The root's bounds are read in the same serialized hop, before handing ownership on: this element
     // is the root the match was found under, and once the new handle is serializing there is nothing

@@ -13,18 +13,13 @@ import Foundation
 /// fetched-keys set are guarded by a lock because `addXPCCallDuration` may be
 /// called from the accessibility XPC callback thread while the serialization
 /// walk increments element/attribute counts.
-///
-/// Created and driven entirely from Swift in this module (the serializer and the
-/// dispatcher), so it is a plain Swift class.
 public final class FBAccessibilityProfilingCollector {
 
-  // Timing fields are set on the serialization thread (non-atomic, as in the
-  // original ObjC `assign` properties).
+  // Timing fields are set only on the serialization thread, so they are not lock-guarded.
   public var translationDuration: CFAbsoluteTime = 0
   public var elementConversionDuration: CFAbsoluteTime = 0
 
-  /// When the read began. The collector is created with the request, so its own lifetime is the read's
-  /// — there is no earlier moment worth stamping and nothing to thread down from the caller.
+  /// When the read began; the collector is created at request start.
   private let readStart = CFAbsoluteTimeGetCurrent()
 
   private let lock = NSLock()
@@ -101,8 +96,7 @@ public final class FBAccessibilityProfilingCollector {
     return _totalXPCDuration
   }
 
-  /// The walk's own XPC wait, which is what this lane's `read` phase is: the tree is pulled out of the
-  /// application one attribute at a time, and the wait for those is the pulling.
+  /// XPC wait accrued during the walk — this lane's `read` phase.
   private var walkXPCDuration: CFAbsoluteTime {
     lock.lock()
     defer { lock.unlock() }
@@ -110,8 +104,7 @@ public final class FBAccessibilityProfilingCollector {
   }
 
   /// `walkDuration` is the wall time of the serialization walk, which on this lane fetches and formats
-  /// in one pass. The two are told apart by subtraction: what the walk did not spend waiting on the
-  /// application, it spent building the output.
+  /// in one pass; `serializeDuration` is that wall time minus the walk's XPC wait.
   public func finalize(withWalkDuration walkDuration: CFAbsoluteTime) -> FBAccessibilityProfilingData {
     let readDuration = walkXPCDuration
     return FBAccessibilityProfilingData(
@@ -119,8 +112,7 @@ public final class FBAccessibilityProfilingCollector {
       totalDuration: CFAbsoluteTimeGetCurrent() - readStart,
       acquireDuration: translationDuration + elementConversionDuration,
       readDuration: readDuration,
-      // Clamped on the invariant that the walk's XPC waits happen during the walk. A future path that
-      // broke it would produce a negative duration, which is worse to publish than a zero.
+      // Clamped on the invariant that the walk's XPC waits happen during the walk.
       serializeDuration: max(0, walkDuration - readDuration),
       attributeFetchCount: attributeFetchCount,
       xpcCallCount: xpcCallCount,
