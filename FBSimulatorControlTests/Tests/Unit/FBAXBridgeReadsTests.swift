@@ -871,6 +871,32 @@ final class FBAXBridgeReadsTests: XCTestCase {
     }
   }
 
+  // The profile must report the traversal that actually ran — inferring it from `mach_round_trips`
+  // breaks as soon as two traversals produce the same count.
+  func testDescribeTreeReportsTheTraversalItReadWith() async throws {
+    for traversal in FBAXTraversalStrategy.allCases {
+      let reader = StubTreeReader(read: Self.stubRead())
+      var options = FBAccessibilityRequestOptions(traversalStrategy: traversal)
+      options.enableProfiling = true
+      let response = try await reader.describeTree(.frontmost, options: options)
+      guard case let .guestBridge(profile)? = response.profilingData else {
+        return XCTFail("expected a guest profile, got \(String(describing: response.profilingData))")
+      }
+      XCTAssertEqual(profile.traversal, traversal)
+      XCTAssertEqual(reader.strategies, reader.profiledStrategies, "the read and its profile must agree")
+    }
+  }
+
+  // The field rides on the profile, so a read that did not ask for profiling reports no traversal.
+  func testTheTraversalIsOnlyReportedWhenProfilingWasAskedFor() async throws {
+    let reader = StubTreeReader(read: Self.stubRead())
+    let response = try await reader.describeTree(
+      .frontmost, options: FBAccessibilityRequestOptions(traversalStrategy: .singleFetch)
+    )
+    XCTAssertNil(response.profilingData)
+    XCTAssertEqual(reader.profiledStrategies, [], "an unprofiled read must not build a profile at all")
+  }
+
   // It is the default walk done in one call, so it answers the same keys.
   func testTheSingleFetchAnswersEveryKeyTheDefaultWalkDoes() {
     XCTAssertEqual(FBAXTraversalStrategy.singleFetch.unsatisfiableKeys, [])
@@ -1923,6 +1949,9 @@ private final class StubTreeReader: FBAXTreeReader, @unchecked Sendable {
   private(set) var truncationWarnings: [Bool] = []
   /// The traversal each read asked for — how a test asserts a caller's choice reached the wire.
   private(set) var strategies: [FBAXTraversalStrategy] = []
+  /// The traversal each profile was built for, so a test can assert the profile is told the same thing
+  /// the read was rather than working it out for itself.
+  private(set) var profiledStrategies: [FBAXTraversalStrategy] = []
   /// The keys each read reported it could not answer.
   private(set) var unsatisfiableWarnings: [Set<FBAXKeys>] = []
   private(set) var hitTestPoints: [CGPoint] = []
@@ -1947,6 +1976,18 @@ private final class StubTreeReader: FBAXTreeReader, @unchecked Sendable {
 
   func warnIfUnsatisfiable(_ keys: Set<FBAXKeys>, strategy: FBAXTraversalStrategy) async {
     unsatisfiableWarnings.append(keys)
+  }
+
+  func profile(
+    for read: FBAXTreeRead, elementCount: Int, serializeDuration: CFAbsoluteTime,
+    strategy: FBAXTraversalStrategy
+  ) -> FBAccessibilityProfile? {
+    profiledStrategies.append(strategy)
+    return .guestBridge(
+      FBAXBridgeProfile(
+        elementCount: Int64(elementCount), totalDuration: 0, acquireDuration: 0, readDuration: 0,
+        serializeDuration: serializeDuration, traversal: strategy
+      ))
   }
 
   /// Records the key set of any read that would have warned about per-node hit-testing.

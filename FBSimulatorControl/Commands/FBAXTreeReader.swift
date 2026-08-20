@@ -61,8 +61,12 @@ protocol FBAXTreeReader: FBUIAutomation {
 
   /// Where this read spent its time, in whatever shape this backend measures. Nil from a backend that
   /// does not measure, which is distinct from a zeroed profile.
+  ///
+  /// `strategy` is the traversal the read was performed with, passed in rather than inferred so the
+  /// profile reports what happened rather than what a caller asked for.
   func profile(
-    for read: FBAXTreeRead, elementCount: Int, serializeDuration: CFAbsoluteTime
+    for read: FBAXTreeRead, elementCount: Int, serializeDuration: CFAbsoluteTime,
+    strategy: FBAXTraversalStrategy
   ) -> FBAccessibilityProfile?
 }
 
@@ -78,7 +82,8 @@ extension FBAXTreeReader {
 
   /// Backends that do not measure report nothing rather than zeroes.
   func profile(
-    for read: FBAXTreeRead, elementCount: Int, serializeDuration: CFAbsoluteTime
+    for read: FBAXTreeRead, elementCount: Int, serializeDuration: CFAbsoluteTime,
+    strategy: FBAXTraversalStrategy
   ) -> FBAccessibilityProfile? {
     nil
   }
@@ -178,7 +183,8 @@ extension FBAXTreeReader {
         elements: .tree(elements),
         profilingData: options.enableProfiling
           ? profile(
-            for: read, elementCount: Self.nodeCount(of: elements), serializeDuration: serializeDuration
+            for: read, elementCount: Self.nodeCount(of: elements), serializeDuration: serializeDuration,
+            strategy: options.traversalStrategy
           ) : nil,
         coverage: coverage, modal: read.modal, automation: read.automation
       )

@@ -624,6 +624,13 @@ public struct FBAXBridgeProfile: Sendable, Equatable, Encodable {
 
   // MARK: What only a guest-backed read has
 
+  /// The traversal that produced this read. Without it `machRoundTrips` is ambiguous: the same tree
+  /// costs one round trip or one per node depending on the traversal.
+  ///
+  /// Guest-only rather than part of the core, because the `testmanagerd` backend has no traversal to
+  /// report.
+  public let traversal: FBAXTraversalStrategy
+
   /// Round trips to the application's accessibility server — one per node.
   public let machRoundTrips: Int64?
   /// Host-side decode of the guest's JSON response.
@@ -637,6 +644,7 @@ public struct FBAXBridgeProfile: Sendable, Equatable, Encodable {
     acquireDuration: CFAbsoluteTime,
     readDuration: CFAbsoluteTime,
     serializeDuration: CFAbsoluteTime,
+    traversal: FBAXTraversalStrategy,
     machRoundTrips: Int64? = nil,
     hostDecodeDuration: CFAbsoluteTime? = nil,
     responseBytes: Int64? = nil
@@ -646,6 +654,7 @@ public struct FBAXBridgeProfile: Sendable, Equatable, Encodable {
     self.acquireDuration = acquireDuration
     self.readDuration = readDuration
     self.serializeDuration = serializeDuration
+    self.traversal = traversal
     self.machRoundTrips = machRoundTrips
     self.hostDecodeDuration = hostDecodeDuration
     self.responseBytes = responseBytes
@@ -657,6 +666,7 @@ public struct FBAXBridgeProfile: Sendable, Equatable, Encodable {
     case acquireDurationMs = "acquire_duration_ms"
     case readDurationMs = "read_duration_ms"
     case serializeDurationMs = "serialize_duration_ms"
+    case traversal
     case machRoundTrips = "mach_round_trips"
     case hostDecodeDurationMs = "host_decode_duration_ms"
     case responseBytes = "response_bytes"
@@ -672,6 +682,7 @@ public struct FBAXBridgeProfile: Sendable, Equatable, Encodable {
     try container.encode(acquireDuration * 1000, forKey: .acquireDurationMs)
     try container.encode(readDuration * 1000, forKey: .readDurationMs)
     try container.encode(serializeDuration * 1000, forKey: .serializeDurationMs)
+    try container.encode(traversal.rawValue, forKey: .traversal)
     try container.encode(machRoundTrips, forKey: .machRoundTrips)
     try container.encode(hostDecodeDuration.map { $0 * 1000 }, forKey: .hostDecodeDurationMs)
     try container.encode(responseBytes, forKey: .responseBytes)

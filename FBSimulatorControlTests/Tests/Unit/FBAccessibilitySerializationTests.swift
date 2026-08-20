@@ -1014,7 +1014,7 @@ final class FBAccessibilitySerializationTests: XCTestCase {
       profilingData: .guestBridge(
         FBAXBridgeProfile(
           elementCount: 176, totalDuration: 0.4, acquireDuration: 0.36, readDuration: 0.03,
-          serializeDuration: 0.01, machRoundTrips: 176
+          serializeDuration: 0.01, traversal: .viewHierarchy, machRoundTrips: 176
         ))
     )
     let profile = try XCTUnwrap(documentObject(response)["profile"] as? [String: Any])
@@ -1033,6 +1033,23 @@ final class FBAccessibilitySerializationTests: XCTestCase {
       XCTAssertNil(profile[translatorOnly], "a guest profile must not carry \(translatorOnly)")
     }
     XCTAssertNil(profile["case"], "the sum is a Swift-level one; nothing wraps it on the wire")
+  }
+
+  // The wire profile carries the traversal for every strategy, so `mach_round_trips` can be read
+  // without inferring which walk produced it.
+  func testTheGuestProfileReportsHowTheTreeWasTraversed() throws {
+    for traversal in FBAXTraversalStrategy.allCases {
+      let response = FBAccessibilityElementsResponse(
+        elements: .tree([]),
+        profilingData: .guestBridge(
+          FBAXBridgeProfile(
+            elementCount: 0, totalDuration: 0, acquireDuration: 0, readDuration: 0, serializeDuration: 0,
+            traversal: traversal
+          ))
+      )
+      let profile = try XCTUnwrap(documentObject(response)["profile"] as? [String: Any])
+      XCTAssertEqual(profile["traversal"] as? String, traversal.rawValue)
+    }
   }
 
   func testCompleteDocumentTargetKindsCarryTheirOwnFields() throws {

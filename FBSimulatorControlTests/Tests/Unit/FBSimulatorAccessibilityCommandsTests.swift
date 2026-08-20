@@ -1390,7 +1390,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
       profilingData: .guestBridge(
         FBAXBridgeProfile(
           elementCount: 1, totalDuration: 1, acquireDuration: 0.5, readDuration: 0.25,
-          serializeDuration: 0.25
+          serializeDuration: 0.25, traversal: .viewHierarchy
         ))
     )
     let core: Set<String> = [

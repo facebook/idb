@@ -324,8 +324,10 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
   }
 
   /// The guest lanes' profile. `acquire` is `FBAXReadTimings.residual` — see there.
+  /// `traversal` says which walk produced `machRoundTrips` — see `FBAXBridgeProfile.traversal`.
   func profile(
-    for read: FBAXTreeRead, elementCount: Int, serializeDuration: CFAbsoluteTime
+    for read: FBAXTreeRead, elementCount: Int, serializeDuration: CFAbsoluteTime,
+    strategy: FBAXTraversalStrategy
   ) -> FBAccessibilityProfile? {
     guard let timings = read.timings else {
       return nil
@@ -337,6 +339,7 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
         acquireDuration: timings.residual,
         readDuration: timings.traverse ?? 0,
         serializeDuration: serializeDuration,
+        traversal: strategy,
         machRoundTrips: timings.machRoundTrips,
         hostDecodeDuration: timings.decode,
         responseBytes: timings.responseBytes
