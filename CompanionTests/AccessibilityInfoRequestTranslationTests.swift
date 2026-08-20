@@ -129,7 +129,7 @@ final class AccessibilityInfoRequestTranslationTests: XCTestCase {
     XCTAssertFalse(options.collectFrameCoverage, "frame coverage is collected only when the request asks")
   }
 
-  func testOptionsThreadTheEnrichers() throws {
+  func testOptionsForwardProfilingAndFrameCoverageFlags() throws {
     var request = Idb_AccessibilityInfoRequest()
     request.profile = true
     request.collectFrameCoverage = true
@@ -140,11 +140,11 @@ final class AccessibilityInfoRequestTranslationTests: XCTestCase {
 
   // MARK: - Backend selection
 
-  func testUnspecifiedBackendPreservesTheHistoricalPath() {
+  func testUnspecifiedBackendDefaultsToAccessibilityBackend() {
     XCTAssertEqual(AccessibilityInfoRequestTranslation.backend(from: .unspecified), .accessibility)
   }
 
-  func testBackendMapsThroughTheSharedVocabulary() {
+  func testBackendMapsWireValuesToFrameworkBackends() {
     XCTAssertEqual(AccessibilityInfoRequestTranslation.backend(from: .ax), .accessibility)
     XCTAssertEqual(
       AccessibilityInfoRequestTranslation.backend(from: .axbridge),
@@ -153,11 +153,11 @@ final class AccessibilityInfoRequestTranslationTests: XCTestCase {
     XCTAssertEqual(
       AccessibilityInfoRequestTranslation.backend(from: .axbridgePersistent),
       .axBridge(persistence: .persistent, frontmostMethod: .windowServer, automationMode: true),
-      "the persistent transport is selected for a long-lived server, which amortizes its warm reads"
+      "axbridge_persistent selects the persistent transport"
     )
   }
 
-  func testUnrecognizedBackendPreservesTheHistoricalPath() {
+  func testUnrecognizedBackendDefaultsToAccessibilityBackend() {
     XCTAssertEqual(AccessibilityInfoRequestTranslation.backend(from: .UNRECOGNIZED(9)), .accessibility)
   }
 

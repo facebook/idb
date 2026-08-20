@@ -118,7 +118,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
     }
   }
 
-  func testFusedFrontmostReportsAnUnreadableApplicationAsSuchAndNotAsAFrontmostFailure() throws {
+  func testFusedFrontmostApplicationUnavailableKindThrowsApplicationUnavailable() throws {
     // The guest tagged this `application_unavailable`, and it means the same thing here as it does on a
     // `--pid` read: nothing frontmost has an accessibility server. Reporting it as a frontmost-strategy
     // failure sent the caller after the wrong thing. There is no pid because nothing resolved.
@@ -209,7 +209,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
   // A kind this host has never heard of has to degrade to what an untagged failure already does, so a
   // guest running ahead of its host costs precision and nothing else.
   func testAnUnknownFailureKindDegradesToAnOpaqueFailureCarryingTheMessage() throws {
-    let data = try envelope(["ok": false, "error": "something new went wrong", "error_kind": "application_on_fire"])
+    let data = try envelope(["ok": false, "error": "something new went wrong", "error_kind": "some_future_kind"])
     XCTAssertThrowsError(try FBAXTreeRead(frontmostResponse: data, method: .centerPoint)) { error in
       guard case FBAXBridgeError.guestFailure = error else {
         return XCTFail("expected guestFailure, got: \(error)")
@@ -482,7 +482,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
   func testASmallReadIsNotJudged() {
     XCTAssertNil(
       FBAccessibilityGuidance.zeroFrameAdvice(summary(total: 4, zeroFrame: 4)),
-      "a four-element read has no statistical claim either way, whatever its ratio"
+      "reads below the size threshold produce no advice, whatever their ratio"
     )
   }
 
@@ -513,7 +513,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
   func testAWaitEndsAtOnceOnAFailureThatCannotResolveItself() {
     XCTAssertFalse(
       FBAXBridgeError.readerUnavailable("XCTAccessibilityFramework unavailable").isTransientDuringMarkerWait,
-      "a reader that cannot bind will not bind by being polled"
+      "readerUnavailable is not transient; the wait must end immediately"
     )
     XCTAssertFalse(FBAXBridgeError.bridgeUnavailable.isTransientDuringMarkerWait)
   }
@@ -1627,7 +1627,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
         operation: "A tap",
         callerAssertion: FBTapOptions.Assertion(key: .label, value: "General")
       )
-      XCTFail("there is nothing at the point to assert about")
+      XCTFail("expected noElementAtPoint to be thrown")
     } catch let error as FBUIAutomationError {
       guard case .noElementAtPoint = error else {
         return XCTFail("expected noElementAtPoint, got \(error)")
@@ -1671,7 +1671,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
     XCTAssertTrue(try FBAXTreeRead.writeLanded(fromResponse: Self.json(["ok": true, "pid": 4321])))
     XCTAssertFalse(
       try FBAXTreeRead.writeLanded(fromResponse: Self.json(["ok": true, "empty": true])),
-      "an unoccupied point is a successful answer of nothing, not a write that landed"
+      "writeLanded is false for an ok response carrying empty"
     )
   }
 
@@ -1885,7 +1885,7 @@ final class FBAXBridgeGuestDeathTests: XCTestCase {
   }
 
   // Nothing to consult, nothing added: a caller is told what is true and no more.
-  func testTheMessageIsBareWhenThereIsNothingToAsk() {
+  func testSocketClosedMessageOmitsDetailWhenPidAndStatusUnknown() {
     XCTAssertEqual(
       FBAXBridgeConnection.socketClosedMessage(pid: nil, signal: nil, exitCode: nil),
       "serve socket closed by peer"

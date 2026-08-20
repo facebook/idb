@@ -208,7 +208,7 @@ typedef struct FBAXPair {
 
 // A class or selector that has gone is the same failure as one that changed shape, and is reported the
 // same way rather than passing silently for want of anything to compare.
-- (void)testSignatureReportsWhatIsNotInTheRuntimeAtAll
+- (void)testSignatureMismatchReportedForMissingClassOrSelector
 {
   NSString *absentClass = FBAXSignatureMismatch("FBAXNoSuchClass", "length", NO, "Q@:");
   XCTAssertNotNil(absentClass);
@@ -240,7 +240,7 @@ typedef struct FBAXPair {
   XCTAssertEqual(unavailable.status, FBAXReadStatusApplicationUnavailable);
 
   FBAXReadOutcome *notResponding = [FBAXReadOutcome failureForAttributeError:FBAXTestsErrorWithCode(FBAXErrorIPCTimeout)];
-  XCTAssertEqual(notResponding.status, FBAXReadStatusApplicationNotResponding, @"a live app that did not answer has not gone away");
+  XCTAssertEqual(notResponding.status, FBAXReadStatusApplicationNotResponding, @"an IPC timeout classifies as application-not-responding, not unavailable");
 
   for (NSNumber *code in @[@(FBAXErrorInvalidUIElement), @(FBAXErrorSuccess), @(-1)]) {
     FBAXReadOutcome *outcome = [FBAXReadOutcome failureForAttributeError:FBAXTestsErrorWithCode(code.intValue)];
@@ -269,7 +269,7 @@ typedef struct FBAXPair {
 {
   XCTAssertNil(
     [FBAXHitTestOutcome outcomeForHitTestError:FBAXErrorSuccess hasElement:YES],
-    @"success with an element is the caller's to wrap"
+    @"success with an element returns nil; the caller wraps the element"
   );
   // Success with no element out is still nothing at the point, not a contradiction to report.
   XCTAssertEqual(
@@ -279,7 +279,7 @@ typedef struct FBAXPair {
   XCTAssertEqual(
     [FBAXHitTestOutcome outcomeForHitTestError:FBAXErrorServerNotFound hasElement:NO].status,
     FBAXHitTestStatusApplicationUnavailable,
-    @"nothing answered at all is not an empty point"
+    @"server-not-found classifies as application-unavailable, not empty"
   );
   XCTAssertEqual(
     [FBAXHitTestOutcome outcomeForHitTestError:FBAXErrorInvalidUIElement hasElement:NO].status,
@@ -289,7 +289,7 @@ typedef struct FBAXPair {
   XCTAssertEqual(
     [FBAXHitTestOutcome outcomeForHitTestError:FBAXErrorIPCTimeout hasElement:NO].status,
     FBAXHitTestStatusApplicationNotResponding,
-    @"a live application that did not answer is neither an empty point nor an absent app"
+    @"an IPC timeout classifies as application-not-responding, not empty or unavailable"
   );
 }
 
@@ -356,7 +356,7 @@ typedef struct FBAXPair {
 // An application that is there and did not answer in time. Its own kind because the two remedies diverge:
 // an unavailable application is reconfigured or relaunched, one that did not answer is waited for. Empty
 // would be worse than either — it says the point is blank, which is exactly what a busy app looks like.
-- (void)testAnApplicationThatDidNotAnswerIsTaggedApartFromOneThatIsAbsent
+- (void)testNotRespondingAndUnavailableProduceDistinctErrorKinds
 {
   _runtime.hitTestOutcome = [FBAXHitTestOutcome applicationNotResponding];
 
@@ -369,7 +369,7 @@ typedef struct FBAXPair {
   NSDictionary *systemWide = FBAXBridgeHandleRequest(@{@"verb" : @"hittest", @"x" : @1, @"y" : @2});
   XCTAssertEqualObjects(systemWide[@"error_kind"], @"application_not_responding");
   XCTAssertEqualObjects(systemWide[@"error"], @"the application at the hit-test point did not answer in time");
-  XCTAssertNil(systemWide[@"empty"], @"an app that did not answer must never read as empty space");
+  XCTAssertNil(systemWide[@"empty"], @"empty must not be set on a not-responding response");
 }
 
 // A hit-test that went wrong is an opaque failure carrying the runtime's reason, and must *not* pick up
@@ -724,7 +724,7 @@ static NSDictionary *FBAXTestsSnapshotRequest(NSDictionary<NSString *, id> *extr
   NSDictionary *response = FBAXBridgeHandleRequest(@{@"verb" : @"describe", @"pid" : @(kAppPid)});
   NSDictionary *phases = response[@"phases"];
 
-  XCTAssertNotNil(phases, @"every describe reports its phases; this is not behind a flag");
+  XCTAssertNotNil(phases, @"phases must be present on every describe response");
   XCTAssertEqualObjects(phases[@"mach_round_trips"], @2, @"one round trip per node, root plus leaf");
   XCTAssertNotNil(phases[@"traverse_ms"]);
   XCTAssertGreaterThanOrEqual([phases[@"traverse_ms"] doubleValue], 0.0);
@@ -765,7 +765,7 @@ static NSDictionary *FBAXTestsSnapshotRequest(NSDictionary<NSString *, id> *extr
   XCTAssertEqualObjects(response[@"automation"][@"asserted"], @NO);
 }
 
-- (void)testRequestingAutomationModeAssertsItAndSaysSo
+- (void)testRequestingAutomationModeWritesAndReportsAsserted
 {
   _runtime.applicationElements[@(kAppPid)] = [FBAXFakeElement readable:@"UIApplication"];
   _runtime.automationMode = NO;
@@ -809,7 +809,7 @@ static NSDictionary *FBAXTestsSnapshotRequest(NSDictionary<NSString *, id> *extr
 
 // The readback is the point. A preference write can be accepted and silently not apply, and a caller
 // told `asserted` for one of those would believe the device is in a mode it is not in.
-- (void)testAWriteThatDoesNotTakeIsReportedRatherThanAssumed
+- (void)testFailedAutomationModeWriteReportsAssertedFalse
 {
   _runtime.applicationElements[@(kAppPid)] = [FBAXFakeElement readable:@"UIApplication"];
   _runtime.automationMode = NO;
@@ -819,8 +819,8 @@ static NSDictionary *FBAXTestsSnapshotRequest(NSDictionary<NSString *, id> *extr
   FBAXBridgeHandleRequest(@{@"verb" : @"describe", @"pid" : @(kAppPid), @"automationMode" : @YES});
 
   XCTAssertEqualObjects(_runtime.automationModeWrites, @[@YES], @"the write was attempted");
-  XCTAssertEqualObjects(response[@"automation"][@"enabled"], @NO, @"and the device is still not in it");
-  XCTAssertEqualObjects(response[@"automation"][@"asserted"], @NO, @"so the read must not claim it was");
+  XCTAssertEqualObjects(response[@"automation"][@"enabled"], @NO, @"enabled reads back NO after the failed write");
+  XCTAssertEqualObjects(response[@"automation"][@"asserted"], @NO, @"asserted is NO when the write did not take");
 }
 
 #pragma mark - Write dispatch
@@ -868,7 +868,7 @@ static NSDictionary *FBAXTestsPress(void)
 
 // An action name the guest cannot map has no number to perform, so it is refused outright rather than
 // falling through to whichever action happens to be first in the enum.
-- (void)testAnUnknownActionIsRefusedBeforeAnythingIsTouched
+- (void)testUnknownActionIsRejectedWithoutReachingTheRuntime
 {
   [self seedHitElementWithAttributes:@{}];
   for (id action in @[@"pres", @"AXPress", @"", @123, NSNull.null]) {
@@ -1197,7 +1197,7 @@ static NSDictionary *FBAXTestsPress(void)
   XCTAssertEqualObjects(
     response[@"truncated"],
     @NO,
-    @"a cap that hid nothing is not a truncated read"
+    @"truncated is NO when the depth cap cut nothing"
   );
 }
 
@@ -1277,7 +1277,7 @@ static NSDictionary *FBAXTestsPress(void)
   FBAXBridgeHandleRequest(@{@"verb" : @"describe", @"pid" : @(kAppPid), @"translatorVocabulary" : @YES})[@"tree"];
 
   XCTAssertEqualObjects(tree[kNodeTranslatorRole], @9);
-  XCTAssertNil(tree[kAXElementType], @"an unmapped translator role must not masquerade as an XCUIElementType");
+  XCTAssertNil(tree[kAXElementType], @"the translator role must not be emitted under the elementType key");
 }
 
 // The point is what lets the host judge reachability on this path: it derives `interactable` from the
@@ -1740,9 +1740,9 @@ static NSDictionary *FBAXTestsPress(void)
 - (void)testAnUnsupportedFrontmostMethodConsultsNoResolver
 {
   NSDictionary *response =
-  FBAXBridgeHandleRequest(@{@"verb" : @"describe", @"x" : @1, @"y" : @2, @"method" : @"telepathy"});
+  FBAXBridgeHandleRequest(@{@"verb" : @"describe", @"x" : @1, @"y" : @2, @"method" : @"not-a-method"});
   XCTAssertEqualObjects(response[@"ok"], @NO);
-  XCTAssertEqualObjects(response[@"error"], @"unsupported frontmost method: telepathy");
+  XCTAssertEqualObjects(response[@"error"], @"unsupported frontmost method: not-a-method");
   XCTAssertEqualObjects(response[@"error_kind"], @"frontmost_unresolved");
   XCTAssertEqual(_runtime.hitTestCount, 0u);
   XCTAssertEqual(_runtime.windowServerCount, 0u);

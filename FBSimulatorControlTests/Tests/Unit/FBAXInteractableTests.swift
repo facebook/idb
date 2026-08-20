@@ -160,7 +160,7 @@ final class FBAXInteractableTests: XCTestCase {
       "the key was requested, so it must be present"
     )
 
-    XCTAssertNil(value, "no point was read, so there is nothing to judge — and no reason to invent one")
+    XCTAssertNil(value, "interactable is null when no visible point was fetched")
   }
 
   // MARK: - Encoding

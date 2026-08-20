@@ -40,7 +40,7 @@
 
 - (void)testUnknownActionReturnsFailure
 {
-  XCTAssertEqual(handleNotificationSettingsAction(@"frobnicate", @"com.example.test"), 1);
+  XCTAssertEqual(handleNotificationSettingsAction(@"unknown", @"com.example.test"), 1);
 }
 
 @end

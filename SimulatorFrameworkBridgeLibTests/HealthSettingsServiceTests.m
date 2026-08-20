@@ -78,7 +78,7 @@ static BOOL FBHealthRuntimeDeclaresSelector(NSString *selectorName)
 // `respondsToSelector:` dispatch between them is total. A third rename shows up as a failure here.
 - (void)testTheRuntimeDeclaresExactlyOneAuthorizationSpelling
 {
-  XCTAssertNotNil(FBHealthAuthorizationStoreClass(), @"HealthKit must be loadable for any of this to mean anything");
+  XCTAssertNotNil(FBHealthAuthorizationStoreClass(), @"HealthKit failed to load");
   BOOL legacy = FBHealthRuntimeDeclaresSelector(kLegacyAuthorizationSelector);
   BOOL modeInfos = FBHealthRuntimeDeclaresSelector(kModeInfosAuthorizationSelector);
   XCTAssertNotEqual(legacy, modeInfos, @"expected one spelling, got legacy=%d modeInfos=%d", legacy, modeInfos);
@@ -97,7 +97,7 @@ static BOOL FBHealthRuntimeDeclaresSelector(NSString *selectorName)
 
 - (void)testUnknownActionReturnsFailure
 {
-  XCTAssertEqual(handleHealthSettingsAction(@"frobnicate", @"com.example.test", @[]), 1);
+  XCTAssertEqual(handleHealthSettingsAction(@"unknown", @"com.example.test", @[]), 1);
 }
 
 @end

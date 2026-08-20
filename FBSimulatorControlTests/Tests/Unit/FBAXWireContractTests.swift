@@ -136,7 +136,7 @@ final class FBAXWireContractTests: XCTestCase {
   // than as anything the host would act on. A newer guest can then emit kinds an older host does not
   // know, degrading precision instead of breaking parsing.
   func testAnUnknownFailureKindIsNotAKnownOne() {
-    XCTAssertNil(FBAXWire.ErrorKind(rawValue: "application_on_fire"))
+    XCTAssertNil(FBAXWire.ErrorKind(rawValue: "some_future_kind"))
   }
 
   // MARK: - Verbs and actions
