@@ -6,7 +6,7 @@ title: UI Automation
 `idb ui` is the command group for everything that reads or drives the screen. It covers two kinds of operation that are easy to confuse:
 
 - **Accessibility operations** ask the target's accessibility system what is on screen, and act on the *elements* it reports. `describe-all`, `describe-point`, `describe`, `scroll` and `set-value` are always accessibility operations; `tap` can be one.
-- **HID operations** synthesize the events a physical finger, keyboard or button would produce. They know nothing about elements — a swipe is a swipe whether or not anything is under it.
+- **HID operations** synthesize the events a physical finger, keyboard or button would produce. They operate on coordinates, not elements.
 
 Accessibility operations are currently supported on iOS Simulators only. HID operations work on Simulators, and a subset works on Devices.
 
@@ -85,7 +85,7 @@ In the `default` and `nested` formats a whole-screen read emits an array where t
 
 ### `idb ui describe MARKER`
 
-Describes the single element matching a marker, without you having to know where it is.
+Describes the single element matching a marker.
 
 ```
 $ idb ui describe General | jq '{AXLabel, AXUniqueId, type}'
@@ -115,11 +115,11 @@ idb ui describe com.apple.settings.general --match-key AXUniqueId
 
 ## Acting on elements
 
-These commands resolve a target through the accessibility system and then perform the action the platform itself would perform. They are not synthesized touches: an accessibility press activates the element directly, so it is unaffected by an animation moving the element mid-gesture, and it cannot land on the wrong thing because something moved under the coordinate.
+These commands resolve a target through the accessibility system and then perform the action the platform itself would perform. They are not synthesized touches: an accessibility press activates the element directly, so it does not depend on where the element is on screen at the moment of the press.
 
 ### `idb ui tap`
 
-`tap` is the one command that spans both worlds, and which world it lands in depends on how you address it:
+`tap` can be either a HID operation or an accessibility operation, depending on how the target is addressed:
 
 ```
 # Coordinate tap, delivered as a synthesized touch
@@ -132,7 +132,7 @@ idb ui tap General
 
 A marker is always resolved through the accessibility system; passing `--api hid` with one is rejected rather than silently ignored.
 
-`--duration` holds the touch down for a given time, and is only meaningful for a coordinate touch. An accessibility press is instantaneous with nowhere to put a hold, so `--duration` is rejected there rather than being dropped — a long press that quietly became a tap would make a test pass for the wrong reason.
+`--duration` holds the touch down for a given time, and is only meaningful for a coordinate touch. An accessibility press is instantaneous, so `--duration` is rejected there rather than silently ignored.
 
 `--expected-value` guards the tap. The element must report that value for `--expected-key` (default `AXLabel`) or the tap is refused, leaving the screen where it was:
 
@@ -272,7 +272,7 @@ idb ui shake
 
 ## Building a loop
 
-The read and act commands are designed to compose. A read tells you what is on screen and a marker names an element in it, so an interaction never has to hardcode a coordinate that a different device size or a shifted layout would invalidate:
+The read and act commands compose: read the screen, then address elements by marker rather than hardcoding coordinates that vary with device size and layout:
 
 ```
 # Wait for a button to appear, then press it
