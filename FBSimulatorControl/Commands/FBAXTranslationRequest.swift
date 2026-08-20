@@ -132,7 +132,10 @@ final class FBAXTranslationRequest {
     }
     // A named element is one element, with no tree behind it to speak for the screen. A marker match
     // does know its bounds — the root it descended from — and the backend stamps them on the way out.
-    return buildResponse(elements: .single(elements), serializationStart: serializationStart, coverage: nil, screen: nil)
+    return buildResponse(
+      elements: .single(elements), serializationStart: serializationStart, coverage: nil, screen: nil,
+      reportProfile: options.enableProfiling
+    )
   }
 
   // MARK: - Frontmost Application
@@ -177,7 +180,8 @@ final class FBAXTranslationRequest {
             reported: mainAppElements, walked: walked, screenBounds: screenBounds,
             nested: options.nestedFormat
           ) : nil,
-        screen: Self.screenInfo(fromBounds: screenBounds)
+        screen: Self.screenInfo(fromBounds: screenBounds),
+        reportProfile: options.enableProfiling
       )
     }
 
@@ -192,6 +196,7 @@ final class FBAXTranslationRequest {
       coverageGrid: grid,
       walkedElements: walked,
       collectFrameCoverage: options.collectFrameCoverage,
+      reportProfile: options.enableProfiling,
       serializationStart: serializationStart,
       keys: keys,
       remoteOptions: remoteOptions,
@@ -302,6 +307,7 @@ final class FBAXTranslationRequest {
     coverageGrid: FBAccessibilityCoverageGrid?,
     walkedElements: [FBAccessibilityDocumentElement],
     collectFrameCoverage: Bool,
+    reportProfile: Bool,
     serializationStart: CFAbsoluteTime,
     keys: Set<FBAXKeys>,
     remoteOptions: FBAccessibilityRemoteContentOptions,
@@ -352,7 +358,8 @@ final class FBAXTranslationRequest {
           reported: mainAppElements, walked: walkedElements, screenBounds: screenBounds,
           nested: nestedFormat, additional: additionalFrameCoverage
         ) : nil,
-      screen: Self.screenInfo(fromBounds: screenBounds)
+      screen: Self.screenInfo(fromBounds: screenBounds),
+      reportProfile: reportProfile
     )
   }
 
@@ -367,10 +374,14 @@ final class FBAXTranslationRequest {
     elements: FBAccessibilityElementPayload,
     serializationStart: CFAbsoluteTime,
     coverage: FBAccessibilityCoverage?,
-    screen: FBAccessibilityScreenInfo?
+    screen: FBAccessibilityScreenInfo?,
+    reportProfile: Bool
   ) -> FBAccessibilityElementsResponse {
     let serializationDuration = CFAbsoluteTimeGetCurrent() - serializationStart
-    let profilingData = collector?.finalize(withSerializationDuration: serializationDuration)
+    // Collected either way; reported only when asked. Collection is cheap enough to leave on, and a
+    // number nobody collected cannot be recovered afterwards — but a caller that did not ask for timings
+    // should not have to parse them.
+    let profilingData = reportProfile ? collector?.finalize(withSerializationDuration: serializationDuration) : nil
     return FBAccessibilityElementsResponse(
       elements: elements,
       profilingData: profilingData.map { .translator($0) },

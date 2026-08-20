@@ -174,9 +174,10 @@ extension FBAXTreeReader {
       await warnIfGeometrySuspect(FBAccessibilityFrameSummary(elements: elements))
       return FBAccessibilityElementsResponse(
         elements: .tree(elements),
-        profilingData: profile(
-          for: read, elementCount: Self.nodeCount(of: elements), serializeDuration: serializeDuration
-        ),
+        profilingData: options.enableProfiling
+          ? profile(
+            for: read, elementCount: Self.nodeCount(of: elements), serializeDuration: serializeDuration
+          ) : nil,
         coverage: coverage, modal: read.modal, automation: read.automation
       )
       .withProvenance(
