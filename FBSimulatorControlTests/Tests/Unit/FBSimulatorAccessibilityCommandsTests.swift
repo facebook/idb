@@ -1129,6 +1129,43 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     XCTAssertEqual(coverage.walked, 1.0, accuracy: 0.01, "and the walk is unchanged")
   }
 
+  // MARK: - When the profiling collector starts existing
+
+  // The dispatcher times both acquisition phases — `perform(withTranslator:)` and
+  // `macPlatformElement(fromTranslation:)` — and writes each to `request.collector`. The collector is
+  // created in `serialize`, which runs *after* resolution has finished, so at the moment of those two
+  // writes the optional is nil and both are discarded.
+  //
+  // The double burns 20 ms in each of those calls, so the two phases together have at least 40 ms to
+  // report. This asserts they report none of it.
+  //
+  // BUG: acquisition is reported as taking exactly no time — flipped in the following commit.
+  func testTheTranslatorProfileReportsNoAcquisitionTime() async throws {
+    try setUp(withRootElement: defaultRoot(withChildren: []))
+    fixture!.translator.frontmostApplicationDelay = 0.02
+    fixture!.translator.macPlatformElementDelay = 0.02
+
+    let element = try await simulator.resolveElement(for: .frontmost)
+    defer { element.close() }
+    var options = FBAccessibilityRequestOptions()
+    options.enableProfiling = true
+    let response = try await element.serialize(with: options)
+    let profile = try XCTUnwrap(response.profilingData?.translatorProfile)
+
+    XCTAssertEqual(profile.translationDuration, 0, "the 20 ms spent resolving the translation is not reported")
+    XCTAssertEqual(profile.elementConversionDuration, 0, "nor the 20 ms spent converting it to an element")
+    XCTAssertGreaterThan(profile.serializationDuration, 0, "while the phase measured after the collector exists is")
+  }
+
+  // The mechanism behind the above, pinned directly rather than through a read: a request begins life
+  // with nowhere to record. Every dispatcher measurement taken between here and `serialize` is written
+  // to a nil optional.
+  //
+  // BUG: the collector outlives only part of the read it profiles — flipped in the following commit.
+  func testARequestBeginsWithNoCollector() {
+    XCTAssertNil(FBAXTranslationRequest(kind: .frontmostApplication).collector)
+  }
+
   // The baseline the filtered read below is measured against: every node serialized.
   func testAllFilterProfileCountsCoverEveryNode() async throws {
     assertProfilingData(try await profile(withFilter: .all), expectedElements: 4, expectedAttributeFetches: 60)

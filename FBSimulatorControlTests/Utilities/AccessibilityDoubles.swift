@@ -203,6 +203,12 @@ class FBSimulatorControlTests_AXPTranslator_Double: NSObject {
   /// return a distinct element for object-at-point hit-testing (remote content)
   /// versus the frontmost application. Falls back to `macPlatformElementResult`.
   var macPlatformElementResultsByPid: [pid_t: FBSimulatorControlTests_AXPMacPlatformElement_Double] = [:]
+  /// Wall time to burn inside the two calls the dispatcher times, so a test can assert a *floor* on the
+  /// acquisition phases rather than merely that they are non-negative. A real translator's cost here is
+  /// whatever the simulator is doing; a double's is nothing, and a duration assertion against nothing
+  /// passes whether or not the measurement is wired up. Zero by default, so no other test pays for it.
+  var frontmostApplicationDelay: TimeInterval = 0
+  var macPlatformElementDelay: TimeInterval = 0
   weak var bridgeTokenDelegate: AnyObject?
   private(set) var methodCalls = NSMutableArray()
   /// Invoked at the top of each frontmost resolution, on the thread driving it. Lets a
@@ -213,6 +219,9 @@ class FBSimulatorControlTests_AXPTranslator_Double: NSObject {
   func frontmostApplication(withDisplayId displayId: Int32, bridgeDelegateToken token: String) -> FBSimulatorControlTests_AXPTranslationObject_Double? {
     resolutionEnterHook?()
     methodCalls.add("frontmostApplicationWithDisplayId:\(displayId) token:\(token)")
+    if frontmostApplicationDelay > 0 {
+      Thread.sleep(forTimeInterval: frontmostApplicationDelay)
+    }
     let result = frontmostApplicationResult
     result?.bridgeDelegateToken = token
     return result
@@ -228,6 +237,9 @@ class FBSimulatorControlTests_AXPTranslator_Double: NSObject {
 
   func macPlatformElement(fromTranslation translation: FBSimulatorControlTests_AXPTranslationObject_Double) -> FBSimulatorControlTests_AXPMacPlatformElement_Double? {
     methodCalls.add("macPlatformElementFromTranslation")
+    if macPlatformElementDelay > 0 {
+      Thread.sleep(forTimeInterval: macPlatformElementDelay)
+    }
     let result = macPlatformElementResultsByPid[translation.pid] ?? macPlatformElementResult
     result?.translation = translation
     return result
