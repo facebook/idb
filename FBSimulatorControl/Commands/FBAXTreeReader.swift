@@ -32,25 +32,37 @@ protocol FBAXTreeReader: FBUIAutomation {
   /// Derived from the caller's requested keys, so an attribute only reaches the wire when a key that
   /// needs it was asked for.
   ///
-  /// `strategy` chooses how the tree is traversed, and therefore which vocabulary answers. Per read: the
-  /// same caller wants the structural tree for one question and the semantic one for another.
+  /// `traversal` chooses how the tree is traversed, and therefore which attributes the elements carry. Per read: the
+  /// same caller wants the structural tree for one question and the semantic one for another. Already
+  /// resolved, so a backend never has to decide what an unchosen traversal means at the point of reading.
   func readRawTree(
     for query: FBAccessibilityElementQuery,
     attributes: [String]?,
     explainUnreachable: Bool,
-    strategy: FBAXTraversalStrategy
+    traversal: FBAXTraversal
   ) async throws -> FBAXTreeRead
+
+  /// The traversal this backend performs for a read that named none.
+  ///
+  /// Per backend because it is a question only a backend can answer: what is cheapest depends on what the
+  /// read has to ask the application for, and the backends do not have the same reads to choose between.
+  /// Takes the whole options rather than nothing, so the answer can depend on what was asked for.
+  ///
+  /// Static because the answer is a property of the backend rather than of one reader: nothing about how an
+  /// instance was configured — its transport, its persistence, the mode it asserts — may change which walk
+  /// an unasked read gets. It also lets a test ask a backend for its answer without standing up a simulator.
+  static func autoTraversal(for options: FBAccessibilityRequestOptions) -> FBAXTraversal
 
   /// Warns that the traversal could not answer keys the caller asked for, so a caller can tell "this read
   /// could not ask" from "the app set nothing".
-  func warnIfUnsatisfiable(_ keys: Set<FBAXKeys>, strategy: FBAXTraversalStrategy) async
+  func warnIfUnsatisfiable(_ keys: Set<FBAXKeys>, traversal: FBAXTraversal) async
 
   /// Warns that a read's tree was truncated by the depth or node bound, so an incomplete tree is never
   /// passed off as whole. Per backend because each logs through its own target; `describeTree` calls it
   /// once per describe, and never on the `.marker` wait poll, which reads without describing.
   func warnIfTruncated(_ truncated: Bool) async
 
-  /// Warns when a whole-tree read asked for reachability. Guest lanes only: the translator lane has no
+  /// Warns when a whole-tree read asked for reachability. Axbridge only: the `testmanagerd` backend has no
   /// counterpart for these attributes, so the same request costs nothing there.
   func warnIfReachabilityAcrossTree(_ keys: Set<FBAXKeys>) async
 
@@ -62,11 +74,11 @@ protocol FBAXTreeReader: FBUIAutomation {
   /// Where this read spent its time, in whatever shape this backend measures. Nil from a backend that
   /// does not measure, which is distinct from a zeroed profile.
   ///
-  /// `strategy` is the traversal the read was performed with, passed in rather than inferred so the
-  /// profile reports what happened rather than what a caller asked for.
+  /// `traversal` is the one the read was performed with, passed in rather than inferred so the profile
+  /// reports what happened rather than what a caller asked for.
   func profile(
     for read: FBAXTreeRead, elementCount: Int, serializeDuration: CFAbsoluteTime,
-    strategy: FBAXTraversalStrategy
+    traversal: FBAXTraversal
   ) -> FBAccessibilityProfile?
 }
 
@@ -75,7 +87,7 @@ extension FBAXTreeReader {
   /// Elements in the serialized read, counted through `children`.
   ///
   /// The `complete` format is always nested, so the top level is a single root and `count` would report 1
-  /// for any tree — where the translator lane counts every node.
+  /// for any tree — where the `testmanagerd` backend counts every node.
   static func nodeCount(of elements: [FBAccessibilityDocumentElement]) -> Int {
     elements.reduce(0) { $0 + 1 + nodeCount(of: $1.children ?? []) }
   }
@@ -83,9 +95,20 @@ extension FBAXTreeReader {
   /// Backends that do not measure report nothing rather than zeroes.
   func profile(
     for read: FBAXTreeRead, elementCount: Int, serializeDuration: CFAbsoluteTime,
-    strategy: FBAXTraversalStrategy
+    traversal: FBAXTraversal
   ) -> FBAccessibilityProfile? {
     nil
+  }
+
+  /// The traversal a read actually gets: what the caller named, or what this backend chooses when they
+  /// named nothing.
+  ///
+  /// Written once here rather than per backend, so "an explicit choice wins" is a rule no backend can
+  /// implement differently — a conformer supplies only the `auto` answer. Do not shadow this on a
+  /// conformer: `describeTree` dispatches to this extension statically, so a shadow would change what
+  /// tests see without changing what reads do.
+  static func resolvedTraversal(for options: FBAccessibilityRequestOptions) -> FBAXTraversal {
+    options.traversalStrategy.traversal ?? autoTraversal(for: options)
   }
 }
 
@@ -119,13 +142,14 @@ extension FBAXTreeReader {
       return response.withProvenance(backend: backend.name, target: query.targetDescriptor)
     case let .marker(value, key, _):
       let markerKeys = options.serializationKeys(including: [key.serializationKey])
+      let traversal = Self.resolvedTraversal(for: options)
       let read = try await readRawTree(
         for: query, attributes: FBAXWire.Node.fetchList(for: markerKeys),
-        explainUnreachable: false, strategy: options.traversalStrategy
+        explainUnreachable: false, traversal: traversal
       )
       await warnIfTruncated(read.truncated)
       await warnIfUnsatisfiable(
-        options.unsatisfiableKeys(including: [key.serializationKey]), strategy: options.traversalStrategy
+        options.unsatisfiableKeys(for: traversal, including: [key.serializationKey]), traversal: traversal
       )
       // A marker read walks the whole tree to find one element, so it costs the same per-node
       // hit-testing a describe-all does while returning far less.
@@ -147,15 +171,16 @@ extension FBAXTreeReader {
           truncated: read.truncated
         )
     case .frontmost, .application:
+      let traversal = Self.resolvedTraversal(for: options)
       let read = try await readRawTree(
         for: query,
         attributes: FBAXWire.Node.fetchList(for: options.serializationKeys),
         // Only a read that asked to name what is in the way pays for the guest to work it out.
         explainUnreachable: options.keys.contains(.occludedBy),
-        strategy: options.traversalStrategy
+        traversal: traversal
       )
       await warnIfTruncated(read.truncated)
-      await warnIfUnsatisfiable(options.unsatisfiableKeys, strategy: options.traversalStrategy)
+      await warnIfUnsatisfiable(options.unsatisfiableKeys(for: traversal), traversal: traversal)
       await warnIfReachabilityAcrossTree(options.serializationKeys)
       let serializeStarted = CFAbsoluteTimeGetCurrent()
       let walked = FBAXTreeWalk.describeAllElements(
@@ -184,7 +209,7 @@ extension FBAXTreeReader {
         profilingData: options.enableProfiling
           ? profile(
             for: read, elementCount: Self.nodeCount(of: elements), serializeDuration: serializeDuration,
-            strategy: options.traversalStrategy
+            traversal: traversal
           ) : nil,
         coverage: coverage, modal: read.modal, automation: read.automation
       )
@@ -315,7 +340,7 @@ extension FBAXTreeReader {
       // Structural traversal regardless of what a read would have asked for: resolving a write target is
       // about finding the element to act on, and the semantic traversal cannot name element types.
       let read = try await readRawTree(
-        for: query, attributes: nil, explainUnreachable: false, strategy: .viewHierarchy
+        for: query, attributes: nil, explainUnreachable: false, traversal: .viewHierarchy
       )
       await warnIfTruncated(read.truncated)
       // Unfiltered, like the marker branch of `describeTree`: a write resolves the element the caller

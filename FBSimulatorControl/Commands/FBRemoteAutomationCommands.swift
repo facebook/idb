@@ -80,7 +80,7 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
     for query: FBAccessibilityElementQuery,
     attributes: [String]?,
     explainUnreachable: Bool,
-    strategy: FBAXTraversalStrategy
+    traversal: FBAXTraversal
   ) async throws -> FBAXTreeRead {
     let fetchList = attributes ?? FBAXWire.Node.defaultFetchList
     let tree: FBRemoteAutomationElementTree
@@ -312,8 +312,14 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
     )
   }
 
-  /// One traversal on this backend, so nothing a caller asks for is unsatisfiable on strategy grounds.
-  func warnIfUnsatisfiable(_ keys: Set<FBAXKeys>, strategy: FBAXTraversalStrategy) {
+  /// The only traversal this backend has. `testmanagerd` serves one snapshot shape, so `auto` has
+  /// nothing to choose between here and an explicit choice changes nothing about the read.
+  static func autoTraversal(for options: FBAccessibilityRequestOptions) -> FBAXTraversal {
+    .viewHierarchy
+  }
+
+  /// One traversal on this backend, so nothing a caller asks for is unsatisfiable on traversal grounds.
+  func warnIfUnsatisfiable(_ keys: Set<FBAXKeys>, traversal: FBAXTraversal) {
   }
 
   /// Warns when a whole-tree read hit the depth or node bound, so a truncated tree is never passed off
@@ -337,7 +343,7 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
   /// the marker write verbs (tap, set-value). Throws `elementNotFound` when nothing matches the marker,
   /// or `elementNotOnScreen` when an element matches but reports no on-screen frame to interact with.
   private func markerCenter(_ markerValue: String, key: FBAXSearchableKey) async throws -> (x: Double, y: Double) {
-    let read = try await readRawTree(for: .frontmost, attributes: nil, explainUnreachable: false, strategy: .viewHierarchy)
+    let read = try await readRawTree(for: .frontmost, attributes: nil, explainUnreachable: false, traversal: .viewHierarchy)
     warnIfTruncated(read.truncated)
     let elements = FBAXTreeWalk.describeAllElements(fromTree: read.tree, keys: FBAXKeys.defaultSet.union([key.serializationKey]), nestedFormat: false, pid: read.pid)
     switch FBAXTreeWalk.resolveMarker(inElements: elements, markerValue: markerValue, key: key) {

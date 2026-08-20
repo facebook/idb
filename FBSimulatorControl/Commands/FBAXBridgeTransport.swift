@@ -118,13 +118,13 @@ protocol FBAXBridgeTransport {
   ///
   /// `attributes` names what to fetch per element; nil leaves the guest on `Node.defaultFetchList`, so a
   /// default read is byte-identical on the wire to one from a host that did not know the field existed.
-  func read(pid: pid_t, maxDepth: Int, maxNodes: Int, attributes: [String]?, explainUnreachable: Bool, strategy: FBAXTraversalStrategy, automationMode: Bool?) async throws -> Data
+  func read(pid: pid_t, maxDepth: Int, maxNodes: Int, attributes: [String]?, explainUnreachable: Bool, traversal: FBAXTraversal, automationMode: Bool?) async throws -> Data
   /// Fused frontmost read (the guest `describe` verb with no pid): the guest resolves the frontmost app
   /// in-guest via `method` (anchored at the given screen point for `.centerPoint`) AND reads its tree in
   /// this one round-trip — no host-side CoreSimulator query and no separate pid call. The response
   /// envelope carries the resolved pid alongside the tree. This is the axbridge frontmost optimization:
   /// one IPC hop.
-  func readFrontmost(x: Double, y: Double, maxDepth: Int, maxNodes: Int, method: FBAXBridgeFrontmostMethod, attributes: [String]?, explainUnreachable: Bool, strategy: FBAXTraversalStrategy, automationMode: Bool?) async throws -> Data
+  func readFrontmost(x: Double, y: Double, maxDepth: Int, maxNodes: Int, method: FBAXBridgeFrontmostMethod, attributes: [String]?, explainUnreachable: Bool, traversal: FBAXTraversal, automationMode: Bool?) async throws -> Data
   /// Reads just the element at a screen point (the guest `hittest` verb with no pid) — a system-wide
   /// hit-test that resolves the element and its owning app in-guest in one round-trip, with no walk and
   /// no separate frontmost pid query. The response carries the owning pid alongside the hit node.
@@ -143,7 +143,7 @@ protocol FBAXBridgeTransport {
 struct FBAXBridgeOneshotTransport: FBAXBridgeTransport {
   let simulator: FBSimulator
 
-  func read(pid: pid_t, maxDepth: Int, maxNodes: Int, attributes: [String]?, explainUnreachable: Bool, strategy: FBAXTraversalStrategy, automationMode: Bool?) async throws -> Data {
+  func read(pid: pid_t, maxDepth: Int, maxNodes: Int, attributes: [String]?, explainUnreachable: Bool, traversal: FBAXTraversal, automationMode: Bool?) async throws -> Data {
     try await spawn(
       ["accessibility", FBAXWire.Verb.describe.rawValue]
         + FBAXWire.Request.pid.argument("\(pid)")
@@ -151,12 +151,12 @@ struct FBAXBridgeOneshotTransport: FBAXBridgeTransport {
         + FBAXWire.Request.maxNodes.argument("\(maxNodes)")
         + Self.attributeArgument(attributes)
         + Self.explainArgument(explainUnreachable)
-        + Self.strategyArgument(strategy)
+        + Self.traversalArgument(traversal)
         + Self.automationArgument(automationMode)
     )
   }
 
-  func readFrontmost(x: Double, y: Double, maxDepth: Int, maxNodes: Int, method: FBAXBridgeFrontmostMethod, attributes: [String]?, explainUnreachable: Bool, strategy: FBAXTraversalStrategy, automationMode: Bool?) async throws -> Data {
+  func readFrontmost(x: Double, y: Double, maxDepth: Int, maxNodes: Int, method: FBAXBridgeFrontmostMethod, attributes: [String]?, explainUnreachable: Bool, traversal: FBAXTraversal, automationMode: Bool?) async throws -> Data {
     try await spawn(
       ["accessibility", FBAXWire.Verb.describe.rawValue]
         + FBAXWire.Request.x.argument("\(x)")
@@ -166,7 +166,7 @@ struct FBAXBridgeOneshotTransport: FBAXBridgeTransport {
         + FBAXWire.Request.method.argument(method.rawValue)
         + Self.attributeArgument(attributes)
         + Self.explainArgument(explainUnreachable)
-        + Self.strategyArgument(strategy)
+        + Self.traversalArgument(traversal)
         + Self.automationArgument(automationMode)
     )
   }
@@ -182,8 +182,8 @@ struct FBAXBridgeOneshotTransport: FBAXBridgeTransport {
 
   /// Sent only for a non-default traversal, so a default read's argv stays byte-identical to what a guest
   /// predating the field expects.
-  private static func strategyArgument(_ strategy: FBAXTraversalStrategy) -> [String] {
-    switch strategy {
+  private static func traversalArgument(_ traversal: FBAXTraversal) -> [String] {
+    switch traversal {
     case .semantic: FBAXWire.Request.translatorVocabulary.argument("1")
     case .singleFetch: FBAXWire.Request.snapshotTree.argument("1")
     case .viewHierarchy: []
@@ -249,12 +249,12 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
     self.simulator = simulator
   }
 
-  func read(pid: pid_t, maxDepth: Int, maxNodes: Int, attributes: [String]?, explainUnreachable: Bool, strategy: FBAXTraversalStrategy, automationMode: Bool?) async throws -> Data {
+  func read(pid: pid_t, maxDepth: Int, maxNodes: Int, attributes: [String]?, explainUnreachable: Bool, traversal: FBAXTraversal, automationMode: Bool?) async throws -> Data {
     try await roundTripWithRecovery(
       Self.adding(
         attributes,
         explainUnreachable,
-        strategy,
+        traversal,
         automationMode,
         to: [
           FBAXWire.Request.verb.key: FBAXWire.Verb.describe.rawValue,
@@ -264,12 +264,12 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
         ]))
   }
 
-  func readFrontmost(x: Double, y: Double, maxDepth: Int, maxNodes: Int, method: FBAXBridgeFrontmostMethod, attributes: [String]?, explainUnreachable: Bool, strategy: FBAXTraversalStrategy, automationMode: Bool?) async throws -> Data {
+  func readFrontmost(x: Double, y: Double, maxDepth: Int, maxNodes: Int, method: FBAXBridgeFrontmostMethod, attributes: [String]?, explainUnreachable: Bool, traversal: FBAXTraversal, automationMode: Bool?) async throws -> Data {
     try await roundTripWithRecovery(
       Self.adding(
         attributes,
         explainUnreachable,
-        strategy,
+        traversal,
         automationMode,
         to: [
           FBAXWire.Request.verb.key: FBAXWire.Verb.describe.rawValue,
@@ -302,7 +302,7 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
   private static func adding(
     _ attributes: [String]?,
     _ explainUnreachable: Bool,
-    _ strategy: FBAXTraversalStrategy,
+    _ traversal: FBAXTraversal,
     _ automationMode: Bool?,
     to payload: [String: Any]
   ) -> [String: Any] {
@@ -313,10 +313,10 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
     if explainUnreachable {
       payload[FBAXWire.Request.explainUnreachable.key] = true
     }
-    if strategy == .semantic {
+    if traversal == .semantic {
       payload[FBAXWire.Request.translatorVocabulary.key] = true
     }
-    if strategy == .singleFetch {
+    if traversal == .singleFetch {
       payload[FBAXWire.Request.snapshotTree.key] = true
     }
     // Present only when the caller asked, so an unset request leaves the device alone rather than

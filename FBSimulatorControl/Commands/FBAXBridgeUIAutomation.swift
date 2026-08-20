@@ -111,6 +111,11 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
     )
   }
 
+  /// What the guest lanes read when the caller named no traversal.
+  static func autoTraversal(for options: FBAccessibilityRequestOptions) -> FBAXTraversal {
+    .viewHierarchy
+  }
+
   /// Reads the whole bounded attribute tree a query targets, through the configured transport (one-shot
   /// spawn or persistent socket). `.application` reads the named pid; every other query is a frontmost
   /// read served by a single fused guest query — the guest resolves the frontmost app (system-wide
@@ -121,7 +126,7 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
     for query: FBAccessibilityElementQuery,
     attributes: [String]?,
     explainUnreachable: Bool,
-    strategy: FBAXTraversalStrategy
+    traversal: FBAXTraversal
   ) async throws -> FBAXTreeRead {
     try await translatingBackendErrors {
       if case let .application(pid) = query {
@@ -129,7 +134,7 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
         let sent = CFAbsoluteTimeGetCurrent()
         let response = try await transport.read(
           pid: pid, maxDepth: FBAXReadLimits.maxReadDepth, maxNodes: FBAXReadLimits.maxReadNodes,
-          attributes: attributes, explainUnreachable: explainUnreachable, strategy: strategy,
+          attributes: attributes, explainUnreachable: explainUnreachable, traversal: traversal,
           automationMode: requestedAutomationMode
         )
         let returned = CFAbsoluteTimeGetCurrent()
@@ -142,7 +147,7 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
       let response = try await transport.readFrontmost(
         x: anchor.x, y: anchor.y, maxDepth: FBAXReadLimits.maxReadDepth, maxNodes: FBAXReadLimits.maxReadNodes,
         method: frontmostMethod, attributes: attributes, explainUnreachable: explainUnreachable,
-        strategy: strategy, automationMode: requestedAutomationMode
+        traversal: traversal, automationMode: requestedAutomationMode
       )
       let returned = CFAbsoluteTimeGetCurrent()
       var read = try FBAXTreeRead(frontmostResponse: response, method: frontmostMethod)
@@ -191,7 +196,7 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
       do {
         // A poll reads the raw tree directly (not through `describeTree`), so `warnIfTruncated` is not
         // called on every poll iteration — matching the describe-path-only warning.
-        let read = try await self.readRawTree(for: .frontmost, attributes: nil, explainUnreachable: false, strategy: .viewHierarchy)
+        let read = try await self.readRawTree(for: .frontmost, attributes: nil, explainUnreachable: false, traversal: .viewHierarchy)
         let elements = FBAXTreeWalk.describeAllElements(
           fromTree: read.tree, keys: FBAXKeys.defaultSet.union([key.serializationKey]), nestedFormat: false, pid: read.pid
         )
@@ -304,12 +309,12 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
 
   /// Warns that the traversal could not answer keys the caller asked for, so a caller can tell "this read
   /// could not ask" from "the app set nothing".
-  func warnIfUnsatisfiable(_ keys: Set<FBAXKeys>, strategy: FBAXTraversalStrategy) {
+  func warnIfUnsatisfiable(_ keys: Set<FBAXKeys>, traversal: FBAXTraversal) {
     guard !keys.isEmpty else {
       return
     }
     _ = simulator.logger.log(
-      "The \(strategy.rawValue) traversal cannot fetch "
+      "The \(traversal.rawValue) traversal cannot fetch "
         + keys.map(\.rawValue).sorted().joined(separator: ", ")
         + " for every element; a missing value may mean the attribute was unfetchable, not unset"
     )
@@ -327,7 +332,7 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
   /// `traversal` says which walk produced `machRoundTrips` — see `FBAXBridgeProfile.traversal`.
   func profile(
     for read: FBAXTreeRead, elementCount: Int, serializeDuration: CFAbsoluteTime,
-    strategy: FBAXTraversalStrategy
+    traversal: FBAXTraversal
   ) -> FBAccessibilityProfile? {
     guard let timings = read.timings else {
       return nil
@@ -339,7 +344,7 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
         acquireDuration: timings.residual,
         readDuration: timings.traverse ?? 0,
         serializeDuration: serializeDuration,
-        traversal: strategy,
+        traversal: traversal,
         machRoundTrips: timings.machRoundTrips,
         hostDecodeDuration: timings.decode,
         responseBytes: timings.responseBytes

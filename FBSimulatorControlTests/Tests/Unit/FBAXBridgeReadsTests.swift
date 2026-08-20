@@ -858,7 +858,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
     for query in [FBAccessibilityElementQuery.frontmost, .marker(value: "General", key: .label, depth: 10)] {
       let reader = StubTreeReader(read: Self.stubRead())
       _ = try? await reader.describeTree(query, options: FBAccessibilityRequestOptions(traversalStrategy: .semantic))
-      XCTAssertEqual(reader.strategies, [.semantic], "\(query) must carry the caller's choice to the read")
+      XCTAssertEqual(reader.traversals, [.semantic], "\(query) must carry the caller's choice to the read")
     }
   }
 
@@ -867,23 +867,25 @@ final class FBAXBridgeReadsTests: XCTestCase {
     for query in [FBAccessibilityElementQuery.frontmost, .marker(value: "General", key: .label, depth: 10)] {
       let reader = StubTreeReader(read: Self.stubRead())
       _ = try? await reader.describeTree(query, options: FBAccessibilityRequestOptions(traversalStrategy: .singleFetch))
-      XCTAssertEqual(reader.strategies, [.singleFetch], "\(query) must carry the caller's choice to the read")
+      XCTAssertEqual(reader.traversals, [.singleFetch], "\(query) must carry the caller's choice to the read")
     }
   }
 
   // The profile must report the traversal that actually ran — inferring it from `mach_round_trips`
   // breaks as soon as two traversals produce the same count.
   func testDescribeTreeReportsTheTraversalItReadWith() async throws {
-    for traversal in FBAXTraversalStrategy.allCases {
+    for strategy in FBAXTraversalStrategy.allCases {
       let reader = StubTreeReader(read: Self.stubRead())
-      var options = FBAccessibilityRequestOptions(traversalStrategy: traversal)
+      var options = FBAccessibilityRequestOptions(traversalStrategy: strategy)
       options.enableProfiling = true
       let response = try await reader.describeTree(.frontmost, options: options)
       guard case let .guestBridge(profile)? = response.profilingData else {
         return XCTFail("expected a guest profile, got \(String(describing: response.profilingData))")
       }
-      XCTAssertEqual(profile.traversal, traversal)
-      XCTAssertEqual(reader.strategies, reader.profiledStrategies, "the read and its profile must agree")
+      // Against what the read resolved to rather than what was asked for, which is the point of the
+      // field: `auto` names no traversal and the profile must still report the one that ran.
+      XCTAssertEqual(profile.traversal, StubTreeReader.resolvedTraversal(for: options))
+      XCTAssertEqual(reader.traversals, reader.profiledTraversals, "the read and its profile must agree")
     }
   }
 
@@ -894,15 +896,15 @@ final class FBAXBridgeReadsTests: XCTestCase {
       .frontmost, options: FBAccessibilityRequestOptions(traversalStrategy: .singleFetch)
     )
     XCTAssertNil(response.profilingData)
-    XCTAssertEqual(reader.profiledStrategies, [], "an unprofiled read must not build a profile at all")
+    XCTAssertEqual(reader.profiledTraversals, [], "an unprofiled read must not build a profile at all")
   }
 
   // It is the default walk done in one call, so it answers the same keys.
   func testTheSingleFetchAnswersEveryKeyTheDefaultWalkDoes() {
-    XCTAssertEqual(FBAXTraversalStrategy.singleFetch.unsatisfiableKeys, [])
+    XCTAssertEqual(FBAXTraversal.singleFetch.unsatisfiableKeys, [])
     XCTAssertEqual(
-      FBAXTraversalStrategy.singleFetch.unsatisfiableKeys,
-      FBAXTraversalStrategy.viewHierarchy.unsatisfiableKeys
+      FBAXTraversal.singleFetch.unsatisfiableKeys,
+      FBAXTraversal.viewHierarchy.unsatisfiableKeys
     )
   }
 
@@ -1838,18 +1840,27 @@ final class FBAXBridgeTeardownLoggingTests: XCTestCase {
 /// Choosing a traversal per read.
 final class FBAXTraversalStrategyTests: XCTestCase {
 
-  // The default is what every caller got before the choice existed, so an existing caller cannot be
-  // moved onto a different tree by upgrading.
-  func testTheDefaultTraversalIsTheViewHierarchy() {
-    XCTAssertEqual(FBAccessibilityRequestOptions().traversalStrategy, .viewHierarchy)
+  // A caller who names no traversal is asking the backend to choose, so `auto` must name no traversal
+  // of its own. What each backend chooses is asserted in `FBAXAutoTraversalTests`.
+  func testARequestThatNamesNoTraversalLeavesTheChoiceToTheBackend() {
+    XCTAssertEqual(FBAccessibilityRequestOptions().traversalStrategy, .auto)
+    XCTAssertNil(FBAXTraversalStrategy.auto.traversal, "`auto` must name no traversal of its own")
+  }
+
+  // The other three name a traversal outright, and the resolution has to hand back the one named rather
+  // than a backend's preference — otherwise `--traversal` would be advisory.
+  func testANamedStrategyResolvesToItself() {
+    for traversal in FBAXTraversal.allCases {
+      XCTAssertEqual(FBAXTraversalStrategy(rawValue: traversal.rawValue)?.traversal, traversal)
+    }
   }
 
   // The structural traversal answers everything; nothing a caller asks for is unsatisfiable on its
   // account, so it must never produce a warning.
   func testTheViewHierarchyCanAnswerEveryKey() {
-    XCTAssertTrue(FBAXTraversalStrategy.viewHierarchy.unsatisfiableKeys.isEmpty)
+    XCTAssertTrue(FBAXTraversal.viewHierarchy.unsatisfiableKeys.isEmpty)
     let options = FBAccessibilityRequestOptions(keys: Set(FBAXKeys.allCases), traversalStrategy: .viewHierarchy)
-    XCTAssertTrue(options.unsatisfiableKeys.isEmpty)
+    XCTAssertTrue(options.unsatisfiableKeys(for: .viewHierarchy).isEmpty)
   }
 
   // The semantic traversal answers `type` from the translator's own role numbering, and only the roles
@@ -1857,19 +1868,20 @@ final class FBAXTraversalStrategyTests: XCTestCase {
   // listed because the contract is about what a traversal can answer for *every* element: a caller
   // holding a node with no type has to be able to tell "the app set none" from "this read could not ask".
   func testSemanticCannotTypeEveryElement() {
-    XCTAssertEqual(FBAXTraversalStrategy.semantic.unsatisfiableKeys, [.type])
+    XCTAssertEqual(FBAXTraversal.semantic.unsatisfiableKeys, [.type])
   }
 
   // Only keys the read actually asked for are reported. A caller that never wanted the type should not
   // be warned about it.
   func testOnlyRequestedKeysAreReportedUnsatisfiable() {
     let asking = FBAccessibilityRequestOptions(keys: [.type, .label], traversalStrategy: .semantic)
-    XCTAssertEqual(asking.unsatisfiableKeys, [.type])
+    XCTAssertEqual(asking.unsatisfiableKeys(for: .semantic), [.type])
 
     let notAsking = FBAccessibilityRequestOptions(keys: [.label], traversalStrategy: .semantic)
     XCTAssertTrue(
-      notAsking.unsatisfiableKeys.isEmpty,
-      "a caller that did not ask for the type must not be warned about it, got \(notAsking.unsatisfiableKeys)"
+      notAsking.unsatisfiableKeys(for: .semantic).isEmpty,
+      "a caller that did not ask for the type must not be warned about it, "
+        + "got \(notAsking.unsatisfiableKeys(for: .semantic))"
     )
   }
 
@@ -1947,11 +1959,12 @@ private final class StubTreeReader: FBAXTreeReader, @unchecked Sendable {
   /// cost is only incurred when the key that needs it was requested.
   private(set) var explainRequests: [Bool] = []
   private(set) var truncationWarnings: [Bool] = []
-  /// The traversal each read asked for — how a test asserts a caller's choice reached the wire.
-  private(set) var strategies: [FBAXTraversalStrategy] = []
+  /// The traversal each read was performed with — how a test asserts a caller's choice reached the wire,
+  /// and what an unchosen one resolved to.
+  private(set) var traversals: [FBAXTraversal] = []
   /// The traversal each profile was built for, so a test can assert the profile is told the same thing
   /// the read was rather than working it out for itself.
-  private(set) var profiledStrategies: [FBAXTraversalStrategy] = []
+  private(set) var profiledTraversals: [FBAXTraversal] = []
   /// The keys each read reported it could not answer.
   private(set) var unsatisfiableWarnings: [Set<FBAXKeys>] = []
   private(set) var hitTestPoints: [CGPoint] = []
@@ -1965,28 +1978,32 @@ private final class StubTreeReader: FBAXTreeReader, @unchecked Sendable {
     for query: FBAccessibilityElementQuery,
     attributes: [String]?,
     explainUnreachable: Bool,
-    strategy: FBAXTraversalStrategy
+    traversal: FBAXTraversal
   ) async throws -> FBAXTreeRead {
     readCount += 1
     readAttributes.append(attributes)
     explainRequests.append(explainUnreachable)
-    strategies.append(strategy)
+    traversals.append(traversal)
     return read
   }
 
-  func warnIfUnsatisfiable(_ keys: Set<FBAXKeys>, strategy: FBAXTraversalStrategy) async {
+  static func autoTraversal(for options: FBAccessibilityRequestOptions) -> FBAXTraversal {
+    .viewHierarchy
+  }
+
+  func warnIfUnsatisfiable(_ keys: Set<FBAXKeys>, traversal: FBAXTraversal) async {
     unsatisfiableWarnings.append(keys)
   }
 
   func profile(
     for read: FBAXTreeRead, elementCount: Int, serializeDuration: CFAbsoluteTime,
-    strategy: FBAXTraversalStrategy
+    traversal: FBAXTraversal
   ) -> FBAccessibilityProfile? {
-    profiledStrategies.append(strategy)
+    profiledTraversals.append(traversal)
     return .guestBridge(
       FBAXBridgeProfile(
         elementCount: Int64(elementCount), totalDuration: 0, acquireDuration: 0, readDuration: 0,
-        serializeDuration: serializeDuration, traversal: strategy
+        serializeDuration: serializeDuration, traversal: traversal
       ))
   }
 

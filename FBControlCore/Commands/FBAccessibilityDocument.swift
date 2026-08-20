@@ -629,7 +629,7 @@ public struct FBAXBridgeProfile: Sendable, Equatable, Encodable {
   ///
   /// Guest-only rather than part of the core, because the `testmanagerd` backend has no traversal to
   /// report.
-  public let traversal: FBAXTraversalStrategy
+  public let traversal: FBAXTraversal
 
   /// Round trips to the application's accessibility server — one per node.
   public let machRoundTrips: Int64?
@@ -644,7 +644,7 @@ public struct FBAXBridgeProfile: Sendable, Equatable, Encodable {
     acquireDuration: CFAbsoluteTime,
     readDuration: CFAbsoluteTime,
     serializeDuration: CFAbsoluteTime,
-    traversal: FBAXTraversalStrategy,
+    traversal: FBAXTraversal,
     machRoundTrips: Int64? = nil,
     hostDecodeDuration: CFAbsoluteTime? = nil,
     responseBytes: Int64? = nil

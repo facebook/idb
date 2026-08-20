@@ -103,7 +103,7 @@ public enum FBAccessibilityElementFilter: String, Sendable, CaseIterable {
 /// A strategy need not answer everything for every element: `semantic` answers `type` only for the
 /// translator roles that have been identified. A key it cannot always satisfy is warned about rather than
 /// silently absent, so "the app set no type" stays distinguishable from "this read could not ask".
-public enum FBAXTraversalStrategy: String, Sendable, CaseIterable {
+public enum FBAXTraversal: String, Sendable, CaseIterable {
   case viewHierarchy = "view-hierarchy"
   case semantic = "semantic"
   /// Reads the whole bounded subtree in one call instead of one call per node. The tree and the
@@ -122,6 +122,32 @@ public enum FBAXTraversalStrategy: String, Sendable, CaseIterable {
     case .semantic: [.type]
     // Same walk as the default, so it answers the same keys.
     case .singleFetch: []
+    }
+  }
+}
+
+/// What a read asks to be traversed with: a traversal named outright, or `auto` — which names none and
+/// leaves the choice to the backend serving the read.
+///
+/// A type of its own rather than a fourth `FBAXTraversal` case: `auto` is a request, not a traversal a
+/// backend can perform. Everything past the resolution — the guest's argv, the unsatisfiable-key
+/// warning, the profile — takes an `FBAXTraversal`, so "undecided" cannot be sent to a guest or reported
+/// as the walk that happened.
+public enum FBAXTraversalStrategy: String, Sendable, CaseIterable {
+  /// Let the backend serving the read choose. Resolved by the backend, not here, because the cheapest
+  /// traversal differs per backend; a profiled read reports which one ran.
+  case auto
+  case viewHierarchy = "view-hierarchy"
+  case semantic = "semantic"
+  case singleFetch = "single-fetch"
+
+  /// The traversal this names outright, or nil for `auto`, which only a backend can resolve.
+  public var traversal: FBAXTraversal? {
+    switch self {
+    case .auto: nil
+    case .viewHierarchy: .viewHierarchy
+    case .semantic: .semantic
+    case .singleFetch: .singleFetch
     }
   }
 }
@@ -216,20 +242,24 @@ public struct FBAccessibilityRequestOptions: Sendable {
   /// Which elements to include in a describe-all read. Default: `.all`.
   public var filter: FBAccessibilityElementFilter
 
-  /// How the read traverses. Default: `.viewHierarchy`.
+  /// How the read asks to traverse. Default: `.auto`, so a caller who does not choose gets whatever
+  /// the backend serving them does best.
   public var traversalStrategy: FBAXTraversalStrategy
 
-  /// The keys this read asked for that its traversal cannot answer for every element. Empty for the
-  /// default traversal.
-  public var unsatisfiableKeys: Set<FBAXKeys> {
-    serializationKeys.intersection(traversalStrategy.unsatisfiableKeys)
+  /// The keys this read asked for that the traversal it was served by cannot answer for every element.
+  /// Empty for the default traversal.
+  ///
+  /// Takes the traversal rather than reading `traversalStrategy`, because that may name none: what a read
+  /// could not ask about is a property of the walk that happened, not of what was asked for.
+  public func unsatisfiableKeys(for traversal: FBAXTraversal) -> Set<FBAXKeys> {
+    serializationKeys.intersection(traversal.unsatisfiableKeys)
   }
 
   /// The same intersection over the marker read's widened key set, so the key it searched on is warned
   /// about too. `--match-key type` against a traversal that cannot type is the case that matters, and
   /// intersecting `serializationKeys` alone would miss it.
-  public func unsatisfiableKeys(including extraKeys: Set<FBAXKeys>) -> Set<FBAXKeys> {
-    serializationKeys(including: extraKeys).intersection(traversalStrategy.unsatisfiableKeys)
+  public func unsatisfiableKeys(for traversal: FBAXTraversal, including extraKeys: Set<FBAXKeys>) -> Set<FBAXKeys> {
+    serializationKeys(including: extraKeys).intersection(traversal.unsatisfiableKeys)
   }
 
   public init(
@@ -240,7 +270,7 @@ public struct FBAccessibilityRequestOptions: Sendable {
     collectFrameCoverage: Bool = false,
     remoteContentOptions: FBAccessibilityRemoteContentOptions? = nil,
     filter: FBAccessibilityElementFilter = .all,
-    traversalStrategy: FBAXTraversalStrategy = .viewHierarchy
+    traversalStrategy: FBAXTraversalStrategy = .auto
   ) {
     self.format = format
     self.keys = keys

@@ -1038,7 +1038,7 @@ final class FBAccessibilitySerializationTests: XCTestCase {
   // The wire profile carries the traversal for every strategy, so `mach_round_trips` can be read
   // without inferring which walk produced it.
   func testTheGuestProfileReportsHowTheTreeWasTraversed() throws {
-    for traversal in FBAXTraversalStrategy.allCases {
+    for traversal in FBAXTraversal.allCases {
       let response = FBAccessibilityElementsResponse(
         elements: .tree([]),
         profilingData: .guestBridge(
