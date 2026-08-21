@@ -103,7 +103,10 @@ public class FBBundleStorage: FBIDBStorage {
   }
 
   public func checkArchitecture(_ bundle: FBBundleDescriptor) throws {
-    let binaryArchitectures = Set(bundle.binary!.architectures.map { $0.rawValue })
+    guard let binary = bundle.binary else {
+      throw FBIDBError.describe("Cannot check the architectures of \(bundle.name), it has no binary").build()
+    }
+    let binaryArchitectures = Set(binary.architectures.map { $0.rawValue })
     let targetArchs = target.architectures
     let supportedArchitectures = Set(FBiOSTargetConfiguration.baseArchsToCompatibleArch(targetArchs).map { $0.rawValue })
 

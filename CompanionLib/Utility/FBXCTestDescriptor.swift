@@ -126,14 +126,16 @@ public final class FBXCTestBootstrapDescriptor: NSObject, FBXCTestDescriptor {
   }
 
   public func testConfig(withRunRequest request: FBXCTestRunRequest, testApps: FBTestApplicationsPair, logDirectoryPath: String?, logger: FBControlCoreLogger, queue: DispatchQueue) -> FBFuture<FBIDBAppHostedTestConfiguration> {
+    guard let testHostApp = testApps.testHostApp else {
+      return FBIDBError.describe("Cannot build a test configuration for \(request), no test host application was resolved").failFuture().retyped(FBFuture<FBIDBAppHostedTestConfiguration>.self)
+    }
     let appLaunchConfigFuture = buildAppLaunchConfig(
-      bundleID: testApps.testHostApp!.bundle.identifier,
+      bundleID: testHostApp.bundle.identifier,
       environment: request.environment,
       arguments: request.arguments,
       logger: logger,
       processLogDirectory: logDirectoryPath,
-      waitForDebugger: request.waitForDebugger,
-      queue: queue
+      waitForDebugger: request.waitForDebugger
     )
     var coverageConfig: FBCodeCoverageConfiguration?
     if request.coverageRequest.collect {
@@ -153,8 +155,7 @@ public final class FBXCTestBootstrapDescriptor: NSObject, FBXCTestDescriptor {
 
     return appLaunchConfigFuture.onQueue(
       queue,
-      map: { result -> AnyObject in
-        let applicationLaunchConfiguration = result as! FBApplicationLaunchConfiguration
+      map: { applicationLaunchConfiguration -> AnyObject in
         let testLaunchConfig = FBTestLaunchConfiguration(
           testBundle: self.testBundle,
           applicationLaunchConfiguration: applicationLaunchConfiguration,
@@ -268,39 +269,47 @@ public final class FBXCodebuildTestRunDescriptor: NSObject, FBXCTestDescriptor {
 
 // MARK: - Private Helper
 
-private func buildAppLaunchConfig(bundleID: String, environment: [String: String], arguments: [String], logger: FBControlCoreLogger, processLogDirectory: String?, waitForDebugger: Bool, queue: DispatchQueue) -> FBFuture<AnyObject> {
+private func buildAppLaunchConfig(bundleID: String, environment: [String: String], arguments: [String], logger: FBControlCoreLogger, processLogDirectory: String?, waitForDebugger: Bool) -> FBFuture<FBApplicationLaunchConfiguration> {
   let stdOutConsumer = FBLoggingDataConsumer(logger: logger)
   let stdErrConsumer = FBLoggingDataConsumer(logger: logger)
 
-  var stdOutFuture: FBFuture<AnyObject> = FBFuture(result: stdOutConsumer as AnyObject)
-  var stdErrFuture: FBFuture<AnyObject> = FBFuture(result: stdErrConsumer as AnyObject)
-
-  if let processLogDirectory {
-    let mirrorLogger = FBXCTestLogger.defaultLogger(inDirectory: processLogDirectory)
-    stdOutFuture = mirrorLogger.logConsumption(of: stdOutConsumer, toFileNamed: "test_process_stdout.out", logger: logger)
-    stdErrFuture = mirrorLogger.logConsumption(of: stdErrConsumer, toFileNamed: "test_process_stderr.err", logger: logger)
+  guard let processLogDirectory else {
+    return FBFuture(result: applicationLaunchConfiguration(bundleID: bundleID, environment: environment, arguments: arguments, waitForDebugger: waitForDebugger, stdOut: stdOutConsumer, stdErr: stdErrConsumer))
   }
 
-  let combined = FBFuture<AnyObject>.combine([stdOutFuture, stdErrFuture])
-  return combined.onQueue(
-    queue,
-    map: { results -> AnyObject in
-      let resultsArray = results as [AnyObject]
-      let stdOutResult = resultsArray[0]
-      let stdErrResult = resultsArray[1]
-      let outputCls = unsafeBitCast(FBProcessOutput<AnyObject>.self, to: NSObject.Type.self)
-      let sel = NSSelectorFromString("outputForDataConsumer:")
-      let stdOut = outputCls.perform(sel, with: stdOutResult)!.takeUnretainedValue() as! FBProcessOutput<AnyObject>
-      let stdErr = outputCls.perform(sel, with: stdErrResult)!.takeUnretainedValue() as! FBProcessOutput<AnyObject>
-      let io = FBProcessIO<AnyObject, AnyObject, AnyObject>(stdIn: nil, stdOut: stdOut, stdErr: stdErr)
-      return FBApplicationLaunchConfiguration(
-        bundleID: bundleID,
-        bundleName: nil,
-        arguments: arguments,
-        environment: environment,
-        waitForDebugger: waitForDebugger,
-        io: io,
-        launchMode: .relaunchIfRunning
-      )
-    })
+  // Both mirrors are created before either is awaited, so the two file writers are opened concurrently.
+  let mirrorLogger = FBXCTestLogger.defaultLogger(inDirectory: processLogDirectory)
+  let stdOutFuture = mirrorLogger.logConsumption(of: stdOutConsumer, toFileNamed: "test_process_stdout.out", logger: logger)
+  let stdErrFuture = mirrorLogger.logConsumption(of: stdErrConsumer, toFileNamed: "test_process_stderr.err", logger: logger)
+
+  return fbFutureFromAsync {
+    let stdOut = try await mirroredConsumer(stdOutFuture)
+    let stdErr = try await mirroredConsumer(stdErrFuture)
+    return applicationLaunchConfiguration(bundleID: bundleID, environment: environment, arguments: arguments, waitForDebugger: waitForDebugger, stdOut: stdOut, stdErr: stdErr)
+  }
+}
+
+private func mirroredConsumer(_ future: FBFuture<AnyObject>) async throws -> FBDataConsumer {
+  let result = try await bridgeFBFuture(future)
+  guard let consumer = result as? FBDataConsumer else {
+    throw FBIDBError.describe("Expected a data consumer for the mirrored test process output, got \(result)").build()
+  }
+  return consumer
+}
+
+private func applicationLaunchConfiguration(bundleID: String, environment: [String: String], arguments: [String], waitForDebugger: Bool, stdOut: FBDataConsumer, stdErr: FBDataConsumer) -> FBApplicationLaunchConfiguration {
+  let io = FBProcessIO<AnyObject, AnyObject, AnyObject>(
+    stdIn: nil,
+    stdOut: FBProcessOutput<AnyObject>(for: stdOut),
+    stdErr: FBProcessOutput<AnyObject>(for: stdErr)
+  )
+  return FBApplicationLaunchConfiguration(
+    bundleID: bundleID,
+    bundleName: nil,
+    arguments: arguments,
+    environment: environment,
+    waitForDebugger: waitForDebugger,
+    io: io,
+    launchMode: .relaunchIfRunning
+  )
 }
