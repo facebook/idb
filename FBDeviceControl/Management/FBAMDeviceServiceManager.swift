@@ -8,6 +8,29 @@
 @preconcurrency import FBControlCore
 import Foundation
 
+/// The ways house-arrest service management can fail, as data rather than assembled strings.
+enum FBAMDeviceServiceError: Error {
+  case deviceNil
+  case houseArrestStartFailed(bundleID: String, status: Int32, message: String)
+  case houseArrestConnectionMissing(bundleID: String)
+  case notAnAFCConnection(context: String)
+}
+
+extension FBAMDeviceServiceError: LocalizedError {
+  var errorDescription: String? {
+    switch self {
+    case .deviceNil:
+      return "Device is nil"
+    case let .houseArrestStartFailed(bundleID, status, message):
+      return "Failed to start house_arrest service for '\(bundleID)' with error 0x\(String(status, radix: 16)) (\(message))"
+    case let .houseArrestConnectionMissing(bundleID):
+      return "No house_arrest connection was returned for '\(bundleID)'"
+    case let .notAnAFCConnection(context):
+      return "\(context) is not an FBAFCConnection"
+    }
+  }
+}
+
 private class FBAMDeviceServiceManager_HouseArrest: NSObject, FBFutureContextManagerDelegate {
   weak var device: FBAMDevice?
   let bundleID: String
@@ -24,7 +47,7 @@ private class FBAMDeviceServiceManager_HouseArrest: NSObject, FBFutureContextMan
 
   func prepare(_ logger: any FBControlCoreLogger) -> FBFuture<AnyObject> {
     guard let device else {
-      return FBDeviceControlError.describe("Device is nil").failFuture()
+      return FBFuture(error: FBAMDeviceServiceError.deviceNil)
     }
     var afcConnection: Unmanaged<AnyObject>?
     logger.log("Starting house arrest for '\(bundleID)'")
@@ -37,10 +60,10 @@ private class FBAMDeviceServiceManager_HouseArrest: NSObject, FBFutureContextMan
       ) ?? -1
     if status != 0 {
       let internalMessage = device.calls.CopyErrorText?(status)?.takeRetainedValue() as String? ?? "unknown"
-      return FBDeviceControlError.describe("Failed to start house_arrest service for '\(bundleID)' with error 0x\(String(status, radix: 16)) (\(internalMessage))").failFuture()
+      return FBFuture(error: FBAMDeviceServiceError.houseArrestStartFailed(bundleID: bundleID, status: status, message: internalMessage))
     }
     guard let afcConnection else {
-      return FBDeviceControlError.describe("No house_arrest connection was returned for '\(bundleID)'").failFuture()
+      return FBFuture(error: FBAMDeviceServiceError.houseArrestConnectionMissing(bundleID: bundleID))
     }
     let connection = FBAFCConnection(connection: afcConnection.takeUnretainedValue(), calls: afcCalls, logger: logger)
     return FBFuture(result: connection as AnyObject)
@@ -48,7 +71,7 @@ private class FBAMDeviceServiceManager_HouseArrest: NSObject, FBFutureContextMan
 
   func teardown(_ context: Any, logger: any FBControlCoreLogger) -> FBFuture<NSNull> {
     guard let connection = context as? FBAFCConnection else {
-      return FBFuture(error: FBDeviceControlError.describe("\(context) is not an FBAFCConnection").build())
+      return FBFuture(error: FBAMDeviceServiceError.notAnAFCConnection(context: String(describing: context)))
     }
     logger.log("Closing connection to House Arrest for '\(bundleID)'")
     do {
