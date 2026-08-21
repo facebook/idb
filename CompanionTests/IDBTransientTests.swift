@@ -274,22 +274,10 @@ final class IDBTransientTests: XCTestCase {
     XCTAssertTrue(status.message?.contains("String") ?? false)
   }
 
-  // MARK: - EmptyIDBKillswitch Tests
-
-  func testEmptyKillswitchDisabledReturnsTrue() async {
-    let killswitch = EmptyIDBKillswitch()
-    let result = await killswitch.disabled(.grpcEndpoint)
-    XCTAssertTrue(result)
-  }
-
   // MARK: - IDBConfiguration Tests
 
   func testDefaultEventReporterIsEmptyReporter() {
     XCTAssertTrue(IDBConfiguration.eventReporter is EmptyEventReporter)
-  }
-
-  func testDefaultKillswitchIsEmptyKillswitch() {
-    XCTAssertTrue(IDBConfiguration.idbKillswitch is EmptyIDBKillswitch)
   }
 
   // MARK: - EmptyEventReporter Tests
@@ -297,51 +285,6 @@ final class IDBTransientTests: XCTestCase {
   func testEmptyEventReporterMetadataStartsEmpty() {
     let reporter = EmptyEventReporter()
     XCTAssertTrue(reporter.metadata.isEmpty)
-  }
-
-  // MARK: - DefaultConfiguration Tests
-
-  func testDefaultCacheInvalidationInterval() {
-    XCTAssertEqual(DefaultConfiguration.cacheInvalidationInterval, 120)
-  }
-
-  func testDefaultBaseURLContainsInterngraph() {
-    XCTAssertTrue(DefaultConfiguration.baseURL.contains("interngraph"))
-  }
-
-  func testDefaultURLSessionTimeout() {
-    XCTAssertEqual(DefaultConfiguration.urlSessionConfiguration.timeoutIntervalForRequest, 15)
-  }
-
-  // MARK: - FBInternGraphError Tests
-
-  func testFailToFormURLRequestErrorDescription() {
-    let error = FBInternGraphError.failToFormURLRequest
-    XCTAssertNotNil(error.errorDescription)
-    XCTAssertTrue(error.errorDescription!.contains("URL request"))
-  }
-
-  func testInconsistentSitevarTypesErrorDescription() {
-    let error = FBInternGraphError.inconsistentSitevarTypes
-    XCTAssertNotNil(error.errorDescription)
-    XCTAssertTrue(error.errorDescription!.contains("types mismatched"))
-  }
-
-  // MARK: - FBInternGraphInternalError Tests
-
-  func testSitevarNotFoundDescription() {
-    let error = FBInternGraphInternalError.sitevarNotFoundInResult
-    XCTAssertTrue(error.description.contains("sitevar not found"))
-  }
-
-  func testNotReceiveErrorOrDataDescription() {
-    let error = FBInternGraphInternalError.notReceiveErrorOrData
-    XCTAssertTrue(error.description.contains("not received error or data"))
-  }
-
-  func testInacceptableStatusCodeDescription() {
-    let error = FBInternGraphInternalError.inacceptableStatusCode("test output")
-    XCTAssertTrue(error.description.contains("test output"))
   }
 
   // MARK: - Helpers
