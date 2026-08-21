@@ -97,6 +97,7 @@ module.exports = {
     ],
   ],
   plugins: [
+    './scripts/validate-mermaid',
     [
       '@docusaurus/plugin-client-redirects',
       {
