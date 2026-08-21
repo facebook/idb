@@ -295,13 +295,13 @@ idb ui key 4
 
 ## Misc
 
-### Reset Idb
+### Reset idb
 
 ```
 idb kill
 ```
 
-idb stores information about available companions in a local file. this command clears these files and kills the idb notifier if one is running.
+idb stores information about available companions in a local file. This command clears these files and kills the idb notifier if one is running.
 
 ### Focus a simulators window
 
@@ -547,7 +547,7 @@ Deletes crash logs, either specified by name or all those matching the provided 
 
 ## Companion Commands
 
-The `idb_companion` is a native Objective-C++ executable that is used to manipulate iOS Simulators & Devices. It implements many of the CRUD-style operations associated with iOS resources and exposes a `gRPC` interface that can be consumed by the `idb` client.
+The `idb_companion` is a native executable, written in Swift, that is used to manipulate iOS Simulators & Devices. It implements many of the CRUD-style operations associated with iOS resources and exposes a `gRPC` interface that can be consumed by the `idb` client.
 
 When using `idb` for ad-hoc usage, you likely won't need to use the `idb_companion` cli directly as it's wrapped by the `idb` cli. However, it can be used directly if needed.
 
@@ -592,3 +592,23 @@ idb_companion --notify FILE_PATH|stdout
 It's also used as an implementation detail of how the `idb` cli discovers what targets it can connect to, when the `idb` cli is run on macOS.
 
 If `stdout` is provided, updates will be written to `stdout` instead of the provided file path.
+
+### Managing targets from the companion
+
+The companion also exposes target management directly, as one-shot flags instead of a server. These are the operations that are deliberately kept off the `gRPC` interface because they are destructive, or because they concern targets that do not have a server running yet:
+
+```
+idb_companion --list 1                  # List available targets
+idb_companion --boot UDID               # Boot a simulator
+idb_companion --reboot UDID             # Reboot a target
+idb_companion --shutdown UDID           # Shut a target down
+idb_companion --create "iPhone X,iOS 12.4"
+idb_companion --clone UDID              # Clone a simulator
+idb_companion --erase UDID              # Erase a target's contents and settings
+idb_companion --delete UDID|all         # Delete a simulator, or all of them
+idb_companion --recover ecid:ECID       # Enter recovery mode (devices)
+idb_companion --unrecover ecid:ECID     # Exit recovery mode (devices)
+idb_companion --activate ecid:ECID      # Activate a device
+```
+
+The full list is in `idb_companion --help`.
