@@ -8,8 +8,6 @@
 import FBControlCore
 import Foundation
 
-// swiftlint:disable force_cast
-
 /*
 Much of the implementation here comes from:
  - DTDeviceKitBase which provides implementations of functions for calling AMDevice calls. This is used to establish the 'debugserver' socket, which is then consumed by lldb itself.
@@ -60,8 +58,9 @@ public class FBDeviceDebuggerCommands: NSObject {
             diskImage.xcodeVersion.majorVersion >= 12
             ? "com.apple.debugserver.DVTSecureSocketProxy"
             : "com.apple.debugserver"
-          return device.startService(serviceName) as! FBFutureContext<AnyObject>
-        }) as! FBFutureContext<FBAMDServiceConnection>
+          return device.startService(serviceName).retyped(FBFutureContext<AnyObject>.self)
+        }
+      ).retyped(FBFutureContext<FBAMDServiceConnection>.self)
   }
 
   // MARK: - Async
@@ -83,8 +82,7 @@ public class FBDeviceDebuggerCommands: NSObject {
       queue: device.workQueue,
       logger: device.logger
     )
-    let result = try await bridgeFBFuture(server)
-    return result as! any FBDebugServer
+    return try await bridgeFBFuture(server)
   }
 
   // MARK: - Private

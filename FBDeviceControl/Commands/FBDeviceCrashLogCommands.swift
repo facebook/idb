@@ -8,8 +8,6 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-// swiftlint:disable force_cast
-
 private let CrashReportMoverService = "com.apple.crashreportmover"
 private let CrashReportCopyService = "com.apple.crashreportcopymobile"
 private let PingSuccess = "ping"
@@ -64,22 +62,23 @@ public class FBDeviceCrashLogCommands: NSObject {
     let logger = device.logger.withName("crash_remove")
     _ = try await ingestAllCrashLogsAsync(useCache: true)
     let pruned = store.pruneCrashLogs(matchingPredicate: predicate)
-    let names = (pruned as NSArray).value(forKeyPath: "name") as! [Any]
-    logger.log("Pruned \(FBCollectionInformation.oneLineDescription(from: names)) logs from local cache")
+    logger.log("Pruned \(FBCollectionInformation.oneLineDescription(from: pruned.map(\.name))) logs from local cache")
     return try await removeCrashLogsFromDeviceAsync(pruned, logger: logger)
   }
 
   fileprivate func crashLogFilesContext() -> FBFutureContext<FBDeviceFileContainer> {
     guard let device else {
-      return FBDeviceControlError().describe("Device is nil").failFutureContext() as! FBFutureContext<FBDeviceFileContainer>
+      return FBFutureContext(error: FBDeviceControlError().describe("Device is nil").build())
     }
+    let asyncQueue = device.asyncQueue
     return
-      (crashReportFileConnection()
+      crashReportFileConnection()
       .onQueue(
-        device.asyncQueue,
+        asyncQueue,
         pend: { connection -> FBFuture<AnyObject> in
-          FBFuture(result: FBDeviceFileContainer(afcConnection: connection, queue: device.asyncQueue) as AnyObject)
-        })) as! FBFutureContext<FBDeviceFileContainer>
+          FBFuture(result: FBDeviceFileContainer(afcConnection: connection, queue: asyncQueue) as AnyObject)
+        }
+      ).retyped(FBFutureContext<FBDeviceFileContainer>.self)
   }
 
   // MARK: - Private
@@ -175,16 +174,20 @@ public class FBDeviceCrashLogCommands: NSObject {
 
   private func crashReportFileConnection() -> FBFutureContext<FBAFCConnection> {
     guard let device else {
-      return FBDeviceControlError().describe("Device is nil").failFutureContext() as! FBFutureContext<FBAFCConnection>
+      return FBFutureContext(error: FBDeviceControlError().describe("Device is nil").build())
     }
+    let workQueue = device.workQueue
+    let logger = device.logger
     return
       device
       .startService(CrashReportCopyService)
       .onQueue(
-        device.workQueue,
+        workQueue,
         push: { connection -> FBFutureContext<AnyObject> in
-          FBAFCConnection.afc(from: connection, calls: FBAFCConnection.defaultCalls, logger: device.logger, queue: device.workQueue) as! FBFutureContext<AnyObject>
-        }) as! FBFutureContext<FBAFCConnection>
+          FBAFCConnection.afc(from: connection, calls: FBAFCConnection.defaultCalls, logger: logger, queue: workQueue)
+            .retyped(FBFutureContext<AnyObject>.self)
+        }
+      ).retyped(FBFutureContext<FBAFCConnection>.self)
   }
 }
 

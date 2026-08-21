@@ -125,11 +125,10 @@ public class FBDeviceDebugServer: NSObject, FBSocketServerDelegate, FBDebugServe
     lldbBootstrapCommands: [String],
     queue: DispatchQueue,
     logger: any FBControlCoreLogger
-  ) -> FBFuture<AnyObject> {
+  ) -> FBFuture<FBDeviceDebugServer> {
     return service.onQueue(
       queue,
-      push: { (serviceConnection: AnyObject) -> FBFutureContext<AnyObject> in
-        let connection = serviceConnection as! FBAMDServiceConnection
+      push: { connection -> FBFutureContext<AnyObject> in
         let server = FBDeviceDebugServer(
           serviceConnection: connection,
           port: port,
@@ -139,13 +138,14 @@ public class FBDeviceDebugServer: NSObject, FBSocketServerDelegate, FBDebugServe
         )
         return server.startListening().retyped(FBFutureContext<AnyObject>.self)
       }
-    ).onQueue(
-      queue,
-      enter: { (result: AnyObject, teardownFuture: FBMutableFuture<NSNull>) -> AnyObject in
-        let server = result as! FBDeviceDebugServer
-        server.teardown = teardownFuture
-        return server
-      })
+    ).retyped(FBFutureContext<FBDeviceDebugServer>.self)
+      .onQueue(
+        queue,
+        enter: { server, teardownFuture -> AnyObject in
+          server.teardown = teardownFuture
+          return server
+        }
+      ).retyped(FBFuture<FBDeviceDebugServer>.self)
   }
 
   init(
