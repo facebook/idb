@@ -9,8 +9,6 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-// swiftlint:disable force_cast
-
 public final class FBSimulatorShutdownStrategy {
 
   // MARK: - Public Methods
@@ -85,7 +83,7 @@ public final class FBSimulatorShutdownStrategy {
         FBiOSTargetResolveState(simulator, .shutdown).timeout(
           FBControlCoreGlobalConfiguration.regularTimeout,
           waitingFor: "Simulator to resolve state \(FBiOSTargetStateString.shutdown)"
-        ) as! FBFuture<NSNull>)
+        ).retyped(FBFuture<NSNull>.self))
       return
     } catch {
       try await eraseSimulatorAsync(simulator)
@@ -108,6 +106,6 @@ public final class FBSimulatorShutdownStrategy {
       FBiOSTargetResolveState(simulator, .shutdown).timeout(
         FBControlCoreGlobalConfiguration.regularTimeout,
         waitingFor: "Timed out waiting for Simulator to transition from Creating -> Shutdown"
-      ) as! FBFuture<NSNull>)
+      ).retyped(FBFuture<NSNull>.self))
   }
 }

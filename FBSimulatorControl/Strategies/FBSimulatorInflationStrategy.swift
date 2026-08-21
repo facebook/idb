@@ -52,8 +52,8 @@ public final class FBSimulatorInflationStrategy {
 
     // Cull Simulators
     if !simulatorsToCull.isEmpty {
-      let predicate = NSCompoundPredicate(notPredicateWithSubpredicate: FBiOSTargetPredicateForUDIDs(Array(simulatorsToCull)))
-      result = (result as NSArray).filtered(using: predicate) as! [FBSimulator]
+      let culled = FBiOSTargetPredicateForUDIDs(Array(simulatorsToCull))
+      result = result.filter { !culled.evaluate(with: $0) }
     }
 
     // Inflate the Simulators and join the array.

@@ -14,7 +14,7 @@ public final class FBCoreSimulatorNotifier {
   // MARK: - Properties
 
   private let handle: UInt64
-  private let notifierObj: AnyObject? // SimDeviceNotifier (nil in test doubles)
+  private let notifier: SimDeviceNotifier? // nil in test doubles
 
   // MARK: - Public
 
@@ -50,8 +50,7 @@ public final class FBCoreSimulatorNotifier {
   }
 
   public func terminate() {
-    guard let notifier = notifierObj else { return }
-    (notifier as! SimDeviceNotifier).unregisterNotificationHandler(handle, error: nil)
+    notifier?.unregisterNotificationHandler(handle, error: nil)
   }
 
   // MARK: - Internal
@@ -65,12 +64,13 @@ public final class FBCoreSimulatorNotifier {
   // MARK: - Private
 
   private init(notifier: AnyObject?, queue: DispatchQueue, block: @escaping @Sendable ([String: Any]) -> Void) {
-    self.notifierObj = notifier
     // nil for test doubles; mirror ObjC nil-messaging with a 0 handle.
     guard let notifier = notifier as? SimDeviceNotifier else {
+      self.notifier = nil
       self.handle = 0
       return
     }
+    self.notifier = notifier
     self.handle = notifier.registerNotificationHandler(on: queue) { info in
       block((info as? [String: Any]) ?? [:])
     }

@@ -39,11 +39,11 @@ extension FBSimulatorConfiguration {
 
   @objc(inferSimulatorConfigurationFromDevice:error:)
   public class func inferSimulatorConfiguration(fromDevice simDevice: SimDevice) throws -> FBSimulatorConfiguration {
-    let osName = FBOSVersionName(rawValue: simDevice.runtime.name!)
+    let osName = FBOSVersionName(rawValue: simDevice.runtime.name ?? "unknown")
     guard FBiOSTargetConfiguration.nameToOSVersion[osName] != nil else {
       throw FBSimulatorConfigurationError.unsupportedOSVersion(name: osName.rawValue)
     }
-    let model = FBDeviceModel(rawValue: simDevice.deviceType.name!)
+    let model = FBDeviceModel(rawValue: simDevice.deviceType.name ?? "unknown")
     guard FBiOSTargetConfiguration.nameToDevice[model] != nil else {
       throw FBSimulatorConfigurationError.unsupportedDevice(name: model.rawValue)
     }
@@ -58,8 +58,8 @@ extension FBSimulatorConfiguration {
     // Synthesize directly rather than via the throwing `defaultConfiguration()`: this path must not
     // fail (it has ObjC callers in non-throwing FBSimulator init) and it overrides both OS and device
     // anyway, so the default's own values are irrelevant.
-    let osName = FBOSVersionName(rawValue: simDevice.runtime.name!)
-    let model = FBDeviceModel(rawValue: simDevice.deviceType.name!)
+    let osName = FBOSVersionName(rawValue: simDevice.runtime.name ?? "unknown")
+    let model = FBDeviceModel(rawValue: simDevice.deviceType.name ?? "unknown")
     let os = FBiOSTargetConfiguration.nameToOSVersion[osName] ?? FBOSVersion.generic(withName: osName.rawValue)
     let device = FBiOSTargetConfiguration.nameToDevice[model] ?? FBDeviceType.generic(withName: model.rawValue)
     return FBSimulatorConfiguration(device: device, os: os).withDeviceModel(model)
@@ -128,7 +128,7 @@ extension FBSimulatorConfiguration {
       if !runtime.available {
         continue
       }
-      let runtimeName = runtime.name!
+      let runtimeName = runtime.name ?? "unknown"
       let osName = FBOSVersionName(rawValue: runtimeName)
       if FBiOSTargetConfiguration.nameToOSVersion[osName] == nil {
         absentOSVersions.append(runtimeName)
@@ -139,7 +139,7 @@ extension FBSimulatorConfiguration {
         if !runtime.supportsDeviceType(deviceType) {
           continue
         }
-        let deviceTypeName = deviceType.name!
+        let deviceTypeName = deviceType.name ?? "unknown"
         let model = FBDeviceModel(rawValue: deviceTypeName)
         if FBiOSTargetConfiguration.nameToDevice[model] == nil {
           absentDeviceTypes.append(deviceTypeName)
@@ -161,7 +161,11 @@ extension FBSimulatorConfiguration {
   @objc(obtainRuntimeWithError:)
   public func obtainRuntime() throws -> SimRuntime {
     let runtimes = try FBSimulatorConfiguration.supportedRuntimes()
-    let matchingRuntimes = (runtimes as NSArray).filtered(using: runtimePredicate) as! [SimRuntime]
+    let matchingRuntimes = runtimes.filter { runtime in
+      runtime.available
+        && runtime.name == os.name.rawValue
+        && FBSimulatorConfiguration.runtime(runtime, supportsFamilyOf: device)
+    }
     if matchingRuntimes.isEmpty {
       throw FBSimulatorConfigurationError.noMatchingRuntime(available: "\(runtimes)")
     }
@@ -174,7 +178,7 @@ extension FBSimulatorConfiguration {
   @objc(obtainDeviceTypeWithError:)
   public func obtainDeviceType() throws -> SimDeviceType {
     let deviceTypes = try FBSimulatorConfiguration.supportedDeviceTypes()
-    let matchingDeviceTypes = (deviceTypes as NSArray).filtered(using: FBSimulatorConfiguration.deviceTypePredicate(device)) as! [SimDeviceType]
+    let matchingDeviceTypes = deviceTypes.filter { $0.name == device.model.rawValue }
     if matchingDeviceTypes.isEmpty {
       throw FBSimulatorConfigurationError.noMatchingDeviceType(available: "\(matchingDeviceTypes)")
     }
@@ -188,8 +192,10 @@ extension FBSimulatorConfiguration {
 
   private class func osVersions(forRuntimes runtimes: [SimRuntime]) -> [FBOSVersion] {
     runtimes.map { runtime in
-      let name = FBOSVersionName(rawValue: runtime.name!)
-      return FBiOSTargetConfiguration.nameToOSVersion[name] ?? FBOSVersion.generic(withName: runtime.name!)
+      guard let name = FBOSVersionName(rawValue: runtime.name) else {
+        return FBOSVersion.generic(withName: "unknown")
+      }
+      return FBiOSTargetConfiguration.nameToOSVersion[name] ?? FBOSVersion.generic(withName: name.rawValue)
     }
   }
 
@@ -203,9 +209,7 @@ extension FBSimulatorConfiguration {
 
   private class func supportedRuntimes(forDevice device: FBDeviceType) throws -> [SimRuntime] {
     try supportedRuntimes()
-      .filter { runtime in
-        (runtime.supportedProductFamilyIDs as! [NSNumber]).contains(NSNumber(value: device.family.rawValue))
-      }
+      .filter { runtime($0, supportsFamilyOf: device) }
       .sorted { left, right in
         let leftVersion = NSDecimalNumber(string: left.versionString)
         let rightVersion = NSDecimalNumber(string: right.versionString)
@@ -213,39 +217,21 @@ extension FBSimulatorConfiguration {
       }
   }
 
-  private var runtimePredicate: NSPredicate {
-    NSCompoundPredicate(andPredicateWithSubpredicates: [
-      FBSimulatorConfiguration.runtimeProductFamilyPredicate(device),
-      FBSimulatorConfiguration.runtimeNamePredicate(os),
-      runtimeAvailabilityPredicate,
-    ])
-  }
-
-  private class func runtimeProductFamilyPredicate(_ device: FBDeviceType) -> NSPredicate {
-    NSPredicate { obj, _ in
-      guard let runtime = obj as? SimRuntime else { return false }
-      return (runtime.supportedProductFamilyIDs as! [NSNumber]).contains(NSNumber(value: device.family.rawValue))
+  private class func runtime(_ runtime: SimRuntime, supportsFamilyOf device: FBDeviceType) -> Bool {
+    guard let familyIDs = runtime.supportedProductFamilyIDs as? [NSNumber] else {
+      return false
     }
+    return familyIDs.contains(NSNumber(value: device.family.rawValue))
   }
+}
 
-  private class func runtimeNamePredicate(_ os: FBOSVersion) -> NSPredicate {
-    NSPredicate { obj, _ in
-      guard let runtime = obj as? SimRuntime else { return false }
-      return runtime.name == os.name.rawValue
+extension FBOSVersionName {
+  /// CoreSimulator's un-annotated headers surface `SimRuntime.name` as optional; a runtime
+  /// with no name has no version name, rather than a version name made from a placeholder.
+  fileprivate init?(rawValue: String?) {
+    guard let rawValue else {
+      return nil
     }
-  }
-
-  private var runtimeAvailabilityPredicate: NSPredicate {
-    NSPredicate { obj, _ in
-      guard let runtime = obj as? SimRuntime else { return false }
-      return runtime.available
-    }
-  }
-
-  private class func deviceTypePredicate(_ device: FBDeviceType) -> NSPredicate {
-    NSPredicate { obj, _ in
-      guard let deviceType = obj as? SimDeviceType else { return false }
-      return deviceType.name == device.model.rawValue
-    }
+    self.init(rawValue: rawValue)
   }
 }
