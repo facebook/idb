@@ -32,11 +32,11 @@ final class FBXCTestShimConfigurationTests: XCTestCase {
     return dir
   }
 
-  func testShimConfigurationResolvesRenamedShims() throws {
+  func testShimConfigurationResolvesRenamedShims() async throws {
     let dir = try makeShimDirectory()
     defer { try? FileManager.default.removeItem(atPath: dir) }
 
-    let config = try FBXCTestShimConfiguration.shimConfiguration(withDirectory: dir, logger: nil).await()
+    let config = try await FBXCTestShimConfiguration.shimConfiguration(withDirectory: dir)
 
     XCTAssertEqual(config.iOSSimulatorTestShimPath, (dir as NSString).appendingPathComponent(Self.iOSShimName))
     XCTAssertEqual(config.macOSTestShimPath, (dir as NSString).appendingPathComponent(Self.macOSShimName))

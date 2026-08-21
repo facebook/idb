@@ -148,10 +148,7 @@ public final class FBSimulatorXCTestCommands: NSObject {
   }
 
   fileprivate func extendedTestShimAsync() async throws -> String {
-    guard let simulator = self.simulator else {
-      throw FBWeakTargetError.simulator
-    }
-    let shimConfig = try await bridgeFBFuture(FBXCTestShimConfiguration.sharedShimConfiguration(with: simulator.logger))
+    let shimConfig = try await FBXCTestShimConfiguration.sharedShimConfiguration()
     return shimConfig.iOSSimulatorTestShimPath
   }
 
@@ -215,7 +212,7 @@ public final class FBSimulatorXCTestCommands: NSObject {
     let filePath = try FBXcodeBuildOperation.createXCTestRunFile(at: simulator.auxillaryDirectory, fromConfiguration: configuration)
     let xcodeBuildPath = try FBXcodeBuildOperation.xcodeBuildPath()
 
-    let shimConfig = try await bridgeFBFuture(FBXCTestShimConfiguration.sharedShimConfiguration(with: simulator.logger))
+    let shimConfig = try await FBXCTestShimConfiguration.sharedShimConfiguration()
     return try await bridgeFBFuture(
       FBXcodeBuildOperation.operation(
         withUDID: simulator.udid,

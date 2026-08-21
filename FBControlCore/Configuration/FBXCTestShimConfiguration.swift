@@ -29,7 +29,10 @@ private enum CanonicalShim: CaseIterable {
   }
 }
 
-public class FBXCTestShimConfiguration: NSObject, NSCopying {
+// The stored paths are immutable `let`s, so instances are safe to share across
+// concurrency domains even though the NSObject base prevents checked Sendable.
+// patternlint-disable-next-line unchecked-sendable
+public class FBXCTestShimConfiguration: NSObject, NSCopying, @unchecked Sendable {
 
   public let iOSSimulatorTestShimPath: String
   public let macOSTestShimPath: String
@@ -44,99 +47,90 @@ public class FBXCTestShimConfiguration: NSObject, NSCopying {
     super.init()
   }
 
-  private class func createWorkQueue() -> DispatchQueue {
-    DispatchQueue(label: "com.facebook.xctestbootstrap.shims")
-  }
+  // MARK: Lookup
 
-  private class func pathForCanonicallyNamedShim(_ shim: CanonicalShim, inDirectory directory: String, logger: FBControlCoreLogger?) -> FBFuture<AnyObject> {
-    let codesign = FBCodesignProvider.codeSignCommand(withIdentityName: "-", logger: nil)
-
+  private class func pathForCanonicallyNamedShim(_ shim: CanonicalShim, inDirectory directory: String) async throws -> String {
     let shimPath = (directory as NSString).appendingPathComponent(shim.filename)
-    if !FileManager.default.fileExists(atPath: shimPath) {
-      return FBControlCoreError.describe("No shim located at expected location of \(shimPath)").failFuture()
+    guard FileManager.default.fileExists(atPath: shimPath) else {
+      throw FBControlCoreError.describe("No shim located at expected location of \(shimPath)").build()
     }
-    if !shim.codesigningRequired {
-      return FBFuture(result: shimPath as AnyObject)
+    guard shim.codesigningRequired else {
+      return shimPath
     }
-    return codesign.cdHashForBundle(atPath: shimPath)
-      .rephraseFailure("Shim at path \(shimPath) was required to be signed, but it was not")
-      .mapReplace(shimPath as AnyObject)
-  }
-
-  public class func findShimDirectory(onQueue queue: DispatchQueue, logger: FBControlCoreLogger?) -> FBFuture<NSString> {
-    let future: FBFuture<AnyObject> = FBFuture.onQueue(
-      queue,
-      resolve: { () -> FBFuture<AnyObject> in
-        guard let searchPath = BundledResources.directoryPath() else {
-          return FBControlCoreError.describe("Unable to determine the shim search path.").failFuture()
-        }
-
-        let searchFuture: FBFuture<AnyObject> = confirmExistenceOfRequiredShims(inDirectory: searchPath, logger: logger)
-        let shimNames = CanonicalShim.allCases.map(\.filename)
-        return searchFuture.rephraseFailure("Could not find all shims \(FBCollectionInformation.oneLineDescription(from: shimNames)) in the expected directory \(searchPath)")
-      })
-    return unsafeBitCast(future, to: FBFuture<NSString>.self)
-  }
-
-  private class func confirmExistenceOfRequiredShims(inDirectory directory: String, logger: FBControlCoreLogger?) -> FBFuture<AnyObject> {
-    if !FileManager.default.fileExists(atPath: directory) {
-      return FBControlCoreError.describe("A shim directory was searched for at '\(directory)', but it was not there").failFuture()
+    let codesign = FBCodesignProvider.codeSignCommand(withIdentityName: "-", logger: nil)
+    do {
+      _ = try await bridgeFBFuture(codesign.cdHashForBundle(atPath: shimPath))
+    } catch {
+      throw
+        FBControlCoreError
+        .describe("Shim at path \(shimPath) was required to be signed, but it was not")
+        .caused(by: error as NSError)
+        .build()
     }
-    let futures = CanonicalShim.allCases.map { pathForCanonicallyNamedShim($0, inDirectory: directory, logger: logger) }
-    let combined = FBFuture<AnyObject>.combine(futures)
-    return combined.mapReplace(directory as AnyObject)
+    return shimPath
   }
 
-  nonisolated(unsafe) private static var _sharedShimFuture: FBFuture<FBXCTestShimConfiguration>?
-  private static let _sharedShimLock = NSLock()
-
-  public class func sharedShimConfiguration(with logger: FBControlCoreLogger?) -> FBFuture<FBXCTestShimConfiguration> {
-    _sharedShimLock.lock()
-    defer { _sharedShimLock.unlock() }
-    if let existing = _sharedShimFuture {
-      return existing
+  public class func findShimDirectory() async throws -> String {
+    guard let searchPath = BundledResources.directoryPath() else {
+      throw FBControlCoreError.describe("Unable to determine the shim search path.").build()
     }
-    let result = defaultShimConfiguration(with: logger)
-    _sharedShimFuture = result
-    return result
+    do {
+      return try await confirmExistenceOfRequiredShims(inDirectory: searchPath)
+    } catch {
+      let shimNames = CanonicalShim.allCases.map(\.filename)
+      throw
+        FBControlCoreError
+        .describe("Could not find all shims \(FBCollectionInformation.oneLineDescription(from: shimNames)) in the expected directory \(searchPath)")
+        .caused(by: error as NSError)
+        .build()
+    }
   }
 
-  public class func defaultShimConfiguration(with logger: FBControlCoreLogger?) -> FBFuture<FBXCTestShimConfiguration> {
-    let queue = createWorkQueue()
-    let future: FBFuture<AnyObject> = findShimDirectory(onQueue: queue, logger: logger)
-      .onQueue(
-        queue,
-        fmap: { directory -> FBFuture<AnyObject> in
-          shimConfiguration(withDirectory: directory as String, logger: logger).retyped(FBFuture<AnyObject>.self)
-        })
-    return unsafeBitCast(future, to: FBFuture<FBXCTestShimConfiguration>.self)
+  private class func confirmExistenceOfRequiredShims(inDirectory directory: String) async throws -> String {
+    guard FileManager.default.fileExists(atPath: directory) else {
+      throw FBControlCoreError.describe("A shim directory was searched for at '\(directory)', but it was not there").build()
+    }
+    async let iOSSimulatorShim = pathForCanonicallyNamedShim(.iOSSimulatorTest, inDirectory: directory)
+    async let macShim = pathForCanonicallyNamedShim(.macTest, inDirectory: directory)
+    _ = try await (iOSSimulatorShim, macShim)
+    return directory
   }
 
-  public class func shimConfiguration(withDirectory directory: String, logger: FBControlCoreLogger?) -> FBFuture<FBXCTestShimConfiguration> {
-    let queue = createWorkQueue()
-    let future: FBFuture<AnyObject> = confirmExistenceOfRequiredShims(inDirectory: directory, logger: logger)
-      .onQueue(
-        queue,
-        fmap: { _ -> FBFuture<AnyObject> in
-          let futures = [
-            pathForCanonicallyNamedShim(.iOSSimulatorTest, inDirectory: directory, logger: logger),
-            pathForCanonicallyNamedShim(.macTest, inDirectory: directory, logger: logger),
-          ]
-          return FBFuture<AnyObject>.combine(futures)
-            .onQueue(
-              queue,
-              fmap: { shims -> FBFuture<AnyObject> in
-                guard shims.count == 2,
-                  let iOSSimulatorTestShimPath = shims[0] as? String,
-                  let macOSTestShimPath = shims[1] as? String
-                else {
-                  return FBControlCoreError.describe("Expected the iOS simulator and macOS shim paths, got \(shims)").failFuture()
-                }
-                return FBFuture(result: FBXCTestShimConfiguration(iOSSimulatorTestShimPath: iOSSimulatorTestShimPath, macOSTestShimPath: macOSTestShimPath))
-              })
-        }
-      )
-    return unsafeBitCast(future, to: FBFuture<FBXCTestShimConfiguration>.self)
+  // Caches the first resolution for the life of the process, matching the future the
+  // old implementation memoised. An actor holding the task needs no lock and no
+  // unsafely-nonisolated storage; concurrent first callers race to create the task
+  // inside the actor, so exactly one resolution ever runs.
+  private actor SharedResolution {
+    private var task: Task<FBXCTestShimConfiguration, Error>?
+
+    func configuration() async throws -> FBXCTestShimConfiguration {
+      if let task {
+        return try await task.value
+      }
+      let task = Task { try await FBXCTestShimConfiguration.defaultShimConfiguration() }
+      self.task = task
+      return try await task.value
+    }
+  }
+
+  private static let sharedResolution = SharedResolution()
+
+  public class func sharedShimConfiguration() async throws -> FBXCTestShimConfiguration {
+    try await sharedResolution.configuration()
+  }
+
+  public class func defaultShimConfiguration() async throws -> FBXCTestShimConfiguration {
+    let directory = try await findShimDirectory()
+    return try await shimConfiguration(withDirectory: directory)
+  }
+
+  public class func shimConfiguration(withDirectory directory: String) async throws -> FBXCTestShimConfiguration {
+    _ = try await confirmExistenceOfRequiredShims(inDirectory: directory)
+    async let iOSSimulatorTestShimPath = pathForCanonicallyNamedShim(.iOSSimulatorTest, inDirectory: directory)
+    async let macOSTestShimPath = pathForCanonicallyNamedShim(.macTest, inDirectory: directory)
+    return try await FBXCTestShimConfiguration(
+      iOSSimulatorTestShimPath: iOSSimulatorTestShimPath,
+      macOSTestShimPath: macOSTestShimPath)
   }
 
   // MARK: NSCopying

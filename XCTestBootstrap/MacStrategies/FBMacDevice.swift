@@ -414,20 +414,10 @@ public final class FBMacDevice: NSObject, FBiOSTarget {
   // MARK: - FBXCTestExtendedCommands
 
   public func extendedTestShim() -> FBFuture<NSString> {
-    return unsafeBitCast(
-      unsafeBitCast(
-        FBXCTestShimConfiguration.sharedShimConfiguration(with: self.logger),
-        to: FBFuture<AnyObject>.self
-      )
-      .onQueue(
-        asyncQueue,
-        map: { shimConfigObj -> AnyObject in
-          // swiftlint:disable:next force_cast
-          let shims = shimConfigObj as! FBXCTestShimConfiguration
-          return shims.macOSTestShimPath as NSString
-        }),
-      to: FBFuture<NSString>.self
-    )
+    fbFutureFromAsync {
+      let shims = try await FBXCTestShimConfiguration.sharedShimConfiguration()
+      return shims.macOSTestShimPath as NSString
+    }
   }
 
   public func listTests(forBundleAtPath bundlePath: String, timeout: TimeInterval, withAppAtPath appPath: String?) -> FBFuture<NSArray> {
