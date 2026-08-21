@@ -354,20 +354,6 @@ public final class FBMacDevice: NSObject, FBiOSTarget {
       .retyped(FBFuture<FBMacLaunchedApplication>.self)
   }
 
-  public func runTest(withLaunchConfiguration testLaunchConfiguration: FBTestLaunchConfiguration, reporter: AnyObject, logger: FBControlCoreLogger) -> FBFuture<NSNull> {
-    guard let typedReporter = reporter as? FBXCTestReporter else {
-      return FBFuture(error: FBControlCoreError.describe("Expected an FBXCTestReporter, got \(reporter)").build())
-    }
-    return FBManagedTestRunStrategy.runToCompletion(
-      withTarget: self,
-      configuration: testLaunchConfiguration,
-      codesign: nil,
-      workingDirectory: self.workingDirectory,
-      reporter: typedReporter,
-      logger: logger
-    )
-  }
-
   public var uniqueIdentifier: String {
     udid
   }
@@ -397,13 +383,6 @@ public final class FBMacDevice: NSObject, FBiOSTarget {
   }
 
   // MARK: - FBXCTestExtendedCommands
-
-  public func extendedTestShim() -> FBFuture<NSString> {
-    fbFutureFromAsync {
-      let shims = try await FBXCTestShimConfiguration.sharedShimConfiguration()
-      return shims.macOSTestShimPath as NSString
-    }
-  }
 
   public func listTests(forBundleAtPath bundlePath: String, timeout: TimeInterval, withAppAtPath appPath: String?) -> FBFuture<NSArray> {
     let bundleDescriptor: FBBundleDescriptor
@@ -456,8 +435,17 @@ extension FBMacDevice: XCTestExtendedCommands {
     reporter: AnyObject,
     logger: any FBControlCoreLogger
   ) async throws {
-    try await bridgeFBFutureVoid(
-      runTest(withLaunchConfiguration: launchConfiguration, reporter: reporter, logger: logger))
+    guard let typedReporter = reporter as? FBXCTestReporter else {
+      throw FBControlCoreError.describe("Expected an FBXCTestReporter, got \(reporter)").build()
+    }
+    try await FBManagedTestRunStrategy.runToCompletion(
+      withTarget: self,
+      configuration: launchConfiguration,
+      codesign: nil,
+      workingDirectory: workingDirectory,
+      reporter: typedReporter,
+      logger: logger
+    )
   }
 
   public func listTests(
@@ -470,8 +458,7 @@ extension FBMacDevice: XCTestExtendedCommands {
   }
 
   public func extendedTestShim() async throws -> String {
-    let shim = try await bridgeFBFuture(extendedTestShim() as FBFuture<NSString>)
-    return shim as String
+    try await FBXCTestShimConfiguration.sharedShimConfiguration().macOSTestShimPath
   }
 
   public func withTransportForTestManagerService<R>(

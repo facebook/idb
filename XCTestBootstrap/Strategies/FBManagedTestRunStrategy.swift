@@ -10,44 +10,36 @@ import Foundation
 
 public final class FBManagedTestRunStrategy {
 
-  public static func runToCompletion(withTarget target: any FBiOSTarget & ApplicationCommands & XCTestExtendedCommands & CrashLogCommands, configuration: FBTestLaunchConfiguration, codesign: FBCodesignProvider?, workingDirectory: String, reporter: FBXCTestReporter, logger: FBControlCoreLogger) -> FBFuture<NSNull> {
+  public static func runToCompletion(withTarget target: any FBiOSTarget & ApplicationCommands & XCTestExtendedCommands & CrashLogCommands, configuration: FBTestLaunchConfiguration, codesign: FBCodesignProvider?, workingDirectory: String, reporter: FBXCTestReporter, logger: FBControlCoreLogger) async throws {
     do {
       try XCTestBootstrapFrameworkLoader.allDependentFrameworks.loadPrivateFrameworks(target.logger)
     } catch {
-      return FBFuture(error: XCTestBootstrapError.describe(error.localizedDescription).build())
+      throw XCTestBootstrapError.describe(error.localizedDescription).build()
     }
 
-    let applicationLaunchConfiguration = configuration.applicationLaunchConfiguration
-
-    return FBTestRunnerConfiguration.prepareConfiguration(
+    let runnerConfiguration = try await FBTestRunnerConfiguration.prepareConfiguration(
       withTarget: target,
       testLaunchConfiguration: configuration,
       workingDirectory: workingDirectory,
       codesign: codesign
     )
-    .onQueue(
-      target.workQueue,
-      fmap: { runnerConfiguration -> FBFuture<AnyObject> in
-        let testHostLaunchConfiguration = FBManagedTestRunStrategy.prepareApplicationLaunchConfiguration(applicationLaunchConfiguration, withTestRunnerConfiguration: runnerConfiguration)
 
-        let context = FBTestManagerContext(
-          sessionIdentifier: runnerConfiguration.sessionIdentifier,
-          timeout: configuration.timeout,
-          testHostLaunchConfiguration: testHostLaunchConfiguration,
-          testedApplicationAdditionalEnvironment: runnerConfiguration.testedApplicationAdditionalEnvironment,
-          testConfiguration: runnerConfiguration.testConfiguration
-        )
+    let testHostLaunchConfiguration = prepareApplicationLaunchConfiguration(configuration.applicationLaunchConfiguration, withTestRunnerConfiguration: runnerConfiguration)
 
-        return FBTestManagerAPIMediator.connectAndRunUntilCompletion(
-          with: context,
-          target: target,
-          reporter: reporter,
-          logger: logger
-        )
-        .retyped(FBFuture<AnyObject>.self)
-      }
+    let context = FBTestManagerContext(
+      sessionIdentifier: runnerConfiguration.sessionIdentifier,
+      timeout: configuration.timeout,
+      testHostLaunchConfiguration: testHostLaunchConfiguration,
+      testedApplicationAdditionalEnvironment: runnerConfiguration.testedApplicationAdditionalEnvironment,
+      testConfiguration: runnerConfiguration.testConfiguration
     )
-    .retyped(FBFuture<NSNull>.self)
+
+    try await FBTestManagerAPIMediator.connectAndRunUntilCompletion(
+      with: context,
+      target: target,
+      reporter: reporter,
+      logger: logger
+    )
   }
 
   private static func prepareApplicationLaunchConfiguration(_ applicationLaunchConfiguration: FBApplicationLaunchConfiguration, withTestRunnerConfiguration testRunnerConfiguration: FBTestRunnerConfiguration) -> FBApplicationLaunchConfiguration {

@@ -48,12 +48,9 @@ public final class FBTestManagerAPIMediator: NSObject, @unchecked Sendable {
     target: any FBiOSTarget & ApplicationCommands & XCTestExtendedCommands & CrashLogCommands,
     reporter: FBXCTestReporter,
     logger: FBControlCoreLogger
-  ) -> FBFuture<NSNull> {
+  ) async throws {
     let mediator = FBTestManagerAPIMediator(context: context, target: target, reporter: reporter, logger: logger)
-    return fbFutureFromAsync {
-      try await mediator.connectAndRunUntilCompletion()
-      return NSNull()
-    }
+    try await mediator.connectAndRunUntilCompletion()
   }
 
   private init(

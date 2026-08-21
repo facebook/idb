@@ -163,16 +163,15 @@ public final class FBSimulatorXCTestCommands: NSObject {
       throw FBSimulatorError.describe("Simulator must be booted to run tests").build()
     }
 
-    try await bridgeFBFutureVoid(
-      FBManagedTestRunStrategy.runToCompletion(
-        withTarget: simulator,
-        configuration: testLaunchConfiguration,
-        codesign: FBControlCoreGlobalConfiguration.confirmCodesignaturesAreValid
-          ? FBCodesignProvider.codeSignCommand(withIdentityName: "-", logger: simulator.logger)
-          : nil,
-        workingDirectory: simulator.auxillaryDirectory,
-        reporter: reporter,
-        logger: logger))
+    try await FBManagedTestRunStrategy.runToCompletion(
+      withTarget: simulator,
+      configuration: testLaunchConfiguration,
+      codesign: FBControlCoreGlobalConfiguration.confirmCodesignaturesAreValid
+        ? FBCodesignProvider.codeSignCommand(withIdentityName: "-", logger: simulator.logger)
+        : nil,
+      workingDirectory: simulator.auxillaryDirectory,
+      reporter: reporter,
+      logger: logger)
   }
 
   // Internal (not private) so the poll can be unit-tested with a getenv device double. The env key is

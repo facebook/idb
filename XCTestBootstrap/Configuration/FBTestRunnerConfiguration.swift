@@ -48,23 +48,19 @@ public class FBTestRunnerConfiguration: NSObject, NSCopying {
 
   // MARK: Public
 
-  public class func prepareConfiguration(withTarget target: FBiOSTarget & ApplicationCommands & XCTestExtendedCommands, testLaunchConfiguration: FBTestLaunchConfiguration, workingDirectory: String, codesign: FBCodesignProvider?) -> FBFuture<FBTestRunnerConfiguration> {
+  public class func prepareConfiguration(withTarget target: FBiOSTarget & ApplicationCommands & XCTestExtendedCommands, testLaunchConfiguration: FBTestLaunchConfiguration, workingDirectory: String, codesign: FBCodesignProvider?) async throws -> FBTestRunnerConfiguration {
     if let codesign {
-      return unsafeBitCast(
-        codesign.cdHashForBundle(atPath: testLaunchConfiguration.testBundle.path)
-          .rephraseFailure("Could not determine bundle at path '\(testLaunchConfiguration.testBundle.path)' is codesigned and codesigning is required")
-          .onQueue(
-            target.asyncQueue,
-            fmap: { (_: AnyObject) -> FBFuture<AnyObject> in
-              unsafeBitCast(
-                self.prepareConfigurationAfterCodesignatureCheck(withTarget: target, testLaunchConfiguration: testLaunchConfiguration, workingDirectory: workingDirectory),
-                to: FBFuture<AnyObject>.self
-              )
-            }),
-        to: FBFuture<FBTestRunnerConfiguration>.self
-      )
+      do {
+        _ = try await bridgeFBFuture(codesign.cdHashForBundle(atPath: testLaunchConfiguration.testBundle.path))
+      } catch {
+        throw
+          XCTestBootstrapError
+          .describe("Could not determine bundle at path '\(testLaunchConfiguration.testBundle.path)' is codesigned and codesigning is required")
+          .caused(by: error)
+          .build()
+      }
     }
-    return prepareConfigurationAfterCodesignatureCheck(withTarget: target, testLaunchConfiguration: testLaunchConfiguration, workingDirectory: workingDirectory)
+    return try await prepareConfigurationAfterCodesignatureCheck(withTarget: target, testLaunchConfiguration: testLaunchConfiguration, workingDirectory: workingDirectory)
   }
 
   public class func launchEnvironment(withHostApplication hostApplication: FBBundleDescriptor, hostApplicationAdditionalEnvironment: [String: String], testBundle: FBBundleDescriptor, testConfigurationPath: String, frameworkSearchPaths: [String]) -> [String: String] {
@@ -93,7 +89,7 @@ public class FBTestRunnerConfiguration: NSObject, NSCopying {
     return envs
   }
 
-  private class func prepareConfigurationAfterCodesignatureCheck(withTarget target: FBiOSTarget & ApplicationCommands & XCTestExtendedCommands, testLaunchConfiguration: FBTestLaunchConfiguration, workingDirectory: String) -> FBFuture<FBTestRunnerConfiguration> {
+  private class func prepareConfigurationAfterCodesignatureCheck(withTarget target: FBiOSTarget & ApplicationCommands & XCTestExtendedCommands, testLaunchConfiguration: FBTestLaunchConfiguration, workingDirectory: String) async throws -> FBTestRunnerConfiguration {
     // Common Paths
     let runtimeRoot = target.runtimeRootDirectory
     let platformRoot = target.platformRootDirectory
@@ -132,13 +128,11 @@ public class FBTestRunnerConfiguration: NSObject, NSCopying {
     do {
       testBundle = try FBBundleDescriptor.bundle(fromPath: testLaunchConfiguration.testBundle.path)
     } catch {
-      return unsafeBitCast(
+      throw
         XCTestBootstrapError
-          .describe("Failed to prepare test bundle")
-          .caused(by: error)
-          .failFuture(),
-        to: FBFuture<FBTestRunnerConfiguration>.self
-      )
+        .describe("Failed to prepare test bundle")
+        .caused(by: error)
+        .build()
     }
 
     // Prepare the test configuration
@@ -158,78 +152,54 @@ public class FBTestRunnerConfiguration: NSObject, NSCopying {
         reportActivities: testLaunchConfiguration.reportActivities
       )
     } catch {
-      return unsafeBitCast(
+      throw
         XCTestBootstrapError
-          .describe("Failed to prepare test configuration")
-          .caused(by: error)
-          .failFuture(),
-        to: FBFuture<FBTestRunnerConfiguration>.self
-      )
+        .describe("Failed to prepare test configuration")
+        .caused(by: error)
+        .build()
     }
 
-    let installedAppFuture: FBFuture<FBInstalledApplication> = fbFutureFromAsync {
-      try await target.installedApplication(bundleID: testLaunchConfiguration.applicationLaunchConfiguration.bundleID)
+    let hostApplication = try await target.installedApplication(bundleID: testLaunchConfiguration.applicationLaunchConfiguration.bundleID)
+    let shimPath = try await target.extendedTestShim()
+
+    var hostApplicationAdditionalEnvironment: [String: String] = [:]
+    hostApplicationAdditionalEnvironment[kEnvShimStartXCTest] = "1"
+    hostApplicationAdditionalEnvironment["DYLD_INSERT_LIBRARIES"] = shimPath
+    hostApplicationAdditionalEnvironment[kEnvWaitForDebugger] = testLaunchConfiguration.applicationLaunchConfiguration.waitForDebugger ? "YES" : "NO"
+
+    if let coverageDirectoryPath = testLaunchConfiguration.coverageDirectoryPath {
+      let continuousCoverageCollectionMode = testLaunchConfiguration.shouldEnableContinuousCoverageCollection ? "%c" : ""
+      let hostCoverageFile = "coverage_\(hostApplication.bundle.identifier)\(continuousCoverageCollectionMode).profraw"
+      let hostCoveragePath = (coverageDirectoryPath as NSString).appendingPathComponent(hostCoverageFile)
+      hostApplicationAdditionalEnvironment[kEnvLLVMProfileFile] = hostCoveragePath
+
+      if let targetBundle = testLaunchConfiguration.targetApplicationBundle {
+        let targetCoverageFile = "coverage_\(targetBundle.identifier)\(continuousCoverageCollectionMode).profraw"
+        let targetAppCoveragePath = (coverageDirectoryPath as NSString).appendingPathComponent(targetCoverageFile)
+        testedApplicationAdditionalEnvironment[kEnvLLVMProfileFile] = targetAppCoveragePath
+      }
     }
-    let shimFuture: FBFuture<AnyObject> = fbFutureFromAsync {
-      try await target.extendedTestShim() as AnyObject
+
+    if let logDirectoryPath = testLaunchConfiguration.logDirectoryPath {
+      hostApplicationAdditionalEnvironment[kEnvLogDirectoryPath] = logDirectoryPath
     }
-    return unsafeBitCast(
-      FBFuture<AnyObject>.combine([
-        unsafeBitCast(installedAppFuture, to: FBFuture<AnyObject>.self),
-        shimFuture,
-      ])
-      .onQueue(
-        target.asyncQueue,
-        fmap: { tuple -> FBFuture<AnyObject> in
-          guard tuple.count == 2,
-            let hostApplication = tuple[0] as? FBInstalledApplication,
-            let shimPath = tuple[1] as? String
-          else {
-            return XCTestBootstrapError.describe("Expected the host application and the shim path, got \(tuple)").failFuture()
-          }
 
-          var hostApplicationAdditionalEnvironment: [String: String] = [:]
-          hostApplicationAdditionalEnvironment[kEnvShimStartXCTest] = "1"
-          hostApplicationAdditionalEnvironment["DYLD_INSERT_LIBRARIES"] = shimPath
-          hostApplicationAdditionalEnvironment[kEnvWaitForDebugger] = testLaunchConfiguration.applicationLaunchConfiguration.waitForDebugger ? "YES" : "NO"
+    let frameworkSearchPaths = xcTestFrameworksPaths + [(hostApplication.bundle.path as NSString).appendingPathComponent("Frameworks")]
 
-          if let coverageDirectoryPath = testLaunchConfiguration.coverageDirectoryPath {
-            let continuousCoverageCollectionMode = testLaunchConfiguration.shouldEnableContinuousCoverageCollection ? "%c" : ""
-            let hostCoverageFile = "coverage_\(hostApplication.bundle.identifier)\(continuousCoverageCollectionMode).profraw"
-            let hostCoveragePath = (coverageDirectoryPath as NSString).appendingPathComponent(hostCoverageFile)
-            hostApplicationAdditionalEnvironment[kEnvLLVMProfileFile] = hostCoveragePath
+    let launchEnvironment = FBTestRunnerConfiguration.launchEnvironment(
+      withHostApplication: hostApplication.bundle,
+      hostApplicationAdditionalEnvironment: hostApplicationAdditionalEnvironment,
+      testBundle: testBundle,
+      testConfigurationPath: testConfiguration.path,
+      frameworkSearchPaths: frameworkSearchPaths
+    )
 
-            if let targetBundle = testLaunchConfiguration.targetApplicationBundle {
-              let targetCoverageFile = "coverage_\(targetBundle.identifier)\(continuousCoverageCollectionMode).profraw"
-              let targetAppCoveragePath = (coverageDirectoryPath as NSString).appendingPathComponent(targetCoverageFile)
-              testedApplicationAdditionalEnvironment[kEnvLLVMProfileFile] = targetAppCoveragePath
-            }
-          }
-
-          if let logDirectoryPath = testLaunchConfiguration.logDirectoryPath {
-            hostApplicationAdditionalEnvironment[kEnvLogDirectoryPath] = logDirectoryPath
-          }
-
-          let frameworkSearchPaths = xcTestFrameworksPaths + [(hostApplication.bundle.path as NSString).appendingPathComponent("Frameworks")]
-
-          let launchEnvironment = FBTestRunnerConfiguration.launchEnvironment(
-            withHostApplication: hostApplication.bundle,
-            hostApplicationAdditionalEnvironment: hostApplicationAdditionalEnvironment,
-            testBundle: testBundle,
-            testConfigurationPath: testConfiguration.path,
-            frameworkSearchPaths: frameworkSearchPaths
-          )
-
-          return FBFuture<AnyObject>(
-            result: FBTestRunnerConfiguration(
-              sessionIdentifier: sessionIdentifier,
-              testRunner: hostApplication.bundle,
-              launchEnvironment: launchEnvironment,
-              testedApplicationAdditionalEnvironment: testedApplicationAdditionalEnvironment,
-              testConfiguration: testConfiguration
-            ))
-        }),
-      to: FBFuture<FBTestRunnerConfiguration>.self
+    return FBTestRunnerConfiguration(
+      sessionIdentifier: sessionIdentifier,
+      testRunner: hostApplication.bundle,
+      launchEnvironment: launchEnvironment,
+      testedApplicationAdditionalEnvironment: testedApplicationAdditionalEnvironment,
+      testConfiguration: testConfiguration
     )
   }
 }
