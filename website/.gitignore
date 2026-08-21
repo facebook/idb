@@ -20,3 +20,4 @@ yarn-error.log*
 
 # generated from the framework READMEs by scripts/generate-framework-docs.js
 /docs/idb/fbsimulatorcontrol.mdx
+/docs/idb/fbdevicecontrol.mdx
