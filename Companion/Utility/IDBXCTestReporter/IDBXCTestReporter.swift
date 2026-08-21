@@ -50,6 +50,26 @@ extension IDBXCTestReporter {
   }
 }
 
+/// The ways coverage collection can fail, as data rather than assembled strings.
+enum IDBXCTestReporterError: Error {
+  case unsupportedCoverageFormat
+  case coverageExportFailed(exitCode: Int32, stderr: String)
+  case exportStreamMissing
+}
+
+extension IDBXCTestReporterError: LocalizedError {
+  var errorDescription: String? {
+    switch self {
+    case .unsupportedCoverageFormat:
+      return "Unsupported code coverage format"
+    case let .coverageExportFailed(exitCode, stderr):
+      return "xcrun failed to export code coverage data \(exitCode) \(stderr)"
+    case .exportStreamMissing:
+      return "xcrun llvm-cov export misconfigured. stdOut stream is nil"
+    }
+  }
+}
+
 final class IDBXCTestReporter: NSObject, FBXCTestReporter, FBDataConsumer, @unchecked Sendable {
 
   private let reportingTerminated = AsyncPromise<Int>()
@@ -421,7 +441,7 @@ final class IDBXCTestReporter: NSObject, FBXCTestReporter, FBDataConsumer, @unch
       return try await gzipFolder(at: config.coverageDirectory)
 
     default:
-      throw FBControlCoreError.describe("Unsupported code coverage format")
+      throw IDBXCTestReporterError.unsupportedCoverageFormat
     }
   }
 
@@ -450,7 +470,7 @@ final class IDBXCTestReporter: NSObject, FBXCTestReporter, FBDataConsumer, @unch
       withAcceptableExitCodes: nil)
     let exitCode = try await awaitExitCode(of: mergeProcess)
     if exitCode != 0 {
-      throw FBControlCoreError.describe("xcrun failed to export code coverage data \(exitCode) \(mergeProcess.stdErr ?? "")")
+      throw IDBXCTestReporterError.coverageExportFailed(exitCode: exitCode, stderr: (mergeProcess.stdErr as String?) ?? "")
     }
   }
 
@@ -480,7 +500,7 @@ final class IDBXCTestReporter: NSObject, FBXCTestReporter, FBDataConsumer, @unch
 
     guard let exportOutputStream = exportProcess.stdOut
     else {
-      throw FBControlCoreError.describe("xcrun llvm-cov export misconfigured. stdOut stream is nil")
+      throw IDBXCTestReporterError.exportStreamMissing
     }
     exportOutputStream.open()
 
@@ -494,7 +514,7 @@ final class IDBXCTestReporter: NSObject, FBXCTestReporter, FBDataConsumer, @unch
 
     let exitCode = try await awaitExitCode(of: exportProcess)
     if exitCode != 0 {
-      throw FBControlCoreError.describe("xcrun failed to export code coverage data \(exitCode) \(exportProcess.stdErr ?? "")")
+      throw IDBXCTestReporterError.coverageExportFailed(exitCode: exitCode, stderr: (exportProcess.stdErr as String?) ?? "")
     }
 
     let archiveProcess = try await archiveTask.value
