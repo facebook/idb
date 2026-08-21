@@ -8,6 +8,38 @@
 @preconcurrency import FBControlCore
 import Foundation
 
+/// The ways socket forwarding can fail, as data rather than assembled strings.
+public enum FBDeviceSocketForwardingError: Error {
+  case deviceNil
+  case fileDescriptorWriterFailed(fileDescriptor: Int32)
+  case socketDuplicationFailed(message: String)
+  case socketWriterFailed(socket: Int32)
+  case callUnavailable(function: String)
+  case connectionIDUnavailable
+  case remoteConnectionFailed(remotePort: Int)
+}
+
+extension FBDeviceSocketForwardingError: LocalizedError {
+  public var errorDescription: String? {
+    switch self {
+    case .deviceNil:
+      return "Device is nil"
+    case let .fileDescriptorWriterFailed(fileDescriptor):
+      return "Failed to create a writer for local file descriptor \(fileDescriptor)"
+    case let .socketDuplicationFailed(message):
+      return "Could not duplicate socket descriptor: \(message)"
+    case let .socketWriterFailed(socket):
+      return "Failed to create a writer for local socket \(socket)"
+    case let .callUnavailable(function):
+      return "\(function) not available"
+    case .connectionIDUnavailable:
+      return "Failed to get ConnectionID from Device"
+    case let .remoteConnectionFailed(remotePort):
+      return "Failed to connect to remote port \(remotePort)"
+    }
+  }
+}
+
 public class FBDeviceSocketForwardingCommands: NSObject {
   private(set) weak var device: FBDevice?
 
@@ -30,11 +62,11 @@ public class FBDeviceSocketForwardingCommands: NSObject {
     remotePort: Int32
   ) async throws {
     guard let device else {
-      throw FBDeviceControlError().describe("Device is nil").build()
+      throw FBDeviceSocketForwardingError.deviceNil
     }
     var error: NSError?
     guard let localConsumer = FBFileWriter.asyncWriter(withFileDescriptor: localFileDescriptorOutput, closeOnEndOfFile: false, error: &error) else {
-      throw error ?? FBDeviceControlError.describe("Failed to create a writer for local file descriptor \(localFileDescriptorOutput)").build()
+      throw error ?? FBDeviceSocketForwardingError.fileDescriptorWriterFailed(fileDescriptor: localFileDescriptorOutput)
     }
     try await withFBFutureContext(device.connectToDevice(withPurpose: "Socket Connection")) { connectedDevice in
       let localSocket = try Self.openLocalSocket(toRemotePort: Int(remotePort), on: connectedDevice, logger: device.logger)
@@ -46,13 +78,13 @@ public class FBDeviceSocketForwardingCommands: NSObject {
       let writerDescriptor = dup(localSocket)
       guard writerDescriptor >= 0 else {
         close(localSocket)
-        throw FBDeviceControlError.describe("Could not duplicate socket descriptor: \(String(cString: strerror(errno)))").build()
+        throw FBDeviceSocketForwardingError.socketDuplicationFailed(message: String(cString: strerror(errno)))
       }
       var writerError: NSError?
       guard let remoteWriter = FBFileWriter.asyncWriter(withFileDescriptor: writerDescriptor, closeOnEndOfFile: true, error: &writerError) else {
         close(writerDescriptor)
         close(localSocket)
-        throw writerError ?? FBDeviceControlError.describe("Failed to create a writer for local socket \(localSocket)").build()
+        throw writerError ?? FBDeviceSocketForwardingError.socketWriterFailed(socket: localSocket)
       }
       let remoteReader = FBFileReader.reader(withFileDescriptor: localSocket, closeOnEndOfFile: false, consumer: localConsumer, logger: nil)
       let inputReader = FBFileReader.reader(withFileDescriptor: localFileDescriptorInput, closeOnEndOfFile: false, consumer: remoteWriter, logger: nil)
@@ -96,20 +128,20 @@ public class FBDeviceSocketForwardingCommands: NSObject {
 
   private static func openLocalSocket(toRemotePort remotePort: Int, on device: any FBDeviceCommands, logger: (any FBControlCoreLogger)?) throws -> Int32 {
     guard let getConnectionID = device.calls.GetConnectionID else {
-      throw FBDeviceControlError.describe("GetConnectionID not available").build()
+      throw FBDeviceSocketForwardingError.callUnavailable(function: "GetConnectionID")
     }
     let connectionID = getConnectionID(device.amDeviceRef)
     if connectionID <= 0 {
-      throw FBDeviceControlError.describe("Failed to get ConnectionID from Device").build()
+      throw FBDeviceSocketForwardingError.connectionIDUnavailable
     }
     logger?.log("Got connection ID \(connectionID), for device. Connecting to remote port \(remotePort)")
     var localSocket: Int32 = 0
     guard let usbMuxConnect = device.calls.USBMuxConnectByPort else {
-      throw FBDeviceControlError.describe("USBMuxConnectByPort not available").build()
+      throw FBDeviceSocketForwardingError.callUnavailable(function: "USBMuxConnectByPort")
     }
     let status = usbMuxConnect(connectionID, Int32(UInt16(remotePort).bigEndian), &localSocket)
     if status != 0 {
-      throw FBDeviceControlError.describe("Failed to connect to remote port \(remotePort)").build()
+      throw FBDeviceSocketForwardingError.remoteConnectionFailed(remotePort: remotePort)
     }
     logger?.log("Got local socket \(localSocket) for remote port \(remotePort)")
     return localSocket
