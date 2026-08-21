@@ -11,12 +11,7 @@ private let ProcessTableRemovalTimeout: TimeInterval = 20.0
 
 private let FBProcessTerminationStrategyConfigurationDefault = FBProcessTerminationStrategyConfiguration(
   signo: SIGKILL,
-  options: FBProcessTerminationStrategyOptions(
-    rawValue:
-      FBProcessTerminationStrategyOptions.checkProcessExistsBeforeSignal.rawValue
-      | FBProcessTerminationStrategyOptions.checkDeathAfterSignal.rawValue
-      | FBProcessTerminationStrategyOptions.backoffToSIGKILL.rawValue
-  )!
+  options: [.checkProcessExistsBeforeSignal, .checkDeathAfterSignal, .backoffToSIGKILL]
 )
 
 @objc(FBProcessTerminationStrategy)
@@ -158,7 +153,7 @@ public class FBProcessTerminationStrategy: NSObject {
   // MARK: Private
 
   private func hasOption(_ option: FBProcessTerminationStrategyOptions) -> Bool {
-    (configuration.options.rawValue & option.rawValue) == option.rawValue
+    configuration.options.contains(option)
   }
 
   private func strategyWith(configuration: FBProcessTerminationStrategyConfiguration) -> FBProcessTerminationStrategy {

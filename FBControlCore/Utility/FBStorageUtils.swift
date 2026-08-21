@@ -35,10 +35,10 @@ public class FBStorageUtils {
 
   public class func findFile(withExtension ext: String, at url: URL) throws -> URL {
     let files = try findFiles(withExtension: ext, at: url)
-    if files.count != 1 {
+    guard let file = files.first, files.count == 1 else {
       throw FBControlCoreError.describe("\(files.count) files with extension .\(ext) in \(url)").build()
     }
-    return files.first!
+    return file
   }
 
   public class func findFiles(withExtension ext: String, at url: URL) throws -> Set<URL> {

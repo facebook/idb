@@ -135,7 +135,8 @@ private class FBFileWriter_Sync: FBFileWriter, FBDispatchDataConsumer, FBDataCon
   func consumeData(_ data: __DispatchData) {
     let dispatchData = data as DispatchData
     dispatchData.enumerateBytes { buffer, _, _ in
-      write(self.fileDescriptor, buffer.baseAddress!, buffer.count)
+      guard let baseAddress = buffer.baseAddress else { return }
+      write(self.fileDescriptor, baseAddress, buffer.count)
     }
   }
 

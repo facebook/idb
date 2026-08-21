@@ -156,14 +156,10 @@ public final class FBBundleDescriptor: NSObject, NSCopying, Sendable {
       throw FBControlCoreError.describe("Failed to load bundle at path \(path)").build()
     }
     let bundleName = bundleNameForBundle(bundle)
-    var identifier = bundle.bundleIdentifier
-    if identifier == nil {
-      if !fallbackIdentifier {
-        throw FBControlCoreError.describe("Could not obtain Bundle ID for bundle '\((path as NSString).lastPathComponent)' at \(path)").build()
-      }
-      identifier = bundleName
+    guard let identifier = bundle.bundleIdentifier ?? (fallbackIdentifier ? bundleName : nil) else {
+      throw FBControlCoreError.describe("Could not obtain Bundle ID for bundle '\((path as NSString).lastPathComponent)' at \(path)").build()
     }
     let binary = try binaryForBundle(bundle)
-    return FBBundleDescriptor(name: bundleName, identifier: identifier!, path: path, binary: binary)
+    return FBBundleDescriptor(name: bundleName, identifier: identifier, path: path, binary: binary)
   }
 }

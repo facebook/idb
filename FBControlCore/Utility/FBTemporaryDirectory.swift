@@ -21,28 +21,19 @@ public class FBTemporaryDirectory: NSObject {
 
   @objc(temporaryDirectoryWithLogger:)
   public class func temporaryDirectory(logger: FBControlCoreLogger) -> Self {
-    let base = ProcessInfo.processInfo.environment["TMPDIR"] ?? NSTemporaryDirectory()
-    let tempPathComponents = [base, "IDB", UUID().uuidString]
-    let temporaryDirectory = NSURL.fileURL(withPathComponents: tempPathComponents)!
-    var error: NSError?
-    let success: Bool
+    let temporaryDirectory = uniqueTemporaryDirectoryURL()
     do {
       try FileManager.default.createDirectory(at: temporaryDirectory, withIntermediateDirectories: true, attributes: nil)
-      success = true
-    } catch let err as NSError {
-      error = err
-      success = false
+    } catch {
+      assertionFailure("Failed to create temporary directory: \(error)")
     }
-    assert(success, "\(error!)")
     let queue = DispatchQueue(label: "com.facebook.idb.fbtemporarydirectory")
     return self.init(rootDirectory: temporaryDirectory, queue: queue, logger: logger)
   }
 
   @objc(initWithLogger:)
   public convenience init(logger: FBControlCoreLogger) {
-    let base = ProcessInfo.processInfo.environment["TMPDIR"] ?? NSTemporaryDirectory()
-    let tempPathComponents = [base, "IDB", UUID().uuidString]
-    let temporaryDirectory = NSURL.fileURL(withPathComponents: tempPathComponents)!
+    let temporaryDirectory = FBTemporaryDirectory.uniqueTemporaryDirectoryURL()
     do {
       try FileManager.default.createDirectory(at: temporaryDirectory, withIntermediateDirectories: true, attributes: nil)
     } catch {
@@ -50,6 +41,13 @@ public class FBTemporaryDirectory: NSObject {
     }
     let queue = DispatchQueue(label: "com.facebook.idb.fbtemporarydirectory")
     self.init(rootDirectory: temporaryDirectory, queue: queue, logger: logger)
+  }
+
+  private class func uniqueTemporaryDirectoryURL() -> URL {
+    let base = ProcessInfo.processInfo.environment["TMPDIR"] ?? NSTemporaryDirectory()
+    return URL(fileURLWithPath: base)
+      .appendingPathComponent("IDB")
+      .appendingPathComponent(UUID().uuidString)
   }
 
   required init(rootDirectory: URL, queue: DispatchQueue, logger: FBControlCoreLogger) {
