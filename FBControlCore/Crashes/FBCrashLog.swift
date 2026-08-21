@@ -49,6 +49,41 @@ private let FBCrashLog_dateFormatter: DateFormatter = {
   return formatter
 }()
 
+/// The ways crash-log reading and parsing can fail, as data rather than assembled strings.
+public enum FBCrashLogError: Error {
+  case fileDoesNotExist(path: String)
+  case fileNotReadable(path: String)
+  case dataReadFailed(path: String, underlying: Error)
+  case fileEmpty(path: String)
+  case stringExtractionFailed(path: String)
+  case readFailed(path: String, underlying: Error)
+  case parseFailed(underlying: Error)
+  case missingField(field: String)
+}
+
+extension FBCrashLogError: LocalizedError {
+  public var errorDescription: String? {
+    switch self {
+    case let .fileDoesNotExist(path):
+      return "File does not exist at given crash path: \(path)"
+    case let .fileNotReadable(path):
+      return "Crash file at \(path) is not readable"
+    case let .dataReadFailed(path, _):
+      return "Could not read data from \(path)"
+    case let .fileEmpty(path):
+      return "Crash file at \(path) is empty"
+    case let .stringExtractionFailed(path):
+      return "Could not extract string from \(path)"
+    case let .readFailed(path, _):
+      return "Failed to read crash log at path \(path)"
+    case let .parseFailed(underlying):
+      return "Could not parse crash string \(underlying)"
+    case let .missingField(field):
+      return "Missing \(field) in crash log"
+    }
+  }
+}
+
 @objc(FBCrashLogInfo)
 public class FBCrashLogInfo: NSObject, NSCopying {
 
@@ -106,23 +141,23 @@ public class FBCrashLogInfo: NSObject, NSCopying {
   public class func fromCrashLog(atPath crashPath: String) throws -> FBCrashLogInfo {
     let fileManager = FileManager.default
     if !fileManager.fileExists(atPath: crashPath) {
-      throw FBControlCoreError.describe("File does not exist at given crash path: \(crashPath)").build()
+      throw FBCrashLogError.fileDoesNotExist(path: crashPath)
     }
     if !fileManager.isReadableFile(atPath: crashPath) {
-      throw FBControlCoreError.describe("Crash file at \(crashPath) is not readable").build()
+      throw FBCrashLogError.fileNotReadable(path: crashPath)
     }
     let crashFileData: Data
     do {
       crashFileData = try Data(contentsOf: URL(fileURLWithPath: crashPath))
     } catch {
-      throw FBControlCoreError.describe("Could not read data from \(crashPath)").caused(by: error as NSError).build()
+      throw FBCrashLogError.dataReadFailed(path: crashPath, underlying: error)
     }
     if crashFileData.isEmpty {
-      throw FBControlCoreError.describe("Crash file at \(crashPath) is empty").build()
+      throw FBCrashLogError.fileEmpty(path: crashPath)
     }
 
     guard let crashString = String(data: crashFileData, encoding: .utf8) else {
-      throw FBControlCoreError.describe("Could not extract string from \(crashPath)").build()
+      throw FBCrashLogError.stringExtractionFailed(path: crashPath)
     }
 
     let parser = getPreferredCrashLogParser(forCrashString: crashString)
@@ -206,7 +241,7 @@ public class FBCrashLogInfo: NSObject, NSCopying {
     do {
       contents = try loadRawCrashLogString()
     } catch {
-      throw FBControlCoreError.describe("Failed to read crash log at path \(crashPath)").caused(by: error as NSError).build()
+      throw FBCrashLogError.readFailed(path: crashPath, underlying: error)
     }
     return FBCrashLog(info: self, contents: contents)
   }
@@ -304,30 +339,30 @@ public class FBCrashLogInfo: NSObject, NSCopying {
     )
 
     if let parseError {
-      throw FBControlCoreError.describe("Could not parse crash string \(parseError)").build()
+      throw FBCrashLogError.parseFailed(underlying: parseError)
     }
 
     let processNameStr = processName as String
     if processNameStr.isEmpty {
-      throw FBControlCoreError.describe("Missing process name in crash log").build()
+      throw FBCrashLogError.missingField(field: "process name")
     }
     let identifierStr = identifier as String
     if identifierStr.isEmpty {
-      throw FBControlCoreError.describe("Missing identifier in crash log").build()
+      throw FBCrashLogError.missingField(field: "identifier")
     }
     let parentProcessNameStr = parentProcessName as String
     if parentProcessNameStr.isEmpty {
-      throw FBControlCoreError.describe("Missing parent process name in crash log").build()
+      throw FBCrashLogError.missingField(field: "parent process name")
     }
     let executablePathStr = executablePath as String
     if executablePathStr.isEmpty {
-      throw FBControlCoreError.describe("Missing executable path in crash log").build()
+      throw FBCrashLogError.missingField(field: "executable path")
     }
     if processIdentifier == -1 {
-      throw FBControlCoreError.describe("Missing process identifier in crash log").build()
+      throw FBCrashLogError.missingField(field: "process identifier")
     }
     if parentProcessIdentifier == -1 {
-      throw FBControlCoreError.describe("Missing parent process identifier in crash log").build()
+      throw FBCrashLogError.missingField(field: "parent process identifier")
     }
 
     let processType = self.processType(forExecutablePath: executablePathStr)
