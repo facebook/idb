@@ -69,7 +69,6 @@ final class FBDataDownloadInputTests: XCTestCase {
     let configuration = URLSessionConfiguration.ephemeral
     configuration.protocolClasses = [StubURLProtocol.self]
     // swiftlint:disable:next force_unwrapping
-    // patternlint-disable-next-line use-meta-url-wrapper-for-url
     let url = URL(string: "https://example.invalid/app.ipa")!
     let download = FBDataDownloadInput.dataDownload(
       withURL: url,
