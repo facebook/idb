@@ -13,21 +13,15 @@ import XCTestBootstrap
 
 public final class FBiOSTargetProvider {
 
-  public static func target(withUDID udid: String, targetSets: [FBiOSTargetSet], warmUp: Bool, logger: FBControlCoreLogger) -> FBFuture<AnyObject> {
-    let target: FBiOSTarget
-    do {
-      switch udid.lowercased() {
-      case "only":
-        target = try fetchSoleTarget(forTargetSets: targetSets, logger: logger)
-      case "booted":
-        target = try fetchSoleBootedTarget(forTargetSets: targetSets, logger: logger)
-      default:
-        target = try fetchTarget(withUDID: udid, targetSets: targetSets, logger: logger)
-      }
-    } catch {
-      return FBFuture(error: error)
+  public static func target(withUDID udid: String, targetSets: [FBiOSTargetSet], warmUp: Bool, logger: FBControlCoreLogger) throws -> FBiOSTarget {
+    switch udid.lowercased() {
+    case "only":
+      return try fetchSoleTarget(forTargetSets: targetSets, logger: logger)
+    case "booted":
+      return try fetchSoleBootedTarget(forTargetSets: targetSets, logger: logger)
+    default:
+      return try fetchTarget(withUDID: udid, targetSets: targetSets, logger: logger)
     }
-    return FBFuture(result: target as AnyObject)
   }
 
   // MARK: - Private

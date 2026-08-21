@@ -76,7 +76,7 @@ enum MultisourceFileReader {
   }
 
   private static func filepathsFromTar(temporaryDirectory: FBTemporaryDirectory, input: FBProcessInput<OutputStream>, extractFromSubdir: Bool, compression: FBCompressionFormat) async throws -> [URL] {
-    let mappedInput = input as! FBProcessInput<AnyObject>
+    let mappedInput = input.retyped(FBProcessInput<AnyObject>.self)
     if extractFromSubdir {
       return try await temporaryDirectory.filesFromSubdirsAsync(fromStream: mappedInput, compression: compression)
     } else {

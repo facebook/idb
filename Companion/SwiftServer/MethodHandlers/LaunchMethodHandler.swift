@@ -89,7 +89,7 @@ struct LaunchMethodHandler: @unchecked Sendable {
   }
 
   private func processOutputForNullDevice() -> FBProcessOutput<AnyObject> {
-    return FBProcessOutput<AnyObject>.forNullDevice() as! FBProcessOutput<AnyObject>
+    return FBProcessOutput<AnyObject>.forNullDevice().retyped(FBProcessOutput<AnyObject>.self)
   }
 
   private func pipeOutput(interface: Idb_ProcessOutput.Interface, responseWriter: FIFOStreamWriter<GRPCAsyncResponseStreamWriter<Idb_LaunchResponse>>) -> (FBDataConsumer & FBDataConsumerLifecycle) {

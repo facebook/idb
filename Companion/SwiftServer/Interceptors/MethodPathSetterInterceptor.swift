@@ -55,8 +55,9 @@ final class MethodInfoSetterInterceptor<Request, Response>: ServerInterceptor<Re
   }
 
   private func extractMethodName(path: String) -> Substring {
-    path
-      .suffix(from: path.lastIndex(of: "/")!)
-      .dropFirst()
+    guard let lastSeparator = path.lastIndex(of: "/") else {
+      return path[...]
+    }
+    return path[path.index(after: lastSeparator)...]
   }
 }

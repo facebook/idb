@@ -80,10 +80,7 @@ final class FBiOSTargetStateChangeNotifier: NSObject, FBiOSTargetSetDelegate {
         if let newline = "\n".data(using: .utf8) {
           readyOutput.append(newline)
         }
-        readyOutput.withUnsafeBytes { bytes in
-          // swiftlint:disable:next force_unwrapping
-          _ = Darwin.write(STDOUT_FILENO, bytes.baseAddress!, bytes.count)
-        }
+        writeToStandardOutput(readyOutput)
         fflush(stdout)
       }
     }
@@ -125,15 +122,8 @@ final class FBiOSTargetStateChangeNotifier: NSObject, FBiOSTargetSetDelegate {
   }
 
   private func writeTargetsDataToStdOut(_ data: Data) -> Bool {
-    data.withUnsafeBytes { bytes in
-      // swiftlint:disable:next force_unwrapping
-      _ = Darwin.write(STDOUT_FILENO, bytes.baseAddress!, bytes.count)
-    }
-    let newline = FBDataBuffer.newlineTerminal()
-    newline.withUnsafeBytes { bytes in
-      // swiftlint:disable:next force_unwrapping
-      _ = Darwin.write(STDOUT_FILENO, bytes.baseAddress!, bytes.count)
-    }
+    writeToStandardOutput(data)
+    writeToStandardOutput(FBDataBuffer.newlineTerminal())
     fflush(stdout)
     return true
   }

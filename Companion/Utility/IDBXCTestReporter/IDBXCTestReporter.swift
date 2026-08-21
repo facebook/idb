@@ -467,8 +467,7 @@ final class IDBXCTestReporter: NSObject, FBXCTestReporter, FBDataConsumer, @unch
         .withStdErrInMemoryAsString())
 
     let gzipProcessInput = FBProcessInput<OutputStream>.fromStream()
-    // swiftlint:disable:next force_cast
-    let gzipInput = gzipProcessInput as! FBProcessInput<AnyObject>
+    let gzipInput = gzipProcessInput.retyped(FBProcessInput<AnyObject>.self)
     let archiveTask = Task {
       try await FBArchiveOperations.createGzipDataAsync(from: gzipInput, logger: self.logger)
     }

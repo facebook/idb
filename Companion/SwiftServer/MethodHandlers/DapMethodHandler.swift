@@ -21,7 +21,7 @@ struct DapMethodHandler: @unchecked Sendable {
     guard case let .start(start) = try await requestStream.requiredNext.control
     else { throw GRPCStatus(code: .failedPrecondition, message: "Dap command expected a Start messaged in the beginning of the Stream") }
 
-    let writer = FBProcessInput<FBDataConsumer>.fromConsumer() as! FBProcessInput<AnyObject>
+    let writer = FBProcessInput<FBDataConsumer>.fromConsumer().retyped(FBProcessInput<AnyObject>.self)
     let dapProcess = try await startDapServer(startRequest: start, processInput: writer, responseStream: responseStream)
 
     let tenHours: UInt64 = 36000 * 1000000000
