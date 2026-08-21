@@ -35,6 +35,92 @@ public enum FBSimulatorContentSizeCategory: Int, Sendable {
 
 private let slowAnimationsNotification = "com.apple.UIKit.SimulatorSlowMotionAnimationState"
 
+/// The ways settings operations can fail, as data rather than assembled strings.
+public enum FBSimulatorSettingsError: Error {
+  case noDataDirectory
+  case noDataDirectoryForPlists
+  case settingNotPreferenceBacked(setting: String)
+  case noServicesToGrant(bundleIDs: Set<String>)
+  case noBundleIDsToGrant(services: Set<FBTargetSettingsService>)
+  case unhandledGrantServices(services: Set<FBTargetSettingsService>)
+  case noServicesToRevoke(bundleIDs: Set<String>)
+  case noBundleIDsToRevoke(services: Set<FBTargetSettingsService>)
+  case unhandledRevokeServices(services: Set<FBTargetSettingsService>)
+  case emptyScheme(operation: String)
+  case emptyBundleIDs(operation: String)
+  case schemeApprovalPlistUnreadable(path: String)
+  case schemeApprovalDirectoryCreationFailed(underlying: Error)
+  case schemeApprovalPlistWriteFailed
+  case addressBookDirectoryMissing(path: String)
+  case contactsDirectoryEnumerationFailed(path: String)
+  case noContactsDatabases
+  case noDnsServers
+  case frameworkBridgeBinaryMissing
+  case frameworkBridgeFailed(service: String, action: String, exitCode: Int32, stderr: String)
+  case tccDatabaseMissing(path: String)
+  case tccDatabaseIsDirectory(path: String)
+  case tccDatabaseNotWritable(path: String)
+  case sqliteTaskFailed(exitCode: Int, stdOut: String, stdErr: String)
+  case sqliteCommandFailed(stderr: String)
+}
+
+extension FBSimulatorSettingsError: LocalizedError {
+  public var errorDescription: String? {
+    switch self {
+    case .noDataDirectory:
+      return "Simulator has no data directory"
+    case .noDataDirectoryForPlists:
+      return "The Simulator has no data directory, so its plists cannot be located"
+    case let .settingNotPreferenceBacked(setting):
+      return "Setting '\(setting)' is not backed by a preference"
+    case let .noServicesToGrant(bundleIDs):
+      return "Cannot approve any services for \(bundleIDs) since no services were provided"
+    case let .noBundleIDsToGrant(services):
+      return "Cannot approve \(services) since no bundle ids were provided"
+    case let .unhandledGrantServices(services):
+      return "Cannot approve \(FBCollectionInformation.oneLineDescription(from: Array(services))) since there is no handling of it"
+    case let .noServicesToRevoke(bundleIDs):
+      return "Cannot revoke any services for \(bundleIDs) since no services were provided"
+    case let .noBundleIDsToRevoke(services):
+      return "Cannot revoke \(services) since no bundle ids were provided"
+    case let .unhandledRevokeServices(services):
+      return "Cannot revoke \(FBCollectionInformation.oneLineDescription(from: Array(services))) since there is no handling of it"
+    case let .emptyScheme(operation):
+      return "Empty scheme provided to \(operation)"
+    case let .emptyBundleIDs(operation):
+      return "Empty bundleID set provided to \(operation)"
+    case let .schemeApprovalPlistUnreadable(path):
+      return "Failed to read the file at \(path)"
+    case .schemeApprovalDirectoryCreationFailed:
+      return "Failed to create folders for scheme approval plist"
+    case .schemeApprovalPlistWriteFailed:
+      return "Failed to write scheme approval plist"
+    case let .addressBookDirectoryMissing(path):
+      return "Expected Address Book path to exist at \(path) but it was not there"
+    case let .contactsDirectoryEnumerationFailed(path):
+      return "Could not enumerate directory at \(path)"
+    case .noContactsDatabases:
+      return "Could not update Address Book DBs when no databases are provided"
+    case .noDnsServers:
+      return "At least one DNS server address is required"
+    case .frameworkBridgeBinaryMissing:
+      return "SimulatorFrameworkBridge binary not found in the companion Resources directory"
+    case let .frameworkBridgeFailed(service, action, exitCode, stderr):
+      return "SimulatorFrameworkBridge \(service) \(action) failed with exit code \(exitCode): \(stderr)"
+    case let .tccDatabaseMissing(path):
+      return "Expected file to exist at path \(path) but it was not there"
+    case let .tccDatabaseIsDirectory(path):
+      return "Expected file to exist at path \(path) but it is a directory"
+    case let .tccDatabaseNotWritable(path):
+      return "Database file at path \(path) is not writable"
+    case let .sqliteTaskFailed(exitCode, stdOut, stdErr):
+      return "Task did not exit 0: \(exitCode) \(stdOut) \(stdErr)"
+    case let .sqliteCommandFailed(stderr):
+      return "Failed to execute sqlite command: \(stderr)"
+    }
+  }
+}
+
 public final class FBSimulatorSettingsCommands: NSObject {
 
   // MARK: - Properties
@@ -62,7 +148,7 @@ public final class FBSimulatorSettingsCommands: NSObject {
 
   private func requireDataDirectory(of simulator: FBSimulator) throws -> String {
     guard let dataDirectory = simulator.dataDirectory else {
-      throw FBSimulatorError.describe("The Simulator has no data directory, so its plists cannot be located").build()
+      throw FBSimulatorSettingsError.noDataDirectoryForPlists
     }
     return dataDirectory
   }
@@ -209,7 +295,7 @@ public final class FBSimulatorSettingsCommands: NSObject {
   // for autofill-passwords lives on FBSimulatorSettingKey.preferenceBacking.
   fileprivate func setPreferenceBackedAsync(_ key: FBSimulatorSettingKey, value: String, type: String?) async throws {
     guard let backing = key.preferenceBacking else {
-      throw FBSimulatorError.describe("Setting '\(key.rawValue)' is not backed by a preference").build()
+      throw FBSimulatorSettingsError.settingNotPreferenceBacked(setting: key.rawValue)
     }
     try await setPreferenceAsync(backing.key, value: value, type: type, domain: backing.domain)
   }
@@ -235,10 +321,10 @@ public final class FBSimulatorSettingsCommands: NSObject {
   fileprivate func grantAccessAsync(_ bundleIDs: Set<String>, toServices services: Set<FBTargetSettingsService>) async throws {
     let simulator = try requireSimulator()
     if services.isEmpty {
-      throw FBSimulatorError.describe("Cannot approve any services for \(bundleIDs) since no services were provided").build()
+      throw FBSimulatorSettingsError.noServicesToGrant(bundleIDs: bundleIDs)
     }
     if bundleIDs.isEmpty {
-      throw FBSimulatorError.describe("Cannot approve \(services) since no bundle ids were provided").build()
+      throw FBSimulatorSettingsError.noBundleIDsToGrant(services: services)
     }
 
     var toApprove = services
@@ -283,17 +369,17 @@ public final class FBSimulatorSettingsCommands: NSObject {
     }
 
     if !toApprove.isEmpty {
-      throw FBSimulatorError.describe("Cannot approve \(FBCollectionInformation.oneLineDescription(from: Array(toApprove))) since there is no handling of it").build()
+      throw FBSimulatorSettingsError.unhandledGrantServices(services: toApprove)
     }
   }
 
   fileprivate func revokeAccessAsync(_ bundleIDs: Set<String>, toServices services: Set<FBTargetSettingsService>) async throws {
     let simulator = try requireSimulator()
     if services.isEmpty {
-      throw FBSimulatorError.describe("Cannot revoke any services for \(bundleIDs) since no services were provided").build()
+      throw FBSimulatorSettingsError.noServicesToRevoke(bundleIDs: bundleIDs)
     }
     if bundleIDs.isEmpty {
-      throw FBSimulatorError.describe("Cannot revoke \(services) since no bundle ids were provided").build()
+      throw FBSimulatorSettingsError.noBundleIDsToRevoke(services: services)
     }
 
     var toRevoke = services
@@ -338,17 +424,17 @@ public final class FBSimulatorSettingsCommands: NSObject {
     }
 
     if !toRevoke.isEmpty {
-      throw FBSimulatorError.describe("Cannot revoke \(FBCollectionInformation.oneLineDescription(from: Array(toRevoke))) since there is no handling of it").build()
+      throw FBSimulatorSettingsError.unhandledRevokeServices(services: toRevoke)
     }
   }
 
   fileprivate func grantAccessAsync(_ bundleIDs: Set<String>, toDeeplink scheme: String) async throws {
     let simulator = try requireSimulator()
     if scheme.isEmpty {
-      throw FBSimulatorError.describe("Empty scheme provided to url approve").build()
+      throw FBSimulatorSettingsError.emptyScheme(operation: "url approve")
     }
     if bundleIDs.isEmpty {
-      throw FBSimulatorError.describe("Empty bundleID set provided to url approve").build()
+      throw FBSimulatorSettingsError.emptyBundleIDs(operation: "url approve")
     }
 
     let preferencesDirectory = (try requireDataDirectory(of: simulator) as NSString).appendingPathComponent("Library/Preferences")
@@ -357,7 +443,7 @@ public final class FBSimulatorSettingsCommands: NSObject {
     var schemeApprovalProperties: NSMutableDictionary = NSMutableDictionary()
     if FileManager.default.fileExists(atPath: schemeApprovalPlistPath) {
       guard let dict = NSDictionary(contentsOfFile: schemeApprovalPlistPath)?.mutableCopy() as? NSMutableDictionary else {
-        throw FBSimulatorError.describe("Failed to read the file at \(schemeApprovalPlistPath)").build()
+        throw FBSimulatorSettingsError.schemeApprovalPlistUnreadable(path: schemeApprovalPlistPath)
       }
       schemeApprovalProperties = dict
     }
@@ -370,20 +456,20 @@ public final class FBSimulatorSettingsCommands: NSObject {
     do {
       try FileManager.default.createDirectory(atPath: preferencesDirectory, withIntermediateDirectories: true, attributes: nil)
     } catch {
-      throw FBSimulatorError.describe("Failed to create folders for scheme approval plist").build()
+      throw FBSimulatorSettingsError.schemeApprovalDirectoryCreationFailed(underlying: error)
     }
     if !schemeApprovalProperties.write(toFile: schemeApprovalPlistPath, atomically: true) {
-      throw FBSimulatorError.describe("Failed to write scheme approval plist").build()
+      throw FBSimulatorSettingsError.schemeApprovalPlistWriteFailed
     }
   }
 
   fileprivate func revokeAccessAsync(_ bundleIDs: Set<String>, toDeeplink scheme: String) async throws {
     let simulator = try requireSimulator()
     if scheme.isEmpty {
-      throw FBSimulatorError.describe("Empty scheme provided to url revoke").build()
+      throw FBSimulatorSettingsError.emptyScheme(operation: "url revoke")
     }
     if bundleIDs.isEmpty {
-      throw FBSimulatorError.describe("Empty bundleID set provided to url revoke").build()
+      throw FBSimulatorSettingsError.emptyBundleIDs(operation: "url revoke")
     }
 
     let preferencesDirectory = (try requireDataDirectory(of: simulator) as NSString).appendingPathComponent("Library/Preferences")
@@ -393,14 +479,14 @@ public final class FBSimulatorSettingsCommands: NSObject {
       return
     }
     guard let schemeApprovalProperties = NSDictionary(contentsOfFile: schemeApprovalPlistPath)?.mutableCopy() as? NSMutableDictionary else {
-      throw FBSimulatorError.describe("Failed to read the file at \(schemeApprovalPlistPath)").build()
+      throw FBSimulatorSettingsError.schemeApprovalPlistUnreadable(path: schemeApprovalPlistPath)
     }
 
     let urlKey = FBSimulatorSettingsCommands.magicDeeplinkKey(forScheme: scheme)
     schemeApprovalProperties.removeObject(forKey: urlKey)
 
     if !schemeApprovalProperties.write(toFile: schemeApprovalPlistPath, atomically: true) {
-      throw FBSimulatorError.describe("Failed to write scheme approval plist").build()
+      throw FBSimulatorSettingsError.schemeApprovalPlistWriteFailed
     }
   }
 
@@ -408,7 +494,7 @@ public final class FBSimulatorSettingsCommands: NSObject {
     let simulator = try requireSimulator()
     let destinationDirectory = (try requireDataDirectory(of: simulator) as NSString).appendingPathComponent("Library/AddressBook")
     if !FileManager.default.fileExists(atPath: destinationDirectory) {
-      throw FBSimulatorError.describe("Expected Address Book path to exist at \(destinationDirectory) but it was not there").build()
+      throw FBSimulatorSettingsError.addressBookDirectoryMissing(path: destinationDirectory)
     }
 
     let sourceFilePaths = try FBSimulatorSettingsCommands.contactsDatabaseFilePaths(fromContainingDirectory: databaseDirectory)
@@ -439,7 +525,7 @@ public final class FBSimulatorSettingsCommands: NSObject {
 
   fileprivate func setDnsServersAsync(_ servers: [String]) async throws {
     if servers.isEmpty {
-      throw FBSimulatorError.describe("At least one DNS server address is required").build()
+      throw FBSimulatorSettingsError.noDnsServers
     }
     try await runSimulatorFrameworkBridgeAsync(withService: "dns", action: "set", arguments: servers)
   }
@@ -472,7 +558,7 @@ public final class FBSimulatorSettingsCommands: NSObject {
   fileprivate func runSimulatorFrameworkBridgeAsync(withService service: String, action: String, arguments: [String] = []) async throws -> String {
     let simulator = try requireSimulator()
     guard let helperPath = BundledResources.path(forItem: "SimulatorFrameworkBridge") else {
-      throw FBSimulatorError.describe("SimulatorFrameworkBridge binary not found in the companion Resources directory").build()
+      throw FBSimulatorSettingsError.frameworkBridgeBinaryMissing
     }
 
     // Spawn the bridge helper inside the simulator via CoreSimulator (the same
@@ -484,7 +570,7 @@ public final class FBSimulatorSettingsCommands: NSObject {
       arguments: [service, action] + arguments)
     guard output.exitCode == 0 else {
       let stderr = String(data: output.stderr, encoding: .utf8) ?? ""
-      throw FBSimulatorError.describe("SimulatorFrameworkBridge \(service) \(action) failed with exit code \(output.exitCode): \(stderr)").build()
+      throw FBSimulatorSettingsError.frameworkBridgeFailed(service: service, action: action, exitCode: output.exitCode, stderr: stderr)
     }
     simulator.logger.log("SimulatorFrameworkBridge \(service) \(action) completed successfully")
     return String(data: output.stdout, encoding: .utf8) ?? ""
@@ -504,7 +590,7 @@ public final class FBSimulatorSettingsCommands: NSObject {
 
   fileprivate func updateHealthServiceAsync(_ bundleIDs: [String], approve approved: Bool) async throws {
     if bundleIDs.isEmpty {
-      throw FBSimulatorError.describe("Empty bundleID set provided to health approve").build()
+      throw FBSimulatorSettingsError.emptyBundleIDs(operation: "health approve")
     }
     let action = approved ? "approve" : "revoke"
     for bundleID in bundleIDs {
@@ -514,7 +600,7 @@ public final class FBSimulatorSettingsCommands: NSObject {
 
   fileprivate func updateNotificationServiceAsync(_ bundleIDs: [String], approve approved: Bool) async throws {
     if bundleIDs.isEmpty {
-      throw FBSimulatorError.describe("Empty bundleID set provided to notifications approve").build()
+      throw FBSimulatorSettingsError.emptyBundleIDs(operation: "notifications approve")
     }
 
     let action = approved ? "approve" : "revoke"
@@ -526,18 +612,18 @@ public final class FBSimulatorSettingsCommands: NSObject {
   fileprivate func modifyTCCDatabaseAsync(withBundleIDs bundleIDs: Set<String>, toServices services: Set<FBTargetSettingsService>, grantAccess: Bool) async throws {
     let simulator = try requireSimulator()
     guard let dataDirectory = simulator.dataDirectory else {
-      throw FBSimulatorError.describe("Simulator has no data directory").build()
+      throw FBSimulatorSettingsError.noDataDirectory
     }
     let databasePath = (dataDirectory as NSString).appendingPathComponent("Library/TCC/TCC.db")
     var isDirectory: ObjCBool = true
     if !FileManager.default.fileExists(atPath: databasePath, isDirectory: &isDirectory) {
-      throw FBSimulatorError.describe("Expected file to exist at path \(databasePath) but it was not there").build()
+      throw FBSimulatorSettingsError.tccDatabaseMissing(path: databasePath)
     }
     if isDirectory.boolValue {
-      throw FBSimulatorError.describe("Expected file to exist at path \(databasePath) but it is a directory").build()
+      throw FBSimulatorSettingsError.tccDatabaseIsDirectory(path: databasePath)
     }
     if !FileManager.default.isWritableFile(atPath: databasePath) {
-      throw FBSimulatorError.describe("Database file at path \(databasePath) is not writable").build()
+      throw FBSimulatorSettingsError.tccDatabaseNotWritable(path: databasePath)
     }
 
     let logger = simulator.logger.withName("sqlite_auth")
@@ -723,10 +809,13 @@ public final class FBSimulatorSettingsCommands: NSObject {
       .runUntilCompletion(withAcceptableExitCodes: [0, 1])
     let task = try await bridgeFBFuture(runFuture)
     if task.exitCode.result != 0 as NSNumber {
-      throw FBSimulatorError.describe("Task did not exit 0: \(task.exitCode.result ?? 0) \(task.stdOut ?? "") \(task.stdErr ?? "")").build()
+      throw FBSimulatorSettingsError.sqliteTaskFailed(
+        exitCode: task.exitCode.result?.intValue ?? 0,
+        stdOut: (task.stdOut as? String) ?? "",
+        stdErr: (task.stdErr as? String) ?? "")
     }
     if let stdErr = task.stdErr as? String, stdErr.hasPrefix("Error") {
-      throw FBSimulatorError.describe("Failed to execute sqlite command: \(stdErr)").build()
+      throw FBSimulatorSettingsError.sqliteCommandFailed(stderr: stdErr)
     }
     return (task.stdOut as String?) ?? ""
   }
@@ -734,7 +823,7 @@ public final class FBSimulatorSettingsCommands: NSObject {
   private class func contactsDatabaseFilePaths(fromContainingDirectory databaseDirectory: String) throws -> [String] {
     var filePaths: [String] = []
     guard let enumerator = FileManager.default.enumerator(atPath: databaseDirectory) else {
-      throw FBSimulatorError.describe("Could not enumerate directory at \(databaseDirectory)").build()
+      throw FBSimulatorSettingsError.contactsDirectoryEnumerationFailed(path: databaseDirectory)
     }
 
     for case let path as String in enumerator {
@@ -746,7 +835,7 @@ public final class FBSimulatorSettingsCommands: NSObject {
     }
 
     if filePaths.isEmpty {
-      throw FBSimulatorError.describe("Could not update Address Book DBs when no databases are provided").build()
+      throw FBSimulatorSettingsError.noContactsDatabases
     }
 
     return filePaths
