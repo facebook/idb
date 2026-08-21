@@ -9,6 +9,65 @@
 @preconcurrency import FBControlCore
 @preconcurrency import Foundation
 
+/// The ways simulator application operations can fail, as data rather than assembled strings.
+public enum FBSimulatorApplicationError: Error {
+  case installFailed(bundleDescription: String, options: String)
+  case attachmentMissingFiles(bundleID: String)
+  case uninstallingSystemApplication(applicationDescription: String)
+  case uninstallFailed(bundleID: String, underlying: Error)
+  case servicePatternConstructionFailed
+  case searchPatternConstructionFailed(bundleID: String)
+  case launchingUninstalledApplication(bundleID: String, underlying: Error)
+  case foregroundIfRunningIncompatibleWithWaitForDebugger
+  case applicationAlreadyRunning(bundleID: String, processIdentifier: pid_t)
+  case noDataDirectory(bundleID: String)
+  case installInfoFieldNotAString(field: String, value: String, key: String, info: String)
+  case dataContainerNotAURL(value: String, key: String, info: String)
+  case applicationInfoUnavailable(path: String)
+  case installingSystemApplication(applicationDescription: String)
+  case applicationMissingExecutable(path: String)
+  case unsupportedArchitectures(binaryArchitectures: [String], binaryPath: String, simulatorArchitectures: [String])
+}
+
+extension FBSimulatorApplicationError: LocalizedError {
+  public var errorDescription: String? {
+    switch self {
+    case let .installFailed(bundleDescription, options):
+      return "Failed to install Application \(bundleDescription) with options \(options)"
+    case let .attachmentMissingFiles(bundleID):
+      return "Attaching to \(bundleID) did not yield both a stdout and a stderr file"
+    case let .uninstallingSystemApplication(applicationDescription):
+      return "Can't uninstall '\(applicationDescription)' as it is a system Application"
+    case let .uninstallFailed(bundleID, _):
+      return "Failed to uninstall '\(bundleID)'"
+    case .servicePatternConstructionFailed:
+      return "Couldn't build the UIKitApplication service pattern"
+    case let .searchPatternConstructionFailed(bundleID):
+      return "Couldn't build search pattern for '\(bundleID)'"
+    case let .launchingUninstalledApplication(bundleID, underlying):
+      return "App \(bundleID) can't be launched as it isn't installed: \(underlying)"
+    case .foregroundIfRunningIncompatibleWithWaitForDebugger:
+      return "'Foreground if running' and 'wait for debugger cannot be applied simultaneously"
+    case let .applicationAlreadyRunning(bundleID, processIdentifier):
+      return "App '\(bundleID)' can't be launched as it is already running (PID=\(processIdentifier))"
+    case let .noDataDirectory(bundleID):
+      return "Cannot launch \(bundleID) as the Simulator has no data directory"
+    case let .installInfoFieldNotAString(field, value, key, info):
+      return "\(field) \(value) is not a String for \(key) in \(info)"
+    case let .dataContainerNotAURL(value, key, info):
+      return "Data Container \(value) is not a NSURL for \(key) in \(info)"
+    case let .applicationInfoUnavailable(path):
+      return "Could not determine Application information for path \(path)"
+    case let .installingSystemApplication(applicationDescription):
+      return "Cannot install app as it is a system app \(applicationDescription)"
+    case let .applicationMissingExecutable(path):
+      return "Cannot install the app at \(path) as it has no executable"
+    case let .unsupportedArchitectures(binaryArchitectures, binaryPath, simulatorArchitectures):
+      return "Simulator does not support any of the architectures (\(FBCollectionInformation.oneLineDescription(from: binaryArchitectures))) of the executable at \(binaryPath). Simulator Archs (\(FBCollectionInformation.oneLineDescription(from: simulatorArchitectures)))"
+    }
+  }
+}
+
 public class FBSimulatorApplicationCommands: NSObject {
 
   // MARK: - Properties
@@ -51,7 +110,7 @@ public class FBSimulatorApplicationCommands: NSObject {
       }
     }
 
-    throw FBSimulatorError.describe("Failed to install Application \(appBundle) with options \(options)").build()
+    throw FBSimulatorApplicationError.installFailed(bundleDescription: String(describing: appBundle), options: String(describing: options))
   }
 
   internal func launchApplication(_ configuration: FBApplicationLaunchConfiguration) async throws -> FBLaunchedApplication {
@@ -62,7 +121,7 @@ public class FBSimulatorApplicationCommands: NSObject {
     try await confirmApplicationLaunchState(configuration.bundleID, launchMode: configuration.launchMode, waitForDebugger: configuration.waitForDebugger)
     let attachment = try await bridgeFBFuture(configuration.io.attachViaFile())
     guard let stdOut = attachment.stdOut, let stdErr = attachment.stdErr else {
-      throw FBSimulatorError.describe("Attaching to \(configuration.bundleID) did not yield both a stdout and a stderr file").build()
+      throw FBSimulatorApplicationError.attachmentMissingFiles(bundleID: configuration.bundleID)
     }
     let launch = launchApplication(configuration, stdOut: stdOut, stdErr: stdErr)
     return try await bridgeFBFuture(FBSimulatorLaunchedApplication.application(withSimulator: simulator, configuration: configuration, attachment: attachment, launchFuture: launch))
@@ -98,14 +157,14 @@ public class FBSimulatorApplicationCommands: NSObject {
     }
     let installedApplication = try await installedApplication(withBundleID: bundleID)
     if installedApplication.installType == .system {
-      throw FBSimulatorError.describe("Can't uninstall '\(installedApplication)' as it is a system Application").build()
+      throw FBSimulatorApplicationError.uninstallingSystemApplication(applicationDescription: String(describing: installedApplication))
     }
     // Best-effort kill before uninstall; ignore errors.
     _ = try? await killApplication(withBundleID: bundleID)
     do {
       try simulator.device.uninstallApplication(bundleID, withOptions: nil)
     } catch {
-      throw FBSimulatorError.describe("Failed to uninstall '\(bundleID)'").build()
+      throw FBSimulatorApplicationError.uninstallFailed(bundleID: bundleID, underlying: error)
     }
   }
 
@@ -118,7 +177,7 @@ public class FBSimulatorApplicationCommands: NSObject {
       throw FBWeakTargetError.simulator
     }
     guard let uiKitApplicationPattern = try? NSRegularExpression(pattern: "UIKitApplication:", options: []) else {
-      throw FBSimulatorError.describe("Couldn't build the UIKitApplication service pattern").build()
+      throw FBSimulatorApplicationError.servicePatternConstructionFailed
     }
     let serviceNameToProcessIdentifier = try await simulator.serviceNamesAndProcessIdentifiers(matching: uiKitApplicationPattern)
     var mapping: [String: NSNumber] = [:]
@@ -136,7 +195,7 @@ public class FBSimulatorApplicationCommands: NSObject {
     }
     let pattern = "UIKitApplication:\(NSRegularExpression.escapedPattern(for: bundleID))(\\[|$)"
     guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else {
-      throw FBSimulatorError.describe("Couldn't build search pattern for '\(bundleID)'").build()
+      throw FBSimulatorApplicationError.searchPatternConstructionFailed(bundleID: bundleID)
     }
     let (_, processIdentifier) = try await simulator.firstServiceNameAndProcessIdentifier(matching: regex)
     return processIdentifier
@@ -159,13 +218,13 @@ public class FBSimulatorApplicationCommands: NSObject {
     do {
       _ = try await installedApplication(withBundleID: bundleID)
     } catch {
-      throw FBSimulatorError.describe("App \(bundleID) can't be launched as it isn't installed: \(error)").build()
+      throw FBSimulatorApplicationError.launchingUninstalledApplication(bundleID: bundleID, underlying: error)
     }
   }
 
   private func confirmApplicationLaunchState(_ bundleID: String, launchMode: FBApplicationLaunchMode, waitForDebugger: Bool) async throws {
     if waitForDebugger && launchMode == .foregroundIfRunning {
-      throw FBSimulatorError.describe("'Foreground if running' and 'wait for debugger cannot be applied simultaneously").build()
+      throw FBSimulatorApplicationError.foregroundIfRunningIncompatibleWithWaitForDebugger
     }
 
     let pid: pid_t
@@ -177,7 +236,7 @@ public class FBSimulatorApplicationCommands: NSObject {
     }
 
     if launchMode == .failIfRunning {
-      throw FBSimulatorError.describe("App '\(bundleID)' can't be launched as it is already running (PID=\(pid))").build()
+      throw FBSimulatorApplicationError.applicationAlreadyRunning(bundleID: bundleID, processIdentifier: pid)
     } else if launchMode == .relaunchIfRunning {
       try await killApplication(withBundleID: bundleID)
     }
@@ -196,7 +255,7 @@ public class FBSimulatorApplicationCommands: NSObject {
       throw FBWeakTargetError.simulator
     }
     guard let dataDirectory = simulator.dataDirectory else {
-      throw FBSimulatorError.describe("Cannot launch \(configuration.bundleID) as the Simulator has no data directory").build()
+      throw FBSimulatorApplicationError.noDataDirectory(bundleID: configuration.bundleID)
     }
     let options = FBSimulatorApplicationCommands.simDeviceLaunchOptions(
       for: configuration,
@@ -252,20 +311,36 @@ public class FBSimulatorApplicationCommands: NSObject {
 
   private class func installedApplication(fromInfo appInfo: [String: Any]) throws -> FBInstalledApplication {
     guard let appName = appInfo[FBApplicationInstallInfoKey.bundleName.rawValue] as? String else {
-      throw FBControlCoreError.describe("Bundle Name \(appInfo[FBApplicationInstallInfoKey.bundleName.rawValue] ?? "nil") is not a String for \(FBApplicationInstallInfoKey.bundleName.rawValue) in \(appInfo)").build()
+      throw FBSimulatorApplicationError.installInfoFieldNotAString(
+        field: "Bundle Name",
+        value: String(describing: appInfo[FBApplicationInstallInfoKey.bundleName.rawValue] ?? "nil"),
+        key: FBApplicationInstallInfoKey.bundleName.rawValue,
+        info: String(describing: appInfo))
     }
     guard let _ = appInfo[FBApplicationInstallInfoKey.bundleIdentifier.rawValue] as? String else {
-      throw FBControlCoreError.describe("Bundle Identifier \(appInfo[FBApplicationInstallInfoKey.bundleIdentifier.rawValue] ?? "nil") is not a String for \(FBApplicationInstallInfoKey.bundleIdentifier.rawValue) in \(appInfo)").build()
+      throw FBSimulatorApplicationError.installInfoFieldNotAString(
+        field: "Bundle Identifier",
+        value: String(describing: appInfo[FBApplicationInstallInfoKey.bundleIdentifier.rawValue] ?? "nil"),
+        key: FBApplicationInstallInfoKey.bundleIdentifier.rawValue,
+        info: String(describing: appInfo))
     }
     guard let appPath = appInfo[FBApplicationInstallInfoKey.path.rawValue] as? String else {
-      throw FBControlCoreError.describe("App Path \(appInfo[FBApplicationInstallInfoKey.path.rawValue] ?? "nil") is not a String for \(FBApplicationInstallInfoKey.path.rawValue) in \(appInfo)").build()
+      throw FBSimulatorApplicationError.installInfoFieldNotAString(
+        field: "App Path",
+        value: String(describing: appInfo[FBApplicationInstallInfoKey.path.rawValue] ?? "nil"),
+        key: FBApplicationInstallInfoKey.path.rawValue,
+        info: String(describing: appInfo))
     }
     guard let typeString = appInfo[FBApplicationInstallInfoKey.applicationType.rawValue] as? String else {
-      throw FBControlCoreError.describe("Install Type \(appInfo[FBApplicationInstallInfoKey.applicationType.rawValue] ?? "nil") is not a String for \(FBApplicationInstallInfoKey.applicationType.rawValue) in \(appInfo)").build()
+      throw FBSimulatorApplicationError.installInfoFieldNotAString(
+        field: "Install Type",
+        value: String(describing: appInfo[FBApplicationInstallInfoKey.applicationType.rawValue] ?? "nil"),
+        key: FBApplicationInstallInfoKey.applicationType.rawValue,
+        info: String(describing: appInfo))
     }
     let dataContainer = appInfo[keyDataContainer]
     if let dataContainer, !(dataContainer is URL) {
-      throw FBControlCoreError.describe("Data Container \(dataContainer) is not a NSURL for \(keyDataContainer) in \(appInfo)").build()
+      throw FBSimulatorApplicationError.dataContainerNotAURL(value: String(describing: dataContainer), key: keyDataContainer, info: String(describing: appInfo))
     }
 
     let bundle = try FBBundleDescriptor.bundle(fromPath: appPath)
@@ -280,7 +355,7 @@ public class FBSimulatorApplicationCommands: NSObject {
 
   private func confirmCompatibilityOfApplication(atPath path: String) async throws -> FBBundleDescriptor {
     guard let application = try? FBBundleDescriptor.bundle(fromPath: path) else {
-      throw FBSimulatorError.describe("Could not determine Application information for path \(path)").build()
+      throw FBSimulatorApplicationError.applicationInfoUnavailable(path: path)
     }
     guard let simulator = self.simulator else {
       throw FBWeakTargetError.simulator
@@ -293,18 +368,19 @@ public class FBSimulatorApplicationCommands: NSObject {
       installed = nil
     }
     if let installed, installed.installType == .system {
-      throw FBSimulatorError.describe("Cannot install app as it is a system app \(installed)").build()
+      throw FBSimulatorApplicationError.installingSystemApplication(applicationDescription: String(describing: installed))
     }
     guard let binary = application.binary else {
-      throw FBSimulatorError.describe("Cannot install the app at \(path) as it has no executable").build()
+      throw FBSimulatorApplicationError.applicationMissingExecutable(path: path)
     }
     let binaryArchRawValues = Set(binary.architectures.map { $0.rawValue })
     let supportedArchitectures = FBiOSTargetConfiguration.baseArchsToCompatibleArch(simulator.architectures)
     let supportedArchRawValues = Set(supportedArchitectures.map { $0.rawValue })
     if binaryArchRawValues.isDisjoint(with: supportedArchRawValues) {
-      throw FBSimulatorError.describe(
-        "Simulator does not support any of the architectures (\(FBCollectionInformation.oneLineDescription(from: Array(binaryArchRawValues)))) of the executable at \(binary.path). Simulator Archs (\(FBCollectionInformation.oneLineDescription(from: Array(supportedArchRawValues))))"
-      ).build()
+      throw FBSimulatorApplicationError.unsupportedArchitectures(
+        binaryArchitectures: Array(binaryArchRawValues),
+        binaryPath: binary.path,
+        simulatorArchitectures: Array(supportedArchRawValues))
     }
     return application
   }
