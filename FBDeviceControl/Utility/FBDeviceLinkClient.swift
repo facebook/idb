@@ -29,6 +29,41 @@ private final class AnyBox: @unchecked Sendable {
   }
 }
 
+/// The ways the DeviceLink protocol exchange can fail, as data rather than assembled strings.
+public enum FBDeviceLinkError: Error {
+  case resultNotAnArray(result: String)
+  case responseTypeNotAString(responseType: String, result: String)
+  case unexpectedResponseType(responseType: String, expected: String)
+  case responseBodyNotADictionary(body: String)
+  case versionExchangeNotAnArray(plist: String)
+  case handshakeVersionNotANumber(version: String)
+  case deviceReadyMessageNotAString(message: String)
+  case deviceNotReady(message: String, expected: String)
+}
+
+extension FBDeviceLinkError: LocalizedError {
+  public var errorDescription: String? {
+    switch self {
+    case let .resultNotAnArray(result):
+      return "Result is not an NSArray: \(result)"
+    case let .responseTypeNotAString(responseType, result):
+      return "\(responseType) is not an NSString in \(result)"
+    case let .unexpectedResponseType(responseType, expected):
+      return "\(responseType) should be a \(expected)"
+    case let .responseBodyNotADictionary(body):
+      return "\(body) is not an NSDictionary"
+    case let .versionExchangeNotAnArray(plist):
+      return "\(plist) is not an array in version exchange"
+    case let .handshakeVersionNotANumber(version):
+      return "\(version) is not an NSNumber for the handshake version"
+    case let .deviceReadyMessageNotAString(message):
+      return "\(message) is not an NSString for the device ready call"
+    case let .deviceNotReady(message, expected):
+      return "\(message) is not equal to \(expected)"
+    }
+  }
+}
+
 @objc(FBDeviceLinkClient)
 public class FBDeviceLinkClient: NSObject {
   private let connection: FBAMDServiceConnection
@@ -70,20 +105,20 @@ public class FBDeviceLinkClient: NSObject {
         do {
           let result = try connectionBox.connection.sendAndReceiveMessage([ProcessMessage, messageBox.value])
           guard let resultArray = result as? NSArray else {
-            continuation.resume(throwing: FBDeviceControlError.describe("Result is not an NSArray: \(String(describing: result))").build())
+            continuation.resume(throwing: FBDeviceLinkError.resultNotAnArray(result: String(describing: result)))
             return
           }
           let responseType = resultArray[0]
           guard let responseString = responseType as? String else {
-            continuation.resume(throwing: FBDeviceControlError.describe("\(responseType) is not an NSString in \(resultArray)").build())
+            continuation.resume(throwing: FBDeviceLinkError.responseTypeNotAString(responseType: String(describing: responseType), result: String(describing: resultArray)))
             return
           }
           if responseString != ProcessMessage {
-            continuation.resume(throwing: FBDeviceControlError.describe("\(responseString) should be a \(ProcessMessage)").build())
+            continuation.resume(throwing: FBDeviceLinkError.unexpectedResponseType(responseType: responseString, expected: ProcessMessage))
             return
           }
           guard let response = resultArray[1] as? NSDictionary else {
-            continuation.resume(throwing: FBDeviceControlError.describe("\(resultArray[1]) is not an NSDictionary").build())
+            continuation.resume(throwing: FBDeviceLinkError.responseBodyNotADictionary(body: String(describing: resultArray[1])))
             return
           }
           continuation.resume(returning: response)
@@ -103,27 +138,27 @@ public class FBDeviceLinkClient: NSObject {
         do {
           let plist = try connectionBox.connection.receiveMessage()
           guard let plistArray = plist as? NSArray else {
-            continuation.resume(throwing: FBDeviceControlError.describe("\(String(describing: plist)) is not an array in version exchange").build())
+            continuation.resume(throwing: FBDeviceLinkError.versionExchangeNotAnArray(plist: String(describing: plist)))
             return
           }
           let versionNumber = plistArray[1]
           guard versionNumber is NSNumber else {
-            continuation.resume(throwing: FBDeviceControlError.describe("\(versionNumber) is not an NSNumber for the handshake version").build())
+            continuation.resume(throwing: FBDeviceLinkError.handshakeVersionNotANumber(version: String(describing: versionNumber)))
             return
           }
           let response: [Any] = ["DLMessageVersionExchange", "DLVersionsOk", versionNumber]
           let reply = try connectionBox.connection.sendAndReceiveMessage(response)
           guard let replyArray = reply as? NSArray else {
-            continuation.resume(throwing: FBDeviceControlError.describe("\(String(describing: reply)) is not an array in version exchange").build())
+            continuation.resume(throwing: FBDeviceLinkError.versionExchangeNotAnArray(plist: String(describing: reply)))
             return
           }
           let message = replyArray[0]
           guard let messageString = message as? String else {
-            continuation.resume(throwing: FBDeviceControlError.describe("\(message) is not an NSString for the device ready call").build())
+            continuation.resume(throwing: FBDeviceLinkError.deviceReadyMessageNotAString(message: String(describing: message)))
             return
           }
           if messageString != DeviceReady {
-            continuation.resume(throwing: FBDeviceControlError.describe("\(messageString) is not equal to \(DeviceReady)").build())
+            continuation.resume(throwing: FBDeviceLinkError.deviceNotReady(message: messageString, expected: DeviceReady))
             return
           }
           continuation.resume(returning: ())
