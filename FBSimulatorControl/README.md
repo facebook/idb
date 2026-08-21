@@ -4,7 +4,7 @@ A macOS library for managing, booting and interacting with multiple iOS Simulato
 
 `FBSimulatorControl` is primarily an implementation detail of `idb`: the `idb_companion` is its main consumer, and for most automation `idb` is the better choice. The framework is also built to be used directly, for two main reasons:
 
-- **Building native macOS applications.** A macOS application can link the framework and control Simulators in-process, with no separate client, gRPC hop, or companion lifecycle to manage. That includes [building a new simulator app](#beyond-apples-tools) that renders and drives the screen itself. [qalti](https://github.com/qalti/qalti), for example, embeds the idb frameworks directly inside a macOS testing product.
+- **Building native macOS applications.** A macOS application can link the framework and control Simulators in-process, with no separate client, gRPC hop, or companion lifecycle to manage. That includes [building a new simulator app](#functionality-beyond-apples-tools) that renders and drives the screen itself. [qalti](https://github.com/qalti/qalti), for example, embeds the idb frameworks directly inside a macOS testing product.
 - **Finer-grained control.** The framework exposes more than the `idb` cli surfaces, such as direct framebuffer access, live video streaming, HID event synthesis and boot configuration. It also lets a consumer combine that functionality in ways the cli deliberately simplifies. [serve-sim](https://github.com/EvanBacon/serve-sim) ported the framework's host-side accessibility reading into its own server.
 
 The trade-off is stability. The `idb` cli and its gRPC interface are the project's compatibility boundary and change conservatively. The frameworks are the implementation behind that boundary, so their APIs change more freely. A direct consumer should expect to track those changes when updating.
@@ -50,7 +50,7 @@ For a high level overview:
 - Configuration objects: `FBApplicationLaunchConfiguration`, `FBSimulatorControlConfiguration`, `FBSimulatorConfiguration` & `FBSimulatorBootConfiguration`.
 
 
-## Beyond Apple's tools
+## Functionality beyond Apple's tools
 
 `FBSimulatorControl` supported "Multisim" (booting many Simulators concurrently on one host, headlessly, isolated in custom device sets) years before Xcode and `simctl` did. Apple's tools now provide all of this, so it is no longer a reason to pick the framework.
 
@@ -83,16 +83,16 @@ The framework is built on the private frameworks and services that Apple's own t
 
 ### `simctl`
 
-`simctl` is essentially a CLI that exposes iOS Simulator functionality by linking and using `CoreSimulator`. This binary is bundled inside of Xcode, and typically addressed via usage of the `xcrun` command. `xcrun` is essentially a trampoline that addresses binaries that are bundled within Xcode by using the value defined in `xcode-select`
+`simctl` is a CLI that exposes iOS Simulator functionality by linking and using `CoreSimulator`. This binary is bundled inside of Xcode, and typically addressed via the `xcrun` command. `xcrun` is a trampoline that locates binaries bundled within Xcode, using the value defined in `xcode-select`.
 
 The overwhelming majority of Simulator functionality is not implemented in `simctl`, it is implemented within `CoreSimulator` with `simctl` providing an accessible way of using this functionality. Having this behaviour implemented at the Framework level means that `Simulator.app` and `simctl` behave consistently, as they share the same implementation.
 ### `CoreSimulatorService`
 
 `CoreSimulatorService` is a user-level daemon that is bootstrapped by any usage of `SimServiceContext`, effectively any usage of iOS Simulators will cause this service to be created and launched. This is an XPC service contained within the `CoreSimulator.framework` bundle. This service is responsible for starting and managing Simulators.
 
-When using `CoreSimulator` as a client Framework it will transparently communicate with `CoreSimulatorService`. The overwhelming majority of `CoreSimulator` APIs that do meaningful work are essentially performing IO to `CoreSimulatorService`, though the asynchronous nature of this work isn't completely consistent. Some `CoreSimulator` APIs (for instance those associated with [launching an iOS Application](https://github.com/facebook/idb/blob/main/PrivateHeaders/CoreSimulator/SimDevice.h)) do have asynchronous methods, but others (such as the [instantiation of a `SimServiceContext`](https://github.com/facebook/idb/blob/main/PrivateHeaders/CoreSimulator/SimServiceContext.h)) do not. `CoreSimulatorService` still gets much of its implementation from `CoreSimulator.framework`, touching different areas of the API.
+When using `CoreSimulator` as a client Framework it will transparently communicate with `CoreSimulatorService`. The overwhelming majority of `CoreSimulator` APIs that do meaningful work are performing IO to `CoreSimulatorService`, though the asynchronous nature of this work isn't completely consistent. Some `CoreSimulator` APIs (for instance those associated with [launching an iOS Application](https://github.com/facebook/idb/blob/main/PrivateHeaders/CoreSimulator/SimDevice.h)) do have asynchronous methods, but others (such as the [instantiation of a `SimServiceContext`](https://github.com/facebook/idb/blob/main/PrivateHeaders/CoreSimulator/SimServiceContext.h)) do not. `CoreSimulatorService` still gets much of its implementation from `CoreSimulator.framework`, touching different areas of the API.
 
-Having the "work" of iOS Simulators performed within the context of share user daemon is likely due to the needs to synchronize and consolidate state. The service is also an effective caching mechanism for runtime and device profiles. There are a few downsides to this approach. Firstly, `CoreSimulatorService` is effectively a single point of failure. If `CoreSimulatorService` becomes stuck, or a client of `CoreSimulator` exhibits pathological behaviour, then all iOS Simulator functionality on a given host will fail. iOS Simulator functionality will effectively halt until `CoreSimulatorService` restarts, either by the hung `CoreSimulatorService` terminating and restarting or via reboot.
+Having the "work" of iOS Simulators performed within a shared user daemon is likely due to the need to synchronize and consolidate state. The service is also an effective caching mechanism for runtime and device profiles. There are a few downsides to this approach. Firstly, `CoreSimulatorService` is effectively a single point of failure. If `CoreSimulatorService` becomes stuck, or a client of `CoreSimulator` exhibits pathological behaviour, then all iOS Simulator functionality on a given host will fail. iOS Simulator functionality will effectively halt until `CoreSimulatorService` restarts, either by the hung `CoreSimulatorService` terminating and restarting or via reboot.
 
 Secondly, the lifecycle of `CoreSimulatorService` is tied to that of the selected `Xcode`. This means that different versions of Xcode cannot be used concurrently on the same host; `CoreSimulatorService` can only be aware of a single Xcode at any point in time. Switching Xcodes and fetching a new `CoreSimulatorService` (for instance via a `simctl` command) will cause `CoreSimulatorService` to restart, disconnecting existing clients and killing booted Simulators.
 
@@ -110,7 +110,7 @@ This `launchd_sim` can be interrogated the same as the `launchd` of the host, pr
 
 ### Device Sets
 
-A Device Set is essentially a directory that contains a number of created iOS Simulators. The "Default Device Set" is located at `~/Library/Developer/CoreSimulator/Devices`, this is the device set that is used by `Xcode.app`.
+A Device Set is a directory that contains a number of created iOS Simulators. The "Default Device Set" is located at `~/Library/Developer/CoreSimulator/Devices`, this is the device set that is used by `Xcode.app`.
 
 Custom device sets can be placed at any location on disk. This is useful for isolating the filesystems of created iOS Simulators from each other. For instance, if there are independent processes managing iOS Simulators on the same host it can be worthwhile having each of these processes manage their own device sets to prevent data races.
 
