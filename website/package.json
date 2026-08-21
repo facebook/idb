@@ -7,6 +7,9 @@
     "deploy": "docusaurus deploy"
   },
   "license": "MIT",
+  "engines": {
+    "node": ">=18.0"
+  },
   "dependencies": {
     "@docusaurus/core": "^3.7.0",
     "@docusaurus/plugin-client-redirects": "^3.7.0",
