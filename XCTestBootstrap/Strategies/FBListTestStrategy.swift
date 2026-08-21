@@ -8,6 +8,38 @@
 import FBControlCore
 import Foundation
 
+/// The ways test listing can fail, as data rather than assembled strings.
+public enum FBListTestError: Error {
+  case testNamesMalformed(result: String)
+  case missingShimAndOutput(result: String)
+  case sanitiserDylibsMalformed(result: String)
+  case testProcessMissingExitCode(result: String)
+  case testListJSONParseFailed
+  case unexpectedTestName(value: String)
+  case listingFailed(exitCode: Int32, exitDescription: String, stdErr: String)
+}
+
+extension FBListTestError: LocalizedError {
+  public var errorDescription: String? {
+    switch self {
+    case let .testNamesMalformed(result):
+      return "Expected a list of test names, got \(result)"
+    case let .missingShimAndOutput(result):
+      return "Expected the shim path and its output file, got \(result)"
+    case let .sanitiserDylibsMalformed(result):
+      return "Expected a list of sanitiser dylib paths, got \(result)"
+    case let .testProcessMissingExitCode(result):
+      return "Expected the test process to resolve to its exit code, got \(result)"
+    case .testListJSONParseFailed:
+      return "Failed to parse test list JSON"
+    case let .unexpectedTestName(value):
+      return "Received unexpected test name from shim: \(value)"
+    case let .listingFailed(exitCode, exitDescription, stdErr):
+      return "Listing of tests failed due to xctest binary exiting with non-zero exit code \(exitCode) [\(exitDescription)]: \(stdErr)"
+    }
+  }
+}
+
 private final class FBListTestStrategy_ReporterWrapped: NSObject, FBXCTestRunner {
 
   let strategy: FBListTestStrategy
@@ -28,7 +60,7 @@ private final class FBListTestStrategy_ReporterWrapped: NSObject, FBXCTestRunner
           strategy.target.workQueue,
           fmap: { testNamesObj -> FBFuture<AnyObject> in
             guard let testNames = testNamesObj as? [String] else {
-              return XCTestBootstrapError.describe("Expected a list of test names, got \(testNamesObj)").failFuture()
+              return FBFuture(error: FBListTestError.testNamesMalformed(result: String(describing: testNamesObj)))
             }
             for testName in testNames {
               guard let slashRange = testName.range(of: "/") else { continue }
@@ -79,7 +111,7 @@ public final class FBListTestStrategy {
               let shimPath = tuple[0] as? String,
               let shimOutput = tuple[1] as? FBProcessFileOutput
             else {
-              return XCTestBootstrapError.describe("Expected the shim path and its output file, got \(tuple)").failFuture()
+              return FBFuture(error: FBListTestError.missingShimAndOutput(result: String(describing: tuple)))
             }
             return unsafeBitCast(
               self.listTests(withShimPath: shimPath, shimOutput: shimOutput, shimBuffer: shimBuffer),
@@ -118,7 +150,7 @@ public final class FBListTestStrategy {
                 self.target.workQueue,
                 fmap: { librariesObj -> FBFuture<AnyObject> in
                   guard let libraries = librariesObj as? [String] else {
-                    return XCTestBootstrapError.describe("Expected a list of sanitiser dylib paths, got \(librariesObj)").failFuture()
+                    return FBFuture(error: FBListTestError.sanitiserDylibsMalformed(result: String(describing: librariesObj)))
                   }
                   let environment = FBListTestStrategy.setupEnvironment(withDylibs: libraries, shimPath: shimPath, shimOutputFilePath: shimOutput.filePath, bundlePath: self.configuration.testBundlePath, target: self.target)
 
@@ -127,7 +159,7 @@ public final class FBListTestStrategy {
                       self.target.workQueue,
                       fmap: { exitCodeFutureObj -> FBFuture<AnyObject> in
                         guard let exitCodeFuture = exitCodeFutureObj as? FBFuture<NSNumber> else {
-                          return XCTestBootstrapError.describe("Expected the test process to resolve to its exit code, got \(exitCodeFutureObj)").failFuture()
+                          return FBFuture(error: FBListTestError.testProcessMissingExitCode(result: String(describing: exitCodeFutureObj)))
                         }
                         return unsafeBitCast(
                           FBListTestStrategy.launchedProcess(withExitCode: exitCodeFuture, shimOutput: shimOutput, shimBuffer: shimBuffer, stdOutBuffer: stdOutBuffer, stdErrBuffer: stdErrBuffer, queue: self.target.workQueue),
@@ -177,8 +209,7 @@ public final class FBListTestStrategy {
             do {
               guard let parsed = try JSONSerialization.jsonObject(with: data, options: []) as? [[String: String]] else {
                 NSLog("Shimulator buffer data (should contain test information): %@", String(data: data, encoding: .utf8) ?? "")
-                let error = NSError(domain: "FBListTestStrategy", code: 0, userInfo: [NSLocalizedDescriptionKey: "Failed to parse test list JSON"])
-                return FBFuture<AnyObject>(error: error)
+                return FBFuture<AnyObject>(error: FBListTestError.testListJSONParseFailed)
               }
               tests = parsed
             } catch {
@@ -188,7 +219,7 @@ public final class FBListTestStrategy {
             var testNames: [String] = []
             for test in tests {
               guard let testName = test["legacyTestName"] else {
-                return XCTestBootstrapError.describe("Received unexpected test name from shim: \(String(describing: test["legacyTestName"]))").failFuture()
+                return FBFuture(error: FBListTestError.unexpectedTestName(value: String(describing: test["legacyTestName"])))
               }
               testNames.append(testName)
             }
@@ -207,7 +238,7 @@ public final class FBListTestStrategy {
             let exitCodeValue = exitCodeNumber.int32Value
             if let description = FBXCTestProcess.describeFailingExitCode(exitCodeValue) {
               let stdErrReversed = stdErrBuffer.lines().reversed().joined(separator: "\n")
-              return XCTestBootstrapError.describe("Listing of tests failed due to xctest binary exiting with non-zero exit code \(exitCodeValue) [\(description)]: \(stdErrReversed)").failFuture()
+              return FBFuture(error: FBListTestError.listingFailed(exitCode: exitCodeValue, exitDescription: description, stdErr: stdErrReversed))
             }
             let futures: [FBFuture<AnyObject>] = [
               unsafeBitCast(output.stopReading(), to: FBFuture<AnyObject>.self),
