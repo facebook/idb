@@ -8,6 +8,61 @@
 @preconcurrency import FBControlCore
 import Foundation
 
+// MARK: - FBDeviceApplicationError
+
+/// The ways device application operations can fail, as data rather than assembled strings.
+public enum FBDeviceApplicationError: Error {
+  case deviceNil
+  case awaitingTerminationUnsupported
+  case installFailed(applicationName: String, status: Int32, message: String, recentEvents: String)
+  case uninstallFailed(bundleID: String, status: Int32, message: String, recentEvents: String)
+  case applicationNotInstalled(bundleID: String, installed: [String])
+  case noProcessID(bundleID: String)
+  case applicationLookupFailed(status: Int32, message: String)
+  case applicationLookupMalformed
+  case pidListRequestFailed(underlying: Error)
+  case pidListAcknowledgementFailed(underlying: Error)
+  case pidListResponseFailed(underlying: Error)
+  case pidListResponseNotADictionary(response: String)
+  case pidListRequestUnsuccessful
+  case missingBundleIdentifier(key: String, application: String)
+}
+
+extension FBDeviceApplicationError: LocalizedError {
+  public var errorDescription: String? {
+    switch self {
+    case .deviceNil:
+      return "Device is nil"
+    case .awaitingTerminationUnsupported:
+      return "Awaiting termination is not supported for device applications"
+    case let .installFailed(applicationName, status, message, recentEvents):
+      return "Failed to install application \(applicationName) 0x\(String(UInt32(bitPattern: status), radix: 16)) (\(message)). \(recentEvents)"
+    case let .uninstallFailed(bundleID, status, message, recentEvents):
+      return "Failed to uninstall application '\(bundleID)' with error 0x\(String(UInt32(bitPattern: status), radix: 16)) (\(message)). \(recentEvents)"
+    case let .applicationNotInstalled(bundleID, installed):
+      return "Application with bundle ID: \(bundleID) is not installed. Installed apps \(FBCollectionInformation.oneLineDescription(from: installed))"
+    case let .noProcessID(bundleID):
+      return "No pid for \(bundleID)"
+    case let .applicationLookupFailed(status, message):
+      return "Failed to get list of applications 0x\(String(UInt32(bitPattern: status), radix: 16)) (\(message))"
+    case .applicationLookupMalformed:
+      return "Application lookup did not return a mapping of bundle identifiers to attributes"
+    case let .pidListRequestFailed(underlying):
+      return "Failed to request PidList \(underlying)"
+    case let .pidListAcknowledgementFailed(underlying):
+      return "Failed to receive 1 byte after PidList \(underlying)"
+    case let .pidListResponseFailed(underlying):
+      return "Failed to receive PidList response \(underlying)"
+    case let .pidListResponseNotADictionary(response):
+      return "PidList response \(response) is not a dictionary"
+    case .pidListRequestUnsuccessful:
+      return "Request to PidList is not RequestSuccessful"
+    case let .missingBundleIdentifier(key, application):
+      return "No \(key) in installed application \(application)"
+    }
+  }
+}
+
 // MARK: - FBDeviceWorkflowStatistics
 
 private class FBDeviceWorkflowStatistics {
@@ -55,7 +110,7 @@ private class FBDeviceLaunchedApplication: FBLaunchedApplication {
   }
 
   func waitForTermination() async throws {
-    throw FBControlCoreError.describe("Awaiting termination is not supported for device applications").build()
+    throw FBDeviceApplicationError.awaitingTerminationUnsupported
   }
 
   func terminate() async throws {
@@ -90,7 +145,7 @@ public class FBDeviceApplicationCommands: NSObject {
 
   fileprivate func installApplicationAsync(withPath path: String) async throws -> FBInstalledApplication {
     guard let device else {
-      throw FBDeviceControlError().describe("Device is nil").build()
+      throw FBDeviceApplicationError.deviceNil
     }
     let bundle = try FBBundleDescriptor.bundle(fromPath: path)
     let appURL = URL(fileURLWithPath: path, isDirectory: true)
@@ -116,7 +171,7 @@ public class FBDeviceApplicationCommands: NSObject {
         ) ?? -1
       if status != 0 {
         let errorMessage = connectedDevice.calls.CopyErrorText?(status)?.takeRetainedValue() as String? ?? "Unknown error"
-        throw FBDeviceControlError.describe("Failed to install application \(appURL.lastPathComponent) 0x\(String(UInt32(bitPattern: status), radix: 16)) (\(errorMessage)). \(statistics.summaryOfRecentEvents)").build()
+        throw FBDeviceApplicationError.installFailed(applicationName: appURL.lastPathComponent, status: status, message: errorMessage, recentEvents: statistics.summaryOfRecentEvents)
       }
       device.logger.log("Installed Application \(appURL)")
     }
@@ -125,7 +180,7 @@ public class FBDeviceApplicationCommands: NSObject {
 
   fileprivate func uninstallApplicationAsync(withBundleID bundleID: String) async throws {
     guard let device else {
-      throw FBDeviceControlError().describe("Device is nil").build()
+      throw FBDeviceApplicationError.deviceNil
     }
     try await withFBFutureContext(device.connectToDevice(withPurpose: "uninstall_\(bundleID)")) { connectedDevice in
       let statistics = FBDeviceWorkflowStatistics(workflowType: "Uninstall", logger: connectedDevice.logger)
@@ -142,7 +197,7 @@ public class FBDeviceApplicationCommands: NSObject {
         ) ?? -1
       if status != 0 {
         let internalMessage = connectedDevice.calls.CopyErrorText?(status)?.takeRetainedValue() as String? ?? "Unknown error"
-        throw FBDeviceControlError.describe("Failed to uninstall application '\(bundleID)' with error 0x\(String(UInt32(bitPattern: status), radix: 16)) (\(internalMessage)). \(statistics.summaryOfRecentEvents)").build()
+        throw FBDeviceApplicationError.uninstallFailed(bundleID: bundleID, status: status, message: internalMessage, recentEvents: statistics.summaryOfRecentEvents)
       }
       device.logger.log("Uninstalled Application \(bundleID)")
     }
@@ -161,7 +216,7 @@ public class FBDeviceApplicationCommands: NSObject {
   fileprivate func installedApplicationAsync(withBundleID bundleID: String) async throws -> FBInstalledApplication {
     let applicationData = try await installedApplicationsDataAsync(Self.installedApplicationLookupAttributes)
     guard let app = applicationData[bundleID] else {
-      throw FBDeviceControlError.describe("Application with bundle ID: \(bundleID) is not installed. Installed apps \(FBCollectionInformation.oneLineDescription(from: Array(applicationData.keys) as [Any]))").build()
+      throw FBDeviceApplicationError.applicationNotInstalled(bundleID: bundleID, installed: Array(applicationData.keys))
     }
     return try FBDeviceApplicationCommands.installedApplication(from: app)
   }
@@ -193,7 +248,7 @@ public class FBDeviceApplicationCommands: NSObject {
   fileprivate func processIDAsync(withBundleID bundleID: String) async throws -> NSNumber {
     let running = try await runningApplicationsAsync()
     guard let pid = running[bundleID] else {
-      throw FBDeviceControlError.describe("No pid for \(bundleID)").build()
+      throw FBDeviceApplicationError.noProcessID(bundleID: bundleID)
     }
     return pid
   }
@@ -205,7 +260,7 @@ public class FBDeviceApplicationCommands: NSObject {
 
   fileprivate func launchApplicationAsync(_ configuration: FBApplicationLaunchConfiguration) async throws -> any FBLaunchedApplication {
     guard let device else {
-      throw FBDeviceControlError().describe("Device is nil").build()
+      throw FBDeviceApplicationError.deviceNil
     }
     let pid: NSNumber
     if device.osVersion.version.majorVersion >= 17 {
@@ -241,7 +296,7 @@ public class FBDeviceApplicationCommands: NSObject {
 
   private func installedApplicationsDataAsync(_ returnAttributes: [String]) async throws -> [String: [String: Any]] {
     guard let device else {
-      throw FBDeviceControlError().describe("Device is nil").build()
+      throw FBDeviceApplicationError.deviceNil
     }
     return try await withFBFutureContext(device.connectToDevice(withPurpose: "installed_apps")) { connectedDevice in
       let options: [String: Any] = [
@@ -256,10 +311,10 @@ public class FBDeviceApplicationCommands: NSObject {
         ) ?? -1
       if status != 0 {
         let errorMessage = connectedDevice.calls.CopyErrorText?(status)?.takeRetainedValue() as String? ?? "Unknown error"
-        throw FBDeviceControlError.describe("Failed to get list of applications 0x\(String(UInt32(bitPattern: status), radix: 16)) (\(errorMessage))").build()
+        throw FBDeviceApplicationError.applicationLookupFailed(status: status, message: errorMessage)
       }
       guard let result = applications.takeRetainedValue() as? [String: [String: Any]] else {
-        throw FBDeviceControlError.describe("Application lookup did not return a mapping of bundle identifiers to attributes").build()
+        throw FBDeviceApplicationError.applicationLookupMalformed
       }
       return result
     }
@@ -267,7 +322,7 @@ public class FBDeviceApplicationCommands: NSObject {
 
   private func withRemoteInstrumentsClient<R>(_ body: (FBInstrumentsClient) async throws -> R) async throws -> R {
     guard let device else {
-      throw FBDeviceControlError().describe("Device is nil").build()
+      throw FBDeviceApplicationError.deviceNil
     }
     let usesSecureConnection = device.osVersion.version.majorVersion >= 14
     _ = try await bridgeFBFuture(device.ensureDeveloperDiskImageIsMounted())
@@ -280,31 +335,31 @@ public class FBDeviceApplicationCommands: NSObject {
 
   private func pidToRunningProcessNameAsync() async throws -> [NSNumber: String] {
     guard let device else {
-      throw FBDeviceControlError().describe("Device is nil").build()
+      throw FBDeviceApplicationError.deviceNil
     }
     return try await withFBFutureContext(device.startService("com.apple.os_trace_relay")) { connection in
       do {
         try connection.sendMessage(["Request": "PidList"])
       } catch {
-        throw FBDeviceControlError.describe("Failed to request PidList \(error)").build()
+        throw FBDeviceApplicationError.pidListRequestFailed(underlying: error)
       }
       do {
         _ = try connection.receive(1)
       } catch {
-        throw FBDeviceControlError.describe("Failed to receive 1 byte after PidList \(error)").build()
+        throw FBDeviceApplicationError.pidListAcknowledgementFailed(underlying: error)
       }
       let response: Any
       do {
         response = try connection.receiveMessage()
       } catch {
-        throw FBDeviceControlError.describe("Failed to receive PidList response \(error)").build()
+        throw FBDeviceApplicationError.pidListResponseFailed(underlying: error)
       }
       guard let responseDict = response as? [String: Any] else {
-        throw FBDeviceControlError.describe("PidList response \(response) is not a dictionary").build()
+        throw FBDeviceApplicationError.pidListResponseNotADictionary(response: String(describing: response))
       }
       let status = responseDict["Status"] as? String
       if status != "RequestSuccessful" {
-        throw FBDeviceControlError.describe("Request to PidList is not RequestSuccessful").build()
+        throw FBDeviceApplicationError.pidListRequestUnsuccessful
       }
       let payload = responseDict["Payload"] as? [NSNumber: Any] ?? [:]
       var pidToRunningProcessName: [NSNumber: String] = [:]
@@ -324,7 +379,7 @@ public class FBDeviceApplicationCommands: NSObject {
     let bundleName = app[FBApplicationInstallInfoKey.bundleName.rawValue] as? String ?? ""
     let path = app[FBApplicationInstallInfoKey.path.rawValue] as? String ?? ""
     guard let bundleID = app[FBApplicationInstallInfoKey.bundleIdentifier.rawValue] as? String else {
-      throw FBDeviceControlError.describe("No \(FBApplicationInstallInfoKey.bundleIdentifier.rawValue) in installed application \(app)").build()
+      throw FBDeviceApplicationError.missingBundleIdentifier(key: FBApplicationInstallInfoKey.bundleIdentifier.rawValue, application: String(describing: app))
     }
 
     let bundle = FBBundleDescriptor(name: bundleName, identifier: bundleID, path: path, binary: nil)
