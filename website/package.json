@@ -1,5 +1,8 @@
 {
   "scripts": {
+    "generate-framework-docs": "node scripts/generate-framework-docs.js",
+    "prestart": "node scripts/generate-framework-docs.js",
+    "prebuild": "node scripts/generate-framework-docs.js",
     "start": "docusaurus start",
     "build": "docusaurus build",
     "swizzle": "docusaurus swizzle",

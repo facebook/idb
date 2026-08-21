@@ -17,3 +17,6 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# generated from the framework READMEs by scripts/generate-framework-docs.js
+/docs/idb/fbsimulatorcontrol.mdx
