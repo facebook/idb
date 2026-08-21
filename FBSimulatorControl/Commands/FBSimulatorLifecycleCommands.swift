@@ -12,6 +12,29 @@ import AppKit
 
 private let openURLRetries = 2
 
+/// The ways simulator lifecycle operations can fail, as data rather than assembled strings.
+public enum FBSimulatorLifecycleError: Error {
+  case focusUnsupportedForCustomDeviceSet(deviceSetPath: String)
+  case focusAmbiguous(runningApplications: String)
+  case focusFailed(applicationDescription: String)
+  case openURLFailed(url: URL, simulatorDescription: String, underlying: Error?)
+}
+
+extension FBSimulatorLifecycleError: LocalizedError {
+  public var errorDescription: String? {
+    switch self {
+    case let .focusUnsupportedForCustomDeviceSet(deviceSetPath):
+      return "Focusing on the Simulator App for a simulator in a custom device set (\(deviceSetPath)) is not supported"
+    case let .focusAmbiguous(runningApplications):
+      return "More than one SimulatorApp \(runningApplications) running, focus is ambiguous"
+    case let .focusFailed(applicationDescription):
+      return "Failed to focus \(applicationDescription)"
+    case let .openURLFailed(url, simulatorDescription, _):
+      return "Failed to open URL \(url) on simulator \(simulatorDescription)"
+    }
+  }
+}
+
 public final class FBSimulatorLifecycleCommands: NSObject {
 
   // MARK: - Properties
@@ -81,7 +104,7 @@ public final class FBSimulatorLifecycleCommands: NSObject {
     // This is also why Xcode parallel testing — which clones into a non-default device set — is
     // not visible in DeviceHub (Apple known issue 176809181).
     if let deviceSetPath = simulator.customDeviceSetPath {
-      throw FBSimulatorError.describe("Focusing on the Simulator App for a simulator in a custom device set (\(deviceSetPath)) is not supported").build()
+      throw FBSimulatorLifecycleError.focusUnsupportedForCustomDeviceSet(deviceSetPath: deviceSetPath)
     }
 
     // Find the running instances of the Simulator host app. Xcode 27 renamed Simulator.app
@@ -101,12 +124,12 @@ public final class FBSimulatorLifecycleCommands: NSObject {
 
     // Multiple apps, we don't know which to select.
     if simulatorApps.count > 1 {
-      throw FBSimulatorError.describe("More than one SimulatorApp \(FBCollectionInformation.oneLineDescription(from: simulatorApps)) running, focus is ambiguous").build()
+      throw FBSimulatorLifecycleError.focusAmbiguous(runningApplications: FBCollectionInformation.oneLineDescription(from: simulatorApps))
     }
 
     // Otherwise we have a single Simulator App to activate.
     if !simulatorApp.activate() {
-      throw FBSimulatorError.describe("Failed to focus \(simulatorApp)").build()
+      throw FBSimulatorLifecycleError.focusFailed(applicationDescription: String(describing: simulatorApp))
     }
   }
 
@@ -180,8 +203,7 @@ public final class FBSimulatorLifecycleCommands: NSObject {
         lastError = error as NSError
       }
     }
-    _ = lastError
-    throw FBSimulatorError.describe("Failed to open URL \(url) on simulator \(simulator)").build()
+    throw FBSimulatorLifecycleError.openURLFailed(url: url, simulatorDescription: String(describing: simulator), underlying: lastError)
   }
 }
 
