@@ -13,6 +13,47 @@ import IOKit
   func _XCT_requestConnectedSocketForTransport(_ arg1: @escaping (FileHandle?, Error?) -> Void)
 }
 
+/// The ways Mac-device operations can fail, as data rather than assembled strings.
+public enum FBMacDeviceError: Error {
+  case testManagerProxyNonConformant(proxyDescription: String)
+  case transportUnavailable
+  case applicationNotLaunched(bundleID: String)
+  case applicationNotInstalled(bundleID: String)
+  case bundleNotRegistered(bundleID: String)
+  case applicationNotFound(bundleID: String)
+  case applicationHasNoExecutable(bundleID: String)
+  case testBundleHasNoBinary(path: String)
+  case unexpectedReporter(reporterDescription: String)
+  case notImplemented(selector: String)
+}
+
+extension FBMacDeviceError: LocalizedError {
+  public var errorDescription: String? {
+    switch self {
+    case let .testManagerProxyNonConformant(proxyDescription):
+      return "The testmanagerd proxy \(proxyDescription) does not conform to XCTestManager_XPCControl"
+    case .transportUnavailable:
+      return "Unknown error getting transport"
+    case let .applicationNotLaunched(bundleID):
+      return "Application with bundleID (\(bundleID)) was not launched by XCTestBootstrap"
+    case let .applicationNotInstalled(bundleID):
+      return "Application with bundleID (\(bundleID)) was not installed by XCTestBootstrap"
+    case let .bundleNotRegistered(bundleID):
+      return "No bundle for \(bundleID)"
+    case let .applicationNotFound(bundleID):
+      return "Could not find application for \(bundleID)"
+    case let .applicationHasNoExecutable(bundleID):
+      return "Application bundle \(bundleID) has no executable"
+    case let .testBundleHasNoBinary(path):
+      return "Test bundle at \(path) has no binary to read architectures from"
+    case let .unexpectedReporter(reporterDescription):
+      return "Expected an FBXCTestReporter, got \(reporterDescription)"
+    case let .notImplemented(selector):
+      return "-[FBMacDevice \(selector)] is not implemented"
+    }
+  }
+}
+
 public final class FBMacDevice: NSObject, FBiOSTarget {
 
   // MARK: - FBiOSTarget synthesized properties
@@ -207,7 +248,7 @@ public final class FBMacDevice: NSObject, FBiOSTarget {
       proxyError = error
     }
     guard let proxy = rawProxy as? XCTestManager_XPCControl else {
-      return FBFutureContext(error: FBControlCoreError.describe("The testmanagerd proxy \(rawProxy) does not conform to XCTestManager_XPCControl").build())
+      return FBFutureContext(error: FBMacDeviceError.testManagerProxyNonConformant(proxyDescription: String(describing: rawProxy)))
     }
 
     self.connection = connection
@@ -222,8 +263,7 @@ public final class FBMacDevice: NSObject, FBiOSTarget {
       transport = file
     }
     guard let transport else {
-      let nsError = (error ?? proxyError ?? NSError(domain: "FBMacDevice", code: 0, userInfo: [NSLocalizedDescriptionKey: "Unknown error getting transport"])) as NSError
-      return FBFutureContext(error: nsError)
+      return FBFutureContext(error: error ?? proxyError ?? FBMacDeviceError.transportUnavailable)
     }
     return FBFuture(result: NSNumber(value: transport.fileDescriptor))
       .onQueue(
@@ -240,8 +280,7 @@ public final class FBMacDevice: NSObject, FBiOSTarget {
 
   public func processID(withBundleID bundleID: String) -> FBFuture<NSNumber> {
     guard let task = bundleIDToRunningTask[bundleID] else {
-      let error = XCTestBootstrapError.error(forDescription: "Application with bundleID (\(bundleID)) was not launched by XCTestBootstrap")
-      return FBFuture(error: error)
+      return FBFuture(error: FBMacDeviceError.applicationNotLaunched(bundleID: bundleID))
     }
     return FBFuture(result: NSNumber(value: task.processIdentifier))
   }
@@ -276,7 +315,7 @@ public final class FBMacDevice: NSObject, FBiOSTarget {
 
   public func uninstallApplication(withBundleID bundleID: String) -> FBFuture<NSNull> {
     guard let bundle = bundleIDToProductMap[bundleID] else {
-      return FBFuture(error: XCTestBootstrapError.describe("Application with bundleID (\(bundleID)) was not installed by XCTestBootstrap").build())
+      return FBFuture(error: FBMacDeviceError.applicationNotInstalled(bundleID: bundleID))
     }
 
     if !FileManager.default.fileExists(atPath: bundle.path) {
@@ -307,7 +346,7 @@ public final class FBMacDevice: NSObject, FBiOSTarget {
 
   public func installedApplication(withBundleID bundleID: String) -> FBFuture<FBInstalledApplication> {
     guard let existingBundle = bundleIDToProductMap[bundleID] else {
-      return FBFuture(error: NSError(domain: "FBMacDevice", code: 0, userInfo: [NSLocalizedDescriptionKey: "No bundle for \(bundleID)"]))
+      return FBFuture(error: FBMacDeviceError.bundleNotRegistered(bundleID: bundleID))
     }
     do {
       let bundle = try FBBundleDescriptor.bundle(fromPath: existingBundle.path)
@@ -320,8 +359,7 @@ public final class FBMacDevice: NSObject, FBiOSTarget {
 
   public func killApplication(withBundleID bundleID: String) -> FBFuture<NSNull> {
     guard let task = bundleIDToRunningTask[bundleID] else {
-      let error = XCTestBootstrapError.error(forDescription: "Application with bundleID (\(bundleID)) was not launched by XCTestBootstrap")
-      return FBFuture(error: error)
+      return FBFuture(error: FBMacDeviceError.applicationNotLaunched(bundleID: bundleID))
     }
     task.sendSignal(SIGTERM, backingOffToKillWithTimeout: 2, logger: self.logger)
     bundleIDToRunningTask.removeValue(forKey: bundleID)
@@ -330,10 +368,10 @@ public final class FBMacDevice: NSObject, FBiOSTarget {
 
   public func launchApplication(_ configuration: FBApplicationLaunchConfiguration) -> FBFuture<FBMacLaunchedApplication> {
     guard let bundle = bundleIDToProductMap[configuration.bundleID] else {
-      return FBFuture(error: FBControlCoreError.describe("Could not find application for \(configuration.bundleID)").build())
+      return FBFuture(error: FBMacDeviceError.applicationNotFound(bundleID: configuration.bundleID))
     }
     guard let binary = bundle.binary else {
-      return FBFuture(error: FBControlCoreError.describe("Application bundle \(bundle.identifier) has no executable").build())
+      return FBFuture(error: FBMacDeviceError.applicationHasNoExecutable(bundleID: bundle.identifier))
     }
     return FBProcessBuilder<AnyObject, AnyObject, AnyObject>.withLaunchPath(binary.path, arguments: configuration.arguments)
       .withEnvironment(configuration.environment)
@@ -393,7 +431,7 @@ public final class FBMacDevice: NSObject, FBiOSTarget {
     }
 
     guard let binary = bundleDescriptor.binary else {
-      return FBFuture(error: FBControlCoreError.describe("Test bundle at \(bundlePath) has no binary to read architectures from").build())
+      return FBFuture(error: FBMacDeviceError.testBundleHasNoBinary(path: bundlePath))
     }
     let configuration = FBListTestConfiguration(
       environment: [:],
@@ -436,7 +474,7 @@ extension FBMacDevice: XCTestExtendedCommands {
     logger: any FBControlCoreLogger
   ) async throws {
     guard let typedReporter = reporter as? FBXCTestReporter else {
-      throw FBControlCoreError.describe("Expected an FBXCTestReporter, got \(reporter)").build()
+      throw FBMacDeviceError.unexpectedReporter(reporterDescription: String(describing: reporter))
     }
     try await FBManagedTestRunStrategy.runToCompletion(
       withTarget: self,
@@ -515,7 +553,7 @@ extension FBMacDevice: ApplicationCommands {
 extension FBMacDevice: CrashLogCommands {
 
   public func crashes(matching predicate: NSPredicate, useCache: Bool) async throws -> [FBCrashLogInfo] {
-    throw FBControlCoreError.describe("-[FBMacDevice crashes:useCache:] is not implemented").build()
+    throw FBMacDeviceError.notImplemented(selector: "crashes:useCache:")
   }
 
   public func notifyOfCrash(matching predicate: NSPredicate) async throws -> FBCrashLogInfo {
@@ -523,10 +561,10 @@ extension FBMacDevice: CrashLogCommands {
   }
 
   public func pruneCrashes(matching predicate: NSPredicate) async throws -> [FBCrashLogInfo] {
-    throw FBControlCoreError.describe("-[FBMacDevice pruneCrashes:] is not implemented").build()
+    throw FBMacDeviceError.notImplemented(selector: "pruneCrashes:")
   }
 
   public func withCrashLogFiles<R>(body: (any AsyncFileContainer) async throws -> R) async throws -> R {
-    throw FBControlCoreError.describe("-[FBMacDevice crashLogFiles] is not implemented").build()
+    throw FBMacDeviceError.notImplemented(selector: "crashLogFiles")
   }
 }
