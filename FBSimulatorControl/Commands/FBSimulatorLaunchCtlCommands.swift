@@ -9,6 +9,44 @@
 @preconcurrency import FBControlCore
 @preconcurrency import Foundation
 
+/// The ways launchctl queries can fail, as data rather than assembled strings.
+public enum FBSimulatorLaunchCtlError: Error {
+  case searchPatternConstructionFailed(processIdentifier: pid_t)
+  case noMatchingProcesses(pattern: String)
+  case multipleMatchingProcesses(pattern: String, matches: [String: NSNumber])
+  case insufficientOutput(output: String)
+  case stopFailed(serviceName: String, underlying: Error)
+  case startFailed(serviceName: String, underlying: Error)
+  case malformedListLine(words: [String])
+  case invalidProcessIdentifier(word: String, words: [String])
+  case commandFailed(arguments: [String], exitCode: Int32, stderr: String)
+}
+
+extension FBSimulatorLaunchCtlError: LocalizedError {
+  public var errorDescription: String? {
+    switch self {
+    case let .searchPatternConstructionFailed(processIdentifier):
+      return "Couldn't build search pattern for '\(processIdentifier)'"
+    case let .noMatchingProcesses(pattern):
+      return "No Matching processes for '\(pattern)'"
+    case let .multipleMatchingProcesses(pattern, matches):
+      return "Multiple Matching processes for '\(pattern)' \(FBCollectionInformation.oneLineDescription(from: matches))"
+    case let .insufficientOutput(output):
+      return "Insufficient number of lines from output '\(output)'"
+    case let .stopFailed(serviceName, _):
+      return "Failed to stop service '\(serviceName)'"
+    case let .startFailed(serviceName, _):
+      return "Failed to start service '\(serviceName)'"
+    case let .malformedListLine(words):
+      return "Output does not have exactly three words: \(FBCollectionInformation.oneLineDescription(from: words))"
+    case let .invalidProcessIdentifier(word, words):
+      return "Expected a process identifier as first word, but got \(word) from \(FBCollectionInformation.oneLineDescription(from: words))"
+    case let .commandFailed(arguments, exitCode, stderr):
+      return "launchctl \(arguments.joined(separator: " ")) failed with exit code \(exitCode): \(stderr)"
+    }
+  }
+}
+
 public final class FBSimulatorLaunchCtlCommands: NSObject {
 
   // MARK: - Properties
@@ -39,7 +77,7 @@ public final class FBSimulatorLaunchCtlCommands: NSObject {
   fileprivate func serviceName(forProcessIdentifier pid: pid_t) async throws -> String {
     let pattern = "^\(NSRegularExpression.escapedPattern(for: "\(pid)"))\t"
     guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else {
-      throw FBSimulatorError.describe("Couldn't build search pattern for '\(pid)'").build()
+      throw FBSimulatorLaunchCtlError.searchPatternConstructionFailed(processIdentifier: pid)
     }
     let (serviceName, _) = try await firstServiceNameAndProcessIdentifier(matching: regex)
     return serviceName
@@ -66,10 +104,10 @@ public final class FBSimulatorLaunchCtlCommands: NSObject {
   fileprivate func firstServiceNameAndProcessIdentifier(matching regex: NSRegularExpression) async throws -> (String, pid_t) {
     let serviceNameToProcessIdentifier = try await serviceNamesAndProcessIdentifiers(matching: regex)
     guard let (serviceName, processIdentifier) = serviceNameToProcessIdentifier.first else {
-      throw FBSimulatorError.describe("No Matching processes for '\(regex.pattern)'").build()
+      throw FBSimulatorLaunchCtlError.noMatchingProcesses(pattern: regex.pattern)
     }
     if serviceNameToProcessIdentifier.count > 1 {
-      throw FBSimulatorError.describe("Multiple Matching processes for '\(regex.pattern)' \(FBCollectionInformation.oneLineDescription(from: serviceNameToProcessIdentifier))").build()
+      throw FBSimulatorLaunchCtlError.multipleMatchingProcesses(pattern: regex.pattern, matches: serviceNameToProcessIdentifier)
     }
     return (serviceName, processIdentifier.int32Value)
   }
@@ -78,7 +116,7 @@ public final class FBSimulatorLaunchCtlCommands: NSObject {
     let text = try await run(.list)
     let lines = text.components(separatedBy: .newlines)
     if lines.count < 2 {
-      throw FBSimulatorError.describe("Insufficient number of lines from output '\(text)'").build()
+      throw FBSimulatorLaunchCtlError.insufficientOutput(output: text)
     }
     var services: [String: Any] = [:]
     for (serviceName, processIdentifier) in Self.serviceMap(fromListOutput: text) {
@@ -91,9 +129,7 @@ public final class FBSimulatorLaunchCtlCommands: NSObject {
     do {
       return try await run(.stop(serviceName: serviceName))
     } catch {
-      throw FBSimulatorError.describe("Failed to stop service '\(serviceName)'")
-        .caused(by: error as NSError)
-        .build()
+      throw FBSimulatorLaunchCtlError.stopFailed(serviceName: serviceName, underlying: error)
     }
   }
 
@@ -101,9 +137,7 @@ public final class FBSimulatorLaunchCtlCommands: NSObject {
     do {
       return try await run(.start(serviceName: serviceName))
     } catch {
-      throw FBSimulatorError.describe("Failed to start service '\(serviceName)'")
-        .caused(by: error as NSError)
-        .build()
+      throw FBSimulatorLaunchCtlError.startFailed(serviceName: serviceName, underlying: error)
     }
   }
 
@@ -122,7 +156,7 @@ public final class FBSimulatorLaunchCtlCommands: NSObject {
   private class func extractServiceName(fromListLine line: String, processIdentifierOut: inout pid_t) throws -> String {
     let words = line.components(separatedBy: .whitespaces)
     guard words.count == 3, let processIdentifierString = words.first, let serviceName = words.last else {
-      throw FBSimulatorError.describe("Output does not have exactly three words: \(FBCollectionInformation.oneLineDescription(from: words))").build()
+      throw FBSimulatorLaunchCtlError.malformedListLine(words: words)
     }
     if processIdentifierString == "-" {
       processIdentifierOut = -1
@@ -131,7 +165,7 @@ public final class FBSimulatorLaunchCtlCommands: NSObject {
 
     let processIdentifierInteger = Int(processIdentifierString) ?? 0
     guard processIdentifierInteger >= 1 else {
-      throw FBSimulatorError.describe("Expected a process identifier as first word, but got \(processIdentifierString) from \(FBCollectionInformation.oneLineDescription(from: words))").build()
+      throw FBSimulatorLaunchCtlError.invalidProcessIdentifier(word: processIdentifierString, words: words)
     }
     processIdentifierOut = pid_t(processIdentifierInteger)
     return serviceName
@@ -201,7 +235,7 @@ public final class FBSimulatorLaunchCtlCommands: NSObject {
     if output.exitCode != 0 {
       let stderr = String(data: output.stderr, encoding: .utf8) ?? ""
       guard command.exitCodePolicy.accepts(output.exitCode) else {
-        throw FBSimulatorError.describe("launchctl \(command.arguments.joined(separator: " ")) failed with exit code \(output.exitCode): \(stderr)").build()
+        throw FBSimulatorLaunchCtlError.commandFailed(arguments: command.arguments, exitCode: output.exitCode, stderr: stderr)
       }
       logger?.log("launchctl \(command.arguments.joined(separator: " ")) exited with code \(output.exitCode): \(stderr)")
     }
