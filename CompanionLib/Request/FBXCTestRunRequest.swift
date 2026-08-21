@@ -9,8 +9,6 @@ import FBControlCore
 import Foundation
 import XCTestBootstrap
 
-// swiftlint:disable force_cast
-
 private let FBLogicTestTimeout: TimeInterval = 60 * 60 // Approx. an hour.
 
 // MARK: - FBXCTestRunRequest
@@ -201,9 +199,12 @@ private class FBXCTestRunRequest_LogicTest: FBXCTestRunRequest {
   }
 
   private func startTestExecution(_ configuration: FBLogicTestConfiguration, target: FBiOSTarget, reporter: FBXCTestReporter, logger: FBControlCoreLogger) throws -> FBIDBTestOperation {
+    guard let target = target as? (FBiOSTarget & ProcessSpawnCommands & XCTestExtendedCommands) else {
+      throw FBIDBError.describe("Target \(target) does not support process spawning and extended xctest commands, cannot run logic tests").build()
+    }
     let adapter = FBLogicReporterAdapter(reporter: reporter, logger: logger)
     let runner = FBLogicTestRunStrategy(
-      target: target as! (FBiOSTarget & ProcessSpawnCommands & XCTestExtendedCommands),
+      target: target,
       configuration: configuration,
       reporter: adapter,
       logger: logger

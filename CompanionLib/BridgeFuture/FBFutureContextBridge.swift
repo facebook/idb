@@ -26,10 +26,12 @@ public func bridgeFBFutureContext<T: AnyObject>(_ futureContext: FBFutureContext
   return try await bridgeFBFuture(futureContext.future)
 }
 
-/// `FBFutureContext` array overload that force-casts the resolved `NSArray` to
-/// `[T]`.
+/// `FBFutureContext` array overload that bridges the resolved `NSArray` to `[T]`,
+/// throwing when the future resolved with elements of another type.
 public func bridgeFBFutureContextArray<T>(_ futureContext: FBFutureContext<NSArray>) async throws -> [T] {
   let array = try await bridgeFBFutureContext(futureContext)
-  // swiftlint:disable:next force_cast
-  return array as! [T]
+  guard let typed = array as? [T] else {
+    throw FBControlCoreError.describe("Expected the future to resolve with an array of \(T.self), got \(array)").build()
+  }
+  return typed
 }
