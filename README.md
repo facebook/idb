@@ -13,7 +13,7 @@ The "iOS Development Bridge" or `idb`, is a command line interface for automatin
 
 `idb` is transitioning to a pure Swift codebase: the companion is written in Swift, and the Frameworks are migrating from Objective-C. [The architecture documentation](https://www.fbidb.io/docs/idb/architecture) describes where the migration stands.
 
-We've given a talk about `idb` at F8, so that you can learn more about what `idb` is and why we built it. A [recording of the talk is available here](https://developers.facebook.com/videos/2019/reliable-code-at-scale/).
+A talk from F8 2019 covers the original motivation for `idb`; a [recording is available here](https://developers.facebook.com/videos/2019/reliable-code-at-scale/).
 
 ## Quick Start
 
@@ -48,10 +48,10 @@ Once installed, just run the list-targets command which will show you all the si
 ```
 $ idb list-targets
 ...
-iPhone X | 569C0F94-5D53-40D2-AF8F-F4AA5BAA7D5E | Shutdown | simulator | iOS 12.2 | x86_64 | No Companion Connected
-iPhone Xs | 2A1C6A5A-0C67-46FD-B3F5-3CB42FFB38B5 | Shutdown | simulator | iOS 12.2 | x86_64 | No Companion Connected
-iPhone Xs Max | D3CF178F-EF61-4CD3-BB3B-F5ECAD246310 | Shutdown | simulator | iOS 12.2 | x86_64 | No Companion Connected
-iPhone Xʀ | 74064851-4B98-473A-8110-225202BB86F6 | Shutdown | simulator | iOS 12.2 | x86_64 | No Companion Connected
+iPhone 16 | 569C0F94-5D53-40D2-AF8F-F4AA5BAA7D5E | Shutdown | simulator | iOS 26.0 | arm64 | No Companion Connected
+iPhone 17 | 2A1C6A5A-0C67-46FD-B3F5-3CB42FFB38B5 | Shutdown | simulator | iOS 26.0 | arm64 | No Companion Connected
+iPhone 17 Pro | D3CF178F-EF61-4CD3-BB3B-F5ECAD246310 | Shutdown | simulator | iOS 26.0 | arm64 | No Companion Connected
+iPhone Air | 74064851-4B98-473A-8110-225202BB86F6 | Shutdown | simulator | iOS 26.0 | arm64 | No Companion Connected
 ...
 ```
 
@@ -59,10 +59,10 @@ iPhone Xʀ | 74064851-4B98-473A-8110-225202BB86F6 | Shutdown | simulator | iOS 1
 
 ```
 $ idb list-apps --udid 74064851-4B98-473A-8110-225202BB86F6
-com.apple.Maps | Maps | system | x86_64 | Not running | Not Debuggable
-com.apple.MobileSMS | MobileSMS | system | x86_64 | Not running | Not Debuggable
-com.apple.mobileslideshow | MobileSlideShow | system | x86_64 | Not running | Not Debuggable
-com.apple.mobilesafari | MobileSafari | system | x86_64 | Not running | Not Debuggable
+com.apple.Maps | Maps | system | arm64 | Not running | Not Debuggable
+com.apple.MobileSMS | MobileSMS | system | arm64 | Not running | Not Debuggable
+com.apple.mobileslideshow | MobileSlideShow | system | arm64 | Not running | Not Debuggable
+com.apple.mobilesafari | MobileSafari | system | arm64 | Not running | Not Debuggable
 ```
 
 `launch` will launch an application:
