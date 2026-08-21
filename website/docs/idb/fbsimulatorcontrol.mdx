@@ -9,18 +9,18 @@ title: FBSimulatorControl
 
 `CoreSimulator` is the Private Framework that is the interface for most Simulator related functionality on macOS. In previous Xcode versions, `CoreSimulator` was bundled inside of Xcode, but it is now installed at the System level just like `MobileDevice.framework`. It may be upgraded to a newer version as part of the install process of Xcode itself.
 
-`CoreSimulator` is used by Xcode and `simctl` as the Framework used to manipulate Simulators. It has Objective-C classes representing a set of Simulators within a directory (`SimDeviceSet` wrapped by `FBSimulatorSet`) and an individual iOS Simulator (`SimDevice`, wrapped by `FBSimulator`). There is also a Class that behaves a lot like an "entrypoint" to the Framework in `SimServiceContext`, this performs initialization of external services and is aware of the various configurations of Simulators that are availabile.
+`CoreSimulator` is used by Xcode and `simctl` as the Framework used to manipulate Simulators. It has Objective-C classes representing a set of Simulators within a directory (`SimDeviceSet` wrapped by `FBSimulatorSet`) and an individual iOS Simulator (`SimDevice`, wrapped by `FBSimulator`). There is also a Class that behaves a lot like an "entrypoint" to the Framework in `SimServiceContext`, this performs initialization of external services and is aware of the various configurations of Simulators that are available.
 
 ## `simctl`
 
 `simctl` is essentially a CLI that exposes iOS Simulator functionality by linking and using `CoreSimulator`. This binary is bundled inside of Xcode, and typically addressed via usage of the `xcrun` command. `xcrun` is essentially a trampoline that addresses binaries that are bundled within Xcode by using the value defined in `xcode-select`
 
-The overwhelming majority of Simulator functionality is not implemented in `simctl`, it is implemented within `CoreSimulator` with `simctl` providing an accessible way of using this functionality. Having this behaviour implemented at the Framework level so that `Simulator.app` and `simctl` behave identically when using their user interfaces.
+The overwhelming majority of Simulator functionality is not implemented in `simctl`, it is implemented within `CoreSimulator` with `simctl` providing an accessible way of using this functionality. Having this behaviour implemented at the Framework level means that `Simulator.app` and `simctl` behave consistently, as they share the same implementation.
 ## `CoreSimulatorService`
 
 `CoreSimulatorService` is a user-level daemon that is bootstrapped by any usage of `SimServiceContext`, effectively any usage of iOS Simulators will cause this service to be created and launched. This is an XPC service contained within the `CoreSimulator.framework` bundle. This service is responsible for starting and managing Simulators.
 
-When using `CoreSimulator` as a client Framework it will transparently communicate with `CoreSimulatorService`. The overwhelming majority of `CoreSimulator` APIs that do meaningful work are essentially performing IO to `CoreSimulatorService`, though the asynchronous nature of this work isn't completely consistent. Some `CoreSimulator` APIs (for instance those associated with [launching an iOS Application](https://github.com/facebook/idb/blob/main/PrivateHeaders/CoreSimulator/SimDevice.h#L75)) do have asynchronous methods, but others (such as the [instantiation of a `SimServiceContext`](https://github.com/facebook/idb/blob/main/PrivateHeaders/CoreSimulator/SimServiceContext.h#L26)) do not. `CoreSimulatorService` still gets much of it's implementation from `CoreSimulator.framework`, touching different areas of the API.
+When using `CoreSimulator` as a client Framework it will transparently communicate with `CoreSimulatorService`. The overwhelming majority of `CoreSimulator` APIs that do meaningful work are essentially performing IO to `CoreSimulatorService`, though the asynchronous nature of this work isn't completely consistent. Some `CoreSimulator` APIs (for instance those associated with [launching an iOS Application](https://github.com/facebook/idb/blob/main/PrivateHeaders/CoreSimulator/SimDevice.h)) do have asynchronous methods, but others (such as the [instantiation of a `SimServiceContext`](https://github.com/facebook/idb/blob/main/PrivateHeaders/CoreSimulator/SimServiceContext.h)) do not. `CoreSimulatorService` still gets much of its implementation from `CoreSimulator.framework`, touching different areas of the API.
 
 Having the "work" of iOS Simulators performed within the context of share user daemon is likely due to the needs to synchronize and consolidate state. The service is also an effective caching mechanism for runtime and device profiles. There are a few downsides to this approach. Firstly, `CoreSimulatorService` is effectively a single point of failure. If `CoreSimulatorService` becomes stuck, or a client of `CoreSimulator` exhibits pathological behaviour, then all iOS Simulator functionality on a given host will fail. iOS Simulator functionality will effectively halt until `CoreSimulatorService` restarts, either by the hung `CoreSimulatorService` terminating and restarting or via reboot.
 
@@ -34,7 +34,7 @@ Each version of Xcode is bundled with `SimRuntime`s for the most recent iOS vers
 
 ## `launchd_sim`
 
-iOS, like macOS has `launchd` as it's "root process" (often PID 1). However, iOS Simulators have their own version of `launchd` as a root process. This `launchd_sim` is effectively the "root process" of the iOS Simulator runtime, but not of the macOS host. This `launchd_sim` is required by the Simulator OS in order to launch Applications, manage services etc. Each launched iOS Simulator has it's own `launchd_sim` process, launched from the `launchd_sim` within the `SimRuntime`. This also means that processes within this nested `launchd` will only see the processes of the iOS Simulator, rather than all of those of the entire host (including other iOS Simulators running on the same host).
+iOS, like macOS has `launchd` as its "root process" (often PID 1). However, iOS Simulators have their own version of `launchd` as a root process. This `launchd_sim` is effectively the "root process" of the iOS Simulator runtime, but not of the macOS host. This `launchd_sim` is required by the Simulator OS in order to launch Applications, manage services etc. Each launched iOS Simulator has its own `launchd_sim` process, launched from the `launchd_sim` within the `SimRuntime`. This also means that processes within this nested `launchd` will only see the processes of the iOS Simulator, rather than all of those of the entire host (including other iOS Simulators running on the same host).
 
 This `launchd_sim` can be interrogated the same as the `launchd` of the host, provided that the `launchctl` called is spawned within the `launchd_sim` of the iOS Simulator.
 
@@ -56,21 +56,23 @@ The functionality within this Application is largely implemented within `CoreSim
 
 ## Framebuffers via `IOSurface`
 
-The screen from an iOS Simulator is rendered, regardless of whether there is an iOS Simulator application that is presenting this within a IO. An iOS Simulator can be launched independently of `Simulator.app`, since Simulators are kept alive by `CoreSimulatorService`.
+The screen from an iOS Simulator is rendered, regardless of whether there is a `Simulator.app` presenting it in a window. An iOS Simulator can be launched independently of `Simulator.app`, since Simulators are kept alive by `CoreSimulatorService`.
 
 In order for other Applications (mainly `Simulator.app`, but also for video recording within `simctl`) to get the iOS Simulator's Framebuffer for rendering, `CoreSimulator` can access the `IOSurface` of the screen of an iOS Simulator. A Simulator can have many screens, for instance when Simulating CarPlay and the main screen at the same time.
 
-An `IOSurface` is an object that wraps a Framebuffer, with the contents of the Framebuffer being located within GPU memory. This `IOSurface` can be read and inspected across process boundaries. The iOS Simulator uses this `IOSurface` as the backing Framebuffer for it's view of an iOS Simulator.
+An `IOSurface` is an object that wraps a Framebuffer, with the contents of the Framebuffer being located within GPU memory. This `IOSurface` can be read and inspected across process boundaries. `Simulator.app` uses this `IOSurface` as the backing Framebuffer for its view of an iOS Simulator.
 
-`IOSurface` objects are also easily convertable to ["Pixel Buffer" types that are used in video encoding](https://github.com/facebook/idb/blob/d587458fa2188fbcdd3f71fcbb2a131903cfa5f2/FBSimulatorControl/Framebuffer/FBSimulatorVideoStream.m#L398). This allows `FBSimulatorControl` to implement video encoding of an iOS Simulator's Framebuffer in a way that avoids large copies of bitmap framebuffers on a per-frame basis.
+`IOSurface` objects are also easily convertible to "Pixel Buffer" types that are used in video encoding, which [`FBSimulatorVideoStream`](https://github.com/facebook/idb/blob/main/FBSimulatorControl/Framebuffer/FBSimulatorVideoStream.swift) takes advantage of. This allows `FBSimulatorControl` to implement video encoding of an iOS Simulator's Framebuffer in a way that avoids large copies of bitmap framebuffers on a per-frame basis.
 
-## `IndigoHID`
+## HID: `IndigoHID` and `DTUHID`
 
-"Indigo" is a service present in the iOS Simulator that is used inside `Simulator.app` to synthesize "Input Events" that are understood within the iOS Simulator. This service is how clicking on the UI of the `Simulator.app` translate into touches within the iOS Simulator.
+"Indigo" is a service present in the iOS Simulator that is used inside `Simulator.app` to synthesize "Input Events" that are understood within the iOS Simulator. This service is how clicking on the UI of the `Simulator.app` translates into touches within the iOS Simulator.
 
-This uses "mach" IPC, where data structures are sent over a channel using `mach_msg_send`. These data structures are defined through the "Mach Interface Generator", which get compiled out of the `Simulator.app` binary. As such, `FBSimulatorControl`'s understanding of the layout and values in these data structures [are understood through reverse engineering](https://github.com/facebook/idb/blob/main/PrivateHeaders/SimulatorApp/Indigo.h#L40).
+This uses "mach" IPC, where data structures are sent over a channel using `mach_msg_send`. These data structures are defined through the "Mach Interface Generator", which get compiled out of the `Simulator.app` binary. As such, `FBSimulatorControl`'s understanding of the layout and values in these data structures [are understood through reverse engineering](https://github.com/facebook/idb/blob/main/PrivateHeaders/SimulatorApp/Indigo.h).
 
-The reverse engineering of this protocol, allows `FBSimulatorControl` to expose APIs that allow sending of touch events directly to the iOS Simulator without using Accessibility APIs in a UI Test. The combination of video streams and APIs for sending input events allows for the building of applications that expose a remote iOS Simulator.
+The reverse engineering of this protocol allows `FBSimulatorControl` to expose APIs that send touch events directly to the iOS Simulator without using Accessibility APIs in a UI Test. The combination of video streams and APIs for sending input events allows for the building of applications that expose a remote iOS Simulator.
+
+Newer Xcode versions introduce a second event path: a `dtuhidd` daemon inside the Simulator, which receives events as XPC dictionaries rather than reverse-engineered mach structures. On these runtimes the guest hands some of its legacy HID services over to `dtuhidd`, so `FBSimulatorControl` implements HID delivery behind a pluggable transport ([`FBSimulatorHID`](https://github.com/facebook/idb/blob/main/FBSimulatorControl/HID/FBSimulatorHID.swift)): the Indigo transport remains the default where it works, and the [DTUHID transport](https://github.com/facebook/idb/blob/main/FBSimulatorControl/HID/FBSimulatorDTUHIDTransport.swift) is used where the runtime requires it, negotiated automatically per Simulator. A caller of the Framework does not need to know which transport is in use.
 
 ## `SimulatorKit.framework`
 
