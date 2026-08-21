@@ -580,16 +580,10 @@ public final class FBXCTestResultBundleParser {
     return subdirectoryFullPath
   }
 
-  private static let screenshotFilenameRegex: NSRegularExpression = {
-    // swiftlint:disable:next force_try
-    try! NSRegularExpression(pattern: "^Screenshot_.*", options: [])
-  }()
-
   private static func extractScreenshotsFromAttachments(_ attachments: [NSDictionary], to destination: String, queue: DispatchQueue, resultBundlePath: String, logger: FBControlCoreLogger) {
     for attachment in attachments {
       guard let filename = accessAndUnwrapValue(attachment, "filename", logger) as? String else { continue }
-      let matchResult = FBXCTestResultBundleParser.screenshotFilenameRegex.firstMatch(in: filename, options: [], range: NSRange(location: 0, length: (filename as NSString).length))
-      guard matchResult != nil,
+      guard filename.hasPrefix("Screenshot_"),
         let payloadRef = attachment["payloadRef"] as? NSDictionary,
         let screenshotId = accessAndUnwrapValue(payloadRef, "id", logger) as? String,
         let screenshotType = accessAndUnwrapValue(attachment, "uniformTypeIdentifier", logger) as? String

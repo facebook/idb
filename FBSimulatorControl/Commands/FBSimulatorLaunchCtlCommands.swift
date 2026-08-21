@@ -116,19 +116,13 @@ public final class FBSimulatorLaunchCtlCommands: NSObject {
 
   @objc
   public class func extractApplicationBundleIdentifier(fromServiceName serviceName: String) -> String? {
-    let regex = regularExpressionForServiceNameToBundleID
-    guard let result = regex.firstMatch(in: serviceName, options: [], range: NSRange(location: 0, length: serviceName.count)) else {
+    guard let marker = serviceName.range(of: "UIKitApplication:") else {
       return nil
     }
-    let range = result.range(at: 1)
-    return (serviceName as NSString).substring(with: range)
+    return String(serviceName[marker.upperBound...].prefix { $0 != "[" })
   }
 
   // MARK: - Private
-
-  private static let regularExpressionForServiceNameToBundleID: NSRegularExpression = {
-    try! NSRegularExpression(pattern: "UIKitApplication:([^\\[]*).*", options: .dotMatchesLineSeparators)
-  }()
 
   private class func extractServiceName(fromListLine line: String, processIdentifierOut: inout pid_t) throws -> String {
     let words = line.components(separatedBy: .whitespaces)

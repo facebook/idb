@@ -9,8 +9,6 @@
 @preconcurrency import FBControlCore
 @preconcurrency import Foundation
 
-// swiftlint:disable force_try
-
 public class FBSimulatorApplicationCommands: NSObject {
 
   // MARK: - Properties
@@ -119,7 +117,10 @@ public class FBSimulatorApplicationCommands: NSObject {
     guard let simulator = self.simulator else {
       throw FBWeakTargetError.simulator
     }
-    let serviceNameToProcessIdentifier = try await simulator.serviceNamesAndProcessIdentifiers(matching: FBSimulatorApplicationCommands.uiKitApplicationRegex)
+    guard let uiKitApplicationPattern = try? NSRegularExpression(pattern: "UIKitApplication:", options: []) else {
+      throw FBSimulatorError.describe("Couldn't build the UIKitApplication service pattern").build()
+    }
+    let serviceNameToProcessIdentifier = try await simulator.serviceNamesAndProcessIdentifiers(matching: uiKitApplicationPattern)
     var mapping: [String: NSNumber] = [:]
     for serviceName in serviceNameToProcessIdentifier.keys {
       if let bundleName = FBSimulatorLaunchCtlCommands.extractApplicationBundleIdentifier(fromServiceName: serviceName) {
@@ -153,10 +154,6 @@ public class FBSimulatorApplicationCommands: NSObject {
     let appInfo = try device.properties(ofApplication: bundleID)
     return try FBSimulatorApplicationCommands.installedApplication(fromInfo: appInfo)
   }
-
-  private static let uiKitApplicationRegex: NSRegularExpression = {
-    try! NSRegularExpression(pattern: "UIKitApplication:", options: [])
-  }()
 
   private func ensureApplicationIsInstalled(_ bundleID: String) async throws {
     do {

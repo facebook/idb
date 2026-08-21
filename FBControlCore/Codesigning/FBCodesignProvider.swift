@@ -34,11 +34,6 @@ public class FBCodesignProvider: NSObject {
 
   // MARK: Private
 
-  private static let cdHashRegex: NSRegularExpression = {
-    // swiftlint:disable:next force_try
-    try! NSRegularExpression(pattern: "CDHash=(.+)", options: [])
-  }()
-
   private func makeCodesignatureWritable(_ bundlePath: String) throws {
     let fileManager = FileManager.default
     let codeSignatureFile = bundlePath + "/_CodeSignature/CodeResources"
@@ -139,13 +134,13 @@ public class FBCodesignProvider: NSObject {
                 .failFuture()
             }
             let output = (task.stdErr ?? "") as String
-            guard let result = FBCodesignProvider.cdHashRegex.firstMatch(in: output, options: [], range: NSRange(location: 0, length: output.count)) else {
+            guard let result = output.firstMatch(of: /CDHash=(.+)/) else {
               return
                 FBControlCoreError
                 .describe("Could not find 'CDHash' in output: \(output)")
                 .failFuture()
             }
-            let cdHash = (output as NSString).substring(with: result.range(at: 1))
+            let cdHash = String(result.1)
             logger?.log("Successfully obtained hash \(cdHash) from bundle \(bundlePath)")
             return FBFuture<AnyObject>(result: cdHash as NSString)
           }),
