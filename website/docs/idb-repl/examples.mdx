@@ -111,7 +111,7 @@ Force a fresh process with `--new-session`. For long-running sessions, launch wi
 Build the `.xctest` bundle, then run code inside the bundle's process:
 
 ```bash
-BUNDLE=$(buck build <buck-test-target> --show-output 2>/dev/null | awk '{print $2}')
+BUNDLE=path/to/Build/Products/Debug-iphonesimulator/MyAppTests.xctest
 idb-repl --reason "run in test bundle" test --udid <udid> --test-bundle-path "$BUNDLE" \
   'return "loaded \(Bundle.allBundles.count) bundles"'
 ```

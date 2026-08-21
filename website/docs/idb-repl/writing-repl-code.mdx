@@ -87,7 +87,7 @@ Injects into a logic-test (`.xctest`) bundle, running your code inside that bund
 Build the `.xctest` bundle with a normal build of the test target and pass its path:
 
 ```bash
-BUNDLE=$(buck build <buck-test-target> --show-output 2>/dev/null | awk '{print $2}')
+BUNDLE=path/to/Build/Products/Debug-iphonesimulator/MyAppTests.xctest
 idb-repl --reason "<why>" test --udid <udid> --test-bundle-path "$BUNDLE" 'return "done"'
 ```
 

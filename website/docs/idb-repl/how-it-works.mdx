@@ -8,10 +8,12 @@ title: How it works
 - **`idb_companion` (the server).** A macOS process that manages simulators and exposes a gRPC API. `idb-repl` builds on top of it — the companion is what actually injects and runs your code inside a process on the simulator. This is the same companion that powers `idb`'s other features.
 - **The target process.** The process your code runs inside: an app, the simulator, or a test bundle (see [Writing REPL code](writing-repl-code.mdx)).
 
-```
-  you ──▶ idb-repl ──(gRPC)──▶ idb companion ──▶ target process on the simulator
-   ▲       (driver)              (server)          (app / simulator / test bundle)
-   └──────────────── result streamed back ──────────────────┘
+```mermaid
+flowchart LR
+    you(["you"]) --> repl["idb-repl<br/>(driver)"]
+    repl -- "gRPC" --> companion["idb companion<br/>(server)"]
+    companion -- "inject + execute" --> target["target process on the simulator<br/>(app / simulator / test bundle)"]
+    target -. "result streamed back" .-> you
 ```
 
 ## What happens when you run a command
