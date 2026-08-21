@@ -12,7 +12,7 @@ private let kEnvWaitForDebugger = "XCTOOL_WAIT_FOR_DEBUGGER"
 private let kEnvLLVMProfileFile = "LLVM_PROFILE_FILE"
 private let kEnvLogDirectoryPath = "LOG_DIRECTORY_PATH"
 
-public class FBTestRunnerConfiguration: NSObject, NSCopying {
+public struct FBTestRunnerConfiguration {
 
   // MARK: Properties
 
@@ -37,18 +37,11 @@ public class FBTestRunnerConfiguration: NSObject, NSCopying {
     self.launchEnvironment = launchEnvironment
     self.testedApplicationAdditionalEnvironment = testedApplicationAdditionalEnvironment
     self.testConfiguration = testConfiguration
-    super.init()
-  }
-
-  // MARK: NSCopying
-
-  public func copy(with zone: NSZone? = nil) -> Any {
-    self
   }
 
   // MARK: Public
 
-  public class func prepareConfiguration(withTarget target: FBiOSTarget & ApplicationCommands & XCTestExtendedCommands, testLaunchConfiguration: FBTestLaunchConfiguration, workingDirectory: String, codesign: FBCodesignProvider?) async throws -> FBTestRunnerConfiguration {
+  public static func prepareConfiguration(withTarget target: FBiOSTarget & ApplicationCommands & XCTestExtendedCommands, testLaunchConfiguration: FBTestLaunchConfiguration, workingDirectory: String, codesign: FBCodesignProvider?) async throws -> FBTestRunnerConfiguration {
     if let codesign {
       do {
         _ = try await bridgeFBFuture(codesign.cdHashForBundle(atPath: testLaunchConfiguration.testBundle.path))
@@ -63,7 +56,7 @@ public class FBTestRunnerConfiguration: NSObject, NSCopying {
     return try await prepareConfigurationAfterCodesignatureCheck(withTarget: target, testLaunchConfiguration: testLaunchConfiguration, workingDirectory: workingDirectory)
   }
 
-  public class func launchEnvironment(withHostApplication hostApplication: FBBundleDescriptor, hostApplicationAdditionalEnvironment: [String: String], testBundle: FBBundleDescriptor, testConfigurationPath: String, frameworkSearchPaths: [String]) -> [String: String] {
+  public static func launchEnvironment(withHostApplication hostApplication: FBBundleDescriptor, hostApplicationAdditionalEnvironment: [String: String], testBundle: FBBundleDescriptor, testConfigurationPath: String, frameworkSearchPaths: [String]) -> [String: String] {
     var environmentVariables = hostApplicationAdditionalEnvironment
     let frameworkSearchPath = frameworkSearchPaths.joined(separator: ":")
     environmentVariables["AppTargetLocation"] = hostApplication.binary?.path ?? ""
@@ -78,7 +71,7 @@ public class FBTestRunnerConfiguration: NSObject, NSCopying {
 
   // MARK: Private
 
-  private class func addAdditionalEnvironmentVariables(_ currentEnvironmentVariables: [String: String]) -> [String: String] {
+  private static func addAdditionalEnvironmentVariables(_ currentEnvironmentVariables: [String: String]) -> [String: String] {
     let prefix = "CUSTOM_"
     var envs = currentEnvironmentVariables
     for (key, value) in ProcessInfo.processInfo.environment {
@@ -89,7 +82,7 @@ public class FBTestRunnerConfiguration: NSObject, NSCopying {
     return envs
   }
 
-  private class func prepareConfigurationAfterCodesignatureCheck(withTarget target: FBiOSTarget & ApplicationCommands & XCTestExtendedCommands, testLaunchConfiguration: FBTestLaunchConfiguration, workingDirectory: String) async throws -> FBTestRunnerConfiguration {
+  private static func prepareConfigurationAfterCodesignatureCheck(withTarget target: FBiOSTarget & ApplicationCommands & XCTestExtendedCommands, testLaunchConfiguration: FBTestLaunchConfiguration, workingDirectory: String) async throws -> FBTestRunnerConfiguration {
     // Common Paths
     let runtimeRoot = target.runtimeRootDirectory
     let platformRoot = target.platformRootDirectory
