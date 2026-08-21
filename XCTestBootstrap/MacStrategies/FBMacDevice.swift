@@ -9,8 +9,6 @@ import FBControlCore
 import Foundation
 import IOKit
 
-// swiftlint:disable force_cast force_unwrapping
-
 @objc private protocol XCTestManager_XPCControl {
   func _XCT_requestConnectedSocketForTransport(_ arg1: @escaping (FileHandle?, Error?) -> Void)
 }
@@ -35,8 +33,8 @@ public final class FBMacDevice: NSObject, FBiOSTarget {
 
   // MARK: - Private properties
 
-  private var bundleIDToProductMap: NSMutableDictionary
-  private var bundleIDToRunningTask: NSMutableDictionary
+  private var bundleIDToProductMap: [String: FBBundleDescriptor]
+  private var bundleIDToRunningTask: [String: FBSubprocess<AnyObject, AnyObject, AnyObject>]
   private var connection: NSXPCConnection?
   private let workingDirectory: String
   private let catalyst: Bool
@@ -45,7 +43,7 @@ public final class FBMacDevice: NSObject, FBiOSTarget {
 
   private static let _applicationInstallDirectory: String = {
     let uuid = UUID().uuidString
-    let parentDir = NSSearchPathForDirectoriesInDomains(.applicationDirectory, .userDomainMask, true).last!
+    let parentDir = NSSearchPathForDirectoriesInDomains(.applicationDirectory, .userDomainMask, true).last ?? NSTemporaryDirectory()
     return (parentDir as NSString).appendingPathComponent(uuid)
   }()
 
@@ -53,8 +51,8 @@ public final class FBMacDevice: NSObject, FBiOSTarget {
     _applicationInstallDirectory
   }
 
-  public static func fetchInstalledApplications() -> NSMutableDictionary {
-    let mapping = NSMutableDictionary()
+  public static func fetchInstalledApplications() -> [String: FBBundleDescriptor] {
+    var mapping: [String: FBBundleDescriptor] = [:]
     let content = try? FileManager.default.contentsOfDirectory(atPath: applicationInstallDirectory)
     for fileOrDirectory in content ?? [] {
       if (fileOrDirectory as NSString).pathExtension != "app" {
@@ -80,7 +78,7 @@ public final class FBMacDevice: NSObject, FBiOSTarget {
       auxillaryDirectory = ((NSTemporaryDirectory() as NSString).appendingPathComponent("idb-mac-cwd") as NSString).appendingPathComponent(ProcessInfo.processInfo.globallyUniqueString)
     }
     bundleIDToProductMap = FBMacDevice.fetchInstalledApplications()
-    bundleIDToRunningTask = NSMutableDictionary()
+    bundleIDToRunningTask = [:]
     udid = FBMacDevice.resolveDeviceUDID()
     state = .booted
     targetType = .localMac
@@ -109,7 +107,7 @@ public final class FBMacDevice: NSObject, FBiOSTarget {
       auxillaryDirectory = ((NSTemporaryDirectory() as NSString).appendingPathComponent("idb-mac-cwd") as NSString).appendingPathComponent(ProcessInfo.processInfo.globallyUniqueString)
     }
     bundleIDToProductMap = FBMacDevice.fetchInstalledApplications()
-    bundleIDToRunningTask = NSMutableDictionary()
+    bundleIDToRunningTask = [:]
     udid = FBMacDevice.resolveDeviceUDID()
     state = .booted
     targetType = .localMac
@@ -130,23 +128,27 @@ public final class FBMacDevice: NSObject, FBiOSTarget {
     var queuedFutures: [FBFuture<AnyObject>] = []
 
     var killFutures: [FBFuture<AnyObject>] = []
-    for bundleID in (bundleIDToRunningTask.allKeys as! [String]) {
-      killFutures.append(unsafeBitCast(killApplication(withBundleID: bundleID), to: FBFuture<AnyObject>.self))
+    for bundleID in Array(bundleIDToRunningTask.keys) {
+      killFutures.append(killApplication(withBundleID: bundleID).retyped(FBFuture<AnyObject>.self))
     }
     if !killFutures.isEmpty {
       queuedFutures.append(FBFuture(race: killFutures))
     }
 
     var uninstallFutures: [FBFuture<AnyObject>] = []
-    for bundleID in (bundleIDToProductMap.allKeys as! [String]) {
-      uninstallFutures.append(unsafeBitCast(uninstallApplication(withBundleID: bundleID), to: FBFuture<AnyObject>.self))
+    for bundleID in Array(bundleIDToProductMap.keys) {
+      uninstallFutures.append(uninstallApplication(withBundleID: bundleID).retyped(FBFuture<AnyObject>.self))
     }
     if !uninstallFutures.isEmpty {
       queuedFutures.append(FBFuture(race: uninstallFutures))
     }
 
     if !queuedFutures.isEmpty {
-      return unsafeBitCast(FBFuture<AnyObject>.combine(queuedFutures), to: FBFuture<NSNull>.self)
+      // The combined future resolves with the array of results; nothing reads the value,
+      // so it is re-typed in place rather than paying a queue hop to replace it - callers
+      // (including the state-restoration test) rely on already-resolved inputs resolving
+      // this future synchronously.
+      return FBFuture<AnyObject>.combine(queuedFutures).retyped(FBFuture<NSNull>.self)
     }
     return FBFuture(result: NSNull())
   }
@@ -199,12 +201,14 @@ public final class FBMacDevice: NSObject, FBiOSTarget {
     }
     connection.resume()
     var proxyError: Error?
-    let proxy =
-      connection.synchronousRemoteObjectProxyWithErrorHandler { [weak self] error in
-        logger.log("Error occurred during synchronousRemoteObjectProxyWithErrorHandler call: \(error.localizedDescription)")
-        self?.connection = nil
-        proxyError = error
-      } as! XCTestManager_XPCControl
+    let rawProxy = connection.synchronousRemoteObjectProxyWithErrorHandler { [weak self] error in
+      logger.log("Error occurred during synchronousRemoteObjectProxyWithErrorHandler call: \(error.localizedDescription)")
+      self?.connection = nil
+      proxyError = error
+    }
+    guard let proxy = rawProxy as? XCTestManager_XPCControl else {
+      return FBFutureContext(error: FBControlCoreError.describe("The testmanagerd proxy \(rawProxy) does not conform to XCTestManager_XPCControl").build())
+    }
 
     self.connection = connection
     var error: Error?
@@ -219,35 +223,23 @@ public final class FBMacDevice: NSObject, FBiOSTarget {
     }
     guard let transport else {
       let nsError = (error ?? proxyError ?? NSError(domain: "FBMacDevice", code: 0, userInfo: [NSLocalizedDescriptionKey: "Unknown error getting transport"])) as NSError
-      // Use ObjC runtime: FBFutureContext has no Swift-visible futureContextWithError:
-      let sel = NSSelectorFromString("futureContextWithError:")
-      let method = (FBFutureContext<AnyObject>.self as AnyObject).method(for: sel)!
-      typealias CtxErrFunc = @convention(c) (AnyObject, Selector, NSError) -> AnyObject
-      let ctxErr = unsafeBitCast(method, to: CtxErrFunc.self)
-      return unsafeDowncast(
-        ctxErr(FBFutureContext<AnyObject>.self as AnyObject, sel, nsError),
-        to: FBFutureContext<NSNumber>.self
-      )
+      return FBFutureContext(error: nsError)
     }
-    return unsafeBitCast(
-      unsafeBitCast(
-        FBFuture(result: NSNumber(value: transport.fileDescriptor)),
-        to: FBFuture<AnyObject>.self
-      )
+    return FBFuture(result: NSNumber(value: transport.fileDescriptor))
       .onQueue(
         workQueue,
         contextualTeardown: { _, _ -> FBFuture<NSNull> in
           transport.closeFile()
           return FBFuture(result: NSNull())
-        }),
-      to: FBFutureContext<NSNumber>.self
-    )
+        }
+      )
+      .retyped(FBFutureContext<NSNumber>.self)
   }
 
   // MARK: - Process ID
 
   public func processID(withBundleID bundleID: String) -> FBFuture<NSNumber> {
-    guard let task = bundleIDToRunningTask[bundleID] as? FBSubprocess<AnyObject, AnyObject, AnyObject> else {
+    guard let task = bundleIDToRunningTask[bundleID] else {
       let error = XCTestBootstrapError.error(forDescription: "Application with bundleID (\(bundleID)) was not launched by XCTestBootstrap")
       return FBFuture(error: error)
     }
@@ -283,11 +275,8 @@ public final class FBMacDevice: NSObject, FBiOSTarget {
   }
 
   public func uninstallApplication(withBundleID bundleID: String) -> FBFuture<NSNull> {
-    guard let bundle = bundleIDToProductMap[bundleID] as? FBBundleDescriptor else {
-      return unsafeBitCast(
-        XCTestBootstrapError.describe("Application with bundleID (\(bundleID)) was not installed by XCTestBootstrap").failFuture(),
-        to: FBFuture<NSNull>.self
-      )
+    guard let bundle = bundleIDToProductMap[bundleID] else {
+      return FBFuture(error: XCTestBootstrapError.describe("Application with bundleID (\(bundleID)) was not installed by XCTestBootstrap").build())
     }
 
     if !FileManager.default.fileExists(atPath: bundle.path) {
@@ -299,26 +288,25 @@ public final class FBMacDevice: NSObject, FBiOSTarget {
     } catch {
       return FBFuture(error: error)
     }
-    bundleIDToProductMap.removeObject(forKey: bundleID)
+    bundleIDToProductMap.removeValue(forKey: bundleID)
     return FBFuture(result: NSNull())
   }
 
   public func installedApplications() -> FBFuture<NSArray> {
     let result = NSMutableArray()
-    for bundleID in bundleIDToProductMap.allKeys as! [String] {
-      guard let existingBundle = bundleIDToProductMap[bundleID] as? FBBundleDescriptor else { continue }
+    for existingBundle in bundleIDToProductMap.values {
       do {
         let bundle = try FBBundleDescriptor.bundle(fromPath: existingBundle.path)
         result.add(FBInstalledApplication(bundle: bundle, installType: .mac, dataContainer: nil))
       } catch {
-        return unsafeBitCast(FBFuture<AnyObject>(error: error), to: FBFuture<NSArray>.self)
+        return FBFuture(error: error)
       }
     }
     return FBFuture(result: result)
   }
 
   public func installedApplication(withBundleID bundleID: String) -> FBFuture<FBInstalledApplication> {
-    guard let existingBundle = bundleIDToProductMap[bundleID] as? FBBundleDescriptor else {
+    guard let existingBundle = bundleIDToProductMap[bundleID] else {
       return FBFuture(error: NSError(domain: "FBMacDevice", code: 0, userInfo: [NSLocalizedDescriptionKey: "No bundle for \(bundleID)"]))
     }
     do {
@@ -331,33 +319,29 @@ public final class FBMacDevice: NSObject, FBiOSTarget {
   }
 
   public func killApplication(withBundleID bundleID: String) -> FBFuture<NSNull> {
-    guard let task = bundleIDToRunningTask[bundleID] as? FBSubprocess<AnyObject, AnyObject, AnyObject> else {
+    guard let task = bundleIDToRunningTask[bundleID] else {
       let error = XCTestBootstrapError.error(forDescription: "Application with bundleID (\(bundleID)) was not launched by XCTestBootstrap")
       return FBFuture(error: error)
     }
     task.sendSignal(SIGTERM, backingOffToKillWithTimeout: 2, logger: self.logger)
-    bundleIDToRunningTask.removeObject(forKey: bundleID)
+    bundleIDToRunningTask.removeValue(forKey: bundleID)
     return FBFuture(result: NSNull())
   }
 
   public func launchApplication(_ configuration: FBApplicationLaunchConfiguration) -> FBFuture<FBMacLaunchedApplication> {
-    guard let bundle = bundleIDToProductMap[configuration.bundleID] as? FBBundleDescriptor else {
-      return unsafeBitCast(
-        FBControlCoreError.describe("Could not find application for \(configuration.bundleID)").failFuture(),
-        to: FBFuture.self
-      )
+    guard let bundle = bundleIDToProductMap[configuration.bundleID] else {
+      return FBFuture(error: FBControlCoreError.describe("Could not find application for \(configuration.bundleID)").build())
     }
-    return unsafeBitCast(
-      unsafeBitCast(
-        FBProcessBuilder<AnyObject, AnyObject, AnyObject>.withLaunchPath(bundle.binary!.path, arguments: configuration.arguments)
-          .withEnvironment(configuration.environment)
-          .start(),
-        to: FBFuture<AnyObject>.self
-      )
+    guard let binary = bundle.binary else {
+      return FBFuture(error: FBControlCoreError.describe("Application bundle \(bundle.identifier) has no executable").build())
+    }
+    return FBProcessBuilder<AnyObject, AnyObject, AnyObject>.withLaunchPath(binary.path, arguments: configuration.arguments)
+      .withEnvironment(configuration.environment)
+      .start()
+      .retyped(FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>>.self)
       .onQueue(
         workQueue,
-        map: { taskObj -> AnyObject in
-          let task = taskObj as! FBSubprocess<AnyObject, AnyObject, AnyObject>
+        map: { task in
           self.bundleIDToRunningTask[bundle.identifier] = task
           return FBMacLaunchedApplication(
             bundleID: bundle.identifier,
@@ -365,14 +349,15 @@ public final class FBMacDevice: NSObject, FBiOSTarget {
             device: self,
             queue: self.workQueue
           )
-        }),
-      to: FBFuture.self
-    )
+        }
+      )
+      .retyped(FBFuture<FBMacLaunchedApplication>.self)
   }
 
   public func runTest(withLaunchConfiguration testLaunchConfiguration: FBTestLaunchConfiguration, reporter: AnyObject, logger: FBControlCoreLogger) -> FBFuture<NSNull> {
-    // swiftlint:disable:next force_cast
-    let typedReporter = reporter as! FBXCTestReporter
+    guard let typedReporter = reporter as? FBXCTestReporter else {
+      return FBFuture(error: FBControlCoreError.describe("Expected an FBXCTestReporter, got \(reporter)").build())
+    }
     return FBManagedTestRunStrategy.runToCompletion(
       withTarget: self,
       configuration: testLaunchConfiguration,
@@ -425,9 +410,12 @@ public final class FBMacDevice: NSObject, FBiOSTarget {
     do {
       bundleDescriptor = try FBBundleDescriptor.bundleWithFallbackIdentifier(fromPath: bundlePath)
     } catch {
-      return unsafeBitCast(FBFuture<AnyObject>(error: error), to: FBFuture<NSArray>.self)
+      return FBFuture(error: error)
     }
 
+    guard let binary = bundleDescriptor.binary else {
+      return FBFuture(error: FBControlCoreError.describe("Test bundle at \(bundlePath) has no binary to read architectures from").build())
+    }
     let configuration = FBListTestConfiguration(
       environment: [:],
       workingDirectory: auxillaryDirectory,
@@ -435,7 +423,7 @@ public final class FBMacDevice: NSObject, FBiOSTarget {
       runnerAppPath: appPath,
       waitForDebugger: false,
       timeout: timeout,
-      architectures: Set(bundleDescriptor.binary!.architectures.map { $0.rawValue })
+      architectures: Set(binary.architectures.map { $0.rawValue })
     )
 
     return FBListTestStrategy(target: self, configuration: configuration, logger: self.logger).listTests()
@@ -523,11 +511,8 @@ extension FBMacDevice: ApplicationCommands {
 
   public func runningApplications() async throws -> [String: pid_t] {
     var result: [String: pid_t] = [:]
-    // swiftlint:disable:next force_cast
-    for bundleId in bundleIDToRunningTask.allKeys as! [String] {
-      if let task = bundleIDToRunningTask[bundleId] as? FBSubprocess<AnyObject, AnyObject, AnyObject> {
-        result[bundleId] = task.processIdentifier
-      }
+    for (bundleId, task) in bundleIDToRunningTask {
+      result[bundleId] = task.processIdentifier
     }
     return result
   }
