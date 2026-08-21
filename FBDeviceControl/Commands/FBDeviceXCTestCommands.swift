@@ -9,6 +9,35 @@
 import Foundation
 import XCTestBootstrap
 
+/// The ways device test execution can fail, as data rather than assembled strings.
+public enum FBDeviceXCTestError: Error {
+  case deviceNil
+  case testManagerAlreadyRunning(configurationDescription: String)
+  case unexpectedReporter(reporterDescription: String)
+  case xctestrunCreationFailed(underlying: Error)
+  case xcodebuildNotFound(underlying: Error)
+  case deviceIdentifierUnavailable(deviceDescription: String)
+}
+
+extension FBDeviceXCTestError: LocalizedError {
+  public var errorDescription: String? {
+    switch self {
+    case .deviceNil:
+      return "Device is nil"
+    case let .testManagerAlreadyRunning(configurationDescription):
+      return "Cannot Start Test Manager with Configuration \(configurationDescription) as it is already running"
+    case let .unexpectedReporter(reporterDescription):
+      return "\(reporterDescription) is not an FBXCTestReporter"
+    case let .xctestrunCreationFailed(underlying):
+      return "Failed to create xctestrun file: \(underlying)"
+    case let .xcodebuildNotFound(underlying):
+      return "Failed to find xcodebuild: \(underlying)"
+    case let .deviceIdentifierUnavailable(deviceDescription):
+      return "No device identifier could be copied from \(deviceDescription)"
+    }
+  }
+}
+
 public class FBDeviceXCTestCommands: NSObject {
   private(set) weak var device: FBDevice?
   private(set) var workingDirectory: String
@@ -37,13 +66,13 @@ public class FBDeviceXCTestCommands: NSObject {
     logger: any FBControlCoreLogger
   ) async throws {
     if runningXcodeBuildOperation {
-      throw FBDeviceControlError.describe("Cannot Start Test Manager with Configuration \(testLaunchConfiguration) as it is already running").build()
+      throw FBDeviceXCTestError.testManagerAlreadyRunning(configurationDescription: String(describing: testLaunchConfiguration))
     }
     guard let device else {
-      throw FBDeviceControlError().describe("Device is nil").build()
+      throw FBDeviceXCTestError.deviceNil
     }
     guard let reporter = reporter as? FBXCTestReporter else {
-      throw FBDeviceControlError.describe("\(reporter) is not an FBXCTestReporter").build()
+      throw FBDeviceXCTestError.unexpectedReporter(reporterDescription: String(describing: reporter))
     }
     runningXcodeBuildOperation = true
     defer { runningXcodeBuildOperation = false }
@@ -61,14 +90,14 @@ public class FBDeviceXCTestCommands: NSObject {
     do {
       filePath = try FBXcodeBuildOperation.createXCTestRunFile(at: workingDirectory, fromConfiguration: configuration)
     } catch {
-      throw FBDeviceControlError.describe("Failed to create xctestrun file: \(error)").build()
+      throw FBDeviceXCTestError.xctestrunCreationFailed(underlying: error)
     }
     // Find the path to xcodebuild
     let xcodeBuildPath: String
     do {
       xcodeBuildPath = try FBXcodeBuildOperation.xcodeBuildPath()
     } catch {
-      throw FBDeviceControlError.describe("Failed to find xcodebuild: \(error)").build()
+      throw FBDeviceXCTestError.xcodebuildNotFound(underlying: error)
     }
     // This is to walk around a bug in xcodebuild. The UDID inside xcodebuild does not match
     // UDID reported by device properties (the difference is missing hyphen in xcodebuild).
@@ -76,10 +105,10 @@ public class FBDeviceXCTestCommands: NSObject {
     // id (e.g. we query for 00008101-001D296A2EE8001E, while xcodebuild have
     // 00008101001D296A2EE8001E).
     guard let device else {
-      throw FBDeviceControlError.describe("Device is nil").build()
+      throw FBDeviceXCTestError.deviceNil
     }
     guard let identifier = device.calls.CopyDeviceIdentifier(device.amDeviceRef) else {
-      throw FBDeviceControlError.describe("No device identifier could be copied from \(device)").build()
+      throw FBDeviceXCTestError.deviceIdentifierUnavailable(deviceDescription: String(describing: device))
     }
     let udid = identifier.takeRetainedValue() as String
 
