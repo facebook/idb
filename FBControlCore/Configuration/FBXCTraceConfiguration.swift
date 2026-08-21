@@ -7,6 +7,9 @@
 
 import Foundation
 
+public let DefaultXCTraceRecordOperationTimeLimit: TimeInterval = 4 * 60 * 60 // 4h
+public let DefaultXCTraceRecordStopTimeout: TimeInterval = 600
+
 public struct FBXCTraceRecordConfiguration {
 
   public let templateName: String

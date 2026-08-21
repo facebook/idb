@@ -29,6 +29,34 @@ private let KeyWorkingDirectory = "working_directory"
 
 private let kDefaultTimeoutValue: TimeInterval = 500
 
+// MARK: - Test Types
+
+/// The type of an xctest execution, as reported in ocunit-shim events.
+public struct FBXCTestType: RawRepresentable, Hashable, Sendable {
+  public let rawValue: String
+
+  public init(rawValue: String) {
+    self.rawValue = rawValue
+  }
+
+  public static let applicationTest = FBXCTestType(rawValue: "application-test")
+  public static let logicTest = FBXCTestType(rawValue: "logic-test")
+  public static let listTest = FBXCTestType(rawValue: "list-test")
+  public static let uiTest = FBXCTestType(rawValue: "ui-test")
+}
+
+/// Where a logic test's output is mirrored to, in addition to the reporter.
+public struct FBLogicTestMirrorLogs: OptionSet, Sendable {
+  public let rawValue: UInt
+
+  public init(rawValue: UInt) {
+    self.rawValue = rawValue
+  }
+
+  public static let fileLogs = FBLogicTestMirrorLogs(rawValue: 1 << 0)
+  public static let logger = FBLogicTestMirrorLogs(rawValue: 1 << 1)
+}
+
 // MARK: - FBXCTestConfiguration
 
 @objc public class FBXCTestConfiguration: NSObject, NSCopying {
@@ -39,7 +67,7 @@ private let kDefaultTimeoutValue: TimeInterval = 500
   @objc public let waitForDebugger: Bool
   @objc public let testTimeout: TimeInterval
 
-  @objc public var testType: FBXCTestType {
+  public var testType: FBXCTestType {
     fatalError("-[\(type(of: self)) testType] is abstract and should be overridden")
   }
 
@@ -145,7 +173,7 @@ private let kDefaultTimeoutValue: TimeInterval = 500
     super.init(environment: environment, workingDirectory: workingDirectory, testBundlePath: testBundlePath, waitForDebugger: waitForDebugger, timeout: timeout)
   }
 
-  @objc public override var testType: FBXCTestType {
+  public override var testType: FBXCTestType {
     FBXCTestType.listTest
   }
 
@@ -182,7 +210,7 @@ private let kDefaultTimeoutValue: TimeInterval = 500
     super.init(environment: environment, workingDirectory: workingDirectory, testBundlePath: testBundlePath, waitForDebugger: waitForDebugger, timeout: timeout)
   }
 
-  @objc public override var testType: FBXCTestType {
+  public override var testType: FBXCTestType {
     testTargetAppPath != nil ? FBXCTestType.uiTest : FBXCTestType.applicationTest
   }
 
@@ -203,18 +231,18 @@ private let kDefaultTimeoutValue: TimeInterval = 500
 @objc public final class FBLogicTestConfiguration: FBXCTestConfiguration {
 
   @objc public let testFilter: String?
-  @objc public let mirroring: FBLogicTestMirrorLogs
+  public let mirroring: FBLogicTestMirrorLogs
   @objc public let coverageConfiguration: FBCodeCoverageConfiguration?
   @objc public let binaryPath: String?
   @objc public let logDirectoryPath: String?
   @objc public let architectures: Set<String>
   @objc public let injectLibraries: [String]
 
-  @objc public static func configuration(withEnvironment environment: [String: String], workingDirectory: String, testBundlePath: String, waitForDebugger: Bool, timeout: TimeInterval, testFilter: String?, mirroring: FBLogicTestMirrorLogs, coverageConfiguration: FBCodeCoverageConfiguration?, binaryPath: String?, logDirectoryPath: String?, architectures: Set<String>) -> FBLogicTestConfiguration {
+  public static func configuration(withEnvironment environment: [String: String], workingDirectory: String, testBundlePath: String, waitForDebugger: Bool, timeout: TimeInterval, testFilter: String?, mirroring: FBLogicTestMirrorLogs, coverageConfiguration: FBCodeCoverageConfiguration?, binaryPath: String?, logDirectoryPath: String?, architectures: Set<String>) -> FBLogicTestConfiguration {
     FBLogicTestConfiguration(environment: environment, workingDirectory: workingDirectory, testBundlePath: testBundlePath, waitForDebugger: waitForDebugger, timeout: timeout, testFilter: testFilter, mirroring: mirroring, coverageConfiguration: coverageConfiguration, binaryPath: binaryPath, logDirectoryPath: logDirectoryPath, architectures: architectures)
   }
 
-  @objc public init(environment: [String: String], workingDirectory: String, testBundlePath: String, waitForDebugger: Bool, timeout: TimeInterval, testFilter: String?, mirroring: FBLogicTestMirrorLogs, coverageConfiguration: FBCodeCoverageConfiguration?, binaryPath: String?, logDirectoryPath: String?, architectures: Set<String>, injectLibraries: [String] = []) {
+  public init(environment: [String: String], workingDirectory: String, testBundlePath: String, waitForDebugger: Bool, timeout: TimeInterval, testFilter: String?, mirroring: FBLogicTestMirrorLogs, coverageConfiguration: FBCodeCoverageConfiguration?, binaryPath: String?, logDirectoryPath: String?, architectures: Set<String>, injectLibraries: [String] = []) {
     self.testFilter = testFilter
     self.mirroring = mirroring
     self.coverageConfiguration = coverageConfiguration
@@ -225,7 +253,7 @@ private let kDefaultTimeoutValue: TimeInterval = 500
     super.init(environment: environment, workingDirectory: workingDirectory, testBundlePath: testBundlePath, waitForDebugger: waitForDebugger, timeout: timeout)
   }
 
-  @objc public override var testType: FBXCTestType {
+  public override var testType: FBXCTestType {
     FBXCTestType.logicTest
   }
 
