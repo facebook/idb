@@ -15,11 +15,51 @@ These primitives support a number of scenarios:
 
 A read is served by one of three backends, selected with `--api` on `idb ui describe-all`, `idb ui describe-point` and `idb ui describe`. They differ in where the read runs, which determines how much of the screen they can see and how much each read costs.
 
+Every backend ultimately reads the same source of truth — the accessibility server running *inside* the target application — but they reach it along different paths:
+
+```mermaid
+flowchart TD
+    subgraph host["macOS host — idb_companion"]
+        selector["Backend selection: --api"]
+        ax["ax<br/>host-side translation"]
+        bridge["axbridge / axbridge-persistent<br/>in-guest reader"]
+    end
+    subgraph guest["Booted Simulator"]
+        sb["SimulatorBridge<br/>Apple's guest daemon"]
+        sfb["SimulatorFrameworkBridge<br/>idb's guest helper"]
+        app["Application's in-process<br/>accessibility server"]
+    end
+    selector --> ax
+    selector --> bridge
+    ax -- "XPC, per attribute" --> sb
+    bridge -- "spawn, then Unix domain socket" --> sfb
+    sb -- mach --> app
+    sfb -- mach --> app
+```
+
 ### `--api ax` — the accessibility backend
 
 The default. The companion asks the Simulator's accessibility server, from the host, for the frontmost application's elements.
 
 This is the same view an assistive technology gets. It is cheap and needs nothing installed in the Simulator, but composed views report as single elements: a view that draws its own content and describes itself with a single label — a custom collection view cell, a composed row of text and images — is reported as that one element, not as the parts it was built from.
+
+The cost model follows from where the read runs: the translation layer on the host fetches lazily, so every element and attribute is its own host-to-guest round trip.
+
+```mermaid
+sequenceDiagram
+    participant H as Companion (host)
+    participant CS as CoreSimulator (XPC)
+    participant SB as SimulatorBridge (guest)
+    participant A as App accessibility server
+    loop per element / attribute
+        H->>CS: accessibility request
+        CS->>SB: forward
+        SB->>A: read attribute
+        A-->>SB: value
+        SB-->>CS: response
+        CS-->>H: response
+    end
+```
 
 ### `--api axbridge` — the guest reader
 
@@ -55,9 +95,24 @@ Both axbridge backends ask the application for the whole tree in **one** call. T
 
 On a 167-element Settings screen the one call costs 1 mach round trip instead of 167, for the same document. On an idle screen the read time is comparable for either traversal (roughly 30ms); the saving is the round trips, so it grows with tree size and with how busy the application is, and it is what a warm `--api axbridge-persistent` reader benefits from — on a one-shot `--api axbridge` read the spawn still dominates.
 
+```mermaid
+sequenceDiagram
+    participant H as Companion (host)
+    participant G as SimulatorFrameworkBridge (guest)
+    participant A as App accessibility server
+    Note over H,G: axbridge spawns the reader per read<br/>axbridge-persistent connects to a warm serve process
+    H->>G: describe request — one host/guest round trip
+    G->>A: resolve the frontmost application
+    loop walk, entirely in-guest
+        G->>A: read attributes
+        A-->>G: values
+    end
+    G-->>H: the whole serialized tree
+```
+
 **A read that asks about reachability takes the per-node walk instead.** The application hit-tests every node to answer `interactable` or `occluded_by`, and a single call asking for them times out rather than answering: on that same idle screen it fails every time at around four seconds, where the walk answers in about 1.6s. Nothing is needed from the caller — such a read reports `traversal: view-hierarchy`. A caller who explicitly asks for the single fetch together with a reachability key is refused with an error naming the keys, rather than left to that timeout.
 
-`--filter interactable` does not put a read on that path. The filter matches on label, identifier and role, none of which are hit-tested, so a filtered read keeps the one-call fetch.
+Narrowing a read with `--key` does not put it on that path unless a reachability key is among the keys asked for — the ordinary attributes are not hit-tested.
 
 `--api ax` is unaffected. It fetches attribute by attribute over XPC and reports no `traversal` at all.
 
@@ -130,8 +185,8 @@ $ idb ui describe General --format complete | jq '{backend, truncated, target, s
 | `truncated` | Whether the read hit the depth or node bounds and stopped short of the whole tree |
 | `modal` | The blocking alert on screen, if there is one: whether it belongs to the system or the app, its element type, and its title |
 | `automation` | The automation mode the read ran in, and whether this read asserted it — see [Automation mode](#automation-mode) |
-| `coverage` | How much of the screen the read's element frames cover, along several dimensions |
-| `profile` | Where the read spent its time, and how many calls it took — see [Reading `profile`](#reading-profile) |
+| `coverage` | How much of the screen the read's element frames cover, along several dimensions. Collected when `--collect-frame-coverage` is passed |
+| `profile` | Where the read spent its time, and how many calls it took. Collected when `--profile` is passed — see [Reading `profile`](#reading-profile) |
 
 This format is the easiest one to consume. Its **key set is fixed**: every field is always present, `null` where it does not apply, so one parser handles every read command, and `target` — not the shape — says which command produced the document. Its **element attribute names are the clean ones**: `label` rather than `AXLabel`, `identifier` rather than `AXUniqueId`. Two attributes that restated another are absent: the stringified `AXFrame` (`frame` carries the same rectangle structurally) and the raw `role` (`type` is its normalised form).
 
@@ -145,7 +200,7 @@ warning: the companion does not support --format complete (it predates format se
 
 ### Reading `profile`
 
-Every read reports a profile — there is no flag to turn it on. It is present on the `complete` format only.
+Pass `--profile` on `idb ui describe-all` or `idb ui describe-point` to collect one. It is reported on the `complete` format only — the other formats have nowhere to carry it.
 
 The core is the same on every backend, so two reads served by different backends can be compared:
 
@@ -213,7 +268,7 @@ idb ui describe-all --format complete
 idb ui describe-point 201 286 --key interactable
 ```
 
-The frames from the first give you the point for the second. `--filter interactable` on the periodic read matches on label, identifier and role, which costs nothing and does not answer whether an element is covered; the point read answers that for the one element you are about to act on.
+The frames from the first give you the point for the second; the point read answers, for the one element you are about to act on, whether it is actually reachable.
 
 **Request reachability per interaction, not per frame.** `isVisible` and `visiblePoint` are priced per node, so a poll loop that asks for them hit-tests the whole tree on every tick — a one-second poll over a tree that takes two seconds to hit-test can never keep up. Fetch reachability when about to act on a specific element; keep the periodic read on the ordinary key set.
 

@@ -110,6 +110,8 @@ idb ui describe com.apple.settings.general --match-key AXUniqueId
 | `--format {default,nested,complete}` | all three | The output format. See [Accessibility](accessibility.mdx) |
 | `--nested` | all three | Deprecated alias for `--format nested` |
 | `--key KEY` | `describe-all`, `describe-point` | Report only this attribute; repeatable |
+| `--profile` | `describe-all`, `describe-point` | Collect timings and counts for the read, reported in the `complete` format. See [Accessibility](accessibility.mdx#reading-profile) |
+| `--collect-frame-coverage` | `describe-all`, `describe-point` | Collect screen-coverage ratios for the read's element frames, reported in the `complete` format |
 | `--match-key KEY` | `describe` | Attribute the marker is matched against, default `AXLabel` |
 | `--depth N` | `describe` | Maximum tree depth searched for the marker, default `10` |
 
@@ -120,6 +122,15 @@ These commands resolve a target through the accessibility system and then perfor
 ### `idb ui tap`
 
 `tap` can be either a HID operation or an accessibility operation, depending on how the target is addressed:
+
+```mermaid
+flowchart TD
+    tap["idb ui tap TARGET"] --> kind{"How is the target addressed?"}
+    kind -- "X Y coordinates" --> hid["Synthesized touch — HID"]
+    kind -- "X Y with --api ax" --> press["Accessibility press"]
+    kind -- "a marker" --> press
+    kind -- "any target with --expected-value" --> press
+```
 
 ```
 # Coordinate tap, delivered as a synthesized touch
