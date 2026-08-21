@@ -118,29 +118,13 @@ private extension FBVideoStreamCodec {
   }
 }
 
-/// Render an `OSType` four-char code as its ASCII string (e.g. `kCVPixelFormatType_32BGRA` → "BGRA"),
-/// matching the diagnostic `format` string the ObjC code produced via `UTCreateStringForOSType`
-/// (which is deprecated). Falls back to the numeric value for non-printable codes.
-private func fourCharCodeString(_ code: OSType) -> String {
-  let bytes: [UInt8] = [
-    UInt8((code >> 24) & 0xFF),
-    UInt8((code >> 16) & 0xFF),
-    UInt8((code >> 8) & 0xFF),
-    UInt8(code & 0xFF),
-  ]
-  if bytes.allSatisfy({ $0 >= 0x20 && $0 < 0x7F }) {
-    return String(bytes: bytes, encoding: .ascii) ?? String(code)
-  }
-  return String(code)
-}
-
 private func bitmapStreamPixelBufferAttributes(from pixelBuffer: CVPixelBuffer) -> [String: Any] {
   let width = CVPixelBufferGetWidth(pixelBuffer)
   let height = CVPixelBufferGetHeight(pixelBuffer)
   let frameSize = CVPixelBufferGetDataSize(pixelBuffer)
   let rowSize = CVPixelBufferGetBytesPerRow(pixelBuffer)
   let pixelFormat = CVPixelBufferGetPixelFormatType(pixelBuffer)
-  let pixelFormatString = fourCharCodeString(pixelFormat)
+  let pixelFormatString = pixelFormat.fourCharCodeString
 
   var columnLeft = 0
   var columnRight = 0
