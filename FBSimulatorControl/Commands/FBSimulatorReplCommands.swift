@@ -9,6 +9,23 @@ import FBControlCore
 import Foundation
 @preconcurrency import XCTestBootstrap
 
+/// The ways REPL session setup can fail, as data rather than assembled strings.
+public enum FBSimulatorReplError: Error {
+  case bundledResourceMissing(item: String)
+  case socketDirectoryCreationFailed(path: String)
+}
+
+extension FBSimulatorReplError: LocalizedError {
+  public var errorDescription: String? {
+    switch self {
+    case let .bundledResourceMissing(item):
+      return "\(item) not found in the companion Resources directory"
+    case let .socketDirectoryCreationFailed(path):
+      return "Could not create a private REPL socket directory at \(path)"
+    }
+  }
+}
+
 public final class FBSimulatorReplCommands: NSObject {
 
   // MARK: - Properties
@@ -39,7 +56,7 @@ public final class FBSimulatorReplCommands: NSObject {
     // so injected code reaches the API through `IDB`; the API code itself is linked
     // into libRepl, which is injected).
     guard let replDylibPath = BundledResources.path(forItem: "libRepl-iOS.dylib") else {
-      throw FBSimulatorError.describe("libRepl-iOS.dylib not found in the companion Resources directory").build()
+      throw FBSimulatorReplError.bundledResourceMissing(item: "libRepl-iOS.dylib")
     }
     let idbInterfacePath = BundledResources.path(forItem: "IDBAPI.swiftinterface")
     let extraInterfacePaths = idbInterfacePath.map { [$0] } ?? []
@@ -87,10 +104,10 @@ public final class FBSimulatorReplCommands: NSObject {
     // .swiftinterface (reported to the driver, which auto-imports it so injected
     // code reaches the API through `IDB`).
     guard let bridgePath = BundledResources.path(forItem: "SimulatorFrameworkBridge") else {
-      throw FBSimulatorError.describe("SimulatorFrameworkBridge binary not found in the companion Resources directory").build()
+      throw FBSimulatorReplError.bundledResourceMissing(item: "SimulatorFrameworkBridge binary")
     }
     guard let libReplPath = BundledResources.path(forItem: "libRepl-iOS.dylib") else {
-      throw FBSimulatorError.describe("libRepl-iOS.dylib not found in the companion Resources directory").build()
+      throw FBSimulatorReplError.bundledResourceMissing(item: "libRepl-iOS.dylib")
     }
     let idbInterfacePath = BundledResources.path(forItem: "IDBAPI.swiftinterface")
 
@@ -120,7 +137,7 @@ public final class FBSimulatorReplCommands: NSObject {
       throw FBWeakTargetError.simulator
     }
     guard let replDylibPath = BundledResources.path(forItem: "libRepl-iOS.dylib") else {
-      throw FBSimulatorError.describe("libRepl-iOS.dylib not found in the companion Resources directory").build()
+      throw FBSimulatorReplError.bundledResourceMissing(item: "libRepl-iOS.dylib")
     }
     return [
       "DYLD_INSERT_LIBRARIES": replDylibPath,
@@ -147,7 +164,7 @@ public final class FBSimulatorReplCommands: NSObject {
     // instead of relaunching. Hashed to a fixed length that fits sockaddr_un, and
     // placed in a per-user 0700 directory so only the owning user can reach it.
     guard ensureReplSocketDirectory(replSocketDirectory()) else {
-      throw FBSimulatorError.describe("Could not create a private REPL socket directory at \(replSocketDirectory())").build()
+      throw FBSimulatorReplError.socketDirectoryCreationFailed(path: replSocketDirectory())
     }
     let socketPath = replSocketPath(udid: simulator.udid, bundleID: bundleID)
 
