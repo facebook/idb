@@ -31,8 +31,13 @@ final class FBJSONTestReporterTests: XCTestCase {
 
   private func object(atLine index: Int) -> [String: Any] {
     let line = lines[index]
-    let data = line.data(using: .utf8)!
-    return try! JSONSerialization.jsonObject(with: data) as! [String: Any]
+    guard let data = line.data(using: .utf8),
+      let object = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
+    else {
+      XCTFail("Line \(index) is not a JSON object: \(line)")
+      return [:]
+    }
+    return object
   }
 
   subscript(index: Int) -> [String: Any] {

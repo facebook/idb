@@ -108,7 +108,7 @@ final class FBAFCConnectionTests: XCTestCase {
     ]
   }
 
-  private func setUpConnection() -> FBAFCConnection {
+  private func setUpConnection() throws -> FBAFCConnection {
     var afcCalls = AFCCalls()
 
     afcCalls.ConnectionCopyLastErrorInfo = { _ in
@@ -247,9 +247,9 @@ final class FBAFCConnectionTests: XCTestCase {
     // ./foo.txt
     // ./bar
     // ./bar/baz.empty
-    try! FileManager.default.createDirectory(atPath: rootHostDirectory, withIntermediateDirectories: true, attributes: nil)
-    try! FileManager.default.createDirectory(atPath: barHostDirectory, withIntermediateDirectories: true, attributes: nil)
-    try! (FooFileContents as NSString).write(toFile: fooHostFilePath, atomically: true, encoding: String.Encoding.ascii.rawValue)
+    try FileManager.default.createDirectory(atPath: rootHostDirectory, withIntermediateDirectories: true, attributes: nil)
+    try FileManager.default.createDirectory(atPath: barHostDirectory, withIntermediateDirectories: true, attributes: nil)
+    try (FooFileContents as NSString).write(toFile: fooHostFilePath, atomically: true, encoding: String.Encoding.ascii.rawValue)
     FileManager.default.createFile(atPath: bazHostFilePath, contents: Data(), attributes: nil)
 
     return FBAFCConnection(connection: NSNull(), calls: afcCalls, logger: nil)
@@ -276,7 +276,7 @@ final class FBAFCConnectionTests: XCTestCase {
   // MARK: - Tests
 
   func testRootDirectoryList() throws {
-    let connection = setUpConnection()
+    let connection = try setUpConnection()
     addVirtualizedRemoteFiles()
     let actual = try connection.contents(ofDirectory: "")
     let expected: Set<String> = ["remote_foo.txt", "remote_empty", "remote_bar"]
@@ -284,41 +284,41 @@ final class FBAFCConnectionTests: XCTestCase {
   }
 
   func testNestedDirectoryList() throws {
-    let connection = setUpConnection()
+    let connection = try setUpConnection()
     addVirtualizedRemoteFiles()
     let actual = try connection.contents(ofDirectory: "remote_bar")
     let expected: Set<String> = ["some.txt", "other.txt"]
     XCTAssertEqual(Set(actual), expected)
   }
 
-  func testMissingDirectoryFail() {
-    let connection = setUpConnection()
+  func testMissingDirectoryFail() throws {
+    let connection = try setUpConnection()
     addVirtualizedRemoteFiles()
     XCTAssertThrowsError(try connection.contents(ofDirectory: "aaaaaa"))
   }
 
   func testReadsFile() throws {
-    let connection = setUpConnection()
+    let connection = try setUpConnection()
     addVirtualizedRemoteFiles()
     let expected = "some foo".data(using: .ascii)
     let actual = try connection.contents(ofPath: "remote_foo.txt")
     XCTAssertEqual(expected, actual)
   }
 
-  func testFailsToReadDirectory() {
-    let connection = setUpConnection()
+  func testFailsToReadDirectory() throws {
+    let connection = try setUpConnection()
     addVirtualizedRemoteFiles()
     XCTAssertThrowsError(try connection.contents(ofPath: "remote_bar"))
   }
 
-  func testFailsToReadMissingFile() {
-    let connection = setUpConnection()
+  func testFailsToReadMissingFile() throws {
+    let connection = try setUpConnection()
     addVirtualizedRemoteFiles()
     XCTAssertThrowsError(try connection.contents(ofPath: "nope"))
   }
 
   func testCopySingleFileToRoot() throws {
-    let connection = setUpConnection()
+    let connection = try setUpConnection()
     try connection.copy(fromHost: fooHostFilePath, toContainerPath: "")
 
     assertExpectedDirectoryCreate([])
@@ -328,7 +328,7 @@ final class FBAFCConnectionTests: XCTestCase {
   }
 
   func testCopyFileToContainerPath() throws {
-    let connection = setUpConnection()
+    let connection = try setUpConnection()
     try connection.copy(fromHost: fooHostFilePath, toContainerPath: "bing")
 
     assertExpectedDirectoryCreate([])
@@ -338,7 +338,7 @@ final class FBAFCConnectionTests: XCTestCase {
   }
 
   func testCopyItemsFromHostDirectory() throws {
-    let connection = setUpConnection()
+    let connection = try setUpConnection()
     try connection.copy(fromHost: rootHostDirectory, toContainerPath: "")
 
     let dirName = (rootHostDirectory as NSString).lastPathComponent
@@ -353,28 +353,28 @@ final class FBAFCConnectionTests: XCTestCase {
   }
 
   func testCreateDirectoryAtRoot() throws {
-    let connection = setUpConnection()
+    let connection = try setUpConnection()
     try connection.createDirectory("bing")
 
     assertExpectedDirectoryCreate(["bing"])
   }
 
   func testCreateDirectoryInsideDirectory() throws {
-    let connection = setUpConnection()
+    let connection = try setUpConnection()
     try connection.createDirectory("bar/bing")
 
     assertExpectedDirectoryCreate(["bar/bing"])
   }
 
   func testRenamePath() throws {
-    let connection = setUpConnection()
+    let connection = try setUpConnection()
     try connection.renamePath("foo.txt", destination: "bar.txt")
 
     assertRenameFiles([["foo.txt", "bar.txt"]])
   }
 
   func testRemovePath() throws {
-    let connection = setUpConnection()
+    let connection = try setUpConnection()
     try connection.removePath("foo.txt", recursively: true)
 
     assertRemoveFiles(["foo.txt"])

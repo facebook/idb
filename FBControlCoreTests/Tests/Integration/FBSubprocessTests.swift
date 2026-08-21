@@ -11,9 +11,9 @@ import XCTest
 // swiftlint:disable force_cast
 final class FBSubprocessTests: XCTestCase {
 
-  private func startSynchronously<S: AnyObject, O: AnyObject, E: AnyObject>(_ builder: FBProcessBuilder<S, O, E>) -> FBSubprocess<S, O, E> {
+  private func startSynchronously<S: AnyObject, O: AnyObject, E: AnyObject>(_ builder: FBProcessBuilder<S, O, E>) throws -> FBSubprocess<S, O, E> {
     let future = builder.start()
-    return try! future.`await`()
+    return try future.`await`()
   }
 
   private func runAndWaitForTaskFuture<S: AnyObject, O: AnyObject, E: AnyObject>(_ future: FBFuture<FBSubprocess<S, O, E>>) -> FBSubprocess<S, O, E> {
@@ -75,7 +75,7 @@ final class FBSubprocessTests: XCTestCase {
 
   func testBase64Matches() throws {
     let filePath = TestFixtures.assetsdCrashPathWithCustomDeviceSet
-    let expected = (try! Data(contentsOf: URL(fileURLWithPath: filePath))).base64EncodedString(options: [])
+    let expected = (try Data(contentsOf: URL(fileURLWithPath: filePath))).base64EncodedString(options: [])
 
     let futureProcess = FBProcessBuilder<NSNull, NSData, NSData>
       .withLaunchPath("/usr/bin/base64", arguments: ["-i", filePath])
@@ -190,7 +190,7 @@ final class FBSubprocessTests: XCTestCase {
   }
 
   func testUpdatesStateWithAsynchronousTermination() throws {
-    let process = startSynchronously(
+    let process = try startSynchronously(
       FBProcessBuilder<NSNull, NSData, NSData>.withLaunchPath("/bin/sleep", arguments: ["1"])
     )
 
@@ -198,7 +198,7 @@ final class FBSubprocessTests: XCTestCase {
   }
 
   func testAwaitingTerminationOfShortLivedProcess() throws {
-    let process = startSynchronously(
+    let process = try startSynchronously(
       FBProcessBuilder<NSNull, NSData, NSData>.withLaunchPath("/bin/sleep", arguments: ["0"])
     )
 
@@ -225,7 +225,7 @@ final class FBSubprocessTests: XCTestCase {
   func testAwaitingTerminationDoesNotTerminateStalledTask() throws {
     let expectation = XCTestExpectation(description: "Termination Handler Called")
     expectation.isInverted = true
-    let process = startSynchronously(
+    let process = try startSynchronously(
       FBProcessBuilder<NSNull, NSData, NSData>.withLaunchPath("/bin/sleep", arguments: ["1000"])
     )
 
@@ -246,7 +246,7 @@ final class FBSubprocessTests: XCTestCase {
   func testInputReading() throws {
     let expected = "FOO BAR BAZ".data(using: .utf8)!
 
-    let process = startSynchronously(
+    let process = try startSynchronously(
       FBProcessBuilder<NSNull, NSData, NSData>
         .withLaunchPath("/bin/cat", arguments: [])
         .withStdInConnected()
@@ -270,7 +270,7 @@ final class FBSubprocessTests: XCTestCase {
     let input = FBProcessInput<OutputStream>.fromStream()
     let stream: OutputStream = input.contents
 
-    let process = startSynchronously(
+    let process = try startSynchronously(
       FBProcessBuilder<NSNull, NSData, NSData>
         .withLaunchPath("/bin/cat", arguments: [])
         .withStdIn(unsafeBitCast(input, to: FBProcessInput<AnyObject>.self))
@@ -295,7 +295,7 @@ final class FBSubprocessTests: XCTestCase {
     let input = FBProcessInput<OutputStream>.fromStream()
     let stream: OutputStream = input.contents
 
-    let process = startSynchronously(
+    let process = try startSynchronously(
       FBProcessBuilder<NSNull, NSData, NSData>
         .withLaunchPath("/bin/cat", arguments: [])
         .withStdIn(unsafeBitCast(input, to: FBProcessInput<AnyObject>.self))
@@ -321,7 +321,7 @@ final class FBSubprocessTests: XCTestCase {
     let input = FBProcessInput<OutputStream>.fromStream()
     let stream = input.contents
 
-    let process = startSynchronously(
+    let process = try startSynchronously(
       FBProcessBuilder<NSNull, NSData, NSData>
         .withLaunchPath("/usr/bin/true", arguments: [])
         .withStdIn(unsafeBitCast(input, to: FBProcessInput<AnyObject>.self))
@@ -341,7 +341,7 @@ final class FBSubprocessTests: XCTestCase {
   func testOutputStream() throws {
     let expected = "FOO BAR BAZ"
 
-    let process = startSynchronously(
+    let process = try startSynchronously(
       FBProcessBuilder<NSNull, NSData, NSData>
         .withLaunchPath("/bin/echo", arguments: ["FOO BAR BAZ"])
         .withStdErrToDevNull()
@@ -369,7 +369,7 @@ final class FBSubprocessTests: XCTestCase {
   func testInputFromData() throws {
     let expected = "FOO BAR BAZ".data(using: .utf8)!
 
-    let process = startSynchronously(
+    let process = try startSynchronously(
       FBProcessBuilder<NSNull, NSData, NSData>
         .withLaunchPath("/bin/cat", arguments: [])
         .withStdIn(from: expected)
@@ -383,7 +383,7 @@ final class FBSubprocessTests: XCTestCase {
   }
 
   func testSendingSIGINT() throws {
-    let process = startSynchronously(
+    let process = try startSynchronously(
       FBProcessBuilder<NSNull, NSData, NSData>.withLaunchPath("/bin/sleep", arguments: ["1000000"])
     )
 
@@ -398,7 +398,7 @@ final class FBSubprocessTests: XCTestCase {
   }
 
   func testSendingSIGKILL() throws {
-    let process = startSynchronously(
+    let process = try startSynchronously(
       FBProcessBuilder<NSNull, NSData, NSData>.withLaunchPath("/bin/sleep", arguments: ["1000000"])
     )
 
@@ -421,7 +421,7 @@ final class FBSubprocessTests: XCTestCase {
     // shell instead, have it announce readiness on stdout, and `exec` so the
     // sleeping process keeps the pid that already ignores SIGHUP.
     let ignoringHUP = XCTestExpectation(description: "Child Has Ignored SIGHUP")
-    let process = startSynchronously(
+    let process = try startSynchronously(
       FBProcessBuilder<NSNull, NSData, NSData>
         .withLaunchPath("/bin/sh", arguments: ["-c", "trap '' HUP; echo ready; exec /bin/sleep 10000000"])
         .withStdOutLineReader { line in

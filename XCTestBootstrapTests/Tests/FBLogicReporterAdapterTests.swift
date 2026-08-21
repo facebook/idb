@@ -34,24 +34,24 @@ final class FBLogicReporterAdapterTests: XCTestCase {
     adapter = FBLogicReporterAdapter(reporter: reporterDouble, logger: nil)
   }
 
-  func test_LogicReporter_testSuiteDidStart() {
-    let data = try! JSONSerialization.data(withJSONObject: beginTestSuiteDict())
+  func test_LogicReporter_testSuiteDidStart() throws {
+    let data = try JSONSerialization.data(withJSONObject: beginTestSuiteDict())
 
     adapter.handleEventJSONData(data)
     XCTAssertEqual(reporterDouble.startedSuites, ["NARANJA"])
   }
 
-  func test_LogicReporter_testCaseDidStart() {
+  func test_LogicReporter_testCaseDidStart() throws {
     var event = testEventDict()
     event["event"] = "begin-test"
 
-    let data = try! JSONSerialization.data(withJSONObject: event)
+    let data = try JSONSerialization.data(withJSONObject: event)
     adapter.handleEventJSONData(data)
 
     XCTAssertEqual(reporterDouble.startedTests, [[event["className"] as! String, event["methodName"] as! String]])
   }
 
-  func test_LogicReporter_testCaseDidFail_fromFailure() {
+  func test_LogicReporter_testCaseDidFail_fromFailure() throws {
     var event = testEventDict()
     let duration: TimeInterval = 0.0050642
     event["totalDuration"] = duration
@@ -69,13 +69,13 @@ final class FBLogicReporterAdapterTests: XCTestCase {
       ]
     ]
 
-    let data = try! JSONSerialization.data(withJSONObject: event)
+    let data = try JSONSerialization.data(withJSONObject: event)
     adapter.handleEventJSONData(data)
 
     XCTAssertEqual(reporterDouble.failedTests, [[event["className"] as! String, event["methodName"] as! String]])
   }
 
-  func test_LogicReporter_testCaseDidFail_fromError() {
+  func test_LogicReporter_testCaseDidFail_fromError() throws {
     var event = testEventDict()
     let duration: TimeInterval = 0.0050642
     event["totalDuration"] = duration
@@ -93,13 +93,13 @@ final class FBLogicReporterAdapterTests: XCTestCase {
       ]
     ]
 
-    let data = try! JSONSerialization.data(withJSONObject: event)
+    let data = try JSONSerialization.data(withJSONObject: event)
     adapter.handleEventJSONData(data)
 
     XCTAssertEqual(reporterDouble.failedTests, [[event["className"] as! String, event["methodName"] as! String]])
   }
 
-  func test_LogicReporter_testCaseDidSucceed() {
+  func test_LogicReporter_testCaseDidSucceed() throws {
     var event = testEventDict()
     event["event"] = "begin-event"
     let duration: TimeInterval = 0.0050642
@@ -107,13 +107,13 @@ final class FBLogicReporterAdapterTests: XCTestCase {
     event["event"] = "end-test"
     event["result"] = "success"
 
-    let data = try! JSONSerialization.data(withJSONObject: event)
+    let data = try JSONSerialization.data(withJSONObject: event)
     adapter.handleEventJSONData(data)
 
     XCTAssertEqual(reporterDouble.passedTests, [[event["className"] as! String, event["methodName"] as! String]])
   }
 
-  func test_LogicReporter_testSuiteDidEnd() {
+  func test_LogicReporter_testSuiteDidEnd() throws {
     let dict: [String: Any] = [
       "event": "end-test-suite",
       "suite": "Toplevel Test Suite",
@@ -125,7 +125,7 @@ final class FBLogicReporterAdapterTests: XCTestCase {
       "unexpectedExceptionCount": 0,
     ]
 
-    let data = try! JSONSerialization.data(withJSONObject: dict)
+    let data = try JSONSerialization.data(withJSONObject: dict)
     adapter.handleEventJSONData(data)
 
     XCTAssertEqual(reporterDouble.endedSuites, ["Toplevel Test Suite"])
