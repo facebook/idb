@@ -7,6 +7,35 @@
 
 import Foundation
 
+/// The ways weak-framework loading can fail, as data rather than assembled strings.
+public enum FBWeakFrameworkError: Error {
+  case missingRequiredClass(className: String, frameworkName: String)
+  case rootUserForbidden(relativePath: String)
+  case fileMissing(path: String)
+  case bundleLoadFailed(path: String)
+  case bundleUnavailable(className: String)
+  case loadedFromWrongDirectory(frameworkName: String, bundlePath: String, basePath: String)
+}
+
+extension FBWeakFrameworkError: LocalizedError {
+  public var errorDescription: String? {
+    switch self {
+    case let .missingRequiredClass(className, frameworkName):
+      return "Missing \(className) class from \(frameworkName) framework"
+    case let .rootUserForbidden(relativePath):
+      return "\(relativePath) cannot be loaded from the root user. Don't run this as root."
+    case let .fileMissing(path):
+      return "Attempting to load a file at path '\(path)', but it does not exist"
+    case let .bundleLoadFailed(path):
+      return "Failed to load the bundle for path \(path)"
+    case let .bundleUnavailable(className):
+      return "Could not obtain Framework bundle for class named \(className)"
+    case let .loadedFromWrongDirectory(frameworkName, bundlePath, basePath):
+      return "Expected Framework \(frameworkName) to be loaded for Developer Directory at path \(bundlePath), but was loaded from \(basePath)"
+    }
+  }
+}
+
 @objc(FBWeakFramework)
 public class FBWeakFramework: NSObject {
 
@@ -67,7 +96,7 @@ public class FBWeakFramework: NSObject {
   private func allRequiredClassesExist() throws {
     for requiredClassName in requiredClassNames {
       if NSClassFromString(requiredClassName) == nil {
-        throw FBControlCoreError.describe("Missing \(requiredClassName) class from \(name) framework").build()
+        throw FBWeakFrameworkError.missingRequiredClass(className: requiredClassName, frameworkName: name)
       }
     }
   }
@@ -82,17 +111,17 @@ public class FBWeakFramework: NSObject {
 
     // Check root permission
     if NSUserName() == "root" && !rootPermitted {
-      throw FBControlCoreError.describe("\(relativePath) cannot be loaded from the root user. Don't run this as root.").build()
+      throw FBWeakFrameworkError.rootUserForbidden(relativePath: relativePath)
     }
 
     // Load framework
     let path = ((relativeDirectory as NSString).appendingPathComponent(relativePath) as NSString).standardizingPath
     if !FileManager.default.fileExists(atPath: path) {
-      throw FBControlCoreError.describe("Attempting to load a file at path '\(path)', but it does not exist").build()
+      throw FBWeakFrameworkError.fileMissing(path: path)
     }
 
     guard let bundle = Bundle(path: path) else {
-      throw FBControlCoreError.describe("Failed to load the bundle for path \(path)").build()
+      throw FBWeakFrameworkError.bundleLoadFailed(path: path)
     }
 
     logger?.debug().log("\(name): Loading from \(path) ")
@@ -111,7 +140,7 @@ public class FBWeakFramework: NSObject {
 
   private func verifyRelativeDirectory(forPrivateClass className: String, logger: (any FBControlCoreLogger)?) throws {
     guard let cls = NSClassFromString(className) else {
-      throw FBControlCoreError.describe("Could not obtain Framework bundle for class named \(className)").build()
+      throw FBWeakFrameworkError.bundleUnavailable(className: className)
     }
     let bundle = Bundle(for: cls)
 
@@ -119,7 +148,7 @@ public class FBWeakFramework: NSObject {
     // The common base path is: /Applications/Xcode.app
     let commonBasePath = ((basePath as NSString).deletingLastPathComponent as NSString).deletingLastPathComponent
     if !bundle.bundlePath.hasPrefix(commonBasePath) {
-      throw FBControlCoreError.describe("Expected Framework \((bundle.bundlePath as NSString).lastPathComponent) to be loaded for Developer Directory at path \(bundle.bundlePath), but was loaded from \(basePath)").build()
+      throw FBWeakFrameworkError.loadedFromWrongDirectory(frameworkName: (bundle.bundlePath as NSString).lastPathComponent, bundlePath: bundle.bundlePath, basePath: basePath)
     }
     logger?.debug().log("\(name): \(className) has correct path of \(commonBasePath)")
   }
