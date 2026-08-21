@@ -28,8 +28,10 @@ public final class FBSimulatorSet: NSObject, FBiOSTargetSet {
   // startup, delegate notification, description). Unsynchronized, the swap
   // races iteration in concurrent callers.
   private let simulatorsLock = NSLock()
-  private var inflationStrategy: FBSimulatorInflationStrategy!
-  private var notificationUpdateStrategy: FBSimulatorNotificationUpdateStrategy!
+  private lazy var inflationStrategy = FBSimulatorInflationStrategy.strategy(for: self)
+
+  // Held only so that the strategy's notifier stays registered for the lifetime of the set; it is never read.
+  private var notificationUpdateStrategy: FBSimulatorNotificationUpdateStrategy?
 
   // MARK: - Initializers
 
@@ -53,7 +55,6 @@ public final class FBSimulatorSet: NSObject, FBiOSTargetSet {
     self.asyncQueue = DispatchQueue.global(qos: .default)
     self._allSimulators = []
     super.init()
-    self.inflationStrategy = FBSimulatorInflationStrategy.strategy(for: self)
     self.notificationUpdateStrategy = FBSimulatorNotificationUpdateStrategy.strategy(with: self)
   }
 

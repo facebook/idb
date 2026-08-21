@@ -23,7 +23,6 @@ public final class FBDataDownloadInput: NSObject, @unchecked Sendable {
   }
 
   private let completedFuture: FBMutableFuture<NSNull>
-  private var urlSessionTask: URLSessionTask!
   private let logger: FBControlCoreLogger
 
   public static func dataDownload(withURL url: URL, logger: FBControlCoreLogger) -> FBDataDownloadInput {
@@ -33,21 +32,25 @@ public final class FBDataDownloadInput: NSObject, @unchecked Sendable {
   /// Downloads over a caller-supplied session configuration, so that timeouts,
   /// caching policy and protocol handling are the caller's to decide.
   public static func dataDownload(withURL url: URL, configuration: URLSessionConfiguration, logger: FBControlCoreLogger) -> FBDataDownloadInput {
-    let download = FBDataDownloadInput(url: url, configuration: configuration, logger: logger)
-    download.urlSessionTask.resume()
+    let download = FBDataDownloadInput(logger: logger)
+    download.startDownload(from: url, configuration: configuration)
     return download
   }
 
-  private init(url: URL, configuration: URLSessionConfiguration, logger: FBControlCoreLogger) {
+  private init(logger: FBControlCoreLogger) {
     self.logger = logger
     self.completedFuture = FBMutableFuture<NSNull>()
     let rawInput = FBProcessInput<NSObject>.fromConsumer()
     self.input = unsafeBitCast(rawInput, to: FBProcessInput<AnyObject>.self)
     super.init()
+  }
+
+  // The session holds both the delegate and the resumed task for the lifetime of the download, so neither needs storing here.
+  private func startDownload(from url: URL, configuration: URLSessionConfiguration) {
     let delegateQueue = OperationQueue()
     delegateQueue.name = "CompanionLib.FBDataDownloadInput.urlSessionDelegate"
     let session = URLSession(configuration: configuration, delegate: self, delegateQueue: delegateQueue)
-    self.urlSessionTask = session.dataTask(with: url)
+    session.dataTask(with: url).resume()
   }
 }
 
