@@ -26,9 +26,7 @@ public final class FBTestManagerAPIMediator: NSObject, @unchecked Sendable {
   // MARK: - Properties
 
   private let context: FBTestManagerContext
-  private let target: any FBiOSTarget
-  private let asyncTarget: any ApplicationCommands
-  private let asyncXCTestTarget: any XCTestExtendedCommands
+  private let target: any FBiOSTarget & ApplicationCommands & XCTestExtendedCommands & CrashLogCommands
   private let reporter: FBXCTestReporter
   private let logger: FBControlCoreLogger
   private let requestQueue: DispatchQueue
@@ -47,7 +45,7 @@ public final class FBTestManagerAPIMediator: NSObject, @unchecked Sendable {
    */
   public static func connectAndRunUntilCompletion(
     with context: FBTestManagerContext,
-    target: any FBiOSTarget,
+    target: any FBiOSTarget & ApplicationCommands & XCTestExtendedCommands & CrashLogCommands,
     reporter: FBXCTestReporter,
     logger: FBControlCoreLogger
   ) -> FBFuture<NSNull> {
@@ -60,18 +58,12 @@ public final class FBTestManagerAPIMediator: NSObject, @unchecked Sendable {
 
   private init(
     context: FBTestManagerContext,
-    target: any FBiOSTarget,
+    target: any FBiOSTarget & ApplicationCommands & XCTestExtendedCommands & CrashLogCommands,
     reporter: FBXCTestReporter,
     logger: FBControlCoreLogger
   ) {
     self.context = context
     self.target = target
-    // FBSimulator, FBDevice and FBMacDevice all conform to ApplicationCommands in addition to
-    // the legacy FBApplicationCommands declared in this type's signature.
-    // swiftlint:disable:next force_cast
-    self.asyncTarget = target as! any ApplicationCommands
-    // swiftlint:disable:next force_cast
-    self.asyncXCTestTarget = target as! any XCTestExtendedCommands
     self.reporter = reporter
     self.logger = logger
     self.requestQueue = DispatchQueue(label: "com.facebook.xctestboostrap.mediator")
@@ -84,7 +76,7 @@ public final class FBTestManagerAPIMediator: NSObject, @unchecked Sendable {
     let timeout = context.timeout <= 0 ? Self.defaultTestTimeout : context.timeout
     let result: Result<Void, Error>
     do {
-      let launchedApplication = try await asyncTarget.launchApplication(context.testHostLaunchConfiguration)
+      let launchedApplication = try await target.launchApplication(context.testHostLaunchConfiguration)
       do {
         if context.testHostLaunchConfiguration.waitForDebugger {
           reporter.processWaitingForDebugger(withProcessIdentifier: launchedApplication.processIdentifier)
@@ -114,7 +106,7 @@ public final class FBTestManagerAPIMediator: NSObject, @unchecked Sendable {
       // Open the testmanagerd transport over async and hand the socket down to the Objective-C
       // bundle connection (which does not acquire the transport itself). The socket stays open
       // for the duration of the connection and is closed when this scope ends.
-      try await self.asyncXCTestTarget.withTransportForTestManagerService { socket in
+      try await self.target.withTransportForTestManagerService { socket in
         let connection = FBTestBundleConnection(
           context: self.context,
           target: self.target,
@@ -178,7 +170,7 @@ public final class FBTestManagerAPIMediator: NSObject, @unchecked Sendable {
     }
     logger.log("Terminating processes spawned due to test bundle requests: \(appsToKill.map(\.bundleID))")
     for app in appsToKill {
-      try await asyncTarget.killApplication(bundleID: app.bundleID)
+      try await target.killApplication(bundleID: app.bundleID)
     }
   }
 
@@ -219,7 +211,7 @@ public final class FBTestManagerAPIMediator: NSObject, @unchecked Sendable {
     let bundleID = app.bundleID
     Task {
       do {
-        try await self.asyncTarget.killApplication(bundleID: bundleID)
+        try await self.target.killApplication(bundleID: bundleID)
         completion(nil)
       } catch {
         completion(error)
@@ -232,10 +224,8 @@ public final class FBTestManagerAPIMediator: NSObject, @unchecked Sendable {
     for (key, value) in environment {
       targetEnvironment[key] = value
     }
-    // swiftlint:disable force_cast
-    let stdOut = FBProcessOutput(for: logger) as! FBProcessOutput<AnyObject>
-    let stdErr = FBProcessOutput(for: logger) as! FBProcessOutput<AnyObject>
-    // swiftlint:enable force_cast
+    let stdOut = FBProcessOutput<AnyObject>(for: logger)
+    let stdErr = FBProcessOutput<AnyObject>(for: logger)
     let processIO = FBProcessIO<AnyObject, AnyObject, AnyObject>(stdIn: nil, stdOut: stdOut, stdErr: stdErr)
     let launch = FBApplicationLaunchConfiguration(
       bundleID: bundleID,
@@ -251,8 +241,8 @@ public final class FBTestManagerAPIMediator: NSObject, @unchecked Sendable {
 
   private func launchApplication(_ configuration: FBApplicationLaunchConfiguration, atPath path: String?) async throws -> FBLaunchedApplication {
     // If the bundle is already installed at the expected path, just launch it.
-    if let installed = try? await asyncTarget.installedApplication(bundleID: configuration.bundleID), installed.bundle.path == path {
-      return try await asyncTarget.launchApplication(configuration)
+    if let installed = try? await target.installedApplication(bundleID: configuration.bundleID), installed.bundle.path == path {
+      return try await target.launchApplication(configuration)
     }
     return try await installAndLaunchApplication(configuration, atPath: path)
   }
@@ -262,15 +252,15 @@ public final class FBTestManagerAPIMediator: NSObject, @unchecked Sendable {
       throw FBControlCoreError.describe("Could not install App-Under-Test \(configuration) as it is not installed and no path was provided").build()
     }
     if await isApplicationInstalled(bundleID: configuration.bundleID) {
-      try await asyncTarget.uninstallApplication(bundleID: configuration.bundleID)
+      try await target.uninstallApplication(bundleID: configuration.bundleID)
     }
-    _ = try await asyncTarget.installApplication(atPath: path)
-    return try await asyncTarget.launchApplication(configuration)
+    _ = try await target.installApplication(atPath: path)
+    return try await target.launchApplication(configuration)
   }
 
   private func isApplicationInstalled(bundleID: String) async -> Bool {
     do {
-      _ = try await asyncTarget.installedApplication(bundleID: bundleID)
+      _ = try await target.installedApplication(bundleID: bundleID)
       return true
     } catch {
       return false

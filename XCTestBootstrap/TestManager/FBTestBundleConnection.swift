@@ -21,9 +21,7 @@ private let crashCheckWaitLimit: TimeInterval = 120
 final class FBTestBundleConnection {
 
   private let context: FBTestManagerContext
-  private let target: any FBiOSTarget
-  private let asyncApp: any ApplicationCommands
-  private let asyncCrash: any CrashLogCommands
+  private let target: any FBiOSTarget & ApplicationCommands & CrashLogCommands
   private let socket: Int32
   private let interface: NSObject
   private let testHostApplication: FBLaunchedApplication
@@ -32,7 +30,7 @@ final class FBTestBundleConnection {
 
   init(
     context: FBTestManagerContext,
-    target: any FBiOSTarget,
+    target: any FBiOSTarget & ApplicationCommands & CrashLogCommands,
     socket: Int32,
     interface: NSObject,
     testHostApplication: FBLaunchedApplication,
@@ -41,11 +39,6 @@ final class FBTestBundleConnection {
   ) {
     self.context = context
     self.target = target
-    // FBSimulator, FBDevice and FBMacDevice all conform to these async protocols.
-    // swiftlint:disable force_cast
-    self.asyncApp = target as! any ApplicationCommands
-    self.asyncCrash = target as! any CrashLogCommands
-    // swiftlint:enable force_cast
     self.socket = socket
     self.interface = interface
     self.testHostApplication = testHostApplication
@@ -88,7 +81,7 @@ final class FBTestBundleConnection {
     let bundleID = context.testHostLaunchConfiguration.bundleID
     let runningPid: pid_t
     do {
-      runningPid = try await asyncApp.processID(forBundleID: bundleID)
+      runningPid = try await target.processID(forBundleID: bundleID)
     } catch {
       // No running host process — it likely crashed during startup but lived long enough to avoid a
       // relaunch. Look for a crash log.
@@ -124,7 +117,7 @@ final class FBTestBundleConnection {
   private func findCrashedProcessLog() async throws -> FBCrashLog {
     let bundleID = context.testHostLaunchConfiguration.bundleID
     // If the host process is still running it has not crashed.
-    if let runningPid = try? await asyncApp.processID(forBundleID: bundleID) {
+    if let runningPid = try? await target.processID(forBundleID: bundleID) {
       throw FBControlCoreError.describe("The Process for \(runningPid) is not crashed as it is running").build()
     }
     var crashWaitTimeout = crashCheckWaitLimit
@@ -135,7 +128,7 @@ final class FBTestBundleConnection {
     let predicate = FBCrashLogInfo.predicateForCrashLogs(withProcessID: pid)
     // CrashLogCommands.notifyOfCrash(matching:) has no timeout, so bound it with FBFuture's
     // timeout the way the old FBTestHostCrashLogQuery caller did.
-    let future = fbFutureFromAsync { try await self.asyncCrash.notifyOfCrash(matching: predicate) }
+    let future = fbFutureFromAsync { try await self.target.notifyOfCrash(matching: predicate) }
     let timed = future.timeout(crashWaitTimeout, waitingFor: "Getting crash log for process with pid \(pid), bundle ID: \(bundleID)")
     guard let info = try await bridgeFBFuture(timed) as? FBCrashLogInfo else {
       throw FBControlCoreError.describe("Crash log lookup for pid \(pid) returned an unexpected result").build()
