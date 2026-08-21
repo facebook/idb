@@ -9,7 +9,9 @@ The "iOS Development Bridge" or `idb`, is a command line interface for automatin
 * *Simple Primitives*: `idb` exposes granular commands so that sophisticated workflows can be sequenced on top of them. This means you can use `idb` from an IDE or build an automated testing scenario that isn't feasible with default tooling. All of these primitives aim to be consistent across iOS versions and between iOS Simulators and iOS Devices. All the primitives are exposed over a cli, so that it's easy to use for both humans and automation.
 * *Exposing missing functionality*: Xcode has a number of features that aren't available outside its user interface. `idb` leverages many of Private Frameworks that are used by Xcode, so that these features can be in GUI-less automated scenarios.
 
-`idb` is built on top the `FBSimulatorControl` and `FBDeviceControl` macOS Frameworks, contained within this repository. These Frameworks can be used independently of `idb`, however `idb` is likely to provide the simplest install and the most sensible defaults for most users.
+`idb` is built on top of the `FBSimulatorControl` and `FBDeviceControl` macOS Frameworks, contained within this repository. These Frameworks can be used independently of `idb`, however `idb` is likely to provide the simplest install and the most sensible defaults for most users.
+
+`idb` is transitioning to a pure Swift codebase: the companion is written in Swift, and the Frameworks are migrating from Objective-C. [The architecture documentation](https://www.fbidb.io/docs/idb/architecture) describes where the migration stands.
 
 We've given a talk about `idb` at F8, so that you can learn more about what `idb` is and why we built it. A [recording of the talk is available here](https://developers.facebook.com/videos/2019/reliable-code-at-scale/).
 
@@ -77,10 +79,11 @@ Head over [to the main documentation](https://www.fbidb.io) for more details on 
 
 - **macOS 15+** with **Xcode 26.0+**
 - **XcodeGen**: `brew install xcodegen`
-- **For idb_companion**: protobuf and gRPC Swift plugins
+- **For idb_companion**: the protobuf compiler and its Swift plugin
   ```
-  brew install protobuf swift-protobuf grpc-swift
+  brew install protobuf swift-protobuf
   ```
+  (`build.sh` builds the `protoc-gen-grpc-swift` plugin itself, from a pinned checkout of grpc-swift.)
 
 ### Building
 
