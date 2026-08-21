@@ -53,8 +53,7 @@ public class FBIDBStorage: NSObject {
   }
 
   public func asFileContainer() -> any AsyncFileContainer {
-    // swiftlint:disable:next force_cast
-    return FBFileContainer.fileContainer(forBasePath: basePath.path) as! FBContainedFile_ContainedRoot
+    FBFileContainer.fileContainer(forBasePath: basePath.path)
   }
 
   public var replacementMapping: [String: String] {

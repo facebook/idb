@@ -431,10 +431,7 @@ public class FBDeviceFileCommands: NSObject {
 
   fileprivate func fileCommandsForAuxillary() throws -> FBFutureContext<FBContainedFile_ContainedRoot> {
     let device = try requireDevice()
-    guard let container = FBFileContainer.fileContainer(forBasePath: device.auxillaryDirectory) as? FBContainedFile_ContainedRoot else {
-      throw FBDeviceControlError.describe("The auxillary directory container is not a contained root").build()
-    }
-    return FBFutureContext(result: container)
+    return FBFutureContext(result: FBFileContainer.fileContainer(forBasePath: device.auxillaryDirectory))
   }
 
   fileprivate func fileCommandsForMediaDirectory() throws -> FBFutureContext<FBDeviceFileContainer> {

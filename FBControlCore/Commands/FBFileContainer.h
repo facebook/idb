@@ -31,16 +31,18 @@ extern FBFileContainerKind _Nonnull const FBFileContainerKindDsym;
 extern FBFileContainerKind _Nonnull const FBFileContainerKindFramework;
 
 @protocol FBDataConsumer;
+@protocol FBContainedFile;
+@class FBContainedFile_ContainedRoot;
 
 /**
  Implementations of File Commands.
  */
 @interface FBFileContainer : NSObject
 
-+ (nonnull id)containedFileForBasePath:(nonnull NSString *)basePath;
-+ (nonnull id)containedFileForPathMapping:(nonnull NSDictionary<NSString *, NSString *> *)pathMapping;
-+ (nonnull id)fileContainerForBasePath:(nonnull NSString *)basePath;
-+ (nonnull id)fileContainerForPathMapping:(nonnull NSDictionary<NSString *, NSString *> *)pathMapping;
-+ (nonnull id)fileContainerForContainedFile:(nonnull id)containedFile;
++ (nonnull id<FBContainedFile>)containedFileForBasePath:(nonnull NSString *)basePath;
++ (nonnull id<FBContainedFile>)containedFileForPathMapping:(nonnull NSDictionary<NSString *, NSString *> *)pathMapping;
++ (nonnull FBContainedFile_ContainedRoot *)fileContainerForBasePath:(nonnull NSString *)basePath;
++ (nonnull FBContainedFile_ContainedRoot *)fileContainerForPathMapping:(nonnull NSDictionary<NSString *, NSString *> *)pathMapping;
++ (nonnull FBContainedFile_ContainedRoot *)fileContainerForContainedFile:(nonnull id<FBContainedFile>)containedFile;
 
 @end

@@ -9,8 +9,6 @@
 import FBControlCore
 import Foundation
 
-// swiftlint:disable force_cast force_unwrapping
-
 public final class FBSimulatorFileCommands: NSObject {
 
   // MARK: - Properties
@@ -31,75 +29,28 @@ public final class FBSimulatorFileCommands: NSObject {
   // MARK: - FBFileCommands Implementation
 
   public func fileCommandsForContainerApplication(_ bundleID: String) async throws -> FBContainedFile_ContainedRoot {
-    let containedFile = try await containedFile(forApplication: bundleID)
-    return FBFileContainer.fileContainer(forContainedFile: containedFile as AnyObject) as! FBContainedFile_ContainedRoot
+    FBFileContainer.fileContainer(for: try await containedFile(forApplication: bundleID))
   }
 
   public func fileCommandsForAuxillary() -> FBFutureContext<FBContainedFile_ContainedRoot> {
-    return FBFutureContext<AnyObject>(result: FBFileContainer.fileContainer(forBasePath: simulator.auxillaryDirectory) as AnyObject) as! FBFutureContext<FBContainedFile_ContainedRoot>
+    FBFutureContext(result: FBFileContainer.fileContainer(forBasePath: simulator.auxillaryDirectory))
   }
 
   public func fileCommandsForApplicationContainers() async throws -> FBContainedFile_ContainedRoot {
-    let containedFile = try containedFileForApplicationContainers()
-    return FBFileContainer.fileContainer(forContainedFile: containedFile as AnyObject) as! FBContainedFile_ContainedRoot
+    FBFileContainer.fileContainer(for: try containedFileForApplicationContainers())
   }
 
   public func fileCommandsForGroupContainers() async throws -> FBContainedFile_ContainedRoot {
-    let containedFile = try containedFileForGroupContainers()
-    return FBFileContainer.fileContainer(forContainedFile: containedFile as AnyObject) as! FBContainedFile_ContainedRoot
+    FBFileContainer.fileContainer(for: try containedFileForGroupContainers())
   }
 
-  public func fileCommandsForRootFilesystem() -> FBFutureContext<FBContainedFile_ContainedRoot> {
-    let containedFile = containedFileForRootFilesystem()
-    let fileContainer = FBFileContainer.fileContainer(forContainedFile: containedFile as AnyObject) as AnyObject
-    return FBFutureContext<AnyObject>(result: fileContainer) as! FBFutureContext<FBContainedFile_ContainedRoot>
+  public func fileCommandsForRootFilesystem() throws -> FBFutureContext<FBContainedFile_ContainedRoot> {
+    FBFutureContext(result: FBFileContainer.fileContainer(forBasePath: try requireDataDirectory()))
   }
 
-  public func fileCommandsForMediaDirectory() -> FBFutureContext<FBContainedFile_ContainedRoot> {
-    let mediaDirectory = (simulator.dataDirectory! as NSString).appendingPathComponent("Media")
-    return FBFutureContext<AnyObject>(result: FBFileContainer.fileContainer(forBasePath: mediaDirectory) as AnyObject) as! FBFutureContext<FBContainedFile_ContainedRoot>
-  }
-
-  public func fileCommandsForMDMProfiles() -> FBFutureContext<FBContainedFile_ContainedRoot> {
-    return
-      FBControlCoreError
-      .describe("fileCommandsForMDMProfiles not supported on simulators")
-      .failFutureContext() as! FBFutureContext<FBContainedFile_ContainedRoot>
-  }
-
-  public func fileCommandsForProvisioningProfiles() -> FBFutureContext<FBContainedFile_ContainedRoot> {
-    return
-      FBControlCoreError
-      .describe("fileCommandsForProvisioningProfiles not supported on simulators")
-      .failFutureContext() as! FBFutureContext<FBContainedFile_ContainedRoot>
-  }
-
-  public func fileCommandsForSpringboardIconLayout() -> FBFutureContext<FBContainedFile_ContainedRoot> {
-    return
-      FBControlCoreError
-      .describe("fileCommandsForSpringboardIconLayout not supported on simulators")
-      .failFutureContext() as! FBFutureContext<FBContainedFile_ContainedRoot>
-  }
-
-  public func fileCommandsForWallpaper() -> FBFutureContext<FBContainedFile_ContainedRoot> {
-    return
-      FBControlCoreError
-      .describe("fileCommandsForWallpaper not supported on simulators")
-      .failFutureContext() as! FBFutureContext<FBContainedFile_ContainedRoot>
-  }
-
-  public func fileCommandsForDiskImages() -> FBFutureContext<FBContainedFile_ContainedRoot> {
-    return
-      FBControlCoreError
-      .describe("fileCommandsForDiskImages not supported on simulators")
-      .failFutureContext() as! FBFutureContext<FBContainedFile_ContainedRoot>
-  }
-
-  public func fileCommandsForSymbols() -> FBFutureContext<FBContainedFile_ContainedRoot> {
-    return
-      FBControlCoreError
-      .describe("fileCommandsForSymbols not supported on simulators")
-      .failFutureContext() as! FBFutureContext<FBContainedFile_ContainedRoot>
+  public func fileCommandsForMediaDirectory() throws -> FBFutureContext<FBContainedFile_ContainedRoot> {
+    let mediaDirectory = (try requireDataDirectory() as NSString).appendingPathComponent("Media")
+    return FBFutureContext(result: FBFileContainer.fileContainer(forBasePath: mediaDirectory))
   }
 
   // MARK: - Contained file accessors
@@ -109,27 +60,26 @@ public final class FBSimulatorFileCommands: NSObject {
     guard let container = installedApplication.dataContainer else {
       throw FBSimulatorError.describe("No data container present for application \(installedApplication)").build()
     }
-    return FBFileContainer.containedFile(forBasePath: container) as! any FBContainedFile
+    return FBFileContainer.containedFile(forBasePath: container)
   }
 
   private func containedFileForApplicationContainers() throws -> any FBContainedFile {
-    let installedApps = try simulator.device.installedApps() as! [String: Any]
     var mapping: [String: String] = [:]
-    for (bundleID, appInfo) in installedApps {
-      guard let info = appInfo as? [String: Any],
+    for (bundleID, appInfo) in try simulator.device.installedApps() {
+      guard let bundleID = bundleID as? String,
+        let info = appInfo as? [String: Any],
         let dataContainer = info["DataContainer"] as? URL
       else {
         continue
       }
       mapping[bundleID] = dataContainer.path
     }
-    return FBFileContainer.containedFile(forPathMapping: mapping) as! any FBContainedFile
+    return FBFileContainer.containedFile(forPathMapping: mapping)
   }
 
   private func containedFileForGroupContainers() throws -> any FBContainedFile {
-    let installedApps = try simulator.device.installedApps() as! [String: Any]
     var bundleIDToURL: [String: URL] = [:]
-    for (_, appInfo) in installedApps {
+    for appInfo in try simulator.device.installedApps().values {
       guard let info = appInfo as? [String: Any],
         let appContainers = info["GroupContainers"] as? [String: URL]
       else {
@@ -143,11 +93,14 @@ public final class FBSimulatorFileCommands: NSObject {
     for (identifier, url) in bundleIDToURL {
       pathMapping[identifier] = url.path
     }
-    return FBFileContainer.containedFile(forPathMapping: pathMapping) as! any FBContainedFile
+    return FBFileContainer.containedFile(forPathMapping: pathMapping)
   }
 
-  private func containedFileForRootFilesystem() -> any FBContainedFile {
-    FBFileContainer.containedFile(forBasePath: simulator.dataDirectory!) as! any FBContainedFile
+  private func requireDataDirectory() throws -> String {
+    guard let dataDirectory = simulator.dataDirectory else {
+      throw FBSimulatorError.describe("No data directory for \(simulator), it may not have been booted").build()
+    }
+    return dataDirectory
   }
 }
 
@@ -195,37 +148,37 @@ extension FBSimulator: FileCommands {
   public func withFileCommandsForProvisioningProfiles<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await withFileContainer(fileCommands().fileCommandsForProvisioningProfiles(), body: body)
+    throw FBControlCoreError.describe("\(#function) not supported on simulators").build()
   }
 
   public func withFileCommandsForMDMProfiles<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await withFileContainer(fileCommands().fileCommandsForMDMProfiles(), body: body)
+    throw FBControlCoreError.describe("\(#function) not supported on simulators").build()
   }
 
   public func withFileCommandsForSpringboardIconLayout<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await withFileContainer(fileCommands().fileCommandsForSpringboardIconLayout(), body: body)
+    throw FBControlCoreError.describe("\(#function) not supported on simulators").build()
   }
 
   public func withFileCommandsForWallpaper<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await withFileContainer(fileCommands().fileCommandsForWallpaper(), body: body)
+    throw FBControlCoreError.describe("\(#function) not supported on simulators").build()
   }
 
   public func withFileCommandsForDiskImages<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await withFileContainer(fileCommands().fileCommandsForDiskImages(), body: body)
+    throw FBControlCoreError.describe("\(#function) not supported on simulators").build()
   }
 
   public func withFileCommandsForSymbols<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await withFileContainer(fileCommands().fileCommandsForSymbols(), body: body)
+    throw FBControlCoreError.describe("\(#function) not supported on simulators").build()
   }
 
   /// Scopes the file container to `body`, exposing it through the

@@ -281,19 +281,19 @@ FBFileContainerKind const FBFileContainerKindFramework = @"framework";
   return [[FBContainedFile_Mapped_Host alloc] initWithMappingPaths:pathMapping fileManager:NSFileManager.defaultManager];
 }
 
-+ (id)fileContainerForBasePath:(NSString *)basePath
++ (FBContainedFile_ContainedRoot *)fileContainerForBasePath:(NSString *)basePath
 {
   id<FBContainedFile> rootFile = [self containedFileForBasePath:basePath];
   return [self fileContainerForContainedFile:rootFile];
 }
 
-+ (id)fileContainerForPathMapping:(NSDictionary<NSString *, NSString *> *)pathMapping
++ (FBContainedFile_ContainedRoot *)fileContainerForPathMapping:(NSDictionary<NSString *, NSString *> *)pathMapping
 {
   id<FBContainedFile> rootFile = [self containedFileForPathMapping:pathMapping];
   return [self fileContainerForContainedFile:rootFile];
 }
 
-+ (id)fileContainerForContainedFile:(id<FBContainedFile>)containedFile
++ (FBContainedFile_ContainedRoot *)fileContainerForContainedFile:(id<FBContainedFile>)containedFile
 {
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbcontrolcore.file_container", DISPATCH_QUEUE_SERIAL);
   return [[FBContainedFile_ContainedRoot alloc] initWithRootFile:containedFile queue:queue];
