@@ -9,14 +9,11 @@
 @preconcurrency import FBControlCore
 @preconcurrency import Foundation
 
-// swiftlint:disable force_try
-
 public final class FBSimulatorLaunchCtlCommands: NSObject {
 
   // MARK: - Properties
 
   private let simulator: FBSimulator
-  private let launchctlLaunchPath: String
 
   // MARK: - Initializers
 
@@ -29,13 +26,11 @@ public final class FBSimulatorLaunchCtlCommands: NSObject {
   }
 
   public class func commands(with simulator: FBSimulator) -> FBSimulatorLaunchCtlCommands {
-    let launchctlLaunchPath = try! launchCtlLaunchPath(for: simulator)
-    return FBSimulatorLaunchCtlCommands(simulator: simulator, launchctlLaunchPath: launchctlLaunchPath)
+    FBSimulatorLaunchCtlCommands(simulator: simulator)
   }
 
-  private init(simulator: FBSimulator, launchctlLaunchPath: String) {
+  private init(simulator: FBSimulator) {
     self.simulator = simulator
-    self.launchctlLaunchPath = launchctlLaunchPath
     super.init()
   }
 
@@ -197,7 +192,7 @@ public final class FBSimulatorLaunchCtlCommands: NSObject {
   }
 
   private func run(_ command: Command) async throws -> String {
-    let output = try await simulator.launchProcessConsumingOutput(launchPath: launchctlLaunchPath, arguments: command.arguments)
+    let output = try await simulator.launchProcessConsumingOutput(launchPath: Self.launchCtlLaunchPath(for: simulator), arguments: command.arguments)
     return try FBSimulatorLaunchCtlCommands.stdout(orThrowFrom: output, command: command, logger: simulator.logger)
   }
 
