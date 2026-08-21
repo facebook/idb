@@ -11,6 +11,32 @@ import FBControlCore
 import Foundation
 import UniformTypeIdentifiers
 
+/// The ways media upload can fail, as data rather than assembled strings.
+public enum FBSimulatorMediaError: Error {
+  case noMediaProvided
+  case unknownMediaPaths(paths: [URL])
+  case simulatorNotBooted(state: String)
+  case addMediaFailed(paths: [URL], underlying: Error)
+  case addContactsFailed(paths: [URL], underlying: Error)
+}
+
+extension FBSimulatorMediaError: LocalizedError {
+  public var errorDescription: String? {
+    switch self {
+    case .noMediaProvided:
+      return "Cannot upload media, none was provided"
+    case let .unknownMediaPaths(paths):
+      return "\(paths) not a known media path"
+    case let .simulatorNotBooted(state):
+      return "Simulator must be booted to upload photos, is \(state)"
+    case let .addMediaFailed(paths, _):
+      return "Failed to add media \(paths)"
+    case let .addContactsFailed(paths, _):
+      return "Failed to add contacts \(paths)"
+    }
+  }
+}
+
 public final class FBSimulatorMediaCommands: NSObject {
 
   // MARK: - Properties
@@ -60,18 +86,18 @@ public final class FBSimulatorMediaCommands: NSObject {
     }
 
     if mediaFileURLs.isEmpty {
-      throw FBSimulatorError.describe("Cannot upload media, none was provided").build()
+      throw FBSimulatorMediaError.noMediaProvided
     }
 
     let mediaPredicate = FBSimulatorMediaCommands.predicateForMediaPaths
     let unknown = mediaFileURLs.filter { !mediaPredicate.evaluate(with: $0) }
     if !unknown.isEmpty {
-      throw FBSimulatorError.describe("\(unknown) not a known media path").build()
+      throw FBSimulatorMediaError.unknownMediaPaths(paths: unknown)
     }
 
     if simulator.state != .booted {
       let stateString = (simulator.device.stateString() as String?) ?? "unknown"
-      throw FBSimulatorError.describe("Simulator must be booted to upload photos, is \(stateString)").build()
+      throw FBSimulatorMediaError.simulatorNotBooted(state: stateString)
     }
 
     let photosAndVideosPredicate = NSCompoundPredicate(orPredicateWithSubpredicates: [
@@ -85,7 +111,7 @@ public final class FBSimulatorMediaCommands: NSObject {
           try simulator.device.addMedia(photosAndVideos)
         }
       } catch {
-        throw FBSimulatorError.describe("Failed to add media \(photosAndVideos)").caused(by: error as NSError).build()
+        throw FBSimulatorMediaError.addMediaFailed(paths: photosAndVideos, underlying: error)
       }
     }
 
@@ -97,7 +123,7 @@ public final class FBSimulatorMediaCommands: NSObject {
           try simulator.device.addMedia(contacts)
         }
       } catch {
-        throw FBSimulatorError.describe("Failed to add contacts \(contacts)").caused(by: error as NSError).build()
+        throw FBSimulatorMediaError.addContactsFailed(paths: contacts, underlying: error)
       }
     }
   }
