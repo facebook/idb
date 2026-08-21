@@ -14,10 +14,10 @@ The table below lists all of the available containers and to which iOS targets t
 
 | Switch | Description | Simulators | Devices |
 |--------|-------------|------------|---------|
-| `--application` | The container of all installed "Application Sandboxes". These are bundle ids corresponding to installed Application home directories | ✅ | ✅ (Only for Applications installed with a signed with a Developer Profile) |
+| `--application` | The container of all installed "Application Sandboxes". These are bundle ids corresponding to installed Application home directories | ✅ | ✅ (Only for Applications signed with a Developer Profile) |
 | `--crashes`|The container for Crash/Diagnostic reports. This can be used to view and pull crash logs from a device | ❌ | ✅ |
 | `--disk-images` | The [container for developer disk images](fbdevicecontrol#developer-disk-images) | ❌ | ✅ |
-| `--group` | Group containers are shared directories between applications and are prefixed with reverse-domain identifiers (e.g 'group.com.apple.safari') | ✅ | ❌ |
+| `--group` | Group containers are shared directories between applications and are prefixed with reverse-domain identifiers (e.g. `group.com.apple.safari`) | ✅ | ❌ |
 | `--mdm-profiles` | A container representing installed MDM Profiles | ❌ | ✅ |
 | `--media`|The container for Photos/Videos| ✅ | ✅ |
 | `--provisioning-profiles` | A container representing installed provisioning profiles on the device | ❌ | ✅ |
@@ -32,10 +32,10 @@ All operations on a File Container are relative to some "root". What this root r
 ### Copying files into a container
 
 ```
-idb file push --application com.foo.bar/src1.jpg com.foo.bar/src2.jpg dest_1
+idb file push --application src1.jpg src2.jpg com.foo.bar/Documents
 ```
 
-Copies one or more files from the host to the relative destination path within the container.
+Copies one or more files from the host to the relative destination path within the container. Here, two images from the current directory on the host are copied into the `Documents` directory of the app's sandbox.
 
 
 ### Copying files out of a container
@@ -49,10 +49,10 @@ Copies a single file from the container to the host.
 ### Moving files within the container
 
 ```
-idb file mv --application com.foo.bar/src1.jpg dest_1.jpg
+idb file mv --application com.foo.bar/src1.jpg com.foo.bar/src2.jpg com.foo.bar/Documents
 ```
 
-This will move two image files from the root of the container, to a destination subdirectory within the container.
+Moves one or more files to a destination path, entirely within the container. Here, two images at the root of the app's sandbox move into its `Documents` directory.
 
 
 ### Make a new directory

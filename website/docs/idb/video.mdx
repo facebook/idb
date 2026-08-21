@@ -17,7 +17,7 @@ Video streaming allows for live frames to be captured from the iOS Target. Typic
 
 Projects such as [`ffmpeg`](https://www.ffmpeg.org) or [`gstreamer`](https://gstreamer.freedesktop.org) are examples of these applications. For example, `ffmpeg` can accept streamed `h264` video and expose this over a UDP socket with intermediate transcoding of data.
 
-For example, the following invocation can be used to start a video stream and expose it on UDP port.
+For example, the following invocation can be used to start a video stream and expose it on a UDP port.
 
 ```
 $ idb video-stream --fps 30 --format h264 --compression-quality 1.0 --udid EE074DCE-7D75-4F96-A949-82252F5FEC30 | ffmpeg -f h264 -i pipe:0 -vcodec copy -tune zerolatency -b 900k -framerate 30 -f mpegts udp://0.0.0.0:12345
@@ -26,12 +26,12 @@ $ idb video-stream --fps 30 --format h264 --compression-quality 1.0 --udid EE074
 Breaking this command down:
 
 - `idb video-stream` is the command used in idb to stream video out.
-- `--fps 30` is the number of frames that are produced by `idb` per second. This can be arbitrarily large or small. A higher frame rate will increase system utilization. Increasing the fps may not result in smoother presentation, as an iOS Simulator may be refreshing it's screen less frequently than the target frame rate. Typically an iOS Simulator may not render transparencies at 60fps.
+- `--fps 30` is the number of frames that are produced by `idb` per second. This can be arbitrarily large or small. A higher frame rate will increase system utilization. Increasing the fps may not result in smoother presentation, as an iOS Simulator may be refreshing its screen less frequently than the target frame rate. Typically an iOS Simulator may not render transparencies at 60fps.
 - `--format h264` represents the format of the video stream itself. A variety of outputs are available:
-  - `h264` This is an [Annexe-B H.264 Stream](https://en.wikipedia.org/wiki/Network_Abstraction_Layer#NAL_Units_in_Byte-Stream_Format_Use)
-  - `rbga` is a stream of raw RBGA bytes.
-  - `mjpeg` is an stream of encoed JPEG images, [typically called MJPEG](https://en.wikipedia.org/wiki/Motion_JPEG).
-  - `minicap` is [format used by the minicap project](https://github.com/openstf/minicap). It's fundementally a MJPEG stream with a header at the start of the stream and length [headers per frame](https://github.com/openstf/minicap#global-header-binary-format).
+  - `h264` This is an [Annex-B H.264 Stream](https://en.wikipedia.org/wiki/Network_Abstraction_Layer#NAL_Units_in_Byte-Stream_Format_Use)
+  - `rbga` is a stream of raw RGBA bytes. (The format's name preserves a historical misspelling — the flag value really is `rbga`.)
+  - `mjpeg` is a stream of encoded JPEG images, [typically called MJPEG](https://en.wikipedia.org/wiki/Motion_JPEG).
+  - `minicap` is [the format used by the minicap project](https://github.com/DeviceFarmer/minicap). It's fundamentally an MJPEG stream with a header at the start of the stream and length [headers per frame](https://github.com/DeviceFarmer/minicap#global-header-binary-format).
 - `--compression-quality 1.0` represents the quality level used for encoded frames, this is a value between 0.0 and 1.0. It applies to all formats except for the raw `rbga` format.
 - `--scale-factor` scales the source video down before it is encoded, as a value between 0.0 and 1.0. Reducing it is the cheapest way to cut the bandwidth of a stream, at the cost of resolution.
 - `idb video-stream` takes a positional argument for a file path to stream to. When this is not provided, video will be streamed to `stdout`.
