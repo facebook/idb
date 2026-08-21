@@ -41,6 +41,60 @@ import Foundation
   @objc var pathMapping: [String: String]? { get }
 }
 
+/// The failures a file container can produce, as data: which operation, on what,
+/// and what underlying error caused it - instead of a stringly-built `NSError`.
+public enum FBFileContainerError: Error {
+  case copyIntoContainerFailed(source: String, destination: String, underlying: Error)
+  case sourceDoesNotExist(source: String)
+  case temporaryDirectoryCreationFailed(underlying: Error)
+  case removalBeforeOverwriteFailed(path: String, underlying: Error)
+  case copyOutOfContainerFailed(source: String, destination: String, underlying: Error)
+  case notOnLocalFilesystem(file: String)
+  case directoryCreationFailed(directory: String, underlying: Error)
+  case moveFailed(source: String, destination: String, underlying: Error)
+  case removalFailed(path: String, underlying: Error)
+  case unsupportedForProvisioningProfiles(operation: String)
+  case destinationNotOnHostFilesystem(destination: String)
+  case unsupportedOnVirtualRoot(operation: String)
+  case movingUnsupportedOnVirtualRoot
+  case invalidRootPath(component: String, available: [String])
+}
+
+extension FBFileContainerError: LocalizedError {
+  public var errorDescription: String? {
+    switch self {
+    case let .copyIntoContainerFailed(source, destination, underlying):
+      return "Could not copy from \(source) to \(destination): \(underlying)"
+    case let .sourceDoesNotExist(source):
+      return "Source path does not exist: \(source)"
+    case let .temporaryDirectoryCreationFailed(underlying):
+      return "Could not create temporary directory: \(underlying)"
+    case let .removalBeforeOverwriteFailed(path, underlying):
+      return "Could not remove \(path): \(underlying)"
+    case let .copyOutOfContainerFailed(source, destination, underlying):
+      return "Could not copy from \(source) to \(destination): \(underlying)"
+    case let .notOnLocalFilesystem(file):
+      return "Cannot tail \(file), it is not on the local filesystem"
+    case let .directoryCreationFailed(directory, underlying):
+      return "Could not create directory \(directory): \(underlying)"
+    case let .moveFailed(source, destination, underlying):
+      return "Could not move item at \(source) to \(destination): \(underlying)"
+    case let .removalFailed(path, underlying):
+      return "Could not remove item at path \(path): \(underlying)"
+    case let .unsupportedForProvisioningProfiles(operation):
+      return "\(operation) is not implemented for provisioning profiles"
+    case let .destinationNotOnHostFilesystem(destination):
+      return "Cannot move to \(destination), it is not on the host filesystem"
+    case let .unsupportedOnVirtualRoot(operation):
+      return "\(operation) does not operate on root virtual containers"
+    case .movingUnsupportedOnVirtualRoot:
+      return "Moving files does not work on root virtual containers"
+    case let .invalidRootPath(component, available):
+      return "'\(component)' is not a valid root path out of \(FBCollectionInformation.oneLineDescription(from: available))"
+    }
+  }
+}
+
 /// Carries a non-`Sendable` `FBContainedFile` across the serial-queue boundary.
 /// The wrapped value is only ever touched on the owning serial queue.
 private final class ContainedFileBox: @unchecked Sendable {
@@ -107,11 +161,7 @@ public final class FBContainedFile_ContainedRoot: NSObject, AsyncFileContainer {
           do {
             try destination.populate(withContentsOfHostPath: sourcePath)
           } catch {
-            throw
-              FBControlCoreError
-              .describe("Could not copy from \(sourcePath) to \(destinationPath): \(error)")
-              .caused(by: error)
-              .build()
+            throw FBFileContainerError.copyIntoContainerFailed(source: sourcePath, destination: destinationPath, underlying: error)
           }
           continuation.resume(returning: ())
         } catch {
@@ -129,18 +179,14 @@ public final class FBContainedFile_ContainedRoot: NSObject, AsyncFileContainer {
           let source = try box.file.file(byAppendingPathComponent: sourcePath)
           var sourceIsDirectory: ObjCBool = false
           guard source.fileExists(isDirectory: &sourceIsDirectory) else {
-            throw FBControlCoreError.describe("Source path does not exist: \(source)").build()
+            throw FBFileContainerError.sourceDoesNotExist(source: String(describing: source))
           }
           var dstPath = destinationPath
           if !sourceIsDirectory.boolValue {
             do {
               try FileManager.default.createDirectory(atPath: dstPath, withIntermediateDirectories: true)
             } catch {
-              throw
-                FBControlCoreError
-                .describe("Could not create temporary directory: \(error)")
-                .caused(by: error)
-                .build()
+              throw FBFileContainerError.temporaryDirectoryCreationFailed(underlying: error)
             }
             dstPath = (dstPath as NSString).appendingPathComponent((sourcePath as NSString).lastPathComponent)
           }
@@ -150,21 +196,13 @@ public final class FBContainedFile_ContainedRoot: NSObject, AsyncFileContainer {
             do {
               try FileManager.default.removeItem(atPath: dstPath)
             } catch {
-              throw
-                FBControlCoreError
-                .describe("Could not remove \(dstPath)")
-                .caused(by: error)
-                .build()
+              throw FBFileContainerError.removalBeforeOverwriteFailed(path: dstPath, underlying: error)
             }
           }
           do {
             try source.populateHostPath(withContents: dstPath)
           } catch {
-            throw
-              FBControlCoreError
-              .describe("Could not copy from \(source) to \(dstPath): \(error)")
-              .caused(by: error)
-              .build()
+            throw FBFileContainerError.copyOutOfContainerFailed(source: String(describing: source), destination: dstPath, underlying: error)
           }
           continuation.resume(returning: destinationPath)
         } catch {
@@ -182,7 +220,7 @@ public final class FBContainedFile_ContainedRoot: NSObject, AsyncFileContainer {
         do {
           let fileToTail = try box.file.file(byAppendingPathComponent: path)
           guard let hostPath = fileToTail.pathOnHostFileSystem else {
-            throw FBControlCoreError.describe("Cannot tail \(fileToTail), it is not on the local filesystem").build()
+            throw FBFileContainerError.notOnLocalFilesystem(file: String(describing: fileToTail))
           }
           continuation.resume(returning: hostPath)
         } catch {
@@ -213,11 +251,7 @@ public final class FBContainedFile_ContainedRoot: NSObject, AsyncFileContainer {
           do {
             try directory.createDirectory()
           } catch {
-            throw
-              FBControlCoreError
-              .describe("Could not create directory \(directory): \(error)")
-              .caused(by: error)
-              .build()
+            throw FBFileContainerError.directoryCreationFailed(directory: String(describing: directory), underlying: error)
           }
           continuation.resume(returning: ())
         } catch {
@@ -237,11 +271,7 @@ public final class FBContainedFile_ContainedRoot: NSObject, AsyncFileContainer {
           do {
             try source.move(to: destination)
           } catch {
-            throw
-              FBControlCoreError
-              .describe("Could not move item at \(source) to \(destination): \(error)")
-              .caused(by: error)
-              .build()
+            throw FBFileContainerError.moveFailed(source: String(describing: source), destination: String(describing: destination), underlying: error)
           }
           continuation.resume(returning: ())
         } catch {
@@ -260,11 +290,7 @@ public final class FBContainedFile_ContainedRoot: NSObject, AsyncFileContainer {
           do {
             try file.removeItem()
           } catch {
-            throw
-              FBControlCoreError
-              .describe("Could not remove item at path \(file): \(error)")
-              .caused(by: error)
-              .build()
+            throw FBFileContainerError.removalFailed(path: String(describing: file), underlying: error)
           }
           continuation.resume(returning: ())
         } catch {
@@ -307,19 +333,19 @@ public final class FBFileContainer_ProvisioningProfile: AsyncFileContainer {
   }
 
   public func copy(fromContainer sourcePath: String, toHost destinationPath: String) async throws -> String {
-    throw FBControlCoreError.describe("\(#function) is not implemented for provisioning profiles").build()
+    throw FBFileContainerError.unsupportedForProvisioningProfiles(operation: #function)
   }
 
   public func tail(_ path: String, to consumer: any FBDataConsumer) async throws -> FileContainerTailOperation {
-    throw FBControlCoreError.describe("\(#function) is not implemented for provisioning profiles").build()
+    throw FBFileContainerError.unsupportedForProvisioningProfiles(operation: #function)
   }
 
   public func createDirectory(_ directoryPath: String) async throws {
-    throw FBControlCoreError.describe("\(#function) is not implemented for provisioning profiles").build()
+    throw FBFileContainerError.unsupportedForProvisioningProfiles(operation: #function)
   }
 
   public func move(from sourcePath: String, to destinationPath: String) async throws {
-    throw FBControlCoreError.describe("\(#function) is not implemented for provisioning profiles").build()
+    throw FBFileContainerError.unsupportedForProvisioningProfiles(operation: #function)
   }
 
   public func remove(_ path: String) async throws {
@@ -404,7 +430,7 @@ private final class ContainedFile_Host: NSObject, FBContainedFile {
 
   func move(to destination: FBContainedFile) throws {
     guard let hostDestination = destination as? ContainedFile_Host else {
-      throw FBControlCoreError.describe("Cannot move to \(destination), it is not on the host filesystem").build()
+      throw FBFileContainerError.destinationNotOnHostFilesystem(destination: String(describing: destination))
     }
     try fileManager.moveItem(atPath: path, toPath: hostDestination.path)
   }
@@ -442,7 +468,7 @@ private final class ContainedFile_Mapped_Host: NSObject, FBContainedFile {
   }
 
   func removeItem() throws {
-    throw FBControlCoreError.describe("\(#function) does not operate on root virtual containers").build()
+    throw FBFileContainerError.unsupportedOnVirtualRoot(operation: #function)
   }
 
   func contentsOfDirectory() throws -> [String] {
@@ -450,11 +476,11 @@ private final class ContainedFile_Mapped_Host: NSObject, FBContainedFile {
   }
 
   func contentsOfFile() throws -> Data {
-    throw FBControlCoreError.describe("\(#function) does not operate on root virtual containers").build()
+    throw FBFileContainerError.unsupportedOnVirtualRoot(operation: #function)
   }
 
   func createDirectory() throws {
-    throw FBControlCoreError.describe("\(#function) does not operate on root virtual containers").build()
+    throw FBFileContainerError.unsupportedOnVirtualRoot(operation: #function)
   }
 
   func fileExists(isDirectory isDirectoryOut: UnsafeMutablePointer<ObjCBool>?) -> Bool {
@@ -462,15 +488,15 @@ private final class ContainedFile_Mapped_Host: NSObject, FBContainedFile {
   }
 
   func move(to destination: FBContainedFile) throws {
-    throw FBControlCoreError.describe("Moving files does not work on root virtual containers").build()
+    throw FBFileContainerError.movingUnsupportedOnVirtualRoot
   }
 
   func populate(withContentsOfHostPath path: String) throws {
-    throw FBControlCoreError.describe("\(#function) does not operate on root virtual containers").build()
+    throw FBFileContainerError.unsupportedOnVirtualRoot(operation: #function)
   }
 
   func populateHostPath(withContents path: String) throws {
-    throw FBControlCoreError.describe("\(#function) does not operate on root virtual containers").build()
+    throw FBFileContainerError.unsupportedOnVirtualRoot(operation: #function)
   }
 
   func file(byAppendingPathComponent component: String) throws -> FBContainedFile {
@@ -480,10 +506,7 @@ private final class ContainedFile_Mapped_Host: NSObject, FBContainedFile {
       return self
     }
     guard let firstComponent = pathComponents.first, let mappedPath = mappingPaths[firstComponent] else {
-      throw
-        FBControlCoreError
-        .describe("'\(pathComponents.first ?? "")' is not a valid root path out of \(FBCollectionInformation.oneLineDescription(from: Array(mappingPaths.keys)))")
-        .build()
+      throw FBFileContainerError.invalidRootPath(component: pathComponents.first ?? "", available: Array(mappingPaths.keys))
     }
     let mapped = ContainedFile_Host(fileManager: fileManager, path: mappedPath)
     return try mapped.file(byAppendingPathComponent: Self.popFirstPathComponent(pathComponents))
