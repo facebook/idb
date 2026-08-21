@@ -5,7 +5,7 @@ title: Development
 
 ## Building & Running the [`idb` cli](architecture#the-idb-cli)
 
-The `idb` cli is python based and can simply be built using `pip`
+The `idb` cli is python based and can simply be built using `pip` from the root of the repository:
 
 ```
 pip3 install .
@@ -22,8 +22,9 @@ Firstly, there are system level build dependencies, which can be [installed via 
 ```
 # XcodeGen generates the Xcode projects from the project.yml files
 brew install xcodegen
-# protobuf and swift-protobuf are used to generate the gRPC Swift bindings from
-# idb.proto (grpc-swift itself is resolved as a Swift Package dependency)
+# protobuf and swift-protobuf are used to generate the gRPC Swift bindings
+# from idb.proto. build.sh builds the protoc-gen-grpc-swift plugin itself,
+# from a pinned checkout of grpc-swift.
 brew install protobuf swift-protobuf
 ```
 
@@ -33,7 +34,18 @@ Build the companion (and the frameworks, shims and helpers it needs) with:
 ./build.sh build
 ```
 
-This produces a self-contained distribution at `Build/Distribution`, containing
+You can also build a subset, or run the test suites:
+
+```
+./build.sh build frameworks       # just the frameworks
+./build.sh build idb_companion    # just the companion
+./build.sh build FBControlCore    # a single framework
+./build.sh test                   # run all tests
+./build.sh test FBSimulatorControl
+./build.sh help                   # all options
+```
+
+A full `./build.sh build` produces a self-contained distribution at `Build/Distribution`, containing
 `idb_companion` alongside a `Resources` directory with the shim dylibs and the
 `SimulatorFrameworkBridge` helper — the layout `idb_companion` expects at runtime.
 You can then run it directly:
@@ -47,10 +59,13 @@ Xcode under Window -> Devices and Simulators (the value in the `Identifier`
 section of the header).
 
 If you prefer to build and debug inside Xcode, generate the projects with
-`./build.sh generate` and open `idb_companion/idb_companion.xcodeproj`. Edit the
+`./build.sh generate` and open `Companion/idb_companion.xcodeproj`. Edit the
 `idb_companion` scheme (Product -> Scheme -> Edit Scheme, or `cmd + <`), and under
 Run -> Arguments add `--udid <UDID>` to "Arguments Passed on Launch" before running
 the `idb_companion` target on `My Mac`.
+
+Note that `project.yml` at the root of the repository is generated — regenerate it
+rather than editing it by hand; the other `project.yml` specs are maintained manually.
 
 Once `idb_companion` has launched, it will output the TCP port upon which the companion has bound to `stdout`:
 
