@@ -10,7 +10,7 @@ import Foundation
 public protocol DapServerCommand: AnyObject {
 
   func launchDapServer(
-    _ dapPath: Any,
+    _ dapPath: String,
     stdIn: FBProcessInput<AnyObject>,
     stdOut: any FBDataConsumer
   ) async throws -> FBSubprocess<AnyObject, FBDataConsumer, NSString>

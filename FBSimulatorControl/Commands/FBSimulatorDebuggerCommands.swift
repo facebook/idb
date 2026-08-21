@@ -51,8 +51,8 @@ private final class FBSimulatorDebugServer: FBDebugServer {
         // responder's future actually matches its declared return type and
         // the bridge can read its result safely.
         task.sendSignal(SIGTERM, backingOffToKillWithTimeout: 1, logger: nil)
-          // swiftlint:disable:next force_cast
-          .mapReplace(NSNull()) as! FBFuture<NSNull>
+          .mapReplace(NSNull())
+          .retyped(FBFuture<NSNull>.self)
       }
     )
   }
@@ -105,8 +105,7 @@ public final class FBSimulatorDebuggerCommands: NSObject {
       launchMode: .failIfRunning
     )
     let launchedApp = try await simulator.launchApplication(configuration)
-    // swiftlint:disable:next force_cast
-    let debugTask = try await bridgeFBFuture(debugServerTask(forPort: port, processIdentifier: launchedApp.processIdentifier, simulator: simulator, debugServerPath: debugServerPath)) as! FBSubprocess<NSNull, AnyObject, AnyObject>
+    let debugTask = try await bridgeFBFuture(debugServerTask(forPort: port, processIdentifier: launchedApp.processIdentifier, simulator: simulator, debugServerPath: debugServerPath))
     let lldbBootstrapCommands = [
       "process connect connect://localhost:\(port)"
     ]
@@ -116,14 +115,16 @@ public final class FBSimulatorDebuggerCommands: NSObject {
     )
   }
 
-  private func debugServerTask(forPort port: in_port_t, processIdentifier: pid_t, simulator: FBSimulator, debugServerPath: String) -> FBFuture<AnyObject> {
-    FBProcessBuilder<NSNull, AnyObject, AnyObject>
+  private func debugServerTask(forPort port: in_port_t, processIdentifier: pid_t, simulator: FBSimulator, debugServerPath: String) -> FBFuture<FBSubprocess<NSNull, AnyObject, AnyObject>> {
+    let logger = simulator.logger
+    return
+      FBProcessBuilder<NSNull, AnyObject, AnyObject>
       .withLaunchPath(debugServerPath)
       .withArguments(["localhost:\(port)", "--attach", "\(processIdentifier)"])
-      .withStdOut(to: simulator.logger)
-      .withStdErr(to: simulator.logger)
-      // swiftlint:disable:next force_cast
-      .start() as! FBFuture<AnyObject>
+      .withStdOut(to: logger)
+      .withStdErr(to: logger)
+      .start()
+      .retyped(FBFuture<FBSubprocess<NSNull, AnyObject, AnyObject>>.self)
   }
 }
 

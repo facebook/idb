@@ -11,8 +11,6 @@ import FBControlCore
 import Foundation
 import UniformTypeIdentifiers
 
-// swiftlint:disable force_cast
-
 public final class FBSimulatorMediaCommands: NSObject {
 
   // MARK: - Properties
@@ -65,7 +63,8 @@ public final class FBSimulatorMediaCommands: NSObject {
       throw FBSimulatorError.describe("Cannot upload media, none was provided").build()
     }
 
-    let unknown = (mediaFileURLs as NSArray).filtered(using: NSCompoundPredicate(notPredicateWithSubpredicate: FBSimulatorMediaCommands.predicateForMediaPaths)) as! [URL]
+    let mediaPredicate = FBSimulatorMediaCommands.predicateForMediaPaths
+    let unknown = mediaFileURLs.filter { !mediaPredicate.evaluate(with: $0) }
     if !unknown.isEmpty {
       throw FBSimulatorError.describe("\(unknown) not a known media path").build()
     }
@@ -75,13 +74,11 @@ public final class FBSimulatorMediaCommands: NSObject {
       throw FBSimulatorError.describe("Simulator must be booted to upload photos, is \(stateString)").build()
     }
 
-    let photosAndVideos =
-      (mediaFileURLs as NSArray).filtered(
-        using: NSCompoundPredicate(orPredicateWithSubpredicates: [
-          FBSimulatorMediaCommands.predicateForPhotoPaths,
-          FBSimulatorMediaCommands.predicateForVideoPaths,
-        ])
-      ) as! [URL]
+    let photosAndVideosPredicate = NSCompoundPredicate(orPredicateWithSubpredicates: [
+      FBSimulatorMediaCommands.predicateForPhotoPaths,
+      FBSimulatorMediaCommands.predicateForVideoPaths,
+    ])
+    let photosAndVideos = mediaFileURLs.filter { photosAndVideosPredicate.evaluate(with: $0) }
     if !photosAndVideos.isEmpty {
       do {
         try FBObjCExceptionGuard.guarded {
@@ -92,7 +89,8 @@ public final class FBSimulatorMediaCommands: NSObject {
       }
     }
 
-    let contacts = (mediaFileURLs as NSArray).filtered(using: FBSimulatorMediaCommands.predicateForContactPaths) as! [URL]
+    let contactPredicate = FBSimulatorMediaCommands.predicateForContactPaths
+    let contacts = mediaFileURLs.filter { contactPredicate.evaluate(with: $0) }
     if !contacts.isEmpty {
       do {
         try FBObjCExceptionGuard.guarded {

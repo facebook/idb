@@ -10,8 +10,6 @@
 import Foundation
 @preconcurrency import XCTestBootstrap
 
-// swiftlint:disable force_unwrapping
-
 private let testmanagerdSimSockTimeout: TimeInterval = 5
 private let simSockEnvKey = "TESTMANAGERD_SIM_SOCK"
 
@@ -64,9 +62,12 @@ public final class FBSimulatorXCTestCommands: NSObject {
     var remote = sockaddr_un()
     remote.sun_family = sa_family_t(AF_UNIX)
     testManagerSocketCStr.withUnsafeBufferPointer { buffer in
+      guard let baseAddress = buffer.baseAddress else {
+        return
+      }
       withUnsafeMutablePointer(to: &remote.sun_path) { sunPathPtr in
         sunPathPtr.withMemoryRebound(to: CChar.self, capacity: Int(buffer.count)) { dest in
-          _ = memcpy(dest, buffer.baseAddress!, buffer.count)
+          _ = memcpy(dest, baseAddress, buffer.count)
         }
       }
     }
@@ -95,8 +96,11 @@ public final class FBSimulatorXCTestCommands: NSObject {
     guard let simulator = self.simulator else {
       throw FBWeakTargetError.simulator
     }
-    // swiftlint:disable:next force_cast
-    let typedReporter = reporter as! any FBXCTestReporter
+    // `XCTestCommands` lives in FBControlCore, which cannot see `FBXCTestReporter` in XCTestBootstrap,
+    // so the reporter arrives type-erased and has to be recovered here.
+    guard let typedReporter = reporter as? any FBXCTestReporter else {
+      throw FBSimulatorError.describe("\(reporter) is not an FBXCTestReporter").build()
+    }
 
     if !launchConfiguration.shouldUseXcodebuild {
       try await runTestAsync(with: launchConfiguration, reporter: typedReporter, logger: logger, workingDirectory: simulator.auxillaryDirectory)

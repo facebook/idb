@@ -27,7 +27,7 @@ public final class FBSimulatorDapServerCommand: NSObject {
 
   // MARK: - Private
 
-  fileprivate func launchDapServerAsync(_ dapPath: Any, stdIn: FBProcessInput<AnyObject>, stdOut: any FBDataConsumer) async throws -> FBSubprocess<AnyObject, any FBDataConsumer, NSString> {
+  fileprivate func launchDapServerAsync(_ dapPath: String, stdIn: FBProcessInput<AnyObject>, stdOut: any FBDataConsumer) async throws -> FBSubprocess<AnyObject, any FBDataConsumer, NSString> {
     let dapLogDir = (simulator.coreSimulatorLogsDirectory as NSString).appendingPathComponent("dap")
 
     do {
@@ -55,7 +55,7 @@ public final class FBSimulatorDapServerCommand: NSObject {
     guard let dataDirectory = simulator.dataDirectory else {
       throw FBControlCoreError.describe("Simulator has no data directory").build()
     }
-    let fullPath = (dataDirectory as NSString).appendingPathComponent(dapPath as! String)
+    let fullPath = (dataDirectory as NSString).appendingPathComponent(dapPath)
     let startedFuture = FBProcessBuilder<AnyObject, AnyObject, NSString>
       .withLaunchPath(fullPath)
       .withEnvironment(envs)
@@ -72,7 +72,7 @@ public final class FBSimulatorDapServerCommand: NSObject {
 extension FBSimulator: DapServerCommand {
 
   public func launchDapServer(
-    _ dapPath: Any,
+    _ dapPath: String,
     stdIn: FBProcessInput<AnyObject>,
     stdOut: any FBDataConsumer
   ) async throws -> FBSubprocess<AnyObject, FBDataConsumer, NSString> {

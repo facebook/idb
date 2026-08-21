@@ -10,8 +10,6 @@ import AppKit
 @preconcurrency import FBControlCore
 @preconcurrency import Foundation
 
-// swiftlint:disable force_cast force_unwrapping
-
 private let openURLRetries = 2
 
 public final class FBSimulatorLifecycleCommands: NSObject {
@@ -96,7 +94,7 @@ public final class FBSimulatorLifecycleCommands: NSObject {
     }
 
     // If we have no SimulatorApp running then we can instead launch one in a focused state
-    if simulatorApps.isEmpty {
+    guard let simulatorApp = simulatorApps.first else {
       try await FBSimulatorLifecycleCommands.launchSimulatorApplicationForDefaultDeviceSet()
       return
     }
@@ -107,7 +105,6 @@ public final class FBSimulatorLifecycleCommands: NSObject {
     }
 
     // Otherwise we have a single Simulator App to activate.
-    let simulatorApp = simulatorApps.first!
     if !simulatorApp.activate() {
       throw FBSimulatorError.describe("Failed to focus \(simulatorApp)").build()
     }
@@ -139,7 +136,8 @@ public final class FBSimulatorLifecycleCommands: NSObject {
         try await terminateConnectionsAsync()
         return NSNull()
       }
-      .timeout(timeout, waitingFor: "Simulator connections to teardown") as! FBFuture<NSNull>
+      .timeout(timeout, waitingFor: "Simulator connections to teardown")
+      .retyped(FBFuture<NSNull>.self)
     try await bridgeFBFutureVoid(teardownFuture)
     logger?.debug().log("Simulator connections torn down in \(Date().timeIntervalSince(date)) seconds")
   }
