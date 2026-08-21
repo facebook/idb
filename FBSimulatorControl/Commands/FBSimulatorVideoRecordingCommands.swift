@@ -89,9 +89,8 @@ public final class FBSimulatorVideoRecordingCommands: NSObject {
     guard let simulator = self.simulator else {
       throw FBWeakTargetError.simulator
     }
-    let logger = simulator.logger
     let framebuffer = try await simulator.connectToFramebuffer()
-    return try await FBSimulatorVideoStream.start(framebuffer: framebuffer, configuration: configuration, to: consumer, logger: logger)
+    return try await FBSimulatorVideoStream.start(framebuffer: framebuffer, configuration: configuration, to: consumer, logger: simulator.logger)
   }
 }
 

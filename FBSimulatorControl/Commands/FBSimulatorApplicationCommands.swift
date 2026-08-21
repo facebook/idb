@@ -9,7 +9,7 @@
 @preconcurrency import FBControlCore
 @preconcurrency import Foundation
 
-// swiftlint:disable force_try force_unwrapping
+// swiftlint:disable force_try
 
 public class FBSimulatorApplicationCommands: NSObject {
 
@@ -63,7 +63,10 @@ public class FBSimulatorApplicationCommands: NSObject {
     try await ensureApplicationIsInstalled(configuration.bundleID)
     try await confirmApplicationLaunchState(configuration.bundleID, launchMode: configuration.launchMode, waitForDebugger: configuration.waitForDebugger)
     let attachment = try await bridgeFBFuture(configuration.io.attachViaFile())
-    let launch = launchApplication(configuration, stdOut: attachment.stdOut!, stdErr: attachment.stdErr!)
+    guard let stdOut = attachment.stdOut, let stdErr = attachment.stdErr else {
+      throw FBSimulatorError.describe("Attaching to \(configuration.bundleID) did not yield both a stdout and a stderr file").build()
+    }
+    let launch = launchApplication(configuration, stdOut: stdOut, stdErr: stdErr)
     return try await bridgeFBFuture(FBSimulatorLaunchedApplication.application(withSimulator: simulator, configuration: configuration, attachment: attachment, launchFuture: launch))
   }
 
@@ -195,10 +198,13 @@ public class FBSimulatorApplicationCommands: NSObject {
     guard let simulator = self.simulator else {
       throw FBWeakTargetError.simulator
     }
+    guard let dataDirectory = simulator.dataDirectory else {
+      throw FBSimulatorError.describe("Cannot launch \(configuration.bundleID) as the Simulator has no data directory").build()
+    }
     let options = FBSimulatorApplicationCommands.simDeviceLaunchOptions(
       for: configuration,
-      stdOutPath: translateAbsolutePath(stdOutPath, toPathRelativeTo: simulator.dataDirectory!),
-      stdErrPath: translateAbsolutePath(stdErrPath, toPathRelativeTo: simulator.dataDirectory!))
+      stdOutPath: translateAbsolutePath(stdOutPath, toPathRelativeTo: dataDirectory),
+      stdErrPath: translateAbsolutePath(stdErrPath, toPathRelativeTo: dataDirectory))
 
     let logger = simulator.logger
     let bundleID = configuration.bundleID
@@ -292,12 +298,15 @@ public class FBSimulatorApplicationCommands: NSObject {
     if let installed, installed.installType == .system {
       throw FBSimulatorError.describe("Cannot install app as it is a system app \(installed)").build()
     }
-    let binaryArchRawValues = Set(application.binary!.architectures.map { $0.rawValue })
+    guard let binary = application.binary else {
+      throw FBSimulatorError.describe("Cannot install the app at \(path) as it has no executable").build()
+    }
+    let binaryArchRawValues = Set(binary.architectures.map { $0.rawValue })
     let supportedArchitectures = FBiOSTargetConfiguration.baseArchsToCompatibleArch(simulator.architectures)
     let supportedArchRawValues = Set(supportedArchitectures.map { $0.rawValue })
     if binaryArchRawValues.isDisjoint(with: supportedArchRawValues) {
       throw FBSimulatorError.describe(
-        "Simulator does not support any of the architectures (\(FBCollectionInformation.oneLineDescription(from: Array(binaryArchRawValues)))) of the executable at \(application.binary!.path). Simulator Archs (\(FBCollectionInformation.oneLineDescription(from: Array(supportedArchRawValues))))"
+        "Simulator does not support any of the architectures (\(FBCollectionInformation.oneLineDescription(from: Array(binaryArchRawValues)))) of the executable at \(binary.path). Simulator Archs (\(FBCollectionInformation.oneLineDescription(from: Array(supportedArchRawValues))))"
       ).build()
     }
     return application

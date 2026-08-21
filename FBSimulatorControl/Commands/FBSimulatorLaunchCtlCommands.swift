@@ -9,7 +9,7 @@
 @preconcurrency import FBControlCore
 @preconcurrency import Foundation
 
-// swiftlint:disable force_try force_unwrapping
+// swiftlint:disable force_try
 
 public final class FBSimulatorLaunchCtlCommands: NSObject {
 
@@ -70,15 +70,13 @@ public final class FBSimulatorLaunchCtlCommands: NSObject {
 
   fileprivate func firstServiceNameAndProcessIdentifier(matching regex: NSRegularExpression) async throws -> (String, pid_t) {
     let serviceNameToProcessIdentifier = try await serviceNamesAndProcessIdentifiers(matching: regex)
-    if serviceNameToProcessIdentifier.isEmpty {
+    guard let (serviceName, processIdentifier) = serviceNameToProcessIdentifier.first else {
       throw FBSimulatorError.describe("No Matching processes for '\(regex.pattern)'").build()
     }
     if serviceNameToProcessIdentifier.count > 1 {
       throw FBSimulatorError.describe("Multiple Matching processes for '\(regex.pattern)' \(FBCollectionInformation.oneLineDescription(from: serviceNameToProcessIdentifier))").build()
     }
-    let serviceName = serviceNameToProcessIdentifier.keys.first!
-    let processIdentifier = serviceNameToProcessIdentifier.values.first!.int32Value
-    return (serviceName, processIdentifier)
+    return (serviceName, processIdentifier.int32Value)
   }
 
   fileprivate func listServices() async throws -> [String: Any] {
@@ -134,11 +132,9 @@ public final class FBSimulatorLaunchCtlCommands: NSObject {
 
   private class func extractServiceName(fromListLine line: String, processIdentifierOut: inout pid_t) throws -> String {
     let words = line.components(separatedBy: .whitespaces)
-    guard words.count == 3 else {
+    guard words.count == 3, let processIdentifierString = words.first, let serviceName = words.last else {
       throw FBSimulatorError.describe("Output does not have exactly three words: \(FBCollectionInformation.oneLineDescription(from: words))").build()
     }
-    let serviceName = words.last!
-    let processIdentifierString = words.first!
     if processIdentifierString == "-" {
       processIdentifierOut = -1
       return serviceName

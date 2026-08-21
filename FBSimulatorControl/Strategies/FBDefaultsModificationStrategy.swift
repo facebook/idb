@@ -9,8 +9,6 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-// swiftlint:disable force_unwrapping
-
 /// Errors thrown while modifying simulator defaults/preferences. String-representable so the message
 /// reaches the caller and the error log without the NSError wrapper.
 enum DefaultsModificationError: Error, CustomStringConvertible {
@@ -18,6 +16,7 @@ enum DefaultsModificationError: Error, CustomStringConvertible {
   case couldNotWritePlist(String)
   case invalidState(FBiOSTargetState, action: String)
   case commandFailed(command: String, exitCode: Int32, stderr: String)
+  case noDataDirectory
 
   var description: String {
     switch self {
@@ -29,6 +28,8 @@ enum DefaultsModificationError: Error, CustomStringConvertible {
       return "Cannot \(action) a plist when the Simulator state is \(FBiOSTargetStateStringFromState(state)), should be \(FBiOSTargetStateString.shutdown) or \(FBiOSTargetStateString.booted)"
     case let .commandFailed(command, exitCode, stderr):
       return "defaults \(command) failed with exit code \(exitCode): \(stderr)"
+    case .noDataDirectory:
+      return "The Simulator has no data directory, so its plists cannot be located"
     }
   }
 }
@@ -142,12 +143,15 @@ public class FBDefaultsModificationStrategy: NSObject {
     guard state == .booted || state == .shutdown else {
       throw DefaultsModificationError.invalidState(state, action: "amend")
     }
+    guard let dataDirectory = simulator.dataDirectory else {
+      throw DefaultsModificationError.noDataDirectory
+    }
 
     // Stop the service while the plist is rewritten, restarting it afterwards if it was running.
     if state == .booted {
       _ = try await simulator.stopService(withName: serviceName)
     }
-    let fullPath = (simulator.dataDirectory! as NSString).appendingPathComponent(relativePath)
+    let fullPath = (dataDirectory as NSString).appendingPathComponent(relativePath)
     try await modifyDefaults(inDomainOrPath: fullPath, defaults: defaults)
     if state == .booted {
       _ = try await simulator.startService(withName: serviceName)
@@ -157,8 +161,13 @@ public class FBDefaultsModificationStrategy: NSObject {
   // MARK: - Private
 
   private var defaultsBinary: String {
+    // `SimRuntime.root` comes from an unannotated CoreSimulator header, so it imports implicitly
+    // unwrapped; it is only absent for a runtime that could not be resolved at all.
+    guard let runtimeRoot = simulator.device.runtime.root else {
+      fatalError("Could not locate defaults as the Simulator runtime has no root")
+    }
     let path =
-      ((simulator.device.runtime.root! as NSString)
+      ((runtimeRoot as NSString)
       .appendingPathComponent("usr") as NSString)
       .appendingPathComponent("bin") as NSString
     let fullPath = path.appendingPathComponent("defaults")
@@ -219,13 +228,16 @@ public class FBLocationServicesModificationStrategy: FBDefaultsModificationStrat
     guard state == .booted || state == .shutdown else {
       throw DefaultsModificationError.invalidState(state, action: "modify")
     }
+    guard let dataDirectory = simulator.dataDirectory else {
+      throw DefaultsModificationError.noDataDirectory
+    }
 
     let serviceName = "locationd"
     if state == .booted {
       _ = try await simulator.stopService(withName: serviceName)
     }
 
-    let path = (simulator.dataDirectory! as NSString)
+    let path = (dataDirectory as NSString)
       .appendingPathComponent("Library/Caches/locationd/clients.plist")
     // Delete sequentially: every delete is a read-modify-write of the same clients.plist, so running
     // them concurrently races and can drop entries when revoking several bundle IDs at once.

@@ -9,8 +9,6 @@
 @preconcurrency import FBControlCore
 @preconcurrency import Foundation
 
-// swiftlint:disable force_unwrapping
-
 /// Dark/Light mode appearance.
 /// Values match UIUserInterfaceStyle used by SimDevice's setUIInterfaceStyle:error:.
 public enum FBSimulatorAppearance: Int, Sendable {
@@ -60,6 +58,13 @@ public final class FBSimulatorSettingsCommands: NSObject {
       throw FBWeakTargetError.simulator
     }
     return simulator
+  }
+
+  private func requireDataDirectory(of simulator: FBSimulator) throws -> String {
+    guard let dataDirectory = simulator.dataDirectory else {
+      throw FBSimulatorError.describe("The Simulator has no data directory, so its plists cannot be located").build()
+    }
+    return dataDirectory
   }
 
   // Single source of truth for the SettingsCommands.apply entry point: switch over the setting and
@@ -203,7 +208,9 @@ public final class FBSimulatorSettingsCommands: NSObject {
   // Write a preference-backed setting through its centralized (domain, key). The ASP-cover rationale
   // for autofill-passwords lives on FBSimulatorSettingKey.preferenceBacking.
   fileprivate func setPreferenceBackedAsync(_ key: FBSimulatorSettingKey, value: String, type: String?) async throws {
-    let backing = key.preferenceBacking!
+    guard let backing = key.preferenceBacking else {
+      throw FBSimulatorError.describe("Setting '\(key.rawValue)' is not backed by a preference").build()
+    }
     try await setPreferenceAsync(backing.key, value: value, type: type, domain: backing.domain)
   }
 
@@ -344,7 +351,7 @@ public final class FBSimulatorSettingsCommands: NSObject {
       throw FBSimulatorError.describe("Empty bundleID set provided to url approve").build()
     }
 
-    let preferencesDirectory = (simulator.dataDirectory! as NSString).appendingPathComponent("Library/Preferences")
+    let preferencesDirectory = (try requireDataDirectory(of: simulator) as NSString).appendingPathComponent("Library/Preferences")
     let schemeApprovalPlistPath = (preferencesDirectory as NSString).appendingPathComponent("com.apple.launchservices.schemeapproval.plist")
 
     var schemeApprovalProperties: NSMutableDictionary = NSMutableDictionary()
@@ -379,7 +386,7 @@ public final class FBSimulatorSettingsCommands: NSObject {
       throw FBSimulatorError.describe("Empty bundleID set provided to url revoke").build()
     }
 
-    let preferencesDirectory = (simulator.dataDirectory! as NSString).appendingPathComponent("Library/Preferences")
+    let preferencesDirectory = (try requireDataDirectory(of: simulator) as NSString).appendingPathComponent("Library/Preferences")
     let schemeApprovalPlistPath = (preferencesDirectory as NSString).appendingPathComponent("com.apple.launchservices.schemeapproval.plist")
 
     guard FileManager.default.fileExists(atPath: schemeApprovalPlistPath) else {
@@ -399,7 +406,7 @@ public final class FBSimulatorSettingsCommands: NSObject {
 
   fileprivate func updateContactsAsync(_ databaseDirectory: String) async throws {
     let simulator = try requireSimulator()
-    let destinationDirectory = (simulator.dataDirectory! as NSString).appendingPathComponent("Library/AddressBook")
+    let destinationDirectory = (try requireDataDirectory(of: simulator) as NSString).appendingPathComponent("Library/AddressBook")
     if !FileManager.default.fileExists(atPath: destinationDirectory) {
       throw FBSimulatorError.describe("Expected Address Book path to exist at \(destinationDirectory) but it was not there").build()
     }
@@ -613,6 +620,12 @@ public final class FBSimulatorSettingsCommands: NSObject {
     approvals.intersection(Set(tccDatabaseMapping.keys))
   }
 
+  /// The TCC database names of the approvals that have one, so the row builders below never have to
+  /// repeat the lookup that `filteredTCCApprovals` has already made.
+  private class func tccServiceNames(for approvals: Set<FBTargetSettingsService>) -> [String] {
+    filteredTCCApprovals(approvals).compactMap { tccDatabaseMapping[$0] }
+  }
+
   fileprivate func grantAccessInTCCDatabaseAsync(_ databasePath: String, bundleIDs: Set<String>, services: Set<FBTargetSettingsService>, queue: DispatchQueue, logger: (any FBControlCoreLogger)?) async throws {
     let query = try await FBSimulatorSettingsCommands.buildApprovalInsertQueryAsync(forDatabase: databasePath, bundleIDs: bundleIDs, services: services, queue: queue, logger: logger)
     _ = try await FBSimulatorSettingsCommands.runSqliteCommandAsync(onDatabase: databasePath, arguments: [query], queue: queue, logger: logger)
@@ -621,8 +634,7 @@ public final class FBSimulatorSettingsCommands: NSObject {
   fileprivate func revokeAccessInTCCDatabaseAsync(_ databasePath: String, bundleIDs: Set<String>, services: Set<FBTargetSettingsService>, queue: DispatchQueue, logger: (any FBControlCoreLogger)?) async throws {
     var deletions: [String] = []
     for bundleID in bundleIDs {
-      for service in FBSimulatorSettingsCommands.filteredTCCApprovals(services) {
-        let serviceName = FBSimulatorSettingsCommands.tccDatabaseMapping[service]!
+      for serviceName in FBSimulatorSettingsCommands.tccServiceNames(for: services) {
         deletions.append("(service = '\(serviceName)' AND client = '\(bundleID)')")
       }
     }
@@ -661,8 +673,7 @@ public final class FBSimulatorSettingsCommands: NSObject {
   internal class func preiOS12ApprovalRows(forBundleIDs bundleIDs: Set<String>, services: Set<FBTargetSettingsService>) -> String {
     var tuples: [String] = []
     for bundleID in bundleIDs {
-      for service in filteredTCCApprovals(services) {
-        let serviceName = tccDatabaseMapping[service]!
+      for serviceName in tccServiceNames(for: services) {
         tuples.append("('\(serviceName)', '\(bundleID)', 0, 1, 0, 0, 0)")
       }
     }
@@ -673,8 +684,7 @@ public final class FBSimulatorSettingsCommands: NSObject {
     let timestamp = UInt(Date().timeIntervalSince1970)
     var tuples: [String] = []
     for bundleID in bundleIDs {
-      for service in filteredTCCApprovals(services) {
-        let serviceName = tccDatabaseMapping[service]!
+      for serviceName in tccServiceNames(for: services) {
         tuples.append("('\(serviceName)', '\(bundleID)', 0, 1, 1, NULL, NULL, NULL, 'UNUSED', NULL, NULL, \(timestamp))")
       }
     }
@@ -685,8 +695,7 @@ public final class FBSimulatorSettingsCommands: NSObject {
     let timestamp = UInt(Date().timeIntervalSince1970)
     var tuples: [String] = []
     for bundleID in bundleIDs {
-      for service in filteredTCCApprovals(services) {
-        let serviceName = tccDatabaseMapping[service]!
+      for serviceName in tccServiceNames(for: services) {
         tuples.append("('\(serviceName)', '\(bundleID)', 0, 2, 2, 2, NULL, NULL, NULL, 'UNUSED', NULL, NULL, \(timestamp))")
       }
     }
@@ -697,8 +706,7 @@ public final class FBSimulatorSettingsCommands: NSObject {
     let timestamp = UInt(Date().timeIntervalSince1970)
     var tuples: [String] = []
     for bundleID in bundleIDs {
-      for service in filteredTCCApprovals(services) {
-        let serviceName = tccDatabaseMapping[service]!
+      for serviceName in tccServiceNames(for: services) {
         tuples.append("('\(serviceName)', '\(bundleID)', 0, 2, 2, 2, NULL, NULL, NULL, 'UNUSED', NULL, NULL, \(timestamp), NULL, NULL, 'UNUSED', \(timestamp))")
       }
     }
@@ -769,7 +777,9 @@ extension FBSimulator: SettingsCommands {
     }
     switch key {
     case .autoFillPasswords, .locale:
-      let backing = key.preferenceBacking!
+      guard let backing = key.preferenceBacking else {
+        return try await getCurrentPreference(name, domain: domain)
+      }
       return try await getCurrentPreference(backing.key, domain: backing.domain)
     case .appearance:
       return (try await currentAppearance()).argumentName ?? "light"
