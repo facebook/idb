@@ -3,9 +3,22 @@ id: architecture
 title: Architecture
 ---
 
-import useBaseUrl from '@docusaurus/useBaseUrl';
-
 `idb` is formed of two components that have different responsibilities. Both these components are necessary for `idb` to run commands.
+
+```mermaid
+flowchart LR
+    subgraph client["Anywhere (macOS, Linux, ...)"]
+        cli["idb cli<br/>Python"]
+    end
+    subgraph host["macOS host"]
+        companion["idb_companion<br/>Swift"]
+        simulator["iOS Simulator"]
+        device["iOS Device"]
+    end
+    cli <-- "gRPC<br/>TCP or Unix domain socket" --> companion
+    companion --> simulator
+    companion --> device
+```
 
 ## The `idb` cli
 
@@ -17,20 +30,28 @@ This client library can be imported into your own python3 code if you wish, or t
 
 ## The `idb_companion`
 
-The `idb_companion` is a `gRPC` server that runs on macOS. It talks to the native APIs that are used for automating Simulators and Devices. It links the `FBSimulatorControl` and `FBDeviceControl` Frameworks, which are part of the overall `idb` project.
+The `idb_companion` is a `gRPC` server, written in Swift, that runs on macOS. It talks to the native APIs that are used for automating Simulators and Devices. It links the `FBSimulatorControl` and `FBDeviceControl` Frameworks, which are part of the overall `idb` project.
 
 When the `idb_companion` acts as `gRPC` server, it does so for a *single* iOS target (a device or simulator).
 
 Additionally, the `idb_companion` has some commands that are deliberately unavailable from the python CLI, these operations are related to iOS Device management or operations on the lifecycle of a Simulator.
-
-<img alt="idb architecture" src={useBaseUrl('img/idb_architecture.png')} />
 
 ## Connections
 
 The `idb` cli will, by default operate in one of two modes:
 
 - If the `idb` cli is running on macOS, then it will automatically start and stop companions for all targets that are attached to your Mac. This means that you can run commands against any iOS Simulators that you have, as well as any devices that you have connected.
-- If the `idb` cli is running on any other OS, it will not manage companions for you. In this case you can either "attach" companions via `idb connect` or explictly on every call using the `IDB_COMPANION=hostname:port` environment variable. This allows you to perform `idb` commands against companions running on other hosts. These facilities for companion discovery work on macOS also.
+- If the `idb` cli is running on any other OS, it will not manage companions for you. In this case you can either "attach" companions via `idb connect` or explicitly on every call using the `IDB_COMPANION=hostname:port` environment variable. This allows you to perform `idb` commands against companions running on other hosts. These facilities for companion discovery work on macOS also.
+
+## The transition to pure Swift
+
+`idb` is transitioning to a pure Swift codebase. This is an ongoing migration, and the current state is:
+
+- **The `idb_companion` is Swift.** The companion executable, its gRPC server and all of its request handling are implemented in Swift, replacing the previous Objective-C++ implementation that was built against the C++ gRPC library. The server is built on [`grpc-swift`](https://github.com/grpc/grpc-swift) and SwiftNIO.
+- **The Frameworks are migrating.** `FBControlCore`, `FBSimulatorControl`, `FBDeviceControl` and `XCTestBootstrap` are a mix of Objective-C and Swift. New functionality is written in Swift, and existing functionality is progressively rewritten. Objective-C remains concentrated where `idb` binds C or Objective-C system API directly: the `MobileDevice.framework` layer in `FBDeviceControl`, the `DTX` protocol layer in `XCTestBootstrap`, process spawning and `FBFuture` itself.
+- **New components are Swift-only.** `idb-repl` and the companion's supporting libraries are pure Swift. `idb-repl`'s whole dependency closure contains no Objective-C, which is what allows it to be built with the Swift Package Manager and cross-compiled for Linux.
+
+For consumers of the Frameworks this means that newer APIs are exposed as Swift protocols with `async` methods, while older APIs return an `FBFuture`. The two interoperate: Swift code awaits `FBFuture`-based APIs through bridging described in [`FBFuture` and Swift Concurrency](#fbfuture-and-swift-concurrency) below.
 
 ## Differences between Devices, Simulators & Emulators
 
@@ -48,7 +69,18 @@ iOS Devices and Simulators behave in substantially different ways, as well as Si
 
 ## Framework Concepts
 
-There are two frameworks in `FBSimulatorControl` and `FBDeviceControl` that exist to implement the majority of the functionality used by `idb`. Additionally, there is the `FBControlCore` Framework that exists to define common interfaces for the Device and Simulator Frameworks and to provide other functionality that is common to both. These Frameworks are able to be used independently of `idb` itself. This is an overview of how these Frameworks are designed together
+There are two frameworks in `FBSimulatorControl` and `FBDeviceControl` that exist to implement the majority of the functionality used by `idb`. Additionally, there is the `FBControlCore` Framework that exists to define common interfaces for the Device and Simulator Frameworks and to provide other functionality that is common to both. These Frameworks are able to be used independently of `idb` itself. This is an overview of how these Frameworks are designed together.
+
+```mermaid
+flowchart TD
+    companion["idb_companion"] --> CompanionLib
+    CompanionLib --> FBSimulatorControl
+    CompanionLib --> FBDeviceControl
+    CompanionLib --> XCTestBootstrap
+    FBSimulatorControl --> FBControlCore
+    FBDeviceControl --> FBControlCore
+    XCTestBootstrap --> FBControlCore
+```
 
 ### Targets
 
@@ -64,19 +96,19 @@ This abstraction allows for interfaces to "CRUD" operations on both Simulators a
 
 ### Configuration Values
 
-Across the Frameworks, there are "Configuration" values, implemented as Objective-C classes. These are typically used for consolidating all the information required for a particular API call. For instance `FBApplicationLaunchConfiguration` defines launch arguments, environment and launch modes.
+Across the Frameworks, there are "Configuration" values. These are typically used for consolidating all the information required for a particular API call. For instance `FBApplicationLaunchConfiguration` defines launch arguments, environment and launch modes.
 
 These types exist so that APIs do not require extremely long and cumbersome argument lists, as well as providing sane defaults. These types are intentionally as behaviour-less as possible, close to pure value types.
 
 ### Command Protocols & Implementations
 
-In order to keep a common APIs between Simulators and Devices, `idb` has a set of Objective-C protocols that define an interface for separate implementations across iOS Simulators & Devices. This does encourage the creation of well thought-out APIs. The `idb_companion` can be agnostic to the underlying iOS target, instead interacting with these protocols.
+In order to keep a common API between Simulators and Devices, `idb` has a set of protocols that define an interface for separate implementations across iOS Simulators & Devices. This does encourage the creation of well thought-out APIs. The `idb_companion` can be agnostic to the underlying iOS target, instead interacting with these protocols. Older protocols are defined in Objective-C and expose their asynchronous work as an `FBFuture`; newer protocols are defined in Swift with `async` methods.
 
 There may be some protocols that are only supported by one or the other, depending on the target. For instance there is no concept of "Activation" on an iOS Simulator, so `FBDeviceActivationCommands` is only implemented by `FBDevice`. Where a target does not support a given protocol, `idb` will fail when these APIs are called, giving an error message that explains what functionality is missing.
 
 Implementations across Simulators & Devices are completely separated and implemented in their respective Frameworks. As an example, `FBApplicationCommands` (which provides an API for launching and listing Applications on an iOS Target), is implemented separately in `FBSimulatorApplicationCommands` and `FBDeviceApplicationCommands`.
 
-If functionality is common to both Simulators & Devices, it's protocol is added to `FBiOSTarget` so that implementors of `FBiOSTarget` are required to implement it. For functionality that is not common, the relevant protocol is added to the definition of the concrete `FBSimulator` or `FBDevice` class. For non-common protocols, the caller must either check for protocol conformance before calling an API, or use the concrete type directly.
+If functionality is common to both Simulators & Devices, its protocol is added to `FBiOSTarget` so that implementors of `FBiOSTarget` are required to implement it. For functionality that is not common, the relevant protocol is added to the definition of the concrete `FBSimulator` or `FBDevice` class. For non-common protocols, the caller must either check for protocol conformance before calling an API, or use the concrete type directly.
 
 ### Logging
 
@@ -88,41 +120,41 @@ There are also classes that are used for intercepting internal calls (`FBLogging
 
 Due to the nature of the functionality that is offered in the Frameworks, IO is a very common task. There are a number of abstractions for reading and writing data between various sources and sinks. For example, the common interface (`FBFileReader`) is used to read output from a spawned Application process and relay it to a consumer (`FBFileWriter`). This is then used to pipe Application output over `idb`'s gRPC interface without the Application launcher having to be aware of what is consuming the output.
 
-All of this is backed by `libdispatch`, due to it's affordance for asynchronous IO, where file reading and writing is managed in an efficient manner without the user having to build their own IO multiplexer.
+All of this is backed by `libdispatch`, due to its affordance for asynchronous IO, where file reading and writing is managed in an efficient manner without the user having to build their own IO multiplexer.
 
-### `FBFuture`
+### `FBFuture` and Swift Concurrency
 
 A huge amount of the "work" that is done inside the Frameworks is based on IO and calling out to other APIs that perform IO. This work is very asynchronous, which means that there is a strong case for a consistent API for performing and waiting on this work.
 
-Since the Frameworks are Objective-C Frameworks, as well as the absence of an API such as `async`/`await` within the Swift language, the `FBFuture` class is used to encapsulate this asynchronous work. It is preferable for these features to exist at the language or standard library level to avoid implementing this kind of functionality, however there are benefits to doing so:
+The Objective-C parts of the Frameworks predate `async`/`await` in Swift, so they encapsulate asynchronous work in the `FBFuture` class:
 
 - **Error conditions**. Nearly all of the asynchronous operations represented by a `FBFuture` are fallible in some way, so an `FBFuture` can be resolved to an error state with a full `NSError`.
 - **Chaining**. A single high-level API may be formed of a sequence of asynchronous calls that occur one after another. The `FBFuture` syntax provides a way of threading these all together in a quasi-imperative way.
 - **Queues must be always defined**. In order to prevent unintended behaviour, where an async callback is called on an arbitrary or private queue, any consumer of an `FBFuture` must provide the queue that the callback will be called on. This is also true of chaining, which promotes the separation of queues that are used for serializing calls to other APIs or queues that are used for background behaviour that can be performed on any thread. For example, all calls to `CoreSimulator` must be serialized on the same thread but work in a Future that performs pure data transformation with no side-effects can be performed on an arbitrary background queue.
 - **No waiter thread**. All resolution of Futures is performed asynchronously, there does not need to be a thread or queue waiting on the resolution of a Future. This means that if multiple Futures are running concurrently there is not a danger of thread exhaustion.
 
-Code that is a consumer of `FBFuture` can use it's calls to receive a callback upon completion, or to `await:` it's result synchronously to obtain a value. The internal usage of `FBFuture` avoids any synchronous work as far as possible. A consumer of `idb` need not be aware of these details, as they are internal to the implementation of the `idb_companion`.
+Swift code in `idb` uses Swift Concurrency (`async`/`await`) instead. The two worlds are bridged: [`CompanionLib`'s `BridgeFuture`](https://github.com/facebook/idb/tree/main/CompanionLib/BridgeFuture) awaits `FBFuture`-based Framework APIs from Swift `async` contexts, so the companion's Swift request handling composes with the Objective-C core. As the migration to Swift progresses, `FBFuture` recedes towards the Objective-C code that remains; a consumer of `idb` need not be aware of these details, as they are internal to the implementation of the `idb_companion`.
 
 ## `idb_companion` concepts
 
-The majority of what the `idb_companion` does is to act as a gRPC server to all the functionality across the `FBSimulatorControl` and `FBDeviceControl` Frameworks.
+The majority of what the `idb_companion` does is to act as a gRPC server to all the functionality across the `FBSimulatorControl` and `FBDeviceControl` Frameworks. The server and all of its request handling are written in Swift.
 
 It does have a handful of components that are important to the way that it operates.
 
-### [`main`](https://github.com/facebook/idb/blob/main/idb_companion/main.m)
+### [`main.swift`](https://github.com/facebook/idb/blob/main/Companion/main.swift)
 
 This is the entrypoint to the `idb_companion` and includes all of the various flags that are supported by it. This is used for specifying how the gRPC server should be started for a given iOS Target.
 
-Additionally, it exposes a number of "CRUD" commands that are destructive for managing Simulators and Devices. These commands are intentionally left out of the gRPC interface, to prevent unwanted behaviour. If you wish to perform destructive commands, these must be performed on the host where the iOS Simulators or Devices are present.
+Additionally, it exposes a number of "CRUD" commands that are destructive for managing Simulators and Devices, for example `--create`, `--erase` and `--delete`. These commands are intentionally left out of the gRPC interface, to prevent unwanted behaviour. If you wish to perform destructive commands, these must be performed on the host where the iOS Simulators or Devices are present.
 
-### [`FBIDBServiceHandler`](https://github.com/facebook/idb/blob/main/idb_companion/Server/FBIDBServiceHandler.mm)
+### [`GRPCSwiftServer`](https://github.com/facebook/idb/blob/main/Companion/SwiftServer/GRPCSwiftServer.swift)
 
-This is an C++ class that [implements the gRPC interface](https://github.com/facebook/idb/blob/main/proto/idb.proto). This is a C++ class as the `idb_companion` is using the gRPC library for C++.
+This is the gRPC server itself, built on [`grpc-swift`](https://github.com/grpc/grpc-swift) and SwiftNIO. It binds the [`idb.proto` interface](https://github.com/facebook/idb/blob/main/proto/idb.proto) on a TCP port or Unix domain socket, optionally over TLS.
 
-Requests are forwarded to the handler on a thread pool that is internal to the gRPC C++ library. The overwhelming majority of calls made to the companion will call out to APIs that are backed by an `FBFuture`. This means that the handler thread is then responsible for awaiting the resolution of that `FBFuture`. Each handler call is wrapped in an autorelease pool to prevent memory leakage. The calls to the underlying Frameworks will serialize work appropriately, due to their usage of Futures.
+### [Method handlers](https://github.com/facebook/idb/tree/main/Companion/SwiftServer/MethodHandlers)
 
-### [`FBIDBCommandExecutor`](https://github.com/facebook/idb/blob/main/idb_companion/Server/FBIDBCommandExecutor.h)
+Each RPC in the `idb.proto` interface is implemented by its own Swift method handler, for instance `InstallMethodHandler` or `AccessibilityInfoMethodHandler`. A handler translates the request's protobuf types into the value types used by the Frameworks, awaits the underlying work with Swift Concurrency, and translates the result back into a protobuf response. This keeps each RPC's implementation small, isolated and testable.
 
-This is a pure Objective-C class that provides a facade over the many APIs in the underlying Framework, so that the service handler does not need to be aware of how they operate. This also means that C++ only needs to be used where it is necessary, so that if the gRPC handler is ever migrated to Swift there will be minimal implementation in the handler.
+### [`FBIDBCommandExecutor`](https://github.com/facebook/idb/blob/main/CompanionLib/FBIDBCommandExecutor.swift)
 
-Before calling the command executor, the service handler needs to convert C++ types to their Objective-C equivalents as request and response objects are expressed via C++ protobufs.
+This provides a facade over the many APIs in the underlying Frameworks, so that the method handlers do not need to be aware of how they operate. It lives in `CompanionLib`, which also contains the storage management for installed artifacts and the bridging between `FBFuture` and Swift Concurrency.
