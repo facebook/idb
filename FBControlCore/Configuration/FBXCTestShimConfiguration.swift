@@ -29,10 +29,7 @@ private enum CanonicalShim: CaseIterable {
   }
 }
 
-// The stored paths are immutable `let`s, so instances are safe to share across
-// concurrency domains even though the NSObject base prevents checked Sendable.
-// patternlint-disable-next-line unchecked-sendable
-public class FBXCTestShimConfiguration: NSObject, NSCopying, @unchecked Sendable {
+public struct FBXCTestShimConfiguration: Sendable {
 
   public let iOSSimulatorTestShimPath: String
   public let macOSTestShimPath: String
@@ -44,12 +41,11 @@ public class FBXCTestShimConfiguration: NSObject, NSCopying, @unchecked Sendable
     assert(!macOSTestShimPath.isEmpty)
     self.iOSSimulatorTestShimPath = iOSSimulatorTestShimPath
     self.macOSTestShimPath = macOSTestShimPath
-    super.init()
   }
 
   // MARK: Lookup
 
-  private class func pathForCanonicallyNamedShim(_ shim: CanonicalShim, inDirectory directory: String) async throws -> String {
+  private static func pathForCanonicallyNamedShim(_ shim: CanonicalShim, inDirectory directory: String) async throws -> String {
     let shimPath = (directory as NSString).appendingPathComponent(shim.filename)
     guard FileManager.default.fileExists(atPath: shimPath) else {
       throw FBControlCoreError.describe("No shim located at expected location of \(shimPath)").build()
@@ -70,7 +66,7 @@ public class FBXCTestShimConfiguration: NSObject, NSCopying, @unchecked Sendable
     return shimPath
   }
 
-  public class func findShimDirectory() async throws -> String {
+  public static func findShimDirectory() async throws -> String {
     guard let searchPath = BundledResources.directoryPath() else {
       throw FBControlCoreError.describe("Unable to determine the shim search path.").build()
     }
@@ -86,7 +82,7 @@ public class FBXCTestShimConfiguration: NSObject, NSCopying, @unchecked Sendable
     }
   }
 
-  private class func confirmExistenceOfRequiredShims(inDirectory directory: String) async throws -> String {
+  private static func confirmExistenceOfRequiredShims(inDirectory directory: String) async throws -> String {
     guard FileManager.default.fileExists(atPath: directory) else {
       throw FBControlCoreError.describe("A shim directory was searched for at '\(directory)', but it was not there").build()
     }
@@ -115,16 +111,16 @@ public class FBXCTestShimConfiguration: NSObject, NSCopying, @unchecked Sendable
 
   private static let sharedResolution = SharedResolution()
 
-  public class func sharedShimConfiguration() async throws -> FBXCTestShimConfiguration {
+  public static func sharedShimConfiguration() async throws -> FBXCTestShimConfiguration {
     try await sharedResolution.configuration()
   }
 
-  public class func defaultShimConfiguration() async throws -> FBXCTestShimConfiguration {
+  public static func defaultShimConfiguration() async throws -> FBXCTestShimConfiguration {
     let directory = try await findShimDirectory()
     return try await shimConfiguration(withDirectory: directory)
   }
 
-  public class func shimConfiguration(withDirectory directory: String) async throws -> FBXCTestShimConfiguration {
+  public static func shimConfiguration(withDirectory directory: String) async throws -> FBXCTestShimConfiguration {
     _ = try await confirmExistenceOfRequiredShims(inDirectory: directory)
     async let iOSSimulatorTestShimPath = pathForCanonicallyNamedShim(.iOSSimulatorTest, inDirectory: directory)
     async let macOSTestShimPath = pathForCanonicallyNamedShim(.macTest, inDirectory: directory)
@@ -133,21 +129,4 @@ public class FBXCTestShimConfiguration: NSObject, NSCopying, @unchecked Sendable
       macOSTestShimPath: macOSTestShimPath)
   }
 
-  // MARK: NSCopying
-
-  public func copy(with zone: NSZone? = nil) -> Any {
-    self
-  }
-
-  // MARK: NSObject
-
-  public override func isEqual(_ object: Any?) -> Bool {
-    guard let other = object as? FBXCTestShimConfiguration else { return false }
-    return iOSSimulatorTestShimPath == other.iOSSimulatorTestShimPath
-      && macOSTestShimPath == other.macOSTestShimPath
-  }
-
-  public override var hash: Int {
-    iOSSimulatorTestShimPath.hash ^ macOSTestShimPath.hash
-  }
 }
