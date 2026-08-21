@@ -15,6 +15,32 @@ private func scoreVersions(_ current: OperatingSystemVersion, _ target: Operatin
   return major + minor
 }
 
+/// The ways disk-image discovery can fail, as data rather than assembled strings.
+public enum FBDeveloperDiskImageError: Error {
+  case symbolsNotFound(buildVersion: String, searched: [String])
+  case noImagesProvided
+  case noSuitableImage(bestDescription: String, majorVersion: Int, minorVersion: Int)
+  case imageMissing(path: String)
+  case signatureLoadFailed(path: String)
+}
+
+extension FBDeveloperDiskImageError: LocalizedError {
+  public var errorDescription: String? {
+    switch self {
+    case let .symbolsNotFound(buildVersion, searched):
+      return "Could not find the Symbols for \(buildVersion) in any of \(FBCollectionInformation.oneLineDescription(from: searched))"
+    case .noImagesProvided:
+      return "No disk images provided"
+    case let .noSuitableImage(bestDescription, majorVersion, minorVersion):
+      return "The best match \(bestDescription) is not suitable for \(majorVersion).\(minorVersion)"
+    case let .imageMissing(path):
+      return "Disk image does not exist at expected path \(path)"
+    case let .signatureLoadFailed(path):
+      return "Failed to load signature at \(path)"
+    }
+  }
+}
+
 @objc(FBDeveloperDiskImage)
 public class FBDeveloperDiskImage: NSObject {
 
@@ -101,13 +127,13 @@ public class FBDeveloperDiskImage: NSObject {
         return path
       }
     }
-    throw FBControlCoreError.describe("Could not find the Symbols for \(buildVersion) in any of \(FBCollectionInformation.oneLineDescription(from: paths))").build()
+    throw FBDeveloperDiskImageError.symbolsNotFound(buildVersion: buildVersion, searched: paths)
   }
 
   @objc(bestImageForImages:targetVersion:logger:error:)
   public class func bestImage(forImages images: [FBDeveloperDiskImage], targetVersion: OperatingSystemVersion, logger: (any FBControlCoreLogger)?) throws -> FBDeveloperDiskImage {
     if images.isEmpty {
-      throw FBControlCoreError.describe("No disk images provided").build()
+      throw FBDeveloperDiskImageError.noImagesProvided
     }
 
     let sorted = images.sorted { left, right in
@@ -126,7 +152,7 @@ public class FBDeveloperDiskImage: NSObject {
       logger?.log("Found the closest match for \(targetVersion.majorVersion).\(targetVersion.minorVersion) at \(best)")
       return best
     }
-    throw FBControlCoreError.describe("The best match \(best) is not suitable for \(targetVersion.majorVersion).\(targetVersion.minorVersion)").build()
+    throw FBDeveloperDiskImageError.noSuitableImage(bestDescription: String(describing: best), majorVersion: targetVersion.majorVersion, minorVersion: targetVersion.minorVersion)
   }
 
   // MARK: NSObject
@@ -164,11 +190,11 @@ public class FBDeveloperDiskImage: NSObject {
   private class func diskImage(atPath path: String, xcodeVersion: OperatingSystemVersion) throws -> FBDeveloperDiskImage {
     let diskImagePath = (path as NSString).appendingPathComponent("DeveloperDiskImage.dmg")
     if !FileManager.default.fileExists(atPath: diskImagePath) {
-      throw FBControlCoreError.describe("Disk image does not exist at expected path \(diskImagePath)").build()
+      throw FBDeveloperDiskImageError.imageMissing(path: diskImagePath)
     }
     let signaturePath = diskImagePath + ".signature"
     guard let signature = try? Data(contentsOf: URL(fileURLWithPath: signaturePath)) else {
-      throw FBControlCoreError.describe("Failed to load signature at \(signaturePath)").build()
+      throw FBDeveloperDiskImageError.signatureLoadFailed(path: signaturePath)
     }
     let version = FBOSVersion.operatingSystemVersion(fromName: (path as NSString).lastPathComponent)
     return FBDeveloperDiskImage(diskImagePath: diskImagePath, signature: signature, version: version, xcodeVersion: xcodeVersion)
