@@ -8,23 +8,27 @@
 @testable import FBSimulatorControl
 import Foundation
 
-@objcMembers
+// Every member of these doubles is messaged through the Objective-C runtime: each is
+// substituted for the CoreSimulator class of the same shape and reached either from
+// `FBSimulator.m` or from Swift through an `unsafeBitCast`. `@objc` is spelled out per
+// member rather than applied wholesale to the class, so a member that stops being
+// representable in Objective-C fails to compile instead of silently vanishing from the
+// class at runtime.
+
 class FBSimulatorControlTests_SimDeviceType_Double: NSObject {
-  var name: String = ""
+  @objc var name: String = ""
 }
 
-@objcMembers
 class FBSimulatorControlTests_SimDeviceRuntime_Double: NSObject {
-  var name: String = ""
-  var versionString: String = ""
+  @objc var name: String = ""
+  @objc var versionString: String = ""
 }
 
-@objcMembers
 class FBSimulatorControlTests_SimDevice_Double: NSObject {
-  var name: String = ""
-  var UDID: NSUUID = NSUUID()
+  @objc var name: String = ""
+  @objc var UDID: NSUUID = NSUUID()
   private var _dataPath: String?
-  var dataPath: String {
+  @objc var dataPath: String {
     get {
       if _dataPath == nil {
         let path = (NSTemporaryDirectory() as NSString)
@@ -39,23 +43,22 @@ class FBSimulatorControlTests_SimDevice_Double: NSObject {
       _dataPath = newValue
     }
   }
-  var state: UInt64 = 0
-  var deviceType: FBSimulatorControlTests_SimDeviceType_Double?
-  var runtime: FBSimulatorControlTests_SimDeviceRuntime_Double?
-  var notificationManager: AnyObject?
+  @objc var state: UInt64 = 0
+  @objc var deviceType: FBSimulatorControlTests_SimDeviceType_Double?
+  @objc var runtime: FBSimulatorControlTests_SimDeviceRuntime_Double?
+  @objc var notificationManager: AnyObject?
 
   override func isEqual(_ object: Any?) -> Bool {
     guard let other = object as? FBSimulatorControlTests_SimDevice_Double else { return false }
     return UDID.isEqual(other.UDID)
   }
 
-  var stateString: FBiOSTargetStateString {
+  @objc var stateString: FBiOSTargetStateString {
     return FBiOSTargetStateStringFromState(FBiOSTargetState(rawValue: UInt(state))!)
   }
 }
 
-@objcMembers
 class FBSimulatorControlTests_SimDeviceSet_Double: NSObject {
-  var availableDevices: [Any] = []
-  var notificationManager: AnyObject?
+  @objc var availableDevices: [Any] = []
+  @objc var notificationManager: AnyObject?
 }

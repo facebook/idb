@@ -12,10 +12,14 @@ import ObjectiveC
 
 // MARK: - AXPTranslationObject Double
 
-@objcMembers
+// The doubles below stand in for `AXPTranslator` and its object graph, which production
+// code reaches through an `unsafeBitCast` and therefore messages through the Objective-C
+// runtime. Only the substituted surface is `@objc`; the fixture and call-recording members
+// are read from Swift by the tests themselves and stay invisible to Objective-C.
+
 class FBSimulatorControlTests_AXPTranslationObject_Double: NSObject {
-  var bridgeDelegateToken: String?
-  var pid: pid_t = 12345
+  @objc var bridgeDelegateToken: String?
+  @objc var pid: pid_t = 12345
 }
 
 // MARK: - AXPMacPlatformElement Double
@@ -194,7 +198,6 @@ extension FBSimulatorControlTests_AXPMacPlatformElement_Double: FBAXWritableElem
 
 // MARK: - AXPTranslator Double
 
-@objcMembers
 class FBSimulatorControlTests_AXPTranslator_Double: NSObject {
   var frontmostApplicationResult: FBSimulatorControlTests_AXPTranslationObject_Double?
   var objectAtPointResult: FBSimulatorControlTests_AXPTranslationObject_Double?
@@ -209,13 +212,14 @@ class FBSimulatorControlTests_AXPTranslator_Double: NSObject {
   /// passes whether or not the measurement is wired up. Zero by default, so no other test pays for it.
   var frontmostApplicationDelay: TimeInterval = 0
   var macPlatformElementDelay: TimeInterval = 0
-  weak var bridgeTokenDelegate: AnyObject?
+  @objc weak var bridgeTokenDelegate: AnyObject?
   private(set) var methodCalls = NSMutableArray()
   /// Invoked at the top of each frontmost resolution, on the thread driving it. Lets a
   /// test observe — or deliberately hold open — the window in which a resolution is
   /// inside the shared translator, so overlap between concurrent resolutions is testable.
   var resolutionEnterHook: (() -> Void)?
 
+  @objc
   func frontmostApplication(withDisplayId displayId: Int32, bridgeDelegateToken token: String) -> FBSimulatorControlTests_AXPTranslationObject_Double? {
     resolutionEnterHook?()
     methodCalls.add("frontmostApplicationWithDisplayId:\(displayId) token:\(token)")
@@ -235,6 +239,7 @@ class FBSimulatorControlTests_AXPTranslator_Double: NSObject {
     return result
   }
 
+  @objc
   func macPlatformElement(fromTranslation translation: FBSimulatorControlTests_AXPTranslationObject_Double) -> FBSimulatorControlTests_AXPMacPlatformElement_Double? {
     methodCalls.add("macPlatformElementFromTranslation")
     if macPlatformElementDelay > 0 {
@@ -264,14 +269,14 @@ typealias FBAccessibilityResponseHandler = (Any, @escaping (Any?) -> Void) -> Vo
 
 // MARK: - SimDevice Accessibility Double
 
-@objcMembers
 class FBSimulatorControlTests_SimDevice_Accessibility_Double: NSObject {
-  var name: String = ""
-  var UDID: NSUUID = NSUUID()
-  var state: UInt64 = 0
+  @objc var name: String = ""
+  @objc var UDID: NSUUID = NSUUID()
+  @objc var state: UInt64 = 0
   var accessibilityResponseHandler: FBAccessibilityResponseHandler?
   private(set) var accessibilityRequests = NSMutableArray()
 
+  @objc
   func sendAccessibilityRequestAsync(_ request: Any, completionQueue queue: DispatchQueue, completionHandler handler: @escaping (Any?) -> Void) {
     accessibilityRequests.add(request)
     if let responseHandler = accessibilityResponseHandler {
@@ -291,7 +296,7 @@ class FBSimulatorControlTests_SimDevice_Accessibility_Double: NSObject {
     accessibilityRequests.removeAllObjects()
   }
 
-  var stateString: String {
+  @objc var stateString: String {
     return "Booted"
   }
 }
