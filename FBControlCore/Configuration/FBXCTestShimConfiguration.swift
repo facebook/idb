@@ -29,6 +29,32 @@ private enum CanonicalShim: CaseIterable {
   }
 }
 
+/// The ways shim resolution can fail, as data rather than assembled strings.
+public enum FBXCTestShimError: Error {
+  case shimMissing(path: String)
+  case shimUnsigned(path: String, underlying: Error)
+  case searchPathUnresolvable
+  case shimDirectoryMissing(directory: String)
+  case shimsMissingInDirectory(shimNames: [String], directory: String, underlying: Error)
+}
+
+extension FBXCTestShimError: LocalizedError {
+  public var errorDescription: String? {
+    switch self {
+    case let .shimMissing(path):
+      return "No shim located at expected location of \(path)"
+    case let .shimUnsigned(path, _):
+      return "Shim at path \(path) was required to be signed, but it was not"
+    case .searchPathUnresolvable:
+      return "Unable to determine the shim search path."
+    case let .shimDirectoryMissing(directory):
+      return "A shim directory was searched for at '\(directory)', but it was not there"
+    case let .shimsMissingInDirectory(shimNames, directory, underlying):
+      return "Could not find all shims \(FBCollectionInformation.oneLineDescription(from: shimNames)) in the expected directory \(directory): \(underlying.localizedDescription)"
+    }
+  }
+}
+
 public struct FBXCTestShimConfiguration: Sendable {
 
   public let iOSSimulatorTestShimPath: String
@@ -48,7 +74,7 @@ public struct FBXCTestShimConfiguration: Sendable {
   private static func pathForCanonicallyNamedShim(_ shim: CanonicalShim, inDirectory directory: String) async throws -> String {
     let shimPath = (directory as NSString).appendingPathComponent(shim.filename)
     guard FileManager.default.fileExists(atPath: shimPath) else {
-      throw FBControlCoreError.describe("No shim located at expected location of \(shimPath)").build()
+      throw FBXCTestShimError.shimMissing(path: shimPath)
     }
     guard shim.codesigningRequired else {
       return shimPath
@@ -57,34 +83,25 @@ public struct FBXCTestShimConfiguration: Sendable {
     do {
       _ = try await bridgeFBFuture(codesign.cdHashForBundle(atPath: shimPath))
     } catch {
-      throw
-        FBControlCoreError
-        .describe("Shim at path \(shimPath) was required to be signed, but it was not")
-        .caused(by: error as NSError)
-        .build()
+      throw FBXCTestShimError.shimUnsigned(path: shimPath, underlying: error)
     }
     return shimPath
   }
 
   public static func findShimDirectory() async throws -> String {
     guard let searchPath = BundledResources.directoryPath() else {
-      throw FBControlCoreError.describe("Unable to determine the shim search path.").build()
+      throw FBXCTestShimError.searchPathUnresolvable
     }
     do {
       return try await confirmExistenceOfRequiredShims(inDirectory: searchPath)
     } catch {
-      let shimNames = CanonicalShim.allCases.map(\.filename)
-      throw
-        FBControlCoreError
-        .describe("Could not find all shims \(FBCollectionInformation.oneLineDescription(from: shimNames)) in the expected directory \(searchPath)")
-        .caused(by: error as NSError)
-        .build()
+      throw FBXCTestShimError.shimsMissingInDirectory(shimNames: CanonicalShim.allCases.map(\.filename), directory: searchPath, underlying: error)
     }
   }
 
   private static func confirmExistenceOfRequiredShims(inDirectory directory: String) async throws -> String {
     guard FileManager.default.fileExists(atPath: directory) else {
-      throw FBControlCoreError.describe("A shim directory was searched for at '\(directory)', but it was not there").build()
+      throw FBXCTestShimError.shimDirectoryMissing(directory: directory)
     }
     async let iOSSimulatorShim = pathForCanonicallyNamedShim(.iOSSimulatorTest, inDirectory: directory)
     async let macShim = pathForCanonicallyNamedShim(.macTest, inDirectory: directory)
