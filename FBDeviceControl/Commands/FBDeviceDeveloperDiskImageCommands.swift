@@ -8,8 +8,6 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-// swiftlint:disable force_cast force_unwrapping
-
 private let MountPathKey = "MountPath"
 private let ImageTypeKey = "ImageType"
 private let ImageSignatureKey = "ImageSignature"
@@ -60,7 +58,9 @@ public class FBDeviceDeveloperDiskImageCommands: NSObject, DeveloperDiskImageCom
       if mountSignature != diskImage.signature {
         continue
       }
-      let mountPath = mountEntry[MountPathKey] as! String
+      guard let mountPath = mountEntry[MountPathKey] as? String else {
+        throw FBDeviceControlError.describe("No \(MountPathKey) in mounted image entry \(mountEntry)").build()
+      }
       try await unmountDiskImageAtPathAsync(mountPath)
       return
     }
@@ -75,7 +75,10 @@ public class FBDeviceDeveloperDiskImageCommands: NSObject, DeveloperDiskImageCom
     guard let device else {
       throw FBDeviceControlError().describe("Device is nil").build()
     }
-    let targetVersion = FBOSVersion.operatingSystemVersion(fromName: device.productVersion!)
+    guard let productVersion = device.productVersion else {
+      throw FBDeviceControlError.describe("No product version available for \(device), cannot select a developer disk image").build()
+    }
+    let targetVersion = FBOSVersion.operatingSystemVersion(fromName: productVersion)
     let diskImage = try FBDeveloperDiskImage.developerDiskImage(targetVersion, logger: device.logger)
     return try await mountDeveloperDiskImageAsync(diskImage, imageType: DiskImageTypeDeveloper)
   }
@@ -111,11 +114,16 @@ public class FBDeviceDeveloperDiskImageCommands: NSObject, DeveloperDiskImageCom
       let request: [String: Any] = [
         CommandKey: "CopyDevices"
       ]
-      let response = try connection.sendAndReceiveMessage(request) as! [String: Any]
+      let message = try connection.sendAndReceiveMessage(request)
+      guard let response = message as? [String: Any] else {
+        throw FBDeviceControlError.describe("CopyDevices response \(message) is not a dictionary").build()
+      }
       if let errorString = response["Error"] as? String {
         throw FBDeviceControlError.describe("Could not get mounted image info: \(errorString)").build()
       }
-      let entries = response["EntryList"] as! [[String: Any]]
+      guard let entries = response["EntryList"] as? [[String: Any]] else {
+        throw FBDeviceControlError.describe("No EntryList of mounted images in \(response)").build()
+      }
       return entries
     }
   }

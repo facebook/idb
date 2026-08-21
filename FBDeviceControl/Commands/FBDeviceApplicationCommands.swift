@@ -8,8 +8,6 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-// swiftlint:disable force_cast force_unwrapping
-
 // MARK: - FBDeviceWorkflowStatistics
 
 private class FBDeviceWorkflowStatistics {
@@ -154,7 +152,7 @@ public class FBDeviceApplicationCommands: NSObject {
     let applicationData = try await installedApplicationsDataAsync(Self.installedApplicationLookupAttributes)
     var installedApplications: [FBInstalledApplication] = []
     for app in applicationData.values {
-      let application = FBDeviceApplicationCommands.installedApplication(from: app)
+      let application = try FBDeviceApplicationCommands.installedApplication(from: app)
       installedApplications.append(application)
     }
     return installedApplications
@@ -165,7 +163,7 @@ public class FBDeviceApplicationCommands: NSObject {
     guard let app = applicationData[bundleID] else {
       throw FBDeviceControlError.describe("Application with bundle ID: \(bundleID) is not installed. Installed apps \(FBCollectionInformation.oneLineDescription(from: Array(applicationData.keys) as [Any]))").build()
     }
-    return FBDeviceApplicationCommands.installedApplication(from: app)
+    return try FBDeviceApplicationCommands.installedApplication(from: app)
   }
 
   fileprivate func runningApplicationsAsync() async throws -> [String: NSNumber] {
@@ -260,8 +258,10 @@ public class FBDeviceApplicationCommands: NSObject {
         let errorMessage = connectedDevice.calls.CopyErrorText?(status)?.takeRetainedValue() as String? ?? "Unknown error"
         throw FBDeviceControlError.describe("Failed to get list of applications 0x\(String(UInt32(bitPattern: status), radix: 16)) (\(errorMessage))").build()
       }
-      let result = applications.takeRetainedValue() as NSDictionary
-      return result as! [String: [String: Any]]
+      guard let result = applications.takeRetainedValue() as? [String: [String: Any]] else {
+        throw FBDeviceControlError.describe("Application lookup did not return a mapping of bundle identifiers to attributes").build()
+      }
+      return result
     }
   }
 
@@ -299,7 +299,9 @@ public class FBDeviceApplicationCommands: NSObject {
       } catch {
         throw FBDeviceControlError.describe("Failed to receive PidList response \(error)").build()
       }
-      let responseDict = response as! [String: Any]
+      guard let responseDict = response as? [String: Any] else {
+        throw FBDeviceControlError.describe("PidList response \(response) is not a dictionary").build()
+      }
       let status = responseDict["Status"] as? String
       if status != "RequestSuccessful" {
         throw FBDeviceControlError.describe("Request to PidList is not RequestSuccessful").build()
@@ -318,10 +320,12 @@ public class FBDeviceApplicationCommands: NSObject {
     }
   }
 
-  private static func installedApplication(from app: [String: Any]) -> FBInstalledApplication {
+  private static func installedApplication(from app: [String: Any]) throws -> FBInstalledApplication {
     let bundleName = app[FBApplicationInstallInfoKey.bundleName.rawValue] as? String ?? ""
     let path = app[FBApplicationInstallInfoKey.path.rawValue] as? String ?? ""
-    let bundleID = app[FBApplicationInstallInfoKey.bundleIdentifier.rawValue] as! String
+    guard let bundleID = app[FBApplicationInstallInfoKey.bundleIdentifier.rawValue] as? String else {
+      throw FBDeviceControlError.describe("No \(FBApplicationInstallInfoKey.bundleIdentifier.rawValue) in installed application \(app)").build()
+    }
 
     let bundle = FBBundleDescriptor(name: bundleName, identifier: bundleID, path: path, binary: nil)
 

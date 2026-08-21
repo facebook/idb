@@ -85,15 +85,17 @@ private final class FBDeviceEraseOperation: NSObject, FBiOSTargetSetDelegate, @u
         ) ?? -1
       logger.log("AMSEraseDevice had status \(status)")
     }
-    // swiftlint:disable:next force_cast
-    let timed = convertFBMutableFuture(eraseCallbackResult).timeout(APICallbackTimeout, waitingFor: "Device erase API call to resolve") as! FBFuture<NSNumber>
+    let timed = convertFBMutableFuture(eraseCallbackResult)
+      .timeout(APICallbackTimeout, waitingFor: "Device erase API call to resolve")
+      .retyped(FBFuture<NSNumber>.self)
     let result = try await bridgeFBFuture(timed)
     return result.int32Value
   }
 
   private func awaitEvent(_ future: FBMutableFuture<NSNull>, timeout: TimeInterval, waitingFor description: String) async throws {
-    // swiftlint:disable:next force_cast
-    let timed = convertFBMutableFuture(future).timeout(timeout, waitingFor: description) as! FBFuture<NSNull>
+    let timed = convertFBMutableFuture(future)
+      .timeout(timeout, waitingFor: description)
+      .retyped(FBFuture<NSNull>.self)
     try await bridgeFBFutureVoid(timed)
   }
 

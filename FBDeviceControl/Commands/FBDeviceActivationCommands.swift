@@ -8,8 +8,6 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-// swiftlint:disable force_cast force_unwrapping
-
 private let DefaultDRMHandshakeURL = "https://albert.apple.com/deviceservices/drmHandshake"
 private let DefaultDeviceActivationURL = "https://albert.apple.com/deviceservices/deviceActivation"
 
@@ -74,7 +72,7 @@ public class FBDeviceActivationCommands: NSObject {
 
   private func mobileActivationService() -> FBFutureContext<FBAMDServiceConnection> {
     guard let device else {
-      return FBDeviceControlError().describe("Device is nil").failFutureContext() as! FBFutureContext<FBAMDServiceConnection>
+      return FBFutureContext(error: FBDeviceControlError().describe("Device is nil").build())
     }
     return device.startService("com.apple.mobileactivationd")
   }
@@ -124,7 +122,10 @@ public class FBDeviceActivationCommands: NSObject {
   private static func mobileActivationRequestAsync(forRequestPayload requestPayload: [String: Any]) async throws -> Data {
     let body = try PropertyListSerialization.data(fromPropertyList: requestPayload, format: .xml, options: 0)
 
-    let url = URL(string: ProcessInfo.processInfo.environment["IDB_DRM_HANDSHAKE_URL"] ?? DefaultDRMHandshakeURL)!
+    let urlString = ProcessInfo.processInfo.environment["IDB_DRM_HANDSHAKE_URL"] ?? DefaultDRMHandshakeURL
+    guard let url = URL(string: urlString) else {
+      throw FBControlCoreError.describe("\(urlString) is not a valid DRM handshake URL").build()
+    }
     var request = URLRequest(url: url)
     request.httpMethod = "POST"
     request.httpBody = body
@@ -147,7 +148,10 @@ public class FBDeviceActivationCommands: NSObject {
     let boundaryConstant = UUID().uuidString
     let contentType = "multipart/form-data; boundary=\(boundaryConstant)"
 
-    let url = URL(string: ProcessInfo.processInfo.environment["IDB_ACTIVATION_URL"] ?? DefaultDeviceActivationURL)!
+    let urlString = ProcessInfo.processInfo.environment["IDB_ACTIVATION_URL"] ?? DefaultDeviceActivationURL
+    guard let url = URL(string: urlString) else {
+      throw FBControlCoreError.describe("\(urlString) is not a valid device activation URL").build()
+    }
     var request = URLRequest(url: url)
     request.httpMethod = "POST"
     request.httpBody = multipartData(fromRequestPayload: payloadData, key: "activation-info", boundary: boundaryConstant)
@@ -193,11 +197,11 @@ public class FBDeviceActivationCommands: NSObject {
     key: String,
     boundary: String
   ) -> Data {
-    let dashesData = "--".data(using: .utf8)!
-    let newlineData = "\r\n".data(using: .utf8)!
-    let keyData = key.data(using: .utf8)!
-    let boundaryData = boundary.data(using: .utf8)!
-    let valueHeaderData = "Content-Disposition: form-data; name=".data(using: .utf8)!
+    let dashesData = Data("--".utf8)
+    let newlineData = Data("\r\n".utf8)
+    let keyData = Data(key.utf8)
+    let boundaryData = Data(boundary.utf8)
+    let valueHeaderData = Data("Content-Disposition: form-data; name=".utf8)
 
     var data = Data()
 

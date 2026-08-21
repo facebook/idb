@@ -8,8 +8,6 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-// swiftlint:disable force_unwrapping
-
 private let StartCommand: UInt32 = 0x00000000
 
 public class FBDeviceLocationCommands: NSObject {
@@ -38,13 +36,8 @@ public class FBDeviceLocationCommands: NSObject {
       let startData = Data(bytes: &start, count: MemoryLayout<UInt32>.size)
       try connection.send(startData)
 
-      let latitudeString = "\(latitude)"
-      let latitudeData = latitudeString.data(using: .utf8)!
-      try connection.send(withLengthHeader: latitudeData)
-
-      let longitudeString = "\(longitude)"
-      let longitudeData = longitudeString.data(using: .utf8)!
-      try connection.send(withLengthHeader: longitudeData)
+      try connection.send(withLengthHeader: Data("\(latitude)".utf8))
+      try connection.send(withLengthHeader: Data("\(longitude)".utf8))
     }
   }
 }

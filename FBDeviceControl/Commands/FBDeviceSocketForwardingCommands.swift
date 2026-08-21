@@ -8,8 +8,6 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-// swiftlint:disable force_unwrapping
-
 public class FBDeviceSocketForwardingCommands: NSObject {
   private(set) weak var device: FBDevice?
 
@@ -36,7 +34,7 @@ public class FBDeviceSocketForwardingCommands: NSObject {
     }
     var error: NSError?
     guard let localConsumer = FBFileWriter.asyncWriter(withFileDescriptor: localFileDescriptorOutput, closeOnEndOfFile: false, error: &error) else {
-      throw error!
+      throw error ?? FBDeviceControlError.describe("Failed to create a writer for local file descriptor \(localFileDescriptorOutput)").build()
     }
     try await withFBFutureContext(device.connectToDevice(withPurpose: "Socket Connection")) { connectedDevice in
       let localSocket = try Self.openLocalSocket(toRemotePort: Int(remotePort), on: connectedDevice, logger: device.logger)
@@ -54,7 +52,7 @@ public class FBDeviceSocketForwardingCommands: NSObject {
       guard let remoteWriter = FBFileWriter.asyncWriter(withFileDescriptor: writerDescriptor, closeOnEndOfFile: true, error: &writerError) else {
         close(writerDescriptor)
         close(localSocket)
-        throw writerError!
+        throw writerError ?? FBDeviceControlError.describe("Failed to create a writer for local socket \(localSocket)").build()
       }
       let remoteReader = FBFileReader.reader(withFileDescriptor: localSocket, closeOnEndOfFile: false, consumer: localConsumer, logger: nil)
       let inputReader = FBFileReader.reader(withFileDescriptor: localFileDescriptorInput, closeOnEndOfFile: false, consumer: remoteWriter, logger: nil)
