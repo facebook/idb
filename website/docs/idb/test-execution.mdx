@@ -5,7 +5,7 @@ title: Test Execution
 
 Test execution is a well-supported feature of idb. Supporting `xctest run` as a primitive means that idb can be used in automated scenarios such as continuous integration or IDEs.
 
-There are three areas that idb aims to solve on top of Xcode and `xcodebuild`:
+There are four areas that idb aims to solve on top of Xcode and `xcodebuild`:
 
 1. Structured Output: idb will output machine readable output when using the `--json` flag. This is often required for CI systems. `xcodebuild` now supports the `-resultBundlePath` flag, which outputs a plist upon completion, but idb also exposes streaming output and can support custom reporters.
 2. Build Once, Run Many, Run Repeated: `xcodebuild` currently supports "Run Many" with the `test-without-building` command. However, this imposes more of a burden on the user than is necessary. In many cases idb supports building a singular `.xctest` bundle and `xctest install`ing this. This makes it easier to distribute test bundles against many runtimes and also run the same test bundle with a different runtime environment. For example, idb can run the same bundle with different environment variables, without modifying the build output. This makes it ideal for parameterizing the same test bundle with different data inputs. Or running the same test bundle in an Application or Logic Test context.
@@ -76,7 +76,7 @@ A Test Bundle that can run in the context of any process, typically used for Uni
 
 Like all `xctest` bundles, they can dynamically link the code-under-test at runtime, or statically links the tested code inside the Test Bundle's dynamic library.
 
-Logic tests are typically injected into a small host process like the `xctest` commandline. macOS has a `xctest` commandline at `/usr/bin/xctest/`, the iOS Simulator `xctest` executable is located at `$DEVELOPER_DIR/Platforms/iPhoneSimulator.platform/Developer/Library/Xcode/Agents/xctest`.
+Logic tests are typically injected into a small host process like the `xctest` commandline. macOS has a `xctest` commandline at `/usr/bin/xctest`, the iOS Simulator `xctest` executable is located at `$DEVELOPER_DIR/Platforms/iPhoneSimulator.platform/Developer/Library/Xcode/Agents/xctest`.
 
 The `xctest` commandline will load the `xctest` bundle provided as an argument and run tests according to the arguments, or from an `XCTestConfigurationFilePath` provided as an environment variable passed to the process.
 
@@ -98,16 +98,10 @@ In Xcode 7, Apple deprecated `UIAutomation` and replaced it with UI Testing supp
 
 As part of the security model of running these tests, the Test Bundle cannot manipulate the User Interface un-aided. The bundle running inside the application process coordinates with Xcode via a daemon process called `testmanagerd`.
 
-This mediated connection between the injected application process and IDE Host also allows for [test results to be delivered across a delegate protocol to the IDE Host](https://github.com/facebook/FBSimulatorControl/blob/main/PrivateHeaders/XCTest/XCTestManager_IDEInterface-Protocol.h).
+This mediated connection between the injected application process and IDE Host also allows for [test results to be delivered across a delegate protocol to the IDE Host](https://github.com/facebook/idb/blob/main/PrivateHeaders/XCTestPrivate/XCTestManager_IDEInterface-Protocol.h).
 
 ## idb and Shims
 
-In order for idb to extract structured output from a test process, it uses a "shim": a dynamically linked library that can interpose some of the functionality of `XCTest.framework`.
+In order for idb to extract structured output from a test process, it uses a "shim": a dynamically linked library that can interpose some of the functionality of `XCTest.framework`. The shim sources live under [`Shims/Shimulator`](https://github.com/facebook/idb/tree/main/Shims/Shimulator).
 
-The default installation instructions for idb will create shims for you. If you're re-locating the `idb_companion` you should take a [look at this class](https://github.com/facebook/idb/blob/main/XCTestBootstrap/Configuration/FBXCTestShimConfiguration.m), which describes how idb finds these binaries.
-
-## What about `fbxctest`?
-
-`fbxctest` was built as a drop-in replacement for `xctool` before it. idb doesn't have the same command-line interface for test execution, so you will need to invoke idb differently to use it.
-
-`fbxctest` will remain around for the foreseeable future, as both idb and `fbxctest` depend on the same underlying `XCTestBootstrap` framework. `fbxctest` may be deprecated in the future.
+A built `idb_companion` distribution ships the shim dylibs in a `Resources` directory that sits alongside the `idb_companion` binary, and finds them there at runtime through [`BundledResources`](https://github.com/facebook/idb/blob/main/FBControlCore/Utility/BundledResources.swift). If you relocate the companion binary, move the whole distribution directory as a unit so that `Resources` stays next to it.
