@@ -20,6 +20,49 @@ private final class AFCConnectionBox: @unchecked Sendable {
   }
 }
 
+// MARK: - FBDeviceFileContainerError
+
+/// The ways device file-container operations can fail, as data rather than assembled strings.
+public enum FBDeviceFileContainerError: Error {
+  case deviceDeallocated
+  case tailNotImplemented
+  case tailUnsupported(container: String)
+  case operationUnsupported(operation: String, container: String)
+  case moveOutsideMounts(destination: String)
+  case notAMountableImage(path: String, available: [String])
+  case removeOutsideMounts(path: String)
+  case notAMountedImage(path: String, available: [String])
+  case unexpectedServiceConnections(description: String)
+  case requiresRootedDevice(operation: String)
+}
+
+extension FBDeviceFileContainerError: LocalizedError {
+  public var errorDescription: String? {
+    switch self {
+    case .deviceDeallocated:
+      return "The device that these file commands were created for has been deallocated"
+    case .tailNotImplemented:
+      return "tail is not implemented for FBDeviceFileContainer"
+    case let .tailUnsupported(container):
+      return "tail is not supported for \(container)"
+    case let .operationUnsupported(operation, container):
+      return "\(operation) does not make sense for \(container)"
+    case let .moveOutsideMounts(destination):
+      return "\(destination) only moving into mounts is supported."
+    case let .notAMountableImage(path, available):
+      return "\(path) is not one of \(FBCollectionInformation.oneLineDescription(from: available))"
+    case let .removeOutsideMounts(path):
+      return "\(path) cannot be removed, only mounts can be removed"
+    case let .notAMountedImage(path, available):
+      return "\(path) is not one of the available mounts \(FBCollectionInformation.oneLineDescription(from: available))"
+    case let .unexpectedServiceConnections(description):
+      return "Expected the springboard and managed configuration connections, got \(description)"
+    case let .requiresRootedDevice(operation):
+      return "\(operation) not supported on devices, requires a rooted device"
+    }
+  }
+}
+
 // MARK: - FBDeviceFileContainer
 
 public class FBDeviceFileContainer: AsyncFileContainer {
@@ -58,7 +101,7 @@ public class FBDeviceFileContainer: AsyncFileContainer {
   }
 
   public func tail(_ path: String, to consumer: any FBDataConsumer) async throws -> FileContainerTailOperation {
-    throw FBControlCoreError.describe("tail is not implemented for FBDeviceFileContainer").build()
+    throw FBDeviceFileContainerError.tailNotImplemented
   }
 
   public func createDirectory(_ directoryPath: String) async throws {
@@ -162,19 +205,19 @@ private class FBDeviceFileContainer_Wallpaper: AsyncFileContainer {
   }
 
   func tail(_ path: String, to consumer: any FBDataConsumer) async throws -> FileContainerTailOperation {
-    throw FBControlCoreError.describe("tail is not supported for Wallpaper File Containers").build()
+    throw FBDeviceFileContainerError.tailUnsupported(container: "Wallpaper File Containers")
   }
 
   func createDirectory(_ directoryPath: String) async throws {
-    throw FBControlCoreError.describe("\(#function) does not make sense for Wallpaper File Containers").build()
+    throw FBDeviceFileContainerError.operationUnsupported(operation: #function, container: "Wallpaper File Containers")
   }
 
   func move(from sourcePath: String, to destinationPath: String) async throws {
-    throw FBControlCoreError.describe("\(#function) does not make sense for Wallpaper File Containers").build()
+    throw FBDeviceFileContainerError.operationUnsupported(operation: #function, container: "Wallpaper File Containers")
   }
 
   func remove(_ path: String) async throws {
-    throw FBControlCoreError.describe("\(#function) does not make sense for Wallpaper File Containers").build()
+    throw FBDeviceFileContainerError.operationUnsupported(operation: #function, container: "Wallpaper File Containers")
   }
 
   func contents(ofDirectory path: String) async throws -> [String] {
@@ -199,19 +242,19 @@ private class FBDeviceFileContainer_MDMProfiles: AsyncFileContainer {
   }
 
   func copy(fromContainer sourcePath: String, toHost destinationPath: String) async throws -> String {
-    throw FBControlCoreError.describe("\(#function) does not make sense for MDM Profile File Containers").build()
+    throw FBDeviceFileContainerError.operationUnsupported(operation: #function, container: "MDM Profile File Containers")
   }
 
   func tail(_ path: String, to consumer: any FBDataConsumer) async throws -> FileContainerTailOperation {
-    throw FBControlCoreError.describe("tail is not supported for MDM Profile File Containers").build()
+    throw FBDeviceFileContainerError.tailUnsupported(container: "MDM Profile File Containers")
   }
 
   func createDirectory(_ directoryPath: String) async throws {
-    throw FBControlCoreError.describe("\(#function) does not make sense for MDM Profile File Containers").build()
+    throw FBDeviceFileContainerError.operationUnsupported(operation: #function, container: "MDM Profile File Containers")
   }
 
   func move(from sourcePath: String, to destinationPath: String) async throws {
-    throw FBControlCoreError.describe("\(#function) does not make sense for MDM Profile File Containers").build()
+    throw FBDeviceFileContainerError.operationUnsupported(operation: #function, container: "MDM Profile File Containers")
   }
 
   func remove(_ path: String) async throws {
@@ -237,39 +280,39 @@ private class FBDeviceFileCommands_DiskImages: AsyncFileContainer {
   // MARK: AsyncFileContainer
 
   func copy(fromHost sourcePath: String, toContainer destinationPath: String) async throws {
-    throw FBControlCoreError.describe("\(#function) does not make sense for Disk Images").build()
+    throw FBDeviceFileContainerError.operationUnsupported(operation: #function, container: "Disk Images")
   }
 
   func copy(fromContainer sourcePath: String, toHost destinationPath: String) async throws -> String {
-    throw FBControlCoreError.describe("\(#function) does not make sense for Disk Images").build()
+    throw FBDeviceFileContainerError.operationUnsupported(operation: #function, container: "Disk Images")
   }
 
   func tail(_ path: String, to consumer: any FBDataConsumer) async throws -> FileContainerTailOperation {
-    throw FBControlCoreError.describe("tail is not supported for Disk Images").build()
+    throw FBDeviceFileContainerError.tailUnsupported(container: "Disk Images")
   }
 
   func createDirectory(_ directoryPath: String) async throws {
-    throw FBControlCoreError.describe("\(#function) does not make sense for Disk Images").build()
+    throw FBDeviceFileContainerError.operationUnsupported(operation: #function, container: "Disk Images")
   }
 
   func move(from sourcePath: String, to destinationPath: String) async throws {
     if !destinationPath.hasPrefix(MountRootPath) {
-      throw FBDeviceControlError.describe("\(destinationPath) only moving into mounts is supported.").build()
+      throw FBDeviceFileContainerError.moveOutsideMounts(destination: destinationPath)
     }
     let mountableImagesByPath = self.mountableDiskImagesByPath
     guard let image = mountableImagesByPath[sourcePath] else {
-      throw FBControlCoreError.describe("\(sourcePath) is not one of \(FBCollectionInformation.oneLineDescription(from: mountableImagesByPath.keys.sorted()))").build()
+      throw FBDeviceFileContainerError.notAMountableImage(path: sourcePath, available: mountableImagesByPath.keys.sorted())
     }
     _ = try await commands.mountDiskImage(image)
   }
 
   func remove(_ path: String) async throws {
     if !path.hasPrefix(MountRootPath) {
-      throw FBDeviceControlError.describe("\(path) cannot be removed, only mounts can be removed").build()
+      throw FBDeviceFileContainerError.removeOutsideMounts(path: path)
     }
     let mountedImages = try await mountedDiskImagesAsync()
     guard let image = mountedImages[path] else {
-      throw FBDeviceControlError.describe("\(path) is not one of the available mounts \(FBCollectionInformation.oneLineDescription(from: Array(mountedImages.keys)))").build()
+      throw FBDeviceFileContainerError.notAMountedImage(path: path, available: Array(mountedImages.keys))
     }
     try await commands.unmountDiskImage(image)
   }
@@ -352,7 +395,7 @@ private class FBDeviceFileCommands_Symbols: AsyncFileContainer {
   }
 
   func copy(fromHost sourcePath: String, toContainer destinationPath: String) async throws {
-    throw FBControlCoreError.describe("\(#function) does not make sense for Symbols").build()
+    throw FBDeviceFileContainerError.operationUnsupported(operation: #function, container: "Symbols")
   }
 
   func copy(fromContainer sourcePath: String, toHost destinationPath: String) async throws -> String {
@@ -363,19 +406,19 @@ private class FBDeviceFileCommands_Symbols: AsyncFileContainer {
   }
 
   func tail(_ path: String, to consumer: any FBDataConsumer) async throws -> FileContainerTailOperation {
-    throw FBControlCoreError.describe("tail is not supported for Symbols").build()
+    throw FBDeviceFileContainerError.tailUnsupported(container: "Symbols")
   }
 
   func createDirectory(_ directoryPath: String) async throws {
-    throw FBControlCoreError.describe("\(#function) does not make sense for Symbols").build()
+    throw FBDeviceFileContainerError.operationUnsupported(operation: #function, container: "Symbols")
   }
 
   func move(from sourcePath: String, to destinationPath: String) async throws {
-    throw FBControlCoreError.describe("\(#function) does not make sense for Symbols").build()
+    throw FBDeviceFileContainerError.operationUnsupported(operation: #function, container: "Symbols")
   }
 
   func remove(_ path: String) async throws {
-    throw FBControlCoreError.describe("\(#function) does not make sense for Symbols").build()
+    throw FBDeviceFileContainerError.operationUnsupported(operation: #function, container: "Symbols")
   }
 
   func contents(ofDirectory path: String) async throws -> [String] {
@@ -410,7 +453,7 @@ public class FBDeviceFileCommands: NSObject {
 
   private func requireDevice() throws -> FBDevice {
     guard let device else {
-      throw FBDeviceControlError.describe("The device that these file commands were created for has been deallocated").build()
+      throw FBDeviceFileContainerError.deviceDeallocated
     }
     return device
   }
@@ -481,7 +524,7 @@ public class FBDeviceFileCommands: NSObject {
       device.asyncQueue,
       pend: { (started: NSArray) -> FBFuture<AnyObject> in
         guard let connections = started as? [FBAMDServiceConnection], connections.count == 2 else {
-          return FBDeviceControlError.describe("Expected the springboard and managed configuration connections, got \(started)").failFuture()
+          return FBFuture(error: FBDeviceFileContainerError.unexpectedServiceConnections(description: String(describing: started)))
         }
         let springboard = FBSpringboardServicesClient.springboardServicesClient(connection: connections[0], logger: logger)
         let managedConfig = FBManagedConfigClient.managedConfigClient(connection: connections[1], logger: logger)
@@ -521,19 +564,19 @@ extension FBDevice: FileCommands {
   public func withFileCommandsForApplicationContainers<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    throw FBControlCoreError.describe("\(#function) not supported on devices, requires a rooted device").build()
+    throw FBDeviceFileContainerError.requiresRootedDevice(operation: #function)
   }
 
   public func withFileCommandsForGroupContainers<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    throw FBControlCoreError.describe("\(#function) not supported on devices, requires a rooted device").build()
+    throw FBDeviceFileContainerError.requiresRootedDevice(operation: #function)
   }
 
   public func withFileCommandsForRootFilesystem<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    throw FBControlCoreError.describe("\(#function) not supported on devices, requires a rooted device").build()
+    throw FBDeviceFileContainerError.requiresRootedDevice(operation: #function)
   }
 
   public func withFileCommandsForMediaDirectory<R>(
