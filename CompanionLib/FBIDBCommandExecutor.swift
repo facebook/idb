@@ -12,8 +12,6 @@ import FBSimulatorControl
 import Foundation
 import XCTestBootstrap
 
-// swiftlint:disable force_cast force_unwrapping
-
 public final class FBIDBCommandExecutor {
 
   private let target: any FBiOSTarget & AsynciOSTarget
@@ -26,9 +24,11 @@ public final class FBIDBCommandExecutor {
 
   // MARK: - Initializers
 
-  public static func commandExecutor(forTarget target: FBiOSTarget, storageManager: FBIDBStorageManager, temporaryDirectory: FBTemporaryDirectory, debugserverPort: in_port_t, logger: FBIDBLogger) -> FBIDBCommandExecutor {
-    let asyncTarget = target as! any FBiOSTarget & AsynciOSTarget
-    return FBIDBCommandExecutor(target: asyncTarget, storageManager: storageManager, temporaryDirectory: temporaryDirectory, debugserverPort: debugserverPort, logger: logger.withName("grpc_handler") as! FBIDBLogger)
+  public static func commandExecutor(forTarget target: FBiOSTarget, storageManager: FBIDBStorageManager, temporaryDirectory: FBTemporaryDirectory, debugserverPort: in_port_t, logger: FBIDBLogger) throws -> FBIDBCommandExecutor {
+    guard let asyncTarget = target as? any FBiOSTarget & AsynciOSTarget else {
+      throw FBIDBError.describe("Target does not conform to AsynciOSTarget: \(target)").build()
+    }
+    return FBIDBCommandExecutor(target: asyncTarget, storageManager: storageManager, temporaryDirectory: temporaryDirectory, debugserverPort: debugserverPort, logger: logger.named("grpc_handler"))
   }
 
   private init(target: any FBiOSTarget & AsynciOSTarget, storageManager: FBIDBStorageManager, temporaryDirectory: FBTemporaryDirectory, debugserverPort: in_port_t, logger: FBIDBLogger) {
@@ -65,17 +65,15 @@ public final class FBIDBCommandExecutor {
       let bundleDescriptor = try FBBundleDescriptor.bundle(fromPath: filePath)
       return try await installAppBundle(bundleDescriptor, makeDebuggable: makeDebuggable)
     } else {
-      return try await withFBFutureContext(temporaryDirectory.withArchiveExtracted(fromFile: filePath, overrideModificationTime: overrideModificationTime) as! FBFutureContext<AnyObject>) { extractPath in
-        let url = extractPath as! URL
-        return try await installExtractedApp(url, makeDebuggable: makeDebuggable)
+      return try await withFBFutureContext(temporaryDirectory.withArchiveExtracted(fromFile: filePath, overrideModificationTime: overrideModificationTime)) { extractPath in
+        return try await installExtractedApp(extractPath as URL, makeDebuggable: makeDebuggable)
       }
     }
   }
 
   public func install_app_stream(_ input: FBProcessInput<AnyObject>, compression: FBCompressionFormat, make_debuggable makeDebuggable: Bool, override_modification_time overrideModificationTime: Bool) async throws -> FBInstalledArtifact {
-    return try await withFBFutureContext(temporaryDirectory.withArchiveExtracted(fromStream: input, compression: compression, overrideModificationTime: overrideModificationTime) as! FBFutureContext<AnyObject>) { extractPath in
-      let url = extractPath as! URL
-      return try await installExtractedApp(url, makeDebuggable: makeDebuggable)
+    return try await withFBFutureContext(temporaryDirectory.withArchiveExtracted(fromStream: input, compression: compression, overrideModificationTime: overrideModificationTime)) { extractPath in
+      return try await installExtractedApp(extractPath as URL, makeDebuggable: makeDebuggable)
     }
   }
 
@@ -84,9 +82,8 @@ public final class FBIDBCommandExecutor {
   }
 
   public func install_xctest_app_stream(_ stream: FBProcessInput<AnyObject>, skipSigningBundles: Bool) async throws -> FBInstalledArtifact {
-    return try await withFBFutureContext(temporaryDirectory.withArchiveExtracted(fromStream: stream, compression: .GZIP) as! FBFutureContext<AnyObject>) { extractPath in
-      let url = extractPath as! URL
-      return try await installXctest(url, skipSigningBundles: skipSigningBundles)
+    return try await withFBFutureContext(temporaryDirectory.withArchiveExtracted(fromStream: stream, compression: .GZIP)) { extractPath in
+      return try await installXctest(extractPath as URL, skipSigningBundles: skipSigningBundles)
     }
   }
 
@@ -95,9 +92,8 @@ public final class FBIDBCommandExecutor {
   }
 
   public func install_dylib_stream(_ input: FBProcessInput<AnyObject>, name: String) async throws -> FBInstalledArtifact {
-    return try await withFBFutureContext(temporaryDirectory.withGzipExtracted(fromStream: input, name: name) as! FBFutureContext<AnyObject>) { extractPath in
-      let url = extractPath as! URL
-      return try await installFile(url, intoStorage: storageManager.dylib)
+    return try await withFBFutureContext(temporaryDirectory.withGzipExtracted(fromStream: input, name: name)) { extractPath in
+      return try await installFile(extractPath as URL, intoStorage: storageManager.dylib)
     }
   }
 
@@ -106,9 +102,8 @@ public final class FBIDBCommandExecutor {
   }
 
   public func install_framework_stream(_ input: FBProcessInput<AnyObject>) async throws -> FBInstalledArtifact {
-    return try await withFBFutureContext(temporaryDirectory.withArchiveExtracted(fromStream: input, compression: .GZIP) as! FBFutureContext<AnyObject>) { extractPath in
-      let url = extractPath as! URL
-      return try await installBundle(url, intoStorage: storageManager.framework)
+    return try await withFBFutureContext(temporaryDirectory.withArchiveExtracted(fromStream: input, compression: .GZIP)) { extractPath in
+      return try await installBundle(extractPath as URL, intoStorage: storageManager.framework)
     }
   }
 
@@ -117,8 +112,8 @@ public final class FBIDBCommandExecutor {
   }
 
   public func install_dsym_stream(_ input: FBProcessInput<AnyObject>, compression: FBCompressionFormat, linkTo: FBDsymInstallLinkToBundle?) async throws -> FBInstalledArtifact {
-    return try await withFBFutureContext(temporaryDirectory.withArchiveExtracted(fromStream: input, compression: compression) as! FBFutureContext<AnyObject>) { extractPath in
-      let url = try dsymDirnameFromUnzipDir(extractPath as! URL)
+    return try await withFBFutureContext(temporaryDirectory.withArchiveExtracted(fromStream: input, compression: compression)) { extractPath in
+      let url = try dsymDirnameFromUnzipDir(extractPath as URL)
       return try await installAndLinkDsym(url, intoStorage: storageManager.dsym, linkTo: linkTo)
     }
   }
@@ -250,7 +245,10 @@ public final class FBIDBCommandExecutor {
   }
 
   public func open_url(_ url: String) async throws {
-    try await simulatorTarget().open(URL(string: url)!)
+    guard let parsed = URL(string: url) else {
+      throw FBIDBError.describe("\(url) is not a valid URL").build()
+    }
+    try await simulatorTarget().open(parsed)
   }
 
   public func focus() async throws {
@@ -515,9 +513,9 @@ public final class FBIDBCommandExecutor {
     }
   }
 
-  public func pull_file_path(_ path: String, destination_path destinationPath: String?, containerType: String?) async throws -> String {
+  public func pull_file_path(_ path: String, destination_path destinationPath: String, containerType: String?) async throws -> String {
     return try await withFileContainer(for: containerType) { container in
-      try await container.copy(fromContainer: path, toHost: destinationPath!)
+      try await container.copy(fromContainer: path, toHost: destinationPath)
     }
   }
 
@@ -631,6 +629,16 @@ public final class FBIDBCommandExecutor {
     for containerType: String?,
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
+    guard let containerType, !containerType.isEmpty else {
+      if target is FBDevice {
+        return try await target.withFileCommandsForMediaDirectory { container in
+          try await body(container)
+        }
+      }
+      return try await target.withFileCommandsForRootFilesystem { container in
+        try await body(container)
+      }
+    }
     if containerType == FBFileContainerKind.crashes.rawValue {
       return try await target.withCrashLogFiles { container in
         try await body(container)
@@ -703,18 +711,7 @@ public final class FBIDBCommandExecutor {
         try await body(container)
       }
     }
-    if containerType == nil || containerType?.isEmpty == true {
-      if target is FBDevice {
-        return try await target.withFileCommandsForMediaDirectory { container in
-          try await body(container)
-        }
-      } else {
-        return try await target.withFileCommandsForRootFilesystem { container in
-          try await body(container)
-        }
-      }
-    }
-    return try await target.withFileCommandsForContainerApplication(containerType!) { container in
+    return try await target.withFileCommandsForContainerApplication(containerType) { container in
       try await body(container)
     }
   }

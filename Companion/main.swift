@@ -367,7 +367,7 @@ private func runClean(_ udid: String, userDefaults: UserDefaults, xcodeAvailable
   let target = try await targetForUDID(udid, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, warmUp: true, logger: logger, reporter: reporter)
   let idbLogger = logger as! FBIDBLogger
   let storageManager = try FBIDBStorageManager.manager(forTarget: target, logger: idbLogger)
-  let commandExecutor = FBIDBCommandExecutor.commandExecutor(
+  let commandExecutor = try FBIDBCommandExecutor.commandExecutor(
     forTarget: target,
     storageManager: storageManager,
     temporaryDirectory: FBTemporaryDirectory(logger: idbLogger),
@@ -417,7 +417,7 @@ private func runCompanionServer(_ udid: String, userDefaults: UserDefaults, xcod
   }
 
   // Command Executor
-  let commandExecutor = FBIDBCommandExecutor.commandExecutor(
+  let commandExecutor = try FBIDBCommandExecutor.commandExecutor(
     forTarget: target,
     storageManager: storageManager,
     temporaryDirectory: temporaryDirectory,

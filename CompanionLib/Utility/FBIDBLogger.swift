@@ -9,18 +9,18 @@ import Darwin
 @preconcurrency import FBControlCore
 import Foundation
 
-nonisolated(unsafe) private let globalLoggers: NSMutableArray = NSMutableArray()
+nonisolated(unsafe) private var globalLoggers: [FBControlCoreLogger] = []
 private let globalLoggersLock = NSLock()
 
 private func addGlobalLogger(_ logger: FBControlCoreLogger) {
   globalLoggersLock.lock()
-  globalLoggers.add(logger)
+  globalLoggers.append(logger)
   globalLoggersLock.unlock()
 }
 
 private func removeGlobalLogger(_ logger: FBControlCoreLogger) {
   globalLoggersLock.lock()
-  globalLoggers.remove(logger)
+  globalLoggers.removeAll { $0 === logger }
   globalLoggersLock.unlock()
 }
 
@@ -41,9 +41,7 @@ private final class FBIDBLoggerOperation: NSObject, LogOperation, @unchecked Sen
 
   var completed: FBFuture<NSNull> {
     let logger = self.logger
-    let cls = unsafeBitCast(NSClassFromString("FBMutableFuture")!, to: NSObject.Type.self)
-    let mutableFuture = cls.perform(NSSelectorFromString("future"))!.takeUnretainedValue() as! FBFuture<NSNull>
-    return mutableFuture.onQueue(
+    return convertFBMutableFuture(FBMutableFuture<NSNull>()).onQueue(
       self.queue,
       respondToCancellation: {
         removeGlobalLogger(logger)
@@ -65,7 +63,7 @@ public final class FBIDBLogger: FBCompositeLogger, @unchecked Sendable {
   public static func logger(withUserDefaults userDefaults: UserDefaults) -> FBIDBLogger {
     let debugLogging = userDefaults.string(forKey: "-log-level")?.lowercased() == "info" ? false : true
     let systemLogger = FBControlCoreLoggerFactory.systemLoggerWriting(toStderr: true, withDebugLogging: debugLogging)
-    let loggers: NSMutableArray = NSMutableArray(object: systemLogger)
+    var loggers: [FBControlCoreLogger] = [systemLogger]
 
     let logFilePath = userDefaults.string(forKey: "-log-file-path")
     if let logFilePath {
@@ -83,9 +81,9 @@ public final class FBIDBLogger: FBCompositeLogger, @unchecked Sendable {
         exit(1)
       }
 
-      loggers.add(FBControlCoreLoggerFactory.logger(toFileDescriptor: fileDescriptor, closeOnEndOfFile: true))
+      loggers.append(FBControlCoreLoggerFactory.logger(toFileDescriptor: fileDescriptor, closeOnEndOfFile: true))
     }
-    let logger = FBIDBLogger(loggers: loggers as! [FBControlCoreLogger]).withDateFormatEnabled(true) as! FBIDBLogger
+    let logger = FBIDBLogger(loggers: loggers).dateFormatted()
     FBControlCoreGlobalConfiguration.defaultLogger = logger
 
     return logger
@@ -98,10 +96,21 @@ public final class FBIDBLogger: FBCompositeLogger, @unchecked Sendable {
   public override var loggers: [FBControlCoreLogger] {
     var all = super.loggers
     globalLoggersLock.lock()
-    let global = globalLoggers as! [FBControlCoreLogger]
+    let global = globalLoggers
     globalLoggersLock.unlock()
     all.append(contentsOf: global)
     return all
+  }
+
+  /// `FBCompositeLogger`'s builder methods allocate an instance of the receiver's dynamic class, so
+  /// applying one to an `FBIDBLogger` always yields an `FBIDBLogger` — the Objective-C declarations
+  /// can only promise `FBControlCoreLogger`.
+  public func named(_ name: String) -> FBIDBLogger {
+    unsafeDowncast(withName(name) as AnyObject, to: FBIDBLogger.self)
+  }
+
+  public func dateFormatted() -> FBIDBLogger {
+    unsafeDowncast(withDateFormatEnabled(true) as AnyObject, to: FBIDBLogger.self)
   }
 
   public func tailToConsumerAsync(_ consumer: FBDataConsumer) async throws -> any LogOperation {
