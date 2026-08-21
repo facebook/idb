@@ -26,6 +26,44 @@ private func mountCallback(_ callbackDictionary: [String: Any]?, _ context: Unsa
   }
 }
 
+/// The ways developer disk-image operations can fail, as data rather than assembled strings.
+public enum FBDeviceDiskImageError: Error {
+  case deviceNil
+  case missingMountPath(key: String, entry: String)
+  case imageNotMounted(imageDescription: String)
+  case noProductVersion(deviceDescription: String)
+  case copyDevicesResponseNotADictionary(response: String)
+  case mountedImageInfoUnavailable(message: String)
+  case missingEntryList(response: String)
+  case wrongImageMounted(imageDescription: String)
+  case mountFailed(imagePath: String, status: Int32, message: String)
+}
+
+extension FBDeviceDiskImageError: LocalizedError {
+  public var errorDescription: String? {
+    switch self {
+    case .deviceNil:
+      return "Device is nil"
+    case let .missingMountPath(key, entry):
+      return "No \(key) in mounted image entry \(entry)"
+    case let .imageNotMounted(imageDescription):
+      return "\(imageDescription) does not appear to be mounted"
+    case let .noProductVersion(deviceDescription):
+      return "No product version available for \(deviceDescription), cannot select a developer disk image"
+    case let .copyDevicesResponseNotADictionary(response):
+      return "CopyDevices response \(response) is not a dictionary"
+    case let .mountedImageInfoUnavailable(message):
+      return "Could not get mounted image info: \(message)"
+    case let .missingEntryList(response):
+      return "No EntryList of mounted images in \(response)"
+    case let .wrongImageMounted(imageDescription):
+      return "Failed to mount image '\(imageDescription)', this can occur when the wrong disk image is mounted for the target OS, or a disk image of the same type is already mounted."
+    case let .mountFailed(imagePath, status, message):
+      return "Failed to mount image '\(imagePath)' with error 0x\(String(UInt32(bitPattern: status), radix: 16)) (\(message))"
+    }
+  }
+}
+
 public class FBDeviceDeveloperDiskImageCommands: NSObject, DeveloperDiskImageCommands {
   private(set) weak var device: FBDevice?
 
@@ -59,12 +97,12 @@ public class FBDeviceDeveloperDiskImageCommands: NSObject, DeveloperDiskImageCom
         continue
       }
       guard let mountPath = mountEntry[MountPathKey] as? String else {
-        throw FBDeviceControlError.describe("No \(MountPathKey) in mounted image entry \(mountEntry)").build()
+        throw FBDeviceDiskImageError.missingMountPath(key: MountPathKey, entry: String(describing: mountEntry))
       }
       try await unmountDiskImageAtPathAsync(mountPath)
       return
     }
-    throw FBDeviceControlError.describe("\(diskImage) does not appear to be mounted").build()
+    throw FBDeviceDiskImageError.imageNotMounted(imageDescription: String(describing: diskImage))
   }
 
   public func mountableDiskImages() -> [FBDeveloperDiskImage] {
@@ -73,10 +111,10 @@ public class FBDeviceDeveloperDiskImageCommands: NSObject, DeveloperDiskImageCom
 
   public func ensureDeveloperDiskImageIsMounted() async throws -> FBDeveloperDiskImage {
     guard let device else {
-      throw FBDeviceControlError().describe("Device is nil").build()
+      throw FBDeviceDiskImageError.deviceNil
     }
     guard let productVersion = device.productVersion else {
-      throw FBDeviceControlError.describe("No product version available for \(device), cannot select a developer disk image").build()
+      throw FBDeviceDiskImageError.noProductVersion(deviceDescription: String(describing: device))
     }
     let targetVersion = FBOSVersion.operatingSystemVersion(fromName: productVersion)
     let diskImage = try FBDeveloperDiskImage.developerDiskImage(targetVersion, logger: device.logger)
@@ -108,7 +146,7 @@ public class FBDeviceDeveloperDiskImageCommands: NSObject, DeveloperDiskImageCom
 
   private func mountedImageEntriesAsync() async throws -> [[String: Any]] {
     guard let device else {
-      throw FBDeviceControlError().describe("Device is nil").build()
+      throw FBDeviceDiskImageError.deviceNil
     }
     return try await withFBFutureContext(device.startService(ImageMounterService)) { connection in
       let request: [String: Any] = [
@@ -116,13 +154,13 @@ public class FBDeviceDeveloperDiskImageCommands: NSObject, DeveloperDiskImageCom
       ]
       let message = try connection.sendAndReceiveMessage(request)
       guard let response = message as? [String: Any] else {
-        throw FBDeviceControlError.describe("CopyDevices response \(message) is not a dictionary").build()
+        throw FBDeviceDiskImageError.copyDevicesResponseNotADictionary(response: String(describing: message))
       }
       if let errorString = response["Error"] as? String {
-        throw FBDeviceControlError.describe("Could not get mounted image info: \(errorString)").build()
+        throw FBDeviceDiskImageError.mountedImageInfoUnavailable(message: errorString)
       }
       guard let entries = response["EntryList"] as? [[String: Any]] else {
-        throw FBDeviceControlError.describe("No EntryList of mounted images in \(response)").build()
+        throw FBDeviceDiskImageError.missingEntryList(response: String(describing: response))
       }
       return entries
     }
@@ -149,7 +187,7 @@ public class FBDeviceDeveloperDiskImageCommands: NSObject, DeveloperDiskImageCom
 
   private func performDiskImageMountAsync(_ diskImage: FBDeveloperDiskImage, imageType: String) async throws -> FBDeveloperDiskImage {
     guard let device else {
-      throw FBDeviceControlError().describe("Device is nil").build()
+      throw FBDeviceDiskImageError.deviceNil
     }
     return try await withFBFutureContext(device.connectToDevice(withPurpose: "mount_disk_image")) { connectedDevice in
       let options: [String: Any] = [
@@ -166,10 +204,10 @@ public class FBDeviceDeveloperDiskImageCommands: NSObject, DeveloperDiskImageCom
           context
         ) ?? -1
       if status == DiskImageMountingError {
-        throw FBDeviceControlError.describe("Failed to mount image '\(diskImage)', this can occur when the wrong disk image is mounted for the target OS, or a disk image of the same type is already mounted.").build()
+        throw FBDeviceDiskImageError.wrongImageMounted(imageDescription: String(describing: diskImage))
       } else if status != 0 {
         let internalMessage = connectedDevice.calls.CopyErrorText?(status)?.takeRetainedValue() as String? ?? "Unknown error"
-        throw FBDeviceControlError.describe("Failed to mount image '\(diskImage.diskImagePath)' with error 0x\(String(UInt32(bitPattern: status), radix: 16)) (\(internalMessage))").build()
+        throw FBDeviceDiskImageError.mountFailed(imagePath: diskImage.diskImagePath, status: status, message: internalMessage)
       }
       return diskImage
     }
@@ -177,7 +215,7 @@ public class FBDeviceDeveloperDiskImageCommands: NSObject, DeveloperDiskImageCom
 
   private func unmountDiskImageAtPathAsync(_ mountPath: String) async throws {
     guard let device else {
-      throw FBDeviceControlError().describe("Device is nil").build()
+      throw FBDeviceDiskImageError.deviceNil
     }
     try await withFBFutureContext(device.startService(ImageMounterService)) { connection in
       let request: [String: Any] = [
