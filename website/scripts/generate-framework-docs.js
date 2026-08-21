@@ -14,8 +14,10 @@ const fs = require('fs');
 const path = require('path');
 
 const FRAMEWORKS = [
+  { repoPath: 'FBControlCore', id: 'fbcontrolcore' },
   { repoPath: 'FBSimulatorControl', id: 'fbsimulatorcontrol' },
   { repoPath: 'FBDeviceControl', id: 'fbdevicecontrol' },
+  { repoPath: 'XCTestBootstrap', id: 'xctestbootstrap' },
 ];
 
 const websiteDir = path.join(__dirname, '..');

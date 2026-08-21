@@ -19,5 +19,7 @@ yarn-debug.log*
 yarn-error.log*
 
 # generated from the framework READMEs by scripts/generate-framework-docs.js
+/docs/idb/fbcontrolcore.mdx
 /docs/idb/fbsimulatorcontrol.mdx
 /docs/idb/fbdevicecontrol.mdx
+/docs/idb/xctestbootstrap.mdx
