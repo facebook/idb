@@ -26,6 +26,41 @@ private final class FBLogicTestRunOutputs {
   }
 }
 
+/// The ways logic-test runs can fail, as data rather than assembled strings.
+public enum FBLogicTestRunError: Error {
+  case missingOutputsAndShim(result: String)
+  case sanitiserDylibsMalformed(result: String)
+  case testProcessMissingExitCode(result: String)
+  case endOfFileTimedOut
+  case xctestProcessMissingExitCode(result: String)
+  case xctestProcessFailed(exitCode: Int32, exitDescription: String, stdErr: String)
+  case sigstopWaitFailed(processIdentifier: pid_t, underlying: Error)
+  case missingOutputConsumers(result: String)
+}
+
+extension FBLogicTestRunError: LocalizedError {
+  public var errorDescription: String? {
+    switch self {
+    case let .missingOutputsAndShim(result):
+      return "Expected the test outputs and the shim path, got \(result)"
+    case let .sanitiserDylibsMalformed(result):
+      return "Expected a list of sanitiser dylib paths, got \(result)"
+    case let .testProcessMissingExitCode(result):
+      return "Expected the test process to resolve to its exit code, got \(result)"
+    case .endOfFileTimedOut:
+      return "Timed out waiting to receive an end-of-file after fifo has been stopped, as the process has already exited"
+    case let .xctestProcessMissingExitCode(result):
+      return "Expected the xctest process to resolve to its exit code, got \(result)"
+    case let .xctestProcessFailed(exitCode, exitDescription, stdErr):
+      return "xctest process exited in failure (\(exitCode)): \(exitDescription) \(stdErr)"
+    case let .sigstopWaitFailed(processIdentifier, underlying):
+      return "Failed to wait test process (pid \(processIdentifier)) to receive a SIGSTOP: '\(underlying.localizedDescription)'"
+    case let .missingOutputConsumers(result):
+      return "Expected stdout, stderr and shim consumers, got \(result)"
+    }
+  }
+}
+
 public final class FBLogicTestRunStrategy: NSObject, FBXCTestRunner {
 
   private let target: FBiOSTarget & ProcessSpawnCommands & XCTestExtendedCommands
@@ -71,7 +106,7 @@ public final class FBLogicTestRunStrategy: NSObject, FBXCTestRunner {
               let outputs = tuple[0] as? FBLogicTestRunOutputs,
               let shimPath = tuple[1] as? String
             else {
-              return XCTestBootstrapError.describe("Expected the test outputs and the shim path, got \(tuple)").failFuture()
+              return FBFuture(error: FBLogicTestRunError.missingOutputsAndShim(result: String(describing: tuple)))
             }
             return unsafeBitCast(
               self.testFuture(withOutputs: outputs, shimPath: shimPath, uuid: uuid),
@@ -101,7 +136,7 @@ public final class FBLogicTestRunStrategy: NSObject, FBXCTestRunner {
                 self.target.workQueue,
                 fmap: { librariesObj -> FBFuture<AnyObject> in
                   guard let libraries = librariesObj as? [String] else {
-                    return XCTestBootstrapError.describe("Expected a list of sanitiser dylib paths, got \(librariesObj)").failFuture()
+                    return FBFuture(error: FBLogicTestRunError.sanitiserDylibsMalformed(result: String(describing: librariesObj)))
                   }
                   let environment = FBLogicTestRunStrategy.setupEnvironment(withDylibs: self.configuration.processUnderTestEnvironment, withLibraries: libraries, injectLibraries: self.configuration.injectLibraries, shimOutputFilePath: outputs.shimOutput.filePath, shimPath: shimPath, bundlePath: self.configuration.testBundlePath, coverageConfiguration: self.configuration.coverageConfiguration, logDirectoryPath: self.configuration.logDirectoryPath, waitForDebugger: self.configuration.waitForDebugger, target: self.target)
 
@@ -110,7 +145,7 @@ public final class FBLogicTestRunStrategy: NSObject, FBXCTestRunner {
                       self.target.workQueue,
                       fmap: { exitCodeFutureObj -> FBFuture<AnyObject> in
                         guard let exitCodeFuture = exitCodeFutureObj as? FBFuture<NSNumber> else {
-                          return XCTestBootstrapError.describe("Expected the test process to resolve to its exit code, got \(exitCodeFutureObj)").failFuture()
+                          return FBFuture(error: FBLogicTestRunError.testProcessMissingExitCode(result: String(describing: exitCodeFutureObj)))
                         }
                         return unsafeBitCast(
                           self.completeLaunchedProcess(exitCodeFuture, outputs: outputs),
@@ -214,7 +249,7 @@ public final class FBLogicTestRunStrategy: NSObject, FBXCTestRunner {
             let timedOut = combined.onQueue(
               queue, timeout: EndOfFileFromStopReadingTimeout,
               handler: {
-                FBControlCoreError.describe("Timed out waiting to receive an end-of-file after fifo has been stopped, as the process has already exited").failFuture()
+                FBFuture<AnyObject>(error: FBLogicTestRunError.endOfFileTimedOut)
               })
             return timedOut.chainReplace(unsafeBitCast(exitCode, to: FBFuture<AnyObject>.self))
           }
@@ -223,13 +258,13 @@ public final class FBLogicTestRunStrategy: NSObject, FBXCTestRunner {
           queue,
           fmap: { exitCodeObj -> FBFuture<AnyObject> in
             guard let exitCodeNumber = exitCodeObj as? NSNumber else {
-              return FBControlCoreError.describe("Expected the xctest process to resolve to its exit code, got \(exitCodeObj)").failFuture()
+              return FBFuture(error: FBLogicTestRunError.xctestProcessMissingExitCode(result: String(describing: exitCodeObj)))
             }
             logger.log("xctest process terminated, exited with \(exitCodeNumber), checking status code")
             let exitCodeValue = exitCodeNumber.int32Value
             if let descriptionOfExit = FBXCTestProcess.describeFailingExitCode(exitCodeValue) {
               let stdErrReversed = outputs.stdErrBuffer.lines().reversed().joined(separator: "\n")
-              return FBControlCoreError.describe("xctest process exited in failure (\(exitCodeValue)): \(descriptionOfExit) \(stdErrReversed)").failFuture()
+              return FBFuture(error: FBLogicTestRunError.xctestProcessFailed(exitCode: exitCodeValue, exitDescription: descriptionOfExit, stdErr: stdErrReversed))
             }
             return FBFuture(result: exitCodeNumber as AnyObject)
           }),
@@ -249,7 +284,7 @@ public final class FBLogicTestRunStrategy: NSObject, FBXCTestRunner {
           waitQueue,
           chain: { future -> FBFuture<AnyObject> in
             if let error = future.error {
-              return XCTestBootstrapError.describe("Failed to wait test process (pid \(processIdentifier)) to receive a SIGSTOP: '\(error.localizedDescription)'").failFuture()
+              return FBFuture(error: FBLogicTestRunError.sigstopWaitFailed(processIdentifier: processIdentifier, underlying: error))
             }
             reporter.processWaitingForDebugger(withProcessIdentifier: processIdentifier)
             return FBFuture(result: NSNull() as AnyObject)
@@ -330,7 +365,7 @@ public final class FBLogicTestRunStrategy: NSObject, FBXCTestRunner {
             let resolvedStdErr = outputsArray[1] as? FBDataConsumer & FBDataConsumerLifecycle,
             let resolvedShim = outputsArray[2] as? FBDataConsumer & FBDataConsumerLifecycle
           else {
-            return XCTestBootstrapError.describe("Expected stdout, stderr and shim consumers, got \(outputsArray)").failFuture()
+            return FBFuture(error: FBLogicTestRunError.missingOutputConsumers(result: String(describing: outputsArray)))
           }
           return FBProcessOutput<AnyObject>(for: resolvedShim).providedThroughFile()
             .onQueue(
