@@ -337,3 +337,205 @@ public final class FBFileContainer_ProvisioningProfile: AsyncFileContainer {
     return files
   }
 }
+
+// MARK: - Container Kinds
+
+/// The names of the file containers a target can expose.
+public struct FBFileContainerKind: RawRepresentable, Hashable, Sendable {
+  public let rawValue: String
+
+  public init(rawValue: String) {
+    self.rawValue = rawValue
+  }
+
+  public static let application = FBFileContainerKind(rawValue: "application")
+  public static let auxillary = FBFileContainerKind(rawValue: "auxillary")
+  public static let crashes = FBFileContainerKind(rawValue: "crashes")
+  public static let diskImages = FBFileContainerKind(rawValue: "disk_images")
+  public static let group = FBFileContainerKind(rawValue: "group")
+  public static let mdmProfiles = FBFileContainerKind(rawValue: "mdm_profiles")
+  public static let media = FBFileContainerKind(rawValue: "media")
+  public static let provisioningProfiles = FBFileContainerKind(rawValue: "provisioning_profiles")
+  public static let root = FBFileContainerKind(rawValue: "root")
+  public static let springboardIcons = FBFileContainerKind(rawValue: "springboard_icons")
+  public static let symbols = FBFileContainerKind(rawValue: "symbols")
+  public static let wallpaper = FBFileContainerKind(rawValue: "wallpaper")
+  public static let xctest = FBFileContainerKind(rawValue: "xctest")
+  public static let dylib = FBFileContainerKind(rawValue: "dylib")
+  public static let dsym = FBFileContainerKind(rawValue: "dsym")
+  public static let framework = FBFileContainerKind(rawValue: "framework")
+}
+
+// MARK: - Host Filesystem Contained Files
+
+/// A file on the host filesystem, addressed by absolute path.
+private final class ContainedFile_Host: NSObject, FBContainedFile {
+
+  private let fileManager: FileManager
+  private let path: String
+
+  init(fileManager: FileManager, path: String) {
+    self.fileManager = fileManager
+    self.path = path
+  }
+
+  func removeItem() throws {
+    try fileManager.removeItem(atPath: path)
+  }
+
+  func contentsOfDirectory() throws -> [String] {
+    try fileManager.contentsOfDirectory(atPath: path)
+  }
+
+  func contentsOfFile() throws -> Data {
+    try Data(contentsOf: URL(fileURLWithPath: path))
+  }
+
+  func createDirectory() throws {
+    try fileManager.createDirectory(atPath: path, withIntermediateDirectories: true)
+  }
+
+  func fileExists(isDirectory isDirectoryOut: UnsafeMutablePointer<ObjCBool>?) -> Bool {
+    guard let isDirectoryOut else {
+      return fileManager.fileExists(atPath: path)
+    }
+    return fileManager.fileExists(atPath: path, isDirectory: isDirectoryOut)
+  }
+
+  func move(to destination: FBContainedFile) throws {
+    guard let hostDestination = destination as? ContainedFile_Host else {
+      throw FBControlCoreError.describe("Cannot move to \(destination), it is not on the host filesystem").build()
+    }
+    try fileManager.moveItem(atPath: path, toPath: hostDestination.path)
+  }
+
+  func populate(withContentsOfHostPath path: String) throws {
+    try fileManager.copyItem(atPath: path, toPath: self.path)
+  }
+
+  func populateHostPath(withContents path: String) throws {
+    try fileManager.copyItem(atPath: self.path, toPath: path)
+  }
+
+  func file(byAppendingPathComponent component: String) throws -> FBContainedFile {
+    ContainedFile_Host(fileManager: fileManager, path: (path as NSString).appendingPathComponent(component))
+  }
+
+  var pathOnHostFileSystem: String? { path }
+
+  var pathMapping: [String: String]? { nil }
+
+  override var description: String {
+    "Host File \(path)"
+  }
+}
+
+/// A virtual root that maps first path components onto host paths.
+private final class ContainedFile_Mapped_Host: NSObject, FBContainedFile {
+
+  private let mappingPaths: [String: String]
+  private let fileManager: FileManager
+
+  init(mappingPaths: [String: String], fileManager: FileManager) {
+    self.mappingPaths = mappingPaths
+    self.fileManager = fileManager
+  }
+
+  func removeItem() throws {
+    throw FBControlCoreError.describe("\(#function) does not operate on root virtual containers").build()
+  }
+
+  func contentsOfDirectory() throws -> [String] {
+    Array(mappingPaths.keys)
+  }
+
+  func contentsOfFile() throws -> Data {
+    throw FBControlCoreError.describe("\(#function) does not operate on root virtual containers").build()
+  }
+
+  func createDirectory() throws {
+    throw FBControlCoreError.describe("\(#function) does not operate on root virtual containers").build()
+  }
+
+  func fileExists(isDirectory isDirectoryOut: UnsafeMutablePointer<ObjCBool>?) -> Bool {
+    false
+  }
+
+  func move(to destination: FBContainedFile) throws {
+    throw FBControlCoreError.describe("Moving files does not work on root virtual containers").build()
+  }
+
+  func populate(withContentsOfHostPath path: String) throws {
+    throw FBControlCoreError.describe("\(#function) does not operate on root virtual containers").build()
+  }
+
+  func populateHostPath(withContents path: String) throws {
+    throw FBControlCoreError.describe("\(#function) does not operate on root virtual containers").build()
+  }
+
+  func file(byAppendingPathComponent component: String) throws -> FBContainedFile {
+    // The root of the mapping itself has nothing further to resolve.
+    let pathComponents = (component as NSString).pathComponents
+    if Self.isRootPathOfContainer(pathComponents) {
+      return self
+    }
+    guard let firstComponent = pathComponents.first, let mappedPath = mappingPaths[firstComponent] else {
+      throw
+        FBControlCoreError
+        .describe("'\(pathComponents.first ?? "")' is not a valid root path out of \(FBCollectionInformation.oneLineDescription(from: Array(mappingPaths.keys)))")
+        .build()
+    }
+    let mapped = ContainedFile_Host(fileManager: fileManager, path: mappedPath)
+    return try mapped.file(byAppendingPathComponent: Self.popFirstPathComponent(pathComponents))
+  }
+
+  var pathOnHostFileSystem: String? { nil }
+
+  var pathMapping: [String: String]? { mappingPaths }
+
+  override var description: String {
+    "Root mapping: \(FBCollectionInformation.oneLineDescription(from: Array(mappingPaths.keys)))"
+  }
+
+  private static func isRootPathOfContainer(_ pathComponents: [String]) -> Bool {
+    // No components, or a lone "." or "/", all address the root of the container.
+    if pathComponents.isEmpty {
+      return true
+    }
+    if pathComponents.count == 1, let first = pathComponents.first, first == "." || first == "/" {
+      return true
+    }
+    return false
+  }
+
+  private static func popFirstPathComponent(_ pathComponents: [String]) -> String {
+    // Re-assemble the mapped path, discarding the re-mapped first path component.
+    pathComponents.dropFirst().reduce("") { ($0 as NSString).appendingPathComponent($1) }
+  }
+}
+
+// MARK: - Factories
+
+/// Factories for the file containers a target exposes.
+public enum FBFileContainer {
+
+  public static func containedFile(forBasePath basePath: String) -> FBContainedFile {
+    ContainedFile_Host(fileManager: .default, path: basePath)
+  }
+
+  public static func containedFile(forPathMapping pathMapping: [String: String]) -> FBContainedFile {
+    ContainedFile_Mapped_Host(mappingPaths: pathMapping, fileManager: .default)
+  }
+
+  public static func fileContainer(forBasePath basePath: String) -> FBContainedFile_ContainedRoot {
+    fileContainer(for: containedFile(forBasePath: basePath))
+  }
+
+  public static func fileContainer(forPathMapping pathMapping: [String: String]) -> FBContainedFile_ContainedRoot {
+    fileContainer(for: containedFile(forPathMapping: pathMapping))
+  }
+
+  public static func fileContainer(for containedFile: FBContainedFile) -> FBContainedFile_ContainedRoot {
+    FBContainedFile_ContainedRoot(rootFile: containedFile, queue: DispatchQueue(label: "com.facebook.fbcontrolcore.file_container"))
+  }
+}

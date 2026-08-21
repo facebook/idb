@@ -14,7 +14,6 @@
 #import <FBControlCore/FBCrashLog.h>
 #import <FBControlCore/FBDataBuffer.h>
 #import <FBControlCore/FBDataConsumer.h>
-#import <FBControlCore/FBFileContainer.h>
 #import <FBControlCore/FBFileReader.h>
 #import <FBControlCore/FBFuture.h>
 #import <FBControlCore/FBFuture+Sync.h>
