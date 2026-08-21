@@ -5,47 +5,63 @@ title: Guided Tour
 
 This is a quick start guide to show you a glimpse of what idb can do. If you haven't installed idb already please refer to [installation](installation.mdx).
 
-Let's start with finding out what simulators/devices are available on your Mac. This will print out all the simulators on your Mac and all of the devices attached.
+Let's start with finding out what simulators/devices are available on your Mac. This will print out all the simulators on your Mac and all of the devices attached, along with the UDID of each:
 
 ```
 idb list-targets
 ```
 
-Boot any one of them.
+Boot any one of the simulators:
 
 ```
 idb boot UDID
 ```
 
-Try any of the commands below and make sure you pass `--udid` to run them with the correct simulator.
+Every other command runs against a specific target, addressed with `--udid`. If exactly one target is booted you can omit it — idb will use that one. You can also set the `IDB_UDID` environment variable instead of passing the flag each time.
+
+Try any of the commands below:
 
 ```
-idb launch com.apple.Maps
-idb screenshot maps.png
-idb video maps.mp4
-idb log
-idb ui describe-all
+# Launch an app, take a screenshot, then record a video of the screen
+idb launch com.apple.Maps --udid UDID
+idb screenshot maps.png --udid UDID
+idb video maps.mp4 --udid UDID
+# Tail the target's logs
+idb log --udid UDID
 ```
 
-Now let's try to run tests. This will install the test bundle provided on the simulator.
+idb can also read the screen through the accessibility system, then act on the elements it finds — by name, rather than by coordinates:
 
 ```
-idb xctest install Fixtures/Binaries/iOSUnitTestFixture.xctest
+# Describe every element on the screen, as JSON
+idb ui describe-all --udid UDID
+# Tap an element by its accessibility label
+idb ui tap 'Maps' --udid UDID
+```
+
+The [UI Automation page](ui.mdx) covers the whole `idb ui` command group.
+
+Now let's try to run tests. From a checkout of the repository, this will install a fixture test bundle on the simulator:
+
+```
+idb xctest install Fixtures/Binaries/iOSUnitTestFixture.xctest --udid UDID
 ```
 
 To verify that it's been installed correctly just run
 
 ```
-idb xctest list
+idb xctest list --udid UDID
 ```
 
 Run the tests by issuing these commands.
 
-* `run logic` would just run the logic tests
-* `run app` will run the app tests
-* `run ui` will run the ui tests
+* `run logic` runs the tests in the simulator without an app host
+* `run app` runs the tests inside a host application
+* `run ui` runs UI tests, driven from a test runner app
 
 ```
-idb xctest run logic com.facebook.iOSUnitTestFixture
-idb xctest run app com.facebook.iOSUnitTestFixture com.apple.Maps
+idb xctest run logic com.facebook.iOSUnitTestFixture --udid UDID
+idb xctest run app com.facebook.iOSUnitTestFixture com.apple.Maps --udid UDID
 ```
+
+[Test Execution](test-execution.mdx) explains these modes in depth, and the [Commands page](commands.mdx) lists everything else idb can do.

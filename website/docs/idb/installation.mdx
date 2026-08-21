@@ -7,25 +7,25 @@ idb is made up of 2 parts, both of which are installed by a single brew formula.
 
 ### idb companion
 
-Each target (simulator/device) will have a companion process attached allowing idb to communicate remotely.
+The companion runs on macOS only, next to the Simulators and Devices it automates. Each target (simulator/device) will have a companion process attached, allowing idb to communicate with it remotely.
 
-The idb companion can be installed via brew or built from [source](https://github.com/facebook/idb)
+The idb companion can be installed via brew or built from [source](https://github.com/facebook/idb):
 
 ```
 brew install facebook/fb/idb
 ```
 
-Notes: 
+Notes:
 
 1. Instructions on how to install brew can be found [here](https://brew.sh)
 
-2. A full installation of Xcode is required to compile and use idb-companion.
+2. A full installation of Xcode is required to compile and use the idb companion.
 Installing just the Command Line Tools is not sufficient.
 Xcode can be installed from the App Store.
 
 ### idb client
 
-A cli tool and python client is provided to interact with idb.
+A cli tool and python client library is provided to interact with idb. It can run on any OS with a Python installation — it does not need to run on the Mac that hosts the companion.
 
 It is installed alongside the companion by the brew formula above. It can also be installed separately via pip (releases publish to PyPI):
 
