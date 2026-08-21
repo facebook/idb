@@ -29,6 +29,10 @@ public enum FBSpringboardServicesError: Error, LocalizedError {
   case invalidIconLayoutJSON(path: String)
   case invalidIconLayoutPlist(path: String)
   case invalidIconLayoutFile(filename: String, validFilenames: [String])
+  case responseNotADictionary(response: String)
+  case missingImageData(response: String)
+  case tailNotImplemented
+  case operationUnsupported(operation: String)
 
   public var errorDescription: String? {
     switch self {
@@ -40,6 +44,14 @@ public enum FBSpringboardServicesError: Error, LocalizedError {
       return "Icon layout plist at '\(path)' is not in the expected format"
     case .invalidIconLayoutFile(let filename, let validFilenames):
       return "\(filename) is not one of \(FBCollectionInformation.oneLineDescription(from: validFilenames))"
+    case .responseNotADictionary(let response):
+      return "Response \(response) is not a dictionary"
+    case .missingImageData(let response):
+      return "No pngData in response \(response)"
+    case .tailNotImplemented:
+      return "tail is not implemented for FBSpringboardServicesIconContainer"
+    case .operationUnsupported(let operation):
+      return "\(operation) does not make sense for Springboard File Containers"
     }
   }
 }
@@ -186,11 +198,11 @@ public class FBSpringboardServicesClient {
         do {
           let response = try connectionBox.connection.sendAndReceiveMessage(["command": "getWallpaperPreviewImage", "wallpaperName": name])
           guard let responseDict = response as? [String: Any] else {
-            continuation.resume(throwing: FBControlCoreError.describe("Response \(String(describing: response)) is not a dictionary").build())
+            continuation.resume(throwing: FBSpringboardServicesError.responseNotADictionary(response: String(describing: response)))
             return
           }
           guard let data = responseDict["pngData"] as? Data else {
-            continuation.resume(throwing: FBControlCoreError.describe("No pngData in response \(responseDict)").build())
+            continuation.resume(throwing: FBSpringboardServicesError.missingImageData(response: String(describing: responseDict)))
             return
           }
           continuation.resume(returning: data)
@@ -224,19 +236,19 @@ class FBSpringboardServicesIconContainer: AsyncFileContainer {
   }
 
   func tail(_ path: String, to consumer: any FBDataConsumer) async throws -> FileContainerTailOperation {
-    throw FBControlCoreError.describe("tail is not implemented for FBSpringboardServicesIconContainer").build()
+    throw FBSpringboardServicesError.tailNotImplemented
   }
 
   func createDirectory(_ directoryPath: String) async throws {
-    throw FBControlCoreError.describe("createDirectory does not make sense for Springboard File Containers").build()
+    throw FBSpringboardServicesError.operationUnsupported(operation: "createDirectory")
   }
 
   func move(from sourcePath: String, to destinationPath: String) async throws {
-    throw FBControlCoreError.describe("moveFrom does not make sense for Springboard File Containers").build()
+    throw FBSpringboardServicesError.operationUnsupported(operation: "moveFrom")
   }
 
   func remove(_ path: String) async throws {
-    throw FBControlCoreError.describe("remove does not make sense for Springboard File Containers").build()
+    throw FBSpringboardServicesError.operationUnsupported(operation: "remove")
   }
 
   func contents(ofDirectory path: String) async throws -> [String] {
@@ -248,7 +260,7 @@ class FBSpringboardServicesIconContainer: AsyncFileContainer {
   fileprivate func copyFromContainerAsync(sourcePath: String, toHost destinationPath: String) async throws -> String {
     let filename = (sourcePath as NSString).lastPathComponent
     guard validFilenames.contains(filename) else {
-      throw FBControlCoreError.describe("\(filename) is not one of \(FBCollectionInformation.oneLineDescription(from: validFilenames))").build()
+      throw FBSpringboardServicesError.invalidIconLayoutFile(filename: filename, validFilenames: validFilenames)
     }
     let layout = try await client.getIconLayoutAsync()
     if filename == IconJSONFile {
