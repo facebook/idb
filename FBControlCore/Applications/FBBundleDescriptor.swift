@@ -7,6 +7,29 @@
 
 import Foundation
 
+/// The ways bundle inspection can fail, as data rather than assembled strings.
+public enum FBBundleDescriptorError: Error {
+  case rpathReplacementsMalformed(replacements: String)
+  case binaryPathUnavailable(bundlePath: String)
+  case bundleLoadFailed(path: String)
+  case bundleIdentifierUnavailable(name: String, path: String)
+}
+
+extension FBBundleDescriptorError: LocalizedError {
+  public var errorDescription: String? {
+    switch self {
+    case let .rpathReplacementsMalformed(replacements):
+      return "Expected the rpath replacements to be strings, got \(replacements)"
+    case let .binaryPathUnavailable(bundlePath):
+      return "Could not obtain binary path for bundle \(bundlePath)"
+    case let .bundleLoadFailed(path):
+      return "Failed to load bundle at path \(path)"
+    case let .bundleIdentifierUnavailable(name, path):
+      return "Could not obtain Bundle ID for bundle '\(name)' at \(path)"
+    }
+  }
+}
+
 @objc(FBBundleDescriptor)
 public final class FBBundleDescriptor: NSObject, NSCopying, Sendable {
 
@@ -76,7 +99,7 @@ public final class FBBundleDescriptor: NSObject, NSCopying, Sendable {
         queue,
         fmap: { replacementsDictionary -> FBFuture<AnyObject> in
           guard let replacements = replacementsDictionary as? [String: String] else {
-            return FBControlCoreError.describe("Expected the rpath replacements to be strings, got \(replacementsDictionary)").failFuture()
+            return FBFuture(error: FBBundleDescriptorError.rpathReplacementsMalformed(replacements: String(describing: replacementsDictionary)))
           }
           if replacements.isEmpty {
             return FBFuture(result: replacements as NSDictionary)
@@ -112,7 +135,7 @@ public final class FBBundleDescriptor: NSObject, NSCopying, Sendable {
 
   private class func binaryForBundle(_ bundle: Bundle) throws -> FBBinaryDescriptor {
     guard let binaryPath = bundle.executablePath else {
-      throw FBControlCoreError.describe("Could not obtain binary path for bundle \(bundle.bundlePath)").build()
+      throw FBBundleDescriptorError.binaryPathUnavailable(bundlePath: bundle.bundlePath)
     }
     return try FBBinaryDescriptor.binary(withPath: binaryPath)
   }
@@ -153,11 +176,11 @@ public final class FBBundleDescriptor: NSObject, NSCopying, Sendable {
 
   private class func bundleFromPath(_ path: String, fallbackIdentifier: Bool) throws -> FBBundleDescriptor {
     guard let bundle = Bundle(path: path) else {
-      throw FBControlCoreError.describe("Failed to load bundle at path \(path)").build()
+      throw FBBundleDescriptorError.bundleLoadFailed(path: path)
     }
     let bundleName = bundleNameForBundle(bundle)
     guard let identifier = bundle.bundleIdentifier ?? (fallbackIdentifier ? bundleName : nil) else {
-      throw FBControlCoreError.describe("Could not obtain Bundle ID for bundle '\((path as NSString).lastPathComponent)' at \(path)").build()
+      throw FBBundleDescriptorError.bundleIdentifierUnavailable(name: (path as NSString).lastPathComponent, path: path)
     }
     let binary = try binaryForBundle(bundle)
     return FBBundleDescriptor(name: bundleName, identifier: identifier, path: path, binary: binary)
