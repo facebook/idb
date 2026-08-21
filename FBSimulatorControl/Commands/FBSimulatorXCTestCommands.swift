@@ -13,6 +13,41 @@ import Foundation
 private let testmanagerdSimSockTimeout: TimeInterval = 5
 private let simSockEnvKey = "TESTMANAGERD_SIM_SOCK"
 
+/// The ways simulator test execution can fail, as data rather than assembled strings.
+public enum FBSimulatorXCTestError: Error {
+  case socketCreationFailed
+  case socketFileMissing(path: String)
+  case socketPathTooLong(path: String)
+  case socketConnectionFailed
+  case unexpectedReporter(reporterDescription: String)
+  case testManagerAlreadyRunning(configurationDescription: String)
+  case simulatorNotBooted
+  case environmentVariableUnavailable(key: String, underlying: Error?)
+}
+
+extension FBSimulatorXCTestError: LocalizedError {
+  public var errorDescription: String? {
+    switch self {
+    case .socketCreationFailed:
+      return "Unable to create a unix domain socket"
+    case let .socketFileMissing(path):
+      return "Simulator indicated unix domain socket for testmanagerd at path \(path), but no file was found at that path."
+    case let .socketPathTooLong(path):
+      return "Unix domain socket path for simulator testmanagerd service '\(path)' is too big to fit in sockaddr_un.sun_path"
+    case .socketConnectionFailed:
+      return "Failed to connect to testmangerd socket"
+    case let .unexpectedReporter(reporterDescription):
+      return "\(reporterDescription) is not an FBXCTestReporter"
+    case let .testManagerAlreadyRunning(configurationDescription):
+      return "Cannot Start Test Manager with Configuration \(configurationDescription) as it is already running"
+    case .simulatorNotBooted:
+      return "Simulator must be booted to run tests"
+    case let .environmentVariableUnavailable(key, _):
+      return "Failed to get \(key) from simulator environment"
+    }
+  }
+}
+
 public final class FBSimulatorXCTestCommands: NSObject {
 
   // MARK: - Properties
@@ -48,16 +83,16 @@ public final class FBSimulatorXCTestCommands: NSObject {
   private static func connectedTestManagerSocket(atPath testManagerSocketString: String) throws -> Int32 {
     let socketFD = socket(AF_UNIX, SOCK_STREAM, 0)
     if socketFD == -1 {
-      throw FBSimulatorError.describe("Unable to create a unix domain socket").build()
+      throw FBSimulatorXCTestError.socketCreationFailed
     }
     if !FileManager.default.fileExists(atPath: testManagerSocketString) {
       close(socketFD)
-      throw FBSimulatorError.describe("Simulator indicated unix domain socket for testmanagerd at path \(testManagerSocketString), but no file was found at that path.").build()
+      throw FBSimulatorXCTestError.socketFileMissing(path: testManagerSocketString)
     }
     let testManagerSocketCStr = testManagerSocketString.utf8CString
     if testManagerSocketCStr.count - 1 >= 0x68 {
       close(socketFD)
-      throw FBSimulatorError.describe("Unix domain socket path for simulator testmanagerd service '\(testManagerSocketString)' is too big to fit in sockaddr_un.sun_path").build()
+      throw FBSimulatorXCTestError.socketPathTooLong(path: testManagerSocketString)
     }
     var remote = sockaddr_un()
     remote.sun_family = sa_family_t(AF_UNIX)
@@ -79,7 +114,7 @@ public final class FBSimulatorXCTestCommands: NSObject {
     }
     if connectResult == -1 {
       close(socketFD)
-      throw FBSimulatorError.describe("Failed to connect to testmangerd socket").build()
+      throw FBSimulatorXCTestError.socketConnectionFailed
     }
     return socketFD
   }
@@ -99,7 +134,7 @@ public final class FBSimulatorXCTestCommands: NSObject {
     // `XCTestCommands` lives in FBControlCore, which cannot see `FBXCTestReporter` in XCTestBootstrap,
     // so the reporter arrives type-erased and has to be recovered here.
     guard let typedReporter = reporter as? any FBXCTestReporter else {
-      throw FBSimulatorError.describe("\(reporter) is not an FBXCTestReporter").build()
+      throw FBSimulatorXCTestError.unexpectedReporter(reporterDescription: String(describing: reporter))
     }
 
     if !launchConfiguration.shouldUseXcodebuild {
@@ -108,7 +143,7 @@ public final class FBSimulatorXCTestCommands: NSObject {
     }
 
     if isRunningXcodeBuildOperation {
-      throw FBSimulatorError.describe("Cannot Start Test Manager with Configuration \(launchConfiguration) as it is already running").build()
+      throw FBSimulatorXCTestError.testManagerAlreadyRunning(configurationDescription: String(describing: launchConfiguration))
     }
 
     _ = try await bridgeFBFuture(
@@ -160,7 +195,7 @@ public final class FBSimulatorXCTestCommands: NSObject {
     }
 
     if simulator.state != .booted {
-      throw FBSimulatorError.describe("Simulator must be booted to run tests").build()
+      throw FBSimulatorXCTestError.simulatorNotBooted
     }
 
     try await FBManagedTestRunStrategy.runToCompletion(
@@ -193,11 +228,7 @@ public final class FBSimulatorXCTestCommands: NSObject {
         lastError = error as NSError
       }
       if Date() >= deadline {
-        throw
-          FBSimulatorError
-          .describe("Failed to get \(envKey) from simulator environment")
-          .caused(by: lastError)
-          .build()
+        throw FBSimulatorXCTestError.environmentVariableUnavailable(key: envKey, underlying: lastError)
       }
       try await Task.sleep(nanoseconds: 50_000_000)
     }
