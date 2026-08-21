@@ -5,6 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+// Every Docusaurus command loads this config, so generating here covers them
+// all — including `docusaurus deploy`, which builds internally without running
+// the package.json `build` script or its hooks.
+require('./scripts/generate-framework-docs');
+
 module.exports = {
   title: 'idb',
   tagline: 'iOS Development Bridge',

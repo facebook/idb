@@ -7,8 +7,8 @@
 
 // Generates the framework doc pages from the corresponding in-repo READMEs,
 // so each framework's README is the one copy to edit and renders both on
-// GitHub and on this site. Runs automatically before `start` and `build`; the
-// generated pages are gitignored.
+// GitHub and on this site. Required by docusaurus.config.js so it runs for
+// every Docusaurus command; the generated pages are gitignored.
 
 const fs = require('fs');
 const path = require('path');
