@@ -7,6 +7,29 @@
 
 import Foundation
 
+/// The ways xctrace recording can fail, as data rather than assembled strings.
+public enum FBXCTraceError: Error {
+  case outputDirectoryCreationFailed(underlying: Error)
+  case shimMissing
+  case recordFailed(exitCode: NSNumber)
+  case xctraceMissing(path: String)
+}
+
+extension FBXCTraceError: LocalizedError {
+  public var errorDescription: String? {
+    switch self {
+    case let .outputDirectoryCreationFailed(underlying):
+      return "Failed to create xctrace trace output directory: \(underlying)"
+    case .shimMissing:
+      return "Failed to locate the shim file for xctrace method swizzling"
+    case let .recordFailed(exitCode):
+      return "Xctrace record exited with failure - status: \(exitCode)"
+    case let .xctraceMissing(path):
+      return "xctrace does not exist at expected path \(path)"
+    }
+  }
+}
+
 public final class FBXCTraceRecordOperation {
 
   // MARK: Properties
@@ -33,7 +56,7 @@ public final class FBXCTraceRecordOperation {
     do {
       try FileManager.default.createDirectory(atPath: traceDir, withIntermediateDirectories: false, attributes: nil)
     } catch {
-      throw FBControlCoreError.describe("Failed to create xctrace trace output directory: \(error)").build()
+      throw FBXCTraceError.outputDirectoryCreationFailed(underlying: error)
     }
     let traceFile = (traceDir as NSString).appendingPathComponent("trace.trace")
 
@@ -72,7 +95,7 @@ public final class FBXCTraceRecordOperation {
     var environment: [String: String] = [:]
     if let customDeviceSetPath = target.customDeviceSetPath {
       guard let shim = configuration.shim else {
-        throw FBControlCoreError.describe("Failed to locate the shim file for xctrace method swizzling").build()
+        throw FBXCTraceError.shimMissing
       }
       environment["SIM_DEVICE_SET_PATH"] = customDeviceSetPath
       environment["DYLD_INSERT_LIBRARIES"] = shim.macOSTestShimPath
@@ -115,7 +138,7 @@ public final class FBXCTraceRecordOperation {
             if exitCode.isEqual(to: NSNumber(value: 0)) {
               return FBFuture<AnyObject>(result: self.traceDir as NSURL)
             } else {
-              return FBControlCoreError.describe("Xctrace record exited with failure - status: \(exitCode)").failFuture()
+              return FBFuture(error: FBXCTraceError.recordFailed(exitCode: exitCode))
             }
           })
     )
@@ -125,7 +148,7 @@ public final class FBXCTraceRecordOperation {
   public class func xctracePath() throws -> String {
     let path = (FBXcodeConfiguration.developerDirectory as NSString).appendingPathComponent("/usr/bin/xctrace")
     if !FileManager.default.fileExists(atPath: path) {
-      throw FBControlCoreError.describe("xctrace does not exist at expected path \(path)").build()
+      throw FBXCTraceError.xctraceMissing(path: path)
     }
     return path
   }
