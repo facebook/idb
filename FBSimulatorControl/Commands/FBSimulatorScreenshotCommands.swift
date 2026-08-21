@@ -11,6 +11,32 @@ import Foundation
 import ImageIO
 import UniformTypeIdentifiers
 
+/// The ways screenshot capture can fail, as data rather than assembled strings.
+public enum FBSimulatorScreenshotError: Error {
+  case unrecognizedFormat(format: String)
+  case captureFailed
+  case cropRectOutOfBounds(cropRect: CGRect)
+  case imageDestinationCreationFailed
+  case encodingFailed
+}
+
+extension FBSimulatorScreenshotError: LocalizedError {
+  public var errorDescription: String? {
+    switch self {
+    case let .unrecognizedFormat(format):
+      return "\(format) is not a recognized screenshot format"
+    case .captureFailed:
+      return "Failed to capture a screenshot"
+    case let .cropRectOutOfBounds(cropRect):
+      return "Screenshot crop rect \(cropRect) is outside the screen bounds"
+    case .imageDestinationCreationFailed:
+      return "Failed to create an image destination"
+    case .encodingFailed:
+      return "Failed to encode the screenshot"
+    }
+  }
+}
+
 public final class FBSimulatorScreenshotCommands: NSObject {
 
   // MARK: - Properties
@@ -38,7 +64,7 @@ public final class FBSimulatorScreenshotCommands: NSObject {
     } else if format == .png {
       return try await image.pngImageData()
     } else {
-      throw FBSimulatorError.describe("\(format) is not a recognized screenshot format").build()
+      throw FBSimulatorScreenshotError.unrecognizedFormat(format: String(describing: format))
     }
   }
 
@@ -63,7 +89,7 @@ public final class FBSimulatorScreenshotCommands: NSObject {
   private func replScreenshotImage(cropRect: CGRect?) async throws -> CGImage {
     let image = try await connectToImage()
     guard let full = try await image.image() else {
-      throw FBSimulatorError.describe("Failed to capture a screenshot").build()
+      throw FBSimulatorScreenshotError.captureFailed
     }
     guard let cropRect else {
       return full
@@ -78,7 +104,7 @@ public final class FBSimulatorScreenshotCommands: NSObject {
     let bounds = CGRect(x: 0, y: 0, width: full.width, height: full.height)
     let clamped = pixelRect.intersection(bounds)
     guard !clamped.isNull, clamped.width >= 1, clamped.height >= 1, let cropped = full.cropping(to: clamped) else {
-      throw FBSimulatorError.describe("Screenshot crop rect \(cropRect) is outside the screen bounds").build()
+      throw FBSimulatorScreenshotError.cropRectOutOfBounds(cropRect: cropRect)
     }
     return cropped
   }
@@ -87,7 +113,7 @@ public final class FBSimulatorScreenshotCommands: NSObject {
     let type: UTType = asPNG ? .png : .tiff
     let data = NSMutableData()
     guard let destination = CGImageDestinationCreateWithData(data, type.identifier as CFString, 1, nil) else {
-      throw FBSimulatorError.describe("Failed to create an image destination").build()
+      throw FBSimulatorScreenshotError.imageDestinationCreationFailed
     }
     var properties: [CFString: Any] = [:]
     if !asPNG {
@@ -96,7 +122,7 @@ public final class FBSimulatorScreenshotCommands: NSObject {
     }
     CGImageDestinationAddImage(destination, image, properties as CFDictionary)
     guard CGImageDestinationFinalize(destination) else {
-      throw FBSimulatorError.describe("Failed to encode the screenshot").build()
+      throw FBSimulatorScreenshotError.encodingFailed
     }
     return data as Data
   }
