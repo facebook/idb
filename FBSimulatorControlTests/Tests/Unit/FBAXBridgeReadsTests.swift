@@ -1785,9 +1785,8 @@ final class FBAXBridgeReadsTests: XCTestCase {
     )
   }
 
-  private static func json(_ object: [String: Any]) -> Data {
-    // swiftlint:disable:next force_try
-    try! JSONSerialization.data(withJSONObject: object)
+  private static func json(_ object: [String: Any]) throws -> Data {
+    try JSONSerialization.data(withJSONObject: object)
   }
 }
 
