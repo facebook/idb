@@ -13,6 +13,10 @@ module.exports = {
   baseUrl: '/',
   organizationName: 'facebook',
   projectName: 'idb',
+  markdown: {
+    mermaid: true,
+  },
+  themes: ['@docusaurus/theme-mermaid'],
   themeConfig: {
     navbar: {
       title: 'idb',
