@@ -8,6 +8,35 @@
 @preconcurrency import FBControlCore
 import Foundation
 
+/// The ways provisioning-profile operations can fail, as data rather than assembled strings.
+public enum FBDeviceProvisioningProfileError: Error {
+  case deviceNil
+  case copyFailed
+  case removeFailed(uuid: String, message: String)
+  case constructionFailed(dataDescription: String)
+  case installFailed(profileDescription: String, message: String)
+  case payloadUnavailable(profileDescription: String)
+}
+
+extension FBDeviceProvisioningProfileError: LocalizedError {
+  public var errorDescription: String? {
+    switch self {
+    case .deviceNil:
+      return "Device is nil"
+    case .copyFailed:
+      return "Failed to copy provisioning profiles"
+    case let .removeFailed(uuid, message):
+      return "Failed to remove profile \(uuid): \(message)"
+    case let .constructionFailed(dataDescription):
+      return "Could not construct profile from data \(dataDescription)"
+    case let .installFailed(profileDescription, message):
+      return "Failed to install profile \(profileDescription): \(message)"
+    case let .payloadUnavailable(profileDescription):
+      return "Failed to get payload of \(profileDescription)"
+    }
+  }
+}
+
 public class FBDeviceProvisioningProfileCommands: NSObject, ProvisioningProfileCommands {
   private(set) weak var device: FBDevice?
 
@@ -26,11 +55,11 @@ public class FBDeviceProvisioningProfileCommands: NSObject, ProvisioningProfileC
 
   public func allProvisioningProfiles() async throws -> [[String: Any]] {
     guard let device else {
-      throw FBDeviceControlError().describe("Device is nil").build()
+      throw FBDeviceProvisioningProfileError.deviceNil
     }
     return try await withFBFutureContext(device.connectToDevice(withPurpose: "list_provisioning_profiles")) { connectedDevice in
       guard let profiles = connectedDevice.calls.CopyProvisioningProfiles?(connectedDevice.amDeviceRef)?.takeRetainedValue() as? [Any] else {
-        throw FBControlCoreError.describe("Failed to copy provisioning profiles").build()
+        throw FBDeviceProvisioningProfileError.copyFailed
       }
       var allProfiles: [[String: Any]] = []
       for profile in profiles {
@@ -49,14 +78,14 @@ public class FBDeviceProvisioningProfileCommands: NSObject, ProvisioningProfileC
 
   public func removeProvisioningProfile(uuid: String) async throws -> [String: Any] {
     guard let device else {
-      throw FBDeviceControlError().describe("Device is nil").build()
+      throw FBDeviceProvisioningProfileError.deviceNil
     }
     return try await withFBFutureContext(device.connectToDevice(withPurpose: "remove_provisioning_profile")) { connectedDevice in
       let status = connectedDevice.calls.RemoveProvisioningProfile?(connectedDevice.amDeviceRef, uuid as CFString) ?? -1
       if status != 0 {
         let errRef = connectedDevice.calls.ProvisioningProfileCopyErrorStringForCode?(status)
         let errorDescription = errRef?.takeRetainedValue() as String? ?? "Unknown error"
-        throw FBControlCoreError.describe("Failed to remove profile \(uuid): \(errorDescription)").build()
+        throw FBDeviceProvisioningProfileError.removeFailed(uuid: uuid, message: errorDescription)
       }
       return [:]
     }
@@ -64,18 +93,18 @@ public class FBDeviceProvisioningProfileCommands: NSObject, ProvisioningProfileC
 
   public func installProvisioningProfile(_ profileData: Data) async throws -> [String: Any] {
     guard let device else {
-      throw FBDeviceControlError().describe("Device is nil").build()
+      throw FBDeviceProvisioningProfileError.deviceNil
     }
     return try await withFBFutureContext(device.connectToDevice(withPurpose: "install_provisioning_profile")) { connectedDevice in
       guard let profileUnmanaged = connectedDevice.calls.ProvisioningProfileCreateWithData?(profileData as CFData) else {
-        throw FBControlCoreError.describe("Could not construct profile from data \(profileData)").build()
+        throw FBDeviceProvisioningProfileError.constructionFailed(dataDescription: String(describing: profileData))
       }
       let profile = profileUnmanaged.takeRetainedValue()
       let status = connectedDevice.calls.InstallProvisioningProfile?(connectedDevice.amDeviceRef, profile) ?? -1
       if status != 0 {
         let errRef = connectedDevice.calls.ProvisioningProfileCopyErrorStringForCode?(status)
         let errorDescription = errRef?.takeRetainedValue() as String? ?? "Unknown error"
-        throw FBControlCoreError.describe("Failed to install profile \(profile): \(errorDescription)").build()
+        throw FBDeviceProvisioningProfileError.installFailed(profileDescription: String(describing: profile), message: errorDescription)
       }
       let payloadRef = connectedDevice.calls.ProvisioningProfileCopyPayload?(profile)
       var payload = payloadRef?.takeRetainedValue() as? [String: Any]
@@ -83,7 +112,7 @@ public class FBDeviceProvisioningProfileCommands: NSObject, ProvisioningProfileC
         payload = FBCollectionOperations.recursiveFilteredJSONSerializableRepresentation(of: p)
       }
       guard let payload else {
-        throw FBControlCoreError.describe("Failed to get payload of \(profile)").build()
+        throw FBDeviceProvisioningProfileError.payloadUnavailable(profileDescription: String(describing: profile))
       }
       return payload
     }
