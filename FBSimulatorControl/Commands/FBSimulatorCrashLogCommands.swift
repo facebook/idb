@@ -8,6 +8,18 @@
 import FBControlCore
 import Foundation
 
+/// The way crash-log file access fails on simulators, as data rather than an assembled string.
+public enum FBSimulatorCrashLogError: Error, LocalizedError {
+  case fileAccessUnsupported
+
+  public var errorDescription: String? {
+    switch self {
+    case .fileAccessUnsupported:
+      return "crashLogFiles not supported on simulators"
+    }
+  }
+}
+
 public final class FBSimulatorCrashLogCommands: NSObject {
 
   // MARK: - Properties
@@ -74,6 +86,6 @@ extension FBSimulator: CrashLogCommands {
   }
 
   public func withCrashLogFiles<R>(body: (any AsyncFileContainer) async throws -> R) async throws -> R {
-    throw FBControlCoreError.describe("crashLogFiles not supported on simulators").build()
+    throw FBSimulatorCrashLogError.fileAccessUnsupported
   }
 }
