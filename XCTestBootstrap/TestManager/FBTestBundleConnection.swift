@@ -18,6 +18,35 @@ private let crashCheckWaitLimit: TimeInterval = 120
  XCTest `_XCT_*` callback surface, and the `NSInvocation` message forwarding stay in the Objective-C
  `FBTestBundleDTXConnection`, which this type drives step by step.
  */
+/// The ways a test-bundle connection can fail, as data rather than assembled strings.
+enum FBTestBundleConnectionError: Error {
+  case hostRelaunchedByOS(underlying: Error)
+  case hostStalled(processIdentifier: pid_t, stackshot: String)
+  case hostCrashed(crashLog: String)
+  case connectionLost(message: String)
+  case processStillRunning(processIdentifier: pid_t)
+  case unexpectedCrashLookupResult(processIdentifier: pid_t)
+}
+
+extension FBTestBundleConnectionError: LocalizedError {
+  var errorDescription: String? {
+    switch self {
+    case .hostRelaunchedByOS:
+      return "Error while establishing connection to test bundle: Running test host application pid is different from the pid launched and set up to execute the tests. The host application is likely to have crashed during startup and been relaunched by iOS."
+    case let .hostStalled(processIdentifier, stackshot):
+      return "Could not connect to test bundle, but host application process \(processIdentifier) is still alive and busy/stalled: \(stackshot)"
+    case let .hostCrashed(crashLog):
+      return "Test Bundle/HostApp Crashed: \(crashLog)"
+    case let .connectionLost(message):
+      return message
+    case let .processStillRunning(processIdentifier):
+      return "The Process for \(processIdentifier) is not crashed as it is running"
+    case let .unexpectedCrashLookupResult(processIdentifier):
+      return "Crash log lookup for pid \(processIdentifier) returned an unexpected result"
+    }
+  }
+}
+
 final class FBTestBundleConnection {
 
   private let context: FBTestManagerContext
@@ -91,34 +120,27 @@ final class FBTestBundleConnection {
     if runningPid != expectedPid {
       // iOS sometimes relaunches a host that crashed very early as a vanilla process that idb cannot
       // drive, so there is no bundle to connect to.
-      return
-        FBXCTestError
-        .describe("Error while establishing connection to test bundle: Running test host application pid is different from the pid launched and set up to execute the tests. The host application is likely to have crashed during startup and been relaunched by iOS.")
-        .caused(by: error)
-        .build()
+      return FBTestBundleConnectionError.hostRelaunchedByOS(underlying: error)
     }
     // Host process is alive — sample its stack for the error message.
     if let stackshot = (try? await bridgeFBFuture(FBProcessFetcher.performSampleStackshot(forProcessIdentifier: expectedPid, queue: target.workQueue))) as? String {
-      return
-        FBXCTestError
-        .describe("Could not connect to test bundle, but host application process \(expectedPid) is still alive and busy/stalled: \(stackshot)")
-        .build()
+      return FBTestBundleConnectionError.hostStalled(processIdentifier: expectedPid, stackshot: stackshot)
     }
     return error
   }
 
   private func crashLogOrNotFoundError(description notFound: String) async -> Error {
     if let crashLog = try? await findCrashedProcessLog() {
-      return FBXCTestError.describe("Test Bundle/HostApp Crashed: \(crashLog)").build()
+      return FBTestBundleConnectionError.hostCrashed(crashLog: String(describing: crashLog))
     }
-    return FBXCTestError.describe(notFound).code(XCTestBootstrapErrorCodeLostConnection).build()
+    return FBTestBundleConnectionError.connectionLost(message: notFound)
   }
 
   private func findCrashedProcessLog() async throws -> FBCrashLog {
     let bundleID = context.testHostLaunchConfiguration.bundleID
     // If the host process is still running it has not crashed.
     if let runningPid = try? await target.processID(forBundleID: bundleID) {
-      throw FBControlCoreError.describe("The Process for \(runningPid) is not crashed as it is running").build()
+      throw FBTestBundleConnectionError.processStillRunning(processIdentifier: runningPid)
     }
     var crashWaitTimeout = crashCheckWaitLimit
     if let env = ProcessInfo.processInfo.environment["FBXCTEST_CRASH_WAIT_TIMEOUT"] {
@@ -131,7 +153,7 @@ final class FBTestBundleConnection {
     let future = fbFutureFromAsync { try await self.target.notifyOfCrash(matching: predicate) }
     let timed = future.timeout(crashWaitTimeout, waitingFor: "Getting crash log for process with pid \(pid), bundle ID: \(bundleID)")
     guard let info = try await bridgeFBFuture(timed) as? FBCrashLogInfo else {
-      throw FBControlCoreError.describe("Crash log lookup for pid \(pid) returned an unexpected result").build()
+      throw FBTestBundleConnectionError.unexpectedCrashLookupResult(processIdentifier: pid)
     }
     return try info.obtainCrashLog()
   }
