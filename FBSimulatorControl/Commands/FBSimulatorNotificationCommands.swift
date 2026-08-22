@@ -9,6 +9,26 @@
 import FBControlCore
 import Foundation
 
+/// The ways push-notification injection can fail, as data rather than assembled strings.
+public enum FBSimulatorNotificationError: Error {
+  case jsonNotUTF8
+  case jsonNotADictionary
+  case selectorUnavailable
+}
+
+extension FBSimulatorNotificationError: LocalizedError {
+  public var errorDescription: String? {
+    switch self {
+    case .jsonNotUTF8:
+      return "Failed to encode notification json as UTF-8"
+    case .jsonNotADictionary:
+      return "Failed to deserialize notification json: not a dictionary"
+    case .selectorUnavailable:
+      return "SimDevice doesn't have sendPushNotificationForBundleID selector"
+    }
+  }
+}
+
 public final class FBSimulatorNotificationCommands: NSObject {
 
   // MARK: - Properties
@@ -34,14 +54,14 @@ public final class FBSimulatorNotificationCommands: NSObject {
     }
 
     guard let data = jsonPayload.data(using: .utf8) else {
-      throw FBSimulatorError.describe("Failed to encode notification json as UTF-8").build()
+      throw FBSimulatorNotificationError.jsonNotUTF8
     }
     guard let jsonObj = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-      throw FBSimulatorError.describe("Failed to deserialize notification json: not a dictionary").build()
+      throw FBSimulatorNotificationError.jsonNotADictionary
     }
 
     guard simulator.device.responds(to: NSSelectorFromString("sendPushNotificationForBundleID:jsonPayload:error:")) else {
-      throw FBSimulatorError.describe("SimDevice doesn't have sendPushNotificationForBundleID selector").build()
+      throw FBSimulatorNotificationError.selectorUnavailable
     }
 
     try simulator.device.sendPushNotification(forBundleID: bundleID, jsonPayload: jsonObj)
