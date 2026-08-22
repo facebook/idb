@@ -8,16 +8,31 @@
 import FBControlCore
 import Foundation
 
+/// The ways otool inspection can fail, as data rather than assembled strings.
+public enum FBOToolError: Error {
+  case bundleInaccessible(path: String)
+  case bundleMissingExecutable(path: String)
+}
+
+extension FBOToolError: LocalizedError {
+  public var errorDescription: String? {
+    switch self {
+    case let .bundleInaccessible(path):
+      return "Bundle '\(path)' does not identify an accessible bundle directory."
+    case let .bundleMissingExecutable(path):
+      return "The bundle at \(path) does not contain an executable."
+    }
+  }
+}
+
 public final class FBOToolOperation {
 
   public static func listSanitiserDylibsRequired(byBundle testBundlePath: String, onQueue queue: DispatchQueue) -> FBFuture<NSArray> {
     guard let bundle = Bundle(path: testBundlePath) else {
-      let message = "Bundle '\(testBundlePath)' does not identify an accessible bundle directory."
-      return FBFuture(error: XCTestBootstrapError.describe(message).build())
+      return FBFuture(error: FBOToolError.bundleInaccessible(path: testBundlePath))
     }
     guard let executablePath = bundle.executablePath else {
-      let message = "The bundle at \(testBundlePath) does not contain an executable."
-      return FBFuture(error: XCTestBootstrapError.describe(message).build())
+      return FBFuture(error: FBOToolError.bundleMissingExecutable(path: testBundlePath))
     }
 
     let base = FBProcessBuilder<NSNull, NSData, NSData>.withLaunchPath("/usr/bin/otool", arguments: ["-L", executablePath])
