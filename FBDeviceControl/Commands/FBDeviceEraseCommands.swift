@@ -53,7 +53,7 @@ private final class FBDeviceEraseOperation: NSObject, FBiOSTargetSetDelegate, @u
     logger.log("Device has been detected, starting erase API Call")
     let eraseCallbackValue = try await startErase()
     guard eraseCallbackValue == EraseCallbackValueGood else {
-      throw FBDeviceControlError().describe("Erase callback was \(eraseCallbackValue), not \(EraseCallbackValueGood). Perhaps the device is not activated?").build()
+      throw FBDeviceEraseError.badEraseCallback(value: eraseCallbackValue, expected: EraseCallbackValueGood)
     }
     logger.log("Device API call finished, waiting for device to go offline")
     try await awaitEvent(deviceWentAway, timeout: OfflineTimeout, waitingFor: "Device to go offline")
@@ -121,6 +121,23 @@ private final class FBDeviceEraseOperation: NSObject, FBiOSTargetSetDelegate, @u
 
 // MARK: - FBDeviceEraseCommands
 
+/// The ways a device erase can fail, as data rather than assembled strings.
+public enum FBDeviceEraseError: Error {
+  case deviceNil
+  case badEraseCallback(value: Int32, expected: Int32)
+}
+
+extension FBDeviceEraseError: LocalizedError {
+  public var errorDescription: String? {
+    switch self {
+    case .deviceNil:
+      return "Device is nil"
+    case let .badEraseCallback(value, expected):
+      return "Erase callback was \(value), not \(expected). Perhaps the device is not activated?"
+    }
+  }
+}
+
 public final class FBDeviceEraseCommands: NSObject, EraseCommands {
 
   private weak var device: FBDevice?
@@ -138,7 +155,7 @@ public final class FBDeviceEraseCommands: NSObject, EraseCommands {
 
   public func erase() async throws {
     guard let device else {
-      throw FBDeviceControlError().describe("Device is nil").build()
+      throw FBDeviceEraseError.deviceNil
     }
     let logger = device.logger.withName("erase_\(device.udid)")
     try await device.activate()
