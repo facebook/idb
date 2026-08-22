@@ -8,6 +8,21 @@
 import FBControlCore
 import Foundation
 
+/// The ways device-set resolution can fail, as data rather than assembled strings.
+public enum FBSimulatorDeviceSetError: Error, LocalizedError {
+  case simDeviceSetUnavailable
+  case defaultPathUnavailable
+
+  public var errorDescription: String? {
+    switch self {
+    case .simDeviceSetUnavailable:
+      return "SimDeviceSet is not present after loading CoreSimulator"
+    case .defaultPathUnavailable:
+      return "SimDeviceSet did not provide a default device set path"
+    }
+  }
+}
+
 @objc(FBSimulatorControlConfiguration)
 public class FBSimulatorControlConfiguration: NSObject, NSCopying {
 
@@ -76,7 +91,7 @@ public class FBSimulatorControlConfiguration: NSObject, NSCopying {
   public class func defaultDeviceSetPath() throws -> String {
     try FBSimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworks(nil)
     guard let deviceSetClass = objc_lookUpClass("SimDeviceSet") else {
-      throw FBControlCoreError.describe("SimDeviceSet is not present after loading CoreSimulator").build()
+      throw FBSimulatorDeviceSetError.simDeviceSetUnavailable
     }
     let cls = deviceSetClass as AnyObject
     if let result = cls.perform(NSSelectorFromString("defaultSetPath"))?.takeUnretainedValue() as? String {
@@ -86,7 +101,7 @@ public class FBSimulatorControlConfiguration: NSObject, NSCopying {
       let defaultSet = cls.perform(NSSelectorFromString("defaultSet"))?.takeUnretainedValue(),
       let setPath = (defaultSet as AnyObject).perform(NSSelectorFromString("setPath"))?.takeUnretainedValue() as? String
     else {
-      throw FBControlCoreError.describe("SimDeviceSet did not provide a default device set path").build()
+      throw FBSimulatorDeviceSetError.defaultPathUnavailable
     }
     return setPath
   }
