@@ -9,6 +9,18 @@
 @preconcurrency import FBControlCore
 import Foundation
 
+/// The way shutdown preparation fails on an unknown state, as data rather than an assembled string.
+public enum FBSimulatorShutdownError: Error, LocalizedError {
+  case unknownState
+
+  public var errorDescription: String? {
+    switch self {
+    case .unknownState:
+      return "Failed to prepare simulator for usage as it is in an unknown state"
+    }
+  }
+}
+
 public final class FBSimulatorShutdownStrategy {
 
   // MARK: - Public Methods
@@ -34,7 +46,7 @@ public final class FBSimulatorShutdownStrategy {
     logger.debug().log("Starting Safe Shutdown of \(simulator.udid)")
 
     if simulator.state == .unknown {
-      throw FBSimulatorError.describe("Failed to prepare simulator for usage as it is in an unknown state").build()
+      throw FBSimulatorShutdownError.unknownState
     }
     if simulator.state == .shutdown {
       logger.debug().log("Shutdown of \(simulator.udid) succeeded as it is already shutdown")
