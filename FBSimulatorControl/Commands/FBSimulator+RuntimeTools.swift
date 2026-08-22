@@ -107,7 +107,7 @@ extension FBSimulator {
   ///   `usr/bin/heap`.
   private func runtimeExecutablePath(_ relativePath: String) throws -> String {
     guard let root = device.runtime.root else {
-      throw FBSimulatorError.describe("Could not obtain runtime root for simulator").build()
+      throw FBSimulatorLogError.runtimeRootUnavailable
     }
     let path = (root as NSString).appendingPathComponent(relativePath)
     let binary = try FBBinaryDescriptor.binary(withPath: path)

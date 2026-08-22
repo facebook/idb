@@ -9,6 +9,18 @@
 import FBControlCore
 import Foundation
 
+/// The way log invocation fails without a runtime root, as data rather than an assembled string.
+public enum FBSimulatorLogError: Error, LocalizedError {
+  case runtimeRootUnavailable
+
+  public var errorDescription: String? {
+    switch self {
+    case .runtimeRootUnavailable:
+      return "Could not obtain runtime root for simulator"
+    }
+  }
+}
+
 public final class FBSimulatorLogCommands: NSObject {
 
   // MARK: - Properties
@@ -55,7 +67,7 @@ public final class FBSimulatorLogCommands: NSObject {
       throw FBWeakTargetError.simulator
     }
     guard let root = simulator.device.runtime.root else {
-      throw FBSimulatorError.describe("Could not obtain runtime root for simulator").build()
+      throw FBSimulatorLogError.runtimeRootUnavailable
     }
     let path =
       (((root as NSString)
