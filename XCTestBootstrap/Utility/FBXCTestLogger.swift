@@ -13,6 +13,18 @@ private let xctoolOutputLogDirectoryEnv = "XCTOOL_TEST_ENV_FB_LOG_DIRECTORY"
 
 // SAFETY: all stored state is immutable; thread-safety of logging delegates to the base logger,
 // which the FBControlCoreLogger contract requires to be thread-safe.
+/// The way log mirroring fails when the writer is not a consumer, as data rather than an assembled string.
+public enum FBXCTestLoggerError: Error, LocalizedError {
+  case notADataConsumer(path: String, writer: String)
+
+  public var errorDescription: String? {
+    switch self {
+    case let .notADataConsumer(path, writer):
+      return "Expected a data consumer writing to \(path), got \(writer)"
+    }
+  }
+}
+
 public final class FBXCTestLogger: NSObject, FBControlCoreLogger, @unchecked Sendable {
 
   private let baseLogger: FBControlCoreLogger
@@ -127,7 +139,7 @@ public final class FBXCTestLogger: NSObject, FBControlCoreLogger, @unchecked Sen
       queue,
       fmap: { writer -> FBFuture<AnyObject> in
         guard let writer = writer as? FBDataConsumer else {
-          return FBControlCoreError.describe("Expected a data consumer writing to \(filePath), got \(writer)").failFuture()
+          return FBFuture(error: FBXCTestLoggerError.notADataConsumer(path: filePath, writer: String(describing: writer)))
         }
         logger.info().log("Mirroring output to \(filePath)")
         return FBFuture<AnyObject>(
