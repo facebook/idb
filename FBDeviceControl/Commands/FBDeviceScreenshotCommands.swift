@@ -10,6 +10,23 @@ import Foundation
 
 private let ScreenShotDataKey = "ScreenShotData"
 
+/// The ways a device screenshot can fail, as data rather than assembled strings.
+public enum FBDeviceScreenshotError: Error {
+  case deviceNil
+  case notImageData(response: String, key: String)
+}
+
+extension FBDeviceScreenshotError: LocalizedError {
+  public var errorDescription: String? {
+    switch self {
+    case .deviceNil:
+      return "Device is nil"
+    case let .notImageData(response, key):
+      return "\(response) is not an NSData for \(key)"
+    }
+  }
+}
+
 public class FBDeviceScreenshotCommands: NSObject {
   private weak var device: FBDevice?
 
@@ -28,14 +45,12 @@ public class FBDeviceScreenshotCommands: NSObject {
 
   fileprivate func takeScreenshotAsync(_ format: FBScreenshotFormat) async throws -> Data {
     guard let device else {
-      throw FBDeviceControlError().describe("Device is nil").build()
+      throw FBDeviceScreenshotError.deviceNil
     }
     return try await withFBFutureContext(device.startDeviceLinkService("com.apple.mobile.screenshotr")) { client in
       let response = try await bridgeFBFuture(client.processMessage(["MessageType": "ScreenShotRequest"]))
       guard let screenshotData = response[ScreenShotDataKey] as? NSData else {
-        throw FBDeviceControlError()
-          .describe("\(String(describing: response)) is not an NSData for \(ScreenShotDataKey)")
-          .build()
+        throw FBDeviceScreenshotError.notImageData(response: String(describing: response), key: ScreenShotDataKey)
       }
       return screenshotData as Data
     }
