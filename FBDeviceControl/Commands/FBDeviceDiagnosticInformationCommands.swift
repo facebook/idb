@@ -10,6 +10,27 @@ import Foundation
 
 private let DiagnosticsRelayService = "com.apple.mobile.diagnostics_relay"
 
+/// The ways a diagnostics_relay exchange can fail, as data rather than assembled strings.
+/// Shared with the power commands, which drive the same relay service.
+public enum FBDiagnosticsRelayError: Error {
+  case deviceNil
+  case unexpectedResponse
+  case unsuccessful(response: String)
+}
+
+extension FBDiagnosticsRelayError: LocalizedError {
+  public var errorDescription: String? {
+    switch self {
+    case .deviceNil:
+      return "Device is nil"
+    case .unexpectedResponse:
+      return "Unexpected response"
+    case let .unsuccessful(response):
+      return "Not successful \(response)"
+    }
+  }
+}
+
 public class FBDeviceDiagnosticInformationCommands: NSObject, FBiOSTargetCommand {
   private weak var device: FBDevice?
 
@@ -31,7 +52,7 @@ public class FBDeviceDiagnosticInformationCommands: NSObject, FBiOSTargetCommand
 
   fileprivate func fetchDiagnosticInformationAsync() async throws -> [String: Any] {
     guard let device else {
-      throw FBDeviceControlError().describe("Device is nil").build()
+      throw FBDiagnosticsRelayError.deviceNil
     }
     let diagnostics = try await fetchInformationFromDiagnosticsRelayAsync(device: device)
     let springboard = try await fetchInformationFromSpringboardAsync(device: device)
@@ -49,10 +70,10 @@ public class FBDeviceDiagnosticInformationCommands: NSObject, FBiOSTargetCommand
   private func fetchInformationFromDiagnosticsRelayAsync(device: FBDevice) async throws -> Any {
     try await withFBFutureContext(device.startService(DiagnosticsRelayService)) { connection in
       guard let result = try connection.sendAndReceiveMessage(["Request": "All"]) as? NSDictionary else {
-        throw FBControlCoreError.describe("Unexpected response").build()
+        throw FBDiagnosticsRelayError.unexpectedResponse
       }
       if (result["Status"] as? String) != "Success" {
-        throw FBControlCoreError.describe("Not successful \(result)").build()
+        throw FBDiagnosticsRelayError.unsuccessful(response: String(describing: result))
       }
       guard let diagnostics = result["Diagnostics"] as? [String: Any] else {
         return [:] as [String: Any]

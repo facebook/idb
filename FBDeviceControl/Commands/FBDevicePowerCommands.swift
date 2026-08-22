@@ -26,14 +26,14 @@ public class FBDevicePowerCommands: NSObject {
 
   fileprivate func sendRelayCommand(_ request: String) async throws {
     guard let device else {
-      throw FBDeviceControlError().describe("Device is nil").build()
+      throw FBDiagnosticsRelayError.deviceNil
     }
     try await withFBFutureContext(device.startService("com.apple.mobile.diagnostics_relay")) { connection in
       guard let result = try connection.sendAndReceiveMessage(["Request": request]) as? NSDictionary else {
-        throw FBControlCoreError.describe("Unexpected response").build()
+        throw FBDiagnosticsRelayError.unexpectedResponse
       }
       if (result["Status"] as? String) != "Success" {
-        throw FBControlCoreError.describe("Not successful \(result)").build()
+        throw FBDiagnosticsRelayError.unsuccessful(response: String(describing: result))
       }
     }
   }
