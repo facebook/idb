@@ -13,6 +13,26 @@ private let XcodebuildEnvironmentDeviceSetPath = "SIM_DEVICE_SET_PATH"
 private let XcodebuildEnvironmentInsertDylib = "DYLD_INSERT_LIBRARIES"
 private let XcodebuildDestinationTimeoutSecs = "180"
 
+/// The ways xcodebuild orchestration can fail, as data rather than assembled strings.
+public enum FBXcodeBuildError: Error {
+  case shimMissing
+  case writeFailed(path: String)
+  case xcodebuildMissing(path: String)
+}
+
+extension FBXcodeBuildError: LocalizedError {
+  public var errorDescription: String? {
+    switch self {
+    case .shimMissing:
+      return "Failed to locate the shim file for xcodebuild method swizzling"
+    case let .writeFailed(path):
+      return "Failed to write to file \(path)"
+    case let .xcodebuildMissing(path):
+      return "xcodebuild does not exist at expected path \(path)"
+    }
+  }
+}
+
 public final class FBXcodeBuildOperation {
 
   // MARK: Initializers
@@ -42,10 +62,7 @@ public final class FBXcodeBuildOperation {
 
     if let simDeviceSetPath {
       guard let macOSTestShimPath else {
-        return unsafeBitCast(
-          XCTestBootstrapError.describe("Failed to locate the shim file for xcodebuild method swizzling").failFuture(),
-          to: FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>>.self
-        )
+        return FBFuture(error: FBXcodeBuildError.shimMissing)
       }
       environment[XcodebuildEnvironmentDeviceSetPath] = simDeviceSetPath
       if let existingDylib = environment[XcodebuildEnvironmentInsertDylib] {
@@ -111,7 +128,7 @@ public final class FBXcodeBuildOperation {
     }
 
     if !testRunProperties.write(toFile: path, atomically: false) {
-      throw XCTestBootstrapError.describe("Failed to write to file \(path)").build()
+      throw FBXcodeBuildError.writeFailed(path: path)
     }
     return path
   }
@@ -135,7 +152,7 @@ public final class FBXcodeBuildOperation {
   public static func xcodeBuildPath() throws -> String {
     let path = (FBXcodeConfiguration.developerDirectory as NSString).appendingPathComponent("/usr/bin/xcodebuild")
     if !FileManager.default.fileExists(atPath: path) {
-      throw XCTestBootstrapError.describe("xcodebuild does not exist at expected path \(path)").build()
+      throw FBXcodeBuildError.xcodebuildMissing(path: path)
     }
     return path
   }
