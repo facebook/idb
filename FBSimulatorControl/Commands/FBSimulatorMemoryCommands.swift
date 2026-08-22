@@ -9,6 +9,18 @@
 import FBControlCore
 import Foundation
 
+/// The way memory-warning simulation fails on older CoreSimulators, as data rather than an assembled string.
+public enum FBSimulatorMemoryError: Error, LocalizedError {
+  case selectorUnavailable
+
+  public var errorDescription: String? {
+    switch self {
+    case .selectorUnavailable:
+      return "SimDevice doesn't have simulateMemoryWarning selector"
+    }
+  }
+}
+
 public final class FBSimulatorMemoryCommands: NSObject {
 
   // MARK: - Properties
@@ -33,7 +45,7 @@ public final class FBSimulatorMemoryCommands: NSObject {
       throw FBWeakTargetError.simulator
     }
     guard simulator.device.responds(to: NSSelectorFromString("simulateMemoryWarning")) else {
-      throw FBSimulatorError.describe("SimDevice doesn't have simulateMemoryWarning selector").build()
+      throw FBSimulatorMemoryError.selectorUnavailable
     }
     simulator.device.simulateMemoryWarning()
   }
