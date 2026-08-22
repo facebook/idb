@@ -12,6 +12,19 @@ private func fullyFormattedXCTestName(_ className: String, _ methodName: String)
   "-[\(className) \(methodName)]"
 }
 
+/// The ways report finalisation can fail; the messages are assembled by the reporter itself.
+public enum FBJSONTestReporterError: Error, LocalizedError {
+  case testPlanDidNotStart(message: String)
+  case testPlanDidNotFinish(message: String)
+
+  public var errorDescription: String? {
+    switch self {
+    case let .testPlanDidNotStart(message), let .testPlanDidNotFinish(message):
+      return message
+    }
+  }
+}
+
 public final class FBJSONTestReporter: NSObject, FBXCTestReporter {
 
   private let dataConsumer: FBDataConsumer
@@ -39,7 +52,7 @@ public final class FBJSONTestReporter: NSObject, FBXCTestReporter {
 
   public func printReport() throws {
     if !started {
-      throw XCTestBootstrapError.describe(noStartOfTestPlanErrorMessage()).build()
+      throw FBJSONTestReporterError.testPlanDidNotStart(message: noStartOfTestPlanErrorMessage())
     }
     if !finished {
       var errorMessage = "No didFinishExecutingTestPlan event was received, the test bundle has likely crashed."
@@ -50,7 +63,7 @@ public final class FBJSONTestReporter: NSObject, FBXCTestReporter {
         errorMessage += ". Crash occurred while this test was running: \(currentTestName)"
       }
       printEvent(FBJSONTestReporter.createOCUnitEndEvent(testType, testBundlePath: testBundlePath, message: errorMessage, success: false))
-      throw XCTestBootstrapError.describe(errorMessage).build()
+      throw FBJSONTestReporterError.testPlanDidNotFinish(message: errorMessage)
     }
     dataConsumer.consumeEndOfFile()
   }
