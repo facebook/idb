@@ -93,6 +93,23 @@ private func dateFromString(_ date: String) -> Date? {
   return FBXCTestResultBundleParser_dateFormatter.date(from: date)
 }
 
+/// The ways result-bundle parsing can fail, as data rather than assembled strings.
+public enum FBXCTestResultBundleError: Error {
+  case noActions
+  case notADirectory(path: String)
+}
+
+extension FBXCTestResultBundleError: LocalizedError {
+  public var errorDescription: String? {
+    switch self {
+    case .noActions:
+      return "Test result bundle root record does not contain any actions"
+    case let .notADirectory(path):
+      return "\(path) is not a directory"
+    }
+  }
+}
+
 public final class FBXCTestResultBundleParser {
 
   // MARK: Public
@@ -125,7 +142,7 @@ public final class FBXCTestResultBundleParser {
             guard let record = actionsInvocationRecord as? NSDictionary,
               let actions = record["actions"] as? NSDictionary
             else {
-              return XCTestBootstrapError.describe("Test result bundle root record does not contain any actions").failFuture()
+              return FBFuture(error: FBXCTestResultBundleError.noActions)
             }
             let ids = parseActions(actions, logger: logger)
             var operations: [FBFuture<AnyObject>] = []
@@ -572,7 +589,7 @@ public final class FBXCTestResultBundleParser {
     var isDirectory: ObjCBool = false
     if fileManager.fileExists(atPath: subdirectoryFullPath, isDirectory: &isDirectory) {
       if !isDirectory.boolValue {
-        throw FBControlCoreError.describe("\(subdirectoryFullPath) is not a directory").build()
+        throw FBXCTestResultBundleError.notADirectory(path: subdirectoryFullPath)
       }
     } else {
       try fileManager.createDirectory(atPath: subdirectoryFullPath, withIntermediateDirectories: false, attributes: nil)
