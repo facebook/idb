@@ -7,6 +7,20 @@
 
 import Foundation
 
+/// The way a devicectl invocation fails, as data rather than an assembled string.
+public enum FBDevicectlError: Error {
+  case commandFailed(exitCode: String, arguments: [String], stdOut: String, stdErr: String)
+}
+
+extension FBDevicectlError: LocalizedError {
+  public var errorDescription: String? {
+    switch self {
+    case let .commandFailed(exitCode, arguments, stdOut, stdErr):
+      return "devicectl failed with exit code \(exitCode)\narguments: \(FBCollectionInformation.oneLineDescription(from: arguments))\n\(stdOut)\n\(stdErr)"
+    }
+  }
+}
+
 public class FBAppleDevicectlCommandExecutor {
 
   let logger: FBControlCoreLogger?
@@ -63,8 +77,11 @@ public extension FBAppleDevicectlCommandExecutor {
     let builder = taskBuilder(arguments: arguments)
     let task = try await bridgeFBFuture(builder.runUntilCompletion(withAcceptableExitCodes: nil))
     if task.exitCode.result?.intValue != 0 {
-      throw FBControlCoreError.describe("devicectl failed with exit code \(task.exitCode.result.flatMap(String.init) ?? "<nil>")\narguments: \(FBCollectionInformation.oneLineDescription(from: arguments))\n\(task.stdOut ?? "")\n\(task.stdErr ?? "")")
-        .build()
+      throw FBDevicectlError.commandFailed(
+        exitCode: task.exitCode.result.flatMap(String.init) ?? "<nil>",
+        arguments: arguments,
+        stdOut: (task.stdOut as String?) ?? "",
+        stdErr: (task.stdErr as String?) ?? "")
     }
     let data = try Data(contentsOf: tmpPath)
     let info = try JSONDecoder().decode(DevicectlProcInfo.self, from: data)
