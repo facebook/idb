@@ -13,6 +13,18 @@ private let SipsPath = "/usr/bin/sips"
 private let HEIC = "public.heic"
 private let JPEG = "public.jpeg"
 
+/// The way screenshot export fails on an unknown encoding, as data rather than an assembled string.
+public enum FBXCTestResultToolError: Error, LocalizedError {
+  case unrecognizedScreenshotEncoding(encoding: String)
+
+  public var errorDescription: String? {
+    switch self {
+    case let .unrecognizedScreenshotEncoding(encoding):
+      return "Unrecognized XCTest screenshot encoding: \(encoding)"
+    }
+  }
+}
+
 public final class FBXCTestResultToolOperation {
 
   // MARK: Private
@@ -91,7 +103,7 @@ public final class FBXCTestResultToolOperation {
           } else if encodeType == JPEG {
             return FBFuture(result: task)
           } else {
-            return XCTestBootstrapError.describe("Unrecognized XCTest screenshot encoding: \(encodeType)").failFuture()
+            return FBFuture(error: FBXCTestResultToolError.unrecognizedScreenshotEncoding(encoding: String(describing: encodeType)))
           }
         }),
       to: FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>>.self
