@@ -9,6 +9,18 @@
 @preconcurrency import FBControlCore
 @preconcurrency import Foundation
 
+/// The way deletion fails when the set never forgets the simulator, as data rather than an assembled string.
+public enum FBSimulatorDeletionError: Error, LocalizedError {
+  case removalTimedOut
+
+  public var errorDescription: String? {
+    switch self {
+    case .removalTimedOut:
+      return "Timed out waiting for Simulator to be removed from set"
+    }
+  }
+}
+
 public final class FBSimulatorDeletionStrategy {
 
   // MARK: - Public Methods
@@ -82,7 +94,7 @@ public final class FBSimulatorDeletionStrategy {
         return
       }
       if Date() >= deadline {
-        throw FBSimulatorError.describe("Timed out waiting for Simulator to be removed from set").build()
+        throw FBSimulatorDeletionError.removalTimedOut
       }
       try await Task.sleep(nanoseconds: pollIntervalNs)
     }
