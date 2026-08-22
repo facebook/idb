@@ -9,6 +9,23 @@
 @preconcurrency import FBControlCore
 import Foundation
 
+/// The ways boot verification can fail, as data rather than assembled strings.
+public enum FBSimulatorBootVerificationError: Error {
+  case noBootInfo(simulatorDescription: String)
+  case notTerminalStatus(bootInfoDescription: String)
+}
+
+extension FBSimulatorBootVerificationError: LocalizedError {
+  public var errorDescription: String? {
+    switch self {
+    case let .noBootInfo(simulatorDescription):
+      return "No bootInfo for \(simulatorDescription)"
+    case let .notTerminalStatus(bootInfoDescription):
+      return "Not terminal status, status is \(bootInfoDescription)"
+    }
+  }
+}
+
 public final class FBSimulatorBootVerificationStrategy {
 
   // MARK: - Properties
@@ -60,11 +77,11 @@ public final class FBSimulatorBootVerificationStrategy {
   private func performBootVerificationCheck() throws {
     let bootInfo: SimDeviceBootInfo? = simulator.device.bootStatus()
     guard let bootInfo else {
-      throw FBSimulatorError.describe("No bootInfo for \(simulator)").build()
+      throw FBSimulatorBootVerificationError.noBootInfo(simulatorDescription: String(describing: simulator))
     }
     updateBootInfo(bootInfo)
     if bootInfo.isTerminalStatus == false {
-      throw FBSimulatorError.describe("Not terminal status, status is \(String(describing: bootInfo))").build()
+      throw FBSimulatorBootVerificationError.notTerminalStatus(bootInfoDescription: String(describing: bootInfo))
     }
   }
 
