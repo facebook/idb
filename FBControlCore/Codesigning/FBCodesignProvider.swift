@@ -7,6 +7,24 @@
 
 import Foundation
 
+/// The ways codesigning can fail, as data rather than assembled strings.
+public enum FBCodesignError: Error, LocalizedError {
+  case signingFailed(exitCode: NSNumber, stdOut: String, stdErr: String)
+  case cdHashCheckFailed(exitCode: NSNumber, stdOut: String, stdErr: String)
+  case cdHashNotFound(output: String)
+
+  public var errorDescription: String? {
+    switch self {
+    case let .signingFailed(exitCode, stdOut, stdErr):
+      return "Codesigning failed with exit code \(exitCode), \(stdOut)\n\(stdErr)"
+    case let .cdHashCheckFailed(exitCode, stdOut, stdErr):
+      return "Checking CDHash of codesign execution failed \(exitCode), \(stdOut)\n\(stdErr)"
+    case let .cdHashNotFound(output):
+      return "Could not find 'CDHash' in output: \(output)"
+    }
+  }
+}
+
 public class FBCodesignProvider: NSObject {
 
   // MARK: Properties
@@ -75,10 +93,7 @@ public class FBCodesignProvider: NSObject {
           fmap: { [logger] task -> FBFuture<AnyObject> in
             let exitCode = task.exitCode.result
             if exitCode != 0 {
-              return
-                FBControlCoreError
-                .describe("Codesigning failed with exit code \(exitCode ?? -1), \(task.stdOut ?? "")\n\(task.stdErr ?? "")")
-                .failFuture()
+              return FBFuture(error: FBCodesignError.signingFailed(exitCode: exitCode ?? -1, stdOut: (task.stdOut as String?) ?? "", stdErr: (task.stdErr as String?) ?? ""))
             }
             logger?.log("Successfully signed bundle \(task.stdErr ?? "")")
             return FBFuture<AnyObject>(result: NSNull())
@@ -98,10 +113,7 @@ public class FBCodesignProvider: NSObject {
           pathsToSign.append(frameworksPath + frameworkPath)
         }
       } catch {
-        return unsafeBitCast(
-          FBControlCoreError.failFuture(with: error as NSError),
-          to: FBFuture<NSNull>.self
-        )
+        return FBFuture(error: error)
       }
     }
     var futures: [FBFuture<AnyObject>] = []
@@ -128,17 +140,11 @@ public class FBCodesignProvider: NSObject {
           fmap: { [logger] task -> FBFuture<AnyObject> in
             let exitCode = task.exitCode.result
             if exitCode != 0 {
-              return
-                FBControlCoreError
-                .describe("Checking CDHash of codesign execution failed \(exitCode ?? -1), \(task.stdOut ?? "")\n\(task.stdErr ?? "")")
-                .failFuture()
+              return FBFuture(error: FBCodesignError.cdHashCheckFailed(exitCode: exitCode ?? -1, stdOut: (task.stdOut as String?) ?? "", stdErr: (task.stdErr as String?) ?? ""))
             }
             let output = (task.stdErr ?? "") as String
             guard let result = output.firstMatch(of: /CDHash=(.+)/) else {
-              return
-                FBControlCoreError
-                .describe("Could not find 'CDHash' in output: \(output)")
-                .failFuture()
+              return FBFuture(error: FBCodesignError.cdHashNotFound(output: output))
             }
             let cdHash = String(result.1)
             logger?.log("Successfully obtained hash \(cdHash) from bundle \(bundlePath)")
