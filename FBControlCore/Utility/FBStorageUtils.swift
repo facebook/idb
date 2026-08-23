@@ -7,6 +7,26 @@
 
 import Foundation
 
+/// The ways file discovery can fail, as data rather than assembled strings.
+public enum FBStorageUtilsError: Error {
+  case notExactlyOneFileWithExtension(count: Int, fileExtension: String, url: URL)
+  case notExactlyOneFile(found: [URL])
+  case directoryListFailed(directory: URL, underlying: Error)
+}
+
+extension FBStorageUtilsError: LocalizedError {
+  public var errorDescription: String? {
+    switch self {
+    case let .notExactlyOneFileWithExtension(count, fileExtension, url):
+      return "\(count) files with extension .\(fileExtension) in \(url)"
+    case let .notExactlyOneFile(found):
+      return "Expected one top level file, found \(found.count): \(FBCollectionInformation.oneLineDescription(from: found))"
+    case let .directoryListFailed(directory, _):
+      return "Failed to list files in directory \(directory)"
+    }
+  }
+}
+
 public class FBStorageUtils {
 
   // MARK: Finding Files
@@ -36,7 +56,7 @@ public class FBStorageUtils {
   public class func findFile(withExtension ext: String, at url: URL) throws -> URL {
     let files = try findFiles(withExtension: ext, at: url)
     guard let file = files.first, files.count == 1 else {
-      throw FBControlCoreError.describe("\(files.count) files with extension .\(ext) in \(url)").build()
+      throw FBStorageUtilsError.notExactlyOneFileWithExtension(count: files.count, fileExtension: ext, url: url)
     }
     return file
   }
@@ -49,7 +69,7 @@ public class FBStorageUtils {
   public class func findUniqueFile(inDirectory directory: URL) throws -> URL {
     let filesInDirectory = try files(inDirectory: directory)
     if filesInDirectory.count != 1 {
-      throw FBControlCoreError.describe("Expected one top level file, found \(filesInDirectory.count): \(FBCollectionInformation.oneLineDescription(from: filesInDirectory))").build()
+      throw FBStorageUtilsError.notExactlyOneFile(found: filesInDirectory)
     }
     return filesInDirectory[0]
   }
@@ -58,7 +78,7 @@ public class FBStorageUtils {
     do {
       return try FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: [.isDirectoryKey], options: [])
     } catch {
-      throw FBControlCoreError.describe("Failed to list files in directory \(directory)").caused(by: error as NSError).build()
+      throw FBStorageUtilsError.directoryListFailed(directory: directory, underlying: error)
     }
   }
 
