@@ -18,6 +18,23 @@ import Foundation
  test runner communicates with stays in Objective-C in `FBTestManagerAPIMediatorIDEInterface`, which
  forwards application launch/termination requests back to this type.
  */
+/// The ways the test-manager mediator can fail, as data rather than assembled strings.
+public enum FBTestManagerError: Error {
+  case hostProcessStalled(timeout: TimeInterval, processIdentifier: pid_t, stackshot: String)
+  case appUnderTestNotInstallable(configurationDescription: String)
+}
+
+extension FBTestManagerError: LocalizedError {
+  public var errorDescription: String? {
+    switch self {
+    case let .hostProcessStalled(timeout, processIdentifier, stackshot):
+      return "Waited \(timeout) seconds for process \(processIdentifier) to terminate, but the host application process stalled: \(stackshot)"
+    case let .appUnderTestNotInstallable(configurationDescription):
+      return "Could not install App-Under-Test \(configurationDescription) as it is not installed and no path was provided"
+    }
+  }
+}
+
 @objc(FBTestManagerAPIMediator)
 public final class FBTestManagerAPIMediator: NSObject, @unchecked Sendable {
 
@@ -127,7 +144,7 @@ public final class FBTestManagerAPIMediator: NSObject, @unchecked Sendable {
       return fbFutureFromAsync { () -> AnyObject in
         let stackshot = (try? await self.sampleStack(forProcessIdentifier: launchedApplication.processIdentifier)) ?? "<no stackshot>"
         try? await self.terminateSpawnedProcesses()
-        throw FBXCTestError.describe("Waited \(timeout) seconds for process \(launchedApplication.processIdentifier) to terminate, but the host application process stalled: \(stackshot)").build()
+        throw FBTestManagerError.hostProcessStalled(timeout: timeout, processIdentifier: launchedApplication.processIdentifier, stackshot: stackshot)
       }
     }
     try await bridgeFBFutureVoid(timed)
@@ -246,7 +263,7 @@ public final class FBTestManagerAPIMediator: NSObject, @unchecked Sendable {
 
   private func installAndLaunchApplication(_ configuration: FBApplicationLaunchConfiguration, atPath path: String?) async throws -> FBLaunchedApplication {
     guard let path else {
-      throw FBControlCoreError.describe("Could not install App-Under-Test \(configuration) as it is not installed and no path was provided").build()
+      throw FBTestManagerError.appUnderTestNotInstallable(configurationDescription: String(describing: configuration))
     }
     if await isApplicationInstalled(bundleID: configuration.bundleID) {
       try await target.uninstallApplication(bundleID: configuration.bundleID)
