@@ -11,6 +11,35 @@ import FBSimulatorControl
 import Foundation
 import XCTestBootstrap
 
+/// The ways target resolution can fail, as data rather than assembled strings.
+public enum FBiOSTargetProviderError: Error {
+  case targetNotUsable(udid: String, targetDescription: String)
+  case targetNotFound(udid: String, targetSetsDescription: String)
+  case multipleTargets(targetsDescription: String)
+  case noTargets(targetSetsDescription: String)
+  case multipleBootedTargets(targetsDescription: String)
+  case noBootedTargets(targetSetsDescription: String)
+}
+
+extension FBiOSTargetProviderError: LocalizedError {
+  public var errorDescription: String? {
+    switch self {
+    case let .targetNotUsable(udid, targetDescription):
+      return "\(udid) exists, but the target is not usable \(targetDescription)"
+    case let .targetNotFound(udid, targetSetsDescription):
+      return "\(udid) could not be resolved to any target in \(targetSetsDescription)"
+    case let .multipleTargets(targetsDescription):
+      return "Cannot get a sole target when multiple found \(targetsDescription)"
+    case let .noTargets(targetSetsDescription):
+      return "Cannot get a sole target when none were found in target sets \(targetSetsDescription)"
+    case let .multipleBootedTargets(targetsDescription):
+      return "Cannot get a sole booted target when multiple are booted \(targetsDescription)"
+    case let .noBootedTargets(targetSetsDescription):
+      return "Cannot get a sole booted target when none are booted in target sets \(targetSetsDescription)"
+    }
+  }
+}
+
 public final class FBiOSTargetProvider {
 
   public static func target(withUDID udid: String, targetSets: [FBiOSTargetSet], warmUp: Bool, logger: FBControlCoreLogger) throws -> FBiOSTarget {
@@ -35,12 +64,12 @@ public final class FBiOSTargetProvider {
         continue
       }
       guard let target = targetInfo as? FBiOSTarget else {
-        throw FBDeviceControlError.describe("\(udid) exists, but the target is not usable \(targetInfo)").build()
+        throw FBiOSTargetProviderError.targetNotUsable(udid: udid, targetDescription: String(describing: targetInfo))
       }
       return target
     }
 
-    throw FBIDBError.describe("\(udid) could not be resolved to any target in \(targetSets)").build()
+    throw FBiOSTargetProviderError.targetNotFound(udid: udid, targetSetsDescription: String(describing: targetSets))
   }
 
   private static func fetchSoleTarget(forTargetSets targetSets: [FBiOSTargetSet], logger: FBControlCoreLogger) throws -> FBiOSTarget {
@@ -53,10 +82,10 @@ public final class FBiOSTargetProvider {
       }
     }
     if targets.count > 1 {
-      throw FBIDBError.describe("Cannot get a sole target when multiple found \(FBCollectionInformation.oneLineDescription(from: targets))").build()
+      throw FBiOSTargetProviderError.multipleTargets(targetsDescription: FBCollectionInformation.oneLineDescription(from: targets))
     }
     guard let target = targets.first else {
-      throw FBIDBError.describe("Cannot get a sole target when none were found in target sets \(FBCollectionInformation.oneLineDescription(from: targetSets))").build()
+      throw FBiOSTargetProviderError.noTargets(targetSetsDescription: FBCollectionInformation.oneLineDescription(from: targetSets))
     }
     return target
   }
@@ -72,10 +101,10 @@ public final class FBiOSTargetProvider {
       }
     }
     if bootedTargets.count > 1 {
-      throw FBIDBError.describe("Cannot get a sole booted target when multiple are booted \(FBCollectionInformation.oneLineDescription(from: bootedTargets))").build()
+      throw FBiOSTargetProviderError.multipleBootedTargets(targetsDescription: FBCollectionInformation.oneLineDescription(from: bootedTargets))
     }
     guard let target = bootedTargets.first else {
-      throw FBIDBError.describe("Cannot get a sole booted target when none are booted in target sets \(FBCollectionInformation.oneLineDescription(from: targetSets))").build()
+      throw FBiOSTargetProviderError.noBootedTargets(targetSetsDescription: FBCollectionInformation.oneLineDescription(from: targetSets))
     }
     return target
   }
