@@ -17,6 +17,53 @@ public let IdbFrameworksFolder: String = "idb-frameworks"
 
 // MARK: - FBInstalledArtifact
 
+/// The ways bundle storage can fail, as data rather than assembled strings.
+public enum FBIDBStorageError: Error {
+  case bundleMissingBinary(name: String)
+  case architecturesIncompatible(supported: [String], bundle: [String])
+  case multipleXctestFiles(files: [URL])
+  case multipleXctestrunFiles(files: [URL])
+  case noTestArtifactsProvided(bucketsDescription: String)
+  case testArtifactNotSaved(xctestDescription: String, xctestrunDescription: String)
+  case invalidPathExtension(pathExtension: String, path: URL)
+  case testNotFoundByID(bundleID: String)
+  case baseDirectoryUnreadable
+  case testNotFoundByURL(url: URL)
+  case notExactlyOneTest(count: Int)
+  case storageLocationCreationFailed(path: URL, underlying: Error)
+}
+
+extension FBIDBStorageError: LocalizedError {
+  public var errorDescription: String? {
+    switch self {
+    case let .bundleMissingBinary(name):
+      return "Cannot check the architectures of \(name), it has no binary"
+    case let .architecturesIncompatible(supported, bundle):
+      return "The supported architectures of the target \(FBCollectionInformation.oneLineDescription(from: supported)) do not intersect with any architectures in the bundle: \(FBCollectionInformation.oneLineDescription(from: bundle))"
+    case let .multipleXctestFiles(files):
+      return "Multiple files with .xctest extension: \(FBCollectionInformation.oneLineDescription(from: files))"
+    case let .multipleXctestrunFiles(files):
+      return "Multiple files with .xctestrun extension: \(FBCollectionInformation.oneLineDescription(from: files))"
+    case let .noTestArtifactsProvided(bucketsDescription):
+      return "Neither a .xctest bundle or .xctestrun file provided: \(bucketsDescription)"
+    case let .testArtifactNotSaved(xctestDescription, xctestrunDescription):
+      return ".xctest bundle (\(xctestDescription)) or .xctestrun (\(xctestrunDescription)) file was not saved"
+    case let .invalidPathExtension(pathExtension, path):
+      return "The path extension (\(pathExtension)) of the provided bundle (\(path)) is not .xctest or .xctestrun"
+    case let .testNotFoundByID(bundleID):
+      return "Couldn't find test with id: \(bundleID)"
+    case .baseDirectoryUnreadable:
+      return "Error reading test bundle base directory"
+    case let .testNotFoundByURL(url):
+      return "Couldn't find test with url: \(url)"
+    case let .notExactlyOneTest(count):
+      return "Expected exactly one test in the xctestrun file, got: \(count)"
+    case let .storageLocationCreationFailed(path, _):
+      return "Failed to create xctest storage location \(path)"
+    }
+  }
+}
+
 public final class FBInstalledArtifact {
   public let name: String
   public let uuid: NSUUID?
@@ -104,7 +151,7 @@ public class FBBundleStorage: FBIDBStorage {
 
   public func checkArchitecture(_ bundle: FBBundleDescriptor) throws {
     guard let binary = bundle.binary else {
-      throw FBIDBError.describe("Cannot check the architectures of \(bundle.name), it has no binary").build()
+      throw FBIDBStorageError.bundleMissingBinary(name: bundle.name)
     }
     let binaryArchitectures = Set(binary.architectures.map { $0.rawValue })
     let targetArchs = target.architectures
@@ -114,7 +161,7 @@ public class FBBundleStorage: FBIDBStorage {
     let arm64eEquivalent = targetArchs.contains(FBArchitecture(rawValue: "arm64e")) && binaryArchitectures.contains("arm64")
 
     if !(containsExactArch || arm64eEquivalent) {
-      throw FBIDBError.describe("The supported architectures of the target \(FBCollectionInformation.oneLineDescription(from: supportedArchitectures.sorted())) do not intersect with any architectures in the bundle: \(FBCollectionInformation.oneLineDescription(from: binaryArchitectures.sorted()))").build()
+      throw FBIDBStorageError.architecturesIncompatible(supported: supportedArchitectures.sorted(), bundle: binaryArchitectures.sorted())
     }
   }
 
@@ -222,15 +269,15 @@ public final class FBXCTestBundleStorage: FBBundleStorage {
     let xctestBucket = buckets[XctestExtension]?.sorted(by: { $0.path < $1.path }) ?? []
     let xctestBundleURL = xctestBucket.first
     if xctestBucket.count > 1 {
-      throw FBControlCoreError.describe("Multiple files with .xctest extension: \(FBCollectionInformation.oneLineDescription(from: xctestBucket))").build()
+      throw FBIDBStorageError.multipleXctestFiles(files: xctestBucket)
     }
     let xctestrunBucket = buckets[XctestRunExtension]?.sorted(by: { $0.path < $1.path }) ?? []
     let xctestrunURL = xctestrunBucket.first
     if xctestrunBucket.count > 1 {
-      throw FBControlCoreError.describe("Multiple files with .xctestrun extension: \(FBCollectionInformation.oneLineDescription(from: xctestrunBucket))").build()
+      throw FBIDBStorageError.multipleXctestrunFiles(files: xctestrunBucket)
     }
     if xctestBundleURL == nil && xctestrunURL == nil {
-      throw FBIDBError.describe("Neither a .xctest bundle or .xctestrun file provided: \(FBCollectionInformation.oneLineDescription(from: buckets))").build()
+      throw FBIDBStorageError.noTestArtifactsProvided(bucketsDescription: FBCollectionInformation.oneLineDescription(from: buckets))
     }
 
     if let xctestBundleURL {
@@ -239,7 +286,7 @@ public final class FBXCTestBundleStorage: FBBundleStorage {
     if let xctestrunURL {
       return try saveTestRun(xctestrunURL)
     }
-    throw FBIDBError.describe(".xctest bundle (\(String(describing: xctestBundleURL))) or .xctestrun (\(String(describing: xctestrunURL))) file was not saved").build()
+    throw FBIDBStorageError.testArtifactNotSaved(xctestDescription: String(describing: xctestBundleURL), xctestrunDescription: String(describing: xctestrunURL))
   }
 
   public func saveBundleOrTestRun(_ filePath: URL, skipSigningBundles: Bool) -> FBFuture<FBInstalledArtifact> {
@@ -255,7 +302,7 @@ public final class FBXCTestBundleStorage: FBBundleStorage {
     if filePath.pathExtension == XctestRunExtension {
       return try saveTestRun(filePath)
     }
-    throw FBControlCoreError.describe("The path extension (\(filePath.pathExtension)) of the provided bundle (\(filePath)) is not .xctest or .xctestrun").build()
+    throw FBIDBStorageError.invalidPathExtension(pathExtension: filePath.pathExtension, path: filePath)
   }
 
   public func listTestDescriptors() throws -> [FBXCTestDescriptor] {
@@ -293,7 +340,7 @@ public final class FBXCTestBundleStorage: FBBundleStorage {
         return testDescriptor
       }
     }
-    throw FBIDBError.describe("Couldn't find test with id: \(bundleId)").build()
+    throw FBIDBStorageError.testNotFoundByID(bundleID: bundleId)
   }
 
   public func getXCTestRunDescriptors(from xctestrunURL: URL) throws -> [FBXCTestDescriptor] {
@@ -325,7 +372,7 @@ public final class FBXCTestBundleStorage: FBBundleStorage {
 
   private func listXCTestContents(withExtension ext: String) throws -> Set<URL> {
     guard let directories = try? FileManager.default.contentsOfDirectory(at: basePath, includingPropertiesForKeys: nil, options: .skipsSubdirectoryDescendants) else {
-      throw FBIDBError.describe("Error reading test bundle base directory").build()
+      throw FBIDBStorageError.baseDirectoryUnreadable
     }
 
     var tests = Set<URL>()
@@ -344,7 +391,7 @@ public final class FBXCTestBundleStorage: FBBundleStorage {
         return testDescriptor
       }
     }
-    throw FBIDBError.describe("Couldn't find test with url: \(url)").build()
+    throw FBIDBStorageError.testNotFoundByURL(url: url)
   }
 
   private func getDescriptors(from xctestrunContents: [String: Any], with xctestrunURL: URL) -> [FBXCTestDescriptor] {
@@ -411,7 +458,7 @@ public final class FBXCTestBundleStorage: FBBundleStorage {
   private func saveTestRun(_ xcTestRunURL: URL) throws -> FBInstalledArtifact {
     let descriptors = try getXCTestRunDescriptors(from: xcTestRunURL)
     if descriptors.count != 1 {
-      throw FBIDBError.describe("Expected exactly one test in the xctestrun file, got: \(descriptors.count)").build()
+      throw FBIDBStorageError.notExactlyOneTest(count: descriptors.count)
     }
 
     let descriptor = descriptors[0]
@@ -513,7 +560,7 @@ public final class FBIDBStorageManager {
     do {
       try FileManager.default.createDirectory(at: basePath, withIntermediateDirectories: true, attributes: nil)
     } catch {
-      throw FBIDBError.describe("Failed to create xctest storage location \(basePath)").caused(by: error as NSError).build()
+      throw FBIDBStorageError.storageLocationCreationFailed(path: basePath, underlying: error)
     }
     return basePath
   }
