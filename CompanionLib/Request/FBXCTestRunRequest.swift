@@ -13,6 +13,41 @@ private let FBLogicTestTimeout: TimeInterval = 60 * 60 // Approx. an hour.
 
 // MARK: - FBXCTestRunRequest
 
+/// The ways a test-run request can fail before execution, as data rather than assembled strings.
+public enum FBXCTestRunRequestError: Error {
+  case abstractBaseClass(typeName: String)
+  case notExactlyOneTest(count: Int)
+  case noTestBundleID
+  case testDescriptorNotFound
+  case logicTestsUnsupported(targetDescription: String)
+  case testsToSkipUnsupported(testsToSkip: [String])
+  case multipleTestsToRun(testsToRun: [String])
+  case xctestCommandsUnsupported(targetDescription: String)
+}
+
+extension FBXCTestRunRequestError: LocalizedError {
+  public var errorDescription: String? {
+    switch self {
+    case let .abstractBaseClass(typeName):
+      return "\(typeName) not implemented in abstract base class"
+    case let .notExactlyOneTest(count):
+      return "Expected exactly one test in the xctestrun file, got: \(count)"
+    case .noTestBundleID:
+      return "No test bundle ID provided"
+    case .testDescriptorNotFound:
+      return "Could not find test descriptor"
+    case let .logicTestsUnsupported(targetDescription):
+      return "Target \(targetDescription) does not support process spawning and extended xctest commands, cannot run logic tests"
+    case let .testsToSkipUnsupported(testsToSkip):
+      return "'Tests to Skip' \(FBCollectionInformation.oneLineDescription(from: testsToSkip)) provided, but Logic Tests do not support this."
+    case let .multipleTestsToRun(testsToRun):
+      return "More than one 'Tests to Run' \(FBCollectionInformation.oneLineDescription(from: testsToRun)) provided, but only one 'Tests to Run' is supported."
+    case let .xctestCommandsUnsupported(targetDescription):
+      return "\(targetDescription) does not support XCTestCommands"
+    }
+  }
+}
+
 @objc public class FBXCTestRunRequest: NSObject {
   @objc public let testBundleID: String?
   @objc public let testPath: URL?
@@ -117,7 +152,7 @@ private let FBLogicTestTimeout: TimeInterval = 60 * 60 // Approx. an hour.
   }
 
   func startWithTestDescriptorAsync(_ testDescriptor: FBXCTestDescriptor, logDirectoryPath: String?, reportActivities: Bool, target: FBiOSTarget, reporter: FBXCTestReporter, logger: FBControlCoreLogger, temporaryDirectory: FBTemporaryDirectory) async throws -> FBIDBTestOperation {
-    throw FBIDBError.describe("\(type(of: self)) not implemented in abstract base class").build()
+    throw FBXCTestRunRequestError.abstractBaseClass(typeName: String(describing: type(of: self)))
   }
 
   private func fetchAndSetupDescriptorAsync(withBundleStorage bundleStorage: FBXCTestBundleStorage, target: FBiOSTarget) async throws -> FBXCTestDescriptor {
@@ -131,19 +166,19 @@ private let FBLogicTestTimeout: TimeInterval = 60 * 60 // Approx. an hour.
       if filePath.pathExtension == "xctestrun" {
         let descriptors = try bundleStorage.getXCTestRunDescriptors(from: filePath)
         if descriptors.count != 1 {
-          throw FBIDBError.describe("Expected exactly one test in the xctestrun file, got: \(descriptors.count)").build()
+          throw FBXCTestRunRequestError.notExactlyOneTest(count: descriptors.count)
         }
         testDescriptor = descriptors[0]
       }
     } else {
       guard let bundleID = testBundleID else {
-        throw FBIDBError.describe("No test bundle ID provided").build()
+        throw FBXCTestRunRequestError.noTestBundleID
       }
       testDescriptor = try bundleStorage.testDescriptor(withID: bundleID)
     }
 
     guard let descriptor = testDescriptor else {
-      throw FBIDBError.describe("Could not find test descriptor").build()
+      throw FBXCTestRunRequestError.testDescriptorNotFound
     }
 
     try await descriptor.setupAsync(with: self, target: target)
@@ -172,11 +207,11 @@ private class FBXCTestRunRequest_LogicTest: FBXCTestRunRequest {
 
     let testsToSkipArray = testsToSkip.sorted()
     if !testsToSkipArray.isEmpty {
-      throw FBXCTestError.describe("'Tests to Skip' \(FBCollectionInformation.oneLineDescription(from: testsToSkipArray)) provided, but Logic Tests do not support this.").build()
+      throw FBXCTestRunRequestError.testsToSkipUnsupported(testsToSkip: testsToSkipArray)
     }
     let testsToRunArray = testsToRun?.sorted() ?? []
     if testsToRunArray.count > 1 {
-      throw FBXCTestError.describe("More than one 'Tests to Run' \(FBCollectionInformation.oneLineDescription(from: testsToRunArray)) provided, but only one 'Tests to Run' is supported.").build()
+      throw FBXCTestRunRequestError.multipleTestsToRun(testsToRun: testsToRunArray)
     }
     let testFilter = testsToRunArray.first
 
@@ -200,7 +235,7 @@ private class FBXCTestRunRequest_LogicTest: FBXCTestRunRequest {
 
   private func startTestExecution(_ configuration: FBLogicTestConfiguration, target: FBiOSTarget, reporter: FBXCTestReporter, logger: FBControlCoreLogger) throws -> FBIDBTestOperation {
     guard let target = target as? (FBiOSTarget & ProcessSpawnCommands & XCTestExtendedCommands) else {
-      throw FBIDBError.describe("Target \(target) does not support process spawning and extended xctest commands, cannot run logic tests").build()
+      throw FBXCTestRunRequestError.logicTestsUnsupported(targetDescription: String(describing: target))
     }
     let adapter = FBLogicReporterAdapter(reporter: reporter, logger: logger)
     let runner = FBLogicTestRunStrategy(
@@ -261,7 +296,7 @@ private class FBXCTestRunRequest_AppTest: FBXCTestRunRequest {
 
     let testCompleted: FBFuture<NSNull> = fbFutureFromAsync {
       guard let asyncTarget = target as? any XCTestCommands else {
-        throw FBIDBError.describe("\(target) does not support XCTestCommands").build()
+        throw FBXCTestRunRequestError.xctestCommandsUnsupported(targetDescription: String(describing: target))
       }
       try await asyncTarget.runTest(launchConfiguration: testLaunchConfiguration, reporter: reporter, logger: logger)
       return NSNull()
