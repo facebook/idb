@@ -20,7 +20,7 @@ import Foundation
 extension FBMacDevice {
 
   fileprivate func macUnsupported(_ command: String) -> any Error {
-    FBControlCoreError.describe("\(command) is not supported on the mac target").build()
+    FBMacDeviceError.commandUnsupported(command: command)
   }
 }
 

@@ -25,6 +25,7 @@ public enum FBMacDeviceError: Error {
   case testBundleHasNoBinary(path: String)
   case unexpectedReporter(reporterDescription: String)
   case notImplemented(selector: String)
+  case commandUnsupported(command: String)
 }
 
 extension FBMacDeviceError: LocalizedError {
@@ -50,6 +51,8 @@ extension FBMacDeviceError: LocalizedError {
       return "Expected an FBXCTestReporter, got \(reporterDescription)"
     case let .notImplemented(selector):
       return "-[FBMacDevice \(selector)] is not implemented"
+    case let .commandUnsupported(command):
+      return "\(command) is not supported on the mac target"
     }
   }
 }
