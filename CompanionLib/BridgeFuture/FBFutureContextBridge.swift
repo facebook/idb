@@ -26,12 +26,24 @@ public func bridgeFBFutureContext<T: AnyObject>(_ futureContext: FBFutureContext
   return try await bridgeFBFuture(futureContext.future)
 }
 
+/// The way the array bridge fails on an unexpected element type, as data rather than an assembled string.
+public enum FBFutureBridgeError: Error, LocalizedError {
+  case unexpectedArrayElementType(expected: String, array: NSArray)
+
+  public var errorDescription: String? {
+    switch self {
+    case let .unexpectedArrayElementType(expected, array):
+      return "Expected the future to resolve with an array of \(expected), got \(array)"
+    }
+  }
+}
+
 /// `FBFutureContext` array overload that bridges the resolved `NSArray` to `[T]`,
 /// throwing when the future resolved with elements of another type.
 public func bridgeFBFutureContextArray<T>(_ futureContext: FBFutureContext<NSArray>) async throws -> [T] {
   let array = try await bridgeFBFutureContext(futureContext)
   guard let typed = array as? [T] else {
-    throw FBControlCoreError.describe("Expected the future to resolve with an array of \(T.self), got \(array)").build()
+    throw FBFutureBridgeError.unexpectedArrayElementType(expected: String(describing: T.self), array: array)
   }
   return typed
 }
