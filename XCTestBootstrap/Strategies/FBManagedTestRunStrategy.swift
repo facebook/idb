@@ -8,13 +8,25 @@
 import FBControlCore
 import Foundation
 
+/// The way a managed run fails before starting, as data rather than an assembled string.
+public enum FBManagedTestRunError: Error, LocalizedError {
+  case frameworkLoadingFailed(underlying: Error)
+
+  public var errorDescription: String? {
+    switch self {
+    case let .frameworkLoadingFailed(underlying):
+      return underlying.localizedDescription
+    }
+  }
+}
+
 public final class FBManagedTestRunStrategy {
 
   public static func runToCompletion(withTarget target: any FBiOSTarget & ApplicationCommands & XCTestExtendedCommands & CrashLogCommands, configuration: FBTestLaunchConfiguration, codesign: FBCodesignProvider?, workingDirectory: String, reporter: FBXCTestReporter, logger: FBControlCoreLogger) async throws {
     do {
       try XCTestBootstrapFrameworkLoader.allDependentFrameworks.loadPrivateFrameworks(target.logger)
     } catch {
-      throw XCTestBootstrapError.describe(error.localizedDescription).build()
+      throw FBManagedTestRunError.frameworkLoadingFailed(underlying: error)
     }
 
     let runnerConfiguration = try await FBTestRunnerConfiguration.prepareConfiguration(
