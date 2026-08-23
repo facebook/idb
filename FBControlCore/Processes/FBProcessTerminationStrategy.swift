@@ -9,12 +9,37 @@ import Foundation
 
 private let ProcessTableRemovalTimeout: TimeInterval = 20.0
 
+/// An Option Set for Process Termination.
+public struct FBProcessTerminationStrategyOptions: OptionSet, Sendable {
+  public let rawValue: UInt
+  public init(rawValue: UInt) {
+    self.rawValue = rawValue
+  }
+
+  /// Checks for the process to exist before signalling.
+  public static let checkProcessExistsBeforeSignal = FBProcessTerminationStrategyOptions(rawValue: 1 << 2)
+  /// Waits for the process to die before returning.
+  public static let checkDeathAfterSignal = FBProcessTerminationStrategyOptions(rawValue: 1 << 3)
+  /// Whether to backoff to SIGKILL if a less severe signal fails.
+  public static let backoffToSIGKILL = FBProcessTerminationStrategyOptions(rawValue: 1 << 4)
+}
+
+/// A Configuration for the Strategy.
+public struct FBProcessTerminationStrategyConfiguration: Sendable {
+  public var signo: Int32
+  public var options: FBProcessTerminationStrategyOptions
+
+  public init(signo: Int32, options: FBProcessTerminationStrategyOptions) {
+    self.signo = signo
+    self.options = options
+  }
+}
+
 private let FBProcessTerminationStrategyConfigurationDefault = FBProcessTerminationStrategyConfiguration(
   signo: SIGKILL,
   options: [.checkProcessExistsBeforeSignal, .checkDeathAfterSignal, .backoffToSIGKILL]
 )
 
-@objc(FBProcessTerminationStrategy)
 public class FBProcessTerminationStrategy: NSObject {
 
   // MARK: Private Properties
@@ -26,7 +51,6 @@ public class FBProcessTerminationStrategy: NSObject {
 
   // MARK: Initializers
 
-  @objc
   public class func strategy(
     withConfiguration configuration: FBProcessTerminationStrategyConfiguration,
     processFetcher: FBProcessFetcher,
@@ -36,7 +60,6 @@ public class FBProcessTerminationStrategy: NSObject {
     self.init(configuration: configuration, processFetcher: processFetcher, workQueue: workQueue, logger: logger)
   }
 
-  @objc
   public class func strategy(
     withProcessFetcher processFetcher: FBProcessFetcher,
     workQueue: DispatchQueue,
@@ -68,7 +91,6 @@ public class FBProcessTerminationStrategy: NSObject {
 
   // MARK: Public Methods
 
-  @objc
   @discardableResult
   public func killProcessIdentifier(_ processIdentifier: pid_t) -> FBFuture<NSNull> {
     let checkExists = hasOption(.checkProcessExistsBeforeSignal)
