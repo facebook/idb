@@ -12,6 +12,62 @@ import FBSimulatorControl
 import Foundation
 import XCTestBootstrap
 
+/// The ways command execution can fail before reaching the target, as data rather than assembled strings.
+public enum FBIDBCommandError: Error {
+  case notAsyncTarget(targetDescription: String)
+  case simulatorOnlyOperation(operation: String, targetDescription: String)
+  case notASimulator(targetDescription: String)
+  case invalidURL(urlString: String)
+  case multipleCrashLogs(predicateDescription: String)
+  case noCrashLogs(predicateDescription: String)
+  case replTestsUnsupported(targetDescription: String)
+  case replSessionsUnsupported(targetDescription: String)
+  case replAppLaunchesUnsupported(targetDescription: String)
+  case replHostAppMissing
+  case noDebugServer
+  case debugServerAlreadyRunning
+  case notPersistedApplication(bundleID: String, suitable: [String])
+  case noAppBundleExtracted
+  case userDevelopmentSigningRequired(applicationDescription: String)
+}
+
+extension FBIDBCommandError: LocalizedError {
+  public var errorDescription: String? {
+    switch self {
+    case let .notAsyncTarget(targetDescription):
+      return "Target does not conform to AsynciOSTarget: \(targetDescription)"
+    case let .simulatorOnlyOperation(operation, targetDescription):
+      return "Target is not a simulator, cannot \(operation): \(targetDescription)"
+    case let .notASimulator(targetDescription):
+      return "Target is not a simulator: \(targetDescription)"
+    case let .invalidURL(urlString):
+      return "\(urlString) is not a valid URL"
+    case let .multipleCrashLogs(predicateDescription):
+      return "More than one crash log matching \(predicateDescription)"
+    case let .noCrashLogs(predicateDescription):
+      return "No crashes matching \(predicateDescription)"
+    case let .replTestsUnsupported(targetDescription):
+      return "\(targetDescription) does not support running REPL tests"
+    case let .replSessionsUnsupported(targetDescription):
+      return "\(targetDescription) does not support running REPL sessions"
+    case let .replAppLaunchesUnsupported(targetDescription):
+      return "\(targetDescription) does not support REPL app launches"
+    case .replHostAppMissing:
+      return "ReplHost.app not found in the companion Resources directory"
+    case .noDebugServer:
+      return "No debug server running"
+    case .debugServerAlreadyRunning:
+      return "Debug server is already running"
+    case let .notPersistedApplication(bundleID, suitable):
+      return "\(bundleID) not persisted application and is therefore not debuggable. Suitable applications: \(FBCollectionInformation.oneLineDescription(from: suitable))"
+    case .noAppBundleExtracted:
+      return "No app bundle could be extracted"
+    case let .userDevelopmentSigningRequired(applicationDescription):
+      return "Requested debuggable install of \(applicationDescription) but User Development signing is required"
+    }
+  }
+}
+
 public final class FBIDBCommandExecutor {
 
   private let target: any FBiOSTarget & AsynciOSTarget
@@ -26,7 +82,7 @@ public final class FBIDBCommandExecutor {
 
   public static func commandExecutor(forTarget target: FBiOSTarget, storageManager: FBIDBStorageManager, temporaryDirectory: FBTemporaryDirectory, debugserverPort: in_port_t, logger: FBIDBLogger) throws -> FBIDBCommandExecutor {
     guard let asyncTarget = target as? any FBiOSTarget & AsynciOSTarget else {
-      throw FBIDBError.describe("Target does not conform to AsynciOSTarget: \(target)").build()
+      throw FBIDBCommandError.notAsyncTarget(targetDescription: String(describing: target))
     }
     return FBIDBCommandExecutor(target: asyncTarget, storageManager: storageManager, temporaryDirectory: temporaryDirectory, debugserverPort: debugserverPort, logger: logger.named("grpc_handler"))
   }
@@ -126,14 +182,14 @@ public final class FBIDBCommandExecutor {
 
   public func accessibility_tap(label: String) async throws {
     guard let simulator = target as? FBSimulator else {
-      throw FBIDBError.describe("Target is not a simulator, cannot tap by accessibility label: \(target)").build()
+      throw FBIDBCommandError.simulatorOnlyOperation(operation: "tap by accessibility label", targetDescription: String(describing: target))
     }
     try await simulator.uiAutomation(backend: .accessibility).tap(.marker(value: label, key: .label, depth: .max))
   }
 
   public func accessibility_tap(query: FBAccessibilityElementQuery, expectedValue: String?, expectedKey: FBAXSearchableKey) async throws {
     guard let simulator = target as? FBSimulator else {
-      throw FBIDBError.describe("Target is not a simulator, cannot tap by accessibility: \(target)").build()
+      throw FBIDBCommandError.simulatorOnlyOperation(operation: "tap by accessibility", targetDescription: String(describing: target))
     }
     let assertion = expectedValue.map { FBTapOptions.Assertion(key: expectedKey, value: $0) }
     try await simulator.uiAutomation(backend: .accessibility).tap(query, options: FBTapOptions(assertion: assertion))
@@ -141,7 +197,7 @@ public final class FBIDBCommandExecutor {
 
   public func accessibility_describe(query: FBAccessibilityElementQuery, format: FBAccessibilityOutputFormat, backend: FBUIAutomationBackend = .accessibility) async throws -> Data {
     guard let simulator = target as? FBSimulator else {
-      throw FBIDBError.describe("Target is not a simulator, cannot describe accessibility: \(target)").build()
+      throw FBIDBCommandError.simulatorOnlyOperation(operation: "describe accessibility", targetDescription: String(describing: target))
     }
     let options = FBAccessibilityRequestOptions(format: format, enableLogging: false)
     return try await simulator.uiAutomation(backend: backend).describe(query, options: options)
@@ -150,14 +206,14 @@ public final class FBIDBCommandExecutor {
 
   public func accessibility_scroll(query: FBAccessibilityElementQuery, direction: FBAccessibilityScrollDirection) async throws {
     guard let simulator = target as? FBSimulator else {
-      throw FBIDBError.describe("Target is not a simulator, cannot scroll by accessibility: \(target)").build()
+      throw FBIDBCommandError.simulatorOnlyOperation(operation: "scroll by accessibility", targetDescription: String(describing: target))
     }
     try await simulator.uiAutomation(backend: .accessibility).scroll(query, direction: direction)
   }
 
   public func accessibility_set_value(query: FBAccessibilityElementQuery, value: String) async throws {
     guard let simulator = target as? FBSimulator else {
-      throw FBIDBError.describe("Target is not a simulator, cannot set value by accessibility: \(target)").build()
+      throw FBIDBCommandError.simulatorOnlyOperation(operation: "set value by accessibility", targetDescription: String(describing: target))
     }
     try await simulator.uiAutomation(backend: .accessibility).setValue(value, for: query)
   }
@@ -169,7 +225,7 @@ public final class FBIDBCommandExecutor {
 
   public func accessibility_info_at_point(_ value: NSValue?, options: FBAccessibilityRequestOptions, backend: FBUIAutomationBackend = .accessibility) async throws -> FBAccessibilityElementsResponse {
     guard let simulator = target as? FBSimulator else {
-      throw FBIDBError.describe("Target is not a simulator, cannot provide accessibility commands: \(target)").build()
+      throw FBIDBCommandError.simulatorOnlyOperation(operation: "provide accessibility commands", targetDescription: String(describing: target))
     }
     let query: FBAccessibilityElementQuery = value.map { .point($0.pointValue) } ?? .frontmost
     return try await simulator.uiAutomation(backend: backend).describe(query, options: options)
@@ -187,7 +243,7 @@ public final class FBIDBCommandExecutor {
   /// label contains `label` -- the same lookup as `accessibility_tap`.
   public func repl_accessibility_frame(label: String) async throws -> CGRect {
     guard let simulator = target as? FBSimulator else {
-      throw FBIDBError.describe("Target is not a simulator, cannot look up an accessibility frame: \(target)").build()
+      throw FBIDBCommandError.simulatorOnlyOperation(operation: "look up an accessibility frame", targetDescription: String(describing: target))
     }
     return try await simulator.uiAutomation(backend: .accessibility)
       .frame(.marker(value: label, key: .label, depth: .max))
@@ -197,7 +253,7 @@ public final class FBIDBCommandExecutor {
   /// encoded as uncompressed TIFF (`asPNG == false`) or PNG.
   public func repl_screenshot(cropRect: CGRect?, asPNG: Bool) async throws -> Data {
     guard let simulator = target as? FBSimulator else {
-      throw FBIDBError.describe("Target is not a simulator, cannot take a screenshot: \(target)").build()
+      throw FBIDBCommandError.simulatorOnlyOperation(operation: "take a screenshot", targetDescription: String(describing: target))
     }
     return try await simulator.replScreenshot(cropRect: cropRect, asPNG: asPNG)
   }
@@ -246,7 +302,7 @@ public final class FBIDBCommandExecutor {
 
   public func open_url(_ url: String) async throws {
     guard let parsed = URL(string: url) else {
-      throw FBIDBError.describe("\(url) is not a valid URL").build()
+      throw FBIDBCommandError.invalidURL(urlString: url)
     }
     try await simulatorTarget().open(parsed)
   }
@@ -329,10 +385,10 @@ public final class FBIDBCommandExecutor {
   public func crash_show(_ predicate: NSPredicate) async throws -> FBCrashLog {
     let crashArray = try await target.crashes(matching: predicate, useCache: true)
     if crashArray.count > 1 {
-      throw FBIDBError.describe("More than one crash log matching \(predicate)").build()
+      throw FBIDBCommandError.multipleCrashLogs(predicateDescription: String(describing: predicate))
     }
     guard let first = crashArray.first else {
-      throw FBIDBError.describe("No crashes matching \(predicate)").build()
+      throw FBIDBCommandError.noCrashLogs(predicateDescription: String(describing: predicate))
     }
     return try first.obtainCrashLog()
   }
@@ -353,7 +409,7 @@ public final class FBIDBCommandExecutor {
   /// the test process exits, i.e. once the control socket is closed.
   public func repl_start_test(bundlePath: String) async throws -> ReplSession {
     guard let replTarget = target as? ReplCommands else {
-      throw FBIDBError.describe("\(target) does not support running REPL tests").build()
+      throw FBIDBCommandError.replTestsUnsupported(targetDescription: String(describing: target))
     }
     return try await replTarget.startReplTest(bundlePath: bundlePath)
   }
@@ -377,7 +433,7 @@ public final class FBIDBCommandExecutor {
   /// process exits.
   public func repl_start_simulator() async throws -> ReplSession {
     guard let replTarget = target as? ReplCommands else {
-      throw FBIDBError.describe("\(target) does not support running REPL sessions").build()
+      throw FBIDBCommandError.replSessionsUnsupported(targetDescription: String(describing: target))
     }
     return try await replTarget.startReplSimulator()
   }
@@ -388,7 +444,7 @@ public final class FBIDBCommandExecutor {
   /// outlives the session (it resets and waits for the next client on disconnect).
   public func repl_start_app(bundleID: String, reuseSession: Bool) async throws -> ReplSession {
     guard let replTarget = target as? ReplCommands else {
-      throw FBIDBError.describe("\(target) does not support running REPL sessions").build()
+      throw FBIDBCommandError.replSessionsUnsupported(targetDescription: String(describing: target))
     }
     return try await replTarget.startReplApp(bundleID: bundleID, reuseSession: reuseSession)
   }
@@ -410,7 +466,7 @@ public final class FBIDBCommandExecutor {
     // Not installed: locate ReplHost.app in the Resources/ directory next to the
     // companion binary (the same directory the shim dylibs load from) and install it.
     guard let appPath = BundledResources.path(forItem: "ReplHost.app") else {
-      throw FBIDBError.describe("ReplHost.app not found in the companion Resources directory").build()
+      throw FBIDBCommandError.replHostAppMissing
     }
     _ = try await install_app_file_path(appPath, make_debuggable: false, override_modification_time: false)
     return bundleID
@@ -422,7 +478,7 @@ public final class FBIDBCommandExecutor {
   /// targets only.
   public func replAppLaunchEnvironment(bundleID: String) async throws -> [String: String] {
     guard let replTarget = target as? ReplCommands else {
-      throw FBIDBError.describe("\(target) does not support REPL app launches").build()
+      throw FBIDBCommandError.replAppLaunchesUnsupported(targetDescription: String(describing: target))
     }
     return try await replTarget.replAppLaunchEnvironment(bundleID: bundleID)
   }
@@ -436,7 +492,7 @@ public final class FBIDBCommandExecutor {
 
   public func debugserver_status() throws -> FBDebugServer {
     guard let debugServer else {
-      throw FBControlCoreError.describe("No debug server running").build()
+      throw FBIDBCommandError.noDebugServer
     }
     return debugServer
   }
@@ -616,11 +672,11 @@ public final class FBIDBCommandExecutor {
 
   private func debugserver_prepare(_ bundleID: String) throws -> FBBundleDescriptor {
     if debugServer != nil {
-      throw FBControlCoreError.describe("Debug server is already running").build()
+      throw FBIDBCommandError.debugServerAlreadyRunning
     }
     let persisted = storageManager.application.persistedBundles
     guard let bundle = persisted[bundleID] else {
-      throw FBIDBError.describe("\(bundleID) not persisted application and is therefore not debuggable. Suitable applications: \(FBCollectionInformation.oneLineDescription(from: Array(persisted.keys)))").build()
+      throw FBIDBCommandError.notPersistedApplication(bundleID: bundleID, suitable: Array(persisted.keys))
     }
     return bundle
   }
@@ -718,7 +774,7 @@ public final class FBIDBCommandExecutor {
 
   private func simulatorTarget() throws -> FBSimulator {
     guard let simulator = target as? FBSimulator else {
-      throw FBIDBError.describe("Target is not a simulator: \(target)").build()
+      throw FBIDBCommandError.notASimulator(targetDescription: String(describing: target))
     }
     return simulator
   }
@@ -731,7 +787,7 @@ public final class FBIDBCommandExecutor {
 
   private func installExtractedApp(_ extractPath: URL, makeDebuggable: Bool) async throws -> FBInstalledArtifact {
     guard let bundleDescriptor = try? FBBundleDescriptor.findAppPath(fromDirectory: extractPath, logger: target.logger) else {
-      throw FBControlCoreError.describe("No app bundle could be extracted").build()
+      throw FBIDBCommandError.noAppBundleExtracted
     }
     return try await installAppBundle(bundleDescriptor, makeDebuggable: makeDebuggable)
   }
@@ -746,7 +802,7 @@ public final class FBIDBCommandExecutor {
     // placeholders by app bundle paths instead
     _ = try await storageManager.application.saveBundleAsync(appBundle)
     if makeDebuggable && installedApp.installType != .userDevelopment && userDevelopmentAppIsRequired {
-      throw FBIDBError.describe("Requested debuggable install of \(installedApp) but User Development signing is required").build()
+      throw FBIDBCommandError.userDevelopmentSigningRequired(applicationDescription: String(describing: installedApp))
     }
     return FBInstalledArtifact(name: appBundle.identifier, uuid: appBundle.binary?.uuid as NSUUID?, path: URL(fileURLWithPath: installedApp.bundle.path))
   }
