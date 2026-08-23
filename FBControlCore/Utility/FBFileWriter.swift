@@ -7,6 +7,21 @@
 
 import Foundation
 
+/// The ways file writing can fail, as data rather than assembled strings.
+public enum FBFileWriterError: Error, LocalizedError {
+  case openFailed(path: String, message: String)
+  case ioChannelCreationFailed(fileDescriptor: Int32)
+
+  public var errorDescription: String? {
+    switch self {
+    case let .openFailed(path, message):
+      return "A file handle for path \(path) could not be opened: \(message)"
+    case let .ioChannelCreationFailed(fileDescriptor):
+      return "A IO Channel could not be created for fd \(fileDescriptor)"
+    }
+  }
+}
+
 @objc(FBFileWriter)
 public class FBFileWriter: NSObject {
 
@@ -29,10 +44,7 @@ public class FBFileWriter: NSObject {
   private static func fileDescriptor(forPath filePath: String) throws -> Int32 {
     let fd = open(filePath, O_WRONLY | O_CREAT, 0o644)
     if fd == -1 {
-      throw
-        FBControlCoreError
-        .describe("A file handle for path \(filePath) could not be opened: \(String(cString: strerror(errno)))")
-        .build()
+      throw FBFileWriterError.openFailed(path: filePath, message: String(cString: strerror(errno)))
     }
     return fd
   }
@@ -208,10 +220,7 @@ private class FBFileWriter_Async: FBFileWriter, FBDispatchDataConsumer, FBDataCo
       finishedConsuming.resolve(withResult: NSNull())
     }
     guard io != nil else {
-      throw
-        FBControlCoreError
-        .describe("A IO Channel could not be created for fd \(fileDescriptor)")
-        .build()
+      throw FBFileWriterError.ioChannelCreationFailed(fileDescriptor: fileDescriptor)
     }
 
     // Report partial results with as little as 1 byte read.
