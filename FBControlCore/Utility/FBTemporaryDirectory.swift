@@ -7,6 +7,18 @@
 
 import Foundation
 
+/// The way temporary-directory creation fails, as data rather than an assembled string.
+public enum FBTemporaryDirectoryError: Error, LocalizedError {
+  case creationFailed(directory: URL, underlying: Error)
+
+  public var errorDescription: String? {
+    switch self {
+    case let .creationFailed(directory, _):
+      return "Failed to create Temp Dir \(directory)"
+    }
+  }
+}
+
 @objc(FBTemporaryDirectory)
 public class FBTemporaryDirectory: NSObject {
 
@@ -169,11 +181,7 @@ public class FBTemporaryDirectory: NSObject {
     do {
       try FileManager.default.createDirectory(at: tempDirectory, withIntermediateDirectories: true, attributes: nil)
     } catch {
-      return
-        FBControlCoreError
-        .describe("Failed to create Temp Dir \(tempDirectory)")
-        .caused(by: error as NSError)
-        .failFutureContext().retyped(FBFutureContext<NSURL>.self)
+      return FBFutureContext(error: FBTemporaryDirectoryError.creationFailed(directory: tempDirectory, underlying: error))
     }
     return FBFuture<NSURL>(result: tempDirectory as NSURL)
       .onQueue(
