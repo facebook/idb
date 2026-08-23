@@ -7,6 +7,23 @@
 
 import Foundation
 
+/// Process-exit outcomes surfaced as errors on the future that did not happen, as data rather than assembled strings.
+public enum FBProcessTerminationError: Error {
+  case exitedWithSignal(processIdentifier: pid_t, processName: String, signal: Int32)
+  case exitedWithCode(processIdentifier: pid_t, processName: String, exitCode: Int32)
+}
+
+extension FBProcessTerminationError: LocalizedError {
+  public var errorDescription: String? {
+    switch self {
+    case let .exitedWithSignal(processIdentifier, processName, signal):
+      return "Process \(processIdentifier) (\(processName)) exited with signal \(signal)"
+    case let .exitedWithCode(processIdentifier, processName, exitCode):
+      return "Process \(processIdentifier) (\(processName)) exited with code \(exitCode)"
+    }
+  }
+}
+
 @objc(FBProcessSpawnCommandHelpers)
 public final class FBProcessSpawnCommandHelpers: NSObject {
 
@@ -33,16 +50,14 @@ public final class FBProcessSpawnCommandHelpers: NSObject {
           if wstatus != 0x7f /* _WSTOPPED */ && wstatus != 0 {
             // WIFSIGNALED
             let signalCode = statLoc & 0x7f // WTERMSIG
-            let message = "Process \(processIdentifier) (\(configuration.processName)) exited with signal \(signalCode)"
-            logger?.log(message)
-            let error = FBControlCoreError.describe(message).build()
+            let error = FBProcessTerminationError.exitedWithSignal(processIdentifier: processIdentifier, processName: configuration.processName, signal: signalCode)
+            logger?.log(error.localizedDescription)
             exitCodeFuture.resolveWithError(error)
             signalFuture.resolve(withResult: NSNumber(value: signalCode))
           } else {
             let exitCode = (statLoc >> 8) & 0xff // WEXITSTATUS
-            let message = "Process \(processIdentifier) (\(configuration.processName)) exited with code \(exitCode)"
-            logger?.log(message)
-            let error = FBControlCoreError.describe(message).build()
+            let error = FBProcessTerminationError.exitedWithCode(processIdentifier: processIdentifier, processName: configuration.processName, exitCode: exitCode)
+            logger?.log(error.localizedDescription)
             signalFuture.resolveWithError(error)
             exitCodeFuture.resolve(withResult: NSNumber(value: exitCode))
           }
