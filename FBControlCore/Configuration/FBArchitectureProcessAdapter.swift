@@ -22,6 +22,24 @@ private func processIsTranslated() -> Int32 {
   return ret
 }
 
+/// The ways architecture adaptation can fail, as data rather than assembled strings.
+public enum FBArchitectureAdapterError: Error, LocalizedError {
+  case noCompatibleArchitecture(requested: [String], host: [String])
+  case timedOut(seconds: Double, waitingFor: String)
+  case otoolFailed(binary: String)
+
+  public var errorDescription: String? {
+    switch self {
+    case let .noCompatibleArchitecture(requested, host):
+      return "Could not select an architecture from \(FBCollectionInformation.oneLineDescription(from: requested)) compatible with \(FBCollectionInformation.oneLineDescription(from: host))"
+    case let .timedOut(seconds, waitingFor):
+      return "Timed out after \(String(format: "%.1f", seconds))s waiting for \(waitingFor)"
+    case let .otoolFailed(binary):
+      return "Failed to call otool -l over \(binary)"
+    }
+  }
+}
+
 @objc(FBArchitectureProcessAdapter)
 public class FBArchitectureProcessAdapter: NSObject {
 
@@ -65,10 +83,7 @@ public class FBArchitectureProcessAdapter: NSObject {
     temporaryDirectory: URL
   ) -> FBFuture<FBProcessSpawnConfiguration> {
     guard let architecture = selectArchitecture(from: requestedArchitectures, supportedArchitectures: hostArchitectures) else {
-      return
-        FBControlCoreError
-        .describe("Could not select an architecture from \(FBCollectionInformation.oneLineDescription(from: Array(requestedArchitectures))) compatible with \(FBCollectionInformation.oneLineDescription(from: Array(hostArchitectures)))")
-        .failFuture().retyped(FBFuture<FBProcessSpawnConfiguration>.self)
+      return FBFuture(error: FBArchitectureAdapterError.noCompatibleArchitecture(requested: requestedArchitectures.map(\.rawValue), host: hostArchitectures.map(\.rawValue)))
     }
 
     return unsafeBitCast(
@@ -126,9 +141,7 @@ public class FBArchitectureProcessAdapter: NSObject {
         .onQueue(
           queue, timeout: 20,
           handler: {
-            FBControlCoreError
-              .describe("Timed out after 20.0s waiting for \(timeoutDescription)")
-              .failFuture()
+            FBFuture<AnyObject>(error: FBArchitectureAdapterError.timedOut(seconds: 20.0, waitingFor: timeoutDescription))
           }),
       to: FBFuture<NSNull>.self
     )
@@ -154,9 +167,7 @@ public class FBArchitectureProcessAdapter: NSObject {
         .onQueue(
           queue, timeout: 10,
           handler: {
-            FBControlCoreError
-              .describe("Timed out after 10.0s waiting for \(timeoutDescription)")
-              .failFuture()
+            FBFuture<AnyObject>(error: FBArchitectureAdapterError.timedOut(seconds: 10.0, waitingFor: timeoutDescription))
           }),
       to: FBFuture<NSNull>.self
     )
@@ -205,18 +216,13 @@ public class FBArchitectureProcessAdapter: NSObject {
             if let stdOut = subprocess.stdOut {
               return FBFuture<AnyObject>(result: stdOut)
             }
-            return
-              FBControlCoreError
-              .describe("Failed to call otool -l over \(binary)")
-              .failFuture()
+            return FBFuture(error: FBArchitectureAdapterError.otoolFailed(binary: binary))
           }
         )
         .onQueue(
           queue, timeout: 10,
           handler: {
-            FBControlCoreError
-              .describe("Timed out after 10.0s waiting for \(timeoutDescription)")
-              .failFuture()
+            FBFuture<AnyObject>(error: FBArchitectureAdapterError.timedOut(seconds: 10.0, waitingFor: timeoutDescription))
           }),
       to: FBFuture<NSString>.self
     )
