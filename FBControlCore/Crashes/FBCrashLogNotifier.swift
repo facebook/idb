@@ -7,6 +7,18 @@
 
 import Foundation
 
+/// The way crash-log polling reports an absent match, as data rather than an assembled string.
+public enum FBCrashLogNotifierError: Error, LocalizedError {
+  case crashLogUnavailable(predicateDescription: String)
+
+  public var errorDescription: String? {
+    switch self {
+    case let .crashLogUnavailable(predicateDescription):
+      return "Crash Log Info for \(predicateDescription) could not be obtained"
+    }
+  }
+}
+
 public class FBCrashLogNotifier {
 
   // MARK: Properties
@@ -48,7 +60,7 @@ public class FBCrashLogNotifier {
           .filtered(using: predicate)
           .first as? FBCrashLogInfo
         guard let crashInfo else {
-          return FBControlCoreError.describe("Crash Log Info for \(predicate) could not be obtained").failFuture()
+          return FBFuture(error: FBCrashLogNotifierError.crashLogUnavailable(predicateDescription: String(describing: predicate)))
         }
         _ = self.store.ingestCrashLog(atPath: crashInfo.crashPath)
         return FBFuture(result: crashInfo)
