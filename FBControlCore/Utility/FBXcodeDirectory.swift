@@ -7,6 +7,30 @@
 
 import Foundation
 
+/// The ways developer-directory resolution can fail, as data rather than assembled strings.
+public enum FBXcodeDirectoryError: Error, LocalizedError {
+  case emptyXcodeSelectOutput(stdErr: String)
+  case pathNil
+  case commandLineToolsOnly
+  case rootPath
+  case pathDoesNotExist(directory: String)
+
+  public var errorDescription: String? {
+    switch self {
+    case let .emptyXcodeSelectOutput(stdErr):
+      return "Empty output for xcode directory returned from `xcode-select -p`: \(stdErr)"
+    case .pathNil:
+      return "Xcode path is nil"
+    case .commandLineToolsOnly:
+      return "`xcode-select -p` returned '/Library/Developer/CommandLineTools', but idb requires a full Xcode install."
+    case .rootPath:
+      return "`xcode-select -p` returned '/' which isn't valid."
+    case let .pathDoesNotExist(directory):
+      return "`xcode-select -p` returned '\(directory)' which doesn't exist."
+    }
+  }
+}
+
 public struct FBXcodeDirectory {
 
   // MARK: Public
@@ -34,10 +58,7 @@ public struct FBXcodeDirectory {
     let directory = task.stdOut as? String ?? ""
     if directory.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
       let stdErr = task.stdErr as? String ?? ""
-      throw
-        FBControlCoreError
-        .describe("Empty output for xcode directory returned from `xcode-select -p`: \(stdErr)")
-        .build()
+      throw FBXcodeDirectoryError.emptyXcodeSelectOutput(stdErr: stdErr)
     }
     let resolved = (directory as NSString).resolvingSymlinksInPath
     try validateXcodeDirectory(resolved)
@@ -54,28 +75,16 @@ public struct FBXcodeDirectory {
 
   private static func validateXcodeDirectory(_ directory: String?) throws {
     guard let directory else {
-      throw
-        FBControlCoreError
-        .describe("Xcode path is nil")
-        .build()
+      throw FBXcodeDirectoryError.pathNil
     }
     guard directory != "/Library/Developer/CommandLineTools" else {
-      throw
-        FBControlCoreError
-        .describe("`xcode-select -p` returned '/Library/Developer/CommandLineTools', but idb requires a full Xcode install.")
-        .build()
+      throw FBXcodeDirectoryError.commandLineToolsOnly
     }
     guard directory != "/" else {
-      throw
-        FBControlCoreError
-        .describe("`xcode-select -p` returned '/' which isn't valid.")
-        .build()
+      throw FBXcodeDirectoryError.rootPath
     }
     guard FileManager.default.fileExists(atPath: directory) else {
-      throw
-        FBControlCoreError
-        .describe("`xcode-select -p` returned '\(directory)' which doesn't exist.")
-        .build()
+      throw FBXcodeDirectoryError.pathDoesNotExist(directory: directory)
     }
   }
 }
