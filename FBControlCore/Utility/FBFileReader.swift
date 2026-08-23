@@ -24,6 +24,27 @@ private func stateString(from state: FBFileReaderState) -> String {
   }
 }
 
+/// The ways file reading can fail, as data rather than assembled strings.
+public enum FBFileReaderError: Error, LocalizedError {
+  case openFailed(path: String, message: String)
+  case wrongStateToStart(targeting: String, state: String)
+  case ioChannelCreationFailed(description: String)
+  case notStartedReading(targeting: String)
+
+  public var errorDescription: String? {
+    switch self {
+    case let .openFailed(path, message):
+      return "open of \(path) returned an error '\(message)'"
+    case let .wrongStateToStart(targeting, state):
+      return "Could not start reading read of \(targeting) when it is in state \(state)"
+    case let .ioChannelCreationFailed(description):
+      return "A IO Channel could not be created for \(description)"
+    case let .notStartedReading(targeting):
+      return "File reader has not started reading \(targeting), you should call 'startReading' first"
+    }
+  }
+}
+
 @objc(FBFileReader)
 public class FBFileReader: NSObject, FBFileReaderProtocol {
 
@@ -63,10 +84,7 @@ public class FBFileReader: NSObject, FBFileReaderProtocol {
         resolve: {
           let fd = open(filePath, O_RDONLY)
           if fd == -1 {
-            return
-              FBControlCoreError
-              .describe("open of \(filePath) returned an error '\(String(cString: strerror(errno)))'")
-              .failFuture()
+            return FBFuture(error: FBFileReaderError.openFailed(path: filePath, message: String(cString: strerror(errno))))
           }
           return FBFuture(
             result: FBFileReader(
@@ -153,10 +171,7 @@ public class FBFileReader: NSObject, FBFileReaderProtocol {
 
   private func startReadingNow() -> FBFuture<AnyObject> {
     if state != .notStarted {
-      return
-        FBControlCoreError
-        .describe("Could not start reading read of \(targeting) when it is in state \(stateString(from: state))")
-        .failFuture()
+      return FBFuture(error: FBFileReaderError.wrongStateToStart(targeting: targeting, state: stateString(from: state)))
     }
     assert(io == nil, "IO Channel should not exist when not started")
 
@@ -182,10 +197,7 @@ public class FBFileReader: NSObject, FBFileReaderProtocol {
       self.ioChannelHasRelinquishedControl(withErrorCode: createErrorCode != 0 ? createErrorCode : readErrorCode)
     }
     guard let io else {
-      return
-        FBControlCoreError
-        .describe("A IO Channel could not be created for \(self.description)")
-        .failFuture()
+      return FBFuture(error: FBFileReaderError.ioChannelCreationFailed(description: self.description))
     }
 
     // Report partial results with as little as 1 byte read.
@@ -206,10 +218,7 @@ public class FBFileReader: NSObject, FBFileReaderProtocol {
   private func stopReadingNow() -> FBFuture<AnyObject> {
     // The only error condition is that we haven't yet started reading
     if state == .notStarted {
-      return
-        FBControlCoreError
-        .describe("File reader has not started reading \(targeting), you should call 'startReading' first")
-        .failFuture()
+      return FBFuture(error: FBFileReaderError.notStartedReading(targeting: targeting))
     }
     // All states other than reading mean that we don't need to close the channel.
     if state != .reading {
