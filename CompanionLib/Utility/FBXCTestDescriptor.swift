@@ -40,6 +40,32 @@ public extension FBXCTestDescriptor {
 
 // MARK: - FBXCTestBootstrapDescriptor
 
+/// The ways test-descriptor preparation can fail, as data rather than assembled strings.
+public enum FBXCTestDescriptorError: Error {
+  case applicationCommandsUnsupported(targetDescription: String)
+  case uiTestMissingAppBundleID
+  case appTestMissingBundleIDs
+  case noTestHostApplication(requestDescription: String)
+  case notADataConsumer(result: String)
+}
+
+extension FBXCTestDescriptorError: LocalizedError {
+  public var errorDescription: String? {
+    switch self {
+    case let .applicationCommandsUnsupported(targetDescription):
+      return "\(targetDescription) does not support ApplicationCommands"
+    case .uiTestMissingAppBundleID:
+      return "Request for UI Test, but no app_bundle_id provided"
+    case .appTestMissingBundleIDs:
+      return "Request for Application Test, but no app_bundle_id or test_host_app_bundle_id provided"
+    case let .noTestHostApplication(requestDescription):
+      return "Cannot build a test configuration for \(requestDescription), no test host application was resolved"
+    case let .notADataConsumer(result):
+      return "Expected a data consumer for the mirrored test process output, got \(result)"
+    }
+  }
+}
+
 public final class FBXCTestBootstrapDescriptor: NSObject, FBXCTestDescriptor {
 
   public let url: URL
@@ -72,7 +98,7 @@ public final class FBXCTestBootstrapDescriptor: NSObject, FBXCTestDescriptor {
   private static func killAllRunningApplications(_ target: FBiOSTarget) -> FBFuture<NSNull> {
     let future: FBFuture<NSNull> = fbFutureFromAsync {
       guard let asyncTarget = target as? any ApplicationCommands else {
-        throw FBIDBError.describe("\(target) does not support ApplicationCommands").build()
+        throw FBXCTestDescriptorError.applicationCommandsUnsupported(targetDescription: String(describing: target))
       }
       let running = try await asyncTarget.runningApplications()
       try await Array(running.keys).concurrentForEachThrowingFirstError { bundleID in
@@ -99,12 +125,12 @@ public final class FBXCTestBootstrapDescriptor: NSObject, FBXCTestDescriptor {
     }
     if request.isUITest {
       guard let testTargetAppBundleID = request.testTargetAppBundleID else {
-        return FBIDBError.describe("Request for UI Test, but no app_bundle_id provided").failFuture().retyped(FBFuture<FBTestApplicationsPair>.self)
+        return FBFuture(error: FBXCTestDescriptorError.uiTestMissingAppBundleID)
       }
       let testHostBundleID = request.testHostAppBundleID ?? "com.apple.Preferences"
       let pairFuture: FBFuture<FBTestApplicationsPair> = fbFutureFromAsync {
         guard let asyncTarget = target as? any ApplicationCommands else {
-          throw FBIDBError.describe("\(target) does not support ApplicationCommands").build()
+          throw FBXCTestDescriptorError.applicationCommandsUnsupported(targetDescription: String(describing: target))
         }
         let testTargetApp = try await asyncTarget.installedApplication(bundleID: testTargetAppBundleID)
         let testHostApp = try await asyncTarget.installedApplication(bundleID: testHostBundleID)
@@ -114,11 +140,11 @@ public final class FBXCTestBootstrapDescriptor: NSObject, FBXCTestDescriptor {
     }
     // App Test
     guard let bundleID = request.testHostAppBundleID else {
-      return FBIDBError.describe("Request for Application Test, but no app_bundle_id or test_host_app_bundle_id provided").failFuture().retyped(FBFuture<FBTestApplicationsPair>.self)
+      return FBFuture(error: FBXCTestDescriptorError.appTestMissingBundleIDs)
     }
     return fbFutureFromAsync {
       guard let asyncTarget = target as? any ApplicationCommands else {
-        throw FBIDBError.describe("\(target) does not support ApplicationCommands").build()
+        throw FBXCTestDescriptorError.applicationCommandsUnsupported(targetDescription: String(describing: target))
       }
       let application = try await asyncTarget.installedApplication(bundleID: bundleID)
       return FBTestApplicationsPair(applicationUnderTest: nil, testHostApp: application)
@@ -127,7 +153,7 @@ public final class FBXCTestBootstrapDescriptor: NSObject, FBXCTestDescriptor {
 
   public func testConfig(withRunRequest request: FBXCTestRunRequest, testApps: FBTestApplicationsPair, logDirectoryPath: String?, logger: FBControlCoreLogger, queue: DispatchQueue) -> FBFuture<FBIDBAppHostedTestConfiguration> {
     guard let testHostApp = testApps.testHostApp else {
-      return FBIDBError.describe("Cannot build a test configuration for \(request), no test host application was resolved").failFuture().retyped(FBFuture<FBIDBAppHostedTestConfiguration>.self)
+      return FBFuture(error: FBXCTestDescriptorError.noTestHostApplication(requestDescription: String(describing: request)))
     }
     let appLaunchConfigFuture = buildAppLaunchConfig(
       bundleID: testHostApp.bundle.identifier,
@@ -292,7 +318,7 @@ private func buildAppLaunchConfig(bundleID: String, environment: [String: String
 private func mirroredConsumer(_ future: FBFuture<AnyObject>) async throws -> FBDataConsumer {
   let result = try await bridgeFBFuture(future)
   guard let consumer = result as? FBDataConsumer else {
-    throw FBIDBError.describe("Expected a data consumer for the mirrored test process output, got \(result)").build()
+    throw FBXCTestDescriptorError.notADataConsumer(result: String(describing: result))
   }
   return consumer
 }
