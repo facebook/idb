@@ -12,6 +12,24 @@ private let kEnvWaitForDebugger = "XCTOOL_WAIT_FOR_DEBUGGER"
 private let kEnvLLVMProfileFile = "LLVM_PROFILE_FILE"
 private let kEnvLogDirectoryPath = "LOG_DIRECTORY_PATH"
 
+/// The ways runner-configuration preparation can fail, as data rather than assembled strings.
+public enum FBTestRunnerConfigurationError: Error, LocalizedError {
+  case codesignCheckFailed(bundlePath: String, underlying: Error)
+  case testBundlePreparationFailed(underlying: Error)
+  case testConfigurationPreparationFailed(underlying: Error)
+
+  public var errorDescription: String? {
+    switch self {
+    case let .codesignCheckFailed(bundlePath, _):
+      return "Could not determine bundle at path '\(bundlePath)' is codesigned and codesigning is required"
+    case .testBundlePreparationFailed:
+      return "Failed to prepare test bundle"
+    case .testConfigurationPreparationFailed:
+      return "Failed to prepare test configuration"
+    }
+  }
+}
+
 public struct FBTestRunnerConfiguration {
 
   // MARK: Properties
@@ -46,11 +64,7 @@ public struct FBTestRunnerConfiguration {
       do {
         _ = try await bridgeFBFuture(codesign.cdHashForBundle(atPath: testLaunchConfiguration.testBundle.path))
       } catch {
-        throw
-          XCTestBootstrapError
-          .describe("Could not determine bundle at path '\(testLaunchConfiguration.testBundle.path)' is codesigned and codesigning is required")
-          .caused(by: error)
-          .build()
+        throw FBTestRunnerConfigurationError.codesignCheckFailed(bundlePath: testLaunchConfiguration.testBundle.path, underlying: error)
       }
     }
     return try await prepareConfigurationAfterCodesignatureCheck(withTarget: target, testLaunchConfiguration: testLaunchConfiguration, workingDirectory: workingDirectory)
@@ -121,11 +135,7 @@ public struct FBTestRunnerConfiguration {
     do {
       testBundle = try FBBundleDescriptor.bundle(fromPath: testLaunchConfiguration.testBundle.path)
     } catch {
-      throw
-        XCTestBootstrapError
-        .describe("Failed to prepare test bundle")
-        .caused(by: error)
-        .build()
+      throw FBTestRunnerConfigurationError.testBundlePreparationFailed(underlying: error)
     }
 
     // Prepare the test configuration
@@ -145,11 +155,7 @@ public struct FBTestRunnerConfiguration {
         reportActivities: testLaunchConfiguration.reportActivities
       )
     } catch {
-      throw
-        XCTestBootstrapError
-        .describe("Failed to prepare test configuration")
-        .caused(by: error)
-        .build()
+      throw FBTestRunnerConfigurationError.testConfigurationPreparationFailed(underlying: error)
     }
 
     let hostApplication = try await target.installedApplication(bundleID: testLaunchConfiguration.applicationLaunchConfiguration.bundleID)
