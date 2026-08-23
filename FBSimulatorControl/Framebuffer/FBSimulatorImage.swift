@@ -12,6 +12,24 @@ import Foundation
 import ImageIO
 import UniformTypeIdentifiers
 
+/// The ways image encoding can fail, as data rather than assembled strings.
+public enum FBSimulatorImageError: Error, LocalizedError {
+  case noImage
+  case destinationCreationFailed
+  case finalizationFailed
+
+  public var errorDescription: String? {
+    switch self {
+    case .noImage:
+      return "No Image available to encode"
+    case .destinationCreationFailed:
+      return "Could not create image destination"
+    case .finalizationFailed:
+      return "Could not finalize the creation of the Image"
+    }
+  }
+}
+
 public actor FBSimulatorImage {
 
   // MARK: - Properties
@@ -99,25 +117,16 @@ public actor FBSimulatorImage {
 
   private static func imageData(from image: CGImage?, type: UTType) throws -> Data {
     guard let image else {
-      throw
-        FBSimulatorError
-        .describe("No Image available to encode")
-        .build()
+      throw FBSimulatorImageError.noImage
     }
 
     let data = NSMutableData()
     guard let destination = CGImageDestinationCreateWithData(data as CFMutableData, type.identifier as CFString, 1, nil) else {
-      throw
-        FBSimulatorError
-        .describe("Could not create image destination")
-        .build()
+      throw FBSimulatorImageError.destinationCreationFailed
     }
     CGImageDestinationAddImage(destination, image, nil)
     if !CGImageDestinationFinalize(destination) {
-      throw
-        FBSimulatorError
-        .describe("Could not finalize the creation of the Image")
-        .build()
+      throw FBSimulatorImageError.finalizationFailed
     }
     return data as Data
   }
