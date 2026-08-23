@@ -35,17 +35,11 @@ extension FBBundleDescriptor {
     }
     if applicationPaths.isEmpty {
       let lastComponents = nonApplicationPaths.map { ($0 as NSString).lastPathComponent }
-      throw
-        FBControlCoreError
-        .describe("Could not find an Application in IPA, present files \(FBCollectionInformation.oneLineDescription(from: lastComponents))")
-        .build()
+      throw FBBundleDescriptorError.noApplicationInIPA(presentFiles: lastComponents)
     }
     if applicationPaths.count > 1 {
       let lastComponents = applicationPaths.map { ($0 as NSString).lastPathComponent }
-      throw
-        FBControlCoreError
-        .describe("Expected only one Application in IPA, found \(applicationPaths.count): \(FBCollectionInformation.oneLineDescription(from: lastComponents))")
-        .build()
+      throw FBBundleDescriptorError.multipleApplicationsInIPA(count: applicationPaths.count, found: lastComponents)
     }
     let applicationPath = applicationPaths[0]
     logger?.log("Using Application at path \(applicationPath)")

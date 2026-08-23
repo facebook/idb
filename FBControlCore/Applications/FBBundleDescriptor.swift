@@ -13,6 +13,8 @@ public enum FBBundleDescriptorError: Error {
   case binaryPathUnavailable(bundlePath: String)
   case bundleLoadFailed(path: String)
   case bundleIdentifierUnavailable(name: String, path: String)
+  case noApplicationInIPA(presentFiles: [String])
+  case multipleApplicationsInIPA(count: Int, found: [String])
 }
 
 extension FBBundleDescriptorError: LocalizedError {
@@ -26,6 +28,10 @@ extension FBBundleDescriptorError: LocalizedError {
       return "Failed to load bundle at path \(path)"
     case let .bundleIdentifierUnavailable(name, path):
       return "Could not obtain Bundle ID for bundle '\(name)' at \(path)"
+    case let .noApplicationInIPA(presentFiles):
+      return "Could not find an Application in IPA, present files \(FBCollectionInformation.oneLineDescription(from: presentFiles))"
+    case let .multipleApplicationsInIPA(count, found):
+      return "Expected only one Application in IPA, found \(count): \(FBCollectionInformation.oneLineDescription(from: found))"
     }
   }
 }
