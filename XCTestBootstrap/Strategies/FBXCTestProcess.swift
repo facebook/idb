@@ -12,6 +12,26 @@ private let CrashLogStartDateFuzz: TimeInterval = -20
 private let CrashLogWaitTime: TimeInterval = 180
 private let KillBackoffTimeout: TimeInterval = 1
 
+/// The ways xctest process supervision can fail, as data rather than assembled strings.
+public enum FBXCTestProcessError: Error {
+  case stalled(timeout: TimeInterval, processIdentifier: pid_t, stackshot: String)
+  case crashed(info: String, rawLog: String)
+  case crashLogTimedOut(processIdentifier: pid_t)
+}
+
+extension FBXCTestProcessError: LocalizedError {
+  public var errorDescription: String? {
+    switch self {
+    case let .stalled(timeout, processIdentifier, stackshot):
+      return "Waited \(timeout) seconds for process \(processIdentifier) to terminate, but the xctest process stalled: \(stackshot)"
+    case let .crashed(info, rawLog):
+      return "xctest process crashed\n\(info)\n\nRaw Crash File Contents\n\(rawLog)"
+    case let .crashLogTimedOut(processIdentifier):
+      return "Crash logs for terminated process \(processIdentifier) to appear"
+    }
+  }
+}
+
 public final class FBXCTestProcess {
 
   public static func ensureProcess(_ process: FBSubprocess<AnyObject, AnyObject, AnyObject>, completesWithin timeout: TimeInterval, crashLogCommands: (any CrashLogCommands)?, queue: DispatchQueue, logger: FBControlCoreLogger) -> FBFuture<NSNumber> {
@@ -73,7 +93,7 @@ public final class FBXCTestProcess {
       .onQueue(
         queue,
         fmap: { stackshot -> FBFuture<AnyObject> in
-          FBXCTestError.describe("Waited \(timeout) seconds for process \(process.processIdentifier) to terminate, but the xctest process stalled: \(stackshot)").failFuture()
+          FBFuture(error: FBXCTestProcessError.stalled(timeout: timeout, processIdentifier: process.processIdentifier, stackshot: String(describing: stackshot)))
         }
       )
       .onQueue(
@@ -98,7 +118,7 @@ public final class FBXCTestProcess {
           queue,
           fmap: { info -> FBFuture<AnyObject> in
             let rawLog = (try? info.loadRawCrashLogString()) ?? ""
-            return FBXCTestError.describe("xctest process crashed\n\(info)\n\nRaw Crash File Contents\n\(rawLog)").failFuture()
+            return FBFuture(error: FBXCTestProcessError.crashed(info: String(describing: info), rawLog: rawLog))
           }),
       to: FBFuture<NSNumber>.self
     )
@@ -118,7 +138,7 @@ public final class FBXCTestProcess {
         .onQueue(
           queue, timeout: crashLogWaitTime,
           handler: {
-            FBControlCoreError.describe("Crash logs for terminated process \(process.processIdentifier) to appear").failFuture()
+            FBFuture<AnyObject>(error: FBXCTestProcessError.crashLogTimedOut(processIdentifier: process.processIdentifier))
           }),
       to: FBFuture<FBCrashLogInfo>.self
     )
