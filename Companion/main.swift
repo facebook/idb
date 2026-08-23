@@ -17,6 +17,50 @@ import XCTestBootstrap
   // @oss-disable
 // @oss-disable
 
+/// The ways companion startup and one-shot modes can fail, as data rather than assembled strings.
+enum IDBCompanionError: Error {
+  case invalidOnlyArgument(argument: String)
+  case noDevicesMatchingECID(ecid: String)
+  case simulatorLifecycleUnsupported(targetDescription: String)
+  case lifecycleUnsupported(targetDescription: String)
+  case shutdownUnsupported(targetDescription: String)
+  case rebootUnsupported(targetDescription: String)
+  case eraseUnsupported(targetDescription: String)
+  case simulatorNotFound(udid: String)
+  case invalidForwardArgument(argument: String)
+  case socketForwardingUnsupported(targetDescription: String)
+  case noModeOfOperation(usage: String)
+}
+
+extension IDBCompanionError: LocalizedError {
+  var errorDescription: String? {
+    switch self {
+    case let .invalidOnlyArgument(argument):
+      return "\(argument) is not a valid argument for '--only'"
+    case let .noDevicesMatchingECID(ecid):
+      return "No devices [] matching \(ecid)"
+    case let .simulatorLifecycleUnsupported(targetDescription):
+      return "\(targetDescription) does not support Simulator Lifecycle commands"
+    case let .lifecycleUnsupported(targetDescription):
+      return "\(targetDescription) does not support LifecycleCommands"
+    case let .shutdownUnsupported(targetDescription):
+      return "Cannot shutdown \(targetDescription), does not support shutting down"
+    case let .rebootUnsupported(targetDescription):
+      return "Cannot shutdown \(targetDescription), does not support rebooting"
+    case let .eraseUnsupported(targetDescription):
+      return "Cannot erase \(targetDescription), does not support erasing"
+    case let .simulatorNotFound(udid):
+      return "Could not find a simulator with udid \(udid)"
+    case let .invalidForwardArgument(argument):
+      return "\(argument) should be of the form UDID:PORT"
+    case let .socketForwardingUnsupported(targetDescription):
+      return "\(targetDescription) does not conform to SocketForwardingCommands"
+    case let .noModeOfOperation(usage):
+      return "You must specify at least one 'Mode of operation'\n\n\(usage)"
+    }
+  }
+}
+
 private let kUsageHelpMessage = """
   Usage:
     Modes of operation, only one of these may be specified:
@@ -178,7 +222,7 @@ private func defaultTargetSets(_ userDefaults: UserDefaults, xcodeAvailable: Boo
       logger.log("ECID filter of \(ecid)")
       return [try await deviceSet(logger, ecidFilter: ecid, waitForDevices: true)]
     }
-    throw FBIDBError.describe("\(only) is not a valid argument for '--only'").build()
+    throw IDBCompanionError.invalidOnlyArgument(argument: only)
   }
   if !xcodeAvailable {
     logger.log("Xcode is not available, only Devices will be provided")
@@ -200,7 +244,7 @@ private func deviceForECID(_ ecid: String, logger: FBControlCoreLogger) async th
   let set = try await deviceSet(logger, ecidFilter: ecid.replacingOccurrences(of: "ecid:", with: ""), waitForDevices: true)
   let devices = set.allDevices
   if devices.isEmpty {
-    throw FBIDBError.describe("No devices \(FBCollectionInformation.oneLineDescription(from: devices)) matching \(ecid)").build()
+    throw IDBCompanionError.noDevicesMatchingECID(ecid: ecid)
   }
   return devices[0]
 }
@@ -209,14 +253,14 @@ private func resolveSimulator(_ udid: String, userDefaults: UserDefaults, logger
   let set = try simulatorSet(userDefaults, logger: logger, reporter: reporter)
   let target = try FBiOSTargetProvider.target(withUDID: udid, targetSets: [set], warmUp: false, logger: logger)
   guard target is SimulatorLifecycleCommands, let simulator = target as? FBSimulator else {
-    throw FBIDBError.describe("\(target) does not support Simulator Lifecycle commands").build()
+    throw IDBCompanionError.simulatorLifecycleUnsupported(targetDescription: String(describing: target))
   }
   return simulator
 }
 
 private func awaitTargetOffline(_ target: FBiOSTarget, logger: FBControlCoreLogger) async throws {
   guard let asyncTarget = target as? any LifecycleCommands else {
-    throw FBIDBError.describe("\(target) does not support LifecycleCommands").build()
+    throw IDBCompanionError.lifecycleUnsupported(targetDescription: String(describing: target))
   }
   try await asyncTarget.resolveLeavesState(.booted)
   target.logger.log("Target is no longer booted, companion going offline")
@@ -275,7 +319,7 @@ private func runBoot(_ udid: String, userDefaults: UserDefaults, logger: FBContr
 private func runShutdown(_ udid: String, userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBControlCoreLogger, reporter: FBEventReporter) async throws {
   let target = try await targetForUDID(udid, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, warmUp: false, logger: logger, reporter: reporter)
   guard let powerTarget = target as? any PowerCommands else {
-    throw FBIDBError.describe("Cannot shutdown \(target), does not support shutting down").build()
+    throw IDBCompanionError.shutdownUnsupported(targetDescription: String(describing: target))
   }
   try await powerTarget.shutdown()
 }
@@ -283,7 +327,7 @@ private func runShutdown(_ udid: String, userDefaults: UserDefaults, xcodeAvaila
 private func runReboot(_ udid: String, userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBControlCoreLogger, reporter: FBEventReporter) async throws {
   let target = try await targetForUDID(udid, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, warmUp: false, logger: logger, reporter: reporter)
   guard let powerTarget = target as? any PowerCommands else {
-    throw FBIDBError.describe("Cannot shutdown \(target), does not support rebooting").build()
+    throw IDBCompanionError.rebootUnsupported(targetDescription: String(describing: target))
   }
   try await powerTarget.reboot()
 }
@@ -291,7 +335,7 @@ private func runReboot(_ udid: String, userDefaults: UserDefaults, xcodeAvailabl
 private func runErase(_ udid: String, userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBControlCoreLogger, reporter: FBEventReporter) async throws {
   let target = try await targetForUDID(udid, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, warmUp: false, logger: logger, reporter: reporter)
   guard let eraseTarget = target as? any EraseCommands else {
-    throw FBIDBError.describe("Cannot erase \(target), does not support erasing").build()
+    throw IDBCompanionError.eraseUnsupported(targetDescription: String(describing: target))
   }
   try await eraseTarget.erase()
 }
@@ -303,7 +347,7 @@ private func runDelete(_ udidOrAll: String, userDefaults: UserDefaults, logger: 
     return
   }
   guard let simulator = set.simulator(withUDID: udidOrAll) else {
-    throw FBIDBError.describe("Could not find a simulator with udid \(udidOrAll)").build()
+    throw IDBCompanionError.simulatorNotFound(udid: udidOrAll)
   }
   try await bridgeFBFutureVoid(set.delete(simulator))
 }
@@ -492,14 +536,14 @@ private func runNotifier(_ notify: String, userDefaults: UserDefaults, xcodeAvai
 private func runForward(_ forward: String, userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBControlCoreLogger, reporter: FBEventReporter) async throws {
   let components = forward.components(separatedBy: ":")
   if components.count != 2 {
-    throw FBIDBError.describe("\(forward) should be of the form UDID:PORT").build()
+    throw IDBCompanionError.invalidForwardArgument(argument: forward)
   }
   let udid = components[0]
   let remotePort = Int32(components[1]) ?? 0
 
   let target = try await targetForUDID(udid, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, warmUp: false, logger: logger, reporter: reporter)
   guard let commands = target as? SocketForwardingCommands else {
-    throw FBIDBError.describe("\(target) does not conform to SocketForwardingCommands").build()
+    throw IDBCompanionError.socketForwardingUnsupported(targetDescription: String(describing: target))
   }
   try await commands.drainLocalFileInput(STDIN_FILENO, localFileOutput: STDOUT_FILENO, remotePort: remotePort)
 }
@@ -570,7 +614,7 @@ private func runSelectedCommand(_ userDefaults: UserDefaults, xcodeAvailable: Bo
     logger.info().log("Forwarding \(forward)")
     try await runForward(forward, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, logger: logger, reporter: reporter)
   } else {
-    throw FBIDBError.describe("You must specify at least one 'Mode of operation'\n\n\(kUsageHelpMessage)").build()
+    throw IDBCompanionError.noModeOfOperation(usage: kUsageHelpMessage)
   }
 }
 
