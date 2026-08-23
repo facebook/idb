@@ -8,6 +8,18 @@
 import FBControlCore
 import Foundation
 
+/// The way termination-waiting fails on macOS applications, as data rather than an assembled string.
+public enum FBMacLaunchedApplicationError: Error, LocalizedError {
+  case awaitingTerminationUnsupported
+
+  public var errorDescription: String? {
+    switch self {
+    case .awaitingTerminationUnsupported:
+      return "Awaiting termination is not supported for macOS applications"
+    }
+  }
+}
+
 public final class FBMacLaunchedApplication: FBLaunchedApplication {
 
   public let bundleID: String
@@ -23,7 +35,7 @@ public final class FBMacLaunchedApplication: FBLaunchedApplication {
   }
 
   public func waitForTermination() async throws {
-    throw FBControlCoreError.describe("Awaiting termination is not supported for macOS applications").build()
+    throw FBMacLaunchedApplicationError.awaitingTerminationUnsupported
   }
 
   public func terminate() async throws {
