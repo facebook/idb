@@ -40,6 +40,30 @@ private let FBProcessTerminationStrategyConfigurationDefault = FBProcessTerminat
   options: [.checkProcessExistsBeforeSignal, .checkDeathAfterSignal, .backoffToSIGKILL]
 )
 
+/// The ways process termination can fail, as data rather than assembled strings.
+public enum FBProcessTerminationStrategyError: Error, LocalizedError {
+  case processDoesNotExist(processIdentifier: pid_t)
+  case killFailed(processIdentifier: pid_t, message: String)
+  case processTableRemovalTimedOut(processIdentifier: pid_t)
+  case processDidNotDisappear(processIdentifier: pid_t, processInfo: String)
+  case sigkillAfterFailedKill(processIdentifier: pid_t, signo: Int32, underlying: Error)
+
+  public var errorDescription: String? {
+    switch self {
+    case let .processDoesNotExist(processIdentifier):
+      return "Could not find that process \(processIdentifier) exists"
+    case let .killFailed(processIdentifier, message):
+      return "Failed to kill \(processIdentifier): '\(message)'"
+    case let .processTableRemovalTimedOut(processIdentifier):
+      return "Process \(processIdentifier) to be removed from the process table"
+    case let .processDidNotDisappear(processIdentifier, _):
+      return "Timed out waiting for \(processIdentifier) to disappear from the process table"
+    case let .sigkillAfterFailedKill(processIdentifier, signo, _):
+      return "Attempted to SIGKILL \(processIdentifier) after failed kill with signo \(signo)"
+    }
+  }
+}
+
 public class FBProcessTerminationStrategy: NSObject {
 
   // MARK: Private Properties
@@ -95,19 +119,13 @@ public class FBProcessTerminationStrategy: NSObject {
   public func killProcessIdentifier(_ processIdentifier: pid_t) -> FBFuture<NSNull> {
     let checkExists = hasOption(.checkProcessExistsBeforeSignal)
     if checkExists && processFetcher.processInfo(for: processIdentifier) == nil {
-      return
-        FBControlCoreError
-        .describe("Could not find that process \(processIdentifier) exists")
-        .failFuture().retyped(FBFuture<NSNull>.self)
+      return FBFuture(error: FBProcessTerminationStrategyError.processDoesNotExist(processIdentifier: processIdentifier))
     }
 
     // Kill the process with kill(2).
     logger.debug().log("Killing \(processIdentifier)")
     if kill(processIdentifier, configuration.signo) != 0 {
-      return
-        FBControlCoreError
-        .describe("Failed to kill \(processIdentifier): '\(String(cString: strerror(errno)))'")
-        .failFuture().retyped(FBFuture<NSNull>.self)
+      return FBFuture(error: FBProcessTerminationStrategyError.killFailed(processIdentifier: processIdentifier, message: String(cString: strerror(errno))))
     }
 
     let checkDeath = hasOption(.checkDeathAfterSignal)
@@ -126,9 +144,7 @@ public class FBProcessTerminationStrategy: NSObject {
       .onQueue(
         workQueue, timeout: ProcessTableRemovalTimeout,
         handler: { () -> FBFuture<AnyObject> in
-          FBControlCoreError
-            .describe("Process \(processIdentifier) to be removed from the process table")
-            .failFuture()
+          FBFuture<AnyObject>(error: FBProcessTerminationStrategyError.processTableRemovalTimedOut(processIdentifier: processIdentifier))
         }
       )
       .onQueue(
@@ -141,11 +157,7 @@ public class FBProcessTerminationStrategy: NSObject {
           let backoff = self.hasOption(.backoffToSIGKILL)
           if self.configuration.signo == SIGKILL || !backoff {
             let processInfo: Any = self.processFetcher.processInfo(for: processIdentifier) ?? ("No Process Info" as NSString)
-            return
-              FBControlCoreError
-              .describe("Timed out waiting for \(processIdentifier) to disappear from the process table")
-              .extraInfo("\(processIdentifier)_process", value: processInfo)
-              .failFuture()
+            return FBFuture(error: FBProcessTerminationStrategyError.processDidNotDisappear(processIdentifier: processIdentifier, processInfo: String(describing: processInfo)))
           }
 
           // Try with SIGKILL instead.
@@ -160,11 +172,7 @@ public class FBProcessTerminationStrategy: NSObject {
             self.workQueue,
             chain: { (innerFuture: FBFuture<AnyObject>) -> FBFuture<AnyObject> in
               if let error = innerFuture.error {
-                return
-                  FBControlCoreError
-                  .describe("Attempted to SIGKILL \(processIdentifier) after failed kill with signo \(self.configuration.signo)")
-                  .caused(by: error)
-                  .failFuture()
+                return FBFuture(error: FBProcessTerminationStrategyError.sigkillAfterFailedKill(processIdentifier: processIdentifier, signo: self.configuration.signo, underlying: error))
               }
               return innerFuture
             })
