@@ -22,7 +22,11 @@ struct ReplMethodHandler {
   let recordingCoordinator: ReplRecordingCoordinator
 
   func handle(requestStream: GRPCAsyncRequestStream<Idb_ReplRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_ReplResponse>, context: GRPCAsyncServerCallContext) async throws {
-    guard case let .start(start) = try await requestStream.requiredNext.control
+    // grpc-swift traps if a second AsyncIterator is created; read every
+    // request frame through one owned iterator.
+    let stream = SingleIteratorRequestStream(requestStream)
+
+    guard case let .start(start) = try await stream.requiredNext.control
     else { throw GRPCStatus(code: .failedPrecondition, message: "repl expected a Start message at the beginning of the stream") }
 
     targetLogger.debug().log("REPL session context: \(start.context)")
@@ -56,14 +60,14 @@ struct ReplMethodHandler {
     // than pulled back over gRPC.
     let sharedFilesystem = !start.probeFilePath.isEmpty && FileManager.default.fileExists(atPath: start.probeFilePath)
 
-    try await serve(session: session, sharedFilesystem: sharedFilesystem, context: start.context, appBundleID: appBundleID, requestStream: requestStream, responseStream: responseStream)
+    try await serve(session: session, sharedFilesystem: sharedFilesystem, context: start.context, appBundleID: appBundleID, requestStream: stream, responseStream: responseStream)
   }
 
   /// Bridges the gRPC repl stream to a launched session's control socket:
   /// connects to the socket, reports `ready`, forwards each `Execute` (a dylib
   /// plus a symbol) to the socket and streams back the result, and on stop/EOF
   /// closes the socket (which ends the served process) and reports `stopped`.
-  private func serve(session: ReplSession, sharedFilesystem: Bool, context: Idb_ReplRequest.Start.Context, appBundleID: String?, requestStream: GRPCAsyncRequestStream<Idb_ReplRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_ReplResponse>) async throws {
+  private func serve(session: ReplSession, sharedFilesystem: Bool, context: Idb_ReplRequest.Start.Context, appBundleID: String?, requestStream: SingleIteratorRequestStream<GRPCAsyncRequestStream<Idb_ReplRequest>>, responseStream: GRPCAsyncResponseStreamWriter<Idb_ReplResponse>) async throws {
     // Per-session scratch directory for the dylibs received over the wire. It
     // lives on the host filesystem, which the simulator process can read.
     let scratchDirectory = (NSTemporaryDirectory() as NSString).appendingPathComponent("idb_repl_\(UUID().uuidString)")
@@ -126,7 +130,7 @@ struct ReplMethodHandler {
     let dispatcher = HostCommandDispatcher(commandExecutor: commandExecutor, state: hostState, recordingCoordinator: recordingCoordinator, appBundleID: appBundleID)
 
     var runIndex = 0
-    bridge: for try await request in requestStream {
+    bridge: while let request = try await requestStream.next() {
       switch request.control {
       case .start:
         throw GRPCStatus(code: .failedPrecondition, message: "repl session already started")

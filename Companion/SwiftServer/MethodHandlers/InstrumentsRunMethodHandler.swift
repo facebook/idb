@@ -22,12 +22,17 @@ struct InstrumentsRunMethodHandler {
   func handle(requestStream: GRPCAsyncRequestStream<Idb_InstrumentsRunRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_InstrumentsRunResponse>, context: GRPCAsyncServerCallContext) async throws {
     @Atomic var finishedWriting = false
 
-    guard case let .start(start) = try await requestStream.requiredNext.control
+    // Read every request frame through one owned iterator: grpc-swift's
+    // request stream traps if a second AsyncIterator is created, and this
+    // handler reads more than one frame.
+    let stream = SingleIteratorRequestStream(requestStream)
+
+    guard case let .start(start) = try await stream.requiredNext.control
     else { throw GRPCStatus(code: .failedPrecondition, message: "Expected start control") }
 
     let operation = try await startInstrumentsOperation(request: start, responseStream: responseStream, finishedWriting: _finishedWriting)
 
-    guard case let .stop(stop) = try await requestStream.requiredNext.control
+    guard case let .stop(stop) = try await stream.requiredNext.control
     else { throw GRPCStatus(code: .failedPrecondition, message: "Expected end control") }
 
     try await stopInstruments(operation: operation, request: stop, responseStream: responseStream, finishedWriting: _finishedWriting)

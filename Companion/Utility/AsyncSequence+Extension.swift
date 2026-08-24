@@ -23,6 +23,12 @@ extension AsyncSequence {
 
   /// We have quite a lot of grpc request streams where we read request N constant number of times and do not need foreach loop. But pure next produces optinal by design.
   /// This small tweak just saves us from lots of boilerplate of unwrapping the optionals everywhere
+  ///
+  /// - Warning: this reads via `first(where:)`, which creates a *new*
+  ///   `AsyncIterator` on every call. `GRPCAsyncRequestStream` fatal-errors if a
+  ///   second iterator is ever created, so this must be called at most once per
+  ///   request stream. Handlers that read more than one frame must wrap the
+  ///   stream in a `SingleIteratorRequestStream` and read through that instead.
   var requiredNext: Element {
     get async throws {
       guard let next = try await first(where: { _ in true }) else {

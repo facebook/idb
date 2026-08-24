@@ -15,9 +15,13 @@ struct AddMediaMethodHandler {
   let commandExecutor: FBIDBCommandExecutor
 
   func handle(requestStream: GRPCAsyncRequestStream<Idb_AddMediaRequest>, context: GRPCAsyncServerCallContext) async throws -> Idb_AddMediaResponse {
+    // grpc-swift traps if a second AsyncIterator is created; read every
+    // request frame through one owned iterator.
+    let stream = SingleIteratorRequestStream(requestStream)
+
     let extractedFileURLs =
       try await MultisourceFileReader
-      .filePathURLs(from: requestStream, temporaryDirectory: commandExecutor.temporaryDirectory, extractFromSubdir: true)
+      .filePathURLs(from: stream, temporaryDirectory: commandExecutor.temporaryDirectory, extractFromSubdir: true)
 
     try await commandExecutor.add_media(extractedFileURLs)
     return .init()

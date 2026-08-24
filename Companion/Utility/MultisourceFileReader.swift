@@ -13,9 +13,9 @@ import IDBGRPCSwift
 
 enum MultisourceFileReader {
 
-  static func filePathURLs<Request: PayloadExtractable>(from requestStream: GRPCAsyncRequestStream<Request>, temporaryDirectory: FBTemporaryDirectory, extractFromSubdir: Bool) async throws -> [URL] {
+  static func filePathURLs<Request: PayloadExtractable>(from requestStream: SingleIteratorRequestStream<GRPCAsyncRequestStream<Request>>, temporaryDirectory: FBTemporaryDirectory, extractFromSubdir: Bool) async throws -> [URL] {
     func readNextPayload() async throws -> Idb_Payload {
-      guard let p = try await requestStream.requiredNext.extractPayload()
+      guard let p = try await requestStream.requiredNext.extractPayload()  // wrapper's single-iterator read
       else { throw GRPCStatus(code: .failedPrecondition, message: "Incorrect request. Expected payload") }
       return p
     }
@@ -59,10 +59,10 @@ enum MultisourceFileReader {
     }
   }
 
-  private static func filepathsFromStream<Request: PayloadExtractable>(initial: URL, requestStream: GRPCAsyncRequestStream<Request>) async throws -> [URL] {
+  private static func filepathsFromStream<Request: PayloadExtractable>(initial: URL, requestStream: SingleIteratorRequestStream<GRPCAsyncRequestStream<Request>>) async throws -> [URL] {
     var filePaths = [initial]
 
-    for try await request in requestStream {
+    while let request = try await requestStream.next() {
       guard let payload = request.extractPayload()
       else { throw GRPCStatus(code: .invalidArgument, message: "Unrecogized buffer frame. Expect payload, got \(request)") }
 
@@ -86,7 +86,7 @@ enum MultisourceFileReader {
   }
 
   // TODO: Do we really need multithreading here? Isnt we just fill the stream sequentially while read is blocked and only then read starts?
-  private static func pipeToInput<Request: PayloadExtractable>(initialData: Data, requestStream: GRPCAsyncRequestStream<Request>) -> (Task<Void, Error>, FBProcessInput<OutputStream>) {
+  private static func pipeToInput<Request: PayloadExtractable>(initialData: Data, requestStream: SingleIteratorRequestStream<GRPCAsyncRequestStream<Request>>) -> (Task<Void, Error>, FBProcessInput<OutputStream>) {
     let input = FBProcessInput<OutputStream>.fromStream()
     let stream = input.contents
 
@@ -97,7 +97,7 @@ enum MultisourceFileReader {
       var buffer = [UInt8](initialData)
       stream.write(&buffer, maxLength: buffer.count)
 
-      for try await request in requestStream {
+      while let request = try await requestStream.next() {
         guard let payload = request.extractPayload()
         else { throw GRPCStatus(code: .invalidArgument, message: "Unrecogized buffer frame. Expect payload, got \(request)") }
 
