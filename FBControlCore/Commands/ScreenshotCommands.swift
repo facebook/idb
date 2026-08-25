@@ -7,6 +7,17 @@
 
 import Foundation
 
+/// A screenshot format, matching the wire names accepted over the companion's API.
+public struct FBScreenshotFormat: RawRepresentable, Hashable, Sendable {
+  public let rawValue: String
+  public init(rawValue: String) {
+    self.rawValue = rawValue
+  }
+
+  public static let jpeg = FBScreenshotFormat(rawValue: "jpeg")
+  public static let png = FBScreenshotFormat(rawValue: "png")
+}
+
 public protocol ScreenshotCommands: AnyObject {
 
   func takeScreenshot(format: FBScreenshotFormat) async throws -> Data

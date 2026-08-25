@@ -9,7 +9,6 @@
 
 #import <FBControlCore/FBArchitecture.h>
 #import <FBControlCore/FBInstrumentsCommands.h>
-#import <FBControlCore/FBScreenshotCommands.h>
 #import <FBControlCore/FBiOSTargetConstants.h>
 
 @class FBDeviceType;
