@@ -32,7 +32,7 @@ final class FBAXBridgeReapTests: XCTestCase {
   }
 
   private func socketPath(_ name: String = String(UInt32.random(in: 0..<0xffff_ffff))) -> String {
-    "\(directory)/\(FBAXBridgeSocket.prefix)\(name)\(FBAXBridgeSocket.suffix)"
+    "\(directory)/\(name)\(FBAXBridgeSocket.suffix)"
   }
 
   /// A listener that answers one shutdown probe the way the guest does, then stops.
@@ -184,9 +184,11 @@ final class FBAXBridgeReapTests: XCTestCase {
     XCTAssertFalse(FileManager.default.fileExists(atPath: path))
   }
 
-  // A reap must not touch anything that is not ours, however tempting the directory looks.
-  func testUnrelatedFilesAreUntouched() throws {
-    let unrelated = "\(directory)/something-else.sock"
+  // A reap must not touch anything that is not ours. What answers "is it ours" is now the directory —
+  // we own it and put nothing else in it — so a filename no longer has to prove anything. The suffix
+  // is still checked, and is what keeps a reap off a file that is not a socket at all.
+  func testFilesThatAreNotSocketsAreUntouched() throws {
+    let unrelated = "\(directory)/something-else.txt"
     FileManager.default.createFile(atPath: unrelated, contents: Data())
 
     let summary = FBAXBridgeReap.reapIdleGuests(inDirectory: directory, probeTimeout: 1)
@@ -199,8 +201,7 @@ final class FBAXBridgeReapTests: XCTestCase {
   // nothing and says so cheerfully.
   func testTheTransportNamingIsRecognisedByTheReaper() {
     let path = FBAXBridgeSocket.path(forConnection: "ABC")
-    XCTAssertEqual(path, "/tmp/idb_axbridge_ABC.sock")
-    XCTAssertTrue(path.hasPrefix("\(FBAXBridgeSocket.directory)/\(FBAXBridgeSocket.prefix)"))
+    XCTAssertEqual(path, "\(FBAXBridgeSocket.directory)/ABC.sock")
     XCTAssertTrue(path.hasSuffix(FBAXBridgeSocket.suffix))
   }
 
@@ -208,18 +209,47 @@ final class FBAXBridgeReapTests: XCTestCase {
   // and unlinks the paths it finds there, and a predictable socket name in a directory anyone can write
   // to can be bound by somebody else first.
   func testTheSocketDirectoryIsPrivateToThisUser() throws {
+    try FBAXBridgeSocket.prepareDirectory()
     // `realpath` rather than `resolvingSymlinksInPath`, which deliberately leaves `/tmp` alone: on
-    // macOS that is a 0755 symlink to the 1777 directory actually holding the sockets, and it is the
+    // macOS that is a 0755 symlink to the 1777 directory that used to hold the sockets, and it is the
     // latter's mode that decides who can write there.
     let resolved = try XCTUnwrap(resolvingSymlinks(FBAXBridgeSocket.directory))
     let attributes = try FileManager.default.attributesOfItem(atPath: resolved)
     let permissions = try XCTUnwrap(attributes[.posixPermissions] as? NSNumber).uint16Value
-    // BUG: the guests live in a world-writable directory shared with every other process on the
-    // machine — flipped in the following commit. The mask is other-write alone, matching the claim:
-    // group-write would be a different and lesser problem.
-    XCTAssertNotEqual(
-      permissions & 0o002, 0,
+    XCTAssertEqual(
+      permissions & 0o077, 0,
       "dir=\(FBAXBridgeSocket.directory) resolved=\(resolved) mode=\(String(permissions, radix: 8))")
+  }
+
+  // A directory that is already there must still come out owner-only. `createDirectory` applies its
+  // attributes only when it creates something, so on the `/tmp` fallback another local user could
+  // pre-create `idb-ax` with a permissive mode and we would bind predictable socket names into it.
+  func testPreparingAnExistingLooseDirectoryTightensIt() throws {
+    let loose = "\(directory)/loose-idb-ax"
+    try FileManager.default.createDirectory(
+      atPath: loose, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o777])
+    try FileManager.default.setAttributes([.posixPermissions: 0o777], ofItemAtPath: loose)
+    XCTAssertEqual(try mode(of: loose), 0o777, "precondition: the directory starts world-writable")
+
+    try FBAXBridgeSocket.prepareDirectory(loose)
+
+    let tightened = try mode(of: loose)
+    XCTAssertEqual(tightened & 0o077, 0, "mode=\(String(tightened, radix: 8))")
+  }
+
+  private func mode(of path: String) throws -> UInt16 {
+    let attributes = try FileManager.default.attributesOfItem(atPath: path)
+    return try XCTUnwrap(attributes[.posixPermissions] as? NSNumber).uint16Value
+  }
+
+  // The directory has to be there before a spawn, because the guest binds into it and `bind` does not
+  // create intermediate directories. Asking twice must be fine — every spawn asks.
+  func testPreparingTheSocketDirectoryIsRepeatable() throws {
+    try FBAXBridgeSocket.prepareDirectory()
+    try FBAXBridgeSocket.prepareDirectory()
+    var isDirectory: ObjCBool = false
+    XCTAssertTrue(FileManager.default.fileExists(atPath: FBAXBridgeSocket.directory, isDirectory: &isDirectory))
+    XCTAssertTrue(isDirectory.boolValue)
   }
 
   private func resolvingSymlinks(_ path: String) -> String? {
@@ -230,15 +260,14 @@ final class FBAXBridgeReapTests: XCTestCase {
     return String(cString: resolved)
   }
 
-  // A bridge socket is recognised by a filename prefix because it shares a directory with unrelated
-  // files. Moving to a directory of our own is what removes the need for the prefix — and it has to be
-  // removed, because `sun_path` cannot afford both.
-  func testABridgeSocketIsRecognisedByItsFilename() {
-    // BUG: the directory is shared, so the prefix is load-bearing — flipped in the following commit.
-    XCTAssertFalse(FBAXBridgeSocket.prefix.isEmpty)
-    let occupied =
-      FBAXBridgeSocket.directory.count + FBAXBridgeSocket.prefix.count
-      + UUID().uuidString.count + FBAXBridgeSocket.suffix.count + 1
-    XCTAssertLessThan(occupied, 104, "a bridge socket path must fit in sun_path")
+  // Owning the directory is what pays for the name: no filename prefix is needed to tell our sockets
+  // apart from anyone else's, and `sun_path` could not have afforded a subdirectory and a prefix both.
+  //
+  // The headroom is small — six bytes on a stock layout — and over-running it is worse than an error,
+  // because `bind` truncates silently rather than failing, which would land two simulators on one
+  // socket. So this asserts the budget rather than trusting it.
+  func testABridgeSocketPathFitsInSunPath() {
+    let path = FBAXBridgeSocket.path(forConnection: UUID().uuidString)
+    XCTAssertLessThan(path.utf8.count, 104, "\(path) is \(path.utf8.count) bytes")
   }
 }

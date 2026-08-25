@@ -15,9 +15,67 @@ import Foundation
 /// disagreed with the transport about the naming would either miss every orphan or delete something
 /// that was never ours.
 enum FBAXBridgeSocket {
-  static let directory = "/tmp"
-  static let prefix = "idb_axbridge_"
   static let suffix = ".sock"
+
+  /// A directory of our own beneath the per-user temporary directory, owner-only.
+  ///
+  /// Private rather than `/tmp` for two reasons: the reaper probes and unlinks whatever it finds here,
+  /// which it should only ever do to a directory it owns; and a socket name anyone can predict is only
+  /// safe if nobody else can bind it first.
+  ///
+  /// Owning the directory is also what pays for the name. `sun_path` is 104 bytes and the per-user
+  /// temporary directory is 49 of them, so the old `idb_axbridge_` prefix plus a UUID no longer fits —
+  /// but the prefix only existed to pick our sockets out of a directory full of other people's files,
+  /// and here there are none.
+  static let directory: String = {
+    let base = userTemporaryDirectory()
+    return "\(base.hasSuffix("/") ? String(base.dropLast()) : base)/idb-ax"
+  }()
+
+  /// The per-user temporary directory, from `confstr` rather than `$TMPDIR`.
+  ///
+  /// `NSTemporaryDirectory()` reads the environment variable, which a build system, CI harness or
+  /// sandbox is free to set to anything. That is wrong here three times over: an arbitrary value can
+  /// overrun `sun_path`, it could point somewhere world-writable, and — worst, because it fails
+  /// silently — two host processes that disagree about the path would each spawn their own guest
+  /// instead of sharing one, losing the reuse with no error to notice. `confstr` answers from the uid,
+  /// so every process this user runs gets the same fixed-length answer.
+  private static func userTemporaryDirectory() -> String {
+    let size = confstr(_CS_DARWIN_USER_TEMP_DIR, nil, 0)
+    guard size > 0 else {
+      return "/tmp"
+    }
+    var buffer = [CChar](repeating: 0, count: size)
+    guard confstr(_CS_DARWIN_USER_TEMP_DIR, &buffer, size) == size else {
+      return "/tmp"
+    }
+    // `confstr` reports a size that includes the terminator, which has to come off before decoding.
+    return String(decoding: buffer.prefix { $0 != 0 }.map { UInt8(bitPattern: $0) }, as: UTF8.self)
+  }
+
+  /// Creates the socket directory if it is not already there, and makes sure it is owner-only. Called
+  /// before a spawn, because the guest binds into it and `bind` does not create intermediate
+  /// directories.
+  ///
+  /// The mode is applied after the fact rather than left to `createDirectory`, which honours its
+  /// `attributes` only when it actually creates something. That distinction matters on the `/tmp`
+  /// fallback: `/tmp` is world-writable, so another local user could pre-create `idb-ax` there with a
+  /// permissive mode, and a create call would return success on it without complaint — handing them a
+  /// directory we then bind predictable socket names into. Setting the mode every time closes that,
+  /// and throwing if it cannot be set fails closed rather than serving from a directory we do not
+  /// actually control.
+  static func prepareDirectory(_ path: String = directory) throws {
+    let manager = FileManager.default
+    try manager.createDirectory(
+      atPath: path,
+      withIntermediateDirectories: true,
+      attributes: [.posixPermissions: ownerOnlyPermissions]
+    )
+    try manager.setAttributes([.posixPermissions: ownerOnlyPermissions], ofItemAtPath: path)
+  }
+
+  /// `rwx` for the owner and nothing for anyone else.
+  static let ownerOnlyPermissions = 0o700
 
   /// The backlog the guest's `serve` loop listens with, mirrored here because the reaper's classification
   /// depends on it.
@@ -31,14 +89,18 @@ enum FBAXBridgeSocket {
   static let guestListenBacklog: Int32 = 16
 
   static func path(forConnection identifier: String) -> String {
-    "\(directory)/\(prefix)\(identifier)\(suffix)"
+    "\(directory)/\(identifier)\(suffix)"
   }
 
   /// Every path that looks like a bridge socket, whether or not anything is still listening on it.
   ///
+  /// The suffix is the whole test, because the directory is ours and holds nothing else. It used to
+  /// also require a filename prefix, which was how our sockets were told apart from everything else in
+  /// a shared `/tmp`.
+  ///
   /// Joined through a URL so a trailing or doubled separator in the caller's directory does not reach
-  /// the socket path. Deliberately not `standardizedFileURL`: that resolves symlinks, and on macOS
-  /// `/tmp` is one — a caller that asked about `/tmp` should be told about `/tmp`, not `/private/tmp`.
+  /// the socket path. Deliberately not `standardizedFileURL`: that resolves symlinks, so a caller who
+  /// asked about a path should be told about that path, not its resolved form.
   static func existingPaths(inDirectory directory: String = Self.directory) -> [String] {
     let base = URL(fileURLWithPath: directory, isDirectory: true)
     let contents =
@@ -52,7 +114,7 @@ enum FBAXBridgeSocket {
     return
       contents
       .map(\.lastPathComponent)
-      .filter { $0.hasPrefix(prefix) && $0.hasSuffix(suffix) }
+      .filter { $0.hasSuffix(suffix) }
       .sorted()
       .map { "\(trimmed)/\($0)" }
   }
@@ -101,12 +163,15 @@ public enum FBAXBridgeReap {
   ///
   /// Safe to call at any time, including while other sessions are reading — see the note above on why a
   /// busy guest cannot be reaped by mistake.
+  /// `nil` means the directory the transport spawns guests into, which is the only one a caller outside
+  /// this module can name — `FBAXBridgeSocket` is internal, so it cannot be spelled as a default here.
   @discardableResult
   public static func reapIdleGuests(
-    inDirectory directory: String = "/tmp",
+    inDirectory directory: String? = nil,
     probeTimeout: TimeInterval = defaultProbeTimeout,
     logger: (any FBControlCoreLogger)? = nil
   ) -> FBAXBridgeReapSummary {
+    let directory = directory ?? FBAXBridgeSocket.directory
     var shutDown: [String] = []
     var removed: [String] = []
     var busy: [String] = []

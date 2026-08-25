@@ -418,6 +418,8 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
     guard let helperPath = BundledResources.path(forItem: "SimulatorFrameworkBridge") else {
       throw FBAXBridgeError.bridgeUnavailable
     }
+    // The guest binds into this directory and `bind` will not create it.
+    try FBAXBridgeSocket.prepareDirectory()
     let socketPath = FBAXBridgeSocket.path(forConnection: UUID().uuidString)
     let io = FBProcessIO<AnyObject, AnyObject, AnyObject>.outputToDevNull()
     let configuration = FBProcessSpawnConfiguration(
