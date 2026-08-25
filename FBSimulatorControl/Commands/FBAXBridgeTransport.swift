@@ -411,6 +411,21 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
     }
   }
 
+  /// How long a guest this transport spawned may sit without traffic before reaping itself.
+  ///
+  /// The guest's historical default rather than a chosen number: nobody has measured how long real
+  /// sessions go between reads.
+  static let idleTimeoutSeconds = 300
+
+  /// The guest's argv for a spawn.
+  ///
+  /// The timeout is stated rather than left to the guest's default, because the two ship separately: the
+  /// guest lives in the companion's `Resources/` and a consumer may pin an older artifact. A guest
+  /// predating the flag ignores it, so this is safe to send to any of them.
+  static func serveArguments(socketPath: String, idleTimeoutSeconds: Int = idleTimeoutSeconds) -> [String] {
+    ["accessibility", "serve", socketPath, "--idle-timeout", "\(idleTimeoutSeconds)"]
+  }
+
   private static func establish(simulator: FBSimulator?) async throws -> FBAXBridgeConnection {
     guard let simulator else {
       throw FBWeakTargetError.simulator
@@ -424,7 +439,7 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
     let io = FBProcessIO<AnyObject, AnyObject, AnyObject>.outputToDevNull()
     let configuration = FBProcessSpawnConfiguration(
       launchPath: helperPath,
-      arguments: ["accessibility", "serve", socketPath],
+      arguments: serveArguments(socketPath: socketPath),
       environment: [:],
       io: io,
       mode: .default

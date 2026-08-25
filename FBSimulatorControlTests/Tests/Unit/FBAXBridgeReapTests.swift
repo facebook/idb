@@ -299,4 +299,16 @@ final class FBAXBridgeReapTests: XCTestCase {
   func testTheSunPathCapacityMatchesThePlatform() {
     XCTAssertEqual(FBAXBridgeConnection.sunPathCapacity, 104)
   }
+
+  func testASpawnNamesTheIdleTimeoutItWants() {
+    let arguments = FBAXBridgePersistentTransport.serveArguments(socketPath: "/x/y.sock")
+    XCTAssertEqual(
+      arguments,
+      ["accessibility", "serve", "/x/y.sock", "--idle-timeout", "\(FBAXBridgePersistentTransport.idleTimeoutSeconds)"])
+  }
+
+  func testASpawnCanAskForADifferentIdleTimeout() {
+    let arguments = FBAXBridgePersistentTransport.serveArguments(socketPath: "/x/y.sock", idleTimeoutSeconds: 7)
+    XCTAssertEqual(arguments, ["accessibility", "serve", "/x/y.sock", "--idle-timeout", "7"])
+  }
 }
