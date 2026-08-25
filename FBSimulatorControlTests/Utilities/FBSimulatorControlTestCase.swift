@@ -98,12 +98,12 @@ class FBSimulatorControlTestCase: XCTestCase {
     deviceSetPath = FBSimulatorControlTestCase.defaultDeviceSetPath
   }
 
-  override func tearDown() {
+  override func tearDown() async throws {
     // `control` is lazy: referencing it here would bootstrap FBSimulatorControl —
     // and shut down every booted simulator in the device set — for tests that
     // never touched a simulator. Only clean up if the test actually used it.
     if let control = _control {
-      _ = try? control.set.shutdownAll().await()
+      _ = try? await bridgeFBFuture(control.set.shutdownAll())
     }
     _control = nil
   }

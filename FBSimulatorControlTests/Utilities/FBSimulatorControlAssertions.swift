@@ -71,8 +71,8 @@ extension FBSimulatorControlTestCase {
     return control.set.createSimulator(with: configuration)
   }
 
-  func assertObtainsSimulator() -> FBSimulator? {
-    return try? assertObtainsSimulatorWithConfiguration(simulatorConfiguration).await()
+  func assertObtainsSimulator() async -> FBSimulator? {
+    return try? await bridgeFBFuture(assertObtainsSimulatorWithConfiguration(simulatorConfiguration))
   }
 
   func assertObtainsBootedSimulator() async -> FBSimulator? {
@@ -91,7 +91,7 @@ extension FBSimulatorControlTestCase {
   }
 
   func assertObtainsBootedSimulator(with configuration: FBSimulatorConfiguration, bootConfiguration: FBSimulatorBootConfiguration) async -> FBSimulator? {
-    guard let simulator = try? assertObtainsSimulatorWithConfiguration(configuration).await() else { return nil }
+    guard let simulator = try? await bridgeFBFuture(assertObtainsSimulatorWithConfiguration(configuration)) else { return nil }
     do {
       try await simulator.boot(bootConfiguration)
     } catch {

@@ -121,10 +121,10 @@ final class FBDeviceControlTransientTests: XCTestCase {
     XCTAssertTrue(nsError.localizedDescription.contains("42"))
   }
 
-  func testErrorFailFuture() {
+  func testErrorFailFuture() async {
     let future: FBFuture<AnyObject> = FBDeviceControlError.describe("future error").failFuture()
     do {
-      _ = try future.await()
+      _ = try await bridgeFBFuture(future)
       XCTFail("Expected future to throw")
     } catch {
       let nsError = error as NSError
