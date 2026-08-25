@@ -38,7 +38,7 @@ extension DefaultsModificationError: LocalizedError {
   var errorDescription: String? { description }
 }
 
-public class FBDefaultsModificationStrategy: NSObject {
+public class FBDefaultsModificationStrategy {
 
   // MARK: - Properties
 
@@ -48,7 +48,6 @@ public class FBDefaultsModificationStrategy: NSObject {
 
   required init(simulator: FBSimulator) {
     self.simulator = simulator
-    super.init()
   }
 
   // MARK: - Public Methods

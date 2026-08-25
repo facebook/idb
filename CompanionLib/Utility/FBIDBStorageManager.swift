@@ -78,7 +78,7 @@ public final class FBInstalledArtifact {
 
 // MARK: - FBIDBStorage
 
-public class FBIDBStorage: NSObject {
+public class FBIDBStorage {
   public let target: FBiOSTarget
   public let basePath: URL
   public let queue: DispatchQueue
@@ -89,7 +89,6 @@ public class FBIDBStorage: NSObject {
     self.basePath = basePath
     self.queue = queue
     self.logger = logger
-    super.init()
   }
 
   public func clean() throws {

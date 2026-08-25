@@ -7,7 +7,7 @@
 
 import Foundation
 
-public class FBSimulatorLaunchedApplication: NSObject, FBLaunchedApplication {
+public class FBSimulatorLaunchedApplication: FBLaunchedApplication, CustomStringConvertible {
 
   // MARK: - Properties
 
@@ -109,7 +109,6 @@ public class FBSimulatorLaunchedApplication: NSObject, FBLaunchedApplication {
           attachment.detach().chainReplace(future)
         }
       ).retyped(FBFuture<NSNull>.self)
-    super.init()
   }
 
   // MARK: - Private
@@ -140,9 +139,9 @@ public class FBSimulatorLaunchedApplication: NSObject, FBLaunchedApplication {
     return unsafeBitCast(future, to: FBFuture<NSNumber>.self)
   }
 
-  // MARK: - NSObject
+  // MARK: - CustomStringConvertible
 
-  public override var description: String {
+  public var description: String {
     "Application Operation \(configuration.description) | pid \(processIdentifier) | State \(applicationTerminated)"
   }
 }

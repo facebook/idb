@@ -25,7 +25,7 @@ public enum FBCodesignError: Error, LocalizedError {
   }
 }
 
-public class FBCodesignProvider: NSObject {
+public class FBCodesignProvider {
 
   // MARK: Properties
 
@@ -47,7 +47,6 @@ public class FBCodesignProvider: NSObject {
     self.identityName = identityName
     self.logger = logger
     self.queue = DispatchQueue(label: "com.facebook.fbcontrolcore.codesign", attributes: .concurrent)
-    super.init()
   }
 
   // MARK: Private

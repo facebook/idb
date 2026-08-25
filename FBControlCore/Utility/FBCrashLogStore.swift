@@ -9,7 +9,7 @@ import Foundation
 
 private let FBCrashLogAppeared = NSNotification.Name("FBCrashLogAppeared")
 
-public class FBCrashLogStore: NSObject {
+public class FBCrashLogStore {
 
   // MARK: Properties
 
@@ -29,7 +29,6 @@ public class FBCrashLogStore: NSObject {
     self.logger = logger
     self.ingestedCrashLogs = NSMutableDictionary()
     self.queue = DispatchQueue(label: "com.facebook.fbcontrolcore.crash_store")
-    super.init()
   }
 
   // MARK: Ingestion

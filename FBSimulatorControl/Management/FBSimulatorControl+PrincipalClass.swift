@@ -15,7 +15,7 @@ public final class FBSimulatorControl: NSObject {
   // MARK: - Properties
 
   @objc public var configuration: FBSimulatorControlConfiguration
-  @objc public let serviceContext: FBSimulatorServiceContext
+  public let serviceContext: FBSimulatorServiceContext
   @objc public let set: FBSimulatorSet
 
   // MARK: - Initializers

@@ -9,8 +9,7 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-@objc(FBSimulatorServiceContext)
-public final class FBSimulatorServiceContext: NSObject {
+public final class FBSimulatorServiceContext {
 
   // MARK: - Properties
 
@@ -21,12 +20,10 @@ public final class FBSimulatorServiceContext: NSObject {
   nonisolated(unsafe) private static var _sharedInstance: FBSimulatorServiceContext?
   private static let sharedLock = NSLock()
 
-  @objc
   public class func sharedServiceContext() throws -> FBSimulatorServiceContext {
     return try sharedServiceContext(withLogger: FBControlCoreGlobalConfiguration.defaultLogger)
   }
 
-  @objc(sharedServiceContextWithLogger:error:)
   public class func sharedServiceContext(withLogger logger: (any FBControlCoreLogger)?) throws -> FBSimulatorServiceContext {
     sharedLock.lock()
     defer { sharedLock.unlock() }
@@ -69,12 +66,10 @@ public final class FBSimulatorServiceContext: NSObject {
 
   private init(serviceContext: SimServiceContext) {
     self.serviceContext = serviceContext
-    super.init()
   }
 
   // MARK: - Public
 
-  @objc
   public func pathsOfAllDeviceSets() -> [String] {
     var deviceSetPaths: [String] = []
     if let deviceSets = serviceContext.allDeviceSets() as? [SimDeviceSet] {
@@ -85,17 +80,14 @@ public final class FBSimulatorServiceContext: NSObject {
     return deviceSetPaths
   }
 
-  @objc
   public func supportedRuntimes() -> [SimRuntime] {
     return (serviceContext.supportedRuntimes as? [SimRuntime]) ?? []
   }
 
-  @objc
   public func supportedDeviceTypes() -> [SimDeviceType] {
     return (serviceContext.supportedDeviceTypes as? [SimDeviceType]) ?? []
   }
 
-  @objc(createDeviceSetWithConfiguration:error:)
   public func createDeviceSet(with configuration: FBSimulatorControlConfiguration) throws -> SimDeviceSet {
     guard let deviceSetPath = configuration.deviceSetPath else {
       // defaultDeviceSetWithError: takes (id *) not (NSError **), so use the raw API
