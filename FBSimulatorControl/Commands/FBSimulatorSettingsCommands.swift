@@ -227,7 +227,7 @@ public final class FBSimulatorSettingsCommands {
       batteryState: &batteryState,
       batteryLevel: &batteryLevel,
       showNotCharging: &showNotCharging)
-    let override = FBStatusBarOverride()
+    var override = FBStatusBarOverride()
     override.timeString = timeString as String?
     override.dataNetworkType = dataNetworkType
     override.wiFiMode = wiFiMode

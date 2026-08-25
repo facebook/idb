@@ -10,7 +10,7 @@ import Foundation
 /// Represents a set of status bar overrides for deterministic screenshots.
 /// Non-nil NSNumber properties are applied as overrides; nil properties are left unchanged.
 /// All SimDevice status bar methods use raw NSInteger parameters (same as appearance/content size).
-public final class FBStatusBarOverride {
+public struct FBStatusBarOverride: Sendable {
 
   /// Display time string, e.g. "9:41".
   public var timeString: String?
