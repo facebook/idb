@@ -29,7 +29,7 @@ extension FBSimulatorNotificationError: LocalizedError {
   }
 }
 
-public final class FBSimulatorNotificationCommands: NSObject {
+public final class FBSimulatorNotificationCommands {
 
   // MARK: - Properties
 
@@ -43,7 +43,6 @@ public final class FBSimulatorNotificationCommands: NSObject {
 
   private init(simulator: FBSimulator) {
     self.simulator = simulator
-    super.init()
   }
 
   // MARK: - Private

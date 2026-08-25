@@ -21,7 +21,7 @@ public enum FBSimulatorLogError: Error, LocalizedError {
   }
 }
 
-public final class FBSimulatorLogCommands: NSObject {
+public final class FBSimulatorLogCommands {
 
   // MARK: - Properties
 
@@ -35,7 +35,6 @@ public final class FBSimulatorLogCommands: NSObject {
 
   private init(simulator: FBSimulator) {
     self.simulator = simulator
-    super.init()
   }
 
   // MARK: - Private

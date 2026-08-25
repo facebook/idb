@@ -68,7 +68,7 @@ extension FBSimulatorApplicationError: LocalizedError {
   }
 }
 
-public class FBSimulatorApplicationCommands: NSObject {
+public class FBSimulatorApplicationCommands {
 
   // MARK: - Properties
 
@@ -82,7 +82,6 @@ public class FBSimulatorApplicationCommands: NSObject {
 
   internal init(simulator: FBSimulator) {
     self.simulator = simulator
-    super.init()
   }
 
   // MARK: - Async

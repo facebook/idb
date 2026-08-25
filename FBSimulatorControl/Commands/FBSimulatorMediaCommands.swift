@@ -34,7 +34,7 @@ extension FBSimulatorMediaError: LocalizedError {
   }
 }
 
-public final class FBSimulatorMediaCommands: NSObject {
+public final class FBSimulatorMediaCommands {
 
   // MARK: - Properties
 
@@ -48,7 +48,6 @@ public final class FBSimulatorMediaCommands: NSObject {
 
   private init(simulator: FBSimulator) {
     self.simulator = simulator
-    super.init()
   }
 
   // MARK: - Private

@@ -35,7 +35,7 @@ extension FBSimulatorLifecycleError: LocalizedError {
   }
 }
 
-public final class FBSimulatorLifecycleCommands: NSObject {
+public final class FBSimulatorLifecycleCommands {
 
   // MARK: - Properties
 
@@ -50,7 +50,6 @@ public final class FBSimulatorLifecycleCommands: NSObject {
 
   private init(simulator: FBSimulator) {
     self.simulator = simulator
-    super.init()
   }
 
   // MARK: - Async

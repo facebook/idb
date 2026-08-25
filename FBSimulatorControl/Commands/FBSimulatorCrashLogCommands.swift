@@ -20,7 +20,7 @@ public enum FBSimulatorCrashLogError: Error, LocalizedError {
   }
 }
 
-public final class FBSimulatorCrashLogCommands: NSObject {
+public final class FBSimulatorCrashLogCommands {
 
   // MARK: - Properties
 
@@ -40,7 +40,6 @@ public final class FBSimulatorCrashLogCommands: NSObject {
   private init(simulator: FBSimulator, notifier: FBCrashLogNotifier) {
     self.simulator = simulator
     self.notifier = notifier
-    super.init()
   }
 
   // MARK: - Private

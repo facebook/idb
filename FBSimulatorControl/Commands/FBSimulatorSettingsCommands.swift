@@ -121,7 +121,7 @@ extension FBSimulatorSettingsError: LocalizedError {
   }
 }
 
-public final class FBSimulatorSettingsCommands: NSObject {
+public final class FBSimulatorSettingsCommands {
 
   // MARK: - Properties
 
@@ -135,7 +135,6 @@ public final class FBSimulatorSettingsCommands: NSObject {
 
   internal init(simulator: FBSimulator) {
     self.simulator = simulator
-    super.init()
   }
 
   // The command's simulator reference is weak; resolve it or fail uniformly across the settings ops.

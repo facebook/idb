@@ -47,7 +47,7 @@ extension FBSimulatorLaunchCtlError: LocalizedError {
   }
 }
 
-public final class FBSimulatorLaunchCtlCommands: NSObject {
+public final class FBSimulatorLaunchCtlCommands {
 
   // MARK: - Properties
 
@@ -69,7 +69,6 @@ public final class FBSimulatorLaunchCtlCommands: NSObject {
 
   private init(simulator: FBSimulator) {
     self.simulator = simulator
-    super.init()
   }
 
   // MARK: - Services
@@ -143,7 +142,6 @@ public final class FBSimulatorLaunchCtlCommands: NSObject {
 
   // MARK: - Helpers
 
-  @objc
   public class func extractApplicationBundleIdentifier(fromServiceName serviceName: String) -> String? {
     guard let marker = serviceName.range(of: "UIKitApplication:") else {
       return nil

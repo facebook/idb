@@ -21,7 +21,7 @@ public enum FBSimulatorMemoryError: Error, LocalizedError {
   }
 }
 
-public final class FBSimulatorMemoryCommands: NSObject {
+public final class FBSimulatorMemoryCommands {
 
   // MARK: - Properties
 
@@ -35,7 +35,6 @@ public final class FBSimulatorMemoryCommands: NSObject {
 
   private init(simulator: FBSimulator) {
     self.simulator = simulator
-    super.init()
   }
 
   // MARK: - Private

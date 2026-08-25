@@ -37,7 +37,7 @@ extension FBSimulatorScreenshotError: LocalizedError {
   }
 }
 
-public final class FBSimulatorScreenshotCommands: NSObject {
+public final class FBSimulatorScreenshotCommands {
 
   // MARK: - Properties
 
@@ -52,7 +52,6 @@ public final class FBSimulatorScreenshotCommands: NSObject {
 
   private init(simulator: FBSimulator) {
     self.simulator = simulator
-    super.init()
   }
 
   // MARK: - Private

@@ -45,7 +45,7 @@ extension FBSimulatorXCTestError: LocalizedError {
   }
 }
 
-public final class FBSimulatorXCTestCommands: NSObject {
+public final class FBSimulatorXCTestCommands {
 
   // MARK: - Properties
 
@@ -60,7 +60,6 @@ public final class FBSimulatorXCTestCommands: NSObject {
 
   private init(simulator: FBSimulator) {
     self.simulator = simulator
-    super.init()
   }
 
   // MARK: - testmanagerd transport
@@ -116,7 +115,6 @@ public final class FBSimulatorXCTestCommands: NSObject {
     return socketFD
   }
 
-  @objc
   public var xctestPath: String {
     (FBXcodeConfiguration.developerDirectory as NSString)
       .appendingPathComponent("Platforms/iPhoneSimulator.platform/Developer/Library/Xcode/Agents/xctest")
