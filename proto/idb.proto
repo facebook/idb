@@ -223,11 +223,77 @@ message InstallResponse {
   double progress = 3;
 }
 
-message ScreenshotRequest {}
+message ScreenshotRequest {
+  enum Format {
+    PNG = 0;
+    JPEG = 1;
+    TIFF = 2;
+  }
+  // The unit that `crop` and `fit` are expressed in. POINTS is the coordinate
+  // space that tap, swipe and describe already use; it is resolved to pixels
+  // on the companion, which is the only side that knows the screen scale.
+  enum Unit {
+    PIXELS = 0;
+    POINTS = 1;
+  }
+  // Top-left origin, matching the tap/swipe coordinate space. A rect that
+  // partially overhangs the screen is clamped; the response reports the
+  // dimensions actually captured.
+  message Rect {
+    double x = 1;
+    double y = 2;
+    double width = 3;
+    double height = 4;
+  }
+  // Bounding box the image is scaled to fit inside. One factor is applied to
+  // both axes and the image is never upscaled, so the aspect ratio is
+  // preserved to within the rounding of each side to a whole pixel -- a few
+  // percent on a very small image. 0 means "unbounded" on that axis; when both
+  // are set, the more restrictive bound wins.
+  message Fit {
+    uint32 max_width = 1;
+    uint32 max_height = 2;
+  }
+
+  Format format = 1;
+  // Lossy formats only; 0 means "server default" (0.8), as in
+  // VideoStreamRequest. Setting this on PNG or TIFF is an INVALID_ARGUMENT
+  // error rather than a no-op.
+  double compression_quality = 2;
+  // Unset captures the full screen.
+  Rect crop = 3;
+  // Transforms are applied crop -> scale -> encode, so the scaler never
+  // touches pixels that are about to be discarded.
+  oneof scale {
+    // In (0, 1].
+    double scale_factor = 4;
+    Fit fit = 5;
+  }
+  Unit unit = 6;
+}
 
 message ScreenshotResponse {
+  // Pixels. A measurement is never legitimately 0, so 0 on either axis is the
+  // companion saying it did not report one rather than an image of no height.
+  message Size {
+    uint32 width = 1;
+    uint32 height = 2;
+  }
+
   bytes image_data = 1;
+  // One of "png", "jpeg" or "tiff". Declared since this message was written
+  // but never populated before the request gained fields. A companion that
+  // leaves this empty predates that change and has silently ignored every
+  // field of ScreenshotRequest.
   string image_format = 2;
+  // Dimensions of image_data, after crop and scale.
+  Size destination = 3;
+  // Dimensions of the native capture, before crop and scale.
+  Size source = 4;
+  // Pixels per point, so a client can convert between the two units itself.
+  // 0 when the target does not report a screen scale, which is also when a
+  // request in POINTS is rejected.
+  double screen_scale = 5;
 }
 
 message FocusRequest {}
