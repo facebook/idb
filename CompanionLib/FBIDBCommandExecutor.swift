@@ -180,6 +180,10 @@ public final class FBIDBCommandExecutor {
     try await target.takeScreenshot(format: format)
   }
 
+  public func take_screenshot(_ configuration: FBScreenshotConfiguration) async throws -> FBScreenshotResult {
+    try await target.takeScreenshot(configuration: configuration)
+  }
+
   public func accessibility_tap(label: String) async throws {
     guard let simulator = target as? FBSimulator else {
       throw FBIDBCommandError.simulatorOnlyOperation(operation: "tap by accessibility label", targetDescription: String(describing: target))

@@ -9,26 +9,6 @@ import CoreImage
 @preconcurrency import FBControlCore
 import Foundation
 @preconcurrency import IOSurface
-import ImageIO
-import UniformTypeIdentifiers
-
-/// The ways image encoding can fail, as data rather than assembled strings.
-public enum FBSimulatorImageError: Error, LocalizedError {
-  case noImage
-  case destinationCreationFailed
-  case finalizationFailed
-
-  public var errorDescription: String? {
-    switch self {
-    case .noImage:
-      return "No Image available to encode"
-    case .destinationCreationFailed:
-      return "Could not create image destination"
-    case .finalizationFailed:
-      return "Could not finalize the creation of the Image"
-    }
-  }
-}
 
 public actor FBSimulatorImage {
 
@@ -65,14 +45,6 @@ public actor FBSimulatorImage {
     return imageGenerator.image()
   }
 
-  public func jpegImageData() throws -> Data {
-    try FBSimulatorImage.jpegImageData(from: image())
-  }
-
-  public func pngImageData() throws -> Data {
-    try FBSimulatorImage.pngImageData(from: image())
-  }
-
   // MARK: - Private
 
   /// One-time lazy attach; actor isolation makes this attach-exactly-once regardless of caller
@@ -103,31 +75,5 @@ public actor FBSimulatorImage {
 
   private func applySurface(_ surface: IOSurface?) {
     imageGenerator.updateSurface(surface)
-  }
-
-  // MARK: - Encoding
-
-  private static func jpegImageData(from image: CGImage?) throws -> Data {
-    try imageData(from: image, type: .jpeg)
-  }
-
-  private static func pngImageData(from image: CGImage?) throws -> Data {
-    try imageData(from: image, type: .png)
-  }
-
-  private static func imageData(from image: CGImage?, type: UTType) throws -> Data {
-    guard let image else {
-      throw FBSimulatorImageError.noImage
-    }
-
-    let data = NSMutableData()
-    guard let destination = CGImageDestinationCreateWithData(data as CFMutableData, type.identifier as CFString, 1, nil) else {
-      throw FBSimulatorImageError.destinationCreationFailed
-    }
-    CGImageDestinationAddImage(destination, image, nil)
-    if !CGImageDestinationFinalize(destination) {
-      throw FBSimulatorImageError.finalizationFailed
-    }
-    return data as Data
   }
 }

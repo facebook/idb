@@ -20,5 +20,44 @@ public struct FBScreenshotFormat: RawRepresentable, Hashable, Sendable {
 
 public protocol ScreenshotCommands: AnyObject {
 
-  func takeScreenshot(format: FBScreenshotFormat) async throws -> Data
+  /// Captures the screen as `configuration` describes.
+  func takeScreenshot(configuration: FBScreenshotConfiguration) async throws -> FBScreenshotResult
+}
+
+public extension ScreenshotCommands {
+
+  /// Captures the whole screen at its native resolution.
+  func takeScreenshot(format: FBScreenshotFormat) async throws -> Data {
+    let configuration = FBScreenshotConfiguration(encoding: try FBScreenshotEncoding(format: format))
+    return try await takeScreenshot(configuration: configuration).imageData
+  }
+}
+
+/// The ways the Objective-C format constants can fail to name an encoding.
+public enum FBScreenshotFormatError: Error, Hashable {
+  case unrecognizedFormat(String)
+}
+
+extension FBScreenshotFormatError: LocalizedError {
+  public var errorDescription: String? {
+    switch self {
+    case let .unrecognizedFormat(format):
+      return "\(format) is not a recognized screenshot format"
+    }
+  }
+}
+
+public extension FBScreenshotEncoding {
+
+  /// Bridges the Objective-C format constants, which name a container but carry no encoder options.
+  init(format: FBScreenshotFormat) throws {
+    switch format {
+    case .png:
+      self = .png
+    case .jpeg:
+      self = .jpeg(quality: Self.defaultJPEGQuality)
+    default:
+      throw FBScreenshotFormatError.unrecognizedFormat(format.rawValue)
+    }
+  }
 }

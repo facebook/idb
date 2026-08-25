@@ -126,7 +126,7 @@ extension FBMacDevice: LogCommands {
 
 extension FBMacDevice: ScreenshotCommands {
 
-  public func takeScreenshot(format: FBScreenshotFormat) async throws -> Data {
+  public func takeScreenshot(configuration: FBScreenshotConfiguration) async throws -> FBScreenshotResult {
     throw macUnsupported("takeScreenshot")
   }
 }

@@ -39,11 +39,23 @@ public class FBDeviceScreenshotCommands {
 
   // MARK: - Async
 
-  fileprivate func takeScreenshotAsync(_ format: FBScreenshotFormat) async throws -> Data {
+  fileprivate func takeScreenshotAsync(configuration: FBScreenshotConfiguration) async throws -> FBScreenshotResult {
     guard let device else {
       throw FBDeviceNilError.deviceNil
     }
-    return try await withFBFutureContext(device.startDeviceLinkService("com.apple.mobile.screenshotr")) { client in
+    let captured = try await capture(from: device)
+    // A device hands back a finished image file rather than a framebuffer, so any crop or scale is
+    // applied to the decoded image. A request for the whole screen as PNG -- which is what the
+    // device already sent -- skips the round trip entirely.
+    return try FBScreenshotRenderer.render(
+      encoded: captured,
+      configuration: configuration,
+      screenScale: device.screenInfo.map { Double($0.scale) }
+    )
+  }
+
+  private func capture(from device: FBDevice) async throws -> Data {
+    try await withFBFutureContext(device.startDeviceLinkService("com.apple.mobile.screenshotr")) { client in
       let response = try await bridgeFBFuture(client.processMessage(["MessageType": "ScreenShotRequest"]))
       guard let screenshotData = response[ScreenShotDataKey] as? NSData else {
         throw FBDeviceScreenshotError.notImageData(response: String(describing: response), key: ScreenShotDataKey)
@@ -57,7 +69,7 @@ public class FBDeviceScreenshotCommands {
 
 extension FBDevice: ScreenshotCommands {
 
-  public func takeScreenshot(format: FBScreenshotFormat) async throws -> Data {
-    try await screenshotCommands().takeScreenshotAsync(format)
+  public func takeScreenshot(configuration: FBScreenshotConfiguration) async throws -> FBScreenshotResult {
+    try await screenshotCommands().takeScreenshotAsync(configuration: configuration)
   }
 }
