@@ -40,7 +40,7 @@ extension FBListTestError: LocalizedError {
   }
 }
 
-private final class FBListTestStrategy_ReporterWrapped: NSObject, FBXCTestRunner {
+private final class FBListTestStrategy_ReporterWrapped: FBXCTestRunner {
 
   let strategy: FBListTestStrategy
   let reporter: FBXCTestReporter
@@ -48,7 +48,6 @@ private final class FBListTestStrategy_ReporterWrapped: NSObject, FBXCTestRunner
   init(strategy: FBListTestStrategy, reporter: FBXCTestReporter) {
     self.strategy = strategy
     self.reporter = reporter
-    super.init()
   }
 
   func execute() -> FBFuture<NSNull> {

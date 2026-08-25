@@ -61,7 +61,7 @@ extension FBLogicTestRunError: LocalizedError {
   }
 }
 
-public final class FBLogicTestRunStrategy: NSObject, FBXCTestRunner {
+public final class FBLogicTestRunStrategy: FBXCTestRunner {
 
   private let target: FBiOSTarget & ProcessSpawnCommands & XCTestExtendedCommands
   private let configuration: FBLogicTestConfiguration
@@ -73,7 +73,6 @@ public final class FBLogicTestRunStrategy: NSObject, FBXCTestRunner {
     self.configuration = configuration
     self.reporter = reporter
     self.logger = logger
-    super.init()
   }
 
   // MARK: FBXCTestRunner

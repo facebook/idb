@@ -26,7 +26,7 @@ extension FBSimulatorReplError: LocalizedError {
   }
 }
 
-public final class FBSimulatorReplCommands: NSObject {
+public final class FBSimulatorReplCommands {
 
   // MARK: - Properties
 
@@ -40,7 +40,6 @@ public final class FBSimulatorReplCommands: NSObject {
 
   private init(simulator: FBSimulator) {
     self.simulator = simulator
-    super.init()
   }
 
   // MARK: - Async
@@ -227,7 +226,7 @@ extension FBSimulator: ReplCommands {
 
 /// A no-op logic-test reporter. REPL mode runs the shim's single test purely to
 /// host the control socket, so the normal test-reporting events are discarded.
-final class ReplNullReporter: NSObject, FBLogicXCTestReporter {
+final class ReplNullReporter: FBLogicXCTestReporter {
   func processWaitingForDebugger(withProcessIdentifier pid: pid_t) {}
   func didBeginExecutingTestPlan() {}
   func didFinishExecutingTestPlan() {}

@@ -7,21 +7,17 @@
 
 import Foundation
 
-@objc public protocol FBLogicXCTestReporter: NSObjectProtocol {
+public protocol FBLogicXCTestReporter: AnyObject {
 
-  @objc(processWaitingForDebuggerWithProcessIdentifier:)
   func processWaitingForDebugger(withProcessIdentifier pid: pid_t)
 
-  @objc func didBeginExecutingTestPlan()
+  func didBeginExecutingTestPlan()
 
-  @objc func didFinishExecutingTestPlan()
+  func didFinishExecutingTestPlan()
 
-  @objc(testHadOutput:)
   func testHadOutput(_ output: String)
 
-  @objc(handleEventJSONData:)
   func handleEventJSONData(_ data: Data)
 
-  @objc(didCrashDuringTest:)
   func didCrashDuringTest(_ error: Error)
 }

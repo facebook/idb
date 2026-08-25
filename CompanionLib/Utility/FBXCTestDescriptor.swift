@@ -10,7 +10,7 @@ import FBControlCore
 import Foundation
 import XCTestBootstrap
 
-@objc public protocol FBXCTestDescriptor: NSObjectProtocol {
+public protocol FBXCTestDescriptor: AnyObject {
   var url: URL { get }
   var name: String { get }
   var testBundleID: String { get }
@@ -66,7 +66,7 @@ extension FBXCTestDescriptorError: LocalizedError {
   }
 }
 
-public final class FBXCTestBootstrapDescriptor: NSObject, FBXCTestDescriptor {
+public final class FBXCTestBootstrapDescriptor: FBXCTestDescriptor, CustomStringConvertible {
 
   public let url: URL
   public let name: String
@@ -86,10 +86,9 @@ public final class FBXCTestBootstrapDescriptor: NSObject, FBXCTestDescriptor {
     self.url = url
     self.name = name
     self.testBundle = testBundle
-    super.init()
   }
 
-  public override var description: String {
+  public var description: String {
     "xctestbootstrap descriptor for \(url) \(name) \(testBundle)"
   }
 
@@ -208,7 +207,7 @@ public final class FBXCTestBootstrapDescriptor: NSObject, FBXCTestDescriptor {
 
 // MARK: - FBXCodebuildTestRunDescriptor
 
-public final class FBXCodebuildTestRunDescriptor: NSObject, FBXCTestDescriptor {
+public final class FBXCodebuildTestRunDescriptor: FBXCTestDescriptor, CustomStringConvertible {
 
   public let url: URL
   public let name: String
@@ -230,10 +229,9 @@ public final class FBXCodebuildTestRunDescriptor: NSObject, FBXCTestDescriptor {
     self.name = name
     self.testBundle = testBundle
     self.testHostBundle = testHostBundle
-    super.init()
   }
 
-  public override var description: String {
+  public var description: String {
     "xcodebuild descriptor for \(url) \(name) \(testBundle) \(testHostBundle)"
   }
 

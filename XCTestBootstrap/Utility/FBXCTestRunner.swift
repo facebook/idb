@@ -7,7 +7,7 @@
 
 import Foundation
 
-@objc public protocol FBXCTestRunner: NSObjectProtocol {
+public protocol FBXCTestRunner: AnyObject {
 
-  @objc func execute() -> FBFuture<NSNull>
+  func execute() -> FBFuture<NSNull>
 }

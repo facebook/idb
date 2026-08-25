@@ -8,7 +8,7 @@
 import FBControlCore
 import Foundation
 
-public final class FBLogicReporterAdapter: NSObject, FBLogicXCTestReporter {
+public final class FBLogicReporterAdapter: FBLogicXCTestReporter {
 
   private let reporter: FBXCTestReporter
   private let logger: FBControlCoreLogger?
@@ -16,7 +16,6 @@ public final class FBLogicReporterAdapter: NSObject, FBLogicXCTestReporter {
   public init(reporter: FBXCTestReporter, logger: FBControlCoreLogger?) {
     self.reporter = reporter
     self.logger = logger?.withName("FBLogicReporterAdapter") as (any FBControlCoreLogger)?
-    super.init()
   }
 
   // MARK: FBLogicXCTestReporter
