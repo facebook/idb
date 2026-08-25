@@ -285,6 +285,31 @@ static NSDictionary *FBAXTestsParse(NSData *data)
   XCTAssertEqual(FBAXBridgeServeBacklogForTesting(), 16);
 }
 
+#pragma mark - Idle timeout
+
+- (void)testAnIdleTimeoutOnTheCommandLineIsHonoured
+{
+  XCTAssertEqual(FBAXBridgeIdleTimeoutForTesting(@[@"--idle-timeout", @"45"], 300), 45);
+}
+
+// A host predating the flag lands here too: `serve` reads the socket path and ignores the rest of argv.
+- (void)testAServeWithNoIdleTimeoutUsesTheDefault
+{
+  XCTAssertEqual(FBAXBridgeIdleTimeoutForTesting(@[], 300), 300);
+  XCTAssertEqual(FBAXBridgeIdleTimeoutForTesting(@[@"--something-else", @"1"], 300), 300);
+  XCTAssertEqual(FBAXBridgeDefaultIdleTimeoutForTesting(), 300);
+}
+
+- (void)testAnUnusableIdleTimeoutFallsBackToTheDefault
+{
+  XCTAssertEqual(FBAXBridgeIdleTimeoutForTesting(@[@"--idle-timeout", @"0"], 300), 300);
+  XCTAssertEqual(FBAXBridgeIdleTimeoutForTesting(@[@"--idle-timeout", @"-5"], 300), 300);
+  XCTAssertEqual(FBAXBridgeIdleTimeoutForTesting(@[@"--idle-timeout", @"soon"], 300), 300);
+  XCTAssertEqual(FBAXBridgeIdleTimeoutForTesting(@[@"--idle-timeout", @"12x"], 300), 300);
+  // A flag with no value at all: the parser walks pairs, so there is nothing to read.
+  XCTAssertEqual(FBAXBridgeIdleTimeoutForTesting(@[@"--idle-timeout"], 300), 300);
+}
+
 #pragma mark - Modal detection
 
 // A SpringBoard system alert window anywhere in the tree marks a `system` modal. With no

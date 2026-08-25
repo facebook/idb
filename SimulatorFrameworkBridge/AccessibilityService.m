@@ -245,7 +245,11 @@ static const int kDefaultNodeBudget = 5000;
 // launchd domain, so it is parented to launchd_sim, not the host; there is no parent-death signal to
 // watch, hence an idle timeout. A live host that pauses longer is transparently re-spawned on its next
 // read, so this only ever costs a re-spawn, never correctness.
-static const int kIdleTimeoutSeconds = 300;
+//
+// Overridable per spawn via `--idle-timeout`. A host that names none gets this, as does one predating
+// the flag, since `serve` ignores argv it does not recognise.
+static const int kDefaultIdleTimeoutSeconds = 300;
+static NSString *const kFlagIdleTimeout = @"--idle-timeout";
 
 #pragma mark - AX client setup
 
@@ -1623,6 +1627,26 @@ static BOOL FBAXBridgeReadFully(int fd, void *buffer, size_t length)
   return YES;
 }
 
+// Lenient on purpose: an unusable value is a host bug, and a bridge that refuses to start or exits
+// immediately is harder to diagnose than one that logs what it ignored.
+static int FBAXBridgeIdleTimeoutFromArguments(NSArray<NSString *> *arguments, int fallback)
+{
+  for (NSUInteger i = 0; i + 1 < arguments.count; i += 2) {
+    if (![arguments[i] isEqualToString:kFlagIdleTimeout]) {
+      continue;
+    }
+    NSString *rawValue = arguments[i + 1];
+    NSScanner *scanner = [NSScanner scannerWithString:rawValue];
+    int seconds = 0;
+    if (![scanner scanInt:&seconds] || !scanner.isAtEnd || seconds <= 0) {
+      NSLog(@"[AccessibilityService] ignoring unusable %@ '%@'; using %ds", kFlagIdleTimeout, rawValue, fallback);
+      return fallback;
+    }
+    return seconds;
+  }
+  return fallback;
+}
+
 // Serves the transport-agnostic request handler over a Unix-domain socket so a host client can reuse
 // one warm process for many reads (the ~30x amortization). The framing is a 4-byte big-endian length
 // prefix followed by a JSON request/response object — the same envelope the oneshot path emits. The
@@ -1636,7 +1660,7 @@ static BOOL FBAXBridgeReadFully(int fd, void *buffer, size_t length)
 // re-`accept`s, allowing a reconnect. The host memoizes its transport per target, so that connection
 // lasts as long as the target does; the process is torn down when the host releases it, or reaped by
 // the idle timeout below if the host went away without doing so.
-static int FBAXBridgeServe(NSString *socketPath)
+static int FBAXBridgeServe(NSString *socketPath, int idleTimeoutSeconds)
 {
   int listenFd = socket(AF_UNIX, SOCK_STREAM, 0);
   if (listenFd < 0) {
@@ -1669,13 +1693,13 @@ static int FBAXBridgeServe(NSString *socketPath)
   // Warm the runtime up front so the first served request is already fast.
   NSString *warmupError = nil;
   FBAXBridgeSharedRuntime(&warmupError);
-  NSLog(@"[AccessibilityService] serving accessibility on %@", socketPath);
+  NSLog(@"[AccessibilityService] serving accessibility on %@ (idle timeout %ds)", socketPath, idleTimeoutSeconds);
 
   while (YES) {
     struct pollfd listenPoll = {.fd = listenFd, .events = POLLIN, .revents = 0};
-    int ready = poll(&listenPoll, 1, kIdleTimeoutSeconds * 1000);
+    int ready = poll(&listenPoll, 1, idleTimeoutSeconds * 1000);
     if (ready == 0) {
-      NSLog(@"[AccessibilityService] idle %ds with no client; exiting", kIdleTimeoutSeconds);
+      NSLog(@"[AccessibilityService] idle %ds with no client; exiting", idleTimeoutSeconds);
       break;  // reap this (likely orphaned) serve
     }
     if (ready < 0) {
@@ -1694,7 +1718,7 @@ static int FBAXBridgeServe(NSString *socketPath)
     // Bound the per-request wait too: a `recv` on a connected-but-idle client (or a dead host still
     // holding the socket) that blocks past the window fails, the inner loop breaks, and the outer
     // `poll` then reaps the serve if no new client arrives.
-    struct timeval recvTimeout = {.tv_sec = kIdleTimeoutSeconds, .tv_usec = 0};
+    struct timeval recvTimeout = {.tv_sec = idleTimeoutSeconds, .tv_usec = 0};
     setsockopt(connection, SOL_SOCKET, SO_RCVTIMEO, &recvTimeout, sizeof(recvTimeout));
     while (YES) {
       // A pool per request. `serve` never returns, so the process-lifetime pool `main` opens is never
@@ -1756,7 +1780,8 @@ int handleAccessibilityAction(NSString *action, NSArray<NSString *> *arguments)
       NSLog(@"[AccessibilityService] serve requires a socket path argument");
       return 1;
     }
-    return FBAXBridgeServe(socketPath);
+    NSArray<NSString *> *flags = [arguments subarrayWithRange:NSMakeRange(1, arguments.count - 1)];
+    return FBAXBridgeServe(socketPath, FBAXBridgeIdleTimeoutFromArguments(flags, kDefaultIdleTimeoutSeconds));
   }
 
   NSMutableDictionary<NSString *, id> *request = [NSMutableDictionary dictionary];
@@ -1811,6 +1836,16 @@ int handleAccessibilityAction(NSString *action, NSArray<NSString *> *arguments)
 int FBAXBridgeServeBacklogForTesting(void)
 {
   return kServeBacklog;
+}
+
+int FBAXBridgeIdleTimeoutForTesting(NSArray<NSString *> *arguments, int fallback)
+{
+  return FBAXBridgeIdleTimeoutFromArguments(arguments, fallback);
+}
+
+int FBAXBridgeDefaultIdleTimeoutForTesting(void)
+{
+  return kDefaultIdleTimeoutSeconds;
 }
 
 NSDictionary<NSString *, NSString *> *FBAXBridgeWireConstantsForTesting(void)

@@ -37,6 +37,20 @@ NSDictionary<NSString *, NSString *> *FBAXBridgeWireConstantsForTesting(void);
 int FBAXBridgeServeBacklogForTesting(void);
 
 /**
+ * How long a `serve` invocation will sit idle before exiting, given its trailing argv and the default to
+ * fall back on.
+ *
+ * Exposed because covering this otherwise means spawning a guest and waiting out the timeout.
+ */
+int FBAXBridgeIdleTimeoutForTesting(NSArray<NSString *> *arguments, int fallback);
+
+/**
+ * The idle timeout a `serve` gets when its host names none — which is also what a host predating
+ * `--idle-timeout` gets, since `serve` ignores argv it does not recognise.
+ */
+int FBAXBridgeDefaultIdleTimeoutForTesting(void);
+
+/**
  * Builds the fullscreen-modal descriptor for a built `XC_kAXXC*`-keyed attribute tree, or nil when
  * neither a system (`SBAlertItemWindow`) nor an app (`_UIAlertController*`) alert is present. The
  * descriptor carries `kind` (`system`/`app`), `elementType`, and an optional `label` — the same `modal`
