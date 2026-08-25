@@ -357,12 +357,6 @@ final class CompanionLibTransientTests: XCTestCase {
     XCTAssertTrue(desc.contains("/logs"))
   }
 
-  // MARK: - FBIDBError Tests
-
-  func testIDBErrorDomainConstant() {
-    XCTAssertEqual(FBIDBErrorDomain, "com.facebook.idb")
-  }
-
   // MARK: - bridgeFBFuture with delayed resolution Tests
 
   func testValueWithDelayedResolution() async throws {

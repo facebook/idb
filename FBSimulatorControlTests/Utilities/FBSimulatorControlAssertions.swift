@@ -62,7 +62,11 @@ extension FBSimulatorControlTestCase {
   func assertObtainsSimulatorWithConfiguration(_ configuration: FBSimulatorConfiguration) -> FBFuture<FBSimulator> {
     var error: NSError?
     if !CheckRuntimeRequirements(configuration, &error) {
-      return FBSimulatorError.describe("Configuration \(configuration) does not meet the runtime requirements with error \(String(describing: error))").failFuture() as! FBFuture<FBSimulator>
+      struct RuntimeRequirementsUnmet: Error, LocalizedError {
+        let message: String
+        var errorDescription: String? { message }
+      }
+      return FBFuture(error: RuntimeRequirementsUnmet(message: "Configuration \(configuration) does not meet the runtime requirements with error \(String(describing: error))"))
     }
     return control.set.createSimulator(with: configuration)
   }
