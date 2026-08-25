@@ -53,7 +53,7 @@ public final class FBiOSTargetScreenInfo: NSObject, NSCopying {
 // MARK: - FBDeviceType
 
 @objc(FBDeviceType)
-public final class FBDeviceType: NSObject, NSCopying {
+public final class FBDeviceType: NSObject, NSCopying, @unchecked Sendable {
 
   @objc public let model: FBDeviceModel
   @objc public let productTypes: Set<String>
@@ -127,7 +127,7 @@ public final class FBDeviceType: NSObject, NSCopying {
 // MARK: - FBOSVersion
 
 @objc(FBOSVersion)
-public final class FBOSVersion: NSObject, NSCopying {
+public final class FBOSVersion: NSObject, NSCopying, @unchecked Sendable {
 
   @objc public let name: FBOSVersionName
   @objc public let families: Set<NSNumber>
@@ -230,7 +230,7 @@ public final class FBiOSTargetConfiguration: NSObject {
 
   // MARK: Device Configurations
 
-  nonisolated(unsafe) private static let _deviceConfigurations: [FBDeviceType] = {
+  private static let _deviceConfigurations: [FBDeviceType] = {
     [
       FBDeviceType.iPhone(withModel: .modeliPhone4s, productType: "iPhone4,1", deviceArchitecture: .armv7),
       FBDeviceType.iPhone(withModel: .modeliPhone5, productTypes: ["iPhone5,1", "iPhone5,2"], deviceArchitecture: .armv7s),
@@ -331,7 +331,7 @@ public final class FBiOSTargetConfiguration: NSObject {
 
   // MARK: OS Configurations
 
-  nonisolated(unsafe) private static let _osConfigurations: [FBOSVersion] = {
+  private static let _osConfigurations: [FBOSVersion] = {
     [
       FBOSVersion.iOS(withName: .nameiOS_7_1),
       FBOSVersion.iOS(withName: .nameiOS_8_0),
@@ -426,7 +426,7 @@ public final class FBiOSTargetConfiguration: NSObject {
 
   // MARK: Class Properties
 
-  nonisolated(unsafe) private static let _nameToDevice: [FBDeviceModel: FBDeviceType] = {
+  private static let _nameToDevice: [FBDeviceModel: FBDeviceType] = {
     var dictionary = [FBDeviceModel: FBDeviceType]()
     for device in _deviceConfigurations {
       dictionary[device.model] = device
@@ -434,7 +434,7 @@ public final class FBiOSTargetConfiguration: NSObject {
     return dictionary
   }()
 
-  nonisolated(unsafe) private static let _productTypeToDevice: [String: FBDeviceType] = {
+  private static let _productTypeToDevice: [String: FBDeviceType] = {
     var dictionary = [String: FBDeviceType]()
     for device in _deviceConfigurations {
       for productType in device.productTypes {
@@ -444,7 +444,7 @@ public final class FBiOSTargetConfiguration: NSObject {
     return dictionary
   }()
 
-  nonisolated(unsafe) private static let _nameToOSVersion: [FBOSVersionName: FBOSVersion] = {
+  private static let _nameToOSVersion: [FBOSVersionName: FBOSVersion] = {
     var dictionary = [FBOSVersionName: FBOSVersion]()
     for os in _osConfigurations {
       dictionary[os.name] = os

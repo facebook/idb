@@ -42,7 +42,7 @@ extension FBDeveloperDiskImageError: LocalizedError {
 }
 
 @objc(FBDeveloperDiskImage)
-public class FBDeveloperDiskImage: NSObject {
+public final class FBDeveloperDiskImage: NSObject, @unchecked Sendable {
 
   // MARK: Properties
 
@@ -79,7 +79,7 @@ public class FBDeveloperDiskImage: NSObject {
     _cachedAllDiskImages
   }
 
-  nonisolated(unsafe) private static let _cachedAllDiskImages: [FBDeveloperDiskImage] = {
+  private static let _cachedAllDiskImages: [FBDeveloperDiskImage] = {
     let searchPath = (FBXcodeConfiguration.developerDirectory as NSString).appendingPathComponent("Platforms/iPhoneOS.platform/DeviceSupport")
     var images = allDiskImages(fromSearchPath: searchPath, xcodeVersion: FBXcodeConfiguration.xcodeVersion, logger: FBControlCoreGlobalConfiguration.defaultLogger)
     if let extraPath = ProcessInfo.processInfo.environment[ExtraDeviceSupportDirEnv] {
