@@ -270,4 +270,22 @@ final class FBAXBridgeReapTests: XCTestCase {
     let path = FBAXBridgeSocket.path(forConnection: UUID().uuidString)
     XCTAssertLessThan(path.utf8.count, 104, "\(path) is \(path.utf8.count) bytes")
   }
+
+  // What a caller is told when a socket path will not fit in `sun_path`. It cannot be connected to at
+  // all, so the only question is whether the message says why — and the budget is tight enough (six
+  // bytes) that somebody will eventually hit this.
+  func testAnOverLongSocketPathIsRejectedForItsLength() async throws {
+    let tooLong = "\(directory)/\(String(repeating: "x", count: 120)).sock"
+    XCTAssertGreaterThan(tooLong.utf8.count, 103)
+    do {
+      _ = try await FBAXBridgeConnection.connect(path: tooLong, timeout: 1)
+      XCTFail("connecting to a path that cannot fit in sun_path must not succeed")
+    } catch {
+      let message = error.localizedDescription
+      // BUG: the length check is silent, so the caller waits out the whole connect timeout and is then
+      // told the guest did not show up — flipped in the following commit.
+      XCTAssertTrue(message.contains("timed out connecting"), message)
+      XCTAssertFalse(message.contains("104"), message)
+    }
+  }
 }
