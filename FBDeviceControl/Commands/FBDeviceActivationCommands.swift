@@ -52,7 +52,7 @@ extension FBDeviceActivationError: LocalizedError {
   }
 }
 
-public class FBDeviceActivationCommands: NSObject {
+public class FBDeviceActivationCommands {
   private weak var device: FBDevice?
 
   // MARK: - Initializers
@@ -63,7 +63,6 @@ public class FBDeviceActivationCommands: NSObject {
 
   init(device: FBDevice) {
     self.device = device
-    super.init()
   }
 
   // MARK: - Activation

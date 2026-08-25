@@ -8,7 +8,7 @@
 import FBControlCore
 import Foundation
 
-public class FBDevicePowerCommands: NSObject {
+public class FBDevicePowerCommands {
   private weak var device: FBDevice?
 
   // MARK: - Initializers
@@ -19,7 +19,6 @@ public class FBDevicePowerCommands: NSObject {
 
   init(device: FBDevice) {
     self.device = device
-    super.init()
   }
 
   // MARK: - Private

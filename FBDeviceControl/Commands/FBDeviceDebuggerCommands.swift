@@ -36,7 +36,7 @@ extension FBDeviceDebuggerError: LocalizedError {
   }
 }
 
-public class FBDeviceDebuggerCommands: NSObject {
+public class FBDeviceDebuggerCommands {
   private weak var device: FBDevice?
 
   // MARK: - Initializers
@@ -47,7 +47,6 @@ public class FBDeviceDebuggerCommands: NSObject {
 
   init(device: FBDevice) {
     self.device = device
-    super.init()
   }
 
   // MARK: - Public

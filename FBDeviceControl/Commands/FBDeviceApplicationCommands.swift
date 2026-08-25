@@ -121,7 +121,7 @@ private class FBDeviceLaunchedApplication: FBLaunchedApplication {
 
 // MARK: - FBDeviceApplicationCommands
 
-public class FBDeviceApplicationCommands: NSObject {
+public class FBDeviceApplicationCommands {
   fileprivate weak var device: FBDevice?
   private let deltaUpdateDirectory: URL
 
@@ -135,7 +135,6 @@ public class FBDeviceApplicationCommands: NSObject {
   init(device: FBDevice, deltaUpdateDirectory: URL) {
     self.device = device
     self.deltaUpdateDirectory = deltaUpdateDirectory
-    super.init()
   }
 
   // MARK: - Async

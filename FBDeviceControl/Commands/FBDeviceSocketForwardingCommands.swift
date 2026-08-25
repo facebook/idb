@@ -37,7 +37,7 @@ extension FBDeviceSocketForwardingError: LocalizedError {
   }
 }
 
-public class FBDeviceSocketForwardingCommands: NSObject {
+public class FBDeviceSocketForwardingCommands {
   private(set) weak var device: FBDevice?
 
   // MARK: Initializers
@@ -48,7 +48,6 @@ public class FBDeviceSocketForwardingCommands: NSObject {
 
   init(device: FBDevice) {
     self.device = device
-    super.init()
   }
 
   // MARK: - Socket forwarding

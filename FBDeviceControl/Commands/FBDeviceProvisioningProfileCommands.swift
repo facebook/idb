@@ -34,7 +34,7 @@ extension FBDeviceProvisioningProfileError: LocalizedError {
   }
 }
 
-public class FBDeviceProvisioningProfileCommands: NSObject, ProvisioningProfileCommands {
+public class FBDeviceProvisioningProfileCommands: ProvisioningProfileCommands {
   private(set) weak var device: FBDevice?
 
   // MARK: Public
@@ -45,7 +45,6 @@ public class FBDeviceProvisioningProfileCommands: NSObject, ProvisioningProfileC
 
   public init(device: FBDevice) {
     self.device = device
-    super.init()
   }
 
   // MARK: ProvisioningProfileCommands

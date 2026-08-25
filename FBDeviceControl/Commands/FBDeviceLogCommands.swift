@@ -40,7 +40,7 @@ public class FBDeviceLogOperation: LogOperation {
 
 // MARK: - FBDeviceLogCommands
 
-public class FBDeviceLogCommands: NSObject {
+public class FBDeviceLogCommands {
   private weak var device: FBDevice?
 
   // MARK: - Initializers
@@ -51,7 +51,6 @@ public class FBDeviceLogCommands: NSObject {
 
   init(device: FBDevice) {
     self.device = device
-    super.init()
   }
 
   // MARK: - FBLogCommands

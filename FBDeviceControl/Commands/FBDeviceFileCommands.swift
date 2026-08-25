@@ -429,7 +429,7 @@ private class FBDeviceFileCommands_Symbols: AsyncFileContainer {
 
 // MARK: - FBDeviceFileCommands
 
-public class FBDeviceFileCommands: NSObject {
+public class FBDeviceFileCommands {
   private weak var device: FBDevice?
   private let afcCalls: AFCCalls
 
@@ -446,7 +446,6 @@ public class FBDeviceFileCommands: NSObject {
   init(device: FBDevice, afcCalls: AFCCalls) {
     self.device = device
     self.afcCalls = afcCalls
-    super.init()
   }
 
   // MARK: FBFileCommands

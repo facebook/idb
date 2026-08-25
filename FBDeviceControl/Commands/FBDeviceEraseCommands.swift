@@ -135,7 +135,7 @@ extension FBDeviceEraseError: LocalizedError {
   }
 }
 
-public final class FBDeviceEraseCommands: NSObject, EraseCommands {
+public final class FBDeviceEraseCommands: EraseCommands {
 
   private weak var device: FBDevice?
 
@@ -145,7 +145,6 @@ public final class FBDeviceEraseCommands: NSObject, EraseCommands {
 
   init(device: FBDevice) {
     self.device = device
-    super.init()
   }
 
   // MARK: EraseCommands

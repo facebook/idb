@@ -24,7 +24,7 @@ extension FBDeviceScreenshotError: LocalizedError {
   }
 }
 
-public class FBDeviceScreenshotCommands: NSObject {
+public class FBDeviceScreenshotCommands {
   private weak var device: FBDevice?
 
   // MARK: - Initializers
@@ -35,7 +35,6 @@ public class FBDeviceScreenshotCommands: NSObject {
 
   init(device: FBDevice) {
     self.device = device
-    super.init()
   }
 
   // MARK: - Async

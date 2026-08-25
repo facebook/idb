@@ -34,19 +34,17 @@ extension FBDeviceRecoveryError: LocalizedError {
   }
 }
 
-public class FBDeviceRecoveryCommands: NSObject {
+public class FBDeviceRecoveryCommands {
   private(set) weak var device: FBDevice?
 
   // MARK: Initializers
 
-  @objc
   public class func commands(with device: FBDevice) -> FBDeviceRecoveryCommands {
     FBDeviceRecoveryCommands(device: device)
   }
 
   init(device: FBDevice) {
     self.device = device
-    super.init()
   }
 
   // MARK: - Recovery

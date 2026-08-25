@@ -8,7 +8,7 @@
 import FBControlCore
 import Foundation
 
-public class FBDeviceLifecycleCommands: NSObject {
+public class FBDeviceLifecycleCommands {
   private weak var device: FBDevice?
 
   // MARK: - Initializers
@@ -19,7 +19,6 @@ public class FBDeviceLifecycleCommands: NSObject {
 
   init(device: FBDevice) {
     self.device = device
-    super.init()
   }
 
   // MARK: - Async

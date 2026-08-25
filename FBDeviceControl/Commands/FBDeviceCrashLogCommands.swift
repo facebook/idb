@@ -35,7 +35,7 @@ extension FBDeviceCrashLogError: LocalizedError {
   }
 }
 
-public class FBDeviceCrashLogCommands: NSObject {
+public class FBDeviceCrashLogCommands {
   private weak var device: FBDevice?
   private let store: FBCrashLogStore
   private var hasPerformedInitialIngestion: Bool = false
@@ -51,7 +51,6 @@ public class FBDeviceCrashLogCommands: NSObject {
   init(device: FBDevice, store: FBCrashLogStore) {
     self.device = device
     self.store = store
-    super.init()
   }
 
   // MARK: - FBCrashLogCommands (legacy FBFuture entry point)

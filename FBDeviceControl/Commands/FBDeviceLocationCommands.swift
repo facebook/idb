@@ -10,7 +10,7 @@ import Foundation
 
 private let StartCommand: UInt32 = 0x00000000
 
-public class FBDeviceLocationCommands: NSObject {
+public class FBDeviceLocationCommands {
   private weak var device: FBDevice?
 
   // MARK: - Initializers
@@ -21,7 +21,6 @@ public class FBDeviceLocationCommands: NSObject {
 
   init(device: FBDevice) {
     self.device = device
-    super.init()
   }
 
   // MARK: - Async

@@ -61,7 +61,7 @@ extension FBDeviceDiskImageError: LocalizedError {
   }
 }
 
-public class FBDeviceDeveloperDiskImageCommands: NSObject, DeveloperDiskImageCommands {
+public class FBDeviceDeveloperDiskImageCommands: DeveloperDiskImageCommands {
   private(set) weak var device: FBDevice?
 
   // MARK: Initializers
@@ -72,7 +72,6 @@ public class FBDeviceDeveloperDiskImageCommands: NSObject, DeveloperDiskImageCom
 
   init(device: FBDevice) {
     self.device = device
-    super.init()
   }
 
   // MARK: DeveloperDiskImageCommands
