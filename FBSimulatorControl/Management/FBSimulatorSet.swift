@@ -18,7 +18,6 @@ public final class FBSimulatorSet: NSObject, FBiOSTargetSet {
   @objc public let deviceSet: SimDeviceSet
   @objc public weak var delegate: (any FBiOSTargetSetDelegate)?
   @objc public let logger: any FBControlCoreLogger
-  @objc public let reporter: (any FBEventReporter)?
   @objc public let workQueue: DispatchQueue
   @objc public let asyncQueue: DispatchQueue
 
@@ -38,19 +37,18 @@ public final class FBSimulatorSet: NSObject, FBiOSTargetSet {
   /// - Parameter logger: nil means `FBControlCoreGlobalConfiguration.defaultLogger`, which is
   ///   os_log-only unless the `FBCONTROLCORE_LOGGING`/`FBCONTROLCORE_DEBUG_LOGGING` environment
   ///   variables are set — see its documentation. The resolved logger is stored non-optionally.
-  @objc(setWithConfiguration:deviceSet:delegate:logger:reporter:error:)
-  public class func set(withConfiguration configuration: FBSimulatorControlConfiguration, deviceSet: SimDeviceSet, delegate: (any FBiOSTargetSetDelegate)?, logger: (any FBControlCoreLogger)?, reporter: (any FBEventReporter)?) throws -> FBSimulatorSet {
+  @objc(setWithConfiguration:deviceSet:delegate:logger:error:)
+  public class func set(withConfiguration configuration: FBSimulatorControlConfiguration, deviceSet: SimDeviceSet, delegate: (any FBiOSTargetSetDelegate)?, logger: (any FBControlCoreLogger)?) throws -> FBSimulatorSet {
     let resolvedLogger = logger ?? FBControlCoreGlobalConfiguration.defaultLogger
     try FBSimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworks(resolvedLogger)
-    return FBSimulatorSet(configuration: configuration, deviceSet: deviceSet, delegate: delegate, logger: resolvedLogger, reporter: reporter)
+    return FBSimulatorSet(configuration: configuration, deviceSet: deviceSet, delegate: delegate, logger: resolvedLogger)
   }
 
-  private init(configuration: FBSimulatorControlConfiguration, deviceSet: SimDeviceSet, delegate: (any FBiOSTargetSetDelegate)?, logger: any FBControlCoreLogger, reporter: (any FBEventReporter)?) {
+  private init(configuration: FBSimulatorControlConfiguration, deviceSet: SimDeviceSet, delegate: (any FBiOSTargetSetDelegate)?, logger: any FBControlCoreLogger) {
     self.configuration = configuration
     self.deviceSet = deviceSet
     self.delegate = delegate
     self.logger = logger
-    self.reporter = reporter
     self.workQueue = DispatchQueue.main
     self.asyncQueue = DispatchQueue.global(qos: .default)
     self._allSimulators = []

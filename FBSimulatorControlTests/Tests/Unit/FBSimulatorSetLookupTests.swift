@@ -29,7 +29,7 @@ struct FBSimulatorSetLookupTests {
       device.runtime = runtime
       return device
     }
-    let configuration = FBSimulatorControlConfiguration(deviceSetPath: nil, logger: nil, reporter: nil)
+    let configuration = FBSimulatorControlConfiguration(deviceSetPath: nil, logger: nil)
     return CreateSimulatorSetWithFakeDeviceSetAndLogger(configuration, deviceSet, nil)
   }
 

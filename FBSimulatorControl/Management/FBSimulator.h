@@ -7,7 +7,6 @@
 
 #import <Foundation/Foundation.h>
 
-#import <CompanionUtilities/CompanionUtilities-Swift.h>
 #import <FBControlCore/FBControlCore.h>
 
 @protocol FBControlCoreLogger;
@@ -124,8 +123,8 @@ NS_SWIFT_SENDABLE
 @property (nonnull, nonatomic, readonly, strong) FBTargetCommandCache *commandCache;
 
 + (nonnull instancetype)fromSimDevice:(nonnull SimDevice *)device configuration:(nullable FBSimulatorConfiguration *)configuration set:(nonnull FBSimulatorSet *)set;
-- (nonnull instancetype)initWithDevice:(nonnull SimDevice *)device configuration:(nonnull FBSimulatorConfiguration *)configuration set:(nullable FBSimulatorSet *)set auxillaryDirectory:(nonnull NSString *)auxillaryDirectory logger:(nullable id<FBControlCoreLogger>)logger reporter:(nullable id<FBEventReporter>)reporter;
-- (nonnull instancetype)initWithDevice:(nonnull id)device logger:(nonnull id<FBControlCoreLogger>)logger reporter:(nonnull id<FBEventReporter>)reporter;
+- (nonnull instancetype)initWithDevice:(nonnull SimDevice *)device configuration:(nonnull FBSimulatorConfiguration *)configuration set:(nullable FBSimulatorSet *)set auxillaryDirectory:(nonnull NSString *)auxillaryDirectory logger:(nullable id<FBControlCoreLogger>)logger;
+- (nonnull instancetype)initWithDevice:(nonnull id)device logger:(nonnull id<FBControlCoreLogger>)logger;
 
 @end
 

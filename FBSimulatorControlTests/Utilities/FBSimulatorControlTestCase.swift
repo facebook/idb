@@ -29,11 +29,9 @@ class FBSimulatorControlTestCase: XCTestCase {
   var control: FBSimulatorControl {
     if _control == nil {
       let noLogger: (any FBControlCoreLogger)? = nil
-      let noReporter: (any FBEventReporter)? = nil
       let configuration = FBSimulatorControlConfiguration(
         deviceSetPath: deviceSetPath,
-        logger: noLogger,
-        reporter: noReporter
+        logger: noLogger
       )
       do {
         _control = try FBSimulatorControl.withConfiguration(configuration)

@@ -133,16 +133,16 @@ private func writeTargetToStdOut(_ target: FBiOSTargetInfo) {
   writeJSONToStdOut(FBiOSTargetDescription(target: target).asJSON)
 }
 
-private func simulatorSetWithPath(_ deviceSetPath: String?, logger: FBControlCoreLogger, reporter: FBEventReporter) throws -> FBSimulatorSet {
+private func simulatorSetWithPath(_ deviceSetPath: String?, logger: FBControlCoreLogger) throws -> FBSimulatorSet {
   // Give a more meaningful message if we can't load the frameworks.
   try FBSimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworks(logger)
-  let configuration = FBSimulatorControlConfiguration(deviceSetPath: deviceSetPath, logger: logger, reporter: reporter)
+  let configuration = FBSimulatorControlConfiguration(deviceSetPath: deviceSetPath, logger: logger)
   return try FBSimulatorControl.withConfiguration(configuration).set
 }
 
-private func simulatorSet(_ userDefaults: UserDefaults, logger: FBControlCoreLogger, reporter: FBEventReporter) throws -> FBSimulatorSet {
+private func simulatorSet(_ userDefaults: UserDefaults, logger: FBControlCoreLogger) throws -> FBSimulatorSet {
   let deviceSetPath = userDefaults.string(forKey: "-device-set-path")
-  return try simulatorSetWithPath(deviceSetPath, logger: logger, reporter: reporter)
+  return try simulatorSetWithPath(deviceSetPath, logger: logger)
 }
 
 /// How long a device-targeted invocation waits for MobileDevice to report a
@@ -206,12 +206,12 @@ private func awaitDevicePopulation(of set: FBDeviceSet, logger: FBControlCoreLog
   }
 }
 
-private func defaultTargetSets(_ userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBControlCoreLogger, reporter: FBEventReporter) async throws -> [FBiOSTargetSet] {
+private func defaultTargetSets(_ userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBControlCoreLogger) async throws -> [FBiOSTargetSet] {
   let only = userDefaults.string(forKey: "-only")
   if let only {
     if only.lowercased().contains("simulator") {
       logger.log("'--only' set for Simulators")
-      return [try simulatorSet(userDefaults, logger: logger, reporter: reporter)]
+      return [try simulatorSet(userDefaults, logger: logger)]
     }
     if only.lowercased().contains("device") {
       logger.log("'--only' set for Devices")
@@ -230,13 +230,13 @@ private func defaultTargetSets(_ userDefaults: UserDefaults, xcodeAvailable: Boo
   }
   logger.log("Providing targets across Simulator and Device sets.")
   return [
-    try simulatorSet(userDefaults, logger: logger, reporter: reporter),
+    try simulatorSet(userDefaults, logger: logger),
     try await deviceSet(logger, ecidFilter: nil),
   ]
 }
 
-private func targetForUDID(_ udid: String, userDefaults: UserDefaults, xcodeAvailable: Bool, warmUp: Bool, logger: FBControlCoreLogger, reporter: FBEventReporter) async throws -> FBiOSTarget {
-  let targetSets = try await defaultTargetSets(userDefaults, xcodeAvailable: xcodeAvailable, logger: logger, reporter: reporter)
+private func targetForUDID(_ udid: String, userDefaults: UserDefaults, xcodeAvailable: Bool, warmUp: Bool, logger: FBControlCoreLogger) async throws -> FBiOSTarget {
+  let targetSets = try await defaultTargetSets(userDefaults, xcodeAvailable: xcodeAvailable, logger: logger)
   return try FBiOSTargetProvider.target(withUDID: udid, targetSets: targetSets, warmUp: warmUp, logger: logger)
 }
 
@@ -249,8 +249,8 @@ private func deviceForECID(_ ecid: String, logger: FBControlCoreLogger) async th
   return devices[0]
 }
 
-private func resolveSimulator(_ udid: String, userDefaults: UserDefaults, logger: FBControlCoreLogger, reporter: FBEventReporter) async throws -> FBSimulator {
-  let set = try simulatorSet(userDefaults, logger: logger, reporter: reporter)
+private func resolveSimulator(_ udid: String, userDefaults: UserDefaults, logger: FBControlCoreLogger) async throws -> FBSimulator {
+  let set = try simulatorSet(userDefaults, logger: logger)
   let target = try FBiOSTargetProvider.target(withUDID: udid, targetSets: [set], warmUp: false, logger: logger)
   guard target is SimulatorLifecycleCommands, let simulator = target as? FBSimulator else {
     throw IDBCompanionError.simulatorLifecycleUnsupported(targetDescription: String(describing: target))
@@ -266,10 +266,10 @@ private func awaitTargetOffline(_ target: FBiOSTarget, logger: FBControlCoreLogg
   target.logger.log("Target is no longer booted, companion going offline")
 }
 
-private func runBoot(_ udid: String, userDefaults: UserDefaults, logger: FBControlCoreLogger, reporter: FBEventReporter) async throws {
+private func runBoot(_ udid: String, userDefaults: UserDefaults, logger: FBControlCoreLogger) async throws {
   let headless = userDefaults.bool(forKey: "-headless")
   let verifyBooted = userDefaults.object(forKey: "-verify-booted") == nil ? true : userDefaults.bool(forKey: "-verify-booted")
-  let simulator = try await resolveSimulator(udid, userDefaults: userDefaults, logger: logger, reporter: reporter)
+  let simulator = try await resolveSimulator(udid, userDefaults: userDefaults, logger: logger)
 
   // Boot the simulator with the options provided.
   var options = FBSimulatorBootConfiguration.default.options
@@ -316,32 +316,32 @@ private func runBoot(_ udid: String, userDefaults: UserDefaults, logger: FBContr
   }
 }
 
-private func runShutdown(_ udid: String, userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBControlCoreLogger, reporter: FBEventReporter) async throws {
-  let target = try await targetForUDID(udid, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, warmUp: false, logger: logger, reporter: reporter)
+private func runShutdown(_ udid: String, userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBControlCoreLogger) async throws {
+  let target = try await targetForUDID(udid, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, warmUp: false, logger: logger)
   guard let powerTarget = target as? any PowerCommands else {
     throw IDBCompanionError.shutdownUnsupported(targetDescription: String(describing: target))
   }
   try await powerTarget.shutdown()
 }
 
-private func runReboot(_ udid: String, userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBControlCoreLogger, reporter: FBEventReporter) async throws {
-  let target = try await targetForUDID(udid, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, warmUp: false, logger: logger, reporter: reporter)
+private func runReboot(_ udid: String, userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBControlCoreLogger) async throws {
+  let target = try await targetForUDID(udid, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, warmUp: false, logger: logger)
   guard let powerTarget = target as? any PowerCommands else {
     throw IDBCompanionError.rebootUnsupported(targetDescription: String(describing: target))
   }
   try await powerTarget.reboot()
 }
 
-private func runErase(_ udid: String, userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBControlCoreLogger, reporter: FBEventReporter) async throws {
-  let target = try await targetForUDID(udid, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, warmUp: false, logger: logger, reporter: reporter)
+private func runErase(_ udid: String, userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBControlCoreLogger) async throws {
+  let target = try await targetForUDID(udid, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, warmUp: false, logger: logger)
   guard let eraseTarget = target as? any EraseCommands else {
     throw IDBCompanionError.eraseUnsupported(targetDescription: String(describing: target))
   }
   try await eraseTarget.erase()
 }
 
-private func runDelete(_ udidOrAll: String, userDefaults: UserDefaults, logger: FBControlCoreLogger, reporter: FBEventReporter) async throws {
-  let set = try simulatorSet(userDefaults, logger: logger, reporter: reporter)
+private func runDelete(_ udidOrAll: String, userDefaults: UserDefaults, logger: FBControlCoreLogger) async throws {
+  let set = try simulatorSet(userDefaults, logger: logger)
   if udidOrAll.lowercased() == "all" {
     try await bridgeFBFutureVoid(set.deleteAll())
     return
@@ -352,8 +352,8 @@ private func runDelete(_ udidOrAll: String, userDefaults: UserDefaults, logger: 
   try await bridgeFBFutureVoid(set.delete(simulator))
 }
 
-private func runList(_ userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBControlCoreLogger, reporter: FBEventReporter) async throws {
-  let targetSets = try await defaultTargetSets(userDefaults, xcodeAvailable: xcodeAvailable, logger: logger, reporter: reporter)
+private func runList(_ userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBControlCoreLogger) async throws {
+  let targetSets = try await defaultTargetSets(userDefaults, xcodeAvailable: xcodeAvailable, logger: logger)
   var reportedCount: UInt = 0
   for targetSet in targetSets {
     for targetInfo in targetSet.allTargetInfos {
@@ -364,7 +364,7 @@ private func runList(_ userDefaults: UserDefaults, xcodeAvailable: Bool, logger:
   logger.log("Reported \(reportedCount) targets to stdout")
 }
 
-private func runCreate(_ create: String, userDefaults: UserDefaults, logger: FBControlCoreLogger, reporter: FBEventReporter) async throws {
+private func runCreate(_ create: String, userDefaults: UserDefaults, logger: FBControlCoreLogger) async throws {
   let parameters = create.components(separatedBy: ",")
   var config = try FBSimulatorConfiguration.defaultConfiguration()
   if parameters.count > 0 {
@@ -373,15 +373,15 @@ private func runCreate(_ create: String, userDefaults: UserDefaults, logger: FBC
   if parameters.count > 1 {
     config = config.withOSNamed(FBOSVersionName(rawValue: parameters[1]))
   }
-  let set = try simulatorSet(userDefaults, logger: logger, reporter: reporter)
+  let set = try simulatorSet(userDefaults, logger: logger)
   let simulator = try await set.createSimulatorAsync(with: config)
   writeTargetToStdOut(simulator)
 }
 
-private func runClone(_ udid: String, userDefaults: UserDefaults, logger: FBControlCoreLogger, reporter: FBEventReporter) async throws {
+private func runClone(_ udid: String, userDefaults: UserDefaults, logger: FBControlCoreLogger) async throws {
   let destinationSet = userDefaults.string(forKey: "-clone-destination-set")
-  let base = try await resolveSimulator(udid, userDefaults: userDefaults, logger: logger, reporter: reporter)
-  let destination = try simulatorSetWithPath(destinationSet, logger: logger, reporter: reporter)
+  let base = try await resolveSimulator(udid, userDefaults: userDefaults, logger: logger)
+  let destination = try simulatorSetWithPath(destinationSet, logger: logger)
   let cloned = try await bridgeFBFuture(base.set.cloneSimulator(base, toDeviceSet: destination))
   writeTargetToStdOut(cloned)
 }
@@ -401,8 +401,8 @@ private func runActivate(_ ecid: String, logger: FBControlCoreLogger) async thro
   try await device.activate()
 }
 
-private func runClean(_ udid: String, userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBIDBLogger, reporter: FBEventReporter) async throws {
-  let target = try await targetForUDID(udid, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, warmUp: true, logger: logger, reporter: reporter)
+private func runClean(_ udid: String, userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBIDBLogger) async throws {
+  let target = try await targetForUDID(udid, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, warmUp: true, logger: logger)
   let storageManager = try FBIDBStorageManager.manager(forTarget: target, logger: logger)
   let commandExecutor = try FBIDBCommandExecutor.commandExecutor(
     forTarget: target,
@@ -418,7 +418,7 @@ private func runCompanionServer(_ udid: String, userDefaults: UserDefaults, xcod
   let terminateOffline = userDefaults.bool(forKey: "-terminate-offline")
   let idleShutdownTime = userDefaults.string(forKey: "-idle-shutdown-time").flatMap(Double.init).flatMap { $0 > 0 ? $0 : nil }
 
-  let target = try await targetForUDID(udid, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, warmUp: true, logger: logger, reporter: reporter)
+  let target = try await targetForUDID(udid, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, warmUp: true, logger: logger)
 
   let addMetadataSel = NSSelectorFromString("addMetadata:")
   if (reporter as AnyObject).responds(to: addMetadataSel) {
@@ -514,8 +514,8 @@ private func runCompanionServer(_ udid: String, userDefaults: UserDefaults, xcod
   _ = try await Task.select(raceTasks).value
 }
 
-private func runNotifier(_ notify: String, userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBControlCoreLogger, reporter: FBEventReporter) async throws {
-  let targetSets = try await defaultTargetSets(userDefaults, xcodeAvailable: xcodeAvailable, logger: logger, reporter: reporter)
+private func runNotifier(_ notify: String, userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBControlCoreLogger) async throws {
+  let targetSets = try await defaultTargetSets(userDefaults, xcodeAvailable: xcodeAvailable, logger: logger)
   let notifier: FBiOSTargetStateChangeNotifier
   if notify == "stdout" {
     notifier = try FBiOSTargetStateChangeNotifier.notifierToStdOut(withTargetSets: targetSets, logger: logger)
@@ -533,7 +533,7 @@ private func runNotifier(_ notify: String, userDefaults: UserDefaults, xcodeAvai
   }
 }
 
-private func runForward(_ forward: String, userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBControlCoreLogger, reporter: FBEventReporter) async throws {
+private func runForward(_ forward: String, userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBControlCoreLogger) async throws {
   let components = forward.components(separatedBy: ":")
   if components.count != 2 {
     throw IDBCompanionError.invalidForwardArgument(argument: forward)
@@ -541,7 +541,7 @@ private func runForward(_ forward: String, userDefaults: UserDefaults, xcodeAvai
   let udid = components[0]
   let remotePort = Int32(components[1]) ?? 0
 
-  let target = try await targetForUDID(udid, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, warmUp: false, logger: logger, reporter: reporter)
+  let target = try await targetForUDID(udid, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, warmUp: false, logger: logger)
   guard let commands = target as? SocketForwardingCommands else {
     throw IDBCompanionError.socketForwardingUnsupported(targetDescription: String(describing: target))
   }
@@ -573,31 +573,31 @@ private func runSelectedCommand(_ userDefaults: UserDefaults, xcodeAvailable: Bo
     try await runCompanionServer(udid, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, logger: logger, reporter: reporter)
   } else if list != nil {
     logger.info().log("Listing")
-    try await runList(userDefaults, xcodeAvailable: xcodeAvailable, logger: logger, reporter: reporter)
+    try await runList(userDefaults, xcodeAvailable: xcodeAvailable, logger: logger)
   } else if let notify {
     logger.info().log("Notifying \(notify)")
-    try await runNotifier(notify, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, logger: logger, reporter: reporter)
+    try await runNotifier(notify, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, logger: logger)
   } else if let boot {
     logger.log("Booting \(boot)")
-    try await runBoot(boot, userDefaults: userDefaults, logger: logger, reporter: reporter)
+    try await runBoot(boot, userDefaults: userDefaults, logger: logger)
   } else if let shutdown {
     logger.info().log("Shutting down \(shutdown)")
-    try await runShutdown(shutdown, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, logger: logger, reporter: reporter)
+    try await runShutdown(shutdown, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, logger: logger)
   } else if let reboot {
     logger.info().log("Rebooting \(reboot)")
-    try await runReboot(reboot, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, logger: logger, reporter: reporter)
+    try await runReboot(reboot, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, logger: logger)
   } else if let erase {
     logger.info().log("Erasing \(erase)")
-    try await runErase(erase, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, logger: logger, reporter: reporter)
+    try await runErase(erase, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, logger: logger)
   } else if let deleteArg {
     logger.info().log("Deleting \(deleteArg)")
-    try await runDelete(deleteArg, userDefaults: userDefaults, logger: logger, reporter: reporter)
+    try await runDelete(deleteArg, userDefaults: userDefaults, logger: logger)
   } else if let create {
     logger.info().log("Creating \(create)")
-    try await runCreate(create, userDefaults: userDefaults, logger: logger, reporter: reporter)
+    try await runCreate(create, userDefaults: userDefaults, logger: logger)
   } else if let clone {
     logger.info().log("Cloning \(clone)")
-    try await runClone(clone, userDefaults: userDefaults, logger: logger, reporter: reporter)
+    try await runClone(clone, userDefaults: userDefaults, logger: logger)
   } else if let recover {
     logger.info().log("Putting \(recover) into recovery")
     try await runEnterRecovery(recover, logger: logger)
@@ -609,10 +609,10 @@ private func runSelectedCommand(_ userDefaults: UserDefaults, xcodeAvailable: Bo
     try await runActivate(activate, logger: logger)
   } else if let clean {
     logger.info().log("Cleaning \(clean)")
-    try await runClean(clean, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, logger: logger, reporter: reporter)
+    try await runClean(clean, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, logger: logger)
   } else if let forward {
     logger.info().log("Forwarding \(forward)")
-    try await runForward(forward, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, logger: logger, reporter: reporter)
+    try await runForward(forward, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, logger: logger)
   } else {
     throw IDBCompanionError.noModeOfOperation(usage: kUsageHelpMessage)
   }

@@ -29,8 +29,7 @@ public final class FBSimulatorControl: NSObject {
       withConfiguration: configuration,
       deviceSet: deviceSet,
       delegate: nil,
-      logger: configuration.logger.withName("simulator_set"),
-      reporter: configuration.reporter)
+      logger: configuration.logger.withName("simulator_set"))
     return FBSimulatorControl(configuration: configuration, serviceContext: serviceContext, set: set)
   }
 

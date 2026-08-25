@@ -26,7 +26,7 @@ struct FBSimulatorSetLoggerTests {
     device.runtime = runtime
     let deviceSet = FBSimulatorControlTests_SimDeviceSet_Double()
     deviceSet.availableDevices = [device]
-    let configuration = FBSimulatorControlConfiguration(deviceSetPath: nil, logger: nil, reporter: nil)
+    let configuration = FBSimulatorControlConfiguration(deviceSetPath: nil, logger: nil)
     return CreateSimulatorSetWithFakeDeviceSetAndLogger(configuration, deviceSet, logger)
   }
 

@@ -33,14 +33,6 @@
 
 @end
 
-// Minimal reporter stand-in. The designated init only stores the reporter; the
-// unit-test path never reads it.
-@interface FBStubEventReporter : NSObject
-@end
-
-@implementation FBStubEventReporter
-@end
-
 // Named stand-ins for `SimDevice.runtime` / `SimDevice.deviceType`. Only `-name` is
 // read, by the configuration synthesis below.
 @interface FBStubSimNamed : NSObject
@@ -87,7 +79,6 @@
 + (FBSimulator *)testableSimulatorWithDevice:(id)device
 {
   id<FBControlCoreLogger> logger = [FBControlCoreLoggerFactory loggerToConsumer:[FBNullDataConsumer new]];
-  id stubReporter = [FBStubEventReporter new];
   // Synthesize the configuration from a stub rather than asking for the default one.
   // `+defaultConfiguration` pins a hardcoded device model and then resolves the newest
   // *installed* runtime that supports it, so it returns nil on a host whose runtimes have
@@ -101,8 +92,7 @@
                                configuration:configuration
                                          set:nil
                           auxillaryDirectory:NSTemporaryDirectory()
-                                      logger:logger
-                                    reporter:stubReporter];
+                                      logger:logger];
 }
 
 @end

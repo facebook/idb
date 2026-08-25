@@ -93,25 +93,16 @@
 
 @end
 
-// Minimal event reporter stub.
-@interface _FBTestEventReporter : NSObject
-@end
-
-@implementation _FBTestEventReporter
-@end
-
 #pragma mark - Helper
 
 static FBSimulator *_createSimulatorWithDevice(_FBTestSimDevice *device)
 {
   id<FBControlCoreLogger> logger = [FBControlCoreLoggerFactory loggerToConsumer:[FBNullDataConsumer new]];
-  id reporter = [_FBTestEventReporter new];
   return [[FBSimulator alloc] initWithDevice:(id)device
                                configuration:[FBSimulatorConfiguration defaultConfigurationAndReturnError:nil]
                                          set:nil
                           auxillaryDirectory:@"/tmp/test-aux"
-                                      logger:logger
-                                    reporter:reporter];
+                                      logger:logger];
 }
 
 #pragma mark - Test Class
@@ -222,10 +213,8 @@ static FBSimulator *_createSimulatorWithDevice(_FBTestSimDevice *device)
   // The auxillaryDirectory was set in setUp via the init parameter, so test the class method indirectly
   // by creating a simulator using the convenience init that calls auxillaryDirectoryFromSimDevice:
   id<FBControlCoreLogger> logger = [FBControlCoreLoggerFactory loggerToConsumer:[FBNullDataConsumer new]];
-  id reporter = [_FBTestEventReporter new];
   FBSimulator *simViaConvenienceInit = [[FBSimulator alloc] initWithDevice:(id)_stubDevice
-                                                                    logger:logger
-                                                                  reporter:reporter];
+                                                                    logger:logger];
   XCTAssertEqualObjects(
     simViaConvenienceInit.auxillaryDirectory,
     expected,

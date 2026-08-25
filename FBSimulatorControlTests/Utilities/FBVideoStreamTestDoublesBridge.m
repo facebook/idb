@@ -27,7 +27,6 @@ FBSimulatorSet *CreateSimulatorSetWithFakeDeviceSetAndLogger(FBSimulatorControlC
                                                    deviceSet:(SimDeviceSet *)fakeDeviceSet
                                                     delegate:nil
                                                       logger:logger
-                                                    reporter:nil
                                                        error:&error];
   NSCAssert(set, @"Failed to create the simulator set: %@", error);
   return set;
