@@ -18,7 +18,7 @@ public struct FBEventType: RawRepresentable, Equatable, Hashable, Sendable {
   public static let failure = FBEventType(rawValue: "failure")
 }
 
-public final class FBEventReporterSubject: NSObject {
+public struct FBEventReporterSubject: Sendable {
 
   public let eventName: String
   public let eventType: FBEventType
@@ -34,7 +34,7 @@ public final class FBEventReporterSubject: NSObject {
 
   // MARK: Convenience Initializers
 
-  public convenience init(forEvent eventName: String) {
+  public init(forEvent eventName: String) {
     self.init(
       eventName: eventName,
       eventType: .discrete,
@@ -47,7 +47,7 @@ public final class FBEventReporterSubject: NSObject {
     )
   }
 
-  public convenience init(forStartedCall call: String, arguments: [String]) {
+  public init(forStartedCall call: String, arguments: [String]) {
     self.init(
       eventName: call,
       eventType: .started,
@@ -60,7 +60,7 @@ public final class FBEventReporterSubject: NSObject {
     )
   }
 
-  public convenience init(
+  public init(
     forSuccessfulCall call: String,
     duration: TimeInterval,
     size: NSNumber?,
@@ -80,7 +80,7 @@ public final class FBEventReporterSubject: NSObject {
     )
   }
 
-  public convenience init(
+  public init(
     forFailingCall call: String,
     duration: TimeInterval,
     message: String,
@@ -101,39 +101,12 @@ public final class FBEventReporterSubject: NSObject {
     )
   }
 
-  // MARK: Factory Methods (ObjC compatibility)
-  //
-  // Swift callers use the convenience initializers above; these selector-named
-  // factories exist only for Objective-C, so they compile only where ObjC interop
-  // is available.
-  #if canImport(ObjectiveC)
-  @objc(subjectForEvent:)
-  public class func subject(forEvent eventName: String) -> FBEventReporterSubject {
-    return FBEventReporterSubject(forEvent: eventName)
-  }
-
-  @objc(subjectForStartedCall:arguments:)
-  public class func subject(forStartedCall call: String, arguments: [String]) -> FBEventReporterSubject {
-    return FBEventReporterSubject(forStartedCall: call, arguments: arguments)
-  }
-
-  @objc(subjectForSuccessfulCall:duration:size:arguments:)
-  public class func subject(forSuccessfulCall call: String, duration: TimeInterval, size: NSNumber?, arguments: [String]) -> FBEventReporterSubject {
-    return FBEventReporterSubject(forSuccessfulCall: call, duration: duration, size: size, arguments: arguments)
-  }
-
-  @objc(subjectForFailingCall:duration:message:size:arguments:)
-  public class func subject(forFailingCall call: String, duration: TimeInterval, message: String, size: NSNumber?, arguments: [String]) -> FBEventReporterSubject {
-    return FBEventReporterSubject(forFailingCall: call, duration: duration, message: message, size: size, arguments: arguments)
-  }
-  #endif
-
   // MARK: Private
 
   // Saturating on purpose: durations can arrive negative (wall clocks step
   // backwards under NTP between a call's start and end) or non-finite, and
   // UInt.init traps on both, killing the process for a telemetry value.
-  private class func durationMilliseconds(_ timeInterval: TimeInterval) -> NSNumber {
+  private static func durationMilliseconds(_ timeInterval: TimeInterval) -> NSNumber {
     let milliseconds = timeInterval * 1000
     guard milliseconds.isFinite, milliseconds > 0 else {
       return NSNumber(value: UInt(0))
@@ -153,6 +126,5 @@ public final class FBEventReporterSubject: NSObject {
     self.message = message
     self.normals = normals
     self.ints = ints
-    super.init()
   }
 }
