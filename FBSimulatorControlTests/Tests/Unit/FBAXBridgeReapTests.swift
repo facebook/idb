@@ -203,4 +203,42 @@ final class FBAXBridgeReapTests: XCTestCase {
     XCTAssertTrue(path.hasPrefix("\(FBAXBridgeSocket.directory)/\(FBAXBridgeSocket.prefix)"))
     XCTAssertTrue(path.hasSuffix(FBAXBridgeSocket.suffix))
   }
+
+  // Where the sockets live, which is a security property rather than a naming one: the reaper probes
+  // and unlinks the paths it finds there, and a predictable socket name in a directory anyone can write
+  // to can be bound by somebody else first.
+  func testTheSocketDirectoryIsPrivateToThisUser() throws {
+    // `realpath` rather than `resolvingSymlinksInPath`, which deliberately leaves `/tmp` alone: on
+    // macOS that is a 0755 symlink to the 1777 directory actually holding the sockets, and it is the
+    // latter's mode that decides who can write there.
+    let resolved = try XCTUnwrap(resolvingSymlinks(FBAXBridgeSocket.directory))
+    let attributes = try FileManager.default.attributesOfItem(atPath: resolved)
+    let permissions = try XCTUnwrap(attributes[.posixPermissions] as? NSNumber).uint16Value
+    // BUG: the guests live in a world-writable directory shared with every other process on the
+    // machine — flipped in the following commit. The mask is other-write alone, matching the claim:
+    // group-write would be a different and lesser problem.
+    XCTAssertNotEqual(
+      permissions & 0o002, 0,
+      "dir=\(FBAXBridgeSocket.directory) resolved=\(resolved) mode=\(String(permissions, radix: 8))")
+  }
+
+  private func resolvingSymlinks(_ path: String) -> String? {
+    guard let resolved = realpath(path, nil) else {
+      return nil
+    }
+    defer { free(resolved) }
+    return String(cString: resolved)
+  }
+
+  // A bridge socket is recognised by a filename prefix because it shares a directory with unrelated
+  // files. Moving to a directory of our own is what removes the need for the prefix — and it has to be
+  // removed, because `sun_path` cannot afford both.
+  func testABridgeSocketIsRecognisedByItsFilename() {
+    // BUG: the directory is shared, so the prefix is load-bearing — flipped in the following commit.
+    XCTAssertFalse(FBAXBridgeSocket.prefix.isEmpty)
+    let occupied =
+      FBAXBridgeSocket.directory.count + FBAXBridgeSocket.prefix.count
+      + UUID().uuidString.count + FBAXBridgeSocket.suffix.count + 1
+    XCTAssertLessThan(occupied, 104, "a bridge socket path must fit in sun_path")
+  }
 }
