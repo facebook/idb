@@ -59,19 +59,19 @@ public struct FBLogicTestMirrorLogs: OptionSet, Sendable {
 
 // MARK: - FBXCTestConfiguration
 
-@objc public class FBXCTestConfiguration: NSObject, NSCopying {
+public class FBXCTestConfiguration: NSObject, NSCopying {
 
-  @objc public let processUnderTestEnvironment: [String: String]
-  @objc public let workingDirectory: String
-  @objc public let testBundlePath: String
-  @objc public let waitForDebugger: Bool
-  @objc public let testTimeout: TimeInterval
+  public let processUnderTestEnvironment: [String: String]
+  public let workingDirectory: String
+  public let testBundlePath: String
+  public let waitForDebugger: Bool
+  public let testTimeout: TimeInterval
 
   public var testType: FBXCTestType {
     fatalError("-[\(type(of: self)) testType] is abstract and should be overridden")
   }
 
-  @objc public init(environment: [String: String], workingDirectory: String, testBundlePath: String, waitForDebugger: Bool, timeout: TimeInterval) {
+  public init(environment: [String: String], workingDirectory: String, testBundlePath: String, waitForDebugger: Bool, timeout: TimeInterval) {
     self.processUnderTestEnvironment = environment
     self.workingDirectory = workingDirectory
     self.testBundlePath = testBundlePath
@@ -113,7 +113,7 @@ public struct FBLogicTestMirrorLogs: OptionSet, Sendable {
 
   // MARK: Public
 
-  @objc public func buildEnvironment(withEntries entries: [String: String]) -> [String: String] {
+  public func buildEnvironment(withEntries entries: [String: String]) -> [String: String] {
     var parentEnvironment = ProcessInfo.processInfo.environment
     parentEnvironment.removeValue(forKey: "XCTestConfigurationFilePath")
 
@@ -137,7 +137,7 @@ public struct FBLogicTestMirrorLogs: OptionSet, Sendable {
 
   // MARK: JSON
 
-  @objc public func jsonSerializableRepresentation() -> [String: Any] {
+  public func jsonSerializableRepresentation() -> [String: Any] {
     [
       KeyEnvironment: processUnderTestEnvironment,
       KeyWorkingDirectory: workingDirectory,
@@ -151,23 +151,23 @@ public struct FBLogicTestMirrorLogs: OptionSet, Sendable {
 
   // MARK: NSCopying
 
-  @objc public func copy(with zone: NSZone? = nil) -> Any {
+  public func copy(with zone: NSZone? = nil) -> Any {
     self
   }
 }
 
 // MARK: - FBListTestConfiguration
 
-@objc public final class FBListTestConfiguration: FBXCTestConfiguration {
+public final class FBListTestConfiguration: FBXCTestConfiguration {
 
-  @objc public let architectures: Set<String>
-  @objc public let runnerAppPath: String?
+  public let architectures: Set<String>
+  public let runnerAppPath: String?
 
-  @objc public static func configuration(withEnvironment environment: [String: String], workingDirectory: String, testBundlePath: String, runnerAppPath: String?, waitForDebugger: Bool, timeout: TimeInterval, architectures: Set<String>) -> FBListTestConfiguration {
+  public static func configuration(withEnvironment environment: [String: String], workingDirectory: String, testBundlePath: String, runnerAppPath: String?, waitForDebugger: Bool, timeout: TimeInterval, architectures: Set<String>) -> FBListTestConfiguration {
     FBListTestConfiguration(environment: environment, workingDirectory: workingDirectory, testBundlePath: testBundlePath, runnerAppPath: runnerAppPath, waitForDebugger: waitForDebugger, timeout: timeout, architectures: architectures)
   }
 
-  @objc public init(environment: [String: String], workingDirectory: String, testBundlePath: String, runnerAppPath: String?, waitForDebugger: Bool, timeout: TimeInterval, architectures: Set<String>) {
+  public init(environment: [String: String], workingDirectory: String, testBundlePath: String, runnerAppPath: String?, waitForDebugger: Bool, timeout: TimeInterval, architectures: Set<String>) {
     self.runnerAppPath = runnerAppPath
     self.architectures = architectures
     super.init(environment: environment, workingDirectory: workingDirectory, testBundlePath: testBundlePath, waitForDebugger: waitForDebugger, timeout: timeout)
@@ -177,7 +177,7 @@ public struct FBLogicTestMirrorLogs: OptionSet, Sendable {
     FBXCTestType.listTest
   }
 
-  @objc public override func jsonSerializableRepresentation() -> [String: Any] {
+  public override func jsonSerializableRepresentation() -> [String: Any] {
     var json = super.jsonSerializableRepresentation()
     json[KeyListTestsOnly] = true
     json[KeyRunnerAppPath] = runnerAppPath ?? NSNull()
@@ -187,20 +187,20 @@ public struct FBLogicTestMirrorLogs: OptionSet, Sendable {
 
 // MARK: - FBTestManagerTestConfiguration
 
-@objc public final class FBTestManagerTestConfiguration: FBXCTestConfiguration {
+public final class FBTestManagerTestConfiguration: FBXCTestConfiguration {
 
-  @objc public let runnerAppPath: String
-  @objc public let testTargetAppPath: String?
-  @objc public let testFilter: String?
-  @objc public let osLogPath: String?
-  @objc public let videoRecordingPath: String?
-  @objc public let testArtifactsFilenameGlobs: [String]?
+  public let runnerAppPath: String
+  public let testTargetAppPath: String?
+  public let testFilter: String?
+  public let osLogPath: String?
+  public let videoRecordingPath: String?
+  public let testArtifactsFilenameGlobs: [String]?
 
-  @objc public static func configuration(withEnvironment environment: [String: String], workingDirectory: String, testBundlePath: String, waitForDebugger: Bool, timeout: TimeInterval, runnerAppPath: String, testTargetAppPath: String?, testFilter: String?, videoRecordingPath: String?, testArtifactsFilenameGlobs: [String]?, osLogPath: String?) -> FBTestManagerTestConfiguration {
+  public static func configuration(withEnvironment environment: [String: String], workingDirectory: String, testBundlePath: String, waitForDebugger: Bool, timeout: TimeInterval, runnerAppPath: String, testTargetAppPath: String?, testFilter: String?, videoRecordingPath: String?, testArtifactsFilenameGlobs: [String]?, osLogPath: String?) -> FBTestManagerTestConfiguration {
     FBTestManagerTestConfiguration(environment: environment, workingDirectory: workingDirectory, testBundlePath: testBundlePath, waitForDebugger: waitForDebugger, timeout: timeout, runnerAppPath: runnerAppPath, testTargetAppPath: testTargetAppPath, testFilter: testFilter, videoRecordingPath: videoRecordingPath, testArtifactsFilenameGlobs: testArtifactsFilenameGlobs, osLogPath: osLogPath)
   }
 
-  @objc public init(environment: [String: String], workingDirectory: String, testBundlePath: String, waitForDebugger: Bool, timeout: TimeInterval, runnerAppPath: String, testTargetAppPath: String?, testFilter: String?, videoRecordingPath: String?, testArtifactsFilenameGlobs: [String]?, osLogPath: String?) {
+  public init(environment: [String: String], workingDirectory: String, testBundlePath: String, waitForDebugger: Bool, timeout: TimeInterval, runnerAppPath: String, testTargetAppPath: String?, testFilter: String?, videoRecordingPath: String?, testArtifactsFilenameGlobs: [String]?, osLogPath: String?) {
     self.runnerAppPath = runnerAppPath
     self.testTargetAppPath = testTargetAppPath
     self.testFilter = testFilter
@@ -214,7 +214,7 @@ public struct FBLogicTestMirrorLogs: OptionSet, Sendable {
     testTargetAppPath != nil ? FBXCTestType.uiTest : FBXCTestType.applicationTest
   }
 
-  @objc public override func jsonSerializableRepresentation() -> [String: Any] {
+  public override func jsonSerializableRepresentation() -> [String: Any] {
     var json = super.jsonSerializableRepresentation()
     json[KeyRunnerAppPath] = runnerAppPath
     if let testTargetAppPath { json[KeyRunnerTargetPath] = testTargetAppPath }
@@ -228,15 +228,15 @@ public struct FBLogicTestMirrorLogs: OptionSet, Sendable {
 
 // MARK: - FBLogicTestConfiguration
 
-@objc public final class FBLogicTestConfiguration: FBXCTestConfiguration {
+public final class FBLogicTestConfiguration: FBXCTestConfiguration {
 
-  @objc public let testFilter: String?
+  public let testFilter: String?
   public let mirroring: FBLogicTestMirrorLogs
   public let coverageConfiguration: FBCodeCoverageConfiguration?
-  @objc public let binaryPath: String?
-  @objc public let logDirectoryPath: String?
-  @objc public let architectures: Set<String>
-  @objc public let injectLibraries: [String]
+  public let binaryPath: String?
+  public let logDirectoryPath: String?
+  public let architectures: Set<String>
+  public let injectLibraries: [String]
 
   public static func configuration(withEnvironment environment: [String: String], workingDirectory: String, testBundlePath: String, waitForDebugger: Bool, timeout: TimeInterval, testFilter: String?, mirroring: FBLogicTestMirrorLogs, coverageConfiguration: FBCodeCoverageConfiguration?, binaryPath: String?, logDirectoryPath: String?, architectures: Set<String>) -> FBLogicTestConfiguration {
     FBLogicTestConfiguration(environment: environment, workingDirectory: workingDirectory, testBundlePath: testBundlePath, waitForDebugger: waitForDebugger, timeout: timeout, testFilter: testFilter, mirroring: mirroring, coverageConfiguration: coverageConfiguration, binaryPath: binaryPath, logDirectoryPath: logDirectoryPath, architectures: architectures)
@@ -257,7 +257,7 @@ public struct FBLogicTestMirrorLogs: OptionSet, Sendable {
     FBXCTestType.logicTest
   }
 
-  @objc public override func jsonSerializableRepresentation() -> [String: Any] {
+  public override func jsonSerializableRepresentation() -> [String: Any] {
     var json = super.jsonSerializableRepresentation()
     json[KeyTestFilter] = testFilter ?? NSNull()
     return json
