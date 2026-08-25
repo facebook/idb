@@ -44,7 +44,11 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
   let requestedAutomationMode: Bool?
 
   private let simulator: FBSimulator
-  private let transport: any FBAXBridgeTransport
+
+  /// How this reader reaches the guest. Internal rather than private so a test can assert which
+  /// transport instance a reader was vended with, since that is what decides whether a guest `serve`
+  /// process is shared across reads or spawned for each one.
+  let transport: any FBAXBridgeTransport
 
   /// The transport lifecycle this reader was vended for. Held only so `backend` reports the case the
   /// caller selected; the injected transport already encodes the behavioural difference.

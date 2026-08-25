@@ -31,4 +31,40 @@ final class FBUIAutomationTests: XCTestCase {
     XCTAssertEqual(anchor.x, 200, accuracy: 0.001)
     XCTAssertEqual(anchor.y, 400, accuracy: 0.001)
   }
+
+  // Which transport instance a reader is vended with decides whether the guest `serve` process is
+  // shared across reads or spawned for each one. Constructing the axbridge backends touches no
+  // device, so this needs no booted simulator.
+
+  private static let persistentBackend = FBUIAutomationBackend.axBridge(
+    persistence: .persistent, frontmostMethod: .windowServer, automationMode: true
+  )
+
+  private func persistentTransport(_ simulator: FBSimulator) throws -> FBAXBridgePersistentTransport {
+    let reader = try simulator.uiAutomation(backend: Self.persistentBackend)
+    let bridgeReader = try XCTUnwrap(reader as? FBAXBridgeUIAutomation)
+    return try XCTUnwrap(bridgeReader.transport as? FBAXBridgePersistentTransport)
+  }
+
+  func testEachPersistentBackendCallBuildsItsOwnTransport() throws {
+    let simulator = FBSimulatorTestSupport.testableSimulator()
+    let first = try persistentTransport(simulator)
+    let second = try persistentTransport(simulator)
+    // BUG: every call mints a fresh transport, so each read spawns a guest and SIGKILLs it on the way
+    // out instead of reusing one — flipped in the following commit.
+    XCTAssertFalse(first === second)
+  }
+
+  func testEachOneShotBackendCallBuildsAOneShotTransport() throws {
+    let simulator = FBSimulatorTestSupport.testableSimulator()
+    let backend = FBUIAutomationBackend.axBridge(
+      persistence: .oneShot, frontmostMethod: .windowServer, automationMode: true
+    )
+    // Both calls, because the claim is about every call: the one-shot transport is a stateless value
+    // with nothing to reuse, so it must stay per-call whatever the persistent one does.
+    for _ in 0..<2 {
+      let reader = try XCTUnwrap(try simulator.uiAutomation(backend: backend) as? FBAXBridgeUIAutomation)
+      XCTAssertTrue(reader.transport is FBAXBridgeOneshotTransport)
+    }
+  }
 }
