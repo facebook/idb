@@ -7,6 +7,22 @@
 
 import Foundation
 
+/// The kind of process that has crashed, with the member names the `NS_OPTIONS` importer produced.
+public struct FBCrashLogInfoProcessType: OptionSet, Sendable {
+  public let rawValue: UInt
+
+  public init(rawValue: UInt) {
+    self.rawValue = rawValue
+  }
+
+  /// A process that is part of the operating system runtime.
+  public static let system = FBCrashLogInfoProcessType(rawValue: 1 << 0)
+  /// A process that is an application.
+  public static let application = FBCrashLogInfoProcessType(rawValue: 1 << 1)
+  /// A process that is neither an application nor part of the operating system runtime.
+  public static let custom = FBCrashLogInfoProcessType(rawValue: 1 << 2)
+}
+
 @objc(FBCrashLog)
 public class FBCrashLog: NSObject, NSCopying {
 
@@ -97,7 +113,7 @@ public class FBCrashLogInfo: NSObject, NSCopying {
   @objc public let parentProcessName: String
   @objc public let parentProcessIdentifier: pid_t
   @objc public let date: Date
-  @objc public let processType: FBCrashLogInfoProcessType
+  public let processType: FBCrashLogInfoProcessType
   @objc public let exceptionDescription: String?
   @objc public let crashedThreadDescription: String?
 
@@ -107,7 +123,6 @@ public class FBCrashLogInfo: NSObject, NSCopying {
 
   // MARK: Initializers
 
-  @objc
   public init(
     crashPath: String,
     executablePath: String,

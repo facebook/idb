@@ -13,7 +13,6 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBArchiveOperations.h>
-#import <FBControlCore/FBCrashLog.h>
 #import <FBControlCore/FBFileReader.h>
 #import <FBControlCore/FBInstrumentsOperation.h>
 #import <FBControlCore/FBiOSTarget.h>
