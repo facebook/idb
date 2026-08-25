@@ -480,6 +480,10 @@ final class FBAXBridgeConnection: @unchecked Sendable {
   /// Deliberately not derived from read cost, which varies by orders of magnitude across applications.
   private static let receiveTimeoutSeconds = 30
 
+  /// How many bytes of path a Unix-domain socket address can hold, terminator included. Read from the
+  /// struct rather than written down, so it tracks the platform.
+  static let sunPathCapacity = MemoryLayout.size(ofValue: sockaddr_un().sun_path)
+
   init(
     fileDescriptor: Int32,
     process: FBSubprocess<AnyObject, AnyObject, AnyObject>,
@@ -550,9 +554,15 @@ final class FBAXBridgeConnection: @unchecked Sendable {
   /// timeout elapses. Runs on a background queue so the blocking retry never occupies a cooperative
   /// thread.
   static func connect(path: String, timeout: TimeInterval) async throws -> Int32 {
+    // `connectSocket` refuses an over-long path without reaching the syscall, so the retry loop below
+    // would spend the whole deadline and then report a timeout. Checked rather than left to the caller's
+    // arithmetic: `bind` truncates such a path and reports success, so nothing downstream catches it.
+    guard path.utf8.count < sunPathCapacity else {
+      throw FBAXBridgeError.socketPathTooLong(path: path, limit: sunPathCapacity)
+    }
     // Single-resume by construction (the background block resumes once), so a plain checked
     // continuation is safe.
-    try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Int32, Error>) in
+    return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Int32, Error>) in
       DispatchQueue.global().async {
         let deadline = Date().addingTimeInterval(timeout)
         repeat {

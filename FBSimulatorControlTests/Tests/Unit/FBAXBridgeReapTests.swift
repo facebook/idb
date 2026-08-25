@@ -282,10 +282,21 @@ final class FBAXBridgeReapTests: XCTestCase {
       XCTFail("connecting to a path that cannot fit in sun_path must not succeed")
     } catch {
       let message = error.localizedDescription
-      // BUG: the length check is silent, so the caller waits out the whole connect timeout and is then
-      // told the guest did not show up — flipped in the following commit.
-      XCTAssertTrue(message.contains("timed out connecting"), message)
-      XCTAssertFalse(message.contains("104"), message)
+      XCTAssertTrue(message.contains("sockaddr_un limit"), message)
+      XCTAssertTrue(message.contains("\(FBAXBridgeConnection.sunPathCapacity)"), message)
+      XCTAssertFalse(message.contains("timed out connecting"), message)
     }
+  }
+
+  // Rejection must not cost the caller the connect deadline.
+  func testAnOverLongSocketPathIsRejectedWithoutWaiting() async throws {
+    let tooLong = "\(directory)/\(String(repeating: "x", count: 120)).sock"
+    let started = Date()
+    _ = try? await FBAXBridgeConnection.connect(path: tooLong, timeout: 10)
+    XCTAssertLessThan(Date().timeIntervalSince(started), 1)
+  }
+
+  func testTheSunPathCapacityMatchesThePlatform() {
+    XCTAssertEqual(FBAXBridgeConnection.sunPathCapacity, 104)
   }
 }
