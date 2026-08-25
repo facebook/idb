@@ -14,6 +14,38 @@ private let installTypeStringUser = "user"
 private let installTypeStringUserEnterprise = "user_enterprise"
 private let installTypeStringUserDevelopment = "user_development"
 
+/// The Installed Type of the Application. `@objc` because the installed-application
+/// class exposes it through its own `@objc` members.
+@objc public enum FBApplicationInstallType: UInt, Sendable {
+  /// The Application is unknown.
+  case unknown = 0
+  /// The Application is part of the Operating System.
+  case system = 1
+  /// The Application is part of macOS.
+  case mac = 2
+  /// The Application has been installed by the user.
+  case user = 3
+  /// The Application has been installed by the user and signed with a distribution certificate.
+  case userEnterprise = 4
+  /// The Application has been installed by the user and signed with a development certificate.
+  case userDevelopment = 5
+}
+
+/// Keys from UserInfo about Applications, with the same member names the
+/// `NS_EXTENSIBLE_STRING_ENUM` importer produced.
+public struct FBApplicationInstallInfoKey: RawRepresentable, Hashable, Sendable {
+  public let rawValue: String
+  public init(rawValue: String) {
+    self.rawValue = rawValue
+  }
+
+  public static let applicationType = FBApplicationInstallInfoKey(rawValue: "ApplicationType")
+  public static let bundleIdentifier = FBApplicationInstallInfoKey(rawValue: "CFBundleIdentifier")
+  public static let bundleName = FBApplicationInstallInfoKey(rawValue: "CFBundleName")
+  public static let path = FBApplicationInstallInfoKey(rawValue: "Path")
+  public static let signerIdentity = FBApplicationInstallInfoKey(rawValue: "SignerIdentity")
+}
+
 @objc(FBInstalledApplication)
 public final class FBInstalledApplication: NSObject, NSCopying {
 
