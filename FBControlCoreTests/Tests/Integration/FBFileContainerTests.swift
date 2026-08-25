@@ -8,7 +8,6 @@
 @testable import FBControlCore
 import XCTest
 
-// swiftlint:disable force_cast
 final class FBFileContainerTests: XCTestCase {
 
   private var basePathTestBasePath: String!
@@ -57,7 +56,7 @@ final class FBFileContainerTests: XCTestCase {
     try fm.createDirectory(atPath: directoryInBasePath, withIntermediateDirectories: true, attributes: nil)
     try (fileInBasePathText as NSString).write(toFile: fileInBasePath, atomically: true, encoding: String.Encoding.utf8.rawValue)
     try (fileInDirectoryInBasePathText as NSString).write(toFile: fileInDirectoryInBasePath, atomically: true, encoding: String.Encoding.utf8.rawValue)
-    return FBFileContainer.fileContainer(forBasePath: basePath) as! any AsyncFileContainer
+    return FBFileContainer.fileContainer(forBasePath: basePath)
   }
 
   // MARK: - Mapped Path Helpers
@@ -80,7 +79,7 @@ final class FBFileContainerTests: XCTestCase {
     try (fileInFooText as NSString).write(toFile: fileInFoo, atomically: true, encoding: String.Encoding.utf8.rawValue)
     try (fileInDirectoryInBarText as NSString).write(toFile: fileInDirectoryInBar, atomically: true, encoding: String.Encoding.utf8.rawValue)
     let pathMapping: [String: String] = ["foo": fooPath, "bar": barPath]
-    return FBFileContainer.fileContainer(forPathMapping: pathMapping) as! any AsyncFileContainer
+    return FBFileContainer.fileContainer(forPathMapping: pathMapping)
   }
 
   // MARK: - Base Path Tests
