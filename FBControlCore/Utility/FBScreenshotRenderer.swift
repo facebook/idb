@@ -67,12 +67,29 @@ public enum FBScreenshotRenderer {
     encoding: FBScreenshotEncoding,
     screenScale: Double?
   ) throws -> FBScreenshotResult {
-    let sourceSize = CGSize(width: image.width, height: image.height)
-    let transformed = try transform(image, plan: plan)
-    return FBScreenshotResult(
-      imageData: try encode(transformed, encoding: encoding),
+    try render(
+      transformed: try transform(image, plan: plan),
+      sourceSize: CGSize(width: image.width, height: image.height),
+      encoding: encoding,
+      screenScale: screenScale
+    )
+  }
+
+  /// Encodes an image whose plan has already been applied, and describes it.
+  ///
+  /// This is for a target that can transform during capture rather than after it -- the simulator
+  /// folds the crop and scale into the render it was going to do anyway -- and so arrives holding
+  /// the finished pixels and the size they were cut from, with no image left to transform.
+  public static func render(
+    transformed image: CGImage,
+    sourceSize: CGSize,
+    encoding: FBScreenshotEncoding,
+    screenScale: Double?
+  ) throws -> FBScreenshotResult {
+    FBScreenshotResult(
+      imageData: try encode(image, encoding: encoding),
       format: encoding.format,
-      size: CGSize(width: transformed.width, height: transformed.height),
+      size: CGSize(width: image.width, height: image.height),
       sourceSize: sourceSize,
       screenScale: screenScale
     )

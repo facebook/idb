@@ -29,7 +29,7 @@ public actor FBSimulatorImage {
   init(framebuffer: FBFramebuffer, logger: (any FBControlCoreLogger)?) {
     self.framebuffer = framebuffer
     self.logger = logger
-    self.imageGenerator = FBSurfaceImageGenerator(scale: NSDecimalNumber.one, purpose: "simulator_image", logger: logger)
+    self.imageGenerator = FBSurfaceImageGenerator(purpose: "simulator_image", logger: logger)
   }
 
   deinit {
@@ -42,7 +42,14 @@ public actor FBSimulatorImage {
 
   public func image() throws -> CGImage? {
     try attachIfNeeded()
-    return imageGenerator.image()
+    return try imageGenerator.image()
+  }
+
+  /// Renders the current surface with `configuration` applied during the render rather than after
+  /// it. See `FBSurfaceImageGenerator.image(configuration:screenScale:)`.
+  public func image(configuration: FBScreenshotConfiguration, screenScale: Double?) throws -> FBSurfaceImage? {
+    try attachIfNeeded()
+    return try imageGenerator.image(configuration: configuration, screenScale: screenScale)
   }
 
   // MARK: - Private

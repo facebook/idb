@@ -44,20 +44,17 @@ public final class FBSimulatorScreenshotCommands {
 
   // MARK: - Private
 
+  /// The crop and scale are applied by the render itself rather than to its output, so all that is
+  /// left here is to encode what comes back.
   fileprivate func takeScreenshotAsync(configuration: FBScreenshotConfiguration) async throws -> FBScreenshotResult {
     let image = try await connectToImage()
-    guard let captured = try await image.image() else {
+    let screenScale = simulator.screenInfo.map { Double($0.scale) }
+    guard let captured = try await image.image(configuration: configuration, screenScale: screenScale) else {
       throw FBSimulatorScreenshotError.captureFailed
     }
-    let screenScale = simulator.screenInfo.map { Double($0.scale) }
-    let plan = try FBScreenshotGeometry.plan(
-      for: configuration,
-      sourceSize: CGSize(width: captured.width, height: captured.height),
-      screenScale: screenScale
-    )
     return try FBScreenshotRenderer.render(
-      captured,
-      plan: plan,
+      transformed: captured.image,
+      sourceSize: captured.sourceSize,
       encoding: configuration.encoding,
       screenScale: screenScale
     )

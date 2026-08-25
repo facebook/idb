@@ -72,3 +72,29 @@ func makeTestIOSurface(width: Int = 16, height: Int = 16) -> IOSurface {
   }
   return surface
 }
+
+/// Creates a test IOSurface whose contents come from `pixel`, called with top-left coordinates and
+/// returning BGRA components. A pattern that varies along both axes lets a test catch an image that
+/// has been flipped or transposed, not just one that is the wrong size.
+func makeTestIOSurface(
+  width: Int,
+  height: Int,
+  pixel: (_ x: Int, _ y: Int) -> (b: UInt8, g: UInt8, r: UInt8, a: UInt8)
+) throws -> IOSurface {
+  let surface = makeTestIOSurface(width: width, height: height)
+  try surface.lock(options: [], seed: nil)
+  defer { try? surface.unlock(options: [], seed: nil) }
+  let base = surface.baseAddress.assumingMemoryBound(to: UInt8.self)
+  let bytesPerRow = surface.bytesPerRow
+  for y in 0..<height {
+    for x in 0..<width {
+      let offset = y * bytesPerRow + x * 4
+      let components = pixel(x, y)
+      base[offset] = components.b
+      base[offset + 1] = components.g
+      base[offset + 2] = components.r
+      base[offset + 3] = components.a
+    }
+  }
+  return surface
+}
