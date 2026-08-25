@@ -29,7 +29,9 @@ import Foundation
 ///
 // SAFETY: immutable after init — it holds the target and a transport; the persistent transport is an
 // actor and the one-shot transport is a stateless value, and the verb logic keeps no mutable state.
-// `Sendable` lets a long-lived caller (e.g. `ui shell`) hold one warm reader across reads.
+// `Sendable` lets a caller hold one reader across reads and hand it between tasks. It is no longer
+// what keeps the guest warm — the persistent transport is memoized on the target, so readers built
+// and dropped per read share the same guest.
 // patternlint-disable-next-line unchecked-sendable
 final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
 

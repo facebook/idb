@@ -295,4 +295,4 @@ idb ui set-value 'Email' --value 'user@example.com'
 idb ui tap 'Continue' --expected-value 'Continue'
 ```
 
-For repeated reads in a long-running process, `--api axbridge-persistent` keeps the reader warm between them; see [Accessibility](accessibility.mdx).
+For repeated reads, `--api axbridge-persistent` keeps the reader warm between them — the companion owns it, so this holds across separate `idb` invocations too; see [Accessibility](accessibility.mdx).

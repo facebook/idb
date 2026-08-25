@@ -75,7 +75,9 @@ A guest read also puts the target into automation mode and leaves it there — s
 
 The same reader, spawned once instead of once per read. The companion starts `SimulatorFrameworkBridge` in `serve` mode and talks to it over a Unix domain socket, so the framework loading is paid once and every subsequent read is just the walk — around 20ms, roughly 30x faster than re-spawning.
 
-The saving only applies to a long-lived process holding one connection: a driver, a REPL, an interactive session. A single `idb ui describe-all` from a shell spawns the reader, reads once and tears it down, which is strictly slower than `--api axbridge` doing the same thing without the socket. Use `axbridge` for one-shot commands and `axbridge-persistent` for a process that will read repeatedly.
+The reader belongs to the companion, not to any one command, so the saving does not require you to hold anything. The first read against a target starts it and the rest are warm, including across separate `idb` invocations, for as long as that companion is running. Measured on a booted simulator: the first `idb ui describe-all --api axbridge-persistent` takes a few seconds, and every one after it lands around 0.2s, against roughly 3.5s each for `--api axbridge`.
+
+`axbridge` is still the better choice when you will genuinely read only once against a freshly started companion, since it does the same work without the socket. Past the first read, prefer `axbridge-persistent`.
 
 The connection is self-healing: if the reader dies — the Simulator shut down, the process was killed — the next read re-establishes it and retries once, rather than wedging on a dead socket.
 
@@ -87,7 +89,7 @@ The connection is self-healing: if the reader dies — the Simulator shut down, 
 | Detail | Assistive-technology view | Full application tree | Full application tree |
 | Cost per read | Low | ~600ms, spawn-dominated | ~20ms warm, after a one-off start |
 | Needs `SimulatorFrameworkBridge` | No | Yes | Yes |
-| Best for | Quick checks; anything the composite view is enough for | A one-shot read that needs full detail | Repeated reads from one long-lived process |
+| Best for | Quick checks; anything the composite view is enough for | A single read that needs full detail | Any repeated reading against one companion |
 
 ### How the axbridge backends fetch the tree
 

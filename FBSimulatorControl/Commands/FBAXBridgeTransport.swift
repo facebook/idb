@@ -515,8 +515,9 @@ final class FBAXBridgeConnection: @unchecked Sendable {
   }
 
   deinit {
-    // Best-effort teardown when the reader holding this connection is released (e.g. the host process
-    // exits gracefully).
+    // Best-effort teardown when the memoized transport holding this connection is released — which,
+    // because the transport lives in the target's `commandCache`, means the target went away or the
+    // host process exited gracefully. Dropping a reader does not reach here.
     Self.teardown(
       fileDescriptor: fileDescriptor,
       processIdentifier: process.processIdentifier,

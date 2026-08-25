@@ -1633,7 +1633,9 @@ static BOOL FBAXBridgeReadFully(int fd, void *buffer, size_t length)
 // connection for the session, so requests are processed one-by-one over that connection with a
 // blocking read between them (the read blocks waiting for the next command — the expected interactive
 // idle, not a stall). When the client disconnects, the inner read returns EOF and the outer loop
-// re-`accept`s, allowing a reconnect. The process is torn down by the host at end of session.
+// re-`accept`s, allowing a reconnect. The host memoizes its transport per target, so that connection
+// lasts as long as the target does; the process is torn down when the host releases it, or reaped by
+// the idle timeout below if the host went away without doing so.
 static int FBAXBridgeServe(NSString *socketPath)
 {
   int listenFd = socket(AF_UNIX, SOCK_STREAM, 0);
