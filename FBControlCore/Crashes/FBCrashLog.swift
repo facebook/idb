@@ -23,13 +23,11 @@ public struct FBCrashLogInfoProcessType: OptionSet, Sendable {
   public static let custom = FBCrashLogInfoProcessType(rawValue: 1 << 2)
 }
 
-@objc(FBCrashLog)
 public class FBCrashLog: NSObject, NSCopying {
 
-  @objc public let info: FBCrashLogInfo
-  @objc public let contents: String
+  public let info: FBCrashLogInfo
+  public let contents: String
 
-  @objc
   public init(info: FBCrashLogInfo, contents: String) {
     self.info = info
     self.contents = contents
@@ -51,7 +49,6 @@ public class FBCrashLog: NSObject, NSCopying {
 
   // MARK: Public
 
-  @objc
   public class func dateFormatter() -> DateFormatter {
     FBCrashLog_dateFormatter
   }
@@ -100,24 +97,23 @@ extension FBCrashLogError: LocalizedError {
   }
 }
 
-@objc(FBCrashLogInfo)
 public class FBCrashLogInfo: NSObject, NSCopying {
 
   // MARK: Properties
 
-  @objc public let crashPath: String
-  @objc public let executablePath: String
-  @objc public let identifier: String
-  @objc public let processName: String
-  @objc public let processIdentifier: pid_t
-  @objc public let parentProcessName: String
-  @objc public let parentProcessIdentifier: pid_t
-  @objc public let date: Date
+  public let crashPath: String
+  public let executablePath: String
+  public let identifier: String
+  public let processName: String
+  public let processIdentifier: pid_t
+  public let parentProcessName: String
+  public let parentProcessIdentifier: pid_t
+  public let date: Date
   public let processType: FBCrashLogInfoProcessType
-  @objc public let exceptionDescription: String?
-  @objc public let crashedThreadDescription: String?
+  public let exceptionDescription: String?
+  public let crashedThreadDescription: String?
 
-  @objc public var name: String {
+  public var name: String {
     (crashPath as NSString).lastPathComponent
   }
 
@@ -152,7 +148,6 @@ public class FBCrashLogInfo: NSObject, NSCopying {
 
   // MARK: Factory Methods
 
-  @objc(fromCrashLogAtPath:error:)
   public class func fromCrashLog(atPath crashPath: String) throws -> FBCrashLogInfo {
     let fileManager = FileManager.default
     if !fileManager.fileExists(atPath: crashPath) {
@@ -179,7 +174,6 @@ public class FBCrashLogInfo: NSObject, NSCopying {
     return try fromCrashLogString(crashString, crashPath: crashPath, parser: parser)
   }
 
-  @objc(isParsableCrashLog:)
   public class func isParsableCrashLog(_ data: Data) -> Bool {
     #if canImport(Darwin)
     guard let crashString = String(data: data, encoding: .utf8) else {
@@ -212,14 +206,12 @@ public class FBCrashLogInfo: NSObject, NSCopying {
 
   // MARK: Public Methods
 
-  @objc(loadRawCrashLogStringWithError:)
   public func loadRawCrashLogString() throws -> String {
     try String(contentsOfFile: crashPath, encoding: .utf8)
   }
 
   // MARK: Bulk Collection
 
-  @objc(crashInfoAfterDate:logger:)
   public class func crashInfo(afterDate date: Date, logger: FBControlCoreLogger?) -> [FBCrashLogInfo] {
     var allCrashInfos: [FBCrashLogInfo] = []
 
@@ -250,7 +242,6 @@ public class FBCrashLogInfo: NSObject, NSCopying {
 
   // MARK: Contents
 
-  @objc(obtainCrashLogWithError:)
   public func obtainCrashLog() throws -> FBCrashLog {
     let contents: String
     do {
@@ -263,7 +254,6 @@ public class FBCrashLogInfo: NSObject, NSCopying {
 
   // MARK: Predicates
 
-  @objc(predicateForCrashLogsWithProcessID:)
   public class func predicateForCrashLogs(withProcessID processID: pid_t) -> NSPredicate {
     NSPredicate { evaluatedObject, _ in
       guard let crashLog = evaluatedObject as? FBCrashLogInfo else { return false }
@@ -271,7 +261,6 @@ public class FBCrashLogInfo: NSObject, NSCopying {
     }
   }
 
-  @objc(predicateNewerThanDate:)
   public class func predicateNewer(thanDate date: Date) -> NSPredicate {
     NSPredicate { evaluatedObject, _ in
       guard let crashLog = evaluatedObject as? FBCrashLogInfo else { return false }
@@ -279,12 +268,10 @@ public class FBCrashLogInfo: NSObject, NSCopying {
     }
   }
 
-  @objc(predicateOlderThanDate:)
   public class func predicateOlder(thanDate date: Date) -> NSPredicate {
     NSCompoundPredicate(notPredicateWithSubpredicate: predicateNewer(thanDate: date))
   }
 
-  @objc(predicateForIdentifier:)
   public class func predicate(forIdentifier identifier: String) -> NSPredicate {
     NSPredicate { evaluatedObject, _ in
       guard let crashLog = evaluatedObject as? FBCrashLogInfo else { return false }
@@ -292,7 +279,6 @@ public class FBCrashLogInfo: NSObject, NSCopying {
     }
   }
 
-  @objc(predicateForName:)
   public class func predicate(forName name: String) -> NSPredicate {
     NSPredicate { evaluatedObject, _ in
       guard let crashLog = evaluatedObject as? FBCrashLogInfo else { return false }
@@ -300,7 +286,6 @@ public class FBCrashLogInfo: NSObject, NSCopying {
     }
   }
 
-  @objc(predicateForExecutablePathContains:)
   public class func predicate(forExecutablePathContains contains: String) -> NSPredicate {
     NSPredicate { evaluatedObject, _ in
       guard let crashLog = evaluatedObject as? FBCrashLogInfo else { return false }
@@ -310,7 +295,7 @@ public class FBCrashLogInfo: NSObject, NSCopying {
 
   // MARK: Helpers
 
-  @objc public class var diagnosticReportsPaths: [String] {
+  public class var diagnosticReportsPaths: [String] {
     [
       (NSHomeDirectory() as NSString).appendingPathComponent("Library/Logs/DiagnosticReports"),
       "/Library/Logs/DiagnosticReports",
