@@ -420,15 +420,10 @@ private func runCompanionServer(_ udid: String, userDefaults: UserDefaults, xcod
 
   let target = try await targetForUDID(udid, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, warmUp: true, logger: logger)
 
-  let addMetadataSel = NSSelectorFromString("addMetadata:")
-  if (reporter as AnyObject).responds(to: addMetadataSel) {
-    _ = (reporter as AnyObject).perform(
-      addMetadataSel,
-      with: [
-        "udid": udid,
-        "target_type": FBiOSTargetTypeStringFromTargetType(target.targetType).lowercased(),
-      ])
-  }
+  reporter.addMetadata([
+    "udid": udid,
+    "target_type": FBiOSTargetTypeStringFromTargetType(target.targetType).lowercased(),
+  ])
   reporter.report(FBEventReporterSubject(forEvent: "launched"))
 
   let temporaryDirectory = FBTemporaryDirectory(logger: logger)
