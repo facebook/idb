@@ -311,4 +311,37 @@ final class FBAXBridgeReapTests: XCTestCase {
     let arguments = FBAXBridgePersistentTransport.serveArguments(socketPath: "/x/y.sock", idleTimeoutSeconds: 7)
     XCTAssertEqual(arguments, ["accessibility", "serve", "/x/y.sock", "--idle-timeout", "7"])
   }
+
+  // Two processes have to arrive at the same name independently.
+
+  func testTheSocketForASimulatorIsTheSameForEveryProcessThatAsks() {
+    let udid = "AE4DEFD9-F94B-4543-84F1-849D4B5C4351"
+    XCTAssertEqual(FBAXBridgeSocket.path(forSimulator: udid), FBAXBridgeSocket.path(forSimulator: udid))
+  }
+
+  // A UDID is hex and can reach two callers in different cases; both must land on one socket.
+  func testTheSocketForASimulatorIgnoresUdidCase() {
+    let upper = FBAXBridgeSocket.path(forSimulator: "AE4DEFD9-F94B-4543-84F1-849D4B5C4351")
+    let lower = FBAXBridgeSocket.path(forSimulator: "ae4defd9-f94b-4543-84f1-849d4b5c4351")
+    XCTAssertEqual(upper, lower)
+  }
+
+  func testDifferentSimulatorsGetDifferentSockets() {
+    let first = FBAXBridgeSocket.path(forSimulator: "AE4DEFD9-F94B-4543-84F1-849D4B5C4351")
+    let second = FBAXBridgeSocket.path(forSimulator: "7A44631A-36A9-4575-ADDA-2477A4719519")
+    XCTAssertNotEqual(first, second)
+  }
+
+  func testASimulatorSocketIsRecognisedByTheReaper() {
+    let path = FBAXBridgeSocket.path(forSimulator: "AE4DEFD9-F94B-4543-84F1-849D4B5C4351")
+    XCTAssertEqual(path, "\(FBAXBridgeSocket.directory)/AE4DEFD9F94B454384F1849D4B5C4351.sock")
+    XCTAssertTrue(path.hasSuffix(FBAXBridgeSocket.suffix))
+  }
+
+  // `bind` truncates rather than failing, so the margin is checked against the real limit.
+  func testASimulatorSocketPathFitsInSunPath() {
+    let path = FBAXBridgeSocket.path(forSimulator: "AE4DEFD9-F94B-4543-84F1-849D4B5C4351")
+    XCTAssertLessThan(
+      path.utf8.count, FBAXBridgeConnection.sunPathCapacity, "\(path) is \(path.utf8.count) bytes")
+  }
 }

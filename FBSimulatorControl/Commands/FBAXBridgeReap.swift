@@ -92,6 +92,16 @@ enum FBAXBridgeSocket {
     "\(directory)/\(identifier)\(suffix)"
   }
 
+  /// The socket a bridge serving `udid` listens on.
+  ///
+  /// Named for the simulator rather than the connection, so a process can find a bridge it did not
+  /// start. Case is normalised because a UDID is hex that can reach two callers in either case, and both
+  /// must compute the same socket. Dashes are stripped to buy length: ten bytes spare in `sun_path`
+  /// rather than six, which matters because `bind` truncates an over-long path and reports success.
+  static func path(forSimulator udid: String) -> String {
+    path(forConnection: udid.replacingOccurrences(of: "-", with: "").uppercased())
+  }
+
   /// Every path that looks like a bridge socket, whether or not anything is still listening on it.
   ///
   /// The suffix is the whole test, because the directory is ours and holds nothing else. It used to
