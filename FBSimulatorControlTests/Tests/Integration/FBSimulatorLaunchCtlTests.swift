@@ -16,7 +16,7 @@ final class FBSimulatorLaunchCtlTests: FBSimulatorControlTestCase {
 
   func testListsServicesViaCoreSimulatorSpawn() async throws {
     guard
-      let simulator = assertObtainsBootedSimulator(
+      let simulator = await assertObtainsBootedSimulator(
         with: try FBSimulatorConfiguration.defaultConfiguration().withDeviceModel(FBDeviceModel(rawValue: "iPhone 8")),
         bootConfiguration: bootConfiguration
       )

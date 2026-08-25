@@ -11,7 +11,7 @@ final class FBSimulatorLaunchTests: FBSimulatorControlTestCase {
 
   func testLaunchesSingleSimulator(_ configuration: FBSimulatorConfiguration) async {
     guard
-      let simulator = assertObtainsBootedSimulator(
+      let simulator = await assertObtainsBootedSimulator(
         with: configuration,
         bootConfiguration: bootConfiguration
       )
@@ -51,7 +51,7 @@ final class FBSimulatorLaunchTests: FBSimulatorControlTestCase {
   // func testCanUninstallApplication() {
   //   let application = tableSearchApplication
   //   let launch = tableSearchAppLaunch
-  //   guard let simulator = assertObtainsBootedSimulator(withInstalledApplication: application) else { return }
+  //   guard let simulator = await assertObtainsBootedSimulator(withInstalledApplication: application) else { return }
   //
   //   var error: NSError?
   //   var success = simulator.launchApplication(launch).await(&error) != nil

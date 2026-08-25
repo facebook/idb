@@ -17,7 +17,7 @@ final class FBSimulatorSettingsBridgeTests: FBSimulatorControlTestCase {
 
   func testRunsSimulatorFrameworkBridgeViaCoreSimulator() async throws {
     guard
-      let simulator = assertObtainsBootedSimulator(
+      let simulator = await assertObtainsBootedSimulator(
         with: try FBSimulatorConfiguration.defaultConfiguration().withDeviceModel(FBDeviceModel(rawValue: "iPhone 8")),
         bootConfiguration: bootConfiguration
       )
@@ -35,7 +35,7 @@ final class FBSimulatorSettingsBridgeTests: FBSimulatorControlTestCase {
 
   func testAutoFillPasswordsRoundTripsThroughApply() async throws {
     guard
-      let simulator = assertObtainsBootedSimulator(
+      let simulator = await assertObtainsBootedSimulator(
         with: try FBSimulatorConfiguration.defaultConfiguration().withDeviceModel(FBDeviceModel(rawValue: "iPhone 8")),
         bootConfiguration: bootConfiguration
       )

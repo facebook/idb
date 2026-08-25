@@ -75,12 +75,12 @@ extension FBSimulatorControlTestCase {
     return try? assertObtainsSimulatorWithConfiguration(simulatorConfiguration).await()
   }
 
-  func assertObtainsBootedSimulator() -> FBSimulator? {
-    return assertObtainsBootedSimulator(with: simulatorConfiguration, bootConfiguration: bootConfiguration)
+  func assertObtainsBootedSimulator() async -> FBSimulator? {
+    return await assertObtainsBootedSimulator(with: simulatorConfiguration, bootConfiguration: bootConfiguration)
   }
 
   func assertObtainsBootedSimulator(withInstalledApplication application: FBBundleDescriptor) async -> FBSimulator? {
-    guard let simulator = assertObtainsBootedSimulator() else { return nil }
+    guard let simulator = await assertObtainsBootedSimulator() else { return nil }
     do {
       _ = try await simulator.installApplication(atPath: application.path)
     } catch {
@@ -90,10 +90,10 @@ extension FBSimulatorControlTestCase {
     return simulator
   }
 
-  func assertObtainsBootedSimulator(with configuration: FBSimulatorConfiguration, bootConfiguration: FBSimulatorBootConfiguration) -> FBSimulator? {
+  func assertObtainsBootedSimulator(with configuration: FBSimulatorConfiguration, bootConfiguration: FBSimulatorBootConfiguration) async -> FBSimulator? {
     guard let simulator = try? assertObtainsSimulatorWithConfiguration(configuration).await() else { return nil }
     do {
-      try simulator.boot(bootConfiguration).await()
+      try await simulator.boot(bootConfiguration)
     } catch {
       XCTFail("Failed to boot simulator: \(error)")
       return nil
@@ -132,7 +132,7 @@ extension FBSimulatorControlTestCase {
   }
 
   func assertSimulator(withConfiguration simulatorConfiguration: FBSimulatorConfiguration, boots bootConfiguration: FBSimulatorBootConfiguration, thenLaunchesApplication launchConfiguration: FBApplicationLaunchConfiguration) async -> FBSimulator? {
-    guard let simulator = assertObtainsBootedSimulator(with: simulatorConfiguration, bootConfiguration: bootConfiguration) else { return nil }
+    guard let simulator = await assertObtainsBootedSimulator(with: simulatorConfiguration, bootConfiguration: bootConfiguration) else { return nil }
     return await assertSimulator(simulator, launches: launchConfiguration)
   }
 }
