@@ -221,12 +221,6 @@ static NSString *const DefaultDeviceSet = @"~/Library/Developer/CoreSimulator/De
           stringByAppendingPathComponent:self.udid];
 }
 
-- (NSString *)xctestBinaryPath
-{
-  return [FBXcodeConfiguration.developerDirectory
-          stringByAppendingPathComponent:@"Platforms/iPhoneSimulator.platform/Developer/Library/Xcode/Agents/xctest"];
-}
-
 #pragma mark NSObject
 
 - (NSUInteger)hash
