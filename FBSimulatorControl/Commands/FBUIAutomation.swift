@@ -244,12 +244,17 @@ public extension FBAccessibilityElementsResponse {
 public extension FBSimulator {
 
   /// The converged UI-automation surface for `backend` — element reads and element-targeted actions
-  /// over a single query-shaped API. Each call returns a fresh reader that **owns its own warm
-  /// resource**: `.remoteAutomation` owns a `testmanagerd` DTX session, `.axBridge(persistence:
-  /// .persistent, …)` owns a guest `serve` process. Hold the returned instance to reuse its warm
-  /// resource across operations; drop it to tear the resource down. `.accessibility` and
-  /// `.axBridge(persistence: .oneShot, …)` are stateless — they hold no warm resource, so
-  /// reconstructing them per call is free.
+  /// over a single query-shaped API. Every call returns a fresh reader; the readers are cheap, and
+  /// where a backend owns an expensive warm resource, who owns it differs by backend:
+  ///
+  /// - `.axBridge(persistence: .persistent, …)` reads over a guest `serve` process owned by the
+  ///   **target**, memoized in `commandCache` and shared by every reader vended for that simulator.
+  ///   Dropping a reader leaves it running; it is released when the target is, or collected by the
+  ///   guest's own idle timeout or `FBAXBridgeReap`.
+  /// - `.remoteAutomation` owns a `testmanagerd` DTX session per **reader**. Hold the returned
+  ///   instance to reuse it across operations; drop it to tear the session down.
+  /// - `.accessibility` and `.axBridge(persistence: .oneShot, …)` are stateless — they hold no warm
+  ///   resource, so reconstructing them per call is free.
   ///
   /// The axbridge backend case carries the transport persistence and frontmost-resolution method it
   /// reads with, so those choices are expressed only where they apply rather than as arguments the
@@ -264,12 +269,23 @@ public extension FBSimulator {
       let transport: any FBAXBridgeTransport =
         switch persistence {
         case .oneShot: FBAXBridgeOneshotTransport(simulator: self)
-        case .persistent: FBAXBridgePersistentTransport(simulator: self)
+        case .persistent: persistentAXBridgeTransport()
         }
       return FBAXBridgeUIAutomation(
         simulator: self, transport: transport, persistence: persistence, frontmostMethod: frontmostMethod,
         automationMode: automationMode
       )
     }
+  }
+
+  /// The one persistent axbridge transport for this target.
+  ///
+  /// Memoized rather than per-reader because the transport is what owns the guest `serve` process, and
+  /// the spawn plus `initForRemoteAccess` it pays for is the cost the persistent lane exists to avoid.
+  /// Keyed by type, so one per simulator — which is the right granularity precisely because the
+  /// transport is parameterized by nothing else: `frontmostMethod` and `automationMode` are the
+  /// reader's, so readers differing in those still share this.
+  private func persistentAXBridgeTransport() -> FBAXBridgePersistentTransport {
+    commandCache.resolve { FBAXBridgePersistentTransport(simulator: self) }
   }
 }

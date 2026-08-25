@@ -46,13 +46,29 @@ final class FBUIAutomationTests: XCTestCase {
     return try XCTUnwrap(bridgeReader.transport as? FBAXBridgePersistentTransport)
   }
 
-  func testEachPersistentBackendCallBuildsItsOwnTransport() throws {
+  func testEveryPersistentBackendCallSharesOneTransport() throws {
     let simulator = FBSimulatorTestSupport.testableSimulator()
     let first = try persistentTransport(simulator)
     let second = try persistentTransport(simulator)
-    // BUG: every call mints a fresh transport, so each read spawns a guest and SIGKILLs it on the way
-    // out instead of reusing one — flipped in the following commit.
+    XCTAssertTrue(first === second)
+  }
+
+  func testPersistentTransportsAreNotSharedAcrossSimulators() throws {
+    let first = try persistentTransport(FBSimulatorTestSupport.testableSimulator())
+    let second = try persistentTransport(FBSimulatorTestSupport.testableSimulator())
     XCTAssertFalse(first === second)
+  }
+
+  func testReadersDifferingOnlyInReaderOptionsShareOneTransport() throws {
+    let simulator = FBSimulatorTestSupport.testableSimulator()
+    let shared = try persistentTransport(simulator)
+    let otherOptions = FBUIAutomationBackend.axBridge(
+      persistence: .persistent, frontmostMethod: .centerPoint, automationMode: nil
+    )
+    let reader = try XCTUnwrap(try simulator.uiAutomation(backend: otherOptions) as? FBAXBridgeUIAutomation)
+    // `frontmostMethod` and `automationMode` are the reader's, not the transport's, so differing on
+    // them must not cost a second guest.
+    XCTAssertTrue((reader.transport as? FBAXBridgePersistentTransport) === shared)
   }
 
   func testEachOneShotBackendCallBuildsAOneShotTransport() throws {
