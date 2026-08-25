@@ -7,38 +7,31 @@
 
 import Foundation
 
-@objc public protocol FBContainedFile: NSObjectProtocol {
+/// A file addressed within some container. Conformers are value types holding only
+/// the address, so the existential is `Sendable` and hops queues without boxing.
+public protocol FBContainedFile: Sendable {
 
-  @objc(removeItemWithError:)
   func removeItem() throws
 
-  @objc(contentsOfDirectoryWithError:)
   func contentsOfDirectory() throws -> [String]
 
-  @objc(contentsOfFileWithError:)
   func contentsOfFile() throws -> Data
 
-  @objc(createDirectoryWithError:)
   func createDirectory() throws
 
-  @objc(fileExistsIsDirectory:)
-  func fileExists(isDirectory isDirectoryOut: UnsafeMutablePointer<ObjCBool>?) -> Bool
+  func fileExists() -> (exists: Bool, isDirectory: Bool)
 
-  @objc(moveTo:error:)
   func move(to destination: FBContainedFile) throws
 
-  @objc(populateWithContentsOfHostPath:error:)
   func populate(withContentsOfHostPath path: String) throws
 
-  @objc(populateHostPathWithContents:error:)
   func populateHostPath(withContents path: String) throws
 
-  @objc(fileByAppendingPathComponent:error:)
   func file(byAppendingPathComponent component: String) throws -> FBContainedFile
 
-  @objc var pathOnHostFileSystem: String? { get }
+  var pathOnHostFileSystem: String? { get }
 
-  @objc var pathMapping: [String: String]? { get }
+  var pathMapping: [String: String]? { get }
 }
 
 /// The failures a file container can produce, as data: which operation, on what,
@@ -95,15 +88,6 @@ extension FBFileContainerError: LocalizedError {
   }
 }
 
-/// Carries a non-`Sendable` `FBContainedFile` across the serial-queue boundary.
-/// The wrapped value is only ever touched on the owning serial queue.
-private final class ContainedFileBox: @unchecked Sendable {
-  let file: any FBContainedFile
-  init(_ file: any FBContainedFile) {
-    self.file = file
-  }
-}
-
 /// Carries a non-`Sendable` `ProvisioningProfileCommands` across the async boundary.
 private final class ProvisioningCommandsBox: @unchecked Sendable {
   let commands: any ProvisioningProfileCommands
@@ -129,32 +113,30 @@ public final class FileContainerTailOperation {
 /// File container backed by a synchronous `FBContainedFile`. Each operation
 /// resolves the target path and runs the synchronous file work on a serial
 /// queue.
-@objc(FBContainedFile_ContainedRoot)
-public final class FBContainedFile_ContainedRoot: NSObject, AsyncFileContainer {
+public final class FBContainedFile_ContainedRoot: AsyncFileContainer {
 
-  private let rootFileBox: ContainedFileBox
+  private let rootFile: any FBContainedFile
   private let queue: DispatchQueue
 
-  @objc public init(rootFile: any FBContainedFile, queue: DispatchQueue) {
-    self.rootFileBox = ContainedFileBox(rootFile)
+  public init(rootFile: any FBContainedFile, queue: DispatchQueue) {
+    self.rootFile = rootFile
     self.queue = queue
-    super.init()
   }
 
   // MARK: - Host path access
 
-  public var pathOnHostFileSystem: String? { rootFileBox.file.pathOnHostFileSystem }
+  public var pathOnHostFileSystem: String? { rootFile.pathOnHostFileSystem }
 
-  public var pathMapping: [String: String]? { rootFileBox.file.pathMapping }
+  public var pathMapping: [String: String]? { rootFile.pathMapping }
 
   // MARK: - AsyncFileContainer
 
   public func copy(fromHost sourcePath: String, toContainer destinationPath: String) async throws {
-    let box = rootFileBox
+    let rootFile = self.rootFile
     try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
       queue.async {
         do {
-          var destination = try box.file.file(byAppendingPathComponent: destinationPath)
+          var destination = try rootFile.file(byAppendingPathComponent: destinationPath)
           // Attempt to delete first to overwrite.
           destination = try destination.file(byAppendingPathComponent: (sourcePath as NSString).lastPathComponent)
           try? destination.removeItem()
@@ -172,17 +154,17 @@ public final class FBContainedFile_ContainedRoot: NSObject, AsyncFileContainer {
   }
 
   public func copy(fromContainer sourcePath: String, toHost destinationPath: String) async throws -> String {
-    let box = rootFileBox
+    let rootFile = self.rootFile
     return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<String, Error>) in
       queue.async {
         do {
-          let source = try box.file.file(byAppendingPathComponent: sourcePath)
-          var sourceIsDirectory: ObjCBool = false
-          guard source.fileExists(isDirectory: &sourceIsDirectory) else {
+          let source = try rootFile.file(byAppendingPathComponent: sourcePath)
+          let (sourceExists, sourceIsDirectory) = source.fileExists()
+          guard sourceExists else {
             throw FBFileContainerError.sourceDoesNotExist(source: String(describing: source))
           }
           var dstPath = destinationPath
-          if !sourceIsDirectory.boolValue {
+          if !sourceIsDirectory {
             do {
               try FileManager.default.createDirectory(atPath: dstPath, withIntermediateDirectories: true)
             } catch {
@@ -213,12 +195,12 @@ public final class FBContainedFile_ContainedRoot: NSObject, AsyncFileContainer {
   }
 
   public func tail(_ path: String, to consumer: any FBDataConsumer) async throws -> FileContainerTailOperation {
-    let box = rootFileBox
+    let rootFile = self.rootFile
     let serialQueue = queue
     let hostPath: String = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<String, Error>) in
       serialQueue.async {
         do {
-          let fileToTail = try box.file.file(byAppendingPathComponent: path)
+          let fileToTail = try rootFile.file(byAppendingPathComponent: path)
           guard let hostPath = fileToTail.pathOnHostFileSystem else {
             throw FBFileContainerError.notOnLocalFilesystem(file: String(describing: fileToTail))
           }
@@ -243,11 +225,11 @@ public final class FBContainedFile_ContainedRoot: NSObject, AsyncFileContainer {
   }
 
   public func createDirectory(_ directoryPath: String) async throws {
-    let box = rootFileBox
+    let rootFile = self.rootFile
     try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
       queue.async {
         do {
-          let directory = try box.file.file(byAppendingPathComponent: directoryPath)
+          let directory = try rootFile.file(byAppendingPathComponent: directoryPath)
           do {
             try directory.createDirectory()
           } catch {
@@ -262,12 +244,12 @@ public final class FBContainedFile_ContainedRoot: NSObject, AsyncFileContainer {
   }
 
   public func move(from sourcePath: String, to destinationPath: String) async throws {
-    let box = rootFileBox
+    let rootFile = self.rootFile
     try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
       queue.async {
         do {
-          let source = try box.file.file(byAppendingPathComponent: sourcePath)
-          let destination = try box.file.file(byAppendingPathComponent: destinationPath)
+          let source = try rootFile.file(byAppendingPathComponent: sourcePath)
+          let destination = try rootFile.file(byAppendingPathComponent: destinationPath)
           do {
             try source.move(to: destination)
           } catch {
@@ -282,11 +264,11 @@ public final class FBContainedFile_ContainedRoot: NSObject, AsyncFileContainer {
   }
 
   public func remove(_ path: String) async throws {
-    let box = rootFileBox
+    let rootFile = self.rootFile
     try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
       queue.async {
         do {
-          let file = try box.file.file(byAppendingPathComponent: path)
+          let file = try rootFile.file(byAppendingPathComponent: path)
           do {
             try file.removeItem()
           } catch {
@@ -301,11 +283,11 @@ public final class FBContainedFile_ContainedRoot: NSObject, AsyncFileContainer {
   }
 
   public func contents(ofDirectory path: String) async throws -> [String] {
-    let box = rootFileBox
+    let rootFile = self.rootFile
     return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<[String], Error>) in
       queue.async {
         do {
-          let directory = try box.file.file(byAppendingPathComponent: path)
+          let directory = try rootFile.file(byAppendingPathComponent: path)
           continuation.resume(returning: try directory.contentsOfDirectory())
         } catch {
           continuation.resume(throwing: error)
@@ -395,22 +377,16 @@ public struct FBFileContainerKind: RawRepresentable, Hashable, Sendable {
 // MARK: - Host Filesystem Contained Files
 
 /// A file on the host filesystem, addressed by absolute path.
-private final class ContainedFile_Host: NSObject, FBContainedFile {
+private struct ContainedFile_Host: FBContainedFile, CustomStringConvertible {
 
-  private let fileManager: FileManager
-  private let path: String
-
-  init(fileManager: FileManager, path: String) {
-    self.fileManager = fileManager
-    self.path = path
-  }
+  let path: String
 
   func removeItem() throws {
-    try fileManager.removeItem(atPath: path)
+    try FileManager.default.removeItem(atPath: path)
   }
 
   func contentsOfDirectory() throws -> [String] {
-    try fileManager.contentsOfDirectory(atPath: path)
+    try FileManager.default.contentsOfDirectory(atPath: path)
   }
 
   func contentsOfFile() throws -> Data {
@@ -418,54 +394,47 @@ private final class ContainedFile_Host: NSObject, FBContainedFile {
   }
 
   func createDirectory() throws {
-    try fileManager.createDirectory(atPath: path, withIntermediateDirectories: true)
+    try FileManager.default.createDirectory(atPath: path, withIntermediateDirectories: true)
   }
 
-  func fileExists(isDirectory isDirectoryOut: UnsafeMutablePointer<ObjCBool>?) -> Bool {
-    guard let isDirectoryOut else {
-      return fileManager.fileExists(atPath: path)
-    }
-    return fileManager.fileExists(atPath: path, isDirectory: isDirectoryOut)
+  func fileExists() -> (exists: Bool, isDirectory: Bool) {
+    var isDirectory: ObjCBool = false
+    let exists = FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory)
+    return (exists, isDirectory.boolValue)
   }
 
   func move(to destination: FBContainedFile) throws {
     guard let hostDestination = destination as? ContainedFile_Host else {
       throw FBFileContainerError.destinationNotOnHostFilesystem(destination: String(describing: destination))
     }
-    try fileManager.moveItem(atPath: path, toPath: hostDestination.path)
+    try FileManager.default.moveItem(atPath: path, toPath: hostDestination.path)
   }
 
   func populate(withContentsOfHostPath path: String) throws {
-    try fileManager.copyItem(atPath: path, toPath: self.path)
+    try FileManager.default.copyItem(atPath: path, toPath: self.path)
   }
 
   func populateHostPath(withContents path: String) throws {
-    try fileManager.copyItem(atPath: self.path, toPath: path)
+    try FileManager.default.copyItem(atPath: self.path, toPath: path)
   }
 
   func file(byAppendingPathComponent component: String) throws -> FBContainedFile {
-    ContainedFile_Host(fileManager: fileManager, path: (path as NSString).appendingPathComponent(component))
+    ContainedFile_Host(path: (path as NSString).appendingPathComponent(component))
   }
 
   var pathOnHostFileSystem: String? { path }
 
   var pathMapping: [String: String]? { nil }
 
-  override var description: String {
+  var description: String {
     "Host File \(path)"
   }
 }
 
 /// A virtual root that maps first path components onto host paths.
-private final class ContainedFile_Mapped_Host: NSObject, FBContainedFile {
+private struct ContainedFile_Mapped_Host: FBContainedFile, CustomStringConvertible {
 
-  private let mappingPaths: [String: String]
-  private let fileManager: FileManager
-
-  init(mappingPaths: [String: String], fileManager: FileManager) {
-    self.mappingPaths = mappingPaths
-    self.fileManager = fileManager
-  }
+  let mappingPaths: [String: String]
 
   func removeItem() throws {
     throw FBFileContainerError.unsupportedOnVirtualRoot(operation: #function)
@@ -483,8 +452,8 @@ private final class ContainedFile_Mapped_Host: NSObject, FBContainedFile {
     throw FBFileContainerError.unsupportedOnVirtualRoot(operation: #function)
   }
 
-  func fileExists(isDirectory isDirectoryOut: UnsafeMutablePointer<ObjCBool>?) -> Bool {
-    false
+  func fileExists() -> (exists: Bool, isDirectory: Bool) {
+    (false, false)
   }
 
   func move(to destination: FBContainedFile) throws {
@@ -508,7 +477,7 @@ private final class ContainedFile_Mapped_Host: NSObject, FBContainedFile {
     guard let firstComponent = pathComponents.first, let mappedPath = mappingPaths[firstComponent] else {
       throw FBFileContainerError.invalidRootPath(component: pathComponents.first ?? "", available: Array(mappingPaths.keys))
     }
-    let mapped = ContainedFile_Host(fileManager: fileManager, path: mappedPath)
+    let mapped = ContainedFile_Host(path: mappedPath)
     return try mapped.file(byAppendingPathComponent: Self.popFirstPathComponent(pathComponents))
   }
 
@@ -516,7 +485,7 @@ private final class ContainedFile_Mapped_Host: NSObject, FBContainedFile {
 
   var pathMapping: [String: String]? { mappingPaths }
 
-  override var description: String {
+  var description: String {
     "Root mapping: \(FBCollectionInformation.oneLineDescription(from: Array(mappingPaths.keys)))"
   }
 
@@ -543,11 +512,11 @@ private final class ContainedFile_Mapped_Host: NSObject, FBContainedFile {
 public enum FBFileContainer {
 
   public static func containedFile(forBasePath basePath: String) -> FBContainedFile {
-    ContainedFile_Host(fileManager: .default, path: basePath)
+    ContainedFile_Host(path: basePath)
   }
 
   public static func containedFile(forPathMapping pathMapping: [String: String]) -> FBContainedFile {
-    ContainedFile_Mapped_Host(mappingPaths: pathMapping, fileManager: .default)
+    ContainedFile_Mapped_Host(mappingPaths: pathMapping)
   }
 
   public static func fileContainer(forBasePath basePath: String) -> FBContainedFile_ContainedRoot {
