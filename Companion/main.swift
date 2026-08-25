@@ -665,9 +665,9 @@ private func logStartupInfo(_ logger: FBIDBLogger) {
 private func idbMain() async -> Int32 {
   let arguments = ProcessInfo.processInfo.arguments
   if arguments.contains("--help") {
-    // A requested help message is not an error: print to stdout and exit 0.
-    // `print` appends the trailing newline the multiline constant lacks.
-    print(kUsageHelpMessage)
+    // A requested help message is not an error: write to stdout and exit 0,
+    // appending the trailing newline the multiline constant lacks.
+    FileHandle.standardOutput.write(Data((kUsageHelpMessage + "\n").utf8))
     return 0
   }
   if arguments.contains("--version") {
