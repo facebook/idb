@@ -232,7 +232,7 @@ public struct FBLogicTestMirrorLogs: OptionSet, Sendable {
 
   @objc public let testFilter: String?
   public let mirroring: FBLogicTestMirrorLogs
-  @objc public let coverageConfiguration: FBCodeCoverageConfiguration?
+  public let coverageConfiguration: FBCodeCoverageConfiguration?
   @objc public let binaryPath: String?
   @objc public let logDirectoryPath: String?
   @objc public let architectures: Set<String>

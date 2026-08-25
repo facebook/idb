@@ -7,20 +7,25 @@
 
 import Foundation
 
-@objc public final class FBCodeCoverageConfiguration: NSObject {
+/// The code-coverage formats, with the member names the `NS_ENUM` importer produced.
+public enum FBCodeCoverageFormat: UInt, Sendable {
+  case exported = 0
+  case raw = 1
+}
 
-  @objc public let coverageDirectory: String
-  @objc public let format: FBCodeCoverageFormat
-  @objc public let shouldEnableContinuousCoverageCollection: Bool
+public struct FBCodeCoverageConfiguration: Sendable, CustomStringConvertible {
 
-  @objc public init(directory coverageDirectory: String, format: FBCodeCoverageFormat, enableContinuousCoverageCollection: Bool) {
+  public let coverageDirectory: String
+  public let format: FBCodeCoverageFormat
+  public let shouldEnableContinuousCoverageCollection: Bool
+
+  public init(directory coverageDirectory: String, format: FBCodeCoverageFormat, enableContinuousCoverageCollection: Bool) {
     self.coverageDirectory = coverageDirectory
     self.format = format
     self.shouldEnableContinuousCoverageCollection = enableContinuousCoverageCollection
-    super.init()
   }
 
-  public override var description: String {
+  public var description: String {
     "Coverage Directory \(coverageDirectory) | Format \(format.rawValue) | Enable Continuous Coverage Collection \(shouldEnableContinuousCoverageCollection)"
   }
 }

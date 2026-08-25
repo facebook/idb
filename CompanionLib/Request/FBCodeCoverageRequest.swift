@@ -9,16 +9,15 @@ import FBControlCore
 import Foundation
 import XCTestBootstrap
 
-@objc public final class FBCodeCoverageRequest: NSObject {
+public struct FBCodeCoverageRequest: Sendable {
 
-  @objc public let collect: Bool
-  @objc public let format: FBCodeCoverageFormat
-  @objc public let shouldEnableContinuousCoverageCollection: Bool
+  public let collect: Bool
+  public let format: FBCodeCoverageFormat
+  public let shouldEnableContinuousCoverageCollection: Bool
 
-  @objc public init(collect: Bool, format: FBCodeCoverageFormat, enableContinuousCoverageCollection: Bool) {
+  public init(collect: Bool, format: FBCodeCoverageFormat, enableContinuousCoverageCollection: Bool) {
     self.collect = collect
     self.format = format
     self.shouldEnableContinuousCoverageCollection = enableContinuousCoverageCollection
-    super.init()
   }
 }

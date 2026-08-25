@@ -52,7 +52,6 @@ extension IDBXCTestReporter {
 
 /// The ways coverage collection can fail, as data rather than assembled strings.
 enum IDBXCTestReporterError: Error {
-  case unsupportedCoverageFormat
   case coverageExportFailed(exitCode: Int32, stderr: String)
   case exportStreamMissing
 }
@@ -60,8 +59,6 @@ enum IDBXCTestReporterError: Error {
 extension IDBXCTestReporterError: LocalizedError {
   var errorDescription: String? {
     switch self {
-    case .unsupportedCoverageFormat:
-      return "Unsupported code coverage format"
     case let .coverageExportFailed(exitCode, stderr):
       return "xcrun failed to export code coverage data \(exitCode) \(stderr)"
     case .exportStreamMissing:
@@ -439,9 +436,6 @@ final class IDBXCTestReporter: NSObject, FBXCTestReporter, FBDataConsumer, @unch
 
     case .raw:
       return try await gzipFolder(at: config.coverageDirectory)
-
-    default:
-      throw IDBXCTestReporterError.unsupportedCoverageFormat
     }
   }
 
