@@ -26,6 +26,7 @@ class _TelemetryPlugin(ModuleType):
         self.updates_per_call: list[LoggingMetadata | None] = list(updates_per_call)
         self.started: list[LoggingMetadata] = []
         self.succeeded: list[LoggingMetadata] = []
+        self.succeeded_durations: list[int] = []
         self.failed: list[LoggingMetadata] = []
         self.observed_results: list[object] = []
 
@@ -36,6 +37,7 @@ class _TelemetryPlugin(ModuleType):
         self, name: str, duration: int, metadata: LoggingMetadata
     ) -> None:
         self.succeeded.append(dict(metadata))
+        self.succeeded_durations.append(duration)
 
     async def failed_invocation(
         self,
@@ -56,6 +58,64 @@ class _TelemetryPlugin(ModuleType):
 
 
 class LogCallResultMetadataTest(TestCase):
+    async def test_decorator_duration_preserves_subsecond_precision(self) -> None:
+        telemetry = _TelemetryPlugin(updates_per_call=[])
+
+        @log_call(name="fetch")
+        async def fetch() -> None:
+            return None
+
+        with (
+            mock.patch.object(plugin, "PLUGINS", [telemetry]),
+            mock.patch(
+                "idb.common.logging._monotonic",
+                side_effect=[10.25, 10.375],
+            ),
+        ):
+            await fetch()
+
+        self.assertEqual([125], telemetry.succeeded_durations)
+
+    async def test_context_manager_duration_preserves_subsecond_precision(
+        self,
+    ) -> None:
+        telemetry = _TelemetryPlugin(updates_per_call=[])
+
+        with (
+            mock.patch.object(plugin, "PLUGINS", [telemetry]),
+            mock.patch(
+                "idb.common.logging._monotonic",
+                side_effect=[10.25, 10.375],
+            ),
+        ):
+            async with log_call(name="fetch"):
+                pass
+
+        self.assertEqual([125], telemetry.succeeded_durations)
+
+    async def test_object_metadata_is_copied_per_invocation(self) -> None:
+        telemetry = _TelemetryPlugin(updates_per_call=[])
+
+        class Caller:
+            @property
+            def metadata(self) -> LoggingMetadata:
+                return plugin.resolve_metadata(logger=mock.MagicMock())
+
+            @log_call(name="fetch", metadata={"grpc_method_name": "fetch"})
+            async def fetch(self) -> None:
+                return None
+
+        caller = Caller()
+        with mock.patch.object(plugin, "PLUGINS", [telemetry]):
+            with plugin.scoped_invocation_metadata({"capture": "capture-1"}):
+                await caller.fetch()
+            await caller.fetch()
+
+        self.assertEqual("capture-1", telemetry.succeeded[0].get("capture"))
+        self.assertNotIn("capture", telemetry.succeeded[1])
+        self.assertEqual("fetch", telemetry.succeeded[0].get("grpc_method_name"))
+        self.assertEqual("fetch", telemetry.succeeded[1].get("grpc_method_name"))
+
     async def test_result_metadata_is_merged_into_success_event(self) -> None:
         telemetry = _TelemetryPlugin(updates_per_call=[{"ax_element_count": "3"}])
         result = object()

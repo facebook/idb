@@ -258,6 +258,10 @@ class Client(ClientBase):
         self.logger = logger
 
     @property
+    def metadata(self) -> LoggingMetadata:
+        return plugin.current_scoped_invocation_metadata()
+
+    @property
     def address(self) -> Address:
         return self.companion.address
 

@@ -14,11 +14,13 @@ import logging
 import os
 import ssl
 from argparse import ArgumentParser, Namespace
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Iterator
+from contextlib import contextmanager
+from contextvars import ContextVar
 from functools import wraps
 from logging import Logger
 from types import ModuleType
-from typing import Any, cast, Dict, List, Optional, overload, ParamSpec, TypeVar
+from typing import cast, List, overload, ParamSpec, TypeVar
 
 from idb.common.command import Command
 from idb.common.types import IdbException, LoggingMetadata
@@ -50,6 +52,24 @@ def _load_plugins(package_names: list[str]) -> list[ModuleType]:
 PLUGINS: list[ModuleType] = _load_plugins(PLUGIN_PACKAGE_NAMES)
 _META_ENVIRON_PREFIX = "IDB_META_"
 logger: logging.Logger = logging.getLogger(__name__)
+_SCOPED_METADATA: ContextVar[LoggingMetadata | None] = ContextVar(
+    "idb_scoped_invocation_metadata",
+    default=None,
+)
+
+
+@contextmanager
+def scoped_invocation_metadata(metadata: LoggingMetadata) -> Iterator[None]:
+    current = _SCOPED_METADATA.get() or {}
+    token = _SCOPED_METADATA.set({**current, **metadata})
+    try:
+        yield
+    finally:
+        _SCOPED_METADATA.reset(token)
+
+
+def current_scoped_invocation_metadata() -> LoggingMetadata:
+    return dict(_SCOPED_METADATA.get() or {})
 
 
 def load_cli_plugins() -> None:
@@ -245,6 +265,7 @@ def resolve_metadata(
             continue
         resolved = plugin_resolver(logger=logger, command=command, args=args)
         metadata.update(resolved)
+    metadata.update(current_scoped_invocation_metadata())
     return metadata
 
 
