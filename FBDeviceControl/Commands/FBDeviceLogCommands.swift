@@ -40,18 +40,6 @@ public class FBDeviceLogOperation: LogOperation {
 
 // MARK: - FBDeviceLogCommands
 
-/// The way log tailing fails when its device is gone, as data rather than an assembled string.
-public enum FBDeviceLogError: Error, LocalizedError {
-  case deviceNil
-
-  public var errorDescription: String? {
-    switch self {
-    case .deviceNil:
-      return "Device is nil"
-    }
-  }
-}
-
 public class FBDeviceLogCommands: NSObject {
   private weak var device: FBDevice?
 
@@ -70,7 +58,7 @@ public class FBDeviceLogCommands: NSObject {
 
   public func tailLog(_ arguments: [String], consumer: any FBDataConsumer) -> FBFuture<FBDeviceLogOperation> {
     guard let device else {
-      return FBFuture(error: FBDeviceLogError.deviceNil)
+      return FBFuture(error: FBDeviceNilError.deviceNil)
     }
     if !arguments.isEmpty {
       let unsupportedArgumentsMessage = "[FBDeviceLogCommands][rdar://38452839] Unsupported arguments: \(arguments)"

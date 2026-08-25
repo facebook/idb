@@ -11,7 +11,6 @@ import XCTestBootstrap
 
 /// The ways device test execution can fail, as data rather than assembled strings.
 public enum FBDeviceXCTestError: Error {
-  case deviceNil
   case testManagerAlreadyRunning(configurationDescription: String)
   case unexpectedReporter(reporterDescription: String)
   case xctestrunCreationFailed(underlying: Error)
@@ -22,8 +21,6 @@ public enum FBDeviceXCTestError: Error {
 extension FBDeviceXCTestError: LocalizedError {
   public var errorDescription: String? {
     switch self {
-    case .deviceNil:
-      return "Device is nil"
     case let .testManagerAlreadyRunning(configurationDescription):
       return "Cannot Start Test Manager with Configuration \(configurationDescription) as it is already running"
     case let .unexpectedReporter(reporterDescription):
@@ -69,7 +66,7 @@ public class FBDeviceXCTestCommands: NSObject {
       throw FBDeviceXCTestError.testManagerAlreadyRunning(configurationDescription: String(describing: testLaunchConfiguration))
     }
     guard let device else {
-      throw FBDeviceXCTestError.deviceNil
+      throw FBDeviceNilError.deviceNil
     }
     guard let reporter = reporter as? FBXCTestReporter else {
       throw FBDeviceXCTestError.unexpectedReporter(reporterDescription: String(describing: reporter))
@@ -105,7 +102,7 @@ public class FBDeviceXCTestCommands: NSObject {
     // id (e.g. we query for 00008101-001D296A2EE8001E, while xcodebuild have
     // 00008101001D296A2EE8001E).
     guard let device else {
-      throw FBDeviceXCTestError.deviceNil
+      throw FBDeviceNilError.deviceNil
     }
     guard let identifier = device.calls.CopyDeviceIdentifier(device.amDeviceRef) else {
       throw FBDeviceXCTestError.deviceIdentifierUnavailable(deviceDescription: String(describing: device))

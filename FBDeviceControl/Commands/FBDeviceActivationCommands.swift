@@ -13,7 +13,6 @@ private let DefaultDeviceActivationURL = "https://albert.apple.com/deviceservice
 
 /// The ways device activation can fail, as data rather than assembled strings.
 public enum FBDeviceActivationError: Error {
-  case deviceNil
   case invalidActivationState(state: String)
   case activationStateMismatch(expected: String, actual: String)
   case noActivationState(response: String)
@@ -29,8 +28,6 @@ public enum FBDeviceActivationError: Error {
 extension FBDeviceActivationError: LocalizedError {
   public var errorDescription: String? {
     switch self {
-    case .deviceNil:
-      return "Device is nil"
     case let .invalidActivationState(state):
       return "\(state) is not a valid activation state"
     case let .activationStateMismatch(expected, actual):
@@ -73,7 +70,7 @@ public class FBDeviceActivationCommands: NSObject {
 
   fileprivate func activate() async throws {
     guard let device else {
-      throw FBDeviceActivationError.deviceNil
+      throw FBDeviceNilError.deviceNil
     }
     let logger = device.logger
     let state = try await activationStateAsync()
@@ -100,7 +97,7 @@ public class FBDeviceActivationCommands: NSObject {
 
   private func performActivationAsync() async throws {
     guard let device else {
-      throw FBDeviceActivationError.deviceNil
+      throw FBDeviceNilError.deviceNil
     }
     let logger = device.logger
     try await confirmActivationStateAsync(FBDeviceActivationState.unactivated)
@@ -116,7 +113,7 @@ public class FBDeviceActivationCommands: NSObject {
 
   private func mobileActivationService() -> FBFutureContext<FBAMDServiceConnection> {
     guard let device else {
-      return FBFutureContext(error: FBDeviceActivationError.deviceNil)
+      return FBFutureContext(error: FBDeviceNilError.deviceNil)
     }
     return device.startService("com.apple.mobileactivationd")
   }

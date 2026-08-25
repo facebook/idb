@@ -8,18 +8,6 @@
 import FBControlCore
 import Foundation
 
-/// The ways lifecycle queries can fail, as data rather than assembled strings.
-public enum FBDeviceLifecycleError: Error, LocalizedError {
-  case deviceNil
-
-  public var errorDescription: String? {
-    switch self {
-    case .deviceNil:
-      return "Device is nil"
-    }
-  }
-}
-
 public class FBDeviceLifecycleCommands: NSObject {
   private weak var device: FBDevice?
 
@@ -38,14 +26,14 @@ public class FBDeviceLifecycleCommands: NSObject {
 
   fileprivate func resolveStateAsync(_ state: FBiOSTargetState) async throws {
     guard let device else {
-      throw FBDeviceLifecycleError.deviceNil
+      throw FBDeviceNilError.deviceNil
     }
     try await bridgeFBFutureVoid(FBiOSTargetResolveState(device, state))
   }
 
   fileprivate func resolveLeavesStateAsync(_ state: FBiOSTargetState) async throws {
     guard let device else {
-      throw FBDeviceLifecycleError.deviceNil
+      throw FBDeviceNilError.deviceNil
     }
     try await bridgeFBFutureVoid(FBiOSTargetResolveLeavesState(device, state))
   }

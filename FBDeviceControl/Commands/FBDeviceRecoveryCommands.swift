@@ -10,7 +10,6 @@ import Foundation
 
 /// The ways recovery-mode transitions can fail, as data rather than assembled strings.
 public enum FBDeviceRecoveryError: Error {
-  case deviceNil
   case callUnavailable(function: String)
   case enterRecoveryFailed(message: String)
   case notInRecovery(deviceDescription: String)
@@ -21,8 +20,6 @@ public enum FBDeviceRecoveryError: Error {
 extension FBDeviceRecoveryError: LocalizedError {
   public var errorDescription: String? {
     switch self {
-    case .deviceNil:
-      return "Device is nil"
     case let .callUnavailable(function):
       return "\(function) function not available"
     case let .enterRecoveryFailed(message):
@@ -56,7 +53,7 @@ public class FBDeviceRecoveryCommands: NSObject {
 
   fileprivate func enterRecovery() async throws {
     guard let device else {
-      throw FBDeviceRecoveryError.deviceNil
+      throw FBDeviceNilError.deviceNil
     }
     try await withFBFutureContext(device.connectToDevice(withPurpose: "enter_recovery")) { connectedDevice in
       guard let enterRecoveryFunc = connectedDevice.calls.EnterRecovery else {
@@ -71,7 +68,7 @@ public class FBDeviceRecoveryCommands: NSObject {
 
   fileprivate func exitRecovery() async throws {
     guard let device else {
-      throw FBDeviceRecoveryError.deviceNil
+      throw FBDeviceNilError.deviceNil
     }
     guard let recoveryDevice = device.recoveryModeDeviceRef else {
       throw FBDeviceRecoveryError.notInRecovery(deviceDescription: String(describing: device))

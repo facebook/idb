@@ -12,7 +12,6 @@ import Foundation
 
 /// The ways device application operations can fail, as data rather than assembled strings.
 public enum FBDeviceApplicationError: Error {
-  case deviceNil
   case awaitingTerminationUnsupported
   case installFailed(applicationName: String, status: Int32, message: String, recentEvents: String)
   case uninstallFailed(bundleID: String, status: Int32, message: String, recentEvents: String)
@@ -31,8 +30,6 @@ public enum FBDeviceApplicationError: Error {
 extension FBDeviceApplicationError: LocalizedError {
   public var errorDescription: String? {
     switch self {
-    case .deviceNil:
-      return "Device is nil"
     case .awaitingTerminationUnsupported:
       return "Awaiting termination is not supported for device applications"
     case let .installFailed(applicationName, status, message, recentEvents):
@@ -145,7 +142,7 @@ public class FBDeviceApplicationCommands: NSObject {
 
   fileprivate func installApplicationAsync(withPath path: String) async throws -> FBInstalledApplication {
     guard let device else {
-      throw FBDeviceApplicationError.deviceNil
+      throw FBDeviceNilError.deviceNil
     }
     let bundle = try FBBundleDescriptor.bundle(fromPath: path)
     let appURL = URL(fileURLWithPath: path, isDirectory: true)
@@ -180,7 +177,7 @@ public class FBDeviceApplicationCommands: NSObject {
 
   fileprivate func uninstallApplicationAsync(withBundleID bundleID: String) async throws {
     guard let device else {
-      throw FBDeviceApplicationError.deviceNil
+      throw FBDeviceNilError.deviceNil
     }
     try await withFBFutureContext(device.connectToDevice(withPurpose: "uninstall_\(bundleID)")) { connectedDevice in
       let statistics = FBDeviceWorkflowStatistics(workflowType: "Uninstall", logger: connectedDevice.logger)
@@ -260,7 +257,7 @@ public class FBDeviceApplicationCommands: NSObject {
 
   fileprivate func launchApplicationAsync(_ configuration: FBApplicationLaunchConfiguration) async throws -> any FBLaunchedApplication {
     guard let device else {
-      throw FBDeviceApplicationError.deviceNil
+      throw FBDeviceNilError.deviceNil
     }
     let pid: NSNumber
     if device.osVersion.version.majorVersion >= 17 {
@@ -296,7 +293,7 @@ public class FBDeviceApplicationCommands: NSObject {
 
   private func installedApplicationsDataAsync(_ returnAttributes: [String]) async throws -> [String: [String: Any]] {
     guard let device else {
-      throw FBDeviceApplicationError.deviceNil
+      throw FBDeviceNilError.deviceNil
     }
     return try await withFBFutureContext(device.connectToDevice(withPurpose: "installed_apps")) { connectedDevice in
       let options: [String: Any] = [
@@ -322,7 +319,7 @@ public class FBDeviceApplicationCommands: NSObject {
 
   private func withRemoteInstrumentsClient<R>(_ body: (FBInstrumentsClient) async throws -> R) async throws -> R {
     guard let device else {
-      throw FBDeviceApplicationError.deviceNil
+      throw FBDeviceNilError.deviceNil
     }
     let usesSecureConnection = device.osVersion.version.majorVersion >= 14
     _ = try await bridgeFBFuture(device.ensureDeveloperDiskImageIsMounted())
@@ -335,7 +332,7 @@ public class FBDeviceApplicationCommands: NSObject {
 
   private func pidToRunningProcessNameAsync() async throws -> [NSNumber: String] {
     guard let device else {
-      throw FBDeviceApplicationError.deviceNil
+      throw FBDeviceNilError.deviceNil
     }
     return try await withFBFutureContext(device.startService("com.apple.os_trace_relay")) { connection in
       do {

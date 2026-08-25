@@ -24,15 +24,12 @@ Much of the implementation here comes from:
  */
 /// The ways debug-server setup can fail, as data rather than assembled strings.
 public enum FBDeviceDebuggerError: Error {
-  case deviceNil
   case unsupportedOSVersion(version: String)
 }
 
 extension FBDeviceDebuggerError: LocalizedError {
   public var errorDescription: String? {
     switch self {
-    case .deviceNil:
-      return "Device is nil"
     case let .unsupportedOSVersion(version):
       return "Debugging is not supported for devices running iOS 17 and higher. Device OS version: \(version)"
     }
@@ -62,7 +59,7 @@ public class FBDeviceDebuggerCommands: NSObject {
    */
   public func connectToDebugServer() -> FBFutureContext<FBAMDServiceConnection> {
     guard let device else {
-      return FBFutureContext(error: FBDeviceDebuggerError.deviceNil)
+      return FBFutureContext(error: FBDeviceNilError.deviceNil)
     }
     return
       device
@@ -84,7 +81,7 @@ public class FBDeviceDebuggerCommands: NSObject {
 
   fileprivate func launchDebugServer(forHostApplication application: FBBundleDescriptor, port: in_port_t) async throws -> any FBDebugServer {
     guard let device else {
-      throw FBDeviceDebuggerError.deviceNil
+      throw FBDeviceNilError.deviceNil
     }
     if device.osVersion.version.majorVersion >= 17 {
       throw FBDeviceDebuggerError.unsupportedOSVersion(version: device.osVersion.versionString)
@@ -104,7 +101,7 @@ public class FBDeviceDebuggerCommands: NSObject {
 
   private func lldbBootstrapCommandsAsync(forApplicationAtPath path: String, port: in_port_t) async throws -> [String] {
     guard device != nil else {
-      throw FBDeviceDebuggerError.deviceNil
+      throw FBDeviceNilError.deviceNil
     }
     let bundle = try FBBundleDescriptor.bundle(fromPath: path)
     let platformSelect = try platformSelectCommand()
@@ -116,7 +113,7 @@ public class FBDeviceDebuggerCommands: NSObject {
 
   private func platformSelectCommand() throws -> String {
     guard let device else {
-      throw FBDeviceDebuggerError.deviceNil
+      throw FBDeviceNilError.deviceNil
     }
     let platformSelectCommand = "platform select remote-ios"
     guard let buildVersion = device.buildVersion else {
@@ -134,7 +131,7 @@ public class FBDeviceDebuggerCommands: NSObject {
 
   private func remoteTargetAsync(forBundleID bundleID: String) async throws -> String {
     guard let device else {
-      throw FBDeviceDebuggerError.deviceNil
+      throw FBDeviceNilError.deviceNil
     }
     let installedApplication = try await device.installedApplication(bundleID: bundleID)
     return "script lldb.target.modules[0].SetPlatformFileSpec(lldb.SBFileSpec(\"\(installedApplication.bundle.path)\"))"

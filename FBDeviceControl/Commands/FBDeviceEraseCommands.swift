@@ -123,15 +123,12 @@ private final class FBDeviceEraseOperation: NSObject, FBiOSTargetSetDelegate, @u
 
 /// The ways a device erase can fail, as data rather than assembled strings.
 public enum FBDeviceEraseError: Error {
-  case deviceNil
   case badEraseCallback(value: Int32, expected: Int32)
 }
 
 extension FBDeviceEraseError: LocalizedError {
   public var errorDescription: String? {
     switch self {
-    case .deviceNil:
-      return "Device is nil"
     case let .badEraseCallback(value, expected):
       return "Erase callback was \(value), not \(expected). Perhaps the device is not activated?"
     }
@@ -155,7 +152,7 @@ public final class FBDeviceEraseCommands: NSObject, EraseCommands {
 
   public func erase() async throws {
     guard let device else {
-      throw FBDeviceEraseError.deviceNil
+      throw FBDeviceNilError.deviceNil
     }
     let logger = device.logger.withName("erase_\(device.udid)")
     try await device.activate()

@@ -10,7 +10,6 @@ import Foundation
 
 /// The ways house-arrest service management can fail, as data rather than assembled strings.
 enum FBAMDeviceServiceError: Error {
-  case deviceNil
   case houseArrestStartFailed(bundleID: String, status: Int32, message: String)
   case houseArrestConnectionMissing(bundleID: String)
   case notAnAFCConnection(context: String)
@@ -19,8 +18,6 @@ enum FBAMDeviceServiceError: Error {
 extension FBAMDeviceServiceError: LocalizedError {
   var errorDescription: String? {
     switch self {
-    case .deviceNil:
-      return "Device is nil"
     case let .houseArrestStartFailed(bundleID, status, message):
       return "Failed to start house_arrest service for '\(bundleID)' with error 0x\(String(status, radix: 16)) (\(message))"
     case let .houseArrestConnectionMissing(bundleID):
@@ -47,7 +44,7 @@ private class FBAMDeviceServiceManager_HouseArrest: NSObject, FBFutureContextMan
 
   func prepare(_ logger: any FBControlCoreLogger) -> FBFuture<AnyObject> {
     guard let device else {
-      return FBFuture(error: FBAMDeviceServiceError.deviceNil)
+      return FBFuture(error: FBDeviceNilError.deviceNil)
     }
     var afcConnection: Unmanaged<AnyObject>?
     logger.log("Starting house arrest for '\(bundleID)'")

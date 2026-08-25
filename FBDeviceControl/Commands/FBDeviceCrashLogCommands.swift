@@ -14,7 +14,6 @@ private let PingSuccess = "ping"
 
 /// The ways device crash-log collection can fail, as data rather than assembled strings.
 public enum FBDeviceCrashLogError: Error {
-  case deviceNil
   case ingestFailed(name: String)
   case pingbackReceiveFailed(service: String, underlying: Error)
   case pingbackNotDecodable(service: String)
@@ -24,8 +23,6 @@ public enum FBDeviceCrashLogError: Error {
 extension FBDeviceCrashLogError: LocalizedError {
   public var errorDescription: String? {
     switch self {
-    case .deviceNil:
-      return "Device is nil"
     case let .ingestFailed(name):
       return "Failed to ingest crash log data for \(name)"
     case let .pingbackReceiveFailed(service, _):
@@ -75,7 +72,7 @@ public class FBDeviceCrashLogCommands: NSObject {
 
   fileprivate func crashesAsync(_ predicate: NSPredicate, useCache: Bool) async throws -> [FBCrashLogInfo] {
     guard device != nil else {
-      throw FBDeviceCrashLogError.deviceNil
+      throw FBDeviceNilError.deviceNil
     }
     _ = try await ingestAllCrashLogsAsync(useCache: useCache)
     return store.ingestedCrashLogs(matchingPredicate: predicate)
@@ -83,7 +80,7 @@ public class FBDeviceCrashLogCommands: NSObject {
 
   fileprivate func pruneCrashesAsync(_ predicate: NSPredicate) async throws -> [FBCrashLogInfo] {
     guard let device else {
-      throw FBDeviceCrashLogError.deviceNil
+      throw FBDeviceNilError.deviceNil
     }
     let logger = device.logger.withName("crash_remove")
     _ = try await ingestAllCrashLogsAsync(useCache: true)
@@ -94,7 +91,7 @@ public class FBDeviceCrashLogCommands: NSObject {
 
   fileprivate func crashLogFilesContext() -> FBFutureContext<FBDeviceFileContainer> {
     guard let device else {
-      return FBFutureContext(error: FBDeviceCrashLogError.deviceNil)
+      return FBFutureContext(error: FBDeviceNilError.deviceNil)
     }
     let asyncQueue = device.asyncQueue
     return
@@ -115,7 +112,7 @@ public class FBDeviceCrashLogCommands: NSObject {
       return []
     }
     guard let device else {
-      throw FBDeviceCrashLogError.deviceNil
+      throw FBDeviceNilError.deviceNil
     }
     let logger = device.logger
     _ = try await moveCrashReportsAsync()
@@ -140,7 +137,7 @@ public class FBDeviceCrashLogCommands: NSObject {
 
   private func removeCrashLogsFromDeviceAsync(_ crashesToRemove: [FBCrashLogInfo], logger: (any FBControlCoreLogger)?) async throws -> [FBCrashLogInfo] {
     guard device != nil else {
-      throw FBDeviceCrashLogError.deviceNil
+      throw FBDeviceNilError.deviceNil
     }
     return try await withFBFutureContext(crashReportFileConnection()) { afc in
       var removed: [FBCrashLogInfo] = []
@@ -172,7 +169,7 @@ public class FBDeviceCrashLogCommands: NSObject {
 
   private func moveCrashReportsAsync() async throws -> String {
     guard let device else {
-      throw FBDeviceCrashLogError.deviceNil
+      throw FBDeviceNilError.deviceNil
     }
     return try await withFBFutureContext(device.startService(CrashReportMoverService)) { connection in
       let data: Data
@@ -193,7 +190,7 @@ public class FBDeviceCrashLogCommands: NSObject {
 
   private func crashReportFileConnection() -> FBFutureContext<FBAFCConnection> {
     guard let device else {
-      return FBFutureContext(error: FBDeviceCrashLogError.deviceNil)
+      return FBFutureContext(error: FBDeviceNilError.deviceNil)
     }
     let workQueue = device.workQueue
     let logger = device.logger

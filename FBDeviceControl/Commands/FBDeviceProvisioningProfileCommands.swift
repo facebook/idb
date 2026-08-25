@@ -10,7 +10,6 @@ import Foundation
 
 /// The ways provisioning-profile operations can fail, as data rather than assembled strings.
 public enum FBDeviceProvisioningProfileError: Error {
-  case deviceNil
   case copyFailed
   case removeFailed(uuid: String, message: String)
   case constructionFailed(dataDescription: String)
@@ -21,8 +20,6 @@ public enum FBDeviceProvisioningProfileError: Error {
 extension FBDeviceProvisioningProfileError: LocalizedError {
   public var errorDescription: String? {
     switch self {
-    case .deviceNil:
-      return "Device is nil"
     case .copyFailed:
       return "Failed to copy provisioning profiles"
     case let .removeFailed(uuid, message):
@@ -55,7 +52,7 @@ public class FBDeviceProvisioningProfileCommands: NSObject, ProvisioningProfileC
 
   public func allProvisioningProfiles() async throws -> [[String: Any]] {
     guard let device else {
-      throw FBDeviceProvisioningProfileError.deviceNil
+      throw FBDeviceNilError.deviceNil
     }
     return try await withFBFutureContext(device.connectToDevice(withPurpose: "list_provisioning_profiles")) { connectedDevice in
       guard let profiles = connectedDevice.calls.CopyProvisioningProfiles?(connectedDevice.amDeviceRef)?.takeRetainedValue() as? [Any] else {
@@ -78,7 +75,7 @@ public class FBDeviceProvisioningProfileCommands: NSObject, ProvisioningProfileC
 
   public func removeProvisioningProfile(uuid: String) async throws -> [String: Any] {
     guard let device else {
-      throw FBDeviceProvisioningProfileError.deviceNil
+      throw FBDeviceNilError.deviceNil
     }
     return try await withFBFutureContext(device.connectToDevice(withPurpose: "remove_provisioning_profile")) { connectedDevice in
       let status = connectedDevice.calls.RemoveProvisioningProfile?(connectedDevice.amDeviceRef, uuid as CFString) ?? -1
@@ -93,7 +90,7 @@ public class FBDeviceProvisioningProfileCommands: NSObject, ProvisioningProfileC
 
   public func installProvisioningProfile(_ profileData: Data) async throws -> [String: Any] {
     guard let device else {
-      throw FBDeviceProvisioningProfileError.deviceNil
+      throw FBDeviceNilError.deviceNil
     }
     return try await withFBFutureContext(device.connectToDevice(withPurpose: "install_provisioning_profile")) { connectedDevice in
       guard let profileUnmanaged = connectedDevice.calls.ProvisioningProfileCreateWithData?(profileData as CFData) else {

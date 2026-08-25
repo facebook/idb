@@ -13,7 +13,6 @@ private let DiagnosticsRelayService = "com.apple.mobile.diagnostics_relay"
 /// The ways a diagnostics_relay exchange can fail, as data rather than assembled strings.
 /// Shared with the power commands, which drive the same relay service.
 public enum FBDiagnosticsRelayError: Error {
-  case deviceNil
   case unexpectedResponse
   case unsuccessful(response: String)
 }
@@ -21,8 +20,6 @@ public enum FBDiagnosticsRelayError: Error {
 extension FBDiagnosticsRelayError: LocalizedError {
   public var errorDescription: String? {
     switch self {
-    case .deviceNil:
-      return "Device is nil"
     case .unexpectedResponse:
       return "Unexpected response"
     case let .unsuccessful(response):
@@ -52,7 +49,7 @@ public class FBDeviceDiagnosticInformationCommands: NSObject, FBiOSTargetCommand
 
   fileprivate func fetchDiagnosticInformationAsync() async throws -> [String: Any] {
     guard let device else {
-      throw FBDiagnosticsRelayError.deviceNil
+      throw FBDeviceNilError.deviceNil
     }
     let diagnostics = try await fetchInformationFromDiagnosticsRelayAsync(device: device)
     let springboard = try await fetchInformationFromSpringboardAsync(device: device)

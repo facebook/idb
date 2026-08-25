@@ -10,7 +10,6 @@ import Foundation
 
 /// The ways socket forwarding can fail, as data rather than assembled strings.
 public enum FBDeviceSocketForwardingError: Error {
-  case deviceNil
   case fileDescriptorWriterFailed(fileDescriptor: Int32)
   case socketDuplicationFailed(message: String)
   case socketWriterFailed(socket: Int32)
@@ -22,8 +21,6 @@ public enum FBDeviceSocketForwardingError: Error {
 extension FBDeviceSocketForwardingError: LocalizedError {
   public var errorDescription: String? {
     switch self {
-    case .deviceNil:
-      return "Device is nil"
     case let .fileDescriptorWriterFailed(fileDescriptor):
       return "Failed to create a writer for local file descriptor \(fileDescriptor)"
     case let .socketDuplicationFailed(message):
@@ -62,7 +59,7 @@ public class FBDeviceSocketForwardingCommands: NSObject {
     remotePort: Int32
   ) async throws {
     guard let device else {
-      throw FBDeviceSocketForwardingError.deviceNil
+      throw FBDeviceNilError.deviceNil
     }
     var error: NSError?
     guard let localConsumer = FBFileWriter.asyncWriter(withFileDescriptor: localFileDescriptorOutput, closeOnEndOfFile: false, error: &error) else {

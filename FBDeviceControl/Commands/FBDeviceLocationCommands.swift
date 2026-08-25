@@ -10,18 +10,6 @@ import Foundation
 
 private let StartCommand: UInt32 = 0x00000000
 
-/// The way location simulation fails when its device is gone, as data rather than an assembled string.
-public enum FBDeviceLocationError: Error, LocalizedError {
-  case deviceNil
-
-  public var errorDescription: String? {
-    switch self {
-    case .deviceNil:
-      return "Device is nil"
-    }
-  }
-}
-
 public class FBDeviceLocationCommands: NSObject {
   private weak var device: FBDevice?
 
@@ -40,7 +28,7 @@ public class FBDeviceLocationCommands: NSObject {
 
   fileprivate func overrideLocationAsync(withLongitude longitude: Double, latitude: Double) async throws {
     guard let device else {
-      throw FBDeviceLocationError.deviceNil
+      throw FBDeviceNilError.deviceNil
     }
     _ = try await bridgeFBFuture(device.ensureDeveloperDiskImageIsMounted())
     try await withFBFutureContext(device.startService("com.apple.dt.simulatelocation")) { connection in

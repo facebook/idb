@@ -28,7 +28,6 @@ private func mountCallback(_ callbackDictionary: [String: Any]?, _ context: Unsa
 
 /// The ways developer disk-image operations can fail, as data rather than assembled strings.
 public enum FBDeviceDiskImageError: Error {
-  case deviceNil
   case missingMountPath(key: String, entry: String)
   case imageNotMounted(imageDescription: String)
   case noProductVersion(deviceDescription: String)
@@ -42,8 +41,6 @@ public enum FBDeviceDiskImageError: Error {
 extension FBDeviceDiskImageError: LocalizedError {
   public var errorDescription: String? {
     switch self {
-    case .deviceNil:
-      return "Device is nil"
     case let .missingMountPath(key, entry):
       return "No \(key) in mounted image entry \(entry)"
     case let .imageNotMounted(imageDescription):
@@ -111,7 +108,7 @@ public class FBDeviceDeveloperDiskImageCommands: NSObject, DeveloperDiskImageCom
 
   public func ensureDeveloperDiskImageIsMounted() async throws -> FBDeveloperDiskImage {
     guard let device else {
-      throw FBDeviceDiskImageError.deviceNil
+      throw FBDeviceNilError.deviceNil
     }
     guard let productVersion = device.productVersion else {
       throw FBDeviceDiskImageError.noProductVersion(deviceDescription: String(describing: device))
@@ -146,7 +143,7 @@ public class FBDeviceDeveloperDiskImageCommands: NSObject, DeveloperDiskImageCom
 
   private func mountedImageEntriesAsync() async throws -> [[String: Any]] {
     guard let device else {
-      throw FBDeviceDiskImageError.deviceNil
+      throw FBDeviceNilError.deviceNil
     }
     return try await withFBFutureContext(device.startService(ImageMounterService)) { connection in
       let request: [String: Any] = [
@@ -187,7 +184,7 @@ public class FBDeviceDeveloperDiskImageCommands: NSObject, DeveloperDiskImageCom
 
   private func performDiskImageMountAsync(_ diskImage: FBDeveloperDiskImage, imageType: String) async throws -> FBDeveloperDiskImage {
     guard let device else {
-      throw FBDeviceDiskImageError.deviceNil
+      throw FBDeviceNilError.deviceNil
     }
     return try await withFBFutureContext(device.connectToDevice(withPurpose: "mount_disk_image")) { connectedDevice in
       let options: [String: Any] = [
@@ -215,7 +212,7 @@ public class FBDeviceDeveloperDiskImageCommands: NSObject, DeveloperDiskImageCom
 
   private func unmountDiskImageAtPathAsync(_ mountPath: String) async throws {
     guard let device else {
-      throw FBDeviceDiskImageError.deviceNil
+      throw FBDeviceNilError.deviceNil
     }
     try await withFBFutureContext(device.startService(ImageMounterService)) { connection in
       let request: [String: Any] = [
