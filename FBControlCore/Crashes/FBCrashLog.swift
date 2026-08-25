@@ -23,7 +23,7 @@ public struct FBCrashLogInfoProcessType: OptionSet, Sendable {
   public static let custom = FBCrashLogInfoProcessType(rawValue: 1 << 2)
 }
 
-public class FBCrashLog: NSObject, NSCopying {
+public final class FBCrashLog: CustomStringConvertible {
 
   public let info: FBCrashLogInfo
   public let contents: String
@@ -31,20 +31,12 @@ public class FBCrashLog: NSObject, NSCopying {
   public init(info: FBCrashLogInfo, contents: String) {
     self.info = info
     self.contents = contents
-    super.init()
   }
 
-  // MARK: NSObject
+  // MARK: CustomStringConvertible
 
-  public override var description: String {
+  public var description: String {
     "Crash Info: \(info) \n Crash Report: \(contents)\n"
-  }
-
-  // MARK: NSCopying
-
-  public func copy(with zone: NSZone? = nil) -> Any {
-    // Is immutable
-    self
   }
 
   // MARK: Public
@@ -97,7 +89,7 @@ extension FBCrashLogError: LocalizedError {
   }
 }
 
-public class FBCrashLogInfo: NSObject, NSCopying {
+public final class FBCrashLogInfo: CustomStringConvertible {
 
   // MARK: Properties
 
@@ -143,7 +135,6 @@ public class FBCrashLogInfo: NSObject, NSCopying {
     self.processType = processType
     self.exceptionDescription = exceptionDescription
     self.crashedThreadDescription = crashedThreadDescription
-    super.init()
   }
 
   // MARK: Factory Methods
@@ -191,17 +182,10 @@ public class FBCrashLogInfo: NSObject, NSCopying {
     #endif
   }
 
-  // MARK: NSObject
+  // MARK: CustomStringConvertible
 
-  public override var description: String {
+  public var description: String {
     "Identifier \(identifier) | Executable Path \(executablePath) | Process \(processName) | pid \(processIdentifier) | Parent \(parentProcessName) | ppid \(parentProcessIdentifier) | Date \(date) | Path \(crashPath) | Exception: \(exceptionDescription ?? "nil") | Trace: \(crashedThreadDescription ?? "nil")"
-  }
-
-  // MARK: NSCopying
-
-  public func copy(with zone: NSZone? = nil) -> Any {
-    // Is immutable
-    self
   }
 
   // MARK: Public Methods
