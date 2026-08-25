@@ -9,18 +9,6 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-/// The way boot fails from a non-bootable state, as data rather than an assembled string.
-public enum FBSimulatorBootError: Error, LocalizedError {
-  case notBootable(state: String)
-
-  public var errorDescription: String? {
-    switch self {
-    case let .notBootable(state):
-      return "Cannot Boot Simulator when in \(state) state"
-    }
-  }
-}
-
 public final class FBSimulatorBootStrategy {
 
   // MARK: - Public Methods
@@ -40,7 +28,7 @@ public final class FBSimulatorBootStrategy {
       return
     }
     if simulator.state != .shutdown {
-      throw FBSimulatorBootError.notBootable(state: String(describing: simulator.stateString))
+      throw FBSimulatorStateError.notShutdown(operation: "boot", state: String(describing: simulator.stateString))
     }
 
     // Boot via CoreSimulator.

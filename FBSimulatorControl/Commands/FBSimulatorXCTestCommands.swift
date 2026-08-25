@@ -21,7 +21,6 @@ public enum FBSimulatorXCTestError: Error {
   case socketConnectionFailed
   case unexpectedReporter(reporterDescription: String)
   case testManagerAlreadyRunning(configurationDescription: String)
-  case simulatorNotBooted
   case environmentVariableUnavailable(key: String, underlying: Error?)
 }
 
@@ -40,8 +39,6 @@ extension FBSimulatorXCTestError: LocalizedError {
       return "\(reporterDescription) is not an FBXCTestReporter"
     case let .testManagerAlreadyRunning(configurationDescription):
       return "Cannot Start Test Manager with Configuration \(configurationDescription) as it is already running"
-    case .simulatorNotBooted:
-      return "Simulator must be booted to run tests"
     case let .environmentVariableUnavailable(key, _):
       return "Failed to get \(key) from simulator environment"
     }
@@ -195,7 +192,7 @@ public final class FBSimulatorXCTestCommands: NSObject {
     }
 
     if simulator.state != .booted {
-      throw FBSimulatorXCTestError.simulatorNotBooted
+      throw FBSimulatorStateError.notBooted(operation: "run tests", state: String(describing: simulator.stateString))
     }
 
     try await FBManagedTestRunStrategy.runToCompletion(

@@ -15,7 +15,6 @@ import UniformTypeIdentifiers
 public enum FBSimulatorMediaError: Error {
   case noMediaProvided
   case unknownMediaPaths(paths: [URL])
-  case simulatorNotBooted(state: String)
   case addMediaFailed(paths: [URL], underlying: Error)
   case addContactsFailed(paths: [URL], underlying: Error)
 }
@@ -27,8 +26,6 @@ extension FBSimulatorMediaError: LocalizedError {
       return "Cannot upload media, none was provided"
     case let .unknownMediaPaths(paths):
       return "\(paths) not a known media path"
-    case let .simulatorNotBooted(state):
-      return "Simulator must be booted to upload photos, is \(state)"
     case let .addMediaFailed(paths, _):
       return "Failed to add media \(paths)"
     case let .addContactsFailed(paths, _):
@@ -97,7 +94,7 @@ public final class FBSimulatorMediaCommands: NSObject {
 
     if simulator.state != .booted {
       let stateString = (simulator.device.stateString() as String?) ?? "unknown"
-      throw FBSimulatorMediaError.simulatorNotBooted(state: stateString)
+      throw FBSimulatorStateError.notBooted(operation: "upload photos", state: stateString)
     }
 
     let photosAndVideosPredicate = NSCompoundPredicate(orPredicateWithSubpredicates: [
