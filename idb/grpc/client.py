@@ -62,6 +62,7 @@ from idb.common.types import (
     CrashLog,
     CrashLogInfo,
     CrashLogQuery,
+    DEFAULT_SCREENSHOT_OPTIONS,
     DomainSocketAddress,
     FileContainer,
     FileContainerType,
@@ -79,6 +80,8 @@ from idb.common.types import (
     LoggingMetadata,
     OnlyFilter,
     Permission,
+    Screenshot,
+    ScreenshotOptions,
     TargetDescription,
     TCPAddress,
     TestRunInfo,
@@ -127,7 +130,6 @@ from idb.grpc.idb_pb2 import (
     RecordRequest,
     RevokeRequest,
     RmRequest,
-    ScreenshotRequest,
     SendNotificationRequest,
     SetLocationRequest,
     SettingRequest,
@@ -155,6 +157,7 @@ from idb.grpc.instruments import (
     translate_instruments_timings,
 )
 from idb.grpc.launch import drain_launch_stream, end_launch_stream
+from idb.grpc.screenshot import screenshot_from_grpc, screenshot_to_grpc
 from idb.grpc.stream import (
     cancel_wrapper,
     drain_to_stream,
@@ -669,9 +672,11 @@ class Client(ClientBase):
         await self.stub.photos_clear(PhotosClearRequest())
 
     @log_and_handle_exceptions("screenshot")
-    async def screenshot(self) -> bytes:
-        response = await self.stub.screenshot(ScreenshotRequest())
-        return response.image_data
+    async def screenshot(
+        self, options: ScreenshotOptions = DEFAULT_SCREENSHOT_OPTIONS
+    ) -> Screenshot:
+        response = await self.stub.screenshot(screenshot_to_grpc(options))
+        return screenshot_from_grpc(options, response)
 
     @log_and_handle_exceptions("set_location")
     async def set_location(self, latitude: float, longitude: float) -> None:

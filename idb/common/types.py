@@ -141,6 +141,160 @@ class ScreenDimensions:
     height_points: int | None
 
 
+# The encoding of a screenshot. Values are the names the companion reports back
+# in the response, so they are the wire contract as well as the CLI's choices.
+class ScreenshotFormat(Enum):
+    PNG = "png"
+    JPEG = "jpeg"
+    TIFF = "tiff"
+
+
+# The unit a crop rect and a fit bound are expressed in. POINTS is the space
+# tap, swipe and describe already use; it is resolved to pixels on the
+# companion, which is the only side that knows the screen scale.
+class ScreenshotUnit(Enum):
+    PIXELS = "pixels"
+    POINTS = "points"
+
+
+# Top-left origin, matching the tap/swipe coordinate space. A rect that
+# partially overhangs the screen is clamped by the companion, which reports the
+# dimensions it actually captured.
+@dataclass(frozen=True)
+class ScreenshotCrop:
+    x: float
+    y: float
+    width: float
+    height: float
+
+
+# Shapes the screenshot request. The defaults are the behaviour every caller got
+# before the request had fields: a full-screen, unscaled PNG.
+#
+# Only what the wire cannot express is rejected here. A scale factor in (0, 1]
+# and a crop that lies on the screen are the companion's to enforce, since a
+# crop can only be judged against the screen that was actually captured, and a
+# second copy of those rules would drift from the first. See __post_init__ for
+# the three that the wire cannot carry as sent.
+@dataclass(frozen=True)
+class ScreenshotOptions:
+    format: ScreenshotFormat = ScreenshotFormat.PNG
+    # Lossy formats only, in (0, 1]; None means the companion's default. The
+    # companion rejects one set on PNG or TIFF rather than ignoring it, so a
+    # caller who believes they are getting a smaller image finds out that they
+    # are not.
+    compression_quality: float | None = None
+    crop: ScreenshotCrop | None = None
+    # A scale factor and a fit bound are alternatives on the wire, so asking for
+    # both cannot be sent. One factor is applied to both axes and the image is
+    # never upscaled, so the aspect ratio is preserved to within the rounding of
+    # each side to a whole pixel; an unset bound is unbounded on that axis.
+    scale_factor: float | None = None
+    max_width: int | None = None
+    max_height: int | None = None
+    unit: ScreenshotUnit = ScreenshotUnit.PIXELS
+
+    # Only the rules the wire cannot carry are checked here; everything the
+    # companion can see for itself is left to it, so there is one copy of each
+    # rule rather than two that drift. A scale factor of 2 or a crop with a
+    # negative width travel intact and come back as INVALID_ARGUMENT. These
+    # three do not travel intact:
+    #
+    # - a factor and a bounding box are alternatives in a proto `oneof`, so
+    #   setting both silently drops one instead of being an error
+    # - 0 is a proto scalar's "unset", so a compression quality of 0 arrives
+    #   indistinguishable from asking for the default, and would come back a
+    #   JPEG at 0.8 reported as a success
+    # - the fit bounds are `uint32`, so a negative one raises out of protobuf
+    #   before any of this runs, and surfaces as a traceback
+    def __post_init__(self) -> None:
+        if self.scale_factor is not None and (
+            self.max_width is not None or self.max_height is not None
+        ):
+            raise ValueError(
+                "A screenshot can be scaled by a factor or fitted to a bounding "
+                "box, not both"
+            )
+        if self.compression_quality is not None and not (
+            0 < self.compression_quality <= 1
+        ):
+            raise ValueError(
+                f"Compression quality {self.compression_quality} is not in the "
+                "range (0, 1]"
+            )
+        for name, bound in (
+            ("max_width", self.max_width),
+            ("max_height", self.max_height),
+        ):
+            if bound is not None and bound < 1:
+                raise ValueError(
+                    f"{name} {bound} is not a positive number of "
+                    f"{self.unit.value}; leave it unset to bound only the other "
+                    "axis"
+                )
+
+
+# Asking for nothing in particular. Named so that it can be a default argument
+# without constructing one per call site, and so that "the caller configured
+# something" is a single comparison.
+DEFAULT_SCREENSHOT_OPTIONS: ScreenshotOptions = ScreenshotOptions()
+
+
+# The bytes of a screenshot, and what the companion says they are.
+#
+# This is a bytes subclass rather than a wrapper because screenshot() returned
+# bare bytes before it could be configured, and its callers write them to files,
+# base64 them and isinstance-check them. The measurements ride along for the
+# callers that want them without breaking any of that.
+#
+# Every measurement is None when the companion did not report one, which is the
+# case for a companion older than the fields on the request.
+class Screenshot(bytes):
+    format: ScreenshotFormat
+    width: int | None
+    height: int | None
+    source_width: int | None
+    source_height: int | None
+    # Pixels per point, so a caller can convert between the two units itself.
+    # None on a target that does not report one, which is also the target that
+    # refuses a request expressed in points.
+    screen_scale: float | None
+
+    def __new__(
+        cls,
+        data: bytes,
+        format: ScreenshotFormat = ScreenshotFormat.PNG,
+        width: int | None = None,
+        height: int | None = None,
+        source_width: int | None = None,
+        source_height: int | None = None,
+        screen_scale: float | None = None,
+    ) -> "Screenshot":
+        screenshot = super().__new__(cls, data)
+        screenshot.format = format
+        screenshot.width = width
+        screenshot.height = height
+        screenshot.source_width = source_width
+        screenshot.source_height = source_height
+        screenshot.screen_scale = screen_scale
+        return screenshot
+
+    def __repr__(self) -> str:
+        # bytes' own repr would print the whole image into a traceback.
+        def size(width: int | None, height: int | None) -> str:
+            # "NonexNone" reads as a measurement rather than the absence of one.
+            return (
+                "unreported" if width is None or height is None else f"{width}x{height}"
+            )
+
+        return (
+            f"Screenshot({len(self)} bytes, format={self.format.value}, "
+            f"size={size(self.width, self.height)}, "
+            f"source_size={size(self.source_width, self.source_height)}, "
+            f"screen_scale={self.screen_scale})"
+        )
+
+
 DeviceDetails = Mapping[str, Union[int, str]]
 
 
@@ -737,7 +891,9 @@ class Client(ABC):
         yield
 
     @abstractmethod
-    async def screenshot(self) -> bytes:
+    async def screenshot(
+        self, options: ScreenshotOptions = DEFAULT_SCREENSHOT_OPTIONS
+    ) -> Screenshot:
         pass
 
     @abstractmethod
