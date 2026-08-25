@@ -338,6 +338,14 @@ final class FBAXBridgeReapTests: XCTestCase {
     XCTAssertTrue(path.hasSuffix(FBAXBridgeSocket.suffix))
   }
 
+  // Only the adopted case is reachable without building an `FBSubprocess`, which needs three futures
+  // and a spawn configuration. The started-shared and started-private cases are covered end to end,
+  // where the difference shows as a guest that outlives its companion or does not.
+  func testAnAdoptedGuestIsNeverReapedByTheHostUsingIt() {
+    XCTAssertFalse(FBAXBridgeGuestOwnership.shared(nil).reapsGuestOnRelease)
+    XCTAssertNil(FBAXBridgeGuestOwnership.shared(nil).process)
+  }
+
   // `bind` truncates rather than failing, so the margin is checked against the real limit.
   func testASimulatorSocketPathFitsInSunPath() {
     let path = FBAXBridgeSocket.path(forSimulator: "AE4DEFD9-F94B-4543-84F1-849D4B5C4351")

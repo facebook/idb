@@ -465,12 +465,13 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
       simulator.logger.log("Adopted the axbridge guest already serving on \(sharedPath)")
       return FBAXBridgeConnection(
         fileDescriptor: fileDescriptor,
-        process: nil,
+        ownership: .shared(nil),
         socketPath: sharedPath,
         logger: simulator.logger
       )
     case .absent:
-      return try await spawn(simulator: simulator, helperPath: helperPath, socketPath: sharedPath)
+      return try await spawn(
+        simulator: simulator, helperPath: helperPath, socketPath: sharedPath, ownership: { .shared($0) })
     case .busy:
       // The shared guest will not take a second client until the first leaves, which may be their whole
       // session. A private socket is what every host used before bridges were shared, so a contended
@@ -478,7 +479,9 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
       let privatePath = FBAXBridgeSocket.path(forConnection: UUID().uuidString)
       simulator.logger.log(
         "The axbridge guest on \(sharedPath) is serving another client; starting a private one on \(privatePath)")
-      return try await spawn(simulator: simulator, helperPath: helperPath, socketPath: privatePath)
+      return try await spawn(
+        simulator: simulator, helperPath: helperPath, socketPath: privatePath,
+        ownership: { .privateToThisHost($0) })
     }
   }
 
@@ -526,7 +529,8 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
   private static func spawn(
     simulator: FBSimulator,
     helperPath: String,
-    socketPath: String
+    socketPath: String,
+    ownership: (FBSubprocess<AnyObject, AnyObject, AnyObject>) -> FBAXBridgeGuestOwnership
   ) async throws -> FBAXBridgeConnection {
     let io = FBProcessIO<AnyObject, AnyObject, AnyObject>.outputToDevNull()
     let configuration = FBProcessSpawnConfiguration(
@@ -543,7 +547,7 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
       let fileDescriptor = try await FBAXBridgeConnection.connect(path: socketPath, timeout: 10)
       return FBAXBridgeConnection(
         fileDescriptor: fileDescriptor,
-        process: process,
+        ownership: ownership(process),
         socketPath: socketPath,
         logger: simulator.logger
       )
@@ -563,6 +567,41 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
 
 // MARK: - Connection
 
+/// A connection's relationship to the guest on the other end, which is what decides whether releasing
+/// the connection ends the guest.
+///
+/// An enum rather than an optional handle plus a flag, which would allow states that cannot occur: a
+/// guest we may reap is always one we started, and a shared guest is left alone whether we started it
+/// or adopted it.
+enum FBAXBridgeGuestOwnership {
+  /// Started by us, on a socket whose name only we know. Nobody else can find it, so nobody else can be
+  /// using it, and it is ours to reap.
+  case privateToThisHost(FBSubprocess<AnyObject, AnyObject, AnyObject>)
+  /// Serving the simulator on its well-known socket. Left running when we go, for whoever wants a bridge
+  /// next. The handle is present when we started it and absent when we adopted it — it is kept only to
+  /// report why the guest went away if the socket closes under a read.
+  case shared(FBSubprocess<AnyObject, AnyObject, AnyObject>?)
+
+  /// The guest process, when there is a handle for it. Diagnostics only.
+  var process: FBSubprocess<AnyObject, AnyObject, AnyObject>? {
+    switch self {
+    case let .privateToThisHost(process): process
+    case let .shared(process): process
+    }
+  }
+
+  /// Whether releasing the connection should end the guest and remove its socket.
+  ///
+  /// Named separately from `deinit` so it can be tested without constructing a connection. A shared
+  /// guest survives us even when we started it.
+  var reapsGuestOnRelease: Bool {
+    switch self {
+    case .privateToThisHost: true
+    case .shared: false
+    }
+  }
+}
+
 /// A connected Unix-domain socket to a running `accessibility serve` guest, plus the retained guest
 /// process handle (retaining it keeps the serve process alive). Frames are 4-byte big-endian length +
 /// JSON. Blocking socket I/O runs on a dedicated serial queue so it never blocks a cooperative thread,
@@ -574,9 +613,7 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
 // patternlint-disable-next-line unchecked-sendable
 final class FBAXBridgeConnection: @unchecked Sendable {
   private let fileDescriptor: Int32
-  /// The guest we started, or `nil` for one we adopted. A guest somebody else started is not ours to
-  /// reap, and holding no handle to it is what `deinit` reads to know that.
-  private let process: FBSubprocess<AnyObject, AnyObject, AnyObject>?
+  private let ownership: FBAXBridgeGuestOwnership
   private let socketPath: String
   private let logger: (any FBControlCoreLogger)?
   private let queue = DispatchQueue(label: "com.facebook.FBSimulatorControl.axbridge.connection")
@@ -595,12 +632,12 @@ final class FBAXBridgeConnection: @unchecked Sendable {
 
   init(
     fileDescriptor: Int32,
-    process: FBSubprocess<AnyObject, AnyObject, AnyObject>?,
+    ownership: FBAXBridgeGuestOwnership,
     socketPath: String,
     logger: (any FBControlCoreLogger)?
   ) {
     self.fileDescriptor = fileDescriptor
-    self.process = process
+    self.ownership = ownership
     self.socketPath = socketPath
     self.logger = logger
   }
@@ -643,9 +680,9 @@ final class FBAXBridgeConnection: @unchecked Sendable {
     // because the transport lives in the target's `commandCache`, means the target went away or the
     // host process exited gracefully. Dropping a reader does not reach here.
     //
-    // An adopted guest has no process handle and no socket file of ours, so this closes our descriptor
-    // and leaves it running for whoever else is using it.
-    guard let process else {
+    // A shared guest is left running with its socket intact, so the next process finds a warm one. It
+    // reaps itself after the idle timeout it was spawned with.
+    guard ownership.reapsGuestOnRelease, let process = ownership.process else {
       Self.teardown(fileDescriptor: fileDescriptor, processIdentifier: nil, socketPath: nil, logger: logger)
       return
     }
@@ -663,10 +700,10 @@ final class FBAXBridgeConnection: @unchecked Sendable {
     // continuation is safe here (unlike the DTX receipt path, which needs AssertingSafeContinuation
     // to arbitrate a receipt/deadline/cancel three-way race).
     try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Data, Error>) in
-      queue.async { [fileDescriptor, process] in
+      queue.async { [fileDescriptor, guest = ownership.process] in
         do {
           try FBAXBridgeConnection.writeFrame(fileDescriptor, requestData)
-          let responseData = try FBAXBridgeConnection.readFrame(fileDescriptor, guest: process)
+          let responseData = try FBAXBridgeConnection.readFrame(fileDescriptor, guest: guest)
           continuation.resume(returning: responseData)
         } catch {
           continuation.resume(throwing: error)
