@@ -45,7 +45,9 @@ public final class FBSimulatorDeletionStrategy {
     // Capture the Log Directory ahead of time as the Simulator will disappear on deletion.
     let coreSimulatorLogsDirectory = simulator.coreSimulatorLogsDirectory
     let udid = simulator.udid
-    let set = simulator.set
+    guard let set = simulator.set else {
+      throw FBSimulatorSetError.simulatorHasNoSet(udid: simulator.udid)
+    }
     let logger = simulator.logger
 
     // Kill the Simulator before deleting it.
@@ -54,7 +56,7 @@ public final class FBSimulatorDeletionStrategy {
 
     // Then follow through with the actual deletion of the Simulator, which will remove it from the set.
     logger.log("Deleting Simulator \(simulator)")
-    try await performDeletionAsync(of: simulator.device, on: simulator.set.deviceSet, queue: simulator.asyncQueue)
+    try await performDeletionAsync(of: simulator.device, on: set.deviceSet, queue: simulator.asyncQueue)
 
     logger.log("Simulator \(udid) Deleted")
 

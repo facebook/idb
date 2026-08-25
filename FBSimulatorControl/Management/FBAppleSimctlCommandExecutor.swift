@@ -23,8 +23,13 @@ public final class FBAppleSimctlCommandExecutor: NSObject {
 
   @objc(executorForSimulator:)
   public class func executor(for simulator: FBSimulator) -> FBAppleSimctlCommandExecutor {
-    FBAppleSimctlCommandExecutor(
-      deviceSetPath: simulator.set.deviceSet.setPath,
+    // simctl addresses a simulator by its device set, so this is only reachable for a
+    // set-managed simulator - which every simulator the companion serves is.
+    guard let set = simulator.set else {
+      preconditionFailure("\(simulator.udid) does not belong to a simulator set, so simctl cannot address it")
+    }
+    return FBAppleSimctlCommandExecutor(
+      deviceSetPath: set.deviceSet.setPath,
       deviceUUID: simulator.udid,
       // A booted/managed simulator always has a logger.
       logger: simulator.logger.withName("simctl"))

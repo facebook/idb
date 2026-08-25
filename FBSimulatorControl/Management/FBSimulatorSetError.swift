@@ -23,6 +23,9 @@ public enum FBSimulatorSetError: LocalizedError, Sendable {
   /// A device was created/cloned but no matching simulator was inflated into the set.
   case simulatorNotInflated(udid: String)
 
+  /// An operation addressed a simulator through the device set it belongs to, and it has none.
+  case simulatorHasNoSet(udid: String)
+
   /// CoreSimulator reported neither a device nor an error when creating a device.
   case deviceCreationFailed
 
@@ -37,6 +40,8 @@ public enum FBSimulatorSetError: LocalizedError, Sendable {
       return Self.describe("Could not get newly-created simulator into a shutdown state", reason)
     case .simulatorNotInflated(let udid):
       return "Expected simulator with UDID \(udid) to be inflated"
+    case .simulatorHasNoSet(let udid):
+      return "Simulator with UDID \(udid) does not belong to a simulator set"
     case .deviceCreationFailed:
       return "Failed to create device with no error"
     case .deviceCloneFailed:

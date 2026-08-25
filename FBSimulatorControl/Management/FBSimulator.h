@@ -82,8 +82,9 @@ NS_SWIFT_SENDABLE
  The Simulator Set that the Simulator belongs to.
  Reference to `FBSimulatorSet` results to a strong-strong reference cycle between `FBSimulatorSet` and `FBSimulator`.
  However, this cycle is explicitly broken by `FBSimulatorSet` when a `FBSimulator` is removed from the set that `FBSimulatorSet` wraps.
+ Nil for a simulator constructed outside a set, which the designated initializer permits.
  */
-@property (nonnull, nonatomic, readonly, strong) FBSimulatorSet *set;
+@property (nullable, nonatomic, readonly, strong) FBSimulatorSet *set;
 
 /**
  The Product Family of the Simulator.
