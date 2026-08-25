@@ -426,6 +426,29 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
     ["accessibility", "serve", socketPath, "--idle-timeout", "\(idleTimeoutSeconds)"]
   }
 
+  /// How long a running bridge gets to answer before we decide somebody else is using it.
+  ///
+  /// Short because it is paid on the first read of every session, and a free guest replies without
+  /// touching the accessibility runtime. A longer window only slows down giving up.
+  private static let adoptionTimeout: TimeInterval = 2
+
+  /// The request an adoption probe sends.
+  ///
+  /// A verb the guest does not implement. The guest serves one client at a time and stays inside that
+  /// connection until it goes away, so any reply means it accepted us and nobody else holds it, and an
+  /// unknown verb costs it no accessibility work. `FBAXBridgeReap` draws the same inference from the
+  /// other side.
+  private static let adoptionProbeVerb = "ping"
+
+  private enum RunningBridge {
+    /// Connected and answered, so it is ours to use.
+    case adopted(Int32)
+    /// Nothing is listening: no socket file, or one left behind by a guest that has gone.
+    case absent
+    /// Listening, but silent — another host is inside its accept loop.
+    case busy
+  }
+
   private static func establish(simulator: FBSimulator?) async throws -> FBAXBridgeConnection {
     guard let simulator else {
       throw FBWeakTargetError.simulator
@@ -435,7 +458,76 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
     }
     // The guest binds into this directory and `bind` will not create it.
     try FBAXBridgeSocket.prepareDirectory()
-    let socketPath = FBAXBridgeSocket.path(forConnection: UUID().uuidString)
+
+    let sharedPath = FBAXBridgeSocket.path(forSimulator: simulator.udid)
+    switch await runningBridge(at: sharedPath) {
+    case let .adopted(fileDescriptor):
+      simulator.logger.log("Adopted the axbridge guest already serving on \(sharedPath)")
+      return FBAXBridgeConnection(
+        fileDescriptor: fileDescriptor,
+        process: nil,
+        socketPath: sharedPath,
+        logger: simulator.logger
+      )
+    case .absent:
+      return try await spawn(simulator: simulator, helperPath: helperPath, socketPath: sharedPath)
+    case .busy:
+      // The shared guest will not take a second client until the first leaves, which may be their whole
+      // session. A private socket is what every host used before bridges were shared, so a contended
+      // simulator falls back to the old behaviour rather than waiting.
+      let privatePath = FBAXBridgeSocket.path(forConnection: UUID().uuidString)
+      simulator.logger.log(
+        "The axbridge guest on \(sharedPath) is serving another client; starting a private one on \(privatePath)")
+      return try await spawn(simulator: simulator, helperPath: helperPath, socketPath: privatePath)
+    }
+  }
+
+  /// Whether a bridge is already serving at `path`, and a connection to it if so.
+  ///
+  /// A busy guest still completes our `connect`, because its address is bound and the accept queue has
+  /// room; it just never serves us. Sending something and waiting for a reply is the only way to tell.
+  private static func runningBridge(at path: String) async -> RunningBridge {
+    guard FileManager.default.fileExists(atPath: path) else {
+      return .absent
+    }
+    let fileDescriptor: Int32
+    do {
+      fileDescriptor = try await FBAXBridgeConnection.connect(path: path, timeout: adoptionTimeout)
+    } catch {
+      // The file is there and nothing answers on it: a guest that has gone, leaving its socket behind.
+      return .absent
+    }
+    // The framing calls below block, so they run off the cooperative pool.
+    return await withCheckedContinuation { continuation in
+      DispatchQueue.global().async {
+        continuation.resume(returning: probe(fileDescriptor: fileDescriptor))
+      }
+    }
+  }
+
+  private static func probe(fileDescriptor: Int32) -> RunningBridge {
+    var window = timeval(tv_sec: Int(adoptionTimeout), tv_usec: 0)
+    setsockopt(fileDescriptor, SOL_SOCKET, SO_RCVTIMEO, &window, socklen_t(MemoryLayout<timeval>.size))
+    do {
+      let request = try JSONSerialization.data(
+        withJSONObject: [FBAXWire.Request.verb.key: adoptionProbeVerb])
+      try FBAXBridgeConnection.writeFrame(fileDescriptor, request)
+      _ = try FBAXBridgeConnection.readFrame(fileDescriptor, guest: nil)
+    } catch {
+      close(fileDescriptor)
+      return .busy
+    }
+    // Back to the working deadline now the probe is done, so a real read gets the full window.
+    var readTimeout = timeval(tv_sec: FBAXBridgeConnection.receiveTimeoutSeconds, tv_usec: 0)
+    setsockopt(fileDescriptor, SOL_SOCKET, SO_RCVTIMEO, &readTimeout, socklen_t(MemoryLayout<timeval>.size))
+    return .adopted(fileDescriptor)
+  }
+
+  private static func spawn(
+    simulator: FBSimulator,
+    helperPath: String,
+    socketPath: String
+  ) async throws -> FBAXBridgeConnection {
     let io = FBProcessIO<AnyObject, AnyObject, AnyObject>.outputToDevNull()
     let configuration = FBProcessSpawnConfiguration(
       launchPath: helperPath,
@@ -482,7 +574,9 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
 // patternlint-disable-next-line unchecked-sendable
 final class FBAXBridgeConnection: @unchecked Sendable {
   private let fileDescriptor: Int32
-  private let process: FBSubprocess<AnyObject, AnyObject, AnyObject>
+  /// The guest we started, or `nil` for one we adopted. A guest somebody else started is not ours to
+  /// reap, and holding no handle to it is what `deinit` reads to know that.
+  private let process: FBSubprocess<AnyObject, AnyObject, AnyObject>?
   private let socketPath: String
   private let logger: (any FBControlCoreLogger)?
   private let queue = DispatchQueue(label: "com.facebook.FBSimulatorControl.axbridge.connection")
@@ -493,7 +587,7 @@ final class FBAXBridgeConnection: @unchecked Sendable {
   /// deadline, so every chunk that arrives resets it. Only a guest that says nothing at all for the
   /// deadline trips it, after which the recovery path drops and re-establishes the connection.
   /// Deliberately not derived from read cost, which varies by orders of magnitude across applications.
-  private static let receiveTimeoutSeconds = 30
+  static let receiveTimeoutSeconds = 30
 
   /// How many bytes of path a Unix-domain socket address can hold, terminator included. Read from the
   /// struct rather than written down, so it tracks the platform.
@@ -501,7 +595,7 @@ final class FBAXBridgeConnection: @unchecked Sendable {
 
   init(
     fileDescriptor: Int32,
-    process: FBSubprocess<AnyObject, AnyObject, AnyObject>,
+    process: FBSubprocess<AnyObject, AnyObject, AnyObject>?,
     socketPath: String,
     logger: (any FBControlCoreLogger)?
   ) {
@@ -517,28 +611,44 @@ final class FBAXBridgeConnection: @unchecked Sendable {
   ///
   /// Takes the pid rather than the process because that is all it needs, which also lets a test drive
   /// it against a throwaway child instead of a spawned guest.
+  /// Each argument is optional because each is separately ours or not: an adopted guest is still
+  /// listening, so neither its process nor its socket is ours to remove.
+  ///
+  /// `processIdentifier` is optional rather than a `0` sentinel so "nothing to kill" cannot be spelled
+  /// as a pid. `kill(0, SIGKILL)` signals the caller's whole process group, taking the host with it, so
+  /// it is made unrepresentable.
   static func teardown(
     fileDescriptor: Int32?,
-    processIdentifier: pid_t,
-    socketPath: String,
+    processIdentifier: pid_t?,
+    socketPath: String?,
     logger: (any FBControlCoreLogger)?
   ) {
     if let fileDescriptor {
       close(fileDescriptor)
     }
-    if processIdentifier > 0 {
+    // A handle to a process that never launched reports `0`, which must not reach `kill` either.
+    if let processIdentifier, processIdentifier > 0 {
       // Logged before the kill so the exit reporter's "exited with signal 9" reads as expected
       // teardown, not a crash.
       logger?.log("Releasing axbridge connection: terminating guest serve process \(processIdentifier) with SIGKILL, this exit is expected")
       kill(processIdentifier, SIGKILL)
     }
-    unlink(socketPath)
+    if let socketPath {
+      unlink(socketPath)
+    }
   }
 
   deinit {
     // Best-effort teardown when the memoized transport holding this connection is released — which,
     // because the transport lives in the target's `commandCache`, means the target went away or the
     // host process exited gracefully. Dropping a reader does not reach here.
+    //
+    // An adopted guest has no process handle and no socket file of ours, so this closes our descriptor
+    // and leaves it running for whoever else is using it.
+    guard let process else {
+      Self.teardown(fileDescriptor: fileDescriptor, processIdentifier: nil, socketPath: nil, logger: logger)
+      return
+    }
     Self.teardown(
       fileDescriptor: fileDescriptor,
       processIdentifier: process.processIdentifier,

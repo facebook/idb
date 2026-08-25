@@ -1833,6 +1833,18 @@ final class FBAXBridgeTeardownLoggingTests: XCTestCase {
     XCTAssertEqual(process.terminationStatus, SIGKILL)
   }
 
+  // `kill(0, SIGKILL)` would signal the host's whole process group, so a teardown with no guest must
+  // not reach `kill`. The log line is written immediately before it.
+  func testTeardownWithNoGuestKillsNothing() {
+    let capture = captureLogger()
+
+    FBAXBridgeConnection.teardown(
+      fileDescriptor: nil, processIdentifier: nil, socketPath: nil, logger: capture.logger)
+
+    let logged = capture.read()
+    XCTAssertFalse(logged.contains("SIGKILL"), logged)
+  }
+
   func testTeardownSaysItIsTerminatingTheGuest() throws {
     let (process, pid) = try spawnSleeper()
     let socketPath = NSTemporaryDirectory() + "/axteardown-\(UUID().uuidString).sock"
