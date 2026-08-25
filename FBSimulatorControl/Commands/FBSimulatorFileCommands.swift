@@ -51,8 +51,8 @@ public final class FBSimulatorFileCommands {
     FBFileContainer.fileContainer(for: try await containedFile(forApplication: bundleID))
   }
 
-  public func fileCommandsForAuxillary() -> FBFutureContext<FBContainedFile_ContainedRoot> {
-    FBFutureContext(result: FBFileContainer.fileContainer(forBasePath: simulator.auxillaryDirectory))
+  public func fileCommandsForAuxillary() -> FBContainedFile_ContainedRoot {
+    FBFileContainer.fileContainer(forBasePath: simulator.auxillaryDirectory)
   }
 
   public func fileCommandsForApplicationContainers() async throws -> FBContainedFile_ContainedRoot {
@@ -63,13 +63,13 @@ public final class FBSimulatorFileCommands {
     FBFileContainer.fileContainer(for: try containedFileForGroupContainers())
   }
 
-  public func fileCommandsForRootFilesystem() throws -> FBFutureContext<FBContainedFile_ContainedRoot> {
-    FBFutureContext(result: FBFileContainer.fileContainer(forBasePath: try requireDataDirectory()))
+  public func fileCommandsForRootFilesystem() throws -> FBContainedFile_ContainedRoot {
+    FBFileContainer.fileContainer(forBasePath: try requireDataDirectory())
   }
 
-  public func fileCommandsForMediaDirectory() throws -> FBFutureContext<FBContainedFile_ContainedRoot> {
+  public func fileCommandsForMediaDirectory() throws -> FBContainedFile_ContainedRoot {
     let mediaDirectory = (try requireDataDirectory() as NSString).appendingPathComponent("Media")
-    return FBFutureContext(result: FBFileContainer.fileContainer(forBasePath: mediaDirectory))
+    return FBFileContainer.fileContainer(forBasePath: mediaDirectory)
   }
 
   // MARK: - Contained file accessors
@@ -137,7 +137,7 @@ extension FBSimulator: FileCommands {
   public func withFileCommandsForAuxillary<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await withFileContainer(fileCommands().fileCommandsForAuxillary(), body: body)
+    try await body(fileCommands().fileCommandsForAuxillary())
   }
 
   public func withFileCommandsForApplicationContainers<R>(
@@ -155,13 +155,13 @@ extension FBSimulator: FileCommands {
   public func withFileCommandsForRootFilesystem<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await withFileContainer(fileCommands().fileCommandsForRootFilesystem(), body: body)
+    try await body(fileCommands().fileCommandsForRootFilesystem())
   }
 
   public func withFileCommandsForMediaDirectory<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await withFileContainer(fileCommands().fileCommandsForMediaDirectory(), body: body)
+    try await body(fileCommands().fileCommandsForMediaDirectory())
   }
 
   public func withFileCommandsForProvisioningProfiles<R>(
