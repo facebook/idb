@@ -33,6 +33,13 @@ static id ExtractResult(FBFuture *future, NSTimeInterval timeout, BOOL completed
   return future.result;
 }
 
+@interface NSRunLoop (FBControlCore)
+
+- (BOOL)spinRunLoopWithTimeout:(NSTimeInterval)timeout untilTrue:(nonnull BOOL (^)(void))untilTrue;
+- (nullable id)awaitCompletionOfFuture:(nonnull FBFuture *)future timeout:(NSTimeInterval)timeout error:(NSError * _Nullable * _Nullable)error;
+
+@end
+
 @implementation NSRunLoop (FBControlCore)
 
 static NSString *const KeyIsAwaiting = @"FBCONTROLCORE_IS_AWAITING";
@@ -63,20 +70,6 @@ static NSString *const KeyIsAwaiting = @"FBCONTROLCORE_IS_AWAITING";
   return YES;
 }
 
-- (id)spinRunLoopWithTimeout:(NSTimeInterval)timeout untilExists:(id (^)(void) )untilExists
-{
-  __block id value = nil;
-  BOOL success = [self spinRunLoopWithTimeout:timeout
-                                    untilTrue:^BOOL {
-                                      value = untilExists();
-                                      return value != nil;
-                                    }];
-  if (!success) {
-    return nil;
-  }
-  return value;
-}
-
 - (nullable id)awaitCompletionOfFuture:(FBFuture *)future timeout:(NSTimeInterval)timeout error:(NSError **)error
 {
   [NSRunLoop updateRunLoopIsAwaiting:YES];
@@ -97,6 +90,12 @@ static dispatch_queue_t blockQueue(void)
   return dispatch_queue_create("com.facebook.fbfuture.block", DISPATCH_QUEUE_SERIAL);
 }
 
+@interface FBFuture (NSRunLoopPrivate)
+
+- (nullable id)onQueue:(nonnull dispatch_queue_t)queue timeout:(dispatch_time_t)timeout block:(NSError * _Nullable * _Nullable)error;
+
+@end
+
 @implementation FBFuture (NSRunLoop)
 
 - (nullable id)await:(NSError **)error
@@ -107,20 +106,6 @@ static dispatch_queue_t blockQueue(void)
 - (nullable id)awaitWithTimeout:(NSTimeInterval)timeout error:(NSError **)error
 {
   return [NSRunLoop.currentRunLoop awaitCompletionOfFuture:self timeout:timeout error:error];
-}
-
-- (BOOL)succeeds:(NSError **)error
-{
-  return [self onQueue:blockQueue() timeout:DISPATCH_TIME_FOREVER succeeds:error];
-}
-
-- (BOOL)onQueue:(dispatch_queue_t)queue timeout:(dispatch_time_t)timeout succeeds:(NSError **)error
-{
-  id value = [self onQueue:queue timeout:timeout block:error];
-  if (!value) {
-    return NO;
-  }
-  return YES;
 }
 
 - (nullable id)block:(NSError **)error
