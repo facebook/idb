@@ -471,9 +471,9 @@ public class FBDeviceFileCommands {
       ).retyped(FBFutureContext<FBDeviceFileContainer>.self)
   }
 
-  fileprivate func fileCommandsForAuxillary() throws -> FBFutureContext<FBContainedFile_ContainedRoot> {
+  fileprivate func fileCommandsForAuxillary() throws -> FBContainedFile_ContainedRoot {
     let device = try requireDevice()
-    return FBFutureContext(result: FBFileContainer.fileContainer(forBasePath: device.auxillaryDirectory))
+    return FBFileContainer.fileContainer(forBasePath: device.auxillaryDirectory)
   }
 
   fileprivate func fileCommandsForMediaDirectory() throws -> FBFutureContext<FBDeviceFileContainer> {
@@ -490,9 +490,9 @@ public class FBDeviceFileCommands {
       ).retyped(FBFutureContext<FBDeviceFileContainer>.self)
   }
 
-  fileprivate func fileCommandsForProvisioningProfiles() throws -> FBFutureContext<FBFileContainer_ProvisioningProfile> {
+  fileprivate func fileCommandsForProvisioningProfiles() throws -> FBFileContainer_ProvisioningProfile {
     let device = try requireDevice()
-    return FBFutureContext(result: FBFileContainer_ProvisioningProfile(commands: FBDeviceProvisioningProfileCommands.commands(with: device)))
+    return FBFileContainer_ProvisioningProfile(commands: FBDeviceProvisioningProfileCommands.commands(with: device))
   }
 
   fileprivate func fileCommandsForMDMProfiles() throws -> FBFutureContext<FBDeviceFileContainer_MDMProfiles> {
@@ -532,14 +532,14 @@ public class FBDeviceFileCommands {
     ).retyped(FBFutureContext<FBDeviceFileContainer_Wallpaper>.self)
   }
 
-  fileprivate func fileCommandsForDiskImages() throws -> FBFutureContext<FBDeviceFileCommands_DiskImages> {
+  fileprivate func fileCommandsForDiskImages() throws -> FBDeviceFileCommands_DiskImages {
     let device = try requireDevice()
-    return FBFutureContext(result: FBDeviceFileCommands_DiskImages(commands: device as any DeveloperDiskImageCommands, queue: device.asyncQueue))
+    return FBDeviceFileCommands_DiskImages(commands: device as any DeveloperDiskImageCommands, queue: device.asyncQueue)
   }
 
-  fileprivate func fileCommandsForSymbols() throws -> FBFutureContext<FBDeviceFileCommands_Symbols> {
+  fileprivate func fileCommandsForSymbols() throws -> FBDeviceFileCommands_Symbols {
     let device = try requireDevice()
-    return FBFutureContext(result: FBDeviceFileCommands_Symbols(commands: device as any DebugSymbolsCommands, queue: device.asyncQueue))
+    return FBDeviceFileCommands_Symbols(commands: device as any DebugSymbolsCommands, queue: device.asyncQueue)
   }
 }
 
@@ -557,7 +557,7 @@ extension FBDevice: FileCommands {
   public func withFileCommandsForAuxillary<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await withFileContainer(fileCommands().fileCommandsForAuxillary(), body: body)
+    try await body(fileCommands().fileCommandsForAuxillary())
   }
 
   public func withFileCommandsForApplicationContainers<R>(
@@ -587,7 +587,7 @@ extension FBDevice: FileCommands {
   public func withFileCommandsForProvisioningProfiles<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await withFileContainer(fileCommands().fileCommandsForProvisioningProfiles(), body: body)
+    try await body(fileCommands().fileCommandsForProvisioningProfiles())
   }
 
   public func withFileCommandsForMDMProfiles<R>(
@@ -614,13 +614,13 @@ extension FBDevice: FileCommands {
   public func withFileCommandsForDiskImages<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await withFileContainer(fileCommands().fileCommandsForDiskImages(), body: body)
+    try await body(fileCommands().fileCommandsForDiskImages())
   }
 
   public func withFileCommandsForSymbols<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await withFileContainer(fileCommands().fileCommandsForSymbols(), body: body)
+    try await body(fileCommands().fileCommandsForSymbols())
   }
 
   /// Scopes the file container to `body`, exposing it through the
