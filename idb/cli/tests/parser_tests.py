@@ -6,11 +6,14 @@
 
 # pyre-strict
 
+import json
 import logging
 import os
+import tempfile
 from argparse import ArgumentParser, Namespace
 from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, redirect_stdout
+from io import StringIO
 from types import ModuleType
 from typing import Any, TypeVar
 from unittest.mock import ANY, MagicMock, patch
@@ -39,6 +42,11 @@ from idb.common.types import (
     InstrumentsTimings,
     LoggingMetadata,
     Permission,
+    Screenshot,
+    ScreenshotCrop,
+    ScreenshotFormat,
+    ScreenshotOptions,
+    ScreenshotUnit,
     TCPAddress,
 )
 from idb.grpc.idb_pb2 import AccessibilityInfoRequest
@@ -1306,6 +1314,175 @@ class TestParser(TestCase):
         self.client_mock.photos_clear = AsyncMock(return_value=None)
         await cli_main(cmd_input=["photos", "clear"])
         self.client_mock.photos_clear.assert_called_once()
+
+    async def test_screenshot_defaults_to_the_historical_capture(self) -> None:
+        # No flags has to keep meaning what it meant before the command had
+        # any: a full-screen, unscaled PNG written to the destination.
+        self.client_mock.screenshot = AsyncMock(return_value=Screenshot(b"png bytes"))
+        with tempfile.TemporaryDirectory() as directory:
+            path = os.path.join(directory, "out.png")
+            self.assertEqual(await cli_main(cmd_input=["screenshot", path]), 0)
+            with open(path, "rb") as f:
+                self.assertEqual(f.read(), b"png bytes")
+        self.client_mock.screenshot.assert_called_once_with(options=ScreenshotOptions())
+
+    async def test_screenshot_every_flag_reaches_the_options(self) -> None:
+        self.client_mock.screenshot = AsyncMock(return_value=Screenshot(b"jpeg"))
+        with tempfile.TemporaryDirectory() as directory:
+            await cli_main(
+                cmd_input=[
+                    "screenshot",
+                    os.path.join(directory, "out.jpeg"),
+                    "--format",
+                    "jpeg",
+                    "--compression-quality",
+                    "0.35",
+                    "--crop",
+                    "10,20,30,40",
+                    "--max-width",
+                    "100",
+                    "--max-height",
+                    "200",
+                    "--units",
+                    "points",
+                ]
+            )
+        self.client_mock.screenshot.assert_called_once_with(
+            options=ScreenshotOptions(
+                format=ScreenshotFormat.JPEG,
+                compression_quality=0.35,
+                crop=ScreenshotCrop(x=10, y=20, width=30, height=40),
+                max_width=100,
+                max_height=200,
+                unit=ScreenshotUnit.POINTS,
+            )
+        )
+
+    async def test_screenshot_scale_factor_reaches_the_options(self) -> None:
+        self.client_mock.screenshot = AsyncMock(return_value=Screenshot(b"png"))
+        with tempfile.TemporaryDirectory() as directory:
+            await cli_main(
+                cmd_input=[
+                    "screenshot",
+                    os.path.join(directory, "out.png"),
+                    "--scale-factor",
+                    "0.5",
+                ]
+            )
+        self.client_mock.screenshot.assert_called_once_with(
+            options=ScreenshotOptions(scale_factor=0.5)
+        )
+
+    async def test_screenshot_rejects_a_factor_and_a_bounding_box(self) -> None:
+        # argparse cannot express "a factor, or one or both bounds", so the
+        # options type refuses it and the command reports that as an error
+        # rather than a traceback.
+        self.client_mock.screenshot = AsyncMock(return_value=Screenshot(b"png"))
+        with tempfile.TemporaryDirectory() as directory:
+            self.assertEqual(
+                await cli_main(
+                    cmd_input=[
+                        "screenshot",
+                        os.path.join(directory, "out.png"),
+                        "--scale-factor",
+                        "0.5",
+                        "--max-width",
+                        "100",
+                    ]
+                ),
+                1,
+            )
+        self.client_mock.screenshot.assert_not_called()
+
+    async def test_screenshot_rejects_a_malformed_crop(self) -> None:
+        self.client_mock.screenshot = AsyncMock(return_value=Screenshot(b"png"))
+        with tempfile.TemporaryDirectory() as directory:
+            for crop in ["10,20", "10,20,30,40,50", "10,20,30,wide"]:
+                with self.subTest(crop=crop):
+                    self.assertEqual(
+                        await cli_main(
+                            cmd_input=[
+                                "screenshot",
+                                os.path.join(directory, "out.png"),
+                                "--crop",
+                                crop,
+                            ]
+                        ),
+                        2,
+                    )
+        self.client_mock.screenshot.assert_not_called()
+
+    async def test_screenshot_reports_a_value_the_wire_cannot_carry(self) -> None:
+        # These three never reach the companion: 0 is a proto scalar's "unset",
+        # so a quality of 0 would come back as a default-quality JPEG reported
+        # as a success, and a negative fit bound raises out of protobuf as a
+        # traceback. They have to be an error message from here instead.
+        for flags in [
+            ["--compression-quality", "0"],
+            ["--format", "png", "--compression-quality", "0"],
+            ["--compression-quality", "1.5"],
+            ["--max-width", "-1"],
+            ["--max-height", "0"],
+        ]:
+            with self.subTest(flags=flags):
+                self.client_mock.screenshot = AsyncMock(return_value=Screenshot(b"png"))
+                with tempfile.TemporaryDirectory() as directory:
+                    self.assertEqual(
+                        await cli_main(
+                            cmd_input=[
+                                "screenshot",
+                                os.path.join(directory, "out.png"),
+                                *flags,
+                            ]
+                        ),
+                        1,
+                    )
+                self.client_mock.screenshot.assert_not_called()
+
+    async def test_screenshot_json_reports_every_measurement(self) -> None:
+        self.client_mock.screenshot = AsyncMock(
+            return_value=Screenshot(
+                b"jpeg",
+                format=ScreenshotFormat.JPEG,
+                width=200,
+                height=100,
+                source_width=828,
+                source_height=1792,
+                screen_scale=3,
+            )
+        )
+        output = StringIO()
+        with tempfile.TemporaryDirectory() as directory:
+            with redirect_stdout(output):
+                await cli_main(
+                    cmd_input=[
+                        "screenshot",
+                        os.path.join(directory, "out.jpeg"),
+                        "--format",
+                        "jpeg",
+                        "--json",
+                    ]
+                )
+        self.assertEqual(
+            json.loads(output.getvalue()),
+            {
+                "format": "jpeg",
+                "byte_count": 4,
+                "width": 200,
+                "height": 100,
+                "source_width": 828,
+                "source_height": 1792,
+                "screen_scale": 3,
+            },
+        )
+
+    async def test_screenshot_will_not_put_json_and_an_image_on_stdout(self) -> None:
+        self.client_mock.screenshot = AsyncMock(return_value=Screenshot(b"png"))
+        self.assertEqual(
+            await cli_main(cmd_input=["screenshot", "-", "--json"]),
+            1,
+        )
+        self.client_mock.screenshot.assert_not_called()
 
     async def test_accessibility_info_all(self) -> None:
         self.client_mock.accessibility_info = AsyncMock()
