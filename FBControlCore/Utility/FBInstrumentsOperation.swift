@@ -43,7 +43,7 @@ extension FBInstrumentsError: LocalizedError {
 
 /// Watches the instruments output for the two lifecycle markers: template loading has
 /// begun, and the premature "Trace Complete" that signals a failed startup.
-private final class InstrumentsConsumer: NSObject, FBDataConsumer {
+final class InstrumentsConsumer: NSObject, FBDataConsumer {
 
   let hasStoppedRecording: FBMutableFuture<NSNull>
   let hasStartedLoadingTemplate: FBMutableFuture<NSNull>
