@@ -1833,6 +1833,22 @@ final class FBAXBridgeTeardownLoggingTests: XCTestCase {
     XCTAssertEqual(process.terminationStatus, SIGKILL)
   }
 
+  // A terminated guest's pid can already belong to something else, so it must not be signalled. The
+  // check is one-way: `statLoc` does not always resolve for a guest parented to `launchd_sim`, so an
+  // unresolved future is not evidence the guest is alive.
+
+  func testATerminatedGuestIsNotSignalled() {
+    XCTAssertNil(FBAXBridgeConnection.pidToSignal(processIdentifier: 4321, hasTerminated: true))
+  }
+
+  func testARunningGuestIsSignalled() {
+    XCTAssertEqual(FBAXBridgeConnection.pidToSignal(processIdentifier: 4321, hasTerminated: false), 4321)
+  }
+
+  func testAGuestThatNeverLaunchedIsNotSignalled() {
+    XCTAssertNil(FBAXBridgeConnection.pidToSignal(processIdentifier: 0, hasTerminated: false))
+  }
+
   // `kill(0, SIGKILL)` would signal the host's whole process group, so a teardown with no guest must
   // not reach `kill`. The log line is written immediately before it.
   func testTeardownWithNoGuestKillsNothing() {

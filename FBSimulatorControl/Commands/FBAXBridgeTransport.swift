@@ -688,7 +688,8 @@ final class FBAXBridgeConnection: @unchecked Sendable {
     }
     Self.teardown(
       fileDescriptor: fileDescriptor,
-      processIdentifier: process.processIdentifier,
+      processIdentifier: Self.pidToSignal(
+        processIdentifier: process.processIdentifier, hasTerminated: process.statLoc.hasCompleted),
       socketPath: socketPath,
       logger: logger
     )
@@ -838,6 +839,22 @@ final class FBAXBridgeConnection: @unchecked Sendable {
       signal: process.signal.hasCompleted ? process.signal.result?.intValue : nil,
       exitCode: process.exitCode.hasCompleted ? process.exitCode.result?.intValue : nil
     )
+  }
+
+  /// The pid to signal when a connection is released, or nil when there is nothing to signal.
+  ///
+  /// A guest that has already terminated leaves a pid the kernel is free to hand to something else, so
+  /// signalling it can hit an unrelated process. `statLoc` resolves on any termination, so a resolved
+  /// one means there is nothing left to kill.
+  ///
+  /// The check only ever rules a kill out, never in: `statLoc` is not guaranteed to resolve for a guest
+  /// parented to `launchd_sim` rather than to us, so an unresolved future is not evidence the guest is
+  /// alive. Over the two values rather than the process, for the reason `socketClosedMessage` is.
+  static func pidToSignal(processIdentifier: pid_t, hasTerminated: Bool) -> pid_t? {
+    guard !hasTerminated, processIdentifier > 0 else {
+      return nil
+    }
+    return processIdentifier
   }
 
   /// The message itself, over the values rather than the process that carries them.
