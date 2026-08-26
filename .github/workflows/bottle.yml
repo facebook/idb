@@ -129,8 +129,11 @@ jobs:
                   # Not reported: leave the DSL default rather than guess one.
                   return f'  sha256 {tag}: "{sha}"'
               cellar = str(cellar)
-              if cellar.startswith(":"):
-                  return f'  sha256 cellar: {cellar}, {tag}: "{sha}"'
+              # The JSON reports symbolic cellars without the leading colon;
+              # the DSL needs a symbol — a quoted string means a literal
+              # cellar path and makes the bottle silently unpourable.
+              if cellar.lstrip(":") in ("any", "any_skip_relocation"):
+                  return f'  sha256 cellar: :{cellar.lstrip(":")}, {tag}: "{sha}"'
               return f'  sha256 cellar: "{cellar}", {tag}: "{sha}"'
 
           blocks = []
