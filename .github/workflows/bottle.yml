@@ -102,6 +102,16 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: gh release upload "$TAG" ./*.bottle.tar.gz --clobber --repo "$GITHUB_REPOSITORY"
 
+      # The blocks below are also derivable from this JSON by tooling; the
+      # artifact is the machine-readable counterpart of the human-readable
+      # summary.
+      - name: Upload the bottle JSON as a run artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: bottle-json
+          path: '*.bottle.json'
+          if-no-files-found: error
+
       # Everything in the emitted blocks — root_url, cellar, os/arch tag,
       # sha256 — is read out of the `brew bottle --json` output, which is
       # reproduced verbatim below the blocks.
