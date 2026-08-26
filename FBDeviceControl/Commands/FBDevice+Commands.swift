@@ -52,10 +52,6 @@ extension FBDevice {
     commandCache.resolve { FBDeviceXCTestCommands.commands(with: self) }
   }
 
-  func instrumentsCommands() throws -> FBInstrumentsCommands {
-    commandCache.resolve { FBInstrumentsCommands(target: self) }
-  }
-
   func xctraceRecordCommands() throws -> FBXCTraceRecordCommands {
     commandCache.resolve { FBXCTraceRecordCommands.commands(with: self) }
   }

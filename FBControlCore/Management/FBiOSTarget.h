@@ -8,7 +8,7 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBArchitecture.h>
-#import <FBControlCore/FBInstrumentsCommands.h>
+#import <FBControlCore/FBFuture.h>
 #import <FBControlCore/FBiOSTargetConstants.h>
 
 @class FBDeviceType;
