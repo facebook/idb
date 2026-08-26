@@ -8,7 +8,6 @@
 // Headers with C type definitions must come before any header that imports
 // FBSimulatorControl-Swift.h, because the generated Swift header may reference
 // these types (e.g. FBSimulatorBootOptions).
-#import <FBSimulatorControl/FBSimulator.h>
 #import <FBSimulatorControl/FBSimulatorBootConfiguration.h>
 #import <FBSimulatorControl/FBSimulatorControlFrameworkLoader.h>
 
