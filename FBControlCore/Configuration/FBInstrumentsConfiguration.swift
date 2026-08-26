@@ -7,45 +7,38 @@
 
 import Foundation
 
-@objc(FBInstrumentsTimings)
-public final class FBInstrumentsTimings: NSObject {
+public struct FBInstrumentsTimings: Sendable {
 
-  @objc public let terminateTimeout: TimeInterval
-  @objc public let launchRetryTimeout: TimeInterval
-  @objc public let launchErrorTimeout: TimeInterval
-  @objc public let operationDuration: TimeInterval
+  public let terminateTimeout: TimeInterval
+  public let launchRetryTimeout: TimeInterval
+  public let launchErrorTimeout: TimeInterval
+  public let operationDuration: TimeInterval
 
-  @objc(timingsWithTerminateTimeout:launchRetryTimeout:launchErrorTimeout:operationDuration:)
-  public class func timings(withTerminateTimeout terminateTimeout: TimeInterval, launchRetryTimeout: TimeInterval, launchErrorTimeout: TimeInterval, operationDuration: TimeInterval) -> FBInstrumentsTimings {
+  public static func timings(withTerminateTimeout terminateTimeout: TimeInterval, launchRetryTimeout: TimeInterval, launchErrorTimeout: TimeInterval, operationDuration: TimeInterval) -> FBInstrumentsTimings {
     FBInstrumentsTimings(terminateTimeout: terminateTimeout, launchRetryTimeout: launchRetryTimeout, launchErrorTimeout: launchErrorTimeout, operationDuration: operationDuration)
   }
 
-  @objc
   public init(terminateTimeout: TimeInterval, launchRetryTimeout: TimeInterval, launchErrorTimeout: TimeInterval, operationDuration: TimeInterval) {
     self.terminateTimeout = terminateTimeout
     self.launchRetryTimeout = launchRetryTimeout
     self.launchErrorTimeout = launchErrorTimeout
     self.operationDuration = operationDuration
-    super.init()
   }
 }
 
-@objc(FBInstrumentsConfiguration)
-public final class FBInstrumentsConfiguration: NSObject, NSCopying {
+public struct FBInstrumentsConfiguration: Sendable, CustomStringConvertible {
 
-  @objc public let templateName: String
-  @objc public let targetApplication: String
-  @objc public let appEnvironment: [String: String]
-  @objc public let appArguments: [String]
-  @objc public let toolArguments: [String]
-  @objc public let timings: FBInstrumentsTimings
+  public let templateName: String
+  public let targetApplication: String
+  public let appEnvironment: [String: String]
+  public let appArguments: [String]
+  public let toolArguments: [String]
+  public let timings: FBInstrumentsTimings
 
-  @objc(configurationWithTemplateName:targetApplication:appEnvironment:appArguments:toolArguments:timings:)
-  public class func configuration(withTemplateName templateName: String, targetApplication: String, appEnvironment: [String: String], appArguments: [String], toolArguments: [String], timings: FBInstrumentsTimings) -> FBInstrumentsConfiguration {
+  public static func configuration(withTemplateName templateName: String, targetApplication: String, appEnvironment: [String: String], appArguments: [String], toolArguments: [String], timings: FBInstrumentsTimings) -> FBInstrumentsConfiguration {
     FBInstrumentsConfiguration(templateName: templateName, targetApplication: targetApplication, appEnvironment: appEnvironment, appArguments: appArguments, toolArguments: toolArguments, timings: timings)
   }
 
-  @objc
   public init(templateName: String, targetApplication: String, appEnvironment: [String: String], appArguments: [String], toolArguments: [String], timings: FBInstrumentsTimings) {
     self.templateName = templateName
     self.targetApplication = targetApplication
@@ -53,14 +46,9 @@ public final class FBInstrumentsConfiguration: NSObject, NSCopying {
     self.appArguments = appArguments
     self.toolArguments = toolArguments
     self.timings = timings
-    super.init()
   }
 
-  public override var description: String {
+  public var description: String {
     "Instruments \(templateName) | \(targetApplication) | \(FBCollectionInformation.oneLineDescription(from: appEnvironment)) | \(FBCollectionInformation.oneLineDescription(from: appArguments)) | \(FBCollectionInformation.oneLineDescription(from: toolArguments)) | duration \(timings.operationDuration) | terminate timeout \(timings.terminateTimeout) | launch retry timeout \(timings.launchRetryTimeout) | launch error timeout \(timings.launchErrorTimeout)"
-  }
-
-  public func copy(with zone: NSZone? = nil) -> Any {
-    self
   }
 }
