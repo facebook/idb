@@ -14,7 +14,6 @@
 
 #import <FBControlCore/FBArchiveOperations.h>
 #import <FBControlCore/FBFileReader.h>
-#import <FBControlCore/FBInstrumentsOperation.h>
 #import <FBControlCore/FBiOSTarget.h>
 #import <FBControlCore/FBiOSTargetConfiguration.h>
 
