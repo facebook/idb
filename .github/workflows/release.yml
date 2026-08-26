@@ -30,7 +30,14 @@ jobs:
           if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
             echo "Release $GITHUB_REF_NAME already exists, leaving it as-is"
           else
-            gh release create "$GITHUB_REF_NAME" --prerelease --title "$GITHUB_REF_NAME" --generate-notes --repo "$GITHUB_REPOSITORY"
+            # Mark prerelease-suffixed tags (v1.5.0.b3, v1.5.0.rc1) as
+            # prereleases; a plain version tag becomes the repo's latest
+            # release.
+            prerelease=()
+            case "$GITHUB_REF_NAME" in
+              *.a[0-9]*|*.b[0-9]*|*.rc[0-9]*) prerelease=(--prerelease) ;;
+            esac
+            gh release create "$GITHUB_REF_NAME" "${prerelease[@]}" --title "$GITHUB_REF_NAME" --generate-notes --repo "$GITHUB_REPOSITORY"
           fi
 
   companion:
