@@ -1,0 +1,90 @@
+/*
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+import FBControlCore
+import Foundation
+import Testing
+
+/// Counts how many times a slot's `build` closure ran, across threads.
+private final class BuildCounter: @unchecked Sendable {
+  private let lock = NSLock()
+  private var count = 0
+
+  func increment() {
+    lock.lock()
+    defer { lock.unlock() }
+    count += 1
+  }
+
+  var value: Int {
+    lock.lock()
+    defer { lock.unlock() }
+    return count
+  }
+}
+
+private final class StubCommand {
+  let identifier: Int
+  init(identifier: Int = 0) {
+    self.identifier = identifier
+  }
+}
+
+private final class OtherStubCommand {}
+
+@Suite("FBTargetCommandCache")
+struct FBTargetCommandCacheTests {
+
+  @Test("A resolved command is cached, so a second resolve returns the same instance")
+  func resolveReturnsTheSameInstance() {
+    let cache = FBTargetCommandCache()
+    let first = cache.resolve(StubCommand.self) { StubCommand(identifier: 1) }
+    let second = cache.resolve(StubCommand.self) { StubCommand(identifier: 2) }
+
+    // The second build closure never runs, so the identifier stays at the first.
+    #expect(first === second)
+    #expect(second.identifier == 1)
+  }
+
+  @Test("Registering pre-populates the slot, so resolve does not build")
+  func registerPrePopulatesTheSlot() {
+    let cache = FBTargetCommandCache()
+    let registered = StubCommand(identifier: 7)
+    cache.register(registered, as: StubCommand.self)
+
+    let resolved = cache.resolve(StubCommand.self) { StubCommand(identifier: 8) }
+    #expect(resolved === registered)
+  }
+
+  @Test("Each type gets its own slot")
+  func distinctTypesGetDistinctSlots() {
+    let cache = FBTargetCommandCache()
+    let command = cache.resolve(StubCommand.self) { StubCommand(identifier: 1) }
+    let other = cache.resolve(OtherStubCommand.self) { OtherStubCommand() }
+
+    #expect(cache.resolve(StubCommand.self) { StubCommand(identifier: 2) } === command)
+    #expect(cache.resolve(OtherStubCommand.self) { OtherStubCommand() } === other)
+  }
+
+  @Test("Concurrent first access builds the command exactly once")
+  func concurrentFirstAccessBuildsOnce() {
+    let cache = FBTargetCommandCache()
+    let counter = BuildCounter()
+
+    // The lock is held across `build` precisely so that two callers racing for the first
+    // resolve cannot both construct one — the case the class comment calls out as mattering
+    // for commands that own a queue or connection per target.
+    DispatchQueue.concurrentPerform(iterations: 64) { _ in
+      _ = cache.resolve(StubCommand.self) {
+        counter.increment()
+        return StubCommand(identifier: 1)
+      }
+    }
+
+    #expect(counter.value == 1)
+  }
+}
