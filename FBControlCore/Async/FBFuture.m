@@ -283,9 +283,12 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
            onQueue:queue
            fmap:pop]
           onQueue:queue
-          notifyOfCompletion:^(FBFuture *resolved) {
+          chain:^(FBFuture *resolved) {
             NSArray<FBFutureContext_Teardown *> *teardowns = [self.teardowns asArray];
-            [FBFutureContext popTeardowns:teardowns.reverseObjectEnumerator state:resolved.state];
+            return [[FBFutureContext
+                     popTeardowns:teardowns.reverseObjectEnumerator
+                     state:resolved.state]
+                    chainReplace:resolved];
           }];
 }
 

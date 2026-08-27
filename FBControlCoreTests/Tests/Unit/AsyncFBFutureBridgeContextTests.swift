@@ -59,10 +59,7 @@ struct AsyncFBFutureBridgeContextTests {
     }
 
     try await Task.sleep(nanoseconds: 200_000_000)
-    // BUG: `pop:` triggers the teardown stack from `notifyOfCompletion:` and returns the
-    // undecorated future, so it resolves while the teardown is still running — flipped in the
-    // following commit.
-    #expect(await completion.isComplete == true)
+    #expect(await completion.isComplete == false)
 
     gate.resolve(withResult: NSNull())
     try await task.value
@@ -82,9 +79,7 @@ struct AsyncFBFutureBridgeContextTests {
 
     // Long enough for the body to have run and the teardown to have been triggered.
     try await Task.sleep(nanoseconds: 200_000_000)
-    // BUG: the teardown is triggered but never awaited, so the call has already returned while
-    // the teardown is still in flight — flipped in the following commit.
-    #expect(await completion.isComplete == true)
+    #expect(await completion.isComplete == false)
 
     gate.resolve(withResult: NSNull())
     #expect(try await task.value == "resource")

@@ -178,7 +178,7 @@ private final class FBFutureContextBox<T: AnyObject>: @unchecked Sendable {
 /// `enter:` block so they survive across the `await` that follows.
 private final class ContextEnterCapture<T: AnyObject>: @unchecked Sendable {
   var value: T?
-  var teardown: FBMutableFuture<NSNull>?
+  var teardown: FBMutableFuture<AnyObject>?
 }
 
 /// Acquires the resource produced by an `FBFutureContext`, runs `body`, then
@@ -189,44 +189,56 @@ private final class ContextEnterCapture<T: AnyObject>: @unchecked Sendable {
 /// to the duration of `body`. If `body` throws, the teardown still runs and
 /// the original error is rethrown.
 ///
-/// Internally uses `FBFutureContext.enter:` to extract the value and the
-/// teardown trigger; the teardown trigger is resolved after `body` returns
-/// (or throws).
+/// Uses `pop:` directly rather than the `enter:` convenience: `enter:` returns a
+/// future that resolves at acquire time and discards the one that resolves when
+/// the teardown stack has finished, which is the one this needs in order to not
+/// return early.
 public func withFBFutureContext<T: AnyObject, R>(
   _ context: FBFutureContext<T>,
   body: (T) async throws -> R
 ) async throws -> R {
   let capture = ContextEnterCapture<T>()
   let contextBox = FBFutureContextBox(context)
+  let acquired = FBMutableFuture<NSNull>()
+  let acquiredBox = FBFutureResultBox(acquired)
 
-  // Use `enter:` to extract both the value and a teardown trigger. We don't
-  // care about the value the block returns (it just feeds the surrounding
-  // future); we only need the side-effect of capturing.
-  let extracted = contextBox.context.onQueue(
+  // The block runs once the resource is acquired; the future it returns gates
+  // the teardown, and `popped` resolves once that teardown stack has run.
+  let popped = contextBox.context.onQueue(
     asyncBridgeQueue,
-    enter: { value, teardown in
+    pop: { (value: T) -> FBFuture<AnyObject> in
+      let teardown = FBMutableFuture<AnyObject>()
       capture.value = value
       capture.teardown = teardown
-      return NSNull()
+      acquiredBox.value.resolve(withResult: NSNull())
+      return convertFBMutableFuture(teardown)
     })
 
-  // The `enter:`-derived future resolves as soon as the block runs. Awaiting
-  // it ensures the capture has been populated and surfaces any failure that
-  // occurred while acquiring the underlying resource.
-  // swiftlint:disable:next force_cast
-  let extractedTyped = extracted as! FBFuture<NSNull>
-  _ = try await bridgeFBFuture(extractedTyped)
+  // Surfaces any failure that occurred while acquiring the underlying resource:
+  // when acquisition fails the pop block never runs, so `acquired` is resolved
+  // from `popped`'s error rather than by the block above.
+  popped.onQueue(
+    asyncBridgeQueue,
+    handleError: { (error: any Error) -> FBFuture<AnyObject> in
+      acquiredBox.value.resolveWithError(error)
+      return FBFuture(error: error)
+    })
+  _ = try await awaitMutableFutureVoid(acquired)
 
   guard let value = capture.value, let teardown = capture.teardown else {
     throw AsyncFBFutureBridgeError.contextTeardownNotCaptured
   }
 
+  // The teardown is awaited on both paths: a scoped acquisition that returns
+  // while the resource is still being released is not scoped at all.
   do {
     let result = try await body(value)
     teardown.resolve(withResult: NSNull())
+    _ = try await bridgeFBFuture(popped)
     return result
   } catch {
     teardown.resolve(withResult: NSNull())
+    _ = try? await bridgeFBFuture(popped)
     throw error
   }
 }
