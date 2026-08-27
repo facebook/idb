@@ -18,27 +18,12 @@ extension FBAMDevice {
   /// the duration — while the service *connection* is invalidated when the caller finishes with it.
   @objc(startServiceConnection:)
   public func startServiceConnection(_ service: String) -> FBFutureContext<FBAMDServiceConnection> {
-    let calls = self.calls
     let logger = self.logger
-    let workQueue = self.workQueue
-    return
-      connectToDevice(withPurpose: "start_service_\(service)")
+    return fbFutureFromAsync { try await self.openServiceConnection(service) }
       .onQueue(
         workQueue,
-        pop: { (connectedDevice: any FBDeviceCommands) -> FBFuture<AnyObject> in
-          do {
-            let connection = try Self.startService(
-              service, on: connectedDevice, calls: calls, logger: logger)
-            return FBFuture(result: connection as AnyObject)
-          } catch {
-            return FBFuture(error: error)
-          }
-        }
-      )
-      .onQueue(
-        workQueue,
-        contextualTeardown: { (connection: AnyObject, _: FBFutureState) -> FBFuture<NSNull> in
-          Self.invalidate(connection as? FBAMDServiceConnection, service: service, logger: logger)
+        contextualTeardown: { (connection: FBAMDServiceConnection, _: FBFutureState) -> FBFuture<NSNull> in
+          Self.invalidate(connection, service: service, logger: logger)
           return FBFuture<NSNull>.empty()
         }
       ).retyped(FBFutureContext<FBAMDServiceConnection>.self)
