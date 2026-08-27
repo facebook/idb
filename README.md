@@ -39,7 +39,7 @@ It is installed alongside the companion by the brew formula above. It can also b
 ```
 pip3 install fb-idb
 ```
-Note: The idb client requires python 3.11 or greater to be installed.
+Note: The idb client requires python 3.10 or greater to be installed.
 
 Please refer to [fbidb.io](https://www.fbidb.io/) for detailed installation instructions and a guided tour of idb.
 

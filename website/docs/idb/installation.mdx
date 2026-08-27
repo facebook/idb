@@ -19,7 +19,8 @@ Notes:
 
 1. Instructions on how to install brew can be found [here](https://brew.sh)
 
-2. A full installation of Xcode is required to compile and use the idb companion.
+2. The brew formula installs a prebuilt companion binary — nothing is compiled on install.
+It requires an arm64 Mac running macOS 15 or later, with a full installation of Xcode 26 or later selected.
 Installing just the Command Line Tools is not sufficient.
 Xcode can be installed from the App Store.
 
@@ -33,7 +34,7 @@ It is installed alongside the companion by the brew formula above. It can also b
 pip3 install fb-idb
 ```
 
-Note: The idb client requires python 3.11 or greater to be installed.
+Note: The idb client requires python 3.10 or greater to be installed.
 
 Note: Instructions on how to install pip can be found [here](https://pip.pypa.io/en/stable/installation/)
 
