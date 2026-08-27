@@ -120,14 +120,6 @@ extern FBDeviceActivationState _Nonnull FBDeviceActivationStateCoerceFromString(
 - (nonnull FBFutureContext<FBAMDServiceConnection *> *)startService:(nonnull NSString *)service;
 
 /**
- Starts a Service, wrapping it in an "AFC" Client.
-
- @param service the service name.
- @return a Future wrapping the AFC connection.
- */
-- (nonnull FBFutureContext<FBAFCConnection *> *)startAFCService:(nonnull NSString *)service;
-
-/**
  Starts house arrest for a given bundle id.
 
  @param bundleID the bundle id to use.

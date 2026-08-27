@@ -250,17 +250,6 @@
                              failFutureContext];
 }
 
-- (FBFutureContext<FBAFCConnection *> *)startAFCService:(NSString *)service
-{
-  FBAMDevice *amDevice = self.amDevice;
-  if (amDevice) {
-    return (FBFutureContext *)[amDevice startAFCService:service];
-  }
-  return (FBFutureContext *)[[FBDeviceControlError
-                              describe:[NSString stringWithFormat:@"%@ fails when not AMDevice backed.", NSStringFromSelector(_cmd)]]
-                             failFutureContext];
-}
-
 - (FBFutureContext<FBAFCConnection *> *)houseArrestAFCConnectionForBundleID:(NSString *)bundleID afcCalls:(AFCCalls)afcCalls
 {
   FBAMDevice *amDevice = self.amDevice;

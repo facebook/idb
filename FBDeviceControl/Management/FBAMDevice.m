@@ -159,16 +159,6 @@ static NSString *const UnknownValue = @"unknown";
   return [self startServiceConnection:service];
 }
 
-- (FBFutureContext<FBAFCConnection *> *)startAFCService:(NSString *)service
-{
-  return [[self
-           startService:service]
-          onQueue:self.workQueue
-          push:^(FBAMDServiceConnection *connection) {
-            return [FBAFCConnection afcFromServiceConnection:connection calls:FBAFCConnection.defaultCalls logger:self.logger queue:self.workQueue];
-          }];
-}
-
 - (FBFutureContext<FBAFCConnection *> *)houseArrestAFCConnectionForBundleID:(NSString *)bundleID afcCalls:(AFCCalls)afcCalls
 {
   return [[self

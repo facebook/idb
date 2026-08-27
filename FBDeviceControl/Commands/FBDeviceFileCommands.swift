@@ -473,20 +473,6 @@ public class FBDeviceFileCommands {
     return FBFileContainer.fileContainer(forBasePath: device.auxillaryDirectory)
   }
 
-  fileprivate func fileCommandsForMediaDirectory() throws -> FBFutureContext<FBDeviceFileContainer> {
-    let device = try requireDevice()
-    let queue = device.asyncQueue
-    return
-      device
-      .startAFCService("com.apple.afc")
-      .onQueue(
-        queue,
-        pend: { connection -> FBFuture<AnyObject> in
-          FBFuture(result: FBDeviceFileContainer(afcConnection: connection, queue: queue) as AnyObject)
-        }
-      ).retyped(FBFutureContext<FBDeviceFileContainer>.self)
-  }
-
   fileprivate func fileCommandsForProvisioningProfiles() throws -> FBFileContainer_ProvisioningProfile {
     let device = try requireDevice()
     return FBFileContainer_ProvisioningProfile(commands: FBDeviceProvisioningProfileCommands.commands(with: device))
@@ -541,7 +527,10 @@ extension FBDevice: FileCommands {
   public func withFileCommandsForMediaDirectory<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await withFileContainer(fileCommands().fileCommandsForMediaDirectory(), body: body)
+    let queue = asyncQueue
+    return try await withAFCConnection("com.apple.afc") { afc in
+      try await body(FBDeviceFileContainer(afcConnection: afc, queue: queue))
+    }
   }
 
   public func withFileCommandsForProvisioningProfiles<R>(
