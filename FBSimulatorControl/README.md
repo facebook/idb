@@ -17,7 +17,7 @@ The trade-off is stability. The `idb` cli and its gRPC interface are the project
 - Exposes a broad range of functionality that is available in `simctl` and Xcode.
 - Implements additional functionality not available in `simctl` including hardware encoded video streaming, file manipulation, accessibility fetching, direct input event injection and more.
 - No external dependencies.
-- A mix of Objective-C and Swift, transitioning to pure Swift over time; the API is usable from both languages.
+- A Swift framework. What Objective-C remains is an implementation detail of reaching Apple's private frameworks, not part of the API.
 
 ## About
 
@@ -44,10 +44,10 @@ Since the Frameworks upon which `FBSimulatorControl` depends are loaded lazily, 
 [The tests](FBSimulatorControlTests/Tests) should provide you with some basic guidance for using the API, and the `idb_companion` in this repository is a full-featured consumer of it.
 
 For a high level overview:
-- `FBSimulatorControl` is the Principal Class. It is the first object that you should create, with `FBSimulatorControl.withConfiguration(_:)` (`+[FBSimulatorControl withConfiguration:error:]` from Objective-C). It creates a `FBSimulatorSet` upon creation, exposed as `set`.
+- `FBSimulatorControl` is the Principal Class. It is the first object that you should create, with `FBSimulatorControl.withConfiguration(_:)`. It creates a `FBSimulatorSet` upon creation, exposed as `set`.
 - `FBSimulatorSet` wraps `SimDeviceSet` and provides a resilient CRUD API for Deleting, Creating and Erasing Simulators.
 - `FBSimulator` is a reference type that represents an individual Simulator. It has a number of convenience methods for accessing information about a Simulator. Many of the possible actions you can perform on a Simulator are present on instances of this class.
-- Configuration objects: `FBApplicationLaunchConfiguration`, `FBSimulatorControlConfiguration`, `FBSimulatorConfiguration` & `FBSimulatorBootConfiguration`.
+- Configuration values: `FBApplicationLaunchConfiguration`, `FBSimulatorControlConfiguration`, `FBSimulatorConfiguration` & `FBSimulatorBootConfiguration`. The last three are structs.
 
 
 ## Functionality beyond Apple's tools
