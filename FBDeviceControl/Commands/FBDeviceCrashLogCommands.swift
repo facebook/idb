@@ -91,21 +91,6 @@ public class FBDeviceCrashLogCommands {
     return try await removeCrashLogsFromDeviceAsync(pruned, logger: logger)
   }
 
-  fileprivate func crashLogFilesContext() -> FBFutureContext<FBDeviceFileContainer> {
-    guard let device else {
-      return FBFutureContext(error: FBDeviceNilError.deviceNil)
-    }
-    let asyncQueue = device.asyncQueue
-    return
-      crashReportFileConnection()
-      .onQueue(
-        asyncQueue,
-        pend: { connection -> FBFuture<AnyObject> in
-          FBFuture(result: FBDeviceFileContainer(afcConnection: connection, queue: asyncQueue) as AnyObject)
-        }
-      ).retyped(FBFutureContext<FBDeviceFileContainer>.self)
-  }
-
   // MARK: - Private
 
   @discardableResult
@@ -118,7 +103,7 @@ public class FBDeviceCrashLogCommands {
     }
     let logger = device.logger
     _ = try await moveCrashReportsAsync()
-    return try await withFBFutureContext(crashReportFileConnection()) { afc in
+    return try await withCrashReportFileConnection { afc in
       if !self.hasPerformedInitialIngestion {
         self.store.ingestAllExistingInDirectory()
         self.hasPerformedInitialIngestion = true
@@ -141,7 +126,7 @@ public class FBDeviceCrashLogCommands {
     guard device != nil else {
       throw FBDeviceNilError.deviceNil
     }
-    return try await withFBFutureContext(crashReportFileConnection()) { afc in
+    return try await withCrashReportFileConnection { afc in
       var removed: [FBCrashLogInfo] = []
       for crash in crashesToRemove {
         do {
@@ -190,22 +175,11 @@ public class FBDeviceCrashLogCommands {
     }
   }
 
-  private func crashReportFileConnection() -> FBFutureContext<FBAFCConnection> {
+  private func withCrashReportFileConnection<T>(_ body: (FBAFCConnection) async throws -> T) async throws -> T {
     guard let device else {
-      return FBFutureContext(error: FBDeviceNilError.deviceNil)
+      throw FBDeviceNilError.deviceNil
     }
-    let workQueue = device.workQueue
-    let logger = device.logger
-    return
-      device
-      .startService(CrashReportCopyService)
-      .onQueue(
-        workQueue,
-        push: { connection -> FBFutureContext<AnyObject> in
-          FBAFCConnection.afc(from: connection, calls: FBAFCConnection.defaultCalls, logger: logger, queue: workQueue)
-            .retyped(FBFutureContext<AnyObject>.self)
-        }
-      ).retyped(FBFutureContext<FBAFCConnection>.self)
+    return try await device.withAFCConnection(CrashReportCopyService, body)
   }
 }
 
@@ -226,8 +200,9 @@ extension FBDevice: CrashLogCommands {
   }
 
   public func withCrashLogFiles<R>(body: (any AsyncFileContainer) async throws -> R) async throws -> R {
-    try await withFBFutureContext(crashLogCommands().crashLogFilesContext()) { container in
-      try await body(container)
+    let queue = asyncQueue
+    return try await withAFCConnection(CrashReportCopyService) { afc in
+      try await body(FBDeviceFileContainer(afcConnection: afc, queue: queue))
     }
   }
 }
