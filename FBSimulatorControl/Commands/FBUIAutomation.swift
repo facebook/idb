@@ -250,7 +250,7 @@ public extension FBSimulator {
   /// - `.axBridge(persistence: .persistent, …)` reads over a guest `serve` process owned by the
   ///   **target**, memoized in `commandCache` and shared by every reader vended for that simulator.
   ///   Dropping a reader leaves it running; it is released when the target is, or collected by the
-  ///   guest's own idle timeout or `FBAXBridgeReap`.
+  ///   guest's own idle timeout.
   /// - `.remoteAutomation` owns a `testmanagerd` DTX session per **reader**. Hold the returned
   ///   instance to reuse it across operations; drop it to tear the session down.
   /// - `.accessibility` and `.axBridge(persistence: .oneShot, …)` are stateless — they hold no warm

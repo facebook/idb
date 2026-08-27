@@ -436,8 +436,7 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
   ///
   /// A verb the guest does not implement. The guest serves one client at a time and stays inside that
   /// connection until it goes away, so any reply means it accepted us and nobody else holds it, and an
-  /// unknown verb costs it no accessibility work. `FBAXBridgeReap` draws the same inference from the
-  /// other side.
+  /// unknown verb costs it no accessibility work.
   private static let adoptionProbeVerb = "ping"
 
   private enum RunningBridge {

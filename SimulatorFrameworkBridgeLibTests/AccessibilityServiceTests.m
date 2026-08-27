@@ -275,11 +275,10 @@ static NSDictionary *FBAXTestsParse(NSData *data)
   XCTAssertEqualObjects(FBAXBridgeWireConstantsForTesting(), expected);
 }
 
-// The serve loop handles one client at a time, so the accept queue exists only to hold a probe while
-// somebody else is connected. It is pinned because the reaper's safety depends on the number: a connect
-// to a Unix socket whose backlog is full fails with `ECONNREFUSED`, the same errno as nothing being
-// bound, and the reaper deletes the socket on that errno. Every free slot is one more reason a refusal
-// really does mean the guest has gone. Mirrored host-side as `FBAXBridgeSocket.guestListenBacklog`.
+// The serve loop handles one client at a time, so the accept queue exists only to hold a second host
+// while somebody else is connected. It is pinned because a host's classification depends on the number:
+// a connect to a Unix socket whose backlog is full fails with `ECONNREFUSED`, the same errno as nothing
+// being bound, so without a free slot a live guest would be mistaken for an absent one and duplicated.
 - (void)testTheServeBacklogIsPinned
 {
   XCTAssertEqual(FBAXBridgeServeBacklogForTesting(), 16);

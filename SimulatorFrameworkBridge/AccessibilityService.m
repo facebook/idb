@@ -1583,8 +1583,7 @@ static NSDictionary<NSString *, id> *FBAXBridgeDispatchRequest(NSDictionary<NSSt
 // The `serve` accept queue. The loop handles one client at a time, so the queue exists only to hold a
 // probe while another host is connected. The reaper deletes a socket whose connect is refused, and a
 // full queue is refused with the same errno as nothing being bound — so every free slot here is one
-// more reason a refusal really does mean the guest has gone. Mirrored host-side as
-// `FBAXBridgeSocket.guestListenBacklog`.
+// more reason a refusal really does mean the guest has gone.
 static const int kServeBacklog = 16;
 
 static BOOL FBAXBridgeWriteFully(int fd, const void *buffer, size_t length)
