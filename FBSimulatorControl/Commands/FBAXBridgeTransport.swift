@@ -508,8 +508,13 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
     }
   }
 
+  /// An all-zero `timeval` means "no deadline" to the kernel, not "expire immediately".
+  static func receiveWindow(_ timeout: TimeInterval) -> timeval {
+    timeval(tv_sec: Int(timeout), tv_usec: 0)
+  }
+
   private static func probe(fileDescriptor: Int32) -> RunningBridge {
-    var window = timeval(tv_sec: Int(adoptionTimeout), tv_usec: 0)
+    var window = receiveWindow(adoptionTimeout)
     setsockopt(fileDescriptor, SOL_SOCKET, SO_RCVTIMEO, &window, socklen_t(MemoryLayout<timeval>.size))
     do {
       let request = try JSONSerialization.data(

@@ -296,6 +296,38 @@ final class FBAXBridgeReapTests: XCTestCase {
     XCTAssertLessThan(Date().timeIntervalSince(started), 1)
   }
 
+  // The kernel reads an all-zero `timeval` as no deadline at all rather than as an immediate one, so a
+  // deadline that rounds to zero removes the bound instead of shortening it.
+
+  func testAWholeSecondDeadlineConvertsExactly() {
+    let window = FBAXBridgePersistentTransport.receiveWindow(2)
+    XCTAssertEqual(window.tv_sec, 2)
+    XCTAssertEqual(window.tv_usec, 0)
+  }
+
+  func testASubSecondDeadlineIsDiscarded() {
+    let window = FBAXBridgePersistentTransport.receiveWindow(0.1)
+    // BUG: 100ms becomes an all-zero timeval, which removes the deadline instead of shortening it —
+    // flipped in the following commit.
+    XCTAssertEqual(window.tv_sec, 0)
+    XCTAssertEqual(window.tv_usec, 0)
+  }
+
+  func testAFractionalDeadlineLosesItsFraction() {
+    let window = FBAXBridgePersistentTransport.receiveWindow(1.5)
+    XCTAssertEqual(window.tv_sec, 1)
+    // BUG: the half second is dropped — flipped in the following commit.
+    XCTAssertEqual(window.tv_usec, 0)
+  }
+
+  // Zero is the one deadline the conversion already gets right, and it has to stay that way: the kernel
+  // reads an all-zero `timeval` as no deadline, so it must only ever come from a caller asking for none.
+  func testAZeroDeadlineStaysZero() {
+    let window = FBAXBridgePersistentTransport.receiveWindow(0)
+    XCTAssertEqual(window.tv_sec, 0)
+    XCTAssertEqual(window.tv_usec, 0)
+  }
+
   func testTheSunPathCapacityMatchesThePlatform() {
     XCTAssertEqual(FBAXBridgeConnection.sunPathCapacity, 104)
   }
