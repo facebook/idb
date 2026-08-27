@@ -7,12 +7,33 @@
 
 import Foundation
 
+/// An Option Set for Direct Launching.
+///
+/// The raw values are not contiguous, and are kept as they were when this was an `NS_OPTIONS`:
+/// they are compared and persisted by callers.
+public struct FBSimulatorBootOptions: OptionSet, Sendable {
+
+  public let rawValue: UInt
+
+  public init(rawValue: UInt) {
+    self.rawValue = rawValue
+  }
+
+  /// Ties the Simulator's lifecycle to that of the launching process, so that the Simulator is
+  /// shut down automatically when the process that booted it dies.
+  public static let tieToProcessLifecycle = FBSimulatorBootOptions(rawValue: 1 << 1)
+
+  /// Requires that the Simulator is 'Usable' before the boot API completes. A Simulator can report
+  /// itself 'Booted' very quickly while not yet being usable.
+  public static let verifyUsable = FBSimulatorBootOptions(rawValue: 1 << 3)
+}
+
 @objc(FBSimulatorBootConfiguration)
 public class FBSimulatorBootConfiguration: NSObject, NSCopying {
 
   // MARK: Properties
 
-  @objc public let options: FBSimulatorBootOptions
+  public let options: FBSimulatorBootOptions
 
   @objc public let environment: [String: String]
 
@@ -26,7 +47,6 @@ public class FBSimulatorBootConfiguration: NSObject, NSCopying {
 
   // MARK: Initializers
 
-  @objc
   public init(options: FBSimulatorBootOptions, environment: [String: String]) {
     self.options = options
     self.environment = environment
