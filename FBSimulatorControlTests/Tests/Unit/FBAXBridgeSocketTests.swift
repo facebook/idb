@@ -65,9 +65,8 @@ final class FBAXBridgeSocketTests: XCTestCase {
     XCTAssertTrue(path.hasSuffix(FBAXBridgeSocket.suffix))
   }
 
-  // Where the sockets live, which is a security property rather than a naming one: the reaper probes
-  // and unlinks the paths it finds there, and a predictable socket name in a directory anyone can write
-  // to can be bound by somebody else first.
+  // Where the sockets live, which is a security property rather than a naming one: a predictable
+  // socket name in a directory anyone can write to can be bound by somebody else first.
   func testTheSocketDirectoryIsPrivateToThisUser() throws {
     try FBAXBridgeSocket.prepareDirectory()
     // `realpath` rather than `resolvingSymlinksInPath`, which deliberately leaves `/tmp` alone: on
@@ -237,7 +236,7 @@ final class FBAXBridgeSocketTests: XCTestCase {
     XCTAssertNotEqual(first, second)
   }
 
-  func testASimulatorSocketIsRecognisedByTheReaper() {
+  func testASimulatorSocketIsNamedForItsSimulator() {
     let path = FBAXBridgeSocket.path(forSimulator: "AE4DEFD9-F94B-4543-84F1-849D4B5C4351")
     XCTAssertEqual(path, "\(FBAXBridgeSocket.directory)/AE4DEFD9F94B454384F1849D4B5C4351.sock")
     XCTAssertTrue(path.hasSuffix(FBAXBridgeSocket.suffix))

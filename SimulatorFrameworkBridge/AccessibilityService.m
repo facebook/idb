@@ -198,8 +198,8 @@ static NSString *const kVerbHitTest = @"hittest";
 // honoured only by `serve` — a one-shot `describe` has nothing to shut down and says so.
 //
 // The serve loop accepts one client at a time and stays inside that connection until the client goes
-// away, so a caller that gets *any* answer is the only client there is. That is what makes a reap safe
-// without asking the guest who else is attached: being answered is the proof.
+// away, so a caller that gets *any* answer is the only client there is. That is what lets a host decide
+// a bridge is free without asking the guest who else is attached: being answered is the proof.
 static NSString *const kVerbShutdown = @"shutdown";
 // Set by the shutdown verb and read by the serve loop after the response is written.
 static BOOL gShutdownRequested = NO;
@@ -1355,7 +1355,7 @@ static NSDictionary<NSString *, id> *FBAXBridgeDispatchRequest(NSDictionary<NSSt
   BOOL isSetValue = [verb isEqualToString:kVerbSetValue];
   if ([verb isEqualToString:kVerbShutdown]) {
     // Answered here, above the pid check and the runtime bind: shutting down needs neither, and a
-    // reader that cannot bind is exactly the one a caller most wants to be able to reap.
+    // reader that cannot bind is exactly the one a caller most wants to be able to end.
     gShutdownRequested = YES;
     return @{kResponseOk : @YES, kResponseShutdown : @YES};
   }
@@ -1585,7 +1585,7 @@ static NSDictionary<NSString *, id> *FBAXBridgeDispatchRequest(NSDictionary<NSSt
 #pragma mark - Persistent serve transport
 
 // The `serve` accept queue. The loop handles one client at a time, so the queue exists only to hold a
-// probe while another host is connected. The reaper deletes a socket whose connect is refused, and a
+// probe while another host is connected. A host reads a refused connect as nothing being there, and a
 // full queue is refused with the same errno as nothing being bound — so every free slot here is one
 // more reason a refusal really does mean the guest has gone.
 static const int kServeBacklog = 16;

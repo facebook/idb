@@ -10,17 +10,15 @@ import Foundation
 
 /// Where a persistent bridge's socket lives, and how to recognise one.
 ///
-/// Its own file because it is shared vocabulary: the transport creates these sockets and the reaper
-/// collects them, and either disagreeing with the other about the naming would miss every orphan or
-/// delete something that was never ours.
+/// Its own file because it is shared vocabulary: two processes that never speak to each other have to
+/// derive the same path for the same simulator, or each starts a bridge the other cannot find.
 enum FBAXBridgeSocket {
   static let suffix = ".sock"
 
   /// A directory of our own beneath the per-user temporary directory, owner-only.
   ///
-  /// Private rather than `/tmp` for two reasons: the reaper probes and unlinks whatever it finds here,
-  /// which it should only ever do to a directory it owns; and a socket name anyone can predict is only
-  /// safe if nobody else can bind it first.
+  /// Private rather than `/tmp` because a socket name anyone can predict is only safe if nobody else
+  /// can bind it first.
   ///
   /// Owning the directory is also what pays for the name. `sun_path` is 104 bytes and the per-user
   /// temporary directory is 49 of them, so the old `idb_axbridge_` prefix plus a UUID no longer fits —

@@ -30,9 +30,9 @@ NSDictionary<NSString *, NSString *> *FBAXBridgeWireConstantsForTesting(void);
 /**
  * The backlog the `serve` loop listens with.
  *
- * Exposed because the reaper's safety depends on the number rather than on anything observable in a
- * response: a connect to a Unix socket whose accept queue is full fails with the same errno as nothing
- * being bound, and the reaper deletes a socket on that errno.
+ * Exposed because a host's spawn decision depends on the number rather than on anything observable in
+ * a response: a connect to a Unix socket whose accept queue is full fails with the same errno as nothing
+ * being bound, so too small a backlog makes a busy bridge look absent and a duplicate gets started.
  */
 int FBAXBridgeServeBacklogForTesting(void);
 
