@@ -77,6 +77,11 @@ final class FBAMDeviceTests: XCTestCase {
       return 0
     }
 
+    calls.ServiceConnectionGetSecureIOContext = { _ in
+      sAMDeviceEvents.append("service_connection_get_secure_io_context")
+      return nil
+    }
+
     calls.ServiceConnectionInvalidate = { _ in
       sAMDeviceEvents.append("service_connection_invalidate")
       return 0
@@ -192,6 +197,33 @@ final class FBAMDeviceTests: XCTestCase {
     ]
     await waitForDeviceEvents(expected)
 
+    XCTAssertEqual(expected, sAMDeviceEvents)
+  }
+
+  /// Pins the two lifetimes `startService` manages, which are not the same: the AMDevice session
+  /// is released as soon as the service has started, while the service connection is invalidated
+  /// only when the caller finishes with it.
+  func testStartService_StartsTheServiceThenInvalidatesTheConnection() async throws {
+    let name = try await withFBFutureContext(device.startService("com.apple.testservice")) { connection in
+      connection.name
+    }
+    XCTAssertEqual(name, "com.apple.testservice")
+
+    // The session is stopped and the device disconnected before the connection is invalidated:
+    // the service is started inside a pop, so the AMDevice session is not held for the caller's
+    // use of the connection.
+    let expected = [
+      "connect",
+      "is_paired",
+      "validate_pairing",
+      "start_session",
+      "secure_start_service",
+      "service_connection_get_secure_io_context",
+      "stop_session",
+      "disconnect",
+      "service_connection_invalidate",
+    ]
+    await waitForDeviceEvents(expected)
     XCTAssertEqual(expected, sAMDeviceEvents)
   }
 
