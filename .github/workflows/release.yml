@@ -3,9 +3,20 @@ on:
   push:
     tags:
       - 'v*'
-  # Allows the build and packaging legs to be exercised without cutting a tag;
-  # the release-creation steps only run on tag pushes.
+  # Dispatching with a version cuts a release without a local tag push: the
+  # run creates the tag and the release itself at the dispatched commit.
+  # Dispatching with the version left empty keeps the existing dry-run, where
+  # only the build legs run.
   workflow_dispatch:
+    inputs:
+      version:
+        description: >-
+          Release version to cut, e.g. v1.5.0.b8. When set, the run creates
+          the tag and release itself at the dispatched commit; when empty,
+          the build legs run without releasing (the existing dry-run).
+        type: string
+        required: false
+        default: ''
 
 permissions:
   contents: write
@@ -13,13 +24,19 @@ permissions:
 jobs:
   # The single owner of `gh release create`: with both build jobs creating the
   # release concurrently, whichever won the race decided the release's title
-  # and notes. Skipped on workflow_dispatch (no tag to release); the build jobs
-  # tolerate that skip explicitly below.
+  # and notes. Skipped on dry-run dispatches (no version to release); the
+  # build jobs tolerate that skip explicitly below.
   create-release:
     name: Create the GitHub release
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: ${{ startsWith(github.ref, 'refs/tags/v') || inputs.version != '' }}
+    env:
+      # The tag this run releases: the pushed tag, or the dispatched version.
+      # The expression works because && / || short-circuit to their operand
+      # values, and inputs.version is empty both on tag pushes and on dry-run
+      # dispatches.
+      RELEASE_TAG: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || inputs.version }}
     steps:
       - name: Create release
         env:
@@ -27,17 +44,25 @@ jobs:
         run: |
           # Tolerate re-runs of the same tag: only create the release if it
           # does not already exist, and never mask a genuine creation failure.
-          if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
-            echo "Release $GITHUB_REF_NAME already exists, leaving it as-is"
+          if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            echo "Release $RELEASE_TAG already exists, leaving it as-is"
           else
             # Mark prerelease-suffixed tags (v1.5.0.b3, v1.5.0.rc1) as
             # prereleases; a plain version tag becomes the repo's latest
             # release.
             prerelease=()
-            case "$GITHUB_REF_NAME" in
+            case "$RELEASE_TAG" in
               *.a[0-9]*|*.b[0-9]*|*.rc[0-9]*) prerelease=(--prerelease) ;;
             esac
-            gh release create "$GITHUB_REF_NAME" "${prerelease[@]}" --title "$GITHUB_REF_NAME" --generate-notes --repo "$GITHUB_REPOSITORY"
+            # On a dispatch the tag does not exist yet: --target has
+            # `gh release create` create it at the dispatched commit, under
+            # the Actions bot identity. Tags created with GITHUB_TOKEN do not
+            # trigger workflows, so this cannot start a second Release run.
+            target=()
+            if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+              target=(--target "$GITHUB_SHA")
+            fi
+            gh release create "$RELEASE_TAG" "${prerelease[@]}" "${target[@]}" --title "$RELEASE_TAG" --generate-notes --repo "$GITHUB_REPOSITORY"
           fi
 
   companion:
@@ -45,12 +70,13 @@ jobs:
     runs-on: macos-26
     timeout-minutes: 120
     # `!cancelled()` suppresses the implicit success() so this still runs when
-    # create-release is skipped (workflow_dispatch), while a failed or
+    # create-release is skipped (dry-run dispatch), while a failed or
     # cancelled create-release still blocks the upload legs.
     needs: [create-release]
     if: ${{ !cancelled() && (needs.create-release.result == 'success' || needs.create-release.result == 'skipped') }}
     env:
       XCODEGEN_STRIP_XATTRS: 'false'
+      RELEASE_TAG: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || inputs.version }}
     steps:
       - uses: actions/checkout@v5
       - name: Install tools
@@ -74,13 +100,13 @@ jobs:
           name: idb-companion
           path: idb-companion.macos-arm64.tar.gz*
       - name: Upload to release
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: ${{ startsWith(github.ref, 'refs/tags/v') || inputs.version != '' }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release upload "$GITHUB_REF_NAME" idb-companion.macos-arm64.tar.gz idb-companion.macos-arm64.tar.gz.sha256 --clobber --repo "$GITHUB_REPOSITORY"
+          gh release upload "$RELEASE_TAG" idb-companion.macos-arm64.tar.gz idb-companion.macos-arm64.tar.gz.sha256 --clobber --repo "$GITHUB_REPOSITORY"
       - name: Homebrew formula update instructions
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: ${{ startsWith(github.ref, 'refs/tags/v') || inputs.version != '' }}
         run: |
           {
             echo '## Update the homebrew formulae'
@@ -88,7 +114,7 @@ jobs:
             echo ''
             echo '- In `idb-companion.rb`, point the `url`/`sha256` at this tarball. The digest below is also published as the `idb-companion.macos-arm64.tar.gz.sha256` release asset:'
             echo '```ruby'
-            echo "url \"https://github.com/$GITHUB_REPOSITORY/releases/download/$GITHUB_REF_NAME/idb-companion.macos-arm64.tar.gz\""
+            echo "url \"https://github.com/$GITHUB_REPOSITORY/releases/download/$RELEASE_TAG/idb-companion.macos-arm64.tar.gz\""
             echo "sha256 \"${{ steps.package.outputs.sha256 }}\""
             echo '```'
             echo '- In `idb-companion.rb`, also update the explicit `version` stanza to match the tag: Homebrew mis-parses prerelease suffixes out of the URL.'
@@ -101,9 +127,12 @@ jobs:
     name: Build fb-idb distributions
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    # See companion: run on dispatch (create-release skipped), block on failure.
+    # See companion: run on dry-run dispatch (create-release skipped), block
+    # on failure.
     needs: [create-release]
     if: ${{ !cancelled() && (needs.create-release.result == 'success' || needs.create-release.result == 'skipped') }}
+    env:
+      RELEASE_TAG: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || inputs.version }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
@@ -112,11 +141,11 @@ jobs:
       - name: Build sdist and wheel
         run: |
           pip install build
-          # On workflow_dispatch the ref is a branch name, which is not a valid
-          # PEP 440 version; use a placeholder so the build legs stay
-          # exercisable without a tag.
-          case "$GITHUB_REF" in
-            refs/tags/v*) FB_IDB_VERSION="${GITHUB_REF_NAME#v}" ;;
+          # On a dry-run dispatch there is no release tag to derive a valid
+          # PEP 440 version from; use a placeholder so the build legs stay
+          # exercisable without one.
+          case "$RELEASE_TAG" in
+            v*) FB_IDB_VERSION="${RELEASE_TAG#v}" ;;
             *) FB_IDB_VERSION="0.0.0.dev0" ;;
           esac
           FB_IDB_VERSION="$FB_IDB_VERSION" python -m build
@@ -126,11 +155,11 @@ jobs:
           name: fb-idb-dist
           path: dist/*
       - name: Attach to release
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: ${{ startsWith(github.ref, 'refs/tags/v') || inputs.version != '' }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release upload "$GITHUB_REF_NAME" dist/* --clobber --repo "$GITHUB_REPOSITORY"
+          gh release upload "$RELEASE_TAG" dist/* --clobber --repo "$GITHUB_REPOSITORY"
 
   # Bottles idb-cli during the release itself. A bottle is built by installing
   # its formula, and the published tap still points at the previous release
@@ -153,9 +182,11 @@ jobs:
     # needs the wheel, so bottling runs in parallel with the slow companion
     # job and adds no wall-clock time to the release.
     needs: [create-release, python-client]
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: ${{ startsWith(github.ref, 'refs/tags/v') || inputs.version != '' }}
     permissions:
       contents: write
+    env:
+      RELEASE_TAG: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || inputs.version }}
     steps:
       - uses: actions/checkout@v5
       - uses: Homebrew/actions/setup-homebrew@master
@@ -166,7 +197,7 @@ jobs:
       - name: Download this release's wheel
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release download "$GITHUB_REF_NAME" --pattern 'fb_idb-*-py3-none-any.whl' --repo "$GITHUB_REPOSITORY"
+        run: gh release download "$RELEASE_TAG" --pattern 'fb_idb-*-py3-none-any.whl' --repo "$GITHUB_REPOSITORY"
 
       # No published-tap version guard is needed (the old Bottle workflow had
       # one): this job constructs the bump itself, from this run's own tag and
@@ -186,7 +217,7 @@ jobs:
           [wheel] = glob.glob("fb_idb-*-py3-none-any.whl")
           sha = hashlib.sha256(Path(wheel).read_bytes()).hexdigest()
           formula = Path("tap/idb-cli.rb")
-          tag = os.environ["GITHUB_REF_NAME"]
+          tag = os.environ["RELEASE_TAG"]
           formula.write_text(tap_formulae.rewrite_cli(formula.read_text(), tag, sha))
           print(f"{formula} -> {tag} ({wheel}: {sha})")
           EOF
@@ -203,7 +234,7 @@ jobs:
         run: |
           brew install --build-bottle facebook/fb/idb-cli
           brew bottle --json --no-rebuild \
-            --root-url="https://github.com/$GITHUB_REPOSITORY/releases/download/$GITHUB_REF_NAME" \
+            --root-url="https://github.com/$GITHUB_REPOSITORY/releases/download/$RELEASE_TAG" \
             facebook/fb/idb-cli
 
       # `brew bottle` writes local files named `name--version.tag.bottle.tar.gz`,
@@ -231,7 +262,7 @@ jobs:
       - name: Upload bottles to the release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload "$GITHUB_REF_NAME" ./*.bottle.tar.gz --clobber --repo "$GITHUB_REPOSITORY"
+        run: gh release upload "$RELEASE_TAG" ./*.bottle.tar.gz --clobber --repo "$GITHUB_REPOSITORY"
 
       # The machine-readable counterpart of the summary below; release tooling
       # downloads it to write the bottle block into the tap commit.
@@ -275,7 +306,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: [python-client]
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: ${{ startsWith(github.ref, 'refs/tags/v') || inputs.version != '' }}
     environment:
       name: pypi
       url: https://pypi.org/p/fb-idb
