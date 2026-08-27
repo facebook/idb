@@ -132,6 +132,144 @@ jobs:
         run: |
           gh release upload "$GITHUB_REF_NAME" dist/* --clobber --repo "$GITHUB_REPOSITORY"
 
+  # Bottles idb-cli during the release itself. A bottle is built by installing
+  # its formula, and the published tap still points at the previous release
+  # while this run is in flight — so this job clones a WORKING COPY of the tap,
+  # bumps idb-cli.rb to this run's own tag, and bottles from that. The tap
+  # commit that publishes the bump and the bottle block together comes
+  # afterwards, from release tooling, once this run's assets and bottle-json
+  # artifact exist. This replaces the manually-dispatched Bottle workflow.
+  #
+  # Only idb-cli is bottled: its source install is the venv-and-pip work a
+  # bottle eliminates, while idb-companion's source install already unpacks a
+  # prebuilt tarball and idb is a tiny metapackage.
+  bottle:
+    name: Build and publish the idb-cli bottle
+    # The runner image decides the bottle's os/arch tag: macos-26 produces
+    # arm64_tahoe bottles only. Users on anything else keep the source install.
+    runs-on: macos-26
+    timeout-minutes: 30
+    # Deliberately not gated on the companion build: the idb-cli formula only
+    # needs the wheel, so bottling runs in parallel with the slow companion
+    # job and adds no wall-clock time to the release.
+    needs: [create-release, python-client]
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+      - uses: Homebrew/actions/setup-homebrew@master
+
+      - name: Clone a tap working copy
+        run: git clone --depth 1 https://github.com/facebook/homebrew-fb tap
+
+      - name: Download this release's wheel
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release download "$GITHUB_REF_NAME" --pattern 'fb_idb-*-py3-none-any.whl' --repo "$GITHUB_REPOSITORY"
+
+      # No published-tap version guard is needed (the old Bottle workflow had
+      # one): this job constructs the bump itself, from this run's own tag and
+      # wheel, so tap/release version skew is impossible.
+      - name: Bump idb-cli.rb in the working copy
+        run: |
+          python3 - <<'EOF'
+          import glob
+          import hashlib
+          import os
+          import sys
+          from pathlib import Path
+
+          sys.path.insert(0, ".github/scripts")
+          import tap_formulae
+
+          [wheel] = glob.glob("fb_idb-*-py3-none-any.whl")
+          sha = hashlib.sha256(Path(wheel).read_bytes()).hexdigest()
+          formula = Path("tap/idb-cli.rb")
+          tag = os.environ["GITHUB_REF_NAME"]
+          formula.write_text(tap_formulae.rewrite_cli(formula.read_text(), tag, sha))
+          print(f"{formula} -> {tag} ({wheel}: {sha})")
+          EOF
+
+      # brew only installs formulae out of its own tap directories, so expose
+      # the bumped working copy as the facebook/fb tap.
+      - name: Link the working copy as the facebook/fb tap
+        run: |
+          taps="$(brew --repository)/Library/Taps/facebook"
+          mkdir -p "$taps"
+          ln -s "$PWD/tap" "$taps/homebrew-fb"
+
+      - name: Build the bottle
+        run: |
+          brew install --build-bottle facebook/fb/idb-cli
+          brew bottle --json --no-rebuild \
+            --root-url="https://github.com/$GITHUB_REPOSITORY/releases/download/$GITHUB_REF_NAME" \
+            facebook/fb/idb-cli
+
+      # `brew bottle` writes local files named `name--version.tag.bottle.tar.gz`,
+      # but the URL Homebrew later requests under root_url uses a different
+      # filename. Both spellings are recorded in the bottle JSON, so rename
+      # from one to the other instead of assuming the dash convention.
+      - name: Rename bottles to their download filenames
+        run: |
+          python3 - <<'EOF'
+          import glob
+          import json
+          import os
+
+          for path in sorted(glob.glob("*.bottle.json")):
+              with open(path) as f:
+                  doc = json.load(f)
+              for entry in doc.values():
+                  for tag_info in entry["bottle"]["tags"].values():
+                      local, wanted = tag_info["local_filename"], tag_info["filename"]
+                      if local != wanted:
+                          os.rename(local, wanted)
+                      print(f"{local} -> {wanted}")
+          EOF
+
+      - name: Upload bottles to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "$GITHUB_REF_NAME" ./*.bottle.tar.gz --clobber --repo "$GITHUB_REPOSITORY"
+
+      # The machine-readable counterpart of the summary below; release tooling
+      # downloads it to write the bottle block into the tap commit.
+      - name: Upload the bottle JSON as a run artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: bottle-json
+          path: '*.bottle.json'
+          if-no-files-found: error
+
+      # Everything in the emitted blocks — root_url, cellar, os/arch tag,
+      # sha256 — is read out of the `brew bottle --json` output, which is
+      # reproduced verbatim below the blocks.
+      - name: Emit the bottle blocks for the tap commit
+        run: |
+          python3 - "$GITHUB_STEP_SUMMARY" <<'EOF'
+          import glob
+          import sys
+
+          sys.path.insert(0, ".github/scripts")
+          import tap_formulae
+
+          blocks = tap_formulae.bottle_blocks_from_dir(".")
+          with open(sys.argv[1], "a") as out:
+              out.write("## Add these `bottle do` blocks to the tap formulae\n\n")
+              out.write(
+                  "All values are taken from the `brew bottle --json` "
+                  "output reproduced below, not inferred.\n\n"
+              )
+              for name, block in blocks.items():
+                  out.write(f"### `{name}`\n\n```ruby\n{block}\n```\n\n")
+              out.write("## Raw `brew bottle --json` output\n\n")
+              for path in sorted(glob.glob("*.bottle.json")):
+                  with open(path) as f:
+                      raw = f.read().strip()
+                  out.write(f"### `{path}`\n\n```json\n{raw}\n```\n\n")
+          EOF
+
   pypi-publish:
     name: Publish fb-idb to PyPI
     runs-on: ubuntu-latest
