@@ -284,6 +284,30 @@ static NSDictionary *FBAXTestsParse(NSData *data)
   XCTAssertEqual(FBAXBridgeServeBacklogForTesting(), 16);
 }
 
+#pragma mark - Exit on disconnect
+
+// An exclusive bridge has one client for its whole life, so a disconnect means it is finished. A shared
+// bridge wants the opposite: the next visitor is the point of staying up.
+
+- (void)testExitOnDisconnectIsOffUnlessAsked
+{
+  XCTAssertFalse(FBAXBridgeExitOnDisconnectForTesting(@[]));
+  XCTAssertFalse(FBAXBridgeExitOnDisconnectForTesting(@[@"--idle-timeout", @"30"]));
+}
+
+- (void)testExitOnDisconnectIsHonouredWhenAsked
+{
+  XCTAssertTrue(FBAXBridgeExitOnDisconnectForTesting(@[@"--exit-on-disconnect", @"1"]));
+  XCTAssertTrue(FBAXBridgeExitOnDisconnectForTesting(@[@"--idle-timeout", @"30", @"--exit-on-disconnect", @"1"]));
+}
+
+// A guest predating the flag ignores it and keeps waiting for the next client, so a newer host talking
+// to an older guest degrades to the idle timeout rather than failing.
+- (void)testExitOnDisconnectCanBeTurnedOffExplicitly
+{
+  XCTAssertFalse(FBAXBridgeExitOnDisconnectForTesting(@[@"--exit-on-disconnect", @"0"]));
+}
+
 #pragma mark - Idle timeout
 
 - (void)testAnIdleTimeoutOnTheCommandLineIsHonoured

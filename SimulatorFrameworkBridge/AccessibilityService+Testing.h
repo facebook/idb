@@ -51,6 +51,14 @@ int FBAXBridgeIdleTimeoutForTesting(NSArray<NSString *> *arguments, int fallback
 int FBAXBridgeDefaultIdleTimeoutForTesting(void);
 
 /**
+ * Whether a `serve` invocation will exit when its client disconnects, given its trailing argv.
+ *
+ * Exposed for the same reason as the idle timeout: covering it otherwise means spawning a guest,
+ * connecting, disconnecting and watching for an exit.
+ */
+BOOL FBAXBridgeExitOnDisconnectForTesting(NSArray<NSString *> *arguments);
+
+/**
  * Builds the fullscreen-modal descriptor for a built `XC_kAXXC*`-keyed attribute tree, or nil when
  * neither a system (`SBAlertItemWindow`) nor an app (`_UIAlertController*`) alert is present. The
  * descriptor carries `kind` (`system`/`app`), `elementType`, and an optional `label` — the same `modal`

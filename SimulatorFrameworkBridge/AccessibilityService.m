@@ -250,6 +250,10 @@ static const int kDefaultNodeBudget = 5000;
 // the flag, since `serve` ignores argv it does not recognise.
 static const int kDefaultIdleTimeoutSeconds = 300;
 static NSString *const kFlagIdleTimeout = @"--idle-timeout";
+// Asks a `serve` to exit when its client goes, rather than waiting for the next one. An exclusive
+// bridge has one client for its whole life, so a disconnect means it is finished. A shared bridge must
+// stay up for the next client, so it is never passed there.
+static NSString *const kFlagExitOnDisconnect = @"--exit-on-disconnect";
 
 #pragma mark - AX client setup
 
@@ -1628,6 +1632,18 @@ static BOOL FBAXBridgeReadFully(int fd, void *buffer, size_t length)
 
 // Lenient on purpose: an unusable value is a host bug, and a bridge that refuses to start or exits
 // immediately is harder to diagnose than one that logs what it ignored.
+// Reads a flag's value as a boolean, absent meaning NO. Argv is walked in pairs, as everywhere else in
+// this front-end, so a valueless flag contributes nothing rather than being read as a bare switch.
+static BOOL FBAXBridgeBoolFromArguments(NSArray<NSString *> *arguments, NSString *flag)
+{
+  for (NSUInteger i = 0; i + 1 < arguments.count; i += 2) {
+    if ([arguments[i] isEqualToString:flag]) {
+      return [arguments[i + 1] boolValue];
+    }
+  }
+  return NO;
+}
+
 static int FBAXBridgeIdleTimeoutFromArguments(NSArray<NSString *> *arguments, int fallback)
 {
   for (NSUInteger i = 0; i + 1 < arguments.count; i += 2) {
@@ -1659,7 +1675,7 @@ static int FBAXBridgeIdleTimeoutFromArguments(NSArray<NSString *> *arguments, in
 // re-`accept`s, allowing a reconnect. The host memoizes its transport per target, so that connection
 // lasts as long as the target does; the process is torn down when the host releases it, or reaped by
 // the idle timeout below if the host went away without doing so.
-static int FBAXBridgeServe(NSString *socketPath, int idleTimeoutSeconds)
+static int FBAXBridgeServe(NSString *socketPath, int idleTimeoutSeconds, BOOL exitOnDisconnect)
 {
   int listenFd = socket(AF_UNIX, SOCK_STREAM, 0);
   if (listenFd < 0) {
@@ -1756,6 +1772,12 @@ static int FBAXBridgeServe(NSString *socketPath, int idleTimeoutSeconds)
       }
     }
     close(connection);
+    if (exitOnDisconnect) {
+      // Nobody else can reach this socket, so there is no next client to wait for. Going now is what
+      // makes an exclusive guest die with the host that started it.
+      NSLog(@"[AccessibilityService] exclusive client disconnected; exiting");
+      break;
+    }
     if (gShutdownRequested) {
       NSLog(@"[AccessibilityService] shutdown requested by client; exiting");
       break;
@@ -1780,7 +1802,11 @@ int handleAccessibilityAction(NSString *action, NSArray<NSString *> *arguments)
       return 1;
     }
     NSArray<NSString *> *flags = [arguments subarrayWithRange:NSMakeRange(1, arguments.count - 1)];
-    return FBAXBridgeServe(socketPath, FBAXBridgeIdleTimeoutFromArguments(flags, kDefaultIdleTimeoutSeconds));
+    return FBAXBridgeServe(
+      socketPath,
+      FBAXBridgeIdleTimeoutFromArguments(flags, kDefaultIdleTimeoutSeconds),
+      FBAXBridgeBoolFromArguments(flags, kFlagExitOnDisconnect)
+    );
   }
 
   NSMutableDictionary<NSString *, id> *request = [NSMutableDictionary dictionary];
@@ -1845,6 +1871,11 @@ int FBAXBridgeIdleTimeoutForTesting(NSArray<NSString *> *arguments, int fallback
 int FBAXBridgeDefaultIdleTimeoutForTesting(void)
 {
   return kDefaultIdleTimeoutSeconds;
+}
+
+BOOL FBAXBridgeExitOnDisconnectForTesting(NSArray<NSString *> *arguments)
+{
+  return FBAXBridgeBoolFromArguments(arguments, kFlagExitOnDisconnect);
 }
 
 NSDictionary<NSString *, NSString *> *FBAXBridgeWireConstantsForTesting(void)
