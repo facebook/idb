@@ -305,19 +305,16 @@ final class FBAXBridgeReapTests: XCTestCase {
     XCTAssertEqual(window.tv_usec, 0)
   }
 
-  func testASubSecondDeadlineIsDiscarded() {
+  func testASubSecondDeadlineIsKept() {
     let window = FBAXBridgePersistentTransport.receiveWindow(0.1)
-    // BUG: 100ms becomes an all-zero timeval, which removes the deadline instead of shortening it —
-    // flipped in the following commit.
     XCTAssertEqual(window.tv_sec, 0)
-    XCTAssertEqual(window.tv_usec, 0)
+    XCTAssertEqual(window.tv_usec, 100_000)
   }
 
-  func testAFractionalDeadlineLosesItsFraction() {
+  func testAFractionalDeadlineKeepsItsFraction() {
     let window = FBAXBridgePersistentTransport.receiveWindow(1.5)
     XCTAssertEqual(window.tv_sec, 1)
-    // BUG: the half second is dropped — flipped in the following commit.
-    XCTAssertEqual(window.tv_usec, 0)
+    XCTAssertEqual(window.tv_usec, 500_000)
   }
 
   // Zero is the one deadline the conversion already gets right, and it has to stay that way: the kernel

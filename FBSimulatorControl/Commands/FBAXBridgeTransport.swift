@@ -510,7 +510,8 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
 
   /// An all-zero `timeval` means "no deadline" to the kernel, not "expire immediately".
   static func receiveWindow(_ timeout: TimeInterval) -> timeval {
-    timeval(tv_sec: Int(timeout), tv_usec: 0)
+    let whole = timeout.rounded(.down)
+    return timeval(tv_sec: Int(whole), tv_usec: Int32((timeout - whole) * 1_000_000))
   }
 
   private static func probe(fileDescriptor: Int32) -> RunningBridge {
