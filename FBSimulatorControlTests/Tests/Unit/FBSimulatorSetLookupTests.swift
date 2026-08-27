@@ -30,7 +30,7 @@ struct FBSimulatorSetLookupTests {
       return device
     }
     let configuration = FBSimulatorControlConfiguration(deviceSetPath: nil, logger: nil)
-    return CreateSimulatorSetWithFakeDeviceSetAndLogger(configuration, deviceSet, nil)
+    return createSimulatorSet(configuration: configuration, fakeDeviceSet: deviceSet)
   }
 
   @Test func lookupByKnownUDIDReturnsTheSimulator() {

@@ -7,6 +7,3 @@
 
 // Test fixtures
 #import "FBSimulatorControlFixtures.h"
-
-// ObjC bridge for nullable CMSampleBuffer wrapper
-#import "FBVideoStreamTestDoublesBridge.h"

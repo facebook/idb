@@ -48,6 +48,28 @@ private func asSimDevice(_ object: AnyObject) -> SimDevice {
   Unmanaged<SimDevice>.fromOpaque(Unmanaged.passUnretained(object).toOpaque()).takeUnretainedValue()
 }
 
+/// Reinterprets a test double as `SimDeviceSet`, for the same reason as `asSimDevice`.
+private func asSimDeviceSet(_ object: AnyObject) -> SimDeviceSet {
+  Unmanaged<SimDeviceSet>.fromOpaque(Unmanaged.passUnretained(object).toOpaque()).takeUnretainedValue()
+}
+
+/// Builds an `FBSimulatorSet` around a device set double.
+func createSimulatorSet(
+  configuration: FBSimulatorControlConfiguration,
+  fakeDeviceSet: AnyObject,
+  logger: (any FBControlCoreLogger)? = nil
+) -> FBSimulatorSet {
+  do {
+    return try FBSimulatorSet.set(
+      withConfiguration: configuration,
+      deviceSet: asSimDeviceSet(fakeDeviceSet),
+      delegate: nil,
+      logger: logger)
+  } catch {
+    preconditionFailure("Failed to create the simulator set: \(error)")
+  }
+}
+
 /// Helpers that construct an `FBSimulator` instance suitable for unit tests.
 ///
 /// The unit-test path is intended never to reach production code that touches the real

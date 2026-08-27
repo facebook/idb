@@ -27,7 +27,7 @@ struct FBSimulatorSetLoggerTests {
     let deviceSet = FBSimulatorControlTests_SimDeviceSet_Double()
     deviceSet.availableDevices = [device]
     let configuration = FBSimulatorControlConfiguration(deviceSetPath: nil, logger: nil)
-    return CreateSimulatorSetWithFakeDeviceSetAndLogger(configuration, deviceSet, logger)
+    return createSimulatorSet(configuration: configuration, fakeDeviceSet: deviceSet, logger: logger)
   }
 
   @Test("A nil logger is defaulted at the factory boundary")

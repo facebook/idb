@@ -51,7 +51,7 @@ class FBSimulatorSetTestCase: XCTestCase {
 
     let noLogger: (any FBControlCoreLogger)? = nil
     let configuration = FBSimulatorControlConfiguration(deviceSetPath: nil, logger: noLogger)
-    set = CreateSimulatorSetWithFakeDeviceSet(configuration, deviceSet)
+    set = createSimulatorSet(configuration: configuration, fakeDeviceSet: deviceSet)
 
     let simulators = set.allSimulators
     XCTAssertEqual(simulators.count, simDevices.count)
