@@ -13,6 +13,8 @@ enum FBAMDeviceServiceError: Error {
   case houseArrestStartFailed(bundleID: String, status: Int32, message: String)
   case houseArrestConnectionMissing(bundleID: String)
   case notAnAFCConnection(context: String)
+  case secureStartServiceFailed(service: String, status: Int32, message: String)
+  case deviceNotConnected(service: String)
 }
 
 extension FBAMDeviceServiceError: LocalizedError {
@@ -24,6 +26,10 @@ extension FBAMDeviceServiceError: LocalizedError {
       return "No house_arrest connection was returned for '\(bundleID)'"
     case let .notAnAFCConnection(context):
       return "\(context) is not an FBAFCConnection"
+    case let .secureStartServiceFailed(service, status, message):
+      return "SecureStartService of \(service) Failed with 0x\(String(status, radix: 16)) \(message)"
+    case let .deviceNotConnected(service):
+      return "Cannot start service \(service): device is not connected"
     }
   }
 }

@@ -156,51 +156,7 @@ static NSString *const UnknownValue = @"unknown";
 
 - (FBFutureContext<FBAMDServiceConnection *> *)startService:(NSString *)service
 {
-  NSDictionary<NSString *, id> *userInfo = @{
-    @"CloseOnInvalidate" : @1,
-    @"InvalidateOnDetach" : @1,
-  };
-  // NOTE - The pop: after connectToDeviceWithPurpose: is critical to ensure we stop the AMDevice session
-  //        immediately after the service is started. See longer description in FBAMDevice.h to understand why.
-  return [[[self
-            connectToDeviceWithPurpose:[NSString stringWithFormat:@"start_service_%@", service]]
-           onQueue:self.workQueue
-           pop:^FBFuture<FBAMDServiceConnection *> *(id<FBDeviceCommands> device) {
-             AMDServiceConnectionRef serviceConnection;
-             [self.logger log:[NSString stringWithFormat:@"Starting service %@", service]];
-             int status = self.calls.SecureStartService(
-               device.amDeviceRef,
-               (__bridge CFStringRef)(service),
-               (__bridge CFDictionaryRef)(userInfo),
-               &serviceConnection
-             );
-             if (status != 0) {
-               NSString *errorDescription = CFBridgingRelease(self.calls.CopyErrorText(status));
-               return (FBFuture *)[[FBDeviceControlError
-                                    describe:[NSString stringWithFormat:@"SecureStartService of %@ Failed with 0x%x %@", service, status, errorDescription]]
-                                   failFuture];
-             }
-             AMDeviceRef amDeviceRef = device.amDeviceRef;
-             if (!amDeviceRef) {
-               return (FBFuture *)[[FBDeviceControlError
-                                    describe:[NSString stringWithFormat:@"Cannot start service %@: device is not connected", service]]
-                                   failFuture];
-             }
-             FBAMDServiceConnection *connection = [FBAMDServiceConnection connectionWithName:service connection:serviceConnection device:amDeviceRef calls:self.calls logger:self.logger];
-             [self.logger log:[NSString stringWithFormat:@"Service %@ started", service]];
-             return [FBFuture futureWithResult:connection];
-           }]
-          onQueue:self.workQueue
-          contextualTeardown:^(id connection, FBFutureState __) {
-            [self.logger log:[NSString stringWithFormat:@"Invalidating service %@", service]];
-            NSError *error = nil;
-            if (![connection invalidateWithError:&error]) {
-              [self.logger log:[NSString stringWithFormat:@"Failed to invalidate service %@ with error %@", service, error]];
-            } else {
-              [self.logger log:[NSString stringWithFormat:@"Invalidated service %@", service]];
-            }
-            return FBFuture.empty;
-          }];
+  return [self startServiceConnection:service];
 }
 
 - (FBFutureContext<FBDeviceLinkClient *> *)startDeviceLinkService:(NSString *)service
