@@ -15,6 +15,11 @@ import Foundation
 /// The lock is held across `build` so concurrent first-access from two RPCs
 /// can't double-construct the same command class -- important for stateful
 /// command classes that own queues / connections per target.
+///
+/// Value types are cached too, but get value semantics: `resolve` hands back a
+/// copy, so mutating what you receive does not write back and the next caller
+/// sees the original. A command that mutates state as it is used therefore has
+/// to be a reference type; one that only models a domain can be a struct.
 @objc public final class FBTargetCommandCache: NSObject {
 
   private let lock = NSLock()

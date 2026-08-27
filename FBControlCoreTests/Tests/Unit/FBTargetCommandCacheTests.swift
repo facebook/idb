@@ -36,6 +36,11 @@ private final class StubCommand {
 
 private final class OtherStubCommand {}
 
+/// A command modelled as a value: it describes what to do rather than owning anything.
+private struct StubValueCommand: Equatable {
+  var identifier: Int
+}
+
 @Suite("FBTargetCommandCache")
 struct FBTargetCommandCacheTests {
 
@@ -68,6 +73,29 @@ struct FBTargetCommandCacheTests {
 
     #expect(cache.resolve(StubCommand.self) { StubCommand(identifier: 2) } === command)
     #expect(cache.resolve(OtherStubCommand.self) { OtherStubCommand() } === other)
+  }
+
+  @Test("A resolved value command is cached, so a second resolve returns the same value")
+  func resolveReturnsTheSameValue() {
+    let cache = FBTargetCommandCache()
+    let first = cache.resolve(StubValueCommand.self) { StubValueCommand(identifier: 1) }
+    let second = cache.resolve(StubValueCommand.self) { StubValueCommand(identifier: 2) }
+
+    #expect(first == second)
+    #expect(second.identifier == 1)
+  }
+
+  /// The difference a value type makes, and the reason a command that mutates itself must stay a
+  /// reference type: what `resolve` hands back is a copy, so writing to it changes nothing in the
+  /// cache and the next caller sees the original.
+  @Test("Mutating a resolved value command does not write back to the cache")
+  func mutatingAResolvedValueDoesNotWriteBack() {
+    let cache = FBTargetCommandCache()
+    var resolved = cache.resolve(StubValueCommand.self) { StubValueCommand(identifier: 1) }
+    resolved.identifier = 99
+
+    let next = cache.resolve(StubValueCommand.self) { StubValueCommand(identifier: 2) }
+    #expect(next.identifier == 1)
   }
 
   @Test("Concurrent first access builds the command exactly once")
