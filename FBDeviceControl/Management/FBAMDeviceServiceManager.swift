@@ -15,6 +15,7 @@ enum FBAMDeviceServiceError: Error {
   case notAnAFCConnection(context: String)
   case secureStartServiceFailed(service: String, status: Int32, message: String)
   case deviceNotConnected(service: String)
+  case notAMDeviceBacked(service: String)
 }
 
 extension FBAMDeviceServiceError: LocalizedError {
@@ -30,6 +31,8 @@ extension FBAMDeviceServiceError: LocalizedError {
       return "SecureStartService of \(service) Failed with 0x\(String(status, radix: 16)) \(message)"
     case let .deviceNotConnected(service):
       return "Cannot start service \(service): device is not connected"
+    case let .notAMDeviceBacked(service):
+      return "Cannot start service \(service): the device is not AMDevice backed"
     }
   }
 }
