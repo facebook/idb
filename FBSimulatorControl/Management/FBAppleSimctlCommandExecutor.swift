@@ -9,7 +9,6 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-@objc(FBAppleSimctlCommandExecutor)
 public final class FBAppleSimctlCommandExecutor: NSObject {
 
   // MARK: - Properties
@@ -21,7 +20,6 @@ public final class FBAppleSimctlCommandExecutor: NSObject {
 
   // MARK: - Initializers
 
-  @objc(executorForSimulator:)
   public class func executor(for simulator: FBSimulator) -> FBAppleSimctlCommandExecutor {
     // simctl addresses a simulator by its device set, so this is only reachable for a
     // set-managed simulator - which every simulator the companion serves is.
@@ -45,7 +43,6 @@ public final class FBAppleSimctlCommandExecutor: NSObject {
 
   // MARK: - Public Methods
 
-  @objc(taskBuilderWithCommand:arguments:)
   public func taskBuilder(withCommand command: String, arguments: [String]) -> FBProcessBuilder<NSNull, FBControlCoreLogger, FBControlCoreLogger> {
     var derived: [String] = [
       "simctl",

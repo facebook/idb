@@ -50,7 +50,6 @@ private final class AXPSerializedJob<T>: @unchecked Sendable {
 /// An `@objc`/`NSObject` class only because it conforms to the Objective-C
 /// `AXPTranslationTokenDelegateHelper` protocol and is installed as
 /// `AXPTranslator`'s bridge-token delegate.
-@objc(FBAXTranslationDispatcher)
 final class FBAXTranslationDispatcher: NSObject, AXPTranslationTokenDelegateHelper {
 
   private weak var translator: AXPTranslator?

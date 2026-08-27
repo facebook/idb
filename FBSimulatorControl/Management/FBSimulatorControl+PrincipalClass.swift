@@ -9,14 +9,13 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-@objc(FBSimulatorControl)
 public final class FBSimulatorControl: NSObject {
 
   // MARK: - Properties
 
   public var configuration: FBSimulatorControlConfiguration
   public let serviceContext: FBSimulatorServiceContext
-  @objc public let set: FBSimulatorSet
+  public let set: FBSimulatorSet
 
   // MARK: - Initializers
 
