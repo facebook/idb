@@ -504,7 +504,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
   /// Creates and activates the fixture with the given root element tree, then
   /// builds a real `FBSimulator`, a mock translation dispatcher, and registers an
   /// `FBSimulatorAccessibilityCommands` with that dispatcher injected into the
-  /// simulator's command cache. Production paths that resolve `accessibilityCommands()`
+  /// simulator's command cache. Production paths that resolve `accessibilityCommands`
   /// on the simulator will return it.
   private func setUp(
     withRootElement rootElement: FBSimulatorControlTests_AXPMacPlatformElement_Double,

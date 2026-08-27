@@ -273,6 +273,6 @@ public class FBDeviceActivationCommands {
 extension FBDevice: ActivationCommands {
 
   public func activate() async throws {
-    try await activationCommands().activate()
+    try await activationCommands.activate()
   }
 }

@@ -45,10 +45,10 @@ public class FBDeviceLifecycleCommands {
 extension FBDevice: LifecycleCommands {
 
   public func resolveState(_ state: FBiOSTargetState) async throws {
-    try await lifecycleCommands().resolveStateAsync(state)
+    try await lifecycleCommands.resolveStateAsync(state)
   }
 
   public func resolveLeavesState(_ state: FBiOSTargetState) async throws {
-    try await lifecycleCommands().resolveLeavesStateAsync(state)
+    try await lifecycleCommands.resolveLeavesStateAsync(state)
   }
 }

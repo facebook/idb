@@ -497,13 +497,13 @@ extension FBDevice: FileCommands {
     _ bundleID: String,
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await withFileContainer(fileCommands().fileCommandsForContainerApplication(bundleID), body: body)
+    try await withFileContainer(fileCommands.fileCommandsForContainerApplication(bundleID), body: body)
   }
 
   public func withFileCommandsForAuxillary<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await body(fileCommands().fileCommandsForAuxillary())
+    try await body(fileCommands.fileCommandsForAuxillary())
   }
 
   public func withFileCommandsForApplicationContainers<R>(
@@ -536,7 +536,7 @@ extension FBDevice: FileCommands {
   public func withFileCommandsForProvisioningProfiles<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await body(fileCommands().fileCommandsForProvisioningProfiles())
+    try await body(fileCommands.fileCommandsForProvisioningProfiles())
   }
 
   public func withFileCommandsForMDMProfiles<R>(
@@ -573,13 +573,13 @@ extension FBDevice: FileCommands {
   public func withFileCommandsForDiskImages<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await body(fileCommands().fileCommandsForDiskImages())
+    try await body(fileCommands.fileCommandsForDiskImages())
   }
 
   public func withFileCommandsForSymbols<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await body(fileCommands().fileCommandsForSymbols())
+    try await body(fileCommands.fileCommandsForSymbols())
   }
 
   /// Scopes the file container to `body`, exposing it through the

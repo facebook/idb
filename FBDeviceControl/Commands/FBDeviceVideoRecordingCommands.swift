@@ -88,7 +88,7 @@ public class FBDeviceVideoRecordingCommands: NSObject {
 extension FBDevice: VideoRecordingCommands {
 
   public func startRecording(toFile filePath: String) async throws -> any FBVideoRecording {
-    try await videoRecordingCommands().startRecordingAsync(toFile: filePath)
+    try await videoRecordingCommands.startRecordingAsync(toFile: filePath)
   }
 }
 
@@ -97,6 +97,6 @@ extension FBDevice: VideoRecordingCommands {
 extension FBDevice: VideoStreamCommands {
 
   public func createStream(configuration: FBVideoStreamConfiguration, to consumer: any FBDataConsumer) async throws -> any FBVideoStream {
-    try await videoRecordingCommands().createStreamAsync(with: configuration, to: consumer)
+    try await videoRecordingCommands.createStreamAsync(with: configuration, to: consumer)
   }
 }

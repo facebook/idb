@@ -131,37 +131,37 @@ extension FBSimulator: FileCommands {
     _ bundleID: String,
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await body(fileCommands().fileCommandsForContainerApplication(bundleID))
+    try await body(fileCommands.fileCommandsForContainerApplication(bundleID))
   }
 
   public func withFileCommandsForAuxillary<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await body(fileCommands().fileCommandsForAuxillary())
+    try await body(fileCommands.fileCommandsForAuxillary())
   }
 
   public func withFileCommandsForApplicationContainers<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await body(fileCommands().fileCommandsForApplicationContainers())
+    try await body(fileCommands.fileCommandsForApplicationContainers())
   }
 
   public func withFileCommandsForGroupContainers<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await body(fileCommands().fileCommandsForGroupContainers())
+    try await body(fileCommands.fileCommandsForGroupContainers())
   }
 
   public func withFileCommandsForRootFilesystem<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await body(fileCommands().fileCommandsForRootFilesystem())
+    try await body(fileCommands.fileCommandsForRootFilesystem())
   }
 
   public func withFileCommandsForMediaDirectory<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await body(fileCommands().fileCommandsForMediaDirectory())
+    try await body(fileCommands.fileCommandsForMediaDirectory())
   }
 
   public func withFileCommandsForProvisioningProfiles<R>(

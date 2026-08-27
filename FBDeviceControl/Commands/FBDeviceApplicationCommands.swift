@@ -407,36 +407,36 @@ public class FBDeviceApplicationCommands {
 extension FBDevice: ApplicationCommands {
 
   public func installApplication(atPath path: String) async throws -> FBInstalledApplication {
-    try await applicationCommands().installApplicationAsync(withPath: path)
+    try await applicationCommands.installApplicationAsync(withPath: path)
   }
 
   public func uninstallApplication(bundleID: String) async throws {
-    try await applicationCommands().uninstallApplicationAsync(withBundleID: bundleID)
+    try await applicationCommands.uninstallApplicationAsync(withBundleID: bundleID)
   }
 
   public func launchApplication(_ configuration: FBApplicationLaunchConfiguration) async throws -> FBLaunchedApplication {
-    try await applicationCommands().launchApplicationAsync(configuration)
+    try await applicationCommands.launchApplicationAsync(configuration)
   }
 
   public func killApplication(bundleID: String) async throws {
-    try await applicationCommands().killApplicationAsync(withBundleID: bundleID)
+    try await applicationCommands.killApplicationAsync(withBundleID: bundleID)
   }
 
   public func installedApplications() async throws -> [FBInstalledApplication] {
-    try await applicationCommands().installedApplicationsAsync()
+    try await applicationCommands.installedApplicationsAsync()
   }
 
   public func installedApplication(bundleID: String) async throws -> FBInstalledApplication {
-    try await applicationCommands().installedApplicationAsync(withBundleID: bundleID)
+    try await applicationCommands.installedApplicationAsync(withBundleID: bundleID)
   }
 
   public func runningApplications() async throws -> [String: pid_t] {
-    let dict = try await applicationCommands().runningApplicationsAsync()
+    let dict = try await applicationCommands.runningApplicationsAsync()
     return dict.mapValues { $0.int32Value }
   }
 
   public func processID(forBundleID bundleID: String) async throws -> pid_t {
-    let pid = try await applicationCommands().processIDAsync(withBundleID: bundleID)
+    let pid = try await applicationCommands.processIDAsync(withBundleID: bundleID)
     return pid.int32Value
   }
 }

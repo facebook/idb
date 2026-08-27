@@ -149,6 +149,6 @@ public class FBDeviceSocketForwardingCommands {
 extension FBDevice: SocketForwardingCommands {
 
   public func drainLocalFileInput(_ localFileDescriptorInput: Int32, localFileOutput localFileDescriptorOutput: Int32, remotePort: Int32) async throws {
-    try await socketForwardingCommands().drainLocalFileInput(localFileDescriptorInput, localFileOutput: localFileDescriptorOutput, remotePort: remotePort)
+    try await socketForwardingCommands.drainLocalFileInput(localFileDescriptorInput, localFileOutput: localFileDescriptorOutput, remotePort: remotePort)
   }
 }

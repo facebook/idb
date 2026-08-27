@@ -246,35 +246,35 @@ public final class FBSimulatorLaunchCtlCommands {
 extension FBSimulator: LaunchCtlCommands {
 
   public func serviceName(forProcessIdentifier pid: pid_t) async throws -> String {
-    try await launchCtlCommands().serviceName(forProcessIdentifier: pid)
+    try await launchCtlCommands.serviceName(forProcessIdentifier: pid)
   }
 
   public func serviceName(forProcess process: FBProcessInfo) async throws -> String {
-    try await launchCtlCommands().serviceName(forProcessIdentifier: process.processIdentifier)
+    try await launchCtlCommands.serviceName(forProcessIdentifier: process.processIdentifier)
   }
 
   public func serviceNamesAndProcessIdentifiers(matching regex: NSRegularExpression) async throws -> [String: NSNumber] {
-    try await launchCtlCommands().serviceNamesAndProcessIdentifiers(matching: regex)
+    try await launchCtlCommands.serviceNamesAndProcessIdentifiers(matching: regex)
   }
 
   public func firstServiceNameAndProcessIdentifier(matching regex: NSRegularExpression) async throws -> (serviceName: String, processIdentifier: pid_t) {
-    try await launchCtlCommands().firstServiceNameAndProcessIdentifier(matching: regex)
+    try await launchCtlCommands.firstServiceNameAndProcessIdentifier(matching: regex)
   }
 
   public func processIsRunning(onSimulator process: FBProcessInfo) async throws -> Bool {
-    _ = try await launchCtlCommands().serviceName(forProcessIdentifier: process.processIdentifier)
+    _ = try await launchCtlCommands.serviceName(forProcessIdentifier: process.processIdentifier)
     return true
   }
 
   public func listServices() async throws -> [String: Any] {
-    try await launchCtlCommands().listServices()
+    try await launchCtlCommands.listServices()
   }
 
   public func stopService(withName serviceName: String) async throws -> String {
-    try await launchCtlCommands().stopService(withName: serviceName)
+    try await launchCtlCommands.stopService(withName: serviceName)
   }
 
   public func startService(withName serviceName: String) async throws -> String {
-    try await launchCtlCommands().startService(withName: serviceName)
+    try await launchCtlCommands.startService(withName: serviceName)
   }
 }

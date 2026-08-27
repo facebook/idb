@@ -33,23 +33,23 @@ struct FBSimulatorCommandRetentionTests {
 
   @Test("A command holding its simulator weakly lets the simulator go")
   func weaklyHeldCommandDoesNotRetainTheSimulator() throws {
-    #expect(try simulatorSurvives { _ = try $0.locationCommands() } == false)
+    #expect(try simulatorSurvives { _ = try $0.locationCommands } == false)
   }
 
   /// These three hold their simulator strongly, which is only safe because they are no longer
   /// resolved through the simulator's own cache — nothing outlives the call that builds them.
   @Test("The file commands do not retain the simulator")
   func fileCommandsDoNotRetainTheSimulator() throws {
-    #expect(try simulatorSurvives { _ = try $0.fileCommands() } == false)
+    #expect(try simulatorSurvives { _ = try $0.fileCommands } == false)
   }
 
   @Test("The launchctl commands do not retain the simulator")
   func launchCtlCommandsDoNotRetainTheSimulator() throws {
-    #expect(try simulatorSurvives { _ = try $0.launchCtlCommands() } == false)
+    #expect(try simulatorSurvives { _ = try $0.launchCtlCommands } == false)
   }
 
   @Test("The DAP server commands do not retain the simulator")
   func dapServerCommandsDoNotRetainTheSimulator() throws {
-    #expect(try simulatorSurvives { _ = try $0.dapServerCommand() } == false)
+    #expect(try simulatorSurvives { _ = try $0.dapServerCommand } == false)
   }
 }

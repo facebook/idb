@@ -163,6 +163,6 @@ extension FBSimulator: ProcessSpawnCommands {
   public func launchProcess(
     _ configuration: FBProcessSpawnConfiguration
   ) async throws -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
-    try await processSpawnCommands().launchProcess(configuration)
+    try await processSpawnCommands.launchProcess(configuration)
   }
 }

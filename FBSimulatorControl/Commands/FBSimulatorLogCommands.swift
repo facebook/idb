@@ -73,6 +73,6 @@ public struct FBSimulatorLogCommands {
 extension FBSimulator: LogCommands {
 
   public func tailLog(arguments: [String], consumer: any FBDataConsumer) async throws -> any LogOperation {
-    return try await logCommands().tailLogAsync(arguments: arguments, consumer: consumer)
+    return try await logCommands.tailLogAsync(arguments: arguments, consumer: consumer)
   }
 }

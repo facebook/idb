@@ -100,6 +100,6 @@ public class FBDeviceDiagnosticInformationCommands: NSObject, FBiOSTargetCommand
 extension FBDevice: DiagnosticInformationCommands {
 
   public func fetchDiagnosticInformation() async throws -> [String: Any] {
-    try await diagnosticInformationCommands().fetchDiagnosticInformationAsync()
+    try await diagnosticInformationCommands.fetchDiagnosticInformationAsync()
   }
 }

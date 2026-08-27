@@ -12,85 +12,85 @@ extension FBDevice {
 
   // MARK: - Shared accessors
 
-  func applicationCommands() throws -> FBDeviceApplicationCommands {
+  var applicationCommands: FBDeviceApplicationCommands {
     commandCache.resolve { FBDeviceApplicationCommands.commands(with: self) }
   }
 
-  func crashLogCommands() throws -> FBDeviceCrashLogCommands {
+  var crashLogCommands: FBDeviceCrashLogCommands {
     commandCache.resolve { FBDeviceCrashLogCommands.commands(with: self) }
   }
 
-  func screenshotCommands() throws -> FBDeviceScreenshotCommands {
+  var screenshotCommands: FBDeviceScreenshotCommands {
     commandCache.resolve { FBDeviceScreenshotCommands.commands(with: self) }
   }
 
-  func locationCommands() throws -> FBDeviceLocationCommands {
+  var locationCommands: FBDeviceLocationCommands {
     commandCache.resolve { FBDeviceLocationCommands.commands(with: self) }
   }
 
-  func debuggerCommands() throws -> FBDeviceDebuggerCommands {
+  var debuggerCommands: FBDeviceDebuggerCommands {
     commandCache.resolve { FBDeviceDebuggerCommands.commands(with: self) }
   }
 
-  func fileCommands() throws -> FBDeviceFileCommands {
+  var fileCommands: FBDeviceFileCommands {
     commandCache.resolve { FBDeviceFileCommands.commands(with: self) }
   }
 
-  func lifecycleCommands() throws -> FBDeviceLifecycleCommands {
+  var lifecycleCommands: FBDeviceLifecycleCommands {
     commandCache.resolve { FBDeviceLifecycleCommands.commands(with: self) }
   }
 
-  func logCommands() throws -> FBDeviceLogCommands {
+  var logCommands: FBDeviceLogCommands {
     commandCache.resolve { FBDeviceLogCommands.commands(with: self) }
   }
 
-  func videoRecordingCommands() throws -> FBDeviceVideoRecordingCommands {
+  var videoRecordingCommands: FBDeviceVideoRecordingCommands {
     commandCache.resolve { FBDeviceVideoRecordingCommands.commands(with: self) }
   }
 
-  func xctestCommands() throws -> FBDeviceXCTestCommands {
+  var xctestCommands: FBDeviceXCTestCommands {
     commandCache.resolve { FBDeviceXCTestCommands.commands(with: self) }
   }
 
-  func xctraceRecordCommands() throws -> FBXCTraceRecordCommands {
+  var xctraceRecordCommands: FBXCTraceRecordCommands {
     commandCache.resolve { FBXCTraceRecordCommands.commands(with: self) }
   }
 
   // MARK: - Device-only accessors
 
-  func diagnosticInformationCommands() throws -> FBDeviceDiagnosticInformationCommands {
+  var diagnosticInformationCommands: FBDeviceDiagnosticInformationCommands {
     commandCache.resolve { FBDeviceDiagnosticInformationCommands.commands(with: self) }
   }
 
-  func eraseCommands() throws -> FBDeviceEraseCommands {
+  var eraseCommands: FBDeviceEraseCommands {
     commandCache.resolve { FBDeviceEraseCommands.commands(with: self) }
   }
 
-  func powerCommands() throws -> FBDevicePowerCommands {
+  var powerCommands: FBDevicePowerCommands {
     commandCache.resolve { FBDevicePowerCommands.commands(with: self) }
   }
 
-  func provisioningProfileCommands() throws -> FBDeviceProvisioningProfileCommands {
+  var provisioningProfileCommands: FBDeviceProvisioningProfileCommands {
     commandCache.resolve { FBDeviceProvisioningProfileCommands.commands(with: self) }
   }
 
-  func activationCommands() throws -> FBDeviceActivationCommands {
+  var activationCommands: FBDeviceActivationCommands {
     commandCache.resolve { FBDeviceActivationCommands.commands(with: self) }
   }
 
-  func recoveryCommands() throws -> FBDeviceRecoveryCommands {
+  var recoveryCommands: FBDeviceRecoveryCommands {
     commandCache.resolve { FBDeviceRecoveryCommands.commands(with: self) }
   }
 
-  func debugSymbolsCommands() throws -> FBDeviceDebugSymbolsCommands {
+  var debugSymbolsCommands: FBDeviceDebugSymbolsCommands {
     commandCache.resolve { FBDeviceDebugSymbolsCommands(device: self) }
   }
 
-  func developerDiskImageCommands() throws -> FBDeviceDeveloperDiskImageCommands {
+  var developerDiskImageCommands: FBDeviceDeveloperDiskImageCommands {
     commandCache.resolve { FBDeviceDeveloperDiskImageCommands.commands(with: self) }
   }
 
-  func socketForwardingCommands() throws -> FBDeviceSocketForwardingCommands {
+  var socketForwardingCommands: FBDeviceSocketForwardingCommands {
     commandCache.resolve { FBDeviceSocketForwardingCommands.commands(with: self) }
   }
 }

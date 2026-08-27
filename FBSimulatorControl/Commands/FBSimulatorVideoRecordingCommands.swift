@@ -98,11 +98,11 @@ public final class FBSimulatorVideoRecordingCommands {
 extension FBSimulator: VideoRecordingCommands {
 
   public func startRecording(toFile filePath: String) async throws -> any FBVideoRecording {
-    try await videoRecordingCommands().startRecordingAsync(toFile: filePath)
+    try await videoRecordingCommands.startRecordingAsync(toFile: filePath)
   }
 
   public func startRecording(toFile filePath: String, configuration: FBVideoStreamConfiguration) async throws -> any FBVideoRecording {
-    try await videoRecordingCommands().startRecordingAsync(toFile: filePath, configuration: configuration)
+    try await videoRecordingCommands.startRecordingAsync(toFile: filePath, configuration: configuration)
   }
 }
 
@@ -111,6 +111,6 @@ extension FBSimulator: VideoRecordingCommands {
 extension FBSimulator: VideoStreamCommands {
 
   public func createStream(configuration: FBVideoStreamConfiguration, to consumer: any FBDataConsumer) async throws -> any FBVideoStream {
-    try await videoRecordingCommands().createStreamAsync(configuration: configuration, to: consumer)
+    try await videoRecordingCommands.createStreamAsync(configuration: configuration, to: consumer)
   }
 }

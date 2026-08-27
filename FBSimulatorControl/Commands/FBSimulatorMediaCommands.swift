@@ -131,6 +131,6 @@ public struct FBSimulatorMediaCommands {
 extension FBSimulator: MediaCommands {
 
   public func addMedia(_ mediaFileURLs: [URL]) async throws {
-    try mediaCommands().uploadMedia(mediaFileURLs)
+    try mediaCommands.uploadMedia(mediaFileURLs)
   }
 }

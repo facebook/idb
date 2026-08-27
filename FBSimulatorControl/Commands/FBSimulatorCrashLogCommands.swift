@@ -73,15 +73,15 @@ public final class FBSimulatorCrashLogCommands {
 extension FBSimulator: CrashLogCommands {
 
   public func crashes(matching predicate: NSPredicate, useCache: Bool) async throws -> [FBCrashLogInfo] {
-    try await crashLogCommands().crashesAsync(matching: predicate, useCache: useCache)
+    try await crashLogCommands.crashesAsync(matching: predicate, useCache: useCache)
   }
 
   public func notifyOfCrash(matching predicate: NSPredicate) async throws -> FBCrashLogInfo {
-    try await crashLogCommands().notifyOfCrashAsync(matching: predicate)
+    try await crashLogCommands.notifyOfCrashAsync(matching: predicate)
   }
 
   public func pruneCrashes(matching predicate: NSPredicate) async throws -> [FBCrashLogInfo] {
-    try await crashLogCommands().pruneCrashesAsync(matching: predicate)
+    try await crashLogCommands.pruneCrashesAsync(matching: predicate)
   }
 
   public func withCrashLogFiles<R>(body: (any AsyncFileContainer) async throws -> R) async throws -> R {

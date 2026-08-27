@@ -21,89 +21,89 @@ extension FBSimulator {
 
   // MARK: - Shared accessors
 
-  func applicationCommands() throws -> FBSimulatorApplicationCommands {
+  var applicationCommands: FBSimulatorApplicationCommands {
     commandCache.resolve { FBSimulatorApplicationCommands.commands(with: self) }
   }
 
-  func crashLogCommands() throws -> FBSimulatorCrashLogCommands {
+  var crashLogCommands: FBSimulatorCrashLogCommands {
     commandCache.resolve { FBSimulatorCrashLogCommands.commands(with: self) }
   }
 
-  func screenshotCommands() throws -> FBSimulatorScreenshotCommands {
+  var screenshotCommands: FBSimulatorScreenshotCommands {
     commandCache.resolve { FBSimulatorScreenshotCommands.commands(with: self) }
   }
 
-  func locationCommands() throws -> FBSimulatorLocationCommands {
+  var locationCommands: FBSimulatorLocationCommands {
     FBSimulatorLocationCommands.commands(with: self)
   }
 
-  func debuggerCommands() throws -> FBSimulatorDebuggerCommands {
+  var debuggerCommands: FBSimulatorDebuggerCommands {
     commandCache.resolve { FBSimulatorDebuggerCommands.commands(with: self) }
   }
 
-  func fileCommands() throws -> FBSimulatorFileCommands {
+  var fileCommands: FBSimulatorFileCommands {
     FBSimulatorFileCommands.commands(with: self)
   }
 
-  func logCommands() throws -> FBSimulatorLogCommands {
+  var logCommands: FBSimulatorLogCommands {
     FBSimulatorLogCommands.commands(with: self)
   }
 
-  func processSpawnCommands() throws -> FBSimulatorProcessSpawnCommands {
+  var processSpawnCommands: FBSimulatorProcessSpawnCommands {
     FBSimulatorProcessSpawnCommands.commands(with: self)
   }
 
-  func videoRecordingCommands() throws -> FBSimulatorVideoRecordingCommands {
+  var videoRecordingCommands: FBSimulatorVideoRecordingCommands {
     commandCache.resolve { FBSimulatorVideoRecordingCommands.commands(with: self) }
   }
 
-  func launchCtlCommands() throws -> FBSimulatorLaunchCtlCommands {
+  var launchCtlCommands: FBSimulatorLaunchCtlCommands {
     FBSimulatorLaunchCtlCommands.commands(with: self)
   }
 
-  func xctraceRecordCommands() throws -> FBXCTraceRecordCommands {
+  var xctraceRecordCommands: FBXCTraceRecordCommands {
     commandCache.resolve { FBXCTraceRecordCommands.commands(with: self) }
   }
 
   // MARK: - Sim-only accessors
 
-  func lifecycleCommands() throws -> FBSimulatorLifecycleCommands {
+  var lifecycleCommands: FBSimulatorLifecycleCommands {
     commandCache.resolve { FBSimulatorLifecycleCommands.commands(with: self) }
   }
 
-  func mediaCommands() throws -> FBSimulatorMediaCommands {
+  var mediaCommands: FBSimulatorMediaCommands {
     FBSimulatorMediaCommands.commands(with: self)
   }
 
-  func keychainCommands() throws -> FBSimulatorKeychainCommands {
+  var keychainCommands: FBSimulatorKeychainCommands {
     FBSimulatorKeychainCommands.commands(with: self)
   }
 
-  func settingsCommands() throws -> FBSimulatorSettingsCommands {
+  var settingsCommands: FBSimulatorSettingsCommands {
     FBSimulatorSettingsCommands.commands(with: self)
   }
 
-  func xctestExtendedCommands() throws -> FBSimulatorXCTestCommands {
+  var xctestExtendedCommands: FBSimulatorXCTestCommands {
     commandCache.resolve { FBSimulatorXCTestCommands.commands(with: self) }
   }
 
-  func accessibilityCommands() throws -> FBSimulatorAccessibilityCommands {
+  var accessibilityCommands: FBSimulatorAccessibilityCommands {
     commandCache.resolve { FBSimulatorAccessibilityCommands.commands(with: self) }
   }
 
-  func dapServerCommand() throws -> FBSimulatorDapServerCommand {
+  var dapServerCommand: FBSimulatorDapServerCommand {
     FBSimulatorDapServerCommand.commands(with: self)
   }
 
-  func replCommands() throws -> FBSimulatorReplCommands {
+  var replCommands: FBSimulatorReplCommands {
     commandCache.resolve { FBSimulatorReplCommands.commands(with: self) }
   }
 
-  func notificationCommands() throws -> FBSimulatorNotificationCommands {
+  var notificationCommands: FBSimulatorNotificationCommands {
     FBSimulatorNotificationCommands.commands(with: self)
   }
 
-  func memoryCommands() throws -> FBSimulatorMemoryCommands {
+  var memoryCommands: FBSimulatorMemoryCommands {
     FBSimulatorMemoryCommands.commands(with: self)
   }
 }

@@ -92,6 +92,6 @@ public class FBDeviceLogCommands {
 extension FBDevice: LogCommands {
 
   public func tailLog(arguments: [String], consumer: any FBDataConsumer) async throws -> any LogOperation {
-    return try await bridgeFBFuture(logCommands().tailLog(arguments, consumer: consumer))
+    return try await bridgeFBFuture(logCommands.tailLog(arguments, consumer: consumer))
   }
 }

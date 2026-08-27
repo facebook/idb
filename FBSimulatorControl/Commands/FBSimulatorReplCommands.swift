@@ -206,19 +206,19 @@ public final class FBSimulatorReplCommands {
 extension FBSimulator: ReplCommands {
 
   public func startReplTest(bundlePath: String) async throws -> ReplSession {
-    try await replCommands().startReplTest(bundlePath: bundlePath)
+    try await replCommands.startReplTest(bundlePath: bundlePath)
   }
 
   public func startReplSimulator() async throws -> ReplSession {
-    try await replCommands().startReplSimulator()
+    try await replCommands.startReplSimulator()
   }
 
   public func startReplApp(bundleID: String, reuseSession: Bool) async throws -> ReplSession {
-    try await replCommands().startReplApp(bundleID: bundleID, reuseSession: reuseSession)
+    try await replCommands.startReplApp(bundleID: bundleID, reuseSession: reuseSession)
   }
 
   public func replAppLaunchEnvironment(bundleID: String) async throws -> [String: String] {
-    try await replCommands().replAppEnvironment(bundleID: bundleID)
+    try await replCommands.replAppEnvironment(bundleID: bundleID)
   }
 }
 
