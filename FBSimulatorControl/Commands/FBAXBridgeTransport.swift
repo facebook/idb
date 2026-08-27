@@ -14,9 +14,10 @@ import Foundation
 ///
 /// - `FBAXBridgeOneshotTransport` spawns the guest per read (`accessibility describe`), simple but
 ///   pays the spawn+dlopen cost every read.
-/// - `FBAXBridgePersistentTransport` spawns the guest once (`accessibility serve <socket>`) and reads
-///   over a reused Unix-domain socket, so warm reads avoid that cost — the path a long-lived host
-///   process (companion, `ui shell`, a streaming hit-test server) should use.
+/// - `FBAXBridgePersistentTransport` reads over an `accessibility serve <socket>` guest that outlives
+///   the read, so warm reads avoid that cost. It may spawn the guest or adopt one already running.
+///   Whether it keeps the connection between reads depends on who owns the guest: a private one is
+///   held, the shared one is released so the next process can have it.
 ///
 /// `read` returns the guest's raw JSON response bytes (a `Sendable` `Data`, so it crosses the actor
 /// boundary cleanly); the conformer parses the `{ "ok", "tree" | "error" }` envelope.
@@ -236,14 +237,17 @@ struct FBAXBridgeOneshotTransport: FBAXBridgeTransport {
 
 // MARK: - Persistent transport
 
-/// Spawns `accessibility serve <socket>` once and reads over a reused Unix-domain socket. An actor so
-/// the connection is established exactly once under concurrent callers, and reads are serialized (the
-/// guest handles one request at a time). Memoized per simulator via `commandCache`, so a long-lived
-/// host process amortizes the spawn+warmup across every read.
+/// Reads over an `accessibility serve <socket>` guest rather than spawning one per read. An actor so
+/// concurrent callers do not each establish their own connection, and reads are serialized (the guest
+/// handles one request at a time). Memoized per simulator and per persistence, so a long-lived host
+/// process amortizes the spawn and warmup across every read, and a shared reader is never handed the
+/// private transport.
 actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
   private weak var simulator: FBSimulator?
-  /// Which kind of bridge this transport reaches. Decides whether it may discover one, and that is the
-  /// only difference between the two: everything about framing a request is identical.
+  /// Which kind of bridge this transport reaches: whether it may discover one on the simulator's
+  /// well-known socket, and whether a guest it spawns exits when its client goes. Whether a connection
+  /// is kept between round trips is decided by the guest that was established, not by this. Framing a
+  /// request is identical either way.
   private let persistence: FBAXBridgePersistence
   private var connectionTask: Task<FBAXBridgeConnection, Error>?
 
@@ -422,10 +426,11 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
     }
   }
 
-  /// How long a guest this transport spawned may sit without traffic before reaping itself.
+  /// How long a guest this transport spawned may sit without traffic before ending itself.
   ///
   /// The guest's historical default rather than a chosen number: nobody has measured how long real
-  /// sessions go between reads.
+  /// sessions go between reads. For a shared guest it is the only thing that ends one: no host ends it,
+  /// and its connection is released after every round trip.
   static let idleTimeoutSeconds = 300
 
   /// The guest's argv for a spawn.
@@ -463,7 +468,7 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
   private static let adoptionProbeVerb = "ping"
 
   private enum RunningBridge {
-    /// Connected and answered, so it is ours to use.
+    /// Connected and answered, so nothing else holds it.
     case adopted(Int32)
     /// Nothing is listening: no socket file, or one left behind by a guest that has gone.
     case absent
@@ -509,8 +514,7 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
         persistence: .shared, ownership: { .shared($0) })
     case .busy:
       // The shared guest will not take a second client until the first leaves, which may be their whole
-      // session. A private socket is what every host used before bridges were shared, so a contended
-      // simulator falls back to the old behaviour rather than waiting.
+      // session, so a contended read starts a private guest rather than waiting.
       let privatePath = FBAXBridgeSocket.path(forConnection: UUID().uuidString)
       simulator.logger.log(
         "The axbridge guest on \(sharedPath) is serving another client; starting a private one on \(privatePath)")
@@ -594,8 +598,8 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
         logger: simulator.logger
       )
     } catch {
-      // Connecting failed, so the `FBAXBridgeConnection` that tears the serve down on deinit was never
-      // created — reap the just-spawned serve here so it does not leak as an orphan.
+      // Connecting failed, so the `FBAXBridgeConnection` that ends the serve on deinit was never
+      // created — end the just-spawned serve here so it does not leak as an orphan.
       FBAXBridgeConnection.teardown(
         fileDescriptor: nil,
         processIdentifier: process.processIdentifier,
@@ -619,9 +623,9 @@ enum FBAXBridgeGuestOwnership {
   /// Started by us, on a socket whose name only we know. Nobody else can find it, so nobody else can be
   /// using it, and it is ours to reap.
   case privateToThisHost(FBSubprocess<AnyObject, AnyObject, AnyObject>)
-  /// Serving the simulator on its well-known socket. Left running when we go, for whoever wants a bridge
-  /// next. The handle is present when we started it and absent when we adopted it — it is kept only to
-  /// report why the guest went away if the socket closes under a read.
+  /// Serving the simulator on its well-known socket. Left running when we go, for the next process that
+  /// wants a bridge. The handle is present when we started it and absent when we adopted it — it is kept
+  /// only to report why the guest went away if the socket closes under a read.
   case shared(FBSubprocess<AnyObject, AnyObject, AnyObject>?)
 
   /// The guest process, when there is a handle for it. Diagnostics only.
@@ -647,10 +651,9 @@ enum FBAXBridgeGuestOwnership {
   }
 }
 
-/// A connected Unix-domain socket to a running `accessibility serve` guest, plus the retained guest
-/// process handle (retaining it keeps the serve process alive). Frames are 4-byte big-endian length +
-/// JSON. Blocking socket I/O runs on a dedicated serial queue so it never blocks a cooperative thread,
-/// and the serial queue also guarantees request/response frames never interleave.
+/// A connected Unix-domain socket to a running `accessibility serve` guest. Frames are 4-byte
+/// big-endian length + JSON. Blocking socket I/O runs on a dedicated serial queue so it never blocks a
+/// cooperative thread, and the serial queue also guarantees request/response frames never interleave.
 ///
 // SAFETY: the stored properties are immutable and only read; all socket I/O is serialized on the
 // private `queue`, which processes one request/response frame pair at a time, so no mutable state is
@@ -658,6 +661,8 @@ enum FBAXBridgeGuestOwnership {
 // patternlint-disable-next-line unchecked-sendable
 final class FBAXBridgeConnection: @unchecked Sendable {
   private let fileDescriptor: Int32
+  /// The guest on the other end: its process handle, so a failed read can say why it went away, and
+  /// whether it is private to this host, which decides if this connection may be held between reads.
   private let ownership: FBAXBridgeGuestOwnership
   private let socketPath: String
   private let logger: (any FBControlCoreLogger)?

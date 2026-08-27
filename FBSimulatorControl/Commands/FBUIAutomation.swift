@@ -9,9 +9,9 @@ import CoreGraphics
 import FBControlCore
 import Foundation
 
-/// The guest-transport lifecycle for the `.axBridge` backend: a fresh spawn per read, or a memoized
-/// process reused across reads. It applies only to the axbridge backend, so it rides on that case as a
-/// payload rather than existing as a backend of its own.
+/// Which guest a `.axBridge` read runs against: a fresh spawn of its own, the simulator's shared one,
+/// or a private one held for the caller's lifetime. It applies only to the axbridge backend, so it
+/// rides on that case as a payload rather than existing as a backend of its own.
 public enum FBAXBridgePersistence: Sendable, Hashable {
   /// A fresh guest spawn per read. Stateless and free to reconstruct per call — for a single one-shot
   /// read.
@@ -34,7 +34,7 @@ public enum FBUIAutomationBackend: Sendable, Equatable {
   case remoteAutomation
   /// The bundle-free guest AX-C reader: the `SimulatorFrameworkBridge` `accessibility` service spawned
   /// in the simulator. XCUI-grade like `.remoteAutomation`, light like `.accessibility`. `persistence`
-  /// picks a fresh spawn per read or a reused `serve` process; `frontmostMethod` is how it resolves the
+  /// picks which guest the read runs against; `frontmostMethod` is how it resolves the
   /// foreground app; `automationMode` is what the read asks the device's accessibility automation mode
   /// to be. All three apply only to this backend, so they are payloads of the case rather than
   /// parameters every backend would have to ignore.
@@ -257,10 +257,14 @@ public extension FBSimulator {
   /// over a single query-shaped API. Every call returns a fresh reader; the readers are cheap, and
   /// where a backend owns an expensive warm resource, who owns it differs by backend:
   ///
-  /// - `.axBridge(persistence: .shared, …)` reads over a guest `serve` process owned by the
-  ///   **target**, memoized in `commandCache` and shared by every reader vended for that simulator.
-  ///   Dropping a reader leaves it running; it is released when the target is, or collected by the
-  ///   guest's own idle timeout.
+  /// - `.axBridge(persistence: .shared, …)` reads over a guest `serve` process on the simulator's
+  ///   well-known socket, shared with every other process reading the same simulator. The connection is
+  ///   released after each round trip so the next reader can have it, and no host ever ends the guest —
+  ///   only its own idle timeout does.
+  /// - `.axBridge(persistence: .exclusive, …)` reads over a guest of the caller's own, on a socket
+  ///   nobody else can discover. Memoized per simulator and per persistence, and holds its connection
+  ///   between reads. The guest was spawned with `--exit-on-disconnect`, so closing that connection is
+  ///   what ends it — for a process that owns the simulator for its lifetime.
   /// - `.remoteAutomation` owns a `testmanagerd` DTX session per **reader**. Hold the returned
   ///   instance to reuse it across operations; drop it to tear the session down.
   /// - `.accessibility` and `.axBridge(persistence: .oneShot, …)` are stateless — they hold no warm

@@ -204,7 +204,7 @@ final class FBAXBridgeSocketTests: XCTestCase {
     XCTAssertFalse(arguments.contains("--exit-on-disconnect"))
   }
 
-  func testASpawnNamesTheIdleTimeoutItWants() {
+  func testASpawnPassesTheDefaultIdleTimeout() {
     let arguments = FBAXBridgePersistentTransport.serveArguments(socketPath: "/x/y.sock", persistence: .shared)
     XCTAssertEqual(
       arguments,
