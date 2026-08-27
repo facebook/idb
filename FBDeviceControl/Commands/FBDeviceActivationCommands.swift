@@ -110,15 +110,15 @@ public class FBDeviceActivationCommands {
     try await confirmActivationStateAsync(FBDeviceActivationState.activated)
   }
 
-  private func mobileActivationService() -> FBFutureContext<FBAMDServiceConnection> {
+  private func withMobileActivationService<T>(_ body: (FBAMDServiceConnection) async throws -> T) async throws -> T {
     guard let device else {
-      return FBFutureContext(error: FBDeviceNilError.deviceNil)
+      throw FBDeviceNilError.deviceNil
     }
-    return device.startService("com.apple.mobileactivationd")
+    return try await device.withServiceConnection("com.apple.mobileactivationd", body)
   }
 
   private func activationStateAsync() async throws -> FBDeviceActivationState {
-    try await withFBFutureContext(mobileActivationService()) { connection in
+    try await withMobileActivationService { connection in
       let response = try connection.sendAndReceiveMessage(["Command": "GetActivationStateRequest"])
       guard let responseDict = response as? NSDictionary,
         let activationState = responseDict["Value"] as? String
@@ -130,7 +130,7 @@ public class FBDeviceActivationCommands {
   }
 
   private func buildDRMHandshakePayloadAsync() async throws -> Data {
-    try await withFBFutureContext(mobileActivationService()) { connection in
+    try await withMobileActivationService { connection in
       let response = try connection.sendAndReceiveMessage(["Command": "CreateTunnel1SessionInfoRequest"])
       guard let responseDict = response as? NSDictionary,
         let responsePayload = responseDict["Value"] as? [String: Any]
@@ -142,7 +142,7 @@ public class FBDeviceActivationCommands {
   }
 
   private func activationRecordFromDRMHandshakePayloadAsync(_ handshakePayload: Data) async throws -> Data {
-    try await withFBFutureContext(mobileActivationService()) { connection in
+    try await withMobileActivationService { connection in
       let response = try connection.sendAndReceiveMessage(["Command": "CreateTunnel1ActivationInfoRequest", "Value": handshakePayload])
       guard let responseDict = response as? NSDictionary,
         let responsePayload = responseDict["Value"] as? [String: Any]
@@ -154,7 +154,7 @@ public class FBDeviceActivationCommands {
   }
 
   private func activateFromActivationRecordAsync(_ activationRecord: Data) async throws {
-    try await withFBFutureContext(mobileActivationService()) { connection in
+    try await withMobileActivationService { connection in
       _ = try connection.sendAndReceiveMessage(["Command": "HandleActivationInfoWithSessionRequest", "Value": activationRecord])
     }
   }
