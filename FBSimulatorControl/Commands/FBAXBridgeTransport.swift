@@ -448,11 +448,12 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
     return arguments
   }
 
-  /// How long a running bridge gets to answer before we decide somebody else is using it.
+  /// How long a running bridge gets to answer before we decide somebody else is holding it.
   ///
-  /// Short because it is paid on the first read of every session, and a free guest replies without
-  /// touching the accessibility runtime. A longer window only slows down giving up.
-  private static let adoptionTimeout: TimeInterval = 2
+  /// A free guest answers in tens of microseconds; one part-way through another shared reader's request
+  /// is free again within about thirty milliseconds. Long enough to wait that reader out, short enough
+  /// that a bridge held for longer than one turn will not come free soon enough to wait for.
+  static let adoptionTimeout: TimeInterval = 0.25
 
   /// The request an adoption probe sends.
   ///

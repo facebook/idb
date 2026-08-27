@@ -28,6 +28,13 @@ final class FBAXBridgeSocketTests: XCTestCase {
     try? FileManager.default.removeItem(atPath: directory)
   }
 
+  // The adoption deadline is sub-second, which is only expressible because the conversion keeps
+  // fractions. A whole-second deadline here would be forty thousand times the answer it waits for.
+  func testTheAdoptionDeadlineIsSubSecondAndNonZero() {
+    let window = FBAXBridgePersistentTransport.receiveWindow(FBAXBridgePersistentTransport.adoptionTimeout)
+    XCTAssertLessThan(FBAXBridgePersistentTransport.adoptionTimeout, 1)
+    XCTAssertGreaterThan(window.tv_usec, 0, "a sub-second deadline that converts to zero is no deadline")
+  }
   // A read's provenance must name the lane that served it, so name → backend has to be a bijection.
 
   func testEveryPersistenceCaseRoundTripsThroughItsName() {
