@@ -241,7 +241,8 @@ static const int kDefaultNodeBudget = 5000;
 
 // The persistent `serve` exits after sitting idle this long — no client connected, or a connected
 // client sending nothing — so an orphaned serve (the host crashed, or was replaced by the host's
-// recovery path) is reaped rather than lingering. `establish` spawns the serve into the booted
+// recovery path) is collected rather than lingering. For a shared guest it is the only thing that ends
+// one, because no host ever does. `establish` spawns the serve into the booted
 // launchd domain, so it is parented to launchd_sim, not the host; there is no parent-death signal to
 // watch, hence an idle timeout. A live host that pauses longer is transparently re-spawned on its next
 // read, so this only ever costs a re-spawn, never correctness.
@@ -1630,10 +1631,9 @@ static BOOL FBAXBridgeReadFully(int fd, void *buffer, size_t length)
   return YES;
 }
 
-// Lenient on purpose: an unusable value is a host bug, and a bridge that refuses to start or exits
-// immediately is harder to diagnose than one that logs what it ignored.
 // Reads a flag's value as a boolean, absent meaning NO. Argv is walked in pairs, as everywhere else in
-// this front-end, so a valueless flag contributes nothing rather than being read as a bare switch.
+// this front-end, so every flag a host sends has to carry a value: a bare switch ahead of this one
+// shifts the alignment and this flag is then missed silently.
 static BOOL FBAXBridgeBoolFromArguments(NSArray<NSString *> *arguments, NSString *flag)
 {
   for (NSUInteger i = 0; i + 1 < arguments.count; i += 2) {
@@ -1644,6 +1644,8 @@ static BOOL FBAXBridgeBoolFromArguments(NSArray<NSString *> *arguments, NSString
   return NO;
 }
 
+// Lenient on purpose: an unusable value is a host bug, and a bridge that refuses to start or exits
+// immediately is harder to diagnose than one that logs what it ignored.
 static int FBAXBridgeIdleTimeoutFromArguments(NSArray<NSString *> *arguments, int fallback)
 {
   for (NSUInteger i = 0; i + 1 < arguments.count; i += 2) {
@@ -1665,16 +1667,19 @@ static int FBAXBridgeIdleTimeoutFromArguments(NSArray<NSString *> *arguments, in
 // Serves the transport-agnostic request handler over a Unix-domain socket so a host client can reuse
 // one warm process for many reads (the ~30x amortization). The framing is a 4-byte big-endian length
 // prefix followed by a JSON request/response object — the same envelope the oneshot path emits. The
-// host binds/connects the same `/tmp` path (host and this in-simulator process share the filesystem
-// namespace as the same user, so no data-container translation is needed).
+// host binds/connects the same path beneath the per-user temporary directory (host and this
+// in-simulator process share the filesystem namespace as the same user, so no data-container
+// translation is needed).
 //
-// This intentionally serves one client at a time, serially: the host holds a single long-lived
-// connection for the session, so requests are processed one-by-one over that connection with a
-// blocking read between them (the read blocks waiting for the next command — the expected interactive
-// idle, not a stall). When the client disconnects, the inner read returns EOF and the outer loop
-// re-`accept`s, allowing a reconnect. The host memoizes its transport per target, so that connection
-// lasts as long as the target does; the process is torn down when the host releases it, or reaped by
-// the idle timeout below if the host went away without doing so.
+// This intentionally serves one client at a time, serially, and how long a client stays depends on
+// which kind of bridge this is. A host that owns the simulator holds one connection for its whole
+// session, reading over it with a blocking wait between requests. A host reading the simulator's
+// shared bridge connects, makes its round trip and leaves, so the reconnect below is the common case
+// rather than the exception.
+//
+// Three things end this process: a client disconnecting when `--exit-on-disconnect` was passed, a
+// client asking it to shut down, and the idle timeout. No host ends a shared guest; the next process
+// to want a bridge is expected to find it.
 static int FBAXBridgeServe(NSString *socketPath, int idleTimeoutSeconds, BOOL exitOnDisconnect)
 {
   int listenFd = socket(AF_UNIX, SOCK_STREAM, 0);
@@ -1782,8 +1787,8 @@ static int FBAXBridgeServe(NSString *socketPath, int idleTimeoutSeconds, BOOL ex
       NSLog(@"[AccessibilityService] shutdown requested by client; exiting");
       break;
     }
-    // Loop back to accept: the host may reconnect within the session. The process is torn down by the
-    // host at end of session.
+    // Loop back to accept: the same host may reconnect, or a different one may arrive. For a shared
+    // bridge this is the steady state, and only the idle timeout ever ends the wait.
   }
 
   close(listenFd);

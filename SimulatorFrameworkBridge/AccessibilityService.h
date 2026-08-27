@@ -52,14 +52,17 @@ NS_ASSUME_NONNULL_BEGIN
  *                                              resolved positionally.
  * Front-ends:
  *   - oneshot:    accessibility <verb> ...       (runs once, prints JSON, exits)
- *   - persistent: accessibility serve <socket>   (serves many requests over a UDS)
+ *   - persistent: accessibility serve <socket> [--idle-timeout <seconds>] [--exit-on-disconnect 1]
+ *                                              (serves many requests over a UDS; the flags decide when
+ *                                              it gives up — after this long without traffic, and as
+ *                                              soon as its client goes)
  *
  * The persistent `serve` mode binds a Unix-domain socket and answers length-prefixed JSON request
  * frames (4-byte big-endian length + a request object, same envelope as oneshot) with the framework
  * cached once, so a host client reusing one warm process reads ~30x faster than re-spawning per read.
  *
  * @param action The verb ("describe", "hittest", or "frontmost") or the "serve" action.
- * @param arguments Remaining argv (e.g. @[@"--pid", @"1234"], @[@"--pid", @"1234", @"--x", @"20", @"--y", @"40"], @[@"--x", @"201", @"--y", @"437"] for frontmost, or @[socketPath]).
+ * @param arguments Remaining argv (e.g. @[@"--pid", @"1234"], @[@"--pid", @"1234", @"--x", @"20", @"--y", @"40"], @[@"--x", @"201", @"--y", @"437"] for frontmost, or @[socketPath, @"--idle-timeout", @"300"] for serve). Read in pairs, so every flag carries a value.
  * @return 0 on success, 1 on failure.
  */
 int handleAccessibilityAction(NSString *action, NSArray<NSString *> *arguments);
