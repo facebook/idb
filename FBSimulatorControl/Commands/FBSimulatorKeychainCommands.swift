@@ -8,28 +8,21 @@
 import FBControlCore
 import Foundation
 
-public final class FBSimulatorKeychainCommands {
+public struct FBSimulatorKeychainCommands {
 
   // MARK: - Properties
 
-  private weak var simulator: FBSimulator?
+  private let simulator: FBSimulator
 
   // MARK: - Initializers
 
-  public class func commands(with simulator: FBSimulator) -> FBSimulatorKeychainCommands {
+  public static func commands(with simulator: FBSimulator) -> FBSimulatorKeychainCommands {
     FBSimulatorKeychainCommands(simulator: simulator)
-  }
-
-  private init(simulator: FBSimulator) {
-    self.simulator = simulator
   }
 
   // MARK: - Private
 
   fileprivate func clearKeychain() async throws {
-    guard let simulator = self.simulator else {
-      throw FBWeakTargetError.simulator
-    }
     try simulator.device.resetKeychain()
   }
 }

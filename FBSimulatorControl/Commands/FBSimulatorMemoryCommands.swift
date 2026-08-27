@@ -21,28 +21,21 @@ public enum FBSimulatorMemoryError: Error, LocalizedError {
   }
 }
 
-public final class FBSimulatorMemoryCommands {
+public struct FBSimulatorMemoryCommands {
 
   // MARK: - Properties
 
-  private weak var simulator: FBSimulator?
+  private let simulator: FBSimulator
 
   // MARK: - Initializers
 
-  public class func commands(with simulator: FBSimulator) -> FBSimulatorMemoryCommands {
+  public static func commands(with simulator: FBSimulator) -> FBSimulatorMemoryCommands {
     FBSimulatorMemoryCommands(simulator: simulator)
-  }
-
-  private init(simulator: FBSimulator) {
-    self.simulator = simulator
   }
 
   // MARK: - Private
 
   fileprivate func simulateMemoryWarningAsync() async throws {
-    guard let simulator = self.simulator else {
-      throw FBWeakTargetError.simulator
-    }
     guard simulator.device.responds(to: NSSelectorFromString("simulateMemoryWarning")) else {
       throw FBSimulatorMemoryError.selectorUnavailable
     }

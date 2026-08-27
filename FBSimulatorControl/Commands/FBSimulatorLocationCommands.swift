@@ -9,28 +9,21 @@
 import FBControlCore
 import Foundation
 
-public final class FBSimulatorLocationCommands {
+public struct FBSimulatorLocationCommands {
 
   // MARK: - Properties
 
-  private weak var simulator: FBSimulator?
+  private let simulator: FBSimulator
 
   // MARK: - Initializers
 
-  public class func commands(with simulator: FBSimulator) -> FBSimulatorLocationCommands {
+  public static func commands(with simulator: FBSimulator) -> FBSimulatorLocationCommands {
     FBSimulatorLocationCommands(simulator: simulator)
-  }
-
-  private init(simulator: FBSimulator) {
-    self.simulator = simulator
   }
 
   // MARK: - Private
 
   fileprivate func overrideLocationAsync(longitude: Double, latitude: Double) async throws {
-    guard let simulator = self.simulator else {
-      throw FBWeakTargetError.simulator
-    }
     try simulator.device.setLocationWithLatitude(latitude, andLongitude: longitude)
   }
 }

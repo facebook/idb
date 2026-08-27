@@ -23,25 +23,21 @@ extension FBSimulatorProcessSpawnError: LocalizedError {
   }
 }
 
-public final class FBSimulatorProcessSpawnCommands {
+public struct FBSimulatorProcessSpawnCommands {
 
   // MARK: - Properties
 
-  private weak var simulator: FBSimulator?
+  private let simulator: FBSimulator
 
   // MARK: - Initializers
 
-  public class func commands(with simulator: FBSimulator) -> FBSimulatorProcessSpawnCommands {
+  public static func commands(with simulator: FBSimulator) -> FBSimulatorProcessSpawnCommands {
     return FBSimulatorProcessSpawnCommands(simulator: simulator)
-  }
-
-  private init(simulator: FBSimulator) {
-    self.simulator = simulator
   }
 
   // MARK: - Launch Options
 
-  class func launchOptions(withArguments arguments: [String], environment: [String: String], waitForDebugger: Bool) -> [String: Any] {
+  static func launchOptions(withArguments arguments: [String], environment: [String: String], waitForDebugger: Bool) -> [String: Any] {
     var options: [String: Any] = [:]
     options["arguments"] = arguments
     options["environment"] = environment
@@ -54,9 +50,6 @@ public final class FBSimulatorProcessSpawnCommands {
   // MARK: - Private
 
   fileprivate func launchProcess(_ configuration: FBProcessSpawnConfiguration) async throws -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
-    guard let simulator else {
-      throw FBWeakTargetError.simulator
-    }
     // Rejected before attaching, so that no file descriptor is opened for an input
     // that could never be read: SimDevice's launch options address stdout and stderr
     // by file descriptor and have no equivalent for stdin.
@@ -71,7 +64,7 @@ public final class FBSimulatorProcessSpawnCommands {
     )
   }
 
-  private class func launchProcess(withSimulator simulator: FBSimulator, configuration: FBProcessSpawnConfiguration, attachment: FBProcessIOAttachment) async throws -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
+  private static func launchProcess(withSimulator simulator: FBSimulator, configuration: FBProcessSpawnConfiguration, attachment: FBProcessIOAttachment) async throws -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
     let logger = simulator.logger
     let statLoc = FBMutableFuture<NSNumber>(name: "Process completion of \(configuration.launchPath) on \(simulator.udid)")
     let exitCode = FBMutableFuture<NSNumber>(name: "Process exit of \(configuration.launchPath) on \(simulator.udid)")
@@ -135,7 +128,7 @@ public final class FBSimulatorProcessSpawnCommands {
   }
 
   // Internal (not private) so the option dictionary can be characterized by unit tests; see FBSimulatorProcessSpawnCommandsTests.
-  class func simDeviceLaunchOptions(withSimulator simulator: FBSimulator, launchPath: String, arguments: [String], environment: [String: String], waitForDebugger: Bool, stdOut: FBProcessStreamAttachment?, stdErr: FBProcessStreamAttachment?, mode: FBProcessSpawnMode) -> [String: Any] {
+  static func simDeviceLaunchOptions(withSimulator simulator: FBSimulator, launchPath: String, arguments: [String], environment: [String: String], waitForDebugger: Bool, stdOut: FBProcessStreamAttachment?, stdErr: FBProcessStreamAttachment?, mode: FBProcessSpawnMode) -> [String: Any] {
     // argv[0] should be launch path of the process. SimDevice does not do this automatically, so we need to add it.
     let fullArguments = [launchPath] + arguments
     var options = launchOptions(withArguments: fullArguments, environment: environment, waitForDebugger: waitForDebugger)
@@ -150,7 +143,7 @@ public final class FBSimulatorProcessSpawnCommands {
   }
 
   // Internal (not private) for unit-test characterization of the launchd-vs-standalone decision.
-  class func shouldLaunchStandalone(onSimulator simulator: FBSimulator, mode: FBProcessSpawnMode) -> Bool {
+  static func shouldLaunchStandalone(onSimulator simulator: FBSimulator, mode: FBProcessSpawnMode) -> Bool {
     switch mode {
     case .launchd:
       return false

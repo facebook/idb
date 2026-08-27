@@ -21,28 +21,21 @@ public enum FBSimulatorLogError: Error, LocalizedError {
   }
 }
 
-public final class FBSimulatorLogCommands {
+public struct FBSimulatorLogCommands {
 
   // MARK: - Properties
 
-  private weak var simulator: FBSimulator?
+  private let simulator: FBSimulator
 
   // MARK: - Initializers
 
-  public class func commands(with simulator: FBSimulator) -> FBSimulatorLogCommands {
+  public static func commands(with simulator: FBSimulator) -> FBSimulatorLogCommands {
     FBSimulatorLogCommands(simulator: simulator)
-  }
-
-  private init(simulator: FBSimulator) {
-    self.simulator = simulator
   }
 
   // MARK: - Private
 
   fileprivate func tailLogAsync(arguments: [String], consumer: any FBDataConsumer) async throws -> any LogOperation {
-    guard let simulator = self.simulator else {
-      throw FBWeakTargetError.simulator
-    }
     let launchPath = try logExecutablePath()
     let streamArguments = FBProcessLogOperation.osLogArgumentsInsertStreamIfNeeded(arguments)
     let processIO = FBProcessIO<AnyObject, AnyObject, AnyObject>(
@@ -62,9 +55,6 @@ public final class FBSimulatorLogCommands {
   }
 
   private func logExecutablePath() throws -> String {
-    guard let simulator = self.simulator else {
-      throw FBWeakTargetError.simulator
-    }
     guard let root = simulator.device.runtime.root else {
       throw FBSimulatorLogError.runtimeRootUnavailable
     }

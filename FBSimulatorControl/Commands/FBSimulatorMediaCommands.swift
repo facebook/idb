@@ -34,29 +34,25 @@ extension FBSimulatorMediaError: LocalizedError {
   }
 }
 
-public final class FBSimulatorMediaCommands {
+public struct FBSimulatorMediaCommands {
 
   // MARK: - Properties
 
-  private weak var simulator: FBSimulator?
+  private let simulator: FBSimulator
 
   // MARK: - Initializers
 
-  public class func commands(with simulator: FBSimulator) -> FBSimulatorMediaCommands {
+  public static func commands(with simulator: FBSimulator) -> FBSimulatorMediaCommands {
     FBSimulatorMediaCommands(simulator: simulator)
-  }
-
-  private init(simulator: FBSimulator) {
-    self.simulator = simulator
   }
 
   // MARK: - Private
 
-  private class var predicateForVideoPaths: NSPredicate {
+  private static var predicateForVideoPaths: NSPredicate {
     predicateForPaths(matchingTypes: [.movie, .mpeg4Movie, .quickTimeMovie])
   }
 
-  private class var predicateForPhotoPaths: NSPredicate {
+  private static var predicateForPhotoPaths: NSPredicate {
     var types: [UTType] = [.heic, .image, .jpeg, .png]
     if let jpeg2000 = UTType("public.jpeg-2000") {
       types.append(jpeg2000)
@@ -64,11 +60,11 @@ public final class FBSimulatorMediaCommands {
     return predicateForPaths(matchingTypes: types)
   }
 
-  private class var predicateForContactPaths: NSPredicate {
+  private static var predicateForContactPaths: NSPredicate {
     predicateForPaths(matchingTypes: [.vCard])
   }
 
-  private class var predicateForMediaPaths: NSPredicate {
+  private static var predicateForMediaPaths: NSPredicate {
     NSCompoundPredicate(orPredicateWithSubpredicates: [
       predicateForVideoPaths,
       predicateForPhotoPaths,
@@ -77,9 +73,6 @@ public final class FBSimulatorMediaCommands {
   }
 
   fileprivate func uploadMedia(_ mediaFileURLs: [URL]) throws {
-    guard let simulator = self.simulator else {
-      throw FBWeakTargetError.simulator
-    }
 
     if mediaFileURLs.isEmpty {
       throw FBSimulatorMediaError.noMediaProvided
@@ -124,7 +117,7 @@ public final class FBSimulatorMediaCommands {
     }
   }
 
-  private class func predicateForPaths(matchingTypes types: [UTType]) -> NSPredicate {
+  private static func predicateForPaths(matchingTypes types: [UTType]) -> NSPredicate {
     NSPredicate { (evaluatedObject: Any?, _: [String: Any]?) -> Bool in
       guard let url = evaluatedObject as? URL else { return false }
       guard let contentType = try? url.resourceValues(forKeys: [.contentTypeKey]).contentType else { return false }

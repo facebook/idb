@@ -29,28 +29,21 @@ extension FBSimulatorNotificationError: LocalizedError {
   }
 }
 
-public final class FBSimulatorNotificationCommands {
+public struct FBSimulatorNotificationCommands {
 
   // MARK: - Properties
 
-  private weak var simulator: FBSimulator?
+  private let simulator: FBSimulator
 
   // MARK: - Initializers
 
-  public class func commands(with simulator: FBSimulator) -> FBSimulatorNotificationCommands {
+  public static func commands(with simulator: FBSimulator) -> FBSimulatorNotificationCommands {
     FBSimulatorNotificationCommands(simulator: simulator)
-  }
-
-  private init(simulator: FBSimulator) {
-    self.simulator = simulator
   }
 
   // MARK: - Private
 
   fileprivate func sendPushNotificationAsync(forBundleID bundleID: String, jsonPayload: String) async throws {
-    guard let simulator = self.simulator else {
-      throw FBWeakTargetError.simulator
-    }
 
     guard let data = jsonPayload.data(using: .utf8) else {
       throw FBSimulatorNotificationError.jsonNotUTF8
