@@ -8,7 +8,7 @@
 import FBControlCore
 import Foundation
 
-public final class FBSimulatorKeychainCommands: NSObject {
+public final class FBSimulatorKeychainCommands {
 
   // MARK: - Properties
 
@@ -22,7 +22,6 @@ public final class FBSimulatorKeychainCommands: NSObject {
 
   private init(simulator: FBSimulator) {
     self.simulator = simulator
-    super.init()
   }
 
   // MARK: - Private

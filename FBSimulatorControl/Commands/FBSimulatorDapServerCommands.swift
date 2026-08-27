@@ -28,7 +28,7 @@ extension FBSimulatorDapServerError: LocalizedError {
   }
 }
 
-public final class FBSimulatorDapServerCommand: NSObject {
+public final class FBSimulatorDapServerCommand {
 
   // MARK: - Properties
 
@@ -42,7 +42,6 @@ public final class FBSimulatorDapServerCommand: NSObject {
 
   private init(simulator: FBSimulator) {
     self.simulator = simulator
-    super.init()
   }
 
   // MARK: - Private

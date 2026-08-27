@@ -9,7 +9,7 @@
 import FBControlCore
 import Foundation
 
-public final class FBSimulatorLocationCommands: NSObject {
+public final class FBSimulatorLocationCommands {
 
   // MARK: - Properties
 
@@ -23,7 +23,6 @@ public final class FBSimulatorLocationCommands: NSObject {
 
   private init(simulator: FBSimulator) {
     self.simulator = simulator
-    super.init()
   }
 
   // MARK: - Private

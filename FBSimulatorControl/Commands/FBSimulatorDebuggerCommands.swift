@@ -60,7 +60,7 @@ private final class FBSimulatorDebugServer: FBDebugServer {
 
 // MARK: - FBSimulatorDebuggerCommands
 
-public final class FBSimulatorDebuggerCommands: NSObject {
+public final class FBSimulatorDebuggerCommands {
 
   // MARK: - Properties
 
@@ -86,7 +86,6 @@ public final class FBSimulatorDebuggerCommands: NSObject {
   internal init(simulator: FBSimulator, debugServerPath: String) {
     self.simulator = simulator
     self.debugServerPath = debugServerPath
-    super.init()
   }
 
   // MARK: - Private

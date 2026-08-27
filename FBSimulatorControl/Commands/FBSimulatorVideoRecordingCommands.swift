@@ -24,7 +24,7 @@ extension FBSimulatorVideoRecordingCommandError: LocalizedError {
   }
 }
 
-public final class FBSimulatorVideoRecordingCommands: NSObject {
+public final class FBSimulatorVideoRecordingCommands {
 
   // MARK: - Properties
 
@@ -39,7 +39,6 @@ public final class FBSimulatorVideoRecordingCommands: NSObject {
 
   private init(simulator: FBSimulator) {
     self.simulator = simulator
-    super.init()
   }
 
   // MARK: - Private
