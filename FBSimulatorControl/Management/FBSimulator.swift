@@ -15,13 +15,12 @@ private let DefaultDeviceSet = "~/Library/Developer/CoreSimulator/Devices"
 ///
 /// The async commands serialize their work onto `FBFuture`'s internal queues, so instances are
 /// safe to pass across Swift concurrency domains.
-@objc(FBSimulator)
 public final class FBSimulator: NSObject, FBiOSTarget, @unchecked Sendable {
 
   // MARK: - Properties
 
   /// The underlying `SimDevice`.
-  @objc public let device: SimDevice
+  public let device: SimDevice
 
   /// The Simulator Set that the Simulator belongs to.
   ///
@@ -30,15 +29,15 @@ public final class FBSimulator: NSObject, FBiOSTarget, @unchecked Sendable {
   /// it wraps.
   /// Nil for simulators created outside a set. The Objective-C header annotated this `nonnull`
   /// while its initializer accepted nil, so the paths that require a set now say so explicitly.
-  @objc public private(set) var set: FBSimulatorSet?
+  public private(set) var set: FBSimulatorSet?
 
   /// The `FBSimulatorConfiguration` representing this Simulator.
   public var configuration: FBSimulatorConfiguration
 
-  @objc public let commandCache: FBTargetCommandCache
+  public let commandCache: FBTargetCommandCache
 
-  @objc public let logger: any FBControlCoreLogger
-  @objc public let auxillaryDirectory: String
+  public let logger: any FBControlCoreLogger
+  public let auxillaryDirectory: String
 
   private var _temporaryDirectory: FBTemporaryDirectory?
 
@@ -71,33 +70,33 @@ public final class FBSimulator: NSObject, FBiOSTarget, @unchecked Sendable {
 
   // MARK: - FBiOSTargetInfo
 
-  @objc public var uniqueIdentifier: String { udid }
+  public var uniqueIdentifier: String { udid }
 
-  @objc public var udid: String { device.udid.uuidString }
+  public var udid: String { device.udid.uuidString }
 
-  @objc public var name: String { device.name }
+  public var name: String { device.name }
 
-  @objc public var state: FBiOSTargetState { FBiOSTargetState(rawValue: UInt(device.state)) ?? .unknown }
+  public var state: FBiOSTargetState { FBiOSTargetState(rawValue: UInt(device.state)) ?? .unknown }
 
-  @objc public var targetType: FBiOSTargetType { .simulator }
+  public var targetType: FBiOSTargetType { .simulator }
 
-  @objc public var architectures: [FBArchitecture] { Array(FBArchitectureProcessAdapter.hostMachineSupportedArchitectures()) }
+  public var architectures: [FBArchitecture] { Array(FBArchitectureProcessAdapter.hostMachineSupportedArchitectures()) }
 
-  @objc public var deviceType: FBDeviceType { configuration.device }
+  public var deviceType: FBDeviceType { configuration.device }
 
-  @objc public var osVersion: FBOSVersion { configuration.os }
+  public var osVersion: FBOSVersion { configuration.os }
 
-  @objc public var extendedInformation: [String: Any] { [:] }
+  public var extendedInformation: [String: Any] { [:] }
 
   // MARK: - FBiOSTarget
 
-  @objc public var runtimeRootDirectory: String { device.runtime.root }
+  public var runtimeRootDirectory: String { device.runtime.root }
 
-  @objc public var platformRootDirectory: String {
+  public var platformRootDirectory: String {
     (FBXcodeConfiguration.developerDirectory as NSString).appendingPathComponent("Platforms/iPhoneSimulator.platform")
   }
 
-  @objc public var screenInfo: FBiOSTargetScreenInfo? {
+  public var screenInfo: FBiOSTargetScreenInfo? {
     guard let deviceType = device.deviceType else {
       return nil
     }
@@ -107,7 +106,7 @@ public final class FBSimulator: NSObject, FBiOSTarget, @unchecked Sendable {
       scale: deviceType.mainScreenScale)
   }
 
-  @objc public var temporaryDirectory: FBTemporaryDirectory {
+  public var temporaryDirectory: FBTemporaryDirectory {
     if let _temporaryDirectory {
       return _temporaryDirectory
     }
@@ -116,21 +115,21 @@ public final class FBSimulator: NSObject, FBiOSTarget, @unchecked Sendable {
     return directory
   }
 
-  @objc public var workQueue: DispatchQueue { .main }
+  public var workQueue: DispatchQueue { .main }
 
-  @objc public var asyncQueue: DispatchQueue { .global(qos: .userInitiated) }
+  public var asyncQueue: DispatchQueue { .global(qos: .userInitiated) }
 
-  @objc public func compare(_ target: any FBiOSTarget) -> ComparisonResult {
+  public func compare(_ target: any FBiOSTarget) -> ComparisonResult {
     FBiOSTargetComparison(self, target)
   }
 
-  @objc public func replacementMapping() -> [String: String] {
+  public func replacementMapping() -> [String: String] {
     ["%%SIM_ROOT%%": dataDirectory ?? ""]
   }
 
-  @objc public func environmentAdditions() -> [String: String] { [:] }
+  public func environmentAdditions() -> [String: String] { [:] }
 
-  @objc public func requiresBundlesToBeSigned() -> Bool { true }
+  public func requiresBundlesToBeSigned() -> Bool { true }
 
   /// `FBiOSTarget` refines `FBiOSTargetCommand`, whose factory exists for command classes rather
   /// than for targets; a simulator is its own command source, so it returns the target it is
@@ -141,7 +140,6 @@ public final class FBSimulator: NSObject, FBiOSTarget, @unchecked Sendable {
   /// Note this is a real narrowing — the Objective-C predecessor omitted the method behind a
   /// `-Wprotocol` suppression, so a caller raised `NSInvalidArgumentException`, which this
   /// codebase catches via `FBObjCExceptionGuard`; a trap is not catchable.
-  @objc(commandsWithTarget:)
   public static func commands(with target: any FBiOSTarget) -> Self {
     guard let simulator = target as? Self else {
       preconditionFailure("\(type(of: target)) is not an FBSimulator, so it cannot provide simulator commands")
@@ -175,7 +173,7 @@ public final class FBSimulator: NSObject, FBiOSTarget, @unchecked Sendable {
   /// The Directory that Contains the Simulator's Data.
   public var dataDirectory: String? { device.dataPath() }
 
-  @objc public var customDeviceSetPath: String? {
+  public var customDeviceSetPath: String? {
     let setPath = device.deviceSet?.setPath
     return setPath == (DefaultDeviceSet as NSString).expandingTildeInPath ? nil : setPath
   }
