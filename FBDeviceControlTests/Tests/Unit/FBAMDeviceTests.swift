@@ -18,6 +18,21 @@ private var sAMDeviceEvents: [String] = []
 /// Pinned to the main actor: the AMDevice stubs append to `sAMDeviceEvents` from the device's
 /// work and async queues, both of which are `DispatchQueue.main`, so the assertions have to read
 /// it there too. The synchronous predecessors of these tests got that for free.
+/// The session is stopped and the device disconnected before the connection is invalidated: the
+/// service is started inside a pop, so the AMDevice session is not held for the caller's use of
+/// the connection.
+private let startServiceEvents = [
+  "connect",
+  "is_paired",
+  "validate_pairing",
+  "start_session",
+  "secure_start_service",
+  "service_connection_get_secure_io_context",
+  "stop_session",
+  "disconnect",
+  "service_connection_invalidate",
+]
+
 @MainActor
 final class FBAMDeviceTests: XCTestCase {
 
@@ -209,22 +224,30 @@ final class FBAMDeviceTests: XCTestCase {
     }
     XCTAssertEqual(name, "com.apple.testservice")
 
-    // The session is stopped and the device disconnected before the connection is invalidated:
-    // the service is started inside a pop, so the AMDevice session is not held for the caller's
-    // use of the connection.
-    let expected = [
-      "connect",
-      "is_paired",
-      "validate_pairing",
-      "start_session",
-      "secure_start_service",
-      "service_connection_get_secure_io_context",
-      "stop_session",
-      "disconnect",
-      "service_connection_invalidate",
-    ]
-    await waitForDeviceEvents(expected)
-    XCTAssertEqual(expected, sAMDeviceEvents)
+    await waitForDeviceEvents(startServiceEvents)
+    XCTAssertEqual(startServiceEvents, sAMDeviceEvents)
+  }
+
+  func testWithServiceConnection_InvalidatesTheConnectionWhenTheBodyReturns() async throws {
+    let name = try await device.withServiceConnection("com.apple.testservice") { $0.name }
+    XCTAssertEqual(name, "com.apple.testservice")
+
+    await waitForDeviceEvents(startServiceEvents)
+    XCTAssertEqual(startServiceEvents, sAMDeviceEvents)
+  }
+
+  /// The connection is invalidated on the way out of a throwing body, not just a returning one.
+  func testWithServiceConnection_InvalidatesTheConnectionWhenTheBodyThrows() async throws {
+    struct BodyError: Error {}
+    do {
+      try await device.withServiceConnection("com.apple.testservice") { _ in throw BodyError() }
+      XCTFail("Expected the body's error to propagate")
+    } catch is BodyError {
+      // Expected.
+    }
+
+    await waitForDeviceEvents(startServiceEvents)
+    XCTAssertEqual(startServiceEvents, sAMDeviceEvents)
   }
 
   func testConcurrentHouseArrest() async throws {

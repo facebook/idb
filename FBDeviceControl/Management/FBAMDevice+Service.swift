@@ -44,7 +44,28 @@ extension FBAMDevice {
       ).retyped(FBFutureContext<FBAMDServiceConnection>.self)
   }
 
+  /// Starts a service on the device, invalidating the connection once `body` returns or throws.
+  ///
+  /// The async counterpart of `startServiceConnection`, with the same two lifetimes: the AMDevice
+  /// session is released as soon as the service has started, the connection when `body` is done.
+  public func withServiceConnection<T>(
+    _ service: String,
+    _ body: (FBAMDServiceConnection) async throws -> T
+  ) async throws -> T {
+    let connection = try await openServiceConnection(service)
+    defer { Self.invalidate(connection, service: service, logger: logger) }
+    return try await body(connection)
+  }
+
   // MARK: - Private
+
+  private func openServiceConnection(_ service: String) async throws -> FBAMDServiceConnection {
+    let calls = self.calls
+    let logger = self.logger
+    return try await withFBFutureContext(connectToDevice(withPurpose: "start_service_\(service)")) { device in
+      try Self.startService(service, on: device, calls: calls, logger: logger)
+    }
+  }
 
   private static func startService(
     _ service: String,
