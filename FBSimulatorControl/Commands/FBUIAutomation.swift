@@ -12,7 +12,7 @@ import Foundation
 /// The guest-transport lifecycle for the `.axBridge` backend: a fresh spawn per read, or a memoized
 /// process reused across reads. It applies only to the axbridge backend, so it rides on that case as a
 /// payload rather than existing as a backend of its own.
-public enum FBAXBridgePersistence: Sendable, Equatable {
+public enum FBAXBridgePersistence: Sendable, Hashable {
   /// A fresh guest spawn per read. Stateless and free to reconstruct per call — for a single one-shot
   /// read.
   case oneShot
@@ -279,8 +279,8 @@ public extension FBSimulator {
       let transport: any FBAXBridgeTransport =
         switch persistence {
         case .oneShot: FBAXBridgeOneshotTransport(simulator: self)
-        case .shared: sharedAXBridgeTransport()
-        case .exclusive: FBAXBridgePersistentTransport(simulator: self, persistence: .exclusive)
+        case .shared: axBridgeTransport(.shared)
+        case .exclusive: axBridgeTransport(.exclusive)
         }
       return FBAXBridgeUIAutomation(
         simulator: self, transport: transport, persistence: persistence, frontmostMethod: frontmostMethod,
@@ -289,17 +289,45 @@ public extension FBSimulator {
     }
   }
 
-  /// The one shared axbridge transport for this target.
+  /// The socket-backed axbridge transport this target uses for `persistence`.
   ///
-  /// Memoized rather than per-reader because the transport is what owns the guest `serve` process, and
-  /// the spawn plus `initForRemoteAccess` it pays for is the cost a socket-backed lane exists to avoid.
-  /// `frontmostMethod` and `automationMode` are the reader's, not the transport's, so readers differing
-  /// in those still share this one.
+  /// Memoized rather than per-reader because the transport is what reaches the guest, and the spawn plus
+  /// `initForRemoteAccess` behind it is the cost these lanes exist to avoid. `frontmostMethod` and
+  /// `automationMode` belong to the reader, so readers differing in those share a transport.
   ///
-  /// Only for `.shared`. The memo is keyed by type, so an `.exclusive` transport routed through here
-  /// would collide with the shared one and hand a caller a bridge on the wrong socket; `.exclusive`
-  /// deliberately bypasses this helper and constructs its own.
-  private func sharedAXBridgeTransport() -> FBAXBridgePersistentTransport {
-    commandCache.resolve { FBAXBridgePersistentTransport(simulator: self, persistence: .shared) }
+  /// Keyed by persistence rather than by type alone, because a shared and an exclusive bridge are not
+  /// interchangeable: handing a shared request the exclusive transport would read over a bridge nobody
+  /// else can see, and handing an exclusive request the shared one would put the caller back to holding
+  /// a bridge others are trying to use.
+  private func axBridgeTransport(_ persistence: FBAXBridgePersistence) -> FBAXBridgePersistentTransport {
+    commandCache.resolve { FBAXBridgeTransportsByPersistence() }
+      .transport(for: persistence) { FBAXBridgePersistentTransport(simulator: self, persistence: persistence) }
+  }
+}
+
+/// One socket-backed transport per persistence, for one target.
+///
+/// `FBTargetCommandCache` keys its slots by type, and the two persistences need separate transports that
+/// are the same type, so this holds them apart.
+///
+// SAFETY: `transports` is only read or written with `lock` held, so no mutable state is reachable from
+// two threads at once. Mirrors the `@unchecked Sendable` convention in FBRemoteInvoking.
+// patternlint-disable-next-line unchecked-sendable
+final class FBAXBridgeTransportsByPersistence: @unchecked Sendable {
+  private let lock = NSLock()
+  private var transports: [FBAXBridgePersistence: FBAXBridgePersistentTransport] = [:]
+
+  func transport(
+    for persistence: FBAXBridgePersistence,
+    build: () -> FBAXBridgePersistentTransport
+  ) -> FBAXBridgePersistentTransport {
+    lock.lock()
+    defer { lock.unlock() }
+    if let existing = transports[persistence] {
+      return existing
+    }
+    let created = build()
+    transports[persistence] = created
+    return created
   }
 }

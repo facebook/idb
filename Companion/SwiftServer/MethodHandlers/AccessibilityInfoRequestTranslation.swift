@@ -66,7 +66,9 @@ enum AccessibilityInfoRequestTranslation {
     case .axbridge:
       return FBUIAutomationBackend(.axBridge)
     case .axbridgePersistent:
-      return FBUIAutomationBackend(.axBridgePersistent)
+      // The companion owns its simulator for its whole run, so it holds a bridge. Holding the shared
+      // one would make every other process on this machine wait and then spawn a duplicate.
+      return FBUIAutomationBackend(.axBridgeExclusive)
     case .UNRECOGNIZED:
       return .accessibility
     }

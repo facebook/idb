@@ -182,15 +182,31 @@ final class FBAXBridgeSocketTests: XCTestCase {
     XCTAssertEqual(FBAXBridgeConnection.sunPathCapacity, 104)
   }
 
+  // An exclusive guest must die with the host that started it. Nobody else can reach its socket, so
+  // once its client goes there is no next one to wait for, and sitting through the idle window would
+  // leave exactly the orphan a private socket is meant to prevent.
+  func testAnExclusiveSpawnPassesExitOnDisconnect() {
+    let arguments = FBAXBridgePersistentTransport.serveArguments(
+      socketPath: "/x/y.sock", persistence: .exclusive)
+    XCTAssertEqual(Array(arguments.suffix(2)), ["--exit-on-disconnect", "1"])
+  }
+
+  // A shared guest must stay up for the next client, so the flag is never passed there.
+  func testASharedSpawnOmitsExitOnDisconnect() {
+    let arguments = FBAXBridgePersistentTransport.serveArguments(
+      socketPath: "/x/y.sock", persistence: .shared)
+    XCTAssertFalse(arguments.contains("--exit-on-disconnect"))
+  }
+
   func testASpawnNamesTheIdleTimeoutItWants() {
-    let arguments = FBAXBridgePersistentTransport.serveArguments(socketPath: "/x/y.sock")
+    let arguments = FBAXBridgePersistentTransport.serveArguments(socketPath: "/x/y.sock", persistence: .shared)
     XCTAssertEqual(
       arguments,
       ["accessibility", "serve", "/x/y.sock", "--idle-timeout", "\(FBAXBridgePersistentTransport.idleTimeoutSeconds)"])
   }
 
   func testASpawnCanAskForADifferentIdleTimeout() {
-    let arguments = FBAXBridgePersistentTransport.serveArguments(socketPath: "/x/y.sock", idleTimeoutSeconds: 7)
+    let arguments = FBAXBridgePersistentTransport.serveArguments(socketPath: "/x/y.sock", persistence: .shared, idleTimeoutSeconds: 7)
     XCTAssertEqual(arguments, ["accessibility", "serve", "/x/y.sock", "--idle-timeout", "7"])
   }
 

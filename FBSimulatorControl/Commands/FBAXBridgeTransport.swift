@@ -427,8 +427,19 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
   /// The timeout is stated rather than left to the guest's default, because the two ship separately: the
   /// guest lives in the companion's `Resources/` and a consumer may pin an older artifact. A guest
   /// predating the flag ignores it, so this is safe to send to any of them.
-  static func serveArguments(socketPath: String, idleTimeoutSeconds: Int = idleTimeoutSeconds) -> [String] {
-    ["accessibility", "serve", socketPath, "--idle-timeout", "\(idleTimeoutSeconds)"]
+  static func serveArguments(
+    socketPath: String,
+    persistence: FBAXBridgePersistence,
+    idleTimeoutSeconds: Int = idleTimeoutSeconds
+  ) -> [String] {
+    var arguments = ["accessibility", "serve", socketPath, "--idle-timeout", "\(idleTimeoutSeconds)"]
+    if persistence == .exclusive {
+      // Nobody else can reach an exclusive socket, so once our client goes there is no next one to wait
+      // for. Without this the guest would sit through its whole idle window after the host that owned
+      // it died, which is the orphan the private socket was supposed to make impossible.
+      arguments += ["--exit-on-disconnect", "1"]
+    }
+    return arguments
   }
 
   /// How long a running bridge gets to answer before we decide somebody else is using it.
@@ -472,7 +483,7 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
       let privatePath = FBAXBridgeSocket.path(forConnection: UUID().uuidString)
       return try await spawn(
         simulator: simulator, helperPath: helperPath, socketPath: privatePath,
-        ownership: { .privateToThisHost($0) })
+        persistence: .exclusive, ownership: { .privateToThisHost($0) })
     }
 
     let sharedPath = FBAXBridgeSocket.path(forSimulator: simulator.udid)
@@ -487,7 +498,8 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
       )
     case .absent:
       return try await spawn(
-        simulator: simulator, helperPath: helperPath, socketPath: sharedPath, ownership: { .shared($0) })
+        simulator: simulator, helperPath: helperPath, socketPath: sharedPath,
+        persistence: .shared, ownership: { .shared($0) })
     case .busy:
       // The shared guest will not take a second client until the first leaves, which may be their whole
       // session. A private socket is what every host used before bridges were shared, so a contended
@@ -497,7 +509,7 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
         "The axbridge guest on \(sharedPath) is serving another client; starting a private one on \(privatePath)")
       return try await spawn(
         simulator: simulator, helperPath: helperPath, socketPath: privatePath,
-        ownership: { .privateToThisHost($0) })
+        persistence: .exclusive, ownership: { .privateToThisHost($0) })
     }
   }
 
@@ -552,12 +564,13 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
     simulator: FBSimulator,
     helperPath: String,
     socketPath: String,
+    persistence: FBAXBridgePersistence,
     ownership: (FBSubprocess<AnyObject, AnyObject, AnyObject>) -> FBAXBridgeGuestOwnership
   ) async throws -> FBAXBridgeConnection {
     let io = FBProcessIO<AnyObject, AnyObject, AnyObject>.outputToDevNull()
     let configuration = FBProcessSpawnConfiguration(
       launchPath: helperPath,
-      arguments: serveArguments(socketPath: socketPath),
+      arguments: serveArguments(socketPath: socketPath, persistence: persistence),
       environment: [:],
       io: io,
       mode: .default
