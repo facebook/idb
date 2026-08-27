@@ -181,7 +181,7 @@ $ idb ui describe General --format complete | jq '{backend, truncated, target, s
 | Field | Description |
 |-------|-------------|
 | `elements` | The elements, always an array — even for a single-element read, which the other formats emit as a bare object |
-| `backend` | Which backend served the read: `ax`, `axbridge`, `axbridge-persistent` or `testmanagerd` |
+| `backend` | Which backend served the read: `ax`, `axbridge`, `axbridge-persistent`, `axbridge-exclusive` or `testmanagerd`. A read requested as `axbridge-persistent` reports `axbridge-exclusive` when it was served from a bridge the reader holds for itself, which is what the companion does |
 | `target` | What was asked for: `kind` is `frontmost`, `application`, `point` or `marker`, with the `pid`, `x`/`y` or `value`/`match_key` that named it |
 | `screen` | The bounds element frames are relative to |
 | `truncated` | Whether the read hit the depth or node bounds and stopped short of the whole tree |
@@ -228,7 +228,7 @@ On `ax`, the tree is fetched attribute by attribute over XPC, so the phases deco
 | `xpc_call_count` | Round trips to the simulator's accessibility service |
 | `total_xpc_duration_ms` | XPC wait across the **whole** read. Larger than `read_duration_ms`, which counts only the walk's share — acquisition's XPC is reported as its wall time instead |
 
-On `axbridge` and `axbridge-persistent`, the tree is walked in-process by a guest reader and shipped back as JSON, so the interesting split is transport against traversal:
+On any of the `axbridge` backends, the tree is walked in-process by a guest reader and shipped back as JSON, so the interesting split is transport against traversal:
 
 | Field | What it measures |
 |-------|------------------|
