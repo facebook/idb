@@ -39,7 +39,7 @@ extension FBSimulator {
   }
 
   func fileCommands() throws -> FBSimulatorFileCommands {
-    commandCache.resolve { FBSimulatorFileCommands.commands(with: self) }
+    FBSimulatorFileCommands.commands(with: self)
   }
 
   func logCommands() throws -> FBSimulatorLogCommands {
@@ -55,7 +55,7 @@ extension FBSimulator {
   }
 
   func launchCtlCommands() throws -> FBSimulatorLaunchCtlCommands {
-    commandCache.resolve { FBSimulatorLaunchCtlCommands.commands(with: self) }
+    FBSimulatorLaunchCtlCommands.commands(with: self)
   }
 
   func xctraceRecordCommands() throws -> FBXCTraceRecordCommands {
@@ -89,7 +89,7 @@ extension FBSimulator {
   }
 
   func dapServerCommand() throws -> FBSimulatorDapServerCommand {
-    commandCache.resolve { FBSimulatorDapServerCommand.commands(with: self) }
+    FBSimulatorDapServerCommand.commands(with: self)
   }
 
   func replCommands() throws -> FBSimulatorReplCommands {

@@ -36,21 +36,20 @@ struct FBSimulatorCommandRetentionTests {
     #expect(try simulatorSurvives { _ = try $0.locationCommands() } == false)
   }
 
-  // BUG: these three hold `private let simulator: FBSimulator` rather than `weak var`, so
-  // resolving one into the simulator's own cache closes a retain cycle and the simulator is
-  // never released — flipped in the following commit.
-  @Test("The file commands retain the simulator")
-  func fileCommandsRetainTheSimulator() throws {
-    #expect(try simulatorSurvives { _ = try $0.fileCommands() } == true)
+  /// These three hold their simulator strongly, which is only safe because they are no longer
+  /// resolved through the simulator's own cache — nothing outlives the call that builds them.
+  @Test("The file commands do not retain the simulator")
+  func fileCommandsDoNotRetainTheSimulator() throws {
+    #expect(try simulatorSurvives { _ = try $0.fileCommands() } == false)
   }
 
-  @Test("The launchctl commands retain the simulator")
-  func launchCtlCommandsRetainTheSimulator() throws {
-    #expect(try simulatorSurvives { _ = try $0.launchCtlCommands() } == true)
+  @Test("The launchctl commands do not retain the simulator")
+  func launchCtlCommandsDoNotRetainTheSimulator() throws {
+    #expect(try simulatorSurvives { _ = try $0.launchCtlCommands() } == false)
   }
 
-  @Test("The DAP server commands retain the simulator")
-  func dapServerCommandsRetainTheSimulator() throws {
-    #expect(try simulatorSurvives { _ = try $0.dapServerCommand() } == true)
+  @Test("The DAP server commands do not retain the simulator")
+  func dapServerCommandsDoNotRetainTheSimulator() throws {
+    #expect(try simulatorSurvives { _ = try $0.dapServerCommand() } == false)
   }
 }
