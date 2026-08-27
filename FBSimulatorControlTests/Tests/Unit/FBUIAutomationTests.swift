@@ -36,32 +36,45 @@ final class FBUIAutomationTests: XCTestCase {
   // shared across reads or spawned for each one. Constructing the axbridge backends touches no
   // device, so this needs no booted simulator.
 
-  private static let persistentBackend = FBUIAutomationBackend.axBridge(
-    persistence: .shared, frontmostMethod: .windowServer, automationMode: true
-  )
+  private static func backend(_ persistence: FBAXBridgePersistence) -> FBUIAutomationBackend {
+    .axBridge(persistence: persistence, frontmostMethod: .windowServer, automationMode: true)
+  }
 
-  private func persistentTransport(_ simulator: FBSimulator) throws -> FBAXBridgePersistentTransport {
-    let reader = try simulator.uiAutomation(backend: Self.persistentBackend)
+  private func transport(
+    _ simulator: FBSimulator, _ persistence: FBAXBridgePersistence
+  ) throws -> FBAXBridgePersistentTransport {
+    let reader = try simulator.uiAutomation(backend: Self.backend(persistence))
     let bridgeReader = try XCTUnwrap(reader as? FBAXBridgeUIAutomation)
     return try XCTUnwrap(bridgeReader.transport as? FBAXBridgePersistentTransport)
   }
 
-  func testEveryPersistentBackendCallSharesOneTransport() throws {
+  func testEverySharedBackendCallSharesOneTransport() throws {
     let simulator = FBSimulatorTestSupport.testableSimulator()
-    let first = try persistentTransport(simulator)
-    let second = try persistentTransport(simulator)
-    XCTAssertTrue(first === second)
+    XCTAssertTrue(try transport(simulator, .shared) === (try transport(simulator, .shared)))
   }
 
-  func testPersistentTransportsAreNotSharedAcrossSimulators() throws {
-    let first = try persistentTransport(FBSimulatorTestSupport.testableSimulator())
-    let second = try persistentTransport(FBSimulatorTestSupport.testableSimulator())
+  func testEveryExclusiveBackendCallSharesOneTransport() throws {
+    let simulator = FBSimulatorTestSupport.testableSimulator()
+    XCTAssertTrue(try transport(simulator, .exclusive) === (try transport(simulator, .exclusive)))
+  }
+
+  // The two lanes reach different guests, so handing a shared read the exclusive transport would read
+  // over a bridge nobody else can see, and the reverse would put the caller back to holding one others
+  // want. Memoization is therefore keyed by persistence, not just by simulator.
+  func testSharedAndExclusiveDoNotShareATransport() throws {
+    let simulator = FBSimulatorTestSupport.testableSimulator()
+    XCTAssertFalse(try transport(simulator, .shared) === (try transport(simulator, .exclusive)))
+  }
+
+  func testTransportsAreNotSharedAcrossSimulators() throws {
+    let first = try transport(FBSimulatorTestSupport.testableSimulator(), .shared)
+    let second = try transport(FBSimulatorTestSupport.testableSimulator(), .shared)
     XCTAssertFalse(first === second)
   }
 
   func testReadersDifferingOnlyInReaderOptionsShareOneTransport() throws {
     let simulator = FBSimulatorTestSupport.testableSimulator()
-    let shared = try persistentTransport(simulator)
+    let shared = try transport(simulator, .shared)
     let otherOptions = FBUIAutomationBackend.axBridge(
       persistence: .shared, frontmostMethod: .centerPoint, automationMode: nil
     )
