@@ -28,6 +28,30 @@ final class FBAXBridgeSocketTests: XCTestCase {
     try? FileManager.default.removeItem(atPath: directory)
   }
 
+  // A read's provenance must name the lane that served it, so name → backend has to be a bijection.
+
+  func testEveryPersistenceCaseRoundTripsThroughItsName() {
+    let cases: [(FBAXBridgePersistence, FBUIAutomationBackendName)] = [
+      (.oneShot, .axBridge), (.shared, .axBridgePersistent), (.exclusive, .axBridgeExclusive),
+    ]
+    for (persistence, name) in cases {
+      let backend = FBUIAutomationBackend.axBridge(
+        persistence: persistence, frontmostMethod: .windowServer, automationMode: true)
+      XCTAssertEqual(backend.name, name)
+      XCTAssertEqual(FBUIAutomationBackend(name), backend)
+    }
+  }
+
+  // The wire spelling of the shared case is unchanged, so a client asking for `axbridge-persistent`
+  // keeps working and no proto or CLI change rides along with this.
+  func testTheSharedCaseKeepsTheExistingWireName() {
+    XCTAssertEqual(FBUIAutomationBackendName.axBridgePersistent.rawValue, "axbridge-persistent")
+  }
+
+  func testTheExclusiveCaseHasItsOwnWireName() {
+    XCTAssertEqual(FBUIAutomationBackendName.axBridgeExclusive.rawValue, "axbridge-exclusive")
+  }
+
   func testAConnectionSocketIsNamedForItsIdentifier() {
     let path = FBAXBridgeSocket.path(forConnection: "ABC")
     XCTAssertEqual(path, "\(FBAXBridgeSocket.directory)/ABC.sock")

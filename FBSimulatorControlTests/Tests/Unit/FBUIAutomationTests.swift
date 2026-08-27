@@ -37,7 +37,7 @@ final class FBUIAutomationTests: XCTestCase {
   // device, so this needs no booted simulator.
 
   private static let persistentBackend = FBUIAutomationBackend.axBridge(
-    persistence: .persistent, frontmostMethod: .windowServer, automationMode: true
+    persistence: .shared, frontmostMethod: .windowServer, automationMode: true
   )
 
   private func persistentTransport(_ simulator: FBSimulator) throws -> FBAXBridgePersistentTransport {
@@ -63,7 +63,7 @@ final class FBUIAutomationTests: XCTestCase {
     let simulator = FBSimulatorTestSupport.testableSimulator()
     let shared = try persistentTransport(simulator)
     let otherOptions = FBUIAutomationBackend.axBridge(
-      persistence: .persistent, frontmostMethod: .centerPoint, automationMode: nil
+      persistence: .shared, frontmostMethod: .centerPoint, automationMode: nil
     )
     let reader = try XCTUnwrap(try simulator.uiAutomation(backend: otherOptions) as? FBAXBridgeUIAutomation)
     // `frontmostMethod` and `automationMode` are the reader's, not the transport's, so differing on

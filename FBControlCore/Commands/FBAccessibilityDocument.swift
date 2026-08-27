@@ -14,6 +14,7 @@ public enum FBUIAutomationBackendName: String, Sendable, Encodable, CaseIterable
   case ax
   case axBridge = "axbridge"
   case axBridgePersistent = "axbridge-persistent"
+  case axBridgeExclusive = "axbridge-exclusive"
   case testmanagerd
 }
 

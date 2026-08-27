@@ -152,7 +152,7 @@ final class AccessibilityInfoRequestTranslationTests: XCTestCase {
     )
     XCTAssertEqual(
       AccessibilityInfoRequestTranslation.backend(from: .axbridgePersistent),
-      .axBridge(persistence: .persistent, frontmostMethod: .windowServer, automationMode: true),
+      .axBridge(persistence: .shared, frontmostMethod: .windowServer, automationMode: true),
       "axbridge_persistent selects the persistent transport"
     )
   }

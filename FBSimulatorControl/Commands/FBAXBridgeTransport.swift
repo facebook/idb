@@ -242,11 +242,15 @@ struct FBAXBridgeOneshotTransport: FBAXBridgeTransport {
 /// host process amortizes the spawn+warmup across every read.
 actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
   private weak var simulator: FBSimulator?
+  /// Which kind of bridge this transport reaches. Decides whether it may discover one, and that is the
+  /// only difference between the two: everything about framing a request is identical.
+  private let persistence: FBAXBridgePersistence
   private var connectionTask: Task<FBAXBridgeConnection, Error>?
   private var connectionGeneration = 0
 
-  init(simulator: FBSimulator) {
+  init(simulator: FBSimulator, persistence: FBAXBridgePersistence) {
     self.simulator = simulator
+    self.persistence = persistence
   }
 
   func read(pid: pid_t, maxDepth: Int, maxNodes: Int, attributes: [String]?, explainUnreachable: Bool, traversal: FBAXTraversal, automationMode: Bool?) async throws -> Data {
@@ -399,7 +403,8 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
     connectionGeneration += 1
     let generation = connectionGeneration
     let simulator = self.simulator
-    let task = Task { try await Self.establish(simulator: simulator) }
+    let persistence = self.persistence
+    let task = Task { try await Self.establish(simulator: simulator, persistence: persistence) }
     connectionTask = task
     do {
       return (try await task.value, generation)
@@ -448,7 +453,10 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
     case busy
   }
 
-  private static func establish(simulator: FBSimulator?) async throws -> FBAXBridgeConnection {
+  private static func establish(
+    simulator: FBSimulator?,
+    persistence: FBAXBridgePersistence
+  ) async throws -> FBAXBridgeConnection {
     guard let simulator else {
       throw FBWeakTargetError.simulator
     }
@@ -457,6 +465,15 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
     }
     // The guest binds into this directory and `bind` will not create it.
     try FBAXBridgeSocket.prepareDirectory()
+
+    // An exclusive bridge is never discovered: its socket name is a UUID only this host knows, so the
+    // discovery below applies to the shared case alone.
+    guard persistence != .exclusive else {
+      let privatePath = FBAXBridgeSocket.path(forConnection: UUID().uuidString)
+      return try await spawn(
+        simulator: simulator, helperPath: helperPath, socketPath: privatePath,
+        ownership: { .privateToThisHost($0) })
+    }
 
     let sharedPath = FBAXBridgeSocket.path(forSimulator: simulator.udid)
     switch await runningBridge(at: sharedPath) {

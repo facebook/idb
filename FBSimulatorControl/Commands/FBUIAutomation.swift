@@ -16,9 +16,14 @@ public enum FBAXBridgePersistence: Sendable, Equatable {
   /// A fresh guest spawn per read. Stateless and free to reconstruct per call — for a single one-shot
   /// read.
   case oneShot
-  /// A persistent (memoized) guest `serve` process reused across reads — ~30x faster warm, for
-  /// long-lived host processes doing repeated reads.
-  case persistent
+  /// A guest on the simulator's well-known socket, shared with any other process reading the same
+  /// target. Discoverable, so a read can adopt one somebody else already warmed, and held no longer than
+  /// a round trip so it is never taken out from under anyone.
+  case shared
+  /// A guest of the caller's own, on a socket whose name nobody else knows. Never discovered and never
+  /// shared, so the caller may hold it for as long as it likes without denying anyone. For a process
+  /// that owns the simulator for its lifetime.
+  case exclusive
 }
 
 /// Selects the backend a UI-automation element operation runs against.
@@ -59,8 +64,10 @@ public extension FBUIAutomationBackend {
       switch persistence {
       case .oneShot:
         return .axBridge
-      case .persistent:
+      case .shared:
         return .axBridgePersistent
+      case .exclusive:
+        return .axBridgeExclusive
       }
     }
   }
@@ -87,7 +94,10 @@ public extension FBUIAutomationBackend {
       self = .axBridge(persistence: .oneShot, frontmostMethod: frontmostMethod, automationMode: automationMode)
     case .axBridgePersistent:
       self = .axBridge(
-        persistence: .persistent, frontmostMethod: frontmostMethod, automationMode: automationMode)
+        persistence: .shared, frontmostMethod: frontmostMethod, automationMode: automationMode)
+    case .axBridgeExclusive:
+      self = .axBridge(
+        persistence: .exclusive, frontmostMethod: frontmostMethod, automationMode: automationMode)
     }
   }
 }
@@ -247,7 +257,7 @@ public extension FBSimulator {
   /// over a single query-shaped API. Every call returns a fresh reader; the readers are cheap, and
   /// where a backend owns an expensive warm resource, who owns it differs by backend:
   ///
-  /// - `.axBridge(persistence: .persistent, …)` reads over a guest `serve` process owned by the
+  /// - `.axBridge(persistence: .shared, …)` reads over a guest `serve` process owned by the
   ///   **target**, memoized in `commandCache` and shared by every reader vended for that simulator.
   ///   Dropping a reader leaves it running; it is released when the target is, or collected by the
   ///   guest's own idle timeout.
@@ -269,7 +279,8 @@ public extension FBSimulator {
       let transport: any FBAXBridgeTransport =
         switch persistence {
         case .oneShot: FBAXBridgeOneshotTransport(simulator: self)
-        case .persistent: persistentAXBridgeTransport()
+        case .shared: sharedAXBridgeTransport()
+        case .exclusive: FBAXBridgePersistentTransport(simulator: self, persistence: .exclusive)
         }
       return FBAXBridgeUIAutomation(
         simulator: self, transport: transport, persistence: persistence, frontmostMethod: frontmostMethod,
@@ -278,14 +289,17 @@ public extension FBSimulator {
     }
   }
 
-  /// The one persistent axbridge transport for this target.
+  /// The one shared axbridge transport for this target.
   ///
   /// Memoized rather than per-reader because the transport is what owns the guest `serve` process, and
-  /// the spawn plus `initForRemoteAccess` it pays for is the cost the persistent lane exists to avoid.
-  /// Keyed by type, so one per simulator — which is the right granularity precisely because the
-  /// transport is parameterized by nothing else: `frontmostMethod` and `automationMode` are the
-  /// reader's, so readers differing in those still share this.
-  private func persistentAXBridgeTransport() -> FBAXBridgePersistentTransport {
-    commandCache.resolve { FBAXBridgePersistentTransport(simulator: self) }
+  /// the spawn plus `initForRemoteAccess` it pays for is the cost a socket-backed lane exists to avoid.
+  /// `frontmostMethod` and `automationMode` are the reader's, not the transport's, so readers differing
+  /// in those still share this one.
+  ///
+  /// Only for `.shared`. The memo is keyed by type, so an `.exclusive` transport routed through here
+  /// would collide with the shared one and hand a caller a bridge on the wrong socket; `.exclusive`
+  /// deliberately bypasses this helper and constructs its own.
+  private func sharedAXBridgeTransport() -> FBAXBridgePersistentTransport {
+    commandCache.resolve { FBAXBridgePersistentTransport(simulator: self, persistence: .shared) }
   }
 }

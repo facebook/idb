@@ -240,7 +240,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
   // its backend, so "not found" has to be catchable without knowing. One catch clause must handle
   // every backend, and the message must still say which one spoke.
   func testOneCatchClauseHandlesEveryBackend() {
-    let backends: [FBUIAutomationBackend] = [.accessibility, .remoteAutomation, .axBridge(persistence: .oneShot, frontmostMethod: .centerPoint, automationMode: true), .axBridge(persistence: .persistent, frontmostMethod: .centerPoint, automationMode: true)]
+    let backends: [FBUIAutomationBackend] = [.accessibility, .remoteAutomation, .axBridge(persistence: .oneShot, frontmostMethod: .centerPoint, automationMode: true), .axBridge(persistence: .shared, frontmostMethod: .centerPoint, automationMode: true)]
     for backend in backends {
       let thrown: Error = FBUIAutomationError.elementNotFound(backend: backend, key: "AXLabel", value: "General")
       guard case let FBUIAutomationError.elementNotFound(caught, key, value) = thrown else {
@@ -1374,7 +1374,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
       )
     }
     XCTAssertEqual(
-      FBUIAutomationBackend.axBridge(persistence: .persistent, frontmostMethod: .centerPoint, automationMode: true).name,
+      FBUIAutomationBackend.axBridge(persistence: .shared, frontmostMethod: .centerPoint, automationMode: true).name,
       .axBridgePersistent,
       "the persistent transport is a distinct backend to a consumer reading timings"
     )
