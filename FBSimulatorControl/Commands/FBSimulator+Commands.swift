@@ -31,7 +31,7 @@ extension FBSimulator {
   }
 
   func locationCommands() throws -> FBSimulatorLocationCommands {
-    commandCache.resolve { FBSimulatorLocationCommands.commands(with: self) }
+    FBSimulatorLocationCommands.commands(with: self)
   }
 
   func debuggerCommands() throws -> FBSimulatorDebuggerCommands {
@@ -43,11 +43,11 @@ extension FBSimulator {
   }
 
   func logCommands() throws -> FBSimulatorLogCommands {
-    commandCache.resolve { FBSimulatorLogCommands.commands(with: self) }
+    FBSimulatorLogCommands.commands(with: self)
   }
 
   func processSpawnCommands() throws -> FBSimulatorProcessSpawnCommands {
-    commandCache.resolve { FBSimulatorProcessSpawnCommands.commands(with: self) }
+    FBSimulatorProcessSpawnCommands.commands(with: self)
   }
 
   func videoRecordingCommands() throws -> FBSimulatorVideoRecordingCommands {
@@ -69,11 +69,11 @@ extension FBSimulator {
   }
 
   func mediaCommands() throws -> FBSimulatorMediaCommands {
-    commandCache.resolve { FBSimulatorMediaCommands.commands(with: self) }
+    FBSimulatorMediaCommands.commands(with: self)
   }
 
   func keychainCommands() throws -> FBSimulatorKeychainCommands {
-    commandCache.resolve { FBSimulatorKeychainCommands.commands(with: self) }
+    FBSimulatorKeychainCommands.commands(with: self)
   }
 
   func settingsCommands() throws -> FBSimulatorSettingsCommands {
@@ -97,10 +97,10 @@ extension FBSimulator {
   }
 
   func notificationCommands() throws -> FBSimulatorNotificationCommands {
-    commandCache.resolve { FBSimulatorNotificationCommands.commands(with: self) }
+    FBSimulatorNotificationCommands.commands(with: self)
   }
 
   func memoryCommands() throws -> FBSimulatorMemoryCommands {
-    commandCache.resolve { FBSimulatorMemoryCommands.commands(with: self) }
+    FBSimulatorMemoryCommands.commands(with: self)
   }
 }
