@@ -28,6 +28,14 @@ on:
         required: true
         type: string
         default: idb-cli
+      ref:
+        description: >-
+          Tap ref (branch or sha) to bottle from. Defaults to main. Tooling
+          passes a temporary branch here so the version bump and the bottle
+          block can land on main as a single commit.
+        required: false
+        type: string
+        default: main
 
 jobs:
   bottle:
@@ -41,10 +49,18 @@ jobs:
     env:
       TAG: ${{ inputs.tag }}
       FORMULAE: ${{ inputs.formulae }}
+      REF: ${{ inputs.ref }}
     steps:
       - uses: Homebrew/actions/setup-homebrew@master
       - name: Tap facebook/fb
         run: brew tap facebook/fb
+
+      - name: Check out the requested tap ref
+        if: ${{ inputs.ref != 'main' }}
+        run: |
+          tap_dir="$(brew --repository facebook/fb)"
+          git -C "$tap_dir" fetch origin "$REF"
+          git -C "$tap_dir" checkout FETCH_HEAD
 
       # Refuse to build bottles for a version the tap does not reference yet;
       # without this the workflow happily bottles the previous release and
