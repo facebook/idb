@@ -502,12 +502,7 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
     switch await runningBridge(at: sharedPath) {
     case let .adopted(fileDescriptor):
       simulator.logger.log("Adopted the axbridge guest already serving on \(sharedPath)")
-      return FBAXBridgeConnection(
-        fileDescriptor: fileDescriptor,
-        ownership: .shared(nil),
-        socketPath: sharedPath,
-        logger: simulator.logger
-      )
+      return FBAXBridgeConnection(fileDescriptor: fileDescriptor, ownership: .shared(nil))
     case .absent:
       return try await spawn(
         simulator: simulator, helperPath: helperPath, socketPath: sharedPath,
@@ -591,12 +586,7 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
     let process = try await simulator.launchProcess(configuration)
     do {
       let fileDescriptor = try await FBAXBridgeConnection.connect(path: socketPath, timeout: 10)
-      return FBAXBridgeConnection(
-        fileDescriptor: fileDescriptor,
-        ownership: ownership(process),
-        socketPath: socketPath,
-        logger: simulator.logger
-      )
+      return FBAXBridgeConnection(fileDescriptor: fileDescriptor, ownership: ownership(process))
     } catch {
       // Nothing to signal. A guest we could not connect to has most likely already exited, and one that
       // is up but unreachable is collected by its own idle timeout — on a socket no other process can
@@ -610,15 +600,15 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
 
 // MARK: - Connection
 
-/// A connection's relationship to the guest on the other end, which is what decides whether releasing
-/// the connection ends the guest.
+/// A connection's relationship to the guest on the other end, which is what decides whether the
+/// connection may be held between round trips.
 ///
 /// An enum rather than an optional handle plus a flag, which would allow states that cannot occur: a
-/// guest we may reap is always one we started, and a shared guest is left alone whether we started it
-/// or adopted it.
+/// guest only we can reach is always one we started, and a shared guest is one anyone may adopt whether
+/// we started it or found it.
 enum FBAXBridgeGuestOwnership {
   /// Started by us, on a socket whose name only we know. Nobody else can find it, so nobody else can be
-  /// using it, and it is ours to reap.
+  /// waiting for it, and we may keep it for as long as we like.
   case privateToThisHost(FBSubprocess<AnyObject, AnyObject, AnyObject>)
   /// Serving the simulator on its well-known socket. Left running when we go, for the next process that
   /// wants a bridge. The handle is present when we started it and absent when we adopted it — it is kept
@@ -635,11 +625,9 @@ enum FBAXBridgeGuestOwnership {
 
   /// Whether the guest is private to this host.
   ///
-  /// Named for the fact rather than for one of its consequences, because more than one follows from it:
-  /// nobody else can find a private guest, so ending it when we are done strands nobody. A shared guest
-  /// survives us even when we started it.
-  ///
-  /// Named separately from `deinit` so it can be tested without constructing a connection.
+  /// No other process can discover a private guest, so its single client slot may be held between round
+  /// trips. The shared one is the opposite: the next reader may be another process entirely, so it is
+  /// released as soon as the work is done.
   var isPrivate: Bool {
     switch self {
     case .privateToThisHost: true
@@ -661,8 +649,6 @@ final class FBAXBridgeConnection: @unchecked Sendable {
   /// The guest on the other end: its process handle, so a failed read can say why it went away, and
   /// whether it is private to this host, which decides if this connection may be held between reads.
   private let ownership: FBAXBridgeGuestOwnership
-  private let socketPath: String
-  private let logger: (any FBControlCoreLogger)?
   private let queue = DispatchQueue(label: "com.facebook.FBSimulatorControl.axbridge.connection")
 
   /// Per-`recv` deadline (SO_RCVTIMEO), so a hung or dead guest cannot wedge a round trip forever.
@@ -684,56 +670,16 @@ final class FBAXBridgeConnection: @unchecked Sendable {
     ownership.isPrivate
   }
 
-  init(
-    fileDescriptor: Int32,
-    ownership: FBAXBridgeGuestOwnership,
-    socketPath: String,
-    logger: (any FBControlCoreLogger)?
-  ) {
+  init(fileDescriptor: Int32, ownership: FBAXBridgeGuestOwnership) {
     self.fileDescriptor = fileDescriptor
     self.ownership = ownership
-    self.socketPath = socketPath
-    self.logger = logger
-  }
-
-  /// Releases everything a connection attempt can own: the socket, the long-lived serve process, and
-  /// the socket file. Shared by `deinit` and the establish-failure path, which owns everything except
-  /// the descriptor (`nil`) — so both reap a serve the same way and neither can drift from the other.
-  ///
-  /// Takes the pid rather than the process because that is all it needs, which also lets a test drive
-  /// it against a throwaway child instead of a spawned guest.
-  /// Each argument is optional because each is separately ours or not: an adopted guest is still
-  /// listening, so neither its process nor its socket is ours to remove.
-  ///
-  /// `processIdentifier` is optional rather than a `0` sentinel so "nothing to kill" cannot be spelled
-  /// as a pid. `kill(0, SIGKILL)` signals the caller's whole process group, taking the host with it, so
-  /// it is made unrepresentable.
-  static func teardown(
-    fileDescriptor: Int32?,
-    processIdentifier: pid_t?,
-    socketPath: String?,
-    logger: (any FBControlCoreLogger)?
-  ) {
-    if let fileDescriptor {
-      close(fileDescriptor)
-    }
-    // A handle to a process that never launched reports `0`, which must not reach `kill` either.
-    if let processIdentifier, processIdentifier > 0 {
-      // Logged before the kill so the exit reporter's "exited with signal 9" reads as expected
-      // teardown, not a crash.
-      logger?.log("Releasing axbridge connection: terminating guest serve process \(processIdentifier) with SIGKILL, this exit is expected")
-      kill(processIdentifier, SIGKILL)
-    }
-    if let socketPath {
-      unlink(socketPath)
-    }
   }
 
   deinit {
     // Closing the descriptor is all the teardown there is. A private guest was spawned with
     // `--exit-on-disconnect`, so this is what ends it; a shared one keeps running with its socket
     // intact and ends itself after its idle timeout.
-    Self.teardown(fileDescriptor: fileDescriptor, processIdentifier: nil, socketPath: nil, logger: logger)
+    close(fileDescriptor)
   }
 
   func roundTrip(_ requestData: Data) async throws -> Data {
@@ -880,22 +826,6 @@ final class FBAXBridgeConnection: @unchecked Sendable {
       signal: process.signal.hasCompleted ? process.signal.result?.intValue : nil,
       exitCode: process.exitCode.hasCompleted ? process.exitCode.result?.intValue : nil
     )
-  }
-
-  /// The pid to signal when a connection is released, or nil when there is nothing to signal.
-  ///
-  /// A guest that has already terminated leaves a pid the kernel is free to hand to something else, so
-  /// signalling it can hit an unrelated process. `statLoc` resolves on any termination, so a resolved
-  /// one means there is nothing left to kill.
-  ///
-  /// The check only ever rules a kill out, never in: `statLoc` is not guaranteed to resolve for a guest
-  /// parented to `launchd_sim` rather than to us, so an unresolved future is not evidence the guest is
-  /// alive. Over the two values rather than the process, for the reason `socketClosedMessage` is.
-  static func pidToSignal(processIdentifier: pid_t, hasTerminated: Bool) -> pid_t? {
-    guard !hasTerminated, processIdentifier > 0 else {
-      return nil
-    }
-    return processIdentifier
   }
 
   /// The message itself, over the values rather than the process that carries them.
