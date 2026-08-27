@@ -17,11 +17,14 @@ typedef CFTypeRef PrivateDevice;
 /**
  Abstract class for device-based discovery.
  */
-@interface FBDeviceManager <PublicDevice : id> : NSObject <FBiOSTargetSet>
+@interface FBDeviceManager <PublicDevice : id> : NSObject
 
 #pragma mark - FBiOSTargetSet Protocol Members
-// Declared explicitly for Swift visibility since FBiOSTargetSet is Swift-defined.
+// Declared explicitly for Swift visibility, since FBiOSTargetSet is Swift-defined and the
+// conformance is declared in a Swift extension rather than here.
 @property (nullable, nonatomic, readwrite, weak) id<FBiOSTargetSetDelegate> delegate;
+@property (nonnull, nonatomic, readonly, copy) NSArray<id<FBiOSTargetInfo>> *allTargetInfos;
+- (nullable id<FBiOSTargetInfo>)targetWithUDID:(nonnull NSString *)udid;
 
 #pragma mark Initializers
 
