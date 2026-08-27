@@ -48,22 +48,4 @@ final class FBSimulatorLaunchTests: FBSimulatorControlTestCase {
       try FBSimulatorConfiguration.defaultConfiguration().withDeviceModel(FBDeviceModel(rawValue: "Apple TV"))
     )
   }
-
-  // Commented out: causes target-level timeout (too slow with other tests)
-  // func testCanUninstallApplication() {
-  //   let application = tableSearchApplication
-  //   let launch = tableSearchAppLaunch
-  //   guard let simulator = await assertObtainsBootedSimulator(withInstalledApplication: application) else { return }
-  //
-  //   var error: NSError?
-  //   var success = simulator.launchApplication(launch).await(&error) != nil
-  //   XCTAssertNil(error)
-  //   XCTAssertTrue(success)
-  //
-  //   assertSimulator(simulator, isRunningApplicationFromConfiguration: launch)
-  //
-  //   success = simulator.uninstallApplication(withBundleID: application.identifier).await(&error) != nil
-  //   XCTAssertNil(error)
-  //   XCTAssertTrue(success)
-  // }
 }
