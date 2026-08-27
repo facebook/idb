@@ -23,21 +23,19 @@ public enum FBSimulatorDeviceSetError: Error, LocalizedError {
   }
 }
 
-@objc(FBSimulatorControlConfiguration)
-public class FBSimulatorControlConfiguration: NSObject, NSCopying {
+public struct FBSimulatorControlConfiguration: Equatable, Hashable, CustomStringConvertible {
 
   // MARK: - Properties
 
-  @objc public let deviceSetPath: String?
-  @objc public let logger: FBControlCoreLogger
+  public let deviceSetPath: String?
+  public let logger: FBControlCoreLogger
 
   // MARK: - Initializers
 
   /// - Parameter logger: nil means `FBControlCoreGlobalConfiguration.defaultLogger`, which is
   ///   os_log-only unless the `FBCONTROLCORE_LOGGING`/`FBCONTROLCORE_DEBUG_LOGGING` environment
   ///   variables are set — see its documentation.
-  @objc(configurationWithDeviceSetPath:logger:)
-  public class func configuration(
+  public static func configuration(
     withDeviceSetPath deviceSetPath: String?,
     logger: (any FBControlCoreLogger)?
   ) -> FBSimulatorControlConfiguration {
@@ -49,33 +47,26 @@ public class FBSimulatorControlConfiguration: NSObject, NSCopying {
 
   /// - Parameter logger: nil means `FBControlCoreGlobalConfiguration.defaultLogger` (os_log-only
   ///   by default — see its documentation).
-  @objc
   public init(deviceSetPath: String?, logger: (any FBControlCoreLogger)?) {
     self.deviceSetPath = deviceSetPath
     self.logger = logger ?? FBControlCoreGlobalConfiguration.defaultLogger
-    super.init()
   }
 
-  // MARK: - NSCopying
+  // MARK: - Equatable, Hashable
 
-  public func copy(with zone: NSZone? = nil) -> Any {
-    self
+  /// Identity is the device set path alone. The logger is a dependency rather than data, and was
+  /// excluded from equality when this was a class.
+  public static func == (lhs: FBSimulatorControlConfiguration, rhs: FBSimulatorControlConfiguration) -> Bool {
+    lhs.deviceSetPath == rhs.deviceSetPath
   }
 
-  // MARK: - NSObject
-
-  public override var hash: Int {
-    deviceSetPath?.hash ?? 0
+  public func hash(into hasher: inout Hasher) {
+    hasher.combine(deviceSetPath)
   }
 
-  public override func isEqual(_ object: Any?) -> Bool {
-    guard let other = object as? FBSimulatorControlConfiguration else {
-      return false
-    }
-    return deviceSetPath == other.deviceSetPath
-  }
+  // MARK: - CustomStringConvertible
 
-  public override var description: String {
+  public var description: String {
     "Pool Config | Set Path \(deviceSetPath ?? "(null)")"
   }
 
@@ -83,8 +74,7 @@ public class FBSimulatorControlConfiguration: NSObject, NSCopying {
 
   /// The default CoreSimulator device-set path. Loads the private frameworks on demand and throws
   /// when they cannot be loaded or the path cannot be resolved.
-  @objc(defaultDeviceSetPathAndReturnError:)
-  public class func defaultDeviceSetPath() throws -> String {
+  public static func defaultDeviceSetPath() throws -> String {
     try FBSimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworks(nil)
     guard let deviceSetClass = objc_lookUpClass("SimDeviceSet") else {
       throw FBSimulatorDeviceSetError.simDeviceSetUnavailable

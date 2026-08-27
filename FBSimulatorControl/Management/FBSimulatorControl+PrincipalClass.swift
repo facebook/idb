@@ -14,13 +14,12 @@ public final class FBSimulatorControl: NSObject {
 
   // MARK: - Properties
 
-  @objc public var configuration: FBSimulatorControlConfiguration
+  public var configuration: FBSimulatorControlConfiguration
   public let serviceContext: FBSimulatorServiceContext
   @objc public let set: FBSimulatorSet
 
   // MARK: - Initializers
 
-  @objc(withConfiguration:error:)
   public class func withConfiguration(_ configuration: FBSimulatorControlConfiguration) throws -> FBSimulatorControl {
     try FBSimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworks(configuration.logger)
     let serviceContext = try FBSimulatorServiceContext.sharedServiceContext(withLogger: configuration.logger)
