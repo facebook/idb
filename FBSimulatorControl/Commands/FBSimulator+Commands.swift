@@ -8,12 +8,15 @@
 import FBControlCore
 import Foundation
 
-// The per-command classes are resolved lazily and memoized through `commandCache`
-// (`FBTargetCommandCache`). This indirection is deliberately kept rather than flattening each
-// command into a bare `FBSimulator` extension: besides caching one-time per-target setup, the cache
-// is a dependency-injection seam — tests substitute mock command classes (e.g. to mock process
-// spawning) via `commandCache.register(_:as:)`. Flattening a command into an extension removes that
-// seam, so prefer keeping the command-class + accessor shape.
+// Commands that own something outliving a single call — a notifier, an in-flight video, a task —
+// are memoized through `commandCache` (`FBTargetCommandCache`), whose lock also stops two callers
+// racing the first construction. Commands that only wrap the simulator are built per call: a slot
+// for one would hold a box around a pointer back to the object owning the cache, and caching one
+// used to close a retain cycle.
+//
+// The cache is also how the accessibility commands are given a mock translation dispatcher in
+// tests, via `commandCache.register(_:as:)`. That is a testing seam rather than a caching need,
+// and the only one left.
 extension FBSimulator {
 
   // MARK: - Shared accessors

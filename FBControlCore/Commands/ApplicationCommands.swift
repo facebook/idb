@@ -7,13 +7,18 @@
 
 import Foundation
 
-public protocol ApplicationCommands: AnyObject {
+/// Launching an application, separated from the rest of the application commands so that a caller
+/// needing only this does not depend on all of them.
+public protocol ApplicationLaunching: AnyObject {
+
+  func launchApplication(_ configuration: FBApplicationLaunchConfiguration) async throws -> FBLaunchedApplication
+}
+
+public protocol ApplicationCommands: ApplicationLaunching {
 
   func installApplication(atPath path: String) async throws -> FBInstalledApplication
 
   func uninstallApplication(bundleID: String) async throws
-
-  func launchApplication(_ configuration: FBApplicationLaunchConfiguration) async throws -> FBLaunchedApplication
 
   func killApplication(bundleID: String) async throws
 

@@ -67,6 +67,10 @@ public final class FBSimulatorDebuggerCommands {
   internal weak var simulator: FBSimulator?
   internal let debugServerPath: String
 
+  /// How the host application is launched. Defaults to the simulator itself; a test supplies its
+  /// own launcher rather than substituting the simulator's application commands.
+  private let applicationLauncher: (any ApplicationLaunching)?
+
   // MARK: - Class Methods
 
   internal class func resolveDebugServerPath() -> String {
@@ -83,9 +87,14 @@ public final class FBSimulatorDebuggerCommands {
     )
   }
 
-  internal init(simulator: FBSimulator, debugServerPath: String) {
+  internal init(
+    simulator: FBSimulator,
+    debugServerPath: String,
+    applicationLauncher: (any ApplicationLaunching)? = nil
+  ) {
     self.simulator = simulator
     self.debugServerPath = debugServerPath
+    self.applicationLauncher = applicationLauncher
   }
 
   // MARK: - Private
@@ -103,7 +112,7 @@ public final class FBSimulatorDebuggerCommands {
       io: FBProcessIO<AnyObject, AnyObject, AnyObject>.outputToDevNull(),
       launchMode: .failIfRunning
     )
-    let launchedApp = try await simulator.launchApplication(configuration)
+    let launchedApp = try await (applicationLauncher ?? simulator).launchApplication(configuration)
     let debugTask = try await bridgeFBFuture(debugServerTask(forPort: port, processIdentifier: launchedApp.processIdentifier, simulator: simulator, debugServerPath: debugServerPath))
     let lldbBootstrapCommands = [
       "process connect connect://localhost:\(port)"

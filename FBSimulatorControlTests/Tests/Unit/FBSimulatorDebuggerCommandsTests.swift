@@ -15,14 +15,11 @@ import XCTest
 /// configuration; tests inspect the capture, not the future result.
 private struct LaunchCaptureStop: Error {}
 
-/// Subclass of the real `FBSimulatorApplicationCommands` that overrides only
-/// `launchApplication` to record the configuration supplied by the
-/// production code path. All other behavior is inherited unchanged.
+/// A stand-in launcher that records the configuration production supplies.
 ///
-/// Registered via `simulator.commandCache.register(_:as: FBSimulatorApplicationCommands.self)`
-/// so production calls to `simulator.launchApplication(...)` resolve to this
-/// instance and route into the override.
-private final class CapturingApplicationCommands: FBSimulatorApplicationCommands {
+/// Injected into `FBSimulatorDebuggerCommands` as its `applicationLauncher`, so the test does not
+/// have to subclass a production command class or install one in the simulator's command cache.
+private final class CapturingApplicationLauncher: ApplicationLaunching, @unchecked Sendable {
   private let lock = NSLock()
   private var _capturedConfiguration: FBApplicationLaunchConfiguration?
 
@@ -32,7 +29,7 @@ private final class CapturingApplicationCommands: FBSimulatorApplicationCommands
     return _capturedConfiguration
   }
 
-  override func launchApplication(_ configuration: FBApplicationLaunchConfiguration) async throws -> FBLaunchedApplication {
+  func launchApplication(_ configuration: FBApplicationLaunchConfiguration) async throws -> FBLaunchedApplication {
     capture(configuration)
     // Throw to unwind launchDebugServer before it reaches the
     // (process-spawning) debugServerTask path. The thrown error never
@@ -62,22 +59,22 @@ final class FBSimulatorDebuggerCommandsTests: XCTestCase {
   private struct Harness {
     let simulator: FBSimulator
     let commands: FBSimulatorDebuggerCommands
-    let wrapper: CapturingApplicationCommands
+    let wrapper: CapturingApplicationLauncher
   }
 
-  /// Builds a real `FBSimulator` (with a stub device — see FBSimulatorTestSupport),
-  /// pre-registers a capturing wrapper for `FBSimulatorApplicationCommands` in
-  /// its command cache, and constructs the production `FBSimulatorDebuggerCommands`
-  /// against that simulator.
+  /// Builds a real `FBSimulator` (with a stub device — see FBSimulatorTestSupport) and constructs
+  /// the production `FBSimulatorDebuggerCommands` against it, with a capturing launcher injected.
   private func makeHarness() -> Harness {
     let simulator = FBSimulatorTestSupport.testableSimulator()
-    let wrapper = CapturingApplicationCommands(simulator: simulator)
-    simulator.commandCache.register(wrapper, as: FBSimulatorApplicationCommands.self)
-    let commands = FBSimulatorDebuggerCommands(simulator: simulator, debugServerPath: "/fake/debugserver")
+    let wrapper = CapturingApplicationLauncher()
+    let commands = FBSimulatorDebuggerCommands(
+      simulator: simulator,
+      debugServerPath: "/fake/debugserver",
+      applicationLauncher: wrapper)
     return Harness(simulator: simulator, commands: commands, wrapper: wrapper)
   }
 
-  private func awaitCapturedConfig(_ wrapper: CapturingApplicationCommands, timeout: TimeInterval = 1.0) -> FBApplicationLaunchConfiguration? {
+  private func awaitCapturedConfig(_ wrapper: CapturingApplicationLauncher, timeout: TimeInterval = 1.0) -> FBApplicationLaunchConfiguration? {
     let deadline = Date().addingTimeInterval(timeout)
     while Date() < deadline {
       if let config = wrapper.capturedConfiguration {
