@@ -33,7 +33,7 @@ public final class FBSimulator: NSObject, FBiOSTarget, @unchecked Sendable {
   @objc public private(set) var set: FBSimulatorSet?
 
   /// The `FBSimulatorConfiguration` representing this Simulator.
-  @objc public var configuration: FBSimulatorConfiguration
+  public var configuration: FBSimulatorConfiguration
 
   @objc public let commandCache: FBTargetCommandCache
 
@@ -44,7 +44,6 @@ public final class FBSimulator: NSObject, FBiOSTarget, @unchecked Sendable {
 
   // MARK: - Initializers
 
-  @objc(fromSimDevice:configuration:set:)
   public class func fromSimDevice(_ device: SimDevice, configuration: FBSimulatorConfiguration?, set: FBSimulatorSet) -> FBSimulator {
     FBSimulator(
       device: device,

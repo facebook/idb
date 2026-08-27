@@ -13,11 +13,10 @@ extension FBSimulatorConfiguration {
 
   // MARK: - Matching Configuration against Available Versions
 
-  public class func newestAvailableOS(forDevice device: FBDeviceType) throws -> FBOSVersion? {
+  public static func newestAvailableOS(forDevice device: FBDeviceType) throws -> FBOSVersion? {
     try FBSimulatorConfiguration.supportedOSVersions(forDevice: device).last
   }
 
-  @objc
   public func newestAvailableOS() throws -> FBSimulatorConfiguration {
     guard let os = try FBSimulatorConfiguration.newestAvailableOS(forDevice: device) else {
       throw FBSimulatorConfigurationError.noNewestAvailableOS(device: device.model.rawValue)
@@ -25,11 +24,10 @@ extension FBSimulatorConfiguration {
     return withOSNamed(os.name)
   }
 
-  public class func oldestAvailableOS(forDevice device: FBDeviceType) throws -> FBOSVersion? {
+  public static func oldestAvailableOS(forDevice device: FBDeviceType) throws -> FBOSVersion? {
     try FBSimulatorConfiguration.supportedOSVersions(forDevice: device).first
   }
 
-  @objc
   public func oldestAvailableOS() throws -> FBSimulatorConfiguration {
     guard let os = try FBSimulatorConfiguration.oldestAvailableOS(forDevice: device) else {
       throw FBSimulatorConfigurationError.noOldestAvailableOS(device: device.model.rawValue)
@@ -37,8 +35,7 @@ extension FBSimulatorConfiguration {
     return withOSNamed(os.name)
   }
 
-  @objc(inferSimulatorConfigurationFromDevice:error:)
-  public class func inferSimulatorConfiguration(fromDevice simDevice: SimDevice) throws -> FBSimulatorConfiguration {
+  public static func inferSimulatorConfiguration(fromDevice simDevice: SimDevice) throws -> FBSimulatorConfiguration {
     let osName = FBOSVersionName(rawValue: simDevice.runtime.name ?? "unknown")
     guard FBiOSTargetConfiguration.nameToOSVersion[osName] != nil else {
       throw FBSimulatorConfigurationError.unsupportedOSVersion(name: osName.rawValue)
@@ -50,8 +47,7 @@ extension FBSimulatorConfiguration {
     return try FBSimulatorConfiguration.defaultConfiguration().withOSNamed(osName).withDeviceModel(model)
   }
 
-  @objc(inferSimulatorConfigurationFromDeviceSynthesizingMissing:)
-  public class func inferSimulatorConfigurationFromDeviceSynthesizingMissing(_ simDevice: SimDevice) -> FBSimulatorConfiguration {
+  public static func inferSimulatorConfigurationFromDeviceSynthesizingMissing(_ simDevice: SimDevice) -> FBSimulatorConfiguration {
     if let configuration = try? inferSimulatorConfiguration(fromDevice: simDevice) {
       return configuration
     }
@@ -65,7 +61,6 @@ extension FBSimulatorConfiguration {
     return FBSimulatorConfiguration(device: device, os: os).withDeviceModel(model)
   }
 
-  @objc(checkRuntimeRequirementsReturningError:)
   public func checkRuntimeRequirements() throws {
     let runtime: SimRuntime
     do {
@@ -86,18 +81,15 @@ extension FBSimulatorConfiguration {
     }
   }
 
-  @objc
-  public class func supportedOSVersions() throws -> [FBOSVersion] {
+  public static func supportedOSVersions() throws -> [FBOSVersion] {
     try osVersions(forRuntimes: supportedRuntimes())
   }
 
-  @objc(supportedOSVersionsForDevice:error:)
-  public class func supportedOSVersions(forDevice device: FBDeviceType) throws -> [FBOSVersion] {
+  public static func supportedOSVersions(forDevice device: FBDeviceType) throws -> [FBOSVersion] {
     try osVersions(forRuntimes: supportedRuntimes(forDevice: device))
   }
 
-  @objc(allAvailableDefaultConfigurationsWithLogger:error:)
-  public class func allAvailableDefaultConfigrations(withLogger logger: (any FBControlCoreLogger)?) throws -> [FBSimulatorConfiguration] {
+  public static func allAvailableDefaultConfigrations(withLogger logger: (any FBControlCoreLogger)?) throws -> [FBSimulatorConfiguration] {
     var absentOSVersions: NSArray?
     var absentDeviceTypes: NSArray?
     let configurations = try allAvailableDefaultConfigrations(withAbsentOSVersionsOut: &absentOSVersions, absentDeviceTypesOut: &absentDeviceTypes)
@@ -114,8 +106,7 @@ extension FBSimulatorConfiguration {
     return configurations
   }
 
-  @objc(allAvailableDefaultConfigurationsWithAbsentOSVersionsOut:absentDeviceTypesOut:error:)
-  public class func allAvailableDefaultConfigrations(
+  public static func allAvailableDefaultConfigrations(
     withAbsentOSVersionsOut absentOSVersionsOut: AutoreleasingUnsafeMutablePointer<NSArray?>?,
     absentDeviceTypesOut: AutoreleasingUnsafeMutablePointer<NSArray?>?
   ) throws -> [FBSimulatorConfiguration] {
@@ -158,7 +149,6 @@ extension FBSimulatorConfiguration {
 
   // MARK: - Obtaining CoreSimulator Classes
 
-  @objc(obtainRuntimeWithError:)
   public func obtainRuntime() throws -> SimRuntime {
     let runtimes = try FBSimulatorConfiguration.supportedRuntimes()
     let matchingRuntimes = runtimes.filter { runtime in
@@ -175,7 +165,6 @@ extension FBSimulatorConfiguration {
     return matchingRuntimes[0]
   }
 
-  @objc(obtainDeviceTypeWithError:)
   public func obtainDeviceType() throws -> SimDeviceType {
     let deviceTypes = try FBSimulatorConfiguration.supportedDeviceTypes()
     let matchingDeviceTypes = deviceTypes.filter { $0.name == device.model.rawValue }
@@ -190,7 +179,7 @@ extension FBSimulatorConfiguration {
 
   // MARK: - Private
 
-  private class func osVersions(forRuntimes runtimes: [SimRuntime]) -> [FBOSVersion] {
+  private static func osVersions(forRuntimes runtimes: [SimRuntime]) -> [FBOSVersion] {
     runtimes.map { runtime in
       guard let name = FBOSVersionName(rawValue: runtime.name) else {
         return FBOSVersion.generic(withName: "unknown")
@@ -199,15 +188,15 @@ extension FBSimulatorConfiguration {
     }
   }
 
-  private class func supportedRuntimes() throws -> [SimRuntime] {
+  private static func supportedRuntimes() throws -> [SimRuntime] {
     try FBSimulatorServiceContext.sharedServiceContext().supportedRuntimes()
   }
 
-  private class func supportedDeviceTypes() throws -> [SimDeviceType] {
+  private static func supportedDeviceTypes() throws -> [SimDeviceType] {
     try FBSimulatorServiceContext.sharedServiceContext().supportedDeviceTypes()
   }
 
-  private class func supportedRuntimes(forDevice device: FBDeviceType) throws -> [SimRuntime] {
+  private static func supportedRuntimes(forDevice device: FBDeviceType) throws -> [SimRuntime] {
     try supportedRuntimes()
       .filter { runtime($0, supportsFamilyOf: device) }
       .sorted { left, right in
@@ -217,7 +206,7 @@ extension FBSimulatorConfiguration {
       }
   }
 
-  private class func runtime(_ runtime: SimRuntime, supportsFamilyOf device: FBDeviceType) -> Bool {
+  private static func runtime(_ runtime: SimRuntime, supportsFamilyOf device: FBDeviceType) -> Bool {
     guard let familyIDs = runtime.supportedProductFamilyIDs as? [NSNumber] else {
       return false
     }

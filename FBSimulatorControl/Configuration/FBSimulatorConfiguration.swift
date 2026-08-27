@@ -8,13 +8,12 @@
 @preconcurrency import FBControlCore
 @preconcurrency import Foundation
 
-@objc(FBSimulatorConfiguration)
-public final class FBSimulatorConfiguration: NSObject, NSCopying {
+public struct FBSimulatorConfiguration: Equatable, Hashable, CustomStringConvertible {
 
   // MARK: - Properties
 
-  @objc public let device: FBDeviceType
-  @objc public let os: FBOSVersion
+  public let device: FBDeviceType
+  public let os: FBOSVersion
 
   // MARK: - Initializers
 
@@ -24,10 +23,8 @@ public final class FBSimulatorConfiguration: NSObject, NSCopying {
   init(device: FBDeviceType, os: FBOSVersion) {
     self.device = device
     self.os = os
-    super.init()
   }
 
-  @objc
   public static func defaultConfiguration() throws -> FBSimulatorConfiguration {
     try _defaultConfiguration.get()
   }
@@ -54,30 +51,27 @@ public final class FBSimulatorConfiguration: NSObject, NSCopying {
     }
   }()
 
-  // MARK: - NSCopying
+  // MARK: - Equatable, Hashable
 
-  public func copy(with zone: NSZone? = nil) -> Any {
-    FBSimulatorConfiguration(device: device, os: os)
+  /// Identity is the device model and OS name, not the `FBDeviceType` and `FBOSVersion` objects
+  /// carrying them — two configurations naming the same model and OS are the same configuration.
+  public static func == (lhs: FBSimulatorConfiguration, rhs: FBSimulatorConfiguration) -> Bool {
+    lhs.device.model == rhs.device.model && lhs.os.name == rhs.os.name
   }
 
-  // MARK: - NSObject
-
-  public override var hash: Int {
-    device.model.rawValue.hash ^ os.name.rawValue.hash
+  public func hash(into hasher: inout Hasher) {
+    hasher.combine(device.model.rawValue)
+    hasher.combine(os.name.rawValue)
   }
 
-  public override func isEqual(_ object: Any?) -> Bool {
-    guard let other = object as? FBSimulatorConfiguration else { return false }
-    return device.model == other.device.model && os.name == other.os.name
-  }
+  // MARK: - CustomStringConvertible
 
-  public override var description: String {
+  public var description: String {
     "Device '\(device.model.rawValue)' | OS Version '\(os.name.rawValue)'"
   }
 
   // MARK: - Models
 
-  @objc
   public func withDeviceModel(_ model: FBDeviceModel) -> FBSimulatorConfiguration {
     let device = FBiOSTargetConfiguration.nameToDevice[model] ?? FBDeviceType.generic(withName: model.rawValue)
     return withDevice(device)
@@ -85,7 +79,6 @@ public final class FBSimulatorConfiguration: NSObject, NSCopying {
 
   // MARK: - OS Versions
 
-  @objc
   public func withOSNamed(_ osName: FBOSVersionName) -> FBSimulatorConfiguration {
     let os = FBiOSTargetConfiguration.nameToOSVersion[osName] ?? FBOSVersion.generic(withName: osName.rawValue)
     return withOS(os)

@@ -69,7 +69,6 @@ public final class FBSimulatorSet: NSObject, FBiOSTargetSet {
 
   // MARK: - Creation
 
-  @objc(createSimulatorWithConfiguration:)
   public func createSimulator(with configuration: FBSimulatorConfiguration) -> FBFuture<FBSimulator> {
     fbFutureFromAsync { [self] in
       try await createSimulatorAsync(with: configuration)
@@ -117,7 +116,6 @@ public final class FBSimulatorSet: NSObject, FBiOSTargetSet {
     return try destinationSet.fetchNewlyMadeSimulatorOrThrow(device)
   }
 
-  @objc
   public func configurationsForAbsentDefaultSimulators() throws -> [FBSimulatorConfiguration] {
     let existingConfigurations = Set(allSimulators.compactMap { $0.configuration })
     var absentConfigurations = Set(try FBSimulatorConfiguration.allAvailableDefaultConfigrations(withLogger: logger))
