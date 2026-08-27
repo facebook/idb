@@ -9,17 +9,16 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-@objc(FBSimulatorSet)
 public final class FBSimulatorSet: NSObject, FBiOSTargetSet {
 
   // MARK: - Properties
 
   public let configuration: FBSimulatorControlConfiguration
-  @objc public let deviceSet: SimDeviceSet
-  @objc public weak var delegate: (any FBiOSTargetSetDelegate)?
-  @objc public let logger: any FBControlCoreLogger
-  @objc public let workQueue: DispatchQueue
-  @objc public let asyncQueue: DispatchQueue
+  public let deviceSet: SimDeviceSet
+  public weak var delegate: (any FBiOSTargetSetDelegate)?
+  public let logger: any FBControlCoreLogger
+  public let workQueue: DispatchQueue
+  public let asyncQueue: DispatchQueue
 
   private var _allSimulators: [FBSimulator]
   // Guards _allSimulators: the allSimulators getter re-inflates and swaps the
@@ -57,12 +56,10 @@ public final class FBSimulatorSet: NSObject, FBiOSTargetSet {
 
   // MARK: - Querying
 
-  @objc
   public func target(withUDID udid: String) -> (any FBiOSTargetInfo)? {
     return simulator(withUDID: udid)
   }
 
-  @objc(simulatorWithUDID:)
   public func simulator(withUDID udid: String) -> FBSimulator? {
     return allSimulators.filter { FBiOSTargetPredicateForUDID(udid).evaluate(with: $0) }.first
   }
@@ -75,7 +72,6 @@ public final class FBSimulatorSet: NSObject, FBiOSTargetSet {
     }
   }
 
-  @objc(cloneSimulator:toDeviceSet:)
   public func cloneSimulator(_ simulator: FBSimulator, toDeviceSet destinationSet: FBSimulatorSet) -> FBFuture<FBSimulator> {
     fbFutureFromAsync { [self] in
       try await cloneSimulatorAsync(simulator, toDeviceSet: destinationSet)
@@ -125,32 +121,26 @@ public final class FBSimulatorSet: NSObject, FBiOSTargetSet {
 
   // MARK: - Destructive Methods
 
-  @objc(shutdown:)
   public func shutdown(_ simulator: FBSimulator) -> FBFuture<NSNull> {
     return FBSimulatorShutdownStrategy.shutdown(simulator)
   }
 
-  @objc(delete:)
   public func delete(_ simulator: FBSimulator) -> FBFuture<NSNull> {
     return FBSimulatorDeletionStrategy.delete(simulator)
   }
 
-  @objc(shutdownAll:)
   public func shutdownAll(_ simulators: [FBSimulator]) -> FBFuture<NSNull> {
     return FBSimulatorShutdownStrategy.shutdownAll(simulators)
   }
 
-  @objc(deleteAll:)
   public func deleteAll(_ simulators: [FBSimulator]) -> FBFuture<NSNull> {
     return FBSimulatorDeletionStrategy.deleteAll(simulators)
   }
 
-  @objc
   public func shutdownAll() -> FBFuture<NSNull> {
     return FBSimulatorShutdownStrategy.shutdownAll(allSimulators)
   }
 
-  @objc
   public func deleteAll() -> FBFuture<NSNull> {
     return deleteAll(allSimulators)
   }
@@ -163,14 +153,12 @@ public final class FBSimulatorSet: NSObject, FBiOSTargetSet {
 
   // MARK: - FBiOSTargetSet
 
-  @objc
   public var allTargetInfos: [any FBiOSTargetInfo] {
     allSimulators
   }
 
   // MARK: - Public Properties
 
-  @objc
   public var allSimulators: [FBSimulator] {
     simulatorsLock.lock()
     defer { simulatorsLock.unlock() }
