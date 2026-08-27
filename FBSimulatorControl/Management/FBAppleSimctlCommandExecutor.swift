@@ -9,7 +9,7 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-public final class FBAppleSimctlCommandExecutor: NSObject {
+public final class FBAppleSimctlCommandExecutor {
 
   // MARK: - Properties
 
@@ -38,7 +38,6 @@ public final class FBAppleSimctlCommandExecutor: NSObject {
     self.deviceUUID = deviceUUID
     self.logger = logger
     self.queue = DispatchQueue(label: "com.facebook.fbsimulatorcontrol.simctl_executor")
-    super.init()
   }
 
   // MARK: - Public Methods

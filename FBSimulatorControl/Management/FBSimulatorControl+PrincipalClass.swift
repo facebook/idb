@@ -9,7 +9,7 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-public final class FBSimulatorControl: NSObject {
+public final class FBSimulatorControl {
 
   // MARK: - Properties
 
@@ -35,6 +35,5 @@ public final class FBSimulatorControl: NSObject {
     self.configuration = configuration
     self.serviceContext = serviceContext
     self.set = set
-    super.init()
   }
 }
