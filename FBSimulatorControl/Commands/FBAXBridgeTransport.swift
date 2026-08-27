@@ -348,7 +348,9 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
     let requestData = try JSONSerialization.data(withJSONObject: request)
     let (connection, generation) = try await self.connection()
     do {
-      return try await connection.roundTrip(requestData)
+      let response = try await connection.roundTrip(requestData)
+      releaseConnectionIfNotRetained(connection)
+      return response
     } catch {
       // Compare-and-clear on the generation that failed, for the reason `roundTripWithRecovery` gives:
       // a concurrent caller may already have replaced this connection with a healthy one.
@@ -365,7 +367,9 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
     do {
       let (connection, generation) = try await self.connection()
       do {
-        return try await connection.roundTrip(requestData)
+        let response = try await connection.roundTrip(requestData)
+        releaseConnectionIfNotRetained(connection)
+        return response
       } catch {
         // Compare-and-clear: drop the memoized connection only if it is still the generation that just
         // failed. `read` is reentrant on the actor (it suspends at every `await`), so a concurrent read
@@ -386,8 +390,26 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
       // Retrying makes recovery transparent; a second failure (e.g. the app's accessibility server is
       // genuinely down) is surfaced.
       let (connection, _) = try await self.connection()
-      return try await connection.roundTrip(requestData)
+      let response = try await connection.roundTrip(requestData)
+      releaseConnectionIfNotRetained(connection)
+      return response
     }
+  }
+
+  /// Drops the memoized connection unless the guest it reaches is private to this host.
+  ///
+  /// A shared bridge is released the moment the work that needed it is done, because the guest serves
+  /// one client at a time: holding the connection between reads would keep its only slot and make every
+  /// other process on the machine wait. The guest stays up either way, so the next read re-adopts it
+  /// rather than paying for a spawn.
+  ///
+  /// Keyed on the guest that was established rather than the persistence that was asked for, because a
+  /// shared read that finds the bridge busy falls back to a private guest, which is safe to hold.
+  private func releaseConnectionIfNotRetained(_ connection: FBAXBridgeConnection) {
+    guard !connection.mayBeHeldBetweenRoundTrips else {
+      return
+    }
+    connectionTask = nil
   }
 
   /// Returns the memoized connection along with the generation that produced it, so a caller can
@@ -667,6 +689,13 @@ final class FBAXBridgeConnection: @unchecked Sendable {
   /// How many bytes of path a Unix-domain socket address can hold, terminator included. Read from the
   /// struct rather than written down, so it tracks the platform.
   static let sunPathCapacity = MemoryLayout.size(ofValue: sockaddr_un().sun_path)
+
+  /// Whether this connection may be kept open between round trips, which is true exactly when the guest
+  /// on the other end is private to this host. A shared guest serves one client at a time, so holding it
+  /// would make every other process on the machine wait; a private one they cannot reach.
+  var mayBeHeldBetweenRoundTrips: Bool {
+    ownership.isPrivate
+  }
 
   init(
     fileDescriptor: Int32,
