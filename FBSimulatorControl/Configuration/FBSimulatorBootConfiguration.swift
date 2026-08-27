@@ -11,7 +11,7 @@ import Foundation
 ///
 /// The raw values are not contiguous, and are kept as they were when this was an `NS_OPTIONS`:
 /// they are compared and persisted by callers.
-public struct FBSimulatorBootOptions: OptionSet, Sendable {
+public struct FBSimulatorBootOptions: OptionSet, Hashable, Sendable {
 
   public let rawValue: UInt
 
@@ -28,19 +28,17 @@ public struct FBSimulatorBootOptions: OptionSet, Sendable {
   public static let verifyUsable = FBSimulatorBootOptions(rawValue: 1 << 3)
 }
 
-@objc(FBSimulatorBootConfiguration)
-public class FBSimulatorBootConfiguration: NSObject, NSCopying {
+public struct FBSimulatorBootConfiguration: Equatable, Hashable, Sendable, CustomStringConvertible {
 
   // MARK: Properties
 
   public let options: FBSimulatorBootOptions
 
-  @objc public let environment: [String: String]
+  public let environment: [String: String]
 
   // MARK: Default Instance
 
-  @objc(defaultConfiguration)
-  public nonisolated(unsafe) static let `default` = FBSimulatorBootConfiguration(
+  public static let `default` = FBSimulatorBootConfiguration(
     options: .verifyUsable,
     environment: [:]
   )
@@ -50,29 +48,11 @@ public class FBSimulatorBootConfiguration: NSObject, NSCopying {
   public init(options: FBSimulatorBootOptions, environment: [String: String]) {
     self.options = options
     self.environment = environment
-    super.init()
   }
 
-  // MARK: - NSCopying
+  // MARK: - CustomStringConvertible
 
-  public func copy(with zone: NSZone? = nil) -> Any {
-    self
-  }
-
-  // MARK: - NSObject
-
-  public override func isEqual(_ object: Any?) -> Bool {
-    guard let other = object as? FBSimulatorBootConfiguration else {
-      return false
-    }
-    return options == other.options && environment == other.environment
-  }
-
-  public override var hash: Int {
-    Int(bitPattern: options.rawValue) ^ (environment as NSDictionary).hash
-  }
-
-  public override var description: String {
+  public var description: String {
     String(
       format: "Boot Environment %@ | Options %@",
       FBCollectionInformation.oneLineDescription(from: environment as [String: Any]),

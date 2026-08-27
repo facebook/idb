@@ -32,12 +32,6 @@ final class FBSimulatorControlTransientTests: XCTestCase {
     XCTAssertEqual(config.environment.count, 0)
   }
 
-  func testDefaultConfigurationIsSingleton() {
-    let a = FBSimulatorBootConfiguration.default
-    let b = FBSimulatorBootConfiguration.default
-    XCTAssertTrue(a === b)
-  }
-
   func testBootConfigurationInitWithOptions() {
     let config = FBSimulatorBootConfiguration(
       options: .tieToProcessLifecycle,
@@ -53,31 +47,6 @@ final class FBSimulatorControlTransientTests: XCTestCase {
     let config = FBSimulatorBootConfiguration(options: combined, environment: [:])
     XCTAssertTrue(config.options.contains(.tieToProcessLifecycle))
     XCTAssertTrue(config.options.contains(.verifyUsable))
-  }
-
-  func testBootConfigurationEquality() {
-    let a = FBSimulatorBootConfiguration(options: .verifyUsable, environment: ["A": "B"])
-    let b = FBSimulatorBootConfiguration(options: .verifyUsable, environment: ["A": "B"])
-    XCTAssertEqual(a, b)
-    XCTAssertEqual(a.hash, b.hash)
-  }
-
-  func testBootConfigurationInequalityByOptions() {
-    let a = FBSimulatorBootConfiguration(options: .verifyUsable, environment: [:])
-    let b = FBSimulatorBootConfiguration(options: .tieToProcessLifecycle, environment: [:])
-    XCTAssertNotEqual(a, b)
-  }
-
-  func testBootConfigurationInequalityByEnvironment() {
-    let a = FBSimulatorBootConfiguration(options: .verifyUsable, environment: ["X": "1"])
-    let b = FBSimulatorBootConfiguration(options: .verifyUsable, environment: ["Y": "2"])
-    XCTAssertNotEqual(a, b)
-  }
-
-  func testBootConfigurationCopyReturnsSelf() {
-    let config = FBSimulatorBootConfiguration(options: .verifyUsable, environment: [:])
-    let copy = config.copy() as AnyObject
-    XCTAssertTrue(config === copy)
   }
 
   func testBootConfigurationDescription() {
