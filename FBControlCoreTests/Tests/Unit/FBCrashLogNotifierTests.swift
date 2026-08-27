@@ -42,21 +42,25 @@ final class FBCrashLogNotifierTests: XCTestCase {
 
   // MARK: - nextCrashLogForPredicate
 
-  func testNextCrashLogForPredicate_WhenNoMatchingCrashLog_FutureDoesNotResolveWithResult() {
+  func testNextCrashLogForPredicate_WhenNoMatchingCrashLog_PollDoesNotResolve() async throws {
     let notifier = FBCrashLogNotifier(logger: FBControlCoreLoggerDouble())
 
     let predicate = NSPredicate(value: false)
-    let future = notifier.nextCrashLog(forPredicate: predicate)
+    let poll = Task { try await notifier.nextCrashLog(forPredicate: predicate) }
 
-    XCTAssertThrowsError(
-      try future.`await`(withTimeout: 0.2),
-      "Future should produce an error (timeout) when no crash log matches")
+    try await Task.sleep(nanoseconds: 200_000_000)
 
-    // The poller behind this future retries until it resolves or is
-    // cancelled. An always-false predicate never resolves, so without this
-    // cancellation the poller outlives the test, re-scanning the host's
-    // crash-log directories concurrently for the remainder of the bundle —
-    // enough to starve unrelated tests of worker threads on small CI hosts.
-    _ = try? future.cancel().`await`(withTimeout: 5.0)
+    // The poller retries until it resolves or is cancelled. An always-false
+    // predicate never resolves, so without this cancellation the poller
+    // outlives the test, re-scanning the host's crash-log directories
+    // concurrently for the remainder of the bundle — enough to starve
+    // unrelated tests of worker threads on small CI hosts.
+    poll.cancel()
+    do {
+      _ = try await poll.value
+      XCTFail("Poll should not resolve for an always-false predicate")
+    } catch {
+      XCTAssertTrue(error is CancellationError, "cancelling the poll should surface CancellationError, got \(error)")
+    }
   }
 }

@@ -7,17 +7,8 @@
 
 import Foundation
 
-/// The way crash-log polling reports an absent match, as data rather than an assembled string.
-public enum FBCrashLogNotifierError: Error, LocalizedError {
-  case crashLogUnavailable(predicateDescription: String)
-
-  public var errorDescription: String? {
-    switch self {
-    case let .crashLogUnavailable(predicateDescription):
-      return "Crash Log Info for \(predicateDescription) could not be obtained"
-    }
-  }
-}
+/// The pause between crash-log scans, matching `AsyncPolling`'s default cadence.
+private let CrashLogPollInterval: UInt64 = 100 * NSEC_PER_MSEC
 
 public class FBCrashLogNotifier {
 
@@ -48,23 +39,26 @@ public class FBCrashLogNotifier {
     return true
   }
 
-  public func nextCrashLog(forPredicate predicate: NSPredicate) -> FBFuture<FBCrashLogInfo> {
+  /// Polls until a crash log matching `predicate` appears. Callers impose their own timeouts,
+  /// and task cancellation stops the poll.
+  ///
+  /// Each pass is a synchronous scan of the diagnostic-reports directories, which fans out
+  /// through `DispatchQueue.concurrentPerform` and so blocks the thread running it. The pause
+  /// between passes keeps that off a cooperative-pool worker continuously; the future-based
+  /// predecessor got the same effect by running the scan on its own serial queue.
+  public func nextCrashLog(forPredicate predicate: NSPredicate) async throws -> FBCrashLogInfo {
     _ = startListening(true)
-
-    let queue = DispatchQueue(label: "com.facebook.fbcontrolcore.crashlogfetch")
-    let result = FBFuture<AnyObject>.onQueue(
-      queue,
-      resolveUntil: {
-        let crashInfo =
-          (FBCrashLogInfo.crashInfo(afterDate: self.sinceDate, logger: nil) as NSArray)
-          .filtered(using: predicate)
-          .first as? FBCrashLogInfo
-        guard let crashInfo else {
-          return FBFuture(error: FBCrashLogNotifierError.crashLogUnavailable(predicateDescription: String(describing: predicate)))
-        }
-        _ = self.store.ingestCrashLog(atPath: crashInfo.crashPath)
-        return FBFuture(result: crashInfo)
-      })
-    return unsafeBitCast(result, to: FBFuture<FBCrashLogInfo>.self)
+    while true {
+      try Task.checkCancellation()
+      let crashInfo =
+        (FBCrashLogInfo.crashInfo(afterDate: sinceDate, logger: nil) as NSArray)
+        .filtered(using: predicate)
+        .first as? FBCrashLogInfo
+      if let crashInfo {
+        _ = store.ingestCrashLog(atPath: crashInfo.crashPath)
+        return crashInfo
+      }
+      try await Task.sleep(nanoseconds: CrashLogPollInterval)
+    }
   }
 }

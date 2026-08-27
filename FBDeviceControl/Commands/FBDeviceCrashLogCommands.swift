@@ -53,18 +53,21 @@ public class FBDeviceCrashLogCommands {
     self.store = store
   }
 
-  // MARK: - FBCrashLogCommands (legacy FBFuture entry point)
+  // MARK: - Notify
 
-  @objc(notifyOfCrash:)
-  public func notifyOfCrash(_ predicate: NSPredicate) -> FBFuture<FBCrashLogInfo> {
-    // Set up the notification listener first, then kick off ingestion as a
-    // fire-and-forget background job. Matches the legacy ordering where the
-    // listener is registered before the ingestion future resolves.
-    let next = store.nextCrashLog(forMatchingPredicate: predicate)
+  fileprivate func notifyOfCrashAsync(matching predicate: NSPredicate) async throws -> FBCrashLogInfo {
+    // Start listening for the next matching crash log first, then kick off ingestion as a
+    // fire-and-forget background job - the same task ordering the future-based predecessor
+    // established.
+    // The listener rides fbFutureFromAsync rather than Task: region isolation rejects
+    // sending the non-Sendable predicate into a Task closure.
+    let next = fbFutureFromAsync { [store] in
+      try await store.nextCrashLog(forMatchingPredicate: predicate)
+    }
     _ = fbFutureFromAsync { [self] in
       try await ingestAllCrashLogsAsync(useCache: false) as NSArray
     }
-    return next
+    return try await bridgeFBFuture(next)
   }
 
   // MARK: - Async
@@ -215,8 +218,7 @@ extension FBDevice: CrashLogCommands {
   }
 
   public func notifyOfCrash(matching predicate: NSPredicate) async throws -> FBCrashLogInfo {
-    let cmds = try crashLogCommands()
-    return try await bridgeFBFuture(cmds.notifyOfCrash(predicate))
+    try await crashLogCommands().notifyOfCrashAsync(matching: predicate)
   }
 
   public func pruneCrashes(matching predicate: NSPredicate) async throws -> [FBCrashLogInfo] {

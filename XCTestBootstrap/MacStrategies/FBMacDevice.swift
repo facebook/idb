@@ -449,10 +449,6 @@ public final class FBMacDevice: NSObject, FBiOSTarget {
     return FBListTestStrategy(target: self, configuration: configuration, logger: self.logger).listTests()
   }
 
-  public func notifyOfCrash(_ predicate: NSPredicate) -> FBFuture<FBCrashLogInfo> {
-    return FBCrashLogNotifier.sharedInstance.nextCrashLog(forPredicate: predicate)
-  }
-
 }
 
 // MARK: - FBMacDevice+ProcessSpawnCommands
@@ -560,7 +556,7 @@ extension FBMacDevice: CrashLogCommands {
   }
 
   public func notifyOfCrash(matching predicate: NSPredicate) async throws -> FBCrashLogInfo {
-    try await bridgeFBFuture(notifyOfCrash(predicate))
+    try await FBCrashLogNotifier.sharedInstance.nextCrashLog(forPredicate: predicate)
   }
 
   public func pruneCrashes(matching predicate: NSPredicate) async throws -> [FBCrashLogInfo] {

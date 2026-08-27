@@ -94,15 +94,7 @@ public class FBCrashLogStore {
     return ingestedCrashLogs.allValues.compactMap { $0 as? FBCrashLogInfo }
   }
 
-  public func nextCrashLog(forMatchingPredicate predicate: NSPredicate) -> FBFuture<FBCrashLogInfo> {
-    fbFutureFromAsync { [self] in
-      try await nextCrashLogAsync(forMatchingPredicate: predicate)
-    }
-  }
-
-  // MARK: - Async
-
-  fileprivate func nextCrashLogAsync(forMatchingPredicate predicate: NSPredicate) async throws -> FBCrashLogInfo {
+  public func nextCrashLog(forMatchingPredicate predicate: NSPredicate) async throws -> FBCrashLogInfo {
     let holder = ObserverHolder()
     nonisolated(unsafe) let predicateRef = predicate
     let box = try await withTaskCancellationHandler {

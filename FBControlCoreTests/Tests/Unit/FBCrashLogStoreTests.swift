@@ -55,7 +55,7 @@ final class FBCrashLogStoreTests: XCTestCase {
 
   func testNextCrashLog_WhenMatchingCrashLogIsIngested_DeliversIt() async throws {
     let store = makeStore()
-    let next = Task { try await bridgeFBFuture(store.nextCrashLog(forMatchingPredicate: FBCrashLogInfo.predicate(forIdentifier: "assetsd"))) }
+    let next = Task { try await store.nextCrashLog(forMatchingPredicate: FBCrashLogInfo.predicate(forIdentifier: "assetsd")) }
     defer { next.cancel() }
 
     let ingester = ingestRepeatedly(try assetsdCrashData(), into: store, named: "assetsd")
@@ -68,7 +68,7 @@ final class FBCrashLogStoreTests: XCTestCase {
 
   func testNextCrashLog_WhenIngestedCrashLogDoesNotMatch_SkipsItAndWaitsForOneThatDoes() async throws {
     let store = makeStore()
-    let next = Task { try await bridgeFBFuture(store.nextCrashLog(forMatchingPredicate: FBCrashLogInfo.predicate(forIdentifier: "assetsd"))) }
+    let next = Task { try await store.nextCrashLog(forMatchingPredicate: FBCrashLogInfo.predicate(forIdentifier: "assetsd")) }
     defer { next.cancel() }
 
     // Observed but discarded: had the non-match resolved the wait, the assertion below

@@ -45,7 +45,7 @@ public final class FBSimulatorCrashLogCommands {
   // MARK: - Private
 
   fileprivate func notifyOfCrashAsync(matching predicate: NSPredicate) async throws -> FBCrashLogInfo {
-    try await bridgeFBFuture(notifier.nextCrashLog(forPredicate: predicate))
+    try await notifier.nextCrashLog(forPredicate: predicate)
   }
 
   fileprivate func crashesAsync(matching predicate: NSPredicate, useCache: Bool) async throws -> [FBCrashLogInfo] {
