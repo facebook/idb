@@ -144,7 +144,7 @@ public class FBDeviceDeveloperDiskImageCommands: DeveloperDiskImageCommands {
     guard let device else {
       throw FBDeviceNilError.deviceNil
     }
-    return try await withFBFutureContext(device.startService(ImageMounterService)) { connection in
+    return try await device.withServiceConnection(ImageMounterService) { connection in
       let request: [String: Any] = [
         CommandKey: "CopyDevices"
       ]
@@ -213,7 +213,7 @@ public class FBDeviceDeveloperDiskImageCommands: DeveloperDiskImageCommands {
     guard let device else {
       throw FBDeviceNilError.deviceNil
     }
-    try await withFBFutureContext(device.startService(ImageMounterService)) { connection in
+    try await device.withServiceConnection(ImageMounterService) { connection in
       let request: [String: Any] = [
         CommandKey: "UnmountImage",
         MountPathKey: mountPath,

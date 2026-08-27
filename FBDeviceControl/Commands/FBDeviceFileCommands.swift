@@ -599,7 +599,7 @@ extension FBDevice: FileCommands {
   public func withFileCommandsForSpringboardIconLayout<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    return try await withFBFutureContext(startService(FBSpringboardServicesClient.serviceName)) { connection in
+    return try await withServiceConnection(FBSpringboardServicesClient.serviceName) { connection in
       let client = FBSpringboardServicesClient.springboardServicesClient(connection: connection, logger: logger)
       return try await body(client.iconContainer())
     }

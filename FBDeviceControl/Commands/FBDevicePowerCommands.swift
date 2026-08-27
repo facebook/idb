@@ -27,7 +27,7 @@ public class FBDevicePowerCommands {
     guard let device else {
       throw FBDeviceNilError.deviceNil
     }
-    try await withFBFutureContext(device.startService("com.apple.mobile.diagnostics_relay")) { connection in
+    try await device.withServiceConnection("com.apple.mobile.diagnostics_relay") { connection in
       guard let result = try connection.sendAndReceiveMessage(["Request": request]) as? NSDictionary else {
         throw FBDiagnosticsRelayError.unexpectedResponse
       }

@@ -30,7 +30,7 @@ public class FBDeviceLocationCommands {
       throw FBDeviceNilError.deviceNil
     }
     _ = try await bridgeFBFuture(device.ensureDeveloperDiskImageIsMounted())
-    try await withFBFutureContext(device.startService("com.apple.dt.simulatelocation")) { connection in
+    try await device.withServiceConnection("com.apple.dt.simulatelocation") { connection in
       var start = StartCommand
       let startData = Data(bytes: &start, count: MemoryLayout<UInt32>.size)
       try connection.send(startData)

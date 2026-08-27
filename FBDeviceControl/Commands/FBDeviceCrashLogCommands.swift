@@ -173,7 +173,7 @@ public class FBDeviceCrashLogCommands {
     guard let device else {
       throw FBDeviceNilError.deviceNil
     }
-    return try await withFBFutureContext(device.startService(CrashReportMoverService)) { connection in
+    return try await device.withServiceConnection(CrashReportMoverService) { connection in
       let data: Data
       do {
         data = try connection.receive(4)

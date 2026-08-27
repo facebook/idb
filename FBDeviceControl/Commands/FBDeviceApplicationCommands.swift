@@ -323,7 +323,7 @@ public class FBDeviceApplicationCommands {
     let usesSecureConnection = device.osVersion.version.majorVersion >= 14
     _ = try await bridgeFBFuture(device.ensureDeveloperDiskImageIsMounted())
     let serviceName = usesSecureConnection ? "com.apple.instruments.remoteserver.DVTSecureSocketProxy" : "com.apple.instruments.remoteserver"
-    return try await withFBFutureContext(device.startService(serviceName)) { connection in
+    return try await device.withServiceConnection(serviceName) { connection in
       let client = try await bridgeFBFuture(FBInstrumentsClient.instrumentsClient(with: connection, logger: device.logger))
       return try await body(client)
     }
@@ -333,7 +333,7 @@ public class FBDeviceApplicationCommands {
     guard let device else {
       throw FBDeviceNilError.deviceNil
     }
-    return try await withFBFutureContext(device.startService("com.apple.os_trace_relay")) { connection in
+    return try await device.withServiceConnection("com.apple.os_trace_relay") { connection in
       do {
         try connection.sendMessage(["Request": "PidList"])
       } catch {

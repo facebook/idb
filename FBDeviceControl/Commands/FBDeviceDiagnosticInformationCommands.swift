@@ -65,7 +65,7 @@ public class FBDeviceDiagnosticInformationCommands: NSObject, FBiOSTargetCommand
   // MARK: - Private
 
   private func fetchInformationFromDiagnosticsRelayAsync(device: FBDevice) async throws -> Any {
-    try await withFBFutureContext(device.startService(DiagnosticsRelayService)) { connection in
+    try await device.withServiceConnection(DiagnosticsRelayService) { connection in
       guard let result = try connection.sendAndReceiveMessage(["Request": "All"]) as? NSDictionary else {
         throw FBDiagnosticsRelayError.unexpectedResponse
       }
@@ -81,7 +81,7 @@ public class FBDeviceDiagnosticInformationCommands: NSObject, FBiOSTargetCommand
 
   private func fetchInformationFromSpringboardAsync(device: FBDevice) async throws -> Any {
     let logger = device.logger
-    return try await withFBFutureContext(device.startService(FBSpringboardServicesClient.serviceName)) { connection in
+    return try await device.withServiceConnection(FBSpringboardServicesClient.serviceName) { connection in
       let client = FBSpringboardServicesClient(connection: connection, logger: logger)
       return try await client.getIconLayoutAsync().pages
     }
@@ -89,7 +89,7 @@ public class FBDeviceDiagnosticInformationCommands: NSObject, FBiOSTargetCommand
 
   private func fetchInformationFromMobileConfigurationAsync(device: FBDevice) async throws -> Any {
     let logger = device.logger
-    return try await withFBFutureContext(device.startService(FBManagedConfigClient.serviceName)) { connection in
+    return try await device.withServiceConnection(FBManagedConfigClient.serviceName) { connection in
       try await FBManagedConfigClient.managedConfigClient(connection: connection, logger: logger).getCloudConfigurationAsync()
     }
   }
