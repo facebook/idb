@@ -121,15 +121,15 @@ extension FBSimulatorSettingsError: LocalizedError {
   }
 }
 
-public final class FBSimulatorSettingsCommands {
+public struct FBSimulatorSettingsCommands {
 
   // MARK: - Properties
 
-  private weak var simulator: FBSimulator?
+  private let simulator: FBSimulator
 
   // MARK: - Initializers
 
-  public class func commands(with simulator: FBSimulator) -> FBSimulatorSettingsCommands {
+  public static func commands(with simulator: FBSimulator) -> FBSimulatorSettingsCommands {
     FBSimulatorSettingsCommands(simulator: simulator)
   }
 
@@ -139,9 +139,6 @@ public final class FBSimulatorSettingsCommands {
 
   // The command's simulator reference is weak; resolve it or fail uniformly across the settings ops.
   private func requireSimulator() throws -> FBSimulator {
-    guard let simulator = self.simulator else {
-      throw FBWeakTargetError.simulator
-    }
     return simulator
   }
 
@@ -701,13 +698,13 @@ public final class FBSimulatorSettingsCommands {
     "AddressBookImages.sqlitedb-wal",
   ]
 
-  internal class func filteredTCCApprovals(_ approvals: Set<FBTargetSettingsService>) -> Set<FBTargetSettingsService> {
+  internal static func filteredTCCApprovals(_ approvals: Set<FBTargetSettingsService>) -> Set<FBTargetSettingsService> {
     approvals.intersection(Set(tccDatabaseMapping.keys))
   }
 
   /// The TCC database names of the approvals that have one, so the row builders below never have to
   /// repeat the lookup that `filteredTCCApprovals` has already made.
-  private class func tccServiceNames(for approvals: Set<FBTargetSettingsService>) -> [String] {
+  private static func tccServiceNames(for approvals: Set<FBTargetSettingsService>) -> [String] {
     filteredTCCApprovals(approvals).compactMap { tccDatabaseMapping[$0] }
   }
 
@@ -733,12 +730,12 @@ public final class FBSimulatorSettingsCommands {
       logger: logger)
   }
 
-  fileprivate class func buildApprovalInsertQueryAsync(forDatabase databasePath: String, bundleIDs: Set<String>, services: Set<FBTargetSettingsService>, queue: DispatchQueue, logger: (any FBControlCoreLogger)?) async throws -> String {
+  fileprivate static func buildApprovalInsertQueryAsync(forDatabase databasePath: String, bundleIDs: Set<String>, services: Set<FBTargetSettingsService>, queue: DispatchQueue, logger: (any FBControlCoreLogger)?) async throws -> String {
     let schema = try await runSqliteCommandAsync(onDatabase: databasePath, arguments: [".schema access"], queue: queue, logger: logger)
     return approvalInsertQuery(forAccessSchema: schema, bundleIDs: bundleIDs, services: services)
   }
 
-  internal class func approvalInsertQuery(forAccessSchema schema: String, bundleIDs: Set<String>, services: Set<FBTargetSettingsService>) -> String {
+  internal static func approvalInsertQuery(forAccessSchema schema: String, bundleIDs: Set<String>, services: Set<FBTargetSettingsService>) -> String {
     if schema.contains("last_reminded") {
       let rows = postiOS17ApprovalRows(forBundleIDs: bundleIDs, services: services)
       return "INSERT or REPLACE INTO access (\(postiOS17AccessColumns)) VALUES \(rows)"
@@ -755,7 +752,7 @@ public final class FBSimulatorSettingsCommands {
     return "INSERT or REPLACE INTO access VALUES \(rows)"
   }
 
-  internal class func preiOS12ApprovalRows(forBundleIDs bundleIDs: Set<String>, services: Set<FBTargetSettingsService>) -> String {
+  internal static func preiOS12ApprovalRows(forBundleIDs bundleIDs: Set<String>, services: Set<FBTargetSettingsService>) -> String {
     var tuples: [String] = []
     for bundleID in bundleIDs {
       for serviceName in tccServiceNames(for: services) {
@@ -765,7 +762,7 @@ public final class FBSimulatorSettingsCommands {
     return tuples.joined(separator: ", ")
   }
 
-  internal class func postiOS12ApprovalRows(forBundleIDs bundleIDs: Set<String>, services: Set<FBTargetSettingsService>) -> String {
+  internal static func postiOS12ApprovalRows(forBundleIDs bundleIDs: Set<String>, services: Set<FBTargetSettingsService>) -> String {
     let timestamp = UInt(Date().timeIntervalSince1970)
     var tuples: [String] = []
     for bundleID in bundleIDs {
@@ -776,7 +773,7 @@ public final class FBSimulatorSettingsCommands {
     return tuples.joined(separator: ", ")
   }
 
-  internal class func postiOS15ApprovalRows(forBundleIDs bundleIDs: Set<String>, services: Set<FBTargetSettingsService>) -> String {
+  internal static func postiOS15ApprovalRows(forBundleIDs bundleIDs: Set<String>, services: Set<FBTargetSettingsService>) -> String {
     let timestamp = UInt(Date().timeIntervalSince1970)
     var tuples: [String] = []
     for bundleID in bundleIDs {
@@ -787,7 +784,7 @@ public final class FBSimulatorSettingsCommands {
     return tuples.joined(separator: ", ")
   }
 
-  internal class func postiOS17ApprovalRows(forBundleIDs bundleIDs: Set<String>, services: Set<FBTargetSettingsService>) -> String {
+  internal static func postiOS17ApprovalRows(forBundleIDs bundleIDs: Set<String>, services: Set<FBTargetSettingsService>) -> String {
     let timestamp = UInt(Date().timeIntervalSince1970)
     var tuples: [String] = []
     for bundleID in bundleIDs {
@@ -798,7 +795,7 @@ public final class FBSimulatorSettingsCommands {
     return tuples.joined(separator: ", ")
   }
 
-  fileprivate class func runSqliteCommandAsync(onDatabase databasePath: String, arguments: [String], queue: DispatchQueue, logger: (any FBControlCoreLogger)?) async throws -> String {
+  fileprivate static func runSqliteCommandAsync(onDatabase databasePath: String, arguments: [String], queue: DispatchQueue, logger: (any FBControlCoreLogger)?) async throws -> String {
     let allArguments = [databasePath] + arguments
     logger?.log("Running sqlite3 \(FBCollectionInformation.oneLineDescription(from: allArguments))")
     let runFuture = FBProcessBuilder<NSNull, NSData, NSData>.withLaunchPath("/usr/bin/sqlite3", arguments: allArguments)
@@ -819,7 +816,7 @@ public final class FBSimulatorSettingsCommands {
     return (task.stdOut as String?) ?? ""
   }
 
-  private class func contactsDatabaseFilePaths(fromContainingDirectory databaseDirectory: String) throws -> [String] {
+  private static func contactsDatabaseFilePaths(fromContainingDirectory databaseDirectory: String) throws -> [String] {
     var filePaths: [String] = []
     guard let enumerator = FileManager.default.enumerator(atPath: databaseDirectory) else {
       throw FBSimulatorSettingsError.contactsDirectoryEnumerationFailed(path: databaseDirectory)
@@ -840,7 +837,7 @@ public final class FBSimulatorSettingsCommands {
     return filePaths
   }
 
-  internal class func magicDeeplinkKey(forScheme scheme: String) -> String {
+  internal static func magicDeeplinkKey(forScheme scheme: String) -> String {
     "com.apple.CoreSimulator.CoreSimulatorBridge-->\(scheme)"
   }
 }

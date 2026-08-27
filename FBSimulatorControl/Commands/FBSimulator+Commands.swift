@@ -77,7 +77,7 @@ extension FBSimulator {
   }
 
   func settingsCommands() throws -> FBSimulatorSettingsCommands {
-    commandCache.resolve { FBSimulatorSettingsCommands.commands(with: self) }
+    FBSimulatorSettingsCommands.commands(with: self)
   }
 
   func xctestExtendedCommands() throws -> FBSimulatorXCTestCommands {

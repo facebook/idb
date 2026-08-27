@@ -17,7 +17,6 @@ final class FBSimulatorSettingsCommandsTests: XCTestCase {
 
   private func makeSimulator() -> FBSimulator {
     let simulator = FBSimulatorTestSupport.testableSimulator()
-    simulator.commandCache.register(FBSimulatorSettingsCommands(simulator: simulator), as: FBSimulatorSettingsCommands.self)
     return simulator
   }
 
