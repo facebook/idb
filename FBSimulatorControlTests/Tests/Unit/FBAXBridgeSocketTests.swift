@@ -239,8 +239,8 @@ final class FBAXBridgeSocketTests: XCTestCase {
   // Only the adopted case is reachable without building an `FBSubprocess`, which needs three futures
   // and a spawn configuration. The started-shared and started-private cases are covered end to end,
   // where the difference shows as a guest that outlives its companion or does not.
-  func testAnAdoptedGuestIsNeverReapedByTheHostUsingIt() {
-    XCTAssertFalse(FBAXBridgeGuestOwnership.shared(nil).reapsGuestOnRelease)
+  func testASharedGuestIsNotPrivate() {
+    XCTAssertFalse(FBAXBridgeGuestOwnership.shared(nil).isPrivate)
     XCTAssertNil(FBAXBridgeGuestOwnership.shared(nil).process)
   }
 

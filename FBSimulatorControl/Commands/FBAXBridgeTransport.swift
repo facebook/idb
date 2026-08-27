@@ -625,11 +625,14 @@ enum FBAXBridgeGuestOwnership {
     }
   }
 
-  /// Whether releasing the connection should end the guest and remove its socket.
+  /// Whether the guest is private to this host.
   ///
-  /// Named separately from `deinit` so it can be tested without constructing a connection. A shared
-  /// guest survives us even when we started it.
-  var reapsGuestOnRelease: Bool {
+  /// Named for the fact rather than for one of its consequences, because more than one follows from it:
+  /// nobody else can find a private guest, so ending it when we are done strands nobody. A shared guest
+  /// survives us even when we started it.
+  ///
+  /// Named separately from `deinit` so it can be tested without constructing a connection.
+  var isPrivate: Bool {
     switch self {
     case .privateToThisHost: true
     case .shared: false
@@ -717,7 +720,7 @@ final class FBAXBridgeConnection: @unchecked Sendable {
     //
     // A shared guest is left running with its socket intact, so the next process finds a warm one. It
     // reaps itself after the idle timeout it was spawned with.
-    guard ownership.reapsGuestOnRelease, let process = ownership.process else {
+    guard ownership.isPrivate, let process = ownership.process else {
       Self.teardown(fileDescriptor: fileDescriptor, processIdentifier: nil, socketPath: nil, logger: logger)
       return
     }
