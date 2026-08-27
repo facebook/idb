@@ -89,31 +89,4 @@ enum FBAXBridgeSocket {
   static func path(forSimulator udid: String) -> String {
     path(forConnection: udid.replacingOccurrences(of: "-", with: "").uppercased())
   }
-
-  /// Every path that looks like a bridge socket, whether or not anything is still listening on it.
-  ///
-  /// The suffix is the whole test, because the directory is ours and holds nothing else. It used to
-  /// also require a filename prefix, which was how our sockets were told apart from everything else in
-  /// a shared `/tmp`.
-  ///
-  /// Joined through a URL so a trailing or doubled separator in the caller's directory does not reach
-  /// the socket path. Deliberately not `standardizedFileURL`: that resolves symlinks, so a caller who
-  /// asked about a path should be told about that path, not its resolved form.
-  static func existingPaths(inDirectory directory: String = Self.directory) -> [String] {
-    let base = URL(fileURLWithPath: directory, isDirectory: true)
-    let contents =
-      (try? FileManager.default.contentsOfDirectory(
-        at: base, includingPropertiesForKeys: nil, options: [.skipsSubdirectoryDescendants]
-      )) ?? []
-    // Re-joined onto the caller's own directory string rather than using the enumerated URL's path:
-    // `FileManager` hands back resolved URLs, and answering `/private/tmp` to someone who asked about
-    // `/tmp` makes the summary hard to match against what they passed in.
-    let trimmed = directory.hasSuffix("/") ? String(directory.dropLast()) : directory
-    return
-      contents
-      .map(\.lastPathComponent)
-      .filter { $0.hasSuffix(suffix) }
-      .sorted()
-      .map { "\(trimmed)/\($0)" }
-  }
 }
