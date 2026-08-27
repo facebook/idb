@@ -32,7 +32,6 @@ public enum FBDeviceFileContainerError: Error {
   case notAMountableImage(path: String, available: [String])
   case removeOutsideMounts(path: String)
   case notAMountedImage(path: String, available: [String])
-  case unexpectedServiceConnections(description: String)
   case requiresRootedDevice(operation: String)
 }
 
@@ -55,8 +54,6 @@ extension FBDeviceFileContainerError: LocalizedError {
       return "\(path) cannot be removed, only mounts can be removed"
     case let .notAMountedImage(path, available):
       return "\(path) is not one of the available mounts \(FBCollectionInformation.oneLineDescription(from: available))"
-    case let .unexpectedServiceConnections(description):
-      return "Expected the springboard and managed configuration connections, got \(description)"
     case let .requiresRootedDevice(operation):
       return "\(operation) not supported on devices, requires a rooted device"
     }
@@ -495,43 +492,6 @@ public class FBDeviceFileCommands {
     return FBFileContainer_ProvisioningProfile(commands: FBDeviceProvisioningProfileCommands.commands(with: device))
   }
 
-  fileprivate func fileCommandsForMDMProfiles() throws -> FBFutureContext<FBDeviceFileContainer_MDMProfiles> {
-    let device = try requireDevice()
-    let logger = device.logger
-    let workQueue = device.workQueue
-    return
-      device
-      .startService(FBManagedConfigClient.serviceName)
-      .onQueue(
-        device.asyncQueue,
-        pend: { connection -> FBFuture<AnyObject> in
-          let managedConfig = FBManagedConfigClient.managedConfigClient(connection: connection, logger: logger)
-          return FBFuture(result: FBDeviceFileContainer_MDMProfiles(managedConfig: managedConfig, queue: workQueue) as AnyObject)
-        }
-      ).retyped(FBFutureContext<FBDeviceFileContainer_MDMProfiles>.self)
-  }
-
-  fileprivate func fileCommandsForWallpaper() throws -> FBFutureContext<FBDeviceFileContainer_Wallpaper> {
-    let device = try requireDevice()
-    let logger = device.logger
-    let workQueue = device.workQueue
-    return FBFutureContext(futureContexts: [
-      device.startService(FBSpringboardServicesClient.serviceName).retyped(FBFutureContext<AnyObject>.self),
-      device.startService(FBManagedConfigClient.serviceName).retyped(FBFutureContext<AnyObject>.self),
-    ])
-    .onQueue(
-      device.asyncQueue,
-      pend: { (started: NSArray) -> FBFuture<AnyObject> in
-        guard let connections = started as? [FBAMDServiceConnection], connections.count == 2 else {
-          return FBFuture(error: FBDeviceFileContainerError.unexpectedServiceConnections(description: String(describing: started)))
-        }
-        let springboard = FBSpringboardServicesClient.springboardServicesClient(connection: connections[0], logger: logger)
-        let managedConfig = FBManagedConfigClient.managedConfigClient(connection: connections[1], logger: logger)
-        return FBFuture(result: FBDeviceFileContainer_Wallpaper(springboard: springboard, managedConfig: managedConfig, queue: workQueue) as AnyObject)
-      }
-    ).retyped(FBFutureContext<FBDeviceFileContainer_Wallpaper>.self)
-  }
-
   fileprivate func fileCommandsForDiskImages() throws -> FBDeviceFileCommands_DiskImages {
     let device = try requireDevice()
     return FBDeviceFileCommands_DiskImages(commands: device as any DeveloperDiskImageCommands, queue: device.asyncQueue)
@@ -593,7 +553,10 @@ extension FBDevice: FileCommands {
   public func withFileCommandsForMDMProfiles<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await withFileContainer(fileCommands().fileCommandsForMDMProfiles(), body: body)
+    return try await withServiceConnection(FBManagedConfigClient.serviceName) { connection in
+      let managedConfig = FBManagedConfigClient.managedConfigClient(connection: connection, logger: logger)
+      return try await body(FBDeviceFileContainer_MDMProfiles(managedConfig: managedConfig, queue: workQueue))
+    }
   }
 
   public func withFileCommandsForSpringboardIconLayout<R>(
@@ -608,7 +571,14 @@ extension FBDevice: FileCommands {
   public func withFileCommandsForWallpaper<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await withFileContainer(fileCommands().fileCommandsForWallpaper(), body: body)
+    return try await withServiceConnection(FBSpringboardServicesClient.serviceName) { springboardConnection in
+      try await withServiceConnection(FBManagedConfigClient.serviceName) { managedConfigConnection in
+        let springboard = FBSpringboardServicesClient.springboardServicesClient(connection: springboardConnection, logger: logger)
+        let managedConfig = FBManagedConfigClient.managedConfigClient(connection: managedConfigConnection, logger: logger)
+        return try await body(
+          FBDeviceFileContainer_Wallpaper(springboard: springboard, managedConfig: managedConfig, queue: workQueue))
+      }
+    }
   }
 
   public func withFileCommandsForDiskImages<R>(
