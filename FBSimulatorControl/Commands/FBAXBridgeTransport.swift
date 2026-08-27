@@ -598,14 +598,11 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
         logger: simulator.logger
       )
     } catch {
-      // Connecting failed, so the `FBAXBridgeConnection` that ends the serve on deinit was never
-      // created — end the just-spawned serve here so it does not leak as an orphan.
-      FBAXBridgeConnection.teardown(
-        fileDescriptor: nil,
-        processIdentifier: process.processIdentifier,
-        socketPath: socketPath,
-        logger: simulator.logger
-      )
+      // Nothing to signal. A guest we could not connect to has most likely already exited, and one that
+      // is up but unreachable is collected by its own idle timeout — on a socket no other process can
+      // discover, so nothing else is waiting on it.
+      simulator.logger.log(
+        "Could not reach the axbridge guest just spawned on \(socketPath); leaving it to time out")
       throw error
     }
   }
@@ -733,23 +730,10 @@ final class FBAXBridgeConnection: @unchecked Sendable {
   }
 
   deinit {
-    // Best-effort teardown when the memoized transport holding this connection is released — which,
-    // because the transport lives in the target's `commandCache`, means the target went away or the
-    // host process exited gracefully. Dropping a reader does not reach here.
-    //
-    // A shared guest is left running with its socket intact, so the next process finds a warm one. It
-    // reaps itself after the idle timeout it was spawned with.
-    guard ownership.isPrivate, let process = ownership.process else {
-      Self.teardown(fileDescriptor: fileDescriptor, processIdentifier: nil, socketPath: nil, logger: logger)
-      return
-    }
-    Self.teardown(
-      fileDescriptor: fileDescriptor,
-      processIdentifier: Self.pidToSignal(
-        processIdentifier: process.processIdentifier, hasTerminated: process.statLoc.hasCompleted),
-      socketPath: socketPath,
-      logger: logger
-    )
+    // Closing the descriptor is all the teardown there is. A private guest was spawned with
+    // `--exit-on-disconnect`, so this is what ends it; a shared one keeps running with its socket
+    // intact and ends itself after its idle timeout.
+    Self.teardown(fileDescriptor: fileDescriptor, processIdentifier: nil, socketPath: nil, logger: logger)
   }
 
   func roundTrip(_ requestData: Data) async throws -> Data {
