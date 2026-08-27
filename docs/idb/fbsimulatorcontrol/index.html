@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="generator" content="Docusaurus v3.7.0">
 <title data-rh="true">FBSimulatorControl | idb</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="https://fbidb.io/docs/idb/fbsimulatorcontrol"><meta data-rh="true" property="og:locale" content="en"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="FBSimulatorControl | idb"><meta data-rh="true" name="description" content="{/ Generated from FBSimulatorControl/README.md by scripts/generate-framework-docs.js — edit the README, not this file. /}"><meta data-rh="true" property="og:description" content="{/ Generated from FBSimulatorControl/README.md by scripts/generate-framework-docs.js — edit the README, not this file. /}"><link data-rh="true" rel="icon" href="/img/favicon.png"><link data-rh="true" rel="canonical" href="https://fbidb.io/docs/idb/fbsimulatorcontrol"><link data-rh="true" rel="alternate" href="https://fbidb.io/docs/idb/fbsimulatorcontrol" hreflang="en"><link data-rh="true" rel="alternate" href="https://fbidb.io/docs/idb/fbsimulatorcontrol" hreflang="x-default"><link rel="stylesheet" href="/assets/css/styles.8200a855.css">
-<script src="/assets/js/runtime~main.8f35b828.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.75fbcaea.js" defer="defer"></script>
 <script src="/assets/js/main.c8e3f4a6.js" defer="defer"></script>
 </head>
 <body class="navigation-with-keyboard">
@@ -24,7 +24,7 @@
 <li>Exposes a broad range of functionality that is available in <code>simctl</code> and Xcode.</li>
 <li>Implements additional functionality not available in <code>simctl</code> including hardware encoded video streaming, file manipulation, accessibility fetching, direct input event injection and more.</li>
 <li>No external dependencies.</li>
-<li>A mix of Objective-C and Swift, transitioning to pure Swift over time; the API is usable from both languages.</li>
+<li>A Swift framework. What Objective-C remains is an implementation detail of reaching Apple&#x27;s private frameworks, not part of the API.</li>
 </ul>
 <h2 class="anchor anchorWithStickyNavbar_LWe7" id="about">About<a href="#about" class="hash-link" aria-label="Direct link to About" title="Direct link to About">​</a></h2>
 <p>The original use-case for <code>FBSimulatorControl</code> was to boot multiple Simulators on the same host, before this was officially supported in Xcode.</p>
@@ -43,10 +43,10 @@
 <p><a href="https://github.com/facebook/idb/tree/main/FBSimulatorControl/FBSimulatorControlTests/Tests" target="_blank" rel="noopener noreferrer">The tests</a> should provide you with some basic guidance for using the API, and the <code>idb_companion</code> in this repository is a full-featured consumer of it.</p>
 <p>For a high level overview:</p>
 <ul>
-<li><code>FBSimulatorControl</code> is the Principal Class. It is the first object that you should create, with <code>FBSimulatorControl.withConfiguration(_:)</code> (<code>+[FBSimulatorControl withConfiguration:error:]</code> from Objective-C). It creates a <code>FBSimulatorSet</code> upon creation, exposed as <code>set</code>.</li>
+<li><code>FBSimulatorControl</code> is the Principal Class. It is the first object that you should create, with <code>FBSimulatorControl.withConfiguration(_:)</code>. It creates a <code>FBSimulatorSet</code> upon creation, exposed as <code>set</code>.</li>
 <li><code>FBSimulatorSet</code> wraps <code>SimDeviceSet</code> and provides a resilient CRUD API for Deleting, Creating and Erasing Simulators.</li>
 <li><code>FBSimulator</code> is a reference type that represents an individual Simulator. It has a number of convenience methods for accessing information about a Simulator. Many of the possible actions you can perform on a Simulator are present on instances of this class.</li>
-<li>Configuration objects: <code>FBApplicationLaunchConfiguration</code>, <code>FBSimulatorControlConfiguration</code>, <code>FBSimulatorConfiguration</code> &amp; <code>FBSimulatorBootConfiguration</code>.</li>
+<li>Configuration values: <code>FBApplicationLaunchConfiguration</code>, <code>FBSimulatorControlConfiguration</code>, <code>FBSimulatorConfiguration</code> &amp; <code>FBSimulatorBootConfiguration</code>. The last three are structs.</li>
 </ul>
 <h2 class="anchor anchorWithStickyNavbar_LWe7" id="functionality-beyond-apples-tools">Functionality beyond Apple&#x27;s tools<a href="#functionality-beyond-apples-tools" class="hash-link" aria-label="Direct link to Functionality beyond Apple&#x27;s tools" title="Direct link to Functionality beyond Apple&#x27;s tools">​</a></h2>
 <p><code>FBSimulatorControl</code> supported &quot;Multisim&quot; (booting many Simulators concurrently on one host, headlessly, isolated in custom device sets) years before Xcode and <code>simctl</code> did. Apple&#x27;s tools now provide all of this, so it is no longer a reason to pick the framework.</p>
