@@ -246,7 +246,6 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
   /// only difference between the two: everything about framing a request is identical.
   private let persistence: FBAXBridgePersistence
   private var connectionTask: Task<FBAXBridgeConnection, Error>?
-  private var connectionGeneration = 0
 
   init(simulator: FBSimulator, persistence: FBAXBridgePersistence) {
     self.simulator = simulator
@@ -346,17 +345,13 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
   /// establishes a fresh serve rather than reusing it.
   private func roundTripWithoutResend(_ request: [String: Any]) async throws -> Data {
     let requestData = try JSONSerialization.data(withJSONObject: request)
-    let (connection, generation) = try await self.connection()
+    let connection = try await self.connection()
     do {
       let response = try await connection.roundTrip(requestData)
       releaseConnectionIfNotRetained(connection)
       return response
     } catch {
-      // Compare-and-clear on the generation that failed, for the reason `roundTripWithRecovery` gives:
-      // a concurrent caller may already have replaced this connection with a healthy one.
-      if connectionGeneration == generation {
-        connectionTask = nil
-      }
+      connectionTask = nil
       throw error
     }
   }
@@ -365,34 +360,29 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
   private func roundTripWithRecovery(_ request: [String: Any]) async throws -> Data {
     let requestData = try JSONSerialization.data(withJSONObject: request)
     do {
-      let (connection, generation) = try await self.connection()
+      let connection = try await self.connection()
       do {
         let response = try await connection.roundTrip(requestData)
         releaseConnectionIfNotRetained(connection)
         return response
       } catch {
-        // Compare-and-clear: drop the memoized connection only if it is still the generation that just
-        // failed. `read` is reentrant on the actor (it suspends at every `await`), so a concurrent read
-        // that shared this now-dead connection may already have dropped it and established a fresh serve
-        // (a newer generation); clearing unconditionally would evict that healthy connection from the
-        // memo and spawn a redundant serve process (the orphan is later SIGKILLed).
-        if connectionGeneration == generation {
-          connectionTask = nil
-        }
+        connectionTask = nil
         throw error
       }
     } catch {
       // The connection is likely dead — the serve process terminated (crash, sim teardown, external
-      // kill), or the stream desynced after a partial frame. It has been dropped above; re-establish a
-      // fresh serve + socket and retry the request once. The transport is itself memoized per simulator
-      // (`commandCache`) and never re-created for the target's lifetime, so without this a terminated
-      // SimulatorFrameworkBridge would wedge the client (every future request reusing the dead fd).
-      // Retrying makes recovery transparent; a second failure (e.g. the app's accessibility server is
-      // genuinely down) is surfaced.
-      let (connection, _) = try await self.connection()
-      let response = try await connection.roundTrip(requestData)
-      releaseConnectionIfNotRetained(connection)
-      return response
+      // kill), or the stream desynced after a partial frame. It has been dropped above; re-establish and
+      // retry the request once, so recovery is invisible to the caller. A second failure — the
+      // application's accessibility server genuinely being down — is surfaced.
+      let connection = try await self.connection()
+      do {
+        let response = try await connection.roundTrip(requestData)
+        releaseConnectionIfNotRetained(connection)
+        return response
+      } catch {
+        connectionTask = nil
+        throw error
+      }
     }
   }
 
@@ -412,28 +402,22 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
     connectionTask = nil
   }
 
-  /// Returns the memoized connection along with the generation that produced it, so a caller can
-  /// compare-and-clear on the exact generation that failed (`read` is reentrant on the actor — the
-  /// generation is captured before any `await`, so a reentrant caller that re-establishes bumps it and
-  /// the failing caller correctly skips the clear). Establishes once under concurrent callers; each
-  /// fresh serve is a new generation, and an establish failure clears the memo so a later call retries.
-  private func connection() async throws -> (connection: FBAXBridgeConnection, generation: Int) {
+  /// The connection to this transport's guest, established once under concurrent callers.
+  ///
+  /// Any failure clears the memo. Two callers can therefore race to establish, and the loser re-adopts
+  /// over the well-known socket — or spawns, if the shared guest is busy by then.
+  private func connection() async throws -> FBAXBridgeConnection {
     if let connectionTask {
-      let generation = connectionGeneration
-      return (try await connectionTask.value, generation)
+      return try await connectionTask.value
     }
-    connectionGeneration += 1
-    let generation = connectionGeneration
     let simulator = self.simulator
     let persistence = self.persistence
     let task = Task { try await Self.establish(simulator: simulator, persistence: persistence) }
     connectionTask = task
     do {
-      return (try await task.value, generation)
+      return try await task.value
     } catch {
-      if connectionGeneration == generation {
-        connectionTask = nil
-      }
+      connectionTask = nil
       throw error
     }
   }
