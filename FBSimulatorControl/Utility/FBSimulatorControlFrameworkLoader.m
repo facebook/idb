@@ -9,20 +9,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-static void FBSimulatorControl_SimLogHandler(int level, const char *function, int lineNumber, NSString *format, ...)
-{
-  va_list args;
-  va_start(args, format);
-  NSString *string = [[NSString alloc] initWithFormat:format arguments:args];
-  va_end(args);
-  id<FBControlCoreLogger> logger = [FBControlCoreGlobalConfiguration.defaultLogger.debug withName:@"CoreSimulator"];
-  [logger log:string];
-}
-
-@interface FBSimulatorControlFrameworkLoader_Essential : FBSimulatorControlFrameworkLoader
-
-@end
-
 @implementation FBSimulatorControlFrameworkLoader
 
 #pragma mark Initializers
@@ -32,8 +18,8 @@ static void FBSimulatorControl_SimLogHandler(int level, const char *function, in
   static dispatch_once_t onceToken;
   static FBSimulatorControlFrameworkLoader *loader;
   dispatch_once(&onceToken, ^{
-    loader = [FBSimulatorControlFrameworkLoader_Essential loaderWithName:@"FBSimulatorControl"
-                                                              frameworks:@[
+    loader = [FBSimulatorControlFrameworkLoader loaderWithName:@"FBSimulatorControl"
+                                                    frameworks:@[
                 FBWeakFramework.CoreSimulator,
               ]];
   });
@@ -64,59 +50,6 @@ static void FBSimulatorControl_SimLogHandler(int level, const char *function, in
               ]];
   });
   return loader;
-}
-
-@end
-
-@implementation FBSimulatorControlFrameworkLoader_Essential
-
-#pragma mark Public Methods
-
-- (BOOL)loadPrivateFrameworks:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error
-{
-  if (self.hasLoadedFrameworks) {
-    return YES;
-  }
-  BOOL loaded = [super loadPrivateFrameworks:logger error:error];
-  if (loaded) {
-    // Hook the default handler to call us instead.
-    [FBSimulatorControlFrameworkLoader_Essential setInternalLogHandler];
-  }
-  return loaded;
-}
-
-#pragma mark Private Methods
-
-+ (BOOL)setInternalLogHandler
-{
-  NSBundle *coreSimulatorBundle = [NSBundle bundleWithIdentifier:@"com.apple.CoreSimulator"];
-  if (!coreSimulatorBundle) {
-    return NO;
-  }
-  NSString *bundleVersionString = coreSimulatorBundle.infoDictionary[@"CFBundleVersion"];
-  if (!bundleVersionString) {
-    return NO;
-  }
-  NSDecimalNumber *bundleVersion = [NSDecimalNumber decimalNumberWithString:bundleVersionString];
-  if (!bundleVersion) {
-    return NO;
-  }
-  if ([bundleVersion isEqualToNumber:NSDecimalNumber.notANumber]) {
-    return NO;
-  }
-  if ([bundleVersion isGreaterThanOrEqualTo:[NSDecimalNumber decimalNumberWithString:@"757"]]) {
-    return NO;
-  }
-  void *coreSimulatorHandle = [coreSimulatorBundle dlopenExecutablePath];
-  if (!coreSimulatorHandle) {
-    return NO;
-  }
-  void (*SetHandler)(void *) = FBGetSymbolFromHandleOptional(coreSimulatorHandle, "SimLogSetHandler");
-  if (!SetHandler) {
-    return NO;
-  }
-  SetHandler(FBSimulatorControl_SimLogHandler);
-  return YES;
 }
 
 @end
