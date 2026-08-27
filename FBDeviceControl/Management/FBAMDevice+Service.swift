@@ -42,6 +42,20 @@ extension FBAMDevice {
     return try await body(connection)
   }
 
+  /// Starts a device link service, invalidating the connection once `body` returns or throws.
+  ///
+  /// The device link handshake is performed before `body` runs, so the client it receives is ready
+  /// to process messages.
+  public func withDeviceLinkClient<T>(
+    _ service: String,
+    _ body: (FBDeviceLinkClient) async throws -> T
+  ) async throws -> T {
+    try await withServiceConnection(service) { connection in
+      let client = try await FBDeviceLinkClient.deviceLinkClientAsync(connection: connection)
+      return try await body(client)
+    }
+  }
+
   // MARK: - Private
 
   private func openServiceConnection(_ service: String) async throws -> FBAMDServiceConnection {

@@ -23,4 +23,15 @@ extension FBDevice {
     }
     return try await amDevice.withServiceConnection(service, body)
   }
+
+  /// Starts a device link service, invalidating the connection once `body` returns or throws.
+  public func withDeviceLinkClient<T>(
+    _ service: String,
+    _ body: (FBDeviceLinkClient) async throws -> T
+  ) async throws -> T {
+    guard let amDevice else {
+      throw FBAMDeviceServiceError.notAMDeviceBacked(service: service)
+    }
+    return try await amDevice.withDeviceLinkClient(service, body)
+  }
 }

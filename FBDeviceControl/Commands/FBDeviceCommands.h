@@ -120,14 +120,6 @@ extern FBDeviceActivationState _Nonnull FBDeviceActivationStateCoerceFromString(
 - (nonnull FBFutureContext<FBAMDServiceConnection *> *)startService:(nonnull NSString *)service;
 
 /**
- Starts a Service, wrapping it in a "Device Link" Plist client.
-
- @param service the service name.
- @return a Future context wrapping the FBDeviceLinkClient.
- */
-- (nonnull FBFutureContext<FBDeviceLinkClient *> *)startDeviceLinkService:(nonnull NSString *)service;
-
-/**
  Starts a Service, wrapping it in an "AFC" Client.
 
  @param service the service name.

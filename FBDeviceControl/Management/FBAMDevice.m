@@ -159,16 +159,6 @@ static NSString *const UnknownValue = @"unknown";
   return [self startServiceConnection:service];
 }
 
-- (FBFutureContext<FBDeviceLinkClient *> *)startDeviceLinkService:(NSString *)service
-{
-  return [[self
-           startService:service]
-          onQueue:self.workQueue
-          pend:^(FBAMDServiceConnection *connection) {
-            return [FBDeviceLinkClient deviceLinkClientWithConnection:connection];
-          }];
-}
-
 - (FBFutureContext<FBAFCConnection *> *)startAFCService:(NSString *)service
 {
   return [[self
