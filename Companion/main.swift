@@ -206,7 +206,7 @@ private func awaitDevicePopulation(of set: FBDeviceSet, logger: FBControlCoreLog
   }
 }
 
-private func defaultTargetSets(_ userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBControlCoreLogger) async throws -> [FBiOSTargetSet] {
+private func defaultTargetSets(_ userDefaults: UserDefaults, xcodeAvailable: Bool, waitForDevices: Bool = false, logger: FBControlCoreLogger) async throws -> [FBiOSTargetSet] {
   let only = userDefaults.string(forKey: "-only")
   if let only {
     if only.lowercased().contains("simulator") {
@@ -231,7 +231,7 @@ private func defaultTargetSets(_ userDefaults: UserDefaults, xcodeAvailable: Boo
   logger.log("Providing targets across Simulator and Device sets.")
   return [
     try simulatorSet(userDefaults, logger: logger),
-    try await deviceSet(logger, ecidFilter: nil),
+    try await deviceSet(logger, ecidFilter: nil, waitForDevices: waitForDevices),
   ]
 }
 
@@ -353,7 +353,7 @@ private func runDelete(_ udidOrAll: String, userDefaults: UserDefaults, logger: 
 }
 
 private func runList(_ userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBControlCoreLogger) async throws {
-  let targetSets = try await defaultTargetSets(userDefaults, xcodeAvailable: xcodeAvailable, logger: logger)
+  let targetSets = try await defaultTargetSets(userDefaults, xcodeAvailable: xcodeAvailable, waitForDevices: true, logger: logger)
   var reportedCount: UInt = 0
   for targetSet in targetSets {
     for targetInfo in targetSet.allTargetInfos {
