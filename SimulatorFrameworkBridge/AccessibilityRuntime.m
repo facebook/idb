@@ -425,6 +425,10 @@ typedef struct {
   FBAXValueGetValueFn valueGetValue;                                // borrows
   FBAXDefaultSnapshotParametersFn defaultSnapshotParameters;
   FBAXAttributeNumbersForNamesFn attributeNumbersForNames;
+  // What proves a snapshot node's element value really is an AXUIElementRef before it is handed to the
+  // C entry points, which do not check. Optional: without it, elements cannot be attributed to a process
+  // and boundary continuation stays off, which is safer than guessing.
+  CFTypeID (*elementTypeID)(void);
 } FBAXRuntimeFunctions;
 
 // The one place a semantic action becomes the number the C ABI takes, so a runtime that renumbers them is
@@ -757,6 +761,7 @@ static NSString *const kFrontboardVisibilityEndowment = @"com.apple.frontboard.v
   _functions.valueGetValue = dlsym(RTLD_DEFAULT, "AXValueGetValue");
   _functions.defaultSnapshotParameters = dlsym(RTLD_DEFAULT, "XCTDefaultSnapshotParameters");
   _functions.attributeNumbersForNames = dlsym(RTLD_DEFAULT, "XCAXAccessibilityAttributesForStringAttributes");
+  _functions.elementTypeID = dlsym(RTLD_DEFAULT, "AXUIElementGetTypeID");
   if (!_functions.createSystemWide || !_functions.copyElementAtPosition || !_functions.getPid
       || !_functions.performAction || !_functions.setAttributeValue) {
     if (error) {
@@ -845,10 +850,13 @@ static NSError *FBAXSnapshotFailure(NSInteger code, NSString *description)
                          userInfo:@{NSLocalizedDescriptionKey : description}];
 }
 
-- (nullable id)snapshotOfElement:(id)element
-                  attributeNames:(NSArray<NSString *> *)names
-                   namesByNumber:(NSDictionary<NSNumber *, NSString *> *_Nullable *_Nonnull)namesByNumber
-                           error:(NSError **)error
+// The body both snapshot entry points share, taking the raw reference the framework wants. The framework
+// passes its argument straight to the accessibility call without unwrapping it, which is why the callers
+// unwrap on their side of this seam rather than handing over the element wrapper the other methods take.
+- (nullable id)snapshotOfReference:(id)reference
+                    attributeNames:(NSArray<NSString *> *)names
+                     namesByNumber:(NSDictionary<NSNumber *, NSString *> *_Nullable *_Nonnull)namesByNumber
+                             error:(NSError **)error
 {
   SEL selector = @selector(userTestingSnapshotForElement:options:error:);
   if (![_framework respondsToSelector:selector]) {
@@ -885,9 +893,15 @@ static NSError *FBAXSnapshotFailure(NSInteger code, NSString *description)
   NSMutableDictionary *options = [_functions.defaultSnapshotParameters() mutableCopy] ?: [NSMutableDictionary dictionary];
   options[@"attributes"] = numbers;
 
-  // The framework passes its argument straight to the accessibility call without unwrapping it, so it
-  // needs the raw reference rather than the element wrapper every other method here takes. Unwrapped on
-  // this side of the seam, where the accessor is declared and its signature is checked.
+  return [_framework userTestingSnapshotForElement:reference options:options error:error];
+}
+
+- (nullable id)snapshotOfElement:(id)element
+                  attributeNames:(NSArray<NSString *> *)names
+                   namesByNumber:(NSDictionary<NSNumber *, NSString *> *_Nullable *_Nonnull)namesByNumber
+                           error:(NSError **)error
+{
+  // Unwrapped here, where the accessor is declared and its signature is checked.
   XCAccessibilityElement *wrapper = element;
   void *reference = [wrapper respondsToSelector:@selector(AXUIElement)] ? [wrapper AXUIElement] : NULL;
   if (!reference) {
@@ -896,7 +910,42 @@ static NSError *FBAXSnapshotFailure(NSInteger code, NSString *description)
     }
     return nil;
   }
-  return [_framework userTestingSnapshotForElement:(__bridge id)reference options:options error:error];
+  return [self snapshotOfReference:(__bridge id)reference attributeNames:names namesByNumber:namesByNumber error:error];
+}
+
+- (pid_t)owningProcessIdentifierForSnapshotElement:(id)element
+{
+  // The snapshot's element key holds a raw AXUIElementRef, which is exactly what the pid lookup takes —
+  // but the C entry points do not check what they are handed, so the type is proven before the call
+  // rather than trusted from the key's name. A failed lookup answers 0, the value the interface names
+  // "unknown" — never a guess.
+  if (!element || !_functions.getPid || !_functions.elementTypeID) {
+    return 0;
+  }
+  if (CFGetTypeID((__bridge CFTypeRef)element) != _functions.elementTypeID()) {
+    return 0;
+  }
+  pid_t pid = 0;
+  if (_functions.getPid((__bridge void *)element, &pid) != FBAXErrorSuccess) {
+    return 0;
+  }
+  return pid;
+}
+
+- (nullable id)snapshotOfSnapshotElement:(id)element
+                          attributeNames:(NSArray<NSString *> *)names
+                           namesByNumber:(NSDictionary<NSNumber *, NSString *> *_Nullable *_Nonnull)namesByNumber
+                                   error:(NSError **)error
+{
+  // The snapshot's element key already holds the raw reference the framework wants; there is nothing to
+  // unwrap. The reference is owned by the snapshot dictionary it came from, which the caller is holding.
+  if (!element) {
+    if (error) {
+      *error = FBAXSnapshotFailure(2, @"the snapshot node carries no element to snapshot");
+    }
+    return nil;
+  }
+  return [self snapshotOfReference:element attributeNames:names namesByNumber:namesByNumber error:error];
 }
 
 - (BOOL)getRect:(CGRect *)rect fromValue:(id)value

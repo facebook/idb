@@ -117,8 +117,8 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
     )
   }
 
-  /// What this backend reads when the caller named no traversal: one fetch for the whole tree, unless
-  /// the read asks whether its elements can be reached.
+  /// What this backend reads when the caller named no traversal: one fetch per process for the whole
+  /// tree, unless the read asks whether its elements can be reached.
   ///
   /// The application hit-tests every node to answer reachability, and a single fetch that asks for it
   /// times out rather than answering — three reads of an Instagram feed timed out at 3.1-3.4s where the
