@@ -18,6 +18,7 @@
 @property (nonatomic, readonly, strong) dispatch_queue_t asyncQueue;
 @property (nonatomic, readonly, assign) AMDCalls calls;
 @property (nonatomic, readwrite, assign) int registrationID;
+@property (nullable, nonatomic, readwrite, assign) void *notificationContext;
 @property (nullable, nonatomic, readonly, copy) NSString *ecidFilter;
 
 - (NSDictionary<NSString *, id> *)infoForRestorableDevice:(AMRestorableDeviceRef)device;
@@ -88,18 +89,24 @@ static void FB_AMRestorableDeviceListenerCallback(AMRestorableDeviceRef device, 
 
 - (BOOL)startListeningWithError:(NSError **)error
 {
+  // Retained for as long as the registration lasts: the callback bridges this back unretained, so
+  // it must not be deallocated while MobileDevice can still deliver a notification. Balanced in
+  // -stopListeningWithError:, and below if the registration itself fails.
+  void *context = (void *) CFBridgingRetain(self);
   int registrationID = self.calls.RestorableDeviceRegisterForNotifications(
     FB_AMRestorableDeviceListenerCallback,
-    (void *) CFBridgingRetain(self),
+    context,
     0,
     0
   );
   if (registrationID < 1) {
+    CFBridgingRelease(context);
     return [[FBDeviceControlError
              describe:[NSString stringWithFormat:@"AMRestorableDeviceRegisterForNotifications failed with %d", registrationID]]
             failBool:error];
   }
   self.registrationID = registrationID;
+  self.notificationContext = context;
   return YES;
 }
 
@@ -116,6 +123,12 @@ static void FB_AMRestorableDeviceListenerCallback(AMRestorableDeviceRef device, 
   // Return of AMRestorableDeviceUnregisterForNotifications seems to be some random number.
   // However, giving invalid registrationID is fine and we still get logging.
   self.calls.RestorableDeviceUnregisterForNotifications(registrationID);
+  // No further notification can be delivered, so the callback's context can be given back.
+  void *context = self.notificationContext;
+  self.notificationContext = NULL;
+  if (context) {
+    CFBridgingRelease(context);
+  }
   return YES;
 }
 

@@ -47,11 +47,8 @@ struct FBAMRestorableDeviceManagerRetentionTests {
     #expect(weakManager == nil)
   }
 
-  // BUG: `startListening` passes `CFBridgingRetain(self)` as the callback context and nothing ever
-  // gives that retain back — `stopListening` unregisters the notification only. The manager is
-  // therefore immortal once it has listened — flipped in the following commit.
   @Test
-  func listenedManagerIsRetained() throws {
+  func listenedManagerIsReleased() throws {
     weak var weakManager: FBAMRestorableDeviceManager?
     try autoreleasepool {
       let manager = makeManager()
@@ -59,6 +56,6 @@ struct FBAMRestorableDeviceManagerRetentionTests {
       try manager.startListening()
       try manager.stopListening()
     }
-    #expect(weakManager != nil)
+    #expect(weakManager == nil)
   }
 }
