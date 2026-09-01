@@ -10,217 +10,215 @@ import CompanionLib
 import FBSimulatorControl
 import GRPC
 import IDBGRPCSwift
-import XCTest
+import Testing
 
 /// Pins the `accessibility_info` request → framework translation and the legacy output byte shape.
 /// This is the wire contract the gRPC surface has always served; later changes (backend selection,
 /// the `complete` format) must leave every pin here untouched.
-final class AccessibilityInfoRequestTranslationTests: XCTestCase {
+@Suite
+struct AccessibilityInfoRequestTranslationTests {
 
   // MARK: - Format mapping
 
-  func testOutputFormatMapsLegacyAndNested() {
-    XCTAssertEqual(AccessibilityInfoRequestTranslation.outputFormat(from: .legacy), .default)
-    XCTAssertEqual(AccessibilityInfoRequestTranslation.outputFormat(from: .nested), .nested)
+  @Test
+  func outputFormatMapsLegacyAndNested() {
+    #expect((AccessibilityInfoRequestTranslation.outputFormat(from: .legacy)) == (.default))
+    #expect((AccessibilityInfoRequestTranslation.outputFormat(from: .nested)) == (.nested))
   }
 
-  func testUnrecognizedFormatFallsBackToLegacy() {
-    XCTAssertEqual(
-      AccessibilityInfoRequestTranslation.outputFormat(from: .UNRECOGNIZED(99)), .default,
-      "an unknown format from a newer client degrades to the historical output rather than failing the call"
-    )
+  @Test
+  func unrecognizedFormatFallsBackToLegacy() {
+    #expect((AccessibilityInfoRequestTranslation.outputFormat(from: .UNRECOGNIZED(99))) == (.default), "an unknown format from a newer client degrades to the historical output rather than failing the call")
   }
 
-  func testCompleteFormatMapsThroughUnchanged() {
-    XCTAssertEqual(AccessibilityInfoRequestTranslation.outputFormat(from: .complete), .complete)
+  @Test
+  func completeFormatMapsThroughUnchanged() {
+    #expect((AccessibilityInfoRequestTranslation.outputFormat(from: .complete)) == (.complete))
   }
 
   // MARK: - Searchable-key mapping
 
-  func testSearchableKeyMapsEveryWireValue() {
+  @Test
+  func searchableKeyMapsEveryWireValue() {
     let expected: [(Idb_AccessibilityActionRequest.SearchableKey, FBAXSearchableKey)] = [
       (.label, .label), (.uniqueID, .uniqueID), (.value, .value), (.title, .title),
       (.role, .role), (.roleDescription, .roleDescription), (.subrole, .subrole),
       (.help, .help), (.placeholder, .placeholder),
     ]
-    XCTAssertEqual(
-      expected.count, Idb_AccessibilityActionRequest.SearchableKey.allCases.count,
-      "a searchable key added to the proto must be added to this map"
-    )
+    #expect((expected.count) == (Idb_AccessibilityActionRequest.SearchableKey.allCases.count), "a searchable key added to the proto must be added to this map")
     for (wire, key) in expected {
-      XCTAssertEqual(AccessibilityInfoRequestTranslation.searchableKey(from: wire), key)
+      #expect((AccessibilityInfoRequestTranslation.searchableKey(from: wire)) == (key))
     }
   }
 
-  func testUnrecognizedSearchableKeyFallsBackToLabel() {
-    XCTAssertEqual(AccessibilityInfoRequestTranslation.searchableKey(from: .UNRECOGNIZED(42)), .label)
+  @Test
+  func unrecognizedSearchableKeyFallsBackToLabel() {
+    #expect((AccessibilityInfoRequestTranslation.searchableKey(from: .UNRECOGNIZED(42))) == (.label))
   }
 
   // MARK: - Query construction
 
-  func testEmptyMarkerIsNotAMarkerQuery() {
-    XCTAssertNil(AccessibilityInfoRequestTranslation.markerQuery(from: .init()))
+  @Test
+  func emptyMarkerIsNotAMarkerQuery() {
+    #expect((AccessibilityInfoRequestTranslation.markerQuery(from: .init())) == nil)
   }
 
-  func testMarkerQueryCarriesValueKeyAndDepth() {
+  @Test
+  func markerQueryCarriesValueKeyAndDepth() {
     var request = Idb_AccessibilityInfoRequest()
     request.marker = "Settings"
     request.matchKey = .uniqueID
     request.depth = 7
-    XCTAssertEqual(
-      AccessibilityInfoRequestTranslation.markerQuery(from: request),
-      .marker(value: "Settings", key: .uniqueID, depth: 7)
-    )
+    #expect((AccessibilityInfoRequestTranslation.markerQuery(from: request)) == (.marker(value: "Settings", key: .uniqueID, depth: 7)))
   }
 
   // MARK: - Point
 
-  func testNoPointMeansFrontmost() {
-    XCTAssertNil(AccessibilityInfoRequestTranslation.point(from: .init()))
+  @Test
+  func noPointMeansFrontmost() {
+    #expect((AccessibilityInfoRequestTranslation.point(from: .init())) == nil)
   }
 
-  func testPointRoundTrips() throws {
+  @Test
+  func pointRoundTrips() throws {
     var request = Idb_AccessibilityInfoRequest()
     request.point = .with {
       $0.x = 12
       $0.y = 34
     }
-    let value = try XCTUnwrap(AccessibilityInfoRequestTranslation.point(from: request))
-    XCTAssertEqual(value.pointValue, NSPoint(x: 12, y: 34))
+    let value = try #require(AccessibilityInfoRequestTranslation.point(from: request))
+    #expect((value.pointValue) == (NSPoint(x: 12, y: 34)))
   }
 
   // MARK: - Keys
 
-  func testEmptyKeysSelectTheDefaultSet() throws {
+  @Test
+  func emptyKeysSelectTheDefaultSet() throws {
     let options = try AccessibilityInfoRequestTranslation.options(from: .init(), format: .default)
-    XCTAssertEqual(options.keys, FBAXKeys.defaultSet)
+    #expect((options.keys) == (FBAXKeys.defaultSet))
   }
 
-  func testUnrecognizedKeysInAPartiallyValidListAreDropped() throws {
+  @Test
+  func unrecognizedKeysInAPartiallyValidListAreDropped() throws {
     var request = Idb_AccessibilityInfoRequest()
     request.keys = ["AXLabel", "not-a-key"]
     let options = try AccessibilityInfoRequestTranslation.options(from: request, format: .default)
-    let label = try XCTUnwrap(FBAXKeys(rawValue: "AXLabel"))
-    XCTAssertEqual(
-      options.keys, Set([label]),
-      "deliberately lenient: invalid keys drop silently as long as one key is recognized"
-    )
+    let label = try #require(FBAXKeys(rawValue: "AXLabel"))
+    #expect((options.keys) == (Set([label])), "deliberately lenient: invalid keys drop silently as long as one key is recognized")
   }
 
-  func testAllInvalidKeysAreRejected() {
+  @Test
+  func allInvalidKeysAreRejected() {
     var request = Idb_AccessibilityInfoRequest()
     request.keys = ["not-a-key", "also-not-a-key"]
-    XCTAssertThrowsError(try AccessibilityInfoRequestTranslation.options(from: request, format: .default)) { error in
-      guard let status = error as? GRPCStatus else {
-        return XCTFail("expected GRPCStatus, got \(error)")
-      }
-      XCTAssertEqual(status.code, .invalidArgument)
+    do {
+      _ = try AccessibilityInfoRequestTranslation.options(from: request, format: .default)
+      Issue.record("expected an invalidArgument GRPCStatus")
+    } catch let status as GRPCStatus {
+      #expect(status.code == .invalidArgument)
+    } catch {
+      Issue.record("expected GRPCStatus, got \(error)")
     }
   }
 
-  func testOptionsPinTheHandlerDefaults() throws {
+  @Test
+  func optionsPinTheHandlerDefaults() throws {
     let options = try AccessibilityInfoRequestTranslation.options(from: .init(), format: .nested)
-    XCTAssertEqual(options.format, .nested)
+    #expect((options.format) == (.nested))
     // Per-element round-trip logging is off by default: it floods stderr with
     // element identifiers and label text on the serialization critical path.
     // Debugging opts in by constructing options with logging enabled.
-    XCTAssertFalse(options.enableLogging)
-    XCTAssertFalse(options.enableProfiling, "profiling is collected only when the request asks")
-    XCTAssertFalse(options.collectFrameCoverage, "frame coverage is collected only when the request asks")
+    #expect(!(options.enableLogging))
+    #expect(!(options.enableProfiling), "profiling is collected only when the request asks")
+    #expect(!(options.collectFrameCoverage), "frame coverage is collected only when the request asks")
   }
 
-  func testOptionsForwardProfilingAndFrameCoverageFlags() throws {
+  @Test
+  func optionsForwardProfilingAndFrameCoverageFlags() throws {
     var request = Idb_AccessibilityInfoRequest()
     request.profile = true
     request.collectFrameCoverage = true
     let options = try AccessibilityInfoRequestTranslation.options(from: request, format: .complete)
-    XCTAssertTrue(options.enableProfiling)
-    XCTAssertTrue(options.collectFrameCoverage)
+    #expect((options.enableProfiling))
+    #expect((options.collectFrameCoverage))
   }
 
   // MARK: - Backend selection
 
-  func testUnspecifiedBackendDefaultsToAccessibilityBackend() {
-    XCTAssertEqual(AccessibilityInfoRequestTranslation.backend(from: .unspecified), .accessibility)
+  @Test
+  func unspecifiedBackendDefaultsToAccessibilityBackend() {
+    #expect((AccessibilityInfoRequestTranslation.backend(from: .unspecified)) == (.accessibility))
   }
 
-  func testBackendMapsWireValuesToFrameworkBackends() {
-    XCTAssertEqual(AccessibilityInfoRequestTranslation.backend(from: .ax), .accessibility)
-    XCTAssertEqual(
-      AccessibilityInfoRequestTranslation.backend(from: .axbridge),
-      .axBridge(persistence: .oneShot, frontmostMethod: .windowServer, automationMode: true)
-    )
-    XCTAssertEqual(
-      AccessibilityInfoRequestTranslation.backend(from: .axbridgePersistent),
-      .axBridge(persistence: .exclusive, frontmostMethod: .windowServer, automationMode: true),
-      "axbridge_persistent must select the exclusive transport"
-    )
+  @Test
+  func backendMapsWireValuesToFrameworkBackends() {
+    #expect((AccessibilityInfoRequestTranslation.backend(from: .ax)) == (.accessibility))
+    #expect((AccessibilityInfoRequestTranslation.backend(from: .axbridge)) == (.axBridge(persistence: .oneShot, frontmostMethod: .windowServer, automationMode: true)))
+    #expect((AccessibilityInfoRequestTranslation.backend(from: .axbridgePersistent)) == (.axBridge(persistence: .exclusive, frontmostMethod: .windowServer, automationMode: true)), "axbridge_persistent must select the exclusive transport")
   }
 
-  func testUnrecognizedBackendDefaultsToAccessibilityBackend() {
-    XCTAssertEqual(AccessibilityInfoRequestTranslation.backend(from: .UNRECOGNIZED(9)), .accessibility)
+  @Test
+  func unrecognizedBackendDefaultsToAccessibilityBackend() {
+    #expect((AccessibilityInfoRequestTranslation.backend(from: .UNRECOGNIZED(9))) == (.accessibility))
   }
 
   // MARK: - Legacy output shape
 
-  func testTreeSerializesAsABareArray() throws {
+  @Test
+  func treeSerializesAsABareArray() throws {
     let response = FBAccessibilityElementsResponse(elements: .tree([FBAccessibilityDocumentElement()]))
     let data = try AccessibilityInfoRequestTranslation.legacyJSON(from: response)
-    XCTAssertEqual(
-      String(data: data, encoding: .utf8), "[{}]",
-      "point/frontmost reads emit the bare element array — not the {\"elements\":…} envelope the marker path uses"
-    )
+    #expect((String(data: data, encoding: .utf8)) == ("[{}]"), "point/frontmost reads emit the bare element array — not the {\"elements\":…} envelope the marker path uses")
   }
 
-  func testSingleSerializesAsABareObject() throws {
+  @Test
+  func singleSerializesAsABareObject() throws {
     let response = FBAccessibilityElementsResponse(elements: .single(FBAccessibilityDocumentElement()))
     let data = try AccessibilityInfoRequestTranslation.legacyJSON(from: response)
-    XCTAssertEqual(String(data: data, encoding: .utf8), "{}")
+    #expect((String(data: data, encoding: .utf8)) == ("{}"))
   }
 
-  func testResponseJSONKeepsTheLegacyShapesByteIdentical() throws {
+  @Test
+  func responseJSONKeepsTheLegacyShapesByteIdentical() throws {
     let response = FBAccessibilityElementsResponse(elements: .tree([FBAccessibilityDocumentElement()]))
     for format in [FBAccessibilityOutputFormat.default, .nested] {
-      XCTAssertEqual(
-        try AccessibilityInfoRequestTranslation.responseJSON(from: response, format: format),
-        try AccessibilityInfoRequestTranslation.legacyJSON(from: response),
-        "the legacy formats are byte-untouched by the format-aware encoder"
-      )
+      #expect((try AccessibilityInfoRequestTranslation.responseJSON(from: response, format: format)) == (try AccessibilityInfoRequestTranslation.legacyJSON(from: response)), "the legacy formats are byte-untouched by the format-aware encoder")
     }
   }
 
-  func testResponseJSONEmitsTheCompleteDocument() throws {
+  @Test
+  func responseJSONEmitsTheCompleteDocument() throws {
     let response = FBAccessibilityElementsResponse(elements: .tree([FBAccessibilityDocumentElement()]), backend: .ax)
     let data = try AccessibilityInfoRequestTranslation.responseJSON(from: response, format: .complete)
-    let document = try XCTUnwrap(try JSONSerialization.jsonObject(with: data) as? [String: Any])
-    XCTAssertEqual(document["backend"] as? String, "ax")
-    XCTAssertNotNil(
-      document["elements"],
-      "the complete document is the client-detectable shape: an object naming the backend that served it"
-    )
+    let document = try #require(try JSONSerialization.jsonObject(with: data) as? [String: Any])
+    #expect((document["backend"] as? String) == ("ax"))
+    #expect((document["elements"]) != nil, "the complete document is the client-detectable shape: an object naming the backend that served it")
   }
 
   // `--key all` is the whole point of the token: a caller wanting a full dump should not have to name
   // twenty-odd keys and keep the list current as the vocabulary grows.
-  func testTheAllTokenExpandsToEveryKey() throws {
+  @Test
+  func theAllTokenExpandsToEveryKey() throws {
     var request = Idb_AccessibilityInfoRequest()
     request.keys = [FBAXKeys.everythingToken]
     let options = try AccessibilityInfoRequestTranslation.options(from: request, format: .default)
-    XCTAssertEqual(options.keys, FBAXKeys.everything)
+    #expect((options.keys) == (FBAXKeys.everything))
   }
 
   // `all` alongside a named key still means all. Intersecting them would answer with less than either
   // request would have on its own, which is the one outcome the caller cannot have meant.
-  func testTheAllTokenWinsOverKeysNamedBesideIt() throws {
+  @Test
+  func theAllTokenWinsOverKeysNamedBesideIt() throws {
     var request = Idb_AccessibilityInfoRequest()
     request.keys = ["AXLabel", FBAXKeys.everythingToken]
     let options = try AccessibilityInfoRequestTranslation.options(from: request, format: .default)
-    XCTAssertEqual(options.keys, FBAXKeys.everything)
+    #expect((options.keys) == (FBAXKeys.everything))
   }
 
   // The token is not a key: it names no field and must never reach a node as one.
-  func testTheAllTokenIsNotItselfAKey() {
-    XCTAssertNil(FBAXKeys(rawValue: FBAXKeys.everythingToken))
+  @Test
+  func theAllTokenIsNotItselfAKey() {
+    #expect((FBAXKeys(rawValue: FBAXKeys.everythingToken)) == nil)
   }
 
 }
