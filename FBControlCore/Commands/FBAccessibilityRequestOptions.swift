@@ -78,6 +78,59 @@ public enum FBAccessibilityElementFilter: String, Sendable, CaseIterable {
   }
 }
 
+/// A substring search a describe-all read narrows its elements by: report only the elements whose
+/// `key` value contains `value`.
+///
+/// Distinct from `FBAccessibilityElementQuery.marker`, which selects exactly one element and fails
+/// when there is none. A match narrows a list: no match is an empty list, not an error, and every
+/// element that matches is reported rather than the first.
+///
+/// Like the filter it runs beside, this reads the *serialized* element, so `key`'s attribute has to be
+/// among the keys the read serialized — `serializationKeys` unions it in for that reason.
+public struct FBAccessibilityMatch: Sendable, Equatable {
+
+  /// The substring an element's `key` value must contain. Never empty: an empty match reports every
+  /// element, which is the absence of a match rather than a match that succeeds everywhere, so callers
+  /// express that by passing no match at all.
+  public let value: String
+
+  /// Which attribute the substring is compared against. Defaults to `.label`, the attribute all but a
+  /// fraction of real lookups search on.
+  public let key: FBAXSearchableKey
+
+  /// Compare case-insensitively. Read path only — marker resolution for a write stays case-sensitive.
+  public let ignoresCase: Bool
+
+  /// Nil for an empty value, so "the caller passed no match" and "the caller passed an empty one" reach
+  /// the filter as the same thing rather than as a predicate that keeps everything by accident.
+  public init?(value: String, key: FBAXSearchableKey = .label, ignoresCase: Bool = false) {
+    guard !value.isEmpty else {
+      return nil
+    }
+    self.value = value
+    self.key = key
+    self.ignoresCase = ignoresCase
+  }
+
+  /// Whether a serialized attribute value satisfies this match. Nil — an attribute the element does not
+  /// carry, or that the read did not serialize — never matches.
+  public func matches(_ candidate: String?) -> Bool {
+    guard let candidate else {
+      return false
+    }
+    guard ignoresCase else {
+      return candidate.contains(value)
+    }
+    return candidate.range(of: value, options: .caseInsensitive) != nil
+  }
+}
+
+extension FBAccessibilityMatch: CustomStringConvertible {
+  public var description: String {
+    "<FBAccessibilityMatch: \(key.rawValue) contains '\(value)'\(ignoresCase ? " (ignoring case)" : "")>"
+  }
+}
+
 /// How a read traverses the application, and therefore which set of attributes the returned elements
 /// carry.
 ///
@@ -175,7 +228,9 @@ public struct FBAccessibilityRequestOptions: Sendable {
   /// That is not true of every widening: `interactable` and `occludedBy` are costly to fetch — see
   /// `FBAXKeys.interactable`.
   public var serializationKeys: Set<FBAXKeys> {
-    Self.serializationKeys(for: keys, format: format, filter: filter, collectFrameCoverage: collectFrameCoverage)
+    Self.serializationKeys(
+      for: keys, format: format, filter: filter, match: match, collectFrameCoverage: collectFrameCoverage
+    )
   }
 
   /// The same expansion over an arbitrary key set, for the marker read — which unions the key it
@@ -183,7 +238,8 @@ public struct FBAccessibilityRequestOptions: Sendable {
   /// then reports under neither name.
   public func serializationKeys(including extraKeys: Set<FBAXKeys>) -> Set<FBAXKeys> {
     Self.serializationKeys(
-      for: keys.union(extraKeys), format: format, filter: filter, collectFrameCoverage: collectFrameCoverage
+      for: keys.union(extraKeys), format: format, filter: filter, match: match,
+      collectFrameCoverage: collectFrameCoverage
     )
   }
 
@@ -195,6 +251,7 @@ public struct FBAccessibilityRequestOptions: Sendable {
     for keys: Set<FBAXKeys>,
     format: FBAccessibilityOutputFormat,
     filter: FBAccessibilityElementFilter,
+    match: FBAccessibilityMatch?,
     collectFrameCoverage: Bool
   ) -> Set<FBAXKeys> {
     var expanded = keys
@@ -214,6 +271,17 @@ public struct FBAccessibilityRequestOptions: Sendable {
     }
     if filter != .all {
       expanded.formUnion(filter.requiredKeys)
+    }
+    // Same reason as the filter's `requiredKeys`, and as the marker read's `including:`: the match runs
+    // over the serialized model, so an attribute the read did not fetch is one it cannot match on —
+    // `--key frame --match Buy` would otherwise report nothing rather than the buy button's frame.
+    if let match {
+      expanded.insert(match.key.serializationKey)
+      // `complete` reports `role` only as the normalized `type`, so matching on the raw attribute needs
+      // the counterpart too — the same widening the format arm above performs for a requested key.
+      if format == .complete, match.key.serializationKey == .role {
+        expanded.insert(.type)
+      }
     }
     if collectFrameCoverage {
       expanded.formUnion(frameCoverageKeys)
@@ -244,6 +312,13 @@ public struct FBAccessibilityRequestOptions: Sendable {
   /// Which elements to include in a describe-all read. Default: `.all`.
   public var filter: FBAccessibilityElementFilter
 
+  /// A substring search narrowing which elements a describe-all read reports. `nil` (default) reports
+  /// every element the filter kept.
+  ///
+  /// Composes with `filter` rather than replacing it: `filter` decides what is worth reporting at all,
+  /// the match decides which of those the caller asked about.
+  public var match: FBAccessibilityMatch?
+
   /// How the read asks to traverse. Default: `.auto`, so a caller who does not choose gets whatever
   /// the backend serving them does best.
   public var traversalStrategy: FBAXTraversalStrategy
@@ -272,6 +347,7 @@ public struct FBAccessibilityRequestOptions: Sendable {
     collectFrameCoverage: Bool = false,
     remoteContentOptions: FBAccessibilityRemoteContentOptions? = nil,
     filter: FBAccessibilityElementFilter = .all,
+    match: FBAccessibilityMatch? = nil,
     traversalStrategy: FBAXTraversalStrategy = .auto
   ) {
     self.format = format
@@ -281,12 +357,13 @@ public struct FBAccessibilityRequestOptions: Sendable {
     self.collectFrameCoverage = collectFrameCoverage
     self.remoteContentOptions = remoteContentOptions
     self.filter = filter
+    self.match = match
     self.traversalStrategy = traversalStrategy
   }
 }
 
 extension FBAccessibilityRequestOptions: CustomStringConvertible {
   public var description: String {
-    "<FBAccessibilityRequestOptions: format=\(format.rawValue), keys=\(keys), logging=\(enableLogging), profiling=\(enableProfiling), collectFrameCoverage=\(collectFrameCoverage), remote=\(String(describing: remoteContentOptions)), traversal=\(traversalStrategy.rawValue)>"
+    "<FBAccessibilityRequestOptions: format=\(format.rawValue), keys=\(keys), logging=\(enableLogging), profiling=\(enableProfiling), collectFrameCoverage=\(collectFrameCoverage), remote=\(String(describing: remoteContentOptions)), filter=\(filter.rawValue), match=\(match.map(String.init(describing:)) ?? "none"), traversal=\(traversalStrategy.rawValue)>"
   }
 }
