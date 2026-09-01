@@ -65,6 +65,25 @@ final class FakeLockdownService: NSObject {
   }
 }
 
+/// Mounting is a named function rather than a closure literal assigned to `calls.MountImage`:
+/// assigning a literal there crashes the Swift compiler outright, with no diagnostic. The
+/// difference is the `AMDeviceProgressCallback` parameter — a C function pointer whose own
+/// parameter is an Objective-C object type.
+private func fakeMountImage(
+  _ deviceRef: AMDevice?,
+  _ image: CFString?,
+  _ options: CFDictionary?,
+  _ callback: AMDeviceProgressCallback?,
+  _ context: UnsafeMutableRawPointer?
+) -> Int32 {
+  guard let device = deviceRef as? FakeAMDevice, let image = image as String? else {
+    return 1
+  }
+  device.record("mount_image:\(image)")
+  device.recordMount(path: image)
+  return device.mountImageStatus
+}
+
 /// An `AMDCalls` table backed by scripted fakes, exercising the real `FBAMDevice`,
 /// `FBAMDServiceConnection` and command implementations with nothing device-side.
 ///
@@ -90,6 +109,12 @@ final class FakeAMDevice: NSObject {
     "DeviceName": "Fake Device",
   ]
 
+  /// Status `MountImage` returns. Zero succeeds; the commands treat `0xe8000076` as the distinct
+  /// "wrong image for this OS" case.
+  var mountImageStatus: Int32 = 0
+
+  private(set) var mountedImagePaths: [String] = []
+
   private var services: [String: FakeLockdownService] = [:]
 
   /// The scripted service of this name, created empty on first use so a test can set up a reply
@@ -109,6 +134,10 @@ final class FakeAMDevice: NSObject {
 
   fileprivate func record(_ event: String) {
     events.append(event)
+  }
+
+  fileprivate func recordMount(path: String) {
+    mountedImagePaths.append(path)
   }
 
   // MARK: - Building a device
@@ -202,6 +231,8 @@ final class FakeAMDevice: NSObject {
       return 0
     }
 
+    calls.MountImage = fakeMountImage
+
     calls.ServiceConnectionGetSecureIOContext = { _ in nil }
 
     calls.ServiceConnectionInvalidate = { connectionRef in
@@ -259,7 +290,7 @@ final class FakeAMDevice: NSObject {
 
   // MARK: - Recovering the fakes from the opaque refs
 
-  private static func device(_ ref: AnyObject?) -> FakeAMDevice? {
+  fileprivate static func device(_ ref: AnyObject?) -> FakeAMDevice? {
     ref as? FakeAMDevice
   }
 
