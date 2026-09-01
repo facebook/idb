@@ -343,6 +343,24 @@ message AccessibilityInfoRequest {
   // Collect upper-region frame coverage for the read. Reported by the
   // COMPLETE format only, like profile.
   bool collect_frame_coverage = 10;
+  // Which elements the read reports. FILTER_ALL is the historical behaviour,
+  // so an older client — or one that does not ask — is unaffected.
+  enum Filter {
+    FILTER_ALL = 0;
+    // Only the elements a caller could actually interact with.
+    FILTER_INTERACTABLE = 1;
+  }
+  // Report only the elements whose match_key value contains this substring;
+  // empty reports every element, which is the historical behaviour. Unlike
+  // marker, which selects the first matching element and only it, match
+  // reports all of them and finding none is an empty result rather than an
+  // error. Setting both marker and match is INVALID_ARGUMENT.
+  string match = 11;
+  // Compare match — and, on a marker read, marker — case-insensitively. Read
+  // path only: marker resolution for a tap, scroll, set-value or drag stays
+  // case-sensitive.
+  bool ignore_case = 12;
+  Filter filter = 13;
 }
 
 message AccessibilityInfoResponse {

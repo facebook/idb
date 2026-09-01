@@ -12,10 +12,12 @@ from argparse import ArgumentParser, Namespace
 from idb.cli import ClientCommand
 from idb.common.types import (
     ACCESSIBILITY_BACKEND_BY_NAME,
+    ACCESSIBILITY_FILTER_BY_NAME,
     ACCESSIBILITY_FORMAT_BY_NAME,
     ACCESSIBILITY_KEY_BY_NAME,
     AccessibilityBackend,
     AccessibilityDragOptions,
+    AccessibilityElementFilter,
     AccessibilityInfoOptions,
     AccessibilityMarker,
     AccessibilityOutputFormat,
@@ -145,6 +147,52 @@ def _add_enricher_args(parser: ArgumentParser) -> None:
     )
 
 
+def _add_match_args(parser: ArgumentParser) -> None:
+    parser.add_argument(
+        "--match",
+        default=None,
+        help=(
+            "Report only the elements whose --match-key contains this "
+            "substring, instead of every element on the screen. Unlike "
+            "describe MARKER, which resolves to a single element and fails "
+            "when there is none, this reports every element that matches and "
+            "an empty result when none do."
+        ),
+    )
+    parser.add_argument(
+        "--match-key",
+        choices=list(ACCESSIBILITY_KEY_BY_NAME),
+        default="AXLabel",
+        help="Which attribute --match searches (default: AXLabel)",
+    )
+    parser.add_argument(
+        "--ignore-case",
+        action="store_true",
+        default=False,
+        help="Compare --match case-insensitively",
+    )
+
+
+def _add_filter_arg(parser: ArgumentParser) -> None:
+    parser.add_argument(
+        "--filter",
+        dest="filter",
+        choices=list(ACCESSIBILITY_FILTER_BY_NAME),
+        default=None,
+        help=(
+            "Which elements the read reports: all of them (the default), or "
+            "only the interactable ones — those the companion reports as "
+            "actionable, or that carry a label, an identifier or an "
+            "actionable role."
+        ),
+    )
+
+
+def _filter(args: Namespace) -> AccessibilityElementFilter | None:
+    name = getattr(args, "filter", None)
+    return ACCESSIBILITY_FILTER_BY_NAME[name] if name else None
+
+
 def _add_backend_arg(parser: ArgumentParser) -> None:
     parser.add_argument(
         "--api",
@@ -233,6 +281,8 @@ class AccessibilityInfoAllCommand(ClientCommand):
             action="store_true",
             default=False,
         )
+        _add_match_args(parser)
+        _add_filter_arg(parser)
         _add_enricher_args(parser)
         _add_backend_arg(parser)
         _add_format_arg(parser)
@@ -248,6 +298,10 @@ class AccessibilityInfoAllCommand(ClientCommand):
                 format=requested_format,
                 profile=args.profile,
                 collect_frame_coverage=args.collect_frame_coverage,
+                match=args.match,
+                match_key=ACCESSIBILITY_KEY_BY_NAME[args.match_key],
+                ignore_case=args.ignore_case,
+                filter=_filter(args),
             ),
         )
         _warn_if_complete_downgraded(requested_format, info.json)

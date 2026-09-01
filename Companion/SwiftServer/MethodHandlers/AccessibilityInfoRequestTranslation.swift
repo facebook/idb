@@ -26,6 +26,32 @@ enum AccessibilityInfoRequestTranslation {
     return .marker(value: request.marker, key: searchableKey(from: request.matchKey), depth: UInt(request.depth))
   }
 
+  /// The substring narrowing a request asks for, or nil when it asks for none.
+  ///
+  /// Shares `match_key` with the marker read, which already names "which attribute the search compares
+  /// against"; an unrecognized key falls back to `AXLabel`, as `searchableKey(from:)` does everywhere
+  /// else.
+  static func match(from request: Idb_AccessibilityInfoRequest) -> FBAccessibilityMatch? {
+    FBAccessibilityMatch(
+      value: request.match,
+      key: searchableKey(from: request.matchKey),
+      ignoresCase: request.ignoreCase)
+  }
+
+  /// The element filter a request selects. `FILTER_ALL` — an older client, or one that did not ask —
+  /// and an unrecognized value from a newer client both preserve the historical unfiltered read rather
+  /// than failing the call, as `backend(from:)` and `outputFormat(from:)` do.
+  static func filter(from wire: Idb_AccessibilityInfoRequest.Filter) -> FBAccessibilityElementFilter {
+    switch wire {
+    case .all:
+      return .all
+    case .interactable:
+      return .interactable
+    case .UNRECOGNIZED:
+      return .all
+    }
+  }
+
   /// The point a request targets, or nil for the whole frontmost app.
   static func point(from request: Idb_AccessibilityInfoRequest) -> NSValue? {
     guard request.hasPoint else {
@@ -51,7 +77,20 @@ enum AccessibilityInfoRequestTranslation {
       keys: keys,
       enableLogging: false,
       enableProfiling: request.profile,
-      collectFrameCoverage: request.collectFrameCoverage)
+      collectFrameCoverage: request.collectFrameCoverage,
+      filter: filter(from: request.filter),
+      match: match(from: request))
+  }
+
+  /// Rejects a request that sets both `marker` and `match`.
+  ///
+  /// They are different verbs sharing a message: `marker` selects one element and fails when there is
+  /// none, `match` narrows a list and reports an empty one. There is no reading of "both" that is not a
+  /// guess about which the caller meant, so this is `INVALID_ARGUMENT` rather than a precedence rule.
+  static func validate(_ request: Idb_AccessibilityInfoRequest) throws {
+    guard request.marker.isEmpty || request.match.isEmpty else {
+      throw GRPCStatus(code: .invalidArgument, message: "set either marker or match, not both")
+    }
   }
 
   /// The backend a request selects, through the framework's name bijection. `UNSPECIFIED` — an older

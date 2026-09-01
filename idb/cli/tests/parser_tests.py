@@ -24,6 +24,7 @@ from idb.common.command import Command, CommandGroup
 from idb.common.types import (
     AccessibilityBackend,
     AccessibilityDragOptions,
+    AccessibilityElementFilter,
     AccessibilityInfo,
     AccessibilityInfoOptions,
     AccessibilityMarker,
@@ -1867,6 +1868,71 @@ class TestParser(TestCase):
             target=None,
             options=AccessibilityInfoOptions(nested=True, keys=["AXLabel", "type"]),
         )
+
+    async def test_accessibility_info_all_match(self) -> None:
+        self.client_mock.accessibility_info = AsyncMock()
+        await cli_main(cmd_input=["ui", "describe-all", "--match", "Add to Cart"])
+        self.client_mock.accessibility_info.assert_called_once_with(
+            target=None,
+            options=AccessibilityInfoOptions(nested=False, match="Add to Cart"),
+        )
+
+    async def test_accessibility_info_all_match_key_and_ignore_case(self) -> None:
+        self.client_mock.accessibility_info = AsyncMock()
+        await cli_main(
+            cmd_input=[
+                "ui",
+                "describe-all",
+                "--match",
+                "cart",
+                "--match-key",
+                "AXUniqueId",
+                "--ignore-case",
+            ]
+        )
+        self.client_mock.accessibility_info.assert_called_once_with(
+            target=None,
+            options=AccessibilityInfoOptions(
+                nested=False,
+                match="cart",
+                match_key=AccessibilitySearchableKey.UNIQUE_ID,
+                ignore_case=True,
+            ),
+        )
+
+    async def test_accessibility_info_all_filter(self) -> None:
+        self.client_mock.accessibility_info = AsyncMock()
+        await cli_main(cmd_input=["ui", "describe-all", "--filter", "interactable"])
+        self.client_mock.accessibility_info.assert_called_once_with(
+            target=None,
+            options=AccessibilityInfoOptions(
+                nested=False, filter=AccessibilityElementFilter.INTERACTABLE
+            ),
+        )
+
+    async def test_accessibility_info_all_filter_all_is_explicit(self) -> None:
+        # --filter all is not the same as omitting it: it sets the field, which
+        # is still the historical behaviour, so both must reach the companion
+        # as a read over every element.
+        self.client_mock.accessibility_info = AsyncMock()
+        await cli_main(cmd_input=["ui", "describe-all", "--filter", "all"])
+        self.client_mock.accessibility_info.assert_called_once_with(
+            target=None,
+            options=AccessibilityInfoOptions(
+                nested=False, filter=AccessibilityElementFilter.ALL
+            ),
+        )
+
+    async def test_filter_enum_matches_wire_values(self) -> None:
+        # The typed filter must emit the values the proto declares, by name and
+        # by number — FILTER_ALL is zero, so a request that does not ask, and
+        # an older companion that drops the field, both read every element.
+        self.assertEqual(AccessibilityInfoRequest.FILTER_ALL, 0)
+        for element_filter in AccessibilityElementFilter:
+            self.assertEqual(
+                element_filter.value,
+                getattr(AccessibilityInfoRequest, f"FILTER_{element_filter.name}"),
+            )
 
     async def test_crash_list_all(self) -> None:
         self.client_mock.crash_list = AsyncMock(return_value=[])

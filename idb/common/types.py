@@ -425,9 +425,23 @@ ACCESSIBILITY_FORMAT_BY_NAME: dict[str, AccessibilityOutputFormat] = {
 }
 
 
+# Which elements an accessibility read reports. Values match the wire
+# protocol; ALL is the historical behaviour, so an option left unset — or an
+# older companion, which drops the field — reads as it always has.
+class AccessibilityElementFilter(Enum):
+    ALL = 0
+    INTERACTABLE = 1
+
+
+ACCESSIBILITY_FILTER_BY_NAME: dict[str, AccessibilityElementFilter] = {
+    "all": AccessibilityElementFilter.ALL,
+    "interactable": AccessibilityElementFilter.INTERACTABLE,
+}
+
+
 # Shapes the accessibility_info request: the format, which accessibility
-# keys are reported, and which backend serves the read. This grows as
-# describe-all gains enrichers.
+# keys are reported, which elements are reported, and which backend serves the
+# read. This grows as describe-all gains enrichers.
 @dataclass(frozen=True)
 class AccessibilityInfoOptions:
     nested: bool = False
@@ -436,6 +450,17 @@ class AccessibilityInfoOptions:
     format: AccessibilityOutputFormat | None = None
     profile: bool = False
     collect_frame_coverage: bool = False
+    # Report only the elements whose `match_key` contains this substring.
+    # None (and the empty string) reports every element. Unlike a marker,
+    # which selects the first match and only it, this reports all of them and
+    # no match is an empty result rather than an error.
+    match: str | None = None
+    # Which attribute `match` is compared against. Shared with the marker
+    # read's key on the wire, so a request carries one or the other.
+    match_key: AccessibilitySearchableKey = AccessibilitySearchableKey.LABEL
+    # Compare `match` — and a marker, on a read — case-insensitively.
+    ignore_case: bool = False
+    filter: AccessibilityElementFilter | None = None
 
 
 class AccessibilityScrollDirection(Enum):

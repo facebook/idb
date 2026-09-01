@@ -17,6 +17,7 @@ struct AccessibilityInfoMethodHandler {
   let commandExecutor: FBIDBCommandExecutor
 
   func handle(request: Idb_AccessibilityInfoRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_AccessibilityInfoResponse {
+    try AccessibilityInfoRequestTranslation.validate(request)
     let format = AccessibilityInfoRequestTranslation.outputFormat(from: request.format)
     let backend = AccessibilityInfoRequestTranslation.backend(from: request.backend)
     // A marker selects a single element to describe; without one the request

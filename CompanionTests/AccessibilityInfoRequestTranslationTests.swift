@@ -72,6 +72,119 @@ struct AccessibilityInfoRequestTranslationTests {
     #expect((AccessibilityInfoRequestTranslation.markerQuery(from: request)) == (.marker(value: "Settings", key: .uniqueID, depth: 7)))
   }
 
+  // MARK: - Match construction
+
+  @Test
+  func emptyMatchIsNotAMatch() {
+    #expect(
+      AccessibilityInfoRequestTranslation.match(from: .init()) == nil,
+      "an empty substring is contained in every value, so it is the absence of a narrowing rather than one that keeps everything"
+    )
+  }
+
+  @Test
+  func matchCarriesValueKeyAndCaseSensitivity() throws {
+    var request = Idb_AccessibilityInfoRequest()
+    request.match = "Cart"
+    request.matchKey = .value
+    request.ignoreCase = true
+    let match = try #require(AccessibilityInfoRequestTranslation.match(from: request))
+    #expect(match.value == "Cart")
+    #expect(match.key == .value)
+    #expect(match.ignoresCase)
+  }
+
+  @Test
+  func matchDefaultsToTheLabelAndToCaseSensitivity() throws {
+    var request = Idb_AccessibilityInfoRequest()
+    request.match = "Cart"
+    let match = try #require(AccessibilityInfoRequestTranslation.match(from: request))
+    #expect(match.key == .label)
+    #expect(!match.ignoresCase)
+  }
+
+  @Test
+  func unrecognizedMatchKeyFallsBackToLabel() throws {
+    var request = Idb_AccessibilityInfoRequest()
+    request.match = "Cart"
+    request.matchKey = .UNRECOGNIZED(42)
+    let match = try #require(AccessibilityInfoRequestTranslation.match(from: request))
+    #expect(
+      match.key == .label,
+      "a key a newer client knows and this companion does not degrades to the default search rather than failing the call"
+    )
+  }
+
+  // MARK: - Filter selection
+
+  @Test
+  func filterMapsEveryWireValue() {
+    let expected: [(Idb_AccessibilityInfoRequest.Filter, FBAccessibilityElementFilter)] = [
+      (.all, .all), (.interactable, .interactable),
+    ]
+    #expect(
+      expected.count == Idb_AccessibilityInfoRequest.Filter.allCases.count,
+      "a filter added to the proto must be added to this map"
+    )
+    for (wire, filter) in expected {
+      #expect(AccessibilityInfoRequestTranslation.filter(from: wire) == filter)
+    }
+  }
+
+  @Test
+  func unsetAndUnrecognizedFiltersBothReadEverything() {
+    #expect(AccessibilityInfoRequestTranslation.filter(from: Idb_AccessibilityInfoRequest().filter) == .all)
+    #expect(AccessibilityInfoRequestTranslation.filter(from: .UNRECOGNIZED(9)) == .all)
+  }
+
+  @Test
+  func optionsCarryTheFilterAndTheMatch() throws {
+    var request = Idb_AccessibilityInfoRequest()
+    request.match = "Cart"
+    request.filter = .interactable
+    let options = try AccessibilityInfoRequestTranslation.options(from: request, format: .complete)
+    #expect(options.filter == .interactable)
+    #expect(options.match?.value == "Cart")
+  }
+
+  @Test
+  func optionsDefaultToAnUnnarrowedRead() throws {
+    let options = try AccessibilityInfoRequestTranslation.options(from: .init(), format: .default)
+    #expect(options.filter == .all)
+    #expect(options.match == nil)
+  }
+
+  // MARK: - Validation
+
+  @Test
+  func markerAndMatchTogetherAreRejected() {
+    var request = Idb_AccessibilityInfoRequest()
+    request.marker = "Login"
+    request.match = "Cart"
+    do {
+      try AccessibilityInfoRequestTranslation.validate(request)
+      Issue.record("expected an invalidArgument GRPCStatus")
+    } catch let status as GRPCStatus {
+      #expect(
+        status.code == .invalidArgument,
+        "the two select elements by different rules, and there is no reading of both that is not a guess at which the caller meant"
+      )
+    } catch {
+      Issue.record("expected GRPCStatus, got \(error)")
+    }
+  }
+
+  @Test
+  func eitherMarkerOrMatchAloneIsAccepted() throws {
+    var marker = Idb_AccessibilityInfoRequest()
+    marker.marker = "Login"
+    try AccessibilityInfoRequestTranslation.validate(marker)
+    var match = Idb_AccessibilityInfoRequest()
+    match.match = "Cart"
+    try AccessibilityInfoRequestTranslation.validate(match)
+    try AccessibilityInfoRequestTranslation.validate(.init())
+  }
+
   // MARK: - Point
 
   @Test

@@ -199,8 +199,10 @@ extension FBAXTreeReader {
         fromTree: read.tree, keys: options.serializationKeys, nestedFormat: options.nestedFormat, pid: read.pid
       )
       let screen = FBAXTreeWalk.screenInfo(fromTree: read.tree)
+      // The filter and the match both run before the interactable refinement, which is per-element guest
+      // work there is no reason to spend on an element about to be dropped.
       let elements = try await refiningInteractable(
-        options.filter.apply(to: walked), screen: screen, options: options
+        options.narrowing(walked), screen: screen, options: options
       )
       // Measures serialize + refine, closed before response assembly.
       let serializeDuration = CFAbsoluteTimeGetCurrent() - serializeStarted

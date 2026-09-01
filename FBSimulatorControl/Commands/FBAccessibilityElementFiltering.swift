@@ -113,3 +113,28 @@ extension FBAccessibilityMatch {
     matches(element.searchableValue(for: key))
   }
 }
+
+extension FBAccessibilityElementRetention {
+
+  /// Both narrowings in the order a read applies them: the filter says which elements are worth
+  /// reporting at all, the match says which of those the caller was looking for.
+  ///
+  /// The order lives here, in one place, because it is observable: both hoist, so filtering a matching
+  /// element's container away before the match runs is not the same as after.
+  static func narrowing(
+    _ elements: [FBAccessibilityDocumentElement],
+    filter: FBAccessibilityElementFilter,
+    match: FBAccessibilityMatch?
+  ) -> [FBAccessibilityDocumentElement] {
+    let filtered = filter.apply(to: elements)
+    return match.map { $0.apply(to: filtered) } ?? filtered
+  }
+}
+
+extension FBAccessibilityRequestOptions {
+
+  /// The elements a describe-all read reports out of what it walked.
+  func narrowing(_ elements: [FBAccessibilityDocumentElement]) -> [FBAccessibilityDocumentElement] {
+    FBAccessibilityElementRetention.narrowing(elements, filter: filter, match: match)
+  }
+}

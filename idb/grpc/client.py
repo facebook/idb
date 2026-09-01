@@ -87,6 +87,7 @@ from idb.common.types import (
     TestRunInfo,
     VideoFormat,
 )
+from idb.grpc.accessibility import accessibility_info_to_grpc
 from idb.grpc.crash import (
     _to_crash_log,
     _to_crash_log_info_list,
@@ -98,7 +99,6 @@ from idb.grpc.hid import event_to_grpc
 from idb.grpc.idb_grpc import CompanionServiceStub
 from idb.grpc.idb_pb2 import (
     AccessibilityActionRequest,
-    AccessibilityInfoRequest,
     AddMediaRequest,
     ANY as AnySetting,
     ApproveRequest,
@@ -512,30 +512,9 @@ class Client(ClientBase):
         target: AccessibilityTarget | None,
         options: AccessibilityInfoOptions,
     ) -> AccessibilityInfo:
-        if options.format is not None:
-            wire_format = options.format.value
-        elif options.nested:
-            wire_format = AccessibilityInfoRequest.NESTED
-        else:
-            wire_format = AccessibilityInfoRequest.LEGACY
-        request = AccessibilityInfoRequest(
-            format=wire_format,
-            keys=options.keys or [],
-            profile=options.profile,
-            collect_frame_coverage=options.collect_frame_coverage,
+        response = await self.stub.accessibility_info(
+            accessibility_info_to_grpc(target, options)
         )
-        # Unset means "unspecified" on the wire: the companion's historical
-        # default backend, and the only thing an older companion understands.
-        if options.backend is not None:
-            request.backend = options.backend.value
-        if isinstance(target, AccessibilityMarker):
-            request.marker = target.value
-            request.match_key = target.match_key.value
-            request.depth = target.depth
-        elif isinstance(target, AccessibilityPoint):
-            request.point.x = target.x
-            request.point.y = target.y
-        response = await self.stub.accessibility_info(request)
         return AccessibilityInfo(json=response.json)
 
     @log_and_handle_exceptions("accessibility_tap")

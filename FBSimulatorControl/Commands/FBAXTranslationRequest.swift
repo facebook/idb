@@ -163,7 +163,7 @@ final class FBAXTranslationRequest {
       collector: collector,
       seenPids: seenPids
     )
-    let mainAppElements = options.filter.apply(to: walked)
+    let mainAppElements = options.narrowing(walked)
 
     // Coverage of what the read reports and of what it walked; the unfiltered elements are still in
     // hand, so the second ratio costs no extra traversal of the live tree.
@@ -194,6 +194,7 @@ final class FBAXTranslationRequest {
       mainAppElements: mainAppElements,
       nestedFormat: options.nestedFormat,
       filter: options.filter,
+      match: options.match,
       screenBounds: screenBounds,
       frontmostPid: frontmostPid,
       seenPids: seenPids,
@@ -305,6 +306,7 @@ final class FBAXTranslationRequest {
     mainAppElements: [FBAccessibilityDocumentElement],
     nestedFormat: Bool,
     filter: FBAccessibilityElementFilter,
+    match: FBAccessibilityMatch?,
     screenBounds: CGRect,
     frontmostPid: pid_t,
     seenPids: SeenPIDs,
@@ -337,10 +339,13 @@ final class FBAXTranslationRequest {
       }
     }
 
-    // Discovered elements are kept or dropped on what they are, not on which traversal found them.
-    // `additionalFrameCoverage` is measured before the filter: it reports what the hit-test found that
-    // the element tree did not expose, independent of what the filter keeps.
-    let keptDiscovered = filter.apply(to: discoveredElements)
+    // Discovered elements are kept or dropped on what they are, not on which traversal found them —
+    // including by `--match`, or a remote WebView's matching button would be the one element a match
+    // could not find. `additionalFrameCoverage` is measured before the narrowing: it reports what the
+    // hit-test found that the element tree did not expose, independent of what is kept.
+    let keptDiscovered = FBAccessibilityElementRetention.narrowing(
+      discoveredElements, filter: filter, match: match
+    )
     var elements = mainAppElements
     if !keptDiscovered.isEmpty {
       if nestedFormat, var applicationElement = elements.first {
