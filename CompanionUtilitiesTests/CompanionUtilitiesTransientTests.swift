@@ -6,57 +6,66 @@
  */
 
 @testable import CompanionUtilities
-import XCTest
+import Foundation
+import Testing
 
-final class CompanionUtilitiesTransientTests: XCTestCase {
+@Suite
+struct CompanionUtilitiesTransientTests {
 
   // MARK: - FBMutex Tests
 
-  func testMutexSyncReturnsValue() {
+  @Test
+  func mutexSyncReturnsValue() {
     let mutex = FBMutex()
     let result = mutex.sync { 42 }
-    XCTAssertEqual(result, 42)
+    #expect(result == 42)
   }
 
-  func testMutexSyncThrows() {
+  @Test
+  func mutexSyncThrows() {
     struct TestError: Error {}
     let mutex = FBMutex()
-    XCTAssertThrowsError(try mutex.sync { throw TestError() })
+    #expect(throws: (any Error).self) { try mutex.sync { throw TestError() } }
   }
 
-  func testMutexConcurrentAccess() {
+  @Test
+  func mutexConcurrentAccess() {
     let mutex = FBMutex()
     var counter = 0
     DispatchQueue.concurrentPerform(iterations: 1000) { _ in
       mutex.sync { counter += 1 }
     }
-    XCTAssertEqual(counter, 1000)
+    #expect(counter == 1000)
   }
 
   // MARK: - CodeLocation Tests
 
-  func testCodeLocationDescriptionWithFunction() {
+  @Test
+  func codeLocationDescriptionWithFunction() {
     let location = CodeLocation(function: "testFunc", file: "TestFile.swift", line: 10, column: 5)
-    XCTAssertEqual(location.description, "Located at file: TestFile.swift, line: 10, column: 5, function: testFunc")
+    #expect(location.description == "Located at file: TestFile.swift, line: 10, column: 5, function: testFunc")
   }
 
-  func testCodeLocationDescriptionWithoutFunction() {
+  @Test
+  func codeLocationDescriptionWithoutFunction() {
     let location = CodeLocation(function: nil, file: "TestFile.swift", line: 10, column: 5)
-    XCTAssertEqual(location.description, "Located at file: TestFile.swift, line: 10, column: 5")
+    #expect(location.description == "Located at file: TestFile.swift, line: 10, column: 5")
   }
 
   // MARK: - TaskTimeoutError Tests
 
-  func testTaskTimeoutErrorDescription() {
+  @Test
+  func taskTimeoutErrorDescription() {
     let location = CodeLocation(function: "myFunc", file: "File.swift", line: 1, column: 1)
     let error = TaskTimeoutError(location: location)
-    XCTAssertTrue(error.errorDescription?.contains("timeout") == true)
-    XCTAssertTrue(error.errorDescription?.contains("File.swift") == true)
+    #expect(error.errorDescription?.contains("timeout") == true)
+    #expect(error.errorDescription?.contains("File.swift") == true)
   }
 
   // MARK: - Task.select Tests
 
-  func testSelectReturnsFirstCompletedTask() async {
+  @Test
+  func selectReturnsFirstCompletedTask() async {
     let fast = Task<Int, Never> { 1 }
     let slow = Task<Int, Never> {
       try? await Task.sleep(nanoseconds: 5_000_000_000)
@@ -64,11 +73,12 @@ final class CompanionUtilitiesTransientTests: XCTestCase {
     }
     let winner = await Task.select(fast, slow)
     let value = await winner.value
-    XCTAssertEqual(value, 1)
+    #expect(value == 1)
     slow.cancel()
   }
 
-  func testSelectWithSequence() async {
+  @Test
+  func selectWithSequence() async {
     let tasks = (0..<3).map { i in
       Task<Int, Never> {
         if i == 1 {
@@ -80,11 +90,12 @@ final class CompanionUtilitiesTransientTests: XCTestCase {
     }
     let winner = await Task.select(tasks)
     let value = await winner.value
-    XCTAssertEqual(value, 99)
+    #expect(value == 99)
     for task in tasks { task.cancel() }
   }
 
-  func testSelectCancellationCancelsTasks() async {
+  @Test
+  func selectCancellationCancelsTasks() async throws {
     let task1 = Task<Int, Never> {
       try? await Task.sleep(nanoseconds: 5_000_000_000)
       return 1
@@ -104,56 +115,55 @@ final class CompanionUtilitiesTransientTests: XCTestCase {
 
     // After cancellation, the underlying tasks should be cancelled
     try? await Task.sleep(nanoseconds: 50_000_000)
-    XCTAssertTrue(task1.isCancelled)
-    XCTAssertTrue(task2.isCancelled)
+    #expect(task1.isCancelled)
+    #expect(task2.isCancelled)
   }
 
   // MARK: - Task.timeout Tests
 
-  func testTimeoutSucceedsWhenJobCompletesInTime() async throws {
+  @Test
+  func timeoutSucceedsWhenJobCompletesInTime() async throws {
     let result = try await Task.timeout(nanoseconds: 1_000_000_000) {
       return 42
     }
-    XCTAssertEqual(result, 42)
+    #expect(result == 42)
   }
 
-  func testTimeoutThrowsWhenJobExceedsTimeout() async {
-    do {
-      _ = try await Task.timeout(nanoseconds: 10_000_000) {
+  @Test
+  func timeoutThrowsWhenJobExceedsTimeout() async {
+    await #expect(throws: TaskTimeoutError.self) {
+      try await Task.timeout(nanoseconds: 10_000_000) {
         try await Task.sleep(nanoseconds: 5_000_000_000)
         return 1
       }
-      XCTFail("Expected timeout error")
-    } catch {
-      XCTAssertTrue(error is TaskTimeoutError, "Expected TaskTimeoutError but got \(type(of: error))")
     }
   }
 
-  func testTimeoutPropagatesJobError() async {
+  @Test
+  func timeoutPropagatesJobError() async {
     struct JobError: Error {}
-    do {
-      _ = try await Task.timeout(nanoseconds: 1_000_000_000) {
+    await #expect(throws: JobError.self) {
+      try await Task.timeout(nanoseconds: 1_000_000_000) {
         throw JobError()
       }
-      XCTFail("Expected job error")
-    } catch {
-      XCTAssertTrue(error is JobError, "Expected JobError but got \(type(of: error))")
     }
   }
 
   // MARK: - FBTeardownContext Tests
 
-  func testWithAutocleanupCallsCleanup() async throws {
+  @Test
+  func withAutocleanupCallsCleanup() async throws {
     var cleaned = false
     try await FBTeardownContext.withAutocleanup {
       try FBTeardownContext.current.addCleanup {
         cleaned = true
       }
     }
-    XCTAssertTrue(cleaned)
+    #expect(cleaned)
   }
 
-  func testWithAutocleanupCallsCleanupInLIFOOrder() async throws {
+  @Test
+  func withAutocleanupCallsCleanupInLIFOOrder() async throws {
     var order: [Int] = []
     try await FBTeardownContext.withAutocleanup {
       try FBTeardownContext.current.addCleanup {
@@ -166,36 +176,39 @@ final class CompanionUtilitiesTransientTests: XCTestCase {
         order.append(3)
       }
     }
-    XCTAssertEqual(order, [3, 2, 1])
+    #expect(order == [3, 2, 1])
   }
 
-  func testEmptyContextThrowsOnAddCleanup() async {
+  @Test
+  func emptyContextThrowsOnAddCleanup() async {
     let emptyContext = FBTeardownContext.current
-    XCTAssertThrowsError(try emptyContext.addCleanup {}) { error in
-      XCTAssertTrue(error is FBTeardownContextError)
-      guard let contextError = error as? FBTeardownContextError else { return }
+    do {
+      try emptyContext.addCleanup {}
+      Issue.record("Expected emptyContext error")
+    } catch let contextError as FBTeardownContextError {
       switch contextError {
       case .emptyContext:
         break
       @unknown default:
-        XCTFail("Unexpected error case")
+        Issue.record("Unexpected error case")
       }
-    }
-  }
-
-  func testEmptyContextThrowsOnPerformCleanup() async throws {
-    let emptyContext = FBTeardownContext.current
-    do {
-      try await emptyContext.performCleanup()
-      XCTFail("Expected emptyContext error")
     } catch {
-      XCTAssertTrue(error is FBTeardownContextError)
+      Issue.record("Expected FBTeardownContextError")
     }
   }
 
-  func testDoubleCleanupThrows() async throws {
+  @Test
+  func emptyContextThrowsOnPerformCleanup() async {
+    let emptyContext = FBTeardownContext.current
+    await #expect(throws: FBTeardownContextError.self) {
+      try await emptyContext.performCleanup()
+    }
+  }
+
+  @Test
+  func doubleCleanupThrows() async throws {
     var cleanupCount = 0
-    do {
+    await #expect(throws: FBTeardownContextError.self) {
       try await FBTeardownContext.withAutocleanup {
         let context = FBTeardownContext.current
         try context.addCleanup {
@@ -204,40 +217,38 @@ final class CompanionUtilitiesTransientTests: XCTestCase {
         // Manually perform cleanup before autocleanup triggers
         try await context.performCleanup()
       }
-      XCTFail("Expected cleanupAlreadyPerformed error from autocleanup")
-    } catch {
-      XCTAssertTrue(error is FBTeardownContextError)
     }
-    XCTAssertEqual(cleanupCount, 1)
+    #expect(cleanupCount == 1)
   }
 
-  func testAddCleanupAfterCleanupPerformedThrows() async throws {
+  @Test
+  func addCleanupAfterCleanupPerformedThrows() async throws {
     var context: FBTeardownContext?
     try await FBTeardownContext.withAutocleanup {
       context = FBTeardownContext.current
     }
     // Context cleanup already performed by withAutocleanup
-    XCTAssertThrowsError(try context?.addCleanup {}) { error in
-      XCTAssertTrue(error is FBTeardownContextError)
+    let captured = try #require(context)
+    #expect(throws: FBTeardownContextError.self) {
+      try captured.addCleanup {}
     }
   }
 
-  func testWithAutocleanupReturnsValue() async throws {
+  @Test
+  func withAutocleanupReturnsValue() async throws {
     let result = try await FBTeardownContext.withAutocleanup {
       return 42
     }
-    XCTAssertEqual(result, 42)
+    #expect(result == 42)
   }
 
-  func testWithAutocleanupPropagatesError() async {
+  @Test
+  func withAutocleanupPropagatesError() async {
     struct TestError: Error {}
-    do {
-      _ = try await FBTeardownContext.withAutocleanup {
+    await #expect(throws: TestError.self) {
+      try await FBTeardownContext.withAutocleanup {
         throw TestError()
       }
-      XCTFail("Expected error to propagate")
-    } catch {
-      XCTAssertTrue(error is TestError)
     }
   }
 }

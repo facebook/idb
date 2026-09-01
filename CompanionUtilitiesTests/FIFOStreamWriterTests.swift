@@ -6,29 +6,30 @@
  */
 
 @testable import CompanionUtilities
-import XCTest
+import Testing
 
-class FIFOStreamWriterTests: XCTestCase {
+@Suite
+struct FIFOStreamWriterTests {
 
   private static let maxValue: Int = 1_000
   let sequentialValues = (0...maxValue).map({ $0 })
   private var mockWriter = MockStreamWriter(terminator: maxValue)
 
-  override func setUp() {
+  init() {
     mockWriter = .init(terminator: Self.maxValue)
   }
 
-  func testFIFOOrder() throws {
-    let expectation = expectation(description: #function)
+  @Test
+  func fifoOrder() async throws {
     let fifoWrapper = FIFOStreamWriter(stream: mockWriter)
-    mockWriter.completion = { expectation.fulfill() }
+    try await confirmation("completion") { confirm in
+      mockWriter.completion = { confirm() }
 
-    for value in sequentialValues {
-      try fifoWrapper.send(value)
+      for value in sequentialValues {
+        try fifoWrapper.send(value)
+      }
     }
 
-    wait(for: [expectation], timeout: 2)
-
-    XCTAssertEqual(sequentialValues, mockWriter.storage)
+    #expect(sequentialValues == mockWriter.storage)
   }
 }
