@@ -7,70 +7,78 @@
 
 import FBControlCore
 @testable import FBDeviceControl
-import XCTest
+import Testing
 
-final class FBDeviceControlTransientTests: XCTestCase {
+@Suite
+struct FBDeviceControlTransientTests {
 
   // MARK: - FBDeviceStorage Tests
 
-  func testAttachAndLookupDevice() {
+  @Test
+  func attachAndLookupDevice() {
     let storage = FBDeviceStorage<NSString>(logger: FBControlCoreGlobalConfiguration.defaultLogger)
     storage.deviceAttached("device1" as NSString, forKey: "key1")
 
     let retrieved = storage.device(forKey: "key1") as? NSString
-    XCTAssertEqual(retrieved, "device1")
+    #expect((retrieved) == ("device1"))
   }
 
-  func testAttachedPropertyReflectsAttachedDevices() {
+  @Test
+  func attachedPropertyReflectsAttachedDevices() {
     let storage = FBDeviceStorage<NSString>(logger: FBControlCoreGlobalConfiguration.defaultLogger)
     storage.deviceAttached("device1" as NSString, forKey: "key1")
     storage.deviceAttached("device2" as NSString, forKey: "key2")
 
     let attached = storage.attached as? [String: NSString]
-    XCTAssertEqual(attached?.count, 2)
-    XCTAssertEqual(attached?["key1"], "device1")
-    XCTAssertEqual(attached?["key2"], "device2")
+    #expect((attached?.count) == (2))
+    #expect((attached?["key1"]) == ("device1"))
+    #expect((attached?["key2"]) == ("device2"))
   }
 
-  func testDetachRemovesFromAttached() {
+  @Test
+  func detachRemovesFromAttached() {
     let storage = FBDeviceStorage<NSString>(logger: FBControlCoreGlobalConfiguration.defaultLogger)
     storage.deviceAttached("device1" as NSString, forKey: "key1")
     storage.deviceDetached(forKey: "key1")
 
     let attached = storage.attached as? [String: NSString]
-    XCTAssertEqual(attached?.count, 0)
+    #expect((attached?.count) == (0))
   }
 
-  func testLookupReturnsNilForUnknownKey() {
+  @Test
+  func lookupReturnsNilForUnknownKey() {
     let storage = FBDeviceStorage<NSString>(logger: FBControlCoreGlobalConfiguration.defaultLogger)
     let result = storage.device(forKey: "nonexistent")
-    XCTAssertNil(result)
+    #expect((result) == nil)
   }
 
-  func testReattachUpdatesDevice() {
+  @Test
+  func reattachUpdatesDevice() {
     let storage = FBDeviceStorage<NSString>(logger: FBControlCoreGlobalConfiguration.defaultLogger)
     storage.deviceAttached("old" as NSString, forKey: "key1")
     storage.deviceAttached("new" as NSString, forKey: "key1")
 
     let retrieved = storage.device(forKey: "key1") as? NSString
-    XCTAssertEqual(retrieved, "new")
+    #expect((retrieved) == ("new"))
   }
 
-  func testDetachedDeviceNotInAttachedButStillLookupable() {
+  @Test
+  func detachedDeviceNotInAttachedButStillLookupable() {
     let storage = FBDeviceStorage<NSString>(logger: FBControlCoreGlobalConfiguration.defaultLogger)
     storage.deviceAttached("device1" as NSString, forKey: "key1")
     storage.deviceDetached(forKey: "key1")
 
     // After detach, device is removed from the attached dictionary
     let attached = storage.attached as? [String: NSString]
-    XCTAssertNil(attached?["key1"])
+    #expect((attached?["key1"]) == nil)
 
     // But it can still be found via lookup (weak reference from NSString literal persists)
     let retrieved = storage.device(forKey: "key1")
-    XCTAssertNotNil(retrieved)
+    #expect((retrieved) != nil)
   }
 
-  func testMultipleDevicesAttachAndDetach() {
+  @Test
+  func multipleDevicesAttachAndDetach() {
     let storage = FBDeviceStorage<NSString>(logger: FBControlCoreGlobalConfiguration.defaultLogger)
     storage.deviceAttached("d1" as NSString, forKey: "k1")
     storage.deviceAttached("d2" as NSString, forKey: "k2")
@@ -78,67 +86,71 @@ final class FBDeviceControlTransientTests: XCTestCase {
 
     storage.deviceDetached(forKey: "k2")
 
-    XCTAssertNotNil(storage.device(forKey: "k1"))
-    XCTAssertNotNil(storage.device(forKey: "k3"))
+    #expect((storage.device(forKey: "k1")) != nil)
+    #expect((storage.device(forKey: "k3")) != nil)
 
     let attached = storage.attached as? [String: NSString]
-    XCTAssertEqual(attached?.count, 2)
-    XCTAssertNil(attached?["k2"])
+    #expect((attached?.count) == (2))
+    #expect((attached?["k2"]) == nil)
   }
 
-  func testReferencedPropertyTracksAllKnownDevices() {
+  @Test
+  func referencedPropertyTracksAllKnownDevices() {
     let storage = FBDeviceStorage<NSString>(logger: FBControlCoreGlobalConfiguration.defaultLogger)
     storage.deviceAttached("d1" as NSString, forKey: "k1")
     storage.deviceAttached("d2" as NSString, forKey: "k2")
 
     // Both attached and referenced should have 2 entries
     let referenced = storage.referenced as? [String: NSString]
-    XCTAssertEqual(referenced?.count, 2)
+    #expect((referenced?.count) == (2))
 
     // Detach one - attached drops to 1, referenced still has 2 (string literals are immortal)
     storage.deviceDetached(forKey: "k1")
     let attached = storage.attached as? [String: NSString]
-    XCTAssertEqual(attached?.count, 1)
+    #expect((attached?.count) == (1))
 
     let referencedAfter = storage.referenced as? [String: NSString]
-    XCTAssertEqual(referencedAfter?.count, 2)
+    #expect((referencedAfter?.count) == (2))
   }
 
   // MARK: - FBDeviceControlError Tests
 
-  func testErrorDomain() {
-    XCTAssertEqual(FBDeviceControlErrorDomain, "com.facebook.FBDeviceControl")
+  @Test
+  func errorDomain() {
+    #expect((FBDeviceControlErrorDomain) == ("com.facebook.FBDeviceControl"))
   }
 
-  func testErrorBuilderCreatesErrorInCorrectDomain() {
+  @Test
+  func errorBuilderCreatesErrorInCorrectDomain() {
     let nsError = FBDeviceControlError.describe("test error").build() as NSError
-    XCTAssertEqual(nsError.domain, "com.facebook.FBDeviceControl")
+    #expect((nsError.domain) == ("com.facebook.FBDeviceControl"))
   }
 
-  func testErrorBuilderWithDescription() {
+  @Test
+  func errorBuilderWithDescription() {
     let nsError = FBDeviceControlError.describe("error foo 42").build() as NSError
-    XCTAssertTrue(nsError.localizedDescription.contains("foo"))
-    XCTAssertTrue(nsError.localizedDescription.contains("42"))
+    #expect((nsError.localizedDescription.contains("foo")))
+    #expect((nsError.localizedDescription.contains("42")))
   }
 
-  func testErrorFailFuture() async {
+  @Test
+  func errorFailFuture() async {
     let future: FBFuture<AnyObject> = FBDeviceControlError.describe("future error").failFuture()
     do {
       _ = try await bridgeFBFuture(future)
-      XCTFail("Expected future to throw")
+      Issue.record("Expected future to throw")
     } catch {
       let nsError = error as NSError
-      XCTAssertEqual(nsError.domain, "com.facebook.FBDeviceControl")
+      #expect((nsError.domain) == ("com.facebook.FBDeviceControl"))
     }
   }
 
   // MARK: - FileManager+TemporaryFile Tests
 
-  func testTemporaryFileCreation() throws {
+  @Test
+  func temporaryFileCreation() throws {
     let url = try FileManager.default.temporaryFile(extension: "txt")
-    XCTAssertTrue(
-      url.lastPathComponent.hasSuffix(".txt") || url.lastPathComponent.contains("."),
-      "Temporary file should have a file extension component")
+    #expect((url.lastPathComponent.hasSuffix(".txt") || url.lastPathComponent.contains(".")), "Temporary file should have a file extension component")
     // The parent directory should exist (it was created by the method)
     let parentDir: String
     if #available(macOS 13.0, *) {
@@ -146,38 +158,43 @@ final class FBDeviceControlTransientTests: XCTestCase {
     } else {
       parentDir = url.deletingLastPathComponent().path
     }
-    XCTAssertTrue(FileManager.default.fileExists(atPath: parentDir))
+    #expect((FileManager.default.fileExists(atPath: parentDir)))
   }
 
-  func testTemporaryFileUniqueness() throws {
+  @Test
+  func temporaryFileUniqueness() throws {
     let url1 = try FileManager.default.temporaryFile(extension: "json")
     let url2 = try FileManager.default.temporaryFile(extension: "json")
-    XCTAssertNotEqual(url1, url2, "Each call should produce a unique path")
+    #expect((url1) != (url2), "Each call should produce a unique path")
   }
 
-  func testTemporaryFileDifferentExtensions() throws {
+  @Test
+  func temporaryFileDifferentExtensions() throws {
     let txtURL = try FileManager.default.temporaryFile(extension: "txt")
     let jsonURL = try FileManager.default.temporaryFile(extension: "json")
     if #available(macOS 13.0, *) {
-      XCTAssertTrue(txtURL.lastPathComponent.hasSuffix(".txt"))
-      XCTAssertTrue(jsonURL.lastPathComponent.hasSuffix(".json"))
+      #expect((txtURL.lastPathComponent.hasSuffix(".txt")))
+      #expect((jsonURL.lastPathComponent.hasSuffix(".json")))
     }
   }
 
   // MARK: - Wallpaper Name Constants Tests
 
-  func testWallpaperNameConstants() {
-    XCTAssertEqual(FBWallpaperName.homescreen.rawValue, "homescreen")
-    XCTAssertEqual(FBWallpaperName.lockscreen.rawValue, "lockscreen")
+  @Test
+  func wallpaperNameConstants() {
+    #expect((FBWallpaperName.homescreen.rawValue) == ("homescreen"))
+    #expect((FBWallpaperName.lockscreen.rawValue) == ("lockscreen"))
   }
 
   // MARK: - Springboard Service Name Constants
 
-  func testSpringboardServiceName() {
-    XCTAssertEqual(FBSpringboardServiceName, "com.apple.springboardservices")
+  @Test
+  func springboardServiceName() {
+    #expect((FBSpringboardServiceName) == ("com.apple.springboardservices"))
   }
 
-  func testManagedConfigServiceName() {
-    XCTAssertEqual(FBManagedConfigService, "com.apple.mobile.MCInstall")
+  @Test
+  func managedConfigServiceName() {
+    #expect((FBManagedConfigService) == ("com.apple.mobile.MCInstall"))
   }
 }

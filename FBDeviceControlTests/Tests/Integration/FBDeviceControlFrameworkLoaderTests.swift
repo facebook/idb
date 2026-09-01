@@ -7,12 +7,12 @@
 
 import FBControlCore
 import FBDeviceControl
-import XCTest
+import Testing
 
-final class FBDeviceControlFrameworkLoaderTests: XCTestCase {
+@Suite
+struct FBDeviceControlFrameworkLoaderTests {
 
-  override class func setUp() {
-    super.setUp()
+  init() {
     if ProcessInfo.processInfo.environment[FBControlCoreStderrLogging] == nil {
       setenv(FBControlCoreStderrLogging, "YES", 1)
     }
@@ -21,9 +21,10 @@ final class FBDeviceControlFrameworkLoaderTests: XCTestCase {
     }
   }
 
-  func testConstructsDeviceSet() throws {
+  @Test
+  func constructsDeviceSet() throws {
     let deviceSet = try FBDeviceSet(logger: FBControlCoreGlobalConfiguration.defaultLogger, delegate: nil, ecidFilter: nil)
-    XCTAssertNotNil(deviceSet)
-    XCTAssertNotNil(deviceSet.allDevices)
+    #expect((deviceSet) != nil)
+    #expect((deviceSet.allDevices) != nil)
   }
 }

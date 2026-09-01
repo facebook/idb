@@ -7,7 +7,7 @@
 
 import FBControlCore
 import FBDeviceControl
-import XCTest
+import Testing
 
 /// Records every logged line so log content can be asserted.
 private final class RecordingLogger: NSObject, FBControlCoreLogger {
@@ -27,7 +27,8 @@ private final class RecordingLogger: NSObject, FBControlCoreLogger {
   func withDateFormatEnabled(_ enabled: Bool) -> any FBControlCoreLogger { self }
 }
 
-final class FBDeviceManagerLoggingTests: XCTestCase {
+@Suite
+struct FBDeviceManagerLoggingTests {
 
   /// A stand-in for the CFTypeRef handed to connection callbacks, with a
   /// recognizable description.
@@ -40,19 +41,21 @@ final class FBDeviceManagerLoggingTests: XCTestCase {
     return logger
   }
 
-  func testConnectionLogsIdentifyTheDeviceWithoutDereferencingTheRef() {
+  @Test
+  func connectionLogsIdentifyTheDeviceWithoutDereferencingTheRef() {
     let logger = connectDevice(identifier: "chip-id-1")
     let allOutput = logger.lines.joined(separator: "\n")
-    XCTAssertFalse(allOutput.contains("recognizable-private-ref-description"), "unexpected log output: \(allOutput)")
-    XCTAssertTrue(allOutput.contains("chip-id-1"), "unexpected log output: \(allOutput)")
+    #expect(!(allOutput.contains("recognizable-private-ref-description")), "unexpected log output: \(allOutput)")
+    #expect((allOutput.contains("chip-id-1")), "unexpected log output: \(allOutput)")
   }
 
-  func testDisconnectionLogsIdentifyTheDeviceWithoutDereferencingTheRef() {
+  @Test
+  func disconnectionLogsIdentifyTheDeviceWithoutDereferencingTheRef() {
     let logger = connectDevice(identifier: "chip-id-2")
     let manager = FBDeviceManagerDouble(logger: logger)
     manager.deviceDisconnected(privateDevice, identifier: "chip-id-2")
     let allOutput = logger.lines.joined(separator: "\n")
-    XCTAssertFalse(allOutput.contains("recognizable-private-ref-description"), "unexpected log output: \(allOutput)")
-    XCTAssertTrue(allOutput.contains("chip-id-2"), "unexpected log output: \(allOutput)")
+    #expect(!(allOutput.contains("recognizable-private-ref-description")), "unexpected log output: \(allOutput)")
+    #expect((allOutput.contains("chip-id-2")), "unexpected log output: \(allOutput)")
   }
 }

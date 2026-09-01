@@ -7,7 +7,7 @@
 
 import FBControlCore
 import FBDeviceControl
-import XCTest
+import Testing
 import XCTestBootstrap
 
 final class FBTestManagerTestReporterDouble: NSObject, FBXCTestReporter {
@@ -37,9 +37,11 @@ final class FBTestManagerTestReporterDouble: NSObject, FBXCTestReporter {
   func didCrashDuringTest(_ error: Error) {}
 }
 
-final class FBDeviceXCTestCommandsTests: XCTestCase {
+@Suite
+struct FBDeviceXCTestCommandsTests {
 
-  func testOverwriteXCTestRunPropertiesWithBaseProperties() {
+  @Test
+  func overwriteXCTestRunPropertiesWithBaseProperties() {
     let baseProperties: [String: Any] = [
       "BundleIDBase": [
         "NoOverwrite": "Hello",
@@ -63,6 +65,6 @@ final class FBDeviceXCTestCommandsTests: XCTestCase {
 
     let realProperties = FBXcodeBuildOperation.overwriteXCTestRunProperties(withBaseProperties: baseProperties, newProperties: newProperties)
 
-    XCTAssertEqual(realProperties as NSDictionary, expectedProperties as NSDictionary)
+    #expect((realProperties as NSDictionary) == (expectedProperties as NSDictionary))
   }
 }

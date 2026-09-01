@@ -8,7 +8,7 @@
 import FBControlCore
 @testable import FBDeviceControl
 import Foundation
-import XCTest
+import Testing
 
 /// Records the `AMDCalls` a device usage cycle makes, in order.
 private final class UsageCallRecorder: @unchecked Sendable {
@@ -35,10 +35,12 @@ private nonisolated(unsafe) var sUsageRecorder = UsageCallRecorder()
 /// These are the entry points `FBAMDevice` uses around every operation, and the sequence is the
 /// contract: connect before pairing, pair before a session, and unwind in reverse. Nothing here
 /// needs a device — every step is an `AMDCalls` function pointer.
-final class FBAMDeviceManagerUsageTests: XCTestCase {
+// Serialized: the stubs record into the file-scope `sUsageRecorder` that `init`
+// resets, which would race across parallel tests.
+@Suite(.serialized)
+final class FBAMDeviceManagerUsageTests {
 
-  override func setUp() {
-    super.setUp()
+  init() {
     sUsageRecorder = UsageCallRecorder()
   }
 
@@ -80,13 +82,15 @@ final class FBAMDeviceManagerUsageTests: XCTestCase {
   /// The stubs ignore the device entirely, so any object stands in for the opaque reference.
   private let device = NSObject()
 
-  func testStartUsingConnectsThenPairsThenStartsASession() throws {
+  @Test
+  func startUsingConnectsThenPairsThenStartsASession() throws {
     try FBAMDeviceManager.start(using: device, calls: stubbedCalls(), logger: logger)
-    XCTAssertEqual(sUsageRecorder.recorded, ["connect", "is_paired", "validate_pairing", "start_session"])
+    #expect((sUsageRecorder.recorded) == (["connect", "is_paired", "validate_pairing", "start_session"]))
   }
 
-  func testStopUsingEndsTheSessionBeforeTheConnection() throws {
+  @Test
+  func stopUsingEndsTheSessionBeforeTheConnection() throws {
     try FBAMDeviceManager.stop(using: device, calls: stubbedCalls(), logger: logger)
-    XCTAssertEqual(sUsageRecorder.recorded, ["stop_session", "disconnect"])
+    #expect((sUsageRecorder.recorded) == (["stop_session", "disconnect"]))
   }
 }

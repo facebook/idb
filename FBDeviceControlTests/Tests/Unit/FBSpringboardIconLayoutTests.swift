@@ -6,11 +6,13 @@
  */
 
 @testable import FBDeviceControl
-import XCTest
+import Testing
 
-final class FBSpringboardIconLayoutTests: XCTestCase {
+@Suite
+struct FBSpringboardIconLayoutTests {
 
-  func testParsesRawIconLayoutPages() throws {
+  @Test
+  func parsesRawIconLayoutPages() throws {
     let rawLayout: [[[String: Any]]] = [
       [
         [
@@ -43,27 +45,29 @@ final class FBSpringboardIconLayoutTests: XCTestCase {
 
     let layout = try FBSpringboardIconLayout(rawValue: rawLayout)
 
-    XCTAssertEqual(layout.pageCount, 2)
-    XCTAssertEqual(layout.totalEntries, 3)
-    XCTAssertEqual(layout.flattenedBundleIdentifierPages(), [["com.example.dock"], ["com.example.app"]])
-    XCTAssertEqual(layout.iconsByBundleID["com.example.app"]?["displayName"] as? String, "Example")
-    XCTAssertEqual(layout.rawValue.count, rawLayout.count)
+    #expect((layout.pageCount) == (2))
+    #expect((layout.totalEntries) == (3))
+    #expect((layout.flattenedBundleIdentifierPages()) == ([["com.example.dock"], ["com.example.app"]]))
+    #expect((layout.iconsByBundleID["com.example.app"]?["displayName"] as? String) == ("Example"))
+    #expect((layout.rawValue.count) == (rawLayout.count))
   }
 
-  func testRejectsUnexpectedRawIconLayoutShape() {
-    XCTAssertThrowsError(try FBSpringboardIconLayout(rawValue: ["not": "pages"])) { error in
-      guard case FBSpringboardServicesError.unexpectedResponse(let command, let expected, let actual) = error else {
-        XCTFail("Expected unexpectedResponse error, got \(error)")
-        return
-      }
-
-      XCTAssertEqual(command, "getIconState")
-      XCTAssertEqual(expected, "an array of icon pages")
-      XCTAssertTrue(actual.contains("not"))
+  @Test
+  func rejectsUnexpectedRawIconLayoutShape() {
+    do {
+      _ = try FBSpringboardIconLayout(rawValue: ["not": "pages"])
+      Issue.record("Expected unexpectedResponse error to be thrown")
+    } catch FBSpringboardServicesError.unexpectedResponse(let command, let expected, let actual) {
+      #expect(command == "getIconState")
+      #expect(expected == "an array of icon pages")
+      #expect(actual.contains("not"))
+    } catch {
+      Issue.record("Expected unexpectedResponse error, got \(error)")
     }
   }
 
-  func testValidationErrorReportsFirstMismatchedPage() {
+  @Test
+  func validationErrorReportsFirstMismatchedPage() {
     let expected = FBSpringboardIconLayout(
       pages: [
         [["displayIdentifier": "com.example.dock"]],
@@ -75,8 +79,6 @@ final class FBSpringboardIconLayoutTests: XCTestCase {
         [["displayIdentifier": "com.example.two"]],
       ])
 
-    XCTAssertEqual(
-      expected.validationError(comparedTo: actual),
-      "page 1 identifiers differ at position 0: sent 'com.example.one', got 'com.example.two'")
+    #expect((expected.validationError(comparedTo: actual)) == ("page 1 identifiers differ at position 0: sent 'com.example.one', got 'com.example.two'"))
   }
 }
