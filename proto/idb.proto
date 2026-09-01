@@ -637,8 +637,34 @@ message LogResponse {
 }
 
 message RecordRequest {
+  // Field names and numbers match VideoStreamRequest.Start, so the two read
+  // identically; 3 is skipped because that is the stream's `format` and a
+  // recording is always H.264 in an mp4. A zero value means the default noted
+  // against each field, since a proto3 scalar cannot distinguish unset from
+  // zero. A companion older than these fields ignores them and records at the
+  // defaults; see RecordResponse.Applied.
   message Start {
+    // 3 is the stream's `format`, deliberately skipped here (see above).
+    // Reserve the tag and name so no future field can silently reuse them and
+    // collide with a wire-compatible client that ever sent a `format` value.
+    reserved 3;
+    reserved "format";
     string file_path = 1;
+    // Capture cadence. Default 30 -- unlike the stream, whose default is the
+    // display's own rate. This is what FBSimulatorVideoRecordingCommands has
+    // always pinned, so an all-zero request records exactly as it did before.
+    uint64 fps = 2;
+    // Inert for H.264 and so not offered by the CLI; here for message
+    // symmetry. Must be in [0, 1], and cannot be combined with avg_bitrate.
+    double compression_quality = 4;
+    // Scale applied before encoding. Only a value in (0, 1) scales; default
+    // unset, which records at full size. Values above 1 are rejected.
+    double scale_factor = 5;
+    // Target average bits per second. Default unset, which lets the encoder
+    // choose.
+    double avg_bitrate = 6;
+    // Maximum seconds between forced key frames. Default 4.
+    double key_frame_rate = 7;
   }
   message Stop {}
   oneof control {
@@ -648,9 +674,25 @@ message RecordRequest {
 }
 
 message RecordResponse {
+  // The encode options the companion resolved for this recording, so a client
+  // can tell that they took effect. Unset fps/scale_factor/key_frame_rate are
+  // reported as the defaults they resolved to. The rate control is reported in
+  // whichever of avg_bitrate/compression_quality the request chose, and both
+  // are 0 when it chose neither and left the rate automatic.
+  message Applied {
+    uint64 fps = 1;
+    double scale_factor = 2;
+    double avg_bitrate = 3;
+    double key_frame_rate = 4;
+    double compression_quality = 5;
+  }
   oneof output {
     bytes log_output = 1;
     Payload payload = 2;
+    // Sent once, before any payload, and only when the request set at least
+    // one encode option. A client that set one and did not receive this is
+    // talking to a companion that silently dropped it.
+    Applied applied = 3;
   }
 }
 
