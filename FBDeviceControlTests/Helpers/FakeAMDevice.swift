@@ -24,9 +24,17 @@ final class FakeLockdownService: NSObject {
   /// What the device sends for each raw `receive`, consumed as it is read.
   var readBuffer = Data()
 
+  /// Makes raw sends or receives report a failure, the way a broken connection would.
+  var sendFails = false
+  var receiveFails = false
+
   private(set) var sentMessages: [Any] = []
   private(set) var sentBytes = Data()
   private(set) var isInvalidated = false
+
+  /// The size of each raw call, so chunking can be asserted rather than inferred.
+  private(set) var sendChunks: [Int] = []
+  private(set) var receiveRequests: [Int] = []
 
   init(serviceName: String) {
     self.serviceName = serviceName
@@ -41,10 +49,12 @@ final class FakeLockdownService: NSObject {
   }
 
   fileprivate func send(bytes: Data) {
+    sendChunks.append(bytes.count)
     sentBytes.append(bytes)
   }
 
   fileprivate func read(upTo count: Int) -> Data {
+    receiveRequests.append(count)
     let taken = readBuffer.prefix(count)
     readBuffer.removeFirst(taken.count)
     return Data(taken)
@@ -221,14 +231,14 @@ final class FakeAMDevice: NSObject {
 
     // The raw data plane.
     calls.ServiceConnectionSend = { connectionRef, buffer, size in
-      guard let service = FakeAMDevice.service(connectionRef), let buffer else {
+      guard let service = FakeAMDevice.service(connectionRef), let buffer, !service.sendFails else {
         return -1
       }
       service.send(bytes: Data(bytes: buffer, count: size))
       return Int32(size)
     }
     calls.ServiceConnectionReceive = { connectionRef, buffer, size in
-      guard let service = FakeAMDevice.service(connectionRef), let buffer else {
+      guard let service = FakeAMDevice.service(connectionRef), let buffer, !service.receiveFails else {
         return -1
       }
       let data = service.read(upTo: size)
