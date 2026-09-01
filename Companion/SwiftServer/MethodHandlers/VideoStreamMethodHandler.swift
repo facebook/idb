@@ -90,43 +90,10 @@ struct VideoStreamMethodHandler {
       consumer = writer
     }
 
-    let framesPerSecond = start.fps > 0 ? Int(start.fps) : nil
-    let format = streamFormat(from: start.format)
-
-    let rateControl: FBVideoStreamRateControl?
-    if start.avgBitrate > 0 {
-      rateControl = .bitrate(Int(start.avgBitrate))
-    } else if start.compressionQuality > 0 {
-      rateControl = .quality(Double(start.compressionQuality))
-    } else {
-      rateControl = nil
-    }
-
-    let config = FBVideoStreamConfiguration(
-      format: format,
-      framesPerSecond: framesPerSecond,
-      rateControl: rateControl,
-      scaleFactor: Double(start.scaleFactor),
-      keyFrameRate: Double(start.keyFrameRate))
-
     guard let asyncTarget = target as? any VideoStreamCommands else {
       throw GRPCStatus(code: .failedPrecondition, message: "\(target) does not support VideoStreamCommands")
     }
-    return try await asyncTarget.createStream(configuration: config, to: consumer)
-  }
-
-  private func streamFormat(from requestFormat: Idb_VideoStreamRequest.Format) -> FBVideoStreamFormat {
-    switch requestFormat {
-    case .h264:
-      return .compressedVideo(withCodec: .h264, transport: .annexB)
-    case .rbga:
-      return .bgra
-    case .mjpeg:
-      return .mjpeg(encoder: .requireHardware)
-    case .minicap:
-      return .minicap
-    case .i420, .UNRECOGNIZED:
-      return .compressedVideo(withCodec: .h264, transport: .annexB)
-    }
+    return try await asyncTarget.createStream(
+      configuration: VideoStreamRequestTranslation.configuration(from: start), to: consumer)
   }
 }
