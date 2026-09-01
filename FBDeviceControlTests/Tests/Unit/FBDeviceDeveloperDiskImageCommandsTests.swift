@@ -18,7 +18,10 @@ private let firstSignature = Data([0xF0, 0x0D])
 private let secondSignature = Data([0xBE, 0xEF])
 
 @MainActor
-@Suite
+// Serialized: these tests drive an `FBAMDevice` whose work and async queues are the main queue,
+// from main-actor tests. Run in parallel they interleave on that one queue, which is why the other
+// device-driving suites in this target are serialized too.
+@Suite(.serialized)
 struct FBDeviceDeveloperDiskImageCommandsTests {
 
   // Fresh per test: each test in a Swift Testing suite gets its own suite instance.

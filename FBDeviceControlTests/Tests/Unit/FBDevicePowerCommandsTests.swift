@@ -17,7 +17,10 @@ private let DiagnosticsRelayService = "com.apple.mobile.diagnostics_relay"
 /// Pinned to the main actor because the fake records events from the device's work and async
 /// queues, both of which are the main queue.
 @MainActor
-@Suite
+// Serialized: these tests drive an `FBAMDevice` whose work and async queues are the main queue,
+// from main-actor tests. Run in parallel they interleave on that one queue, which is why the other
+// device-driving suites in this target are serialized too.
+@Suite(.serialized)
 struct FBDevicePowerCommandsTests {
 
   // Fresh per test: each test in a Swift Testing suite gets its own suite
