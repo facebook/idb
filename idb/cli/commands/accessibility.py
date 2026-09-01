@@ -165,11 +165,17 @@ def _add_match_args(parser: ArgumentParser) -> None:
         default="AXLabel",
         help="Which attribute --match searches (default: AXLabel)",
     )
+    _add_ignore_case_arg(parser, subject="--match")
+
+
+def _add_ignore_case_arg(parser: ArgumentParser, subject: str) -> None:
+    # One wire field serves both verbs, so the flag is spelled the same on both
+    # commands and only its help names which one it is comparing.
     parser.add_argument(
         "--ignore-case",
         action="store_true",
         default=False,
-        help="Compare --match case-insensitively",
+        help=f"Compare {subject} case-insensitively",
     )
 
 
@@ -378,6 +384,7 @@ class AccessibilityDescribeMarkerCommand(ClientCommand):
             default=False,
             help="Report data in the nested format rather than the flat one",
         )
+        _add_ignore_case_arg(parser, subject="the marker")
         _add_enricher_args(parser)
         _add_backend_arg(parser)
         _add_format_arg(parser)
@@ -397,6 +404,7 @@ class AccessibilityDescribeMarkerCommand(ClientCommand):
                 format=requested_format,
                 profile=args.profile,
                 collect_frame_coverage=args.collect_frame_coverage,
+                ignore_case=args.ignore_case,
             ),
         )
         _warn_if_complete_downgraded(requested_format, info.json)

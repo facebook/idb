@@ -1871,6 +1871,24 @@ class TestParser(TestCase):
             ),
         )
 
+    async def test_describe_marker_ignore_case(self) -> None:
+        self.client_mock.accessibility_info = AsyncMock()
+        await cli_main(cmd_input=["ui", "describe", "ok", "--ignore-case"])
+        self.client_mock.accessibility_info.assert_called_once_with(
+            target=AccessibilityMarker(
+                value="ok",
+                match_key=AccessibilitySearchableKey.LABEL,
+                depth=10,
+            ),
+            options=AccessibilityInfoOptions(nested=False, ignore_case=True),
+        )
+
+    async def test_describe_marker_is_case_sensitive_by_default(self) -> None:
+        self.client_mock.accessibility_info = AsyncMock()
+        await cli_main(cmd_input=["ui", "describe", "ok"])
+        _, kwargs = self.client_mock.accessibility_info.call_args
+        self.assertFalse(kwargs["options"].ignore_case)
+
     async def test_backend_enum_matches_wire_values(self) -> None:
         # The typed backend must emit the exact values the proto declares, by
         # name and by number — an unset backend is BACKEND_UNSPECIFIED, the

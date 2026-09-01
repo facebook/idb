@@ -78,11 +78,13 @@ class AccessibilityInfoRequestTests(TestCase):
                 keys=["AXLabel", "frame"],
                 profile=True,
                 collect_frame_coverage=True,
+                ignore_case=True,
             ),
         )
         self.assertEqual(list(request.keys), ["AXLabel", "frame"])
         self.assertTrue(request.profile)
         self.assertTrue(request.collect_frame_coverage)
+        self.assertTrue(request.ignore_case)
 
     def test_point_target(self) -> None:
         request = accessibility_info_to_grpc(

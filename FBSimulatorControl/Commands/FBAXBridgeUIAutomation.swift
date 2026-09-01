@@ -318,7 +318,7 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
     do {
       try await translatingBackendErrors(body)
     } catch let FBAXBridgeError.assertionFailed(message) {
-      guard case let .marker(value, key, _) = query else {
+      guard case let .marker(value, key, _, _) = query else {
         throw FBAXBridgeError.assertionFailed(message)
       }
       throw FBUIAutomationError.elementMoved(backend: backend, key: key.rawValue, value: value)

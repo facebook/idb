@@ -62,13 +62,23 @@ enum FBAXTreeWalk {
   /// describe-by-marker. Substring, matching `FBAccessibilityElementQuery.marker` — the accessibility
   /// backend walks the live tree and matches the same way, so a marker resolves to the same element
   /// whichever backend serves the read.
-  static func matchingElement(inElements elements: [FBAccessibilityDocumentElement], markerValue: String, key: FBAXSearchableKey) -> FBAccessibilityDocumentElement? {
-    elements.first { element in
-      guard let value = element.searchableValue(for: key) else {
-        return false
-      }
-      return value.contains(markerValue)
+  ///
+  /// `ignoresCase` comes from the query and so is off for every write; the comparison itself is
+  /// `FBAccessibilityMatch`'s, so a marker and a `describe-all --match` agree on what "contains" means
+  /// rather than drifting apart one Unicode edge case at a time.
+  static func matchingElement(
+    inElements elements: [FBAccessibilityDocumentElement],
+    markerValue: String,
+    key: FBAXSearchableKey,
+    ignoresCase: Bool = false
+  ) -> FBAccessibilityDocumentElement? {
+    // An empty marker is not a search — every value contains it — and callers that reach here with one
+    // have historically got the first element carrying the key at all. `FBAccessibilityMatch` refuses
+    // to represent that, so it is spelled out rather than quietly becoming "no match".
+    guard let match = FBAccessibilityMatch(value: markerValue, key: key, ignoresCase: ignoresCase) else {
+      return elements.first { $0.searchableValue(for: key) != nil }
     }
+    return elements.first { match.matches($0.searchableValue(for: key)) }
   }
 
   /// The outcome of resolving a marker to a point to interact with. Separates a marker that matched an

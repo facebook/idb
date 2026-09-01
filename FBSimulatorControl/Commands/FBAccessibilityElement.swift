@@ -160,7 +160,12 @@ final class FBAccessibilityElement {
   /// transferred to a new handle wrapping the found element, and the receiver is
   /// closed without popping. If not found, the receiver is closed and an error
   /// is thrown.
-  func findElement(withValue value: String, forKey key: FBAXSearchableKey, depth: UInt) async throws -> FBAccessibilityElement {
+  ///
+  /// `ignoresCase` is off by default, which is what every write resolves with; it is the read path
+  /// that offers it, and this walk is the one the default backend serves `describe MARKER` from.
+  func findElement(
+    withValue value: String, forKey key: FBAXSearchableKey, depth: UInt, ignoresCase: Bool = false
+  ) async throws -> FBAccessibilityElement {
     // The legacy accessibility tree is composed entirely of `AXPMacPlatformElement`, so a matched
     // descendant is always writable; a non-writable match is treated as not found.
     //
@@ -170,7 +175,11 @@ final class FBAccessibilityElement {
     let element = self.element
     let token = request.token
     let match = try await dispatcher.performSerialized { () -> (found: FBAXWritableElement, rootBounds: CGRect)? in
-      guard let found = Self.findElement(withValue: value, forKey: key, in: element, token: token, remainingDepth: depth) as? FBAXWritableElement else {
+      guard
+        let found = Self.findElement(
+          withValue: value, forKey: key, in: element, token: token, remainingDepth: depth, ignoresCase: ignoresCase
+        ) as? FBAXWritableElement
+      else {
         return nil
       }
       element.axSetBridgeDelegateToken(token)
@@ -216,9 +225,16 @@ final class FBAccessibilityElement {
     }
   }
 
-  private static func findElement(withValue value: String, forKey key: FBAXSearchableKey, in element: FBAXPlatformElement, token: String, remainingDepth: UInt) -> FBAXPlatformElement? {
+  private static func findElement(
+    withValue value: String,
+    forKey key: FBAXSearchableKey,
+    in element: FBAXPlatformElement,
+    token: String,
+    remainingDepth: UInt,
+    ignoresCase: Bool
+  ) -> FBAXPlatformElement? {
     element.axSetBridgeDelegateToken(token)
-    if let propertyValue = stringValue(forKey: key, from: element), propertyValue.contains(value) {
+    if let propertyValue = stringValue(forKey: key, from: element), contains(value, in: propertyValue, ignoringCase: ignoresCase) {
       return element
     }
     if remainingDepth == 0 {
@@ -226,10 +242,22 @@ final class FBAccessibilityElement {
     }
     for child in element.axChildren() {
       child.axSetBridgeDelegateToken(token)
-      if let found = findElement(withValue: value, forKey: key, in: child, token: token, remainingDepth: remainingDepth - 1) {
+      if let found = findElement(
+        withValue: value, forKey: key, in: child, token: token, remainingDepth: remainingDepth - 1, ignoresCase: ignoresCase
+      ) {
         return found
       }
     }
     return nil
+  }
+
+  /// The same substring test `FBAccessibilityMatch` and the serialized-tree walk apply, so a marker
+  /// resolves to the same element whichever backend serves the read. An empty marker keeps its
+  /// historical meaning — every value contains it — rather than becoming a match that never succeeds.
+  private static func contains(_ value: String, in candidate: String, ignoringCase: Bool) -> Bool {
+    guard let match = FBAccessibilityMatch(value: value, ignoresCase: ignoringCase) else {
+      return true
+    }
+    return match.matches(candidate)
   }
 }

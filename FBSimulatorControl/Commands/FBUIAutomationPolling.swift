@@ -50,7 +50,7 @@ enum FBUIAutomationPolling {
     pollInterval: TimeInterval,
     probe: (_ value: String, _ key: FBAXSearchableKey, _ depth: UInt) async throws -> Bool?
   ) async throws {
-    guard case let .marker(value, key, depth) = query else {
+    guard case let .marker(value, key, depth, _) = query else {
       throw FBUIAutomationError.markerRequired(backend: backend, operation: "Waiting")
     }
     // A negative interval would trap `Task.sleep`'s unsigned conversion below; reject it loudly rather

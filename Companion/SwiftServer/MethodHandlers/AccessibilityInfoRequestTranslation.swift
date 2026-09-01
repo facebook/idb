@@ -19,11 +19,19 @@ enum AccessibilityInfoRequestTranslation {
 
   /// The marker query a request selects, or nil when the request targets a point or the whole
   /// frontmost app.
+  ///
+  /// `ignore_case` reaches the marker as well as `match`: it is a property of how the read compares
+  /// strings, not of which of the two verbs asked for the comparison. An older client leaves it false,
+  /// which is the historical case-sensitive resolution.
   static func markerQuery(from request: Idb_AccessibilityInfoRequest) -> FBAccessibilityElementQuery? {
     guard !request.marker.isEmpty else {
       return nil
     }
-    return .marker(value: request.marker, key: searchableKey(from: request.matchKey), depth: UInt(request.depth))
+    return .marker(
+      value: request.marker,
+      key: searchableKey(from: request.matchKey),
+      depth: UInt(request.depth),
+      ignoresCase: request.ignoreCase)
   }
 
   /// The substring narrowing a request asks for, or nil when it asks for none.

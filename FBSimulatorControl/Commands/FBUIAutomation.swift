@@ -178,7 +178,7 @@ enum FBDragEndpoint: Equatable {
     switch query {
     case let .point(point):
       self = .point(point)
-    case let .marker(value, key, depth):
+    case let .marker(value, key, depth, _):
       self = .marker(value: value, key: key, depth: depth)
     case .frontmost, .application:
       throw FBUIAutomationError.pointOrMarkerRequired(backend: backend, operation: Self.operation)

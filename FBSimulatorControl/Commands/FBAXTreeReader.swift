@@ -140,7 +140,7 @@ extension FBAXTreeReader {
       // A hit-test resolves one element with no tree behind it, so there is no screen or truncation to
       // report — only which backend answered and what was asked for.
       return response.withProvenance(backend: backend.name, target: query.targetDescriptor)
-    case let .marker(value, key, _):
+    case let .marker(value, key, _, ignoresCase):
       let markerKeys = options.serializationKeys(including: [key.serializationKey])
       let traversal = Self.resolvedTraversal(for: options)
       let read = try await readRawTree(
@@ -157,7 +157,11 @@ extension FBAXTreeReader {
       let elements = FBAXTreeWalk.describeAllElements(
         fromTree: read.tree, keys: markerKeys, nestedFormat: false, pid: read.pid
       )
-      guard let match = FBAXTreeWalk.matchingElement(inElements: elements, markerValue: value, key: key) else {
+      guard
+        let match = FBAXTreeWalk.matchingElement(
+          inElements: elements, markerValue: value, key: key, ignoresCase: ignoresCase
+        )
+      else {
         throw FBUIAutomationError.elementNotFound(backend: backend, key: key.rawValue, value: value)
       }
       // The match came from a flattened walk, so it carries no children of its own; reporting them
@@ -350,7 +354,7 @@ extension FBAXTreeReader {
         try await assertBeforeWriting(callerAssertion, atPoint: point)
       }
       return FBAXWriteTarget(point: point, pid: nil, assertion: nil)
-    case let .marker(value, key, _):
+    case let .marker(value, key, _, _):
       // Structural traversal regardless of what a read would have asked for: resolving a write target is
       // about finding the element to act on, and the semantic traversal cannot name element types. The
       // per-node walk is named rather than the single fetch, deliberately: the single-fetch default is
@@ -398,7 +402,7 @@ extension FBAXTreeReader {
   /// What an unoccupied write target means, told in the terms the caller used to name it: a marker
   /// write reports `elementMoved`, and only a caller who named a coordinate is told about a coordinate.
   func emptyWriteTargetError(for query: FBAccessibilityElementQuery, at point: CGPoint) -> FBUIAutomationError {
-    guard case let .marker(value, key, _) = query else {
+    guard case let .marker(value, key, _, _) = query else {
       return .noElementAtPoint(backend: backend, x: Double(point.x), y: Double(point.y))
     }
     return .elementMoved(backend: backend, key: key.rawValue, value: value)

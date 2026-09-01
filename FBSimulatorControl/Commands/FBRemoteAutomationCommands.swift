@@ -166,7 +166,7 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
           FBSimulatorHIDEvent.tapAt(x: Double(point.x), y: Double(point.y), duration: $0)
         } ?? FBSimulatorHIDEvent.tapAt(x: Double(point.x), y: Double(point.y))
       try await sendHIDEvent(event)
-    case let .marker(markerValue, key, _):
+    case let .marker(markerValue, key, _, _):
       let center = try await markerCenter(markerValue, key: key)
       try await withSession { session in
         try await session.synthesizeEvent(try Self.eventRecord(for: .tapAt(x: center.x, y: center.y)))
@@ -281,7 +281,7 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
     switch query {
     case let .point(point):
       try await withSession { try await $0.setValue(value, atX: Double(point.x), y: Double(point.y), valueAttribute: FBAXWire.Node.value.rawValue) }
-    case let .marker(markerValue, key, _):
+    case let .marker(markerValue, key, _, _):
       let center = try await markerCenter(markerValue, key: key)
       try await withSession { try await $0.setValue(value, atX: center.x, y: center.y, valueAttribute: FBAXWire.Node.value.rawValue) }
     case .frontmost, .application:

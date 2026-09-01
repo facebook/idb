@@ -557,6 +557,55 @@ final class FBAXBridgeReadsTests: XCTestCase {
     XCTAssertEqual(centre?.y, 45)
   }
 
+  // MARK: - Marker case sensitivity is opt-in, and reads only
+
+  private func settingsElements() -> [FBAccessibilityDocumentElement] {
+    FBAXTreeWalk.describeAllElements(
+      fromTree: [
+        FBAXWire.Node.label.rawValue: "General Settings",
+        FBAXWire.Node.frame.rawValue: CGRectCreateDictionaryRepresentation(CGRect(x: 10, y: 20, width: 100, height: 50)) as NSDictionary,
+        FBAXWire.Node.children.rawValue: [[String: Any]](),
+      ],
+      keys: FBAXKeys.defaultSet, nestedFormat: false, pid: 1
+    )
+  }
+
+  func testMarkerIsCaseSensitiveUnlessAsked() throws {
+    let elements = settingsElements()
+    XCTAssertNil(
+      FBAXTreeWalk.matchingElement(inElements: elements, markerValue: "general", key: .label),
+      "the default must stay the historical case-sensitive match"
+    )
+    guard
+      let label = FBAXTreeWalk.matchingElement(
+        inElements: elements, markerValue: "general", key: .label, ignoresCase: true
+      )?.label ?? nil
+    else {
+      return XCTFail("--ignore-case must resolve a marker that differs only in case")
+    }
+    XCTAssertEqual(label, "General Settings")
+  }
+
+  func testMarkerWritesStayCaseSensitive() {
+    // `tap`/`scroll`/`set-value`/`wait` resolve through resolveMarker, which takes no case option: a
+    // write that resolved "ok" to a *Cancel* button labelled "OK" would act on an element the caller
+    // did not name, and unlike a read it cannot be undone by reading again.
+    let elements = settingsElements()
+    XCTAssertEqual(
+      FBAXTreeWalk.resolveMarker(inElements: elements, markerValue: "general", key: .label),
+      .notFound
+    )
+    XCTAssertNil(FBAXTreeWalk.frameCenter(inElements: elements, markerValue: "general", key: .label))
+  }
+
+  func testEmptyMarkerKeepsMatchingTheFirstElementCarryingTheKey() {
+    // Every value contains the empty string, so an empty marker has always resolved to the first
+    // element with the searched key at all. `FBAccessibilityMatch` refuses to represent that, and the
+    // matcher must not let the refusal turn into a silent "no match".
+    let label = FBAXTreeWalk.matchingElement(inElements: settingsElements(), markerValue: "", key: .label)?.label ?? nil
+    XCTAssertEqual(label, "General Settings")
+  }
+
   // MARK: - A marker matches by its searched key regardless of the requested key set
 
   // A marker is matched over the *serialized* element, so the searched key's field has to be among the

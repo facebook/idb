@@ -72,6 +72,21 @@ struct AccessibilityInfoRequestTranslationTests {
     #expect((AccessibilityInfoRequestTranslation.markerQuery(from: request)) == (.marker(value: "Settings", key: .uniqueID, depth: 7)))
   }
 
+  @Test
+  func markerQueryIsCaseSensitiveUnlessAsked() {
+    var request = Idb_AccessibilityInfoRequest()
+    request.marker = "ok"
+    #expect(
+      AccessibilityInfoRequestTranslation.markerQuery(from: request)
+        == .marker(value: "ok", key: .label, depth: 0, ignoresCase: false)
+    )
+    request.ignoreCase = true
+    #expect(
+      AccessibilityInfoRequestTranslation.markerQuery(from: request)
+        == .marker(value: "ok", key: .label, depth: 0, ignoresCase: true)
+    )
+  }
+
   // MARK: - Match construction
 
   @Test
