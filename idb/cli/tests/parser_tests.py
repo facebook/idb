@@ -889,7 +889,33 @@ class TestParser(TestCase):
             namespace.reason = None
             namespace.output_file = output_file
             namespace.companion_tls = False
+            # Every encode option defaults to unset, which the companion reads as its own default.
+            namespace.fps = None
+            namespace.scale_factor = None
+            namespace.bitrate = None
+            namespace.key_frame_rate = None
             mock.assert_called_once_with(namespace)
+
+    async def test_video_record_encode_options(self) -> None:
+        mock = AsyncMock()
+        with patch(
+            "idb.cli.commands.video.VideoRecordCommand._run_impl", new=mock, create=True
+        ):
+            await cli_main(
+                cmd_input=[
+                    "record-video",
+                    "--fps=15",
+                    "--scale-factor=0.5",
+                    "--bitrate=1000000",
+                    "--key-frame-rate=2",
+                    "video.mp4",
+                ]
+            )
+            namespace = mock.call_args[0][0]
+            self.assertEqual(namespace.fps, 15)
+            self.assertEqual(namespace.scale_factor, 0.5)
+            self.assertEqual(namespace.bitrate, 1000000)
+            self.assertEqual(namespace.key_frame_rate, 2)
 
     async def test_video_stream(self) -> None:
         mock = AsyncMock()

@@ -128,6 +128,7 @@ from idb.grpc.idb_pb2 import (
     PullRequest,
     PushRequest,
     RecordRequest,
+    RecordResponse,
     RevokeRequest,
     RmRequest,
     SendNotificationRequest,
@@ -1241,35 +1242,63 @@ class Client(ClientBase):
                 await drain_launch_stream(stream, pid_file)
 
     @log_and_handle_exceptions("record")
-    async def record_video(self, stop: asyncio.Event, output_file: str) -> None:
+    async def record_video(
+        self,
+        stop: asyncio.Event,
+        output_file: str,
+        fps: int | None = None,
+        scale_factor: float | None = None,
+        bitrate: float | None = None,
+        key_frame_rate: float | None = None,
+    ) -> None:
         self.logger.info("Starting connection to backend")
+        requested_encode_options = any([fps, scale_factor, bitrate, key_frame_rate])
+        applied: list[RecordResponse.Applied] = []
         async with self.stub.record.open() as stream:
             if self.is_local:
                 self.logger.info(
                     f"Starting video recording to local file {output_file}"
                 )
-                await stream.send_message(
-                    RecordRequest(start=RecordRequest.Start(file_path=output_file))
-                )
+                file_path = output_file
             else:
                 self.logger.info("Starting video recording with response data")
-                await stream.send_message(
-                    # pyre-ignore
-                    RecordRequest(start=RecordRequest.Start(file_path=None))
+                file_path = None
+            await stream.send_message(
+                RecordRequest(
+                    start=RecordRequest.Start(
+                        # pyre-ignore
+                        file_path=file_path,
+                        # Zero is how the wire says "unset", and each has a companion-side default.
+                        fps=fps or 0,
+                        scale_factor=scale_factor or 0,
+                        avg_bitrate=bitrate or 0,
+                        key_frame_rate=key_frame_rate or 0,
+                    )
                 )
+            )
             await stop.wait()
             self.logger.info("Stopping video recording")
             await stream.send_message(RecordRequest(stop=RecordRequest.Stop()))
             await stream.end()
             if self.is_local:
                 self.logger.info("Video saved at output path")
-                await stream.recv_message()
+                # The echo of the encode options, when there is one, precedes the file path.
+                while True:
+                    response = await stream.recv_message()
+                    if response is None or response.WhichOneof("output") != "applied":
+                        break
+                    applied.append(response.applied)
             else:
                 self.logger.info(f"Decompressing gzip to {output_file}")
                 await drain_gzip_decompress(
-                    generate_video_bytes(stream), output_path=output_file
+                    generate_video_bytes(stream, applied), output_path=output_file
                 )
                 self.logger.info(f"Finished decompression to {output_file}")
+        if requested_encode_options and not applied:
+            self.logger.warning(
+                "The companion did not report which encode options it applied, so it predates them "
+                "and recorded at its own defaults"
+            )
 
     @log_and_handle_exceptions("video_stream")
     async def stream_video(

@@ -34,11 +34,40 @@ class VideoRecordCommand(ClientCommand):
 
     def add_parser_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument("output_file", help="mp4 file to output the video to")
+        parser.add_argument(
+            "--fps",
+            type=int,
+            default=None,
+            help="The framerate to record at. Default is 30",
+        )
+        parser.add_argument(
+            "--scale-factor",
+            type=float,
+            default=None,
+            help="Scale the recording (between 0 and 1.0). Default is the source size",
+        )
+        parser.add_argument(
+            "--bitrate",
+            type=float,
+            default=None,
+            help="Target average bits per second. Default lets the encoder choose",
+        )
+        parser.add_argument(
+            "--key-frame-rate",
+            type=float,
+            default=None,
+            help="The maximum seconds between key frames. Default is 4",
+        )
         super().add_parser_arguments(parser)
 
     async def run_with_client(self, args: Namespace, client: Client) -> None:
         await client.record_video(
-            stop=signal_handler_event("video"), output_file=args.output_file
+            stop=signal_handler_event("video"),
+            output_file=args.output_file,
+            fps=args.fps,
+            scale_factor=args.scale_factor,
+            bitrate=args.bitrate,
+            key_frame_rate=args.key_frame_rate,
         )
 
 

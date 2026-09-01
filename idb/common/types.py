@@ -888,7 +888,15 @@ class Client(ABC):
         pass
 
     @abstractmethod
-    async def record_video(self, stop: asyncio.Event, output_file: str) -> None:
+    async def record_video(
+        self,
+        stop: asyncio.Event,
+        output_file: str,
+        fps: int | None = None,
+        scale_factor: float | None = None,
+        bitrate: float | None = None,
+        key_frame_rate: float | None = None,
+    ) -> None:
         pass
 
     @abstractmethod
