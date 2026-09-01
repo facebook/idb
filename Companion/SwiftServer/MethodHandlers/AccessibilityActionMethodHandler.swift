@@ -25,6 +25,10 @@ struct AccessibilityActionMethodHandler {
       try await performScroll(request: request, scroll: scroll)
     case let .setValue(setValue):
       try await performSetValue(request: request, setValue: setValue)
+    case .drag:
+      // The action exists on the wire before the companion can serve it, so a client built against a
+      // newer proto is told the companion is too old rather than having its drag silently ignored.
+      throw GRPCStatus(code: .unimplemented, message: "accessibility_action drag is not served by this companion")
     case .none:
       throw GRPCStatus(code: .invalidArgument, message: "accessibility_action requires an action")
     }

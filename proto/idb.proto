@@ -390,10 +390,33 @@ message AccessibilityActionRequest {
     string value = 1;
   }
 
+  // Press and hold the request's target, drag to the destination below, and
+  // release. All durations are in seconds; a zero value means the server
+  // default noted against each field.
+  message Drag {
+    // A destination is required; unlike the source, it has no frontmost
+    // default.
+    oneof destination {
+      string marker = 1;
+      Point point = 2;
+    }
+    SearchableKey destination_match_key = 3;
+    uint32 destination_depth = 4;
+    // How long to hold the source before moving. Default 0.5.
+    double press_duration = 5;
+    // How long the movement itself takes. Default 0.5.
+    double duration = 6;
+    // How long to hold the destination before releasing. Default 0.1.
+    double release_duration = 7;
+    // Distance between interpolated touch points, in points. Default 10.
+    double delta = 8;
+  }
+
   oneof action {
     Tap tap = 5;
     Scroll scroll = 6;
     SetValue set_value = 7;
+    Drag drag = 8;
   }
 }
 
