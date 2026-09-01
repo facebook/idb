@@ -138,6 +138,46 @@ public extension FBSimulatorHIDEvent {
     return .composite(events)
   }
 
+  /// A press-and-drag from `(xStart,yStart)` to `(xEnd,yEnd)`: hold the source, travel to the
+  /// destination over interpolated samples, hold there, then lift.
+  ///
+  /// The travel is the interpolation `swipe` performs, at the same `delta` and with the same
+  /// not-positive-means-default rule. The two holds are what make this a drag rather than a flick:
+  /// iOS starts a drag session only once the initial press clears its long-press threshold, and
+  /// `swipe` cannot express that because it divides its one `duration` across every step, so the
+  /// hold it produces shrinks as the path gets longer.
+  ///
+  /// The three durations are seconds and are additive — the gesture takes
+  /// `pressDuration + duration + releaseDuration`, with `duration` spread evenly over the samples.
+  static func drag(
+    _ xStart: Double, yStart: Double, xEnd: Double, yEnd: Double, delta: Double,
+    pressDuration: Double, duration: Double, releaseDuration: Double
+  ) -> FBSimulatorHIDEvent {
+    let distance = sqrt(pow(yEnd - yStart, 2) + pow(xEnd - xStart, 2))
+    var effectiveDelta = delta
+    if effectiveDelta <= 0.0 {
+      effectiveDelta = defaultSwipeDelta
+    }
+    let steps = max(1, Int(distance / effectiveDelta))
+
+    let dx = (xEnd - xStart) / Double(steps)
+    let dy = (yEnd - yStart) / Double(steps)
+    let stepDelay = duration / Double(steps)
+
+    var events: [FBSimulatorHIDEvent] = [
+      .touch(direction: .down, x: xStart, y: yStart),
+      .delay(pressDuration),
+    ]
+    for i in 1...steps {
+      events.append(.touch(direction: .down, x: xStart + dx * Double(i), y: yStart + dy * Double(i)))
+      events.append(.delay(stepDelay))
+    }
+    events.append(.delay(releaseDuration))
+    events.append(.touch(direction: .up, x: xEnd, y: yEnd))
+
+    return .composite(events)
+  }
+
   /// A tvOS Siri Remote trackpad pan from `(fromX,fromY)` to `(toX,toY)` — points absolute-normalized
   /// (0..1, top-left). Expands to a began → changed×steps → ended gesture; the interpolated changed
   /// samples with small delays give the focus engine the velocity it needs to move focus. Drained once
