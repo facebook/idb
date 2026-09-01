@@ -46,6 +46,7 @@ public final class FBSimulatorVideoRecordingCommands {
   /// The default configuration for in-process recording when the caller supplies none: H264 at a
   /// constant frame rate (eager cadence), clean frames, default quality. The transport is irrelevant —
   /// recording muxes encoded samples to a file rather than byte-framing them.
+  /// `RecordMethodHandler` mirrors the frame rate here as the meaning of an unset `fps` on the wire.
   private static var recordingConfiguration: FBVideoStreamConfiguration {
     FBVideoStreamConfiguration(
       format: FBVideoStreamFormat.compressedVideo(withCodec: .h264, transport: .annexB),
@@ -104,6 +105,8 @@ extension FBSimulator: VideoRecordingCommands {
   public func startRecording(toFile filePath: String, configuration: FBVideoStreamConfiguration) async throws -> any FBVideoRecording {
     try await videoRecordingCommands.startRecordingAsync(toFile: filePath, configuration: configuration)
   }
+
+  public var honorsRecordingConfiguration: Bool { true }
 }
 
 // MARK: - FBSimulator+VideoStreamCommands
