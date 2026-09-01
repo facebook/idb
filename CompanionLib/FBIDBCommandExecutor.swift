@@ -222,6 +222,17 @@ public final class FBIDBCommandExecutor {
     try await simulator.uiAutomation(backend: .accessibility).setValue(value, for: query)
   }
 
+  public func accessibility_drag(
+    from source: FBAccessibilityElementQuery,
+    to destination: FBAccessibilityElementQuery,
+    options: FBDragOptions
+  ) async throws {
+    guard let simulator = target as? FBSimulator else {
+      throw FBIDBCommandError.simulatorOnlyOperation(operation: "drag by accessibility", targetDescription: String(describing: target))
+    }
+    try await simulator.uiAutomation(backend: .accessibility).drag(from: source, to: destination, options: options)
+  }
+
   public func accessibility_info_at_point(_ value: NSValue?, format: FBAccessibilityOutputFormat) async throws -> FBAccessibilityElementsResponse {
     return try await accessibility_info_at_point(
       value, options: FBAccessibilityRequestOptions(format: format, enableLogging: false))
