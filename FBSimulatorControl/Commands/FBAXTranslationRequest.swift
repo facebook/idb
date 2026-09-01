@@ -185,7 +185,8 @@ final class FBAXTranslationRequest {
             nested: options.nestedFormat
           ) : nil,
         screen: Self.screenInfo(fromBounds: screenBounds),
-        reportProfile: options.enableProfiling
+        reportProfile: options.enableProfiling,
+        narrowing: options.narrowingReport(walked: walked, reported: mainAppElements)
       )
     }
 
@@ -367,7 +368,13 @@ final class FBAXTranslationRequest {
           nested: nestedFormat, additional: additionalFrameCoverage
         ) : nil,
       screen: Self.screenInfo(fromBounds: screenBounds),
-      reportProfile: reportProfile
+      reportProfile: reportProfile,
+      // The discovered elements were walked too, and were narrowed by the same filter and match, so
+      // they belong on both sides of the count — otherwise a read that hit-tested remote content could
+      // report more matched than it walked. The pairing lives in one place so a test can pin it.
+      narrowing: FBAccessibilityNarrowing(
+        filter: filter, match: match,
+        walked: walkedElements, discovered: discoveredElements, reported: elements)
     )
   }
 
@@ -382,7 +389,8 @@ final class FBAXTranslationRequest {
     walkStart: CFAbsoluteTime,
     coverage: FBAccessibilityCoverage?,
     screen: FBAccessibilityScreenInfo?,
-    reportProfile: Bool
+    reportProfile: Bool,
+    narrowing: FBAccessibilityNarrowing? = nil
   ) -> FBAccessibilityElementsResponse {
     let walkDuration = CFAbsoluteTimeGetCurrent() - walkStart
     // Collected always (cheap); reported only when profiling was requested.
@@ -392,7 +400,8 @@ final class FBAXTranslationRequest {
       profilingData: profilingData.map { .translator($0) },
       coverage: coverage,
       truncated: false,
-      screen: screen
+      screen: screen,
+      narrowing: narrowing
     )
   }
 

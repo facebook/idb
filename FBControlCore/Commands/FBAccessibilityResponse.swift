@@ -211,6 +211,10 @@ public struct FBAccessibilityElementsResponse: Sendable {
   /// The device's accessibility automation mode for this read, when the backend reported it.
   public let automation: FBAccessibilityAutomationState?
 
+  /// What narrowed the read and how much survived, for a read that could narrow. Nil for the
+  /// single-element reads, which select an element rather than narrow a list.
+  public let narrowing: FBAccessibilityNarrowing?
+
   public init(
     elements: FBAccessibilityElementPayload,
     profilingData: FBAccessibilityProfile? = nil,
@@ -220,7 +224,8 @@ public struct FBAccessibilityElementsResponse: Sendable {
     screen: FBAccessibilityScreenInfo? = nil,
     backend: FBUIAutomationBackendName? = nil,
     target: FBAccessibilityTargetDescriptor? = nil,
-    automation: FBAccessibilityAutomationState? = nil
+    automation: FBAccessibilityAutomationState? = nil,
+    narrowing: FBAccessibilityNarrowing? = nil
   ) {
     self.elements = elements
     self.profilingData = profilingData
@@ -231,6 +236,7 @@ public struct FBAccessibilityElementsResponse: Sendable {
     self.backend = backend
     self.target = target
     self.automation = automation
+    self.narrowing = narrowing
   }
 
   /// A copy carrying the provenance of the read that produced it. The backend and the query are known
@@ -251,7 +257,27 @@ public struct FBAccessibilityElementsResponse: Sendable {
       screen: screen ?? self.screen,
       backend: backend ?? self.backend,
       target: target ?? self.target,
-      automation: automation
+      automation: automation,
+      narrowing: narrowing
+    )
+  }
+
+  /// A copy reporting what narrowed the read.
+  ///
+  /// A separate stamper rather than an init parameter for the same reason `withProvenance` is one: the
+  /// counts are known where the narrowing runs, which is not where the response is assembled.
+  public func withNarrowing(_ narrowing: FBAccessibilityNarrowing) -> FBAccessibilityElementsResponse {
+    FBAccessibilityElementsResponse(
+      elements: elements,
+      profilingData: profilingData,
+      coverage: coverage,
+      modal: modal,
+      truncated: truncated,
+      screen: screen,
+      backend: backend,
+      target: target,
+      automation: automation,
+      narrowing: narrowing
     )
   }
 
@@ -272,7 +298,8 @@ public struct FBAccessibilityElementsResponse: Sendable {
       screen: nil,
       backend: backend,
       target: target,
-      automation: automation
+      automation: automation,
+      narrowing: narrowing
     )
   }
 
@@ -295,7 +322,8 @@ public struct FBAccessibilityElementsResponse: Sendable {
       // serialized, so computing it anywhere else would only create a way for the two to disagree.
       interaction: FBAccessibilityInteractionSummary(elements: reported),
       frames: FBAccessibilityFrameSummary(elements: reported),
-      automation: automation
+      automation: automation,
+      narrowing: narrowing
     )
   }
 

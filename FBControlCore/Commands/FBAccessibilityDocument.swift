@@ -718,6 +718,123 @@ public enum FBAccessibilityProfile: Sendable, Equatable, Encodable {
   }
 }
 
+/// What narrowed a read, and how much of it survived.
+///
+/// A caller that asked for `--match Cart` and got back three elements cannot otherwise tell that from
+/// a screen with three elements on it: the narrowing happens on the companion, and the document that
+/// comes back looks the same either way. This says what the read applied and what it dropped, so an
+/// empty result reads as "the substring matched nothing out of 812" rather than as "the read failed".
+///
+/// Emitted on every `complete` document, including reads that narrowed nothing — those report the
+/// default filter, a null match, and equal counts. A consumer therefore never has to distinguish "did
+/// not narrow" from "the companion predates this field" by whether a key is present.
+public struct FBAccessibilityNarrowing: Sendable, Equatable, Encodable {
+
+  /// The substring the read reported only the matching elements for, or nil when it did not narrow by
+  /// one. A marker read leaves this null: it reports its search through `target`, not here.
+  public let match: String?
+
+  /// The element key `match` was compared against, and whether that comparison ignored case. Both null
+  /// when there was no match — they describe a comparison that did not happen, and reporting a default
+  /// for it would read as one that did.
+  public let matchKey: String?
+  public let ignoreCase: Bool?
+
+  /// The element filter the read applied, spelled as the CLI spells it.
+  public let filter: String
+
+  /// Elements walked before narrowing, and elements reported after it. Counted through `children`, so
+  /// the pair means the same thing for a nested read as for a flat one, and equal when nothing
+  /// narrowed.
+  public let walked: Int
+  public let matched: Int
+
+  public init(match: String?, matchKey: String?, ignoreCase: Bool?, filter: String, walked: Int, matched: Int) {
+    self.match = match
+    self.matchKey = matchKey
+    self.ignoreCase = ignoreCase
+    self.filter = filter
+    self.walked = walked
+    self.matched = matched
+  }
+
+  enum CodingKeys: String, CodingKey {
+    case match
+    case matchKey = "match_key"
+    case ignoreCase = "ignore_case"
+    case filter
+    case walked
+    case matched
+  }
+
+  // `encode` rather than `encodeIfPresent`: the document's key set is fixed, so a match that was not
+  // asked for is an explicit `null` rather than an absent key.
+  public func encode(to encoder: Encoder) throws {
+    var container = encoder.container(keyedBy: CodingKeys.self)
+    try container.encode(match, forKey: .match)
+    try container.encode(matchKey, forKey: .matchKey)
+    try container.encode(ignoreCase, forKey: .ignoreCase)
+    try container.encode(filter, forKey: .filter)
+    try container.encode(walked, forKey: .walked)
+    try container.encode(matched, forKey: .matched)
+  }
+}
+
+public extension FBAccessibilityNarrowing {
+  /// The report for a read that applied `filter` and `match`, walking `walked` nodes and reporting
+  /// `matched` of them.
+  ///
+  /// Spelled from the typed filter and match rather than from strings at the call site, so the echo
+  /// cannot claim a narrowing the read did not apply; the counts are all the site contributes.
+  init(filter: FBAccessibilityElementFilter, match: FBAccessibilityMatch?, walked: Int, matched: Int) {
+    self.init(
+      match: match?.value,
+      matchKey: match?.key.rawValue,
+      ignoreCase: match.map(\.ignoresCase),
+      filter: filter.rawValue,
+      walked: walked,
+      matched: matched)
+  }
+
+  /// The report for a read that hit-tested remote content in addition to walking the element tree.
+  ///
+  /// The discovered elements were walked too, and were narrowed by the same `filter` and `match`, so
+  /// they belong on both sides of the count: `discovered` adds to `walked`, and whatever survived
+  /// narrowing is already counted in `reported`. Pairing the counts here — rather than by hand at the
+  /// call site — is what stops a read that reported matching remote content from claiming more matched
+  /// than it walked.
+  init(
+    filter: FBAccessibilityElementFilter,
+    match: FBAccessibilityMatch?,
+    walked: [FBAccessibilityDocumentElement],
+    discovered: [FBAccessibilityDocumentElement],
+    reported: [FBAccessibilityDocumentElement]
+  ) {
+    self.init(
+      filter: filter, match: match,
+      walked: walked.nodeCount + discovered.nodeCount, matched: reported.nodeCount)
+  }
+}
+
+public extension FBAccessibilityRequestOptions {
+  /// The narrowing report for a read under these options that walked `walked` and reported `reported`.
+  func narrowingReport(
+    walked: [FBAccessibilityDocumentElement], reported: [FBAccessibilityDocumentElement]
+  ) -> FBAccessibilityNarrowing {
+    FBAccessibilityNarrowing(
+      filter: filter, match: match, walked: walked.nodeCount, matched: reported.nodeCount)
+  }
+}
+
+public extension [FBAccessibilityDocumentElement] {
+  /// Elements in a serialized read, counted through `children`.
+  ///
+  /// The nested formats put a single root at the top level, so `count` would report 1 for any tree.
+  var nodeCount: Int {
+    reduce(0) { $0 + 1 + ($1.children ?? []).nodeCount }
+  }
+}
+
 /// The device's accessibility automation mode as it stood for a read, and whether the read changed it.
 ///
 /// Reported on every whole-tree read: with the mode off UIKit collapses subtrees behind opaque element
@@ -958,6 +1075,9 @@ public struct FBAccessibilityDocument: Sendable, Encodable {
   /// The device's accessibility automation mode for this read. Nil when the backend cannot report it —
   /// a single-element read, or a guest predating the field.
   public let automation: FBAccessibilityAutomationState?
+  /// What the read was narrowed by and how much survived. Nil for a single-element read, which selects
+  /// rather than narrows.
+  public let narrowing: FBAccessibilityNarrowing?
 
   public init(
     elements: [FBAccessibilityDocumentElement],
@@ -970,7 +1090,8 @@ public struct FBAccessibilityDocument: Sendable, Encodable {
     coverage: FBAccessibilityCoverage? = nil,
     interaction: FBAccessibilityInteractionSummary? = nil,
     frames: FBAccessibilityFrameSummary? = nil,
-    automation: FBAccessibilityAutomationState? = nil
+    automation: FBAccessibilityAutomationState? = nil,
+    narrowing: FBAccessibilityNarrowing? = nil
   ) {
     self.elements = elements
     self.modal = modal
@@ -983,6 +1104,7 @@ public struct FBAccessibilityDocument: Sendable, Encodable {
     self.interaction = interaction
     self.frames = frames
     self.automation = automation
+    self.narrowing = narrowing
   }
 
   enum CodingKeys: String, CodingKey {
@@ -997,6 +1119,7 @@ public struct FBAccessibilityDocument: Sendable, Encodable {
     case interaction
     case frames
     case automation
+    case narrowing
   }
 
   public func encode(to encoder: Encoder) throws {
@@ -1012,6 +1135,7 @@ public struct FBAccessibilityDocument: Sendable, Encodable {
     try container.encode(interaction, forKey: .interaction)
     try container.encode(frames, forKey: .frames)
     try container.encode(automation, forKey: .automation)
+    try container.encode(narrowing, forKey: .narrowing)
   }
 }
 

@@ -84,14 +84,6 @@ protocol FBAXTreeReader: FBUIAutomation {
 
 extension FBAXTreeReader {
 
-  /// Elements in the serialized read, counted through `children`.
-  ///
-  /// The `complete` format is always nested, so the top level is a single root and `count` would report 1
-  /// for any tree — where the `testmanagerd` backend counts every node.
-  static func nodeCount(of elements: [FBAccessibilityDocumentElement]) -> Int {
-    elements.reduce(0) { $0 + 1 + nodeCount(of: $1.children ?? []) }
-  }
-
   /// Backends that do not measure report nothing rather than zeroes.
   func profile(
     for read: FBAXTreeRead, elementCount: Int, serializeDuration: CFAbsoluteTime,
@@ -226,7 +218,7 @@ extension FBAXTreeReader {
         elements: .tree(elements),
         profilingData: options.enableProfiling
           ? profile(
-            for: read, elementCount: Self.nodeCount(of: elements), serializeDuration: serializeDuration,
+            for: read, elementCount: elements.nodeCount, serializeDuration: serializeDuration,
             traversal: traversal
           ) : nil,
         coverage: coverage, modal: read.modal, automation: read.automation
@@ -237,6 +229,7 @@ extension FBAXTreeReader {
         screen: screen,
         truncated: read.truncated
       )
+      .withNarrowing(options.narrowingReport(walked: walked, reported: elements))
     }
   }
 

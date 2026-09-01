@@ -247,6 +247,14 @@ final class FBAccessibilitySerializationTests: XCTestCase {
     elements.compactMap { $0.label ?? nil }
   }
 
+  // A single flat element carrying just a label — a match on `.label` keeps it, and with no children it
+  // contributes exactly one to `nodeCount`, so a fixture built from these has a count you can read off.
+  private static func labeled(_ label: String) -> FBAccessibilityDocumentElement {
+    var element = FBAccessibilityDocumentElement()
+    element.label = label
+    return element
+  }
+
   // A match carrying only a value: `--match-key AXValue` finds it, and `.interactable` would drop it,
   // since it has no label, no identifier and no actionable role.
   private static func valueOnlyMatchTree() -> [String: Any] {
@@ -587,7 +595,7 @@ final class FBAccessibilitySerializationTests: XCTestCase {
     }
     XCTAssertEqual(
       try rendered(.complete),
-      #"{"automation":null,"backend":"axbridge-persistent","coverage":null,"elements":[],"frames":null,"interaction":null,"modal":null,"profile":null,"screen":null,"target":{"kind":"point","match_key":null,"pid":null,"value":null,"x":5,"y":6},"truncated":false}"#
+      #"{"automation":null,"backend":"axbridge-persistent","coverage":null,"elements":[],"frames":null,"interaction":null,"modal":null,"narrowing":null,"profile":null,"screen":null,"target":{"kind":"point","match_key":null,"pid":null,"value":null,"x":5,"y":6},"truncated":false}"#
     )
   }
 
@@ -750,7 +758,7 @@ final class FBAccessibilitySerializationTests: XCTestCase {
     )
     let document = documentObject(response)
     XCTAssertTrue(document["screen"] is NSNull, "unknown bounds are null, and the read still renders")
-    XCTAssertEqual(Set(document.keys).count, 11, "the document keeps its fixed key set")
+    XCTAssertEqual(Set(document.keys).count, 12, "the document keeps its fixed key set")
   }
 
   // The same hazard on a hit-tested coordinate: `ui shell` parses one with `Double(_:)`, which accepts
@@ -909,7 +917,7 @@ final class FBAccessibilitySerializationTests: XCTestCase {
   // The document's key set never varies: what a verb or backend cannot supply is an explicit null, so
   // one parser serves every describe verb.
   func testCompleteDocumentKeySetIsFixedAcrossReads() throws {
-    let expected: Set<String> = ["elements", "modal", "truncated", "screen", "backend", "target", "profile", "coverage", "interaction", "frames", "automation"]
+    let expected: Set<String> = ["elements", "modal", "truncated", "screen", "backend", "target", "profile", "coverage", "interaction", "frames", "automation", "narrowing"]
     let bare = FBAccessibilityElementsResponse(elements: .tree([]))
     let full = FBAccessibilityElementsResponse(
       elements: .tree(flatElements()),
@@ -919,7 +927,9 @@ final class FBAccessibilitySerializationTests: XCTestCase {
       truncated: true,
       screen: FBAccessibilityScreenInfo(width: 390, height: 844),
       backend: .axBridge,
-      target: .point(CGPoint(x: 10, y: 20))
+      target: .point(CGPoint(x: 10, y: 20)),
+      narrowing: FBAccessibilityNarrowing(
+        match: "Cart", matchKey: "AXLabel", ignoreCase: true, filter: "interactable", walked: 40, matched: 1)
     )
     XCTAssertEqual(documentKeys(bare), expected, "an empty read still carries every key")
     XCTAssertEqual(documentKeys(full), expected)
@@ -929,7 +939,7 @@ final class FBAccessibilitySerializationTests: XCTestCase {
     let response = FBAccessibilityElementsResponse(elements: .tree([]))
     XCTAssertEqual(
       try documentJSON(response),
-      #"{"automation":null,"backend":null,"coverage":null,"elements":[],"frames":null,"interaction":null,"modal":null,"profile":null,"screen":null,"target":null,"truncated":false}"#
+      #"{"automation":null,"backend":null,"coverage":null,"elements":[],"frames":null,"interaction":null,"modal":null,"narrowing":null,"profile":null,"screen":null,"target":null,"truncated":false}"#
     )
   }
 
@@ -972,6 +982,106 @@ final class FBAccessibilitySerializationTests: XCTestCase {
     XCTAssertTrue(coverage["additional"] is NSNull)
 
     XCTAssertEqual((document["profile"] as? [String: NSNumber])?["element_count"], NSNumber(value: 2))
+  }
+
+  // MARK: - Narrowing
+
+  // A caller who asked the companion to narrow cannot see what was dropped, so the document says what
+  // the predicate was and how much of the tree survived it. Without both counts a caller cannot tell an
+  // over-tight match from an app that genuinely has one matching element.
+  func testNarrowingEchoesThePredicateAndBothCounts() throws {
+    let options = FBAccessibilityRequestOptions(
+      filter: .interactable,
+      match: FBAccessibilityMatch(value: "Cart", key: .value, ignoresCase: true)
+    )
+    let response = FBAccessibilityElementsResponse(elements: .tree([]))
+      .withNarrowing(options.narrowingReport(walked: flatElements(), reported: Array(flatElements().prefix(1))))
+    let narrowing = try XCTUnwrap(documentObject(response)["narrowing"] as? [String: Any])
+
+    XCTAssertEqual(narrowing["match"] as? String, "Cart")
+    XCTAssertEqual(narrowing["match_key"] as? String, "AXValue")
+    XCTAssertEqual(narrowing["ignore_case"] as? Bool, true)
+    XCTAssertEqual(narrowing["filter"] as? String, "interactable")
+    XCTAssertEqual(narrowing["walked"] as? Int, 2)
+    XCTAssertEqual(narrowing["matched"] as? Int, 1)
+  }
+
+  // The default read narrows nothing. It still reports, because "no predicate" is the answer to "what
+  // did you drop?" — and `walked == matched` is what proves it.
+  func testAnUnnarrowedReadReportsNoPredicateAndEqualCounts() throws {
+    let response = FBAccessibilityElementsResponse(elements: .tree(flatElements()))
+      .withNarrowing(FBAccessibilityRequestOptions().narrowingReport(walked: flatElements(), reported: flatElements()))
+    let narrowing = try XCTUnwrap(documentObject(response)["narrowing"] as? [String: Any])
+
+    XCTAssertTrue(narrowing["match"] is NSNull, "no match, but the key stays")
+    XCTAssertTrue(narrowing["match_key"] is NSNull)
+    XCTAssertTrue(narrowing["ignore_case"] is NSNull, "case sensitivity is a property of a match")
+    XCTAssertEqual(narrowing["filter"] as? String, "all")
+    XCTAssertEqual(narrowing["walked"] as? Int, 2)
+    XCTAssertEqual(narrowing["matched"] as? Int, 2)
+  }
+
+  // The prior two tests hand the report its counts through `prefix(1)` — they pin the plumbing, not the
+  // arithmetic. This one runs a real narrowing: walk a tree, apply a match that genuinely drops nodes,
+  // and let `narrowing` and `narrowingReport` derive both counts. `walked > matched` then means the
+  // read narrowed, and the surviving labels prove it dropped what did not match rather than miscounting.
+  func testARealMatchReportsFewerMatchedThanWalked() throws {
+    let walked = FBAXTreeWalk.describeAllElements(
+      fromTree: Self.filterTree(), keys: [.label, .role], nestedFormat: false, pid: 7
+    )
+    let options = FBAccessibilityRequestOptions(
+      filter: .all, match: FBAccessibilityMatch(value: "sibling", key: .label, ignoresCase: false)
+    )
+    let reported = options.narrowing(walked)
+    let report = options.narrowingReport(walked: walked, reported: reported)
+
+    XCTAssertEqual(Set(Self.labels(walked)), ["root", "leaf", "sibling"], "the walk saw every labeled node")
+    XCTAssertEqual(Self.labels(reported), ["sibling"], "the match kept only the matching node, dropping root and leaf")
+    XCTAssertEqual(report.walked, 4, "four nodes walked — the unlabeled container counts too")
+    XCTAssertEqual(report.matched, 1)
+    XCTAssertGreaterThan(report.walked, report.matched, "a match that drops nodes reports fewer matched than walked")
+  }
+
+  // The remote-content read walks the element tree and *also* hit-tests for content the walk never
+  // entered — a WebView's buttons live in another process. Those discovered elements are narrowed by
+  // the same predicate and reported, so they must count on the walked side too: here one non-matching
+  // main node is walked while three discovered nodes all match, so counting only the main walk would
+  // report three matched out of a walk of one. `FBAccessibilityNarrowing(filter:match:walked:discovered:
+  // reported:)` is the one place that pairs the counts, and this pins the invariant it guards.
+  func testARemoteContentReadCountsDiscoveredNodesOnTheWalkedSide() throws {
+    let options = FBAccessibilityRequestOptions(
+      filter: .all, match: FBAccessibilityMatch(value: "Cart", key: .label, ignoresCase: false)
+    )
+    let walkedMain = [Self.labeled("root")]
+    let discovered = [Self.labeled("Cart"), Self.labeled("Cart"), Self.labeled("Cart")]
+    let reported = options.narrowing(walkedMain) + options.narrowing(discovered)
+
+    XCTAssertEqual(Self.labels(reported), ["Cart", "Cart", "Cart"], "only the discovered matches survive the read")
+    XCTAssertGreaterThan(
+      reported.nodeCount, walkedMain.nodeCount,
+      "the fixture must reproduce the hazard: more reported than the main walk alone"
+    )
+
+    let report = FBAccessibilityNarrowing(
+      filter: options.filter, match: options.match,
+      walked: walkedMain, discovered: discovered, reported: reported
+    )
+    XCTAssertEqual(report.walked, 4, "one main node walked plus three discovered")
+    XCTAssertEqual(report.matched, 3)
+    XCTAssertLessThanOrEqual(report.matched, report.walked, "a read cannot report more matched than it walked")
+  }
+
+  // The counts are node counts, not top-level counts. The same two-node tree rendered nested is one
+  // top-level element with one child, and reporting `1` there would understate the read against the flat
+  // rendering of the identical tree.
+  func testTheCountsAreNodeCountsWhateverTheRendering() throws {
+    let nested = FBAXTreeWalk.describeAllElements(
+      fromTree: Self.sampleTree(), keys: FBAXKeys.defaultSet, nestedFormat: true, pid: 7
+    )
+    XCTAssertEqual(nested.count, 1, "the fixture nests, or this test proves nothing")
+    XCTAssertEqual(nested.nodeCount, 2, "a child is an element the read walked")
+    XCTAssertEqual(flatElements().nodeCount, 2, "the same tree, the same count")
+    XCTAssertEqual([FBAccessibilityDocumentElement]().nodeCount, 0)
   }
 
   // The sample tree is one element with area and one collapsed to a zero rect, which is the shape a read
@@ -1178,7 +1288,7 @@ final class FBAccessibilitySerializationTests: XCTestCase {
     #"{"elements":{"AXFrame":"{{16, 380}, {370, 52}}","AXLabel":"root","AXUniqueId":"com.example.root","AXValue":"on","content_required":false,"custom_actions":[],"enabled":null,"frame":{"height":52,"width":370,"x":16,"y":380},"help":null,"pid":7,"role":"Button","role_description":null,"subrole":null,"title":null,"traits":null,"type":"Button"}}"#
 
   private static let expectedProfiledDocumentJSON =
-    #"{"automation":null,"backend":null,"coverage":{"additional":0.25,"content":0.5,"frame":0.5,"leaf":0.5,"walked":0.5},"elements":[],"frames":null,"interaction":null,"modal":null,"profile":{"acquire_duration_ms":750,"attribute_fetch_count":3,"element_conversion_duration_ms":250,"element_count":2,"read_duration_ms":62.5,"serialize_duration_ms":125,"total_duration_ms":1000,"total_xpc_duration_ms":62.5,"translation_duration_ms":500,"xpc_call_count":4},"screen":null,"target":null,"truncated":false}"#
+    #"{"automation":null,"backend":null,"coverage":{"additional":0.25,"content":0.5,"frame":0.5,"leaf":0.5,"walked":0.5},"elements":[],"frames":null,"interaction":null,"modal":null,"narrowing":null,"profile":{"acquire_duration_ms":750,"attribute_fetch_count":3,"element_conversion_duration_ms":250,"element_count":2,"read_duration_ms":62.5,"serialize_duration_ms":125,"total_duration_ms":1000,"total_xpc_duration_ms":62.5,"translation_duration_ms":500,"xpc_call_count":4},"screen":null,"target":null,"truncated":false}"#
 
   private static let expectedFlatJSON =
     #"{"elements":[{"AXFrame":"{{16, 380}, {370, 52}}","AXLabel":"root","AXUniqueId":"com.example.root","AXValue":"on","content_required":false,"custom_actions":[],"enabled":null,"frame":{"height":52,"width":370,"x":16,"y":380},"help":null,"pid":7,"role":"Button","role_description":null,"subrole":null,"title":null,"traits":null,"type":"Button"},{"AXFrame":"{{0, 0}, {0, 0}}","AXLabel":"child","AXUniqueId":null,"AXValue":null,"content_required":false,"custom_actions":[],"enabled":null,"frame":{"height":0,"width":0,"x":0,"y":0},"help":null,"pid":7,"role":"AXCell","role_description":null,"subrole":null,"title":null,"traits":null,"type":"Cell"}]}"#
