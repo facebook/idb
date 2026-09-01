@@ -64,14 +64,19 @@ extension FBDeviceDiskImageError: LocalizedError {
 public class FBDeviceDeveloperDiskImageCommands: DeveloperDiskImageCommands {
   private(set) weak var device: FBDevice?
 
+  /// Where the images this host has to offer come from. Injected because the default reads the
+  /// Xcode installation, which is the one input to selection a unit test cannot supply.
+  private let diskImages: any DeveloperDiskImageProviding
+
   // MARK: Initializers
 
   public class func commands(with device: FBDevice) -> FBDeviceDeveloperDiskImageCommands {
     FBDeviceDeveloperDiskImageCommands(device: device)
   }
 
-  init(device: FBDevice) {
+  init(device: FBDevice, diskImages: any DeveloperDiskImageProviding = InstalledDeveloperDiskImages()) {
     self.device = device
+    self.diskImages = diskImages
   }
 
   // MARK: DeveloperDiskImageCommands
@@ -102,7 +107,7 @@ public class FBDeviceDeveloperDiskImageCommands: DeveloperDiskImageCommands {
   }
 
   public func mountableDiskImages() -> [FBDeveloperDiskImage] {
-    return FBDeveloperDiskImage.allDiskImages
+    return diskImages.availableDiskImages
   }
 
   public func ensureDeveloperDiskImageIsMounted() async throws -> FBDeveloperDiskImage {
@@ -113,7 +118,12 @@ public class FBDeviceDeveloperDiskImageCommands: DeveloperDiskImageCommands {
       throw FBDeviceDiskImageError.noProductVersion(deviceDescription: String(describing: device))
     }
     let targetVersion = FBOSVersion.operatingSystemVersion(fromName: productVersion)
-    let diskImage = try FBDeveloperDiskImage.developerDiskImage(targetVersion, logger: device.logger)
+    // The same composition `FBDeveloperDiskImage.developerDiskImage` performs, with the image list
+    // coming from the injected source rather than straight off disk.
+    let diskImage = try FBDeveloperDiskImage.bestImage(
+      forImages: diskImages.availableDiskImages,
+      targetVersion: targetVersion,
+      logger: device.logger)
     return try await mountDeveloperDiskImageAsync(diskImage, imageType: DiskImageTypeDeveloper)
   }
 
@@ -122,7 +132,7 @@ public class FBDeviceDeveloperDiskImageCommands: DeveloperDiskImageCommands {
   private func mountInfoToDiskImageAsync() async throws -> [NSDictionary: FBDeveloperDiskImage] {
     let logger = device?.logger
     let entries = try await mountedImageEntriesAsync()
-    let images = FBDeveloperDiskImage.allDiskImages
+    let images = diskImages.availableDiskImages
     var imagesBySignature: [Data: FBDeveloperDiskImage] = [:]
     for image in images {
       imagesBySignature[image.signature] = image
