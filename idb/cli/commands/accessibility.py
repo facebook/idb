@@ -378,6 +378,7 @@ class AccessibilityDescribeMarkerCommand(ClientCommand):
             default=False,
             help="Report data in the nested format rather than the flat one",
         )
+        _add_enricher_args(parser)
         _add_backend_arg(parser)
         _add_format_arg(parser)
 
@@ -391,8 +392,11 @@ class AccessibilityDescribeMarkerCommand(ClientCommand):
             ),
             options=AccessibilityInfoOptions(
                 nested=args.nested,
+                keys=args.keys,
                 backend=_backend(args),
                 format=requested_format,
+                profile=args.profile,
+                collect_frame_coverage=args.collect_frame_coverage,
             ),
         )
         _warn_if_complete_downgraded(requested_format, info.json)

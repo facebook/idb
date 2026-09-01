@@ -65,6 +65,25 @@ class AccessibilityInfoRequestTests(TestCase):
         self.assertEqual(request.depth, 4)
         self.assertEqual(request.match, "")
 
+    def test_marker_target_carries_the_read_options(self) -> None:
+        # A marker read is a read: the keys and the enrichers travel with it,
+        # not only with a whole-app read.
+        request = accessibility_info_to_grpc(
+            AccessibilityMarker(
+                value="Login",
+                match_key=AccessibilitySearchableKey.LABEL,
+                depth=10,
+            ),
+            AccessibilityInfoOptions(
+                keys=["AXLabel", "frame"],
+                profile=True,
+                collect_frame_coverage=True,
+            ),
+        )
+        self.assertEqual(list(request.keys), ["AXLabel", "frame"])
+        self.assertTrue(request.profile)
+        self.assertTrue(request.collect_frame_coverage)
+
     def test_point_target(self) -> None:
         request = accessibility_info_to_grpc(
             AccessibilityPoint(x=10, y=20), AccessibilityInfoOptions()

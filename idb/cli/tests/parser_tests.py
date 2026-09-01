@@ -1840,6 +1840,37 @@ class TestParser(TestCase):
             ),
         )
 
+    async def test_describe_marker_keys_and_enrichers(self) -> None:
+        # describe took --format and --api but not --key, so a caller asking a
+        # marker read for two attributes got the whole default set instead.
+        self.client_mock.accessibility_info = AsyncMock()
+        await cli_main(
+            cmd_input=[
+                "ui",
+                "describe",
+                "Login",
+                "--key",
+                "AXLabel",
+                "--key",
+                "frame",
+                "--profile",
+                "--collect-frame-coverage",
+            ]
+        )
+        self.client_mock.accessibility_info.assert_called_once_with(
+            target=AccessibilityMarker(
+                value="Login",
+                match_key=AccessibilitySearchableKey.LABEL,
+                depth=10,
+            ),
+            options=AccessibilityInfoOptions(
+                nested=False,
+                keys=["AXLabel", "frame"],
+                profile=True,
+                collect_frame_coverage=True,
+            ),
+        )
+
     async def test_backend_enum_matches_wire_values(self) -> None:
         # The typed backend must emit the exact values the proto declares, by
         # name and by number — an unset backend is BACKEND_UNSPECIFIED, the
