@@ -15,6 +15,7 @@ from idb.common.types import (
     ACCESSIBILITY_FORMAT_BY_NAME,
     ACCESSIBILITY_KEY_BY_NAME,
     AccessibilityBackend,
+    AccessibilityDragOptions,
     AccessibilityInfoOptions,
     AccessibilityMarker,
     AccessibilityOutputFormat,
@@ -52,6 +53,67 @@ def _parse_target(
         "expected 'x y' coordinates, a single marker string, or no target "
         "for the frontmost app"
     )
+
+
+def _split_endpoints(tokens: list[str]) -> tuple[list[str], list[str]]:
+    """Split one positional list into a source and a destination, each of which
+    is a `_parse_target` token list: 'x y' coordinates or a single marker.
+
+    Both endpoints are variable-length, so the boundary is found by reading the
+    source greedily: two leading integers are a coordinate pair, anything else
+    is a one-token marker. That is the same rule `_parse_target` applies, so a
+    numeric marker has to be quoted here for the same reason it does in
+    `ui tap`, and `"42 7"` quoted is still one marker.
+
+    Four tokens can only be point-to-point and two can only be marker-to-marker,
+    so the rule decides nothing there; it only picks which end owns the odd
+    token in the three-token case."""
+    if len(tokens) < 2:
+        raise IdbException(
+            "drag-and-drop needs two endpoints: 'x y' coordinates or a marker "
+            "for each of the source and the destination"
+        )
+    if len(tokens) > 4:
+        raise IdbException(
+            f"drag-and-drop takes two endpoints, but {len(tokens)} tokens were "
+            "given; an endpoint is 'x y' coordinates or a single marker, so "
+            "quote a marker that contains spaces"
+        )
+    leading_point = _looks_int(tokens[0]) and _looks_int(tokens[1])
+    if len(tokens) == 2 and leading_point:
+        # `10 20` is one coordinate pair everywhere else in `idb ui`, so reading
+        # it as two numeric markers here would contradict the sibling verbs.
+        # It is far more likely to be a dropped destination than a real pair of
+        # numeric labels, and the caller who did mean the latter has no way to
+        # say so, which is exactly why this is an error rather than a guess.
+        pair = f"{tokens[0]} {tokens[1]}"
+        raise IdbException(
+            f"'{pair}' is a single coordinate pair, and drag-and-drop needs "
+            f"two endpoints; add the destination, as in "
+            f"'drag-and-drop {pair} X Y'"
+        )
+    split = 2 if leading_point else 1
+    return tokens[:split], tokens[split:]
+
+
+def _parse_endpoint(
+    tokens: list[str],
+    name: str,
+    match_key: AccessibilitySearchableKey,
+    depth: int,
+) -> AccessibilityTarget:
+    """`_parse_target` for one end of a drag, naming which end failed. The
+    empty target the other callers accept (the frontmost app) is not a
+    meaningful endpoint, so it is rejected rather than passed on."""
+    try:
+        target = _parse_target(tokens, match_key=match_key, depth=depth)
+    except IdbException as error:
+        raise IdbException(f"drag-and-drop {name}: {error}") from error
+    if target is None:
+        raise IdbException(
+            f"drag-and-drop {name}: expected 'x y' coordinates or a marker"
+        )
+    return target
 
 
 def _add_enricher_args(parser: ArgumentParser) -> None:
@@ -364,3 +426,101 @@ class AccessibilitySetValueCommand(ClientCommand):
         if target is None:
             raise IdbException("set-value requires 'x y' coordinates or a marker")
         await client.accessibility_set_value(target=target, value=args.value)
+
+
+class AccessibilityDragAndDropCommand(ClientCommand):
+    @property
+    def description(self) -> str:
+        return "Press an element, drag it to another, and release"
+
+    @property
+    def name(self) -> str:
+        return "drag-and-drop"
+
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
+        super().add_parser_arguments(parser)
+        parser.add_argument(
+            "endpoints",
+            nargs="+",
+            metavar=("SOURCE", "DESTINATION"),
+            help="Source and destination for the drag, in that order. Specify "
+            "each as either two integer coordinates ('X Y') or one accessibility "
+            "marker. Examples: '10 20 30 40' drags from (10, 20) to (30, 40); "
+            "'Photo Album' drags from marker Photo to marker Album; and 'Photo "
+            "30 40' drags from marker Photo to (30, 40). Quote marker names that "
+            "contain spaces.",
+        )
+        parser.add_argument(
+            "--match-key",
+            choices=list(ACCESSIBILITY_KEY_BY_NAME),
+            default="AXLabel",
+            help="Accessibility key to match the source marker against",
+        )
+        parser.add_argument(
+            "--depth", type=int, default=10, help="Maximum tree depth to search"
+        )
+        parser.add_argument(
+            "--to-match-key",
+            choices=list(ACCESSIBILITY_KEY_BY_NAME),
+            default=None,
+            help="Accessibility key to match the destination marker against "
+            "(default: --match-key)",
+        )
+        parser.add_argument(
+            "--to-depth",
+            type=int,
+            default=None,
+            help="Maximum tree depth to search for the destination (default: --depth)",
+        )
+        parser.add_argument(
+            "--press-duration",
+            type=float,
+            default=None,
+            help="Seconds to hold the source before moving (default: 0.5). This "
+            "hold is what makes the gesture a drag rather than a flick.",
+        )
+        parser.add_argument(
+            "--duration",
+            type=float,
+            default=None,
+            help="Seconds the movement itself takes (default: 0.5)",
+        )
+        parser.add_argument(
+            "--release-duration",
+            type=float,
+            default=None,
+            help="Seconds to hold the destination before releasing (default: 0.1)",
+        )
+        parser.add_argument(
+            "--delta",
+            type=float,
+            default=None,
+            help="Distance in points between interpolated touch points (default: "
+            "10). A delta at or above the distance dragged is rejected: it moves "
+            "in one jump, which reads as a flick.",
+        )
+
+    async def run_with_client(self, args: Namespace, client: Client) -> None:
+        source_tokens, destination_tokens = _split_endpoints(args.endpoints)
+        source = _parse_endpoint(
+            source_tokens,
+            "source",
+            match_key=ACCESSIBILITY_KEY_BY_NAME[args.match_key],
+            depth=args.depth,
+        )
+        destination = _parse_endpoint(
+            destination_tokens,
+            "destination",
+            match_key=ACCESSIBILITY_KEY_BY_NAME[args.to_match_key or args.match_key],
+            depth=args.to_depth if args.to_depth is not None else args.depth,
+        )
+        await client.accessibility_drag(
+            source=source,
+            destination=destination,
+            options=AccessibilityDragOptions(
+                press_duration=args.press_duration,
+                duration=args.duration,
+                release_duration=args.release_duration,
+                delta=args.delta,
+            ),
+        )

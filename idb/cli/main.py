@@ -31,6 +31,7 @@ logging.getLogger("scuba_logger").setLevel(logging.CRITICAL)
 import idb.common.plugin as plugin
 from idb.cli.commands.accessibility import (
     AccessibilityDescribeMarkerCommand,
+    AccessibilityDragAndDropCommand,
     AccessibilityInfoAllCommand,
     AccessibilityInfoAtPointCommand,
     AccessibilityScrollCommand,
@@ -286,6 +287,7 @@ async def gen_main(cmd_input: list[str] | None = None) -> SysExitArg:
                 AccessibilityDescribeMarkerCommand(),
                 AccessibilityScrollCommand(),
                 AccessibilitySetValueCommand(),
+                AccessibilityDragAndDropCommand(),
                 TapCommand(),
                 MultiTapCommand(),
                 PinchCommand(),

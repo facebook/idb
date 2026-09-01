@@ -44,6 +44,7 @@ from idb.common.logging import log_call
 from idb.common.stream import stream_map
 from idb.common.tar import create_tar, drain_untar, generate_tar
 from idb.common.types import (
+    AccessibilityDragOptions,
     AccessibilityInfo,
     AccessibilityInfoOptions,
     AccessibilityMarker,
@@ -593,6 +594,36 @@ class Client(ClientBase):
         elif isinstance(target, AccessibilityPoint):
             request.point.x = target.x
             request.point.y = target.y
+        await self.stub.accessibility_action(request)
+
+    @log_and_handle_exceptions("accessibility_drag")
+    async def accessibility_drag(
+        self,
+        source: AccessibilityTarget,
+        destination: AccessibilityTarget,
+        options: AccessibilityDragOptions,
+    ) -> None:
+        drag = AccessibilityActionRequest.Drag(
+            press_duration=options.press_duration or 0.0,
+            duration=options.duration or 0.0,
+            release_duration=options.release_duration or 0.0,
+            delta=options.delta or 0.0,
+        )
+        if isinstance(destination, AccessibilityMarker):
+            drag.marker = destination.value
+            drag.destination_match_key = destination.match_key.value
+            drag.destination_depth = destination.depth
+        elif isinstance(destination, AccessibilityPoint):
+            drag.point.x = destination.x
+            drag.point.y = destination.y
+        request = AccessibilityActionRequest(drag=drag)
+        if isinstance(source, AccessibilityMarker):
+            request.marker = source.value
+            request.match_key = source.match_key.value
+            request.depth = source.depth
+        elif isinstance(source, AccessibilityPoint):
+            request.point.x = source.x
+            request.point.y = source.y
         await self.stub.accessibility_action(request)
 
     @log_and_handle_exceptions("add_media")

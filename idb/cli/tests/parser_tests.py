@@ -23,6 +23,7 @@ from idb.common import plugin
 from idb.common.command import Command, CommandGroup
 from idb.common.types import (
     AccessibilityBackend,
+    AccessibilityDragOptions,
     AccessibilityInfo,
     AccessibilityInfoOptions,
     AccessibilityMarker,
@@ -1069,6 +1070,197 @@ class TestParser(TestCase):
             ),
             value="hello",
         )
+
+    async def test_drag_and_drop_points(self) -> None:
+        self.client_mock.accessibility_drag = AsyncMock(return_value=[])
+        await cli_main(cmd_input=["ui", "drag-and-drop", "10", "20", "30", "40"])
+        self.client_mock.accessibility_drag.assert_called_once_with(
+            source=AccessibilityPoint(x=10, y=20),
+            destination=AccessibilityPoint(x=30, y=40),
+            options=AccessibilityDragOptions(
+                press_duration=None, duration=None, release_duration=None, delta=None
+            ),
+        )
+
+    async def test_drag_and_drop_markers(self) -> None:
+        self.client_mock.accessibility_drag = AsyncMock(return_value=[])
+        await cli_main(
+            cmd_input=[
+                "ui",
+                "drag-and-drop",
+                "Photo",
+                "Album",
+                "--match-key",
+                "AXUniqueId",
+                "--depth",
+                "5",
+            ]
+        )
+        # The destination inherits the source's key and depth unless it overrides them.
+        self.client_mock.accessibility_drag.assert_called_once_with(
+            source=AccessibilityMarker(
+                value="Photo",
+                match_key=AccessibilitySearchableKey.UNIQUE_ID,
+                depth=5,
+            ),
+            destination=AccessibilityMarker(
+                value="Album",
+                match_key=AccessibilitySearchableKey.UNIQUE_ID,
+                depth=5,
+            ),
+            options=AccessibilityDragOptions(
+                press_duration=None, duration=None, release_duration=None, delta=None
+            ),
+        )
+
+    async def test_drag_and_drop_destination_overrides_the_source_key(self) -> None:
+        self.client_mock.accessibility_drag = AsyncMock(return_value=[])
+        await cli_main(
+            cmd_input=[
+                "ui",
+                "drag-and-drop",
+                "Photo",
+                "Album",
+                "--to-match-key",
+                "AXLabel",
+                "--to-depth",
+                "3",
+                "--match-key",
+                "AXUniqueId",
+            ]
+        )
+        self.client_mock.accessibility_drag.assert_called_once_with(
+            source=AccessibilityMarker(
+                value="Photo",
+                match_key=AccessibilitySearchableKey.UNIQUE_ID,
+                depth=10,
+            ),
+            destination=AccessibilityMarker(
+                value="Album",
+                match_key=AccessibilitySearchableKey.LABEL,
+                depth=3,
+            ),
+            options=AccessibilityDragOptions(
+                press_duration=None, duration=None, release_duration=None, delta=None
+            ),
+        )
+
+    async def test_drag_and_drop_timings(self) -> None:
+        self.client_mock.accessibility_drag = AsyncMock(return_value=[])
+        await cli_main(
+            cmd_input=[
+                "ui",
+                "drag-and-drop",
+                "10",
+                "20",
+                "30",
+                "40",
+                "--press-duration",
+                "1",
+                "--duration",
+                "2",
+                "--release-duration",
+                "0.25",
+                "--delta",
+                "5",
+            ]
+        )
+        self.client_mock.accessibility_drag.assert_called_once_with(
+            source=AccessibilityPoint(x=10, y=20),
+            destination=AccessibilityPoint(x=30, y=40),
+            options=AccessibilityDragOptions(
+                press_duration=1.0, duration=2.0, release_duration=0.25, delta=5.0
+            ),
+        )
+
+    async def test_drag_and_drop_point_to_marker(self) -> None:
+        # Three tokens, the first two integers: the source takes the pair.
+        self.client_mock.accessibility_drag = AsyncMock(return_value=[])
+        await cli_main(cmd_input=["ui", "drag-and-drop", "10", "20", "Album"])
+        self.client_mock.accessibility_drag.assert_called_once_with(
+            source=AccessibilityPoint(x=10, y=20),
+            destination=AccessibilityMarker(
+                value="Album",
+                match_key=AccessibilitySearchableKey.LABEL,
+                depth=10,
+            ),
+            options=AccessibilityDragOptions(
+                press_duration=None, duration=None, release_duration=None, delta=None
+            ),
+        )
+
+    async def test_drag_and_drop_marker_to_point(self) -> None:
+        # Three tokens, the first not an integer: the source is one marker and
+        # the destination takes the pair.
+        self.client_mock.accessibility_drag = AsyncMock(return_value=[])
+        await cli_main(cmd_input=["ui", "drag-and-drop", "Photo", "30", "40"])
+        self.client_mock.accessibility_drag.assert_called_once_with(
+            source=AccessibilityMarker(
+                value="Photo",
+                match_key=AccessibilitySearchableKey.LABEL,
+                depth=10,
+            ),
+            destination=AccessibilityPoint(x=30, y=40),
+            options=AccessibilityDragOptions(
+                press_duration=None, duration=None, release_duration=None, delta=None
+            ),
+        )
+
+    async def test_drag_and_drop_all_numeric_endpoints_read_the_source_greedily(
+        self,
+    ) -> None:
+        # Three integer tokens are the one genuinely ambiguous input: "300 400"
+        # could be the source point or the destination point. The source is read
+        # greedily, the same way `_parse_target` reads a leading integer pair
+        # everywhere else, so this is a point to a numeric marker.
+        self.client_mock.accessibility_drag = AsyncMock(return_value=[])
+        await cli_main(cmd_input=["ui", "drag-and-drop", "300", "400", "500"])
+        self.client_mock.accessibility_drag.assert_called_once_with(
+            source=AccessibilityPoint(x=300, y=400),
+            destination=AccessibilityMarker(
+                value="500",
+                match_key=AccessibilitySearchableKey.LABEL,
+                depth=10,
+            ),
+            options=AccessibilityDragOptions(
+                press_duration=None, duration=None, release_duration=None, delta=None
+            ),
+        )
+
+    async def test_drag_and_drop_rejects_a_bare_coordinate_pair(self) -> None:
+        # `10 20` is one coordinate pair everywhere else in `idb ui`. Reading it
+        # here as two numeric markers would contradict the sibling verbs, and a
+        # dropped destination is the far likelier intent, so it is an error.
+        self.client_mock.accessibility_drag = AsyncMock(return_value=[])
+        exit_code = await cli_main(cmd_input=["ui", "drag-and-drop", "10", "20"])
+        self.assertEqual(exit_code, 1)
+        self.client_mock.accessibility_drag.assert_not_called()
+
+    async def test_drag_and_drop_rejects_one_endpoint(self) -> None:
+        self.client_mock.accessibility_drag = AsyncMock(return_value=[])
+        exit_code = await cli_main(cmd_input=["ui", "drag-and-drop", "Photo"])
+        self.assertEqual(exit_code, 1)
+        self.client_mock.accessibility_drag.assert_not_called()
+
+    async def test_drag_and_drop_rejects_too_many_tokens(self) -> None:
+        # Five tokens cannot be two endpoints; an unquoted multi-word marker is
+        # the usual cause, so this is rejected rather than split some other way.
+        self.client_mock.accessibility_drag = AsyncMock(return_value=[])
+        exit_code = await cli_main(
+            cmd_input=["ui", "drag-and-drop", "My", "Photo", "My", "Album", "1"]
+        )
+        self.assertEqual(exit_code, 1)
+        self.client_mock.accessibility_drag.assert_not_called()
+
+    async def test_drag_and_drop_unparseable_destination(self) -> None:
+        # Four tokens with a marker source leave three for the destination,
+        # which is neither a point nor one marker.
+        self.client_mock.accessibility_drag = AsyncMock(return_value=[])
+        exit_code = await cli_main(
+            cmd_input=["ui", "drag-and-drop", "Photo", "My", "Album", "2"]
+        )
+        self.assertEqual(exit_code, 1)
+        self.client_mock.accessibility_drag.assert_not_called()
 
     async def test_multi_tap_default(self) -> None:
         self.client_mock.multi_tap = AsyncMock(return_value=[])

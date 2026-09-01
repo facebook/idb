@@ -364,6 +364,20 @@ class AccessibilityMarker:
 AccessibilityTarget = Union[AccessibilityPoint, AccessibilityMarker]
 
 
+@dataclass(frozen=True)
+class AccessibilityDragOptions:
+    """The three drag phase durations, in seconds, and the distance between
+    interpolated touch points, in screen points. None sends the wire's zero,
+    which the companion reads as its own default (0.5s press, 0.5s travel, 0.1s
+    release, 10pt delta) — a proto3 scalar cannot distinguish unset from zero,
+    and none of these are useful at zero."""
+
+    press_duration: float | None = None
+    duration: float | None = None
+    release_duration: float | None = None
+    delta: float | None = None
+
+
 # CLI names (matching the sime2e vocabulary) for the accessibility searchable
 # keys, so the same marker/expected-value flags work across both CLIs.
 ACCESSIBILITY_KEY_BY_NAME: dict[str, AccessibilitySearchableKey] = {
@@ -992,6 +1006,15 @@ class Client(ABC):
         self,
         target: AccessibilityTarget,
         value: str,
+    ) -> None:
+        pass
+
+    @abstractmethod
+    async def accessibility_drag(
+        self,
+        source: AccessibilityTarget,
+        destination: AccessibilityTarget,
+        options: AccessibilityDragOptions,
     ) -> None:
         pass
 
