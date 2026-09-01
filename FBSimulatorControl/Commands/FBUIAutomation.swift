@@ -134,6 +134,58 @@ public struct FBTapOptions: Sendable, Equatable {
   }
 }
 
+/// Options for a `drag`: the three phase durations and the sampling interval. Every value defaults to
+/// what the gesture uses when a caller does not choose, so `FBDragOptions()` is the documented drag.
+public struct FBDragOptions: Sendable, Equatable {
+
+  /// The hold at the source before travel starts. This is the phase that makes the gesture a drag
+  /// rather than a flick: iOS begins a drag session only once the press clears its long-press
+  /// threshold.
+  public var pressDuration: TimeInterval
+  /// The travel time, spread evenly over the interpolated samples.
+  public var duration: TimeInterval
+  /// The hold at the destination before the touch lifts, so a drop target can settle.
+  public var releaseDuration: TimeInterval
+  /// The distance in screen points between interpolated samples.
+  public var delta: Double
+
+  public init(
+    pressDuration: TimeInterval = 0.5,
+    duration: TimeInterval = 0.5,
+    releaseDuration: TimeInterval = 0.1,
+    delta: Double = FBSimulatorHIDEvent.defaultSwipeDelta
+  ) {
+    self.pressDuration = pressDuration
+    self.duration = duration
+    self.releaseDuration = releaseDuration
+    self.delta = delta
+  }
+}
+
+/// What a drag endpoint names, once the queries that name no single element are refused. Shared by the
+/// backends so a drag accepts the same endpoints whichever one runs it; they differ only in how a
+/// marker becomes a point.
+enum FBDragEndpoint: Equatable {
+  case point(CGPoint)
+  case marker(value: String, key: FBAXSearchableKey, depth: UInt)
+
+  /// The verb named in the refusal.
+  static let operation = "A drag endpoint"
+
+  /// `.frontmost` and `.application` name a tree. Resolving one would drag from the middle of the
+  /// application's own rectangle, which is somewhere the caller never named.
+  init(_ query: FBAccessibilityElementQuery, backend: FBUIAutomationBackend) throws {
+    switch query {
+    case let .point(point):
+      self = .point(point)
+    case let .marker(value, key, depth):
+      self = .marker(value: value, key: key, depth: depth)
+    case .frontmost, .application:
+      throw FBUIAutomationError.pointOrMarkerRequired(backend: backend, operation: Self.operation)
+    }
+  }
+}
+
 /// The converged UI-automation surface: element reads and element-targeted
 /// actions, expressed once against an `FBAccessibilityElementQuery` target and run by the selected
 /// backend. `FBSimulator.uiAutomation(backend:)` vends the backend that implements it.
@@ -196,6 +248,19 @@ public protocol FBUIAutomation: Sendable {
   /// that need an element's position/size — e.g. to draw an overlay or resolve a pid — without a full
   /// serialize. Accessibility only for now; the remote backend rejects it with a clear error.
   func frame(_ query: FBAccessibilityElementQuery) async throws -> CGRect
+
+  /// Presses `source`, drags to `destination`, and releases. `.point` endpoints are the coordinate
+  /// itself; a `.marker` endpoint is the centre of the element it names. `.frontmost`/`.application`
+  /// are not endpoints.
+  ///
+  /// Delivered as synthesized input on every backend, because no accessibility action expresses a
+  /// drag. The backends differ only in how a marker endpoint is resolved and which transport carries
+  /// the events.
+  func drag(
+    from source: FBAccessibilityElementQuery,
+    to destination: FBAccessibilityElementQuery,
+    options: FBDragOptions
+  ) async throws
 }
 
 public extension FBUIAutomation {
@@ -203,6 +268,11 @@ public extension FBUIAutomation {
   /// Taps the element named by `query` with no hold duration and no value assertion.
   func tap(_ query: FBAccessibilityElementQuery) async throws {
     try await tap(query, options: FBTapOptions())
+  }
+
+  /// Drags with the default phase durations and sampling interval.
+  func drag(from source: FBAccessibilityElementQuery, to destination: FBAccessibilityElementQuery) async throws {
+    try await drag(from: source, to: destination, options: FBDragOptions())
   }
 }
 
@@ -276,7 +346,7 @@ public extension FBSimulator {
   func uiAutomation(backend: FBUIAutomationBackend) throws -> any FBUIAutomation {
     switch backend {
     case .accessibility:
-      return FBAccessibilityUIAutomation(operations: self)
+      return FBAccessibilityUIAutomation(simulator: self)
     case .remoteAutomation:
       return try remoteAutomation()
     case let .axBridge(persistence, frontmostMethod, automationMode):
@@ -306,6 +376,12 @@ public extension FBSimulator {
   private func axBridgeTransport(_ persistence: FBAXBridgePersistence) -> FBAXBridgePersistentTransport {
     commandCache.resolve { FBAXBridgeTransportsByPersistence() }
       .transport(for: persistence) { FBAXBridgePersistentTransport(simulator: self, persistence: persistence) }
+  }
+
+  /// Delivers one composed gesture over HID, which drains the transport once for the whole gesture
+  /// rather than once per primitive event.
+  internal func sendHIDGesture(_ event: FBSimulatorHIDEvent) async throws {
+    try await connectToHID().send(event: event, logger: logger)
   }
 }
 

@@ -255,6 +255,25 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
     try await write(.perform(Self.action(for: direction)), to: target, query: query)
   }
 
+  /// Resolves both endpoints the way every other write on this backend resolves its target, then
+  /// synthesizes the gesture over HID. The guest has no wire verb for a drag, and one would not help:
+  /// a drag is a touch path rather than an action on a single element.
+  func drag(
+    from source: FBAccessibilityElementQuery,
+    to destination: FBAccessibilityElementQuery,
+    options: FBDragOptions
+  ) async throws {
+    let start = try await writeTarget(for: source, operation: FBDragEndpoint.operation, callerAssertion: nil).point
+    let end = try await writeTarget(for: destination, operation: FBDragEndpoint.operation, callerAssertion: nil).point
+    try await simulator.sendHIDGesture(
+      .drag(
+        Double(start.x), yStart: Double(start.y), xEnd: Double(end.x), yEnd: Double(end.y),
+        delta: options.delta, pressDuration: options.pressDuration, duration: options.duration,
+        releaseDuration: options.releaseDuration
+      )
+    )
+  }
+
   /// The semantic action a scroll direction asks for.
   private static func action(for direction: FBAccessibilityScrollDirection) -> FBAXWire.Action {
     switch direction {

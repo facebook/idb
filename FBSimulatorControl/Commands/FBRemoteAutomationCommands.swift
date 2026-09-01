@@ -176,6 +176,37 @@ public actor FBSimulatorRemoteAutomation: FBAXTreeReader {
     }
   }
 
+  /// Presses `source`, drags to `destination`, and releases. Endpoints resolve the way `tap` resolves
+  /// its target: a coordinate directly, a marker to its frame centre in the frontmost tree.
+  ///
+  /// The whole gesture is one composite event, sent as one synthesized record. Sending the touches
+  /// individually would produce a separate single-touch record per step, so the press would never join
+  /// the moves into a path.
+  public func drag(
+    from source: FBAccessibilityElementQuery,
+    to destination: FBAccessibilityElementQuery,
+    options: FBDragOptions
+  ) async throws {
+    let start = try await dragEndpoint(source)
+    let end = try await dragEndpoint(destination)
+    try await sendHIDEvent(
+      .drag(
+        start.x, yStart: start.y, xEnd: end.x, yEnd: end.y,
+        delta: options.delta, pressDuration: options.pressDuration, duration: options.duration,
+        releaseDuration: options.releaseDuration
+      )
+    )
+  }
+
+  private func dragEndpoint(_ query: FBAccessibilityElementQuery) async throws -> (x: Double, y: Double) {
+    switch try FBDragEndpoint(query, backend: .remoteAutomation) {
+    case let .point(point):
+      return (Double(point.x), Double(point.y))
+    case let .marker(markerValue, key, _):
+      return try await markerCenter(markerValue, key: key)
+    }
+  }
+
   /// Polls the frontmost app tree until the element named by a `.marker` query appears, or throws when
   /// `timeout` elapses. `.point`/`.frontmost` are not waitable. The screen-centre anchor is probed to
   /// discover the frontmost app's pid.

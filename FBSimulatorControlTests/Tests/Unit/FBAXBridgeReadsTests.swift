@@ -2078,6 +2078,10 @@ private final class StubTreeReader: FBAXTreeReader, @unchecked Sendable {
   func scroll(_ query: FBAccessibilityElementQuery, direction: FBAccessibilityScrollDirection) async throws {}
 
   func frame(_ query: FBAccessibilityElementQuery) async throws -> CGRect { .zero }
+
+  func drag(
+    from source: FBAccessibilityElementQuery, to destination: FBAccessibilityElementQuery, options: FBDragOptions
+  ) async throws {}
 }
 
 /// The composition of the key vocabulary's derived sets.
