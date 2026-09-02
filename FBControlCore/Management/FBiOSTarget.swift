@@ -104,11 +104,10 @@ import Foundation
   func environmentAdditions() -> [String: String]
 }
 
-// MARK: - C function replacements via @_cdecl
+// MARK: - State conversions
 
 /// The canonical string representation of the state enum.
-@_cdecl("FBiOSTargetStateStringFromState")
-func FBiOSTargetStateStringFromState(_ state: FBiOSTargetState) -> FBiOSTargetStateString {
+public func FBiOSTargetStateStringFromState(_ state: FBiOSTargetState) -> FBiOSTargetStateString {
   switch state {
   case .creating:
     return .creating
@@ -134,8 +133,7 @@ func FBiOSTargetStateStringFromState(_ state: FBiOSTargetState) -> FBiOSTargetSt
 }
 
 /// The canonical enum representation of the state string.
-@_cdecl("FBiOSTargetStateFromStateString")
-func FBiOSTargetStateFromStateString(_ stateString: FBiOSTargetStateString) -> FBiOSTargetState {
+public func FBiOSTargetStateFromStateString(_ stateString: FBiOSTargetStateString) -> FBiOSTargetState {
   let normalized = stateString.rawValue.lowercased().replacingOccurrences(of: "-", with: " ")
   if normalized == FBiOSTargetStateString.creating.rawValue.lowercased() {
     return .creating

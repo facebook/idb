@@ -23,16 +23,6 @@
 @protocol FBiOSTarget;
 
 /**
- The canonical string representation of the state enum.
- */
-FOUNDATION_EXTERN FBiOSTargetStateString _Nonnull FBiOSTargetStateStringFromState(FBiOSTargetState state);
-
-/**
- The canonical enum representation of the state string.
- */
-FOUNDATION_EXTERN FBiOSTargetState FBiOSTargetStateFromStateString(FBiOSTargetStateString _Nonnull stateString);
-
-/**
  The canonical string representations of the FBiOSTargetType Enum.
  */
 FOUNDATION_EXTERN NSString *_Nonnull FBiOSTargetTypeStringFromTargetType(FBiOSTargetType targetType);
