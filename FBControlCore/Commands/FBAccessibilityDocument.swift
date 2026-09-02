@@ -129,7 +129,7 @@ public struct FBAccessibilityTargetDescriptor: Sendable, Equatable, Encodable {
   /// The element key the marker was matched against, for `.marker`.
   public let matchKey: String?
 
-  public init(
+  private init(
     kind: Kind,
     pid: Int32? = nil,
     x: Double? = nil,

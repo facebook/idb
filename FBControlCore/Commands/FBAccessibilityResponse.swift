@@ -281,21 +281,15 @@ public struct FBAccessibilityElementsResponse: Sendable {
     )
   }
 
-  /// A copy that reports no screen bounds.
-  ///
-  /// `withProvenance` can only supply bounds, never withdraw them, because it defaults each field to
-  /// what the response already carries. A read that resolved a single element needs the opposite: the
-  /// serializer takes a read's bounds from the element it is handed, and for a single element that is
-  /// the element's own frame, which describes the element rather than the screen. Reporting that would
-  /// be worse than reporting nothing.
-  public func withoutScreen() -> FBAccessibilityElementsResponse {
+  /// A copy whose screen bounds are replaced, including with `nil` when a read has no screen context.
+  public func replacingScreen(_ screen: FBAccessibilityScreenInfo?) -> FBAccessibilityElementsResponse {
     FBAccessibilityElementsResponse(
       elements: elements,
       profilingData: profilingData,
       coverage: coverage,
       modal: modal,
       truncated: truncated,
-      screen: nil,
+      screen: screen,
       backend: backend,
       target: target,
       automation: automation,

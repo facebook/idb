@@ -1350,10 +1350,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
     XCTAssertEqual(stamped, bare, "provenance must stay out of the legacy envelope")
   }
 
-  // The serializer takes a read's screen bounds from the element it is handed, so a single-element read
-  // arrives carrying the element's own frame as the screen. That is worse than reporting nothing, and
-  // `withProvenance` cannot withdraw a field — hence a dedicated way to clear it.
-  func testWithoutScreenClearsBoundsAndKeepsEverythingElse() throws {
+  func testReplacingScreenCanClearBoundsAndKeepsEverythingElse() throws {
     let hit = FBAccessibilityElementsResponse(
       elements: .single(FBAccessibilityDocumentElement()),
       truncated: true,
@@ -1363,7 +1360,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
     )
     XCTAssertNotNil(hit.screen, "the fixture starts with the misleading element-sized bounds")
 
-    let stripped = hit.withoutScreen()
+    let stripped = hit.replacingScreen(nil)
     XCTAssertNil(stripped.screen, "the element's own frame is not the screen")
     XCTAssertEqual(stripped.elements, hit.elements)
     XCTAssertEqual(stripped.truncated, hit.truncated)
@@ -1383,18 +1380,13 @@ final class FBAXBridgeReadsTests: XCTestCase {
       backend: .ax
     )
 
-    let restamped = matchSized.withoutScreen().withProvenance(screen: root)
+    let restamped = matchSized.replacingScreen(root)
     XCTAssertEqual(restamped.screen, root, "a marker read reports the root's bounds, not the match's")
     XCTAssertEqual(restamped.backend, .ax, "clearing the screen does not disturb the rest of the provenance")
 
     XCTAssertNil(
-      matchSized.withoutScreen().withProvenance(screen: nil).screen,
+      matchSized.replacingScreen(nil).screen,
       "with no usable root bounds a marker reports none, rather than falling back to the match's frame"
-    )
-    XCTAssertEqual(
-      matchSized.withProvenance(screen: nil).screen,
-      matchSized.screen,
-      "stamping alone cannot withdraw the match's frame — which is why the ax path clears first"
     )
   }
 

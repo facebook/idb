@@ -41,10 +41,9 @@ final class FBAccessibilityUIAutomation: FBUIAutomation, @unchecked Sendable {
       // to be discarded, and replaced where the read does know better.
       switch query {
       case .point:
-        return response.withoutScreen()
+        return response.replacingScreen(nil)
       case .marker:
-        return response.withoutScreen()
-          .withProvenance(screen: element.rootBounds.flatMap(FBAXTranslationRequest.screenInfo(fromBounds:)))
+        return response.replacingScreen(element.rootBounds.flatMap(FBAXTranslationRequest.screenInfo(fromBounds:)))
       case .frontmost, .application:
         return response
       }
