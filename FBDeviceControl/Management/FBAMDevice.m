@@ -14,9 +14,9 @@
 
 #import "FBAFCConnection.h"
 #import "FBAMDServiceConnection.h"
-#import "FBAMDeviceManager.h"
 #import "FBAMRestorableDevice.h"
 #import "FBDeviceControlFrameworkLoader.h"
+#import "FBDeviceManager.h"
 
 static NSString *const UnknownValue = @"unknown";
 
@@ -177,7 +177,7 @@ static NSString *const UnknownValue = @"unknown";
 - (FBFuture<FBAMDevice *> *)prepare:(id<FBControlCoreLogger>)logger
 {
   NSError *error = nil;
-  if (![FBAMDeviceManager startUsing:self.amDevice calls:self.calls logger:logger error:&error]) {
+  if (![FBAMDeviceUsage startUsing:self.amDevice calls:self.calls logger:logger error:&error]) {
     return [FBFuture futureWithError:error];
   }
   return [FBFuture futureWithResult:self];
@@ -186,7 +186,7 @@ static NSString *const UnknownValue = @"unknown";
 - (FBFuture<NSNull *> *)teardown:(FBAMDevice *)device logger:(id<FBControlCoreLogger>)logger;
 {
   NSError *error = nil;
-  if (![FBAMDeviceManager stopUsing:self.amDevice calls:self.calls logger:logger error:&error]) {
+  if (![FBAMDeviceUsage stopUsing:self.amDevice calls:self.calls logger:logger error:&error]) {
     return [FBFuture futureWithError:error];
   }
   return FBFuture.empty;
