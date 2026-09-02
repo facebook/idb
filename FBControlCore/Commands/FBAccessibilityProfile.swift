@@ -61,6 +61,8 @@ public struct FBAXBridgeProfile: Sendable, Equatable, Encodable {
     try container.encode(readDuration * 1000, forKey: .readDurationMs)
     try container.encode(serializeDuration * 1000, forKey: .serializeDurationMs)
     try container.encode(traversal.rawValue, forKey: .traversal)
+    // Keep optional measurements present as null. Missing means an older producer did not know the
+    // field; null means this read could not measure it.
     try container.encode(machRoundTrips, forKey: .machRoundTrips)
     try container.encode(hostDecodeDuration.map { $0 * 1000 }, forKey: .hostDecodeDurationMs)
     try container.encode(responseBytes, forKey: .responseBytes)

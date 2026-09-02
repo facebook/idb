@@ -8,6 +8,7 @@
 #import <XCTest/XCTest.h>
 
 #import <SimulatorFrameworkBridgeLib/AccessibilityService+Testing.h>
+#import <SimulatorFrameworkBridgeLib/AccessibilityService_Private.h>
 
 @interface AccessibilityServiceServerTests : XCTestCase
 @end
@@ -16,6 +17,8 @@
 
 - (void)testServeBacklogAccommodatesConcurrentProbes
 {
+  // A full backlog can reject a probe with ECONNREFUSED, which is indistinguishable from no listener.
+  // Leave room for competing hosts to connect and learn that the single-threaded guest is busy.
   XCTAssertEqual(FBAXBridgeServeBacklogForTesting(), 16);
 }
 
@@ -55,6 +58,30 @@
   XCTAssertEqual(FBAXBridgeIdleTimeoutForTesting(@[@"--idle-timeout", @"soon"], 300), 300);
   XCTAssertEqual(FBAXBridgeIdleTimeoutForTesting(@[@"--idle-timeout", @"12x"], 300), 300);
   XCTAssertEqual(FBAXBridgeIdleTimeoutForTesting(@[@"--idle-timeout"], 300), 300);
+}
+
+- (void)testAMalformedFrameUsesTheServiceBadRequestEnvelope
+{
+  BOOL shutdownRequested = YES;
+  NSDictionary *response = FBAXBridgeHandleRequestData(
+    [@"not json" dataUsingEncoding:NSUTF8StringEncoding],
+    &shutdownRequested
+  );
+
+  XCTAssertEqualObjects(response[@"ok"], @NO);
+  XCTAssertEqualObjects(response[@"error"], @"malformed request frame");
+  XCTAssertEqualObjects(response[@"error_kind"], @"bad_request");
+  XCTAssertFalse(shutdownRequested);
+}
+
+- (void)testAShutdownFrameReportsItsControlSignalBesideTheResponse
+{
+  NSData *request = [NSJSONSerialization dataWithJSONObject:@{@"verb" : @"shutdown"} options:0 error:NULL];
+  BOOL shutdownRequested = NO;
+  NSDictionary *response = FBAXBridgeHandleRequestData(request, &shutdownRequested);
+
+  XCTAssertEqualObjects(response[@"ok"], @YES);
+  XCTAssertTrue(shutdownRequested);
 }
 
 @end

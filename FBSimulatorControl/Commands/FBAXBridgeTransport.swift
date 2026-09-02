@@ -165,12 +165,16 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
     }
   }
 
+  /// Converts a deadline without rounding a positive sub-second value down to an all-zero `timeval`,
+  /// which the kernel interprets as no deadline.
   static func receiveWindow(_ timeout: TimeInterval) -> timeval {
     let whole = timeout.rounded(.down)
     return timeval(tv_sec: Int(whole), tv_usec: Int32((timeout - whole) * 1_000_000))
   }
 
   private static func probe(fileDescriptor: Int32) -> RunningBridge {
+    // A successful connect only means the listen backlog accepted us. The guest serves one connection
+    // at a time, so a round trip is the only way to distinguish an adoptable guest from a busy one.
     var window = receiveWindow(adoptionTimeout)
     setsockopt(fileDescriptor, SOL_SOCKET, SO_RCVTIMEO, &window, socklen_t(MemoryLayout<timeval>.size))
     do {

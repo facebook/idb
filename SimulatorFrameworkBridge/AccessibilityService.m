@@ -970,6 +970,21 @@ NSDictionary<NSString *, id> *FBAXBridgeHandleRequest(NSDictionary<NSString *, i
   }
 }
 
+NSDictionary<NSString *, id> *FBAXBridgeHandleRequestData(NSData *data, BOOL *_Nullable shutdownRequested)
+{
+  id parsed = [NSJSONSerialization JSONObjectWithData:data options:0 error:NULL];
+  NSDictionary<NSString *, id> *response;
+  if ([parsed isKindOfClass:NSDictionary.class]) {
+    response = FBAXBridgeHandleRequest(parsed);
+  } else {
+    response = FBAXBridgeTaggedErrorResponse(@"malformed request frame", kErrorKindBadRequest, nil);
+  }
+  if (shutdownRequested) {
+    *shutdownRequested = [response[kResponseShutdown] boolValue];
+  }
+  return response;
+}
+
 NSData *FBAXBridgeSerializeResponse(NSDictionary<NSString *, id> *response)
 {
   // Sanitize first (non-finite numbers would otherwise raise), then still guard the call: an

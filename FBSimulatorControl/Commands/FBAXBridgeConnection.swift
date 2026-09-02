@@ -169,6 +169,8 @@ final class FBAXBridgeConnection: @unchecked Sendable {
     guard let process else {
       return socketClosedMessage(pid: nil, signal: nil, exitCode: nil)
     }
+    // `result` blocks until the future resolves. EOF can arrive before process status, so completion
+    // must be checked first to keep an error-reporting path from hanging.
     return socketClosedMessage(
       pid: process.processIdentifier,
       signal: process.signal.hasCompleted ? process.signal.result?.intValue : nil,

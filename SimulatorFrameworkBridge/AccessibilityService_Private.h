@@ -11,4 +11,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 void FBAXBridgePrepareRuntime(void);
 
+NSDictionary<NSString *, id> *FBAXBridgeHandleRequestData(
+  NSData *data,
+  BOOL *_Nullable shutdownRequested);
+
 NS_ASSUME_NONNULL_END

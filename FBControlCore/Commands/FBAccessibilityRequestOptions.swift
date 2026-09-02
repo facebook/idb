@@ -332,13 +332,6 @@ public struct FBAccessibilityRequestOptions: Sendable {
     serializationKeys.intersection(traversal.unsatisfiableKeys)
   }
 
-  /// The same intersection over the marker read's widened key set, so the key it searched on is warned
-  /// about too. `--match-key type` against a traversal that cannot type is the case that matters, and
-  /// intersecting `serializationKeys` alone would miss it.
-  public func unsatisfiableKeys(for traversal: FBAXTraversal, including extraKeys: Set<FBAXKeys>) -> Set<FBAXKeys> {
-    serializationKeys(including: extraKeys).intersection(traversal.unsatisfiableKeys)
-  }
-
   public init(
     format: FBAccessibilityOutputFormat = .default,
     keys: Set<FBAXKeys> = FBAXKeys.defaultSet,

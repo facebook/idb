@@ -94,15 +94,6 @@ static int FBAXBridgeIdleTimeoutFromArguments(NSArray<NSString *> *arguments, in
   return fallback;
 }
 
-static NSDictionary<NSString *, id> *FBAXBridgeDecodeRequest(NSData *data)
-{
-  id parsed = [NSJSONSerialization JSONObjectWithData:data options:0 error:NULL];
-  if ([parsed isKindOfClass:NSDictionary.class]) {
-    return FBAXBridgeHandleRequest(parsed);
-  }
-  return @{ @"ok" : @NO, @"error" : @"malformed request frame", @"error_kind" : @"bad_request" };
-}
-
 static BOOL FBAXBridgeServeConnection(int connection, int idleTimeoutSeconds)
 {
   struct timeval receiveTimeout = {.tv_sec = idleTimeoutSeconds, .tv_usec = 0};
@@ -124,14 +115,15 @@ static BOOL FBAXBridgeServeConnection(int connection, int idleTimeoutSeconds)
         return NO;
       }
 
-      NSDictionary<NSString *, id> *response = FBAXBridgeDecodeRequest(requestData);
+      BOOL shutdownRequested = NO;
+      NSDictionary<NSString *, id> *response = FBAXBridgeHandleRequestData(requestData, &shutdownRequested);
       NSData *responseData = FBAXBridgeSerializeResponse(response);
       uint32_t responseLength = htonl((uint32_t)responseData.length);
       if (!FBAXBridgeWriteFully(connection, &responseLength, sizeof(responseLength))
           || !FBAXBridgeWriteFully(connection, responseData.bytes, responseData.length)) {
         return NO;
       }
-      if ([response[@"shutdown"] boolValue]) {
+      if (shutdownRequested) {
         return YES;
       }
     }

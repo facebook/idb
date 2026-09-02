@@ -27,6 +27,8 @@ extension FBAXBridgeTreeReader {
       }
       return FBAXWriteTarget(point: point, pid: nil, assertion: nil)
     case let .marker(value, key, _, _):
+      // Writes resolve against the structural tree deliberately: `.auto` is backend-dependent and a
+      // semantic traversal can omit the element a marker names.
       let read = try await readRawTree(
         for: query,
         attributes: nil,
@@ -46,6 +48,8 @@ extension FBAXBridgeTreeReader {
       try validate(callerAssertion, against: match)
       switch FBAXTreeWalk.resolveMarker(inElements: elements, markerValue: value, key: key) {
       case let .resolved(x, y):
+        // Marker lookup is a substring match, but the guest's safety check is equality. Assert the
+        // matched element's actual value rather than the substring the caller searched for.
         return FBAXWriteTarget(
           point: CGPoint(x: x, y: y),
           pid: read.pid,
