@@ -63,13 +63,14 @@ extension FBAMDevice {
   /// are released innermost first.
   public func withAFCConnection<T>(
     _ service: String,
+    calls afcCalls: AFCCalls = FBAFCConnection.defaultCalls,
     _ body: (FBAFCConnection) async throws -> T
   ) async throws -> T {
     let logger = self.logger
     let workQueue = self.workQueue
     return try await withServiceConnection(service) { connection in
       try await withFBFutureContext(
-        FBAFCConnection.afc(from: connection, calls: FBAFCConnection.defaultCalls, logger: logger, queue: workQueue)
+        FBAFCConnection.afc(from: connection, calls: afcCalls, logger: logger, queue: workQueue)
       ) { afc in
         try await body(afc)
       }

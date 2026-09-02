@@ -38,6 +38,17 @@ extension FBDeviceCrashLogError: LocalizedError {
 public class FBDeviceCrashLogCommands {
   private weak var device: FBDevice?
   private let store: FBCrashLogStore
+  /// The AFC table the crash report file service is read through, when a caller supplies one.
+  ///
+  /// Held optional and resolved at the point of use rather than defaulted in the initializer:
+  /// `FBAFCConnection.defaultCalls` dlopens MobileDevice on first evaluation, and constructing
+  /// these commands must not force that. Reading it eagerly aborts the process whenever the
+  /// private frameworks have not been loaded yet.
+  private let injectedAFCCalls: AFCCalls?
+
+  private var afcCalls: AFCCalls {
+    injectedAFCCalls ?? FBAFCConnection.defaultCalls
+  }
   private var hasPerformedInitialIngestion: Bool = false
 
   // MARK: - Initializers
@@ -48,9 +59,10 @@ public class FBDeviceCrashLogCommands {
     return FBDeviceCrashLogCommands(device: device, store: store)
   }
 
-  init(device: FBDevice, store: FBCrashLogStore) {
+  init(device: FBDevice, store: FBCrashLogStore, afcCalls: AFCCalls? = nil) {
     self.device = device
     self.store = store
+    self.injectedAFCCalls = afcCalls
   }
 
   // MARK: - Notify
@@ -179,7 +191,7 @@ public class FBDeviceCrashLogCommands {
     guard let device else {
       throw FBDeviceNilError.deviceNil
     }
-    return try await device.withAFCConnection(CrashReportCopyService, body)
+    return try await device.withAFCConnection(CrashReportCopyService, calls: afcCalls, body)
   }
 }
 

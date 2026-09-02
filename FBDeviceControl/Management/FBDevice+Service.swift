@@ -39,11 +39,12 @@ extension FBDevice {
   /// throws.
   public func withAFCConnection<T>(
     _ service: String,
+    calls afcCalls: AFCCalls = FBAFCConnection.defaultCalls,
     _ body: (FBAFCConnection) async throws -> T
   ) async throws -> T {
     guard let amDevice else {
       throw FBAMDeviceServiceError.notAMDeviceBacked(service: service)
     }
-    return try await amDevice.withAFCConnection(service, body)
+    return try await amDevice.withAFCConnection(service, calls: afcCalls, body)
   }
 }
