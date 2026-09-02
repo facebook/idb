@@ -31,7 +31,7 @@ actor FBSimulatorIndigoHIDTransport {
   /// The scale of the main screen.
   private let mainScreenScale: Float
   /// Whether the guest has handed its legacy keyboard HID over to `dtuhidd`, captured from
-  /// `FBSimulator.isLegacyHIDSuppressed` when the transport is built. `sendKeyboard` fails loudly on
+  /// `FBSimulator.isLegacyKeyboardSuppressed` when the transport is built. `sendKeyboard` fails loudly on
   /// it rather than typing into the void; the DTUHID transport is the workaround.
   private let legacyKeyboardSuppressed: Bool
   /// The product family of the target, captured at construction. Touchscreen touches are a no-op on
@@ -49,7 +49,7 @@ actor FBSimulatorIndigoHIDTransport {
       indigo: try FBSimulatorIndigoHID(),
       mainScreenSize: simulator.device.deviceType.mainScreenSize,
       mainScreenScale: simulator.device.deviceType.mainScreenScale,
-      legacyKeyboardSuppressed: simulator.isLegacyHIDSuppressed,
+      legacyKeyboardSuppressed: simulator.isLegacyKeyboardSuppressed,
       productFamily: simulator.productFamily)
   }
 
