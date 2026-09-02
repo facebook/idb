@@ -9,7 +9,7 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-public final class FBSimulatorSet: NSObject, FBiOSTargetSet {
+public final class FBSimulatorSet: FBiOSTargetSet {
 
   // MARK: - Properties
 
@@ -50,7 +50,6 @@ public final class FBSimulatorSet: NSObject, FBiOSTargetSet {
     self.workQueue = DispatchQueue.main
     self.asyncQueue = DispatchQueue.global(qos: .default)
     self._allSimulators = []
-    super.init()
     self.notificationUpdateStrategy = FBSimulatorNotificationUpdateStrategy.strategy(with: self)
   }
 
@@ -147,7 +146,7 @@ public final class FBSimulatorSet: NSObject, FBiOSTargetSet {
 
   // MARK: - NSObject
 
-  public override var description: String {
+  public var description: String {
     FBCollectionInformation.oneLineDescription(from: allSimulators)
   }
 

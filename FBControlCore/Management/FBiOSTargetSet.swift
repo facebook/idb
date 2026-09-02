@@ -10,34 +10,31 @@ import Foundation
 // MARK: - FBiOSTargetSetDelegate Protocol
 
 /// Delegate that informs of updates regarding the set of iOS Targets.
-@objc public protocol FBiOSTargetSetDelegate {
+public protocol FBiOSTargetSetDelegate: AnyObject {
 
   /// Called every time an iOS Target is added to the set.
-  @objc(targetAdded:inTargetSet:)
   func targetAdded(_ targetInfo: any FBiOSTargetInfo, in targetSet: any FBiOSTargetSet)
 
   /// Called every time an iOS Target is removed from the set.
-  @objc(targetRemoved:inTargetSet:)
   func targetRemoved(_ targetInfo: any FBiOSTargetInfo, in targetSet: any FBiOSTargetSet)
 
   /// Called every time the target info is changed.
-  @objc(targetUpdated:inTargetSet:)
   func targetUpdated(_ targetInfo: any FBiOSTargetInfo, in targetSet: any FBiOSTargetSet)
 }
 
 // MARK: - FBiOSTargetSet Protocol
 
 /// Common properties of iOS Target Sets, shared by Simulator & Device Sets.
-@objc public protocol FBiOSTargetSet: NSObjectProtocol {
+public protocol FBiOSTargetSet: AnyObject {
 
   /// The Delegate of the Target Set.
   /// Used to report updates out.
-  weak var delegate: (any FBiOSTargetSetDelegate)? { get set }
+  /// Conformers hold this weakly; the protocol cannot say so, but the requirement is the same.
+  var delegate: (any FBiOSTargetSetDelegate)? { get set }
 
   /// Obtains all current targets infos within a set.
   var allTargetInfos: [any FBiOSTargetInfo] { get }
 
   /// Fetches a Target by a UDID.
-  @objc(targetWithUDID:)
   func target(withUDID udid: String) -> (any FBiOSTargetInfo)?
 }

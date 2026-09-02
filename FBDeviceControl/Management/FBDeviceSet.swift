@@ -21,11 +21,10 @@ public class FBDeviceSet: NSObject, FBiOSTargetSet, FBiOSTargetSetDelegate {
   private let restorableDeviceManager: FBAMRestorableDeviceManager
   private let storage: _FBDeviceStorageBase
   @objc public let logger: any FBControlCoreLogger
-  @objc public weak var delegate: (any FBiOSTargetSetDelegate)?
+  public weak var delegate: (any FBiOSTargetSetDelegate)?
 
   // MARK: Initializers
 
-  @objc(setWithLogger:delegate:ecidFilter:error:)
   public convenience init(logger: any FBControlCoreLogger, delegate: (any FBiOSTargetSetDelegate)?, ecidFilter: String?) throws {
     try Self._frameworksLoadResult.get()
     let calls = FBDeviceControlFrameworkLoader.amDeviceCalls
