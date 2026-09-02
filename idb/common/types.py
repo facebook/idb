@@ -15,7 +15,7 @@ from dataclasses import asdict, dataclass, field
 from datetime import timedelta
 from enum import Enum
 from io import StringIO
-from typing import IO, List, Optional, Set, Tuple, Union
+from typing import IO, Optional, Union
 
 
 LoggingMetadata = dict[str, Optional[Union[str, list[str], int, float]]]
@@ -404,8 +404,7 @@ class AccessibilityBackend(Enum):
 
 ACCESSIBILITY_BACKEND_BY_NAME: dict[str, AccessibilityBackend] = {
     "ax": AccessibilityBackend.AX,
-    "axbridge": AccessibilityBackend.AXBRIDGE,
-    "axbridge-persistent": AccessibilityBackend.AXBRIDGE_PERSISTENT,
+    "axbridge": AccessibilityBackend.AXBRIDGE_PERSISTENT,
 }
 
 

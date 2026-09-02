@@ -926,7 +926,7 @@ final class FBAccessibilitySerializationTests: XCTestCase {
       modal: FBAccessibilityModalInfo(kind: .system, elementType: "SBAlertItemWindow", label: "Allow"),
       truncated: true,
       screen: FBAccessibilityScreenInfo(width: 390, height: 844),
-      backend: .axBridge,
+      backend: .axBridgeOneShot,
       target: .point(CGPoint(x: 10, y: 20)),
       narrowing: FBAccessibilityNarrowing(
         match: "Cart", matchKey: "AXLabel", ignoreCase: true, filter: "interactable", walked: 40, matched: 1)
@@ -951,12 +951,12 @@ final class FBAccessibilitySerializationTests: XCTestCase {
       modal: FBAccessibilityModalInfo(kind: .system, elementType: "SBAlertItemWindow", label: "Allow"),
       truncated: true,
       screen: FBAccessibilityScreenInfo(width: 390, height: 844),
-      backend: .axBridge,
+      backend: .axBridgeOneShot,
       target: .marker(value: "General", matchKey: FBAXSearchableKey.label.rawValue)
     )
     let document = documentObject(response)
 
-    XCTAssertEqual(document["backend"] as? String, "axbridge")
+    XCTAssertEqual(document["backend"] as? String, "axbridge-oneshot")
     XCTAssertEqual(document["truncated"] as? Bool, true)
 
     let modal = try XCTUnwrap(document["modal"] as? [String: Any])

@@ -11,7 +11,7 @@ import Foundation
 /// The canonical name of the backend that served a UI-automation request.
 public enum FBUIAutomationBackendName: String, Sendable, Encodable, CaseIterable {
   case ax
-  case axBridge = "axbridge"
+  case axBridgeOneShot = "axbridge-oneshot"
   case axBridgePersistent = "axbridge-persistent"
   case axBridgeExclusive = "axbridge-exclusive"
   case testmanagerd

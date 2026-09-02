@@ -39,7 +39,7 @@ final class FBAXBridgeSocketTests: XCTestCase {
 
   func testEveryPersistenceCaseRoundTripsThroughItsName() {
     let cases: [(FBAXBridgePersistence, FBUIAutomationBackendName)] = [
-      (.oneShot, .axBridge), (.shared, .axBridgePersistent), (.exclusive, .axBridgeExclusive),
+      (.oneShot, .axBridgeOneShot), (.shared, .axBridgePersistent), (.exclusive, .axBridgeExclusive),
     ]
     for (persistence, name) in cases {
       let backend = FBUIAutomationBackend.axBridge(
@@ -49,8 +49,10 @@ final class FBAXBridgeSocketTests: XCTestCase {
     }
   }
 
-  // The wire spelling of the shared case is unchanged, so a client asking for `axbridge-persistent`
-  // keeps working and no proto or CLI change rides along with this.
+  func testTheOneShotCaseHasAnExplicitWireName() {
+    XCTAssertEqual(FBUIAutomationBackendName.axBridgeOneShot.rawValue, "axbridge-oneshot")
+  }
+
   func testTheSharedCaseKeepsTheExistingWireName() {
     XCTAssertEqual(FBUIAutomationBackendName.axBridgePersistent.rawValue, "axbridge-persistent")
   }

@@ -61,7 +61,7 @@ public extension FBUIAutomationBackend {
     case let .axBridge(persistence, _, _):
       switch persistence {
       case .oneShot:
-        return .axBridge
+        return .axBridgeOneShot
       case .shared:
         return .axBridgePersistent
       case .exclusive:
@@ -85,7 +85,7 @@ public extension FBUIAutomationBackend {
       self = .accessibility
     case .testmanagerd:
       self = .remoteAutomation
-    case .axBridge:
+    case .axBridgeOneShot:
       self = .axBridge(persistence: .oneShot, frontmostMethod: frontmostMethod, automationMode: automationMode)
     case .axBridgePersistent:
       self = .axBridge(

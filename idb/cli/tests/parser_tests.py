@@ -1736,7 +1736,7 @@ class TestParser(TestCase):
 
     async def test_accessibility_info_all_api(self) -> None:
         self.client_mock.accessibility_info = AsyncMock()
-        await cli_main(cmd_input=["ui", "describe-all", "--api", "axbridge-persistent"])
+        await cli_main(cmd_input=["ui", "describe-all", "--api", "axbridge"])
         self.client_mock.accessibility_info.assert_called_once_with(
             target=None,
             options=AccessibilityInfoOptions(
@@ -1752,7 +1752,7 @@ class TestParser(TestCase):
         self.client_mock.accessibility_info.assert_called_once_with(
             target=AccessibilityPoint(x=10, y=20),
             options=AccessibilityInfoOptions(
-                nested=False, backend=AccessibilityBackend.AXBRIDGE
+                nested=False, backend=AccessibilityBackend.AXBRIDGE_PERSISTENT
             ),
         )
 

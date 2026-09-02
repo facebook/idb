@@ -206,10 +206,9 @@ def _add_backend_arg(parser: ArgumentParser) -> None:
         default=None,
         help=(
             "Which backend serves the read (default: the companion's standard "
-            "accessibility backend). axbridge spawns a guest reader per read; "
-            "axbridge-persistent keeps that reader alive on the companion for "
-            "fast repeated reads. A companion that predates backend selection "
-            "ignores this and serves the default backend."
+            "accessibility backend). axbridge uses a guest reader owned by the "
+            "companion. A companion that predates backend selection ignores "
+            "this and serves the default backend."
         ),
     )
 

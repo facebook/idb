@@ -406,7 +406,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
   // value that decides what a device does in practice. It is a payload rather than a constant, so this
   // test keeps a change to the default deliberate.
   func testSelectingTheAxbridgeLaneByNameAssertsAutomationMode() {
-    for name in [FBUIAutomationBackendName.axBridge, .axBridgePersistent] {
+    for name in [FBUIAutomationBackendName.axBridgeOneShot, .axBridgePersistent] {
       guard case let .axBridge(_, _, automationMode) = FBUIAutomationBackend(resolvedName: name) else {
         return XCTFail("\(name) did not select an axbridge backend")
       }
@@ -417,8 +417,8 @@ final class FBAXBridgeReadsTests: XCTestCase {
   // The tri-state has to survive the enum, not just the wire. `false` is what reproduces the child-cache
   // fault and what measures the mode's cost, and it must not collapse into "did not ask".
   func testTheAxbridgeBackendCarriesAnExplicitlyDisabledAutomationMode() {
-    guard case let .axBridge(_, _, off) = FBUIAutomationBackend(resolvedName: .axBridge, automationMode: false),
-      case let .axBridge(_, _, unset) = FBUIAutomationBackend(resolvedName: .axBridge, automationMode: nil)
+    guard case let .axBridge(_, _, off) = FBUIAutomationBackend(resolvedName: .axBridgeOneShot, automationMode: false),
+      case let .axBridge(_, _, unset) = FBUIAutomationBackend(resolvedName: .axBridgeOneShot, automationMode: nil)
     else {
       return XCTFail("expected axbridge backends")
     }
@@ -1322,7 +1322,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
     for (query, kind) in cases {
       let reader = StubTreeReader(read: Self.stubRead(), hitTestResult: hit)
       let response = try await reader.describeTree(query, options: FBAccessibilityRequestOptions())
-      XCTAssertEqual(response.backend, .axBridge, "\(query) must record which backend answered")
+      XCTAssertEqual(response.backend, .axBridgeOneShot, "\(query) must record which backend answered")
       XCTAssertEqual(response.target?.kind, kind, "\(query) must record what was asked for")
     }
   }
