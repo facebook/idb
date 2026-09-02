@@ -67,6 +67,47 @@ extension FBAXBridgeTreeReader {
   static func resolvedTraversal(for options: FBAccessibilityRequestOptions) -> FBAXTraversal {
     options.traversalStrategy.traversal ?? autoTraversal(for: options)
   }
+
+  private static func readPlan(
+    for options: FBAccessibilityRequestOptions,
+    including extraKeys: Set<FBAXKeys> = [],
+    explainUnreachable: Bool
+  ) -> FBAXBridgeReadPlan {
+    FBAXBridgeReadPlan(
+      options: options,
+      serializationKeys: options.serializationKeys(including: extraKeys),
+      traversal: resolvedTraversal(for: options),
+      explainUnreachable: explainUnreachable
+    )
+  }
+}
+
+/// The derived values used throughout one axbridge tree read.
+private struct FBAXBridgeReadPlan {
+  let serializationKeys: Set<FBAXKeys>
+  let attributes: [String]?
+  let traversal: FBAXTraversal
+  let unsatisfiableKeys: Set<FBAXKeys>
+  let nestedFormat: Bool
+  let collectFrameCoverage: Bool
+  let enableProfiling: Bool
+  let explainUnreachable: Bool
+
+  init(
+    options: FBAccessibilityRequestOptions,
+    serializationKeys: Set<FBAXKeys>,
+    traversal: FBAXTraversal,
+    explainUnreachable: Bool
+  ) {
+    self.serializationKeys = serializationKeys
+    self.attributes = FBAXWire.Node.fetchList(for: serializationKeys)
+    self.traversal = traversal
+    self.unsatisfiableKeys = serializationKeys.intersection(traversal.unsatisfiableKeys)
+    self.nestedFormat = options.nestedFormat
+    self.collectFrameCoverage = options.collectFrameCoverage
+    self.enableProfiling = options.enableProfiling
+    self.explainUnreachable = explainUnreachable
+  }
 }
 
 /// Where a point-addressed write lands, and what the element there must still be for it to go ahead.
@@ -93,21 +134,18 @@ extension FBAXBridgeTreeReader {
       // report — only which backend answered and what was asked for.
       return response.withProvenance(backend: backend.name, target: query.targetDescriptor)
     case let .marker(value, key, _, ignoresCase):
-      let markerKeys = options.serializationKeys(including: [key.serializationKey])
-      let traversal = Self.resolvedTraversal(for: options)
+      let plan = Self.readPlan(for: options, including: [key.serializationKey], explainUnreachable: false)
       let read = try await readRawTree(
-        for: query, attributes: FBAXWire.Node.fetchList(for: markerKeys),
-        explainUnreachable: false, traversal: traversal
+        for: query, attributes: plan.attributes,
+        explainUnreachable: plan.explainUnreachable, traversal: plan.traversal
       )
       await warnIfTruncated(read.truncated)
-      await warnIfUnsatisfiable(
-        options.unsatisfiableKeys(for: traversal, including: [key.serializationKey]), traversal: traversal
-      )
+      await warnIfUnsatisfiable(plan.unsatisfiableKeys, traversal: plan.traversal)
       // A marker read walks the whole tree to find one element, so it costs the same per-node
       // hit-testing a describe-all does while returning far less.
-      await warnIfReachabilityAcrossTree(markerKeys)
+      await warnIfReachabilityAcrossTree(plan.serializationKeys)
       let elements = FBAXTreeWalk.describeAllElements(
-        fromTree: read.tree, keys: markerKeys, nestedFormat: false, pid: read.pid
+        fromTree: read.tree, keys: plan.serializationKeys, nestedFormat: false, pid: read.pid
       )
       guard
         let match = FBAXTreeWalk.matchingElement(
@@ -118,7 +156,7 @@ extension FBAXBridgeTreeReader {
       }
       // The match came from a flattened walk, so it carries no children of its own; reporting them
       // keeps a marker read the same shape as any other single-element read of the same format.
-      let matched = options.nestedFormat ? match.reportingChildren() : match
+      let matched = plan.nestedFormat ? match.reportingChildren() : match
       return FBAccessibilityElementsResponse(elements: .single(matched), modal: read.modal)
         .withProvenance(
           backend: backend.name,
@@ -127,13 +165,16 @@ extension FBAXBridgeTreeReader {
           truncated: read.truncated
         )
     case .frontmost, .application:
-      let traversal = Self.resolvedTraversal(for: options)
+      let plan = Self.readPlan(
+        for: options,
+        explainUnreachable: options.keys.contains(.occludedBy)
+      )
       // An explicit single fetch cannot answer reachability: the application hit-tests every node for
       // these keys, and a snapshot asking for them times out rather than answering. `.auto` routes such
       // a read to the per-node walk, so only an explicit choice can get here — refused up front rather
       // than left to time out in the guest.
-      let unanswerable = options.serializationKeys.intersection(FBAXKeys.reachabilityKeys)
-      if traversal == .singleFetch, !unanswerable.isEmpty {
+      let unanswerable = plan.serializationKeys.intersection(FBAXKeys.reachabilityKeys)
+      if plan.traversal == .singleFetch, !unanswerable.isEmpty {
         throw FBUIAutomationError.traversalCannotAnswer(
           backend: backend,
           traversal: FBAXTraversal.singleFetch.rawValue,
@@ -142,17 +183,16 @@ extension FBAXBridgeTreeReader {
       }
       let read = try await readRawTree(
         for: query,
-        attributes: FBAXWire.Node.fetchList(for: options.serializationKeys),
-        // Only a read that asked to name what is in the way pays for the guest to work it out.
-        explainUnreachable: options.keys.contains(.occludedBy),
-        traversal: traversal
+        attributes: plan.attributes,
+        explainUnreachable: plan.explainUnreachable,
+        traversal: plan.traversal
       )
       await warnIfTruncated(read.truncated)
-      await warnIfUnsatisfiable(options.unsatisfiableKeys(for: traversal), traversal: traversal)
-      await warnIfReachabilityAcrossTree(options.serializationKeys)
+      await warnIfUnsatisfiable(plan.unsatisfiableKeys, traversal: plan.traversal)
+      await warnIfReachabilityAcrossTree(plan.serializationKeys)
       let serializeStarted = CFAbsoluteTimeGetCurrent()
       let walked = FBAXTreeWalk.describeAllElements(
-        fromTree: read.tree, keys: options.serializationKeys, nestedFormat: options.nestedFormat, pid: read.pid
+        fromTree: read.tree, keys: plan.serializationKeys, nestedFormat: plan.nestedFormat, pid: read.pid
       )
       let screen = FBAXTreeWalk.screenInfo(fromTree: read.tree)
       // The filter and the match both run before the interactable refinement, which is per-element guest
@@ -165,21 +205,21 @@ extension FBAXBridgeTreeReader {
       // Coverage is a calculation over the serialized model, the same one every backend runs.
       // Remote-content discovery is accessibility-only, so `additional` stays absent here.
       let coverage: FBAccessibilityCoverage? =
-        options.collectFrameCoverage
+        plan.collectFrameCoverage
         ? screen.flatMap {
           .measured(
             reported: elements, walked: walked, screenBounds: FBAccessibilityCoverage.bounds(of: $0),
-            nested: options.nestedFormat
+            nested: plan.nestedFormat
           )
         } : nil
       // Judged on the reported elements — what the caller's `--filter` shows them.
       await warnIfMostElementsUnframed(FBAccessibilityFrameSummary(elements: elements))
       return FBAccessibilityElementsResponse(
         elements: .tree(elements),
-        profilingData: options.enableProfiling
+        profilingData: plan.enableProfiling
           ? profile(
             for: read, elementCount: elements.nodeCount, serializeDuration: serializeDuration,
-            traversal: traversal
+            traversal: plan.traversal
           ) : nil,
         coverage: coverage, modal: read.modal, automation: read.automation
       )
