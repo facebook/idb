@@ -78,11 +78,6 @@
 
 @end
 
-// The generated header also declares a Swift extension on FBDeviceManager, so that interface has
-// to be visible before it is imported. Kept here rather than in the umbrella's import block, which
-// the formatter sorts alphabetically and would move ahead of this file.
-#import <FBDeviceControl/FBDeviceManager.h>
-
 // Imported after @interface FBDevice so Swift-generated category extensions
 // (e.g. `extension FBDevice: FBSomeProtocol`) can attach to the fully-defined
 // class.

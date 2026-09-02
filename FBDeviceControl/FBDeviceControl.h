@@ -14,7 +14,6 @@
 #import <FBDeviceControl/FBDeviceCommands.h>
 #import <FBDeviceControl/FBDeviceControlFrameworkLoader.h>
 #import <FBDeviceControl/FBDeviceDebugSymbolsCommands.h>
-#import <FBDeviceControl/FBDeviceManager.h>
 #import <FBDeviceControl/FBInstrumentsClient.h>
 
 #if __has_include(<FBDeviceControl/FBDeviceControl-Swift.h>)
