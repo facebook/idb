@@ -23,18 +23,15 @@ import Foundation
 /// its point host-side from a tree read and carries an assertion the guest re-checks, so the write
 /// cannot land on whatever moved under the point in between.
 ///
-// SAFETY: immutable after init — it holds the target and a transport; the persistent transport is an
-// actor and the one-shot transport is a stateless value, and the verb logic keeps no mutable state.
-// `Sendable` lets a caller hold one reader across reads and hand it between tasks. It is no longer
-// what keeps the guest warm — the persistent transport is memoized on the target, so readers built
-// and dropped per read share the same guest.
+// SAFETY: stored state is immutable. Persistent transport state is actor-isolated and the one-shot
+// transport is a value type.
 // patternlint-disable-next-line unchecked-sendable
 final class FBAXBridgeUIAutomation: FBAXBridgeTreeReader, @unchecked Sendable {
 
   /// What this read asks the guest to do about accessibility automation mode.
   ///
   /// Tri-state, matching the guest: `true` asserts the mode, `false` asserts it off, `nil` observes
-  /// without touching the device. Selecting the axbridge lane by name yields `true`, because that is the
+  /// without touching the device. Selecting axbridge by name yields `true`, because that is the
   /// mode a UI-test host puts an application into and reading without it means UIKit collapses subtrees
   /// and can serve cached children describing a screen that is no longer displayed.
   ///
@@ -375,7 +372,7 @@ final class FBAXBridgeUIAutomation: FBAXBridgeTreeReader, @unchecked Sendable {
     _ = simulator.logger.log("axbridge read hit the bound (maxDepth \(FBAXReadLimits.maxReadDepth), maxNodes \(FBAXReadLimits.maxReadNodes)); the returned tree is truncated and incomplete.")
   }
 
-  /// The guest lanes' profile. `acquire` is `FBAXReadTimings.residual` — see there.
+  /// The axbridge profile. `acquire` is `FBAXReadTimings.residual` — see there.
   /// `traversal` says which walk produced `machRoundTrips` — see `FBAXBridgeProfile.traversal`.
   func profile(
     for read: FBAXTreeRead, elementCount: Int, serializeDuration: CFAbsoluteTime,

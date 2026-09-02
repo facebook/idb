@@ -391,12 +391,9 @@ final class FBAXBridgeReadsTests: XCTestCase {
     XCTAssertTrue(description.contains("On") && description.contains("Off"), "message should name both values: \(description)")
   }
 
-  // MARK: - The lane's automation-mode default
+  // MARK: - Automation-mode default
 
-  // Pinned because selecting the lane by name is how almost every caller reaches it, so this is the
-  // value that decides what a device does in practice. It is a payload rather than a constant, so this
-  // test keeps a change to the default deliberate.
-  func testSelectingTheAxbridgeLaneByNameAssertsAutomationMode() {
+  func testSelectingAxbridgeByResolvedNameAssertsAutomationMode() {
     for name in [FBUIAutomationBackendName.axBridgeOneShot, .axBridgePersistent] {
       guard case let .axBridge(_, _, automationMode) = FBUIAutomationBackend(resolvedName: name) else {
         return XCTFail("\(name) did not select an axbridge backend")

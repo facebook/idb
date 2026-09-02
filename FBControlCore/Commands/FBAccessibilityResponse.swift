@@ -9,9 +9,8 @@ import Foundation
 
 /// Where a translator-backed read spent its time.
 ///
-/// Disjoint from `FBAXBridgeProfile`, the guest lanes' equivalent — see the note there for why the two
-/// are separate types rather than one widened to hold both. What they share is the spelling of the
-/// first five fields, so a fleet can ask which lane is slow without knowing either shape.
+/// Disjoint from `FBAXBridgeProfile` because the backends measure different phases. Their common fields
+/// use the same names so callers can compare backend performance without flattening the two models.
 public struct FBAccessibilityProfilingData: Sendable, Equatable, Encodable {
 
   // MARK: The core, spelled identically in every backend's profile
@@ -23,7 +22,7 @@ public struct FBAccessibilityProfilingData: Sendable, Equatable, Encodable {
   /// Getting into a position to read at all — the translation object, and the platform element made
   /// from it.
   public let acquireDuration: CFAbsoluteTime
-  /// Pulling the tree out of the application. On this lane that is the walk's XPC wait: attributes are
+  /// Pulling the tree out of the application. For this backend that is the walk's XPC wait: attributes are
   /// fetched one round trip at a time, and the waiting is the pulling.
   public let readDuration: CFAbsoluteTime
   /// Turning what was read into what the caller asked for — the walk's time less what it spent waiting.

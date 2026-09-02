@@ -35,9 +35,7 @@ final class FBAXBridgeSocketTests: XCTestCase {
     XCTAssertLessThan(FBAXBridgePersistentTransport.adoptionTimeout, 1)
     XCTAssertGreaterThan(window.tv_usec, 0, "a sub-second deadline that converts to zero is no deadline")
   }
-  // A read's provenance must name the lane that served it, so name → backend has to be a bijection.
-
-  func testEveryPersistenceCaseRoundTripsThroughItsName() {
+  func testEveryResolvedBackendNameRoundTrips() {
     let cases: [(FBAXBridgePersistence, FBUIAutomationBackendName)] = [
       (.oneShot, .axBridgeOneShot), (.shared, .axBridgePersistent), (.exclusive, .axBridgeExclusive),
     ]

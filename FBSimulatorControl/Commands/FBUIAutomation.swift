@@ -66,7 +66,7 @@ public extension FBUIAutomationBackend {
 
   /// Builds the resolved backend represented by `name`.
   ///
-  /// `automationMode` defaults to asserting the mode, which is what selecting the axbridge lane by name
+  /// `automationMode` defaults to asserting the mode, which is what selecting axbridge by name
   /// means today. A caller that wants the pre-assertion behaviour — reproducing the child-cache fault,
   /// or measuring what the mode costs — passes `false` explicitly rather than getting it by omission.
   init(
@@ -349,7 +349,7 @@ public extension FBSimulator {
   /// The socket-backed axbridge transport this target uses for `persistence`.
   ///
   /// Memoized rather than per-reader because the transport is what reaches the guest, and the spawn plus
-  /// `initForRemoteAccess` behind it is the cost these lanes exist to avoid. `frontmostMethod` and
+  /// `initForRemoteAccess` behind it is the cost these modes exist to avoid. `frontmostMethod` and
   /// `automationMode` belong to the reader, so readers differing in those share a transport.
   ///
   /// Keyed by persistence rather than by type alone, because a shared and an exclusive bridge are not

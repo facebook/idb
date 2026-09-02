@@ -96,14 +96,14 @@ public final class FBAccessibilityProfilingCollector {
     return _totalXPCDuration
   }
 
-  /// XPC wait accrued during the walk — this lane's `read` phase.
+  /// XPC wait accrued during the walk — this backend's `read` phase.
   private var walkXPCDuration: CFAbsoluteTime {
     lock.lock()
     defer { lock.unlock() }
     return _totalXPCDuration - _xpcDurationBeforeWalk
   }
 
-  /// `walkDuration` is the wall time of the serialization walk, which on this lane fetches and formats
+  /// `walkDuration` is the wall time of the serialization walk, which on this backend fetches and formats
   /// in one pass; `serializeDuration` is that wall time minus the walk's XPC wait.
   public func finalize(withWalkDuration walkDuration: CFAbsoluteTime) -> FBAccessibilityProfilingData {
     let readDuration = walkXPCDuration

@@ -38,7 +38,7 @@ public enum FBAXKeys: String, Sendable, CaseIterable {
   /// Not in `defaultSet`: `isVisible` and `visiblePoint` cannot be looked up — the application
   /// hit-tests the element to answer them — so requesting them for a whole tree hit-tests every node.
   ///
-  /// Only the guest lanes are affected. `axIsHittable()` returns nil on the translator lane, which has no
+  /// Only axbridge is affected. `axIsHittable()` returns nil on the translator backend, which has no
   /// equivalent attributes, so the verdict is null there and nothing extra is fetched.
   case interactable = "interactable"
   /// Names the element covering an occluded element's centre, under `interactable`'s `occluded` reason.

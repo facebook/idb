@@ -106,7 +106,7 @@ idb ui describe com.apple.settings.general --match-key AXUniqueId
 
 | Option | Applies to | Description |
 |--------|-----------|-------------|
-| `--api {ax,axbridge,axbridge-persistent}` | all three | Which backend serves the read. See [Accessibility](accessibility.mdx) |
+| `--api {ax,axbridge}` | all three | Which backend serves the read. See [Accessibility](accessibility.mdx) |
 | `--format {default,nested,complete}` | all three | The output format. See [Accessibility](accessibility.mdx) |
 | `--nested` | all three | Deprecated alias for `--format nested` |
 | `--key KEY` | `describe-all`, `describe-point` | Report only this attribute; repeatable |
@@ -295,4 +295,4 @@ idb ui set-value 'Email' --value 'user@example.com'
 idb ui tap 'Continue' --expected-value 'Continue'
 ```
 
-For repeated reads, `--api axbridge-persistent` keeps the reader warm between them — the companion owns it, so this holds across separate `idb` invocations too; see [Accessibility](accessibility.mdx).
+`--api axbridge` keeps the companion-owned reader warm between requests, including across separate `idb` invocations; see [Accessibility](accessibility.mdx).

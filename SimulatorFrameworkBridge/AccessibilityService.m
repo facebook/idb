@@ -147,9 +147,8 @@ static NSString *const kErrorKindAssertionFailed = @"assertion_failed";
 // a partial view, so the host can warn rather than pass it off as complete. Absent or `false` means the
 // walk visited every element within the bounds.
 static NSString *const kResponseTruncated = @"truncated";
-// The resolved foreground pid a fused frontmost read reports, plus the mechanism that resolved it (a
-// diagnostic tag, so a future alternate strategy is distinguishable in logs from the current one). The
-// pid also tags the owning element of a hit-test result.
+// The resolved foreground pid and the mechanism that resolved it. The pid also tags the owning element
+// of a hit-test result.
 static NSString *const kResponsePid = @"pid";
 static NSString *const kResponseMethod = @"method";
 // The device's accessibility automation mode as it stood for this read, and whether this read changed it.
@@ -435,9 +434,7 @@ static id FBAXBridgeJSONSafeNumber(NSNumber *number)
   return number;
 }
 
-// Recursively replaces every non-finite number in a response with null. Applied once to the whole
-// response before serialization, so a non-finite value anywhere — a frame member, or any future
-// numeric attribute — degrades that one value instead of killing the read.
+// Recursively replaces every non-finite number in a response with null before serialization.
 static id FBAXBridgeJSONSanitized(id value)
 {
   if ([value isKindOfClass:NSNumber.class]) {
@@ -768,8 +765,7 @@ NSDictionary<NSString *, NSString *> *_Nullable FBAXBridgeModalDescriptor(NSDict
 #pragma mark - Frontmost resolution
 
 // Resolves the frontmost application positionally: a system-wide hit-test at the caller's screen anchor
-// (the screen centre — the anchor the testmanagerd backend also uses) reads whichever element owns that
-// point, and its owning pid is the frontmost app.
+// reads whichever element owns that point, and its owning pid is the frontmost app.
 //
 // This is a *positional* proxy for frontmost, not the window server's notion of frontmost. It agrees with
 // it for a fullscreen app or the home screen, but can differ for a centred element owned by another

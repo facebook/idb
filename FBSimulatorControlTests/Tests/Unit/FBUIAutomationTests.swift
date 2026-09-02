@@ -54,7 +54,7 @@ final class FBUIAutomationTests: XCTestCase {
     XCTAssertTrue(try transport(simulator, .exclusive) === (try transport(simulator, .exclusive)))
   }
 
-  // The two lanes reach different guests, so handing a shared read the exclusive transport would read
+  // The two scopes reach different guests, so handing a shared read the exclusive transport would read
   // over a bridge nobody else can see, and the reverse would put the caller back to holding one others
   // want. Memoization is therefore keyed by persistence, not just by simulator.
   func testSharedAndExclusiveDoNotShareATransport() throws {
