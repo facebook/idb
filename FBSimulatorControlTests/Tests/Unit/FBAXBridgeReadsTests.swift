@@ -82,9 +82,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
   }
 
   func testApplicationUnavailableErrorKindThrowsTypedCase() throws {
-    // A failure tagged `application_unavailable` becomes the typed `FBAXBridgeError.applicationUnavailable`
-    // (carrying the pid), which the conformer re-raises as the backend-neutral
-    // `FBUIAutomationError.applicationUnavailable` — matching what the remote backend throws for a dead pid.
+    // The guest error becomes the backend-neutral error shared with the accessibility backend.
     let data = try envelope(["ok": false, "error": "no application element for pid 7", "error_kind": "application_unavailable"])
     XCTAssertThrowsError(try FBAXTreeRead(wholeTreeResponse: data, pid: 7)) { error in
       guard case let FBAXBridgeError.applicationUnavailable(pid) = error else {

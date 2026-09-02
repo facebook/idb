@@ -95,9 +95,7 @@ public extension FBUIAutomationBackend {
 public struct FBTapOptions: Sendable, Equatable {
 
   /// A pre-tap value assertion: read `key` on the resolved element and tap only if it equals `value`,
-  /// else throw `FBUIAutomationError.valueMismatch`. Accessibility-only — only that backend can
-  /// read-and-assert atomically; the remote backend rejects a non-nil assertion rather than tap with it
-  /// silently dropped.
+  /// else throw `FBUIAutomationError.valueMismatch`.
   public struct Assertion: Sendable, Equatable {
     public var key: FBAXSearchableKey
     public var value: String
@@ -232,8 +230,7 @@ public protocol FBUIAutomation: Sendable {
   ) async throws
 
   /// The frame (in screen points) of the element named by `query`. A geometry-only read for callers
-  /// that need an element's position/size — e.g. to draw an overlay or resolve a pid — without a full
-  /// serialize. Accessibility only for now; the remote backend rejects it with a clear error.
+  /// that need an element's position or size without a full serialization.
   func frame(_ query: FBAccessibilityElementQuery) async throws -> CGRect
 
   /// Presses `source`, drags to `destination`, and releases. `.point` endpoints are the coordinate
