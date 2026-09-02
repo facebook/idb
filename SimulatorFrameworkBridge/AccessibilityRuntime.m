@@ -8,12 +8,12 @@
 #import "AccessibilityRuntime.h"
 
 #import <dlfcn.h>
-#import <objc/message.h>
 #import <objc/runtime.h>
 
 #import "AXPAttributes.h"
 #import "AXPTranslationPrivate.h"
 #import "AXRuntimePrivate.h"
+#import "AccessibilityUtilitiesPrivate.h"
 #import "RunningBoardServicesPrivate.h"
 #import "XCTAutomationSupportPrivate.h"
 
@@ -347,6 +347,8 @@ static const FBAXBoundSelector kFBAXBoundSelectors[] = {
   {"XCAccessibilityElement", "elementWithProcessIdentifier:", YES, "@@:i"},
   {"XCAccessibilityElement", "elementWithAXUIElement:", YES, "@@:^{__AXUIElement=}"},
   {"XCAccessibilityElement", "AXUIElement", NO, "^{__AXUIElement=}@:"},
+  // AccessibilityUtilities. `setAutomationEnabled:` takes BOOL, whose encoding differs by architecture.
+  {"AXSettings", "sharedInstance", YES, "@@:"},
   // AccessibilityPlatformTranslation
   {"AXPTranslator", "sharediOSInstance", YES, "@@:"},
   {"AXPTranslator", "frontmostApplicationWithDisplayId:bridgeDelegateToken:", NO, "@@:I@"},
@@ -377,6 +379,7 @@ NSArray<NSString *> *FBAXSignatureWarnings(void)
   // reached. dlopen on an already-open image is a refcount bump.
   dlopen(FBAXPathAXRuntime, RTLD_NOW);
   dlopen(FBAXPathXCTAutomationSupport, RTLD_NOW);
+  dlopen(FBAXPathAccessibilityUtilities, RTLD_NOW);
   dlopen(FBAXPathAXPTranslation, RTLD_NOW);
   dlopen(FBAXPathRunningBoardServices, RTLD_NOW);
 
@@ -770,15 +773,6 @@ static NSString *const kFrontboardVisibilityEndowment = @"com.apple.frontboard.v
 
 #pragma mark Automation mode
 
-// The settings facade that owns this preference. Reached by name rather than by linking, and guarded by
-// `respondsToSelector:`, which is the pattern WebDriverAgent uses for the same class in this repo.
-//
-// Deliberately NOT in `kFBAXBoundSelectors`: that sweep runs in the unit tests on macOS, and reports a
-// class the runtime does not have as a mismatch. AccessibilityUtilities is not guaranteed there, so
-// adding it would turn a host-only absence into a failing signature test. The `respondsToSelector:`
-// guard below is the check instead, performed where it is true — in the guest.
-static NSString *const kFBAXSettingsClassName = @"AXSettings";
-
 - (BOOL)automationModeEnabled
 {
   if (!_functions.automationEnabled) {
@@ -789,17 +783,16 @@ static NSString *const kFBAXSettingsClassName = @"AXSettings";
 
 - (BOOL)setAutomationModeEnabled:(BOOL)enabled
 {
-  Class settingsClass = NSClassFromString(kFBAXSettingsClassName);
-  SEL sharedInstance = NSSelectorFromString(@"sharedInstance");
-  SEL setter = NSSelectorFromString(@"setAutomationEnabled:");
-  if (![settingsClass respondsToSelector:sharedInstance]) {
+  dlopen(FBAXPathAccessibilityUtilities, RTLD_NOW);
+  Class<AXSettingsClass> settingsClass = (Class<AXSettingsClass>)objc_lookUpClass("AXSettings");
+  if (!settingsClass || ![settingsClass respondsToSelector:@selector(sharedInstance)]) {
     return [self automationModeEnabled];
   }
-  id settings = ((id (*)(id, SEL)) objc_msgSend)(settingsClass, sharedInstance);
-  if (![settings respondsToSelector:setter]) {
+  AXSettings *settings = [settingsClass sharedInstance];
+  if (!settings || ![settings respondsToSelector:@selector(setAutomationEnabled:)]) {
     return [self automationModeEnabled];
   }
-  ((void (*)(id, SEL, BOOL)) objc_msgSend)(settings, setter, enabled);
+  [settings setAutomationEnabled:enabled];
 
   // Read back rather than reporting the write. A preference write can fail silently — the sandbox
   // refuses it outright on a real device — and the target consults the preference per read, so what
