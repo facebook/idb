@@ -1032,6 +1032,121 @@ final class FBAXBridgeReadsTests: XCTestCase {
     XCTAssertEqual(elements.count, 1, "the unlabeled container is filtered out, its labeled child kept")
   }
 
+  private static func occlusionIdentity(label: String, frame: CGRect) -> [String: Any] {
+    [
+      FBAXWire.Node.label.rawValue: label,
+      FBAXWire.Node.identifier.rawValue: label.lowercased(),
+      FBAXWire.Node.elementType.rawValue: NSNumber(value: 9),
+      FBAXWire.Node.frame.rawValue: CGRectCreateDictionaryRepresentation(frame) as NSDictionary,
+    ]
+  }
+
+  private static func occlusionNode(
+    label: String,
+    frame: CGRect,
+    blockedBy: [String: Any]? = nil,
+    children: [[String: Any]] = []
+  ) -> [String: Any] {
+    let centre = CGPoint(x: frame.midX, y: frame.midY)
+    var node = occlusionIdentity(label: label, frame: frame)
+    node[FBAXWire.Node.isVisible.rawValue] = blockedBy == nil
+    node[FBAXWire.Node.visiblePoint.rawValue] =
+      CGPointCreateDictionaryRepresentation(
+        blockedBy == nil ? centre : CGPoint(x: -1, y: -1)
+      ) as NSDictionary
+    node[FBAXWire.Node.centerPoint.rawValue] = CGPointCreateDictionaryRepresentation(centre) as NSDictionary
+    node[FBAXWire.Node.userInteractionEnabled.rawValue] = true
+    node[FBAXWire.Node.children.rawValue] = children
+    node[FBAXWire.Node.explainedBy.rawValue] = blockedBy
+    return node
+  }
+
+  private static func describedOcclusionTree(_ tree: [String: Any]) async throws -> FBAccessibilityDocumentElement {
+    let reader = StubAXBridgeTreeReader(
+      read: FBAXTreeRead(tree: tree, pid: 99, truncated: false, modal: nil)
+    )
+    let response = try await reader.describeTree(
+      .frontmost,
+      options: FBAccessibilityRequestOptions(format: .nested, keys: [.occludedBy])
+    )
+    return try XCTUnwrap(response.elements.elements.first)
+  }
+
+  private static func elementRef(label: String, frame: CGRect) -> FBAccessibilityElementRef {
+    FBAccessibilityElementRef(
+      type: "Button",
+      identifier: label.lowercased(),
+      label: label,
+      frame: FBAccessibilityFrame(frame),
+      pid: 99
+    )
+  }
+
+  func testAnAncestorHandlingATouchIsClassifiedAsARelative() async throws {
+    let rootFrame = CGRect(x: 0, y: 0, width: 400, height: 800)
+    let childFrame = CGRect(x: 20, y: 20, width: 100, height: 40)
+    let rootIdentity = Self.occlusionIdentity(label: "Root", frame: rootFrame)
+    let tree = Self.occlusionNode(
+      label: "Root",
+      frame: rootFrame,
+      children: [Self.occlusionNode(label: "Child", frame: childFrame, blockedBy: rootIdentity)]
+    )
+
+    let root = try await Self.describedOcclusionTree(tree)
+    let child = try XCTUnwrap(root.children?.first)
+    XCTAssertEqual(
+      child.interactable ?? nil,
+      .blocked(reasons: [.handledBy(Self.elementRef(label: "Root", frame: rootFrame))])
+    )
+  }
+
+  func testAGrandchildHandlingATouchIsClassifiedAsARelative() async throws {
+    let rootFrame = CGRect(x: 0, y: 0, width: 400, height: 800)
+    let childFrame = CGRect(x: 20, y: 20, width: 200, height: 200)
+    let grandchildFrame = CGRect(x: 40, y: 40, width: 100, height: 40)
+    let grandchildIdentity = Self.occlusionIdentity(label: "Grandchild", frame: grandchildFrame)
+    let tree = Self.occlusionNode(
+      label: "Root",
+      frame: rootFrame,
+      blockedBy: grandchildIdentity,
+      children: [
+        Self.occlusionNode(
+          label: "Child",
+          frame: childFrame,
+          children: [Self.occlusionNode(label: "Grandchild", frame: grandchildFrame)]
+        )
+      ]
+    )
+
+    let root = try await Self.describedOcclusionTree(tree)
+    XCTAssertEqual(
+      root.interactable ?? nil,
+      .blocked(reasons: [.handledBy(Self.elementRef(label: "Grandchild", frame: grandchildFrame))])
+    )
+  }
+
+  func testASiblingHandlingATouchIsClassifiedAsAnOccluder() async throws {
+    let rootFrame = CGRect(x: 0, y: 0, width: 400, height: 800)
+    let firstFrame = CGRect(x: 20, y: 20, width: 100, height: 40)
+    let secondFrame = CGRect(x: 20, y: 80, width: 100, height: 40)
+    let secondIdentity = Self.occlusionIdentity(label: "Second", frame: secondFrame)
+    let tree = Self.occlusionNode(
+      label: "Root",
+      frame: rootFrame,
+      children: [
+        Self.occlusionNode(label: "First", frame: firstFrame, blockedBy: secondIdentity),
+        Self.occlusionNode(label: "Second", frame: secondFrame),
+      ]
+    )
+
+    let root = try await Self.describedOcclusionTree(tree)
+    let first = try XCTUnwrap(root.children?.first)
+    XCTAssertEqual(
+      first.interactable ?? nil,
+      .blocked(reasons: [.occluded(by: Self.elementRef(label: "Second", frame: secondFrame))])
+    )
+  }
+
   // MARK: - Frame coverage
 
   /// A root spanning a 390x844 screen with one child covering its lower half — enough for a coverage
