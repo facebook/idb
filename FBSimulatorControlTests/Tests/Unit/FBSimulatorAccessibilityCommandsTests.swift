@@ -1549,12 +1549,9 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     }
   }
 
-  // MARK: - Frontmost pid (remote-automation pid anchor)
+  // MARK: - Frontmost pid
 
   func testResolveFrontmostElementExposesProcessIdentifier() async throws {
-    // The remote-automation backend anchors its frontmost read on the app's pid, borrowing it from
-    // the AX handle rather than hit-testing a screen point. The resolved element must surface that pid
-    // (the translation double's pid defaults to 12345).
     let root = FBAccessibilityTestElementBuilder.application(withLabel: "App", frame: CGRect(x: 0, y: 0, width: 100, height: 100), children: [])
     try setUp(withRootElement: root)
 

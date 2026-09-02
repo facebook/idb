@@ -30,14 +30,10 @@ public enum FBAXBridgePersistence: Sendable, Hashable {
 public enum FBUIAutomationBackend: Sendable, Equatable {
   /// The legacy CoreSimulator accessibility-translation path.
   case accessibility
-  /// The bundle-free guest `testmanagerd` remote-automation channel (iOS 27+).
-  case remoteAutomation
   /// The bundle-free guest AX-C reader: the `SimulatorFrameworkBridge` `accessibility` service spawned
-  /// in the simulator. XCUI-grade like `.remoteAutomation`, light like `.accessibility`. `persistence`
-  /// picks which guest the read runs against; `frontmostMethod` is how it resolves the
-  /// foreground app; `automationMode` is what the read asks the device's accessibility automation mode
-  /// to be. All three apply only to this backend, so they are payloads of the case rather than
-  /// parameters every backend would have to ignore.
+  /// in the simulator. `persistence` picks which guest the read runs against; `frontmostMethod` is how
+  /// it resolves the foreground app; `automationMode` is what the read asks the device's accessibility
+  /// automation mode to be.
   ///
   /// `automationMode` is tri-state for the reason the guest is: `true` asserts the mode, `false` asserts
   /// it off, and `nil` observes without touching the device. `false` is not a synonym for `nil` — it is
@@ -56,8 +52,6 @@ public extension FBUIAutomationBackend {
     switch self {
     case .accessibility:
       return .ax
-    case .remoteAutomation:
-      return .testmanagerd
     case let .axBridge(persistence, _, _):
       switch persistence {
       case .oneShot:
@@ -83,8 +77,6 @@ public extension FBUIAutomationBackend {
     switch name {
     case .ax:
       self = .accessibility
-    case .testmanagerd:
-      self = .remoteAutomation
     case .axBridgeOneShot:
       self = .axBridge(persistence: .oneShot, frontmostMethod: frontmostMethod, automationMode: automationMode)
     case .axBridgePersistent:
@@ -330,8 +322,6 @@ public extension FBSimulator {
   ///   nobody else can discover. Memoized per simulator and per persistence, and holds its connection
   ///   between reads. The guest was spawned with `--exit-on-disconnect`, so closing that connection is
   ///   what ends it — for a process that owns the simulator for its lifetime.
-  /// - `.remoteAutomation` owns a `testmanagerd` DTX session per **reader**. Hold the returned
-  ///   instance to reuse it across operations; drop it to tear the session down.
   /// - `.accessibility` and `.axBridge(persistence: .oneShot, …)` are stateless — they hold no warm
   ///   resource, so reconstructing them per call is free.
   ///
@@ -342,8 +332,6 @@ public extension FBSimulator {
     switch backend {
     case .accessibility:
       return FBAccessibilityUIAutomation(simulator: self)
-    case .remoteAutomation:
-      return try remoteAutomation()
     case let .axBridge(persistence, frontmostMethod, automationMode):
       let transport: any FBAXBridgeTransport =
         switch persistence {
@@ -386,7 +374,7 @@ public extension FBSimulator {
 /// are the same type, so this holds them apart.
 ///
 // SAFETY: `transports` is only read or written with `lock` held, so no mutable state is reachable from
-// two threads at once. Mirrors the `@unchecked Sendable` convention in FBRemoteInvoking.
+// two threads at once.
 // patternlint-disable-next-line unchecked-sendable
 final class FBAXBridgeTransportsByPersistence: @unchecked Sendable {
   private let lock = NSLock()

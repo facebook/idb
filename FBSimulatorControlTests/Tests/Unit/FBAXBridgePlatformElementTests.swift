@@ -10,10 +10,10 @@ import CoreGraphics
 import Foundation
 import XCTest
 
-final class FBRemoteAutomationPlatformElementTests: XCTestCase {
+final class FBAXBridgePlatformElementTests: XCTestCase {
 
   func testMapsCoreStringAttributes() {
-    let element = FBRemoteAutomationPlatformElement(
+    let element = FBAXBridgePlatformElement(
       attributes: [
         FBAXWire.Node.label.rawValue: "General",
         FBAXWire.Node.value.rawValue: "On",
@@ -33,7 +33,7 @@ final class FBRemoteAutomationPlatformElementTests: XCTestCase {
 
   func testParsesFrameFromDictionaryRepresentation() {
     let expected = CGRect(x: 16, y: 380, width: 370, height: 52)
-    let element = FBRemoteAutomationPlatformElement(
+    let element = FBAXBridgePlatformElement(
       attributes: [
         FBAXWire.Node.frame.rawValue: CGRectCreateDictionaryRepresentation(expected) as NSDictionary
       ],
@@ -50,7 +50,7 @@ final class FBRemoteAutomationPlatformElementTests: XCTestCase {
 
   func testParsesFrameFromNSValueFallback() {
     let expected = NSRect(x: 0, y: 0, width: 402, height: 874)
-    let element = FBRemoteAutomationPlatformElement(
+    let element = FBAXBridgePlatformElement(
       attributes: [FBAXWire.Node.frame.rawValue: NSValue(rect: expected)],
       children: [],
       pid: 0
@@ -72,7 +72,7 @@ final class FBRemoteAutomationPlatformElementTests: XCTestCase {
       dictionary: CGRectCreateDictionaryRepresentation(CGRect(x: 0, y: 0, width: 10, height: 20)) as NSDictionary
     )
     frameDict["X"] = NSNull()
-    let element = FBRemoteAutomationPlatformElement(
+    let element = FBAXBridgePlatformElement(
       attributes: [FBAXWire.Node.frame.rawValue: frameDict],
       children: [],
       pid: 0
@@ -86,7 +86,7 @@ final class FBRemoteAutomationPlatformElementTests: XCTestCase {
   }
 
   func testRoleMapsElementTypeNumberToReadableName() {
-    let element = FBRemoteAutomationPlatformElement(
+    let element = FBAXBridgePlatformElement(
       attributes: [FBAXWire.Node.elementType.rawValue: NSNumber(value: 9)],
       children: [],
       pid: 0
@@ -95,7 +95,7 @@ final class FBRemoteAutomationPlatformElementTests: XCTestCase {
   }
 
   func testRolePrefersAutomationTypeNameOverElementType() {
-    let element = FBRemoteAutomationPlatformElement(
+    let element = FBAXBridgePlatformElement(
       attributes: [
         FBAXWire.Node.automationType.rawValue: NSNumber(value: 48),
         FBAXWire.Node.elementType.rawValue: NSNumber(value: 9),
@@ -107,7 +107,7 @@ final class FBRemoteAutomationPlatformElementTests: XCTestCase {
   }
 
   func testRoleFallsBackToRawStringForUnknownElementType() {
-    let element = FBRemoteAutomationPlatformElement(
+    let element = FBAXBridgePlatformElement(
       attributes: [FBAXWire.Node.elementType.rawValue: NSNumber(value: 9999)],
       children: [],
       pid: 0
@@ -120,7 +120,7 @@ final class FBRemoteAutomationPlatformElementTests: XCTestCase {
   // chain and the concrete class name the read already carried is never consulted. An app's own
   // `UIControl` subclass is the case that costs the most: it reports `Any` and is unidentifiable.
   func testRoleReportsTheConcreteElementTypeRatherThanAny() {
-    let element = FBRemoteAutomationPlatformElement(
+    let element = FBAXBridgePlatformElement(
       attributes: [
         FBAXWire.Node.automationType.rawValue: NSNumber(value: 0),
         FBAXWire.Node.elementType.rawValue: "AppRefreshControl",
@@ -136,7 +136,7 @@ final class FBRemoteAutomationPlatformElementTests: XCTestCase {
   // rather than a special case for `Any`: an automation type that resolves to no name at all still beats
   // the concrete class name, because the stringified-number term sits above it.
   func testRoleReportsTheConcreteElementTypeRatherThanAStringifiedAutomationType() {
-    let element = FBRemoteAutomationPlatformElement(
+    let element = FBAXBridgePlatformElement(
       attributes: [
         FBAXWire.Node.automationType.rawValue: NSNumber(value: 9999),
         FBAXWire.Node.elementType.rawValue: "AppRefreshControl",
@@ -151,7 +151,7 @@ final class FBRemoteAutomationPlatformElementTests: XCTestCase {
   // An element with nothing better than `Any` must keep reporting it. Pinned alongside the two above so
   // the fix cannot buy a concrete name at the cost of turning this into the literal string "0".
   func testRoleStillReportsAnyWhenThereIsNoConcreteElementType() {
-    let element = FBRemoteAutomationPlatformElement(
+    let element = FBAXBridgePlatformElement(
       attributes: [FBAXWire.Node.automationType.rawValue: NSNumber(value: 0)],
       children: [],
       pid: 0
@@ -163,7 +163,7 @@ final class FBRemoteAutomationPlatformElementTests: XCTestCase {
   // A semantic-vocabulary node carries no `elementType` or `automationType` at all — the translator's own
   // role numbering is the only type on that wire, so this term is the one that answers there.
   func testTranslatorRoleAnswersWhenItIsTheOnlyType() {
-    let element = FBRemoteAutomationPlatformElement(
+    let element = FBAXBridgePlatformElement(
       attributes: [FBAXWire.Node.translatorRole.rawValue: NSNumber(value: 2)],
       children: [],
       pid: 0
@@ -175,7 +175,7 @@ final class FBRemoteAutomationPlatformElementTests: XCTestCase {
   // it holds only the integers with evidence — and a bare role number means nothing to a caller expecting
   // an `XCUIElementType` name, so it must not reach them as one.
   func testUnidentifiedTranslatorRoleReportsNoType() {
-    let element = FBRemoteAutomationPlatformElement(
+    let element = FBAXBridgePlatformElement(
       attributes: [FBAXWire.Node.translatorRole.rawValue: NSNumber(value: 99)],
       children: [],
       pid: 0
@@ -192,7 +192,7 @@ final class FBRemoteAutomationPlatformElementTests: XCTestCase {
       (6, "Heading"), (14, "StaticText"), (15, "TextField"), (21, "Grid"),
     ]
     for (raw, expected) in cases {
-      let element = FBRemoteAutomationPlatformElement(
+      let element = FBAXBridgePlatformElement(
         attributes: [FBAXWire.Node.translatorRole.rawValue: NSNumber(value: raw)],
         children: [],
         pid: 0
@@ -204,7 +204,7 @@ final class FBRemoteAutomationPlatformElementTests: XCTestCase {
   // The two cases the subrole exists to fix. Both refined names are `XCUIElementType` members and are in
   // the interactable role set; neither bare role is, so reporting the role alone loses the useful answer.
   func testASubroleRefinesTheRoleItAccompanies() {
-    let toggle = FBRemoteAutomationPlatformElement(
+    let toggle = FBAXBridgePlatformElement(
       attributes: [
         FBAXWire.Node.translatorRole.rawValue: NSNumber(value: 3),
         FBAXWire.Node.translatorSubrole.rawValue: NSNumber(value: 3),
@@ -214,7 +214,7 @@ final class FBRemoteAutomationPlatformElementTests: XCTestCase {
     )
     XCTAssertEqual(toggle.axRole(), "Switch", "a toggle is a check box with a switch subrole")
 
-    let search = FBRemoteAutomationPlatformElement(
+    let search = FBAXBridgePlatformElement(
       attributes: [
         FBAXWire.Node.translatorRole.rawValue: NSNumber(value: 15),
         FBAXWire.Node.translatorSubrole.rawValue: NSNumber(value: 1),
@@ -227,7 +227,7 @@ final class FBRemoteAutomationPlatformElementTests: XCTestCase {
 
   // An unidentified subrole must not hide the role, which is a real answer on its own.
   func testAnUnidentifiedSubroleFallsBackToTheRole() {
-    let element = FBRemoteAutomationPlatformElement(
+    let element = FBAXBridgePlatformElement(
       attributes: [
         FBAXWire.Node.translatorRole.rawValue: NSNumber(value: 2),
         FBAXWire.Node.translatorSubrole.rawValue: NSNumber(value: 99),
@@ -241,7 +241,7 @@ final class FBRemoteAutomationPlatformElementTests: XCTestCase {
   // The XCTest vocabulary keeps precedence where both are present: it names types in the vocabulary the
   // wire already speaks, and the translator numbering is a second scheme that only it uses.
   func testXCUIElementTypeOutranksTheTranslatorRole() {
-    let element = FBRemoteAutomationPlatformElement(
+    let element = FBAXBridgePlatformElement(
       attributes: [
         FBAXWire.Node.automationType.rawValue: NSNumber(value: 48),
         FBAXWire.Node.translatorRole.rawValue: NSNumber(value: 2),
@@ -253,12 +253,12 @@ final class FBRemoteAutomationPlatformElementTests: XCTestCase {
   }
 
   func testChildrenAreExposed() {
-    let child = FBRemoteAutomationPlatformElement(
+    let child = FBAXBridgePlatformElement(
       attributes: [FBAXWire.Node.label.rawValue: "About"],
       children: [],
       pid: 7
     )
-    let root = FBRemoteAutomationPlatformElement(
+    let root = FBAXBridgePlatformElement(
       attributes: [FBAXWire.Node.label.rawValue: "General"],
       children: [child],
       pid: 7
@@ -274,14 +274,14 @@ final class FBRemoteAutomationPlatformElementTests: XCTestCase {
   // value of answering it at all depends on the other reads still reporting unknown: a wire with no such
   // key must not start reporting a fabricated `false`, which is the bug this whole seam already had once.
   func testEnabledIsReadFromATranslatorNodeAndStaysUnknownOnEveryOtherRead() {
-    let translator = FBRemoteAutomationPlatformElement(
+    let translator = FBAXBridgePlatformElement(
       attributes: [FBAXWire.Node.isEnabled.rawValue: false],
       children: [],
       pid: 7
     )
     XCTAssertEqual(translator.axIsEnabled(), false, "the translator's enabled answer must be reported")
 
-    let xctest = FBRemoteAutomationPlatformElement(
+    let xctest = FBAXBridgePlatformElement(
       attributes: [FBAXWire.Node.label.rawValue: "General"],
       children: [],
       pid: 7
@@ -290,7 +290,7 @@ final class FBRemoteAutomationPlatformElementTests: XCTestCase {
   }
 
   func testAbsentAttributesUseSafeDefaults() {
-    let element = FBRemoteAutomationPlatformElement(attributes: [:], children: [], pid: 0)
+    let element = FBAXBridgePlatformElement(attributes: [:], children: [], pid: 0)
 
     XCTAssertNil(element.axLabel())
     XCTAssertNil(element.axValue())

@@ -25,7 +25,7 @@
 #import "AccessibilityRuntime.h"
 
 // The `XC_kAXXC*` attribute keys. These MUST match `FBAXWire.Node` host-side so the emitted tree feeds
-// the shared serializer (via `FBRemoteAutomationPlatformElement`) unchanged.
+// the shared serializer (via `FBAXBridgePlatformElement`) unchanged.
 static NSString *const kAXElementType = @"XC_kAXXCAttributeElementType";
 static NSString *const kAXElementBaseType = @"XC_kAXXCAttributeElementBaseType";
 static NSString *const kAXLabel = @"XC_kAXXCAttributeLabel";

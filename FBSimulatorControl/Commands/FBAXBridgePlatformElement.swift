@@ -9,16 +9,13 @@ import CoreGraphics
 import FBControlCore
 import Foundation
 
-/// An `FBAXPlatformElement` backed by a remote-automation `fetchAttributes` result, so the remote
-/// element tree feeds the same serializer as the legacy AX path. It conforms to the read-only
-/// `FBAXPlatformElement` and not `FBAXWritableElement`: the remote projection cannot be acted on, so
-/// element actions are kept off it by the type system rather than by silently no-op'd accessors.
-final class FBRemoteAutomationPlatformElement: FBAXPlatformElement {
+/// Adapts the `XC_kAXXC*` dictionaries returned by the axbridge guest to `FBAXPlatformElement`.
+final class FBAXBridgePlatformElement: FBAXPlatformElement {
   private let attributes: [String: Any]
-  private let childElements: [FBRemoteAutomationPlatformElement]
+  private let childElements: [FBAXBridgePlatformElement]
   private let pid: pid_t
 
-  init(attributes: [String: Any], children: [FBRemoteAutomationPlatformElement], pid: pid_t) {
+  init(attributes: [String: Any], children: [FBAXBridgePlatformElement], pid: pid_t) {
     self.attributes = attributes
     self.childElements = children
     self.pid = pid
@@ -119,7 +116,7 @@ final class FBRemoteAutomationPlatformElement: FBAXPlatformElement {
     guard let attributes = self.attributes[FBAXWire.Node.explainedBy.rawValue] as? [String: Any] else {
       return nil
     }
-    return FBRemoteAutomationPlatformElement(attributes: attributes, children: [], pid: pid)
+    return FBAXBridgePlatformElement(attributes: attributes, children: [], pid: pid)
   }
   func axCustomActionNames() -> [String] { [] }
   func axActionNames() -> [String] { [] }

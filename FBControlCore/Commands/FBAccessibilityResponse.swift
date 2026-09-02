@@ -171,8 +171,8 @@ public struct FBAccessibilityModalInfo: Sendable, Equatable, Encodable {
 
 /// Response object containing accessibility elements and optional profiling data.
 ///
-/// `elements` is a `Sendable` value type, so a response can cross concurrency domains (e.g. the
-/// remote-automation actor) without an `@unchecked` conformance.
+/// `elements` is a `Sendable` value type, so a response can cross concurrency domains without an
+/// `@unchecked` conformance.
 public struct FBAccessibilityElementsResponse: Sendable {
 
   /// The accessibility elements: an object (single element) or an array (flat/nested tree).

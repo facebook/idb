@@ -10,15 +10,11 @@ import FBControlCore
 import Foundation
 
 /// The `FBUIAutomation` backend that reads via the `SimulatorFrameworkBridge` guest `accessibility`
-/// service — an in-simulator accessibility client, with no automation daemon, DTX channel, or test
-/// bundle. XCUI-grade like `.remoteAutomation`, but light like `.accessibility`.
+/// service — an in-simulator accessibility client with no test bundle.
 ///
 /// One-shot per read: each verb resolves the target pid (frontmost via the CoreSimulator AX path, or a
 /// given application pid), spawns the guest with `accessibility describe --pid <pid>`, parses its JSON
-/// tree, and feeds it through the **same** serializer path the `testmanagerd` backend uses
-/// (`FBRemoteAutomationPlatformElement` -> `FBAXNodeSerializer`), because the guest
-/// emits the identical `XC_kAXXC*` node shape. The output schema is therefore byte-identical across
-/// the two backends and needs no new serialization code.
+/// tree, and feeds it through `FBAXBridgePlatformElement` and `FBAXNodeSerializer`.
 ///
 /// Writes are semantic accessibility actions, not synthesized input: the guest hands the AX runtime a
 /// press or a scroll and the element's own implementation decides what happens, which is the whole
@@ -335,13 +331,17 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
 
   // MARK: - Frontmost anchor
 
-  /// The screen-centre anchor (in points) for the in-guest frontmost hit-test. The same point the
-  /// remote backend uses (`FBSimulatorRemoteAutomation.anchorPoint`), so the two agree on "frontmost".
+  /// The screen-centre anchor, in points, for the in-guest frontmost hit-test.
   private func frontmostAnchor() -> (x: Double, y: Double) {
     let info = simulator.screenInfo
-    return FBSimulatorRemoteAutomation.anchorPoint(
+    return Self.anchorPoint(
       widthPixels: info?.widthPixels ?? 828, heightPixels: info?.heightPixels ?? 1792, scale: info?.scale ?? 2
     )
+  }
+
+  static func anchorPoint(widthPixels: UInt, heightPixels: UInt, scale: Float) -> (x: Double, y: Double) {
+    let pointsPerPixel = scale > 0 ? Double(scale) : 1
+    return (Double(widthPixels) / pointsPerPixel / 2, Double(heightPixels) / pointsPerPixel / 2)
   }
 
   /// Warns that the traversal could not answer keys the caller asked for, so a caller can tell "this read

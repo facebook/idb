@@ -10,9 +10,7 @@ import FBControlCore
 import Foundation
 import XCTest
 
-/// Coverage for the axbridge read path that does not require a live simulator: the guest response
-/// envelope parsing (`FBAXTreeRead`) and the tree -> shared-serializer integration that makes
-/// the axbridge output identical to the testmanagerd backend (both feed `describeAllElements`).
+/// Coverage for the axbridge read path that does not require a live simulator.
 final class FBAXBridgeReadsTests: XCTestCase {
 
   private func envelope(_ object: [String: Any]) throws -> Data {
@@ -240,7 +238,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
   // its backend, so "not found" has to be catchable without knowing. One catch clause must handle
   // every backend, and the message must still say which one spoke.
   func testOneCatchClauseHandlesEveryBackend() {
-    let backends: [FBUIAutomationBackend] = [.accessibility, .remoteAutomation, .axBridge(persistence: .oneShot, frontmostMethod: .centerPoint, automationMode: true), .axBridge(persistence: .shared, frontmostMethod: .centerPoint, automationMode: true)]
+    let backends: [FBUIAutomationBackend] = [.accessibility, .axBridge(persistence: .oneShot, frontmostMethod: .centerPoint, automationMode: true), .axBridge(persistence: .shared, frontmostMethod: .centerPoint, automationMode: true)]
     for backend in backends {
       let thrown: Error = FBUIAutomationError.elementNotFound(backend: backend, key: "AXLabel", value: "General")
       guard case let FBUIAutomationError.elementNotFound(caught, key, value) = thrown else {
@@ -354,13 +352,6 @@ final class FBAXBridgeReadsTests: XCTestCase {
       descriptions.insert(description)
     }
     XCTAssertEqual(descriptions.count, cases.count, "no two failure modes may share a message")
-  }
-
-  // The remote backend's read failure genuinely is about the flag — that session documents
-  // `ApplicationAccessibilityEnabled=1` as a precondition — so it carries the guidance.
-  func testTheRemoteBackendTreeFailureCarriesTheAccessibilityServerGuidance() {
-    let error = FBRemoteAutomationError.treeUnavailable(x: 201, y: 437)
-    XCTAssertTrue(error.description.contains("ApplicationAccessibilityEnabled"), "got: \(error.description)")
   }
 
   // The failures that are not about the flag must not carry its guidance. `frontmostUnresolved` states
@@ -804,10 +795,8 @@ final class FBAXBridgeReadsTests: XCTestCase {
   // MARK: - Tree -> shared serializer integration
 
   func testGuestTreeFeedsSharedSerializerSchema() throws {
-    // A guest envelope carrying a small XC_kAXXC* tree round-trips through the same path the
-    // testmanagerd backend uses (`FBAXTreeRead(wholeTreeResponse:)` -> `describeAllElements`), producing the
-    // shared schema: the child is a Button (automationType 9) with its identifier, proving the
-    // axbridge output is byte-compatible with the shared serializer rather than a bespoke shape.
+    // The child is a Button (automationType 9) with its identifier, proving the guest tree uses the
+    // shared serializer rather than a bespoke output shape.
     let tree: [String: Any] = [
       FBAXWire.Node.label.rawValue: "root",
       FBAXWire.Node.children.rawValue: [
@@ -839,11 +828,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
 
   // MARK: - Shared `describeTree` composition
 
-  // `describeTree` is the `FBAXTreeReader` extension both XCUI-grade backends (axbridge and
-  // testmanagerd) inherit as their `describe`, so what it composes — which query shape yields an array
-  // versus a bare object, how the modal rides out, when the truncation warning fires, and which keys a
-  // marker is serialized with — is backend-agnostic behaviour that neither backend's own tests cover.
-  // A stub conformer supplies a canned read so the composition is observable without a simulator.
+  // A stub reader makes the `describeTree` composition observable without a simulator.
 
   private static func twoNodeTree() -> [String: Any] {
     [
@@ -1818,7 +1803,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
   // "backend"; this one names it part-way through a sentence, where both of those read as a stutter.
   func testAnUnsupportedOperationNamesTheBackendOnceAndInLowerCase() {
     let backends: [FBUIAutomationBackend] = [
-      .accessibility, .remoteAutomation, .axBridge(persistence: .oneShot, frontmostMethod: .centerPoint, automationMode: true),
+      .accessibility, .axBridge(persistence: .oneShot, frontmostMethod: .centerPoint, automationMode: true),
     ]
     for backend in backends {
       let description = FBUIAutomationError.operationUnsupported(backend: backend, operation: "Scroll").description
@@ -1891,10 +1876,8 @@ final class FBAXTraversalStrategyTests: XCTestCase {
 
 /// What each backend reads when the caller named no traversal.
 ///
-/// Asserted against the real backends rather than `StubTreeReader`: these pins exist to catch a change
-/// to a backend's own default, and a stub agreeing with itself proves nothing about either backend. Both
-/// are reachable without a simulator: the resolution is static precisely so a backend can be asked what
-/// it reads without standing up something to read from.
+/// Asserted against the real backend rather than `StubTreeReader`: these pins catch a change to the
+/// backend's own default without requiring a simulator.
 final class FBAXAutoTraversalTests: XCTestCase {
 
   // FBAXBridgeUIAutomation takes the whole tree in one fetch for a read that named nothing, and falls
@@ -1945,19 +1928,7 @@ final class FBAXAutoTraversalTests: XCTestCase {
     )
   }
 
-  // FBSimulatorRemoteAutomation serves one snapshot shape and its read takes no traversal into account
-  // at all, so its answer cannot depend on the key set — and it has no argv of its own to pin.
-  func testRemoteAutomationWalksPerNodeForEveryKeySet() {
-    XCTAssertEqual(FBSimulatorRemoteAutomation.autoTraversal(for: FBAccessibilityRequestOptions()), .viewHierarchy)
-    XCTAssertEqual(
-      FBSimulatorRemoteAutomation.autoTraversal(for: FBAccessibilityRequestOptions(keys: Set(FBAXKeys.allCases))),
-      .viewHierarchy
-    )
-  }
-
-  // A named traversal reaches the read unchanged. Pinned against the real backends rather than the
-  // strategy's own resolution test: an explicit `--traversal view-hierarchy` must keep selecting the
-  // walk after the default changes.
+  // A named traversal reaches the read unchanged.
   func testANamedTraversalOverridesTheBackendDefault() {
     for traversal in FBAXTraversal.allCases {
       guard let strategy = FBAXTraversalStrategy(rawValue: traversal.rawValue) else {
@@ -1965,7 +1936,6 @@ final class FBAXAutoTraversalTests: XCTestCase {
       }
       let options = FBAccessibilityRequestOptions(traversalStrategy: strategy)
       XCTAssertEqual(FBAXBridgeUIAutomation.resolvedTraversal(for: options), traversal)
-      XCTAssertEqual(FBSimulatorRemoteAutomation.resolvedTraversal(for: options), traversal)
     }
   }
 }

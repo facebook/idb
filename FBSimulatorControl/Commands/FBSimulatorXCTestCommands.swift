@@ -204,10 +204,8 @@ public final class FBSimulatorXCTestCommands {
       logger: logger)
   }
 
-  // Internal (not private) so the poll can be unit-tested with a getenv device double. The env key is
-  // parameterized (default `TESTMANAGERD_SIM_SOCK`) so the remote-automation path can resolve its own
-  // socket via `TESTMANAGERD_REMOTE_AUTOMATION_SIM_SOCK` through the same tested poll.
-  func testManagerDaemonSocketPath(envKey: String = simSockEnvKey) async throws -> String {
+  // Internal so the poll can be unit-tested with a getenv device double.
+  func testManagerDaemonSocketPath() async throws -> String {
     guard let simulator = self.simulator else {
       throw FBWeakTargetError.simulator
     }
@@ -215,7 +213,7 @@ public final class FBSimulatorXCTestCommands {
     var lastError: NSError?
     while true {
       do {
-        let socketPath = try simulator.device.getenv(envKey)
+        let socketPath = try simulator.device.getenv(simSockEnvKey)
         if !socketPath.isEmpty {
           return socketPath
         }
@@ -223,7 +221,7 @@ public final class FBSimulatorXCTestCommands {
         lastError = error as NSError
       }
       if Date() >= deadline {
-        throw FBSimulatorXCTestError.environmentVariableUnavailable(key: envKey, underlying: lastError)
+        throw FBSimulatorXCTestError.environmentVariableUnavailable(key: simSockEnvKey, underlying: lastError)
       }
       try await Task.sleep(nanoseconds: 50_000_000)
     }

@@ -642,7 +642,7 @@ enum FBAXBridgeGuestOwnership {
 ///
 // SAFETY: the stored properties are immutable and only read; all socket I/O is serialized on the
 // private `queue`, which processes one request/response frame pair at a time, so no mutable state is
-// shared across threads. Mirrors the `@unchecked Sendable` convention in FBRemoteInvoking.
+// shared across threads.
 // patternlint-disable-next-line unchecked-sendable
 final class FBAXBridgeConnection: @unchecked Sendable {
   private let fileDescriptor: Int32

@@ -36,7 +36,7 @@ extension FBAccessibilityRemoteContentOptions: CustomStringConvertible {
 }
 
 /// Filters which elements a describe-all read returns, applied in the shared serializer so both the
-/// accessibility and remote-automation backends honor it identically. The raw values are the filter's
+/// accessibility and axbridge backends honor it identically. The raw values are the filter's
 /// canonical tokens — what a CLI accepts — so a consumer selects a filter without re-declaring the
 /// case list.
 public enum FBAccessibilityElementFilter: String, Sendable, CaseIterable {

@@ -91,7 +91,7 @@ final class FBAXInteractableTests: XCTestCase {
   // the guest cannot vouch for either way is still actionable — the absence of a measurement is not
   // evidence of a disabled control.
   func testEnabledIsUnknownOnAGuestBackedRead() throws {
-    let element = FBRemoteAutomationPlatformElement(attributes: [:], children: [], pid: 0)
+    let element = FBAXBridgePlatformElement(attributes: [:], children: [], pid: 0)
     XCTAssertNil(element.axIsEnabled())
 
     let value = try XCTUnwrap(Self.interactable(Self.node()) ?? nil)

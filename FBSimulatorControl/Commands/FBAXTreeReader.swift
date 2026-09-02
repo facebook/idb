@@ -10,11 +10,7 @@ import FBControlCore
 import Foundation
 
 /// A backend that answers a query by reading a whole `XC_kAXXC*` attribute tree and matching over the
-/// result — the shape both XCUI-grade backends share.
-///
-/// Backends differ only in where the tree comes from (a `testmanagerd` session versus a guest reader)
-/// and how a point is hit-tested; query semantics, marker matching, response wrapping and errors are
-/// shared here.
+/// result emitted by the axbridge guest.
 protocol FBAXTreeReader: FBUIAutomation {
   /// Which backend this is, for the errors the shared verbs raise.
   nonisolated var backend: FBUIAutomationBackend { get }
@@ -62,8 +58,7 @@ protocol FBAXTreeReader: FBUIAutomation {
   /// once per describe, and never on the `.marker` wait poll, which reads without describing.
   func warnIfTruncated(_ truncated: Bool) async
 
-  /// Warns when a whole-tree read asked for reachability. Axbridge only: the `testmanagerd` backend has no
-  /// counterpart for these attributes, so the same request costs nothing there.
+  /// Warns when a whole-tree read asked for reachability.
   func warnIfReachabilityAcrossTree(_ keys: Set<FBAXKeys>) async
 
   /// Warns that most of a read's elements carry no rectangle, which can mean the target is serving stale

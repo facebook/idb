@@ -14,7 +14,6 @@ public enum FBUIAutomationBackendName: String, Sendable, Encodable, CaseIterable
   case axBridgeOneShot = "axbridge-oneshot"
   case axBridgePersistent = "axbridge-persistent"
   case axBridgeExclusive = "axbridge-exclusive"
-  case testmanagerd
 }
 
 /// The space an element frame is expressed in.
@@ -627,8 +626,6 @@ public struct FBAXBridgeProfile: Sendable, Equatable, Encodable {
   /// The traversal that produced this read. Without it `machRoundTrips` is ambiguous: the same tree
   /// costs one round trip or one per node depending on the traversal.
   ///
-  /// Guest-only rather than part of the core, because the `testmanagerd` backend has no traversal to
-  /// report.
   public let traversal: FBAXTraversal
 
   /// Round trips to the application's accessibility server — one per node.

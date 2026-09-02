@@ -8,11 +8,8 @@
 import FBControlCore
 import Foundation
 
-/// Backend-neutral walk over an `XC_kAXXC*` attribute-dictionary tree, plus the marker matcher and
-/// frame-centre geometry that run over the walk's result. Both XCUI-grade backends emit this node
-/// shape — the `testmanagerd` remote-automation session and the `axbridge` guest reader — so the tree
-/// walk, marker matching, and frame-centre geometry live here, in a type neither backend owns, rather
-/// than on one backend that the other has to reach into. Per-node serialization is delegated to
+/// Walks an axbridge `XC_kAXXC*` attribute-dictionary tree and provides marker matching and
+/// frame-centre geometry. Per-node serialization is delegated to
 /// `FBAXNodeSerializer`.
 enum FBAXTreeWalk {
 
@@ -42,7 +39,7 @@ enum FBAXTreeWalk {
   /// Reads the frame through the same element type the serializer uses, so this cannot disagree with
   /// the frames on the elements it describes.
   static func screenInfo(fromTree tree: [String: Any]) -> FBAccessibilityScreenInfo? {
-    let root = FBRemoteAutomationPlatformElement(attributes: tree, children: [], pid: 0)
+    let root = FBAXBridgePlatformElement(attributes: tree, children: [], pid: 0)
     let frame = root.axFrame()
     guard frame.width > 0, frame.height > 0 else {
       return nil
@@ -50,12 +47,12 @@ enum FBAXTreeWalk {
     return FBAccessibilityScreenInfo(width: Double(frame.width), height: Double(frame.height))
   }
 
-  /// Recursively builds an `FBRemoteAutomationPlatformElement` from a nested attribute-dictionary
+  /// Recursively builds an `FBAXBridgePlatformElement` from a nested attribute-dictionary
   /// node, tagging every node with the owning application's pid.
-  static func buildPlatformElementTree(from node: [String: Any], pid: pid_t) -> FBRemoteAutomationPlatformElement {
+  static func buildPlatformElementTree(from node: [String: Any], pid: pid_t) -> FBAXBridgePlatformElement {
     let childNodes = (node[FBAXWire.Node.children.rawValue] as? [[String: Any]]) ?? []
     let children = childNodes.map { buildPlatformElementTree(from: $0, pid: pid) }
-    return FBRemoteAutomationPlatformElement(attributes: node, children: children, pid: pid)
+    return FBAXBridgePlatformElement(attributes: node, children: children, pid: pid)
   }
 
   /// The first serialized element whose `key` value contains `markerValue`, used by

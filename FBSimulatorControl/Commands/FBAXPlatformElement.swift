@@ -12,8 +12,8 @@ import Foundation
 
 /// The read-only accessibility attribute + traversal surface the serializer, translation
 /// request, dispatcher, element handle, and facade depend on, expressed in plain value
-/// types. Element actions live in `FBAXWritableElement`, so a tree that can only be read —
-/// the remote-automation projection — conforms here without pretending it can act.
+/// types. Element actions live in `FBAXWritableElement`, so the read-only axbridge projection
+/// conforms here without pretending it can act.
 ///
 /// `AXPMacPlatformElement` is a private-framework class the unit tests cannot subclass, so a
 /// protocol seam lets both the real element (which conforms via the adapter extension below)

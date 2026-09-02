@@ -22,7 +22,6 @@ final class FBDragEndpointTests: XCTestCase {
 
   private static let backends: [FBUIAutomationBackend] = [
     .accessibility,
-    .remoteAutomation,
     .axBridge(persistence: .oneShot, frontmostMethod: .windowServer, automationMode: true),
   ]
 
