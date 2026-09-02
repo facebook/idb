@@ -6,7 +6,7 @@
  */
 
 import FBControlCore
-import FBDeviceControl
+@testable import FBDeviceControl
 import Foundation
 import Testing
 
@@ -27,10 +27,6 @@ private func index(of path: String) -> Int {
     preconditionFailure("\(path) is not part of the listing under test")
   }
   return index
-}
-
-private func indexedByPosition(_ matched: [NSNumber: String]) -> [Int: String] {
-  Dictionary(uniqueKeysWithValues: matched.map { (Int(truncating: $0.key), $0.value) })
 }
 
 @Suite
@@ -77,7 +73,7 @@ struct FBDeviceDebugSymbolsTests {
 
     let matched = try FBDeviceDebugSymbolsCommands.matchFiles([cache, map], againstFileIndices: remoteListing)
 
-    #expect(indexedByPosition(matched) == [index(of: cache): cache, index(of: map): map])
+    #expect(matched == [index(of: cache): cache, index(of: map): map])
   }
 
   @Test

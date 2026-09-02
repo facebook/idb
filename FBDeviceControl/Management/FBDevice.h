@@ -9,7 +9,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 #import <FBDeviceControl/FBDeviceCommands.h>
-#import <FBDeviceControl/FBDeviceDebugSymbolsCommands.h>
 
 @class FBAMDevice;
 @class FBAMRestorableDevice;

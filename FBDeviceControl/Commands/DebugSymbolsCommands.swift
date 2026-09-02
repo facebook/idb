@@ -22,14 +22,14 @@ public protocol DebugSymbolsCommands: AnyObject {
 extension FBDevice: DebugSymbolsCommands {
 
   public func listSymbols() async throws -> [String] {
-    try await bridgeFBFutureArray(debugSymbolsCommands.listSymbols()) as [String]
+    try await debugSymbolsCommands.listSymbols()
   }
 
   public func pullSymbolFile(_ fileName: String, toDestinationPath destinationPath: String) async throws -> String {
-    try await bridgeFBFuture(debugSymbolsCommands.pullSymbolFile(fileName, toDestinationPath: destinationPath)) as String
+    try await debugSymbolsCommands.pullSymbolFile(fileName, toDestinationPath: destinationPath)
   }
 
   public func pullAndExtractSymbols(toDestinationDirectory destinationDirectory: String) async throws -> String {
-    try await bridgeFBFuture(debugSymbolsCommands.pullAndExtractSymbols(toDestinationDirectory: destinationDirectory)) as String
+    try await debugSymbolsCommands.pullAndExtractSymbols(toDestinationDirectory: destinationDirectory)
   }
 }
