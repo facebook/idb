@@ -113,29 +113,137 @@ struct FBAXBridgeWriteRequest: Sendable, Equatable {
   }
 }
 
+struct FBAXBridgeReadRequest: Sendable, Equatable {
+  let maxDepth: Int
+  let maxNodes: Int
+  let attributes: [String]?
+  let explainUnreachable: Bool
+  let traversal: FBAXTraversal
+  let automationMode: Bool?
+
+  func appendingArguments(to arguments: [String]) -> [String] {
+    var arguments = arguments
+    arguments += FBAXWire.Request.maxDepth.argument("\(maxDepth)")
+    arguments += FBAXWire.Request.maxNodes.argument("\(maxNodes)")
+    if let attributes, !attributes.isEmpty {
+      arguments += FBAXWire.Request.attributes.argument(attributes.joined(separator: ","))
+    }
+    if explainUnreachable {
+      arguments += FBAXWire.Request.explainUnreachable.argument("1")
+    }
+    switch traversal {
+    case .semantic:
+      arguments += FBAXWire.Request.translatorVocabulary.argument("1")
+    case .singleFetch:
+      arguments += FBAXWire.Request.snapshotTree.argument("1")
+    case .viewHierarchy:
+      break
+    }
+    if let automationMode {
+      arguments += FBAXWire.Request.automationMode.argument(automationMode ? "1" : "0")
+    }
+    return arguments
+  }
+
+  func appendingPayload(to payload: [String: Any]) -> [String: Any] {
+    var payload = payload
+    payload[FBAXWire.Request.maxDepth.key] = maxDepth
+    payload[FBAXWire.Request.maxNodes.key] = maxNodes
+    if let attributes, !attributes.isEmpty {
+      payload[FBAXWire.Request.attributes.key] = attributes
+    }
+    if explainUnreachable {
+      payload[FBAXWire.Request.explainUnreachable.key] = true
+    }
+    if traversal == .semantic {
+      payload[FBAXWire.Request.translatorVocabulary.key] = true
+    }
+    if traversal == .singleFetch {
+      payload[FBAXWire.Request.snapshotTree.key] = true
+    }
+    if let automationMode {
+      payload[FBAXWire.Request.automationMode.key] = automationMode
+    }
+    return payload
+  }
+}
+
+enum FBAXBridgeRequest: Sendable {
+  case read(pid: pid_t, options: FBAXBridgeReadRequest)
+  case readFrontmost(x: Double, y: Double, method: FBAXBridgeFrontmostMethod, options: FBAXBridgeReadRequest)
+  case hitTest(x: Double, y: Double, attributes: [String]?)
+  case write(FBAXBridgeWriteRequest)
+  case ping
+
+  var mayRetry: Bool {
+    if case .write = self {
+      return false
+    }
+    return true
+  }
+
+  var arguments: [String] {
+    switch self {
+    case let .read(pid, options):
+      return options.appendingArguments(
+        to: ["accessibility", FBAXWire.Verb.describe.rawValue]
+          + FBAXWire.Request.pid.argument("\(pid)"))
+    case let .readFrontmost(x, y, method, options):
+      return options.appendingArguments(
+        to: ["accessibility", FBAXWire.Verb.describe.rawValue]
+          + FBAXWire.Request.x.argument("\(x)")
+          + FBAXWire.Request.y.argument("\(y)")
+          + FBAXWire.Request.method.argument(method.rawValue))
+    case let .hitTest(x, y, attributes):
+      var arguments =
+        ["accessibility", FBAXWire.Verb.hitTest.rawValue]
+        + FBAXWire.Request.x.argument("\(x)")
+        + FBAXWire.Request.y.argument("\(y)")
+      if let attributes, !attributes.isEmpty {
+        arguments += FBAXWire.Request.attributes.argument(attributes.joined(separator: ","))
+      }
+      return arguments
+    case let .write(request):
+      return request.arguments
+    case .ping:
+      return ["accessibility", "ping"]
+    }
+  }
+
+  var payload: [String: Any] {
+    switch self {
+    case let .read(pid, options):
+      return options.appendingPayload(to: [
+        FBAXWire.Request.verb.key: FBAXWire.Verb.describe.rawValue,
+        FBAXWire.Request.pid.key: Int(pid),
+      ])
+    case let .readFrontmost(x, y, method, options):
+      return options.appendingPayload(to: [
+        FBAXWire.Request.verb.key: FBAXWire.Verb.describe.rawValue,
+        FBAXWire.Request.x.key: x,
+        FBAXWire.Request.y.key: y,
+        FBAXWire.Request.method.key: method.rawValue,
+      ])
+    case let .hitTest(x, y, attributes):
+      var payload: [String: Any] = [
+        FBAXWire.Request.verb.key: FBAXWire.Verb.hitTest.rawValue,
+        FBAXWire.Request.x.key: x,
+        FBAXWire.Request.y.key: y,
+      ]
+      if let attributes, !attributes.isEmpty {
+        payload[FBAXWire.Request.attributes.key] = attributes
+      }
+      return payload
+    case let .write(request):
+      return request.payload
+    case .ping:
+      return [FBAXWire.Request.verb.key: "ping"]
+    }
+  }
+}
+
 protocol FBAXBridgeTransport {
-  /// Reads the whole element tree for `pid` (the guest `describe` verb), bounded by the caller's
-  /// depth and node budget — the host owns those bounds so both XCUI-grade backends truncate alike.
-  ///
-  /// `attributes` names what to fetch per element; nil leaves the guest on `Node.defaultFetchList`, so a
-  /// default read is byte-identical on the wire to one from a host that did not know the field existed.
-  func read(pid: pid_t, maxDepth: Int, maxNodes: Int, attributes: [String]?, explainUnreachable: Bool, traversal: FBAXTraversal, automationMode: Bool?) async throws -> Data
-  /// Fused frontmost read (the guest `describe` verb with no pid): the guest resolves the frontmost app
-  /// in-guest via `method` (anchored at the given screen point for `.centerPoint`) AND reads its tree in
-  /// this one round-trip — no host-side CoreSimulator query and no separate pid call. The response
-  /// envelope carries the resolved pid alongside the tree. This is the axbridge frontmost optimization:
-  /// one IPC hop.
-  func readFrontmost(x: Double, y: Double, maxDepth: Int, maxNodes: Int, method: FBAXBridgeFrontmostMethod, attributes: [String]?, explainUnreachable: Bool, traversal: FBAXTraversal, automationMode: Bool?) async throws -> Data
-  /// Reads just the element at a screen point (the guest `hittest` verb with no pid) — a system-wide
-  /// hit-test that resolves the element and its owning app in-guest in one round-trip, with no walk and
-  /// no separate frontmost pid query. The response carries the owning pid alongside the hit node.
-  func hitTest(x: Double, y: Double, attributes: [String]?) async throws -> Data
-  /// Sends one point-addressed write (the guest `perform` or `setvalue` verb) and returns its envelope.
-  ///
-  /// One entry point rather than one per verb: the guest splits them because performing an action and
-  /// setting an attribute are different runtime calls, but a transport only ships the request, and the
-  /// request already says which it is.
-  func write(_ request: FBAXBridgeWriteRequest) async throws -> Data
+  func send(_ request: FBAXBridgeRequest) async throws -> Data
 }
 
 // MARK: - One-shot transport
@@ -144,81 +252,7 @@ protocol FBAXBridgeTransport {
 struct FBAXBridgeOneshotTransport: FBAXBridgeTransport {
   let simulator: FBSimulator
 
-  func read(pid: pid_t, maxDepth: Int, maxNodes: Int, attributes: [String]?, explainUnreachable: Bool, traversal: FBAXTraversal, automationMode: Bool?) async throws -> Data {
-    try await spawn(
-      ["accessibility", FBAXWire.Verb.describe.rawValue]
-        + FBAXWire.Request.pid.argument("\(pid)")
-        + FBAXWire.Request.maxDepth.argument("\(maxDepth)")
-        + FBAXWire.Request.maxNodes.argument("\(maxNodes)")
-        + Self.attributeArgument(attributes)
-        + Self.explainArgument(explainUnreachable)
-        + Self.traversalArgument(traversal)
-        + Self.automationArgument(automationMode)
-    )
-  }
-
-  func readFrontmost(x: Double, y: Double, maxDepth: Int, maxNodes: Int, method: FBAXBridgeFrontmostMethod, attributes: [String]?, explainUnreachable: Bool, traversal: FBAXTraversal, automationMode: Bool?) async throws -> Data {
-    try await spawn(
-      ["accessibility", FBAXWire.Verb.describe.rawValue]
-        + FBAXWire.Request.x.argument("\(x)")
-        + FBAXWire.Request.y.argument("\(y)")
-        + FBAXWire.Request.maxDepth.argument("\(maxDepth)")
-        + FBAXWire.Request.maxNodes.argument("\(maxNodes)")
-        + FBAXWire.Request.method.argument(method.rawValue)
-        + Self.attributeArgument(attributes)
-        + Self.explainArgument(explainUnreachable)
-        + Self.traversalArgument(traversal)
-        + Self.automationArgument(automationMode)
-    )
-  }
-
-  func hitTest(x: Double, y: Double, attributes: [String]?) async throws -> Data {
-    try await spawn(
-      ["accessibility", FBAXWire.Verb.hitTest.rawValue]
-        + FBAXWire.Request.x.argument("\(x)")
-        + FBAXWire.Request.y.argument("\(y)")
-        + Self.attributeArgument(attributes)
-    )
-  }
-
-  /// Sent only for a non-default traversal, so a default read's argv stays byte-identical to what a guest
-  /// predating the field expects.
-  static func traversalArgument(_ traversal: FBAXTraversal) -> [String] {
-    switch traversal {
-    case .semantic: FBAXWire.Request.translatorVocabulary.argument("1")
-    case .singleFetch: FBAXWire.Request.snapshotTree.argument("1")
-    case .viewHierarchy: []
-    }
-  }
-
-  /// Absent unless asked for, so the argv of a read that wants no explanations is unchanged.
-  private static func explainArgument(_ explainUnreachable: Bool) -> [String] {
-    guard explainUnreachable else {
-      return []
-    }
-    return FBAXWire.Request.explainUnreachable.argument("1")
-  }
-
-  /// Absent unless the caller asked, so a read that does not care leaves the device alone and its argv
-  /// stays byte-identical to what a guest predating the field expects.
-  private static func automationArgument(_ automationMode: Bool?) -> [String] {
-    guard let automationMode else {
-      return []
-    }
-    return FBAXWire.Request.automationMode.argument(automationMode ? "1" : "0")
-  }
-
-  /// The attribute list as the one-shot front-end takes it: comma-separated, because the guest reads argv
-  /// strictly in flag/value pairs and an attribute name never contains a comma. Absent for a default
-  /// read, so its argv is unchanged.
-  private static func attributeArgument(_ attributes: [String]?) -> [String] {
-    guard let attributes, !attributes.isEmpty else {
-      return []
-    }
-    return FBAXWire.Request.attributes.argument(attributes.joined(separator: ","))
-  }
-
-  func write(_ request: FBAXBridgeWriteRequest) async throws -> Data {
+  func send(_ request: FBAXBridgeRequest) async throws -> Data {
     try await spawn(request.arguments)
   }
 
@@ -256,86 +290,11 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
     self.persistence = persistence
   }
 
-  func read(pid: pid_t, maxDepth: Int, maxNodes: Int, attributes: [String]?, explainUnreachable: Bool, traversal: FBAXTraversal, automationMode: Bool?) async throws -> Data {
-    try await roundTripWithRecovery(
-      Self.adding(
-        attributes: attributes,
-        explainUnreachable: explainUnreachable,
-        traversal: traversal,
-        automationMode: automationMode,
-        to: [
-          FBAXWire.Request.verb.key: FBAXWire.Verb.describe.rawValue,
-          FBAXWire.Request.pid.key: Int(pid),
-          FBAXWire.Request.maxDepth.key: maxDepth,
-          FBAXWire.Request.maxNodes.key: maxNodes,
-        ]))
-  }
-
-  func readFrontmost(x: Double, y: Double, maxDepth: Int, maxNodes: Int, method: FBAXBridgeFrontmostMethod, attributes: [String]?, explainUnreachable: Bool, traversal: FBAXTraversal, automationMode: Bool?) async throws -> Data {
-    try await roundTripWithRecovery(
-      Self.adding(
-        attributes: attributes,
-        explainUnreachable: explainUnreachable,
-        traversal: traversal,
-        automationMode: automationMode,
-        to: [
-          FBAXWire.Request.verb.key: FBAXWire.Verb.describe.rawValue,
-          FBAXWire.Request.x.key: x,
-          FBAXWire.Request.y.key: y,
-          FBAXWire.Request.maxDepth.key: maxDepth,
-          FBAXWire.Request.maxNodes.key: maxNodes,
-          FBAXWire.Request.method.key: method.rawValue,
-        ]))
-  }
-
-  func hitTest(x: Double, y: Double, attributes: [String]?) async throws -> Data {
-    try await roundTripWithRecovery(
-      Self.adding(
-        attributes: attributes,
-        explainUnreachable: false,
-        // A hit-test resolves one element positionally; there is no traversal to choose.
-        traversal: .viewHierarchy,
-        // A hit-test never asserts the mode: it resolves one element, not a tree.
-        automationMode: nil,
-        to: [
-          FBAXWire.Request.verb.key: FBAXWire.Verb.hitTest.rawValue,
-          FBAXWire.Request.x.key: x,
-          FBAXWire.Request.y.key: y,
-        ]))
-  }
-
-  /// Adds the attribute list to a request payload, or leaves the payload untouched for a default read —
-  /// an absent field is what makes that read's bytes identical to a host that predates the field.
-  static func adding(
-    attributes: [String]?,
-    explainUnreachable: Bool,
-    traversal: FBAXTraversal,
-    automationMode: Bool?,
-    to payload: [String: Any]
-  ) -> [String: Any] {
-    var payload = payload
-    if let attributes, !attributes.isEmpty {
-      payload[FBAXWire.Request.attributes.key] = attributes
+  func send(_ request: FBAXBridgeRequest) async throws -> Data {
+    if request.mayRetry {
+      return try await roundTripWithRecovery(request.payload)
     }
-    if explainUnreachable {
-      payload[FBAXWire.Request.explainUnreachable.key] = true
-    }
-    if traversal == .semantic {
-      payload[FBAXWire.Request.translatorVocabulary.key] = true
-    }
-    if traversal == .singleFetch {
-      payload[FBAXWire.Request.snapshotTree.key] = true
-    }
-    // Present only when the caller asked, so an unset request leaves the device alone rather than
-    // asserting a default the caller did not choose.
-    if let automationMode {
-      payload[FBAXWire.Request.automationMode.key] = automationMode
-    }
-    return payload
-  }
-
-  func write(_ request: FBAXBridgeWriteRequest) async throws -> Data {
-    try await roundTripWithoutResend(request.payload)
+    return try await roundTripWithoutResend(request.payload)
   }
 
   /// Sends one request over the reused connection and never re-sends it, for requests that are not safe
@@ -460,13 +419,6 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
   /// that a bridge held for longer than one turn will not come free soon enough to wait for.
   static let adoptionTimeout: TimeInterval = 0.25
 
-  /// The request an adoption probe sends.
-  ///
-  /// A verb the guest does not implement. The guest serves one client at a time and stays inside that
-  /// connection until it goes away, so any reply means it accepted us and nobody else holds it, and an
-  /// unknown verb costs it no accessibility work.
-  private static let adoptionProbeVerb = "ping"
-
   private enum RunningBridge {
     /// Connected and answered, so nothing else holds it.
     case adopted(Int32)
@@ -552,8 +504,7 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
     var window = receiveWindow(adoptionTimeout)
     setsockopt(fileDescriptor, SOL_SOCKET, SO_RCVTIMEO, &window, socklen_t(MemoryLayout<timeval>.size))
     do {
-      let request = try JSONSerialization.data(
-        withJSONObject: [FBAXWire.Request.verb.key: adoptionProbeVerb])
+      let request = try JSONSerialization.data(withJSONObject: FBAXBridgeRequest.ping.payload)
       try FBAXBridgeConnection.writeFrame(fileDescriptor, request)
       _ = try FBAXBridgeConnection.readFrame(fileDescriptor, guest: nil)
     } catch {

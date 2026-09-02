@@ -139,24 +139,33 @@ final class FBAXBridgeUIAutomation: FBAXBridgeTreeReader, @unchecked Sendable {
   ) async throws -> FBAXTreeRead {
     try await translatingBackendErrors {
       if case let .application(pid) = query {
-        // Timed around the transport: what the caller waited for is the whole round trip.
-        let sent = CFAbsoluteTimeGetCurrent()
-        let response = try await transport.read(
-          pid: pid, maxDepth: FBAXReadLimits.maxReadDepth, maxNodes: FBAXReadLimits.maxReadNodes,
-          attributes: attributes, explainUnreachable: explainUnreachable, traversal: traversal,
+        let options = FBAXBridgeReadRequest(
+          maxDepth: FBAXReadLimits.maxReadDepth,
+          maxNodes: FBAXReadLimits.maxReadNodes,
+          attributes: attributes,
+          explainUnreachable: explainUnreachable,
+          traversal: traversal,
           automationMode: requestedAutomationMode
         )
+        let sent = CFAbsoluteTimeGetCurrent()
+        let response = try await transport.send(.read(pid: pid, options: options))
         let returned = CFAbsoluteTimeGetCurrent()
         var read = try FBAXTreeRead(wholeTreeResponse: response, pid: pid)
         read.timings = Self.timings(response: response, sent: sent, returned: returned, read: read)
         return read
       }
       let anchor = frontmostAnchor()
+      let options = FBAXBridgeReadRequest(
+        maxDepth: FBAXReadLimits.maxReadDepth,
+        maxNodes: FBAXReadLimits.maxReadNodes,
+        attributes: attributes,
+        explainUnreachable: explainUnreachable,
+        traversal: traversal,
+        automationMode: requestedAutomationMode
+      )
       let sent = CFAbsoluteTimeGetCurrent()
-      let response = try await transport.readFrontmost(
-        x: anchor.x, y: anchor.y, maxDepth: FBAXReadLimits.maxReadDepth, maxNodes: FBAXReadLimits.maxReadNodes,
-        method: frontmostMethod, attributes: attributes, explainUnreachable: explainUnreachable,
-        traversal: traversal, automationMode: requestedAutomationMode
+      let response = try await transport.send(
+        .readFrontmost(x: anchor.x, y: anchor.y, method: frontmostMethod, options: options)
       )
       let returned = CFAbsoluteTimeGetCurrent()
       var read = try FBAXTreeRead(frontmostResponse: response, method: frontmostMethod)
@@ -173,8 +182,10 @@ final class FBAXBridgeUIAutomation: FBAXBridgeTreeReader, @unchecked Sendable {
       // A single system-wide guest hit-test resolves the element at the point and its owning app
       // in-guest — no host-side CoreSimulator frontmost query, one IPC hop. `.point` is positional, so
       // a system-wide hit-test is exactly its semantics (unlike a whole-tree read of "frontmost").
-      let response = try await transport.hitTest(
-        x: Double(point.x), y: Double(point.y), attributes: FBAXWire.Node.fetchList(for: options.serializationKeys)
+      let response = try await transport.send(
+        .hitTest(
+          x: Double(point.x), y: Double(point.y),
+          attributes: FBAXWire.Node.fetchList(for: options.serializationKeys))
       )
       guard let hit = try FBAXTreeRead(hitTestResponse: response) else {
         return nil
@@ -289,13 +300,15 @@ final class FBAXBridgeUIAutomation: FBAXBridgeTreeReader, @unchecked Sendable {
     query: FBAccessibilityElementQuery
   ) async throws {
     try await translatingWriteErrors(query) {
-      let response = try await transport.write(
-        FBAXBridgeWriteRequest(
-          kind: kind,
-          x: Double(target.point.x),
-          y: Double(target.point.y),
-          pid: target.pid,
-          assertion: target.assertion
+      let response = try await transport.send(
+        .write(
+          FBAXBridgeWriteRequest(
+            kind: kind,
+            x: Double(target.point.x),
+            y: Double(target.point.y),
+            pid: target.pid,
+            assertion: target.assertion
+          )
         )
       )
       guard try FBAXTreeRead.writeLanded(fromResponse: response) else {

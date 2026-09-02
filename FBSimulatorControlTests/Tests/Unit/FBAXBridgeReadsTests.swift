@@ -1896,36 +1896,26 @@ final class FBAXAutoTraversalTests: XCTestCase {
   // a read whose cost depends on how the host happened to connect.
   func testADefaultGuestReadAsksTheGuestForASnapshot() {
     let traversal = FBAXBridgeUIAutomation.autoTraversal(for: FBAccessibilityRequestOptions())
-    XCTAssertEqual(FBAXBridgeOneshotTransport.traversalArgument(traversal), ["--snapshot-tree", "1"])
-    XCTAssertEqual(
-      FBAXBridgePersistentTransport.adding(
-        attributes: nil, explainUnreachable: false, traversal: traversal, automationMode: nil, to: [:]
-      ) as NSDictionary,
-      ["snapshotTree": true] as NSDictionary
-    )
+    let request = Self.readRequest(traversal: traversal)
+    XCTAssertTrue(request.arguments.contains("--snapshot-tree"))
+    XCTAssertEqual(request.payload["snapshotTree"] as? Bool, true)
   }
 
   // The same wire pin for a reachability read: it resolves to the walk, so its argv and payload stay
   // empty.
   func testAReachabilityReadAsksTheGuestForNoSnapshot() {
     let traversal = FBAXBridgeUIAutomation.autoTraversal(for: FBAccessibilityRequestOptions(keys: [.interactable]))
-    XCTAssertEqual(FBAXBridgeOneshotTransport.traversalArgument(traversal), [])
-    XCTAssertTrue(
-      FBAXBridgePersistentTransport.adding(
-        attributes: nil, explainUnreachable: false, traversal: traversal, automationMode: nil, to: [:]
-      ).isEmpty)
+    let request = Self.readRequest(traversal: traversal)
+    XCTAssertFalse(request.arguments.contains("--snapshot-tree"))
+    XCTAssertNil(request.payload["snapshotTree"])
   }
 
   // The explicit single fetch is pinned in its own right, not only as today's default, so its argv and
   // payload stay asserted if the default ever moves again.
   func testTheSingleFetchAsksTheGuestForASnapshot() {
-    XCTAssertEqual(FBAXBridgeOneshotTransport.traversalArgument(.singleFetch), ["--snapshot-tree", "1"])
-    XCTAssertEqual(
-      FBAXBridgePersistentTransport.adding(
-        attributes: nil, explainUnreachable: false, traversal: .singleFetch, automationMode: nil, to: [:]
-      ) as NSDictionary,
-      ["snapshotTree": true] as NSDictionary
-    )
+    let request = Self.readRequest(traversal: .singleFetch)
+    XCTAssertTrue(request.arguments.contains("--snapshot-tree"))
+    XCTAssertEqual(request.payload["snapshotTree"] as? Bool, true)
   }
 
   // A named traversal reaches the read unchanged.
@@ -1937,6 +1927,20 @@ final class FBAXAutoTraversalTests: XCTestCase {
       let options = FBAccessibilityRequestOptions(traversalStrategy: strategy)
       XCTAssertEqual(FBAXBridgeUIAutomation.resolvedTraversal(for: options), traversal)
     }
+  }
+
+  private static func readRequest(traversal: FBAXTraversal) -> FBAXBridgeRequest {
+    .read(
+      pid: 1,
+      options: FBAXBridgeReadRequest(
+        maxDepth: FBAXReadLimits.maxReadDepth,
+        maxNodes: FBAXReadLimits.maxReadNodes,
+        attributes: nil,
+        explainUnreachable: false,
+        traversal: traversal,
+        automationMode: nil
+      )
+    )
   }
 }
 
