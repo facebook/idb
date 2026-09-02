@@ -7,36 +7,9 @@
 
 #import "FBDeviceControlFrameworkLoader.h"
 
-#import <asl.h>
 #import <objc/runtime.h>
 
 #import <FBControlCore/FBControlCore.h>
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-
-static BOOL IsInitializing = NO;
-
-static asl_object_t FBDeviceControlFrameworkLoader_asl_open(const char *ident, const char *facility, uint32_t opts)
-{
-  asl_object_t object = asl_open(ident, facility, opts);
-  if (!IsInitializing) {
-    return object;
-  }
-  asl_add_log_file(object, STDERR_FILENO);
-  return object;
-}
-
-#ifndef DYLD_INTERPOSE
-
- #define DYLD_INTERPOSE(_replacment, _replacee) \
-         __attribute__((used)) static struct {const void *replacment; const void *replacee;} _interpose_ ## _replacee \
-         __attribute__ ((section ("__DATA,__interpose"))) = { (const void *)(unsigned long)&_replacment, (const void *)(unsigned long)&_replacee };
-DYLD_INTERPOSE(FBDeviceControlFrameworkLoader_asl_open, asl_open);
-
-#endif
-
-#pragma GCC diagnostic pop
 
 @implementation FBDeviceControlFrameworkLoader
 
@@ -60,9 +33,7 @@ DYLD_INTERPOSE(FBDeviceControlFrameworkLoader_asl_open, asl_open);
   BOOL result = [super loadPrivateFrameworks:logger error:error];
   if (result) {
     AMDCalls calls = FBDeviceControlFrameworkLoader.amDeviceCalls;
-    IsInitializing = YES;
     calls.InitializeMobileDevice();
-    IsInitializing = NO;
   }
   return result;
 }
