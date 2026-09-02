@@ -13,8 +13,10 @@ public class FBDeviceSet: NSObject, FBiOSTargetSet, FBiOSTargetSetDelegate {
   // Memoized so the load (and AMDevice's InitializeMobileDevice) runs once per process, matching
   // the previous static-let semantics while letting the failure surface: a failed load is cached
   // and rethrown by every subsequent init instead of aborting the process.
-  private static let _frameworksLoadResult: Result<Void, Error> = Result {
-    try FBDeviceControlFrameworkLoader().loadPrivateFrameworks(FBControlCoreGlobalConfiguration.defaultLogger)
+  private static let _amDeviceCalls: Result<AMDCalls, Error> = Result {
+    let loader = FBDeviceControlFrameworkLoader()
+    try loader.loadPrivateFrameworks(FBControlCoreGlobalConfiguration.defaultLogger)
+    return try loader.amDeviceCalls
   }
 
   private let amDeviceManager: FBAMDeviceManager
@@ -26,8 +28,7 @@ public class FBDeviceSet: NSObject, FBiOSTargetSet, FBiOSTargetSetDelegate {
   // MARK: Initializers
 
   public convenience init(logger: any FBControlCoreLogger, delegate: (any FBiOSTargetSetDelegate)?, ecidFilter: String?) throws {
-    try Self._frameworksLoadResult.get()
-    let calls = FBDeviceControlFrameworkLoader.amDeviceCalls
+    let calls = try Self._amDeviceCalls.get()
     let workQueue = DispatchQueue.main
     let asyncQueue = DispatchQueue.global(qos: .userInitiated)
     let amDeviceManager = FBAMDeviceManager(calls: calls, work: workQueue, asyncQueue: asyncQueue, ecidFilter: ecidFilter, logger: logger)

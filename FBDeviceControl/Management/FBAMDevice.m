@@ -15,7 +15,6 @@
 #import "FBAFCConnection.h"
 #import "FBAMDServiceConnection.h"
 #import "FBAMRestorableDevice.h"
-#import "FBDeviceControlFrameworkLoader.h"
 static NSString *const UnknownValue = @"unknown";
 
 #pragma mark - FBAMDevice Implementation

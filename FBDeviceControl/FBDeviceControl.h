@@ -12,7 +12,6 @@
 #import <FBDeviceControl/FBAMRestorableDevice.h>
 #import <FBDeviceControl/FBDevice.h>
 #import <FBDeviceControl/FBDeviceCommands.h>
-#import <FBDeviceControl/FBDeviceControlFrameworkLoader.h>
 #import <FBDeviceControl/FBDeviceDebugSymbolsCommands.h>
 #import <FBDeviceControl/FBInstrumentsClient.h>
 
