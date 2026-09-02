@@ -336,8 +336,8 @@ public extension FBSimulator {
       let transport: any FBAXBridgeTransport =
         switch persistence {
         case .oneShot: FBAXBridgeOneshotTransport(simulator: self)
-        case .shared: axBridgeTransport(.shared)
-        case .exclusive: axBridgeTransport(.exclusive)
+        case .shared: axBridgeTransport(scope: .shared)
+        case .exclusive: axBridgeTransport(scope: .exclusive)
         }
       return FBAXBridgeUIAutomation(
         simulator: self, transport: transport, persistence: persistence, frontmostMethod: frontmostMethod,
@@ -356,9 +356,9 @@ public extension FBSimulator {
   /// interchangeable: handing a shared request the exclusive transport would read over a bridge nobody
   /// else can see, and handing an exclusive request the shared one would put the caller back to holding
   /// a bridge others are trying to use.
-  private func axBridgeTransport(_ persistence: FBAXBridgePersistence) -> FBAXBridgePersistentTransport {
-    commandCache.resolve { FBAXBridgeTransportsByPersistence() }
-      .transport(for: persistence) { FBAXBridgePersistentTransport(simulator: self, persistence: persistence) }
+  private func axBridgeTransport(scope: FBAXBridgeServiceScope) -> FBAXBridgePersistentTransport {
+    commandCache.resolve { FBAXBridgeTransportsByScope() }
+      .transport(for: scope) { FBAXBridgePersistentTransport(simulator: self, scope: scope) }
   }
 
   /// Delivers one composed gesture over HID, which drains the transport once for the whole gesture
@@ -368,29 +368,29 @@ public extension FBSimulator {
   }
 }
 
-/// One socket-backed transport per persistence, for one target.
+/// One socket-backed transport per service scope, for one target.
 ///
-/// `FBTargetCommandCache` keys its slots by type, and the two persistences need separate transports that
+/// `FBTargetCommandCache` keys its slots by type, and the two scopes need separate transports that
 /// are the same type, so this holds them apart.
 ///
 // SAFETY: `transports` is only read or written with `lock` held, so no mutable state is reachable from
 // two threads at once.
 // patternlint-disable-next-line unchecked-sendable
-final class FBAXBridgeTransportsByPersistence: @unchecked Sendable {
+final class FBAXBridgeTransportsByScope: @unchecked Sendable {
   private let lock = NSLock()
-  private var transports: [FBAXBridgePersistence: FBAXBridgePersistentTransport] = [:]
+  private var transports: [FBAXBridgeServiceScope: FBAXBridgePersistentTransport] = [:]
 
   func transport(
-    for persistence: FBAXBridgePersistence,
+    for scope: FBAXBridgeServiceScope,
     build: () -> FBAXBridgePersistentTransport
   ) -> FBAXBridgePersistentTransport {
     lock.lock()
     defer { lock.unlock() }
-    if let existing = transports[persistence] {
+    if let existing = transports[scope] {
       return existing
     }
     let created = build()
-    transports[persistence] = created
+    transports[scope] = created
     return created
   }
 }

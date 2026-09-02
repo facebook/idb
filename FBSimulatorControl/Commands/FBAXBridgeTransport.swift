@@ -32,6 +32,11 @@ public enum FBAXBridgeFrontmostMethod: String, Sendable, CaseIterable {
   case runningBoard = "runningboard"
 }
 
+enum FBAXBridgeServiceScope: Sendable, Hashable {
+  case shared
+  case exclusive
+}
+
 /// What the element at a write's point must still be for the write to go ahead: one node attribute and
 /// the value it has to equal, compared by the guest against whatever it actually hit-tests there.
 ///
@@ -273,21 +278,17 @@ struct FBAXBridgeOneshotTransport: FBAXBridgeTransport {
 
 /// Reads over an `accessibility serve <socket>` guest rather than spawning one per read. An actor so
 /// concurrent callers do not each establish their own connection, and reads are serialized (the guest
-/// handles one request at a time). Memoized per simulator and per persistence, so a long-lived host
+/// handles one request at a time). Memoized per simulator and per service scope, so a long-lived host
 /// process amortizes the spawn and warmup across every read, and a shared reader is never handed the
 /// private transport.
 actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
   private weak var simulator: FBSimulator?
-  /// Which kind of bridge this transport reaches: whether it may discover one on the simulator's
-  /// well-known socket, and whether a guest it spawns exits when its client goes. Whether a connection
-  /// is kept between round trips is decided by the guest that was established, not by this. Framing a
-  /// request is identical either way.
-  private let persistence: FBAXBridgePersistence
+  private let scope: FBAXBridgeServiceScope
   private var connectionTask: Task<FBAXBridgeConnection, Error>?
 
-  init(simulator: FBSimulator, persistence: FBAXBridgePersistence) {
+  init(simulator: FBSimulator, scope: FBAXBridgeServiceScope) {
     self.simulator = simulator
-    self.persistence = persistence
+    self.scope = scope
   }
 
   func send(_ request: FBAXBridgeRequest) async throws -> Data {
@@ -374,8 +375,8 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
       return try await connectionTask.value
     }
     let simulator = self.simulator
-    let persistence = self.persistence
-    let task = Task { try await Self.establish(simulator: simulator, persistence: persistence) }
+    let scope = self.scope
+    let task = Task { try await Self.establish(simulator: simulator, scope: scope) }
     connectionTask = task
     do {
       return try await task.value
@@ -399,11 +400,11 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
   /// predating the flag ignores it, so this is safe to send to any of them.
   static func serveArguments(
     socketPath: String,
-    persistence: FBAXBridgePersistence,
+    scope: FBAXBridgeServiceScope,
     idleTimeoutSeconds: Int = idleTimeoutSeconds
   ) -> [String] {
     var arguments = ["accessibility", "serve", socketPath, "--idle-timeout", "\(idleTimeoutSeconds)"]
-    if persistence == .exclusive {
+    if scope == .exclusive {
       // Nobody else can reach an exclusive socket, so once our client goes there is no next one to wait
       // for. Without this the guest would sit through its whole idle window after the host that owned
       // it died, which is the orphan the private socket was supposed to make impossible.
@@ -430,7 +431,7 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
 
   private static func establish(
     simulator: FBSimulator?,
-    persistence: FBAXBridgePersistence
+    scope: FBAXBridgeServiceScope
   ) async throws -> FBAXBridgeConnection {
     guard let simulator else {
       throw FBWeakTargetError.simulator
@@ -443,11 +444,11 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
 
     // An exclusive bridge is never discovered: its socket name is a UUID only this host knows, so the
     // discovery below applies to the shared case alone.
-    guard persistence != .exclusive else {
+    guard scope != .exclusive else {
       let privatePath = FBAXBridgeSocket.path(forConnection: UUID().uuidString)
       return try await spawn(
         simulator: simulator, helperPath: helperPath, socketPath: privatePath,
-        persistence: .exclusive, ownership: { .privateToThisHost($0) })
+        scope: .exclusive, ownership: { .privateToThisHost($0) })
     }
 
     let sharedPath = FBAXBridgeSocket.path(forSimulator: simulator.udid)
@@ -458,7 +459,7 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
     case .absent:
       return try await spawn(
         simulator: simulator, helperPath: helperPath, socketPath: sharedPath,
-        persistence: .shared, ownership: { .shared($0) })
+        scope: .shared, ownership: { .shared($0) })
     case .busy:
       // The shared guest will not take a second client until the first leaves, which may be their whole
       // session, so a contended read starts a private guest rather than waiting.
@@ -467,7 +468,7 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
         "The axbridge guest on \(sharedPath) is serving another client; starting a private one on \(privatePath)")
       return try await spawn(
         simulator: simulator, helperPath: helperPath, socketPath: privatePath,
-        persistence: .exclusive, ownership: { .privateToThisHost($0) })
+        scope: .exclusive, ownership: { .privateToThisHost($0) })
     }
   }
 
@@ -521,13 +522,13 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
     simulator: FBSimulator,
     helperPath: String,
     socketPath: String,
-    persistence: FBAXBridgePersistence,
+    scope: FBAXBridgeServiceScope,
     ownership: (FBSubprocess<AnyObject, AnyObject, AnyObject>) -> FBAXBridgeGuestOwnership
   ) async throws -> FBAXBridgeConnection {
     let io = FBProcessIO<AnyObject, AnyObject, AnyObject>.outputToDevNull()
     let configuration = FBProcessSpawnConfiguration(
       launchPath: helperPath,
-      arguments: serveArguments(socketPath: socketPath, persistence: persistence),
+      arguments: serveArguments(socketPath: socketPath, scope: scope),
       environment: [:],
       io: io,
       mode: .default
