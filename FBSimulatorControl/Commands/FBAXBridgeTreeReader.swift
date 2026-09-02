@@ -9,10 +9,10 @@ import CoreGraphics
 import FBControlCore
 import Foundation
 
-/// A backend that answers a query by reading a whole `XC_kAXXC*` attribute tree and matching over the
-/// result emitted by the axbridge guest.
-protocol FBAXTreeReader: FBUIAutomation {
-  /// Which backend this is, for the errors the shared verbs raise.
+/// The axbridge read pipeline. The protocol boundary keeps transport responses and warnings injectable
+/// in unit tests; production has one conformer, `FBAXBridgeUIAutomation`.
+protocol FBAXBridgeTreeReader: FBUIAutomation {
+  /// The resolved axbridge backend, used in response metadata and errors.
   nonisolated var backend: FBUIAutomationBackend { get }
 
   /// Reads the whole bounded attribute tree the query targets and returns it parsed. `.frontmost`
@@ -38,62 +38,32 @@ protocol FBAXTreeReader: FBUIAutomation {
     traversal: FBAXTraversal
   ) async throws -> FBAXTreeRead
 
-  /// The traversal this backend performs for a read that named none.
-  ///
-  /// Per backend because it is a question only a backend can answer: what is cheapest depends on what the
-  /// read has to ask the application for, and the backends do not have the same reads to choose between.
-  /// Takes the whole options rather than nothing, so the answer can depend on what was asked for.
-  ///
-  /// Static because the answer is a property of the backend rather than of one reader: nothing about how an
-  /// instance was configured — its transport, its persistence, the mode it asserts — may change which walk
-  /// an unasked read gets. It also lets a test ask a backend for its answer without standing up a simulator.
+  /// The traversal axbridge performs when the request does not select one.
   static func autoTraversal(for options: FBAccessibilityRequestOptions) -> FBAXTraversal
 
   /// Warns that the traversal could not answer keys the caller asked for, so a caller can tell "this read
   /// could not ask" from "the app set nothing".
   func warnIfUnsatisfiable(_ keys: Set<FBAXKeys>, traversal: FBAXTraversal) async
 
-  /// Warns that a read's tree was truncated by the depth or node bound, so an incomplete tree is never
-  /// passed off as whole. Per backend because each logs through its own target; `describeTree` calls it
-  /// once per describe, and never on the `.marker` wait poll, which reads without describing.
+  /// Warns that a read's tree was truncated by the depth or node bound.
   func warnIfTruncated(_ truncated: Bool) async
 
   /// Warns when a whole-tree read asked for reachability.
   func warnIfReachabilityAcrossTree(_ keys: Set<FBAXKeys>) async
 
-  /// Warns that most of a read's elements carry no rectangle, which can mean the target is serving stale
-  /// cached children. Per backend for the same reason as `warnIfTruncated` — each logs through its own
-  /// target — and called only on a whole-tree describe, since a single element has no ratio to judge.
+  /// Warns that most of a read's elements carry no rectangle.
   func warnIfMostElementsUnframed(_ frames: FBAccessibilityFrameSummary?) async
 
-  /// Where this read spent its time, in whatever shape this backend measures. Nil from a backend that
-  /// does not measure, which is distinct from a zeroed profile.
-  ///
-  /// `traversal` is the one the read was performed with, passed in rather than inferred so the profile
-  /// reports what happened rather than what a caller asked for.
+  /// Produces the axbridge profile for a completed read.
   func profile(
     for read: FBAXTreeRead, elementCount: Int, serializeDuration: CFAbsoluteTime,
     traversal: FBAXTraversal
   ) -> FBAccessibilityProfile?
 }
 
-extension FBAXTreeReader {
+extension FBAXBridgeTreeReader {
 
-  /// Backends that do not measure report nothing rather than zeroes.
-  func profile(
-    for read: FBAXTreeRead, elementCount: Int, serializeDuration: CFAbsoluteTime,
-    traversal: FBAXTraversal
-  ) -> FBAccessibilityProfile? {
-    nil
-  }
-
-  /// The traversal a read actually gets: what the caller named, or what this backend chooses when they
-  /// named nothing.
-  ///
-  /// Written once here rather than per backend, so "an explicit choice wins" is a rule no backend can
-  /// implement differently — a conformer supplies only the `auto` answer. Do not shadow this on a
-  /// conformer: `describeTree` dispatches to this extension statically, so a shadow would change what
-  /// tests see without changing what reads do.
+  /// The traversal a read actually gets: the explicit request or axbridge's automatic choice.
   static func resolvedTraversal(for options: FBAccessibilityRequestOptions) -> FBAXTraversal {
     options.traversalStrategy.traversal ?? autoTraversal(for: options)
   }
@@ -107,14 +77,9 @@ struct FBAXWriteTarget: Equatable {
   let assertion: FBAXBridgeWriteAssertion?
 }
 
-extension FBAXTreeReader {
+extension FBAXBridgeTreeReader {
 
-  /// `describe` for any tree-reading backend: resolve what the query means, read the raw tree, warn if it
-  /// was truncated, serialize it once with the caller's keys/format/filter, and wrap. A point delegates to
-  /// the backend's targeted `hitTest` and turns an empty result into an error, which is what makes
-  /// `describe(.point:)` throwing while `hitTest` stays optional. Serialize and warn live here — not
-  /// behind `readRawTree` — so they run once per describe and not on a `.marker` wait poll that reads
-  /// without describing.
+  /// Resolves the query, reads the raw tree, serializes it, and attaches response metadata.
   func describeTree(
     _ query: FBAccessibilityElementQuery,
     options: FBAccessibilityRequestOptions

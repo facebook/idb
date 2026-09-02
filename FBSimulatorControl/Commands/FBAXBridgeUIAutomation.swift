@@ -29,7 +29,7 @@ import Foundation
 // what keeps the guest warm — the persistent transport is memoized on the target, so readers built
 // and dropped per read share the same guest.
 // patternlint-disable-next-line unchecked-sendable
-final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
+final class FBAXBridgeUIAutomation: FBAXBridgeTreeReader, @unchecked Sendable {
 
   /// What this read asks the guest to do about accessibility automation mode.
   ///
@@ -84,10 +84,7 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
       persistence: persistence, frontmostMethod: frontmostMethod, automationMode: requestedAutomationMode)
   }
 
-  /// Re-raises the two transport-level failures that are really facts about the application as their
-  /// backend-neutral cases, so a caller holding `any FBUIAutomation` sees the same typed error for a dead
-  /// or wedged app regardless of which backend served the read (the remote backend throws the neutral
-  /// case directly). Every other bridge error is about this transport and passes through untouched.
+  /// Converts application-level bridge failures to the public UI automation errors.
   private func translatingBackendErrors<T>(_ body: () async throws -> T) async throws -> T {
     do {
       return try await body()
