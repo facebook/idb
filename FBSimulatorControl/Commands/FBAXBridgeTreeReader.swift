@@ -251,7 +251,8 @@ extension FBAXBridgeTreeReader {
     var refined: [FBAccessibilityDocumentElement] = []
     refined.reserveCapacity(elements.count)
     for element in elements {
-      refined.append(await refiningInteractable(of: element, ancestors: [], screen: screen, options: options))
+      let result = await refiningInteractable(of: element, ancestors: [], screen: screen, options: options)
+      refined.append(result.element)
     }
     return refined
   }
@@ -261,66 +262,44 @@ extension FBAXBridgeTreeReader {
     ancestors: [FBAXElementIdentity],
     screen: FBAccessibilityScreenInfo?,
     options: FBAccessibilityRequestOptions
-  ) async -> FBAccessibilityDocumentElement {
+  ) async -> (element: FBAccessibilityDocumentElement, identities: Set<FBAXElementIdentity>) {
     var element = element
-    let ancestryForChildren = ancestors + [FBAXElementIdentity(element)]
+    let identity = FBAXElementIdentity(element)
+    let ancestryForChildren = ancestors + [identity]
+    var descendantIdentities: Set<FBAXElementIdentity> = []
     if let children = element.children {
       var refined: [FBAccessibilityDocumentElement] = []
       refined.reserveCapacity(children.count)
       for child in children {
-        refined.append(
-          await refiningInteractable(of: child, ancestors: ancestryForChildren, screen: screen, options: options)
-        )
+        let result = await refiningInteractable(
+          of: child, ancestors: ancestryForChildren, screen: screen, options: options)
+        refined.append(result.element)
+        descendantIdentities.formUnion(result.identities)
       }
       element.children = refined
     }
-    // Screen-edge clipping first: pure geometry, no round trip.
     element = FBAXScreenBoundsClassifier.notingScreenClipping(element, screen: screen)
-    guard options.keys.contains(.occludedBy) else {
-      return element
-    }
-    guard case let .blocked(reasons)?? = element.interactable else {
-      return element
-    }
-    // The guest already hit-tested this element's centre during its walk and sent the answer back with
-    // the tree, so there is nothing to ask for here — only an answer to interpret. That is the whole
-    // difference between one round trip and one per unreachable element.
-    guard let found = element.explainedBy else {
-      return element
-    }
-    let foundIdentity = FBAXElementIdentity(found)
-    // Whether the element that took the touch is a relative decides which answer this is. A relative
-    // means the element was never independently interactive — a label inside its button, or a container
-    // passing through to its child — and the caller should act on that relative. Anything else is
-    // genuinely in the way.
-    let isRelative =
-      ancestors.contains(foundIdentity) || Self.descendantIdentities(of: element).contains(foundIdentity)
-    element.interactable = .some(
-      .blocked(
-        reasons: reasons.map { reason in
-          switch reason {
-          case .occluded(nil), .notHittable:
-            return isRelative ? .handledBy(found) : .occluded(by: found)
-          default:
-            return reason
+    if options.keys.contains(.occludedBy),
+      case let .blocked(reasons)?? = element.interactable,
+      let found = element.explainedBy
+    {
+      let foundIdentity = FBAXElementIdentity(found)
+      let isRelative = ancestors.contains(foundIdentity) || descendantIdentities.contains(foundIdentity)
+      element.interactable = .some(
+        .blocked(
+          reasons: reasons.map { reason in
+            switch reason {
+            case .occluded(nil), .notHittable:
+              return isRelative ? .handledBy(found) : .occluded(by: found)
+            default:
+              return reason
+            }
           }
-        }
+        )
       )
-    )
-    return element
-  }
-
-  /// The identities of everything below `element`, for recognising a hit result as its own descendant.
-  private static func descendantIdentities(of element: FBAccessibilityDocumentElement) -> Set<FBAXElementIdentity> {
-    var identities: Set<FBAXElementIdentity> = []
-    func visit(_ children: [FBAccessibilityDocumentElement]?) {
-      for child in children ?? [] {
-        identities.insert(FBAXElementIdentity(child))
-        visit(child.children)
-      }
     }
-    visit(element.children)
-    return identities
+    descendantIdentities.insert(identity)
+    return (element, descendantIdentities)
   }
 
   /// Resolves a query to the point a write acts on, plus the assertion that keeps a two-step write honest.
