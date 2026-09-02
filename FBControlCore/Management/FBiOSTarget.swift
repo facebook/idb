@@ -104,6 +104,22 @@ import Foundation
   func environmentAdditions() -> [String: String]
 }
 
+/// String representations of `FBiOSTargetState`.
+///
+/// The state enum's numeric values are not stable across releases; these strings are, and are what
+/// gets serialised.
+public enum FBiOSTargetStateString: String, Sendable, CaseIterable {
+  case creating = "Creating"
+  case shutdown = "Shutdown"
+  case booting = "Booting"
+  case booted = "Booted"
+  case shuttingDown = "Shutting Down"
+  case DFU = "DFU"
+  case recovery = "Recovery"
+  case restoreOS = "RestoreOS"
+  case unknown = "Unknown"
+}
+
 // MARK: - State conversions
 
 /// The canonical string representation of the state enum.

@@ -190,7 +190,7 @@ public final class FBSimulatorXCTestCommands {
     }
 
     if simulator.state != .booted {
-      throw FBSimulatorStateError.notBooted(operation: "run tests", state: String(describing: simulator.stateString))
+      throw FBSimulatorStateError.notBooted(operation: "run tests", state: simulator.stateString.rawValue)
     }
 
     try await FBManagedTestRunStrategy.runToCompletion(

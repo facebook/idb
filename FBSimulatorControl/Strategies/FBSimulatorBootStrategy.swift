@@ -28,7 +28,7 @@ public final class FBSimulatorBootStrategy {
       return
     }
     if simulator.state != .shutdown {
-      throw FBSimulatorStateError.notShutdown(operation: "boot", state: String(describing: simulator.stateString))
+      throw FBSimulatorStateError.notShutdown(operation: "boot", state: simulator.stateString.rawValue)
     }
 
     // Boot via CoreSimulator.
