@@ -8,8 +8,7 @@
 import CoreGraphics
 import Foundation
 
-/// The canonical name of a UI-automation backend: the value the `complete` document carries, and the
-/// token a consumer selects a backend by. The simulator layer's backend enum maps to and from these names.
+/// The canonical name of the backend that served a UI-automation request.
 public enum FBUIAutomationBackendName: String, Sendable, Encodable, CaseIterable {
   case ax
   case axBridge = "axbridge"

@@ -407,7 +407,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
   // test keeps a change to the default deliberate.
   func testSelectingTheAxbridgeLaneByNameAssertsAutomationMode() {
     for name in [FBUIAutomationBackendName.axBridge, .axBridgePersistent] {
-      guard case let .axBridge(_, _, automationMode) = FBUIAutomationBackend(name) else {
+      guard case let .axBridge(_, _, automationMode) = FBUIAutomationBackend(resolvedName: name) else {
         return XCTFail("\(name) did not select an axbridge backend")
       }
       XCTAssertEqual(automationMode, true, "selecting \(name) by name asserts automation mode")
@@ -417,8 +417,8 @@ final class FBAXBridgeReadsTests: XCTestCase {
   // The tri-state has to survive the enum, not just the wire. `false` is what reproduces the child-cache
   // fault and what measures the mode's cost, and it must not collapse into "did not ask".
   func testTheAxbridgeBackendCarriesAnExplicitlyDisabledAutomationMode() {
-    guard case let .axBridge(_, _, off) = FBUIAutomationBackend(.axBridge, automationMode: false),
-      case let .axBridge(_, _, unset) = FBUIAutomationBackend(.axBridge, automationMode: nil)
+    guard case let .axBridge(_, _, off) = FBUIAutomationBackend(resolvedName: .axBridge, automationMode: false),
+      case let .axBridge(_, _, unset) = FBUIAutomationBackend(resolvedName: .axBridge, automationMode: nil)
     else {
       return XCTFail("expected axbridge backends")
     }
@@ -1418,7 +1418,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
     // consumer that silently cannot name (or select) it.
     for name in FBUIAutomationBackendName.allCases {
       XCTAssertEqual(
-        FBUIAutomationBackend(name).name, name,
+        FBUIAutomationBackend(resolvedName: name).name, name,
         "\(name.rawValue) must round-trip through the backend it selects"
       )
     }
@@ -1428,7 +1428,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
       "the persistent transport is a distinct backend to a consumer reading timings"
     )
     XCTAssertEqual(
-      FBUIAutomationBackend(.axBridgePersistent, frontmostMethod: .windowServer).name,
+      FBUIAutomationBackend(resolvedName: .axBridgePersistent, frontmostMethod: .windowServer).name,
       .axBridgePersistent,
       "the frontmost method rides the axbridge case without disturbing its name"
     )

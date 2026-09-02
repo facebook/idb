@@ -51,9 +51,7 @@ public enum FBUIAutomationBackend: Sendable, Equatable {
 }
 
 public extension FBUIAutomationBackend {
-  /// How this backend names itself — in the `complete` output document, and to any consumer selecting
-  /// a backend by name. The persistence of the axbridge transport is part of the name because it is
-  /// what a caller chose between, and it is the difference a read's timing profile reflects.
+  /// The backend name reported in the `complete` output document.
   var name: FBUIAutomationBackendName {
     switch self {
     case .accessibility:
@@ -72,16 +70,13 @@ public extension FBUIAutomationBackend {
     }
   }
 
-  /// The backend a name selects — the inverse of `name`, kept beside it so the two directions form one
-  /// bijection in one place; the round-trip is pinned over every case, so a new backend cannot be added
-  /// without teaching both directions. `frontmostMethod` and `automationMode` are carried into the
-  /// axbridge cases, the only ones they apply to; the other backends ignore them.
+  /// Builds the resolved backend represented by `name`.
   ///
   /// `automationMode` defaults to asserting the mode, which is what selecting the axbridge lane by name
   /// means today. A caller that wants the pre-assertion behaviour — reproducing the child-cache fault,
   /// or measuring what the mode costs — passes `false` explicitly rather than getting it by omission.
   init(
-    _ name: FBUIAutomationBackendName,
+    resolvedName name: FBUIAutomationBackendName,
     frontmostMethod: FBAXBridgeFrontmostMethod = .windowServer,
     automationMode: Bool? = true
   ) {

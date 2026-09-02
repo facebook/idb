@@ -45,7 +45,7 @@ final class FBAXBridgeSocketTests: XCTestCase {
       let backend = FBUIAutomationBackend.axBridge(
         persistence: persistence, frontmostMethod: .windowServer, automationMode: true)
       XCTAssertEqual(backend.name, name)
-      XCTAssertEqual(FBUIAutomationBackend(name), backend)
+      XCTAssertEqual(FBUIAutomationBackend(resolvedName: name), backend)
     }
   }
 
