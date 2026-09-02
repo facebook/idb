@@ -14,7 +14,7 @@ private func notificationTypeDescription(_ status: AMRestorableDeviceNotificatio
     return "connected"
   case .disconnected:
     return "disconnected"
-  default:
+  @unknown default:
     return "unknown"
   }
 }
@@ -69,7 +69,9 @@ public final class FBAMRestorableDeviceManager: FBDeviceManager<FBAMRestorableDe
   // MARK: - Notifications
 
   fileprivate func handleNotification(device: AMRestorableDevice, status: AMRestorableDeviceNotificationType) {
-    let deviceState = AMRestorableDeviceState(rawValue: calls.RestorableDeviceGetState(device)) ?? .DFU
+    // Unrecognised values fall to `.unknown`, which `targetState(for:)` maps the same way its
+    // `default` did. `.DFU` would report a real state the device is not in.
+    let deviceState = AMRestorableDeviceState(rawValue: calls.RestorableDeviceGetState(device)) ?? .unknown
     let targetState = FBAMRestorableDevice.targetState(for: deviceState)
     let identifier = String(calls.RestorableDeviceGetECID(device))
     logger.log(
@@ -87,7 +89,7 @@ public final class FBAMRestorableDeviceManager: FBDeviceManager<FBAMRestorableDe
       deviceConnected(device, identifier: identifier, info: info)
     case .disconnected:
       deviceDisconnected(device, identifier: identifier)
-    default:
+    @unknown default:
       logger.log("Unknown Restorable Notification \(status.rawValue)")
     }
   }
@@ -167,7 +169,7 @@ public final class FBAMRestorableDeviceManager: FBDeviceManager<FBAMRestorableDe
       FBDeviceKey.serialNumber: calls.RestorableDeviceCopySerialNumber(device)?.takeRetainedValue() as String? ?? NSNull(),
       FBDeviceKey.deviceName: calls.RestorableDeviceCopyUserFriendlyName(device)?.takeRetainedValue() as String? ?? NSNull(),
       FBDeviceKey.productType: calls.RestorableDeviceCopyProductString(device)?.takeRetainedValue() as String? ?? NSNull(),
-      FBDeviceKey.uniqueChipID: Int(calls.RestorableDeviceGetECID(device)),
+      FBDeviceKey.uniqueChipID: NSNumber(value: calls.RestorableDeviceGetECID(device)),
     ]
   }
 }

@@ -17,6 +17,10 @@ import Foundation
 final class FakeLockdownService: NSObject {
   let serviceName: String
 
+  /// Answers every `receiveMessage` that `messageReplies` does not, so a test scripting a service
+  /// it calls repeatedly does not have to predict how many times.
+  var repeatingReply: Any?
+
   /// What the device replies to each `receiveMessage`, consumed in order. A test scripts the far
   /// side of the exchange here.
   var messageReplies: [Any] = []
@@ -45,7 +49,7 @@ final class FakeLockdownService: NSObject {
   }
 
   fileprivate func nextReply() -> Any? {
-    messageReplies.isEmpty ? nil : messageReplies.removeFirst()
+    messageReplies.isEmpty ? repeatingReply : messageReplies.removeFirst()
   }
 
   fileprivate func send(bytes: Data) {
