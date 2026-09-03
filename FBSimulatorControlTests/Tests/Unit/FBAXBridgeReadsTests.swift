@@ -584,6 +584,25 @@ final class FBAXBridgeReadsTests: XCTestCase {
     XCTAssertNil(FBAXTreeWalk.frameCenter(inElements: elements, markerValue: "general", key: .label))
   }
 
+  func testAMarkerWriteWithIgnoreCaseStillResolvesCaseSensitively() async throws {
+    // BUG: `writeTarget` drops the query's `ignoresCase`, so a marker explicitly asking for a
+    // case-insensitive match still resolves case-sensitively. Flipped in the following feature
+    // commit, which threads the flag through to the shared matcher.
+    do {
+      _ = try await Self.framedReader().writeTarget(
+        for: .marker(value: "general", key: .label, depth: 10, ignoresCase: true),
+        operation: "A tap"
+      )
+      XCTFail("a case-insensitive marker must not resolve while writes stay case-sensitive")
+    } catch let error as FBUIAutomationError {
+      guard case let .elementNotFound(_, key, value) = error else {
+        return XCTFail("expected elementNotFound, got \(error)")
+      }
+      XCTAssertEqual(key, "AXLabel")
+      XCTAssertEqual(value, "general")
+    }
+  }
+
   func testEmptyMarkerKeepsMatchingTheFirstElementCarryingTheKey() {
     // Every value contains the empty string, so an empty marker has always resolved to the first
     // element with the searched key at all. `FBAccessibilityMatch` refuses to represent that, and the
