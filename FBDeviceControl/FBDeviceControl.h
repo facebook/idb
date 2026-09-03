@@ -6,7 +6,6 @@
  */
 
 #import <FBDeviceControl/FBAMDefines.h>
-#import <FBDeviceControl/FBDevice.h>
 #import <FBDeviceControl/FBDeviceCommands.h>
 #import <FBDeviceControl/FBInstrumentsClient.h>
 
