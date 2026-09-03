@@ -87,7 +87,7 @@ public final class FBDeviceDebuggerCommands {
     if device.osVersion.version.majorVersion >= 17 {
       throw FBDeviceDebuggerError.unsupportedOSVersion(version: device.osVersion.versionString)
     }
-    let commands = try await lldbBootstrapCommandsAsync(forApplicationAtPath: application.path, port: port)
+    let commands = try await lldbBootstrapCommands(forApplicationAtPath: application.path, port: port)
     let server = FBDeviceDebugServer.debugServer(
       forServiceConnection: connectToDebugServer(),
       port: port,
@@ -100,14 +100,14 @@ public final class FBDeviceDebuggerCommands {
 
   // MARK: - Private
 
-  private func lldbBootstrapCommandsAsync(forApplicationAtPath path: String, port: in_port_t) async throws -> [String] {
+  private func lldbBootstrapCommands(forApplicationAtPath path: String, port: in_port_t) async throws -> [String] {
     guard device != nil else {
       throw FBDeviceNilError.deviceNil
     }
     let bundle = try FBBundleDescriptor.bundle(fromPath: path)
     let platformSelect = try platformSelectCommand()
     let localTarget = "target create '\(path)'"
-    let remote = try await remoteTargetAsync(forBundleID: bundle.identifier)
+    let remote = try await remoteTarget(forBundleID: bundle.identifier)
     let processConnect = "process connect connect://localhost:\(port)"
     return [platformSelect, localTarget, remote, processConnect]
   }
@@ -130,7 +130,7 @@ public final class FBDeviceDebuggerCommands {
     }
   }
 
-  private func remoteTargetAsync(forBundleID bundleID: String) async throws -> String {
+  private func remoteTarget(forBundleID bundleID: String) async throws -> String {
     guard let device else {
       throw FBDeviceNilError.deviceNil
     }

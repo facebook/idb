@@ -72,14 +72,14 @@ public final class FBDeviceActivationCommands {
       throw FBDeviceNilError.deviceNil
     }
     let logger = device.logger
-    let state = try await activationStateAsync()
+    let state = try await activationState()
     if state == FBDeviceActivationState.activated {
       logger.log("Device is already activated, nothing to activate")
       return
     }
     if state == FBDeviceActivationState.unactivated {
       logger.log("Device is not activated, starting activation")
-      try await performActivationAsync()
+      try await performActivation()
       return
     }
     throw FBDeviceActivationError.invalidActivationState(state: String(describing: state))
@@ -87,27 +87,27 @@ public final class FBDeviceActivationCommands {
 
   // MARK: - Private
 
-  private func confirmActivationStateAsync(_ activationState: FBDeviceActivationState) async throws {
-    let actual = try await activationStateAsync()
+  private func confirmActivationState(_ activationState: FBDeviceActivationState) async throws {
+    let actual = try await self.activationState()
     if activationState != actual {
       throw FBDeviceActivationError.activationStateMismatch(expected: String(describing: activationState), actual: String(describing: actual))
     }
   }
 
-  private func performActivationAsync() async throws {
+  private func performActivation() async throws {
     guard let device else {
       throw FBDeviceNilError.deviceNil
     }
     let logger = device.logger
-    try await confirmActivationStateAsync(FBDeviceActivationState.unactivated)
+    try await confirmActivationState(FBDeviceActivationState.unactivated)
     logger.log("Building DRM Handshake Payload")
-    let drmHandshakePayload = try await buildDRMHandshakePayloadAsync()
+    let drmHandshakePayload = try await buildDRMHandshakePayload()
     logger.log("Obtaining Activation record from DRM Handshake Payload")
-    let activationRecordPayload = try await activationRecordFromDRMHandshakePayloadAsync(drmHandshakePayload)
+    let activationRecordPayload = try await activationRecordFromDRMHandshakePayload(drmHandshakePayload)
     logger.log("Performing activation from activation record")
-    try await activateFromActivationRecordAsync(activationRecordPayload)
+    try await activateFromActivationRecord(activationRecordPayload)
     logger.log("Confirming activation state is Activated")
-    try await confirmActivationStateAsync(FBDeviceActivationState.activated)
+    try await confirmActivationState(FBDeviceActivationState.activated)
   }
 
   private func withMobileActivationService<T>(_ body: (FBAMDServiceConnection) async throws -> T) async throws -> T {
@@ -117,7 +117,7 @@ public final class FBDeviceActivationCommands {
     return try await device.withServiceConnection("com.apple.mobileactivationd", body)
   }
 
-  private func activationStateAsync() async throws -> FBDeviceActivationState {
+  private func activationState() async throws -> FBDeviceActivationState {
     try await withMobileActivationService { connection in
       let response = try connection.sendAndReceiveMessage(["Command": "GetActivationStateRequest"])
       guard let responseDict = response as? NSDictionary,
@@ -129,7 +129,7 @@ public final class FBDeviceActivationCommands {
     }
   }
 
-  private func buildDRMHandshakePayloadAsync() async throws -> Data {
+  private func buildDRMHandshakePayload() async throws -> Data {
     try await withMobileActivationService { connection in
       let response = try connection.sendAndReceiveMessage(["Command": "CreateTunnel1SessionInfoRequest"])
       guard let responseDict = response as? NSDictionary,
@@ -137,11 +137,11 @@ public final class FBDeviceActivationCommands {
       else {
         throw FBDeviceActivationError.noValueInResponse(response: String(describing: response))
       }
-      return try await Self.mobileActivationRequestAsync(forRequestPayload: responsePayload)
+      return try await Self.mobileActivationRequest(forRequestPayload: responsePayload)
     }
   }
 
-  private func activationRecordFromDRMHandshakePayloadAsync(_ handshakePayload: Data) async throws -> Data {
+  private func activationRecordFromDRMHandshakePayload(_ handshakePayload: Data) async throws -> Data {
     try await withMobileActivationService { connection in
       let response = try connection.sendAndReceiveMessage(["Command": "CreateTunnel1ActivationInfoRequest", "Value": handshakePayload])
       guard let responseDict = response as? NSDictionary,
@@ -149,17 +149,17 @@ public final class FBDeviceActivationCommands {
       else {
         throw FBDeviceActivationError.noValueInResponse(response: String(describing: response))
       }
-      return try await Self.mobileActivationActivateAsync(forRequestPayload: responsePayload)
+      return try await Self.mobileActivationActivate(forRequestPayload: responsePayload)
     }
   }
 
-  private func activateFromActivationRecordAsync(_ activationRecord: Data) async throws {
+  private func activateFromActivationRecord(_ activationRecord: Data) async throws {
     try await withMobileActivationService { connection in
       _ = try connection.sendAndReceiveMessage(["Command": "HandleActivationInfoWithSessionRequest", "Value": activationRecord])
     }
   }
 
-  private static func mobileActivationRequestAsync(forRequestPayload requestPayload: [String: Any]) async throws -> Data {
+  private static func mobileActivationRequest(forRequestPayload requestPayload: [String: Any]) async throws -> Data {
     let body = try PropertyListSerialization.data(fromPropertyList: requestPayload, format: .xml, options: 0)
 
     let urlString = ProcessInfo.processInfo.environment["IDB_DRM_HANDSHAKE_URL"] ?? DefaultDRMHandshakeURL
@@ -173,7 +173,7 @@ public final class FBDeviceActivationCommands {
     request.setValue("application/xml", forHTTPHeaderField: "Accept")
     request.setValue("idb (https://github.com/facebook/idb/blob/main/FBDeviceControl/Commands/FBDeviceActivationCommands.m)", forHTTPHeaderField: "User-Agent")
 
-    let (responseData, httpResponse) = try await dataAsync(for: request)
+    let (responseData, httpResponse) = try await data(for: request)
     if httpResponse.statusCode != 200 {
       throw FBDeviceActivationError.non200Response(response: String(describing: httpResponse))
     }
@@ -181,7 +181,7 @@ public final class FBDeviceActivationCommands {
     return responseData
   }
 
-  private static func mobileActivationActivateAsync(forRequestPayload requestPayload: [String: Any]) async throws -> Data {
+  private static func mobileActivationActivate(forRequestPayload requestPayload: [String: Any]) async throws -> Data {
     let payloadData = try PropertyListSerialization.data(fromPropertyList: requestPayload, format: .xml, options: 0)
 
     // Multipart info
@@ -198,7 +198,7 @@ public final class FBDeviceActivationCommands {
     request.setValue(contentType, forHTTPHeaderField: "Content-Type")
     request.setValue("idb (https://github.com/facebook/idb/blob/main/FBDeviceControl/Commands/FBDeviceActivationCommands.m)", forHTTPHeaderField: "User-Agent")
 
-    let (responseData, httpResponse) = try await dataAsync(for: request)
+    let (responseData, httpResponse) = try await data(for: request)
     if httpResponse.statusCode != 200 {
       throw FBDeviceActivationError.non200Response(response: String(describing: httpResponse))
     }
@@ -211,7 +211,7 @@ public final class FBDeviceActivationCommands {
     return try PropertyListSerialization.data(fromPropertyList: activationRecord, format: .xml, options: 0)
   }
 
-  private static func dataAsync(for request: URLRequest) async throws -> (Data, HTTPURLResponse) {
+  private static func data(for request: URLRequest) async throws -> (Data, HTTPURLResponse) {
     try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<(Data, HTTPURLResponse), Error>) in
       let task = URLSession.shared.dataTask(with: request) { responseData, response, error in
         if let error {

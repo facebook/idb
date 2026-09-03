@@ -82,16 +82,16 @@ public final class FBDeviceDeveloperDiskImageCommands: DeveloperDiskImageCommand
   // MARK: DeveloperDiskImageCommands
 
   public func mountedDiskImages() async throws -> [FBDeveloperDiskImage] {
-    let mountInfo = try await mountInfoToDiskImageAsync()
+    let mountInfo = try await mountInfoToDiskImage()
     return Array(mountInfo.values)
   }
 
   public func mountDiskImage(_ diskImage: FBDeveloperDiskImage) async throws -> FBDeveloperDiskImage {
-    try await mountDeveloperDiskImageAsync(diskImage, imageType: DiskImageTypeDeveloper)
+    try await mountDeveloperDiskImage(diskImage, imageType: DiskImageTypeDeveloper)
   }
 
   public func unmountDiskImage(_ diskImage: FBDeveloperDiskImage) async throws {
-    let entries = try await mountedImageEntriesAsync()
+    let entries = try await mountedImageEntries()
     for mountEntry in entries {
       let mountSignature = mountEntry[ImageSignatureKey] as? Data
       if mountSignature != diskImage.signature {
@@ -100,7 +100,7 @@ public final class FBDeviceDeveloperDiskImageCommands: DeveloperDiskImageCommand
       guard let mountPath = mountEntry[MountPathKey] as? String else {
         throw FBDeviceDiskImageError.missingMountPath(key: MountPathKey, entry: String(describing: mountEntry))
       }
-      try await unmountDiskImageAtPathAsync(mountPath)
+      try await unmountDiskImageAtPath(mountPath)
       return
     }
     throw FBDeviceDiskImageError.imageNotMounted(imageDescription: String(describing: diskImage))
@@ -124,14 +124,14 @@ public final class FBDeviceDeveloperDiskImageCommands: DeveloperDiskImageCommand
       forImages: diskImages.availableDiskImages,
       targetVersion: targetVersion,
       logger: device.logger)
-    return try await mountDeveloperDiskImageAsync(diskImage, imageType: DiskImageTypeDeveloper)
+    return try await mountDeveloperDiskImage(diskImage, imageType: DiskImageTypeDeveloper)
   }
 
   // MARK: - Private
 
-  private func mountInfoToDiskImageAsync() async throws -> [NSDictionary: FBDeveloperDiskImage] {
+  private func mountInfoToDiskImage() async throws -> [NSDictionary: FBDeveloperDiskImage] {
     let logger = device?.logger
-    let entries = try await mountedImageEntriesAsync()
+    let entries = try await mountedImageEntries()
     let images = diskImages.availableDiskImages
     var imagesBySignature: [Data: FBDeveloperDiskImage] = [:]
     for image in images {
@@ -150,7 +150,7 @@ public final class FBDeviceDeveloperDiskImageCommands: DeveloperDiskImageCommand
     return mountEntryToDiskImage
   }
 
-  private func mountedImageEntriesAsync() async throws -> [[String: Any]] {
+  private func mountedImageEntries() async throws -> [[String: Any]] {
     guard let device else {
       throw FBDeviceNilError.deviceNil
     }
@@ -172,8 +172,8 @@ public final class FBDeviceDeveloperDiskImageCommands: DeveloperDiskImageCommand
     }
   }
 
-  private func signatureToDiskImageOfMountedDisksAsync() async throws -> [Data: FBDeveloperDiskImage] {
-    let mountInfo = try await mountInfoToDiskImageAsync()
+  private func signatureToDiskImageOfMountedDisks() async throws -> [Data: FBDeveloperDiskImage] {
+    let mountInfo = try await mountInfoToDiskImage()
     var signatureToDiskImage: [Data: FBDeveloperDiskImage] = [:]
     for image in mountInfo.values {
       signatureToDiskImage[image.signature] = image
@@ -181,17 +181,17 @@ public final class FBDeviceDeveloperDiskImageCommands: DeveloperDiskImageCommand
     return signatureToDiskImage
   }
 
-  private func mountDeveloperDiskImageAsync(_ diskImage: FBDeveloperDiskImage, imageType: String) async throws -> FBDeveloperDiskImage {
+  private func mountDeveloperDiskImage(_ diskImage: FBDeveloperDiskImage, imageType: String) async throws -> FBDeveloperDiskImage {
     let logger = device?.logger
-    let signatureToDiskImage = try await signatureToDiskImageOfMountedDisksAsync()
+    let signatureToDiskImage = try await signatureToDiskImageOfMountedDisks()
     if signatureToDiskImage[diskImage.signature] != nil {
       logger?.log("Disk Image \(diskImage) is already mounted, avoiding re-mounting it")
       return diskImage
     }
-    return try await performDiskImageMountAsync(diskImage, imageType: imageType)
+    return try await performDiskImageMount(diskImage, imageType: imageType)
   }
 
-  private func performDiskImageMountAsync(_ diskImage: FBDeveloperDiskImage, imageType: String) async throws -> FBDeveloperDiskImage {
+  private func performDiskImageMount(_ diskImage: FBDeveloperDiskImage, imageType: String) async throws -> FBDeveloperDiskImage {
     guard let device else {
       throw FBDeviceNilError.deviceNil
     }
@@ -219,7 +219,7 @@ public final class FBDeviceDeveloperDiskImageCommands: DeveloperDiskImageCommand
     }
   }
 
-  private func unmountDiskImageAtPathAsync(_ mountPath: String) async throws {
+  private func unmountDiskImageAtPath(_ mountPath: String) async throws {
     guard let device else {
       throw FBDeviceNilError.deviceNil
     }

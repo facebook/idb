@@ -307,7 +307,7 @@ private class FBDeviceFileCommands_DiskImages: AsyncFileContainer {
     if !path.hasPrefix(MountRootPath) {
       throw FBDeviceFileContainerError.removeOutsideMounts(path: path)
     }
-    let mountedImages = try await mountedDiskImagesAsync()
+    let mountedImages = try await mountedDiskImages()
     guard let image = mountedImages[path] else {
       throw FBDeviceFileContainerError.notAMountedImage(path: path, available: Array(mountedImages.keys))
     }
@@ -315,7 +315,7 @@ private class FBDeviceFileCommands_DiskImages: AsyncFileContainer {
   }
 
   func contents(ofDirectory path: String) async throws -> [String] {
-    let diskImagePaths = try await allDiskImagePathsAsync()
+    let diskImagePaths = try await allDiskImagePaths()
     return FBDeviceFileCommands_DiskImages.traverseAndDescendPaths(diskImagePaths, path: path)
   }
 
@@ -330,7 +330,7 @@ private class FBDeviceFileCommands_DiskImages: AsyncFileContainer {
     return mapping
   }
 
-  private func mountedDiskImagesAsync() async throws -> [String: FBDeveloperDiskImage] {
+  private func mountedDiskImages() async throws -> [String: FBDeveloperDiskImage] {
     let mountedImages = try await commands.mountedDiskImages()
     var imagesByPath: [String: FBDeveloperDiskImage] = [:]
     for image in mountedImages {
@@ -340,8 +340,8 @@ private class FBDeviceFileCommands_DiskImages: AsyncFileContainer {
     return imagesByPath
   }
 
-  private func allDiskImagePathsAsync() async throws -> [String] {
-    let mountedDiskImages = try await mountedDiskImagesAsync()
+  private func allDiskImagePaths() async throws -> [String] {
+    let mountedDiskImages = try await mountedDiskImages()
     var paths: [String] = []
     let sortedKeys = self.mountableDiskImagesByPath.sorted { pair1, pair2 in
       let v1 = pair1.value.version

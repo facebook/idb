@@ -77,7 +77,7 @@ public final class FBDeviceCrashLogCommands {
       try await store.nextCrashLog(forMatchingPredicate: predicate)
     }
     _ = fbFutureFromAsync { [self] in
-      try await ingestAllCrashLogsAsync(useCache: false) as NSArray
+      try await ingestAllCrashLogs(useCache: false) as NSArray
     }
     return try await bridgeFBFuture(next)
   }
@@ -88,7 +88,7 @@ public final class FBDeviceCrashLogCommands {
     guard device != nil else {
       throw FBDeviceNilError.deviceNil
     }
-    _ = try await ingestAllCrashLogsAsync(useCache: useCache)
+    _ = try await ingestAllCrashLogs(useCache: useCache)
     return store.ingestedCrashLogs(matchingPredicate: predicate)
   }
 
@@ -97,16 +97,16 @@ public final class FBDeviceCrashLogCommands {
       throw FBDeviceNilError.deviceNil
     }
     let logger = device.logger.withName("crash_remove")
-    _ = try await ingestAllCrashLogsAsync(useCache: true)
+    _ = try await ingestAllCrashLogs(useCache: true)
     let pruned = store.pruneCrashLogs(matchingPredicate: predicate)
     logger.log("Pruned \(FBCollectionInformation.oneLineDescription(from: pruned.map(\.name))) logs from local cache")
-    return try await removeCrashLogsFromDeviceAsync(pruned, logger: logger)
+    return try await removeCrashLogsFromDevice(pruned, logger: logger)
   }
 
   // MARK: - Private
 
   @discardableResult
-  private func ingestAllCrashLogsAsync(useCache: Bool) async throws -> [FBCrashLogInfo] {
+  private func ingestAllCrashLogs(useCache: Bool) async throws -> [FBCrashLogInfo] {
     if hasPerformedInitialIngestion && useCache {
       return []
     }
@@ -114,7 +114,7 @@ public final class FBDeviceCrashLogCommands {
       throw FBDeviceNilError.deviceNil
     }
     let logger = device.logger
-    _ = try await moveCrashReportsAsync()
+    _ = try await moveCrashReports()
     return try await withCrashReportFileConnection { afc in
       if !self.hasPerformedInitialIngestion {
         self.store.ingestAllExistingInDirectory()
@@ -134,7 +134,7 @@ public final class FBDeviceCrashLogCommands {
     }
   }
 
-  private func removeCrashLogsFromDeviceAsync(_ crashesToRemove: [FBCrashLogInfo], logger: (any FBControlCoreLogger)?) async throws -> [FBCrashLogInfo] {
+  private func removeCrashLogsFromDevice(_ crashesToRemove: [FBCrashLogInfo], logger: (any FBControlCoreLogger)?) async throws -> [FBCrashLogInfo] {
     guard device != nil else {
       throw FBDeviceNilError.deviceNil
     }
@@ -166,7 +166,7 @@ public final class FBDeviceCrashLogCommands {
     return crash
   }
 
-  private func moveCrashReportsAsync() async throws -> String {
+  private func moveCrashReports() async throws -> String {
     guard let device else {
       throw FBDeviceNilError.deviceNil
     }
