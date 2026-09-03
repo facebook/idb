@@ -125,7 +125,7 @@ public final class CompanionManager {
   /// Ensures a companion exists for `udid` and records it. `idleShutdownTime`, if
   /// set, is forwarded to a newly spawned companion as `--idle-shutdown-time`.
   @discardableResult
-  public func spawnCompanionServer(udid: String, only: String? = nil, idleShutdownTime: Int? = nil) async throws -> CompanionInfo {
+  func spawnCompanionServer(udid: String, only: String? = nil, idleShutdownTime: Int? = nil) async throws -> CompanionInfo {
     let path = paths.companionSocketPath(forUDID: udid)
     let info: CompanionInfo
     if CompanionConnectivity.isDomainSocketBound(path: path) {

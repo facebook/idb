@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import CompanionDiscovery
+@testable import CompanionDiscovery
 import Darwin
 import Foundation
 import Testing

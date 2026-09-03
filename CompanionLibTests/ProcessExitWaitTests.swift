@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import CompanionLib
+@testable import CompanionLib
 import Foundation
 import Testing
 

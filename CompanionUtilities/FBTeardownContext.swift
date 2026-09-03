@@ -99,7 +99,7 @@ public final class FBTeardownContext: Sendable {
   }
 
   /// This method should be called explicitly. Relying on deinit is programmer error.
-  public func performCleanup() async throws {
+  func performCleanup() async throws {
     guard let contextImpl else {
       throw FBTeardownContextError.emptyContext
     }

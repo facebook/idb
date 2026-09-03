@@ -15,7 +15,7 @@ import Foundation
 ///
 /// Use `withFBFutureContext` instead when the resource lifetime should be
 /// scoped to a single closure.
-public func bridgeFBFutureContext<T: AnyObject>(_ futureContext: FBFutureContext<T>) async throws -> T {
+func bridgeFBFutureContext<T: AnyObject>(_ futureContext: FBFutureContext<T>) async throws -> T {
   try FBTeardownContext.current.addCleanup {
     let cleanupFuture = futureContext.onQueue(BridgeQueues.futureSerialFullfillmentQueue) { (_: Any, teardown: FBMutableFuture<NSNull>) -> NSNull in
       teardown.resolve(withResult: NSNull())
@@ -40,7 +40,7 @@ public enum FBFutureBridgeError: Error, LocalizedError {
 
 /// `FBFutureContext` array overload that bridges the resolved `NSArray` to `[T]`,
 /// throwing when the future resolved with elements of another type.
-public func bridgeFBFutureContextArray<T>(_ futureContext: FBFutureContext<NSArray>) async throws -> [T] {
+func bridgeFBFutureContextArray<T>(_ futureContext: FBFutureContext<NSArray>) async throws -> [T] {
   let array = try await bridgeFBFutureContext(futureContext)
   guard let typed = array as? [T] else {
     throw FBFutureBridgeError.unexpectedArrayElementType(expected: String(describing: T.self), array: array)

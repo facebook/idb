@@ -229,19 +229,19 @@ public enum IDB {
 
     /// Captures the full screen and returns it as a `CGImage` (nothing is written
     /// to disk), or nil on failure.
-    public func captureImage() -> CGImage? {
+    func captureImage() -> CGImage? {
       imageResult(.full)
     }
 
     /// Captures `rect` (in screen points) and returns it as a `CGImage`, or nil on
     /// failure.
-    public func captureImage(rect: CGRect) -> CGImage? {
+    func captureImage(rect: CGRect) -> CGImage? {
       imageResult(.rect(rect))
     }
 
     /// Captures the frontmost-app accessibility element whose label contains
     /// `label` and returns it as a `CGImage`, or nil on failure.
-    public func captureImage(label: String) -> CGImage? {
+    func captureImage(label: String) -> CGImage? {
       imageResult(.element(label: label))
     }
 

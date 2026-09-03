@@ -23,7 +23,7 @@ public struct CompanionPaths {
   /// the v1 `idb_companion` server, or the v2 `idb2` CLI (whose `companion`
   /// subcommand runs the server). Both are installed at these conventional paths
   /// by the idb RPM.
-  public var defaultCompanionExecutable: String {
+  var defaultCompanionExecutable: String {
     switch version {
     case .v1: return "/usr/local/bin/idb_companion"
     case .v2: return "/usr/local/bin/idb2"
@@ -44,7 +44,7 @@ public struct CompanionPaths {
   }
 
   /// Directory holding per-target companion logs. (`IDB_LOGS_PATH`)
-  public var logsDirectory: String {
+  var logsDirectory: String {
     (baseDirectory as NSString).appendingPathComponent("logs")
   }
 
@@ -64,7 +64,7 @@ public struct CompanionPaths {
   }
 
   /// Creates `logsDirectory` if needed.
-  public func ensureLogsDirectory() throws {
+  func ensureLogsDirectory() throws {
     try FileManager.default.createDirectory(atPath: logsDirectory, withIntermediateDirectories: true)
   }
 }

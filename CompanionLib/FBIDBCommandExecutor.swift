@@ -572,7 +572,7 @@ public final class FBIDBCommandExecutor {
     }
   }
 
-  public func push_file_from_tar(_ tarData: Data, to_path destinationPath: String, containerType: String?) async throws {
+  func push_file_from_tar(_ tarData: Data, to_path destinationPath: String, containerType: String?) async throws {
     try await withFBFutureContext(temporaryDirectory.withArchiveExtracted(tarData)) { extractDir in
       let paths = try FileManager.default.contentsOfDirectory(at: extractDir as URL, includingPropertiesForKeys: [.isDirectoryKey], options: [])
       try await self.push_files(paths, to_path: destinationPath, containerType: containerType)
@@ -593,7 +593,7 @@ public final class FBIDBCommandExecutor {
     }
   }
 
-  public func pull_file(_ path: String, containerType: String?) async throws -> Data {
+  func pull_file(_ path: String, containerType: String?) async throws -> Data {
     return try await withFBFutureContext(temporaryDirectory.withTemporaryDirectory()) { url in
       let tempPath = ((url as URL).path as NSString).appendingPathComponent((path as NSString).lastPathComponent)
       try await self.withFileContainer(for: containerType) { container in

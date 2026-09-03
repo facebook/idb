@@ -9,11 +9,11 @@ import FBControlCore
 import Foundation
 import XCTestBootstrap
 
-public let IdbTestBundlesFolder: String = "idb-test-bundles"
-public let IdbApplicationsFolder: String = "idb-applications"
-public let IdbDylibsFolder: String = "idb-dylibs"
-public let IdbDsymsFolder: String = "idb-dsyms"
-public let IdbFrameworksFolder: String = "idb-frameworks"
+let IdbTestBundlesFolder: String = "idb-test-bundles"
+let IdbApplicationsFolder: String = "idb-applications"
+let IdbDylibsFolder: String = "idb-dylibs"
+let IdbDsymsFolder: String = "idb-dsyms"
+let IdbFrameworksFolder: String = "idb-frameworks"
 
 // MARK: - FBInstalledArtifact
 
@@ -98,7 +98,7 @@ public class FBIDBStorage {
     }
   }
 
-  public func asFileContainer() -> any AsyncFileContainer {
+  func asFileContainer() -> any AsyncFileContainer {
     FBFileContainer.fileContainer(forBasePath: basePath.path)
   }
 
@@ -118,11 +118,11 @@ public class FBIDBStorage {
 
 public final class FBFileStorage: FBIDBStorage {
 
-  public func saveFile(_ url: URL) throws -> FBInstalledArtifact {
+  func saveFile(_ url: URL) throws -> FBInstalledArtifact {
     return try copyInto(basePath, from: url)
   }
 
-  public func saveFileInUniquePath(_ url: URL) throws -> FBInstalledArtifact {
+  func saveFileInUniquePath(_ url: URL) throws -> FBInstalledArtifact {
     var baseURL = basePath
     baseURL = baseURL.appendingPathComponent(NSUUID().uuidString)
     try FileManager.default.createDirectory(at: baseURL, withIntermediateDirectories: true, attributes: nil)
@@ -148,7 +148,7 @@ public class FBBundleStorage: FBIDBStorage {
     super.init(target: target, basePath: basePath, queue: queue, logger: logger)
   }
 
-  public func checkArchitecture(_ bundle: FBBundleDescriptor) throws {
+  func checkArchitecture(_ bundle: FBBundleDescriptor) throws {
     guard let binary = bundle.binary else {
       throw FBIDBStorageError.bundleMissingBinary(name: bundle.name)
     }
@@ -164,21 +164,21 @@ public class FBBundleStorage: FBIDBStorage {
     }
   }
 
-  public func saveBundle(_ bundle: FBBundleDescriptor) -> FBFuture<FBInstalledArtifact> {
+  func saveBundle(_ bundle: FBBundleDescriptor) -> FBFuture<FBInstalledArtifact> {
     return saveBundle(bundle, usingSymlink: true, skipSigningBundles: false)
   }
 
-  public func saveBundle(_ bundle: FBBundleDescriptor, usingSymlink useSymlink: Bool, skipSigningBundles: Bool) -> FBFuture<FBInstalledArtifact> {
+  func saveBundle(_ bundle: FBBundleDescriptor, usingSymlink useSymlink: Bool, skipSigningBundles: Bool) -> FBFuture<FBInstalledArtifact> {
     fbFutureFromAsync { [self] in
       try await saveBundleAsync(bundle, usingSymlink: useSymlink, skipSigningBundles: skipSigningBundles)
     }
   }
 
-  public func saveBundleAsync(_ bundle: FBBundleDescriptor) async throws -> FBInstalledArtifact {
+  func saveBundleAsync(_ bundle: FBBundleDescriptor) async throws -> FBInstalledArtifact {
     return try await saveBundleAsync(bundle, usingSymlink: true, skipSigningBundles: false)
   }
 
-  public func saveBundleAsync(_ bundle: FBBundleDescriptor, usingSymlink useSymlink: Bool, skipSigningBundles: Bool) async throws -> FBInstalledArtifact {
+  func saveBundleAsync(_ bundle: FBBundleDescriptor, usingSymlink useSymlink: Bool, skipSigningBundles: Bool) async throws -> FBInstalledArtifact {
     try checkArchitecture(bundle)
 
     let storageDirectory = basePath.appendingPathComponent(bundle.identifier)
@@ -210,7 +210,7 @@ public class FBBundleStorage: FBIDBStorage {
     return Set(contents ?? [])
   }
 
-  public var persistedBundles: [String: FBBundleDescriptor] {
+  var persistedBundles: [String: FBBundleDescriptor] {
     var mapping: [String: FBBundleDescriptor] = [:]
     guard let enumerator = FileManager.default.enumerator(at: basePath, includingPropertiesForKeys: nil, options: .skipsSubdirectoryDescendants, errorHandler: nil) else {
       return mapping
@@ -257,13 +257,13 @@ private let XctestRunExtension = "xctestrun"
 
 public final class FBXCTestBundleStorage: FBBundleStorage {
 
-  public func saveBundleOrTestRunFromBaseDirectory(_ baseDirectory: URL, skipSigningBundles: Bool) -> FBFuture<FBInstalledArtifact> {
+  func saveBundleOrTestRunFromBaseDirectory(_ baseDirectory: URL, skipSigningBundles: Bool) -> FBFuture<FBInstalledArtifact> {
     fbFutureFromAsync { [self] in
       try await saveBundleOrTestRunFromBaseDirectoryAsync(baseDirectory, skipSigningBundles: skipSigningBundles)
     }
   }
 
-  public func saveBundleOrTestRunFromBaseDirectoryAsync(_ baseDirectory: URL, skipSigningBundles: Bool) async throws -> FBInstalledArtifact {
+  func saveBundleOrTestRunFromBaseDirectoryAsync(_ baseDirectory: URL, skipSigningBundles: Bool) async throws -> FBInstalledArtifact {
     let buckets = try FBStorageUtils.bucketFiles(withExtensions: Set([XctestExtension, XctestRunExtension]), inDirectory: baseDirectory)
     let xctestBucket = buckets[XctestExtension]?.sorted(by: { $0.path < $1.path }) ?? []
     let xctestBundleURL = xctestBucket.first
@@ -288,13 +288,13 @@ public final class FBXCTestBundleStorage: FBBundleStorage {
     throw FBIDBStorageError.testArtifactNotSaved(xctestDescription: String(describing: xctestBundleURL), xctestrunDescription: String(describing: xctestrunURL))
   }
 
-  public func saveBundleOrTestRun(_ filePath: URL, skipSigningBundles: Bool) -> FBFuture<FBInstalledArtifact> {
+  func saveBundleOrTestRun(_ filePath: URL, skipSigningBundles: Bool) -> FBFuture<FBInstalledArtifact> {
     fbFutureFromAsync { [self] in
       try await saveBundleOrTestRunAsync(filePath, skipSigningBundles: skipSigningBundles)
     }
   }
 
-  public func saveBundleOrTestRunAsync(_ filePath: URL, skipSigningBundles: Bool) async throws -> FBInstalledArtifact {
+  func saveBundleOrTestRunAsync(_ filePath: URL, skipSigningBundles: Bool) async throws -> FBInstalledArtifact {
     if filePath.pathExtension == XctestExtension {
       return try await saveTestBundleAsync(filePath, usingSymlink: true, skipSigningBundles: skipSigningBundles)
     }
@@ -304,7 +304,7 @@ public final class FBXCTestBundleStorage: FBBundleStorage {
     throw FBIDBStorageError.invalidPathExtension(pathExtension: filePath.pathExtension, path: filePath)
   }
 
-  public func listTestDescriptors() throws -> [FBXCTestDescriptor] {
+  func listTestDescriptors() throws -> [FBXCTestDescriptor] {
     var testDescriptors: [FBXCTestDescriptor] = []
 
     let testURLs = try listTestBundles()
@@ -332,7 +332,7 @@ public final class FBXCTestBundleStorage: FBBundleStorage {
     return testDescriptors
   }
 
-  public func testDescriptor(withID bundleId: String) throws -> FBXCTestDescriptor {
+  func testDescriptor(withID bundleId: String) throws -> FBXCTestDescriptor {
     let testDescriptors = try listTestDescriptors()
     for testDescriptor in testDescriptors {
       if testDescriptor.testBundleID == bundleId {
@@ -342,7 +342,7 @@ public final class FBXCTestBundleStorage: FBBundleStorage {
     throw FBIDBStorageError.testNotFoundByID(bundleID: bundleId)
   }
 
-  public func getXCTestRunDescriptors(from xctestrunURL: URL) throws -> [FBXCTestDescriptor] {
+  func getXCTestRunDescriptors(from xctestrunURL: URL) throws -> [FBXCTestDescriptor] {
     let contentDict = try FBXCTestRunFileReader.readContents(of: xctestrunURL, expandPlaceholderWithPath: target.auxillaryDirectory)
     let xctestrunMetadata = contentDict["__xctestrun_metadata__"] as? [String: NSNumber]
     if let xctestrunMetadata {

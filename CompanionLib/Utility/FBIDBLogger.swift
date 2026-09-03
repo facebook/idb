@@ -109,11 +109,11 @@ public final class FBIDBLogger: FBCompositeLogger, @unchecked Sendable {
     unsafeDowncast(withName(name) as AnyObject, to: FBIDBLogger.self)
   }
 
-  public func dateFormatted() -> FBIDBLogger {
+  func dateFormatted() -> FBIDBLogger {
     unsafeDowncast(withDateFormatEnabled(true) as AnyObject, to: FBIDBLogger.self)
   }
 
-  public func tailToConsumerAsync(_ consumer: FBDataConsumer) async throws -> any LogOperation {
+  func tailToConsumerAsync(_ consumer: FBDataConsumer) async throws -> any LogOperation {
     let queue = FBIDBLogger.loggerQueue
     // FBDataConsumer is a thread-safe ObjC protocol that isn't Sendable.
     nonisolated(unsafe) let consumer = consumer

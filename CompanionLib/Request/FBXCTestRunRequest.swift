@@ -65,8 +65,8 @@ public class FBXCTestRunRequest: NSObject {
   public let waitForDebugger: Bool
   public let collectResultBundle: Bool
 
-  public var isLogicTest: Bool { false }
-  public var isUITest: Bool { false }
+  var isLogicTest: Bool { false }
+  var isUITest: Bool { false }
 
   // MARK: - Initializers
 
@@ -140,7 +140,7 @@ public class FBXCTestRunRequest: NSObject {
     }
   }
 
-  public func startAsync(withBundleStorageManager bundleStorage: FBXCTestBundleStorage, target: FBiOSTarget, reporter: FBXCTestReporter, logger: FBControlCoreLogger, temporaryDirectory: FBTemporaryDirectory) async throws -> FBIDBTestOperation {
+  func startAsync(withBundleStorageManager bundleStorage: FBXCTestBundleStorage, target: FBiOSTarget, reporter: FBXCTestReporter, logger: FBControlCoreLogger, temporaryDirectory: FBTemporaryDirectory) async throws -> FBIDBTestOperation {
     let descriptor = try await fetchAndSetupDescriptorAsync(withBundleStorage: bundleStorage, target: target)
     var logDirectoryPath: String?
     if collectLogs {
