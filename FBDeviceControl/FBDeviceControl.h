@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import <FBDeviceControl/FBAFCConnection.h>
 #import <FBDeviceControl/FBAMDefines.h>
 #import <FBDeviceControl/FBAMDevice.h>
 #import <FBDeviceControl/FBAMRestorableDevice.h>
