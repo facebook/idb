@@ -8,8 +8,8 @@
 #import <XCTest/XCTest.h>
 
 #import <FBControlCore/FBControlCore.h>
-#import <FBDeviceControl/FBAMRestorableDevice.h>
 #import <FBDeviceControl/FBDeviceCommands.h>
+#import <FBDeviceControl/FBDeviceControl-Swift.h>
 
 @interface FBAMRestorableDeviceTests : XCTestCase
 

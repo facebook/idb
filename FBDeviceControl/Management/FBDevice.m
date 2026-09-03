@@ -11,7 +11,6 @@
 #import <FBDeviceControl/FBDeviceControl-Swift.h>
 
 #import "FBAMDevice.h"
-#import "FBAMRestorableDevice.h"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wprotocol"

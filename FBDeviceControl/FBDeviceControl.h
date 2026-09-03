@@ -7,7 +7,6 @@
 
 #import <FBDeviceControl/FBAMDefines.h>
 #import <FBDeviceControl/FBAMDevice.h>
-#import <FBDeviceControl/FBAMRestorableDevice.h>
 #import <FBDeviceControl/FBDevice.h>
 #import <FBDeviceControl/FBDeviceCommands.h>
 #import <FBDeviceControl/FBInstrumentsClient.h>
