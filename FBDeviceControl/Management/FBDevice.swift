@@ -165,7 +165,6 @@ public final class FBDevice: NSObject, FBiOSTarget, FBDeviceCommands {
     nil
   }
 
-  @objc(compare:)
   public func compare(_ target: any FBiOSTarget) -> ComparisonResult {
     FBiOSTargetComparison(self, target)
   }

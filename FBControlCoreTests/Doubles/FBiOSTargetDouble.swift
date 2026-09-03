@@ -33,7 +33,6 @@ final class FBiOSTargetDouble: NSObject, FBiOSTarget {
 
   // MARK: FBiOSTargetCommand
 
-  @objc(commandsWithTarget:)
   static func commands(with target: any FBiOSTarget) -> Self {
     return self.init()
   }
@@ -44,7 +43,6 @@ final class FBiOSTargetDouble: NSObject, FBiOSTarget {
 
   var asyncQueue: DispatchQueue { .global(qos: .userInitiated) }
 
-  @objc(compare:)
   func compare(_ target: any FBiOSTarget) -> ComparisonResult {
     return FBiOSTargetComparison(self, target)
   }

@@ -14,7 +14,6 @@
 
 @protocol FBControlCoreLogger;
 @protocol FBXCTestReporter;
-@protocol FBiOSTarget;
 
 NS_ASSUME_NONNULL_BEGIN
 

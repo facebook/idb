@@ -7,9 +7,9 @@
 
 import Foundation
 
-/// Composes the new async command protocols (Phase 1.1/1.2) and exposes the same
-/// shared informational properties as `FBiOSTarget`. Conformers can adopt this
-/// protocol incrementally alongside the existing `@objc FBiOSTarget` conformance.
+/// Composes the async command protocols and exposes the same shared informational properties as
+/// `FBiOSTarget`. Conformers can adopt this protocol incrementally alongside their `FBiOSTarget`
+/// conformance.
 public protocol AsynciOSTarget: AnyObject,
   ApplicationCommands,
   VideoStreamCommands,
