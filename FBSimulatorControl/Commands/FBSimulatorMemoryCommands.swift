@@ -35,7 +35,7 @@ public struct FBSimulatorMemoryCommands {
 
   // MARK: - Private
 
-  fileprivate func simulateMemoryWarningAsync() async throws {
+  fileprivate func simulateMemoryWarning() async throws {
     guard simulator.device.responds(to: NSSelectorFromString("simulateMemoryWarning")) else {
       throw FBSimulatorMemoryError.selectorUnavailable
     }
@@ -48,6 +48,6 @@ public struct FBSimulatorMemoryCommands {
 extension FBSimulator: MemoryCommands {
 
   public func simulateMemoryWarning() async throws {
-    try await memory.simulateMemoryWarningAsync()
+    try await memory.simulateMemoryWarning()
   }
 }

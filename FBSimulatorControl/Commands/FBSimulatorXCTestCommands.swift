@@ -151,12 +151,12 @@ public final class FBSimulatorXCTestCommands {
     isRunningXcodeBuildOperation = true
     defer { isRunningXcodeBuildOperation = false }
 
-    let subprocess = try await startTestAsync(with: launchConfiguration, logger: logger)
+    let subprocess = try await startTest(with: launchConfiguration, logger: logger)
     try await bridgeFBFutureVoid(
       FBXcodeBuildOperation.confirmExit(ofXcodebuildOperation: subprocess, configuration: launchConfiguration, reporter: typedReporter, target: simulator, logger: logger))
   }
 
-  fileprivate func listTestsAsync(forBundleAtPath bundlePath: String, timeout: TimeInterval, withAppAtPath appPath: String?) async throws -> [String] {
+  fileprivate func listTests(forBundleAtPath bundlePath: String, timeout: TimeInterval, withAppAtPath appPath: String?) async throws -> [String] {
     guard let simulator = self.simulator else {
       throw FBWeakTargetError.simulator
     }
@@ -177,7 +177,7 @@ public final class FBSimulatorXCTestCommands {
         .listTests())
   }
 
-  fileprivate func extendedTestShimAsync() async throws -> String {
+  fileprivate func extendedTestShim() async throws -> String {
     let shimConfig = try await FBXCTestShimConfiguration.sharedShimConfiguration()
     return shimConfig.iOSSimulatorTestShimPath
   }
@@ -227,7 +227,7 @@ public final class FBSimulatorXCTestCommands {
     }
   }
 
-  private func startTestAsync(with configuration: FBTestLaunchConfiguration, logger: any FBControlCoreLogger) async throws -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
+  private func startTest(with configuration: FBTestLaunchConfiguration, logger: any FBControlCoreLogger) async throws -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
     guard let simulator = self.simulator else {
       throw FBWeakTargetError.simulator
     }
@@ -266,11 +266,11 @@ extension FBSimulator: XCTestExtendedCommands {
     timeout: TimeInterval,
     withAppAtPath appPath: String?
   ) async throws -> [String] {
-    try await xctestExtended.listTestsAsync(forBundleAtPath: bundlePath, timeout: timeout, withAppAtPath: appPath)
+    try await xctestExtended.listTests(forBundleAtPath: bundlePath, timeout: timeout, withAppAtPath: appPath)
   }
 
   public func extendedTestShim() async throws -> String {
-    try await xctestExtended.extendedTestShimAsync()
+    try await xctestExtended.extendedTestShim()
   }
 
   public func withTransportForTestManagerService<R>(
