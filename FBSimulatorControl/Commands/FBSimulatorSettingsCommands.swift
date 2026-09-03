@@ -151,57 +151,57 @@ public struct FBSimulatorSettingsCommands {
 
   // Single source of truth for the SettingsCommands.apply entry point: switch over the setting and
   // dispatch to the transport-specific implementation.
-  fileprivate func applyAsync(_ setting: FBSimulatorSetting) async throws {
+  fileprivate func apply(_ setting: FBSimulatorSetting) async throws {
     switch setting {
     case let .hardwareKeyboard(enabled):
-      try await setHardwareKeyboardEnabledAsync(enabled)
+      try await setHardwareKeyboardEnabled(enabled)
     case let .slowAnimations(enabled):
-      try await setSlowAnimationsEnabledAsync(enabled)
+      try await setSlowAnimationsEnabled(enabled)
     case let .increaseContrast(enabled):
-      try await setIncreaseContrastEnabledAsync(enabled)
+      try await setIncreaseContrastEnabled(enabled)
     case let .autoFillPasswords(enabled):
-      try await setPreferenceBackedAsync(.autoFillPasswords, value: enabled ? "true" : "false", type: "bool")
+      try await setPreferenceBacked(.autoFillPasswords, value: enabled ? "true" : "false", type: "bool")
     case let .appearance(appearance):
-      try await setAppearanceAsync(appearance)
+      try await setAppearance(appearance)
     case let .contentSize(category):
-      try await setContentSizeCategoryAsync(category)
+      try await setContentSizeCategory(category)
     case let .locale(localeIdentifier):
-      try await setPreferenceBackedAsync(.locale, value: localeIdentifier, type: nil)
+      try await setPreferenceBacked(.locale, value: localeIdentifier, type: nil)
     }
   }
 
-  fileprivate func applyResolutionAsync(_ resolution: FBSimulatorSettingResolution) async throws {
+  fileprivate func applyResolution(_ resolution: FBSimulatorSettingResolution) async throws {
     switch resolution {
     case let .setting(setting):
-      try await applyAsync(setting)
+      try await apply(setting)
     case let .preference(name, value, type, domain):
-      try await setPreferenceAsync(name, value: value, type: type, domain: domain)
+      try await setPreference(name, value: value, type: type, domain: domain)
     }
   }
 
-  fileprivate func currentAppearanceAsync() async throws -> FBSimulatorAppearance {
+  fileprivate func currentAppearance() async throws -> FBSimulatorAppearance {
     let simulator = try requireSimulator()
     let raw = simulator.device.currentUIInterfaceStyle()
     return FBSimulatorAppearance(rawValue: raw) ?? .light
   }
 
-  fileprivate func setAppearanceAsync(_ appearance: FBSimulatorAppearance) async throws {
+  fileprivate func setAppearance(_ appearance: FBSimulatorAppearance) async throws {
     let simulator = try requireSimulator()
     try simulator.device.setUIInterfaceStyle(appearance.rawValue)
   }
 
-  fileprivate func currentContentSizeCategoryAsync() async throws -> FBSimulatorContentSizeCategory {
+  fileprivate func currentContentSizeCategory() async throws -> FBSimulatorContentSizeCategory {
     let simulator = try requireSimulator()
     let raw = simulator.device.currentContentSizeCategory()
     return FBSimulatorContentSizeCategory(rawValue: raw) ?? .large
   }
 
-  fileprivate func setContentSizeCategoryAsync(_ category: FBSimulatorContentSizeCategory) async throws {
+  fileprivate func setContentSizeCategory(_ category: FBSimulatorContentSizeCategory) async throws {
     let simulator = try requireSimulator()
     try simulator.device.setContentSizeCategory(category.rawValue)
   }
 
-  fileprivate func currentStatusBarOverridesAsync() async throws -> FBStatusBarOverride {
+  fileprivate func currentStatusBarOverrides() async throws -> FBStatusBarOverride {
     let simulator = try requireSimulator()
     var timeString: NSString?
     var dataNetworkType: NSNumber?
@@ -238,7 +238,7 @@ public struct FBSimulatorSettingsCommands {
     return override
   }
 
-  fileprivate func overrideStatusBarAsync(_ override: FBStatusBarOverride?) async throws {
+  fileprivate func overrideStatusBar(_ override: FBStatusBarOverride?) async throws {
     let simulator = try requireSimulator()
     guard let override else {
       // clearStatusBarOverrides:(NSUInteger)flags sends @{@"OverridesToClear": @(flags)} via MIG.
@@ -273,48 +273,48 @@ public struct FBSimulatorSettingsCommands {
 
   // MARK: - Async
 
-  fileprivate func setHardwareKeyboardEnabledAsync(_ enabled: Bool) async throws {
+  fileprivate func setHardwareKeyboardEnabled(_ enabled: Bool) async throws {
     let simulator = try requireSimulator()
     try simulator.device.setHardwareKeyboardEnabled(enabled, keyboardType: 0)
   }
 
-  fileprivate func setSlowAnimationsEnabledAsync(_ enabled: Bool) async throws {
-    try await setDarwinNotificationStateAsync(enabled, name: slowAnimationsNotification)
+  fileprivate func setSlowAnimationsEnabled(_ enabled: Bool) async throws {
+    try await setDarwinNotificationState(enabled, name: slowAnimationsNotification)
   }
 
-  fileprivate func setIncreaseContrastEnabledAsync(_ enabled: Bool) async throws {
+  fileprivate func setIncreaseContrastEnabled(_ enabled: Bool) async throws {
     let simulator = try requireSimulator()
     try simulator.device.setIncreaseContrastEnabled(enabled)
   }
 
   // Write a preference-backed setting through its centralized (domain, key). The ASP-cover rationale
   // for autofill-passwords lives on FBSimulatorSettingKey.preferenceBacking.
-  fileprivate func setPreferenceBackedAsync(_ key: FBSimulatorSettingKey, value: String, type: String?) async throws {
+  fileprivate func setPreferenceBacked(_ key: FBSimulatorSettingKey, value: String, type: String?) async throws {
     guard let backing = key.preferenceBacking else {
       throw FBSimulatorSettingsError.settingNotPreferenceBacked(setting: key.rawValue)
     }
-    try await setPreferenceAsync(backing.key, value: value, type: type, domain: backing.domain)
+    try await setPreference(backing.key, value: value, type: type, domain: backing.domain)
   }
 
-  fileprivate func setDarwinNotificationStateAsync(_ enabled: Bool, name: String) async throws {
+  fileprivate func setDarwinNotificationState(_ enabled: Bool, name: String) async throws {
     let simulator = try requireSimulator()
     try simulator.device.darwinNotificationSetState(enabled ? 1 : 0, name: name)
     try simulator.device.postDarwinNotification(name)
   }
 
-  fileprivate func setPreferenceAsync(_ name: String, value: String, type: String?, domain: String?) async throws {
+  fileprivate func setPreference(_ name: String, value: String, type: String?, domain: String?) async throws {
     let simulator = try requireSimulator()
     try await FBPreferenceModificationStrategy(simulator: simulator)
       .setPreference(name, value: value, type: type, domain: domain)
   }
 
-  fileprivate func getCurrentPreferenceAsync(_ name: String, domain: String?) async throws -> String {
+  fileprivate func getCurrentPreference(_ name: String, domain: String?) async throws -> String {
     let simulator = try requireSimulator()
     return try await FBPreferenceModificationStrategy(simulator: simulator)
       .getCurrentPreference(name, domain: domain)
   }
 
-  fileprivate func grantAccessAsync(_ bundleIDs: Set<String>, toServices services: Set<FBTargetSettingsService>) async throws {
+  fileprivate func grantAccess(_ bundleIDs: Set<String>, toServices services: Set<FBTargetSettingsService>) async throws {
     let simulator = try requireSimulator()
     if services.isEmpty {
       throw FBSimulatorSettingsError.noServicesToGrant(bundleIDs: bundleIDs)
@@ -349,18 +349,18 @@ public struct FBSimulatorSettingsCommands {
     if !toApprove.isEmpty && !toApprove.isDisjoint(with: Set(FBSimulatorSettingsCommands.tccDatabaseMapping.keys)) {
       let tccServices = toApprove.intersection(Set(FBSimulatorSettingsCommands.tccDatabaseMapping.keys))
       toApprove.subtract(tccServices)
-      try await modifyTCCDatabaseAsync(withBundleIDs: bundleIDs, toServices: tccServices, grantAccess: true)
+      try await modifyTCCDatabase(withBundleIDs: bundleIDs, toServices: tccServices, grantAccess: true)
     }
     if !toApprove.isEmpty && toApprove.contains(FBTargetSettingsService.location) {
-      try await authorizeLocationSettingsAsync(Array(bundleIDs))
+      try await authorizeLocationSettings(Array(bundleIDs))
       toApprove.remove(FBTargetSettingsService.location)
     }
     if !toApprove.isEmpty && toApprove.contains(.notification) {
-      try await updateNotificationServiceAsync(Array(bundleIDs), approve: true)
+      try await updateNotificationService(Array(bundleIDs), approve: true)
       toApprove.remove(.notification)
     }
     if !toApprove.isEmpty && toApprove.contains(.health) {
-      try await updateHealthServiceAsync(Array(bundleIDs), approve: true)
+      try await updateHealthService(Array(bundleIDs), approve: true)
       toApprove.remove(.health)
     }
 
@@ -369,7 +369,7 @@ public struct FBSimulatorSettingsCommands {
     }
   }
 
-  fileprivate func revokeAccessAsync(_ bundleIDs: Set<String>, toServices services: Set<FBTargetSettingsService>) async throws {
+  fileprivate func revokeAccess(_ bundleIDs: Set<String>, toServices services: Set<FBTargetSettingsService>) async throws {
     let simulator = try requireSimulator()
     if services.isEmpty {
       throw FBSimulatorSettingsError.noServicesToRevoke(bundleIDs: bundleIDs)
@@ -404,18 +404,18 @@ public struct FBSimulatorSettingsCommands {
     if !toRevoke.isEmpty && !toRevoke.isDisjoint(with: Set(FBSimulatorSettingsCommands.tccDatabaseMapping.keys)) {
       let tccServices = toRevoke.intersection(Set(FBSimulatorSettingsCommands.tccDatabaseMapping.keys))
       toRevoke.subtract(tccServices)
-      try await modifyTCCDatabaseAsync(withBundleIDs: bundleIDs, toServices: tccServices, grantAccess: false)
+      try await modifyTCCDatabase(withBundleIDs: bundleIDs, toServices: tccServices, grantAccess: false)
     }
     if !toRevoke.isEmpty && toRevoke.contains(FBTargetSettingsService.location) {
-      try await revokeLocationSettingsAsync(Array(bundleIDs))
+      try await revokeLocationSettings(Array(bundleIDs))
       toRevoke.remove(FBTargetSettingsService.location)
     }
     if !toRevoke.isEmpty && toRevoke.contains(.notification) {
-      try await updateNotificationServiceAsync(Array(bundleIDs), approve: false)
+      try await updateNotificationService(Array(bundleIDs), approve: false)
       toRevoke.remove(.notification)
     }
     if !toRevoke.isEmpty && toRevoke.contains(.health) {
-      try await updateHealthServiceAsync(Array(bundleIDs), approve: false)
+      try await updateHealthService(Array(bundleIDs), approve: false)
       toRevoke.remove(.health)
     }
 
@@ -424,7 +424,7 @@ public struct FBSimulatorSettingsCommands {
     }
   }
 
-  fileprivate func grantAccessAsync(_ bundleIDs: Set<String>, toDeeplink scheme: String) async throws {
+  fileprivate func grantAccess(_ bundleIDs: Set<String>, toDeeplink scheme: String) async throws {
     let simulator = try requireSimulator()
     if scheme.isEmpty {
       throw FBSimulatorSettingsError.emptyScheme(operation: "url approve")
@@ -459,7 +459,7 @@ public struct FBSimulatorSettingsCommands {
     }
   }
 
-  fileprivate func revokeAccessAsync(_ bundleIDs: Set<String>, toDeeplink scheme: String) async throws {
+  fileprivate func revokeAccess(_ bundleIDs: Set<String>, toDeeplink scheme: String) async throws {
     let simulator = try requireSimulator()
     if scheme.isEmpty {
       throw FBSimulatorSettingsError.emptyScheme(operation: "url revoke")
@@ -486,7 +486,7 @@ public struct FBSimulatorSettingsCommands {
     }
   }
 
-  fileprivate func updateContactsAsync(_ databaseDirectory: String) async throws {
+  fileprivate func updateContacts(_ databaseDirectory: String) async throws {
     let simulator = try requireSimulator()
     let destinationDirectory = (try requireDataDirectory(of: simulator) as NSString).appendingPathComponent("Library/AddressBook")
     if !FileManager.default.fileExists(atPath: destinationDirectory) {
@@ -504,54 +504,54 @@ public struct FBSimulatorSettingsCommands {
     }
   }
 
-  fileprivate func setProxyAsync(host: String, port: UInt, type: String) async throws {
-    try await runSimulatorFrameworkBridgeAsync(
+  fileprivate func setProxy(host: String, port: UInt, type: String) async throws {
+    try await runSimulatorFrameworkBridge(
       withService: "proxy",
       action: "set",
       arguments: [host, "\(port)", type.isEmpty ? "http" : type])
   }
 
-  fileprivate func clearProxyAsync() async throws {
-    try await runSimulatorFrameworkBridgeAsync(withService: "proxy", action: "clear")
+  fileprivate func clearProxy() async throws {
+    try await runSimulatorFrameworkBridge(withService: "proxy", action: "clear")
   }
 
-  fileprivate func listProxyAsync() async throws -> String {
-    try await runSimulatorFrameworkBridgeAsync(withService: "proxy", action: "list")
+  fileprivate func listProxy() async throws -> String {
+    try await runSimulatorFrameworkBridge(withService: "proxy", action: "list")
   }
 
-  fileprivate func setDnsServersAsync(_ servers: [String]) async throws {
+  fileprivate func setDnsServers(_ servers: [String]) async throws {
     if servers.isEmpty {
       throw FBSimulatorSettingsError.noDnsServers
     }
-    try await runSimulatorFrameworkBridgeAsync(withService: "dns", action: "set", arguments: servers)
+    try await runSimulatorFrameworkBridge(withService: "dns", action: "set", arguments: servers)
   }
 
-  fileprivate func clearDnsAsync() async throws {
-    try await runSimulatorFrameworkBridgeAsync(withService: "dns", action: "clear")
+  fileprivate func clearDns() async throws {
+    try await runSimulatorFrameworkBridge(withService: "dns", action: "clear")
   }
 
-  fileprivate func listDnsAsync() async throws -> String {
-    try await runSimulatorFrameworkBridgeAsync(withService: "dns", action: "list")
+  fileprivate func listDns() async throws -> String {
+    try await runSimulatorFrameworkBridge(withService: "dns", action: "list")
   }
 
-  fileprivate func setHealthAuthorizationAsync(_ approved: Bool, forBundleID bundleID: String, typeIdentifiers: [String]) async throws {
+  fileprivate func setHealthAuthorization(_ approved: Bool, forBundleID bundleID: String, typeIdentifiers: [String]) async throws {
     let action = approved ? "approve" : "revoke"
     let args = [bundleID] + typeIdentifiers
-    try await runSimulatorFrameworkBridgeAsync(withService: "health", action: action, arguments: args)
+    try await runSimulatorFrameworkBridge(withService: "health", action: action, arguments: args)
   }
 
-  fileprivate func clearHealthAuthorizationAsync(forBundleID bundleID: String) async throws {
-    try await runSimulatorFrameworkBridgeAsync(withService: "health", action: "clear", arguments: [bundleID])
+  fileprivate func clearHealthAuthorization(forBundleID bundleID: String) async throws {
+    try await runSimulatorFrameworkBridge(withService: "health", action: "clear", arguments: [bundleID])
   }
 
-  fileprivate func listHealthAuthorizationAsync(forBundleID bundleID: String) async throws -> String {
-    try await runSimulatorFrameworkBridgeAsync(withService: "health", action: "list", arguments: [bundleID])
+  fileprivate func listHealthAuthorization(forBundleID bundleID: String) async throws -> String {
+    try await runSimulatorFrameworkBridge(withService: "health", action: "list", arguments: [bundleID])
   }
 
   // MARK: - Private
 
   @discardableResult
-  fileprivate func runSimulatorFrameworkBridgeAsync(withService service: String, action: String, arguments: [String] = []) async throws -> String {
+  fileprivate func runSimulatorFrameworkBridge(withService service: String, action: String, arguments: [String] = []) async throws -> String {
     let simulator = try requireSimulator()
     guard let helperPath = BundledResources.path(forItem: "SimulatorFrameworkBridge") else {
       throw FBSimulatorSettingsError.frameworkBridgeBinaryMissing
@@ -572,40 +572,40 @@ public struct FBSimulatorSettingsCommands {
     return String(data: output.stdout, encoding: .utf8) ?? ""
   }
 
-  fileprivate func authorizeLocationSettingsAsync(_ bundleIDs: [String]) async throws {
+  fileprivate func authorizeLocationSettings(_ bundleIDs: [String]) async throws {
     let simulator = try requireSimulator()
     try await FBLocationServicesModificationStrategy(simulator: simulator)
       .approveLocationServices(forBundleIDs: bundleIDs)
   }
 
-  fileprivate func revokeLocationSettingsAsync(_ bundleIDs: [String]) async throws {
+  fileprivate func revokeLocationSettings(_ bundleIDs: [String]) async throws {
     let simulator = try requireSimulator()
     try await FBLocationServicesModificationStrategy(simulator: simulator)
       .revokeLocationServices(forBundleIDs: bundleIDs)
   }
 
-  fileprivate func updateHealthServiceAsync(_ bundleIDs: [String], approve approved: Bool) async throws {
+  fileprivate func updateHealthService(_ bundleIDs: [String], approve approved: Bool) async throws {
     if bundleIDs.isEmpty {
       throw FBSimulatorSettingsError.emptyBundleIDs(operation: "health approve")
     }
     let action = approved ? "approve" : "revoke"
     for bundleID in bundleIDs {
-      try await runSimulatorFrameworkBridgeAsync(withService: "health", action: action, arguments: [bundleID])
+      try await runSimulatorFrameworkBridge(withService: "health", action: action, arguments: [bundleID])
     }
   }
 
-  fileprivate func updateNotificationServiceAsync(_ bundleIDs: [String], approve approved: Bool) async throws {
+  fileprivate func updateNotificationService(_ bundleIDs: [String], approve approved: Bool) async throws {
     if bundleIDs.isEmpty {
       throw FBSimulatorSettingsError.emptyBundleIDs(operation: "notifications approve")
     }
 
     let action = approved ? "approve" : "revoke"
     for bundleID in bundleIDs {
-      try await runSimulatorFrameworkBridgeAsync(withService: "notifications", action: action, arguments: [bundleID])
+      try await runSimulatorFrameworkBridge(withService: "notifications", action: action, arguments: [bundleID])
     }
   }
 
-  fileprivate func modifyTCCDatabaseAsync(withBundleIDs bundleIDs: Set<String>, toServices services: Set<FBTargetSettingsService>, grantAccess: Bool) async throws {
+  fileprivate func modifyTCCDatabase(withBundleIDs bundleIDs: Set<String>, toServices services: Set<FBTargetSettingsService>, grantAccess: Bool) async throws {
     let simulator = try requireSimulator()
     guard let dataDirectory = simulator.dataDirectory else {
       throw FBSimulatorSettingsError.noDataDirectory
@@ -626,9 +626,9 @@ public struct FBSimulatorSettingsCommands {
     let queue = simulator.asyncQueue
 
     if grantAccess {
-      try await grantAccessInTCCDatabaseAsync(databasePath, bundleIDs: bundleIDs, services: services, queue: queue, logger: logger)
+      try await grantAccessInTCCDatabase(databasePath, bundleIDs: bundleIDs, services: services, queue: queue, logger: logger)
     } else {
-      try await revokeAccessInTCCDatabaseAsync(databasePath, bundleIDs: bundleIDs, services: services, queue: queue, logger: logger)
+      try await revokeAccessInTCCDatabase(databasePath, bundleIDs: bundleIDs, services: services, queue: queue, logger: logger)
     }
   }
 
@@ -708,12 +708,12 @@ public struct FBSimulatorSettingsCommands {
     filteredTCCApprovals(approvals).compactMap { tccDatabaseMapping[$0] }
   }
 
-  fileprivate func grantAccessInTCCDatabaseAsync(_ databasePath: String, bundleIDs: Set<String>, services: Set<FBTargetSettingsService>, queue: DispatchQueue, logger: (any FBControlCoreLogger)?) async throws {
-    let query = try await FBSimulatorSettingsCommands.buildApprovalInsertQueryAsync(forDatabase: databasePath, bundleIDs: bundleIDs, services: services, queue: queue, logger: logger)
-    _ = try await FBSimulatorSettingsCommands.runSqliteCommandAsync(onDatabase: databasePath, arguments: [query], queue: queue, logger: logger)
+  fileprivate func grantAccessInTCCDatabase(_ databasePath: String, bundleIDs: Set<String>, services: Set<FBTargetSettingsService>, queue: DispatchQueue, logger: (any FBControlCoreLogger)?) async throws {
+    let query = try await FBSimulatorSettingsCommands.buildApprovalInsertQuery(forDatabase: databasePath, bundleIDs: bundleIDs, services: services, queue: queue, logger: logger)
+    _ = try await FBSimulatorSettingsCommands.runSqliteCommand(onDatabase: databasePath, arguments: [query], queue: queue, logger: logger)
   }
 
-  fileprivate func revokeAccessInTCCDatabaseAsync(_ databasePath: String, bundleIDs: Set<String>, services: Set<FBTargetSettingsService>, queue: DispatchQueue, logger: (any FBControlCoreLogger)?) async throws {
+  fileprivate func revokeAccessInTCCDatabase(_ databasePath: String, bundleIDs: Set<String>, services: Set<FBTargetSettingsService>, queue: DispatchQueue, logger: (any FBControlCoreLogger)?) async throws {
     var deletions: [String] = []
     for bundleID in bundleIDs {
       for serviceName in FBSimulatorSettingsCommands.tccServiceNames(for: services) {
@@ -723,15 +723,15 @@ public struct FBSimulatorSettingsCommands {
     if deletions.isEmpty {
       return
     }
-    _ = try await FBSimulatorSettingsCommands.runSqliteCommandAsync(
+    _ = try await FBSimulatorSettingsCommands.runSqliteCommand(
       onDatabase: databasePath,
       arguments: ["DELETE FROM access WHERE \(deletions.joined(separator: " OR "))"],
       queue: queue,
       logger: logger)
   }
 
-  fileprivate static func buildApprovalInsertQueryAsync(forDatabase databasePath: String, bundleIDs: Set<String>, services: Set<FBTargetSettingsService>, queue: DispatchQueue, logger: (any FBControlCoreLogger)?) async throws -> String {
-    let schema = try await runSqliteCommandAsync(onDatabase: databasePath, arguments: [".schema access"], queue: queue, logger: logger)
+  fileprivate static func buildApprovalInsertQuery(forDatabase databasePath: String, bundleIDs: Set<String>, services: Set<FBTargetSettingsService>, queue: DispatchQueue, logger: (any FBControlCoreLogger)?) async throws -> String {
+    let schema = try await runSqliteCommand(onDatabase: databasePath, arguments: [".schema access"], queue: queue, logger: logger)
     return approvalInsertQuery(forAccessSchema: schema, bundleIDs: bundleIDs, services: services)
   }
 
@@ -795,7 +795,7 @@ public struct FBSimulatorSettingsCommands {
     return tuples.joined(separator: ", ")
   }
 
-  fileprivate static func runSqliteCommandAsync(onDatabase databasePath: String, arguments: [String], queue: DispatchQueue, logger: (any FBControlCoreLogger)?) async throws -> String {
+  fileprivate static func runSqliteCommand(onDatabase databasePath: String, arguments: [String], queue: DispatchQueue, logger: (any FBControlCoreLogger)?) async throws -> String {
     let allArguments = [databasePath] + arguments
     logger?.log("Running sqlite3 \(FBCollectionInformation.oneLineDescription(from: allArguments))")
     let runFuture = FBProcessBuilder<NSNull, NSData, NSData>.withLaunchPath("/usr/bin/sqlite3", arguments: allArguments)
@@ -847,11 +847,11 @@ public struct FBSimulatorSettingsCommands {
 extension FBSimulator: SettingsCommands {
 
   public func apply(_ setting: FBSimulatorSetting) async throws {
-    try await settings.applyAsync(setting)
+    try await settings.apply(setting)
   }
 
   public func apply(_ resolution: FBSimulatorSettingResolution) async throws {
-    try await settings.applyResolutionAsync(resolution)
+    try await settings.applyResolution(resolution)
   }
 
   /// Read the current value of a curated setting by name, mirroring `apply`'s name space and
@@ -877,86 +877,86 @@ extension FBSimulator: SettingsCommands {
   }
 
   public func getCurrentPreference(_ name: String, domain: String?) async throws -> String {
-    try await settings.getCurrentPreferenceAsync(name, domain: domain)
+    try await settings.getCurrentPreference(name, domain: domain)
   }
 
   public func grantAccess(_ bundleIDs: Set<String>, toServices services: Set<FBTargetSettingsService>) async throws {
-    try await settings.grantAccessAsync(bundleIDs, toServices: services)
+    try await settings.grantAccess(bundleIDs, toServices: services)
   }
 
   public func revokeAccess(_ bundleIDs: Set<String>, toServices services: Set<FBTargetSettingsService>) async throws {
-    try await settings.revokeAccessAsync(bundleIDs, toServices: services)
+    try await settings.revokeAccess(bundleIDs, toServices: services)
   }
 
   public func grantAccess(_ bundleIDs: Set<String>, toDeeplink scheme: String) async throws {
-    try await settings.grantAccessAsync(bundleIDs, toDeeplink: scheme)
+    try await settings.grantAccess(bundleIDs, toDeeplink: scheme)
   }
 
   public func revokeAccess(_ bundleIDs: Set<String>, toDeeplink scheme: String) async throws {
-    try await settings.revokeAccessAsync(bundleIDs, toDeeplink: scheme)
+    try await settings.revokeAccess(bundleIDs, toDeeplink: scheme)
   }
 
   public func updateContacts(_ databaseDirectory: String) async throws {
-    try await settings.updateContactsAsync(databaseDirectory)
+    try await settings.updateContacts(databaseDirectory)
   }
 
   public func clearContacts() async throws {
-    try await settings.runSimulatorFrameworkBridgeAsync(withService: "contacts", action: "clear")
+    try await settings.runSimulatorFrameworkBridge(withService: "contacts", action: "clear")
   }
 
   public func clearPhotos() async throws {
-    try await settings.runSimulatorFrameworkBridgeAsync(withService: "photos", action: "clear")
+    try await settings.runSimulatorFrameworkBridge(withService: "photos", action: "clear")
   }
 
   private func currentAppearance() async throws -> FBSimulatorAppearance {
-    try await settings.currentAppearanceAsync()
+    try await settings.currentAppearance()
   }
 
   private func currentContentSizeCategory() async throws -> FBSimulatorContentSizeCategory {
-    try await settings.currentContentSizeCategoryAsync()
+    try await settings.currentContentSizeCategory()
   }
 
   public func currentStatusBarOverrides() async throws -> FBStatusBarOverride {
-    try await settings.currentStatusBarOverridesAsync()
+    try await settings.currentStatusBarOverrides()
   }
 
   public func overrideStatusBar(_ override: FBStatusBarOverride?) async throws {
-    try await settings.overrideStatusBarAsync(override)
+    try await settings.overrideStatusBar(override)
   }
 
   public func setProxy(host: String, port: UInt, type: String) async throws {
-    try await settings.setProxyAsync(host: host, port: port, type: type)
+    try await settings.setProxy(host: host, port: port, type: type)
   }
 
   public func clearProxy() async throws {
-    try await settings.clearProxyAsync()
+    try await settings.clearProxy()
   }
 
   public func listProxy() async throws -> String {
-    try await settings.listProxyAsync()
+    try await settings.listProxy()
   }
 
   public func setDnsServers(_ servers: [String]) async throws {
-    try await settings.setDnsServersAsync(servers)
+    try await settings.setDnsServers(servers)
   }
 
   public func clearDns() async throws {
-    try await settings.clearDnsAsync()
+    try await settings.clearDns()
   }
 
   public func listDns() async throws -> String {
-    try await settings.listDnsAsync()
+    try await settings.listDns()
   }
 
   public func setHealthAuthorization(_ approved: Bool, forBundleID bundleID: String, typeIdentifiers: [String]) async throws {
-    try await settings.setHealthAuthorizationAsync(approved, forBundleID: bundleID, typeIdentifiers: typeIdentifiers)
+    try await settings.setHealthAuthorization(approved, forBundleID: bundleID, typeIdentifiers: typeIdentifiers)
   }
 
   public func clearHealthAuthorization(forBundleID bundleID: String) async throws {
-    try await settings.clearHealthAuthorizationAsync(forBundleID: bundleID)
+    try await settings.clearHealthAuthorization(forBundleID: bundleID)
   }
 
   public func listHealthAuthorization(forBundleID bundleID: String) async throws -> String {
-    try await settings.listHealthAuthorizationAsync(forBundleID: bundleID)
+    try await settings.listHealthAuthorization(forBundleID: bundleID)
   }
 }
