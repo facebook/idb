@@ -245,6 +245,9 @@ final class FBAMDeviceTests {
     #expect((startServiceEvents) == (sAMDeviceEvents))
   }
 
+  /// Three consumers of one bundle's house arrest share a single connection, whether they overlap
+  /// or follow one another: the AMDevice session and the AFC connection are both pooled for longer
+  /// than the consumers take, so only the last release starts either teardown.
   @Test
   func concurrentHouseArrest() async throws {
     var afcCalls = AFCCalls()
@@ -253,47 +256,15 @@ final class FBAMDeviceTests {
       return 0
     }
 
-    let map = DispatchQueue(label: "com.facebook.fbdevicecontrol.amdevicetests.map")
     let device = Self.makeDevice(connectionReuseTimeout: 0.5, serviceReuseTimeout: 0.3)
-    let future0: FBMutableFuture<NSNumber> = FBMutableFuture()
-    let future1: FBMutableFuture<NSNumber> = FBMutableFuture()
-    let future2: FBMutableFuture<NSNumber> = FBMutableFuture()
-
-    // Register the three consumers from this one thread, in order: dispatching
-    // the registrations onto a concurrent queue leaves their ordering to the
-    // scheduler, and under loaded CI hosts one can slip past another's release
-    // and reuse window, splitting the shared connection into a second connect
-    // sequence and flaking the call-order assertions below.
-    do {
-      let inner = device.houseArrestAFCConnection(forBundleID: "com.foo.bar", afcCalls: afcCalls)
-        .onQueue(
-          map,
-          pop: { (_: FBAFCConnection) -> FBFuture<AnyObject> in
-            return FBFuture<AnyObject>(result: NSNumber(value: 0))
-          })
-      future0.resolve(from: inner)
+    await withTaskGroup(of: Void.self) { group in
+      for _ in 0..<3 {
+        group.addTask { @MainActor in
+          try? await device.withHouseArrestAFCConnection(forBundleID: "com.foo.bar", afcCalls: afcCalls) { _ in
+          }
+        }
+      }
     }
-    do {
-      let inner = device.houseArrestAFCConnection(forBundleID: "com.foo.bar", afcCalls: afcCalls)
-        .onQueue(
-          map,
-          pop: { (_: FBAFCConnection) -> FBFuture<AnyObject> in
-            return FBFuture<AnyObject>(result: NSNumber(value: 1))
-          })
-      future1.resolve(from: inner)
-    }
-    do {
-      let inner = device.houseArrestAFCConnection(forBundleID: "com.foo.bar", afcCalls: afcCalls)
-        .onQueue(
-          map,
-          pop: { (_: FBAFCConnection) -> FBFuture<AnyObject> in
-            return FBFuture<AnyObject>(result: NSNumber(value: 2))
-          })
-      future2.resolve(from: inner)
-    }
-
-    let value = try await bridgeFBFuture(FBFuture<AnyObject>.combine([future0, future1, future2]))
-    #expect(value != nil)
 
     var expected = [
       "connect",
@@ -305,13 +276,9 @@ final class FBAMDeviceTests {
     await waitForDeviceEvents(expected)
     #expect((expected) == (sAMDeviceEvents))
 
-    _ = try? await bridgeFBFuture(FBFuture<NSNull>(delay: 0.5, future: FBFuture<NSNull>.empty()))
-    expected = [
-      "connect",
-      "is_paired",
-      "validate_pairing",
-      "start_session",
-      "create_house_arrest_service",
+    // The AFC connection's 0.3s reuse window elapses before the session's 0.5s one, so the close
+    // lands ahead of the session teardown.
+    expected += [
       "connection_close",
       "stop_session",
       "disconnect",
@@ -334,7 +301,7 @@ final class FBAMDeviceTests {
 
     let device = Self.makeDevice(connectionReuseTimeout: nil, serviceReuseTimeout: 2)
     for _ in 0..<2 {
-      try await withFBFutureContext(device.houseArrestAFCConnection(forBundleID: "com.foo.bar", afcCalls: afcCalls)) { _ in
+      try await device.withHouseArrestAFCConnection(forBundleID: "com.foo.bar", afcCalls: afcCalls) { _ in
       }
     }
 

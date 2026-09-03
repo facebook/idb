@@ -213,11 +213,15 @@ public final class FBDevice: FBiOSTarget, FBDeviceCommands, CustomStringConverti
     return amDevice.startService(service)
   }
 
-  public func houseArrestAFCConnection(forBundleID bundleID: String, afcCalls: AFCCalls) -> FBFutureContext<FBAFCConnection> {
+  public func withHouseArrestAFCConnection<T>(
+    forBundleID bundleID: String,
+    afcCalls: AFCCalls,
+    _ body: (FBAFCConnection) async throws -> T
+  ) async throws -> T {
     guard let amDevice else {
-      return notAMDeviceBacked(operation: "houseArrestAFCConnectionForBundleID:afcCalls:")
+      throw FBAMDeviceServiceError.notAMDeviceBacked(service: "withHouseArrestAFCConnection(forBundleID:afcCalls:)")
     }
-    return amDevice.houseArrestAFCConnection(forBundleID: bundleID, afcCalls: afcCalls)
+    return try await amDevice.withHouseArrestAFCConnection(forBundleID: bundleID, afcCalls: afcCalls, body)
   }
 
   // MARK: - Private

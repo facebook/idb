@@ -27,10 +27,10 @@ public final class FBAMDevice: NSObject, FBiOSTargetInfo, FBDeviceCommands, FBFu
   public let asyncQueue: DispatchQueue
   public let logger: any FBControlCoreLogger
   public let contextPoolTimeout: NSNumber?
-  // Created eagerly at the end of the initializer: both managers take this object as their
-  // delegate, so they cannot be `let` properties, and `lazy` would make first access from two
-  // threads a race. The storage is populated before the object is shared, which is what makes
-  // the unsynchronised accessors safe.
+  // Created eagerly at the end of the initializer: both are constructed with this object, so they
+  // cannot be `let` properties, and `lazy` would make first access from two threads a race. The
+  // storage is populated before the object is shared, which is what makes the unsynchronised
+  // accessors safe.
   private var connectionContextManagerStorage: FBFutureContextManager<FBAMDevice>?
   private var serviceManagerStorage: FBAMDeviceServiceManager?
 
@@ -95,8 +95,8 @@ public final class FBAMDevice: NSObject, FBiOSTargetInfo, FBDeviceCommands, FBFu
     // The un-named logger: only this object's own logger is decorated with the udid.
     self.connectionContextManagerStorage = FBFutureContextManager<FBAMDevice>(
       queue: workQueue, delegate: self, logger: logger)
-    self.serviceManagerStorage = FBAMDeviceServiceManager.manager(
-      withAMDevice: self, serviceTimeout: serviceReuseTimeout)
+    self.serviceManagerStorage = FBAMDeviceServiceManager(
+      device: self, serviceTimeout: serviceReuseTimeout?.doubleValue)
   }
 
   // MARK: - FBiOSTargetInfo
@@ -188,17 +188,21 @@ public final class FBAMDevice: NSObject, FBiOSTargetInfo, FBDeviceCommands, FBFu
     startServiceConnection(service)
   }
 
-  public func houseArrestAFCConnection(forBundleID bundleID: String, afcCalls: AFCCalls) -> FBFutureContext<FBAFCConnection> {
-    connectToDevice(withPurpose: "house_arrest")
-      .onQueue(
-        workQueue,
-        replace: { [self] (_: AnyObject) -> FBFutureContext<AnyObject> in
-          serviceManager
-            .houseArrestAFCConnection(forBundleID: bundleID, afcCalls: afcCalls)
-            .utilize(withPurpose: udid)
-            .retyped(FBFutureContext<AnyObject>.self)
-        }
-      ).retyped(FBFutureContext<FBAFCConnection>.self)
+  /// Two lifetimes again, and not the ones `withServiceConnection` manages: the AMDevice session
+  /// is held for as long as `body` runs, while the AFC connection outlives it. The connection is
+  /// pooled for the device's service reuse timeout so a following operation on the same bundle
+  /// re-uses it rather than starting house arrest again.
+  public func withHouseArrestAFCConnection<T>(
+    forBundleID bundleID: String,
+    afcCalls: AFCCalls,
+    _ body: (FBAFCConnection) async throws -> T
+  ) async throws -> T {
+    try await withConnectedDevice(purpose: "house_arrest") { _ in
+      let service = self.serviceManager.houseArrestService(forBundleID: bundleID, afcCalls: afcCalls)
+      let connection = try await service.acquire()
+      defer { service.release() }
+      return try await body(connection)
+    }
   }
 
   // MARK: - FBFutureContextManagerDelegate

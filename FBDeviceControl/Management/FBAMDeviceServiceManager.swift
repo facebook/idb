@@ -37,26 +37,129 @@ extension FBAMDeviceServiceError: LocalizedError {
   }
 }
 
-private class FBAMDeviceServiceManager_HouseArrest: NSObject, FBFutureContextManagerDelegate {
-  weak var device: FBAMDevice?
-  let bundleID: String
-  let afcCalls: AFCCalls
-  var contextPoolTimeout: NSNumber?
+/// The house arrest service for a single bundle id, and the AFC connection it vends.
+///
+/// One consumer uses the connection at a time and the rest wait for it. When the last consumer
+/// releases it the connection is not closed but pooled for `reuseTimeout`, so a following
+/// operation on the same bundle re-uses it instead of paying for another
+/// `AMDeviceCreateHouseArrestService`. With no timeout it is closed as soon as it is released.
+///
+/// `@unchecked Sendable`: all mutable state is guarded by `lock`.
+final class FBHouseArrestService: @unchecked Sendable {
 
-  init(device: FBAMDevice, bundleID: String, calls: AFCCalls, serviceTimeout: NSNumber?) {
+  // MARK: - Properties
+
+  private weak var device: FBAMDevice?
+  private let bundleID: String
+  private let afcCalls: AFCCalls
+  private let reuseTimeout: TimeInterval?
+  private let logger: any FBControlCoreLogger
+
+  private let lock = NSLock()
+  private var connection: FBAFCConnection?
+  private var inUse = false
+  private var waiters: [CheckedContinuation<Void, Never>] = []
+  private var idleTeardown: Task<Void, Never>?
+
+  // MARK: - Initializers
+
+  init(device: FBAMDevice, bundleID: String, afcCalls: AFCCalls, reuseTimeout: TimeInterval?) {
     self.device = device
     self.bundleID = bundleID
-    self.afcCalls = calls
-    self.contextPoolTimeout = serviceTimeout
-    super.init()
+    self.afcCalls = afcCalls
+    self.reuseTimeout = reuseTimeout
+    self.logger = device.logger.withName("house_arrest_\(bundleID)")
   }
 
-  func prepare(_ logger: any FBControlCoreLogger) -> FBFuture<AnyObject> {
-    guard let device else {
-      return FBFuture(error: FBDeviceNilError.deviceNil)
+  // MARK: - Public Methods
+
+  /// Waits for exclusive use of the connection, opening it if it is not already established.
+  ///
+  /// Every call that returns a connection must be paired with a `release()`.
+  func acquire() async throws -> FBAFCConnection {
+    await takeExclusiveUse()
+    if let established = establishedConnection() {
+      logger.log("Re-using the existing house arrest connection for '\(bundleID)'")
+      return established
     }
-    var afcConnection: Unmanaged<AnyObject>?
+    do {
+      let opened = try openConnection()
+      store(opened)
+      return opened
+    } catch {
+      // Use was taken before the connection could be opened, so it has to be handed on from here.
+      release()
+      throw error
+    }
+  }
+
+  /// Gives up use of the connection, passing it to the next waiter or pooling it for reuse.
+  func release() {
+    lock.lock()
+    // Waiters are served back to front, as the pending queue of the `FBFutureContextManager` this
+    // replaced also was. `inUse` stays set: use passes straight on to the consumer resumed here.
+    if let next = waiters.popLast() {
+      lock.unlock()
+      next.resume()
+      return
+    }
+    inUse = false
+    idleTeardown?.cancel()
+    idleTeardown = nil
+    guard let reuseTimeout else {
+      let closing = connection
+      connection = nil
+      lock.unlock()
+      close(closing)
+      return
+    }
+    idleTeardown = Task { [weak self] in
+      try? await Task.sleep(nanoseconds: UInt64(reuseTimeout * Double(NSEC_PER_SEC)))
+      guard !Task.isCancelled else {
+        return
+      }
+      self?.closeIfUnused()
+    }
+    lock.unlock()
+    logger.log("No more consumers of house arrest for '\(bundleID)', pooling it for \(reuseTimeout) seconds of inactivity")
+  }
+
+  // MARK: - Private
+
+  private func takeExclusiveUse() async {
+    await withCheckedContinuation { continuation in
+      lock.lock()
+      idleTeardown?.cancel()
+      idleTeardown = nil
+      if inUse {
+        waiters.append(continuation)
+        lock.unlock()
+        return
+      }
+      inUse = true
+      lock.unlock()
+      continuation.resume()
+    }
+  }
+
+  private func establishedConnection() -> FBAFCConnection? {
+    lock.lock()
+    defer { lock.unlock() }
+    return connection
+  }
+
+  private func store(_ connection: FBAFCConnection) {
+    lock.lock()
+    self.connection = connection
+    lock.unlock()
+  }
+
+  private func openConnection() throws -> FBAFCConnection {
+    guard let device else {
+      throw FBDeviceNilError.deviceNil
+    }
     logger.log("Starting house arrest for '\(bundleID)'")
+    var afcConnection: Unmanaged<AnyObject>?
     let status =
       device.calls.CreateHouseArrestService?(
         device.amDeviceRef,
@@ -64,72 +167,76 @@ private class FBAMDeviceServiceManager_HouseArrest: NSObject, FBFutureContextMan
         nil,
         &afcConnection
       ) ?? -1
-    if status != 0 {
-      let internalMessage = device.calls.CopyErrorText?(status)?.takeRetainedValue() as String? ?? "unknown"
-      return FBFuture(error: FBAMDeviceServiceError.houseArrestStartFailed(bundleID: bundleID, status: status, message: internalMessage))
+    guard status == 0 else {
+      let message = device.calls.CopyErrorText?(status)?.takeRetainedValue() as String? ?? "unknown"
+      throw FBAMDeviceServiceError.houseArrestStartFailed(bundleID: bundleID, status: status, message: message)
     }
     guard let afcConnection else {
-      return FBFuture(error: FBAMDeviceServiceError.houseArrestConnectionMissing(bundleID: bundleID))
+      throw FBAMDeviceServiceError.houseArrestConnectionMissing(bundleID: bundleID)
     }
-    let connection = FBAFCConnection(connection: afcConnection.takeUnretainedValue(), calls: afcCalls, logger: logger)
-    return FBFuture(result: connection as AnyObject)
+    return FBAFCConnection(connection: afcConnection.takeUnretainedValue(), calls: afcCalls, logger: logger)
   }
 
-  func teardown(_ context: Any, logger: any FBControlCoreLogger) -> FBFuture<NSNull> {
-    guard let connection = context as? FBAFCConnection else {
-      return FBFuture(error: FBAMDeviceServiceError.notAnAFCConnection(context: String(describing: context)))
+  /// The idle window is best-effort cancelled rather than reliably so, hence the second check for
+  /// a consumer that took the connection while it was running out.
+  private func closeIfUnused() {
+    lock.lock()
+    if inUse {
+      lock.unlock()
+      logger.log("Not tearing down house arrest for '\(bundleID)' as it has a consumer again")
+      return
     }
-    logger.log("Closing connection to House Arrest for '\(bundleID)'")
+    let closing = connection
+    connection = nil
+    lock.unlock()
+    close(closing)
+  }
+
+  private func close(_ connection: FBAFCConnection?) {
+    guard let connection else {
+      return
+    }
+    logger.log("Closing the connection to house arrest for '\(bundleID)'")
     do {
       try connection.close()
-      logger.log("Closed House Arrest service for '\(bundleID)'")
-      return FBFuture<NSNull>.empty()
+      logger.log("Closed house arrest for '\(bundleID)'")
     } catch {
-      logger.log("Failed to close House Arrest for '\(bundleID)' with error \(error)")
-      return FBFuture(error: error)
+      logger.log("Failed to close house arrest for '\(bundleID)' with error \(error)")
     }
-  }
-
-  var contextName: String {
-    "house_arrest_\(bundleID)"
-  }
-
-  var isContextSharable: Bool {
-    false
   }
 }
 
-class FBAMDeviceServiceManager: NSObject {
+/// The house arrest services a device has opened, one per bundle id.
+///
+/// `@unchecked Sendable`: the service map is guarded by `lock`.
+final class FBAMDeviceServiceManager: @unchecked Sendable {
+
   private weak var device: FBAMDevice?
-  private let serviceTimeout: NSNumber?
-  private var houseArrestManagers: [String: FBFutureContextManager<FBAFCConnection>] = [:]
-  private var houseArrestDelegates: [String: FBAMDeviceServiceManager_HouseArrest] = [:]
+  private let serviceTimeout: TimeInterval?
+  private let lock = NSLock()
+  private var houseArrestServices: [String: FBHouseArrestService] = [:]
 
   // MARK: Initializers
 
-  class func manager(withAMDevice device: FBAMDevice, serviceTimeout: NSNumber?) -> FBAMDeviceServiceManager {
-    FBAMDeviceServiceManager(device: device, serviceTimeout: serviceTimeout)
-  }
-
-  private init(device: FBAMDevice, serviceTimeout: NSNumber?) {
+  init(device: FBAMDevice, serviceTimeout: TimeInterval?) {
     self.device = device
     self.serviceTimeout = serviceTimeout
-    super.init()
   }
 
   // MARK: Public Services
 
-  func houseArrestAFCConnection(forBundleID bundleID: String, afcCalls: AFCCalls) -> FBFutureContextManager<FBAFCConnection> {
-    if let manager = houseArrestManagers[bundleID] {
-      return manager
+  /// The house arrest service for `bundleID`, created on first use and kept for the device's life.
+  func houseArrestService(forBundleID bundleID: String, afcCalls: AFCCalls) -> FBHouseArrestService {
+    lock.lock()
+    defer { lock.unlock() }
+    if let existing = houseArrestServices[bundleID] {
+      return existing
     }
     guard let device else {
       preconditionFailure("Device is nil when creating house arrest connection for '\(bundleID)'")
     }
-    let delegate = FBAMDeviceServiceManager_HouseArrest(device: device, bundleID: bundleID, calls: afcCalls, serviceTimeout: serviceTimeout)
-    let manager = FBFutureContextManager<FBAFCConnection>(queue: device.workQueue, delegate: delegate, logger: device.logger)
-    houseArrestManagers[bundleID] = manager
-    houseArrestDelegates[bundleID] = delegate
-    return manager
+    let service = FBHouseArrestService(device: device, bundleID: bundleID, afcCalls: afcCalls, reuseTimeout: serviceTimeout)
+    houseArrestServices[bundleID] = service
+    return service
   }
 }

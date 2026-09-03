@@ -454,18 +454,15 @@ public final class FBDeviceFileCommands {
     return device
   }
 
-  fileprivate func fileCommandsForContainerApplication(_ bundleID: String) throws -> FBFutureContext<FBDeviceFileContainer> {
+  fileprivate func withFileContainerForContainerApplication<R>(
+    _ bundleID: String,
+    body: (any AsyncFileContainer) async throws -> R
+  ) async throws -> R {
     let device = try requireDevice()
     let queue = device.asyncQueue
-    return
-      device
-      .houseArrestAFCConnection(forBundleID: bundleID, afcCalls: afcCalls)
-      .onQueue(
-        queue,
-        pend: { connection -> FBFuture<AnyObject> in
-          FBFuture(result: FBDeviceFileContainer(afcConnection: connection, queue: queue) as AnyObject)
-        }
-      ).retyped(FBFutureContext<FBDeviceFileContainer>.self)
+    return try await device.withHouseArrestAFCConnection(forBundleID: bundleID, afcCalls: afcCalls) { connection in
+      try await body(FBDeviceFileContainer(afcConnection: connection, queue: queue))
+    }
   }
 
   fileprivate func fileCommandsForAuxillary() throws -> FBContainedFile_ContainedRoot {
@@ -497,7 +494,7 @@ extension FBDevice: FileCommands {
     _ bundleID: String,
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await withFileContainer(file.fileCommandsForContainerApplication(bundleID), body: body)
+    try await file.withFileContainerForContainerApplication(bundleID, body: body)
   }
 
   public func withFileCommandsForAuxillary<R>(
@@ -580,16 +577,5 @@ extension FBDevice: FileCommands {
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
     try await body(file.fileCommandsForSymbols())
-  }
-
-  /// Scopes the file container to `body`, exposing it through the
-  /// `AsyncFileContainer` async API.
-  private func withFileContainer<C: AsyncFileContainer, R>(
-    _ context: FBFutureContext<C>,
-    body: (any AsyncFileContainer) async throws -> R
-  ) async throws -> R {
-    try await withFBFutureContext(context) { container in
-      try await body(container)
-    }
   }
 }
