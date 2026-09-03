@@ -10,8 +10,6 @@
 #import <FBControlCore/FBControlCore.h>
 #import <FBDeviceControl/FBDeviceControl-Swift.h>
 
-#import "FBAMDevice.h"
-
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wprotocol"
 #pragma clang diagnostic ignored "-Wincomplete-implementation"
