@@ -42,13 +42,7 @@ class FBAppleDevicectlCommandExecutor {
 }
 
 extension FBAppleDevicectlCommandExecutor {
-  @objc func launchApplication(configuration: FBApplicationLaunchConfiguration) -> FBFuture<NSNumber> {
-    fbFutureFromAsync { [self] in
-      try await launchApplicationAsync(configuration: configuration) as NSNumber
-    }
-  }
-
-  func launchApplicationAsync(configuration: FBApplicationLaunchConfiguration) async throws -> NSNumber {
+  func launchApplication(configuration: FBApplicationLaunchConfiguration) async throws -> NSNumber {
     let tmpPath = try FileManager.default.temporaryFile(extension: "json")
     let tmpPathStr = tmpPath.path()
     var arguments = [

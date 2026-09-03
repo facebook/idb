@@ -58,7 +58,7 @@ public final class FBSimulatorLifecycleCommands {
     guard let simulator = self.simulator else {
       throw FBWeakTargetError.simulator
     }
-    try await FBSimulatorBootStrategy.bootAsync(simulator, with: configuration)
+    try await FBSimulatorBootStrategy.boot(simulator, with: configuration)
   }
 
   fileprivate func shutdown() async throws {

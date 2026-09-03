@@ -111,7 +111,7 @@ private class FBDeviceLaunchedApplication: FBLaunchedApplication {
   }
 
   func terminate() async throws {
-    try await bridgeFBFutureVoid(commands.killApplication(withProcessIdentifier: processIdentifier))
+    try await commands.killApplication(withProcessIdentifier: processIdentifier)
   }
 
   var bundleID: String {
@@ -251,7 +251,7 @@ public final class FBDeviceApplicationCommands {
 
   fileprivate func killApplicationAsync(withBundleID bundleID: String) async throws {
     let pid = try await processIDAsync(withBundleID: bundleID)
-    try await killApplicationAsync(withProcessIdentifier: pid.int32Value)
+    try await killApplication(withProcessIdentifier: pid.int32Value)
   }
 
   fileprivate func launchApplicationAsync(_ configuration: FBApplicationLaunchConfiguration) async throws -> any FBLaunchedApplication {
@@ -261,7 +261,7 @@ public final class FBDeviceApplicationCommands {
     let pid: NSNumber
     if device.osVersion.version.majorVersion >= 17 {
       let devicectl = FBAppleDevicectlCommandExecutor(device: device)
-      pid = try await devicectl.launchApplicationAsync(configuration: configuration)
+      pid = try await devicectl.launchApplication(configuration: configuration)
     } else {
       pid = try await withRemoteInstrumentsClient { client in
         try await bridgeFBFuture(client.launchApplication(configuration))
@@ -277,14 +277,7 @@ public final class FBDeviceApplicationCommands {
 
   // MARK: Private
 
-  fileprivate func killApplication(withProcessIdentifier processIdentifier: pid_t) -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      try await killApplicationAsync(withProcessIdentifier: processIdentifier)
-      return NSNull()
-    }
-  }
-
-  fileprivate func killApplicationAsync(withProcessIdentifier processIdentifier: pid_t) async throws {
+  fileprivate func killApplication(withProcessIdentifier processIdentifier: pid_t) async throws {
     try await withRemoteInstrumentsClient { client in
       try await bridgeFBFutureVoid(client.killProcess(processIdentifier))
     }

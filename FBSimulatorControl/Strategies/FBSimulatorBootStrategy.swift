@@ -13,16 +13,7 @@ final class FBSimulatorBootStrategy {
 
   // MARK: - Public Methods
 
-  class func boot(_ simulator: FBSimulator, with configuration: FBSimulatorBootConfiguration) -> FBFuture<NSNull> {
-    fbFutureFromAsync {
-      try await bootAsync(simulator, with: configuration)
-      return NSNull()
-    }
-  }
-
-  // MARK: - Async
-
-  static func bootAsync(_ simulator: FBSimulator, with configuration: FBSimulatorBootConfiguration) async throws {
+  static func boot(_ simulator: FBSimulator, with configuration: FBSimulatorBootConfiguration) async throws {
     // Return early depending on Simulator state.
     if simulator.state == .booted {
       return
