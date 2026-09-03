@@ -164,6 +164,9 @@ targets:
         INFOPLIST_FILE: $(SRCROOT)/Info.plist
         HEADER_SEARCH_PATHS: $(inherited) $(SRCROOT)/../PrivateHeaders
         FRAMEWORK_SEARCH_PATHS: $(inherited) $(SRCROOT)/../Build/Products/Release
+        # The linked static archives ship loose .swiftmodule directories next
+        # to the .a files; resolve them independently of -F framework semantics.
+        SWIFT_INCLUDE_PATHS: $(SRCROOT)/../Build/Products/Release
         # Suppress warnings for existing code patterns that trigger errors with strict settings
         OTHER_CFLAGS: $(inherited) -Wno-implicit-int-conversion -Wno-missing-field-initializers
         # The frameworks are linked as static archives (MACH_O_TYPE=staticlib), so
@@ -192,13 +195,13 @@ targets:
         embed: false
       - framework: ../Build/Products/Release/XCTestBootstrap.framework
         embed: false
-      - framework: ../Build/Products/Release/FBSimulatorControl.framework
+      - framework: ../Build/Products/Release/libFBSimulatorControl.a
         embed: false
-      - framework: ../Build/Products/Release/FBDeviceControl.framework
+      - framework: ../Build/Products/Release/libFBDeviceControl.a
         embed: false
-      - framework: ../Build/Products/Release/CompanionLib.framework
+      - framework: ../Build/Products/Release/libCompanionLib.a
         embed: false
-      - framework: ../Build/Products/Release/CompanionUtilities.framework
+      - framework: ../Build/Products/Release/libCompanionUtilities.a
         embed: false
       - target: IDBGRPCSwift
         embed: false
@@ -302,6 +305,9 @@ targets:
         CODE_SIGN_IDENTITY: "-"
         CODE_SIGNING_REQUIRED: NO
         CODE_SIGNING_ALLOWED: NO
+        # The linked static archives ship loose .swiftmodule directories next
+        # to the .a files; resolve them independently of -F framework semantics.
+        SWIFT_INCLUDE_PATHS: $(SRCROOT)/../Build/Products/Release
       # Linked tool: strip DWARF into a dSYM in Release.
       configs:
         Release:
@@ -314,7 +320,7 @@ targets:
         embed: false
       - target: ReplCompiler
         embed: false
-      - framework: ../Build/Products/Release/CompanionUtilities.framework
+      - framework: ../Build/Products/Release/libCompanionUtilities.a
         embed: false
       - package: swift-argument-parser
         product: ArgumentParser

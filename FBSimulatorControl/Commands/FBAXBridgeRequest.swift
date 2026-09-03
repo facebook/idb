@@ -6,6 +6,7 @@
  */
 
 import Darwin
+import FBControlCore
 import Foundation
 
 /// Selects how an in-guest frontmost read resolves the foreground application.

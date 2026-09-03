@@ -324,20 +324,17 @@ function build_idb_deps() {
   fi
 }
 
-function strip_framework() {
-  local FRAMEWORK_PATH="$BUILD_DIRECTORY/Products/Release/$1"
+# Only the two remaining .framework products (FBControlCore, XCTestBootstrap)
+# can nest: XCTestBootstrap re-embeds FBControlCore, and the duplicate is
+# deleted here. Pure-Swift targets build as static libraries, which never
+# nest. This last entry goes away with the last ObjC file (which lets those
+# targets become static libraries too).
+function strip_embedded_frameworks() {
+  local FRAMEWORK_PATH="$BUILD_DIRECTORY/Products/Release/XCTestBootstrap.framework/Versions/Current/Frameworks/FBControlCore.framework"
   if [ -d "$FRAMEWORK_PATH" ]; then
     echo "Stripping Framework $FRAMEWORK_PATH"
     rm -r "$FRAMEWORK_PATH"
   fi
-}
-
-function strip_embedded_frameworks() {
-  strip_framework "FBSimulatorControl.framework/Versions/Current/Frameworks/XCTestBootstrap.framework"
-  strip_framework "FBSimulatorControl.framework/Versions/Current/Frameworks/FBControlCore.framework"
-  strip_framework "FBDeviceControl.framework/Versions/Current/Frameworks/XCTestBootstrap.framework"
-  strip_framework "FBDeviceControl.framework/Versions/Current/Frameworks/FBControlCore.framework"
-  strip_framework "XCTestBootstrap.framework/Versions/Current/Frameworks/FBControlCore.framework"
 }
 
 # =============================================================================

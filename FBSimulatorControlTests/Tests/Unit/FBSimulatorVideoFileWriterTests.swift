@@ -7,6 +7,7 @@
 
 import AVFoundation
 import CoreMedia
+import FBControlCore
 @testable import FBSimulatorControl
 import XCTest
 
