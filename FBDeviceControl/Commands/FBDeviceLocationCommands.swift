@@ -10,7 +10,7 @@ import Foundation
 
 private let StartCommand: UInt32 = 0x00000000
 
-public class FBDeviceLocationCommands {
+public final class FBDeviceLocationCommands {
   private weak var device: FBDevice?
 
   // MARK: - Initializers

@@ -52,7 +52,7 @@ extension FBDeviceActivationError: LocalizedError {
   }
 }
 
-public class FBDeviceActivationCommands {
+public final class FBDeviceActivationCommands {
   private weak var device: FBDevice?
 
   // MARK: - Initializers

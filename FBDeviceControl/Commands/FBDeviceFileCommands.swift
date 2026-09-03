@@ -62,7 +62,7 @@ extension FBDeviceFileContainerError: LocalizedError {
 
 // MARK: - FBDeviceFileContainer
 
-public class FBDeviceFileContainer: AsyncFileContainer {
+public final class FBDeviceFileContainer: AsyncFileContainer {
   private let queue: DispatchQueue
   private let connectionBox: AFCConnectionBox
 
@@ -426,7 +426,7 @@ private class FBDeviceFileCommands_Symbols: AsyncFileContainer {
 
 // MARK: - FBDeviceFileCommands
 
-public class FBDeviceFileCommands {
+public final class FBDeviceFileCommands {
   private weak var device: FBDevice?
   private let afcCalls: AFCCalls
 

@@ -24,7 +24,7 @@ extension FBDeviceScreenshotError: LocalizedError {
   }
 }
 
-public class FBDeviceScreenshotCommands {
+public final class FBDeviceScreenshotCommands {
   private weak var device: FBDevice?
 
   // MARK: - Initializers

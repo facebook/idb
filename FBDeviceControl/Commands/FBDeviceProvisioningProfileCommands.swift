@@ -34,7 +34,7 @@ extension FBDeviceProvisioningProfileError: LocalizedError {
   }
 }
 
-public class FBDeviceProvisioningProfileCommands: ProvisioningProfileCommands {
+public final class FBDeviceProvisioningProfileCommands: ProvisioningProfileCommands {
   private(set) weak var device: FBDevice?
 
   // MARK: Public

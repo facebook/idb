@@ -37,7 +37,7 @@ extension FBDeviceSocketForwardingError: LocalizedError {
   }
 }
 
-public class FBDeviceSocketForwardingCommands {
+public final class FBDeviceSocketForwardingCommands {
   private(set) weak var device: FBDevice?
 
   // MARK: Initializers

@@ -64,7 +64,7 @@ extension FBDeviceLinkError: LocalizedError {
   }
 }
 
-public class FBDeviceLinkClient {
+public final class FBDeviceLinkClient {
   private let connection: FBAMDServiceConnection
   private let queue: DispatchQueue
 

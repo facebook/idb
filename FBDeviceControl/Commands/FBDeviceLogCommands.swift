@@ -10,7 +10,7 @@ import Foundation
 
 // MARK: - FBDeviceLogOperation
 
-public class FBDeviceLogOperation: LogOperation {
+public final class FBDeviceLogOperation: LogOperation {
   public let consumer: any FBDataConsumer
   private let readCompleted: FBFuture<NSNull>
   private let serviceCompleted: FBMutableFuture<NSNull>
@@ -40,7 +40,7 @@ public class FBDeviceLogOperation: LogOperation {
 
 // MARK: - FBDeviceLogCommands
 
-public class FBDeviceLogCommands {
+public final class FBDeviceLogCommands {
   private weak var device: FBDevice?
 
   // MARK: - Initializers

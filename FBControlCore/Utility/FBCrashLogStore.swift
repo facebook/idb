@@ -9,7 +9,7 @@ import Foundation
 
 private let FBCrashLogAppeared = NSNotification.Name("FBCrashLogAppeared")
 
-public class FBCrashLogStore {
+public final class FBCrashLogStore {
 
   // MARK: Properties
 

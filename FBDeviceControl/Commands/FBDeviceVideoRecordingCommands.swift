@@ -28,7 +28,7 @@ extension FBDeviceVideoRecordingCommandError: LocalizedError {
   }
 }
 
-public class FBDeviceVideoRecordingCommands: NSObject {
+public final class FBDeviceVideoRecordingCommands: NSObject {
   private weak var device: FBDevice?
   private var video: FBDeviceVideo?
 

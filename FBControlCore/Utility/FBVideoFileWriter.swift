@@ -36,7 +36,7 @@ extension FBVideoFileWriterError: LocalizedError {
   }
 }
 
-public class FBVideoFileWriter: NSObject, AVCaptureFileOutputRecordingDelegate {
+public final class FBVideoFileWriter: NSObject, AVCaptureFileOutputRecordingDelegate {
 
   // MARK: Properties
 

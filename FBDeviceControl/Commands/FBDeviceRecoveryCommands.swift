@@ -34,7 +34,7 @@ extension FBDeviceRecoveryError: LocalizedError {
   }
 }
 
-public class FBDeviceRecoveryCommands {
+public final class FBDeviceRecoveryCommands {
   private(set) weak var device: FBDevice?
 
   // MARK: Initializers

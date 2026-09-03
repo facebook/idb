@@ -41,7 +41,7 @@ public enum FBArchitectureAdapterError: Error, LocalizedError {
 }
 
 @objc(FBArchitectureProcessAdapter)
-public class FBArchitectureProcessAdapter: NSObject {
+public final class FBArchitectureProcessAdapter: NSObject {
 
   /// Force binaries to be launched in desired architectures.
   ///

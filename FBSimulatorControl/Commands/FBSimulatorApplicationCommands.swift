@@ -68,7 +68,7 @@ extension FBSimulatorApplicationError: LocalizedError {
   }
 }
 
-public class FBSimulatorApplicationCommands {
+public final class FBSimulatorApplicationCommands {
 
   // MARK: - Properties
 

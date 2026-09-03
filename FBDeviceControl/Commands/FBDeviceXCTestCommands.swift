@@ -35,7 +35,7 @@ extension FBDeviceXCTestError: LocalizedError {
   }
 }
 
-public class FBDeviceXCTestCommands: NSObject {
+public final class FBDeviceXCTestCommands: NSObject {
   private(set) weak var device: FBDevice?
   private(set) var workingDirectory: String
   private(set) var processFetcher: FBProcessFetcher

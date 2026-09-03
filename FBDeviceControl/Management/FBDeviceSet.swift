@@ -8,7 +8,7 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-public class FBDeviceSet: FBiOSTargetSet, FBiOSTargetSetDelegate, CustomStringConvertible {
+public final class FBDeviceSet: FBiOSTargetSet, FBiOSTargetSetDelegate, CustomStringConvertible {
   // Memoized so the load (and AMDevice's InitializeMobileDevice) runs once per process, matching
   // the previous static-let semantics while letting the failure surface: a failed load is cached
   // and rethrown by every subsequent init instead of aborting the process.

@@ -25,7 +25,7 @@ public enum FBCodesignError: Error, LocalizedError {
   }
 }
 
-public class FBCodesignProvider {
+public final class FBCodesignProvider {
 
   // MARK: Properties
 

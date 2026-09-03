@@ -20,7 +20,7 @@ public enum FBTemporaryDirectoryError: Error, LocalizedError {
 }
 
 @objc(FBTemporaryDirectory)
-public class FBTemporaryDirectory: NSObject {
+public final class FBTemporaryDirectory: NSObject {
 
   // MARK: Properties
 

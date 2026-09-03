@@ -36,7 +36,7 @@ extension FBDeviceDebuggerError: LocalizedError {
   }
 }
 
-public class FBDeviceDebuggerCommands {
+public final class FBDeviceDebuggerCommands {
   private weak var device: FBDevice?
 
   // MARK: - Initializers

@@ -7,7 +7,7 @@
 
 import Foundation
 
-public class FBXCTraceRecordCommands: NSObject, FBiOSTargetCommand {
+public final class FBXCTraceRecordCommands: NSObject, FBiOSTargetCommand {
 
   // MARK: Properties
 

@@ -20,7 +20,7 @@ public protocol FBCrashLogParser: NSObjectProtocol {
 /// 2. Json structure itself can be easily changed
 /// 3. Crashes is not often happening operation of idb
 /// we prefer reliability over performance gain here and parse all json strings finding the fields that we need in all of json entries
-public class FBConcatedJSONCrashLogParser: NSObject, FBCrashLogParser {
+public final class FBConcatedJSONCrashLogParser: NSObject, FBCrashLogParser {
 
   public func parseCrashLog(from str: String, executablePathOut: AutoreleasingUnsafeMutablePointer<NSString>, identifierOut: AutoreleasingUnsafeMutablePointer<NSString>, processNameOut: AutoreleasingUnsafeMutablePointer<NSString>, parentProcessNameOut: AutoreleasingUnsafeMutablePointer<NSString>, processIdentifierOut: UnsafeMutablePointer<pid_t>, parentProcessIdentifierOut: UnsafeMutablePointer<pid_t>, dateOut: AutoreleasingUnsafeMutablePointer<NSDate>, exceptionDescription: AutoreleasingUnsafeMutablePointer<NSString>, crashedThreadDescription: AutoreleasingUnsafeMutablePointer<NSString>, error: NSErrorPointer) {
     let parsedReport: [String: Any]
@@ -108,7 +108,7 @@ public class FBConcatedJSONCrashLogParser: NSObject, FBCrashLogParser {
 }
 
 /// This parser handles old plain text implementation of crash results
-public class FBPlainTextCrashLogParser: NSObject, FBCrashLogParser {
+public final class FBPlainTextCrashLogParser: NSObject, FBCrashLogParser {
 
   private static let maxLineSearch: UInt = 20
 

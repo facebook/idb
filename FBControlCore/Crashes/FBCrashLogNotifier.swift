@@ -10,7 +10,7 @@ import Foundation
 /// The pause between crash-log scans, matching `AsyncPolling`'s default cadence.
 private let CrashLogPollInterval: UInt64 = 100 * NSEC_PER_MSEC
 
-public class FBCrashLogNotifier {
+public final class FBCrashLogNotifier {
 
   // MARK: Properties
 

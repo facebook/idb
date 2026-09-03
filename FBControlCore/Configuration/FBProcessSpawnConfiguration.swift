@@ -15,7 +15,7 @@ public enum FBProcessSpawnMode: UInt {
 }
 
 @objc(FBProcessSpawnConfiguration)
-public class FBProcessSpawnConfiguration: FBProcessLaunchConfiguration {
+public final class FBProcessSpawnConfiguration: FBProcessLaunchConfiguration {
 
   @objc public let launchPath: String
   @objc public let mode: FBProcessSpawnMode

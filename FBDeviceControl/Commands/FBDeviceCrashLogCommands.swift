@@ -35,7 +35,7 @@ extension FBDeviceCrashLogError: LocalizedError {
   }
 }
 
-public class FBDeviceCrashLogCommands {
+public final class FBDeviceCrashLogCommands {
   private weak var device: FBDevice?
   private let store: FBCrashLogStore
   /// The AFC table the crash report file service is read through, when a caller supplies one.

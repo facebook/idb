@@ -8,7 +8,7 @@
 import Foundation
 
 @objc(FBXcodeConfiguration)
-public class FBXcodeConfiguration: NSObject {
+public final class FBXcodeConfiguration: NSObject {
 
   // MARK: Public Properties
 

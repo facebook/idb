@@ -61,7 +61,7 @@ extension FBDeviceDiskImageError: LocalizedError {
   }
 }
 
-public class FBDeviceDeveloperDiskImageCommands: DeveloperDiskImageCommands {
+public final class FBDeviceDeveloperDiskImageCommands: DeveloperDiskImageCommands {
   private(set) weak var device: FBDevice?
 
   /// Where the images this host has to offer come from. Injected because the default reads the

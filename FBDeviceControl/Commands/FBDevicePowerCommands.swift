@@ -8,7 +8,7 @@
 import FBControlCore
 import Foundation
 
-public class FBDevicePowerCommands {
+public final class FBDevicePowerCommands {
   private weak var device: FBDevice?
 
   // MARK: - Initializers
