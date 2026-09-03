@@ -92,7 +92,7 @@ public func pollUntilTrue(
 ///   - interval: The delay between attempts. Defaults to 100 milliseconds.
 ///   - operation: The work to attempt. Returns the value on the first success.
 /// - Returns: The result of the first successful invocation of `operation`.
-public func retryUntilSuccess<T>(
+func retryUntilSuccess<T>(
   interval: TimeInterval = 0.1,
   operation: @escaping @Sendable () async throws -> T
 ) async throws -> T {

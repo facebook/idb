@@ -98,7 +98,7 @@ public final class FBBundleDescriptor: NSObject, NSCopying, Sendable {
     _ = try await bridgeFBFuture(updatePathsForRelocation(withCodesign: codesign, logger: logger, queue: queue))
   }
 
-  public func updatePathsForRelocation(withCodesign codesign: FBCodesignProvider, logger: FBControlCoreLogger, queue: DispatchQueue) -> FBFuture<AnyObject> {
+  func updatePathsForRelocation(withCodesign codesign: FBCodesignProvider, logger: FBControlCoreLogger, queue: DispatchQueue) -> FBFuture<AnyObject> {
     return replacementsForBinary()
       .onQueue(
         queue,

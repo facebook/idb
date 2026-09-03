@@ -145,7 +145,7 @@ public struct FBScreenshotConfiguration: Hashable, Sendable {
   /// screen at native resolution, or shrunk by a dimensionless factor, has nothing to convert. Only
   /// a crop rect and a fit bound are in units, so only those make a `points` request depend on a
   /// screen scale the target may not report.
-  public var requiresScreenScale: Bool {
+  var requiresScreenScale: Bool {
     guard unit == .points else {
       return false
     }
@@ -249,7 +249,7 @@ public struct FBScreenshotPlan: Hashable, Sendable {
   }
 
   /// True when the image can be encoded exactly as captured.
-  public var isIdentity: Bool {
+  var isIdentity: Bool {
     cropRect == nil && scaleFactor == 1
   }
 }

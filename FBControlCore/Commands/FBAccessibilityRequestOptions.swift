@@ -64,7 +64,7 @@ public enum FBAccessibilityElementFilter: String, Sendable, CaseIterable {
   /// cannot match on — an element would be dropped for lacking a label that was simply never fetched.
   /// `serializationKeys` unions these in so narrowing `--key` narrows the *output* without also
   /// changing which elements survive.
-  public var requiredKeys: Set<FBAXKeys> {
+  var requiredKeys: Set<FBAXKeys> {
     switch self {
     case .all:
       return []

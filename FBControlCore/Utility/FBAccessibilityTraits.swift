@@ -77,7 +77,7 @@ private let axTraitToName: [NSNumber: String] =
   Dictionary(uniqueKeysWithValues: axTraitNames.map { (NSNumber(value: $0.0.rawValue), $0.1) })
 
 /// Mapping from single-bit accessibility trait values to their names.
-public func AXTraitToNameMap() -> [NSNumber: String] {
+func AXTraitToNameMap() -> [NSNumber: String] {
   axTraitToName
 }
 

@@ -154,12 +154,12 @@ public func convertFBMutableFuture<T: AnyObject>(_ mutableFuture: FBMutableFutur
 ///
 /// Convenience wrapper around `bridgeFBFuture(convertFBMutableFuture(_:))` that
 /// hides the cast through `FBFuture<T>` from callers.
-public func awaitMutableFuture<T: AnyObject>(_ mutableFuture: FBMutableFuture<T>) async throws -> T {
+func awaitMutableFuture<T: AnyObject>(_ mutableFuture: FBMutableFuture<T>) async throws -> T {
   try await bridgeFBFuture(convertFBMutableFuture(mutableFuture))
 }
 
 /// Awaits an `FBMutableFuture<NSNull>`, discarding the resolved `NSNull`.
-public func awaitMutableFutureVoid(_ mutableFuture: FBMutableFuture<NSNull>) async throws {
+func awaitMutableFutureVoid(_ mutableFuture: FBMutableFuture<NSNull>) async throws {
   try await bridgeFBFutureVoid(convertFBMutableFuture(mutableFuture))
 }
 

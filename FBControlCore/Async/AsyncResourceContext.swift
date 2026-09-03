@@ -38,7 +38,7 @@ import Foundation
 ///     and best-effort after a failing `body`.
 ///   - body: Uses the resource. The result is returned to the caller.
 /// - Returns: The result of `body`.
-public func withAsyncResource<T, R>(
+func withAsyncResource<T, R>(
   acquire: () async throws -> T,
   cleanup: (T) async throws -> Void,
   body: (T) async throws -> R

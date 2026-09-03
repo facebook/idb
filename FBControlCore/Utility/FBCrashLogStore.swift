@@ -42,7 +42,7 @@ public class FBCrashLogStore {
     return ingested
   }
 
-  public func ingestCrashLog(atPath path: String) -> FBCrashLogInfo? {
+  func ingestCrashLog(atPath path: String) -> FBCrashLogInfo? {
     if hasIngestedCrashLog(withName: (path as NSString).lastPathComponent) {
       return nil
     }
@@ -75,7 +75,7 @@ public class FBCrashLogStore {
     return nil
   }
 
-  public func removeCrashLog(atPath path: String) -> FBCrashLogInfo? {
+  func removeCrashLog(atPath path: String) -> FBCrashLogInfo? {
     let key = (path as NSString).lastPathComponent
     guard let crashLog = ingestedCrashLog(withName: key) else {
       return nil
@@ -90,7 +90,7 @@ public class FBCrashLogStore {
     return ingestedCrashLogs[name] as? FBCrashLogInfo
   }
 
-  public func allIngestedCrashLogs() -> [FBCrashLogInfo] {
+  func allIngestedCrashLogs() -> [FBCrashLogInfo] {
     return ingestedCrashLogs.allValues.compactMap { $0 as? FBCrashLogInfo }
   }
 

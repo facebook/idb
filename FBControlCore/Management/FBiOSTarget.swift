@@ -147,7 +147,7 @@ public func FBiOSTargetStateStringFromState(_ state: FBiOSTargetState) -> FBiOST
 }
 
 /// The canonical enum representation of the state string.
-public func FBiOSTargetStateFromStateString(_ stateString: FBiOSTargetStateString) -> FBiOSTargetState {
+func FBiOSTargetStateFromStateString(_ stateString: FBiOSTargetStateString) -> FBiOSTargetState {
   let normalized = stateString.rawValue.lowercased().replacingOccurrences(of: "-", with: " ")
   if normalized == FBiOSTargetStateString.creating.rawValue.lowercased() {
     return .creating
