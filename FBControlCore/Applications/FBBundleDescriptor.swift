@@ -9,7 +9,6 @@ import Foundation
 
 /// The ways bundle inspection can fail, as data rather than assembled strings.
 public enum FBBundleDescriptorError: Error {
-  case rpathReplacementsMalformed(replacements: String)
   case binaryPathUnavailable(bundlePath: String)
   case bundleLoadFailed(path: String)
   case bundleIdentifierUnavailable(name: String, path: String)
@@ -20,8 +19,6 @@ public enum FBBundleDescriptorError: Error {
 extension FBBundleDescriptorError: LocalizedError {
   public var errorDescription: String? {
     switch self {
-    case let .rpathReplacementsMalformed(replacements):
-      return "Expected the rpath replacements to be strings, got \(replacements)"
     case let .binaryPathUnavailable(bundlePath):
       return "Could not obtain binary path for bundle \(bundlePath)"
     case let .bundleLoadFailed(path):
@@ -93,47 +90,27 @@ public final class FBBundleDescriptor: NSObject, NSCopying, Sendable {
 
   // MARK: Public Methods
 
-  /// Async wrapper for `updatePathsForRelocation(withCodesign:logger:queue:)`.
-  public func updatePathsForRelocationAsync(withCodesign codesign: FBCodesignProvider, logger: FBControlCoreLogger, queue: DispatchQueue) async throws {
-    _ = try await bridgeFBFuture(updatePathsForRelocation(withCodesign: codesign, logger: logger, queue: queue))
-  }
-
-  func updatePathsForRelocation(withCodesign codesign: FBCodesignProvider, logger: FBControlCoreLogger, queue: DispatchQueue) -> FBFuture<AnyObject> {
-    return replacementsForBinary()
-      .onQueue(
-        queue,
-        fmap: { replacementsDictionary -> FBFuture<AnyObject> in
-          guard let replacements = replacementsDictionary as? [String: String] else {
-            return FBFuture(error: FBBundleDescriptorError.rpathReplacementsMalformed(replacements: String(describing: replacementsDictionary)))
-          }
-          if replacements.isEmpty {
-            return FBFuture(result: replacements as NSDictionary)
-          }
-          var arguments: [String] = []
-          for (key, value) in replacements {
-            arguments.append("-rpath")
-            arguments.append(key)
-            arguments.append(value)
-          }
-          if let binaryPath = self.binary?.path {
-            arguments.append(binaryPath)
-          }
-          logger.log("Updating rpaths for binary \(FBCollectionInformation.oneLineDescription(from: replacements as [String: Any]))")
-          return
-            FBProcessBuilder<AnyObject, AnyObject, AnyObject>
-            .withLaunchPath("/usr/bin/install_name_tool", arguments: arguments)
-            .withStdErr(to: logger)
-            .runUntilCompletion(withAcceptableExitCodes: Set([0 as NSNumber]))
-            .mapReplace(replacements as NSDictionary)
-        }
-      )
-      .retyped(FBFuture<NSDictionary>.self)
-      .onQueue(
-        queue,
-        fmap: { replacements -> FBFuture<AnyObject> in
-          logger.log("Re-Codesigning after rpath update \(self.path)")
-          return codesign.signBundle(atPath: self.path).mapReplace(replacements)
-        })
+  public func updatePathsForRelocation(withCodesign codesign: FBCodesignProvider, logger: FBControlCoreLogger) async throws {
+    let replacements = try replacementsForBinary()
+    if !replacements.isEmpty {
+      var arguments: [String] = []
+      for (key, value) in replacements {
+        arguments.append("-rpath")
+        arguments.append(key)
+        arguments.append(value)
+      }
+      if let binaryPath = binary?.path {
+        arguments.append(binaryPath)
+      }
+      logger.log("Updating rpaths for binary \(FBCollectionInformation.oneLineDescription(from: replacements as [String: Any]))")
+      _ = try await bridgeFBFuture(
+        FBProcessBuilder<AnyObject, AnyObject, AnyObject>
+          .withLaunchPath("/usr/bin/install_name_tool", arguments: arguments)
+          .withStdErr(to: logger)
+          .runUntilCompletion(withAcceptableExitCodes: Set([0 as NSNumber])))
+    }
+    logger.log("Re-Codesigning after rpath update \(path)")
+    try await bridgeFBFutureVoid(codesign.signBundle(atPath: path))
   }
 
   // MARK: Private
@@ -151,16 +128,11 @@ public final class FBBundleDescriptor: NSObject, NSCopying, Sendable {
       ?? ((bundle.bundlePath as NSString).deletingPathExtension as NSString).lastPathComponent
   }
 
-  private func replacementsForBinary() -> FBFuture<NSDictionary> {
-    do {
-      let rpaths = try binary?.rpaths()
-      guard let rpaths else {
-        return FBFuture(result: NSDictionary())
-      }
-      return FBFuture(result: FBBundleDescriptor.interpolateRpathReplacements(forRPaths: rpaths) as NSDictionary)
-    } catch {
-      return FBFuture(error: error)
+  private func replacementsForBinary() throws -> [String: String] {
+    guard let rpaths = try binary?.rpaths() else {
+      return [:]
     }
+    return FBBundleDescriptor.interpolateRpathReplacements(forRPaths: rpaths)
   }
 
   private class func interpolateRpathReplacements(forRPaths rpaths: [String]) -> [String: String] {

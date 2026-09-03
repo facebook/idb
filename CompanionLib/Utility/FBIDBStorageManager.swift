@@ -191,7 +191,7 @@ public class FBBundleStorage: FBIDBStorage {
     }
     let updatedBundle = try FBBundleDescriptor.bundle(fromPath: destinationBundlePath.path)
     let provider = FBCodesignProvider.codeSignCommand(withIdentityName: "-", logger: logger)
-    try await updatedBundle.updatePathsForRelocationAsync(withCodesign: provider, logger: logger, queue: queue)
+    try await updatedBundle.updatePathsForRelocation(withCodesign: provider, logger: logger)
     return artifact
   }
 
