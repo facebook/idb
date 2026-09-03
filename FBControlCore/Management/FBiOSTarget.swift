@@ -267,7 +267,7 @@ public func FBiOSTargetResolveState(
   deadline: PollDeadline? = nil
 ) async throws {
   let box = TargetBox(target)
-  try await awaitTargetState(box, deadline: deadline) { box.target.state == state }
+  try await pollUntilTrue(on: target.workQueue, deadline: deadline) { box.target.state == state }
 }
 
 /// Waits until the target leaves a provided state.
@@ -279,7 +279,7 @@ public func FBiOSTargetResolveLeavesState(
   deadline: PollDeadline? = nil
 ) async throws {
   let box = TargetBox(target)
-  try await awaitTargetState(box, deadline: deadline) { box.target.state != state }
+  try await pollUntilTrue(on: target.workQueue, deadline: deadline) { box.target.state != state }
 }
 
 /// Carries a target into the `@Sendable` polling closure. The target is read only for its `state`,
@@ -289,17 +289,4 @@ private final class TargetBox: @unchecked Sendable {
   init(_ target: FBiOSTarget) {
     self.target = target
   }
-}
-
-private func awaitTargetState(
-  _ box: TargetBox,
-  deadline: PollDeadline?,
-  condition: @escaping @Sendable () -> Bool
-) async throws {
-  let future = FBFuture<AnyObject>.onQueue(box.target.workQueue, resolveWhen: condition)
-  guard let deadline else {
-    try await bridgeFBFutureVoid(future)
-    return
-  }
-  try await bridgeFBFutureVoid(future.timeout(deadline.timeout, waitingFor: deadline.waitingFor))
 }
