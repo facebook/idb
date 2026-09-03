@@ -56,7 +56,7 @@ public final class FBDeviceScreenshotCommands {
 
   private func capture(from device: FBDevice) async throws -> Data {
     try await device.withDeviceLinkClient("com.apple.mobile.screenshotr") { client in
-      let response = try await client.processMessageAsync(["MessageType": "ScreenShotRequest"])
+      let response = try await client.processMessage(["MessageType": "ScreenShotRequest"])
       guard let screenshotData = response[ScreenShotDataKey] as? NSData else {
         throw FBDeviceScreenshotError.notImageData(response: String(describing: response), key: ScreenShotDataKey)
       }

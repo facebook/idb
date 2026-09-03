@@ -70,13 +70,7 @@ public final class FBDeviceLinkClient {
 
   // MARK: Initializers
 
-  public static func deviceLinkClient(connection: FBAMDServiceConnection) -> FBFuture<FBDeviceLinkClient> {
-    fbFutureFromAsync {
-      try await deviceLinkClientAsync(connection: connection)
-    }
-  }
-
-  public static func deviceLinkClientAsync(connection: FBAMDServiceConnection) async throws -> FBDeviceLinkClient {
+  public static func deviceLinkClient(connection: FBAMDServiceConnection) async throws -> FBDeviceLinkClient {
     let queue = DispatchQueue(label: "com.facebook.fbdevicecontrol.fbdevicelinkclient")
     try await performVersionExchangeAsync(connection: connection, queue: queue)
     return FBDeviceLinkClient(connection: connection, queue: queue)
@@ -89,13 +83,7 @@ public final class FBDeviceLinkClient {
 
   // MARK: Public Methods
 
-  func processMessage(_ message: Any) -> FBFuture<NSDictionary> {
-    fbFutureFromAsync { [self] in
-      try await processMessageAsync(message)
-    }
-  }
-
-  func processMessageAsync(_ message: Any) async throws -> NSDictionary {
+  func processMessage(_ message: Any) async throws -> NSDictionary {
     let connectionBox = ConnectionBox(connection)
     let messageBox = AnyBox(message)
     return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<NSDictionary, Error>) in

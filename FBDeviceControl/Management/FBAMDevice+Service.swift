@@ -50,7 +50,7 @@ extension FBAMDevice {
     _ body: (FBDeviceLinkClient) async throws -> T
   ) async throws -> T {
     try await withServiceConnection(service) { connection in
-      let client = try await FBDeviceLinkClient.deviceLinkClientAsync(connection: connection)
+      let client = try await FBDeviceLinkClient.deviceLinkClient(connection: connection)
       return try await body(client)
     }
   }
