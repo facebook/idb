@@ -535,7 +535,7 @@ public final class FBIDBCommandExecutor {
 
   public func hid(_ event: FBSimulatorHIDEvent) async throws {
     let hid = try await connectToHID()
-    try await event.sendAsync(on: hid)
+    try await event.send(on: hid)
   }
 
   public func set_hardware_keyboard_enabled(_ enabled: Bool) async throws {

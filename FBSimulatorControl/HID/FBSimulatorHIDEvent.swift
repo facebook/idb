@@ -50,7 +50,7 @@ public extension FBSimulatorHIDEvent {
   /// The gRPC companion has always sent this way and so has never drained; keeping the entry point
   /// preserves that until it is addressed on its own terms. Prefer `FBSimulatorHID.send(event:logger:)`,
   /// which drains once per gesture.
-  func sendAsync(on hid: FBSimulatorHID) async throws {
+  func send(on hid: FBSimulatorHID) async throws {
     _ = try await hid.deliver(self)
   }
 }

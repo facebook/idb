@@ -23,13 +23,13 @@ final class FBSimulatorBootStrategy {
     }
 
     // Boot via CoreSimulator.
-    try await performSimulatorBootAsync(simulator, with: configuration)
-    try await verifySimulatorIsBootedAsync(simulator, with: configuration)
+    try await performSimulatorBoot(simulator, with: configuration)
+    try await verifySimulatorIsBooted(simulator, with: configuration)
   }
 
   // MARK: - Private
 
-  private static func verifySimulatorIsBootedAsync(_ simulator: FBSimulator, with configuration: FBSimulatorBootConfiguration) async throws {
+  private static func verifySimulatorIsBooted(_ simulator: FBSimulator, with configuration: FBSimulatorBootConfiguration) async throws {
     // Return early if the option to verify boot is not set.
     if !configuration.options.contains(.verifyUsable) {
       return
@@ -38,7 +38,7 @@ final class FBSimulatorBootStrategy {
     try await FBSimulatorBootVerificationStrategy.verifySimulatorIsBootedAsync(simulator)
   }
 
-  private static func performSimulatorBootAsync(_ simulator: FBSimulator, with configuration: FBSimulatorBootConfiguration) async throws {
+  private static func performSimulatorBoot(_ simulator: FBSimulator, with configuration: FBSimulatorBootConfiguration) async throws {
     // "Persisting" means that the booted Simulator should live beyond the lifecycle of the process that calls the boot API.
     // The inverse of this is `FBSimulatorBootOptionsTieToProcessLifecycle`, which means that the Simulator should shutdown when the process that calls the boot API dies.
     let persist = !configuration.options.contains(.tieToProcessLifecycle)

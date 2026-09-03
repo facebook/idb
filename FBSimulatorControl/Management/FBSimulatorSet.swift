@@ -80,7 +80,7 @@ public final class FBSimulatorSet: FBiOSTargetSet {
 
     // First, create the device.
     logger.debug().log("Creating device with Type \(deviceType) Runtime \(runtime)")
-    let device = try await Self.createDeviceAsync(on: deviceSet, type: deviceType, runtime: runtime, name: model, queue: asyncQueue)
+    let device = try await Self.createDevice(on: deviceSet, type: deviceType, runtime: runtime, name: model, queue: asyncQueue)
     let simulator = try fetchNewlyMadeSimulatorOrThrow(device)
     simulator.configuration = configuration
     logger.debug().log("Created Simulator \(simulator.udid) for configuration \(configuration)")
@@ -93,7 +93,7 @@ public final class FBSimulatorSet: FBiOSTargetSet {
   }
 
   func cloneSimulator(_ simulator: FBSimulator, toDeviceSet destinationSet: FBSimulatorSet) async throws -> FBSimulator {
-    let device = try await Self.cloneDeviceAsync(on: deviceSet, device: simulator.device, toDeviceSet: destinationSet.deviceSet, queue: asyncQueue)
+    let device = try await Self.cloneDevice(on: deviceSet, device: simulator.device, toDeviceSet: destinationSet.deviceSet, queue: asyncQueue)
     return try destinationSet.fetchNewlyMadeSimulatorOrThrow(device)
   }
 
@@ -172,7 +172,7 @@ public final class FBSimulatorSet: FBiOSTargetSet {
     return simulator
   }
 
-  private static func createDeviceAsync(on deviceSet: SimDeviceSet, type deviceType: SimDeviceType, runtime: SimRuntime, name: String, queue: DispatchQueue) async throws -> SimDevice {
+  private static func createDevice(on deviceSet: SimDeviceSet, type deviceType: SimDeviceType, runtime: SimRuntime, name: String, queue: DispatchQueue) async throws -> SimDevice {
     try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<SimDevice, Error>) in
       deviceSet.createDeviceAsync(withType: deviceType, runtime: runtime, name: name, completionQueue: queue) { error, device in
         if let device {
@@ -184,7 +184,7 @@ public final class FBSimulatorSet: FBiOSTargetSet {
     }
   }
 
-  private static func cloneDeviceAsync(on deviceSet: SimDeviceSet, device: SimDevice, toDeviceSet destinationSet: SimDeviceSet, queue: DispatchQueue) async throws -> SimDevice {
+  private static func cloneDevice(on deviceSet: SimDeviceSet, device: SimDevice, toDeviceSet destinationSet: SimDeviceSet, queue: DispatchQueue) async throws -> SimDevice {
     try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<SimDevice, Error>) in
       deviceSet.cloneDeviceAsync(device, name: device.name, to: destinationSet, completionQueue: queue) { error, created in
         if let created {
