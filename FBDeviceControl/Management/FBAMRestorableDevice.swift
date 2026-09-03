@@ -11,7 +11,7 @@ import Foundation
 private let UnknownValue = "unknown"
 
 /// An Object Wrapper around AMRestorableDevice.
-public final class FBAMRestorableDevice: NSObject, FBiOSTargetInfo, FBDeviceProtocol {
+public final class FBAMRestorableDevice: FBiOSTargetInfo, FBDeviceProtocol {
 
   // MARK: - Properties
 
@@ -51,7 +51,6 @@ public final class FBAMRestorableDevice: NSObject, FBiOSTargetInfo, FBDeviceProt
     self.workQueue = workQueue
     self.asyncQueue = asyncQueue
     self.logger = logger
-    super.init()
   }
 
   deinit {
