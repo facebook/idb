@@ -57,7 +57,7 @@ public final class FBSimulatorBootVerificationStrategy {
   // MARK: - Async
 
   static func verifySimulatorIsBootedAsync(_ simulator: FBSimulator) async throws {
-    try await bridgeFBFutureVoid(FBiOSTargetResolveState(simulator, .booted))
+    try await FBiOSTargetResolveState(simulator, .booted)
     let strategy = FBSimulatorBootVerificationStrategy(simulator: simulator)
     let interval = UInt64(bootVerificationWaitInterval * Double(NSEC_PER_SEC))
     while true {

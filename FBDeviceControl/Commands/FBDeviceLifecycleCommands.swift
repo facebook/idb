@@ -27,14 +27,14 @@ public class FBDeviceLifecycleCommands {
     guard let device else {
       throw FBDeviceNilError.deviceNil
     }
-    try await bridgeFBFutureVoid(FBiOSTargetResolveState(device, state))
+    try await FBiOSTargetResolveState(device, state)
   }
 
   fileprivate func resolveLeavesStateAsync(_ state: FBiOSTargetState) async throws {
     guard let device else {
       throw FBDeviceNilError.deviceNil
     }
-    try await bridgeFBFutureVoid(FBiOSTargetResolveLeavesState(device, state))
+    try await FBiOSTargetResolveLeavesState(device, state)
   }
 }
 

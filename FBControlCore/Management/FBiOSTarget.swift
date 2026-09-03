@@ -258,20 +258,48 @@ public func FBiOSTargetPredicateForUDIDs(_ udids: [String]) -> NSPredicate {
   }
 }
 
-/// Constructs a future that resolves when the target resolves to a provided state.
-public func FBiOSTargetResolveState(_ target: FBiOSTarget, _ state: FBiOSTargetState) -> FBFuture<NSNull> {
-  return FBFuture<AnyObject>.onQueue(
-    target.workQueue,
-    resolveWhen: {
-      target.state == state
-    })
+/// Waits until the target resolves to a provided state.
+///
+/// - Parameter deadline: How long to wait for. Waits indefinitely when `nil`.
+public func FBiOSTargetResolveState(
+  _ target: FBiOSTarget,
+  _ state: FBiOSTargetState,
+  deadline: PollDeadline? = nil
+) async throws {
+  let box = TargetBox(target)
+  try await awaitTargetState(box, deadline: deadline) { box.target.state == state }
 }
 
-/// Constructs a future that resolves when the target leaves a provided state.
-public func FBiOSTargetResolveLeavesState(_ target: FBiOSTarget, _ state: FBiOSTargetState) -> FBFuture<NSNull> {
-  return FBFuture<AnyObject>.onQueue(
-    target.workQueue,
-    resolveWhen: {
-      target.state != state
-    })
+/// Waits until the target leaves a provided state.
+///
+/// - Parameter deadline: How long to wait for. Waits indefinitely when `nil`.
+public func FBiOSTargetResolveLeavesState(
+  _ target: FBiOSTarget,
+  _ state: FBiOSTargetState,
+  deadline: PollDeadline? = nil
+) async throws {
+  let box = TargetBox(target)
+  try await awaitTargetState(box, deadline: deadline) { box.target.state != state }
+}
+
+/// Carries a target into the `@Sendable` polling closure. The target is read only for its `state`,
+/// and only on its own work queue, which is the serialisation point the protocol documents.
+private final class TargetBox: @unchecked Sendable {
+  let target: FBiOSTarget
+  init(_ target: FBiOSTarget) {
+    self.target = target
+  }
+}
+
+private func awaitTargetState(
+  _ box: TargetBox,
+  deadline: PollDeadline?,
+  condition: @escaping @Sendable () -> Bool
+) async throws {
+  let future = FBFuture<AnyObject>.onQueue(box.target.workQueue, resolveWhen: condition)
+  guard let deadline else {
+    try await bridgeFBFutureVoid(future)
+    return
+  }
+  try await bridgeFBFutureVoid(future.timeout(deadline.timeout, waitingFor: deadline.waitingFor))
 }

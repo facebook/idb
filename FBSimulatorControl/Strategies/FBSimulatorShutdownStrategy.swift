@@ -74,16 +74,17 @@ public final class FBSimulatorShutdownStrategy {
         }
       }
     }
-    try await bridgeFBFutureVoid(FBiOSTargetResolveState(simulator, .shutdown))
+    try await FBiOSTargetResolveState(simulator, .shutdown)
   }
 
   private static func transitionCreatingToShutdownAsync(_ simulator: FBSimulator) async throws {
     do {
-      try await bridgeFBFutureVoid(
-        FBiOSTargetResolveState(simulator, .shutdown).timeout(
-          FBControlCoreGlobalConfiguration.regularTimeout,
-          waitingFor: "Simulator to resolve state \(FBiOSTargetStateString.shutdown)"
-        ).retyped(FBFuture<NSNull>.self))
+      try await FBiOSTargetResolveState(
+        simulator,
+        .shutdown,
+        deadline: PollDeadline(
+          timeout: FBControlCoreGlobalConfiguration.regularTimeout,
+          waitingFor: "Simulator to resolve state \(FBiOSTargetStateString.shutdown)"))
       return
     } catch {
       try await eraseSimulatorAsync(simulator)
@@ -102,10 +103,11 @@ public final class FBSimulatorShutdownStrategy {
         }
       }
     }
-    try await bridgeFBFutureVoid(
-      FBiOSTargetResolveState(simulator, .shutdown).timeout(
-        FBControlCoreGlobalConfiguration.regularTimeout,
-        waitingFor: "Timed out waiting for Simulator to transition from Creating -> Shutdown"
-      ).retyped(FBFuture<NSNull>.self))
+    try await FBiOSTargetResolveState(
+      simulator,
+      .shutdown,
+      deadline: PollDeadline(
+        timeout: FBControlCoreGlobalConfiguration.regularTimeout,
+        waitingFor: "Simulator to transition from Creating -> Shutdown"))
   }
 }

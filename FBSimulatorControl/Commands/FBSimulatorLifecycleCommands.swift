@@ -84,7 +84,7 @@ public final class FBSimulatorLifecycleCommands {
     guard let simulator = self.simulator else {
       throw FBWeakTargetError.simulator
     }
-    try await bridgeFBFutureVoid(FBiOSTargetResolveState(simulator, state))
+    try await FBiOSTargetResolveState(simulator, state)
   }
 
   fileprivate func resolveLeavesStateAsync(_ state: FBiOSTargetState) async throws {
