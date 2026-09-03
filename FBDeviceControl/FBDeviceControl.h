@@ -7,7 +7,6 @@
 
 #import <FBDeviceControl/FBAMDefines.h>
 #import <FBDeviceControl/FBDeviceCommands.h>
-#import <FBDeviceControl/FBInstrumentsClient.h>
 
 #if __has_include(<FBDeviceControl/FBDeviceControl-Swift.h>)
  #import <FBDeviceControl/FBDeviceControl-Swift.h>

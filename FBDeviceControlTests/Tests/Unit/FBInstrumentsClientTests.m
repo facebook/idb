@@ -9,6 +9,7 @@
 
 #import <FBControlCore/FBControlCore.h>
 #import <FBDeviceControl/FBDeviceControl.h>
+#import <FBDeviceControl/FBDeviceControl-Swift.h>
 
 // Constants mirroring private definitions in FBInstrumentsClient.m
 static const uint64_t TestArgumentMagic = 0x1F0;
