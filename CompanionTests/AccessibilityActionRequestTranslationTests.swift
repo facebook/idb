@@ -106,6 +106,27 @@ final class AccessibilityActionRequestTranslationTests: XCTestCase {
     XCTAssertEqual(destination, .marker(value: "Album", key: .label, depth: 3))
   }
 
+  func testAMarkerEndpointResolvesCaseSensitively() throws {
+    // Action requests carry no case option, so every translated marker matches case-sensitively.
+    // Spelled out rather than relying on the enum default: the feature commit carrying the
+    // request's flag into the query builds on this default.
+    let action = try action {
+      $0.marker = "Photo"
+      $0.matchKey = .uniqueID
+      $0.depth = 5
+      $0.drag = .with { drag in
+        drag.marker = "Album"
+        drag.destinationMatchKey = .label
+        drag.destinationDepth = 3
+      }
+    }
+    guard case let .drag(source, destination, _) = action else {
+      return XCTFail("expected a drag")
+    }
+    XCTAssertEqual(source, .marker(value: "Photo", key: .uniqueID, depth: 5, ignoresCase: false))
+    XCTAssertEqual(destination, .marker(value: "Album", key: .label, depth: 3, ignoresCase: false))
+  }
+
   func testAMissingSourceIsRefusedByName() {
     // Unlike a scroll, a drag has nothing sensible to do with the frontmost app.
     assertRejected({ $0.target = nil }, mentioning: "source")
