@@ -17,24 +17,14 @@ public protocol FBXCTestDescriptor: AnyObject {
   var architectures: Set<String> { get }
   var testBundle: FBBundleDescriptor { get }
   func setup(with request: FBXCTestRunRequest, target: FBiOSTarget) -> FBFuture<NSNull>
-  func testConfig(withRunRequest request: FBXCTestRunRequest, testApps: FBTestApplicationsPair, logDirectoryPath: String?, logger: FBControlCoreLogger, queue: DispatchQueue) -> FBFuture<FBIDBAppHostedTestConfiguration>
-  func testAppPair(for request: FBXCTestRunRequest, target: FBiOSTarget) -> FBFuture<FBTestApplicationsPair>
+  func testConfig(withRunRequest request: FBXCTestRunRequest, testApps: FBTestApplicationsPair, logDirectoryPath: String?, logger: FBControlCoreLogger) async throws -> FBIDBAppHostedTestConfiguration
+  func testAppPair(for request: FBXCTestRunRequest, target: FBiOSTarget) async throws -> FBTestApplicationsPair
 }
 
 public extension FBXCTestDescriptor {
   /// Async wrapper for `setup(with:target:)`.
   func setupAsync(with request: FBXCTestRunRequest, target: FBiOSTarget) async throws {
     try await bridgeFBFutureVoid(self.setup(with: request, target: target))
-  }
-
-  /// Async wrapper for `testAppPair(for:target:)`.
-  func testAppPairAsync(for request: FBXCTestRunRequest, target: FBiOSTarget) async throws -> FBTestApplicationsPair {
-    try await bridgeFBFuture(self.testAppPair(for: request, target: target))
-  }
-
-  /// Async wrapper for `testConfig(withRunRequest:testApps:logDirectoryPath:logger:queue:)`.
-  func testConfigAsync(withRunRequest request: FBXCTestRunRequest, testApps: FBTestApplicationsPair, logDirectoryPath: String?, logger: FBControlCoreLogger, queue: DispatchQueue) async throws -> FBIDBAppHostedTestConfiguration {
-    try await bridgeFBFuture(self.testConfig(withRunRequest: request, testApps: testApps, logDirectoryPath: logDirectoryPath, logger: logger, queue: queue))
   }
 }
 
@@ -118,59 +108,39 @@ public final class FBXCTestBootstrapDescriptor: FBXCTestDescriptor, CustomString
     return FBXCTestBootstrapDescriptor.killAllRunningApplications(target).mapReplace(NSNull()).retyped(FBFuture<NSNull>.self)
   }
 
-  public func testAppPair(for request: FBXCTestRunRequest, target: FBiOSTarget) -> FBFuture<FBTestApplicationsPair> {
+  public func testAppPair(for request: FBXCTestRunRequest, target: FBiOSTarget) async throws -> FBTestApplicationsPair {
     if request.isLogicTest {
-      return FBFuture(result: FBTestApplicationsPair(applicationUnderTest: nil, testHostApp: nil))
+      return FBTestApplicationsPair(applicationUnderTest: nil, testHostApp: nil)
+    }
+    guard let asyncTarget = target as? any ApplicationCommands else {
+      throw FBXCTestDescriptorError.applicationCommandsUnsupported(targetDescription: String(describing: target))
     }
     if request.isUITest {
       guard let testTargetAppBundleID = request.testTargetAppBundleID else {
-        return FBFuture(error: FBXCTestDescriptorError.uiTestMissingAppBundleID)
+        throw FBXCTestDescriptorError.uiTestMissingAppBundleID
       }
       let testHostBundleID = request.testHostAppBundleID ?? "com.apple.Preferences"
-      let pairFuture: FBFuture<FBTestApplicationsPair> = fbFutureFromAsync {
-        guard let asyncTarget = target as? any ApplicationCommands else {
-          throw FBXCTestDescriptorError.applicationCommandsUnsupported(targetDescription: String(describing: target))
-        }
-        let testTargetApp = try await asyncTarget.installedApplication(bundleID: testTargetAppBundleID)
-        let testHostApp = try await asyncTarget.installedApplication(bundleID: testHostBundleID)
-        return FBTestApplicationsPair(applicationUnderTest: testTargetApp, testHostApp: testHostApp)
-      }
-      return pairFuture
+      let testTargetApp = try await asyncTarget.installedApplication(bundleID: testTargetAppBundleID)
+      let testHostApp = try await asyncTarget.installedApplication(bundleID: testHostBundleID)
+      return FBTestApplicationsPair(applicationUnderTest: testTargetApp, testHostApp: testHostApp)
     }
     // App Test
     guard let bundleID = request.testHostAppBundleID else {
-      return FBFuture(error: FBXCTestDescriptorError.appTestMissingBundleIDs)
+      throw FBXCTestDescriptorError.appTestMissingBundleIDs
     }
-    return fbFutureFromAsync {
-      guard let asyncTarget = target as? any ApplicationCommands else {
-        throw FBXCTestDescriptorError.applicationCommandsUnsupported(targetDescription: String(describing: target))
-      }
-      let application = try await asyncTarget.installedApplication(bundleID: bundleID)
-      return FBTestApplicationsPair(applicationUnderTest: nil, testHostApp: application)
-    }
+    let application = try await asyncTarget.installedApplication(bundleID: bundleID)
+    return FBTestApplicationsPair(applicationUnderTest: nil, testHostApp: application)
   }
 
-  public func testConfig(withRunRequest request: FBXCTestRunRequest, testApps: FBTestApplicationsPair, logDirectoryPath: String?, logger: FBControlCoreLogger, queue: DispatchQueue) -> FBFuture<FBIDBAppHostedTestConfiguration> {
+  public func testConfig(withRunRequest request: FBXCTestRunRequest, testApps: FBTestApplicationsPair, logDirectoryPath: String?, logger: FBControlCoreLogger) async throws -> FBIDBAppHostedTestConfiguration {
     guard let testHostApp = testApps.testHostApp else {
-      return FBFuture(error: FBXCTestDescriptorError.noTestHostApplication(requestDescription: String(describing: request)))
+      throw FBXCTestDescriptorError.noTestHostApplication(requestDescription: String(describing: request))
     }
-    let appLaunchConfigFuture = buildAppLaunchConfig(
-      bundleID: testHostApp.bundle.identifier,
-      environment: request.environment,
-      arguments: request.arguments,
-      logger: logger,
-      processLogDirectory: logDirectoryPath,
-      waitForDebugger: request.waitForDebugger
-    )
     var coverageConfig: FBCodeCoverageConfiguration?
     if request.coverageRequest.collect {
       let coverageDirName = "coverage_\(UUID().uuidString)"
       let coverageDirPath = (targetAuxillaryDirectory as NSString).appendingPathComponent(coverageDirName)
-      do {
-        try FileManager.default.createDirectory(atPath: coverageDirPath, withIntermediateDirectories: true, attributes: nil)
-      } catch {
-        return FBFuture(error: error as NSError)
-      }
+      try FileManager.default.createDirectory(atPath: coverageDirPath, withIntermediateDirectories: true, attributes: nil)
       coverageConfig = FBCodeCoverageConfiguration(
         directory: coverageDirPath,
         format: request.coverageRequest.format,
@@ -178,30 +148,33 @@ public final class FBXCTestBootstrapDescriptor: FBXCTestDescriptor, CustomString
       )
     }
 
-    return appLaunchConfigFuture.onQueue(
-      queue,
-      map: { applicationLaunchConfiguration -> AnyObject in
-        let testLaunchConfig = FBTestLaunchConfiguration(
-          testBundle: self.testBundle,
-          applicationLaunchConfiguration: applicationLaunchConfiguration,
-          testHostBundle: testApps.testHostApp?.bundle,
-          timeout: request.testTimeout?.doubleValue ?? 0,
-          initializeUITesting: request.isUITest,
-          useXcodebuild: false,
-          testsToRun: request.testsToRun,
-          testsToSkip: request.testsToSkip,
-          targetApplicationBundle: testApps.applicationUnderTest?.bundle,
-          xcTestRunProperties: nil,
-          resultBundlePath: nil,
-          reportActivities: request.reportActivities,
-          coverageDirectoryPath: coverageConfig?.coverageDirectory,
-          enableContinuousCoverageCollection: coverageConfig?.shouldEnableContinuousCoverageCollection ?? false,
-          logDirectoryPath: logDirectoryPath,
-          reportResultBundle: request.collectResultBundle
-        )
-        return FBIDBAppHostedTestConfiguration(testLaunchConfiguration: testLaunchConfig, coverageConfiguration: coverageConfig)
-      }
-    ).retyped(FBFuture<FBIDBAppHostedTestConfiguration>.self)
+    let applicationLaunchConfiguration = try await buildAppLaunchConfig(
+      bundleID: testHostApp.bundle.identifier,
+      environment: request.environment,
+      arguments: request.arguments,
+      logger: logger,
+      processLogDirectory: logDirectoryPath,
+      waitForDebugger: request.waitForDebugger
+    )
+    let testLaunchConfig = FBTestLaunchConfiguration(
+      testBundle: testBundle,
+      applicationLaunchConfiguration: applicationLaunchConfiguration,
+      testHostBundle: testApps.testHostApp?.bundle,
+      timeout: request.testTimeout?.doubleValue ?? 0,
+      initializeUITesting: request.isUITest,
+      useXcodebuild: false,
+      testsToRun: request.testsToRun,
+      testsToSkip: request.testsToSkip,
+      targetApplicationBundle: testApps.applicationUnderTest?.bundle,
+      xcTestRunProperties: nil,
+      resultBundlePath: nil,
+      reportActivities: request.reportActivities,
+      coverageDirectoryPath: coverageConfig?.coverageDirectory,
+      enableContinuousCoverageCollection: coverageConfig?.shouldEnableContinuousCoverageCollection ?? false,
+      logDirectoryPath: logDirectoryPath,
+      reportResultBundle: request.collectResultBundle
+    )
+    return FBIDBAppHostedTestConfiguration(testLaunchConfiguration: testLaunchConfig, coverageConfiguration: coverageConfig)
   }
 }
 
@@ -242,20 +215,15 @@ public final class FBXCodebuildTestRunDescriptor: FBXCTestDescriptor, CustomStri
     return FBFuture<NSNull>.empty()
   }
 
-  public func testAppPair(for request: FBXCTestRunRequest, target: FBiOSTarget) -> FBFuture<FBTestApplicationsPair> {
-    FBFuture(result: FBTestApplicationsPair(applicationUnderTest: nil, testHostApp: nil))
+  public func testAppPair(for request: FBXCTestRunRequest, target: FBiOSTarget) async throws -> FBTestApplicationsPair {
+    FBTestApplicationsPair(applicationUnderTest: nil, testHostApp: nil)
   }
 
-  public func testConfig(withRunRequest request: FBXCTestRunRequest, testApps: FBTestApplicationsPair, logDirectoryPath: String?, logger: FBControlCoreLogger, queue: DispatchQueue) -> FBFuture<FBIDBAppHostedTestConfiguration> {
+  public func testConfig(withRunRequest request: FBXCTestRunRequest, testApps: FBTestApplicationsPair, logDirectoryPath: String?, logger: FBControlCoreLogger) async throws -> FBIDBAppHostedTestConfiguration {
     let resultBundleName = "resultbundle_\(UUID().uuidString)"
     let resultBundlePath = (targetAuxillaryDirectory as NSString).appendingPathComponent(resultBundleName)
 
-    let properties: [String: Any]
-    do {
-      properties = try FBXCTestRunFileReader.readContents(of: url, expandPlaceholderWithPath: targetAuxillaryDirectory)
-    } catch {
-      return FBFuture(error: error as NSError)
-    }
+    let properties = try FBXCTestRunFileReader.readContents(of: url, expandPlaceholderWithPath: targetAuxillaryDirectory)
 
     let io = FBProcessIO<AnyObject, AnyObject, AnyObject>(stdIn: nil, stdOut: nil, stdErr: nil)
     let launchConfig = FBApplicationLaunchConfiguration(
@@ -287,18 +255,18 @@ public final class FBXCodebuildTestRunDescriptor: FBXCTestDescriptor, CustomStri
       reportResultBundle: request.collectResultBundle
     )
 
-    return FBFuture(result: FBIDBAppHostedTestConfiguration(testLaunchConfiguration: testLaunchConfiguration, coverageConfiguration: nil))
+    return FBIDBAppHostedTestConfiguration(testLaunchConfiguration: testLaunchConfiguration, coverageConfiguration: nil)
   }
 }
 
 // MARK: - Private Helper
 
-private func buildAppLaunchConfig(bundleID: String, environment: [String: String], arguments: [String], logger: FBControlCoreLogger, processLogDirectory: String?, waitForDebugger: Bool) -> FBFuture<FBApplicationLaunchConfiguration> {
+private func buildAppLaunchConfig(bundleID: String, environment: [String: String], arguments: [String], logger: FBControlCoreLogger, processLogDirectory: String?, waitForDebugger: Bool) async throws -> FBApplicationLaunchConfiguration {
   let stdOutConsumer = FBLoggingDataConsumer(logger: logger)
   let stdErrConsumer = FBLoggingDataConsumer(logger: logger)
 
   guard let processLogDirectory else {
-    return FBFuture(result: applicationLaunchConfiguration(bundleID: bundleID, environment: environment, arguments: arguments, waitForDebugger: waitForDebugger, stdOut: stdOutConsumer, stdErr: stdErrConsumer))
+    return applicationLaunchConfiguration(bundleID: bundleID, environment: environment, arguments: arguments, waitForDebugger: waitForDebugger, stdOut: stdOutConsumer, stdErr: stdErrConsumer)
   }
 
   // Both mirrors are created before either is awaited, so the two file writers are opened concurrently.
@@ -306,11 +274,9 @@ private func buildAppLaunchConfig(bundleID: String, environment: [String: String
   let stdOutFuture = mirrorLogger.logConsumption(of: stdOutConsumer, toFileNamed: "test_process_stdout.out", logger: logger)
   let stdErrFuture = mirrorLogger.logConsumption(of: stdErrConsumer, toFileNamed: "test_process_stderr.err", logger: logger)
 
-  return fbFutureFromAsync {
-    let stdOut = try await mirroredConsumer(stdOutFuture)
-    let stdErr = try await mirroredConsumer(stdErrFuture)
-    return applicationLaunchConfiguration(bundleID: bundleID, environment: environment, arguments: arguments, waitForDebugger: waitForDebugger, stdOut: stdOut, stdErr: stdErr)
-  }
+  let stdOut = try await mirroredConsumer(stdOutFuture)
+  let stdErr = try await mirroredConsumer(stdErrFuture)
+  return applicationLaunchConfiguration(bundleID: bundleID, environment: environment, arguments: arguments, waitForDebugger: waitForDebugger, stdOut: stdOut, stdErr: stdErr)
 }
 
 private func mirroredConsumer(_ future: FBFuture<AnyObject>) async throws -> FBDataConsumer {

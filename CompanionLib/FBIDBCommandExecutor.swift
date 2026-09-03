@@ -818,7 +818,7 @@ public final class FBIDBCommandExecutor {
     // as installed apps are referenced from xctestrun files and expanded by idb
     // by using its own application storage. Fix this by replacing xctestrun
     // placeholders by app bundle paths instead
-    _ = try await storageManager.application.saveBundleAsync(appBundle)
+    _ = try await storageManager.application.saveBundle(appBundle)
     if makeDebuggable && installedApp.installType != .userDevelopment && userDevelopmentAppIsRequired {
       throw FBIDBCommandError.userDevelopmentSigningRequired(applicationDescription: String(describing: installedApp))
     }
@@ -826,11 +826,11 @@ public final class FBIDBCommandExecutor {
   }
 
   private func installXctest(_ extractionDirectory: URL, skipSigningBundles: Bool) async throws -> FBInstalledArtifact {
-    return try await storageManager.xctest.saveBundleOrTestRunFromBaseDirectoryAsync(extractionDirectory, skipSigningBundles: skipSigningBundles)
+    return try await storageManager.xctest.saveBundleOrTestRunFromBaseDirectory(extractionDirectory, skipSigningBundles: skipSigningBundles)
   }
 
   private func installXctestFilePath(_ xctestURL: URL, skipSigningBundles: Bool) async throws -> FBInstalledArtifact {
-    return try await storageManager.xctest.saveBundleOrTestRunAsync(xctestURL, skipSigningBundles: skipSigningBundles)
+    return try await storageManager.xctest.saveBundleOrTestRun(xctestURL, skipSigningBundles: skipSigningBundles)
   }
 
   private func installFile(_ extractedFile: URL, intoStorage storage: FBFileStorage) async throws -> FBInstalledArtifact {
@@ -871,6 +871,6 @@ public final class FBIDBCommandExecutor {
 
   private func installBundle(_ extractedDirectory: URL, intoStorage storage: FBBundleStorage) async throws -> FBInstalledArtifact {
     let bundle = try FBStorageUtils.bundle(inDirectory: extractedDirectory)
-    return try await storage.saveBundleAsync(bundle)
+    return try await storage.saveBundle(bundle)
   }
 }

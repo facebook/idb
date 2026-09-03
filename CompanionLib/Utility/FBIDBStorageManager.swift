@@ -164,21 +164,11 @@ public class FBBundleStorage: FBIDBStorage {
     }
   }
 
-  func saveBundle(_ bundle: FBBundleDescriptor) -> FBFuture<FBInstalledArtifact> {
-    return saveBundle(bundle, usingSymlink: true, skipSigningBundles: false)
+  func saveBundle(_ bundle: FBBundleDescriptor) async throws -> FBInstalledArtifact {
+    return try await saveBundle(bundle, usingSymlink: true, skipSigningBundles: false)
   }
 
-  func saveBundle(_ bundle: FBBundleDescriptor, usingSymlink useSymlink: Bool, skipSigningBundles: Bool) -> FBFuture<FBInstalledArtifact> {
-    fbFutureFromAsync { [self] in
-      try await saveBundleAsync(bundle, usingSymlink: useSymlink, skipSigningBundles: skipSigningBundles)
-    }
-  }
-
-  func saveBundleAsync(_ bundle: FBBundleDescriptor) async throws -> FBInstalledArtifact {
-    return try await saveBundleAsync(bundle, usingSymlink: true, skipSigningBundles: false)
-  }
-
-  func saveBundleAsync(_ bundle: FBBundleDescriptor, usingSymlink useSymlink: Bool, skipSigningBundles: Bool) async throws -> FBInstalledArtifact {
+  func saveBundle(_ bundle: FBBundleDescriptor, usingSymlink useSymlink: Bool, skipSigningBundles: Bool) async throws -> FBInstalledArtifact {
     try checkArchitecture(bundle)
 
     let storageDirectory = basePath.appendingPathComponent(bundle.identifier)
@@ -257,13 +247,7 @@ private let XctestRunExtension = "xctestrun"
 
 public final class FBXCTestBundleStorage: FBBundleStorage {
 
-  func saveBundleOrTestRunFromBaseDirectory(_ baseDirectory: URL, skipSigningBundles: Bool) -> FBFuture<FBInstalledArtifact> {
-    fbFutureFromAsync { [self] in
-      try await saveBundleOrTestRunFromBaseDirectoryAsync(baseDirectory, skipSigningBundles: skipSigningBundles)
-    }
-  }
-
-  func saveBundleOrTestRunFromBaseDirectoryAsync(_ baseDirectory: URL, skipSigningBundles: Bool) async throws -> FBInstalledArtifact {
+  func saveBundleOrTestRunFromBaseDirectory(_ baseDirectory: URL, skipSigningBundles: Bool) async throws -> FBInstalledArtifact {
     let buckets = try FBStorageUtils.bucketFiles(withExtensions: Set([XctestExtension, XctestRunExtension]), inDirectory: baseDirectory)
     let xctestBucket = buckets[XctestExtension]?.sorted(by: { $0.path < $1.path }) ?? []
     let xctestBundleURL = xctestBucket.first
@@ -288,13 +272,7 @@ public final class FBXCTestBundleStorage: FBBundleStorage {
     throw FBIDBStorageError.testArtifactNotSaved(xctestDescription: String(describing: xctestBundleURL), xctestrunDescription: String(describing: xctestrunURL))
   }
 
-  func saveBundleOrTestRun(_ filePath: URL, skipSigningBundles: Bool) -> FBFuture<FBInstalledArtifact> {
-    fbFutureFromAsync { [self] in
-      try await saveBundleOrTestRunAsync(filePath, skipSigningBundles: skipSigningBundles)
-    }
-  }
-
-  func saveBundleOrTestRunAsync(_ filePath: URL, skipSigningBundles: Bool) async throws -> FBInstalledArtifact {
+  func saveBundleOrTestRun(_ filePath: URL, skipSigningBundles: Bool) async throws -> FBInstalledArtifact {
     if filePath.pathExtension == XctestExtension {
       return try await saveTestBundleAsync(filePath, usingSymlink: true, skipSigningBundles: skipSigningBundles)
     }
@@ -451,7 +429,7 @@ public final class FBXCTestBundleStorage: FBBundleStorage {
 
   private func saveTestBundleAsync(_ testBundleURL: URL, usingSymlink useSymlink: Bool, skipSigningBundles: Bool) async throws -> FBInstalledArtifact {
     let bundle = try FBBundleDescriptor.bundleWithFallbackIdentifier(fromPath: testBundleURL.path)
-    return try await saveBundleAsync(bundle, usingSymlink: useSymlink, skipSigningBundles: skipSigningBundles)
+    return try await saveBundle(bundle, usingSymlink: useSymlink, skipSigningBundles: skipSigningBundles)
   }
 
   private func saveTestRun(_ xcTestRunURL: URL) throws -> FBInstalledArtifact {
