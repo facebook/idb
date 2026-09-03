@@ -13,23 +13,7 @@ final class FBSimulatorShutdownStrategy {
 
   // MARK: - Public Methods
 
-  class func shutdown(_ simulator: FBSimulator) -> FBFuture<NSNull> {
-    fbFutureFromAsync {
-      try await shutdownAsync(simulator)
-      return NSNull()
-    }
-  }
-
-  class func shutdownAll(_ simulators: [FBSimulator]) -> FBFuture<NSNull> {
-    fbFutureFromAsync {
-      try await shutdownAllAsync(simulators)
-      return NSNull()
-    }
-  }
-
-  // MARK: - Async
-
-  static func shutdownAsync(_ simulator: FBSimulator) async throws {
+  static func shutdown(_ simulator: FBSimulator) async throws {
     let logger = simulator.logger
     logger.debug().log("Starting Safe Shutdown of \(simulator.udid)")
 
@@ -47,9 +31,9 @@ final class FBSimulatorShutdownStrategy {
     try await shutdownSimulatorAsync(simulator)
   }
 
-  static func shutdownAllAsync(_ simulators: [FBSimulator]) async throws {
+  static func shutdownAll(_ simulators: [FBSimulator]) async throws {
     for simulator in simulators {
-      try await shutdownAsync(simulator)
+      try await shutdown(simulator)
     }
   }
 

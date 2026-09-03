@@ -103,7 +103,7 @@ class FBSimulatorControlTestCase: XCTestCase {
     // and shut down every booted simulator in the device set — for tests that
     // never touched a simulator. Only clean up if the test actually used it.
     if let control = _control {
-      _ = try? await bridgeFBFuture(control.set.shutdownAll())
+      try? await control.set.shutdownAll()
     }
     _control = nil
   }

@@ -61,15 +61,15 @@ public final class FBSimulatorLifecycleCommands {
     try await FBSimulatorBootStrategy.bootAsync(simulator, with: configuration)
   }
 
-  fileprivate func shutdownAsync() async throws {
+  fileprivate func shutdown() async throws {
     guard let simulator = self.simulator else {
       throw FBWeakTargetError.simulator
     }
-    try await FBSimulatorShutdownStrategy.shutdownAsync(simulator)
+    try await FBSimulatorShutdownStrategy.shutdown(simulator)
   }
 
   fileprivate func rebootAsync() async throws {
-    try await shutdownAsync()
+    try await shutdown()
     try await bootAsync(FBSimulatorBootConfiguration.default)
   }
 
@@ -224,7 +224,7 @@ extension FBSimulator: LifecycleCommands {
 extension FBSimulator: PowerCommands {
 
   public func shutdown() async throws {
-    try await lifecycle.shutdownAsync()
+    try await lifecycle.shutdown()
   }
 
   public func reboot() async throws {

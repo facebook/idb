@@ -25,23 +25,7 @@ final class FBSimulatorDeletionStrategy {
 
   // MARK: - Public Methods
 
-  class func delete(_ simulator: FBSimulator) -> FBFuture<NSNull> {
-    fbFutureFromAsync {
-      try await deleteAsync(simulator)
-      return NSNull()
-    }
-  }
-
-  class func deleteAll(_ simulators: [FBSimulator]) -> FBFuture<NSNull> {
-    fbFutureFromAsync {
-      try await deleteAllAsync(simulators)
-      return NSNull()
-    }
-  }
-
-  // MARK: - Async
-
-  static func deleteAsync(_ simulator: FBSimulator) async throws {
+  static func delete(_ simulator: FBSimulator) async throws {
     // Capture the Log Directory ahead of time as the Simulator will disappear on deletion.
     let coreSimulatorLogsDirectory = simulator.coreSimulatorLogsDirectory
     let udid = simulator.udid
@@ -52,7 +36,7 @@ final class FBSimulatorDeletionStrategy {
 
     // Kill the Simulator before deleting it.
     logger.log("Killing Simulator, in preparation for deletion \(simulator)")
-    try await FBSimulatorShutdownStrategy.shutdownAsync(simulator)
+    try await FBSimulatorShutdownStrategy.shutdown(simulator)
 
     // Then follow through with the actual deletion of the Simulator, which will remove it from the set.
     logger.log("Deleting Simulator \(simulator)")
@@ -76,9 +60,9 @@ final class FBSimulatorDeletionStrategy {
     logger.log("\(udid) has been removed from set")
   }
 
-  static func deleteAllAsync(_ simulators: [FBSimulator]) async throws {
+  static func deleteAll(_ simulators: [FBSimulator]) async throws {
     for simulator in simulators {
-      try await deleteAsync(simulator)
+      try await delete(simulator)
     }
   }
 

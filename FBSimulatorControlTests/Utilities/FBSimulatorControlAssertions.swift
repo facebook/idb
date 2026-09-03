@@ -59,7 +59,7 @@ extension XCTestCase {
 
 extension FBSimulatorControlTestCase {
 
-  func assertObtainsSimulatorWithConfiguration(_ configuration: FBSimulatorConfiguration) -> FBFuture<FBSimulator> {
+  func assertObtainsSimulatorWithConfiguration(_ configuration: FBSimulatorConfiguration) async throws -> FBSimulator {
     do {
       try configuration.checkRuntimeRequirements()
     } catch {
@@ -67,13 +67,13 @@ extension FBSimulatorControlTestCase {
         let message: String
         var errorDescription: String? { message }
       }
-      return FBFuture(error: RuntimeRequirementsUnmet(message: "Configuration \(configuration) does not meet the runtime requirements with error \(error)"))
+      throw RuntimeRequirementsUnmet(message: "Configuration \(configuration) does not meet the runtime requirements with error \(error)")
     }
-    return control.set.createSimulator(with: configuration)
+    return try await control.set.createSimulator(with: configuration)
   }
 
   func assertObtainsSimulator() async -> FBSimulator? {
-    return try? await bridgeFBFuture(assertObtainsSimulatorWithConfiguration(simulatorConfiguration))
+    return try? await assertObtainsSimulatorWithConfiguration(simulatorConfiguration)
   }
 
   func assertObtainsBootedSimulator() async -> FBSimulator? {
@@ -92,7 +92,7 @@ extension FBSimulatorControlTestCase {
   }
 
   func assertObtainsBootedSimulator(with configuration: FBSimulatorConfiguration, bootConfiguration: FBSimulatorBootConfiguration) async -> FBSimulator? {
-    guard let simulator = try? await bridgeFBFuture(assertObtainsSimulatorWithConfiguration(configuration)) else { return nil }
+    guard let simulator = try? await assertObtainsSimulatorWithConfiguration(configuration) else { return nil }
     do {
       try await simulator.boot(bootConfiguration)
     } catch {

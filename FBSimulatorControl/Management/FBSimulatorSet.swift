@@ -65,21 +65,7 @@ public final class FBSimulatorSet: FBiOSTargetSet {
 
   // MARK: - Creation
 
-  public func createSimulator(with configuration: FBSimulatorConfiguration) -> FBFuture<FBSimulator> {
-    fbFutureFromAsync { [self] in
-      try await createSimulatorAsync(with: configuration)
-    }
-  }
-
-  public func cloneSimulator(_ simulator: FBSimulator, toDeviceSet destinationSet: FBSimulatorSet) -> FBFuture<FBSimulator> {
-    fbFutureFromAsync { [self] in
-      try await cloneSimulatorAsync(simulator, toDeviceSet: destinationSet)
-    }
-  }
-
-  // MARK: - Async
-
-  public func createSimulatorAsync(with configuration: FBSimulatorConfiguration) async throws -> FBSimulator {
+  public func createSimulator(with configuration: FBSimulatorConfiguration) async throws -> FBSimulator {
     let model: String = configuration.device.model.rawValue
 
     // See if we meet the runtime requirements to create a Simulator with the given configuration.
@@ -99,14 +85,14 @@ public final class FBSimulatorSet: FBiOSTargetSet {
     simulator.configuration = configuration
     logger.debug().log("Created Simulator \(simulator.udid) for configuration \(configuration)")
     do {
-      try await FBSimulatorShutdownStrategy.shutdownAsync(simulator)
+      try await FBSimulatorShutdownStrategy.shutdown(simulator)
     } catch {
       throw FBSimulatorSetError.shutdownAfterCreateFailed(reason: error.localizedDescription)
     }
     return simulator
   }
 
-  func cloneSimulatorAsync(_ simulator: FBSimulator, toDeviceSet destinationSet: FBSimulatorSet) async throws -> FBSimulator {
+  func cloneSimulator(_ simulator: FBSimulator, toDeviceSet destinationSet: FBSimulatorSet) async throws -> FBSimulator {
     let device = try await Self.cloneDeviceAsync(on: deviceSet, device: simulator.device, toDeviceSet: destinationSet.deviceSet, queue: asyncQueue)
     return try destinationSet.fetchNewlyMadeSimulatorOrThrow(device)
   }
@@ -120,28 +106,28 @@ public final class FBSimulatorSet: FBiOSTargetSet {
 
   // MARK: - Destructive Methods
 
-  public func shutdown(_ simulator: FBSimulator) -> FBFuture<NSNull> {
-    return FBSimulatorShutdownStrategy.shutdown(simulator)
+  public func shutdown(_ simulator: FBSimulator) async throws {
+    try await FBSimulatorShutdownStrategy.shutdown(simulator)
   }
 
-  public func delete(_ simulator: FBSimulator) -> FBFuture<NSNull> {
-    return FBSimulatorDeletionStrategy.delete(simulator)
+  public func delete(_ simulator: FBSimulator) async throws {
+    try await FBSimulatorDeletionStrategy.delete(simulator)
   }
 
-  func shutdownAll(_ simulators: [FBSimulator]) -> FBFuture<NSNull> {
-    return FBSimulatorShutdownStrategy.shutdownAll(simulators)
+  func shutdownAll(_ simulators: [FBSimulator]) async throws {
+    try await FBSimulatorShutdownStrategy.shutdownAll(simulators)
   }
 
-  public func deleteAll(_ simulators: [FBSimulator]) -> FBFuture<NSNull> {
-    return FBSimulatorDeletionStrategy.deleteAll(simulators)
+  public func deleteAll(_ simulators: [FBSimulator]) async throws {
+    try await FBSimulatorDeletionStrategy.deleteAll(simulators)
   }
 
-  func shutdownAll() -> FBFuture<NSNull> {
-    return FBSimulatorShutdownStrategy.shutdownAll(allSimulators)
+  func shutdownAll() async throws {
+    try await FBSimulatorShutdownStrategy.shutdownAll(allSimulators)
   }
 
-  public func deleteAll() -> FBFuture<NSNull> {
-    return deleteAll(allSimulators)
+  public func deleteAll() async throws {
+    try await deleteAll(allSimulators)
   }
 
   // MARK: - NSObject
