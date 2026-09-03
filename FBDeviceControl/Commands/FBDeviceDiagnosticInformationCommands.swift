@@ -90,7 +90,7 @@ public final class FBDeviceDiagnosticInformationCommands: NSObject, FBiOSTargetC
   private func fetchInformationFromMobileConfigurationAsync(device: FBDevice) async throws -> Any {
     let logger = device.logger
     return try await device.withServiceConnection(FBManagedConfigClient.serviceName) { connection in
-      try await FBManagedConfigClient.managedConfigClient(connection: connection, logger: logger).getCloudConfigurationAsync()
+      try await FBManagedConfigClient.managedConfigClient(connection: connection, logger: logger).getCloudConfiguration()
     }
   }
 }

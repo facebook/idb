@@ -192,7 +192,7 @@ private class FBDeviceFileContainer_Wallpaper: AsyncFileContainer {
 
   func copy(fromHost sourcePath: String, toContainer destinationPath: String) async throws {
     let data = try Data(contentsOf: URL(fileURLWithPath: sourcePath))
-    try await bridgeFBFutureVoid(managedConfig.changeWallpaper(withName: (destinationPath as NSString).lastPathComponent, data: data))
+    try await managedConfig.changeWallpaper(name: (destinationPath as NSString).lastPathComponent, data: data)
   }
 
   func copy(fromContainer sourcePath: String, toHost destinationPath: String) async throws -> String {
@@ -235,7 +235,7 @@ private class FBDeviceFileContainer_MDMProfiles: AsyncFileContainer {
 
   func copy(fromHost sourcePath: String, toContainer destinationPath: String) async throws {
     let data = try Data(contentsOf: URL(fileURLWithPath: sourcePath))
-    _ = try await bridgeFBFuture(managedConfig.installProfile(data))
+    _ = try await managedConfig.installProfile(data)
   }
 
   func copy(fromContainer sourcePath: String, toHost destinationPath: String) async throws -> String {
@@ -255,11 +255,11 @@ private class FBDeviceFileContainer_MDMProfiles: AsyncFileContainer {
   }
 
   func remove(_ path: String) async throws {
-    try await bridgeFBFutureVoid(managedConfig.removeProfile(path))
+    try await managedConfig.removeProfile(path)
   }
 
   func contents(ofDirectory path: String) async throws -> [String] {
-    try await bridgeFBFutureArray(managedConfig.getProfileList()) as [String]
+    try await managedConfig.getProfileList()
   }
 }
 
