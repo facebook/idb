@@ -67,7 +67,7 @@ public class FBXCTestConfiguration: NSObject, NSCopying {
   public let waitForDebugger: Bool
   public let testTimeout: TimeInterval
 
-  public var testType: FBXCTestType {
+  var testType: FBXCTestType {
     fatalError("-[\(type(of: self)) testType] is abstract and should be overridden")
   }
 
@@ -113,7 +113,7 @@ public class FBXCTestConfiguration: NSObject, NSCopying {
 
   // MARK: Public
 
-  public func buildEnvironment(withEntries entries: [String: String]) -> [String: String] {
+  func buildEnvironment(withEntries entries: [String: String]) -> [String: String] {
     var parentEnvironment = ProcessInfo.processInfo.environment
     parentEnvironment.removeValue(forKey: "XCTestConfigurationFilePath")
 
@@ -137,7 +137,7 @@ public class FBXCTestConfiguration: NSObject, NSCopying {
 
   // MARK: JSON
 
-  public func jsonSerializableRepresentation() -> [String: Any] {
+  func jsonSerializableRepresentation() -> [String: Any] {
     [
       KeyEnvironment: processUnderTestEnvironment,
       KeyWorkingDirectory: workingDirectory,
@@ -173,11 +173,11 @@ public final class FBListTestConfiguration: FBXCTestConfiguration {
     super.init(environment: environment, workingDirectory: workingDirectory, testBundlePath: testBundlePath, waitForDebugger: waitForDebugger, timeout: timeout)
   }
 
-  public override var testType: FBXCTestType {
+  override var testType: FBXCTestType {
     FBXCTestType.listTest
   }
 
-  public override func jsonSerializableRepresentation() -> [String: Any] {
+  override func jsonSerializableRepresentation() -> [String: Any] {
     var json = super.jsonSerializableRepresentation()
     json[KeyListTestsOnly] = true
     json[KeyRunnerAppPath] = runnerAppPath ?? NSNull()
@@ -210,11 +210,11 @@ public final class FBTestManagerTestConfiguration: FBXCTestConfiguration {
     super.init(environment: environment, workingDirectory: workingDirectory, testBundlePath: testBundlePath, waitForDebugger: waitForDebugger, timeout: timeout)
   }
 
-  public override var testType: FBXCTestType {
+  override var testType: FBXCTestType {
     testTargetAppPath != nil ? FBXCTestType.uiTest : FBXCTestType.applicationTest
   }
 
-  public override func jsonSerializableRepresentation() -> [String: Any] {
+  override func jsonSerializableRepresentation() -> [String: Any] {
     var json = super.jsonSerializableRepresentation()
     json[KeyRunnerAppPath] = runnerAppPath
     if let testTargetAppPath { json[KeyRunnerTargetPath] = testTargetAppPath }
@@ -253,11 +253,11 @@ public final class FBLogicTestConfiguration: FBXCTestConfiguration {
     super.init(environment: environment, workingDirectory: workingDirectory, testBundlePath: testBundlePath, waitForDebugger: waitForDebugger, timeout: timeout)
   }
 
-  public override var testType: FBXCTestType {
+  override var testType: FBXCTestType {
     FBXCTestType.logicTest
   }
 
-  public override func jsonSerializableRepresentation() -> [String: Any] {
+  override func jsonSerializableRepresentation() -> [String: Any] {
     var json = super.jsonSerializableRepresentation()
     json[KeyTestFilter] = testFilter ?? NSNull()
     return json

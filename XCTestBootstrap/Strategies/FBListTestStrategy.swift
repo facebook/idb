@@ -121,7 +121,7 @@ public final class FBListTestStrategy {
     )
   }
 
-  public func wrapInReporter(_ reporter: FBXCTestReporter) -> FBXCTestRunner {
+  func wrapInReporter(_ reporter: FBXCTestReporter) -> FBXCTestRunner {
     FBListTestStrategy_ReporterWrapped(strategy: self, reporter: reporter)
   }
 

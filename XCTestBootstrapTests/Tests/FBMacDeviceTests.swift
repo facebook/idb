@@ -7,7 +7,7 @@
 
 import FBControlCore
 import XCTest
-import XCTestBootstrap
+@testable import XCTestBootstrap
 
 final class FBMacDeviceTests: XCTestCase {
 
