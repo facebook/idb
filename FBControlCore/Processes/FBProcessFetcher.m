@@ -182,6 +182,7 @@ static size_t const MaxPidBufferSize = 5568 * 2 * sizeof(int);  // From 'ulimit 
   size_t size = sizeof(MaxArgumentBufferSize);
   int status = sysctl(name, 2, &MaxArgumentBufferSize, &size, NULL, 0);
   NSAssert(status != -1, @"Failed to get the KERN_ARGMAX from sysctl %s", strerror(errno));
+  (void)status; // Read only by the assert above, which compiles out in Release.
 }
 
 - (instancetype)init
