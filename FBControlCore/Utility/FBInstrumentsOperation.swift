@@ -105,7 +105,7 @@ public final class FBInstrumentsOperation {
   ///
   /// The instruments cli is unreliable and sometimes stops recording right after starting.
   /// To make it reliable, launches are retried until one succeeds or the launch-retry
-  /// timeout elapses, matching the future-based predecessor's retry-with-timeout.
+  /// timeout elapses.
   public class func operationAsync(
     target: any FBiOSTarget,
     configuration: FBInstrumentsConfiguration,
@@ -178,16 +178,15 @@ public final class FBInstrumentsOperation {
       .withStdErr(to: compositeLogger)
       .withTaskLifecycleLogging(to: logger)
       .start()
-    // Bounded by the remaining retry budget as well: the future-based predecessor raced the whole
-    // chain, including the spawn, against the launch-retry timeout, so a wedged spawn failed at
-    // the deadline rather than hanging the operation indefinitely.
+    // The spawn is bounded by the remaining retry budget too, so a wedged spawn fails at the
+    // deadline rather than hanging the operation indefinitely.
     let task = try await bridgeFBFuture(
       startFuture
         .timeout(attemptTimeout, waitingFor: "instruments to start")
         .retyped(FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>>.self))
 
-    // Bound the template-load wait by the remaining retry budget: the future-based
-    // predecessor applied its overall timeout across this wait via a race.
+    // Bounded by the remaining retry budget too, so a template that never loads fails at the
+    // deadline rather than holding the attempt open.
     let templateLoaded = convertFBMutableFuture(instrumentsConsumer.hasStartedLoadingTemplate)
       .timeout(attemptTimeout, waitingFor: "instruments to start loading the template")
     do {
