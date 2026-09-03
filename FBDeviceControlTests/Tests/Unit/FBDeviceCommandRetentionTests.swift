@@ -78,26 +78,15 @@ enum FBDeviceCommandAccessor: CaseIterable, Sendable {
       _ = device.socketForwarding
     }
   }
-
-  /// BUG: `xctraceRecord` is memoized yet holds the device strongly, so resolving it closes the
-  /// cycle described on the suite below and the device is never released. The expectation is
-  /// flipped to `false` in the commit that fixes it.
-  var retainsTheDevice: Bool {
-    switch self {
-    case .xctraceRecord:
-      return true
-    default:
-      return false
-    }
-  }
 }
 
 /// Whether resolving a command class keeps the device alive.
 ///
-/// A device owns its `commandCache`; the cache owns whatever is resolved into it. Every command on
-/// `FBDevice` is memoized, so a command holding its device strongly closes a cycle — device to
-/// cache to command to device — and the device can never be released. This is why the device
-/// command classes hold `weak var device`.
+/// A device owns its `commandCache`; the cache owns whatever is resolved into it. A memoized
+/// command holding its device strongly closes a cycle — device to cache to command to device — and
+/// the device can never be released, which is why the device command classes hold
+/// `weak var device`. Commands built per call are free to hold it strongly: nothing outlives the
+/// call that builds them.
 @MainActor
 // Serialized for the same reason as the other device-driving suites in this target: the devices
 // these tests build run their work and async queues on the main queue.
@@ -125,6 +114,6 @@ struct FBDeviceCommandRetentionTests {
 
   @Test("Resolving a command does not retain the device", arguments: FBDeviceCommandAccessor.allCases)
   func resolvingACommandDoesNotRetainTheDevice(_ accessor: FBDeviceCommandAccessor) {
-    #expect(deviceSurvives { accessor.resolve(on: $0) } == accessor.retainsTheDevice)
+    #expect(deviceSurvives { accessor.resolve(on: $0) } == false)
   }
 }

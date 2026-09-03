@@ -80,18 +80,6 @@ enum FBSimulatorCommandAccessor: CaseIterable, Sendable {
       _ = simulator.memory
     }
   }
-
-  /// BUG: `xctraceRecord` is memoized yet holds the simulator strongly, so resolving it closes the
-  /// cycle described on the suite below and the simulator is never released. The expectation is
-  /// flipped to `false` in the commit that fixes it.
-  var retainsTheSimulator: Bool {
-    switch self {
-    case .xctraceRecord:
-      return true
-    default:
-      return false
-    }
-  }
 }
 
 /// Whether resolving a command class keeps the simulator alive.
@@ -121,6 +109,6 @@ struct FBSimulatorCommandRetentionTests {
 
   @Test("Resolving a command does not retain the simulator", arguments: FBSimulatorCommandAccessor.allCases)
   func resolvingACommandDoesNotRetainTheSimulator(_ accessor: FBSimulatorCommandAccessor) {
-    #expect(simulatorSurvives { accessor.resolve(on: $0) } == accessor.retainsTheSimulator)
+    #expect(simulatorSurvives { accessor.resolve(on: $0) } == false)
   }
 }

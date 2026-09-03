@@ -53,7 +53,7 @@ extension FBDevice {
   }
 
   var xctraceRecord: FBXCTraceRecordCommands {
-    commandCache.resolve { FBXCTraceRecordCommands.commands(with: self) }
+    FBXCTraceRecordCommands.commands(with: self)
   }
 
   // MARK: - Device-only accessors
