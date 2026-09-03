@@ -17,17 +17,16 @@ private let DeviceClassOSPrefixes = [
 ]
 
 /// An Object Wrapper around AMDeviceRef.
-@objc(FBAMDevice)
 public final class FBAMDevice: NSObject, FBiOSTargetInfo, FBDeviceCommands, FBFutureContextManagerDelegate {
 
   // MARK: - Properties
 
-  @objc public let calls: AMDCalls
-  @objc public var allValues: [String: Any]
-  @objc public let workQueue: DispatchQueue
-  @objc public let asyncQueue: DispatchQueue
-  @objc public let logger: any FBControlCoreLogger
-  @objc public let contextPoolTimeout: NSNumber?
+  public let calls: AMDCalls
+  public var allValues: [String: Any]
+  public let workQueue: DispatchQueue
+  public let asyncQueue: DispatchQueue
+  public let logger: any FBControlCoreLogger
+  public let contextPoolTimeout: NSNumber?
   // Created eagerly at the end of the initializer: both managers take this object as their
   // delegate, so they cannot be `let` properties, and `lazy` would make first access from two
   // threads a race. The storage is populated before the object is shared, which is what makes
@@ -35,14 +34,14 @@ public final class FBAMDevice: NSObject, FBiOSTargetInfo, FBDeviceCommands, FBFu
   private var connectionContextManagerStorage: FBFutureContextManager<FBAMDevice>?
   private var serviceManagerStorage: FBAMDeviceServiceManager?
 
-  @objc public var connectionContextManager: FBFutureContextManager<FBAMDevice> {
+  public var connectionContextManager: FBFutureContextManager<FBAMDevice> {
     guard let connectionContextManagerStorage else {
       preconditionFailure("The connection context manager is created in the initializer")
     }
     return connectionContextManagerStorage
   }
 
-  @objc public var serviceManager: FBAMDeviceServiceManager {
+  public var serviceManager: FBAMDeviceServiceManager {
     guard let serviceManagerStorage else {
       preconditionFailure("The service manager is created in the initializer")
     }
@@ -53,7 +52,7 @@ public final class FBAMDevice: NSObject, FBiOSTargetInfo, FBDeviceCommands, FBFu
   /// reference on the incoming device and drops the one it replaces.
   private var amDeviceReference: AMDevice?
 
-  @objc public var amDeviceRef: AMDevice? {
+  public var amDeviceRef: AMDevice? {
     get {
       amDeviceReference
     }
@@ -69,13 +68,12 @@ public final class FBAMDevice: NSObject, FBiOSTargetInfo, FBDeviceCommands, FBFu
     }
   }
 
-  @objc public var amDevice: AMDevice? {
+  public var amDevice: AMDevice? {
     amDeviceReference
   }
 
   // MARK: - Initializers
 
-  @objc(initWithAllValues:calls:connectionReuseTimeout:serviceReuseTimeout:workQueue:asyncQueue:logger:)
   public init(
     allValues: [String: Any],
     calls: AMDCalls,
@@ -103,7 +101,7 @@ public final class FBAMDevice: NSObject, FBiOSTargetInfo, FBDeviceCommands, FBFu
 
   // MARK: - FBiOSTargetInfo
 
-  @objc public var uniqueIdentifier: String {
+  public var uniqueIdentifier: String {
     // The stored chip identifier may be a number or a string; accepting only a number would
     // silently degrade a string identifier to unknown.
     let value = allValues[FBDeviceKey.uniqueChipID.rawValue]
@@ -116,60 +114,60 @@ public final class FBAMDevice: NSObject, FBiOSTargetInfo, FBDeviceCommands, FBFu
     return UnknownValue
   }
 
-  @objc public var udid: String {
+  public var udid: String {
     allValues[FBDeviceKey.uniqueDeviceID.rawValue] as? String ?? UnknownValue
   }
 
-  @objc public var name: String {
+  public var name: String {
     allValues[FBDeviceKey.deviceName.rawValue] as? String ?? UnknownValue
   }
 
-  @objc public var architectures: [FBArchitecture] {
+  public var architectures: [FBArchitecture] {
     guard let architecture = allValues[FBDeviceKey.cpuArchitecture.rawValue] as? String else {
       return []
     }
     return [FBArchitecture(rawValue: architecture)]
   }
 
-  @objc public var deviceType: FBDeviceType {
+  public var deviceType: FBDeviceType {
     let productType = allValues[FBDeviceKey.productType.rawValue] as? String ?? UnknownValue
     return FBiOSTargetConfiguration.productTypeToDevice[productType] ?? FBDeviceType.generic(withName: productType)
   }
 
-  @objc public var osVersion: FBOSVersion {
+  public var osVersion: FBOSVersion {
     let name = Self.osVersionName(
       deviceClass: allValues[FBDeviceKey.deviceClass.rawValue] as? String,
       productVersion: productVersion)
     return FBiOSTargetConfiguration.nameToOSVersion[FBOSVersionName(rawValue: name)] ?? FBOSVersion.generic(withName: name)
   }
 
-  @objc public var state: FBiOSTargetState {
+  public var state: FBiOSTargetState {
     .booted
   }
 
-  @objc public var targetType: FBiOSTargetType {
+  public var targetType: FBiOSTargetType {
     .device
   }
 
-  @objc public var extendedInformation: [String: Any] {
+  public var extendedInformation: [String: Any] {
     ["device": FBCollectionOperations.recursiveFilteredJSONSerializableRepresentation(of: allValues)]
   }
 
   // MARK: - FBDeviceProtocol
 
-  @objc public var buildVersion: String? {
+  public var buildVersion: String? {
     allValues[FBDeviceKey.buildVersion.rawValue] as? String
   }
 
-  @objc public var productVersion: String? {
+  public var productVersion: String? {
     allValues[FBDeviceKey.productVersion.rawValue] as? String
   }
 
-  @objc public var recoveryModeDeviceRef: AMRecoveryModeDevice? {
+  public var recoveryModeDeviceRef: AMRecoveryModeDevice? {
     nil
   }
 
-  @objc public var activationState: String {
+  public var activationState: String {
     guard let activationState = allValues[FBDeviceKey.activationState.rawValue] as? String else {
       return FBDeviceActivationState.unknown.rawValue
     }

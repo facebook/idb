@@ -13,20 +13,19 @@ import Foundation
 /// A device is backed by an `FBAMDevice`, an `FBAMRestorableDevice`, or both, and caches the
 /// target information of whichever it holds. The AMDevice is the richer source, so its values
 /// overwrite; the restorable device only fills gaps.
-@objc(FBDevice)
 public final class FBDevice: NSObject, FBiOSTarget, FBDeviceCommands {
 
   // MARK: - Properties
 
   public private(set) weak var set: FBDeviceSet?
-  @objc public let commandCache: FBTargetCommandCache
-  @objc public private(set) var logger: any FBControlCoreLogger
-  @objc public private(set) var calls: AMDCalls
+  public let commandCache: FBTargetCommandCache
+  public private(set) var logger: any FBControlCoreLogger
+  public private(set) var calls: AMDCalls
 
   private var amDeviceStorage: FBAMDevice?
   private var restorableDeviceStorage: FBAMRestorableDevice?
 
-  @objc public var amDevice: FBAMDevice? {
+  public var amDevice: FBAMDevice? {
     get {
       amDeviceStorage
     }
@@ -38,7 +37,7 @@ public final class FBDevice: NSObject, FBiOSTarget, FBDeviceCommands {
     }
   }
 
-  @objc public var restorableDevice: FBAMRestorableDevice? {
+  public var restorableDevice: FBAMRestorableDevice? {
     get {
       restorableDeviceStorage
     }
@@ -69,20 +68,20 @@ public final class FBDevice: NSObject, FBiOSTarget, FBDeviceCommands {
   private var cachedActivationState: String?
   private var cachedAllValues: [String: Any]?
 
-  @objc public private(set) var state: FBiOSTargetState = .unknown
+  public private(set) var state: FBiOSTargetState = .unknown
 
-  @objc public var uniqueIdentifier: String { cachedUniqueIdentifier ?? "" }
-  @objc public var udid: String { cachedUDID ?? "" }
-  @objc public var name: String { cachedName ?? "" }
-  @objc public var deviceType: FBDeviceType { cachedDeviceType ?? FBDeviceType.generic(withName: "unknown") }
-  @objc public var architectures: [FBArchitecture] { cachedArchitectures ?? [] }
-  @objc public var osVersion: FBOSVersion { cachedOSVersion ?? FBOSVersion.generic(withName: "unknown") }
-  @objc public var extendedInformation: [String: Any] { cachedExtendedInformation ?? [:] }
-  @objc public var targetType: FBiOSTargetType { cachedTargetType ?? .none }
-  @objc public var buildVersion: String? { cachedBuildVersion }
-  @objc public var productVersion: String? { cachedProductVersion }
-  @objc public var activationState: String { cachedActivationState ?? "" }
-  @objc public var allValues: [String: Any] { cachedAllValues ?? [:] }
+  public var uniqueIdentifier: String { cachedUniqueIdentifier ?? "" }
+  public var udid: String { cachedUDID ?? "" }
+  public var name: String { cachedName ?? "" }
+  public var deviceType: FBDeviceType { cachedDeviceType ?? FBDeviceType.generic(withName: "unknown") }
+  public var architectures: [FBArchitecture] { cachedArchitectures ?? [] }
+  public var osVersion: FBOSVersion { cachedOSVersion ?? FBOSVersion.generic(withName: "unknown") }
+  public var extendedInformation: [String: Any] { cachedExtendedInformation ?? [:] }
+  public var targetType: FBiOSTargetType { cachedTargetType ?? .none }
+  public var buildVersion: String? { cachedBuildVersion }
+  public var productVersion: String? { cachedProductVersion }
+  public var activationState: String { cachedActivationState ?? "" }
+  public var allValues: [String: Any] { cachedAllValues ?? [:] }
 
   // MARK: - Initializers
 
@@ -124,18 +123,18 @@ public final class FBDevice: NSObject, FBiOSTarget, FBDeviceCommands {
 
   // MARK: - FBiOSTarget
 
-  @objc public var workQueue: DispatchQueue {
+  public var workQueue: DispatchQueue {
     // One of the two backing devices is always present, per the initializer's contract.
     (amDevice?.workQueue ?? restorableDevice?.workQueue) ?? DispatchQueue.main
   }
 
-  @objc public var asyncQueue: DispatchQueue {
+  public var asyncQueue: DispatchQueue {
     (amDevice?.asyncQueue ?? restorableDevice?.asyncQueue) ?? DispatchQueue.global()
   }
 
   private var temporaryDirectoryStorage: FBTemporaryDirectory?
 
-  @objc public var temporaryDirectory: FBTemporaryDirectory {
+  public var temporaryDirectory: FBTemporaryDirectory {
     if let temporaryDirectoryStorage {
       return temporaryDirectoryStorage
     }
@@ -144,24 +143,24 @@ public final class FBDevice: NSObject, FBiOSTarget, FBDeviceCommands {
     return created
   }
 
-  @objc public var auxillaryDirectory: String {
+  public var auxillaryDirectory: String {
     let cwd = FileManager.default.currentDirectoryPath
     return FileManager.default.isWritableFile(atPath: cwd) ? cwd : "/tmp"
   }
 
-  @objc public var platformRootDirectory: String {
+  public var platformRootDirectory: String {
     (FBXcodeConfiguration.developerDirectory as NSString).appendingPathComponent("Platforms/iPhoneOS.platform")
   }
 
-  @objc public var runtimeRootDirectory: String {
+  public var runtimeRootDirectory: String {
     platformRootDirectory
   }
 
-  @objc public var screenInfo: FBiOSTargetScreenInfo? {
+  public var screenInfo: FBiOSTargetScreenInfo? {
     nil
   }
 
-  @objc public var customDeviceSetPath: String? {
+  public var customDeviceSetPath: String? {
     nil
   }
 
@@ -169,15 +168,15 @@ public final class FBDevice: NSObject, FBiOSTarget, FBDeviceCommands {
     FBiOSTargetComparison(self, target)
   }
 
-  @objc public func requiresBundlesToBeSigned() -> Bool {
+  public func requiresBundlesToBeSigned() -> Bool {
     true
   }
 
-  @objc public func replacementMapping() -> [String: String] {
+  public func replacementMapping() -> [String: String] {
     [:]
   }
 
-  @objc public func environmentAdditions() -> [String: String] {
+  public func environmentAdditions() -> [String: String] {
     [:]
   }
 
@@ -189,11 +188,11 @@ public final class FBDevice: NSObject, FBiOSTarget, FBDeviceCommands {
 
   // MARK: - FBDeviceProtocol
 
-  @objc public var amDeviceRef: AMDevice? {
+  public var amDeviceRef: AMDevice? {
     amDevice?.amDeviceRef
   }
 
-  @objc public var recoveryModeDeviceRef: AMRecoveryModeDevice? {
+  public var recoveryModeDeviceRef: AMRecoveryModeDevice? {
     restorableDevice?.recoveryModeDeviceRef
   }
 

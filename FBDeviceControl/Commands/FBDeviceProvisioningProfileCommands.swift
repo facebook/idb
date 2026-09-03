@@ -53,7 +53,7 @@ public class FBDeviceProvisioningProfileCommands: ProvisioningProfileCommands {
     guard let device else {
       throw FBDeviceNilError.deviceNil
     }
-    return try await withFBFutureContext(device.connectToDevice(withPurpose: "list_provisioning_profiles")) { connectedDevice in
+    return try await device.withConnectedDevice(purpose: "list_provisioning_profiles") { connectedDevice in
       guard let profiles = connectedDevice.calls.CopyProvisioningProfiles?(connectedDevice.amDeviceRef)?.takeRetainedValue() as? [Any] else {
         throw FBDeviceProvisioningProfileError.copyFailed
       }
@@ -76,7 +76,7 @@ public class FBDeviceProvisioningProfileCommands: ProvisioningProfileCommands {
     guard let device else {
       throw FBDeviceNilError.deviceNil
     }
-    return try await withFBFutureContext(device.connectToDevice(withPurpose: "remove_provisioning_profile")) { connectedDevice in
+    return try await device.withConnectedDevice(purpose: "remove_provisioning_profile") { connectedDevice in
       let status = connectedDevice.calls.RemoveProvisioningProfile?(connectedDevice.amDeviceRef, uuid as CFString) ?? -1
       if status != 0 {
         let errRef = connectedDevice.calls.ProvisioningProfileCopyErrorStringForCode?(status)
@@ -91,7 +91,7 @@ public class FBDeviceProvisioningProfileCommands: ProvisioningProfileCommands {
     guard let device else {
       throw FBDeviceNilError.deviceNil
     }
-    return try await withFBFutureContext(device.connectToDevice(withPurpose: "install_provisioning_profile")) { connectedDevice in
+    return try await device.withConnectedDevice(purpose: "install_provisioning_profile") { connectedDevice in
       guard let profileUnmanaged = connectedDevice.calls.ProvisioningProfileCreateWithData?(profileData as CFData) else {
         throw FBDeviceProvisioningProfileError.constructionFailed(dataDescription: String(describing: profileData))
       }
