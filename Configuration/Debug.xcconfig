@@ -1,0 +1,11 @@
+// Debug configuration: fast inner loop. No optimization, no stripping,
+// assertions and testability on, private symbols visible.
+#include "Shared.xcconfig"
+
+GCC_OPTIMIZATION_LEVEL = 0
+SWIFT_OPTIMIZATION_LEVEL = -Onone
+COPY_PHASE_STRIP = NO
+STRIP_INSTALLED_PRODUCT = NO
+GCC_SYMBOLS_PRIVATE_EXTERN = NO
+ENABLE_NS_ASSERTIONS = YES
+ENABLE_TESTABILITY = YES

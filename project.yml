@@ -33,7 +33,7 @@ options:
   bundleIdPrefix: com.facebook
 
 configFiles:
-  Debug: Configuration/Shared.xcconfig
+  Debug: Configuration/Debug.xcconfig
   Release: Configuration/Shared.xcconfig
 
 settings:
