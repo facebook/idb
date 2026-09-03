@@ -34,7 +34,7 @@ options:
 
 configFiles:
   Debug: Configuration/Debug.xcconfig
-  Release: Configuration/Shared.xcconfig
+  Release: Configuration/Release.xcconfig
 
 settings:
   base:
