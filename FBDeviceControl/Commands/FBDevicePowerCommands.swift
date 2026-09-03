@@ -43,10 +43,10 @@ public class FBDevicePowerCommands {
 extension FBDevice: PowerCommands {
 
   public func shutdown() async throws {
-    try await powerCommands.sendRelayCommand("Shutdown")
+    try await power.sendRelayCommand("Shutdown")
   }
 
   public func reboot() async throws {
-    try await powerCommands.sendRelayCommand("Restart")
+    try await power.sendRelayCommand("Restart")
   }
 }

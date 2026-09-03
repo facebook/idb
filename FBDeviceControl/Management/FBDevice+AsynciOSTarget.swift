@@ -16,7 +16,7 @@ extension FBDevice: XCTraceRecordCommands {
     configuration: FBXCTraceRecordConfiguration,
     logger: any FBControlCoreLogger
   ) async throws -> FBXCTraceRecordOperation {
-    try await xctraceRecordCommands.startXctraceRecord(configuration, logger: logger)
+    try await xctraceRecord.startXctraceRecord(configuration, logger: logger)
   }
 }
 

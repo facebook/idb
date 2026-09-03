@@ -102,10 +102,10 @@ public class FBDeviceRecoveryCommands {
 extension FBDevice: RecoveryCommands {
 
   public func enterRecovery() async throws {
-    try await recoveryCommands.enterRecovery()
+    try await recovery.enterRecovery()
   }
 
   public func exitRecovery() async throws {
-    try await recoveryCommands.exitRecovery()
+    try await recovery.exitRecovery()
   }
 }

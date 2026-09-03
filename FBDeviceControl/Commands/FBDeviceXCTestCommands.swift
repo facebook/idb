@@ -122,6 +122,6 @@ extension FBDevice: XCTestCommands {
     reporter: AnyObject,
     logger: any FBControlCoreLogger
   ) async throws {
-    try await xctestCommands.runTestAsync(withLaunchConfiguration: launchConfiguration, reporter: reporter, logger: logger)
+    try await xctest.runTestAsync(withLaunchConfiguration: launchConfiguration, reporter: reporter, logger: logger)
   }
 }

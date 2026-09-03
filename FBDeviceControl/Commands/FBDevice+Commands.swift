@@ -12,85 +12,85 @@ extension FBDevice {
 
   // MARK: - Shared accessors
 
-  var applicationCommands: FBDeviceApplicationCommands {
+  var application: FBDeviceApplicationCommands {
     commandCache.resolve { FBDeviceApplicationCommands.commands(with: self) }
   }
 
-  var crashLogCommands: FBDeviceCrashLogCommands {
+  var crashLog: FBDeviceCrashLogCommands {
     commandCache.resolve { FBDeviceCrashLogCommands.commands(with: self) }
   }
 
-  var screenshotCommands: FBDeviceScreenshotCommands {
+  var screenshot: FBDeviceScreenshotCommands {
     commandCache.resolve { FBDeviceScreenshotCommands.commands(with: self) }
   }
 
-  var locationCommands: FBDeviceLocationCommands {
+  var location: FBDeviceLocationCommands {
     commandCache.resolve { FBDeviceLocationCommands.commands(with: self) }
   }
 
-  var debuggerCommands: FBDeviceDebuggerCommands {
+  var debugger: FBDeviceDebuggerCommands {
     commandCache.resolve { FBDeviceDebuggerCommands.commands(with: self) }
   }
 
-  var fileCommands: FBDeviceFileCommands {
+  var file: FBDeviceFileCommands {
     commandCache.resolve { FBDeviceFileCommands.commands(with: self) }
   }
 
-  var lifecycleCommands: FBDeviceLifecycleCommands {
+  var lifecycle: FBDeviceLifecycleCommands {
     commandCache.resolve { FBDeviceLifecycleCommands.commands(with: self) }
   }
 
-  var logCommands: FBDeviceLogCommands {
+  var log: FBDeviceLogCommands {
     commandCache.resolve { FBDeviceLogCommands.commands(with: self) }
   }
 
-  var videoRecordingCommands: FBDeviceVideoRecordingCommands {
+  var videoRecording: FBDeviceVideoRecordingCommands {
     commandCache.resolve { FBDeviceVideoRecordingCommands.commands(with: self) }
   }
 
-  var xctestCommands: FBDeviceXCTestCommands {
+  var xctest: FBDeviceXCTestCommands {
     commandCache.resolve { FBDeviceXCTestCommands.commands(with: self) }
   }
 
-  var xctraceRecordCommands: FBXCTraceRecordCommands {
+  var xctraceRecord: FBXCTraceRecordCommands {
     commandCache.resolve { FBXCTraceRecordCommands.commands(with: self) }
   }
 
   // MARK: - Device-only accessors
 
-  var diagnosticInformationCommands: FBDeviceDiagnosticInformationCommands {
+  var diagnosticInformation: FBDeviceDiagnosticInformationCommands {
     commandCache.resolve { FBDeviceDiagnosticInformationCommands.commands(with: self) }
   }
 
-  var eraseCommands: FBDeviceEraseCommands {
+  var erase: FBDeviceEraseCommands {
     commandCache.resolve { FBDeviceEraseCommands.commands(with: self) }
   }
 
-  var powerCommands: FBDevicePowerCommands {
+  var power: FBDevicePowerCommands {
     commandCache.resolve { FBDevicePowerCommands.commands(with: self) }
   }
 
-  var provisioningProfileCommands: FBDeviceProvisioningProfileCommands {
+  var provisioningProfile: FBDeviceProvisioningProfileCommands {
     commandCache.resolve { FBDeviceProvisioningProfileCommands.commands(with: self) }
   }
 
-  var activationCommands: FBDeviceActivationCommands {
+  var activation: FBDeviceActivationCommands {
     commandCache.resolve { FBDeviceActivationCommands.commands(with: self) }
   }
 
-  var recoveryCommands: FBDeviceRecoveryCommands {
+  var recovery: FBDeviceRecoveryCommands {
     commandCache.resolve { FBDeviceRecoveryCommands.commands(with: self) }
   }
 
-  var debugSymbolsCommands: FBDeviceDebugSymbolsCommands {
+  var debugSymbols: FBDeviceDebugSymbolsCommands {
     commandCache.resolve { FBDeviceDebugSymbolsCommands(device: self) }
   }
 
-  var developerDiskImageCommands: FBDeviceDeveloperDiskImageCommands {
+  var developerDiskImage: FBDeviceDeveloperDiskImageCommands {
     commandCache.resolve { FBDeviceDeveloperDiskImageCommands.commands(with: self) }
   }
 
-  var socketForwardingCommands: FBDeviceSocketForwardingCommands {
+  var socketForwarding: FBDeviceSocketForwardingCommands {
     commandCache.resolve { FBDeviceSocketForwardingCommands.commands(with: self) }
   }
 }

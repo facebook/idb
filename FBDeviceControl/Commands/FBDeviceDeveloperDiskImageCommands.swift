@@ -238,23 +238,23 @@ public class FBDeviceDeveloperDiskImageCommands: DeveloperDiskImageCommands {
 extension FBDevice: DeveloperDiskImageCommands {
 
   public func mountedDiskImages() async throws -> [FBDeveloperDiskImage] {
-    try await developerDiskImageCommands.mountedDiskImages()
+    try await developerDiskImage.mountedDiskImages()
   }
 
   public func mountDiskImage(_ diskImage: FBDeveloperDiskImage) async throws -> FBDeveloperDiskImage {
-    try await developerDiskImageCommands.mountDiskImage(diskImage)
+    try await developerDiskImage.mountDiskImage(diskImage)
   }
 
   public func unmountDiskImage(_ diskImage: FBDeveloperDiskImage) async throws {
-    try await developerDiskImageCommands.unmountDiskImage(diskImage)
+    try await developerDiskImage.unmountDiskImage(diskImage)
   }
 
   public func mountableDiskImages() -> [FBDeveloperDiskImage] {
-    developerDiskImageCommands.mountableDiskImages()
+    developerDiskImage.mountableDiskImages()
   }
 
   public func ensureDeveloperDiskImageIsMounted() async throws -> FBDeveloperDiskImage {
-    try await developerDiskImageCommands.ensureDeveloperDiskImageIsMounted()
+    try await developerDiskImage.ensureDeveloperDiskImageIsMounted()
   }
 
   // MARK: Objective-C entry point
@@ -266,7 +266,7 @@ extension FBDevice: DeveloperDiskImageCommands {
 
   public func ensureDeveloperDiskImageIsMounted() -> FBFuture<FBDeveloperDiskImage> {
     fbFutureFromAsync { [self] in
-      try await developerDiskImageCommands.ensureDeveloperDiskImageIsMounted()
+      try await developerDiskImage.ensureDeveloperDiskImageIsMounted()
     }
   }
 }

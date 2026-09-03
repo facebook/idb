@@ -145,6 +145,6 @@ extension FBDevice: DebuggerCommands {
     forHostApplication application: FBBundleDescriptor,
     port: in_port_t
   ) async throws -> any FBDebugServer {
-    try await debuggerCommands.launchDebugServer(forHostApplication: application, port: port)
+    try await debugger.launchDebugServer(forHostApplication: application, port: port)
   }
 }

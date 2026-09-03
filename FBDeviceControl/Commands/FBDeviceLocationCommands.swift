@@ -46,6 +46,6 @@ public class FBDeviceLocationCommands {
 extension FBDevice: LocationCommands {
 
   public func overrideLocation(longitude: Double, latitude: Double) async throws {
-    try await locationCommands.overrideLocationAsync(withLongitude: longitude, latitude: latitude)
+    try await location.overrideLocationAsync(withLongitude: longitude, latitude: latitude)
   }
 }

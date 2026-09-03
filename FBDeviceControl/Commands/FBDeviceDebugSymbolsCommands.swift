@@ -146,7 +146,7 @@ public final class FBDeviceDebugSymbolsCommands: DebugSymbolsCommands {
     guard let device else {
       throw FBDeviceNilError.deviceNil
     }
-    _ = try await device.developerDiskImageCommands.ensureDeveloperDiskImageIsMounted()
+    _ = try await device.developerDiskImage.ensureDeveloperDiskImageIsMounted()
     return try await device.withServiceConnection(FetchSymbolsService, body)
   }
 

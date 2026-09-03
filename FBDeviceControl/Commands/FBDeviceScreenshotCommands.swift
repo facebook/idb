@@ -70,6 +70,6 @@ public class FBDeviceScreenshotCommands {
 extension FBDevice: ScreenshotCommands {
 
   public func takeScreenshot(configuration: FBScreenshotConfiguration) async throws -> FBScreenshotResult {
-    try await screenshotCommands.takeScreenshotAsync(configuration: configuration)
+    try await screenshot.takeScreenshotAsync(configuration: configuration)
   }
 }
