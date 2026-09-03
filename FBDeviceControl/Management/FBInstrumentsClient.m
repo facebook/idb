@@ -7,7 +7,7 @@
 
 #import "FBInstrumentsClient.h"
 
-#import "FBAMDServiceConnection.h"
+#import <FBDeviceControl/FBDeviceControl-Swift.h>
 
 #pragma mark DTX Internals
 

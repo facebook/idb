@@ -6,7 +6,6 @@
  */
 
 #import <FBDeviceControl/FBAFCConnection.h>
-#import <FBDeviceControl/FBAMDServiceConnection.h>
 #import <FBDeviceControl/FBAMDefines.h>
 #import <FBDeviceControl/FBAMDevice.h>
 #import <FBDeviceControl/FBAMRestorableDevice.h>

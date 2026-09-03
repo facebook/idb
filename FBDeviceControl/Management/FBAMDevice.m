@@ -13,7 +13,6 @@
 #import <FBDeviceControl/FBDeviceControl-Swift.h>
 
 #import "FBAFCConnection.h"
-#import "FBAMDServiceConnection.h"
 #import "FBAMRestorableDevice.h"
 static NSString *const UnknownValue = @"unknown";
 

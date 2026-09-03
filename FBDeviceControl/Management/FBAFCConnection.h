@@ -28,7 +28,7 @@
  @param logger the logger to use.
  @return a new FBAFConnection Instance.
  */
-- (nonnull instancetype)initWithConnection:(AFCConnectionRef _Nonnull)connection calls:(AFCCalls)calls logger:(nullable id<FBControlCoreLogger>)logger;
+- (nonnull instancetype)initWithConnection:(AFCConnectionRef _Nullable)connection calls:(AFCCalls)calls logger:(nullable id<FBControlCoreLogger>)logger;
 
 /**
  Constructs an FBAFCConnection from a Service Connection and tears it down after.

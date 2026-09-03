@@ -8,7 +8,7 @@
 #import <XCTest/XCTest.h>
 
 #import <FBControlCore/FBControlCore.h>
-#import <FBDeviceControl/FBAMDServiceConnection.h>
+#import <FBDeviceControl/FBDeviceControl-Swift.h>
 
 static AMSecureIOContext NullSecureIOContext(CFTypeRef connection)
 {
