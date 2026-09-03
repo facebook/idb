@@ -76,7 +76,6 @@ targets:
         Release:
           DEBUG_INFORMATION_FORMAT: dwarf
           STRIP_INSTALLED_PRODUCT: "NO"
-          ENABLE_TESTABILITY: "YES"
     dependencies:
       - sdk: AVFoundation.framework
       - sdk: Cocoa.framework
@@ -149,7 +148,6 @@ targets:
         Release:
           DEBUG_INFORMATION_FORMAT: dwarf
           STRIP_INSTALLED_PRODUCT: "NO"
-          ENABLE_TESTABILITY: "YES"
     dependencies:
       - target: FBControlCore
         embed: false
@@ -236,7 +234,6 @@ targets:
         Release:
           DEBUG_INFORMATION_FORMAT: dwarf
           STRIP_INSTALLED_PRODUCT: "NO"
-          ENABLE_TESTABILITY: "YES"
     dependencies:
       - target: CompanionUtilities
         embed: false
@@ -341,7 +338,6 @@ targets:
         Release:
           DEBUG_INFORMATION_FORMAT: dwarf
           STRIP_INSTALLED_PRODUCT: "NO"
-          ENABLE_TESTABILITY: "YES"
     dependencies:
       - target: FBControlCore
         embed: false
@@ -416,7 +412,6 @@ targets:
         Release:
           DEBUG_INFORMATION_FORMAT: dwarf
           STRIP_INSTALLED_PRODUCT: "NO"
-          ENABLE_TESTABILITY: "YES"
     dependencies:
       - sdk: Foundation.framework
   CompanionUtilitiesTests:
@@ -471,7 +466,6 @@ targets:
         Release:
           DEBUG_INFORMATION_FORMAT: dwarf
           STRIP_INSTALLED_PRODUCT: "NO"
-          ENABLE_TESTABILITY: "YES"
     dependencies:
       - target: CompanionUtilities
         embed: false
