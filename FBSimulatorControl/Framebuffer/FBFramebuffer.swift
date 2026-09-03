@@ -17,7 +17,7 @@ import Foundation
 /// signal only (see `FBFramebufferSurface`), so a frame-rendered callback carries no dimensions.
 public struct FBFramebufferStats: Sendable {
   public var frameRenderedCount: UInt = 0
-  public var ioSurfaceChangeCount: UInt = 0
+  var ioSurfaceChangeCount: UInt = 0
 
   public init() {}
 }
@@ -96,7 +96,7 @@ public final class FBFramebuffer: @unchecked Sendable {
     statsRecorder.snapshot()
   }
 
-  public var statsStartTime: CFTimeInterval {
+  var statsStartTime: CFTimeInterval {
     statsRecorder.startTime
   }
 

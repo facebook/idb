@@ -7,7 +7,7 @@
 
 @preconcurrency import CoreSimulator
 import FBControlCore
-import FBSimulatorControl
+@testable import FBSimulatorControl
 import XCTest
 
 // MARK: - Test Doubles

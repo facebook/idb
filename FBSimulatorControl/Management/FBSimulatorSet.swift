@@ -111,7 +111,7 @@ public final class FBSimulatorSet: FBiOSTargetSet {
     return try destinationSet.fetchNewlyMadeSimulatorOrThrow(device)
   }
 
-  public func configurationsForAbsentDefaultSimulators() throws -> [FBSimulatorConfiguration] {
+  func configurationsForAbsentDefaultSimulators() throws -> [FBSimulatorConfiguration] {
     let existingConfigurations = Set(allSimulators.compactMap { $0.configuration })
     var absentConfigurations = Set(try FBSimulatorConfiguration.allAvailableDefaultConfigrations(withLogger: logger))
     absentConfigurations.subtract(existingConfigurations)
@@ -128,7 +128,7 @@ public final class FBSimulatorSet: FBiOSTargetSet {
     return FBSimulatorDeletionStrategy.delete(simulator)
   }
 
-  public func shutdownAll(_ simulators: [FBSimulator]) -> FBFuture<NSNull> {
+  func shutdownAll(_ simulators: [FBSimulator]) -> FBFuture<NSNull> {
     return FBSimulatorShutdownStrategy.shutdownAll(simulators)
   }
 
@@ -136,7 +136,7 @@ public final class FBSimulatorSet: FBiOSTargetSet {
     return FBSimulatorDeletionStrategy.deleteAll(simulators)
   }
 
-  public func shutdownAll() -> FBFuture<NSNull> {
+  func shutdownAll() -> FBFuture<NSNull> {
     return FBSimulatorShutdownStrategy.shutdownAll(allSimulators)
   }
 

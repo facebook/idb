@@ -147,7 +147,7 @@ public final class FBSimulator: FBiOSTarget, Hashable, CustomStringConvertible, 
   // MARK: - Simulator Properties
 
   /// The Product Family of the Simulator.
-  public var productFamily: FBControlCoreProductFamily {
+  var productFamily: FBControlCoreProductFamily {
     switch device.deviceType?.productFamilyID {
     case .some(1):
       return .familyiPhone
@@ -168,7 +168,7 @@ public final class FBSimulator: FBiOSTarget, Hashable, CustomStringConvertible, 
   }
 
   /// The Directory that Contains the Simulator's Data.
-  public var dataDirectory: String? { device.dataPath() }
+  var dataDirectory: String? { device.dataPath() }
 
   public var customDeviceSetPath: String? {
     let setPath = device.deviceSet?.setPath
@@ -184,7 +184,7 @@ public final class FBSimulator: FBiOSTarget, Hashable, CustomStringConvertible, 
   }
 
   /// The directory path of the expected location of the CoreSimulator logs directory.
-  public var coreSimulatorLogsDirectory: String {
+  var coreSimulatorLogsDirectory: String {
     ((NSHomeDirectory() as NSString).appendingPathComponent("Library/Logs/CoreSimulator") as NSString)
       .appendingPathComponent(udid)
   }

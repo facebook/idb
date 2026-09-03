@@ -38,7 +38,7 @@ extension DefaultsModificationError: LocalizedError {
   var errorDescription: String? { description }
 }
 
-public class FBDefaultsModificationStrategy {
+class FBDefaultsModificationStrategy {
 
   // MARK: - Properties
 
@@ -52,7 +52,7 @@ public class FBDefaultsModificationStrategy {
 
   // MARK: - Public Methods
 
-  public func modifyDefaults(inDomainOrPath domainOrPath: String?, defaults: [String: Any]) async throws {
+  func modifyDefaults(inDomainOrPath domainOrPath: String?, defaults: [String: Any]) async throws {
     let file = (simulator.auxillaryDirectory as NSString).appendingPathComponent("temporary.plist")
     let dirPath = (file as NSString).deletingLastPathComponent
 
@@ -181,16 +181,16 @@ public class FBDefaultsModificationStrategy {
 
 // MARK: - FBPreferenceModificationStrategy
 
-public class FBPreferenceModificationStrategy: FBDefaultsModificationStrategy {
+class FBPreferenceModificationStrategy: FBDefaultsModificationStrategy {
 
   private static let appleGlobalDomain = "Apple Global Domain"
 
-  public func setPreference(_ name: String, value: String, type: String?, domain: String?) async throws {
+  func setPreference(_ name: String, value: String, type: String?, domain: String?) async throws {
     let effectiveDomain = domain ?? FBPreferenceModificationStrategy.appleGlobalDomain
     try await setDefault(inDomain: effectiveDomain, key: name, value: value, type: type)
   }
 
-  public func getCurrentPreference(_ name: String, domain: String?) async throws -> String {
+  func getCurrentPreference(_ name: String, domain: String?) async throws -> String {
     let effectiveDomain = domain ?? FBPreferenceModificationStrategy.appleGlobalDomain
     return try await getDefault(inDomain: effectiveDomain, key: name) as String
   }
@@ -198,9 +198,9 @@ public class FBPreferenceModificationStrategy: FBDefaultsModificationStrategy {
 
 // MARK: - FBLocationServicesModificationStrategy
 
-public class FBLocationServicesModificationStrategy: FBDefaultsModificationStrategy {
+class FBLocationServicesModificationStrategy: FBDefaultsModificationStrategy {
 
-  public func approveLocationServices(forBundleIDs bundleIDs: [String]) async throws {
+  func approveLocationServices(forBundleIDs bundleIDs: [String]) async throws {
     var defaults: [String: Any] = [:]
     for bundleID in bundleIDs {
       defaults[bundleID] =
@@ -222,7 +222,7 @@ public class FBLocationServicesModificationStrategy: FBDefaultsModificationStrat
     )
   }
 
-  public func revokeLocationServices(forBundleIDs bundleIDs: [String]) async throws {
+  func revokeLocationServices(forBundleIDs bundleIDs: [String]) async throws {
     let state = simulator.state
     guard state == .booted || state == .shutdown else {
       throw DefaultsModificationError.invalidState(state, action: "modify")

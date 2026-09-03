@@ -38,19 +38,19 @@ public final class FBAccessibilityProfilingCollector {
   /// attributed to either without a mark. Acquisition's share is already inside `translationDuration`
   /// and `elementConversionDuration` — wall times over calls that make XPC of their own — so counting
   /// it again as read time would report it twice.
-  public func markWalkStart() {
+  func markWalkStart() {
     lock.lock()
     _xpcDurationBeforeWalk = _totalXPCDuration
     lock.unlock()
   }
 
-  public func incrementElementCount() {
+  func incrementElementCount() {
     lock.lock()
     _elementCount += 1
     lock.unlock()
   }
 
-  public func incrementAttributeFetchCount(forKey key: String?) {
+  func incrementAttributeFetchCount(forKey key: String?) {
     lock.lock()
     _attributeFetchCount += 1
     if let key {
@@ -59,7 +59,7 @@ public final class FBAccessibilityProfilingCollector {
     lock.unlock()
   }
 
-  public func addXPCCallDuration(_ duration: CFAbsoluteTime) {
+  func addXPCCallDuration(_ duration: CFAbsoluteTime) {
     lock.lock()
     _xpcCallCount += 1
     _totalXPCDuration += duration

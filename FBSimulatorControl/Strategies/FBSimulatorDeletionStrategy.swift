@@ -21,18 +21,18 @@ public enum FBSimulatorDeletionError: Error, LocalizedError {
   }
 }
 
-public final class FBSimulatorDeletionStrategy {
+final class FBSimulatorDeletionStrategy {
 
   // MARK: - Public Methods
 
-  public class func delete(_ simulator: FBSimulator) -> FBFuture<NSNull> {
+  class func delete(_ simulator: FBSimulator) -> FBFuture<NSNull> {
     fbFutureFromAsync {
       try await deleteAsync(simulator)
       return NSNull()
     }
   }
 
-  public class func deleteAll(_ simulators: [FBSimulator]) -> FBFuture<NSNull> {
+  class func deleteAll(_ simulators: [FBSimulator]) -> FBFuture<NSNull> {
     fbFutureFromAsync {
       try await deleteAllAsync(simulators)
       return NSNull()

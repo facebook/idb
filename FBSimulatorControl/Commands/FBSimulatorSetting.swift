@@ -150,7 +150,7 @@ extension FBSimulatorAppearance {
     self = entry.value
   }
 
-  public var argumentName: String? {
+  var argumentName: String? {
     FBSimulatorAppearance.argumentNames.first(where: { $0.value == self })?.name
   }
 
@@ -182,7 +182,7 @@ extension FBSimulatorContentSizeCategory {
     self = entry.value
   }
 
-  public var argumentName: String? {
+  var argumentName: String? {
     FBSimulatorContentSizeCategory.argumentNames.first(where: { $0.value == self })?.name
   }
 

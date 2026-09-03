@@ -9,18 +9,18 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-public final class FBSimulatorShutdownStrategy {
+final class FBSimulatorShutdownStrategy {
 
   // MARK: - Public Methods
 
-  public class func shutdown(_ simulator: FBSimulator) -> FBFuture<NSNull> {
+  class func shutdown(_ simulator: FBSimulator) -> FBFuture<NSNull> {
     fbFutureFromAsync {
       try await shutdownAsync(simulator)
       return NSNull()
     }
   }
 
-  public class func shutdownAll(_ simulators: [FBSimulator]) -> FBFuture<NSNull> {
+  class func shutdownAll(_ simulators: [FBSimulator]) -> FBFuture<NSNull> {
     fbFutureFromAsync {
       try await shutdownAllAsync(simulators)
       return NSNull()

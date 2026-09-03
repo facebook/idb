@@ -70,7 +70,7 @@ extension FBSimulator {
   ///   - arguments: Arguments passed to the process.
   ///   - environment: Environment for the spawned process.
   /// - Returns: The captured stdout, stderr and exit code.
-  public func launchProcessConsumingOutput(
+  func launchProcessConsumingOutput(
     launchPath: String,
     arguments: [String] = [],
     environment: [String: String] = [:]

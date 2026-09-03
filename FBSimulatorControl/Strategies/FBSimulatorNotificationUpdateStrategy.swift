@@ -9,7 +9,7 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-public final class FBSimulatorNotificationUpdateStrategy: @unchecked Sendable {
+final class FBSimulatorNotificationUpdateStrategy: @unchecked Sendable {
 
   // MARK: - Properties
 
@@ -18,7 +18,7 @@ public final class FBSimulatorNotificationUpdateStrategy: @unchecked Sendable {
 
   // MARK: - Initializers
 
-  public class func strategy(with set: FBSimulatorSet) -> FBSimulatorNotificationUpdateStrategy {
+  class func strategy(with set: FBSimulatorSet) -> FBSimulatorNotificationUpdateStrategy {
     let strategy = FBSimulatorNotificationUpdateStrategy(set: set)
     strategy.startNotifyingOfStateChanges()
     return strategy

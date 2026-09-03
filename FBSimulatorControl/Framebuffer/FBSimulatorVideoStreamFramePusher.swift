@@ -18,11 +18,11 @@ public struct FBVideoEncoderStats: Sendable {
   public var callbackCount: UInt
   public var writeCount: UInt
   public var dropCount: UInt
-  public var writeFailureCount: UInt
+  var writeFailureCount: UInt
   public var encodeErrorCount: UInt
   public var tornFrameCount: UInt
   public var totalEncodedBytes: UInt
-  public var totalEncodeSubmitSeconds: CFTimeInterval
+  var totalEncodeSubmitSeconds: CFTimeInterval
 
   public init() {
     self.callbackCount = 0

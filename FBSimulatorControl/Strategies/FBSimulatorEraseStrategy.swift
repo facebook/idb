@@ -9,7 +9,7 @@
 @preconcurrency import FBControlCore
 @preconcurrency import Foundation
 
-public final class FBSimulatorEraseStrategy {
+final class FBSimulatorEraseStrategy {
 
   // MARK: - Public
 
