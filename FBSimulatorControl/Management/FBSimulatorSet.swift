@@ -92,7 +92,7 @@ public final class FBSimulatorSet: FBiOSTargetSet {
     return simulator
   }
 
-  func cloneSimulator(_ simulator: FBSimulator, toDeviceSet destinationSet: FBSimulatorSet) async throws -> FBSimulator {
+  public func cloneSimulator(_ simulator: FBSimulator, toDeviceSet destinationSet: FBSimulatorSet) async throws -> FBSimulator {
     let device = try await Self.cloneDevice(on: deviceSet, device: simulator.device, toDeviceSet: destinationSet.deviceSet, queue: asyncQueue)
     return try destinationSet.fetchNewlyMadeSimulatorOrThrow(device)
   }
