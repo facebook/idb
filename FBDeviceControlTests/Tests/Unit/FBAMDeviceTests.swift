@@ -320,6 +320,35 @@ final class FBAMDeviceTests {
     #expect((expected) == (sAMDeviceEvents))
   }
 
+  /// The house arrest connection outlives the AMDevice session that created it. Production builds
+  /// every device with no connection reuse timeout but a six second service reuse timeout, so two
+  /// consecutive file operations on the same bundle re-establish the session while sharing one AFC
+  /// connection, and that connection is closed only once the window elapses with no consumer.
+  @Test
+  func houseArrestConnectionIsSharedAcrossSequentialScopes() async throws {
+    var afcCalls = AFCCalls()
+    afcCalls.ConnectionClose = { _ in
+      sAMDeviceEvents.append("connection_close")
+      return 0
+    }
+
+    let device = Self.makeDevice(connectionReuseTimeout: nil, serviceReuseTimeout: 2)
+    for _ in 0..<2 {
+      try await withFBFutureContext(device.houseArrestAFCConnection(forBundleID: "com.foo.bar", afcCalls: afcCalls)) { _ in
+      }
+    }
+
+    let session = ["connect", "is_paired", "validate_pairing", "start_session"]
+    let sessionTeardown = ["stop_session", "disconnect"]
+    var expected = session + ["create_house_arrest_service"] + sessionTeardown + session + sessionTeardown
+    await waitForDeviceEvents(expected)
+    #expect((expected) == (sAMDeviceEvents))
+
+    expected += ["connection_close"]
+    await waitForDeviceEvents(expected, timeout: 10)
+    #expect((expected) == (sAMDeviceEvents))
+  }
+
   @Test
   func concurrentUtilizationHasSharedConnection() async throws {
     let map = DispatchQueue(label: "com.facebook.fbdevicecontrol.amdevicetests.map")
