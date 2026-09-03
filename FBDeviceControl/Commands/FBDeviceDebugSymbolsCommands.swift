@@ -188,8 +188,8 @@ public final class FBDeviceDebugSymbolsCommands: DebugSymbolsCommands {
     }
     let raw = (message as? [String: Any])?["files"]
     guard let files = raw as? [String] else {
-      // Described the way the predecessor did, so the message is unchanged for the case that
-      // actually occurs: a `files` array holding something other than strings.
+      // The case that actually occurs is a `files` array holding something other than strings, so
+      // the elements are described individually rather than dumping the container.
       let described = (raw as? [Any]).map { FBCollectionInformation.oneLineDescription(from: $0) } ?? String(describing: raw)
       throw FBDeviceDebugSymbolsError.listingNotStrings(files: described)
     }

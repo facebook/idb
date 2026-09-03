@@ -12,10 +12,10 @@ extension FBAMDevice {
 
   /// Starts a service on the device, tearing the connection down when the context is exited.
   ///
-  /// The Objective-C `startService:` forwards here. Two lifetimes are in play and they are not the
-  /// same: the AMDevice *session* is released as soon as the service has started — that is what the
-  /// predecessor's `pop:` did, and `FBAMDevice.h` explains at length why it must not be held for
-  /// the duration — while the service *connection* is invalidated when the caller finishes with it.
+  /// Two lifetimes are in play and they are not the same: the AMDevice *session* is released as
+  /// soon as the service has started, while the service *connection* is invalidated when the
+  /// caller finishes with it. A session times out after 60 seconds, so holding one open for the
+  /// duration of a long-running service fails the next operation on the device.
   public func startServiceConnection(_ service: String) -> FBFutureContext<FBAMDServiceConnection> {
     let logger = self.logger
     return fbFutureFromAsync { try await self.openServiceConnection(service) }
@@ -109,8 +109,7 @@ extension FBAMDevice {
     guard let amDeviceRef = connectedDevice.amDeviceRef, let serviceConnection else {
       throw FBAMDeviceServiceError.deviceNotConnected(service: service)
     }
-    // Unretained, matching the predecessor: the raw reference was handed straight to the
-    // connection, which owns it from here.
+    // Unretained: the raw reference is handed straight to the connection, which owns it from here.
     let connection = FBAMDServiceConnection(
       name: service,
       connection: serviceConnection.takeUnretainedValue(),

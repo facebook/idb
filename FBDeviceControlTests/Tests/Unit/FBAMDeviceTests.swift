@@ -17,7 +17,7 @@ private var sAMDeviceEvents: [String] = []
 
 /// Pinned to the main actor: the AMDevice stubs append to `sAMDeviceEvents` from the device's
 /// work and async queues, both of which are `DispatchQueue.main`, so the assertions have to read
-/// it there too. The synchronous predecessors of these tests got that for free.
+/// it there too.
 /// The session is stopped and the device disconnected before the connection is invalidated: the
 /// service is started inside a pop, so the AMDevice session is not held for the caller's use of
 /// the connection.
@@ -136,8 +136,7 @@ final class FBAMDeviceTests {
   // MARK: - Tests
 
   /// The context teardown (`stop_session`, `disconnect`) is enqueued on the main queue when the
-  /// popped future resolves, so it can still be pending when the await resumes. Blocking on the
-  /// future used to spin the run loop and service it incidentally; waiting for it is explicit.
+  /// popped future resolves, so it can still be pending when the await resumes.
   private func waitForDeviceEvents(
     _ expected: [String],
     timeout: TimeInterval = 5,

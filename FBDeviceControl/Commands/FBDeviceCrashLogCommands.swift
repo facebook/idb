@@ -69,8 +69,8 @@ public class FBDeviceCrashLogCommands {
 
   fileprivate func notifyOfCrashAsync(matching predicate: NSPredicate) async throws -> FBCrashLogInfo {
     // Start listening for the next matching crash log first, then kick off ingestion as a
-    // fire-and-forget background job - the same task ordering the future-based predecessor
-    // established.
+    // fire-and-forget background job: a log ingested before the listener is installed is not
+    // reported.
     // The listener rides fbFutureFromAsync rather than Task: region isolation rejects
     // sending the non-Sendable predicate into a Task closure.
     let next = fbFutureFromAsync { [store] in

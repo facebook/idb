@@ -27,12 +27,10 @@ private func amDeviceConnected(_ device: AMDevice, manager: FBAMDeviceManager) {
     return
   }
 
-  // The predecessor sent `-stringValue` to whatever `CopyValue` returned, which answers for both
-  // a number and a string; accepting only a number would silently drop a device reporting the
-  // latter.
   // Erased to `AnyObject` because the call table under-declares `CopyValue` as returning
-  // `CFStringRef` while MobileDevice returns whatever CF type the key holds — the predecessor saw
-  // it as `id` and let the runtime decide.
+  // `CFStringRef` while MobileDevice returns whatever CF type the key holds. The ECID comes back
+  // as a number on some devices and a string on others, so accepting only one silently drops the
+  // devices reporting the other.
   let rawChipID = calls.CopyValue(device, nil, FBDeviceKey.uniqueChipID.rawValue as CFString)?.takeRetainedValue() as AnyObject?
   guard let uniqueChipID = (rawChipID as? NSNumber)?.stringValue ?? (rawChipID as? String) else {
     try? FBAMDeviceUsage.stopConnection(to: device, calls: calls, logger: logger)
@@ -213,8 +211,8 @@ public final class FBAMDeviceManager: FBDeviceManager<FBAMDevice> {
   // MARK: - Private
 
   fileprivate func identifier(forDevice amDevice: AMDevice) -> String? {
-    // Compared by address, as the predecessor did, and the same way `FBDeviceManager` does it —
-    // rather than leaving the result to how the opaque reference happens to bridge.
+    // Compared by address, the same way `FBDeviceManager` does it, rather than leaving the result
+    // to how the opaque reference happens to bridge.
     let address = Unmanaged.passUnretained(amDevice as AnyObject).toOpaque()
     for device in storage.referenced.values {
       if let reference = device.amDeviceRef, Unmanaged.passUnretained(reference as AnyObject).toOpaque() == address {
