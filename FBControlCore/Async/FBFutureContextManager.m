@@ -106,49 +106,6 @@
           }];
 }
 
-- (id)utilizeNowWithPurpose:(NSString *)purpose error:(NSError **)error
-{
-  if (self.pending.count > 0 || self.using.count > 0 || self.context) {
-    return [[FBControlCoreError
-             describe:[NSString stringWithFormat:@"Could not utilize context synchronously for %@ it is already in use", purpose]]
-            fail:error];
-  }
-  id<FBControlCoreLogger> logger = [self loggerWithPurpose:purpose];
-  FBFuture<id> *context = [self.delegate prepare:logger];
-  if (!context.result) {
-    return [[FBControlCoreError
-             describe:[NSString stringWithFormat:@"Could not extract prepare synchronously in %@", context]]
-            fail:error];
-  }
-  self.context = context;
-  return context.result;
-}
-
-- (BOOL)returnNowWithPurpose:(NSString *)purpose error:(NSError **)error
-{
-  FBFuture<id> *context = self.context;
-  if (!context) {
-    return [[FBControlCoreError
-             describe:[NSString stringWithFormat:@"Could not return context for '%@' as none exists", purpose]]
-            failBool:error];
-  }
-  id contextResult = context.result;
-  if (!contextResult) {
-    return [[FBControlCoreError
-             describe:[NSString stringWithFormat:@"Could not return context for '%@' as it has not resolved", purpose]]
-            failBool:error];
-  }
-  id<FBControlCoreLogger> logger = [self loggerWithPurpose:purpose];
-  FBFuture<NSNull *> *teardown = [self.delegate teardown:contextResult logger:logger];
-  if (!teardown.result) {
-    return [[FBControlCoreError
-             describe:[NSString stringWithFormat:@"Could not return context synchronously in %@", teardown]]
-            failBool:error];
-  }
-  self.context = nil;
-  return YES;
-}
-
 #pragma mark Private
 
 - (id<FBControlCoreLogger>)loggerWithPurpose:(NSString *)purpose

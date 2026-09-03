@@ -400,15 +400,6 @@ final class FBFutureContextManagerTests: XCTestCase, FBFutureContextManagerDeleg
     XCTAssertEqual(teardownCalled, 1)
   }
 
-  func testImmediateAquireAndRelease() throws {
-    let manager = self.manager
-
-    let context = try manager.utilizeNow(withPurpose: "A Test")
-    XCTAssertEqual(context, 0)
-
-    try manager.returnNow(withPurpose: "A Test")
-  }
-
   // MARK: - FBFutureContextManagerDelegate
 
   var contextName: String {

@@ -40,22 +40,4 @@
  */
 - (nonnull FBFutureContext<ContextType> *)utilizeWithPurpose:(nonnull NSString *)purpose;
 
-/**
- Synchronously attempt to utilize the context.
-
- @param purpose the purpose for utilization.
- @param error an error out for any error that occurs.
- @return the context if one could be synchronously used.
- */
-- (nullable ContextType)utilizeNowWithPurpose:(nonnull NSString *)purpose error:(NSError * _Nullable * _Nullable)error;
-
-/**
- Synchronously attempt to return the context.
-
- @param purpose the purpose for utilization.
- @param error an error out for any error that occurs.
- @return the context if one could be synchronously returned.
- */
-- (BOOL)returnNowWithPurpose:(nonnull NSString *)purpose error:(NSError * _Nullable * _Nullable)error;
-
 @end
