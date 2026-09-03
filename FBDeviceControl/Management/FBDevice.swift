@@ -13,7 +13,7 @@ import Foundation
 /// A device is backed by an `FBAMDevice`, an `FBAMRestorableDevice`, or both, and caches the
 /// target information of whichever it holds. The AMDevice is the richer source, so its values
 /// overwrite; the restorable device only fills gaps.
-public final class FBDevice: NSObject, FBiOSTarget, FBDeviceCommands {
+public final class FBDevice: FBiOSTarget, FBDeviceCommands, CustomStringConvertible {
 
   // MARK: - Properties
 
@@ -105,7 +105,6 @@ public final class FBDevice: NSObject, FBiOSTarget, FBDeviceCommands {
       preconditionFailure("An FBAMDevice or FBAMRestorableDevice must be provided")
     }
     self.logger = logger
-    super.init()
     if let info: any FBiOSTargetInfo & FBDeviceProtocol = amDevice ?? restorableDevice {
       cacheValues(from: info, overwrite: true)
     }
@@ -180,9 +179,9 @@ public final class FBDevice: NSObject, FBiOSTarget, FBDeviceCommands {
     [:]
   }
 
-  // MARK: - NSObject
+  // MARK: - CustomStringConvertible
 
-  public override var description: String {
+  public var description: String {
     FBiOSTargetDescribe(self)
   }
 

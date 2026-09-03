@@ -43,7 +43,6 @@ public class FBDeviceXCTestCommands: NSObject {
 
   // MARK: Initializers
 
-  @objc
   public class func commands(with device: FBDevice) -> FBDeviceXCTestCommands {
     FBDeviceXCTestCommands(device: device, workingDirectory: NSTemporaryDirectory())
   }
