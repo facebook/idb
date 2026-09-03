@@ -20,10 +20,18 @@ import Foundation
 /// copy, so mutating what you receive does not write back and the next caller
 /// sees the original. A command that mutates state as it is used therefore has
 /// to be a reference type; one that only models a domain can be a struct.
-@objc public final class FBTargetCommandCache: NSObject {
+///
+/// A command resolved here must hold its target weakly. The target owns the
+/// cache and the cache owns what is resolved into it, so a command holding its
+/// target strongly closes a target -> cache -> command -> target cycle that the
+/// target can never escape. A command that has to hold its target strongly is
+/// built per call instead of being resolved here.
+public final class FBTargetCommandCache {
 
   private let lock = NSLock()
   private var slots: [ObjectIdentifier: Any] = [:]
+
+  public init() {}
 
   public func resolve<T>(_ type: T.Type = T.self, build: () throws -> T) rethrows -> T {
     lock.lock()

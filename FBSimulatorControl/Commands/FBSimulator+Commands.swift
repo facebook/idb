@@ -15,8 +15,7 @@ import Foundation
 // cycle.
 //
 // The cache is also how the accessibility commands are given a mock translation dispatcher in
-// tests, via `commandCache.register(_:as:)`. That is a testing seam rather than a caching need,
-// and the only one left.
+// tests, via `commandCache.register(_:as:)`. That is a testing seam rather than a caching need.
 extension FBSimulator {
 
   // MARK: - Shared accessors
