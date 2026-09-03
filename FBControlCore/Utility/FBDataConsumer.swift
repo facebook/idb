@@ -43,7 +43,7 @@ import Foundation
 
 public extension FBDataConsumerLifecycle {
   /// Awaits completion of `finishedConsuming`.
-  func awaitFinishedConsumingAsync() async throws {
+  func awaitFinishedConsuming() async throws {
     try await bridgeFBFutureVoid(self.finishedConsuming)
   }
 }

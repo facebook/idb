@@ -264,7 +264,7 @@ public final class FBXCTestBundleStorage: FBBundleStorage {
     }
 
     if let xctestBundleURL {
-      return try await saveTestBundleAsync(xctestBundleURL, usingSymlink: false, skipSigningBundles: skipSigningBundles)
+      return try await saveTestBundle(xctestBundleURL, usingSymlink: false, skipSigningBundles: skipSigningBundles)
     }
     if let xctestrunURL {
       return try saveTestRun(xctestrunURL)
@@ -274,7 +274,7 @@ public final class FBXCTestBundleStorage: FBBundleStorage {
 
   func saveBundleOrTestRun(_ filePath: URL, skipSigningBundles: Bool) async throws -> FBInstalledArtifact {
     if filePath.pathExtension == XctestExtension {
-      return try await saveTestBundleAsync(filePath, usingSymlink: true, skipSigningBundles: skipSigningBundles)
+      return try await saveTestBundle(filePath, usingSymlink: true, skipSigningBundles: skipSigningBundles)
     }
     if filePath.pathExtension == XctestRunExtension {
       return try saveTestRun(filePath)
@@ -427,7 +427,7 @@ public final class FBXCTestBundleStorage: FBBundleStorage {
     return FBXCodebuildTestRunDescriptor(url: xctestrunURL, name: testTarget, testBundle: testBundle, testHostBundle: testHostBundle)
   }
 
-  private func saveTestBundleAsync(_ testBundleURL: URL, usingSymlink useSymlink: Bool, skipSigningBundles: Bool) async throws -> FBInstalledArtifact {
+  private func saveTestBundle(_ testBundleURL: URL, usingSymlink useSymlink: Bool, skipSigningBundles: Bool) async throws -> FBInstalledArtifact {
     let bundle = try FBBundleDescriptor.bundleWithFallbackIdentifier(fromPath: testBundleURL.path)
     return try await saveBundle(bundle, usingSymlink: useSymlink, skipSigningBundles: skipSigningBundles)
   }

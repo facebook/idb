@@ -83,7 +83,7 @@ public final class FBDeviceDiagnosticInformationCommands: NSObject, FBiOSTargetC
     let logger = device.logger
     return try await device.withServiceConnection(FBSpringboardServicesClient.serviceName) { connection in
       let client = FBSpringboardServicesClient(connection: connection, logger: logger)
-      return try await client.getIconLayoutAsync().pages
+      return try await client.getIconLayout().pages
     }
   }
 

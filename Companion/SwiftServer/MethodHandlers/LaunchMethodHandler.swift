@@ -81,7 +81,7 @@ struct LaunchMethodHandler: @unchecked Sendable {
       for consumer in consumers {
         nonisolated(unsafe) let consumer = consumer
         group.addTask {
-          try await consumer.awaitFinishedConsumingAsync()
+          try await consumer.awaitFinishedConsuming()
         }
       }
       try await group.waitForAll()

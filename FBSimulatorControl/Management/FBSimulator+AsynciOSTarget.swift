@@ -28,7 +28,7 @@ extension FBSimulator: InstrumentsCommands {
     configuration: FBInstrumentsConfiguration,
     logger: any FBControlCoreLogger
   ) async throws -> FBInstrumentsOperation {
-    try await FBInstrumentsOperation.operationAsync(target: self, configuration: configuration, logger: logger)
+    try await FBInstrumentsOperation.operation(target: self, configuration: configuration, logger: logger)
   }
 }
 

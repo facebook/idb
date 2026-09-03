@@ -76,7 +76,7 @@ struct InstrumentsRunMethodHandler {
     try await responseStream.send(response)
 
     let postProcessArguments = commandExecutor.storageManager.interpolateArgumentReplacements(request.postProcessArguments)
-    let processed = try await FBInstrumentsOperation.postProcessAsync(
+    let processed = try await FBInstrumentsOperation.postProcess(
       arguments: postProcessArguments,
       traceFile: traceFile,
       queue: BridgeQueues.futureSerialFullfillmentQueue,

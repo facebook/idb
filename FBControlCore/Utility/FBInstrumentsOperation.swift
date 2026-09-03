@@ -106,7 +106,7 @@ public final class FBInstrumentsOperation {
   /// The instruments cli is unreliable and sometimes stops recording right after starting.
   /// To make it reliable, launches are retried until one succeeds or the launch-retry
   /// timeout elapses.
-  public class func operationAsync(
+  public class func operation(
     target: any FBiOSTarget,
     configuration: FBInstrumentsConfiguration,
     logger: any FBControlCoreLogger
@@ -224,7 +224,7 @@ public final class FBInstrumentsOperation {
   }
 
   /// Post-processes an instruments trace, returning the post-processed trace URL.
-  public class func postProcessAsync(
+  public class func postProcess(
     arguments: [String]?,
     traceFile: URL,
     queue: DispatchQueue,

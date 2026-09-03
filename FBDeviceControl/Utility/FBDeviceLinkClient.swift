@@ -72,7 +72,7 @@ public final class FBDeviceLinkClient {
 
   public static func deviceLinkClient(connection: FBAMDServiceConnection) async throws -> FBDeviceLinkClient {
     let queue = DispatchQueue(label: "com.facebook.fbdevicecontrol.fbdevicelinkclient")
-    try await performVersionExchangeAsync(connection: connection, queue: queue)
+    try await performVersionExchange(connection: connection, queue: queue)
     return FBDeviceLinkClient(connection: connection, queue: queue)
   }
 
@@ -117,7 +117,7 @@ public final class FBDeviceLinkClient {
 
   // MARK: Private
 
-  private static func performVersionExchangeAsync(connection: FBAMDServiceConnection, queue: DispatchQueue) async throws {
+  private static func performVersionExchange(connection: FBAMDServiceConnection, queue: DispatchQueue) async throws {
     let connectionBox = ConnectionBox(connection)
     try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
       queue.async {

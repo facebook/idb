@@ -54,7 +54,7 @@ public final class FBDeviceVideo {
     }
   }
 
-  private class func findCaptureDeviceAsync(for device: FBDevice) async throws -> AVCaptureDevice {
+  private class func findCaptureDevice(for device: FBDevice) async throws -> AVCaptureDevice {
     let timeout = FBControlCoreGlobalConfiguration.fastTimeout
     let deadline = Date().addingTimeInterval(timeout)
     while true {
@@ -70,9 +70,9 @@ public final class FBDeviceVideo {
 
   // MARK: Initializers
 
-  public class func captureSessionAsync(for device: FBDevice) async throws -> AVCaptureSession {
+  public class func captureSession(for device: FBDevice) async throws -> AVCaptureSession {
     try allowAccessToScreenCaptureDevices()
-    let captureDevice = try await findCaptureDeviceAsync(for: device)
+    let captureDevice = try await findCaptureDevice(for: device)
     let deviceInput = try AVCaptureDeviceInput(device: captureDevice)
     let session = AVCaptureSession()
     if !session.canAddInput(deviceInput) {
@@ -82,8 +82,8 @@ public final class FBDeviceVideo {
     return session
   }
 
-  public class func videoAsync(for device: FBDevice, filePath: String) async throws -> FBDeviceVideo {
-    let session = try await captureSessionAsync(for: device)
+  public class func video(for device: FBDevice, filePath: String) async throws -> FBDeviceVideo {
+    let session = try await captureSession(for: device)
     let encoder = try FBVideoFileWriter.writer(withSession: session, filePath: filePath, logger: device.logger)
     return FBDeviceVideo(encoder: encoder)
   }

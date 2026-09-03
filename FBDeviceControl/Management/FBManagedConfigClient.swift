@@ -117,7 +117,7 @@ class FBManagedConfigClient {
     guard let whereNumber = FBManagedConfigClient.wallpaperWhereForName[name] else {
       throw FBManagedConfigError.invalidWallpaperName(name: name)
     }
-    try await changeSettingsAsync(settings: [["Item": "Wallpaper", "Image": data, "Where": whereNumber]])
+    try await changeSettings(settings: [["Item": "Wallpaper", "Image": data, "Where": whereNumber]])
   }
 
   func getProfileList() async throws -> [String] {
@@ -209,7 +209,7 @@ class FBManagedConfigClient {
 
   // MARK: Private Methods
 
-  private func changeSettingsAsync(settings: [[String: Any]]) async throws {
+  private func changeSettings(settings: [[String: Any]]) async throws {
     let connectionBox = ManagedConfigConnectionBox(connection)
     let settingsBox = ManagedConfigDataBox(settings)
     try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in

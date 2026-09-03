@@ -523,7 +523,7 @@ public final class FBIDBCommandExecutor {
   }
 
   public func tail_companion_logs(_ consumer: FBDataConsumer) async throws -> any LogOperation {
-    return try await logger.tailToConsumerAsync(consumer)
+    return try await logger.tailToConsumer(consumer)
   }
 
   public func diagnostic_information() async throws -> NSDictionary {

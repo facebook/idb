@@ -52,7 +52,7 @@ public final class FBDeviceVideoRecordingCommands: NSObject {
     if video != nil {
       throw FBDeviceVideoRecordingCommandError.recordingAlreadyActive
     }
-    let video = try await FBDeviceVideo.videoAsync(for: device, filePath: filePath)
+    let video = try await FBDeviceVideo.video(for: device, filePath: filePath)
     self.video = video
     try await video.startRecording()
     return FBVideoRecordingHandle {
@@ -76,7 +76,7 @@ public final class FBDeviceVideoRecordingCommands: NSObject {
       throw FBDeviceVideoRecordingCommandError.missingDevice
     }
     let logger = device.logger
-    let session = try await FBDeviceVideo.captureSessionAsync(for: device)
+    let session = try await FBDeviceVideo.captureSession(for: device)
     let stream = try FBDeviceVideoStream.stream(withSession: session, configuration: configuration, logger: logger)
     try await stream.startStreaming(consumer)
     return stream
