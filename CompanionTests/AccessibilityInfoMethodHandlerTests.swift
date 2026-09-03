@@ -40,12 +40,10 @@ private final class RecordingAccessibilityExecutor: AccessibilityDescribing {
   }
 }
 
-/// Guards the bug this diff fixes at the layer it lived in. A describe-by-marker used to reach the
-/// executor with a format-only options set — the request's `--key`/`--profile`/`--collect-frame-coverage`
-/// were dropped between the wire and the reader. `AccessibilityInfoRequestTranslation.options(from:)`
-/// already carried them for the at-point path (added earlier in this stack), so a test on that
-/// translation passes before the fix and does not guard it; the regression is only visible in what
-/// the *handler* hands the executor on the marker path, which is what these tests assert.
+/// Asserts what the *handler* hands the executor, which is where a describe-by-marker can silently
+/// lose the request's `--key`/`--profile`/`--collect-frame-coverage` by reaching the executor with a
+/// format-only options set. `AccessibilityInfoRequestTranslation.options(from:)` carries them for
+/// both paths, so coverage on that translation alone does not guard the marker path.
 final class AccessibilityInfoMethodHandlerTests: XCTestCase {
 
   func testMarkerReadCarriesTheRequestedKeysToTheExecutor() async throws {

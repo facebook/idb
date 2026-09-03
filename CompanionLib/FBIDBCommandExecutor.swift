@@ -200,10 +200,9 @@ public final class FBIDBCommandExecutor {
   }
 
   /// Describes the single element a query names. The caller supplies the options rather than having a
-  /// format-only set built here: a marker read used to discard the request's `keys`, profiling and
-  /// frame-coverage on the way through, so `--key` was accepted by the parser, carried over the wire and
-  /// then dropped one layer above the reader that would have honoured it. The format is read back off
-  /// the options so the serialization and the envelope cannot disagree about which one was asked for.
+  /// format-only set built here, so the request's `keys`, profiling and frame-coverage reach the reader
+  /// that honours them. The format is read back off the options so the serialization and the envelope
+  /// cannot disagree about which one was asked for.
   public func accessibility_describe(query: FBAccessibilityElementQuery, options: FBAccessibilityRequestOptions, backend: FBUIAutomationBackend = .accessibility) async throws -> Data {
     guard let simulator = target as? FBSimulator else {
       throw FBIDBCommandError.simulatorOnlyOperation(operation: "describe accessibility", targetDescription: String(describing: target))

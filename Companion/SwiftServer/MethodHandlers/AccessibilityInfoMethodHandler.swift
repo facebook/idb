@@ -14,10 +14,9 @@ import IDBGRPCSwift
 
 /// The two command-executor reads this handler drives. Extracted as a seam so the handler's
 /// request→options→executor wiring can be tested against a recording double: `FBIDBCommandExecutor`
-/// is a `public final class` with no other injection point, and the bug this diff fixes lived in
-/// exactly this wiring (the marker path fed the executor a format-only options set, dropping the
-/// request's `--key`/`--profile`/`--collect-frame-coverage`), so the options handed across this
-/// boundary are what a regression test must inspect.
+/// is a `public final class` with no other injection point, and the options handed across this
+/// boundary are the only place a request field dropped between the wire and the reader is
+/// observable.
 protocol AccessibilityDescribing {
   func accessibility_describe(
     query: FBAccessibilityElementQuery,
@@ -52,9 +51,8 @@ struct AccessibilityInfoMethodHandler {
     try AccessibilityInfoRequestTranslation.validate(request)
     let format = AccessibilityInfoRequestTranslation.outputFormat(from: request.format)
     let backend = AccessibilityInfoRequestTranslation.backend(from: request.backend)
-    // Built before the branch: both paths are reads of the same tree with the same options, and the
-    // marker path used to build its own format-only set, which is how `--key` came to be silently
-    // dropped on a describe-by-marker.
+    // Built before the branch: both paths are reads of the same tree with the same options, so the
+    // marker path honours the request's keys, profiling and frame coverage too.
     let options = try AccessibilityInfoRequestTranslation.options(from: request, format: format)
     // A marker selects a single element to describe; without one the request
     // describes the element at a point, or the whole frontmost app.
