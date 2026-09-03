@@ -219,17 +219,6 @@ public final class FBDevice: NSObject, FBiOSTarget, FBDeviceCommands {
     return amDevice.houseArrestAFCConnection(forBundleID: bundleID, afcCalls: afcCalls)
   }
 
-  // MARK: - Forwarding
-
-  /// Selectors this class does not implement are forwarded to the AMDevice, so its surface
-  /// remains reachable through the device for runtime-dispatched callers.
-  public override func forwardingTarget(for aSelector: Selector?) -> Any? {
-    if let aSelector, let amDevice, amDevice.responds(to: aSelector) {
-      return amDevice
-    }
-    return super.forwardingTarget(for: aSelector)
-  }
-
   // MARK: - Private
 
   private func notAMDeviceBacked<T>(operation: String) -> FBFutureContext<T> {
