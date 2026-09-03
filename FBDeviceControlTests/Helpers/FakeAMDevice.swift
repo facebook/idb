@@ -28,6 +28,10 @@ final class FakeLockdownService: NSObject {
   /// What the device sends for each raw `receive`, consumed as it is read.
   var readBuffer = Data()
 
+  /// The file service behind this connection, when a test drives one over AFC. Its socket is what
+  /// `ServiceConnectionGetSocket` reports, which is how `AFCCalls.Create` finds it.
+  var afc: FakeAFC?
+
   /// Makes raw sends or receives report a failure, the way a broken connection would.
   var sendFails = false
   var receiveFails = false
@@ -236,6 +240,10 @@ final class FakeAMDevice: NSObject {
     }
 
     calls.MountImage = fakeMountImage
+
+    calls.ServiceConnectionGetSocket = { connectionRef in
+      FakeAMDevice.service(connectionRef)?.afc?.socket ?? -1
+    }
 
     calls.ServiceConnectionGetSecureIOContext = { _ in nil }
 
