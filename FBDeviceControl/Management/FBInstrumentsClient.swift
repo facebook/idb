@@ -294,8 +294,6 @@ public final class FBInstrumentsClient: NSObject {
   }
 
   // MARK: - The wire format
-  //
-  // Exposed to Objective-C because the byte-level encoding tests reach these through a category.
 
   private static let capabilitiesArgumentData = argumentData(
     forArgument: ["com.apple.private.DTXBlockCompression": 2, "com.apple.private.DTXConnection": 1])
@@ -309,7 +307,6 @@ public final class FBInstrumentsClient: NSObject {
   private static let ObjectArgumentType: UInt32 = 2
   private static let Int32ArgumentType: UInt32 = 3
 
-  @objc(argumentDataForArgument:)
   static func argumentData(forArgument argument: Any) -> Data {
     // These are plist-shaped values the caller controls, so archiver failure is programmer error.
     // swiftlint:disable:next force_try
@@ -322,7 +319,6 @@ public final class FBInstrumentsClient: NSObject {
     return data
   }
 
-  @objc(argumentDataForInt32:)
   static func argumentData(forInt32 value: Int32) -> Data {
     var data = Data()
     data.appendValue(EmptyDictionaryKey)
@@ -331,7 +327,6 @@ public final class FBInstrumentsClient: NSObject {
     return data
   }
 
-  @objc(auxillaryDataFromArgumentsData:)
   static func auxillaryData(fromArgumentsData arguments: [Data]?) -> Data {
     guard let arguments else {
       return Data()
@@ -347,7 +342,6 @@ public final class FBInstrumentsClient: NSObject {
     return data
   }
 
-  @objc(objectArgumentsFromAuxillaryData:error:)
   static func objectArguments(fromAuxillaryData data: Data) throws -> [Any] {
     guard data.count >= 16 else {
       throw FBInstrumentsClientError.auxillaryDataTooShort(described: String(describing: data as NSData))
@@ -384,23 +378,6 @@ public final class FBInstrumentsClient: NSObject {
       arguments.append(argument)
     }
     return arguments
-  }
-
-  // Data-walking helpers in Objective-C shape, reachable only from the byte-level tests —
-  // `WireReader` is what this implementation uses. Deleted when those tests move to Swift Testing.
-
-  @objc(advanceData:buffer:length:)
-  static func advance(_ data: Data, buffer: UnsafeMutableRawPointer, length: Int) -> Data {
-    (data as NSData).getBytes(buffer, length: length)
-    return data.subdata(in: length..<data.count)
-  }
-
-  @objc(advanceData:dataOut:length:)
-  static func advance(_ data: Data, dataOut: AutoreleasingUnsafeMutablePointer<NSData?>?, length: Int) -> Data {
-    if let dataOut {
-      dataOut.pointee = data.subdata(in: 0..<length) as NSData
-    }
-    return data.subdata(in: length..<data.count)
   }
 
   // MARK: - The DTXMessage exchange

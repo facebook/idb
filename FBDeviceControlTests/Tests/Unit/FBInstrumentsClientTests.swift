@@ -207,49 +207,6 @@ struct FBInstrumentsClientTests {
     #expect(decoded == dictionary as NSDictionary)
   }
 
-  // MARK: - The advanceData compatibility walkers
-
-  @Test
-  func advanceDataWithBufferReadsCorrectBytesAndAdvances() {
-    let values: [UInt32] = [0xDEAD_BEEF, 0xCAFE_BABE, 0x1234_5678]
-    let data = values.withUnsafeBytes { Data($0) }
-
-    var firstValue: UInt32 = 0
-    let remaining = withUnsafeMutableBytes(of: &firstValue) { buffer in
-      FBInstrumentsClient.advance(data, buffer: buffer.baseAddress!, length: 4)
-    }
-
-    #expect(firstValue == 0xDEAD_BEEF)
-    #expect(remaining.count == 8)
-
-    var secondValue: UInt32 = 0
-    let remaining2 = withUnsafeMutableBytes(of: &secondValue) { buffer in
-      FBInstrumentsClient.advance(remaining, buffer: buffer.baseAddress!, length: 4)
-    }
-    #expect(secondValue == 0xCAFE_BABE)
-    #expect(remaining2.count == 4)
-  }
-
-  @Test
-  func advanceDataWithDataOutExtractsSubdataAndAdvances() {
-    let data = Data([0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08])
-
-    var extracted: NSData?
-    let remaining = FBInstrumentsClient.advance(data, dataOut: &extracted, length: 3)
-
-    #expect(extracted as Data? == Data([0x01, 0x02, 0x03]))
-    #expect(remaining.count == 5)
-  }
-
-  @Test
-  func advanceDataWithNilDataOutStillAdvances() {
-    let data = Data([0x01, 0x02, 0x03, 0x04, 0x05])
-
-    let remaining = FBInstrumentsClient.advance(data, dataOut: nil, length: 2)
-
-    #expect(remaining.count == 3, "Should advance past 2 bytes even with nil dataOut")
-  }
-
   @Test
   func objectArgumentsPreservesArgumentOrder() throws {
     let auxData = FBInstrumentsClient.auxillaryData(fromArgumentsData: [
