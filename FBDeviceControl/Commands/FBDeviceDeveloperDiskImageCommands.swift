@@ -195,7 +195,7 @@ public class FBDeviceDeveloperDiskImageCommands: DeveloperDiskImageCommands {
     guard let device else {
       throw FBDeviceNilError.deviceNil
     }
-    return try await withFBFutureContext(device.connectToDevice(withPurpose: "mount_disk_image")) { connectedDevice in
+    return try await device.withConnectedDevice(purpose: "mount_disk_image") { connectedDevice in
       let options: [String: Any] = [
         ImageSignatureKey: diskImage.signature,
         ImageTypeKey: imageType,

@@ -53,7 +53,7 @@ public class FBDeviceRecoveryCommands {
     guard let device else {
       throw FBDeviceNilError.deviceNil
     }
-    try await withFBFutureContext(device.connectToDevice(withPurpose: "enter_recovery")) { connectedDevice in
+    try await device.withConnectedDevice(purpose: "enter_recovery") { connectedDevice in
       guard let enterRecoveryFunc = connectedDevice.calls.EnterRecovery else {
         throw FBDeviceRecoveryError.callUnavailable(function: "EnterRecovery")
       }

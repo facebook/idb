@@ -153,7 +153,7 @@ public class FBDeviceApplicationCommands {
       "PackageType": "Developer",
       "ShadowParentKey": deltaUpdateDirectory,
     ]
-    try await withFBFutureContext(device.connectToDevice(withPurpose: "install")) { connectedDevice in
+    try await device.withConnectedDevice(purpose: "install") { connectedDevice in
       device.logger.log("Installing Application \(appURL)")
       let statistics = FBDeviceWorkflowStatistics(workflowType: "Install", logger: connectedDevice.logger)
       let context = Unmanaged.passUnretained(statistics).toOpaque()
@@ -178,7 +178,7 @@ public class FBDeviceApplicationCommands {
     guard let device else {
       throw FBDeviceNilError.deviceNil
     }
-    try await withFBFutureContext(device.connectToDevice(withPurpose: "uninstall_\(bundleID)")) { connectedDevice in
+    try await device.withConnectedDevice(purpose: "uninstall_\(bundleID)") { connectedDevice in
       let statistics = FBDeviceWorkflowStatistics(workflowType: "Uninstall", logger: connectedDevice.logger)
       device.logger.log("Uninstalling Application \(bundleID)")
       let context = Unmanaged.passUnretained(statistics).toOpaque()
@@ -294,7 +294,7 @@ public class FBDeviceApplicationCommands {
     guard let device else {
       throw FBDeviceNilError.deviceNil
     }
-    return try await withFBFutureContext(device.connectToDevice(withPurpose: "installed_apps")) { connectedDevice in
+    return try await device.withConnectedDevice(purpose: "installed_apps") { connectedDevice in
       let options: [String: Any] = [
         "ReturnAttributes": returnAttributes
       ]

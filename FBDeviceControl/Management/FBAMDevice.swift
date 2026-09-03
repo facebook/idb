@@ -182,9 +182,8 @@ public final class FBAMDevice: NSObject, FBiOSTargetInfo, FBDeviceCommands, FBFu
   // `any FBDeviceCommands`, `AnyObject`, `Any` — because a Swift witness must match its
   // requirement exactly rather than covariantly.
 
-  @objc(connectToDeviceWithPurpose:)
-  public func connectToDevice(withPurpose purpose: String) -> FBFutureContext<any FBDeviceCommands> {
-    connectionContextManager.utilize(withPurpose: purpose).retyped(FBFutureContext<any FBDeviceCommands>.self)
+  public func connectToDevice(withPurpose purpose: String) -> FBFutureContext<AnyObject> {
+    connectionContextManager.utilize(withPurpose: purpose).retyped(FBFutureContext<AnyObject>.self)
   }
 
   @objc(startService:)
@@ -197,7 +196,7 @@ public final class FBAMDevice: NSObject, FBiOSTargetInfo, FBDeviceCommands, FBFu
     connectToDevice(withPurpose: "house_arrest")
       .onQueue(
         workQueue,
-        replace: { [self] (_: any FBDeviceCommands) -> FBFutureContext<AnyObject> in
+        replace: { [self] (_: AnyObject) -> FBFutureContext<AnyObject> in
           serviceManager
             .houseArrestAFCConnection(forBundleID: bundleID, afcCalls: afcCalls)
             .utilize(withPurpose: udid)

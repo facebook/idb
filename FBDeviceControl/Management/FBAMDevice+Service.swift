@@ -82,7 +82,7 @@ extension FBAMDevice {
   private func openServiceConnection(_ service: String) async throws -> FBAMDServiceConnection {
     let calls = self.calls
     let logger = self.logger
-    return try await withFBFutureContext(connectToDevice(withPurpose: "start_service_\(service)")) { device in
+    return try await withConnectedDevice(purpose: "start_service_\(service)") { device in
       try Self.startService(service, on: device, calls: calls, logger: logger)
     }
   }

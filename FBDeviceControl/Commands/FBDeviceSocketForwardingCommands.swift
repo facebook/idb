@@ -64,7 +64,7 @@ public class FBDeviceSocketForwardingCommands {
     guard let localConsumer = FBFileWriter.asyncWriter(withFileDescriptor: localFileDescriptorOutput, closeOnEndOfFile: false, error: &error) else {
       throw error ?? FBDeviceSocketForwardingError.fileDescriptorWriterFailed(fileDescriptor: localFileDescriptorOutput)
     }
-    try await withFBFutureContext(device.connectToDevice(withPurpose: "Socket Connection")) { connectedDevice in
+    try await device.withConnectedDevice(purpose: "Socket Connection") { connectedDevice in
       let localSocket = try Self.openLocalSocket(toRemotePort: Int(remotePort), on: connectedDevice, logger: device.logger)
       // The writer gets its own duplicate of the socket, owned and closed by
       // its channel. Two dispatch io channels must not share one descriptor:

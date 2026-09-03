@@ -201,8 +201,7 @@ public final class FBDevice: NSObject, FBiOSTarget, FBDeviceCommands {
 
   // MARK: - FBDeviceCommands
 
-  @objc(connectToDeviceWithPurpose:)
-  public func connectToDevice(withPurpose purpose: String) -> FBFutureContext<any FBDeviceCommands> {
+  public func connectToDevice(withPurpose purpose: String) -> FBFutureContext<AnyObject> {
     guard let amDevice else {
       return notAMDeviceBacked(operation: "connectToDeviceWithPurpose:")
     }

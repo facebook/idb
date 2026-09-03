@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+@preconcurrency import FBControlCore
 import Foundation
 
 /// The way a devicectl invocation fails, as data rather than an assembled string.
