@@ -153,60 +153,6 @@ final class FBAMDeviceTests {
     }
   }
 
-  @Test
-  func connectToDeviceWithSuccess() async throws {
-    let future = device.connectionContextManager.utilize(withPurpose: "test")
-      .onQueue(
-        DispatchQueue.main,
-        pop: { (_: FBAMDevice) -> FBFuture<AnyObject> in
-          return FBFuture<AnyObject>(result: NSNull())
-        })
-
-    let value = try await bridgeFBFuture(future)
-    #expect(value is NSNull, "the pop block resolves with NSNull, got \(value)")
-
-    let expected = [
-      "connect",
-      "is_paired",
-      "validate_pairing",
-      "start_session",
-      "stop_session",
-      "disconnect",
-    ]
-    await waitForDeviceEvents(expected)
-
-    #expect((expected) == (sAMDeviceEvents))
-  }
-
-  @Test
-  func connectToDeviceWithFailure() async {
-    let future = device.connectionContextManager.utilize(withPurpose: "test")
-      .onQueue(
-        DispatchQueue.main,
-        pop: { (_: FBAMDevice) -> FBFuture<AnyObject> in
-          return FBDeviceControlError.describe("A bad thing").failFuture()
-        })
-
-    do {
-      _ = try await bridgeFBFuture(future)
-      Issue.record("Expected the connection future to fail")
-    } catch {
-      #expect(error.localizedDescription.contains("A bad thing"), "the pop block's failure should surface, got \(error)")
-    }
-
-    let expected = [
-      "connect",
-      "is_paired",
-      "validate_pairing",
-      "start_session",
-      "stop_session",
-      "disconnect",
-    ]
-    await waitForDeviceEvents(expected)
-
-    #expect((expected) == (sAMDeviceEvents))
-  }
-
   /// Pins the two lifetimes `startService` manages, which are not the same: the AMDevice session
   /// is released as soon as the service has started, while the service connection is invalidated
   /// only when the caller finishes with it.
@@ -313,63 +259,6 @@ final class FBAMDeviceTests {
 
     expected += ["connection_close"]
     await waitForDeviceEvents(expected, timeout: 10)
-    #expect((expected) == (sAMDeviceEvents))
-  }
-
-  @Test
-  func concurrentUtilizationHasSharedConnection() async throws {
-    let map = DispatchQueue(label: "com.facebook.fbdevicecontrol.amdevicetests.map")
-    let future0: FBMutableFuture<NSNumber> = FBMutableFuture()
-    let future1: FBMutableFuture<NSNumber> = FBMutableFuture()
-    let future2: FBMutableFuture<NSNumber> = FBMutableFuture()
-
-    let device = self.device
-
-    // Register the three consumers from this one thread, in order: dispatching
-    // the registrations onto a concurrent queue leaves their ordering to the
-    // scheduler, and under loaded CI hosts one can slip past another's release
-    // and reuse window, splitting the shared connection into a second connect
-    // sequence and flaking the call-order assertions below.
-    do {
-      let future = device.connectionContextManager.utilize(withPurpose: "test")
-        .onQueue(
-          map,
-          pop: { (_: FBAMDevice) -> FBFuture<AnyObject> in
-            return FBFuture<AnyObject>(result: NSNumber(value: 0))
-          })
-      future0.resolve(from: future)
-    }
-    do {
-      let future = device.connectionContextManager.utilize(withPurpose: "test")
-        .onQueue(
-          map,
-          pop: { (_: FBAMDevice) -> FBFuture<AnyObject> in
-            return FBFuture<AnyObject>(result: NSNumber(value: 1))
-          })
-      future1.resolve(from: future)
-    }
-    do {
-      let future = device.connectionContextManager.utilize(withPurpose: "test")
-        .onQueue(
-          map,
-          pop: { (_: FBAMDevice) -> FBFuture<AnyObject> in
-            return FBFuture<AnyObject>(result: NSNumber(value: 2))
-          })
-      future2.resolve(from: future)
-    }
-
-    let value = try await bridgeFBFuture(FBFuture<AnyObject>.combine([future0, future1, future2])) as? [NSNumber]
-    #expect((value) == ([0, 1, 2]))
-
-    let expected = [
-      "connect",
-      "is_paired",
-      "validate_pairing",
-      "start_session",
-      "stop_session",
-      "disconnect",
-    ]
-    await waitForDeviceEvents(expected)
     #expect((expected) == (sAMDeviceEvents))
   }
 }

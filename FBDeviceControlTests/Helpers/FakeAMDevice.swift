@@ -121,6 +121,10 @@ final class FakeAMDevice: NSObject {
   /// "wrong image for this OS" case.
   var mountImageStatus: Int32 = 0
 
+  /// Status `StartSession` returns, so a test can drive the failure path of taking the device
+  /// into use. Zero succeeds.
+  var startSessionStatus: Int32 = 0
+
   private(set) var mountedImagePaths: [String] = []
 
   private var services: [String: FakeLockdownService] = [:]
@@ -204,8 +208,11 @@ final class FakeAMDevice: NSObject {
       return 0
     }
     calls.StartSession = { deviceRef in
-      FakeAMDevice.device(deviceRef)?.record("start_session")
-      return 0
+      guard let device = FakeAMDevice.device(deviceRef) else {
+        return 1
+      }
+      device.record("start_session")
+      return device.startSessionStatus
     }
     calls.StopSession = { deviceRef in
       FakeAMDevice.device(deviceRef)?.record("stop_session")
