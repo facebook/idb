@@ -169,11 +169,11 @@ public final class FBAMDevice: NSObject, FBiOSTargetInfo, FBDeviceCommands, FBFu
     nil
   }
 
-  @objc public var activationState: NSString {
+  @objc public var activationState: String {
     guard let activationState = allValues[FBDeviceKey.activationState.rawValue] as? String else {
-      return FBDeviceActivationState.unknown.rawValue as NSString
+      return FBDeviceActivationState.unknown.rawValue
     }
-    return FBDeviceActivationStateCoerceFromString(activationState).rawValue as NSString
+    return FBDeviceActivationStateCoerceFromString(activationState).rawValue
   }
 
   // MARK: - FBDeviceCommands

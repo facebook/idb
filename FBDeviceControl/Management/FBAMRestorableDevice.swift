@@ -128,10 +128,8 @@ public final class FBAMRestorableDevice: NSObject, FBiOSTargetInfo, FBDeviceProt
     calls.RestorableDeviceGetRecoveryModeDevice(restorableDevice)?.takeUnretainedValue()
   }
 
-  /// Typed `NSString` rather than `FBDeviceActivationState`: the protocol declares this property
-  /// `assign` on an object type, so the string-enum typedef does not survive into the requirement.
-  @objc public var activationState: NSString {
-    FBDeviceActivationState.unknown.rawValue as NSString
+  @objc public var activationState: String {
+    FBDeviceActivationState.unknown.rawValue
   }
 
   // MARK: - Public

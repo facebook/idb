@@ -66,7 +66,7 @@ public final class FBDevice: NSObject, FBiOSTarget, FBDeviceCommands {
   private var cachedTargetType: FBiOSTargetType?
   private var cachedBuildVersion: String?
   private var cachedProductVersion: String?
-  private var cachedActivationState: NSString?
+  private var cachedActivationState: String?
   private var cachedAllValues: [String: Any]?
 
   @objc public private(set) var state: FBiOSTargetState = .unknown
@@ -81,7 +81,7 @@ public final class FBDevice: NSObject, FBiOSTarget, FBDeviceCommands {
   @objc public var targetType: FBiOSTargetType { cachedTargetType ?? .none }
   @objc public var buildVersion: String? { cachedBuildVersion }
   @objc public var productVersion: String? { cachedProductVersion }
-  @objc public var activationState: NSString { cachedActivationState ?? "" }
+  @objc public var activationState: String { cachedActivationState ?? "" }
   @objc public var allValues: [String: Any] { cachedAllValues ?? [:] }
 
   // MARK: - Initializers

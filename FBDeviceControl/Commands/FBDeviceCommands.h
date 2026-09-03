@@ -16,40 +16,6 @@
 @class FBDeviceLinkClient;
 
 /**
- An enum representing the activation state of the device.
- */
-typedef NSString *FBDeviceActivationState NS_STRING_ENUM;
-extern FBDeviceActivationState _Nonnull const FBDeviceActivationStateUnknown;
-extern FBDeviceActivationState _Nonnull const FBDeviceActivationStateUnactivated;
-extern FBDeviceActivationState _Nonnull const FBDeviceActivationStateActivated;
-
-/**
- A string enum representing keys within device information.
- */
-typedef NSString *FBDeviceKey NS_STRING_ENUM;
-extern FBDeviceKey _Nonnull const FBDeviceKeyChipID;
-extern FBDeviceKey _Nonnull const FBDeviceKeyDeviceClass;
-extern FBDeviceKey _Nonnull const FBDeviceKeyDeviceName;
-extern FBDeviceKey _Nonnull const FBDeviceKeyLocationID;
-extern FBDeviceKey _Nonnull const FBDeviceKeyProductType;
-extern FBDeviceKey _Nonnull const FBDeviceKeySerialNumber;
-extern FBDeviceKey _Nonnull const FBDeviceKeyUniqueChipID;
-extern FBDeviceKey _Nonnull const FBDeviceKeyUniqueDeviceID;
-extern FBDeviceKey _Nonnull const FBDeviceKeyCPUArchitecture;
-extern FBDeviceKey _Nonnull const FBDeviceKeyBuildVersion;
-extern FBDeviceKey _Nonnull const FBDeviceKeyProductVersion;
-extern FBDeviceKey _Nonnull const FBDeviceKeyActivationState;
-extern FBDeviceKey _Nonnull const FBDeviceKeyIsPaired;
-
-/**
- Coerce an Activation State string to the String Enum
-
- @param activationState the string representation of the activation state.
- @return a FBDeviceActivationState string enum.
- */
-extern FBDeviceActivationState _Nonnull FBDeviceActivationStateCoerceFromString(NSString * _Nonnull activationState);
-
-/**
  Defines properties that are required on classes related to the implementation of FBDevice.
  */
 @protocol FBDeviceProtocol <NSObject>
@@ -89,7 +55,7 @@ extern FBDeviceActivationState _Nonnull FBDeviceActivationStateCoerceFromString(
 /**
  The Device's 'Activation State'.
  */
-@property (nonnull, nonatomic, readonly, assign) FBDeviceActivationState activationState;
+@property (nonnull, nonatomic, readonly, copy) NSString *activationState;
 
 /**
  All of the Device Values available.
