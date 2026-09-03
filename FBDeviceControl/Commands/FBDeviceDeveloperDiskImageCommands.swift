@@ -257,16 +257,4 @@ extension FBDevice: DeveloperDiskImageCommands {
     try await developerDiskImage.ensureDeveloperDiskImageIsMounted()
   }
 
-  // MARK: Objective-C entry point
-  //
-  // `ensureDeveloperDiskImageIsMounted` is part of `FBDevice`'s Objective-C interface
-  // (`FBDevice.h`) and is invoked from Objective-C (e.g. `FBDeviceDebugSymbolsCommands.m`),
-  // which cannot call the Swift `async` method above. The `FBFuture` form is retained for
-  // those callers and bridges to the async implementation.
-
-  public func ensureDeveloperDiskImageIsMounted() -> FBFuture<FBDeveloperDiskImage> {
-    fbFutureFromAsync { [self] in
-      try await developerDiskImage.ensureDeveloperDiskImageIsMounted()
-    }
-  }
 }

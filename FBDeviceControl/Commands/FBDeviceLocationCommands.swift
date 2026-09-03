@@ -29,7 +29,7 @@ public final class FBDeviceLocationCommands {
     guard let device else {
       throw FBDeviceNilError.deviceNil
     }
-    _ = try await bridgeFBFuture(device.ensureDeveloperDiskImageIsMounted())
+    _ = try await device.ensureDeveloperDiskImageIsMounted()
     try await device.withServiceConnection("com.apple.dt.simulatelocation") { connection in
       var start = StartCommand
       let startData = Data(bytes: &start, count: MemoryLayout<UInt32>.size)

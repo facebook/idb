@@ -60,9 +60,11 @@ public final class FBDeviceDebuggerCommands {
     guard let device else {
       return FBFutureContext(error: FBDeviceNilError.deviceNil)
     }
+    let mounted: FBFuture<FBDeveloperDiskImage> = fbFutureFromAsync {
+      try await device.ensureDeveloperDiskImageIsMounted()
+    }
     return
-      device
-      .ensureDeveloperDiskImageIsMounted()
+      mounted
       .onQueue(
         device.workQueue,
         pushTeardown: { diskImage -> FBFutureContext<AnyObject> in

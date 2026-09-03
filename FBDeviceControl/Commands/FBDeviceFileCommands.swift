@@ -196,7 +196,7 @@ private class FBDeviceFileContainer_Wallpaper: AsyncFileContainer {
   }
 
   func copy(fromContainer sourcePath: String, toHost destinationPath: String) async throws -> String {
-    let imageData = try await bridgeFBFuture(springboard.wallpaperImageData(forKind: (sourcePath as NSString).lastPathComponent)) as Data
+    let imageData = try await springboard.wallpaperImageData(forKind: (sourcePath as NSString).lastPathComponent)
     try imageData.write(to: URL(fileURLWithPath: destinationPath), options: .atomic)
     return destinationPath
   }

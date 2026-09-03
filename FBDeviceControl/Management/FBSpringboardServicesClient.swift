@@ -107,13 +107,7 @@ class FBSpringboardServicesClient {
     self.logger = logger
   }
 
-  // MARK: Public Methods (legacy FBFuture entry points)
-
-  func wallpaperImageData(forKind name: String) -> FBFuture<NSData> {
-    fbFutureFromAsync { [self] in
-      try await wallpaperImageDataAsync(forKind: name) as NSData
-    }
-  }
+  // MARK: Public Methods
 
   func iconContainer() -> any AsyncFileContainer {
     FBSpringboardServicesIconContainer(client: self)
@@ -191,7 +185,7 @@ class FBSpringboardServicesClient {
     }
   }
 
-  func wallpaperImageDataAsync(forKind name: String) async throws -> Data {
+  func wallpaperImageData(forKind name: String) async throws -> Data {
     let connectionBox = SpringboardConnectionBox(connection)
     return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Data, Error>) in
       queue.async {
