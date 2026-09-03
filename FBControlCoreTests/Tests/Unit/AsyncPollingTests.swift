@@ -79,6 +79,33 @@ struct AsyncPollingTests {
     }
   }
 
+  @Test("A condition that never becomes true fails once the deadline elapses")
+  func unsatisfiedConditionTimesOut() async throws {
+    let deadline = PollDeadline(timeout: 0.05, waitingFor: "a condition that is never true")
+    await #expect(throws: PollTimeoutError.self) {
+      try await pollUntilTrue(on: .global(), interval: Self.fastInterval, deadline: deadline) { false }
+    }
+  }
+
+  @Test("The timeout reports what was being waited for")
+  func timeoutDescribesWhatWasAwaited() async throws {
+    let deadline = PollDeadline(timeout: 0.05, waitingFor: "the thing")
+    let error = await #expect(throws: PollTimeoutError.self) {
+      try await pollUntilTrue(on: .global(), interval: Self.fastInterval, deadline: deadline) { false }
+    }
+    #expect(error?.errorDescription == "Timed out after 0.05 seconds waiting for the thing")
+  }
+
+  @Test("A condition satisfied within the deadline does not time out")
+  func satisfiedConditionIgnoresDeadline() async throws {
+    let counter = Counter()
+    let deadline = PollDeadline(timeout: Self.neverElapsingInterval, waitingFor: "the third poll")
+    try await pollUntilTrue(on: .global(), interval: Self.fastInterval, deadline: deadline) {
+      counter.increment() == 3
+    }
+    #expect(counter.count == 3)
+  }
+
   @Test("An operation that succeeds first time is not retried")
   func successfulOperationIsNotRetried() async throws {
     let counter = Counter()
