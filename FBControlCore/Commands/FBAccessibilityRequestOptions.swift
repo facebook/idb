@@ -98,7 +98,8 @@ public struct FBAccessibilityMatch: Sendable, Equatable {
   /// fraction of real lookups search on.
   public let key: FBAXSearchableKey
 
-  /// Compare case-insensitively. Read path only — marker resolution for a write stays case-sensitive.
+  /// Compare case-insensitively. Opt-in on both reads and marker writes; the default stays
+  /// case-sensitive everywhere.
   public let ignoresCase: Bool
 
   /// Nil for an empty value, so "the caller passed no match" and "the caller passed an empty one" reach

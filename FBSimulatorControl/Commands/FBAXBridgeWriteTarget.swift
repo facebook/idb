@@ -26,7 +26,7 @@ extension FBAXBridgeTreeReader {
         try await assertBeforeWriting(callerAssertion, atPoint: point)
       }
       return FBAXWriteTarget(point: point, pid: nil, assertion: nil)
-    case let .marker(value, key, _, _):
+    case let .marker(value, key, _, ignoresCase):
       // Writes resolve against the structural tree deliberately: `.auto` is backend-dependent and a
       // semantic traversal can omit the element a marker names.
       let read = try await readRawTree(
@@ -42,11 +42,11 @@ extension FBAXBridgeTreeReader {
         nestedFormat: false,
         pid: read.pid
       )
-      guard let match = FBAXTreeWalk.matchingElement(inElements: elements, markerValue: value, key: key) else {
+      guard let match = FBAXTreeWalk.matchingElement(inElements: elements, markerValue: value, key: key, ignoresCase: ignoresCase) else {
         throw FBUIAutomationError.elementNotFound(backend: backend, key: key.rawValue, value: value)
       }
       try validate(callerAssertion, against: match)
-      switch FBAXTreeWalk.resolveMarker(inElements: elements, markerValue: value, key: key) {
+      switch FBAXTreeWalk.resolveMarker(inElements: elements, markerValue: value, key: key, ignoresCase: ignoresCase) {
       case let .resolved(x, y):
         // Marker lookup is a substring match, but the guest's safety check is equality. Assert the
         // matched element's actual value rather than the substring the caller searched for.

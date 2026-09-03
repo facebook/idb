@@ -90,14 +90,28 @@ enum FBAXTreeWalk {
     case resolved(x: Double, y: Double)
   }
 
-  /// Resolves `markerValue` to the centre of the first matching element that has a usable frame (the
-  /// same substring match as `matchingElement`), reporting whether a match without a usable frame
-  /// existed so a caller can tell an off-screen element apart from an absent one.
-  static func resolveMarker(inElements elements: [FBAccessibilityDocumentElement], markerValue: String, key: FBAXSearchableKey) -> MarkerResolution {
+  /// Resolves `markerValue` to the centre of the first matching element that has a usable frame,
+  /// reporting whether a match without a usable frame existed so a caller can tell an off-screen
+  /// element apart from an absent one. Matches through the same `FBAccessibilityMatch` predicate as
+  /// `matchingElement`, so the asserted element and the tapped point cannot disagree.
+  static func resolveMarker(
+    inElements elements: [FBAccessibilityDocumentElement],
+    markerValue: String,
+    key: FBAXSearchableKey,
+    ignoresCase: Bool = false
+  ) -> MarkerResolution {
     var matched = false
+    let match = FBAccessibilityMatch(value: markerValue, key: key, ignoresCase: ignoresCase)
     for element in elements {
-      guard let value = element.searchableValue(for: key), value.contains(markerValue) else {
-        continue
+      if let match {
+        guard let value = element.searchableValue(for: key), match.matches(value) else {
+          continue
+        }
+      } else {
+        // An empty marker matches the first element carrying the key, as `matchingElement` does.
+        guard element.searchableValue(for: key) != nil else {
+          continue
+        }
       }
       matched = true
       // A rectangle with no area is not somewhere a caller can be aimed at, and it is not rare: an
@@ -119,8 +133,13 @@ enum FBAXTreeWalk {
   /// nothing *or* every match is off-screen. A `resolveMarker` wrapper for the `wait` poll, which
   /// treats both nil cases alike (keep polling); tap/set-value call `resolveMarker` directly to tell an
   /// off-screen match from a genuine miss.
-  static func frameCenter(inElements elements: [FBAccessibilityDocumentElement], markerValue: String, key: FBAXSearchableKey) -> (x: Double, y: Double)? {
-    guard case let .resolved(x, y) = resolveMarker(inElements: elements, markerValue: markerValue, key: key) else {
+  static func frameCenter(
+    inElements elements: [FBAccessibilityDocumentElement],
+    markerValue: String,
+    key: FBAXSearchableKey,
+    ignoresCase: Bool = false
+  ) -> (x: Double, y: Double)? {
+    guard case let .resolved(x, y) = resolveMarker(inElements: elements, markerValue: markerValue, key: key, ignoresCase: ignoresCase) else {
       return nil
     }
     return (x, y)
