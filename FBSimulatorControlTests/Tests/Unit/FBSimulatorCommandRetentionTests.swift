@@ -9,47 +9,118 @@
 import Foundation
 import Testing
 
-/// Whether resolving a command class through the target's own command cache keeps the target
-/// alive.
+/// Every command accessor on `FBSimulator`, so the retention rule is checked against all of them
+/// rather than a hand-picked few.
+enum FBSimulatorCommandAccessor: CaseIterable, Sendable {
+  case application
+  case crashLog
+  case screenshot
+  case location
+  case debugger
+  case file
+  case log
+  case processSpawn
+  case videoRecording
+  case launchCtl
+  case xctraceRecord
+  case lifecycle
+  case media
+  case keychain
+  case settings
+  case xctestExtended
+  case accessibility
+  case dapServer
+  case repl
+  case notification
+  case memory
+
+  func resolve(on simulator: FBSimulator) {
+    switch self {
+    case .application:
+      _ = simulator.application
+    case .crashLog:
+      _ = simulator.crashLog
+    case .screenshot:
+      _ = simulator.screenshot
+    case .location:
+      _ = simulator.location
+    case .debugger:
+      _ = simulator.debugger
+    case .file:
+      _ = simulator.file
+    case .log:
+      _ = simulator.log
+    case .processSpawn:
+      _ = simulator.processSpawn
+    case .videoRecording:
+      _ = simulator.videoRecording
+    case .launchCtl:
+      _ = simulator.launchCtl
+    case .xctraceRecord:
+      _ = simulator.xctraceRecord
+    case .lifecycle:
+      _ = simulator.lifecycle
+    case .media:
+      _ = simulator.media
+    case .keychain:
+      _ = simulator.keychain
+    case .settings:
+      _ = simulator.settings
+    case .xctestExtended:
+      _ = simulator.xctestExtended
+    case .accessibility:
+      _ = simulator.accessibility
+    case .dapServer:
+      _ = simulator.dapServer
+    case .repl:
+      _ = simulator.repl
+    case .notification:
+      _ = simulator.notification
+    case .memory:
+      _ = simulator.memory
+    }
+  }
+
+  /// BUG: these two are memoized yet hold the simulator strongly, so resolving either closes the
+  /// cycle described on the suite below and the simulator is never released. Both expectations are
+  /// flipped to `false` in the commits that fix them.
+  var retainsTheSimulator: Bool {
+    switch self {
+    case .screenshot, .xctraceRecord:
+      return true
+    default:
+      return false
+    }
+  }
+}
+
+/// Whether resolving a command class keeps the simulator alive.
 ///
-/// A simulator owns its `commandCache`; the cache owns whatever is resolved into it. A command
-/// class that holds its simulator strongly therefore closes a cycle — simulator to cache to
-/// command to simulator — and the simulator can never be released. Most command classes hold
-/// `weak var simulator` precisely to avoid this.
+/// A simulator owns its `commandCache`; the cache owns whatever is resolved into it. A memoized
+/// command that holds its simulator strongly therefore closes a cycle — simulator to cache to
+/// command to simulator — and the simulator can never be released, which is why the memoized
+/// commands hold `weak var simulator`. Commands built per call are free to hold it strongly:
+/// nothing outlives the call that builds them.
+///
+/// Asserting over every accessor rather than the memoized ones keeps the rule intact when a
+/// per-call command is later moved into the cache.
 @Suite("Simulator command retention")
 struct FBSimulatorCommandRetentionTests {
 
-  /// Resolves a command through the cache, then reports whether the simulator survived the only
-  /// strong reference to it going away.
-  private func simulatorSurvives(_ resolve: (FBSimulator) throws -> Void) rethrows -> Bool {
+  /// Resolves a command, then reports whether the simulator survived the only strong reference to
+  /// it going away.
+  private func simulatorSurvives(_ resolve: (FBSimulator) -> Void) -> Bool {
     weak var weakSimulator: FBSimulator?
-    try autoreleasepool {
+    autoreleasepool {
       let simulator = FBSimulatorTestSupport.testableSimulator()
       weakSimulator = simulator
-      try resolve(simulator)
+      resolve(simulator)
     }
     return weakSimulator != nil
   }
 
-  @Test("A command holding its simulator weakly lets the simulator go")
-  func weaklyHeldCommandDoesNotRetainTheSimulator() throws {
-    #expect(try simulatorSurvives { _ = try $0.location } == false)
-  }
-
-  /// These three hold their simulator strongly, which is only safe because they are no longer
-  /// resolved through the simulator's own cache — nothing outlives the call that builds them.
-  @Test("The file commands do not retain the simulator")
-  func fileCommandsDoNotRetainTheSimulator() throws {
-    #expect(try simulatorSurvives { _ = try $0.file } == false)
-  }
-
-  @Test("The launchctl commands do not retain the simulator")
-  func launchCtlCommandsDoNotRetainTheSimulator() throws {
-    #expect(try simulatorSurvives { _ = try $0.launchCtl } == false)
-  }
-
-  @Test("The DAP server commands do not retain the simulator")
-  func dapServerCommandsDoNotRetainTheSimulator() throws {
-    #expect(try simulatorSurvives { _ = try $0.dapServer } == false)
+  @Test("Resolving a command does not retain the simulator", arguments: FBSimulatorCommandAccessor.allCases)
+  func resolvingACommandDoesNotRetainTheSimulator(_ accessor: FBSimulatorCommandAccessor) {
+    #expect(simulatorSurvives { accessor.resolve(on: $0) } == accessor.retainsTheSimulator)
   }
 }
