@@ -99,7 +99,6 @@ private class FBAMDeviceServiceManager_HouseArrest: NSObject, FBFutureContextMan
   }
 }
 
-@objc(FBAMDeviceServiceManager)
 public class FBAMDeviceServiceManager: NSObject {
   private weak var device: FBAMDevice?
   private let serviceTimeout: NSNumber?
@@ -108,7 +107,6 @@ public class FBAMDeviceServiceManager: NSObject {
 
   // MARK: Initializers
 
-  @objc(managerWithAMDevice:serviceTimeout:)
   public class func manager(withAMDevice device: FBAMDevice, serviceTimeout: NSNumber?) -> FBAMDeviceServiceManager {
     FBAMDeviceServiceManager(device: device, serviceTimeout: serviceTimeout)
   }

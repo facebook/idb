@@ -264,7 +264,7 @@ extension FBDevice: DeveloperDiskImageCommands {
   // which cannot call the Swift `async` method above. The `FBFuture` form is retained for
   // those callers and bridges to the async implementation.
 
-  @objc public func ensureDeveloperDiskImageIsMounted() -> FBFuture<FBDeveloperDiskImage> {
+  public func ensureDeveloperDiskImageIsMounted() -> FBFuture<FBDeveloperDiskImage> {
     fbFutureFromAsync { [self] in
       try await developerDiskImageCommands.ensureDeveloperDiskImageIsMounted()
     }

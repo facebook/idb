@@ -18,7 +18,7 @@ public final class FBDevice: NSObject, FBiOSTarget, FBDeviceCommands {
 
   // MARK: - Properties
 
-  @objc public private(set) weak var set: FBDeviceSet?
+  public private(set) weak var set: FBDeviceSet?
   @objc public let commandCache: FBTargetCommandCache
   @objc public private(set) var logger: any FBControlCoreLogger
   @objc public private(set) var calls: AMDCalls
@@ -86,7 +86,6 @@ public final class FBDevice: NSObject, FBiOSTarget, FBDeviceCommands {
 
   // MARK: - Initializers
 
-  @objc(initWithSet:amDevice:restorableDevice:logger:)
   public init(
     set: FBDeviceSet?,
     amDevice: FBAMDevice?,

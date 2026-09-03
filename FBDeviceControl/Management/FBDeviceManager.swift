@@ -75,7 +75,7 @@ public class FBDeviceManager<PublicDevice: AnyObject>: NSObject, FBiOSTargetSet 
     // means the underlying reference is replaced beneath them. A device that is no longer
     // referenced has already left the mapping, whose values are weakly held.
     let device: PublicDevice
-    if let existing = storage.device(forKey: identifier) as? PublicDevice {
+    if let existing = storage.device(forKey: identifier) {
       logger.info().log("Device has been re-attached \(existing)")
       device = existing
     } else {
@@ -129,7 +129,7 @@ public class FBDeviceManager<PublicDevice: AnyObject>: NSObject, FBiOSTargetSet 
   // MARK: - Public
 
   public var currentDeviceList: [PublicDevice] {
-    storage.attached.values.compactMap { $0 as? PublicDevice }.sorted { lhs, rhs in
+    Array(storage.attached.values).sorted { lhs, rhs in
       let lhsID = (lhs as? any FBiOSTargetInfo)?.uniqueIdentifier ?? ""
       let rhsID = (rhs as? any FBiOSTargetInfo)?.uniqueIdentifier ?? ""
       return lhsID < rhsID

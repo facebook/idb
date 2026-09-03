@@ -8,8 +8,7 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-@objc(FBDeviceSet)
-public class FBDeviceSet: NSObject, FBiOSTargetSet, FBiOSTargetSetDelegate {
+public class FBDeviceSet: FBiOSTargetSet, FBiOSTargetSetDelegate, CustomStringConvertible {
   // Memoized so the load (and AMDevice's InitializeMobileDevice) runs once per process, matching
   // the previous static-let semantics while letting the failure surface: a failed load is cached
   // and rethrown by every subsequent init instead of aborting the process.
@@ -21,8 +20,8 @@ public class FBDeviceSet: NSObject, FBiOSTargetSet, FBiOSTargetSetDelegate {
 
   private let amDeviceManager: FBAMDeviceManager
   private let restorableDeviceManager: FBAMRestorableDeviceManager
-  private let storage: _FBDeviceStorageBase
-  @objc public let logger: any FBControlCoreLogger
+  private let storage: FBDeviceStorage<FBDevice>
+  public let logger: any FBControlCoreLogger
   public weak var delegate: (any FBiOSTargetSetDelegate)?
 
   // MARK: Initializers
@@ -43,8 +42,7 @@ public class FBDeviceSet: NSObject, FBiOSTargetSet, FBiOSTargetSetDelegate {
     self.restorableDeviceManager = restorableDeviceManager
     self.logger = logger
     self.delegate = delegate
-    self.storage = _FBDeviceStorageBase(logger: logger)
-    super.init()
+    self.storage = FBDeviceStorage<FBDevice>(logger: logger)
     subscribeToDeviceNotifications()
   }
 
@@ -52,33 +50,32 @@ public class FBDeviceSet: NSObject, FBiOSTargetSet, FBiOSTargetSetDelegate {
     unsubscribeFromDeviceNotifications()
   }
 
-  // MARK: NSObject
+  // MARK: CustomStringConvertible
 
-  public override var description: String {
+  public var description: String {
     "FBDeviceSet: \(FBCollectionInformation.oneLineDescription(from: allDevices))"
   }
 
   // MARK: Querying
 
-  @objc(targetWithUDID:)
   public func target(withUDID udid: String) -> (any FBiOSTargetInfo)? {
     deviceWithUDID(udid)
   }
 
-  @objc public func deviceWithUDID(_ udid: String) -> FBDevice? {
+  public func deviceWithUDID(_ udid: String) -> FBDevice? {
     allDevices.first { $0.udid == udid }
   }
 
   // MARK: FBiOSTargetSet
 
-  @objc public var allTargetInfos: [any FBiOSTargetInfo] {
+  public var allTargetInfos: [any FBiOSTargetInfo] {
     allDevices
   }
 
   // MARK: Properties
 
-  @objc public var allDevices: [FBDevice] {
-    (storage.attached.values.compactMap { $0 as? FBDevice }).sorted { $0.uniqueIdentifier < $1.uniqueIdentifier }
+  public var allDevices: [FBDevice] {
+    Array(storage.attached.values).sorted { $0.uniqueIdentifier < $1.uniqueIdentifier }
   }
 
   // MARK: Private
@@ -100,19 +97,19 @@ public class FBDeviceSet: NSObject, FBiOSTargetSet, FBiOSTargetSetDelegate {
   }
 
   private func amDeviceAdded(_ amDevice: FBAMDevice) {
-    if let device = storage.device(forKey: amDevice.uniqueIdentifier) as? FBDevice {
+    if let device = storage.device(forKey: amDevice.uniqueIdentifier) {
       device.amDevice = amDevice
     } else {
       let device = FBDevice(set: self, amDevice: amDevice, restorableDevice: nil, logger: logger)
       storage.deviceAttached(device, forKey: amDevice.uniqueIdentifier)
     }
-    if let device = storage.device(forKey: amDevice.uniqueIdentifier) as? FBDevice {
+    if let device = storage.device(forKey: amDevice.uniqueIdentifier) {
       delegate?.targetAdded(device, in: self)
     }
   }
 
   private func amDeviceRemoved(_ amDevice: FBAMDevice) {
-    guard let device = storage.device(forKey: amDevice.uniqueIdentifier) as? FBDevice else {
+    guard let device = storage.device(forKey: amDevice.uniqueIdentifier) else {
       logger.log("\(amDevice) was removed, but there's no active device for it")
       return
     }
@@ -126,19 +123,19 @@ public class FBDeviceSet: NSObject, FBiOSTargetSet, FBiOSTargetSetDelegate {
   }
 
   private func restorableDeviceAdded(_ restorableDevice: FBAMRestorableDevice) {
-    if let device = storage.device(forKey: restorableDevice.uniqueIdentifier) as? FBDevice {
+    if let device = storage.device(forKey: restorableDevice.uniqueIdentifier) {
       device.restorableDevice = restorableDevice
     } else {
       let device = FBDevice(set: self, amDevice: nil, restorableDevice: restorableDevice, logger: logger)
       storage.deviceAttached(device, forKey: restorableDevice.uniqueIdentifier)
     }
-    if let device = storage.device(forKey: restorableDevice.uniqueIdentifier) as? FBDevice {
+    if let device = storage.device(forKey: restorableDevice.uniqueIdentifier) {
       delegate?.targetAdded(device, in: self)
     }
   }
 
   private func restorableDeviceRemoved(_ restorableDevice: FBAMRestorableDevice) {
-    guard let device = storage.device(forKey: restorableDevice.uniqueIdentifier) as? FBDevice else {
+    guard let device = storage.device(forKey: restorableDevice.uniqueIdentifier) else {
       logger.log("\(restorableDevice) was removed, but there's no active device for it")
       return
     }
@@ -174,7 +171,7 @@ public class FBDeviceSet: NSObject, FBiOSTargetSet, FBiOSTargetSetDelegate {
   }
 
   public func targetUpdated(_ targetInfo: any FBiOSTargetInfo, in targetSet: any FBiOSTargetSet) {
-    guard let device = storage.device(forKey: targetInfo.uniqueIdentifier) as? FBDevice else {
+    guard let device = storage.device(forKey: targetInfo.uniqueIdentifier) else {
       assertionFailure("No existing device to update for \(targetInfo)")
       return
     }

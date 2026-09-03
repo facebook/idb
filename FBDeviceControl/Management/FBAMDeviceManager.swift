@@ -216,7 +216,7 @@ public final class FBAMDeviceManager: FBDeviceManager<FBAMDevice> {
     // Compared by address, as the predecessor did, and the same way `FBDeviceManager` does it —
     // rather than leaving the result to how the opaque reference happens to bridge.
     let address = Unmanaged.passUnretained(amDevice as AnyObject).toOpaque()
-    for case let device as FBAMDevice in storage.referenced.values {
+    for device in storage.referenced.values {
       if let reference = device.amDeviceRef, Unmanaged.passUnretained(reference as AnyObject).toOpaque() == address {
         return device.uniqueIdentifier
       }

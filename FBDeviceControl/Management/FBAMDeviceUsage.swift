@@ -14,12 +14,10 @@ private let mobileBackupDomain = "com.apple.mobile.backup"
 ///
 /// Separate from `FBAMDeviceManager`, which discovers the *set* of devices. These operate on one
 /// device and are what `FBAMDevice` wraps around every operation it performs.
-@objc(FBAMDeviceUsage)
-public final class FBAMDeviceUsage: NSObject {
+public enum FBAMDeviceUsage {
 
   /// Connects to the device and opens a session on it, pairing first if required.
-  @objc(startUsing:calls:logger:error:)
-  public class func start(using device: AMDevice, calls: AMDCalls, logger: any FBControlCoreLogger) throws {
+  public static func start(using device: AMDevice, calls: AMDCalls, logger: any FBControlCoreLogger) throws {
     // Connect first
     try startConnection(to: device, calls: calls, logger: logger)
     // Confirm pairing and start a session
@@ -29,8 +27,7 @@ public final class FBAMDeviceUsage: NSObject {
 
   /// Ends the session and then the connection. Failures are logged by the callees rather than
   /// surfaced: there is nothing a caller can do about a teardown that did not take.
-  @objc(stopUsing:calls:logger:error:)
-  public class func stop(using device: AMDevice, calls: AMDCalls, logger: any FBControlCoreLogger) throws {
+  public static func stop(using device: AMDevice, calls: AMDCalls, logger: any FBControlCoreLogger) throws {
     // Stop the session first.
     try? stopSession(with: device, calls: calls, logger: logger)
     // Then the connection.
@@ -39,7 +36,7 @@ public final class FBAMDeviceUsage: NSObject {
 
   // MARK: - Steps
 
-  internal class func startConnection(
+  internal static func startConnection(
     to device: AMDevice,
     calls: AMDCalls,
     logger: any FBControlCoreLogger
@@ -51,7 +48,7 @@ public final class FBAMDeviceUsage: NSObject {
     }
   }
 
-  internal class func startSessionByPairing(
+  internal static func startSessionByPairing(
     with device: AMDevice,
     calls: AMDCalls,
     logger: any FBControlCoreLogger
@@ -83,7 +80,7 @@ public final class FBAMDeviceUsage: NSObject {
     }
   }
 
-  internal class func stopSession(
+  internal static func stopSession(
     with device: AMDevice,
     calls: AMDCalls,
     logger: any FBControlCoreLogger
@@ -92,7 +89,7 @@ public final class FBAMDeviceUsage: NSObject {
     _ = calls.StopSession(device)
   }
 
-  internal class func stopConnection(
+  internal static func stopConnection(
     to device: AMDevice,
     calls: AMDCalls,
     logger: any FBControlCoreLogger
@@ -102,7 +99,7 @@ public final class FBAMDeviceUsage: NSObject {
     logger.log("Disconnected from \(device)")
   }
 
-  internal class func obtainDeviceValues(_ device: AMDevice, calls: AMDCalls) -> [String: Any]? {
+  internal static func obtainDeviceValues(_ device: AMDevice, calls: AMDCalls) -> [String: Any]? {
     // Get the values from the default domain, this will obtain information regardless of whether
     // pairing was successful or not.
     guard var info = calls.CopyValue(device, nil, nil)?.takeRetainedValue() as? [String: Any] else {
@@ -121,7 +118,7 @@ public final class FBAMDeviceUsage: NSObject {
     return info
   }
 
-  private class func errorText(_ status: Int32, calls: AMDCalls) -> String {
+  private static func errorText(_ status: Int32, calls: AMDCalls) -> String {
     calls.CopyErrorText(status)?.takeRetainedValue() as String? ?? "Unknown error"
   }
 

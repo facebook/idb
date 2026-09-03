@@ -51,7 +51,6 @@ public final class FBAMRestorableDeviceManager: FBDeviceManager<FBAMRestorableDe
 
   // MARK: - Initializers
 
-  @objc(initWithCalls:workQueue:asyncQueue:ecidFilter:logger:)
   public init(
     calls: AMDCalls,
     work workQueue: DispatchQueue,

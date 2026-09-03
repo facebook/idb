@@ -27,12 +27,12 @@ public class FBAppleDevicectlCommandExecutor {
   let logger: FBControlCoreLogger?
   let device: FBDevice
 
-  @objc public init(device: FBDevice) {
+  public init(device: FBDevice) {
     logger = device.logger.withName("devicectl")
     self.device = device
   }
 
-  @objc public func taskBuilder(arguments: [String]) -> FBProcessBuilder<NSNull, NSString, NSString> {
+  public func taskBuilder(arguments: [String]) -> FBProcessBuilder<NSNull, NSString, NSString> {
     let derivedArgs = ["devicectl"] + arguments
     return FBProcessBuilder<NSNull, NSString, NSString>.withLaunchPath("/usr/bin/xcrun", arguments: derivedArgs)
       .withStdOutInMemoryAsString()

@@ -8,18 +8,20 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-@objc(FBDeviceStorage)
-public class _FBDeviceStorageBase: NSObject {
+/// Holds both the currently-attached devices and weak references to every device this storage has
+/// ever vended, so a consumer holding a device across a disconnect gets the same instance back on
+/// re-attach.
+public final class FBDeviceStorage<T: AnyObject> {
 
-  @objc public var attached: [String: Any] {
+  public var attached: [String: T] {
     attachedDevices
   }
 
-  @objc public var referenced: [String: Any] {
-    var result: [String: Any] = [:]
+  public var referenced: [String: T] {
+    var result: [String: T] = [:]
     let enumerator = referencedDevices.keyEnumerator()
     while let key = enumerator.nextObject() as? NSString {
-      if let value = referencedDevices.object(forKey: key) {
+      if let value = referencedDevices.object(forKey: key) as? T {
         result[key as String] = value
       }
     }
@@ -27,17 +29,16 @@ public class _FBDeviceStorageBase: NSObject {
   }
 
   private let logger: any FBControlCoreLogger
-  private var attachedDevices: [String: Any]
+  private var attachedDevices: [String: T]
   private var referencedDevices: NSMapTable<NSString, AnyObject>
 
-  @objc public init(logger: any FBControlCoreLogger) {
+  public init(logger: any FBControlCoreLogger) {
     self.logger = logger
     self.attachedDevices = [:]
     self.referencedDevices = NSMapTable(keyOptions: .copyIn, valueOptions: .weakMemory)
-    super.init()
   }
 
-  @objc public func deviceAttached(_ device: Any, forKey key: String) {
+  public func deviceAttached(_ device: T, forKey key: String) {
     let attached = attachedDevices[key]
     let referenced = referencedDevices.object(forKey: key as NSString)
     if attached != nil && referenced != nil {
@@ -48,19 +49,14 @@ public class _FBDeviceStorageBase: NSObject {
       logger.log("\(device) appeared for the first time")
     }
     attachedDevices[key] = device
-    referencedDevices.setObject(device as AnyObject, forKey: key as NSString)
+    referencedDevices.setObject(device, forKey: key as NSString)
   }
 
-  @objc public func deviceDetached(forKey key: String) {
+  public func deviceDetached(forKey key: String) {
     attachedDevices.removeValue(forKey: key)
   }
 
-  @objc public func device(forKey key: String) -> Any? {
-    attachedDevices[key] ?? referencedDevices.object(forKey: key as NSString)
+  public func device(forKey key: String) -> T? {
+    attachedDevices[key] ?? referencedDevices.object(forKey: key as NSString) as? T
   }
-}
-
-/// Generic wrapper for Swift consumers. The generic parameter is erased at runtime.
-/// ObjC code sees `FBDeviceStorage` (the @objc name of _FBDeviceStorageBase).
-public class FBDeviceStorage<T: AnyObject>: _FBDeviceStorageBase {
 }
