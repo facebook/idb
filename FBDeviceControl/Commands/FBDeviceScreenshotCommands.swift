@@ -39,7 +39,7 @@ public final class FBDeviceScreenshotCommands {
 
   // MARK: - Async
 
-  fileprivate func takeScreenshotAsync(configuration: FBScreenshotConfiguration) async throws -> FBScreenshotResult {
+  fileprivate func takeScreenshot(configuration: FBScreenshotConfiguration) async throws -> FBScreenshotResult {
     guard let device else {
       throw FBDeviceNilError.deviceNil
     }
@@ -70,6 +70,6 @@ public final class FBDeviceScreenshotCommands {
 extension FBDevice: ScreenshotCommands {
 
   public func takeScreenshot(configuration: FBScreenshotConfiguration) async throws -> FBScreenshotResult {
-    try await screenshot.takeScreenshotAsync(configuration: configuration)
+    try await screenshot.takeScreenshot(configuration: configuration)
   }
 }

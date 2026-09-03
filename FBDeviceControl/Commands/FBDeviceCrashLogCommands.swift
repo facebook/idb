@@ -67,7 +67,7 @@ public final class FBDeviceCrashLogCommands {
 
   // MARK: - Notify
 
-  fileprivate func notifyOfCrashAsync(matching predicate: NSPredicate) async throws -> FBCrashLogInfo {
+  fileprivate func notifyOfCrash(matching predicate: NSPredicate) async throws -> FBCrashLogInfo {
     // Start listening for the next matching crash log first, then kick off ingestion as a
     // fire-and-forget background job: a log ingested before the listener is installed is not
     // reported.
@@ -84,7 +84,7 @@ public final class FBDeviceCrashLogCommands {
 
   // MARK: - Async
 
-  fileprivate func crashesAsync(_ predicate: NSPredicate, useCache: Bool) async throws -> [FBCrashLogInfo] {
+  fileprivate func crashes(_ predicate: NSPredicate, useCache: Bool) async throws -> [FBCrashLogInfo] {
     guard device != nil else {
       throw FBDeviceNilError.deviceNil
     }
@@ -92,7 +92,7 @@ public final class FBDeviceCrashLogCommands {
     return store.ingestedCrashLogs(matchingPredicate: predicate)
   }
 
-  fileprivate func pruneCrashesAsync(_ predicate: NSPredicate) async throws -> [FBCrashLogInfo] {
+  fileprivate func pruneCrashes(_ predicate: NSPredicate) async throws -> [FBCrashLogInfo] {
     guard let device else {
       throw FBDeviceNilError.deviceNil
     }
@@ -200,15 +200,15 @@ public final class FBDeviceCrashLogCommands {
 extension FBDevice: CrashLogCommands {
 
   public func crashes(matching predicate: NSPredicate, useCache: Bool) async throws -> [FBCrashLogInfo] {
-    try await crashLog.crashesAsync(predicate, useCache: useCache)
+    try await crashLog.crashes(predicate, useCache: useCache)
   }
 
   public func notifyOfCrash(matching predicate: NSPredicate) async throws -> FBCrashLogInfo {
-    try await crashLog.notifyOfCrashAsync(matching: predicate)
+    try await crashLog.notifyOfCrash(matching: predicate)
   }
 
   public func pruneCrashes(matching predicate: NSPredicate) async throws -> [FBCrashLogInfo] {
-    try await crashLog.pruneCrashesAsync(predicate)
+    try await crashLog.pruneCrashes(predicate)
   }
 
   public func withCrashLogFiles<R>(body: (any AsyncFileContainer) async throws -> R) async throws -> R {

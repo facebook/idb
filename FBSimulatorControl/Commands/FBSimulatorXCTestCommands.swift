@@ -122,7 +122,7 @@ public final class FBSimulatorXCTestCommands {
 
   // MARK: - Async
 
-  fileprivate func runTestAsync(launchConfiguration: FBTestLaunchConfiguration, reporter: AnyObject, logger: any FBControlCoreLogger) async throws {
+  fileprivate func runTest(launchConfiguration: FBTestLaunchConfiguration, reporter: AnyObject, logger: any FBControlCoreLogger) async throws {
     guard let simulator = self.simulator else {
       throw FBWeakTargetError.simulator
     }
@@ -133,7 +133,7 @@ public final class FBSimulatorXCTestCommands {
     }
 
     if !launchConfiguration.shouldUseXcodebuild {
-      try await runTestAsync(with: launchConfiguration, reporter: typedReporter, logger: logger, workingDirectory: simulator.auxillaryDirectory)
+      try await runTest(with: launchConfiguration, reporter: typedReporter, logger: logger, workingDirectory: simulator.auxillaryDirectory)
       return
     }
 
@@ -184,7 +184,7 @@ public final class FBSimulatorXCTestCommands {
 
   // MARK: - Private
 
-  private func runTestAsync(with testLaunchConfiguration: FBTestLaunchConfiguration, reporter: any FBXCTestReporter, logger: any FBControlCoreLogger, workingDirectory: String?) async throws {
+  private func runTest(with testLaunchConfiguration: FBTestLaunchConfiguration, reporter: any FBXCTestReporter, logger: any FBControlCoreLogger, workingDirectory: String?) async throws {
     guard let simulator = self.simulator else {
       throw FBWeakTargetError.simulator
     }
@@ -258,7 +258,7 @@ extension FBSimulator: XCTestExtendedCommands {
     reporter: AnyObject,
     logger: any FBControlCoreLogger
   ) async throws {
-    try await xctestExtended.runTestAsync(launchConfiguration: launchConfiguration, reporter: reporter, logger: logger)
+    try await xctestExtended.runTest(launchConfiguration: launchConfiguration, reporter: reporter, logger: logger)
   }
 
   public func listTests(

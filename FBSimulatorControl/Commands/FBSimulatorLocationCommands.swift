@@ -23,7 +23,7 @@ public struct FBSimulatorLocationCommands {
 
   // MARK: - Private
 
-  fileprivate func overrideLocationAsync(longitude: Double, latitude: Double) async throws {
+  fileprivate func overrideLocation(longitude: Double, latitude: Double) async throws {
     try simulator.device.setLocationWithLatitude(latitude, andLongitude: longitude)
   }
 }
@@ -33,6 +33,6 @@ public struct FBSimulatorLocationCommands {
 extension FBSimulator: LocationCommands {
 
   public func overrideLocation(longitude: Double, latitude: Double) async throws {
-    try await location.overrideLocationAsync(longitude: longitude, latitude: latitude)
+    try await location.overrideLocation(longitude: longitude, latitude: latitude)
   }
 }

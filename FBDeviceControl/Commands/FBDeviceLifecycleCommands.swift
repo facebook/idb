@@ -23,14 +23,14 @@ public final class FBDeviceLifecycleCommands {
 
   // MARK: - Async
 
-  fileprivate func resolveStateAsync(_ state: FBiOSTargetState) async throws {
+  fileprivate func resolveState(_ state: FBiOSTargetState) async throws {
     guard let device else {
       throw FBDeviceNilError.deviceNil
     }
     try await FBiOSTargetResolveState(device, state)
   }
 
-  fileprivate func resolveLeavesStateAsync(_ state: FBiOSTargetState) async throws {
+  fileprivate func resolveLeavesState(_ state: FBiOSTargetState) async throws {
     guard let device else {
       throw FBDeviceNilError.deviceNil
     }
@@ -45,10 +45,10 @@ public final class FBDeviceLifecycleCommands {
 extension FBDevice: LifecycleCommands {
 
   public func resolveState(_ state: FBiOSTargetState) async throws {
-    try await lifecycle.resolveStateAsync(state)
+    try await lifecycle.resolveState(state)
   }
 
   public func resolveLeavesState(_ state: FBiOSTargetState) async throws {
-    try await lifecycle.resolveLeavesStateAsync(state)
+    try await lifecycle.resolveLeavesState(state)
   }
 }

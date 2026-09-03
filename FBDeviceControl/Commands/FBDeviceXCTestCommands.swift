@@ -56,7 +56,7 @@ public final class FBDeviceXCTestCommands: NSObject {
 
   // MARK: - Async
 
-  fileprivate func runTestAsync(
+  fileprivate func runTest(
     withLaunchConfiguration testLaunchConfiguration: FBTestLaunchConfiguration,
     reporter: AnyObject,
     logger: any FBControlCoreLogger
@@ -122,6 +122,6 @@ extension FBDevice: XCTestCommands {
     reporter: AnyObject,
     logger: any FBControlCoreLogger
   ) async throws {
-    try await xctest.runTestAsync(withLaunchConfiguration: launchConfiguration, reporter: reporter, logger: logger)
+    try await xctest.runTest(withLaunchConfiguration: launchConfiguration, reporter: reporter, logger: logger)
   }
 }

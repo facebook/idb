@@ -45,7 +45,7 @@ public final class FBDeviceVideoRecordingCommands: NSObject {
 
   // MARK: - Async
 
-  fileprivate func startRecordingAsync(toFile filePath: String) async throws -> any FBVideoRecording {
+  fileprivate func startRecording(toFile filePath: String) async throws -> any FBVideoRecording {
     guard let device else {
       throw FBDeviceVideoRecordingCommandError.missingDevice
     }
@@ -56,11 +56,11 @@ public final class FBDeviceVideoRecordingCommands: NSObject {
     self.video = video
     try await video.startRecording()
     return FBVideoRecordingHandle {
-      return try await self.stopAsync()
+      return try await self.stop()
     }
   }
 
-  fileprivate func stopAsync() async throws -> URL {
+  fileprivate func stop() async throws -> URL {
     guard let device else {
       throw FBDeviceVideoRecordingCommandError.missingDevice
     }
@@ -71,7 +71,7 @@ public final class FBDeviceVideoRecordingCommands: NSObject {
     return try await video.stop()
   }
 
-  fileprivate func createStreamAsync(with configuration: FBVideoStreamConfiguration, to consumer: any FBDataConsumer) async throws -> any FBVideoStream {
+  fileprivate func createStream(with configuration: FBVideoStreamConfiguration, to consumer: any FBDataConsumer) async throws -> any FBVideoStream {
     guard let device else {
       throw FBDeviceVideoRecordingCommandError.missingDevice
     }
@@ -88,7 +88,7 @@ public final class FBDeviceVideoRecordingCommands: NSObject {
 extension FBDevice: VideoRecordingCommands {
 
   public func startRecording(toFile filePath: String) async throws -> any FBVideoRecording {
-    try await videoRecording.startRecordingAsync(toFile: filePath)
+    try await videoRecording.startRecording(toFile: filePath)
   }
 }
 
@@ -97,6 +97,6 @@ extension FBDevice: VideoRecordingCommands {
 extension FBDevice: VideoStreamCommands {
 
   public func createStream(configuration: FBVideoStreamConfiguration, to consumer: any FBDataConsumer) async throws -> any FBVideoStream {
-    try await videoRecording.createStreamAsync(with: configuration, to: consumer)
+    try await videoRecording.createStream(with: configuration, to: consumer)
   }
 }

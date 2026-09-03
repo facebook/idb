@@ -80,14 +80,14 @@ public final class FBSimulatorLifecycleCommands {
     try await FBSimulatorEraseStrategy.erase(simulator)
   }
 
-  fileprivate func resolveStateAsync(_ state: FBiOSTargetState) async throws {
+  fileprivate func resolveState(_ state: FBiOSTargetState) async throws {
     guard let simulator = self.simulator else {
       throw FBWeakTargetError.simulator
     }
     try await FBiOSTargetResolveState(simulator, state)
   }
 
-  fileprivate func resolveLeavesStateAsync(_ state: FBiOSTargetState) async throws {
+  fileprivate func resolveLeavesState(_ state: FBiOSTargetState) async throws {
     guard let simulator = self.simulator else {
       throw FBWeakTargetError.simulator
     }
@@ -211,11 +211,11 @@ public final class FBSimulatorLifecycleCommands {
 extension FBSimulator: LifecycleCommands {
 
   public func resolveState(_ state: FBiOSTargetState) async throws {
-    try await lifecycle.resolveStateAsync(state)
+    try await lifecycle.resolveState(state)
   }
 
   public func resolveLeavesState(_ state: FBiOSTargetState) async throws {
-    try await lifecycle.resolveLeavesStateAsync(state)
+    try await lifecycle.resolveLeavesState(state)
   }
 }
 

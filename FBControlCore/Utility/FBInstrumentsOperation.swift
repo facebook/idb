@@ -213,7 +213,7 @@ public final class FBInstrumentsOperation {
 
   /// Stops the operation, waiting for the trace file to be written out to disk.
   /// Returns the trace file.
-  public func stopAsync() async throws -> URL {
+  public func stop() async throws -> URL {
     logger.log("Terminating instruments \(task). Backoff Timeout \(configuration.timings.terminateTimeout)")
     _ = try? await bridgeFBFuture(task.sendSignal(SIGINT, backingOffToKillWithTimeout: configuration.timings.terminateTimeout, logger: logger))
     let exitCode = try await bridgeFBFuture(task.exitCode)

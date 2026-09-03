@@ -69,7 +69,7 @@ struct InstrumentsRunMethodHandler {
   }
 
   private func stopInstruments(operation: FBInstrumentsOperation, request: Idb_InstrumentsRunRequest.Stop, responseStream: GRPCAsyncResponseStreamWriter<Idb_InstrumentsRunResponse>, finishedWriting: Atomic<Bool>) async throws {
-    let traceFile = try await operation.stopAsync()
+    let traceFile = try await operation.stop()
     let response = Idb_InstrumentsRunResponse.with {
       $0.state = .postProcessing
     }
