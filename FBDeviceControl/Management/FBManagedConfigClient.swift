@@ -8,7 +8,7 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-public let FBManagedConfigService: String = "com.apple.mobile.MCInstall"
+let FBManagedConfigService: String = "com.apple.mobile.MCInstall"
 
 private let OrderedIdentifiers = "OrderedIdentifiers"
 private let ProfileMetadata = "ProfileMetadata"
@@ -59,14 +59,14 @@ extension FBManagedConfigError: LocalizedError {
   }
 }
 
-public class FBManagedConfigClient {
+class FBManagedConfigClient {
   private let connection: FBAMDServiceConnection
   private let queue: DispatchQueue
   private let logger: any FBControlCoreLogger
 
   // MARK: ObjC-visible Constants
 
-  public static let serviceName: String = "com.apple.mobile.MCInstall"
+  static let serviceName: String = "com.apple.mobile.MCInstall"
 
   private static let wallpaperWhereForName: [String: NSNumber] = [
     FBWallpaperName.homescreen.rawValue: 0,
@@ -75,7 +75,7 @@ public class FBManagedConfigClient {
 
   // MARK: Initializers
 
-  public static func managedConfigClient(connection: FBAMDServiceConnection, logger: any FBControlCoreLogger) -> FBManagedConfigClient {
+  static func managedConfigClient(connection: FBAMDServiceConnection, logger: any FBControlCoreLogger) -> FBManagedConfigClient {
     let queue = DispatchQueue(label: "com.facebook.FBDeviceControl.managed_config")
     return FBManagedConfigClient(connection: connection, queue: queue, logger: logger)
   }
@@ -92,41 +92,9 @@ public class FBManagedConfigClient {
 
   // MARK: Public Methods (legacy FBFuture entry points)
 
-  public func getCloudConfiguration() -> FBFuture<NSDictionary> {
-    fbFutureFromAsync { [self] in
-      try await getCloudConfigurationAsync() as NSDictionary
-    }
-  }
-
-  public func changeWallpaper(withName name: String, data: Data) -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      try await changeWallpaperAsync(name: name, data: data)
-      return NSNull()
-    }
-  }
-
-  public func getProfileList() -> FBFuture<NSArray> {
-    fbFutureFromAsync { [self] in
-      try await getProfileListAsync() as NSArray
-    }
-  }
-
-  public func installProfile(_ payload: Data) -> FBFuture<NSDictionary> {
-    fbFutureFromAsync { [self] in
-      try await installProfileAsync(payload) as NSDictionary
-    }
-  }
-
-  public func removeProfile(_ profileName: String) -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      try await removeProfileAsync(profileName)
-      return NSNull()
-    }
-  }
-
   // MARK: - Async
 
-  public func getCloudConfigurationAsync() async throws -> [String: Any] {
+  func getCloudConfiguration() async throws -> [String: Any] {
     let connectionBox = ManagedConfigConnectionBox(connection)
     return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<[String: Any], Error>) in
       queue.async {
@@ -145,16 +113,16 @@ public class FBManagedConfigClient {
     }
   }
 
-  public func changeWallpaperAsync(name: String, data: Data) async throws {
+  func changeWallpaper(name: String, data: Data) async throws {
     guard let whereNumber = FBManagedConfigClient.wallpaperWhereForName[name] else {
       throw FBManagedConfigError.invalidWallpaperName(name: name)
     }
-    try await changeSettingsAsync(settings: [["Item": "Wallpaper", "Image": data, "Where": whereNumber]])
+    try await changeSettings(settings: [["Item": "Wallpaper", "Image": data, "Where": whereNumber]])
   }
 
-  public func getProfileListAsync() async throws -> [Any] {
+  func getProfileList() async throws -> [String] {
     let connectionBox = ManagedConfigConnectionBox(connection)
-    return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<[Any], Error>) in
+    return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<[String], Error>) in
       queue.async {
         do {
           let result = try connectionBox.connection.sendAndReceiveMessage(["RequestType": "GetProfileList"])
@@ -166,11 +134,11 @@ public class FBManagedConfigClient {
             continuation.resume(throwing: FBManagedConfigError.orderedIdentifiersMissing(key: OrderedIdentifiers))
             return
           }
-          guard FBCollectionInformation.isArrayHeterogeneous(orderedIdentifiers, with: NSString.self) else {
+          guard let identifiers = orderedIdentifiers as? [String] else {
             continuation.resume(throwing: FBManagedConfigError.orderedIdentifiersNotStrings(key: OrderedIdentifiers))
             return
           }
-          continuation.resume(returning: orderedIdentifiers)
+          continuation.resume(returning: identifiers)
         } catch {
           continuation.resume(throwing: error)
         }
@@ -178,7 +146,7 @@ public class FBManagedConfigClient {
     }
   }
 
-  public func installProfileAsync(_ payload: Data) async throws -> [String: Any] {
+  func installProfile(_ payload: Data) async throws -> [String: Any] {
     let connectionBox = ManagedConfigConnectionBox(connection)
     let payloadBox = ManagedConfigDataBox(payload)
     return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<[String: Any], Error>) in
@@ -198,7 +166,7 @@ public class FBManagedConfigClient {
     }
   }
 
-  public func removeProfileAsync(_ profileName: String) async throws {
+  func removeProfile(_ profileName: String) async throws {
     let connectionBox = ManagedConfigConnectionBox(connection)
     try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
       queue.async {
@@ -241,7 +209,7 @@ public class FBManagedConfigClient {
 
   // MARK: Private Methods
 
-  private func changeSettingsAsync(settings: [[String: Any]]) async throws {
+  private func changeSettings(settings: [[String: Any]]) async throws {
     let connectionBox = ManagedConfigConnectionBox(connection)
     let settingsBox = ManagedConfigDataBox(settings)
     try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in

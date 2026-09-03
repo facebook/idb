@@ -6,11 +6,14 @@
  */
 
 @testable import CompanionUtilities
-import XCTest
+import Foundation
+import Testing
 
-class AtomicTests: XCTestCase {
+@Suite
+struct AtomicTests {
 
-  func testAtomicSync() throws {
+  @Test
+  func atomicSync() throws {
     @Atomic var counter = 0
 
     let iterationCount = 1000
@@ -20,18 +23,20 @@ class AtomicTests: XCTestCase {
       }
     }
 
-    XCTAssertEqual(counter, iterationCount, "Counters don't match. Caution: this may be flaky, because it tests possible race condition.")
+    #expect(counter == iterationCount, "Counters don't match. Caution: this may be flaky, because it tests possible race condition.")
   }
 
-  func testConcurrentReadNoCrash() {
+  @Test
+  func concurrentReadNoCrash() {
     @Atomic var counter = 10
 
     DispatchQueue.concurrentPerform(iterations: 1000) { _ in
-      XCTAssertEqual(counter, 10, "This should never fail, we test for concurrent read crashes")
+      #expect(counter == 10, "This should never fail, we test for concurrent read crashes")
     }
   }
 
-  func testAtomicSet() {
+  @Test
+  func atomicSet() {
     @Atomic var counter = 0
     @Atomic var testableCounter = 0
 
@@ -46,6 +51,6 @@ class AtomicTests: XCTestCase {
       _testableCounter.set(etalonCounter)
     }
 
-    XCTAssertEqual(counter, iterationCount, "Conters not match. Caution: this maby flacky, because tests possible race condition.")
+    #expect(counter == iterationCount, "Conters not match. Caution: this maby flacky, because tests possible race condition.")
   }
 }

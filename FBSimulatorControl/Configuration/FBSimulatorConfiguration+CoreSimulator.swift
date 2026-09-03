@@ -13,22 +13,22 @@ extension FBSimulatorConfiguration {
 
   // MARK: - Matching Configuration against Available Versions
 
-  public static func newestAvailableOS(forDevice device: FBDeviceType) throws -> FBOSVersion? {
+  static func newestAvailableOS(forDevice device: FBDeviceType) throws -> FBOSVersion? {
     try FBSimulatorConfiguration.supportedOSVersions(forDevice: device).last
   }
 
-  public func newestAvailableOS() throws -> FBSimulatorConfiguration {
+  func newestAvailableOS() throws -> FBSimulatorConfiguration {
     guard let os = try FBSimulatorConfiguration.newestAvailableOS(forDevice: device) else {
       throw FBSimulatorConfigurationError.noNewestAvailableOS(device: device.model.rawValue)
     }
     return withOSNamed(os.name)
   }
 
-  public static func oldestAvailableOS(forDevice device: FBDeviceType) throws -> FBOSVersion? {
+  static func oldestAvailableOS(forDevice device: FBDeviceType) throws -> FBOSVersion? {
     try FBSimulatorConfiguration.supportedOSVersions(forDevice: device).first
   }
 
-  public func oldestAvailableOS() throws -> FBSimulatorConfiguration {
+  func oldestAvailableOS() throws -> FBSimulatorConfiguration {
     guard let os = try FBSimulatorConfiguration.oldestAvailableOS(forDevice: device) else {
       throw FBSimulatorConfigurationError.noOldestAvailableOS(device: device.model.rawValue)
     }
@@ -61,7 +61,7 @@ extension FBSimulatorConfiguration {
     return FBSimulatorConfiguration(device: device, os: os).withDeviceModel(model)
   }
 
-  public func checkRuntimeRequirements() throws {
+  func checkRuntimeRequirements() throws {
     let runtime: SimRuntime
     do {
       runtime = try obtainRuntime()
@@ -149,7 +149,7 @@ extension FBSimulatorConfiguration {
 
   // MARK: - Obtaining CoreSimulator Classes
 
-  public func obtainRuntime() throws -> SimRuntime {
+  func obtainRuntime() throws -> SimRuntime {
     let runtimes = try FBSimulatorConfiguration.supportedRuntimes()
     let matchingRuntimes = runtimes.filter { runtime in
       runtime.available
@@ -165,7 +165,7 @@ extension FBSimulatorConfiguration {
     return matchingRuntimes[0]
   }
 
-  public func obtainDeviceType() throws -> SimDeviceType {
+  func obtainDeviceType() throws -> SimDeviceType {
     let deviceTypes = try FBSimulatorConfiguration.supportedDeviceTypes()
     let matchingDeviceTypes = deviceTypes.filter { $0.name == device.model.rawValue }
     if matchingDeviceTypes.isEmpty {

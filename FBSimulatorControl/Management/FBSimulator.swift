@@ -15,20 +15,18 @@ private let DefaultDeviceSet = "~/Library/Developer/CoreSimulator/Devices"
 ///
 /// The async commands serialize their work onto `FBFuture`'s internal queues, so instances are
 /// safe to pass across Swift concurrency domains.
-public final class FBSimulator: NSObject, FBiOSTarget, @unchecked Sendable {
+public final class FBSimulator: FBiOSTarget, Hashable, CustomStringConvertible, @unchecked Sendable {
 
   // MARK: - Properties
 
   /// The underlying `SimDevice`.
   public let device: SimDevice
 
-  /// The Simulator Set that the Simulator belongs to.
+  /// The Simulator Set that the Simulator belongs to. Nil for simulators created outside a set.
   ///
   /// Referencing `FBSimulatorSet` here forms a strong-strong reference cycle between the set and
   /// the simulator. The set breaks it explicitly when a simulator is removed from the device set
   /// it wraps.
-  /// Nil for simulators created outside a set. The Objective-C header annotated this `nonnull`
-  /// while its initializer accepted nil, so the paths that require a set now say so explicitly.
   public private(set) var set: FBSimulatorSet?
 
   /// The `FBSimulatorConfiguration` representing this Simulator.
@@ -65,7 +63,6 @@ public final class FBSimulator: NSObject, FBiOSTarget, @unchecked Sendable {
     self.auxillaryDirectory = auxillaryDirectory
     self.logger = (logger ?? FBControlCoreGlobalConfiguration.defaultLogger).withName(device.udid.uuidString)
     self.commandCache = FBTargetCommandCache()
-    super.init()
   }
 
   // MARK: - FBiOSTargetInfo
@@ -90,10 +87,12 @@ public final class FBSimulator: NSObject, FBiOSTarget, @unchecked Sendable {
 
   // MARK: - FBiOSTarget
 
-  public var runtimeRootDirectory: String { device.runtime.root }
+  public var runtimeRootDirectory: String { get async { device.runtime.root } }
 
   public var platformRootDirectory: String {
-    (FBXcodeConfiguration.developerDirectory as NSString).appendingPathComponent("Platforms/iPhoneSimulator.platform")
+    get async {
+      (FBXcodeConfiguration.developerDirectory as NSString).appendingPathComponent("Platforms/iPhoneSimulator.platform")
+    }
   }
 
   public var screenInfo: FBiOSTargetScreenInfo? {
@@ -137,9 +136,7 @@ public final class FBSimulator: NSObject, FBiOSTarget, @unchecked Sendable {
   ///
   /// Nothing calls this, and a mismatch cannot be reported gracefully: the protocol requires a
   /// non-throwing function returning `Self`, so there is no error channel and no value to return.
-  /// Note this is a real narrowing — the Objective-C predecessor omitted the method behind a
-  /// `-Wprotocol` suppression, so a caller raised `NSInvalidArgumentException`, which this
-  /// codebase catches via `FBObjCExceptionGuard`; a trap is not catchable.
+  /// The resulting trap is not catchable by `FBObjCExceptionGuard`.
   public static func commands(with target: any FBiOSTarget) -> Self {
     guard let simulator = target as? Self else {
       preconditionFailure("\(type(of: target)) is not an FBSimulator, so it cannot provide simulator commands")
@@ -150,7 +147,7 @@ public final class FBSimulator: NSObject, FBiOSTarget, @unchecked Sendable {
   // MARK: - Simulator Properties
 
   /// The Product Family of the Simulator.
-  public var productFamily: FBControlCoreProductFamily {
+  var productFamily: FBControlCoreProductFamily {
     switch device.deviceType?.productFamilyID {
     case .some(1):
       return .familyiPhone
@@ -171,7 +168,7 @@ public final class FBSimulator: NSObject, FBiOSTarget, @unchecked Sendable {
   }
 
   /// The Directory that Contains the Simulator's Data.
-  public var dataDirectory: String? { device.dataPath() }
+  var dataDirectory: String? { device.dataPath() }
 
   public var customDeviceSetPath: String? {
     let setPath = device.deviceSet?.setPath
@@ -187,23 +184,24 @@ public final class FBSimulator: NSObject, FBiOSTarget, @unchecked Sendable {
   }
 
   /// The directory path of the expected location of the CoreSimulator logs directory.
-  public var coreSimulatorLogsDirectory: String {
+  var coreSimulatorLogsDirectory: String {
     ((NSHomeDirectory() as NSString).appendingPathComponent("Library/Logs/CoreSimulator") as NSString)
       .appendingPathComponent(udid)
   }
 
-  // MARK: - NSObject
+  // MARK: - Hashable
 
-  public override var hash: Int { device.hash }
-
-  public override func isEqual(_ object: Any?) -> Bool {
-    guard let simulator = object as? FBSimulator else {
-      return false
-    }
-    return device.isEqual(simulator.device)
+  public func hash(into hasher: inout Hasher) {
+    hasher.combine(device.hash)
   }
 
-  public override var description: String {
+  public static func == (lhs: FBSimulator, rhs: FBSimulator) -> Bool {
+    lhs.device.isEqual(rhs.device)
+  }
+
+  // MARK: - CustomStringConvertible
+
+  public var description: String {
     FBiOSTargetDescribe(self)
   }
 
@@ -227,8 +225,8 @@ extension FBSimulator {
   public func lookupBootstrapPortNamed(_ name: String) throws -> NSNumber {
     var error: NSError?
     let port = device.lookup(name, error: &error)
-    // The port is checked first, matching the Objective-C predecessor: CoreSimulator is
-    // unannotated private API, and a populated error alongside a valid port was a success.
+    // The port is checked before the error: CoreSimulator is unannotated private API, and a
+    // populated error alongside a valid port is a success.
     guard port != mach_port_t(MACH_PORT_NULL) else {
       throw error ?? FBSimulatorPortLookupError.portNotFound(name: name)
     }

@@ -12,7 +12,7 @@ import Foundation
 // Uses XCTest to match the existing tests in this target; migrating the whole
 // target to Swift Testing is a separate effort.
 // ast-grep-ignore: swift-testing/swift/no-new-xctest
-import XCTest
+import Testing
 
 /// Captures every subject the telemetry reports, so the per-RPC emission can
 /// be asserted without a scribe process.
@@ -46,7 +46,8 @@ private struct TelemetryTestError: Error, LocalizedError {
   var errorDescription: String? { "request exploded" }
 }
 
-final class CompanionTelemetryTests: XCTestCase {
+@Suite
+struct CompanionTelemetryTests {
 
   private static let logger = FBIDBLogger(
     loggers: [FBControlCoreLoggerFactory.systemLoggerWriting(toStderr: true, withDebugLogging: false)])
@@ -56,73 +57,78 @@ final class CompanionTelemetryTests: XCTestCase {
     return (CompanionTelemetry(logger: Self.logger, reporter: recorder), recorder)
   }
 
-  func testUnaryCallSuccessReportsOneSuccessSubject() async throws {
+  @Test
+  func unaryCallSuccessReportsOneSuccessSubject() async throws {
     let (telemetry, recorder) = makeTelemetry()
     let request = FetchRequest(bundleID: "com.example.app", verbose: true)
     let value = try await telemetry.unaryCall("list_apps", request: request) { "ok" }
-    XCTAssertEqual(value, "ok")
+    #expect((value) == ("ok"))
     // Pinned: exactly one terminal subject per RPC; no started subject.
-    XCTAssertEqual(recorder.subjects.count, 1)
+    #expect((recorder.subjects.count) == (1))
     let subject = recorder.subjects[0]
-    XCTAssertEqual(subject.eventName, "list_apps")
-    XCTAssertEqual(subject.eventType, .success)
-    XCTAssertNotNil(subject.duration)
-    XCTAssertNil(subject.size)
-    XCTAssertEqual(subject.arguments, ["bundleID=com.example.app", "verbose=true"])
+    #expect((subject.eventName) == ("list_apps"))
+    #expect((subject.eventType) == (.success))
+    #expect((subject.duration) != nil)
+    #expect((subject.size) == nil)
+    #expect((subject.arguments) == (["bundleID=com.example.app", "verbose=true"]))
   }
 
-  func testUnaryCallFailureReportsFailureSubjectAndRethrows() async {
+  @Test
+  func unaryCallFailureReportsFailureSubjectAndRethrows() async {
     let (telemetry, recorder) = makeTelemetry()
     let request = FetchRequest(bundleID: "com.example.app", verbose: false)
     do {
       _ = try await telemetry.unaryCall("list_apps", request: request) { () async throws -> String in
         throw TelemetryTestError()
       }
-      XCTFail("unaryCall should rethrow the body's error")
+      Issue.record("unaryCall should rethrow the body's error")
     } catch {
-      XCTAssertTrue(error is TelemetryTestError)
+      #expect((error is TelemetryTestError))
     }
-    XCTAssertEqual(recorder.subjects.count, 1)
+    #expect((recorder.subjects.count) == (1))
     let subject = recorder.subjects[0]
-    XCTAssertEqual(subject.eventName, "list_apps")
-    XCTAssertEqual(subject.eventType, .failure)
-    XCTAssertEqual(subject.message, "request exploded")
-    XCTAssertNotNil(subject.duration)
+    #expect((subject.eventName) == ("list_apps"))
+    #expect((subject.eventType) == (.failure))
+    #expect((subject.message) == ("request exploded"))
+    #expect((subject.duration) != nil)
   }
 
-  func testClientStreamingReportsWithEmptyArguments() async throws {
+  @Test
+  func clientStreamingReportsWithEmptyArguments() async throws {
     let (telemetry, recorder) = makeTelemetry()
     _ = try await telemetry.clientStreaming("push") { "done" }
-    XCTAssertEqual(recorder.subjects.count, 1)
+    #expect((recorder.subjects.count) == (1))
     let subject = recorder.subjects[0]
-    XCTAssertEqual(subject.eventName, "push")
-    XCTAssertEqual(subject.eventType, .success)
-    XCTAssertEqual(subject.arguments, [])
+    #expect((subject.eventName) == ("push"))
+    #expect((subject.eventType) == (.success))
+    #expect((subject.arguments) == ([]))
   }
 
-  func testServerStreamingSuccessReportsRequestArguments() async throws {
+  @Test
+  func serverStreamingSuccessReportsRequestArguments() async throws {
     let (telemetry, recorder) = makeTelemetry()
     let request = FetchRequest(bundleID: "com.example.app", verbose: false)
     try await telemetry.serverStreaming("pull", request: request) {}
-    XCTAssertEqual(recorder.subjects.count, 1)
+    #expect((recorder.subjects.count) == (1))
     let subject = recorder.subjects[0]
-    XCTAssertEqual(subject.eventType, .success)
-    XCTAssertEqual(subject.arguments, ["bundleID=com.example.app", "verbose=false"])
+    #expect((subject.eventType) == (.success))
+    #expect((subject.arguments) == (["bundleID=com.example.app", "verbose=false"]))
   }
 
-  func testBidiStreamingFailureReportsFailureSubject() async {
+  @Test
+  func bidiStreamingFailureReportsFailureSubject() async {
     let (telemetry, recorder) = makeTelemetry()
     do {
       try await telemetry.bidiStreaming("repl") {
         throw TelemetryTestError()
       }
-      XCTFail("bidiStreaming should rethrow the body's error")
+      Issue.record("bidiStreaming should rethrow the body's error")
     } catch {
-      XCTAssertTrue(error is TelemetryTestError)
+      #expect((error is TelemetryTestError))
     }
-    XCTAssertEqual(recorder.subjects.count, 1)
+    #expect((recorder.subjects.count) == (1))
     let subject = recorder.subjects[0]
-    XCTAssertEqual(subject.eventName, "repl")
-    XCTAssertEqual(subject.eventType, .failure)
+    #expect((subject.eventName) == ("repl"))
+    #expect((subject.eventType) == (.failure))
   }
 }

@@ -72,13 +72,12 @@ private let axTraitNames: [(AXTraits, String)] = [
   (.allowsLayoutChangeInStatusBar, "AllowsLayoutChangeInStatusBar"),
 ]
 
-// Built once on first access - Swift global initialisation runs behind `swift_once`,
-// matching the `dispatch_once` caching the Objective-C implementation had.
+// Built once on first access - Swift global initialisation runs behind `swift_once`.
 private let axTraitToName: [NSNumber: String] =
   Dictionary(uniqueKeysWithValues: axTraitNames.map { (NSNumber(value: $0.0.rawValue), $0.1) })
 
 /// Mapping from single-bit accessibility trait values to their names.
-public func AXTraitToNameMap() -> [NSNumber: String] {
+func AXTraitToNameMap() -> [NSNumber: String] {
   axTraitToName
 }
 

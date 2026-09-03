@@ -8,11 +8,8 @@
 import FBControlCore
 import Foundation
 
-/// Backend-neutral walk over an `XC_kAXXC*` attribute-dictionary tree, plus the marker matcher and
-/// frame-centre geometry that run over the walk's result. Both XCUI-grade backends emit this node
-/// shape — the `testmanagerd` remote-automation session and the `axbridge` guest reader — so the tree
-/// walk, marker matching, and frame-centre geometry live here, in a type neither backend owns, rather
-/// than on one backend that the other has to reach into. Per-node serialization is delegated to
+/// Walks an axbridge `XC_kAXXC*` attribute-dictionary tree and provides marker matching and
+/// frame-centre geometry. Per-node serialization is delegated to
 /// `FBAXNodeSerializer`.
 enum FBAXTreeWalk {
 
@@ -42,7 +39,7 @@ enum FBAXTreeWalk {
   /// Reads the frame through the same element type the serializer uses, so this cannot disagree with
   /// the frames on the elements it describes.
   static func screenInfo(fromTree tree: [String: Any]) -> FBAccessibilityScreenInfo? {
-    let root = FBRemoteAutomationPlatformElement(attributes: tree, children: [], pid: 0)
+    let root = FBAXBridgePlatformElement(attributes: tree, children: [], pid: 0)
     let frame = root.axFrame()
     guard frame.width > 0, frame.height > 0 else {
       return nil
@@ -50,25 +47,35 @@ enum FBAXTreeWalk {
     return FBAccessibilityScreenInfo(width: Double(frame.width), height: Double(frame.height))
   }
 
-  /// Recursively builds an `FBRemoteAutomationPlatformElement` from a nested attribute-dictionary
+  /// Recursively builds an `FBAXBridgePlatformElement` from a nested attribute-dictionary
   /// node, tagging every node with the owning application's pid.
-  static func buildPlatformElementTree(from node: [String: Any], pid: pid_t) -> FBRemoteAutomationPlatformElement {
+  static func buildPlatformElementTree(from node: [String: Any], pid: pid_t) -> FBAXBridgePlatformElement {
     let childNodes = (node[FBAXWire.Node.children.rawValue] as? [[String: Any]]) ?? []
     let children = childNodes.map { buildPlatformElementTree(from: $0, pid: pid) }
-    return FBRemoteAutomationPlatformElement(attributes: node, children: children, pid: pid)
+    return FBAXBridgePlatformElement(attributes: node, children: children, pid: pid)
   }
 
   /// The first serialized element whose `key` value contains `markerValue`, used by
   /// describe-by-marker. Substring, matching `FBAccessibilityElementQuery.marker` — the accessibility
   /// backend walks the live tree and matches the same way, so a marker resolves to the same element
   /// whichever backend serves the read.
-  static func matchingElement(inElements elements: [FBAccessibilityDocumentElement], markerValue: String, key: FBAXSearchableKey) -> FBAccessibilityDocumentElement? {
-    elements.first { element in
-      guard let value = element.searchableValue(for: key) else {
-        return false
-      }
-      return value.contains(markerValue)
+  ///
+  /// `ignoresCase` comes from the query and so is off for every write; the comparison itself is
+  /// `FBAccessibilityMatch`'s, so a marker and a `describe-all --match` agree on what "contains" means
+  /// rather than drifting apart one Unicode edge case at a time.
+  static func matchingElement(
+    inElements elements: [FBAccessibilityDocumentElement],
+    markerValue: String,
+    key: FBAXSearchableKey,
+    ignoresCase: Bool = false
+  ) -> FBAccessibilityDocumentElement? {
+    // An empty marker is not a search — every value contains it — and callers that reach here with one
+    // have historically got the first element carrying the key at all. `FBAccessibilityMatch` refuses
+    // to represent that, so it is spelled out rather than quietly becoming "no match".
+    guard let match = FBAccessibilityMatch(value: markerValue, key: key, ignoresCase: ignoresCase) else {
+      return elements.first { $0.searchableValue(for: key) != nil }
     }
+    return elements.first { match.matches($0.searchableValue(for: key)) }
   }
 
   /// The outcome of resolving a marker to a point to interact with. Separates a marker that matched an
@@ -83,14 +90,28 @@ enum FBAXTreeWalk {
     case resolved(x: Double, y: Double)
   }
 
-  /// Resolves `markerValue` to the centre of the first matching element that has a usable frame (the
-  /// same substring match as `matchingElement`), reporting whether a match without a usable frame
-  /// existed so a caller can tell an off-screen element apart from an absent one.
-  static func resolveMarker(inElements elements: [FBAccessibilityDocumentElement], markerValue: String, key: FBAXSearchableKey) -> MarkerResolution {
+  /// Resolves `markerValue` to the centre of the first matching element that has a usable frame,
+  /// reporting whether a match without a usable frame existed so a caller can tell an off-screen
+  /// element apart from an absent one. Matches through the same `FBAccessibilityMatch` predicate as
+  /// `matchingElement`, so the asserted element and the tapped point cannot disagree.
+  static func resolveMarker(
+    inElements elements: [FBAccessibilityDocumentElement],
+    markerValue: String,
+    key: FBAXSearchableKey,
+    ignoresCase: Bool = false
+  ) -> MarkerResolution {
     var matched = false
+    let match = FBAccessibilityMatch(value: markerValue, key: key, ignoresCase: ignoresCase)
     for element in elements {
-      guard let value = element.searchableValue(for: key), value.contains(markerValue) else {
-        continue
+      if let match {
+        guard let value = element.searchableValue(for: key), match.matches(value) else {
+          continue
+        }
+      } else {
+        // An empty marker matches the first element carrying the key, as `matchingElement` does.
+        guard element.searchableValue(for: key) != nil else {
+          continue
+        }
       }
       matched = true
       // A rectangle with no area is not somewhere a caller can be aimed at, and it is not rare: an
@@ -112,8 +133,13 @@ enum FBAXTreeWalk {
   /// nothing *or* every match is off-screen. A `resolveMarker` wrapper for the `wait` poll, which
   /// treats both nil cases alike (keep polling); tap/set-value call `resolveMarker` directly to tell an
   /// off-screen match from a genuine miss.
-  static func frameCenter(inElements elements: [FBAccessibilityDocumentElement], markerValue: String, key: FBAXSearchableKey) -> (x: Double, y: Double)? {
-    guard case let .resolved(x, y) = resolveMarker(inElements: elements, markerValue: markerValue, key: key) else {
+  static func frameCenter(
+    inElements elements: [FBAccessibilityDocumentElement],
+    markerValue: String,
+    key: FBAXSearchableKey,
+    ignoresCase: Bool = false
+  ) -> (x: Double, y: Double)? {
+    guard case let .resolved(x, y) = resolveMarker(inElements: elements, markerValue: markerValue, key: key, ignoresCase: ignoresCase) else {
       return nil
     }
     return (x, y)

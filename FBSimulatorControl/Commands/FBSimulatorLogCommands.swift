@@ -35,7 +35,7 @@ public struct FBSimulatorLogCommands {
 
   // MARK: - Private
 
-  fileprivate func tailLogAsync(arguments: [String], consumer: any FBDataConsumer) async throws -> any LogOperation {
+  fileprivate func tailLog(arguments: [String], consumer: any FBDataConsumer) async throws -> any LogOperation {
     let launchPath = try logExecutablePath()
     let streamArguments = FBProcessLogOperation.osLogArgumentsInsertStreamIfNeeded(arguments)
     let processIO = FBProcessIO<AnyObject, AnyObject, AnyObject>(
@@ -73,6 +73,6 @@ public struct FBSimulatorLogCommands {
 extension FBSimulator: LogCommands {
 
   public func tailLog(arguments: [String], consumer: any FBDataConsumer) async throws -> any LogOperation {
-    return try await logCommands.tailLogAsync(arguments: arguments, consumer: consumer)
+    return try await log.tailLog(arguments: arguments, consumer: consumer)
   }
 }

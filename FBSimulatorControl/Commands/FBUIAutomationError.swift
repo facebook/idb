@@ -14,8 +14,8 @@ import Foundation
 /// target shape is wrong for the verb, the backend doesn't implement it — are facts about the query,
 /// not about a transport, so they are one type with a `backend` tag rather than one enum per backend.
 /// That is what lets `catch FBUIAutomationError.elementNotFound` work regardless of the backend in
-/// hand. Failures that genuinely belong to one transport (a missing guest binary, an unadvertised
-/// daemon, a dead accessibility dispatcher) stay in that backend's own error type.
+/// hand. Failures that genuinely belong to one transport (a missing guest binary or a dead
+/// accessibility dispatcher) stay in that backend's own error type.
 ///
 /// A case appends remediation only where that remedy plausibly applies to it. `applicationUnavailable`
 /// is the one condition `ApplicationAccessibilityEnabled` addresses; a point that is empty and a marker
@@ -129,8 +129,6 @@ public extension FBUIAutomationBackend {
     switch self {
     case .accessibility:
       return "The accessibility backend"
-    case .remoteAutomation:
-      return "The testmanagerd remote-automation backend"
     case .axBridge:
       return "The axbridge backend"
     }

@@ -6,8 +6,8 @@
  */
 
 import FBControlCore
-import FBDeviceControl
-import XCTest
+@testable import FBDeviceControl
+import Testing
 
 // MARK: - File-scope state for C function pointer callbacks
 
@@ -55,18 +55,19 @@ private func contentsOfVirtualizedDirectory(_ directory: String) -> [String] {
   return contents
 }
 
-// MARK: - Test class
+// MARK: - Test suite
 
-final class FBAFCConnectionTests: XCTestCase {
+// Serialized: the C-callback stubs record into file-scope globals (`sEvents`
+// and friends) that `init` resets, which would race across parallel tests.
+@Suite(.serialized)
+final class FBAFCConnectionTests {
 
   private var rootHostDirectory: String = ""
   private var fooHostFilePath: String = ""
   private var barHostDirectory: String = ""
   private var bazHostFilePath: String = ""
 
-  override func setUp() {
-    super.setUp()
-
+  init() {
     sEvents = [:]
     sEvents[DirCreateKey] = NSMutableArray()
     sEvents[FileCloseKey] = NSMutableArray()
@@ -81,9 +82,7 @@ final class FBAFCConnectionTests: XCTestCase {
     bazHostFilePath = (barHostDirectory as NSString).appendingPathComponent("baz.empty")
   }
 
-  override func tearDown() {
-    super.tearDown()
-
+  deinit {
     try? FileManager.default.removeItem(atPath: bazHostFilePath)
     try? FileManager.default.removeItem(atPath: barHostDirectory)
     try? FileManager.default.removeItem(atPath: fooHostFilePath)
@@ -256,68 +255,75 @@ final class FBAFCConnectionTests: XCTestCase {
   }
 
   private func assertExpectedDirectoryCreate(_ expectedDirectoryCreate: [String]) {
-    XCTAssertEqual(sEvents[DirCreateKey] as! [String]? ?? [], expectedDirectoryCreate)
+    #expect((sEvents[DirCreateKey] as! [String]? ?? []) == (expectedDirectoryCreate))
   }
 
   private func assertExpectedFiles(_ expectedFiles: [String]) {
-    XCTAssertEqual(sEvents[FileOpenKey] as! [String]? ?? [], expectedFiles)
-    XCTAssertEqual(sEvents[FileCloseKey] as! [String]? ?? [], expectedFiles)
+    #expect((sEvents[FileOpenKey] as! [String]? ?? []) == (expectedFiles))
+    #expect((sEvents[FileCloseKey] as! [String]? ?? []) == (expectedFiles))
   }
 
   private func assertRenameFiles(_ expectedRenameFiles: [[String]]) {
     let actual = sEvents[RenamePathKey] as? [[String]] ?? []
-    XCTAssertEqual(actual, expectedRenameFiles)
+    #expect((actual) == (expectedRenameFiles))
   }
 
   private func assertRemoveFiles(_ expectedRemoveFiles: [String]) {
-    XCTAssertEqual(sEvents[RemovePathKey] as! [String]? ?? [], expectedRemoveFiles)
+    #expect((sEvents[RemovePathKey] as! [String]? ?? []) == (expectedRemoveFiles))
   }
 
   // MARK: - Tests
 
-  func testRootDirectoryList() throws {
+  @Test
+  func rootDirectoryList() throws {
     let connection = try setUpConnection()
     addVirtualizedRemoteFiles()
     let actual = try connection.contents(ofDirectory: "")
     let expected: Set<String> = ["remote_foo.txt", "remote_empty", "remote_bar"]
-    XCTAssertEqual(Set(actual), expected)
+    #expect((Set(actual)) == (expected))
   }
 
-  func testNestedDirectoryList() throws {
+  @Test
+  func nestedDirectoryList() throws {
     let connection = try setUpConnection()
     addVirtualizedRemoteFiles()
     let actual = try connection.contents(ofDirectory: "remote_bar")
     let expected: Set<String> = ["some.txt", "other.txt"]
-    XCTAssertEqual(Set(actual), expected)
+    #expect((Set(actual)) == (expected))
   }
 
-  func testMissingDirectoryFail() throws {
+  @Test
+  func missingDirectoryFail() throws {
     let connection = try setUpConnection()
     addVirtualizedRemoteFiles()
-    XCTAssertThrowsError(try connection.contents(ofDirectory: "aaaaaa"))
+    #expect(throws: (any Error).self) { try connection.contents(ofDirectory: "aaaaaa") }
   }
 
-  func testReadsFile() throws {
+  @Test
+  func readsFile() throws {
     let connection = try setUpConnection()
     addVirtualizedRemoteFiles()
     let expected = "some foo".data(using: .ascii)
     let actual = try connection.contents(ofPath: "remote_foo.txt")
-    XCTAssertEqual(expected, actual)
+    #expect((expected) == (actual))
   }
 
-  func testFailsToReadDirectory() throws {
+  @Test
+  func failsToReadDirectory() throws {
     let connection = try setUpConnection()
     addVirtualizedRemoteFiles()
-    XCTAssertThrowsError(try connection.contents(ofPath: "remote_bar"))
+    #expect(throws: (any Error).self) { try connection.contents(ofPath: "remote_bar") }
   }
 
-  func testFailsToReadMissingFile() throws {
+  @Test
+  func failsToReadMissingFile() throws {
     let connection = try setUpConnection()
     addVirtualizedRemoteFiles()
-    XCTAssertThrowsError(try connection.contents(ofPath: "nope"))
+    #expect(throws: (any Error).self) { try connection.contents(ofPath: "nope") }
   }
 
-  func testCopySingleFileToRoot() throws {
+  @Test
+  func copySingleFileToRoot() throws {
     let connection = try setUpConnection()
     try connection.copy(fromHost: fooHostFilePath, toContainerPath: "")
 
@@ -327,7 +333,8 @@ final class FBAFCConnectionTests: XCTestCase {
     ])
   }
 
-  func testCopyFileToContainerPath() throws {
+  @Test
+  func copyFileToContainerPath() throws {
     let connection = try setUpConnection()
     try connection.copy(fromHost: fooHostFilePath, toContainerPath: "bing")
 
@@ -337,7 +344,8 @@ final class FBAFCConnectionTests: XCTestCase {
     ])
   }
 
-  func testCopyItemsFromHostDirectory() throws {
+  @Test
+  func copyItemsFromHostDirectory() throws {
     let connection = try setUpConnection()
     try connection.copy(fromHost: rootHostDirectory, toContainerPath: "")
 
@@ -352,28 +360,32 @@ final class FBAFCConnectionTests: XCTestCase {
     ])
   }
 
-  func testCreateDirectoryAtRoot() throws {
+  @Test
+  func createDirectoryAtRoot() throws {
     let connection = try setUpConnection()
     try connection.createDirectory("bing")
 
     assertExpectedDirectoryCreate(["bing"])
   }
 
-  func testCreateDirectoryInsideDirectory() throws {
+  @Test
+  func createDirectoryInsideDirectory() throws {
     let connection = try setUpConnection()
     try connection.createDirectory("bar/bing")
 
     assertExpectedDirectoryCreate(["bar/bing"])
   }
 
-  func testRenamePath() throws {
+  @Test
+  func renamePath() throws {
     let connection = try setUpConnection()
     try connection.renamePath("foo.txt", destination: "bar.txt")
 
     assertRenameFiles([["foo.txt", "bar.txt"]])
   }
 
-  func testRemovePath() throws {
+  @Test
+  func removePath() throws {
     let connection = try setUpConnection()
     try connection.removePath("foo.txt", recursively: true)
 

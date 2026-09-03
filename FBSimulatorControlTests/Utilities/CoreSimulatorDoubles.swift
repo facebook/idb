@@ -53,8 +53,10 @@ class FBSimulatorControlTests_SimDevice_Double: NSObject {
     return UDID.isEqual(other.UDID)
   }
 
-  @objc var stateString: FBiOSTargetStateString {
-    return FBiOSTargetStateStringFromState(FBiOSTargetState(rawValue: UInt(state))!)
+  /// Mirrors the real `SimDevice`, which vends this as a string to the Objective-C runtime.
+  @objc var stateString: String {
+    // A state the enum does not name reads as unknown, rather than trapping the whole suite.
+    return FBiOSTargetStateStringFromState(FBiOSTargetState(rawValue: UInt(state)) ?? .unknown).rawValue
   }
 }
 

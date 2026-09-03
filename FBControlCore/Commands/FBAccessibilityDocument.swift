@@ -8,14 +8,12 @@
 import CoreGraphics
 import Foundation
 
-/// The canonical name of a UI-automation backend: the value the `complete` document carries, and the
-/// token a consumer selects a backend by. The simulator layer's backend enum maps to and from these names.
+/// The canonical name of the backend that served a UI-automation request.
 public enum FBUIAutomationBackendName: String, Sendable, Encodable, CaseIterable {
   case ax
-  case axBridge = "axbridge"
+  case axBridgeOneShot = "axbridge-oneshot"
   case axBridgePersistent = "axbridge-persistent"
   case axBridgeExclusive = "axbridge-exclusive"
-  case testmanagerd
 }
 
 /// The space an element frame is expressed in.
@@ -131,7 +129,7 @@ public struct FBAccessibilityTargetDescriptor: Sendable, Equatable, Encodable {
   /// The element key the marker was matched against, for `.marker`.
   public let matchKey: String?
 
-  public init(
+  private init(
     kind: Kind,
     pid: Int32? = nil,
     x: Double? = nil,
@@ -600,145 +598,120 @@ public struct FBAccessibilityFrameSummary: Sendable, Equatable, Encodable {
   }
 }
 
-/// Where a guest-backed read spent its time.
+/// What narrowed a read, and how much of it survived.
 ///
-/// A separate type from `FBAccessibilityProfilingData` because the two backends measure disjoint
-/// phases; the document's `backend` field says which shape a consumer is holding.
+/// A caller that asked for `--match Cart` and got back three elements cannot otherwise tell that from
+/// a screen with three elements on it: the narrowing happens on the companion, and the document that
+/// comes back looks the same either way. This says what the read applied and what it dropped, so an
+/// empty result reads as "the substring matched nothing out of 812" rather than as "the read failed".
 ///
-/// The first five fields are the core, spelled identically in both profiles so the lanes stay
-/// comparable.
-public struct FBAXBridgeProfile: Sendable, Equatable, Encodable {
+/// Emitted on every `complete` document, including reads that narrowed nothing — those report the
+/// default filter, a null match, and equal counts. A consumer therefore never has to distinguish "did
+/// not narrow" from "the companion predates this field" by whether a key is present.
+public struct FBAccessibilityNarrowing: Sendable, Equatable, Encodable {
 
-  // MARK: The core, spelled identically in every backend's profile
+  /// The substring the read reported only the matching elements for, or nil when it did not narrow by
+  /// one. A marker read leaves this null: it reports its search through `target`, not here.
+  public let match: String?
 
-  /// Elements in the serialized read.
-  public let elementCount: Int64
-  /// Wall time for the whole read, host-side.
-  public let totalDuration: CFAbsoluteTime
-  /// Everything the round trip was not the guest's walk: getting a usable guest, the guest's own JSON
-  /// encoding, and the IPC. A **residual**, not a measurement — neither side can separate the three.
-  public let acquireDuration: CFAbsoluteTime
-  /// Pulling the tree out of the application.
-  public let readDuration: CFAbsoluteTime
-  /// Turning what was read into what the caller asked for.
-  public let serializeDuration: CFAbsoluteTime
+  /// The element key `match` was compared against, and whether that comparison ignored case. Both null
+  /// when there was no match — they describe a comparison that did not happen, and reporting a default
+  /// for it would read as one that did.
+  public let matchKey: String?
+  public let ignoreCase: Bool?
 
-  // MARK: What only a guest-backed read has
+  /// The element filter the read applied, spelled as the CLI spells it.
+  public let filter: String
 
-  /// The traversal that produced this read. Without it `machRoundTrips` is ambiguous: the same tree
-  /// costs one round trip or one per node depending on the traversal.
-  ///
-  /// Guest-only rather than part of the core, because the `testmanagerd` backend has no traversal to
-  /// report.
-  public let traversal: FBAXTraversal
+  /// Elements walked before narrowing, and elements reported after it. Counted through `children`, so
+  /// the pair means the same thing for a nested read as for a flat one, and equal when nothing
+  /// narrowed.
+  public let walked: Int
+  public let matched: Int
 
-  /// Round trips to the application's accessibility server — one per node.
-  public let machRoundTrips: Int64?
-  /// Host-side decode of the guest's JSON response.
-  public let hostDecodeDuration: CFAbsoluteTime?
-  /// Response size.
-  public let responseBytes: Int64?
-
-  public init(
-    elementCount: Int64,
-    totalDuration: CFAbsoluteTime,
-    acquireDuration: CFAbsoluteTime,
-    readDuration: CFAbsoluteTime,
-    serializeDuration: CFAbsoluteTime,
-    traversal: FBAXTraversal,
-    machRoundTrips: Int64? = nil,
-    hostDecodeDuration: CFAbsoluteTime? = nil,
-    responseBytes: Int64? = nil
-  ) {
-    self.elementCount = elementCount
-    self.totalDuration = totalDuration
-    self.acquireDuration = acquireDuration
-    self.readDuration = readDuration
-    self.serializeDuration = serializeDuration
-    self.traversal = traversal
-    self.machRoundTrips = machRoundTrips
-    self.hostDecodeDuration = hostDecodeDuration
-    self.responseBytes = responseBytes
+  public init(match: String?, matchKey: String?, ignoreCase: Bool?, filter: String, walked: Int, matched: Int) {
+    self.match = match
+    self.matchKey = matchKey
+    self.ignoreCase = ignoreCase
+    self.filter = filter
+    self.walked = walked
+    self.matched = matched
   }
 
   enum CodingKeys: String, CodingKey {
-    case elementCount = "element_count"
-    case totalDurationMs = "total_duration_ms"
-    case acquireDurationMs = "acquire_duration_ms"
-    case readDurationMs = "read_duration_ms"
-    case serializeDurationMs = "serialize_duration_ms"
-    case traversal
-    case machRoundTrips = "mach_round_trips"
-    case hostDecodeDurationMs = "host_decode_duration_ms"
-    case responseBytes = "response_bytes"
+    case match
+    case matchKey = "match_key"
+    case ignoreCase = "ignore_case"
+    case filter
+    case walked
+    case matched
   }
 
-  /// Durations are emitted in milliseconds, matching the translator profile. A phase that does not apply
-  /// to this transport keeps its key with a null value rather than vanishing — absent would mean "this
-  /// build does not report it", and nil here means "this transport does not have this phase".
+  // `encode` rather than `encodeIfPresent`: the document's key set is fixed, so a match that was not
+  // asked for is an explicit `null` rather than an absent key.
   public func encode(to encoder: Encoder) throws {
     var container = encoder.container(keyedBy: CodingKeys.self)
-    try container.encode(elementCount, forKey: .elementCount)
-    try container.encode(totalDuration * 1000, forKey: .totalDurationMs)
-    try container.encode(acquireDuration * 1000, forKey: .acquireDurationMs)
-    try container.encode(readDuration * 1000, forKey: .readDurationMs)
-    try container.encode(serializeDuration * 1000, forKey: .serializeDurationMs)
-    try container.encode(traversal.rawValue, forKey: .traversal)
-    try container.encode(machRoundTrips, forKey: .machRoundTrips)
-    try container.encode(hostDecodeDuration.map { $0 * 1000 }, forKey: .hostDecodeDurationMs)
-    try container.encode(responseBytes, forKey: .responseBytes)
+    try container.encode(match, forKey: .match)
+    try container.encode(matchKey, forKey: .matchKey)
+    try container.encode(ignoreCase, forKey: .ignoreCase)
+    try container.encode(filter, forKey: .filter)
+    try container.encode(walked, forKey: .walked)
+    try container.encode(matched, forKey: .matched)
   }
 }
 
-/// Which backend's profile a document carries.
-///
-/// A Swift-level sum so the two disjoint types can share one slot; **not** a tagged union on the wire.
-/// It encodes transparently — the emitted JSON is exactly one struct's fields with no discriminator
-/// wrapping them; the document's `backend` field is the discriminator.
-public enum FBAccessibilityProfile: Sendable, Equatable, Encodable {
-  case translator(FBAccessibilityProfilingData)
-  case guestBridge(FBAXBridgeProfile)
-
-  /// The translator profile, or nil on a guest-backed read.
-  public var translatorProfile: FBAccessibilityProfilingData? {
-    guard case let .translator(profile) = self else {
-      return nil
-    }
-    return profile
+public extension FBAccessibilityNarrowing {
+  /// The report for a read that applied `filter` and `match`, walking `walked` nodes and reporting
+  /// `matched` of them.
+  ///
+  /// Spelled from the typed filter and match rather than from strings at the call site, so the echo
+  /// cannot claim a narrowing the read did not apply; the counts are all the site contributes.
+  init(filter: FBAccessibilityElementFilter, match: FBAccessibilityMatch?, walked: Int, matched: Int) {
+    self.init(
+      match: match?.value,
+      matchKey: match?.key.rawValue,
+      ignoreCase: match.map(\.ignoresCase),
+      filter: filter.rawValue,
+      walked: walked,
+      matched: matched)
   }
 
-  public func encode(to encoder: Encoder) throws {
-    var container = encoder.singleValueContainer()
-    switch self {
-    case let .translator(profile):
-      try container.encode(profile)
-    case let .guestBridge(profile):
-      try container.encode(profile)
-    }
+  /// The report for a read that hit-tested remote content in addition to walking the element tree.
+  ///
+  /// The discovered elements were walked too, and were narrowed by the same `filter` and `match`, so
+  /// they belong on both sides of the count: `discovered` adds to `walked`, and whatever survived
+  /// narrowing is already counted in `reported`. Pairing the counts here — rather than by hand at the
+  /// call site — is what stops a read that reported matching remote content from claiming more matched
+  /// than it walked.
+  init(
+    filter: FBAccessibilityElementFilter,
+    match: FBAccessibilityMatch?,
+    walked: [FBAccessibilityDocumentElement],
+    discovered: [FBAccessibilityDocumentElement],
+    reported: [FBAccessibilityDocumentElement]
+  ) {
+    self.init(
+      filter: filter, match: match,
+      walked: walked.nodeCount + discovered.nodeCount, matched: reported.nodeCount)
   }
 }
 
-/// The device's accessibility automation mode as it stood for a read, and whether the read changed it.
-///
-/// Reported on every whole-tree read: with the mode off UIKit collapses subtrees behind opaque element
-/// providers and caches a container's children; with it on the full structure is exposed and children
-/// are recomputed per read. `asserted` distinguishes a read that changed the device setting from one
-/// that found it already set.
-public struct FBAccessibilityAutomationState: Sendable, Equatable, Encodable {
-
-  /// Whether the device was in automation mode for this read.
-  public let enabled: Bool
-  /// Whether this read put it there. False when it was already set, or when nothing asked.
-  public let asserted: Bool
-
-  public init(enabled: Bool, asserted: Bool) {
-    self.enabled = enabled
-    self.asserted = asserted
+public extension FBAccessibilityRequestOptions {
+  /// The narrowing report for a read under these options that walked `walked` and reported `reported`.
+  func narrowingReport(
+    walked: [FBAccessibilityDocumentElement], reported: [FBAccessibilityDocumentElement]
+  ) -> FBAccessibilityNarrowing {
+    FBAccessibilityNarrowing(
+      filter: filter, match: match, walked: walked.nodeCount, matched: reported.nodeCount)
   }
+}
 
-  enum CodingKeys: String, CodingKey {
-    case enabled
-    case asserted
+public extension [FBAccessibilityDocumentElement] {
+  /// Elements in a serialized read, counted through `children`.
+  ///
+  /// The nested formats put a single root at the top level, so `count` would report 1 for any tree.
+  var nodeCount: Int {
+    reduce(0) { $0 + 1 + ($1.children ?? []).nodeCount }
   }
 }
 
@@ -958,6 +931,9 @@ public struct FBAccessibilityDocument: Sendable, Encodable {
   /// The device's accessibility automation mode for this read. Nil when the backend cannot report it —
   /// a single-element read, or a guest predating the field.
   public let automation: FBAccessibilityAutomationState?
+  /// What the read was narrowed by and how much survived. Nil for a single-element read, which selects
+  /// rather than narrows.
+  public let narrowing: FBAccessibilityNarrowing?
 
   public init(
     elements: [FBAccessibilityDocumentElement],
@@ -970,7 +946,8 @@ public struct FBAccessibilityDocument: Sendable, Encodable {
     coverage: FBAccessibilityCoverage? = nil,
     interaction: FBAccessibilityInteractionSummary? = nil,
     frames: FBAccessibilityFrameSummary? = nil,
-    automation: FBAccessibilityAutomationState? = nil
+    automation: FBAccessibilityAutomationState? = nil,
+    narrowing: FBAccessibilityNarrowing? = nil
   ) {
     self.elements = elements
     self.modal = modal
@@ -983,6 +960,7 @@ public struct FBAccessibilityDocument: Sendable, Encodable {
     self.interaction = interaction
     self.frames = frames
     self.automation = automation
+    self.narrowing = narrowing
   }
 
   enum CodingKeys: String, CodingKey {
@@ -997,6 +975,7 @@ public struct FBAccessibilityDocument: Sendable, Encodable {
     case interaction
     case frames
     case automation
+    case narrowing
   }
 
   public func encode(to encoder: Encoder) throws {
@@ -1012,6 +991,7 @@ public struct FBAccessibilityDocument: Sendable, Encodable {
     try container.encode(interaction, forKey: .interaction)
     try container.encode(frames, forKey: .frames)
     try container.encode(automation, forKey: .automation)
+    try container.encode(narrowing, forKey: .narrowing)
   }
 }
 
@@ -1031,161 +1011,6 @@ public extension FBAccessibilityDocumentElement {
     case .subrole: return subrole ?? nil
     case .help: return help ?? nil
     case .placeholder: return placeholder ?? nil
-    }
-  }
-}
-
-/// What a read produced: a whole tree, a single element, or nothing.
-///
-/// The distinction is real and observable — a point or marker read emits a bare object where a
-/// whole-tree read emits an array — so it is modelled rather than left implicit in the shape of an
-/// untyped payload. `complete` flattens all three to an array; the legacy formats preserve them.
-public enum FBAccessibilityElementPayload: Sendable, Equatable {
-  case tree([FBAccessibilityDocumentElement])
-  case single(FBAccessibilityDocumentElement)
-  /// A hit-test that found nothing: a successful empty result, distinct from a failed read.
-  case empty
-
-  /// A copy whose elements all report `children`, for the formats that describe a tree.
-  public func reportingChildren() -> FBAccessibilityElementPayload {
-    switch self {
-    case let .tree(elements): return .tree(elements.map { $0.reportingChildren() })
-    case let .single(element): return .single(element.reportingChildren())
-    case .empty: return .empty
-    }
-  }
-
-  /// The elements as a list, which is how `complete` always reports them.
-  public var elements: [FBAccessibilityDocumentElement] {
-    switch self {
-    case let .tree(elements): return elements
-    case let .single(element): return [element]
-    case .empty: return []
-    }
-  }
-}
-
-public extension FBAccessibilityElementPayload {
-  /// The legacy-spelled elements as a Foundation object.
-  ///
-  /// The legacy formats are rendered by `JSONSerialization`, not by `JSONEncoder`, and the difference is
-  /// not cosmetic: the two disagree on how a non-integral double is written. `JSONSerialization` emits
-  /// the full 17 significant digits (`0.33333333333333331`) where `JSONEncoder` emits the shortest form
-  /// that round-trips (`0.3333333333333333`). Sub-point frame edges and fractional element values are
-  /// commonplace, so encoding these through `JSONEncoder` would silently change the bytes of a format
-  /// whose output consumers already parse. The typed model stays the source of truth; this is only
-  /// about which writer produces the frozen wire form.
-  var legacyFoundationObject: Any {
-    switch self {
-    case let .tree(elements):
-      return elements.map { $0.legacyFoundationObject }
-    case let .single(element):
-      return element.legacyFoundationObject
-    case .empty:
-      return NSNull()
-    }
-  }
-}
-
-public extension FBAccessibilityDocumentElement {
-  /// This element under the legacy key names, as Foundation. A requested attribute is present — `NSNull`
-  /// when it has no value — and an unrequested one is absent, the same three states the typed model
-  /// carries.
-  var legacyFoundationObject: [String: Any] {
-    var object: [String: Any] = [:]
-    func put(_ attribute: Any??, _ key: String) {
-      guard let value = attribute else {
-        return
-      }
-      object[key] = value ?? NSNull()
-    }
-    put(label, "AXLabel")
-    put(axFrame, "AXFrame")
-    put(value.map { $0?.legacyFoundationValue }, "AXValue")
-    put(identifier, "AXUniqueId")
-    put(type, "type")
-    put(title, "title")
-    put(frame.map { $0?.legacyFoundationObject }, "frame")
-    put(help, "help")
-    put(enabled, "enabled")
-    put(customActions, "custom_actions")
-    put(role, "role")
-    put(roleDescription, "role_description")
-    put(subrole, "subrole")
-    put(contentRequired, "content_required")
-    put(pid, "pid")
-    put(traits, "traits")
-    put(expanded, "expanded")
-    put(placeholder, "placeholder")
-    put(hidden, "hidden")
-    put(focused, "focused")
-    put(isRemote, "is_remote")
-    put(interactable.map { $0?.legacyFoundationObject }, "interactable")
-    if let children {
-      object["children"] = children.map { $0.legacyFoundationObject }
-    }
-    return object
-  }
-}
-
-public extension FBAccessibilityFrame {
-  /// Every edge is present, `NSNull` where it is not representable.
-  var legacyFoundationObject: [String: Any] {
-    ["x": x ?? NSNull(), "y": y ?? NSNull(), "width": width ?? NSNull(), "height": height ?? NSNull()]
-  }
-}
-
-public extension FBAccessibilityInteractable {
-  /// The same internally-tagged shape the `complete` encoder emits, as Foundation.
-  ///
-  /// Rendered by hand for `JSONSerialization` — see `FBAccessibilityElementPayload.legacyFoundationObject`.
-  var legacyFoundationObject: [String: Any] {
-    switch self {
-    case let .actionable(at):
-      return ["status": Status.actionable.rawValue, "at": ["x": at.x, "y": at.y]]
-    case let .blocked(reasons):
-      return [
-        "status": Status.blocked.rawValue,
-        "reasons": reasons.mostSpecificFirst.map { $0.legacyFoundationObject },
-      ]
-    }
-  }
-}
-
-public extension FBAccessibilityInteractable.Reason {
-  var legacyFoundationObject: [String: Any] {
-    switch self {
-    case let .occluded(by), let .handledBy(by):
-      guard let by else { return ["kind": kind] }
-      return ["kind": kind, "by": by.legacyFoundationObject]
-    default:
-      return ["kind": kind]
-    }
-  }
-}
-
-public extension FBAccessibilityElementRef {
-  var legacyFoundationObject: [String: Any] {
-    [
-      "type": type ?? NSNull(),
-      "identifier": identifier ?? NSNull(),
-      "label": label ?? NSNull(),
-      "frame": frame?.legacyFoundationObject ?? NSNull(),
-      "pid": pid ?? NSNull(),
-    ]
-  }
-}
-
-public extension FBAccessibilityAttributeValue {
-  var legacyFoundationValue: Any {
-    switch self {
-    case let .string(value): return value
-    case let .bool(value): return value
-    case let .int(value): return value
-    case let .double(value): return value.isFinite ? value : NSNull()
-    case let .array(value): return value.map { $0.legacyFoundationValue }
-    case let .object(value): return value.mapValues { $0.legacyFoundationValue }
-    case .null: return NSNull()
     }
   }
 }

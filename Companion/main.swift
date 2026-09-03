@@ -343,13 +343,13 @@ private func runErase(_ udid: String, userDefaults: UserDefaults, xcodeAvailable
 private func runDelete(_ udidOrAll: String, userDefaults: UserDefaults, logger: FBControlCoreLogger) async throws {
   let set = try simulatorSet(userDefaults, logger: logger)
   if udidOrAll.lowercased() == "all" {
-    try await bridgeFBFutureVoid(set.deleteAll())
+    try await set.deleteAll()
     return
   }
   guard let simulator = set.simulator(withUDID: udidOrAll) else {
     throw IDBCompanionError.simulatorNotFound(udid: udidOrAll)
   }
-  try await bridgeFBFutureVoid(set.delete(simulator))
+  try await set.delete(simulator)
 }
 
 private func runList(_ userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBControlCoreLogger) async throws {
@@ -374,7 +374,7 @@ private func runCreate(_ create: String, userDefaults: UserDefaults, logger: FBC
     config = config.withOSNamed(FBOSVersionName(rawValue: parameters[1]))
   }
   let set = try simulatorSet(userDefaults, logger: logger)
-  let simulator = try await set.createSimulatorAsync(with: config)
+  let simulator = try await set.createSimulator(with: config)
   writeTargetToStdOut(simulator)
 }
 
@@ -385,7 +385,7 @@ private func runClone(_ udid: String, userDefaults: UserDefaults, logger: FBCont
   guard let baseSet = base.set else {
     throw FBSimulatorSetError.simulatorHasNoSet(udid: base.udid)
   }
-  let cloned = try await bridgeFBFuture(baseSet.cloneSimulator(base, toDeviceSet: destination))
+  let cloned = try await baseSet.cloneSimulator(base, toDeviceSet: destination)
   writeTargetToStdOut(cloned)
 }
 

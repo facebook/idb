@@ -6,8 +6,8 @@
  */
 
 import FBControlCore
-import FBDeviceControl
-import XCTest
+@testable import FBDeviceControl
+import Testing
 
 // MARK: - File-scope state for C function pointer callbacks
 
@@ -17,7 +17,7 @@ private var sAMDeviceEvents: [String] = []
 
 /// Pinned to the main actor: the AMDevice stubs append to `sAMDeviceEvents` from the device's
 /// work and async queues, both of which are `DispatchQueue.main`, so the assertions have to read
-/// it there too. The synchronous predecessors of these tests got that for free.
+/// it there too.
 /// The session is stopped and the device disconnected before the connection is invalidated: the
 /// service is started inside a pop, so the AMDevice session is not held for the caller's use of
 /// the connection.
@@ -33,18 +33,21 @@ private let startServiceEvents = [
   "service_connection_invalidate",
 ]
 
+// Serialized: the stubs append to the file-scope `sAMDeviceEvents` from the
+// main queue; parallel tests would interleave their recordings.
 @MainActor
-final class FBAMDeviceTests: XCTestCase {
+@Suite(.serialized)
+final class FBAMDeviceTests {
 
-  private var _device: FBAMDevice?
+  private let device: FBAMDevice
 
-  override func tearDown() {
-    _device = nil
+  init() {
+    device = Self.makeDevice(connectionReuseTimeout: nil, serviceReuseTimeout: nil)
   }
 
   // MARK: - Helpers
 
-  private var stubbedCalls: AMDCalls {
+  private static var stubbedCalls: AMDCalls {
     var calls = FBCreateZeroedAMDCalls()
 
     calls.Retain = { _ in }
@@ -111,9 +114,9 @@ final class FBAMDeviceTests: XCTestCase {
     return calls
   }
 
-  private func makeDevice(connectionReuseTimeout: NSNumber?, serviceReuseTimeout: NSNumber?) -> FBAMDevice {
+  private static func makeDevice(connectionReuseTimeout: NSNumber?, serviceReuseTimeout: NSNumber?) -> FBAMDevice {
     sAMDeviceEvents.removeAll()
-    XCTAssertEqual(sAMDeviceEvents, [])
+    #expect(sAMDeviceEvents.isEmpty)
 
     let device = FBAMDevice(
       allValues: ["UniqueDeviceID": "foo"],
@@ -125,43 +128,33 @@ final class FBAMDeviceTests: XCTestCase {
       logger: FBControlCoreGlobalConfiguration.defaultLogger
     )
     device.amDeviceRef = ("A DEVICE" as CFString)
-    XCTAssertEqual(sAMDeviceEvents, [])
+    #expect(sAMDeviceEvents.isEmpty)
     sAMDeviceEvents.removeAll()
     return device
-  }
-
-  private var device: FBAMDevice {
-    if let existing = _device {
-      return existing
-    }
-    let created = makeDevice(connectionReuseTimeout: nil, serviceReuseTimeout: nil)
-    _device = created
-    return created
   }
 
   // MARK: - Tests
 
   /// The context teardown (`stop_session`, `disconnect`) is enqueued on the main queue when the
-  /// popped future resolves, so it can still be pending when the await resumes. Blocking on the
-  /// future used to spin the run loop and service it incidentally; waiting for it is explicit.
+  /// popped future resolves, so it can still be pending when the await resumes.
   private func waitForDeviceEvents(
     _ expected: [String],
     timeout: TimeInterval = 5,
-    file: StaticString = #filePath,
-    line: UInt = #line
+    sourceLocation: SourceLocation = #_sourceLocation
   ) async {
     let deadline = Date().addingTimeInterval(timeout)
     while Date() < deadline, sAMDeviceEvents != expected {
       try? await Task.sleep(nanoseconds: 20_000_000)
     }
     if sAMDeviceEvents != expected {
-      XCTFail(
+      Issue.record(
         "Timed out after \(timeout)s waiting for the device events to settle, last saw \(sAMDeviceEvents)",
-        file: file, line: line)
+        sourceLocation: sourceLocation)
     }
   }
 
-  func testConnectToDeviceWithSuccess() async throws {
+  @Test
+  func connectToDeviceWithSuccess() async throws {
     let future = device.connectionContextManager.utilize(withPurpose: "test")
       .onQueue(
         DispatchQueue.main,
@@ -170,7 +163,7 @@ final class FBAMDeviceTests: XCTestCase {
         })
 
     let value = try await bridgeFBFuture(future)
-    XCTAssertTrue(value is NSNull, "the pop block resolves with NSNull, got \(value)")
+    #expect(value is NSNull, "the pop block resolves with NSNull, got \(value)")
 
     let expected = [
       "connect",
@@ -182,10 +175,11 @@ final class FBAMDeviceTests: XCTestCase {
     ]
     await waitForDeviceEvents(expected)
 
-    XCTAssertEqual(expected, sAMDeviceEvents)
+    #expect((expected) == (sAMDeviceEvents))
   }
 
-  func testConnectToDeviceWithFailure() async {
+  @Test
+  func connectToDeviceWithFailure() async {
     let future = device.connectionContextManager.utilize(withPurpose: "test")
       .onQueue(
         DispatchQueue.main,
@@ -195,11 +189,9 @@ final class FBAMDeviceTests: XCTestCase {
 
     do {
       _ = try await bridgeFBFuture(future)
-      XCTFail("Expected the connection future to fail")
+      Issue.record("Expected the connection future to fail")
     } catch {
-      XCTAssertTrue(
-        error.localizedDescription.contains("A bad thing"),
-        "the pop block's failure should surface, got \(error)")
+      #expect(error.localizedDescription.contains("A bad thing"), "the pop block's failure should surface, got \(error)")
     }
 
     let expected = [
@@ -212,45 +204,49 @@ final class FBAMDeviceTests: XCTestCase {
     ]
     await waitForDeviceEvents(expected)
 
-    XCTAssertEqual(expected, sAMDeviceEvents)
+    #expect((expected) == (sAMDeviceEvents))
   }
 
   /// Pins the two lifetimes `startService` manages, which are not the same: the AMDevice session
   /// is released as soon as the service has started, while the service connection is invalidated
   /// only when the caller finishes with it.
-  func testStartService_StartsTheServiceThenInvalidatesTheConnection() async throws {
+  @Test
+  func startService_StartsTheServiceThenInvalidatesTheConnection() async throws {
     let name = try await withFBFutureContext(device.startService("com.apple.testservice")) { connection in
       connection.name
     }
-    XCTAssertEqual(name, "com.apple.testservice")
+    #expect((name) == ("com.apple.testservice"))
 
     await waitForDeviceEvents(startServiceEvents)
-    XCTAssertEqual(startServiceEvents, sAMDeviceEvents)
+    #expect((startServiceEvents) == (sAMDeviceEvents))
   }
 
-  func testWithServiceConnection_InvalidatesTheConnectionWhenTheBodyReturns() async throws {
+  @Test
+  func withServiceConnection_InvalidatesTheConnectionWhenTheBodyReturns() async throws {
     let name = try await device.withServiceConnection("com.apple.testservice") { $0.name }
-    XCTAssertEqual(name, "com.apple.testservice")
+    #expect((name) == ("com.apple.testservice"))
 
     await waitForDeviceEvents(startServiceEvents)
-    XCTAssertEqual(startServiceEvents, sAMDeviceEvents)
+    #expect((startServiceEvents) == (sAMDeviceEvents))
   }
 
   /// The connection is invalidated on the way out of a throwing body, not just a returning one.
-  func testWithServiceConnection_InvalidatesTheConnectionWhenTheBodyThrows() async throws {
+  @Test
+  func withServiceConnection_InvalidatesTheConnectionWhenTheBodyThrows() async throws {
     struct BodyError: Error {}
     do {
       try await device.withServiceConnection("com.apple.testservice") { _ in throw BodyError() }
-      XCTFail("Expected the body's error to propagate")
+      Issue.record("Expected the body's error to propagate")
     } catch is BodyError {
       // Expected.
     }
 
     await waitForDeviceEvents(startServiceEvents)
-    XCTAssertEqual(startServiceEvents, sAMDeviceEvents)
+    #expect((startServiceEvents) == (sAMDeviceEvents))
   }
 
-  func testConcurrentHouseArrest() async throws {
+  @Test
+  func concurrentHouseArrest() async throws {
     var afcCalls = AFCCalls()
     afcCalls.ConnectionClose = { _ in
       sAMDeviceEvents.append("connection_close")
@@ -258,7 +254,7 @@ final class FBAMDeviceTests: XCTestCase {
     }
 
     let map = DispatchQueue(label: "com.facebook.fbdevicecontrol.amdevicetests.map")
-    let device = makeDevice(connectionReuseTimeout: 0.5, serviceReuseTimeout: 0.3)
+    let device = Self.makeDevice(connectionReuseTimeout: 0.5, serviceReuseTimeout: 0.3)
     let future0: FBMutableFuture<NSNumber> = FBMutableFuture()
     let future1: FBMutableFuture<NSNumber> = FBMutableFuture()
     let future2: FBMutableFuture<NSNumber> = FBMutableFuture()
@@ -297,7 +293,7 @@ final class FBAMDeviceTests: XCTestCase {
     }
 
     let value = try await bridgeFBFuture(FBFuture<AnyObject>.combine([future0, future1, future2]))
-    XCTAssertNotNil(value)
+    #expect(value != nil)
 
     var expected = [
       "connect",
@@ -307,7 +303,7 @@ final class FBAMDeviceTests: XCTestCase {
       "create_house_arrest_service",
     ]
     await waitForDeviceEvents(expected)
-    XCTAssertEqual(expected, sAMDeviceEvents)
+    #expect((expected) == (sAMDeviceEvents))
 
     _ = try? await bridgeFBFuture(FBFuture<NSNull>(delay: 0.5, future: FBFuture<NSNull>.empty()))
     expected = [
@@ -321,10 +317,11 @@ final class FBAMDeviceTests: XCTestCase {
       "disconnect",
     ]
     await waitForDeviceEvents(expected)
-    XCTAssertEqual(expected, sAMDeviceEvents)
+    #expect((expected) == (sAMDeviceEvents))
   }
 
-  func testConcurrentUtilizationHasSharedConnection() async throws {
+  @Test
+  func concurrentUtilizationHasSharedConnection() async throws {
     let map = DispatchQueue(label: "com.facebook.fbdevicecontrol.amdevicetests.map")
     let future0: FBMutableFuture<NSNumber> = FBMutableFuture()
     let future1: FBMutableFuture<NSNumber> = FBMutableFuture()
@@ -366,7 +363,7 @@ final class FBAMDeviceTests: XCTestCase {
     }
 
     let value = try await bridgeFBFuture(FBFuture<AnyObject>.combine([future0, future1, future2])) as? [NSNumber]
-    XCTAssertEqual(value, [0, 1, 2])
+    #expect((value) == ([0, 1, 2]))
 
     let expected = [
       "connect",
@@ -377,6 +374,6 @@ final class FBAMDeviceTests: XCTestCase {
       "disconnect",
     ]
     await waitForDeviceEvents(expected)
-    XCTAssertEqual(expected, sAMDeviceEvents)
+    #expect((expected) == (sAMDeviceEvents))
   }
 }

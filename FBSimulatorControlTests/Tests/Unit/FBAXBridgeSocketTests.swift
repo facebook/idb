@@ -35,22 +35,22 @@ final class FBAXBridgeSocketTests: XCTestCase {
     XCTAssertLessThan(FBAXBridgePersistentTransport.adoptionTimeout, 1)
     XCTAssertGreaterThan(window.tv_usec, 0, "a sub-second deadline that converts to zero is no deadline")
   }
-  // A read's provenance must name the lane that served it, so name → backend has to be a bijection.
-
-  func testEveryPersistenceCaseRoundTripsThroughItsName() {
+  func testEveryResolvedBackendNameRoundTrips() {
     let cases: [(FBAXBridgePersistence, FBUIAutomationBackendName)] = [
-      (.oneShot, .axBridge), (.shared, .axBridgePersistent), (.exclusive, .axBridgeExclusive),
+      (.oneShot, .axBridgeOneShot), (.shared, .axBridgePersistent), (.exclusive, .axBridgeExclusive),
     ]
     for (persistence, name) in cases {
       let backend = FBUIAutomationBackend.axBridge(
         persistence: persistence, frontmostMethod: .windowServer, automationMode: true)
       XCTAssertEqual(backend.name, name)
-      XCTAssertEqual(FBUIAutomationBackend(name), backend)
+      XCTAssertEqual(FBUIAutomationBackend(resolvedName: name), backend)
     }
   }
 
-  // The wire spelling of the shared case is unchanged, so a client asking for `axbridge-persistent`
-  // keeps working and no proto or CLI change rides along with this.
+  func testTheOneShotCaseHasAnExplicitWireName() {
+    XCTAssertEqual(FBUIAutomationBackendName.axBridgeOneShot.rawValue, "axbridge-oneshot")
+  }
+
   func testTheSharedCaseKeepsTheExistingWireName() {
     XCTAssertEqual(FBUIAutomationBackendName.axBridgePersistent.rawValue, "axbridge-persistent")
   }
@@ -193,26 +193,26 @@ final class FBAXBridgeSocketTests: XCTestCase {
   // leave exactly the orphan a private socket is meant to prevent.
   func testAnExclusiveSpawnPassesExitOnDisconnect() {
     let arguments = FBAXBridgePersistentTransport.serveArguments(
-      socketPath: "/x/y.sock", persistence: .exclusive)
+      socketPath: "/x/y.sock", scope: .exclusive)
     XCTAssertEqual(Array(arguments.suffix(2)), ["--exit-on-disconnect", "1"])
   }
 
   // A shared guest must stay up for the next client, so the flag is never passed there.
   func testASharedSpawnOmitsExitOnDisconnect() {
     let arguments = FBAXBridgePersistentTransport.serveArguments(
-      socketPath: "/x/y.sock", persistence: .shared)
+      socketPath: "/x/y.sock", scope: .shared)
     XCTAssertFalse(arguments.contains("--exit-on-disconnect"))
   }
 
   func testASpawnPassesTheDefaultIdleTimeout() {
-    let arguments = FBAXBridgePersistentTransport.serveArguments(socketPath: "/x/y.sock", persistence: .shared)
+    let arguments = FBAXBridgePersistentTransport.serveArguments(socketPath: "/x/y.sock", scope: .shared)
     XCTAssertEqual(
       arguments,
       ["accessibility", "serve", "/x/y.sock", "--idle-timeout", "\(FBAXBridgePersistentTransport.idleTimeoutSeconds)"])
   }
 
   func testASpawnCanAskForADifferentIdleTimeout() {
-    let arguments = FBAXBridgePersistentTransport.serveArguments(socketPath: "/x/y.sock", persistence: .shared, idleTimeoutSeconds: 7)
+    let arguments = FBAXBridgePersistentTransport.serveArguments(socketPath: "/x/y.sock", scope: .shared, idleTimeoutSeconds: 7)
     XCTAssertEqual(arguments, ["accessibility", "serve", "/x/y.sock", "--idle-timeout", "7"])
   }
 

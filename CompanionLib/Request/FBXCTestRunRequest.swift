@@ -65,8 +65,8 @@ public class FBXCTestRunRequest: NSObject {
   public let waitForDebugger: Bool
   public let collectResultBundle: Bool
 
-  public var isLogicTest: Bool { false }
-  public var isUITest: Bool { false }
+  var isLogicTest: Bool { false }
+  var isUITest: Bool { false }
 
   // MARK: - Initializers
 
@@ -132,30 +132,24 @@ public class FBXCTestRunRequest: NSObject {
     super.init()
   }
 
-  // MARK: - Public Methods
+  // MARK: - Test Execution
 
-  public func start(withBundleStorageManager bundleStorage: FBXCTestBundleStorage, target: FBiOSTarget, reporter: FBXCTestReporter, logger: FBControlCoreLogger, temporaryDirectory: FBTemporaryDirectory) -> FBFuture<FBIDBTestOperation> {
-    fbFutureFromAsync { [self] in
-      try await startAsync(withBundleStorageManager: bundleStorage, target: target, reporter: reporter, logger: logger, temporaryDirectory: temporaryDirectory)
-    }
-  }
-
-  public func startAsync(withBundleStorageManager bundleStorage: FBXCTestBundleStorage, target: FBiOSTarget, reporter: FBXCTestReporter, logger: FBControlCoreLogger, temporaryDirectory: FBTemporaryDirectory) async throws -> FBIDBTestOperation {
-    let descriptor = try await fetchAndSetupDescriptorAsync(withBundleStorage: bundleStorage, target: target)
+  func start(withBundleStorageManager bundleStorage: FBXCTestBundleStorage, target: FBiOSTarget, reporter: FBXCTestReporter, logger: FBControlCoreLogger, temporaryDirectory: FBTemporaryDirectory) async throws -> FBIDBTestOperation {
+    let descriptor = try await fetchAndSetupDescriptor(withBundleStorage: bundleStorage, target: target)
     var logDirectoryPath: String?
     if collectLogs {
       let directory = temporaryDirectory.ephemeralTemporaryDirectory()
       try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true, attributes: nil)
       logDirectoryPath = directory.path
     }
-    return try await startWithTestDescriptorAsync(descriptor, logDirectoryPath: logDirectoryPath, reportActivities: reportActivities, target: target, reporter: reporter, logger: logger, temporaryDirectory: temporaryDirectory)
+    return try await startWithTestDescriptor(descriptor, logDirectoryPath: logDirectoryPath, reportActivities: reportActivities, target: target, reporter: reporter, logger: logger, temporaryDirectory: temporaryDirectory)
   }
 
-  func startWithTestDescriptorAsync(_ testDescriptor: FBXCTestDescriptor, logDirectoryPath: String?, reportActivities: Bool, target: FBiOSTarget, reporter: FBXCTestReporter, logger: FBControlCoreLogger, temporaryDirectory: FBTemporaryDirectory) async throws -> FBIDBTestOperation {
+  func startWithTestDescriptor(_ testDescriptor: FBXCTestDescriptor, logDirectoryPath: String?, reportActivities: Bool, target: FBiOSTarget, reporter: FBXCTestReporter, logger: FBControlCoreLogger, temporaryDirectory: FBTemporaryDirectory) async throws -> FBIDBTestOperation {
     throw FBXCTestRunRequestError.abstractBaseClass(typeName: String(describing: type(of: self)))
   }
 
-  private func fetchAndSetupDescriptorAsync(withBundleStorage bundleStorage: FBXCTestBundleStorage, target: FBiOSTarget) async throws -> FBXCTestDescriptor {
+  private func fetchAndSetupDescriptor(withBundleStorage bundleStorage: FBXCTestBundleStorage, target: FBiOSTarget) async throws -> FBXCTestDescriptor {
     var testDescriptor: FBXCTestDescriptor?
 
     if let filePath = self.testPath {
@@ -192,7 +186,7 @@ private class FBXCTestRunRequest_LogicTest: FBXCTestRunRequest {
   override var isLogicTest: Bool { true }
   override var isUITest: Bool { false }
 
-  override func startWithTestDescriptorAsync(_ testDescriptor: FBXCTestDescriptor, logDirectoryPath: String?, reportActivities: Bool, target: FBiOSTarget, reporter: FBXCTestReporter, logger: FBControlCoreLogger, temporaryDirectory: FBTemporaryDirectory) async throws -> FBIDBTestOperation {
+  override func startWithTestDescriptor(_ testDescriptor: FBXCTestDescriptor, logDirectoryPath: String?, reportActivities: Bool, target: FBiOSTarget, reporter: FBXCTestReporter, logger: FBControlCoreLogger, temporaryDirectory: FBTemporaryDirectory) async throws -> FBIDBTestOperation {
     let workingDirectory = temporaryDirectory.ephemeralTemporaryDirectory()
     try FileManager.default.createDirectory(at: workingDirectory, withIntermediateDirectories: true, attributes: nil)
 
@@ -271,10 +265,10 @@ private class FBXCTestRunRequest_AppTest: FBXCTestRunRequest {
   override var isLogicTest: Bool { false }
   override var isUITest: Bool { false }
 
-  override func startWithTestDescriptorAsync(_ testDescriptor: FBXCTestDescriptor, logDirectoryPath: String?, reportActivities: Bool, target: FBiOSTarget, reporter: FBXCTestReporter, logger: FBControlCoreLogger, temporaryDirectory: FBTemporaryDirectory) async throws -> FBIDBTestOperation {
-    let appPair = try await testDescriptor.testAppPairAsync(for: self, target: target)
+  override func startWithTestDescriptor(_ testDescriptor: FBXCTestDescriptor, logDirectoryPath: String?, reportActivities: Bool, target: FBiOSTarget, reporter: FBXCTestReporter, logger: FBControlCoreLogger, temporaryDirectory: FBTemporaryDirectory) async throws -> FBIDBTestOperation {
+    let appPair = try await testDescriptor.testAppPair(for: self, target: target)
     logger.log("Obtaining launch configuration for App Pair \(appPair) on descriptor \(testDescriptor)")
-    let appHostedTestConfig = try await testDescriptor.testConfigAsync(withRunRequest: self, testApps: appPair, logDirectoryPath: logDirectoryPath, logger: logger, queue: target.workQueue)
+    let appHostedTestConfig = try await testDescriptor.testConfig(withRunRequest: self, testApps: appPair, logDirectoryPath: logDirectoryPath, logger: logger)
     logger.log("Obtained app-hosted test configuration \(appHostedTestConfig)")
     return FBXCTestRunRequest_AppTest.startTestExecution(appHostedTestConfig, reportAttachments: reportAttachments, target: target, reporter: reporter, logger: logger, reportResultBundle: collectResultBundle)
   }

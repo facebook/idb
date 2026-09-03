@@ -8,7 +8,7 @@
 import FBControlCore
 import Foundation
 
-public class FBDeviceLifecycleCommands {
+public final class FBDeviceLifecycleCommands {
   private weak var device: FBDevice?
 
   // MARK: - Initializers
@@ -23,18 +23,18 @@ public class FBDeviceLifecycleCommands {
 
   // MARK: - Async
 
-  fileprivate func resolveStateAsync(_ state: FBiOSTargetState) async throws {
+  fileprivate func resolveState(_ state: FBiOSTargetState) async throws {
     guard let device else {
       throw FBDeviceNilError.deviceNil
     }
-    try await bridgeFBFutureVoid(FBiOSTargetResolveState(device, state))
+    try await FBiOSTargetResolveState(device, state)
   }
 
-  fileprivate func resolveLeavesStateAsync(_ state: FBiOSTargetState) async throws {
+  fileprivate func resolveLeavesState(_ state: FBiOSTargetState) async throws {
     guard let device else {
       throw FBDeviceNilError.deviceNil
     }
-    try await bridgeFBFutureVoid(FBiOSTargetResolveLeavesState(device, state))
+    try await FBiOSTargetResolveLeavesState(device, state)
   }
 }
 
@@ -45,10 +45,10 @@ public class FBDeviceLifecycleCommands {
 extension FBDevice: LifecycleCommands {
 
   public func resolveState(_ state: FBiOSTargetState) async throws {
-    try await lifecycleCommands.resolveStateAsync(state)
+    try await lifecycle.resolveState(state)
   }
 
   public func resolveLeavesState(_ state: FBiOSTargetState) async throws {
-    try await lifecycleCommands.resolveLeavesStateAsync(state)
+    try await lifecycle.resolveLeavesState(state)
   }
 }

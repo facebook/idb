@@ -46,7 +46,7 @@ public final class FBSimulatorDapServerCommand {
 
   // MARK: - Private
 
-  fileprivate func launchDapServerAsync(_ dapPath: String, stdIn: FBProcessInput<AnyObject>, stdOut: any FBDataConsumer) async throws -> FBSubprocess<AnyObject, any FBDataConsumer, NSString> {
+  fileprivate func launchDapServer(_ dapPath: String, stdIn: FBProcessInput<AnyObject>, stdOut: any FBDataConsumer) async throws -> FBSubprocess<AnyObject, any FBDataConsumer, NSString> {
     let dapLogDir = (simulator.coreSimulatorLogsDirectory as NSString).appendingPathComponent("dap")
 
     do {
@@ -89,6 +89,6 @@ extension FBSimulator: DapServerCommand {
     stdIn: FBProcessInput<AnyObject>,
     stdOut: any FBDataConsumer
   ) async throws -> FBSubprocess<AnyObject, FBDataConsumer, NSString> {
-    try await dapServerCommand.launchDapServerAsync(dapPath, stdIn: stdIn, stdOut: stdOut)
+    try await dapServer.launchDapServer(dapPath, stdIn: stdIn, stdOut: stdOut)
   }
 }

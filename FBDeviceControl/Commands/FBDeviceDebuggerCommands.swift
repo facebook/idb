@@ -36,7 +36,7 @@ extension FBDeviceDebuggerError: LocalizedError {
   }
 }
 
-public class FBDeviceDebuggerCommands {
+public final class FBDeviceDebuggerCommands {
   private weak var device: FBDevice?
 
   // MARK: - Initializers
@@ -60,9 +60,11 @@ public class FBDeviceDebuggerCommands {
     guard let device else {
       return FBFutureContext(error: FBDeviceNilError.deviceNil)
     }
+    let mounted: FBFuture<FBDeveloperDiskImage> = fbFutureFromAsync {
+      try await device.ensureDeveloperDiskImageIsMounted()
+    }
     return
-      device
-      .ensureDeveloperDiskImageIsMounted()
+      mounted
       .onQueue(
         device.workQueue,
         pushTeardown: { diskImage -> FBFutureContext<AnyObject> in
@@ -85,7 +87,7 @@ public class FBDeviceDebuggerCommands {
     if device.osVersion.version.majorVersion >= 17 {
       throw FBDeviceDebuggerError.unsupportedOSVersion(version: device.osVersion.versionString)
     }
-    let commands = try await lldbBootstrapCommandsAsync(forApplicationAtPath: application.path, port: port)
+    let commands = try await lldbBootstrapCommands(forApplicationAtPath: application.path, port: port)
     let server = FBDeviceDebugServer.debugServer(
       forServiceConnection: connectToDebugServer(),
       port: port,
@@ -98,14 +100,14 @@ public class FBDeviceDebuggerCommands {
 
   // MARK: - Private
 
-  private func lldbBootstrapCommandsAsync(forApplicationAtPath path: String, port: in_port_t) async throws -> [String] {
+  private func lldbBootstrapCommands(forApplicationAtPath path: String, port: in_port_t) async throws -> [String] {
     guard device != nil else {
       throw FBDeviceNilError.deviceNil
     }
     let bundle = try FBBundleDescriptor.bundle(fromPath: path)
     let platformSelect = try platformSelectCommand()
     let localTarget = "target create '\(path)'"
-    let remote = try await remoteTargetAsync(forBundleID: bundle.identifier)
+    let remote = try await remoteTarget(forBundleID: bundle.identifier)
     let processConnect = "process connect connect://localhost:\(port)"
     return [platformSelect, localTarget, remote, processConnect]
   }
@@ -128,7 +130,7 @@ public class FBDeviceDebuggerCommands {
     }
   }
 
-  private func remoteTargetAsync(forBundleID bundleID: String) async throws -> String {
+  private func remoteTarget(forBundleID bundleID: String) async throws -> String {
     guard let device else {
       throw FBDeviceNilError.deviceNil
     }
@@ -145,6 +147,6 @@ extension FBDevice: DebuggerCommands {
     forHostApplication application: FBBundleDescriptor,
     port: in_port_t
   ) async throws -> any FBDebugServer {
-    try await debuggerCommands.launchDebugServer(forHostApplication: application, port: port)
+    try await debugger.launchDebugServer(forHostApplication: application, port: port)
   }
 }

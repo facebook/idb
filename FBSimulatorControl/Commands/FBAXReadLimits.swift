@@ -7,9 +7,7 @@
 
 import Foundation
 
-/// The bounds every whole-tree read is taken under, shared by both XCUI-grade backends (the
-/// `testmanagerd` remote-automation session and the `axbridge` guest reader) so their output is
-/// comparable: a tree read over one backend truncates at the same point as the other.
+/// The bounds applied to each whole-tree axbridge read.
 ///
 /// These are authoritative. The host sends them on every request, so the guest reader truncates to
 /// these rather than keeping its own copy. The guest keeps a *separate*, larger fallback pair

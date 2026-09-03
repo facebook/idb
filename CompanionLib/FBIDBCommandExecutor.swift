@@ -199,13 +199,16 @@ public final class FBIDBCommandExecutor {
     try await simulator.uiAutomation(backend: .accessibility).tap(query, options: FBTapOptions(assertion: assertion))
   }
 
-  public func accessibility_describe(query: FBAccessibilityElementQuery, format: FBAccessibilityOutputFormat, backend: FBUIAutomationBackend = .accessibility) async throws -> Data {
+  /// Describes the single element a query names. The caller supplies the options rather than having a
+  /// format-only set built here, so the request's `keys`, profiling and frame-coverage reach the reader
+  /// that honours them. The format is read back off the options so the serialization and the envelope
+  /// cannot disagree about which one was asked for.
+  public func accessibility_describe(query: FBAccessibilityElementQuery, options: FBAccessibilityRequestOptions, backend: FBUIAutomationBackend = .accessibility) async throws -> Data {
     guard let simulator = target as? FBSimulator else {
       throw FBIDBCommandError.simulatorOnlyOperation(operation: "describe accessibility", targetDescription: String(describing: target))
     }
-    let options = FBAccessibilityRequestOptions(format: format, enableLogging: false)
     return try await simulator.uiAutomation(backend: backend).describe(query, options: options)
-      .formattedOutputJSON(format: format)
+      .formattedOutputJSON(format: options.format)
   }
 
   public func accessibility_scroll(query: FBAccessibilityElementQuery, direction: FBAccessibilityScrollDirection) async throws {
@@ -220,6 +223,17 @@ public final class FBIDBCommandExecutor {
       throw FBIDBCommandError.simulatorOnlyOperation(operation: "set value by accessibility", targetDescription: String(describing: target))
     }
     try await simulator.uiAutomation(backend: .accessibility).setValue(value, for: query)
+  }
+
+  public func accessibility_drag(
+    from source: FBAccessibilityElementQuery,
+    to destination: FBAccessibilityElementQuery,
+    options: FBDragOptions
+  ) async throws {
+    guard let simulator = target as? FBSimulator else {
+      throw FBIDBCommandError.simulatorOnlyOperation(operation: "drag by accessibility", targetDescription: String(describing: target))
+    }
+    try await simulator.uiAutomation(backend: .accessibility).drag(from: source, to: destination, options: options)
   }
 
   public func accessibility_info_at_point(_ value: NSValue?, format: FBAccessibilityOutputFormat) async throws -> FBAccessibilityElementsResponse {
@@ -402,7 +416,7 @@ public final class FBIDBCommandExecutor {
   }
 
   public func xctest_run(_ request: FBXCTestRunRequest, reporter: FBXCTestReporter, logger: FBControlCoreLogger) async throws -> FBIDBTestOperation {
-    return try await request.startAsync(withBundleStorageManager: storageManager.xctest, target: target, reporter: reporter, logger: logger, temporaryDirectory: temporaryDirectory)
+    return try await request.start(withBundleStorageManager: storageManager.xctest, target: target, reporter: reporter, logger: logger, temporaryDirectory: temporaryDirectory)
   }
 
   /// Launches a logic test bundle in REPL mode. The implementation lives in the
@@ -509,7 +523,7 @@ public final class FBIDBCommandExecutor {
   }
 
   public func tail_companion_logs(_ consumer: FBDataConsumer) async throws -> any LogOperation {
-    return try await logger.tailToConsumerAsync(consumer)
+    return try await logger.tailToConsumer(consumer)
   }
 
   public func diagnostic_information() async throws -> NSDictionary {
@@ -521,7 +535,7 @@ public final class FBIDBCommandExecutor {
 
   public func hid(_ event: FBSimulatorHIDEvent) async throws {
     let hid = try await connectToHID()
-    try await event.sendAsync(on: hid)
+    try await event.send(on: hid)
   }
 
   public func set_hardware_keyboard_enabled(_ enabled: Bool) async throws {
@@ -558,7 +572,7 @@ public final class FBIDBCommandExecutor {
     }
   }
 
-  public func push_file_from_tar(_ tarData: Data, to_path destinationPath: String, containerType: String?) async throws {
+  func push_file_from_tar(_ tarData: Data, to_path destinationPath: String, containerType: String?) async throws {
     try await withFBFutureContext(temporaryDirectory.withArchiveExtracted(tarData)) { extractDir in
       let paths = try FileManager.default.contentsOfDirectory(at: extractDir as URL, includingPropertiesForKeys: [.isDirectoryKey], options: [])
       try await self.push_files(paths, to_path: destinationPath, containerType: containerType)
@@ -579,7 +593,7 @@ public final class FBIDBCommandExecutor {
     }
   }
 
-  public func pull_file(_ path: String, containerType: String?) async throws -> Data {
+  func pull_file(_ path: String, containerType: String?) async throws -> Data {
     return try await withFBFutureContext(temporaryDirectory.withTemporaryDirectory()) { url in
       let tempPath = ((url as URL).path as NSString).appendingPathComponent((path as NSString).lastPathComponent)
       try await self.withFileContainer(for: containerType) { container in
@@ -804,7 +818,7 @@ public final class FBIDBCommandExecutor {
     // as installed apps are referenced from xctestrun files and expanded by idb
     // by using its own application storage. Fix this by replacing xctestrun
     // placeholders by app bundle paths instead
-    _ = try await storageManager.application.saveBundleAsync(appBundle)
+    _ = try await storageManager.application.saveBundle(appBundle)
     if makeDebuggable && installedApp.installType != .userDevelopment && userDevelopmentAppIsRequired {
       throw FBIDBCommandError.userDevelopmentSigningRequired(applicationDescription: String(describing: installedApp))
     }
@@ -812,11 +826,11 @@ public final class FBIDBCommandExecutor {
   }
 
   private func installXctest(_ extractionDirectory: URL, skipSigningBundles: Bool) async throws -> FBInstalledArtifact {
-    return try await storageManager.xctest.saveBundleOrTestRunFromBaseDirectoryAsync(extractionDirectory, skipSigningBundles: skipSigningBundles)
+    return try await storageManager.xctest.saveBundleOrTestRunFromBaseDirectory(extractionDirectory, skipSigningBundles: skipSigningBundles)
   }
 
   private func installXctestFilePath(_ xctestURL: URL, skipSigningBundles: Bool) async throws -> FBInstalledArtifact {
-    return try await storageManager.xctest.saveBundleOrTestRunAsync(xctestURL, skipSigningBundles: skipSigningBundles)
+    return try await storageManager.xctest.saveBundleOrTestRun(xctestURL, skipSigningBundles: skipSigningBundles)
   }
 
   private func installFile(_ extractedFile: URL, intoStorage storage: FBFileStorage) async throws -> FBInstalledArtifact {
@@ -857,6 +871,6 @@ public final class FBIDBCommandExecutor {
 
   private func installBundle(_ extractedDirectory: URL, intoStorage storage: FBBundleStorage) async throws -> FBInstalledArtifact {
     let bundle = try FBStorageUtils.bundle(inDirectory: extractedDirectory)
-    return try await storage.saveBundleAsync(bundle)
+    return try await storage.saveBundle(bundle)
   }
 }

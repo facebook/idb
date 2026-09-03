@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+@preconcurrency import FBControlCore
 import Foundation
 
 public let FBDeviceControlErrorDomain = "com.facebook.FBDeviceControl"

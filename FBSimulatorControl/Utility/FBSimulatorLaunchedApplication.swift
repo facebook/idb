@@ -7,7 +7,7 @@
 
 import Foundation
 
-public class FBSimulatorLaunchedApplication: FBLaunchedApplication, CustomStringConvertible {
+public final class FBSimulatorLaunchedApplication: FBLaunchedApplication, CustomStringConvertible {
 
   // MARK: - Properties
 

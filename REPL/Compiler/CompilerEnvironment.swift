@@ -144,7 +144,7 @@ func makeCompilerToolchain() -> any CompilerToolchain {
   #endif
 }
 
-public func resolveSDKPath(platform: Platform) throws -> String {
+func resolveSDKPath(platform: Platform) throws -> String {
   try makeCompilerToolchain().sdkPath(for: platform)
 }
 
@@ -158,19 +158,19 @@ public func resolveSDKPath(platform: Platform) throws -> String {
 /// `runtimeOSVersion` may be greater than the local SDK version (an older Xcode
 /// against a newer runtime); the deployment target is the lower of the two,
 /// since the compiler rejects a deployment target above the SDK version.
-public func resolveTargetTriple(platform: Platform, runtimeOSVersion: String) throws -> String {
+func resolveTargetTriple(platform: Platform, runtimeOSVersion: String) throws -> String {
   let sdkVersion = try makeCompilerToolchain().sdkPlatformVersion(for: platform)
   return platform.targetTriple(
     version: DeploymentTargetVersion.floored(runtimeOSVersion: runtimeOSVersion, sdkVersion: sdkVersion))
 }
 
 /// Resolves any extra `swiftc` arguments for compiling.
-public func resolveCompilerArguments(platform: Platform) throws -> [String] {
+func resolveCompilerArguments(platform: Platform) throws -> [String] {
   try makeCompilerToolchain().compilerArguments(for: platform)
 }
 
 /// Resolves any extra `swiftc` arguments for linking.
-public func resolveLinkerArguments(platform: Platform, runtimeOSVersion: String) throws -> [String] {
+func resolveLinkerArguments(platform: Platform, runtimeOSVersion: String) throws -> [String] {
   try makeCompilerToolchain().linkerArguments(for: platform, runtimeOSVersion: runtimeOSVersion)
 }
 
@@ -203,7 +203,7 @@ public enum DeploymentTargetVersion {
 
 /// Resolves the Swift toolchain path. Returns `explicit` when given;
 /// otherwise uses the current platform's toolchain.
-public func resolveToolchainPath(explicit: String?) throws -> String {
+func resolveToolchainPath(explicit: String?) throws -> String {
   if let explicit {
     return explicit
   }

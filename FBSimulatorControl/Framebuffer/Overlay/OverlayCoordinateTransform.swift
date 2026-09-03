@@ -43,7 +43,7 @@ public struct FBOverlayCoordinateTransform {
   public let insetCorrection: CGPoint
 
   /// Visible header height in buffer pixels (the `scaledBorderTop` init parameter).
-  public let headerHeight: CGFloat
+  let headerHeight: CGFloat
 
   public init(
     screenPixelWidth: Int,
@@ -80,7 +80,7 @@ public struct FBOverlayCoordinateTransform {
     }
   }
 
-  public func bufferPoint(x: CGFloat, y: CGFloat) -> CGPoint {
+  func bufferPoint(x: CGFloat, y: CGFloat) -> CGPoint {
     CGPoint(
       x: x * overlayScale + insetCorrection.x,
       y: y * overlayScale + insetCorrection.y
@@ -91,7 +91,7 @@ public struct FBOverlayCoordinateTransform {
     CGSize(width: width * overlayScale, height: height * overlayScale)
   }
 
-  public func bufferRect(x: CGFloat, y: CGFloat, width: CGFloat, height: CGFloat) -> CGRect {
+  func bufferRect(x: CGFloat, y: CGFloat, width: CGFloat, height: CGFloat) -> CGRect {
     let bx = x * overlayScale + insetCorrection.x
     let by = y * overlayScale + insetCorrection.y
     var bw = width < 0 ? width : width * overlayScale
@@ -101,7 +101,7 @@ public struct FBOverlayCoordinateTransform {
     return CGRect(x: bx, y: by, width: bw, height: bh)
   }
 
-  public func translateTarget(x: CGFloat, y: CGFloat) -> CGPoint {
+  func translateTarget(x: CGFloat, y: CGFloat) -> CGPoint {
     CGPoint(
       x: x * overlayScale + insetCorrection.x,
       y: y * overlayScale + insetCorrection.y
@@ -111,7 +111,7 @@ public struct FBOverlayCoordinateTransform {
   /// Label origin in buffer pixels, vertically centered within the visible header.
   /// The visible header spans y=0 to y=headerHeight in buffer coordinates,
   /// so no `insetCorrection.y` is applied (unlike shapes positioned via `bufferRect`).
-  public func labelOrigin(padding: CGFloat, ascent: CGFloat, descent: CGFloat) -> CGPoint {
+  func labelOrigin(padding: CGFloat, ascent: CGFloat, descent: CGFloat) -> CGPoint {
     let scaledPadding = padding * overlayScale
     let lineHeight = ascent + descent
     let centeredY: CGFloat
@@ -127,7 +127,7 @@ public struct FBOverlayCoordinateTransform {
   }
 
   /// Scale a label font size to buffer pixels.
-  public func labelFontSize(_ baseFontSize: CGFloat) -> CGFloat {
+  func labelFontSize(_ baseFontSize: CGFloat) -> CGFloat {
     baseFontSize * overlayScale
   }
 
@@ -137,14 +137,14 @@ public struct FBOverlayCoordinateTransform {
   public static let defaultBarHeight: Int = 24
 
   /// Bar font size in buffer pixels, derived from the bar's logical height.
-  public func barFontSize() -> CGFloat {
+  func barFontSize() -> CGFloat {
     let logicalHeight = CGFloat(Self.defaultBarHeight)
     let padding: CGFloat = 4
     return (logicalHeight - padding * 2) * overlayScale
   }
 
   /// Bar height in buffer pixels.
-  public func barHeight() -> CGFloat {
+  func barHeight() -> CGFloat {
     CGFloat(Self.defaultBarHeight) * overlayScale
   }
 
@@ -154,7 +154,7 @@ public struct FBOverlayCoordinateTransform {
   }
 
   /// Bar Y position in buffer pixels for a given position.
-  public func barY(position: String) -> CGFloat {
+  func barY(position: String) -> CGFloat {
     switch position {
     case "top":
       return 0

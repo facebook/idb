@@ -38,19 +38,19 @@ public final class FBAccessibilityProfilingCollector {
   /// attributed to either without a mark. Acquisition's share is already inside `translationDuration`
   /// and `elementConversionDuration` — wall times over calls that make XPC of their own — so counting
   /// it again as read time would report it twice.
-  public func markWalkStart() {
+  func markWalkStart() {
     lock.lock()
     _xpcDurationBeforeWalk = _totalXPCDuration
     lock.unlock()
   }
 
-  public func incrementElementCount() {
+  func incrementElementCount() {
     lock.lock()
     _elementCount += 1
     lock.unlock()
   }
 
-  public func incrementAttributeFetchCount(forKey key: String?) {
+  func incrementAttributeFetchCount(forKey key: String?) {
     lock.lock()
     _attributeFetchCount += 1
     if let key {
@@ -59,7 +59,7 @@ public final class FBAccessibilityProfilingCollector {
     lock.unlock()
   }
 
-  public func addXPCCallDuration(_ duration: CFAbsoluteTime) {
+  func addXPCCallDuration(_ duration: CFAbsoluteTime) {
     lock.lock()
     _xpcCallCount += 1
     _totalXPCDuration += duration
@@ -96,14 +96,14 @@ public final class FBAccessibilityProfilingCollector {
     return _totalXPCDuration
   }
 
-  /// XPC wait accrued during the walk — this lane's `read` phase.
+  /// XPC wait accrued during the walk — this backend's `read` phase.
   private var walkXPCDuration: CFAbsoluteTime {
     lock.lock()
     defer { lock.unlock() }
     return _totalXPCDuration - _xpcDurationBeforeWalk
   }
 
-  /// `walkDuration` is the wall time of the serialization walk, which on this lane fetches and formats
+  /// `walkDuration` is the wall time of the serialization walk, which on this backend fetches and formats
   /// in one pass; `serializeDuration` is that wall time minus the walk's XPC wait.
   public func finalize(withWalkDuration walkDuration: CFAbsoluteTime) -> FBAccessibilityProfilingData {
     let readDuration = walkXPCDuration

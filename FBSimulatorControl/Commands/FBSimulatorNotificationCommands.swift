@@ -43,7 +43,7 @@ public struct FBSimulatorNotificationCommands {
 
   // MARK: - Private
 
-  fileprivate func sendPushNotificationAsync(forBundleID bundleID: String, jsonPayload: String) async throws {
+  fileprivate func sendPushNotification(forBundleID bundleID: String, jsonPayload: String) async throws {
 
     guard let data = jsonPayload.data(using: .utf8) else {
       throw FBSimulatorNotificationError.jsonNotUTF8
@@ -65,6 +65,6 @@ public struct FBSimulatorNotificationCommands {
 extension FBSimulator: NotificationCommands {
 
   public func sendPushNotification(forBundleID bundleID: String, jsonPayload: String) async throws {
-    try await notificationCommands.sendPushNotificationAsync(forBundleID: bundleID, jsonPayload: jsonPayload)
+    try await notification.sendPushNotification(forBundleID: bundleID, jsonPayload: jsonPayload)
   }
 }

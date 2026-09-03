@@ -15,7 +15,7 @@ public let FBControlCoreDebugLogging = "FBCONTROLCORE_DEBUG_LOGGING"
 private let ConfirmShimsAreSignedEnv = "FBCONTROLCORE_CONFIRM_SIGNED_SHIMS"
 
 @objc(FBControlCoreGlobalConfiguration)
-public class FBControlCoreGlobalConfiguration: NSObject {
+public final class FBControlCoreGlobalConfiguration: NSObject {
 
   // Guarded by _loggerLock. nonisolated(unsafe) only silences static-variable isolation
   // checking; the lock is what provides the synchronization.

@@ -46,6 +46,7 @@ public final class FBSimulatorVideoRecordingCommands {
   /// The default configuration for in-process recording when the caller supplies none: H264 at a
   /// constant frame rate (eager cadence), clean frames, default quality. The transport is irrelevant —
   /// recording muxes encoded samples to a file rather than byte-framing them.
+  /// `RecordMethodHandler` mirrors the frame rate here as the meaning of an unset `fps` on the wire.
   private static var recordingConfiguration: FBVideoStreamConfiguration {
     FBVideoStreamConfiguration(
       format: FBVideoStreamFormat.compressedVideo(withCodec: .h264, transport: .annexB),
@@ -55,11 +56,11 @@ public final class FBSimulatorVideoRecordingCommands {
       keyFrameRate: nil)
   }
 
-  fileprivate func startRecordingAsync(toFile filePath: String) async throws -> any FBVideoRecording {
-    try await startRecordingAsync(toFile: filePath, configuration: Self.recordingConfiguration)
+  fileprivate func startRecording(toFile filePath: String) async throws -> any FBVideoRecording {
+    try await startRecording(toFile: filePath, configuration: Self.recordingConfiguration)
   }
 
-  fileprivate func startRecordingAsync(toFile filePath: String, configuration: FBVideoStreamConfiguration) async throws -> any FBVideoRecording {
+  fileprivate func startRecording(toFile filePath: String, configuration: FBVideoStreamConfiguration) async throws -> any FBVideoRecording {
     guard let simulator = self.simulator else {
       throw FBWeakTargetError.simulator
     }
@@ -71,11 +72,11 @@ public final class FBSimulatorVideoRecordingCommands {
     try await video.startRecording()
     self.video = video
     return FBVideoRecordingHandle {
-      return try await self.stopAsync()
+      return try await self.stop()
     }
   }
 
-  fileprivate func stopAsync() async throws -> URL {
+  fileprivate func stop() async throws -> URL {
     let video = self.video
     self.video = nil
     guard let video else {
@@ -84,7 +85,7 @@ public final class FBSimulatorVideoRecordingCommands {
     return try await video.stop()
   }
 
-  fileprivate func createStreamAsync(configuration: FBVideoStreamConfiguration, to consumer: any FBDataConsumer) async throws -> any FBVideoStream {
+  fileprivate func createStream(configuration: FBVideoStreamConfiguration, to consumer: any FBDataConsumer) async throws -> any FBVideoStream {
     guard let simulator = self.simulator else {
       throw FBWeakTargetError.simulator
     }
@@ -98,12 +99,14 @@ public final class FBSimulatorVideoRecordingCommands {
 extension FBSimulator: VideoRecordingCommands {
 
   public func startRecording(toFile filePath: String) async throws -> any FBVideoRecording {
-    try await videoRecordingCommands.startRecordingAsync(toFile: filePath)
+    try await videoRecording.startRecording(toFile: filePath)
   }
 
   public func startRecording(toFile filePath: String, configuration: FBVideoStreamConfiguration) async throws -> any FBVideoRecording {
-    try await videoRecordingCommands.startRecordingAsync(toFile: filePath, configuration: configuration)
+    try await videoRecording.startRecording(toFile: filePath, configuration: configuration)
   }
+
+  public var honorsRecordingConfiguration: Bool { true }
 }
 
 // MARK: - FBSimulator+VideoStreamCommands
@@ -111,6 +114,6 @@ extension FBSimulator: VideoRecordingCommands {
 extension FBSimulator: VideoStreamCommands {
 
   public func createStream(configuration: FBVideoStreamConfiguration, to consumer: any FBDataConsumer) async throws -> any FBVideoStream {
-    try await videoRecordingCommands.createStreamAsync(configuration: configuration, to: consumer)
+    try await videoRecording.createStream(configuration: configuration, to: consumer)
   }
 }

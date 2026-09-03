@@ -10,15 +10,11 @@ import FBControlCore
 import Foundation
 
 /// The `FBUIAutomation` backend that reads via the `SimulatorFrameworkBridge` guest `accessibility`
-/// service — an in-simulator accessibility client, with no automation daemon, DTX channel, or test
-/// bundle. XCUI-grade like `.remoteAutomation`, but light like `.accessibility`.
+/// service — an in-simulator accessibility client with no test bundle.
 ///
 /// One-shot per read: each verb resolves the target pid (frontmost via the CoreSimulator AX path, or a
 /// given application pid), spawns the guest with `accessibility describe --pid <pid>`, parses its JSON
-/// tree, and feeds it through the **same** serializer path the `testmanagerd` backend uses
-/// (`FBRemoteAutomationPlatformElement` -> `FBAXNodeSerializer`), because the guest
-/// emits the identical `XC_kAXXC*` node shape. The output schema is therefore byte-identical across
-/// the two backends and needs no new serialization code.
+/// tree, and feeds it through `FBAXBridgePlatformElement` and `FBAXNodeSerializer`.
 ///
 /// Writes are semantic accessibility actions, not synthesized input: the guest hands the AX runtime a
 /// press or a scroll and the element's own implementation decides what happens, which is the whole
@@ -27,18 +23,15 @@ import Foundation
 /// its point host-side from a tree read and carries an assertion the guest re-checks, so the write
 /// cannot land on whatever moved under the point in between.
 ///
-// SAFETY: immutable after init — it holds the target and a transport; the persistent transport is an
-// actor and the one-shot transport is a stateless value, and the verb logic keeps no mutable state.
-// `Sendable` lets a caller hold one reader across reads and hand it between tasks. It is no longer
-// what keeps the guest warm — the persistent transport is memoized on the target, so readers built
-// and dropped per read share the same guest.
+// SAFETY: stored state is immutable. Persistent transport state is actor-isolated and the one-shot
+// transport is a value type.
 // patternlint-disable-next-line unchecked-sendable
-final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
+final class FBAXBridgeUIAutomation: FBAXBridgeTreeReader, @unchecked Sendable {
 
   /// What this read asks the guest to do about accessibility automation mode.
   ///
   /// Tri-state, matching the guest: `true` asserts the mode, `false` asserts it off, `nil` observes
-  /// without touching the device. Selecting the axbridge lane by name yields `true`, because that is the
+  /// without touching the device. Selecting axbridge by name yields `true`, because that is the
   /// mode a UI-test host puts an application into and reading without it means UIKit collapses subtrees
   /// and can serve cached children describing a screen that is no longer displayed.
   ///
@@ -88,10 +81,7 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
       persistence: persistence, frontmostMethod: frontmostMethod, automationMode: requestedAutomationMode)
   }
 
-  /// Re-raises the two transport-level failures that are really facts about the application as their
-  /// backend-neutral cases, so a caller holding `any FBUIAutomation` sees the same typed error for a dead
-  /// or wedged app regardless of which backend served the read (the remote backend throws the neutral
-  /// case directly). Every other bridge error is about this transport and passes through untouched.
+  /// Converts application-level bridge failures to the public UI automation errors.
   private func translatingBackendErrors<T>(_ body: () async throws -> T) async throws -> T {
     do {
       return try await body()
@@ -146,24 +136,33 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
   ) async throws -> FBAXTreeRead {
     try await translatingBackendErrors {
       if case let .application(pid) = query {
-        // Timed around the transport: what the caller waited for is the whole round trip.
-        let sent = CFAbsoluteTimeGetCurrent()
-        let response = try await transport.read(
-          pid: pid, maxDepth: FBAXReadLimits.maxReadDepth, maxNodes: FBAXReadLimits.maxReadNodes,
-          attributes: attributes, explainUnreachable: explainUnreachable, traversal: traversal,
+        let options = FBAXBridgeReadRequest(
+          maxDepth: FBAXReadLimits.maxReadDepth,
+          maxNodes: FBAXReadLimits.maxReadNodes,
+          attributes: attributes,
+          explainUnreachable: explainUnreachable,
+          traversal: traversal,
           automationMode: requestedAutomationMode
         )
+        let sent = CFAbsoluteTimeGetCurrent()
+        let response = try await transport.send(.read(pid: pid, options: options))
         let returned = CFAbsoluteTimeGetCurrent()
         var read = try FBAXTreeRead(wholeTreeResponse: response, pid: pid)
         read.timings = Self.timings(response: response, sent: sent, returned: returned, read: read)
         return read
       }
       let anchor = frontmostAnchor()
+      let options = FBAXBridgeReadRequest(
+        maxDepth: FBAXReadLimits.maxReadDepth,
+        maxNodes: FBAXReadLimits.maxReadNodes,
+        attributes: attributes,
+        explainUnreachable: explainUnreachable,
+        traversal: traversal,
+        automationMode: requestedAutomationMode
+      )
       let sent = CFAbsoluteTimeGetCurrent()
-      let response = try await transport.readFrontmost(
-        x: anchor.x, y: anchor.y, maxDepth: FBAXReadLimits.maxReadDepth, maxNodes: FBAXReadLimits.maxReadNodes,
-        method: frontmostMethod, attributes: attributes, explainUnreachable: explainUnreachable,
-        traversal: traversal, automationMode: requestedAutomationMode
+      let response = try await transport.send(
+        .readFrontmost(x: anchor.x, y: anchor.y, method: frontmostMethod, options: options)
       )
       let returned = CFAbsoluteTimeGetCurrent()
       var read = try FBAXTreeRead(frontmostResponse: response, method: frontmostMethod)
@@ -180,8 +179,10 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
       // A single system-wide guest hit-test resolves the element at the point and its owning app
       // in-guest — no host-side CoreSimulator frontmost query, one IPC hop. `.point` is positional, so
       // a system-wide hit-test is exactly its semantics (unlike a whole-tree read of "frontmost").
-      let response = try await transport.hitTest(
-        x: Double(point.x), y: Double(point.y), attributes: FBAXWire.Node.fetchList(for: options.serializationKeys)
+      let response = try await transport.send(
+        .hitTest(
+          x: Double(point.x), y: Double(point.y),
+          attributes: FBAXWire.Node.fetchList(for: options.serializationKeys))
       )
       guard let hit = try FBAXTreeRead(hitTestResponse: response) else {
         return nil
@@ -255,6 +256,25 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
     try await write(.perform(Self.action(for: direction)), to: target, query: query)
   }
 
+  /// Resolves both endpoints the way every other write on this backend resolves its target, then
+  /// synthesizes the gesture over HID. The guest has no wire verb for a drag, and one would not help:
+  /// a drag is a touch path rather than an action on a single element.
+  func drag(
+    from source: FBAccessibilityElementQuery,
+    to destination: FBAccessibilityElementQuery,
+    options: FBDragOptions
+  ) async throws {
+    let start = try await writeTarget(for: source, operation: FBDragEndpoint.operation, callerAssertion: nil).point
+    let end = try await writeTarget(for: destination, operation: FBDragEndpoint.operation, callerAssertion: nil).point
+    try await simulator.sendHIDGesture(
+      .drag(
+        Double(start.x), yStart: Double(start.y), xEnd: Double(end.x), yEnd: Double(end.y),
+        delta: options.delta, pressDuration: options.pressDuration, duration: options.duration,
+        releaseDuration: options.releaseDuration
+      )
+    )
+  }
+
   /// The semantic action a scroll direction asks for.
   private static func action(for direction: FBAccessibilityScrollDirection) -> FBAXWire.Action {
     switch direction {
@@ -277,13 +297,15 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
     query: FBAccessibilityElementQuery
   ) async throws {
     try await translatingWriteErrors(query) {
-      let response = try await transport.write(
-        FBAXBridgeWriteRequest(
-          kind: kind,
-          x: Double(target.point.x),
-          y: Double(target.point.y),
-          pid: target.pid,
-          assertion: target.assertion
+      let response = try await transport.send(
+        .write(
+          FBAXBridgeWriteRequest(
+            kind: kind,
+            x: Double(target.point.x),
+            y: Double(target.point.y),
+            pid: target.pid,
+            assertion: target.assertion
+          )
         )
       )
       guard try FBAXTreeRead.writeLanded(fromResponse: response) else {
@@ -299,7 +321,7 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
     do {
       try await translatingBackendErrors(body)
     } catch let FBAXBridgeError.assertionFailed(message) {
-      guard case let .marker(value, key, _) = query else {
+      guard case let .marker(value, key, _, _) = query else {
         throw FBAXBridgeError.assertionFailed(message)
       }
       throw FBUIAutomationError.elementMoved(backend: backend, key: key.rawValue, value: value)
@@ -316,13 +338,17 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
 
   // MARK: - Frontmost anchor
 
-  /// The screen-centre anchor (in points) for the in-guest frontmost hit-test. The same point the
-  /// remote backend uses (`FBSimulatorRemoteAutomation.anchorPoint`), so the two agree on "frontmost".
+  /// The screen-centre anchor, in points, for the in-guest frontmost hit-test.
   private func frontmostAnchor() -> (x: Double, y: Double) {
     let info = simulator.screenInfo
-    return FBSimulatorRemoteAutomation.anchorPoint(
+    return Self.anchorPoint(
       widthPixels: info?.widthPixels ?? 828, heightPixels: info?.heightPixels ?? 1792, scale: info?.scale ?? 2
     )
+  }
+
+  static func anchorPoint(widthPixels: UInt, heightPixels: UInt, scale: Float) -> (x: Double, y: Double) {
+    let pointsPerPixel = scale > 0 ? Double(scale) : 1
+    return (Double(widthPixels) / pointsPerPixel / 2, Double(heightPixels) / pointsPerPixel / 2)
   }
 
   /// Warns that the traversal could not answer keys the caller asked for, so a caller can tell "this read
@@ -346,7 +372,7 @@ final class FBAXBridgeUIAutomation: FBAXTreeReader, @unchecked Sendable {
     _ = simulator.logger.log("axbridge read hit the bound (maxDepth \(FBAXReadLimits.maxReadDepth), maxNodes \(FBAXReadLimits.maxReadNodes)); the returned tree is truncated and incomplete.")
   }
 
-  /// The guest lanes' profile. `acquire` is `FBAXReadTimings.residual` — see there.
+  /// The axbridge profile. `acquire` is `FBAXReadTimings.residual` — see there.
   /// `traversal` says which walk produced `machRoundTrips` — see `FBAXBridgeProfile.traversal`.
   func profile(
     for read: FBAXTreeRead, elementCount: Int, serializeDuration: CFAbsoluteTime,

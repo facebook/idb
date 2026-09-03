@@ -9,13 +9,15 @@ import CompanionUtilities
 @preconcurrency import FBControlCore
 import GRPC
 import IDBGRPCSwift
-import XCTest
+import Testing
 
-final class IDBTransientTests: XCTestCase {
+@Suite
+struct IDBTransientTests {
 
   // MARK: - FileContainerValueTransformer Tests
 
-  func testFileContainerMapsAllKnownKinds() {
+  @Test
+  func fileContainerMapsAllKnownKinds() {
     let mappings: [(Idb_FileContainer.Kind, FBFileContainerKind)] = [
       (.root, .root),
       (.media, .media),
@@ -36,255 +38,293 @@ final class IDBTransientTests: XCTestCase {
     ]
     for (protoKind, expectedKind) in mappings {
       let result = FileContainerValueTransformer.fileContainer(from: protoKind)
-      XCTAssertEqual(result, expectedKind, "Mapping failed for \(protoKind)")
+      #expect((result) == (expectedKind), "Mapping failed for \(protoKind)")
     }
   }
 
-  func testFileContainerReturnsNilForApplicationKind() {
-    XCTAssertNil(FileContainerValueTransformer.fileContainer(from: .application))
+  @Test
+  func fileContainerReturnsNilForApplicationKind() {
+    #expect((FileContainerValueTransformer.fileContainer(from: .application)) == nil)
   }
 
-  func testFileContainerReturnsNilForNoneKind() {
-    XCTAssertNil(FileContainerValueTransformer.fileContainer(from: .none))
+  @Test
+  func fileContainerReturnsNilForNoneKind() {
+    #expect((FileContainerValueTransformer.fileContainer(from: .none)) == nil)
   }
 
-  func testRawFileContainerReturnsRawValueForKnownKind() {
+  @Test
+  func rawFileContainerReturnsRawValueForKnownKind() {
     var container = Idb_FileContainer()
     container.kind = .root
     let result = FileContainerValueTransformer.rawFileContainer(from: container)
-    XCTAssertEqual(result, FBFileContainerKind.root.rawValue)
+    #expect((result) == (FBFileContainerKind.root.rawValue))
   }
 
-  func testRawFileContainerReturnsBundleIDForUnmappedKind() {
+  @Test
+  func rawFileContainerReturnsBundleIDForUnmappedKind() {
     var container = Idb_FileContainer()
     container.kind = .application
     container.bundleID = "com.example.app"
     let result = FileContainerValueTransformer.rawFileContainer(from: container)
-    XCTAssertEqual(result, "com.example.app")
+    #expect((result) == ("com.example.app"))
   }
 
   // MARK: - GrpcDataMappings Tests
 
-  func testInstallRequestExtractsPayload() {
+  @Test
+  func installRequestExtractsPayload() {
     let payload = Idb_Payload.with { $0.source = .data(Data([1, 2, 3])) }
     var request = Idb_InstallRequest()
     request.value = .payload(payload)
-    XCTAssertNotNil(request.extractPayload())
+    #expect((request.extractPayload()) != nil)
   }
 
-  func testInstallRequestReturnsNilWithoutPayload() {
+  @Test
+  func installRequestReturnsNilWithoutPayload() {
     let request = Idb_InstallRequest()
-    XCTAssertNil(request.extractPayload())
+    #expect((request.extractPayload()) == nil)
   }
 
-  func testPushRequestExtractsPayload() {
+  @Test
+  func pushRequestExtractsPayload() {
     let payload = Idb_Payload.with { $0.source = .data(Data([4, 5])) }
     var request = Idb_PushRequest()
     request.value = .payload(payload)
-    XCTAssertNotNil(request.extractPayload())
+    #expect((request.extractPayload()) != nil)
   }
 
-  func testPushRequestReturnsNilWithoutPayload() {
+  @Test
+  func pushRequestReturnsNilWithoutPayload() {
     let request = Idb_PushRequest()
-    XCTAssertNil(request.extractPayload())
+    #expect((request.extractPayload()) == nil)
   }
 
-  func testAddMediaRequestExtractsPayload() {
+  @Test
+  func addMediaRequestExtractsPayload() {
     var request = Idb_AddMediaRequest()
     request.payload = Idb_Payload.with { $0.source = .data(Data([7, 8])) }
-    XCTAssertNotNil(request.extractPayload())
+    #expect((request.extractPayload()) != nil)
   }
 
-  func testAddMediaRequestReturnsNilWithoutPayload() {
+  @Test
+  func addMediaRequestReturnsNilWithoutPayload() {
     let request = Idb_AddMediaRequest()
-    XCTAssertNil(request.extractPayload())
+    #expect((request.extractPayload()) == nil)
   }
 
-  func testPayloadExtractsDataFrame() {
+  @Test
+  func payloadExtractsDataFrame() {
     let testData = Data([10, 20, 30])
     let payload = Idb_Payload.with { $0.source = .data(testData) }
-    XCTAssertEqual(payload.extractDataFrame(), testData)
+    #expect((payload.extractDataFrame()) == (testData))
   }
 
-  func testPayloadReturnsNilDataFrameForFilePath() {
+  @Test
+  func payloadReturnsNilDataFrameForFilePath() {
     let payload = Idb_Payload.with { $0.source = .filePath("/tmp/file") }
-    XCTAssertNil(payload.extractDataFrame())
+    #expect((payload.extractDataFrame()) == nil)
   }
 
-  func testPayloadExtractableChainExtractsData() {
+  @Test
+  func payloadExtractableChainExtractsData() {
     let testData = Data([1, 2, 3, 4])
     let payload = Idb_Payload.with { $0.source = .data(testData) }
     var request = Idb_InstallRequest()
     request.value = .payload(payload)
-    XCTAssertEqual(request.extractDataFrame(), testData)
+    #expect((request.extractDataFrame()) == (testData))
   }
 
-  func testPayloadExtractableChainReturnsNilWithoutPayload() {
+  @Test
+  func payloadExtractableChainReturnsNilWithoutPayload() {
     let request = Idb_InstallRequest()
-    XCTAssertNil(request.extractDataFrame())
+    #expect((request.extractDataFrame()) == nil)
   }
 
   // MARK: - IDBPortsConfiguration Tests
 
-  func testDefaultDebugserverPort() {
+  @Test
+  func defaultDebugserverPort() {
     let (defaults, cleanup) = makeTestDefaults()
     defer { cleanup() }
     let config = IDBPortsConfiguration(arguments: defaults)
-    XCTAssertEqual(config.debugserverPort, 10881)
+    #expect((config.debugserverPort) == (10881))
   }
 
-  func testCustomDebugserverPort() {
+  @Test
+  func customDebugserverPort() {
     let (defaults, cleanup) = makeTestDefaults()
     defer { cleanup() }
     defaults.set("12345", forKey: "-debug-port")
     let config = IDBPortsConfiguration(arguments: defaults)
-    XCTAssertEqual(config.debugserverPort, 12345)
+    #expect((config.debugserverPort) == (12345))
   }
 
-  func testSwiftServerTargetDefaultsToTcpPort() {
+  @Test
+  func swiftServerTargetDefaultsToTcpPort() {
     let (defaults, cleanup) = makeTestDefaults()
     defer { cleanup() }
     let config = IDBPortsConfiguration(arguments: defaults)
     if case .tcpPort(let port) = config.swiftServerTarget {
-      XCTAssertEqual(port, 10882)
+      #expect((port) == (10882))
     } else {
-      XCTFail("Expected TCP port target")
+      Issue.record("Expected TCP port target")
     }
   }
 
-  func testSwiftServerTargetUsesCustomGrpcPort() {
+  @Test
+  func swiftServerTargetUsesCustomGrpcPort() {
     let (defaults, cleanup) = makeTestDefaults()
     defer { cleanup() }
     defaults.set("9999", forKey: "-grpc-port")
     let config = IDBPortsConfiguration(arguments: defaults)
     if case .tcpPort(let port) = config.swiftServerTarget {
-      XCTAssertEqual(port, 9999)
+      #expect((port) == (9999))
     } else {
-      XCTFail("Expected TCP port target")
+      Issue.record("Expected TCP port target")
     }
   }
 
-  func testSwiftServerTargetPrefersUnixDomainSocket() {
+  @Test
+  func swiftServerTargetPrefersUnixDomainSocket() {
     let (defaults, cleanup) = makeTestDefaults()
     defer { cleanup() }
     defaults.set("/tmp/test.sock", forKey: "-grpc-domain-sock")
     defaults.set("9999", forKey: "-grpc-port")
     let config = IDBPortsConfiguration(arguments: defaults)
     if case .unixDomainSocket(let path) = config.swiftServerTarget {
-      XCTAssertEqual(path, "/tmp/test.sock")
+      #expect((path) == ("/tmp/test.sock"))
     } else {
-      XCTFail("Expected Unix domain socket target")
+      Issue.record("Expected Unix domain socket target")
     }
   }
 
-  func testTlsCertPathFromDefaults() {
+  @Test
+  func tlsCertPathFromDefaults() {
     let (defaults, cleanup) = makeTestDefaults()
     defer { cleanup() }
     defaults.set("/path/to/cert.pem", forKey: "-tls-cert-path")
     let config = IDBPortsConfiguration(arguments: defaults)
-    XCTAssertEqual(config.tlsCertPath, "/path/to/cert.pem")
+    #expect((config.tlsCertPath) == ("/path/to/cert.pem"))
   }
 
-  func testTlsCertPathDefaultsToNil() {
+  @Test
+  func tlsCertPathDefaultsToNil() {
     let (defaults, cleanup) = makeTestDefaults()
     defer { cleanup() }
     let config = IDBPortsConfiguration(arguments: defaults)
-    XCTAssertNil(config.tlsCertPath)
+    #expect((config.tlsCertPath) == nil)
   }
 
   // MARK: - GRPCConnectionTarget Tests
 
-  func testTcpPortDescription() {
+  @Test
+  func tcpPortDescription() {
     let target = GRPCConnectionTarget.tcpPort(port: 8080)
-    XCTAssertEqual(target.description, "tcp port 8080")
+    #expect((target.description) == ("tcp port 8080"))
   }
 
-  func testUnixDomainSocketDescription() {
+  @Test
+  func unixDomainSocketDescription() {
     let target = GRPCConnectionTarget.unixDomainSocket("/tmp/test.sock")
-    XCTAssertEqual(target.description, "unix socket /tmp/test.sock")
+    #expect((target.description) == ("unix socket /tmp/test.sock"))
   }
 
-  func testTcpPortSupportsTLS() {
-    XCTAssertTrue(GRPCConnectionTarget.tcpPort(port: 443).supportsTLSCert)
+  @Test
+  func tcpPortSupportsTLS() {
+    #expect((GRPCConnectionTarget.tcpPort(port: 443).supportsTLSCert))
   }
 
-  func testUnixDomainSocketDoesNotSupportTLS() {
-    XCTAssertFalse(GRPCConnectionTarget.unixDomainSocket("/tmp/s").supportsTLSCert)
+  @Test
+  func unixDomainSocketDoesNotSupportTLS() {
+    #expect(!(GRPCConnectionTarget.unixDomainSocket("/tmp/s").supportsTLSCert))
   }
 
-  func testOutputDescriptionThrowsForNilAddress() {
+  @Test
+  func outputDescriptionThrowsForNilAddress() {
     let target = GRPCConnectionTarget.tcpPort(port: 8080)
-    XCTAssertThrowsError(try target.outputDescription(for: nil)) { error in
-      XCTAssertTrue(error is GRPCConnectionTarget.ExtractionError)
+    do {
+      _ = try target.outputDescription(for: nil)
+      Issue.record("expected an ExtractionError")
+    } catch {
+      #expect(error is GRPCConnectionTarget.ExtractionError)
     }
   }
 
   // MARK: - CrashLogQueryValueTransformer Tests
 
-  func testEmptyQueryReturnsTruePredicate() {
+  @Test
+  func emptyQueryReturnsTruePredicate() {
     let query = Idb_CrashLogQuery()
     let predicate = CrashLogQueryValueTransformer.predicate(from: query)
-    XCTAssertEqual(predicate, NSPredicate(value: true))
+    #expect((predicate) == (NSPredicate(value: true)))
   }
 
-  func testQueryWithSinceReturnsCompoundPredicate() {
+  @Test
+  func queryWithSinceReturnsCompoundPredicate() {
     var query = Idb_CrashLogQuery()
     query.since = 1000
     let predicate = CrashLogQueryValueTransformer.predicate(from: query)
-    XCTAssertTrue(predicate is NSCompoundPredicate)
+    #expect((predicate is NSCompoundPredicate))
   }
 
-  func testQueryWithBeforeReturnsCompoundPredicate() {
+  @Test
+  func queryWithBeforeReturnsCompoundPredicate() {
     var query = Idb_CrashLogQuery()
     query.before = 2000
     let predicate = CrashLogQueryValueTransformer.predicate(from: query)
-    XCTAssertTrue(predicate is NSCompoundPredicate)
+    #expect((predicate is NSCompoundPredicate))
   }
 
-  func testQueryWithNameReturnsCompoundPredicate() {
+  @Test
+  func queryWithNameReturnsCompoundPredicate() {
     var query = Idb_CrashLogQuery()
     query.name = "MyCrash"
     let predicate = CrashLogQueryValueTransformer.predicate(from: query)
-    XCTAssertTrue(predicate is NSCompoundPredicate)
+    #expect((predicate is NSCompoundPredicate))
   }
 
-  func testQueryWithBundleIDReturnsCompoundPredicate() {
+  @Test
+  func queryWithBundleIDReturnsCompoundPredicate() {
     var query = Idb_CrashLogQuery()
     query.bundleID = "com.example.app"
     let predicate = CrashLogQueryValueTransformer.predicate(from: query)
-    XCTAssertTrue(predicate is NSCompoundPredicate)
+    #expect((predicate is NSCompoundPredicate))
   }
 
-  func testQueryWithMultipleFiltersReturnsCorrectSubpredicateCount() {
+  @Test
+  func queryWithMultipleFiltersReturnsCorrectSubpredicateCount() {
     var query = Idb_CrashLogQuery()
     query.since = 1000
     query.before = 2000
     query.name = "Crash"
     let predicate = CrashLogQueryValueTransformer.predicate(from: query)
     let compound = predicate as! NSCompoundPredicate
-    XCTAssertEqual(compound.subpredicates.count, 3)
+    #expect((compound.subpredicates.count) == (3))
   }
 
   // MARK: - StreamReadError Tests
 
-  func testStreamReadErrorMakesFailedPreconditionStatus() {
+  @Test
+  func streamReadErrorMakesFailedPreconditionStatus() {
     let error = StreamReadError<String>.nextElementNotProduced
     let status = error.makeGRPCStatus()
-    XCTAssertEqual(status.code, .failedPrecondition)
-    XCTAssertTrue(status.message?.contains("String") ?? false)
+    #expect((status.code) == (.failedPrecondition))
+    #expect((status.message?.contains("String") ?? false))
   }
 
   // MARK: - IDBConfiguration Tests
 
-  func testDefaultEventReporterIsEmptyReporter() {
-    XCTAssertTrue(IDBConfiguration.eventReporter is EmptyEventReporter)
+  @Test
+  func defaultEventReporterIsEmptyReporter() {
+    #expect((IDBConfiguration.eventReporter is EmptyEventReporter))
   }
 
   // MARK: - EmptyEventReporter Tests
 
-  func testEmptyEventReporterMetadataStartsEmpty() {
+  @Test
+  func emptyEventReporterMetadataStartsEmpty() {
     let reporter = EmptyEventReporter()
-    XCTAssertTrue(reporter.metadata.isEmpty)
+    #expect((reporter.metadata.isEmpty))
   }
 
   // MARK: - Helpers

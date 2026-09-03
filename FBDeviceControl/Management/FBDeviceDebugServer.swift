@@ -100,7 +100,7 @@ private class FBDeviceDebugServer_TwistedPairFiles {
   }
 }
 
-public class FBDeviceDebugServer: NSObject, FBSocketServerDelegate, FBDebugServer {
+public final class FBDeviceDebugServer: NSObject, FBSocketServerDelegate, FBDebugServer {
   private let serviceConnection: FBAMDServiceConnection
   private lazy var tcpServer: FBSocketServer = FBSocketServer(onPort: self.port, delegate: self)
   private let port: in_port_t

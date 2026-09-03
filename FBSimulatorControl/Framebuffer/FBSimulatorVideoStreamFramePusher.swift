@@ -18,11 +18,11 @@ public struct FBVideoEncoderStats: Sendable {
   public var callbackCount: UInt
   public var writeCount: UInt
   public var dropCount: UInt
-  public var writeFailureCount: UInt
+  var writeFailureCount: UInt
   public var encodeErrorCount: UInt
   public var tornFrameCount: UInt
   public var totalEncodedBytes: UInt
-  public var totalEncodeSubmitSeconds: CFTimeInterval
+  var totalEncodeSubmitSeconds: CFTimeInterval
 
   public init() {
     self.callbackCount = 0
@@ -81,10 +81,8 @@ extension FBSimulatorVideoStreamFramePusher {
 
 // MARK: - VideoToolbox Output Mode
 
-/// Selects what the VideoToolbox pusher's per-frame encode handler does with each encoded sample.
-/// Replaces the former trio of global `@convention(c)` compressor callbacks — the same mapping the
-/// pusher used to pick a C callback (all H264/HEVC → `.compressed`, MJPEG → `.mjpeg`,
-/// Minicap → `.minicap`) now picks an enum case, dispatched inside the block-based encode handler.
+/// Selects what the VideoToolbox pusher's per-frame encode handler does with each encoded sample:
+/// all H264/HEVC → `.compressed`, MJPEG → `.mjpeg`, Minicap → `.minicap`.
 enum FBVideoToolboxOutputMode {
   /// H264/HEVC: hand the sample to `handleCompressedSampleBuffer` for framing + stats.
   case compressed

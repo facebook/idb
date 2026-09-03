@@ -100,7 +100,7 @@ enum FBAXWire {
     /// wire carries no such attribute.
     ///
     /// Only three of the searchable keys name something the guest fetches, because the rest are host-side
-    /// derivations `FBRemoteAutomationPlatformElement` answers nil for over this wire in the first place.
+    /// derivations the host-side platform element answers nil for over this wire in the first place.
     /// A marker on one of those still writes; it just goes unasserted.
     init?(assertableSearchKey key: FBAXSearchableKey) {
       switch key {

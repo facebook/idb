@@ -7,7 +7,7 @@
 
 @preconcurrency import CoreSimulator
 import FBControlCore
-import FBSimulatorControl
+@testable import FBSimulatorControl
 import XCTest
 
 // MARK: - Test Doubles
@@ -159,12 +159,11 @@ final class FBSimulatorTests: XCTestCase {
     XCTAssertNotEqual(simulator, sim2, "Two simulators wrapping different devices should not be equal")
   }
 
-  func testIsEqual_WhenDifferentClass_ReturnsNO() {
-    XCTAssertFalse(simulator.isEqual("not a simulator"), "isEqual should return NO for objects of a different class")
-  }
-
-  func testHash_MatchesDeviceHash() {
-    XCTAssertEqual(simulator.hash, stubDevice.hash, "Simulator hash should match the underlying device hash")
+  func testHash_DelegatesToDevice() {
+    let sim1 = Self.createSimulator(with: stubDevice)
+    let sim2 = Self.createSimulator(with: stubDevice)
+    XCTAssertEqual(sim1.hashValue, sim2.hashValue, "Simulators wrapping the same device should hash identically")
+    XCTAssertEqual(Set([sim1, sim2]).count, 1, "A set should collapse simulators wrapping the same device")
   }
 
   // MARK: - Temporary Directory (Lazy Init)
@@ -187,10 +186,8 @@ final class FBSimulatorTests: XCTestCase {
     XCTAssertEqual(try XCTUnwrap(port).uint32Value, 12345, "Returned port number should match the looked-up port")
   }
 
-  // The Objective-C signature returns a nullable `NSNumber` with an error out-parameter, so a
-  // Swift caller sees `throws` returning non-optional: returning nil without populating the
-  // error surfaces as a synthesized error rather than as nil. The two no-port paths therefore
-  // both throw, and are told apart by whether the device's own error came back.
+  // Both no-port paths throw: the device's own error when it reported one, and a synthesized
+  // `FBSimulatorPortLookupError` when it did not. They are told apart by the error's domain.
   func testLookupBootstrapPortNamed_WhenPortIsNull_ProducesNoPort() {
     stubDevice.lookupPort = mach_port_t(MACH_PORT_NULL)
     stubDevice.lookupShouldFail = false

@@ -6,60 +6,69 @@
  */
 
 import CompanionUtilities
-// Uses XCTest to match the existing tests in this target; migrating the whole
-// target to Swift Testing is a separate effort.
-// ast-grep-ignore: swift-testing/swift/no-new-xctest
-import XCTest
+import Foundation
+import Testing
 
-final class FBEventReporterSubjectTests: XCTestCase {
+@Suite
+struct FBEventReporterSubjectTests {
 
-  func testSuccessfulCallDurationConvertsSecondsToMilliseconds() {
+  @Test
+  func successfulCallDurationConvertsSecondsToMilliseconds() {
     let subject = FBEventReporterSubject(forSuccessfulCall: "list_apps", duration: 1.5, size: nil, arguments: [])
-    XCTAssertEqual(subject.duration, NSNumber(value: UInt(1500)))
+    #expect(subject.duration == NSNumber(value: UInt(1500)))
   }
 
-  func testFailingCallDurationConvertsSecondsToMilliseconds() {
+  @Test
+  func failingCallDurationConvertsSecondsToMilliseconds() {
     let subject = FBEventReporterSubject(forFailingCall: "list_apps", duration: 0.25, message: "failed", size: nil, arguments: [])
-    XCTAssertEqual(subject.duration, NSNumber(value: UInt(250)))
+    #expect(subject.duration == NSNumber(value: UInt(250)))
   }
 
-  func testZeroDurationIsZeroMilliseconds() {
+  @Test
+  func zeroDurationIsZeroMilliseconds() {
     let subject = FBEventReporterSubject(forSuccessfulCall: "list_apps", duration: 0, size: nil, arguments: [])
-    XCTAssertEqual(subject.duration, NSNumber(value: UInt(0)))
+    #expect(subject.duration == NSNumber(value: UInt(0)))
   }
 
-  func testSubMillisecondNegativeDurationTruncatesToZero() {
+  @Test
+  func subMillisecondNegativeDurationTruncatesToZero() {
     let subject = FBEventReporterSubject(forSuccessfulCall: "list_apps", duration: -0.0005, size: nil, arguments: [])
-    XCTAssertEqual(subject.duration, NSNumber(value: UInt(0)))
+    #expect(subject.duration == NSNumber(value: UInt(0)))
   }
 
-  func testNegativeDurationSaturatesToZero() {
+  @Test
+  func negativeDurationSaturatesToZero() {
     let subject = FBEventReporterSubject(forSuccessfulCall: "list_apps", duration: -5, size: nil, arguments: [])
-    XCTAssertEqual(subject.duration, NSNumber(value: UInt(0)))
+    #expect(subject.duration == NSNumber(value: UInt(0)))
   }
 
-  func testNegativeMillisecondDurationSaturatesToZero() {
+  @Test
+  func negativeMillisecondDurationSaturatesToZero() {
     let subject = FBEventReporterSubject(forFailingCall: "list_apps", duration: -0.001, message: "failed", size: nil, arguments: [])
-    XCTAssertEqual(subject.duration, NSNumber(value: UInt(0)))
+    #expect(subject.duration == NSNumber(value: UInt(0)))
   }
 
-  func testNaNDurationSaturatesToZero() {
+  @Test
+  func naNDurationSaturatesToZero() {
     let subject = FBEventReporterSubject(forSuccessfulCall: "list_apps", duration: .nan, size: nil, arguments: [])
-    XCTAssertEqual(subject.duration, NSNumber(value: UInt(0)))
+    #expect(subject.duration == NSNumber(value: UInt(0)))
   }
 
-  func testInfiniteDurationSaturatesToZero() {
+  @Test
+  func infiniteDurationSaturatesToZero() {
     let subject = FBEventReporterSubject(forSuccessfulCall: "list_apps", duration: .infinity, size: nil, arguments: [])
-    XCTAssertEqual(subject.duration, NSNumber(value: UInt(0)))
+    #expect(subject.duration == NSNumber(value: UInt(0)))
   }
 
-  func testNegativeInfiniteDurationSaturatesToZero() {
+  @Test
+  func negativeInfiniteDurationSaturatesToZero() {
     let subject = FBEventReporterSubject(forSuccessfulCall: "list_apps", duration: -.infinity, size: nil, arguments: [])
-    XCTAssertEqual(subject.duration, NSNumber(value: UInt(0)))
+    #expect(subject.duration == NSNumber(value: UInt(0)))
   }
 
-  func testOverflowingDurationSaturatesToUIntMax() {
+  @Test
+  func overflowingDurationSaturatesToUIntMax() {
     let subject = FBEventReporterSubject(forSuccessfulCall: "list_apps", duration: 1e30, size: nil, arguments: [])
-    XCTAssertEqual(subject.duration, NSNumber(value: UInt.max))
+    #expect(subject.duration == NSNumber(value: UInt.max))
   }
 }

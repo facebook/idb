@@ -25,7 +25,7 @@ public enum FBCodesignError: Error, LocalizedError {
   }
 }
 
-public class FBCodesignProvider {
+public final class FBCodesignProvider {
 
   // MARK: Properties
 
@@ -72,7 +72,7 @@ public class FBCodesignProvider {
 
   // MARK: Public Methods
 
-  public func signBundle(atPath bundlePath: String) -> FBFuture<NSNull> {
+  func signBundle(atPath bundlePath: String) -> FBFuture<NSNull> {
     do {
       try makeCodesignatureWritable(bundlePath)
     } catch {
@@ -101,7 +101,7 @@ public class FBCodesignProvider {
     )
   }
 
-  public func recursivelySignBundle(atPath bundlePath: String) -> FBFuture<NSNull> {
+  func recursivelySignBundle(atPath bundlePath: String) -> FBFuture<NSNull> {
     var pathsToSign = [bundlePath]
     let fileManager = FileManager.default
     let frameworksPath = bundlePath + "/Frameworks/"

@@ -79,13 +79,13 @@ final class FBTestBundleConnection {
     logger.log("Connecting Test Bundle")
     let core = FBTestBundleDTXConnection(
       context: context,
-      target: target,
+      work: target.workQueue,
       socket: socket,
       interface: interface,
       request: requestQueue,
       logger: logger
     )
-    try await withFBFutureContext(core.connect()) { _ in
+    try await withFBFutureContext(core.connect()) { (_: AnyObject) in
       do {
         try await bridgeFBFutureVoid(core.setupAndStartSession())
         try await bridgeFBFutureVoid(core.waitForBundleReady())

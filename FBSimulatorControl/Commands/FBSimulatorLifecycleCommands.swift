@@ -54,23 +54,23 @@ public final class FBSimulatorLifecycleCommands {
 
   // MARK: - Async
 
-  fileprivate func bootAsync(_ configuration: FBSimulatorBootConfiguration) async throws {
+  fileprivate func boot(_ configuration: FBSimulatorBootConfiguration) async throws {
     guard let simulator = self.simulator else {
       throw FBWeakTargetError.simulator
     }
-    try await FBSimulatorBootStrategy.bootAsync(simulator, with: configuration)
+    try await FBSimulatorBootStrategy.boot(simulator, with: configuration)
   }
 
-  fileprivate func shutdownAsync() async throws {
+  fileprivate func shutdown() async throws {
     guard let simulator = self.simulator else {
       throw FBWeakTargetError.simulator
     }
-    try await FBSimulatorShutdownStrategy.shutdownAsync(simulator)
+    try await FBSimulatorShutdownStrategy.shutdown(simulator)
   }
 
-  fileprivate func rebootAsync() async throws {
-    try await shutdownAsync()
-    try await bootAsync(FBSimulatorBootConfiguration.default)
+  fileprivate func reboot() async throws {
+    try await shutdown()
+    try await boot(FBSimulatorBootConfiguration.default)
   }
 
   fileprivate func erase() async throws {
@@ -80,21 +80,21 @@ public final class FBSimulatorLifecycleCommands {
     try await FBSimulatorEraseStrategy.erase(simulator)
   }
 
-  fileprivate func resolveStateAsync(_ state: FBiOSTargetState) async throws {
+  fileprivate func resolveState(_ state: FBiOSTargetState) async throws {
     guard let simulator = self.simulator else {
       throw FBWeakTargetError.simulator
     }
-    try await bridgeFBFutureVoid(FBiOSTargetResolveState(simulator, state))
+    try await FBiOSTargetResolveState(simulator, state)
   }
 
-  fileprivate func resolveLeavesStateAsync(_ state: FBiOSTargetState) async throws {
+  fileprivate func resolveLeavesState(_ state: FBiOSTargetState) async throws {
     guard let simulator = self.simulator else {
       throw FBWeakTargetError.simulator
     }
     try await bridgeFBFutureVoid(FBCoreSimulatorNotifier.resolveLeavesState(state, for: simulator.device))
   }
 
-  fileprivate func focusAsync() async throws {
+  fileprivate func focus() async throws {
     guard let simulator = self.simulator else {
       throw FBWeakTargetError.simulator
     }
@@ -148,14 +148,14 @@ public final class FBSimulatorLifecycleCommands {
     }
   }
 
-  fileprivate func disconnectAsync(withTimeout timeout: TimeInterval, logger: (any FBControlCoreLogger)?) async throws {
+  fileprivate func disconnect(withTimeout timeout: TimeInterval, logger: (any FBControlCoreLogger)?) async throws {
     guard self.simulator != nil else {
       throw FBWeakTargetError.simulator
     }
     let date = Date()
     let teardownFuture =
       fbFutureFromAsync { [self] in
-        try await terminateConnectionsAsync()
+        try await terminateConnections()
         return NSNull()
       }
       .timeout(timeout, waitingFor: "Simulator connections to teardown")
@@ -164,19 +164,19 @@ public final class FBSimulatorLifecycleCommands {
     logger?.debug().log("Simulator connections torn down in \(Date().timeIntervalSince(date)) seconds")
   }
 
-  private func terminateConnectionsAsync() async throws {
+  private func terminateConnections() async throws {
     hid?.disconnect()
     self.hid = nil
   }
 
-  fileprivate func connectToFramebufferAsync() async throws -> FBFramebuffer {
+  fileprivate func connectToFramebuffer() async throws -> FBFramebuffer {
     guard let simulator = self.simulator else {
       throw FBWeakTargetError.simulator
     }
     return try FBFramebuffer.mainScreenSurface(for: simulator, logger: simulator.logger)
   }
 
-  fileprivate func connectToHIDAsync() async throws -> FBSimulatorHID {
+  fileprivate func connectToHID() async throws -> FBSimulatorHID {
     if let hid = self.hid {
       return hid
     }
@@ -188,7 +188,7 @@ public final class FBSimulatorLifecycleCommands {
     return hid
   }
 
-  fileprivate func openAsync(_ url: URL) async throws {
+  fileprivate func open(_ url: URL) async throws {
     guard let simulator = self.simulator else {
       throw FBWeakTargetError.simulator
     }
@@ -211,11 +211,11 @@ public final class FBSimulatorLifecycleCommands {
 extension FBSimulator: LifecycleCommands {
 
   public func resolveState(_ state: FBiOSTargetState) async throws {
-    try await lifecycleCommands.resolveStateAsync(state)
+    try await lifecycle.resolveState(state)
   }
 
   public func resolveLeavesState(_ state: FBiOSTargetState) async throws {
-    try await lifecycleCommands.resolveLeavesStateAsync(state)
+    try await lifecycle.resolveLeavesState(state)
   }
 }
 
@@ -224,11 +224,11 @@ extension FBSimulator: LifecycleCommands {
 extension FBSimulator: PowerCommands {
 
   public func shutdown() async throws {
-    try await lifecycleCommands.shutdownAsync()
+    try await lifecycle.shutdown()
   }
 
   public func reboot() async throws {
-    try await lifecycleCommands.rebootAsync()
+    try await lifecycle.reboot()
   }
 }
 
@@ -237,7 +237,7 @@ extension FBSimulator: PowerCommands {
 extension FBSimulator: EraseCommands {
 
   public func erase() async throws {
-    try await lifecycleCommands.erase()
+    try await lifecycle.erase()
   }
 }
 
@@ -246,26 +246,26 @@ extension FBSimulator: EraseCommands {
 extension FBSimulator: SimulatorLifecycleCommands {
 
   public func boot(_ configuration: FBSimulatorBootConfiguration) async throws {
-    try await lifecycleCommands.bootAsync(configuration)
+    try await lifecycle.boot(configuration)
   }
 
   public func focus() async throws {
-    try await lifecycleCommands.focusAsync()
+    try await lifecycle.focus()
   }
 
   public func disconnect(withTimeout timeout: TimeInterval, logger: (any FBControlCoreLogger)?) async throws {
-    try await lifecycleCommands.disconnectAsync(withTimeout: timeout, logger: logger)
+    try await lifecycle.disconnect(withTimeout: timeout, logger: logger)
   }
 
   public func connectToFramebuffer() async throws -> FBFramebuffer {
-    try await lifecycleCommands.connectToFramebufferAsync()
+    try await lifecycle.connectToFramebuffer()
   }
 
   public func open(_ url: URL) async throws {
-    try await lifecycleCommands.openAsync(url)
+    try await lifecycle.open(url)
   }
 
   public func connectToHID() async throws -> FBSimulatorHID {
-    try await lifecycleCommands.connectToHIDAsync()
+    try await lifecycle.connectToHID()
   }
 }

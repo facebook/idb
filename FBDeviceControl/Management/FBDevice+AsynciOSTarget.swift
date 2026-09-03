@@ -16,7 +16,7 @@ extension FBDevice: XCTraceRecordCommands {
     configuration: FBXCTraceRecordConfiguration,
     logger: any FBControlCoreLogger
   ) async throws -> FBXCTraceRecordOperation {
-    try await xctraceRecordCommands.startXctraceRecord(configuration, logger: logger)
+    try await xctraceRecord.startXctraceRecord(configuration, logger: logger)
   }
 }
 
@@ -28,7 +28,7 @@ extension FBDevice: InstrumentsCommands {
     configuration: FBInstrumentsConfiguration,
     logger: any FBControlCoreLogger
   ) async throws -> FBInstrumentsOperation {
-    try await FBInstrumentsOperation.operationAsync(target: self, configuration: configuration, logger: logger)
+    try await FBInstrumentsOperation.operation(target: self, configuration: configuration, logger: logger)
   }
 }
 

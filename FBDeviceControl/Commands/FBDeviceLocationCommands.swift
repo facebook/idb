@@ -10,7 +10,7 @@ import Foundation
 
 private let StartCommand: UInt32 = 0x00000000
 
-public class FBDeviceLocationCommands {
+public final class FBDeviceLocationCommands {
   private weak var device: FBDevice?
 
   // MARK: - Initializers
@@ -25,11 +25,11 @@ public class FBDeviceLocationCommands {
 
   // MARK: - Async
 
-  fileprivate func overrideLocationAsync(withLongitude longitude: Double, latitude: Double) async throws {
+  fileprivate func overrideLocation(withLongitude longitude: Double, latitude: Double) async throws {
     guard let device else {
       throw FBDeviceNilError.deviceNil
     }
-    _ = try await bridgeFBFuture(device.ensureDeveloperDiskImageIsMounted())
+    _ = try await device.ensureDeveloperDiskImageIsMounted()
     try await device.withServiceConnection("com.apple.dt.simulatelocation") { connection in
       var start = StartCommand
       let startData = Data(bytes: &start, count: MemoryLayout<UInt32>.size)
@@ -46,6 +46,6 @@ public class FBDeviceLocationCommands {
 extension FBDevice: LocationCommands {
 
   public func overrideLocation(longitude: Double, latitude: Double) async throws {
-    try await locationCommands.overrideLocationAsync(withLongitude: longitude, latitude: latitude)
+    try await location.overrideLocation(withLongitude: longitude, latitude: latitude)
   }
 }

@@ -29,10 +29,7 @@ public enum FBAXBridgeError: LocalizedError, Sendable {
   /// because `--frontmost-method` is the caller's choice and the other two may well answer.
   case frontmostUnresolved(method: FBAXBridgeFrontmostMethod, reason: String)
   /// The guest reported that `pid` names no readable application — a dead pid, or an app whose
-  /// accessibility server never started. Its own case (rather than a `guestFailure` string) so the
-  /// conformer can re-raise the backend-neutral `FBUIAutomationError.applicationUnavailable` for it,
-  /// matching what the remote backend throws for the same condition. `pid` is nil when the guest resolved
-  /// nothing to name it — a display-wide hit-test that nothing answered.
+  /// accessibility server never started. `pid` is nil when a display-wide hit-test resolves nothing.
   case applicationUnavailable(pid: pid_t?)
   /// The application has an accessibility server and it did not answer in time. Distinct from
   /// `applicationUnavailable` because the application has not gone away, and distinct from an empty

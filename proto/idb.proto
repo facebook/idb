@@ -343,6 +343,24 @@ message AccessibilityInfoRequest {
   // Collect upper-region frame coverage for the read. Reported by the
   // COMPLETE format only, like profile.
   bool collect_frame_coverage = 10;
+  // Which elements the read reports. FILTER_ALL is the historical behaviour,
+  // so an older client — or one that does not ask — is unaffected.
+  enum Filter {
+    FILTER_ALL = 0;
+    // Only the elements a caller could actually interact with.
+    FILTER_INTERACTABLE = 1;
+  }
+  // Report only the elements whose match_key value contains this substring;
+  // empty reports every element, which is the historical behaviour. Unlike
+  // marker, which selects the first matching element and only it, match
+  // reports all of them and finding none is an empty result rather than an
+  // error. Setting both marker and match is INVALID_ARGUMENT.
+  string match = 11;
+  // Compare match — and, on a marker read, marker — case-insensitively. Read
+  // path only: marker resolution for a tap, scroll, set-value or drag stays
+  // case-sensitive.
+  bool ignore_case = 12;
+  Filter filter = 13;
 }
 
 message AccessibilityInfoResponse {
@@ -390,10 +408,33 @@ message AccessibilityActionRequest {
     string value = 1;
   }
 
+  // Press and hold the request's target, drag to the destination below, and
+  // release. All durations are in seconds; a zero value means the server
+  // default noted against each field.
+  message Drag {
+    // A destination is required; unlike the source, it has no frontmost
+    // default.
+    oneof destination {
+      string marker = 1;
+      Point point = 2;
+    }
+    SearchableKey destination_match_key = 3;
+    uint32 destination_depth = 4;
+    // How long to hold the source before moving. Default 0.5.
+    double press_duration = 5;
+    // How long the movement itself takes. Default 0.5.
+    double duration = 6;
+    // How long to hold the destination before releasing. Default 0.1.
+    double release_duration = 7;
+    // Distance between interpolated touch points, in points. Default 10.
+    double delta = 8;
+  }
+
   oneof action {
     Tap tap = 5;
     Scroll scroll = 6;
     SetValue set_value = 7;
+    Drag drag = 8;
   }
 }
 
@@ -614,8 +655,34 @@ message LogResponse {
 }
 
 message RecordRequest {
+  // Field names and numbers match VideoStreamRequest.Start, so the two read
+  // identically; 3 is skipped because that is the stream's `format` and a
+  // recording is always H.264 in an mp4. A zero value means the default noted
+  // against each field, since a proto3 scalar cannot distinguish unset from
+  // zero. A companion older than these fields ignores them and records at the
+  // defaults; see RecordResponse.Applied.
   message Start {
+    // 3 is the stream's `format`, deliberately skipped here (see above).
+    // Reserve the tag and name so no future field can silently reuse them and
+    // collide with a wire-compatible client that ever sent a `format` value.
+    reserved 3;
+    reserved "format";
     string file_path = 1;
+    // Capture cadence. Default 30 -- unlike the stream, whose default is the
+    // display's own rate. This is what FBSimulatorVideoRecordingCommands has
+    // always pinned, so an all-zero request records exactly as it did before.
+    uint64 fps = 2;
+    // Inert for H.264 and so not offered by the CLI; here for message
+    // symmetry. Must be in [0, 1], and cannot be combined with avg_bitrate.
+    double compression_quality = 4;
+    // Scale applied before encoding. Only a value in (0, 1) scales; default
+    // unset, which records at full size. Values above 1 are rejected.
+    double scale_factor = 5;
+    // Target average bits per second. Default unset, which lets the encoder
+    // choose.
+    double avg_bitrate = 6;
+    // Maximum seconds between forced key frames. Default 4.
+    double key_frame_rate = 7;
   }
   message Stop {}
   oneof control {
@@ -625,9 +692,25 @@ message RecordRequest {
 }
 
 message RecordResponse {
+  // The encode options the companion resolved for this recording, so a client
+  // can tell that they took effect. Unset fps/scale_factor/key_frame_rate are
+  // reported as the defaults they resolved to. The rate control is reported in
+  // whichever of avg_bitrate/compression_quality the request chose, and both
+  // are 0 when it chose neither and left the rate automatic.
+  message Applied {
+    uint64 fps = 1;
+    double scale_factor = 2;
+    double avg_bitrate = 3;
+    double key_frame_rate = 4;
+    double compression_quality = 5;
+  }
   oneof output {
     bytes log_output = 1;
     Payload payload = 2;
+    // Sent once, before any payload, and only when the request set at least
+    // one encode option. A client that set one and did not receive this is
+    // talking to a companion that silently dropped it.
+    Applied applied = 3;
   }
 }
 

@@ -39,7 +39,7 @@ public struct CompanionSpawner {
   ///   outlives this process and is not killed by terminal signals delivered to
   ///   this process's group. The v1 `idb_companion` is not detached by the spawner;
   ///   it survives a normal exit of this process but would receive such signals.
-  public func spawnDomainSocketServer(udid: String, only: String? = nil, path: String, idleShutdownTime: Int? = nil) async throws -> CompanionInfo {
+  func spawnDomainSocketServer(udid: String, only: String? = nil, path: String, idleShutdownTime: Int? = nil) async throws -> CompanionInfo {
     try paths.ensureLogsDirectory()
     let logPath = paths.logFilePath(forUDID: udid)
     let logHandle = try appendHandle(forPath: logPath)

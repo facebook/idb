@@ -29,7 +29,27 @@ struct RecordMethodHandler {
     guard let asyncTarget = target as? any VideoRecordingCommands else {
       throw GRPCStatus(code: .failedPrecondition, message: "\(target) does not support VideoRecordingCommands")
     }
-    let recording = try await asyncTarget.startRecording(toFile: filePath)
+
+    let recording: any FBVideoRecording
+    if let encodeOptions = try RecordRequestTranslation.encodeOptions(from: start) {
+      try RecordRequestTranslation.requireHonoredConfiguration(asyncTarget, describing: "\(target)")
+      recording = try await asyncTarget.startRecording(
+        toFile: filePath,
+        configuration: RecordRequestTranslation.configuration(for: encodeOptions))
+      do {
+        // Ahead of any payload, so a client reading the stream in order learns what it is about to
+        // receive before it receives any of it.
+        try await responseStream.send(RecordRequestTranslation.appliedResponse(encodeOptions))
+      } catch {
+        // The recording is already running and this is the last thing that will reach the client, so
+        // stop it rather than leaving the encoder and its file handle held for the life of the
+        // companion. The original failure is what the caller needs to see.
+        _ = try? await recording.stop()
+        throw error
+      }
+    } else {
+      recording = try await asyncTarget.startRecording(toFile: filePath)
+    }
 
     _ = try await requestStream.requiredNext
     let outputURL = try await recording.stop()

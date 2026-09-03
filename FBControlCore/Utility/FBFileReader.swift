@@ -46,7 +46,7 @@ public enum FBFileReaderError: Error, LocalizedError {
 }
 
 @objc(FBFileReader)
-public class FBFileReader: NSObject, FBFileReaderProtocol {
+public final class FBFileReader: NSObject, FBFileReaderProtocol {
 
   // MARK: - Private Properties
 

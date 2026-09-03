@@ -15,7 +15,7 @@ from dataclasses import asdict, dataclass, field
 from datetime import timedelta
 from enum import Enum
 from io import StringIO
-from typing import IO, List, Optional, Set, Tuple, Union
+from typing import IO, Optional, Union
 
 
 LoggingMetadata = dict[str, Optional[Union[str, list[str], int, float]]]
@@ -364,6 +364,20 @@ class AccessibilityMarker:
 AccessibilityTarget = Union[AccessibilityPoint, AccessibilityMarker]
 
 
+@dataclass(frozen=True)
+class AccessibilityDragOptions:
+    """The three drag phase durations, in seconds, and the distance between
+    interpolated touch points, in screen points. None sends the wire's zero,
+    which the companion reads as its own default (0.5s press, 0.5s travel, 0.1s
+    release, 10pt delta) — a proto3 scalar cannot distinguish unset from zero,
+    and none of these are useful at zero."""
+
+    press_duration: float | None = None
+    duration: float | None = None
+    release_duration: float | None = None
+    delta: float | None = None
+
+
 # CLI names (matching the sime2e vocabulary) for the accessibility searchable
 # keys, so the same marker/expected-value flags work across both CLIs.
 ACCESSIBILITY_KEY_BY_NAME: dict[str, AccessibilitySearchableKey] = {
@@ -390,8 +404,7 @@ class AccessibilityBackend(Enum):
 
 ACCESSIBILITY_BACKEND_BY_NAME: dict[str, AccessibilityBackend] = {
     "ax": AccessibilityBackend.AX,
-    "axbridge": AccessibilityBackend.AXBRIDGE,
-    "axbridge-persistent": AccessibilityBackend.AXBRIDGE_PERSISTENT,
+    "axbridge": AccessibilityBackend.AXBRIDGE_PERSISTENT,
 }
 
 
@@ -411,9 +424,23 @@ ACCESSIBILITY_FORMAT_BY_NAME: dict[str, AccessibilityOutputFormat] = {
 }
 
 
+# Which elements an accessibility read reports. Values match the wire
+# protocol; ALL is the historical behaviour, so an option left unset — or an
+# older companion, which drops the field — reads as it always has.
+class AccessibilityElementFilter(Enum):
+    ALL = 0
+    INTERACTABLE = 1
+
+
+ACCESSIBILITY_FILTER_BY_NAME: dict[str, AccessibilityElementFilter] = {
+    "all": AccessibilityElementFilter.ALL,
+    "interactable": AccessibilityElementFilter.INTERACTABLE,
+}
+
+
 # Shapes the accessibility_info request: the format, which accessibility
-# keys are reported, and which backend serves the read. This grows as
-# describe-all gains enrichers.
+# keys are reported, which elements are reported, and which backend serves the
+# read. This grows as describe-all gains enrichers.
 @dataclass(frozen=True)
 class AccessibilityInfoOptions:
     nested: bool = False
@@ -422,6 +449,17 @@ class AccessibilityInfoOptions:
     format: AccessibilityOutputFormat | None = None
     profile: bool = False
     collect_frame_coverage: bool = False
+    # Report only the elements whose `match_key` contains this substring.
+    # None (and the empty string) reports every element. Unlike a marker,
+    # which selects the first match and only it, this reports all of them and
+    # no match is an empty result rather than an error.
+    match: str | None = None
+    # Which attribute `match` is compared against. Shared with the marker
+    # read's key on the wire, so a request carries one or the other.
+    match_key: AccessibilitySearchableKey = AccessibilitySearchableKey.LABEL
+    # Compare `match` — and a marker, on a read — case-insensitively.
+    ignore_case: bool = False
+    filter: AccessibilityElementFilter | None = None
 
 
 class AccessibilityScrollDirection(Enum):
@@ -874,7 +912,15 @@ class Client(ABC):
         pass
 
     @abstractmethod
-    async def record_video(self, stop: asyncio.Event, output_file: str) -> None:
+    async def record_video(
+        self,
+        stop: asyncio.Event,
+        output_file: str,
+        fps: int | None = None,
+        scale_factor: float | None = None,
+        bitrate: float | None = None,
+        key_frame_rate: float | None = None,
+    ) -> None:
         pass
 
     @abstractmethod
@@ -992,6 +1038,15 @@ class Client(ABC):
         self,
         target: AccessibilityTarget,
         value: str,
+    ) -> None:
+        pass
+
+    @abstractmethod
+    async def accessibility_drag(
+        self,
+        source: AccessibilityTarget,
+        destination: AccessibilityTarget,
+        options: AccessibilityDragOptions,
     ) -> None:
         pass
 

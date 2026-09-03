@@ -70,7 +70,7 @@ public final class FBSimulatorServiceContext {
 
   // MARK: - Public
 
-  public func pathsOfAllDeviceSets() -> [String] {
+  func pathsOfAllDeviceSets() -> [String] {
     var deviceSetPaths: [String] = []
     if let deviceSets = serviceContext.allDeviceSets() as? [SimDeviceSet] {
       for deviceSet in deviceSets {
@@ -88,7 +88,7 @@ public final class FBSimulatorServiceContext {
     return (serviceContext.supportedDeviceTypes as? [SimDeviceType]) ?? []
   }
 
-  public func createDeviceSet(with configuration: FBSimulatorControlConfiguration) throws -> SimDeviceSet {
+  func createDeviceSet(with configuration: FBSimulatorControlConfiguration) throws -> SimDeviceSet {
     guard let deviceSetPath = configuration.deviceSetPath else {
       // defaultDeviceSetWithError: takes (id *) not (NSError **), so use the raw API
       var error: AnyObject?

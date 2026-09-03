@@ -28,7 +28,7 @@ extension FBDiagnosticsRelayError: LocalizedError {
   }
 }
 
-public class FBDeviceDiagnosticInformationCommands: NSObject, FBiOSTargetCommand {
+public final class FBDeviceDiagnosticInformationCommands: NSObject, FBiOSTargetCommand {
   private weak var device: FBDevice?
 
   // MARK: - Initializers
@@ -47,13 +47,13 @@ public class FBDeviceDiagnosticInformationCommands: NSObject, FBiOSTargetCommand
 
   // MARK: - Async
 
-  fileprivate func fetchDiagnosticInformationAsync() async throws -> [String: Any] {
+  fileprivate func fetchDiagnosticInformation() async throws -> [String: Any] {
     guard let device else {
       throw FBDeviceNilError.deviceNil
     }
-    let diagnostics = try await fetchInformationFromDiagnosticsRelayAsync(device: device)
-    let springboard = try await fetchInformationFromSpringboardAsync(device: device)
-    let mobileConfig = try await fetchInformationFromMobileConfigurationAsync(device: device)
+    let diagnostics = try await fetchInformationFromDiagnosticsRelay(device: device)
+    let springboard = try await fetchInformationFromSpringboard(device: device)
+    let mobileConfig = try await fetchInformationFromMobileConfiguration(device: device)
     let merged: [String: Any] = [
       DiagnosticsRelayService: diagnostics,
       FBSpringboardServicesClient.serviceName: springboard,
@@ -64,7 +64,7 @@ public class FBDeviceDiagnosticInformationCommands: NSObject, FBiOSTargetCommand
 
   // MARK: - Private
 
-  private func fetchInformationFromDiagnosticsRelayAsync(device: FBDevice) async throws -> Any {
+  private func fetchInformationFromDiagnosticsRelay(device: FBDevice) async throws -> Any {
     try await device.withServiceConnection(DiagnosticsRelayService) { connection in
       guard let result = try connection.sendAndReceiveMessage(["Request": "All"]) as? NSDictionary else {
         throw FBDiagnosticsRelayError.unexpectedResponse
@@ -79,18 +79,18 @@ public class FBDeviceDiagnosticInformationCommands: NSObject, FBiOSTargetCommand
     }
   }
 
-  private func fetchInformationFromSpringboardAsync(device: FBDevice) async throws -> Any {
+  private func fetchInformationFromSpringboard(device: FBDevice) async throws -> Any {
     let logger = device.logger
     return try await device.withServiceConnection(FBSpringboardServicesClient.serviceName) { connection in
       let client = FBSpringboardServicesClient(connection: connection, logger: logger)
-      return try await client.getIconLayoutAsync().pages
+      return try await client.getIconLayout().pages
     }
   }
 
-  private func fetchInformationFromMobileConfigurationAsync(device: FBDevice) async throws -> Any {
+  private func fetchInformationFromMobileConfiguration(device: FBDevice) async throws -> Any {
     let logger = device.logger
     return try await device.withServiceConnection(FBManagedConfigClient.serviceName) { connection in
-      try await FBManagedConfigClient.managedConfigClient(connection: connection, logger: logger).getCloudConfigurationAsync()
+      try await FBManagedConfigClient.managedConfigClient(connection: connection, logger: logger).getCloudConfiguration()
     }
   }
 }
@@ -100,6 +100,6 @@ public class FBDeviceDiagnosticInformationCommands: NSObject, FBiOSTargetCommand
 extension FBDevice: DiagnosticInformationCommands {
 
   public func fetchDiagnosticInformation() async throws -> [String: Any] {
-    try await diagnosticInformationCommands.fetchDiagnosticInformationAsync()
+    try await diagnosticInformation.fetchDiagnosticInformation()
   }
 }

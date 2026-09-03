@@ -9,27 +9,11 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-public final class FBSimulatorShutdownStrategy {
+final class FBSimulatorShutdownStrategy {
 
   // MARK: - Public Methods
 
-  public class func shutdown(_ simulator: FBSimulator) -> FBFuture<NSNull> {
-    fbFutureFromAsync {
-      try await shutdownAsync(simulator)
-      return NSNull()
-    }
-  }
-
-  public class func shutdownAll(_ simulators: [FBSimulator]) -> FBFuture<NSNull> {
-    fbFutureFromAsync {
-      try await shutdownAllAsync(simulators)
-      return NSNull()
-    }
-  }
-
-  // MARK: - Async
-
-  static func shutdownAsync(_ simulator: FBSimulator) async throws {
+  static func shutdown(_ simulator: FBSimulator) async throws {
     let logger = simulator.logger
     logger.debug().log("Starting Safe Shutdown of \(simulator.udid)")
 
@@ -41,15 +25,15 @@ public final class FBSimulatorShutdownStrategy {
       return
     }
     if simulator.state == .creating {
-      try await transitionCreatingToShutdownAsync(simulator)
+      try await transitionCreatingToShutdown(simulator)
       return
     }
-    try await shutdownSimulatorAsync(simulator)
+    try await shutdownSimulator(simulator)
   }
 
-  static func shutdownAllAsync(_ simulators: [FBSimulator]) async throws {
+  static func shutdownAll(_ simulators: [FBSimulator]) async throws {
     for simulator in simulators {
-      try await shutdownAsync(simulator)
+      try await shutdown(simulator)
     }
   }
 
@@ -57,7 +41,7 @@ public final class FBSimulatorShutdownStrategy {
 
   private static let shutdownWhenShuttingDownErrorCode: Int = 164
 
-  private static func shutdownSimulatorAsync(_ simulator: FBSimulator) async throws {
+  private static func shutdownSimulator(_ simulator: FBSimulator) async throws {
     let logger = simulator.logger
     let errorCode = shutdownWhenShuttingDownErrorCode
 
@@ -74,23 +58,24 @@ public final class FBSimulatorShutdownStrategy {
         }
       }
     }
-    try await bridgeFBFutureVoid(FBiOSTargetResolveState(simulator, .shutdown))
+    try await FBiOSTargetResolveState(simulator, .shutdown)
   }
 
-  private static func transitionCreatingToShutdownAsync(_ simulator: FBSimulator) async throws {
+  private static func transitionCreatingToShutdown(_ simulator: FBSimulator) async throws {
     do {
-      try await bridgeFBFutureVoid(
-        FBiOSTargetResolveState(simulator, .shutdown).timeout(
-          FBControlCoreGlobalConfiguration.regularTimeout,
-          waitingFor: "Simulator to resolve state \(FBiOSTargetStateString.shutdown)"
-        ).retyped(FBFuture<NSNull>.self))
+      try await FBiOSTargetResolveState(
+        simulator,
+        .shutdown,
+        deadline: PollDeadline(
+          timeout: FBControlCoreGlobalConfiguration.regularTimeout,
+          waitingFor: "Simulator to resolve state \(FBiOSTargetStateString.shutdown)"))
       return
     } catch {
-      try await eraseSimulatorAsync(simulator)
+      try await eraseSimulator(simulator)
     }
   }
 
-  private static func eraseSimulatorAsync(_ simulator: FBSimulator) async throws {
+  private static func eraseSimulator(_ simulator: FBSimulator) async throws {
     let logger = simulator.logger
     logger.debug().log("Erasing Simulator \(simulator.udid)")
     try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
@@ -102,10 +87,11 @@ public final class FBSimulatorShutdownStrategy {
         }
       }
     }
-    try await bridgeFBFutureVoid(
-      FBiOSTargetResolveState(simulator, .shutdown).timeout(
-        FBControlCoreGlobalConfiguration.regularTimeout,
-        waitingFor: "Timed out waiting for Simulator to transition from Creating -> Shutdown"
-      ).retyped(FBFuture<NSNull>.self))
+    try await FBiOSTargetResolveState(
+      simulator,
+      .shutdown,
+      deadline: PollDeadline(
+        timeout: FBControlCoreGlobalConfiguration.regularTimeout,
+        waitingFor: "Simulator to transition from Creating -> Shutdown"))
   }
 }

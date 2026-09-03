@@ -29,7 +29,7 @@ public final class FBSimulatorScreenshotCommands {
 
   // MARK: - Properties
 
-  private let simulator: FBSimulator
+  private weak var simulator: FBSimulator?
   private var image: FBSimulatorImage?
 
   // MARK: - Initializers
@@ -46,7 +46,10 @@ public final class FBSimulatorScreenshotCommands {
 
   /// The crop and scale are applied by the render itself rather than to its output, so all that is
   /// left here is to encode what comes back.
-  fileprivate func takeScreenshotAsync(configuration: FBScreenshotConfiguration) async throws -> FBScreenshotResult {
+  fileprivate func takeScreenshot(configuration: FBScreenshotConfiguration) async throws -> FBScreenshotResult {
+    guard let simulator = self.simulator else {
+      throw FBWeakTargetError.simulator
+    }
     let image = try await connectToImage()
     let screenScale = simulator.screenInfo.map { Double($0.scale) }
     guard let captured = try await image.image(configuration: configuration, screenScale: screenScale) else {
@@ -64,6 +67,9 @@ public final class FBSimulatorScreenshotCommands {
     if let image = self.image {
       return image
     }
+    guard let simulator = self.simulator else {
+      throw FBWeakTargetError.simulator
+    }
     let framebuffer = try await simulator.connectToFramebuffer()
     let image = FBSimulatorImage(framebuffer: framebuffer, logger: simulator.logger)
     self.image = image
@@ -79,7 +85,7 @@ public final class FBSimulatorScreenshotCommands {
       cropRect: cropRect,
       unit: .points
     )
-    return try await takeScreenshotAsync(configuration: configuration).imageData
+    return try await takeScreenshot(configuration: configuration).imageData
   }
 }
 
@@ -88,12 +94,12 @@ public final class FBSimulatorScreenshotCommands {
 extension FBSimulator: ScreenshotCommands {
 
   public func takeScreenshot(configuration: FBScreenshotConfiguration) async throws -> FBScreenshotResult {
-    try await screenshotCommands.takeScreenshotAsync(configuration: configuration)
+    try await screenshot.takeScreenshot(configuration: configuration)
   }
 
   /// Captures the current screen as uncompressed TIFF (default) or PNG, optionally
   /// cropped to `cropRect` (in screen points). Backs the REPL screenshot command.
   public func replScreenshot(cropRect: CGRect?, asPNG: Bool) async throws -> Data {
-    try await screenshotCommands.replScreenshotData(cropRect: cropRect, asPNG: asPNG)
+    try await screenshot.replScreenshotData(cropRect: cropRect, asPNG: asPNG)
   }
 }

@@ -7,9 +7,7 @@
 
 import Foundation
 
-/// Backend-neutral polling helper for the `FBUIAutomation` `wait` verbs. Kept out of either backend
-/// so the accessibility and remote-automation conformers depend on shared code rather than on each
-/// other.
+/// Polling shared by the accessibility and axbridge `wait` implementations.
 enum FBUIAutomationPolling {
 
   /// Polls `probe` until it returns a non-nil value or `timeout` elapses (measured by `clock`),
@@ -35,10 +33,9 @@ enum FBUIAutomationPolling {
 
   /// The whole `wait` verb, for a backend that can answer "is the marker there yet?".
   ///
-  /// Every backend's wait is the same three steps around one backend-specific probe: reject a
-  /// non-marker target, poll until found or the deadline passes, then report a timeout. Only the probe
-  /// differs, so only the probe is written per backend. The real clock and sleep are used here; the
-  /// injectable form above stays for tests that need to drive time deterministically.
+  /// Each wait rejects a non-marker target, polls until found or the deadline passes, then reports a
+  /// timeout. The real clock and sleep are used here; the injectable form above supports deterministic
+  /// tests.
   ///
   /// `probe` returns `true` once the element is present and `nil` while it is not yet — a probe should
   /// treat "not there" as `nil` rather than throwing, and throw only on a genuine failure, which ends
@@ -50,7 +47,7 @@ enum FBUIAutomationPolling {
     pollInterval: TimeInterval,
     probe: (_ value: String, _ key: FBAXSearchableKey, _ depth: UInt) async throws -> Bool?
   ) async throws {
-    guard case let .marker(value, key, depth) = query else {
+    guard case let .marker(value, key, depth, _) = query else {
       throw FBUIAutomationError.markerRequired(backend: backend, operation: "Waiting")
     }
     // A negative interval would trap `Task.sleep`'s unsigned conversion below; reject it loudly rather

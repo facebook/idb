@@ -44,6 +44,7 @@ from idb.common.logging import log_call
 from idb.common.stream import stream_map
 from idb.common.tar import create_tar, drain_untar, generate_tar
 from idb.common.types import (
+    AccessibilityDragOptions,
     AccessibilityInfo,
     AccessibilityInfoOptions,
     AccessibilityMarker,
@@ -86,6 +87,7 @@ from idb.common.types import (
     TestRunInfo,
     VideoFormat,
 )
+from idb.grpc.accessibility import accessibility_info_to_grpc
 from idb.grpc.crash import (
     _to_crash_log,
     _to_crash_log_info_list,
@@ -97,7 +99,6 @@ from idb.grpc.hid import event_to_grpc
 from idb.grpc.idb_grpc import CompanionServiceStub
 from idb.grpc.idb_pb2 import (
     AccessibilityActionRequest,
-    AccessibilityInfoRequest,
     AddMediaRequest,
     ANY as AnySetting,
     ApproveRequest,
@@ -127,6 +128,7 @@ from idb.grpc.idb_pb2 import (
     PullRequest,
     PushRequest,
     RecordRequest,
+    RecordResponse,
     RevokeRequest,
     RmRequest,
     SendNotificationRequest,
@@ -510,30 +512,9 @@ class Client(ClientBase):
         target: AccessibilityTarget | None,
         options: AccessibilityInfoOptions,
     ) -> AccessibilityInfo:
-        if options.format is not None:
-            wire_format = options.format.value
-        elif options.nested:
-            wire_format = AccessibilityInfoRequest.NESTED
-        else:
-            wire_format = AccessibilityInfoRequest.LEGACY
-        request = AccessibilityInfoRequest(
-            format=wire_format,
-            keys=options.keys or [],
-            profile=options.profile,
-            collect_frame_coverage=options.collect_frame_coverage,
+        response = await self.stub.accessibility_info(
+            accessibility_info_to_grpc(target, options)
         )
-        # Unset means "unspecified" on the wire: the companion's historical
-        # default backend, and the only thing an older companion understands.
-        if options.backend is not None:
-            request.backend = options.backend.value
-        if isinstance(target, AccessibilityMarker):
-            request.marker = target.value
-            request.match_key = target.match_key.value
-            request.depth = target.depth
-        elif isinstance(target, AccessibilityPoint):
-            request.point.x = target.x
-            request.point.y = target.y
-        response = await self.stub.accessibility_info(request)
         return AccessibilityInfo(json=response.json)
 
     @log_and_handle_exceptions("accessibility_tap")
@@ -593,6 +574,36 @@ class Client(ClientBase):
         elif isinstance(target, AccessibilityPoint):
             request.point.x = target.x
             request.point.y = target.y
+        await self.stub.accessibility_action(request)
+
+    @log_and_handle_exceptions("accessibility_drag")
+    async def accessibility_drag(
+        self,
+        source: AccessibilityTarget,
+        destination: AccessibilityTarget,
+        options: AccessibilityDragOptions,
+    ) -> None:
+        drag = AccessibilityActionRequest.Drag(
+            press_duration=options.press_duration or 0.0,
+            duration=options.duration or 0.0,
+            release_duration=options.release_duration or 0.0,
+            delta=options.delta or 0.0,
+        )
+        if isinstance(destination, AccessibilityMarker):
+            drag.marker = destination.value
+            drag.destination_match_key = destination.match_key.value
+            drag.destination_depth = destination.depth
+        elif isinstance(destination, AccessibilityPoint):
+            drag.point.x = destination.x
+            drag.point.y = destination.y
+        request = AccessibilityActionRequest(drag=drag)
+        if isinstance(source, AccessibilityMarker):
+            request.marker = source.value
+            request.match_key = source.match_key.value
+            request.depth = source.depth
+        elif isinstance(source, AccessibilityPoint):
+            request.point.x = source.x
+            request.point.y = source.y
         await self.stub.accessibility_action(request)
 
     @log_and_handle_exceptions("add_media")
@@ -1210,35 +1221,63 @@ class Client(ClientBase):
                 await drain_launch_stream(stream, pid_file)
 
     @log_and_handle_exceptions("record")
-    async def record_video(self, stop: asyncio.Event, output_file: str) -> None:
+    async def record_video(
+        self,
+        stop: asyncio.Event,
+        output_file: str,
+        fps: int | None = None,
+        scale_factor: float | None = None,
+        bitrate: float | None = None,
+        key_frame_rate: float | None = None,
+    ) -> None:
         self.logger.info("Starting connection to backend")
+        requested_encode_options = any([fps, scale_factor, bitrate, key_frame_rate])
+        applied: list[RecordResponse.Applied] = []
         async with self.stub.record.open() as stream:
             if self.is_local:
                 self.logger.info(
                     f"Starting video recording to local file {output_file}"
                 )
-                await stream.send_message(
-                    RecordRequest(start=RecordRequest.Start(file_path=output_file))
-                )
+                file_path = output_file
             else:
                 self.logger.info("Starting video recording with response data")
-                await stream.send_message(
-                    # pyre-ignore
-                    RecordRequest(start=RecordRequest.Start(file_path=None))
+                file_path = None
+            await stream.send_message(
+                RecordRequest(
+                    start=RecordRequest.Start(
+                        # pyre-ignore
+                        file_path=file_path,
+                        # Zero is how the wire says "unset", and each has a companion-side default.
+                        fps=fps or 0,
+                        scale_factor=scale_factor or 0,
+                        avg_bitrate=bitrate or 0,
+                        key_frame_rate=key_frame_rate or 0,
+                    )
                 )
+            )
             await stop.wait()
             self.logger.info("Stopping video recording")
             await stream.send_message(RecordRequest(stop=RecordRequest.Stop()))
             await stream.end()
             if self.is_local:
                 self.logger.info("Video saved at output path")
-                await stream.recv_message()
+                # The echo of the encode options, when there is one, precedes the file path.
+                while True:
+                    response = await stream.recv_message()
+                    if response is None or response.WhichOneof("output") != "applied":
+                        break
+                    applied.append(response.applied)
             else:
                 self.logger.info(f"Decompressing gzip to {output_file}")
                 await drain_gzip_decompress(
-                    generate_video_bytes(stream), output_path=output_file
+                    generate_video_bytes(stream, applied), output_path=output_file
                 )
                 self.logger.info(f"Finished decompression to {output_file}")
+        if requested_encode_options and not applied:
+            self.logger.warning(
+                "The companion did not report which encode options it applied, so it predates them "
+                "and recorded at its own defaults"
+            )
 
     @log_and_handle_exceptions("video_stream")
     async def stream_video(

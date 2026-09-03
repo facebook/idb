@@ -6,7 +6,6 @@
  */
 
 import CompanionLib
-import CoreGraphics
 import FBControlCore
 import FBSimulatorControl
 import Foundation
@@ -18,96 +17,16 @@ struct AccessibilityActionMethodHandler {
   let commandExecutor: FBIDBCommandExecutor
 
   func handle(request: Idb_AccessibilityActionRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_AccessibilityActionResponse {
-    switch request.action {
-    case let .tap(tap):
-      try await performTap(request: request, tap: tap)
-    case let .scroll(scroll):
-      try await performScroll(request: request, scroll: scroll)
-    case let .setValue(setValue):
-      try await performSetValue(request: request, setValue: setValue)
-    case .none:
-      throw GRPCStatus(code: .invalidArgument, message: "accessibility_action requires an action")
+    switch try AccessibilityActionRequestTranslation.action(from: request) {
+    case let .tap(query, expectedValue, expectedKey):
+      try await commandExecutor.accessibility_tap(query: query, expectedValue: expectedValue, expectedKey: expectedKey)
+    case let .scroll(query, direction):
+      try await commandExecutor.accessibility_scroll(query: query, direction: direction)
+    case let .setValue(query, value):
+      try await commandExecutor.accessibility_set_value(query: query, value: value)
+    case let .drag(source, destination, options):
+      try await commandExecutor.accessibility_drag(from: source, to: destination, options: options)
     }
     return .init()
-  }
-
-  private func performTap(request: Idb_AccessibilityActionRequest, tap: Idb_AccessibilityActionRequest.Tap) async throws {
-    guard let query = try targetedQuery(from: request) else {
-      throw GRPCStatus(code: .invalidArgument, message: "accessibility_action tap requires a marker or point target")
-    }
-    let expectedValue = tap.checkExpectedValue ? tap.expectedValue : nil
-    try await commandExecutor.accessibility_tap(
-      query: query,
-      expectedValue: expectedValue,
-      expectedKey: try searchableKey(from: tap.expectedKey))
-  }
-
-  private func performScroll(request: Idb_AccessibilityActionRequest, scroll: Idb_AccessibilityActionRequest.Scroll) async throws {
-    let query = try targetedQuery(from: request) ?? .frontmost
-    let direction = try scrollDirection(from: scroll.direction)
-    try await commandExecutor.accessibility_scroll(query: query, direction: direction)
-  }
-
-  private func performSetValue(request: Idb_AccessibilityActionRequest, setValue: Idb_AccessibilityActionRequest.SetValue) async throws {
-    guard let query = try targetedQuery(from: request) else {
-      throw GRPCStatus(code: .invalidArgument, message: "accessibility_action set_value requires a marker or point target")
-    }
-    try await commandExecutor.accessibility_set_value(query: query, value: setValue.value)
-  }
-
-  // Returns nil when no target is set, which callers map to the frontmost app
-  // (or reject, for actions that require an explicit element).
-  private func targetedQuery(from request: Idb_AccessibilityActionRequest) throws -> FBAccessibilityElementQuery? {
-    switch request.target {
-    case let .marker(marker):
-      return .marker(
-        value: marker, key: try searchableKey(from: request.matchKey), depth: UInt(request.depth))
-    case let .point(point):
-      return .point(CGPoint(x: point.x, y: point.y))
-    case .none:
-      return nil
-    }
-  }
-
-  private func scrollDirection(from direction: Idb_AccessibilityActionRequest.Scroll.Direction) throws -> FBAccessibilityScrollDirection {
-    switch direction {
-    case .up:
-      return .up
-    case .down:
-      return .down
-    case .left:
-      return .left
-    case .right:
-      return .right
-    case .visible:
-      return .visible
-    case .UNRECOGNIZED:
-      throw GRPCStatus(code: .invalidArgument, message: "unknown scroll direction")
-    }
-  }
-
-  private func searchableKey(from key: Idb_AccessibilityActionRequest.SearchableKey) throws -> FBAXSearchableKey {
-    switch key {
-    case .label:
-      return .label
-    case .uniqueID:
-      return .uniqueID
-    case .value:
-      return .value
-    case .title:
-      return .title
-    case .role:
-      return .role
-    case .roleDescription:
-      return .roleDescription
-    case .subrole:
-      return .subrole
-    case .help:
-      return .help
-    case .placeholder:
-      return .placeholder
-    case .UNRECOGNIZED:
-      throw GRPCStatus(code: .invalidArgument, message: "unrecognized accessibility key")
-    }
   }
 }

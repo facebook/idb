@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import CompanionDiscovery
+@testable import CompanionDiscovery
 import Testing
 
 /// Locks in the filesystem conventions for each companion version: v1 shares the

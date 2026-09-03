@@ -12,9 +12,12 @@ from argparse import ArgumentParser, Namespace
 from idb.cli import ClientCommand
 from idb.common.types import (
     ACCESSIBILITY_BACKEND_BY_NAME,
+    ACCESSIBILITY_FILTER_BY_NAME,
     ACCESSIBILITY_FORMAT_BY_NAME,
     ACCESSIBILITY_KEY_BY_NAME,
     AccessibilityBackend,
+    AccessibilityDragOptions,
+    AccessibilityElementFilter,
     AccessibilityInfoOptions,
     AccessibilityMarker,
     AccessibilityOutputFormat,
@@ -54,6 +57,67 @@ def _parse_target(
     )
 
 
+def _split_endpoints(tokens: list[str]) -> tuple[list[str], list[str]]:
+    """Split one positional list into a source and a destination, each of which
+    is a `_parse_target` token list: 'x y' coordinates or a single marker.
+
+    Both endpoints are variable-length, so the boundary is found by reading the
+    source greedily: two leading integers are a coordinate pair, anything else
+    is a one-token marker. That is the same rule `_parse_target` applies, so a
+    numeric marker has to be quoted here for the same reason it does in
+    `ui tap`, and `"42 7"` quoted is still one marker.
+
+    Four tokens can only be point-to-point and two can only be marker-to-marker,
+    so the rule decides nothing there; it only picks which end owns the odd
+    token in the three-token case."""
+    if len(tokens) < 2:
+        raise IdbException(
+            "drag-and-drop needs two endpoints: 'x y' coordinates or a marker "
+            "for each of the source and the destination"
+        )
+    if len(tokens) > 4:
+        raise IdbException(
+            f"drag-and-drop takes two endpoints, but {len(tokens)} tokens were "
+            "given; an endpoint is 'x y' coordinates or a single marker, so "
+            "quote a marker that contains spaces"
+        )
+    leading_point = _looks_int(tokens[0]) and _looks_int(tokens[1])
+    if len(tokens) == 2 and leading_point:
+        # `10 20` is one coordinate pair everywhere else in `idb ui`, so reading
+        # it as two numeric markers here would contradict the sibling verbs.
+        # It is far more likely to be a dropped destination than a real pair of
+        # numeric labels, and the caller who did mean the latter has no way to
+        # say so, which is exactly why this is an error rather than a guess.
+        pair = f"{tokens[0]} {tokens[1]}"
+        raise IdbException(
+            f"'{pair}' is a single coordinate pair, and drag-and-drop needs "
+            f"two endpoints; add the destination, as in "
+            f"'drag-and-drop {pair} X Y'"
+        )
+    split = 2 if leading_point else 1
+    return tokens[:split], tokens[split:]
+
+
+def _parse_endpoint(
+    tokens: list[str],
+    name: str,
+    match_key: AccessibilitySearchableKey,
+    depth: int,
+) -> AccessibilityTarget:
+    """`_parse_target` for one end of a drag, naming which end failed. The
+    empty target the other callers accept (the frontmost app) is not a
+    meaningful endpoint, so it is rejected rather than passed on."""
+    try:
+        target = _parse_target(tokens, match_key=match_key, depth=depth)
+    except IdbException as error:
+        raise IdbException(f"drag-and-drop {name}: {error}") from error
+    if target is None:
+        raise IdbException(
+            f"drag-and-drop {name}: expected 'x y' coordinates or a marker"
+        )
+    return target
+
+
 def _add_enricher_args(parser: ArgumentParser) -> None:
     parser.add_argument(
         "--key",
@@ -83,6 +147,58 @@ def _add_enricher_args(parser: ArgumentParser) -> None:
     )
 
 
+def _add_match_args(parser: ArgumentParser) -> None:
+    parser.add_argument(
+        "--match",
+        default=None,
+        help=(
+            "Report only the elements whose --match-key contains this "
+            "substring, instead of every element on the screen. Unlike "
+            "describe MARKER, which resolves to a single element and fails "
+            "when there is none, this reports every element that matches and "
+            "an empty result when none do."
+        ),
+    )
+    parser.add_argument(
+        "--match-key",
+        choices=list(ACCESSIBILITY_KEY_BY_NAME),
+        default="AXLabel",
+        help="Which attribute --match searches (default: AXLabel)",
+    )
+    _add_ignore_case_arg(parser, subject="--match")
+
+
+def _add_ignore_case_arg(parser: ArgumentParser, subject: str) -> None:
+    # One wire field serves both verbs, so the flag is spelled the same on both
+    # commands and only its help names which one it is comparing.
+    parser.add_argument(
+        "--ignore-case",
+        action="store_true",
+        default=False,
+        help=f"Compare {subject} case-insensitively",
+    )
+
+
+def _add_filter_arg(parser: ArgumentParser) -> None:
+    parser.add_argument(
+        "--filter",
+        dest="filter",
+        choices=list(ACCESSIBILITY_FILTER_BY_NAME),
+        default=None,
+        help=(
+            "Which elements the read reports: all of them (the default), or "
+            "only the interactable ones — those the companion reports as "
+            "actionable, or that carry a label, an identifier or an "
+            "actionable role."
+        ),
+    )
+
+
+def _filter(args: Namespace) -> AccessibilityElementFilter | None:
+    name = getattr(args, "filter", None)
+    return ACCESSIBILITY_FILTER_BY_NAME[name] if name else None
+
+
 def _add_backend_arg(parser: ArgumentParser) -> None:
     parser.add_argument(
         "--api",
@@ -90,10 +206,9 @@ def _add_backend_arg(parser: ArgumentParser) -> None:
         default=None,
         help=(
             "Which backend serves the read (default: the companion's standard "
-            "accessibility backend). axbridge spawns a guest reader per read; "
-            "axbridge-persistent keeps that reader alive on the companion for "
-            "fast repeated reads. A companion that predates backend selection "
-            "ignores this and serves the default backend."
+            "accessibility backend). axbridge uses the companion's private, "
+            "persistent guest reader. A companion that predates backend "
+            "selection ignores this and serves the default backend."
         ),
     )
 
@@ -171,6 +286,8 @@ class AccessibilityInfoAllCommand(ClientCommand):
             action="store_true",
             default=False,
         )
+        _add_match_args(parser)
+        _add_filter_arg(parser)
         _add_enricher_args(parser)
         _add_backend_arg(parser)
         _add_format_arg(parser)
@@ -186,6 +303,10 @@ class AccessibilityInfoAllCommand(ClientCommand):
                 format=requested_format,
                 profile=args.profile,
                 collect_frame_coverage=args.collect_frame_coverage,
+                match=args.match,
+                match_key=ACCESSIBILITY_KEY_BY_NAME[args.match_key],
+                ignore_case=args.ignore_case,
+                filter=_filter(args),
             ),
         )
         _warn_if_complete_downgraded(requested_format, info.json)
@@ -262,6 +383,8 @@ class AccessibilityDescribeMarkerCommand(ClientCommand):
             default=False,
             help="Report data in the nested format rather than the flat one",
         )
+        _add_ignore_case_arg(parser, subject="the marker")
+        _add_enricher_args(parser)
         _add_backend_arg(parser)
         _add_format_arg(parser)
 
@@ -275,8 +398,12 @@ class AccessibilityDescribeMarkerCommand(ClientCommand):
             ),
             options=AccessibilityInfoOptions(
                 nested=args.nested,
+                keys=args.keys,
                 backend=_backend(args),
                 format=requested_format,
+                profile=args.profile,
+                collect_frame_coverage=args.collect_frame_coverage,
+                ignore_case=args.ignore_case,
             ),
         )
         _warn_if_complete_downgraded(requested_format, info.json)
@@ -364,3 +491,101 @@ class AccessibilitySetValueCommand(ClientCommand):
         if target is None:
             raise IdbException("set-value requires 'x y' coordinates or a marker")
         await client.accessibility_set_value(target=target, value=args.value)
+
+
+class AccessibilityDragAndDropCommand(ClientCommand):
+    @property
+    def description(self) -> str:
+        return "Press an element, drag it to another, and release"
+
+    @property
+    def name(self) -> str:
+        return "drag-and-drop"
+
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
+        super().add_parser_arguments(parser)
+        parser.add_argument(
+            "endpoints",
+            nargs="+",
+            metavar=("SOURCE", "DESTINATION"),
+            help="Source and destination for the drag, in that order. Specify "
+            "each as either two integer coordinates ('X Y') or one accessibility "
+            "marker. Examples: '10 20 30 40' drags from (10, 20) to (30, 40); "
+            "'Photo Album' drags from marker Photo to marker Album; and 'Photo "
+            "30 40' drags from marker Photo to (30, 40). Quote marker names that "
+            "contain spaces.",
+        )
+        parser.add_argument(
+            "--match-key",
+            choices=list(ACCESSIBILITY_KEY_BY_NAME),
+            default="AXLabel",
+            help="Accessibility key to match the source marker against",
+        )
+        parser.add_argument(
+            "--depth", type=int, default=10, help="Maximum tree depth to search"
+        )
+        parser.add_argument(
+            "--to-match-key",
+            choices=list(ACCESSIBILITY_KEY_BY_NAME),
+            default=None,
+            help="Accessibility key to match the destination marker against "
+            "(default: --match-key)",
+        )
+        parser.add_argument(
+            "--to-depth",
+            type=int,
+            default=None,
+            help="Maximum tree depth to search for the destination (default: --depth)",
+        )
+        parser.add_argument(
+            "--press-duration",
+            type=float,
+            default=None,
+            help="Seconds to hold the source before moving (default: 0.5). This "
+            "hold is what makes the gesture a drag rather than a flick.",
+        )
+        parser.add_argument(
+            "--duration",
+            type=float,
+            default=None,
+            help="Seconds the movement itself takes (default: 0.5)",
+        )
+        parser.add_argument(
+            "--release-duration",
+            type=float,
+            default=None,
+            help="Seconds to hold the destination before releasing (default: 0.1)",
+        )
+        parser.add_argument(
+            "--delta",
+            type=float,
+            default=None,
+            help="Distance in points between interpolated touch points (default: "
+            "10). A delta at or above the distance dragged is rejected: it moves "
+            "in one jump, which reads as a flick.",
+        )
+
+    async def run_with_client(self, args: Namespace, client: Client) -> None:
+        source_tokens, destination_tokens = _split_endpoints(args.endpoints)
+        source = _parse_endpoint(
+            source_tokens,
+            "source",
+            match_key=ACCESSIBILITY_KEY_BY_NAME[args.match_key],
+            depth=args.depth,
+        )
+        destination = _parse_endpoint(
+            destination_tokens,
+            "destination",
+            match_key=ACCESSIBILITY_KEY_BY_NAME[args.to_match_key or args.match_key],
+            depth=args.to_depth if args.to_depth is not None else args.depth,
+        )
+        await client.accessibility_drag(
+            source=source,
+            destination=destination,
+            options=AccessibilityDragOptions(
+                press_duration=args.press_duration,
+                duration=args.duration,
+                release_duration=args.release_duration,
+                delta=args.delta,
+            ),
+        )

@@ -168,7 +168,7 @@ public final class FBMacDevice: NSObject, FBiOSTarget {
 
   // MARK: - Public
 
-  public func restorePrimaryDeviceState() -> FBFuture<NSNull> {
+  func restorePrimaryDeviceState() -> FBFuture<NSNull> {
     var queuedFutures: [FBFuture<AnyObject>] = []
 
     var killFutures: [FBFuture<AnyObject>] = []
@@ -200,11 +200,13 @@ public final class FBMacDevice: NSObject, FBiOSTarget {
   // MARK: - Paths
 
   public var runtimeRootDirectory: String {
-    platformRootDirectory
+    get async { await platformRootDirectory }
   }
 
   public var platformRootDirectory: String {
-    (FBXcodeConfiguration.developerDirectory as NSString).appendingPathComponent("Platforms/MacOSX.platform")
+    get async {
+      (FBXcodeConfiguration.developerDirectory as NSString).appendingPathComponent("Platforms/MacOSX.platform")
+    }
   }
 
   public var xctestPath: String {
@@ -230,7 +232,7 @@ public final class FBMacDevice: NSObject, FBiOSTarget {
 
   // MARK: - Transport
 
-  public func transportForTestManagerService() -> FBFutureContext<NSNumber> {
+  func transportForTestManagerService() -> FBFutureContext<NSNumber> {
     let logger = self.logger
     let connection = NSXPCConnection(machServiceName: "com.apple.testmanagerd.control", options: [])
     let interface = NSXPCInterface(with: XCTestManager_XPCControl.self)
@@ -290,7 +292,7 @@ public final class FBMacDevice: NSObject, FBiOSTarget {
 
   // MARK: - Not supported
 
-  public var consoleString: String {
+  var consoleString: String {
     assertionFailure("consoleString is not yet supported")
     return ""
   }

@@ -35,9 +35,20 @@ extension FBDeviceCrashLogError: LocalizedError {
   }
 }
 
-public class FBDeviceCrashLogCommands {
+public final class FBDeviceCrashLogCommands {
   private weak var device: FBDevice?
   private let store: FBCrashLogStore
+  /// The AFC table the crash report file service is read through, when a caller supplies one.
+  ///
+  /// Held optional and resolved at the point of use rather than defaulted in the initializer:
+  /// `FBAFCConnection.defaultCalls` dlopens MobileDevice on first evaluation, and constructing
+  /// these commands must not force that. Reading it eagerly aborts the process whenever the
+  /// private frameworks have not been loaded yet.
+  private let injectedAFCCalls: AFCCalls?
+
+  private var afcCalls: AFCCalls {
+    injectedAFCCalls ?? FBAFCConnection.defaultCalls
+  }
   private var hasPerformedInitialIngestion: Bool = false
 
   // MARK: - Initializers
@@ -48,53 +59,54 @@ public class FBDeviceCrashLogCommands {
     return FBDeviceCrashLogCommands(device: device, store: store)
   }
 
-  init(device: FBDevice, store: FBCrashLogStore) {
+  init(device: FBDevice, store: FBCrashLogStore, afcCalls: AFCCalls? = nil) {
     self.device = device
     self.store = store
+    self.injectedAFCCalls = afcCalls
   }
 
   // MARK: - Notify
 
-  fileprivate func notifyOfCrashAsync(matching predicate: NSPredicate) async throws -> FBCrashLogInfo {
+  fileprivate func notifyOfCrash(matching predicate: NSPredicate) async throws -> FBCrashLogInfo {
     // Start listening for the next matching crash log first, then kick off ingestion as a
-    // fire-and-forget background job - the same task ordering the future-based predecessor
-    // established.
+    // fire-and-forget background job: a log ingested before the listener is installed is not
+    // reported.
     // The listener rides fbFutureFromAsync rather than Task: region isolation rejects
     // sending the non-Sendable predicate into a Task closure.
     let next = fbFutureFromAsync { [store] in
       try await store.nextCrashLog(forMatchingPredicate: predicate)
     }
     _ = fbFutureFromAsync { [self] in
-      try await ingestAllCrashLogsAsync(useCache: false) as NSArray
+      try await ingestAllCrashLogs(useCache: false) as NSArray
     }
     return try await bridgeFBFuture(next)
   }
 
   // MARK: - Async
 
-  fileprivate func crashesAsync(_ predicate: NSPredicate, useCache: Bool) async throws -> [FBCrashLogInfo] {
+  fileprivate func crashes(_ predicate: NSPredicate, useCache: Bool) async throws -> [FBCrashLogInfo] {
     guard device != nil else {
       throw FBDeviceNilError.deviceNil
     }
-    _ = try await ingestAllCrashLogsAsync(useCache: useCache)
+    _ = try await ingestAllCrashLogs(useCache: useCache)
     return store.ingestedCrashLogs(matchingPredicate: predicate)
   }
 
-  fileprivate func pruneCrashesAsync(_ predicate: NSPredicate) async throws -> [FBCrashLogInfo] {
+  fileprivate func pruneCrashes(_ predicate: NSPredicate) async throws -> [FBCrashLogInfo] {
     guard let device else {
       throw FBDeviceNilError.deviceNil
     }
     let logger = device.logger.withName("crash_remove")
-    _ = try await ingestAllCrashLogsAsync(useCache: true)
+    _ = try await ingestAllCrashLogs(useCache: true)
     let pruned = store.pruneCrashLogs(matchingPredicate: predicate)
     logger.log("Pruned \(FBCollectionInformation.oneLineDescription(from: pruned.map(\.name))) logs from local cache")
-    return try await removeCrashLogsFromDeviceAsync(pruned, logger: logger)
+    return try await removeCrashLogsFromDevice(pruned, logger: logger)
   }
 
   // MARK: - Private
 
   @discardableResult
-  private func ingestAllCrashLogsAsync(useCache: Bool) async throws -> [FBCrashLogInfo] {
+  private func ingestAllCrashLogs(useCache: Bool) async throws -> [FBCrashLogInfo] {
     if hasPerformedInitialIngestion && useCache {
       return []
     }
@@ -102,7 +114,7 @@ public class FBDeviceCrashLogCommands {
       throw FBDeviceNilError.deviceNil
     }
     let logger = device.logger
-    _ = try await moveCrashReportsAsync()
+    _ = try await moveCrashReports()
     return try await withCrashReportFileConnection { afc in
       if !self.hasPerformedInitialIngestion {
         self.store.ingestAllExistingInDirectory()
@@ -122,7 +134,7 @@ public class FBDeviceCrashLogCommands {
     }
   }
 
-  private func removeCrashLogsFromDeviceAsync(_ crashesToRemove: [FBCrashLogInfo], logger: (any FBControlCoreLogger)?) async throws -> [FBCrashLogInfo] {
+  private func removeCrashLogsFromDevice(_ crashesToRemove: [FBCrashLogInfo], logger: (any FBControlCoreLogger)?) async throws -> [FBCrashLogInfo] {
     guard device != nil else {
       throw FBDeviceNilError.deviceNil
     }
@@ -154,7 +166,7 @@ public class FBDeviceCrashLogCommands {
     return crash
   }
 
-  private func moveCrashReportsAsync() async throws -> String {
+  private func moveCrashReports() async throws -> String {
     guard let device else {
       throw FBDeviceNilError.deviceNil
     }
@@ -179,7 +191,7 @@ public class FBDeviceCrashLogCommands {
     guard let device else {
       throw FBDeviceNilError.deviceNil
     }
-    return try await device.withAFCConnection(CrashReportCopyService, body)
+    return try await device.withAFCConnection(CrashReportCopyService, calls: afcCalls, body)
   }
 }
 
@@ -188,15 +200,15 @@ public class FBDeviceCrashLogCommands {
 extension FBDevice: CrashLogCommands {
 
   public func crashes(matching predicate: NSPredicate, useCache: Bool) async throws -> [FBCrashLogInfo] {
-    try await crashLogCommands.crashesAsync(predicate, useCache: useCache)
+    try await crashLog.crashes(predicate, useCache: useCache)
   }
 
   public func notifyOfCrash(matching predicate: NSPredicate) async throws -> FBCrashLogInfo {
-    try await crashLogCommands.notifyOfCrashAsync(matching: predicate)
+    try await crashLog.notifyOfCrash(matching: predicate)
   }
 
   public func pruneCrashes(matching predicate: NSPredicate) async throws -> [FBCrashLogInfo] {
-    try await crashLogCommands.pruneCrashesAsync(predicate)
+    try await crashLog.pruneCrashes(predicate)
   }
 
   public func withCrashLogFiles<R>(body: (any AsyncFileContainer) async throws -> R) async throws -> R {

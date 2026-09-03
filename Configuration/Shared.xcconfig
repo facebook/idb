@@ -24,7 +24,6 @@ CLANG_WARN_STRICT_PROTOTYPES = YES
 CLANG_WARN_SUSPICIOUS_IMPLICIT_CONVERSION = YES
 CLANG_WARN_SUSPICIOUS_MOVE = YES
 CLANG_WARN_UNREACHABLE_CODE = YES
-GCC_OPTIMIZATION_LEVEL = 0
 GCC_TREAT_IMPLICIT_FUNCTION_DECLARATIONS_AS_ERRORS = YES
 GCC_TREAT_INCOMPATIBLE_POINTER_TYPE_WARNINGS_AS_ERRORS = YES
 GCC_TREAT_WARNINGS_AS_ERRORS = YES
@@ -50,6 +49,13 @@ GCC_WARN_UNUSED_LABEL = YES
 GCC_WARN_UNUSED_VALUE = YES
 GCC_WARN_UNUSED_VARIABLE = YES
 
+// NOTE: Shared is configuration-neutral by design. Optimization level,
+// stripping, private-extern visibility, assertions, and testability differ
+// between Debug and Release and live in Debug.xcconfig / Release.xcconfig
+// (each `#include`s this file). Do not add per-configuration values here: the
+// target-level xcconfigs also include this file, and anything set here would
+// shadow the project-level Release config.
+
 // SDK & OS Versions
 MACOSX_DEPLOYMENT_TARGET = 15.0
 SDKROOT = macosx
@@ -66,16 +72,12 @@ CLANG_ENABLE_OBJC_ARC = YES
 GCC_C_LANGUAGE_STANDARD = gnu99
 GCC_DYNAMIC_NO_PIC = NO
 GCC_NO_COMMON_BLOCKS = YES
-GCC_SYMBOLS_PRIVATE_EXTERN = NO
 
 // Preprocessor
-ENABLE_NS_ASSERTIONS = YES
 ENABLE_STRICT_OBJC_MSGSEND = YES
-ENABLE_TESTABILITY = YES
 ENABLE_USER_SCRIPT_SANDBOXING = NO
 
 // Deployment
-COPY_PHASE_STRIP = NO
 SKIP_INSTALL = YES
 
 // Code Signing - use ad-hoc signing for local development

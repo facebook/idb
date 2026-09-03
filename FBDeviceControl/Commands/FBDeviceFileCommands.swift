@@ -62,7 +62,7 @@ extension FBDeviceFileContainerError: LocalizedError {
 
 // MARK: - FBDeviceFileContainer
 
-public class FBDeviceFileContainer: AsyncFileContainer {
+public final class FBDeviceFileContainer: AsyncFileContainer {
   private let queue: DispatchQueue
   private let connectionBox: AFCConnectionBox
 
@@ -192,11 +192,11 @@ private class FBDeviceFileContainer_Wallpaper: AsyncFileContainer {
 
   func copy(fromHost sourcePath: String, toContainer destinationPath: String) async throws {
     let data = try Data(contentsOf: URL(fileURLWithPath: sourcePath))
-    try await bridgeFBFutureVoid(managedConfig.changeWallpaper(withName: (destinationPath as NSString).lastPathComponent, data: data))
+    try await managedConfig.changeWallpaper(name: (destinationPath as NSString).lastPathComponent, data: data)
   }
 
   func copy(fromContainer sourcePath: String, toHost destinationPath: String) async throws -> String {
-    let imageData = try await bridgeFBFuture(springboard.wallpaperImageData(forKind: (sourcePath as NSString).lastPathComponent)) as Data
+    let imageData = try await springboard.wallpaperImageData(forKind: (sourcePath as NSString).lastPathComponent)
     try imageData.write(to: URL(fileURLWithPath: destinationPath), options: .atomic)
     return destinationPath
   }
@@ -235,7 +235,7 @@ private class FBDeviceFileContainer_MDMProfiles: AsyncFileContainer {
 
   func copy(fromHost sourcePath: String, toContainer destinationPath: String) async throws {
     let data = try Data(contentsOf: URL(fileURLWithPath: sourcePath))
-    _ = try await bridgeFBFuture(managedConfig.installProfile(data))
+    _ = try await managedConfig.installProfile(data)
   }
 
   func copy(fromContainer sourcePath: String, toHost destinationPath: String) async throws -> String {
@@ -255,11 +255,11 @@ private class FBDeviceFileContainer_MDMProfiles: AsyncFileContainer {
   }
 
   func remove(_ path: String) async throws {
-    try await bridgeFBFutureVoid(managedConfig.removeProfile(path))
+    try await managedConfig.removeProfile(path)
   }
 
   func contents(ofDirectory path: String) async throws -> [String] {
-    try await bridgeFBFutureArray(managedConfig.getProfileList()) as [String]
+    try await managedConfig.getProfileList()
   }
 }
 
@@ -307,7 +307,7 @@ private class FBDeviceFileCommands_DiskImages: AsyncFileContainer {
     if !path.hasPrefix(MountRootPath) {
       throw FBDeviceFileContainerError.removeOutsideMounts(path: path)
     }
-    let mountedImages = try await mountedDiskImagesAsync()
+    let mountedImages = try await mountedDiskImages()
     guard let image = mountedImages[path] else {
       throw FBDeviceFileContainerError.notAMountedImage(path: path, available: Array(mountedImages.keys))
     }
@@ -315,7 +315,7 @@ private class FBDeviceFileCommands_DiskImages: AsyncFileContainer {
   }
 
   func contents(ofDirectory path: String) async throws -> [String] {
-    let diskImagePaths = try await allDiskImagePathsAsync()
+    let diskImagePaths = try await allDiskImagePaths()
     return FBDeviceFileCommands_DiskImages.traverseAndDescendPaths(diskImagePaths, path: path)
   }
 
@@ -330,7 +330,7 @@ private class FBDeviceFileCommands_DiskImages: AsyncFileContainer {
     return mapping
   }
 
-  private func mountedDiskImagesAsync() async throws -> [String: FBDeveloperDiskImage] {
+  private func mountedDiskImages() async throws -> [String: FBDeveloperDiskImage] {
     let mountedImages = try await commands.mountedDiskImages()
     var imagesByPath: [String: FBDeveloperDiskImage] = [:]
     for image in mountedImages {
@@ -340,8 +340,8 @@ private class FBDeviceFileCommands_DiskImages: AsyncFileContainer {
     return imagesByPath
   }
 
-  private func allDiskImagePathsAsync() async throws -> [String] {
-    let mountedDiskImages = try await mountedDiskImagesAsync()
+  private func allDiskImagePaths() async throws -> [String] {
+    let mountedDiskImages = try await mountedDiskImages()
     var paths: [String] = []
     let sortedKeys = self.mountableDiskImagesByPath.sorted { pair1, pair2 in
       let v1 = pair1.value.version
@@ -426,7 +426,7 @@ private class FBDeviceFileCommands_Symbols: AsyncFileContainer {
 
 // MARK: - FBDeviceFileCommands
 
-public class FBDeviceFileCommands {
+public final class FBDeviceFileCommands {
   private weak var device: FBDevice?
   private let afcCalls: AFCCalls
 
@@ -497,13 +497,13 @@ extension FBDevice: FileCommands {
     _ bundleID: String,
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await withFileContainer(fileCommands.fileCommandsForContainerApplication(bundleID), body: body)
+    try await withFileContainer(file.fileCommandsForContainerApplication(bundleID), body: body)
   }
 
   public func withFileCommandsForAuxillary<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await body(fileCommands.fileCommandsForAuxillary())
+    try await body(file.fileCommandsForAuxillary())
   }
 
   public func withFileCommandsForApplicationContainers<R>(
@@ -536,7 +536,7 @@ extension FBDevice: FileCommands {
   public func withFileCommandsForProvisioningProfiles<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await body(fileCommands.fileCommandsForProvisioningProfiles())
+    try await body(file.fileCommandsForProvisioningProfiles())
   }
 
   public func withFileCommandsForMDMProfiles<R>(
@@ -573,13 +573,13 @@ extension FBDevice: FileCommands {
   public func withFileCommandsForDiskImages<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await body(fileCommands.fileCommandsForDiskImages())
+    try await body(file.fileCommandsForDiskImages())
   }
 
   public func withFileCommandsForSymbols<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await body(fileCommands.fileCommandsForSymbols())
+    try await body(file.fileCommandsForSymbols())
   }
 
   /// Scopes the file container to `body`, exposing it through the

@@ -10,7 +10,7 @@ import Foundation
 
 // MARK: - FBDeviceLogOperation
 
-public class FBDeviceLogOperation: LogOperation {
+public final class FBDeviceLogOperation: LogOperation {
   public let consumer: any FBDataConsumer
   private let readCompleted: FBFuture<NSNull>
   private let serviceCompleted: FBMutableFuture<NSNull>
@@ -40,7 +40,7 @@ public class FBDeviceLogOperation: LogOperation {
 
 // MARK: - FBDeviceLogCommands
 
-public class FBDeviceLogCommands {
+public final class FBDeviceLogCommands {
   private weak var device: FBDevice?
 
   // MARK: - Initializers
@@ -92,6 +92,6 @@ public class FBDeviceLogCommands {
 extension FBDevice: LogCommands {
 
   public func tailLog(arguments: [String], consumer: any FBDataConsumer) async throws -> any LogOperation {
-    return try await bridgeFBFuture(logCommands.tailLog(arguments, consumer: consumer))
+    return try await bridgeFBFuture(log.tailLog(arguments, consumer: consumer))
   }
 }

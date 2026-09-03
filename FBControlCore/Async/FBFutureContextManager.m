@@ -89,8 +89,7 @@
           contextualTeardown:^(id _, FBFutureState __) {
             NSUInteger remainingConsumers = [self popPending:uuid];
             if (remainingConsumers == 0) {
-              FBFuture<id> *context = self.context;
-              NSAssert(context, @"Expected a context preserved");
+              NSAssert(self.context, @"Expected a context preserved");
               NSNumber *poolTimeout = self.delegate.contextPoolTimeout;
               if (poolTimeout) {
                 NSTimeInterval timeout = poolTimeout.doubleValue;

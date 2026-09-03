@@ -46,7 +46,7 @@ static NSTimeInterval const DaemonSessionReadyTimeout = 60; // Time for `_IDE_in
 @interface FBTestBundleDTXConnection () <XCTestManager_IDEInterface, XCTMessagingChannel_DaemonToIDE, XCTMessagingChannel_RunnerToIDE>
 
 @property (nonatomic, readonly, strong) FBTestManagerContext *context;
-@property (nonatomic, readonly, strong) id<FBiOSTarget> target;
+@property (nonatomic, readonly, strong) dispatch_queue_t workQueue;
 @property (nonatomic, readonly, assign) int testManagerdSocket;
 @property (nonatomic, readonly, strong) id<XCTestManager_IDEInterface, XCTMessagingChannel_RunnerToIDE, NSObject> interface;
 @property (nonatomic, readonly, strong) dispatch_queue_t requestQueue;
@@ -87,7 +87,7 @@ static NSTimeInterval const DaemonSessionReadyTimeout = 60; // Time for `_IDE_in
   return _clientProcessDisplayPath;
 }
 
-- (instancetype)initWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target socket:(int)socket interface:(id)interface requestQueue:(dispatch_queue_t)requestQueue logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithContext:(FBTestManagerContext *)context workQueue:(dispatch_queue_t)workQueue socket:(int)socket interface:(id)interface requestQueue:(dispatch_queue_t)requestQueue logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -95,7 +95,7 @@ static NSTimeInterval const DaemonSessionReadyTimeout = 60; // Time for `_IDE_in
   }
 
   _context = context;
-  _target = target;
+  _workQueue = workQueue;
   _testManagerdSocket = socket;
   _interface = interface;
   _requestQueue = requestQueue;
@@ -216,7 +216,7 @@ static NSTimeInterval const DaemonSessionReadyTimeout = 60; // Time for `_IDE_in
    peerInterface:@protocol(XCTMessagingChannel_IDEToRunner)
    handler:^(DTXProxyChannel *channel) {
      [self.logger log:@"Got proxy channel request from test bundle"];
-     [channel setExportedObject:self queue:self.target.workQueue];
+     [channel setExportedObject:self queue:self.workQueue];
      id<XCTestDriverInterface> interface = channel.remoteObjectProxy;
      [future resolveWithResult:interface];
    }];
@@ -233,7 +233,7 @@ static NSTimeInterval const DaemonSessionReadyTimeout = 60; // Time for `_IDE_in
                                    xct_makeProxyChannelWithRemoteInterface:@protocol(XCTMessagingChannel_IDEToDaemon)
                                    exportedInterface:@protocol(XCTMessagingChannel_DaemonToIDE)];
   [proxyChannel xct_setAllowedClassesForTestingProtocols];
-  [proxyChannel setExportedObject:self queue:self.target.workQueue];
+  [proxyChannel setExportedObject:self queue:self.workQueue];
   id<XCTestManager_DaemonConnectionInterface> remoteProxy = (id<XCTestManager_DaemonConnectionInterface>) proxyChannel.remoteObjectProxy;
 
   [self.logger log:[NSString stringWithFormat:@"Starting test session with ID %@", self.context.sessionIdentifier.UUIDString]];

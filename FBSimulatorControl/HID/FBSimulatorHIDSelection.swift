@@ -11,7 +11,7 @@ import Foundation
 // MARK: - Transport selection policy
 
 /// Decides which HID transport a caller that did not request one gets, and whether the legacy Indigo
-/// path is functional at all.
+/// keyboard path is functional.
 ///
 /// A namespace of pure functions over injected host facts rather than methods on `FBSimulator`, so
 /// the policy is unit-testable without a booted simulator. `FBSimulator` supplies the real facts in
@@ -45,11 +45,11 @@ enum FBSimulatorHIDTransportSelection {
     productFamily != .familyAppleTV
   }
 
-  /// Whether the guest has handed its legacy HID services over to `dtuhidd`.
+  /// Whether the guest has handed its legacy keyboard service over to `dtuhidd`.
   ///
   /// A property of the CoreSimulator version alone: from 1155.4 the handover happens for the lifetime
   /// of the boot, whether or not the daemon is resident at the moment it is asked.
-  static func isLegacyHIDSuppressed(coreSimulatorVersion: String?) -> Bool {
+  static func isLegacyKeyboardSuppressed(coreSimulatorVersion: String?) -> Bool {
     shipsDTUHID(coreSimulatorVersion: coreSimulatorVersion)
   }
 
@@ -68,19 +68,18 @@ enum FBSimulatorHIDTransportSelection {
   }
 }
 
-// MARK: - Legacy HID suppression
+// MARK: - Legacy keyboard suppression
 
 extension FBSimulator {
 
-  /// Whether this simulator's guest has handed its legacy HID services over to `dtuhidd`.
+  /// Whether this simulator's guest has handed its legacy keyboard service over to `dtuhidd`.
   ///
-  /// On Xcode 27 (CoreSimulator-1155.4) and later the guest's SimulatorHID disconnects the legacy
-  /// services in favour of `dtuhidd`, so legacy Indigo events are delivered byte-correctly and then
-  /// dropped. Nothing in the guest has to be running for that to be true, and the authoritative guest
-  /// notify state `com.apple.coredevice.dtuhidd.active` is not host-bridged, so this follows the
-  /// CoreSimulator version rather than trying to observe the guest.
-  var isLegacyHIDSuppressed: Bool {
-    FBSimulatorHIDTransportSelection.isLegacyHIDSuppressed(
+  /// On Xcode 27 (CoreSimulator-1155.4) and later Indigo keyboard events are delivered byte-correctly
+  /// and then dropped. Indigo button events remain functional. The authoritative guest notify state
+  /// `com.apple.coredevice.dtuhidd.active` is not host-bridged, so this follows the CoreSimulator
+  /// version rather than trying to observe the guest.
+  var isLegacyKeyboardSuppressed: Bool {
+    FBSimulatorHIDTransportSelection.isLegacyKeyboardSuppressed(
       coreSimulatorVersion: FBSimulatorControlFrameworkLoader.loadedCoreSimulatorVersion)
   }
 

@@ -10,9 +10,7 @@ import FBControlCore
 import Foundation
 import XCTest
 
-/// Coverage for the axbridge read path that does not require a live simulator: the guest response
-/// envelope parsing (`FBAXTreeRead`) and the tree -> shared-serializer integration that makes
-/// the axbridge output identical to the testmanagerd backend (both feed `describeAllElements`).
+/// Coverage for the axbridge read path that does not require a live simulator.
 final class FBAXBridgeReadsTests: XCTestCase {
 
   private func envelope(_ object: [String: Any]) throws -> Data {
@@ -84,9 +82,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
   }
 
   func testApplicationUnavailableErrorKindThrowsTypedCase() throws {
-    // A failure tagged `application_unavailable` becomes the typed `FBAXBridgeError.applicationUnavailable`
-    // (carrying the pid), which the conformer re-raises as the backend-neutral
-    // `FBUIAutomationError.applicationUnavailable` — matching what the remote backend throws for a dead pid.
+    // The guest error becomes the backend-neutral error shared with the accessibility backend.
     let data = try envelope(["ok": false, "error": "no application element for pid 7", "error_kind": "application_unavailable"])
     XCTAssertThrowsError(try FBAXTreeRead(wholeTreeResponse: data, pid: 7)) { error in
       guard case let FBAXBridgeError.applicationUnavailable(pid) = error else {
@@ -240,7 +236,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
   // its backend, so "not found" has to be catchable without knowing. One catch clause must handle
   // every backend, and the message must still say which one spoke.
   func testOneCatchClauseHandlesEveryBackend() {
-    let backends: [FBUIAutomationBackend] = [.accessibility, .remoteAutomation, .axBridge(persistence: .oneShot, frontmostMethod: .centerPoint, automationMode: true), .axBridge(persistence: .shared, frontmostMethod: .centerPoint, automationMode: true)]
+    let backends: [FBUIAutomationBackend] = [.accessibility, .axBridge(persistence: .oneShot, frontmostMethod: .centerPoint, automationMode: true), .axBridge(persistence: .shared, frontmostMethod: .centerPoint, automationMode: true)]
     for backend in backends {
       let thrown: Error = FBUIAutomationError.elementNotFound(backend: backend, key: "AXLabel", value: "General")
       guard case let FBUIAutomationError.elementNotFound(caught, key, value) = thrown else {
@@ -356,13 +352,6 @@ final class FBAXBridgeReadsTests: XCTestCase {
     XCTAssertEqual(descriptions.count, cases.count, "no two failure modes may share a message")
   }
 
-  // The remote backend's read failure genuinely is about the flag — that session documents
-  // `ApplicationAccessibilityEnabled=1` as a precondition — so it carries the guidance.
-  func testTheRemoteBackendTreeFailureCarriesTheAccessibilityServerGuidance() {
-    let error = FBRemoteAutomationError.treeUnavailable(x: 201, y: 437)
-    XCTAssertTrue(error.description.contains("ApplicationAccessibilityEnabled"), "got: \(error.description)")
-  }
-
   // The failures that are not about the flag must not carry its guidance. `frontmostUnresolved` states
   // the guest's own reason; a genuinely missing accessibility server is tagged `application_unavailable`
   // by the guest and arrives as the case that does carry guidance.
@@ -400,14 +389,11 @@ final class FBAXBridgeReadsTests: XCTestCase {
     XCTAssertTrue(description.contains("On") && description.contains("Off"), "message should name both values: \(description)")
   }
 
-  // MARK: - The lane's automation-mode default
+  // MARK: - Automation-mode default
 
-  // Pinned because selecting the lane by name is how almost every caller reaches it, so this is the
-  // value that decides what a device does in practice. It is a payload rather than a constant, so this
-  // test keeps a change to the default deliberate.
-  func testSelectingTheAxbridgeLaneByNameAssertsAutomationMode() {
-    for name in [FBUIAutomationBackendName.axBridge, .axBridgePersistent] {
-      guard case let .axBridge(_, _, automationMode) = FBUIAutomationBackend(name) else {
+  func testSelectingAxbridgeByResolvedNameAssertsAutomationMode() {
+    for name in [FBUIAutomationBackendName.axBridgeOneShot, .axBridgePersistent] {
+      guard case let .axBridge(_, _, automationMode) = FBUIAutomationBackend(resolvedName: name) else {
         return XCTFail("\(name) did not select an axbridge backend")
       }
       XCTAssertEqual(automationMode, true, "selecting \(name) by name asserts automation mode")
@@ -417,8 +403,8 @@ final class FBAXBridgeReadsTests: XCTestCase {
   // The tri-state has to survive the enum, not just the wire. `false` is what reproduces the child-cache
   // fault and what measures the mode's cost, and it must not collapse into "did not ask".
   func testTheAxbridgeBackendCarriesAnExplicitlyDisabledAutomationMode() {
-    guard case let .axBridge(_, _, off) = FBUIAutomationBackend(.axBridge, automationMode: false),
-      case let .axBridge(_, _, unset) = FBUIAutomationBackend(.axBridge, automationMode: nil)
+    guard case let .axBridge(_, _, off) = FBUIAutomationBackend(resolvedName: .axBridgeOneShot, automationMode: false),
+      case let .axBridge(_, _, unset) = FBUIAutomationBackend(resolvedName: .axBridgeOneShot, automationMode: nil)
     else {
       return XCTFail("expected axbridge backends")
     }
@@ -555,6 +541,76 @@ final class FBAXBridgeReadsTests: XCTestCase {
     let centre = FBAXTreeWalk.frameCenter(inElements: elements, markerValue: "General", key: .label)
     XCTAssertEqual(centre?.x, 60)
     XCTAssertEqual(centre?.y, 45)
+  }
+
+  // MARK: - Marker case sensitivity is opt-in, and reads only
+
+  private func settingsElements() -> [FBAccessibilityDocumentElement] {
+    FBAXTreeWalk.describeAllElements(
+      fromTree: [
+        FBAXWire.Node.label.rawValue: "General Settings",
+        FBAXWire.Node.frame.rawValue: CGRectCreateDictionaryRepresentation(CGRect(x: 10, y: 20, width: 100, height: 50)) as NSDictionary,
+        FBAXWire.Node.children.rawValue: [[String: Any]](),
+      ],
+      keys: FBAXKeys.defaultSet, nestedFormat: false, pid: 1
+    )
+  }
+
+  func testMarkerIsCaseSensitiveUnlessAsked() throws {
+    let elements = settingsElements()
+    XCTAssertNil(
+      FBAXTreeWalk.matchingElement(inElements: elements, markerValue: "general", key: .label),
+      "the default must stay the historical case-sensitive match"
+    )
+    guard
+      let label = FBAXTreeWalk.matchingElement(
+        inElements: elements, markerValue: "general", key: .label, ignoresCase: true
+      )?.label ?? nil
+    else {
+      return XCTFail("--ignore-case must resolve a marker that differs only in case")
+    }
+    XCTAssertEqual(label, "General Settings")
+  }
+
+  func testMarkerWritesStayCaseSensitive() {
+    // `tap`/`scroll`/`set-value`/`wait` resolve through resolveMarker, which takes no case option: a
+    // write that resolved "ok" to a *Cancel* button labelled "OK" would act on an element the caller
+    // did not name, and unlike a read it cannot be undone by reading again.
+    let elements = settingsElements()
+    XCTAssertEqual(
+      FBAXTreeWalk.resolveMarker(inElements: elements, markerValue: "general", key: .label),
+      .notFound
+    )
+    XCTAssertNil(FBAXTreeWalk.frameCenter(inElements: elements, markerValue: "general", key: .label))
+  }
+
+  func testAMarkerWriteWithIgnoreCaseResolvesCaseInsensitively() async throws {
+    let target = try await Self.framedReader().writeTarget(
+      for: .marker(value: "general", key: .label, depth: 10, ignoresCase: true),
+      operation: "A tap"
+    )
+    XCTAssertEqual(target.point, CGPoint(x: Self.childRect.midX, y: Self.childRect.midY))
+    XCTAssertEqual(target.assertion, FBAXBridgeWriteAssertion(key: .label, value: "General Settings"))
+  }
+
+  func testResolveMarkerWithIgnoreCaseMatchesLikeTheDescribeMatcher() throws {
+    let elements = settingsElements()
+    XCTAssertEqual(
+      FBAXTreeWalk.resolveMarker(inElements: elements, markerValue: "general", key: .label, ignoresCase: true),
+      .resolved(x: 60, y: 45)
+    )
+    XCTAssertEqual(
+      FBAXTreeWalk.frameCenter(inElements: elements, markerValue: "general", key: .label, ignoresCase: true)?.x,
+      60
+    )
+  }
+
+  func testEmptyMarkerKeepsMatchingTheFirstElementCarryingTheKey() {
+    // Every value contains the empty string, so an empty marker has always resolved to the first
+    // element with the searched key at all. `FBAccessibilityMatch` refuses to represent that, and the
+    // matcher must not let the refusal turn into a silent "no match".
+    let label = FBAXTreeWalk.matchingElement(inElements: settingsElements(), markerValue: "", key: .label)?.label ?? nil
+    XCTAssertEqual(label, "General Settings")
   }
 
   // MARK: - A marker matches by its searched key regardless of the requested key set
@@ -755,10 +811,8 @@ final class FBAXBridgeReadsTests: XCTestCase {
   // MARK: - Tree -> shared serializer integration
 
   func testGuestTreeFeedsSharedSerializerSchema() throws {
-    // A guest envelope carrying a small XC_kAXXC* tree round-trips through the same path the
-    // testmanagerd backend uses (`FBAXTreeRead(wholeTreeResponse:)` -> `describeAllElements`), producing the
-    // shared schema: the child is a Button (automationType 9) with its identifier, proving the
-    // axbridge output is byte-compatible with the shared serializer rather than a bespoke shape.
+    // The child is a Button (automationType 9) with its identifier, proving the guest tree uses the
+    // shared serializer rather than a bespoke output shape.
     let tree: [String: Any] = [
       FBAXWire.Node.label.rawValue: "root",
       FBAXWire.Node.children.rawValue: [
@@ -790,11 +844,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
 
   // MARK: - Shared `describeTree` composition
 
-  // `describeTree` is the `FBAXTreeReader` extension both XCUI-grade backends (axbridge and
-  // testmanagerd) inherit as their `describe`, so what it composes — which query shape yields an array
-  // versus a bare object, how the modal rides out, when the truncation warning fires, and which keys a
-  // marker is serialized with — is backend-agnostic behaviour that neither backend's own tests cover.
-  // A stub conformer supplies a canned read so the composition is observable without a simulator.
+  // A stub reader makes the `describeTree` composition observable without a simulator.
 
   private static func twoNodeTree() -> [String: Any] {
     [
@@ -814,7 +864,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
 
   func testDescribeTreeReturnsAnArrayForWholeTreeQueries() async throws {
     for query in [FBAccessibilityElementQuery.frontmost, .application(pid: 99)] {
-      let reader = StubTreeReader(read: Self.stubRead())
+      let reader = StubAXBridgeTreeReader(read: Self.stubRead())
       let response = try await reader.describeTree(query, options: FBAccessibilityRequestOptions())
       guard case let .tree(elements) = response.elements else {
         return XCTFail("\(query) must serialize to an array, got \(response.elements)")
@@ -826,7 +876,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
   // A marker resolves to one element, so the response carries a bare object — the same shape the
   // accessibility backend returns, so a consumer never branches on `--api` here.
   func testDescribeTreeReturnsABareObjectForAMarkerQuery() async throws {
-    let reader = StubTreeReader(read: Self.stubRead())
+    let reader = StubAXBridgeTreeReader(read: Self.stubRead())
     let response = try await reader.describeTree(
       .marker(value: "General", key: .label, depth: 10), options: FBAccessibilityRequestOptions()
     )
@@ -839,7 +889,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
   func testDescribeTreeCarriesTheModalDescriptorOutOfTheRead() async throws {
     let modal = FBAccessibilityModalInfo(kind: .system, elementType: "SBAlertItemWindow", label: "Allow")
     for query in [FBAccessibilityElementQuery.frontmost, .marker(value: "General", key: .label, depth: 10)] {
-      let reader = StubTreeReader(read: Self.stubRead(modal: modal))
+      let reader = StubAXBridgeTreeReader(read: Self.stubRead(modal: modal))
       let response = try await reader.describeTree(query, options: FBAccessibilityRequestOptions())
       XCTAssertEqual(response.modal, modal, "\(query) must surface the read's modal to the host")
     }
@@ -848,7 +898,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
   // The truncation warning belongs to a describe, not to a raw read: it fires exactly once per
   // describe so a `.marker` wait poll (which reads without describing) stays silent.
   func testDescribeTreeWarnsOnceWithTheReadsTruncationFlag() async throws {
-    let reader = StubTreeReader(read: Self.stubRead(truncated: true))
+    let reader = StubAXBridgeTreeReader(read: Self.stubRead(truncated: true))
     _ = try await reader.describeTree(.frontmost, options: FBAccessibilityRequestOptions())
     XCTAssertEqual(reader.truncationWarnings, [true], "one warning carrying the read's flag")
   }
@@ -856,7 +906,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
   // The choice is only worth having if it reaches the wire, on every query that reads a tree.
   func testDescribeTreeCarriesTheChosenTraversalToTheRead() async throws {
     for query in [FBAccessibilityElementQuery.frontmost, .marker(value: "General", key: .label, depth: 10)] {
-      let reader = StubTreeReader(read: Self.stubRead())
+      let reader = StubAXBridgeTreeReader(read: Self.stubRead())
       _ = try? await reader.describeTree(query, options: FBAccessibilityRequestOptions(traversalStrategy: .semantic))
       XCTAssertEqual(reader.traversals, [.semantic], "\(query) must carry the caller's choice to the read")
     }
@@ -865,7 +915,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
   // The single fetch is a traversal choice, so it has to reach the read like the other two do.
   func testDescribeTreeCarriesTheSingleFetchToTheRead() async throws {
     for query in [FBAccessibilityElementQuery.frontmost, .marker(value: "General", key: .label, depth: 10)] {
-      let reader = StubTreeReader(read: Self.stubRead())
+      let reader = StubAXBridgeTreeReader(read: Self.stubRead())
       _ = try? await reader.describeTree(query, options: FBAccessibilityRequestOptions(traversalStrategy: .singleFetch))
       XCTAssertEqual(reader.traversals, [.singleFetch], "\(query) must carry the caller's choice to the read")
     }
@@ -875,7 +925,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
   // breaks as soon as two traversals produce the same count.
   func testDescribeTreeReportsTheTraversalItReadWith() async throws {
     for strategy in FBAXTraversalStrategy.allCases {
-      let reader = StubTreeReader(read: Self.stubRead())
+      let reader = StubAXBridgeTreeReader(read: Self.stubRead())
       var options = FBAccessibilityRequestOptions(traversalStrategy: strategy)
       options.enableProfiling = true
       let response = try await reader.describeTree(.frontmost, options: options)
@@ -884,14 +934,14 @@ final class FBAXBridgeReadsTests: XCTestCase {
       }
       // Against what the read resolved to rather than what was asked for, which is the point of the
       // field: `auto` names no traversal and the profile must still report the one that ran.
-      XCTAssertEqual(profile.traversal, StubTreeReader.resolvedTraversal(for: options))
+      XCTAssertEqual(profile.traversal, StubAXBridgeTreeReader.resolvedTraversal(for: options))
       XCTAssertEqual(reader.traversals, reader.profiledTraversals, "the read and its profile must agree")
     }
   }
 
   // The field rides on the profile, so a read that did not ask for profiling reports no traversal.
   func testTheTraversalIsOnlyReportedWhenProfilingWasAskedFor() async throws {
-    let reader = StubTreeReader(read: Self.stubRead())
+    let reader = StubAXBridgeTreeReader(read: Self.stubRead())
     let response = try await reader.describeTree(
       .frontmost, options: FBAccessibilityRequestOptions(traversalStrategy: .singleFetch)
     )
@@ -912,7 +962,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
   // An explicit single fetch asking for reachability is refused before any read is attempted: the guest
   // would time out rather than answer, so the combination fails fast with the keys it cannot serve.
   func testAnExplicitSingleFetchAskingForReachabilityIsRefused() async throws {
-    let reader = StubTreeReader(read: Self.stubRead())
+    let reader = StubAXBridgeTreeReader(read: Self.stubRead())
     do {
       _ = try await reader.describeTree(
         .frontmost, options: FBAccessibilityRequestOptions(keys: [.interactable], traversalStrategy: .singleFetch)
@@ -928,7 +978,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
   // The warning is what makes an absent field readable as "this traversal could not ask", so it belongs
   // on the describe that actually reports fields — not only on the marker branch.
   func testDescribeTreeWarnsAboutUnsatisfiableKeys() async throws {
-    let reader = StubTreeReader(read: Self.stubRead())
+    let reader = StubAXBridgeTreeReader(read: Self.stubRead())
     _ = try? await reader.describeTree(
       .frontmost, options: FBAccessibilityRequestOptions(keys: [.type, .label], traversalStrategy: .semantic)
     )
@@ -938,7 +988,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
   // A view-hierarchy read answers everything, so the warning must carry an empty set rather than be
   // skipped — an absent warning and a warning about nothing are the same thing to a caller.
   func testDescribeTreeWarnsAboutNothingOnASatisfiableTraversal() async throws {
-    let reader = StubTreeReader(read: Self.stubRead())
+    let reader = StubAXBridgeTreeReader(read: Self.stubRead())
     _ = try? await reader.describeTree(
       .frontmost, options: FBAccessibilityRequestOptions(keys: [.type, .label], traversalStrategy: .viewHierarchy)
     )
@@ -948,7 +998,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
   // A marker is matched over the *serialized* element, so the searched key is unioned into the read key
   // set — otherwise a marker on a key the caller did not request could never resolve.
   func testDescribeTreeUnionsTheSearchedKeyForAMarker() async throws {
-    let reader = StubTreeReader(read: Self.stubRead())
+    let reader = StubAXBridgeTreeReader(read: Self.stubRead())
     let options = FBAccessibilityRequestOptions(keys: [.value])
     let response = try await reader.describeTree(
       .marker(value: "General", key: .label, depth: 10), options: options
@@ -963,7 +1013,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
   // still resolves the element rather than searching only the root — and the match it returns reports
   // children like any other single-element read of that format, empty because none were walked.
   func testDescribeTreeMatchesAMarkerFlatEvenWhenNestedIsRequested() async throws {
-    let reader = StubTreeReader(read: Self.stubRead())
+    let reader = StubAXBridgeTreeReader(read: Self.stubRead())
     let options = FBAccessibilityRequestOptions(format: .nested)
     let response = try await reader.describeTree(
       .marker(value: "General", key: .label, depth: 10), options: options
@@ -976,7 +1026,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
   }
 
   func testDescribeTreeHonoursTheRequestedNestedFormatForWholeTreeQueries() async throws {
-    let response = try await StubTreeReader(read: Self.stubRead())
+    let response = try await StubAXBridgeTreeReader(read: Self.stubRead())
       .describeTree(.frontmost, options: FBAccessibilityRequestOptions(format: .nested))
     guard case let .tree(elements) = response.elements, let root = elements.first else {
       return XCTFail("expected a nested root, got \(response.elements)")
@@ -995,12 +1045,127 @@ final class FBAXBridgeReadsTests: XCTestCase {
         [FBAXWire.Node.label.rawValue: "General Settings", FBAXWire.Node.children.rawValue: [[String: Any]]()] as [String: Any]
       ]
     ]
-    let reader = StubTreeReader(read: FBAXTreeRead(tree: tree, pid: 99, truncated: false, modal: nil))
+    let reader = StubAXBridgeTreeReader(read: FBAXTreeRead(tree: tree, pid: 99, truncated: false, modal: nil))
     let response = try await reader.describeTree(.frontmost, options: FBAccessibilityRequestOptions(filter: .interactable))
     guard case let .tree(elements) = response.elements else {
       return XCTFail("expected an array, got \(response.elements)")
     }
     XCTAssertEqual(elements.count, 1, "the unlabeled container is filtered out, its labeled child kept")
+  }
+
+  private static func occlusionIdentity(label: String, frame: CGRect) -> [String: Any] {
+    [
+      FBAXWire.Node.label.rawValue: label,
+      FBAXWire.Node.identifier.rawValue: label.lowercased(),
+      FBAXWire.Node.elementType.rawValue: NSNumber(value: 9),
+      FBAXWire.Node.frame.rawValue: CGRectCreateDictionaryRepresentation(frame) as NSDictionary,
+    ]
+  }
+
+  private static func occlusionNode(
+    label: String,
+    frame: CGRect,
+    blockedBy: [String: Any]? = nil,
+    children: [[String: Any]] = []
+  ) -> [String: Any] {
+    let centre = CGPoint(x: frame.midX, y: frame.midY)
+    var node = occlusionIdentity(label: label, frame: frame)
+    node[FBAXWire.Node.isVisible.rawValue] = blockedBy == nil
+    node[FBAXWire.Node.visiblePoint.rawValue] =
+      CGPointCreateDictionaryRepresentation(
+        blockedBy == nil ? centre : CGPoint(x: -1, y: -1)
+      ) as NSDictionary
+    node[FBAXWire.Node.centerPoint.rawValue] = CGPointCreateDictionaryRepresentation(centre) as NSDictionary
+    node[FBAXWire.Node.userInteractionEnabled.rawValue] = true
+    node[FBAXWire.Node.children.rawValue] = children
+    node[FBAXWire.Node.explainedBy.rawValue] = blockedBy
+    return node
+  }
+
+  private static func describedOcclusionTree(_ tree: [String: Any]) async throws -> FBAccessibilityDocumentElement {
+    let reader = StubAXBridgeTreeReader(
+      read: FBAXTreeRead(tree: tree, pid: 99, truncated: false, modal: nil)
+    )
+    let response = try await reader.describeTree(
+      .frontmost,
+      options: FBAccessibilityRequestOptions(format: .nested, keys: [.occludedBy])
+    )
+    return try XCTUnwrap(response.elements.elements.first)
+  }
+
+  private static func elementRef(label: String, frame: CGRect) -> FBAccessibilityElementRef {
+    FBAccessibilityElementRef(
+      type: "Button",
+      identifier: label.lowercased(),
+      label: label,
+      frame: FBAccessibilityFrame(frame),
+      pid: 99
+    )
+  }
+
+  func testAnAncestorHandlingATouchIsClassifiedAsARelative() async throws {
+    let rootFrame = CGRect(x: 0, y: 0, width: 400, height: 800)
+    let childFrame = CGRect(x: 20, y: 20, width: 100, height: 40)
+    let rootIdentity = Self.occlusionIdentity(label: "Root", frame: rootFrame)
+    let tree = Self.occlusionNode(
+      label: "Root",
+      frame: rootFrame,
+      children: [Self.occlusionNode(label: "Child", frame: childFrame, blockedBy: rootIdentity)]
+    )
+
+    let root = try await Self.describedOcclusionTree(tree)
+    let child = try XCTUnwrap(root.children?.first)
+    XCTAssertEqual(
+      child.interactable ?? nil,
+      .blocked(reasons: [.handledBy(Self.elementRef(label: "Root", frame: rootFrame))])
+    )
+  }
+
+  func testAGrandchildHandlingATouchIsClassifiedAsARelative() async throws {
+    let rootFrame = CGRect(x: 0, y: 0, width: 400, height: 800)
+    let childFrame = CGRect(x: 20, y: 20, width: 200, height: 200)
+    let grandchildFrame = CGRect(x: 40, y: 40, width: 100, height: 40)
+    let grandchildIdentity = Self.occlusionIdentity(label: "Grandchild", frame: grandchildFrame)
+    let tree = Self.occlusionNode(
+      label: "Root",
+      frame: rootFrame,
+      blockedBy: grandchildIdentity,
+      children: [
+        Self.occlusionNode(
+          label: "Child",
+          frame: childFrame,
+          children: [Self.occlusionNode(label: "Grandchild", frame: grandchildFrame)]
+        )
+      ]
+    )
+
+    let root = try await Self.describedOcclusionTree(tree)
+    XCTAssertEqual(
+      root.interactable ?? nil,
+      .blocked(reasons: [.handledBy(Self.elementRef(label: "Grandchild", frame: grandchildFrame))])
+    )
+  }
+
+  func testASiblingHandlingATouchIsClassifiedAsAnOccluder() async throws {
+    let rootFrame = CGRect(x: 0, y: 0, width: 400, height: 800)
+    let firstFrame = CGRect(x: 20, y: 20, width: 100, height: 40)
+    let secondFrame = CGRect(x: 20, y: 80, width: 100, height: 40)
+    let secondIdentity = Self.occlusionIdentity(label: "Second", frame: secondFrame)
+    let tree = Self.occlusionNode(
+      label: "Root",
+      frame: rootFrame,
+      children: [
+        Self.occlusionNode(label: "First", frame: firstFrame, blockedBy: secondIdentity),
+        Self.occlusionNode(label: "Second", frame: secondFrame),
+      ]
+    )
+
+    let root = try await Self.describedOcclusionTree(tree)
+    let first = try XCTUnwrap(root.children?.first)
+    XCTAssertEqual(
+      first.interactable ?? nil,
+      .blocked(reasons: [.occluded(by: Self.elementRef(label: "Second", frame: secondFrame))])
+    )
   }
 
   // MARK: - Frame coverage
@@ -1028,7 +1193,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
   // `describeTree` is the read path every backend but `ax` funnels through, so it must honour
   // `collectFrameCoverage` for all of them.
   func testDescribeTreeReportsTheRequestedFrameCoverage() async throws {
-    let reader = StubTreeReader(read: FBAXTreeRead(tree: Self.sizedTree(), pid: 99, truncated: false, modal: nil))
+    let reader = StubAXBridgeTreeReader(read: FBAXTreeRead(tree: Self.sizedTree(), pid: 99, truncated: false, modal: nil))
     var options = FBAccessibilityRequestOptions(format: .complete)
     options.collectFrameCoverage = true
     let response = try await reader.describeTree(.frontmost, options: options)
@@ -1057,7 +1222,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
 
   // Coverage stays opt-in: a read that did not ask for it reports none rather than a zero.
   func testDescribeTreeReportsNoCoverageUnlessAsked() async throws {
-    let reader = StubTreeReader(read: FBAXTreeRead(tree: Self.sizedTree(), pid: 99, truncated: false, modal: nil))
+    let reader = StubAXBridgeTreeReader(read: FBAXTreeRead(tree: Self.sizedTree(), pid: 99, truncated: false, modal: nil))
     let response = try await reader.describeTree(.frontmost, options: FBAccessibilityRequestOptions(format: .complete))
     XCTAssertNil(response.coverage)
     XCTAssertNil(response.document.coverage)
@@ -1066,7 +1231,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
   // A read whose root reports no usable frame has no screen to measure against, so it reports no
   // coverage rather than measuring against a zero-sized grid.
   func testDescribeTreeReportsNoCoverageWithoutUsableScreenBounds() async throws {
-    let reader = StubTreeReader(read: Self.stubRead())
+    let reader = StubAXBridgeTreeReader(read: Self.stubRead())
     var options = FBAccessibilityRequestOptions(format: .complete)
     options.collectFrameCoverage = true
     let response = try await reader.describeTree(.frontmost, options: options)
@@ -1133,7 +1298,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
   }
 
   private func contentCoverage(of tree: [String: Any]) async throws -> Double? {
-    let reader = StubTreeReader(read: FBAXTreeRead(tree: tree, pid: 99, truncated: false, modal: nil))
+    let reader = StubAXBridgeTreeReader(read: FBAXTreeRead(tree: tree, pid: 99, truncated: false, modal: nil))
     var options = FBAccessibilityRequestOptions(format: .complete)
     options.collectFrameCoverage = true
     return try await reader.describeTree(.frontmost, options: options).coverage?.content
@@ -1210,7 +1375,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
   // The two ratios diverge on the guest backends the same way they do on the accessibility one — the
   // calculation is shared, so the gap cannot come to mean different things per backend.
   func testDescribeTreeReportsWalkedCoverageAboveReportedWhenFiltering() async throws {
-    let reader = StubTreeReader(
+    let reader = StubAXBridgeTreeReader(
       read: FBAXTreeRead(tree: Self.sizedTreeWithUnlabeledLowerHalf(), pid: 99, truncated: false, modal: nil)
     )
     var options = FBAccessibilityRequestOptions(format: .complete)
@@ -1223,7 +1388,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
     XCTAssertEqual(coverage.frame, 0, accuracy: 0.01, "the filter dropped it, so the report covers nothing")
   }
   func testDescribeTreeThrowsWhenNoElementMatchesTheMarker() async throws {
-    let reader = StubTreeReader(read: Self.stubRead())
+    let reader = StubAXBridgeTreeReader(read: Self.stubRead())
     do {
       _ = try await reader.describeTree(
         .marker(value: "Nothing", key: .label, depth: 10), options: FBAccessibilityRequestOptions()
@@ -1247,7 +1412,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
           e.label = .some("hit")
           return e
         }()))
-    let reader = StubTreeReader(read: Self.stubRead(), hitTestResult: hit)
+    let reader = StubAXBridgeTreeReader(read: Self.stubRead(), hitTestResult: hit)
     let response = try await reader.describeTree(.point(CGPoint(x: 3, y: 4)), options: FBAccessibilityRequestOptions())
     XCTAssertEqual(reader.hitTestPoints, [CGPoint(x: 3, y: 4)])
     XCTAssertEqual(reader.readCount, 0, "a point must not read a whole tree")
@@ -1271,16 +1436,16 @@ final class FBAXBridgeReadsTests: XCTestCase {
       (.point(CGPoint(x: 3, y: 4)), .point),
     ]
     for (query, kind) in cases {
-      let reader = StubTreeReader(read: Self.stubRead(), hitTestResult: hit)
+      let reader = StubAXBridgeTreeReader(read: Self.stubRead(), hitTestResult: hit)
       let response = try await reader.describeTree(query, options: FBAccessibilityRequestOptions())
-      XCTAssertEqual(response.backend, .axBridge, "\(query) must record which backend answered")
+      XCTAssertEqual(response.backend, .axBridgeOneShot, "\(query) must record which backend answered")
       XCTAssertEqual(response.target?.kind, kind, "\(query) must record what was asked for")
     }
   }
 
   func testDescribeTreeStampsTruncationAndScreenForTreeReads() async throws {
     // The stub tree's root reports no frame, so the screen is unknown rather than zero-sized.
-    let reader = StubTreeReader(read: Self.stubRead(truncated: true))
+    let reader = StubAXBridgeTreeReader(read: Self.stubRead(truncated: true))
     let response = try await reader.describeTree(.frontmost, options: FBAccessibilityRequestOptions())
     XCTAssertTrue(response.truncated, "a partial walk must be reported as partial")
     XCTAssertNil(response.screen, "a root with no frame yields no screen bounds")
@@ -1290,7 +1455,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
       FBAXWire.Node.frame.rawValue: CGRectCreateDictionaryRepresentation(CGRect(x: 0, y: 0, width: 390, height: 844)) as NSDictionary,
       FBAXWire.Node.children.rawValue: [[String: Any]](),
     ]
-    let sizedReader = StubTreeReader(read: FBAXTreeRead(tree: sized, pid: 99, truncated: false, modal: nil))
+    let sizedReader = StubAXBridgeTreeReader(read: FBAXTreeRead(tree: sized, pid: 99, truncated: false, modal: nil))
     let sizedResponse = try await sizedReader.describeTree(.frontmost, options: FBAccessibilityRequestOptions())
     XCTAssertEqual(sizedResponse.screen, FBAccessibilityScreenInfo(width: 390, height: 844))
     XCTAssertFalse(sizedResponse.truncated)
@@ -1300,7 +1465,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
   // screen or truncation — but which backend answered and what was asked for are still known.
   func testDescribeTreeStampsAPointWithoutScreenOrTruncation() async throws {
     let hit = FBAccessibilityElementsResponse(elements: .single(FBAccessibilityDocumentElement()))
-    let reader = StubTreeReader(read: Self.stubRead(truncated: true), hitTestResult: hit)
+    let reader = StubAXBridgeTreeReader(read: Self.stubRead(truncated: true), hitTestResult: hit)
     let response = try await reader.describeTree(.point(CGPoint(x: 3, y: 4)), options: FBAccessibilityRequestOptions())
     XCTAssertEqual(response.target, .point(CGPoint(x: 3, y: 4)))
     XCTAssertNil(response.screen)
@@ -1309,17 +1474,14 @@ final class FBAXBridgeReadsTests: XCTestCase {
 
   // Stamping is provenance only: it must not disturb the elements or the legacy envelope's bytes.
   func testProvenanceDoesNotChangeTheLegacyEnvelope() async throws {
-    let reader = StubTreeReader(read: Self.stubRead())
+    let reader = StubAXBridgeTreeReader(read: Self.stubRead())
     let response = try await reader.describeTree(.frontmost, options: FBAccessibilityRequestOptions())
     let stamped = try response.legacyJSONData()
     let bare = try FBAccessibilityElementsResponse(elements: response.elements).legacyJSONData()
     XCTAssertEqual(stamped, bare, "provenance must stay out of the legacy envelope")
   }
 
-  // The serializer takes a read's screen bounds from the element it is handed, so a single-element read
-  // arrives carrying the element's own frame as the screen. That is worse than reporting nothing, and
-  // `withProvenance` cannot withdraw a field — hence a dedicated way to clear it.
-  func testWithoutScreenClearsBoundsAndKeepsEverythingElse() throws {
+  func testReplacingScreenCanClearBoundsAndKeepsEverythingElse() throws {
     let hit = FBAccessibilityElementsResponse(
       elements: .single(FBAccessibilityDocumentElement()),
       truncated: true,
@@ -1329,7 +1491,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
     )
     XCTAssertNotNil(hit.screen, "the fixture starts with the misleading element-sized bounds")
 
-    let stripped = hit.withoutScreen()
+    let stripped = hit.replacingScreen(nil)
     XCTAssertNil(stripped.screen, "the element's own frame is not the screen")
     XCTAssertEqual(stripped.elements, hit.elements)
     XCTAssertEqual(stripped.truncated, hit.truncated)
@@ -1349,18 +1511,13 @@ final class FBAXBridgeReadsTests: XCTestCase {
       backend: .ax
     )
 
-    let restamped = matchSized.withoutScreen().withProvenance(screen: root)
+    let restamped = matchSized.replacingScreen(root)
     XCTAssertEqual(restamped.screen, root, "a marker read reports the root's bounds, not the match's")
     XCTAssertEqual(restamped.backend, .ax, "clearing the screen does not disturb the rest of the provenance")
 
     XCTAssertNil(
-      matchSized.withoutScreen().withProvenance(screen: nil).screen,
+      matchSized.replacingScreen(nil).screen,
       "with no usable root bounds a marker reports none, rather than falling back to the match's frame"
-    )
-    XCTAssertEqual(
-      matchSized.withProvenance(screen: nil).screen,
-      matchSized.screen,
-      "stamping alone cannot withdraw the match's frame — which is why the ax path clears first"
     )
   }
 
@@ -1369,7 +1526,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
     // consumer that silently cannot name (or select) it.
     for name in FBUIAutomationBackendName.allCases {
       XCTAssertEqual(
-        FBUIAutomationBackend(name).name, name,
+        FBUIAutomationBackend(resolvedName: name).name, name,
         "\(name.rawValue) must round-trip through the backend it selects"
       )
     }
@@ -1379,14 +1536,14 @@ final class FBAXBridgeReadsTests: XCTestCase {
       "the persistent transport is a distinct backend to a consumer reading timings"
     )
     XCTAssertEqual(
-      FBUIAutomationBackend(.axBridgePersistent, frontmostMethod: .windowServer).name,
+      FBUIAutomationBackend(resolvedName: .axBridgePersistent, frontmostMethod: .windowServer).name,
       .axBridgePersistent,
       "the frontmost method rides the axbridge case without disturbing its name"
     )
   }
 
   func testDescribeTreeThrowsForAnEmptyPoint() async throws {
-    let reader = StubTreeReader(read: Self.stubRead(), hitTestResult: nil)
+    let reader = StubAXBridgeTreeReader(read: Self.stubRead(), hitTestResult: nil)
     do {
       _ = try await reader.describeTree(.point(CGPoint(x: 1, y: 2)), options: FBAccessibilityRequestOptions())
       XCTFail("an empty point must throw from describe")
@@ -1406,7 +1563,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
   private static let rootRect = CGRect(x: 0, y: 0, width: 390, height: 844)
   private static let childRect = CGRect(x: 16, y: 100, width: 358, height: 44)
 
-  private static func framedReader(child: CGRect? = childRect) -> StubTreeReader {
+  private static func framedReader(child: CGRect? = childRect) -> StubAXBridgeTreeReader {
     func node(_ label: String, _ rect: CGRect?, children: [[String: Any]]) -> [String: Any] {
       var node: [String: Any] = [
         FBAXWire.Node.label.rawValue: label,
@@ -1418,7 +1575,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
       return node
     }
     let tree = node("root", rootRect, children: [node("General Settings", child, children: [])])
-    return StubTreeReader(read: FBAXTreeRead(tree: tree, pid: 99, truncated: false, modal: nil))
+    return StubAXBridgeTreeReader(read: FBAXTreeRead(tree: tree, pid: 99, truncated: false, modal: nil))
   }
 
   // A whole-tree query has no element in mind, so it answers with the root's — the application's own
@@ -1440,7 +1597,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
   func testFrameFromTreeAnswersWithTheHitElementsRectangleForAPoint() async throws {
     var hit = FBAccessibilityDocumentElement()
     hit.frame = .some(FBAccessibilityFrame(Self.childRect))
-    let reader = StubTreeReader(read: Self.stubRead(), hitTestResult: FBAccessibilityElementsResponse(elements: .single(hit)))
+    let reader = StubAXBridgeTreeReader(read: Self.stubRead(), hitTestResult: FBAccessibilityElementsResponse(elements: .single(hit)))
     let frame = try await reader.frameFromTree(.point(CGPoint(x: 20, y: 110)))
     XCTAssertEqual(frame, Self.childRect)
     XCTAssertEqual(reader.readCount, 0, "a point reads no tree to answer about its own frame")
@@ -1462,7 +1619,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
     let query = FBAccessibilityElementQuery.point(CGPoint(x: 20, y: 110))
     let frameless = FBAccessibilityElementsResponse(elements: .single(FBAccessibilityDocumentElement()))
     do {
-      _ = try await StubTreeReader(read: Self.stubRead(), hitTestResult: frameless).frameFromTree(query)
+      _ = try await StubAXBridgeTreeReader(read: Self.stubRead(), hitTestResult: frameless).frameFromTree(query)
       XCTFail("a read carrying no frame must throw rather than answer with the origin")
     } catch let error as FBUIAutomationError {
       guard case let .frameUnavailable(backend, thrownQuery) = error else {
@@ -1531,7 +1688,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
       FBAXWire.Node.frame.rawValue: CGRectCreateDictionaryRepresentation(Self.childRect) as NSDictionary,
       FBAXWire.Node.children.rawValue: [[String: Any]](),
     ]
-    let reader = StubTreeReader(read: FBAXTreeRead(tree: tree, pid: 99, truncated: false, modal: nil))
+    let reader = StubAXBridgeTreeReader(read: FBAXTreeRead(tree: tree, pid: 99, truncated: false, modal: nil))
     let target = try await reader.writeTarget(
       for: .marker(value: "Button", key: .role, depth: 10), operation: "A tap"
     )
@@ -1644,7 +1801,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
   func testACallerAssertionOnAPointReadsTheElementFirst() async throws {
     var hit = FBAccessibilityDocumentElement()
     hit.label = .some("Wi-Fi")
-    let reader = StubTreeReader(
+    let reader = StubAXBridgeTreeReader(
       read: Self.stubRead(), hitTestResult: FBAccessibilityElementsResponse(elements: .single(hit))
     )
     do {
@@ -1665,7 +1822,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
   }
 
   func testACallerAssertionOnAnEmptyPointReportsTheEmptyPoint() async throws {
-    let reader = StubTreeReader(read: Self.stubRead(), hitTestResult: nil)
+    let reader = StubAXBridgeTreeReader(read: Self.stubRead(), hitTestResult: nil)
     do {
       _ = try await reader.writeTarget(
         for: .point(CGPoint(x: 5, y: 6)),
@@ -1769,7 +1926,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
   // "backend"; this one names it part-way through a sentence, where both of those read as a stutter.
   func testAnUnsupportedOperationNamesTheBackendOnceAndInLowerCase() {
     let backends: [FBUIAutomationBackend] = [
-      .accessibility, .remoteAutomation, .axBridge(persistence: .oneShot, frontmostMethod: .centerPoint, automationMode: true),
+      .accessibility, .axBridge(persistence: .oneShot, frontmostMethod: .centerPoint, automationMode: true),
     ]
     for backend in backends {
       let description = FBUIAutomationError.operationUnsupported(backend: backend, operation: "Scroll").description
@@ -1842,10 +1999,8 @@ final class FBAXTraversalStrategyTests: XCTestCase {
 
 /// What each backend reads when the caller named no traversal.
 ///
-/// Asserted against the real backends rather than `StubTreeReader`: these pins exist to catch a change
-/// to a backend's own default, and a stub agreeing with itself proves nothing about either backend. Both
-/// are reachable without a simulator: the resolution is static precisely so a backend can be asked what
-/// it reads without standing up something to read from.
+/// Asserted against the real backend rather than `StubAXBridgeTreeReader`: these pins catch a change to the
+/// backend's own default without requiring a simulator.
 final class FBAXAutoTraversalTests: XCTestCase {
 
   // FBAXBridgeUIAutomation takes the whole tree in one fetch for a read that named nothing, and falls
@@ -1864,51 +2019,29 @@ final class FBAXAutoTraversalTests: XCTestCase {
   // a read whose cost depends on how the host happened to connect.
   func testADefaultGuestReadAsksTheGuestForASnapshot() {
     let traversal = FBAXBridgeUIAutomation.autoTraversal(for: FBAccessibilityRequestOptions())
-    XCTAssertEqual(FBAXBridgeOneshotTransport.traversalArgument(traversal), ["--snapshot-tree", "1"])
-    XCTAssertEqual(
-      FBAXBridgePersistentTransport.adding(
-        attributes: nil, explainUnreachable: false, traversal: traversal, automationMode: nil, to: [:]
-      ) as NSDictionary,
-      ["snapshotTree": true] as NSDictionary
-    )
+    let request = Self.readRequest(traversal: traversal)
+    XCTAssertTrue(request.arguments.contains("--snapshot-tree"))
+    XCTAssertEqual(request.payload["snapshotTree"] as? Bool, true)
   }
 
   // The same wire pin for a reachability read: it resolves to the walk, so its argv and payload stay
   // empty.
   func testAReachabilityReadAsksTheGuestForNoSnapshot() {
     let traversal = FBAXBridgeUIAutomation.autoTraversal(for: FBAccessibilityRequestOptions(keys: [.interactable]))
-    XCTAssertEqual(FBAXBridgeOneshotTransport.traversalArgument(traversal), [])
-    XCTAssertTrue(
-      FBAXBridgePersistentTransport.adding(
-        attributes: nil, explainUnreachable: false, traversal: traversal, automationMode: nil, to: [:]
-      ).isEmpty)
+    let request = Self.readRequest(traversal: traversal)
+    XCTAssertFalse(request.arguments.contains("--snapshot-tree"))
+    XCTAssertNil(request.payload["snapshotTree"])
   }
 
   // The explicit single fetch is pinned in its own right, not only as today's default, so its argv and
   // payload stay asserted if the default ever moves again.
   func testTheSingleFetchAsksTheGuestForASnapshot() {
-    XCTAssertEqual(FBAXBridgeOneshotTransport.traversalArgument(.singleFetch), ["--snapshot-tree", "1"])
-    XCTAssertEqual(
-      FBAXBridgePersistentTransport.adding(
-        attributes: nil, explainUnreachable: false, traversal: .singleFetch, automationMode: nil, to: [:]
-      ) as NSDictionary,
-      ["snapshotTree": true] as NSDictionary
-    )
+    let request = Self.readRequest(traversal: .singleFetch)
+    XCTAssertTrue(request.arguments.contains("--snapshot-tree"))
+    XCTAssertEqual(request.payload["snapshotTree"] as? Bool, true)
   }
 
-  // FBSimulatorRemoteAutomation serves one snapshot shape and its read takes no traversal into account
-  // at all, so its answer cannot depend on the key set — and it has no argv of its own to pin.
-  func testRemoteAutomationWalksPerNodeForEveryKeySet() {
-    XCTAssertEqual(FBSimulatorRemoteAutomation.autoTraversal(for: FBAccessibilityRequestOptions()), .viewHierarchy)
-    XCTAssertEqual(
-      FBSimulatorRemoteAutomation.autoTraversal(for: FBAccessibilityRequestOptions(keys: Set(FBAXKeys.allCases))),
-      .viewHierarchy
-    )
-  }
-
-  // A named traversal reaches the read unchanged. Pinned against the real backends rather than the
-  // strategy's own resolution test: an explicit `--traversal view-hierarchy` must keep selecting the
-  // walk after the default changes.
+  // A named traversal reaches the read unchanged.
   func testANamedTraversalOverridesTheBackendDefault() {
     for traversal in FBAXTraversal.allCases {
       guard let strategy = FBAXTraversalStrategy(rawValue: traversal.rawValue) else {
@@ -1916,8 +2049,21 @@ final class FBAXAutoTraversalTests: XCTestCase {
       }
       let options = FBAccessibilityRequestOptions(traversalStrategy: strategy)
       XCTAssertEqual(FBAXBridgeUIAutomation.resolvedTraversal(for: options), traversal)
-      XCTAssertEqual(FBSimulatorRemoteAutomation.resolvedTraversal(for: options), traversal)
     }
+  }
+
+  private static func readRequest(traversal: FBAXTraversal) -> FBAXBridgeRequest {
+    .read(
+      pid: 1,
+      options: FBAXBridgeReadRequest(
+        maxDepth: FBAXReadLimits.maxReadDepth,
+        maxNodes: FBAXReadLimits.maxReadNodes,
+        attributes: nil,
+        explainUnreachable: false,
+        traversal: traversal,
+        automationMode: nil
+      )
+    )
   }
 }
 
@@ -1974,11 +2120,11 @@ final class FBAXBridgeGuestDeathTests: XCTestCase {
   }
 }
 
-/// A minimal `FBAXTreeReader` serving a canned read, so the shared `describeTree` composition can be
+/// A minimal `FBAXBridgeTreeReader` serving a canned read, so the shared `describeTree` composition can be
 /// observed without a simulator. `readRawTree`, `warnIfTruncated`, `warnIfMostElementsUnframed` and `hitTest`
 /// are the seams
 /// `describeTree` drives; every other `FBUIAutomation` verb is an unused conformance stub.
-private final class StubTreeReader: FBAXTreeReader, @unchecked Sendable {
+private final class StubAXBridgeTreeReader: FBAXBridgeTreeReader, @unchecked Sendable {
 
   let backend: FBUIAutomationBackend = .axBridge(persistence: .oneShot, frontmostMethod: .centerPoint, automationMode: true)
 
@@ -2078,6 +2224,10 @@ private final class StubTreeReader: FBAXTreeReader, @unchecked Sendable {
   func scroll(_ query: FBAccessibilityElementQuery, direction: FBAccessibilityScrollDirection) async throws {}
 
   func frame(_ query: FBAccessibilityElementQuery) async throws -> CGRect { .zero }
+
+  func drag(
+    from source: FBAccessibilityElementQuery, to destination: FBAccessibilityElementQuery, options: FBDragOptions
+  ) async throws {}
 }
 
 /// The composition of the key vocabulary's derived sets.

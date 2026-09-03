@@ -99,8 +99,7 @@ private class FBAMDeviceServiceManager_HouseArrest: NSObject, FBFutureContextMan
   }
 }
 
-@objc(FBAMDeviceServiceManager)
-public class FBAMDeviceServiceManager: NSObject {
+class FBAMDeviceServiceManager: NSObject {
   private weak var device: FBAMDevice?
   private let serviceTimeout: NSNumber?
   private var houseArrestManagers: [String: FBFutureContextManager<FBAFCConnection>] = [:]
@@ -108,8 +107,7 @@ public class FBAMDeviceServiceManager: NSObject {
 
   // MARK: Initializers
 
-  @objc(managerWithAMDevice:serviceTimeout:)
-  public class func manager(withAMDevice device: FBAMDevice, serviceTimeout: NSNumber?) -> FBAMDeviceServiceManager {
+  class func manager(withAMDevice device: FBAMDevice, serviceTimeout: NSNumber?) -> FBAMDeviceServiceManager {
     FBAMDeviceServiceManager(device: device, serviceTimeout: serviceTimeout)
   }
 
@@ -121,8 +119,7 @@ public class FBAMDeviceServiceManager: NSObject {
 
   // MARK: Public Services
 
-  @objc(houseArrestAFCConnectionForBundleID:afcCalls:)
-  public func houseArrestAFCConnection(forBundleID bundleID: String, afcCalls: AFCCalls) -> FBFutureContextManager<FBAFCConnection> {
+  func houseArrestAFCConnection(forBundleID bundleID: String, afcCalls: AFCCalls) -> FBFutureContextManager<FBAFCConnection> {
     if let manager = houseArrestManagers[bundleID] {
       return manager
     }

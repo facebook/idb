@@ -18,10 +18,12 @@ import Foundation
 // patternlint-disable-next-line unchecked-sendable
 final class FBAccessibilityUIAutomation: FBUIAutomation, @unchecked Sendable {
 
-  private let operations: any AccessibilityOperations
+  private let simulator: FBSimulator
 
-  init(operations: any AccessibilityOperations) {
-    self.operations = operations
+  private var operations: any AccessibilityOperations { simulator }
+
+  init(simulator: FBSimulator) {
+    self.simulator = simulator
   }
 
   func describe(
@@ -39,10 +41,9 @@ final class FBAccessibilityUIAutomation: FBUIAutomation, @unchecked Sendable {
       // to be discarded, and replaced where the read does know better.
       switch query {
       case .point:
-        return response.withoutScreen()
+        return response.replacingScreen(nil)
       case .marker:
-        return response.withoutScreen()
-          .withProvenance(screen: element.rootBounds.flatMap(FBAXTranslationRequest.screenInfo(fromBounds:)))
+        return response.replacingScreen(element.rootBounds.flatMap(FBAXTranslationRequest.screenInfo(fromBounds:)))
       case .frontmost, .application:
         return response
       }
@@ -149,6 +150,37 @@ final class FBAccessibilityUIAutomation: FBUIAutomation, @unchecked Sendable {
       let element = try await operations.resolveElement(for: query)
       defer { element.close() }
       return try await element.frame()
+    }
+  }
+
+  /// Resolves both endpoints to screen points and synthesizes the gesture over HID. There is no
+  /// accessibility action for a drag — `AXPress` is the only write this path has — so the endpoints
+  /// are all this backend contributes, and the touches go the same way every other backend sends them.
+  func drag(
+    from source: FBAccessibilityElementQuery,
+    to destination: FBAccessibilityElementQuery,
+    options: FBDragOptions
+  ) async throws {
+    let start = try await endpoint(source)
+    let end = try await endpoint(destination)
+    try await simulator.sendHIDGesture(
+      .drag(
+        Double(start.x), yStart: Double(start.y), xEnd: Double(end.x), yEnd: Double(end.y),
+        delta: options.delta, pressDuration: options.pressDuration, duration: options.duration,
+        releaseDuration: options.releaseDuration
+      )
+    )
+  }
+
+  /// The screen point a drag endpoint names: a coordinate is itself, a marker is the centre of the
+  /// element's frame.
+  private func endpoint(_ query: FBAccessibilityElementQuery) async throws -> CGPoint {
+    switch try FBDragEndpoint(query, backend: .accessibility) {
+    case let .point(point):
+      return point
+    case .marker:
+      let frame = try await frame(query)
+      return CGPoint(x: frame.midX, y: frame.midY)
     }
   }
 }

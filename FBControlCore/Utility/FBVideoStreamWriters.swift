@@ -299,7 +299,7 @@ private let TSSyncByte: UInt8 = 0x47
 private let PATPID: UInt16 = 0x0000
 private let PMTPID: UInt16 = 0x0100
 private let VideoPID: UInt16 = 0x0101
-public let FBMPEGTSMetadataPID: UInt16 = 0x0102
+let FBMPEGTSMetadataPID: UInt16 = 0x0102
 private let HEVCStreamType: UInt8 = 0x24
 private let H264StreamType: UInt8 = 0x1B
 private let TimedMetadataStreamType: UInt8 = 0x15 // PES private data (ID3)
@@ -320,7 +320,7 @@ private let FBMPEGTSCRC32Table: [UInt32] = {
   return table
 }()
 
-public func FBMPEGTS_CRC32(_ data: UnsafePointer<UInt8>, _ length: Int) -> UInt32 {
+func FBMPEGTS_CRC32(_ data: UnsafePointer<UInt8>, _ length: Int) -> UInt32 {
   var crc: UInt32 = 0xFFFFFFFF
   for i in 0..<length {
     crc = (crc << 8) ^ FBMPEGTSCRC32Table[Int(((crc >> 24) ^ UInt32(data[i])) & 0xFF)]
@@ -469,7 +469,7 @@ private func FBMPEGTSCreatePESPayloadPacket(
   return packet
 }
 
-public func FBMPEGTSCreatePATPacket(_ continuityCounter: inout UInt8) -> Data {
+func FBMPEGTSCreatePATPacket(_ continuityCounter: inout UInt8) -> Data {
   var writer = FBMPEGTSPacketWriter(pid: PATPID, payloadUnitStart: true, continuityCounter: &continuityCounter)
   writer.writePointerField()
   let section = writer.beginSection(tableID: 0x00)
@@ -483,7 +483,7 @@ public func FBMPEGTSCreatePATPacket(_ continuityCounter: inout UInt8) -> Data {
   return writer.data()
 }
 
-public func FBMPEGTSCreatePMTPacket(_ continuityCounter: inout UInt8, _ streamType: UInt8) -> Data {
+func FBMPEGTSCreatePMTPacket(_ continuityCounter: inout UInt8, _ streamType: UInt8) -> Data {
   var writer = FBMPEGTSPacketWriter(pid: PMTPID, payloadUnitStart: true, continuityCounter: &continuityCounter)
   writer.writePointerField()
   let section = writer.beginSection(tableID: 0x02)
@@ -500,7 +500,7 @@ public func FBMPEGTSCreatePMTPacket(_ continuityCounter: inout UInt8, _ streamTy
   return writer.data()
 }
 
-public func FBMPEGTSPacketizePES(
+func FBMPEGTSPacketizePES(
   _ pesData: Data,
   _ isKeyFrame: Bool,
   _ streamType: UInt8,
@@ -545,7 +545,7 @@ public func FBMPEGTSPacketizePES(
   return output
 }
 
-public func FBMPEGTSCreatePMTPacketWithMetadata(_ continuityCounter: inout UInt8, _ streamType: UInt8, _ includeMetadataStream: Bool) -> Data {
+func FBMPEGTSCreatePMTPacketWithMetadata(_ continuityCounter: inout UInt8, _ streamType: UInt8, _ includeMetadataStream: Bool) -> Data {
   if !includeMetadataStream {
     return FBMPEGTSCreatePMTPacket(&continuityCounter, streamType)
   }
@@ -569,7 +569,7 @@ public func FBMPEGTSCreatePMTPacketWithMetadata(_ continuityCounter: inout UInt8
   return writer.data()
 }
 
-public func FBMPEGTSCreateTimedMetadataPackets(_ text: String, _ pts90k: UInt64, _ metadataContinuityCounter: inout UInt8) -> Data {
+func FBMPEGTSCreateTimedMetadataPackets(_ text: String, _ pts90k: UInt64, _ metadataContinuityCounter: inout UInt8) -> Data {
   let textData = [UInt8](text.utf8)
 
   // Build ID3v2.4 tag: header (10 bytes) + TXXX frame

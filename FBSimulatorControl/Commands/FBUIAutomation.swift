@@ -30,14 +30,10 @@ public enum FBAXBridgePersistence: Sendable, Hashable {
 public enum FBUIAutomationBackend: Sendable, Equatable {
   /// The legacy CoreSimulator accessibility-translation path.
   case accessibility
-  /// The bundle-free guest `testmanagerd` remote-automation channel (iOS 27+).
-  case remoteAutomation
   /// The bundle-free guest AX-C reader: the `SimulatorFrameworkBridge` `accessibility` service spawned
-  /// in the simulator. XCUI-grade like `.remoteAutomation`, light like `.accessibility`. `persistence`
-  /// picks which guest the read runs against; `frontmostMethod` is how it resolves the
-  /// foreground app; `automationMode` is what the read asks the device's accessibility automation mode
-  /// to be. All three apply only to this backend, so they are payloads of the case rather than
-  /// parameters every backend would have to ignore.
+  /// in the simulator. `persistence` picks which guest the read runs against; `frontmostMethod` is how
+  /// it resolves the foreground app; `automationMode` is what the read asks the device's accessibility
+  /// automation mode to be.
   ///
   /// `automationMode` is tri-state for the reason the guest is: `true` asserts the mode, `false` asserts
   /// it off, and `nil` observes without touching the device. `false` is not a synonym for `nil` — it is
@@ -51,19 +47,15 @@ public enum FBUIAutomationBackend: Sendable, Equatable {
 }
 
 public extension FBUIAutomationBackend {
-  /// How this backend names itself — in the `complete` output document, and to any consumer selecting
-  /// a backend by name. The persistence of the axbridge transport is part of the name because it is
-  /// what a caller chose between, and it is the difference a read's timing profile reflects.
+  /// The backend name reported in the `complete` output document.
   var name: FBUIAutomationBackendName {
     switch self {
     case .accessibility:
       return .ax
-    case .remoteAutomation:
-      return .testmanagerd
     case let .axBridge(persistence, _, _):
       switch persistence {
       case .oneShot:
-        return .axBridge
+        return .axBridgeOneShot
       case .shared:
         return .axBridgePersistent
       case .exclusive:
@@ -72,25 +64,20 @@ public extension FBUIAutomationBackend {
     }
   }
 
-  /// The backend a name selects — the inverse of `name`, kept beside it so the two directions form one
-  /// bijection in one place; the round-trip is pinned over every case, so a new backend cannot be added
-  /// without teaching both directions. `frontmostMethod` and `automationMode` are carried into the
-  /// axbridge cases, the only ones they apply to; the other backends ignore them.
+  /// Builds the resolved backend represented by `name`.
   ///
-  /// `automationMode` defaults to asserting the mode, which is what selecting the axbridge lane by name
+  /// `automationMode` defaults to asserting the mode, which is what selecting axbridge by name
   /// means today. A caller that wants the pre-assertion behaviour — reproducing the child-cache fault,
   /// or measuring what the mode costs — passes `false` explicitly rather than getting it by omission.
   init(
-    _ name: FBUIAutomationBackendName,
+    resolvedName name: FBUIAutomationBackendName,
     frontmostMethod: FBAXBridgeFrontmostMethod = .windowServer,
     automationMode: Bool? = true
   ) {
     switch name {
     case .ax:
       self = .accessibility
-    case .testmanagerd:
-      self = .remoteAutomation
-    case .axBridge:
+    case .axBridgeOneShot:
       self = .axBridge(persistence: .oneShot, frontmostMethod: frontmostMethod, automationMode: automationMode)
     case .axBridgePersistent:
       self = .axBridge(
@@ -108,9 +95,7 @@ public extension FBUIAutomationBackend {
 public struct FBTapOptions: Sendable, Equatable {
 
   /// A pre-tap value assertion: read `key` on the resolved element and tap only if it equals `value`,
-  /// else throw `FBUIAutomationError.valueMismatch`. Accessibility-only — only that backend can
-  /// read-and-assert atomically; the remote backend rejects a non-nil assertion rather than tap with it
-  /// silently dropped.
+  /// else throw `FBUIAutomationError.valueMismatch`.
   public struct Assertion: Sendable, Equatable {
     public var key: FBAXSearchableKey
     public var value: String
@@ -131,6 +116,58 @@ public struct FBTapOptions: Sendable, Equatable {
   public init(duration: TimeInterval? = nil, assertion: Assertion? = nil) {
     self.duration = duration
     self.assertion = assertion
+  }
+}
+
+/// Options for a `drag`: the three phase durations and the sampling interval. Every value defaults to
+/// what the gesture uses when a caller does not choose, so `FBDragOptions()` is the documented drag.
+public struct FBDragOptions: Sendable, Equatable {
+
+  /// The hold at the source before travel starts. This is the phase that makes the gesture a drag
+  /// rather than a flick: iOS begins a drag session only once the press clears its long-press
+  /// threshold.
+  public var pressDuration: TimeInterval
+  /// The travel time, spread evenly over the interpolated samples.
+  public var duration: TimeInterval
+  /// The hold at the destination before the touch lifts, so a drop target can settle.
+  public var releaseDuration: TimeInterval
+  /// The distance in screen points between interpolated samples.
+  public var delta: Double
+
+  public init(
+    pressDuration: TimeInterval = 0.5,
+    duration: TimeInterval = 0.5,
+    releaseDuration: TimeInterval = 0.1,
+    delta: Double = FBSimulatorHIDEvent.defaultSwipeDelta
+  ) {
+    self.pressDuration = pressDuration
+    self.duration = duration
+    self.releaseDuration = releaseDuration
+    self.delta = delta
+  }
+}
+
+/// What a drag endpoint names, once the queries that name no single element are refused. Shared by the
+/// backends so a drag accepts the same endpoints whichever one runs it; they differ only in how a
+/// marker becomes a point.
+enum FBDragEndpoint: Equatable {
+  case point(CGPoint)
+  case marker(value: String, key: FBAXSearchableKey, depth: UInt)
+
+  /// The verb named in the refusal.
+  static let operation = "A drag endpoint"
+
+  /// `.frontmost` and `.application` name a tree. Resolving one would drag from the middle of the
+  /// application's own rectangle, which is somewhere the caller never named.
+  init(_ query: FBAccessibilityElementQuery, backend: FBUIAutomationBackend) throws {
+    switch query {
+    case let .point(point):
+      self = .point(point)
+    case let .marker(value, key, depth, _):
+      self = .marker(value: value, key: key, depth: depth)
+    case .frontmost, .application:
+      throw FBUIAutomationError.pointOrMarkerRequired(backend: backend, operation: Self.operation)
+    }
   }
 }
 
@@ -193,9 +230,21 @@ public protocol FBUIAutomation: Sendable {
   ) async throws
 
   /// The frame (in screen points) of the element named by `query`. A geometry-only read for callers
-  /// that need an element's position/size — e.g. to draw an overlay or resolve a pid — without a full
-  /// serialize. Accessibility only for now; the remote backend rejects it with a clear error.
+  /// that need an element's position or size without a full serialization.
   func frame(_ query: FBAccessibilityElementQuery) async throws -> CGRect
+
+  /// Presses `source`, drags to `destination`, and releases. `.point` endpoints are the coordinate
+  /// itself; a `.marker` endpoint is the centre of the element it names. `.frontmost`/`.application`
+  /// are not endpoints.
+  ///
+  /// Delivered as synthesized input on every backend, because no accessibility action expresses a
+  /// drag. The backends differ only in how a marker endpoint is resolved and which transport carries
+  /// the events.
+  func drag(
+    from source: FBAccessibilityElementQuery,
+    to destination: FBAccessibilityElementQuery,
+    options: FBDragOptions
+  ) async throws
 }
 
 public extension FBUIAutomation {
@@ -203,6 +252,11 @@ public extension FBUIAutomation {
   /// Taps the element named by `query` with no hold duration and no value assertion.
   func tap(_ query: FBAccessibilityElementQuery) async throws {
     try await tap(query, options: FBTapOptions())
+  }
+
+  /// Drags with the default phase durations and sampling interval.
+  func drag(from source: FBAccessibilityElementQuery, to destination: FBAccessibilityElementQuery) async throws {
+    try await drag(from: source, to: destination, options: FBDragOptions())
   }
 }
 
@@ -265,8 +319,6 @@ public extension FBSimulator {
   ///   nobody else can discover. Memoized per simulator and per persistence, and holds its connection
   ///   between reads. The guest was spawned with `--exit-on-disconnect`, so closing that connection is
   ///   what ends it — for a process that owns the simulator for its lifetime.
-  /// - `.remoteAutomation` owns a `testmanagerd` DTX session per **reader**. Hold the returned
-  ///   instance to reuse it across operations; drop it to tear the session down.
   /// - `.accessibility` and `.axBridge(persistence: .oneShot, …)` are stateless — they hold no warm
   ///   resource, so reconstructing them per call is free.
   ///
@@ -276,15 +328,13 @@ public extension FBSimulator {
   func uiAutomation(backend: FBUIAutomationBackend) throws -> any FBUIAutomation {
     switch backend {
     case .accessibility:
-      return FBAccessibilityUIAutomation(operations: self)
-    case .remoteAutomation:
-      return try remoteAutomation()
+      return FBAccessibilityUIAutomation(simulator: self)
     case let .axBridge(persistence, frontmostMethod, automationMode):
       let transport: any FBAXBridgeTransport =
         switch persistence {
         case .oneShot: FBAXBridgeOneshotTransport(simulator: self)
-        case .shared: axBridgeTransport(.shared)
-        case .exclusive: axBridgeTransport(.exclusive)
+        case .shared: axBridgeTransport(scope: .shared)
+        case .exclusive: axBridgeTransport(scope: .exclusive)
         }
       return FBAXBridgeUIAutomation(
         simulator: self, transport: transport, persistence: persistence, frontmostMethod: frontmostMethod,
@@ -296,42 +346,48 @@ public extension FBSimulator {
   /// The socket-backed axbridge transport this target uses for `persistence`.
   ///
   /// Memoized rather than per-reader because the transport is what reaches the guest, and the spawn plus
-  /// `initForRemoteAccess` behind it is the cost these lanes exist to avoid. `frontmostMethod` and
+  /// `initForRemoteAccess` behind it is the cost these modes exist to avoid. `frontmostMethod` and
   /// `automationMode` belong to the reader, so readers differing in those share a transport.
   ///
   /// Keyed by persistence rather than by type alone, because a shared and an exclusive bridge are not
   /// interchangeable: handing a shared request the exclusive transport would read over a bridge nobody
   /// else can see, and handing an exclusive request the shared one would put the caller back to holding
   /// a bridge others are trying to use.
-  private func axBridgeTransport(_ persistence: FBAXBridgePersistence) -> FBAXBridgePersistentTransport {
-    commandCache.resolve { FBAXBridgeTransportsByPersistence() }
-      .transport(for: persistence) { FBAXBridgePersistentTransport(simulator: self, persistence: persistence) }
+  private func axBridgeTransport(scope: FBAXBridgeServiceScope) -> FBAXBridgePersistentTransport {
+    commandCache.resolve { FBAXBridgeTransportsByScope() }
+      .transport(for: scope) { FBAXBridgePersistentTransport(simulator: self, scope: scope) }
+  }
+
+  /// Delivers one composed gesture over HID, which drains the transport once for the whole gesture
+  /// rather than once per primitive event.
+  internal func sendHIDGesture(_ event: FBSimulatorHIDEvent) async throws {
+    try await connectToHID().send(event: event, logger: logger)
   }
 }
 
-/// One socket-backed transport per persistence, for one target.
+/// One socket-backed transport per service scope, for one target.
 ///
-/// `FBTargetCommandCache` keys its slots by type, and the two persistences need separate transports that
+/// `FBTargetCommandCache` keys its slots by type, and the two scopes need separate transports that
 /// are the same type, so this holds them apart.
 ///
 // SAFETY: `transports` is only read or written with `lock` held, so no mutable state is reachable from
-// two threads at once. Mirrors the `@unchecked Sendable` convention in FBRemoteInvoking.
+// two threads at once.
 // patternlint-disable-next-line unchecked-sendable
-final class FBAXBridgeTransportsByPersistence: @unchecked Sendable {
+final class FBAXBridgeTransportsByScope: @unchecked Sendable {
   private let lock = NSLock()
-  private var transports: [FBAXBridgePersistence: FBAXBridgePersistentTransport] = [:]
+  private var transports: [FBAXBridgeServiceScope: FBAXBridgePersistentTransport] = [:]
 
   func transport(
-    for persistence: FBAXBridgePersistence,
+    for scope: FBAXBridgeServiceScope,
     build: () -> FBAXBridgePersistentTransport
   ) -> FBAXBridgePersistentTransport {
     lock.lock()
     defer { lock.unlock() }
-    if let existing = transports[persistence] {
+    if let existing = transports[scope] {
       return existing
     }
     let created = build()
-    transports[persistence] = created
+    transports[scope] = created
     return created
   }
 }

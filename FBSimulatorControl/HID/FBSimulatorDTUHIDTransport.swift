@@ -210,10 +210,8 @@ actor FBSimulatorDTUHIDTransport {
 extension FBSimulatorHIDButton {
 
   /// The HID Consumer-page usage (page, code) for this hardware button. Transport-agnostic: shared by
-  /// the DTUHID transport (`dtuhidd`'s `mainScreenButtons` service) and the testmanagerd remote
-  /// device-event path (`_XCTD_performDeviceEvent:`). All live-confirmed against a booted Xcode 27 /
-  /// iOS 26 simulator (Consumer page 0x0C). Apple Pay has no single usage — it is a double-press of
-  /// the side button — so it is nil.
+  /// the DTUHID transport (`dtuhidd`'s `mainScreenButtons` service). Apple Pay has no single usage —
+  /// it is a double-press of the side button — so it is nil.
   var consumerHIDUsage: (page: UInt16, code: UInt16)? {
     switch self {
     case .homeButton:

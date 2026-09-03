@@ -105,8 +105,8 @@ public final class FBInstrumentsOperation {
   ///
   /// The instruments cli is unreliable and sometimes stops recording right after starting.
   /// To make it reliable, launches are retried until one succeeds or the launch-retry
-  /// timeout elapses, matching the future-based predecessor's retry-with-timeout.
-  public class func operationAsync(
+  /// timeout elapses.
+  public class func operation(
     target: any FBiOSTarget,
     configuration: FBInstrumentsConfiguration,
     logger: any FBControlCoreLogger
@@ -178,16 +178,15 @@ public final class FBInstrumentsOperation {
       .withStdErr(to: compositeLogger)
       .withTaskLifecycleLogging(to: logger)
       .start()
-    // Bounded by the remaining retry budget as well: the future-based predecessor raced the whole
-    // chain, including the spawn, against the launch-retry timeout, so a wedged spawn failed at
-    // the deadline rather than hanging the operation indefinitely.
+    // The spawn is bounded by the remaining retry budget too, so a wedged spawn fails at the
+    // deadline rather than hanging the operation indefinitely.
     let task = try await bridgeFBFuture(
       startFuture
         .timeout(attemptTimeout, waitingFor: "instruments to start")
         .retyped(FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>>.self))
 
-    // Bound the template-load wait by the remaining retry budget: the future-based
-    // predecessor applied its overall timeout across this wait via a race.
+    // Bounded by the remaining retry budget too, so a template that never loads fails at the
+    // deadline rather than holding the attempt open.
     let templateLoaded = convertFBMutableFuture(instrumentsConsumer.hasStartedLoadingTemplate)
       .timeout(attemptTimeout, waitingFor: "instruments to start loading the template")
     do {
@@ -214,7 +213,7 @@ public final class FBInstrumentsOperation {
 
   /// Stops the operation, waiting for the trace file to be written out to disk.
   /// Returns the trace file.
-  public func stopAsync() async throws -> URL {
+  public func stop() async throws -> URL {
     logger.log("Terminating instruments \(task). Backoff Timeout \(configuration.timings.terminateTimeout)")
     _ = try? await bridgeFBFuture(task.sendSignal(SIGINT, backingOffToKillWithTimeout: configuration.timings.terminateTimeout, logger: logger))
     let exitCode = try await bridgeFBFuture(task.exitCode)
@@ -225,7 +224,7 @@ public final class FBInstrumentsOperation {
   }
 
   /// Post-processes an instruments trace, returning the post-processed trace URL.
-  public class func postProcessAsync(
+  public class func postProcess(
     arguments: [String]?,
     traceFile: URL,
     queue: DispatchQueue,

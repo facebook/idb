@@ -6,106 +6,97 @@
  */
 
 @testable import CompanionUtilities
-import XCTest
+import Testing
 
-final class AsyncPromiseTests: XCTestCase {
+@Suite
+struct AsyncPromiseTests {
 
   private enum TestError: Error, Equatable {
     case boom
   }
 
-  func testResolveBeforeAwaitReturnsValue() async throws {
+  @Test
+  func resolveBeforeAwaitReturnsValue() async throws {
     let promise = AsyncPromise<Int>()
     promise.resolve(42)
     let value = try await promise.value
-    XCTAssertEqual(value, 42)
+    #expect(value == 42)
   }
 
-  func testAwaitBeforeResolveReturnsValue() async throws {
+  @Test
+  func awaitBeforeResolveReturnsValue() async throws {
     let promise = AsyncPromise<Int>()
     let waiter = Task { try await promise.value }
     promise.resolve(7)
     let value = try await waiter.value
-    XCTAssertEqual(value, 7)
+    #expect(value == 7)
   }
 
-  func testFailPropagatesError() async {
+  @Test
+  func failPropagatesError() async {
     let promise = AsyncPromise<Int>()
     promise.fail(TestError.boom)
-    do {
-      _ = try await promise.value
-      XCTFail("Expected the promise to throw")
-    } catch let error as TestError {
-      XCTAssertEqual(error, .boom)
-    } catch {
-      XCTFail("Expected TestError.boom, got \(error)")
-    }
+    await #expect(throws: TestError.boom) { try await promise.value }
   }
 
-  func testFirstResolutionWins() async throws {
+  @Test
+  func firstResolutionWins() async throws {
     let promise = AsyncPromise<Int>()
     promise.resolve(1)
     promise.resolve(2)
     promise.fail(TestError.boom)
     let value = try await promise.value
-    XCTAssertEqual(value, 1, "Only the first resolution should take effect")
+    #expect(value == 1, "Only the first resolution should take effect")
   }
 
-  func testIsResolved() {
+  @Test
+  func isResolved() {
     let promise = AsyncPromise<Int>()
-    XCTAssertFalse(promise.isResolved)
+    #expect(!promise.isResolved)
     promise.resolve(1)
-    XCTAssertTrue(promise.isResolved)
+    #expect(promise.isResolved)
   }
 
-  func testVoidPromiseResolves() async throws {
+  @Test
+  func voidPromiseResolves() async throws {
     let promise = AsyncPromise<Void>()
     let waiter = Task { try await promise.value }
     promise.resolve(())
     try await waiter.value
   }
 
-  func testCancellationThrowsCancellationError() async {
+  @Test
+  func cancellationThrowsCancellationError() async {
     let promise = AsyncPromise<Int>()
     let waiter = Task { try await promise.value }
     waiter.cancel()
-    do {
-      _ = try await waiter.value
-      XCTFail("Expected cancellation to throw")
-    } catch is CancellationError {
-      // expected
-    } catch {
-      XCTFail("Expected CancellationError, got \(error)")
-    }
+    await #expect(throws: CancellationError.self) { try await waiter.value }
   }
 
-  func testCancellingOneWaiterDoesNotAffectOthers() async throws {
+  @Test
+  func cancellingOneWaiterDoesNotAffectOthers() async throws {
     let promise = AsyncPromise<Int>()
     let cancelled = Task { try await promise.value }
     let survivor = Task { try await promise.value }
 
     cancelled.cancel()
-    do {
-      _ = try await cancelled.value
-      XCTFail("Expected the cancelled waiter to throw")
-    } catch is CancellationError {
-      // expected
-    }
+    await #expect(throws: CancellationError.self) { try await cancelled.value }
 
     // A later resolution still reaches a waiter that was never cancelled.
     promise.resolve(99)
     let value = try await survivor.value
-    XCTAssertEqual(value, 99)
+    #expect(value == 99)
   }
 
-  func testMultipleWaitersAllReceiveValue() async throws {
+  @Test
+  func multipleWaitersAllReceiveValue() async throws {
     let promise = AsyncPromise<Int>()
     let first = Task { try await promise.value }
     let second = Task { try await promise.value }
     promise.resolve(5)
     let firstValue = try await first.value
     let secondValue = try await second.value
-    XCTAssertEqual(firstValue, 5)
-    XCTAssertEqual(secondValue, 5)
+    #expect(firstValue == 5)
+    #expect(secondValue == 5)
   }
 }

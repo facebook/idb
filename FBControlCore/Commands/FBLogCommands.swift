@@ -7,7 +7,7 @@
 
 import Foundation
 
-public class FBProcessLogOperation: LogOperation {
+public final class FBProcessLogOperation: LogOperation {
 
   // MARK: Properties
 

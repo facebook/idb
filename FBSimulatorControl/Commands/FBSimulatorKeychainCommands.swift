@@ -32,6 +32,6 @@ public struct FBSimulatorKeychainCommands {
 extension FBSimulator: KeychainCommands {
 
   public func clearKeychain() async throws {
-    try await keychainCommands.clearKeychain()
+    try await keychain.clearKeychain()
   }
 }

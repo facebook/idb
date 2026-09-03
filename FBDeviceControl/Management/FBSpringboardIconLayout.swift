@@ -394,7 +394,7 @@ public struct FBSpringboardIconLayout: Encodable, Sendable {
     ).encode(to: encoder)
   }
 
-  public var iconsByBundleID: [String: [String: Any]] {
+  var iconsByBundleID: [String: [String: Any]] {
     var iconsByBundleID: [String: [String: Any]] = [:]
     for page in pages {
       for icon in page {
@@ -406,7 +406,7 @@ public struct FBSpringboardIconLayout: Encodable, Sendable {
     return iconsByBundleID
   }
 
-  public func flattenedBundleIdentifierPages() -> [[String]] {
+  func flattenedBundleIdentifierPages() -> [[String]] {
     pages.map { page in
       page.compactMap { $0["bundleIdentifier"] as? String }
     }

@@ -34,7 +34,7 @@ extension FBDeviceRecoveryError: LocalizedError {
   }
 }
 
-public class FBDeviceRecoveryCommands {
+public final class FBDeviceRecoveryCommands {
   private(set) weak var device: FBDevice?
 
   // MARK: Initializers
@@ -53,7 +53,7 @@ public class FBDeviceRecoveryCommands {
     guard let device else {
       throw FBDeviceNilError.deviceNil
     }
-    try await withFBFutureContext(device.connectToDevice(withPurpose: "enter_recovery")) { connectedDevice in
+    try await device.withConnectedDevice(purpose: "enter_recovery") { connectedDevice in
       guard let enterRecoveryFunc = connectedDevice.calls.EnterRecovery else {
         throw FBDeviceRecoveryError.callUnavailable(function: "EnterRecovery")
       }
@@ -102,10 +102,10 @@ public class FBDeviceRecoveryCommands {
 extension FBDevice: RecoveryCommands {
 
   public func enterRecovery() async throws {
-    try await recoveryCommands.enterRecovery()
+    try await recovery.enterRecovery()
   }
 
   public func exitRecovery() async throws {
-    try await recoveryCommands.exitRecovery()
+    try await recovery.exitRecovery()
   }
 }

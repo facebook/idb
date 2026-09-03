@@ -27,7 +27,7 @@ extension FBStorageUtilsError: LocalizedError {
   }
 }
 
-public class FBStorageUtils {
+public final class FBStorageUtils {
 
   // MARK: Finding Files
 

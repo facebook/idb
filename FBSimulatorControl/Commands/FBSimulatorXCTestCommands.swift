@@ -122,7 +122,7 @@ public final class FBSimulatorXCTestCommands {
 
   // MARK: - Async
 
-  fileprivate func runTestAsync(launchConfiguration: FBTestLaunchConfiguration, reporter: AnyObject, logger: any FBControlCoreLogger) async throws {
+  fileprivate func runTest(launchConfiguration: FBTestLaunchConfiguration, reporter: AnyObject, logger: any FBControlCoreLogger) async throws {
     guard let simulator = self.simulator else {
       throw FBWeakTargetError.simulator
     }
@@ -133,7 +133,7 @@ public final class FBSimulatorXCTestCommands {
     }
 
     if !launchConfiguration.shouldUseXcodebuild {
-      try await runTestAsync(with: launchConfiguration, reporter: typedReporter, logger: logger, workingDirectory: simulator.auxillaryDirectory)
+      try await runTest(with: launchConfiguration, reporter: typedReporter, logger: logger, workingDirectory: simulator.auxillaryDirectory)
       return
     }
 
@@ -151,12 +151,12 @@ public final class FBSimulatorXCTestCommands {
     isRunningXcodeBuildOperation = true
     defer { isRunningXcodeBuildOperation = false }
 
-    let subprocess = try await startTestAsync(with: launchConfiguration, logger: logger)
+    let subprocess = try await startTest(with: launchConfiguration, logger: logger)
     try await bridgeFBFutureVoid(
       FBXcodeBuildOperation.confirmExit(ofXcodebuildOperation: subprocess, configuration: launchConfiguration, reporter: typedReporter, target: simulator, logger: logger))
   }
 
-  fileprivate func listTestsAsync(forBundleAtPath bundlePath: String, timeout: TimeInterval, withAppAtPath appPath: String?) async throws -> [String] {
+  fileprivate func listTests(forBundleAtPath bundlePath: String, timeout: TimeInterval, withAppAtPath appPath: String?) async throws -> [String] {
     guard let simulator = self.simulator else {
       throw FBWeakTargetError.simulator
     }
@@ -177,20 +177,20 @@ public final class FBSimulatorXCTestCommands {
         .listTests())
   }
 
-  fileprivate func extendedTestShimAsync() async throws -> String {
+  fileprivate func extendedTestShim() async throws -> String {
     let shimConfig = try await FBXCTestShimConfiguration.sharedShimConfiguration()
     return shimConfig.iOSSimulatorTestShimPath
   }
 
   // MARK: - Private
 
-  private func runTestAsync(with testLaunchConfiguration: FBTestLaunchConfiguration, reporter: any FBXCTestReporter, logger: any FBControlCoreLogger, workingDirectory: String?) async throws {
+  private func runTest(with testLaunchConfiguration: FBTestLaunchConfiguration, reporter: any FBXCTestReporter, logger: any FBControlCoreLogger, workingDirectory: String?) async throws {
     guard let simulator = self.simulator else {
       throw FBWeakTargetError.simulator
     }
 
     if simulator.state != .booted {
-      throw FBSimulatorStateError.notBooted(operation: "run tests", state: String(describing: simulator.stateString))
+      throw FBSimulatorStateError.notBooted(operation: "run tests", state: simulator.stateString.rawValue)
     }
 
     try await FBManagedTestRunStrategy.runToCompletion(
@@ -204,10 +204,8 @@ public final class FBSimulatorXCTestCommands {
       logger: logger)
   }
 
-  // Internal (not private) so the poll can be unit-tested with a getenv device double. The env key is
-  // parameterized (default `TESTMANAGERD_SIM_SOCK`) so the remote-automation path can resolve its own
-  // socket via `TESTMANAGERD_REMOTE_AUTOMATION_SIM_SOCK` through the same tested poll.
-  func testManagerDaemonSocketPath(envKey: String = simSockEnvKey) async throws -> String {
+  // Internal so the poll can be unit-tested with a getenv device double.
+  func testManagerDaemonSocketPath() async throws -> String {
     guard let simulator = self.simulator else {
       throw FBWeakTargetError.simulator
     }
@@ -215,7 +213,7 @@ public final class FBSimulatorXCTestCommands {
     var lastError: NSError?
     while true {
       do {
-        let socketPath = try simulator.device.getenv(envKey)
+        let socketPath = try simulator.device.getenv(simSockEnvKey)
         if !socketPath.isEmpty {
           return socketPath
         }
@@ -223,13 +221,13 @@ public final class FBSimulatorXCTestCommands {
         lastError = error as NSError
       }
       if Date() >= deadline {
-        throw FBSimulatorXCTestError.environmentVariableUnavailable(key: envKey, underlying: lastError)
+        throw FBSimulatorXCTestError.environmentVariableUnavailable(key: simSockEnvKey, underlying: lastError)
       }
       try await Task.sleep(nanoseconds: 50_000_000)
     }
   }
 
-  private func startTestAsync(with configuration: FBTestLaunchConfiguration, logger: any FBControlCoreLogger) async throws -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
+  private func startTest(with configuration: FBTestLaunchConfiguration, logger: any FBControlCoreLogger) async throws -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
     guard let simulator = self.simulator else {
       throw FBWeakTargetError.simulator
     }
@@ -260,7 +258,7 @@ extension FBSimulator: XCTestExtendedCommands {
     reporter: AnyObject,
     logger: any FBControlCoreLogger
   ) async throws {
-    try await xctestExtendedCommands.runTestAsync(launchConfiguration: launchConfiguration, reporter: reporter, logger: logger)
+    try await xctestExtended.runTest(launchConfiguration: launchConfiguration, reporter: reporter, logger: logger)
   }
 
   public func listTests(
@@ -268,20 +266,20 @@ extension FBSimulator: XCTestExtendedCommands {
     timeout: TimeInterval,
     withAppAtPath appPath: String?
   ) async throws -> [String] {
-    try await xctestExtendedCommands.listTestsAsync(forBundleAtPath: bundlePath, timeout: timeout, withAppAtPath: appPath)
+    try await xctestExtended.listTests(forBundleAtPath: bundlePath, timeout: timeout, withAppAtPath: appPath)
   }
 
   public func extendedTestShim() async throws -> String {
-    try await xctestExtendedCommands.extendedTestShimAsync()
+    try await xctestExtended.extendedTestShim()
   }
 
   public func withTransportForTestManagerService<R>(
     body: (NSNumber) async throws -> R
   ) async throws -> R {
-    try await xctestExtendedCommands.withTransportForTestManagerService(body: body)
+    try await xctestExtended.withTransportForTestManagerService(body: body)
   }
 
   public var xctestPath: String {
-    xctestExtendedCommands.xctestPath
+    xctestExtended.xctestPath
   }
 }

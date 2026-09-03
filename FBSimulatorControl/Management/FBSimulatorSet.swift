@@ -9,7 +9,7 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-public final class FBSimulatorSet: NSObject, FBiOSTargetSet {
+public final class FBSimulatorSet: FBiOSTargetSet {
 
   // MARK: - Properties
 
@@ -50,7 +50,6 @@ public final class FBSimulatorSet: NSObject, FBiOSTargetSet {
     self.workQueue = DispatchQueue.main
     self.asyncQueue = DispatchQueue.global(qos: .default)
     self._allSimulators = []
-    super.init()
     self.notificationUpdateStrategy = FBSimulatorNotificationUpdateStrategy.strategy(with: self)
   }
 
@@ -66,21 +65,7 @@ public final class FBSimulatorSet: NSObject, FBiOSTargetSet {
 
   // MARK: - Creation
 
-  public func createSimulator(with configuration: FBSimulatorConfiguration) -> FBFuture<FBSimulator> {
-    fbFutureFromAsync { [self] in
-      try await createSimulatorAsync(with: configuration)
-    }
-  }
-
-  public func cloneSimulator(_ simulator: FBSimulator, toDeviceSet destinationSet: FBSimulatorSet) -> FBFuture<FBSimulator> {
-    fbFutureFromAsync { [self] in
-      try await cloneSimulatorAsync(simulator, toDeviceSet: destinationSet)
-    }
-  }
-
-  // MARK: - Async
-
-  public func createSimulatorAsync(with configuration: FBSimulatorConfiguration) async throws -> FBSimulator {
+  public func createSimulator(with configuration: FBSimulatorConfiguration) async throws -> FBSimulator {
     let model: String = configuration.device.model.rawValue
 
     // See if we meet the runtime requirements to create a Simulator with the given configuration.
@@ -95,24 +80,24 @@ public final class FBSimulatorSet: NSObject, FBiOSTargetSet {
 
     // First, create the device.
     logger.debug().log("Creating device with Type \(deviceType) Runtime \(runtime)")
-    let device = try await Self.createDeviceAsync(on: deviceSet, type: deviceType, runtime: runtime, name: model, queue: asyncQueue)
+    let device = try await Self.createDevice(on: deviceSet, type: deviceType, runtime: runtime, name: model, queue: asyncQueue)
     let simulator = try fetchNewlyMadeSimulatorOrThrow(device)
     simulator.configuration = configuration
     logger.debug().log("Created Simulator \(simulator.udid) for configuration \(configuration)")
     do {
-      try await FBSimulatorShutdownStrategy.shutdownAsync(simulator)
+      try await FBSimulatorShutdownStrategy.shutdown(simulator)
     } catch {
       throw FBSimulatorSetError.shutdownAfterCreateFailed(reason: error.localizedDescription)
     }
     return simulator
   }
 
-  func cloneSimulatorAsync(_ simulator: FBSimulator, toDeviceSet destinationSet: FBSimulatorSet) async throws -> FBSimulator {
-    let device = try await Self.cloneDeviceAsync(on: deviceSet, device: simulator.device, toDeviceSet: destinationSet.deviceSet, queue: asyncQueue)
+  public func cloneSimulator(_ simulator: FBSimulator, toDeviceSet destinationSet: FBSimulatorSet) async throws -> FBSimulator {
+    let device = try await Self.cloneDevice(on: deviceSet, device: simulator.device, toDeviceSet: destinationSet.deviceSet, queue: asyncQueue)
     return try destinationSet.fetchNewlyMadeSimulatorOrThrow(device)
   }
 
-  public func configurationsForAbsentDefaultSimulators() throws -> [FBSimulatorConfiguration] {
+  func configurationsForAbsentDefaultSimulators() throws -> [FBSimulatorConfiguration] {
     let existingConfigurations = Set(allSimulators.compactMap { $0.configuration })
     var absentConfigurations = Set(try FBSimulatorConfiguration.allAvailableDefaultConfigrations(withLogger: logger))
     absentConfigurations.subtract(existingConfigurations)
@@ -121,33 +106,33 @@ public final class FBSimulatorSet: NSObject, FBiOSTargetSet {
 
   // MARK: - Destructive Methods
 
-  public func shutdown(_ simulator: FBSimulator) -> FBFuture<NSNull> {
-    return FBSimulatorShutdownStrategy.shutdown(simulator)
+  public func shutdown(_ simulator: FBSimulator) async throws {
+    try await FBSimulatorShutdownStrategy.shutdown(simulator)
   }
 
-  public func delete(_ simulator: FBSimulator) -> FBFuture<NSNull> {
-    return FBSimulatorDeletionStrategy.delete(simulator)
+  public func delete(_ simulator: FBSimulator) async throws {
+    try await FBSimulatorDeletionStrategy.delete(simulator)
   }
 
-  public func shutdownAll(_ simulators: [FBSimulator]) -> FBFuture<NSNull> {
-    return FBSimulatorShutdownStrategy.shutdownAll(simulators)
+  func shutdownAll(_ simulators: [FBSimulator]) async throws {
+    try await FBSimulatorShutdownStrategy.shutdownAll(simulators)
   }
 
-  public func deleteAll(_ simulators: [FBSimulator]) -> FBFuture<NSNull> {
-    return FBSimulatorDeletionStrategy.deleteAll(simulators)
+  public func deleteAll(_ simulators: [FBSimulator]) async throws {
+    try await FBSimulatorDeletionStrategy.deleteAll(simulators)
   }
 
-  public func shutdownAll() -> FBFuture<NSNull> {
-    return FBSimulatorShutdownStrategy.shutdownAll(allSimulators)
+  func shutdownAll() async throws {
+    try await FBSimulatorShutdownStrategy.shutdownAll(allSimulators)
   }
 
-  public func deleteAll() -> FBFuture<NSNull> {
-    return deleteAll(allSimulators)
+  public func deleteAll() async throws {
+    try await deleteAll(allSimulators)
   }
 
   // MARK: - NSObject
 
-  public override var description: String {
+  public var description: String {
     FBCollectionInformation.oneLineDescription(from: allSimulators)
   }
 
@@ -187,7 +172,7 @@ public final class FBSimulatorSet: NSObject, FBiOSTargetSet {
     return simulator
   }
 
-  private static func createDeviceAsync(on deviceSet: SimDeviceSet, type deviceType: SimDeviceType, runtime: SimRuntime, name: String, queue: DispatchQueue) async throws -> SimDevice {
+  private static func createDevice(on deviceSet: SimDeviceSet, type deviceType: SimDeviceType, runtime: SimRuntime, name: String, queue: DispatchQueue) async throws -> SimDevice {
     try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<SimDevice, Error>) in
       deviceSet.createDeviceAsync(withType: deviceType, runtime: runtime, name: name, completionQueue: queue) { error, device in
         if let device {
@@ -199,7 +184,7 @@ public final class FBSimulatorSet: NSObject, FBiOSTargetSet {
     }
   }
 
-  private static func cloneDeviceAsync(on deviceSet: SimDeviceSet, device: SimDevice, toDeviceSet destinationSet: SimDeviceSet, queue: DispatchQueue) async throws -> SimDevice {
+  private static func cloneDevice(on deviceSet: SimDeviceSet, device: SimDevice, toDeviceSet destinationSet: SimDeviceSet, queue: DispatchQueue) async throws -> SimDevice {
     try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<SimDevice, Error>) in
       deviceSet.cloneDeviceAsync(device, name: device.name, to: destinationSet, completionQueue: queue) { error, created in
         if let created {

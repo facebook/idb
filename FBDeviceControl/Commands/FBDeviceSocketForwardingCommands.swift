@@ -37,7 +37,7 @@ extension FBDeviceSocketForwardingError: LocalizedError {
   }
 }
 
-public class FBDeviceSocketForwardingCommands {
+public final class FBDeviceSocketForwardingCommands {
   private(set) weak var device: FBDevice?
 
   // MARK: Initializers
@@ -64,7 +64,7 @@ public class FBDeviceSocketForwardingCommands {
     guard let localConsumer = FBFileWriter.asyncWriter(withFileDescriptor: localFileDescriptorOutput, closeOnEndOfFile: false, error: &error) else {
       throw error ?? FBDeviceSocketForwardingError.fileDescriptorWriterFailed(fileDescriptor: localFileDescriptorOutput)
     }
-    try await withFBFutureContext(device.connectToDevice(withPurpose: "Socket Connection")) { connectedDevice in
+    try await device.withConnectedDevice(purpose: "Socket Connection") { connectedDevice in
       let localSocket = try Self.openLocalSocket(toRemotePort: Int(remotePort), on: connectedDevice, logger: device.logger)
       // The writer gets its own duplicate of the socket, owned and closed by
       // its channel. Two dispatch io channels must not share one descriptor:
@@ -149,6 +149,6 @@ public class FBDeviceSocketForwardingCommands {
 extension FBDevice: SocketForwardingCommands {
 
   public func drainLocalFileInput(_ localFileDescriptorInput: Int32, localFileOutput localFileDescriptorOutput: Int32, remotePort: Int32) async throws {
-    try await socketForwardingCommands.drainLocalFileInput(localFileDescriptorInput, localFileOutput: localFileDescriptorOutput, remotePort: remotePort)
+    try await socketForwarding.drainLocalFileInput(localFileDescriptorInput, localFileOutput: localFileDescriptorOutput, remotePort: remotePort)
   }
 }

@@ -9,7 +9,7 @@ import Foundation
 
 /// Awaits termination of the process `pid`, resolving when it exits (or promptly if
 /// it is already gone).
-public func waitForProcessExit(pid: pid_t) async {
+func waitForProcessExit(pid: pid_t) async {
   let watcher = ProcessExitWatcher(pid: pid)
   await withCheckedContinuation { continuation in
     watcher.begin(continuation: continuation)

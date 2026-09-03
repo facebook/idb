@@ -64,7 +64,7 @@ public enum FBProcessTerminationStrategyError: Error, LocalizedError {
   }
 }
 
-public class FBProcessTerminationStrategy: NSObject {
+public final class FBProcessTerminationStrategy: NSObject {
 
   // MARK: Private Properties
 

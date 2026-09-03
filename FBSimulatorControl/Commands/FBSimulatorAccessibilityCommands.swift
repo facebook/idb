@@ -88,10 +88,10 @@ final class FBSimulatorAccessibilityCommands: AccessibilityOperations {
     case .frontmost:
       let request = FBAXTranslationRequest(kind: .frontmostApplication)
       return try await accessibilityElement(request: request, remediationPermitted: true)
-    case let .marker(value, key, depth):
+    case let .marker(value, key, depth, ignoresCase):
       let request = FBAXTranslationRequest(kind: .frontmostApplication)
       let root = try await accessibilityElement(request: request, remediationPermitted: true)
-      return try await root.findElement(withValue: value, forKey: key, depth: depth)
+      return try await root.findElement(withValue: value, forKey: key, depth: depth, ignoresCase: ignoresCase)
     case let .application(pid):
       // An explicit pid target: read that application directly, no SpringBoard stale-hierarchy
       // remediation (that is only meaningful for the frontmost read).
@@ -190,6 +190,6 @@ final class FBSimulatorAccessibilityCommands: AccessibilityOperations {
 extension FBSimulator: AccessibilityOperations {
 
   func resolveElement(for query: FBAccessibilityElementQuery) async throws -> FBAccessibilityElement {
-    try await accessibilityCommands.resolveElement(for: query)
+    try await accessibility.resolveElement(for: query)
   }
 }

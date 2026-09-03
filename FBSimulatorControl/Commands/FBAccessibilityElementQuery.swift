@@ -25,7 +25,11 @@ public enum FBAccessibilityElementQuery: Equatable, Sendable {
   /// `depth` bounds how deep the search descends and is honoured by the accessibility backend, which
   /// walks the live element tree. The XCUI-grade backends read a whole tree in one round trip (under
   /// their own read bounds) and match over the result, so they do not apply it.
-  case marker(value: String, key: FBAXSearchableKey, depth: UInt)
+  ///
+  /// `ignoresCase` is a read-path affordance and defaults to off, which is what every write builds: a
+  /// tap, scroll, set-value or drag that resolved "ok" to a *Cancel* button labelled "OK" would be
+  /// acting on an element the caller did not name, and a write is not undoable the way a read is.
+  case marker(value: String, key: FBAXSearchableKey, depth: UInt, ignoresCase: Bool = false)
   case frontmost
   /// A specific application's whole element tree, anchored by its process identifier — read regardless
   /// of what is frontmost (e.g. an app behind a system modal), unlike `frontmost`. Callers resolve a
@@ -40,7 +44,7 @@ public extension FBAccessibilityElementQuery {
     switch self {
     case let .point(point):
       return .point(point)
-    case let .marker(value, key, _):
+    case let .marker(value, key, _, _):
       return .marker(value: value, matchKey: key.rawValue)
     case .frontmost:
       return .frontmost
@@ -57,8 +61,11 @@ extension FBAccessibilityElementQuery: CustomStringConvertible {
     switch self {
     case let .point(point):
       return "the element at (\(Double(point.x)), \(Double(point.y)))"
-    case let .marker(value, key, _):
-      return "the element whose \(key.rawValue) contains \"\(value)\""
+    case let .marker(value, key, _, ignoresCase):
+      // Naming the case-insensitivity matters most in the failure: "no element whose AXLabel contains
+      // "ok"" reads as a claim about the screen, when the caller wants to know whether "OK" was
+      // considered.
+      return "the element whose \(key.rawValue) contains \"\(value)\"\(ignoresCase ? " (ignoring case)" : "")"
     case .frontmost:
       return "the frontmost application"
     case let .application(pid):

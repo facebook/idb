@@ -166,6 +166,6 @@ public final class FBDeviceEraseCommands: EraseCommands {
 extension FBDevice: EraseCommands {
 
   public func erase() async throws {
-    try await eraseCommands.erase()
+    try await erase.erase()
   }
 }

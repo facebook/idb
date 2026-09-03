@@ -52,7 +52,7 @@ final class FBInstrumentsOperationTests: XCTestCase {
   func testPostProcess_WhenArgumentsAreNil_ReturnsTheInputTraceFileWithoutSpawning() async throws {
     let traceFile = URL(fileURLWithPath: "/tmp/does-not-need-to-exist.trace")
 
-    let result = try await FBInstrumentsOperation.postProcessAsync(
+    let result = try await FBInstrumentsOperation.postProcess(
       arguments: nil, traceFile: traceFile, queue: .main, logger: nil)
 
     XCTAssertEqual(result, traceFile, "Absent post-processing arguments should pass the trace file straight through")
@@ -61,7 +61,7 @@ final class FBInstrumentsOperationTests: XCTestCase {
   func testPostProcess_WhenArgumentsAreEmpty_ReturnsTheInputTraceFileWithoutSpawning() async throws {
     let traceFile = URL(fileURLWithPath: "/tmp/does-not-need-to-exist.trace")
 
-    let result = try await FBInstrumentsOperation.postProcessAsync(
+    let result = try await FBInstrumentsOperation.postProcess(
       arguments: [], traceFile: traceFile, queue: .main, logger: nil)
 
     XCTAssertEqual(result, traceFile, "Empty post-processing arguments should pass the trace file straight through")

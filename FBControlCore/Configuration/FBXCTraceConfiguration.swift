@@ -38,7 +38,7 @@ public struct FBXCTraceRecordConfiguration {
     self.shim = shim
   }
 
-  public func withShim(_ shim: FBXCTestShimConfiguration) -> FBXCTraceRecordConfiguration {
+  func withShim(_ shim: FBXCTestShimConfiguration) -> FBXCTraceRecordConfiguration {
     FBXCTraceRecordConfiguration(templateName: templateName, timeLimit: timeLimit, package: package, allProcesses: allProcesses, processToAttach: processToAttach, processToLaunch: processToLaunch, launchArgs: launchArgs, targetStdin: targetStdin, targetStdout: targetStdout, processEnv: processEnv, shim: shim)
   }
 }

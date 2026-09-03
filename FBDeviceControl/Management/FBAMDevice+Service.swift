@@ -12,12 +12,11 @@ extension FBAMDevice {
 
   /// Starts a service on the device, tearing the connection down when the context is exited.
   ///
-  /// The Objective-C `startService:` forwards here. Two lifetimes are in play and they are not the
-  /// same: the AMDevice *session* is released as soon as the service has started — that is what the
-  /// predecessor's `pop:` did, and `FBAMDevice.h` explains at length why it must not be held for
-  /// the duration — while the service *connection* is invalidated when the caller finishes with it.
-  @objc(startServiceConnection:)
-  public func startServiceConnection(_ service: String) -> FBFutureContext<FBAMDServiceConnection> {
+  /// Two lifetimes are in play and they are not the same: the AMDevice *session* is released as
+  /// soon as the service has started, while the service *connection* is invalidated when the
+  /// caller finishes with it. A session times out after 60 seconds, so holding one open for the
+  /// duration of a long-running service fails the next operation on the device.
+  func startServiceConnection(_ service: String) -> FBFutureContext<FBAMDServiceConnection> {
     let logger = self.logger
     return fbFutureFromAsync { try await self.openServiceConnection(service) }
       .onQueue(
@@ -33,7 +32,7 @@ extension FBAMDevice {
   ///
   /// The async counterpart of `startServiceConnection`, with the same two lifetimes: the AMDevice
   /// session is released as soon as the service has started, the connection when `body` is done.
-  public func withServiceConnection<T>(
+  func withServiceConnection<T>(
     _ service: String,
     _ body: (FBAMDServiceConnection) async throws -> T
   ) async throws -> T {
@@ -46,12 +45,12 @@ extension FBAMDevice {
   ///
   /// The device link handshake is performed before `body` runs, so the client it receives is ready
   /// to process messages.
-  public func withDeviceLinkClient<T>(
+  func withDeviceLinkClient<T>(
     _ service: String,
     _ body: (FBDeviceLinkClient) async throws -> T
   ) async throws -> T {
     try await withServiceConnection(service) { connection in
-      let client = try await FBDeviceLinkClient.deviceLinkClientAsync(connection: connection)
+      let client = try await FBDeviceLinkClient.deviceLinkClient(connection: connection)
       return try await body(client)
     }
   }
@@ -61,15 +60,16 @@ extension FBAMDevice {
   ///
   /// The AFC connection carries its own teardown on top of the service connection's, so the two
   /// are released innermost first.
-  public func withAFCConnection<T>(
+  func withAFCConnection<T>(
     _ service: String,
+    calls afcCalls: AFCCalls = FBAFCConnection.defaultCalls,
     _ body: (FBAFCConnection) async throws -> T
   ) async throws -> T {
     let logger = self.logger
     let workQueue = self.workQueue
     return try await withServiceConnection(service) { connection in
       try await withFBFutureContext(
-        FBAFCConnection.afc(from: connection, calls: FBAFCConnection.defaultCalls, logger: logger, queue: workQueue)
+        FBAFCConnection.afc(from: connection, calls: afcCalls, logger: logger, queue: workQueue)
       ) { afc in
         try await body(afc)
       }
@@ -81,7 +81,7 @@ extension FBAMDevice {
   private func openServiceConnection(_ service: String) async throws -> FBAMDServiceConnection {
     let calls = self.calls
     let logger = self.logger
-    return try await withFBFutureContext(connectToDevice(withPurpose: "start_service_\(service)")) { device in
+    return try await withConnectedDevice(purpose: "start_service_\(service)") { device in
       try Self.startService(service, on: device, calls: calls, logger: logger)
     }
   }
@@ -109,8 +109,7 @@ extension FBAMDevice {
     guard let amDeviceRef = connectedDevice.amDeviceRef, let serviceConnection else {
       throw FBAMDeviceServiceError.deviceNotConnected(service: service)
     }
-    // Unretained, matching the predecessor: the raw reference was handed straight to the
-    // connection, which owns it from here.
+    // Unretained: the raw reference is handed straight to the connection, which owns it from here.
     let connection = FBAMDServiceConnection(
       name: service,
       connection: serviceConnection.takeUnretainedValue(),

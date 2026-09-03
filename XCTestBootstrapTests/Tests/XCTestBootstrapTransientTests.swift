@@ -6,7 +6,7 @@
  */
 
 import XCTest
-import XCTestBootstrap
+@testable import XCTestBootstrap
 
 // MARK: - FBCodeCoverageConfiguration Tests
 

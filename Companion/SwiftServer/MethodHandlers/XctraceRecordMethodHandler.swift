@@ -76,7 +76,7 @@ struct XctraceRecordMethodHandler {
     }
     try await responseStream.send(response)
 
-    let processed = try await FBInstrumentsOperation.postProcessAsync(
+    let processed = try await FBInstrumentsOperation.postProcess(
       arguments: stop.args,
       traceFile: operation.traceDir,
       queue: BridgeQueues.miscEventReaderQueue,

@@ -23,6 +23,8 @@ from idb.common import plugin
 from idb.common.command import Command, CommandGroup
 from idb.common.types import (
     AccessibilityBackend,
+    AccessibilityDragOptions,
+    AccessibilityElementFilter,
     AccessibilityInfo,
     AccessibilityInfoOptions,
     AccessibilityMarker,
@@ -888,7 +890,33 @@ class TestParser(TestCase):
             namespace.reason = None
             namespace.output_file = output_file
             namespace.companion_tls = False
+            # Every encode option defaults to unset, which the companion reads as its own default.
+            namespace.fps = None
+            namespace.scale_factor = None
+            namespace.bitrate = None
+            namespace.key_frame_rate = None
             mock.assert_called_once_with(namespace)
+
+    async def test_video_record_encode_options(self) -> None:
+        mock = AsyncMock()
+        with patch(
+            "idb.cli.commands.video.VideoRecordCommand._run_impl", new=mock, create=True
+        ):
+            await cli_main(
+                cmd_input=[
+                    "record-video",
+                    "--fps=15",
+                    "--scale-factor=0.5",
+                    "--bitrate=1000000",
+                    "--key-frame-rate=2",
+                    "video.mp4",
+                ]
+            )
+            namespace = mock.call_args[0][0]
+            self.assertEqual(namespace.fps, 15)
+            self.assertEqual(namespace.scale_factor, 0.5)
+            self.assertEqual(namespace.bitrate, 1000000)
+            self.assertEqual(namespace.key_frame_rate, 2)
 
     async def test_video_stream(self) -> None:
         mock = AsyncMock()
@@ -1069,6 +1097,197 @@ class TestParser(TestCase):
             ),
             value="hello",
         )
+
+    async def test_drag_and_drop_points(self) -> None:
+        self.client_mock.accessibility_drag = AsyncMock(return_value=[])
+        await cli_main(cmd_input=["ui", "drag-and-drop", "10", "20", "30", "40"])
+        self.client_mock.accessibility_drag.assert_called_once_with(
+            source=AccessibilityPoint(x=10, y=20),
+            destination=AccessibilityPoint(x=30, y=40),
+            options=AccessibilityDragOptions(
+                press_duration=None, duration=None, release_duration=None, delta=None
+            ),
+        )
+
+    async def test_drag_and_drop_markers(self) -> None:
+        self.client_mock.accessibility_drag = AsyncMock(return_value=[])
+        await cli_main(
+            cmd_input=[
+                "ui",
+                "drag-and-drop",
+                "Photo",
+                "Album",
+                "--match-key",
+                "AXUniqueId",
+                "--depth",
+                "5",
+            ]
+        )
+        # The destination inherits the source's key and depth unless it overrides them.
+        self.client_mock.accessibility_drag.assert_called_once_with(
+            source=AccessibilityMarker(
+                value="Photo",
+                match_key=AccessibilitySearchableKey.UNIQUE_ID,
+                depth=5,
+            ),
+            destination=AccessibilityMarker(
+                value="Album",
+                match_key=AccessibilitySearchableKey.UNIQUE_ID,
+                depth=5,
+            ),
+            options=AccessibilityDragOptions(
+                press_duration=None, duration=None, release_duration=None, delta=None
+            ),
+        )
+
+    async def test_drag_and_drop_destination_overrides_the_source_key(self) -> None:
+        self.client_mock.accessibility_drag = AsyncMock(return_value=[])
+        await cli_main(
+            cmd_input=[
+                "ui",
+                "drag-and-drop",
+                "Photo",
+                "Album",
+                "--to-match-key",
+                "AXLabel",
+                "--to-depth",
+                "3",
+                "--match-key",
+                "AXUniqueId",
+            ]
+        )
+        self.client_mock.accessibility_drag.assert_called_once_with(
+            source=AccessibilityMarker(
+                value="Photo",
+                match_key=AccessibilitySearchableKey.UNIQUE_ID,
+                depth=10,
+            ),
+            destination=AccessibilityMarker(
+                value="Album",
+                match_key=AccessibilitySearchableKey.LABEL,
+                depth=3,
+            ),
+            options=AccessibilityDragOptions(
+                press_duration=None, duration=None, release_duration=None, delta=None
+            ),
+        )
+
+    async def test_drag_and_drop_timings(self) -> None:
+        self.client_mock.accessibility_drag = AsyncMock(return_value=[])
+        await cli_main(
+            cmd_input=[
+                "ui",
+                "drag-and-drop",
+                "10",
+                "20",
+                "30",
+                "40",
+                "--press-duration",
+                "1",
+                "--duration",
+                "2",
+                "--release-duration",
+                "0.25",
+                "--delta",
+                "5",
+            ]
+        )
+        self.client_mock.accessibility_drag.assert_called_once_with(
+            source=AccessibilityPoint(x=10, y=20),
+            destination=AccessibilityPoint(x=30, y=40),
+            options=AccessibilityDragOptions(
+                press_duration=1.0, duration=2.0, release_duration=0.25, delta=5.0
+            ),
+        )
+
+    async def test_drag_and_drop_point_to_marker(self) -> None:
+        # Three tokens, the first two integers: the source takes the pair.
+        self.client_mock.accessibility_drag = AsyncMock(return_value=[])
+        await cli_main(cmd_input=["ui", "drag-and-drop", "10", "20", "Album"])
+        self.client_mock.accessibility_drag.assert_called_once_with(
+            source=AccessibilityPoint(x=10, y=20),
+            destination=AccessibilityMarker(
+                value="Album",
+                match_key=AccessibilitySearchableKey.LABEL,
+                depth=10,
+            ),
+            options=AccessibilityDragOptions(
+                press_duration=None, duration=None, release_duration=None, delta=None
+            ),
+        )
+
+    async def test_drag_and_drop_marker_to_point(self) -> None:
+        # Three tokens, the first not an integer: the source is one marker and
+        # the destination takes the pair.
+        self.client_mock.accessibility_drag = AsyncMock(return_value=[])
+        await cli_main(cmd_input=["ui", "drag-and-drop", "Photo", "30", "40"])
+        self.client_mock.accessibility_drag.assert_called_once_with(
+            source=AccessibilityMarker(
+                value="Photo",
+                match_key=AccessibilitySearchableKey.LABEL,
+                depth=10,
+            ),
+            destination=AccessibilityPoint(x=30, y=40),
+            options=AccessibilityDragOptions(
+                press_duration=None, duration=None, release_duration=None, delta=None
+            ),
+        )
+
+    async def test_drag_and_drop_all_numeric_endpoints_read_the_source_greedily(
+        self,
+    ) -> None:
+        # Three integer tokens are the one genuinely ambiguous input: "300 400"
+        # could be the source point or the destination point. The source is read
+        # greedily, the same way `_parse_target` reads a leading integer pair
+        # everywhere else, so this is a point to a numeric marker.
+        self.client_mock.accessibility_drag = AsyncMock(return_value=[])
+        await cli_main(cmd_input=["ui", "drag-and-drop", "300", "400", "500"])
+        self.client_mock.accessibility_drag.assert_called_once_with(
+            source=AccessibilityPoint(x=300, y=400),
+            destination=AccessibilityMarker(
+                value="500",
+                match_key=AccessibilitySearchableKey.LABEL,
+                depth=10,
+            ),
+            options=AccessibilityDragOptions(
+                press_duration=None, duration=None, release_duration=None, delta=None
+            ),
+        )
+
+    async def test_drag_and_drop_rejects_a_bare_coordinate_pair(self) -> None:
+        # `10 20` is one coordinate pair everywhere else in `idb ui`. Reading it
+        # here as two numeric markers would contradict the sibling verbs, and a
+        # dropped destination is the far likelier intent, so it is an error.
+        self.client_mock.accessibility_drag = AsyncMock(return_value=[])
+        exit_code = await cli_main(cmd_input=["ui", "drag-and-drop", "10", "20"])
+        self.assertEqual(exit_code, 1)
+        self.client_mock.accessibility_drag.assert_not_called()
+
+    async def test_drag_and_drop_rejects_one_endpoint(self) -> None:
+        self.client_mock.accessibility_drag = AsyncMock(return_value=[])
+        exit_code = await cli_main(cmd_input=["ui", "drag-and-drop", "Photo"])
+        self.assertEqual(exit_code, 1)
+        self.client_mock.accessibility_drag.assert_not_called()
+
+    async def test_drag_and_drop_rejects_too_many_tokens(self) -> None:
+        # Five tokens cannot be two endpoints; an unquoted multi-word marker is
+        # the usual cause, so this is rejected rather than split some other way.
+        self.client_mock.accessibility_drag = AsyncMock(return_value=[])
+        exit_code = await cli_main(
+            cmd_input=["ui", "drag-and-drop", "My", "Photo", "My", "Album", "1"]
+        )
+        self.assertEqual(exit_code, 1)
+        self.client_mock.accessibility_drag.assert_not_called()
+
+    async def test_drag_and_drop_unparseable_destination(self) -> None:
+        # Four tokens with a marker source leave three for the destination,
+        # which is neither a point nor one marker.
+        self.client_mock.accessibility_drag = AsyncMock(return_value=[])
+        exit_code = await cli_main(
+            cmd_input=["ui", "drag-and-drop", "Photo", "My", "Album", "2"]
+        )
+        self.assertEqual(exit_code, 1)
+        self.client_mock.accessibility_drag.assert_not_called()
 
     async def test_multi_tap_default(self) -> None:
         self.client_mock.multi_tap = AsyncMock(return_value=[])
@@ -1517,7 +1736,7 @@ class TestParser(TestCase):
 
     async def test_accessibility_info_all_api(self) -> None:
         self.client_mock.accessibility_info = AsyncMock()
-        await cli_main(cmd_input=["ui", "describe-all", "--api", "axbridge-persistent"])
+        await cli_main(cmd_input=["ui", "describe-all", "--api", "axbridge"])
         self.client_mock.accessibility_info.assert_called_once_with(
             target=None,
             options=AccessibilityInfoOptions(
@@ -1533,7 +1752,7 @@ class TestParser(TestCase):
         self.client_mock.accessibility_info.assert_called_once_with(
             target=AccessibilityPoint(x=10, y=20),
             options=AccessibilityInfoOptions(
-                nested=False, backend=AccessibilityBackend.AXBRIDGE
+                nested=False, backend=AccessibilityBackend.AXBRIDGE_PERSISTENT
             ),
         )
 
@@ -1621,6 +1840,55 @@ class TestParser(TestCase):
             ),
         )
 
+    async def test_describe_marker_keys_and_enrichers(self) -> None:
+        # describe took --format and --api but not --key, so a caller asking a
+        # marker read for two attributes got the whole default set instead.
+        self.client_mock.accessibility_info = AsyncMock()
+        await cli_main(
+            cmd_input=[
+                "ui",
+                "describe",
+                "Login",
+                "--key",
+                "AXLabel",
+                "--key",
+                "frame",
+                "--profile",
+                "--collect-frame-coverage",
+            ]
+        )
+        self.client_mock.accessibility_info.assert_called_once_with(
+            target=AccessibilityMarker(
+                value="Login",
+                match_key=AccessibilitySearchableKey.LABEL,
+                depth=10,
+            ),
+            options=AccessibilityInfoOptions(
+                nested=False,
+                keys=["AXLabel", "frame"],
+                profile=True,
+                collect_frame_coverage=True,
+            ),
+        )
+
+    async def test_describe_marker_ignore_case(self) -> None:
+        self.client_mock.accessibility_info = AsyncMock()
+        await cli_main(cmd_input=["ui", "describe", "ok", "--ignore-case"])
+        self.client_mock.accessibility_info.assert_called_once_with(
+            target=AccessibilityMarker(
+                value="ok",
+                match_key=AccessibilitySearchableKey.LABEL,
+                depth=10,
+            ),
+            options=AccessibilityInfoOptions(nested=False, ignore_case=True),
+        )
+
+    async def test_describe_marker_is_case_sensitive_by_default(self) -> None:
+        self.client_mock.accessibility_info = AsyncMock()
+        await cli_main(cmd_input=["ui", "describe", "ok"])
+        _, kwargs = self.client_mock.accessibility_info.call_args
+        self.assertFalse(kwargs["options"].ignore_case)
+
     async def test_backend_enum_matches_wire_values(self) -> None:
         # The typed backend must emit the exact values the proto declares, by
         # name and by number — an unset backend is BACKEND_UNSPECIFIED, the
@@ -1649,6 +1917,71 @@ class TestParser(TestCase):
             target=None,
             options=AccessibilityInfoOptions(nested=True, keys=["AXLabel", "type"]),
         )
+
+    async def test_accessibility_info_all_match(self) -> None:
+        self.client_mock.accessibility_info = AsyncMock()
+        await cli_main(cmd_input=["ui", "describe-all", "--match", "Add to Cart"])
+        self.client_mock.accessibility_info.assert_called_once_with(
+            target=None,
+            options=AccessibilityInfoOptions(nested=False, match="Add to Cart"),
+        )
+
+    async def test_accessibility_info_all_match_key_and_ignore_case(self) -> None:
+        self.client_mock.accessibility_info = AsyncMock()
+        await cli_main(
+            cmd_input=[
+                "ui",
+                "describe-all",
+                "--match",
+                "cart",
+                "--match-key",
+                "AXUniqueId",
+                "--ignore-case",
+            ]
+        )
+        self.client_mock.accessibility_info.assert_called_once_with(
+            target=None,
+            options=AccessibilityInfoOptions(
+                nested=False,
+                match="cart",
+                match_key=AccessibilitySearchableKey.UNIQUE_ID,
+                ignore_case=True,
+            ),
+        )
+
+    async def test_accessibility_info_all_filter(self) -> None:
+        self.client_mock.accessibility_info = AsyncMock()
+        await cli_main(cmd_input=["ui", "describe-all", "--filter", "interactable"])
+        self.client_mock.accessibility_info.assert_called_once_with(
+            target=None,
+            options=AccessibilityInfoOptions(
+                nested=False, filter=AccessibilityElementFilter.INTERACTABLE
+            ),
+        )
+
+    async def test_accessibility_info_all_filter_all_is_explicit(self) -> None:
+        # --filter all is not the same as omitting it: it sets the field, which
+        # is still the historical behaviour, so both must reach the companion
+        # as a read over every element.
+        self.client_mock.accessibility_info = AsyncMock()
+        await cli_main(cmd_input=["ui", "describe-all", "--filter", "all"])
+        self.client_mock.accessibility_info.assert_called_once_with(
+            target=None,
+            options=AccessibilityInfoOptions(
+                nested=False, filter=AccessibilityElementFilter.ALL
+            ),
+        )
+
+    async def test_filter_enum_matches_wire_values(self) -> None:
+        # The typed filter must emit the values the proto declares, by name and
+        # by number — FILTER_ALL is zero, so a request that does not ask, and
+        # an older companion that drops the field, both read every element.
+        self.assertEqual(AccessibilityInfoRequest.FILTER_ALL, 0)
+        for element_filter in AccessibilityElementFilter:
+            self.assertEqual(
+                element_filter.value,
+                getattr(AccessibilityInfoRequest, f"FILTER_{element_filter.name}"),
+            )
 
     async def test_crash_list_all(self) -> None:
         self.client_mock.crash_list = AsyncMock(return_value=[])

@@ -8,24 +8,19 @@
 #import "AccessibilityService.h"
 #import "AccessibilityService+Testing.h"
 
-#import <arpa/inet.h>
 #import <dlfcn.h>
-#import <errno.h>
 #import <math.h>
 #import <objc/message.h>
-#import <poll.h>
-#import <sys/socket.h>
-#import <sys/time.h>
-#import <sys/un.h>
-#import <unistd.h>
 
 #import <CoreGraphics/CoreGraphics.h>
 
 #import "AXPAttributes.h"
 #import "AccessibilityRuntime.h"
+#import "AccessibilityServiceServer.h"
+#import "AccessibilityService_Private.h"
 
 // The `XC_kAXXC*` attribute keys. These MUST match `FBAXWire.Node` host-side so the emitted tree feeds
-// the shared serializer (via `FBRemoteAutomationPlatformElement`) unchanged.
+// the shared serializer (via `FBAXBridgePlatformElement`) unchanged.
 static NSString *const kAXElementType = @"XC_kAXXCAttributeElementType";
 static NSString *const kAXElementBaseType = @"XC_kAXXCAttributeElementBaseType";
 static NSString *const kAXLabel = @"XC_kAXXCAttributeLabel";
@@ -152,9 +147,8 @@ static NSString *const kErrorKindAssertionFailed = @"assertion_failed";
 // a partial view, so the host can warn rather than pass it off as complete. Absent or `false` means the
 // walk visited every element within the bounds.
 static NSString *const kResponseTruncated = @"truncated";
-// The resolved foreground pid a fused frontmost read reports, plus the mechanism that resolved it (a
-// diagnostic tag, so a future alternate strategy is distinguishable in logs from the current one). The
-// pid also tags the owning element of a hit-test result.
+// The resolved foreground pid and the mechanism that resolved it. The pid also tags the owning element
+// of a hit-test result.
 static NSString *const kResponsePid = @"pid";
 static NSString *const kResponseMethod = @"method";
 // The device's accessibility automation mode as it stood for this read, and whether this read changed it.
@@ -201,8 +195,6 @@ static NSString *const kVerbHitTest = @"hittest";
 // away, so a caller that gets *any* answer is the only client there is. That is what lets a host decide
 // a bridge is free without asking the guest who else is attached: being answered is the proof.
 static NSString *const kVerbShutdown = @"shutdown";
-// Set by the shutdown verb and read by the serve loop after the response is written.
-static BOOL gShutdownRequested = NO;
 // Two write verbs rather than one: performing a semantic action and setting an attribute are separate
 // runtime calls that take different arguments, and fusing them would leave every request carrying a field
 // the other kind ignores.
@@ -228,33 +220,11 @@ static NSString *const kMethodCenterPoint = @"center-point";
 static NSString *const kMethodWindowServer = @"window-server";
 static NSString *const kMethodRunningBoard = @"runningboard";
 
-// Frame cap for the persistent `serve` transport: a frame larger than this is treated as a protocol
-// error rather than allocating unbounded memory. This is a property of the wire protocol, so the host
-// client caps reads at the same value — keep the two in step.
-static const uint32_t kMaxFrameBytes = 16 * 1024 * 1024;
-
 // A depth cap and a total-node budget guard against pathological trees. A request carries the
 // caller's own bounds (the host sets them so every backend truncates alike); these apply only when it
 // does not — e.g. the one-shot front-end invoked by hand.
 static const int kDefaultMaxDepth = 100;
 static const int kDefaultNodeBudget = 5000;
-
-// The persistent `serve` exits after sitting idle this long — no client connected, or a connected
-// client sending nothing — so an orphaned serve (the host crashed, or was replaced by the host's
-// recovery path) is collected rather than lingering. For a shared guest it is the only thing that ends
-// one, because no host ever does. `establish` spawns the serve into the booted
-// launchd domain, so it is parented to launchd_sim, not the host; there is no parent-death signal to
-// watch, hence an idle timeout. A live host that pauses longer is transparently re-spawned on its next
-// read, so this only ever costs a re-spawn, never correctness.
-//
-// Overridable per spawn via `--idle-timeout`. A host that names none gets this, as does one predating
-// the flag, since `serve` ignores argv it does not recognise.
-static const int kDefaultIdleTimeoutSeconds = 300;
-static NSString *const kFlagIdleTimeout = @"--idle-timeout";
-// Asks a `serve` to exit when its client goes, rather than waiting for the next one. An exclusive
-// bridge has one client for its whole life, so a disconnect means it is finished. A shared bridge must
-// stay up for the next client, so it is never passed there.
-static NSString *const kFlagExitOnDisconnect = @"--exit-on-disconnect";
 
 #pragma mark - AX client setup
 
@@ -282,6 +252,11 @@ static id<FBAXRuntime> _Nullable FBAXBridgeSharedRuntime(NSString *_Nullable *_N
     *error = cachedError ?: @"accessibility setup failed";
   }
   return shared;
+}
+
+void FBAXBridgePrepareRuntime(void)
+{
+  FBAXBridgeSharedRuntime(NULL);
 }
 
 void FBAXBridgeSetRuntimeForTesting(id<FBAXRuntime> _Nullable runtime)
@@ -459,9 +434,7 @@ static id FBAXBridgeJSONSafeNumber(NSNumber *number)
   return number;
 }
 
-// Recursively replaces every non-finite number in a response with null. Applied once to the whole
-// response before serialization, so a non-finite value anywhere — a frame member, or any future
-// numeric attribute — degrades that one value instead of killing the read.
+// Recursively replaces every non-finite number in a response with null before serialization.
 static id FBAXBridgeJSONSanitized(id value)
 {
   if ([value isKindOfClass:NSNumber.class]) {
@@ -792,8 +765,7 @@ NSDictionary<NSString *, NSString *> *_Nullable FBAXBridgeModalDescriptor(NSDict
 #pragma mark - Frontmost resolution
 
 // Resolves the frontmost application positionally: a system-wide hit-test at the caller's screen anchor
-// (the screen centre — the anchor the testmanagerd backend also uses) reads whichever element owns that
-// point, and its owning pid is the frontmost app.
+// reads whichever element owns that point, and its owning pid is the frontmost app.
 //
 // This is a *positional* proxy for frontmost, not the window server's notion of frontmost. It agrees with
 // it for a fullscreen app or the home screen, but can differ for a centred element owned by another
@@ -1054,6 +1026,21 @@ NSDictionary<NSString *, id> *FBAXBridgeHandleRequest(NSDictionary<NSString *, i
       [NSString stringWithFormat:@"the reader raised while answering: %@", exception.reason ?: exception.name]
     );
   }
+}
+
+NSDictionary<NSString *, id> *FBAXBridgeHandleRequestData(NSData *data, BOOL *_Nullable shutdownRequested)
+{
+  id parsed = [NSJSONSerialization JSONObjectWithData:data options:0 error:NULL];
+  NSDictionary<NSString *, id> *response;
+  if ([parsed isKindOfClass:NSDictionary.class]) {
+    response = FBAXBridgeHandleRequest(parsed);
+  } else {
+    response = FBAXBridgeTaggedErrorResponse(@"malformed request frame", kErrorKindBadRequest, nil);
+  }
+  if (shutdownRequested) {
+    *shutdownRequested = [response[kResponseShutdown] boolValue];
+  }
+  return response;
 }
 
 NSData *FBAXBridgeSerializeResponse(NSDictionary<NSString *, id> *response)
@@ -1415,7 +1402,6 @@ static NSDictionary<NSString *, id> *FBAXBridgeDispatchRequest(NSDictionary<NSSt
   if ([verb isEqualToString:kVerbShutdown]) {
     // Answered here, above the pid check and the runtime bind: shutting down needs neither, and a
     // reader that cannot bind is exactly the one a caller most wants to be able to end.
-    gShutdownRequested = YES;
     return @{kResponseOk : @YES, kResponseShutdown : @YES};
   }
   if (!isDescribe && !isHitTest && !isPerform && !isSetValue) {
@@ -1651,219 +1637,6 @@ static NSDictionary<NSString *, id> *FBAXBridgeDispatchRequest(NSDictionary<NSSt
   return response;
 }
 
-#pragma mark - Persistent serve transport
-
-// The `serve` accept queue. The loop handles one client at a time, so the queue exists only to hold a
-// probe while another host is connected. A host reads a refused connect as nothing being there, and a
-// full queue is refused with the same errno as nothing being bound — so every free slot here is one
-// more reason a refusal really does mean the guest has gone.
-static const int kServeBacklog = 16;
-
-static BOOL FBAXBridgeWriteFully(int fd, const void *buffer, size_t length)
-{
-  const char *bytes = buffer;
-  size_t offset = 0;
-  while (offset < length) {
-    ssize_t written = send(fd, bytes + offset, length - offset, MSG_NOSIGNAL);
-    if (written < 0) {
-      if (errno == EINTR) {
-        continue;  // interrupted by a signal, not a real failure — retry
-      }
-      return NO;
-    }
-    if (written == 0) {
-      return NO;
-    }
-    offset += (size_t)written;
-  }
-  return YES;
-}
-
-static BOOL FBAXBridgeReadFully(int fd, void *buffer, size_t length)
-{
-  char *bytes = buffer;
-  size_t offset = 0;
-  while (offset < length) {
-    ssize_t got = recv(fd, bytes + offset, length - offset, 0);
-    if (got < 0) {
-      if (errno == EINTR) {
-        continue;  // interrupted by a signal — retry
-      }
-      return NO;
-    }
-    if (got == 0) {
-      return NO;  // EOF: the client disconnected
-    }
-    offset += (size_t)got;
-  }
-  return YES;
-}
-
-// Reads a flag's value as a boolean, absent meaning NO. Argv is walked in pairs, as everywhere else in
-// this front-end, so every flag a host sends has to carry a value: a bare switch ahead of this one
-// shifts the alignment and this flag is then missed silently.
-static BOOL FBAXBridgeBoolFromArguments(NSArray<NSString *> *arguments, NSString *flag)
-{
-  for (NSUInteger i = 0; i + 1 < arguments.count; i += 2) {
-    if ([arguments[i] isEqualToString:flag]) {
-      return [arguments[i + 1] boolValue];
-    }
-  }
-  return NO;
-}
-
-// Lenient on purpose: an unusable value is a host bug, and a bridge that refuses to start or exits
-// immediately is harder to diagnose than one that logs what it ignored.
-static int FBAXBridgeIdleTimeoutFromArguments(NSArray<NSString *> *arguments, int fallback)
-{
-  for (NSUInteger i = 0; i + 1 < arguments.count; i += 2) {
-    if (![arguments[i] isEqualToString:kFlagIdleTimeout]) {
-      continue;
-    }
-    NSString *rawValue = arguments[i + 1];
-    NSScanner *scanner = [NSScanner scannerWithString:rawValue];
-    int seconds = 0;
-    if (![scanner scanInt:&seconds] || !scanner.isAtEnd || seconds <= 0) {
-      NSLog(@"[AccessibilityService] ignoring unusable %@ '%@'; using %ds", kFlagIdleTimeout, rawValue, fallback);
-      return fallback;
-    }
-    return seconds;
-  }
-  return fallback;
-}
-
-// Serves the transport-agnostic request handler over a Unix-domain socket so a host client can reuse
-// one warm process for many reads (the ~30x amortization). The framing is a 4-byte big-endian length
-// prefix followed by a JSON request/response object — the same envelope the oneshot path emits. The
-// host binds/connects the same path beneath the per-user temporary directory (host and this
-// in-simulator process share the filesystem namespace as the same user, so no data-container
-// translation is needed).
-//
-// This intentionally serves one client at a time, serially, and how long a client stays depends on
-// which kind of bridge this is. A host that owns the simulator holds one connection for its whole
-// session, reading over it with a blocking wait between requests. A host reading the simulator's
-// shared bridge connects, makes its round trip and leaves, so the reconnect below is the common case
-// rather than the exception.
-//
-// Three things end this process: a client disconnecting when `--exit-on-disconnect` was passed, a
-// client asking it to shut down, and the idle timeout. No host ends a shared guest; the next process
-// to want a bridge is expected to find it.
-static int FBAXBridgeServe(NSString *socketPath, int idleTimeoutSeconds, BOOL exitOnDisconnect)
-{
-  int listenFd = socket(AF_UNIX, SOCK_STREAM, 0);
-  if (listenFd < 0) {
-    NSLog(@"[AccessibilityService] socket() failed: %s", strerror(errno));
-    return 1;
-  }
-
-  struct sockaddr_un address;
-  memset(&address, 0, sizeof(address));
-  address.sun_family = AF_UNIX;
-  if (strlen(socketPath.fileSystemRepresentation) >= sizeof(address.sun_path)) {
-    NSLog(@"[AccessibilityService] socket path too long: %@", socketPath);
-    close(listenFd);
-    return 1;
-  }
-  strlcpy(address.sun_path, socketPath.fileSystemRepresentation, sizeof(address.sun_path));
-  unlink(address.sun_path);
-
-  if (bind(listenFd, (struct sockaddr *)&address, sizeof(address)) != 0) {
-    NSLog(@"[AccessibilityService] bind(%@) failed: %s", socketPath, strerror(errno));
-    close(listenFd);
-    return 1;
-  }
-  if (listen(listenFd, kServeBacklog) != 0) {
-    NSLog(@"[AccessibilityService] listen() failed: %s", strerror(errno));
-    close(listenFd);
-    return 1;
-  }
-
-  // Warm the runtime up front so the first served request is already fast.
-  NSString *warmupError = nil;
-  FBAXBridgeSharedRuntime(&warmupError);
-  NSLog(@"[AccessibilityService] serving accessibility on %@ (idle timeout %ds)", socketPath, idleTimeoutSeconds);
-
-  while (YES) {
-    struct pollfd listenPoll = {.fd = listenFd, .events = POLLIN, .revents = 0};
-    int ready = poll(&listenPoll, 1, idleTimeoutSeconds * 1000);
-    if (ready == 0) {
-      NSLog(@"[AccessibilityService] idle %ds with no client; exiting", idleTimeoutSeconds);
-      break;  // reap this (likely orphaned) serve
-    }
-    if (ready < 0) {
-      if (errno == EINTR) {
-        continue;
-      }
-      break;
-    }
-    int connection = accept(listenFd, NULL, NULL);
-    if (connection < 0) {
-      if (errno == EINTR) {
-        continue;
-      }
-      break;
-    }
-    // Bound the per-request wait too: a `recv` on a connected-but-idle client (or a dead host still
-    // holding the socket) that blocks past the window fails, the inner loop breaks, and the outer
-    // `poll` then reaps the serve if no new client arrives.
-    struct timeval recvTimeout = {.tv_sec = idleTimeoutSeconds, .tv_usec = 0};
-    setsockopt(connection, SOL_SOCKET, SO_RCVTIMEO, &recvTimeout, sizeof(recvTimeout));
-    while (YES) {
-      // A pool per request. `serve` never returns, so the process-lifetime pool `main` opens is never
-      // popped: without this, every tree, node dictionary and attribute string autoreleased while
-      // answering a request is held until the serve exits.
-      @autoreleasepool {
-        uint32_t frameLength = 0;
-        if (!FBAXBridgeReadFully(connection, &frameLength, sizeof(frameLength))) {
-          break;
-        }
-        frameLength = ntohl(frameLength);
-        if (frameLength == 0 || frameLength > kMaxFrameBytes) {
-          break;
-        }
-        NSMutableData *requestData = [NSMutableData dataWithLength:frameLength];
-        if (!FBAXBridgeReadFully(connection, requestData.mutableBytes, frameLength)) {
-          break;
-        }
-        id parsed = [NSJSONSerialization JSONObjectWithData:requestData options:0 error:NULL];
-        NSDictionary *response = [parsed isKindOfClass:NSDictionary.class]
-        ? FBAXBridgeHandleRequest(parsed)
-        : FBAXBridgeTaggedErrorResponse(@"malformed request frame", kErrorKindBadRequest, nil);
-        NSData *responseData = FBAXBridgeSerializeResponse(response);
-        uint32_t responseLength = htonl((uint32_t)responseData.length);
-        if (!FBAXBridgeWriteFully(connection, &responseLength, sizeof(responseLength))) {
-          break;
-        }
-        if (!FBAXBridgeWriteFully(connection, responseData.bytes, responseData.length)) {
-          break;
-        }
-        if (gShutdownRequested) {
-          // After the write, so the caller is told the shutdown was honoured rather than seeing the
-          // socket close under it — which is the shape of a crash, not a reap.
-          break;
-        }
-      }
-    }
-    close(connection);
-    if (exitOnDisconnect) {
-      // Nobody else can reach this socket, so there is no next client to wait for. Going now is what
-      // makes an exclusive guest die with the host that started it.
-      NSLog(@"[AccessibilityService] exclusive client disconnected; exiting");
-      break;
-    }
-    if (gShutdownRequested) {
-      NSLog(@"[AccessibilityService] shutdown requested by client; exiting");
-      break;
-    }
-    // Loop back to accept: the same host may reconnect, or a different one may arrive. For a shared
-    // bridge this is the steady state, and only the idle timeout ever ends the wait.
-  }
-
-  close(listenFd);
-  unlink(address.sun_path);
-  return 0;
-}
-
 #pragma mark - Argv front-end
 
 int handleAccessibilityAction(NSString *action, NSArray<NSString *> *arguments)
@@ -1874,12 +1647,7 @@ int handleAccessibilityAction(NSString *action, NSArray<NSString *> *arguments)
       NSLog(@"[AccessibilityService] serve requires a socket path argument");
       return 1;
     }
-    NSArray<NSString *> *flags = [arguments subarrayWithRange:NSMakeRange(1, arguments.count - 1)];
-    return FBAXBridgeServe(
-      socketPath,
-      FBAXBridgeIdleTimeoutFromArguments(flags, kDefaultIdleTimeoutSeconds),
-      FBAXBridgeBoolFromArguments(flags, kFlagExitOnDisconnect)
-    );
+    return FBAXBridgeServe(socketPath, [arguments subarrayWithRange:NSMakeRange(1, arguments.count - 1)]);
   }
 
   NSMutableDictionary<NSString *, id> *request = [NSMutableDictionary dictionary];
@@ -1930,26 +1698,6 @@ int handleAccessibilityAction(NSString *action, NSArray<NSString *> *arguments)
 }
 
 #pragma mark - Testing
-
-int FBAXBridgeServeBacklogForTesting(void)
-{
-  return kServeBacklog;
-}
-
-int FBAXBridgeIdleTimeoutForTesting(NSArray<NSString *> *arguments, int fallback)
-{
-  return FBAXBridgeIdleTimeoutFromArguments(arguments, fallback);
-}
-
-int FBAXBridgeDefaultIdleTimeoutForTesting(void)
-{
-  return kDefaultIdleTimeoutSeconds;
-}
-
-BOOL FBAXBridgeExitOnDisconnectForTesting(NSArray<NSString *> *arguments)
-{
-  return FBAXBridgeBoolFromArguments(arguments, kFlagExitOnDisconnect);
-}
 
 NSDictionary<NSString *, NSString *> *FBAXBridgeWireConstantsForTesting(void)
 {

@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+@preconcurrency import FBControlCore
 import Foundation
 
 /// The way a devicectl invocation fails, as data rather than an assembled string.
@@ -21,17 +22,17 @@ extension FBDevicectlError: LocalizedError {
   }
 }
 
-public class FBAppleDevicectlCommandExecutor {
+class FBAppleDevicectlCommandExecutor {
 
   let logger: FBControlCoreLogger?
   let device: FBDevice
 
-  @objc public init(device: FBDevice) {
+  init(device: FBDevice) {
     logger = device.logger.withName("devicectl")
     self.device = device
   }
 
-  @objc public func taskBuilder(arguments: [String]) -> FBProcessBuilder<NSNull, NSString, NSString> {
+  func taskBuilder(arguments: [String]) -> FBProcessBuilder<NSNull, NSString, NSString> {
     let derivedArgs = ["devicectl"] + arguments
     return FBProcessBuilder<NSNull, NSString, NSString>.withLaunchPath("/usr/bin/xcrun", arguments: derivedArgs)
       .withStdOutInMemoryAsString()
@@ -40,14 +41,8 @@ public class FBAppleDevicectlCommandExecutor {
   }
 }
 
-public extension FBAppleDevicectlCommandExecutor {
-  @objc func launchApplication(configuration: FBApplicationLaunchConfiguration) -> FBFuture<NSNumber> {
-    fbFutureFromAsync { [self] in
-      try await launchApplicationAsync(configuration: configuration) as NSNumber
-    }
-  }
-
-  func launchApplicationAsync(configuration: FBApplicationLaunchConfiguration) async throws -> NSNumber {
+extension FBAppleDevicectlCommandExecutor {
+  func launchApplication(configuration: FBApplicationLaunchConfiguration) async throws -> NSNumber {
     let tmpPath = try FileManager.default.temporaryFile(extension: "json")
     let tmpPathStr = tmpPath.path()
     var arguments = [

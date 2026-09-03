@@ -10,7 +10,7 @@ import Foundation
 /// The pause between crash-log scans, matching `AsyncPolling`'s default cadence.
 private let CrashLogPollInterval: UInt64 = 100 * NSEC_PER_MSEC
 
-public class FBCrashLogNotifier {
+public final class FBCrashLogNotifier {
 
   // MARK: Properties
 
@@ -44,8 +44,7 @@ public class FBCrashLogNotifier {
   ///
   /// Each pass is a synchronous scan of the diagnostic-reports directories, which fans out
   /// through `DispatchQueue.concurrentPerform` and so blocks the thread running it. The pause
-  /// between passes keeps that off a cooperative-pool worker continuously; the future-based
-  /// predecessor got the same effect by running the scan on its own serial queue.
+  /// between passes is what keeps that off a cooperative-pool worker continuously.
   public func nextCrashLog(forPredicate predicate: NSPredicate) async throws -> FBCrashLogInfo {
     _ = startListening(true)
     while true {

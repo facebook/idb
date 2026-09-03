@@ -142,9 +142,9 @@ final class FBDataDownloadInputTests: XCTestCase {
     }
   }
 
-  /// The case that used to be reported as an outright success: an empty body is a
-  /// valid empty archive as far as the extractor is concerned, so nothing
-  /// downstream could tell that the request had been rejected.
+  /// An empty body is a valid empty archive as far as the extractor is concerned,
+  /// so nothing downstream can tell a rejected request from an empty one unless
+  /// the status is checked first.
   func testDownload_WhenResponseIsNotFoundWithNoBody_FailsWithTheHTTPStatus() async throws {
     StubURLProtocol.behaviour = .respond(statusCode: 404, body: Data())
 
@@ -159,8 +159,9 @@ final class FBDataDownloadInputTests: XCTestCase {
 
   // MARK: - Transport errors
 
-  /// Previously reported only as a process exiting non-zero on a truncated
-  /// archive, with the transport error logged and discarded.
+  /// A truncated archive only makes the extractor exit non-zero, which says nothing
+  /// about the transport failure that caused it; the network error is what the
+  /// caller needs.
   func testDownload_WhenTransportFailsMidStream_FailsWithTheNetworkError() async throws {
     let archive = try makeArchiveData(padding: 512 * 1024)
     StubURLProtocol.behaviour = .truncate(

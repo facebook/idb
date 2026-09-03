@@ -7,9 +7,9 @@
 
 import Foundation
 
-/// Composes the new async command protocols (Phase 1.1/1.2) and exposes the same
-/// shared informational properties as `FBiOSTarget`. Conformers can adopt this
-/// protocol incrementally alongside the existing `@objc FBiOSTarget` conformance.
+/// Composes the async command protocols and exposes the same shared informational properties as
+/// `FBiOSTarget`. Conformers can adopt this protocol incrementally alongside their `FBiOSTarget`
+/// conformance.
 public protocol AsynciOSTarget: AnyObject,
   ApplicationCommands,
   VideoStreamCommands,
@@ -40,14 +40,14 @@ public protocol AsynciOSTarget: AnyObject,
   var targetType: FBiOSTargetType { get }
   var state: FBiOSTargetState { get }
 
-  // MARK: Shared FBiOSTarget properties (sync, no FBFuture involved)
+  // MARK: Shared FBiOSTarget properties
 
   var logger: any FBControlCoreLogger { get }
   var customDeviceSetPath: String? { get }
   var temporaryDirectory: FBTemporaryDirectory { get }
   var auxillaryDirectory: String { get }
-  var runtimeRootDirectory: String { get }
-  var platformRootDirectory: String { get }
+  var runtimeRootDirectory: String { get async }
+  var platformRootDirectory: String { get async }
   var screenInfo: FBiOSTargetScreenInfo? { get }
   var workQueue: DispatchQueue { get }
   var asyncQueue: DispatchQueue { get }

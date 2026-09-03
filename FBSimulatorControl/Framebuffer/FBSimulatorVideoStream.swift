@@ -887,10 +887,10 @@ public actor FBSimulatorVideoStream: FBVideoStream {
   }
 
   /// Total number of frames pushed to the encoder since streaming started.
-  public var currentFrameNumber: UInt { frameNumber }
+  var currentFrameNumber: UInt { frameNumber }
 
   /// Wall-clock time when the first frame was pushed, or 0 if not yet started.
-  public var currentTimeAtFirstFrame: CFTimeInterval { timeAtFirstFrame }
+  var currentTimeAtFirstFrame: CFTimeInterval { timeAtFirstFrame }
 
   /// Wall-clock time when the first framebuffer callback was received, or 0 if not yet started.
   /// `nonisolated`: reads only the immutable `framebuffer` reference.

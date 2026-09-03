@@ -14,7 +14,7 @@ extension FBDevice {
   ///
   /// The async counterpart of `startService`, which this mirrors including its restriction to
   /// AMDevice-backed devices.
-  public func withServiceConnection<T>(
+  func withServiceConnection<T>(
     _ service: String,
     _ body: (FBAMDServiceConnection) async throws -> T
   ) async throws -> T {
@@ -25,7 +25,7 @@ extension FBDevice {
   }
 
   /// Starts a device link service, invalidating the connection once `body` returns or throws.
-  public func withDeviceLinkClient<T>(
+  func withDeviceLinkClient<T>(
     _ service: String,
     _ body: (FBDeviceLinkClient) async throws -> T
   ) async throws -> T {
@@ -37,13 +37,14 @@ extension FBDevice {
 
   /// Starts a service and wraps it in an AFC client, tearing both down once `body` returns or
   /// throws.
-  public func withAFCConnection<T>(
+  func withAFCConnection<T>(
     _ service: String,
+    calls afcCalls: AFCCalls = FBAFCConnection.defaultCalls,
     _ body: (FBAFCConnection) async throws -> T
   ) async throws -> T {
     guard let amDevice else {
       throw FBAMDeviceServiceError.notAMDeviceBacked(service: service)
     }
-    return try await amDevice.withAFCConnection(service, body)
+    return try await amDevice.withAFCConnection(service, calls: afcCalls, body)
   }
 }

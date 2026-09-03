@@ -8,8 +8,8 @@ options:
   bundleIdPrefix: com.facebook
 
 configFiles:
-  Debug: ../Configuration/Shared.xcconfig
-  Release: ../Configuration/Shared.xcconfig
+  Debug: ../Configuration/Debug.xcconfig
+  Release: ../Configuration/Release.xcconfig
 
 settings:
   base:
@@ -76,6 +76,11 @@ targets:
         MACH_O_TYPE: staticlib
         SWIFT_VERSION: "5.0"
         GENERATE_INFOPLIST_FILE: YES
+      # Static archive: keep DWARF for the final link's dSYM, never strip.
+      configs:
+        Release:
+          DEBUG_INFORMATION_FORMAT: dwarf
+          STRIP_INSTALLED_PRODUCT: NO
     dependencies:
       - package: grpc-swift
         product: GRPC
@@ -108,6 +113,11 @@ targets:
         MACH_O_TYPE: staticlib
         SWIFT_VERSION: "6.0"
         GENERATE_INFOPLIST_FILE: YES
+      # Static archive: keep DWARF for the final link's dSYM, never strip.
+      configs:
+        Release:
+          DEBUG_INFORMATION_FORMAT: dwarf
+          STRIP_INSTALLED_PRODUCT: NO
     dependencies:
       - sdk: CoreGraphics.framework
       - sdk: Foundation.framework
@@ -172,6 +182,11 @@ targets:
         CODE_SIGNING_ALLOWED: NO
         # Add rpath to find frameworks in same directory and PackageFrameworks
         LD_RUNPATH_SEARCH_PATHS: $(inherited) @executable_path @executable_path/../Frameworks @executable_path/PackageFrameworks
+      # Linked tool: strip DWARF into a dSYM in Release.
+      configs:
+        Release:
+          DEBUG_INFORMATION_FORMAT: dwarf-with-dsym
+          STRIP_INSTALLED_PRODUCT: YES
     dependencies:
       - framework: ../Build/Products/Release/FBControlCore.framework
         embed: false
@@ -206,6 +221,11 @@ targets:
         MACH_O_TYPE: staticlib
         SWIFT_VERSION: "6.0"
         GENERATE_INFOPLIST_FILE: YES
+      # Static archive: keep DWARF for the final link's dSYM, never strip.
+      configs:
+        Release:
+          DEBUG_INFORMATION_FORMAT: dwarf
+          STRIP_INSTALLED_PRODUCT: NO
     dependencies:
       - sdk: Foundation.framework
 
@@ -227,6 +247,11 @@ targets:
         MACH_O_TYPE: staticlib
         SWIFT_VERSION: "6.0"
         GENERATE_INFOPLIST_FILE: YES
+      # Static archive: keep DWARF for the final link's dSYM, never strip.
+      configs:
+        Release:
+          DEBUG_INFORMATION_FORMAT: dwarf
+          STRIP_INSTALLED_PRODUCT: NO
     dependencies:
       - sdk: Foundation.framework
 
@@ -277,6 +302,11 @@ targets:
         CODE_SIGN_IDENTITY: "-"
         CODE_SIGNING_REQUIRED: NO
         CODE_SIGNING_ALLOWED: NO
+      # Linked tool: strip DWARF into a dSYM in Release.
+      configs:
+        Release:
+          DEBUG_INFORMATION_FORMAT: dwarf-with-dsym
+          STRIP_INSTALLED_PRODUCT: YES
     dependencies:
       - target: IDBGRPCSwift
         embed: false

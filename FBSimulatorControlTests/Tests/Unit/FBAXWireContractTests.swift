@@ -227,15 +227,16 @@ final class FBAXWireContractTests: XCTestCase {
       pid: 4321,
       assertion: FBAXBridgeWriteAssertion(key: .label, value: "General")
     )
+    let transportRequest = FBAXBridgeRequest.write(request)
     XCTAssertEqual(
-      request.arguments,
+      transportRequest.arguments,
       [
         "accessibility", "perform", "--x", "201.0", "--y", "406.0", "--pid", "4321",
         "--action", "press", "--assert-key", "XC_kAXXCAttributeLabel", "--assert-value", "General",
       ]
     )
     XCTAssertEqual(
-      request.payload as NSDictionary,
+      transportRequest.payload as NSDictionary,
       [
         "verb": "perform", "x": 201.0, "y": 406.0, "pid": 4321,
         "action": "press", "assertKey": "XC_kAXXCAttributeLabel", "assertValue": "General",
@@ -246,9 +247,10 @@ final class FBAXWireContractTests: XCTestCase {
   func testASetValueRendersItsValueRatherThanAnAction() {
     let request = FBAXBridgeWriteRequest(kind: .setValue("hello"), x: 1, y: 2, pid: nil, assertion: nil)
     XCTAssertEqual(request.verb, .setValue)
-    XCTAssertEqual(request.arguments, ["accessibility", "setvalue", "--x", "1.0", "--y", "2.0", "--value", "hello"])
+    let transportRequest = FBAXBridgeRequest.write(request)
+    XCTAssertEqual(transportRequest.arguments, ["accessibility", "setvalue", "--x", "1.0", "--y", "2.0", "--value", "hello"])
     XCTAssertEqual(
-      request.payload as NSDictionary,
+      transportRequest.payload as NSDictionary,
       ["verb": "setvalue", "x": 1.0, "y": 2.0, "value": "hello"] as NSDictionary
     )
   }
@@ -258,13 +260,15 @@ final class FBAXWireContractTests: XCTestCase {
   // or a zero would be read as a request the caller never made.
   func testAbsentOptionsAreOmittedRatherThanSentEmpty() {
     let request = FBAXBridgeWriteRequest(kind: .perform(.scrollDown), x: 10, y: 20, pid: nil, assertion: nil)
-    XCTAssertEqual(request.arguments, ["accessibility", "perform", "--x", "10.0", "--y", "20.0", "--action", "scroll-down"])
-    XCTAssertFalse(request.arguments.contains("--pid"))
-    XCTAssertFalse(request.arguments.contains("--assert-key"))
-    XCTAssertNil(request.payload["pid"])
-    XCTAssertNil(request.payload["assertKey"])
-    XCTAssertNil(request.payload["assertValue"])
-    XCTAssertEqual(request.arguments.count % 2, 0, "the guest reads argv in pairs, so a flag must never be left without a value")
+    let transportRequest = FBAXBridgeRequest.write(request)
+    XCTAssertEqual(transportRequest.arguments, ["accessibility", "perform", "--x", "10.0", "--y", "20.0", "--action", "scroll-down"])
+    XCTAssertFalse(transportRequest.arguments.contains("--pid"))
+    XCTAssertFalse(transportRequest.arguments.contains("--assert-key"))
+    XCTAssertNil(transportRequest.payload["pid"])
+    XCTAssertNil(transportRequest.payload["assertKey"])
+    XCTAssertNil(transportRequest.payload["assertValue"])
+    XCTAssertEqual(transportRequest.arguments.count % 2, 0, "the guest reads argv in pairs, so a flag must never be left without a value")
+    XCTAssertFalse(transportRequest.mayRetry, "writes must not be resent after a dropped response")
   }
 
   // MARK: - Frontmost-method request selectors

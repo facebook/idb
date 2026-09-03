@@ -8,7 +8,7 @@
 import FBControlCore
 
 /// A stub implementation of FBiOSTarget for testing.
-final class FBiOSTargetDouble: NSObject, FBiOSTarget {
+final class FBiOSTargetDouble: FBiOSTarget {
 
   // MARK: FBiOSTargetInfo - writable properties for test configuration
 
@@ -26,14 +26,13 @@ final class FBiOSTargetDouble: NSObject, FBiOSTarget {
 
   var architectures: [FBArchitecture] = []
   var logger: any FBControlCoreLogger = FBControlCoreLoggerDouble()
-  var platformRootDirectory: String = ""
-  var runtimeRootDirectory: String = ""
+  var platformRootDirectory: String { get async { "" } }
+  var runtimeRootDirectory: String { get async { "" } }
   var screenInfo: FBiOSTargetScreenInfo?
   var temporaryDirectory: FBTemporaryDirectory = .temporaryDirectory(logger: FBControlCoreLoggerDouble())
 
   // MARK: FBiOSTargetCommand
 
-  @objc(commandsWithTarget:)
   static func commands(with target: any FBiOSTarget) -> Self {
     return self.init()
   }
@@ -44,7 +43,6 @@ final class FBiOSTargetDouble: NSObject, FBiOSTarget {
 
   var asyncQueue: DispatchQueue { .global(qos: .userInitiated) }
 
-  @objc(compare:)
   func compare(_ target: any FBiOSTarget) -> ComparisonResult {
     return FBiOSTargetComparison(self, target)
   }

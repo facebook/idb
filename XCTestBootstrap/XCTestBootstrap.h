@@ -7,8 +7,6 @@
 
 #import <XCTestBootstrap/FBActivityRecord.h>
 #import <XCTestBootstrap/FBAttachment.h>
-#import <XCTestBootstrap/FBRemoteAutomationProtocols.h>
-#import <XCTestBootstrap/FBRemoteAutomationRuntime.h>
 #import <XCTestBootstrap/FBTestBundleDTXConnection.h>
 #import <XCTestBootstrap/FBTestConfiguration.h>
 #import <XCTestBootstrap/FBTestManagerAPIMediatorIDEInterface.h>

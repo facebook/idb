@@ -24,7 +24,7 @@ extension FBDeviceScreenshotError: LocalizedError {
   }
 }
 
-public class FBDeviceScreenshotCommands {
+public final class FBDeviceScreenshotCommands {
   private weak var device: FBDevice?
 
   // MARK: - Initializers
@@ -39,7 +39,7 @@ public class FBDeviceScreenshotCommands {
 
   // MARK: - Async
 
-  fileprivate func takeScreenshotAsync(configuration: FBScreenshotConfiguration) async throws -> FBScreenshotResult {
+  fileprivate func takeScreenshot(configuration: FBScreenshotConfiguration) async throws -> FBScreenshotResult {
     guard let device else {
       throw FBDeviceNilError.deviceNil
     }
@@ -56,7 +56,7 @@ public class FBDeviceScreenshotCommands {
 
   private func capture(from device: FBDevice) async throws -> Data {
     try await device.withDeviceLinkClient("com.apple.mobile.screenshotr") { client in
-      let response = try await client.processMessageAsync(["MessageType": "ScreenShotRequest"])
+      let response = try await client.processMessage(["MessageType": "ScreenShotRequest"])
       guard let screenshotData = response[ScreenShotDataKey] as? NSData else {
         throw FBDeviceScreenshotError.notImageData(response: String(describing: response), key: ScreenShotDataKey)
       }
@@ -70,6 +70,6 @@ public class FBDeviceScreenshotCommands {
 extension FBDevice: ScreenshotCommands {
 
   public func takeScreenshot(configuration: FBScreenshotConfiguration) async throws -> FBScreenshotResult {
-    try await screenshotCommands.takeScreenshotAsync(configuration: configuration)
+    try await screenshot.takeScreenshot(configuration: configuration)
   }
 }

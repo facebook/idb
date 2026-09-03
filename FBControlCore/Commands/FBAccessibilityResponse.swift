@@ -9,9 +9,8 @@ import Foundation
 
 /// Where a translator-backed read spent its time.
 ///
-/// Disjoint from `FBAXBridgeProfile`, the guest lanes' equivalent — see the note there for why the two
-/// are separate types rather than one widened to hold both. What they share is the spelling of the
-/// first five fields, so a fleet can ask which lane is slow without knowing either shape.
+/// Disjoint from `FBAXBridgeProfile` because the backends measure different phases. Their common fields
+/// use the same names so callers can compare backend performance without flattening the two models.
 public struct FBAccessibilityProfilingData: Sendable, Equatable, Encodable {
 
   // MARK: The core, spelled identically in every backend's profile
@@ -23,7 +22,7 @@ public struct FBAccessibilityProfilingData: Sendable, Equatable, Encodable {
   /// Getting into a position to read at all — the translation object, and the platform element made
   /// from it.
   public let acquireDuration: CFAbsoluteTime
-  /// Pulling the tree out of the application. On this lane that is the walk's XPC wait: attributes are
+  /// Pulling the tree out of the application. For this backend that is the walk's XPC wait: attributes are
   /// fetched one round trip at a time, and the waiting is the pulling.
   public let readDuration: CFAbsoluteTime
   /// Turning what was read into what the caller asked for — the walk's time less what it spent waiting.
@@ -171,8 +170,8 @@ public struct FBAccessibilityModalInfo: Sendable, Equatable, Encodable {
 
 /// Response object containing accessibility elements and optional profiling data.
 ///
-/// `elements` is a `Sendable` value type, so a response can cross concurrency domains (e.g. the
-/// remote-automation actor) without an `@unchecked` conformance.
+/// `elements` is a `Sendable` value type, so a response can cross concurrency domains without an
+/// `@unchecked` conformance.
 public struct FBAccessibilityElementsResponse: Sendable {
 
   /// The accessibility elements: an object (single element) or an array (flat/nested tree).
@@ -211,6 +210,10 @@ public struct FBAccessibilityElementsResponse: Sendable {
   /// The device's accessibility automation mode for this read, when the backend reported it.
   public let automation: FBAccessibilityAutomationState?
 
+  /// What narrowed the read and how much survived, for a read that could narrow. Nil for the
+  /// single-element reads, which select an element rather than narrow a list.
+  public let narrowing: FBAccessibilityNarrowing?
+
   public init(
     elements: FBAccessibilityElementPayload,
     profilingData: FBAccessibilityProfile? = nil,
@@ -220,7 +223,8 @@ public struct FBAccessibilityElementsResponse: Sendable {
     screen: FBAccessibilityScreenInfo? = nil,
     backend: FBUIAutomationBackendName? = nil,
     target: FBAccessibilityTargetDescriptor? = nil,
-    automation: FBAccessibilityAutomationState? = nil
+    automation: FBAccessibilityAutomationState? = nil,
+    narrowing: FBAccessibilityNarrowing? = nil
   ) {
     self.elements = elements
     self.profilingData = profilingData
@@ -231,6 +235,7 @@ public struct FBAccessibilityElementsResponse: Sendable {
     self.backend = backend
     self.target = target
     self.automation = automation
+    self.narrowing = narrowing
   }
 
   /// A copy carrying the provenance of the read that produced it. The backend and the query are known
@@ -251,28 +256,43 @@ public struct FBAccessibilityElementsResponse: Sendable {
       screen: screen ?? self.screen,
       backend: backend ?? self.backend,
       target: target ?? self.target,
-      automation: automation
+      automation: automation,
+      narrowing: narrowing
     )
   }
 
-  /// A copy that reports no screen bounds.
+  /// A copy reporting what narrowed the read.
   ///
-  /// `withProvenance` can only supply bounds, never withdraw them, because it defaults each field to
-  /// what the response already carries. A read that resolved a single element needs the opposite: the
-  /// serializer takes a read's bounds from the element it is handed, and for a single element that is
-  /// the element's own frame, which describes the element rather than the screen. Reporting that would
-  /// be worse than reporting nothing.
-  public func withoutScreen() -> FBAccessibilityElementsResponse {
+  /// A separate stamper rather than an init parameter for the same reason `withProvenance` is one: the
+  /// counts are known where the narrowing runs, which is not where the response is assembled.
+  public func withNarrowing(_ narrowing: FBAccessibilityNarrowing) -> FBAccessibilityElementsResponse {
     FBAccessibilityElementsResponse(
       elements: elements,
       profilingData: profilingData,
       coverage: coverage,
       modal: modal,
       truncated: truncated,
-      screen: nil,
+      screen: screen,
       backend: backend,
       target: target,
-      automation: automation
+      automation: automation,
+      narrowing: narrowing
+    )
+  }
+
+  /// A copy whose screen bounds are replaced, including with `nil` when a read has no screen context.
+  public func replacingScreen(_ screen: FBAccessibilityScreenInfo?) -> FBAccessibilityElementsResponse {
+    FBAccessibilityElementsResponse(
+      elements: elements,
+      profilingData: profilingData,
+      coverage: coverage,
+      modal: modal,
+      truncated: truncated,
+      screen: screen,
+      backend: backend,
+      target: target,
+      automation: automation,
+      narrowing: narrowing
     )
   }
 
@@ -295,7 +315,8 @@ public struct FBAccessibilityElementsResponse: Sendable {
       // serialized, so computing it anywhere else would only create a way for the two to disagree.
       interaction: FBAccessibilityInteractionSummary(elements: reported),
       frames: FBAccessibilityFrameSummary(elements: reported),
-      automation: automation
+      automation: automation,
+      narrowing: narrowing
     )
   }
 

@@ -275,64 +275,6 @@ static NSDictionary *FBAXTestsParse(NSData *data)
   XCTAssertEqualObjects(FBAXBridgeWireConstantsForTesting(), expected);
 }
 
-// The serve loop handles one client at a time, so the accept queue exists only to hold a second host
-// while somebody else is connected. It is pinned because a host's classification depends on the number:
-// a connect to a Unix socket whose backlog is full fails with `ECONNREFUSED`, the same errno as nothing
-// being bound, so without a free slot a live guest would be mistaken for an absent one and duplicated.
-- (void)testTheServeBacklogIsPinned
-{
-  XCTAssertEqual(FBAXBridgeServeBacklogForTesting(), 16);
-}
-
-#pragma mark - Exit on disconnect
-
-// An exclusive bridge has one client for its whole life, so a disconnect means it is finished. A shared
-// bridge wants the opposite: the next visitor is the point of staying up.
-
-- (void)testExitOnDisconnectIsOffUnlessAsked
-{
-  XCTAssertFalse(FBAXBridgeExitOnDisconnectForTesting(@[]));
-  XCTAssertFalse(FBAXBridgeExitOnDisconnectForTesting(@[@"--idle-timeout", @"30"]));
-}
-
-- (void)testExitOnDisconnectIsHonouredWhenAsked
-{
-  XCTAssertTrue(FBAXBridgeExitOnDisconnectForTesting(@[@"--exit-on-disconnect", @"1"]));
-  XCTAssertTrue(FBAXBridgeExitOnDisconnectForTesting(@[@"--idle-timeout", @"30", @"--exit-on-disconnect", @"1"]));
-}
-
-// A guest predating the flag ignores it and keeps waiting for the next client, so a newer host talking
-// to an older guest degrades to the idle timeout rather than failing.
-- (void)testExitOnDisconnectCanBeTurnedOffExplicitly
-{
-  XCTAssertFalse(FBAXBridgeExitOnDisconnectForTesting(@[@"--exit-on-disconnect", @"0"]));
-}
-
-#pragma mark - Idle timeout
-
-- (void)testAnIdleTimeoutOnTheCommandLineIsHonoured
-{
-  XCTAssertEqual(FBAXBridgeIdleTimeoutForTesting(@[@"--idle-timeout", @"45"], 300), 45);
-}
-
-// A host predating the flag lands here too: `serve` reads the socket path and ignores the rest of argv.
-- (void)testAServeWithNoIdleTimeoutUsesTheDefault
-{
-  XCTAssertEqual(FBAXBridgeIdleTimeoutForTesting(@[], 300), 300);
-  XCTAssertEqual(FBAXBridgeIdleTimeoutForTesting(@[@"--something-else", @"1"], 300), 300);
-  XCTAssertEqual(FBAXBridgeDefaultIdleTimeoutForTesting(), 300);
-}
-
-- (void)testAnUnusableIdleTimeoutFallsBackToTheDefault
-{
-  XCTAssertEqual(FBAXBridgeIdleTimeoutForTesting(@[@"--idle-timeout", @"0"], 300), 300);
-  XCTAssertEqual(FBAXBridgeIdleTimeoutForTesting(@[@"--idle-timeout", @"-5"], 300), 300);
-  XCTAssertEqual(FBAXBridgeIdleTimeoutForTesting(@[@"--idle-timeout", @"soon"], 300), 300);
-  XCTAssertEqual(FBAXBridgeIdleTimeoutForTesting(@[@"--idle-timeout", @"12x"], 300), 300);
-  // A flag with no value at all: the parser walks pairs, so there is nothing to read.
-  XCTAssertEqual(FBAXBridgeIdleTimeoutForTesting(@[@"--idle-timeout"], 300), 300);
-}
-
 #pragma mark - Modal detection
 
 // A SpringBoard system alert window anywhere in the tree marks a `system` modal. With no

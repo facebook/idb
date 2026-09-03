@@ -5,16 +5,18 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import CompanionLib
+@testable import CompanionLib
 import Foundation
-import XCTest
+import Testing
 
-final class ProcessExitWaitTests: XCTestCase {
+@Suite
+struct ProcessExitWaitTests {
 
   /// A process that has already exited (and been reaped) never delivers a `.exit`
   /// event, so `waitForProcessExit` must resolve via its liveness fallback rather
   /// than hang. This is the race the app-exit recording cleanup depends on.
-  func testResolvesForAnAlreadyExitedProcess() async throws {
+  @Test
+  func resolvesForAnAlreadyExitedProcess() async throws {
     let process = Process()
     process.executableURL = URL(fileURLWithPath: "/bin/echo")
     process.arguments = ["idb-repl-process-exit-test"]
@@ -26,13 +28,14 @@ final class ProcessExitWaitTests: XCTestCase {
 
   /// A live process that exits while being watched resolves the wait (and the
   /// `DispatchSource` survives long enough to deliver the event).
-  func testResolvesWhenAWatchedProcessExits() async throws {
+  @Test
+  func resolvesWhenAWatchedProcessExits() async throws {
     let process = Process()
     process.executableURL = URL(fileURLWithPath: "/bin/sleep")
     process.arguments = ["0.3"]
     try process.run()
 
     await waitForProcessExit(pid: process.processIdentifier)
-    XCTAssertFalse(process.isRunning)
+    #expect(!(process.isRunning))
   }
 }

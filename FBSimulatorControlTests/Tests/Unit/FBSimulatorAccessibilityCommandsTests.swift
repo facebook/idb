@@ -104,8 +104,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     expectedAttributeFetches: Int64
   ) {
     XCTAssertNotNil(profile, "Profiling data should be present")
-    // The accessibility backend is the translator lane, so it must be that case and not the guest one —
-    // asserting the case is what stops a future change quietly serving the wrong profile shape here.
+    // The accessibility backend must carry the translator profile shape.
     guard case let .translator(profilingData)? = profile else {
       return XCTFail("the accessibility backend must report a translator profile, got \(String(describing: profile))")
     }
@@ -115,7 +114,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     XCTAssertGreaterThanOrEqual(profilingData.translationDuration, 0, "Translation duration should be non-negative")
     XCTAssertGreaterThanOrEqual(profilingData.elementConversionDuration, 0, "Element conversion duration should be non-negative")
     XCTAssertGreaterThanOrEqual(profilingData.serializeDuration, 0, "Serialize duration should be non-negative")
-    // The core, which telemetry reads across both lanes by name. A read cannot have taken less time in
+    // The core, which telemetry reads across both backends by name. A read cannot have taken less time in
     // total than the phases it is made of.
     XCTAssertGreaterThan(profilingData.totalDuration, 0, "Total duration should be positive")
     XCTAssertGreaterThanOrEqual(
@@ -504,7 +503,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
   /// Creates and activates the fixture with the given root element tree, then
   /// builds a real `FBSimulator`, a mock translation dispatcher, and registers an
   /// `FBSimulatorAccessibilityCommands` with that dispatcher injected into the
-  /// simulator's command cache. Production paths that resolve `accessibilityCommands`
+  /// simulator's command cache. Production paths that resolve `accessibility`
   /// on the simulator will return it.
   private func setUp(
     withRootElement rootElement: FBSimulatorControlTests_AXPMacPlatformElement_Double,
@@ -1362,7 +1361,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
         "acquire_duration_ms",
         "read_duration_ms",
         "serialize_duration_ms",
-        // What only this lane has.
+        // Translator-only fields.
         "attribute_fetch_count",
         "xpc_call_count",
         "translation_duration_ms",
@@ -1373,9 +1372,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     )
   }
 
-  // The one thing that makes the two lanes comparable is that they spell the core the same way, and
-  // nothing structural enforces it — the profile types are deliberately disjoint. This is the enforcement.
-  func testBothLanesSpellTheProfileCoreTheSameWay() throws {
+  func testBothBackendsSpellTheProfileCoreTheSameWay() throws {
     let translator = FBAccessibilityElementsResponse(
       elements: .tree([]),
       profilingData: .translator(
@@ -1549,12 +1546,9 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     }
   }
 
-  // MARK: - Frontmost pid (remote-automation pid anchor)
+  // MARK: - Frontmost pid
 
   func testResolveFrontmostElementExposesProcessIdentifier() async throws {
-    // The remote-automation backend anchors its frontmost read on the app's pid, borrowing it from
-    // the AX handle rather than hit-testing a screen point. The resolved element must surface that pid
-    // (the translation double's pid defaults to 12345).
     let root = FBAccessibilityTestElementBuilder.application(withLabel: "App", frame: CGRect(x: 0, y: 0, width: 100, height: 100), children: [])
     try setUp(withRootElement: root)
 

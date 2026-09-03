@@ -10,24 +10,20 @@ import XCTest
 
 final class FBUIAutomationTests: XCTestCase {
 
-  // The remote backend's pid-probe anchor is the screen centre in points: marker and whole-tree
-  // reads probe it to discover the frontmost app's pid. The arithmetic is a pure function so it is
-  // unit-testable without a target.
-
   func testAnchorPointIsScreenCentreInPoints() {
-    let anchor = FBSimulatorRemoteAutomation.anchorPoint(widthPixels: 828, heightPixels: 1792, scale: 2)
+    let anchor = FBAXBridgeUIAutomation.anchorPoint(widthPixels: 828, heightPixels: 1792, scale: 2)
     XCTAssertEqual(anchor.x, 207, accuracy: 0.001)
     XCTAssertEqual(anchor.y, 448, accuracy: 0.001)
   }
 
   func testAnchorPointHonoursScale() {
-    let anchor = FBSimulatorRemoteAutomation.anchorPoint(widthPixels: 1206, heightPixels: 2622, scale: 3)
+    let anchor = FBAXBridgeUIAutomation.anchorPoint(widthPixels: 1206, heightPixels: 2622, scale: 3)
     XCTAssertEqual(anchor.x, 201, accuracy: 0.001)
     XCTAssertEqual(anchor.y, 437, accuracy: 0.001)
   }
 
   func testAnchorPointGuardsAgainstZeroScale() {
-    let anchor = FBSimulatorRemoteAutomation.anchorPoint(widthPixels: 400, heightPixels: 800, scale: 0)
+    let anchor = FBAXBridgeUIAutomation.anchorPoint(widthPixels: 400, heightPixels: 800, scale: 0)
     XCTAssertEqual(anchor.x, 200, accuracy: 0.001)
     XCTAssertEqual(anchor.y, 400, accuracy: 0.001)
   }
@@ -58,7 +54,7 @@ final class FBUIAutomationTests: XCTestCase {
     XCTAssertTrue(try transport(simulator, .exclusive) === (try transport(simulator, .exclusive)))
   }
 
-  // The two lanes reach different guests, so handing a shared read the exclusive transport would read
+  // The two scopes reach different guests, so handing a shared read the exclusive transport would read
   // over a bridge nobody else can see, and the reverse would put the caller back to holding one others
   // want. Memoization is therefore keyed by persistence, not just by simulator.
   func testSharedAndExclusiveDoNotShareATransport() throws {

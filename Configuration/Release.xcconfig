@@ -1,0 +1,37 @@
+// Release-only overrides. Included after Shared.xcconfig, so every setting
+// here wins over the shared default for the Release configuration.
+//
+// Shared.xcconfig is written for a fast Debug inner loop (no optimization, no
+// stripping, assertions on) and is wired as BOTH the Debug and Release config,
+// so Release builds currently ship Debug-sized, Debug-shaped binaries: ObjC at
+// -O0, full DWARF left inside every .o, and private-extern symbols exported.
+// These overrides restore the Release posture without touching Debug:
+// optimized code, DWARF stripped into dSYMs, private symbols hidden.
+#include "Shared.xcconfig"
+
+// Xcode's default Release optimization (-Os). Shared pins -O0 for Debug speed;
+// without this line Release inherits the pin.
+GCC_OPTIMIZATION_LEVEL = s
+
+// Not set anywhere, so Xcode already defaults this to -O for Release. Spelled
+// out so a future Shared.xcconfig edit cannot silently de-optimize Swift.
+// Whole-module is also the Xcode Release default; spelled out to match Buck's
+// PROJECT_RELEASE_CONFIG.
+SWIFT_OPTIMIZATION_LEVEL = -O
+SWIFT_COMPILATION_MODE = wholemodule
+
+// Stripping and dSYM policy is NOT project-wide: it depends on the product
+// type, so the generator emits it per target (see `release_settings` in the
+// project generator). Static frameworks keep their DWARF (`dwarf`) so the
+// final link can emit a complete dSYM; linked products (test bundles, tools)
+// strip into a dSYM (`dwarf-with-dsym` + strip). Stripping a static archive
+// with no dSYM step destroys its debug info, so it must never be set here.
+
+// Hide file-private symbols (Shared sets NO so Debug stack traces and
+// `nm`-based tooling see everything). Shrinks the symbol table and lets the
+// linker drop more at final link.
+GCC_SYMBOLS_PRIVATE_EXTERN = YES
+
+// Release should not pay for Debug diagnostics.
+ENABLE_NS_ASSERTIONS = NO
+ENABLE_TESTABILITY = NO

@@ -44,11 +44,11 @@ public final class FBSimulatorCrashLogCommands {
 
   // MARK: - Private
 
-  fileprivate func notifyOfCrashAsync(matching predicate: NSPredicate) async throws -> FBCrashLogInfo {
+  fileprivate func notifyOfCrash(matching predicate: NSPredicate) async throws -> FBCrashLogInfo {
     try await notifier.nextCrashLog(forPredicate: predicate)
   }
 
-  fileprivate func crashesAsync(matching predicate: NSPredicate, useCache: Bool) async throws -> [FBCrashLogInfo] {
+  fileprivate func crashes(matching predicate: NSPredicate, useCache: Bool) async throws -> [FBCrashLogInfo] {
     if !hasPerformedInitialIngestion {
       notifier.store.ingestAllExistingInDirectory()
       hasPerformedInitialIngestion = true
@@ -56,7 +56,7 @@ public final class FBSimulatorCrashLogCommands {
     return notifier.store.ingestedCrashLogs(matchingPredicate: predicate)
   }
 
-  fileprivate func pruneCrashesAsync(matching predicate: NSPredicate) async throws -> [FBCrashLogInfo] {
+  fileprivate func pruneCrashes(matching predicate: NSPredicate) async throws -> [FBCrashLogInfo] {
     guard let simulator = self.simulator else {
       throw FBWeakTargetError.simulator
     }
@@ -73,15 +73,15 @@ public final class FBSimulatorCrashLogCommands {
 extension FBSimulator: CrashLogCommands {
 
   public func crashes(matching predicate: NSPredicate, useCache: Bool) async throws -> [FBCrashLogInfo] {
-    try await crashLogCommands.crashesAsync(matching: predicate, useCache: useCache)
+    try await crashLog.crashes(matching: predicate, useCache: useCache)
   }
 
   public func notifyOfCrash(matching predicate: NSPredicate) async throws -> FBCrashLogInfo {
-    try await crashLogCommands.notifyOfCrashAsync(matching: predicate)
+    try await crashLog.notifyOfCrash(matching: predicate)
   }
 
   public func pruneCrashes(matching predicate: NSPredicate) async throws -> [FBCrashLogInfo] {
-    try await crashLogCommands.pruneCrashesAsync(matching: predicate)
+    try await crashLog.pruneCrashes(matching: predicate)
   }
 
   public func withCrashLogFiles<R>(body: (any AsyncFileContainer) async throws -> R) async throws -> R {

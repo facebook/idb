@@ -13,7 +13,7 @@ These primitives support a number of scenarios:
 
 ## Backends
 
-A read is served by one of three backends, selected with `--api` on `idb ui describe-all`, `idb ui describe-point` and `idb ui describe`. They differ in where the read runs, which determines how much of the screen they can see and how much each read costs.
+A read is served by one of two backends, selected with `--api` on `idb ui describe-all`, `idb ui describe-point` and `idb ui describe`. They differ in where the read runs, which determines how much of the screen they can see and how much each read costs.
 
 Every backend ultimately reads the same source of truth — the accessibility server running *inside* the target application — but they reach it along different paths:
 
@@ -22,7 +22,7 @@ flowchart TD
     subgraph host["macOS host — idb_companion"]
         selector["Backend selection: --api"]
         ax["ax<br/>host-side translation"]
-        bridge["axbridge / axbridge-persistent<br/>in-guest reader"]
+        bridge["axbridge<br/>in-guest reader"]
     end
     subgraph guest["Booted Simulator"]
         sb["SimulatorBridge<br/>Apple's guest daemon"]
@@ -63,46 +63,36 @@ sequenceDiagram
 
 ### `--api axbridge` — the guest reader
 
-The read runs *inside* the Simulator. The companion spawns the bundled `SimulatorFrameworkBridge` helper, which attaches to the target application's own in-process accessibility server, walks its element tree, and returns it as JSON.
+The read runs *inside* the Simulator. The companion starts the bundled `SimulatorFrameworkBridge` helper in `serve` mode, connects over a private Unix domain socket, and reuses that guest for later requests.
 
-Because it reads the application from the inside, it sees the structure the application actually built, at the granularity `XCUITest` would see — typed, labelled elements where the host-side view reports one composite. It needs no test bundle, no test runner and no automation daemon: the helper is spawned, answers one read, and exits.
+Because it reads the application from the inside, it sees the structure the application actually built, at the granularity `XCUITest` would see — typed, labelled elements where the host-side view reports one composite. It needs no test bundle, test runner, or automation daemon.
 
-The cost is the spawn: the helper has to start and load the accessibility frameworks on every read, which dominates the time a single read takes — roughly 600ms, against roughly 20ms for the walk itself.
+The first request pays for the helper to start and load the accessibility frameworks. Later requests reuse the warm guest, so their cost is dominated by the tree walk rather than process startup. If the guest exits, the next read reconnects or starts a replacement and retries once.
 
 A guest read also puts the target into automation mode and leaves it there — see [Automation mode](#automation-mode).
 
-### `--api axbridge-persistent` — the guest reader, kept warm
-
-The same reader, spawned once instead of once per read. The companion starts `SimulatorFrameworkBridge` in `serve` mode and talks to it over a Unix domain socket, so the framework loading is paid once and every subsequent read is just the walk — around 20ms, roughly 30x faster than re-spawning.
-
-The reader belongs to the companion, not to any one command, so the saving does not require you to hold anything. The first read against a target starts it and the rest are warm, including across separate `idb` invocations, for as long as that companion is running. Measured on a booted simulator: the first `idb ui describe-all --api axbridge-persistent` takes a few seconds, and every one after it lands around 0.2s, against roughly 3.5s each for `--api axbridge`.
-
-`axbridge` is still the better choice when you will genuinely read only once against a freshly started companion, since it does the same work without the socket. Past the first read, prefer `axbridge-persistent`.
-
-The connection is self-healing: if the reader dies — the Simulator shut down, the process was killed — the next read re-establishes it and retries once, rather than wedging on a dead socket.
-
 ### Choosing between them
 
-| | `ax` | `axbridge` | `axbridge-persistent` |
-|---|---|---|---|
-| Where the read runs | Host | Inside the Simulator | Inside the Simulator |
-| Detail | Assistive-technology view | Full application tree | Full application tree |
-| Cost per read | Low | ~600ms, spawn-dominated | ~20ms warm, after a one-off start |
-| Needs `SimulatorFrameworkBridge` | No | Yes | Yes |
-| Best for | Quick checks; anything the composite view is enough for | A single read that needs full detail | Any repeated reading against one companion |
+| | `ax` | `axbridge` |
+|---|---|---|
+| Where the read runs | Host | Inside the Simulator |
+| Detail | Assistive-technology view | Full application tree |
+| Cost per read | Low | Warm after a one-off start |
+| Needs `SimulatorFrameworkBridge` | No | Yes |
+| Best for | Quick checks; anything the composite view is enough for | Full-detail and repeated reads |
 
-### How the axbridge backends fetch the tree
+### How axbridge fetches the tree
 
 Both axbridge backends ask the application for the whole tree in **one** call. A subtree drawn by another process — a web view's page, a photo picker, an autofill sheet — is not in that application's answer, so the read continues with one more call per such subtree, served by the process drawing it. The alternative, one call per node, reads the same tree and the same attributes for more round trips; `profile` reports which one served a read, as `traversal`.
 
-On a 167-element Settings screen the one call costs 1 mach round trip instead of 167, for the same document. On an idle screen the read time is comparable for either traversal (roughly 30ms); the saving is the round trips, so it grows with tree size and with how busy the application is, and it is what a warm `--api axbridge-persistent` reader benefits from — on a one-shot `--api axbridge` read the spawn still dominates.
+On a 167-element Settings screen the one call costs 1 mach round trip instead of 167, for the same document. On an idle screen the read time is comparable for either traversal (roughly 30ms); the saving grows with tree size and with how busy the application is.
 
 ```mermaid
 sequenceDiagram
     participant H as Companion (host)
     participant G as SimulatorFrameworkBridge (guest)
     participant A as App accessibility server
-    Note over H,G: axbridge spawns the reader per read<br/>axbridge-persistent connects to a warm serve process
+    Note over H,G: axbridge connects to the companion's private warm guest
     H->>G: describe request — one host/guest round trip
     G->>A: resolve the frontmost application
     loop walk, entirely in-guest
@@ -126,7 +116,7 @@ When a backend is selected but cannot run, the read fails with a clear error rat
 
 ### Requirements
 
-The axbridge backends are iOS Simulator only, and need the `SimulatorFrameworkBridge` helper alongside the companion binary. A companion built as a distribution (see [Development](development.mdx)) has it in the sibling `Resources` directory, which is the layout `idb_companion` expects at runtime; a bare binary moved out of that layout does not, and a read reports:
+The axbridge backend is iOS Simulator only, and needs the `SimulatorFrameworkBridge` helper alongside the companion binary. A companion built as a distribution (see [Development](development.mdx)) has it in the sibling `Resources` directory, which is the layout `idb_companion` expects at runtime; a bare binary moved out of that layout does not, and a read reports:
 
 ```
 The SimulatorFrameworkBridge guest binary was not found in the companion Resources directory
@@ -181,7 +171,7 @@ $ idb ui describe General --format complete | jq '{backend, truncated, target, s
 | Field | Description |
 |-------|-------------|
 | `elements` | The elements, always an array — even for a single-element read, which the other formats emit as a bare object |
-| `backend` | Which backend served the read: `ax`, `axbridge`, `axbridge-persistent`, `axbridge-exclusive` or `testmanagerd`. A read requested as `axbridge-persistent` reports `axbridge-exclusive` when it was served from a bridge the reader holds for itself, which is what the companion does |
+| `backend` | Which resolved backend served the read: `ax`, `axbridge-oneshot`, `axbridge-persistent` or `axbridge-exclusive`. In idb, `--api axbridge` resolves to `axbridge-exclusive` because the companion owns a private warm guest |
 | `target` | What was asked for: `kind` is `frontmost`, `application`, `point` or `marker`, with the `pid`, `x`/`y` or `value`/`match_key` that named it |
 | `screen` | The bounds element frames are relative to |
 | `truncated` | Whether the read hit the depth or node bounds and stopped short of the whole tree |
@@ -228,7 +218,7 @@ On `ax`, the tree is fetched attribute by attribute over XPC, so the phases deco
 | `xpc_call_count` | Round trips to the simulator's accessibility service |
 | `total_xpc_duration_ms` | XPC wait across the **whole** read. Larger than `read_duration_ms`, which counts only the walk's share — acquisition's XPC is reported as its wall time instead |
 
-On any of the `axbridge` backends, the tree is walked in-process by a guest reader and shipped back as JSON, so the interesting split is transport against traversal:
+On an axbridge backend, the tree is walked in-process by a guest reader and shipped back as JSON, so the interesting split is transport against traversal:
 
 | Field | What it measures |
 |-------|------------------|
@@ -237,7 +227,7 @@ On any of the `axbridge` backends, the tree is walked in-process by a guest read
 | `host_decode_duration_ms` | Decoding the guest's JSON response on the host |
 | `response_bytes` | Response size. Divided by `acquire_duration_ms`, it gives transport throughput |
 
-On these backends `acquire_duration_ms` is a **residual**, not a measurement: the round trip less the guest's walk, holding acquisition, the guest's JSON encoding and the IPC, undivided. Neither transport separates its own spawn or connect out of it, and on a warm persistent read the residual is mostly encoding and IPC — it is not a connect time.
+On these backends `acquire_duration_ms` is a **residual**, not a measurement: the round trip less the guest's walk, holding acquisition, the guest's JSON encoding and the IPC, undivided. The transport does not separate its own spawn or connect out of it, and on a warm read the residual is mostly encoding and IPC — it is not a connect time.
 
 A `null` here means *this transport does not have this phase* — not that the phase took no time, and not that the field is missing. A phase that took no measurable time reports `0`.
 
@@ -254,9 +244,9 @@ A factor of about 130, from the key set alone. For comparison, an ordinary read 
 
 The reason is what those attributes mean: `isVisible` and `visiblePoint` cannot be looked up, so the application has to hit-test the element to answer them, and asking for them on a whole tree hit-tests every node.
 
-**Two keys put a read on the expensive path, and nothing else does.** Asking for `interactable` or `occluded_by` widens the fetch list — for every node — with `isVisible`, `visiblePoint`, `centerPoint` and `userInteractionEnabled`; the first two are the ones that cost. `occluded_by` additionally hit-tests the centre of each element already found occluded, a cost proportional to the occluded set rather than to the tree. Every other key set stays on the default fetch list, which carries no reachability and costs milliseconds. On the axbridge backends those same two keys also move the read to the per-node walk, because one call asking for them times out — see [How the axbridge backends fetch the tree](#how-the-axbridge-backends-fetch-the-tree).
+**Two keys put a read on the expensive path, and nothing else does.** Asking for `interactable` or `occluded_by` widens the fetch list — for every node — with `isVisible`, `visiblePoint`, `centerPoint` and `userInteractionEnabled`; the first two are the ones that cost. `occluded_by` additionally hit-tests the centre of each element already found occluded, a cost proportional to the occluded set rather than to the tree. Every other key set stays on the default fetch list, which carries no reachability and costs milliseconds. On axbridge those same two keys also move the read to the per-node walk, because one call asking for them times out — see [How axbridge fetches the tree](#how-axbridge-fetches-the-tree).
 
-**A point read reports no `profile` on the guest lanes.** It resolves one element rather than walking a tree, so there is no traversal to time; `--api ax` does report one. Keep that in mind when comparing a point read's cost across backends.
+**A point read reports no `profile` on axbridge.** It resolves one element rather than walking a tree, so there is no traversal to time; `--api ax` does report one. Keep that in mind when comparing a point read's cost across backends.
 
 **Ask about one element, not the whole tree.** The point read already does this: `idb ui describe-point <x> <y> --key interactable` hit-tests that point and reads that element's attributes — one element's worth of hit-testing rather than the tree's, around 18 ms instead of two seconds.
 
@@ -293,7 +283,7 @@ A read that reports far fewer elements than the screen shows is usually one of t
 
   Relaunch the application afterwards; the setting is read at startup.
 - **The read was truncated.** A very deep or very large hierarchy stops at the bounds above. `--format complete` reports `truncated: true` when that happened, which distinguishes "this is the whole screen" from "this is as much of it as was read".
-- **The target is not in automation mode.** With automation mode off, UIKit collapses subtrees behind opaque element providers and caches a container's children; with it on, the full structure is exposed and children are recomputed per read. On one measured screen the same read went from 98 elements with 10 carrying a frame, to 176 elements all of which carry one — and the count of elements exposing an identifier went from 12 to 58, which matters more than the node count if you target by identifier rather than by label. The guest lanes assert the mode on every read, so this mainly affects `--api ax`; check and set it with:
+- **The target is not in automation mode.** With automation mode off, UIKit collapses subtrees behind opaque element providers and caches a container's children; with it on, the full structure is exposed and children are recomputed per read. On one measured screen the same read went from 98 elements with 10 carrying a frame, to 176 elements all of which carry one — and the count of elements exposing an identifier went from 12 to 58, which matters more than the node count if you target by identifier rather than by label. axbridge asserts the mode on every read, so this mainly affects `--api ax`; check and set it with:
 
   ```
   idb get --domain com.apple.Accessibility AutomationEnabled
@@ -306,7 +296,7 @@ A read that reports far fewer elements than the screen shows is usually one of t
 
 Automation mode (`AutomationEnabled` in the `com.apple.Accessibility` domain) is the mode a UI-test host puts an application into; a read without it can see a different, smaller tree than `XCUITest` would. It is a device-wide simulator setting and affects every accessibility consumer on that simulator, not just your read.
 
-`--api axbridge` and `--api axbridge-persistent` assert the mode on every read. What that means in practice:
+`--api axbridge` asserts the mode on every read. What that means in practice:
 
 - **The setting persists after the read.** Nothing restores it when the process exits, because restoring would flip a device-wide setting twice per read, with a window in which a concurrent reader sees the wrong value. A later `--api ax` read, or another tool entirely, sees a device left in the mode. To read without changing anything, use `--api ax`.
 - **The read says whether it changed anything.** `--format complete` carries an `automation` object with `enabled` and `asserted`: the mode the read ran in, and whether this read put it there. A read that found the mode already on reports `asserted: false`.
