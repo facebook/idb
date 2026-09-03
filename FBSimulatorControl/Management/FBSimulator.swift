@@ -87,10 +87,12 @@ public final class FBSimulator: FBiOSTarget, Hashable, CustomStringConvertible, 
 
   // MARK: - FBiOSTarget
 
-  public var runtimeRootDirectory: String { device.runtime.root }
+  public var runtimeRootDirectory: String { get async { device.runtime.root } }
 
   public var platformRootDirectory: String {
-    (FBXcodeConfiguration.developerDirectory as NSString).appendingPathComponent("Platforms/iPhoneSimulator.platform")
+    get async {
+      (FBXcodeConfiguration.developerDirectory as NSString).appendingPathComponent("Platforms/iPhoneSimulator.platform")
+    }
   }
 
   public var screenInfo: FBiOSTargetScreenInfo? {

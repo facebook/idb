@@ -98,8 +98,8 @@ public struct FBTestRunnerConfiguration {
 
   private static func prepareConfigurationAfterCodesignatureCheck(withTarget target: FBiOSTarget & ApplicationCommands & XCTestExtendedCommands, testLaunchConfiguration: FBTestLaunchConfiguration, workingDirectory: String) async throws -> FBTestRunnerConfiguration {
     // Common Paths
-    let runtimeRoot = target.runtimeRootDirectory
-    let platformRoot = target.platformRootDirectory
+    let runtimeRoot = await target.runtimeRootDirectory
+    let platformRoot = await target.platformRootDirectory
 
     // This directory will contain XCTest.framework, built for the target platform.
     let platformDeveloperFrameworksPath = (platformRoot as NSString).appendingPathComponent("Developer/Library/Frameworks")

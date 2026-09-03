@@ -72,10 +72,10 @@ public protocol FBiOSTarget: FBiOSTargetInfo, FBiOSTargetCommand {
   var auxillaryDirectory: String { get }
 
   /// The root of the "Runtime" where applicable
-  var runtimeRootDirectory: String { get }
+  var runtimeRootDirectory: String { get async }
 
   /// The root of the "Platform" where applicable
-  var platformRootDirectory: String { get }
+  var platformRootDirectory: String { get async }
 
   /// The Screen Info for the Target.
   var screenInfo: FBiOSTargetScreenInfo? { get }

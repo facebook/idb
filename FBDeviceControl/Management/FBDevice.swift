@@ -148,11 +148,13 @@ public final class FBDevice: FBiOSTarget, FBDeviceCommands, CustomStringConverti
   }
 
   public var platformRootDirectory: String {
-    (FBXcodeConfiguration.developerDirectory as NSString).appendingPathComponent("Platforms/iPhoneOS.platform")
+    get async {
+      (FBXcodeConfiguration.developerDirectory as NSString).appendingPathComponent("Platforms/iPhoneOS.platform")
+    }
   }
 
   public var runtimeRootDirectory: String {
-    platformRootDirectory
+    get async { await platformRootDirectory }
   }
 
   public var screenInfo: FBiOSTargetScreenInfo? {

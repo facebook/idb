@@ -200,11 +200,13 @@ public final class FBMacDevice: NSObject, FBiOSTarget {
   // MARK: - Paths
 
   public var runtimeRootDirectory: String {
-    platformRootDirectory
+    get async { await platformRootDirectory }
   }
 
   public var platformRootDirectory: String {
-    (FBXcodeConfiguration.developerDirectory as NSString).appendingPathComponent("Platforms/MacOSX.platform")
+    get async {
+      (FBXcodeConfiguration.developerDirectory as NSString).appendingPathComponent("Platforms/MacOSX.platform")
+    }
   }
 
   public var xctestPath: String {

@@ -26,8 +26,8 @@ final class FBiOSTargetDouble: FBiOSTarget {
 
   var architectures: [FBArchitecture] = []
   var logger: any FBControlCoreLogger = FBControlCoreLoggerDouble()
-  var platformRootDirectory: String = ""
-  var runtimeRootDirectory: String = ""
+  var platformRootDirectory: String { get async { "" } }
+  var runtimeRootDirectory: String { get async { "" } }
   var screenInfo: FBiOSTargetScreenInfo?
   var temporaryDirectory: FBTemporaryDirectory = .temporaryDirectory(logger: FBControlCoreLoggerDouble())
 
