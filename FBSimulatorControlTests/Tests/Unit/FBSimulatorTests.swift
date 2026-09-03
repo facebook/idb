@@ -159,12 +159,11 @@ final class FBSimulatorTests: XCTestCase {
     XCTAssertNotEqual(simulator, sim2, "Two simulators wrapping different devices should not be equal")
   }
 
-  func testIsEqual_WhenDifferentClass_ReturnsNO() {
-    XCTAssertFalse(simulator.isEqual("not a simulator"), "isEqual should return NO for objects of a different class")
-  }
-
-  func testHash_MatchesDeviceHash() {
-    XCTAssertEqual(simulator.hash, stubDevice.hash, "Simulator hash should match the underlying device hash")
+  func testHash_DelegatesToDevice() {
+    let sim1 = Self.createSimulator(with: stubDevice)
+    let sim2 = Self.createSimulator(with: stubDevice)
+    XCTAssertEqual(sim1.hashValue, sim2.hashValue, "Simulators wrapping the same device should hash identically")
+    XCTAssertEqual(Set([sim1, sim2]).count, 1, "A set should collapse simulators wrapping the same device")
   }
 
   // MARK: - Temporary Directory (Lazy Init)

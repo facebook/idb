@@ -15,7 +15,7 @@ private let DefaultDeviceSet = "~/Library/Developer/CoreSimulator/Devices"
 ///
 /// The async commands serialize their work onto `FBFuture`'s internal queues, so instances are
 /// safe to pass across Swift concurrency domains.
-public final class FBSimulator: NSObject, FBiOSTarget, @unchecked Sendable {
+public final class FBSimulator: FBiOSTarget, Hashable, CustomStringConvertible, @unchecked Sendable {
 
   // MARK: - Properties
 
@@ -63,7 +63,6 @@ public final class FBSimulator: NSObject, FBiOSTarget, @unchecked Sendable {
     self.auxillaryDirectory = auxillaryDirectory
     self.logger = (logger ?? FBControlCoreGlobalConfiguration.defaultLogger).withName(device.udid.uuidString)
     self.commandCache = FBTargetCommandCache()
-    super.init()
   }
 
   // MARK: - FBiOSTargetInfo
@@ -188,18 +187,19 @@ public final class FBSimulator: NSObject, FBiOSTarget, @unchecked Sendable {
       .appendingPathComponent(udid)
   }
 
-  // MARK: - NSObject
+  // MARK: - Hashable
 
-  public override var hash: Int { device.hash }
-
-  public override func isEqual(_ object: Any?) -> Bool {
-    guard let simulator = object as? FBSimulator else {
-      return false
-    }
-    return device.isEqual(simulator.device)
+  public func hash(into hasher: inout Hasher) {
+    hasher.combine(device.hash)
   }
 
-  public override var description: String {
+  public static func == (lhs: FBSimulator, rhs: FBSimulator) -> Bool {
+    lhs.device.isEqual(rhs.device)
+  }
+
+  // MARK: - CustomStringConvertible
+
+  public var description: String {
     FBiOSTargetDescribe(self)
   }
 
