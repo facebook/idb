@@ -8,7 +8,7 @@
 import FBControlCore
 
 /// A stub implementation of FBiOSTarget for testing.
-final class FBiOSTargetDouble: NSObject, FBiOSTarget {
+final class FBiOSTargetDouble: FBiOSTarget {
 
   // MARK: FBiOSTargetInfo - writable properties for test configuration
 
