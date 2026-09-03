@@ -16,7 +16,7 @@ public enum FBDeviceActivationState: String, Sendable, CaseIterable {
 }
 
 /// The canonical activation state for whatever the device reported.
-public func FBDeviceActivationStateCoerceFromString(_ activationState: String) -> FBDeviceActivationState {
+func FBDeviceActivationStateCoerceFromString(_ activationState: String) -> FBDeviceActivationState {
   FBDeviceActivationState(rawValue: activationState) ?? .unknown
 }
 

@@ -119,7 +119,7 @@ public final class FBAMDServiceConnection: CustomStringConvertible {
 
   // MARK: - plist Messaging
 
-  public func sendMessage(_ message: Any) throws {
+  func sendMessage(_ message: Any) throws {
     let result = calls.ServiceConnectionSendMessage(
       connection, message as CFPropertyList, CFPropertyListFormat.binaryFormat_v1_0, nil, nil, nil)
     guard result == 0 else {
@@ -128,7 +128,7 @@ public final class FBAMDServiceConnection: CustomStringConvertible {
     }
   }
 
-  public func receiveMessage() throws -> Any {
+  func receiveMessage() throws -> Any {
     var message: Unmanaged<CFPropertyList>?
     let result = calls.ServiceConnectionReceiveMessage(connection, &message, nil, nil, nil, nil)
     guard result == 0 else {
@@ -137,14 +137,14 @@ public final class FBAMDServiceConnection: CustomStringConvertible {
     return message?.takeRetainedValue() as Any
   }
 
-  public func sendAndReceiveMessage(_ message: Any) throws -> Any {
+  func sendAndReceiveMessage(_ message: Any) throws -> Any {
     try sendMessage(message)
     return try receiveMessage()
   }
 
   // MARK: - Lifecycle
 
-  public func invalidate() throws {
+  func invalidate() throws {
     guard let connectionRef else {
       throw FBAMDServiceConnectionError.noConnectionToInvalidate
     }
@@ -178,7 +178,7 @@ public final class FBAMDServiceConnection: CustomStringConvertible {
 
   // MARK: - AFC
 
-  public func asAFCConnection(
+  func asAFCConnection(
     calls afcCalls: AFCCalls,
     callback: @escaping AFCNotificationCallback,
     logger: any FBControlCoreLogger
@@ -231,7 +231,7 @@ public final class FBAMDServiceConnection: CustomStringConvertible {
     try send(data)
   }
 
-  public func sendUnsignedInt32(_ value: UInt32) throws {
+  func sendUnsignedInt32(_ value: UInt32) throws {
     try send(withUnsafeBytes(of: value) { Data($0) })
   }
 
@@ -259,7 +259,7 @@ public final class FBAMDServiceConnection: CustomStringConvertible {
     }
   }
 
-  public func receiveUp(to size: Int) throws -> Data {
+  func receiveUp(to size: Int) throws -> Data {
     let buffer = UnsafeMutableRawPointer.allocate(byteCount: size, alignment: MemoryLayout<UInt8>.alignment)
     defer { buffer.deallocate() }
     let result = receive(buffer, size: size)
@@ -273,17 +273,17 @@ public final class FBAMDServiceConnection: CustomStringConvertible {
     return Data(bytes: buffer, count: Int(result))
   }
 
-  public func receiveUnsignedInt32(_ valueOut: UnsafeMutablePointer<UInt32>) throws {
+  func receiveUnsignedInt32(_ valueOut: UnsafeMutablePointer<UInt32>) throws {
     try receive(valueOut, ofSize: MemoryLayout<UInt32>.size)
   }
 
-  public func receiveUnsignedInt64(_ valueOut: UnsafeMutablePointer<UInt64>) throws {
+  func receiveUnsignedInt64(_ valueOut: UnsafeMutablePointer<UInt64>) throws {
     try receive(valueOut, ofSize: MemoryLayout<UInt64>.size)
   }
 
   // MARK: - Streams
 
-  public func readFromConnectionWriting(
+  func readFromConnectionWriting(
     to consumer: any FBDataConsumer,
     on queue: DispatchQueue
   ) -> any FBFileReaderProtocol {
@@ -292,7 +292,7 @@ public final class FBAMDServiceConnection: CustomStringConvertible {
     return reader
   }
 
-  public func writeWithConsumerWriting(on queue: DispatchQueue) -> any FBDataConsumer & FBDataConsumerLifecycle {
+  func writeWithConsumerWriting(on queue: DispatchQueue) -> any FBDataConsumer & FBDataConsumerLifecycle {
     FBBlockDataConsumer.asynchronousDataConsumer(on: queue) { [weak self] data in
       try? self?.send(data)
     }

@@ -37,7 +37,7 @@ public final class FBDevice: FBiOSTarget, FBDeviceCommands, CustomStringConverti
     }
   }
 
-  public var restorableDevice: FBAMRestorableDevice? {
+  var restorableDevice: FBAMRestorableDevice? {
     get {
       restorableDeviceStorage
     }

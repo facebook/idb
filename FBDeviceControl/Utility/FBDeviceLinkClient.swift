@@ -89,13 +89,13 @@ public class FBDeviceLinkClient {
 
   // MARK: Public Methods
 
-  public func processMessage(_ message: Any) -> FBFuture<NSDictionary> {
+  func processMessage(_ message: Any) -> FBFuture<NSDictionary> {
     fbFutureFromAsync { [self] in
       try await processMessageAsync(message)
     }
   }
 
-  public func processMessageAsync(_ message: Any) async throws -> NSDictionary {
+  func processMessageAsync(_ message: Any) async throws -> NSDictionary {
     let connectionBox = ConnectionBox(connection)
     let messageBox = AnyBox(message)
     return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<NSDictionary, Error>) in

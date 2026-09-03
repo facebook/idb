@@ -110,7 +110,7 @@ private func amDeviceListenerCallback(
 ///
 /// Not `@objc`: nothing in Objective-C constructs or names it, and a Swift subclass of a generic
 /// Objective-C class cannot be expressed in the generated header.
-public final class FBAMDeviceManager: FBDeviceManager<FBAMDevice> {
+final class FBAMDeviceManager: FBDeviceManager<FBAMDevice> {
 
   // MARK: - Properties
 
@@ -122,7 +122,7 @@ public final class FBAMDeviceManager: FBDeviceManager<FBAMDevice> {
 
   // MARK: - Initializers
 
-  public init(
+  init(
     calls: AMDCalls,
     work workQueue: DispatchQueue,
     asyncQueue: DispatchQueue,
@@ -138,7 +138,7 @@ public final class FBAMDeviceManager: FBDeviceManager<FBAMDevice> {
 
   // MARK: - FBDeviceManager Implementation
 
-  public override func startListening() throws {
+  override func startListening() throws {
     guard subscription == nil else {
       throw FBAMDeviceManagerError.alreadySubscribed
     }
@@ -161,7 +161,7 @@ public final class FBAMDeviceManager: FBDeviceManager<FBAMDevice> {
     self.subscription = subscription
   }
 
-  public override func stopListening() throws {
+  override func stopListening() throws {
     guard let subscription else {
       throw FBAMDeviceManagerError.notSubscribed
     }
@@ -176,7 +176,7 @@ public final class FBAMDeviceManager: FBDeviceManager<FBAMDevice> {
     self.subscription = nil
   }
 
-  public override func constructPublic(
+  override func constructPublic(
     _ privateDevice: CFTypeRef,
     identifier: String,
     info: [String: Any]?
@@ -191,7 +191,7 @@ public final class FBAMDeviceManager: FBDeviceManager<FBAMDevice> {
       logger: logger)
   }
 
-  public override class func updatePublicReference(
+  override class func updatePublicReference(
     _ publicDevice: FBAMDevice,
     privateDevice: CFTypeRef,
     identifier: String,
@@ -201,7 +201,7 @@ public final class FBAMDeviceManager: FBDeviceManager<FBAMDevice> {
     publicDevice.allValues = info ?? [:]
   }
 
-  public override class func extractPrivateReference(_ publicDevice: FBAMDevice) -> Unmanaged<AnyObject>? {
+  override class func extractPrivateReference(_ publicDevice: FBAMDevice) -> Unmanaged<AnyObject>? {
     guard let reference = publicDevice.amDeviceRef else {
       return nil
     }

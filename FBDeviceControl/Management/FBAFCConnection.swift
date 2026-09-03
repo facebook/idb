@@ -237,7 +237,7 @@ public final class FBAFCConnection {
     return buffer
   }
 
-  public func removePath(_ path: String, recursively: Bool) throws {
+  func removePath(_ path: String, recursively: Bool) throws {
     if recursively {
       try removePathAndContents(path)
       return
@@ -250,7 +250,7 @@ public final class FBAFCConnection {
     logger?.log("Removed file path \(path)")
   }
 
-  public func renamePath(_ path: String, destination: String) throws {
+  func renamePath(_ path: String, destination: String) throws {
     let result = calls.RenamePath(connection, path, destination)
     guard result == 0 else {
       throw FBAFCConnectionError.renamePathFailed(
@@ -274,7 +274,7 @@ public final class FBAFCConnection {
     self.connectionRef = nil
   }
 
-  public var connectionIsValid: Bool {
+  var connectionIsValid: Bool {
     calls.ConnectionIsValid(connection) != 0
   }
 

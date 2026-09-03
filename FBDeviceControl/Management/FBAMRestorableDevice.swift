@@ -24,7 +24,7 @@ public final class FBAMRestorableDevice: FBiOSTargetInfo, FBDeviceProtocol {
   /// Owns a +1 reference: retained on assignment, released on replacement and in `deinit`.
   private var restorableDeviceRef: Unmanaged<AnyObject>
 
-  public var restorableDevice: AMRestorableDevice {
+  var restorableDevice: AMRestorableDevice {
     get {
       restorableDeviceRef.takeUnretainedValue()
     }

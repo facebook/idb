@@ -38,7 +38,7 @@ private func restorableDeviceListenerCallback(
 
 /// Obtains `FBAMRestorableDevice` instances.
 @objc(FBAMRestorableDeviceManager)
-public final class FBAMRestorableDeviceManager: FBDeviceManager<FBAMRestorableDevice> {
+final class FBAMRestorableDeviceManager: FBDeviceManager<FBAMRestorableDevice> {
 
   // MARK: - Properties
 
@@ -51,7 +51,7 @@ public final class FBAMRestorableDeviceManager: FBDeviceManager<FBAMRestorableDe
 
   // MARK: - Initializers
 
-  public init(
+  init(
     calls: AMDCalls,
     work workQueue: DispatchQueue,
     asyncQueue: DispatchQueue,
@@ -95,7 +95,7 @@ public final class FBAMRestorableDeviceManager: FBDeviceManager<FBAMRestorableDe
 
   // MARK: - Abstract Implementation
 
-  public override func startListening() throws {
+  override func startListening() throws {
     // Retained for as long as the registration lasts: the callback bridges this back unretained, so
     // the manager must not be deallocated while MobileDevice can still deliver a notification.
     // Balanced in `stopListening`, and below if the registration itself fails.
@@ -113,7 +113,7 @@ public final class FBAMRestorableDeviceManager: FBDeviceManager<FBAMRestorableDe
     self.notificationContext = context
   }
 
-  public override func stopListening() throws {
+  override func stopListening() throws {
     let registrationID = self.registrationID
     self.registrationID = 0
     guard registrationID >= 1 else {
@@ -130,7 +130,7 @@ public final class FBAMRestorableDeviceManager: FBDeviceManager<FBAMRestorableDe
     }
   }
 
-  public override func constructPublic(
+  override func constructPublic(
     _ privateDevice: CFTypeRef,
     identifier: String,
     info: [String: Any]?
@@ -144,7 +144,7 @@ public final class FBAMRestorableDeviceManager: FBDeviceManager<FBAMRestorableDe
       logger: logger.withName(identifier))
   }
 
-  public override class func updatePublicReference(
+  override class func updatePublicReference(
     _ publicDevice: FBAMRestorableDevice,
     privateDevice: CFTypeRef,
     identifier: String,
@@ -154,7 +154,7 @@ public final class FBAMRestorableDeviceManager: FBDeviceManager<FBAMRestorableDe
     publicDevice.allValues = info ?? [:]
   }
 
-  public override class func extractPrivateReference(_ publicDevice: FBAMRestorableDevice) -> Unmanaged<AnyObject>? {
+  override class func extractPrivateReference(_ publicDevice: FBAMRestorableDevice) -> Unmanaged<AnyObject>? {
     Unmanaged.passUnretained(publicDevice.restorableDevice)
   }
 

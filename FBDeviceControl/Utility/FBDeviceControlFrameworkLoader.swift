@@ -47,7 +47,7 @@ public final class FBDeviceControlFrameworkLoader: FBControlCoreFrameworkLoader 
   }
 
   /// The AMDevice calls to use, resolved by a successful `loadPrivateFrameworks`.
-  public var amDeviceCalls: AMDCalls {
+  var amDeviceCalls: AMDCalls {
     get throws {
       guard let resolvedCalls else {
         throw FBDeviceControlFrameworkLoaderError.frameworksNotLoaded

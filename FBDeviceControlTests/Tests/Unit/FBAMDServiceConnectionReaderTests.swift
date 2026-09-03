@@ -6,7 +6,7 @@
  */
 
 import FBControlCore
-import FBDeviceControl
+@testable import FBDeviceControl
 import Foundation
 import Testing
 

@@ -16,7 +16,7 @@ extension FBAMDevice {
   /// soon as the service has started, while the service *connection* is invalidated when the
   /// caller finishes with it. A session times out after 60 seconds, so holding one open for the
   /// duration of a long-running service fails the next operation on the device.
-  public func startServiceConnection(_ service: String) -> FBFutureContext<FBAMDServiceConnection> {
+  func startServiceConnection(_ service: String) -> FBFutureContext<FBAMDServiceConnection> {
     let logger = self.logger
     return fbFutureFromAsync { try await self.openServiceConnection(service) }
       .onQueue(
@@ -32,7 +32,7 @@ extension FBAMDevice {
   ///
   /// The async counterpart of `startServiceConnection`, with the same two lifetimes: the AMDevice
   /// session is released as soon as the service has started, the connection when `body` is done.
-  public func withServiceConnection<T>(
+  func withServiceConnection<T>(
     _ service: String,
     _ body: (FBAMDServiceConnection) async throws -> T
   ) async throws -> T {
@@ -45,7 +45,7 @@ extension FBAMDevice {
   ///
   /// The device link handshake is performed before `body` runs, so the client it receives is ready
   /// to process messages.
-  public func withDeviceLinkClient<T>(
+  func withDeviceLinkClient<T>(
     _ service: String,
     _ body: (FBDeviceLinkClient) async throws -> T
   ) async throws -> T {
@@ -60,7 +60,7 @@ extension FBAMDevice {
   ///
   /// The AFC connection carries its own teardown on top of the service connection's, so the two
   /// are released innermost first.
-  public func withAFCConnection<T>(
+  func withAFCConnection<T>(
     _ service: String,
     calls afcCalls: AFCCalls = FBAFCConnection.defaultCalls,
     _ body: (FBAFCConnection) async throws -> T

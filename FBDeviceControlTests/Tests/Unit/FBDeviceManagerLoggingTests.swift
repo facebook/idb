@@ -6,7 +6,7 @@
  */
 
 import FBControlCore
-import FBDeviceControl
+@testable import FBDeviceControl
 import Testing
 
 /// Records every logged line so log content can be asserted.

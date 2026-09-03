@@ -34,14 +34,14 @@ public final class FBAMDevice: NSObject, FBiOSTargetInfo, FBDeviceCommands, FBFu
   private var connectionContextManagerStorage: FBFutureContextManager<FBAMDevice>?
   private var serviceManagerStorage: FBAMDeviceServiceManager?
 
-  public var connectionContextManager: FBFutureContextManager<FBAMDevice> {
+  var connectionContextManager: FBFutureContextManager<FBAMDevice> {
     guard let connectionContextManagerStorage else {
       preconditionFailure("The connection context manager is created in the initializer")
     }
     return connectionContextManagerStorage
   }
 
-  public var serviceManager: FBAMDeviceServiceManager {
+  var serviceManager: FBAMDeviceServiceManager {
     guard let serviceManagerStorage else {
       preconditionFailure("The service manager is created in the initializer")
     }

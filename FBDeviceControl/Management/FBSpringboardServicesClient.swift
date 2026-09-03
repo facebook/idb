@@ -18,7 +18,7 @@ extension FBWallpaperName {
   public static let lockscreen = FBWallpaperName(rawValue: "lockscreen")
 }
 
-public let FBSpringboardServiceName: String = "com.apple.springboardservices"
+let FBSpringboardServiceName: String = "com.apple.springboardservices"
 
 private let IconPlistFile = "icons.plist"
 private let IconJSONFile = "icons.json"
@@ -74,25 +74,25 @@ private final class SpringboardDataBox: @unchecked Sendable {
   }
 }
 
-public class FBSpringboardServicesClient {
+class FBSpringboardServicesClient {
   private let connection: FBAMDServiceConnection
   fileprivate let queue: DispatchQueue
   private let logger: any FBControlCoreLogger
 
   // MARK: ObjC-visible Constants
 
-  public static let wallpaperNameHomescreen: String = "homescreen"
-  public static let wallpaperNameLockscreen: String = "lockscreen"
-  public static let serviceName: String = "com.apple.springboardservices"
+  static let wallpaperNameHomescreen: String = "homescreen"
+  static let wallpaperNameLockscreen: String = "lockscreen"
+  static let serviceName: String = "com.apple.springboardservices"
 
   // MARK: Initializers
 
-  public static func springboardServicesClient(connection: FBAMDServiceConnection, logger: any FBControlCoreLogger) -> FBSpringboardServicesClient {
+  static func springboardServicesClient(connection: FBAMDServiceConnection, logger: any FBControlCoreLogger) -> FBSpringboardServicesClient {
     let queue = DispatchQueue(label: "com.facebook.FBDeviceControl.springboard_services")
     return FBSpringboardServicesClient(connection: connection, queue: queue, logger: logger)
   }
 
-  public convenience init(connection: FBAMDServiceConnection, logger: any FBControlCoreLogger) {
+  convenience init(connection: FBAMDServiceConnection, logger: any FBControlCoreLogger) {
     let queue = DispatchQueue(label: "com.facebook.FBDeviceControl.springboard_services")
     self.init(connection: connection, queue: queue, logger: logger)
   }
@@ -109,24 +109,24 @@ public class FBSpringboardServicesClient {
 
   // MARK: Public Methods (legacy FBFuture entry points)
 
-  public func wallpaperImageData(forKind name: String) -> FBFuture<NSData> {
+  func wallpaperImageData(forKind name: String) -> FBFuture<NSData> {
     fbFutureFromAsync { [self] in
       try await wallpaperImageDataAsync(forKind: name) as NSData
     }
   }
 
-  public func iconContainer() -> any AsyncFileContainer {
+  func iconContainer() -> any AsyncFileContainer {
     FBSpringboardServicesIconContainer(client: self)
   }
 
   // MARK: - Async
 
-  public func getIconLayoutAsync() async throws -> FBSpringboardIconLayout {
+  func getIconLayoutAsync() async throws -> FBSpringboardIconLayout {
     let raw = try await getRawIconStateAsync(formatVersion: 2)
     return try FBSpringboardIconLayout(rawValue: raw)
   }
 
-  public func getRawIconStateAsync(formatVersion: UInt) async throws -> AnyObject {
+  func getRawIconStateAsync(formatVersion: UInt) async throws -> AnyObject {
     let connectionBox = SpringboardConnectionBox(connection)
     let formatVersionString = "\(formatVersion)"
     return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<AnyObject, Error>) in
@@ -141,7 +141,7 @@ public class FBSpringboardServicesClient {
     }
   }
 
-  public func setIconLayoutAsync(_ iconLayout: FBSpringboardIconLayout) async throws {
+  func setIconLayoutAsync(_ iconLayout: FBSpringboardIconLayout) async throws {
     try await sendIconLayout(iconLayout.rawValue)
   }
 
@@ -169,7 +169,7 @@ public class FBSpringboardServicesClient {
     }
   }
 
-  public func getHomeScreenIconMetricsAsync() async throws -> [String: Any] {
+  func getHomeScreenIconMetricsAsync() async throws -> [String: Any] {
     let connectionBox = SpringboardConnectionBox(connection)
     return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<[String: Any], Error>) in
       queue.async {
@@ -191,7 +191,7 @@ public class FBSpringboardServicesClient {
     }
   }
 
-  public func wallpaperImageDataAsync(forKind name: String) async throws -> Data {
+  func wallpaperImageDataAsync(forKind name: String) async throws -> Data {
     let connectionBox = SpringboardConnectionBox(connection)
     return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Data, Error>) in
       queue.async {

@@ -38,7 +38,7 @@ public final class FBDeviceStorage<T: AnyObject> {
     self.referencedDevices = NSMapTable(keyOptions: .copyIn, valueOptions: .weakMemory)
   }
 
-  public func deviceAttached(_ device: T, forKey key: String) {
+  func deviceAttached(_ device: T, forKey key: String) {
     let attached = attachedDevices[key]
     let referenced = referencedDevices.object(forKey: key as NSString)
     if attached != nil && referenced != nil {
@@ -52,7 +52,7 @@ public final class FBDeviceStorage<T: AnyObject> {
     referencedDevices.setObject(device, forKey: key as NSString)
   }
 
-  public func deviceDetached(forKey key: String) {
+  func deviceDetached(forKey key: String) {
     attachedDevices.removeValue(forKey: key)
   }
 

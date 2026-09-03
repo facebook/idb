@@ -22,17 +22,17 @@ extension FBDevicectlError: LocalizedError {
   }
 }
 
-public class FBAppleDevicectlCommandExecutor {
+class FBAppleDevicectlCommandExecutor {
 
   let logger: FBControlCoreLogger?
   let device: FBDevice
 
-  public init(device: FBDevice) {
+  init(device: FBDevice) {
     logger = device.logger.withName("devicectl")
     self.device = device
   }
 
-  public func taskBuilder(arguments: [String]) -> FBProcessBuilder<NSNull, NSString, NSString> {
+  func taskBuilder(arguments: [String]) -> FBProcessBuilder<NSNull, NSString, NSString> {
     let derivedArgs = ["devicectl"] + arguments
     return FBProcessBuilder<NSNull, NSString, NSString>.withLaunchPath("/usr/bin/xcrun", arguments: derivedArgs)
       .withStdOutInMemoryAsString()
@@ -41,7 +41,7 @@ public class FBAppleDevicectlCommandExecutor {
   }
 }
 
-public extension FBAppleDevicectlCommandExecutor {
+extension FBAppleDevicectlCommandExecutor {
   @objc func launchApplication(configuration: FBApplicationLaunchConfiguration) -> FBFuture<NSNumber> {
     fbFutureFromAsync { [self] in
       try await launchApplicationAsync(configuration: configuration) as NSNumber
