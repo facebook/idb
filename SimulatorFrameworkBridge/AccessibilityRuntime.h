@@ -359,6 +359,33 @@ extern NSArray<NSString *> *FBAXSignatureWarnings(void);
                            error:(NSError **)error;
 
 /**
+ * The process that answers for the element a snapshot node carries under its element key.
+ *
+ * A snapshot is served by the process that owns its root, and it cannot serialize a subtree another
+ * process draws — a web view's page, a picker, an autofill sheet. The node it stops at still names the
+ * element it could not descend into, and which process owns that element is what tells a reader the
+ * nesting ended at a process boundary rather than at a leaf.
+ *
+ * 0 when the value does not carry an element this runtime can attribute; a caller must read that as
+ * unknown, never as a process.
+ */
+- (pid_t)owningProcessIdentifierForSnapshotElement:(nullable id)element;
+
+/**
+ * The counterpart of `-snapshotOfElement:…` for an element a snapshot node carries: one more fetch,
+ * rooted at that element, answered by the process that owns it.
+ *
+ * This is what continues a snapshot across a process boundary. The hosting process's snapshot stops at
+ * the boundary element with no nesting; a snapshot rooted at the same element is served by the process
+ * drawing the subtree, and descends until ownership changes again. Ask, options and `namesByNumber` are
+ * exactly `-snapshotOfElement:…`'s.
+ */
+- (nullable id)snapshotOfSnapshotElement:(id)element
+                          attributeNames:(NSArray<NSString *> *)names
+                           namesByNumber:(NSDictionary<NSNumber *, NSString *> *_Nullable *_Nonnull)namesByNumber
+                                   error:(NSError **)error;
+
+/**
  * Unwraps the `CGRect` an `AXValue` wraps, which is the form a snapshot answers frames in.
  *
  * An `AXValue` is a CFType with its own accessor rather than an `NSValue`, so a caller that only knows

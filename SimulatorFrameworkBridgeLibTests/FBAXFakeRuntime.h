@@ -28,6 +28,16 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign) FBAXReadStatus readStatus;
 /** The error a `Failed` read carries. Nil models a runtime that failed while reporting nothing. */
 @property (nullable, nonatomic, strong) NSError *readError;
+/**
+ * The process this element is drawn by, as `-owningProcessIdentifierForSnapshotElement:` reports it.
+ *
+ * What makes a process boundary expressible: a snapshot stops nesting where a child's owner differs
+ * from its root's, exactly as the live server cannot serialize into a process it does not own — while
+ * the per-node walk still exposes the children, because the server bridges each walked read across.
+ * The default 0 is the interface's "unknown", which existing trees keep: everything owned by 0 is one
+ * process and no read behaves differently.
+ */
+@property (nonatomic, assign) pid_t owningProcessIdentifier;
 
 /** A readable element of the given type, labelled with it. */
 + (instancetype)readable:(NSString *)elementType;
@@ -110,8 +120,17 @@ NS_ASSUME_NONNULL_BEGIN
  * an error.
  */
 @property (nonatomic, assign) BOOL snapshotAnswersNothing;
+/**
+ * When set, `-snapshotOfSnapshotElement:…` reports this instead of answering, while the root fetch
+ * still answers — the shape of a process boundary whose owner is not serving, which a read must survive
+ * with the stub rather than fail on.
+ */
+@property (nullable, nonatomic, strong) NSError *snapshotContinuationError;
 
-/** How many snapshots were fetched — one for a whole tree is the point of the single-fetch path. */
+/**
+ * How many snapshots were fetched, root fetches and boundary continuations alike — one for a whole tree
+ * is the point of the single-fetch path, and one more per crossed boundary is its cost.
+ */
 @property (nonatomic, readonly) NSUInteger snapshotCount;
 /** The attribute names the most recent snapshot was asked for, so a test can assert the ask. */
 @property (nullable, nonatomic, readonly, copy) NSArray<NSString *> *lastSnapshotAttributeNames;

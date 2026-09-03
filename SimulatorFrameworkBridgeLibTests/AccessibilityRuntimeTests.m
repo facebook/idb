@@ -541,6 +541,134 @@ static NSDictionary *FBAXTestsSnapshotRequest(NSDictionary<NSString *, id> *extr
   XCTAssertEqualObjects(children.firstObject[@"XC_kAXXCAttributeLabel"], @"child");
 }
 
+// The pid of the process drawing a hosted subtree in the boundary tests below. Distinct from `kAppPid`
+// is all that matters: the boundary predicate is ownership changing, not any particular value.
+static const pid_t kRemotePid = 8765;
+
+// A tree in which another process draws a subtree — the shape of a web view's page, a photo picker or an
+// autofill sheet. The snapshot served by the host process names the boundary element and cannot
+// serialize beneath it; the per-node walk crosses because the server bridges each walked read.
+static FBAXFakeElement *FBAXTestsTreeWithProcessBoundary(void)
+{
+  FBAXFakeElement *link = FBAXTestsNode(@{@"XC_kAXXCAttributeLabel" : @"Example Domain"}, @[]);
+  FBAXFakeElement *page = FBAXTestsNode(@{@"XC_kAXXCAttributeLabel" : @"web page"}, @[link]);
+  FBAXFakeElement *boundary = FBAXTestsNode(@{@"XC_kAXXCAttributeLabel" : @"remote element"}, @[page]);
+  FBAXFakeElement *webView = FBAXTestsNode(@{@"XC_kAXXCAttributeLabel" : @"web view"}, @[boundary]);
+  FBAXFakeElement *root = FBAXTestsNode(@{@"XC_kAXXCAttributeLabel" : @"root"}, @[webView]);
+  root.owningProcessIdentifier = kAppPid;
+  webView.owningProcessIdentifier = kAppPid;
+  boundary.owningProcessIdentifier = kRemotePid;
+  page.owningProcessIdentifier = kRemotePid;
+  link.owningProcessIdentifier = kRemotePid;
+  return root;
+}
+
+// The boundary node in a single-fetch response of the tree above: root -> web view -> remote element.
+static NSDictionary *FBAXTestsBoundaryNode(NSDictionary *response)
+{
+  NSArray *webViews = response[@"tree"][@"XC_kAXXCAttributeChildren"];
+  return [webViews.firstObject[@"XC_kAXXCAttributeChildren"] firstObject];
+}
+
+// A snapshot is served by the process owning its root and stops where another process draws — a web
+// view's page, a picker, an autofill sheet arrive as a childless stub, indistinguishable from nothing
+// being there. The read continues with one more fetch rooted at the boundary element, which its owner
+// serves, so the hosted subtree is in the tree and the cost is one fetch per boundary rather than one
+// round trip per node.
+- (void)testTheSingleFetchReadContinuesAcrossAProcessBoundary
+{
+  _runtime.applicationElements[@(kAppPid)] = FBAXTestsTreeWithProcessBoundary();
+
+  NSDictionary *response = FBAXBridgeHandleRequest(FBAXTestsSnapshotRequest(@{}));
+  XCTAssertEqualObjects(response[@"ok"], @YES, @"the read must answer: %@", response);
+  NSDictionary *boundary = FBAXTestsBoundaryNode(response);
+  NSArray *hosted = boundary[@"XC_kAXXCAttributeChildren"];
+  XCTAssertEqual(hosted.count, 1u, @"the hosted subtree must be beneath the boundary: %@", boundary);
+  XCTAssertEqualObjects(hosted.firstObject[@"XC_kAXXCAttributeLabel"], @"web page");
+  XCTAssertEqual(_runtime.snapshotCount, 2u, @"one fetch for the tree and one to continue across the boundary");
+  XCTAssertEqualObjects(response[@"phases"][@"mach_round_trips"], @2);
+  XCTAssertEqualObjects(response[@"truncated"], @NO);
+}
+
+// The equivalence the default traversal owes: over the same tree, boundary included, the single fetch
+// and the per-node walk answer the same document — not merely the same node count.
+- (void)testBothTraversalsAnswerTheSameDocumentAcrossAProcessBoundary
+{
+  _runtime.applicationElements[@(kAppPid)] = FBAXTestsTreeWithProcessBoundary();
+
+  NSDictionary *walked = FBAXBridgeHandleRequest(@{@"verb" : @"describe", @"pid" : @(kAppPid)});
+  NSDictionary *fetched = FBAXBridgeHandleRequest(FBAXTestsSnapshotRequest(@{}));
+  XCTAssertEqualObjects(walked[@"ok"], @YES);
+  XCTAssertEqualObjects(fetched[@"ok"], @YES);
+  XCTAssertEqualObjects(walked[@"tree"], fetched[@"tree"]);
+}
+
+// A hosted subtree can host another process's subtree in turn — a web view inside a remote sheet. Each
+// continuation is mapped with its own root's owner, so ownership changing again continues again.
+- (void)testAContinuationContinuesAcrossAFurtherBoundary
+{
+  FBAXFakeElement *innermost = FBAXTestsNode(@{@"XC_kAXXCAttributeLabel" : @"innermost"}, @[]);
+  innermost.owningProcessIdentifier = 111;
+  FBAXFakeElement *root = FBAXTestsTreeWithProcessBoundary();
+  FBAXFakeElement *link = root.children.firstObject.children.firstObject.children.firstObject.children.firstObject;
+  link.children = @[innermost];
+  _runtime.applicationElements[@(kAppPid)] = root;
+
+  NSDictionary *response = FBAXBridgeHandleRequest(FBAXTestsSnapshotRequest(@{}));
+  XCTAssertEqualObjects(response[@"ok"], @YES, @"the read must answer: %@", response);
+  XCTAssertEqual(_runtime.snapshotCount, 3u, @"each boundary costs its own continuation");
+  NSString *rendered = [NSString stringWithFormat:@"%@", response[@"tree"]];
+  XCTAssertTrue([rendered containsString:@"innermost"], @"the twice-hosted subtree must be in the tree: %@", rendered);
+}
+
+// A boundary whose owner is not serving — a picker extension mid-launch, a hung web content process —
+// keeps the stub and the read answers. Absence is also what the per-node walk reports when the server
+// cannot bridge the boundary, so failing the whole read would make the fetch strictly worse than the
+// walk on the same screen.
+- (void)testAProcessBoundaryWhoseOwnerIsNotServingKeepsTheStub
+{
+  _runtime.applicationElements[@(kAppPid)] = FBAXTestsTreeWithProcessBoundary();
+  _runtime.snapshotContinuationError = [NSError errorWithDomain:@"FBAXTests"
+                                                           code:1
+                                                       userInfo:@{NSLocalizedDescriptionKey : @"the owner is not serving"}];
+
+  NSDictionary *response = FBAXBridgeHandleRequest(FBAXTestsSnapshotRequest(@{}));
+  XCTAssertEqualObjects(response[@"ok"], @YES, @"a failed continuation must not fail the read: %@", response);
+  NSDictionary *boundary = FBAXTestsBoundaryNode(response);
+  XCTAssertEqualObjects(boundary[@"XC_kAXXCAttributeLabel"], @"remote element");
+  XCTAssertEqual([boundary[@"XC_kAXXCAttributeChildren"] count], 0u, @"the stub stays childless: %@", boundary);
+  XCTAssertEqual(_runtime.snapshotCount, 2u, @"the continuation must have been attempted");
+  XCTAssertEqualObjects(response[@"truncated"], @NO);
+}
+
+// A boundary sitting at the depth bound is not continued across — nothing below the bound is reported
+// either way — but the subtree beyond it exists, so the read reports truncation exactly as it does for
+// nesting the bound cut off. The walk at the same node says the same: the server bridges the boundary
+// element's children into its children attribute, and the walk sees them and cannot descend.
+- (void)testAProcessBoundaryAtTheDepthBoundReportsTruncationWithoutFetching
+{
+  _runtime.applicationElements[@(kAppPid)] = FBAXTestsTreeWithProcessBoundary();
+
+  NSDictionary *response = FBAXBridgeHandleRequest(FBAXTestsSnapshotRequest(@{@"maxDepth" : @2}));
+  XCTAssertEqualObjects(response[@"ok"], @YES);
+  XCTAssertEqualObjects(response[@"truncated"], @YES, @"the hosted subtree is beyond the bound");
+  XCTAssertEqual(_runtime.snapshotCount, 1u, @"nothing below the bound is worth a fetch");
+}
+
+// The node budget is one budget for the whole read: a continuation spends from the same allowance the
+// rest of the tree does, so a boundary cannot make a bounded read unbounded.
+- (void)testTheNodeBudgetHoldsAcrossAProcessBoundary
+{
+  _runtime.applicationElements[@(kAppPid)] = FBAXTestsTreeWithProcessBoundary();
+
+  NSDictionary *response = FBAXBridgeHandleRequest(FBAXTestsSnapshotRequest(@{@"maxNodes" : @3}));
+  XCTAssertEqualObjects(response[@"ok"], @YES);
+  XCTAssertEqualObjects(response[@"truncated"], @YES, @"the hosted subtree must not fit in three nodes");
+  NSDictionary *boundary = FBAXTestsBoundaryNode(response);
+  XCTAssertEqualObjects(boundary[@"XC_kAXXCAttributeLabel"], @"remote element");
+  XCTAssertEqual([boundary[@"XC_kAXXCAttributeChildren"] count], 0u, @"the budget ran out at the boundary: %@", boundary);
+}
+
 // The server's own bounds are set generously and the host's are applied while building the tree, so that
 // a tree read this way truncates where the same tree read per node does.
 - (void)testTheSingleFetchReadHonoursTheDepthBound

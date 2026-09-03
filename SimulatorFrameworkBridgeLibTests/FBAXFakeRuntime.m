@@ -112,6 +112,7 @@ static NSString *const kAXChildren = @"XC_kAXXCAttributeChildren";
 // service starts reading a different key than the runtime answers with.
 static NSString *const kFakeSnapshotAttributes = @"UIAccessibilitySnapshotKeyAttributes";
 static NSString *const kFakeSnapshotChildren = @"UIAccessibilitySnapshotKeyChildren";
+static NSString *const kFakeSnapshotElement = @"UIAccessibilitySnapshotKeyElement";
 
 // The attribute numbers this fake converts names to. Arbitrary, and deliberately not the runtime's:
 // nothing above the seam may depend on a particular number, so a fake that used the real ones would let
@@ -122,9 +123,15 @@ static NSNumber *FBAXFakeAttributeNumber(NSUInteger index)
 }
 
 // Rebuilds one fake element as a snapshot node — attributes keyed by number, children nested under the
-// snapshot's own key rather than exposed as an attribute.
+// snapshot's own key rather than exposed as an attribute, and the element itself under the element key.
+//
+// `ownerPid` is the owner of the element the snapshot is rooted at. A node another process draws is
+// emitted with its attributes and none of its nesting — the live server serializes only what its own
+// process owns — which is what lets a test construct the boundary the walk crosses and the snapshot
+// stops at.
 static NSDictionary *FBAXFakeSnapshotNode(FBAXFakeElement *element,
-                                          NSDictionary<NSString *, NSNumber *> *numbersByName
+                                          NSDictionary<NSString *, NSNumber *> *numbersByName,
+                                          pid_t ownerPid
 )
 {
   NSMutableDictionary *attributes = [NSMutableDictionary dictionary];
@@ -137,10 +144,32 @@ static NSDictionary *FBAXFakeSnapshotNode(FBAXFakeElement *element,
     }
   }
   NSMutableArray *children = [NSMutableArray array];
-  for (FBAXFakeElement *child in element.children) {
-    [children addObject:FBAXFakeSnapshotNode(child, numbersByName)];
+  if (element.owningProcessIdentifier == ownerPid) {
+    for (FBAXFakeElement *child in element.children) {
+      [children addObject:FBAXFakeSnapshotNode(child, numbersByName, ownerPid)];
+    }
   }
-  return @{kFakeSnapshotAttributes : attributes, kFakeSnapshotChildren : children};
+  return @{
+    kFakeSnapshotAttributes : attributes,
+    kFakeSnapshotChildren : children,
+    kFakeSnapshotElement : element,
+  };
+}
+
+// The body both snapshot entry points share, once their own failure controls have had their say.
+- (nullable id)snapshotRootedAtElement:(FBAXFakeElement *)element
+                        attributeNames:(NSArray<NSString *> *)names
+                         namesByNumber:(NSDictionary<NSNumber *, NSString *> *_Nullable *_Nonnull)namesByNumber
+{
+  NSMutableDictionary<NSNumber *, NSString *> *inverse = [NSMutableDictionary dictionary];
+  NSMutableDictionary<NSString *, NSNumber *> *forward = [NSMutableDictionary dictionary];
+  [names enumerateObjectsUsingBlock:^(NSString *name, NSUInteger index, BOOL *stop) {
+    NSNumber *number = FBAXFakeAttributeNumber(index);
+    inverse[number] = name;
+    forward[name] = number;
+  }];
+  *namesByNumber = inverse;
+  return FBAXFakeSnapshotNode(element, forward, element.owningProcessIdentifier);
 }
 
 - (nullable id)snapshotOfElement:(id)element
@@ -159,16 +188,31 @@ static NSDictionary *FBAXFakeSnapshotNode(FBAXFakeElement *element,
   if (self.snapshotAnswersNothing) {
     return nil;
   }
+  return [self snapshotRootedAtElement:element attributeNames:names namesByNumber:namesByNumber];
+}
 
-  NSMutableDictionary<NSNumber *, NSString *> *inverse = [NSMutableDictionary dictionary];
-  NSMutableDictionary<NSString *, NSNumber *> *forward = [NSMutableDictionary dictionary];
-  [names enumerateObjectsUsingBlock:^(NSString *name, NSUInteger index, BOOL *stop) {
-    NSNumber *number = FBAXFakeAttributeNumber(index);
-    inverse[number] = name;
-    forward[name] = number;
-  }];
-  *namesByNumber = inverse;
-  return FBAXFakeSnapshotNode(element, forward);
+- (pid_t)owningProcessIdentifierForSnapshotElement:(id)element
+{
+  if (![element isKindOfClass:FBAXFakeElement.class]) {
+    return 0;
+  }
+  return ((FBAXFakeElement *)element).owningProcessIdentifier;
+}
+
+- (nullable id)snapshotOfSnapshotElement:(id)element
+                          attributeNames:(NSArray<NSString *> *)names
+                           namesByNumber:(NSDictionary<NSNumber *, NSString *> *_Nullable *_Nonnull)namesByNumber
+                                   error:(NSError **)error
+{
+  _snapshotCount++;
+  _lastSnapshotAttributeNames = [names copy];
+  if (self.snapshotContinuationError) {
+    if (error) {
+      *error = self.snapshotContinuationError;
+    }
+    return nil;
+  }
+  return [self snapshotRootedAtElement:element attributeNames:names namesByNumber:namesByNumber];
 }
 
 - (BOOL)getRect:(CGRect *)rect fromValue:(id)value

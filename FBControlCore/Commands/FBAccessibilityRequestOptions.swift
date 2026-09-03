@@ -140,7 +140,8 @@ extension FBAccessibilityMatch: CustomStringConvertible {
 /// app built: deep, structural, every container; use it for structural assertions. `semantic` returns
 /// what an accessibility client sees: flat and labelled; use it to ask what a user can interact with.
 /// `singleFetch` is not a third answer to that question — it returns the same tree and attributes as
-/// `viewHierarchy`, fetched in one call instead of one per node, so it is cheaper on large trees.
+/// `viewHierarchy`, fetched in one call per process drawing the screen instead of one per node, so it
+/// is cheaper on large trees.
 ///
 /// Chosen per read rather than per backend, and kept separate from persistence and frontmost resolution:
 /// traversal, transport and frontmost are independent.
@@ -160,8 +161,11 @@ extension FBAccessibilityMatch: CustomStringConvertible {
 public enum FBAXTraversal: String, Sendable, CaseIterable {
   case viewHierarchy = "view-hierarchy"
   case semantic = "semantic"
-  /// Reads the whole bounded subtree in one call instead of one call per node. The tree and the
-  /// attributes are the same; the difference is that the application is asked once rather than N times.
+  /// Reads the whole bounded subtree in one call per process instead of one call per node: one fetch
+  /// for the application, plus one for each subtree another process draws — a web view's page, a
+  /// picker, an autofill sheet — which a single fetch cannot cross into because the serving process
+  /// does not own it. The tree and the attributes are the same as `viewHierarchy`'s; the difference is
+  /// that each process is asked once rather than once per node.
   case singleFetch = "single-fetch"
 
   /// The keys this traversal cannot answer for every element, whatever the caller asks for.

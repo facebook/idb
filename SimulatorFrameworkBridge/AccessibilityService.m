@@ -874,10 +874,19 @@ static NSDictionary *_Nullable FBAXBridgeReadFailureResponse(FBAXReadOutcome *re
   }
 }
 
-// The snapshot API's own keys. Its nodes nest under `Children` and carry attributes keyed by number
-// under `Attributes`, rather than the `XC_kAXXCAttribute*` names the per-node walk produces.
+// The snapshot API's own keys. Its nodes nest under `Children`, carry attributes keyed by number under
+// `Attributes` (rather than the `XC_kAXXCAttribute*` names the per-node walk produces), and name the
+// element each node was read from under `Element`.
 static NSString *const kSnapshotAttributes = @"UIAccessibilitySnapshotKeyAttributes";
 static NSString *const kSnapshotChildren = @"UIAccessibilitySnapshotKeyChildren";
+static NSString *const kSnapshotElement = @"UIAccessibilitySnapshotKeyElement";
+
+// How many boundary continuations one read may fetch. Depth and node budget already bound the recursion
+// — a continuation replaces a node at its own depth and never re-triggers on its own root, so every
+// further boundary sits at least one level deeper — but each continuation is fetched before the node it
+// replaces is counted, and this caps what a pathological ownership graph can spend on fetches. Screens
+// measured so far carry one or two boundaries; a read that hits the cap reports `truncated`.
+static const int kSnapshotBoundaryFetchBudget = 64;
 
 // Turns one snapshot node into the node the rest of this file produces, and recurses.
 //
@@ -886,14 +895,31 @@ static NSString *const kSnapshotChildren = @"UIAccessibilitySnapshotKeyChildren"
 // without hardcoding a single attribute number — which matters because those numbers are the runtime's,
 // not ours, and nothing promises they are stable across versions.
 //
+// A snapshot is served by the process that owns its root, and it cannot serialize a subtree another
+// process draws — a web view's page, a picker, an autofill sheet. Where the nesting is empty but the
+// node's own element is owned by another process, the read continues with one more fetch rooted at that
+// element — answered by the process drawing the subtree — and the continuation replaces the stub
+// wholesale: same ask, same element, but attributes the owner answered rather than the host's stand-ins
+// (on the screens measured, the stub's frame is in pixels where the owner answers points). `ownerPid` is
+// the process that served the snapshot this node arrived in — ownership changing against it is what
+// marks a boundary — and 0 disables the comparison entirely, for a runtime that cannot attribute
+// elements. A continuation that fails to fetch leaves the stub childless, which is the same silence the
+// per-node walk answers with when the boundary cannot be crossed.
+//
 // Bounded by the same depth and node budget the walk uses, so a tree read one way truncates where the
 // same tree read the other way does. The server's own `maxDepth`/`maxChildren` are set generously and
 // the host's bounds are applied here instead, which keeps `truncated` meaning what it means everywhere.
-static NSDictionary *_Nullable FBAXBridgeNodeFromSnapshot(id snapshotNode,
+// A boundary that a bound stopped this read from continuing across reports `truncated` too: the walk at
+// the same node sees the children the server bridges for it, and says the same.
+static NSDictionary *_Nullable FBAXBridgeNodeFromSnapshot(id<FBAXRuntime> runtime,
+                                                          id snapshotNode,
+                                                          NSArray<NSString *> *fetchList,
                                                           NSDictionary<NSNumber *, NSString *> *namesByNumber,
+                                                          pid_t ownerPid,
                                                           int depth,
                                                           int maxDepth,
                                                           int *budget,
+                                                          int *boundaryFetches,
                                                           BOOL *truncated
 )
 {
@@ -903,6 +929,46 @@ static NSDictionary *_Nullable FBAXBridgeNodeFromSnapshot(id snapshotNode,
   if (*budget <= 0) {
     *truncated = YES;
     return nil;
+  }
+
+  NSArray *nesting = [((NSDictionary *)snapshotNode)[kSnapshotChildren] isKindOfClass:NSArray.class]
+  ? ((NSDictionary *)snapshotNode)[kSnapshotChildren]
+  : @[];
+  if (ownerPid != 0 && nesting.count == 0) {
+    id element = ((NSDictionary *)snapshotNode)[kSnapshotElement];
+    pid_t elementPid = element ? [runtime owningProcessIdentifierForSnapshotElement:element] : 0;
+    if (elementPid != 0 && elementPid != ownerPid) {
+      if (depth >= maxDepth || *boundaryFetches <= 0) {
+        // A bound stopped the continuation, so the subtree is missing for the same reason one below the
+        // depth cap is — and is reported the same way.
+        *truncated = YES;
+      } else {
+        (*boundaryFetches)--;
+        FBAXBridgeCountRoundTrip();
+        NSDictionary<NSNumber *, NSString *> *continuationNames = nil;
+        NSError *continuationError = nil;
+        id continuation = [runtime snapshotOfSnapshotElement:element
+                                              attributeNames:fetchList
+                                               namesByNumber:&continuationNames
+                                                       error:&continuationError];
+        if (continuation) {
+          return FBAXBridgeNodeFromSnapshot(
+            runtime,
+            continuation,
+            fetchList,
+            continuationNames,
+            elementPid,
+            depth,
+            maxDepth,
+            budget,
+            boundaryFetches,
+            truncated
+          );
+        }
+        // Fall through and map the stub: absence, not an error, is also the walk's answer at a boundary
+        // it cannot cross.
+      }
+    }
   }
   (*budget)--;
 
@@ -924,16 +990,26 @@ static NSDictionary *_Nullable FBAXBridgeNodeFromSnapshot(id snapshotNode,
   }
 
   if (depth >= maxDepth) {
-    id children = ((NSDictionary *)snapshotNode)[kSnapshotChildren];
-    if ([children isKindOfClass:NSArray.class] && ((NSArray *)children).count > 0) {
+    if (nesting.count > 0) {
       *truncated = YES;
     }
     return node;
   }
 
   NSMutableArray *children = [NSMutableArray array];
-  for (id child in (NSArray *)(((NSDictionary *)snapshotNode)[kSnapshotChildren] ?: @[])) {
-    NSDictionary *built = FBAXBridgeNodeFromSnapshot(child, namesByNumber, depth + 1, maxDepth, budget, truncated);
+  for (id child in nesting) {
+    NSDictionary *built = FBAXBridgeNodeFromSnapshot(
+      runtime,
+      child,
+      fetchList,
+      namesByNumber,
+      ownerPid,
+      depth + 1,
+      maxDepth,
+      budget,
+      boundaryFetches,
+      truncated
+    );
     if (built) {
       [children addObject:built];
     }
@@ -1501,12 +1577,30 @@ static NSDictionary<NSString *, id> *FBAXBridgeDispatchRequest(NSDictionary<NSSt
         @(pid)
       );
     }
-    tree = FBAXBridgeNodeFromSnapshot(snapshot, namesByNumber, 0, maxDepth, &budget, &truncated);
+    // One fetch for the whole tree, counted up-front so the boundary continuations the mapper fetches
+    // land on top of it.
+    gRoundTrips = 1;
+    // The owner every node's element is compared against, read from the snapshot's own root element
+    // rather than taken from the request: the two agree on a live runtime, and a runtime that cannot
+    // attribute elements answers 0, which disables boundary continuation rather than mistargeting it.
+    id rootElement = [snapshot isKindOfClass:NSDictionary.class] ? ((NSDictionary *)snapshot)[kSnapshotElement] : nil;
+    pid_t ownerPid = rootElement ? [runtime owningProcessIdentifierForSnapshotElement:rootElement] : 0;
+    int boundaryFetches = kSnapshotBoundaryFetchBudget;
+    tree = FBAXBridgeNodeFromSnapshot(
+      runtime,
+      snapshot,
+      names,
+      namesByNumber,
+      ownerPid,
+      0,
+      maxDepth,
+      &budget,
+      &boundaryFetches,
+      &truncated
+    );
     if (!tree) {
       return FBAXBridgeErrorResponse(@"the single-fetch read returned a shape with no root node");
     }
-    // One fetch for the whole tree.
-    gRoundTrips = 1;
   } else if ([request[kRequestTranslatorVocabulary] boolValue]) {
     // Whether the application is there at all is a question only the XCTest read answers. The runtime
     // vends an application element for any pid, including one that names no process, and the translator

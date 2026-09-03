@@ -83,7 +83,7 @@ A guest read also puts the target into automation mode and leaves it there — s
 
 ### How axbridge fetches the tree
 
-axbridge asks the application for the whole tree in **one** call. The alternative, one call per node, reads the same tree and the same attributes for more round trips; `profile` reports which traversal served a read.
+Both axbridge backends ask the application for the whole tree in **one** call. A subtree drawn by another process — a web view's page, a photo picker, an autofill sheet — is not in that application's answer, so the read continues with one more call per such subtree, served by the process drawing it. The alternative, one call per node, reads the same tree and the same attributes for more round trips; `profile` reports which one served a read, as `traversal`.
 
 On a 167-element Settings screen the one call costs 1 mach round trip instead of 167, for the same document. On an idle screen the read time is comparable for either traversal (roughly 30ms); the saving grows with tree size and with how busy the application is.
 
@@ -222,7 +222,7 @@ On an axbridge backend, the tree is walked in-process by a guest reader and ship
 
 | Field | What it measures |
 |-------|------------------|
-| `traversal` | The traversal that produced this read — `view-hierarchy`, `semantic` or `single-fetch`. Read `mach_round_trips` against it: the same tree costs one round trip or one per node depending on the traversal. Which traversal a read gets is described in [How axbridge fetches the tree](#how-axbridge-fetches-the-tree) |
+| `traversal` | The traversal that produced this read — `view-hierarchy`, `semantic` or `single-fetch`. Read `mach_round_trips` against it: the same tree costs one round trip per process or one per node depending on the traversal. Which traversal a read gets is described in [How the axbridge backends fetch the tree](#how-the-axbridge-backends-fetch-the-tree) |
 | `mach_round_trips` | Round trips to the application's accessibility server |
 | `host_decode_duration_ms` | Decoding the guest's JSON response on the host |
 | `response_bytes` | Response size. Divided by `acquire_duration_ms`, it gives transport throughput |
