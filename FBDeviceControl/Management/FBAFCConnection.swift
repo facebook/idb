@@ -90,33 +90,29 @@ extension FBAFCConnectionError: LocalizedError {
 }
 
 /// An Object-Wrapper around AFCConnectionRef.
-@objc(FBAFCConnection)
-public final class FBAFCConnection: NSObject {
+public final class FBAFCConnection {
 
   // MARK: - Properties
 
-  @objc public let calls: AFCCalls
-  @objc public let logger: (any FBControlCoreLogger)?
+  public let calls: AFCCalls
+  public let logger: (any FBControlCoreLogger)?
 
   /// Held unretained. Unlike the service connection, `AFCConnectionClose` does release it, so
   /// closing nils this out without a release of its own.
   private var connectionRef: Unmanaged<AnyObject>?
 
-  @objc public var connection: AFCConnection? {
+  public var connection: AFCConnection? {
     connectionRef?.takeUnretainedValue()
   }
 
   // MARK: - Initializers
 
-  @objc(initWithConnection:calls:logger:)
   public init(connection: AFCConnection?, calls: AFCCalls, logger: (any FBControlCoreLogger)?) {
     self.connectionRef = connection.map { Unmanaged.passUnretained($0 as AnyObject) }
     self.calls = calls
     self.logger = logger
-    super.init()
   }
 
-  @objc(afcFromServiceConnection:calls:logger:queue:)
   public class func afc(
     from serviceConnection: FBAMDServiceConnection,
     calls: AFCCalls,
@@ -147,7 +143,6 @@ public final class FBAFCConnection: NSObject {
 
   // MARK: - Public
 
-  @objc(copyFromHost:toContainerPath:error:)
   public func copy(fromHost hostPath: String, toContainerPath containerPath: String) throws {
     var isDirectory: ObjCBool = false
     guard FileManager.default.fileExists(atPath: hostPath, isDirectory: &isDirectory) else {
@@ -165,7 +160,6 @@ public final class FBAFCConnection: NSObject {
     }
   }
 
-  @objc(createDirectory:error:)
   public func createDirectory(_ path: String) throws {
     logger?.log("Creating Directory \(path)")
     let result = calls.DirectoryCreate(connection, path)
@@ -175,7 +169,6 @@ public final class FBAFCConnection: NSObject {
     logger?.log("Created Directory \(path)")
   }
 
-  @objc(contentsOfDirectory:error:)
   public func contents(ofDirectory path: String) throws -> [String] {
     logger?.log("Listing contents of directory \(path)")
     var directory: Unmanaged<CFTypeRef>?
@@ -204,7 +197,6 @@ public final class FBAFCConnection: NSObject {
     return entries
   }
 
-  @objc(contentsOfPath:error:)
   public func contents(ofPath path: String) throws -> Data {
     logger?.log("Contents of path \(path)")
     var file: Unmanaged<CFTypeRef>?
@@ -245,7 +237,6 @@ public final class FBAFCConnection: NSObject {
     return buffer
   }
 
-  @objc(removePath:recursively:error:)
   public func removePath(_ path: String, recursively: Bool) throws {
     if recursively {
       try removePathAndContents(path)
@@ -259,7 +250,6 @@ public final class FBAFCConnection: NSObject {
     logger?.log("Removed file path \(path)")
   }
 
-  @objc(renamePath:destination:error:)
   public func renamePath(_ path: String, destination: String) throws {
     let result = calls.RenamePath(connection, path, destination)
     guard result == 0 else {
@@ -268,7 +258,6 @@ public final class FBAFCConnection: NSObject {
     }
   }
 
-  @objc(closeWithError:)
   public func close() throws {
     guard let connectionRef else {
       throw FBAFCConnectionError.noConnectionToClose
@@ -285,13 +274,13 @@ public final class FBAFCConnection: NSObject {
     self.connectionRef = nil
   }
 
-  @objc public var connectionIsValid: Bool {
+  public var connectionIsValid: Bool {
     calls.ConnectionIsValid(connection) != 0
   }
 
   // MARK: - AFC Calls
 
-  @objc public static let defaultCalls: AFCCalls = {
+  public static let defaultCalls: AFCCalls = {
     var calls = AFCCalls()
     // `Bundle(identifier:)` answers for a bundle that has not been loaded, and asking such a
     // bundle for its executable path asserts. Reading this before the private frameworks are up is

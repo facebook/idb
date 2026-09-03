@@ -16,7 +16,6 @@ extension FBAMDevice {
   /// same: the AMDevice *session* is released as soon as the service has started — that is what the
   /// predecessor's `pop:` did, and `FBAMDevice.h` explains at length why it must not be held for
   /// the duration — while the service *connection* is invalidated when the caller finishes with it.
-  @objc(startServiceConnection:)
   public func startServiceConnection(_ service: String) -> FBFutureContext<FBAMDServiceConnection> {
     let logger = self.logger
     return fbFutureFromAsync { try await self.openServiceConnection(service) }

@@ -64,14 +64,13 @@ extension FBDeviceLinkError: LocalizedError {
   }
 }
 
-@objc(FBDeviceLinkClient)
-public class FBDeviceLinkClient: NSObject {
+public class FBDeviceLinkClient {
   private let connection: FBAMDServiceConnection
   private let queue: DispatchQueue
 
   // MARK: Initializers
 
-  @objc public static func deviceLinkClient(connection: FBAMDServiceConnection) -> FBFuture<FBDeviceLinkClient> {
+  public static func deviceLinkClient(connection: FBAMDServiceConnection) -> FBFuture<FBDeviceLinkClient> {
     fbFutureFromAsync {
       try await deviceLinkClientAsync(connection: connection)
     }
@@ -86,7 +85,6 @@ public class FBDeviceLinkClient: NSObject {
   init(connection: FBAMDServiceConnection, queue: DispatchQueue) {
     self.connection = connection
     self.queue = queue
-    super.init()
   }
 
   // MARK: Public Methods

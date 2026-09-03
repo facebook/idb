@@ -208,7 +208,6 @@ public final class FBDevice: NSObject, FBiOSTarget, FBDeviceCommands {
     return amDevice.connectToDevice(withPurpose: purpose)
   }
 
-  @objc(startService:)
   public func startService(_ service: String) -> FBFutureContext<FBAMDServiceConnection> {
     guard let amDevice else {
       return notAMDeviceBacked(operation: "startService:")
@@ -216,7 +215,6 @@ public final class FBDevice: NSObject, FBiOSTarget, FBDeviceCommands {
     return amDevice.startService(service)
   }
 
-  @objc(houseArrestAFCConnectionForBundleID:afcCalls:)
   public func houseArrestAFCConnection(forBundleID bundleID: String, afcCalls: AFCCalls) -> FBFutureContext<FBAFCConnection> {
     guard let amDevice else {
       return notAMDeviceBacked(operation: "houseArrestAFCConnectionForBundleID:afcCalls:")

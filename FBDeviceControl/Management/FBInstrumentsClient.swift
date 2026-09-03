@@ -186,8 +186,7 @@ private let ProcessControlChannel = "com.apple.instruments.server.services.proce
 
 /// A client to instruments-related services on a device, talking the DTXMessage protocol over a
 /// lockdown service connection.
-@objc(FBInstrumentsClient)
-public final class FBInstrumentsClient: NSObject {
+public final class FBInstrumentsClient {
 
   // MARK: - Properties
 
@@ -200,7 +199,6 @@ public final class FBInstrumentsClient: NSObject {
 
   // MARK: - Initializers
 
-  @objc(instrumentsClientWithServiceConnection:logger:)
   public class func instrumentsClient(
     with connection: FBAMDServiceConnection,
     logger: any FBControlCoreLogger
@@ -237,12 +235,10 @@ public final class FBInstrumentsClient: NSObject {
     self.lastMessageIdentifier = lastMessageIdentifier
     self.queue = queue
     self.logger = logger
-    super.init()
   }
 
   // MARK: - Public
 
-  @objc(launchApplication:)
   public func launchApplication(_ configuration: FBApplicationLaunchConfiguration) -> FBFuture<NSNumber> {
     FBFuture<AnyObject>.onQueue(
       queue,
@@ -273,7 +269,6 @@ public final class FBInstrumentsClient: NSObject {
     ).retyped(FBFuture<NSNumber>.self)
   }
 
-  @objc(killProcess:)
   public func killProcess(_ processIdentifier: pid_t) -> FBFuture<NSNull> {
     FBFuture<AnyObject>.onQueue(
       queue,

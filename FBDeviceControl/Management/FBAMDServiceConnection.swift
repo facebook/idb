@@ -72,15 +72,14 @@ extension FBAMDServiceConnectionError: LocalizedError {
 /// Wraps the AMDServiceConnection.
 ///
 /// An AMDServiceConnection represents a connection to a "lockdown" service over USB.
-@objc(FBAMDServiceConnection)
-public final class FBAMDServiceConnection: NSObject {
+public final class FBAMDServiceConnection: CustomStringConvertible {
 
   // MARK: - Properties
 
-  @objc public let name: String
-  @objc public let device: AMDevice
-  @objc public let calls: AMDCalls
-  @objc public let logger: (any FBControlCoreLogger)?
+  public let name: String
+  public let device: AMDevice
+  public let calls: AMDCalls
+  public let logger: (any FBControlCoreLogger)?
 
   /// Held unretained: MobileDevice hands the connection over at +1 and `invalidate` is what gives
   /// that back. Retaining it here would leave the release unbalanced.
@@ -88,25 +87,12 @@ public final class FBAMDServiceConnection: NSObject {
 
   private var activeReaderFinished: FBFuture<NSNumber>?
 
-  @objc public var connection: AMDServiceConnection? {
+  public var connection: AMDServiceConnection? {
     connectionRef?.takeUnretainedValue()
   }
 
   // MARK: - Initializers
 
-  /// The Objective-C entry point; Swift callers use the initializer directly.
-  @objc(connectionWithName:connection:device:calls:logger:)
-  public class func connection(
-    name: String,
-    connection: AMDServiceConnection,
-    device: AMDevice,
-    calls: AMDCalls,
-    logger: (any FBControlCoreLogger)?
-  ) -> FBAMDServiceConnection {
-    FBAMDServiceConnection(name: name, connection: connection, device: device, calls: calls, logger: logger)
-  }
-
-  @objc(initWithName:connection:device:calls:logger:)
   public init(
     name: String,
     connection: AMDServiceConnection,
@@ -123,18 +109,16 @@ public final class FBAMDServiceConnection: NSObject {
     self.device = device
     self.calls = calls
     self.logger = logger
-    super.init()
   }
 
-  // MARK: - NSObject
+  // MARK: - CustomStringConvertible
 
-  public override var description: String {
+  public var description: String {
     "\(name) \(String(describing: connection))"
   }
 
   // MARK: - plist Messaging
 
-  @objc(sendMessage:error:)
   public func sendMessage(_ message: Any) throws {
     let result = calls.ServiceConnectionSendMessage(
       connection, message as CFPropertyList, CFPropertyListFormat.binaryFormat_v1_0, nil, nil, nil)
@@ -144,7 +128,6 @@ public final class FBAMDServiceConnection: NSObject {
     }
   }
 
-  @objc(receiveMessageWithError:)
   public func receiveMessage() throws -> Any {
     var message: Unmanaged<CFPropertyList>?
     let result = calls.ServiceConnectionReceiveMessage(connection, &message, nil, nil, nil, nil)
@@ -154,7 +137,6 @@ public final class FBAMDServiceConnection: NSObject {
     return message?.takeRetainedValue() as Any
   }
 
-  @objc(sendAndReceiveMessage:error:)
   public func sendAndReceiveMessage(_ message: Any) throws -> Any {
     try sendMessage(message)
     return try receiveMessage()
@@ -162,7 +144,6 @@ public final class FBAMDServiceConnection: NSObject {
 
   // MARK: - Lifecycle
 
-  @objc(invalidateWithError:)
   public func invalidate() throws {
     guard let connectionRef else {
       throw FBAMDServiceConnectionError.noConnectionToInvalidate
@@ -197,7 +178,6 @@ public final class FBAMDServiceConnection: NSObject {
 
   // MARK: - AFC
 
-  @objc(asAFCConnectionWithCalls:callback:logger:)
   public func asAFCConnection(
     calls afcCalls: AFCCalls,
     callback: @escaping AFCNotificationCallback,
@@ -214,7 +194,6 @@ public final class FBAMDServiceConnection: NSObject {
 
   // MARK: - Sending
 
-  @objc(send:error:)
   public func send(_ data: Data) throws {
     var bytesRemaining = data.count
     while bytesRemaining > 0 {
@@ -245,7 +224,6 @@ public final class FBAMDServiceConnection: NSObject {
     }
   }
 
-  @objc(sendWithLengthHeader:error:)
   public func send(withLengthHeader data: Data) throws {
     // The host length is converted to the endianness of the remote.
     let lengthWire = HeaderIntType(data.count).bigEndian
@@ -253,14 +231,12 @@ public final class FBAMDServiceConnection: NSObject {
     try send(data)
   }
 
-  @objc(sendUnsignedInt32:error:)
   public func sendUnsignedInt32(_ value: UInt32) throws {
     try send(withUnsafeBytes(of: value) { Data($0) })
   }
 
   // MARK: - Receiving
 
-  @objc(receive:error:)
   public func receive(_ size: Int) throws -> Data {
     var data = Data()
     try enumerateReceive(ofLength: size, chunkSize: ReadBufferSize) { chunk in
@@ -269,14 +245,12 @@ public final class FBAMDServiceConnection: NSObject {
     return data
   }
 
-  @objc(receive:toFile:error:)
   public func receive(_ size: Int, toFile fileHandle: FileHandle) throws {
     try enumerateReceive(ofLength: size, chunkSize: ReadBufferSize) { chunk in
       fileHandle.write(chunk)
     }
   }
 
-  @objc(receive:ofSize:error:)
   public func receive(_ destination: UnsafeMutableRawPointer, ofSize size: Int) throws {
     let data = try receive(size)
     data.withUnsafeBytes { source in
@@ -285,7 +259,6 @@ public final class FBAMDServiceConnection: NSObject {
     }
   }
 
-  @objc(receiveUpTo:error:)
   public func receiveUp(to size: Int) throws -> Data {
     let buffer = UnsafeMutableRawPointer.allocate(byteCount: size, alignment: MemoryLayout<UInt8>.alignment)
     defer { buffer.deallocate() }
@@ -300,19 +273,16 @@ public final class FBAMDServiceConnection: NSObject {
     return Data(bytes: buffer, count: Int(result))
   }
 
-  @objc(receiveUnsignedInt32:error:)
   public func receiveUnsignedInt32(_ valueOut: UnsafeMutablePointer<UInt32>) throws {
     try receive(valueOut, ofSize: MemoryLayout<UInt32>.size)
   }
 
-  @objc(receiveUnsignedInt64:error:)
   public func receiveUnsignedInt64(_ valueOut: UnsafeMutablePointer<UInt64>) throws {
     try receive(valueOut, ofSize: MemoryLayout<UInt64>.size)
   }
 
   // MARK: - Streams
 
-  @objc(readFromConnectionWritingToConsumer:onQueue:)
   public func readFromConnectionWriting(
     to consumer: any FBDataConsumer,
     on queue: DispatchQueue
@@ -322,7 +292,6 @@ public final class FBAMDServiceConnection: NSObject {
     return reader
   }
 
-  @objc(writeWithConsumerWritingOnQueue:)
   public func writeWithConsumerWriting(on queue: DispatchQueue) -> any FBDataConsumer & FBDataConsumerLifecycle {
     FBBlockDataConsumer.asynchronousDataConsumer(on: queue) { [weak self] data in
       try? self?.send(data)

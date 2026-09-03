@@ -186,12 +186,10 @@ public final class FBAMDevice: NSObject, FBiOSTargetInfo, FBDeviceCommands, FBFu
     connectionContextManager.utilize(withPurpose: purpose).retyped(FBFutureContext<AnyObject>.self)
   }
 
-  @objc(startService:)
   public func startService(_ service: String) -> FBFutureContext<FBAMDServiceConnection> {
     startServiceConnection(service)
   }
 
-  @objc(houseArrestAFCConnectionForBundleID:afcCalls:)
   public func houseArrestAFCConnection(forBundleID bundleID: String, afcCalls: AFCCalls) -> FBFutureContext<FBAFCConnection> {
     connectToDevice(withPurpose: "house_arrest")
       .onQueue(

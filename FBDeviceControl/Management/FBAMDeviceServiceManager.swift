@@ -121,7 +121,6 @@ public class FBAMDeviceServiceManager: NSObject {
 
   // MARK: Public Services
 
-  @objc(houseArrestAFCConnectionForBundleID:afcCalls:)
   public func houseArrestAFCConnection(forBundleID bundleID: String, afcCalls: AFCCalls) -> FBFutureContextManager<FBAFCConnection> {
     if let manager = houseArrestManagers[bundleID] {
       return manager
