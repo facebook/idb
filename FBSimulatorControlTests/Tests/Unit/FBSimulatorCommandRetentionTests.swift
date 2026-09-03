@@ -81,12 +81,12 @@ enum FBSimulatorCommandAccessor: CaseIterable, Sendable {
     }
   }
 
-  /// BUG: these two are memoized yet hold the simulator strongly, so resolving either closes the
-  /// cycle described on the suite below and the simulator is never released. Both expectations are
-  /// flipped to `false` in the commits that fix them.
+  /// BUG: `xctraceRecord` is memoized yet holds the simulator strongly, so resolving it closes the
+  /// cycle described on the suite below and the simulator is never released. The expectation is
+  /// flipped to `false` in the commit that fixes it.
   var retainsTheSimulator: Bool {
     switch self {
-    case .screenshot, .xctraceRecord:
+    case .xctraceRecord:
       return true
     default:
       return false

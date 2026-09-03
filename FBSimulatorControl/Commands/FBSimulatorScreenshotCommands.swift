@@ -29,7 +29,7 @@ public final class FBSimulatorScreenshotCommands {
 
   // MARK: - Properties
 
-  private let simulator: FBSimulator
+  private weak var simulator: FBSimulator?
   private var image: FBSimulatorImage?
 
   // MARK: - Initializers
@@ -47,6 +47,9 @@ public final class FBSimulatorScreenshotCommands {
   /// The crop and scale are applied by the render itself rather than to its output, so all that is
   /// left here is to encode what comes back.
   fileprivate func takeScreenshotAsync(configuration: FBScreenshotConfiguration) async throws -> FBScreenshotResult {
+    guard let simulator = self.simulator else {
+      throw FBWeakTargetError.simulator
+    }
     let image = try await connectToImage()
     let screenScale = simulator.screenInfo.map { Double($0.scale) }
     guard let captured = try await image.image(configuration: configuration, screenScale: screenScale) else {
@@ -63,6 +66,9 @@ public final class FBSimulatorScreenshotCommands {
   private func connectToImage() async throws -> FBSimulatorImage {
     if let image = self.image {
       return image
+    }
+    guard let simulator = self.simulator else {
+      throw FBWeakTargetError.simulator
     }
     let framebuffer = try await simulator.connectToFramebuffer()
     let image = FBSimulatorImage(framebuffer: framebuffer, logger: simulator.logger)
