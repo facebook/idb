@@ -22,13 +22,11 @@ public final class FBSimulator: NSObject, FBiOSTarget, @unchecked Sendable {
   /// The underlying `SimDevice`.
   public let device: SimDevice
 
-  /// The Simulator Set that the Simulator belongs to.
+  /// The Simulator Set that the Simulator belongs to. Nil for simulators created outside a set.
   ///
   /// Referencing `FBSimulatorSet` here forms a strong-strong reference cycle between the set and
   /// the simulator. The set breaks it explicitly when a simulator is removed from the device set
   /// it wraps.
-  /// Nil for simulators created outside a set. The Objective-C header annotated this `nonnull`
-  /// while its initializer accepted nil, so the paths that require a set now say so explicitly.
   public private(set) var set: FBSimulatorSet?
 
   /// The `FBSimulatorConfiguration` representing this Simulator.
@@ -137,9 +135,7 @@ public final class FBSimulator: NSObject, FBiOSTarget, @unchecked Sendable {
   ///
   /// Nothing calls this, and a mismatch cannot be reported gracefully: the protocol requires a
   /// non-throwing function returning `Self`, so there is no error channel and no value to return.
-  /// Note this is a real narrowing — the Objective-C predecessor omitted the method behind a
-  /// `-Wprotocol` suppression, so a caller raised `NSInvalidArgumentException`, which this
-  /// codebase catches via `FBObjCExceptionGuard`; a trap is not catchable.
+  /// The resulting trap is not catchable by `FBObjCExceptionGuard`.
   public static func commands(with target: any FBiOSTarget) -> Self {
     guard let simulator = target as? Self else {
       preconditionFailure("\(type(of: target)) is not an FBSimulator, so it cannot provide simulator commands")
@@ -227,8 +223,8 @@ extension FBSimulator {
   public func lookupBootstrapPortNamed(_ name: String) throws -> NSNumber {
     var error: NSError?
     let port = device.lookup(name, error: &error)
-    // The port is checked first, matching the Objective-C predecessor: CoreSimulator is
-    // unannotated private API, and a populated error alongside a valid port was a success.
+    // The port is checked before the error: CoreSimulator is unannotated private API, and a
+    // populated error alongside a valid port is a success.
     guard port != mach_port_t(MACH_PORT_NULL) else {
       throw error ?? FBSimulatorPortLookupError.portNotFound(name: name)
     }

@@ -11,8 +11,8 @@ import Foundation
 // Commands that own something outliving a single call — a notifier, an in-flight video, a task —
 // are memoized through `commandCache` (`FBTargetCommandCache`), whose lock also stops two callers
 // racing the first construction. Commands that only wrap the simulator are built per call: a slot
-// for one would hold a box around a pointer back to the object owning the cache, and caching one
-// used to close a retain cycle.
+// for one would hold a box around a pointer back to the object owning the cache, closing a retain
+// cycle.
 //
 // The cache is also how the accessibility commands are given a mock translation dispatcher in
 // tests, via `commandCache.register(_:as:)`. That is a testing seam rather than a caching need,

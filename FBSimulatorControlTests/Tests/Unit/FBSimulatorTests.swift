@@ -187,10 +187,8 @@ final class FBSimulatorTests: XCTestCase {
     XCTAssertEqual(try XCTUnwrap(port).uint32Value, 12345, "Returned port number should match the looked-up port")
   }
 
-  // The Objective-C signature returns a nullable `NSNumber` with an error out-parameter, so a
-  // Swift caller sees `throws` returning non-optional: returning nil without populating the
-  // error surfaces as a synthesized error rather than as nil. The two no-port paths therefore
-  // both throw, and are told apart by whether the device's own error came back.
+  // Both no-port paths throw: the device's own error when it reported one, and a synthesized
+  // `FBSimulatorPortLookupError` when it did not. They are told apart by the error's domain.
   func testLookupBootstrapPortNamed_WhenPortIsNull_ProducesNoPort() {
     stubDevice.lookupPort = mach_port_t(MACH_PORT_NULL)
     stubDevice.lookupShouldFail = false
