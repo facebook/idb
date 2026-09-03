@@ -48,6 +48,6 @@ public struct FBSimulatorMemoryCommands {
 extension FBSimulator: MemoryCommands {
 
   public func simulateMemoryWarning() async throws {
-    try await memoryCommands.simulateMemoryWarningAsync()
+    try await memory.simulateMemoryWarningAsync()
   }
 }

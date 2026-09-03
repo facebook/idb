@@ -33,6 +33,6 @@ public struct FBSimulatorLocationCommands {
 extension FBSimulator: LocationCommands {
 
   public func overrideLocation(longitude: Double, latitude: Double) async throws {
-    try await locationCommands.overrideLocationAsync(longitude: longitude, latitude: latitude)
+    try await location.overrideLocationAsync(longitude: longitude, latitude: latitude)
   }
 }

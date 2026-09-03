@@ -65,6 +65,6 @@ public struct FBSimulatorNotificationCommands {
 extension FBSimulator: NotificationCommands {
 
   public func sendPushNotification(forBundleID bundleID: String, jsonPayload: String) async throws {
-    try await notificationCommands.sendPushNotificationAsync(forBundleID: bundleID, jsonPayload: jsonPayload)
+    try await notification.sendPushNotificationAsync(forBundleID: bundleID, jsonPayload: jsonPayload)
   }
 }

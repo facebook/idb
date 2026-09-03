@@ -190,6 +190,6 @@ final class FBSimulatorAccessibilityCommands: AccessibilityOperations {
 extension FBSimulator: AccessibilityOperations {
 
   func resolveElement(for query: FBAccessibilityElementQuery) async throws -> FBAccessibilityElement {
-    try await accessibilityCommands.resolveElement(for: query)
+    try await accessibility.resolveElement(for: query)
   }
 }

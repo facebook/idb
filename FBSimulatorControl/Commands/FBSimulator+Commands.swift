@@ -21,89 +21,89 @@ extension FBSimulator {
 
   // MARK: - Shared accessors
 
-  var applicationCommands: FBSimulatorApplicationCommands {
+  var application: FBSimulatorApplicationCommands {
     commandCache.resolve { FBSimulatorApplicationCommands.commands(with: self) }
   }
 
-  var crashLogCommands: FBSimulatorCrashLogCommands {
+  var crashLog: FBSimulatorCrashLogCommands {
     commandCache.resolve { FBSimulatorCrashLogCommands.commands(with: self) }
   }
 
-  var screenshotCommands: FBSimulatorScreenshotCommands {
+  var screenshot: FBSimulatorScreenshotCommands {
     commandCache.resolve { FBSimulatorScreenshotCommands.commands(with: self) }
   }
 
-  var locationCommands: FBSimulatorLocationCommands {
+  var location: FBSimulatorLocationCommands {
     FBSimulatorLocationCommands.commands(with: self)
   }
 
-  var debuggerCommands: FBSimulatorDebuggerCommands {
+  var debugger: FBSimulatorDebuggerCommands {
     commandCache.resolve { FBSimulatorDebuggerCommands.commands(with: self) }
   }
 
-  var fileCommands: FBSimulatorFileCommands {
+  var file: FBSimulatorFileCommands {
     FBSimulatorFileCommands.commands(with: self)
   }
 
-  var logCommands: FBSimulatorLogCommands {
+  var log: FBSimulatorLogCommands {
     FBSimulatorLogCommands.commands(with: self)
   }
 
-  var processSpawnCommands: FBSimulatorProcessSpawnCommands {
+  var processSpawn: FBSimulatorProcessSpawnCommands {
     FBSimulatorProcessSpawnCommands.commands(with: self)
   }
 
-  var videoRecordingCommands: FBSimulatorVideoRecordingCommands {
+  var videoRecording: FBSimulatorVideoRecordingCommands {
     commandCache.resolve { FBSimulatorVideoRecordingCommands.commands(with: self) }
   }
 
-  var launchCtlCommands: FBSimulatorLaunchCtlCommands {
+  var launchCtl: FBSimulatorLaunchCtlCommands {
     FBSimulatorLaunchCtlCommands.commands(with: self)
   }
 
-  var xctraceRecordCommands: FBXCTraceRecordCommands {
+  var xctraceRecord: FBXCTraceRecordCommands {
     commandCache.resolve { FBXCTraceRecordCommands.commands(with: self) }
   }
 
   // MARK: - Sim-only accessors
 
-  var lifecycleCommands: FBSimulatorLifecycleCommands {
+  var lifecycle: FBSimulatorLifecycleCommands {
     commandCache.resolve { FBSimulatorLifecycleCommands.commands(with: self) }
   }
 
-  var mediaCommands: FBSimulatorMediaCommands {
+  var media: FBSimulatorMediaCommands {
     FBSimulatorMediaCommands.commands(with: self)
   }
 
-  var keychainCommands: FBSimulatorKeychainCommands {
+  var keychain: FBSimulatorKeychainCommands {
     FBSimulatorKeychainCommands.commands(with: self)
   }
 
-  var settingsCommands: FBSimulatorSettingsCommands {
+  var settings: FBSimulatorSettingsCommands {
     FBSimulatorSettingsCommands.commands(with: self)
   }
 
-  var xctestExtendedCommands: FBSimulatorXCTestCommands {
+  var xctestExtended: FBSimulatorXCTestCommands {
     commandCache.resolve { FBSimulatorXCTestCommands.commands(with: self) }
   }
 
-  var accessibilityCommands: FBSimulatorAccessibilityCommands {
+  var accessibility: FBSimulatorAccessibilityCommands {
     commandCache.resolve { FBSimulatorAccessibilityCommands.commands(with: self) }
   }
 
-  var dapServerCommand: FBSimulatorDapServerCommand {
+  var dapServer: FBSimulatorDapServerCommand {
     FBSimulatorDapServerCommand.commands(with: self)
   }
 
-  var replCommands: FBSimulatorReplCommands {
+  var repl: FBSimulatorReplCommands {
     commandCache.resolve { FBSimulatorReplCommands.commands(with: self) }
   }
 
-  var notificationCommands: FBSimulatorNotificationCommands {
+  var notification: FBSimulatorNotificationCommands {
     FBSimulatorNotificationCommands.commands(with: self)
   }
 
-  var memoryCommands: FBSimulatorMemoryCommands {
+  var memory: FBSimulatorMemoryCommands {
     FBSimulatorMemoryCommands.commands(with: self)
   }
 }

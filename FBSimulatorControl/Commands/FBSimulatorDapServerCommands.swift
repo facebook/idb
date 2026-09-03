@@ -89,6 +89,6 @@ extension FBSimulator: DapServerCommand {
     stdIn: FBProcessInput<AnyObject>,
     stdOut: any FBDataConsumer
   ) async throws -> FBSubprocess<AnyObject, FBDataConsumer, NSString> {
-    try await dapServerCommand.launchDapServerAsync(dapPath, stdIn: stdIn, stdOut: stdOut)
+    try await dapServer.launchDapServerAsync(dapPath, stdIn: stdIn, stdOut: stdOut)
   }
 }
