@@ -38,17 +38,13 @@ enum FBAXWire {
     /// believes none does. For a partially covered element this is *not* the centre, which is the whole
     /// signal: tapping the centre lands on whatever covers it.
     case visiblePoint = "XC_kAXXCAttributeVisiblePoint"
-    /// The element's own centre — what automation taps today. Read only to compare against
-    /// `visiblePoint`; a divergence is what identifies a partially covered element.
+    /// The element's own centre. Read only to compare against `visiblePoint`; a divergence identifies a
+    /// partially covered element.
     case centerPoint = "XC_kAXXCAttributeCenterPoint"
     case userInteractionEnabled = "XC_kAXXCAttributeIsUserInteractionEnabled"
-    /// What a display-wide hit-test at an unreachable element's centre found, as the guest reports it.
-    ///
-    /// Not an `XC_kAXXC*` attribute — the accessibility server does not vend this, the in-guest reader
-    /// derives it — hence the reader's own namespace. It exists so the host does not have to issue a
-    /// hit-test per unreachable element of its own, which costs a round trip each; the guest is already
-    /// walking the tree with the runtime bound, so it answers inline for the price of the response that
-    /// was coming anyway.
+    /// What a display-wide hit-test at an unreachable element's centre found. Reader-derived, not an
+    /// `XC_kAXXC*` attribute: the guest hit-tests inline while it walks, sparing the host a round trip per
+    /// unreachable element.
     case explainedBy = "FBExplainedBy"
     /// Whether the element is enabled, as the accessibility translator answers it. Reader-namespaced:
     /// XCTest's vocabulary has no counterpart, so only a read through the translator's vocabulary
