@@ -17,9 +17,14 @@ final class FBSimulatorIndigoHID {
   // The SimulatorKit `IndigoHIDMessageFor*` functions, resolved at runtime via dlsym.
   private typealias MessageForButtonFn = @convention(c) (Int32, Int32, Int32) -> UnsafeMutablePointer<IndigoMessage>
   private typealias MessageForKeyboardArbitraryFn = @convention(c) (Int32, Int32) -> UnsafeMutablePointer<IndigoMessage>
+  // IndigoHIDMessageForMouseNSEvent(CGPoint *, CGPoint *, IndigoHIDTarget, NSEventType, NSSize,
+  // IndigoHIDEdge). The builder derives the contact's xRatio/yRatio by dividing the point by the
+  // NSSize, so passing a unit size makes that normalization the identity for callers that have
+  // already converted to a ratio. The trailing IndigoHIDEdge selects the edge-swipe bits it ORs into
+  // IndigoTouch.eventMask (see Indigo.h).
   private typealias MessageForMouseNSEventFn =
     @convention(c) (
-      UnsafeMutablePointer<CGPoint>?, UnsafeMutablePointer<CGPoint>?, Int32, Int32, ObjCBool
+      UnsafeMutablePointer<CGPoint>?, UnsafeMutablePointer<CGPoint>?, UInt32, UInt, CGSize, UInt32
     ) -> UnsafeMutablePointer<IndigoMessage>
   // The SimulatorKit tvOS-trackpad builder: builds a touch-DOWN "changed" digitizer event for the
   // dedicated trackpad service (target 0x16). Callers set the returned message's digitizer phase
@@ -80,6 +85,16 @@ final class FBSimulatorIndigoHID {
     let message = messageForButton(source, direction.rawValue, Int32(ButtonEventTargetHardware))
     return FBSimulatorIndigoHID.data(fromMallocedMessage: message)
   }
+
+  /// The HID service target the mouse/touch builder addresses.
+  private static let mouseTarget: UInt32 = 0x32
+
+  /// The `NSSize` handed to the mouse/touch builder. It normalizes the point by dividing by this, and
+  /// every caller here passes a point that is already a ratio, so a unit size leaves it untouched.
+  private static let unitScreenSize = CGSize(width: 1, height: 1)
+
+  /// A contact that did not originate at a screen edge.
+  private static let noEdge = UInt32(IndigoHIDEdgeNone)
 
   /// The dedicated tvOS trackpad HID service target (what Simulator.app's on-screen remote hard-codes;
   /// NOT the `screenID | 0x40000000` screen target, which binds to the main-screen digitizer and does
@@ -144,10 +159,13 @@ final class FBSimulatorIndigoHID {
 
     // Passing a non-NULL second point makes IndigoHIDMessageForMouseNSEvent produce a 3-payload message
     // with eventType=0x03 (multi-touch) instead of 0x02 (single-touch).
-    let message = messageForMouseNSEvent(&ratio1, &ratio2, 0x32, direction.indigoEventType, ObjCBool(false))
+    let message = messageForMouseNSEvent(
+      &ratio1, &ratio2, FBSimulatorIndigoHID.mouseTarget, UInt(direction.indigoEventType),
+      FBSimulatorIndigoHID.unitScreenSize, FBSimulatorIndigoHID.noEdge)
 
-    // The builder does not store our coordinates directly — patch each contact's xRatio/yRatio. Finger 1
-    // is the primary contact, the digitizer summary (payload 2) mirrors it, and finger 2 is payload 3.
+    // Patch each contact's xRatio/yRatio rather than trusting the builder's own normalization to reach
+    // all three. Finger 1 is the primary contact, the digitizer summary (payload 2) mirrors it, and
+    // finger 2 is payload 3.
     message.pointee.payload.event.touch.xRatio = ratio1.x
     message.pointee.payload.event.touch.yRatio = ratio1.y
     let digitizer = FBSimulatorIndigoHID.payload(at: FBSimulatorIndigoHID.secondPayloadWireOffset, of: message)
@@ -167,7 +185,9 @@ final class FBSimulatorIndigoHID {
     // SimulatorKit has no single-touch builder: IndigoHIDMessageForMouseNSEvent always emits a
     // multi-touch (eventType 0x03) message. So source a valid touch-down IndigoTouch from it, then
     // hand-envelope it as a single-touch (eventType 0x02) two-payload message.
-    let source = messageForMouseNSEvent(&point, nil, 0x32, direction.indigoEventType, ObjCBool(false))
+    let source = messageForMouseNSEvent(
+      &point, nil, FBSimulatorIndigoHID.mouseTarget, UInt(direction.indigoEventType),
+      FBSimulatorIndigoHID.unitScreenSize, FBSimulatorIndigoHID.noEdge)
     source.pointee.payload.event.touch.xRatio = point.x
     source.pointee.payload.event.touch.yRatio = point.y
     let sourceBytes = UnsafeMutableRawPointer(source)

@@ -73,7 +73,31 @@ typedef struct {
   double field16; // 0x20 + 0x10 + 0x58 = 0x88
   double field17; // 0x20 + 0x10 + 0x60 = 0x90
   double field18; // 0x20 + 0x10 + 0x68 = 0x98
+  // NB: the SimulatorKit type encoding below ends in one more `I` than this struct declares, so there
+  // is a trailing unsigned int at 0xa0 that is not yet reverse-engineered. Nothing here writes it, and
+  // the hand-built single-touch message copies only sizeof(IndigoTouch) bytes, so it stays zero.
 } IndigoTouch;
+
+/**
+ The edge a digitizer contact originated at, as passed to IndigoHIDMessageForMouseNSEvent. The builder
+ maps it through a five-entry table into the IOHIDDigitizerEventMask bits it ORs into
+ IndigoTouch.eventMask alongside the usual Range|Touch (0x3) or Position (0x4):
+
+   IndigoHIDEdgeNone   (0) -> 0x00000000  (no edge)
+   IndigoHIDEdgeTop    (1) -> 0x02040000  SwipeDown  — a swipe from the top edge travels down
+   IndigoHIDEdgeLeft   (2) -> 0x08040000  SwipeRight — from the left edge, travelling right
+   IndigoHIDEdgeBottom (3) -> 0x01040000  SwipeUp    — from the bottom edge, travelling up
+   IndigoHIDEdgeRight  (4) -> 0x04040000  SwipeLeft  — from the right edge, travelling left
+
+ Out-of-range values map to the bare 0x00040000 "is an edge event" bit with no direction. The guest
+ recognises the system edge gestures (home indicator, Notification Centre, back swipe) from these bits,
+ not from the contact coordinates, so a swipe that merely starts at the edge does not trigger them.
+ */
+#define IndigoHIDEdgeNone 0x0
+#define IndigoHIDEdgeTop 0x1
+#define IndigoHIDEdgeLeft 0x2
+#define IndigoHIDEdgeBottom 0x3
+#define IndigoHIDEdgeRight 0x4
 
 /**
  The Indigo Event for a wheel event.
