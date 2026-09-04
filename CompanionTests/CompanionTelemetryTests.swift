@@ -42,6 +42,21 @@ private struct FetchRequest {
   let verbose: Bool
 }
 
+/// Mirrors how SwiftProtobuf renders its per-request unknown-fields storage,
+/// without importing SwiftProtobuf into the test target.
+private struct EmptyUnknownStorage: CustomStringConvertible {
+  var description: String { "UnknownStorage(data: 0 bytes)" }
+}
+
+private struct NonEmptyUnknownStorage: CustomStringConvertible {
+  var description: String { "UnknownStorage(data: 3 bytes)" }
+}
+
+private struct RequestWithUnknownFields<Storage: CustomStringConvertible> {
+  let bundleID: String
+  let unknownFields: Storage
+}
+
 private struct TelemetryTestError: Error, LocalizedError {
   var errorDescription: String? { "request exploded" }
 }
@@ -113,6 +128,35 @@ struct CompanionTelemetryTests {
     let subject = recorder.subjects[0]
     #expect((subject.eventType) == (.success))
     #expect((subject.arguments) == (["bundleID=com.example.app", "verbose=false"]))
+  }
+
+  @Test
+  func emptyUnknownFieldsAreOmittedFromArguments() async throws {
+    let (telemetry, recorder) = makeTelemetry()
+    let request = RequestWithUnknownFields(
+      bundleID: "com.example.app",
+      unknownFields: EmptyUnknownStorage(),
+    )
+    try await telemetry.unaryCall("list_apps", request: request) {}
+    #expect((recorder.subjects.count) == (1))
+    #expect((recorder.subjects[0].arguments) == (["bundleID=com.example.app"]))
+  }
+
+  @Test
+  func nonEmptyUnknownFieldsAreKeptInArguments() async throws {
+    let (telemetry, recorder) = makeTelemetry()
+    let request = RequestWithUnknownFields(
+      bundleID: "com.example.app",
+      unknownFields: NonEmptyUnknownStorage(),
+    )
+    try await telemetry.unaryCall("list_apps", request: request) {}
+    #expect((recorder.subjects.count) == (1))
+    #expect(
+      (recorder.subjects[0].arguments)
+        == ([
+          "bundleID=com.example.app",
+          "unknownFields=UnknownStorage(data: 3 bytes)",
+        ]))
   }
 
   @Test

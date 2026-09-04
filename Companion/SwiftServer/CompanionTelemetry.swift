@@ -31,7 +31,8 @@ import Foundation
 /// `Mirror`, with each top-level field rendered as `name=value` and the
 /// value truncated to 100 characters -- the same cap
 /// `FBLoggingWrapper.descriptionForArgumentAtIndex:` enforced on each
-/// stringified ObjC argument.
+/// stringified ObjC argument. Empty protobuf `unknownFields` are omitted:
+/// they are present on every request and carry no information when empty.
 ///
 /// `size` is always `nil`. The legacy `FBLoggingWrapper` populated it
 /// only when the first ObjC method argument implemented a
@@ -136,6 +137,12 @@ struct CompanionTelemetry {
         label = String(label.dropFirst())
       }
       let raw = "\(child.value)"
+      // Every protobuf request carries unknownFields; skip the storage when
+      // it is empty so the log line only names fields that say something.
+      // Non-empty storage is kept verbatim for forward-compat debugging.
+      if label == "unknownFields" && raw == "UnknownStorage(data: 0 bytes)" {
+        continue
+      }
       let truncated =
         raw.count > Self.argumentValueLimit
         ? String(raw.prefix(Self.argumentValueLimit)) + "..."
