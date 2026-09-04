@@ -155,6 +155,96 @@ final class FBAXBridgeSocketTests: XCTestCase {
     XCTAssertLessThan(Date().timeIntervalSince(started), 1)
   }
 
+  // A guest whose process is already gone, signalled before it could bind.
+  private func exitedGuest(pid: pid_t, signal: Int32) -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
+    let configuration = FBProcessSpawnConfiguration(
+      launchPath: "/usr/bin/true",
+      arguments: [],
+      environment: [:],
+      io: FBProcessIO<AnyObject, AnyObject, AnyObject>.outputToDevNull(),
+      mode: .default)
+    // Resolved the way `FBProcessSpawnCommandHelpers.resolveProcessFinished` resolves a signalled
+    // process: `statLoc` carries the raw `waitpid` status, `signal` the number, and `exitCode` *errors*
+    // rather than holding a value. A fake that leaves `exitCode` merely pending would let a reader that
+    // depends on the three resolving in order pass here and fail against a real subprocess.
+    let statLoc = FBMutableFuture<NSNumber>()
+    statLoc.resolve(withResult: NSNumber(value: signal))
+    let signalled = FBMutableFuture<NSNumber>()
+    signalled.resolve(withResult: NSNumber(value: signal))
+    let exitCode = FBMutableFuture<NSNumber>()
+    exitCode.resolveWithError(
+      FBProcessTerminationError.exitedWithSignal(
+        processIdentifier: pid, processName: "SimulatorFrameworkBridge", signal: signal))
+    return FBSubprocess(
+      processIdentifier: pid,
+      statLoc: convertFBMutableFuture(statLoc),
+      exitCode: convertFBMutableFuture(exitCode),
+      signal: convertFBMutableFuture(signalled),
+      configuration: configuration,
+      queue: DispatchQueue(label: "com.facebook.FBSimulatorControl.tests.axbridge"))
+  }
+
+  // The ordering the connect loop depends on: the death check runs after the connect attempt, so a
+  // guest that bound before dying still yields its descriptor. Passes both before and after the
+  // fast-fail change, and is the invariant that stops it turning a working connect into a failure.
+  func testAConnectThatSucceedsWinsOverAGuestKnownToBeDead() async throws {
+    let bound = "\(directory)/live.sock"
+    let listener = socket(AF_UNIX, SOCK_STREAM, 0)
+    XCTAssertGreaterThanOrEqual(listener, 0)
+    defer {
+      close(listener)
+      unlink(bound)
+    }
+    var address = sockaddr_un()
+    address.sun_family = sa_family_t(AF_UNIX)
+    let capacity = MemoryLayout.size(ofValue: address.sun_path)
+    bound.withCString { source in
+      withUnsafeMutablePointer(to: &address.sun_path) { pointer in
+        pointer.withMemoryRebound(to: CChar.self, capacity: capacity) { destination in
+          _ = memcpy(destination, source, strlen(source) + 1)
+        }
+      }
+    }
+    let bindResult = withUnsafePointer(to: &address) {
+      $0.withMemoryRebound(to: sockaddr.self, capacity: 1) {
+        Darwin.bind(listener, $0, socklen_t(MemoryLayout<sockaddr_un>.size))
+      }
+    }
+    XCTAssertEqual(bindResult, 0, "precondition: the socket binds")
+    XCTAssertEqual(listen(listener, 1), 0)
+
+    let connected = try await FBAXBridgeConnection.connect(
+      path: bound, timeout: 2, guest: exitedGuest(pid: 4242, signal: SIGABRT))
+    XCTAssertGreaterThanOrEqual(connected, 0)
+    close(connected)
+  }
+
+  // BUG: the connect loop never looks at the guest, so one that is already gone costs the caller the
+  // entire deadline instead of failing at the first poll — flipped in the following commit.
+  func testAGuestThatDiedBeforeBindingCostsTheWholeDeadline() async throws {
+    let unbound = "\(directory)/dead.sock"
+    let guest = exitedGuest(pid: 4242, signal: SIGABRT)
+    let started = Date()
+    _ = try? await FBAXBridgeConnection.connect(path: unbound, timeout: 2, guest: guest)
+    XCTAssertGreaterThan(Date().timeIntervalSince(started), 1.5)
+  }
+
+  // BUG: the failure reads as a timeout and says nothing about the guest having been signalled, even
+  // though the signal that killed it is known by then — flipped in the following commit.
+  func testAGuestThatDiedBeforeBindingIsReportedAsATimeout() async throws {
+    let unbound = "\(directory)/dead.sock"
+    let guest = exitedGuest(pid: 4242, signal: SIGABRT)
+    do {
+      _ = try await FBAXBridgeConnection.connect(path: unbound, timeout: 1, guest: guest)
+      XCTFail("connecting to a socket no guest will ever bind must not succeed")
+    } catch {
+      let message = error.localizedDescription
+      XCTAssertTrue(message.contains("timed out connecting"), message)
+      XCTAssertFalse(message.contains("signal \(SIGABRT)"), message)
+      XCTAssertFalse(message.contains("4242"), message)
+    }
+  }
+
   // The kernel reads an all-zero `timeval` as no deadline at all rather than as an immediate one, so a
   // deadline that rounds to zero removes the bound instead of shortening it.
 
@@ -242,9 +332,8 @@ final class FBAXBridgeSocketTests: XCTestCase {
     XCTAssertTrue(path.hasSuffix(FBAXBridgeSocket.suffix))
   }
 
-  // Only the adopted case is reachable without building an `FBSubprocess`, which needs three futures
-  // and a spawn configuration. The started-shared and started-private cases are covered end to end,
-  // where the difference shows as a guest that outlives its companion or does not.
+  // The started-shared and started-private cases are covered end to end, where the difference shows as
+  // a guest that outlives its companion or does not.
   func testASharedGuestIsNotPrivate() {
     XCTAssertFalse(FBAXBridgeGuestOwnership.shared(nil).isPrivate)
     XCTAssertNil(FBAXBridgeGuestOwnership.shared(nil).process)
