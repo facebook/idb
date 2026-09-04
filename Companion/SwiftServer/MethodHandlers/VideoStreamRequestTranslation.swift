@@ -9,13 +9,8 @@ import FBControlCore
 import Foundation
 import IDBGRPCSwift
 
-/// The pure translation between a `video_stream` request and the framework's stream configuration.
-/// Free of the target and the sink so the wire contract is pinned by unit tests; the method handler
-/// keeps the consumer wiring.
-///
-/// Every numeric field is a proto3 scalar, so zero is indistinguishable from unset. The framework
-/// substitutes its defaults for nil and not for zero, so mapping zero to nil here is what makes an
-/// unset field mean "the default" rather than the degenerate value zero names.
+/// Translates a `video_stream` request to `FBVideoStreamConfiguration`. Zero is unset on the wire and
+/// maps to nil so the framework substitutes its defaults.
 enum VideoStreamRequestTranslation {
 
   static func configuration(from start: Idb_VideoStreamRequest.Start) -> FBVideoStreamConfiguration {
