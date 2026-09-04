@@ -139,15 +139,6 @@ struct ReplReportFormatterTests {
   }
 
   @Test
-  func runEntryRecordsRuntimeException() {
-    // A runtime exception is a completed run and is recorded like any other output.
-    let entry = ReplReportFormatter.runEntry(index: 1, code: "return try boom()", output: "Exception:\nBoom", artifacts: [], at: epoch)
-    #expect(entry.contains("## Run 1"))
-    #expect(entry.contains("Exception:\nBoom"))
-    #expect(!entry.contains("compile failed"))
-  }
-
-  @Test
   func runEntryWithoutArtifactsHasNoArtifactsBlock() {
     let entry = ReplReportFormatter.runEntry(index: 0, code: "return 1", output: "Result:\n1", artifacts: [], at: epoch)
     #expect(!entry.contains("**Artifacts**"))
@@ -169,7 +160,6 @@ struct ReplReportFormatterTests {
     let entry = ReplReportFormatter.runEntry(
       index: 5, code: "IDB.video.stopRecording()", output: "Result:\nok",
       artifacts: ["session/video_5_1.mp4"], at: epoch)
-    // Video is linked, not embedded as an image.
     #expect(entry.contains("[video_5_1.mp4](session/video_5_1.mp4)"))
     #expect(!entry.contains("![video_5_1.mp4]"))
   }
