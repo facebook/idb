@@ -121,11 +121,6 @@ public final class FBTemporaryDirectory: NSObject {
       ).retyped(FBFutureContext<NSURL>.self)
   }
 
-  @objc(withArchiveExtractedFromFile:)
-  public func withArchiveExtracted(fromFile filePath: String) -> FBFutureContext<NSURL> {
-    return withArchiveExtracted(fromFile: filePath, overrideModificationTime: false)
-  }
-
   @objc(withArchiveExtractedFromFile:overrideModificationTime:)
   public func withArchiveExtracted(fromFile filePath: String, overrideModificationTime overrideMTime: Bool) -> FBFutureContext<NSURL> {
     return withTemporaryDirectory()

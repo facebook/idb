@@ -199,15 +199,4 @@ extension FBSimulator: FileCommands {
   ) async throws -> R {
     throw FBSimulatorFileError.unsupportedOnSimulators(operation: #function)
   }
-
-  /// Scopes the file container to `body`, exposing it through the
-  /// `AsyncFileContainer` async API.
-  private func withFileContainer<C: AsyncFileContainer, R>(
-    _ context: FBFutureContext<C>,
-    body: (any AsyncFileContainer) async throws -> R
-  ) async throws -> R {
-    try await withFBFutureContext(context) { container in
-      try await body(container)
-    }
-  }
 }

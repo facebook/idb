@@ -91,10 +91,6 @@ open class FBControlCoreError: NSObject {
     return FBFuture<AnyObject>(error: build())
   }
 
-  @objc open func failFutureContext() -> FBFutureContext<AnyObject> {
-    return FBFutureContext<AnyObject>(error: build())
-  }
-
   @objc @discardableResult
   open func failPointer(_ error: NSErrorPointer) -> UnsafeMutableRawPointer? {
     error?.pointee = build()

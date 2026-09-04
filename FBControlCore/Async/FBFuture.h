@@ -474,28 +474,12 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
 + (nonnull FBFutureContext<T> *)futureContextWithFuture:(nonnull FBFuture<T> *)future;
 
 /**
- Constructs a context with no teardown, from a result.
-
- @param result the result to wrap.
- @return a FBFutureContext wrapping the Future.
- */
-+ (nonnull FBFutureContext<T> *)futureContextWithResult:(nonnull T)result;
-
-/**
  Constructs a context with no teardown, from an error.
 
  @param error an error to raise.
  @return a new Future Context.
  */
 + (nonnull FBFutureContext *)futureContextWithError:(nonnull NSError *)error;
-
-/**
- Constructs a FBFutureContext in Parallel.
-
- @param contexts the contexts to use.
- @return a new FBFutureContext with the underlying contexts in an array.
- */
-+ (nonnull FBFutureContext<NSArray<id> *> *)futureContextWithFutureContexts:(nonnull NSArray<FBFutureContext *> *)contexts;
 
 #pragma mark Public Methods
 
