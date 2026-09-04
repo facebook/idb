@@ -203,7 +203,6 @@ final class RecordRequestTranslationTests: XCTestCase {
   }
 
   func testTheEchoReportsTheDefaultsThatFilledTheGaps() throws {
-    // The point of echoing at all: the client asked for one thing and learns the rest.
     let options = try XCTUnwrap(try options { $0.scaleFactor = 0.5 })
     guard case let .applied(applied) = RecordRequestTranslation.appliedResponse(options).output else {
       return XCTFail("the echo must be an Applied, not a payload")
