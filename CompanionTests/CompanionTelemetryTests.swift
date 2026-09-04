@@ -173,6 +173,19 @@ struct CompanionTelemetryTests {
   }
 
   @Test
+  func truncateMiddlePassesShortValuesThrough() {
+    #expect((CompanionTelemetry.truncateMiddle("abc", limit: 10)) == ("abc"))
+    #expect((CompanionTelemetry.truncateMiddle("0123456789", limit: 10)) == ("0123456789"))
+  }
+
+  @Test
+  func truncateMiddleKeepsBothEndsAtExactLimit() {
+    let truncated = CompanionTelemetry.truncateMiddle("0123456789ABCDEF", limit: 10)
+    #expect((truncated.count) == (10))
+    #expect((truncated) == ("012...CDEF"))
+  }
+
+  @Test
   func bidiStreamingFailureReportsFailureSubject() async {
     let (telemetry, recorder) = makeTelemetry()
     do {

@@ -33,8 +33,10 @@ import Foundation
 /// `Mirror`, with each top-level field rendered as `name=value` and the
 /// value truncated to 100 characters -- the same cap
 /// `FBLoggingWrapper.descriptionForArgumentAtIndex:` enforced on each
-/// stringified ObjC argument. Empty protobuf `unknownFields` are omitted:
-/// they are present on every request and carry no information when empty.
+/// stringified ObjC argument. Unlike the legacy pure-prefix cut, truncation
+/// keeps both ends: container GUIDs and temp paths differ at the tail, which
+/// a prefix cut discards. Empty protobuf `unknownFields` are omitted: they
+/// are present on every request and carry no information when empty.
 ///
 /// `size` is always `nil`. The legacy `FBLoggingWrapper` populated it
 /// only when the first ObjC method argument implemented a
@@ -136,6 +138,19 @@ struct CompanionTelemetry {
     return String(format: "%.2fs", duration)
   }
 
+  /// Truncates over-long values to exactly `limit` characters, keeping the
+  /// head and the tail around an ellipsis. Values at or under the limit
+  /// pass through verbatim.
+  static func truncateMiddle(_ value: String, limit: Int) -> String {
+    guard value.count > limit else {
+      return value
+    }
+    let ellipsis = "..."
+    let headCount = (limit - ellipsis.count) / 2
+    let tailCount = limit - ellipsis.count - headCount
+    return String(value.prefix(headCount)) + ellipsis + String(value.suffix(tailCount))
+  }
+
   // MARK: - Argument description (Mirror-based, mirrors FBLoggingWrapper's intent)
 
   private func describeArguments(_ request: Any) -> [String] {
@@ -154,11 +169,7 @@ struct CompanionTelemetry {
       if label == "unknownFields" && raw == "UnknownStorage(data: 0 bytes)" {
         continue
       }
-      let truncated =
-        raw.count > Self.argumentValueLimit
-        ? String(raw.prefix(Self.argumentValueLimit)) + "..."
-        : raw
-      args.append("\(label)=\(truncated)")
+      args.append("\(label)=\(Self.truncateMiddle(raw, limit: Self.argumentValueLimit))")
     }
     return args
   }
