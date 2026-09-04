@@ -11,9 +11,7 @@ import Foundation
 private let ProcessMessage = "DLMessageProcessMessage"
 private let DeviceReady = "DLMessageDeviceReady"
 
-/// Wraps the non-`Sendable` `FBAMDServiceConnection` so it can be captured by
-/// the `@Sendable` closure dispatched onto the serial queue. The queue
-/// guarantees serial access to the connection in practice.
+/// Carries the non-`Sendable` connection across the serial-queue boundary; only touched on that queue.
 private final class ConnectionBox: @unchecked Sendable {
   let connection: FBAMDServiceConnection
   init(_ connection: FBAMDServiceConnection) {
@@ -29,7 +27,6 @@ private final class AnyBox: @unchecked Sendable {
   }
 }
 
-/// The ways the DeviceLink protocol exchange can fail, as data rather than assembled strings.
 public enum FBDeviceLinkError: Error {
   case resultNotAnArray(result: String)
   case responseTypeNotAString(responseType: String, result: String)
