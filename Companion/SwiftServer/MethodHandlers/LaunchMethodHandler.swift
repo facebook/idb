@@ -19,7 +19,12 @@ struct LaunchMethodHandler: @unchecked Sendable {
   func handle(requestStream: GRPCAsyncRequestStream<Idb_LaunchRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_LaunchResponse>, context: GRPCAsyncServerCallContext) async throws {
     var consumers: [any FBDataConsumerLifecycle] = []
 
-    var request = try await requestStream.requiredNext
+    // Read every request frame through one owned iterator: grpc-swift's
+    // request stream traps if a second AsyncIterator is created, and this
+    // handler reads more than one frame.
+    let stream = SingleIteratorRequestStream(requestStream)
+
+    var request = try await stream.requiredNext
     guard case let .start(start) = request.control else {
       throw GRPCStatus(code: .failedPrecondition, message: "Application not started yet")
     }
@@ -70,7 +75,7 @@ struct LaunchMethodHandler: @unchecked Sendable {
 
     guard start.waitFor else { return }
 
-    request = try await requestStream.requiredNext
+    request = try await stream.requiredNext
     guard case .stop = request.control else {
       throw GRPCStatus(code: .failedPrecondition, message: "Application has already started")
     }

@@ -34,7 +34,11 @@ struct VideoStreamMethodHandler {
   func handle(requestStream: GRPCAsyncRequestStream<Idb_VideoStreamRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_VideoStreamResponse>, context: GRPCAsyncServerCallContext) async throws {
     @Atomic var finished = false
 
-    guard case let .start(start) = try await requestStream.requiredNext.control
+    // grpc-swift traps if a second AsyncIterator is created; read every
+    // request frame through one owned iterator.
+    let stream = SingleIteratorRequestStream(requestStream)
+
+    guard case let .start(start) = try await stream.requiredNext.control
     else { throw GRPCStatus(code: .failedPrecondition, message: "Expected start control") }
 
     let videoStream = try await startVideoStream(
@@ -43,7 +47,7 @@ struct VideoStreamMethodHandler {
       finished: _finished)
 
     let observeClientCancelStreaming = Task<Void, Error> {
-      for try await request in requestStream {
+      while let request = try await stream.next() {
         switch request.control {
         case .start:
           throw GRPCStatus(code: .failedPrecondition, message: "Video streaming already started")

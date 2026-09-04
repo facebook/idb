@@ -17,7 +17,14 @@ struct RecordMethodHandler {
 
   func handle(requestStream: GRPCAsyncRequestStream<Idb_RecordRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_RecordResponse>, context: GRPCAsyncServerCallContext) async throws {
 
-    let request = try await requestStream.requiredNext
+    // grpc-swift's request stream traps if a second AsyncIterator is ever
+    // created; this handler reads two frames (start, then stop), so both
+    // reads must go through one owned iterator. `requestStream.requiredNext`
+    // makes a fresh iterator per call and crashes the companion on the stop
+    // frame, so route every read through a single SingleIteratorRequestStream.
+    let stream = SingleIteratorRequestStream(requestStream)
+
+    let request = try await stream.requiredNext
     guard case let .start(start) = request.control
     else { throw GRPCStatus(code: .failedPrecondition, message: "Expect start as initial request frame") }
 
@@ -51,7 +58,7 @@ struct RecordMethodHandler {
       recording = try await asyncTarget.startRecording(toFile: filePath)
     }
 
-    _ = try await requestStream.requiredNext
+    _ = try await stream.requiredNext
     let outputURL = try await recording.stop()
 
     if start.filePath.isEmpty {

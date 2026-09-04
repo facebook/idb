@@ -18,7 +18,11 @@ struct DapMethodHandler: @unchecked Sendable {
   let targetLogger: FBControlCoreLogger
 
   func handle(requestStream: GRPCAsyncRequestStream<Idb_DapRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_DapResponse>, context: GRPCAsyncServerCallContext) async throws {
-    guard case let .start(start) = try await requestStream.requiredNext.control
+    // grpc-swift traps if a second AsyncIterator is created; read every
+    // request frame through one owned iterator.
+    let stream = SingleIteratorRequestStream(requestStream)
+
+    guard case let .start(start) = try await stream.requiredNext.control
     else { throw GRPCStatus(code: .failedPrecondition, message: "Dap command expected a Start messaged in the beginning of the Stream") }
 
     let writer = FBProcessInput<FBDataConsumer>.fromConsumer().retyped(FBProcessInput<AnyObject>.self)
@@ -26,7 +30,7 @@ struct DapMethodHandler: @unchecked Sendable {
 
     let tenHours: UInt64 = 36000 * 1000000000
     try await Task.timeout(nanoseconds: tenHours) {
-      try await consumeElements(from: requestStream, to: writer, dapProcess: dapProcess)
+      try await consumeElements(from: stream, to: writer, dapProcess: dapProcess)
     }
 
     let stoppedResponse = Idb_DapResponse.with {
@@ -59,8 +63,8 @@ struct DapMethodHandler: @unchecked Sendable {
     return process
   }
 
-  private func consumeElements(from requestStream: GRPCAsyncRequestStream<Idb_DapRequest>, to writer: FBProcessInput<AnyObject>, dapProcess: FBSubprocess<AnyObject, FBDataConsumer, NSString>) async throws {
-    for try await request in requestStream {
+  private func consumeElements(from stream: SingleIteratorRequestStream<GRPCAsyncRequestStream<Idb_DapRequest>>, to writer: FBProcessInput<AnyObject>, dapProcess: FBSubprocess<AnyObject, FBDataConsumer, NSString>) async throws {
+    while let request = try await stream.next() {
       switch request.control {
       case .start:
         throw GRPCStatus(code: .failedPrecondition, message: "DAP server already started")
