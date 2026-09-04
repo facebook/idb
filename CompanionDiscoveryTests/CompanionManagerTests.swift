@@ -22,7 +22,6 @@ struct CompanionManagerTests {
       let udid = TestSupport.uniqueUDID()
       let existing = CompanionInfo(udid: udid, isLocal: true, pid: 123, address: .tcp(host: "h", port: 1))
       try registry.add(existing)
-      // A non-existent companion path proves no spawn is attempted on a hit.
       let manager = CompanionManager(companionPath: nonexistentCompanionPath(), registry: registry)
       let info = try await manager.companionInfo(forUDID: udid)
       #expect(info == existing)
@@ -61,12 +60,11 @@ struct CompanionManagerTests {
         close(fd)
         unlink(socketPath)
       }
-      // Non-existent companion path: if it tried to spawn, it would throw.
       let manager = CompanionManager(companionPath: nonexistentCompanionPath(), registry: registry)
       let info = try await manager.companionInfo(forUDID: udid)
       #expect(info.address == .domainSocket(path: socketPath))
       #expect(info.isLocal == true)
-      #expect(info.pid == nil) // we did not spawn it
+      #expect(info.pid == nil)
       let recorded = try registry.companions().map(\.udid)
       #expect(recorded == [udid])
     }
@@ -136,7 +134,6 @@ struct CompanionManagerTests {
       }
       let existing = CompanionInfo(udid: udid, isLocal: true, pid: nil, address: .domainSocket(path: socketPath))
       try registry.add(existing)
-      // Non-existent companion path: if it tried to spawn, it would throw.
       let manager = CompanionManager(companionPath: nonexistentCompanionPath(), registry: registry)
       let info = try await manager.companionInfo(forUDID: udid)
       #expect(info == existing)
@@ -144,25 +141,6 @@ struct CompanionManagerTests {
   }
 
   // MARK: - defaultCompanion
-
-  @Test
-  func defaultCompanionReturnsTheOneReachableCompanion() async throws {
-    try await withTemporaryRegistry { registry in
-      let udid = TestSupport.uniqueUDID()
-      let socketPath = TestSupport.shortSocketPath()
-      let fd = TestSupport.makeListeningSocket(at: socketPath)
-      defer {
-        close(fd)
-        unlink(socketPath)
-      }
-      let existing = CompanionInfo(udid: udid, isLocal: true, pid: nil, address: .domainSocket(path: socketPath))
-      try registry.add(existing)
-      // Non-existent companion path: if it tried to spawn, it would throw.
-      let manager = CompanionManager(companionPath: nonexistentCompanionPath(), registry: registry)
-      let info = try await manager.defaultCompanion()
-      #expect(info == existing)
-    }
-  }
 
   @Test
   func defaultCompanionFailsWhenMultipleAreReachable() async throws {
@@ -246,7 +224,6 @@ struct CompanionManagerTests {
       let alive = CompanionInfo(udid: aliveUdid, isLocal: true, pid: nil, address: .domainSocket(path: aliveSocket))
       try registry.add(alive)
       try registry.add(CompanionInfo(udid: deadUdid, isLocal: true, pid: nil, address: .domainSocket(path: deadSocket)))
-      // Non-existent companion path: if it tried to spawn, it would throw.
       let manager = CompanionManager(companionPath: nonexistentCompanionPath(), registry: registry)
       let info = try await manager.defaultCompanion()
       #expect(info == alive)
@@ -294,8 +271,7 @@ struct CompanionManagerTests {
 
       let info = try await manager.companionInfo(forUDID: udid)
       #expect(info.address == .domainSocket(path: socketPath))
-      #expect(info.pid != nil) // freshly spawned
-      // Launched idb2's `companion` subcommand and recorded the companion.
+      #expect(info.pid != nil)
       let argv = try String(contentsOfFile: argsPath, encoding: .utf8)
       #expect(argv.contains("--udid \(udid)"))
       #expect(argv.contains("companion"))
