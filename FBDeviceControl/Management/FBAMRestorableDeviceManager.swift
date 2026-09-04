@@ -68,8 +68,7 @@ final class FBAMRestorableDeviceManager: FBDeviceManager<FBAMRestorableDevice> {
   // MARK: - Notifications
 
   fileprivate func handleNotification(device: AMRestorableDevice, status: AMRestorableDeviceNotificationType) {
-    // Unrecognised values fall to `.unknown`, which `targetState(for:)` maps the same way its
-    // `default` did. `.DFU` would report a real state the device is not in.
+    // Unrecognised raw values map to `.unknown`; a zero default would be `.DFU`, a real state.
     let deviceState = AMRestorableDeviceState(rawValue: calls.RestorableDeviceGetState(device)) ?? .unknown
     let targetState = FBAMRestorableDevice.targetState(for: deviceState)
     let identifier = String(calls.RestorableDeviceGetECID(device))
