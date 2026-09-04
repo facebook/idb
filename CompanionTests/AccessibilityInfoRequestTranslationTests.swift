@@ -13,8 +13,6 @@ import IDBGRPCSwift
 import Testing
 
 /// Pins the `accessibility_info` request → framework translation and the legacy output byte shape.
-/// This is the wire contract the gRPC surface has always served; later changes (backend selection,
-/// the `complete` format) must leave every pin here untouched.
 @Suite
 struct AccessibilityInfoRequestTranslationTests {
 
@@ -253,9 +251,7 @@ struct AccessibilityInfoRequestTranslationTests {
   func optionsPinTheHandlerDefaults() throws {
     let options = try AccessibilityInfoRequestTranslation.options(from: .init(), format: .nested)
     #expect((options.format) == (.nested))
-    // Per-element round-trip logging is off by default: it floods stderr with
-    // element identifiers and label text on the serialization critical path.
-    // Debugging opts in by constructing options with logging enabled.
+    // Per-element logging is off by default: it floods stderr on the serialization critical path.
     #expect(!(options.enableLogging))
     #expect(!(options.enableProfiling), "profiling is collected only when the request asks")
     #expect(!(options.collectFrameCoverage), "frame coverage is collected only when the request asks")
@@ -324,8 +320,6 @@ struct AccessibilityInfoRequestTranslationTests {
     #expect((document["elements"]) != nil, "the complete document is the client-detectable shape: an object naming the backend that served it")
   }
 
-  // `--key all` is the whole point of the token: a caller wanting a full dump should not have to name
-  // twenty-odd keys and keep the list current as the vocabulary grows.
   @Test
   func theAllTokenExpandsToEveryKey() throws {
     var request = Idb_AccessibilityInfoRequest()
@@ -334,8 +328,7 @@ struct AccessibilityInfoRequestTranslationTests {
     #expect((options.keys) == (FBAXKeys.everything))
   }
 
-  // `all` alongside a named key still means all. Intersecting them would answer with less than either
-  // request would have on its own, which is the one outcome the caller cannot have meant.
+  // `all` beside a named key still means all; intersecting would return less than either alone.
   @Test
   func theAllTokenWinsOverKeysNamedBesideIt() throws {
     var request = Idb_AccessibilityInfoRequest()
@@ -344,7 +337,6 @@ struct AccessibilityInfoRequestTranslationTests {
     #expect((options.keys) == (FBAXKeys.everything))
   }
 
-  // The token is not a key: it names no field and must never reach a node as one.
   @Test
   func theAllTokenIsNotItselfAKey() {
     #expect((FBAXKeys(rawValue: FBAXKeys.everythingToken)) == nil)
