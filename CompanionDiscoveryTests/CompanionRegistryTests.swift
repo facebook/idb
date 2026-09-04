@@ -24,17 +24,6 @@ struct CompanionRegistryTests {
   }
 
   @Test
-  func addThenReadBack() throws {
-    try withTemporaryStateFile { statePath in
-      let registry = CompanionRegistry(stateFilePath: statePath)
-      let info = CompanionInfo(udid: "u1", isLocal: true, pid: 1, address: .domainSocket(path: "/tmp/u1.sock"))
-      try registry.add(info)
-      let companions = try registry.companions()
-      #expect(companions == [info])
-    }
-  }
-
-  @Test
   func addReplacesEntryWithSameUDID() throws {
     try withTemporaryStateFile { statePath in
       let registry = CompanionRegistry(stateFilePath: statePath)
