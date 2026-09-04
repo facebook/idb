@@ -24,7 +24,6 @@ private func payload(_ count: Int) -> Data {
 @Suite
 struct FBAMDServiceConnectionTests {
 
-  // Fresh per test: each test in a Swift Testing suite gets its own suite instance.
   private let amDevice = FakeAMDevice()
 
   private func makeConnection(named name: String = "com.apple.test") -> (FBAMDServiceConnection, FakeLockdownService) {
