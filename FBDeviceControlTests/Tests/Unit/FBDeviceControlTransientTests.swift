@@ -113,6 +113,49 @@ struct FBDeviceControlTransientTests {
     #expect((referencedAfter?.count) == (2))
   }
 
+  /// A device type that is not rooted in `NSObject`, which the weakly-referencing map has to hold
+  /// just as well as an Objective-C one.
+  private final class NativeDevice {}
+
+  @Test
+  func attachAndLookupNativeSwiftDevice() {
+    let storage = FBDeviceStorage<NativeDevice>(logger: FBControlCoreGlobalConfiguration.defaultLogger)
+    let device = NativeDevice()
+    storage.deviceAttached(device, forKey: "key1")
+
+    #expect(storage.device(forKey: "key1") === device)
+    #expect(storage.attached["key1"] === device)
+    #expect(storage.referenced["key1"] === device)
+  }
+
+  @Test
+  func detachedNativeSwiftDeviceIsStillLookupableWhileHeld() {
+    let storage = FBDeviceStorage<NativeDevice>(logger: FBControlCoreGlobalConfiguration.defaultLogger)
+    let device = NativeDevice()
+    storage.deviceAttached(device, forKey: "key1")
+    storage.deviceDetached(forKey: "key1")
+
+    #expect(storage.attached["key1"] == nil)
+    #expect(storage.device(forKey: "key1") === device)
+    #expect(storage.referenced["key1"] === device)
+  }
+
+  @Test
+  func detachedNativeSwiftDeviceLeavesTheReferenceMapOnceReleased() {
+    let storage = FBDeviceStorage<NativeDevice>(logger: FBControlCoreGlobalConfiguration.defaultLogger)
+    // The device goes into the reference map through an Objective-C accessor, which can leave an
+    // autoreleased reference behind, so it is released inside a pool of its own rather than
+    // relying on the scope end alone to be the point of deallocation.
+    autoreleasepool {
+      let device = NativeDevice()
+      storage.deviceAttached(device, forKey: "key1")
+      storage.deviceDetached(forKey: "key1")
+    }
+
+    #expect(storage.device(forKey: "key1") == nil)
+    #expect(storage.referenced.isEmpty)
+  }
+
   // MARK: - FBDeviceControlError Tests
 
   @Test

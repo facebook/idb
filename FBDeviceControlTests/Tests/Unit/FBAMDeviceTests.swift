@@ -153,6 +153,16 @@ final class FBAMDeviceTests {
     }
   }
 
+  @Test
+  func descriptionNamesTheDeviceByUdidAndName() {
+    #expect((device.description) == ("AMDevice foo | unknown"))
+
+    device.allValues[FBDeviceKey.deviceName.rawValue] = "A Phone"
+    #expect((device.description) == ("AMDevice foo | A Phone"))
+    // How the device reaches a log line, which is the only way anything reads the description.
+    #expect(("\(device)") == ("AMDevice foo | A Phone"))
+  }
+
   /// Pins the two lifetimes `startService` manages, which are not the same: the AMDevice session
   /// is released as soon as the service has started, while the service connection is invalidated
   /// only when the caller finishes with it.
