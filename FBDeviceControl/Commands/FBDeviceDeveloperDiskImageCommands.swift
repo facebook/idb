@@ -26,7 +26,6 @@ private func mountCallback(_ callbackDictionary: [String: Any]?, _ context: Unsa
   }
 }
 
-/// The ways developer disk-image operations can fail, as data rather than assembled strings.
 public enum FBDeviceDiskImageError: Error {
   case missingMountPath(key: String, entry: String)
   case imageNotMounted(imageDescription: String)
@@ -63,9 +62,6 @@ extension FBDeviceDiskImageError: LocalizedError {
 
 public final class FBDeviceDeveloperDiskImageCommands: DeveloperDiskImageCommands {
   private(set) weak var device: FBDevice?
-
-  /// Where the images this host has to offer come from. Injected because the default reads the
-  /// Xcode installation, which is the one input to selection a unit test cannot supply.
   private let diskImages: any DeveloperDiskImageProviding
 
   // MARK: Initializers
@@ -118,8 +114,6 @@ public final class FBDeviceDeveloperDiskImageCommands: DeveloperDiskImageCommand
       throw FBDeviceDiskImageError.noProductVersion(deviceDescription: String(describing: device))
     }
     let targetVersion = FBOSVersion.operatingSystemVersion(fromName: productVersion)
-    // The same composition `FBDeveloperDiskImage.developerDiskImage` performs, with the image list
-    // coming from the injected source rather than straight off disk.
     let diskImage = try FBDeveloperDiskImage.bestImage(
       forImages: diskImages.availableDiskImages,
       targetVersion: targetVersion,
