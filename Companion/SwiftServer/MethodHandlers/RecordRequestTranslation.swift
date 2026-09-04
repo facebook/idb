@@ -10,13 +10,8 @@ import Foundation
 import GRPC
 import IDBGRPCSwift
 
-/// The pure translation between a `record` request and the framework's stream configuration, and
-/// between the resolved options and the echo sent back. Free of the target so the wire contract is
-/// pinned by unit tests; the method handler stays a thin dispatcher.
-///
-/// The proto can express requests the encoder cannot honor -- a quality outside its range, an
-/// enlargement, two rate controls at once -- because a proto3 scalar has no range and no presence.
-/// Rejecting those here is what lets the framework take options that are correct by construction.
+/// Translates a `record` request to `FBVideoEncodeOptions` and echoes the resolved options back.
+/// Rejects what the encoder cannot honor (a quality out of range, an enlargement, two rate controls).
 enum RecordRequestTranslation {
 
   /// A recording is always H.264 in an mp4; the transport is irrelevant because encoded samples are
@@ -27,10 +22,8 @@ enum RecordRequestTranslation {
   /// mean here. The stream's unset `fps` means the display's own rate instead.
   static let defaultFramesPerSecond = 30
 
-  /// The options the request asked for, or nil when it set none. Nil takes the unconfigured
-  /// recording path, so a request from a client that predates these fields records exactly as it
-  /// always did -- by construction rather than by assertion. Zero is unset: a proto3 scalar cannot
-  /// distinguish the two, and none of these are useful at zero.
+  /// The options the request asked for, or nil when it set none, so a client that predates these fields
+  /// records exactly as before. Zero is unset: a proto3 scalar cannot distinguish the two.
   static func encodeOptions(from start: Idb_RecordRequest.Start) throws -> FBVideoEncodeOptions? {
     for (name, value) in [
       ("scale_factor", start.scaleFactor), ("avg_bitrate", start.avgBitrate),
@@ -106,14 +99,9 @@ enum RecordRequestTranslation {
     }
   }
 
-  /// The resolved options, not the requested ones, so the client can see the defaults that filled in
-  /// the gaps. No scaling reports as 1, the ratio of output to source.
-  ///
-  /// The rate control reports in the field the request chose, so a quality request is not echoed as
-  /// bitrate 0 — that is indistinguishable from an automatic rate, and telling the two apart is what
-  /// this message is for. An automatic rate leaves both fields 0, having no number to name. Reporting
-  /// a quality says the encoder was configured with it, not that H.264 acts on it; the low-latency
-  /// encoder ignores the property, which is why the CLI does not offer the flag.
+  /// Echoes the resolved options (defaults filled in). No scaling reports as 1. Rate control is reported
+  /// in the field the request chose; an automatic rate leaves both 0. A reported quality means the encoder
+  /// was configured with it, not that H.264 acts on it.
   static func appliedResponse(_ options: FBVideoEncodeOptions) -> Idb_RecordResponse {
     Idb_RecordResponse.with {
       $0.output = .applied(
