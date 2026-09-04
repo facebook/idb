@@ -59,7 +59,7 @@ class FBDeviceManager<PublicDevice: AnyObject>: NSObject, FBiOSTargetSet {
     fatalError("updatePublicReference is abstract and must be overridden")
   }
 
-  /// Extracts the private type from the one.
+  /// Extracts the private reference from the public one.
   class func extractPrivateReference(_ publicDevice: PublicDevice) -> Unmanaged<AnyObject>? {
     fatalError("extractPrivateReference is abstract and must be overridden")
   }
@@ -83,7 +83,6 @@ class FBDeviceManager<PublicDevice: AnyObject>: NSObject, FBiOSTargetSet {
       logger.info().log("Created a new Device instance \(device)")
     }
 
-    // See whether the private reference replaces something already known about.
     let oldPrivateDevice = Self.extractPrivateReference(device)
     if let oldPrivateDevice {
       if oldPrivateDevice.toOpaque() != privateAddress {
@@ -97,10 +96,8 @@ class FBDeviceManager<PublicDevice: AnyObject>: NSObject, FBiOSTargetSet {
       Self.updatePublicReference(device, privateDevice: privateDevice, identifier: identifier, info: info)
     }
 
-    // Update the internal state.
     storage.deviceAttached(device, forKey: identifier)
 
-    // Notify the delegate.
     if let info = device as? any FBiOSTargetInfo {
       delegate?.targetAdded(info, in: self)
     }
@@ -117,10 +114,8 @@ class FBDeviceManager<PublicDevice: AnyObject>: NSObject, FBiOSTargetSet {
     }
     logger.log("Removing Device \(identifier) from attached devices")
 
-    // Update the internal state.
     storage.deviceDetached(forKey: identifier)
 
-    // Notify the delegate.
     if let info = device as? any FBiOSTargetInfo {
       delegate?.targetRemoved(info, in: self)
     }
