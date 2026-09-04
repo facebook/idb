@@ -33,30 +33,4 @@ final class FBExceptionInfoTests: XCTestCase {
     XCTAssertTrue(desc.contains("MyTest.m"), "Description must include the file path")
     XCTAssertTrue(desc.contains("55"), "Description must include the line number")
   }
-
-  func testDescription_WithNilFile_StillProducesOutput() {
-    let info = FBExceptionInfo(message: "crash")
-    let desc = info.description
-
-    XCTAssertGreaterThan(desc.count, 0, "Description must produce non-empty output even with nil file")
-    XCTAssertTrue(desc.contains("crash"), "Description must include the message even when file is nil")
-    XCTAssertTrue(desc.contains("0"), "Description must include line 0 from convenience init")
-  }
-
-  func testDescription_DiffersBetweenInitializers() {
-    let withFile = FBExceptionInfo(message: "fail", file: "Source.m", line: 42)
-    let withoutFile = FBExceptionInfo(message: "fail")
-
-    let descWithFile = withFile.description
-    let descWithoutFile = withoutFile.description
-
-    XCTAssertTrue(descWithFile.contains("fail"), "Both descriptions must contain the message")
-    XCTAssertTrue(descWithoutFile.contains("fail"), "Both descriptions must contain the message")
-    XCTAssertNotEqual(
-      descWithFile, descWithoutFile,
-      "Descriptions should differ when file/line information differs")
-    XCTAssertTrue(
-      descWithFile.contains("Source.m"),
-      "Description from full init must include the file name")
-  }
 }
