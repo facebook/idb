@@ -17,7 +17,6 @@ import XCTestBootstrap
   // @oss-disable
 // @oss-disable
 
-/// The ways companion startup and one-shot modes can fail, as data rather than assembled strings.
 enum IDBCompanionError: Error {
   case invalidOnlyArgument(argument: String)
   case noDevicesMatchingECID(ecid: String)
@@ -145,13 +144,10 @@ private func simulatorSet(_ userDefaults: UserDefaults, logger: FBControlCoreLog
   return try simulatorSetWithPath(deviceSetPath, logger: logger)
 }
 
-/// How long a device-targeted invocation waits for MobileDevice to report a
-/// device before giving up and letting the caller report an empty set. Sized
-/// well above observed discovery times, since overshooting only costs a host
-/// with no device attached, while undershooting fails the whole session.
+/// How long a device-targeted invocation waits for MobileDevice to report a device. Overshooting only
+/// delays a host with no device attached; undershooting fails the whole session.
 private let deviceDiscoveryTimeout: TimeInterval = 5
 private let deviceDiscoveryPollInterval: TimeInterval = 0.1
-/// Unconditional nap retained for callers that tolerate an empty device set.
 private let restorableDevicePopulationNap: UInt64 = 200_000_000
 
 private func deviceSet(_ logger: FBControlCoreLogger, ecidFilter: String?, waitForDevices: Bool = false) async throws -> FBDeviceSet {
@@ -178,19 +174,9 @@ private func deviceSet(_ logger: FBControlCoreLogger, ecidFilter: String?, waitF
   return set
 }
 
-/// Waits for at least one device to land in `set`.
-///
-/// Devices arrive asynchronously, over MobileDevice notifications delivered to
-/// the main run loop, so a freshly constructed set is briefly empty. A caller
-/// resolving `--udid only` against it therefore sees no targets at all unless it
-/// waits, and a fixed nap loses that race whenever discovery runs slower than
-/// the nap -- leaving the companion to exit before it ever binds its socket.
-///
-/// `allTargetInfos` is polled rather than `allDevices` because that is what
-/// target resolution reads, though on `FBDeviceSet` the two are the same list.
-///
-/// Timing out is not an error here: a host with no device attached should still
-/// get the caller's usual "no targets" message rather than one about discovery.
+/// Waits for at least one device to land in `set`. Devices arrive asynchronously over MobileDevice
+/// notifications on the main run loop, so a freshly constructed set is briefly empty. Timing out is
+/// tolerated: a host with no device attached should still get the caller's usual "no targets" message.
 private func awaitDevicePopulation(of set: FBDeviceSet, logger: FBControlCoreLogger) async throws {
   do {
     try await Task.timeout(nanoseconds: UInt64(deviceDiscoveryTimeout * Double(NSEC_PER_SEC))) {
@@ -271,7 +257,6 @@ private func runBoot(_ udid: String, userDefaults: UserDefaults, logger: FBContr
   let verifyBooted = userDefaults.object(forKey: "-verify-booted") == nil ? true : userDefaults.bool(forKey: "-verify-booted")
   let simulator = try await resolveSimulator(udid, userDefaults: userDefaults, logger: logger)
 
-  // Boot the simulator with the options provided.
   var options = FBSimulatorBootConfiguration.default.options
   if headless {
     logger.log("Booting \(udid) headlessly")
@@ -290,7 +275,6 @@ private func runBoot(_ udid: String, userDefaults: UserDefaults, logger: FBContr
   let config = FBSimulatorBootConfiguration(options: options, environment: [:])
   try await simulator.boot(config)
 
-  // Write the boot success to stdout
   writeTargetToStdOut(simulator)
 
   // In a headless boot:
@@ -301,9 +285,8 @@ private func runBoot(_ udid: String, userDefaults: UserDefaults, logger: FBContr
     return
   }
 
-  // Whilst we can rely on this process being killed shutting the simulator, this is asynchronous.
-  // This means that we should attempt to handle cancellation gracefully.
-  // In this case we should attempt to shutdown in response to cancellation, and wait for it.
+  // Process death only shuts the simulator down asynchronously, so on cancellation shut it down
+  // explicitly and wait for it.
   do {
     try await awaitTargetOffline(simulator, logger: logger)
   } catch {
@@ -432,7 +415,6 @@ private func runCompanionServer(_ udid: String, userDefaults: UserDefaults, xcod
   let temporaryDirectory = FBTemporaryDirectory(logger: logger)
   let storageManager = try FBIDBStorageManager.manager(forTarget: target, logger: logger)
 
-  // Start up the companion
   let ports = IDBPortsConfiguration(arguments: userDefaults)
 
   // The gRPC domain socket this companion serves on, if any. Removing it
@@ -450,7 +432,6 @@ private func runCompanionServer(_ udid: String, userDefaults: UserDefaults, xcod
     }
   }
 
-  // Command Executor
   let commandExecutor = try FBIDBCommandExecutor.commandExecutor(
     forTarget: target,
     storageManager: storageManager,
@@ -459,8 +440,6 @@ private func runCompanionServer(_ udid: String, userDefaults: UserDefaults, xcod
     logger: logger
   )
 
-  // Give the monitor the socket cleanup so an idle shutdown unlinks the
-  // socket synchronously the instant it begins, ahead of the async teardown.
   let idleMonitor = idleShutdownTime.map {
     IdleMonitor(idleTime: $0, logger: logger, onShutdownStarted: removeRegisteredSocket)
   }
@@ -478,9 +457,6 @@ private func runCompanionServer(_ udid: String, userDefaults: UserDefaults, xcod
   let serverDescription = try await swiftServer.start()
   writeJSONToStdOut(serverDescription)
 
-  // Catch-all teardown for every exit path (normal completion, error, or
-  // cancellation): mirrors the old `chain:` handler. An idle shutdown also
-  // removes the socket synchronously the instant it fires.
   defer {
     temporaryDirectory.cleanOnExit()
     removeRegisteredSocket()
@@ -616,9 +592,8 @@ private func runSelectedCommand(_ userDefaults: UserDefaults, xcodeAvailable: Bo
   }
 }
 
-/// Suspends until `signalCode` is delivered, returning the signal number. The
-/// default disposition is ignored (replaced by the dispatch source) to match the
-/// legacy behavior; cancelling the awaiting task tears the source down.
+/// Suspends until `signalCode` is delivered, returning the signal number. The default disposition is set
+/// to `SIG_IGN` so the dispatch source is the sole handler; cancelling the awaiting task tears it down.
 private func waitForSignal(_ signalCode: Int32, exitMessage: String, logger: FBControlCoreLogger) async throws -> Int32 {
   let promise = AsyncPromise<Int32>()
   let source = DispatchSource.makeSignalSource(signal: signalCode, queue: DispatchQueue.main)
@@ -663,8 +638,6 @@ private func logStartupInfo(_ logger: FBIDBLogger) {
 private func idbMain() async -> Int32 {
   let arguments = ProcessInfo.processInfo.arguments
   if arguments.contains("--help") {
-    // A requested help message is not an error: write to stdout and exit 0,
-    // appending the trailing newline the multiline constant lacks.
     FileHandle.standardOutput.write(Data((kUsageHelpMessage + "\n").utf8))
     return 0
   }
