@@ -78,16 +78,13 @@ struct IDBPortsConfiguration {
     static let grpcPort = "-grpc-port"
   }
 
-  /// The GRPC Unix Domain Socket Path
   private let grpcDomainSocket: String?
 
-  /// The GRPC TCP Port.
   private let grpcPort: Int
 
-  /// The debugserver port
   let debugserverPort: Int
 
-  /// The TLS server cert path. If not specified grpcPort will be listening on unencrypted socket
+  /// If nil, the TCP port listens unencrypted.
   let tlsCertPath: String?
 
   var swiftServerTarget: GRPCConnectionTarget {
@@ -98,7 +95,6 @@ struct IDBPortsConfiguration {
     }
   }
 
-  /// Construct a ports object.
   init(arguments: UserDefaults) {
     self.debugserverPort = arguments.string(forKey: Key.debugPort).flatMap(Int.init) ?? 10881
     self.grpcPort = arguments.string(forKey: Key.grpcPort).flatMap(Int.init) ?? 10882
