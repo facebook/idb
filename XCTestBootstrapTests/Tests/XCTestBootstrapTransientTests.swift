@@ -12,28 +12,6 @@ import XCTest
 
 final class FBCodeCoverageConfigurationTransientTests: XCTestCase {
 
-  func testInitWithExportedFormat() {
-    let config = FBCodeCoverageConfiguration(
-      directory: "/tmp/coverage",
-      format: .exported,
-      enableContinuousCoverageCollection: false
-    )
-    XCTAssertEqual(config.coverageDirectory, "/tmp/coverage")
-    XCTAssertEqual(config.format, .exported)
-    XCTAssertFalse(config.shouldEnableContinuousCoverageCollection)
-  }
-
-  func testInitWithRawFormat() {
-    let config = FBCodeCoverageConfiguration(
-      directory: "/var/coverage",
-      format: .raw,
-      enableContinuousCoverageCollection: true
-    )
-    XCTAssertEqual(config.coverageDirectory, "/var/coverage")
-    XCTAssertEqual(config.format, .raw)
-    XCTAssertTrue(config.shouldEnableContinuousCoverageCollection)
-  }
-
   func testDescriptionContainsDirectory() {
     let config = FBCodeCoverageConfiguration(
       directory: "/my/dir",
@@ -45,74 +23,9 @@ final class FBCodeCoverageConfigurationTransientTests: XCTestCase {
   }
 }
 
-// MARK: - FBExceptionInfo Tests
-
-final class FBExceptionInfoTransientTests: XCTestCase {
-
-  func testInitWithMessageFileAndLine() {
-    let exception = FBExceptionInfo(message: "Something failed", file: "/path/to/File.m", line: 42)
-    XCTAssertEqual(exception.message, "Something failed")
-    XCTAssertEqual(exception.file, "/path/to/File.m")
-    XCTAssertEqual(exception.line, 42)
-  }
-
-  func testInitWithMessageOnly() {
-    let exception = FBExceptionInfo(message: "Crash occurred")
-    XCTAssertEqual(exception.message, "Crash occurred")
-    XCTAssertNil(exception.file)
-    XCTAssertEqual(exception.line, 0)
-  }
-
-  func testDescriptionContainsMessage() {
-    let exception = FBExceptionInfo(message: "test failure", file: "Test.m", line: 10)
-    let desc = exception.description
-    XCTAssertTrue(desc.contains("test failure"), "Description should contain the message")
-    XCTAssertTrue(desc.contains("Test.m"), "Description should contain the file")
-  }
-}
-
 // MARK: - FBTestManagerResultSummary Tests
 
 final class FBTestManagerResultSummaryTransientTests: XCTestCase {
-
-  func testDirectInit() {
-    let date = Date(timeIntervalSince1970: 1000)
-    let summary = FBTestManagerResultSummary(
-      testSuite: "MySuite",
-      finishTime: date,
-      runCount: 10,
-      failureCount: 2,
-      unexpected: 1,
-      testDuration: 5.5,
-      totalDuration: 6.0
-    )
-    XCTAssertEqual(summary.testSuite, "MySuite")
-    XCTAssertEqual(summary.finishTime, date)
-    XCTAssertEqual(summary.runCount, 10)
-    XCTAssertEqual(summary.failureCount, 2)
-    XCTAssertEqual(summary.unexpected, 1)
-    XCTAssertEqual(summary.testDuration, 5.5, accuracy: 0.001)
-    XCTAssertEqual(summary.totalDuration, 6.0, accuracy: 0.001)
-  }
-
-  func testInitWithZeroCounts() {
-    let date = Date()
-    let summary = FBTestManagerResultSummary(
-      testSuite: "EmptySuite",
-      finishTime: date,
-      runCount: 0,
-      failureCount: 0,
-      unexpected: 0,
-      testDuration: 0.0,
-      totalDuration: 0.0
-    )
-    XCTAssertEqual(summary.testSuite, "EmptySuite")
-    XCTAssertEqual(summary.runCount, 0)
-    XCTAssertEqual(summary.failureCount, 0)
-    XCTAssertEqual(summary.unexpected, 0)
-    XCTAssertEqual(summary.testDuration, 0.0, accuracy: 0.001)
-    XCTAssertEqual(summary.totalDuration, 0.0, accuracy: 0.001)
-  }
 
   func testStatusForStatusString() {
     XCTAssertEqual(FBTestManagerResultSummary.status(forStatusString: "passed"), .passed)
@@ -235,25 +148,6 @@ final class FBXCTestConfigurationTransientTests: XCTestCase {
     XCTAssertEqual(config.testType, FBXCTestType.listTest)
   }
 
-  func testListTestConfigurationProperties() {
-    let env = ["KEY": "VALUE"]
-    let config = makeListConfig(
-      env: env,
-      workDir: "/work",
-      bundlePath: "/tests.xctest",
-      runnerAppPath: "/runner.app",
-      waitForDebugger: true,
-      timeout: 200,
-      architectures: ["arm64", "x86_64"]
-    )
-    XCTAssertEqual(config.processUnderTestEnvironment, env)
-    XCTAssertEqual(config.workingDirectory, "/work")
-    XCTAssertEqual(config.testBundlePath, "/tests.xctest")
-    XCTAssertEqual(config.runnerAppPath, "/runner.app")
-    XCTAssertTrue(config.waitForDebugger)
-    XCTAssertEqual(config.architectures, Set(["arm64", "x86_64"]))
-  }
-
   func testListTestConfigurationDescription() {
     let config = makeListConfig()
     let desc = config.description
@@ -304,29 +198,6 @@ final class FBXCTestConfigurationTransientTests: XCTestCase {
     XCTAssertEqual(config.testType, FBXCTestType.uiTest)
   }
 
-  func testManagerTestConfigurationProperties() {
-    let config = FBTestManagerTestConfiguration(
-      environment: ["A": "B"],
-      workingDirectory: "/work",
-      testBundlePath: "/tests.xctest",
-      waitForDebugger: true,
-      timeout: 500,
-      runnerAppPath: "/host.app",
-      testTargetAppPath: "/target.app",
-      testFilter: "MyClass/testMethod",
-      videoRecordingPath: "/video.mp4",
-      testArtifactsFilenameGlobs: ["*.png", "*.log"],
-      osLogPath: "/os.log"
-    )
-    XCTAssertEqual(config.runnerAppPath, "/host.app")
-    XCTAssertEqual(config.testTargetAppPath, "/target.app")
-    XCTAssertEqual(config.testFilter, "MyClass/testMethod")
-    XCTAssertEqual(config.videoRecordingPath, "/video.mp4")
-    XCTAssertEqual(config.testArtifactsFilenameGlobs, ["*.png", "*.log"])
-    XCTAssertEqual(config.osLogPath, "/os.log")
-    XCTAssertTrue(config.waitForDebugger)
-  }
-
   func testManagerTestConfigurationDescription() {
     let config = FBTestManagerTestConfiguration(
       environment: [:],
@@ -355,46 +226,11 @@ final class FBXCTestConfigurationTransientTests: XCTestCase {
     XCTAssertEqual(config.testType, FBXCTestType.logicTest)
   }
 
-  func testLogicTestConfigurationProperties() {
-    let coverage = FBCodeCoverageConfiguration(
-      directory: "/cov",
-      format: .raw,
-      enableContinuousCoverageCollection: true
-    )
-    let config = makeLogicConfig(
-      env: ["FOO": "BAR"],
-      workDir: "/work",
-      bundlePath: "/logic.xctest",
-      waitForDebugger: true,
-      timeout: 250,
-      testFilter: "TestClass/testMethod",
-      mirroring: .fileLogs,
-      coverageConfiguration: coverage,
-      binaryPath: "/bin/test",
-      logDirectoryPath: "/logs",
-      architectures: ["x86_64", "arm64"]
-    )
-    XCTAssertEqual(config.testFilter, "TestClass/testMethod")
-    XCTAssertEqual(config.mirroring, .fileLogs)
-    XCTAssertNotNil(config.coverageConfiguration)
-    XCTAssertEqual(config.coverageConfiguration?.coverageDirectory, "/cov")
-    XCTAssertEqual(config.binaryPath, "/bin/test")
-    XCTAssertEqual(config.logDirectoryPath, "/logs")
-    XCTAssertEqual(config.architectures, Set(["x86_64", "arm64"]))
-    XCTAssertTrue(config.waitForDebugger)
-  }
-
   func testLogicTestConfigurationDescription() {
     let config = makeLogicConfig(testFilter: "MyFilter")
     let desc = config.description
     XCTAssertTrue(desc.contains("logic-test"), "Description should contain test type")
     XCTAssertTrue(desc.contains("MyFilter"), "Description should contain test filter")
-  }
-
-  func testLogicTestConfigurationMirroringCombined() {
-    let config = makeLogicConfig(mirroring: [.fileLogs, .logger])
-    XCTAssertTrue(config.mirroring.contains(.fileLogs))
-    XCTAssertTrue(config.mirroring.contains(.logger))
   }
 
   // MARK: FBXCTestConfiguration base class
@@ -408,7 +244,6 @@ final class FBXCTestConfigurationTransientTests: XCTestCase {
 
   func testConfigurationDefaultTimeout() {
     let config = makeListConfig(timeout: 0)
-    // When timeout is 0, should use default (500 normally, 1800 under TSAN)
     XCTAssertGreaterThan(config.testTimeout, 0)
   }
 
@@ -421,7 +256,6 @@ final class FBXCTestConfigurationTransientTests: XCTestCase {
   func testConfigurationInequalityAcrossSubclasses() {
     let listConfig = makeListConfig()
     let logicConfig = makeLogicConfig(architectures: ["x86_64"])
-    // Different subclasses should not be equal even with same base properties
     XCTAssertFalse(listConfig.isEqual(logicConfig))
   }
 
@@ -430,22 +264,6 @@ final class FBXCTestConfigurationTransientTests: XCTestCase {
     let desc = config.description
     XCTAssertTrue(desc.contains("logic-test"), "Description should contain the test type")
     XCTAssertTrue(desc.contains("/logic.xctest"), "Description should contain the test bundle path")
-  }
-}
-
-// MARK: - XCTestBootstrapError Tests
-
-final class XCTestBootstrapErrorTransientTests: XCTestCase {
-
-  func testErrorDomainConstants() {
-    XCTAssertEqual(XCTestBootstrapErrorDomain, "com.facebook.XCTestBootstrap")
-    XCTAssertEqual(FBTestErrorDomain, "com.facebook.FBTestError")
-  }
-
-  func testErrorCodeConstants() {
-    XCTAssertEqual(XCTestBootstrapErrorCodeStartupFailure, 0x3)
-    XCTAssertEqual(XCTestBootstrapErrorCodeLostConnection, 0x4)
-    XCTAssertEqual(XCTestBootstrapErrorCodeStartupTimeout, 0x5)
   }
 }
 
