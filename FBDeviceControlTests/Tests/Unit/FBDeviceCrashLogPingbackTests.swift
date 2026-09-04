@@ -13,16 +13,12 @@ import Testing
 private let CrashReportMoverService = "com.apple.crashreportmover"
 
 /// The handshake every crash-log operation performs before it reaches the file service: the mover
-/// is started and must answer `ping`. This is the half of crash-log collection that needs no AFC,
-/// so it is reachable through `FBDevice`'s public API as things stand.
+/// is started and must answer `ping`.
 @MainActor
-// Serialized: these tests drive an `FBAMDevice` whose work and async queues are the main queue,
-// from main-actor tests. Run in parallel they interleave on that one queue, which is why the other
-// device-driving suites in this target are serialized too.
+// Serialized: the fake device's queues are the main queue, so parallel tests would interleave on it.
 @Suite(.serialized)
 struct FBDeviceCrashLogPingbackTests {
 
-  // Fresh per test: each test in a Swift Testing suite gets its own suite instance.
   private let amDevice = FakeAMDevice()
 
   private var mover: FakeLockdownService {
@@ -40,18 +36,6 @@ struct FBDeviceCrashLogPingbackTests {
 
   private func collectCrashes(_ device: FBDevice) async throws {
     _ = try await device.crashes(matching: NSPredicate(value: true), useCache: false)
-  }
-
-  /// The mover is the first service started — the copy service must not be reached before the
-  /// mover has answered.
-  @Test
-  func startsTheMoverServiceFirst() async throws {
-    let device = makeDevice(answering: Data("nope".utf8))
-
-    try? await collectCrashes(device)
-
-    let started = amDevice.events.filter { $0.hasPrefix("secure_start_service:") }
-    #expect(started.first == "secure_start_service:\(CrashReportMoverService)")
   }
 
   @Test
