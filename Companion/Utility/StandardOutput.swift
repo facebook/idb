@@ -8,10 +8,8 @@
 import Darwin
 import Foundation
 
-/// Writes `data` straight to the stdout file descriptor, bypassing stdio.
-///
-/// A short or failed write is not reported: the companion's stdout protocol has no way to signal
-/// one to the client, and every caller predates any such handling.
+/// Writes `data` straight to the stdout file descriptor, bypassing stdio. A short or failed write is
+/// not reported; the stdout protocol has no way to signal one.
 func writeToStandardOutput(_ data: Data) {
   data.withUnsafeBytes { bytes in
     guard let baseAddress = bytes.baseAddress else { return }
