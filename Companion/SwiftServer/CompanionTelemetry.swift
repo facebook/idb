@@ -10,47 +10,18 @@ import CompanionUtilities
 @preconcurrency import FBControlCore
 import Foundation
 
-/// Per-RPC telemetry replacement for the legacy `FBLoggingWrapper`.
-///
-/// Applied at the `CompanionServiceProvider` layer. Each RPC method wraps
-/// its handler dispatch in one of `unaryCall`, `clientStreaming`,
-/// `serverStreaming`, or `bidiStreaming`. The resulting log lines and
-/// `FBEventReporter` events are equivalent to what `FBLoggingWrapper`
-/// produced when wrapping `FBIDBCommandExecutor` in the ObjC era:
-///
-/// - `<method> called with: [<args>]` at info on the FBControlCoreLogger
-///   (which routes to stderr and the optional log file).
-/// - `<method> succeeded in <duration>` at info on success, or
-///   `<method> failed after <duration>: <localizedDescription>` at info on
-///   failure. Completion stays at info (rather than debug) so a failing call
-///   is visible even when debug logging is disabled via `-log-level info`.
-/// - One `FBEventReporterSubject(forSuccessfulCall:duration:size:arguments:)`
-///   on success (or `(forFailingCall:…)` on failure) reported to the
-///   `FBEventReporter`, which routes to scuba via the perfpipe_idb scribe
-///   category.
-///
-/// The arguments list is rendered from the typed gRPC `Request` body via
-/// `Mirror`, with each top-level field rendered as `name=value` and the
-/// value truncated to 100 characters -- the same cap
-/// `FBLoggingWrapper.descriptionForArgumentAtIndex:` enforced on each
-/// stringified ObjC argument. Unlike the legacy pure-prefix cut, truncation
-/// keeps both ends: container GUIDs and temp paths differ at the tail, which
-/// a prefix cut discards. Empty protobuf `unknownFields` are omitted: they
-/// are present on every request and carry no information when empty.
-///
-/// `size` is always `nil`. The legacy `FBLoggingWrapper` populated it
-/// only when the first ObjC method argument implemented a
-/// `bytesTransferred` selector -- in practice, none of the proto request
-/// types do, so the legacy size was already `nil` for every gRPC method
-/// running through the wrapper. Stream-level byte counting would be a
-/// genuine enhancement on top of the wrapper's behaviour, but is out of
-/// scope for matching it.
+/// Per-RPC telemetry, applied in `CompanionServiceProvider` around each handler dispatch: logs
+/// `<method> called with: [<args>]` and `<method> succeeded in <duration>` / `<method> failed after
+/// <duration>: <message>`, all at info so a failing call stays visible under `-log-level info`, and reports
+/// one success or failure `FBEventReporterSubject` per call. Arguments are rendered from the request via
+/// `Mirror`, each value middle-truncated to 100 characters (container GUIDs and temp paths differ at the
+/// tail); empty protobuf `unknownFields` are omitted. `size` is always nil; no request type reports bytes
+/// transferred.
 struct CompanionTelemetry {
 
   let logger: FBIDBLogger
   let reporter: FBEventReporter
 
-  /// Match `FBLoggingWrapper.descriptionForArgumentAtIndex:`'s 100-char cap.
   private static let argumentValueLimit = 100
 
   // MARK: - RPC shapes
@@ -151,7 +122,7 @@ struct CompanionTelemetry {
     return String(value.prefix(headCount)) + ellipsis + String(value.suffix(tailCount))
   }
 
-  // MARK: - Argument description (Mirror-based, mirrors FBLoggingWrapper's intent)
+  // MARK: - Argument description
 
   private func describeArguments(_ request: Any) -> [String] {
     let mirror = Mirror(reflecting: request)
