@@ -8,13 +8,8 @@
 import FBControlCore
 import Foundation
 
-/// Narrowing a serialized read to the elements a caller asked for.
-///
-/// Two independent narrowings share this file — `FBAccessibilityElementFilter`, which decides what is
-/// worth reporting at all, and `FBAccessibilityMatch`, which decides which of those the caller was
-/// looking for — because they share the part that is easy to get wrong: hoisting. Both decide *what a
-/// read reports*, never where the walk goes. Running them over the serialized model gives one
-/// implementation for every backend, testable without a simulator.
+/// Narrowing a serialized read to the elements a caller asked for. Both narrowings decide what a read
+/// reports, never where the walk goes.
 enum FBAccessibilityElementRetention {
 
   /// The elements `keeps` accepts, hoisting a dropped element's kept descendants into its place.
@@ -95,13 +90,8 @@ extension FBAccessibilityElementFilter {
 
 extension FBAccessibilityMatch {
 
-  /// The elements whose `key` value contains this match's `value`, with the kept descendants of a
-  /// non-matching element hoisted into its place — the container holding the matching button is not
-  /// itself labelled "Add to Cart", and dropping the button with it is the whole failure hoisting
-  /// exists to prevent.
-  ///
-  /// No match is an empty list, not an error: `describe-all --match` reporting nothing is a true answer
-  /// about the screen, where `describe MARKER` finding nothing is a failed lookup.
+  /// The elements whose `key` value contains this match's `value`, hoisted like the filter. No match is
+  /// an empty list, not an error: `--match` reporting nothing is a true answer about the screen.
   func apply(to elements: [FBAccessibilityDocumentElement]) -> [FBAccessibilityDocumentElement] {
     FBAccessibilityElementRetention.retaining(elements, where: keeps)
   }
