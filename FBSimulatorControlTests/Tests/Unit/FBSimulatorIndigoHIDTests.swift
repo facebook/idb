@@ -181,11 +181,36 @@ final class FBSimulatorIndigoHIDTests: XCTestCase {
     }
   }
 
-  func testConsumerOnlyButtonHasNoIndigoSource() {
-    // `play_pause` is a Consumer-page button the legacy Indigo path cannot express, so it produces no
-    // button message (the DTUHID transport delivers it instead).
-    let indigo = try? makeIndigo()
-    XCTAssertNil(indigo?.button(with: .down, button: .playPause))
+  // Driven off `allCases` so a button added later has to land on one side or the other rather than
+  // silently joining the unsupported set.
+  func testButtonsWithoutALegacyIndigoSource() throws {
+    let indigo = try makeIndigo()
+    let unsupported = FBSimulatorHIDButton.allCases
+      .filter { indigo.button(with: .down, button: $0) == nil }
+      .map(\.name)
+    // BUG: `play_pause` is a Consumer-page button, and the legacy Indigo path has an arbitrary-HID
+    // builder that can carry one — it is simply not bound yet, so the button produces no message at
+    // all and only the DTUHID transport can deliver it. Flipped in the following commit.
+    XCTAssertEqual(unsupported, ["play_pause"])
+  }
+
+  // The whole button envelope, not just its event source: the 0xc0-byte single-payload allocation, the
+  // innerSize, the button-family eventType byte and eventKind, and every IndigoButton field. The
+  // Consumer-page path has to produce this same envelope with a different source, so what must not
+  // move is pinned before it is added.
+  func testButtonMessageEnvelope() throws {
+    let indigo = try makeIndigo()
+    let data = try XCTUnwrap(indigo.button(with: .down, button: .homeButton))
+
+    XCTAssertEqual(data.count, 0xc0, "single-payload button message size")
+    XCTAssertEqual(uint32(at: 0x18, in: data), 0xa0, "innerSize")
+    XCTAssertEqual(uint8(at: 0x1c, in: data), 1, "eventType should be the button family")
+    XCTAssertEqual(uint32(at: 0x20, in: data), 2, "payload.eventKind")
+    XCTAssertEqual(uint32(at: 0x30, in: data), 0x0, "eventSource (home)")
+    XCTAssertEqual(uint32(at: 0x34, in: data), 1, "eventType (down)")
+    XCTAssertEqual(uint32(at: 0x38, in: data), 0x33, "eventTarget (hardware)")
+    XCTAssertEqual(uint32(at: 0x3c, in: data), 0, "the sourced-button builder leaves keyCode unset")
+    XCTAssertEqual(uint32(at: 0x40, in: data), 0, "field5")
   }
 
   func testButtonDirectionAndTarget() throws {
