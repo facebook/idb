@@ -18,7 +18,7 @@ private let GetFileAck = GetFileCommand
 private let SharedCachePathPrefix = "/System/Library"
 private let SharedCachePathFragment = "shared_cache"
 
-// This signature for this function is shown in the OSS release of dyld (ex: https://opensource.apple.com/source/dyld/dyld-433.5/launch-cache/dsc_extractor.cpp.auto.html)
+// Signature from the open-source dyld: https://opensource.apple.com/source/dyld/dyld-433.5/launch-cache/dsc_extractor.cpp.auto.html
 private typealias SharedCacheExtractor =
   @convention(c) (
     UnsafePointer<CChar>?,
@@ -26,7 +26,6 @@ private typealias SharedCacheExtractor =
     @convention(block) (Int32, Int32) -> Void
   ) -> Int32
 
-/// The ways fetching debug symbols can fail, as data rather than assembled strings.
 public enum FBDeviceDebugSymbolsError: Error {
   case destinationDirectoryNotCreated(message: String)
   case listingReceiveFailed(message: String)
@@ -188,8 +187,6 @@ public final class FBDeviceDebugSymbolsCommands: DebugSymbolsCommands {
     }
     let raw = (message as? [String: Any])?["files"]
     guard let files = raw as? [String] else {
-      // The case that actually occurs is a `files` array holding something other than strings, so
-      // the elements are described individually rather than dumping the container.
       let described = (raw as? [Any]).map { FBCollectionInformation.oneLineDescription(from: $0) } ?? String(describing: raw)
       throw FBDeviceDebugSymbolsError.listingNotStrings(files: described)
     }
