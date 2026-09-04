@@ -9,9 +9,8 @@
 import Foundation
 
 public final class FBDeviceSet: FBiOSTargetSet, FBiOSTargetSetDelegate, CustomStringConvertible {
-  // Memoized so the load (and AMDevice's InitializeMobileDevice) runs once per process, matching
-  // the previous static-let semantics while letting the failure surface: a failed load is cached
-  // and rethrown by every subsequent init instead of aborting the process.
+  // Loaded once per process; a failed load is cached and rethrown by every init rather than
+  // aborting the process.
   private static let _amDeviceCalls: Result<AMDCalls, Error> = Result {
     let loader = FBDeviceControlFrameworkLoader()
     try loader.loadPrivateFrameworks(FBControlCoreGlobalConfiguration.defaultLogger)
