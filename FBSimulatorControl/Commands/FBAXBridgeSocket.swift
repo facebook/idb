@@ -19,24 +19,14 @@ enum FBAXBridgeSocket {
   ///
   /// Private rather than `/tmp` because a socket name anyone can predict is only safe if nobody else
   /// can bind it first.
-  ///
-  /// Owning the directory is also what pays for the name. `sun_path` is 104 bytes and the per-user
-  /// temporary directory is 49 of them, so the old `idb_axbridge_` prefix plus a UUID no longer fits —
-  /// but the prefix only existed to pick our sockets out of a directory full of other people's files,
-  /// and here there are none.
   static let directory: String = {
     let base = userTemporaryDirectory()
     return "\(base.hasSuffix("/") ? String(base.dropLast()) : base)/idb-ax"
   }()
 
-  /// The per-user temporary directory, from `confstr` rather than `$TMPDIR`.
-  ///
-  /// `NSTemporaryDirectory()` reads the environment variable, which a build system, CI harness or
-  /// sandbox is free to set to anything. That is wrong here three times over: an arbitrary value can
-  /// overrun `sun_path`, it could point somewhere world-writable, and — worst, because it fails
-  /// silently — two host processes that disagree about the path would each spawn their own guest
-  /// instead of sharing one, losing the reuse with no error to notice. `confstr` answers from the uid,
-  /// so every process this user runs gets the same fixed-length answer.
+  /// From `confstr`, not `$TMPDIR`: `NSTemporaryDirectory()` honours an environment variable a harness
+  /// may set to anything — it can overrun `sun_path`, be world-writable, or differ between two host
+  /// processes so each spawns its own guest instead of sharing one. `confstr` answers from the uid.
   private static func userTemporaryDirectory() -> String {
     let size = confstr(_CS_DARWIN_USER_TEMP_DIR, nil, 0)
     guard size > 0 else {
@@ -50,17 +40,10 @@ enum FBAXBridgeSocket {
     return String(decoding: buffer.prefix { $0 != 0 }.map { UInt8(bitPattern: $0) }, as: UTF8.self)
   }
 
-  /// Creates the socket directory if it is not already there, and makes sure it is owner-only. Called
-  /// before a spawn, because the guest binds into it and `bind` does not create intermediate
-  /// directories.
-  ///
-  /// The mode is applied after the fact rather than left to `createDirectory`, which honours its
-  /// `attributes` only when it actually creates something. That distinction matters on the `/tmp`
-  /// fallback: `/tmp` is world-writable, so another local user could pre-create `idb-ax` there with a
-  /// permissive mode, and a create call would return success on it without complaint — handing them a
-  /// directory we then bind predictable socket names into. Setting the mode every time closes that,
-  /// and throwing if it cannot be set fails closed rather than serving from a directory we do not
-  /// actually control.
+  /// Called before a spawn because `bind` does not create intermediate directories. The mode is set
+  /// explicitly every time: `createDirectory` honours `attributes` only when it creates, and on the
+  /// `/tmp` fallback another user could pre-create `idb-ax` with a permissive mode. Failing to set it
+  /// fails closed.
   static func prepareDirectory(_ path: String = directory) throws {
     let manager = FileManager.default
     try manager.createDirectory(
