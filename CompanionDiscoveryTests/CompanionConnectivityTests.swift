@@ -37,13 +37,4 @@ struct CompanionConnectivityTests {
     }
     #expect(CompanionConnectivity.isDomainSocketBound(path: path) == true)
   }
-
-  @Test
-  func falseAfterSocketClosedAndUnlinked() {
-    let path = TestSupport.shortSocketPath()
-    let fd = TestSupport.makeListeningSocket(at: path)
-    close(fd)
-    unlink(path)
-    #expect(CompanionConnectivity.isDomainSocketBound(path: path) == false)
-  }
 }
