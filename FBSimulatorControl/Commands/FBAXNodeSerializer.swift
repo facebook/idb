@@ -9,14 +9,11 @@ import AppKit
 import FBControlCore
 import Foundation
 
-/// Serializes an `AXPMacPlatformElement` tree into the typed JSON emitted by the
-/// accessibility commands. The values mirror the old SimulatorBridge implementation
-/// for downstream compatibility.
+/// Serializes an `FBAXPlatformElement` tree into the typed accessibility schema. Values are kept
+/// compatible with the SimulatorBridge output downstream consumers parse.
 ///
-/// Each attribute is read into a statically-typed field, so no scalar is round-tripped
-/// through an untyped `NSNumber`. `axValue()` is the one exception — it is genuinely
-/// `Any` — and is classified into the closed `FBAccessibilityAttributeValue` set at the
-/// read site.
+/// Each attribute is read into a statically-typed field; `axValue()` is genuinely `Any` and is
+/// classified into `FBAccessibilityAttributeValue` at the read site.
 enum FBAXNodeSerializer {
 
   // MARK: - Entry points
@@ -73,11 +70,8 @@ enum FBAXNodeSerializer {
   /// `.some(value-or-nil)` and an unrequested one stays `nil`, which is what lets the encodings emit an
   /// explicit null for the former and nothing at all for the latter.
   ///
-  /// `collector` is a pure side-channel intrinsic to the attribute-read pass: it tallies each fetch
-  /// without altering the returned node — proven by `testNodeDictionaryIsCollectorNeutral`. It stays in
-  /// the core because the tallies are a byte-for-byte consequence of the read order, so the order below
-  /// is deliberate and must not be rearranged. The traversal-level concerns the core omits — seen-pid
-  /// dedup and the `is_remote` provenance tag — live in `decoratedElement`.
+  /// The collector tallies each fetch in read order, so the order below is load-bearing for the profile
+  /// and must not be rearranged. Seen-pid dedup and the `is_remote` tag live in `decoratedElement`.
   static func nodeElement(
     forElement element: FBAXPlatformElement,
     token: String,
@@ -91,7 +85,6 @@ enum FBAXNodeSerializer {
 
     var node = FBAccessibilityDocumentElement()
 
-    // Reads an attribute only when it was requested, tallying the fetch exactly as the ObjC macro did.
     func read<T>(_ key: FBAXKeys, _ value: @autoclosure () -> T?) -> T?? {
       guard keys.contains(key) else {
         return nil
@@ -104,8 +97,6 @@ enum FBAXNodeSerializer {
     collector?.incrementAttributeFetchCount(forKey: FBAXKeys.frame.rawValue)
     let frame = element.axFrame()
 
-    // Role is used by multiple keys and needs processing. Check Role first to
-    // assign rawRole, then Type can derive from it.
     var role: String?
     var rawRole: String?
     if keys.contains(.role) {
@@ -123,7 +114,6 @@ enum FBAXNodeSerializer {
       role = rawRole.map(FBAXRoleVocabulary.normalizeRole)
     }
 
-    // Legacy values that mirror SimulatorBridge.
     node.label = read(.label, element.axLabel())
     if keys.contains(.frame) {
       node.axFrame = .some(NSStringFromRect(frame))
@@ -131,12 +121,10 @@ enum FBAXNodeSerializer {
     node.value = read(.value, FBAccessibilityAttributeValue(element.axValue()))
     node.identifier = read(.uniqueID, element.axIdentifier())
 
-    // Synthetic values.
     if keys.contains(.type) {
       node.type = .some(role)
     }
 
-    // New values.
     node.title = read(.title, element.axTitle())
     if keys.contains(.frameDict) {
       collector?.incrementAttributeFetchCount(forKey: FBAXKeys.frameDict.rawValue)
@@ -174,15 +162,9 @@ enum FBAXNodeSerializer {
     return node
   }
 
-  /// Whether an element can be acted on, derived from the attributes just read.
-  ///
-  /// Nil — an explicit null downstream — when the backend cannot answer. Hittability is checked first
-  /// because a backend that answers nothing carries no hittability attribute, so the guard catches it
-  /// before any other attribute is consulted. Falling back to `enabled` would confuse "disabled" with
-  /// "unreachable", which is the distinction this key exists for.
-  ///
-  /// Reasons accumulate rather than short-circuit, because an element is often blocked more than one way
-  /// and a caller told only the first would fix it and hit the next.
+  /// Nil (an explicit null downstream) when the backend cannot answer hittability at all — never
+  /// derived from `enabled`, which would confuse "disabled" with "unreachable". Reasons accumulate
+  /// rather than short-circuit: an element is often blocked more than one way.
   private static func interactable(
     forElement element: FBAXPlatformElement,
     frame: NSRect
@@ -216,18 +198,14 @@ enum FBAXNodeSerializer {
       return .blocked(reasons: reasons.mostSpecificFirst)
     }
 
-    // Reachable, nothing against it, and no point to act at. "The read carried no point" and "the server
-    // reports no reachable point" are different facts, and `hittable` being false already caught the
-    // second. The `axIsHittable()` guard assumes a backend answering hittability answers the rest, which
-    // holds while a read fetches the attributes as a group. Where a wire answers hittability and carries
-    // no point, returning `notHittable` would call a reachable element unreachable and give a reason.
+    // Hittable but no point: the read carried no point (a wire that answers hittability without one),
+    // not an unreachable element — so nil, not `notHittable`.
     guard let hittablePoint else {
       return nil
     }
 
-    // A reachable point makes the element actionable even when that point is not its centre — for a
-    // partially covered element the centre is exactly what fails. A caller that cares can compare `at`
-    // against the frame it already has.
+    // Actionable even when the point is not the centre: for a partially covered element the centre is
+    // exactly what fails.
     return .actionable(at: hittablePoint)
   }
 
@@ -255,8 +233,7 @@ enum FBAXNodeSerializer {
 
   // MARK: - Recursion
 
-  // Non-hierarchical (flat) output: frames are relative to the root, as in SimulatorBridge. A flat node
-  // carries no children — the traversal lists every node separately — which is why `children` stays nil.
+  // Flat output lists every node separately, so `children` stays nil.
   private static func flatRecursiveDescription(
     fromElement element: FBAXPlatformElement,
     token: String,
