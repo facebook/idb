@@ -250,6 +250,47 @@ final class FBAXBridgeSocketTests: XCTestCase {
     }
   }
 
+  // MARK: - Decoding the guest's exit from its waitpid status
+
+  // The two statuses that name an outcome. A signalled process reports the signal in the low seven
+  // bits; an exited one reports its code in the next byte, and the two must not be read as each other.
+  func testASignalledStatusDecodesToItsSignal() {
+    let cause = FBAXBridgeConnection.terminationCause(waitpidStatus: SIGABRT)
+    XCTAssertEqual(cause.signal, Int(SIGABRT))
+    XCTAssertNil(cause.exitCode)
+  }
+
+  func testAnExitedStatusDecodesToItsCode() {
+    let cause = FBAXBridgeConnection.terminationCause(waitpidStatus: 3 << 8)
+    XCTAssertEqual(cause.exitCode, 3)
+    XCTAssertNil(cause.signal)
+  }
+
+  // A stopped process has not terminated, and puts its stopping signal where an exit puts its code.
+  // Decoding it as an exit would report `exited with code 19` for a process that is merely paused.
+  func testAStoppedStatusDecodesToNeither() {
+    let stopped = (SIGSTOP << 8) | 0x7f
+    let cause = FBAXBridgeConnection.terminationCause(waitpidStatus: stopped)
+    XCTAssertNil(cause.signal)
+    XCTAssertNil(cause.exitCode)
+  }
+
+  // No status is not the same as a zero status, which would read as a clean exit the guest never made.
+  func testAMissingStatusDecodesToNeither() {
+    let cause = FBAXBridgeConnection.terminationCause(waitpidStatus: nil)
+    XCTAssertNil(cause.signal)
+    XCTAssertNil(cause.exitCode)
+    let error = FBAXBridgeError.guestDiedBeforeBinding(
+      pid: 4242, signal: cause.signal, exitCode: cause.exitCode, path: "/x/y.sock")
+    XCTAssertTrue(error.localizedDescription.contains("no exit status recorded"), error.localizedDescription)
+  }
+
+  // Signal zero is not a signal, and the message must not claim one was raised.
+  func testAZeroSignalIsNotReportedAsASignal() {
+    let error = FBAXBridgeError.guestDiedBeforeBinding(pid: 4242, signal: 0, exitCode: nil, path: "/x/y.sock")
+    XCTAssertFalse(error.localizedDescription.contains("signal 0"), error.localizedDescription)
+  }
+
   // The kernel reads an all-zero `timeval` as no deadline at all rather than as an immediate one, so a
   // deadline that rounds to zero removes the bound instead of shortening it.
 
