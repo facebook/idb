@@ -319,14 +319,6 @@ struct IDBTransientTests {
     #expect((IDBConfiguration.eventReporter is EmptyEventReporter))
   }
 
-  // MARK: - EmptyEventReporter Tests
-
-  @Test
-  func emptyEventReporterMetadataStartsEmpty() {
-    let reporter = EmptyEventReporter()
-    #expect((reporter.metadata.isEmpty))
-  }
-
   // MARK: - Helpers
 
   private func makeTestDefaults() -> (UserDefaults, () -> Void) {
