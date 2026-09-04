@@ -12,14 +12,8 @@ import Foundation
 import GRPC
 import IDBGRPCSwift
 
-/// The pure translation from an `accessibility_action` request to a resolved action. Free of the
-/// command executor so the wire contract is pinned by unit tests without a target; the method
-/// handler is left with nothing but the dispatch to the executor.
-///
-/// The proto can express requests no action accepts -- an action with no target, a drag onto its own
-/// source, a negative duration -- because a oneof member is optional and a proto3 scalar has no
-/// range. Rejecting those here is what lets each executor call take arguments that are correct by
-/// construction.
+/// Translates an `accessibility_action` request to a checked `Action`. Rejects shapes no action accepts
+/// (a missing target, a drag onto its own source, a negative duration).
 enum AccessibilityActionRequestTranslation {
 
   /// A request that has been checked, with every endpoint and option resolved.
