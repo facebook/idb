@@ -12,8 +12,7 @@ import Foundation
 /// completion callback, or an Objective-C delegate method — and awaited from an
 /// `async` context.
 ///
-/// The first ``resolve(_:)`` or ``fail(_:)`` wins; later calls are ignored
-/// (matching the one-shot semantics of `FBMutableFuture`, which this replaces).
+/// The first ``resolve(_:)`` or ``fail(_:)`` wins; later calls are ignored.
 /// Awaiting ``value`` participates in cooperative cancellation: if the awaiting
 /// task is cancelled before the promise is resolved, the await throws
 /// `CancellationError`. A value that is already resolved is delivered even to a
