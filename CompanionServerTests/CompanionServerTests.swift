@@ -88,7 +88,6 @@ struct CompanionServerTests {
 
       _ = try await server.start()
 
-      // Send a request, keep the connection open, and read the response back.
       let fd = connect(toSocketPath: path)
       defer { close(fd) }
       writeLine(#"{"jsonrpc":"2.0","method":"ping","id":7}"#, to: fd)
@@ -210,7 +209,6 @@ struct CompanionServerTests {
       // A TCP companion is reached by explicit address, so it is not registered.
       #expect(try registry.companions().isEmpty)
 
-      // Round-trip a request over the TCP socket.
       let fd = connect(toHost: host, port: port)
       defer { close(fd) }
       writeLine(#"{"jsonrpc":"2.0","method":"ping","id":7}"#, to: fd)
@@ -340,7 +338,6 @@ struct CompanionServerTests {
     return data
   }
 
-  /// Writes `line` followed by a newline to `fd`.
   private func writeLine(_ line: String, to fd: Int32) {
     var bytes = Array(line.utf8)
     bytes.append(UInt8(ascii: "\n"))
