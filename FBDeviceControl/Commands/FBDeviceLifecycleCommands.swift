@@ -38,8 +38,6 @@ public final class FBDeviceLifecycleCommands {
   }
 }
 
-// MARK: - LifecycleCommands
-
 // MARK: - FBDevice+LifecycleCommands
 
 extension FBDevice: LifecycleCommands {
