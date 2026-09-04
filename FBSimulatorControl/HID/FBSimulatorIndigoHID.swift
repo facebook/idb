@@ -86,14 +86,17 @@ final class FBSimulatorIndigoHID {
     return FBSimulatorIndigoHID.data(fromMallocedMessage: message)
   }
 
-  /// A button event, or `nil` when the button has no dedicated legacy `ButtonEventSource` (a
-  /// Consumer-page button such as `play_pause` that only the DTUHID transport can deliver).
-  func button(with direction: FBSimulatorHIDDirection, button: FBSimulatorHIDButton) -> Data? {
-    guard let source = button.identity.indigoSourceValue else {
-      return nil
+  /// A button event. A button with a dedicated legacy `ButtonEventSource` goes through the sourced
+  /// builder; one identified only by a HID Consumer-page usage goes through the arbitrary-HID builder,
+  /// which addresses the same hardware-button service with the usage the DTUHID transport would send.
+  func button(with direction: FBSimulatorHIDDirection, button: FBSimulatorHIDButton) -> Data {
+    switch button.identity {
+    case let .indigoSource(source), let .indigoSourceAndConsumerUsage(source, _, _):
+      let message = messageForButton(source, direction.rawValue, Int32(ButtonEventTargetHardware))
+      return FBSimulatorIndigoHID.data(fromMallocedMessage: message)
+    case let .consumerUsage(page, code):
+      return hidArbitrary(page: page, usage: code, direction: direction)
     }
-    let message = messageForButton(source, direction.rawValue, Int32(ButtonEventTargetHardware))
-    return FBSimulatorIndigoHID.data(fromMallocedMessage: message)
   }
 
   /// A message carrying an arbitrary HID usage, addressed to the hardware-button service.

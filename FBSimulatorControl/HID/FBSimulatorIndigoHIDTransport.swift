@@ -93,11 +93,7 @@ actor FBSimulatorIndigoHIDTransport {
   }
 
   func sendButton(direction: FBSimulatorHIDDirection, button: FBSimulatorHIDButton) async throws {
-    guard let data = indigo.button(with: direction, button: button) else {
-      throw FBSimulatorHIDError.notImplementedOnIndigoTransport(
-        operation: "sendButton(.\(button.name)) — a Consumer-page button with no legacy Indigo source; use the DTUHID transport")
-    }
-    try await indigoClient.send(data)
+    try await indigoClient.send(indigo.button(with: direction, button: button))
   }
 
   func sendKeyboard(direction: FBSimulatorHIDDirection, keyCode: UInt32) async throws {

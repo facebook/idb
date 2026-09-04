@@ -175,7 +175,7 @@ final class FBSimulatorIndigoHIDTests: XCTestCase {
       (.siri, 0x400002),
     ]
     for (button, source) in expected {
-      let data = try XCTUnwrap(indigo.button(with: .down, button: button))
+      let data = indigo.button(with: .down, button: button)
       // IndigoButton.eventSource at 0x30.
       XCTAssertEqual(uint32(at: 0x30, in: data), source, "eventSource for button rawValue \(button.rawValue)")
     }
@@ -183,15 +183,25 @@ final class FBSimulatorIndigoHIDTests: XCTestCase {
 
   // Driven off `allCases` so a button added later has to land on one side or the other rather than
   // silently joining the unsupported set.
-  func testButtonsWithoutALegacyIndigoSource() throws {
+  func testEveryButtonHasALegacyIndigoMessage() throws {
     let indigo = try makeIndigo()
     let unsupported = FBSimulatorHIDButton.allCases
-      .filter { indigo.button(with: .down, button: $0) == nil }
+      .filter { indigo.button(with: .down, button: $0).isEmpty }
       .map(\.name)
-    // BUG: `play_pause` is a Consumer-page button, and the legacy Indigo path has an arbitrary-HID
-    // builder that can carry one — it is simply not bound yet, so the button produces no message at
-    // all and only the DTUHID transport can deliver it. Flipped in the following commit.
-    XCTAssertEqual(unsupported, ["play_pause"])
+    XCTAssertEqual(unsupported, [])
+  }
+
+  // `play_pause` is the button that had no dedicated `ButtonEventSource`, so it is the one this
+  // routes down the arbitrary-HID path: same hardware target and direction as a sourced button, but
+  // the source is `ButtonEventSourceHIDArbitrary` and the Consumer usage rides in `keyCode`.
+  func testConsumerPageButtonUsesTheArbitraryHIDSource() throws {
+    let indigo = try makeIndigo()
+    let data = indigo.button(with: .down, button: .playPause)
+
+    XCTAssertEqual(uint32(at: 0x30, in: data), 0x2711, "eventSource should be arbitrary HID")
+    XCTAssertEqual(uint32(at: 0x38, in: data), 0x33, "eventTarget (hardware)")
+    XCTAssertEqual(uint32(at: 0x3c, in: data), 0xCD, "Consumer Play/Pause usage")
+    XCTAssertEqual(uint32(at: 0x44, in: data), 0x0C, "Consumer usage page")
   }
 
   // The whole button envelope, not just its event source: the 0xc0-byte single-payload allocation, the
@@ -200,7 +210,7 @@ final class FBSimulatorIndigoHIDTests: XCTestCase {
   // move is pinned before it is added.
   func testButtonMessageEnvelope() throws {
     let indigo = try makeIndigo()
-    let data = try XCTUnwrap(indigo.button(with: .down, button: .homeButton))
+    let data = indigo.button(with: .down, button: .homeButton)
 
     XCTAssertEqual(data.count, 0xc0, "single-payload button message size")
     XCTAssertEqual(uint32(at: 0x18, in: data), 0xa0, "innerSize")
@@ -215,8 +225,8 @@ final class FBSimulatorIndigoHIDTests: XCTestCase {
 
   func testButtonDirectionAndTarget() throws {
     let indigo = try makeIndigo()
-    let down = try XCTUnwrap(indigo.button(with: .down, button: .homeButton))
-    let up = try XCTUnwrap(indigo.button(with: .up, button: .homeButton))
+    let down = indigo.button(with: .down, button: .homeButton)
+    let up = indigo.button(with: .up, button: .homeButton)
     // IndigoButton.eventType at 0x34 == direction (down=1, up=2).
     XCTAssertEqual(uint32(at: 0x34, in: down), 1, "down eventType")
     XCTAssertEqual(uint32(at: 0x34, in: up), 2, "up eventType")
@@ -256,7 +266,7 @@ final class FBSimulatorIndigoHIDTests: XCTestCase {
   func testArbitraryHIDUsageSharesTheSourcedButtonEnvelope() throws {
     let indigo = try makeIndigo()
     let arbitrary = indigo.hidArbitrary(page: 0x0C, usage: 0xCD, direction: .down)
-    let sourced = try XCTUnwrap(indigo.button(with: .down, button: .homeButton))
+    let sourced = indigo.button(with: .down, button: .homeButton)
 
     XCTAssertEqual(arbitrary.count, sourced.count, "message size")
     XCTAssertEqual(uint32(at: 0x18, in: arbitrary), uint32(at: 0x18, in: sourced), "innerSize")
