@@ -22,7 +22,6 @@ public protocol FBXCTestDescriptor: AnyObject {
 }
 
 public extension FBXCTestDescriptor {
-  /// Async wrapper for `setup(with:target:)`.
   func setupAsync(with request: FBXCTestRunRequest, target: FBiOSTarget) async throws {
     try await bridgeFBFutureVoid(self.setup(with: request, target: target))
   }
@@ -30,7 +29,6 @@ public extension FBXCTestDescriptor {
 
 // MARK: - FBXCTestBootstrapDescriptor
 
-/// The ways test-descriptor preparation can fail, as data rather than assembled strings.
 public enum FBXCTestDescriptorError: Error {
   case applicationCommandsUnsupported(targetDescription: String)
   case uiTestMissingAppBundleID
