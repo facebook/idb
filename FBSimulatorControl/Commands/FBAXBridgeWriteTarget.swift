@@ -27,8 +27,7 @@ extension FBAXBridgeTreeReader {
       }
       return FBAXWriteTarget(point: point, pid: nil, assertion: nil)
     case let .marker(value, key, _, ignoresCase):
-      // Writes resolve against the structural tree deliberately: `.auto` is backend-dependent and a
-      // semantic traversal can omit the element a marker names.
+      // Writes resolve against the structural tree: a semantic traversal can omit the element a marker names.
       let read = try await readRawTree(
         for: query,
         attributes: nil,
