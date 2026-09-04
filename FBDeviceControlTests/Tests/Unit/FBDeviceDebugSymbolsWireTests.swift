@@ -40,13 +40,10 @@ private struct StubDiskImages: DeveloperDiskImageProviding {
 /// the device would perform is scripted: the disk image the service requires is already mounted,
 /// so the operation reaches the symbol service itself.
 @MainActor
-// Serialized: these tests drive an `FBAMDevice` whose work and async queues are the main queue,
-// from main-actor tests. Run in parallel they interleave on that one queue, which is why the other
-// device-driving suites in this target are serialized too.
+// Serialized: the fake device's queues are the main queue, so parallel tests would interleave on it.
 @Suite(.serialized)
 struct FBDeviceDebugSymbolsWireTests {
 
-  // Fresh per test: each test in a Swift Testing suite gets its own suite instance.
   private let amDevice = FakeAMDevice()
 
   private var symbols: FakeLockdownService {
