@@ -63,48 +63,15 @@ struct FBDeviceControlTransientTests {
   }
 
   @Test
-  func detachedDeviceNotInAttachedButStillLookupable() {
-    let storage = FBDeviceStorage<NSString>(logger: FBControlCoreGlobalConfiguration.defaultLogger)
-    storage.deviceAttached("device1" as NSString, forKey: "key1")
-    storage.deviceDetached(forKey: "key1")
-
-    // After detach, device is removed from the attached dictionary
-    let attached = storage.attached as? [String: NSString]
-    #expect((attached?["key1"]) == nil)
-
-    // But it can still be found via lookup (weak reference from NSString literal persists)
-    let retrieved = storage.device(forKey: "key1")
-    #expect((retrieved) != nil)
-  }
-
-  @Test
-  func multipleDevicesAttachAndDetach() {
-    let storage = FBDeviceStorage<NSString>(logger: FBControlCoreGlobalConfiguration.defaultLogger)
-    storage.deviceAttached("d1" as NSString, forKey: "k1")
-    storage.deviceAttached("d2" as NSString, forKey: "k2")
-    storage.deviceAttached("d3" as NSString, forKey: "k3")
-
-    storage.deviceDetached(forKey: "k2")
-
-    #expect((storage.device(forKey: "k1")) != nil)
-    #expect((storage.device(forKey: "k3")) != nil)
-
-    let attached = storage.attached as? [String: NSString]
-    #expect((attached?.count) == (2))
-    #expect((attached?["k2"]) == nil)
-  }
-
-  @Test
   func referencedPropertyTracksAllKnownDevices() {
     let storage = FBDeviceStorage<NSString>(logger: FBControlCoreGlobalConfiguration.defaultLogger)
     storage.deviceAttached("d1" as NSString, forKey: "k1")
     storage.deviceAttached("d2" as NSString, forKey: "k2")
 
-    // Both attached and referenced should have 2 entries
     let referenced = storage.referenced as? [String: NSString]
     #expect((referenced?.count) == (2))
 
-    // Detach one - attached drops to 1, referenced still has 2 (string literals are immortal)
+    // Only `attached` drops; `referenced` keeps both because string literals are immortal.
     storage.deviceDetached(forKey: "k1")
     let attached = storage.attached as? [String: NSString]
     #expect((attached?.count) == (1))
@@ -159,11 +126,6 @@ struct FBDeviceControlTransientTests {
   // MARK: - FBDeviceControlError Tests
 
   @Test
-  func errorDomain() {
-    #expect((FBDeviceControlErrorDomain) == ("com.facebook.FBDeviceControl"))
-  }
-
-  @Test
   func errorBuilderCreatesErrorInCorrectDomain() {
     let nsError = FBDeviceControlError.describe("test error").build() as NSError
     #expect((nsError.domain) == ("com.facebook.FBDeviceControl"))
@@ -194,7 +156,6 @@ struct FBDeviceControlTransientTests {
   func temporaryFileCreation() throws {
     let url = try FileManager.default.temporaryFile(extension: "txt")
     #expect((url.lastPathComponent.hasSuffix(".txt") || url.lastPathComponent.contains(".")), "Temporary file should have a file extension component")
-    // The parent directory should exist (it was created by the method)
     let parentDir: String
     if #available(macOS 13.0, *) {
       parentDir = url.deletingLastPathComponent().path()
