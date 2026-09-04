@@ -56,9 +56,7 @@ public enum FBSpringboardServicesError: Error, LocalizedError {
   }
 }
 
-/// Wraps the non-`Sendable` `FBAMDServiceConnection` so it can be captured by
-/// the `@Sendable` closures dispatched on the serial connection queue. Serial
-/// dispatch guarantees thread-safe access to the underlying connection.
+/// Carries the non-`Sendable` connection across the serial-queue boundary; only touched on that queue.
 private final class SpringboardConnectionBox: @unchecked Sendable {
   let connection: FBAMDServiceConnection
   init(_ connection: FBAMDServiceConnection) {
@@ -79,7 +77,7 @@ class FBSpringboardServicesClient {
   fileprivate let queue: DispatchQueue
   private let logger: any FBControlCoreLogger
 
-  // MARK: ObjC-visible Constants
+  // MARK: Constants
 
   static let wallpaperNameHomescreen: String = "homescreen"
   static let wallpaperNameLockscreen: String = "lockscreen"
