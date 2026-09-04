@@ -33,6 +33,20 @@ private let startServiceEvents = [
   "service_connection_invalidate",
 ]
 
+/// `withAFCConnection` layers an AFC client over the service connection: creating it reads the
+/// secure IO context a second time, and it is closed before the service connection beneath it is
+/// invalidated.
+private let afcConnectionEvents =
+  Array(startServiceEvents.dropLast())
+  + ["service_connection_get_secure_io_context", "connection_close", "service_connection_invalidate"]
+
+/// BUG: a connection AFC reports as invalid is dropped without being closed. The teardown only
+/// ever covered a connection that reached the caller, so the client `Create` handed back is
+/// leaked. Flipped by the bugfix later in this stack.
+private let rejectedAFCConnectionEvents =
+  Array(startServiceEvents.dropLast())
+  + ["service_connection_get_secure_io_context", "service_connection_invalidate"]
+
 // Serialized: the stubs append to the file-scope `sAMDeviceEvents` from the
 // main queue; parallel tests would interleave their recordings.
 @MainActor
@@ -105,9 +119,32 @@ final class FBAMDeviceTests {
       return 0
     }
 
+    // Only read when a service connection is wrapped in an AFC client, and the socket it reports
+    // is unused: the AFC stubs answer for whatever they are handed.
+    calls.ServiceConnectionGetSocket = { _ in 0 }
+
     calls.CreateHouseArrestService = { _, _, _, connectionOut in
       sAMDeviceEvents.append("create_house_arrest_service")
       connectionOut?.pointee = Unmanaged<AnyObject>.passRetained("A HOUSE ARREST" as CFString)
+      return 0
+    }
+
+    return calls
+  }
+
+  /// Records the close alongside the AMDevice events, so the AFC teardown can be ordered against
+  /// the service connection's.
+  private static var stubbedAFCCalls: AFCCalls {
+    var calls = AFCCalls()
+
+    calls.Create = { _, _, _, _, _ in
+      Unmanaged<AnyObject>.passRetained("AN AFC CONNECTION" as CFString)
+    }
+
+    calls.ConnectionIsValid = { _ in 1 }
+
+    calls.ConnectionClose = { _ in
+      sAMDeviceEvents.append("connection_close")
       return 0
     }
 
@@ -199,6 +236,55 @@ final class FBAMDeviceTests {
 
     await waitForDeviceEvents(startServiceEvents)
     #expect((startServiceEvents) == (sAMDeviceEvents))
+  }
+
+  /// The AFC client is handed to the body and closed before the service connection beneath it is
+  /// invalidated, so the two lifetimes are released innermost first.
+  @Test
+  func withAFCConnection_ClosesTheAFCConnectionWhenTheBodyReturns() async throws {
+    let description = try await device.withAFCConnection("com.apple.testservice", calls: Self.stubbedAFCCalls) { afc in
+      String(describing: afc.connection)
+    }
+    #expect(description.contains("AN AFC CONNECTION"))
+
+    await waitForDeviceEvents(afcConnectionEvents)
+    #expect((afcConnectionEvents) == (sAMDeviceEvents))
+  }
+
+  /// Both connections are released on the way out of a throwing body, in the same order.
+  @Test
+  func withAFCConnection_ClosesTheAFCConnectionWhenTheBodyThrows() async throws {
+    struct BodyError: Error {}
+    do {
+      try await device.withAFCConnection("com.apple.testservice", calls: Self.stubbedAFCCalls) { _ in
+        throw BodyError()
+      }
+      Issue.record("Expected the body's error to propagate")
+    } catch is BodyError {
+      // Expected.
+    }
+
+    await waitForDeviceEvents(afcConnectionEvents)
+    #expect((afcConnectionEvents) == (sAMDeviceEvents))
+  }
+
+  /// A connection AFC reports as invalid is rejected before the body runs, and the service
+  /// connection beneath it is invalidated either way.
+  ///
+  /// BUG: the rejected client is never closed. Flipped by the bugfix later in this stack.
+  @Test
+  func withAFCConnection_RejectsAConnectionThatIsNotValid() async throws {
+    var afcCalls = Self.stubbedAFCCalls
+    afcCalls.ConnectionIsValid = { _ in 0 }
+
+    await #expect(throws: FBAFCConnectionError.self) {
+      try await device.withAFCConnection("com.apple.testservice", calls: afcCalls) { _ in
+        Issue.record("Expected the invalid connection to be rejected before the body runs")
+      }
+    }
+
+    await waitForDeviceEvents(rejectedAFCConnectionEvents)
+    #expect((rejectedAFCConnectionEvents) == (sAMDeviceEvents))
   }
 
   /// Three consumers of one bundle's house arrest share a single connection, whether they overlap
