@@ -8,18 +8,14 @@
 import FBControlCore
 import Foundation
 
-/// A parsed accessibility read: the raw `XC_kAXXC*` attribute tree the guest returned, the pid that
-/// owns it, whether the guest's walk was cut short by the depth or node bound, and any fullscreen-modal
-/// descriptor the read surfaced. One value type for what both XCUI-grade backends produce from a raw
-/// read.
+/// A parsed axbridge read: the raw `XC_kAXXC*` tree, the owning pid, whether the guest's walk was
+/// truncated, and any fullscreen-modal descriptor.
 ///
 /// The serialize step (`FBAXTreeWalk.describeAllElements`) and the truncation warning happen
 /// once, in the shared `describeTree`, over this value — so a `.marker` poll that reads without
 /// describing does not re-run either.
 ///
-// SAFETY: immutable after init; `tree` is a parsed JSON/DTX value graph (Foundation value types),
-// never mutated after construction and read-only at the serialize site — safe to hand across the remote
-// backend's actor boundary. Mirrors the `@unchecked Sendable` convention used elsewhere in this module.
+// SAFETY: immutable after init; `tree` is a Foundation value graph never mutated after construction.
 // patternlint-disable-next-line unchecked-sendable
 struct FBAXTreeRead: @unchecked Sendable {
   let tree: [String: Any]
@@ -38,9 +34,6 @@ struct FBAXTreeRead: @unchecked Sendable {
 }
 
 /// Where a guest-backed read's time went, from both sides of the boundary.
-///
-/// `residual` is the round trip less the guest's walk. It lumps spawn or connect, the guest's bind,
-/// its JSON encoding and the IPC, undivided — neither side can split them.
 struct FBAXReadTimings: Equatable {
   /// Wall time of the whole transport call, host-side: request out, guest work, response back.
   let roundTrip: CFAbsoluteTime
@@ -91,11 +84,8 @@ extension FBAXTreeRead {
     return FBAccessibilityAutomationState(enabled: enabled, asserted: asserted)
   }
 
-  /// Parses a whole-tree read for `pid`: the tree, plus whether the guest's walk was cut short by the
-  /// depth or node bound (so the caller can warn the tree is incomplete). A tree read has no empty
-  /// result — an app always has a root element — so an empty response is a protocol violation rather
-  /// than "nothing there". `truncated` defaults to `false` when the guest omits it (an older guest, or
-  /// a complete walk).
+  /// An empty response is a protocol violation — an app always has a root element. `truncated`
+  /// defaults to `false` when the guest omits it.
   init(wholeTreeResponse data: Data, pid: pid_t) throws {
     let response = try Self.validatedResponse(fromResponse: data, pid: pid)
     guard let tree = try Self.node(fromValidatedResponse: response, pid: pid) else {
@@ -109,14 +99,9 @@ extension FBAXTreeRead {
     self.phases = Self.guestPhases(fromResponse: response)
   }
 
-  /// Parses a fused frontmost read (the guest resolved the frontmost app and read its tree in one
-  /// call): the tree, whether the walk was truncated, and the pid the guest resolved and read — the
-  /// host does not know that pid in advance, so it rides back in the envelope and tags the serialized
-  /// elements. An `ok:false` is classified by the guest's own failure kind, so a resolved app with no
-  /// accessibility server reads the same here as it does through `--pid` rather than becoming a generic
-  /// frontmost failure; a missing tree or pid on an `ok` response is a protocol violation
-  /// (`guestFailure`). `method` is the strategy the caller selected, named in the error when the
-  /// strategy itself is what could not answer.
+  /// The pid rides back in the envelope because the guest resolved it. `ok:false` is classified by the
+  /// guest's failure kind, so a resolved app with no accessibility server reads the same as via `--pid`;
+  /// `method` is named only when the strategy itself could not answer.
   init(frontmostResponse data: Data, method: FBAXBridgeFrontmostMethod) throws {
     guard let object = try? JSONSerialization.jsonObject(with: data), let response = object as? [String: Any] else {
       throw FBAXBridgeError.guestFailure("unparseable fused frontmost describe response")
@@ -142,11 +127,8 @@ extension FBAXTreeRead {
     self.phases = Self.guestPhases(fromResponse: response)
   }
 
-  /// Parses a system-wide hit-test read: the hit node and the owning pid of the element there (the host
-  /// does not know it in advance — the guest resolved which app owns the point), or `nil` when the
-  /// guest reports no element at the point (a valid empty result). A failure throws, classified by the
-  /// guest's kind, so a caller can tell empty space from an app that did not answer from a broken
-  /// reader. A hit is a single element, so it carries no truncation flag or modal.
+  /// `nil` when the guest reports no element at the point — a valid empty result. A failure throws,
+  /// classified by the guest's kind. A hit carries no truncation flag or modal.
   init?(hitTestResponse data: Data) throws {
     guard let object = try? JSONSerialization.jsonObject(with: data), let response = object as? [String: Any] else {
       throw FBAXBridgeError.guestFailure("unparseable hit-test response")
@@ -168,14 +150,8 @@ extension FBAXTreeRead {
     self.init(tree: node, pid: pid, truncated: false, modal: nil)
   }
 
-  /// Parses a write envelope (`perform` or `setvalue`), answering whether the write landed or found
-  /// nothing at the point, and throwing whatever the guest's failure kind says it was.
-  ///
-  /// A write returns no tree, so this reads the framing alone. `empty` is not a failure — it is the
-  /// point being unoccupied, which only the caller can say is wrong — so it comes back as a value and
-  /// each verb decides. It lives beside the read parsers to share `failure(fromResponse:)`: an
-  /// application that has gone, or is not answering, means the same thing whether the request read or
-  /// wrote, and classifying it twice is how the two would come to disagree.
+  /// Whether a `perform`/`setvalue` landed. `empty` is a value, not a failure: only the caller can say
+  /// an unoccupied point is wrong.
   static func writeLanded(fromResponse data: Data) throws -> Bool {
     guard let object = try? JSONSerialization.jsonObject(with: data), let response = object as? [String: Any] else {
       throw FBAXBridgeError.guestFailure("unparseable write response")
@@ -211,29 +187,17 @@ extension FBAXTreeRead {
     return response
   }
 
-  /// The typed error a failed guest response means, from the kind the guest tagged it with.
-  ///
-  /// One function for all three parsers, because a failure means the same thing whichever verb met it —
-  /// an application with no accessibility server is that whether it was named by `--pid`, resolved as
-  /// frontmost, or found under a point. Classifying per parser is what let the fused frontmost path
-  /// answer differently from the others for identical conditions.
-  ///
-  /// An unrecognized kind, or none, is a `guestFailure` carrying the guest's own message — so a guest
-  /// that gains a kind ahead of the host it is talking to degrades to today's behaviour rather than
-  /// failing to parse.
-  ///
-  /// `pid` is the process the caller named, used when the guest did not report one; `frontmostMethod` is
-  /// non-nil only for a fused frontmost read, where a failure of the strategy itself is expressible.
+  /// The typed error a failed guest response means, from the kind the guest tagged it with. An
+  /// unrecognized or absent kind is a `guestFailure` carrying the guest's message, so a newer guest
+  /// degrades rather than failing to parse. `pid` is the process the caller named, used when the guest
+  /// did not report one; `frontmostMethod` is non-nil only for a fused frontmost read.
   private static func failure(
     fromResponse response: [String: Any],
     pid: pid_t?,
     frontmostMethod: FBAXBridgeFrontmostMethod?
   ) -> FBAXBridgeError {
     let message = (response[FBAXWire.Envelope.error.rawValue] as? String) ?? "the guest reported a failure with no message"
-    // The guest names the process a tagged failure is about when it knows it, which for a frontmost or
-    // display-wide read is the only place that pid can come from. `exactly:` because this is JSON off the
-    // wire: the non-failable conversion traps on a value too large for a `pid_t`, which would turn a
-    // malformed response into a host crash — the one thing this classifier exists to avoid.
+    // `exactly:` so a pid too large for `pid_t` is a rejected response, not a trap.
     let reportedPid = (response[FBAXWire.Envelope.pid.rawValue] as? Int).flatMap(pid_t.init(exactly:)) ?? pid
     let rawKind = response[FBAXWire.Envelope.errorKind.rawValue] as? String
     switch rawKind.flatMap(FBAXWire.ErrorKind.init(rawValue:)) {
