@@ -87,14 +87,9 @@ final class FBAXBridgeConnection: @unchecked Sendable {
             continuation.resume(returning: fileDescriptor)
             return
           }
-          // A guest known to have exited will not bind, but the socket need not be its to bind: the
-          // shared per-UDID path can be served by another host's guest, and ours dying says nothing
-          // about theirs. One more attempt distinguishes the two, and costs a syscall on a path that
-          // is about to fail anyway.
-          //
-          // `.done` rather than `hasCompleted`, which is also true of a cancelled or failed future.
-          // Neither is evidence that the process terminated, and waiting out the deadline beats
-          // failing a guest that is still alive.
+          // Our guest exiting does not mean the socket is unbound: the shared per-UDID path may be served by
+          // another host's guest, so try once more before failing. `.done` rather than `hasCompleted`: a
+          // cancelled or failed future is not evidence the process terminated.
           if let guest, guest.statLoc.state == .done {
             if let fileDescriptor = attemptConnection(toPath: path) {
               continuation.resume(returning: fileDescriptor)
