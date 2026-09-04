@@ -47,14 +47,10 @@ struct FBCollectionInformationTests {
     #expect((FBCollectionInformation.oneLineDescription(from: elements, atKeyPath: "@count")) == ("[alpha, bet]"))
   }
 
-  /// BUG: it does not describe one, it kills the process. The elements are resolved through
-  /// `-[NSArray valueForKeyPath:]`, and a class with no Objective-C root has no key-value coding to
-  /// answer that with, so the runtime aborts rather than raising something catchable. Flipped in
-  /// the following commit.
+  /// A class with no Objective-C root has no key-value coding, so describing one is only possible
+  /// without going through it.
   @Test
-  func oneLineDescription_DescribesAClassWithNoObjectiveCRoot() async {
-    await #expect(processExitsWith: .signal(SIGABRT)) {
-      _ = FBCollectionInformation.oneLineDescription(from: [SwiftRootClass()])
-    }
+  func oneLineDescription_DescribesAClassWithNoObjectiveCRoot() {
+    #expect((FBCollectionInformation.oneLineDescription(from: [SwiftRootClass()])) == ("[a swift root class]"))
   }
 }
