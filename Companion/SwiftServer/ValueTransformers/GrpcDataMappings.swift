@@ -8,8 +8,6 @@
 import Foundation
 import IDBGRPCSwift
 
-// Convenient extractions of items from certain requests
-
 protocol DataExtractable {
   func extractDataFrame() -> Data?
 }
