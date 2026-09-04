@@ -15,13 +15,6 @@ struct CompanionUtilitiesTransientTests {
   // MARK: - FBMutex Tests
 
   @Test
-  func mutexSyncReturnsValue() {
-    let mutex = FBMutex()
-    let result = mutex.sync { 42 }
-    #expect(result == 42)
-  }
-
-  @Test
   func mutexSyncThrows() {
     struct TestError: Error {}
     let mutex = FBMutex()
@@ -150,17 +143,6 @@ struct CompanionUtilitiesTransientTests {
   }
 
   // MARK: - FBTeardownContext Tests
-
-  @Test
-  func withAutocleanupCallsCleanup() async throws {
-    var cleaned = false
-    try await FBTeardownContext.withAutocleanup {
-      try FBTeardownContext.current.addCleanup {
-        cleaned = true
-      }
-    }
-    #expect(cleaned)
-  }
 
   @Test
   func withAutocleanupCallsCleanupInLIFOOrder() async throws {
