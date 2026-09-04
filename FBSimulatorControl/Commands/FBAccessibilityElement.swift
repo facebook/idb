@@ -23,11 +23,9 @@ final class FBAccessibilityElement {
   private weak var simulator: FBSimulator?
   private var closed: Bool = false
 
-  /// The frame of the root this element was found under, for an element reached by descending a tree.
-  ///
-  /// The serializer takes a read's screen bounds from the element it is handed, and for a descendant
-  /// that is the descendant's own frame — so the root's frame is captured at the descent and carried
-  /// here. `nil` for an element read directly.
+  /// The frame of the root this element was found under; `nil` for an element read directly. The
+  /// serializer takes screen bounds from the element it is handed, so a descendant needs its root's
+  /// frame carried in.
   let rootBounds: CGRect?
 
   init(
@@ -66,9 +64,7 @@ final class FBAccessibilityElement {
     if closed {
       throw FBAccessibilityError.closedElement(operation: "serialize")
     }
-    // Wire the per-request logger from the option so the dispatcher's XPC
-    // callbacks (which capture `request.logger`) actually emit request/response
-    // logging during the serialization walk.
+    // The dispatcher's XPC callbacks read `request.logger`.
     request.logger = options.enableLogging ? simulator?.logger : nil
     let request = self.request
     let element = self.element
@@ -160,9 +156,6 @@ final class FBAccessibilityElement {
   /// transferred to a new handle wrapping the found element, and the receiver is
   /// closed without popping. If not found, the receiver is closed and an error
   /// is thrown.
-  ///
-  /// `ignoresCase` is off by default, which is what every write resolves with; it is the read path
-  /// that offers it, and this walk is the one the default backend serves `describe MARKER` from.
   func findElement(
     withValue value: String, forKey key: FBAXSearchableKey, depth: UInt, ignoresCase: Bool = false
   ) async throws -> FBAccessibilityElement {
@@ -251,9 +244,7 @@ final class FBAccessibilityElement {
     return nil
   }
 
-  /// The same substring test `FBAccessibilityMatch` and the serialized-tree walk apply, so a marker
-  /// resolves to the same element whichever backend serves the read. An empty marker keeps its
-  /// historical meaning — every value contains it — rather than becoming a match that never succeeds.
+  /// The same substring test as `FBAccessibilityMatch`; an empty marker matches every value.
   private static func contains(_ value: String, in candidate: String, ignoringCase: Bool) -> Bool {
     guard let match = FBAccessibilityMatch(value: value, ignoresCase: ignoringCase) else {
       return true
