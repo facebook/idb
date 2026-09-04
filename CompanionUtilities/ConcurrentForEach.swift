@@ -14,14 +14,8 @@ extension Sequence where Element: Sendable {
   /// every operation has finished. If one or more threw, the first observed
   /// error is rethrown — additional errors are dropped.
   ///
-  /// Mirrors the semantics of legacy `FBFuture.combine`: best-effort completion
-  /// with aggregate failure reporting via the first error.
-  ///
-  /// The closure is intentionally not marked `@Sendable` so that callers
-  /// migrating off `FBFuture` chains can continue to capture non-`Sendable`
-  /// references (`any FBiOSTarget`, command class instances). Callers are
-  /// responsible for ensuring the closure body does not race on captured
-  /// mutable state.
+  /// Deliberately not `@Sendable`, so callers can capture non-`Sendable` references; the closure body
+  /// must not race on captured mutable state.
   public func concurrentForEachThrowingFirstError(
     _ operation: @escaping (Element) async throws -> Void
   ) async throws {
