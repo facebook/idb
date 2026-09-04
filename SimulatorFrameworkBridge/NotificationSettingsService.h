@@ -9,15 +9,17 @@
 
 /**
  * Modifies notification permissions for apps via the BulletinBoard XPC service.
- * Uses BBSettingsGateway to update BBSectionInfo at runtime, avoiding
- * the need to restart SpringBoard.
+ * Approval sets authorization to authorized, while revocation resets an existing
+ * authorization decision to not determined. Updates happen at runtime without
+ * restarting SpringBoard.
  *
  * Usage:
  *   handleNotificationSettingsAction(@"approve", @"com.example.app")
  *   handleNotificationSettingsAction(@"revoke", @"com.example.app")
  *   handleNotificationSettingsAction(@"check", @"com.example.app")
  *
- * @param action "approve", "revoke", or "check"
+ * @param action "approve", "revoke", or "check". "revoke" resets authorization
+ *               to not determined.
  * @param bundleID the application bundle identifier
  * @return 0 on success, 1 on failure
  */

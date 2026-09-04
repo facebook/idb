@@ -5,42 +5,133 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#import <dlfcn.h>
+
 #import <XCTest/XCTest.h>
 
+#import <SimulatorFrameworkBridgeLib/BulletinBoardPrivate.h>
 #import <SimulatorFrameworkBridgeLib/NotificationSettingsService.h>
 
+extern int handleNotificationSettingsActionWithGateway(NSString *action, NSString *bundleID, id gateway);
+
+@interface FakeNotificationSettingsGateway : NSObject
+
+@property (nonatomic, strong) NSMutableDictionary<NSString *, BBSectionInfo *> *sections;
+
+@end
+
+@implementation FakeNotificationSettingsGateway
+
+- (instancetype)init
+{
+  self = [super init];
+  if (self) {
+    _sections = [NSMutableDictionary dictionary];
+  }
+  return self;
+}
+
+- (BBSectionInfo *)sectionInfoForSectionID:(NSString *)sectionID
+{
+  return self.sections[sectionID];
+}
+
+- (void)setSectionInfo:(BBSectionInfo *)sectionInfo forSectionID:(NSString *)sectionID
+{
+  self.sections[sectionID] = sectionInfo;
+}
+
+- (NSArray<NSString *> *)allSectionIDs
+{
+  return self.sections.allKeys;
+}
+
+@end
+
 @interface NotificationSettingsServiceTests : XCTestCase
+
+@property (nonatomic, strong) FakeNotificationSettingsGateway *gateway;
+
 @end
 
 @implementation NotificationSettingsServiceTests
 
-// BulletinBoard is present in the simulator, so every action reaches a real BBSettingsGateway.
-// `approve` on an unknown section ID is still a success: the service creates a default section
-// info rather than requiring the app to have launched and asked for authorization first.
-
-- (void)testApproveSucceeds
+- (void)setUp
 {
-  XCTAssertEqual(handleNotificationSettingsAction(@"approve", @"com.example.test"), 0);
+  [super setUp];
+  XCTAssertNotEqual(dlopen("/System/Library/PrivateFrameworks/BulletinBoard.framework/BulletinBoard", RTLD_NOW), NULL);
+  self.gateway = [FakeNotificationSettingsGateway new];
 }
 
-- (void)testRevokeSucceeds
+- (void)testApproveSetsAuthorizedState
 {
-  XCTAssertEqual(handleNotificationSettingsAction(@"revoke", @"com.example.test"), 0);
+  NSString *bundleID = @"com.example.test.approve";
+
+  XCTAssertEqual(handleNotificationSettingsActionWithGateway(@"approve", bundleID, self.gateway), 0);
+
+  BBSectionInfo *sectionInfo = [self.gateway sectionInfoForSectionID:bundleID];
+  XCTAssertNotNil(sectionInfo);
+  XCTAssertTrue(sectionInfo.allowsNotifications);
+  XCTAssertEqual(sectionInfo.authorizationStatus, 2);
+}
+
+- (void)testRevokeResetsExistingSection
+{
+  NSString *bundleID = @"com.example.test.revoke";
+  XCTAssertEqual(handleNotificationSettingsActionWithGateway(@"approve", bundleID, self.gateway), 0);
+
+  XCTAssertEqual(handleNotificationSettingsActionWithGateway(@"revoke", bundleID, self.gateway), 0);
+
+  BBSectionInfo *sectionInfo = [self.gateway sectionInfoForSectionID:bundleID];
+  XCTAssertNotNil(sectionInfo);
+  XCTAssertFalse(sectionInfo.allowsNotifications);
+  XCTAssertEqual(sectionInfo.authorizationStatus, 0);
+}
+
+- (void)testRevokeResetsDeniedSection
+{
+  NSString *bundleID = @"com.example.test.revoke.denied";
+  XCTAssertEqual(handleNotificationSettingsActionWithGateway(@"approve", bundleID, self.gateway), 0);
+
+  BBSectionInfo *sectionInfo = [self.gateway sectionInfoForSectionID:bundleID];
+  sectionInfo.allowsNotifications = NO;
+  sectionInfo.authorizationStatus = 1;
+  [self.gateway setSectionInfo:sectionInfo forSectionID:bundleID];
+
+  XCTAssertEqual(handleNotificationSettingsActionWithGateway(@"revoke", bundleID, self.gateway), 0);
+
+  sectionInfo = [self.gateway sectionInfoForSectionID:bundleID];
+  XCTAssertNotNil(sectionInfo);
+  XCTAssertFalse(sectionInfo.allowsNotifications);
+  XCTAssertEqual(sectionInfo.authorizationStatus, 0);
+}
+
+- (void)testRevokeWithoutAnExistingSectionSucceeds
+{
+  NSString *bundleID = [@"com.example.test." stringByAppendingString:NSUUID.UUID.UUIDString];
+
+  XCTAssertEqual(handleNotificationSettingsActionWithGateway(@"revoke", bundleID, self.gateway), 0);
+  XCTAssertNil([self.gateway sectionInfoForSectionID:bundleID]);
+}
+
+- (void)testRevokeWithoutABundleIDReturnsFailure
+{
+  XCTAssertEqual(handleNotificationSettingsActionWithGateway(@"revoke", nil, self.gateway), 1);
 }
 
 - (void)testCheckSucceeds
 {
-  XCTAssertEqual(handleNotificationSettingsAction(@"check", @"com.example.test"), 0);
+  XCTAssertEqual(handleNotificationSettingsActionWithGateway(@"check", @"com.example.test", self.gateway), 0);
 }
 
 - (void)testListWithoutABundleIDSucceeds
 {
-  XCTAssertEqual(handleNotificationSettingsAction(@"list", nil), 0);
+  XCTAssertEqual(handleNotificationSettingsActionWithGateway(@"list", nil, self.gateway), 0);
 }
 
 - (void)testUnknownActionReturnsFailure
 {
-  XCTAssertEqual(handleNotificationSettingsAction(@"unknown", @"com.example.test"), 1);
+  XCTAssertEqual(handleNotificationSettingsActionWithGateway(@"unknown", @"com.example.test", self.gateway), 1);
 }
 
 @end

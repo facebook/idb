@@ -12,8 +12,22 @@
 #import "BulletinBoardPrivate.h"
 
 // UNAuthorizationStatus values
-static const NSUInteger UNAuthorizationStatusDenied = 1;
+static const NSUInteger UNAuthorizationStatusNotDetermined = 0;
 static const NSUInteger UNAuthorizationStatusAuthorized = 2;
+
+@protocol NotificationSettingsGateway <NSObject>
+
+- (BBSectionInfo *)sectionInfoForSectionID:(NSString *)sectionID;
+- (void)setSectionInfo:(BBSectionInfo *)sectionInfo forSectionID:(NSString *)sectionID;
+- (NSArray<NSString *> *)allSectionIDs;
+
+@end
+
+int handleNotificationSettingsActionWithGateway(
+  NSString *action,
+  NSString *bundleID,
+  id<NotificationSettingsGateway> gateway
+);
 
 static BBSettingsGateway *loadGateway(void)
 {
@@ -49,7 +63,14 @@ int handleNotificationSettingsAction(NSString *action, NSString *bundleID)
   if (!gateway) {
     return 1;
   }
+  return handleNotificationSettingsActionWithGateway(action, bundleID, (id<NotificationSettingsGateway>)gateway);
+}
 
+int handleNotificationSettingsActionWithGateway(NSString *action,
+                                                NSString *bundleID,
+                                                id<NotificationSettingsGateway> gateway
+)
+{
   if ([action isEqualToString:@"check"] || [action isEqualToString:@"list"]) {
     if (bundleID) {
       printSectionJSON(bundleID, [gateway sectionInfoForSectionID:bundleID]);
@@ -87,7 +108,7 @@ int handleNotificationSettingsAction(NSString *action, NSString *bundleID)
       return 0;
     }
     [sectionInfo setAllowsNotifications:NO];
-    [sectionInfo setAuthorizationStatus:UNAuthorizationStatusDenied];
+    [sectionInfo setAuthorizationStatus:UNAuthorizationStatusNotDetermined];
   } else {
     NSLog(@"[NotificationSettings] Unknown action: %@. Use approve, revoke, or check.", action);
     return 1;
