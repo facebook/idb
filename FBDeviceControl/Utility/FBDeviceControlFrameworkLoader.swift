@@ -13,9 +13,6 @@ import Foundation
 /// The optional variant is used so a name that does not resolve is reported as an error naming it.
 /// `FBGetSymbolFromHandle` asserts instead, which is compiled out of release builds and leaves a
 /// null pointer in the table to be crashed through later.
-///
-/// The cast is explicit because Objective-C converted the raw address implicitly on assignment;
-/// Swift needs it spelled out, and the destination type supplies it.
 private func symbol<T>(_ handle: UnsafeMutableRawPointer, _ name: String) throws -> T {
   guard let address = FBGetSymbolFromHandleOptional(handle, name) else {
     throw FBDeviceControlFrameworkLoaderError.symbolNotFound(name: name)
@@ -60,9 +57,7 @@ public final class FBDeviceControlFrameworkLoader: FBControlCoreFrameworkLoader 
 
   private var resolvedCalls: AMDCalls?
 
-  /// Built in one expression rather than zeroed and filled: every member is a non-optional function
-  /// pointer, so there is no partially-populated state to represent, and a symbol added to the
-  /// table without being looked up here will not compile.
+  /// Memberwise, so a symbol added to `AMDCalls` without being resolved here fails to compile.
   private static func resolveAMDeviceCalls() throws -> AMDCalls {
     guard let handle = Bundle(identifier: "com.apple.mobiledevice")?.dlopenExecutablePath() else {
       throw FBDeviceControlFrameworkLoaderError.mobileDeviceUnavailable
