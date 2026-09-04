@@ -21,8 +21,7 @@ enum StreamReadError<Element>: Error, GRPCStatusTransformable {
 
 extension AsyncSequence {
 
-  /// We have quite a lot of grpc request streams where we read request N constant number of times and do not need foreach loop. But pure next produces optinal by design.
-  /// This small tweak just saves us from lots of boilerplate of unwrapping the optionals everywhere
+  /// The next element, throwing `failedPrecondition` instead of returning nil when the stream has ended.
   var requiredNext: Element {
     get async throws {
       guard let next = try await first(where: { _ in true }) else {
