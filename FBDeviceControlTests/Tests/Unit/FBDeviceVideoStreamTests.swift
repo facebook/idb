@@ -12,10 +12,8 @@ import FBControlCore
 @testable import FBDeviceControl
 import Testing
 
-/// Behavior-lock coverage for the device video stream's format dispatch and per-format frame writing.
-/// The capture-session/AVFoundation plumbing (`stream(withSession:...)`, `configureVideoOutput`) is
-/// exercised by hardware-gated integration paths; these unit tests cover the format → subclass
-/// mapping and each subclass's `consumeSampleBuffer` byte contract by feeding synthesized buffers.
+/// Format → subclass dispatch and each subclass's `consumeSampleBuffer` byte contract. The
+/// AVFoundation capture plumbing needs hardware and is not covered here.
 @Suite
 struct FBDeviceVideoStreamTests {
 
@@ -59,7 +57,7 @@ struct FBDeviceVideoStreamTests {
 
   @Test
   func classForConfigurationRejectsHEVC() {
-    // HEVC is not yet supported on the device path (added later in the overhaul).
+    // HEVC is not supported on the device path.
     #expect((FBDeviceVideoStream.classForConfiguration(configuration(.compressedVideo(withCodec: .hevc, transport: .annexB)))) == nil)
     #expect((FBDeviceVideoStream.classForConfiguration(configuration(.compressedVideo(withCodec: .hevc, transport: .mpegts)))) == nil)
   }
@@ -143,7 +141,6 @@ struct FBDeviceVideoStreamTests {
   @Test
   func consumeWithoutConsumerDoesNotCrash() throws {
     let stream = try makeStream(for: .bgra, consumer: nil)
-    // No consumer attached; consuming a frame should be a no-op rather than a crash.
     stream.consumeSampleBuffer(makeBGRASampleBuffer(width: 4, height: 4, fill: 0x00))
   }
 }
