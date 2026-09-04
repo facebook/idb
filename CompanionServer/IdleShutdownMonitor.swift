@@ -49,7 +49,7 @@ final class IdleShutdownMonitor: @unchecked Sendable {
     guard let timer, !finished else { return }
     inFlight += 1
     if inFlight == 1 {
-      timer.schedule(deadline: .distantFuture) // pause while work is in flight
+      timer.schedule(deadline: .distantFuture)
     }
   }
 
