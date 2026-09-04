@@ -17,7 +17,7 @@ private let DeviceClassOSPrefixes = [
 ]
 
 /// An Object Wrapper around AMDeviceRef.
-public final class FBAMDevice: NSObject, FBiOSTargetInfo, FBDeviceCommands {
+public final class FBAMDevice: FBiOSTargetInfo, FBDeviceCommands, CustomStringConvertible {
 
   // MARK: - Properties
 
@@ -89,7 +89,6 @@ public final class FBAMDevice: NSObject, FBiOSTargetInfo, FBDeviceCommands {
     // The udid is read from `allValues`, so the named logger can only be built after it is set.
     let udid = allValues[FBDeviceKey.uniqueDeviceID.rawValue] as? String ?? UnknownValue
     self.logger = logger.withName(udid)
-    super.init()
     // The un-named logger: only this object's own logger is decorated with the udid.
     self.sessionStorage = FBAMDeviceSession(
       device: self, reuseTimeout: connectionReuseTimeout?.doubleValue, logger: logger)
@@ -205,14 +204,9 @@ public final class FBAMDevice: NSObject, FBiOSTargetInfo, FBDeviceCommands {
     }
   }
 
-  // MARK: - NSObject
+  // MARK: - CustomStringConvertible
 
-  @objc(device:valueForKey:)
-  public func device(_ device: AMDevice, valueForKey key: String) -> Any? {
-    calls.CopyValue(device, nil, key as CFString)?.takeRetainedValue()
-  }
-
-  public override var description: String {
+  public var description: String {
     "AMDevice \(udid) | \(name)"
   }
 
