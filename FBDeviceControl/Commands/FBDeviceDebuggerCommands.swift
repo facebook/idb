@@ -22,7 +22,7 @@ Much of the implementation here comes from:
   - To trace stacks of all API calls: `sudo dtrace -n 'objc$target:LLDBRPCDebugger:*:entry { ustack(); }'  -p XCODE_PID`
  - It is also possible to use lldb's internal logging to see the API calls that it is making. This is done by configuring lldb via adding a line in ~/.lldbinit (e.g `log enable -v -f /tmp/lldb.log lldb api`)
  */
-/// The ways debug-server setup can fail, as data rather than assembled strings.
+
 public enum FBDeviceDebuggerError: Error {
   case unsupportedOSVersion(version: String)
 }
@@ -68,7 +68,6 @@ public final class FBDeviceDebuggerCommands {
       .onQueue(
         device.workQueue,
         pushTeardown: { diskImage -> FBFutureContext<AnyObject> in
-          // Xcode 12 and after uses a different service name for the debugserver.
           let serviceName =
             diskImage.xcodeVersion.majorVersion >= 12
             ? "com.apple.debugserver.DVTSecureSocketProxy"
