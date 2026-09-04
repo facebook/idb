@@ -83,8 +83,6 @@ struct ReplMethodHandler {
     defer { try? FileManager.default.removeItem(at: artifactsDirectory) }
     let hostState = ReplHostCommandState(stagingDirectory: artifactsDirectory, containerRelativeBase: artifactsContainerBase)
 
-    // Connect to the control socket. It appears once the launched process binds
-    // it, so retry for a while.
     let client = try await ReplSocketClient.connect(path: session.socketPath, timeout: 120)
     defer { client.close() }
 
