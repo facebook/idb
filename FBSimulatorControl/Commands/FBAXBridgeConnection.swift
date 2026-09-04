@@ -68,7 +68,14 @@ final class FBAXBridgeConnection: @unchecked Sendable {
     }
   }
 
-  static func connect(path: String, timeout: TimeInterval) async throws -> Int32 {
+  /// Connects to `path`, retrying until `timeout` elapses.
+  ///
+  /// `guest` is the process expected to bind `path`, passed only when this host spawned it.
+  static func connect(
+    path: String,
+    timeout: TimeInterval,
+    guest: FBSubprocess<AnyObject, AnyObject, AnyObject>? = nil
+  ) async throws -> Int32 {
     guard path.utf8.count < sunPathCapacity else {
       throw FBAXBridgeError.socketPathTooLong(path: path, limit: sunPathCapacity)
     }

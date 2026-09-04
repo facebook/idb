@@ -207,7 +207,7 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
     )
     let process = try await simulator.launchProcess(configuration)
     do {
-      let fileDescriptor = try await FBAXBridgeConnection.connect(path: socketPath, timeout: 10)
+      let fileDescriptor = try await FBAXBridgeConnection.connect(path: socketPath, timeout: 10, guest: process)
       return FBAXBridgeConnection(fileDescriptor: fileDescriptor, ownership: ownership(process))
     } catch {
       simulator.logger.log(
