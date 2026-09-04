@@ -65,7 +65,6 @@ struct ReplSourceMetadataTests {
 
   @Test
   func delimitersInsideLineCommentsAreIgnored() {
-    // The semicolons live in the comment, so they do not start new lines.
     #expect(significantLines("// a; b; c") == 0)
     #expect(significantLines("let x = 1 // a; b; c") == 1)
   }
@@ -91,9 +90,7 @@ struct ReplSourceMetadataTests {
 
   @Test
   func delimitersInsideStringLiteralsAreIgnored() {
-    // Semicolons inside the string are content, not statement separators.
     #expect(significantLines(#"log("a; b; c")"#) == 1)
-    // A semicolon after the closing quote is a real separator.
     #expect(significantLines(#"let x = "hi"; let y = 2"#) == 2)
   }
 
@@ -105,14 +102,12 @@ struct ReplSourceMetadataTests {
 
   @Test
   func multilineStringLiteralCountsAsOneLine() {
-    // The newlines and semicolon inside the multiline literal are content.
     let code = "let x = \"\"\"\nalpha; beta\ngamma\n\"\"\""
     #expect(significantLines(code) == 1)
   }
 
   @Test
   func rawStringDelimitersAreIgnored() {
-    // The `;` inside the raw string is content; the one after it separates.
     #expect(significantLines(##"let x = #"a; b"#; foo()"##) == 2)
   }
 
