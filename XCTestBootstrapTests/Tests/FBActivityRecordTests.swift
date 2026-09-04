@@ -8,24 +8,11 @@
 import XCTest
 import XCTestBootstrap
 
-/// Tests for `FBActivityRecord`, the Swift-/Objective-C-bridged wrapper that
-/// snapshots a private `XCActivityRecord` from XCTest's runner-IDE protocol.
-///
-/// `XCActivityRecord` is declared in `XCTestPrivate`; it cannot be imported
-/// from a Swift test that also imports `XCTest` (the two modules give
-/// conflicting definitions of `XCTAttachment`/`XCTIssue`), and Swift marks the
-/// forward-declared `XCActivityRecord` class as unavailable. We therefore
-/// construct the input via the Objective-C runtime (`NSClassFromString` +
-/// KVC) and invoke `+[FBActivityRecord from:]` through `class_getClassMethod`
-/// so the test source never has to name the private type.
+/// `XCActivityRecord` lives in `XCTestPrivate`, which cannot be imported alongside `XCTest` (both define `XCTAttachment`/`XCTIssue`), so the input record is built and `+[FBActivityRecord from:]` is invoked through the Objective-C runtime.
 final class FBActivityRecordTests: XCTestCase {
 
   // MARK: - Helpers
 
-  /// Builds an `XCActivityRecord` via the Objective-C runtime, configured with
-  /// the given field values. The synthesized fields are set with KVC; the
-  /// readonly `attachments` array is populated through the `addAttachment:`
-  /// selector since the class isn't KVC-compliant for that key.
   private func makeXCActivityRecord(
     title: String = "Activity Title",
     activityType: String = "com.apple.dt.xctest.activity-type.userCreated",
@@ -43,9 +30,7 @@ final class FBActivityRecordTests: XCTestCase {
     record.setValue(uuid, forKey: "uuid")
     record.setValue(start, forKey: "start")
     record.setValue(finish, forKey: "finish")
-    // `attachments` is readonly and the class isn't KVC-compliant for it, so
-    // populate the backing array through the public `addAttachment:` selector
-    // dispatched via the Objective-C runtime.
+    // Not KVC-compliant for the readonly `attachments` key; go through `addAttachment:`.
     let addAttachment = NSSelectorFromString("addAttachment:")
     for attachment in attachments {
       record.perform(addAttachment, with: attachment)
@@ -53,10 +38,6 @@ final class FBActivityRecordTests: XCTestCase {
     return record
   }
 
-  /// Invokes `+[FBActivityRecord from:]` through the Objective-C runtime so
-  /// we don't have to name the unavailable `XCActivityRecord` type at the Swift
-  /// call site. The implementation pointer is invoked with the standard
-  /// `(self, _cmd, arg)` calling convention.
   private func wrapActivity(_ record: NSObject) -> FBActivityRecord {
     let selector = NSSelectorFromString("from:")
     guard let method = class_getClassMethod(FBActivityRecord.self, selector) else {
@@ -101,8 +82,6 @@ final class FBActivityRecordTests: XCTestCase {
     let fb = wrapActivity(record)
 
     XCTAssertEqual(fb.subactivities.count, 0, "Subactivities must start empty; from(_:) does not recursively wrap the source's nested records.")
-    // `subactivities` is declared as NSMutableArray<FBActivityRecord *> *; the
-    // wrapper must hand back a real mutable array so callers can append.
     fb.subactivities.add(fb)
     XCTAssertEqual(fb.subactivities.count, 1, "from(_:) must seed subactivities with a mutable container, not an immutable copy.")
   }
