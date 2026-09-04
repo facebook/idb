@@ -502,6 +502,12 @@ final class FBAXBridgeReadsTests: XCTestCase {
       "readerUnavailable is not transient; the wait must end immediately"
     )
     XCTAssertFalse(FBAXBridgeError.bridgeUnavailable.isTransientDuringMarkerWait)
+    // Polling through this one re-spawns a guest that cannot start, once per poll interval, and still
+    // ends in a timeout that has thrown away the signal it already had.
+    XCTAssertFalse(
+      FBAXBridgeError.guestDiedBeforeBinding(pid: 4242, signal: 6, exitCode: nil, path: "/x/y.sock")
+        .isTransientDuringMarkerWait
+    )
   }
 
   // MARK: - Marker matching agrees with the accessibility backend

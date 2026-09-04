@@ -42,6 +42,12 @@ public enum FBAXBridgeError: LocalizedError, Sendable {
   /// The socket path is longer than `sockaddr_un.sun_path` can hold, so no guest can ever be reached at
   /// it. Its own case because it is the one connect failure that waiting cannot fix.
   case socketPathTooLong(path: String, limit: Int)
+  /// The guest this host spawned terminated before binding its serve socket. Its own case rather than a
+  /// `guestFailure` because it is a spawn failure, not a read failure: the process is already gone, so
+  /// polling for it cannot succeed and a wait must end on it rather than swallow it. Carries the exit
+  /// as data, because how the guest died is the diagnosis — a signal before `main` means it could not
+  /// load at all.
+  case guestDiedBeforeBinding(pid: pid_t, signal: Int?, exitCode: Int?, path: String)
   /// The guest binary exited non-zero, produced unparseable output, or reported a failure with nothing
   /// further to say about it. Also where a failure kind this host does not recognize lands.
   case guestFailure(String)
@@ -62,9 +68,24 @@ public enum FBAXBridgeError: LocalizedError, Sendable {
       return "The axbridge guest refused the write: \(message)"
     case let .socketPathTooLong(path, limit):
       return "The axbridge serve socket path is \(path.utf8.count) bytes, over the \(limit)-byte sockaddr_un limit, so no guest can be reached at it: \(path)"
+    case let .guestDiedBeforeBinding(pid, signal, exitCode, path):
+      return "The axbridge guest (pid \(pid)) \(Self.exitPhrase(signal: signal, exitCode: exitCode)) before binding its serve socket at \(path)"
     case let .guestFailure(message):
       return "The axbridge guest reader failed: \(message)"
     }
+  }
+
+  /// A clause, not a sentence: the caller has already named the process it is about.
+  ///
+  /// Signal zero is not a signal, matching `FBAXBridgeConnection.socketClosedMessage`.
+  private static func exitPhrase(signal: Int?, exitCode: Int?) -> String {
+    if let signal, signal != 0 {
+      return "was killed by signal \(signal)"
+    }
+    if let exitCode {
+      return "exited with code \(exitCode)"
+    }
+    return "is gone, with no exit status recorded"
   }
 
   /// How a message refers to the process it is about. A display-wide read resolved nothing, so there is
@@ -101,8 +122,10 @@ extension FBAXBridgeError {
     // Nothing about the target makes a reader that cannot bind bind, so both of these are the same on
     // the last poll as on the first. A refused write cannot arise here at all — a poll only reads — and
     // waiting would not make one land, so it is not something to poll through either. A path too long
-    // to address is the same on every poll for the same reason: it is arithmetic, not timing.
-    case .bridgeUnavailable, .readerUnavailable, .assertionFailed, .socketPathTooLong:
+    // to address is the same on every poll for the same reason: it is arithmetic, not timing. A guest
+    // that died on spawn is the same again, and polling through it would re-spawn a guest that cannot
+    // start on every iteration.
+    case .bridgeUnavailable, .readerUnavailable, .assertionFailed, .socketPathTooLong, .guestDiedBeforeBinding:
       return false
     }
   }

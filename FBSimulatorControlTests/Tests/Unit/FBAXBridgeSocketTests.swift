@@ -219,29 +219,34 @@ final class FBAXBridgeSocketTests: XCTestCase {
     close(connected)
   }
 
-  // BUG: the connect loop never looks at the guest, so one that is already gone costs the caller the
-  // entire deadline instead of failing at the first poll — flipped in the following commit.
-  func testAGuestThatDiedBeforeBindingCostsTheWholeDeadline() async throws {
+  // A guest that is already gone must cost the caller a poll, not the whole deadline.
+  func testAGuestThatDiedBeforeBindingIsGivenUpOnWithoutWaiting() async throws {
     let unbound = "\(directory)/dead.sock"
     let guest = exitedGuest(pid: 4242, signal: SIGABRT)
     let started = Date()
     _ = try? await FBAXBridgeConnection.connect(path: unbound, timeout: 2, guest: guest)
-    XCTAssertGreaterThan(Date().timeIntervalSince(started), 1.5)
+    XCTAssertLessThan(Date().timeIntervalSince(started), 1)
   }
 
-  // BUG: the failure reads as a timeout and says nothing about the guest having been signalled, even
-  // though the signal that killed it is known by then — flipped in the following commit.
-  func testAGuestThatDiedBeforeBindingIsReportedAsATimeout() async throws {
+  // The signal that killed the guest is known by the time the connect gives up, so the failure must
+  // name it rather than read as a timeout.
+  func testAGuestThatDiedBeforeBindingIsReportedWithItsSignal() async throws {
     let unbound = "\(directory)/dead.sock"
     let guest = exitedGuest(pid: 4242, signal: SIGABRT)
     do {
       _ = try await FBAXBridgeConnection.connect(path: unbound, timeout: 1, guest: guest)
       XCTFail("connecting to a socket no guest will ever bind must not succeed")
-    } catch {
+    } catch let error as FBAXBridgeError {
+      guard case let .guestDiedBeforeBinding(pid, signal, exitCode, _) = error else {
+        return XCTFail("expected guestDiedBeforeBinding, got \(error)")
+      }
+      XCTAssertEqual(pid, 4242)
+      XCTAssertEqual(signal, Int(SIGABRT))
+      XCTAssertNil(exitCode)
       let message = error.localizedDescription
-      XCTAssertTrue(message.contains("timed out connecting"), message)
-      XCTAssertFalse(message.contains("signal \(SIGABRT)"), message)
-      XCTAssertFalse(message.contains("4242"), message)
+      XCTAssertFalse(message.contains("timed out connecting"), message)
+      XCTAssertTrue(message.contains("signal \(SIGABRT)"), message)
+      XCTAssertTrue(message.contains("4242"), message)
     }
   }
 

@@ -210,9 +210,7 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
       let fileDescriptor = try await FBAXBridgeConnection.connect(path: socketPath, timeout: 10, guest: process)
       return FBAXBridgeConnection(fileDescriptor: fileDescriptor, ownership: ownership(process))
     } catch {
-      simulator.logger.log(
-        "Could not reach the axbridge guest just spawned on \(socketPath); leaving it to time out"
-      )
+      simulator.logger.log("Could not reach the axbridge guest just spawned on \(socketPath): \(error)")
       throw error
     }
   }

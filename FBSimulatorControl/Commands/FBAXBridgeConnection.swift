@@ -68,7 +68,7 @@ final class FBAXBridgeConnection: @unchecked Sendable {
     }
   }
 
-  /// Connects to `path`, retrying until `timeout` elapses.
+  /// Connects to `path`, retrying until `timeout` elapses or `guest` is known to have exited.
   ///
   /// `guest` is the process expected to bind `path`, passed only when this host spawned it.
   static func connect(
@@ -83,23 +83,51 @@ final class FBAXBridgeConnection: @unchecked Sendable {
       DispatchQueue.global().async {
         let deadline = Date().addingTimeInterval(timeout)
         repeat {
-          let fileDescriptor = socket(AF_UNIX, SOCK_STREAM, 0)
-          if fileDescriptor >= 0 {
-            if connectSocket(fileDescriptor, toPath: path) {
-              var noSigPipe: Int32 = 1
-              setsockopt(fileDescriptor, SOL_SOCKET, SO_NOSIGPIPE, &noSigPipe, socklen_t(MemoryLayout<Int32>.size))
-              var readTimeout = timeval(tv_sec: receiveTimeoutSeconds, tv_usec: 0)
-              setsockopt(fileDescriptor, SOL_SOCKET, SO_RCVTIMEO, &readTimeout, socklen_t(MemoryLayout<timeval>.size))
+          if let fileDescriptor = attemptConnection(toPath: path) {
+            continuation.resume(returning: fileDescriptor)
+            return
+          }
+          // A guest known to have exited will not bind, but the socket need not be its to bind: the
+          // shared per-UDID path can be served by another host's guest, and ours dying says nothing
+          // about theirs. One more attempt distinguishes the two, and costs a syscall on a path that
+          // is about to fail anyway.
+          //
+          // `.done` rather than `hasCompleted`, which is also true of a cancelled or failed future.
+          // Neither is evidence that the process terminated, and waiting out the deadline beats
+          // failing a guest that is still alive.
+          if let guest, guest.statLoc.state == .done {
+            if let fileDescriptor = attemptConnection(toPath: path) {
               continuation.resume(returning: fileDescriptor)
               return
             }
-            close(fileDescriptor)
+            let exit = terminationCause(waitpidStatus: guest.statLoc.result?.int32Value)
+            continuation.resume(
+              throwing: FBAXBridgeError.guestDiedBeforeBinding(
+                pid: guest.processIdentifier, signal: exit.signal, exitCode: exit.exitCode, path: path))
+            return
           }
           usleep(100_000)
         } while Date() < deadline
         continuation.resume(throwing: FBAXBridgeError.guestFailure("timed out connecting to the serve socket at \(path)"))
       }
     }
+  }
+
+  /// One connect attempt, carrying the socket options a serving connection needs when it lands.
+  private static func attemptConnection(toPath path: String) -> Int32? {
+    let fileDescriptor = socket(AF_UNIX, SOCK_STREAM, 0)
+    guard fileDescriptor >= 0 else {
+      return nil
+    }
+    guard connectSocket(fileDescriptor, toPath: path) else {
+      close(fileDescriptor)
+      return nil
+    }
+    var noSigPipe: Int32 = 1
+    setsockopt(fileDescriptor, SOL_SOCKET, SO_NOSIGPIPE, &noSigPipe, socklen_t(MemoryLayout<Int32>.size))
+    var readTimeout = timeval(tv_sec: receiveTimeoutSeconds, tv_usec: 0)
+    setsockopt(fileDescriptor, SOL_SOCKET, SO_RCVTIMEO, &readTimeout, socklen_t(MemoryLayout<timeval>.size))
+    return fileDescriptor
   }
 
   private static func connectSocket(_ fileDescriptor: Int32, toPath path: String) -> Bool {
@@ -197,6 +225,29 @@ final class FBAXBridgeConnection: @unchecked Sendable {
       return "\(base): the guest (pid \(pid)) exited with code \(exitCode)"
     }
     return "\(base): the guest (pid \(pid)) is gone, with no exit status recorded"
+  }
+
+  /// Splits a `waitpid` status into whichever of the two outcomes it encodes, or neither.
+  ///
+  /// Read from `statLoc` rather than from the sibling `signal` / `exitCode` futures because
+  /// `resolveProcessFinished` resolves `statLoc` first and the other two a few statements later — a
+  /// reader that catches that gap sees neither, and reports a death it cannot describe.
+  ///
+  /// Both nil for a stop rather than a termination, and for no status at all. A stop encodes the
+  /// stopping signal in the byte an exit uses for its code, so reporting it either way names a number
+  /// the process never produced.
+  static func terminationCause(waitpidStatus: Int32?) -> (signal: Int?, exitCode: Int?) {
+    guard let waitpidStatus else {
+      return (signal: nil, exitCode: nil)
+    }
+    let status = waitpidStatus & 0x7f
+    if status == 0x7f {
+      return (signal: nil, exitCode: nil)
+    }
+    if status != 0 {
+      return (signal: Int(status), exitCode: nil)
+    }
+    return (signal: nil, exitCode: Int((waitpidStatus >> 8) & 0xff))
   }
 
   private static func readAll(
