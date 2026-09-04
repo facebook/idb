@@ -23,9 +23,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider, @unchec
   private let logger: FBIDBLogger
   private let interceptorFactory: Idb_CompanionServiceServerInterceptorFactoryProtocol
   private let telemetry: CompanionTelemetry
-  /// Tracks in-flight calls so the companion can shut down when idle. Composed
-  /// here (a peer of `telemetry`) rather than inside it, since idle tracking and
-  /// telemetry are unrelated concerns.
+  /// Tracks in-flight calls so the companion can shut down when idle.
   private let idleMonitor: IdleMonitor?
   /// Owns the single in-progress REPL screen recording. Held here, at target scope,
   /// because a recording can outlive the `repl` stream that started it (the app
@@ -51,9 +49,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider, @unchec
       auxillaryDirectory: commandExecutor.auxillaryDirectory, logger: target.logger)
   }
 
-  /// Wraps a telemetry-reported call so it is also tracked as in-flight by
-  /// `idleMonitor` (a no-op when idle shutdown is disabled). Telemetry and idle
-  /// tracking stay independent; the provider composes them here.
+  /// Also counts the call as in-flight for `idleMonitor` (a no-op when idle shutdown is disabled).
   private func tracked<R>(_ body: () async throws -> R) async throws -> R {
     guard let idleMonitor else {
       return try await body()
