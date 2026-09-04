@@ -132,8 +132,6 @@ final class GRPCSwiftServer: @unchecked Sendable {
     shutdownLock.unlock()
     guard !alreadyInitiated else { return }
 
-    // Release externally-visible registration the instant shutdown begins, so no client can
-    // discover this companion during the graceful-shutdown drain that follows.
     onShutdownStarted?()
 
     guard let server = self.server else { return }
@@ -158,7 +156,6 @@ final class GRPCSwiftServer: @unchecked Sendable {
         }
       }
 
-      // Only unlink the existing file if it is a socket
       if sb.st_mode & S_IFSOCK == S_IFSOCK {
         self.logger.info().log("Existed UDS socket found, unlinking")
         try syscall {
