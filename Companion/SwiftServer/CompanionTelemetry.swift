@@ -20,8 +20,10 @@ import Foundation
 ///
 /// - `<method> called with: [<args>]` at info on the FBControlCoreLogger
 ///   (which routes to stderr and the optional log file).
-/// - `<method> succeeded` at debug on success, or
-///   `<method> failed with: <localizedDescription>` at debug on failure.
+/// - `<method> succeeded in <duration>` at info on success, or
+///   `<method> failed after <duration>: <localizedDescription>` at info on
+///   failure. Completion stays at info (rather than debug) so a failing call
+///   is visible even when debug logging is disabled via `-log-level info`.
 /// - One `FBEventReporterSubject(forSuccessfulCall:duration:size:arguments:)`
 ///   on success (or `(forFailingCall:…)` on failure) reported to the
 ///   `FBEventReporter`, which routes to scuba via the perfpipe_idb scribe
@@ -98,7 +100,7 @@ struct CompanionTelemetry {
     do {
       let result = try await body()
       let duration = Self.secondsSince(start)
-      logger.debug().log("\(method) succeeded")
+      logger.info().log("\(method) succeeded in \(Self.formatDuration(duration))")
       reporter.report(
         FBEventReporterSubject(
           forSuccessfulCall: method,
@@ -109,7 +111,7 @@ struct CompanionTelemetry {
     } catch {
       let duration = Self.secondsSince(start)
       let message = (error as NSError).localizedDescription
-      logger.debug().log("\(method) failed with: \(message)")
+      logger.info().log("\(method) failed after \(Self.formatDuration(duration)): \(message)")
       reporter.report(
         FBEventReporterSubject(
           forFailingCall: method,
@@ -123,6 +125,15 @@ struct CompanionTelemetry {
 
   private static func secondsSince(_ start: DispatchTime) -> TimeInterval {
     TimeInterval(DispatchTime.now().uptimeNanoseconds - start.uptimeNanoseconds) / 1_000_000_000
+  }
+
+  /// Renders a call duration for the completion line: whole milliseconds
+  /// below one second, two-decimal seconds above it.
+  static func formatDuration(_ duration: TimeInterval) -> String {
+    if duration < 1 {
+      return String(format: "%.0fms", duration * 1000)
+    }
+    return String(format: "%.2fs", duration)
   }
 
   // MARK: - Argument description (Mirror-based, mirrors FBLoggingWrapper's intent)

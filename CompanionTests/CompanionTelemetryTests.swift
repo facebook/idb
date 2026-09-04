@@ -160,6 +160,19 @@ struct CompanionTelemetryTests {
   }
 
   @Test
+  func formatDurationUsesMillisecondsBelowOneSecond() {
+    #expect((CompanionTelemetry.formatDuration(0)) == ("0ms"))
+    #expect((CompanionTelemetry.formatDuration(0.0123)) == ("12ms"))
+    #expect((CompanionTelemetry.formatDuration(0.9999)) == ("1000ms"))
+  }
+
+  @Test
+  func formatDurationUsesSecondsAtAndAboveOneSecond() {
+    #expect((CompanionTelemetry.formatDuration(1)) == ("1.00s"))
+    #expect((CompanionTelemetry.formatDuration(16.647)) == ("16.65s"))
+  }
+
+  @Test
   func bidiStreamingFailureReportsFailureSubject() async {
     let (telemetry, recorder) = makeTelemetry()
     do {
