@@ -57,7 +57,6 @@ public final class FBIDBTestOperation: CustomStringConvertible {
     self.queue = queue
   }
 
-  /// Waits for the test run to complete.
   public func awaitCompletion() async throws {
     try await bridgeFBFutureVoid(self.completed)
   }
