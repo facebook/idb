@@ -12,7 +12,6 @@ import FBSimulatorControl
 import Foundation
 import XCTestBootstrap
 
-/// The ways command execution can fail before reaching the target, as data rather than assembled strings.
 public enum FBIDBCommandError: Error {
   case notAsyncTarget(targetDescription: String)
   case simulatorOnlyOperation(operation: String, targetDescription: String)
@@ -199,10 +198,7 @@ public final class FBIDBCommandExecutor {
     try await simulator.uiAutomation(backend: .accessibility).tap(query, options: FBTapOptions(assertion: assertion))
   }
 
-  /// Describes the single element a query names. The caller supplies the options rather than having a
-  /// format-only set built here, so the request's `keys`, profiling and frame-coverage reach the reader
-  /// that honours them. The format is read back off the options so the serialization and the envelope
-  /// cannot disagree about which one was asked for.
+  /// Describes the single element `query` names, serialized in `options.format`.
   public func accessibility_describe(query: FBAccessibilityElementQuery, options: FBAccessibilityRequestOptions, backend: FBUIAutomationBackend = .accessibility) async throws -> Data {
     guard let simulator = target as? FBSimulator else {
       throw FBIDBCommandError.simulatorOnlyOperation(operation: "describe accessibility", targetDescription: String(describing: target))
@@ -373,8 +369,7 @@ public final class FBIDBCommandExecutor {
     do {
       try await target.killApplication(bundleID: bundleID)
     } catch {
-      // Mirror the legacy `.fallback(NSNull())` behavior — kill is a no-op when
-      // the app isn't running.
+      // Killing an app that is not running is a no-op.
     }
   }
 
@@ -477,7 +472,6 @@ public final class FBIDBCommandExecutor {
   /// work. Used by the `app` REPL context when no bundle id is given.
   public func ensureReplHostAppInstalled() async throws -> String {
     let bundleID = Self.replHostBundleID
-    // Fast path: already installed -- nothing to do.
     if (try? await target.installedApplication(bundleID: bundleID)) != nil {
       return bundleID
     }
