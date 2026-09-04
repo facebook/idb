@@ -16,12 +16,8 @@ public struct CompanionSpawner {
   /// Seconds to wait for the companion to print its startup line.
   private let readinessTimeout: TimeInterval
 
-  /// - Parameters:
-  ///   - paths: the versioned filesystem locations a spawned companion logs
-  ///     under, and whose `version` selects how the companion is launched.
-  ///     Defaults to the v1 `CompanionPaths()`.
-  ///   - companionPath: path to the binary to launch (`idb_companion` for v1,
-  ///     `idb2` for v2).
+  /// `paths.version` selects how the companion is launched and where it logs; `companionPath` is
+  /// `idb_companion` for v1, `idb2` for v2.
   public init(paths: CompanionPaths = CompanionPaths(), companionPath: String, deviceSetPath: String? = nil, readinessTimeout: TimeInterval = 30) {
     self.paths = paths
     self.companionPath = companionPath
@@ -58,8 +54,6 @@ public struct CompanionSpawner {
       throw CompanionDiscoveryError.spawnFailed(reason: "\(error). \(logTail(logPath))")
     }
 
-    // Wait for the companion's startup line before returning: the socket is bound
-    // by the time it is emitted, so there is no race between spawning and connecting.
     let line: String
     do {
       line = try await readFirstLine(from: stdoutPipe.fileHandleForReading, timeout: readinessTimeout)
@@ -147,11 +141,6 @@ public struct CompanionSpawner {
 /// Reads a single newline-terminated line from `handle`, returning its content
 /// without the trailing newline. Throws if no line arrives within `timeout`, or
 /// if EOF is reached before any bytes are read.
-///
-/// The read is event-driven (`FileHandle.readabilityHandler`) and bridged to
-/// `async`, so it never parks a thread while waiting, and it is torn down on
-/// completion, timeout, or cancellation rather than left running in the
-/// background.
 private func readFirstLine(from handle: FileHandle, timeout: TimeInterval) async throws -> String {
   let state = LineReadState()
   return try await withTaskCancellationHandler {
@@ -249,8 +238,7 @@ private final class LineReadState: @unchecked Sendable {
   }
 }
 
-/// Parses a single JSON object line into a dictionary, or nil if it isn't valid
-/// JSON. Mirrors `parse_json_line`.
+/// A single JSON object line as a dictionary, or nil if it is not one.
 private func parseJSONObject(_ line: String) -> [String: Any]? {
   guard let data = line.data(using: .utf8),
     let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
@@ -260,8 +248,7 @@ private func parseJSONObject(_ line: String) -> [String: Any]? {
   return object
 }
 
-/// Returns up to the last `count` lines of the file at `path`, for error
-/// context. Mirrors the use of `get_last_n_lines` in the Python spawn errors.
+/// Up to the last `count` lines of the file at `path`, for error context.
 private func logTail(_ path: String, count: Int = 30) -> String {
   guard let contents = try? String(contentsOfFile: path, encoding: .utf8) else {
     return ""
