@@ -86,7 +86,6 @@ public final class FBAMDevice: FBiOSTargetInfo, FBDeviceCommands, CustomStringCo
     self.calls = calls
     self.workQueue = workQueue
     self.asyncQueue = asyncQueue
-    // The udid is read from `allValues`, so the named logger can only be built after it is set.
     let udid = allValues[FBDeviceKey.uniqueDeviceID.rawValue] as? String ?? UnknownValue
     self.logger = logger.withName(udid)
     // The un-named logger: only this object's own logger is decorated with the udid.
@@ -99,8 +98,7 @@ public final class FBAMDevice: FBiOSTargetInfo, FBDeviceCommands, CustomStringCo
   // MARK: - FBiOSTargetInfo
 
   public var uniqueIdentifier: String {
-    // The stored chip identifier may be a number or a string; accepting only a number would
-    // silently degrade a string identifier to unknown.
+    // The chip identifier arrives as a number on some devices and a string on others.
     let value = allValues[FBDeviceKey.uniqueChipID.rawValue]
     if let number = value as? NSNumber {
       return number.stringValue
@@ -187,10 +185,8 @@ public final class FBAMDevice: FBiOSTargetInfo, FBDeviceCommands, CustomStringCo
     startServiceConnection(service)
   }
 
-  /// Two lifetimes again, and not the ones `withServiceConnection` manages: the AMDevice session
-  /// is held for as long as `body` runs, while the AFC connection outlives it. The connection is
-  /// pooled for the device's service reuse timeout so a following operation on the same bundle
-  /// re-uses it rather than starting house arrest again.
+  /// The AMDevice session is held only while `body` runs; the AFC connection outlives it, pooled
+  /// for the device's service reuse timeout so a following operation on the same bundle re-uses it.
   public func withHouseArrestAFCConnection<T>(
     forBundleID bundleID: String,
     afcCalls: AFCCalls,
