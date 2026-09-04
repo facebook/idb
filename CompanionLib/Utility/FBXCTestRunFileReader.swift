@@ -9,7 +9,6 @@ import FBControlCore
 import Foundation
 import XCTestBootstrap
 
-/// The ways xctestrun reading can fail, as data rather than assembled strings.
 public enum FBXCTestRunFileError: Error {
   case fileMissing(url: URL)
   case appStorageMissing(path: String)
@@ -53,20 +52,17 @@ public final class FBXCTestRunFileReader {
       guard var testTargetProperties = (xctestrunContents[contentKey] as? [String: Any])?.asMutable() else {
         continue
       }
-      // Expand __TESTROOT__ and __IDB_APPSTORAGE__ in TestHostPath
       if var testHostPath = testTargetProperties["TestHostPath"] as? String {
         testHostPath = testHostPath.replacingOccurrences(of: "__TESTROOT__", with: testRoot)
         testHostPath = testHostPath.replacingOccurrences(of: "__IDB_APPSTORAGE__", with: idbAppStoragePath)
         testTargetProperties["TestHostPath"] = testHostPath
 
-        // Expand __TESTROOT__ and __TESTHOST__ in TestBundlePath
         if var testBundlePath = testTargetProperties["TestBundlePath"] as? String {
           testBundlePath = testBundlePath.replacingOccurrences(of: "__TESTROOT__", with: testRoot)
           testBundlePath = testBundlePath.replacingOccurrences(of: "__TESTHOST__", with: testHostPath)
           testTargetProperties["TestBundlePath"] = testBundlePath
         }
       }
-      // Expand __IDB_APPSTORAGE__ in UITargetAppPath
       if var targetAppPath = testTargetProperties["UITargetAppPath"] as? String {
         targetAppPath = targetAppPath.replacingOccurrences(of: "__IDB_APPSTORAGE__", with: idbAppStoragePath)
         targetAppPath = targetAppPath.replacingOccurrences(of: "__TESTROOT__", with: testRoot)
