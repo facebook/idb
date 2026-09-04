@@ -19,7 +19,7 @@ public indirect enum FBSimulatorHIDEvent: Equatable, Hashable, Sendable {
   /// The per-sample step, in points, a swipe is broken into when the caller does not choose one.
   public static let defaultSwipeDelta: Double = 10.0
 
-  case touch(direction: FBSimulatorHIDDirection, x: Double, y: Double)
+  case touch(direction: FBSimulatorHIDDirection, x: Double, y: Double, edge: FBSimulatorHIDEdge)
   case button(direction: FBSimulatorHIDDirection, button: FBSimulatorHIDButton)
   case keyboard(direction: FBSimulatorHIDDirection, keyCode: UInt32)
   case twoFingerTouch(direction: FBSimulatorHIDDirection, finger1: CGPoint, finger2: CGPoint)
@@ -59,10 +59,17 @@ public extension FBSimulatorHIDEvent {
 
 public extension FBSimulatorHIDEvent {
 
-  // Single-payload events use the enum cases directly (`.touch(direction:x:y:)`,
-  // `.button(direction:button:)`, `.keyboard(direction:keyCode:)`, `.delay(_:)`,
-  // `.deviceOrientation(_:)`, `.shake`, `.lockDevice`, `.toggleInCallStatusBar`, `.composite(_:)`).
-  // Only composites with real construction logic are wrapped here.
+  // Single-payload events use the enum cases directly (`.button(direction:button:)`,
+  // `.keyboard(direction:keyCode:)`, `.delay(_:)`, `.deviceOrientation(_:)`, `.shake`, `.lockDevice`,
+  // `.toggleInCallStatusBar`, `.composite(_:)`). Only composites with real construction logic, and
+  // the edgeless touch below, are wrapped here.
+
+  /// An ordinary touch, not originating at a screen edge — what almost every caller wants. Tagging a
+  /// contact with an edge is what turns a swipe into a system gesture, so it has to be asked for
+  /// explicitly via the `.touch` case.
+  static func touch(direction: FBSimulatorHIDDirection, x: Double, y: Double) -> FBSimulatorHIDEvent {
+    .touch(direction: direction, x: x, y: y, edge: .none)
+  }
 
   static func tapAt(x: Double, y: Double) -> FBSimulatorHIDEvent {
     .composite([
@@ -269,9 +276,10 @@ private extension FBSimulatorHIDRemoteButton {
 extension FBSimulatorHIDEvent: CustomStringConvertible {
   public var description: String {
     switch self {
-    case let .touch(direction, x, y):
+    case let .touch(direction, x, y, edge):
       guard shouldLogHIDEventDetails() else { return "Touch <hidden>" }
-      return "Touch \(direction.name) at (\(x),\(y))"
+      guard edge != .none else { return "Touch \(direction.name) at (\(x),\(y))" }
+      return "Touch \(direction.name) at (\(x),\(y)) from the \(edge.name) edge"
     case let .button(direction, button):
       guard shouldLogHIDEventDetails() else { return "Button <hidden>" }
       return "Button \(button.name) \(direction.name)"

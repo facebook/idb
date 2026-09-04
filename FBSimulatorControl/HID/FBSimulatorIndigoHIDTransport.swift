@@ -75,12 +75,15 @@ actor FBSimulatorIndigoHIDTransport {
     indigoClient.disconnect()
   }
 
-  func sendTouch(direction: FBSimulatorHIDDirection, x: Double, y: Double) async throws {
+  func sendTouch(
+    direction: FBSimulatorHIDDirection, x: Double, y: Double, edge: FBSimulatorHIDEdge
+  ) async throws {
     if productFamily == .familyAppleTV {
       throw FBSimulatorHIDError.touchUnsupportedOnAppleTV
     }
     try await indigoClient.send(
-      indigo.touchScreenSize(mainScreenSize, screenScale: mainScreenScale, direction: direction, x: x, y: y))
+      indigo.touchScreenSize(
+        mainScreenSize, screenScale: mainScreenScale, direction: direction, x: x, y: y, edge: edge))
   }
 
   func sendTwoFingerTouch(direction: FBSimulatorHIDDirection, finger1: CGPoint, finger2: CGPoint) async throws {

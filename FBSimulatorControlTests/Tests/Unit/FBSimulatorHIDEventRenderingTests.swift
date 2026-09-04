@@ -23,7 +23,7 @@ final class FBSimulatorHIDEventRenderingTests: XCTestCase {
 
   private func touches(_ event: FBSimulatorHIDEvent) throws -> [(FBSimulatorHIDDirection, Double, Double)] {
     try XCTUnwrap(event.subEvents).compactMap {
-      if case let .touch(direction, x, y) = $0 { return (direction, x, y) }
+      if case let .touch(direction, x, y, _) = $0 { return (direction, x, y) }
       return nil
     }
   }

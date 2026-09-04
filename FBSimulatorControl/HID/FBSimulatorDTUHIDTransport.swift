@@ -136,12 +136,15 @@ actor FBSimulatorDTUHIDTransport {
     xpc_connection_cancel(connection)
   }
 
-  func sendTouch(direction: FBSimulatorHIDDirection, x: Double, y: Double) async throws {
+  func sendTouch(
+    direction: FBSimulatorHIDDirection, x: Double, y: Double, edge: FBSimulatorHIDEdge
+  ) async throws {
     let ratio = FBSimulatorIndigoHID.screenRatio(
       from: CGPoint(x: x, y: y), screenSize: mainScreenSize, screenScale: mainScreenScale)
     let event = IndigoDigitizerEvent(
       pointOne: DigitizerPoint(x: Double(ratio.x), y: Double(ratio.y)),
-      eventType: contact.eventType(for: direction))
+      eventType: contact.eventType(for: direction),
+      edge: UInt64(edge.rawValue))
     try await send(messageType: "IndigoDigitizerEvent", payload: event)
   }
 

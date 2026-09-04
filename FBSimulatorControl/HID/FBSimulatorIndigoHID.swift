@@ -167,13 +167,15 @@ final class FBSimulatorIndigoHID {
     return FBSimulatorIndigoHID.data(fromMallocedMessage: message)
   }
 
-  /// A single-finger touch event. `x`/`y` are in points; `screenSize` is in pixels.
+  /// A single-finger touch event. `x`/`y` are in points; `screenSize` is in pixels. `edge` tags the
+  /// contact as originating at a screen edge, which the builder folds into `IndigoTouch.eventMask`.
   func touchScreenSize(
-    _ screenSize: CGSize, screenScale: Float, direction: FBSimulatorHIDDirection, x: Double, y: Double
+    _ screenSize: CGSize, screenScale: Float, direction: FBSimulatorHIDDirection, x: Double, y: Double,
+    edge: FBSimulatorHIDEdge = .none
   ) -> Data {
     // Convert Screen Offset to Ratio for Indigo.
     let point = FBSimulatorIndigoHID.screenRatio(from: CGPoint(x: x, y: y), screenSize: screenSize, screenScale: screenScale)
-    return touchMessage(point: point, direction: direction)
+    return touchMessage(point: point, direction: direction, edge: edge)
   }
 
   /// A two-finger touch event for multi-touch gestures (pinch, rotate, etc.).
@@ -206,14 +208,14 @@ final class FBSimulatorIndigoHID {
 
   // MARK: Event Generation
 
-  private func touchMessage(point: CGPoint, direction: FBSimulatorHIDDirection) -> Data {
+  private func touchMessage(point: CGPoint, direction: FBSimulatorHIDDirection, edge: FBSimulatorHIDEdge) -> Data {
     var point = point
     // SimulatorKit has no single-touch builder: IndigoHIDMessageForMouseNSEvent always emits a
     // multi-touch (eventType 0x03) message. So source a valid touch-down IndigoTouch from it, then
     // hand-envelope it as a single-touch (eventType 0x02) two-payload message.
     let source = messageForMouseNSEvent(
       &point, nil, FBSimulatorIndigoHID.mouseTarget, UInt(direction.indigoEventType),
-      FBSimulatorIndigoHID.unitScreenSize, FBSimulatorIndigoHID.noEdge)
+      FBSimulatorIndigoHID.unitScreenSize, edge.rawValue)
     source.pointee.payload.event.touch.xRatio = point.x
     source.pointee.payload.event.touch.yRatio = point.y
     let sourceBytes = UnsafeMutableRawPointer(source)

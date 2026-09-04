@@ -254,7 +254,7 @@ final class FBSimulatorControlTransientTests: XCTestCase {
     let expectedEvents = (expectedSteps + 1) * 2 + 2 + 1
     XCTAssertEqual(swipe.subEvents?.count, expectedEvents)
     for event in swipe.subEvents ?? [] {
-      if case let .touch(_, x, y) = event {
+      if case let .touch(_, x, y, _) = event {
         XCTAssertTrue(x.isFinite && y.isFinite, "Swipe produced a non-finite coordinate (\(x), \(y))")
       }
     }

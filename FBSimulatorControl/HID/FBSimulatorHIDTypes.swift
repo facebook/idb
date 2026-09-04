@@ -46,6 +46,34 @@ public enum FBSimulatorHIDButton: Int32, Sendable, CaseIterable {
   }
 }
 
+/// The screen edge a touch contact originated at.
+///
+/// iOS recognises its system edge gestures — the home indicator swipe, Notification Centre, the
+/// back swipe — from a flag on the digitizer contact, not from where the contact happens to be. A
+/// swipe that merely starts at `y = height` is an ordinary swipe; one tagged with `.bottom` is the
+/// home gesture. Each transport encodes this its own way (see `Indigo.h` for the wire values).
+///
+/// Named for where the gesture *starts*, not which way it travels: `.bottom` is a swipe up from the
+/// bottom edge.
+public enum FBSimulatorHIDEdge: UInt32, Sendable, CaseIterable {
+  case none = 0
+  case top = 1
+  case left = 2
+  case bottom = 3
+  case right = 4
+
+  /// The canonical lower-snake-case name for this edge.
+  public var name: String {
+    switch self {
+    case .none: return "none"
+    case .top: return "top"
+    case .left: return "left"
+    case .bottom: return "bottom"
+    case .right: return "right"
+    }
+  }
+}
+
 /// A Siri Remote action for tvOS focus navigation. The focus-step actions map to USB HID keyboard
 /// usages the tvOS focus engine already consumes; this is the transport-agnostic vocabulary callers
 /// use, independent of how a given transport delivers it.

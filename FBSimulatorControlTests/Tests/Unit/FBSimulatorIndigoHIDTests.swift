@@ -120,6 +120,40 @@ final class FBSimulatorIndigoHIDTests: XCTestCase {
     XCTAssertEqual(uint32(at: 0xb0, in: down), 0x0b, "second payload eventKind at 0xb0")
   }
 
+  // An edge-originating contact carries the IOHIDDigitizerEventMask swipe bit for the direction the
+  // gesture travels, OR'd into the usual Range|Touch (0x3). The guest reads the system edge gestures
+  // off these bits, so they are the whole difference between a swipe and a home-indicator gesture.
+  func testEdgeTouchSetsTheSwipeEventMaskBits() throws {
+    let indigo = try makeIndigo()
+    let size = CGSize(width: 200, height: 400)
+    let expected: [(FBSimulatorHIDEdge, UInt32)] = [
+      (.none, 0x0000_0003),
+      (.top, 0x0204_0003), // SwipeDown — a swipe from the top travels down
+      (.left, 0x0804_0003), // SwipeRight
+      (.bottom, 0x0104_0003), // SwipeUp
+      (.right, 0x0404_0003), // SwipeLeft
+    ]
+    for (edge, mask) in expected {
+      let data = indigo.touchScreenSize(size, screenScale: 2, direction: .down, x: 50, y: 100, edge: edge)
+      XCTAssertEqual(uint32(at: 0x38, in: data), mask, "eventMask for the \(edge.name) edge")
+    }
+  }
+
+  // The edge changes only the eventMask — the coordinates and contact state are untouched, so an edge
+  // swipe is an ordinary swipe as far as everything downstream of the flag is concerned.
+  func testEdgeTouchLeavesTheContactOtherwiseUnchanged() throws {
+    let indigo = try makeIndigo()
+    let size = CGSize(width: 200, height: 400)
+    let plain = indigo.touchScreenSize(size, screenScale: 2, direction: .down, x: 50, y: 100)
+    let edged = indigo.touchScreenSize(size, screenScale: 2, direction: .down, x: 50, y: 100, edge: .bottom)
+
+    XCTAssertEqual(plain.count, edged.count, "message size")
+    XCTAssertEqual(double(at: 0x3c, in: edged), double(at: 0x3c, in: plain), accuracy: 1e-9, "xRatio")
+    XCTAssertEqual(double(at: 0x44, in: edged), double(at: 0x44, in: plain), accuracy: 1e-9, "yRatio")
+    XCTAssertEqual(uint32(at: 0x64, in: edged), uint32(at: 0x64, in: plain), "range")
+    XCTAssertEqual(uint32(at: 0x68, in: edged), uint32(at: 0x68, in: plain), "touch")
+  }
+
   // MARK: - Two-finger touch
 
   func testTwoFingerPatchedRatios() throws {

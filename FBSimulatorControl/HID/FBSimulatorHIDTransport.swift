@@ -39,11 +39,14 @@ enum FBSimulatorHIDTransport: Sendable {
     }
   }
 
-  /// Sends a single-finger touch at the given point (in points).
-  func sendTouch(direction: FBSimulatorHIDDirection, x: Double, y: Double) async throws {
+  /// Sends a single-finger touch at the given point (in points). `edge` tags the contact as
+  /// originating at a screen edge, which is how the guest recognises a system edge gesture.
+  func sendTouch(
+    direction: FBSimulatorHIDDirection, x: Double, y: Double, edge: FBSimulatorHIDEdge
+  ) async throws {
     switch self {
-    case let .indigo(indigo): try await indigo.sendTouch(direction: direction, x: x, y: y)
-    case let .dtuhid(dtuhid): try await dtuhid.sendTouch(direction: direction, x: x, y: y)
+    case let .indigo(indigo): try await indigo.sendTouch(direction: direction, x: x, y: y, edge: edge)
+    case let .dtuhid(dtuhid): try await dtuhid.sendTouch(direction: direction, x: x, y: y, edge: edge)
     }
   }
 

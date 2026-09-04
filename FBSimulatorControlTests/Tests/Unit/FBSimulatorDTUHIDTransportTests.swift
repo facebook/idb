@@ -53,6 +53,31 @@ final class FBSimulatorDTUHIDTransportTests: XCTestCase {
     XCTAssertEqual(xpc_dictionary_get_uint64(payload, "target"), 0)
   }
 
+  // The edge rides the same `IndigoDigitizerEvent.edge` field `dtuhidd` already declares, using the
+  // same 0...4 encoding the Indigo builder takes, so one `FBSimulatorHIDEdge` describes both wires.
+  func testDigitizerEventCarriesTheEdge() throws {
+    for edge in FBSimulatorHIDEdge.allCases {
+      let event = try encodeDigitizer(
+        IndigoDigitizerEvent(
+          pointOne: DigitizerPoint(x: 0.5, y: 0.99),
+          eventType: .start,
+          edge: UInt64(edge.rawValue)))
+      let payload = xpc_dictionary_get_dictionary(event, "payload")!
+      XCTAssertEqual(
+        xpc_get_type(xpc_dictionary_get_value(payload, "edge")!), XPC_TYPE_UINT64, "edge must be uint64")
+      XCTAssertEqual(xpc_dictionary_get_uint64(payload, "edge"), UInt64(edge.rawValue), "\(edge.name) edge")
+    }
+  }
+
+  func testEdgeRawValuesMatchTheIndigoEncoding() {
+    // Indigo.h: IndigoHIDEdgeNone/Top/Left/Bottom/Right.
+    XCTAssertEqual(FBSimulatorHIDEdge.none.rawValue, 0)
+    XCTAssertEqual(FBSimulatorHIDEdge.top.rawValue, 1)
+    XCTAssertEqual(FBSimulatorHIDEdge.left.rawValue, 2)
+    XCTAssertEqual(FBSimulatorHIDEdge.bottom.rawValue, 3)
+    XCTAssertEqual(FBSimulatorHIDEdge.right.rawValue, 4)
+  }
+
   // MARK: Contact-state machine
 
   func testContactTrackerMapsDownUpToStartPositionEnd() {
