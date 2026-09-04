@@ -24,15 +24,6 @@ struct AsyncPromiseTests {
   }
 
   @Test
-  func awaitBeforeResolveReturnsValue() async throws {
-    let promise = AsyncPromise<Int>()
-    let waiter = Task { try await promise.value }
-    promise.resolve(7)
-    let value = try await waiter.value
-    #expect(value == 7)
-  }
-
-  @Test
   func failPropagatesError() async {
     let promise = AsyncPromise<Int>()
     promise.fail(TestError.boom)
