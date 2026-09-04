@@ -48,7 +48,6 @@ struct ReplReportWriterTests {
     first.recordRun(index: 0, code: "return \"first\"", output: "Result:\nfirst", artifactFilenames: [], at: epoch)
     first.close()
 
-    // A new session id at the same path means a reset: the report is recreated.
     let second = ReplReportWriter(path: path)
     second.open(meta: Self.appMeta, target: "t", reason: nil, sessionID: "new", startedAt: epoch)
     second.recordRun(index: 0, code: "return \"second\"", output: "Result:\nsecond", artifactFilenames: [], at: epoch)
@@ -70,7 +69,6 @@ struct ReplReportWriterTests {
     first.recordRun(index: 0, code: "return \"first\"", output: "Result:\nfirst", artifactFilenames: [], at: epoch)
     first.close()
 
-    // Reconnecting with the same session id appends rather than overwriting.
     let second = ReplReportWriter(path: path)
     second.open(meta: Self.appMeta, target: "t", reason: nil, sessionID: "same", startedAt: epoch)
     second.recordRun(index: 1, code: "return \"second\"", output: "Result:\nsecond", artifactFilenames: [], at: epoch)
@@ -148,7 +146,6 @@ struct ReplReportWriterTests {
     FileManager.default.createFile(atPath: staleArtifact, contents: Data([0x89]))
     first.close()
 
-    // A fresh session at the same path drops the previous session's artifacts.
     let second = ReplReportWriter(path: path)
     second.open(meta: Self.appMeta, target: "t", reason: nil, sessionID: "new", startedAt: epoch)
     second.close()
