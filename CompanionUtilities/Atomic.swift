@@ -18,33 +18,13 @@ public final class Atomic<Value>: @unchecked Sendable {
     self.value = wrappedValue
   }
 
-  /// Custom setter for wrapped value is dangerous thing, because it may give false safety feeling
-  ///
-  /// For example
-  /// ```
-  /// @Atomic var counter = 0
-  ///
-  /// DispatchQueue.global().async { counter = 10 }
-  /// ```
-  /// is safe operation and perfectly valid.
-  /// From the other side,
-  /// ```
-  /// DispatchQueue.global().async { counter += 10 }
-  /// ```
-  /// is unsafe, because consists of two operations: read current counter and save new value to the counter.
-  /// For all mutation operations please use explicit synchronisation.
+  /// Read-only on purpose: a setter would make `counter += 1` look atomic when it is a separate read
+  /// and write. Use `sync` for any read-modify-write.
   public var wrappedValue: Value {
     mutex.sync(execute: { value })
   }
 
   /// Convenience plain setter.
-  /// This produces exact same results:
-  /// ```
-  /// @Atomic var counter = 0
-  ///
-  /// $counter.set(1)
-  /// $counter.sync { $0 = 1 }
-  /// ```
   public func `set`(_ newValue: Value) {
     mutex.sync(execute: { value = newValue })
   }
