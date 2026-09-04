@@ -14,16 +14,10 @@ import Testing
 private let sessionStart = ["connect", "is_paired", "validate_pairing", "start_session"]
 private let sessionEnd = ["stop_session", "disconnect"]
 
-/// Holds every scope open until all of them have arrived, so scopes that are meant to overlap
-/// really do rather than being left to the scheduler — and so that the overlap can be asserted
-/// instead of inferred.
-///
-/// `peakArrivals` is the assertion that matters. The AMDevice call trace cannot distinguish
-/// overlapping scopes from serialised ones: a serialised second scope re-uses the context the
-/// first left behind and so makes the same calls, in the same order, as one that shared it.
-///
-/// The timeout exists only so that a regression which serialises the scopes fails on
-/// `peakArrivals` rather than hanging the suite.
+/// Holds every scope open until all `expected` have arrived, so overlap is asserted via
+/// `peakArrivals` rather than left to the scheduler: the AMDevice call trace alone cannot tell
+/// overlapping scopes from serialised ones. The timeout only turns a serialising regression into a
+/// `peakArrivals` failure instead of a hang.
 ///
 /// `@unchecked Sendable`: all mutable state is guarded by `lock`.
 private final class ScopeBarrier: @unchecked Sendable {
@@ -84,24 +78,14 @@ private final class ScopeBarrier: @unchecked Sendable {
   }
 }
 
-/// How many AMDevice sessions a given pattern of scopes opens, and when each is torn down.
-///
-/// A device is connected and a session opened for the duration of a `withConnectedDevice` scope
-/// and closed when it ends, but scopes nest and overlap — every device command opens one, and
-/// `withHouseArrestAFCConnection` opens one around work that opens more. So the session is
-/// reference counted: overlapping scopes share one, and only the last to end closes it. That
-/// counting is the whole of what `FBAMDeviceSession` does.
-///
-/// Pinned here, at `withConnectedDevice`, rather than at the session behind it, so that the tests
-/// hold across a change of whatever does the counting.
+/// A device session is opened for the duration of a `withConnectedDevice` scope, but scopes nest
+/// and overlap (`withHouseArrestAFCConnection` opens one around work that opens more), so the
+/// session is reference counted: overlapping scopes share one and only the last to end closes it.
 @MainActor
-// Serialized: these tests drive an `FBAMDevice` whose work and async queues are the main queue,
-// from main-actor tests. Run in parallel they interleave on that one queue, which is why the other
-// device-driving suites in this target are serialized too.
+// Serialized: the fake device's queues are the main queue, so parallel tests would interleave on it.
 @Suite("Device connection scopes", .serialized)
 struct FBDeviceConnectionScopeTests {
 
-  // Fresh per test: each test in a Swift Testing suite gets its own suite instance.
   private let amDevice = FakeAMDevice()
 
   /// A scope's teardown is enqueued on the device's work queue as the scope unwinds, so it can
@@ -145,8 +129,6 @@ struct FBDeviceConnectionScopeTests {
     await waitForEvents(sessionStart + sessionEnd + sessionStart + sessionEnd)
   }
 
-  /// The reference count itself: three scopes are open at once, they connect once between them,
-  /// and the session is torn down once, after the last of them ends.
   @Test("Overlapping scopes share one session")
   func overlappingScopesShareOneSession() async throws {
     let device = amDevice.makeAMDevice()
@@ -166,8 +148,6 @@ struct FBDeviceConnectionScopeTests {
     await waitForEvents(sessionStart + sessionEnd)
   }
 
-  /// A scope that throws releases its use of the session on the way out, the same as one that
-  /// returns; the body's error is what surfaces.
   @Test("A throwing body still closes the session")
   func aThrowingBodyStillClosesTheSession() async {
     struct BodyError: Error {}
@@ -207,8 +187,6 @@ struct FBDeviceConnectionScopeTests {
     await waitForEvents(failedStart + sessionStart + sessionEnd)
   }
 
-  /// One of the overlapping scopes failing does not take the shared session with it: the other two
-  /// run to completion on it and it is still torn down exactly once.
   @Test("Overlapping scopes share one session when one body throws")
   func overlappingScopesShareOneSessionWhenOneBodyThrows() async throws {
     struct BodyError: Error {}
