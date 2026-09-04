@@ -58,21 +58,18 @@ extension FBAMDevice {
   /// Starts a service and wraps it in an AFC client, tearing both down once `body` returns or
   /// throws.
   ///
-  /// The AFC connection carries its own teardown on top of the service connection's, so the two
-  /// are released innermost first.
+  /// The AFC connection is closed before the service connection beneath it is invalidated, so the
+  /// two are released innermost first.
   func withAFCConnection<T>(
     _ service: String,
     calls afcCalls: AFCCalls = FBAFCConnection.defaultCalls,
     _ body: (FBAFCConnection) async throws -> T
   ) async throws -> T {
     let logger = self.logger
-    let workQueue = self.workQueue
     return try await withServiceConnection(service) { connection in
-      try await withFBFutureContext(
-        FBAFCConnection.afc(from: connection, calls: afcCalls, logger: logger, queue: workQueue)
-      ) { afc in
-        try await body(afc)
-      }
+      let afc = try FBAFCConnection.afc(from: connection, calls: afcCalls, logger: logger)
+      defer { try? afc.close() }
+      return try await body(afc)
     }
   }
 

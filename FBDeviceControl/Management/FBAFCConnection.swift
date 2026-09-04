@@ -113,32 +113,18 @@ public final class FBAFCConnection {
     self.logger = logger
   }
 
-  public class func afc(
+  /// Wraps a service connection in an AFC client, which the caller then owns and must close.
+  static func afc(
     from serviceConnection: FBAMDServiceConnection,
     calls: AFCCalls,
-    logger: any FBControlCoreLogger,
-    queue: DispatchQueue
-  ) -> FBFutureContext<FBAFCConnection> {
-    FBFuture<AnyObject>
-      .onQueue(
-        queue,
-        resolve: { () -> FBFuture<AnyObject> in
-          let connection = serviceConnection.asAFCConnection(
-            calls: calls, callback: afcConnectionCallback, logger: logger)
-          guard connection.connectionIsValid else {
-            return FBFuture<AnyObject>(
-              error: FBAFCConnectionError.connectionNotValid(description: String(describing: connection)) as NSError)
-          }
-          return FBFuture<AnyObject>(result: connection)
-        }
-      )
-      .onQueue(
-        queue,
-        contextualTeardown: { (connection: AnyObject, _: FBFutureState) -> FBFuture<NSNull> in
-          try? (connection as? FBAFCConnection)?.close()
-          return FBFuture<NSNull>.empty()
-        }
-      ).retyped(FBFutureContext<FBAFCConnection>.self)
+    logger: any FBControlCoreLogger
+  ) throws -> FBAFCConnection {
+    let connection = serviceConnection.asAFCConnection(
+      calls: calls, callback: afcConnectionCallback, logger: logger)
+    guard connection.connectionIsValid else {
+      throw FBAFCConnectionError.connectionNotValid(description: String(describing: connection))
+    }
+    return connection
   }
 
   // MARK: - Public
