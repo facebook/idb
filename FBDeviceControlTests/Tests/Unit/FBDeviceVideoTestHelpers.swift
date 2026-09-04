@@ -10,7 +10,6 @@ import CoreVideo
 import FBControlCore
 import Foundation
 
-/// A test double logger that captures all logged messages for assertion.
 // SAFETY: writes are serialized by `lock`; tests read `messages` after the work under test finishes.
 final class CapturingLogger: NSObject, FBControlCoreLogger, @unchecked Sendable {
   let messages = NSMutableArray()
