@@ -96,8 +96,8 @@ final class FBHouseArrestService: @unchecked Sendable {
   /// Gives up use of the connection, passing it to the next waiter or pooling it for reuse.
   func release() {
     lock.lock()
-    // Waiters are served back to front, as the pending queue of the `FBFutureContextManager` this
-    // replaced also was. `inUse` stays set: use passes straight on to the consumer resumed here.
+    // Waiters are served back to front. `inUse` stays set: use passes straight on to the consumer
+    // resumed here.
     if let next = waiters.popLast() {
       lock.unlock()
       next.resume()
