@@ -12,11 +12,8 @@ import Foundation
 import GRPC
 import IDBGRPCSwift
 
-/// The two command-executor reads this handler drives. Extracted as a seam so the handler's
-/// request→options→executor wiring can be tested against a recording double: `FBIDBCommandExecutor`
-/// is a `public final class` with no other injection point, and the options handed across this
-/// boundary are the only place a request field dropped between the wire and the reader is
-/// observable.
+/// Seam over the two `FBIDBCommandExecutor` reads this handler drives, so the request-to-options wiring
+/// can be tested against a double.
 protocol AccessibilityDescribing {
   func accessibility_describe(
     query: FBAccessibilityElementQuery,
@@ -41,9 +38,7 @@ struct AccessibilityInfoMethodHandler {
     try await Self.respond(to: request, using: commandExecutor)
   }
 
-  /// The request→executor core, lifted out of `handle` so it can be exercised without a
-  /// `GRPCAsyncServerCallContext` (a GRPC framework type the companion never constructs and `handle`
-  /// does not read) and against an `AccessibilityDescribing` double.
+  /// Lifted out of `handle` so it can be tested without a `GRPCAsyncServerCallContext`.
   static func respond(
     to request: Idb_AccessibilityInfoRequest,
     using commandExecutor: any AccessibilityDescribing
