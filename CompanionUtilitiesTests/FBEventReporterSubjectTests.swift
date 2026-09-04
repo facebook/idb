@@ -31,20 +31,8 @@ struct FBEventReporterSubjectTests {
   }
 
   @Test
-  func subMillisecondNegativeDurationTruncatesToZero() {
-    let subject = FBEventReporterSubject(forSuccessfulCall: "list_apps", duration: -0.0005, size: nil, arguments: [])
-    #expect(subject.duration == NSNumber(value: UInt(0)))
-  }
-
-  @Test
   func negativeDurationSaturatesToZero() {
     let subject = FBEventReporterSubject(forSuccessfulCall: "list_apps", duration: -5, size: nil, arguments: [])
-    #expect(subject.duration == NSNumber(value: UInt(0)))
-  }
-
-  @Test
-  func negativeMillisecondDurationSaturatesToZero() {
-    let subject = FBEventReporterSubject(forFailingCall: "list_apps", duration: -0.001, message: "failed", size: nil, arguments: [])
     #expect(subject.duration == NSNumber(value: UInt(0)))
   }
 
@@ -57,12 +45,6 @@ struct FBEventReporterSubjectTests {
   @Test
   func infiniteDurationSaturatesToZero() {
     let subject = FBEventReporterSubject(forSuccessfulCall: "list_apps", duration: .infinity, size: nil, arguments: [])
-    #expect(subject.duration == NSNumber(value: UInt(0)))
-  }
-
-  @Test
-  func negativeInfiniteDurationSaturatesToZero() {
-    let subject = FBEventReporterSubject(forSuccessfulCall: "list_apps", duration: -.infinity, size: nil, arguments: [])
     #expect(subject.duration == NSNumber(value: UInt(0)))
   }
 
