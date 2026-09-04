@@ -8,8 +8,6 @@
 import CompanionLib
 @preconcurrency import FBControlCore
 import Foundation
-// Uses XCTest to match the existing `IDBTransientTests` in this target; migrating
-// the whole target to Swift Testing is a separate effort.
 // ast-grep-ignore: swift-testing/swift/no-new-xctest
 import XCTest
 
