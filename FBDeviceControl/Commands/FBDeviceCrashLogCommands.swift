@@ -12,7 +12,6 @@ private let CrashReportMoverService = "com.apple.crashreportmover"
 private let CrashReportCopyService = "com.apple.crashreportcopymobile"
 private let PingSuccess = "ping"
 
-/// The ways device crash-log collection can fail, as data rather than assembled strings.
 public enum FBDeviceCrashLogError: Error {
   case ingestFailed(name: String)
   case pingbackReceiveFailed(service: String, underlying: Error)
@@ -38,12 +37,9 @@ extension FBDeviceCrashLogError: LocalizedError {
 public final class FBDeviceCrashLogCommands {
   private weak var device: FBDevice?
   private let store: FBCrashLogStore
-  /// The AFC table the crash report file service is read through, when a caller supplies one.
-  ///
-  /// Held optional and resolved at the point of use rather than defaulted in the initializer:
-  /// `FBAFCConnection.defaultCalls` dlopens MobileDevice on first evaluation, and constructing
-  /// these commands must not force that. Reading it eagerly aborts the process whenever the
-  /// private frameworks have not been loaded yet.
+  /// Resolved at the point of use: `FBAFCConnection.defaultCalls` dlopens MobileDevice on first
+  /// evaluation and aborts if the private frameworks are not loaded, so constructing these
+  /// commands must not read it.
   private let injectedAFCCalls: AFCCalls?
 
   private var afcCalls: AFCCalls {
@@ -71,8 +67,6 @@ public final class FBDeviceCrashLogCommands {
     // Start listening for the next matching crash log first, then kick off ingestion as a
     // fire-and-forget background job: a log ingested before the listener is installed is not
     // reported.
-    // The listener rides fbFutureFromAsync rather than Task: region isolation rejects
-    // sending the non-Sendable predicate into a Task closure.
     let next = fbFutureFromAsync { [store] in
       try await store.nextCrashLog(forMatchingPredicate: predicate)
     }
