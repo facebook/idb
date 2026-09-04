@@ -11,7 +11,7 @@ import Foundation
 ///
 /// `id` is absent for notifications; `params` is optional and may be any JSON
 /// value. `jsonrpc` is decoded leniently (it should be "2.0") so a malformed or
-/// missing version does not drop the whole message during this scaffolding phase.
+/// missing version does not drop the whole message.
 public struct JSONRPCRequest: Codable, Equatable, Sendable, CustomStringConvertible {
   public let jsonrpc: String?
   public let method: String
