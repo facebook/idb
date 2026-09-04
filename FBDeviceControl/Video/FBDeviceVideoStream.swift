@@ -59,9 +59,8 @@ extension FBDeviceVideoStreamError: LocalizedError {
   }
 }
 
-// @unchecked Sendable: like FBSimulatorVideoStream, this is a plain NSObject whose frame state is
-// confined to `writeQueue` (the AVCapture delegate queue), and whose lifecycle state below is guarded
-// by `lifecycleLock`. The conformance lets the async completion await use a cancellation handler.
+// @unchecked Sendable: frame state is confined to `writeQueue` (the AVCapture delegate queue);
+// lifecycle state is guarded by `lifecycleLock`.
 public class FBDeviceVideoStream: NSObject, FBVideoStream, @unchecked Sendable {
   let logger: any FBControlCoreLogger
   private let session: AVCaptureSession
@@ -107,7 +106,6 @@ public class FBDeviceVideoStream: NSObject, FBVideoStream, @unchecked Sendable {
     return streamType.init(session: session, output: output, writeQueue: writeQueue, logger: logger)
   }
 
-  // Internal (not private) so @testable tests can assert format → subclass dispatch.
   class func classForConfiguration(_ configuration: FBVideoStreamConfiguration) -> FBDeviceVideoStream.Type? {
     switch configuration.format {
     case let .compressedVideo(codec, transport):
@@ -151,7 +149,7 @@ public class FBDeviceVideoStream: NSObject, FBVideoStream, @unchecked Sendable {
     self.consumer = consumer
     output.setSampleBufferDelegate(self, queue: writeQueue)
     session.startRunning()
-    // Resolve once the first frame is delivered (see captureOutput), matching the old startFuture.
+    // Resolves once the first frame is delivered (see captureOutput).
     await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
       registerStartAwaiter(continuation)
     }
@@ -237,7 +235,6 @@ public class FBDeviceVideoStream: NSObject, FBVideoStream, @unchecked Sendable {
         registerStopAwaiter(continuation)
       }
     } onCancel: {
-      // Cancelling a completion await stops the stream (mirrors a cancellable completion signal).
       Task { [weak self] in try? await self?.stopStreaming() }
     }
   }
