@@ -8,7 +8,6 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-/// The ways socket forwarding can fail, as data rather than assembled strings.
 public enum FBDeviceSocketForwardingError: Error {
   case fileDescriptorWriterFailed(fileDescriptor: Int32)
   case socketDuplicationFailed(message: String)
@@ -66,11 +65,10 @@ public final class FBDeviceSocketForwardingCommands {
     }
     try await device.withConnectedDevice(purpose: "Socket Connection") { connectedDevice in
       let localSocket = try Self.openLocalSocket(toRemotePort: Int(remotePort), on: connectedDevice, logger: device.logger)
-      // The writer gets its own duplicate of the socket, owned and closed by
-      // its channel. Two dispatch io channels must not share one descriptor:
-      // they share a per-descriptor entry inside libdispatch, and one
-      // channel's cleanup is deferred behind the other's outstanding
-      // operations, wedging teardown (pinned in FBFileWriterTests).
+      // The writer gets its own duplicate of the socket, owned and closed by its channel. Two
+      // dispatch io channels must not share one descriptor: they share a per-descriptor entry
+      // inside libdispatch, and one channel's cleanup is deferred behind the other's outstanding
+      // operations, wedging teardown.
       let writerDescriptor = dup(localSocket)
       guard writerDescriptor >= 0 else {
         close(localSocket)
