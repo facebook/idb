@@ -15,7 +15,6 @@
 // a threadsafety.
 @interface FBFutureTeardowns : NSObject
 - (void)addObject:(FBFutureContext_Teardown *)object;
-- (FBFutureContext_Teardown *)pop;
 - (void)addObjectsFromArray:(NSArray<FBFutureContext_Teardown *> *)array;
 - (NSArray<FBFutureContext_Teardown *> *)asArray;
 @end
@@ -46,16 +45,6 @@
   dispatch_sync(_queue, ^{
     [self->_data addObject:object];
   });
-}
-
-- (FBFutureContext_Teardown *)pop
-{
-  __block FBFutureContext_Teardown *result;
-  dispatch_sync(_queue, ^{
-    result = [self->_data lastObject];
-    [self->_data removeLastObject];
-  });
-  return result;
 }
 
 - (void)addObjectsFromArray:(NSArray<FBFutureContext_Teardown *> *)array
@@ -297,37 +286,6 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
     nextContext = [[FBFutureContext alloc] initWithFuture:future teardowns:self.teardowns];
   });
   return nextContext;
-}
-
-- (FBFutureContext *)onQueue:(dispatch_queue_t)queue replace:(FBFutureContext *(^)(id))replace
-{
-  dispatch_queue_t nextContextQueue = dispatch_queue_create("com.facebook.fbcontrolcore.next_context", DISPATCH_QUEUE_SERIAL);
-  FBFutureContext_Teardown *top = [self.teardowns pop];
-  __block FBFutureContext *nextContext = nil;
-  FBFuture *future = [[self.future
-                       onQueue:queue
-                       fmap:^(id result) {
-                         FBFutureContext *resolved = replace(result);
-                         dispatch_sync(nextContextQueue, ^{
-                           [nextContext.teardowns addObjectsFromArray:[resolved.teardowns asArray]];
-                         });
-                         return resolved.future;
-                       }]
-                      onQueue:queue
-                      chain:^(FBFuture *resolved) {
-                        return [[top performTeardown:resolved.state] chainReplace:resolved];
-                      }];
-
-  dispatch_sync(nextContextQueue, ^{
-    nextContext = [[FBFutureContext alloc] initWithFuture:future teardowns:self.teardowns];
-  });
-  return nextContext;
-}
-
-- (FBFutureContext *)onQueue:(dispatch_queue_t)queue handleError:(nonnull FBFuture * _Nonnull (^)(NSError * _Nonnull))handler
-{
-  FBFuture *next = [self.future onQueue:queue handleError:handler];
-  return [[FBFutureContext alloc] initWithFuture:next teardowns:self.teardowns];
 }
 
 - (FBFutureContext *)onQueue:(dispatch_queue_t)queue contextualTeardown:(FBFuture<NSNull *> *(^)(id, FBFutureState) )action
