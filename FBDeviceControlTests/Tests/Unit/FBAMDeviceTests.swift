@@ -13,11 +13,6 @@ import Testing
 
 private var sAMDeviceEvents: [String] = []
 
-// MARK: - Test class
-
-/// Pinned to the main actor: the AMDevice stubs append to `sAMDeviceEvents` from the device's
-/// work and async queues, both of which are `DispatchQueue.main`, so the assertions have to read
-/// it there too.
 /// The session is stopped and the device disconnected before the connection is invalidated: the
 /// service is started inside a pop, so the AMDevice session is not held for the caller's use of
 /// the connection.
@@ -170,8 +165,6 @@ final class FBAMDeviceTests {
     return device
   }
 
-  // MARK: - Tests
-
   /// The context teardown (`stop_session`, `disconnect`) is enqueued on the main queue when the
   /// popped future resolves, so it can still be pending when the await resumes.
   private func waitForDeviceEvents(
@@ -190,13 +183,14 @@ final class FBAMDeviceTests {
     }
   }
 
+  // MARK: - Tests
+
   @Test
   func descriptionNamesTheDeviceByUdidAndName() {
     #expect((device.description) == ("AMDevice foo | unknown"))
 
     device.allValues[FBDeviceKey.deviceName.rawValue] = "A Phone"
     #expect((device.description) == ("AMDevice foo | A Phone"))
-    // How the device reaches a log line, which is the only way anything reads the description.
     #expect(("\(device)") == ("AMDevice foo | A Phone"))
   }
 
@@ -230,9 +224,7 @@ final class FBAMDeviceTests {
     do {
       try await device.withServiceConnection("com.apple.testservice") { _ in throw BodyError() }
       Issue.record("Expected the body's error to propagate")
-    } catch is BodyError {
-      // Expected.
-    }
+    } catch is BodyError {}
 
     await waitForDeviceEvents(startServiceEvents)
     #expect((startServiceEvents) == (sAMDeviceEvents))
