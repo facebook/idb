@@ -11,7 +11,6 @@ import Foundation
 private let DefaultDRMHandshakeURL = "https://albert.apple.com/deviceservices/drmHandshake"
 private let DefaultDeviceActivationURL = "https://albert.apple.com/deviceservices/deviceActivation"
 
-/// The ways device activation can fail, as data rather than assembled strings.
 public enum FBDeviceActivationError: Error {
   case invalidActivationState(state: String)
   case activationStateMismatch(expected: String, actual: String)
@@ -184,7 +183,6 @@ public final class FBDeviceActivationCommands {
   private static func mobileActivationActivate(forRequestPayload requestPayload: [String: Any]) async throws -> Data {
     let payloadData = try PropertyListSerialization.data(fromPropertyList: requestPayload, format: .xml, options: 0)
 
-    // Multipart info
     let boundaryConstant = UUID().uuidString
     let contentType = "multipart/form-data; boundary=\(boundaryConstant)"
 
