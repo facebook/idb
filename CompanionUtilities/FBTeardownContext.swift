@@ -38,28 +38,17 @@ private final class FBTeardownContextImpl: @unchecked Sendable {
   }
 }
 
-/// Use this class to coordinate cleanup of the tasks.
+/// Coordinates LIFO cleanup of resources created inside a task scope:
 ///
 /// ```
-///
-/// func automaticCleanup() async throws -> Response {
-///   return FBTeardownContext.withAutocleanup {
-///     doSomeStuff()
-///   }
-/// }
-///
-/// func doSomeStuff() {
+/// try await FBTeardownContext.withAutocleanup {
 ///   let tmpDir = createTemporaryDirectory()
-///   FBTeardownContext.current.addCleanup {
-///     FileManager.default.remove(tmpDir)
-///   }
+///   try FBTeardownContext.current.addCleanup { try FileManager.default.removeItem(atPath: tmpDir) }
 ///   addFiles(to: tmpDir)
 /// }
-///
 /// ```
 public final class FBTeardownContext: Sendable {
 
-  /// Current context that binded to swift concurrency Task. For more info read about `@TaskLocal`
   @TaskLocal public static var current: FBTeardownContext = .init(emptyContext: ())
 
   private let contextImpl: FBTeardownContextImpl?
@@ -72,16 +61,13 @@ public final class FBTeardownContext: Sendable {
     self.codeLocation = .init(function: nil, file: "", line: 0, column: 0)
   }
 
-  /// Initializer is private intentionally to restrict to `withAutocleanup` usage
   private init(isAutocleanup: Bool, function: String = #function, file: String = #file, line: Int = #line, column: Int = #column) {
     self.contextImpl = FBTeardownContextImpl()
     self.isAutocleanup = isAutocleanup
     self.codeLocation = .init(function: function, file: file, line: line, column: column)
   }
 
-  /// Creates `FBContext` and executes operation with it
-  /// - Parameter operation: Inside the operation you have `FBTeardownContext.current` available that will be cleaned up on scoping out
-  /// - Returns: Operation result
+  /// Runs `operation` with a fresh `FBTeardownContext.current`, then performs its cleanups.
   public static func withAutocleanup<T>(function: String = #function, file: String = #file, line: Int = #line, column: Int = #column, operation: nonisolated(nonsending) () async throws -> T) async throws -> T {
     let context = FBTeardownContext(isAutocleanup: true, function: function, file: file, line: line, column: column)
     let result = try await FBTeardownContext.$current.withValue(context, operation: operation)
@@ -89,8 +75,7 @@ public final class FBTeardownContext: Sendable {
     return result
   }
 
-  /// Adds cleanup closure to the stack. All cleanup jobs will be called in LIFO order
-  /// - Parameter cleanup: Task with cleanup job. There is no enforcement that job *should* throw an error on failure. This is optional.
+  /// Cleanups run in LIFO order when the context is torn down.
   public func addCleanup(_ cleanup: @escaping () async throws -> Void) throws {
     guard let contextImpl else {
       throw FBTeardownContextError.emptyContext
@@ -110,22 +95,13 @@ public final class FBTeardownContext: Sendable {
     if let contextImpl, !contextImpl.cleanupPerformed {
 
       if !Task.isCancelled && !isAutocleanup {
-        // Despite that we can cleanup automatically, this should be done explicitly
-
-        // Note:
-        // When current task is cancelled, we may not reach explicit cleanup.
-        // Then cleanup in deinit is ok, because task cancellation means that we exceeded client
-        // request timeout and error propagation is not required anymore.
-        // But Task.isCancelled not always correctly represents cancellation in deinit (concurrency bug?)
-        // so there are possibility of false-failure report.
-        // To reduce false failures `isAutocleanup` introduced in contexts that used within 100% safe
-        // env with automatic cleanup error propagation.
+        // A cancelled task may never reach its explicit cleanup, so only a live, non-autocleanup context
+        // left uncleaned is a programmer error. `Task.isCancelled` is unreliable in deinit, which is why
+        // `isAutocleanup` narrows the assertion further.
         assertionFailure("Context was not cleaned up explicitly. \(codeLocation)")
       }
 
       Task {
-        // errors thrown above are not caught in this task, this was found during the move to pika27 where the compiler
-        // will no longer allow for an unstructured task with a throwing closure
         try? await contextImpl.performCleanup()
       }
     }
