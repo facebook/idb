@@ -11,20 +11,13 @@ import Testing
 
 private let DiagnosticsRelayService = "com.apple.mobile.diagnostics_relay"
 
-/// Driven entirely through `FBDevice`'s public API against a scripted `AMDCalls` table, so what is
-/// asserted is the AMDevice interaction a caller actually provokes rather than an internal helper.
-///
-/// Pinned to the main actor because the fake records events from the device's work and async
-/// queues, both of which are the main queue.
+/// Driven through `FBDevice`'s public API against a scripted `AMDCalls` table, so what is asserted
+/// is the AMDevice interaction a caller provokes.
 @MainActor
-// Serialized: these tests drive an `FBAMDevice` whose work and async queues are the main queue,
-// from main-actor tests. Run in parallel they interleave on that one queue, which is why the other
-// device-driving suites in this target are serialized too.
+// Serialized: the fake device's queues are the main queue, so parallel tests would interleave on it.
 @Suite(.serialized)
 struct FBDevicePowerCommandsTests {
 
-  // Fresh per test: each test in a Swift Testing suite gets its own suite
-  // instance, which replaces the XCTestCase setUp re-initialization.
   private let amDevice = FakeAMDevice()
 
   private func makeDevice(replying reply: Any?) -> FBDevice {
@@ -60,9 +53,8 @@ struct FBDevicePowerCommandsTests {
 
   // MARK: - The AMDevice interaction
 
-  /// The sequence a single service-backed command provokes, end to end. This is the assertion that
-  /// makes a refactor of the connection handling provable: the session is released as soon as the
-  /// service has started, and the connection is invalidated after the caller is done with it.
+  /// The session is released as soon as the service has started; the connection is invalidated only
+  /// after the caller is done with it.
   @Test
   func drivesTheFullConnectSessionServiceSequence() async throws {
     let device = makeDevice(replying: ["Status": "Success"])
