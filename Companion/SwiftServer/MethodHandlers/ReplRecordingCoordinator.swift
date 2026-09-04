@@ -10,13 +10,9 @@ import Foundation
 
 /// Coordinates the single in-progress REPL screen recording for a target.
 ///
-/// Unlike other host commands, a recording outlives the `repl` stream that started
-/// it: in the app context the app -- and the recording -- keeps running across
-/// reconnects, so the recording state lives here, on the long-lived per-target
-/// companion, rather than in the per-stream `ReplHostCommandState`. This is what
-/// makes a later invocation able to stop a recording an earlier one started, and
-/// what keeps the recording out of the per-session artifacts directory that is
-/// deleted when a stream ends.
+/// A recording outlives the `repl` stream that started it (in the app context the app keeps running
+/// across reconnects), so its state lives here, on the long-lived per-target companion, rather than in
+/// the per-stream `ReplHostCommandState`.
 ///
 /// A recording is collected only by an explicit `stopRecording()`. If it is still
 /// running when the app it belongs to exits, or when a disposable (test/simulator)
