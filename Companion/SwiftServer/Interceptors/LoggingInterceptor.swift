@@ -9,8 +9,13 @@ import CompanionLib
 import CompanionUtilities
 import GRPC
 
-/// Logs gRPC transport-level lifecycle for each call: the request start and, for
-/// streaming calls, each received frame and the client-stream close.
+/// Logs a one-line summary when a streaming call's client stream closes.
+///
+/// Call *start* is intentionally not logged here: `CompanionTelemetry` wraps
+/// every handler and already logs `<method> called with` at info, so a
+/// `Start of` line would duplicate it. Per-frame logging is likewise avoided:
+/// a single `hid` stream can carry dozens of frames, so frames are counted
+/// and summarized on close instead.
 ///
 /// Call *completion* (success/failure) is intentionally not logged or reported
 /// here. A server interceptor's `send(.end)` is not invoked when a client cancels
@@ -19,9 +24,13 @@ import GRPC
 /// handler in a `do`/`catch` and reports completion — and the success/failure
 /// `FBEventReporter` event — reliably on every termination path, so it is the
 /// single source for that.
+///
+/// Interceptor instances are created per call by `CompanionServiceInterceptors`,
+/// so the frame counter below needs no synchronization.
 final class LoggingInterceptor<Request, Response>: ServerInterceptor<Request, Response>, @unchecked Sendable {
 
   private let logger: FBIDBLogger
+  private var frameCount = 0
 
   init(logger: FBIDBLogger) {
     self.logger = logger
@@ -33,16 +42,15 @@ final class LoggingInterceptor<Request, Response>: ServerInterceptor<Request, Re
       super.receive(part, context: context)
       return
     }
+    let isStreamingCall =
+      methodInfo.callType == .clientStreaming || methodInfo.callType == .bidirectionalStreaming
 
     switch part {
-    case .metadata:
-      logger.info().log("Start of \(methodInfo.name)")
+    case .message where isStreamingCall:
+      frameCount += 1
 
-    case .message where methodInfo.callType == .clientStreaming || methodInfo.callType == .bidirectionalStreaming:
-      logger.debug().log("Receive frame of \(methodInfo.name)")
-
-    case .end where methodInfo.callType == .clientStreaming || methodInfo.callType == .bidirectionalStreaming:
-      logger.debug().log("Close client stream of \(methodInfo.name)")
+    case .end where isStreamingCall:
+      logger.debug().log("Closed client stream of \(methodInfo.name) after \(frameCount) frames")
 
     default:
       break
