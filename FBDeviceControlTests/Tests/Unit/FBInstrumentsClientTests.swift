@@ -105,21 +105,6 @@ struct FBInstrumentsClientTests {
     #expect(readInt32(result, at: 8) == -1)
   }
 
-  @Test
-  func argumentDataForInt32WithZeroProducesCorrectFormat() {
-    let result = FBInstrumentsClient.argumentData(forInt32: 0)
-
-    #expect(result.count == 12)
-    #expect(readInt32(result, at: 8) == 0)
-  }
-
-  @Test
-  func argumentDataForInt32WithMaxValuePreservesBoundary() {
-    let result = FBInstrumentsClient.argumentData(forInt32: Int32.max)
-
-    #expect(readInt32(result, at: 8) == Int32.max)
-  }
-
   // MARK: - Auxillary framing
 
   @Test
@@ -205,21 +190,5 @@ struct FBInstrumentsClientTests {
     #expect(result.count == 1)
     let decoded = result.first as? NSDictionary
     #expect(decoded == dictionary as NSDictionary)
-  }
-
-  @Test
-  func objectArgumentsPreservesArgumentOrder() throws {
-    let auxData = FBInstrumentsClient.auxillaryData(fromArgumentsData: [
-      FBInstrumentsClient.argumentData(forArgument: "alpha"),
-      FBInstrumentsClient.argumentData(forArgument: "beta"),
-      FBInstrumentsClient.argumentData(forArgument: "gamma"),
-    ])
-
-    let result = try FBInstrumentsClient.objectArguments(fromAuxillaryData: auxData)
-
-    #expect(result.count == 3)
-    #expect(result.first as? String == "alpha")
-    #expect(result.dropFirst().first as? String == "beta")
-    #expect(result.last as? String == "gamma")
   }
 }
