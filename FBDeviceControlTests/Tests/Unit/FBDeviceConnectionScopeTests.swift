@@ -89,11 +89,11 @@ private final class ScopeBarrier: @unchecked Sendable {
 /// A device is connected and a session opened for the duration of a `withConnectedDevice` scope
 /// and closed when it ends, but scopes nest and overlap — every device command opens one, and
 /// `withHouseArrestAFCConnection` opens one around work that opens more. So the session is
-/// reference counted: overlapping scopes share one, and only the last to end closes it. That is
-/// the whole of what `FBFutureContextManager` does for `FBAMDevice`.
+/// reference counted: overlapping scopes share one, and only the last to end closes it. That
+/// counting is the whole of what `FBAMDeviceSession` does.
 ///
-/// Pinned here, at `withConnectedDevice`, rather than at the manager that implements it today,
-/// because this seam is what survives the manager's removal.
+/// Pinned here, at `withConnectedDevice`, rather than at the session behind it, so that the tests
+/// hold across a change of whatever does the counting.
 @MainActor
 // Serialized: these tests drive an `FBAMDevice` whose work and async queues are the main queue,
 // from main-actor tests. Run in parallel they interleave on that one queue, which is why the other
@@ -234,5 +234,98 @@ struct FBDeviceConnectionScopeTests {
     #expect(completed == 2)
     #expect(barrier.peakArrivals == 3, "all three scopes are open at once, not admitted in turn")
     await waitForEvents(sessionStart + sessionEnd)
+  }
+}
+
+/// Separate from `FBDeviceConnectionScopeTests` because it must not be main-actor. That suite runs
+/// its scopes one at a time on one thread, so the window in which a session is part way through
+/// being opened never exists there — the first caller runs the connect to completion before any
+/// other gets a turn. On a device the connect takes as long as the hardware takes, and callers
+/// really do arrive inside it.
+@Suite("Device session opening", .serialized)
+struct FBAMDeviceSessionOpeningTests {
+
+  /// The case the reference count cannot express on its own: a caller that arrives before there is
+  /// anything to count. It has to wait for the connect already in flight and then share it, rather
+  /// than reading "no session" and starting a second one.
+  @Test("A caller arriving while the session is opening waits for it and shares it")
+  func aCallerArrivingWhileOpeningSharesTheSession() async throws {
+    let amDevice = FakeAMDevice()
+    // Held for the duration: the session refers to its device weakly.
+    let device = amDevice.makeAMDevice()
+    defer { withExtendedLifetime(device) {} }
+    let session = device.session
+
+    let connectStarted = DispatchSemaphore(value: 0)
+    // A latch rather than a hand-off: it stays open once opened, so a second connect runs to
+    // completion and is caught by the assertion instead of deadlocking the test.
+    let letConnectFinish = DispatchSemaphore(value: 0)
+    amDevice.onConnect = {
+      connectStarted.signal()
+      letConnectFinish.wait()
+      letConnectFinish.signal()
+    }
+
+    let opener = Task.detached { try await session.acquire() }
+    connectStarted.wait()
+
+    // The connect is now held part way through, so the session is provably `opening` and this
+    // caller cannot see it in any other state.
+    let joiner = Task.detached { try await session.acquire() }
+    try await Task.sleep(nanoseconds: 200_000_000)
+    letConnectFinish.signal()
+
+    try await opener.value
+    try await joiner.value
+
+    #expect(amDevice.events == sessionStart, "one connect between the two of them")
+
+    session.release()
+    #expect(amDevice.events == sessionStart, "the joiner still holds it")
+
+    session.release()
+    #expect(amDevice.events == sessionStart + sessionEnd, "torn down once, after the last of them")
+  }
+
+  /// A connect takes as long as the device takes, so a caller waiting on someone else's has to be
+  /// able to give up. It leaves with nothing — no share of the session, and so nothing to release.
+  @Test("A caller cancelled while waiting for the session stops waiting and takes no share")
+  func aCancelledWaiterStopsWaitingAndTakesNoShare() async throws {
+    let amDevice = FakeAMDevice()
+    // Held for the duration: the session refers to its device weakly.
+    let device = amDevice.makeAMDevice()
+    defer { withExtendedLifetime(device) {} }
+    let session = device.session
+
+    let connectStarted = DispatchSemaphore(value: 0)
+    let letConnectFinish = DispatchSemaphore(value: 0)
+    amDevice.onConnect = {
+      connectStarted.signal()
+      letConnectFinish.wait()
+      letConnectFinish.signal()
+    }
+
+    let opener = Task.detached { try await session.acquire() }
+    connectStarted.wait()
+
+    let joiner = Task.detached { try await session.acquire() }
+    try await Task.sleep(nanoseconds: 200_000_000)
+    joiner.cancel()
+    // Let the connect finish before awaiting the joiner, so that a regression which ignores the
+    // cancellation is resumed by the session opening and fails the expectation below, rather than
+    // staying parked and hanging the suite.
+    letConnectFinish.signal()
+
+    await #expect(throws: CancellationError.self) {
+      try await joiner.value
+    }
+
+    try await opener.value
+    #expect(amDevice.events == sessionStart, "one connect, and none from the caller that left")
+
+    // The opener is the only user left, so its release is the last one and closes the session. Were
+    // the cancelled caller still counted, this would leave the session open.
+    session.release()
+    #expect(amDevice.events == sessionStart + sessionEnd, "torn down on the opener's release alone")
   }
 }

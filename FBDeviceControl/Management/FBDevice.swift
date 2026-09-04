@@ -199,11 +199,14 @@ public final class FBDevice: FBiOSTarget, FBDeviceCommands, CustomStringConverti
 
   // MARK: - FBDeviceCommands
 
-  public func connectToDevice(withPurpose purpose: String) -> FBFutureContext<AnyObject> {
+  public func withConnectedDevice<T>(
+    purpose: String,
+    _ body: (any FBDeviceCommands) async throws -> T
+  ) async throws -> T {
     guard let amDevice else {
-      return notAMDeviceBacked(operation: "connectToDeviceWithPurpose:")
+      throw FBAMDeviceServiceError.notAMDeviceBacked(service: purpose)
     }
-    return amDevice.connectToDevice(withPurpose: purpose)
+    return try await amDevice.withConnectedDevice(purpose: purpose, body)
   }
 
   public func startService(_ service: String) -> FBFutureContext<FBAMDServiceConnection> {

@@ -17,7 +17,7 @@ private let DeviceClassOSPrefixes = [
 ]
 
 /// An Object Wrapper around AMDeviceRef.
-public final class FBAMDevice: NSObject, FBiOSTargetInfo, FBDeviceCommands, FBFutureContextManagerDelegate {
+public final class FBAMDevice: NSObject, FBiOSTargetInfo, FBDeviceCommands {
 
   // MARK: - Properties
 
@@ -26,19 +26,18 @@ public final class FBAMDevice: NSObject, FBiOSTargetInfo, FBDeviceCommands, FBFu
   public let workQueue: DispatchQueue
   public let asyncQueue: DispatchQueue
   public let logger: any FBControlCoreLogger
-  public let contextPoolTimeout: NSNumber?
   // Created eagerly at the end of the initializer: both are constructed with this object, so they
   // cannot be `let` properties, and `lazy` would make first access from two threads a race. The
   // storage is populated before the object is shared, which is what makes the unsynchronised
   // accessors safe.
-  private var connectionContextManagerStorage: FBFutureContextManager<FBAMDevice>?
+  private var sessionStorage: FBAMDeviceSession?
   private var serviceManagerStorage: FBAMDeviceServiceManager?
 
-  var connectionContextManager: FBFutureContextManager<FBAMDevice> {
-    guard let connectionContextManagerStorage else {
-      preconditionFailure("The connection context manager is created in the initializer")
+  var session: FBAMDeviceSession {
+    guard let sessionStorage else {
+      preconditionFailure("The session is created in the initializer")
     }
-    return connectionContextManagerStorage
+    return sessionStorage
   }
 
   var serviceManager: FBAMDeviceServiceManager {
@@ -87,14 +86,13 @@ public final class FBAMDevice: NSObject, FBiOSTargetInfo, FBDeviceCommands, FBFu
     self.calls = calls
     self.workQueue = workQueue
     self.asyncQueue = asyncQueue
-    self.contextPoolTimeout = connectionReuseTimeout
     // The udid is read from `allValues`, so the named logger can only be built after it is set.
     let udid = allValues[FBDeviceKey.uniqueDeviceID.rawValue] as? String ?? UnknownValue
     self.logger = logger.withName(udid)
     super.init()
     // The un-named logger: only this object's own logger is decorated with the udid.
-    self.connectionContextManagerStorage = FBFutureContextManager<FBAMDevice>(
-      queue: workQueue, delegate: self, logger: logger)
+    self.sessionStorage = FBAMDeviceSession(
+      device: self, reuseTimeout: connectionReuseTimeout?.doubleValue, logger: logger)
     self.serviceManagerStorage = FBAMDeviceServiceManager(
       device: self, serviceTimeout: serviceReuseTimeout?.doubleValue)
   }
@@ -176,12 +174,14 @@ public final class FBAMDevice: NSObject, FBiOSTargetInfo, FBDeviceCommands, FBFu
 
   // MARK: - FBDeviceCommands
 
-  // The protocol witnesses below carry the erased types the requirements import with —
-  // `any FBDeviceCommands`, `AnyObject`, `Any` — because a Swift witness must match its
-  // requirement exactly rather than covariantly.
-
-  public func connectToDevice(withPurpose purpose: String) -> FBFutureContext<AnyObject> {
-    connectionContextManager.utilize(withPurpose: purpose).retyped(FBFutureContext<AnyObject>.self)
+  public func withConnectedDevice<T>(
+    purpose: String,
+    _ body: (any FBDeviceCommands) async throws -> T
+  ) async throws -> T {
+    logger.log("Taking the device into use for \(purpose)")
+    try await session.acquire()
+    defer { session.release() }
+    return try await body(self)
   }
 
   public func startService(_ service: String) -> FBFutureContext<FBAMDServiceConnection> {
@@ -203,36 +203,6 @@ public final class FBAMDevice: NSObject, FBiOSTargetInfo, FBDeviceCommands, FBFu
       defer { service.release() }
       return try await body(connection)
     }
-  }
-
-  // MARK: - FBFutureContextManagerDelegate
-
-  @objc public func prepare(_ logger: any FBControlCoreLogger) -> FBFuture<AnyObject> {
-    do {
-      guard let amDevice else {
-        throw FBAMDeviceServiceError.deviceNotConnected(service: "connect")
-      }
-      try FBAMDeviceUsage.start(using: amDevice, calls: calls, logger: logger)
-    } catch {
-      return FBFuture<AnyObject>(error: error as NSError)
-    }
-    return FBFuture<AnyObject>(result: self)
-  }
-
-  @objc public func teardown(_ device: Any, logger: any FBControlCoreLogger) -> FBFuture<NSNull> {
-    guard let amDevice else {
-      return FBFuture<NSNull>(error: FBAMDeviceServiceError.deviceNotConnected(service: "disconnect") as NSError)
-    }
-    FBAMDeviceUsage.stop(using: amDevice, calls: calls, logger: logger)
-    return FBFuture<NSNull>.empty()
-  }
-
-  @objc public var contextName: String {
-    "\(udid)_connection"
-  }
-
-  @objc public var isContextSharable: Bool {
-    true
   }
 
   // MARK: - NSObject

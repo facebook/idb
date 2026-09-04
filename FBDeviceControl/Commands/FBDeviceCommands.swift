@@ -68,8 +68,15 @@ public protocol FBDeviceProtocol: AnyObject {
 /// Defines Device-Specific commands, off which others are based.
 public protocol FBDeviceCommands: FBDeviceProtocol {
 
-  /// Obtains the connection for a device, wrapped in an async context.
-  func connectToDevice(withPurpose purpose: String) -> FBFutureContext<AnyObject>
+  /// Connects for the duration of `body`, handing it the connected device.
+  ///
+  /// The device is connected and a session opened on it before `body` runs, and released once
+  /// `body` returns or throws. Scopes nest and overlap, so the users of a device's session are
+  /// counted: overlapping scopes share one session and only the last to end closes it.
+  func withConnectedDevice<T>(
+    purpose: String,
+    _ body: (any FBDeviceCommands) async throws -> T
+  ) async throws -> T
 
   /// Starts a service on the AMDevice.
   func startService(_ service: String) -> FBFutureContext<FBAMDServiceConnection>
@@ -80,24 +87,4 @@ public protocol FBDeviceCommands: FBDeviceProtocol {
     afcCalls: AFCCalls,
     _ body: (FBAFCConnection) async throws -> T
   ) async throws -> T
-}
-
-extension FBDeviceCommands {
-  /// Connects for the duration of `body`, handing it the typed connected device.
-  ///
-  /// This is the seam every consumer should use: the raw `connectToDevice` context is erased to
-  /// `AnyObject` because Objective-C generics cannot carry a Swift existential, and dynamic
-  /// member lookup on `AnyObject` compiles against any `@objc` member and fails at runtime — the
-  /// cast here is what turns that silent hazard back into a type error at the call site.
-  public func withConnectedDevice<T>(
-    purpose: String,
-    _ body: (any FBDeviceCommands) async throws -> T
-  ) async throws -> T {
-    try await withFBFutureContext(connectToDevice(withPurpose: purpose)) { connected in
-      guard let connected = connected as? any FBDeviceCommands else {
-        throw FBAMDeviceServiceError.notAMDeviceBacked(service: purpose)
-      }
-      return try await body(connected)
-    }
-  }
 }

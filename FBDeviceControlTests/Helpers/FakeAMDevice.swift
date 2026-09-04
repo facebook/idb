@@ -125,6 +125,11 @@ final class FakeAMDevice: NSObject {
   /// into use. Zero succeeds.
   var startSessionStatus: Int32 = 0
 
+  /// Run inside `Connect`, before it returns. A test holds the connect open here to drive callers
+  /// that arrive while the session is still being opened — a window that is real on a device,
+  /// where connecting takes as long as the hardware takes, but instantaneous otherwise.
+  var onConnect: (@Sendable () -> Void)?
+
   private(set) var mountedImagePaths: [String] = []
 
   private var services: [String: FakeLockdownService] = [:]
@@ -192,7 +197,11 @@ final class FakeAMDevice: NSObject {
     calls.Release = { _ in }
 
     calls.Connect = { deviceRef in
-      FakeAMDevice.device(deviceRef)?.record("connect")
+      guard let device = FakeAMDevice.device(deviceRef) else {
+        return 1
+      }
+      device.record("connect")
+      device.onConnect?()
       return 0
     }
     calls.Disconnect = { deviceRef in
