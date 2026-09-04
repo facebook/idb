@@ -533,15 +533,26 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: FBSimulatorVideoStre
   }
 
   static func encoderSpecification(for format: FBVideoStreamFormat) -> [String: Any] {
-    if case .mjpeg(encoder: .allowSoftware) = format {
+    switch format {
+    case .mjpeg(encoder: .allowSoftware):
       return [
         kVTVideoEncoderSpecification_EnableHardwareAcceleratedVideoEncoder as String: true
       ]
+    case .mjpeg(encoder: .requireHardware), .minicap:
+      // Low-latency rate control is a video-codec selector. Passing it to the
+      // JPEG encoder makes VTCompressionSessionCreate return kVTParameterErr
+      // (-12902) on macOS 26.
+      return [
+        kVTVideoEncoderSpecification_RequireHardwareAcceleratedVideoEncoder as String: true
+      ]
+    case .compressedVideo:
+      return [
+        kVTVideoEncoderSpecification_RequireHardwareAcceleratedVideoEncoder as String: true,
+        kVTVideoEncoderSpecification_EnableLowLatencyRateControl as String: true,
+      ]
+    case .bgra:
+      return [:]
     }
-    return [
-      kVTVideoEncoderSpecification_RequireHardwareAcceleratedVideoEncoder as String: true,
-      kVTVideoEncoderSpecification_EnableLowLatencyRateControl as String: true,
-    ]
   }
 
   func tearDown() throws {
