@@ -5,9 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-/// How a CLI should reach a companion, decided from the connection options and
-/// whether the current platform supports discovering a local companion. Kept free
-/// of I/O so the routing logic can be unit-tested directly (see `CompanionRouteTests`).
+/// How a CLI should reach a companion, decided from the connection options and whether the current
+/// platform supports discovering a local companion. Kept free of I/O.
 public enum CompanionRoute: Equatable {
   /// Connect directly to the companion at this `host:port` (still to be parsed),
   /// bypassing discovery. Corresponds to an explicit `--companion`.
@@ -29,11 +28,9 @@ public let localCompanionDiscoverySupported = true
 public let localCompanionDiscoverySupported = false
 #endif
 
-/// Chooses how a CLI should reach a companion. An explicit `--companion host:port`
-/// always wins; otherwise local discovery is used where it is available and
-/// reported unavailable where it is not (e.g. Linux, which has no local
-/// `idb_companion`). `localAllowed` defaults to the platform capability but can be
-/// overridden in tests.
+/// An explicit `--companion host:port` always wins; otherwise local discovery is used where it is
+/// available and reported unavailable where it is not (e.g. Linux, which has no local
+/// `idb_companion`).
 public func planCompanionRoute(
   companion: String?,
   localAllowed: Bool = localCompanionDiscoverySupported
