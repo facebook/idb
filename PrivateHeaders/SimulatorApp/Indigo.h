@@ -123,16 +123,45 @@ typedef struct {
   unsigned int eventSource; // 0x20 + 0x10 + 0x0 = 0x30
   unsigned int eventType; // 0x20 + 0x10 + 0x4 = 0x34.
   unsigned int eventTarget; // 0x20 + 0x10 + 0x8 = 0x38
-  unsigned int keyCode; // 0x20 + 0x10 + 0xc = 0x3c
+  unsigned int keyCode; // 0x20 + 0x10 + 0xc = 0x3c: the HID usage for a ButtonEventSourceHIDArbitrary event.
   unsigned int field5; // 0x20 + 0x10 + 0x10 = 0x40
+  unsigned int usagePage; // 0x20 + 0x10 + 0x14 = 0x44: only written by IndigoHIDMessageForHIDArbitrary.
 } IndigoButton;
 
 #define ButtonEventSourceApplePay 0x1f4
 #define ButtonEventSourceHomeButton 0x0
 #define ButtonEventSourceLock 0x1
 #define ButtonEventSourceKeyboard 0x2710
+/**
+ The source IndigoHIDMessageForHIDArbitrary(target, usagePage, usage, op) writes, one above
+ ButtonEventSourceKeyboard. Instead of naming a specific button it carries a HID usage: the usage in
+ IndigoButton.keyCode and its page in IndigoButton.usagePage. This is how a Consumer-page button that
+ has no dedicated ButtonEventSource — play/pause, volume — reaches the guest over the legacy transport.
+ */
+#define ButtonEventSourceHIDArbitrary 0x2711
 #define ButtonEventSourceSideButton 0xbb8
 #define ButtonEventSourceSiri 0x400002
+
+/**
+ HID Consumer page (0x0C) usages for the hardware buttons, as carried by
+ ButtonEventSourceHIDArbitrary above and by dtuhidd's IndigoButtonEvent.
+
+   0x30  Power          — the lock / side button
+   0x40  Menu           — the home button
+   0xCD  Play/Pause
+   0xCF  Voice Command  — Siri
+   0xE9  Volume Increment
+   0xEA  Volume Decrement
+
+ Volume is recorded for completeness but is deliberately NOT exposed as a button: no simulator
+ responds to it. Sending 0xE9/0xEA over dtuhidd has no observable effect on iOS 26.5, in sessions
+ where the Menu usage demonstrably works, and the simulator has no volume subsystem to drive — its
+ Settings app ships no "Sounds & Haptics" pane, and Simulator.app offers no iOS volume control (its
+ audioVolumeUp:/audioVolumeDown: actions belong to the Apple TV remote window). Simulator.app does
+ use IndigoHIDMessageForHIDArbitrary with page 0x0C, so the mechanism is right; Apple simply never
+ sends a volume usage from it. The tvOS case is untested rather than disproven — no observable was
+ found there for any button, so nothing can be concluded either way.
+ */
 
 #define ButtonEventTargetHardware 0x33
 #define ButtonEventTargetKeyboard 0x64
