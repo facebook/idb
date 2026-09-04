@@ -10,9 +10,7 @@ import Darwin
 import Foundation
 import Testing
 
-/// Tests the companion launch + startup-handshake logic by pointing
-/// `companionPath` at fake `idb_companion` scripts (the override the public API
-/// exposes for exactly this purpose).
+/// Launch and startup-handshake logic, driven with fake `idb_companion` scripts as `companionPath`.
 @Suite
 struct CompanionSpawnerTests {
   @Test
