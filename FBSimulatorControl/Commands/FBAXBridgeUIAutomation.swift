@@ -12,37 +12,23 @@ import Foundation
 /// The `FBUIAutomation` backend that reads via the `SimulatorFrameworkBridge` guest `accessibility`
 /// service — an in-simulator accessibility client with no test bundle.
 ///
-/// One-shot per read: each verb resolves the target pid (frontmost via the CoreSimulator AX path, or a
-/// given application pid), spawns the guest with `accessibility describe --pid <pid>`, parses its JSON
-/// tree, and feeds it through `FBAXBridgePlatformElement` and `FBAXNodeSerializer`.
-///
-/// Writes are semantic accessibility actions, not synthesized input: the guest hands the AX runtime a
-/// press or a scroll and the element's own implementation decides what happens, which is the whole
-/// reason to use this rather than the HID path. They are addressed by point, because a one-shot guest
-/// exits between requests and so cannot hold an element handle across one; a `.marker` write resolves
-/// its point host-side from a tree read and carries an assertion the guest re-checks, so the write
-/// cannot land on whatever moved under the point in between.
+/// Writes are semantic accessibility actions addressed by point: a one-shot guest cannot hold an
+/// element handle across requests, so a `.marker` write resolves its point host-side and carries an
+/// assertion the guest re-checks before acting, so a screen that moved does not receive the write.
 ///
 // SAFETY: stored state is immutable. Persistent transport state is actor-isolated and the one-shot
 // transport is a value type.
 // patternlint-disable-next-line unchecked-sendable
 final class FBAXBridgeUIAutomation: FBAXBridgeTreeReader, @unchecked Sendable {
 
-  /// What this read asks the guest to do about accessibility automation mode.
-  ///
-  /// Tri-state, matching the guest: `true` asserts the mode, `false` asserts it off, `nil` observes
-  /// without touching the device. Selecting axbridge by name yields `true`, because that is the
-  /// mode a UI-test host puts an application into and reading without it means UIKit collapses subtrees
-  /// and can serve cached children describing a screen that is no longer displayed.
-  ///
-  /// Carried per instance so one process can hold readers with both settings against the same device.
+  /// `true` asserts automation mode, `false` asserts it off, `nil` observes without touching the
+  /// device. Without the mode UIKit collapses subtrees and can serve cached children describing a
+  /// screen no longer displayed.
   let requestedAutomationMode: Bool?
 
   private let simulator: FBSimulator
 
-  /// How this reader reaches the guest. Internal rather than private so a test can assert which
-  /// transport instance a reader was vended with, since that is what decides whether a guest `serve`
-  /// process is shared across reads or spawned for each one.
+  /// How this reader reaches the guest.
   let transport: any FBAXBridgeTransport
 
   /// The transport lifecycle this reader was vended for. Held only so `backend` reports the case the
@@ -50,7 +36,7 @@ final class FBAXBridgeUIAutomation: FBAXBridgeTreeReader, @unchecked Sendable {
   private let persistence: FBAXBridgePersistence
 
   /// How frontmost reads resolve the foreground app. Defaults to the authoritative `.windowServer`; a
-  /// caller (e.g. sime2e) can select the positional `.centerPoint` or `.runningBoard`.
+  /// caller can select the positional `.centerPoint` or `.runningBoard`.
   private let frontmostMethod: FBAXBridgeFrontmostMethod
 
   init(
@@ -107,14 +93,8 @@ final class FBAXBridgeUIAutomation: FBAXBridgeTreeReader, @unchecked Sendable {
     )
   }
 
-  /// What this backend reads when the caller named no traversal: one fetch per process for the whole
-  /// tree, unless the read asks whether its elements can be reached.
-  ///
-  /// The application hit-tests every node to answer reachability, and a single fetch that asks for it
-  /// times out rather than answering — three reads of an Instagram feed timed out at 3.1-3.4s where the
-  /// walk answered in 100-135ms, and three reads of an idle 167-element Settings screen timed out at
-  /// 4.0-4.6s where the walk answered in 1.6-1.7s. The fallback is a correctness requirement, not a
-  /// preference.
+  /// A single fetch that asks for reachability hit-tests every node and times out rather than
+  /// answering, so those keys force the per-node walk.
   static func autoTraversal(for options: FBAccessibilityRequestOptions) -> FBAXTraversal {
     guard options.serializationKeys.isDisjoint(with: FBAXKeys.reachabilityKeys) else {
       return .viewHierarchy
@@ -122,12 +102,8 @@ final class FBAXBridgeUIAutomation: FBAXBridgeTreeReader, @unchecked Sendable {
     return .singleFetch
   }
 
-  /// Reads the whole bounded attribute tree a query targets, through the configured transport (one-shot
-  /// spawn or persistent socket). `.application` reads the named pid; every other query is a frontmost
-  /// read served by a single fused guest query — the guest resolves the frontmost app (system-wide
-  /// hit-test at the screen-centre anchor) and reads its tree in one IPC hop, reporting the pid it
-  /// resolved. No host-side CoreSimulator query and no separate pid round-trip. `.point` does not use
-  /// this — it uses the targeted `transport.hitTest`.
+  /// `.application` reads the named pid; every other query is one fused guest call that resolves the
+  /// frontmost app at the screen-centre anchor and reads its tree. `.point` goes through `hitTest`.
   func readRawTree(
     for query: FBAccessibilityElementQuery,
     attributes: [String]?,
@@ -176,9 +152,6 @@ final class FBAXBridgeUIAutomation: FBAXBridgeTreeReader, @unchecked Sendable {
     options: FBAccessibilityRequestOptions
   ) async throws -> FBAccessibilityElementsResponse? {
     try await translatingBackendErrors {
-      // A single system-wide guest hit-test resolves the element at the point and its owning app
-      // in-guest — no host-side CoreSimulator frontmost query, one IPC hop. `.point` is positional, so
-      // a system-wide hit-test is exactly its semantics (unlike a whole-tree read of "frontmost").
       let response = try await transport.send(
         .hitTest(
           x: Double(point.x), y: Double(point.y),
@@ -191,7 +164,7 @@ final class FBAXBridgeUIAutomation: FBAXBridgeTreeReader, @unchecked Sendable {
       var formatted = FBAXNodeSerializer.formattedDescription(
         ofElement: element, token: "", nestedFormat: options.nestedFormat, keys: options.serializationKeys, collector: nil
       )
-      // The hit element is the one the caller named, so it is exempt; its descendants honour the filter.
+      // The hit element is exempt from the filter; its descendants are not.
       if let children = formatted.children {
         formatted.children = options.filter.apply(to: children)
       }
@@ -208,21 +181,16 @@ final class FBAXBridgeUIAutomation: FBAXBridgeTreeReader, @unchecked Sendable {
     try await FBUIAutomationPolling.waitForMarker(
       query, backend: backend, timeout: timeout, pollInterval: pollInterval
     ) { markerValue, key, _ in
-      // Re-read the frontmost tree each poll (one fused guest query) so an app that launches mid-wait is
-      // picked up — no separate pid resolution.
+      // Re-read frontmost each poll so an app that launches mid-wait is picked up.
       do {
-        // A poll reads the raw tree directly (not through `describeTree`), so `warnIfTruncated` is not
-        // called on every poll iteration — matching the describe-path-only warning.
-        // The poll stays on the per-node walk deliberately: it runs while the screen is transitioning,
-        // where the single fetch is unmeasured, and a wait's cost is dominated by the poll interval.
+        // Raw read (not `describeTree`) so truncation is not warned per poll. `.viewHierarchy` because the
+        // single fetch is unmeasured on a transitioning screen.
         let read = try await self.readRawTree(for: .frontmost, attributes: nil, explainUnreachable: false, traversal: .viewHierarchy)
         let elements = FBAXTreeWalk.describeAllElements(
           fromTree: read.tree, keys: FBAXKeys.defaultSet.union([key.serializationKey]), nestedFormat: false, pid: read.pid
         )
         return FBAXTreeWalk.matchingElement(inElements: elements, markerValue: markerValue, key: key) != nil ? true : nil
       } catch let error as FBAXBridgeError {
-        // Which failures are worth polling through is `isTransientDuringMarkerWait`; anything else
-        // (and any unexpected non-bridge error) ends the wait at once rather than burning the timeout.
         guard error.isTransientDuringMarkerWait else {
           throw error
         }
@@ -256,9 +224,8 @@ final class FBAXBridgeUIAutomation: FBAXBridgeTreeReader, @unchecked Sendable {
     try await write(.perform(Self.action(for: direction)), to: target, query: query)
   }
 
-  /// Resolves both endpoints the way every other write on this backend resolves its target, then
-  /// synthesizes the gesture over HID. The guest has no wire verb for a drag, and one would not help:
-  /// a drag is a touch path rather than an action on a single element.
+  /// Synthesized over HID: a drag is a touch path, not an action on a single element, so the guest has
+  /// no verb for it.
   func drag(
     from source: FBAccessibilityElementQuery,
     to destination: FBAccessibilityElementQuery,
@@ -286,11 +253,7 @@ final class FBAXBridgeUIAutomation: FBAXBridgeTreeReader, @unchecked Sendable {
     }
   }
 
-  /// Sends the write and turns the guest's envelope into the verb's outcome.
-  ///
-  /// An empty point means the thing the caller aimed at was not there — an error, not a write that
-  /// passed. A marker write reports `elementMoved` rather than a coordinate the caller never chose;
-  /// see `emptyWriteTargetError`.
+  /// A write that landed on nothing is an error, not a success; see `emptyWriteTargetError`.
   private func write(
     _ kind: FBAXBridgeWriteRequest.Kind,
     to target: FBAXWriteTarget,
@@ -314,9 +277,8 @@ final class FBAXBridgeUIAutomation: FBAXBridgeTreeReader, @unchecked Sendable {
     }
   }
 
-  /// The backend-error translation for a write: the two application-level failures, plus the refused assertion,
-  /// which only a write can meet. The guest reports what it found under the point; naming the marker that
-  /// sent the write there is the host's half, so the two are joined here.
+  /// Adds the refused-assertion case, which only a write can meet, to the shared backend-error
+  /// translation; the guest cannot know which marker sent the write.
   private func translatingWriteErrors(_ query: FBAccessibilityElementQuery, _ body: () async throws -> Void) async throws {
     do {
       try await translatingBackendErrors(body)
@@ -330,8 +292,6 @@ final class FBAXBridgeUIAutomation: FBAXBridgeTreeReader, @unchecked Sendable {
 
   // MARK: - Geometry
 
-  /// A pure read: `AXFrame` is an attribute of the tree the other verbs already read, so it is served
-  /// by the shared tree-reader path with no wire verb and no guest change.
   func frame(_ query: FBAccessibilityElementQuery) async throws -> CGRect {
     try await frameFromTree(query)
   }
@@ -351,8 +311,6 @@ final class FBAXBridgeUIAutomation: FBAXBridgeTreeReader, @unchecked Sendable {
     return (Double(widthPixels) / pointsPerPixel / 2, Double(heightPixels) / pointsPerPixel / 2)
   }
 
-  /// Warns that the traversal could not answer keys the caller asked for, so a caller can tell "this read
-  /// could not ask" from "the app set nothing".
   func warnIfUnsatisfiable(_ keys: Set<FBAXKeys>, traversal: FBAXTraversal) {
     guard !keys.isEmpty else {
       return
@@ -364,16 +322,11 @@ final class FBAXBridgeUIAutomation: FBAXBridgeTreeReader, @unchecked Sendable {
     )
   }
 
-  /// Warns when a whole-tree read hit the depth or node bound, so a truncated tree is never passed off
-  /// as complete. Called once per describe by the shared `describeTree`; the `wait` poll reads via
-  /// `readRawTree` without describing, so it never warns per iteration.
   func warnIfTruncated(_ truncated: Bool) {
     guard truncated else { return }
     _ = simulator.logger.log("axbridge read hit the bound (maxDepth \(FBAXReadLimits.maxReadDepth), maxNodes \(FBAXReadLimits.maxReadNodes)); the returned tree is truncated and incomplete.")
   }
 
-  /// The axbridge profile. `acquire` is `FBAXReadTimings.residual` — see there.
-  /// `traversal` says which walk produced `machRoundTrips` — see `FBAXBridgeProfile.traversal`.
   func profile(
     for read: FBAXTreeRead, elementCount: Int, serializeDuration: CFAbsoluteTime,
     traversal: FBAXTraversal
