@@ -39,12 +39,14 @@ public final class FBProcessSpawnCommandHelpers: NSObject {
     queue: DispatchQueue,
     logger: (any FBControlCoreLogger)?
   ) {
-    logger?.log("Process \(processIdentifier) (\(configuration.processName)) has exited, tearing down IO...")
+    // One line per exit: the outcome below logs inside this completion handler,
+    // so it inherently reports after IO teardown has finished. The separate
+    // tearing-down/completed lines tripled every process exit for no
+    // additional information.
     unsafeBitCast(attachment.detach(), to: FBFuture<AnyObject>.self)
       .onQueue(
         queue,
         notifyOfCompletion: { _ in
-          logger?.log("Teardown of IO for process \(processIdentifier) (\(configuration.processName)) has completed")
           statLocFuture.resolve(withResult: NSNumber(value: statLoc))
           let wstatus = statLoc & 0x7f // _WSTATUS
           if wstatus != 0x7f /* _WSTOPPED */ && wstatus != 0 {
