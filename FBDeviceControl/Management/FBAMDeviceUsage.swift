@@ -25,13 +25,12 @@ public enum FBAMDeviceUsage {
     logger.log("\(device) ready for use")
   }
 
-  /// Ends the session and then the connection. Failures are logged by the callees rather than
-  /// surfaced: there is nothing a caller can do about a teardown that did not take.
-  public static func stop(using device: AMDevice, calls: AMDCalls, logger: any FBControlCoreLogger) throws {
+  /// Ends the session and then the connection.
+  public static func stop(using device: AMDevice, calls: AMDCalls, logger: any FBControlCoreLogger) {
     // Stop the session first.
-    try? stopSession(with: device, calls: calls, logger: logger)
+    stopSession(with: device, calls: calls, logger: logger)
     // Then the connection.
-    try? stopConnection(to: device, calls: calls, logger: logger)
+    stopConnection(to: device, calls: calls, logger: logger)
   }
 
   // MARK: - Steps
@@ -84,7 +83,7 @@ public enum FBAMDeviceUsage {
     with device: AMDevice,
     calls: AMDCalls,
     logger: any FBControlCoreLogger
-  ) throws {
+  ) {
     logger.log("Stopping Session on \(device)")
     _ = calls.StopSession(device)
   }
@@ -93,7 +92,7 @@ public enum FBAMDeviceUsage {
     to device: AMDevice,
     calls: AMDCalls,
     logger: any FBControlCoreLogger
-  ) throws {
+  ) {
     logger.log("Disconnecting from \(device)")
     _ = calls.Disconnect(device)
     logger.log("Disconnected from \(device)")

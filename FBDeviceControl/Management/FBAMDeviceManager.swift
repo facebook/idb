@@ -33,13 +33,13 @@ private func amDeviceConnected(_ device: AMDevice, manager: FBAMDeviceManager) {
   // devices reporting the other.
   let rawChipID = calls.CopyValue(device, nil, FBDeviceKey.uniqueChipID.rawValue as CFString)?.takeRetainedValue() as AnyObject?
   guard let uniqueChipID = (rawChipID as? NSNumber)?.stringValue ?? (rawChipID as? String) else {
-    try? FBAMDeviceUsage.stopConnection(to: device, calls: calls, logger: logger)
+    FBAMDeviceUsage.stopConnection(to: device, calls: calls, logger: logger)
     logger.error().log("Ignoring device as cannot obtain ECID for it")
     return
   }
 
   if let ecidFilter = manager.ecidFilter, uniqueChipID != ecidFilter {
-    try? FBAMDeviceUsage.stopConnection(to: device, calls: calls, logger: logger)
+    FBAMDeviceUsage.stopConnection(to: device, calls: calls, logger: logger)
     logger.error().log("Ignoring device as ECID \(uniqueChipID) does not match filter \(ecidFilter)")
     return
   }
@@ -57,10 +57,10 @@ private func amDeviceConnected(_ device: AMDevice, manager: FBAMDeviceManager) {
 
   // Stop the session if one was created.
   if pairedWithSession {
-    try? FBAMDeviceUsage.stopSession(with: device, calls: calls, logger: logger)
+    FBAMDeviceUsage.stopSession(with: device, calls: calls, logger: logger)
   }
   // Always disconnect, regardless of whether there was a session or not.
-  try? FBAMDeviceUsage.stopConnection(to: device, calls: calls, logger: logger)
+  FBAMDeviceUsage.stopConnection(to: device, calls: calls, logger: logger)
 
   guard let info else {
     logger.error().log("Ignoring device as no values were returned for it")

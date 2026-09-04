@@ -89,8 +89,8 @@ final class FBAMDeviceManagerUsageTests {
   }
 
   @Test
-  func stopUsingEndsTheSessionBeforeTheConnection() throws {
-    try FBAMDeviceUsage.stop(using: device, calls: stubbedCalls(), logger: logger)
+  func stopUsingEndsTheSessionBeforeTheConnection() {
+    FBAMDeviceUsage.stop(using: device, calls: stubbedCalls(), logger: logger)
     #expect((sUsageRecorder.recorded) == (["stop_session", "disconnect"]))
   }
 }

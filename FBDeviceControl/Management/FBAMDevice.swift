@@ -220,14 +220,10 @@ public final class FBAMDevice: NSObject, FBiOSTargetInfo, FBDeviceCommands, FBFu
   }
 
   @objc public func teardown(_ device: Any, logger: any FBControlCoreLogger) -> FBFuture<NSNull> {
-    do {
-      guard let amDevice else {
-        throw FBAMDeviceServiceError.deviceNotConnected(service: "disconnect")
-      }
-      try FBAMDeviceUsage.stop(using: amDevice, calls: calls, logger: logger)
-    } catch {
-      return FBFuture<NSNull>(error: error as NSError)
+    guard let amDevice else {
+      return FBFuture<NSNull>(error: FBAMDeviceServiceError.deviceNotConnected(service: "disconnect") as NSError)
     }
+    FBAMDeviceUsage.stop(using: amDevice, calls: calls, logger: logger)
     return FBFuture<NSNull>.empty()
   }
 
