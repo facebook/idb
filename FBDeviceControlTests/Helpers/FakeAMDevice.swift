@@ -92,21 +92,15 @@ private func fakeMountImage(
   return device.mountImageStatus
 }
 
-/// An `AMDCalls` table backed by scripted fakes, exercising the real `FBAMDevice`,
-/// `FBAMDServiceConnection` and command implementations with nothing device-side.
+/// An `AMDCalls` table backed by scripted fakes, so a real `FBAMDevice` and its commands can be
+/// driven through their public API with nothing device-side.
 ///
-/// `AMDCalls` is the whole seam. The connect/session lifecycle, service start, and *both* data
-/// planes — the raw `ServiceConnectionSend`/`Receive` and the plist
-/// `ServiceConnectionSendMessage`/`ReceiveMessage` — are all entries in the table, so a device
-/// built on these calls can be driven through its public API and the exchange asserted.
-///
-/// Every entry a test might reach is populated. `FBCreateZeroedAMDCalls` leaves unimplemented
-/// entries as null function pointers, which crash rather than fail when something calls through
-/// them; `CopyErrorText` in particular is reached by *every* failure path.
+/// Every entry a test might reach is populated: `FBCreateZeroedAMDCalls` leaves the rest as null
+/// function pointers, which crash rather than fail. `CopyErrorText` in particular is reached by
+/// every failure path.
 final class FakeAMDevice: NSObject {
 
-  /// Every call the device made, in order, as `event` or `event:detail`. Asserting on this is how
-  /// a refactor is shown to preserve the AMDevice interaction, not just the returned value.
+  /// Every call the device made, in order, as `event` or `event:detail`.
   private(set) var events: [String] = []
 
   /// Answers to `CopyValue`, which is also where `FBDevice` reads its cached device info.
@@ -121,13 +115,11 @@ final class FakeAMDevice: NSObject {
   /// "wrong image for this OS" case.
   var mountImageStatus: Int32 = 0
 
-  /// Status `StartSession` returns, so a test can drive the failure path of taking the device
-  /// into use. Zero succeeds.
+  /// Status `StartSession` returns; zero succeeds.
   var startSessionStatus: Int32 = 0
 
-  /// Run inside `Connect`, before it returns. A test holds the connect open here to drive callers
-  /// that arrive while the session is still being opened — a window that is real on a device,
-  /// where connecting takes as long as the hardware takes, but instantaneous otherwise.
+  /// Run inside `Connect`, before it returns, so a test can hold the connect open while other
+  /// callers arrive.
   var onConnect: (@Sendable () -> Void)?
 
   private(set) var mountedImagePaths: [String] = []
