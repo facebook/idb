@@ -57,6 +57,15 @@ private struct RequestWithUnknownFields<Storage: CustomStringConvertible> {
   let unknownFields: Storage
 }
 
+/// Renders the way a nested protobuf message does: across lines.
+private struct MultilineDescription: CustomStringConvertible {
+  var description: String { "Envelope:\nkind: ROOT\n" }
+}
+
+private struct RequestWithMultilineValue {
+  let container: MultilineDescription
+}
+
 private struct TelemetryTestError: Error, LocalizedError {
   var errorDescription: String? { "request exploded" }
 }
@@ -183,6 +192,15 @@ struct CompanionTelemetryTests {
     let truncated = CompanionTelemetry.truncateMiddle("0123456789ABCDEF", limit: 10)
     #expect((truncated.count) == (10))
     #expect((truncated) == ("012...CDEF"))
+  }
+
+  @Test
+  func multilineValuesAreFlattenedToOneLine() async throws {
+    let (telemetry, recorder) = makeTelemetry()
+    let request = RequestWithMultilineValue(container: MultilineDescription())
+    try await telemetry.unaryCall("ls", request: request) {}
+    #expect((recorder.subjects.count) == (1))
+    #expect((recorder.subjects[0].arguments) == (["container=Envelope: kind: ROOT"]))
   }
 
   @Test

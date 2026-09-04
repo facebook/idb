@@ -169,7 +169,15 @@ struct CompanionTelemetry {
       if label == "unknownFields" && raw == "UnknownStorage(data: 0 bytes)" {
         continue
       }
-      args.append("\(label)=\(Self.truncateMiddle(raw, limit: Self.argumentValueLimit))")
+      // Protobuf messages render across lines (e.g. a file container dumps
+      // as `...Container:\nkind: ROOT\n)]`); flatten so one argument stays
+      // on one log line and line-oriented tools keep working.
+      let singleLine =
+        raw
+        .components(separatedBy: .newlines)
+        .filter { !$0.isEmpty }
+        .joined(separator: " ")
+      args.append("\(label)=\(Self.truncateMiddle(singleLine, limit: Self.argumentValueLimit))")
     }
     return args
   }
