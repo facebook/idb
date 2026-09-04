@@ -20,7 +20,7 @@ typedef CFTypeRef AMDeviceRef;
 typedef CFTypeRef AFCConnectionRef;
 
 /**
- The Connection Reference as is typically passed around between functions.
+ An Alias for the AMDServiceConnectionRef Type.
  */
 typedef CFTypeRef AMDServiceConnectionRef;
 
@@ -105,7 +105,7 @@ typedef struct {
 typedef void (*AMDeviceProgressCallback)(NSDictionary<NSString *, id> *progress, void *_Nullable context);
 
 /**
- Defines the "Notification Callback" AMDeviceRef instances.
+ Defines the "Notification Callback" for AMDeviceRef instances.
  */
 typedef void (*AMDeviceNotificationCallback)(AMDeviceNotification *notification, void *_Nullable context);
 
