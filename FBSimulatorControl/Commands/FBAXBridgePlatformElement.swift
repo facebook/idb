@@ -37,15 +37,10 @@ final class FBAXBridgePlatformElement: FBAXPlatformElement {
     return .zero
   }
 
-  /// A frame dictionary with each JSON null restored to the non-finite number it stands for.
-  ///
-  /// The guest cannot send a non-finite coordinate — JSON has neither infinity nor NaN — so it emits
-  /// null instead, and an element that is off-screen or still being laid out reports one routinely.
-  /// Restoring it here lets the rest of the read treat the value like the host's own element:
-  /// `FBAccessibilityFrame` normalizes each edge independently, so the unreadable one becomes null
-  /// and the others survive. Without this, `CGRectMakeWithDictionaryRepresentation` would fail on the
-  /// null and the whole rectangle would read as the origin with no size — a real-looking position
-  /// instead of an absent one.
+  /// JSON has no infinity or NaN, so the guest sends null for a non-finite coordinate (routine for an
+  /// off-screen or still-laying-out element). Restored to infinity so
+  /// `CGRectMakeWithDictionaryRepresentation` does not fail and read the whole rect as zero;
+  /// `FBAccessibilityFrame` then nulls each non-finite edge independently.
   private static func restoringNonFinite(_ dictionary: NSDictionary) -> NSDictionary {
     guard dictionary.allValues.contains(where: { $0 is NSNull }) else {
       return dictionary
@@ -58,31 +53,16 @@ final class FBAXBridgePlatformElement: FBAXPlatformElement {
   }
 
   func axRole() -> String? {
-    // The daemon reports the automation/element type as an `XCUIElementType` raw value; map it to a
-    // readable name (e.g. 9 -> "Button") so the serialized role is legible rather than a bare number.
-    // An already-string value (or an unmapped number) passes through unchanged.
-    //
-    // `Any` is excluded from the first term because it is the automation type reporting that it has no
-    // type for this element, not a type. It maps like any other value, so taking it would end the search
-    // on a successful lookup that says nothing, discarding a class name the read already carried.
-    //
-    // A class name also outranks a stringified number, for the same reason: a class name identifies the
-    // element, `0` and `9999` identify nothing. Skipping `Any` without that second reorder would just
-    // hand the answer to the stringify term below.
+    // Resolution order: a named automation type (skipping `Any`, which means "untyped"), then the element
+    // type, then translator subrole before role (the refinement is the name a caller wants), then a
+    // class-name string. `Any` and stringified numbers come last so nothing identifying is discarded.
     let automationName = elementTypeName(FBAXWire.Node.automationType.rawValue)
     let identifying =
       (automationName == FBAXRoleVocabulary.untypedName ? nil : automationName)
       ?? elementTypeName(FBAXWire.Node.elementType.rawValue)
-      // The translator numbers its roles in its own scheme, and on a semantic read that role is the only
-      // type on the wire — so this is the term that answers there. Unidentified integers stay nil rather
-      // than stringifying: a role number means nothing to a caller expecting an `XCUIElementType` name.
-      // Subrole before role: it refines it, and the refinement is the name a caller wants — `Switch`
-      // rather than `CheckBox`, `SearchField` rather than `TextField`.
       ?? translatorSubroleName()
       ?? translatorRoleName()
       ?? className(FBAXWire.Node.elementType.rawValue)
-    // `Any` comes back as the last resort, so an element with nothing more specific still reports `Any`
-    // rather than a bare number.
     return identifying
       ?? automationName
       ?? stringAttribute(FBAXWire.Node.automationType.rawValue)
@@ -176,11 +156,7 @@ final class FBAXBridgePlatformElement: FBAXPlatformElement {
     return FBAXRoleVocabulary.name(forTranslatorRole: raw)
   }
 
-  /// The attribute when it already arrived as a class name, or nil when it arrived as a number.
-  ///
-  /// Every term above this one has already tried to resolve a numeric type to an `XCUIElementType` name,
-  /// so stringifying here would only ever produce `0` or `9999`. A string value — an app's own view
-  /// class, or one of Apple's private ones — is the only kind that names the element.
+  /// The attribute when it arrived as a class name; nil when it arrived as a number.
   private func className(_ key: String) -> String? {
     attributes[key] as? String
   }
