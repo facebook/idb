@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// Static libraries have no umbrella header for the Swift compiler to use, so
-// the target's own Objective-C surface is exposed to Swift through this
-// bridging header (the .framework product did this implicitly).
+// Static libraries have no umbrella header, so the target's own Objective-C surface reaches
+// Swift through this bridging header.
 #import "FBDeviceControl.h"
