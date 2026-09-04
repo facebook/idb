@@ -9,11 +9,10 @@ import FBControlCore
 import Foundation
 import XCTestBootstrap
 
-private let FBLogicTestTimeout: TimeInterval = 60 * 60 // Approx. an hour.
+private let FBLogicTestTimeout: TimeInterval = 60 * 60
 
 // MARK: - FBXCTestRunRequest
 
-/// The ways a test-run request can fail before execution, as data rather than assembled strings.
 public enum FBXCTestRunRequestError: Error {
   case abstractBaseClass(typeName: String)
   case notExactlyOneTest(count: Int)
