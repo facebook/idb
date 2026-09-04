@@ -29,17 +29,13 @@ private let crashReport = """
   Exception Type:  EXC_CRASH (SIGABRT)
   """
 
-/// The half of crash-log collection that runs over AFC, driven through `FBDevice`'s public API now
-/// that the call table is injectable. The mover answers `ping`, then the copy service is listed and
-/// read as a remote filesystem.
+/// The half of crash-log collection that runs over AFC: the mover answers `ping`, then the copy
+/// service is listed and read as a remote filesystem.
 @MainActor
-// Serialized: these tests drive an `FBAMDevice` whose work and async queues are the main queue,
-// from main-actor tests. Run in parallel they interleave on that one queue, which is why the other
-// device-driving suites in this target are serialized too.
+// Serialized: the fake device's queues are the main queue, so parallel tests would interleave on it.
 @Suite(.serialized)
 struct FBDeviceCrashLogFileTests {
 
-  // Fresh per test: each test in a Swift Testing suite gets its own suite instance.
   private let amDevice = FakeAMDevice()
   private let afc = FakeAFC()
 
