@@ -21,13 +21,10 @@ private struct StubDiskImages: DeveloperDiskImageProviding {
 }
 
 @MainActor
-// Serialized: these tests drive an `FBAMDevice` whose work and async queues are the main queue,
-// from main-actor tests. Run in parallel they interleave on that one queue, which is why the other
-// device-driving suites in this target are serialized too.
+// Serialized: the fake device's queues are the main queue, so parallel tests would interleave on it.
 @Suite(.serialized)
 struct FBDeviceDiskImageMountingTests {
 
-  // Fresh per test: each test in a Swift Testing suite gets its own suite instance.
   private let amDevice = FakeAMDevice()
 
   private func diskImage(_ major: Int, _ minor: Int, signature: Data) -> FBDeveloperDiskImage {
