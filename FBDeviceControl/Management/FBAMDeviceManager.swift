@@ -20,7 +20,6 @@ private func amDeviceConnected(_ device: AMDevice, manager: FBAMDeviceManager) {
   let calls = manager.calls
 
   do {
-    // Start with a basic connection. This should always succeed, even if the device is not paired.
     try FBAMDeviceUsage.startConnection(to: device, calls: calls, logger: logger)
   } catch {
     logger.error().log("Cannot connect to device, ignoring device \(error)")
@@ -52,14 +51,11 @@ private func amDeviceConnected(_ device: AMDevice, manager: FBAMDeviceManager) {
     logger.log("Device is not paired, degraded device information will be provied \(error)")
   }
 
-  // Now extract all of the values.
   let info = FBAMDeviceUsage.obtainDeviceValues(device, calls: calls)
 
-  // Stop the session if one was created.
   if pairedWithSession {
     FBAMDeviceUsage.stopSession(with: device, calls: calls, logger: logger)
   }
-  // Always disconnect, regardless of whether there was a session or not.
   FBAMDeviceUsage.stopConnection(to: device, calls: calls, logger: logger)
 
   guard let info else {
@@ -107,9 +103,6 @@ private func amDeviceListenerCallback(
 }
 
 /// Obtains `FBAMDevice` instances.
-///
-/// Not `@objc`: nothing in Objective-C constructs or names it, and a Swift subclass of a generic
-/// Objective-C class cannot be expressed in the generated header.
 final class FBAMDeviceManager: FBDeviceManager<FBAMDevice> {
 
   // MARK: - Properties
@@ -171,7 +164,7 @@ final class FBAMDeviceManager: FBDeviceManager<FBAMDevice> {
       throw FBAMDeviceManagerError.unsubscribeFailed(status: result)
     }
 
-    // Cleanup after the subscription.
+    // Balances the retain taken in startListening.
     Unmanaged.passUnretained(self).release()
     self.subscription = nil
   }
@@ -211,8 +204,7 @@ final class FBAMDeviceManager: FBDeviceManager<FBAMDevice> {
   // MARK: - Private
 
   fileprivate func identifier(forDevice amDevice: AMDevice) -> String? {
-    // Compared by address, the same way `FBDeviceManager` does it, rather than leaving the result
-    // to how the opaque reference happens to bridge.
+    // Compared by address: equality on the bridged opaque reference is not reliable.
     let address = Unmanaged.passUnretained(amDevice as AnyObject).toOpaque()
     for device in storage.referenced.values {
       if let reference = device.amDeviceRef, Unmanaged.passUnretained(reference as AnyObject).toOpaque() == address {
