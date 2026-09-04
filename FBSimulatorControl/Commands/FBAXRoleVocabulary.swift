@@ -7,11 +7,8 @@
 
 import Foundation
 
-/// The AX role/element-type vocabulary shared by the two UI-automation reader backends: the
-/// `XCUIElementType` raw-value → readable-name map the remote adapter resolves numeric types through,
-/// the `AX`-prefix normalization the serializer applies before comparing role names, and the set of
-/// roles the `.interactable` filter keeps. Centralizing them keeps the remote adapter's numeric-type
-/// names and the serializer's role handling from drifting out of one shared spelling.
+/// The AX role/element-type vocabulary shared by the reader backends: the `XCUIElementType` raw-value
+/// to name map, the `AX`-prefix normalization, and the roles the `.interactable` filter keeps.
 enum FBAXRoleVocabulary {
 
   private static let axPrefix = "AX"
