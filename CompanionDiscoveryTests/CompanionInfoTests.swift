@@ -9,7 +9,6 @@ import CompanionDiscovery
 import Foundation
 import Testing
 
-/// Verifies `CompanionInfo` JSON encoding/decoding.
 @Suite
 struct CompanionInfoTests {
   @Test
@@ -95,7 +94,6 @@ struct CompanionInfoTests {
   }
 }
 
-/// Verifies `CompanionAddress.parse(tcp:)` host:port parsing.
 @Suite
 struct CompanionAddressParseTests {
   @Test
