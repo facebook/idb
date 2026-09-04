@@ -10,7 +10,6 @@ import Foundation
 
 // MARK: - FBDeviceApplicationError
 
-/// The ways device application operations can fail, as data rather than assembled strings.
 public enum FBDeviceApplicationError: Error {
   case awaitingTerminationUnsupported
   case installFailed(applicationName: String, status: Int32, message: String, recentEvents: String)
@@ -218,8 +217,6 @@ public final class FBDeviceApplicationCommands {
   }
 
   fileprivate func runningApplications() async throws -> [String: NSNumber] {
-    // Sequential rather than parallel: Swift 6 strict concurrency would
-    // require Sendable captures of self/device for `async let` here.
     let pidToRunningProcessName = try await pidToRunningProcessName()
     let bundleIdentifierToAttributes = try await installedApplicationsData(Self.namingLookupAttributes)
     var bundleNameToBundleIdentifier: [String: String] = [:]
