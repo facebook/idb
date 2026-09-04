@@ -23,11 +23,8 @@ struct TaskSelectState<Success: Sendable, Failure: Error>: Sendable {
 }
 
 extension Task {
-  /// Determine the first task to complete of a sequence of tasks.
-  ///
-  /// - Parameters:
-  ///   - tasks: The running tasks to obtain a result from
-  /// - Returns: The first task to complete from the running tasks
+  /// The first of `tasks` to complete. Cancelling the caller cancels every task; a winner does not
+  /// cancel the losers.
   public static func select<Tasks: Sequence & Sendable>(
     _ tasks: Tasks
   ) async -> Task<Success, Failure>
@@ -64,11 +61,6 @@ extension Task {
     }
   }
 
-  /// Determine the first task to complete of a list of tasks.
-  ///
-  /// - Parameters:
-  ///   - tasks: The running tasks to obtain a result from
-  /// - Returns: The first task to complete from the running tasks
   public static func select(
     _ tasks: Task<Success, Failure>...
   ) async -> Task<Success, Failure> where Success: Sendable {
