@@ -42,8 +42,7 @@ public protocol CompanionTLSProvider: Sendable {
 /// available; left nil otherwise, in which case companion TCP falls back to
 /// plaintext.
 public enum CompanionTLS {
-  /// Lock-guarded box for the provider. A `static let` of an `@unchecked Sendable`
-  /// type keeps this global concurrency-safe without an unsafe opt-out attribute.
+  /// Lock-guarded box so the global provider can be read and set from any thread.
   private final class Storage: @unchecked Sendable {
     let lock = NSLock()
     var provider: (any CompanionTLSProvider)?
