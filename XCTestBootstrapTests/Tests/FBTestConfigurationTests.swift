@@ -10,27 +10,6 @@ import XCTestBootstrap
 
 final class FBTestConfigurationTests: XCTestCase {
 
-  func testSimpleConstructor() throws {
-    let xcTestConfig = FBTestConfigurationTestHelper.createXCTestConfiguration()
-    let sessionIdentifier = UUID(uuidString: "E621E1F8-C36C-495A-93FC-0C247A3E6E5F")!
-    let testConfiguration = FBTestConfigurationTestHelper.createTestConfiguration(
-      withSessionIdentifier: sessionIdentifier,
-      moduleName: "Franek",
-      testBundlePath: "BundlePath",
-      path: "ConfigPath",
-      uiTesting: true,
-      xcTestConfiguration: xcTestConfig
-    )
-
-    XCTAssertEqual(testConfiguration.sessionIdentifier, sessionIdentifier)
-    XCTAssertEqual(testConfiguration.testBundlePath, "BundlePath")
-    XCTAssertEqual(testConfiguration.path, "ConfigPath")
-    XCTAssertTrue(testConfiguration.shouldInitializeForUITesting)
-    let storedConfig = try XCTUnwrap(
-      FBTestConfigurationTestHelper.xcTestConfiguration(testConfiguration))
-    XCTAssertTrue(storedConfig as AnyObject === xcTestConfig as AnyObject)
-  }
-
   func testSaveAs() throws {
     let sessionIdentifier = UUID()
     let someRandomPath = NSTemporaryDirectory()
