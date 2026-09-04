@@ -8,11 +8,8 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-/// A class that represents an iOS Device.
-///
-/// A device is backed by an `FBAMDevice`, an `FBAMRestorableDevice`, or both, and caches the
-/// target information of whichever it holds. The AMDevice is the richer source, so its values
-/// overwrite; the restorable device only fills gaps.
+/// Backed by an `FBAMDevice`, an `FBAMRestorableDevice`, or both, caching the target
+/// information of whichever it holds.
 public final class FBDevice: FBiOSTarget, FBDeviceCommands, CustomStringConvertible {
 
   // MARK: - Properties
@@ -95,8 +92,8 @@ public final class FBDevice: FBiOSTarget, FBDeviceCommands, CustomStringConverti
     self.amDeviceStorage = amDevice
     self.restorableDeviceStorage = restorableDevice
     self.commandCache = FBTargetCommandCache()
-    // With neither backing device there is no call table, so every later call would dispatch
-    // through a null function pointer. Failing here names the cause instead.
+    // Without a backing device there is no call table; fail here rather than through a null
+    // function pointer later.
     if let amDevice {
       self.calls = amDevice.calls
     } else if let restorableDevice {
