@@ -15,9 +15,7 @@ private let ProfileMetadata = "ProfileMetadata"
 private let PayloadUUID = "PayloadUUID"
 private let PayloadVersion = "PayloadVersion"
 
-/// Wraps the non-`Sendable` `FBAMDServiceConnection` so it can be captured by
-/// the `@Sendable` closures dispatched on the serial connection queue. Serial
-/// dispatch guarantees thread-safe access to the underlying connection.
+/// Carries the non-`Sendable` connection across the serial-queue boundary; only touched on that queue.
 private final class ManagedConfigConnectionBox: @unchecked Sendable {
   let connection: FBAMDServiceConnection
   init(_ connection: FBAMDServiceConnection) {
@@ -33,7 +31,6 @@ private final class ManagedConfigDataBox: @unchecked Sendable {
   }
 }
 
-/// The ways managed-configuration operations can fail, as data rather than assembled strings.
 public enum FBManagedConfigError: Error {
   case invalidWallpaperName(name: String)
   case orderedIdentifiersMissing(key: String)
@@ -64,7 +61,7 @@ class FBManagedConfigClient {
   private let queue: DispatchQueue
   private let logger: any FBControlCoreLogger
 
-  // MARK: ObjC-visible Constants
+  // MARK: Constants
 
   static let serviceName: String = "com.apple.mobile.MCInstall"
 
@@ -89,8 +86,6 @@ class FBManagedConfigClient {
     self.queue = queue
     self.logger = logger
   }
-
-  // MARK: Public Methods (legacy FBFuture entry points)
 
   // MARK: - Async
 
