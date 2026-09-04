@@ -18,18 +18,14 @@ public enum FBAMDeviceUsage {
 
   /// Connects to the device and opens a session on it, pairing first if required.
   public static func start(using device: AMDevice, calls: AMDCalls, logger: any FBControlCoreLogger) throws {
-    // Connect first
     try startConnection(to: device, calls: calls, logger: logger)
-    // Confirm pairing and start a session
     try startSessionByPairing(with: device, calls: calls, logger: logger)
     logger.log("\(device) ready for use")
   }
 
   /// Ends the session and then the connection.
   public static func stop(using device: AMDevice, calls: AMDCalls, logger: any FBControlCoreLogger) {
-    // Stop the session first.
     stopSession(with: device, calls: calls, logger: logger)
-    // Then the connection.
     stopConnection(to: device, calls: calls, logger: logger)
   }
 
@@ -52,7 +48,6 @@ public enum FBAMDeviceUsage {
     calls: AMDCalls,
     logger: any FBControlCoreLogger
   ) throws {
-    // Then confirm the pairing.
     logger.log("Checking whether \(device) is paired")
     if calls.IsPaired(device) == 0 {
       logger.log("\(device) is not paired, attempting to pair")
@@ -70,7 +65,6 @@ public enum FBAMDeviceUsage {
         device: "\(device)", message: errorText(validateStatus, calls: calls))
     }
 
-    // A session may also be required.
     logger.log("Starting Session on \(device)")
     let sessionStatus = calls.StartSession(device)
     guard sessionStatus == 0 else {
@@ -99,19 +93,16 @@ public enum FBAMDeviceUsage {
   }
 
   internal static func obtainDeviceValues(_ device: AMDevice, calls: AMDCalls) -> [String: Any]? {
-    // Get the values from the default domain, this will obtain information regardless of whether
-    // pairing was successful or not.
+    // The default domain is readable even when unpaired.
     guard var info = calls.CopyValue(device, nil, nil)?.takeRetainedValue() as? [String: Any] else {
       return nil
     }
 
-    // Synthetic Values.
     info[FBDeviceKey.isPaired.rawValue] = calls.IsPaired(device) != 0
 
-    // Get values from mobile backup, this will only return meaningful information if paired.
+    // Only meaningful when paired.
     let backupInfo =
       calls.CopyValue(device, mobileBackupDomain as CFString, nil)?.takeRetainedValue() as? [String: Any] ?? [:]
-    // Insert the values from subdomains.
     info[mobileBackupDomain] = backupInfo
 
     return info
@@ -169,18 +160,14 @@ final class FBAMDeviceSession: @unchecked Sendable {
 
   // MARK: - Public Methods
 
-  /// Takes a share of the session, opening it if no one holds it yet.
+  /// Takes a share of the session, opening it if no one holds it yet. Every call that returns
+  /// without throwing must be paired with a `release()`.
   ///
-  /// Every call that returns without throwing must be paired with a `release()`.
+  /// The lock is never held across the MobileDevice calls, which block until the device answers;
+  /// a caller arriving mid-transition suspends on a continuation and re-reads the state when woken.
   ///
-  /// The lock is never held across the MobileDevice calls, which block for as long as the device
-  /// takes to answer. A caller that arrives mid-transition suspends on a continuation instead, and
-  /// re-reads the state when it is woken — so waiting for someone else's connect costs no thread.
-  ///
-  /// Waiting is cancellable; connecting is not, because the MobileDevice calls are synchronous and
-  /// there is nothing to interrupt them with. A cancelled caller therefore either never takes a
-  /// share or is one of those already inside a connect, and never one that has taken a share
-  /// without a `release()` to pair with it.
+  /// Waiting is cancellable; connecting is not (the MobileDevice calls are synchronous). A
+  /// cancelled caller therefore never holds a share it cannot `release()`.
   func acquire() async throws {
     while true {
       try Task.checkCancellation()
@@ -234,8 +221,6 @@ final class FBAMDeviceSession: @unchecked Sendable {
     case transitionInProgress
   }
 
-  /// The whole of what `acquire` does under the lock: cancel any idle teardown that was running
-  /// out, then decide.
   private func arrive() -> Arrival {
     lock.lock()
     defer { lock.unlock() }
