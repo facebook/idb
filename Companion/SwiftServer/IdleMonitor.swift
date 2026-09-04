@@ -18,9 +18,7 @@ import Foundation
 /// the last in-flight operation finishes (or at `start()` if nothing is running),
 /// and is cancelled as soon as new work arrives, so a long-running operation holds
 /// it off. When the countdown elapses with nothing in flight, `onShutdownStarted`
-/// runs synchronously and then `expired` resolves. Deciding what to do when idle
-/// (e.g. shutting the companion down) is left to whoever observes `expired`; the
-/// monitor itself is not shutdown-specific.
+/// runs synchronously and then `expired` resolves.
 final class IdleMonitor: @unchecked Sendable {
 
   private let expiredPromise = AsyncPromise<Void>()
@@ -39,9 +37,7 @@ final class IdleMonitor: @unchecked Sendable {
   private let queue = DispatchQueue(label: "com.facebook.idb.IdleMonitor")
   private let lock = NSLock()
 
-  /// Number of requests currently in flight.
   private var activeRequests = 0
-  /// The pending idle timer, if armed.
   private var timer: DispatchSourceTimer?
   /// Bumped whenever the timer is armed or invalidated so a timer that fires after
   /// it has been superseded can tell it is stale and do nothing.
@@ -64,7 +60,6 @@ final class IdleMonitor: @unchecked Sendable {
     armLocked()
   }
 
-  /// Records that a request started; cancels any pending idle timer.
   func requestStarted() {
     lock.lock()
     defer { lock.unlock() }
@@ -73,8 +68,6 @@ final class IdleMonitor: @unchecked Sendable {
     invalidateLocked()
   }
 
-  /// Records that a request finished; re-arms the idle timer once the last
-  /// in-flight request completes.
   func requestEnded() {
     lock.lock()
     defer { lock.unlock() }
@@ -87,10 +80,8 @@ final class IdleMonitor: @unchecked Sendable {
     }
   }
 
-  /// Runs `body` as a single in-flight operation: the idle countdown is held off
-  /// while it runs and re-armed when it finishes. The `defer` guarantees the
-  /// operation is accounted as finished on every path — normal return, thrown
-  /// error, or task cancellation — so a caller can never leave the count stuck.
+  /// Runs `body` as a single in-flight operation: the idle countdown is held off while it runs and
+  /// re-armed when it finishes, on every exit path.
   func tracking<R>(_ body: () async throws -> R) async throws -> R {
     requestStarted()
     defer { requestEnded() }
@@ -132,8 +123,6 @@ final class IdleMonitor: @unchecked Sendable {
     lock.unlock()
 
     logger.info().log("No activity for \(Int(idleTime))s; signalling idle")
-    // Release externally-visible resources (the socket) synchronously, before the
-    // async teardown begins, so nothing rediscovers this companion mid-shutdown.
     onShutdownStarted?()
     expiredPromise.resolve(())
   }
