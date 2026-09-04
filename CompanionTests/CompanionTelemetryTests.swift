@@ -9,9 +9,6 @@ import CompanionLib
 import CompanionUtilities
 @preconcurrency import FBControlCore
 import Foundation
-// Uses XCTest to match the existing tests in this target; migrating the whole
-// target to Swift Testing is a separate effort.
-// ast-grep-ignore: swift-testing/swift/no-new-xctest
 import Testing
 
 /// Captures every subject the telemetry reports, so the per-RPC emission can
