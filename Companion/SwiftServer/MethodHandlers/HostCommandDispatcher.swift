@@ -62,25 +62,18 @@ final class ReplHostCommandState: @unchecked Sendable {
     self.containerRelativeBase = containerRelativeBase
   }
 
-  /// Called at the start of each execute so screenshot filenames carry the REPL run
-  /// index, the counter restarts at 1 for the run, and the run's artifact list
-  /// starts empty.
   func beginRun(index: Int) {
     runIndex = index
     screenshotIndex = 0
     runArtifacts = []
   }
 
-  /// The next auto-generated screenshot path, e.g.
-  /// `<staging>/screenshot_<run>_<n>.png` (n starts at 1 within each run).
   func nextScreenshotPath() -> String {
     screenshotIndex += 1
     let name = "screenshot_\(runIndex)_\(screenshotIndex).png"
     return stagingDirectory.appendingPathComponent(name).path
   }
 
-  /// Records a captured screenshot so it is reported in the run's result. The
-  /// container path is relative to the AUXILLARY container root, for pulling it back.
   func recordScreenshot(hostPath: String) {
     let filename = (hostPath as NSString).lastPathComponent
     runArtifacts.append(ReplArtifact(hostPath: hostPath, containerPath: containerRelativeBase + "/" + filename))
@@ -101,14 +94,9 @@ struct ReplArtifact {
   let containerPath: String
 }
 
-/// Maps a decoded `ReplCommand` -- sent by injected REPL code while it runs -- to
-/// an `FBIDBCommandExecutor` call.
-///
-/// Each command's logic (`resultValue(for:)`) produces its result as a value --
-/// nothing, a `Codable` value, or a Foundation property-list object -- or throws.
-/// `run` serializes that to the wire payload and turns a thrown error into a
-/// failure, both in one place, so adding a command repeats none of that. Sharing
-/// `ReplCommand` with the client (via `ReplProtocol`) keeps the switch exhaustive.
+/// Maps a decoded `ReplCommand` -- sent by injected REPL code while it runs -- to an
+/// `FBIDBCommandExecutor` call. `resultValue(for:)` produces the value; `run` serializes it and maps
+/// a thrown error to `.failure`.
 struct HostCommandDispatcher: @unchecked Sendable {
 
   let commandExecutor: FBIDBCommandExecutor
@@ -149,8 +137,6 @@ struct HostCommandDispatcher: @unchecked Sendable {
     }
   }
 
-  /// Runs `command`, returning its result value, or nil when it has no return
-  /// value. Throws on failure.
   private func resultValue(for command: ReplCommand) async throws -> ResultValue? {
     switch command {
     case .tap(let point):
@@ -205,9 +191,6 @@ struct HostCommandDispatcher: @unchecked Sendable {
 
     case .describeAll:
       let response = try await commandExecutor.accessibility_info_at_point(nil, format: .nested)
-      // Adapt the serializer's tree for the client: drop nulls and render each
-      // node's AXValue as a String (see `replAccessibilityTree`). Only describe_all
-      // needs this.
       let tree = Self.replAccessibilityTree(from: response.elements.legacyFoundationObject) ?? [String: Any]()
       return .propertyList(tree)
 
@@ -238,11 +221,8 @@ struct HostCommandDispatcher: @unchecked Sendable {
         throw error
       }
       let id = recordingCoordinator.activate(recording: recording, hostPath: path)
-      // In the app context the recording outlives this stream, so watch the app and
-      // drop the recording if it exits before being stopped. The watcher is left to
-      // run rather than cancelled on stop (its id check makes a late fire a no-op),
-      // which also avoids the process-killing cancellation of the alternative
-      // termination future.
+      // App context: the recording outlives this stream, so drop it if the app exits before it is stopped.
+      // The watcher is not cancelled on stop; the id check makes a late fire a no-op.
       if let appBundleID {
         let coordinator = recordingCoordinator
         let executor = commandExecutor
@@ -262,8 +242,6 @@ struct HostCommandDispatcher: @unchecked Sendable {
     }
   }
 
-  /// Resolves a screenshot `area` to a crop rectangle in screen points, or nil for
-  /// the whole screen.
   private func cropRect(for area: ScreenshotArea) async throws -> CGRect? {
     switch area {
     case .full:
