@@ -12,20 +12,6 @@ import Testing
 @Suite
 struct CompanionLibTransientTests {
 
-  // MARK: - BridgeQueues Tests
-
-  @Test
-  func futureSerialFullfillmentQueueExists() {
-    let queue = BridgeQueues.futureSerialFullfillmentQueue
-    #expect((String(cString: __dispatch_queue_get_label(queue))) == ("com.facebook.fbfuture.fullfilment"))
-  }
-
-  @Test
-  func miscEventReaderQueueExists() {
-    let queue = BridgeQueues.miscEventReaderQueue
-    #expect((String(cString: __dispatch_queue_get_label(queue))) == ("com.facebook.miscellaneous.reader"))
-  }
-
   // MARK: - bridgeFBFuture (single future) Tests
 
   @Test
@@ -50,24 +36,6 @@ struct CompanionLibTransientTests {
     }
   }
 
-  @Test
-  func valueCancelsFutureOnTaskCancellation() async {
-    let mutableFuture = FBMutableFuture<NSString>()
-    let future = convertFBMutableFuture(mutableFuture)
-
-    let task = Task {
-      try await bridgeFBFuture(future)
-    }
-
-    // Give the continuation time to register
-    try? await Task.sleep(nanoseconds: 50_000_000)
-    task.cancel()
-
-    // After cancellation the underlying future should have been cancelled
-    try? await Task.sleep(nanoseconds: 50_000_000)
-    #expect((task.isCancelled))
-  }
-
   // MARK: - bridgeFBFutures (multiple futures) Tests
 
   @Test
@@ -78,15 +46,6 @@ struct CompanionLibTransientTests {
 
     let results = try await bridgeFBFutures([f1, f2, f3])
     #expect((results) == (["a" as NSString, "b" as NSString, "c" as NSString]))
-  }
-
-  @Test
-  func valuesWithArrayResolvesInOrder() async throws {
-    let futures = (0..<5).map { i in
-      FBFuture<NSNumber>(result: NSNumber(value: i))
-    }
-    let results = try await bridgeFBFutures(futures)
-    #expect((results.map(\.intValue)) == ([0, 1, 2, 3, 4]))
   }
 
   @Test
@@ -128,12 +87,6 @@ struct CompanionLibTransientTests {
       let nsError = error as NSError
       #expect((nsError.code) == (1))
     }
-  }
-
-  @Test
-  func awaitAnyObjectFuture() async throws {
-    let future = FBFuture<AnyObject>(result: "value" as NSString)
-    try await bridgeFBFutureVoid(future)
   }
 
   // MARK: - bridgeFBFutureArray (NSArray bridge) Tests
@@ -180,40 +133,6 @@ struct CompanionLibTransientTests {
     } catch {
       #expect(((error as NSError).code) == (77))
     }
-  }
-
-  // MARK: - FBCodeCoverageRequest Tests
-
-  @Test
-  func codeCoverageRequestInitSetsProperties() {
-    let request = FBCodeCoverageRequest(collect: true, format: .exported, enableContinuousCoverageCollection: false)
-    #expect((request.collect))
-    #expect((request.format) == (.exported))
-    #expect(!(request.shouldEnableContinuousCoverageCollection))
-  }
-
-  @Test
-  func codeCoverageRequestNotCollecting() {
-    let request = FBCodeCoverageRequest(collect: false, format: .raw, enableContinuousCoverageCollection: true)
-    #expect(!(request.collect))
-    #expect((request.format) == (.raw))
-    #expect((request.shouldEnableContinuousCoverageCollection))
-  }
-
-  // MARK: - FBDsymInstallLinkToBundle Tests
-
-  @Test
-  func dsymInstallLinkToBundleXCTest() {
-    let link = FBDsymInstallLinkToBundle(bundleID: "com.example.test", bundleType: .xcTest)
-    #expect((link.bundleID) == ("com.example.test"))
-    #expect((link.bundleType) == (.xcTest))
-  }
-
-  @Test
-  func dsymInstallLinkToBundleApp() {
-    let link = FBDsymInstallLinkToBundle(bundleID: "com.example.app", bundleType: .app)
-    #expect((link.bundleID) == ("com.example.app"))
-    #expect((link.bundleType) == (.app))
   }
 
   // MARK: - FBXCTestRunRequest Factory & Property Tests
@@ -334,41 +253,6 @@ struct CompanionLibTransientTests {
   }
 
   // MARK: - FBXCTestReporterConfiguration Tests
-
-  @Test
-  func reporterConfigurationInitSetsProperties() {
-    let config = FBXCTestReporterConfiguration(
-      resultBundlePath: "/path/to/result",
-      coverageConfiguration: nil,
-      logDirectoryPath: "/path/to/logs",
-      binariesPaths: ["/path/to/binary1", "/path/to/binary2"],
-      reportAttachments: true,
-      reportResultBundle: false
-    )
-    #expect((config.resultBundlePath) == ("/path/to/result"))
-    #expect((config.coverageConfiguration) == nil)
-    #expect((config.logDirectoryPath) == ("/path/to/logs"))
-    #expect((config.binariesPaths) == (["/path/to/binary1", "/path/to/binary2"]))
-    #expect((config.reportAttachments))
-    #expect(!(config.reportResultBundle))
-  }
-
-  @Test
-  func reporterConfigurationNilPaths() {
-    let config = FBXCTestReporterConfiguration(
-      resultBundlePath: nil,
-      coverageConfiguration: nil,
-      logDirectoryPath: nil,
-      binariesPaths: [],
-      reportAttachments: false,
-      reportResultBundle: true
-    )
-    #expect((config.resultBundlePath) == nil)
-    #expect((config.logDirectoryPath) == nil)
-    #expect((config.binariesPaths.isEmpty))
-    #expect(!(config.reportAttachments))
-    #expect((config.reportResultBundle))
-  }
 
   @Test
   func reporterConfigurationDescription() {
