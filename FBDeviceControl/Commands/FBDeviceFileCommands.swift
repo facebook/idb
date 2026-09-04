@@ -11,8 +11,7 @@ import Foundation
 private let MountRootPath = "mounted"
 private let ExtractedSymbolsDirectory = "Symbols"
 
-/// Carries a non-`Sendable` `FBAFCConnection` across the serial-queue boundary.
-/// The wrapped value is only ever touched on the owning serial queue.
+/// Carries the non-`Sendable` connection across the serial-queue boundary; only touched on that queue.
 private final class AFCConnectionBox: @unchecked Sendable {
   let connection: FBAFCConnection
   init(_ connection: FBAFCConnection) {
@@ -22,7 +21,6 @@ private final class AFCConnectionBox: @unchecked Sendable {
 
 // MARK: - FBDeviceFileContainerError
 
-/// The ways device file-container operations can fail, as data rather than assembled strings.
 public enum FBDeviceFileContainerError: Error {
   case deviceDeallocated
   case tailNotImplemented
