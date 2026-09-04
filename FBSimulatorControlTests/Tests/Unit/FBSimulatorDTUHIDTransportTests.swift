@@ -131,14 +131,14 @@ final class FBSimulatorDTUHIDTransportTests: XCTestCase {
   // MARK: Button encoding
 
   func testButtonUsageMapping() {
-    XCTAssertEqual(FBSimulatorHIDButton.homeButton.consumerHIDUsage?.page, 0x0C)
-    XCTAssertEqual(FBSimulatorHIDButton.homeButton.consumerHIDUsage?.code, 0x40)
-    XCTAssertEqual(FBSimulatorHIDButton.lock.consumerHIDUsage?.code, 0x30)
-    XCTAssertEqual(FBSimulatorHIDButton.sideButton.consumerHIDUsage?.code, 0x30)
-    XCTAssertEqual(FBSimulatorHIDButton.siri.consumerHIDUsage?.code, 0xCF)
-    XCTAssertEqual(FBSimulatorHIDButton.playPause.consumerHIDUsage?.page, 0x0C)
-    XCTAssertEqual(FBSimulatorHIDButton.playPause.consumerHIDUsage?.code, 0xCD)
-    XCTAssertNil(FBSimulatorHIDButton.applePay.consumerHIDUsage)
+    XCTAssertEqual(FBSimulatorHIDButton.homeButton.identity.consumerUsage?.page, 0x0C)
+    XCTAssertEqual(FBSimulatorHIDButton.homeButton.identity.consumerUsage?.code, 0x40)
+    XCTAssertEqual(FBSimulatorHIDButton.lock.identity.consumerUsage?.code, 0x30)
+    XCTAssertEqual(FBSimulatorHIDButton.sideButton.identity.consumerUsage?.code, 0x30)
+    XCTAssertEqual(FBSimulatorHIDButton.siri.identity.consumerUsage?.code, 0xCF)
+    XCTAssertEqual(FBSimulatorHIDButton.playPause.identity.consumerUsage?.page, 0x0C)
+    XCTAssertEqual(FBSimulatorHIDButton.playPause.identity.consumerUsage?.code, 0xCD)
+    XCTAssertNil(FBSimulatorHIDButton.applePay.identity.consumerUsage)
   }
 
   func testButtonEventEnvelope() throws {
