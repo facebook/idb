@@ -17,6 +17,11 @@ final class FBSimulatorIndigoHID {
   // The SimulatorKit `IndigoHIDMessageFor*` functions, resolved at runtime via dlsym.
   private typealias MessageForButtonFn = @convention(c) (Int32, Int32, Int32) -> UnsafeMutablePointer<IndigoMessage>
   private typealias MessageForKeyboardArbitraryFn = @convention(c) (Int32, Int32) -> UnsafeMutablePointer<IndigoMessage>
+  // IndigoHIDMessageForHIDArbitrary(IndigoHIDTarget, usagePage, usage, IndigoHIDButtonOp) — the
+  // generic HID-usage builder. It writes ButtonEventSourceHIDArbitrary rather than a dedicated
+  // ButtonEventSource, so it can carry any (page, usage) pair the guest understands.
+  private typealias MessageForHIDArbitraryFn =
+    @convention(c) (Int32, UInt32, UInt32, Int32) -> UnsafeMutablePointer<IndigoMessage>
   // IndigoHIDMessageForMouseNSEvent(CGPoint *, CGPoint *, IndigoHIDTarget, NSEventType, NSSize,
   // IndigoHIDEdge). The builder derives the contact's xRatio/yRatio by dividing the point by the
   // NSSize, so passing a unit size makes that normalization the identity for callers that have
@@ -34,6 +39,7 @@ final class FBSimulatorIndigoHID {
 
   private let messageForButton: MessageForButtonFn
   private let messageForKeyboardArbitrary: MessageForKeyboardArbitraryFn
+  private let messageForHIDArbitrary: MessageForHIDArbitraryFn
   private let messageForMouseNSEvent: MessageForMouseNSEventFn
   private let messageForTrackpadMoveEvent: MessageForTrackpadMoveEventFn
 
@@ -50,6 +56,8 @@ final class FBSimulatorIndigoHID {
       messageForButton: unsafeBitCast(FBGetSymbolFromHandle(handle, "IndigoHIDMessageForButton"), to: MessageForButtonFn.self),
       messageForKeyboardArbitrary: unsafeBitCast(
         FBGetSymbolFromHandle(handle, "IndigoHIDMessageForKeyboardArbitrary"), to: MessageForKeyboardArbitraryFn.self),
+      messageForHIDArbitrary: unsafeBitCast(
+        FBGetSymbolFromHandle(handle, "IndigoHIDMessageForHIDArbitrary"), to: MessageForHIDArbitraryFn.self),
       messageForMouseNSEvent: unsafeBitCast(
         FBGetSymbolFromHandle(handle, "IndigoHIDMessageForMouseNSEvent"), to: MessageForMouseNSEventFn.self),
       messageForTrackpadMoveEvent: unsafeBitCast(
@@ -59,11 +67,13 @@ final class FBSimulatorIndigoHID {
   private init(
     messageForButton: @escaping MessageForButtonFn,
     messageForKeyboardArbitrary: @escaping MessageForKeyboardArbitraryFn,
+    messageForHIDArbitrary: @escaping MessageForHIDArbitraryFn,
     messageForMouseNSEvent: @escaping MessageForMouseNSEventFn,
     messageForTrackpadMoveEvent: @escaping MessageForTrackpadMoveEventFn
   ) {
     self.messageForButton = messageForButton
     self.messageForKeyboardArbitrary = messageForKeyboardArbitrary
+    self.messageForHIDArbitrary = messageForHIDArbitrary
     self.messageForMouseNSEvent = messageForMouseNSEvent
     self.messageForTrackpadMoveEvent = messageForTrackpadMoveEvent
   }
@@ -83,6 +93,19 @@ final class FBSimulatorIndigoHID {
       return nil
     }
     let message = messageForButton(source, direction.rawValue, Int32(ButtonEventTargetHardware))
+    return FBSimulatorIndigoHID.data(fromMallocedMessage: message)
+  }
+
+  /// A message carrying an arbitrary HID usage, addressed to the hardware-button service.
+  ///
+  /// The counterpart to `button(with:button:)` for anything the legacy builder has no dedicated
+  /// `ButtonEventSource` for: rather than naming a button, it names a usage — the code in
+  /// `IndigoButton.keyCode` and its page in `IndigoButton.usagePage`, under
+  /// `ButtonEventSourceHIDArbitrary`. Same envelope as a sourced button, so it is interchangeable
+  /// with one everywhere downstream.
+  func hidArbitrary(page: UInt16, usage: UInt16, direction: FBSimulatorHIDDirection) -> Data {
+    let message = messageForHIDArbitrary(
+      Int32(ButtonEventTargetHardware), UInt32(page), UInt32(usage), direction.rawValue)
     return FBSimulatorIndigoHID.data(fromMallocedMessage: message)
   }
 

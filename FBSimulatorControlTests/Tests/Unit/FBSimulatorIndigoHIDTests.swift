@@ -224,6 +224,46 @@ final class FBSimulatorIndigoHIDTests: XCTestCase {
     XCTAssertEqual(uint32(at: 0x38, in: down), 0x33, "eventTarget should be hardware")
   }
 
+  // MARK: - Arbitrary HID usage
+
+  // The arbitrary-HID builder names a usage rather than a button: the source is
+  // ButtonEventSourceHIDArbitrary (0x2711, one above the keyboard source), the usage lands in
+  // IndigoButton.keyCode (0x3c) and its page in IndigoButton.usagePage (0x44), and the target is the
+  // same hardware-button service a sourced button uses.
+  func testArbitraryHIDUsageFields() throws {
+    let indigo = try makeIndigo()
+    let down = indigo.hidArbitrary(page: 0x0C, usage: 0xCD, direction: .down)
+    let up = indigo.hidArbitrary(page: 0x0C, usage: 0xCD, direction: .up)
+
+    XCTAssertEqual(uint32(at: 0x30, in: down), 0x2711, "eventSource should be arbitrary HID")
+    XCTAssertEqual(uint32(at: 0x34, in: down), 1, "down eventType")
+    XCTAssertEqual(uint32(at: 0x34, in: up), 2, "up eventType")
+    XCTAssertEqual(uint32(at: 0x38, in: down), 0x33, "eventTarget (hardware)")
+    XCTAssertEqual(uint32(at: 0x3c, in: down), 0xCD, "usage lands in keyCode")
+    XCTAssertEqual(uint32(at: 0x44, in: down), 0x0C, "page lands in usagePage")
+  }
+
+  // The page and usage are carried independently, so the builder is not hard-wired to one page.
+  func testArbitraryHIDUsageCarriesAnyPageAndUsage() throws {
+    let indigo = try makeIndigo()
+    let data = indigo.hidArbitrary(page: 0x07, usage: 0x4F, direction: .down)
+    XCTAssertEqual(uint32(at: 0x3c, in: data), 0x4F, "usage")
+    XCTAssertEqual(uint32(at: 0x44, in: data), 0x07, "page")
+  }
+
+  // The arbitrary-HID message is the same envelope as a sourced button, so the two are
+  // interchangeable to everything downstream of the builder.
+  func testArbitraryHIDUsageSharesTheSourcedButtonEnvelope() throws {
+    let indigo = try makeIndigo()
+    let arbitrary = indigo.hidArbitrary(page: 0x0C, usage: 0xCD, direction: .down)
+    let sourced = try XCTUnwrap(indigo.button(with: .down, button: .homeButton))
+
+    XCTAssertEqual(arbitrary.count, sourced.count, "message size")
+    XCTAssertEqual(uint32(at: 0x18, in: arbitrary), uint32(at: 0x18, in: sourced), "innerSize")
+    XCTAssertEqual(uint8(at: 0x1c, in: arbitrary), uint8(at: 0x1c, in: sourced), "eventType byte")
+    XCTAssertEqual(uint32(at: 0x20, in: arbitrary), uint32(at: 0x20, in: sourced), "payload.eventKind")
+  }
+
   // MARK: - Keyboard
 
   func testKeyboardPayloadIsKeyDependent() throws {
