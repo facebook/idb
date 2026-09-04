@@ -50,13 +50,11 @@ final class FBAccessibilityCoverageGrid {
       return
     }
 
-    // Frame coordinates relative to the screen bounds origin.
     let relativeX = frame.origin.x - screenBounds.origin.x
     let relativeY = frame.origin.y - screenBounds.origin.y
     let relativeMaxX = relativeX + frame.size.width
     let relativeMaxY = relativeY + frame.size.height
 
-    // Cell range, clamped to valid grid indices.
     var minX = Int(floor(relativeX / cellSize))
     var minY = Int(floor(relativeY / cellSize))
     var maxX = Int(floor(relativeMaxX / cellSize))
@@ -79,7 +77,7 @@ final class FBAccessibilityCoverageGrid {
     }
   }
 
-  /// Whether the cell containing the given point is filled. NO if empty or out of bounds.
+  /// Whether the cell containing `point` is filled; `false` when out of bounds.
   func isFilled(at point: CGPoint) -> Bool {
     let relativeX = point.x - screenBounds.origin.x
     let relativeY = point.y - screenBounds.origin.y
@@ -146,9 +144,6 @@ final class FBAccessibilityCoverageGrid {
 extension FBAccessibilityCoverage {
 
   /// The coverage a read reports, measured over its serialized elements.
-  ///
-  /// One shared definition: both ratios come from the same model the read returned, so backends
-  /// cannot measure differently from each other.
   ///
   /// `nil` when the bounds are unusable, so an unmeasurable read reports nothing rather than zero.
   ///
