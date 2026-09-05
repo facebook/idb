@@ -16,7 +16,6 @@ import XCTest
 // in place of a real `SimDevice`, so the doubles are `@objc` `NSObject` subclasses whose
 // property names match the selectors the simulator sends.
 
-/// Stub for `SimDeviceType`, providing product family and screen info.
 @objc final class TestSimDeviceType: NSObject {
   @objc var productFamilyID: Int32 = 1
   @objc var mainScreenSize: CGSize = CGSize(width: 750, height: 1334)
@@ -24,18 +23,15 @@ import XCTest
   @objc var name: String = "iPhone 14"
 }
 
-/// Stub for `SimRuntime`, providing the root path.
 @objc final class TestSimRuntime: NSObject {
   @objc var root: String = "/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS.simruntime/Contents/Resources/RuntimeRoot"
   @objc var name: String = "iOS 17.0"
 }
 
-/// Stub for `SimDeviceSet`, providing the set path.
 @objc final class TestSimDeviceSet: NSObject {
   @objc var setPath: String = ("~/Library/Developer/CoreSimulator/Devices" as NSString).expandingTildeInPath
 }
 
-/// Stub for `SimDevice` used by `FBSimulator`.
 @objc final class TestSimDevice: NSObject {
   @objc var UDID: NSUUID = NSUUID()
   @objc var name: String = "TestSimulator"
