@@ -11,9 +11,6 @@ import Foundation
 private let fbxctestOutputLogDirectoryEnv = "FBXCTEST_LOG_DIRECTORY"
 private let xctoolOutputLogDirectoryEnv = "XCTOOL_TEST_ENV_FB_LOG_DIRECTORY"
 
-// SAFETY: all stored state is immutable; thread-safety of logging delegates to the base logger,
-// which the FBControlCoreLogger contract requires to be thread-safe.
-/// The way log mirroring fails when the writer is not a consumer, as data rather than an assembled string.
 public enum FBXCTestLoggerError: Error, LocalizedError {
   case notADataConsumer(path: String, writer: String)
 
@@ -25,6 +22,7 @@ public enum FBXCTestLoggerError: Error, LocalizedError {
   }
 }
 
+// @unchecked Sendable: all stored state is immutable and FBControlCoreLogger implementations are required to be thread-safe.
 public final class FBXCTestLogger: NSObject, FBControlCoreLogger, @unchecked Sendable {
 
   private let baseLogger: FBControlCoreLogger
