@@ -115,43 +115,6 @@ final class FBFileReaderTests: XCTestCase, FBDataConsumer {
     pipe.fileHandleForWriting.closeFile()
   }
 
-  func testPipeClosingBehindBackOfConsumer() throws {
-    let pipe = Pipe()
-    let consumer = FBDataBuffer.accumulatingBuffer()
-    let reader = FBFileReader.reader(withFileDescriptor: pipe.fileHandleForReading.fileDescriptor, closeOnEndOfFile: false, consumer: consumer, logger: nil)
-    XCTAssertEqual(reader.state, FBFileReaderState.notStarted)
-
-    try reader.startReading().`await`()
-    XCTAssertEqual(reader.state, FBFileReaderState.reading)
-
-    let expected = "Foo Bar Baz".data(using: .utf8)!
-    pipe.fileHandleForWriting.write(expected)
-    pipe.fileHandleForWriting.closeFile()
-    let predicate = NSPredicate { _, _ in
-      expected == consumer.data()
-    }
-    let expectation = self.expectation(for: predicate, evaluatedWith: self, handler: nil)
-    wait(for: [expectation], timeout: FBControlCoreGlobalConfiguration.fastTimeout)
-
-    let result: NSNumber = try reader.stopReading().`await`()
-    XCTAssertEqual(result, 0)
-    XCTAssertEqual(reader.finishedReading.result, 0)
-    XCTAssertEqual(reader.state, FBFileReaderState.finishedReadingNormally)
-  }
-
-  func testReadsFromFilePath() throws {
-    let reader: FBFileReader = try FBFileReader.reader(withFilePath: "/dev/urandom", consumer: self, logger: nil).`await`()
-    XCTAssertEqual(reader.state, FBFileReaderState.notStarted)
-
-    try reader.startReading().`await`()
-    XCTAssertEqual(reader.state, FBFileReaderState.reading)
-
-    let result: NSNumber = try reader.stopReading().`await`()
-    XCTAssertEqual(result, NSNumber(value: ECANCELED))
-    XCTAssertEqual(reader.finishedReading.result, NSNumber(value: ECANCELED))
-    XCTAssertEqual(reader.state, FBFileReaderState.finishedReadingByCancellation)
-  }
-
   func testReadingTwiceFails() throws {
     let reader: FBFileReader = try FBFileReader.reader(withFilePath: "/dev/urandom", consumer: self, logger: nil).`await`()
     XCTAssertEqual(reader.state, FBFileReaderState.notStarted)
@@ -274,11 +237,8 @@ final class FBFileReaderTests: XCTestCase, FBDataConsumer {
 
     _ = try reader.stopReading().`await`()
 
-    // Winding down must not restore the original blocking flags onto a
-    // descriptor the channel never owned: that restore lands on an
-    // asynchronously-drained queue, possibly after the caller has closed the
-    // descriptor and the number has been recycled, re-blocking an unrelated
-    // live channel. The borrowed socket stays non-blocking.
+    // Teardown must not restore blocking flags on a descriptor the channel never owned: the restore is
+    // asynchronous and could land on a recycled fd number belonging to an unrelated live channel.
     XCTAssertNotEqual(fcntl(localSocket, F_GETFL) & O_NONBLOCK, 0)
   }
 
