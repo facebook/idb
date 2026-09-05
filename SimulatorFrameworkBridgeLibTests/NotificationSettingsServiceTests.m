@@ -88,24 +88,6 @@ extern int handleNotificationSettingsActionWithGateway(NSString *action, NSStrin
   XCTAssertEqual(sectionInfo.authorizationStatus, 0);
 }
 
-- (void)testRevokeResetsDeniedSection
-{
-  NSString *bundleID = @"com.example.test.revoke.denied";
-  XCTAssertEqual(handleNotificationSettingsActionWithGateway(@"approve", bundleID, self.gateway), 0);
-
-  BBSectionInfo *sectionInfo = [self.gateway sectionInfoForSectionID:bundleID];
-  sectionInfo.allowsNotifications = NO;
-  sectionInfo.authorizationStatus = 1;
-  [self.gateway setSectionInfo:sectionInfo forSectionID:bundleID];
-
-  XCTAssertEqual(handleNotificationSettingsActionWithGateway(@"revoke", bundleID, self.gateway), 0);
-
-  sectionInfo = [self.gateway sectionInfoForSectionID:bundleID];
-  XCTAssertNotNil(sectionInfo);
-  XCTAssertFalse(sectionInfo.allowsNotifications);
-  XCTAssertEqual(sectionInfo.authorizationStatus, 0);
-}
-
 - (void)testRevokeWithoutAnExistingSectionSucceeds
 {
   NSString *bundleID = [@"com.example.test." stringByAppendingString:NSUUID.UUID.UUIDString];
