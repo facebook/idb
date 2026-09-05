@@ -14,11 +14,7 @@
 @class FBFuture<T>;
 
 /**
- Queries for Processes running on the Host.
- Should not be called from multiple threads since buffers are re-used internally.
-
- Sharing a Query object and guaranteeing serialization of method calls
- can be an effective way to reduce the number of allocations that are required.
+ Queries for processes running on the host. Not thread-safe: buffers are re-used across calls.
  */
 @interface FBProcessFetcher : NSObject
 
@@ -64,38 +60,33 @@
 - (pid_t)parentOf:(pid_t)child;
 
 /**
- A Query for returning the process identifier of the first found process with an open file of filename.
- This is a operation is generally more expensive than the others.
+ The first process with the file open, or -1. Considerably more expensive than the other queries.
 
  @param filePath the path to the file.
- @return a Process Identifier for the first process with an open file to the path, -1 otherwise.
  */
 - (pid_t)processWithOpenFileTo:(nonnull const char *)filePath;
 
 /**
- Verify if process is running
+ YES if the process is in the SRUN state. NO with `error` set if the process cannot be looked up.
 
  @param processIdentifier process to check.
  @param error an error out for any error that occurs.
- @return YES if process is Runnig and error is NOT set. False if process isn't running or error is set.
  */
 - (BOOL)isProcessRunning:(pid_t)processIdentifier error:(NSError * _Nullable * _Nullable)error;
 
 /**
- Verify if process is stopped
+ YES if the process is in the SSTOP state. NO with `error` set if the process cannot be looked up.
 
  @param processIdentifier process to check.
  @param error an error out for any error that occurs.
- @return YES if process is Stopped and error is NOT set. False if process isn't stopped or error is set.
  */
 - (BOOL)isProcessStopped:(pid_t)processIdentifier error:(NSError * _Nullable * _Nullable)error;
 
 /**
- Verify if process has a debugger attached to it.
+ YES if a tracer is attached to the process. NO with `error` set if the process cannot be looked up.
 
  @param processIdentifier process to check.
  @param error an error out for any error that occurs.
- @return YES if process is has a debugger attached and error is NOT set.. False if process doesn't have a debugger attached  or error is set.
  */
 - (BOOL)isDebuggerAttachedTo:(pid_t)processIdentifier error:(NSError * _Nullable * _Nullable)error;
 
@@ -103,7 +94,7 @@
  Wait for a debugger to attach to the process and the process to be up running again.
 
  @param processIdentifier the Process Identifier of the process.
- @return A future waitting for the debugger and process up running again.
+ @return A future waiting for the debugger and process up running again.
  */
 + (nonnull FBFuture<NSNull *> *)waitForDebuggerToAttachAndContinueFor:(pid_t)processIdentifier;
 
@@ -111,14 +102,12 @@
  Wait for process to receive SIGSTOP.
 
  @param processIdentifier the Process Identifier of the process.
- @return A future waitting for the process to be in SSTOP state.
+ @return A future waiting for the process to be in SSTOP state.
  */
 + (nonnull FBFuture<NSNull *> *)waitStopSignalForProcess:(pid_t)processIdentifier;
 
 /**
- Performs a stackshot on the provided process id.
- Does not terminate the process after performing the stackshot.
- Returns a future to a string containing the stackshot.
+ Samples the process with /usr/bin/sample, resolving to the report text. The process is left running.
 
  @param processIdentifier the process identifier of the process to stackshot.
  @param queue the queue to use.

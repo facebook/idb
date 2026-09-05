@@ -90,7 +90,6 @@ static inline FBProcessInfo *ProcessInfoForProcessIdentifier(pid_t processIdenti
   const char *startPosition = buffer;
   const int argc = *startPosition;
 
-  // If argc isn't 1 or more, something is wrong
   if (argc < 1) {
     return nil;
   }
@@ -109,11 +108,9 @@ static inline FBProcessInfo *ProcessInfoForProcessIdentifier(pid_t processIdenti
   // Enumerate up to the value of argc
   NSMutableArray *arguments = [NSMutableArray array];
   for (int index = 0; index < argc; index++) {
-    // Create Objective-C String from current position.
     NSString *argument = [[NSString alloc] initWithCString:currentPosition encoding:NSASCIIStringEncoding];
     [arguments addObject:argument];
 
-    // Move the current string position passed the null-character.
     currentPosition += strlen(currentPosition);
     currentPosition += 1;
   }
@@ -123,13 +120,11 @@ static inline FBProcessInfo *ProcessInfoForProcessIdentifier(pid_t processIdenti
   while (*currentPosition != '\0') {
     NSString *string = [[NSString alloc] initWithCString:currentPosition encoding:NSASCIIStringEncoding];
     NSArray *tokens = [string componentsSeparatedByString:@"="];
-    // If we don't get 2 tokens, something is malformed.
     if (tokens.count != 2) {
       break;
     }
     environment[tokens[0]] = tokens[1];
 
-    // Move the current string position passed the null-character.
     currentPosition += strlen(currentPosition);
     currentPosition += 1;
   }
@@ -173,7 +168,7 @@ static BOOL ProcessNameForProcessIdentifier(pid_t processIdentifier, char *buffe
 
 #pragma mark Lifecycle
 
-static size_t MaxArgumentBufferSize = ARG_MAX; // A temporary value that is filled on load
+static size_t MaxArgumentBufferSize = ARG_MAX; // Overwritten with KERN_ARGMAX in +load.
 static size_t const MaxPidBufferSize = 5568 * 2 * sizeof(int);  // From 'ulimit -u', but twice as large, in ints.
 
 + (void)load
@@ -332,16 +327,13 @@ static size_t const MaxPidBufferSize = 5568 * 2 * sizeof(int);  // From 'ulimit 
 - (BOOL)isDebuggerAttachedTo:(pid_t)processIdentifier error:(NSError **)error
 {
   struct kinfo_proc proc_info = [self fetchProcessInfo:processIdentifier error:error];
-  // When a debugger (a.k.a tracer) attaches to the test proccess, the parent of tracee will
-  // change to tracer's pid with the original parent pid being store in `p_oppid`.
-  // We detect debugger attachment by checking that parent pid has changed.
+  // When a tracer attaches, the tracee's parent becomes the tracer and the original parent moves to `p_oppid`.
   return *error == nil && proc_info.kp_proc.p_oppid != 0 && proc_info.kp_eproc.e_ppid != proc_info.kp_proc.p_oppid;
 }
 
 + (FBFuture<NSNull *> *)waitForDebuggerToAttachAndContinueFor:(pid_t)processIdentifier
 {
   FBProcessFetcher *processFetcher = [[FBProcessFetcher alloc] init];
-  // Report from the current queue, but wait in a special queue.
   dispatch_queue_t waitQueue = dispatch_queue_create("com.facebook.corecontrol.debugger_wait", DISPATCH_QUEUE_SERIAL);
   return [FBFuture
           onQueue:waitQueue
