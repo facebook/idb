@@ -97,13 +97,11 @@ public struct FBTestRunnerConfiguration {
   }
 
   private static func prepareConfigurationAfterCodesignatureCheck(withTarget target: FBiOSTarget & ApplicationCommands & XCTestExtendedCommands, testLaunchConfiguration: FBTestLaunchConfiguration, workingDirectory: String) async throws -> FBTestRunnerConfiguration {
-    // Common Paths
     let runtimeRoot = await target.runtimeRootDirectory
     let platformRoot = await target.platformRootDirectory
 
     // This directory will contain XCTest.framework, built for the target platform.
     let platformDeveloperFrameworksPath = (platformRoot as NSString).appendingPathComponent("Developer/Library/Frameworks")
-    // Container directory for XCTest related Frameworks.
     let developerLibraryPath = (runtimeRoot as NSString).appendingPathComponent("Developer/Library")
     // Contains other frameworks, depended on by XCTest and Instruments
     let xcTestFrameworksPaths = [
@@ -129,7 +127,6 @@ public struct FBTestRunnerConfiguration {
       testApplicationDependencies = [identifier: path]
     }
 
-    // Prepare XCTest bundle
     let sessionIdentifier = UUID()
     let testBundle: FBBundleDescriptor
     do {
@@ -138,7 +135,6 @@ public struct FBTestRunnerConfiguration {
       throw FBTestRunnerConfigurationError.testBundlePreparationFailed(underlying: error)
     }
 
-    // Prepare the test configuration
     let testConfiguration: FBTestConfiguration
     do {
       testConfiguration = try FBTestConfiguration(
