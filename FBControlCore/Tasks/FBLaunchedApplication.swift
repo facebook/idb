@@ -7,8 +7,7 @@
 
 import Foundation
 
-/// An in-memory representation of a launched application.
-/// This is distinct from FBSubprocess, as exit codes for the process are not available.
+/// Unlike `FBSubprocess`, no exit code or signal status is available.
 public protocol FBLaunchedApplication: AnyObject {
 
   /// The Bundle Identifier of the Launched Application.
@@ -17,9 +16,7 @@ public protocol FBLaunchedApplication: AnyObject {
   /// The Process Identifier of the Launched Application.
   var processIdentifier: pid_t { get }
 
-  /// Awaits the natural termination of the launched application.
-  /// Not every target can observe termination; those that cannot will throw.
-  /// The process's exit code / signal status is not available.
+  /// Targets that cannot observe termination throw.
   func waitForTermination() async throws
 
   /// Terminates the launched application.
