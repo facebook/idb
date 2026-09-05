@@ -9,7 +9,6 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-// Internal (not private) so the rejection can be matched exactly by unit tests; see FBSimulatorProcessSpawnCommandsTests.
 enum FBSimulatorProcessSpawnError: Error {
   case stdInUnsupported
 }
@@ -127,7 +126,6 @@ public struct FBSimulatorProcessSpawnCommands {
     var value: Int32 = 0
   }
 
-  // Internal (not private) so the option dictionary can be characterized by unit tests; see FBSimulatorProcessSpawnCommandsTests.
   static func simDeviceLaunchOptions(withSimulator simulator: FBSimulator, launchPath: String, arguments: [String], environment: [String: String], waitForDebugger: Bool, stdOut: FBProcessStreamAttachment?, stdErr: FBProcessStreamAttachment?, mode: FBProcessSpawnMode) -> [String: Any] {
     // argv[0] should be launch path of the process. SimDevice does not do this automatically, so we need to add it.
     let fullArguments = [launchPath] + arguments
@@ -142,7 +140,6 @@ public struct FBSimulatorProcessSpawnCommands {
     return options
   }
 
-  // Internal (not private) for unit-test characterization of the launchd-vs-standalone decision.
   static func shouldLaunchStandalone(onSimulator simulator: FBSimulator, mode: FBProcessSpawnMode) -> Bool {
     switch mode {
     case .launchd:
@@ -150,7 +147,6 @@ public struct FBSimulatorProcessSpawnCommands {
     case .posixSpawn:
       return true
     default:
-      // Default behaviour is to use launchd if booted, otherwise use standalone.
       return simulator.state != .booted
     }
   }
