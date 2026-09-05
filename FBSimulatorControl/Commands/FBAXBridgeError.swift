@@ -12,17 +12,13 @@ import Foundation
 /// neutral and raised as `FBUIAutomationError`, so a caller can handle them without knowing which
 /// backend it holds.
 ///
-/// The cases mirror the guest's `FBAXWire.ErrorKind` vocabulary, because the guest is the only thing that
-/// knows which of them happened. Two of them — an application with no accessibility server, and one that
-/// did not answer — are facts about the application rather than the transport, so they exist here only
-/// long enough for the conformer to re-raise them as the neutral cases.
+/// The cases mirror the guest's `FBAXWire.ErrorKind`. The two application-level ones are re-raised by
+/// the conformer as the backend-neutral `FBUIAutomationError` cases.
 public enum FBAXBridgeError: LocalizedError, Sendable {
   /// The bundled `SimulatorFrameworkBridge` guest binary could not be located in Resources.
   case bridgeUnavailable
-  /// The guest could not bind the private frameworks it reads through, so it can serve no request at all.
-  /// The message is the guest's own and names what was missing plus any signature that has drifted beside
-  /// it. Its own case because nothing about the target or its configuration changes the outcome — waiting,
-  /// relaunching, or enabling accessibility all leave it exactly as broken.
+  /// The guest could not bind the private frameworks it reads through, so it can serve no request. The
+  /// message is the guest's own. Never transient: no target configuration change fixes it.
   case readerUnavailable(String)
   /// The frontmost-resolution strategy the caller selected could not name an application, for a reason
   /// that is about the strategy rather than about any one application. Carries the method asked for,
@@ -36,17 +32,13 @@ public enum FBAXBridgeError: LocalizedError, Sendable {
   /// result because it is not an answer at all.
   case applicationNotResponding(pid: pid_t?)
   /// A write carried an assertion about the element at its point and the guest found something else
-  /// there, so nothing was written. Its own case so the conformer can re-raise it as the neutral
-  /// `FBUIAutomationError.elementMoved` naming the query, which is the part the guest cannot know.
+  /// there, so nothing was written.
   case assertionFailed(String)
   /// The socket path is longer than `sockaddr_un.sun_path` can hold, so no guest can ever be reached at
-  /// it. Its own case because it is the one connect failure that waiting cannot fix.
+  /// it.
   case socketPathTooLong(path: String, limit: Int)
-  /// The guest this host spawned terminated before binding its serve socket. Its own case rather than a
-  /// `guestFailure` because it is a spawn failure, not a read failure: the process is already gone, so
-  /// polling for it cannot succeed and a wait must end on it rather than swallow it. Carries the exit
-  /// as data, because how the guest died is the diagnosis — a signal before `main` means it could not
-  /// load at all.
+  /// The guest this host spawned terminated before binding its serve socket. Carries the exit as data:
+  /// a signal before `main` means it could not load at all.
   case guestDiedBeforeBinding(pid: pid_t, signal: Int?, exitCode: Int?, path: String)
   /// The guest binary exited non-zero, produced unparseable output, or reported a failure with nothing
   /// further to say about it. Also where a failure kind this host does not recognize lands.
@@ -112,19 +104,12 @@ extension FBAXBridgeError {
   /// poll continues. A failure of the reader or its plumbing is not that: it answers the same way on
   /// every poll, and swallowing it spends the caller's whole timeout only to report a timeout, hiding
   /// the diagnosis the failure already carried.
-  ///
-  /// A predicate rather than a `switch` inside the poll closure, because the closure needs a live
-  /// simulator to reach and this decision is the part worth testing.
   var isTransientDuringMarkerWait: Bool {
     switch self {
     case .frontmostUnresolved, .guestFailure, .applicationUnavailable, .applicationNotResponding:
       return true
-    // Nothing about the target makes a reader that cannot bind bind, so both of these are the same on
-    // the last poll as on the first. A refused write cannot arise here at all — a poll only reads — and
-    // waiting would not make one land, so it is not something to poll through either. A path too long
-    // to address is the same on every poll for the same reason: it is arithmetic, not timing. A guest
-    // that died on spawn is the same again, and polling through it would re-spawn a guest that cannot
-    // start on every iteration.
+    // None of these change between polls: the reader cannot bind, the path is too long, the guest cannot
+    // start, and a poll never writes.
     case .bridgeUnavailable, .readerUnavailable, .assertionFailed, .socketPathTooLong, .guestDiedBeforeBinding:
       return false
     }
