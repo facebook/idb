@@ -12,7 +12,7 @@
 @class FBFutureContext_Teardown;
 
 // A class that encapsulates a mutable array of FBFutureContext_Teardown for
-// a threadsafety.
+// thread safety.
 @interface FBFutureTeardowns : NSObject
 - (void)addObject:(FBFutureContext_Teardown *)object;
 - (void)addObjectsFromArray:(NSArray<FBFutureContext_Teardown *> *)array;
@@ -198,8 +198,7 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
   FBFuture<NSNull *> *(^action)(id, FBFutureState) = self.action;
   FBMutableFuture<NSNull *> *teardownCompleted = FBMutableFuture.future;
 
-  // By this point the future will actually be resolved.
-  // The reason for this notifyOfCompletion, is that we can use it for the queue-bounce to the queue that the action is expected to be called on.
+  // The future is already resolved; notifyOfCompletion is used only to hop onto the action's queue.
   [self.future onQueue:self.queue
     notifyOfCompletion:^(FBFuture *resolved) {
       if (resolved.result) {
@@ -444,7 +443,6 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
       FBFutureLoopState resolveOrFailWhenResult = resolveOrFailWhen(&error);
       switch (resolveOrFailWhenResult) {
         case FBFutureLoopContinue:
-          //Continue running
           break;
         case FBFutureLoopFailed:
           dispatch_cancel(timer);
@@ -554,13 +552,8 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
   for (NSUInteger index = 0; index < futures.count; index++) {
     FBFuture *future = futures[index];
     if (future.hasCompleted) {
-      // The reason that this is done in-line is to avoid work being
-      // asynchronous when not necessary. For example a future-of-futures where
-      // the input futures have resolved already should resolve immediately.
-      // The dispatch_sync ensures that in this case, the composed future is
-      // resolved before returning from the constructor.
-      // It's OK to use dispatch_sync here: queue is local; there is no dispatch
-      // calls within futureCompleted().
+      // Already-completed inputs are folded in synchronously so the composite resolves before this returns.
+      // dispatch_sync is safe: `queue` is private and `futureCompleted` never dispatches.
       dispatch_sync(queue, ^{
         futureCompleted(future, index);
       });
@@ -608,13 +601,8 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
 
   for (FBFuture *future in futures) {
     if (future.hasCompleted) {
-      // The reason that this is done in-line is to avoid work being
-      // asynchronous when not necessary. For example a future-of-futures where
-      // the input futures have resolved already should resolve immediately.
-      // The dispatch_sync ensures that in this case, the composed future is
-      // resolved before returning from the constructor.
-      // It's OK to use dispatch_sync here: queue is local; there is no dispatch
-      // calls within futureCompleted()
+      // Already-completed inputs are folded in synchronously so the composite resolves before this returns.
+      // dispatch_sync is safe: `queue` is private and `futureCompleted` never dispatches.
       dispatch_sync(queue, ^{
         futureCompleted(future);
       });

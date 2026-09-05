@@ -101,8 +101,8 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
 /**
  Resolve a future synchronously, by value.
 
- @param resolve the the block to resolve the future.
- @return the receiver, for chaining.
+ @param resolve the block to resolve the future.
+ @return a new Future.
  */
 + (nonnull instancetype)resolveValue:(nonnull T _Nullable (^)(NSError * _Nullable * _Nullable))resolve;
 
@@ -110,8 +110,8 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
  Resolve a future asynchronously, by value.
 
  @param queue to resolve on.
- @param resolve the the block to resolve the future.
- @return the receiver, for chaining.
+ @param resolve the block to resolve the future.
+ @return a new Future.
  */
 + (nonnull instancetype)onQueue:(nonnull dispatch_queue_t)queue resolveValue:(nonnull T _Nullable (^)(NSError * _Nullable * _Nullable))resolve;
 
@@ -119,16 +119,16 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
  Resolve a future asynchronously, by returning a future.
 
  @param queue to resolve on.
- @param resolve the the block to resolve the future.
- @return the receiver, for chaining.
+ @param resolve the block to resolve the future.
+ @return a new Future.
  */
 + (nonnull instancetype)onQueue:(nonnull dispatch_queue_t)queue resolve:(nonnull FBFuture * _Nonnull (^)(void))resolve;
 
 /**
  Constructs a future from an array of futures.
  The future will resolve when all futures in the array have resolved.
- If any future resolves in an error, the first error will be propogated. Any pending futures will not be cancelled.
- If any future resolves in cancellation, the cancellation will be propogated. Any pending futures will not be cancelled.
+ If any future resolves in an error, the first error will be propagated. Any pending futures will not be cancelled.
+ If any future resolves in cancellation, the cancellation will be propagated. Any pending futures will not be cancelled.
 
  @param futures the futures to compose.
  @return a new future with the resolved results of all the composed futures.
@@ -136,7 +136,7 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
 + (nonnull FBFuture<NSArray<T> *> *)futureWithFutures:(nonnull NSArray<FBFuture<T> *> *)futures NS_SWIFT_NAME(combine(_:));
 
 /**
- Constructrs a Future from an Array of Futures.
+ Constructs a Future from an Array of Futures.
  The future which resolves the first will be returned.
  All other futures will be cancelled.
 
@@ -158,7 +158,7 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
 /**
  Cancels the asynchronous operation.
  This will always start the process of cancellation.
- Some cancellation is immediate, the returned future may resolve immediatey.
+ Some cancellation is immediate, the returned future may resolve immediately.
 
  However, other cancellation operations are asynchronous, where the future will not resolve immediately.
  If you wish to wait for the cancellation to have been fully resolved, chain on the future returned.
@@ -205,8 +205,7 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
 #pragma mark Deriving new Futures
 
 /**
- Chain Futures based on any non-cancellation resolution of the receiver.
- All completion events are called in the chained future block (Done, Error, Cancelled).
+ Chains on every terminal state of the receiver (Done, Error, Cancelled).
 
  @param queue the queue to chain on.
  @param chain the chaining handler, called on all completion events.
@@ -236,7 +235,7 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
  Returns a copy of this future that'll resolve on a specific queue
 
  @param queue the queue to resolve on
- @returns a copy of this future that'll resolve on the specified queue
+ @return a copy of this future that'll resolve on the specified queue
  */
 - (nonnull FBFuture<T> *)onQueue:(nonnull dispatch_queue_t)queue;
 
@@ -332,7 +331,7 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
 
  @param queue the queue to perform the teardown on.
  @param fmap the 'context object' to add.
- @return a 'contex object' that manages the tear-down of the receiver's value.
+ @return a 'context object' that manages the tear-down of the receiver's value.
  */
 - (nonnull FBFutureContext *)onQueue:(nonnull dispatch_queue_t)queue pushTeardown:(nonnull FBFutureContext * _Nonnull (^)(T _Nonnull))fmap;
 
@@ -438,28 +437,9 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
 @end
 
 /**
- Wraps a Future in such a way that teardown work can be deferred.
- This is useful when the Future wraps some kind of resource that requires cleanup.
- Upon completion of the future that the context wraps, a teardown action associated with the context is then performed.
-
- From this class:
- - A Future can be obtained that will completed before the teardown work does.
- - Additional chaining is possible, deferring teardown, or adding to a stack of teardowns.
-
- The API intentionally mirrors some of the methods in FBFuture, so that it can used in equivalent places.
- The nominal types of FBFuture and FBFutureContext so that it hard to confuse chaining on between them.
-
- Like cancellation on a Future, teardown is also permitted to be asynchronous. This is important where resources are allocated on top of each other.
- For example this can be useful to have set-up and tear-down actions performed in the order they are added to the teardown stack:
- 1) A socket is created.
- 2) A file read operation is made on the socket.
- 3) The file read operation is used, and then finishes.
- 4) The file read operation is stopped.
- 5) The socket is closed.
-
- In this case it's important that #4 has finished it's teardown work before #5 completes.
- This is achieved by a teardown action returning a future that completes when the work of #4 is completely done.
- Async teardown is completely optional, if the ordering is not significant, then the action can return an empty future to not defer any teardown work lower in the stack.
+ A future plus a teardown that runs once the context is popped.
+ Contexts stack: teardowns unwind innermost-first, and because a teardown may be asynchronous an inner teardown completes before the outer one starts.
+ Return an empty future from a teardown when ordering does not matter.
  */
 @interface FBFutureContext <T : id> : NSObject
 
@@ -529,7 +509,7 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
 
  @param queue the queue to chain on.
  @param enter the block that receives two parameters. The first is the context value, the second is a future that will tear-down the context when it is resolved.
- @return a Future that wraps the value returned from fmap.
+ @return a Future that wraps the value returned from `enter`.
  */
 - (nonnull FBFuture *)onQueue:(nonnull dispatch_queue_t)queue enter:(nonnull id _Nonnull (^)(T _Nonnull result, FBMutableFuture<NSNull *> * _Nonnull teardown))enter;
 
