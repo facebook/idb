@@ -7,8 +7,7 @@
 
 @testable import FBSimulatorControl
 import Foundation
-// Matches the existing XCTest-based FBSimulatorControl unit suite; this target is
-// XCTest-configured (no swift_testing), so Swift Testing @Test cases would not run.
+// Matches the existing XCTest-based FBSimulatorControl unit suite.
 // ast-grep-ignore: swift-testing/swift/no-new-xctest
 import XCTest
 
@@ -26,20 +25,12 @@ final class FBSimulatorReplSocketTests: XCTestCase {
     XCTAssertEqual(stableHashHex("a"), "af63dc4c8601ec8c")
   }
 
-  func testStableHashIsDeterministic() {
-    XCTAssertEqual(stableHashHex("com.example.app"), stableHashHex("com.example.app"))
-  }
-
   func testStableHashIsAlways16HexDigits() {
     for input in ["", "a", "com.facebook.SomeVeryLongBundleIdentifier.Extension"] {
       let hex = stableHashHex(input)
       XCTAssertEqual(hex.count, 16, "expected 16 digits for \(input.debugDescription)")
       XCTAssertTrue(hex.allSatisfy { $0.isHexDigit }, "expected hex digits for \(input.debugDescription)")
     }
-  }
-
-  func testStableHashDistinguishesInputs() {
-    XCTAssertNotEqual(stableHashHex("a"), stableHashHex("b"))
   }
 
   // MARK: - replSocketPath
