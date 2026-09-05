@@ -8,11 +8,6 @@
 import Foundation
 
 /// Errors thrown while resolving the CoreSimulator `SimServiceContext` and its device sets.
-///
-/// Typed cases let callers pattern-match, while `LocalizedError.errorDescription` preserves the
-/// human-readable messages that flow through `error.localizedDescription` (sime2e output, logs).
-/// Underlying CoreSimulator/`FileManager` failures are captured as their localized message rather
-/// than the error object itself, keeping the enum a `Sendable` value type.
 public enum FBSimulatorServiceContextError: LocalizedError, Sendable {
 
   /// The `SimServiceContext` class is not present in the process even though CoreSimulator
@@ -24,19 +19,10 @@ public enum FBSimulatorServiceContextError: LocalizedError, Sendable {
   /// `NSException`, so this is thrown up-front instead.
   case noFullXcodeSelected
 
-  /// `+[SimServiceContext sharedServiceContextForDeveloperDir:error:]` did not return a context.
   case serviceContextUnavailable(developerDirectory: String, reason: String?)
-
-  /// The default device set could not be resolved from the service context.
   case defaultDeviceSetUnavailable(reason: String?)
-
-  /// A device set could not be created for the given control configuration.
   case deviceSetUnavailable(configuration: String, reason: String?)
-
-  /// The custom device-set directory could not be created on disk.
   case deviceSetDirectoryCreationFailed(path: String, reason: String)
-
-  /// `realpath(3)` failed to resolve the custom device-set path.
   case deviceSetPathResolutionFailed(path: String, reason: String)
 
   public var errorDescription: String? {
