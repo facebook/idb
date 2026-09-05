@@ -8,9 +8,7 @@
 import Foundation
 
 /// A failure while resolving the compiler environment (SDK, toolchain, or
-/// target platform). Replaces `ArgumentParser.ValidationError` so this file
-/// carries no dependency on the argument parser; the CLI surfaces the message
-/// as-is.
+/// target platform). The CLI surfaces `description` verbatim.
 struct CompilerEnvironmentError: Error, CustomStringConvertible {
   let description: String
 
@@ -175,8 +173,7 @@ public func resolveLinkerArguments(platform: Platform, runtimeOSVersion: String)
 }
 
 /// Chooses the OS version to compile injected code against (the deployment
-/// target in the LLVM triple). Pure and free of I/O, so it can be unit-tested
-/// directly (see `CompilerEnvironmentTests`).
+/// target in the LLVM triple).
 public enum DeploymentTargetVersion {
 
   /// The connected target's runtime OS version, floored at the local SDK
