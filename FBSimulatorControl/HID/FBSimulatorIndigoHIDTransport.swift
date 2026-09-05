@@ -102,7 +102,6 @@ actor FBSimulatorIndigoHIDTransport {
   func sendKeyboard(direction: FBSimulatorHIDDirection, keyCode: UInt32) async throws {
     // On Xcode 27 (CoreSimulator-1155.4)+ the guest disconnects the legacy `ExternalKeyboardService`
     // in favour of dtuhidd, so legacy keyboard events deliver byte-correctly but produce no text.
-    // Fail loudly rather than typing into the void — the DTUHID transport is the workaround.
     if legacyKeyboardSuppressed {
       throw FBSimulatorHIDError.keyboardSuppressedByDTUHIDD
     }
@@ -111,8 +110,6 @@ actor FBSimulatorIndigoHIDTransport {
 
   // No tvOS guard — the trackpad is exactly what Apple TV targets need (unlike the touchscreen).
   func sendTrackpad(point: FBSimulatorTrackpadPoint, phase: FBSimulatorTrackpadPhase) async throws {
-    // The Indigo payload builder speaks `CGPoint`; the unit-square guarantee is the caller's, and is
-    // discharged by the time the value reaches this boundary.
     try await indigoClient.send(indigo.trackpad(point: CGPoint(x: point.x, y: point.y), phase: phase))
   }
 }
