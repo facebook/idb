@@ -34,10 +34,6 @@ enum FBUIAutomationPolling {
 
   /// The whole `wait` verb, for a backend that can answer "is the marker there yet?".
   ///
-  /// Each wait rejects a non-marker target, polls until found or the deadline passes, then reports a
-  /// timeout. The real clock and sleep are used here; the injectable form above supports deterministic
-  /// tests.
-  ///
   /// `probe` returns `true` once the element is present and `nil` while it is not yet — a probe should
   /// treat "not there" as `nil` rather than throwing, and throw only on a genuine failure, which ends
   /// the wait immediately instead of burning the timeout.
