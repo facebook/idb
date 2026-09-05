@@ -7,10 +7,8 @@
 
 import Foundation
 
-/// Streams Bitmaps to a File Sink.
-///
-/// `Sendable` because the async lifecycle methods are awaited across concurrency domains (the gRPC
-/// companion, the sime2e command handlers); the conforming stream classes are `@unchecked Sendable`.
+/// Streams encoded video frames to a data consumer. `Sendable` because the async lifecycle methods
+/// are awaited across concurrency domains.
 public protocol FBVideoStream: AnyObject, Sendable {
   /// Starts the Streaming, to a Data Consumer.
   func startStreaming(_ consumer: FBDataConsumer) async throws
