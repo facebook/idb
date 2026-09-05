@@ -11,7 +11,7 @@ import XCTest
 final class FBSimulatorServiceContextErrorTests: XCTestCase {
 
   func testNoFullXcodeSelectedMessageIsStable() {
-    // This message is user-facing (idb / sime2e surface it when no full Xcode is selected); pin it.
+    // User-facing message; pinned verbatim.
     XCTAssertEqual(
       FBSimulatorServiceContextError.noFullXcodeSelected.errorDescription,
       "No full Xcode developer directory is selected. Select one with `xcode-select -s` or set DEVELOPER_DIR."
