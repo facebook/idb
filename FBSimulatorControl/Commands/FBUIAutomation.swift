@@ -10,8 +10,7 @@ import FBControlCore
 import Foundation
 
 /// Which guest a `.axBridge` read runs against: a fresh spawn of its own, the simulator's shared one,
-/// or a private one held for the caller's lifetime. It applies only to the axbridge backend, so it
-/// rides on that case as a payload rather than existing as a backend of its own.
+/// or a private one held for the caller's lifetime.
 public enum FBAXBridgePersistence: Sendable, Hashable {
   /// A fresh guest spawn per read. Stateless and free to reconstruct per call — for a single one-shot
   /// read.
@@ -30,15 +29,10 @@ public enum FBAXBridgePersistence: Sendable, Hashable {
 public enum FBUIAutomationBackend: Sendable, Equatable {
   /// The legacy CoreSimulator accessibility-translation path.
   case accessibility
-  /// The bundle-free guest AX-C reader: the `SimulatorFrameworkBridge` `accessibility` service spawned
-  /// in the simulator. `persistence` picks which guest the read runs against; `frontmostMethod` is how
-  /// it resolves the foreground app; `automationMode` is what the read asks the device's accessibility
-  /// automation mode to be.
-  ///
-  /// `automationMode` is tri-state for the reason the guest is: `true` asserts the mode, `false` asserts
-  /// it off, and `nil` observes without touching the device. `false` is not a synonym for `nil` — it is
-  /// what reads the tree as it would have been read before this mode was asserted, which is what
-  /// reproducing the child-cache fault and measuring the mode's cost both need.
+  /// The guest AX reader: the `SimulatorFrameworkBridge` `accessibility` service spawned in the
+  /// simulator. `persistence` picks which guest; `frontmostMethod` is how it resolves the foreground
+  /// app; `automationMode` is `true` to assert automation mode, `false` to assert it off, `nil` to
+  /// leave the device untouched.
   case axBridge(
     persistence: FBAXBridgePersistence,
     frontmostMethod: FBAXBridgeFrontmostMethod,
@@ -65,10 +59,6 @@ public extension FBUIAutomationBackend {
   }
 
   /// Builds the resolved backend represented by `name`.
-  ///
-  /// `automationMode` defaults to asserting the mode, which is what selecting axbridge by name
-  /// means today. A caller that wants the pre-assertion behaviour — reproducing the child-cache fault,
-  /// or measuring what the mode costs — passes `false` explicitly rather than getting it by omission.
   init(
     resolvedName name: FBUIAutomationBackendName,
     frontmostMethod: FBAXBridgeFrontmostMethod = .windowServer,
@@ -106,9 +96,8 @@ public struct FBTapOptions: Sendable, Equatable {
     }
   }
 
-  /// The hold duration — a long-press. `nil` is an instantaneous tap. Honoured by the coordinate
-  /// (HID-delivered) backends; the accessibility backend performs an instantaneous AXPress and ignores
-  /// it.
+  /// Requests a long-press; a backend whose press is instantaneous rejects it rather than downgrading to
+  /// a tap. `nil` is an instantaneous tap.
   public var duration: TimeInterval?
   /// The pre-tap value assertion, or `nil` to tap unconditionally. See `Assertion`.
   public var assertion: Assertion?
@@ -147,9 +136,7 @@ public struct FBDragOptions: Sendable, Equatable {
   }
 }
 
-/// What a drag endpoint names, once the queries that name no single element are refused. Shared by the
-/// backends so a drag accepts the same endpoints whichever one runs it; they differ only in how a
-/// marker becomes a point.
+/// What a drag endpoint names, once the queries that name no single element are refused.
 enum FBDragEndpoint: Equatable {
   case point(CGPoint)
   case marker(value: String, key: FBAXSearchableKey, depth: UInt)
@@ -174,11 +161,6 @@ enum FBDragEndpoint: Equatable {
 /// The converged UI-automation surface: element reads and element-targeted
 /// actions, expressed once against an `FBAccessibilityElementQuery` target and run by the selected
 /// backend. `FBSimulator.uiAutomation(backend:)` vends the backend that implements it.
-///
-/// Consumers (sime2e, the idb companion) map their own flag/enum to an `FBUIAutomationBackend`, build
-/// an `FBAccessibilityElementQuery`, and call one verb — rather than re-implementing per-backend
-/// dispatch, the pid-probe anchor, or the keys default themselves. Each backend already funnels into
-/// the shared serializer/schema, so the response is identical in shape across backends.
 public protocol FBUIAutomation: Sendable {
 
   /// Reads the element(s) named by `query` and serializes them to the shared accessibility schema.
@@ -197,12 +179,10 @@ public protocol FBUIAutomation: Sendable {
     options: FBAccessibilityRequestOptions
   ) async throws -> FBAccessibilityElementsResponse?
 
-  /// Taps the element named by `query`. `.point` taps the coordinate; `.marker` finds the element and
-  /// taps its centre. `options.assertion`, when given, asserts the element's value for its key before
-  /// tapping — accessibility only; rejected (not silently dropped) over remote automation.
-  /// `options.duration`, when given, holds the tap as a long-press on the coordinate backends; the
-  /// accessibility backend performs an instantaneous press and ignores it. `.frontmost` taps the
-  /// frontmost element over accessibility but is rejected over remote automation.
+  /// Taps the element named by `query`. `.point` taps the coordinate; `.marker` taps the element's
+  /// centre. `options.assertion` checks the element's value for its key before tapping.
+  /// `options.duration` asks for a long-press; a backend whose press is instantaneous rejects it rather
+  /// than downgrading to a tap.
   func tap(
     _ query: FBAccessibilityElementQuery,
     options: FBTapOptions
@@ -222,8 +202,7 @@ public protocol FBUIAutomation: Sendable {
     pollInterval: TimeInterval
   ) async throws
 
-  /// Scrolls the element named by `query` in `direction`. Accessibility only for now; the remote
-  /// backend rejects it with a clear error until remote scroll is implemented.
+  /// Scrolls the element named by `query` in `direction`.
   func scroll(
     _ query: FBAccessibilityElementQuery,
     direction: FBAccessibilityScrollDirection
@@ -261,22 +240,9 @@ public extension FBUIAutomation {
 }
 
 public extension FBAccessibilityElementsResponse {
-  /// The response encoded in `format` — the one definition of how a read reaches a caller, so the byte
-  /// form cannot drift between the describe and hit-test call sites that apply it.
-  ///
-  /// `default` and `nested` differ only in the elements the serializer already produced, so both emit
-  /// the legacy envelope; `complete` emits the consolidated document. There is deliberately no second
-  /// renderer beside this one: two encoders is how the formats would come to disagree about anything
-  /// they are meant to share.
-  ///
-  /// Both formats render the same typed elements; they differ in which spelling they use, how much of
-  /// the read they report, and — deliberately — which writer produces the bytes.
-  ///
-  /// `complete` is new, so it is encoded from its `Encodable` model. The legacy formats are written by
-  /// `JSONSerialization`, because their exact byte form is part of a contract consumers already parse
-  /// and the two writers disagree on non-integral doubles: `JSONSerialization` emits 17 significant
-  /// digits where `JSONEncoder` emits the shortest round-tripping form. A sub-point frame edge is enough
-  /// to diverge.
+  /// `default`/`nested` are written by `JSONSerialization` because their byte form is a contract
+  /// consumers parse, and it differs from `JSONEncoder` on non-integral doubles (17 significant digits
+  /// vs the shortest round-trip form). `complete` is encoded from its `Encodable` model.
   func formattedOutputJSON(format: FBAccessibilityOutputFormat) throws -> Data {
     switch format {
     case .default, .nested:
@@ -321,10 +287,6 @@ public extension FBSimulator {
   ///   what ends it — for a process that owns the simulator for its lifetime.
   /// - `.accessibility` and `.axBridge(persistence: .oneShot, …)` are stateless — they hold no warm
   ///   resource, so reconstructing them per call is free.
-  ///
-  /// The axbridge backend case carries the transport persistence and frontmost-resolution method it
-  /// reads with, so those choices are expressed only where they apply rather than as arguments the
-  /// other backends would ignore.
   func uiAutomation(backend: FBUIAutomationBackend) throws -> any FBUIAutomation {
     switch backend {
     case .accessibility:
@@ -343,16 +305,10 @@ public extension FBSimulator {
     }
   }
 
-  /// The socket-backed axbridge transport this target uses for `persistence`.
-  ///
-  /// Memoized rather than per-reader because the transport is what reaches the guest, and the spawn plus
-  /// `initForRemoteAccess` behind it is the cost these modes exist to avoid. `frontmostMethod` and
-  /// `automationMode` belong to the reader, so readers differing in those share a transport.
-  ///
-  /// Keyed by persistence rather than by type alone, because a shared and an exclusive bridge are not
-  /// interchangeable: handing a shared request the exclusive transport would read over a bridge nobody
-  /// else can see, and handing an exclusive request the shared one would put the caller back to holding
-  /// a bridge others are trying to use.
+  /// Memoized per scope: the spawn plus `initForRemoteAccess` behind a transport is the cost the
+  /// persistent modes exist to avoid. Shared and exclusive transports are never interchangeable.
+  /// `frontmostMethod` and `automationMode` belong to the reader, so readers differing in those share
+  /// a transport.
   private func axBridgeTransport(scope: FBAXBridgeServiceScope) -> FBAXBridgePersistentTransport {
     commandCache.resolve { FBAXBridgeTransportsByScope() }
       .transport(for: scope) { FBAXBridgePersistentTransport(simulator: self, scope: scope) }
