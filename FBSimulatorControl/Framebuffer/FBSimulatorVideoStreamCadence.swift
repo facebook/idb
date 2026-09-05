@@ -21,16 +21,10 @@ struct FrameTrigger {
   let overran: Bool
 }
 
-/// The `.lazy` (VFR) stimulus for the frame push loop: an `AsyncSequence` of `FrameTrigger`s poked by
-/// the framebuffer callbacks rather than a clock. `signalFrameRendered()` (a new frame) and
-/// `signalKeyFrame()` (an overlay change, which must be a decodable keyframe) each enqueue a trigger
-/// that the shared loop consumes. Owning the stream and its keyframe state here keeps it off
-/// the `FBSimulatorVideoStream` actor, so event handling simply calls a method.
-///
-/// Triggers coalesce to the newest (`bufferingNewest(1)`): when pushes fall behind, redundant frames
-/// are dropped and only the latest screen state is pushed — the correct semantics for VFR. A keyframe
-/// must survive that coalescing, so it is not carried on a (droppable) trigger but held as a sticky
-/// flag that `signalKeyFrame()` sets and the iterator reads-and-clears as it pulls each trigger.
+/// The `.lazy` (VFR) stimulus: an `AsyncSequence` of `FrameTrigger`s poked by `signalFrameRendered()`
+/// and `signalKeyFrame()`. Triggers coalesce to the newest (`bufferingNewest(1)`) so a slow consumer
+/// drops redundant frames; a keyframe request must survive that coalescing, so it is a sticky flag the
+/// iterator reads-and-clears rather than a payload on a droppable trigger.
 // @unchecked Sendable: `pendingKeyFrame` is mutable across threads but guarded by `lock`; the stream
 // and its continuation are Sendable.
 final class LazyFrameTriggers: AsyncSequence, @unchecked Sendable {
@@ -44,9 +38,7 @@ final class LazyFrameTriggers: AsyncSequence, @unchecked Sendable {
   private var pendingKeyFrame = false
 
   init() {
-    // The `AsyncStream` builder hands back the continuation synchronously during init, so the IUO is
-    // always assigned before use. This is the pre-`makeStream` idiom (`makeStream` needs a newer
-    // deployment target than our macOS 12 floor).
+    // The builder hands back the continuation synchronously, so the IUO is assigned before use.
     // swiftlint:disable:next implicitly_unwrapped_optional
     var continuation: AsyncStream<Void>.Continuation!
     self.stream = AsyncStream<Void>(bufferingPolicy: .bufferingNewest(1)) { continuation = $0 }
@@ -140,7 +132,7 @@ struct FrameCadence: AsyncSequence {
       if Task.isCancelled {
         return nil
       }
-      // The first tick fires immediately: the original loop pushes once before its first sleep.
+      // The first tick fires immediately, before any sleep.
       if firstTickPending {
         firstTickPending = false
         return FrameTrigger(forceKeyFrame: false, overran: false)
@@ -170,9 +162,7 @@ struct FrameCadence: AsyncSequence {
 
 // MARK: - CadenceStats
 
-/// Accumulates eager-cadence push statistics — Welford online mean/variance of push duration plus an
-/// overrun count — and logs a summary every 5 seconds. Kept out of the push loop so the loop reads
-/// as just "push each tick"; `record` is called once per push.
+/// Welford online mean/variance of push duration plus an overrun count, logged every 5 seconds.
 struct CadenceStats {
   private let frameIntervalNanos: UInt64
   private let machToMs: Double
@@ -222,7 +212,6 @@ struct CadenceStats {
         format: "Cadence stats (%.1fs): %llu pushes, %llu overruns, push duration avg %.1f ms / max %.1f ms, jitter stddev %.1f ms (budget: %.1f ms)",
         intervalSeconds, pushCount, overrunCount, avgMs, maxMs, stddevMs, Double(frameIntervalNanos) / 1e6))
 
-    // Reset for next interval.
     statsStartTime = now
     pushCount = 0
     overrunCount = 0
