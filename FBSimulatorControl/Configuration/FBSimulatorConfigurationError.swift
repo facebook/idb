@@ -9,50 +9,19 @@ import Foundation
 
 /// Errors thrown while resolving a `FBSimulatorConfiguration` against the runtimes and device types
 /// available from CoreSimulator.
-///
-/// Typed cases let callers pattern-match, while `LocalizedError.errorDescription` preserves the
-/// human-readable messages that flow through `error.localizedDescription`. Underlying failures are
-/// captured as their localized message rather than the error object, keeping the enum a `Sendable`
-/// value type.
 public enum FBSimulatorConfigurationError: LocalizedError, Sendable {
-
-  /// No newest OS version is available for the device.
   case noNewestAvailableOS(device: String)
-
-  /// No oldest OS version is available for the device.
   case noOldestAvailableOS(device: String)
-
-  /// The OS version name is not registered with FBSimulatorControl.
   case unsupportedOSVersion(name: String)
-
-  /// The device model is not registered with FBSimulatorControl.
   case unsupportedDevice(name: String)
-
-  /// A matching `SimRuntime` could not be obtained for the configuration.
   case runtimeUnavailable(configuration: String, reason: String?)
-
-  /// A matching `SimDeviceType` could not be obtained for the configuration.
   case deviceTypeUnavailable(configuration: String, reason: String?)
-
-  /// The resolved device type does not support the resolved runtime.
   case runtimeDeviceTypeMismatch(deviceType: String, runtime: String)
-
-  /// No `SimRuntime` matched the configuration's predicate.
   case noMatchingRuntime(available: String)
-
-  /// More than one `SimRuntime` matched the configuration's predicate.
   case ambiguousRuntime(matches: String)
-
-  /// No `SimDeviceType` matched the configuration's predicate.
   case noMatchingDeviceType(available: String)
-
-  /// More than one `SimDeviceType` matched the configuration's predicate.
   case ambiguousDeviceType(matches: String)
-
-  /// The device type backing the default configuration is not registered.
   case noDefaultDeviceTypeRegistered(model: String)
-
-  /// No OS versions are available for the default configuration.
   case noAvailableOSVersionsForDefault
 
   public var errorDescription: String? {
