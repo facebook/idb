@@ -10,7 +10,6 @@ import FBControlCore
 import Foundation
 import Testing
 
-/// Pins what the `FBSimulatorSet` factory does with its nullable `logger:` parameter.
 @Suite("FBSimulatorSet logger retention")
 struct FBSimulatorSetLoggerTests {
 
