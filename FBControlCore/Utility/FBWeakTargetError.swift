@@ -7,17 +7,13 @@
 
 import Foundation
 
-/// Raised when a command's weakly-held target has been deallocated before the command could run.
-///
-/// Command classes hold their target (a simulator, device, or `self`) `weak` to avoid retain cycles,
-/// so every operation must first re-check it. This is the shared error for that guard, replacing
-/// per-surface `deallocated` cases and the stringly-typed `FB*Error.describe("… deallocated")`.
+/// Thrown when a command's weakly-held target (a simulator, device, or `self`) was deallocated
+/// before the command ran.
 public enum FBWeakTargetError: Error, CustomStringConvertible, LocalizedError {
   /// `target` is a human-readable description of what was deallocated, e.g. "Simulator".
   case deallocated(String)
 
-  /// The common case: a weakly-held `FBSimulator` was deallocated. Prefer this over
-  /// hand-writing `.deallocated("Simulator")` at the call site.
+  /// A deallocated `FBSimulator`.
   public static let simulator = FBWeakTargetError.deallocated("Simulator")
 
   public var description: String {
