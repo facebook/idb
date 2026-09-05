@@ -63,7 +63,6 @@ static NSString *const KeyIsAwaiting = @"FBCONTROLCORE_IS_AWAITING";
       if (timeout > 0 && [date timeIntervalSinceNow] < 0) {
         return NO;
       }
-      // Wait for 100ms
       [self runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
     }
   }

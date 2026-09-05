@@ -10,8 +10,7 @@
 #import <FBControlCore/FBFuture.h>
 
 /**
- Helpers for extracting the value from an FBFuture.
- Since FBFuture only exposes callback mounting in it's main interface, this allows callers to wait for a value to appear asynchronously.
+ Synchronous waits on an FBFuture, whose main interface only exposes callbacks.
  */
 @interface FBFuture <T>(Sync)
 
@@ -21,7 +20,7 @@
  For threads and queues that don't have a Run Loop, one will be created in accordance with +[NSRunLoop currentRunLoop].
 
  @param error an error outparam if the Future resolves with an error.
- @return the the Future's result if successful, nil otherwise.
+ @return the Future's result if successful, nil otherwise.
  */
 - (nullable T)await:(NSError * _Nullable * _Nullable)error;
 
@@ -32,7 +31,7 @@
 
  @param timeout the timeout in seconds to wait.
  @param error an error outparam if the Future resolves with an error, or the Future is not resolved within the timeout.
- @return the the Future's result if successful, nil otherwise.
+ @return the Future's result if successful, nil otherwise.
  */
 - (nullable T)awaitWithTimeout:(NSTimeInterval)timeout error:(NSError * _Nullable * _Nullable)error;
 
@@ -41,7 +40,7 @@
  This will use dispatch internally and should *never* be called from the main thread/queue, or any thread/queue that needs to be serviced for the Future to resolve.
 
  @param error an error outparam if the Future resolves with an error.
- @return the the Future's result if successful, nil otherwise.
+ @return the Future's result if successful, nil otherwise.
  */
 - (nullable T)block:(NSError * _Nullable * _Nullable)error;
 
