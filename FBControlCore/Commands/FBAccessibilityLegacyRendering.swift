@@ -7,10 +7,10 @@
 
 import Foundation
 
-/// A whole tree, one element, or a successful empty point read.
 public enum FBAccessibilityElementPayload: Sendable, Equatable {
   case tree([FBAccessibilityDocumentElement])
   case single(FBAccessibilityDocumentElement)
+  /// A point read that succeeded but hit nothing.
   case empty
 
   public func reportingChildren() -> FBAccessibilityElementPayload {
@@ -31,7 +31,7 @@ public enum FBAccessibilityElementPayload: Sendable, Equatable {
 }
 
 public extension FBAccessibilityElementPayload {
-  /// Uses `JSONSerialization` to preserve the exact floating-point rendering of the legacy format.
+  /// Foundation objects, so `JSONSerialization` reproduces the legacy format's floating-point rendering.
   var legacyFoundationObject: Any {
     switch self {
     case let .tree(elements):
