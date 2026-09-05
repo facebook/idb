@@ -58,7 +58,7 @@ enum ReplReportParseError: Error, CustomStringConvertible {
 
 /// Parses an `idb-repl` session report into a replayable session by reading the hidden,
 /// machine-readable markers that `ReplReportFormatter` embeds — never by scraping the
-/// human-readable Markdown. Pure and free of I/O, so it can be unit-tested directly.
+/// human-readable Markdown.
 enum ReplReportParser {
 
   static func parse(_ markdown: String) throws -> ParsedReplaySession {
