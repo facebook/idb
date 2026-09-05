@@ -270,6 +270,7 @@ final class ScreenshotRequestTranslationTests: XCTestCase {
           cropRect: CGRect(x: 900, y: 0, width: 10, height: 10),
           sourceSize: CGSize(width: 828, height: 1792)), .invalidArgument
       ),
+      // Well formed, and the identical request succeeds on a simulator, so not invalidArgument.
       (.screenScaleUnknown, .failedPrecondition),
       (.sourceSizeNotPositive(.zero), .internalError),
     ]
@@ -280,18 +281,8 @@ final class ScreenshotRequestTranslationTests: XCTestCase {
     }
   }
 
-  func testAPointsRequestOnAScalelessTargetIsAPrecondition() {
-    // The request is well formed and the identical request succeeds on a simulator, so this must not
-    // read to a client as "you sent something invalid".
-    XCTAssertEqual(
-      ScreenshotRequestTranslation.status(for: .screenScaleUnknown).code, .failedPrecondition
-    )
-  }
-
   // MARK: - Render failures
 
-  /// Uncaught, every one of these reaches a client as an `UNKNOWN` carrying no message, which says
-  /// only that the screenshot did not happen.
   func testEveryRenderFailureHasAStatus() {
     // Not exhaustive by construction -- the error has associated values, so it is not CaseIterable.
     // A case added to FBScreenshotRenderError must be added here.
