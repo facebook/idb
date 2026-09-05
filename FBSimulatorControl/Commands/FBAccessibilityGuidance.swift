@@ -32,8 +32,7 @@ enum FBAccessibilityGuidance {
   /// size the ratio is noise.
   private static let minimumElementsForRatio = 20
 
-  /// Observed clean reads: 0% zero-framed elements; faulted reads: 38-90%. A quarter sits well clear
-  /// of zero; note the clean-read sample was small.
+  /// Observed: clean reads 0% zero-framed, faulted reads 38-90%.
   private static let zeroFrameWarningRatio = 0.25
 
   /// Advice for a read whose geometry looks degenerate, or nil when it does not. A threshold
