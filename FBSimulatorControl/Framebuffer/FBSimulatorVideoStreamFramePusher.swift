@@ -59,9 +59,6 @@ public struct FBVideoEncoderStats: Sendable {
 // MARK: - Frame Pusher Protocol
 
 /// Frame pusher abstraction. Concrete pushers convert + write frames to the consumer.
-/// This is a plain Swift protocol (not `@objc`) — the pushers are only ever constructed and used
-/// from Swift, and the throwing methods read more naturally than the original ObjC
-/// `BOOL`/`NSError**` surface.
 protocol FBSimulatorVideoStreamFramePusher: AnyObject {
   func setup(with pixelBuffer: CVPixelBuffer, edgeInsets: FBVideoStreamEdgeInsets) throws
   func tearDown() throws
@@ -165,7 +162,6 @@ final class FBSimulatorVideoStreamFramePusher_Bitmap: FBSimulatorVideoStreamFram
   let consumer: any FBDataConsumer
   /// The scale factor between 0-1. nil for no scaling.
   let scaleFactor: Double?
-  /// CV/VT types are ARC-managed in Swift; held strong, released automatically.
   var scaledPixelBufferPool: CVPixelBufferPool?
   var pixelTransferSession: VTPixelTransferSession?
 
@@ -191,7 +187,6 @@ final class FBSimulatorVideoStreamFramePusher_Bitmap: FBSimulatorVideoStreamFram
       VTPixelTransferSessionInvalidate(pixelTransferSession)
       self.pixelTransferSession = nil
     }
-    // CVPixelBufferPool is ARC-managed; dropping the reference releases it.
     self.scaledPixelBufferPool = nil
   }
 
@@ -257,13 +252,11 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: FBSimulatorVideoStre
   private let mjpegFrameWriter = FBMJPEGFrameWriter()
   private let minicapFrameWriter = FBMinicapFrameWriter()
 
-  /// CV/VT types are ARC-managed in Swift; held strong, released automatically.
   var compressionSession: VTCompressionSession?
   var scaledPixelBufferPool: CVPixelBufferPool?
   var nv12PixelBufferPool: CVPixelBufferPool?
   var pixelTransferSession: VTPixelTransferSession?
 
-  // Exposed as internal (not private) so @testable tests can assert on encoder state.
   var consecutiveNotReadyFrameCount: UInt = 0
   var warmupComplete = false
   var starvationWarningLogged = false
@@ -303,7 +296,6 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: FBSimulatorVideoStre
 
   func handleCompressedSampleBuffer(_ sampleBuffer: CMSampleBuffer?, encodeStatus: OSStatus, infoFlags: VTEncodeInfoFlags) {
     if !statsTimer.hasStarted {
-      // First call — start the timer.
       _ = statsTimer.tick()
       logger.info().log("First encode callback received")
     }
@@ -394,7 +386,6 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: FBSimulatorVideoStre
       return
     }
 
-    // Success
     withStats { $0.writeCount += 1 }
     let failuresBefore = consecutiveNotReadyFrameCount
     consecutiveNotReadyFrameCount = 0
@@ -408,8 +399,7 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: FBSimulatorVideoStre
     }
   }
 
-  /// MJPEG output: write the encoded sample's JPEG block buffer straight to the MJPEG stream.
-  /// Ignores encode status/flags, matching the former `MJPEGCompressorCallback`.
+  /// MJPEG output: writes the sample's JPEG block buffer straight to the stream, ignoring encode status/flags.
   private func handleMJPEGSampleBuffer(_ sampleBuffer: CMSampleBuffer?) {
     guard let sampleBuffer, let blockBuffer = CMSampleBufferGetDataBuffer(sampleBuffer) else { return }
     do {
@@ -419,10 +409,8 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: FBSimulatorVideoStre
     }
   }
 
-  /// Minicap output: on frame 0 emit the Minicap header (from the sample's format dimensions), then
-  /// write the JPEG block buffer to the Minicap stream. Ignores encode status/flags, matching the
-  /// former `MinicapCompressorCallback` — the frame number is captured from `writeEncodedFrame`
-  /// rather than carried through a source-frame holder.
+  /// Minicap output: on frame 0 emits the header from the sample's format dimensions, then writes each
+  /// JPEG block buffer. Ignores encode status/flags.
   private func handleMinicapSampleBuffer(_ sampleBuffer: CMSampleBuffer?, frameNumber: UInt) {
     guard let sampleBuffer else { return }
     if frameNumber == 0 {
@@ -554,7 +542,6 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: FBSimulatorVideoStre
       VTPixelTransferSessionInvalidate(pixelTransferSession)
       self.pixelTransferSession = nil
     }
-    // CVPixelBufferPool instances are ARC-managed; dropping the references releases them.
     self.scaledPixelBufferPool = nil
     self.nv12PixelBufferPool = nil
   }
@@ -574,11 +561,7 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: FBSimulatorVideoStre
 
     let encodeStart = CFAbsoluteTimeGetCurrent()
 
-    // Convert BGRA→NV12 (and scale if needed) in a single VTPixelTransferSession call.
-    // VTCompressionSession's native input format is NV12; feeding it NV12 directly
-    // avoids an internal conversion pass. When scaleFactor is set, the NV12 pool is
-    // already sized to the destination dimensions, so scaling + format conversion
-    // happen in one GPU pass.
+    // BGRA→NV12 (and scale, since the pool is destination-sized) in one VTPixelTransferSession pass.
     if let nv12Pool = nv12PixelBufferPool, let pixelTransferSession {
       var nv12Buffer: CVPixelBuffer?
       let returnStatus = CVPixelBufferPoolCreatePixelBuffer(nil, nv12Pool, &nv12Buffer)
@@ -601,13 +584,9 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: FBSimulatorVideoStre
       frameProperties = [kVTEncodeFrameOptionKey_ForceKeyFrame as String: true]
     }
 
-    // The block-based output handler replaces the former create-time C output callback. It captures
-    // the output mode and (for Minicap) this frame's number directly — no `sourceFrameRefcon`
-    // round-trip and no holder object, so the `passRetained`/`takeRetainedValue` pair is gone.
-    // `[weak self]` keeps the handler leak/cycle-free: the session does not retain the pusher, so a
-    // strong capture here would be a retain cycle (pusher → session → handler → pusher). The handler
-    // may run on a VideoToolbox thread after this call returns; `sampleBuffer` is ARC-managed and
-    // mutable encoder state is either confined to the handler or guarded by `statsLock` (see the class doc).
+    // `[weak self]`: the session does not retain the pusher, so a strong capture would be a cycle
+    // (pusher → session → handler → pusher). The handler may run on a VideoToolbox thread after this call
+    // returns; mutable state is handler-confined or guarded by `statsLock` (see the class doc).
     let outputMode = self.outputMode
     let handler: VTCompressionOutputHandler = { [weak self] encodeStatus, infoFlags, sampleBuffer in
       guard let self else { return }
@@ -644,7 +623,6 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: FBSimulatorVideoStre
     )
     CVPixelBufferUnlockBaseAddress(bufferToWrite, .readOnly)
 
-    // Track time spent in NV12 conversion + encode submission.
     let encodeEnd = CFAbsoluteTimeGetCurrent()
     withStats { $0.totalEncodeSubmitSeconds += (encodeEnd - encodeStart) }
 
