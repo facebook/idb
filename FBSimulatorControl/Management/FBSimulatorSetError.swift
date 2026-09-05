@@ -8,28 +8,12 @@
 import Foundation
 
 /// Errors thrown while creating or cloning simulators in an `FBSimulatorSet`.
-///
-/// Typed cases let callers pattern-match, while `LocalizedError.errorDescription` preserves the
-/// human-readable messages that flow through `error.localizedDescription`. Underlying CoreSimulator
-/// failures are captured as their localized message, keeping the enum a `Sendable` value type.
 public enum FBSimulatorSetError: LocalizedError, Sendable {
-
-  /// The device type or runtime for the requested configuration could not be obtained.
   case deviceTypeOrRuntimeUnavailable(configuration: String, reason: String?)
-
-  /// A freshly-created simulator could not be moved into a shutdown state.
   case shutdownAfterCreateFailed(reason: String?)
-
-  /// A device was created/cloned but no matching simulator was inflated into the set.
   case simulatorNotInflated(udid: String)
-
-  /// An operation addressed a simulator through the device set it belongs to, and it has none.
   case simulatorHasNoSet(udid: String)
-
-  /// CoreSimulator reported neither a device nor an error when creating a device.
   case deviceCreationFailed
-
-  /// CoreSimulator reported neither a device nor an error when cloning a device.
   case deviceCloneFailed
 
   public var errorDescription: String? {
