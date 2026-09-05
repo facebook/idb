@@ -8,12 +8,9 @@
 import CoreGraphics
 import Foundation
 
-/// The wire model for a REPL host command. Injected code (through the `IDB`
-/// module) encodes one of these and the companion's `HostCommandDispatcher`
-/// decodes it. Sharing this single `Codable` type across both sides makes the
-/// request contract type-checked end-to-end -- instead of stringly-typed JSON
-/// keys read with `as? Double` -- and lets the dispatcher switch exhaustively, so
-/// adding a command is a compile-time change on both sides.
+/// The wire model for a REPL host command, shared by injected code (the `IDB`
+/// module) and the companion's `HostCommandDispatcher` so the contract is
+/// type-checked on both sides.
 public enum ReplCommand: Codable, Sendable {
   case tap(CGPoint)
   case tapMarker(String)
