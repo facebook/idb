@@ -118,10 +118,8 @@ struct FBSimulatorIndigoHIDClientTests {
     var thrown: Error?
     var raised: Error?
     do {
-      // The client is expected to convert the raise itself; this guard is only here so that a
-      // regression fails one test rather than aborting the whole test process, which is what it
-      // does to `idb_companion` — nothing between the gRPC `hid` handler and this initializer
-      // catches an `NSException`.
+      // The client is expected to convert the raise itself. The guard only keeps a regression from
+      // aborting the whole test process instead of failing this test.
       try FBObjCExceptionGuard.run {
         do {
           _ = try FBSimulatorIndigoHIDClient(device: NSObject(), clientClass: clientClass)
@@ -146,7 +144,6 @@ struct FBSimulatorIndigoHIDClientTests {
     }
     #expect((guardError as NSError).domain == FBObjCExceptionGuardErrorDomain)
     #expect(guardError.localizedDescription == RaisingLegacyHIDClientStub.reason)
-    // The reason the raise carried has to reach whoever asked for the HID, not stop here.
     #expect(hidError.localizedDescription.hasSuffix(RaisingLegacyHIDClientStub.reason))
   }
 
@@ -178,9 +175,8 @@ struct FBSimulatorIndigoHIDClientTests {
   func sendRaises() async throws {
     let client = try FBSimulatorIndigoHIDClient(
       device: NSObject(), clientClass: FBObjCRuntimeClass(RaisingSendLegacyHIDClientStub.self))
-    // Returning here at all is half of what this pins. The send runs on the client's own queue, so
-    // nothing on the test's side can wrap it — an unguarded raise would reach `libc++abi` and abort
-    // the test process, exactly as it does `idb_companion`.
+    // The send runs on the client's own queue, so nothing here can wrap it: an unguarded raise
+    // aborts the test process rather than failing this test.
     let error = try await #require(throws: (any Error).self) {
       try await client.send(Data([0x01, 0x02]))
     }
@@ -203,10 +199,8 @@ struct FBSimulatorIndigoHIDClientTests {
         outcome.record(error)
       }
     }
-    // Bounded rather than awaited, because what is being measured is whether the send comes back at
-    // all. Nothing here reaches the HID server — the client is released before any of it is
-    // attempted — so a send that resolves resolves at once, and one still outstanding after this is
-    // outstanding for good.
+    // Bounded sleep rather than an await: nothing here reaches the HID server, so a send that
+    // returns at all returns at once, and one still outstanding after this hangs for good.
     try await Task.sleep(nanoseconds: 200 * NSEC_PER_MSEC)
 
     #expect(outcome.returned)
