@@ -9,9 +9,6 @@
 import Foundation
 
 /// The private frameworks FBSimulatorControl loads on demand, grouped by what needs them.
-///
-/// A namespace rather than a subclass: it adds no behaviour to `FBControlCoreFrameworkLoader`, only
-/// a name for each set of frameworks.
 public enum FBSimulatorControlFrameworkLoader {
 
   private static let name = "FBSimulatorControl"
