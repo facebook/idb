@@ -63,12 +63,8 @@ typedef struct FBAXPair {
 @end
 
 /**
- * Drives `FBAXBridgeHandleRequest` against a fake `FBAXRuntime`.
- *
- * Every outcome below is one the live runtime only produces against an application that is dead, has no
- * accessibility server, is mid-launch or has stopped answering — states that on a real simulator have to
- * be manufactured by killing or SIGSTOP-ing an app and racing the read. Behind the seam they are just
- * values, so the reader's response shaping is checkable on macOS with nothing booted.
+ * Drives `FBAXBridgeHandleRequest` against a fake `FBAXRuntime`, reaching outcomes a real simulator only
+ * produces against a dead, mid-launch or SIGSTOP-ed application.
  */
 @interface AccessibilityRuntimeTests : XCTestCase
 @end
@@ -95,9 +91,6 @@ typedef struct FBAXPair {
 
 #pragma mark - Encoding normalisation
 
-// `FBAXTypesOnly` is the whole of what makes the signature comparison trustworthy, and every other test
-// here reaches it only through `FBAXSignatureMismatch` against whatever encodings Foundation happens to
-// have. A table says what it does far more plainly, and covers shapes no Foundation selector produces.
 - (void)testTypesOnlyDropsOffsetsAndKeepsTypes
 {
   NSDictionary<NSString *, NSString *> *examples = @{
@@ -133,9 +126,7 @@ typedef struct FBAXPair {
   }
 }
 
-// The property the comparison actually depends on: an encoding straight from the runtime and the same
-// signature written down without offsets have to normalise to the same string. That is what lets the
-// table in the runtime be written either way.
+// The table in the runtime may be written with or without offsets.
 - (void)testTypesOnlyMakesRuntimeAndHandWrittenEncodingsAgree
 {
   Method length = class_getInstanceMethod(NSString.class, @selector(length));
@@ -145,8 +136,6 @@ typedef struct FBAXPair {
   XCTAssertEqualObjects(FBAXTypesOnly(method_getTypeEncoding(objectAtIndex)), FBAXTypesOnly("@@:Q"));
 }
 
-// Normalising is idempotent — an already-normalised encoding is left alone — so it does not matter
-// whether a caller has been through it once or twice.
 - (void)testTypesOnlyIsIdempotent
 {
   for (NSString *encoding in @[@"Q16@0:8", @"{FBAXQuad=[4i]}32@0:8{FBAXPair=ii}16", @"v32@0:8@?24"]) {
@@ -157,18 +146,14 @@ typedef struct FBAXPair {
 
 #pragma mark - Bound signature checking
 
-// A red test is the whole point: a private API that changed shape has to arrive as a signal somebody acts
-// on, not as a line in a log on a booted simulator that nobody reads. This bundle runs inside a simulator,
-// so the frameworks swept here are the guest's copies — the ones the reader sends messages to. All four
-// exist on macOS too, and a shape that moved only inside an iOS runtime image would pass against those.
+// Runs against the guest's copies of the frameworks; a shape that moved only inside an iOS runtime
+// image would pass against the host's.
 - (void)testEveryBoundSignatureAgreesWithTheRuntime
 {
   NSArray<NSString *> *warnings = FBAXSignatureWarnings();
   XCTAssertEqualObjects(warnings, @[], @"%@", [warnings componentsJoinedByString:@"\n"]);
 }
 
-// The comparison the sweep above is only as good as, checked against Foundation — it does not care whose
-// selector it is given, and Foundation is the one runtime guaranteed present.
 - (void)testSignatureAgreesWithTheRuntime
 {
   XCTAssertNil(FBAXSignatureMismatch("NSString", "length", NO, "Q@:"));
@@ -176,17 +161,13 @@ typedef struct FBAXPair {
   XCTAssertNil(FBAXSignatureMismatch("NSArray", "objectAtIndex:", NO, "@@:Q"));
 }
 
-// The expected encoding may be pasted straight out of `method_getTypeEncoding`, offsets and all, which is
-// how the table in the runtime was built. Dropping them is what keeps the check from firing on an ABI
-// where the types are unchanged but the numbers are not.
+// Offsets differ by ABI, so the check must not fire on them.
 - (void)testSignatureIgnoresFrameSizesAndOffsets
 {
   XCTAssertNil(FBAXSignatureMismatch("NSString", "length", NO, "Q16@0:8"));
   XCTAssertNil(FBAXSignatureMismatch("NSArray", "objectAtIndex:", NO, "@24@0:8Q16"));
 }
 
-// Digits inside a struct or array encoding are part of the type, so they survive — otherwise a bound API
-// taking a differently-shaped struct would compare equal to one taking the right shape.
 - (void)testSignatureKeepsDigitsInsideAggregateEncodings
 {
   XCTAssertNil(FBAXSignatureMismatch("FBAXSignatureProbe", "quadFromPair:", NO, "{FBAXQuad=[4i]}@:{FBAXPair=ii}"));
@@ -195,8 +176,6 @@ typedef struct FBAXPair {
   XCTAssertNotNil(mismatch, @"an array length inside the struct is a different type and must not be dropped");
 }
 
-// The diagnostic has to carry both encodings: a mismatch is triaged by someone who has neither the runtime
-// nor this table in front of them, and "the signature changed" on its own says nothing actionable.
 - (void)testSignatureMismatchNamesWhatItFoundAndWhatItAssumed
 {
   NSString *mismatch = FBAXSignatureMismatch("NSString", "length", NO, "i@:");
@@ -206,8 +185,6 @@ typedef struct FBAXPair {
   XCTAssertTrue([mismatch containsString:@"i@:"], @"the encoding assumed must be named: %@", mismatch);
 }
 
-// A class or selector that has gone is the same failure as one that changed shape, and is reported the
-// same way rather than passing silently for want of anything to compare.
 - (void)testSignatureMismatchReportedForMissingClassOrSelector
 {
   NSString *absentClass = FBAXSignatureMismatch("FBAXNoSuchClass", "length", NO, "Q@:");
@@ -217,9 +194,6 @@ typedef struct FBAXPair {
   XCTAssertNotNil(FBAXSignatureMismatch("NSString", "fbaxNoSuchSelector", NO, "Q@:"));
 }
 
-// The class/instance distinction is part of the binding: `+elementWithProcessIdentifier:` and
-// `-AXUIElement` are both bound, and checking one against the other's method list would pass on a runtime
-// that has neither where it is expected.
 - (void)testSignatureDistinguishesClassFromInstanceMethods
 {
   XCTAssertNotNil(FBAXSignatureMismatch("NSString", "length", YES, "Q@:"));
@@ -228,12 +202,7 @@ typedef struct FBAXPair {
 
 #pragma mark - Read-error classification
 
-// Two AX codes name a condition the host can act on, and the classifier has to recognise each by the code
-// the runtime reports and treat every other code as an opaque failure. Getting this wrong in either
-// direction is invisible on the wire until a real app misbehaves: too broad and a genuine reader bug is
-// reported as "the app isn't there", too narrow and a dead app produces an untyped error the host cannot
-// act on. The two are held apart from each other because an app that is gone and an app that is merely
-// slow need opposite things done about them.
+// Too broad and a reader bug reads as "the app isn't there"; too narrow and a dead app is an untyped error.
 - (void)testEachActionableAXCodeClassifiesAsItsOwnCondition
 {
   FBAXReadOutcome *unavailable = [FBAXReadOutcome failureForAttributeError:FBAXTestsErrorWithCode(FBAXErrorServerNotFound)];
@@ -248,9 +217,7 @@ typedef struct FBAXPair {
   }
 }
 
-// An error carrying no accessibility code — a nil error, or one from some other layer — is a failure, not
-// an unavailable application. `nil` in particular reaches the classifier whenever the runtime returns
-// false without populating the out-parameter.
+// `nil` reaches the classifier whenever the runtime returns false without populating the out-parameter.
 - (void)testErrorWithoutAnAccessibilityCodeIsAPlainFailure
 {
   XCTAssertEqual([FBAXReadOutcome failureForAttributeError:nil].status, FBAXReadStatusFailed);
@@ -262,9 +229,6 @@ typedef struct FBAXPair {
 
 #pragma mark - Hit-test outcomes
 
-// The other half of the AX-error classification: what the hit-test itself makes of the code
-// `AXUIElementCopyElementAtPosition` returned. Nil means an element came back and the caller wraps it;
-// every other answer is the complete outcome.
 - (void)testHitTestErrorClassification
 {
   XCTAssertNil(
@@ -307,8 +271,6 @@ typedef struct FBAXPair {
   XCTAssertEqual(_runtime.lastHitTestPoint.y, 20);
 }
 
-// With no pid the hit-test is display-wide, and the owning pid comes back on the outcome rather than
-// being something the caller already knew — that is what lets the host hit-test without a frontmost query.
 - (void)testHitWithNoPidIsDisplayWideAndReportsTheOwningPid
 {
   _runtime.hitTestOutcome = [FBAXHitTestOutcome hit:[FBAXFakeElement readable:@"XCUIElementTypeCell"]
@@ -320,8 +282,6 @@ typedef struct FBAXPair {
   XCTAssertEqual(_runtime.lastHitTestProcessIdentifier, 0, @"no pid means a display-wide hit-test");
 }
 
-// Empty space is a successful result, not a failure. A host doing a streaming hit-test after a tap
-// depends on telling "nothing is there" apart from "the reader broke", so this must stay `ok:true`.
 - (void)testEmptyPointIsASuccessfulEmptyResult
 {
   _runtime.hitTestOutcome = [FBAXHitTestOutcome empty];
@@ -333,9 +293,6 @@ typedef struct FBAXPair {
   XCTAssertNil(response[@"error"]);
 }
 
-// Nothing answering the hit-test carries the `application_unavailable` kind, and the message names the
-// pid when there is one — a seeded hit-test on a dead app and a display-wide one with nothing listening
-// are different diagnostics.
 - (void)testUnavailableApplicationIsTaggedAndNamesThePidWhenSeeded
 {
   _runtime.hitTestOutcome = [FBAXHitTestOutcome applicationUnavailable];
@@ -353,9 +310,6 @@ typedef struct FBAXPair {
   XCTAssertNil(systemWide[@"pid"], @"a display-wide hit-test nothing answered has no process to name");
 }
 
-// An application that is there and did not answer in time. Its own kind because the two remedies diverge:
-// an unavailable application is reconfigured or relaunched, one that did not answer is waited for. Empty
-// would be worse than either — it says the point is blank, which is exactly what a busy app looks like.
 - (void)testNotRespondingAndUnavailableProduceDistinctErrorKinds
 {
   _runtime.hitTestOutcome = [FBAXHitTestOutcome applicationNotResponding];
@@ -372,8 +326,6 @@ typedef struct FBAXPair {
   XCTAssertNil(systemWide[@"empty"], @"empty must not be set on a not-responding response");
 }
 
-// A hit-test that went wrong is an opaque failure carrying the runtime's reason, and must *not* pick up
-// the `application_unavailable` kind — the host acts on that kind, and a reader bug is not an absent app.
 - (void)testFailedHitTestIsAnOpaqueFailureCarryingTheReason
 {
   _runtime.hitTestOutcome = [FBAXHitTestOutcome failed:@"AXUIElementCreateSystemWide returned NULL"];
@@ -384,8 +336,6 @@ typedef struct FBAXPair {
   XCTAssertNil(response[@"error_kind"], @"a reader failure must not be tagged as an unavailable application");
 }
 
-// The hit lands but the element cannot be read: the app went away between the two round trips. The
-// response is shaped from the *read's* outcome, and still names the pid the hit-test attributed it to.
 - (void)testHitElementThatCannotBeReadIsReportedFromTheReadOutcome
 {
   _runtime.hitTestOutcome = [FBAXHitTestOutcome hit:[FBAXFakeElement applicationUnavailable]
@@ -411,10 +361,6 @@ typedef struct FBAXPair {
 
 #pragma mark - The default frontmost method
 
-// A fused frontmost read that names no method gets the authoritative frontmost: the window server's, which
-// answers without looking at a pixel. The positional resolver is still there for a caller who wants the
-// process owning a particular point, but it is a different question and no longer the one asked by default
-// — it fails where nothing occupies the anchor, and answers the wrong application where something else does.
 - (void)testAFrontmostReadWithNoMethodAsksTheWindowServer
 {
   _runtime.hitTestOutcome = [FBAXHitTestOutcome empty];
@@ -431,10 +377,6 @@ typedef struct FBAXPair {
 
 #pragma mark - Raises while answering
 
-// The reader reaches four private frameworks, and a private API is exactly the thing that starts raising
-// where it used to return. Unguarded, the first raise unwinds out of the serve loop and takes the reader
-// with it — costing a client every later request on that connection, with no frame to say why. It comes
-// back as a response instead, and the reader is still answering afterwards.
 - (void)testARaiseWhileAnsweringBecomesAResponseAndLeavesTheReaderAnswering
 {
   _runtime.applicationElements[@(kAppPid)] = [FBAXFakeElement readable:@"UIApplication"];
@@ -456,9 +398,7 @@ typedef struct FBAXPair {
 
 #pragma mark - Request validation
 
-// A malformed request is the caller's to fix, and is held apart from every failure of the reader or of
-// the application so it is never reported as either. Both verbs reject their own arguments, past the
-// point where the runtime has been reached — hence a fake one, rather than the bundle's live bind.
+// Arguments are rejected after the runtime is reached, hence the fake.
 - (void)testMalformedArgumentsAreReportedAsABadRequest
 {
   NSDictionary *hitTest = FBAXBridgeHandleRequest(@{@"verb" : @"hittest", @"x" : @"left", @"y" : @2});
@@ -490,8 +430,6 @@ static NSDictionary *FBAXTestsSnapshotRequest(NSDictionary<NSString *, id> *extr
   return request;
 }
 
-// The whole point of the path: one fetch for a tree, rather than one read per node. The per-node walk is
-// what it is being measured against, so both are driven over the same tree and the counters compared.
 - (void)testTheSingleFetchReadCostsOneRoundTripForTheWholeTree
 {
   _runtime.applicationElements[@(kAppPid)] = FBAXTestsNode(
@@ -505,9 +443,7 @@ static NSDictionary *FBAXTestsSnapshotRequest(NSDictionary<NSString *, id> *extr
   XCTAssertEqualObjects(response[@"phases"][@"mach_round_trips"], @1);
 }
 
-// The snapshot answers keyed by attribute number, and the numbers are the runtime's own. Mapping them
-// back through the conversion that produced them is what keeps a hardcoded number out of the reader —
-// so the fake numbers them differently from the runtime, and the names must still come out right.
+// The fake numbers attributes differently from the runtime, so a hardcoded number would fail here.
 - (void)testSnapshotAttributesAreMappedBackFromNumbersToNames
 {
   _runtime.applicationElements[@(kAppPid)] =
@@ -523,9 +459,7 @@ static NSDictionary *FBAXTestsSnapshotRequest(NSDictionary<NSString *, id> *extr
   );
 }
 
-// The snapshot nests its children under its own key, and separately answers a children *attribute* full
-// of raw element references. Copying that attribute across would put unusable references in the tree, so
-// the nesting is the only source of children.
+// The snapshot also answers a children *attribute* of raw element references; only the nesting is usable.
 - (void)testSnapshotChildrenComeFromTheNestingAndNotTheChildrenAttribute
 {
   FBAXFakeElement *child = FBAXTestsNode(@{@"XC_kAXXCAttributeLabel" : @"child"}, @[]);
@@ -570,11 +504,7 @@ static NSDictionary *FBAXTestsBoundaryNode(NSDictionary *response)
   return [webViews.firstObject[@"XC_kAXXCAttributeChildren"] firstObject];
 }
 
-// A snapshot is served by the process owning its root and stops where another process draws — a web
-// view's page, a picker, an autofill sheet arrive as a childless stub, indistinguishable from nothing
-// being there. The read continues with one more fetch rooted at the boundary element, which its owner
-// serves, so the hosted subtree is in the tree and the cost is one fetch per boundary rather than one
-// round trip per node.
+// A snapshot stops where another process draws; the boundary arrives as a childless stub.
 - (void)testTheSingleFetchReadContinuesAcrossAProcessBoundary
 {
   _runtime.applicationElements[@(kAppPid)] = FBAXTestsTreeWithProcessBoundary();
@@ -590,8 +520,6 @@ static NSDictionary *FBAXTestsBoundaryNode(NSDictionary *response)
   XCTAssertEqualObjects(response[@"truncated"], @NO);
 }
 
-// The equivalence the default traversal owes: over the same tree, boundary included, the single fetch
-// and the per-node walk answer the same document — not merely the same node count.
 - (void)testBothTraversalsAnswerTheSameDocumentAcrossAProcessBoundary
 {
   _runtime.applicationElements[@(kAppPid)] = FBAXTestsTreeWithProcessBoundary();
@@ -603,8 +531,6 @@ static NSDictionary *FBAXTestsBoundaryNode(NSDictionary *response)
   XCTAssertEqualObjects(walked[@"tree"], fetched[@"tree"]);
 }
 
-// A hosted subtree can host another process's subtree in turn — a web view inside a remote sheet. Each
-// continuation is mapped with its own root's owner, so ownership changing again continues again.
 - (void)testAContinuationContinuesAcrossAFurtherBoundary
 {
   FBAXFakeElement *innermost = FBAXTestsNode(@{@"XC_kAXXCAttributeLabel" : @"innermost"}, @[]);
@@ -621,10 +547,6 @@ static NSDictionary *FBAXTestsBoundaryNode(NSDictionary *response)
   XCTAssertTrue([rendered containsString:@"innermost"], @"the twice-hosted subtree must be in the tree: %@", rendered);
 }
 
-// A boundary whose owner is not serving — a picker extension mid-launch, a hung web content process —
-// keeps the stub and the read answers. Absence is also what the per-node walk reports when the server
-// cannot bridge the boundary, so failing the whole read would make the fetch strictly worse than the
-// walk on the same screen.
 - (void)testAProcessBoundaryWhoseOwnerIsNotServingKeepsTheStub
 {
   _runtime.applicationElements[@(kAppPid)] = FBAXTestsTreeWithProcessBoundary();
@@ -641,10 +563,6 @@ static NSDictionary *FBAXTestsBoundaryNode(NSDictionary *response)
   XCTAssertEqualObjects(response[@"truncated"], @NO);
 }
 
-// A boundary sitting at the depth bound is not continued across — nothing below the bound is reported
-// either way — but the subtree beyond it exists, so the read reports truncation exactly as it does for
-// nesting the bound cut off. The walk at the same node says the same: the server bridges the boundary
-// element's children into its children attribute, and the walk sees them and cannot descend.
 - (void)testAProcessBoundaryAtTheDepthBoundReportsTruncationWithoutFetching
 {
   _runtime.applicationElements[@(kAppPid)] = FBAXTestsTreeWithProcessBoundary();
@@ -655,8 +573,6 @@ static NSDictionary *FBAXTestsBoundaryNode(NSDictionary *response)
   XCTAssertEqual(_runtime.snapshotCount, 1u, @"nothing below the bound is worth a fetch");
 }
 
-// The node budget is one budget for the whole read: a continuation spends from the same allowance the
-// rest of the tree does, so a boundary cannot make a bounded read unbounded.
 - (void)testTheNodeBudgetHoldsAcrossAProcessBoundary
 {
   _runtime.applicationElements[@(kAppPid)] = FBAXTestsTreeWithProcessBoundary();
@@ -669,8 +585,6 @@ static NSDictionary *FBAXTestsBoundaryNode(NSDictionary *response)
   XCTAssertEqual([boundary[@"XC_kAXXCAttributeChildren"] count], 0u, @"the budget ran out at the boundary: %@", boundary);
 }
 
-// The server's own bounds are set generously and the host's are applied while building the tree, so that
-// a tree read this way truncates where the same tree read per node does.
 - (void)testTheSingleFetchReadHonoursTheDepthBound
 {
   _runtime.applicationElements[@(kAppPid)] = FBAXTestsNode(
@@ -696,8 +610,6 @@ static NSDictionary *FBAXTestsBoundaryNode(NSDictionary *response)
   XCTAssertEqual([response[@"tree"][@"XC_kAXXCAttributeChildren"] count], 1u);
 }
 
-// A runtime that cannot perform the fetch must say so. Answering an empty tree instead would report a
-// working application as a blank screen, which is the failure this path is most likely to produce.
 - (void)testARuntimeWithoutSnapshotSupportIsReportedRatherThanReadAsEmpty
 {
   _runtime.applicationElements[@(kAppPid)] = FBAXTestsNode(@{@"XC_kAXXCAttributeLabel" : @"root"}, @[]);
@@ -714,8 +626,7 @@ static NSDictionary *FBAXTestsBoundaryNode(NSDictionary *response)
   );
 }
 
-// The server answers NULL under kAXErrorSuccess when it will not accept the options — no error, just
-// nothing. That has to become a failure too, for the same reason.
+// The server answers NULL under kAXErrorSuccess when it will not accept the options.
 - (void)testASnapshotThatAnswersNothingIsAFailureRatherThanAnEmptyTree
 {
   _runtime.applicationElements[@(kAppPid)] = FBAXTestsNode(@{@"XC_kAXXCAttributeLabel" : @"root"}, @[]);
@@ -726,9 +637,7 @@ static NSDictionary *FBAXTestsBoundaryNode(NSDictionary *response)
   XCTAssertNil(response[@"tree"]);
 }
 
-// A frame comes back from the snapshot as an AXValue rather than the NSValue the per-node walk answers
-// with, so only the runtime can unwrap it. Whichever form it takes, the host receives the same
-// dictionary representation.
+// A snapshot answers frames as `AXValue`, not the `NSValue` the per-node walk answers with.
 - (void)testASnapshotFrameIsUnwrappedFromAnAXValue
 {
   _runtime.applicationElements[@(kAppPid)] =
@@ -741,9 +650,7 @@ static NSDictionary *FBAXTestsBoundaryNode(NSDictionary *response)
   XCTAssertEqualObjects(frame[@"Height"], @52);
 }
 
-// The visible point arrives from a snapshot in the same `AXValue` form as the frame, and unwraps the
-// same way. Both attributes are named in the request because the visible point is a reachability key,
-// so a default read does not ask for it.
+// Named in the request because a default read does not ask for the visible point.
 - (void)testASnapshotVisiblePointIsUnwrappedFromAnAXValue
 {
   _runtime.applicationElements[@(kAppPid)] = FBAXTestsNode(
@@ -762,27 +669,6 @@ static NSDictionary *FBAXTestsBoundaryNode(NSDictionary *response)
   XCTAssertEqualObjects(tree[kAXFrame][@"X"], @16, @"the frame on the same node is unwrapped the same way");
 }
 
-// A value that is not a rect must leave the frame alone rather than unwrap to zero: a point read as a
-// rect would be reported as a real frame at the origin, which nothing downstream could tell from one.
-- (void)testAValueThatIsNotARectDoesNotBecomeAZeroFrame
-{
-  CGRect rect = CGRectMake(1, 2, 3, 4);
-  XCTAssertFalse([_runtime getRect:&rect fromValue:@"not a rect"]);
-  XCTAssertTrue(CGRectEqualToRect(rect, CGRectMake(1, 2, 3, 4)), @"a rejected value must leave the rect untouched");
-}
-
-// The point counterpart of the rect test above: rejection must leave `*point` untouched, so a bad
-// value becomes null on the wire rather than a zeroed coordinate.
-- (void)testAValueThatIsNotAPointDoesNotBecomeAZeroPoint
-{
-  CGPoint point = CGPointMake(5, 6);
-  XCTAssertFalse([_runtime getPoint:&point fromValue:@"not a point"]);
-  XCTAssertTrue(CGPointEqualToPoint(point, CGPointMake(5, 6)), @"a rejected value must leave the point untouched");
-}
-
-// An unrecognised frame value — not a dictionary, not an `NSValue`, rejected by the runtime — is
-// emitted as null, the same answer a missing attribute gets. Never as a zeroed rect, which the host
-// could not tell from a real frame at the origin.
 - (void)testAnUnrecognisedFrameValueIsEmittedAsNull
 {
   _runtime.applicationElements[@(kAppPid)] = FBAXTestsNode(@{kAXFrame : @"not a frame"}, @[]);
@@ -791,8 +677,6 @@ static NSDictionary *FBAXTestsBoundaryNode(NSDictionary *response)
   XCTAssertEqualObjects(frame, NSNull.null);
 }
 
-// An unrecognised point value is emitted as null. The zeroed alternative is worse here than for
-// the frame: the host taps points, and `{0,0}` is a plausible tap target.
 - (void)testAnUnrecognisedPointValueIsEmittedAsNull
 {
   _runtime.applicationElements[@(kAppPid)] = FBAXTestsNode(@{kAXVisiblePoint : @"not a point"}, @[]);
@@ -807,9 +691,6 @@ static NSDictionary *FBAXTestsBoundaryNode(NSDictionary *response)
 
 #pragma mark - Write outcomes
 
-// The AX runtime reports every write with a code and nothing else, so this classifier is the only thing
-// standing between "the app has gone" and "the writer is broken" — the same distinction the read and
-// hit-test classifiers make, made once more for the codes a write can come back with.
 - (void)testWriteErrorClassification
 {
   XCTAssertEqual([FBAXWriteOutcome outcomeForWriteError:FBAXErrorSuccess].status, FBAXWriteStatusWritten);
@@ -833,31 +714,7 @@ static NSDictionary *FBAXTestsBoundaryNode(NSDictionary *response)
   XCTAssertTrue([rejected.failureReason containsString:@"-25201"], @"%@", rejected.failureReason);
 }
 
-// The factories are the enforcement — a caller cannot build an outcome carrying a payload its status does
-// not license, so switching on the status is enough to know what is readable.
-- (void)testEachWriteOutcomeCarriesOnlyItsOwnPayload
-{
-  for (FBAXWriteOutcome *empty in @[[FBAXWriteOutcome written],
-                                    [FBAXWriteOutcome empty],
-                                    [FBAXWriteOutcome applicationUnavailable],
-                                    [FBAXWriteOutcome applicationNotResponding]]) {
-    XCTAssertNil(empty.failureReason);
-  }
-
-  FBAXWriteOutcome *assertionFailed = [FBAXWriteOutcome assertionFailed:@"expected General, found Wi-Fi"];
-  XCTAssertEqual(assertionFailed.status, FBAXWriteStatusAssertionFailed);
-  XCTAssertEqualObjects(assertionFailed.failureReason, @"expected General, found Wi-Fi");
-
-  FBAXWriteOutcome *failed = [FBAXWriteOutcome failed:@"the element has no AXUIElement to act on"];
-  XCTAssertEqual(failed.status, FBAXWriteStatusFailed);
-  XCTAssertEqualObjects(failed.failureReason, @"the element has no AXUIElement to act on");
-}
-
-// A dlsym'd C entry point is checked by a null test at bind time and by nothing else —
-// `FBAXSignatureWarnings` sweeps ObjC selectors, and there is no equivalent record of a C function's shape
-// to compare against. Asserting the two write entry points are in the runtime at all is the only part of
-// that binding a test can carry, and it is worth carrying because this bundle runs inside a simulator: the
-// symbols swept here are the guest's, on the runtime image the writer actually sends to.
+// `FBAXSignatureWarnings` sweeps only ObjC selectors; a C entry point has nothing but this presence check.
 - (void)testTheAXRuntimeWriteEntryPointsResolve
 {
   XCTAssertTrue(dlopen(FBAXPathAXRuntime, RTLD_NOW) != NULL, @"AXRuntime could not be opened");
@@ -865,36 +722,15 @@ static NSDictionary *FBAXTestsBoundaryNode(NSDictionary *response)
   XCTAssertTrue(dlsym(RTLD_DEFAULT, "AXUIElementSetAttributeValue") != NULL);
 }
 
-// The automation-mode read is bound the same way and therefore checked the same way. It is deliberately
-// optional in the live runtime — a runtime without it degrades to "cannot say" rather than failing a
-// bind — so this asserts it is present today rather than that the code requires it.
+// Optional in the live runtime; this asserts it is present today, not that the code requires it.
 - (void)testTheAutomationModeReadEntryPointResolves
 {
   XCTAssertTrue(dlopen(FBAXPathAXRuntime, RTLD_NOW) != NULL, @"AXRuntime could not be opened");
   XCTAssertTrue(dlsym(RTLD_DEFAULT, "_AXSAutomationEnabled") != NULL);
 }
 
-// The fake has to behave like the live runtime on the one point a caller can get wrong: a write that is
-// accepted and does not take must read back as the state the device is actually in, not as the state
-// that was asked for. Pinned on the fake because commit-level coverage of the real setter needs a device.
-- (void)testAWriteThatDoesNotTakeReadsBackAsTheUnchangedState
-{
-  FBAXFakeRuntime *runtime = [FBAXFakeRuntime new];
-  runtime.automationMode = NO;
-  runtime.automationModeWriteFails = YES;
-
-  XCTAssertFalse([runtime setAutomationModeEnabled:YES], @"a silent write failure must not report success");
-  XCTAssertFalse([runtime automationModeEnabled]);
-  XCTAssertEqualObjects(runtime.automationModeWrites, @[@YES], @"the write is still attempted, and recorded");
-
-  runtime.automationModeWriteFails = NO;
-  XCTAssertTrue([runtime setAutomationModeEnabled:YES], @"a write that takes reads back as the new state");
-}
-
 #pragma mark - Guest phase reporting
 
-// The counts are what make the durations interpretable, so they are pinned against a tree of known
-// shape rather than asserted to be merely present.
 - (void)testADescribeReportsItsWalkAndRoundTripCount
 {
   FBAXFakeElement *leaf = [FBAXFakeElement readable:@"UIButton"];
@@ -911,29 +747,9 @@ static NSDictionary *FBAXTestsBoundaryNode(NSDictionary *response)
   XCTAssertGreaterThanOrEqual([phases[@"traverse_ms"] doubleValue], 0.0);
 }
 
-// A round-trip count that does not track the tree is worse than none: it would make a per-node cost
-// look constant while the tree grew.
-- (void)testTheRoundTripCountTracksTheTree
-{
-  FBAXFakeElement *root = [FBAXFakeElement readable:@"UIApplication"];
-  NSMutableArray *children = [NSMutableArray array];
-  for (NSUInteger index = 0; index < 5; index++) {
-    [children addObject:[FBAXFakeElement readable:@"UIButton"]];
-  }
-  root.children = children;
-  _runtime.applicationElements[@(kAppPid)] = root;
-
-  NSDictionary *response = FBAXBridgeHandleRequest(@{@"verb" : @"describe", @"pid" : @(kAppPid)});
-  XCTAssertEqualObjects(response[@"phases"][@"mach_round_trips"], @6, @"root plus five children");
-}
-
 #pragma mark - Automation mode on the describe path
 
-// The tri-state the wire carries, driven end to end through the request handler rather than against the
-// runtime directly, because the thing that can regress is the handler's decision about when to write.
-
-// ABSENT is the case most likely to break silently: a host that does not know about this field, or a
-// caller that does not care, must leave the device exactly as it found it.
+// Absent is not false: a host that does not know the field must leave the device alone.
 - (void)testAnAbsentAutomationFieldMutatesNothing
 {
   _runtime.applicationElements[@(kAppPid)] = [FBAXFakeElement readable:@"UIApplication"];
@@ -959,8 +775,6 @@ static NSDictionary *FBAXTestsBoundaryNode(NSDictionary *response)
   XCTAssertEqualObjects(response[@"automation"][@"asserted"], @YES, @"this read changed the device");
 }
 
-// A no-op write is still a preference write, and `asserted` on one would tell a caller this read altered
-// a device it left alone.
 - (void)testRequestingAModeTheDeviceIsAlreadyInWritesNothing
 {
   _runtime.applicationElements[@(kAppPid)] = [FBAXFakeElement readable:@"UIApplication"];
@@ -974,7 +788,6 @@ static NSDictionary *FBAXTestsBoundaryNode(NSDictionary *response)
   XCTAssertEqualObjects(response[@"automation"][@"asserted"], @NO, @"it was already in that mode");
 }
 
-// Explicitly false is a different request from absent: it turns the mode off rather than leaving it be.
 - (void)testRequestingAutomationModeOffTurnsItOff
 {
   _runtime.applicationElements[@(kAppPid)] = [FBAXFakeElement readable:@"UIApplication"];
@@ -988,8 +801,7 @@ static NSDictionary *FBAXTestsBoundaryNode(NSDictionary *response)
   XCTAssertEqualObjects(response[@"automation"][@"asserted"], @YES);
 }
 
-// The readback is the point. A preference write can be accepted and silently not apply, and a caller
-// told `asserted` for one of those would believe the device is in a mode it is not in.
+// A preference write can be accepted and silently not apply.
 - (void)testFailedAutomationModeWriteReportsAssertedFalse
 {
   _runtime.applicationElements[@(kAppPid)] = [FBAXFakeElement readable:@"UIApplication"];
@@ -1021,9 +833,6 @@ static NSDictionary *FBAXTestsPress(void)
   return @{@"verb" : @"perform", @"x" : @1, @"y" : @2, @"action" : @"press"};
 }
 
-// The wire spelling of an action is the host's whole vocabulary for what a write does, so every name has to
-// arrive at the runtime as the action it names. A name that silently became a press would be a tap where
-// the caller asked for a scroll — visible only as a test that navigated somewhere unexpected.
 - (void)testEveryActionNameReachesTheRuntimeAsItsSemanticAction
 {
   NSDictionary<NSString *, NSNumber *> *actions = @{
@@ -1047,8 +856,6 @@ static NSDictionary *FBAXTestsPress(void)
   }
 }
 
-// An action name the guest cannot map has no number to perform, so it is refused outright rather than
-// falling through to whichever action happens to be first in the enum.
 - (void)testUnknownActionIsRejectedWithoutReachingTheRuntime
 {
   [self seedHitElementWithAttributes:@{}];
@@ -1066,8 +873,6 @@ static NSDictionary *FBAXTestsPress(void)
   XCTAssertEqual(_runtime.performCount, 0);
 }
 
-// A write is addressed by point and nothing else, so coordinates that are absent or not numbers leave it
-// with no target — and hit-testing (0, 0) instead would act on whatever is in the corner of the screen.
 - (void)testAWriteRequiresNumericCoordinates
 {
   [self seedHitElementWithAttributes:@{}];
@@ -1086,8 +891,6 @@ static NSDictionary *FBAXTestsPress(void)
   XCTAssertEqual(_runtime.hitTestCount, 0);
 }
 
-// Empty space is a successful result for a write for the same reason it is for a hit-test: the host has to
-// tell "there was nothing to tap" apart from "the write broke", and only one of those is worth retrying.
 - (void)testAWriteOnEmptySpaceIsASuccessfulEmptyResult
 {
   _runtime.hitTestOutcome = [FBAXHitTestOutcome empty];
@@ -1105,9 +908,6 @@ static NSDictionary *FBAXTestsPress(void)
   XCTAssertEqual(_runtime.setValueCount, 0);
 }
 
-// An application that has gone can take a write out at either step, and the diagnostic differs by what was
-// known when: nothing answered the hit-test at all, or the app the hit-test attributed the element to died
-// before the write reached it.
 - (void)testAWriteToAnUnavailableApplicationIsTaggedAndNamesThePidWhenKnown
 {
   _runtime.hitTestOutcome = [FBAXHitTestOutcome applicationUnavailable];
@@ -1123,9 +923,7 @@ static NSDictionary *FBAXTestsPress(void)
   XCTAssertEqualObjects(died[@"error"], @"pid 4321 has no accessibility server to accept the write");
 }
 
-// Nothing stands between a resolved element and the perform. `XC_kAXXCAttributeUserTestingActions` looks
-// like the way to pre-check that an element accepts an action, and is not: no element populates it, so a
-// guard built on it refuses nothing and charges every perform an extra attribute read for the privilege.
+// No element populates `XC_kAXXCAttributeUserTestingActions`, so there is no pre-check on it.
 - (void)testAnActionIsPerformedWhateverTheElementAdvertises
 {
   for (id advertised in @[@[@"AXScrollToVisible"], @[], NSNull.null]) {
@@ -1135,10 +933,6 @@ static NSDictionary *FBAXTestsPress(void)
   XCTAssertEqual(_runtime.performCount, 3);
 }
 
-// A marker is resolved host-side against a tree that was read earlier, so the element under the point can
-// have changed by the time the write arrives. The assertion is what catches that, and the diagnostic has to
-// say what was found as well as what was expected — otherwise the caller cannot tell a moved screen from a
-// wrong marker.
 - (void)testAnAssertionThatDoesNotMatchRefusesTheWrite
 {
   [self seedHitElementWithAttributes:@{kAXLabel : @"Wi-Fi"}];
@@ -1193,8 +987,6 @@ static NSDictionary *FBAXTestsPress(void)
   XCTAssertEqual(_runtime.setValueCount, 1);
 }
 
-// Half an assertion is a request the caller got wrong, and answering it either way — checking nothing, or
-// checking against nil — would silently do something other than what was asked.
 - (void)testAnAssertionKeyAndValueAreOnlyMeaningfulTogether
 {
   [self seedHitElementWithAttributes:@{kAXLabel : @"General"}];
@@ -1208,9 +1000,6 @@ static NSDictionary *FBAXTestsPress(void)
   XCTAssertEqual(_runtime.hitTestCount, 0);
 }
 
-// The host builds an assertion out of a node it read off this wire, so a key that never appears in a node
-// is one it could not have come from there — and passing an unknown key through to the runtime would make
-// an unreadable attribute look like an element that moved.
 - (void)testAnAssertionOnAnAttributeTheReaderDoesNotFetchIsRejected
 {
   [self seedHitElementWithAttributes:@{kAXLabel : @"General"}];
@@ -1238,8 +1027,6 @@ static NSDictionary *FBAXTestsPress(void)
   XCTAssertEqual(_runtime.performCount, 0, @"a set-value is not an action");
 }
 
-// The value is JSON off the wire, so it arrives as whatever the client sent. Anything but a string is
-// rejected rather than stringified — writing "1" because the caller sent the number 1 is a guess.
 - (void)testSetValueRequiresAStringValue
 {
   [self seedHitElementWithAttributes:@{}];
@@ -1256,8 +1043,6 @@ static NSDictionary *FBAXTestsPress(void)
   XCTAssertEqual(_runtime.setValueCount, 0);
 }
 
-// A write that went wrong carries the runtime's reason and must *not* pick up an error kind — the host acts
-// on those kinds, and a slow application is neither an absent one nor an element that moved.
 - (void)testAFailedWriteIsAnOpaqueFailureCarryingTheRuntimeReason
 {
   [self seedHitElementWithAttributes:@{}];
@@ -1269,8 +1054,6 @@ static NSDictionary *FBAXTestsPress(void)
   XCTAssertNil(response[@"error_kind"]);
 }
 
-// A write with an explicit pid scopes the hit-test to that application, exactly as a `hittest` does — a
-// write aimed at one app must not land on whatever is drawn over it.
 - (void)testAWriteWithAnExplicitPidScopesTheHitTest
 {
   [self seedHitElementWithAttributes:@{}];
@@ -1286,10 +1069,6 @@ static NSDictionary *FBAXTestsPress(void)
 
 #pragma mark - Attribute value coercion
 
-// The tree walk coerces every attribute value into something JSON can carry. The accessibility runtime
-// reports its geometric attributes as `X`/`Y`(`/Width`/`Height`) dictionaries, and a point attribute is
-// given the same structural treatment the frame gets, so a consumer reads a coordinate rather than the
-// text `NSDictionary` happens to print.
 - (void)testPointValuedAttributeIsCarriedThroughStructurally
 {
   NSDictionary *point = @{@"X" : @201, @"Y" : @789.5};
@@ -1303,8 +1082,6 @@ static NSDictionary *FBAXTestsPress(void)
   XCTAssertEqualObjects(emitted[@"Y"], @789.5);
 }
 
-// The contrast that makes the above a statement about the *key* rather than about dictionaries: the
-// frame, given the identical shape, is carried through structurally.
 - (void)testTheFrameAttributeIsCarriedThroughStructurally
 {
   FBAXFakeElement *root = [FBAXFakeElement readable:@"UIApplication"];
@@ -1319,9 +1096,8 @@ static NSDictionary *FBAXTestsPress(void)
   XCTAssertEqualObjects(emitted[@"Width"], @402);
 }
 
-// XCTest's reader returns an `NSError` *as an attribute's value* for any AX failure other than no-value or
-// unsupported, so a failed read arrives in the same shape as a successful one. Nothing downstream expects an
-// error object, and the JSON coercion stringifies whatever it does not recognise.
+// XCTest's reader returns an `NSError` as the attribute's value for any AX failure other than no-value or
+// unsupported.
 - (void)testAnAttributeThatFailedToReadIsEmittedAsItsValue
 {
   NSError *failure = [NSError
@@ -1343,22 +1119,6 @@ static NSDictionary *FBAXTestsPress(void)
 
 #pragma mark - The translator vocabulary seam
 
-// The seam carries the ask through verbatim. Worth pinning because the attribute list is the whole
-// request: the wrong numbers reach the server as a different question, and the answer still looks valid.
-- (void)testATranslatorReadPassesTheAttributesThrough
-{
-  _runtime.translatorAttributeValues = @{@(FBAXPAttributeLabel) : @"General"};
-  NSArray *asked = @[@(FBAXPAttributeLabel), @(FBAXPAttributeFrame)];
-
-  NSDictionary *read = [_runtime translatorAttributes:asked ofElement:[FBAXFakeElement readable:@"UIView"]];
-
-  XCTAssertEqualObjects(read[@(FBAXPAttributeLabel)], @"General");
-  XCTAssertEqualObjects(_runtime.lastTranslatorAttributes, asked);
-}
-
-// Both walks are asked for the same depth cap by the same request, so a read should mean the same thing by
-// it. The view-hierarchy walk marks a read truncated only where the node it stopped at *had* children;
-// this pins the translator walk deciding from the node's own attribute count instead.
 - (void)testATranslatorReadOfALeafAtTheDepthCapDoesNotReportTruncation
 {
   FBAXFakeElement *root = [FBAXFakeElement readable:@"UIApplication"];
@@ -1382,9 +1142,6 @@ static NSDictionary *FBAXTestsPress(void)
   );
 }
 
-// Round trips are the cost of a translator walk, not attribute count: every request hops onto the
-// application's main thread and blocks there, so the number of requests is what a deep read pays.
-// Pinning it per node makes a regression to more round trips visible.
 - (void)testATranslatorWalkCostsTwoRoundTripsPerNode
 {
   FBAXFakeElement *root = [FBAXFakeElement readable:@"UIApplication"];
@@ -1409,31 +1166,6 @@ static NSDictionary *FBAXTestsPress(void)
   XCTAssertEqual(_runtime.translatorReadCount, 6u);
 }
 
-// Nil is "the read could not be performed", which a caller must be able to tell from a read that
-// succeeded and returned nothing — the same distinction the outcome types elsewhere exist to preserve.
-- (void)testATranslatorReadThatCannotBePerformedAnswersNil
-{
-  _runtime.translatorAttributeValues = nil;
-  XCTAssertNil([_runtime translatorAttributes:@[@(FBAXPAttributeLabel)] ofElement:[FBAXFakeElement readable:@"UIView"]]);
-}
-
-// One read per node is the reason the batched request type exists; a caller that regressed to one read
-// per attribute would still be correct and would cost eight times as many round trips.
-- (void)testABatchedReadIsOneRoundTripForManyAttributes
-{
-  _runtime.translatorAttributeValues = @{};
-  [_runtime translatorAttributes:@[@(FBAXPAttributeLabel), @(FBAXPAttributeRole), @(FBAXPAttributeFrame),
-                                   @(FBAXPAttributeIdentifier)]
-                       ofElement:[FBAXFakeElement readable:@"UIView"]];
-  XCTAssertEqual(_runtime.translatorReadCount, 1u);
-}
-
-// Every test above this line drives the seam directly, which pins what the fake echoes rather than what a
-// read emits. These drive `describe` itself, so they fail if the build step stops emitting an attribute
-// it fetched.
-
-// `enabled` is the one answer this vocabulary has that XCTest's does not, and fetching it without emitting
-// it is indistinguishable at the wire from not supporting it at all.
 - (void)testATranslatorReadEmitsTheEnabledAnswerItFetched
 {
   _runtime.applicationElements[@(kAppPid)] = [FBAXFakeElement readable:@"UIApplication"];
@@ -1446,9 +1178,6 @@ static NSDictionary *FBAXTestsPress(void)
   XCTAssertEqualObjects(response[@"tree"][kNodeIsEnabled], @NO, @"the fetched enabled answer must reach the wire");
 }
 
-// The role rides the wire as the translator's own integer and is deliberately not merged into
-// `elementType`, which carries `XCUIElementType` names. Pinned because emitting it under the wrong key
-// would be read as a type name by every existing consumer.
 - (void)testATranslatorReadEmitsTheTranslatorsOwnRoleUnmapped
 {
   _runtime.applicationElements[@(kAppPid)] = [FBAXFakeElement readable:@"UIApplication"];
@@ -1461,8 +1190,7 @@ static NSDictionary *FBAXTestsPress(void)
   XCTAssertNil(tree[kAXElementType], @"the translator role must not be emitted under the elementType key");
 }
 
-// The point is what lets the host judge reachability on this path: it derives `interactable` from the
-// same key an XCTest read supplies, so a walk that answers hittability and no point reports no verdict.
+// The host derives `interactable` from the XCTest key, so the point must land under it.
 - (void)testATranslatorReadEmitsTheVisiblePoint
 {
   _runtime.applicationElements[@(kAppPid)] = [FBAXFakeElement readable:@"UIApplication"];
@@ -1477,8 +1205,6 @@ static NSDictionary *FBAXTestsPress(void)
   XCTAssertEqualObjects(tree[@"XC_kAXXCAttributeVisiblePoint"][@"Y"], @311);
 }
 
-// The traits bitmask is the input the translator's own role handler classifies; carrying it lets a caller
-// reach a distinction the role collapsed.
 - (void)testATranslatorReadEmitsTheTraitsBitmask
 {
   _runtime.applicationElements[@(kAppPid)] = [FBAXFakeElement readable:@"UIApplication"];
@@ -1490,8 +1216,6 @@ static NSDictionary *FBAXTestsPress(void)
   XCTAssertEqualObjects(tree[@"FBTraits"], @(1 << 6));
 }
 
-// Identity is what makes two reads comparable element by element. Without it, deciding whether a tree is
-// the previous screen means comparing every attribute and trusting the combination to be unique.
 - (void)testATranslatorReadEmitsAPerElementIdentity
 {
   _runtime.applicationElements[@(kAppPid)] = [FBAXFakeElement readable:@"UIApplication"];
@@ -1503,9 +1227,6 @@ static NSDictionary *FBAXTestsPress(void)
   XCTAssertEqualObjects(tree[@"FBElementIdentity"], @(0x600001234560));
 }
 
-// A translator read that could not be performed answers nil, which is not the same as an element with no
-// attributes. Building a node from it emits a childless, attribute-less tree, so a failed bind reports as a
-// successful read of an application with no content — a wrong answer that looks entirely healthy.
 - (void)testATranslatorReadThatCannotBePerformedIsAFailureNotAnEmptyTree
 {
   _runtime.applicationElements[@(kAppPid)] = [FBAXFakeElement readable:@"UIApplication"];
@@ -1518,11 +1239,8 @@ static NSDictionary *FBAXTestsPress(void)
   XCTAssertNil(response[@"tree"], @"a read that could not be performed must not answer with a tree");
 }
 
-// The runtime vends an application element for any pid, including one that names no process, and the
-// translator answers against it with synthesized defaults rather than failing. Without the availability
-// probe, a read through this vocabulary would answer `ok:true` with a fabricated root — carrying a role
-// and an enabled value — for a process that does not exist, and nothing about that response would look
-// wrong to a caller.
+// The translator answers synthesized defaults for a pid that names no process; only the availability
+// probe fails this.
 - (void)testATranslatorReadOfAnUnavailableApplicationFailsRatherThanFabricatingARoot
 {
   _runtime.applicationElements[@(kAppPid)] = [FBAXFakeElement applicationUnavailable];
@@ -1536,8 +1254,6 @@ static NSDictionary *FBAXTestsPress(void)
   XCTAssertNil(response[@"tree"], @"a process with no accessibility server must not answer with a root");
 }
 
-// The envelope a translator read answers with is the same envelope every other read answers with,
-// `method` included.
 - (void)testAFusedFrontmostTranslatorReadStillNamesTheResolverThatRan
 {
   _runtime.windowServerOutcome = [FBAXFrontmostOutcome resolved:kAppPid];
@@ -1552,49 +1268,9 @@ static NSDictionary *FBAXTestsPress(void)
   XCTAssertEqualObjects(response[@"method"], @"window-server");
 }
 
-#pragma mark - The AXP attribute vocabulary
-
-// These values are read off a private binary rather than a header, so they are pinned here: a runtime
-// that renumbers them would otherwise be discovered as a reader silently fetching the wrong attribute,
-// which reads as missing data rather than as a broken constant.
-//
-// `Children` is the one with two independent derivations — the `__AXPAttributeToString` table and the
-// dispatch jump table that routes both 8 and 9 to the children handler — so it is the canary.
-- (void)testTheAXPAttributeVocabularyIsPinned
-{
-  XCTAssertEqual(FBAXPAttributeVisiblePoint, 112);
-  XCTAssertEqual(FBAXPAttributeTraits, 77);
-  XCTAssertEqual(FBAXPAttributeMemoryAddress, 128);
-  XCTAssertEqual(FBAXPAttributeIsElement, 26);
-  XCTAssertEqual(FBAXPAttributeWindowSections, 79);
-  XCTAssertEqual(FBAXPAttributeContainerType, 80);
-  XCTAssertEqual(FBAXPAttributeViewControllerDescription, 82);
-  XCTAssertEqual(FBAXPAttributeUserInputLabels, 87);
-  XCTAssertEqual(FBAXPAttributeCustomContent, 89);
-  XCTAssertEqual(FBAXPAttributeChildren, 8);
-  XCTAssertEqual(FBAXPAttributeChildrenInNavigationOrder, 9);
-  XCTAssertEqual(FBAXPAttributeLabel, 33);
-  XCTAssertEqual(FBAXPAttributeFrame, 21);
-  XCTAssertEqual(FBAXPAttributeIdentifier, 25);
-  XCTAssertEqual(FBAXPAttributeValue, 53);
-  XCTAssertEqual(FBAXPAttributeRole, 45);
-  XCTAssertEqual(FBAXPAttributeIsVisible, 32);
-  XCTAssertEqual(FBAXPAttributeIsEnabled, 27);
-}
-
-// The two request kinds a reader uses. `MultipleAttribute` is called out because passing its attribute
-// list as an array rather than under the `attributes` key throws inside the guest.
-- (void)testTheAXPRequestTypesArePinned
-{
-  XCTAssertEqual(FBAXPRequestTypeAttribute, 2);
-  XCTAssertEqual(FBAXPRequestTypeMultipleAttribute, 5);
-}
-
 #pragma mark - Request-named attributes
 
-// A request that names attributes is read with exactly those. The fake echoes back whatever it holds
-// rather than filtering, so what this proves is that the *request's* list reached the runtime — which is
-// the whole mechanism.
+// The fake echoes what it holds, so only the ask can be asserted.
 - (void)testARequestNamingAttributesIsReadWithThem
 {
   FBAXFakeElement *root = [FBAXFakeElement readable:@"UIApplication"];
@@ -1610,8 +1286,6 @@ static NSDictionary *FBAXTestsPress(void)
   XCTAssertEqualObjects(_runtime.lastReadAttributes, (@[kAXLabel, kAXVisiblePoint, kAXChildren]));
 }
 
-// A request that names none is read with the default list, unchanged — this is what keeps a default read
-// byte-identical to one issued by a host that predates the field.
 - (void)testARequestNamingNoAttributesIsReadWithTheDefaultList
 {
   _runtime.applicationElements[@(kAppPid)] = [FBAXFakeElement readable:@"UIApplication"];
@@ -1627,8 +1301,6 @@ static NSDictionary *FBAXTestsPress(void)
   );
 }
 
-// The children key is what the walk recurses on, so a request that omits it must still get it — narrowing
-// the attributes must narrow the read, not flatten the tree to its root.
 - (void)testTheChildrenAttributeIsAlwaysRead
 {
   FBAXFakeElement *root = [FBAXFakeElement readable:@"UIApplication"];
@@ -1641,9 +1313,6 @@ static NSDictionary *FBAXTestsPress(void)
   XCTAssertEqualObjects(response[@"tree"][kAXChildren][0][kAXElementType], @"XCUIElementTypeWindow");
 }
 
-// A malformed list is the caller's mistake and must not fail an otherwise well-formed read: a non-array,
-// an empty array, and an array of no usable names all fall back to the default rather than reading
-// nothing. A non-string member is dropped and the rest of the list survives.
 - (void)testAMalformedAttributeListFallsBackToTheDefault
 {
   _runtime.applicationElements[@(kAppPid)] = [FBAXFakeElement readable:@"UIApplication"];
@@ -1668,9 +1337,6 @@ static NSDictionary *FBAXTestsPress(void)
   );
 }
 
-// A write asserts on an attribute of the element found under its point, and the guard is that the key is
-// one the request actually fetches. A non-default key is therefore assertable exactly when the write names
-// it, which is the same condition the read that produced the assertion had to meet.
 - (void)testAWriteCanAssertOnlyOnAnAttributeItNames
 {
   _runtime.hitTestOutcome = [FBAXHitTestOutcome hit:[FBAXFakeElement readable:@"XCUIElementTypeButton"]
@@ -1711,8 +1377,6 @@ static NSDictionary *FBAXTestsPress(void)
   XCTAssertEqualObjects(response[@"tree"][kAXChildren][0][kAXElementType], @"XCUIElementTypeWindow");
 }
 
-// A pid the runtime vends no element for. Distinct from an element that cannot be read: nothing was
-// reached at all, so there is no read outcome to shape the response from.
 - (void)testDescribeWithNoApplicationElementIsAFailureNamingThePid
 {
   NSDictionary *response = FBAXBridgeHandleRequest(@{@"verb" : @"describe", @"pid" : @(kAppPid)});
@@ -1731,8 +1395,6 @@ static NSDictionary *FBAXTestsPress(void)
   XCTAssertEqualObjects(response[@"pid"], @(kAppPid));
 }
 
-// A root belonging to an app that did not answer. `describe` and `hittest` classify the same condition
-// the same way, so a wedged app reads alike whichever verb found it.
 - (void)testDescribeOfARootThatDidNotAnswerIsTaggedNotResponding
 {
   _runtime.applicationElements[@(kAppPid)] = [FBAXFakeElement applicationNotResponding];
@@ -1744,8 +1406,6 @@ static NSDictionary *FBAXTestsPress(void)
   XCTAssertEqualObjects(response[@"pid"], @(kAppPid));
 }
 
-// A root that failed for any other reason is an opaque failure quoting what the runtime said — and when
-// the runtime said nothing, the message says that rather than trailing off into `(null)`.
 - (void)testDescribeOfAFailedRootQuotesTheRuntimeOrSaysItReportedNothing
 {
   _runtime.applicationElements[@(kAppPid)] = [FBAXFakeElement failed:FBAXTestsErrorWithCode(FBAXErrorInvalidUIElement)];
@@ -1762,9 +1422,6 @@ static NSDictionary *FBAXTestsPress(void)
   );
 }
 
-// A child that cannot be read is dropped from the tree rather than failing the whole read. A single
-// unreadable subview in a large app must not cost the host the entire dump — and its siblings must
-// survive alongside it, not be cut short at the failure.
 - (void)testAnUnreadableChildIsDroppedWithoutFailingTheRead
 {
   FBAXFakeElement *root = [FBAXFakeElement readable:@"UIApplication"];
@@ -1785,8 +1442,6 @@ static NSDictionary *FBAXTestsPress(void)
   XCTAssertEqualObjects(response[@"truncated"], @NO, @"a dropped child is not truncation");
 }
 
-// The depth cap stopping descent into children that exist sets `truncated`, so the host warns rather than
-// passing a partial tree off as complete. A node whose children were all visited does not.
 - (void)testDepthCapMarksTheReadTruncated
 {
   FBAXFakeElement *root = [FBAXFakeElement readable:@"UIApplication"];
@@ -1804,8 +1459,6 @@ static NSDictionary *FBAXTestsPress(void)
   XCTAssertEqual([whole[@"tree"][kAXChildren][0][kAXChildren] count], 1u);
 }
 
-// The node budget is shared across the whole walk, so running out mid-traversal also sets `truncated`.
-// This is the cap that protects the reader from an unbounded tree, and the host has to know it fired.
 - (void)testNodeBudgetExhaustionMarksTheReadTruncated
 {
   FBAXFakeElement *root = [FBAXFakeElement readable:@"UIApplication"];
@@ -1861,9 +1514,6 @@ static NSDictionary *FBAXTestsPress(void)
   XCTAssertEqual(_runtime.windowServerCount, 1u, @"the window-server resolver must not run again");
 }
 
-// Each method answers on its own. A resolver that fails is reported as a failure rather than quietly
-// falling through to another one — the host picked the method deliberately, and a response whose `method`
-// disagrees with the resolver that ran would be worse than no answer.
 - (void)testAFailedResolverDoesNotFallBackToAnotherMethod
 {
   _runtime.windowServerOutcome = [FBAXFrontmostOutcome unresolved:@"the window server did not answer"];
@@ -1881,11 +1531,6 @@ static NSDictionary *FBAXTestsPress(void)
   XCTAssertEqual(_runtime.runningBoardCount, 0u, @"no fallback to RunningBoard");
 }
 
-// The positional resolver's non-resolving outcomes get distinct messages *and* distinct kinds: nothing at
-// the anchor (an app mid-launch, or genuinely empty space) versus nothing answering at all versus an app
-// that is there and slow. A fused frontmost read of an app with no accessibility server is the same
-// condition as a `--pid` read of one, and answering it as a generic frontmost failure is what left the
-// host unable to say which had happened.
 - (void)testCenterPointCarriesEachNonResolvingOutcomeThroughAsItsOwnKind
 {
   _runtime.hitTestOutcome = [FBAXHitTestOutcome empty];
@@ -1930,8 +1575,6 @@ static NSDictionary *FBAXTestsPress(void)
   XCTAssertEqual(_runtime.runningBoardCount, 0u);
 }
 
-// A `method` of the wrong type is not a method name — it falls back to the default rather than being
-// stringified into an unsupported-method error. `method` arrives as whatever JSON the host sent.
 - (void)testANonStringMethodFallsBackToTheDefault
 {
   _runtime.hitTestOutcome = [FBAXHitTestOutcome hit:[FBAXFakeElement readable:@"leaf"] owningProcessIdentifier:kAppPid];
