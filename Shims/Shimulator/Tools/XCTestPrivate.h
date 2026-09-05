@@ -160,7 +160,7 @@ struct __va_list_tag {
 + (id)xct_allTestMethodInvocations;
 + (id)xct_testMethodInvocations;
 + (id)xct_allSubclasses;
-@property (atomic, assign) BOOL continueAfterFailure; // @synthesize continueAfterFailure=_continueAfterFailure;
+@property (atomic, assign) BOOL continueAfterFailure;
 @property (atomic, retain) XCTestCaseRun *testCaseRun;
 - (NSUInteger)numberOfTestIterationsForTestWithSelector:(SEL)arg1;
 - (void)afterTestIteration:(NSUInteger)arg1 selector:(SEL)arg2;
@@ -320,32 +320,28 @@ struct __va_list_tag {
   NSString *_automationFrameworkPath;
   BOOL _emitOSLogs;
 }
-@property BOOL emitOSLogs; // @synthesize emitOSLogs=_emitOSLogs;
-@property (copy) NSString *automationFrameworkPath; // @synthesize automationFrameworkPath=_automationFrameworkPath;
-@property (copy) NSDictionary *aggregateStatisticsBeforeCrash; // @synthesize aggregateStatisticsBeforeCrash=_aggregateStatisticsBeforeCrash;
-@property (copy) NSArray *targetApplicationArguments; // @synthesize targetApplicationArguments=_targetApplicationArguments;
-@property (copy) NSDictionary *targetApplicationEnvironment; // @synthesize targetApplicationEnvironment=_targetApplicationEnvironment;
-@property BOOL initializeForUITesting; // @synthesize initializeForUITesting=_initializeForUITesting;
-@property BOOL testsMustRunOnMainThread; // @synthesize testsMustRunOnMainThread=_testsMustRunOnMainThread;
-@property BOOL reportActivities; // @synthesize reportActivities=_reportActivities;
-@property (copy) NSString *productModuleName; // @synthesize productModuleName=_productModuleName;
-@property (copy) NSString *targetApplicationBundleID; // @synthesize targetApplicationBundleID=_targetApplicationBundleID;
-@property (copy) NSString *targetApplicationPath; // @synthesize targetApplicationPath=_targetApplicationPath;
-@property BOOL treatMissingBaselinesAsFailures; // @synthesize treatMissingBaselinesAsFailures=_treatMissingBaselinesAsFailures;
-@property BOOL disablePerformanceMetrics; // @synthesize disablePerformanceMetrics=_disablePerformanceMetrics;
-@property BOOL reportResultsToIDE; // @synthesize reportResultsToIDE=_reportResultsToIDE;
-@property (nonatomic, copy) NSURL *baselineFileURL; // @synthesize baselineFileURL=_baselineFileURL;
-@property (copy) NSString *baselineFileRelativePath; // @synthesize baselineFileRelativePath=_baselineFileRelativePath;
-@property (copy) NSString *pathToXcodeReportingSocket; // @synthesize pathToXcodeReportingSocket=_pathToXcodeReportingSocket;
-@property (copy) NSUUID *sessionIdentifier; // @synthesize sessionIdentifier=_sessionIdentifier;
-@property (copy) id testsToSkip; // @synthesize testsToSkip=_testsToSkip;
-@property (copy) id testsToRun; // @synthesize testsToRun=_testsToRun;
-@property (nonatomic, copy) NSURL *testBundleURL; // @synthesize testBundleURL=_testBundleURL;
-@property (copy) NSString *testBundleRelativePath; // @synthesize testBundleRelativePath=_testBundleRelativePath;
-
-// `absolutePath` has been replaced by `basePathForTestBundleResolution` on XCode 13.0. We don't use either.
-// @property(copy) NSString *absolutePath; // @synthesize absolutePath=_absolutePath;
-// @property (copy,nonatomic) NSString *basePathForTestBundleResolution;
+@property BOOL emitOSLogs;
+@property (copy) NSString *automationFrameworkPath;
+@property (copy) NSDictionary *aggregateStatisticsBeforeCrash;
+@property (copy) NSArray *targetApplicationArguments;
+@property (copy) NSDictionary *targetApplicationEnvironment;
+@property BOOL initializeForUITesting;
+@property BOOL testsMustRunOnMainThread;
+@property BOOL reportActivities;
+@property (copy) NSString *productModuleName;
+@property (copy) NSString *targetApplicationBundleID;
+@property (copy) NSString *targetApplicationPath;
+@property BOOL treatMissingBaselinesAsFailures;
+@property BOOL disablePerformanceMetrics;
+@property BOOL reportResultsToIDE;
+@property (nonatomic, copy) NSURL *baselineFileURL;
+@property (copy) NSString *baselineFileRelativePath;
+@property (copy) NSString *pathToXcodeReportingSocket;
+@property (copy) NSUUID *sessionIdentifier;
+@property (copy) id testsToSkip;
+@property (copy) id testsToRun;
+@property (nonatomic, copy) NSURL *testBundleURL;
+@property (copy) NSString *testBundleRelativePath;
 
 + (id)configurationWithContentsOfFile:(id)arg1;
 + (id)activeTestConfiguration;
