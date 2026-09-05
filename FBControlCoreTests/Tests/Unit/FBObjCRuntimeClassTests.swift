@@ -84,9 +84,8 @@ struct FBObjCRuntimeClassTests {
     #expect(className == NSStringFromClass(NilReturningStub.self))
   }
 
-  // The point of the type: an NSException raised by an initializer nobody here controls has to
-  // arrive as a Swift error. Reaching the assertions below at all is the assertion — an unguarded
-  // raise would unwind into `libc++abi` and abort the test process.
+  // An unguarded raise would unwind into libc++abi and abort the test process; reaching the
+  // assertions is itself the check.
   @Test("An initializer that raises is converted into a Swift error")
   func instantiateRaising() throws {
     let runtimeClass = FBObjCRuntimeClass(RaisingStub.self)
