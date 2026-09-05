@@ -7,8 +7,7 @@
 
 import Foundation
 
-/// Schedules replayed runs to match the original session's timing (`--realtime`). Pure
-/// and free of I/O apart from sleeping, so the offset math can be unit-tested directly.
+/// Schedules replayed runs to match the original session's timing (`--realtime`).
 enum ReplayTiming {
 
   /// The wall-clock offset (seconds from replay start) at which each run should begin,
