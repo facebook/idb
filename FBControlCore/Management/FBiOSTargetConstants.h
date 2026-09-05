@@ -8,8 +8,7 @@
 #import <Foundation/Foundation.h>
 
 /**
- An enum representing states. The values here are not guaranteed to be stable over time and should not be serialized.
- The string form, the Swift `FBiOSTargetStateString`, is guaranteed to be stable over time.
+ Raw values are not stable across versions and must not be serialized; the Swift `FBiOSTargetStateString` form is.
  */
 typedef NS_ENUM(NSUInteger, FBiOSTargetState) {
   FBiOSTargetStateCreating = 0,
