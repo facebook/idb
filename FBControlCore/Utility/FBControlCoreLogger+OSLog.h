@@ -14,11 +14,8 @@
  */
 @interface FBControlCoreLoggerFactory (OSLog)
 
-/*
- Construct a new OS Log logger.
-
- @pragma mark level the log level to use.
- @return a new logger logging to os_log.
+/**
+ An os_log-backed logger, or nil when not built with an Apple compiler.
  */
 + (nullable id<FBControlCoreLogger>)osLoggerWithLevel:(FBControlCoreLogLevel)level;
 
