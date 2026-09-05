@@ -116,7 +116,6 @@
            }]
           onQueue:self.queue
           fmap:^FBFuture *(NSArray<id> *attachments) {
-            // Mount all the relevant std streams.
             id stdIn = attachments[0];
             if ([stdIn isKindOfClass:NSError.class]) {
               return [self detachRepropogate:stdIn];
@@ -138,7 +137,6 @@
             if ([stdErr isKindOfClass:NSNumber.class]) {
               stdErr = nil;
             }
-            // Everything is set up, return the attachment.
             return [FBFuture futureWithResult:[[FBProcessIOAttachment alloc] initWithIO:self stdIn:stdIn stdOut:stdOut stdErr:stdErr]];
           }];
 }
@@ -170,7 +168,6 @@
             if ([stdErr isKindOfClass:NSNumber.class]) {
               stdErr = nil;
             }
-            // Everything is set up, return the attachment.
             return [FBFuture futureWithResult:[[FBProcessFileAttachment alloc] initWithIO:self stdOut:stdOut stdErr:stdErr]];
           }];
 }
