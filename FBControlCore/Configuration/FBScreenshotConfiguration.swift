@@ -15,9 +15,7 @@ public enum FBScreenshotImageFormat: String, Hashable, Sendable, CaseIterable {
   case tiff
 }
 
-/// How a screenshot is encoded. Modeled as a sum so a compression quality exists only on the format
-/// that has one: a quality on PNG or TIFF is not a no-op to be ignored downstream, it is a request
-/// that cannot be honored, and it is rejected where a request is decoded rather than carried inward.
+/// A JPEG quality on PNG or TIFF is rejected where the request is decoded, not silently ignored.
 public enum FBScreenshotEncoding: Hashable, Sendable {
   case png
   /// Uncompressed: preserves the pixels and color space with no codec cost.
@@ -25,8 +23,7 @@ public enum FBScreenshotEncoding: Hashable, Sendable {
   /// `quality` is in (0, 1].
   case jpeg(quality: Double)
 
-  /// Used when a caller asks for JPEG without naming a quality. Matches the default the video
-  /// stream encoder applies for the same reason.
+  /// Matches the video stream encoder's default.
   public static let defaultJPEGQuality: Double = 0.8
 
   public var format: FBScreenshotImageFormat {
@@ -66,33 +63,21 @@ extension FBScreenshotEncoding: CustomStringConvertible {
   }
 }
 
-/// The unit a crop rect or fit bound is expressed in. Points are the coordinate space that tap,
-/// swipe and describe already use; pixels are what the framebuffer is actually in. The two differ by
-/// the target's screen scale, which only the companion knows -- so a caller can work in the units it
-/// already has rather than making a round trip to find out.
-///
-/// Not every target knows its own screen scale, so `points` is not universally available while
-/// `pixels`, the default, always is. A request in points against a target that cannot resolve them
-/// fails rather than guessing a scale of 1, which would silently return the wrong region.
+/// Points are converted with the target's screen scale, which not every target reports; a `points` request
+/// on such a target fails rather than assuming 1x. `pixels` is the default and always available.
 public enum FBScreenshotUnit: String, Hashable, Sendable {
   case pixels
   case points
 }
 
-/// How much to shrink a screenshot. Never enlarges it: a caller asking to fit a 414-wide box is
-/// asking for an upper bound, not a resample target, and upscaling would cost bytes to add no
-/// detail.
+/// Shrinks only; a factor or fit bound never enlarges.
 public enum FBScreenshotScale: Hashable, Sendable {
   /// Capture at the target's native resolution.
   case native
   /// Multiply both dimensions by a factor in (0, 1].
   case factor(Double)
-  /// Shrink to fit inside a bounding box. `nil` leaves that axis unbounded; at least one bound must
-  /// be present. When both are given the more restrictive wins.
-  ///
-  /// One factor is applied to both axes, so the aspect ratio is preserved up to rounding: each side
-  /// is rounded to a whole pixel independently, which on small images can move the ratio by a few
-  /// percent. There is no way to avoid that and still return whole pixels.
+  /// `nil` leaves that axis unbounded; at least one bound is required; the more restrictive wins.
+  /// Aspect ratio is preserved up to per-axis rounding to whole pixels.
   case fit(maxWidth: Int?, maxHeight: Int?)
 }
 
@@ -114,10 +99,6 @@ extension FBScreenshotScale: CustomStringConvertible {
 }
 
 /// Describes a screenshot: what to capture, how much of it, at what size, in what encoding.
-///
-/// The default value reproduces the behaviour of a screenshot taken with no options at all -- full
-/// screen, native resolution, PNG -- so a caller that does not care gets exactly what it got before
-/// any of this existed.
 public struct FBScreenshotConfiguration: Hashable, Sendable {
 
   public let encoding: FBScreenshotEncoding
@@ -139,12 +120,7 @@ public struct FBScreenshotConfiguration: Hashable, Sendable {
     self.unit = unit
   }
 
-  /// Whether resolving this configuration needs the target's screen scale.
-  ///
-  /// `unit` describes the measurements the caller supplied, and a request can supply none: a full
-  /// screen at native resolution, or shrunk by a dimensionless factor, has nothing to convert. Only
-  /// a crop rect and a fit bound are in units, so only those make a `points` request depend on a
-  /// screen scale the target may not report.
+  /// Only a crop rect or a fit bound carries a unit; `native` and `factor` have nothing to convert.
   var requiresScreenScale: Bool {
     guard unit == .points else {
       return false
@@ -168,9 +144,7 @@ extension FBScreenshotConfiguration: CustomStringConvertible {
   }
 }
 
-/// A captured screenshot and the dimensions it was produced at. The source dimensions and screen
-/// scale are reported alongside the image so a caller can tell what it asked for from what it got --
-/// a crop that overhung the screen was clamped, and a fit bound rarely lands on an exact multiple.
+/// A captured screenshot. `size` can differ from what was requested: an overhanging crop is clamped and a fit bound rounds.
 public struct FBScreenshotResult: Hashable, Sendable {
 
   public let imageData: Data
@@ -191,8 +165,7 @@ public struct FBScreenshotResult: Hashable, Sendable {
   }
 }
 
-/// The ways a screenshot request can be geometrically impossible, as data rather than assembled
-/// strings. Each maps to an invalid-argument failure at the API boundary.
+/// Each case maps to an invalid-argument failure at the API boundary.
 public enum FBScreenshotGeometryError: Error, Hashable {
   case scaleFactorOutOfRange(Double)
   case fitBoundsEmpty
@@ -226,12 +199,7 @@ extension FBScreenshotGeometryError: LocalizedError {
   }
 }
 
-/// The transform to apply to a captured image, resolved against the dimensions it was actually
-/// captured at: everything is in pixels and every bound has been checked.
-///
-/// Producing this is separated from performing it so the arithmetic -- unit conversion, clamping,
-/// aspect-preserving fit, rounding -- is testable without a simulator, and so the simulator and
-/// device paths cannot disagree about what a given request means.
+/// A resolved transform: everything in pixels, every bound checked. Shared by the simulator and device paths.
 public struct FBScreenshotPlan: Hashable, Sendable {
 
   /// The region to capture, in pixels, clamped to the source and rounded out to whole pixels.
@@ -257,18 +225,8 @@ public struct FBScreenshotPlan: Hashable, Sendable {
 /// The screenshot geometry, as pure functions over sizes.
 public enum FBScreenshotGeometry {
 
-  /// Resolves `configuration` against the dimensions an image was captured at.
-  ///
-  /// Crop is applied before scale, so a caller cropping to a small region and bounding the result
-  /// gets the region shrunk to that bound, and the scaler never touches pixels that are about to be
-  /// discarded.
-  ///
-  /// - Parameters:
-  ///   - sourceSize: the native capture size, in pixels.
-  ///   - screenScale: pixels per point, or `nil` on a target that does not report one. Only needed
-  ///     to convert a measurement the caller gave in points, so a `nil` scale is an error only for
-  ///     a request that carries one -- a request in pixels, and a request in points that measures
-  ///     nothing, work on any target.
+  /// Crop is applied before scale, so a fit bound applies to the cropped region.
+  /// `screenScale` is required only when `configuration` measures something in points.
   public static func plan(
     for configuration: FBScreenshotConfiguration,
     sourceSize: CGSize,
@@ -277,8 +235,6 @@ public enum FBScreenshotGeometry {
     guard sourceSize.width >= 1, sourceSize.height >= 1 else {
       throw FBScreenshotGeometryError.sourceSizeNotPositive(sourceSize)
     }
-    // Resolved lazily: a full-screen native capture in points converts nothing, and failing it for
-    // want of a scale it never needed would deny a caller an image it could have had.
     let scale =
       try configuration.requiresScreenScale
       ? pointsToPixels(for: configuration.unit, screenScale: screenScale)
@@ -303,8 +259,6 @@ public enum FBScreenshotGeometry {
     case .pixels:
       return 1
     case .points:
-      // Falling back to 1 here would answer a request for a region with a different region, at a
-      // third of the size on a 3x screen, and report success.
       guard let screenScale, screenScale > 0 else {
         throw FBScreenshotGeometryError.screenScaleUnknown
       }
@@ -312,15 +266,9 @@ public enum FBScreenshotGeometry {
     }
   }
 
-  /// Converts a crop rect into whole pixels and clamps it to the source.
-  ///
-  /// A rect that overhangs the screen is clamped rather than rejected -- a caller cropping around a
-  /// element near the edge should get the part that exists -- but one that misses the screen
-  /// entirely is an error, because there is no sensible image to return.
+  /// Converts to whole pixels and clamps to the source; a rect entirely outside the source is an error.
   static func clampedCropRect(_ cropRect: CGRect, pointsToPixels: Double, sourceSize: CGSize) throws -> CGRect {
-    // Read the extent off `size` rather than `width`/`height`, which are standardized: a rect with a
-    // negative height reports a positive one, so this guard would pass and the rect would silently
-    // become one extending upward from the requested origin.
+    // `width`/`height` are standardized (a negative height reads positive); `size` is not.
     guard cropRect.size.width > 0, cropRect.size.height > 0 else {
       throw FBScreenshotGeometryError.cropExtentNotPositive(cropRect)
     }
@@ -360,23 +308,13 @@ public enum FBScreenshotGeometry {
         guard bound > 0 else {
           throw FBScreenshotGeometryError.fitBoundNotPositive(bound)
         }
-        // The more restrictive bound wins, and neither one enlarges.
         factor = min(factor, Double(bound) * pointsToPixels / Double(extent))
       }
       return factor
     }
   }
 
-  /// The pixel dimensions `baseSize` scaled by `factor` rounds to.
-  ///
-  /// Rounds half up rather than to even, matching what the common image libraries do, so a caller
-  /// migrating from a client-side resize gets the same dimensions. Floors at one pixel per side: a
-  /// zero-dimension image is not a smaller image, it is a broken one.
-  ///
-  /// Each axis rounds on its own, so the output aspect ratio is the input's only to within half a
-  /// pixel per side. That is a few percent on a very small image and imperceptible on a large one.
-  /// Rounding the pair together would keep the ratio exact at the cost of missing the bound the
-  /// caller asked to fit inside, which is the worse trade.
+  /// Rounds half up (not to even) to match common image libraries, and floors at 1px per side.
   static func outputSize(baseSize: CGSize, factor: Double) -> CGSize {
     CGSize(
       width: roundToPixels(Double(baseSize.width) * factor),
