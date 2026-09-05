@@ -5,10 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-/// Derives metrics metadata about user-entered REPL Swift. This is separate from
-/// `ReplSourceGenerator`, which turns that code into a compilable source file;
-/// nothing here contributes to compilation. Every function is pure and total, so
-/// it can be unit-tested directly and never disrupts a REPL session.
+/// Metrics about user-entered REPL Swift. Separate from `ReplSourceGenerator`: nothing
+/// here contributes to compilation.
 enum ReplSourceMetadata {
 
   /// Estimates the number of *significant* lines of Swift code in `code`, for
