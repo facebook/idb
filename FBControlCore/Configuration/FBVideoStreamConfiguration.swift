@@ -28,10 +28,7 @@ public enum FBMJPEGEncoderSelection: Hashable, Sendable {
   case allowSoftware
 }
 
-/// The format of a video stream: a compressed codec carried over a transport, or one of the raw/JPEG
-/// formats that have no codec or transport. Modeled as a sum so `transport` exists only where it is
-/// meaningful (the `compressedVideo` case), the encoder selection only where it applies (`mjpeg`),
-/// and every dispatch site matches exhaustively.
+/// The format of a video stream: a compressed codec over a transport, or a raw/JPEG format that has neither.
 public enum FBVideoStreamFormat: Hashable, Sendable {
   case compressedVideo(withCodec: FBVideoStreamCodec, transport: FBVideoStreamTransport)
   case mjpeg(encoder: FBMJPEGEncoderSelection)
@@ -57,8 +54,7 @@ extension FBVideoStreamFormat: CustomStringConvertible {
 }
 
 /// The rate-control strategy for VTCompression: derived automatically, a target quality (0–1), or an
-/// average bitrate (in bits per second). Modeled as a sum so quality stays a `Double` and bitrate an
-/// `Int` — the encoder wants each as the corresponding CoreFoundation number type.
+/// average bitrate in bits per second.
 public enum FBVideoStreamRateControl: Hashable, Sendable {
   /// The default: derive a rate from what is being encoded. JPEG formats (MJPEG/Minicap) use their
   /// quality knob; H.264/HEVC derive an average bitrate from the encoded output dimensions at
@@ -90,9 +86,7 @@ extension FBVideoStreamRateControl: CustomStringConvertible {
   }
 }
 
-/// How frames are encoded, independent of the output format/sink: frame rate, scale, rate control, and
-/// key-frame interval. Composed into `FBVideoStreamConfiguration` so the streaming and recording paths
-/// can build and pass the same encode options, varying only the format (and, for record, the sink).
+/// How frames are encoded, independent of the output format and sink.
 public struct FBVideoEncodeOptions: Hashable, Sendable {
   public let framesPerSecond: Int?
   public let scaleFactor: Double?
@@ -103,10 +97,9 @@ public struct FBVideoEncodeOptions: Hashable, Sendable {
     self.framesPerSecond = framesPerSecond
     self.rateControl = rateControl ?? .automatic
     self.scaleFactor = scaleFactor
-    // Four seconds between forced keyframes: at retina sizes each IDR costs tens of kilobytes and
-    // resets temporal prediction, so a one-second cadence taxed the motion budget noticeably.
-    // Consumers that join mid-stream wait at most this long for a sync point; WebRTC re-syncs
-    // explicitly via requestKeyFrame.
+    // Four seconds between forced keyframes: at retina sizes each IDR costs tens of kilobytes and resets
+    // temporal prediction. Late joiners wait at most this long for a sync point; WebRTC re-syncs via
+    // requestKeyFrame.
     self.keyFrameRate = keyFrameRate ?? 4.0
   }
 }
