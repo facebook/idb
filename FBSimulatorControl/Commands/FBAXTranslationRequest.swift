@@ -20,11 +20,8 @@ final class SeenPIDs {
   func contains(_ pid: pid_t) -> Bool { pids.contains(pid) }
 }
 
-/// A single accessibility translation request. Carries the per-request token,
-/// the resolved CoreSimulator device + translator, the profiling collector, and
-/// the synchronous XPC timeout. The `kind` selects how the root element is
-/// obtained (the frontmost application or the element at a point) and how the
-/// response is serialized.
+/// A single accessibility translation request. `kind` selects how the root element is obtained and
+/// how the response is serialized.
 final class FBAXTranslationRequest {
 
   /// What the request resolves and how it serializes.
@@ -87,16 +84,9 @@ final class FBAXTranslationRequest {
     }
   }
 
-  /// Serializes the resolved element into a response. The frontmost-application
-  /// path additionally computes frame coverage and merges remote (separate-process)
-  /// content; the point path is a single-element description.
-  /// `isMarkerMatch` says `element` is the one element the caller asked for, rather than the tree this
-  /// request resolved.
-  ///
-  /// A marker match is reached by descending from the frontmost tree, so its request still reads
-  /// `.frontmostApplication` even though the caller named the match. Serializing it by `kind` alone
-  /// would make the match the root of a whole-tree walk; a named element is serialized as one element
-  /// wherever it came from.
+  /// Serializes the resolved element. The frontmost path adds frame coverage and remote content; the
+  /// point path is a single element. `isMarkerMatch` forces single-element serialization: a marker
+  /// match descends from the frontmost tree, so its request's `kind` is still `.frontmostApplication`.
   func run(
     _ element: FBAXPlatformElement,
     options: FBAccessibilityRequestOptions,
@@ -127,8 +117,6 @@ final class FBAXTranslationRequest {
       keys: Self.serializerKeys(options),
       collector: collector
     )
-    // The target itself is exempt from the filter — it is the element the caller named — while its
-    // descendants are a tree like any other and honour it.
     if let children = elements.children {
       elements.children = options.filter.apply(to: children)
     }
@@ -147,10 +135,7 @@ final class FBAXTranslationRequest {
     let walkStart = CFAbsoluteTimeGetCurrent()
     collector.markWalkStart()
 
-    // Screen bounds for coverage calculation and remote content fetching.
     let screenBounds = element.axFrame()
-
-    // PIDs seen during traversal, for dedup during remote-content discovery.
     let seenPids = SeenPIDs()
 
     let keys = Self.serializerKeys(options)
@@ -165,16 +150,12 @@ final class FBAXTranslationRequest {
     )
     let mainAppElements = options.narrowing(walked)
 
-    // Coverage of what the read reports and of what it walked; the unfiltered elements are still in
-    // hand, so the second ratio costs no extra traversal of the live tree.
-    //
-    // The live grid stays: remote-content discovery asks it which points the reported elements already
-    // cover, and marks what it hit-tests into it.
+    // The grid stays live: remote-content discovery reads it to skip covered points and marks its hits
+    // into it.
     let grid: FBAccessibilityCoverageGrid? =
       options.collectFrameCoverage ? FBAccessibilityCoverageGrid(screenBounds: screenBounds) : nil
     grid?.markFilled(withElements: mainAppElements)
 
-    // Remote content fetching (only when requested and a translator is present).
     guard let remoteOptions = options.remoteContentOptions, let translator else {
       return buildResponse(
         elements: .tree(mainAppElements),
@@ -212,8 +193,6 @@ final class FBAXTranslationRequest {
 
   // MARK: Remote content
 
-  // Discover remote elements via grid-based hit-testing, skipping PIDs already
-  // seen in the main traversal. Returns the discovered element dictionaries.
   private func discoverRemoteElements(
     screenBounds: CGRect,
     frontmostPid: pid_t,
@@ -245,7 +224,6 @@ final class FBAXTranslationRequest {
 
         let point = CGPoint(x: region.origin.x + x, y: region.origin.y + y)
 
-        // Skip points already covered by native accessibility elements.
         if let coverageGrid, coverageGrid.isFilled(at: point) {
           x += stepSize
           continue
@@ -260,7 +238,6 @@ final class FBAXTranslationRequest {
         hitTranslation.bridgeDelegateToken = token
         let hitPid = hitTranslation.pid
 
-        // Skip PIDs already seen in the main traversal, and the frontmost app itself.
         if seenPids.contains(hitPid) || hitPid <= 0 || hitPid == frontmostPid {
           x += stepSize
           continue
@@ -286,7 +263,7 @@ final class FBAXTranslationRequest {
           token: token,
           keys: keysWithFrame,
           collector: collector,
-          seenPids: nil, // already filtered
+          seenPids: nil,
           isRemote: true
         )
         discoveredElements.append(discovered)
@@ -302,7 +279,6 @@ final class FBAXTranslationRequest {
     return discoveredElements
   }
 
-  // Process remote-content discovery and merge with the main elements.
   private func processRemoteContent(
     mainAppElements: [FBAccessibilityDocumentElement],
     nestedFormat: Bool,
@@ -340,21 +316,17 @@ final class FBAXTranslationRequest {
       }
     }
 
-    // Discovered elements are kept or dropped on what they are, not on which traversal found them —
-    // including by `--match`, or a remote WebView's matching button would be the one element a match
-    // could not find. `additionalFrameCoverage` is measured before the narrowing: it reports what the
-    // hit-test found that the element tree did not expose, independent of what is kept.
+    // Discovered elements honour the same filter and match as the main tree. `additionalFrameCoverage`
+    // is measured before narrowing: it reports what hit-testing found that the tree did not expose.
     let keptDiscovered = FBAccessibilityElementRetention.narrowing(
       discoveredElements, filter: filter, match: match
     )
     var elements = mainAppElements
     if !keptDiscovered.isEmpty {
       if nestedFormat, var applicationElement = elements.first {
-        // Append to the root Application element's children (nested format).
         applicationElement.children = (applicationElement.children ?? []) + keptDiscovered
         elements[0] = applicationElement
       } else {
-        // Append to the flat array.
         elements.append(contentsOf: keptDiscovered)
       }
     }
@@ -369,9 +341,7 @@ final class FBAXTranslationRequest {
         ) : nil,
       screen: Self.screenInfo(fromBounds: screenBounds),
       reportProfile: reportProfile,
-      // The discovered elements were walked too, and were narrowed by the same filter and match, so
-      // they belong on both sides of the count — otherwise a read that hit-tested remote content could
-      // report more matched than it walked. The pairing lives in one place so a test can pin it.
+      // Discovered elements count as walked too, or a read could report more matched than walked.
       narrowing: FBAccessibilityNarrowing(
         filter: filter, match: match,
         walked: walkedElements, discovered: discoveredElements, reported: elements)
@@ -380,10 +350,7 @@ final class FBAXTranslationRequest {
 
   // MARK: - Helpers
 
-  // Builds the response, finalizing profiling timing.
-  //
-  // `truncated` is always false here: this path walks the live element tree with no depth or node
-  // bound, so unlike the guest-backed readers it never returns a partial view.
+  // `truncated` is always false: this path walks the live tree with no depth or node bound.
   private func buildResponse(
     elements: FBAccessibilityElementPayload,
     walkStart: CFAbsoluteTime,
@@ -405,9 +372,8 @@ final class FBAXTranslationRequest {
     )
   }
 
-  /// The screen bounds a read's frames are relative to, or `nil` when the rectangle does not describe
-  /// a screen — a degenerate rectangle is reported as unknown rather than as a zero-sized screen.
-  /// Shared with the marker path, whose bounds come from the root it descended through.
+  /// The screen bounds a read's frames are relative to; `nil` for a degenerate rectangle, so an unknown
+  /// screen is reported as unknown rather than zero-sized.
   static func screenInfo(fromBounds bounds: CGRect) -> FBAccessibilityScreenInfo? {
     guard bounds.width > 0, bounds.height > 0 else {
       return nil
