@@ -49,8 +49,7 @@ public struct FBAccessibilityProfilingData: Sendable, Equatable, Encodable {
   /// acquisition itself spent on XPC, which is reported there as wall time instead.
   public let totalXPCDuration: CFAbsoluteTime
 
-  /// The set of keys that were fetched during serialization. Useful for tests
-  /// to verify which attributes were actually accessed.
+  /// The set of keys that were fetched during serialization.
   public let fetchedKeys: Set<String>
 
   public init(
@@ -92,8 +91,7 @@ public struct FBAccessibilityProfilingData: Sendable, Equatable, Encodable {
     case totalXpcDurationMs = "total_xpc_duration_ms"
   }
 
-  /// Counts stay integers and durations are emitted in milliseconds. `fetchedKeys` is a test-facing
-  /// diagnostic, not part of the reported profile, so it is not encoded.
+  /// `fetchedKeys` is a diagnostic, not part of the reported profile, so it is not encoded.
   public func encode(to encoder: Encoder) throws {
     var container = encoder.container(keyedBy: CodingKeys.self)
     try container.encode(elementCount, forKey: .elementCount)
@@ -122,12 +120,9 @@ extension FBAccessibilityProfilingData: CustomStringConvertible {
   }
 }
 
-/// Describes a fullscreen modal / alert present over the read target. Carried on the internal
-/// SimulatorFrameworkBridge -> FBSimulatorControl wire to enrich the host's view of what is on screen.
-///
-/// Surfaced by the `complete` output format only — see `FBAccessibilityElementsResponse.modal`. It lets
-/// a consumer detect and classify a modal semantically rather than inferring one from an element's
-/// geometry or type, and it stays out of the legacy envelope so that output is byte-stable.
+/// A fullscreen modal / alert over the read target, carried on the SimulatorFrameworkBridge ->
+/// FBSimulatorControl wire. Surfaced only by the `complete` format; the legacy envelope stays
+/// byte-stable.
 public struct FBAccessibilityModalInfo: Sendable, Equatable, Encodable {
 
   /// Who owns the modal: the system shell (SpringBoard — a system/permission alert) or the app itself
@@ -158,8 +153,6 @@ public struct FBAccessibilityModalInfo: Sendable, Equatable, Encodable {
     case label
   }
 
-  /// `label` keeps its key with a `null` value when the guest could not read one, matching the
-  /// document's fixed-key-set rule.
   public func encode(to encoder: Encoder) throws {
     var container = encoder.container(keyedBy: CodingKeys.self)
     try container.encode(kind, forKey: .kind)
@@ -169,29 +162,20 @@ public struct FBAccessibilityModalInfo: Sendable, Equatable, Encodable {
 }
 
 /// Response object containing accessibility elements and optional profiling data.
-///
-/// `elements` is a `Sendable` value type, so a response can cross concurrency domains without an
-/// `@unchecked` conformance.
 public struct FBAccessibilityElementsResponse: Sendable {
 
   /// The accessibility elements: an object (single element) or an array (flat/nested tree).
   public let elements: FBAccessibilityElementPayload
 
-  /// Where the read spent its time, when the backend measured it.
-  ///
-  /// Typed per backend rather than shared: `.translator` and `.guestBridge` measure disjoint phases, and
-  /// the document's `backend` already says which to expect.
+  /// Where the read spent its time, when the backend measured it. `.translator` and `.guestBridge`
+  /// measure disjoint phases; `backend` says which to expect.
   public let profilingData: FBAccessibilityProfile?
 
   /// How much of the screen the read's element frames cover, or `nil` when coverage was not requested.
-  ///
-  /// One value rather than a field per ratio: the reported and walked coverages are computed from the
-  /// same pass over the same read, so a response can never hold one without the other.
   public let coverage: FBAccessibilityCoverage?
 
-  /// A fullscreen modal / alert present over the read target, when one was detected. Emitted by the
-  /// `complete` document and **deliberately absent from the legacy envelope**, whose bytes are frozen
-  /// by the goldens.
+  /// A fullscreen modal / alert over the read target, when detected. Emitted only by the `complete`
+  /// document; the legacy envelope is byte-stable and must not gain it.
   public let modal: FBAccessibilityModalInfo?
 
   /// Whether the read's tree walk was cut short by a depth or node bound, so the elements are a
@@ -238,9 +222,7 @@ public struct FBAccessibilityElementsResponse: Sendable {
     self.narrowing = narrowing
   }
 
-  /// A copy carrying the provenance of the read that produced it. The backend and the query are known
-  /// at the read site rather than by the caller that asked for a format, so each backend stamps what it
-  /// knows on its way out instead of every front-end having to describe the read it just made.
+  /// A copy carrying the read's provenance; a `nil` argument leaves the existing value in place.
   public func withProvenance(
     backend: FBUIAutomationBackendName? = nil,
     target: FBAccessibilityTargetDescriptor? = nil,
@@ -262,9 +244,6 @@ public struct FBAccessibilityElementsResponse: Sendable {
   }
 
   /// A copy reporting what narrowed the read.
-  ///
-  /// A separate stamper rather than an init parameter for the same reason `withProvenance` is one: the
-  /// counts are known where the narrowing runs, which is not where the response is assembled.
   public func withNarrowing(_ narrowing: FBAccessibilityNarrowing) -> FBAccessibilityElementsResponse {
     FBAccessibilityElementsResponse(
       elements: elements,
@@ -297,9 +276,6 @@ public struct FBAccessibilityElementsResponse: Sendable {
   }
 
   /// The `complete` output format for this read.
-  ///
-  /// The document is a plain `Encodable` tree, so the emitted shape is fixed by the types rather than
-  /// assembled as an untyped dictionary.
   public var document: FBAccessibilityDocument {
     let reported = elements.elements.map { $0.reportingChildren() }
     return FBAccessibilityDocument(
@@ -311,8 +287,6 @@ public struct FBAccessibilityElementsResponse: Sendable {
       target: target,
       profile: profilingData,
       coverage: coverage,
-      // Derived from the elements rather than threaded through the read: it is a tally of what was just
-      // serialized, so computing it anywhere else would only create a way for the two to disagree.
       interaction: FBAccessibilityInteractionSummary(elements: reported),
       frames: FBAccessibilityFrameSummary(elements: reported),
       automation: automation,
