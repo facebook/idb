@@ -6,7 +6,6 @@
  */
 
 import Foundation
-import ObjectiveC
 import XCTestBootstrap
 
 /// Helper for FBTestConfigurationTests that wraps XCTestConfiguration interactions.
@@ -14,46 +13,6 @@ import XCTestBootstrap
 /// conflicts with the system XCTest framework. Property access uses KVC since the
 /// private class cannot declare conformance to any Swift-defined protocol.
 final class FBTestConfigurationTestHelper {
-
-  static func createXCTestConfiguration() -> Any {
-    guard let cls = objc_lookUpClass("XCTestConfiguration") as? NSObject.Type else {
-      preconditionFailure("XCTestConfiguration class not found in ObjC runtime")
-    }
-    return cls.init()
-  }
-
-  static func createTestConfiguration(
-    withSessionIdentifier sessionIdentifier: UUID,
-    moduleName: String,
-    testBundlePath: String,
-    path: String,
-    uiTesting: Bool,
-    xcTestConfiguration: Any
-  ) -> FBTestConfiguration {
-    // The init imported from ObjC expects XCTestConfiguration, which is unavailable in
-    // Swift (forward-declared only). Call the ObjC factory method via the runtime instead.
-    let selector = NSSelectorFromString(
-      "configurationWithSessionIdentifier:moduleName:testBundlePath:path:uiTesting:xcTestConfiguration:"
-    )
-    typealias FactoryMethod =
-      @convention(c) (
-        AnyObject, Selector, NSUUID, NSString, NSString, NSString, Bool, AnyObject
-      ) -> AnyObject
-    let metaclass: AnyClass = object_getClass(FBTestConfiguration.self)!
-    let imp = class_getMethodImplementation(metaclass, selector)!
-    let method = unsafeBitCast(imp, to: FactoryMethod.self)
-    let result = method(
-      FBTestConfiguration.self,
-      selector,
-      sessionIdentifier as NSUUID,
-      moduleName as NSString,
-      testBundlePath as NSString,
-      path as NSString,
-      uiTesting,
-      xcTestConfiguration as AnyObject
-    )
-    return result as! FBTestConfiguration
-  }
 
   static func createTestConfigurationByWritingToFile(
     withSessionIdentifier sessionIdentifier: UUID,
