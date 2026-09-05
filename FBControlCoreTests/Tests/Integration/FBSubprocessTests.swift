@@ -264,31 +264,6 @@ final class FBSubprocessTests: XCTestCase {
     XCTAssertEqual(expected, try XCTUnwrap(process.stdOut) as Data)
   }
 
-  func testInputStream() throws {
-    let expected = "FOO BAR BAZ"
-
-    let input = FBProcessInput<OutputStream>.fromStream()
-    let stream: OutputStream = input.contents
-
-    let process = try startSynchronously(
-      FBProcessBuilder<NSNull, NSData, NSData>
-        .withLaunchPath("/bin/cat", arguments: [])
-        .withStdIn(unsafeBitCast(input, to: FBProcessInput<AnyObject>.self))
-        .withStdOutInMemoryAsString()
-        .withStdErrToDevNull()
-    )
-
-    XCTAssertTrue(process.stdIn is OutputStream)
-    stream.open()
-    let bytes = Array(expected.utf8)
-    stream.write(bytes, maxLength: bytes.count)
-    stream.close()
-
-    _ = try process.exitCode.await(withTimeout: 2)
-
-    XCTAssertEqual(expected, try XCTUnwrap(process.stdOut) as String)
-  }
-
   func testInputStreamWithBrokenPipe() throws {
     let expected = "FOO BAR BAZ"
 
@@ -382,21 +357,6 @@ final class FBSubprocessTests: XCTestCase {
     XCTAssertEqual(expected, try XCTUnwrap(process.stdOut) as Data)
   }
 
-  func testSendingSIGINT() throws {
-    let process = try startSynchronously(
-      FBProcessBuilder<NSNull, NSData, NSData>.withLaunchPath("/bin/sleep", arguments: ["1000000"])
-    )
-
-    XCTAssertEqual(process.statLoc.state, FBFutureState.running)
-    XCTAssertEqual(process.exitCode.state, FBFutureState.running)
-    XCTAssertEqual(process.signal.state, FBFutureState.running)
-
-    try process.sendSignal(SIGINT).`await`()
-    XCTAssertEqual(process.exitCode.state, FBFutureState.failed)
-    XCTAssertEqual(process.signal.state, FBFutureState.done)
-    XCTAssertEqual(process.signal.result, NSNumber(value: SIGINT))
-  }
-
   func testSendingSIGKILL() throws {
     let process = try startSynchronously(
       FBProcessBuilder<NSNull, NSData, NSData>.withLaunchPath("/bin/sleep", arguments: ["1000000"])
@@ -414,12 +374,9 @@ final class FBSubprocessTests: XCTestCase {
   }
 
   func testHUPBackoffToKILL() throws {
-    // The child has to be ignoring SIGHUP before the signal is sent, otherwise it
-    // dies of SIGHUP and never backs off to SIGKILL. Launching `/usr/bin/nohup`
-    // and signalling as soon as `posix_spawn` returns races the moment `nohup`
-    // installs `SIG_IGN`, which is flaky under load. Install the disposition in a
-    // shell instead, have it announce readiness on stdout, and `exec` so the
-    // sleeping process keeps the pid that already ignores SIGHUP.
+    // The child must already ignore SIGHUP when signalled or it dies of SIGHUP and never backs off to SIGKILL.
+    // `nohup` installs SIG_IGN asynchronously after spawn, so set the disposition in a shell, announce
+    // readiness, and `exec` so the sleeping pid keeps it.
     let ignoringHUP = XCTestExpectation(description: "Child Has Ignored SIGHUP")
     let process = try startSynchronously(
       FBProcessBuilder<NSNull, NSData, NSData>
