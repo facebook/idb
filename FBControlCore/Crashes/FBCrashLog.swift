@@ -7,7 +7,7 @@
 
 import Foundation
 
-/// The kind of process that has crashed, with the member names the `NS_OPTIONS` importer produced.
+/// The kind of process that crashed.
 public struct FBCrashLogInfoProcessType: OptionSet, Sendable {
   public let rawValue: UInt
 
@@ -54,7 +54,6 @@ private let FBCrashLog_dateFormatter: DateFormatter = {
   return formatter
 }()
 
-/// The ways crash-log reading and parsing can fail, as data rather than assembled strings.
 public enum FBCrashLogError: Error {
   case fileDoesNotExist(path: String)
   case fileNotReadable(path: String)
