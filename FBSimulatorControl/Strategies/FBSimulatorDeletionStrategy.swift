@@ -9,7 +9,6 @@
 @preconcurrency import FBControlCore
 @preconcurrency import Foundation
 
-/// The way deletion fails when the set never forgets the simulator, as data rather than an assembled string.
 public enum FBSimulatorDeletionError: Error, LocalizedError {
   case removalTimedOut
 
@@ -34,17 +33,14 @@ final class FBSimulatorDeletionStrategy {
     }
     let logger = simulator.logger
 
-    // Kill the Simulator before deleting it.
     logger.log("Killing Simulator, in preparation for deletion \(simulator)")
     try await FBSimulatorShutdownStrategy.shutdown(simulator)
 
-    // Then follow through with the actual deletion of the Simulator, which will remove it from the set.
     logger.log("Deleting Simulator \(simulator)")
     try await performDeletion(of: simulator.device, on: set.deviceSet, queue: simulator.asyncQueue)
 
     logger.log("Simulator \(udid) Deleted")
 
-    // The Logfiles now need disposing of.
     if FileManager.default.fileExists(atPath: coreSimulatorLogsDirectory) {
       logger.log("Deleting Simulator Log Directory at \(coreSimulatorLogsDirectory)")
       do {
