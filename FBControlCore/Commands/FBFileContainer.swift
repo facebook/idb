@@ -34,8 +34,6 @@ public protocol FBContainedFile: Sendable {
   var pathMapping: [String: String]? { get }
 }
 
-/// The failures a file container can produce, as data: which operation, on what,
-/// and what underlying error caused it - instead of a stringly-built `NSError`.
 public enum FBFileContainerError: Error {
   case copyIntoContainerFailed(source: String, destination: String, underlying: Error)
   case sourceDoesNotExist(source: String)
@@ -104,7 +102,6 @@ public final class FileContainerTailOperation {
     self.completed = completed
   }
 
-  /// Cancels the tail and waits for the cancellation to complete.
   public func cancel() async throws {
     try await bridgeFBFutureVoid(self.completed.cancel())
   }
@@ -490,7 +487,6 @@ private struct ContainedFile_Mapped_Host: FBContainedFile, CustomStringConvertib
   }
 
   private static func isRootPathOfContainer(_ pathComponents: [String]) -> Bool {
-    // No components, or a lone "." or "/", all address the root of the container.
     if pathComponents.isEmpty {
       return true
     }
@@ -501,7 +497,6 @@ private struct ContainedFile_Mapped_Host: FBContainedFile, CustomStringConvertib
   }
 
   private static func popFirstPathComponent(_ pathComponents: [String]) -> String {
-    // Re-assemble the mapped path, discarding the re-mapped first path component.
     pathComponents.dropFirst().reduce("") { ($0 as NSString).appendingPathComponent($1) }
   }
 }
