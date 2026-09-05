@@ -147,9 +147,7 @@ private func bitmapStreamPixelBufferAttributes(from pixelBuffer: CVPixelBuffer) 
 
 // MARK: - FBSimulatorVideoStream
 
-/// A Video Stream of a Simulator's Framebuffer.
-/// This component can be used to provide a real-time stream of a Simulator's Framebuffer.
-/// This can be connected to additional software via a stream to a File Handle or Fifo.
+/// A real-time video stream of a Simulator's framebuffer, written to an `FBDataConsumer`.
 ///
 /// Concurrency model: the actor serializes start/stop, framebuffer event handling, and every frame
 /// push. Framebuffer events arrive on the attachment's ordered `AsyncStream`, consumed by an
@@ -185,12 +183,8 @@ public actor FBSimulatorVideoStream: FBVideoStream {
     let eventTask: Task<Void, Never>
   }
 
-  /// The stream lifecycle, advanced only by `startStreaming`, the first surface mount, and
-  /// `stopStreaming`. One-way: `.idle` → `.starting` → `.streaming` → `.stopped` (a stop is legal
-  /// from `.starting`, and a failed initial mount unwinds `.starting` back to `.idle`). Holding the
-  /// session and the start awaiters as payloads of the phase they belong to makes the invalid
-  /// states — a stopped stream with pending start awaiters, a mounted stream without a consumer —
-  /// unrepresentable, and each transition resumes exactly the awaiters that can no longer progress.
+  /// One-way: `.idle` → `.starting` → `.streaming` → `.stopped`. A stop is legal from `.starting`; a
+  /// failed initial mount unwinds `.starting` back to `.idle`.
   private enum Lifecycle: Sendable {
     /// Never started; a `startStreaming` may begin.
     case idle
@@ -220,7 +214,6 @@ public actor FBSimulatorVideoStream: FBVideoStream {
   /// finished in `cadenceTeardown`. Nil in `.eager` mode (the cadence clock drives pushes there).
   private var lazyTriggers: LazyFrameTriggers?
 
-  /// CVPixelBuffer is ARC-managed; held strong and released automatically.
   var pixelBuffer: CVPixelBuffer?
   var timeAtFirstFrame: CFTimeInterval = 0
   var timeAtLastPush: CFTimeInterval = 0
@@ -249,16 +242,12 @@ public actor FBSimulatorVideoStream: FBVideoStream {
 
   // MARK: - Initializers
 
-  /// Constructs a Bitmap Stream.
-  /// Bitmaps will only be written when there is a new bitmap available.
-  ///
-  /// Static factories (rather than initializers) since they must derive the cadence strategy.
+  /// Makes a stream with no edge insets. Cadence is derived from `configuration.framesPerSecond`.
   public static func make(framebuffer: FBFramebuffer, configuration: FBVideoStreamConfiguration, logger: any FBControlCoreLogger) -> FBSimulatorVideoStream {
     make(framebuffer: framebuffer, configuration: configuration, edgeInsets: FBVideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0), logger: logger)
   }
 
-  /// Constructs a Bitmap Stream with edge insets for overlay content.
-  /// Insets extend the output frame dimensions, pushing video content inward.
+  /// Makes a stream whose output frame is extended by `edgeInsets` (reserved for overlay content).
   public static func make(framebuffer: FBFramebuffer, configuration: FBVideoStreamConfiguration, edgeInsets: FBVideoStreamEdgeInsets, logger: any FBControlCoreLogger) -> FBSimulatorVideoStream {
     FBSimulatorVideoStream(
       framebuffer: framebuffer,
@@ -282,7 +271,7 @@ public actor FBSimulatorVideoStream: FBVideoStream {
       encodedSampleConsumerOverride: fileWriter)
   }
 
-  /// Starts a Bitmap Stream to `consumer` and returns the running handle.
+  /// Makes and starts a stream to `consumer`.
   public static func start(framebuffer: FBFramebuffer, configuration: FBVideoStreamConfiguration, edgeInsets: FBVideoStreamEdgeInsets = FBVideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0), to consumer: any FBDataConsumer, logger: any FBControlCoreLogger) async throws -> FBSimulatorVideoStream {
     let stream = make(framebuffer: framebuffer, configuration: configuration, edgeInsets: edgeInsets, logger: logger)
     try await stream.startStreaming(consumer)
@@ -358,9 +347,7 @@ public actor FBSimulatorVideoStream: FBVideoStream {
       do {
         try mountSurface(surface)
       } catch {
-        // Unwind the partial start so the failure is observable and nothing stays registered. The
-        // awaiter list is still empty here, so this only tears the session down — the error reaches
-        // the caller by being thrown rather than resumed.
+        // No awaiters exist yet, so this only tears the session down; the error is thrown to the caller.
         failPendingStart(with: error)
         throw error
       }
@@ -394,8 +381,7 @@ public actor FBSimulatorVideoStream: FBVideoStream {
       session = active
       pendingStartAwaiters = []
     }
-    // The transition is unconditional: even a failing frame-pusher teardown leaves the stream
-    // `.stopped` with every awaiter resumed — "torn down but not stopped" is unrepresentable.
+    // Transition first so a failing pusher teardown still leaves the stream `.stopped` with awaiters resumed.
     lifecycle = .stopped
     session.attachment.cancel()
     session.eventTask.cancel()
@@ -409,11 +395,8 @@ public actor FBSimulatorVideoStream: FBVideoStream {
       }
     }
     timedMetadataConsumer = nil
-    // Clean up overlay compositing resources (ARC-managed; dropping references releases them).
     overlayBuffer = nil
     compositedBufferPool = nil
-    // Tear down the cadence machinery: cancels the push-loop task (the loop exits on
-    // `Task.isCancelled`) and, in `.lazy` mode, finishes the trigger stream.
     cadenceTeardown()
     resumeStopAwaiters()
     for awaiter in pendingStartAwaiters {
@@ -451,10 +434,8 @@ public actor FBSimulatorVideoStream: FBVideoStream {
 
   // MARK: - Private
 
-  /// Tear down the push-loop machinery, called from `stopStreaming`. Finishes the `.lazy` trigger
-  /// stream (ending its `for await`) and cancels the push-loop task — cancellation also wakes the
-  /// `.eager` loop if it is suspended in `Task.sleep`. The event task is the session's and is
-  /// cancelled by `stopStreaming` alongside the attachment.
+  /// Finishes the `.lazy` trigger stream and cancels the push-loop task (cancellation also wakes an
+  /// `.eager` loop suspended in `Task.sleep`).
   func cadenceTeardown() {
     lazyTriggers?.finish()
     lazyTriggers = nil
@@ -493,10 +474,7 @@ public actor FBSimulatorVideoStream: FBVideoStream {
   // MARK: - Private (Surface)
 
   func mountSurface(_ surface: IOSurface) throws {
-    // Make a Buffer from the Surface. The previous pixelBuffer is ARC-managed; assigning
-    // releases it automatically (the ObjC code called CVPixelBufferRelease here manually).
-    // CVPixelBufferCreateWithIOSurface returns a +1 buffer via an Unmanaged out-param, so we
-    // take ownership with takeRetainedValue() (ARC then manages it from here).
+    // CVPixelBufferCreateWithIOSurface returns +1 via an Unmanaged out-param; takeRetainedValue() adopts it.
     var unmanagedBuffer: Unmanaged<CVPixelBuffer>?
     let status = CVPixelBufferCreateWithIOSurface(nil, surface, nil, &unmanagedBuffer)
     if status != kCVReturnSuccess {
@@ -510,7 +488,6 @@ public actor FBSimulatorVideoStream: FBVideoStream {
       throw FBSimulatorVideoStreamError.mountSurfaceWithoutConsumer
     }
 
-    // Get the Attributes
     let attributes = bitmapStreamPixelBufferAttributes(from: buffer)
     logger.log("Mounting Surface with Attributes: \(FBCollectionInformation.oneLineDescription(from: attributes))")
 
@@ -540,8 +517,6 @@ public actor FBSimulatorVideoStream: FBVideoStream {
         ?? FBTransportTimedMetadataConsumer(consumer: consumer, timedMetadataWriter: transportTimedMetadataWriter)
     }
 
-    // Set up overlay compositing infrastructure.
-    // Metal-backed CIContext for GPU compositing — created once, reused across frames.
     if compositorCIContext == nil {
       if let device = MTLCreateSystemDefaultDevice() {
         compositorCIContext = CIContext(mtlDevice: device, options: [.cacheIntermediates: false])
@@ -549,8 +524,6 @@ public actor FBSimulatorVideoStream: FBVideoStream {
         compositorCIContext = CIContext(options: [.cacheIntermediates: false])
       }
     }
-    // IOSurface-backed BGRA pixel buffer pool for composited output (ARC-managed).
-    // Include edge insets in the pool dimensions so the composited frame has room for overlay content.
     compositedBufferPool = nil
     let insets = edgeInsets
     // Must agree exactly with the encoder's dimensions — both derive from FBVideoOutputDimensions.
@@ -583,13 +556,9 @@ public actor FBSimulatorVideoStream: FBVideoStream {
       }
     }
 
-    // Start the push-loop task that drives frame pushes — once; a surface re-mount just swaps
-    // `pixelBuffer` for the running loop to pick up. The stimulus differs by cadence: `.eager`
-    // iterates the fixed-rate `FrameCadence` clock; `.lazy` iterates `LazyFrameTriggers`, poked by
-    // the framebuffer frame-rendered events and `updateOverlayBuffer`. Both feed the same loop.
-    // The task holds the stream weakly (upgraded per trigger inside the loop): a strong capture
-    // would make the task and the actor keep each other alive, so a stream released without
-    // `stopStreaming` would push frames forever and the `deinit` backstop could never run.
+    // Started once; a surface re-mount just swaps `pixelBuffer` for the running loop. The task holds the
+    // stream weakly: a strong capture would make task and actor keep each other alive, so a stream dropped
+    // without `stopStreaming` would push forever and `deinit` could never run.
     guard framePusherTask == nil else { return }
     switch cadence {
     case let .eager(framesPerSecond):
@@ -671,8 +640,6 @@ public actor FBSimulatorVideoStream: FBVideoStream {
       }
     }
 
-    // Push the Frame. The composited buffer (if any) is ARC-managed and released when
-    // bufferToEncode goes out of scope (the ObjC code called CVPixelBufferRelease here).
     try? framePusher.writeEncodedFrame(
       bufferToEncode,
       frameNumber: frameNumber,
@@ -680,14 +647,12 @@ public actor FBSimulatorVideoStream: FBVideoStream {
       frameDuration: frameDuration,
       forceKeyFrame: forceKeyFrame)
 
-    // Increment frame counter
     self.frameNumber = frameNumber + 1
   }
 
   // MARK: - Compression Properties
 
-  /// Builds the compression session properties dictionary for a given configuration and caller-provided properties.
-  /// This is extracted for testability — the dictionary is passed to VTSessionSetProperties at stream start.
+  /// The `VTSessionSetProperties` dictionary for `configuration`, with `callerProperties` layered on top.
   public static func compressionSessionProperties(for configuration: FBVideoStreamConfiguration, callerProperties: [String: Any]) -> [String: Any] {
     var derived: [String: Any] = [
       kVTCompressionPropertyKey_RealTime as String: true,
@@ -710,7 +675,6 @@ public actor FBSimulatorVideoStream: FBVideoStream {
       // Explicit bitrate: AverageBitRate is in bits/sec
       derived[kVTCompressionPropertyKey_AverageBitRate as String] = bitrate
     case let .quality(quality):
-      // Constant-quality mode
       derived[kVTCompressionPropertyKey_Quality as String] = quality
     }
 
@@ -844,10 +808,7 @@ public actor FBSimulatorVideoStream: FBVideoStream {
       throw FBSimulatorVideoStreamError.noPixelBufferForScreenshot
     }
 
-    // Build a CIImage, compositing the overlay if present, or applying edge inset padding.
-    // Unlike pushFrame (which needs a CVPixelBuffer for the encoder), the screenshot path only
-    // needs a CGImage, so we skip the intermediate buffer and go directly from the composited
-    // CIImage to createCGImage.
+    // Only a CGImage is needed here, so render the composited CIImage directly rather than via a pool buffer.
     let ciImage = compositedImage(fromSource: sourceBuffer) ?? CIImage(cvPixelBuffer: sourceBuffer)
 
     let ctx = compositorCIContext ?? CIContext()
@@ -926,26 +887,14 @@ public actor FBSimulatorVideoStream: FBVideoStream {
 
   // MARK: - Cadence Loop
 
-  /// The frame push loop, shared by both cadences. It iterates a stimulus `AsyncSequence` of
-  /// `FrameTrigger`s and pushes a frame for each, so the loop reads as "for each trigger, push a
-  /// frame, record it". The stimulus is the only thing that differs between modes: `FrameCadence`
-  /// (the drift-corrected fixed-rate clock) for `.eager`, or `LazyFrameTriggers` (fed by
-  /// the damage/overlay callbacks) for `.lazy`. `stats` is provided for `.eager` (which has a frame
-  /// budget) and `nil` for `.lazy` (VFR has no fixed budget).
+  /// The frame push loop shared by both cadences: for each trigger, push a frame and record it.
   ///
-  /// Serialization: the loop runs on the actor, so each push — and the stream-state mutation it does
-  /// (`frameNumber`, `timeAtLastPush`, the frame pusher's encoder state) — is serialized with every
-  /// other isolated method, and the `for await` suspension between triggers lets other actor work
-  /// (events, accessors, stop) interleave between pushes.
-  ///
-  /// The loop ends when the task is cancelled (`stopStreaming`/`cadenceTeardown` cancel it, and
-  /// `deinit` cancels as a backstop) or the stimulus finishes (the `.lazy` teardown finishes the
-  /// stream).
+  /// Runs on the actor, so each push (and the state it mutates) is serialized with every other isolated
+  /// method; the `for await` suspension between triggers lets events, accessors and stop interleave.
+  /// Ends on task cancellation or when the stimulus finishes.
   // Concrete overloads rather than one generic loop: iterating a generic `AsyncSequence` from
-  // actor-isolated code cannot prove the conformance nonisolated (SE-0470); both concrete stimuli
-  // are nonisolated, non-throwing sequences, so each loop is a plain `for await`. The loops are
-  // static and hold the stream weakly, upgrading per trigger — a strong reference held across the
-  // loop would recreate the task↔stream retain cycle that keeps a dropped stream pushing forever.
+  // actor-isolated code cannot prove the conformance nonisolated (SE-0470). Static and weakly-held so the
+  // loop does not recreate the task↔stream retain cycle.
   private static func runFramePushLoop(stimulus: LazyFrameTriggers, stats: CadenceStats?, stream: () -> FBSimulatorVideoStream?) async {
     var stats = stats
     for await trigger in stimulus {
