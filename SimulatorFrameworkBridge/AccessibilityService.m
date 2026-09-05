@@ -29,24 +29,20 @@ static NSString *const kAXIdentifier = @"XC_kAXXCAttributeIdentifier";
 static NSString *const kAXFrame = @"XC_kAXXCAttributeFrame";
 static NSString *const kAXAutomationType = @"XC_kAXXCAttributeAutomationType";
 static NSString *const kAXChildren = @"XC_kAXXCAttributeChildren";
-// The two attributes the runtime answers with a CGPoint. `VisiblePoint` is the point the accessibility
-// server believes a touch actually reaches, and reads `(-1, -1)` when it believes none does; `CenterPoint`
-// is the element's own centre. They are carried verbatim — the sentinel included — because deciding what
-// an unreachable element means is the host's job, not the reader's.
+// Both answered as CGPoint. `VisiblePoint` reads `(-1, -1)` when the server believes no touch reaches the
+// element; carried verbatim, sentinel included — deciding what unreachable means is the host's job.
 static NSString *const kAXVisiblePoint = @"XC_kAXXCAttributeVisiblePoint";
 static NSString *const kAXCenterPoint = @"XC_kAXXCAttributeCenterPoint";
-// Whether the accessibility server can name any point at which a touch reaches the element. Read by the
-// walk to decide which nodes are worth explaining; the host reads it too, for its own verdict.
+// Whether the server can name a point at which a touch reaches the element; the walk uses it to pick
+// nodes worth explaining.
 static NSString *const kAXIsVisible = @"XC_kAXXCAttributeIsVisible";
 
 static NSString *const kRequestVerb = @"verb";
 static NSString *const kRequestPid = @"pid";
 static NSString *const kRequestMaxDepth = @"maxDepth";
 static NSString *const kRequestMaxNodes = @"maxNodes";
-// The attributes a read fetches for each element. Optional: a request that names none gets
-// `FBAXBridgeDefaultFetchList()`. The host owns the choice for the same reason it owns the depth and
-// node bounds — so every backend fetches alike — and naming them per request keeps an attribute nobody
-// asked for off the wire entirely rather than merely out of the serialized output.
+// The attributes fetched per element. Optional: absent means `FBAXBridgeDefaultFetchList()`. Named per
+// request so an attribute nobody asked for stays off the wire entirely.
 static NSString *const kRequestAttributes = @"attributes";
 // Whether this read wants the device in accessibility automation mode. Tri-state on purpose: **absent**
 // means observe and report without touching the device, which is what a host that does not know about
@@ -56,48 +52,32 @@ static NSString *const kRequestAutomationMode = @"automationMode";
 // Asks the walk to explain each element the accessibility server reports unreachable, by hit-testing that
 // element's centre and reporting whatever answered. Optional and off by default: it costs an extra AX
 // round trip per unreachable element, and only a caller that intends to use the answer should pay.
-//
-// Done in-guest rather than by the host issuing one hit-test per element. The host has no cheaper way to
-// ask — every hit-test would be a separate spawn or socket exchange — whereas here the runtime is already
-// bound, the tree is already being walked, and the answers ride home inside the response that was coming
-// anyway. One round trip instead of one per element.
 static NSString *const kRequestExplainUnreachable = @"explainUnreachable";
-// Reads through the accessibility translator's vocabulary instead of XCTest's. Off by default and
-// opt-in per request: the two disagree on some screens, and which one a caller wants is not a decision
-// this reader should make for them silently.
+// Reads through the translator's vocabulary instead of XCTest's. Off by default; the two disagree on
+// some screens.
 static NSString *const kRequestTranslatorVocabulary = @"translatorVocabulary";
 // Reads the whole subtree in one call, through `userTestingSnapshotForElement:options:error:`, instead
 // of one call per node. Selected by the host's `single-fetch` traversal; the per-node walk is still the
 // default.
 static NSString *const kRequestSnapshotTree = @"snapshotTree";
-// The synthetic per-node key the explanation is reported under. Not an `XC_kAXXC*` attribute — the
-// accessibility server does not vend this; the reader derives it — so it is spelled in the reader's own
-// namespace to keep the two kinds of key distinguishable on the wire.
+// Reader-derived keys (below) are spelled in the reader's own namespace, not `XC_kAXXC*`, so the two
+// kinds stay distinguishable on the wire.
 static NSString *const kNodeExplainedBy = @"FBExplainedBy";
-// The translator's own `enabled` answer, in the reader's namespace for the same reason: XCTest's
-// vocabulary has no counterpart, which is exactly why a read through it reports `enabled` as an explicit
-// null. Only a read through the translator's vocabulary carries this.
+// The translator's own `enabled` answer; XCTest's vocabulary has no counterpart. Only a translator read
+// carries this.
 static NSString *const kNodeIsEnabled = @"FBIsEnabled";
-// The translator's `role`, carried as the translator's own integer.
-//
-// Deliberately not folded into `elementType`: that field carries `XCUIElementType` names, the mapping
-// from these integers onto them is only partly known, and a number where every consumer expects a name
-// is worse than an absent field. It rides the wire unmapped so the mapping can be derived from real
-// screens. The host maps the identified integers and leaves the rest unmapped.
+// The translator's `role`, carried as its raw integer for the host to map. Not folded into `elementType`,
+// which carries `XCUIElementType` names.
 static NSString *const kNodeTranslatorRole = @"FBTranslatorRole";
-// The translator's `subrole`, again as its own integer. It refines the role rather than replacing it —
-// a toggle is a check box with a switch subrole, a search field is a text field with a search subrole —
-// so the two are carried separately and the host decides which name to report.
+// The translator's `subrole`, as its raw integer; it refines the role rather than replacing it.
 static NSString *const kNodeTranslatorSubrole = @"FBTranslatorSubrole";
 // The `UIAccessibilityTraits` bitmask, carried raw. Decoding it needs the trait constants, which live in
 // a macOS-only header this binary cannot import — so the number rides the wire and the host names it.
 static NSString *const kNodeTraits = @"FBTraits";
-// A per-element identity from the translator. Carried so two reads can be compared element by element —
-// which is what distinguishes "this tree is the previous screen" from "this tree happens to look alike".
+// A per-element identity from the translator, so two reads can be compared element by element.
 static NSString *const kNodeElementIdentity = @"FBElementIdentity";
 // Present only on a node where at least one attribute failed to read, mapping the attribute's key to the
-// reason. Separate from the attributes themselves because a failure is not a value: the key it failed for
-// reads as null, and this says why rather than leaving the caller to guess it was never asked for.
+// reason.
 static NSString *const kNodeAttributeReadFailures = @"FBAttributeReadFailures";
 // Echoed back by the shutdown verb so a caller can tell an honoured shutdown from an ok-shaped response
 // to something else.
@@ -120,13 +100,9 @@ static NSString *const kResponseError = @"error";
 // A successful hit-test that found no element at the point: `{ok:true, empty:true}` — distinct from a
 // reader failure (`{ok:false, error:...}`), so the host can tell empty space from a broken reader.
 static NSString *const kResponseEmpty = @"empty";
-// A machine-readable failure kind: what went wrong, as a closed vocabulary, so the host chooses what to
-// tell the user structurally rather than by matching the free-text `error` string. The `error` still
-// carries the detail — the kind decides which remedy, if any, applies to it.
-//
-// A failure with no kind is a reader failure with nothing further to say about it. That is the default,
-// and a host that does not know a kind must treat it as one, so adding a value here degrades an older
-// host's precision rather than breaking it.
+// A closed-vocabulary failure kind, so the host picks a remedy structurally rather than by matching the
+// free-text `error`. Absent kind = plain reader failure; a host must treat an unknown kind the same way,
+// so adding a value here degrades an older host's precision rather than breaking it.
 static NSString *const kResponseErrorKind = @"error_kind";
 // The named process has no accessibility server: a dead pid, or a process that is not an application.
 static NSString *const kErrorKindApplicationUnavailable = @"application_unavailable";
@@ -151,23 +127,11 @@ static NSString *const kResponseTruncated = @"truncated";
 // of a hit-test result.
 static NSString *const kResponsePid = @"pid";
 static NSString *const kResponseMethod = @"method";
-// The device's accessibility automation mode as it stood for this read, and whether this read changed it.
-// Reported on every describe rather than only when it changes: a caller cannot otherwise tell a tree read
-// with subtree collapsing on from the same tree read with it off, and the two are genuinely different
-// answers to the same question.
+// The automation mode this read ran under, and whether this read changed it. Reported on every describe:
+// a tree read with subtree collapsing on is a different answer from the same tree read with it off.
 static NSString *const kResponseAutomation = @"automation";
-// Where the guest spent its time, and how many round trips it took to get there. Reported on every
-// describe rather than behind a flag: the cost is a handful of clock reads against a walk measured in
-// milliseconds.
-//
-// The guest reports only what the guest can see. Spawn, connect, transport and decode all happen on the
-// host side of the boundary and are the host's to measure.
-//
-// Guest-side JSON encoding is deliberately **not** reported, because it cannot honestly be: the encode
-// duration is only known once the response has been encoded, and by then the dictionary that would have
-// carried it is already bytes. Measuring it would mean encoding twice, or carrying it out of band. It
-// therefore falls into the host's residual — total, less what the guest reports, less what the host
-// measures either side of the wire — and the host names it as a residual rather than as a measurement.
+// Where the guest spent its time and how many round trips it took. Reported on every describe (a handful
+// of clock reads). Guest-side JSON encoding is not included — it falls into the host's residual.
 static NSString *const kResponsePhases = @"phases";
 static NSString *const kPhaseTraverse = @"traverse_ms";
 static NSString *const kPhaseMachRoundTrips = @"mach_round_trips";
@@ -188,16 +152,10 @@ static NSString *const kAlertControllerClassPrefix = @"_UIAlertController";
 
 static NSString *const kVerbDescribe = @"describe";
 static NSString *const kVerbHitTest = @"hittest";
-// Asks a `serve` process to exit. Answered before exiting so the caller learns it was honoured, and
-// honoured only by `serve` — a one-shot `describe` has nothing to shut down and says so.
-//
-// The serve loop accepts one client at a time and stays inside that connection until the client goes
-// away, so a caller that gets *any* answer is the only client there is. That is what lets a host decide
-// a bridge is free without asking the guest who else is attached: being answered is the proof.
+// Asks a `serve` process to exit; answered before exiting so the caller learns it was honoured. The serve
+// loop holds one client at a time, so any answer proves the caller is the only client — being answered is
+// how a host learns a bridge is free.
 static NSString *const kVerbShutdown = @"shutdown";
-// Two write verbs rather than one: performing a semantic action and setting an attribute are separate
-// runtime calls that take different arguments, and fusing them would leave every request carrying a field
-// the other kind ignores.
 static NSString *const kVerbPerform = @"perform";
 static NSString *const kVerbSetValue = @"setvalue";
 static NSString *const kActionServe = @"serve";
@@ -228,13 +186,12 @@ static const int kDefaultNodeBudget = 5000;
 
 #pragma mark - AX client setup
 
-// Set by `FBAXBridgeSetRuntimeForTesting` to stand in for the live runtime. Nil in the product, and the
-// only reason this file knows the runtime has more than one possible conformer.
+// Set by `FBAXBridgeSetRuntimeForTesting`; nil in the product.
 static id<FBAXRuntime> gInjectedRuntime = nil;
 
 // The runtime is bound once and reused across requests: `dlopen` + `initForRemoteAccess` is the
-// dominant setup cost (~260ms), so caching it is what makes the persistent `serve` mode fast (the
-// oneshot path binds it once too). Not thread-safe by design — requests are handled serially.
+// dominant setup cost (~260ms), so caching it is what makes the persistent `serve` mode fast.
+// Not thread-safe by design — requests are handled serially.
 static id<FBAXRuntime> _Nullable FBAXBridgeSharedRuntime(NSString *_Nullable *_Nullable error)
 {
   if (gInjectedRuntime) {
@@ -264,9 +221,7 @@ void FBAXBridgeSetRuntimeForTesting(id<FBAXRuntime> _Nullable runtime)
   gInjectedRuntime = runtime;
 }
 
-// What an explanation reports about the element that answered a hit-test: enough for the host to
-// recognise it inside the tree it already holds, and to name it to a caller. Deliberately short — this is
-// read once per unreachable element, so every name here is paid for many times over.
+// Kept short: read once per unreachable element.
 static NSArray<NSString *> *FBAXBridgeExplanationFetchList(void)
 {
   return @[kAXElementType, kAXLabel, kAXIdentifier, kAXFrame, kAXAutomationType];
@@ -282,22 +237,11 @@ static NSArray<NSString *> *FBAXBridgeDefaultFetchList(void)
   ];
 }
 
-// The attributes this request asks each element to be read with.
+// Names are forwarded unfiltered — the vocabulary is far wider than the constants here. The children key
+// is always appended: the walk recurses on it, and omitting it would flatten the tree to its root.
 //
-// A request that names none — or names them malformed — gets the default list. The list is filtered to
-// strings rather than rejected wholesale on one bad member: `attributesForElement:` takes an array of
-// names, and a non-string in it is the caller's mistake to lose, not grounds to fail a read that is
-// otherwise well formed.
-//
-// The children key is always appended when absent. It is what the walk recurses on, so a request that
-// omitted it would not narrow the read — it would flatten the tree to its root.
-// Names are forwarded as the caller gave them, deliberately: the vocabulary is far wider than the handful
-// this file names constants for, so filtering against a known set here would reject legitimate attributes.
-//
-// The hazard that leaves is worth knowing. The framework maps each name to a number and drops any it has no
-// number for, then treats the resulting count mismatch as a failure of the whole read — so a single name it
-// does not recognise costs every attribute for that node rather than just itself. A caller that finds a
-// whole read failing after adding one key should suspect the key before suspecting the element.
+// Hazard: the framework drops any name it has no number for, then fails the whole read on the count
+// mismatch — one unknown key costs every attribute for that node, not just itself.
 static NSArray<NSString *> *FBAXBridgeFetchListForRequest(NSDictionary<NSString *, id> *request)
 {
   id requested = request[kRequestAttributes];
@@ -319,13 +263,9 @@ static NSArray<NSString *> *FBAXBridgeFetchListForRequest(NSDictionary<NSString 
   return attributes;
 }
 
-// Round trips to the application's accessibility server, counted rather than inferred from the node
-// count — which would undercount by up to 2x: the translator vocabulary asks for attributes and
-// children separately (two round trips per node), and explaining an unreachable element adds a
-// hit-test and a read that no node accounts for.
-//
-// A file-static is safe here: a one-shot guest answers a single request per process, and the serve loop
-// answers one at a time.
+// Counted rather than inferred from node count, which would undercount by up to 2x (the translator walk
+// makes two requests per node; explaining an unreachable element adds two more). A file-static is safe:
+// requests are answered one at a time.
 static int64_t gRoundTrips;
 
 static void FBAXBridgeCountRoundTrip(void)
@@ -333,12 +273,8 @@ static void FBAXBridgeCountRoundTrip(void)
   gRoundTrips++;
 }
 
-// A union that arrived in a shape its own constructors cannot produce — a `Read` with no attributes, a
-// `Hit` with no element. Unreachable while the outcome types are built only through their factories, and
-// reported rather than trusted because the alternative is putting a null tree on the wire.
-//
-// An error and not an exception: this guest serves requests on a long-lived connection, and the one thing
-// a malformed answer must not become is a dead reader that takes every later request with it.
+// An outcome whose status and payload disagree. Unreachable through the factories; reported as a response
+// rather than raised because the guest serves a long-lived connection.
 static NSError *FBAXBridgeInvariantError(NSString *description)
 {
   return [NSError errorWithDomain:@"FBAXBridgeInvariant" code:1 userInfo:@{NSLocalizedDescriptionKey : description}];
@@ -382,21 +318,15 @@ static id FBAXBridgeFrameDictionary(id frameValue)
   return (NSDictionary *)CFBridgingRelease(CGRectCreateDictionaryRepresentation(rect));
 }
 
-// Whether an attribute is one the runtime answers with a CGPoint.
-//
-// An allowlist keyed on the attribute name, exactly as the frame's coercion is, rather than a test of the
-// value's shape: an attribute that merely happens to arrive as an `X`/`Y` pair must not be silently
+// Keyed on the attribute name, as the frame is, so a value that merely looks like an X/Y pair is never
 // reinterpreted as a coordinate.
 static BOOL FBAXBridgeIsPointAttribute(NSString *key)
 {
   return [key isEqualToString:kAXVisiblePoint] || [key isEqualToString:kAXCenterPoint];
 }
 
-// A point attribute arrives as a `CGPoint` dictionary representation (an `X`/`Y` pair), or tolerantly as
-// an `NSValue`-wrapped `CGPoint`. Emit the dictionary representation the host consumes via
-// `CGPointMakeWithDictionaryRepresentation`, as the frame's coercion does: left to `-description`, a
-// coordinate reaches the host as a string it cannot parse. Rejection matters more here than for the
-// frame — the host taps the points this function emits, and `{0,0}` is a plausible tap target.
+// Emit the `CGPoint` dictionary representation the host consumes, as the frame's coercion does. Rejection
+// matters more here than for the frame: the host taps these points and `{0,0}` is a plausible target.
 static id FBAXBridgePointDictionary(id pointValue)
 {
   CGPoint point = CGPointZero;
@@ -496,12 +426,8 @@ static BOOL FBAXBridgeNodeIsUnreachable(NSDictionary<NSString *, id> *node)
   return [visible isKindOfClass:NSNumber.class] && ![(NSNumber *)visible boolValue];
 }
 
-// The element a display-wide hit-test finds at `point`, described by the short explanation attribute set,
-// or nil when nothing is there or the hit-test fails.
-//
-// Display-wide rather than scoped to the application, because part of the value is catching another
-// process compositing on top — an element covered by system chrome is covered whoever drew it, and a
-// hit-test scoped to the app would report the app's own view underneath and call it the answer.
+// The element a display-wide hit-test finds at `point`, described by the explanation fetch list, or nil.
+// Display-wide on purpose: an element covered by another process's chrome is covered whoever drew it.
 static NSDictionary<NSString *, id> *_Nullable FBAXBridgeExplanationAtPoint(id<FBAXRuntime> runtime, CGPoint point)
 {
   FBAXBridgeCountRoundTrip();
@@ -525,9 +451,8 @@ static NSDictionary<NSString *, id> *_Nullable FBAXBridgeExplanationAtPoint(id<F
   return explanation;
 }
 
-// The point a hit-test aimed at this node should use: its own centre, as the runtime reports it. Read
-// from the node rather than derived from the frame so the two agree — the server's notion of an element's
-// centre is what its own reachability is measured against.
+// Read from the node rather than derived from the frame, so it matches what the server measured
+// reachability against.
 static BOOL FBAXBridgeNodeCentre(NSDictionary<NSString *, id> *node, CGPoint *point)
 {
   id centre = node[kAXCenterPoint];
@@ -586,7 +511,7 @@ static FBAXReadOutcome *FBAXBridgeBuildNode(id<FBAXRuntime> runtime,
   if (depth < maxDepth) {
     for (id child in childElements) {
       if (*budget <= 0) {
-        *truncated = YES;  // the shared node budget ran out before every child was visited
+        *truncated = YES;
         break;
       }
       (*budget)--;
@@ -597,12 +522,10 @@ static FBAXReadOutcome *FBAXBridgeBuildNode(id<FBAXRuntime> runtime,
       }
     }
   } else if (childElements.count > 0) {
-    *truncated = YES;  // the depth cap stopped descent into this node's existing children
+    *truncated = YES;
   }
   node[kAXChildren] = children;
 
-  // Only an unreachable node is worth an explanation: a reachable one already answers the caller's
-  // question, and hit-testing it would spend a round trip to be told what it already knows.
   CGPoint centre = CGPointZero;
   if (explainUnreachable && FBAXBridgeNodeIsUnreachable(node) && FBAXBridgeNodeCentre(node, &centre)) {
     NSDictionary *explanation = FBAXBridgeExplanationAtPoint(runtime, centre);
@@ -640,10 +563,8 @@ static NSDictionary *_Nullable FBAXBridgeBuildTranslatorNode(id<FBAXRuntime> run
   ];
   FBAXBridgeCountRoundTrip();
   NSDictionary<NSNumber *, id> *values = [runtime translatorAttributes:wanted ofElement:element];
-  // Nil is "the read could not be performed", which is not the same answer as an element that answered
-  // nothing. Building a node from it would emit a childless, attribute-less node that a caller cannot
-  // tell from a real empty element — at the root, a failed translator bind reported as a successful read
-  // of an application with no content.
+  // Nil is "could not read", not "empty element": building a node from it would report a failed bind as a
+  // healthy application with no content.
   if (!values) {
     return nil;
   }
@@ -686,10 +607,8 @@ static NSDictionary *_Nullable FBAXBridgeBuildTranslatorNode(id<FBAXRuntime> run
   }
 
   NSMutableArray *children = [NSMutableArray array];
-  // Children are a separate request: the handler special-cases the attribute rather than returning it
-  // in a batch alongside the rest. Asked for even at the depth cap, because "did the cap hide anything"
-  // cannot be answered without knowing whether this node has children — the view-hierarchy walk gets
-  // that for free in its batch, and this walk has to pay a request for it.
+  // Children are a separate request (the handler special-cases the attribute out of the batch). Asked even
+  // at the depth cap, because `truncated` needs to know whether this node has children.
   FBAXBridgeCountRoundTrip();
   NSDictionary<NSNumber *, id> *kids = [runtime translatorAttributes:@[@(FBAXPAttributeChildren)] ofElement:element];
   id list = kids[@(FBAXPAttributeChildren)];
@@ -702,7 +621,7 @@ static NSDictionary *_Nullable FBAXBridgeBuildTranslatorNode(id<FBAXRuntime> run
       }
     }
   } else if (childElements.count > 0) {
-    *truncated = YES;  // the depth cap stopped descent into this node's existing children
+    *truncated = YES;
   }
   node[kAXChildren] = children;
   return node;
@@ -767,9 +686,8 @@ NSDictionary<NSString *, NSString *> *_Nullable FBAXBridgeModalDescriptor(NSDict
 // Resolves the frontmost application positionally: a system-wide hit-test at the caller's screen anchor
 // reads whichever element owns that point, and its owning pid is the frontmost app.
 //
-// This is a *positional* proxy for frontmost, not the window server's notion of frontmost. It agrees with
-// it for a fullscreen app or the home screen, but can differ for a centred element owned by another
-// process (e.g. a system modal). The other two methods resolve the authoritative frontmost.
+// A *positional* proxy for frontmost: agrees with the window server for a fullscreen app or the home
+// screen, but a centred element owned by another process (e.g. a system modal) answers that process.
 static FBAXFrontmostOutcome *FBAXBridgeCenterPointFrontmost(id<FBAXRuntime> runtime, CGPoint anchor)
 {
   FBAXBridgeCountRoundTrip();
@@ -783,31 +701,21 @@ static FBAXFrontmostOutcome *FBAXBridgeCenterPointFrontmost(id<FBAXRuntime> runt
       // an empty result answers a frontmost query with a resolution failure.
       return [FBAXFrontmostOutcome unresolved:
               [NSString stringWithFormat:@"system-wide hit-test at (%.1f, %.1f) found no element", anchor.x, anchor.y]];
-    // The next two carry the hit-test's own judgement through rather than flattening it into a generic
-    // unresolved: whether the frontmost app is absent or merely slow is the difference between the caller
-    // reconfiguring accessibility and the caller waiting, and only the runtime knows which it was.
     case FBAXHitTestStatusApplicationUnavailable:
       return [FBAXFrontmostOutcome applicationUnavailable:
               [NSString stringWithFormat:@"no accessibility server answered the system-wide hit-test at (%.1f, %.1f)", anchor.x, anchor.y]];
     case FBAXHitTestStatusApplicationNotResponding:
       return [FBAXFrontmostOutcome applicationNotResponding:
               [NSString stringWithFormat:@"the application at (%.1f, %.1f) did not answer the system-wide hit-test in time", anchor.x, anchor.y]];
-    // `default` sits with the failure case rather than alone: a status this does not know never resolves
-    // to a pid.
     case FBAXHitTestStatusFailed:
     default:
       return [FBAXFrontmostOutcome unresolved:outcome.failureReason ?: @"the system-wide hit-test failed"];
   }
 }
 
-// Resolves the frontmost application by the named `method`: `center-point` is the positional system-wide
-// hit-test at `anchor`; `window-server` (the default) is the in-guest AXPTranslator query; `runningboard`
-// reads the foreground app from RunningBoard's visibility endowment. `anchor` is ignored by the latter two.
-//
-// A request names exactly one method and gets exactly that one — there is deliberately no fallback between
-// them, because a caller that asked for the authoritative frontmost is not served by silently receiving the
-// positional proxy instead. The caller therefore already knows which method answered, which is why nothing
-// below reports one back.
+// `center-point` is the positional hit-test at `anchor`; `window-server` (default) is the in-guest
+// AXPTranslator query; `runningboard` reads RunningBoard's visibility endowment. No fallback between
+// them: a caller who asked for the authoritative answer is not served by silently getting the proxy.
 static FBAXFrontmostOutcome *FBAXBridgeResolveFrontmost(id<FBAXRuntime> runtime, NSString *method, CGPoint anchor)
 {
   if ([method isEqualToString:kMethodCenterPoint]) {
@@ -842,11 +750,8 @@ static NSDictionary *FBAXBridgeTaggedErrorResponse(NSString *message, NSString *
   return response;
 }
 
-// The response a failed read answers with, or nil when the read succeeded and the caller should carry on.
-//
-// Shared by both vocabularies so a pid that names no process is reported alike whichever one was asked
-// for. Only the XCTest read produces these statuses, which is why the translator path spends a round trip
-// to obtain one.
+// The response a failed read answers with, or nil when it succeeded. Only the XCTest read produces these
+// statuses, which is why the translator path spends a round trip to obtain one.
 static NSDictionary *_Nullable FBAXBridgeReadFailureResponse(FBAXReadOutcome *read, pid_t pid)
 {
   switch (read.status) {
@@ -888,29 +793,18 @@ static NSString *const kSnapshotElement = @"UIAccessibilitySnapshotKeyElement";
 // measured so far carry one or two boundaries; a read that hits the cap reports `truncated`.
 static const int kSnapshotBoundaryFetchBudget = 64;
 
-// Turns one snapshot node into the node the rest of this file produces, and recurses.
+// Maps one snapshot node into the reader's node shape, recursing.
 //
-// `namesByNumber` inverts the attribute conversion: `XCAXAccessibilityAttributesForStringAttributes`
-// returns numbers positionally for the names it was given, so zipping the two recovers the mapping
-// without hardcoding a single attribute number — which matters because those numbers are the runtime's,
-// not ours, and nothing promises they are stable across versions.
+// `namesByNumber` inverts the positional name→number conversion, so no attribute number is hardcoded.
 //
-// A snapshot is served by the process that owns its root, and it cannot serialize a subtree another
-// process draws — a web view's page, a picker, an autofill sheet. Where the nesting is empty but the
-// node's own element is owned by another process, the read continues with one more fetch rooted at that
-// element — answered by the process drawing the subtree — and the continuation replaces the stub
-// wholesale: same ask, same element, but attributes the owner answered rather than the host's stand-ins
-// (on the screens measured, the stub's frame is in pixels where the owner answers points). `ownerPid` is
-// the process that served the snapshot this node arrived in — ownership changing against it is what
-// marks a boundary — and 0 disables the comparison entirely, for a runtime that cannot attribute
-// elements. A continuation that fails to fetch leaves the stub childless, which is the same silence the
-// per-node walk answers with when the boundary cannot be crossed.
+// A snapshot is served by the process owning its root and cannot serialize a subtree another process
+// draws (a web view's page, a picker, an autofill sheet). A node with no nesting whose element is owned by
+// a different process is refetched rooted at that element, and the continuation replaces the stub
+// wholesale. `ownerPid` 0 disables the comparison. A continuation that fails leaves the stub childless —
+// the same silence the per-node walk answers with.
 //
-// Bounded by the same depth and node budget the walk uses, so a tree read one way truncates where the
-// same tree read the other way does. The server's own `maxDepth`/`maxChildren` are set generously and
-// the host's bounds are applied here instead, which keeps `truncated` meaning what it means everywhere.
-// A boundary that a bound stopped this read from continuing across reports `truncated` too: the walk at
-// the same node sees the children the server bridges for it, and says the same.
+// Bounded by the same depth and node budget as the walk (the server's own bounds are set generously), so
+// `truncated` means the same thing on both paths, including for a boundary a bound stopped.
 static NSDictionary *_Nullable FBAXBridgeNodeFromSnapshot(id<FBAXRuntime> runtime,
                                                           id snapshotNode,
                                                           NSArray<NSString *> *fetchList,
@@ -1020,20 +914,11 @@ static NSDictionary *_Nullable FBAXBridgeNodeFromSnapshot(id<FBAXRuntime> runtim
 
 static NSDictionary<NSString *, id> *FBAXBridgeDispatchRequest(NSDictionary<NSString *, id> *request);
 
-// Answers a request, turning an exception raised while answering into a response.
-//
-// The boundary is the exported function rather than something beside it, so there is no unguarded way in:
-// the serve loop, the argv front-end and the tests all reach the dispatcher only through here.
-//
-// The reader is a long-lived process answering requests on one connection, and it reaches four private
-// frameworks to do it. Those raise; three call sites catch where a raise is known to be possible, and a
-// private API is exactly the thing that gains a fourth without announcing it. Unguarded, the first such
-// raise unwinds out of the serve loop and takes the reader with it — so a client loses not the request
-// that provoked it but every request after it, and learns nothing, the frame it was waiting for simply
-// never arriving.
-//
-// Distinct from an unserializable response, which `FBAXBridgeSerializeResponse` already guards for the
-// same reason: this is the answer failing to be produced rather than failing to be written.
+// Answers a request, turning a raise into a response. This is the only way into the dispatcher, so the
+// serve loop, the argv front-end and the tests are all guarded alike. The private frameworks raise where
+// they are meant to return; unguarded, the first raise unwinds out of the serve loop and costs a client
+// every later request on the connection. Distinct from `FBAXBridgeSerializeResponse`'s guard, which
+// covers the answer failing to be written rather than produced.
 NSDictionary<NSString *, id> *FBAXBridgeHandleRequest(NSDictionary<NSString *, id> *request)
 {
   @try {
@@ -1085,12 +970,8 @@ NSData *FBAXBridgeSerializeResponse(NSDictionary<NSString *, id> *response)
   return [NSData dataWithBytes:fallback length:strlen(fallback)];
 }
 
-// Answers `hittest` from the outcome of the hit-test at the requested point: the runtime says what
-// happened, and this decides what the client is told about it.
-//
-// A hit-test is a single round trip that reads only the element at the point (no tree walk), which is what
-// makes it cheap next to a whole-tree describe. With no pid it is display-wide, so the host gets the app
-// owning the point without a separate frontmost query.
+// Answers `hittest`: one round trip reading only the element at the point. With no pid it is
+// display-wide, so the host learns the owning app without a separate frontmost query.
 static NSDictionary *FBAXBridgeHitTest(id<FBAXRuntime> runtime, NSDictionary *request)
 {
   NSNumber *xNumber = request[kRequestX];
@@ -1123,15 +1004,13 @@ static NSDictionary *FBAXBridgeHitTest(id<FBAXRuntime> runtime, NSDictionary *re
       );
     case FBAXHitTestStatusEmpty:
       return @{kResponseOk : @YES, kResponseEmpty : @YES};
-    // `default` sits with the failure case rather than alone: a status this does not know is reported as
-    // a failure, never mistaken for a hit.
     case FBAXHitTestStatusFailed:
     default:
       return FBAXBridgeErrorResponse(outcome.failureReason ?: @"the hit-test failed");
   }
 
   int budget = 1;
-  BOOL truncated = NO;  // a hit-test reads only the leaf at the point; truncation is not meaningful here
+  BOOL truncated = NO;
   // maxDepth 0 reads just the hit element's own attributes (no child recursion) — the leaf at the point.
   id hitElement = outcome.element;
   if (!hitElement) {
@@ -1194,9 +1073,7 @@ static BOOL FBAXBridgeActionForName(NSString *name, FBAXAction *action)
   return YES;
 }
 
-// Compares an already-JSON-coerced attribute against the assertion's wire value. The assertion is a string
-// because the host derived it from a tree it read off this same wire, so the comparison is made in the form
-// the wire carried — anything else would have the guest and the host disagreeing about what they both read.
+// Compared in the coerced wire form: the host derived the assertion from a tree it read off this wire.
 static BOOL FBAXBridgeAttributeMatches(id _Nullable actual, NSString *expected)
 {
   if ([actual isKindOfClass:NSString.class]) {
@@ -1208,9 +1085,6 @@ static BOOL FBAXBridgeAttributeMatches(id _Nullable actual, NSString *expected)
   return [[actual description] isEqualToString:expected];
 }
 
-// The arguments every write shares, checked before anything is touched. Answers the response the request is
-// refused with, or nil when it is well-formed. A malformed request is the caller's to fix and is held apart
-// from every failure of the reader or of the application, exactly as the read verbs hold it apart.
 static NSDictionary *_Nullable FBAXBridgeWriteArgumentError(NSDictionary *request)
 {
   if (![request[kRequestX] isKindOfClass:NSNumber.class] || ![request[kRequestY] isKindOfClass:NSNumber.class]) {
@@ -1225,10 +1099,8 @@ static NSDictionary *_Nullable FBAXBridgeWriteArgumentError(NSDictionary *reques
       nil
     );
   }
-  // Only the attributes *this request* fetches can be asserted on. That is not a restriction so much as the
-  // contract: the host builds an assertion out of a node it read, and a key that never appears in a node is
-  // one it could not have got from there. A write that wants to assert on a non-default attribute names it
-  // in `attributes`, exactly as the read that produced the assertion had to.
+  // Only a fetched attribute can be asserted on: the host built the assertion from a node it read, so a
+  // key this request does not fetch cannot have come from there.
   if (assertKey && ![FBAXBridgeFetchListForRequest(request) containsObject:assertKey]) {
     return FBAXBridgeTaggedErrorResponse(
       [NSString stringWithFormat:@"%@ is not an attribute a write can assert on", assertKey],
@@ -1239,17 +1111,9 @@ static NSDictionary *_Nullable FBAXBridgeWriteArgumentError(NSDictionary *reques
   return nil;
 }
 
-// Resolves what a write acts on: the element at the requested point, checked against the caller's assertion.
-// The request's arguments are assumed well-formed — `FBAXBridgeWriteArgumentError` has already run.
-//
-// Answers nil — and only then — when the write should go ahead, having filled `element` and `pid`. Every
-// other answer is the outcome the request is reported with, so a caller that gets non-nil is done. Same
-// shape as `+outcomeForHitTestError:hasElement:`, for the same reason: most of the answers are not failures.
-//
-// The assertion is what makes a two-step write safe. A marker is resolved host-side against a tree it read
-// and reaches the guest as a point, so between that read and this hit-test the element under the point can
-// have changed — an occluding view, a non-rectangular element, or a screen that moved on. Verifying one
-// attribute of the element actually found there is what stops the action landing somewhere else.
+// Between the host's read and this hit-test the element under the point can have changed (occlusion, a
+// non-rectangular element, a screen that moved on). Checking one attribute of what is actually there is
+// what stops the action landing somewhere else.
 static FBAXWriteOutcome *_Nullable FBAXBridgeResolveWriteTarget(id<FBAXRuntime> runtime,
                                                                 NSDictionary *request,
                                                                 id _Nullable *element,
@@ -1273,8 +1137,6 @@ static FBAXWriteOutcome *_Nullable FBAXBridgeResolveWriteTarget(id<FBAXRuntime> 
       return [FBAXWriteOutcome applicationUnavailable];
     case FBAXHitTestStatusApplicationNotResponding:
       return [FBAXWriteOutcome applicationNotResponding];
-    // `default` sits with the failure case rather than alone: a status this does not know never becomes an
-    // element something is written to.
     case FBAXHitTestStatusFailed:
     default:
       return [FBAXWriteOutcome failed:hit.failureReason ?: @"the hit-test failed"];
@@ -1343,20 +1205,14 @@ static NSDictionary *FBAXBridgeWriteResponse(FBAXWriteOutcome *outcome, pid_t pi
         kErrorKindApplicationNotResponding,
         pid > 0 ? @(pid) : nil
       );
-    // `default` sits with the failure case rather than alone: a status this does not know is reported as a
-    // failure, never mistaken for a write that landed.
     case FBAXWriteStatusFailed:
     default:
       return FBAXBridgeErrorResponse(outcome.failureReason ?: @"the write failed");
   }
 }
 
-// Answers `perform`: resolve the element at the point, then act on it.
-//
-// Nothing pre-checks that the element accepts the action. `XC_kAXXCAttributeUserTestingActions` is the
-// obvious candidate and is the wrong tool: no element populates it — a sweep of SpringBoard and Settings
-// found it absent on all 206 nodes — so a guard built on it refuses nothing and only makes every perform
-// pay an extra attribute read. The runtime's own answer is the judgement.
+// Answers `perform`. No pre-check that the element accepts the action — see
+// `+[FBAXWriteOutcome outcomeForWriteError:]`.
 static NSDictionary *FBAXBridgePerform(id<FBAXRuntime> runtime, NSDictionary *request)
 {
   id requestedAction = request[kRequestAction];
@@ -1445,9 +1301,8 @@ static NSDictionary<NSString *, id> *FBAXBridgeDispatchRequest(NSDictionary<NSSt
   NSString *setupError = nil;
   id<FBAXRuntime> runtime = FBAXBridgeSharedRuntime(&setupError);
   if (!runtime) {
-    // Its own kind because it is the one failure that is about neither the request nor the application:
-    // no configuration of either fixes a reader that cannot bind, and the message is the only place the
-    // missing class and the drifted signatures are named.
+    // Neither the request nor the application can fix a reader that cannot bind; the message is the only
+    // place the missing class and drifted signatures are named.
     return FBAXBridgeTaggedErrorResponse(
       setupError ?: @"accessibility setup failed",
       kErrorKindReaderUnavailable,
@@ -1461,9 +1316,8 @@ static NSDictionary<NSString *, id> *FBAXBridgeDispatchRequest(NSDictionary<NSSt
     return FBAXBridgeHitTest(runtime, request);
   }
 
-  // The write verbs are point-addressed for the same reason: a one-shot guest exits between requests, so an
-  // element handle cannot survive one. Naming the target and acting on it in a single request is what makes
-  // a write work identically on both transports.
+  // Writes are point-addressed: a one-shot guest exits between requests, so an element handle cannot
+  // survive one.
   if (isPerform) {
     return FBAXBridgePerform(runtime, request);
   }
@@ -1489,16 +1343,9 @@ static NSDictionary<NSString *, id> *FBAXBridgeDispatchRequest(NSDictionary<NSSt
       );
     }
     NSString *requestedMethod = [request[kRequestMethod] isKindOfClass:NSString.class] ? request[kRequestMethod] : nil;
-    // A request that names no method gets the authoritative frontmost, not the positional proxy. The proxy
-    // answers a different question — which process owns the anchor pixel — and coincides with the frontmost
-    // only while the frontmost app covers that pixel, so it both fails on an anchor nothing occupies and
-    // answers the wrong application for one something else does. A caller who wants the pixel can ask.
     NSString *method = requestedMethod ?: kMethodWindowServer;
     FBAXFrontmostOutcome *frontmost =
     FBAXBridgeResolveFrontmost(runtime, method, CGPointMake(xNumber.doubleValue, yNumber.doubleValue));
-    // A frontmost that did not resolve says why in its own terms. The kind is what the resolver decided,
-    // not "the frontmost query failed" — a fused read of an app with no accessibility server is the same
-    // condition as a `--pid` read of one, and answering it differently is what left the host guessing.
     switch (frontmost.status) {
       case FBAXFrontmostStatusResolved:
         break;
@@ -1514,7 +1361,6 @@ static NSDictionary<NSString *, id> *FBAXBridgeDispatchRequest(NSDictionary<NSSt
           kErrorKindApplicationNotResponding,
           nil
         );
-      // `default` sits with the unresolved case: a status this does not know has not named a pid.
       case FBAXFrontmostStatusUnresolved:
       default:
         return FBAXBridgeTaggedErrorResponse(
@@ -1524,8 +1370,6 @@ static NSDictionary<NSString *, id> *FBAXBridgeDispatchRequest(NSDictionary<NSSt
         );
     }
     pid = frontmost.processIdentifier;
-    // The method that answered is the method that was asked for, so the response echoes back what the
-    // request selected rather than something the resolver had to report.
     frontmostMethod = method;
   }
 
@@ -1540,8 +1384,7 @@ static NSDictionary<NSString *, id> *FBAXBridgeDispatchRequest(NSDictionary<NSSt
     // reporting `asserted` for one would tell a caller this read altered a device it left alone.
     if (wanted != automationEnabled) {
       automationEnabled = [runtime setAutomationModeEnabled:wanted];
-      // True only if the write actually took. A preference write can be accepted and not apply, and a
-      // caller told `asserted` for one of those would believe the device is in a mode it is not in.
+      // True only if the write took; a preference write can be accepted and not apply.
       automationAsserted = (automationEnabled == wanted);
     }
   }
