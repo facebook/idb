@@ -13,13 +13,8 @@ import Foundation
 /// `FBAXNodeSerializer`.
 enum FBAXTreeWalk {
 
-  /// Serializes an attribute-dictionary tree (as emitted by either XCUI-grade backend) into the
-  /// schema, building an `FBAXPlatformElement` tree and running the shared recursive serializer. Each
-  /// element is tagged with the owning app's real pid, discovered during the tree read.
-  ///
-  /// The result is unfiltered. `FBAccessibilityElementFilter.apply(to:)` narrows it afterwards, so a
-  /// caller that wants the whole tree as well as the reported subset — a coverage calculation, say —
-  /// can have both from one walk.
+  /// Serializes an attribute-dictionary tree into the schema, tagging each element with `pid`. The
+  /// result is unfiltered so a caller can keep both the whole walk and the reported subset.
   static func describeAllElements(fromTree tree: [String: Any], keys: Set<FBAXKeys>, nestedFormat: Bool, pid: pid_t) -> [FBAccessibilityDocumentElement] {
     let root = buildPlatformElementTree(from: tree, pid: pid)
     return FBAXNodeSerializer.recursiveDescription(
@@ -55,32 +50,25 @@ enum FBAXTreeWalk {
     return FBAXBridgePlatformElement(attributes: node, children: children, pid: pid)
   }
 
-  /// The first serialized element whose `key` value contains `markerValue`, used by
-  /// describe-by-marker. Substring, matching `FBAccessibilityElementQuery.marker` — the accessibility
-  /// backend walks the live tree and matches the same way, so a marker resolves to the same element
-  /// whichever backend serves the read.
-  ///
-  /// `ignoresCase` comes from the query and so is off for every write; the comparison itself is
-  /// `FBAccessibilityMatch`'s, so a marker and a `describe-all --match` agree on what "contains" means
-  /// rather than drifting apart one Unicode edge case at a time.
+  /// The first element whose `key` value contains `markerValue`, via `FBAccessibilityMatch` so a marker
+  /// and `--match` agree on what "contains" means.
   static func matchingElement(
     inElements elements: [FBAccessibilityDocumentElement],
     markerValue: String,
     key: FBAXSearchableKey,
     ignoresCase: Bool = false
   ) -> FBAccessibilityDocumentElement? {
-    // An empty marker is not a search — every value contains it — and callers that reach here with one
-    // have historically got the first element carrying the key at all. `FBAccessibilityMatch` refuses
-    // to represent that, so it is spelled out rather than quietly becoming "no match".
+    // An empty marker is not a search — every value contains it — so it resolves to the first element
+    // carrying the key at all. `FBAccessibilityMatch` refuses to represent that, so it is spelled out
+    // rather than quietly becoming "no match".
     guard let match = FBAccessibilityMatch(value: markerValue, key: key, ignoresCase: ignoresCase) else {
       return elements.first { $0.searchableValue(for: key) != nil }
     }
     return elements.first { match.matches($0.searchableValue(for: key)) }
   }
 
-  /// The outcome of resolving a marker to a point to interact with. Separates a marker that matched an
-  /// element with no usable on-screen frame (off-screen or still settling — nowhere to tap) from one
-  /// that matched nothing: before, both collapsed to a `nil` centre and read as "not found".
+  /// The outcome of resolving a marker to a point: a match with no usable frame is distinguished from no
+  /// match.
   enum MarkerResolution: Equatable {
     /// No serialized element's `key` value contains the marker.
     case notFound
@@ -114,10 +102,8 @@ enum FBAXTreeWalk {
         }
       }
       matched = true
-      // A rectangle with no area is not somewhere a caller can be aimed at, and it is not rare: an
-      // element whose frame never reached the wire is normalized to a zero rectangle on the way in, so it
-      // arrives with all four components present and would otherwise resolve to the origin. Treated as no
-      // usable frame, alongside a frame that is absent outright — the same thing said two ways.
+      // A zero-area frame counts as no frame: an element whose frame never reached the wire is normalized
+      // to zero on the way in and would otherwise resolve to the origin.
       guard let frame = element.frame ?? nil,
         let x = frame.x, let y = frame.y, let width = frame.width, let height = frame.height,
         width > 0, height > 0
