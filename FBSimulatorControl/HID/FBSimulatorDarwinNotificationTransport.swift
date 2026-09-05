@@ -13,10 +13,6 @@ import Foundation
  The transport for the two inputs the simulator takes as Darwin notifications rather than as synthesized
  input: shake, and toggling the in-call status bar.
 
- Not transport-switchable, and the only one of the four with no codec — the payload is a notification
- name, so there is nothing to build. Naming the two here rather than at the dispatch site keeps the
- strings with the thing that posts them.
-
  Connectionless: each post goes straight to the device, so there is nothing to hold open, drain or tear
  down. The post is a synchronous hop into CoreSimulator, so it runs on a private serial queue and the
  caller awaits it, for the same reason the Purple transport does — a cooperative thread should not be
