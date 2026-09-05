@@ -19,7 +19,6 @@ private let SendBufferSize = 1024 * 4
 /// is released.
 private let ReaderDrainTimeout: TimeInterval = 5
 
-/// The ways a lockdown service connection can fail, as data rather than assembled strings.
 public enum FBAMDServiceConnectionError: Error {
   case sendMessageFailed(errorText: String, message: String, code: Int32)
   case receiveMessageFailed(errorText: String, code: Int32)
@@ -69,9 +68,7 @@ extension FBAMDServiceConnectionError: LocalizedError {
   }
 }
 
-/// Wraps the AMDServiceConnection.
-///
-/// An AMDServiceConnection represents a connection to a "lockdown" service over USB.
+/// An AMDServiceConnection is a connection to a "lockdown" service over USB.
 public final class FBAMDServiceConnection: CustomStringConvertible {
 
   // MARK: - Properties
@@ -164,10 +161,8 @@ public final class FBAMDServiceConnection: CustomStringConvertible {
     if let activeReaderFinished {
       drained = (try? activeReaderFinished.await(withTimeout: ReaderDrainTimeout)) != nil
     }
-    // AMDServiceConnectionInvalidate does not release the connection. If the reader failed to
-    // drain in time the reference is deliberately leaked rather than released: releasing under a
-    // still-blocked read is a use-after-free, and one leaked connection on a wedged service is
-    // the cheaper failure.
+    // AMDServiceConnectionInvalidate does not release the connection. If the reader did not
+    // drain, leak rather than release: releasing under a still-blocked read is a use-after-free.
     if drained {
       connectionRef.release()
     } else {
@@ -184,7 +179,6 @@ public final class FBAMDServiceConnection: CustomStringConvertible {
     logger: any FBControlCoreLogger
   ) -> FBAFCConnection {
     let afcConnection = afcCalls.Create(nil, calls.ServiceConnectionGetSocket(connection), nil, callback, nil)
-    // The secure context has to be applied if the service connection has one.
     let afcReference = afcConnection?.takeUnretainedValue()
     if let secureIOContext = calls.ServiceConnectionGetSecureIOContext(connection), let afcReference {
       afcCalls.SetSecureContext(afcReference, secureIOContext)
@@ -209,7 +203,6 @@ public final class FBAMDServiceConnection: CustomStringConvertible {
       if result == -1 {
         throw FBAMDServiceConnectionError.sendFailed(bytes: length, reason: String(cString: strerror(errno)))
       }
-      // End of file.
       if result == 0 {
         break
       }
@@ -225,7 +218,6 @@ public final class FBAMDServiceConnection: CustomStringConvertible {
   }
 
   public func send(withLengthHeader data: Data) throws {
-    // The host length is converted to the endianness of the remote.
     let lengthWire = HeaderIntType(data.count).bigEndian
     try send(withUnsafeBytes(of: lengthWire) { Data($0) })
     try send(data)
@@ -263,7 +255,6 @@ public final class FBAMDServiceConnection: CustomStringConvertible {
     let buffer = UnsafeMutableRawPointer.allocate(byteCount: size, alignment: MemoryLayout<UInt8>.alignment)
     defer { buffer.deallocate() }
     let result = receive(buffer, size: size)
-    // End of file.
     if result == 0 {
       return Data()
     }
@@ -320,7 +311,6 @@ public final class FBAMDServiceConnection: CustomStringConvertible {
     while bytesRemaining > 0 {
       let maxReadBytes = min(chunkSize, bytesRemaining)
       let result = receive(buffer, size: maxReadBytes)
-      // End of file.
       if result == 0 {
         break
       }
