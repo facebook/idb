@@ -10,28 +10,17 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /**
- * The attribute vocabulary `AXPTranslator` answers in.
- *
- * Distinct from the `XC_kAXXCAttribute*` names the reader fetches with today, which are XCTest's. Both
- * ultimately reach the same accessibility server — a translator attribute request and an
- * `attributesForElement:` call both bottom out in `AXUIElementCopyMultipleAttributeValues` — but they
- * are separate namespaces with separate server-side handlers, and an element handle from one is not
+ * The attribute vocabulary `AXPTranslator` answers in — a separate namespace from XCTest's
+ * `XC_kAXXCAttribute*` names, with separate server-side handlers; an element handle from one is not
  * accepted by the other.
  *
- * Values are the enum's own indices, recovered from `__AXPAttributeToString`'s pointer table in the
- * guest `AccessibilityPlatformTranslation` binary: each slot points at a `__CFConstantString` whose
- * `char *` sits at +16, and the slot index is the attribute value. `AXPAttributeChildren` was
- * cross-checked independently against the dispatch jump table in
- * `-[AXPTranslator_iOS _processAttributeSpecialCases:uiElement:parameter:error:client:]`, which routes
- * both 8 and 9 to `_processChildrenAttributeRequest:error:`.
+ * Values are the enum's own indices, recovered from `__AXPAttributeToString` in the guest
+ * `AccessibilityPlatformTranslation` binary (0–129 is the bound both it and
+ * `-[AXPTranslator_iOS attributeFromRequest:]` enforce); identical on the 26.4, 26.5 and 27.0 runtimes.
  *
- * Every member is declared. The enum runs 0 to 129 — `__AXPAttributeToString` rejects anything above
- * 129, and `-[AXPTranslator_iOS attributeFromRequest:]` carries the same bound — and the table decodes
- * identically on the 26.4, 26.5 and 27.0 runtimes.
- *
- * **Declared is not fetchable.** The name each index binds to is verified; what a member *returns* is
- * not. The translator raises on a value it cannot convert, and an uncaught raise inside the guest takes
- * the reader down with it, so anything added to a fetch list needs a run against a real screen first.
+ * **Declared is not fetchable.** Only the name each index binds to is verified. The translator raises on
+ * a value it cannot convert, and an uncaught raise takes the reader down, so anything added to a fetch
+ * list needs a run against a real screen first.
  */
 typedef NS_ENUM(NSInteger, FBAXPAttribute) {
   /** The sentinel the table starts at, and what the translator answers for an index it does not know. */
@@ -66,8 +55,7 @@ typedef NS_ENUM(NSInteger, FBAXPAttribute) {
       attribute 2016; the translator's role handler branches on it to choose `Group` over
       `GenericElement`. */
   FBAXPAttributeIsElement = 26,
-  /** No counterpart exists in the `XC_kAXXCAttribute*` namespace, which is why a guest-backed read
-      reports `enabled` as an explicit null today. */
+  /** No counterpart in the `XC_kAXXCAttribute*` namespace. */
   FBAXPAttributeIsEnabled = 27,
   FBAXPAttributeIsFocused = 28,
   FBAXPAttributeIsOpaqueElementProvider = 29,
@@ -172,6 +160,8 @@ typedef NS_ENUM(NSInteger, FBAXPAttribute) {
   FBAXPAttributeBrailleRoleDescription = 109,
   FBAXPAttributeRangeForTextMarker = 110,
   FBAXPAttributeIndexForTextMarker = 111,
+  /** The point the accessibility server believes a touch reaches; the translator's counterpart to
+      `XC_kAXXCAttributeVisiblePoint`. */
   FBAXPAttributeVisiblePoint = 112,
   FBAXPAttributeElementsForSearchParameters = 113,
   FBAXPAttributeBrailleRendererElementFrame = 114,
@@ -179,9 +169,6 @@ typedef NS_ENUM(NSInteger, FBAXPAttribute) {
   FBAXPAttributeBrailleMap = 116,
   FBAXPAttributeElementForTextMarker = 117,
   FBAXPAttributeAttributedValueDescription = 118,
-  /** The point the accessibility server believes a touch reaches, the translator's counterpart to
-      `XC_kAXXCAttributeVisiblePoint`. Recovered the same way as the rest and checked against three
-      simulator runtimes (26.4, 26.5, 27.0), which agree on the index. */
   /** Guest attribute 2114. */
   FBAXPAttributeExpanded = 119,
   /** Guest attribute 2020. */
