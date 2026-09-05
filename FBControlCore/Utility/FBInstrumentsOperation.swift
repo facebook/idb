@@ -13,12 +13,11 @@ public let DefaultInstrumentsOperationDuration: TimeInterval = 60 * 60 * 4
 public let DefaultInstrumentsTerminateTimeout: TimeInterval = 600.0
 /// Wait this long to ensure instruments started properly.
 public let DefaultInstrumentsLaunchRetryTimeout: TimeInterval = 360.0
-/// The pause between launch attempts, matching `retryUntilSuccess`'s cadence.
+/// The pause between launch attempts.
 private let LaunchRetryInterval: UInt64 = 100 * NSEC_PER_MSEC
 /// Fail instruments if the launch error message appears within this timeout.
 public let DefaultInstrumentsLaunchErrorTimeout: TimeInterval = 15.0
 
-/// The ways an instruments operation can fail, as data rather than assembled strings.
 public enum FBInstrumentsError: Error {
   case outputDirectoryCreationFailed(underlying: Error)
   case startupFailed(logs: [String])
@@ -50,9 +49,8 @@ final class InstrumentsConsumer: NSObject, FBDataConsumer {
   private let lineConsumer: any FBDataConsumer
 
   override init() {
-    // The line block captures locals rather than self: no implicitly-unwrapped
-    // property and no consumer->block->self retain cycle. Lines arrive serially
-    // on the block consumer's queue.
+    // Lines arrive serially on the consumer's queue, so `logs` needs no synchronization. Captured
+    // locals avoid a consumer -> block -> self cycle.
     final class Logs {
       var lines: [String] = []
     }
@@ -131,9 +129,6 @@ public final class FBInstrumentsOperation {
   }
 
   /// Builds the `instruments` command line.
-  ///
-  /// Exposed for testing: the duration is derived from a client-supplied value, so its formatting
-  /// is worth pinning independently of spawning the tool.
   static func launchArguments(udid: String, configuration: FBInstrumentsConfiguration, traceFile: String) -> [String] {
     // Formatted via NSNumber rather than Int: operationDuration arrives unclamped from the client,
     // and Int(_: Double) traps on a value that is infinite, NaN, or beyond Int.max.
@@ -178,15 +173,11 @@ public final class FBInstrumentsOperation {
       .withStdErr(to: compositeLogger)
       .withTaskLifecycleLogging(to: logger)
       .start()
-    // The spawn is bounded by the remaining retry budget too, so a wedged spawn fails at the
-    // deadline rather than hanging the operation indefinitely.
     let task = try await bridgeFBFuture(
       startFuture
         .timeout(attemptTimeout, waitingFor: "instruments to start")
         .retyped(FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>>.self))
 
-    // Bounded by the remaining retry budget too, so a template that never loads fails at the
-    // deadline rather than holding the attempt open.
     let templateLoaded = convertFBMutableFuture(instrumentsConsumer.hasStartedLoadingTemplate)
       .timeout(attemptTimeout, waitingFor: "instruments to start loading the template")
     do {
