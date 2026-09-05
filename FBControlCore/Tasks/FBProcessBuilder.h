@@ -25,7 +25,7 @@
 
 /**
  Creates a new Process Builder with the provided launch path.
- stdin is not not connected.
+ stdin is not connected.
  stdout is written to NSData.
  stderr is written to NSData.
 
@@ -36,7 +36,7 @@
 
 /**
  Creates a new Process Builder with the provided launch path.
- stdin is not not connected.
+ stdin is not connected.
  stdout is written to NSData.
  stderr is written to NSData.
 
@@ -49,15 +49,15 @@
 #pragma mark Spawn Configuration
 
 /**
- The Launch Path of the Proces
+ The Launch Path of the Process
 
- @param launchPath the Launch Path. Will remove shellCommand.
+ @param launchPath the Launch Path.
  @return the receiver, for chaining.
  */
 - (nonnull instancetype)withLaunchPath:(nonnull NSString *)launchPath;
 
 /**
- The Arguments of the Process..
+ The Arguments of the Process.
 
  @param arguments the arguments for the launch path.
  @return the receiver, for chaining.
@@ -86,14 +86,14 @@
  Passes an process input to stdin.
 
  @param input the input to pass
- @return the reciver, for chaining.
+ @return the receiver, for chaining.
  */
 - (nonnull FBProcessBuilder<id, StdOutType, StdErrType> *)withStdIn:(nonnull FBProcessInput *)input;
 
 /**
  Creates a Data Consumer for stdin.
 
- @return the reciver, for chaining.
+ @return the receiver, for chaining.
  */
 - (nonnull FBProcessBuilder<id<FBDataConsumer>, StdOutType, StdErrType> *)withStdInConnected;
 
@@ -101,7 +101,7 @@
  Creates a Data Consumer for stdin.
 
  @param data the data to send.
- @return the reciver, for chaining.
+ @return the receiver, for chaining.
  */
 - (nonnull FBProcessBuilder<NSData *, StdOutType, StdErrType> *)withStdInFromData:(nonnull NSData *)data;
 
@@ -163,7 +163,7 @@
  Redirects stdout to the provided logger, on a per line basis.
 
  @param logger the logger to use for logging lines.
- @return the reciver, for chaining.
+ @return the receiver, for chaining.
  */
 - (nonnull FBProcessBuilder<StdInType, id<FBControlCoreLogger>, StdErrType> *)withStdOutToLogger:(nonnull id<FBControlCoreLogger>)logger;
 
@@ -171,7 +171,7 @@
  Redirects stdout to the provided logger and prints the output in any error message that occurs.
 
  @param logger the logger to use for logging lines.
- @return the reciver, for chaining.
+ @return the receiver, for chaining.
  */
 - (nonnull FBProcessBuilder<StdInType, id<FBAccumulatingBuffer>, StdErrType> *)withStdOutToLoggerAndErrorMessage:(nonnull id<FBControlCoreLogger>)logger;
 
@@ -226,7 +226,7 @@
  Redirects stderr to the provided logger, on a per line basis.
 
  @param logger the logger to use for logging lines.
- @return the reciver, for chaining.
+ @return the receiver, for chaining.
  */
 - (nonnull FBProcessBuilder<StdInType, StdOutType, id<FBControlCoreLogger>> *)withStdErrToLogger:(nonnull id<FBControlCoreLogger>)logger;
 
@@ -234,19 +234,16 @@
  Redirects stderr to the provided logger and prints the output in any error message that occurs.
 
  @param logger the logger to use for logging lines.
- @return the reciver, for chaining.
+ @return the receiver, for chaining.
  */
 - (nonnull FBProcessBuilder<StdInType, StdOutType, id<FBAccumulatingBuffer>> *)withStdErrToLoggerAndErrorMessage:(nonnull id<FBControlCoreLogger>)logger;
 
 #pragma mark Logging
 
 /**
- Enables logging of the process lifecycle to the provided logger.
- By default the task will be constructed without this logging.
- To get detailed information, pass a logger to this method.
- Logging can be disabled by passing nil.
+ Logs the process lifecycle to the logger. Off by default; pass nil to disable.
 
- @param logger the logger to log to. Nil may be passed to disable task lifecycle logging, which is the default.
+ @param logger the logger to log to.
  @return the receiver for chaining.
  */
 - (nonnull instancetype)withTaskLifecycleLoggingTo:(nullable id<FBControlCoreLogger>)logger;
@@ -256,13 +253,12 @@
 /**
  Builds and starts the process.
 
- @return A future that resolves with the started process..
+ @return A future that resolves with the started process.
  */
 - (nonnull FBFuture<FBSubprocess<StdInType, StdOutType, StdErrType> *> *)start;
 
 /**
- Builds and starts the process, then waits for it to complete with the provided exit codes.
- The future will resolve when the process has finished executing.
+ Builds and starts the process, resolving once it has exited with one of the acceptable exit codes.
  Cancelling the process will cancel the task.
 
  @return a Future, encapsulating the process on completion.
