@@ -9,9 +9,9 @@ import CoreGraphics
 import FBControlCore
 import Foundation
 
-/// The ways screenshot capture can fail, as data rather than assembled strings. Everything after the
-/// capture itself -- resolving the request against the screen, cropping, scaling, encoding -- is
-/// shared with the other targets and reports `FBScreenshotGeometryError` or `FBScreenshotRenderError`.
+/// Everything after the capture itself -- resolving the request against the screen, cropping, scaling,
+/// encoding -- is shared with the other targets and reports `FBScreenshotGeometryError` or
+/// `FBScreenshotRenderError`.
 public enum FBSimulatorScreenshotError: Error {
   case captureFailed
 }
@@ -76,9 +76,7 @@ public final class FBSimulatorScreenshotCommands {
     return image
   }
 
-  /// The REPL's crop is in screen points, which is what `FBScreenshotUnit.points` means, so it needs
-  /// no arithmetic of its own -- and going through the same path as every other caller is how the
-  /// REPL and the gRPC API stay in agreement about what a crop rect denotes.
+  /// The REPL's crop is in screen points (`FBScreenshotUnit.points`).
   fileprivate func replScreenshotData(cropRect: CGRect?, asPNG: Bool) async throws -> Data {
     let configuration = FBScreenshotConfiguration(
       encoding: asPNG ? .png : .tiff,
