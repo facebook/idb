@@ -11,16 +11,12 @@
 
 #import "HealthKitPrivate.h"
 
-// HKInternalAuthorizationStatus values used on the wire to healthd.
-// Reverse-engineered from `_HKInternalAuthorizationStatusMake` and the
-// daemon validator at `+[HDAuthorizationEntity _insertAuthorizationWith…]`.
-// These are NOT the public HKAuthorizationStatus enum (0..4).
+// HKInternalAuthorizationStatus values, as healthd expects them (from `_HKInternalAuthorizationStatusMake`
+// and `+[HDAuthorizationEntity _insertAuthorizationWith…]`). NOT the public HKAuthorizationStatus 0..4.
 static const NSUInteger kHealthInternalAuthShareAndRead = 101;
 static const NSUInteger kHealthInternalAuthShareAndReadDenied = 104;
 
-// The curated default set of HKQuantity types used by `approve` when
-// the caller does not specify any. Kept small to match the most common
-// HealthKit consumer use-cases in tests.
+// The default HKQuantity types used by `approve` when the caller does not specify any.
 static NSArray<NSString *> *defaultApproveTypeIdentifiers(void)
 {
   static dispatch_once_t onceToken;
@@ -81,13 +77,8 @@ static NSString *jsonStringFromObject(id obj)
 
 static NSDictionary *recordToDictionary(id record)
 {
-  // fetchAuthorizationRecordsForBundleIdentifier: returns HKObjectType
-  // instances (HKQuantityType, HKCategoryType, etc.) — not dedicated
-  // authorization-record objects. The authorization state is exposed as
-  // properties on the type itself.
-  //
-  // Property names confirmed via runtime introspection on iOS 26.2.
-  // respondsToSelector: guards against future runtimes that drop a property.
+  // The records are HKObjectType instances (HKQuantityType etc.), not dedicated record objects; the
+  // authorization state is exposed as properties on the type. Guarded per key in case a runtime drops one.
   static NSArray<NSString *> *probeKeys;
   static dispatch_once_t onceToken;
   dispatch_once(&onceToken, ^{
@@ -118,11 +109,6 @@ static NSDictionary *recordToDictionary(id record)
 
 #pragma mark - HKObjectType resolution
 
-// Resolve an HKQuantityTypeIdentifier* / HKCategoryTypeIdentifier* /
-// HKCharacteristicTypeIdentifier* / HKCorrelationTypeIdentifier* /
-// HKDocumentTypeIdentifier* string into the matching HKObjectType
-// via the runtime. Returns nil for identifiers that aren't known to
-// the iOS runtime version on this simulator (rare, but logged).
 static id resolveHealthKitObjectType(NSString *identifier)
 {
   static NSArray<NSString *> *factoryClasses;
