@@ -91,7 +91,7 @@ public final class FBOverlayRenderer {
   /// dictionary and crashes). Recursive so a locked method can call `renderToBuffer()` while held.
   private let stateLock = NSRecursiveLock()
 
-  /// Logger for diagnostic output. Set after init from the simulator's logger.
+  /// Logger for diagnostic output.
   public var logger: FBControlCoreLogger?
 
   /// Current content mode for each bar position.
@@ -148,11 +148,10 @@ public final class FBOverlayRenderer {
     self.height = height
     self.transform = transform
 
-    // Initialize to fully transparent.
     clearBuffer()
   }
 
-  /// The overlay scale factor from the transform, for backward compatibility.
+  /// The overlay scale factor from the transform.
   var scaleFactor: CGFloat { transform.overlayScale }
 
   /// Render the given overlays into the buffer.
@@ -172,7 +171,6 @@ public final class FBOverlayRenderer {
       return isEffectActive(effectForShape(timedShape.shape), elapsed: elapsed)
     }
 
-    // Classify incoming shapes.
     for shape in overlays {
       if effectForShape(shape) != nil {
         kept.append(.animating(shape, startTime: now))
@@ -283,9 +281,6 @@ public final class FBOverlayRenderer {
   }
 
   /// Re-render all shapes into the pixel buffer at the current time.
-  ///
-  /// Internal (not private) so tests can trigger re-renders at controlled time points
-  /// via the injectable `currentTime` closure.
   public func renderToBuffer() {
     stateLock.lock()
     defer { stateLock.unlock() }
@@ -463,14 +458,11 @@ public final class FBOverlayRenderer {
   ) {
     let padding: CGFloat = 4
 
-    // pad mode: bar fills reserved canvas space, opaque so PNG and live video read the same.
-    // overlay mode: bar covers simulator screen content, partial alpha lets it peek through.
     let bgAlpha: CGFloat = mode == .overlay ? 0.7 : 1.0
     let bgColor = CGColor(red: 0, green: 0, blue: 0, alpha: bgAlpha)
     context.setFillColor(bgColor)
     context.fill(CGRect(x: 0, y: barY, width: CGFloat(width), height: barHeight))
 
-    // Choose final font size — shrink to fit when requested and the text overflows the bar.
     let availableWidth = CGFloat(width) - padding * 2
     let (font, line) = makeLine(text: text, fontSize: fontSize, availableWidth: availableWidth, fit: fit)
 
