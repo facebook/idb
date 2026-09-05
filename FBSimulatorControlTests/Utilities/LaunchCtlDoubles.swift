@@ -12,8 +12,7 @@ import Foundation
 /// Test double for the launchctl command surface. Only `listServices()` is modelled —
 /// the protocol's `serviceIsRunning(named:)` / `processIsRunning(withProcessIdentifier:)`
 /// default implementations compute their verdict from it, so configuring `servicesResult`
-/// exercises the real decision logic. Methods the suites do not use trap, keeping the
-/// double honest about what it actually covers.
+/// exercises the real decision logic. Methods the suites do not use trap.
 final class FBSimulatorControlTests_LaunchCtl_Double: LaunchCtlCommands {
 
   /// Mirrors `listServices()`: service-name -> `NSNumber(pid)` for a live service, `NSNull` for stopped.
