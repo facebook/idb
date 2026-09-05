@@ -130,13 +130,8 @@ public final class FBSimulator: FBiOSTarget, Hashable, CustomStringConvertible, 
 
   public func requiresBundlesToBeSigned() -> Bool { true }
 
-  /// `FBiOSTarget` refines `FBiOSTargetCommand`, whose factory exists for command classes rather
-  /// than for targets; a simulator is its own command source, so it returns the target it is
-  /// handed.
-  ///
-  /// Nothing calls this, and a mismatch cannot be reported gracefully: the protocol requires a
-  /// non-throwing function returning `Self`, so there is no error channel and no value to return.
-  /// The resulting trap is not catchable by `FBObjCExceptionGuard`.
+  /// A simulator is its own command source. The protocol requires a non-throwing `Self`, so a mismatch can
+  /// only trap (not catchable by `FBObjCExceptionGuard`).
   public static func commands(with target: any FBiOSTarget) -> Self {
     guard let simulator = target as? Self else {
       preconditionFailure("\(type(of: target)) is not an FBSimulator, so it cannot provide simulator commands")
