@@ -26,8 +26,8 @@ public struct FBInSimulatorToolOutput: Sendable {
 
 extension FBSimulator {
 
-  /// Runs a tool vendored by the simulator runtime against the booted simulator,
-  /// capturing its stdout, stderr and exit code.
+  /// Runs a tool vendored by the simulator runtime (`relativePath` is relative to the RuntimeRoot, e.g.
+  /// `usr/bin/heap`) against the booted simulator, capturing its stdout, stderr and exit code.
   ///
   /// The executable is resolved against the simulator's RuntimeRoot — the
   /// runtime's own build of the tool — not the host's `/usr/bin` copy. This is
@@ -40,13 +40,6 @@ extension FBSimulator {
   ///
   /// The spawn runs in the CoreSimulator domain via `launchProcess`. Exit codes
   /// are not interpreted here — callers decide which codes are acceptable.
-  ///
-  /// - Parameters:
-  ///   - relativePath: Executable path relative to the RuntimeRoot, e.g.
-  ///     `usr/bin/heap` or `bin/launchctl`.
-  ///   - arguments: Arguments passed to the tool.
-  ///   - environment: Environment for the spawned tool.
-  /// - Returns: The captured stdout, stderr and exit code.
   public func runRuntimeTool(
     _ relativePath: String,
     arguments: [String] = [],
@@ -64,12 +57,6 @@ extension FBSimulator {
   /// tools; use this directly only for host executables (e.g. `/bin/sh`, which
   /// the runtime does not ship). Exit codes are not interpreted — callers decide
   /// which are acceptable.
-  ///
-  /// - Parameters:
-  ///   - launchPath: Absolute path of the executable.
-  ///   - arguments: Arguments passed to the process.
-  ///   - environment: Environment for the spawned process.
-  /// - Returns: The captured stdout, stderr and exit code.
   func launchProcessConsumingOutput(
     launchPath: String,
     arguments: [String] = [],
@@ -102,9 +89,6 @@ extension FBSimulator {
 
   /// Resolves an executable vendored by the simulator runtime to its on-disk
   /// path, validating that the binary exists.
-  ///
-  /// - Parameter relativePath: Path relative to the RuntimeRoot, e.g.
-  ///   `usr/bin/heap`.
   private func runtimeExecutablePath(_ relativePath: String) throws -> String {
     guard let root = device.runtime.root else {
       throw FBSimulatorLogError.runtimeRootUnavailable
