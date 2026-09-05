@@ -44,9 +44,6 @@ struct DigitizerContactTracker {
  (resolved with `dlsym`) and must be marked simulator-to-host with `xpc_connection_enable_sim2host_4sim`
  before messages reach the service handler.
 
- Capabilities are added one per commit; not-yet-implemented primitives throw
- `notImplementedOnDTUHIDTransport` rather than silently falling back to Indigo.
-
  An `actor`: the mutable contact state is actor-isolated, so the type needs no `@unchecked Sendable`.
  The XPC connection handle is thread-safe, so `disconnect()` cancels it from a `nonisolated` context.
  */
@@ -179,7 +176,6 @@ actor FBSimulatorDTUHIDTransport {
   // MARK: Sending
 
   /// Wraps `payload` in a `DTUHIDMessage` and serializes it to the `xpc_object_t` `dtuhidd` decodes.
-  /// Pure and stateless, so the envelope shape is unit-testable without a live daemon connection.
   nonisolated func encode(messageType: String, payload: some Encodable) throws -> xpc_object_t {
     let message = DTUHIDMessage(
       messageType: messageType, featureIdentifier: Self.digitizerServiceName, payload: payload)
@@ -199,9 +195,7 @@ actor FBSimulatorDTUHIDTransport {
     }
   }
 
-  /// Drains the connection once a gesture's events have all been sent: waits `drainNanos` so
-  /// `dtuhidd` consumes them before the connection is torn down. Run once per gesture (see
-  /// `drainNanos`), not after every primitive.
+  /// Waits `drainNanos` so `dtuhidd` consumes a gesture before the connection is torn down. Once per gesture.
   func flush() async throws {
     try? await Task.sleep(nanoseconds: Self.drainNanos)
   }
