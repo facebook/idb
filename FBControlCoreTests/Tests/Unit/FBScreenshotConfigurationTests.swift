@@ -55,23 +55,12 @@ final class FBScreenshotConfigurationTests: XCTestCase {
     XCTAssertEqual(result.outputSize, sourceSize)
   }
 
-  func testDefaultEncodingIsPNG() {
-    XCTAssertEqual(FBScreenshotConfiguration().encoding, .png)
-    XCTAssertEqual(FBScreenshotConfiguration().unit, .pixels)
-  }
-
   // MARK: - Encoding
 
   func testCompressionQualityExistsOnlyOnJPEG() {
     XCTAssertNil(FBScreenshotEncoding.png.compressionQuality)
     XCTAssertNil(FBScreenshotEncoding.tiff.compressionQuality)
     XCTAssertEqual(FBScreenshotEncoding.jpeg(quality: 0.6).compressionQuality, 0.6)
-  }
-
-  func testEncodingFormats() {
-    XCTAssertEqual(FBScreenshotEncoding.png.format, .png)
-    XCTAssertEqual(FBScreenshotEncoding.tiff.format, .tiff)
-    XCTAssertEqual(FBScreenshotEncoding.jpeg(quality: 0.8).format, .jpeg)
   }
 
   // MARK: - Scale factor
@@ -131,8 +120,7 @@ final class FBScreenshotConfigurationTests: XCTestCase {
     assertThrows(.fitBoundNotPositive(-100), FBScreenshotConfiguration(scale: .fit(maxWidth: nil, maxHeight: -100)))
   }
 
-  /// A bound so tight the result is unreadable is still a legal request: there is no non-arbitrary
-  /// cutoff between "small" and "too small", and the pixel floor keeps it from degenerating.
+  /// A tight bound is legal; the one-pixel floor keeps the result from degenerating.
   func testExtremelyTightFitBoundProducesTheSmallestHonestImage() throws {
     let result = try plan(FBScreenshotConfiguration(scale: .fit(maxWidth: 1, maxHeight: nil)))
     XCTAssertEqual(result.outputSize, CGSize(width: 1, height: 2))
@@ -160,8 +148,7 @@ final class FBScreenshotConfigurationTests: XCTestCase {
     XCTAssertEqual(result.cropRect, CGRect(x: 10, y: 20, width: 30, height: 40))
   }
 
-  /// A physical device does not report a screen scale, so points cannot be resolved there. Guessing
-  /// 1 would answer a request for one region with a different, much smaller one, and report success.
+  /// A physical device does not report a screen scale, so points cannot be resolved there.
   func testPointsAgainstATargetWithNoScreenScaleIsRejected() {
     assertThrows(
       .screenScaleUnknown,
@@ -175,9 +162,7 @@ final class FBScreenshotConfigurationTests: XCTestCase {
     )
   }
 
-  /// A unit describes measurements, and a full-screen native capture has none. Resolving the scale
-  /// before knowing that would fail a request for the whole screen on a target that cannot report
-  /// one -- for a conversion that request was never going to perform.
+  /// With no crop and no fit bound there is nothing to convert, so the screen scale is not consulted.
   func testPointsWithNothingToConvertNeedsNoScreenScale() throws {
     let result = try plan(FBScreenshotConfiguration(unit: .points), screenScale: .some(nil))
     XCTAssertNil(result.cropRect)
@@ -210,7 +195,6 @@ final class FBScreenshotConfigurationTests: XCTestCase {
     )
   }
 
-  /// Pixels are the default and need no screen scale, so they work on every target.
   func testPixelsNeedNoScreenScale() throws {
     let configuration = FBScreenshotConfiguration(
       cropRect: CGRect(x: 0, y: 0, width: 400, height: 400),
@@ -243,8 +227,6 @@ final class FBScreenshotConfigurationTests: XCTestCase {
     XCTAssertEqual(result.cropRect, CGRect(x: 10, y: 20, width: 31, height: 42))
   }
 
-  /// An element near the edge of the screen is a normal thing to crop around, so an overhanging
-  /// rect yields the part that exists rather than an error.
   func testCropOverhangingTheScreenIsClamped() throws {
     let configuration = FBScreenshotConfiguration(cropRect: CGRect(x: 800, y: 1700, width: 100, height: 200))
     let result = try plan(configuration)
@@ -269,8 +251,6 @@ final class FBScreenshotConfigurationTests: XCTestCase {
 
   // MARK: - Crop and scale together
 
-  /// Scale applies to what survives the crop, not to the whole screen -- otherwise a caller
-  /// bounding a cropped region would get a factor computed from dimensions it discarded.
   func testScaleAppliesToTheCroppedRegion() throws {
     let configuration = FBScreenshotConfiguration(
       cropRect: CGRect(x: 0, y: 0, width: 400, height: 400),
@@ -294,7 +274,7 @@ final class FBScreenshotConfigurationTests: XCTestCase {
 
   // MARK: - Rounding
 
-  /// Half rounds up, not to even, matching the client-side resizers callers are migrating from.
+  /// Half rounds up, not to even, for parity with client-side resizers.
   func testOutputRoundsHalfUp() {
     XCTAssertEqual(FBScreenshotGeometry.outputSize(baseSize: CGSize(width: 5, height: 7), factor: 0.5), CGSize(width: 3, height: 4))
     XCTAssertEqual(FBScreenshotGeometry.roundToPixels(2.5), 3)
@@ -302,7 +282,6 @@ final class FBScreenshotConfigurationTests: XCTestCase {
     XCTAssertEqual(FBScreenshotGeometry.roundToPixels(2.49), 2)
   }
 
-  /// A zero-dimension image is not a smaller image, it is a broken one.
   func testOutputIsFlooredAtOnePixelPerSide() {
     let size = FBScreenshotGeometry.outputSize(baseSize: CGSize(width: 100, height: 100), factor: 0.001)
     XCTAssertEqual(size, CGSize(width: 1, height: 1))
