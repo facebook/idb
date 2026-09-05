@@ -85,7 +85,7 @@ private struct DTXMessagePayloadHeader {
   }
 }
 
-/// Reads fixed-width little-endian-in-host-order values off the front of a buffer.
+/// Reads fixed-width host-order values off the front of a buffer.
 private struct WireReader {
   private var data: Data
 
@@ -138,7 +138,6 @@ private struct RequestPayload {
   var expectsReply: Bool
 }
 
-/// The ways an instruments exchange can fail, as data rather than assembled strings.
 public enum FBInstrumentsClientError: Error {
   case channelsNotADictionary(described: String)
   case auxillaryDataTooShort(described: String)
@@ -354,8 +353,7 @@ final class FBInstrumentsClient {
         throw FBInstrumentsClientError.undecodableArgumentType(type: argumentType)
       }
       let argumentLength = argumentReader.readUInt32()
-      // The length comes off the wire, so it is checked against what actually arrived before any
-      // index math — a truncated payload is an error, not a trap.
+      // Wire-supplied length: validate before indexing, or a truncated payload traps.
       guard remaining.count >= 12 + Int(argumentLength) else {
         throw FBInstrumentsClientError.auxillaryDataTooShort(described: String(describing: Data(remaining) as NSData))
       }
@@ -367,7 +365,6 @@ final class FBInstrumentsClient {
         let argument = try? NSKeyedUnarchiver.unarchivedObject(
           ofClasses: supportedReturnSerializerValues, from: argumentData)
       else {
-        // Described by the bytes that failed to decode, not whatever follows them.
         throw FBInstrumentsClientError.undecodableArgument(described: String(describing: argumentData as NSData))
       }
       arguments.append(argument)
@@ -400,7 +397,6 @@ final class FBInstrumentsClient {
   }
 
   private static func requestData(from request: RequestPayload) -> Data {
-    // Arguments are serialized into the auxillary data.
     let auxillaryData = auxillaryData(fromArgumentsData: request.argumentsData)
 
     // The selector is the "return value" of a request. In a response this will be the return
@@ -408,7 +404,6 @@ final class FBInstrumentsClient {
     // swiftlint:disable:next force_try
     let selectorData = try! NSKeyedArchiver.archivedData(withRootObject: request.selector, requiringSecureCoding: false)
 
-    // Message header is derivable from payload sizing.
     var payloadHeader = DTXMessagePayloadHeader()
     payloadHeader.flags = 0x2 | (request.expectsReply ? 0x1000 : 0)
     payloadHeader.auxiliaryLength = UInt32(auxillaryData.count)
@@ -426,8 +421,6 @@ final class FBInstrumentsClient {
     messageHeader.channelCode = request.channelCode
     messageHeader.expectsReply = request.expectsReply ? 1 : 0
 
-    // The payload is: the message header carrying the total length, the payload header carrying
-    // the aux and selector sizing, the aux data (arguments to the remote call), then the selector.
     var data = Data()
     messageHeader.encode(into: &data)
     payloadHeader.encode(into: &data)
@@ -439,19 +432,15 @@ final class FBInstrumentsClient {
   private static func receiveMessage(
     on connection: FBAMDServiceConnection, request: RequestPayload
   ) throws -> ResponsePayload {
-    // The initial value starts the first iteration of the loop; each iteration overwrites it.
     var messageHeader = DTXMessageHeader()
     var payloadData = Data()
 
-    // Executes at least once, exiting when there are no more fragments.
-    // Compared as `Int` because a fragment count of zero underflows the unsigned subtraction.
+    // Compared as `Int`: a fragment count of zero underflows the unsigned subtraction.
     while Int(messageHeader.fragmentId) < Int(messageHeader.fragmentCount) - 1 {
       messageHeader = DTXMessageHeader.decode(try connection.receive(DTXMessageHeader.wireSize))
-      // The data is corrupted in some way if the magic number from the header is missing.
       guard messageHeader.magic == DTXMessageHeaderMagic else {
         throw FBInstrumentsClientError.corruptHeader
       }
-      // Identifiers should always be increasing.
       if messageHeader.conversationIndex == 0 && messageHeader.identifier < request.messageIdentifier {
         throw FBInstrumentsClientError.staleResponseIdentifier(
           received: messageHeader.identifier, requested: request.messageIdentifier)
@@ -464,7 +453,6 @@ final class FBInstrumentsClient {
       if messageHeader.fragmentCount > 1 && messageHeader.fragmentId == 0 {
         continue
       }
-      // Consume all data from this fragment and accumulate it.
       payloadData.append(try connection.receive(Int(messageHeader.length)))
     }
     return try consume(payloadData: payloadData, messageHeader: messageHeader)
@@ -479,8 +467,7 @@ final class FBInstrumentsClient {
       throw FBInstrumentsClientError.compressedResponse
     }
 
-    // The lengths come straight off the wire, so they are validated against each other and against
-    // what actually arrived before any subtraction or indexing, either of which would trap.
+    // Wire-supplied lengths: validate before subtracting or indexing, either of which would trap.
     guard
       payloadHeader.totalLength >= UInt64(payloadHeader.auxiliaryLength),
       payloadHeader.totalLength <= UInt64(remaining.count)
@@ -489,7 +476,6 @@ final class FBInstrumentsClient {
         total: payloadHeader.totalLength, auxiliary: payloadHeader.auxiliaryLength, received: remaining.count)
     }
 
-    // First comes the auxillary data.
     var auxillaryData: Data?
     if payloadHeader.auxiliaryLength > 0 {
       let end = remaining.index(remaining.startIndex, offsetBy: Int(payloadHeader.auxiliaryLength))
@@ -497,7 +483,6 @@ final class FBInstrumentsClient {
       remaining = remaining[end...]
     }
 
-    // Then comes the return value.
     let returnValueDataLength = Int(payloadHeader.totalLength - UInt64(payloadHeader.auxiliaryLength))
     var returnValueData: Data?
     if returnValueDataLength > 0 {
@@ -511,13 +496,13 @@ final class FBInstrumentsClient {
   private static func parse(
     returnValueData: Data?, auxillaryData: Data?, messageHeader: DTXMessageHeader
   ) throws -> ResponsePayload {
-    // Auxillary data comes first; typically only used in the handshake.
+    // Only the handshake response is read for auxillary values.
     var auxillaryValues: [Any]?
     if let auxillaryData, !auxillaryData.isEmpty {
       auxillaryValues = try objectArguments(fromAuxillaryData: auxillaryData)
     }
 
-    // Then the return value of the RPC call. For some calls this will be the selector name.
+    // For some calls the return value is the selector name.
     var returnValue: Any?
     if let returnValueData, !returnValueData.isEmpty {
       returnValue = try NSKeyedUnarchiver.unarchivedObject(
