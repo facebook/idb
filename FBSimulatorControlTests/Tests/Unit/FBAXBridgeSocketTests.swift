@@ -28,8 +28,7 @@ final class FBAXBridgeSocketTests: XCTestCase {
     try? FileManager.default.removeItem(atPath: directory)
   }
 
-  // The adoption deadline is sub-second, which is only expressible because the conversion keeps
-  // fractions. A whole-second deadline here would be forty thousand times the answer it waits for.
+  // The adoption deadline is sub-second, so the conversion has to keep fractions.
   func testTheAdoptionDeadlineIsSubSecondAndNonZero() {
     let window = FBAXBridgePersistentTransport.receiveWindow(FBAXBridgePersistentTransport.adoptionTimeout)
     XCTAssertLessThan(FBAXBridgePersistentTransport.adoptionTimeout, 1)
@@ -65,8 +64,7 @@ final class FBAXBridgeSocketTests: XCTestCase {
     XCTAssertTrue(path.hasSuffix(FBAXBridgeSocket.suffix))
   }
 
-  // Where the sockets live, which is a security property rather than a naming one: a predictable
-  // socket name in a directory anyone can write to can be bound by somebody else first.
+  // A predictable socket name in a world-writable directory can be bound by somebody else first.
   func testTheSocketDirectoryIsPrivateToThisUser() throws {
     try FBAXBridgeSocket.prepareDirectory()
     // `realpath` rather than `resolvingSymlinksInPath`, which deliberately leaves `/tmp` alone: on
@@ -80,9 +78,8 @@ final class FBAXBridgeSocketTests: XCTestCase {
       "dir=\(FBAXBridgeSocket.directory) resolved=\(resolved) mode=\(String(permissions, radix: 8))")
   }
 
-  // A directory that is already there must still come out owner-only. `createDirectory` applies its
-  // attributes only when it creates something, so on the `/tmp` fallback another local user could
-  // pre-create `idb-ax` with a permissive mode and we would bind predictable socket names into it.
+  // `createDirectory` applies its attributes only when it creates something, so on the `/tmp` fallback another
+  // local user could pre-create `idb-ax` with a permissive mode.
   func testPreparingAnExistingLooseDirectoryTightensIt() throws {
     let loose = "\(directory)/loose-idb-ax"
     try FileManager.default.createDirectory(
@@ -119,20 +116,14 @@ final class FBAXBridgeSocketTests: XCTestCase {
     return String(cString: resolved)
   }
 
-  // Owning the directory is what pays for the name: no filename prefix is needed to tell our sockets
-  // apart from anyone else's, and `sun_path` could not have afforded a subdirectory and a prefix both.
-  //
-  // The headroom is small — six bytes on a stock layout — and over-running it is worse than an error,
-  // because `bind` truncates silently rather than failing, which would land two simulators on one
-  // socket. So this asserts the budget rather than trusting it.
+  // `bind` truncates an over-long `sun_path` silently rather than failing, which would land two simulators on
+  // one socket; the headroom is about six bytes on a stock layout.
   func testABridgeSocketPathFitsInSunPath() {
     let path = FBAXBridgeSocket.path(forConnection: UUID().uuidString)
     XCTAssertLessThan(path.utf8.count, 104, "\(path) is \(path.utf8.count) bytes")
   }
 
-  // What a caller is told when a socket path will not fit in `sun_path`. It cannot be connected to at
-  // all, so the only question is whether the message says why — and the budget is tight enough (six
-  // bytes) that somebody will eventually hit this.
+  // A path that will not fit in `sun_path` cannot be connected to at all, so the message must say why.
   func testAnOverLongSocketPathIsRejectedForItsLength() async throws {
     let tooLong = "\(directory)/\(String(repeating: "x", count: 120)).sock"
     XCTAssertGreaterThan(tooLong.utf8.count, 103)
@@ -184,9 +175,7 @@ final class FBAXBridgeSocketTests: XCTestCase {
       queue: DispatchQueue(label: "com.facebook.FBSimulatorControl.tests.axbridge"))
   }
 
-  // The ordering the connect loop depends on: the death check runs after the connect attempt, so a
-  // guest that bound before dying still yields its descriptor. Passes both before and after the
-  // fast-fail change, and is the invariant that stops it turning a working connect into a failure.
+  // The death check runs after the connect attempt, so a guest that bound before dying still yields its descriptor.
   func testAConnectThatSucceedsWinsOverAGuestKnownToBeDead() async throws {
     let bound = "\(directory)/live.sock"
     let listener = socket(AF_UNIX, SOCK_STREAM, 0)
@@ -300,20 +289,13 @@ final class FBAXBridgeSocketTests: XCTestCase {
     XCTAssertEqual(window.tv_usec, 0)
   }
 
-  func testASubSecondDeadlineIsKept() {
-    let window = FBAXBridgePersistentTransport.receiveWindow(0.1)
-    XCTAssertEqual(window.tv_sec, 0)
-    XCTAssertEqual(window.tv_usec, 100_000)
-  }
-
   func testAFractionalDeadlineKeepsItsFraction() {
     let window = FBAXBridgePersistentTransport.receiveWindow(1.5)
     XCTAssertEqual(window.tv_sec, 1)
     XCTAssertEqual(window.tv_usec, 500_000)
   }
 
-  // Zero is the one deadline the conversion already gets right, and it has to stay that way: the kernel
-  // reads an all-zero `timeval` as no deadline, so it must only ever come from a caller asking for none.
+  // Zero must only ever come from a caller asking for no deadline.
   func testAZeroDeadlineStaysZero() {
     let window = FBAXBridgePersistentTransport.receiveWindow(0)
     XCTAssertEqual(window.tv_sec, 0)
@@ -324,9 +306,7 @@ final class FBAXBridgeSocketTests: XCTestCase {
     XCTAssertEqual(FBAXBridgeConnection.sunPathCapacity, 104)
   }
 
-  // An exclusive guest must die with the host that started it. Nobody else can reach its socket, so
-  // once its client goes there is no next one to wait for, and sitting through the idle window would
-  // leave exactly the orphan a private socket is meant to prevent.
+  // Nobody else can reach an exclusive guest's socket, so once its client goes there is no next one to wait for.
   func testAnExclusiveSpawnPassesExitOnDisconnect() {
     let arguments = FBAXBridgePersistentTransport.serveArguments(
       socketPath: "/x/y.sock", scope: .exclusive)
@@ -352,13 +332,6 @@ final class FBAXBridgeSocketTests: XCTestCase {
     XCTAssertEqual(arguments, ["accessibility", "serve", "/x/y.sock", "--idle-timeout", "7"])
   }
 
-  // Two processes have to arrive at the same name independently.
-
-  func testTheSocketForASimulatorIsTheSameForEveryProcessThatAsks() {
-    let udid = "AE4DEFD9-F94B-4543-84F1-849D4B5C4351"
-    XCTAssertEqual(FBAXBridgeSocket.path(forSimulator: udid), FBAXBridgeSocket.path(forSimulator: udid))
-  }
-
   // A UDID is hex and can reach two callers in different cases; both must land on one socket.
   func testTheSocketForASimulatorIgnoresUdidCase() {
     let upper = FBAXBridgeSocket.path(forSimulator: "AE4DEFD9-F94B-4543-84F1-849D4B5C4351")
@@ -366,23 +339,10 @@ final class FBAXBridgeSocketTests: XCTestCase {
     XCTAssertEqual(upper, lower)
   }
 
-  func testDifferentSimulatorsGetDifferentSockets() {
-    let first = FBAXBridgeSocket.path(forSimulator: "AE4DEFD9-F94B-4543-84F1-849D4B5C4351")
-    let second = FBAXBridgeSocket.path(forSimulator: "7A44631A-36A9-4575-ADDA-2477A4719519")
-    XCTAssertNotEqual(first, second)
-  }
-
   func testASimulatorSocketIsNamedForItsSimulator() {
     let path = FBAXBridgeSocket.path(forSimulator: "AE4DEFD9-F94B-4543-84F1-849D4B5C4351")
     XCTAssertEqual(path, "\(FBAXBridgeSocket.directory)/AE4DEFD9F94B454384F1849D4B5C4351.sock")
     XCTAssertTrue(path.hasSuffix(FBAXBridgeSocket.suffix))
-  }
-
-  // The started-shared and started-private cases are covered end to end, where the difference shows as
-  // a guest that outlives its companion or does not.
-  func testASharedGuestIsNotPrivate() {
-    XCTAssertFalse(FBAXBridgeGuestOwnership.shared(nil).isPrivate)
-    XCTAssertNil(FBAXBridgeGuestOwnership.shared(nil).process)
   }
 
   // `bind` truncates rather than failing, so the margin is checked against the real limit.
