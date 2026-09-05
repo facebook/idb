@@ -20,13 +20,10 @@ extension FBProcessOutput: FBLightweightGeneric {}
 
 public extension FBLightweightGeneric {
 
-  /// Re-expresses the erased parameter of a value returned by an Objective-C API.
-  ///
-  /// The chaining methods that cannot name their result type — `onQueue:pend:`, `failFuture`,
-  /// `mapReplace:` and their neighbours — are declared as a bare `FBFuture *` / `FBFutureContext *`
-  /// and so import into Swift as the `AnyObject` specialisation. This restores the parameter the
-  /// caller already knows, and cannot fail: it changes how the type checker reads a reference that
-  /// already points at the right object, and leaves the object itself alone.
+  /// Re-expresses the erased parameter of a value returned by an Objective-C API. Chaining methods that
+  /// cannot name their result type (`onQueue:pend:`, `failFuture`, `mapReplace:` and neighbours) are
+  /// declared as bare `FBFuture *` / `FBFutureContext *` and import as the `AnyObject` specialisation.
+  /// The parameter is erased at runtime, so restoring it cannot fail.
   func retyped<U: FBLightweightGeneric>(_ type: U.Type = U.self) -> U {
     unsafeDowncast(self, to: U.self)
   }
