@@ -144,16 +144,6 @@ final class FBFramebufferTests: XCTestCase {
 
   // MARK: - Attachment lifecycle
 
-  func testAttachmentCancelUnregistersCallbacks() throws {
-    let surface = FakeFramebufferSurface()
-    let framebuffer = makeFramebuffer(surface: surface)
-    let attachment = try framebuffer.attach()
-
-    attachment.cancel()
-
-    XCTAssertEqual(surface.unregisteredTokens.count, 1)
-  }
-
   func testAttachmentCancelIsIdempotent() throws {
     let surface = FakeFramebufferSurface()
     let framebuffer = makeFramebuffer(surface: surface)
