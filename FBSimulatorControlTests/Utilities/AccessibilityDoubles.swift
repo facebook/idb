@@ -149,10 +149,8 @@ class FBSimulatorControlTests_AXPMacPlatformElement_Double: NSObject {
   }
 }
 
-// Conforms the element double to the production seam. Each accessor routes through
-// the tracked properties, so accesses are recorded in `accessedProperties`.
-// Attributes the double does not model (placeholder/expanded/hidden/focused) are
-// inert — none are in the default key set, so the unit suites never exercise them.
+// Attributes the double does not model (placeholder/expanded/hidden/focused) are inert — none are
+// in the default key set.
 extension FBSimulatorControlTests_AXPMacPlatformElement_Double: FBAXPlatformElement {
   func axFrame() -> NSRect { accessibilityFrame }
   func axRole() -> String? { accessibilityRole?.rawValue }
@@ -188,9 +186,7 @@ extension FBSimulatorControlTests_AXPMacPlatformElement_Double: FBAXPlatformElem
   func axSetBridgeDelegateToken(_ token: String?) { translation.bridgeDelegateToken = token }
 }
 
-// The double stands in for the writable legacy element, so it conforms to the action
-// surface too. Only press is exercised (via `FBAccessibilityElement.tap()`); scroll and
-// set-value are inert — the unit suites never drive them.
+// Only press is exercised (via `FBAccessibilityElement.tap()`); scroll and set-value are inert.
 extension FBSimulatorControlTests_AXPMacPlatformElement_Double: FBAXWritableElement {
   func axPerformPress() -> Bool { accessibilityPerformPress() }
   func axScroll(_ direction: FBAccessibilityScrollDirection) {}
@@ -207,10 +203,8 @@ class FBSimulatorControlTests_AXPTranslator_Double: NSObject {
   /// return a distinct element for object-at-point hit-testing (remote content)
   /// versus the frontmost application. Falls back to `macPlatformElementResult`.
   var macPlatformElementResultsByPid: [pid_t: FBSimulatorControlTests_AXPMacPlatformElement_Double] = [:]
-  /// Wall time to burn inside the two calls the dispatcher times, so a test can assert a *floor* on the
-  /// acquisition phases rather than merely that they are non-negative. A real translator's cost here is
-  /// whatever the simulator is doing; a double's is nothing, and a duration assertion against nothing
-  /// passes whether or not the measurement is wired up. Zero by default, so no other test pays for it.
+  /// Wall time burned inside the two calls the dispatcher times, so a test can assert a floor on the
+  /// acquisition phases rather than merely non-negative. Zero by default.
   var frontmostApplicationDelay: TimeInterval = 0
   var macPlatformElementDelay: TimeInterval = 0
   @objc weak var bridgeTokenDelegate: AnyObject?
