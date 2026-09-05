@@ -10,15 +10,10 @@ import FBControlCore
 import Foundation
 import XCTest
 
-/// Untyped views of the legacy output, for assertions written against dictionaries.
-///
-/// The production path is typed end to end; these exist so a test can inspect what a consumer parsing
-/// the emitted JSON actually receives. They deliberately go through the real encoder rather than
-/// reaching into the model, so an assertion cannot pass on a value the encoder would never emit.
+/// Untyped views of the legacy JSON output. They go through the real encoder, so an assertion
+/// cannot pass on a value the encoder would never emit.
 extension FBAccessibilityElementsResponse {
 
-  /// The legacy envelope exactly as a caller receives it — through the production renderer, so a test
-  /// cannot pass against bytes the renderer would never emit.
   func legacyJSONData() throws -> Data {
     try formattedOutputJSON(format: .default)
   }
@@ -44,13 +39,10 @@ extension FBAccessibilityDocumentElement {
 
 extension FBAccessibilityDocumentElement {
 
-  /// An element carrying just the attributes a marker match reads, for tests that exercise matching and
-  /// frame geometry without going through a serializer.
-  ///
-  /// All three attributes are always marked as read, so omitting one yields "requested, and empty"
-  /// rather than "not requested" — the two states the doubly-optional model distinguishes. Matching and
-  /// geometry flatten the pair with `?? nil` and cannot tell them apart, so this is unambiguous here; a
-  /// test that turns on the distinction wants its own element rather than this helper.
+  /// An element with just the attributes a marker match reads. All three are set to `.some(...)`, so an
+  /// omitted one reads as "requested, and empty" rather than "not requested"; matching and geometry
+  /// flatten the pair with `?? nil` and cannot tell the two apart. A test that needs the distinction
+  /// should build its own element.
   static func testElement(
     label: String? = nil,
     identifier: String? = nil,
