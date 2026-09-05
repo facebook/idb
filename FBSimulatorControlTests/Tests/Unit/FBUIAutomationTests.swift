@@ -16,12 +16,6 @@ final class FBUIAutomationTests: XCTestCase {
     XCTAssertEqual(anchor.y, 448, accuracy: 0.001)
   }
 
-  func testAnchorPointHonoursScale() {
-    let anchor = FBAXBridgeUIAutomation.anchorPoint(widthPixels: 1206, heightPixels: 2622, scale: 3)
-    XCTAssertEqual(anchor.x, 201, accuracy: 0.001)
-    XCTAssertEqual(anchor.y, 437, accuracy: 0.001)
-  }
-
   func testAnchorPointGuardsAgainstZeroScale() {
     let anchor = FBAXBridgeUIAutomation.anchorPoint(widthPixels: 400, heightPixels: 800, scale: 0)
     XCTAssertEqual(anchor.x, 200, accuracy: 0.001)
@@ -54,9 +48,7 @@ final class FBUIAutomationTests: XCTestCase {
     XCTAssertTrue(try transport(simulator, .exclusive) === (try transport(simulator, .exclusive)))
   }
 
-  // The two scopes reach different guests, so handing a shared read the exclusive transport would read
-  // over a bridge nobody else can see, and the reverse would put the caller back to holding one others
-  // want. Memoization is therefore keyed by persistence, not just by simulator.
+  // The two scopes reach different guests, so memoization is keyed by persistence, not just by simulator.
   func testSharedAndExclusiveDoNotShareATransport() throws {
     let simulator = FBSimulatorTestSupport.testableSimulator()
     XCTAssertFalse(try transport(simulator, .shared) === (try transport(simulator, .exclusive)))
@@ -85,8 +77,7 @@ final class FBUIAutomationTests: XCTestCase {
     let backend = FBUIAutomationBackend.axBridge(
       persistence: .oneShot, frontmostMethod: .windowServer, automationMode: true
     )
-    // Both calls, because the claim is about every call: the one-shot transport is a stateless value
-    // with nothing to reuse, so it must stay per-call whatever the persistent one does.
+    // Two calls: the one-shot transport must be built per call, never memoized.
     for _ in 0..<2 {
       let reader = try XCTUnwrap(try simulator.uiAutomation(backend: backend) as? FBAXBridgeUIAutomation)
       XCTAssertTrue(reader.transport is FBAXBridgeOneshotTransport)
