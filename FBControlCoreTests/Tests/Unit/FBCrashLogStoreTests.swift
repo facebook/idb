@@ -71,8 +71,6 @@ final class FBCrashLogStoreTests: XCTestCase {
     let next = Task { try await store.nextCrashLog(forMatchingPredicate: FBCrashLogInfo.predicate(forIdentifier: "assetsd")) }
     defer { next.cancel() }
 
-    // Observed but discarded: had the non-match resolved the wait, the assertion below
-    // would see TableSearch rather than assetsd.
     try await Task.sleep(nanoseconds: 200_000_000)
     XCTAssertNotNil(
       store.ingestCrashLogData(try tableSearchCrashData(), name: "tablesearch.crash"),
