@@ -7,8 +7,8 @@
 
 import Foundation
 
-// The `dtuhidd` wire models: the `Encodable` payloads serialized by `XPCEncoder` into the plain-XPC
-// dictionaries `dtuhidd` decodes. Each HID capability adds its payload type to this file.
+// The `dtuhidd` wire models: `Encodable` payloads serialized by `XPCEncoder` into the XPC dictionaries
+// `dtuhidd` decodes.
 
 /**
  The plain-XPC envelope every `dtuhidd` message shares: a `messageType` discriminator, the
@@ -92,8 +92,7 @@ struct IndigoKeyboardButtonEvent: Encodable {
 
 /**
  The `dtuhidd` `IndigoButtonEvent` payload for a hardware button: the HID `usagePage` / `usageCode`
- identifying the button (see `FBSimulatorDTUHIDTransport.buttonUsage(for:)`) and its `state`. All
- ride as `uint64`.
+ identifying the button and its `state`. All ride as `uint64`.
  */
 struct IndigoButtonEvent: Encodable {
   let usagePage: UInt64
