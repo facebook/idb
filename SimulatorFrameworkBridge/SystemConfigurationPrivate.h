@@ -5,17 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// Synthetic header for SystemConfiguration private API.
-//
-// SCDynamicStore is a Core Foundation API for reading and writing
-// system configuration keys in configd (or configd_sim inside the
-// simulator). Network proxy settings live at the key returned by
-// SCDynamicStoreKeyCreateProxies ("State:/Network/Global/Proxies").
-//
-// The iOS SDK headers mark these functions API_UNAVAILABLE(ios), but
-// they exist in the simulator runtime because the simulator is macOS
-// code. We define typed function pointers here and resolve them at
-// runtime via dlsym.
+// Synthetic header for SystemConfiguration's SCDynamicStore API. The iOS SDK marks these functions
+// API_UNAVAILABLE(ios), but configd_sim exports them in the simulator runtime; they are resolved with
+// dlsym and typed by the function pointers below.
 
 #import <CoreFoundation/CoreFoundation.h>
 
@@ -34,9 +26,7 @@ typedef void *SCDynStoreRef;
 typedef SCDynStoreRef (*SCDynamicStoreCreate_fn)(CFAllocatorRef, CFStringRef, void *, void *);
 
 /**
- * Sets a value for a key in the dynamic store. Used to write proxy
- * configuration dictionaries to the proxies key.
- * Returns true on success.
+ * Sets a value for a key in the dynamic store. Returns true on success.
  */
 typedef Boolean (*SCDynamicStoreSetValue_fn)(SCDynStoreRef, CFStringRef, CFPropertyListRef);
 
