@@ -29,7 +29,6 @@ public final class FBAppleSimctlCommandExecutor {
     return FBAppleSimctlCommandExecutor(
       deviceSetPath: set.deviceSet.setPath,
       deviceUUID: simulator.udid,
-      // A booted/managed simulator always has a logger.
       logger: simulator.logger.withName("simctl"))
   }
 
