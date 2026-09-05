@@ -9,12 +9,10 @@ import FBControlCore
 @testable import FBSimulatorControl
 import XCTest
 
-/// Characterizes how `FBSimulator`'s spawn paths build the `SimDevice` launch-option
-/// dictionary. Mostly pure-function assertions over the option builders, so they
-/// hold without a booted simulator and lock the behavior that the spawn-path
-/// consolidation must preserve (argv[0] handling, `standalone` resolution, stdio keys).
-/// The stdin case drives the whole launcher against a recording device double,
-/// because what it asserts is that the device is never reached at all.
+/// How `FBSimulator`'s spawn paths build the `SimDevice` launch-option dictionary: argv[0]
+/// handling, `standalone` resolution, stdio keys. Pure-function assertions except the stdin
+/// case, which drives the launcher against a recording device double because what it asserts
+/// is that the device is never reached.
 final class FBSimulatorProcessSpawnCommandsTests: XCTestCase {
 
   // MARK: - Helpers
