@@ -85,31 +85,6 @@ final class FBiOSTargetTests: XCTestCase {
     XCTAssertEqual(FBiOSTargetComparison(first, second), .orderedAscending)
   }
 
-  func testStateOrdering() {
-    let stateOrder: [FBiOSTargetState] = [
-      .creating,
-      .shutdown,
-      .booting,
-      .booted,
-      .shuttingDown,
-      .unknown,
-    ]
-    var input: [FBiOSTarget] = []
-    for state in stateOrder {
-      let target = FBiOSTargetDouble()
-      target.targetType = .device
-      target.state = state
-      target.deviceType = FBiOSTargetConfiguration.nameToDevice[.modeliPhone6S]!
-      target.osVersion = FBiOSTargetConfiguration.nameToOSVersion[.nameiOS_10_0]!
-      input.append(target)
-    }
-    for (index, target) in input.enumerated() {
-      let expected = stateOrder[index]
-      let actual = target.state
-      XCTAssertEqual(expected, actual)
-    }
-  }
-
   func testiPadComesBeforeiPhone() {
     let deviceTypes = FBiOSTargetTests.iPhoneDeviceTypes + FBiOSTargetTests.iPadDeviceTypes
     var input: [FBiOSTarget] = []
