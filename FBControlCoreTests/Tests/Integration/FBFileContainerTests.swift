@@ -96,7 +96,6 @@ final class FBFileContainerTests: XCTestCase {
     let expectedFiles: Set<String> = ["some.txt"]
     let actualFiles = try await container.contents(ofDirectory: "dir")
     XCTAssertEqual(expectedFiles, Set(actualFiles))
-    // Listing a dir that doesn't exist fails.
     let missing = try? await container.contents(ofDirectory: "no_dir")
     XCTAssertNil(missing)
   }
@@ -186,7 +185,6 @@ final class FBFileContainerTests: XCTestCase {
     XCTAssertEqual(expectedFiles, Set(actualFiles))
     let missing = try? await container.contents(ofDirectory: "dir")
     XCTAssertNil(missing)
-    // Then back again.
     try await container.move(from: "moved_dir", to: "dir")
     expectedFiles = ["some.txt"]
     actualFiles = try await container.contents(ofDirectory: "dir")
@@ -337,7 +335,6 @@ final class FBFileContainerTests: XCTestCase {
     XCTAssertEqual(expectedFiles, Set(actualFiles))
     let missing = try? await container.contents(ofDirectory: "bar/dir")
     XCTAssertNil(missing)
-    // Then back again.
     try await container.move(from: "bar/moved_dir", to: "bar/dir")
     expectedFiles = ["in_dir.txt"]
     actualFiles = try await container.contents(ofDirectory: "bar/dir")
@@ -359,9 +356,7 @@ final class FBFileContainerTests: XCTestCase {
     try await container.remove("bar/dir")
     let missing = try? await container.contents(ofDirectory: "bar/dir")
     XCTAssertNil(missing)
-    // Deleting a root fails
     let rootResult: Void? = try? await container.remove(".")
     XCTAssertNil(rootResult)
   }
 }
-// swiftlint:enable force_cast
