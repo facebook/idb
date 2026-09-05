@@ -10,7 +10,6 @@ import FBControlCore
 import Foundation
 import Testing
 
-/// Pins `FBSimulatorSet`'s UDID lookup behavior.
 @Suite("FBSimulatorSet UDID lookup")
 struct FBSimulatorSetLookupTests {
 
