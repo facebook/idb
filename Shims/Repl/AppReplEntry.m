@@ -33,9 +33,7 @@ static void *ReplAppServeThread(void *context)
   return NULL;
 }
 
-// A constructor is unavoidable here: nothing in an injected app calls into
-// libRepl, so it must start itself on load. It is gated on IDB_REPL_APP_AUTOSTART
-// and returns immediately (near-zero startup cost) in every other process.
+// Constructor is required: nothing in an injected app calls into libRepl (see header above).
 // patternlint-disable-next-line static-initializer-constructor-attribute
 __attribute__((constructor)) static void ReplAppAutostart(void)
 {
