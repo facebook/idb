@@ -21,11 +21,8 @@ public enum FBAccessibilityCoordinateSpace: String, Sendable, Encodable {
   case screen
 }
 
-/// An element's on-screen rectangle.
-///
-/// Each edge is optional because an off-screen element can report a non-finite coordinate, which JSON
-/// cannot represent. Those are normalized to `nil` at construction — once — so nothing downstream has
-/// to re-check, and the encoder cannot be handed a value it would refuse.
+/// An element's on-screen rectangle. An edge is `nil` when non-finite: an off-screen element can
+/// report one, and JSON cannot represent it.
 public struct FBAccessibilityFrame: Sendable, Equatable, Encodable {
 
   public let x: Double?
@@ -61,7 +58,6 @@ public struct FBAccessibilityFrame: Sendable, Equatable, Encodable {
     case height
   }
 
-  // Every edge is emitted, `null` where it is not representable, so the frame's shape never varies.
   public func encode(to encoder: Encoder) throws {
     var container = encoder.container(keyedBy: CodingKeys.self)
     try container.encode(x, forKey: .x)
@@ -88,9 +84,7 @@ public struct FBAccessibilityScreenInfo: Sendable, Equatable, Encodable {
   public let height: Double
   public let coordinateSpace: FBAccessibilityCoordinateSpace
 
-  /// A non-finite bound has no JSON form and is reported as unknown, the same normalization
-  /// `FBAccessibilityFrame` applies to an edge. An off-screen element can report one, so the encoder
-  /// must never be handed it: it would throw and fail the entire read.
+  /// Nil for a non-finite bound: JSON cannot represent it, and encoding it would fail the whole read.
   public init?(width: Double, height: Double, coordinateSpace: FBAccessibilityCoordinateSpace = .screen) {
     guard width.isFinite, height.isFinite else {
       return nil
@@ -107,8 +101,7 @@ public struct FBAccessibilityScreenInfo: Sendable, Equatable, Encodable {
   }
 }
 
-/// What a read was asked for. This is how a consumer tells one describe verb from another: every verb
-/// emits the same document shape, so the *target* rather than the shape identifies the read.
+/// What a read was asked for, which is how a consumer tells one describe verb from another.
 public struct FBAccessibilityTargetDescriptor: Sendable, Equatable, Encodable {
 
   public enum Kind: String, Sendable, Encodable {
@@ -170,8 +163,6 @@ public struct FBAccessibilityTargetDescriptor: Sendable, Equatable, Encodable {
     case matchKey = "match_key"
   }
 
-  // `encode` rather than `encodeIfPresent`: every key is emitted, `null` where it does not apply to
-  // this kind, so the document's shape does not vary with the verb that produced it.
   public func encode(to encoder: Encoder) throws {
     var container = encoder.container(keyedBy: CodingKeys.self)
     try container.encode(kind, forKey: .kind)
@@ -192,25 +183,14 @@ public struct FBAccessibilityCoverage: Sendable, Equatable, Encodable {
   /// Coverage of the elements the read *reports* — what a consumer actually receives.
   public let frame: Double
 
-  /// Coverage of the elements the read *walked*, before `--filter` narrowed them. Equal to `frame`
-  /// under the default filter, which drops nothing.
-  ///
-  /// Named for the walk rather than for the tree: the guest backends bound their walk by depth and
-  /// node count, and a truncated read never saw the rest of the tree.
-  ///
-  /// A `frame` far below `walked` means the filter hid most of the screen's content; both being low
-  /// means the app is not exposing it in the first place — a WebView or other remote content.
+  /// Coverage of the elements the read walked, before `--filter` narrowed them; equal to `frame`
+  /// under the default filter. A truncated read never saw the rest of the tree, so this measures the
+  /// walk, not the tree. Both low means the app is not exposing its content (e.g. a WebView).
   public let walked: Double
 
   /// Coverage of the walked elements a user could perceive: those carrying a label with no labelled
-  /// descendant.
-  ///
-  /// Labelled, not identified: an identifier is a developer handle and says nothing about what a user
-  /// perceives. Innermost, not childless: a label is disowned only by a *labelled* descendant, so an
-  /// app icon — a labelled button wrapping an unlabelled image — still counts.
-  ///
-  /// Measured over the walk, not over what `--filter` left behind. `nil` for a flat read, which
-  /// carries no `children` and so cannot tell a leaf from a container.
+  /// descendant (so a labelled button wrapping an unlabelled image counts once). Measured over the
+  /// walk, not the filtered result. `nil` for a flat read, which carries no `children`.
   public let content: Double?
 
   /// Coverage of the walked elements with no children, labelled or not. Read against `content`: a `leaf`
@@ -247,59 +227,37 @@ public struct FBAccessibilityCoverage: Sendable, Equatable, Encodable {
   }
 }
 
-/// Whether an element can be acted on, and — when it cannot — why.
+/// Whether an element can be acted on, and why not when it cannot.
 ///
-/// A sum type, so **the point exists only on the actionable case**. There is no representable state in
-/// which a caller holds a tap point for an element it cannot tap, and none in which a reason sits beside
-/// a point that contradicts it. It also keeps the accessibility server's `(-1, -1)` "nothing is
-/// reachable" sentinel off the wire entirely: no reachable point is the *absence* of `.actionable`,
-/// not a magic coordinate every consumer has to know to test for.
+/// The accessibility server's `(-1, -1)` "nothing reachable" sentinel never reaches the wire: no
+/// reachable point is the absence of `.actionable`.
 ///
-/// `.actionable` does not mean "a tap will land": it is derived from the application's own render
-/// tree, which cannot see another process compositing on top of it — a system alert or SpringBoard
-/// chrome over the app does not change these attributes. It means nothing *this application* knows
-/// about blocks interaction, and `at` is where the application believes a touch reaches. Naming an
-/// occluder in another process requires the `FBAXKeys.occludedBy` hit-test.
+/// `.actionable` is derived from the application's own render tree, which cannot see another
+/// process compositing on top of it (a system alert, SpringBoard chrome). Naming an occluder in
+/// another process requires the `FBAXKeys.occludedBy` hit-test.
 public enum FBAccessibilityInteractable: Sendable, Equatable {
 
   /// The element can be acted on, at this point. Not necessarily the frame centre: for a partially
   /// covered element the centre is exactly what fails, and this is the point that does not.
   case actionable(at: FBAccessibilityPoint)
 
-  /// The element cannot be acted on, for at least one reason. Never empty — an empty reason list is the
-  /// actionable case, and the type makes that unrepresentable.
-  ///
-  /// **Ordered most specific first.** `reasons[0]` is the most actionable thing known about the element,
-  /// so a consumer that reads only the first gets the best answer rather than an arbitrary one. The
-  /// general observation `notHittable` — the accessibility server saying it found no reachable point,
-  /// without saying why — always sorts last, behind anything that explains it.
+  /// The element cannot be acted on. `reasons` is never empty and is ordered most specific first:
+  /// `notHittable`, which observes without explaining, always sorts last.
   case blocked(reasons: [Reason])
 
-  /// Why an element cannot be acted on. A closed vocabulary, each case traceable to an attribute that was
-  /// actually read rather than to a heuristic over geometry.
-  ///
-  /// Every case but `notHittable` names a cause; `notHittable` only reports that the server found no
-  /// reachable point. Reasons accumulate — an element is routinely both unreachable and
-  /// clipped — and `blocked` orders explanations ahead of the observation.
+  /// Why an element cannot be acted on.
   public enum Reason: Sendable, Equatable {
-    /// The accessibility server can name no point at which a touch reaches this element, and has not
-    /// said why: `IsVisible == false` read straight through.
-    ///
-    /// Covers several situations only a hit-test can separate — a label inside a tappable control, a
-    /// pass-through container, an element genuinely covered by an unrelated one, and one transparent
-    /// or clipped by an ancestor. Because it explains nothing it sorts last in `reasons`.
+    /// `IsVisible == false` read straight through: the server found no reachable point and did not say
+    /// why. Only a hit-test separates the cases this covers — a label inside a tappable control, a
+    /// pass-through container, a genuinely covered element, or one transparent or clipped by an ancestor.
     case notHittable
     /// The element has a reachable point, but it is not the centre — so the centre is covered, and
     /// automation aiming there hits whatever is on top. `by` names that element when a hit-test was paid
     /// for, and is nil otherwise.
     case occluded(by: FBAccessibilityElementRef?)
-    /// A touch aimed here is delivered to a relative instead — an ancestor that owns this element, or a
-    /// descendant it passes through to. The element is not independently interactive and was never meant
-    /// to be: a label inside a button, or a container laying out the control that does the work.
-    ///
-    /// Not a fault, and the recovery is neither scrolling nor moving anything: act on the named element.
-    /// Requires a hit-test, so it appears only when `occludedBy` was requested — without it these fall
-    /// back to plain `notHittable`.
+    /// A touch aimed here is delivered to a relative — an ancestor that owns this element, or a
+    /// descendant it passes through to (a label inside a button, a container around a control). Act on
+    /// the named element. Requires a hit-test, so without `occludedBy` these report as `notHittable`.
     case handledBy(FBAccessibilityElementRef?)
     /// The view has `userInteractionEnabled` off.
     case userInteractionDisabled
@@ -309,12 +267,8 @@ public enum FBAccessibilityInteractable: Sendable, Equatable {
     case hidden
     /// The element has no area to tap.
     case zeroSize
-    /// Part of the element's frame lies outside the screen. The recovery is to bring the element fully
-    /// into view and try again.
-    ///
-    /// Never reported by the server; computed from plain geometry against the screen bounds the
-    /// document carries. Accumulates alongside other reasons — clipped and covered are not
-    /// alternatives, and an element is often both.
+    /// Part of the element's frame lies outside the screen bounds the document carries. Computed from
+    /// geometry, never reported by the server; accumulates alongside other reasons.
     case clippedByScreen
   }
 }
@@ -339,10 +293,8 @@ public struct FBAccessibilityPoint: Sendable, Equatable, Encodable {
 }
 
 /// An element resolved by a hit-test — whatever actually receives a touch aimed at another element.
-///
-/// Descriptive rather than a handle: a hit-test resolves an element with no identity that outlives the
-/// call. Used both for an unrelated element covering the target and for a relative of the target that
-/// takes the touch on its behalf.
+/// Used both for an unrelated element covering the target and for a relative of the target that takes
+/// the touch on its behalf.
 public struct FBAccessibilityElementRef: Sendable, Equatable, Encodable {
   public let type: String?
   public let identifier: String?
@@ -366,7 +318,6 @@ public struct FBAccessibilityElementRef: Sendable, Equatable, Encodable {
     case pid
   }
 
-  // Every key emitted, `null` where absent, so the shape does not vary with what the hit-test could read.
   public func encode(to encoder: Encoder) throws {
     var container = encoder.container(keyedBy: CodingKeys.self)
     try container.encode(type, forKey: .type)
@@ -398,8 +349,7 @@ public extension Array where Element == FBAccessibilityInteractable.Reason {
 
 public extension FBAccessibilityInteractable {
 
-  /// The union is **internally tagged**: every value is an object and the shapes differ by case, so a
-  /// consumer discriminates on `status` rather than probing for which key happens to be present.
+  /// Internally tagged: every value is an object, discriminated by `status`.
   enum CodingKeys: String, CodingKey {
     case status
     case at
@@ -421,9 +371,7 @@ extension FBAccessibilityInteractable: Encodable {
       try container.encode(at, forKey: .at)
     case let .blocked(reasons):
       try container.encode(Status.blocked, forKey: .status)
-      // Ordered here rather than trusting every construction site: the guarantee that `reasons[0]` is the
-      // most actionable thing known belongs to the wire, and a refinement pass that returns early must not
-      // be able to bypass it.
+      // Ordered at encode time so the wire guarantee holds however `reasons` was built.
       try container.encode(reasons.mostSpecificFirst, forKey: .reasons)
     }
   }
@@ -436,7 +384,7 @@ extension FBAccessibilityInteractable.Reason: Encodable {
     case by
   }
 
-  /// The wire spelling of each reason. Pinned by test — these are the tokens a consumer branches on.
+  /// The wire spelling; consumers branch on these tokens.
   public var kind: String {
     switch self {
     case .notHittable: return "not_hittable"
@@ -453,8 +401,6 @@ extension FBAccessibilityInteractable.Reason: Encodable {
   public func encode(to encoder: Encoder) throws {
     var container = encoder.container(keyedBy: CodingKeys.self)
     try container.encode(kind, forKey: .kind)
-    // `by` is emitted only by the cases that can have one, and only when a hit-test named it — the reason
-    // the reference lives on the case rather than beside it.
     switch self {
     case let .occluded(by), let .handledBy(by):
       try container.encodeIfPresent(by, forKey: .by)
@@ -487,11 +433,8 @@ public struct FBAccessibilityInteractionSummary: Sendable, Equatable, Encodable 
     self.unexplainedRatio = blocked > 0 ? Double(unexplained) / Double(blocked) : nil
   }
 
-  /// Tallies a serialized read, or nil when no element carried a verdict at all.
-  ///
-  /// Nil rather than zeroes, because "not requested" and "requested, and the backend could not answer"
-  /// must not read as "a screen with nothing blocked". A legacy-backend read, where every verdict is
-  /// null, reports nothing here rather than 0 unexplained.
+  /// Tallies a serialized read. Nil (not zeroes) when no element carried a verdict, so a read that did
+  /// not request `interactable`, or a backend that could not answer, never reads as "nothing blocked".
   public init?(elements: [FBAccessibilityDocumentElement]) {
     var actionable = 0
     var blocked = 0
@@ -537,19 +480,11 @@ public struct FBAccessibilityInteractionSummary: Sendable, Equatable, Encodable 
   }
 }
 
-/// How many of a read's elements carry a usable rectangle.
-///
-/// A view out of its window reports `CGRectZero` while keeping its label, so geometry is the one
-/// attribute that degrades when the tree does; the framed-to-zero-framed split within one read is the
-/// signal. Raw counts, no ratio and no verdict: what proportion is suspicious depends on the screen —
-/// a scrolled-away list legitimately contributes zero-framed elements — so the threshold belongs to
-/// the consumer.
-///
-/// `total` counts elements carrying a `frame` attribute, not "things on screen": a single visible row
-/// routinely contributes several framed elements.
-///
-/// `nil` when the read did not carry `frame` at all. Nil rather than zeroes, as in
-/// `FBAccessibilityInteractionSummary`: "not requested" must not read as "every element is framed".
+/// How many of a read's elements carry a usable rectangle. A view out of its window reports
+/// `CGRectZero` while keeping its label, so the framed-to-zero-framed split is the signal that the
+/// tree degraded; what proportion is suspicious depends on the screen, so no threshold is applied.
+/// `total` counts elements carrying a `frame` attribute, not things on screen. `nil` (not zeroes)
+/// when the read did not carry `frame`.
 public struct FBAccessibilityFrameSummary: Sendable, Equatable, Encodable {
 
   /// Elements carrying a `frame` attribute, whatever its value.
@@ -598,25 +533,17 @@ public struct FBAccessibilityFrameSummary: Sendable, Equatable, Encodable {
   }
 }
 
-/// What narrowed a read, and how much of it survived.
-///
-/// A caller that asked for `--match Cart` and got back three elements cannot otherwise tell that from
-/// a screen with three elements on it: the narrowing happens on the companion, and the document that
-/// comes back looks the same either way. This says what the read applied and what it dropped, so an
-/// empty result reads as "the substring matched nothing out of 812" rather than as "the read failed".
-///
-/// Emitted on every `complete` document, including reads that narrowed nothing — those report the
-/// default filter, a null match, and equal counts. A consumer therefore never has to distinguish "did
-/// not narrow" from "the companion predates this field" by whether a key is present.
+/// What narrowed a read and how much survived, so an empty result reads as "matched nothing out of
+/// N" rather than as a failed read. Emitted on every `complete` document; an un-narrowed read reports
+/// the default filter, a null match, and equal counts.
 public struct FBAccessibilityNarrowing: Sendable, Equatable, Encodable {
 
   /// The substring the read reported only the matching elements for, or nil when it did not narrow by
   /// one. A marker read leaves this null: it reports its search through `target`, not here.
   public let match: String?
 
-  /// The element key `match` was compared against, and whether that comparison ignored case. Both null
-  /// when there was no match — they describe a comparison that did not happen, and reporting a default
-  /// for it would read as one that did.
+  /// The element key `match` was compared against, and whether the comparison ignored case. Both nil
+  /// when there was no match.
   public let matchKey: String?
   public let ignoreCase: Bool?
 
@@ -647,8 +574,6 @@ public struct FBAccessibilityNarrowing: Sendable, Equatable, Encodable {
     case matched
   }
 
-  // `encode` rather than `encodeIfPresent`: the document's key set is fixed, so a match that was not
-  // asked for is an explicit `null` rather than an absent key.
   public func encode(to encoder: Encoder) throws {
     var container = encoder.container(keyedBy: CodingKeys.self)
     try container.encode(match, forKey: .match)
@@ -663,9 +588,6 @@ public struct FBAccessibilityNarrowing: Sendable, Equatable, Encodable {
 public extension FBAccessibilityNarrowing {
   /// The report for a read that applied `filter` and `match`, walking `walked` nodes and reporting
   /// `matched` of them.
-  ///
-  /// Spelled from the typed filter and match rather than from strings at the call site, so the echo
-  /// cannot claim a narrowing the read did not apply; the counts are all the site contributes.
   init(filter: FBAccessibilityElementFilter, match: FBAccessibilityMatch?, walked: Int, matched: Int) {
     self.init(
       match: match?.value,
@@ -676,13 +598,8 @@ public extension FBAccessibilityNarrowing {
       matched: matched)
   }
 
-  /// The report for a read that hit-tested remote content in addition to walking the element tree.
-  ///
-  /// The discovered elements were walked too, and were narrowed by the same `filter` and `match`, so
-  /// they belong on both sides of the count: `discovered` adds to `walked`, and whatever survived
-  /// narrowing is already counted in `reported`. Pairing the counts here — rather than by hand at the
-  /// call site — is what stops a read that reported matching remote content from claiming more matched
-  /// than it walked.
+  /// The report for a read that also hit-tested remote content. Discovered elements were walked and
+  /// narrowed too: they add to `walked`, and any survivors are already in `reported`.
   init(
     filter: FBAccessibilityElementFilter,
     match: FBAccessibilityMatch?,
@@ -717,28 +634,13 @@ public extension [FBAccessibilityDocumentElement] {
 
 /// An accessibility element in the `complete` output format.
 ///
-/// A struct rather than an untyped bag: every attribute the schema can carry is a named, typed field.
-///
-/// Each attribute is doubly optional, which is how `Encodable` expresses the three states a read can
-/// produce — the synthesized encoder writes optionals with `encodeIfPresent`, so this needs no encoder
-/// of its own:
-///
-/// - `nil` — never requested, so the key is omitted entirely.
+/// Each attribute is doubly optional; the synthesized encoder uses `encodeIfPresent`, so:
+/// - `nil` — not requested: the key is omitted (this is what lets `--key` trim the payload).
 /// - `.some(nil)` — requested, but the element has no value: an explicit `null`.
 /// - `.some(value)` — the value.
 ///
-/// That is the same distinction the legacy formats draw with key presence, and it is worth keeping:
-/// collapsing the first two would leave a consumer unable to tell "not asked for" from "asked for and
-/// empty", and would stop `--key` trimming the payload it exists to trim.
-///
-/// The envelope around these elements still has a fixed key set — that shape must not vary with the
-/// verb. Which *attributes* an element carries is a caller's explicit choice, which is a different
-/// thing.
-///
-/// The names here are the clean schema: the `AX`-prefixed legacy spellings become plain ones
-/// (`AXLabel` to `label`, `AXUniqueId` to `identifier`), and the two attributes that merely restate
-/// another are absent entirely — the stringified frame (`frame` carries it structurally) and the raw
-/// role (`type` is its normalized form).
+/// Legacy `AX`-prefixed names are spelled plainly here (`AXLabel` → `label`, `AXUniqueId` →
+/// `identifier`); the stringified frame and raw role are carried by `frame` and `type`.
 public struct FBAccessibilityDocumentElement: Sendable, Equatable, Encodable {
 
   public var label: String??
@@ -759,7 +661,7 @@ public struct FBAccessibilityDocumentElement: Sendable, Equatable, Encodable {
   public var isRemote: Bool??
   /// Whether the element can be acted on, and why not when it cannot. `.some(nil)` — an explicit `null` —
   /// on a backend that cannot answer: the legacy accessibility path has no counterpart for the attributes
-  /// this is derived from, and the explicit null keeps the key set fixed across backends.
+  /// this is derived from.
   public var interactable: FBAccessibilityInteractable??
   public var customActions: [String]??
   public var traits: [String]??
@@ -769,27 +671,19 @@ public struct FBAccessibilityDocumentElement: Sendable, Equatable, Encodable {
   /// which emits both.
   public var role: String??
   public var axFrame: String??
-  /// What a hit-test at this element's centre found, as the backend reported it.
-  ///
-  /// Not part of the emitted schema and absent from `CodingKeys`: it is an *input* to deciding why an
-  /// element is blocked, consumed by the refinement that turns it into a reason and never emitted on
-  /// its own. Carried on the element so the guest answers once, inline with the tree.
+  /// What a hit-test at this element's centre found. Not part of the emitted schema (absent from
+  /// `CodingKeys`): it is an input to deriving `interactable`, never emitted on its own.
   public var explainedBy: FBAccessibilityElementRef?
   /// The nested children, or `nil` when the read did not walk them — a flat read lists every node
   /// separately and carries no `children` key at all. Not an attribute: it comes from the traversal.
   ///
   /// A format that asks for a tree reports this on every element (see `reportingChildren()`); the flat
-  /// format reports it on none. Either way the key set does not vary with the backend.
+  /// format reports it on none.
   public var children: [FBAccessibilityDocumentElement]?
 
-  /// A copy that reports `children` on every node, empty where the read walked none.
-  ///
-  /// How much of a subtree a single-element read walks differs by backend — the accessibility backend
-  /// can walk its element's children, while the guest-backed readers resolve one node from a hit-test
-  /// and never look further. Left alone that difference reaches the output, so the same
-  /// command describes the same element with a different key set depending on `--api`. Normalizing here
-  /// keeps the shape fixed while letting the contents say what each backend actually read: the key is
-  /// always present, and an empty array means "no children in what was read".
+  /// A copy that reports `children` on every node, empty where the read walked none. Backends differ
+  /// in how much subtree a single-element read walks (the guest-backed readers resolve one node from a
+  /// hit-test and stop), and without this the key set would vary with `--api`.
   public func reportingChildren() -> FBAccessibilityDocumentElement {
     var copy = self
     copy.children = (children ?? []).map { $0.reportingChildren() }
@@ -826,12 +720,9 @@ public struct FBAccessibilityDocumentElement: Sendable, Equatable, Encodable {
 
 }
 
-/// An element's `value`, which the platform reports as an untyped object — usually a string, sometimes
-/// a number or a flag (a slider's position, a switch's state), and occasionally a collection.
-///
-/// This is the one attribute whose shape the platform does not fix, so it is the one place a value tree
-/// is warranted. It stays a closed set scoped to this attribute rather than a general-purpose JSON type:
-/// nothing else in the schema is dynamic.
+/// An element's `value`, which the platform reports as an untyped object — usually a string,
+/// sometimes a number or flag (a slider's position, a switch's state), occasionally a collection.
+/// Deliberately not a general-purpose JSON type: nothing else in the schema is dynamic.
 public enum FBAccessibilityAttributeValue: Sendable, Equatable, Encodable {
   case string(String)
   case bool(Bool)
@@ -843,12 +734,8 @@ public enum FBAccessibilityAttributeValue: Sendable, Equatable, Encodable {
   /// optional, so this case exists only for the position where that optional cannot reach.
   case null
 
-  /// Classifies the platform's untyped `accessibilityValue`. Collections are carried through as
-  /// collections — flattening one to its `String(describing:)` form would change what a consumer reads.
-  /// An object of no recognized kind does become that description, which is the long-standing fallback.
-  ///
-  /// Fails only for `nil`/`NSNull`, which is how a caller reading a single attribute distinguishes "no
-  /// value" — see `member(_:)` for why a collection cannot use that same signal.
+  /// Classifies the platform's untyped `accessibilityValue`. Collections stay collections; an object
+  /// of no recognized kind becomes its description. Fails only for `nil`/`NSNull` — see `member(_:)`.
   public init?(_ object: Any?) {
     guard let object, !(object is NSNull) else {
       return nil
@@ -872,9 +759,7 @@ public enum FBAccessibilityAttributeValue: Sendable, Equatable, Encodable {
     }
   }
 
-  /// A member of a collection value. `init?` reports `nil` only for `nil`/`NSNull` — every other object
-  /// classifies, falling back to its description — so a failure here means the member was null, and a
-  /// null that is a member of a collection has to stay in place rather than read as an absent value.
+  /// A collection member: a failed `init?` can only mean null, which must stay in place inside a collection.
   private static func member(_ object: Any) -> FBAccessibilityAttributeValue {
     FBAccessibilityAttributeValue(object) ?? .null
   }
