@@ -22,11 +22,11 @@
 #pragma mark Initializers
 
 /**
- Creates and returns a socket reader for the provided port and consumer.
+ Creates a socket server for the provided port and delegate.
 
  @param port the port to bind against.
  @param delegate the delegate to use.
- @return a new socket reader.
+ @return a new socket server.
  */
 + (nonnull instancetype)socketServerOnPort:(in_port_t)port delegate:(nonnull id<FBSocketServerDelegate>)delegate;
 
@@ -54,9 +54,7 @@
 - (nonnull FBFuture<NSNull *> *)stopListening;
 
 /**
- Starts the socket server, managed by a context manager
-
- @return a FBFutureContext that will stop listening when the context is torn down.
+ Listens until the returned context is torn down.
  */
 - (nonnull FBFutureContext<NSNull *> *)startListeningContext;
 
