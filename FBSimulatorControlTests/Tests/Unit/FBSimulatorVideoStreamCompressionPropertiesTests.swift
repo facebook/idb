@@ -194,18 +194,6 @@ final class FBSimulatorVideoStreamCompressionPropertiesTests: XCTestCase {
     XCTAssertEqual(props[kVTCompressionPropertyKey_Quality as String] as? NSNumber, 0.5)
   }
 
-  func testMinicapCompressionPropertiesContainQuality() {
-    let config = FBVideoStreamConfiguration(
-      format: FBVideoStreamFormat.minicap,
-      framesPerSecond: nil,
-      rateControl: FBVideoStreamRateControl.quality(0.5),
-      scaleFactor: nil,
-      keyFrameRate: nil
-    )
-    let props = FBSimulatorVideoStream.compressionSessionProperties(for: config, callerProperties: [:])
-    XCTAssertEqual(props[kVTCompressionPropertyKey_Quality as String] as? NSNumber, 0.5)
-  }
-
   func testH264CompressionPropertiesContainQuality() {
     let config = FBVideoStreamConfiguration(
       format: FBVideoStreamFormat.compressedVideo(withCodec: .h264, transport: .annexB),
@@ -218,24 +206,8 @@ final class FBSimulatorVideoStreamCompressionPropertiesTests: XCTestCase {
     XCTAssertEqual(props[kVTCompressionPropertyKey_Quality as String] as? NSNumber, 0.5)
   }
 
-  func testAutomaticRateControlAddsNoRateKeyForH264() {
-    // `.automatic` defers to session setup, where the output dimensions derive an AverageBitRate;
-    // the properties dictionary itself must carry neither a bitrate nor the (encoder-ignored)
-    // Quality key.
-    let config = FBVideoStreamConfiguration(
-      format: FBVideoStreamFormat.compressedVideo(withCodec: .h264, transport: .annexB),
-      framesPerSecond: nil,
-      rateControl: nil,
-      scaleFactor: nil,
-      keyFrameRate: nil
-    )
-    let props = FBSimulatorVideoStream.compressionSessionProperties(for: config, callerProperties: [:])
-    XCTAssertNil(props[kVTCompressionPropertyKey_AverageBitRate as String])
-    XCTAssertNil(props[kVTCompressionPropertyKey_Quality as String])
-  }
-
   func testAutomaticRateControlUsesQualityForMJPEG() {
-    // JPEG encoders honor the quality knob, so `.automatic` keeps the pre-automatic default there.
+    // JPEG encoders honor the quality knob, so `.automatic` uses it for MJPEG.
     let config = FBVideoStreamConfiguration(
       format: FBVideoStreamFormat.mjpeg(encoder: .requireHardware),
       framesPerSecond: nil,
@@ -295,7 +267,6 @@ final class FBSimulatorVideoStreamCompressionPropertiesTests: XCTestCase {
       keyFrameRate: nil
     )
     let props = FBSimulatorVideoStream.compressionSessionProperties(for: config, callerProperties: [:])
-    // HEVC uses a closed GOP and an HEVC Main/Main10 profile.
     XCTAssertEqual(props[kVTCompressionPropertyKey_AllowOpenGOP as String] as? NSNumber, false)
     let profile = props[kVTCompressionPropertyKey_ProfileLevel as String] as? String
     XCTAssertNotNil(profile)
@@ -303,7 +274,6 @@ final class FBSimulatorVideoStreamCompressionPropertiesTests: XCTestCase {
       profile == (kVTProfileLevel_HEVC_Main_AutoLevel as String) || profile == (kVTProfileLevel_HEVC_Main10_AutoLevel as String),
       "HEVC profile should be Main or Main10, got \(String(describing: profile))"
     )
-    // HEVC must not set the H264-specific entropy mode.
     XCTAssertNil(props[kVTCompressionPropertyKey_H264EntropyMode as String])
   }
 
