@@ -7,8 +7,7 @@
 
 import CoreFoundation
 
-/// Shared timing logic for periodic stats logging across the framebuffer and the encoder. Not part of
-/// the public API.
+/// Shared timing logic for periodic stats logging across the framebuffer and the encoder.
 struct FBPeriodicStatsTimer {
   private var startTime: CFAbsoluteTime = 0
   private var lastLogTime: CFAbsoluteTime = 0
