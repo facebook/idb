@@ -141,15 +141,8 @@
 
 + (dispatch_data_t)adaptNSData:(NSData *)data __attribute__((no_sanitize("nullability-arg")))
 {
-  // The safest possible way of adapting the NSData to dispatch_data_t is to ensure that buffer backing the dispatch_data_t data is:
-  // 1) Immutable
-  // 2) Is not freed until the dispatch_data_t is destroyed.
-  // There are two ways of doing this:
-  // 1) Copy the NSData, and retain it for the lifecycle of the dispatch_data_t.
-  // 2) Use DISPATCH_DATA_DESTRUCTOR_DEFAULT which will copy the underlying buffer.
-  // This uses #2 as it's preferable to let libdispatch do the management itself and avoids an object copy (NSData) as well as a potential buffer copy in `-[NSData copy]`.
-  // It can be quite surprising how many methods result in the creation of NSMutableData, for example `-[NSString dataUsingEncoding:]` can result in NSConcreteMutableData.
-  // By copying the buffer we are sure that the data in the dispatch wrapper is completely immutable.
+  // DISPATCH_DATA_DESTRUCTOR_DEFAULT copies the bytes, so the dispatch_data stays valid and immutable
+  // even when `data` is secretly an NSMutableData (e.g. from -[NSString dataUsingEncoding:]).
   return dispatch_data_create(
     data.bytes,
     data.length,
@@ -534,9 +527,7 @@ static inline dataBlock FBDataConsumerToStringConsumer(void (^consumer)(NSString
 
 - (NSInteger)unprocessedDataCount
 {
-  // not synchronized on purpose
-  // as processing data happens on a different thread
-  // so we cannot be accurate anyway
+  // Deliberately unsynchronized: the count is only ever approximate.
   return self.dispatcher.numPendingTasks;
 }
 

@@ -17,7 +17,7 @@
 @protocol FBDataConsumerLifecycle;
 
 /**
- Adapts a NSData consumer to a dispatch_data consumer to.
+ Adapts between NSData and dispatch_data consumers.
  */
 @interface FBDataConsumerAdaptor : NSObject
 
@@ -30,7 +30,7 @@
 + (nonnull id<FBDispatchDataConsumer>)dispatchDataConsumerForDataConsumer:(nonnull id<FBDataConsumer>)consumer;
 
 /**
- Adapts a NSData consumer to a dispatch_data consumer.
+ Adapts a dispatch_data consumer to an NSData consumer.
 
  @param consumer the consumer to adapt.
  @return a NSData consumer.
@@ -38,8 +38,7 @@
 + (nonnull id<FBDataConsumer, FBDataConsumerLifecycle>)dataConsumerForDispatchDataConsumer:(nonnull id<FBDispatchDataConsumer, FBDataConsumerLifecycle>)consumer;
 
 /**
- Converts dispatch_data to NSData.
- Note that this will copy data if the underlying dispatch data is non-contiguous.
+ Converts dispatch_data to NSData, copying only when the dispatch_data is non-contiguous.
 
  @param dispatchData the data to adapt.
  @return NSData from the dispatchData.
@@ -85,7 +84,7 @@
  Creates a consumer that delivers data when available.
  Data will be delivered asynchronously to a private queue.
 
- @param consumer the block to call when a line has been consumed.
+ @param consumer the block to call when new data is available
  @return a new consumer.
  */
 + (nonnull id<FBDataConsumer, FBDataConsumerLifecycle, FBDataConsumerAsync>)asynchronousDataConsumerWithBlock:(void (^_Nonnull)(NSData * _Nonnull))consumer;
@@ -129,7 +128,7 @@
 @interface FBLoggingDataConsumer : NSObject
 
 /**
- The Designated Initializer
+ A consumer that logs each received chunk, trimmed of newlines, to `logger`.
  */
 + (nonnull instancetype)consumerWithLogger:(nonnull id<FBControlCoreLogger>)logger;
 
