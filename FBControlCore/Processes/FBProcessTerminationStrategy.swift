@@ -40,7 +40,6 @@ private let FBProcessTerminationStrategyConfigurationDefault = FBProcessTerminat
   options: [.checkProcessExistsBeforeSignal, .checkDeathAfterSignal, .backoffToSIGKILL]
 )
 
-/// The ways process termination can fail, as data rather than assembled strings.
 public enum FBProcessTerminationStrategyError: Error, LocalizedError {
   case processDoesNotExist(processIdentifier: pid_t)
   case killFailed(processIdentifier: pid_t, message: String)
@@ -122,7 +121,6 @@ public final class FBProcessTerminationStrategy: NSObject {
       return FBFuture(error: FBProcessTerminationStrategyError.processDoesNotExist(processIdentifier: processIdentifier))
     }
 
-    // Kill the process with kill(2).
     logger.debug().log("Killing \(processIdentifier)")
     if kill(processIdentifier, configuration.signo) != 0 {
       return FBFuture(error: FBProcessTerminationStrategyError.killFailed(processIdentifier: processIdentifier, message: String(cString: strerror(errno))))
@@ -134,7 +132,6 @@ public final class FBProcessTerminationStrategy: NSObject {
       return FBFuture<NSNull>.empty()
     }
 
-    // It may take some time for the process to have truly died, so wait for it to be so.
     logger.debug().log("Waiting on \(processIdentifier) to disappear from the process table")
 
     let waitFuture: FBFuture<NSNull> = waitForProcessIdentifierToDie(processIdentifier, on: workQueue, processFetcher: processFetcher)
@@ -160,14 +157,12 @@ public final class FBProcessTerminationStrategy: NSObject {
             return FBFuture(error: FBProcessTerminationStrategyError.processDidNotDisappear(processIdentifier: processIdentifier, processInfo: String(describing: processInfo)))
           }
 
-          // Try with SIGKILL instead.
           var newConfiguration = self.configuration
           newConfiguration.signo = SIGKILL
           self.logger.debug().log("Backing off kill of \(processIdentifier) to SIGKILL")
           let sigkillFuture: FBFuture<NSNull> = self.strategyWith(configuration: newConfiguration)
             .killProcessIdentifier(processIdentifier)
 
-          // Inline rephraseFailure since the ObjC method is variadic and cannot be called from Swift
           return sigkillFuture.onQueue(
             self.workQueue,
             chain: { (innerFuture: FBFuture<AnyObject>) -> FBFuture<AnyObject> in
