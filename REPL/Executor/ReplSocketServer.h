@@ -7,21 +7,18 @@
 
 #import <Foundation/Foundation.h>
 
-// Shared REPL socket server, used by both the `libRepl` shim (DYLD-injected into
-// an xctest process) and the `SimulatorFrameworkBridge` binary. It binds a
-// Unix-domain socket, accepts one connection, and serves length-prefixed binary
-// property-list frames: each message is a 4-byte big-endian byte count followed
-// by that many bytes of a binary property list. Length framing (rather than a
-// delimiter) lets payloads carry arbitrary binary, so values round-trip exactly.
+// The REPL control-socket server shared by every host (`libRepl` in the xctest and app
+// contexts, `SimulatorFrameworkBridge` in the simulator context). Binds a Unix-domain
+// socket, accepts one connection at a time, and exchanges frames: a 4-byte big-endian
+// byte count followed by that many bytes of a binary property list. Length framing lets
+// payloads carry arbitrary binary.
 
 // Serves the REPL on `socketPath`. A no-op (returns 0) if `socketPath` is empty.
 // Returns 0 on normal completion, non-zero if the socket could not be created.
 //
-// On connect, before handling commands, the server sends a greeting frame
-// (a binary property list `{"type": "greeting", "interfaces": [...]}`) carrying
-// `generatedInterfaces` (the host paths of any .swiftinterface files generated
-// for the loaded modules; pass an empty array or nil when there are none) so the
-// connecting client can learn them.
+// On connect the server sends a greeting frame `{"type": "greeting", "interfaces": [...],
+// "nextRunIndex": N, "sessionID": "..."}` — `generatedInterfaces` are host paths of any
+// .swiftinterface files generated for the loaded modules (empty array or nil when none).
 //
 // `keepListening`: when NO, serve a single connection and return (the test and
 // simulator contexts, where the host process exits once the session ends). When

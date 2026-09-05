@@ -60,13 +60,7 @@ static int CreateSocketAtPath(NSString *socketPath)
   return fd;
 }
 
-// MARK: - Framing
-//
-// Each message is a length-prefixed frame: a 4-byte big-endian byte count
-// followed by that many bytes of a binary property list. Framing by length
-// (rather than a delimiter) lets a payload carry arbitrary binary -- so command
-// and response values travel as raw property-list data and round-trip exactly,
-// with no delimiter byte to collide with or escape.
+// MARK: - Framing (see ReplSocketServer.h)
 
 static BOOL ReadFully(int fd, void *buffer, size_t count)
 {
@@ -183,12 +177,8 @@ static NSDictionary *ProcessCommand(NSDictionary *command)
 
 int FBReplServeSocket(NSString *socketPath, NSArray<NSString *> *generatedInterfaces, BOOL keepListening)
 {
-  // Record the host's lifetime mode so injected code (via FBReplHostOutlivesSession)
-  // can tell whether a dropped connection should end the process or just reset.
   gHostOutlivesSession = keepListening;
 
-  // Generate the session id once per process; it outlives individual client
-  // connections, so reconnects (in the app context) are greeted with the same id.
   if (gSessionID == nil) {
     gSessionID = [[[NSUUID UUID] UUIDString] copy];
   }
@@ -202,10 +192,8 @@ int FBReplServeSocket(NSString *socketPath, NSArray<NSString *> *generatedInterf
     return 1;
   }
 
-  // Accept a connection and process commands until it closes. In keepListening
-  // mode (the app context) loop back to accept the next client so the in-app REPL
-  // resets and stays ready; otherwise serve a single connection and return so the
-  // host process exits (test / simulator contexts).
+  // keepListening (app context): re-accept after each client disconnects instead of
+  // returning.
   BOOL listening = YES;
   while (listening) {
     int clientFd = accept(serverFd, NULL, NULL);
@@ -213,8 +201,6 @@ int FBReplServeSocket(NSString *socketPath, NSArray<NSString *> *generatedInterf
       break;
     }
     gClientFd = clientFd;
-    // Greet the client with the .swiftinterface paths the probe generated (an
-    // empty list when there are none), then handle commands.
     WriteMessage(@{@"type" : @"greeting", @"interfaces" : generatedInterfaces ?: @[], @"nextRunIndex" : @(gRunIndex), @"sessionID" : gSessionID ?: @""}, clientFd);
     BOOL connected = YES;
     while (connected) {
