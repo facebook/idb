@@ -17,17 +17,14 @@ import Foundation
 /// command) or an `AVAssetWriter`-backed file (the `record` command), without the pipeline knowing
 /// which.
 protocol FBEncodedSampleConsumer: AnyObject {
-  /// Consume a single encoded sample. Returns whether the write succeeded — the VideoToolbox pusher
-  /// uses this to drive its write / failure / starvation stats exactly as the former inline
-  /// `frameWriter` return value did.
+  /// Consume a single encoded sample. The return value feeds the pusher's write / failure / starvation stats.
   func consume(_ sampleBuffer: CMSampleBuffer, logger: any FBControlCoreLogger) -> Bool
 }
 
 // MARK: - FBDataConsumerEncodedSampleConsumer
 
 /// The streaming `FBEncodedSampleConsumer`: byte-frames each encoded sample to an `FBDataConsumer`
-/// through an `FBEncodedFrameWriter` (Annex-B / MPEG-TS / fMP4). This reproduces the pre-refactor
-/// inline frame writer call exactly.
+/// through an `FBEncodedFrameWriter` (Annex-B / MPEG-TS / fMP4).
 final class FBDataConsumerEncodedSampleConsumer: FBEncodedSampleConsumer {
   let consumer: any FBDataConsumer
   let frameWriter: any FBEncodedFrameWriter
