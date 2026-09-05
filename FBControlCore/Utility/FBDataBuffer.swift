@@ -12,7 +12,7 @@ import Foundation
   /// Obtains a copy of the current output data.
   func data() -> Data
 
-  /// Obtains a copy of the current output data.
+  /// The current output split on newlines.
   func lines() -> [String]
 }
 
@@ -27,7 +27,7 @@ import Foundation
   /// Consumes an amount of data from the buffer.
   func consumeLength(_ length: UInt) -> Data?
 
-  /// Consumes until data received.
+  /// Removes and returns the bytes before the first `terminal` (dropping the terminal), or nil if absent.
   @objc(consumeUntil:)
   func consume(until terminal: Data) -> Data?
 

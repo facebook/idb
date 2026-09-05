@@ -49,7 +49,7 @@
   }
 }
 
-#pragma mark FBAccumilatingLineBuffer
+#pragma mark FBAccumulatingBuffer
 
 - (NSData *)data
 {

@@ -37,7 +37,7 @@
 + (nonnull id<FBAccumulatingBuffer>)accumulatingBufferWithCapacity:(size_t)capacity;
 
 /**
- A data buffer that is only mutated through consuming data.
+ A data buffer that appends into the provided NSMutableData.
 
  @return a FBDataBuffer implementation.
  */
