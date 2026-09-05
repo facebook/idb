@@ -57,19 +57,13 @@
 
 + (instancetype)failureForAttributeError:(nullable NSError *)error
 {
-  // Both codes below are recognised by the code the runtime reports rather than by matching on a message,
-  // and both become a kind the host maps onto a typed error. Everything else is an opaque failure whose
-  // only content is whatever the runtime said.
   NSNumber *code = error.userInfo[FBAXAccessibilityErrorKey];
   if (![code isKindOfClass:NSNumber.class]) {
     return [self failed:error];
   }
   switch (code.intValue) {
-    // Nothing answered, rather than the answer being bad.
     case FBAXErrorServerNotFound:
       return [self applicationUnavailable];
-    // Something is there and did not answer in time — the application has not gone away, so telling the
-    // caller it is unreadable would send them after the wrong thing.
     case FBAXErrorIPCTimeout:
       return [self applicationNotResponding];
     default:
@@ -140,19 +134,12 @@
 + (nullable instancetype)outcomeForHitTestError:(int32_t)axError hasElement:(BOOL)hasElement
 {
   if (axError == FBAXErrorServerNotFound) {
-    // Nothing answered the hit-test at all. Reporting that as an empty result would tell the caller the
-    // app is on screen with nothing under the point, which is the opposite of what happened.
     return [self applicationUnavailable];
   }
   if (axError == FBAXErrorIPCTimeout) {
-    // The application is there and did not answer in time. Empty would tell a caller the point is blank,
-    // which is what it looks like after a tap that is still being processed; unavailable would tell them
-    // the application has gone, which it has not. Its own case, so the caller can say which it was.
     return [self applicationNotResponding];
   }
   if (axError != FBAXErrorSuccess || !hasElement) {
-    // No element at the point is a valid empty result, not a failure: a caller doing a streaming
-    // hit-test (e.g. after a tap) must be able to tell "empty space" apart from "the reader broke".
     return [self empty];
   }
   return nil;
@@ -209,14 +196,9 @@
     return [self written];
   }
   if (axError == FBAXErrorServerNotFound) {
-    // Nothing answered, so nothing was written. Tagged apart from a plain failure for the same reason a
-    // read is: it is the one failure the host can attribute to the application rather than to the writer.
     return [self applicationUnavailable];
   }
   if (axError == FBAXErrorIPCTimeout) {
-    // The application is there and did not answer in time, which says nothing about whether the action ran.
-    // Held apart from an absent application because the two need opposite things done about them, and apart
-    // from a plain failure because a plain failure means the write did not happen.
     return [self applicationNotResponding];
   }
   return [self failed:[NSString stringWithFormat:@"the accessibility runtime rejected the write (%d)", axError]];
@@ -325,14 +307,11 @@ NSString *_Nullable FBAXSignatureMismatch(const char *className,
   return [NSString stringWithFormat:@"%@ is %@ but %@ was assumed", name, actual, assumed];
 }
 
-// Every private selector this file sends, with the signature its declaration assumes.
+// Every private selector this file sends, with the encoding `method_getTypeEncoding` reports for it on a
+// real runtime (taken from the runtime, never hand-written).
 //
-// The encodings were taken from `method_getTypeEncoding` on the runtime the reader is written against, so
-// this table is the assumption made explicit and checkable rather than left implicit in the headers.
-//
-// `-[AXPTranslator setSupportsDelegateTokens:]` is deliberately absent. Its only argument is a `BOOL`,
-// which the runtime encodes as `B` on arm64 and `c` on x86_64, so there is no one encoding to compare
-// against and checking it would report a mismatch on a simulator where nothing is wrong.
+// `-[AXPTranslator setSupportsDelegateTokens:]` is absent on purpose: its `BOOL` encodes as `B` on
+// arm64 and `c` on x86_64, so there is no one encoding to compare against.
 typedef struct {
   const char *className;
   const char *selectorName;
@@ -394,10 +373,8 @@ NSArray<NSString *> *FBAXSignatureWarnings(void)
   return warnings;
 }
 
-// Composes a setup failure with whatever else about the runtime does not match, so a bind that fails on a
-// missing class says alongside it what other shapes moved. Swept here and nowhere else: a signature that
-// moved is the likeliest reason a class or selector went missing beside it, and a process that bound
-// cleanly has nothing to report.
+// Appends the signature sweep to a bind failure, so the message also names what else about the runtime
+// moved. Swept only here: a process that bound cleanly has nothing to report.
 static NSString *FBAXSetupFailure(NSString *reason)
 {
   NSArray<NSString *> *warnings = FBAXSignatureWarnings();
@@ -428,21 +405,14 @@ typedef struct {
   FBAXValueGetValueFn valueGetValue;                                // borrows
   FBAXDefaultSnapshotParametersFn defaultSnapshotParameters;
   FBAXAttributeNumbersForNamesFn attributeNumbersForNames;
-  // What proves a snapshot node's element value really is an AXUIElementRef before it is handed to the
-  // C entry points, which do not check. Optional: without it, elements cannot be attributed to a process
-  // and boundary continuation stays off, which is safer than guessing.
+  // Proves a snapshot element is an AXUIElementRef before it reaches the C entry points, which do not
+  // check. Optional: without it boundary continuation stays off.
   CFTypeID (*elementTypeID)(void);
 } FBAXRuntimeFunctions;
 
-// The one place a semantic action becomes the number the C ABI takes, so a runtime that renumbers them is
-// a single table to correct rather than a constant threaded through the guest, the wire and the host.
-//
-// Answers NO for an action with no number, leaving `*identifier` untouched. `-Wswitch-default` requires
-// the `default`, which costs the exhaustiveness warning an action added without a number would otherwise
-// produce — so the miss has to be caught at run time instead, and the only safe thing to do with it is
-// refuse. Falling through to a number would send the AX server an action nobody asked for, and there is
-// no number that reliably means "none": the C ABI tests the action against zero rather than rejecting it,
-// so zero is a value with behaviour, not an absence.
+// The one place an `FBAXAction` becomes the number the C ABI takes. `-Wswitch-default` forces the
+// `default`, which costs the exhaustiveness warning, so an action added without a mapping is caught here
+// at run time: answer NO rather than send a number — the C ABI treats zero as a real action, not "none".
 static BOOL FBAXActionIdentifierForAction(FBAXAction action, uint32_t *identifier)
 {
   switch (action) {
@@ -471,23 +441,16 @@ static BOOL FBAXActionIdentifierForAction(FBAXAction action, uint32_t *identifie
 
 #pragma mark - Owned AXUIElement references
 
-// The one owner of a raw AXUIElementRef in the product.
-//
-// The AX runtime's C entry points transfer +1 references that have to be released exactly once on every
-// path out of the function that took them. In a method with eight early returns that is a rule no reader
-// can check by looking, and the failure modes are a leak or a use-after-free. Wrapping the reference at
-// the moment it is acquired makes the release ARC's job, so it happens on every path.
+// The one owner of a raw AXUIElementRef in the product. Wrapping a +1 reference at acquisition makes the
+// release ARC's job, so it happens exactly once on every early-return path.
 @interface FBAXElementRef : NSObject
 
 /** Takes ownership of an already-retained (+1) reference — what the AX runtime's Create and Copy give. */
 - (instancetype)initWithOwnedElement:(void *)element NS_DESIGNATED_INITIALIZER;
 
 /**
- * Takes a reference of its own on a borrowed one.
- *
- * `-[XCAccessibilityElement AXUIElement]` returns a reference it continues to own, so it dies with the
- * element that vended it. Retaining is what let the seed of a hit-test outlive that element — reading it
- * without doing so is the SIGSEGV this whole layer exists to prevent.
+ * Takes a reference of its own on a borrowed one. `-[XCAccessibilityElement AXUIElement]` returns a
+ * reference that dies with the element that vended it; retaining lets a hit-test seed outlive it.
  */
 + (instancetype)retainingBorrowedElement:(void *)element;
 
@@ -495,14 +458,9 @@ static BOOL FBAXActionIdentifierForAction(FBAXAction action, uint32_t *identifie
 - (instancetype)init NS_UNAVAILABLE;
 
 /**
- * Runs `body` with the raw reference, keeping this wrapper — and so the reference — alive for all of it.
- *
- * The raw pointer is never vended. A `void *` is invisible to ARC, so nothing ties the wrapper's
- * lifetime to a C call using the pointer — ARC could release the wrapper, and the reference, while
- * the call is still running. Scoping the access here keeps the wrapper alive for exactly the call.
- *
- * `NS_NOESCAPE`: the reference is guaranteed only for the call, and a body that stored it would be back
- * to owning a lifetime it cannot see.
+ * Runs `body` with the raw reference, keeping the wrapper alive for the whole call. A `void *` is
+ * invisible to ARC, which could otherwise release the wrapper mid-call. `NS_NOESCAPE`: the reference is
+ * guaranteed only for the call.
  */
 - (int32_t)axErrorFromElement:(NS_NOESCAPE int32_t (^)(void *element))body;
 
@@ -513,8 +471,6 @@ static BOOL FBAXActionIdentifierForAction(FBAXAction action, uint32_t *identifie
 
 @implementation FBAXElementRef
 {
-  // An ivar rather than a property: a property would vend the pointer again, which is the thing the
-  // scoped accessors exist to stop.
   void *_element;
 }
 
@@ -660,9 +616,6 @@ static AXPTranslator *_Nullable FBAXBridgeWindowServerTranslator(NSString *_Null
 // on the main queue (`-[AXPTranslator_iOS _enableAccessibilityBridgeRuntime]` calls
 // `dispatch_assert_queue_not`). The in-guest self-service delegate re-enters the translator on whichever
 // thread called in, so driving it from the reader's main thread trips the assert and traps the process.
-//
-// Blocking the caller is deliberate: the reader handles one request at a time, so the main thread has
-// nothing else to do while the translator answers.
 static void FBAXBridgeRunOffMainQueue(dispatch_block_t block)
 {
   if (!NSThread.isMainThread) {
@@ -807,16 +760,11 @@ static NSString *const kFrontboardVisibilityEndowment = @"com.apple.frontboard.v
 
 #pragma mark Element references
 
-// A reference of this runtime's own on the AXUIElementRef behind an element handle, for the duration of a
-// call that needs the raw pointer.
-//
-// `-[XCAccessibilityElement AXUIElement]` returns a reference it goes on owning, so it dies with the handle
-// that vended it. Retaining is what makes the write safe against a handle released mid-call — the same
-// reason a hit-test seed is retained rather than borrowed.
+// A retained reference on the AXUIElementRef behind a handle, for the duration of a call that needs the
+// raw pointer (see `+retainingBorrowedElement:`).
 - (nullable FBAXElementRef *)referenceForElement:(id)element
 {
-  // The handle is opaque above this line, so nothing stops a caller passing something that is not one. A
-  // named failure beats an unrecognised selector taking the process down.
+  // Handles are opaque above the seam, so a non-handle is a named failure rather than an unrecognised selector.
   if (![element respondsToSelector:@selector(AXUIElement)]) {
     return nil;
   }
@@ -982,10 +930,8 @@ static NSError *FBAXSnapshotFailure(NSInteger code, NSString *description)
 // nothing outside can outlive or over-release either, and nothing inside has to remember to.
 - (FBAXHitTestOutcome *)hitTestAtPoint:(CGPoint)point processIdentifier:(pid_t)pid
 {
-  // Resolve the seed: a specific app element for an explicit pid, otherwise the system-wide element.
-  // Owned either way, so it outlives whatever vended it and both branches are released alike. Every use
-  // of the raw reference below goes through `-axErrorFromElement:`, which is what keeps the wrapper alive
-  // for the duration of the C call rather than leaving that to each of these call sites.
+  // The seed is owned either way so both branches release alike; every raw use below goes through
+  // `-axErrorFromElement:`.
   FBAXElementRef *seed = nil;
   if (pid > 0) {
     XCAccessibilityElement *root = [_elementClass elementWithProcessIdentifier:pid];
@@ -1044,9 +990,7 @@ static NSError *FBAXSnapshotFailure(NSInteger code, NSString *description)
 
 - (FBAXWriteOutcome *)performAction:(FBAXAction)action onElement:(id)element
 {
-  // Resolved before the element is touched: an action this runtime has no number for is a gap in the
-  // table above, and sending the AX server something else in its place is the one outcome worth ruling
-  // out. Only reachable when a new `FBAXAction` case is added without a mapping.
+  // Only reachable when an `FBAXAction` case is added without a mapping in `FBAXActionIdentifierForAction`.
   uint32_t identifier = 0;
   if (!FBAXActionIdentifierForAction(action, &identifier)) {
     return [FBAXWriteOutcome failed:[NSString stringWithFormat:@"no AX runtime identifier for action %lu", (unsigned long)action]];
@@ -1105,9 +1049,6 @@ static NSError *FBAXSnapshotFailure(NSInteger code, NSString *description)
     if (!translator) {
       return;
     }
-    // The root arrives as an `XCAccessibilityElement`; the children this read returns are already
-    // translation objects and come straight back in on the recursive call. Accept both rather than
-    // making every caller remember which it is holding.
     id translation = element;
     if ([element respondsToSelector:@selector(AXUIElement)]) {
       void *raw = [(XCAccessibilityElement *)element AXUIElement];
@@ -1125,13 +1066,9 @@ static NSError *FBAXSnapshotFailure(NSInteger code, NSString *description)
     }
     AXPTranslatorRequest *request = [requestClass requestWithTranslation:translation];
     request.requestType = FBAXPRequestTypeMultipleAttribute;
-    // `clientType` is deliberately left unset, and setting it would be a regression rather than an
-    // improvement. The app-side children handler this request reaches is gated on whether the requesting
-    // client "deserves automation": one that does is answered from the app's own stored `automationElements`
-    // override, and everything else gets a live traversal. Since nothing in the frameworks ever invalidates
-    // that override, an app which leaves a stale one on a long-lived object serves the previous screen to
-    // automation clients and the current screen to everyone else. Presenting no client type is what keeps
-    // this read on the live side of that gate.
+    // `clientType` is left unset on purpose. The app-side children handler answers a client that "deserves
+    // automation" from its stored `automationElements` override, which nothing invalidates — a stale one
+    // serves the previous screen. No client type keeps this read on the live traversal.
     // The handler subscripts `parameters` by this key; an array here throws and takes the reader down.
     request.parameters = @{@"attributes" : attributes};
     @try {
@@ -1145,21 +1082,14 @@ static NSError *FBAXSnapshotFailure(NSInteger code, NSString *description)
   return result;
 }
 
-// Enumerates every launch-services process and returns the one endowed with on-screen visibility
-// (`com.apple.frontboard.visibility`). This reads the window server's own notion of foreground — the same
-// pid the window-server method resolves — from the process-lifecycle daemon rather than the accessibility
-// stack, so it needs neither a screen anchor nor the AX server.
-//
-// Enumerating other processes' state requires the `com.apple.runningboard.process-state` entitlement;
-// without it runningboardd rejects the query with "Client not entitled". The RBS classes are resolved by
-// name (they are not declared to this translation unit) and messaged defensively.
+// The launch-services process holding `com.apple.frontboard.visibility` is the foreground app — the
+// window server's own notion, read from RunningBoard rather than the AX stack, so it needs neither an
+// anchor nor the AX server. Requires the `com.apple.runningboard.process-state` entitlement; without it
+// runningboardd answers "Client not entitled".
 - (FBAXFrontmostOutcome *)runningBoardFrontmost
 {
   dlopen(FBAXPathRunningBoardServices, RTLD_NOW);
-  // Looked up by name for the same reason as AXPTranslator: nothing in RunningBoardServicesPrivate.h is
-  // linked against, so the classes cannot be named as receivers directly. The `Class<...>` casts matter
-  // beyond tidiness here — `+descriptor` also exists on NSAppleEventDescriptor, and an untyped receiver
-  // resolves the send against whichever declaration the translation unit saw, not the intended class.
+  // Cast to the `Class<…>` protocols: `+descriptor` also exists on NSAppleEventDescriptor (see the header).
   Class<RBSProcessPredicateClass> predicateClass = (Class<RBSProcessPredicateClass>)objc_lookUpClass("RBSProcessPredicate");
   Class<RBSProcessStateClass> stateClass = (Class<RBSProcessStateClass>)objc_lookUpClass("RBSProcessState");
   Class<RBSProcessStateDescriptorClass> descriptorClass = (Class<RBSProcessStateDescriptorClass>)objc_lookUpClass("RBSProcessStateDescriptor");
