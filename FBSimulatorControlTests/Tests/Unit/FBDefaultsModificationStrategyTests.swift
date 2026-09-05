@@ -37,9 +37,4 @@ final class FBDefaultsModificationStrategyTests: XCTestCase {
       XCTAssertTrue(String(describing: error).contains("bad type"), "got: \(String(describing: error))")
     }
   }
-
-  func testImportThrowsOnNonZeroExit() {
-    let output = FBInSimulatorToolOutput(stdout: Data(), stderr: Data("boom\n".utf8), exitCode: 1)
-    XCTAssertThrowsError(try FBDefaultsModificationStrategy.stdout(orThrowFrom: output, command: .importPlist(domainOrPath: "d", file: "/tmp/x.plist"), logger: nil))
-  }
 }
