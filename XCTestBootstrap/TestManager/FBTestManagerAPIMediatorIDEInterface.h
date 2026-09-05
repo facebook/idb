@@ -18,15 +18,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /**
- The Objective-C delegate implementing the private XCTest `XCTestManager_IDEInterface` /
- `XCTMessagingChannel_RunnerToIDE` callback surface that the test runner and `testmanagerd`
- communicate with over the DTX channel.
-
- This object intentionally stays in Objective-C because it depends on private XCTest types
- (`XCTTestIdentifier`, `XCTIssue`, `XCActivityRecord`, `DTXRemoteInvocationReceipt`, …). It owns
- no `FBFuture`-based application logic: the orchestration and all application lifecycle operations
- live in the Swift `FBTestManagerAPIMediator`, to which this delegate forwards process launch and
- termination requests.
+ Implements the private XCTest `XCTestManager_IDEInterface` / `XCTMessagingChannel_RunnerToIDE` callback surface that the test runner and `testmanagerd` call over the DTX channel. Process launch and termination requests are forwarded to `FBTestManagerAPIMediator`.
  */
 @interface FBTestManagerAPIMediatorIDEInterface : NSObject
 

@@ -78,14 +78,7 @@
   return receipt;
 }
 
-/// After _XCT_launchProcessWithPath:bundleID:arguments:environmentVariables: is called,
-/// this method will be called to check on whether the process has already been launched or not
-/// return should be 0 or 1.
-///
-/// If 0 is returned, `_XCT_getProgressForLaunch:` will be called again until 1 is returned
-///
-/// Since we only invoke `_XCT_launchProcessWithPath:bundleID:arguments:environmentVariables:`'s receipt
-/// completion after the process is launched, we just return 1 (because the process is already launched)
+/// Polled after `_XCT_launchProcessWithPath:…` until it returns 1. The launch receipt is only completed once the process is running, so always report 1.
 - (id)_XCT_getProgressForLaunch:(id)token
 {
   [self.logger log:[NSString stringWithFormat:@"Test process requested launch process status with token %@", token]];
@@ -407,7 +400,6 @@
   return [NSString stringWithFormat:@"Received call for unhandled method (%@). Probably you should have a look at _IDETestManagerAPIMediator in IDEFoundation.framework and implement it. Good luck!", NSStringFromSelector(aSelector)];
 }
 
-// This will add more logs when unimplemented method from XCTestManager_IDEInterface protocol is called
 - (id)handleUnimplementedXCTRequest:(SEL)aSelector
 {
   [self.logger log:[self unknownMessageForSelector:aSelector]];
