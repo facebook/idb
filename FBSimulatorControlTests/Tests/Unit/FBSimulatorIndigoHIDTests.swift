@@ -25,8 +25,7 @@ private final class RecordingFrameworkLoader: FBControlCoreFrameworkLoader {
 
 /// Byte-level coverage of the Indigo payloads produced by `FBSimulatorIndigoHID`, plus the
 /// resolution of the runtime-only client class that carries them.
-/// Offsets are taken from `Source/PrivateHeaders/SimulatorApp/Indigo.h`. These tests
-/// pin the wire format so the ObjC -> Swift migration of the builder is provably a no-op.
+/// Offsets are taken from `Source/PrivateHeaders/SimulatorApp/Indigo.h`.
 final class FBSimulatorIndigoHIDTests: XCTestCase {
 
   override func setUpWithError() throws {
@@ -81,9 +80,7 @@ final class FBSimulatorIndigoHIDTests: XCTestCase {
     XCTAssertEqual(uint32(at: 0x18, in: data), 0x90, "innerSize should be sizeof(IndigoPayload)")
     // eventType byte at 0x1c == IndigoEventTypeTouch (2).
     XCTAssertEqual(uint8(at: 0x1c, in: data), 2, "eventType should be touch")
-    // payload.eventKind at 0x20 == 0x0b.
     XCTAssertEqual(uint32(at: 0x20, in: data), 0x0b, "payload.eventKind should be 0x0b")
-    // touch.xRatio at 0x3c, yRatio at 0x44.
     XCTAssertEqual(double(at: 0x3c, in: data), 0.5, accuracy: 1e-9, "xRatio")
     XCTAssertEqual(double(at: 0x44, in: data), 0.5, accuracy: 1e-9, "yRatio")
     // The second (duplicated) payload is adjusted: field1 = 1, field2 = 2 at 0xC0/0xC4.
@@ -166,13 +163,11 @@ final class FBSimulatorIndigoHIDTests: XCTestCase {
       finger1: CGPoint(x: 50, y: 100),
       finger2: CGPoint(x: 100, y: 200))
 
-    // Finger 1 ratio at 0x3C/0x44.
     XCTAssertEqual(double(at: 0x3C, in: data), 0.5, accuracy: 1e-9, "finger1 xRatio")
     XCTAssertEqual(double(at: 0x44, in: data), 0.5, accuracy: 1e-9, "finger1 yRatio")
     // Digitizer summary mirrors finger 1 at 0xDC/0xE4.
     XCTAssertEqual(double(at: 0xDC, in: data), 0.5, accuracy: 1e-9, "digitizer xRatio")
     XCTAssertEqual(double(at: 0xE4, in: data), 0.5, accuracy: 1e-9, "digitizer yRatio")
-    // Finger 2 ratio at 0x17C/0x184.
     XCTAssertEqual(double(at: 0x17C, in: data), 1.0, accuracy: 1e-9, "finger2 xRatio")
     XCTAssertEqual(double(at: 0x184, in: data), 1.0, accuracy: 1e-9, "finger2 yRatio")
   }
@@ -191,7 +186,6 @@ final class FBSimulatorIndigoHIDTests: XCTestCase {
     XCTAssertEqual(uint32(at: 0x18, in: down), 0xa0, "innerSize")
     XCTAssertEqual(uint8(at: 0x1c, in: down), 3, "eventType should be multi-touch")
     XCTAssertEqual(uint32(at: 0x20, in: down), 0x0b, "eventKind")
-    // Direction flips the primary digitizer contact (range 0x64 / touch 0x68).
     XCTAssertEqual(uint32(at: 0x64, in: down), 1, "down range")
     XCTAssertEqual(uint32(at: 0x64, in: up), 0, "up range")
     XCTAssertEqual(uint32(at: 0x68, in: up), 0, "up touch")
@@ -239,9 +233,7 @@ final class FBSimulatorIndigoHIDTests: XCTestCase {
   }
 
   // The whole button envelope, not just its event source: the 0xc0-byte single-payload allocation, the
-  // innerSize, the button-family eventType byte and eventKind, and every IndigoButton field. The
-  // Consumer-page path has to produce this same envelope with a different source, so what must not
-  // move is pinned before it is added.
+  // innerSize, the button-family eventType byte and eventKind, and every IndigoButton field.
   func testButtonMessageEnvelope() throws {
     let indigo = try makeIndigo()
     let data = indigo.button(with: .down, button: .homeButton)
@@ -317,9 +309,7 @@ final class FBSimulatorIndigoHIDTests: XCTestCase {
     let b = indigo.keyboard(with: .down, keyCode: 0x05)
     // eventType byte at 0x1c == IndigoEventTypeButton (1) for the button/keyboard family.
     XCTAssertEqual(uint8(at: 0x1c, in: a1), 1, "keyboard eventType should be 1")
-    // Apart from the per-call timestamp, the same keycode/direction is deterministic...
     XCTAssertEqual(zeroingTimestamp(a1), zeroingTimestamp(a2), "Same keycode/direction is stable apart from timestamp")
-    // ...and a different keycode changes the payload (the keycode flows through).
     XCTAssertNotEqual(zeroingTimestamp(a1), zeroingTimestamp(b), "Distinct keycodes produce distinct payloads")
   }
 
