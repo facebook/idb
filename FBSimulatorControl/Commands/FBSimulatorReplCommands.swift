@@ -9,7 +9,6 @@ import FBControlCore
 import Foundation
 @preconcurrency import XCTestBootstrap
 
-/// The ways REPL session setup can fail, as data rather than assembled strings.
 public enum FBSimulatorReplError: Error {
   case bundledResourceMissing(item: String)
   case socketDirectoryCreationFailed(path: String)
@@ -50,10 +49,8 @@ public final class FBSimulatorReplCommands {
     }
     let logger = simulator.logger
 
-    // Resolve the REPL shim, which is bundled alongside the other shims, as is the
-    // IDBAPI module's .swiftinterface (reported to the driver, which auto-imports it
-    // so injected code reaches the API through `IDB`; the API code itself is linked
-    // into libRepl, which is injected).
+    // The driver auto-imports the IDBAPI `.swiftinterface` so injected code can call `IDB`; the API
+    // itself is linked into libRepl.
     guard let replDylibPath = BundledResources.path(forItem: "libRepl-iOS.dylib") else {
       throw FBSimulatorReplError.bundledResourceMissing(item: "libRepl-iOS.dylib")
     }
@@ -75,7 +72,7 @@ public final class FBSimulatorReplCommands {
       workingDirectory: simulator.auxillaryDirectory,
       testBundlePath: bundlePath,
       waitForDebugger: false,
-      timeout: 3_600, // 1 hour
+      timeout: 3_600,
       testFilter: "TestRepl/start",
       mirroring: .fileLogs,
       coverageConfiguration: nil,
@@ -98,10 +95,6 @@ public final class FBSimulatorReplCommands {
       throw FBWeakTargetError.simulator
     }
 
-    // The SimulatorFrameworkBridge binary is bundled alongside the shims, as are
-    // libRepl (which the bridge loads to serve the REPL) and the IDBAPI module's
-    // .swiftinterface (reported to the driver, which auto-imports it so injected
-    // code reaches the API through `IDB`).
     guard let bridgePath = BundledResources.path(forItem: "SimulatorFrameworkBridge") else {
       throw FBSimulatorReplError.bundledResourceMissing(item: "SimulatorFrameworkBridge binary")
     }
@@ -110,9 +103,7 @@ public final class FBSimulatorReplCommands {
     }
     let idbInterfacePath = BundledResources.path(forItem: "IDBAPI.swiftinterface")
 
-    // The bridge's `repl start` action takes the socket path and libRepl's path
-    // and serves the control socket there. Serving blocks until the socket is
-    // closed, which is what keeps the session alive.
+    // `repl start` blocks until the socket is closed, which is what keeps the session alive.
     let socketPath = "/tmp/idb_repl_\(UUID().uuidString).sock"
 
     let io: FBProcessIO<AnyObject, AnyObject, AnyObject> = .outputToDevNull()
@@ -151,35 +142,23 @@ public final class FBSimulatorReplCommands {
     }
     let logger = simulator.logger
 
-    // Report the IDB API's .swiftinterface (bundled beside libRepl) so the driver
-    // auto-imports it and injected app code can call IDB.*, as the test and
-    // simulator contexts do. The companion reads it host-side, so the app sandbox
-    // need not contain it.
+    // Read host-side by the companion, so the app sandbox need not contain it.
     let idbInterfacePath = BundledResources.path(forItem: "IDBAPI.swiftinterface")
     let extraInterfacePaths = idbInterfacePath.map { [$0] } ?? []
 
-    // Derive the control socket path deterministically from the simulator + app
-    // so a later `idb-repl app` can find and reattach to a still-running REPL
-    // instead of relaunching. Hashed to a fixed length that fits sockaddr_un, and
-    // placed in a per-user 0700 directory so only the owning user can reach it.
+    // Deterministic so a later `idb-repl app` can reattach to a still-running REPL.
     guard ensureReplSocketDirectory(replSocketDirectory()) else {
       throw FBSimulatorReplError.socketDirectoryCreationFailed(path: replSocketDirectory())
     }
     let socketPath = replSocketPath(udid: simulator.udid, bundleID: bundleID)
 
-    // Reattach: if a REPL is already listening at this path, reuse the live app
-    // (and its in-memory state) rather than relaunching. Skipped when
-    // `reuseSession` is false. The app outlives the session, so `run` is already
-    // resolved and teardown neither waits for nor kills it.
     if reuseSession, await replListenerIsAlive(at: socketPath) {
       logger.info().log("Reattaching to the running REPL for \(bundleID) at \(socketPath)")
       let run: FBFuture<NSNull> = FBFuture(result: NSNull())
       return ReplSession(socketPath: socketPath, run: run, extraInterfacePaths: extraInterfacePaths)
     }
 
-    // No live REPL (or `reuseSession` is false): launch -- relaunching if the app is already
-    // running (e.g. running without the REPL injected) so the relaunched process picks
-    // up the dylib.
+    // `.relaunchIfRunning` so an app already running without the dylib picks it up.
     let environment = try await replAppEnvironment(bundleID: bundleID)
     let io: FBProcessIO<AnyObject, AnyObject, AnyObject> = .outputToDevNull()
     let configuration = FBApplicationLaunchConfiguration(
@@ -245,9 +224,8 @@ func replSocketDirectory() -> String {
   return "/tmp/idb_repl_\(getuid())"
 }
 
-/// Ensures `dir` exists as a private (0700) directory we own, safely: it creates
-/// it 0700 if missing, then verifies via lstat that it is a real directory,
-/// owned by the current user, with exactly 0700 permissions.
+/// Verifies with `lstat` rather than trusting creation: the directory may pre-exist with the wrong
+/// owner or mode.
 @discardableResult
 func ensureReplSocketDirectory(_ dir: String) -> Bool {
   let fm = FileManager.default
