@@ -15,7 +15,6 @@ private func scoreVersions(_ current: OperatingSystemVersion, _ target: Operatin
   return major + minor
 }
 
-/// The ways disk-image discovery can fail, as data rather than assembled strings.
 public enum FBDeveloperDiskImageError: Error {
   case symbolsNotFound(buildVersion: String, searched: [String])
   case noImagesProvided
@@ -41,10 +40,7 @@ extension FBDeveloperDiskImageError: LocalizedError {
   }
 }
 
-/// Where the developer disk images available on this host come from.
-///
-/// Exists so a caller can be handed a known set instead of whatever Xcode has installed, which is
-/// otherwise the one input to disk image selection that cannot be supplied.
+/// The developer disk images available on this host.
 public protocol DeveloperDiskImageProviding {
   var availableDiskImages: [FBDeveloperDiskImage] { get }
 }
@@ -116,10 +112,6 @@ public final class FBDeveloperDiskImage: NSObject, @unchecked Sendable {
 
   // MARK: Init
 
-  /// Describes an image directly, rather than reading one out of a device support directory.
-  ///
-  /// Public because the tests that exercise image selection live in another module. Production
-  /// code has no reason to call it: an image there always comes from a provider.
   public init(diskImagePath: String, signature: Data, version: OperatingSystemVersion, xcodeVersion: OperatingSystemVersion) {
     self.diskImagePath = diskImagePath
     self.signature = signature
