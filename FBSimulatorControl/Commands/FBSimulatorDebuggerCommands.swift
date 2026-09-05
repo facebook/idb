@@ -67,8 +67,7 @@ public final class FBSimulatorDebuggerCommands {
   internal weak var simulator: FBSimulator?
   internal let debugServerPath: String
 
-  /// How the host application is launched. Defaults to the simulator itself; a test supplies its
-  /// own launcher rather than substituting the simulator's application commands.
+  /// How the host application is launched; defaults to the simulator itself.
   private let applicationLauncher: (any ApplicationLaunching)?
 
   // MARK: - Class Methods
