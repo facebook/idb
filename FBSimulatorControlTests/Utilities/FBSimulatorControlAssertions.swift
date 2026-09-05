@@ -121,7 +121,6 @@ extension FBSimulatorControlTestCase {
     await assertSimulator(simulator, isRunningApplicationFromConfiguration: configuration)
     assertSimulatorBooted(simulator)
 
-    // Second launch should fail
     do {
       _ = try await simulator.launchApplication(configuration)
       XCTFail("Second launch should have failed")
