@@ -19,11 +19,8 @@ public enum FBSimulatorHIDTransportType: Equatable, Sendable {
 /// The transport carrying the Indigo-family HID primitives — touch, two-finger touch, button and
 /// keyboard — and which of the two it is.
 ///
-/// A closed enum rather than a protocol. There are exactly two, they are chosen at runtime, and they
-/// differ in what they can carry. A protocol has to declare every capability on both, which is how
-/// Indigo came to implement `flush()` as an empty body — it holds a synchronous client with nothing to
-/// drain — and DTUHID to implement `sendTrackpad` only in order to throw. As cases, each capability
-/// lives on the transport that has it and the caller switches for the rest.
+/// A closed enum rather than a protocol so each capability lives only on the transport that has it
+/// (`flush` on DTUHID, `sendTrackpad` on Indigo) and callers switch for the rest.
 ///
 /// Device orientation, lock, shake and the in-call status bar are not carried here at all. They are not
 /// transport-switchable and go out over Purple mach messages and Darwin notifications.
