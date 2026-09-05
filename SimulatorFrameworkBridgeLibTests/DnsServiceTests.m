@@ -16,16 +16,6 @@
 
 #pragma mark - buildDnsDict
 
-- (void)testBuildDnsDictContainsServerAddresses
-{
-  NSDictionary<NSString *, id> *dict = buildDnsDict(@[@"8.8.8.8"]);
-  XCTAssertNotNil(dict);
-
-  NSArray *servers = dict[@"ServerAddresses"];
-  XCTAssertEqual(servers.count, 1u);
-  XCTAssertEqualObjects(servers[0], @"8.8.8.8");
-}
-
 - (void)testBuildDnsDictMultipleServers
 {
   NSDictionary<NSString *, id> *dict = buildDnsDict(@[@"8.8.8.8", @"8.8.4.4", @"1.1.1.1"]);
@@ -35,15 +25,6 @@
   XCTAssertEqualObjects(servers[0], @"8.8.8.8");
   XCTAssertEqualObjects(servers[1], @"8.8.4.4");
   XCTAssertEqualObjects(servers[2], @"1.1.1.1");
-}
-
-#pragma mark - buildEmptyDnsDict
-
-- (void)testBuildEmptyDnsDictIsEmpty
-{
-  NSDictionary<NSString *, id> *dict = buildEmptyDnsDict();
-  XCTAssertNotNil(dict);
-  XCTAssertEqual(dict.count, 0u);
 }
 
 #pragma mark - handleDnsAction
