@@ -68,7 +68,6 @@ public final class FBSimulatorSet: FBiOSTargetSet {
   public func createSimulator(with configuration: FBSimulatorConfiguration) async throws -> FBSimulator {
     let model: String = configuration.device.model.rawValue
 
-    // See if we meet the runtime requirements to create a Simulator with the given configuration.
     let deviceType: SimDeviceType
     let runtime: SimRuntime
     do {
@@ -78,7 +77,6 @@ public final class FBSimulatorSet: FBiOSTargetSet {
       throw FBSimulatorSetError.deviceTypeOrRuntimeUnavailable(configuration: "\(configuration)", reason: error.localizedDescription)
     }
 
-    // First, create the device.
     logger.debug().log("Creating device with Type \(deviceType) Runtime \(runtime)")
     let device = try await Self.createDevice(on: deviceSet, type: deviceType, runtime: runtime, name: model, queue: asyncQueue)
     let simulator = try fetchNewlyMadeSimulatorOrThrow(device)
@@ -130,7 +128,7 @@ public final class FBSimulatorSet: FBiOSTargetSet {
     try await deleteAll(allSimulators)
   }
 
-  // MARK: - NSObject
+  // MARK: - Description
 
   public var description: String {
     FBCollectionInformation.oneLineDescription(from: allSimulators)
