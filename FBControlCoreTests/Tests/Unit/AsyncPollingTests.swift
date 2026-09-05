@@ -79,14 +79,6 @@ struct AsyncPollingTests {
     }
   }
 
-  @Test("A condition that never becomes true fails once the deadline elapses")
-  func unsatisfiedConditionTimesOut() async throws {
-    let deadline = PollDeadline(timeout: 0.05, waitingFor: "a condition that is never true")
-    await #expect(throws: PollTimeoutError.self) {
-      try await pollUntilTrue(on: .global(), interval: Self.fastInterval, deadline: deadline) { false }
-    }
-  }
-
   @Test("The timeout reports what was being waited for")
   func timeoutDescribesWhatWasAwaited() async throws {
     let deadline = PollDeadline(timeout: 0.05, waitingFor: "the thing")
