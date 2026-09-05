@@ -12,10 +12,6 @@ import Foundation
 /// A resolvable reference to an accessibility element: a screen point, a marker
 /// matched against a searchable key up to a depth, the frontmost application, or a
 /// specific application by process identifier.
-///
-/// This is the framework-level equivalent of the point-or-marker target that
-/// CLIs (sime2e, idb) expose, decoupled from any argument parser so both can
-/// share a single resolution path.
 public enum FBAccessibilityElementQuery: Equatable, Sendable {
   case point(CGPoint)
   /// An element whose `key` value *contains* `value` — a substring match, not an equality test, so
@@ -23,12 +19,11 @@ public enum FBAccessibilityElementQuery: Equatable, Sendable {
   /// the first element found in tree order wins.
   ///
   /// `depth` bounds how deep the search descends and is honoured by the accessibility backend, which
-  /// walks the live element tree. The XCUI-grade backends read a whole tree in one round trip (under
-  /// their own read bounds) and match over the result, so they do not apply it.
+  /// walks the live element tree. The axbridge backend reads a whole tree in one round trip (under its
+  /// own read bounds) and matches over the result, so it does not apply it.
   ///
-  /// `ignoresCase` is a read-path affordance and defaults to off, which is what every write builds: a
-  /// tap, scroll, set-value or drag that resolved "ok" to a *Cancel* button labelled "OK" would be
-  /// acting on an element the caller did not name, and a write is not undoable the way a read is.
+  /// `ignoresCase` defaults off and writes never set it, so a write cannot act on an element the caller
+  /// did not name.
   case marker(value: String, key: FBAXSearchableKey, depth: UInt, ignoresCase: Bool = false)
   case frontmost
   /// A specific application's whole element tree, anchored by its process identifier — read regardless
