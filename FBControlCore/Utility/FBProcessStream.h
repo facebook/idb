@@ -55,7 +55,7 @@ typedef NS_ENUM(NSUInteger, FBProcessStreamAttachmentMode) {
 #pragma mark Initializers
 
 /**
- An Output Container for /dev/nul
+ An Output Container for /dev/null
 
  @return a Process Output instance.
  */

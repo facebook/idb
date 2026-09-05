@@ -37,7 +37,7 @@ import Foundation
   func stopReading() -> FBFuture<NSNull>
 }
 
-/// Process Output that can be provided through a file.
+/// Process output that can be redirected to a file path or to a data consumer.
 @objc(FBProcessOutput)
 public protocol FBProcessOutputProtocol: NSObjectProtocol {
   /// Allows the receiver to be written to via a file instead of via a file handle.

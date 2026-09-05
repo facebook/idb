@@ -693,7 +693,6 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
                           ]];
             }
 
-            // FBProcessOuput consumes the read end, the write end is passed out in the attachment.
             self.reader = [FBFileReader readerWithFileDescriptor:self.readEnd closeOnEndOfFile:YES consumer:consumer logger:self.logger];
             return [[[self.reader
                       startReading]
@@ -915,7 +914,6 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
 - (NSString *)contents
 {
   NSData *data = self.dataConsumer.data;
-  // Strip newline from the end of the buffer.
   if (data.length) {
     char lastByte = 0;
     NSRange range = NSMakeRange(data.length - 1, 1);
