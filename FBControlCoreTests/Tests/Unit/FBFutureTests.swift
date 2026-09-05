@@ -1404,11 +1404,9 @@ final class FBFutureTests: XCTestCase {
           completionExpectation.fulfill()
         })
 
-    // Wait for the base future to resolve and confirm there's no teardown called yet.
     wait(for: [completionExpectation], timeout: FBControlCoreGlobalConfiguration.fastTimeout)
     XCTAssertFalse(teardownCalled)
 
-    // Now teardown the context manually.
     teardown?.resolve(withResult: NSNull())
     wait(for: [teardownExpectation], timeout: FBControlCoreGlobalConfiguration.fastTimeout)
   }
