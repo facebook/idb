@@ -43,18 +43,16 @@ struct RunMeta: Codable, Equatable {
   static let statusCompileFailed = "compile-failed"
 }
 
-/// Pure Markdown formatting for `idb-repl` session reports. Every function returns
-/// a string and performs no I/O, so the report's shape can be unit-tested directly;
-/// the file handling lives in `ReplReportWriter`.
+/// Pure Markdown formatting for `idb-repl` session reports; file handling lives in
+/// `ReplReportWriter`.
 ///
 /// Each report also carries hidden, machine-readable markers (HTML comments, invisible
 /// in rendered Markdown) that `ReplReportParser` reads back to replay the session: an
 /// `idb-repl-meta` marker in the header and an `idb-repl-run` marker before each run.
 enum ReplReportFormatter {
 
-  /// The report's leading header: the machine-readable session and metadata markers,
-  /// then a title and a metadata list, written when a report is first created. Ends with
-  /// a horizontal rule so the first run reads as a new section.
+  /// The report header, ending with a horizontal rule so the first run reads as a new
+  /// section.
   static func header(meta: SessionMeta, target: String, reason: String?, sessionID: String, startedAt: Date) -> String {
     var lines = [
       sessionMarker(sessionID),
@@ -72,10 +70,8 @@ enum ReplReportFormatter {
     return lines.joined(separator: "\n")
   }
 
-  /// The report's first line: a machine-readable marker recording the REPL session
-  /// the report belongs to. It is an HTML comment, so it is invisible in rendered
-  /// Markdown; `ReplReportWriter` reads it back to decide whether a reconnect should
-  /// append to an existing report or start a fresh one.
+  /// The report's first line; `ReplReportWriter` reads it back to decide whether a
+  /// reconnect appends or starts fresh.
   static func sessionMarker(_ id: String) -> String {
     "\(sessionMarkerPrefix)\(id)\(sessionMarkerSuffix)"
   }
@@ -180,8 +176,6 @@ enum ReplReportFormatter {
     return lines.joined(separator: "\n")
   }
 
-  /// A Markdown reference for a report-relative artifact path: `![name](path)` for
-  /// images so they render inline, `[name](path)` for everything else.
   private static func artifactReference(_ path: String) -> String {
     let name = (path as NSString).lastPathComponent
     return isImagePath(path) ? "![\(name)](\(path))" : "[\(name)](\(path))"
