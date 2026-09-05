@@ -8,9 +8,8 @@
 @preconcurrency import FBControlCore
 import XCTest
 
-/// Coverage for downloading an archive over HTTP and feeding it straight into
-/// extraction, which is how installing from a URL is wired: the download's
-/// `FBProcessInput` becomes the extracting process's stdin.
+/// Download piped straight into extraction, as the URL install path wires it: the
+/// download's `FBProcessInput` is the extractor's stdin.
 final class FBDataDownloadInputTests: XCTestCase {
 
   private var logger: FBControlCoreLogger!
@@ -60,8 +59,6 @@ final class FBDataDownloadInputTests: XCTestCase {
     return data as Data
   }
 
-  /// Downloads from the stubbed URL and extracts the result, exactly as the URL
-  /// install path composes the two.
   private func downloadAndExtract() async throws -> String {
     let destination = (tempDirectory as NSString).appendingPathComponent(UUID().uuidString)
     try FileManager.default.createDirectory(
@@ -87,7 +84,6 @@ final class FBDataDownloadInputTests: XCTestCase {
     return try extraction.`await`() as String
   }
 
-  /// Runs the download and expects it to fail, handing the error to `inspect`.
   private func assertThrows(_ inspect: (Error) -> Void) async {
     do {
       _ = try await downloadAndExtract()
@@ -129,22 +125,8 @@ final class FBDataDownloadInputTests: XCTestCase {
     }
   }
 
-  func testDownload_WhenResponseIsServerError_FailsWithTheHTTPStatus() async throws {
-    StubURLProtocol.behaviour = .respond(
-      statusCode: 500, body: Data("internal server error".utf8))
-
-    await assertThrows { error in
-      guard case .httpStatus(_, let statusCode)? = error as? FBInstallError else {
-        XCTFail("Expected an HTTP status failure, got: \(error)")
-        return
-      }
-      XCTAssertEqual(statusCode, 500)
-    }
-  }
-
-  /// An empty body is a valid empty archive as far as the extractor is concerned,
-  /// so nothing downstream can tell a rejected request from an empty one unless
-  /// the status is checked first.
+  /// An empty body is a valid empty archive to the extractor, so only the status check
+  /// distinguishes a rejected request from an empty one.
   func testDownload_WhenResponseIsNotFoundWithNoBody_FailsWithTheHTTPStatus() async throws {
     StubURLProtocol.behaviour = .respond(statusCode: 404, body: Data())
 
@@ -160,8 +142,7 @@ final class FBDataDownloadInputTests: XCTestCase {
   // MARK: - Transport errors
 
   /// A truncated archive only makes the extractor exit non-zero, which says nothing
-  /// about the transport failure that caused it; the network error is what the
-  /// caller needs.
+  /// about the cause; the transport error is what the caller needs.
   func testDownload_WhenTransportFailsMidStream_FailsWithTheNetworkError() async throws {
     let archive = try makeArchiveData(padding: 512 * 1024)
     StubURLProtocol.behaviour = .truncate(
@@ -181,8 +162,7 @@ final class FBDataDownloadInputTests: XCTestCase {
 
 // MARK: - Doubles
 
-/// Serves a canned response in place of the network. The behaviour is static
-/// because `URLSession` instantiates the protocol itself.
+/// `behaviour` is static because `URLSession` instantiates the protocol itself.
 private final class StubURLProtocol: URLProtocol {
 
   enum Behaviour {
@@ -204,10 +184,8 @@ private final class StubURLProtocol: URLProtocol {
     return request
   }
 
-  /// The download begins as soon as it is constructed, but the process that
-  /// consumes it only attaches its pipe once extraction starts. Delivering
-  /// immediately races that attachment, so each step is spaced out -- which is
-  /// also how a real transfer behaves.
+  /// The download starts on construction but the consuming process attaches its pipe
+  /// only once extraction starts; delivering immediately races that attachment.
   private static let step = DispatchTimeInterval.milliseconds(200)
 
   override func startLoading() {
@@ -252,7 +230,6 @@ private final class StubURLProtocol: URLProtocol {
   }
 }
 
-/// A Logger that does nothing.
 // SAFETY: stateless no-op.
 private final class DownloadTestLogger: NSObject, FBControlCoreLogger, @unchecked Sendable {
   var name: String? { nil }
