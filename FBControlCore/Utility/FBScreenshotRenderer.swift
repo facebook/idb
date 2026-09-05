@@ -10,7 +10,6 @@ import Foundation
 import ImageIO
 import UniformTypeIdentifiers
 
-/// The ways rendering a planned screenshot can fail, as data rather than assembled strings.
 public enum FBScreenshotRenderError: Error, Hashable {
   case croppingFailed(cropRect: CGRect, sourceSize: CGSize)
   case contextCreationFailed(size: CGSize)
@@ -48,13 +47,8 @@ extension FBScreenshotRenderError: LocalizedError {
   }
 }
 
-/// Applies a resolved `FBScreenshotPlan` to a captured image and encodes the result.
-///
-/// This is the generic path: it works on any `CGImage`, whichever target produced it, so the
-/// simulator, device and Mac paths cannot disagree about what a request means. A target that can do
-/// better than cropping and resampling an already-rasterised image -- the simulator can, by folding
-/// the transform into the render it was going to do anyway -- is free to, so long as it produces the
-/// same pixels.
+/// Applies a resolved `FBScreenshotPlan` to a captured `CGImage` and encodes the result. A target
+/// that folds the transform into capture instead must produce the same pixels.
 public enum FBScreenshotRenderer {
 
   /// Transforms and encodes `image` as `plan` and `encoding` describe.
@@ -75,11 +69,7 @@ public enum FBScreenshotRenderer {
     )
   }
 
-  /// Encodes an image whose plan has already been applied, and describes it.
-  ///
-  /// This is for a target that can transform during capture rather than after it -- the simulator
-  /// folds the crop and scale into the render it was going to do anyway -- and so arrives holding
-  /// the finished pixels and the size they were cut from, with no image left to transform.
+  /// Encodes an image whose plan was already applied during capture; `sourceSize` is the size it was cut from.
   public static func render(
     transformed image: CGImage,
     sourceSize: CGSize,
@@ -95,13 +85,9 @@ public enum FBScreenshotRenderer {
     )
   }
 
-  /// Applies `configuration` to an image that arrives already encoded, as a physical device's does:
-  /// the capture comes off the wire as a finished file, so there is no framebuffer to transform.
-  ///
-  /// A request that asks for exactly what the device already sent is answered with those bytes,
-  /// untouched. That is not only cheaper than a decode and re-encode round trip, it is lossless --
-  /// re-encoding a PNG would change the bytes for no reason, and doing it via a drawing context
-  /// would flatten the source's color space into the context's.
+  /// Applies `configuration` to an already-encoded image, as a device delivers. An identity PNG
+  /// request returns the bytes untouched: re-encoding would alter them, and drawing through a context
+  /// would flatten the source color space.
   public static func render(
     encoded data: Data,
     configuration: FBScreenshotConfiguration,
@@ -192,13 +178,8 @@ public enum FBScreenshotRenderer {
     return scaled
   }
 
-  /// Encodes `image` in `encoding`.
-  ///
-  /// The JPEG quality is checked here rather than at the type. `FBScreenshotEncoding.jpeg(quality:)`
-  /// is a case a Swift caller constructs directly, with no initializer to intercept, and ImageIO
-  /// silently clamps whatever it is given -- so an out-of-range quality would otherwise be a
-  /// successful screenshot at a quality nobody asked for. This is the one place every encode passes
-  /// through.
+  /// Encodes `image` in `encoding`. The JPEG quality range is validated here because ImageIO
+  /// silently clamps out-of-range values.
   public static func encode(_ image: CGImage, encoding: FBScreenshotEncoding) throws -> Data {
     if let quality = encoding.compressionQuality, !(quality > 0 && quality <= 1) {
       throw FBScreenshotRenderError.compressionQualityOutOfRange(quality)
