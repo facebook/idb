@@ -173,7 +173,6 @@ final class FBSimulatorIndigoHID {
     _ screenSize: CGSize, screenScale: Float, direction: FBSimulatorHIDDirection, x: Double, y: Double,
     edge: FBSimulatorHIDEdge = .none
   ) -> Data {
-    // Convert Screen Offset to Ratio for Indigo.
     let point = FBSimulatorIndigoHID.screenRatio(from: CGPoint(x: x, y: y), screenSize: screenSize, screenScale: screenScale)
     return touchMessage(point: point, direction: direction, edge: edge)
   }
