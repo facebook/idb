@@ -8,19 +8,8 @@
 #import <Foundation/Foundation.h>
 
 /**
- * Modifies notification permissions for apps via the BulletinBoard XPC service.
- * Approval sets authorization to authorized, while revocation resets an existing
- * authorization decision to not determined. Updates happen at runtime without
- * restarting SpringBoard.
- *
- * Usage:
- *   handleNotificationSettingsAction(@"approve", @"com.example.app")
- *   handleNotificationSettingsAction(@"revoke", @"com.example.app")
- *   handleNotificationSettingsAction(@"check", @"com.example.app")
- *
- * @param action "approve", "revoke", or "check". "revoke" resets authorization
- *               to not determined.
- * @param bundleID the application bundle identifier
- * @return 0 on success, 1 on failure
+ * Modifies an app's notification permission via BulletinBoard, at runtime and without restarting
+ * SpringBoard. `approve` sets authorized; `revoke` resets an existing decision to not determined;
+ * `check`/`list` print the current state as JSON. Returns 0 on success.
  */
 int handleNotificationSettingsAction(NSString *action, NSString *bundleID);
