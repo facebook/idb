@@ -8,12 +8,7 @@
 import FBControlCore
 import Foundation
 
-// The mac target exists to host `xctest` logic-test and mac-app execution, so it
-// already conforms to `ApplicationCommands`, `CrashLogCommands` and
-// `XCTestExtendedCommands` in `FBMacDevice.swift`. `AsynciOSTarget` additionally
-// composes a set of simulator/device-oriented command protocols that have no mac
-// equivalent; the conformances below fail with a clear message rather than
-// silently no-op, matching how the unimplemented `CrashLogCommands` methods behave.
+// FBMacDevice has no equivalent for these simulator/device-oriented commands; each throws rather than silently no-ops.
 
 // MARK: - Unsupported command helper
 
