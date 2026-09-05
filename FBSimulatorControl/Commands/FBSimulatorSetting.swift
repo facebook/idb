@@ -7,12 +7,8 @@
 
 import Foundation
 
-/// A curated, device-wide simulator setting applied via `SettingsCommands.apply(_:)`.
-///
-/// Each case maps to a different underlying transport (a SimDevice API, a Darwin notification, or a
-/// preference write), but callers build a value and hand it to a single `apply` entry point rather
-/// than reaching for a method per setting. Parsing a CLI `name`/`value` — including the raw-preference
-/// fallback for uncurated names — is `FBSimulatorSettingResolution`'s job.
+/// A curated, device-wide simulator setting applied via `SettingsCommands.apply(_:)`. Parsing a CLI
+/// `name`/`value` is `FBSimulatorSettingResolution`'s job.
 public enum FBSimulatorSetting: Equatable {
   case hardwareKeyboard(Bool)
   case slowAnimations(Bool)
@@ -23,17 +19,14 @@ public enum FBSimulatorSetting: Equatable {
   case locale(localeIdentifier: String)
 }
 
-/// The result of resolving a CLI `set` `name`/`value`: either a curated `FBSimulatorSetting` or a raw
-/// preference write for any name that is not curated. Callers hand this to `apply(_:)`; keeping the
-/// raw case out of `FBSimulatorSetting` lets that enum stay purely the curated settings.
+/// The result of resolving a CLI `set` `name`/`value`: a curated `FBSimulatorSetting`, or a raw
+/// preference write for any other name.
 public enum FBSimulatorSettingResolution: Equatable {
   case setting(FBSimulatorSetting)
   case preference(name: String, value: String, type: String?, domain: String?)
 }
 
-/// The curated setting names. Raw values are the CLI names and the single source of truth shared by
-/// the parser (`FBSimulatorSettingResolution.init(name:...)`) and the getter (`currentSettingValue`),
-/// so each setting's name is declared once and both switches stay exhaustive over it.
+/// The curated setting names; raw values are the CLI names.
 enum FBSimulatorSettingKey: String, CaseIterable {
   case hardwareKeyboard = "hardware-keyboard"
   case slowAnimations = "slow-animations"
@@ -45,9 +38,8 @@ enum FBSimulatorSettingKey: String, CaseIterable {
 }
 
 extension FBSimulatorSettingKey {
-  /// For a setting whose transport is a preference write, the `(domain, key)` that both `apply` and
-  /// the getter use — declared once so set and get never duplicate it. `nil` for settings backed by a
-  /// SimDevice API or a Darwin notification, which have no readable preference.
+  /// The `(domain, key)` for a preference-backed setting; `nil` for settings with no readable
+  /// preference (SimDevice API or Darwin notification).
   ///
   /// `autofill-passwords` maps to the Apple Global Domain `AutoFillPasswords` toggle: disabling it
   /// suppresses the native "Automatic Strong Password" cover shown over `UITextContentTypeNewPassword`
@@ -91,7 +83,6 @@ extension FBSimulatorSettingResolution {
 
   /// Parse a CLI-style `name`/`value` into a resolution. A curated name yields `.setting`; any other
   /// name yields `.preference` (a raw defaults write), the only case that consults `type`/`domain`.
-  /// This is the single source of truth for the `set` surface shared by idb and sime2e.
   public init(name: String, value: String, type: String?, domain: String?) throws {
     guard let key = FBSimulatorSettingKey(rawValue: name) else {
       self = .preference(name: name, value: value, type: type, domain: domain)
