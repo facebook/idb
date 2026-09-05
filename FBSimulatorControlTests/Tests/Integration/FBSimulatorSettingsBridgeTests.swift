@@ -9,10 +9,7 @@ import FBControlCore
 @testable import FBSimulatorControl
 import XCTest
 
-/// Exercises the `SimulatorFrameworkBridge`-backed settings end-to-end on a booted
-/// simulator. These spawn the bridge helper inside the simulator via CoreSimulator
-/// (`FBSimulator.launchProcessConsumingOutput`) rather than `simctl spawn`; a successful
-/// round-trip proves the helper runs under the CoreSimulator launchd domain.
+/// Runs the `SimulatorFrameworkBridge` helper inside a booted simulator via `FBSimulator.launchProcessConsumingOutput`, under the CoreSimulator launchd domain.
 final class FBSimulatorSettingsBridgeTests: FBSimulatorControlTestCase {
 
   func testRunsSimulatorFrameworkBridgeViaCoreSimulator() async throws {
