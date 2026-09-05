@@ -5,8 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// Re-exported for consumers of this umbrella; it used to arrive transitively via the framework
-// loader header, which is now Swift.
+// Re-exported for consumers of this umbrella.
 #import <FBControlCore/FBControlCore.h>
 
 #if __has_include(<FBSimulatorControl/FBSimulatorControl-Swift.h>)
