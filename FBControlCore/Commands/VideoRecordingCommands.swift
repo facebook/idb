@@ -11,7 +11,6 @@ import Foundation
 /// the file and obtain its URL.
 public protocol FBVideoRecording {
 
-  /// Stops the recording, finalizes the file, and returns its URL.
   func stop() async throws -> URL
 }
 
@@ -45,9 +44,7 @@ public protocol VideoRecordingCommands: AnyObject {
 
 public extension VideoRecordingCommands {
 
-  /// Default: ignore the configuration and fall back to the target's fixed recording path. This lets
-  /// conformers that cannot honor a configuration (e.g. `FBDevice`, whose recording is a separate
-  /// `AVCaptureSession` path) inherit it unchanged; `FBSimulator` overrides it to honor the config.
+  /// Default ignores the configuration. A conformer that can honor it overrides both members.
   func startRecording(toFile filePath: String, configuration: FBVideoStreamConfiguration) async throws -> any FBVideoRecording {
     try await startRecording(toFile: filePath)
   }
