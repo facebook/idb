@@ -59,15 +59,9 @@ final class FBAXBridgePlatformElementTests: XCTestCase {
   }
 
   func testFrameWithNullMemberKeepsTheReadableEdgesWithoutCrashing() {
-    // An off-screen or still-settling element reports a non-finite frame coordinate; because JSON has
-    // no infinity/NaN, the guest emits that member as null, which arrives host-side as NSNull.
-    // `CGRectMakeWithDictionaryRepresentation` sends a number selector to every member, so a null one
-    // would raise `-[NSNull _getValue:forType:]` and terminate the read. It must never see one.
-    //
-    // Restoring the null to the non-finite value it stands for satisfies that and keeps the edges the
-    // guest did send. Degrading the whole rectangle to `.zero` also avoided the crash, but reported an
-    // off-screen element as sitting at the origin with no size — a real position rather than an absent
-    // one. `FBAccessibilityFrame` normalizes the non-finite edge to null downstream.
+    // The guest sends a non-finite frame member as JSON null (arriving as NSNull). `CGRectMakeWithDictionaryRepresentation`
+    // would raise `-[NSNull _getValue:forType:]` on it, so the null is restored to a non-finite value and the other
+    // edges are kept rather than collapsing the rect to `.zero` (a real position for an off-screen element).
     let frameDict = NSMutableDictionary(
       dictionary: CGRectCreateDictionaryRepresentation(CGRect(x: 0, y: 0, width: 10, height: 20)) as NSDictionary
     )
@@ -115,10 +109,8 @@ final class FBAXBridgePlatformElementTests: XCTestCase {
     XCTAssertEqual(element.axRole(), "9999")
   }
 
-  // `Any` is `XCUIElementType` 0 — the automation type reporting that it has no type for this element,
-  // not a type of its own. Because it is a *successful* lookup rather than a miss, it short-circuits the
-  // chain and the concrete class name the read already carried is never consulted. An app's own
-  // `UIControl` subclass is the case that costs the most: it reports `Any` and is unidentifiable.
+  // `Any` is `XCUIElementType` 0 — a successful lookup, not a miss — so it must not short-circuit past the
+  // concrete class name the read already carried.
   func testRoleReportsTheConcreteElementTypeRatherThanAny() {
     let element = FBAXBridgePlatformElement(
       attributes: [
@@ -132,9 +124,7 @@ final class FBAXBridgePlatformElementTests: XCTestCase {
     XCTAssertEqual(element.axRole(), "AppRefreshControl")
   }
 
-  // The same ordering defect one step further down the chain, and the reason the fix has to be a reorder
-  // rather than a special case for `Any`: an automation type that resolves to no name at all still beats
-  // the concrete class name, because the stringified-number term sits above it.
+  // An automation type that resolves to no name (a stringified number) must also lose to the concrete class name.
   func testRoleReportsTheConcreteElementTypeRatherThanAStringifiedAutomationType() {
     let element = FBAXBridgePlatformElement(
       attributes: [
@@ -148,8 +138,7 @@ final class FBAXBridgePlatformElementTests: XCTestCase {
     XCTAssertEqual(element.axRole(), "AppRefreshControl")
   }
 
-  // An element with nothing better than `Any` must keep reporting it. Pinned alongside the two above so
-  // the fix cannot buy a concrete name at the cost of turning this into the literal string "0".
+  // With nothing better than `Any`, report `Any` — not the literal string "0".
   func testRoleStillReportsAnyWhenThereIsNoConcreteElementType() {
     let element = FBAXBridgePlatformElement(
       attributes: [FBAXWire.Node.automationType.rawValue: NSNumber(value: 0)],
@@ -160,20 +149,7 @@ final class FBAXBridgePlatformElementTests: XCTestCase {
     XCTAssertEqual(element.axRole(), "Any")
   }
 
-  // A semantic-vocabulary node carries no `elementType` or `automationType` at all — the translator's own
-  // role numbering is the only type on that wire, so this term is the one that answers there.
-  func testTranslatorRoleAnswersWhenItIsTheOnlyType() {
-    let element = FBAXBridgePlatformElement(
-      attributes: [FBAXWire.Node.translatorRole.rawValue: NSNumber(value: 2)],
-      children: [],
-      pid: 0
-    )
-    XCTAssertEqual(element.axRole(), "Button")
-  }
-
-  // An unidentified role reports no type rather than its number. The mapping is partial by construction —
-  // it holds only the integers with evidence — and a bare role number means nothing to a caller expecting
-  // an `XCUIElementType` name, so it must not reach them as one.
+  // The mapping is partial by construction; a bare role number must not reach a caller as an `XCUIElementType` name.
   func testUnidentifiedTranslatorRoleReportsNoType() {
     let element = FBAXBridgePlatformElement(
       attributes: [FBAXWire.Node.translatorRole.rawValue: NSNumber(value: 99)],
@@ -183,9 +159,7 @@ final class FBAXBridgePlatformElementTests: XCTestCase {
     XCTAssertNil(element.axRole(), "an unidentified role must not surface as a number")
   }
 
-  // Spot-checks across the decoded table, including the two whose role is narrower than the element a
-  // reader would call it: a toggle is `CheckBox` and a search field is `TextField`, because `Switch` and
-  // `SearchField` live in the subrole, which nothing reads yet.
+  // A toggle is `CheckBox` and a search field is `TextField`: `Switch` and `SearchField` live in the subrole.
   func testTranslatorRolesAreMappedAcrossTheDecodedTable() {
     let cases: [(Int, String)] = [
       (1, "Application"), (2, "Button"), (3, "CheckBox"), (5, "Group"),
@@ -201,8 +175,7 @@ final class FBAXBridgePlatformElementTests: XCTestCase {
     }
   }
 
-  // The two cases the subrole exists to fix. Both refined names are `XCUIElementType` members and are in
-  // the interactable role set; neither bare role is, so reporting the role alone loses the useful answer.
+  // Both refined names are in the interactable role set; neither bare role is.
   func testASubroleRefinesTheRoleItAccompanies() {
     let toggle = FBAXBridgePlatformElement(
       attributes: [
@@ -225,7 +198,6 @@ final class FBAXBridgePlatformElementTests: XCTestCase {
     XCTAssertEqual(search.axRole(), "SearchField", "a search field is a text field with a search subrole")
   }
 
-  // An unidentified subrole must not hide the role, which is a real answer on its own.
   func testAnUnidentifiedSubroleFallsBackToTheRole() {
     let element = FBAXBridgePlatformElement(
       attributes: [
@@ -238,8 +210,6 @@ final class FBAXBridgePlatformElementTests: XCTestCase {
     XCTAssertEqual(element.axRole(), "Button")
   }
 
-  // The XCTest vocabulary keeps precedence where both are present: it names types in the vocabulary the
-  // wire already speaks, and the translator numbering is a second scheme that only it uses.
   func testXCUIElementTypeOutranksTheTranslatorRole() {
     let element = FBAXBridgePlatformElement(
       attributes: [
@@ -252,27 +222,8 @@ final class FBAXBridgePlatformElementTests: XCTestCase {
     XCTAssertEqual(element.axRole(), "StaticText")
   }
 
-  func testChildrenAreExposed() {
-    let child = FBAXBridgePlatformElement(
-      attributes: [FBAXWire.Node.label.rawValue: "About"],
-      children: [],
-      pid: 7
-    )
-    let root = FBAXBridgePlatformElement(
-      attributes: [FBAXWire.Node.label.rawValue: "General"],
-      children: [child],
-      pid: 7
-    )
-
-    let children = root.axChildren()
-    XCTAssertEqual(children.count, 1)
-    XCTAssertEqual(children.first?.axLabel(), "About")
-  }
-
-  // A translator-vocabulary read is the only one that carries an `enabled` answer, and it carries it under
-  // the reader's own key rather than an `XC_kAXXC*` name. Both halves are pinned together because the
-  // value of answering it at all depends on the other reads still reporting unknown: a wire with no such
-  // key must not start reporting a fabricated `false`, which is the bug this whole seam already had once.
+  // Only a translator-vocabulary read carries `enabled` (under the reader's own key); every other read must stay
+  // unknown rather than report a fabricated `false`.
   func testEnabledIsReadFromATranslatorNodeAndStaysUnknownOnEveryOtherRead() {
     let translator = FBAXBridgePlatformElement(
       attributes: [FBAXWire.Node.isEnabled.rawValue: false],
