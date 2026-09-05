@@ -7,7 +7,7 @@
 
 import Foundation
 
-/// Process-exit outcomes surfaced as errors on the future that did not happen, as data rather than assembled strings.
+/// Set as the error on whichever of `exitCode` / `signal` did not happen.
 public enum FBProcessTerminationError: Error {
   case exitedWithSignal(processIdentifier: pid_t, processName: String, signal: Int32)
   case exitedWithCode(processIdentifier: pid_t, processName: String, exitCode: Int32)
