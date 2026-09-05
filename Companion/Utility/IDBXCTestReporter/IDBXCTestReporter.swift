@@ -50,7 +50,6 @@ extension IDBXCTestReporter {
   }
 }
 
-/// The ways coverage collection can fail, as data rather than assembled strings.
 enum IDBXCTestReporterError: Error {
   case coverageExportFailed(exitCode: Int32, stderr: String)
   case exportStreamMissing
@@ -186,7 +185,7 @@ final class IDBXCTestReporter: NSObject, FBXCTestReporter, FBDataConsumer, @unch
   }
 
   func finished(with summary: FBTestManagerResultSummary) {
-    // didFinishExecutingTestPlan should be used to signify completion instead
+    // Implementation not required
   }
 
   func testHadOutput(_ output: String) {
@@ -331,9 +330,6 @@ final class IDBXCTestReporter: NSObject, FBXCTestReporter, FBDataConsumer, @unch
       return
     }
 
-    // Run the three independent finalization steps concurrently, restoring the parallelism of the
-    // original ObjC reporter (`+[FBFuture futureWithFutures:]`). A task group keeps this consistent
-    // with the companion's other concurrent work (LaunchMethodHandler, ConcurrentForEach).
     let artifacts: [FinalArtifact] = try await withThrowingTaskGroup(of: FinalArtifact?.self) { group in
       let resultBundlePath = configuration.resultBundlePath
       let binariesPath = configuration.binariesPath
