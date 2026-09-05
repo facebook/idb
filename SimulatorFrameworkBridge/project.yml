@@ -4,11 +4,9 @@ options:
   createIntermediateGroups: true
 
 targets:
-  # A command-line executable that runs inside the iOS simulator runtime to drive
-  # privacy/services state (contacts, photos, notifications, health, dns, proxy)
-  # and to serve the REPL socket. idb_companion spawns it from the bundled
-  # `Resources/SimulatorFrameworkBridge` binary (see FBSimulatorSettingsCommands /
-  # FBSimulatorReplCommands). Mirrors the Buck `SimulatorFrameworkBridge` target.
+  # A command-line executable spawned inside the iOS simulator runtime by idb_companion (from the bundled
+  # `Resources/SimulatorFrameworkBridge`) to drive privacy/services state, read the accessibility tree and
+  # serve the REPL socket. Mirrors the Buck `SimulatorFrameworkBridge` target.
   SimulatorFrameworkBridge:
     type: tool
     platform: iOS
@@ -49,8 +47,8 @@ targets:
         CODE_SIGN_ENTITLEMENTS: SimulatorFrameworkBridge.entitlements
         OTHER_CFLAGS: $(inherited) -Wno-deprecated-declarations
     dependencies:
-      # HealthKit, BulletinBoard and SystemConfiguration are dlopen-ed at runtime
-      # (private API), so they are intentionally not linked here.
+      # Everything else the bridge reaches (HealthKit, BulletinBoard, SystemConfiguration, the accessibility
+      # private frameworks) is dlopen-ed at runtime, so it is intentionally not linked here.
       - sdk: Foundation.framework
       - sdk: Contacts.framework
       - sdk: CoreGraphics.framework
