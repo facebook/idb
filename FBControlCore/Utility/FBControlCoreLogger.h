@@ -62,12 +62,9 @@ typedef NS_ENUM(NSUInteger, FBControlCoreLogLevel) {
 @interface FBControlCoreLoggerFactory : NSObject
 
 /**
- An implementation of `FBControlCoreLogger` that logs using the OS's default logging framework.
- Optionally logs to stderr.
-
- @param writeToStdErr YES if all future log messages should be written to stderr, NO otherwise.
- @param debugLogging YES if Debug messages should be written to stderr, NO otherwise.
- @return an FBControlCoreLogger instance.
+ A logger backed by os_log (falling back to NSLog).
+ writeToStdErr additionally mirrors output to stderr unless os_log already does so in this environment.
+ debugLogging selects the debug level rather than info.
  */
 + (nonnull id<FBControlCoreLogger>)systemLoggerWritingToStderr:(BOOL)writeToStdErr withDebugLogging:(BOOL)debugLogging;
 
@@ -97,10 +94,7 @@ typedef NS_ENUM(NSUInteger, FBControlCoreLogLevel) {
 + (nonnull id<FBControlCoreLogger>)loggerToFileDescriptor:(int)fileDescriptor closeOnEndOfFile:(BOOL)closeOnEndOfFile;
 
 /**
- Strips the newline and returns a nullable string if the string shouldn't be logged.
-
- @param string the string to log.
- @return the modifier string.
+ Trims surrounding whitespace and newlines; returns nil when nothing remains to log.
  */
 + (nullable NSString *)loggableStringLine:(nullable NSString *)string;
 

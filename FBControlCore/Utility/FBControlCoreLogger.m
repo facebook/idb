@@ -246,11 +246,9 @@
 
 + (id<FBControlCoreLogger>)systemLoggerWritingToStderr:(BOOL)writeToStdErr withDebugLogging:(BOOL)debugLogging;
 {
-  // Use the appropriate logger.
   FBControlCoreLogLevel level = debugLogging ? FBControlCoreLogLevelDebug : FBControlCoreLogLevelInfo;
   id<FBControlCoreLogger> systemLogger = [self osLoggerWithLevel:level] ?: [FBControlCoreLogger_NSLog new];
 
-  // If we don't care about stderr, just return the system logger.
   if (!writeToStdErr) {
     return systemLogger;
   }
@@ -261,7 +259,6 @@
     return systemLogger;
   }
 
-  // In contexts where we run without mirroring enabled.
   return [self compositeLoggerWithLoggers:@[
     systemLogger,
     [self loggerToFileDescriptor:STDERR_FILENO closeOnEndOfFile:NO],
