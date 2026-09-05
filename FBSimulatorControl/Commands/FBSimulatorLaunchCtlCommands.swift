@@ -9,7 +9,6 @@
 @preconcurrency import FBControlCore
 @preconcurrency import Foundation
 
-/// The ways launchctl queries can fail, as data rather than assembled strings.
 public enum FBSimulatorLaunchCtlError: Error {
   case searchPatternConstructionFailed(processIdentifier: pid_t)
   case noMatchingProcesses(pattern: String)
@@ -92,7 +91,6 @@ public final class FBSimulatorLaunchCtlCommands {
       }
       var processIdentifier: pid_t = 0
       guard let serviceName = try? FBSimulatorLaunchCtlCommands.extractServiceName(fromListLine: line, processIdentifierOut: &processIdentifier) else {
-        // If extraction fails, skip the line
         continue
       }
       mapping[serviceName] = NSNumber(value: processIdentifier)
@@ -169,10 +167,8 @@ public final class FBSimulatorLaunchCtlCommands {
     return serviceName
   }
 
-  // Parses `launchctl list` output into a service-name -> pid map: a pid of -1 marks a
-  // loaded-but-not-running service (the "-" placeholder), >= 1 is a live process. The header
-  // row and any malformed (non-three-column) lines are skipped. Static and internal so the
-  // parsing can be unit-tested without spawning launchctl; see FBSimulatorLaunchCtlCommandsTests.
+  // A pid of -1 marks a loaded-but-not-running service (the "-" placeholder). The header row and
+  // malformed lines are skipped.
   static func serviceMap(fromListOutput text: String) -> [String: pid_t] {
     var services: [String: pid_t] = [:]
     for line in text.components(separatedBy: .newlines) {
@@ -188,9 +184,6 @@ public final class FBSimulatorLaunchCtlCommands {
     return services
   }
 
-  // The closed set of launchctl operations this command issues. Modelling them as an enum keeps argv
-  // construction in one place and makes the operation set exhaustive, so a new operation cannot be
-  // added without routing through `run`.
   enum Command {
     case list
     case stop(serviceName: String)
@@ -228,7 +221,6 @@ public final class FBSimulatorLaunchCtlCommands {
     return try FBSimulatorLaunchCtlCommands.stdout(orThrowFrom: output, command: command, logger: simulator.logger)
   }
 
-  // Internal for unit-test coverage of the exit-code handling; see FBSimulatorLaunchCtlCommandsTests.
   static func stdout(orThrowFrom output: FBInSimulatorToolOutput, command: Command, logger: (any FBControlCoreLogger)?) throws -> String {
     if output.exitCode != 0 {
       let stderr = String(data: output.stderr, encoding: .utf8) ?? ""
