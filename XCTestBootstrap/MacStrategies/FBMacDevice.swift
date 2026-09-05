@@ -13,7 +13,6 @@ import IOKit
   func _XCT_requestConnectedSocketForTransport(_ arg1: @escaping (FileHandle?, Error?) -> Void)
 }
 
-/// The ways Mac-device operations can fail, as data rather than assembled strings.
 public enum FBMacDeviceError: Error {
   case testManagerProxyNonConformant(proxyDescription: String)
   case transportUnavailable
@@ -188,10 +187,7 @@ public final class FBMacDevice: NSObject, FBiOSTarget {
     }
 
     if !queuedFutures.isEmpty {
-      // The combined future resolves with the array of results; nothing reads the value,
-      // so it is re-typed in place rather than paying a queue hop to replace it - callers
-      // (including the state-restoration test) rely on already-resolved inputs resolving
-      // this future synchronously.
+      // Re-typed in place rather than mapped: callers rely on this resolving synchronously when the inputs are already resolved.
       return FBFuture<AnyObject>.combine(queuedFutures).retyped(FBFuture<NSNull>.self)
     }
     return FBFuture(result: NSNull())
