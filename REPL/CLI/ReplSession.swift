@@ -40,11 +40,9 @@ struct ExecutionResult {
   var artifactFilenames: [String]
 }
 
-/// A live REPL session against a companion: it owns the gRPC stream and the compile
-/// parameters, executes blocks of code against the connected target, and (when a report
-/// path is configured) records each run. Created by `start`, driven by `execute`, and
-/// torn down by `finish`. Used sequentially from a single task, so it is a plain
-/// (non-Sendable) reference type.
+/// A live REPL session against a companion: owns the gRPC stream and compile parameters
+/// and, when a report path is configured, records each run. Used sequentially from a
+/// single task, so it is a plain (non-Sendable) reference type.
 final class ReplSession {
 
   /// The connected target's device type (e.g. `iphone`), reported at handshake.
@@ -127,11 +125,8 @@ final class ReplSession {
     self.reportWriter = reportWriter
   }
 
-  /// Starts a REPL session: connects to the companion (an explicit `--companion` or a
-  /// discovered one), opens the bidirectional `repl` stream, sends the Start message for
-  /// `context`, waits for the companion to report the REPL ready, materializes the
-  /// generated `.swiftinterface` files, resolves the compile platform, and — when a
-  /// report path is configured — opens the session report.
+  /// Connects to the companion, opens the `repl` stream, and returns once the companion
+  /// reports the REPL ready. Opens the session report when a report path is configured.
   static func start(context: Context, config: ReplSessionConfig) async throws -> ReplSession {
     // @oss-disable
 
@@ -151,8 +146,6 @@ final class ReplSession {
     }
     reporter.addMetadata(sessionMetadata)
 
-    // Start a REPL session: connect to the companion and wait for it to report
-    // the REPL ready.
     let sessionStart = Date()
     let toolchain: String
     let group: MultiThreadedEventLoopGroup
@@ -173,8 +166,6 @@ final class ReplSession {
     do {
       toolchain = try resolveToolchainPath(explicit: config.toolchainPath)
 
-      // Resolve the companion to connect to (see `resolveCompanionAddress`): an
-      // explicit `--companion host:port`, otherwise a discovered companion.
       let address = try await resolveCompanionAddress(config: config)
 
       group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
@@ -191,7 +182,6 @@ final class ReplSession {
       let probeFilePath = try sessionDirectory.filePath(named: "shared-fs-probe")
       FileManager.default.createFile(atPath: probeFilePath, contents: Data())
 
-      // Open the bidirectional repl stream and start a session.
       call = client.makeReplCall()
       responses = call.responseStream.makeAsyncIterator()
       try await call.requestStream.send(
@@ -200,8 +190,6 @@ final class ReplSession {
             .with {
               $0.context = context.proto
               $0.probeFilePath = probeFilePath
-              // Only the test context runs against a bundle; only the app context
-              // names an app to launch.
               if case let .test(bundlePath) = context {
                 $0.testBundlePath = bundlePath
               }
@@ -228,12 +216,9 @@ final class ReplSession {
       }
       reporter.addMetadata(readyMetadata)
 
-      // The companion sends the .swiftinterface files available to injected code
-      // (the test bundle's probe-generated modules and the `IDB` module) as
-      // contents, since it may not share a filesystem with us. Materialize each into
-      // the session directory, add that directory to the compiler's import search
-      // path, and auto-import the modules so user code can reference them without an
-      // explicit `import`. Report them on stderr (keeping one-shot stdout clean).
+      // Interfaces arrive as contents (the companion may not share our filesystem); they
+      // are materialized here and auto-imported. Reported on stderr to keep one-shot
+      // stdout clean.
       var modules: [String] = []
       var interfaceDirectory: String?
       if !ready.generatedInterfaces.isEmpty {
@@ -249,10 +234,7 @@ final class ReplSession {
       autoImportModules = modules
       interfaceSearchPaths = interfaceDirectory.map { [$0] } ?? []
 
-      // The companion reports the connected target's device type and OS version;
-      // compile injected code for the matching platform, flooring the deployment
-      // target at the runtime OS version so it never links against symbols newer
-      // than the runtime provides.
+      // Deployment target is floored at the runtime OS version (see `resolveTargetTriple`).
       let platform = try Platform(deviceType: deviceType)
       sdkPath = try resolveSDKPath(platform: platform)
       targetTriple = try resolveTargetTriple(platform: platform, runtimeOSVersion: osVersion)
@@ -267,13 +249,12 @@ final class ReplSession {
     }
     reporter.report(ReplRunTelemetry.subject(name: "start_session", start: sessionStart, failure: nil))
 
-    // The app was freshly launched iff the companion resumes numbering from zero (no
-    // prior runs from a reattached REPL). Recorded for app sessions so `replay` can
-    // reproduce the same launch mode.
+    // Freshly launched iff the companion resumes numbering from zero (no runs from a
+    // reattached REPL).
     let freshLaunch = (readyRunIndex == 0)
 
-    // Set up the session report if a path was given. Best-effort: failing to open
-    // it disables reporting but never stops the REPL.
+    // Best-effort: a report that cannot be opened disables reporting without stopping
+    // the REPL.
     var reportWriter: ReplReportWriter?
     if let reportPath = config.reportPath {
       let writer = ReplReportWriter(path: reportPath)
@@ -313,11 +294,9 @@ final class ReplSession {
       reportWriter: reportWriter)
   }
 
-  /// Compiles `code` into a dylib, injects and executes it against the target, and
-  /// returns the result. Advances `nextRunIndex`, transfers any captured artifacts, and
-  /// records the run to the report. Records a compile failure to the report only when
-  /// `--report-failures` was given; either way the error is re-thrown for the caller to
-  /// surface. Reports run telemetry for both success and failure.
+  /// Compiles `code`, injects and executes it against the target, and records the run.
+  /// Errors are re-thrown after telemetry (and, under `--report-failures`, the report)
+  /// has recorded them.
   func execute(code: String) async throws -> ExecutionResult {
     let index = nextRunIndex
     let start = Date()
@@ -388,10 +367,8 @@ final class ReplSession {
     }
   }
 
-  /// Closes the report and tears down the gRPC stream, channel, and event-loop group,
-  /// then cleans up the session's scratch directory. Reports the `session_end`
-  /// event carrying the session's duration and how many runs it executed —
-  /// which makes sessions that never ran code visible.
+  /// Reports `session_end` (duration and run count — so sessions that never ran code
+  /// are visible) and tears the session down.
   func finish() async {
     reporter.report(
       ReplRunTelemetry.subject(
@@ -405,17 +382,11 @@ final class ReplSession {
 
   // MARK: - Connection
 
-  /// Resolves the companion address to connect to. `--companion host:port`
-  /// connects directly to an explicit (typically remote) TCP companion, bypassing
-  /// discovery, matching idb-forward. Otherwise a companion is discovered — by
-  /// `--udid`, or the single running / only-available-simulator default — and
-  /// started if needed, exiting after 5 minutes without gRPC activity so it does
-  /// not outlive its use.
-  ///
-  /// Whether local discovery is available is decided by `CompanionDiscovery`
-  /// (`planCompanionRoute`): it spawns and talks to a local `idb_companion`, which
-  /// exists only on macOS, so on other platforms an explicit `--companion` is
-  /// required.
+  /// `--companion host:port` bypasses discovery; otherwise a local companion is
+  /// discovered (by `--udid` or the single running / only-available-simulator default)
+  /// and started if needed, exiting after 5 idle minutes. Local discovery needs a local
+  /// `idb_companion`, which exists only on macOS, so other platforms require an explicit
+  /// `--companion`.
   private static func resolveCompanionAddress(config: ReplSessionConfig) async throws -> CompanionAddress {
     switch planCompanionRoute(companion: config.companion) {
     case let .tcp(companion):
@@ -457,21 +428,16 @@ final class ReplSession {
 
   // MARK: - Artifacts
 
-  /// Retrieves each artifact captured during a run and returns the filenames stored
-  /// beside the session report (empty when no report is being written). Artifacts are
-  /// stored next to the report — in its `artifactsDirectory()` — so the report can
-  /// link them and they persist; without a report they land in the ephemeral session
-  /// directory instead. When the companion shares our filesystem the file is moved
-  /// directly; otherwise it is pulled over gRPC (the AUXILLARY container) and removed
-  /// from the companion. Best-effort: failing to retrieve one artifact is logged and
-  /// does not stop the session.
+  /// Retrieves each artifact and returns the filenames that landed beside the report
+  /// (empty when no report is being written; without a report they go to the ephemeral
+  /// session directory). With a shared filesystem the file is moved; otherwise it is
+  /// pulled over gRPC from the AUXILLARY container and removed from the companion.
+  /// Best-effort per artifact.
   private static func transferArtifacts(_ artifacts: [Idb_ReplResponse.Result.Artifact], client: Idb_CompanionServiceAsyncClient, into reportWriter: ReplReportWriter?) async -> [String] {
     guard !artifacts.isEmpty else {
       return []
     }
 
-    // Prefer the report's artifacts directory (persistent and linkable); fall back to
-    // the ephemeral session directory when there is no report.
     let reportArtifactsDirectory = reportWriter?.artifactsDirectory()
     let directory: String
     if let reportArtifactsDirectory {
