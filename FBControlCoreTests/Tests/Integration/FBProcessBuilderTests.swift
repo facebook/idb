@@ -13,10 +13,6 @@ import Testing
 /// describe accurately: what an unconfigured builder does with output, what a
 /// `with*` call does to the receiver, and the two unrelated behaviours that are
 /// both named after `/dev/null`.
-///
-/// Nothing here asserts a desirable design. Each case records what callers
-/// observe today so that a later replacement has to either reproduce it or
-/// change it deliberately.
 @Suite
 struct FBProcessBuilderTests {
 
@@ -57,13 +53,10 @@ struct FBProcessBuilderTests {
   func mutatingASinkAliasesTheReceiver() async throws {
     let base = Self.shell("test -e /dev/fd/1")
 
-    // The declared return type reparameterises stdout to NSNull, but no new
-    // builder is produced. `base` and `derived` are one object, so `base`'s own
-    // NSData stdout parameter is now a lie about its own contents.
+    // The return type reparameterises stdout, but no new builder is produced: `base` and `derived` are one object.
     let derived: FBProcessBuilder<NSNull, NSNull, NSData> = base.withStdOutToDevNull()
     #expect(base === derived)
 
-    // Running `base` observes the mutation that was applied through `derived`.
     let process = try await bridgeFBFuture(base.runUntilCompletion(withAcceptableExitCodes: nil))
     #expect(process.stdOut == nil)
   }
