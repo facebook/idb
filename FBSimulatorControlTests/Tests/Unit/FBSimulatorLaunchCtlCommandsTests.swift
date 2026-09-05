@@ -32,7 +32,6 @@ final class FBSimulatorLaunchCtlCommandsTests: XCTestCase {
   }
 
   func testStopThrowsOnGenuineFailure() {
-    // Any non-zero other than ESRCH is a genuine failure to stop a running service.
     let output = FBInSimulatorToolOutput(stdout: Data(), stderr: Data("Operation not permitted\n".utf8), exitCode: 1)
     XCTAssertThrowsError(try FBSimulatorLaunchCtlCommands.stdout(orThrowFrom: output, command: .stop(serviceName: "com.apple.foo"), logger: nil)) { error in
       XCTAssertTrue(error.localizedDescription.contains("Operation not permitted"), "got: \(error.localizedDescription)")
