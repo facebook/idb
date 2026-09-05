@@ -17,9 +17,7 @@ public struct FBSimulatorConfiguration: Equatable, Hashable, CustomStringConvert
 
   // MARK: - Initializers
 
-  // Module-internal so same-module extensions (e.g. FBSimulatorConfiguration+CoreSimulator) can build a
-  // configuration directly without going through the throwing `defaultConfiguration()`. External callers
-  // still construct via `defaultConfiguration()` + the `with*` methods.
+  // Internal so same-module extensions can build a configuration without the throwing `defaultConfiguration()`.
   init(device: FBDeviceType, os: FBOSVersion) {
     self.device = device
     self.os = os
@@ -29,8 +27,7 @@ public struct FBSimulatorConfiguration: Equatable, Hashable, CustomStringConvert
     try _defaultConfiguration.get()
   }
 
-  // Memoized so the default is computed (and the developer directory resolved) at most once,
-  // matching the previous `static let` semantics while letting the resolution error surface.
+  // Memoized: the developer directory is resolved at most once, and the resolution error is preserved.
   private nonisolated(unsafe) static let _defaultConfiguration: Result<FBSimulatorConfiguration, Error> = {
     do {
       try FBSimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworks(FBControlCoreGlobalConfiguration.defaultLogger)
