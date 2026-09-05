@@ -40,29 +40,15 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
 
   private weak var simulator: FBSimulator?
 
-  /// Whether `send(event:logger:)` flushes the transport after every event.
-  ///
-  /// The flush exists so a short-lived host process does not tear the connection down before the
-  /// guest has consumed the gesture (see `FBSimulatorDTUHIDTransport.drainNanos`). It is a fixed
-  /// wait, so it costs the same whether or not a teardown is coming.
-  ///
-  /// A caller that holds one `FBSimulatorHID` open across many gestures — a persistent session
-  /// streaming a continuous gesture — has no teardown between events, so that wait is pure
-  /// per-event latency, and at one flush per event it caps throughput well below the rate such a
-  /// gesture produces. Those callers set this to `false` and call `flush()` once before releasing
-  /// the HID. Defaults to `true`, so one-shot callers keep the safe behaviour without opting in.
+  /// Whether `send(event:logger:)` flushes the transport after every event (a fixed wait — see
+  /// `FBSimulatorDTUHIDTransport.drainNanos`). A caller streaming many gestures over one open HID should
+  /// set this to `false` and call `flush()` once before releasing the HID.
   public var flushesAfterEachEvent = true
 
   // MARK: Initializers
 
-  /**
-   Creates a `FBSimulatorHID` for the provided Simulator.
-
-   `transport` selects the HID path. Pass an explicit value to force one; pass `nil` (the default) to
-   have one negotiated, so a caller that does not care gets a working transport without choosing one.
-   Will fail if the chosen transport cannot be established for the provided Simulator (registration
-   may need to occur prior to booting).
-   */
+  /// `transport` forces a HID path; `nil` negotiates one (see `transport(for:requested:)`). Throws if the
+  /// transport cannot be established (registration may need to occur prior to booting).
   public convenience init(
     for simulator: FBSimulator, transport transportType: FBSimulatorHIDTransportType? = nil
   ) throws {
@@ -73,17 +59,10 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
       simulator: simulator)
   }
 
-  /// Establishes the transport the caller asked for, or negotiates one if they asked for nothing.
-  ///
-  /// A caller that named a transport gets that transport or an error — forcing `.dtuhid` to debug a
-  /// DTUHID problem must not quietly hand back Indigo. A caller that named none gets
-  /// `FBSimulator.defaultHIDTransport`, and if that turns out to be unreachable on this host, the
-  /// other one. Only `isDTUHIDUnreachable` failures are negotiated around; a fault in a transport
-  /// that was successfully established is a real error and surfaces.
-  ///
-  /// The preference cannot be resolved to a certainty up front: `dtuhidd` is demand-launched, so the
-  /// only way to know whether it can be reached is to look its service up, which is what building the
-  /// transport does.
+  /// A requested transport is never substituted — it is established or the error surfaces. With no request,
+  /// `defaultHIDTransport` is tried and only an `isDTUHIDUnreachable` failure falls back to Indigo; a fault
+  /// in an established transport is a real error. Reachability cannot be known up front: `dtuhidd` is
+  /// demand-launched, so the service lookup that builds the transport is the only probe.
   private static func transport(
     for simulator: FBSimulator, requested: FBSimulatorHIDTransportType?
   ) throws -> FBSimulatorHIDTransport {
@@ -114,11 +93,8 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
     }
   }
 
-  /// The designated initializer.
-  ///
-  /// `simulator` is held weakly and may be absent. The Purple and Darwin paths need it and throw
-  /// `FBWeakTargetError.simulator` without one; the transport primitives never touch it. That
-  /// asymmetry is what lets a test drive the transport with no simulator attached.
+  /// `simulator` is weak and may be absent: the Purple and Darwin paths need it and throw
+  /// `FBWeakTargetError.simulator` without one; the transport primitives never touch it.
   init(
     transport: FBSimulatorHIDTransport,
     purple: FBSimulatorPurpleHIDTransport,
@@ -165,15 +141,9 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
     try await transport.sendKeyboard(direction: direction, keyCode: keyCode)
   }
 
-  /// Drains the transport once a gesture's primitives have all been sent, so `dtuhidd` consumes them
-  /// before the connection is torn down. `FBSimulatorHIDEvent.send(on:logger:)` calls this once per
-  /// dispatched event; the individual `send*` primitives do not.
-  ///
-  /// Only DTUHID has anything to drain. Indigo's client is synchronous, so there is nothing waiting on
-  /// the far side and no drain to perform — which is why `flush` is not on the transport at all.
-  ///
-  /// `send(event:logger:)` calls this for you unless `flushesAfterEachEvent` is `false`, in which case
-  /// a caller streaming a continuous gesture calls it once at the end rather than paying it per event.
+  /// Drains the transport so `dtuhidd` consumes a gesture before the connection is torn down. Only DTUHID
+  /// has anything to drain; Indigo's client is synchronous. `send(event:logger:)` calls this per event
+  /// unless `flushesAfterEachEvent` is `false`.
   public func flush() async throws {
     guard case let .dtuhid(dtuhid) = transport else {
       return
@@ -181,13 +151,8 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
     try await dtuhid.flush()
   }
 
-  /// Sends one phase of a tvOS Siri Remote trackpad gesture.
-  ///
-  /// The trackpad rides the dedicated Indigo trackpad service, which `dtuhidd` does not expose: its
-  /// digitizer targets are displays (`DigitizerTarget` = mainScreen/display1..10) and its scroll targets
-  /// are rotary devices (`ScrollTarget` = digitalCrown/dial) — none is the trackpad, and the tvOS guest
-  /// registers no trackpad/pointer service. Asked here rather than on the transport, so DTUHID never
-  /// declares a method it could only throw from.
+  /// Indigo only: the tvOS trackpad rides a dedicated Indigo service that `dtuhidd` does not expose (its
+  /// digitizer targets are displays and its scroll targets rotary devices).
   func sendTrackpad(point: FBSimulatorTrackpadPoint, phase: FBSimulatorTrackpadPhase) async throws {
     guard case let .indigo(indigo) = transport else {
       throw FBSimulatorHIDError.notImplementedOnDTUHIDTransport(
@@ -222,20 +187,11 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
 
   // MARK: Dispatch
 
-  /// Sends a (possibly composite) HID event, then drains the transport if anything reached it.
-  ///
-  /// A `.composite` is flattened to its ordered sub-events so each is logged individually, and a
-  /// `.delay` suspends the task; the single drain then runs after the whole event. So a tap (down + up)
-  /// or a typed string settles once, not after every primitive — which keeps the gesture intact before
-  /// the connection is torn down while avoiding a per-primitive stall on the DTUHID transport.
-  ///
-  /// The drain follows what was *written*, not what the event said it would write. Only DTUHID has
-  /// anything to drain; Indigo's client is synchronous and has no `flush` to call.
+  /// Sends a (possibly composite) event, logging each sub-event, then drains once if any sub-event reached
+  /// the HID transport — so a tap or typed string settles once, not per primitive.
   public func send(event: FBSimulatorHIDEvent, logger: FBControlCoreLogger) async throws {
     var wroteToTransport = false
     for subEvent in event.subEvents ?? [event] {
-      // Listed rather than defaulted so a new case has to decide how it reads in the log, the same
-      // way `deliver` makes it decide which transport carries it.
       switch subEvent {
       case let .delay(duration):
         logger.log("Delay \(duration)s")
@@ -252,12 +208,7 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
     }
   }
 
-  /// Routes one event to the transport that carries it, reporting whether that transport was the HID
-  /// one — which is what decides the drain.
-  ///
-  /// Exhaustive, so a new case cannot be added without deciding which transport delivers it. That is
-  /// the whole reason the routing lives here rather than being predicted by a property on the event:
-  /// a prediction can disagree with the dispatch, an observation cannot.
+  /// Routes one event to its transport; returns whether it went to the HID transport (which decides the drain).
   func deliver(_ event: FBSimulatorHIDEvent) async throws -> Bool {
     switch event {
     case let .touch(direction, x, y, edge):
