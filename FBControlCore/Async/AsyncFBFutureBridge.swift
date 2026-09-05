@@ -13,17 +13,14 @@ public enum AsyncFBFutureBridgeError: Error {
   /// error. This indicates a bug in the producing FBFuture implementation.
   case continuationFulfilledWithoutValues
 
-  /// The teardown extracted from `FBFutureContext.enter:` was not captured.
-  /// This indicates the context's `enter:` block was never invoked, even though
-  /// the surrounding future resolved successfully.
+  /// The `FBFutureContext`'s `pop:` block never ran even though the surrounding future resolved.
   case contextTeardownNotCaptured
 }
 
 // MARK: - FBFuture → async bridge
 
-/// Wraps a non-`Sendable` `FBFuture` so it can be captured by `@Sendable`
-/// closures (the cancellation handler). `FBFuture` is internally serialised by
-/// its own dispatch queue, so this is safe in practice.
+/// Wraps a non-`Sendable` `FBFuture` for capture by `@Sendable` closures; `FBFuture` guards its state
+/// with `@synchronized`, so sharing it is safe.
 private final class FBFutureBox<T: AnyObject>: @unchecked Sendable {
   let future: FBFuture<T>
   init(_ future: FBFuture<T>) {
@@ -47,8 +44,6 @@ private final class FBFutureResultBox<T>: @unchecked Sendable {
 /// Cooperative cancellation is honoured: cancelling the surrounding `Task`
 /// also cancels the underlying future via `FBFuture.cancel()`.
 ///
-/// Will be removed once the underlying `FBFuture` types disappear.
-///
 /// `T` is not constrained to `Sendable` because the existing FBFuture-backed
 /// model types are not `Sendable`-annotated; the bridge ferries the value
 /// across the continuation through an internal `@unchecked Sendable` wrapper.
@@ -65,10 +60,7 @@ public func bridgeFBFuture<T: AnyObject>(_ future: FBFuture<T>) async throws -> 
             // swiftlint:disable:next force_cast
             continuation.resume(returning: FBFutureResultBox(value as! T))
           } else if resolved.state == .cancelled {
-            // A cancelled FBFuture has neither `result` nor `error` set, only
-            // `state == FBFutureStateCancelled`. Surface this as Swift's
-            // standard cancellation error so callers (and logs) see something
-            // actionable instead of the generic "fulfilled without values".
+            // A cancelled FBFuture has neither `result` nor `error`; surface it as `CancellationError`.
             continuation.resume(throwing: CancellationError())
           } else {
             continuation.resume(throwing: AsyncFBFutureBridgeError.continuationFulfilledWithoutValues)
@@ -151,9 +143,6 @@ public func convertFBMutableFuture<T: AnyObject>(_ mutableFuture: FBMutableFutur
 }
 
 /// Awaits an `FBMutableFuture<T>` and returns its resolved value.
-///
-/// Convenience wrapper around `bridgeFBFuture(convertFBMutableFuture(_:))` that
-/// hides the cast through `FBFuture<T>` from callers.
 func awaitMutableFuture<T: AnyObject>(_ mutableFuture: FBMutableFuture<T>) async throws -> T {
   try await bridgeFBFuture(convertFBMutableFuture(mutableFuture))
 }
@@ -174,25 +163,15 @@ private final class FBFutureContextBox<T: AnyObject>: @unchecked Sendable {
   }
 }
 
-/// A box for the context value and its teardown trigger, captured inside the
-/// `enter:` block so they survive across the `await` that follows.
+/// Holds the context value and its teardown trigger, set inside the `pop:` block.
 private final class ContextEnterCapture<T: AnyObject>: @unchecked Sendable {
   var value: T?
   var teardown: FBMutableFuture<AnyObject>?
 }
 
-/// Acquires the resource produced by an `FBFutureContext`, runs `body`, then
-/// triggers the context's teardown stack.
-///
-/// This is the async counterpart of the `FBFutureContext` LIFO-teardown API
-/// (`pend`/`push`/`pop`/`contextualTeardown`). The resource lifetime is scoped
-/// to the duration of `body`. If `body` throws, the teardown still runs and
-/// the original error is rethrown.
-///
-/// Uses `pop:` directly rather than the `enter:` convenience: `enter:` returns a
-/// future that resolves at acquire time and discards the one that resolves when
-/// the teardown stack has finished, which is the one this needs in order to not
-/// return early.
+/// Acquires the resource produced by an `FBFutureContext`, runs `body`, then runs the teardown stack.
+/// Teardown runs and completes even if `body` throws. Uses `pop:` rather than `enter:`, which discards
+/// the future that resolves once the teardown stack has finished.
 public func withFBFutureContext<T: AnyObject, R>(
   _ context: FBFutureContext<T>,
   body: (T) async throws -> R
@@ -229,8 +208,7 @@ public func withFBFutureContext<T: AnyObject, R>(
     throw AsyncFBFutureBridgeError.contextTeardownNotCaptured
   }
 
-  // The teardown is awaited on both paths: a scoped acquisition that returns
-  // while the resource is still being released is not scoped at all.
+  // Await the teardown on both paths so the resource is released before returning.
   do {
     let result = try await body(value)
     teardown.resolve(withResult: NSNull())
@@ -255,24 +233,9 @@ private final class FBFutureJobBox<Success>: @unchecked Sendable {
   }
 }
 
-/// Bridges Swift concurrency back to the `FBFuture` world.
-///
-/// Used by classes that still need to satisfy a legacy `@objc` protocol
-/// returning `FBFuture<T>` while implementing the work natively in
-/// `async`/`await`. Cancellation propagates from the returned future to the
-/// surrounding task.
-///
-/// The `job` closure is *not* required to be `@Sendable`: callers frequently
-/// capture `self` from non-`Sendable` command classes whose internal
-/// serialisation is provided by their work queue. The job runs on exactly one
-/// task, so wrapping it via `@unchecked Sendable` is safe in practice.
-///
-/// `Success` is not constrained to `Sendable` because the existing
-/// FBFuture-backed model types (e.g. `NSData`) are not `Sendable`-annotated.
-/// The job's result is consumed by the future's resolution exactly once, so
-/// unchecked sendability is safe in practice. This is implemented as a free
-/// function rather than a `Task` static member so the surrounding `Task<T,
-/// Error>` type need not satisfy its own `Success: Sendable` constraint.
+/// Bridges an async job back to an `FBFuture`, for callers that must satisfy an `FBFuture`-returning
+/// protocol. Cancelling the returned future cancels the task. Neither `job` nor `Success` is required to
+/// be `Sendable`: the job runs on exactly one task and the result is consumed once by the resolution.
 public func fbFutureFromAsync<Success: AnyObject>(
   job: @escaping () async throws -> Success
 ) -> FBFuture<Success> {
