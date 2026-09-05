@@ -72,7 +72,6 @@ private let axTraitNames: [(AXTraits, String)] = [
   (.allowsLayoutChangeInStatusBar, "AllowsLayoutChangeInStatusBar"),
 ]
 
-// Built once on first access - Swift global initialisation runs behind `swift_once`.
 private let axTraitToName: [NSNumber: String] =
   Dictionary(uniqueKeysWithValues: axTraitNames.map { (NSNumber(value: $0.0.rawValue), $0.1) })
 
