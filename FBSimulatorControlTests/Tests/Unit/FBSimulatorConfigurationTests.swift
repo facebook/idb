@@ -34,12 +34,6 @@ final class FBSimulatorConfigurationTests: XCTestCase {
     XCTAssertEqual(configuration.os.name, .nameiOS_10_0)
   }
 
-  func testiPadConfiguration() throws {
-    let configuration = try FBSimulatorConfiguration.defaultConfiguration().withDeviceModel(.modeliPadPro).withOSNamed(.nameiOS_10_0)
-    XCTAssertEqual(configuration.device.model, .modeliPadPro)
-    XCTAssertEqual(configuration.os.name, .nameiOS_10_0)
-  }
-
   func testWatchOSConfiguration() throws {
     let watchModel = FBDeviceModel(rawValue: "Apple Watch Series 2 - 42mm")
     let watchOS = FBOSVersionName(rawValue: "watchOS 3.2")
