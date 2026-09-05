@@ -16,10 +16,6 @@ import Testing
 /// the other always resolves with an *error*. These cases record the exact
 /// states, the numeric values, and the error text, because callers branch on all
 /// three and at least one out-of-repo consumer string-matches the messages.
-///
-/// Nothing here asserts a desirable design. Each case records what callers
-/// observe today so that a later replacement has to either reproduce it or
-/// change it deliberately.
 @Suite
 struct FBSubprocessTerminationTests {
 
@@ -39,8 +35,7 @@ struct FBSubprocessTerminationTests {
   func normalExitFailsTheSignalFuture() async throws {
     let process = try await Self.start("exit 0")
 
-    // Await the future that carries a result first. All three are resolved from
-    // one block, so this is also the point at which the other two are settled.
+    // All three futures resolve from one block, so once `exitCode` is awaited the other two are settled.
     #expect(try await bridgeFBFuture(process.exitCode).int32Value == 0)
     #expect(process.statLoc.result?.int32Value == 0)
 
@@ -122,9 +117,6 @@ struct FBSubprocessTerminationTests {
           .runUntilCompletion(withAcceptableExitCodes: [0]))
     }
 
-    // The literal "Exit Code <n> is not acceptable" is matched by tooling
-    // outside this repository, so the wording cannot be changed without
-    // breaking those consumers.
     // @oss-disable
     #expect(error?.localizedDescription.contains("Exit Code 149 is not acceptable") == true)
   }
