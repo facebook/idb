@@ -7,7 +7,6 @@
 
 import Foundation
 
-/// The ways weak-framework loading can fail, as data rather than assembled strings.
 public enum FBWeakFrameworkError: Error {
   case missingRequiredClass(className: String, frameworkName: String)
   case rootUserForbidden(relativePath: String)
@@ -84,8 +83,7 @@ public final class FBWeakFramework: NSObject {
 
   // MARK: Public Methods
 
-  /// `logger` is optional: the Objective-C loaders that call this vend a nullable logger, and a
-  /// process that has not configured one loads frameworks silently rather than trapping.
+  /// A nil logger loads silently.
   @objc(loadWithLogger:error:)
   public func load(with logger: (any FBControlCoreLogger)?) throws {
     try loadFromRelativeDirectory(basePath, logger: logger)
@@ -102,19 +100,16 @@ public final class FBWeakFramework: NSObject {
   }
 
   private func loadFromRelativeDirectory(_ relativeDirectory: String, logger: (any FBControlCoreLogger)?) throws {
-    // Check if classes are already loaded
     if (try? allRequiredClassesExist()) != nil && !requiredClassNames.isEmpty {
       logger?.debug().log("\(name): Already loaded, skipping")
       try verifyIfLoaded(with: logger)
       return
     }
 
-    // Check root permission
     if NSUserName() == "root" && !rootPermitted {
       throw FBWeakFrameworkError.rootUserForbidden(relativePath: relativePath)
     }
 
-    // Load framework
     let path = ((relativeDirectory as NSString).appendingPathComponent(relativePath) as NSString).standardizingPath
     if !FileManager.default.fileExists(atPath: path) {
       throw FBWeakFrameworkError.fileMissing(path: path)
