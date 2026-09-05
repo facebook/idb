@@ -7,10 +7,9 @@
 
 import FBControlCore
 
-/// A stub implementation of FBiOSTarget for testing.
 final class FBiOSTargetDouble: FBiOSTarget {
 
-  // MARK: FBiOSTargetInfo - writable properties for test configuration
+  // MARK: FBiOSTargetInfo
 
   var uniqueIdentifier: String = ""
   var udid: String = ""
@@ -22,7 +21,7 @@ final class FBiOSTargetDouble: FBiOSTarget {
   var deviceType: FBDeviceType = .generic(withName: "FBiOSTargetDouble")
   var osVersion: FBOSVersion = .generic(withName: "FBiOSTargetDouble")
 
-  // MARK: FBiOSTarget - synthesized properties
+  // MARK: FBiOSTarget
 
   var architectures: [FBArchitecture] = []
   var logger: any FBControlCoreLogger = FBControlCoreLoggerDouble()
