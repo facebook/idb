@@ -24,7 +24,6 @@ private func afcConnectionCallback(
   logger.log("Connection \(String(describing: connectionRefPtr)), operation \(String(describing: afcOperationPtr))")
 }
 
-/// The ways an AFC exchange can fail, as data rather than assembled strings.
 public enum FBAFCConnectionError: Error {
   case createDirectoryFailed(message: String)
   case openDirectoryFailed(path: String, message: String)
@@ -192,7 +191,6 @@ public final class FBAFCConnection {
     }
     let fileRef = file?.takeUnretainedValue()
 
-    // Seek to the end to discover the length, then back to the start to read it.
     _ = calls.FileRefSeek(connection, fileRef, 0, 2)
     var offset: UInt64 = 0
     _ = calls.FileRefTell(connection, fileRef, &offset)
@@ -256,7 +254,6 @@ public final class FBAFCConnection {
       throw FBAFCConnectionError.closeFailed(status: status)
     }
     logger?.log("Closed AFC Connection \(connectionDescription)")
-    // AFCConnectionClose does release the connection.
     self.connectionRef = nil
   }
 
