@@ -23,9 +23,8 @@ public actor FBSimulatorVideo {
 
   /// The URL of the `.mp4` this recording writes.
   let outputURL: URL
-  /// The underlying encode pipeline. Exposed so the sime2e record path can drive stdin-controlled
-  /// overlay/chapter/screenshot on the live stream, mirroring how `videoStream(...)` returns the
-  /// stream. `nonisolated`: a constant of Sendable (actor) type, readable cross-module without a hop.
+  /// The underlying encode pipeline, exposed so callers can drive overlay/chapter/screenshot on the live
+  /// recording. `nonisolated`: a constant of Sendable (actor) type, readable without a hop.
   public nonisolated let stream: FBSimulatorVideoStream
   private let fileWriter: FBSimulatorVideoFileWriter
   private var hasStopped = false
