@@ -13,7 +13,6 @@ import Foundation
 private let testmanagerdSimSockTimeout: TimeInterval = 5
 private let simSockEnvKey = "TESTMANAGERD_SIM_SOCK"
 
-/// The ways simulator test execution can fail, as data rather than assembled strings.
 public enum FBSimulatorXCTestError: Error {
   case socketCreationFailed
   case socketFileMissing(path: String)
@@ -204,7 +203,6 @@ public final class FBSimulatorXCTestCommands {
       logger: logger)
   }
 
-  // Internal so the poll can be unit-tested with a getenv device double.
   func testManagerDaemonSocketPath() async throws -> String {
     guard let simulator = self.simulator else {
       throw FBWeakTargetError.simulator
