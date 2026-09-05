@@ -8,8 +8,6 @@
 import FBControlCore
 import XCTest
 
-/// Coverage for locating the single `.app` inside an extracted archive, which is
-/// the step between unpacking an `.ipa` and installing what came out of it.
 final class FBBundleDescriptorApplicationTests: XCTestCase {
 
   private var logger: FBControlCoreLoggerDouble!
@@ -132,9 +130,7 @@ final class FBBundleDescriptorApplicationTests: XCTestCase {
     assertSamePath(bundle.path, expected)
   }
 
-  /// An `.app` nested inside another `.app` -- the shape of a bundled app
-  /// extension or watch app -- must not count as a second application. The
-  /// enumerator skips the descendants of anything it already matched.
+  /// App extensions and watch apps nest an `.app` inside the `.app`; only the outer one is a candidate.
   func testFindAppPath_WhenAppContainsANestedApp_FindsOnlyTheOuterApp() throws {
     let expected = try makeAppBundle("Payload/Sample.app", identifier: "com.example.sample")
     try makeAppBundle(
@@ -179,8 +175,6 @@ final class FBBundleDescriptorApplicationTests: XCTestCase {
     XCTAssertThrowsError(try FBBundleDescriptor.findAppPath(fromDirectory: rootURL, logger: logger))
   }
 
-  /// A plain file whose name ends in `.app` is not a bundle, so it is not a
-  /// candidate at all -- the lookup fails as though the directory held no app.
   func testFindAppPath_WhenAppSuffixIsAPlainFile_Fails() throws {
     try makeFile("Payload/Sample.app", contents: "not a directory")
 
