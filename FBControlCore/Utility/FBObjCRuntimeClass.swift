@@ -14,7 +14,6 @@ public enum FBObjCRuntimeClassError: Error, LocalizedError {
   case allocationFailed(className: String)
   /// The designated initializer raised an `NSException` instead of returning.
   case initializerRaised(className: String, underlying: Error)
-  /// The designated initializer returned nil.
   case initializerReturnedNil(className: String)
 
   public var errorDescription: String? {
@@ -30,19 +29,10 @@ public enum FBObjCRuntimeClassError: Error, LocalizedError {
 }
 
 /**
- A class obtained from the Objective-C runtime by name, rather than named as a type.
-
- Private framework classes move between framework binaries across OS and Xcode releases. Naming one
- as a type emits a link-time `_OBJC_CLASS_$_Name` reference pinned to whichever framework vended it
- at build time, and the process fails to launch once it moves. Looking the class up by name avoids
- the symbol, at the cost of hand-rolling what the compiler would otherwise do: allocate, send the
- designated initializer, and interpret the result.
-
- `instantiate` is where that hand-rolling is worth sharing. The initializer send crosses into code
- this process does not own, which is free to raise `NSException` — and a raise that unwinds through
- a Swift frame reaches `libc++abi` and aborts the process, because `do`/`catch` cannot see it. The
- send is therefore funnelled through `FBObjCExceptionGuard`, so a raise arrives as a thrown
- `FBObjCRuntimeClassError` that the caller can map onto its own failure modes.
+ A class resolved from the Objective-C runtime by name. Naming a private-framework class as a type
+ emits a link-time `_OBJC_CLASS_$_Name` reference to whichever binary vended it at build time, and the
+ process fails to launch once Apple moves it. `instantiate` routes the initializer send through
+ `FBObjCExceptionGuard`, since an `NSException` unwinding through a Swift frame aborts the process.
  */
 public struct FBObjCRuntimeClass {
 
@@ -71,17 +61,12 @@ public struct FBObjCRuntimeClass {
   /**
    Allocates an instance and sends it its designated initializer.
 
-   `Messaging` is an `@objc` protocol declaring the initializer's selector. The fresh allocation is
-   `unsafeBitCast` to it, which is what lets `initialize` express the send in Swift without the
-   class ever being named as a type. The cast is only defined when `Messaging` is laid out as an
-   object pointer, which is what the `AnyObject` constraint holds callers to.
+   `Messaging` is an `@objc` protocol declaring the initializer's selector; the allocation is
+   `unsafeBitCast` to it so `initialize` can express the send without naming the class as a type.
+   The cast is only defined for object-pointer layouts, which the `AnyObject` constraint enforces.
 
-   - Parameter initialize: Sends the designated initializer to the allocation, returning whatever it
-     returned. Must not escape the instance it is passed — until the initializer returns, the object
-     is not fully formed.
-   - Throws: `FBObjCRuntimeClassError.allocationFailed` if the instance could not be allocated,
-     `FBObjCRuntimeClassError.initializerRaised` if the initializer raised an `NSException`,
-     `FBObjCRuntimeClassError.initializerReturnedNil` if it returned nil.
+   - Parameter initialize: Sends the designated initializer and returns its result. Must not let the
+     instance escape: until the initializer returns the object is not fully formed.
    */
   public func instantiate<Messaging: AnyObject>(
     as _: Messaging.Type,
