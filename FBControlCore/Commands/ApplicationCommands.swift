@@ -7,8 +7,6 @@
 
 import Foundation
 
-/// Launching an application, separated from the rest of the application commands so that a caller
-/// needing only this does not depend on all of them.
 public protocol ApplicationLaunching: AnyObject {
 
   func launchApplication(_ configuration: FBApplicationLaunchConfiguration) async throws -> FBLaunchedApplication
