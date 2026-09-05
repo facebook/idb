@@ -7,25 +7,11 @@
 
 import Foundation
 
-/// One-slot-per-protocol cache for command class instances bound to a single
-/// target. Each `resolve` call for a distinct `T` creates an independent slot
-/// keyed by the protocol metatype, so callers can cache as many command kinds
-/// as they ask for without registering anything up front.
+/// One cached instance per type, for a single target.
 ///
-/// The lock is held across `build` so concurrent first-access from two RPCs
-/// can't double-construct the same command class -- important for stateful
-/// command classes that own queues / connections per target.
-///
-/// Value types are cached too, but get value semantics: `resolve` hands back a
-/// copy, so mutating what you receive does not write back and the next caller
-/// sees the original. A command that mutates state as it is used therefore has
-/// to be a reference type; one that only models a domain can be a struct.
-///
-/// A command resolved here must hold its target weakly. The target owns the
-/// cache and the cache owns what is resolved into it, so a command holding its
-/// target strongly closes a target -> cache -> command -> target cycle that the
-/// target can never escape. A command that has to hold its target strongly is
-/// built per call instead of being resolved here.
+/// The lock is held across `build`, so concurrent first access cannot construct the same command twice.
+/// Value types are returned by copy, so a command that mutates as it is used must be a reference type.
+/// A resolved command must hold its target weakly: the target owns this cache, so a strong reference is a cycle.
 public final class FBTargetCommandCache {
 
   private let lock = NSLock()
@@ -43,12 +29,8 @@ public final class FBTargetCommandCache {
     return value
   }
 
-  /// Pre-populate a slot so the next `resolve(T.self) { ... }` returns this
-  /// value instead of constructing a new one. Intended for tests that want to
-  /// substitute a subclass / wrapper of a command class. Stored under the
-  /// statically-known type `T`, so callers must spell the slot key explicitly
-  /// (e.g. `register(wrapper, as: FBSimulatorDebuggerCommands.self)`) when the
-  /// runtime type is a subclass.
+  /// Pre-populates a slot (for tests substituting a wrapper). Keyed by the static `T`, so pass `as:` explicitly
+  /// when `value`'s runtime type is a subclass.
   public func register<T>(_ value: T, as type: T.Type = T.self) {
     lock.lock()
     defer { lock.unlock() }
