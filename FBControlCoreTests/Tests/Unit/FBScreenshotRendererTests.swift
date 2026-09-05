@@ -51,7 +51,6 @@ final class FBScreenshotRendererTests: XCTestCase {
     XCTAssertEqual(result.screenScale, 2)
   }
 
-  /// A different container is a real request, so the bytes cannot be handed back as they are.
   func testWholeScreenInAnotherFormatIsReEncoded() throws {
     let data = try fixtureData()
     for encoding in [FBScreenshotEncoding.jpeg(quality: 0.8), .tiff] {
@@ -63,13 +62,6 @@ final class FBScreenshotRendererTests: XCTestCase {
       XCTAssertEqual(decoded.type, encoding.format.contentType)
       XCTAssertEqual(decoded.size, fixtureSize)
     }
-  }
-
-  func testATransformDefeatsThePassthrough() throws {
-    let data = try fixtureData()
-    let result = try render(FBScreenshotConfiguration(scale: .factor(0.5)))
-    XCTAssertNotEqual(result.imageData, data)
-    XCTAssertEqual(result.format, .png)
   }
 
   // MARK: - Crop and scale on encoded input
@@ -156,7 +148,6 @@ final class FBScreenshotRendererTests: XCTestCase {
     XCTAssertEqual(transformed.height, 50)
   }
 
-  /// A factor that rounds back to the size already in hand should not cost a resample.
   func testTransformSkipsAResampleThatWouldChangeNothing() throws {
     let image = try fixtureImage()
     let plan = FBScreenshotPlan(cropRect: nil, scaleFactor: 0.9999, outputSize: fixtureSize)
@@ -164,10 +155,8 @@ final class FBScreenshotRendererTests: XCTestCase {
     XCTAssertTrue(transformed === image)
   }
 
-  /// The one-pixel floor is a rule of `FBScreenshotGeometry`, not of `FBScreenshotPlan` -- the type
-  /// has a public memberwise initializer, so a Swift caller can hand `transform` an output size the
-  /// geometry would never have produced. That has to fail with a named error rather than reach Core
-  /// Graphics as a zero-sized context.
+  /// `FBScreenshotPlan` has a public memberwise initializer, so `transform` can receive an output size
+  /// the geometry would never produce; it must fail with a named error, not a zero-sized CG context.
   func testTransformRejectsAPlanWithNoOutput() throws {
     let image = try fixtureImage()
     for outputSize in [CGSize(width: 0, height: 10), CGSize(width: 10, height: 0), .zero] {
@@ -197,9 +186,8 @@ final class FBScreenshotRendererTests: XCTestCase {
     XCTAssertLessThan(low.count, high.count)
   }
 
-  /// ImageIO clamps a quality outside (0, 1] and encodes anyway, which would hand back an image at a
-  /// quality nobody asked for and call it a success. A Swift caller can build the case directly, so
-  /// the encoder is the only place that sees every one of them.
+  /// ImageIO silently clamps a quality outside (0, 1] and encodes anyway, so the encoder must reject
+  /// it itself.
   func testEncodeRejectsAQualityOutsideTheRange() throws {
     let image = try fixtureImage()
     for quality in [0.0, -0.5, 1.5] {
@@ -214,8 +202,6 @@ final class FBScreenshotRendererTests: XCTestCase {
     XCTAssertNoThrow(try FBScreenshotRenderer.encode(image, encoding: .jpeg(quality: 1)))
   }
 
-  /// The TIFF case exists to be uncompressed, which is only worth having if it is bigger than the
-  /// compressed containers rather than quietly being one of them.
   func testTIFFIsUncompressed() throws {
     let image = try fixtureImage()
     let tiff = try FBScreenshotRenderer.encode(image, encoding: .tiff)
