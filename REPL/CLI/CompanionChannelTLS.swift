@@ -32,10 +32,6 @@ func planCompanionClientTLS(
 /// domain socket, `.disabled`, or a missing provider/identity is plaintext. This
 /// mirrors the choice `CompanionClient` makes for the JSON-RPC transport (present
 /// the identity; the peer is not verified), keeping the two transports consistent.
-///
-/// Kept as a pure function of its inputs — the provider is injected rather than
-/// read from the `CompanionTLS.provider` global — so the selection is unit-testable
-/// without touching process-wide state or the filesystem.
 func replClientTLSIdentity(
   for address: CompanionAddress,
   tls: CompanionClientTLS,
