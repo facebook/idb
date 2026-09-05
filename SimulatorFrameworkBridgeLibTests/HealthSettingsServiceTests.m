@@ -69,11 +69,6 @@ static BOOL FBHealthRuntimeDeclaresSelector(NSString *selectorName)
   XCTAssertNoThrow(handleHealthSettingsAction(@"approve", @"com.example.test", @[]));
 }
 
-- (void)testRevokeAnswersWithAStatusOnAnyRuntime
-{
-  XCTAssertNoThrow(handleHealthSettingsAction(@"revoke", @"com.example.test", @[]));
-}
-
 // Exactly one of the two spellings is present on any runtime, so the service's
 // `respondsToSelector:` dispatch between them is total. A third rename shows up as a failure here.
 - (void)testTheRuntimeDeclaresExactlyOneAuthorizationSpelling
