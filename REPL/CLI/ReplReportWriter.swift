@@ -59,11 +59,6 @@ final class ReplReportWriter {
       try? FileManager.default.createDirectory(atPath: directory, withIntermediateDirectories: true)
     }
 
-    // Resume an existing report only when it belongs to this same REPL session.
-    // This is a reconnect, so the existing report must be appended to, never
-    // truncated: if it cannot be opened or seeked to the end, disable reporting
-    // (return nil) rather than falling through and recreating it. Failures here are
-    // reported on stderr but never interrupt the session (I/O is best-effort).
     if !sessionID.isEmpty, Self.existingSessionID(atPath: path) == sessionID {
       guard let handle = FileHandle(forWritingAtPath: path) else {
         FileHandle.standardError.write(Data("idb-repl: could not open session report at \(path) to append; reporting disabled\n".utf8))
