@@ -25,9 +25,7 @@ final class FBXcodeDirectoryTests: XCTestCase {
     XCTAssertTrue(exists)
     XCTAssertTrue(isDirectory.boolValue)
 
-    // `Platforms` is the stable marker of a Developer directory across Xcode versions.
-    // Xcode 27 moved `Applications` out of Contents/Developer (to Contents/Applications,
-    // where the renamed DeviceHub.app now lives), so it is no longer a reliable marker.
+    // `Platforms` is the stable marker of a Developer directory; `Applications` moved out of Contents/Developer in Xcode 27.
     let expectedContents = NSSet(array: ["Platforms"])
     let actualContents = try? FileManager.default.contentsOfDirectory(atPath: directory)
     let intersection = NSMutableSet(array: actualContents ?? [])
