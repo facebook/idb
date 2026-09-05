@@ -8,17 +8,6 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-/**
- A simplified re-implementation of Apple's _IDETestManagerAPIMediator class.
- This class 'takes over' after an Application Process has been started, mediating between the host,
- the `testmanagerd` daemon, and the test runner.
-
- The orchestration and application lifecycle operations run on Swift `async`/`await` over
- `ApplicationCommands`. The private XCTest `XCTestManager_IDEInterface` callback surface that the
- test runner communicates with stays in Objective-C in `FBTestManagerAPIMediatorIDEInterface`, which
- forwards application launch/termination requests back to this type.
- */
-/// The ways the test-manager mediator can fail, as data rather than assembled strings.
 public enum FBTestManagerError: Error {
   case hostProcessStalled(timeout: TimeInterval, processIdentifier: pid_t, stackshot: String)
   case appUnderTestNotInstallable(configurationDescription: String)
@@ -35,10 +24,11 @@ extension FBTestManagerError: LocalizedError {
   }
 }
 
+/// A simplified re-implementation of Apple's `_IDETestManagerAPIMediator`: takes over once the test host process has started, mediating between the host, `testmanagerd` and the test runner.
 @objc(FBTestManagerAPIMediator)
 public final class FBTestManagerAPIMediator: NSObject, @unchecked Sendable {
 
-  private static let defaultTestTimeout: TimeInterval = 60 * 60 // 1 hour.
+  private static let defaultTestTimeout: TimeInterval = 60 * 60
 
   // MARK: - Properties
 
@@ -55,11 +45,7 @@ public final class FBTestManagerAPIMediator: NSObject, @unchecked Sendable {
 
   // MARK: - Initializers
 
-  /**
-   Performs the entire process of test execution: connecting to `testmanagerd`, the test bundle and
-   the test execution itself. The returned future resolves when test execution has fully completed,
-   or an error occurred with the execution. Test failures are not represented as an error.
-   */
+  /// Runs the whole test session to completion. Test failures are reported, not thrown; only execution errors throw.
   public static func connectAndRunUntilCompletion(
     with context: FBTestManagerContext,
     target: any FBiOSTarget & ApplicationCommands & XCTestExtendedCommands & CrashLogCommands,
@@ -101,7 +87,6 @@ public final class FBTestManagerAPIMediator: NSObject, @unchecked Sendable {
       } catch {
         result = .failure(error)
       }
-      // Mirror the contextual teardown of the test host: terminate it.
       _ = try? await launchedApplication.terminate()
     } catch {
       result = .failure(error)
@@ -117,9 +102,7 @@ public final class FBTestManagerAPIMediator: NSObject, @unchecked Sendable {
 
   private func runUntilCompletion(launchedApplication: FBLaunchedApplication, timeout: TimeInterval) async throws {
     let work: FBFuture<AnyObject> = fbFutureFromAsync { () -> AnyObject in
-      // Open the testmanagerd transport over async and hand the socket down to the Objective-C
-      // bundle connection (which does not acquire the transport itself). The socket stays open
-      // for the duration of the connection and is closed when this scope ends.
+      // The transport socket is closed when this scope ends, so the whole connection must run inside it.
       try await self.target.withTransportForTestManagerService { socket in
         let connection = FBTestBundleConnection(
           context: self.context,
@@ -132,8 +115,6 @@ public final class FBTestManagerAPIMediator: NSObject, @unchecked Sendable {
         )
         try await connection.connectAndRun()
       }
-      // The bundle has disconnected at this point, but we also need to terminate any processes
-      // spawned through `_XCT_launchProcessWithPath` and tear down the host application.
       try await self.terminateSpawnedProcesses()
       _ = try? await launchedApplication.terminate()
       return NSNull()
@@ -254,7 +235,6 @@ public final class FBTestManagerAPIMediator: NSObject, @unchecked Sendable {
   }
 
   private func launchApplication(_ configuration: FBApplicationLaunchConfiguration, atPath path: String?) async throws -> FBLaunchedApplication {
-    // If the bundle is already installed at the expected path, just launch it.
     if let installed = try? await target.installedApplication(bundleID: configuration.bundleID), installed.bundle.path == path {
       return try await target.launchApplication(configuration)
     }
